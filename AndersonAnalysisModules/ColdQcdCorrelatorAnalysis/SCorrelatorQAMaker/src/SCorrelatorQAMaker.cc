@@ -10,10 +10,7 @@
 
 #define SCORRELATORQAMAKER_CC
 
-// c++ utilities
-#include <cassert>
-#include <optional>
-// user includes
+// module definition
 #include "SCorrelatorQAMaker.h"
 
 using namespace std;
@@ -27,7 +24,9 @@ namespace SColdQcdCorrelatorAnalysis {
   SCorrelatorQAMaker::~SCorrelatorQAMaker() {
 
     delete m_checkTrackPairs;
-    delete m_makeTrackQATuples;
+    delete m_makeTrackQATuple;
+    delete m_makeClustQATree;
+    delete m_readLambdaJetTree;
 
   }  // end dtor
 
@@ -37,8 +36,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
   void SCorrelatorQAMaker::SetGlobalDebug(const bool debug) {
 
-    m_checkTrackPairs   -> SetDebug(debug);
-    m_makeTrackQATuples -> SetDebug(debug);
+    if (m_checkTrackPairs)   m_checkTrackPairs   -> SetDebug(debug);
+    if (m_makeTrackQATuple)  m_makeTrackQATuple  -> SetDebug(debug);
+    if (m_makeClustQATree)   m_makeClustQATree   -> SetDebug(debug);
+    if (m_readLambdaJetTree) m_readLambdaJetTree -> SetDebug(debug);
     return;
 
   }  // end 'SetGlobalDebug(bool)'
@@ -47,8 +48,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
   void SCorrelatorQAMaker::SetGlobalOutFile(const string sOutFile) {
 
-    m_checkTrackPairs   -> SetOutFile(sOutFile);
-    m_makeTrackQATuples -> SetOutFile(sOutFile);
+    if (m_checkTrackPairs)   m_checkTrackPairs   -> SetOutFile(sOutFile);
+    if (m_makeTrackQATuple)  m_makeTrackQATuple  -> SetOutFile(sOutFile);
+    if (m_makeClustQATree)   m_makeClustQATree   -> SetOutFile(sOutFile);
+    if (m_readLambdaJetTree) m_readLambdaJetTree -> SetOutFile(sOutFile);
     return;
 
   }  // end 'SetGlobalOutFile(string)'
@@ -57,8 +60,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
   void SCorrelatorQAMaker::SetGlobalVerbosity(const int verbosity) {
 
-    m_checkTrackPairs   -> SetVerbosity(verbosity);
-    m_makeTrackQATuples -> SetVerbosity(verbosity);
+    if (m_checkTrackPairs)   m_checkTrackPairs   -> SetVerbosity(verbosity);
+    if (m_makeTrackQATuple)  m_makeTrackQATuple  -> SetVerbosity(verbosity);
+    if (m_makeClustQATree)   m_makeClustQATree   -> SetVerbosity(verbosity);
+    if (m_readLambdaJetTree) m_readLambdaJetTree -> SetVerbosity(verbosity);
     return;
 
   }  // end 'SetGlobalVerbosity(int)'
@@ -79,23 +84,50 @@ namespace SColdQcdCorrelatorAnalysis {
     m_checkTrackPairs -> SetConfig(config);
     return;
 
-  }  // end 'InitPlugin(SCheckTrackPairs, optional<string>)'
+  }  // end 'InitPlugin(SCheckTrackPairs&, optional<string>)'
 
 
 
-  // specialization for SMakeTrkQATuples
-  template <> void SCorrelatorQAMaker::InitPlugin(const SMakeTrkQATuplesConfig& config, optional<string> name) {
+  // specialization for SMakeTrackQATuple
+  template <> void SCorrelatorQAMaker::InitPlugin(const SMakeTrackQATupleConfig& config, optional<string> name) {
 
     // throw error if no name provided
     if (!name.has_value()) {
       assert(name.has_value());
     }
 
-    m_makeTrackQATuples = new SMakeTrkQATuples(name.value());
-    m_makeTrackQATuples -> SetConfig(config);
+    m_makeTrackQATuple = new SMakeTrackQATuple(name.value());
+    m_makeTrackQATuple -> SetConfig(config);
     return;
 
-  }  // end 'InitPlugin(SMakeTrkQATuples, optional<string>)'
+  }  // end 'InitPlugin(SMakeTrackQATuple&, optional<string>)'
+
+
+
+  // specialization for SMakeClustQATree
+  template <> void SCorrelatorQAMaker::InitPlugin(const SMakeClustQATreeConfig& config, optional<string> name) {
+
+    // throw error if no name provided
+    if (!name.has_value()) {
+      assert(name.has_value());
+    }
+
+    m_makeClustQATree = new SMakeClustQATree(name.value());
+    m_makeClustQATree -> SetConfig(config);
+    return;
+
+  }  // end 'InitPlugin(SMakeClustQATreeConfig&, optional<string>)'
+
+
+
+  // specialization for SReadLambdaJetTree
+  template <> void SCorrelatorQAMaker::InitPlugin(const SReadLambdaJetTreeConfig& config, optional<string> name) {
+
+    m_readLambdaJetTree = new SReadLambdaJetTree();
+    m_readLambdaJetTree -> SetConfig(config);
+    return;
+
+  }  // end 'InitPlugin(SReadLambdaJetTreeConfig&, optional<string>)'
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 

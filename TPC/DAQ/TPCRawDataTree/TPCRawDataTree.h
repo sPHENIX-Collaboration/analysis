@@ -94,6 +94,8 @@ class TPCRawDataTree : public SubsysReco
   int side = 0;
   double m_xPos = 0.;
   double m_yPos = 0.;
+  uint64_t m_Lv1TaggerBCO = 0;
+  uint64_t m_Lv1TaggerCount = 0;
 
   int m_nTaggerInFrame = 0;
   uint16_t m_tagger_type = 0;

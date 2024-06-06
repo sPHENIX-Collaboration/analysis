@@ -10,6 +10,7 @@
 
 #pragma once
 
+// make common namespaces implicit
 using namespace std;
 using namespace fastjet;
 
@@ -19,152 +20,213 @@ namespace SColdQcdCorrelatorAnalysis {
 
   // analysis methods ---------------------------------------------------------
 
-  void SEnergyCorrelator::DoCorrelatorCalculation() {
+  void SEnergyCorrelator::DoLocalCalculation() {
 
+    TF1* fEff = new TF1("fEff", "[0]*(1.0-TMath::Exp(-1.0*[1]*x))", 0, 100.0);
+    fEff->SetParameter(0, m_config.effVal);
+    fEff->SetParameter(1, 0.9);
+    TDatime *date = new TDatime();
+    TRandom2 *shift = new TRandom2(date->GetDate()*date->GetTime());
+    
     // print debug statement
-    if (m_inDebugMode) PrintDebug(31);
+    if (m_config.isDebugOn) PrintDebug(31);
 
-    // announce start of event loop
-    const uint64_t nEvts = m_inChain -> GetEntriesFast();
-    PrintMessage(7, nEvts);
+    // jet loop
+    for (uint64_t iJet = 0; iJet < m_input.jets.size(); iJet++) {
 
-    // event loop
-    uint64_t nBytes = 0;
-    for (uint64_t iEvt = 0; iEvt < nEvts; iEvt++) {
+      // clear vector for correlator
+      m_jetCstVector.clear();
 
-      const uint64_t entry = LoadTree(iEvt);
-      if (entry < 0) break;
+      // select jet pt bin & apply jet cuts
+      const bool isGoodJet = IsGoodJet( m_input.jets[iJet] );
+      if (!isGoodJet) continue;
 
-      const uint64_t bytes = GetEntry(iEvt);
-      if (bytes < 0) {
-        break;
-      } else {
-        nBytes += bytes;
-        //PrintMessage(8, nEvts, iEvt);
+      //get Jet info for manual calculations
+      double jet_pT = m_input.jets[iJet].GetPT();
+      const double jet_Eta = m_input.jets[iJet].GetEta();
+      const double jet_Phi = m_input.jets[iJet].GetPhi();
+      double jet_Ene = m_input.jets[iJet].GetEne();
+      if(m_config.jetPtSmear != 0 && m_config.modJets){
+	double mass = sqrt((jet_Ene*jet_Ene) - (jet_pT*jet_pT));
+	jet_pT += shift->Gaus(0, m_config.jetPtSmear*jet_pT);
+	jet_Ene = sqrt((jet_pT*jet_pT) + (mass*mass));
       }
+      ROOT::Math::PtEtaPhiEVector VecJet(jet_pT, jet_Eta, jet_Phi, jet_Ene);
 
-      // jet loop
-      uint64_t nJets = (int) m_evtNumJets;
-      for (uint64_t iJet = 0; iJet < nJets; iJet++) {
+      // constituent loop
+      for (uint64_t iCst = 0; iCst < m_input.csts[iJet].size(); iCst++) {
 
-        // clear vector for correlator
-        m_jetCstVector.clear();
+        // create cst 4-vector
+        ROOT::Math::PtEtaPhiMVector pVecCst(
+          m_input.csts[iJet][iCst].GetPT(),
+          m_input.csts[iJet][iCst].GetEta(),
+          m_input.csts[iJet][iCst].GetPhi(),
+          Const::MassPion()
+        );
 
-        // get jet info
-        const uint64_t nCsts  = m_jetNumCst -> at(iJet);
-        const double   ptJet  = m_jetPt     -> at(iJet);
-        const double   etaJet = m_jetEta    -> at(iJet);
+	//Components to use for pseudoJet
+	float Px = pVecCst.Px();
+	float Py = pVecCst.Py();
+	float Pz = pVecCst.Pz();
+	float cstE = pVecCst.E();
+	float skipCst = false;
+	
+	//Create pseudoJet for original cst info
+	PseudoJet CstPseudo(Px, Py, Pz, cstE);
 
-        // select jet pt bin & apply jet cuts
-        const uint32_t iPtJetBin = GetJetPtBin(ptJet);
-        const bool     isGoodJet = ApplyJetCuts(ptJet, etaJet);
-        if (!isGoodJet) continue;
+	//Apply smearing if necessary
+	if(m_config.modCsts){
+	  //Apply efficiency if needed
+	  float rando = shift->Uniform(0,1.);
+	  float eff = fEff->Eval(m_input.csts[iJet][iCst].GetPT());
+	  if(rando>eff && m_config.effVal!=1) skipCst = true;
+	  //Apply pT smearing if needed
+	  float newpT = m_input.csts[iJet][iCst].GetPT();
+	  if(m_config.pTSmear != 0) newpT+=shift->Gaus(0, m_config.pTSmear*m_input.csts[iJet][iCst].GetPT());
+	  ROOT::Math::PtEtaPhiMVector rVecCstCopy(newpT, m_input.csts[iJet][iCst].GetEta(), m_input.csts[iJet][iCst].GetPhi(), Const::MassPion());
+	  TVector3 p(rVecCstCopy.X(), rVecCstCopy.Y(), rVecCstCopy.Z());
+	  TVector3 rotation_axis(rVecCstCopy.X(), rVecCstCopy.Y(), rVecCstCopy.Z());
+	  //Apply angular smearing if needed
+	  if(m_config.theta != 0){
+	    float Theta0 = p.Theta();
+	    float deltaTheta = shift->Gaus(0, m_config.theta);
+	    float deltaPhi = shift->Uniform(-TMath::Pi(), TMath::Pi());
+	    p.SetTheta(Theta0+deltaTheta);
+	    p.Rotate(deltaPhi, rotation_axis);
+	  }
+	  //Change values to use in pseudoJet
+	  Px = p.X();
+	  Py = p.Y();
+	  Pz = p.Z();
+	  cstE = rVecCstCopy.E(); 
+	}
+	if(skipCst) continue;
 
-        // constituent loop
-        for (uint64_t iCst = 0; iCst < nCsts; iCst++) {
+        // if needed, apply constituent cuts
+        const bool isGoodCst = IsGoodCst( m_input.csts[iJet][iCst] );
+        if (!isGoodCst) continue;
 
-          // get cst info
-          const double drCst  = (m_cstDr  -> at(iJet)).at(iCst);
-          const double etaCst = (m_cstEta -> at(iJet)).at(iCst);
-          const double phiCst = (m_cstPhi -> at(iJet)).at(iCst);
-          const double ptCst  = (m_cstPt  -> at(iJet)).at(iCst);
+        // create pseudojet
+        PseudoJet constituent(Px, Py, Pz, cstE);
+        constituent.set_user_index(iCst);
 
-          // for weird cst check
-          if (m_doSecondCstLoop) {
-            for (uint64_t jCst = 0; jCst < nCsts; jCst++) {
+        // add to list
+        m_jetCstVector.push_back(constituent);
 
-              // skip over the same cst
-              if (jCst == iCst) continue;
+      }  // end cst loop
 
-              // get cst info
-              const double etaCstB = (m_cstEta -> at(iJet)).at(jCst);
-              const double phiCstB = (m_cstPhi -> at(iJet)).at(jCst);
-              const double ptCstB  = (m_cstPt  -> at(iJet)).at(jCst);
-
-              // calculate separation and pt-weight
-              const double dhCstAB  = (etaCst - etaCstB);
-              const double dfCstAB  = (phiCst - phiCstB);
-              const double drCstAB  = sqrt((dhCstAB * dhCstAB) + (dfCstAB * dfCstAB));
-              const double ptFrac   = ptCst / ptCstB;
-              const double ztJetA   = ptCst / ptJet;
-              const double ztJetB   = ptCstB / ptJet;
-              const double ptWeight = (ptCst * ptCstB) / (ptJet * ptJet);
-              hCstPtOneVsDr      -> Fill(drCstAB, ptCst);
-              hCstPtTwoVsDr      -> Fill(drCstAB, ptCstB);
-              hCstPtFracVsDr     -> Fill(drCstAB, ptFrac);
-              hCstPhiOneVsDr     -> Fill(drCstAB, phiCst);
-              hCstPhiTwoVsDr     -> Fill(drCstAB, phiCstB);
-              hCstEtaOneVsDr     -> Fill(drCstAB, etaCst);
-              hCstEtaTwoVsDr     -> Fill(drCstAB, etaCstB);
-              hDeltaPhiOneVsDr   -> Fill(drCstAB, dfCstAB);
-              hDeltaPhiTwoVsDr   -> Fill(drCstAB, dfCstAB);
-              hDeltaEtaOneVsDr   -> Fill(drCstAB, dhCstAB);
-              hDeltaEtaTwoVsDr   -> Fill(drCstAB, dhCstAB);
-              hJetPtFracOneVsDr  -> Fill(drCstAB, ztJetA);
-              hJetPtFracTwoVsDr  -> Fill(drCstAB, ztJetB);
-              hCstPairWeightVsDr -> Fill(drCstAB, ptWeight);
-            }  // end 2nd cst loop
-          }
-
-          // create cst 4-vector
-          ROOT::Math::PtEtaPhiMVector rVecCst(ptCst, etaCst, phiCst, 0.140);  // FIXME move pion mass to a constant in utilities namespace
-
-          // if truth tree and needed, check embedding ID
-          if (m_isInputTreeTruth && m_selectSubEvts) {
-            const int  embedCst     = (m_cstEmbedID -> at(iJet)).at(iCst);
-            const bool isSubEvtGood = CheckIfSubEvtGood(embedCst);
-            if (!isSubEvtGood) continue;
-          }
-
-          // if needed, apply constituent cuts
-          const bool isGoodCst = ApplyCstCuts(ptCst, drCst);
-          if (m_applyCstCuts && !isGoodCst) continue;
-
-          // create pseudojet & add to list
-          PseudoJet constituent(rVecCst.Px(), rVecCst.Py(), rVecCst.Pz(), rVecCst.E());
-          constituent.set_user_index(iCst);
-          m_jetCstVector.push_back(constituent);
-        }  // end cst loop
-
-        // run eec computation
-        for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-          const bool isInPtBin = ((ptJet >= m_ptJetBins[iPtBin].first) && (ptJet < m_ptJetBins[iPtBin].second));
-          if (isInPtBin) {
-            if (m_jetCstVector.size() > 0) {
-              m_eecLongSide[iPtJetBin] -> compute(m_jetCstVector);
-            }
-          }
-        }  // end pTjet bin loop
-      }  // end jet loop
-    }  // end event loop
-
-    // announce end of event loop
-    PrintMessage(13);
+      // run eec computation(s)
+      if (m_config.doPackageCalc) {
+        DoLocalCalcWithPackage( jet_pT  );
+      }
+      if(m_config.doManualCalc) {
+	DoLocalCalcManual(m_jetCstVector, VecJet);
+      }
+    }  // end jet loop
     return;
 
-  }  // end 'DoCorrelatorCalculation()'
+  }  // end 'DoLocalCalculation()'
 
+  double SEnergyCorrelator::GetWeight(ROOT::Math::PtEtaPhiEVector momentum, int option, optional<ROOT::Math::PtEtaPhiEVector> reference){
+    double weight = 1;
+    double Et = 1;
+    if(reference.has_value()){
+      TVector3 pRef(reference.value().X(), reference.value().Y(), reference.value().Z());
+      TVector3 pMom(momentum.X(), momentum.Y(), momentum.Z());
+      TVector3 pEt = pMom - (pMom*pRef/(pRef*pRef))*pRef;
+      Et = pow(pEt.Mag2()+pow(Const::MassPion(),2),0.5);
+    }
+    switch(option){
+      case Norm::Et:
+	weight = Et;
+	break;
+      case Norm::E:
+	weight = momentum.E();
+	break;
+      case Norm::Pt:
+	[[fallthrough]];
+      default:
+	weight = momentum.Pt();
+	break;
+    }
+    return weight;
+  }
 
+  void SEnergyCorrelator::DoLocalCalcWithPackage(const double ptJet) {
+
+    // print debug statement
+    if (m_config.isDebugOn) PrintDebug(31);
+    const uint32_t iPtJetBin = GetJetPtBin( ptJet );
+    const bool     foundBin  = (iPtJetBin >= 0);
+    const bool     hasCsts   = (m_jetCstVector.size() > 0); 
+    if (foundBin && hasCsts) {
+      m_eecLongSide[iPtJetBin] -> compute(m_jetCstVector);
+    }
+    return;
+
+  }  // end 'DoLocalCalcWithPackage(double)'
+
+  void SEnergyCorrelator::DoLocalCalcManual(const vector<fastjet::PseudoJet> momentum, ROOT::Math::PtEtaPhiEVector normalization){
+    //Get norm
+    double norm = GetWeight(normalization, m_config.norm_option);
+    //Loop over csts
+    for(uint64_t iCst = 0; iCst < momentum.size(); iCst++){
+      //Get weightA
+      ROOT::Math::PtEtaPhiEVector cstVec(
+	  momentum[iCst].pt(),
+          momentum[iCst].eta(),
+	  momentum[iCst].phi(),
+          pow(pow(momentum[iCst].pt(), 2) + pow(Const::MassPion(), 2), 0.5)
+        );
+      double weightA = GetWeight(cstVec, m_config.mom_option, normalization);
+      //Start second cst loop
+      for(uint64_t jCst = 0; jCst < momentum.size(); jCst++){
+        //Get weightB
+	ROOT::Math::PtEtaPhiEVector cstVecB(
+	  momentum[jCst].pt(),
+          momentum[jCst].eta(),
+	  momentum[jCst].phi(),
+          pow(pow(momentum[jCst].pt(), 2) + pow(Const::MassPion(), 2), 0.5)
+        );
+	double weightB = GetWeight(cstVecB, m_config.mom_option, normalization);
+	const double dhCstAB = (momentum[iCst].rap()-momentum[jCst].rap());
+	double dfCstAB = std::fabs(momentum[iCst].phi()-momentum[jCst].phi());
+	if(dfCstAB > TMath::Pi()) dfCstAB = 2*TMath::Pi() - dfCstAB;
+	const double drCstAB  = sqrt((dhCstAB * dhCstAB) + (dfCstAB * dfCstAB));
+	const double eecWeight = (weightA*weightB)/(norm*norm);
+
+	//Fill manual eecs
+	for(size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++){
+	  bool isInPtBin = ((normalization.Pt() >= m_config.ptJetBins[iPtBin].first) && (normalization.Pt() < m_config.ptJetBins[iPtBin].second));
+	  if(isInPtBin){
+	    m_outManualHistErrDrAxis[iPtBin]->Fill(drCstAB, eecWeight);
+	  }
+	}//end of pT bin loop
+      }//end of second cst loop
+    }//end of first cst loop
+  }
 
   void SEnergyCorrelator::ExtractHistsFromCorr() {
 
     // print debug statement
-    if (m_inDebugMode) PrintDebug(25);
+    if (m_config.isDebugOn) PrintDebug(25);
 
     vector<double>                       drBinEdges;
     vector<double>                       lnDrBinEdges;
     pair<vector<double>, vector<double>> histContentAndVariance;
     pair<vector<double>, vector<double>> histContentAndError;
-    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
+
+    for (size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
 
       // create names
       TString sPtJetBin("_ptJet");
-      sPtJetBin += floor(m_ptJetBins[iPtBin].first);
+      sPtJetBin += floor(m_config.ptJetBins[iPtBin].first);
 
-      TString sVarDrAxisName("hCorrelatorVarianceDrAxis");
-      TString sErrDrAxisName("hCorrelatorErrorDrAxis");
-      TString sVarLnDrAxisName("hCorrelatorVarianceLnDrAxis");
-      TString sErrLnDrAxisName("hCorrelatorErrorLnDrAxis");
+      TString sVarDrAxisName("hPackageCorrelatorVarianceDrAxis");
+      TString sErrDrAxisName("hPackageCorrelatorErrorDrAxis");
+      TString sVarLnDrAxisName("hPackageCorrelatorVarianceLnDrAxis");
+      TString sErrLnDrAxisName("hPackageCorrelatorErrorLnDrAxis");
+
       sVarDrAxisName.Append(sPtJetBin.Data());
       sErrDrAxisName.Append(sPtJetBin.Data());
       sVarLnDrAxisName.Append(sPtJetBin.Data());
@@ -200,25 +262,25 @@ namespace SColdQcdCorrelatorAnalysis {
       }
 
       // make sure number of bin edges is reasonable
-      const bool isNumBinEdgesGood = ((nDrBinEdges - 1) == m_nBinsDr);
+      const bool isNumBinEdgesGood = ((nDrBinEdges - 1) == m_config.nBinsDr);
       if (!isNumBinEdgesGood) {
         PrintError(12, nDrBinEdges);
         assert(isNumBinEdgesGood);
       }
 
       // create output histograms
-      m_outHistVarDrAxis[iPtBin]   = new TH1D(sVarDrAxisName.Data(),   "", m_nBinsDr, drBinEdgeArray);
-      m_outHistErrDrAxis[iPtBin]   = new TH1D(sErrDrAxisName.Data(),   "", m_nBinsDr, drBinEdgeArray);
-      m_outHistVarLnDrAxis[iPtBin] = new TH1D(sVarLnDrAxisName.Data(), "", m_nBinsDr, lnDrBinEdgeArray);
-      m_outHistErrLnDrAxis[iPtBin] = new TH1D(sErrLnDrAxisName.Data(), "", m_nBinsDr, lnDrBinEdgeArray);
-      m_outHistVarDrAxis[iPtBin]   -> Sumw2();
-      m_outHistErrDrAxis[iPtBin]   -> Sumw2();
-      m_outHistVarLnDrAxis[iPtBin] -> Sumw2();
-      m_outHistErrLnDrAxis[iPtBin] -> Sumw2();
+      m_outPackageHistVarDrAxis[iPtBin]   = new TH1D(sVarDrAxisName.Data(),   "", m_config.nBinsDr, drBinEdgeArray);
+      m_outPackageHistErrDrAxis[iPtBin]   = new TH1D(sErrDrAxisName.Data(),   "", m_config.nBinsDr, drBinEdgeArray);
+      m_outPackageHistVarLnDrAxis[iPtBin] = new TH1D(sVarLnDrAxisName.Data(), "", m_config.nBinsDr, lnDrBinEdgeArray);
+      m_outPackageHistErrLnDrAxis[iPtBin] = new TH1D(sErrLnDrAxisName.Data(), "", m_config.nBinsDr, lnDrBinEdgeArray);
+      m_outPackageHistVarDrAxis[iPtBin]   -> Sumw2();
+      m_outPackageHistErrDrAxis[iPtBin]   -> Sumw2();
+      m_outPackageHistVarLnDrAxis[iPtBin] -> Sumw2();
+      m_outPackageHistErrLnDrAxis[iPtBin] -> Sumw2();
 
       // set bin content
-      for (size_t iDrEdge = 0; iDrEdge < m_nBinsDr; iDrEdge++) {
-        const size_t iDrBin        = iDrEdge + 1;
+      for (size_t iDrEdge = 0; iDrEdge < m_config.nBinsDr; iDrEdge++) {
+        const size_t iDrBin        = iDrEdge;
         const double binVarContent = histContentAndVariance.first.at(iDrEdge);
         const double binVarError   = histContentAndVariance.second.at(iDrEdge);
         const double binErrContent = histContentAndError.first.at(iDrEdge);
@@ -229,10 +291,10 @@ namespace SColdQcdCorrelatorAnalysis {
         if (areVarBinValuesNans) {
           PrintError(13, 0, iDrBin);
         } else {
-          m_outHistVarDrAxis[iPtBin]   -> SetBinContent(iDrBin, binVarContent);
-          m_outHistVarLnDrAxis[iPtBin] -> SetBinContent(iDrBin, binVarContent);
-          m_outHistVarDrAxis[iPtBin]   -> SetBinError(iDrBin, binVarError);
-          m_outHistVarLnDrAxis[iPtBin] -> SetBinError(iDrBin, binVarError);
+          m_outPackageHistVarDrAxis[iPtBin]   -> SetBinContent(iDrBin, binVarContent);
+          m_outPackageHistVarLnDrAxis[iPtBin] -> SetBinContent(iDrBin, binVarContent);
+          m_outPackageHistVarDrAxis[iPtBin]   -> SetBinError(iDrBin, binVarError);
+          m_outPackageHistVarLnDrAxis[iPtBin] -> SetBinError(iDrBin, binVarError);
         }
 
         // check if bin with errors is good & set content/error
@@ -240,115 +302,66 @@ namespace SColdQcdCorrelatorAnalysis {
         if (areErrBinValuesNans) {
           PrintError(14, 0, iDrBin);
         } else {
-          m_outHistErrDrAxis[iPtBin]   -> SetBinContent(iDrBin, binErrContent);
-          m_outHistErrLnDrAxis[iPtBin] -> SetBinContent(iDrBin, binErrContent);
-          m_outHistErrDrAxis[iPtBin]   -> SetBinError(iDrBin, binErrError);
-          m_outHistErrLnDrAxis[iPtBin] -> SetBinError(iDrBin, binErrError);
+          m_outPackageHistErrDrAxis[iPtBin]   -> SetBinContent(iDrBin, binErrContent);
+          m_outPackageHistErrLnDrAxis[iPtBin] -> SetBinContent(iDrBin, binErrContent);
+          m_outPackageHistErrDrAxis[iPtBin]   -> SetBinError(iDrBin, binErrError);
+          m_outPackageHistErrLnDrAxis[iPtBin] -> SetBinError(iDrBin, binErrError);
         }
       }  // end dr bin edge loop
     }  // end jet pt bin loop
 
-    if (m_inStandaloneMode) PrintMessage(14);
+    if (m_config.isStandalone) PrintMessage(14);
     return;
 
   }  // end 'ExtractHistsFromCorr()'
 
 
 
-  bool SEnergyCorrelator::ApplyJetCuts(const double ptJet, const double etaJet) {
+  bool SEnergyCorrelator::IsGoodJet(const Types::JetInfo& jet) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(26);
+    if (m_config.isDebugOn && (m_config.verbosity > 7)) PrintDebug(26);
 
-    const bool isInPtRange  = ((ptJet >= m_ptJetRange.first)  && (ptJet < m_ptJetRange.second));
-    const bool isInEtaRange = ((etaJet > m_etaJetRange.first) && (etaJet < m_etaJetRange.second));
-    const bool isGoodJet    = (isInPtRange && isInEtaRange);
+    const bool isGoodJet = jet.IsInAcceptance(m_config.jetAccept);
     return isGoodJet;
 
-  }  // end 'ApplyJetCuts(double, double)'
+  }  // end 'IsGoodJet(double, double)'
 
 
 
-  bool SEnergyCorrelator::ApplyCstCuts(const double momCst, const double drCst) {
+  bool SEnergyCorrelator::IsGoodCst(const Types::CstInfo& cst) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(27);
+    if (m_config.isDebugOn && (m_config.verbosity > 7)) PrintDebug(27);
 
-    const bool isInMomRange = ((momCst >= m_momCstRange.first) && (momCst < m_momCstRange.second));
-    const bool isInDrRange  = ((drCst >= m_drCstRange.first)   && (drCst < m_drCstRange.second));
-    const bool isGoodCst    = (isInMomRange && isInDrRange);
+    // if analyzing truth tree and needed, check embedding ID
+    bool isSubEvtGood = true;
+    if (m_config.isInTreeTruth && m_config.selectSubEvts) {
+      isSubEvtGood = Tools::IsSubEvtGood( cst.GetEmbedID(), m_config.subEvtOpt, m_config.isEmbed );
+    }
+
+    // if needed, apply cst. cuts
+    bool isInCstAccept = true;
+    if (m_config.applyCstCuts) {
+      isInCstAccept = cst.IsInAcceptance(m_config.cstAccept);
+    }
+
+    const bool isGoodCst = (isSubEvtGood && isInCstAccept);
     return isGoodCst;
 
-  }  // end 'ApplyCstCuts(double, double)'
+  }  // end 'IsGoodCst(double, double)'
 
 
 
-  bool SEnergyCorrelator::CheckIfSubEvtGood(const int embedID) {
-
-    // print debug statement
-    if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(33);
-
-    // set ID of signal and background events
-    int signalID = 1;
-    if (m_isInputTreeEmbed) {
-      signalID = 2;
-    }
-    const int bkgdID   = 0;
-
-    bool isSubEvtGood = true;
-    switch (m_subEvtOpt) {
-
-      // only consider signal event
-      case 1:
-        isSubEvtGood = (embedID == signalID);
-        break;
-
-      // only consider background events
-      case 2:
-        isSubEvtGood = (embedID <= bkgdID);
-        break;
-
-      // only consider primary background event
-      case 3:
-        isSubEvtGood = (embedID == bkgdID);
-        break;
-
-      // only consider pileup events
-      case 4:
-        isSubEvtGood = (embedID < bkgdID);
-        break;
-
-      // consider only specific events
-      case 5:
-        isSubEvtGood = false;
-        for (const int evtToUse : m_subEvtsToUse) {
-          if (embedID == evtToUse) {
-            isSubEvtGood = true;
-            break;
-          }
-        }
-        break;
-
-      // by default do nothing
-      default:
-        isSubEvtGood = true;
-        break;
-    }
-    return isSubEvtGood;
-
-  }  // end 'CheckIfSubEvtGood(int)'
-
-
-
-  uint32_t SEnergyCorrelator::GetJetPtBin(const double ptJet) {
+  int32_t SEnergyCorrelator::GetJetPtBin(const double ptJet) {
 
     // print debug statement
-    if (m_inDebugMode && (m_verbosity > 7)) PrintDebug(28);
+    if (m_config.isDebugOn && (m_config.verbosity > 7)) PrintDebug(28);
  
-    bool     isInPtBin(false);
-    uint32_t iJetPtBin(0);
-    for (size_t iPtBin = 0; iPtBin < m_nBinsJetPt; iPtBin++) {
-      isInPtBin = ((ptJet >= m_ptJetBins[iPtBin].first) && (ptJet < m_ptJetBins[iPtBin].second));
+    bool    isInPtBin(false);
+    int32_t iJetPtBin(-1);
+    for (size_t iPtBin = 0; iPtBin < m_config.ptJetBins.size(); iPtBin++) {
+      isInPtBin = ((ptJet >= m_config.ptJetBins[iPtBin].first) && (ptJet < m_config.ptJetBins[iPtBin].second));
       if (isInPtBin) {
         iJetPtBin = iPtBin;
         break; 

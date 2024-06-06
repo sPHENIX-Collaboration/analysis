@@ -110,39 +110,73 @@ class TrackletData
     vector<Tracklet *> ProtoTkls, RecoTkls, RecoTkls_GenMatched;
     vector<GenHadron *> GenHadrons;
 
-    int event, NClusLayer1, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
+    float vtxzwei;
+
+    int event, NClusLayer1, NClusLayer2, NPrototkl, NRecotkl_Raw, NRecotkl_GenMatched, NGenHadron;
+    uint64_t INTT_BCO;
     float PV_x, PV_y, PV_z, TruthPV_x, TruthPV_y, TruthPV_z;
-    float Centrality_mbd, Centrality_mbdquantity;
-    bool pu0_sel, trig;
+    float centrality_mbd;
+    float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
+    bool pu0_sel, is_min_bias;
     int process; // single diffractive process
+
+    vector<int> cluslayer;
     vector<float> clusphi, cluseta, clusphisize, cluszsize;
+    vector<unsigned int> clusadc;
+
+    vector<float> tklclus1phi, tklclus1eta, tklclus2phi, tklclus2eta, tklclus1phisize, tklclus2phisize; // 1=inner, 2=outer
+    vector<unsigned int> tklclus1adc, tklclus2adc;
+
     vector<float> prototkl_eta, prototkl_phi, prototkl_deta, prototkl_dphi, prototkl_dR;
     vector<float> recotklraw_eta, recotklraw_phi, recotklraw_deta, recotklraw_dphi, recotklraw_dR;
-    vector<float> recotklgm_eta, recotklgm_phi, recotklgm_deta, recotklgm_dphi, recotklgm_dR;
-    vector<float> GenHadron_Pt, GenHadron_eta, GenHadron_phi, GenHadron_E, GenHadron_matched_Pt, GenHadron_matched_eta, GenHadron_matched_phi, GenHadron_matched_E;
+
+    // vector<float> recotklgm_eta, recotklgm_phi, recotklgm_deta, recotklgm_dphi, recotklgm_dR;
+
+    vector<int> GenHadron_PID;
+    vector<float> GenHadron_Pt, GenHadron_eta, GenHadron_phi, GenHadron_E;
+
+    // vector<float> GenHadron_matched_Pt, GenHadron_matched_eta, GenHadron_matched_phi, GenHadron_matched_E;
 };
 
 void SetMinitree(TTree *outTree, TrackletData &tkldata)
 {
     outTree->Branch("event", &tkldata.event);
+    outTree->Branch("INTT_BCO", &tkldata.INTT_BCO);
     outTree->Branch("NClusLayer1", &tkldata.NClusLayer1);
+    outTree->Branch("NClusLayer2", &tkldata.NClusLayer2);
     outTree->Branch("NPrototkl", &tkldata.NPrototkl);
     outTree->Branch("NRecotkl_Raw", &tkldata.NRecotkl_Raw);
-    outTree->Branch("Centrality_mbd", &tkldata.Centrality_mbd);
-    outTree->Branch("Centrality_mbdquantity", &tkldata.Centrality_mbdquantity);
+    outTree->Branch("MBD_centrality", &tkldata.centrality_mbd);
+    outTree->Branch("MBD_south_charge_sum", &tkldata.mbd_south_charge_sum);
+    outTree->Branch("MBD_north_charge_sum", &tkldata.mbd_north_charge_sum);
+    outTree->Branch("MBD_charge_sum", &tkldata.mbd_charge_sum);
+    outTree->Branch("MBD_charge_asymm", &tkldata.mbd_charge_asymm);
+    outTree->Branch("MBD_z_vtx", &tkldata.mbd_z_vtx);
     outTree->Branch("PV_x", &tkldata.PV_x);
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
-    outTree->Branch("trig", &tkldata.trig);
+    outTree->Branch("vtxzwei", &tkldata.vtxzwei);
+
+    outTree->Branch("is_min_bias", &tkldata.is_min_bias);
+    outTree->Branch("clusLayer", &tkldata.cluslayer);
     outTree->Branch("clusPhi", &tkldata.clusphi);
     outTree->Branch("clusEta", &tkldata.cluseta);
     outTree->Branch("clusPhiSize", &tkldata.clusphisize);
     outTree->Branch("clusZSize", &tkldata.cluszsize);    
-    outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
-    outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
-    outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
-    outTree->Branch("prototkl_dphi", &tkldata.prototkl_dphi);
-    outTree->Branch("prototkl_dR", &tkldata.prototkl_dR);
+    outTree->Branch("clusADC", &tkldata.clusadc);
+    outTree->Branch("tklclus1Phi", &tkldata.tklclus1phi);
+    outTree->Branch("tklclus1Eta", &tkldata.tklclus1eta);
+    outTree->Branch("tklclus2Phi", &tkldata.tklclus2phi);
+    outTree->Branch("tklclus2Eta", &tkldata.tklclus2eta);
+    outTree->Branch("tklclus1PhiSize", &tkldata.tklclus1phisize);
+    outTree->Branch("tklclus2PhiSize", &tkldata.tklclus2phisize);
+    outTree->Branch("tklclus1ADC", &tkldata.tklclus1adc);
+    outTree->Branch("tklclus2ADC", &tkldata.tklclus2adc);
+    // outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
+    // outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
+    // outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
+    // outTree->Branch("prototkl_dphi", &tkldata.prototkl_dphi);
+    // outTree->Branch("prototkl_dR", &tkldata.prototkl_dR);
     outTree->Branch("recotklraw_eta", &tkldata.recotklraw_eta);
     outTree->Branch("recotklraw_phi", &tkldata.recotklraw_phi);
     outTree->Branch("recotklraw_deta", &tkldata.recotklraw_deta);
@@ -151,25 +185,26 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
 
     if (!tkldata.isdata)
     {
-        outTree->Branch("NRecotkl_GenMatched", &tkldata.NRecotkl_GenMatched);
+        // outTree->Branch("NRecotkl_GenMatched", &tkldata.NRecotkl_GenMatched);
         outTree->Branch("TruthPV_x", &tkldata.TruthPV_x);
         outTree->Branch("TruthPV_y", &tkldata.TruthPV_y);
         outTree->Branch("TruthPV_z", &tkldata.TruthPV_z);
         outTree->Branch("pu0_sel", &tkldata.pu0_sel);
         outTree->Branch("process", &tkldata.process);
-        outTree->Branch("recotklgm_eta", &tkldata.recotklgm_eta);
-        outTree->Branch("recotklgm_phi", &tkldata.recotklgm_phi);
-        outTree->Branch("recotklgm_deta", &tkldata.recotklgm_deta);
-        outTree->Branch("recotklgm_dphi", &tkldata.recotklgm_dphi);
-        outTree->Branch("recotklgm_dR", &tkldata.recotklgm_dR);
+        // outTree->Branch("recotklgm_eta", &tkldata.recotklgm_eta);
+        // outTree->Branch("recotklgm_phi", &tkldata.recotklgm_phi);
+        // outTree->Branch("recotklgm_deta", &tkldata.recotklgm_deta);
+        // outTree->Branch("recotklgm_dphi", &tkldata.recotklgm_dphi);
+        // outTree->Branch("recotklgm_dR", &tkldata.recotklgm_dR);
+        outTree->Branch("GenHadron_PID", &tkldata.GenHadron_PID);
         outTree->Branch("GenHadron_Pt", &tkldata.GenHadron_Pt);
         outTree->Branch("GenHadron_eta", &tkldata.GenHadron_eta);
         outTree->Branch("GenHadron_phi", &tkldata.GenHadron_phi);
         outTree->Branch("GenHadron_E", &tkldata.GenHadron_E);
-        outTree->Branch("GenHadron_matched_Pt", &tkldata.GenHadron_matched_Pt);
-        outTree->Branch("GenHadron_matched_eta", &tkldata.GenHadron_matched_eta);
-        outTree->Branch("GenHadron_matched_phi", &tkldata.GenHadron_matched_phi);
-        outTree->Branch("GenHadron_matched_E", &tkldata.GenHadron_matched_E);
+        // outTree->Branch("GenHadron_matched_Pt", &tkldata.GenHadron_matched_Pt);
+        // outTree->Branch("GenHadron_matched_eta", &tkldata.GenHadron_matched_eta);
+        // outTree->Branch("GenHadron_matched_phi", &tkldata.GenHadron_matched_phi);
+        // outTree->Branch("GenHadron_matched_E", &tkldata.GenHadron_matched_E);
     }
 }
 
@@ -181,30 +216,54 @@ void ResetVec(TrackletData &tkldata)
     }
     CleanVec(tkldata.ProtoTkls);
     CleanVec(tkldata.RecoTkls);
+    // CleanVec(tkldata.RecoTkls_GenMatched);
+
     CleanVec(tkldata.prototkl_eta);
     CleanVec(tkldata.prototkl_phi);
     CleanVec(tkldata.prototkl_deta);
     CleanVec(tkldata.prototkl_dphi);
     CleanVec(tkldata.prototkl_dR);
+
+    CleanVec(tkldata.cluslayer);
+    CleanVec(tkldata.clusphi);
+    CleanVec(tkldata.cluseta);
+    CleanVec(tkldata.clusphisize);
+    CleanVec(tkldata.cluszsize);
+    CleanVec(tkldata.clusadc);
+
+    CleanVec(tkldata.tklclus1phi);
+    CleanVec(tkldata.tklclus1eta);
+    CleanVec(tkldata.tklclus2phi);
+    CleanVec(tkldata.tklclus2eta);
+    CleanVec(tkldata.tklclus1phisize);
+    CleanVec(tkldata.tklclus2phisize);
+    CleanVec(tkldata.tklclus1adc);
+    CleanVec(tkldata.tklclus2adc);
+
     CleanVec(tkldata.recotklraw_eta);
     CleanVec(tkldata.recotklraw_phi);
     CleanVec(tkldata.recotklraw_deta);
     CleanVec(tkldata.recotklraw_dphi);
     CleanVec(tkldata.recotklraw_dR);
-    CleanVec(tkldata.recotklgm_eta);
-    CleanVec(tkldata.recotklgm_phi);
-    CleanVec(tkldata.recotklgm_deta);
-    CleanVec(tkldata.recotklgm_dphi);
-    CleanVec(tkldata.recotklgm_dR);
+
+    // CleanVec(tkldata.recotklgm_eta);
+    // CleanVec(tkldata.recotklgm_phi);
+    // CleanVec(tkldata.recotklgm_deta);
+    // CleanVec(tkldata.recotklgm_dphi);
+    // CleanVec(tkldata.recotklgm_dR);
+
     CleanVec(tkldata.GenHadrons);
+    CleanVec(tkldata.GenHadron_PID);
     CleanVec(tkldata.GenHadron_Pt);
     CleanVec(tkldata.GenHadron_eta);
     CleanVec(tkldata.GenHadron_phi);
     CleanVec(tkldata.GenHadron_E);
-    CleanVec(tkldata.GenHadron_matched_Pt);
-    CleanVec(tkldata.GenHadron_matched_eta);
-    CleanVec(tkldata.GenHadron_matched_phi);
-    CleanVec(tkldata.GenHadron_matched_E);
+
+    // CleanVec(tkldata.GenHadron_matched_Pt);
+    // CleanVec(tkldata.GenHadron_matched_eta);
+    // CleanVec(tkldata.GenHadron_matched_phi);
+    // CleanVec(tkldata.GenHadron_matched_E);
+    
 }
 
 bool compare_dR(Tracklet *a, Tracklet *b) { return a->dR() < b->dR(); }
@@ -263,50 +322,60 @@ void RecoTracklets(TrackletData &tkldata)
             tkl->Hit1()->SetMatchedTkl();
             tkl->Hit2()->SetMatchedTkl();
 
-            tkldata.recotklraw_eta.push_back(tkl->Hit1()->Eta());
+            tkldata.recotklraw_eta.push_back((tkl->Hit1()->Eta()));
             tkldata.recotklraw_phi.push_back(tkl->Hit1()->Phi());
             tkldata.recotklraw_deta.push_back(tkl->dEta());
             tkldata.recotklraw_dphi.push_back(tkl->dPhi());
             tkldata.recotklraw_dR.push_back(tkl->dR());
+
+            tkldata.tklclus1phi.push_back(tkl->Hit1()->Phi());
+            tkldata.tklclus1eta.push_back(tkl->Hit1()->Eta());
+            tkldata.tklclus2phi.push_back(tkl->Hit2()->Phi());
+            tkldata.tklclus2eta.push_back(tkl->Hit2()->Eta());
+            tkldata.tklclus1phisize.push_back(tkl->Hit1()->PhiSize());
+            tkldata.tklclus2phisize.push_back(tkl->Hit2()->PhiSize());
+            tkldata.tklclus1adc.push_back(tkl->Hit1()->ClusADC());
+            tkldata.tklclus2adc.push_back(tkl->Hit2()->ClusADC());
         }
     }
 
     tkldata.NRecotkl_Raw = tkldata.RecoTkls.size();
 }
 
-void GenMatch_Recotkl(TrackletData &tkldata)
-{
-    for (auto &tkl : tkldata.RecoTkls)
-    {
-        if (tkl->IsMatchedGenHadron())
-            continue;
-        for (auto &ghadron : tkldata.GenHadrons)
-        {
-            if (ghadron->IsMatchedToRecotkl() || tkl->IsMatchedGenHadron())
-                continue;
-            // Matching criteria
-            if (deltaR(tkl->Eta(), tkl->Phi(), ghadron->Eta(), ghadron->Phi()) > 0.1)
-                continue;
-            else
-            {
-                tkl->SetMatchedGenHardon();
-                ghadron->SetMatchedToRecotkl();
-                tkl->SetGenHadron(ghadron);
-                tkldata.RecoTkls_GenMatched.push_back(tkl);
-                tkldata.recotklgm_eta.push_back(tkl->Hit1()->Eta());
-                tkldata.recotklgm_phi.push_back(tkl->Hit1()->Phi());
-                tkldata.recotklgm_deta.push_back(tkl->dEta());
-                tkldata.recotklgm_dphi.push_back(tkl->dPhi());
-                tkldata.recotklgm_dR.push_back(tkl->dR());
-                tkldata.GenHadron_matched_Pt.push_back(ghadron->Pt());
-                tkldata.GenHadron_matched_eta.push_back(ghadron->Eta());
-                tkldata.GenHadron_matched_phi.push_back(ghadron->Phi());
-                tkldata.GenHadron_matched_E.push_back(ghadron->E());
-            }
-        }
-    }
+// Not used in the current analysis
+// void GenMatch_Recotkl(TrackletData &tkldata)
+// {
+//     for (auto &tkl : tkldata.RecoTkls)
+//     {
+//         if (tkl->IsMatchedGenHadron())
+//             continue;
+//         for (auto &ghadron : tkldata.GenHadrons)
+//         {
+//             if (ghadron->IsMatchedToRecotkl() || tkl->IsMatchedGenHadron())
+//                 continue;
+//             // Matching criteria
+//             if (deltaR(tkl->Eta(), tkl->Phi(), ghadron->Eta(), ghadron->Phi()) > 0.1)
+//                 continue;
+//             else
+//             {
+//                 tkl->SetMatchedGenHardon();
+//                 ghadron->SetMatchedToRecotkl();
+//                 tkl->SetGenHadron(ghadron);
+//                 tkldata.RecoTkls_GenMatched.push_back(tkl);
+//                 tkldata.recotklgm_eta.push_back(tkl->Hit1()->Eta());
+//                 tkldata.recotklgm_phi.push_back(tkl->Hit1()->Phi());
+//                 tkldata.recotklgm_deta.push_back(tkl->dEta());
+//                 tkldata.recotklgm_dphi.push_back(tkl->dPhi());
+//                 tkldata.recotklgm_dR.push_back(tkl->dR());
+//                 tkldata.GenHadron_matched_Pt.push_back(ghadron->Pt());
+//                 tkldata.GenHadron_matched_eta.push_back(ghadron->Eta());
+//                 tkldata.GenHadron_matched_phi.push_back(ghadron->Phi());
+//                 tkldata.GenHadron_matched_E.push_back(ghadron->E());
+//             }
+//         }
+//     }
 
-    tkldata.NRecotkl_GenMatched = tkldata.RecoTkls_GenMatched.size();
-}
+//     tkldata.NRecotkl_GenMatched = tkldata.RecoTkls_GenMatched.size();
+// }
 
 #endif

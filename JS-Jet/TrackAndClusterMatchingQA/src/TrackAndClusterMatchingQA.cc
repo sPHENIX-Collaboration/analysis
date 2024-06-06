@@ -124,6 +124,11 @@ int TrackAndClusterMatchingQA::Init(PHCompositeNode *topNode)
   _h2Track_TPC_Hits_vs_Eta = new TH2F("_h2Track_TPC_Hits_vs_Eta", ";Number of TPC hits;track #eta", 50, -0.5, 49.5, 22, -1.1, 1.1);
   _h2Track_TPC_Hits_vs_Pt = new TH2F("_h2Track_TPC_Hits_vs_Pt", ";Number of TPC hits;track #it{p}_{T} (GeV/#it{c})", 50, -0.5, 49.5, 40, 0., 20);
 
+  _h1deta = new TH1F("hdeta", "Cluster #deta; #deta; Entries", 20, -0.2, 0.2);    //deta distribution
+  _h1dphi  = new TH1F("hdphi", "Cluster #dphi; #dphi; Entries", 50, -0.15, 0.15);   //dphi distribution
+  _h1min_dR  = new TH1F("hdR", "Cluster #dR; #dR; Entries", 100,0.,5.);   //jet delta radius
+  _h2phi_vs_deta = new TH2F("_h2phi_vs_deta", ";#dphi; #deta",  50, -0.15, 0.15, 20, -0.2, 0.2); // deta Vs. dphi distribution
+	
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -278,7 +283,19 @@ int TrackAndClusterMatchingQA::process_event(PHCompositeNode *topNode)
     if(cluster_match)
     {
       _h2trackPt_vs_clusterEt->Fill(track->get_pt(), RawClusterUtility::GetET(*cluster_match, vertex));
+  
+      float cluster_phi = RawClusterUtility::GetAzimuthAngle(*cluster_match, vertex);
+      float cluster_eta = RawClusterUtility::GetPseudorapidity(*cluster_match, vertex);
+      float deta = track_eta - cluster_eta;   //added for eta analysis
+      float dphi = track_phi - cluster_phi;   //added for phi analysis
+
+      _h1deta->Fill(deta);
+      _h1dphi->Fill(dphi);
+      _h2phi_vs_deta->Fill(dphi,deta);
+	    
     }
+	  
+      _h1min_dR->Fill(min_dR);
 
   }
 

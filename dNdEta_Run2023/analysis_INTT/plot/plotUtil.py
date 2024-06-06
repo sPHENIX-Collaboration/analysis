@@ -20,7 +20,7 @@ cyan_hex = '#7FE9DE'
 
 def colorset(i):
     if i == 1:
-        return [black_hex]
+        return [blue_hex]
     elif i == 2:
         return [blue_hex, red_hex]
     elif i == 3:
@@ -78,7 +78,7 @@ def Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, ou
     hist.SetLineColor(1)
     hist.SetLineWidth(2)
     hist.Draw('hist')
-    leg = TLegend((1-RightMargin)-0.45, (1-TopMargin)-0.13,
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)-0.13,
                   (1-RightMargin)-0.1, (1-TopMargin)-0.03)
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
@@ -204,12 +204,16 @@ def Draw_1DhistsComp(lhist, norm1, logx, logy, ymaxscale, XaxisName, Ytitle_unit
         c = 0
 
 
-def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
+def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname):
     c = TCanvas('c', 'c', 800, 700)
     if logz:
         c.SetLogz()
     c.cd()
-    gPad.SetRightMargin(rmargin)
+    if ZaxisName == '':
+        gPad.SetRightMargin(rmargin)
+    else:
+        gPad.SetRightMargin(rmargin+0.03)
+
     gPad.SetTopMargin(TopMargin)
     gPad.SetLeftMargin(LeftMargin)
     gPad.SetBottomMargin(BottomMargin)
@@ -223,21 +227,29 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawop
     hist.GetYaxis().SetTitleSize(AxisTitleSize)
     hist.GetXaxis().SetLabelSize(AxisLabelSize)
     hist.GetYaxis().SetLabelSize(AxisLabelSize)
+    if ZaxisName != '':
+        hist.GetZaxis().SetTitle(ZaxisName)
+        hist.GetZaxis().SetTitleSize(AxisTitleSize)
+        hist.GetZaxis().SetTitleOffset(1.1)
+        
     hist.GetXaxis().SetTitleOffset(1.1)
     hist.GetYaxis().SetTitleOffset(1.3)
     hist.GetZaxis().SetLabelSize(AxisLabelSize)
     hist.SetContour(1000)
     hist.Draw(drawopt)
 
-    # leg = TLegend(LeftMargin, 1-TopMargin*1.1, LeftMargin+0.01, 0.98)
-    # leg.SetFillStyle(0)
-    # if IsData:
-    #     leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
-    #     leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
-    # else:
-    #     leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")
+    rightshift = 0.09 if IsData else 0.1
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, (1-RightMargin)-rightshift, (1-TopMargin)+0.04)
+    leg.SetTextAlign(kHAlignRight+kVAlignBottom)
+    leg.SetTextSize(0.045)
+    leg.SetFillStyle(0)
+    if IsData:
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
         # leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
-    # leg.Draw()
+    else:
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")
+        # leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
+    leg.Draw()
     c.RedrawAxis()
     c.Draw()
     c.SaveAs(outname+'.pdf')

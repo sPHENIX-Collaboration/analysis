@@ -89,15 +89,15 @@ int JetKinematicCheck::Init(PHCompositeNode *topNode)
   jet_mass_pt_r04->GetYaxis()->SetTitle("Jet Mass [GeV/c^{2}]");
 
   jet_mass_eta_r02 = new TH2D("h_jet_mass_eta_r02","", 24, -1.1, 1.1, 15, 0, 15);
-  jet_mass_eta_r02->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  jet_mass_eta_r02->GetXaxis()->SetTitle("#eta");
   jet_mass_eta_r02->GetYaxis()->SetTitle("Jet Mass [GeV/c^{2}]");
 
   jet_mass_eta_r03 = new TH2D("h_jet_mass_eta_r03","", 24, -1.1, 1.1, 15, 0, 15);
-  jet_mass_eta_r03->GetXaxis()->SetTitle("p_{T} [GeV/c]");
-  jet_mass_eta_r03->GetYaxis()->SetTitle("Jet Mass [GeV/c^{2}]");
+  jet_mass_eta_r03->GetXaxis()->SetTitle("#eta");
+  jet_mass_eta_r03->GetYaxis()->SetTitle("Jet Mass [GeV/c^{2}");
 
   jet_mass_eta_r04 = new TH2D("h_jet_mass_eta_r04","", 24, -1.1, 1.1, 15, 0, 15);
-  jet_mass_eta_r04->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  jet_mass_eta_r04->GetXaxis()->SetTitle("#eta");
   jet_mass_eta_r04->GetYaxis()->SetTitle("Jet Mass [GeV/c^{2}]");
 
 

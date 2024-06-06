@@ -1,11 +1,13 @@
+
 // Tell emacs that this is a C++ source
 //  -*- C++ -*-.
 #ifndef TRACKSINJETS_H
 #define TRACKSINJETS_H
 
 #include <fun4all/SubsysReco.h>
-
+#include "TTree.h"
 #include <string>
+#include "TH2F.h"
 
 class PHCompositeNode;
 class TH3;
@@ -23,19 +25,19 @@ class TracksInJets : public SubsysReco
       Typically this is where you can book histograms, and e.g.
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
-   */
+  */
   int Init(PHCompositeNode *topNode) override;
 
   /** Called for first event when run number is known.
       Typically this is where you may want to fetch data from
       database, because you know the run number. A place
       to book histograms which have to know the run number.
-   */
+  */
   int InitRun(PHCompositeNode *topNode) override;
 
   /** Called for each event.
       This is where you do the real work.
-   */
+  */
   int process_event(PHCompositeNode *topNode) override;
 
   /// Clean up internals after each event.
@@ -52,6 +54,8 @@ class TracksInJets : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  bool isAA; // Declare isAA as a public member variable
+
  private:
 
   std::string m_recoJetName;
@@ -59,7 +63,7 @@ class TracksInJets : public SubsysReco
   float m_jetRadius;
   std::string m_outputFileName;
   TH3 *m_h_track_vs_calo_pt;
-
+  TH2F *m_h_track_pt;
 };
 
 #endif // TRACKSINJETS_H

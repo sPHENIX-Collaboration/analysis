@@ -9,20 +9,15 @@
 
 #define SLAMBDAJETHUNTER_CC
 
-// f4a utilities
-#include <fun4all/Fun4AllReturnCodes.h>
-// phool utilities
-#include <phool/PHCompositeNode.h>
 // analysis utilities
 #include "SLambdaJetHunter.h"
-#include "SLambdaJetHunter.ana.h"
 #include "SLambdaJetHunter.sys.h"
+#include "SLambdaJetHunter.ana.h"
 #include "SLambdaJetHunterConfig.h"
 
 // make common namespaces implicit
 using namespace std;
 using namespace fastjet;
-using namespace SColdQcdCorrelatorAnalysis::SCorrelatorUtilities;
 
 
 
@@ -70,6 +65,8 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SLambdaJetHunter::Init(PHCompositeNode *topNode) Initializing" << endl;
     }
 
+    /* TODO check user fastjet input */
+
     InitOutput();
     InitTree();
     return Fun4AllReturnCodes::EVENT_OK;
@@ -85,7 +82,18 @@ namespace SColdQcdCorrelatorAnalysis {
       cout << "SLambdaJetHunter::process_event(PHCompositeNode *topNode) Processing Event" << endl;
     }
 
-    /* TODO processing goes here */
+    // make sure output containers are emtpy
+    ResetOutput();
+
+    // run analysis routines
+    GrabEventInfo(topNode);
+    FindLambdas(topNode);
+    MakeJets(topNode);
+    CollectJetOutput(topNode);
+    AssociateLambdasToJets(topNode);
+
+    // fill tree and return
+    FillOutputTree();
     return Fun4AllReturnCodes::EVENT_OK;
 
   }  // end 'process_event(PHCompositeNode*)'
