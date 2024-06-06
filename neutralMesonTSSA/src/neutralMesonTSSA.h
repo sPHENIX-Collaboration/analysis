@@ -11,7 +11,7 @@
 
 class PHCompositeNode;
 class RunHeaderv1;
-class Gl1Packetv2;
+class Gl1Packetv1;
 class RawClusterContainer;
 class PHG4TruthInfoContainer;
 class GlobalVertex;
@@ -115,7 +115,7 @@ class neutralMesonTSSA : public SubsysReco
   GlobalVertex* gVtx = nullptr;
   PHG4VtxPoint* mcVtx = nullptr;
   RunHeaderv1* runHeader = nullptr;
-  Gl1Packetv2* gl1Packet = nullptr;
+  Gl1Packetv1* gl1Packet = nullptr;
 
   // spin info
   static const int NBUNCHES = 120;

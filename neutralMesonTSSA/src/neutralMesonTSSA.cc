@@ -11,7 +11,7 @@
 #include <phool/phool.h>
 /* #include <ffaobjects/EventHeader.h> */
 #include <ffaobjects/RunHeaderv1.h>
-#include <ffarawobjects/Gl1Packetv2.h>
+#include <ffarawobjects/Gl1Packetv1.h>
 
 //ROOT stuff
 #include <TH1F.h>
@@ -106,11 +106,13 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 {
   /* std::cout << "neutralMesonTSSA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl; */
   n_events_total++;
+  /* std::cout << "Greg info: starting process_event. n_events_total = " << n_events_total << std::endl; */
 
   // First populate all the data containers
 
   // GL1
-  gl1Packet = findNode::getClass<Gl1Packetv2>(topNode, "GL1Packet");
+  gl1Packet = findNode::getClass<Gl1Packetv1>(topNode, "GL1Packet");
+  if (!gl1Packet)
   {
     std::cout << PHWHERE << ":: GL1Packet node missing! Skipping run " << runNum << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
@@ -181,10 +183,17 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 	  assert(vtxContainer);  // force quit
 	  return 0;
       }
+      /* std::cout << "Global vertex map has size " << vtxContainer->size() << std::endl; */
       if (vtxContainer->empty())
       {
-	  std::cout << PHWHERE << "neutralMesonTSSA::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
-	  return Fun4AllReturnCodes::ABORTEVENT;
+	  // Final version:
+	  /* std::cout << PHWHERE << "neutralMesonTSSA::process_event - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl; */
+	  /* return Fun4AllReturnCodes::ABORTEVENT; */
+
+	  // For testing
+	  // Use (0,0,0) as the vertex
+	  n_events_with_vertex++;
+	  n_events_with_good_vertex++;
       }
 
       //More vertex information
@@ -192,12 +201,13 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 	  gVtx = vtxContainer->begin()->second;
 	  if(!gVtx)
 	  {
-	      std::cout << PHWHERE << "neutralMesonTSSA::process_event Could not find vtx from vtxContainer"  << std::endl;
+	      /* std::cout << PHWHERE << "neutralMesonTSSA::process_event Could not find vtx from vtxContainer"  << std::endl; */
 	      return Fun4AllReturnCodes::ABORTEVENT;
 	  }
 	  n_events_with_vertex++;
 	  // Require vertex to be within 10cm of 0
 	  if (abs(gVtx->get_z()) > 10.0) {
+	      /* std::cout << PHWHERE << ":: Vertex |z| > 10cm, skipping event" << std::endl; */
 	      return Fun4AllReturnCodes::ABORTEVENT;
 	  }
 	  n_events_with_good_vertex++;
@@ -214,6 +224,7 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 	  totalCaloE += energy;
       }
       if (totalCaloE < 0) {
+	  /* std::cout << PHWHERE << ":: Total EMCal energy < 0, skipping event" << std::endl; */
 	  return Fun4AllReturnCodes::ABORTEVENT;
       }
       n_events_positiveCaloE++;
@@ -230,17 +241,24 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 	  totalCaloE += energy;
       }
       if (totalCaloE < 0) {
+	  /* std::cout << PHWHERE << ":: Total EMCal energy < 0, skipping event" << std::endl; */
 	  return Fun4AllReturnCodes::ABORTEVENT;
       }
       n_events_positiveCaloE++;
   }
 
   // Event is passes all checks. Now call the functions to do the analysis
+  /* std::cout << "Greg info: Getting bunch number" << std::endl; */
   GetBunchNum();
+  /* std::cout << "Greg info: Getting spins" << std::endl; */
   GetSpins();
+  /* std::cout << "Greg info: Getting luminosity" << std::endl; */
   CountLumi();
+  /* std::cout << "Greg info: Getting good clusters. n_events_total = " << n_events_total << std::endl; */
   FindGoodClusters();
+  /* std::cout << "Greg info: Getting diphotons" << std::endl; */
   FindDiphotons();
+  /* std::cout << "Greg info: Filling phi hists" << std::endl; */
   FillAllPhiHists();
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -251,6 +269,13 @@ int neutralMesonTSSA::ResetEvent(PHCompositeNode *topNode)
 {
   /* std::cout << "neutralMesonTSSA::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl; */
   
+  // Clear the data containers and vertex info
+  m_clusterContainer = nullptr;
+  m_truthInfo = nullptr;
+  gVtx = nullptr;
+  mcVtx = nullptr;
+  gl1Packet = nullptr;
+
   // Clear the vectors
   ClearVectors();
 
@@ -261,6 +286,9 @@ int neutralMesonTSSA::ResetEvent(PHCompositeNode *topNode)
 int neutralMesonTSSA::EndRun(const int runnumber)
 {
   std::cout << "neutralMesonTSSA::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
+
+  // Clear the RunHeader
+  runHeader = nullptr;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -531,31 +559,51 @@ void neutralMesonTSSA::FindGoodClusters()
     RawClusterContainer::ConstRange clusterRange = m_clusterContainer -> getClusters();
     RawClusterContainer::ConstIterator clusterIter;
     /* std::cout << "\n\nBeginning cluster loop\n"; */
+    /* std::cout << "cluster container size is " << m_clusterContainer->size() << std::endl; */
     for (clusterIter = clusterRange.first; clusterIter != clusterRange.second; clusterIter++)
     {
+	/* std::cout << "clusterIter->first = " << clusterIter->first << std::endl; */
 	RawCluster *recoCluster = clusterIter -> second;
+	/* std::cout << "recoCluster = " << recoCluster << std::endl; */
 	CLHEP::Hep3Vector vertex;
-	if (isMonteCarlo) vertex = CLHEP::Hep3Vector(mcVtx->get_x(), mcVtx->get_y(), mcVtx->get_z());
-	else {
-	    if (gVtx) vertex = CLHEP::Hep3Vector(gVtx->get_x(), gVtx->get_y(), gVtx->get_z());
-	    else vertex = CLHEP::Hep3Vector(0,0,0);
+	if (isMonteCarlo) {
+	    /* std::cout << "Setting MC vertex, mcVtx = " << mcVtx << std::endl; */
+	    vertex = CLHEP::Hep3Vector(mcVtx->get_x(), mcVtx->get_y(), mcVtx->get_z());
 	}
+	else {
+	    /* std::cout << "Setting RD vertex, gVtx = " << gVtx << ", identify():" << std::endl; */
+	    if (gVtx) {
+		/* int isValid = gVtx->isValid(); */
+		/* std::cout << "Vertex isValid = " << isValid << std::endl; */
+		/* float vtx_z = gVtx->get_z(); */
+		/* std::cout << "Vertex z = " << vtx_z << std::endl; */
+		/* gVtx->identify(); */
+	        vertex = CLHEP::Hep3Vector(gVtx->get_x(), gVtx->get_y(), gVtx->get_z());
+	    }
+	    else vertex = CLHEP::Hep3Vector(0,0,0);
+	    /* std::cout << "Done setting RD vertex, gVtx = " << gVtx << std::endl; */
+	}
+	/* std::cout << "Got vertex" << std::endl; */
 	CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+	/* std::cout << "E_vec_cluster" << std::endl; */
 	float clusE = recoCluster->get_energy();
 	float clusEcore = recoCluster->get_ecore();
 	float clus_eta = E_vec_cluster.pseudoRapidity();
 	float clus_phi = E_vec_cluster.phi();
 	float clus_chi2 = recoCluster->get_chi2();
 
+	/* std::cout << "Applying cuts" << std::endl; */
 	if (clusE < min_clusterE) continue;
 	if (clusE > max_clusterE) continue;
 	if (clus_chi2 > max_clusterChi2) continue;
 
+	/* std::cout << "Populating goodcluster vectors" << std::endl; */
 	goodclusters_E->push_back(clusE);
 	goodclusters_Eta->push_back(clus_eta);
 	goodclusters_Phi->push_back(clus_phi);
 	goodclusters_Ecore->push_back(clusEcore);
 	goodclusters_Chi2->push_back(clus_chi2);
+	/* std::cout << "Done" << std::endl; */
     }
     return;
 }
