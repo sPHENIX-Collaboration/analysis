@@ -5,8 +5,9 @@
 
 #include <string>
 #include <vector>
-
 #include <ffarawobjects/Gl1Packet.h>
+#include <ffarawobjects/Gl1Packetv1.h>
+#include <ffarawobjects/Gl1Packetv2.h>
 #include <calotrigger/LL1Out.h>
 #include <calotrigger/LL1Outv1.h>
 #include <calotrigger/TriggerPrimitive.h>
@@ -59,6 +60,7 @@ class CaloEmulatorTreeMaker : public SubsysReco
   void SetVerbosity(int verbo) ;
   void SetTrigger(const std::string trigger) {_trigger = trigger;}
   void UseCaloTowerBuilder(bool use) {useCaloTowerBuilder = use;}
+  void UseLL1(bool use) {useLL1 = use;}
  private:
   void reset_tree_vars();
 
@@ -73,6 +75,7 @@ class CaloEmulatorTreeMaker : public SubsysReco
   std::string m_ll1_raw_nodename;
   int _i_event;
   bool useCaloTowerBuilder;
+  bool useLL1;
 
   LL1Out *_ll1out_trigger;
   LL1Out *_ll1out_raw_trigger;
@@ -107,9 +110,13 @@ class CaloEmulatorTreeMaker : public SubsysReco
   unsigned int b_trigger_sum_hcalout[384];
 
   std::vector<unsigned int> b_triggered_sums;
-  uint64_t b_gl1_triggervec;
+  uint64_t b_gl1_rawvec;
+  uint64_t b_gl1_livevec;
+  uint64_t b_gl1_scaledvec;
   uint64_t b_gl1_clock;
- 
+  uint64_t b_gl1_raw[64]; 
+  uint64_t b_gl1_live[64]; 
+  uint64_t b_gl1_scaled[64]; 
   unsigned int b_trigger_sum_smpl_emcal_ll1[384];
   unsigned int b_trigger_sumkey_emcal_ll1[384];
   unsigned int b_trigger_sum_emcal_ll1[384];
@@ -143,6 +150,19 @@ class CaloEmulatorTreeMaker : public SubsysReco
   unsigned int b_trigger_bits;
   unsigned int b_trigger_raw_bits;
 
+  float b_vertex_x;
+  float b_vertex_y;
+  float b_vertex_z;
+
+  int b_cluster_n;
+  std::vector<float> b_cluster_prob;
+  std::vector<float> b_cluster_chi2;
+  std::vector<float> b_cluster_ecore;
+  std::vector<float> b_cluster_pt;
+  std::vector<float> b_cluster_phi;
+  std::vector<float> b_cluster_eta;
+  std::vector<float> b_cluster_iso;
+
   std::vector<short> b_emcal_good;
   std::vector<float> b_emcal_energy;
   std::vector<float> b_emcal_time;
@@ -161,6 +181,10 @@ class CaloEmulatorTreeMaker : public SubsysReco
   std::vector<float> b_hcalout_etabin;
   std::vector<float> b_hcalout_phibin;
 
+  float b_mbd_charge[128];
+  float b_mbd_time[128];
+  int b_mbd_ipmt[128];
+  int b_mbd_side[128];
 };
 
 #endif 

@@ -27,6 +27,8 @@ libemulatortreemaker_la_SOURCES = \
 libemulatortreemaker_la_LIBADD = \
   -lcalotrigger_io \
   -lcalotrigger \
+  -lglobalvertex \
+  -lmbd_io \
   -lSubsysReco
 
 
