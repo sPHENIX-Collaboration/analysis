@@ -35,11 +35,11 @@
 // calo/pf libraries
 #include <caloreco/RawClusterBuilderTopo.h>
 #include <particleflowreco/ParticleFlowReco.h>
-// analysis utilities
+// module definition
+#include <scorrelatorjettreemaker/SCorrelatorJetTreeMaker.h>
+// macro options
 #include "TopoClusterOptions.h"
 #include "JetTreeMakerOptions.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorjettreemaker/SCorrelatorJetTreeMaker.h"
-#include "/sphenix/user/danderson/install/include/scorrelatorjettreemaker/SCorrelatorJetTreeMakerConfig.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -50,8 +50,8 @@ R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorutilities.so)
-R__LOAD_LIBRARY(/sphenix/user/danderson/install/lib/libscorrelatorjettreemaker.so)
+R__LOAD_LIBRARY(libscorrelatorutilities.so)
+R__LOAD_LIBRARY(libscorrelatorjettreemaker.so)
 
 // default input/output
 static const vector<string> VecInFilesDefault = {

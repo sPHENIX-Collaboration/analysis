@@ -3,12 +3,14 @@
 #include "TFile.h"
 #include "TGraphErrors.h"
 #include "TH1F.h"
+#include "TProfile.h"
 #include "TTree.h"
 
 #include <Eigen/Dense>
 
 #include "Beamspot.h"
 #include "Hit.h"
+#include "Utilities.h"
 
 Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>, std::shared_ptr<Hit>>> tracklets, Beamspot BS_init, double d0_cut)
 {
@@ -82,50 +84,63 @@ Beamspot fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>, std::shared_p
 
     TF1 z_f("gaus", "gaus", -60., 60.);
 
-    // TF2 d0phi0_f("d0phi0_f","[0]+[1]*TMath::Gaus(y,[2]*TMath::Cos(x-[3]),[4])",-M_PI,M_PI,-1.,1.);
-
-    TGraphErrors *g = new TGraphErrors();
-
-    for (int i = 0; i < reco_BS.d0phi0dist->GetNbinsY(); i++)
+    // Remove "background"
+    reco_BS.d0phi0dist_bkgrm = (TH2F *)reco_BS.d0phi0dist->Clone("d0phi0dist_bkgrm");
+    for (int i = 0; i < reco_BS.d0phi0dist->GetNbinsX(); i++)
     {
         TH1D *slice = reco_BS.d0phi0dist->ProjectionY("slice", i, i + 1);
         int maxbin = slice->GetMaximumBin();
-        double best_d0 = slice->GetBinCenter(maxbin);
-        double low_d0 = slice->GetBinCenter(slice->FindFirstBinAbove(0.5 * slice->GetMaximum(), 1, maxbin - 10, maxbin));
-        double high_d0 = slice->GetBinCenter(slice->FindLastBinAbove(0.5 * slice->GetMaximum(), 1, maxbin, maxbin + 10));
-        double d0_error;
-        if (best_d0 - low_d0 > high_d0 - best_d0)
-            d0_error = best_d0 - low_d0;
-        else
-            d0_error = high_d0 - best_d0;
-        std::cout << "d0 error: " << d0_error << std::endl;
-        double slice_phi = -M_PI + i * (2. * M_PI) / 200.;
-        g->AddPoint(slice_phi, best_d0);
-        g->SetPointError(i, M_PI / 100., d0_error);
+        float max = slice->GetBinContent(maxbin);
+        for (int j = 0; j < slice->GetNbinsX(); j++)
+        {
+            float content = slice->GetBinContent(j + 1);
+            if (slice->GetBinContent(j + 1) < 0.995 * max)
+                reco_BS.d0phi0dist_bkgrm->SetBinContent(i + 1, j + 1, 0.);
+        }
+    }
+
+    reco_BS.d0phi0dist_bkgrm_prof = reco_BS.d0phi0dist_bkgrm->ProfileX("d0phi0dist_bkgrm_prof");
+
+    TGraphErrors *g = new TGraphErrors();
+    for (int i = 0; i < reco_BS.d0phi0dist_bkgrm_prof->GetNbinsX(); i++)
+    {
+        double d0 = reco_BS.d0phi0dist_bkgrm_prof->GetBinContent(i + 1);
+        double phi = -M_PI + i * (2. * M_PI) / 200.;
+        g->SetPoint(i, phi, d0);
     }
 
     TF1 d0cos("d0cos", "[0]*TMath::Cos(x-[1])", -M_PI, M_PI);
     g->Fit(&d0cos);
-    g->Write("maxgraph");
-    /*
-      d0phi0_f.SetParameter(0,(float)Ntracklets/(reco_BS.d0phi0dist->GetNbinsX()*reco_BS.d0phi0dist->GetNbinsY()));
-      d0phi0_f.SetParLimits(0,0.,1e9);
-      d0phi0_f.SetParameter(1,1.);
-      d0phi0_f.SetParameter(2,1.);
-      d0phi0_f.SetParameter(3,0.);
-      d0phi0_f.SetParLimits(3,-M_PI,M_PI);
-      d0phi0_f.SetParameter(4,.001);
-      d0phi0_f.SetParLimits(4,0.,1.);
-    */
+    g->Write("maxgraph_prermoutl");
+
+    vector<float> phi_2;
+    vector<float> d0_2;
+    TF1 d0cos_rmoutl("d0cos_rmoutl", "[0]*TMath::Cos(x-[1])", -M_PI, M_PI);
+    for (int i = 0; i < g->GetN(); i++)
+    {
+        double x, y;
+        g->GetPoint(i, x, y);
+        double y_fit = d0cos.Eval(x);
+        // cout << "x: " << x << " y: " << y << " y_fit: " << y_fit << "abs(y-y_fit): " << fabs(y - y_fit) << endl;
+        if (fabs(y - y_fit) < 0.2)
+        {
+            phi_2.push_back(x);
+            d0_2.push_back(y);
+        }
+    }
+
+    TGraphErrors *g2 = new TGraphErrors(phi_2.size(), &phi_2[0], &d0_2[0]);
+    // fit the graph again
+    g2->Fit(&d0cos_rmoutl);
+    g2->Write("maxgraph_rmoutl");
+
     reco_BS.z0dist->Fit(&z_f);
-    // reco_BS.d0phi0dist->Fit(&d0phi0_f,"LI");
 
     // build reconstructed beamspot: x and y first
-
-    double BS_d0 = d0cos.GetParameter(0);
-    double BS_phi0 = d0cos.GetParameter(1);
-    double BS_sigmad0 = d0cos.GetParError(0);
-    double BS_sigmaphi0 = d0cos.GetParError(1);
+    double BS_d0 = d0cos_rmoutl.GetParameter(0);
+    double BS_phi0 = d0cos_rmoutl.GetParameter(1);
+    double BS_sigmad0 = d0cos_rmoutl.GetParError(0);
+    double BS_sigmaphi0 = d0cos_rmoutl.GetParError(1);
 
     reco_BS.x = BS_d0 * cos(BS_phi0) + BS_init.x;
     reco_BS.y = BS_d0 * sin(BS_phi0) + BS_init.y;
@@ -191,6 +206,10 @@ int main(int argc, char **argv)
 
         std::cout << "event " << i << " INTT_BCO " << intt_bco << std::endl;
 
+        // // use low-multiplicity events
+        if (Nclusters < 20 || Nclusters > 350)
+            continue;
+
         for (int j = 0; j < Nclusters; j++)
         {
             if (clusters_adc->at(j) < 35)
@@ -206,11 +225,15 @@ int main(int argc, char **argv)
             }
         }
 
+        if (layer1_clusters.size() < 10 || layer2_clusters.size() < 10)
+            continue;
+
         for (auto &cluster1 : layer1_clusters)
         {
             for (auto &cluster2 : layer2_clusters)
             {
-                if (fabs(cluster1->Phi() - cluster2->Phi()) < dphi_cut && fabs(cluster1->posZ() - cluster2->posZ()) < 5.)
+                // if (fabs(cluster1->Phi() - cluster2->Phi()) < dphi_cut && fabs(cluster1->posZ() - cluster2->posZ()) < 5.) // bug in calculating delta phi (?);
+                if (deltaPhi(cluster1->Phi(), cluster2->Phi()) < dphi_cut)
                 {
                     tracklets.push_back(std::make_pair(cluster1, cluster2));
                 }
@@ -219,7 +242,9 @@ int main(int argc, char **argv)
     }
 
     Beamspot origin;
-    Beamspot BS = fit_PCAD0Phi0(tracklets, origin, 100.);
+    // fit_PCAD0Phi0(std::vector<std::pair<std::shared_ptr<Hit>, std::shared_ptr<Hit>>> tracklets, Beamspot BS_init, double d0_cut)
+    // Beamspot BS = fit_PCAD0Phi0(tracklets, origin, 100.);
+    Beamspot BS = fit_PCAD0Phi0(tracklets, origin, 1.);
     // BS = fit_PCAD0Phi0(tracklets,BS,0.5);
     // BS = fit_PCAD0Phi0(tracklets,BS,0.2);
     // BS = fit_PCAD0Phi0(tracklets,BS,0.1);
@@ -246,6 +271,8 @@ int main(int argc, char **argv)
     t->Write();
 
     BS.d0phi0dist->Write("d0phi0dist", TObject::kOverwrite);
+    BS.d0phi0dist_bkgrm->Write("d0phi0dist_bkgrm", TObject::kOverwrite);
+    BS.d0phi0dist_bkgrm_prof->Write("d0phi0dist_bkgrm_prof", TObject::kOverwrite);
     BS.z0dist->Write("z0dist", TObject::kOverwrite);
     BS.pcadist->Write("pcadist", TObject::kOverwrite);
 

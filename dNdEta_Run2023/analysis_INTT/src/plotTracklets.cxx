@@ -50,16 +50,8 @@ void makehist(TString infname, TString outfname)
     TH2F *hM_tklclus1phisize_tklclus2phisize = new TH2F("hM_tklclus1phisize_tklclus2phisize", "hM_tklclus1phisize_tklclus2phisize", 80, 0, 80, 80, 0, 80);
     TH2F *hM_tklclus1phi_tklclus1phisize = new TH2F("hM_tklclus1phi_tklclus1phisize", "hM_tklclus1phi_tklclus1phisize", 140, -3.5, 3.5, 80, 0, 80);
     TH2F *hM_tklclus2phi_tklclus2phisize = new TH2F("hM_tklclus2phi_tklclus2phisize", "hM_tklclus2phi_tklclus2phisize", 140, -3.5, 3.5, 80, 0, 80);
-
-    // TH1F *hM_dEta_proto = new TH1F("hM_dEta_proto", "hM_dEta_proto", 200, -5, 5);
-    // TH1F *hM_dPhi_proto = new TH1F("hM_dPhi_proto", "hM_dPhi_proto", 100, -0.5, 0.5);
-    // TH1F *hM_dPhi_proto_altrange = new TH1F("hM_dPhi_proto_altrange", "hM_dPhi_proto_altrange", 100, -0.05, 0.05);
-    // TH1F *hM_dR_proto = new TH1F("hM_dR_proto", "hM_dR_proto", 100, 0, 0.5);
-    // TH1F *hM_dR_proto_altrange = new TH1F("hM_dR_proto_altrange", "hM_dR_proto_altrange", 50, 0, 0.05);
-    // TH1F *hM_dR_proto_LogX = new TH1F("hM_dR_proto_LogX", "hM_dR_proto_LogX", NBins, edges);
-    // TH1F *hM_Eta_proto = new TH1F("hM_Eta_proto", "hM_Eta_proto", 160, -4, 4);
-    // TH1F *hM_Phi_proto = new TH1F("hM_Phi_proto", "hM_Phi_proto", 140, -3.5, 3.5);
-    // TH2F *hM_Eta_vtxZ_proto_incl = new TH2F("hM_Eta_vtxZ_proto_incl", "hM_Eta_vtxZ_proto_incl", 280, -3.5, 3.5, 300, -50, 10);
+    TH2F *hM_tklclus1eta_tklclus1phisize = new TH2F("hM_tklclus1eta_tklclus1phisize", "hM_tklclus1eta_tklclus1phisize", 160, -4, 4, 80, 0, 80);
+    TH2F *hM_tklclus2eta_tklclus2phisize = new TH2F("hM_tklclus2eta_tklclus2phisize", "hM_tklclus2eta_tklclus2phisize", 160, -4, 4, 80, 0, 80);
 
     TH1F *hM_dEta_reco = new TH1F("hM_dEta_reco", "hM_dEta_reco", 200, -3, 3);
     TH1F *hM_dEta_reco_altrange = new TH1F("hM_dEta_reco_altrange", "hM_dEta_reco_altrange", 100, -0.5, 0.5);
@@ -139,14 +131,12 @@ void makehist(TString infname, TString outfname)
     // not zvtx weighted
     TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 70, 0, 3500);
     TH1F *hM_NClusLayer2 = new TH1F("hM_NClusLayer2", "hM_NClusLayer2", 70, 0, 3500);
-    TH1F *hM_NClusLayer1_clusADCgt35 = new TH1F("hM_NClusLayer1_clusADCgt35", "hM_NClusLayer1_clusADCgt35", 175, 0, 3500);
     TH1F *hM_NTklclusLayer1 = new TH1F("hM_NTklclusLayer1", "hM_NTklclusLayer1", 100, 0, 5000);
     TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
     TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 150, 0, 3000);
     // zvtx weighted 
     TH1F *hM_NClusLayer1_zvtxwei = new TH1F("hM_NClusLayer1_zvtxwei", "hM_NClusLayer1_zvtxwei",  70, 0, 3500);
     TH1F *hM_NClusLayer2_zvtxwei = new TH1F("hM_NClusLayer2_zvtxwei", "hM_NClusLayer2_zvtxwei",  70, 0, 3500);
-    TH1F *hM_NClusLayer1_clusADCgt35_zvtxwei = new TH1F("hM_NClusLayer1_clusADCgt35_zvtxwei", "hM_NClusLayer1_clusADCgt35_zvtxwei", 175, 0, 3500);
     TH1F *hM_NTklclusLayer1_zvtxwei = new TH1F("hM_NTklclusLayer1_zvtxwei", "hM_NTklclusLayer1_zvtxwei", 100, 0, 5000);
     TH1F *hM_NPrototkl_zvtxwei = new TH1F("hM_NPrototkl_zvtxwei", "hM_NPrototkl_zvtxwei", 100, 0, 10000);
     TH1F *hM_NRecotkl_Raw_zvtxwei = new TH1F("hM_NRecotkl_Raw_zvtxwei", "hM_NRecotkl_Raw_zvtxwei", 150, 0, 3000);
@@ -200,11 +190,6 @@ void makehist(TString infname, TString outfname)
     t->SetBranchAddress("tklclus2PhiSize", &tklclus2PhiSize);
     t->SetBranchAddress("tklclus1ADC", &tklclus1ADC);
     t->SetBranchAddress("tklclus2ADC", &tklclus2ADC);
-    // t->SetBranchAddress("prototkl_eta", &prototkl_eta);
-    // t->SetBranchAddress("prototkl_phi", &prototkl_phi);
-    // t->SetBranchAddress("prototkl_deta", &prototkl_deta);
-    // t->SetBranchAddress("prototkl_dphi", &prototkl_dphi);
-    // t->SetBranchAddress("prototkl_dR", &prototkl_dR);
     t->SetBranchAddress("recotklraw_eta", &recotklraw_eta);
     t->SetBranchAddress("recotklraw_phi", &recotklraw_phi);
     t->SetBranchAddress("recotklraw_deta", &recotklraw_deta);
@@ -215,9 +200,6 @@ void makehist(TString infname, TString outfname)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
-
-        if (PV_z < -99.)
-            continue;
 
         cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NTklclusLayer1=" << tklclus1Phi->size() << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;
 
@@ -233,9 +215,12 @@ void makehist(TString infname, TString outfname)
         hM_NPrototkl_zvtxwei->Fill(NPrototkl, vtxzwei);
         hM_NRecotkl_Raw_zvtxwei->Fill(NRecotkl_Raw, vtxzwei);
 
-        hM_RecoPVz->Fill(PV_z, vtxzwei);
-
         int NClusLayer1_clusADCgt35 = 0;
+
+        if (PV_z < -40. || PV_z > 0.)
+            continue;
+
+        hM_RecoPVz->Fill(PV_z, vtxzwei);
 
         for (size_t j = 0; j < clusPhiSize->size(); j++)
         {
@@ -251,12 +236,7 @@ void makehist(TString infname, TString outfname)
             hM_clusphisize_zvtxwei->Fill(clusPhiSize->at(j), vtxzwei);
             hM_clusphi_clusphisize_zvtxwei->Fill(clusPhi->at(j), clusPhiSize->at(j), vtxzwei);
             hM_cluseta_clusphisize_zvtxwei->Fill(clusEta->at(j), clusPhiSize->at(j), vtxzwei);
-
-            if (clusADC->at(j) > 35 && clusLayer->at(j) == 0)
-                NClusLayer1_clusADCgt35++;
         }
-        hM_NClusLayer1_clusADCgt35->Fill(NClusLayer1_clusADCgt35);
-        hM_NClusLayer1_clusADCgt35_zvtxwei->Fill(NClusLayer1_clusADCgt35, vtxzwei);
 
         // clusters of tracklets
         for (size_t j = 0; j < tklclus1PhiSize->size(); j++)
@@ -267,20 +247,6 @@ void makehist(TString infname, TString outfname)
             hM_tklclus1phi_tklclus1phisize->Fill(tklclus1Phi->at(j), tklclus1PhiSize->at(j), vtxzwei);
             hM_tklclus2phi_tklclus2phisize->Fill(tklclus2Phi->at(j), tklclus2PhiSize->at(j), vtxzwei);
         }
-
-        // for (size_t j = 0; j < prototkl_eta->size(); j++)
-        // {
-        //     hM_dEta_proto->Fill(prototkl_deta->at(j));
-        //     hM_dPhi_proto->Fill(prototkl_dphi->at(j));
-        //     hM_dPhi_proto_altrange->Fill(prototkl_dphi->at(j));
-        //     hM_dR_proto->Fill(prototkl_dR->at(j));
-        //     hM_dR_proto_altrange->Fill(prototkl_dR->at(j));
-        //     hM_dR_proto_LogX->Fill(prototkl_dR->at(j));
-        //     hM_Eta_proto->Fill(prototkl_eta->at(j));
-        //     hM_Phi_proto->Fill(prototkl_phi->at(j));
-
-        //     hM_Eta_vtxZ_proto_incl->Fill(prototkl_eta->at(j), PV_z);
-        // }
 
         for (size_t j = 0; j < recotklraw_eta->size(); j++)
         {
@@ -372,14 +338,10 @@ void makehist(TString infname, TString outfname)
     fout->cd();
     hM_NClusLayer1->Write();
     hM_NClusLayer2->Write();
-    hM_NClusLayer1_clusADCgt35->Write();
     hM_NTklclusLayer1->Write();
-    // hM_NPrototkl->Write();
     hM_NRecotkl_Raw->Write();
     hM_NClusLayer1_zvtxwei->Write();
-    hM_NClusLayer1_clusADCgt35_zvtxwei->Write();
     hM_NTklclusLayer1_zvtxwei->Write();
-    // hM_NPrototkl_zvtxwei->Write();
     hM_NRecotkl_Raw_zvtxwei->Write();
     hM_RecoPVz->Write();
     hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Write();
@@ -401,16 +363,7 @@ void makehist(TString infname, TString outfname)
     hM_tklclus1phisize_tklclus2phisize->Write();
     hM_tklclus1phi_tklclus1phisize->Write();
     hM_tklclus2phi_tklclus2phisize->Write();
-    // hM_dEta_proto->Write();
     hM_dEta_reco->Write();
-    // hM_dEta_proto->Write();
-    // hM_dPhi_proto->Write();
-    // hM_dPhi_proto_altrange->Write();
-    // hM_dR_proto->Write();
-    // hM_dR_proto_altrange->Write();
-    // hM_dR_proto_LogX->Write();
-    // hM_Eta_proto->Write();
-    // hM_Phi_proto->Write();
     hM_dEta_reco->Write();
     hM_dEta_reco_altrange->Write();
     hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
@@ -426,7 +379,6 @@ void makehist(TString infname, TString outfname)
     hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
     hM_Phi_reco->Write();
     hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
-    // hM_Eta_vtxZ_proto_incl->Write();
     hM_Eta_vtxZ_reco_incl->Write();
     hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
     hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();

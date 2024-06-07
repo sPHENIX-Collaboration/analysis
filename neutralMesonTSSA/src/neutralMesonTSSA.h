@@ -7,20 +7,41 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 class PHCompositeNode;
+class RunHeaderv1;
+class Gl1Packetv1;
 class RawClusterContainer;
 class PHG4TruthInfoContainer;
 class GlobalVertex;
 class PHG4VtxPoint;
 class TFile;
-class TH1F;
+class TH1;
+class BinnedHistSet;
+
+class Diphoton
+{
+  public:
+    float mass, E, eta, phi, pT, xF;
+    /* Diphoton() {} */
+    /* ~Diphoton() {} */
+};
+
+class PhiHists
+{
+  public:
+    BinnedHistSet *phi_pT, *phi_pT_blue_up, *phi_pT_blue_down, *phi_pT_yellow_up, *phi_pT_yellow_down;
+    BinnedHistSet *phi_xF, *phi_xF_blue_up, *phi_xF_blue_down, *phi_xF_yellow_up, *phi_xF_yellow_down;
+    /* PhiHists() {} */
+    /* ~PhiHists() {} */
+};
 
 class neutralMesonTSSA : public SubsysReco
 {
  public:
 
-  neutralMesonTSSA(const std::string &name = "neutralMesonTSSA", bool isMC = false);
+  neutralMesonTSSA(const std::string &name = "neutralMesonTSSA", std::string histname = "neutralMesonTSSA_hists.root", bool isMC = false);
 
   ~neutralMesonTSSA() override;
 
@@ -61,64 +82,119 @@ class neutralMesonTSSA : public SubsysReco
   void set_min_clusterE(float Emin);
   float get_max_clusterChi2();
   void set_max_clusterChi2(float Chi2max);
+  bool InRange(float mass, std::pair<float, float> range);
 
+  // In Init()
+  void MakePhiHists(std::string which); // which = pi0, eta, pi0bkgr, etabkgr
+  void MakeAllHists();
+  void MakeVectors();
+  // In InitRun()
+  void GetRunNum();
+  int GetSpinInfo(); // spin patterns, beam polarization and crossing shift for this run
+  // In process_event()
+  void GetBunchNum();
+  void GetSpins(); // blue and yellow spins for this event
+  void CountLumi();
   void FindGoodClusters();
-  void FindMesons();
-  void CountMesons();
+  void FindDiphotons();
+  void FillPhiHists(std::string which, int index); // which = pi0, eta, pi0bkgr, etabkgr
+  void FillAllPhiHists();
+  // In ResetEvent()
+  void ClearVectors();
+  // In End()
+  void DeleteStuff();
 
  private:
   bool isMonteCarlo;
-  RawClusterContainer* m_clusterContainer;
-  PHG4TruthInfoContainer* m_truthInfo;
-  GlobalVertex* gVtx;
-  PHG4VtxPoint* mcVtx;
-  TFile* histfile;
-  TH1F* h_diphotonMass;
-  TH1F* h_pi0Mass;
-  TH1F* h_etaMass;
+  std::string outfilename;
+  TFile* outfile = nullptr;
 
-  float min_clusterE;
-  float max_clusterChi2;
-  std::vector<float> goodclusters_E;
-  std::vector<float> goodclusters_Eta;
-  std::vector<float> goodclusters_Phi;
-  std::vector<float> goodclusters_Ecore;
-  std::vector<float> goodclusters_Chi2;
-  float min_mesonPt;
-  float pi0MassMean;
-  float pi0MassSigma;
+  // data containers
+  RawClusterContainer* m_clusterContainer = nullptr;
+  PHG4TruthInfoContainer* m_truthInfo = nullptr;
+  GlobalVertex* gVtx = nullptr;
+  PHG4VtxPoint* mcVtx = nullptr;
+  RunHeaderv1* runHeader = nullptr;
+  Gl1Packetv1* gl1Packet = nullptr;
+
+  // spin info
+  static const int NBUNCHES = 120;
+  int runNum = 0;
+  int spinPatternBlue[NBUNCHES] = {0};
+  int spinPatternYellow[NBUNCHES] = {0};
+  int bunchNum = 0;
+  int crossingShift = 0;
+  int sphenixBunch = 0;
+  int bspin = 0;
+  int yspin = 0;
+  float lumiUpBlue = 0;
+  float lumiDownBlue = 0;
+  /* float relLumiBlue; */
+  float polBlue = 0;
+  float lumiUpYellow = 0;
+  float lumiDownYellow = 0;
+  /* float relLumiYellow; */
+  float polYellow = 0;
+
+  // diphoton distributions
+  TH1* h_diphotonMass = nullptr;
+  BinnedHistSet* bhs_diphotonMass_pT = nullptr;
+  BinnedHistSet* bhs_diphotonMass_xF = nullptr;
+  TH1* h_diphotonpT = nullptr;
+  TH1* h_diphotonxF = nullptr;
+
+  // clusters and cuts
+  float min_clusterE = 0.8;
+  float max_clusterE = 15.0;
+  float max_clusterChi2 = 4.0;
+  std::vector<float>* goodclusters_E = nullptr;
+  std::vector<float>* goodclusters_Eta = nullptr;
+  std::vector<float>* goodclusters_Phi = nullptr;
+  std::vector<float>* goodclusters_Ecore = nullptr;
+  std::vector<float>* goodclusters_Chi2 = nullptr;
+
+  // diphotons and cuts
+  float min_diphotonPt = 0.3;
+  float max_asym = 0.75;
+  float min_deltaR = 0.0;
+  float max_deltaR = 999.9;
+  float pi0MassMean = 0.142;
+  float pi0MassSigma = 0.0168;
+  std::pair<float, float> pi0MassRange{0.117, 0.167};
+  std::pair<float, float> pi0BkgrLowRange{0.047, 0.097};
+  std::pair<float, float> pi0BkgrHighRange{0.177, 0.227};
   float min_pi0Mass;
   float max_pi0Mass;
-  float etaMassMean;
-  float etaMassSigma;
+  float etaMassMean = 0.564;
+  float etaMassSigma = 0.020;
+  std::pair<float, float> etaMassRange{0.494, 0.634};
+  std::pair<float, float> etaBkgrLowRange{0.300, 0.400};
+  std::pair<float, float> etaBkgrHighRange{0.700, 0.800};
   float min_etaMass;
   float max_etaMass;
-  std::vector<float> pi0_E;
-  std::vector<float> pi0_M;
-  std::vector<float> pi0_Eta;
-  std::vector<float> pi0_Phi;
-  std::vector<float> pi0_Pt;
-  std::vector<float> pi0_xF;
-  std::vector<float> eta_E;
-  std::vector<float> eta_M;
-  std::vector<float> eta_Eta;
-  std::vector<float> eta_Phi;
-  std::vector<float> eta_Pt;
-  std::vector<float> eta_xF;
+  std::vector<Diphoton>* pi0s = nullptr;
+  std::vector<Diphoton>* etas = nullptr;
+  std::vector<Diphoton>* pi0Bkgr = nullptr;
+  std::vector<Diphoton>* etaBkgr = nullptr;
+
+  // phi histograms for asymmetries
+  const float PI = 3.141592;
+  int nBins_pT = 6;
+  float bhs_max_pT = 8.0;
+  int nBins_xF = 6;
+  float bhs_max_xF = 0.3;
+  int nHistBins_phi = 16;
+  PhiHists* pi0Hists= nullptr;
+  PhiHists* etaHists= nullptr;
+  PhiHists* pi0BkgrHists= nullptr;
+  PhiHists* etaBkgrHists= nullptr;
+
   // counters for events
-  long int n_events_total;
-  long int n_events_with_vertex;
-  long int n_events_with_good_vertex;
-  long int n_events_positiveCaloE;
-  // counters for asymmetries
-  long int N_pi0_up_left;
-  long int N_pi0_up_right;
-  long int N_pi0_down_left;
-  long int N_pi0_down_right;
-  long int N_eta_up_left;
-  long int N_eta_up_right;
-  long int N_eta_down_left;
-  long int N_eta_down_right;
+  long int n_events_total = 0;
+  long int n_events_with_vertex = 0;
+  long int n_events_with_good_vertex = 0;
+  long int n_events_positiveCaloE = 0;
+
 };
 
 #endif // NEUTRALMESONTSSA_H

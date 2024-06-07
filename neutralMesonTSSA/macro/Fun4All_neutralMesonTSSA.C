@@ -18,7 +18,7 @@ void Fun4All_neutralMesonTSSA(
                      const char *filelist1 = "dst_calo_cluster.list",
                      const char *filelist2 = "dst_truth.list",
 		     const string outname = "neutralMesonTSSA_hists.root",
-		     bool isMC = true)
+		     bool isMC = false)
 {
   // this convenience library knows all our i/o objects so you don't
   // have to figure out what is in each dst type
@@ -40,9 +40,9 @@ void Fun4All_neutralMesonTSSA(
       se -> registerInputManager(inTruth);
   }
 
-  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", isMC);
-  eval->set_min_clusterE(0.3);
-  eval->set_max_clusterChi2(4.0);
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
+  /* eval->set_min_clusterE(0.5); */
+  /* eval->set_max_clusterChi2(4.0); */
   se -> registerSubsystem(eval);
   
   se->run(nEvents);

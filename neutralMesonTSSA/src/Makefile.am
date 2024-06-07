@@ -24,7 +24,11 @@ libneutralMesonTSSA_la_LIBADD = \
   -lSubsysReco \
   -lCLHEP \
   -lcalo_io \
-  -lg4eval
+  -lg4eval \
+  -lBinnedHistSet \
+  -luspin \
+  -lffaobjects \
+  -lffarawobjects
 
 BUILT_SOURCES = testexternals.cc
 
