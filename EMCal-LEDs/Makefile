@@ -4,30 +4,25 @@
 # @file
 # @version 0.1
 
-# root-config --cflags
-# CPPFLAGS = -I./include
 ROOT_CPPFLAGS = `root-config --cflags`
-sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include
-# root-config --libs
-# LIBFLAGS = -L$(MYINSTALL)/lib `root-config --libs`
-LIBFLAGS = -L$(MYINSTALL)/lib `root-config --libs` -lledtowerbuilder
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lfun4all -lfun4allraw -lcalo_io
+ROOT_LIBFLAGS = `root-config --libs`
 
-all: bin/read-LEDs bin/Fun4All_LEDTowerBuilder bin/event-display
+CPPFLAGS = -I$(MYINSTALL)/include
+LIBFLAGS = -L$(MYINSTALL)/lib -lledtowerbuilder
+
+sPHENIX_CPPFLAGS = -I$(OFFLINE_MAIN)/include
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib
+
+all: bin/read-LEDs bin/Fun4All_LEDTowerBuilder
 
 bin/read-LEDs: macro/read-LEDs.C
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(sPHENIX_LIBFLAGS)
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS) -lcalo_io
 
 bin/Fun4All_LEDTowerBuilder: macro/Fun4All_LEDTowerBuilder.C
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/event-display: macro/event-display.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(sPHENIX_LIBFLAGS)
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lfun4allraw $(CPPFLAGS) $(LIBFLAGS)
 
 clean:
 	rm bin/read-LEDs
 	rm bin/Fun4All_LEDTowerBuilder
-	rm bin/event-display

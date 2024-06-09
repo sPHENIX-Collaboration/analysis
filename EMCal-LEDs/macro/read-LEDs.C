@@ -7,6 +7,7 @@
 
 // -- root includes --
 #include <TH2F.h>
+#include <TH3F.h>
 #include <TFile.h>
 #include <TTree.h>
 
@@ -22,132 +23,132 @@ R__LOAD_LIBRARY(libcalo_io.so)
 
 namespace myAnalysis {
 
-    void init(const string& inputFile = "data/LEDTowerBuilder.root");
-    void analyze(UInt_t nevents=0);
-    void finalize(const string &outputFile="output/test.root");
+    void init(const string &inputFile);
+    void analyze(UInt_t nevents);
+    void finalize(const string &outputFile);
 
     TFile* input;
-    TTree* led_tree;
+    TTree* W;
 
     // QA
-    TH1F* hTime;
-    TH1F* hADC;
-    TH1F* hadc;
-    TH1F* hPed;
     TH1F* hChannels;
+    TH1F* hADC;
+    TH1F* hADCNorth;
+    TH1F* hADCSouth;
+    TH1F* hADCFarNorth; // last IB
+    TH1F* hTotalADC;
+    TH1F* hADCVsChannels;
+    TH1F* hPed;
+    TH1F* hTime;
 
     // 2D correlations
-    TH2F* h2TimeVsChannel;
-    TH2F* h2ADCVsChannel;
-    TH2F* h2PedVsChannel;
+    TH2F* h2Channels;
+    TH2F* h2ADC;
+    TH2F* h2ADCVsEta;
     TH2F* h2ADCVsTime;
     TH2F* h2PedVsTime;
     TH2F* h2ADCVsPed;
 
-    TH2F* h2TimeVsChannel_scat;
-    TH2F* h2ADCVsChannel_scat;
-    TH2F* h2PedVsChannel_scat;
-    TH2F* h2ADCVsTime_scat;
-    TH2F* h2PedVsTime_scat;
-    TH2F* h2ADCVsPed_scat;
-
-    // one graph per channel
-    vector<TH2F*> h2adcVsTime;
+    // 3D correlations
+    TH3F* h3ADC;
+    TH3F* h3Ped;
+    TH3F* h3Time;
 
     UInt_t  time_bins    = 32;
-    Float_t time_min     = 0-0.5;
-    Float_t time_max     = 32-0.5;
+    Float_t time_min     = -0.5;
+    Float_t time_max     = 31.5;
 
-    UInt_t  ADC_bins     = 1800;
+    UInt_t  ADC_bins     = 1500;
     Float_t ADC_min      = 0;
-    Float_t ADC_max      = 18000;
+    Float_t ADC_max      = 3e3;
 
-    UInt_t  adc_bins     = 1800;
-    Float_t adc_min      = 0;
-    Float_t adc_max      = 18000;
+    UInt_t  TotalADC_bins = 2000;
+    Float_t TotalADC_min  = 0;
+    Float_t TotalADC_max  = 1.5e7;
 
-    UInt_t  ped_bins     = 1650;
+    UInt_t  ped_bins     = 1250;
     Float_t ped_min      = 0;
-    Float_t ped_max      = 16500;
+    Float_t ped_max      = 5e3;
 
     UInt_t channels_bins = 24576;
-    UInt_t channels_min  = 0;
-    UInt_t channels_max  = 24576;
+    Float_t channels_min = -0.5;
+    Float_t channels_max = 24575.5;
+
+    UInt_t  eta_bins = 96;
+    Float_t eta_min  = -0.5;
+    Float_t eta_max  = 95.5;
+
+    UInt_t  phi_bins = 256;
+    Float_t phi_min  = -0.5;
+    Float_t phi_max  = 255.5;
 }
 
 void myAnalysis::init(const string& inputFile) {
     input = TFile::Open(inputFile.c_str());
-    led_tree = (TTree*)input->Get("W");
+    W = (TTree*)input->Get("W");
 
     // QA
 
-    hTime = new TH1F("hTime", "Peak Location; Time Sample; Counts", time_bins, time_min, time_max);
-    hADC = new TH1F("hADC", "ADC; ADC; Counts", ADC_bins, ADC_min, ADC_max);
-    hadc = new TH1F("hadc", "adc; adc; Counts", adc_bins, adc_min, adc_max);
-    hPed = new TH1F("hPed", "Ped; Ped; Counts", ped_bins, ped_min, ped_max);
-    hChannels = new TH1F("hChannels", "Channels; Channel; Counts", channels_bins, channels_min, channels_max);
+    hTime          = new TH1F("hTime", "Peak Location; Time Sample; Counts", time_bins, time_min, time_max);
+    hADC           = new TH1F("hADC", "ADC; ADC; Counts", ADC_bins, ADC_min, ADC_max);
+    hADCNorth      = new TH1F("hADCNorth", "ADC, Towerid #eta #geq 48; ADC; Counts", ADC_bins, ADC_min, ADC_max);
+    hADCSouth      = new TH1F("hADCSouth", "ADC, Towerid #eta < 48; ADC; Counts", ADC_bins, ADC_min, ADC_max);
+    hADCFarNorth   = new TH1F("hADCFarNorth", "ADC, Towerid #eta #geq 88; ADC; Counts", ADC_bins, ADC_min, ADC_max);
+    hTotalADC      = new TH1F("hTotalADC", "ADC; ADC; Counts", TotalADC_bins, TotalADC_min, TotalADC_max);
+    hADCVsChannels = new TH1F("hADCVsChannels", "Total ADC; Channel; ADC", channels_bins, channels_min, channels_max);
+    hPed           = new TH1F("hPed", "Ped; Ped; Counts", ped_bins, ped_min, ped_max);
+    hChannels      = new TH1F("hChannels", "Channels; Channel; Counts", channels_bins, channels_min, channels_max);
 
     // 2D correlations
 
-    h2TimeVsChannel = new TH2F("h2TimeVsChannel", "Peak Location vs Channel; Channel; Time Sample", channels_bins, channels_min, channels_max, time_bins, time_min, time_max);
-    h2ADCVsChannel = new TH2F("h2ADCVsChannel", "ADC vs Channel; Channel; ADC", channels_bins, channels_min, channels_max, ADC_bins, ADC_min, ADC_max);
-    h2PedVsChannel = new TH2F("h2PedVsChannel", "Ped vs Channel; Channel; Ped", channels_bins, channels_min, channels_max, ped_bins, ped_min, ped_max);
+    h2Channels = new TH2F("h2Channels", "Channels; Towerid #eta; Towerid #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
+    h2ADC      = new TH2F("h2ADC", "ADC; Towerid #eta; Towerid #phi", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max);
+    h2ADCVsEta = new TH2F("h2ADCVsEta", "ADC; Towerid #eta; ADC", eta_bins, eta_min, eta_max, ADC_bins, ADC_min, ADC_max);
 
     h2ADCVsTime = new TH2F("h2ADCVsTime", "ADC vs Peak Location; Time Sample; ADC", time_bins, time_min, time_max, ADC_bins, ADC_min, ADC_max);
     h2PedVsTime = new TH2F("h2PedVsTime", "Ped vs Peak Location; Time Sample; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
     h2ADCVsPed = new TH2F("h2ADCVsPed", "ADC vs Ped; Ped; ADC", ped_bins, ped_min, ped_max, ADC_bins, ADC_min, ADC_max);
 
-    // scatter
-    h2TimeVsChannel_scat = new TH2F("h2TimeVsChannel_scat", "Peak Location vs Channel; Channel; Time Sample", channels_bins, channels_min, channels_max, time_bins, time_min, time_max);
-    h2ADCVsChannel_scat = new TH2F("h2ADCVsChannel_scat", "ADC vs Channel; Channel; ADC", channels_bins, channels_min, channels_max, ADC_bins, ADC_min, ADC_max);
-    h2PedVsChannel_scat = new TH2F("h2PedVsChannel_scat", "Ped vs Channel; Channel; Ped", channels_bins, channels_min, channels_max, ped_bins, ped_min, ped_max);
+    // 3D correlations
 
-    h2ADCVsTime_scat = new TH2F("h2ADCVsTime_scat", "ADC vs Peak Location; Time Sample; ADC", time_bins, time_min, time_max, ADC_bins, ADC_min, ADC_max);
-    h2PedVsTime_scat = new TH2F("h2PedVsTime_scat", "Ped vs Peak Location; Time Sample; Ped", time_bins, time_min, time_max, ped_bins, ped_min, ped_max);
-    h2ADCVsPed_scat = new TH2F("h2ADCVsPed_scat", "ADC vs Ped; Ped; ADC", ped_bins, ped_min, ped_max, ADC_bins, ADC_min, ADC_max);
-
-    for (UInt_t i = 0; i < channels_bins; ++i) {
-        h2adcVsTime.push_back(new TH2F(("h2adcVsTime_" + to_string(i)).c_str(),
-                                         "adc vs Time Sample; Time Sample; adc",
-                                         time_bins, time_min, time_max,
-                                         50, adc_min, adc_max));
-    }
+    h3ADC  = new TH3F("h3ADC", "ADC; Towerid #eta; Towerid #phi; ADC", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max, ADC_bins, ADC_min, ADC_max);
+    h3Ped  = new TH3F("h3Ped", "Ped; Towerid #eta; Towerid #phi; Ped", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max, ped_bins, ped_min, ped_max);
+    h3Time = new TH3F("h3Time", "Peak Location; Towerid #eta; Towerid #phi; Time Sample", eta_bins, eta_min, eta_max, phi_bins, phi_min, phi_max, time_bins, time_min, time_max);
 }
 
 void myAnalysis::analyze(UInt_t nevents) {
-    vector<Float_t>* time              = 0;
-    vector<Float_t>* ADC               = 0;
-    vector<Float_t>* ped               = 0;
-    vector<Int_t>* chan                = 0;
-    vector<vector<Float_t>>* waveforms = 0; // 2D: channel x time sample
+    vector<Float_t>* time = 0;
+    vector<Float_t>* ADC  = 0;
+    vector<Float_t>* ped  = 0;
+    vector<Int_t>*   chan = 0;
+    // vector<vector<Float_t>>* waveforms = 0; // 2D: channel x time sample
 
-    led_tree->SetBranchAddress("time",&time);
-    led_tree->SetBranchAddress("adc",&ADC);
-    led_tree->SetBranchAddress("ped",&ped);
-    led_tree->SetBranchAddress("chan",&chan);
-    led_tree->SetBranchAddress("waveforms",&waveforms);
+    W->SetBranchAddress("time",&time);
+    W->SetBranchAddress("adc", &ADC);
+    W->SetBranchAddress("ped", &ped);
+    W->SetBranchAddress("chan",&chan);
 
     // if nevents is 0 then use all events otherwise use the set number of events
-    nevents = (nevents) ? nevents : led_tree->GetEntries();
+    nevents = (nevents) ? nevents : W->GetEntries();
 
-    Int_t counter_event[24576] = {0};
-    // maximum waveforms to overlap per channel
     Int_t events_max = 100;
+    Float_t channels_min = 99999;
+    Float_t channels_max = 0;
     for(UInt_t i = 0; i < nevents; ++i) {
         if(i%100 == 0) cout << "Progress: " << i*100./nevents << " %" << endl;
 
-        led_tree->GetEntry(i);
+        W->GetEntry(i);
 
-        UInt_t nchannels = time->size();
+        Float_t nchannels = time->size();
         channels_max = max(channels_max,nchannels);
+        channels_min = min(channels_min,nchannels);
 
         for(UInt_t j = 0; j < nchannels; ++j) {
             Float_t time_val = time->at(j);
             Float_t ADC_val  = ADC->at(j);
             Float_t ped_val  = ped->at(j);
-            Int_t channel    = chan->at(j);
-            if(channel >= 24576) {
-                cout << "invalid channel number: " << channel << ", event: " << i << endl;
+            Int_t   channel  = chan->at(j);
+            if(channel >= 24576 || channel == 14492 || channel == 24220) {
                 continue;
             }
 
@@ -155,48 +156,33 @@ void myAnalysis::analyze(UInt_t nevents) {
             UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
             UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
-            Int_t time_bin    = hTime->FindBin(time_val);
-            Int_t ADC_bin     = hADC->FindBin(ADC_val);
-            Int_t ped_bin     = hPed->FindBin(ped_val);
-            Int_t channel_bin = hChannels->FindBin(channel);
-
-            for (UInt_t sample = 0; sample < time_bins; ++sample) {
-                Float_t adc_val = waveforms->at(j).at(sample);
-                // Int_t adc_bin   = h2adcVsTime[channel]->GetYaxis()->FindBin(adc_val);
-
-                hadc->Fill(adc_val);
-                // overlay at most #n events of waveforms for each channel
-                if(counter_event[channel] < events_max) {
-                    // h2adcVsTime[channel]->SetBinContent(sample+1, adc_bin, 1);
-                    h2adcVsTime[channel]->Fill(sample, adc_val);
-                }
-
-                adc_min = min(adc_min, adc_val);
-                adc_max = max(adc_max, adc_val);
-            }
-            ++counter_event[channel];
-
+            // 1D
             hChannels->Fill(channel);
-
             hTime->Fill(time_val);
             hADC->Fill(ADC_val);
+            hADCVsChannels->Fill(channel, ADC_val);
             hPed->Fill(ped_val);
 
-            h2TimeVsChannel->Fill(channel, time_val);
-            h2ADCVsChannel->Fill(channel, ADC_val);
-            h2PedVsChannel->Fill(channel, ped_val);
+            if(etabin >= 48) {
+                hADCNorth->Fill(ADC_val);
+                // check if tower is in the last IB
+                if(etabin >= 88) hADCFarNorth->Fill(ADC_val);
+            }
+            else hADCSouth->Fill(ADC_val);
 
-            h2TimeVsChannel_scat->SetBinContent(channel_bin, time_bin, 1);
-            h2ADCVsChannel_scat->SetBinContent(channel_bin, ADC_bin, 1);
-            h2PedVsChannel_scat->SetBinContent(channel_bin, ped_bin, 1);
+            // 2D
+            h2Channels->Fill(etabin, phibin);
+            h2ADC->Fill(etabin, phibin, ADC_val);
+            h2ADCVsEta->Fill(etabin, ADC_val);
 
             h2ADCVsTime->Fill(time_val, ADC_val);
             h2PedVsTime->Fill(time_val, ped_val);
             h2ADCVsPed->Fill(ped_val, ADC_val);
 
-            h2ADCVsTime_scat->SetBinContent(time_bin, ADC_bin, 1);
-            h2PedVsTime_scat->SetBinContent(time_bin, ped_bin, 1);
-            h2ADCVsPed_scat->SetBinContent(ped_bin, ADC_bin, 1);
+            // 3D
+            h3ADC->Fill(etabin, phibin, ADC_val);
+            h3Ped->Fill(etabin, phibin, ped_val);
+            h3Time->Fill(etabin, phibin, time_val);
 
             time_min = min(time_min, time_val);
             time_max = max(time_max, time_val);
@@ -209,12 +195,18 @@ void myAnalysis::analyze(UInt_t nevents) {
         }
     }
 
+    // for(UInt_t i = 0; i < channels_bins; ++i) {
+    //     Float_t val = hADCVsChannels->GetBinContent(i+1);
+    //     if(val) hTotalADC->Fill(val);
+    // }
+
     cout << "events processed: " << nevents << endl;
-    cout << "max channels per event: " << channels_max << endl;
-    cout << "time_min: " << time_min << " time_max: " << time_max << endl;
-    cout << "ADC_min: " << ADC_min << " ADC_max: " << ADC_max << endl;
-    cout << "adc_min: " << adc_min << " adc_max: " << adc_max << endl;
-    cout << "ped_min: " << ped_min << " ped_max: " << ped_max << endl;
+    cout << "channels_min: " << channels_min << ", channels_max: " << channels_max << endl;
+    cout << "time_min: " << time_min << ", time_max: " << time_max << endl;
+    cout << "ADC_min: " << ADC_min << ", ADC_max: " << ADC_max << endl;
+    cout << "ped_min: " << ped_min << ", ped_max: " << ped_max << endl;
+    // cout << "Total ADC - 3sd: " << hTotalADC->GetMean()-3*hTotalADC->GetStdDev()
+    //      << ", Total ADC + 3sd: " << hTotalADC->GetMean()+3*hTotalADC->GetStdDev() << endl;
 }
 
 void myAnalysis::finalize(const string& outputFile) {
@@ -222,81 +214,53 @@ void myAnalysis::finalize(const string& outputFile) {
     output.cd();
 
     hChannels->Write();
-    hTime->Write();
     hADC->Write();
-    hadc->Write();
+    hADCNorth->Write();
+    hADCSouth->Write();
+    hADCFarNorth->Write();
+    hADCVsChannels->Write();
+    // hTotalADC->Write();
     hPed->Write();
+    hTime->Write();
 
-    h2TimeVsChannel->Write();
-    h2ADCVsChannel->Write();
-    h2PedVsChannel->Write();
-
+    h2Channels->Write();
+    h2ADC->Write();
+    h2ADCVsEta->Write();
     h2ADCVsTime->Write();
     h2PedVsTime->Write();
     h2ADCVsPed->Write();
 
-    output.mkdir("scat");
-    output.cd("scat");
+    // h3ADC->Write();
+    // h3Ped->Write();
+    // h3Time->Write();
 
-    h2TimeVsChannel_scat->Write();
-    h2ADCVsChannel_scat->Write();
-    h2PedVsChannel_scat->Write();
-
-    h2ADCVsTime_scat->Write();
-    h2PedVsTime_scat->Write();
-    h2ADCVsPed_scat->Write();
-
-    output.cd();
-
-    output.mkdir("adcVsTime");
-    output.cd("adcVsTime");
-    for(auto h2 : h2adcVsTime) {
-        if(h2->GetEntries()) h2->Write();
-    }
-
-    // Close root file
     input->Close();
     output.Close();
 }
 
-void convert_channel_to_tower_bin() {
-    for (UInt_t i = 0; i < 1536; ++i) {
-        UInt_t key = TowerInfoDefs::encode_emcal(i);
-        UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
-        UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
-        // cout << "channel: " << i << ", key: " << key << ", etabin: " << etabin << ", phibin: " << phibin << endl;
-        cout << "channel: " << i << ", etabin: " << etabin << ", phibin: " << phibin << endl;
-    }
-}
-
-void read_LEDs(const string &inputFile="data/LEDTowerBuilder.root",
-               const string &outputFile="output/test.root",
-               UInt_t nevents=0) {
+void read_LEDs(const string &inputFile,
+               const string &outputFile="test.root",
+                     UInt_t  nevents=0) {
 
     myAnalysis::init(inputFile);
     myAnalysis::analyze(nevents);
     myAnalysis::finalize(outputFile);
-
-    // convert_channel_to_tower_bin();
 }
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 1 || argc > 4){
+    if(argc < 2 || argc > 4){
         cout << "usage: ./bin/read-LEDs inputFile outputFile events" << endl;
-        cout << "inputFile: Location of LEDTowerBuilder.root. Default = data/LEDTowerBuilder.root." << endl;
-        cout << "outputFile: output root file. Default = output/test.root." << endl;
+        cout << "inputFile: Location of input TTree File." << endl;
+        cout << "outputFile: output root file. Default = test.root." << endl;
         cout << "events: Number of events to analyze. Default = 0 (meaning all events)." << endl;
         return 1;
     }
 
-    string input  = "data/LEDTowerBuilder.root";
-    string output = "output/test.root";
+    string input ;
+    string output = "test.root";
     UInt_t events = 0;
 
-    if(argc >= 2) {
-        input = argv[1];
-    }
     if(argc >= 3) {
         output = argv[2];
     }
@@ -304,7 +268,7 @@ int main(int argc, char* argv[]) {
         events = atoi(argv[3]);
     }
 
-    read_LEDs(input, output, events);
+    read_LEDs(argv[1], output, events);
 
     cout << "done" << endl;
     return 0;

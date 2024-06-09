@@ -10,6 +10,7 @@ subparser = parser.add_subparsers(dest='command')
 
 create  = subparser.add_parser('create', help='Create file lists.')
 run     = subparser.add_parser('run', help='Run LEDTowerBuilder on the given file.')
+analyze = subparser.add_parser('analyze', help='Analyze prdf from a list of input TTrees.')
 evtDisp = subparser.add_parser('evtDisp', help='Create event display (json) given prdf and event number.')
 
 create.add_argument('-i', '--run-list', type=str, nargs='+' , help='List of run numbers.')
@@ -24,6 +25,14 @@ run.add_argument('-b', '--executable', type=str, default='bin/Fun4All_LEDTowerBu
 run.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 run.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
 run.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
+
+analyze.add_argument('-i', '--input-file', type=str, help='List of TTree file to analyze', required=True)
+analyze.add_argument('-m', '--macro', type=str, default='macro/read-LEDs.C', help='Analyze macro. Default: macro/read-LEDs.C')
+analyze.add_argument('-e', '--script', type=str, default='genAna.sh', help='Job script to execute. Default: genAna.sh')
+analyze.add_argument('-b', '--executable', type=str, default='bin/read-LEDs', help='Executable. Default: bin/read-LEDs')
+analyze.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+analyze.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+analyze.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 evtDisp.add_argument('-i', '--prdf', type=str, help='Prdfs to analyze.', required=True)
 evtDisp.add_argument('-r', '--run', type=str, help='Run number.', required=True)
@@ -50,8 +59,45 @@ def create_file_list():
         with open(f'{output_dir}/file-list-{run}.txt',mode='w') as fw:
             fw.write(result.stdout)
 
-def run_analysis():
+def analyze_LEDs():
     input_file     = os.path.realpath(args.input_file)
+    macro          = os.path.realpath(args.macro)
+    script         = os.path.realpath(args.script)
+    executable     = os.path.realpath(args.executable)
+    output_dir     = os.path.realpath(args.output)
+    memory         = args.memory
+    log            = args.log
+
+    print(f'input: {input_file}')
+    print(f'macro: {macro}')
+    print(f'script: {script}')
+    print(f'executable: {executable}')
+    print(f'output: {output_dir}')
+    print(f'memory: {memory}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(macro, output_dir)
+    shutil.copy(script, output_dir)
+    shutil.copy(executable, output_dir)
+    shutil.copy(input_file, output_dir)
+
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
+
+    with open(f'{output_dir}/genAna.sub', mode="w") as file:
+        file.write(f'executable     = {os.path.basename(script)}\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(executable)} $(input_file) output/test-$(Process).root\n')
+        file.write(f'log            = {log}\n')
+        file.write('output          = stdout/job-$(Process).out\n')
+        file.write('error           = error/job-$(Process).err\n')
+        file.write(f'request_memory = {memory}GB\n')
+        file.write('concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:1000\n')
+        file.write(f'queue input_file from {os.path.basename(input_file)}')
+
+def run_analysis():
+    input_file     = os.path.realpath(os.path.dirname(args.input_file))
+    input_file     = input_file + '/' + os.path.basename(args.input_file)
     macro          = os.path.realpath(args.macro)
     script         = os.path.realpath(args.script)
     executable     = os.path.realpath(args.executable)
@@ -95,6 +141,7 @@ def run_analysis():
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
+        file.write('concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:1000\n')
         file.write(f'queue skip from jobs.list')
 
 def event_display():
@@ -138,3 +185,5 @@ if __name__ == '__main__':
         run_analysis()
     if(args.command == 'evtDisp'):
         event_display()
+    if(args.command == 'analyze'):
+        analyze_LEDs()
