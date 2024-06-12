@@ -47,7 +47,7 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
     for hdata in hdatas:
         hdata.Sumw2()
         # Get the maximum bin content
-        maxbincontent = max(hdata.GetMaximum(), maxbincontent)
+        maxbincontent = max(hdata.GetMaximum()+hdata.GetBinError(hdata.GetMaximumBin()), maxbincontent)
         # Get the x-axis range
         if hdata.GetXaxis().GetXmin() < xrange_low:
             xrange_low = hdata.GetXaxis().GetXmin()
@@ -57,7 +57,7 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
     for hsim in hsims:
         hsim.Sumw2()
         # Get the maximum bin content 
-        maxbincontent = max(hsim.GetMaximum(), maxbincontent)
+        maxbincontent = max(hsim.GetMaximum()+hsim.GetBinError(hsim.GetMaximumBin()), maxbincontent)
         # Get the x-axis range
         if hsim.GetXaxis().GetXmin() < xrange_low:
             xrange_low = hsim.GetXaxis().GetXmin()
@@ -180,7 +180,7 @@ def GetMbinNum(fstr):
 
 if __name__ == '__main__':
     parser = OptionParser(usage='usage: %prog ver [options -h]')
-    parser.add_option('--datahistdir', dest='datahistdir', type='string', default='/sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/corrections/Data_set1', help='Histogram file name (data)')
+    parser.add_option('--datahistdir', dest='datahistdir', type='string', default='/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/systematics/', help='Histogram file name (data)')
     parser.add_option('--simhistdir', action='append', dest='simhistdir', type='string', help='Histogram file name (simulation). Example: /sphenix/user/hjheng/TrackletAna/analysis_INTT/plot/corrections/closure_HIJING_set2')
     parser.add_option('--filedesc', dest='filedesc', type='string', default='Centrality0to5_Zvtxm30p0tom10p0_noasel', help='String for input file and output plot description (cuts, binnings, etc...)')
     # parser.add_option('--simlegtext', action='append', dest='simlegtext', type='string', help='Legend text for simulation. Example: HIJING/EPOS/AMPT)')
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     MbinNum = GetMbinNum(filedesc)
     simlegtext = []
 
-    h1WEfinal_data = GetHistogram("{}/{}/correction_hists.root".format(datahistdir,filedesc), 'h1WEfinal')
+    h1WEfinal_data = GetHistogram("{}/{}/finalhists_systematics_{}.root".format(datahistdir,filedesc,filedesc), 'hM_final')
     l_h1WEfinal_sim = []
     # l_h1WGhadron_sim = []
     for i, simhistd in enumerate(simhistdir):

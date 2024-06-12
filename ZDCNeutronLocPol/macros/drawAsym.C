@@ -12,23 +12,18 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gRawS
 
 R__LOAD_LIBRARY(libuspin.so)
 
-float ZDC1CUT = 65; // keep above (nominal 65)
-float ZDC2CUT = 50; // keep above (nominal 25)
-float VETOCUT = 50; // keep below (nominal 150)
-float RMINCUT = 0.5; // keep above (nominal 2)
-float RMAXCUT = 5; // keep below (nominal 4)
+float ZDC1CUT = 100; // keep above (nominal 65)
+float ZDC2CUT = 15; // keep above (nominal 25)
+float VETOCUT = 150; // keep below (nominal 150)
+float RMINCUT = 2; // keep above (nominal 2)
+float RMAXCUT = 4; // keep below (nominal 4)
 
 
 //void drawAsym(const std::string infile = "fakeAsymmetry/FakeAsymmetry.root", int storenumber = 34485, int runnumber = 42797)
-void drawAsym(const std::string infile = "zdcneutronlocpol_42796_0000.root", int storenumber = 34485, int runnumber = 42796)
 //void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
+void drawAsym(const std::string infile = "store34485/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
+//void drawAsym(const std::string infile = "store34492/42836/smdmerge_old.root", int storenumber = 34492, int runnumber = 42836)
 {
-
-  //TGraphErrors *gAsymByXS = new TGraphErrors();
-  //int ite = 0;
-  //for (int ixs = -5; ixs < 6; ixs++)
-  //{
-
 
   TFile *f = new TFile(infile.c_str());
 
@@ -114,8 +109,6 @@ void drawAsym(const std::string infile = "zdcneutronlocpol_42796_0000.root", int
     bspinpat[i] = spin_cont.GetSpinPatternBlue(i);
     yspinpat[i] = spin_cont.GetSpinPatternYellow(i);
 
-    //bspinpat[i] = -1*bspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
-    //yspinpat[i] = -1*yspinpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
   }
   //======================================================================//
 
@@ -158,34 +151,36 @@ void drawAsym(const std::string infile = "zdcneutronlocpol_42796_0000.root", int
     else if (preset_pattern_yellow[spinpatternNo].at(i) == '-'){ypat[i] = -1;}
     else if (preset_pattern_yellow[spinpatternNo].at(i) == '*'){ypat[i] = 10;}
 
-    //bpat[i] = -1*bpat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
-    //ypat[i] = -1*ypat[i]; // spin pattern at sPHENIX is -1*(CDEV pattern) (from PHENIX)
   }
   //=====================================================================================//
 
   //======================= process event ==================================//
   std::cout << nentries << std::endl;
-  for (int i = 0; i < nentries; i++)
+  
+  int clockOffset = 1; //this is the offset between GL1 and ZDC events
+
+  for (int i = 0; i < nentries - clockOffset; i++)
   {
     if (i % 1000000 == 0){std::cout << "Entry: " << i << std::endl;}
-    smdHits->GetEntry(i);
-    
-    
+    smdHits->GetEntry(i+clockOffset);
+   
     int sphenix_cross = (bunchnumber + crossingshift) % 120;
+
+    
+    smdHits->GetEntry(i);
+
     int bspin = bspinpat[sphenix_cross]; //option A: spinDB
     int yspin = yspinpat[sphenix_cross]; //option A: spinDB
     //int bspin = bpat[sphenix_cross]; //option B: preset patterns
     //int yspin = ypat[sphenix_cross]; //option B: preset patterns
 
     /*
-    float ny_offset = 1.05;
-    n_y = n_y - ny_offset;
-    float nx_offset = 0.17;
-    n_x = n_x - nx_offset;
+    float ny_offset = 0.85; float nx_offset = 0.275;
+    float sy_offset = 0.0; float sx_offset = 0.0;
 
-    float sy_offset = 0.15;
+    n_y = n_y - ny_offset;
+    n_x = n_x - nx_offset;
     s_y = s_y - sy_offset;
-    float sx_offset = 0.5;
     s_x = s_x - sx_offset;
     */
 
@@ -230,7 +225,7 @@ void drawAsym(const std::string infile = "zdcneutronlocpol_42796_0000.root", int
     }
 
 
-    if (zdcS1_adc > ZDC1CUT && zdcS2_adc > ZDC2CUT && veto_SF < VETOCUT && veto_SB < VETOCUT && showerCutS == 1)
+    if (zdcS1_adc > ZDC1CUT && zdcS2_adc > ZDC2CUT  && veto_SF < VETOCUT && veto_SB < VETOCUT && showerCutS == 1)
     {
       if (sqrt(s_x*s_x + s_y*s_y) > RMINCUT && sqrt(s_x*s_x+s_y*s_y) < RMAXCUT)
       {
@@ -307,42 +302,12 @@ void drawAsym(const std::string infile = "zdcneutronlocpol_42796_0000.root", int
 
   
   TCanvas *ncall = new TCanvas("ncall","ncall",1200,600);
-  DrawCanvas(runnumber,nxy_hits_up[0],nxy_hits_down[0],gSqrtAsym[0],gSqrtAsym[1]);
-  //DrawAsym(runnumber,gSqrtAsym[0],gSqrtAsym[1]);
+  //DrawCanvas(runnumber,nxy_hits_up[0],nxy_hits_down[0],gSqrtAsym[0],gSqrtAsym[1]);
+  DrawAsym(runnumber,gSqrtAsym[0],gSqrtAsym[1]);
 
   TCanvas *scall = new TCanvas("scall","scall",1200,600);
-  DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
-  //DrawAsym(runnumber,gSqrtAsym[2],gSqrtAsym[3]);
-  
-
-
-  /*
-  double epsilon = 0.;
-  double epsilon_err = 0.;
-  double chi2fit = 0.;
-  FitAsym(gSqrtAsym[0], epsilon, epsilon_err, chi2fit);
-  std::cout << ixs << std::endl;
-  gAsymByXS->SetPoint(ite,ixs,epsilon*100);
-  gAsymByXS->SetPointError(ite,0,epsilon_err*100);
-
-  ite++;
-  
-  }
-  
-  gAsymByXS->GetYaxis()->SetRangeUser(-2,2);
-  gAsymByXS->GetHistogram()->GetXaxis()->SetLimits(-5.5, 5.5);
-  gAsymByXS->SetMarkerStyle(21);
-  gAsymByXS->Draw("ape");
-  */
-
-
-  TFile *outfile = new TFile("xyhitmaps.root","RECREATE");
-  nxy_hits_up[0]->Write();
-  nxy_hits_down[0]->Write();
-  sxy_hits_up[1]->Write();
-  sxy_hits_down[1]->Write();
-  outfile->Write();
-  outfile->Close();
+  //DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
+  DrawAsym(runnumber,gSqrtAsym[2],gSqrtAsym[3]);
 
 
 }
@@ -375,7 +340,7 @@ void FitAsym(TGraphErrors *gAsym, double &eps, double &epserr, double &chi2)
   sin1->SetParLimits(0,0,0.2);
   sin1->SetParLimits(1,0,0.05);
 
-  gAsym->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gAsym->GetYaxis()->SetRangeUser(-0.05,0.05);
   gAsym->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gAsym->Fit("sin1","MR");
   eps = sin1->GetParameter(0);
@@ -417,7 +382,7 @@ void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsy
   gSqrtAsymBlue->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymBlue->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymBlue->GetYaxis()->SetTitleOffset(1.35);
-  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.05,0.05);
   gSqrtAsymBlue->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymBlue->SetMarkerStyle(21);
   gSqrtAsymBlue->Fit("sin1","MR");
@@ -457,7 +422,7 @@ void DrawAsym(int runnumber, TGraphErrors *gSqrtAsymBlue, TGraphErrors *gSqrtAsy
   gSqrtAsymYellow->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymYellow->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymYellow->GetYaxis()->SetTitleOffset(1.35);
-  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.05,0.05);
   gSqrtAsymYellow->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymYellow->SetMarkerStyle(21);
   gSqrtAsymYellow->Fit("sin2","MR");
@@ -522,15 +487,13 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
   TF1 *sin1 = new TF1("sin1","-[0] * TMath::Sin(x - [1])",fitLow,fitHigh);
   sin1->SetParLimits(0,0,0.1);
 
-
-  //gSqrtAsymBlue->SetTitle("Raw square root asymmetry");
   gSqrtAsymBlue->GetXaxis()->SetTitle("#phi, rad");
   gSqrtAsymBlue->GetXaxis()->SetTitleSize(0.045);
   gSqrtAsymBlue->GetXaxis()->SetTitleOffset(0.85);
   gSqrtAsymBlue->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymBlue->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymBlue->GetYaxis()->SetTitleOffset(0.85);
-  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymBlue->GetYaxis()->SetRangeUser(-0.05,0.05);
   gSqrtAsymBlue->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymBlue->SetMarkerStyle(21);
   gSqrtAsymBlue->Fit("sin1","MR");
@@ -573,7 +536,7 @@ void DrawCanvas(int runnumber, TH2 *hits_up, TH2 *hits_down, TGraphErrors *gSqrt
   gSqrtAsymYellow->GetYaxis()->SetTitle("#epsilon(#phi)");
   gSqrtAsymYellow->GetYaxis()->SetTitleSize(0.045);
   gSqrtAsymYellow->GetYaxis()->SetTitleOffset(0.85);
-  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.03,0.03);
+  gSqrtAsymYellow->GetYaxis()->SetRangeUser(-0.05,0.05);
   gSqrtAsymYellow->GetXaxis()->SetRangeUser(fitLow,fitHigh);
   gSqrtAsymYellow->SetMarkerStyle(21);
   gSqrtAsymYellow->Fit("sin2","MR");

@@ -164,6 +164,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
       if (m_is_lvl1)
       {
         m_Lv1TaggerBCO = m_bco;
+        m_Lv1TaggerCount = m_lvl1_count;
       }
     }
 
