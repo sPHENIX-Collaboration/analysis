@@ -144,8 +144,8 @@ class neutralMesonTSSA : public SubsysReco
   TH1* h_diphotonxF = nullptr;
 
   // clusters and cuts
-  float min_clusterE = 0.8;
-  float max_clusterE = 15.0;
+  float min_clusterE = 1.0;
+  float max_clusterE = 8.0;
   float max_clusterChi2 = 4.0;
   std::vector<float>* goodclusters_E = nullptr;
   std::vector<float>* goodclusters_Eta = nullptr;
@@ -155,7 +155,7 @@ class neutralMesonTSSA : public SubsysReco
 
   // diphotons and cuts
   float min_diphotonPt = 0.3;
-  float max_asym = 0.75;
+  float max_asym = 0.6;
   float min_deltaR = 0.0;
   float max_deltaR = 999.9;
   float pi0MassMean = 0.142;
@@ -182,7 +182,7 @@ class neutralMesonTSSA : public SubsysReco
   int nBins_pT = 6;
   float bhs_max_pT = 8.0;
   int nBins_xF = 6;
-  float bhs_max_xF = 0.3;
+  float bhs_max_xF = 0.2;
   int nHistBins_phi = 16;
   PhiHists* pi0Hists= nullptr;
   PhiHists* etaHists= nullptr;

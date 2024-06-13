@@ -106,6 +106,7 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 {
   /* std::cout << "neutralMesonTSSA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl; */
   n_events_total++;
+  if (n_events_total%10000 == 0) std::cout << "Event " << n_events_total << std::endl;
   /* std::cout << "Greg info: starting process_event. n_events_total = " << n_events_total << std::endl; */
 
   // First populate all the data containers
@@ -124,7 +125,7 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
       m_clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
   }
   else {
-      m_clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC");
+      m_clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTERINFO_CEMC2");
   }
   if(!m_clusterContainer)
   {
