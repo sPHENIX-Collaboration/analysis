@@ -40,17 +40,25 @@ namespace myAnalysis {
     void analyze(const string &i_output, const string& outputPDF);
     Int_t readData(const string &input);
 
+    // there are 6 interface boards for north and south (total 12 along eta)
     UInt_t  bins_eta = 12;
     Float_t eta_low  = -6;
     Float_t eta_high = 6;
 
+    // there are 32 sectors in phi
     UInt_t  bins_phi = 32;
     Float_t phi_low  = 0;
-    Float_t phi_high = 32;
+    Float_t phi_high = 2*M_PI;
 
     UInt_t nIBs = 384;
 
     Int_t rows = 0;
+
+    // tune the number of samples to process
+    Int_t process_samples = 60;
+
+    // the maximum time separation between any two consecutive samples
+    Int_t nSeconds_separation = 60;
 }
 
 Int_t myAnalysis::readData(const string &input) {
@@ -110,6 +118,8 @@ Int_t myAnalysis::readData(const string &input) {
 
 void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
 
+    auto hPhiDummy = new TH1F("hPhiDummy","",bins_phi, phi_low, 32);
+
     vector<TH2F*> h2Current;
 
     std::tm t = {};
@@ -125,7 +135,7 @@ void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
     else cout << "Parse failed for row: 0" << endl;
 
     string name  = "h2Current_0";
-    string title = "Current [#mu A]: " + time.str() + "; IB #phi Index; IB #eta Index";
+    string title = "Current [#mu A]: " + time.str() + "; #phi; IB #eta Index";
 
     TH2F* h2 = new TH2F(name.c_str(), title.c_str(), bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
 
@@ -152,9 +162,9 @@ void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
         Int_t   ib     = dataset[i].ib;
         Float_t imeas  = dataset[i].imeas;
 
-        if(seconds-seconds2 >= 60) {
+        if(seconds-seconds2 >= nSeconds_separation) {
             name  = "h2Current_"+to_string(samples);
-            title = "Current [#mu A]: " + time2.str() + "; IB #phi Index; IB #eta Index";
+            title = "Current [#mu A]: " + time2.str() + "; #phi; IB #eta Index";
 
             TH2F* h2 = new TH2F(name.c_str(), title.c_str(), bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
 
@@ -167,19 +177,23 @@ void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
             seconds = seconds2;
 
             ++samples;
+            if(samples == process_samples+1) break;
         }
 
-        Int_t phi = (sector > 31) ? sector-32 : sector;
-        Int_t eta = (sector > 31) ? -ib-1 : ib;
+        Int_t phi = (sector > bins_phi-1) ? sector-bins_phi : sector;
+        Int_t eta = (sector > bins_phi-1) ? -ib-1 : ib;
+
+        Int_t iphi = hPhiDummy->FindBin(phi);
+        Int_t ieta = h2Current[samples-1]->GetYaxis()->FindBin(eta);
 
         ++counts;
 
-        if(counts > 384) {
+        if(counts > nIBs) {
             cout << "ERROR: Counts: " << counts << endl;
             continue;
         }
 
-        h2Current[samples-1]->Fill(phi, eta, imeas);
+        h2Current[samples-1]->SetBinContent(iphi, ieta, imeas);
     }
     cout << time.str() << ": " << counts << endl;
 
@@ -200,8 +214,6 @@ void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
     cout << "Samples: " << h2Current.size() << endl;
     for(UInt_t i = 0; i < h2Current.size(); ++i) {
 
-        if(i % 500) continue;
-
         h2Current[i]->Write();
 
         c1->cd();
@@ -209,6 +221,8 @@ void myAnalysis::analyze(const string &i_output, const string &outputPDF) {
         h2Current[i]->Draw("COLZ1");
         c1->Print((outputPDF).c_str(), "pdf portrait");
         c1->Print((string(h2Current[i]->GetName()) + ".png").c_str());
+
+        if(i == process_samples-1) break;
     }
 
     c1->Print((outputPDF + "]").c_str(), "pdf portrait");
