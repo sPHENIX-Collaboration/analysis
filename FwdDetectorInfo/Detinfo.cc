@@ -1,3 +1,7 @@
+
+//author Ejiro Umaka
+//email eumaka1@bnl.gov
+
 #include "Detinfo.h"
 
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -173,6 +177,28 @@ int Detinfo::process_event(PHCompositeNode *topNode)
 
       _f.push_back(zdc_e);
       _f.push_back(zdc_t);
+/*
+       unsigned int key = TowerInfoDefs::encode_zdc(channel);
+       if(TowerInfoDefs::isZDC(channel)) //get only zdc channels
+       {
+         if(TowerInfoDefs::get_zdc_side(key) == 0) //get zdc south channels
+         if(TowerInfoDefs::get_zdc_side(key) == 1) //get zdc north channels
+       }
+
+      if(TowerInfoDefs::isSMD(channel)) //get only smd channels
+       {
+         if(TowerInfoDefs::get_smd_side(key) == 0) //get smd south channels
+         if(TowerInfoDefs::get_smd_side(key) == 1) //get smd north channels
+       }
+
+       if(TowerInfoDefs::isVeto(channel)) //get only veto channels
+       {
+         if(TowerInfoDefs::get_veto_side(key) == 0) //get veto south channels
+         if(TowerInfoDefs::get_veto_side(key) == 1) //get veto north channels
+       }
+       
+     */
+     
         
         if(channel == 0 || channel == 2 || channel == 4 || channel == 8 || channel == 10 || channel == 12)
         {

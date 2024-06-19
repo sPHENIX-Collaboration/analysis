@@ -56,7 +56,7 @@ private:
 
   //output filename
   std::string _savefname;
-  TFile* _savefile;
+  TFile* _savefile{ nullptr };
    
   //input file (abdul)
  // std::string _file;
@@ -64,9 +64,9 @@ private:
   int nprocessed{0};     // num events processed
 
   //Output
-  TTree* _tree;
+  TTree* _tree{ nullptr };
   Int_t    f_run;
-  Int_t    f_evt;
+  Int_t    f_evt{ 0 };
   Int_t    f_ch;
   Float_t  f_qmean;
   Float_t  f_qmerr;
@@ -92,11 +92,8 @@ private:
   TCanvas *c_mbdt;    // Canvas to 
   TH1 *hevt_mbdt[2];  // time in each mbd, per event
  
-  std::map<int,int> _pids;  // PIDs of tracks in the MBD
-
   //
   TRandom3*     _rndm;
-  Float_t       _tres;    // time resolution of one channel
 
   //Get all the nodes
   void GetNodes(PHCompositeNode *);
