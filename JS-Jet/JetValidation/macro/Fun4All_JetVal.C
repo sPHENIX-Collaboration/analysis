@@ -40,9 +40,10 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   recoConsts *rc = recoConsts::instance();
 
   PHG4CentralityReco *cent = new PHG4CentralityReco();
-  cent->Verbosity(0);
+  cent->Verbosity(verbosity);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
+  
   Enable::VERBOSITY = verbosity;
   HIJetReco();
 
@@ -67,7 +68,7 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   in3->AddListFile(filelistglobal,1);
   se->registerInputManager(in3);
   
-  se->run(1000);
+  se->run(-1);
   se->End();
 
   gSystem->Exit(0);
