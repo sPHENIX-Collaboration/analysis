@@ -68,6 +68,7 @@ int TPCRawDataTree::InitRun(PHCompositeNode *)
   m_SampleTree->Branch("BCO", &m_BCO, "BCO/I");
   m_SampleTree->Branch("checksum", &m_checksum, "checksum/I");
   m_SampleTree->Branch("checksumError", &m_checksumError, "checksumError/I");
+  m_SampleTree->Branch("Lv1TaggerBCO", &m_Lv1TaggerBCO, "Lv1TaggerBCO/l");
 
   m_TaggerTree = new TTree("TaggerTree", "Each entry is one tagger for level 1 trigger or endat tag");
 
@@ -159,6 +160,12 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
       /*uint8_t*/ m_modebits = (uint8_t) (p->lValue(t, "MODEBITS"));
 
       m_TaggerTree->Fill();
+
+      if (m_is_lvl1)
+      {
+        m_Lv1TaggerBCO = m_bco;
+        m_Lv1TaggerCount = m_lvl1_count;
+      }
     }
 
     for (int wf = 0; wf < m_nWaveormInFrame; wf++)
@@ -193,7 +200,7 @@ int TPCRawDataTree::process_event(PHCompositeNode *topNode)
       else{ fillHist=R3_hist; fillHist2D=R3_time;}
 
 
-      assert(m_nSamples < (int) m_adcSamples.size());  // no need for movements in memory allocation
+      assert(m_nSamples <= (int) m_adcSamples.size());  // no need for movements in memory allocation
       for (int s = 0; s < m_nSamples; s++)
       {
         m_adcSamples[s] = p->iValue(wf, s);

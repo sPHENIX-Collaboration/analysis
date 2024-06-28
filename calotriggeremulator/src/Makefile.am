@@ -10,8 +10,8 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib
 
 pkginclude_HEADERS = \
-  HCALEmulatorTreeMaker.h \
-  HCALEmulatorTreeMakerLinkDef.h
+  CaloEmulatorTreeMaker.h \
+  CaloEmulatorTreeMakerLinkDef.h 
 
 ROOTDICTS = 
 
@@ -19,14 +19,16 @@ pcmdir = $(libdir)
 nobase_dist_pcm_DATA = 
 
 lib_LTLIBRARIES = \
-  libhcalemulatortreemaker.la
+  libemulatortreemaker.la
 
-libhcalemulatortreemaker_la_SOURCES = \
-  HCALEmulatorTreeMaker.cc
+libemulatortreemaker_la_SOURCES = \
+  CaloEmulatorTreeMaker.cc
 
-libhcalemulatortreemaker_la_LIBADD = \
+libemulatortreemaker_la_LIBADD = \
   -lcalotrigger_io \
   -lcalotrigger \
+  -lglobalvertex \
+  -lmbd_io \
   -lSubsysReco
 
 
@@ -39,10 +41,10 @@ libhcalemulatortreemaker_la_LIBADD = \
 BUILT_SOURCES = testexternals.cc
 
 noinst_PROGRAMS = \
-  testexternals_hcal
+  testexternals_emulatortreemaker
 
-testexternals_hcal_SOURCES = testexternals.cc
-testexternals_hcal_LDADD   = libhcalemulatortreemaker.la
+testexternals_emulatortreemaker_SOURCES = testexternals.cc
+testexternals_emulatortreemaker_LDADD   = libemulatortreemaker.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

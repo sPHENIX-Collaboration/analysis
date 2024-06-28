@@ -15,6 +15,7 @@
 #ifndef __CINT__
 #include "Math/DistFunc.h"
 #endif
+#include <TDirectory.h>
 #include <TLegend.h>
 #include <TLine.h>
 #include <TMath.h>
@@ -76,19 +77,19 @@ int main(int argc, char *argv[])
     SetsPhenixStyle();
     gStyle->SetPalette(kThermometer);
 
-    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;
-    int NevtToRun = TString(argv[2]).Atoi();
-    float avgVtxX = TString(argv[3]).Atof();  // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
-    float avgVtxY = TString(argv[4]).Atof();  // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
-    float dPhi_cut = TString(argv[5]).Atof(); // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
-    float dca_cut = TString(argv[6]).Atof();  // Example: 0.05cm
-    TString infilename = TString(argv[7]);    // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
-    TString outfilename = TString(argv[8]);   // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
-    TString demoplotpath = TString(argv[9]); // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
-    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;
-    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false;
+    bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;        //
+    int NevtToRun = TString(argv[2]).Atoi();                            //
+    float avgVtxX = TString(argv[3]).Atof();                            // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
+    float avgVtxY = TString(argv[4]).Atof();                            // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
+    float dPhi_cut = TString(argv[5]).Atof();                           // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
+    float dca_cut = TString(argv[6]).Atof();                            // Example: 0.05cm
+    TString infilename = TString(argv[7]);                              // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
+    TString outfilename = TString(argv[8]);                             // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
+    TString demoplotpath = TString(argv[9]);                            // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
+    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;        //
+    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false; //
 
-    // int initevt = process * NevtToRun;
+    TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
     // loop argv and cout
     for (int i = 0; i < argc; i++)
@@ -105,14 +106,19 @@ int main(int argc, char *argv[])
 
     TFile *f = new TFile(infilename, "READ");
     TTree *t = (TTree *)f->Get("EventTree");
-    t->BuildIndex("event"); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
+    t->BuildIndex(idxstr.Data()); // Reference: https://root-forum.cern.ch/t/sort-ttree-entries/13138
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event, NTruthVtx;
-    float TruthPV_trig_x, TruthPV_trig_y, TruthPV_trig_z, centrality_bimp, centrality_impactparam, centrality_mbd, centrality_mbdquantity;
+    uint64_t INTT_BCO;
+    bool is_min_bias;
+    float TruthPV_trig_x, TruthPV_trig_y, TruthPV_trig_z, centrality_bimp, centrality_impactparam, centrality_mbd;
+    float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
     vector<int> *ClusLayer = 0;
     vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusPhiSize = 0, *ClusZSize = 0;
+    vector<unsigned int> *ClusAdc = 0;
     vector<uint8_t> *ClusLadderZId = 0, *ClusLadderPhiId = 0;
     t->SetBranchAddress("event", &event);
+    t->SetBranchAddress("INTT_BCO", &INTT_BCO);
     if (!IsData)
     {
         t->SetBranchAddress("NTruthVtx", &NTruthVtx);
@@ -121,35 +127,40 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
         t->SetBranchAddress("centrality_bimp", &centrality_bimp);
         t->SetBranchAddress("centrality_impactparam", &centrality_impactparam);
-        // The data DST doesn't have centrality_mbd and centrality_mbdquantity branches
-        //! TO BE FIXED
-        t->SetBranchAddress("centrality_mbd", &centrality_mbd);
-        t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
     }
-    // t->SetBranchAddress("centrality_mbd", &centrality_mbd);
-    // t->SetBranchAddress("centrality_mbdquantity", &centrality_mbdquantity);
+    t->SetBranchAddress("is_min_bias", &is_min_bias);
+    t->SetBranchAddress("MBD_centrality", &centrality_mbd);
+    t->SetBranchAddress("MBD_z_vtx", &mbd_z_vtx);
+    t->SetBranchAddress("MBD_south_charge_sum", &mbd_south_charge_sum);
+    t->SetBranchAddress("MBD_north_charge_sum", &mbd_north_charge_sum);
+    t->SetBranchAddress("MBD_charge_sum", &mbd_charge_sum);
+    t->SetBranchAddress("MBD_charge_asymm", &mbd_charge_asymm);
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
     t->SetBranchAddress("ClusZ", &ClusZ);
     t->SetBranchAddress("ClusPhiSize", &ClusPhiSize);
     t->SetBranchAddress("ClusZSize", &ClusZSize);
+    t->SetBranchAddress("ClusAdc", &ClusAdc);
     t->SetBranchAddress("ClusLadderZId", &ClusLadderZId);
     t->SetBranchAddress("ClusLadderPhiId", &ClusLadderPhiId);
 
     TFile *outfile = new TFile(outfilename.Data(), "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of reconstructed vertices");
+    TDirectory *dir = outfile->mkdir("hist_vtxzprojseg");
     SetVtxMinitree(minitree, vtxdata);
 
     for (int ev = 0; ev < NevtToRun; ev++)
     {
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
-        // cout << "event = " << event << " local = " << local << endl;
-        cout << "event=" << event << " has a total of " << ClusLayer->size() << " clusters" << endl;
+
+        cout << "event=" << event << ", INTT BCO=" << INTT_BCO << ", total number of clusters=" << ClusLayer->size() << endl;
 
         CleanVec(INTTlayer1);
         CleanVec(INTTlayer2);
+
+        int NClusLayer1_beforecut = 0;
 
         for (size_t ihit = 0; ihit < ClusLayer->size(); ihit++)
         {
@@ -159,7 +170,13 @@ int main(int argc, char *argv[])
                 exit(1);
             }
 
+            if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
+                NClusLayer1_beforecut++;
+
             if (ClusPhiSize->at(ihit) >= 5)
+                continue;
+
+            if (ClusAdc->at(ihit) < 35)
                 continue;
 
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
@@ -174,7 +191,7 @@ int main(int argc, char *argv[])
                 INTTlayer2.push_back(hit);
         }
 
-        cout << "# of clusters in inner layer (layer ID 3+4, after cluster phi size selection) = " << INTTlayer1.size() << ", outer layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
+        cout << "# of clusters in inner layer (layer ID 3+4, after cluster phi size and adc selection) = " << INTTlayer1.size() << ", outer layer (layer ID 5+6) = " << INTTlayer2.size() << endl;
 
         TH1F *hM_vtxzprojseg = new TH1F(Form("hM_vtxzprojseg_ev%d", ev), Form("hM_vtxzprojseg_ev%d", ev), 2800, -70, 70);
         int goodpaircount = 0;
@@ -204,9 +221,10 @@ int main(int argc, char *argv[])
                 if (debug)
                 {
                     cout << "----------" << endl
-                         << "Cluster pair (i,j) = (" << i << "," << j << "); position (x1,y1,z1,x2,y2,z2) mm =(" << INTTlayer1[i]->posX() * 10. << "," << INTTlayer1[i]->posY() * 10. << "," << INTTlayer1[i]->posZ() * 10. << ","
-                         << INTTlayer2[j]->posX() * 10. << "," << INTTlayer2[j]->posY() * 10. << "," << INTTlayer2[j]->posZ() * 10. << ")" << endl;
-                    cout << "Cluster [phi1 (deg),eta1,phi2(deg),eta2]=[" << INTTlayer1[i]->Phi() * radianstodegree << "," << INTTlayer1[i]->Eta() << "," << INTTlayer2[j]->Phi() * radianstodegree << "," << INTTlayer2[j]->Eta() << "]" << endl
+                         << "Cluster pair (i,j) = (" << i << "," << j << "); position (x1,y1,z1,x2,y2,z2) mm =(" << INTTlayer1[i]->posX() * 10. << "," << INTTlayer1[i]->posY() * 10. << ","
+                         << INTTlayer1[i]->posZ() * 10. << "," << INTTlayer2[j]->posX() * 10. << "," << INTTlayer2[j]->posY() * 10. << "," << INTTlayer2[j]->posZ() * 10. << ")" << endl;
+                    cout << "Cluster [phi1 (deg),eta1,phi2(deg),eta2]=[" << INTTlayer1[i]->Phi() * radianstodegree << "," << INTTlayer1[i]->Eta() << "," << INTTlayer2[j]->Phi() * radianstodegree
+                         << "," << INTTlayer2[j]->Eta() << "]" << endl
                          << "delta phi (in degree) = " << fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) * radianstodegree << "-> pass dPhi selection (<" << dPhi_cut
                          << " rad)=" << ((fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) < dPhi_cut) ? 1 : 0) << endl;
                     cout << "DCA cut = " << dca_cut << " [cm]; vertex candidate (center,edge1,edge2) = (" << z << "," << edge1 << "," << edge2 << "), difference = " << edge2 - edge1 << endl;
@@ -289,6 +307,7 @@ int main(int argc, char *argv[])
 
         vtxdata.isdata = IsData;
         vtxdata.event = event;
+        vtxdata.INTT_BCO = INTT_BCO;
         if (!IsData)
         {
             vtxdata.NTruthVtx = NTruthVtx;
@@ -298,14 +317,20 @@ int main(int argc, char *argv[])
             vtxdata.Centrality_bimp = centrality_bimp;
             vtxdata.Centrality_impactparam = centrality_impactparam;
         }
-        vtxdata.NClusLayer1 = (int)INTTlayer1.size();
+        vtxdata.NClusLayer1 = NClusLayer1_beforecut;
         vtxdata.PV_x = avgVtxX;
         vtxdata.PV_y = avgVtxY;
         vtxdata.PV_z = mean;
         vtxdata.Centrality_mbd = centrality_mbd;
-        vtxdata.Centrality_mbdquantity = centrality_mbdquantity;
+        vtxdata.mbd_south_charge_sum = mbd_south_charge_sum;
+        vtxdata.mbd_north_charge_sum = mbd_north_charge_sum;
+        vtxdata.mbd_charge_sum = mbd_charge_sum;
+        vtxdata.mbd_charge_asymm = mbd_charge_asymm;
+        vtxdata.mbd_z_vtx = mbd_z_vtx;
 
         minitree->Fill();
+        dir->cd();
+        hM_vtxzprojseg->Write();
     }
 
     outfile->cd();

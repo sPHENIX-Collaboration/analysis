@@ -36,12 +36,23 @@ class PPG04EventSelector : public SubsysReco
         // bad chi2
         void do_badChi2_cut(bool doCut) { m_do_badChi2_cut = doCut; }
 
-        / Do event selection on leading R=0.4 truth jet pT range
-        void do_MC_event_select_lead_truth_jet(float low, float high)
+        // Do event selection on leading R=0.4 truth jet pT range
+        void do_MCLeadingTruthJetpT_cut(float low, float high)
         {
-            m_MC_do_event_select = true;
-            m_MC_event_select_jetpT_range.first = low;
-            m_MC_event_select_jetpT_range.second = high;
+            m_do_MCLeadingTruthJetpT_cut = true;
+            m_MCLeadingTruthJetpT_range.first = low;
+            m_MCLeadingTruthJetpT_range.second = high;
+        }
+
+        // MinBias event selection
+        void do_minBias_cut(bool doCut) { m_do_minBias_cut = doCut; }
+
+        // zvtx cut
+        void do_zvtx_cut(float low, float high)
+        {
+            m_do_zvtx_cut = true;
+            m_zvtx_range.first = low;
+            m_zvtx_range.second = high;
         }
 
     private:
@@ -56,10 +67,21 @@ class PPG04EventSelector : public SubsysReco
         bool badChi2_cut(PHCompositeNode *topNode);
 
         // event trigger (for simulation)
-        bool m_MC_do_event_select{false};
-        std::pair<float, float> m_MC_event_select_jetpT_range{-1,1000};
-        bool MC_event_select(PHCompositeNode *topNode);
+        bool m_do_MCLeadingTruthJetpT_cut{false};
+        std::pair<float, float> m_MCLeadingTruthJetpT_range{0.0,1000.0};
+        bool MCLeadingTruthJetpT_cut(PHCompositeNode *topNode);
+
+        // MinBias event selection
+        bool m_do_minBias_cut{false};
+        bool minBias_cut(PHCompositeNode *topNode);
+
+        // zvtx cut
+        bool m_do_zvtx_cut{false};
+        std::pair<float, float> m_zvtx_range{-60.0,60.0};
+        bool zvtx_cut(PHCompositeNode *topNode);
+
+
 
 };
 
-#endif // BACKGROUNDANABASE_EVENTSELECTOR_H
+#endif // PPG04_EVENTSELECTOR_H

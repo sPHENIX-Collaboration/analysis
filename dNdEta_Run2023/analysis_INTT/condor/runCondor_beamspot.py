@@ -28,10 +28,12 @@ if __name__ == '__main__':
     dphicut = float(opt.dphicut)
     nJob = int(opt.nJob)
     submitcondor = opt.submitcondor
-    username = pwd.getpwuid(os.getuid())[0]
-    print ('username: {}'.format(username))
+    # username = pwd.getpwuid(os.getuid())[0]
+    # print ('username: {}'.format(username))
     # subdir = 'data' if isdata else 'sim'
-    finaloutfiledir = '/sphenix/user/{}/TrackletAna/minitree/INTT/{}'.format(username, outfiledir)
+    # get parent directory of this file
+    parentdir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
+    finaloutfiledir = '{}/minitree/{}'.format(parentdir, outfiledir)
     os.makedirs(finaloutfiledir, exist_ok=True)
 
     os.makedirs('./log_beamspot/', exist_ok=True)
@@ -42,15 +44,17 @@ if __name__ == '__main__':
     condorFileName = "submitCondor_BeamspotReco_{}.job".format('data' if isdata else 'sim')
     condorFile = open("{}".format(condorFileName), "w")
     condorFile.write("Universe           = vanilla\n")
-    condorFile.write("InitialDir         = /sphenix/user/{}/TrackletAna/analysis_INTT\n".format(username))
+    condorFile.write("InitialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(InitialDir)/condor_BeamspotReco.sh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
     condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
-    condorFile.write("inputfile          = {}/ntuple_$(Process).root\n".format(infiledir))
+    condorFile.write("Myindex            = $(Process)\n")
+    condorFile.write("Extension          = $INT(Myindex,%05d)\n")
+    condorFile.write("inputfile          = {}/ntuple_$(Extension).root\n".format(infiledir))
     condorFile.write("dphicut            = {}\n".format(dphicut))
-    condorFile.write("outputfile         = {}/minitree_$(Process).root\n".format(finaloutfiledir))
+    condorFile.write("outputfile         = {}/minitree_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).err\n")
     condorFile.write("Log                = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).log\n")

@@ -79,13 +79,13 @@ if __name__ == '__main__':
         print('Run INTT ntuple production')
         # Check if the intt dst exists in the production directory
         if not os.path.isfile('{}/intt-{:08d}.root'.format(config.productiondir,int(config.runnumber))):
-            # try to copy from /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-00020869.root , otherwise exit
-            if not os.path.isfile('/gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root'.format(int(config.runnumber))):
+            # try to copy from /sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/intt-00020869.root , otherwise exit
+            if not os.path.isfile('/sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey/intt-{:08d}.root'.format(int(config.runnumber))):
                 print('Intt DST does not exist. Exit')
                 sys.exit(1)
             else:
                 print('Pre-generated Intt DST exists -> Copy it to the production directory')
-                os.system('cp /gpfs/mnt/gpfs02/sphenix/user/cdean/software/macros/InttProduction/intt-{:08d}.root {}'.format(int(config.runnumber),config.productiondir))
+                os.system('cp -r /sphenix/user/hjheng/sPHENIXRepo/macros/InttProduction/ProdDST-HotDead-ADC-Survey {}'.format(config.productiondir))
         
         os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     if centmbntuple:
         print('Run Centrality&Minimum-bias ntuple production')
         os.chdir('{}'.format(config.dndetamacrodir))
-        os.system('CreateDstList.pl --run {} --build {} --cdb {} DST_CALO'.format(config.runnumber, config.centntupleproduction_softwareversion.replace('.', ''), config.centntupleproduction_productionTag))
+        os.system('CreateDstList.pl --run {} --build {} --cdb {} DST_CALO_run1auau'.format(config.runnumber, config.centntupleproduction_softwareversion.replace('.', ''), config.centntupleproduction_productionTag))
         os.chdir('{}/condor/'.format(config.dndetamacrodir))
         cmdlist = ['chmod 755 runCondor.py',
                    'python runCondor.py --data --runnumber {} --productiontag {} --generator none --eventPerJob {} --nJob {} --outputdir {} --softwareversion {} {}'.format(config.runnumber,

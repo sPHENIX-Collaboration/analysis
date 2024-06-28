@@ -30,7 +30,7 @@ pkginclude_HEADERS = \
   PPG04EventSelector.h
 
 libPPG04EventSelector_la_SOURCES = \
-  EventSelector.h
+  PPG04EventSelector.cc
 
 
 ################################################

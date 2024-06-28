@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I$(ROOTSYS)/include
+  -isystem$(ROOTSYS)/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
@@ -22,10 +22,9 @@ libJetSeedCount_la_SOURCES = \
 libJetSeedCount_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -lfun4all \
+  -lfun4all \ 
   -lg4dst \
   -lg4eval \
-  -lg4jets_io \
   -lg4jets
 
 BUILT_SOURCES = testexternals.cc
