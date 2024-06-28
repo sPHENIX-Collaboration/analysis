@@ -33,8 +33,6 @@
 #include <cmath>
 #include <vector>
 
-using namespace fastjet;
-
 #include "TH1.h"
 #include "TH2.h"
 #include "TFile.h"
