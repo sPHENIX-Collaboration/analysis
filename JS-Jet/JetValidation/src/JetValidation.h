@@ -111,6 +111,9 @@ class JetValidation : public SubsysReco
   float m_impactparam;
   float m_zvtx;
 
+  //!trigger info
+  std::vector<bool> m_triggerVector;
+
   //! reconstructed jets
   std::vector<int> m_id;
   std::vector<int> m_nComponent;
@@ -118,6 +121,14 @@ class JetValidation : public SubsysReco
   std::vector<float> m_phi;
   std::vector<float> m_e;
   std::vector<float> m_pt;
+
+  //! clusters
+  std::vector<float> m_cleta;
+  std::vector<float> m_clphi;
+  std::vector<float> m_cle;
+  std::vector<float> m_clecore;
+  std::vector<float> m_clpt;
+  std::vector<float> m_clprob;
 
   //! unsubtracted jets
   std::vector<float> m_unsub_pt;
