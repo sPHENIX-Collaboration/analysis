@@ -11,7 +11,10 @@
 #if defined(__CLING__)
 R__LOAD_LIBRARY(libmbd_io.so)
 R__LOAD_LIBRARY(libcalo_io.so)
+R__LOAD_LIBRARY(libcalotrigger_io.so)
 R__LOAD_LIBRARY(libglobalvertex_io.so)
+R__LOAD_LIBRARY(libcentrality_io.so)
+R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libBBCStudy.so)
 #endif
 
