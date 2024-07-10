@@ -136,9 +136,9 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 	std::cout << "DijetQA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
 	++m_event;  
 	//Setup the node search
-	JetContainer* jets=findNode::getClass<JetContainer>(topNode);
+	JetContainer* jets=findNode::getClass< JetContainer>(topNode, "AntiKt_Tower_r04");
 	if(!jets){
-		std::cout<<"No jet continer found" <<std::endl;
+		std::cout<<"No jet container found" <<std::endl;
 		--m_event;
 		return -1; 
 	}
@@ -148,8 +148,12 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 		--m_event;
 		return -1;
 	}
+	else{
+		m_centrality=cent_node->get_centile(CentralityInfo::PROP::bimp);
+		m_impactparam=cent_node->get_quantity(CentralityInfo::PROP::bimp);
+	}
 	GlobalVertex *vtx=NULL;
-	GlobalVertexMap *vtxmap = findNode::GetClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+	GlobalVertexMap *vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 	if(!vtxmap || vtxmap->empty())
 	{
 		std::cout<<"No vertex map found, assuming the vertex has z=0" <<std::endl;
@@ -162,16 +166,63 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 	TowerInfoContainer *EMTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
 	TowerInfoContainer *IHTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
 	TowerInfoContainer *OHTowers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
-	RawTowerGeomContainer *ihtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
-	RawTowerGeomContainer *ohtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+//	RawTowerGeomContainer *ihtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+//	RawTowerGeomContainer *ohtower_geom = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
 	if( !EMTowers || !IHTowers || !OHTowers){
 		std::cout<<"Could not find the calo towers" <<std::endl;
 		--m_event;
 		return -1;
 	}
+	//JetMap* jets=findNode::getClass<JetMap>(topNode, "AntiKt_Tower_r04");
+	FindPairs(jets);
+	m_T->Fill();
 	return Fun4AllReturnCodes::EVENT_OK;
 }
-
+void DijetQA::FindPairs(JetContainer* jets)
+{
+	//find all pairs that are potenital dijets and measure the kinematics
+	//prety sure I'm doing this right
+	Jet* jet_leading=NULL, *jet_pair1=NULL, *jet_pair2=NULL;
+	float pt_leading=0, pt1=0, pt2=0;
+	for(auto j1: *jets)
+	{
+		assert(j1);
+		if(j1->get_pt() > pt_leading){
+			pt_leading=j1->get_pt();
+			jet_leading=j1;
+		}
+		for(auto j2: *jets){
+			if(j2 == j1 ) continue;
+			if(abs(j2->get_phi() -j1->get_phi()) > 3 && abs(j2->get_phi() - j1->get_phi() ) < 3.3 )  {
+				if(j2->get_pt() > j1->get_pt() ){
+					jet_pair1=j2;
+					jet_pair2=j1;
+				}
+				else{
+					jet_pair1=j1;
+					jet_pair2=j2;
+				}
+			}
+		}
+	}
+	if(jet_pair1 && jet_pair2){
+	pt1=jet_pair1->get_pt();
+	pt2=jet_pair2->get_pt();
+	m_Ajj=(pt1-pt2)/(pt1+pt2);
+	m_xj=pt2/pt1;
+	m_ptl=pt1;
+	m_ptsl=pt2;
+	m_phil=jet_pair1->get_phi();
+	m_phisl=jet_pair2->get_phi();
+	m_dphi=m_phil-m_phisl;
+	m_etal=jet_pair1->get_eta();
+	m_etasl=jet_pair2->get_eta();
+	m_deltaeta=m_etal-m_etasl;
+	std::cout<<"highest pt jet is " <<jet_leading->get_pt() <<" and highest pt in a pair is " <<jet_pair1->get_pt() <<std::endl;
+	}
+	return;
+		
+}
 //____________________________________________________________________________..
 int DijetQA::ResetEvent(PHCompositeNode *topNode)
 {
@@ -203,5 +254,9 @@ int DijetQA::Reset(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void DijetQA::Print(const std::string &what) const
 {
-  std::cout << "DijetQA::Print(const std::string &what) const Printing info for " << what << std::endl;
+  	TFile* f=new TFile("Dijet_QA.root", "RECREATE");
+	m_T->Write(); 
+	f->Write();
+	f->Close();
+ 	std::cout << "DijetQA::Print(const std::string &what) const Printing info for " << what << std::endl;
 }

@@ -4,10 +4,33 @@
 #define DIJETQA_H
 
 #include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllBase.h>
 
+#include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
+
+#include <jetbase/JetMap.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/Jetv2.h>
+#include <jetbase/Jetv1.h>
+
+#include <centrality/CentralityInfo.h>
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeom.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
 
 #include <string>
 #include <vector>
+#include <unordered_set>
+
+#include "TTree.h"
+#include "TFile.h"
 
 class PHCompositeNode;
 
@@ -15,7 +38,7 @@ class DijetQA : public SubsysReco
 {
  public:
 
-  DijetQA(const std::string &name = "DijetQA");
+  DijetQA(const std::string &name = "DijetQA", const std::string &outputfilename = "DijetQA.root", int phismear=0);
 
   ~DijetQA() override;
 
@@ -51,6 +74,8 @@ class DijetQA : public SubsysReco
   	int Reset(PHCompositeNode * /*topNode*/) override;
 
   	void Print(const std::string &what = "ALL") const override;
+	void FindPairs(JetContainer*);
+	
 	float XJ, AJ; 
 	//These are the interesting variables, definitions for them are 
 	//////////////////////////////////////////////////////////////
@@ -64,7 +89,13 @@ class DijetQA : public SubsysReco
 				//Should set to integer multilple of hcal phi tower size ->Pi/32 
 	int ntowers_opening=1;
 	float DeltaPhi=ntowers_opening*DeltaPhiOne; 
-		//use the above single tower width and tunable parameter to keep things more saefly defined
+	std::string m_outputFileName; 
+	std::pair<float, float> m_etaRange, m_ptRange;
+	TTree* m_T;
+	int m_event, m_nJet, m_nJetPair;
+	float m_centrality, m_zvtx, m_impactparam, m_Ajj, m_xj, m_ptl, m_ptsl;
+	float m_phil, m_phisl, m_dphil, m_dphi, m_etal, m_etasl, m_deltaeta;
+		//use the above single tower width and tunable parameter to keep things more safely defined
 };
 
 #endif // DIJETQA_H

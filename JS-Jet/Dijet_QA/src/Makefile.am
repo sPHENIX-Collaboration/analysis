@@ -21,7 +21,12 @@ libDijetQA_la_SOURCES = \
 
 libDijetQA_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \
+  -lfun4all \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets \
+  -lcalo_io
 
 BUILT_SOURCES = testexternals.cc
 

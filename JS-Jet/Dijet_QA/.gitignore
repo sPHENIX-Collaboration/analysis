@@ -40,11 +40,11 @@ depcomp
 install-sh
 missing
 stamp-h1
-
+**/build/
 config.guess
 config.sub
 ltmain.sh
-
+**/build/*.*/
 # ROOT ALiCE compile file
 AutoDict_*
 *.d
@@ -94,3 +94,4 @@ tmtags
 **/condor*.err
 **/condor*.out
 **/condor*.log
+
