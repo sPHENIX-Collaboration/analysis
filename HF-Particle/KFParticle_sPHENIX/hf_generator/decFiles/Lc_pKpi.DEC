@@ -1,0 +1,28 @@
+#
+# Descriptor: LcpKpi
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20240226
+
+
+# see
+#   https://github.com/PMunkes/evtgen/blob/master/DECAY.DEC#L8560
+#   lines 8560-8563
+# see also
+#   https://pdglive.lbl.gov/Particle.action?init=0&node=S033&home=BXXX040#decayclump_A
+Decay Lambda_c+
+  0.035400000 p+  K-       pi+      PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  # 0.033000000 p+  anti-K0  pi0      PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  # 0.012000000 p+  anti-K0  eta      PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  # 0.026000000 p+  anti-K0  pi+ pi-  PHSP;  #[New mode added] #[Reconstructed PDG2011]
+Enddecay
+# CDecay anti-Lambda_c+
+CDecay anti-Lambda_c- # This was in the file maintained by LHCb but seems like a typo but isn't b/c ROOT/GEANT complained when we tried the other one
+
+
+# TODO:
+# Imitate b2DX.DEC decays for B0, etc for non-prompt
+
+End

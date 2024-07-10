@@ -34,7 +34,8 @@ R__LOAD_LIBRARY(libhftrackefficiency.so)
 int Fun4All_HFG(std::string processID = "0")
 {
   int nEvents = 2e3;
-  std::string channel = "D2Kpi";
+  // std::string channel = "D2Kpi";
+  std::string channel = "Lc_pKpi";
   //F4A setup
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -62,6 +63,11 @@ int Fun4All_HFG(std::string processID = "0")
     PYTHIA8::config_file = "steeringCards/pythia8_D2Kpi.cfg";
     EVTGENDECAYER::DecayFile = "decFiles/D2Kpi.DEC";
   }
+  else if (channel == "Lc_pKpi")
+  {
+    PYTHIA8::config_file = "steeringCards/pythia8_Lc_pKpi.cfg";
+    EVTGENDECAYER::DecayFile = "decFiles/Lc_pKpi.DEC";
+  }
   else
   {
     std::cout << "Your decay channel " << channel << " is not known" << std::endl;
@@ -82,6 +88,11 @@ int Fun4All_HFG(std::string processID = "0")
   {
     p8_hf_signal_trigger->AddParticles(5);
     p8_hf_signal_trigger->AddParticles(-5);
+  }
+  else if (channel == "Lc_pKpi")
+  {
+    p8_hf_signal_trigger->AddParticles(4122);
+    p8_hf_signal_trigger->AddParticles(-4122);
   }
   else
   {
@@ -115,8 +126,18 @@ int Fun4All_HFG(std::string processID = "0")
 
   DecayFinder *myFinder = new DecayFinder("myFinder");
   myFinder->Verbosity(INT_MAX);
-  if (channel == "bs2jpsiks0") myFinder->setDecayDescriptor("[B_s0 -> {J/psi -> e^+ e^-} {K_S0 -> pi^+ pi^-}]cc");
-  else myFinder->setDecayDescriptor("[D0 -> K^- pi^+]cc");
+  if (channel == "bs2jpsiks0")
+  {
+    myFinder->setDecayDescriptor("[B_s0 -> {J/psi -> e^+ e^-} {K_S0 -> pi^+ pi^-}]cc");
+  }
+  else if (channel == "Lc_pKpi")
+  {
+    myFinder->setDecayDescriptor("[Lambda_c+ -> proton^+ K^- pi^+]cc");
+  }
+  else
+  {
+    myFinder->setDecayDescriptor("[D0 -> K^- pi^+]cc");
+  }
   myFinder->saveDST(1);
   myFinder->allowPi0(1);
   myFinder->allowPhotons(1);
@@ -209,7 +230,7 @@ int Fun4All_HFG(std::string processID = "0")
   out->StripNode("TpcTrackSeedContainer");
   out->StripNode("SvtxTrackSeedContainer");
   out->StripNode("ActsTrajectories");
-  out->StripNode("SvtxTrackMap");
+  // out->StripNode("SvtxTrackMap");
   out->StripNode("SvtxAlignmentStateMap");
   out->SaveRunNode(0);
   se->registerOutputManager(out);
