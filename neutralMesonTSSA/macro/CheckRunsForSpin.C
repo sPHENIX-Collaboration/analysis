@@ -30,7 +30,7 @@ void CheckRunsForSpin(std::string infilename)
     int run;
     while (infile >> run) {
 	bool has_spin = ReadSpinDB(run);
-	std::cout << "Greg info: run number = " << run << ", has_spin = " << has_spin << std::endl;
+	/* std::cout << "Greg info: run number = " << run << ", has_spin = " << has_spin << std::endl; */
 	if (has_spin) outfile << run << std::endl;
     }
 

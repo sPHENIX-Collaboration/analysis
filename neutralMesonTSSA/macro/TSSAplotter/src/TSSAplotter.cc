@@ -16,7 +16,7 @@ void TSSAplotter::GetHists(std::string infilename) {
     diphoton_pT = (TH1*)infile->Get("h_diphotonpT");
     diphoton_xF = (TH1*)infile->Get("h_diphotonxF");
     double pT_upper = 15.0;
-    double xF_upper = 0.5;
+    double xF_upper = 0.15;
     std::vector<double> pTbinsMass;
     std::vector<double> xFbinsMass;
     int nbins_bhs = 25;
@@ -34,7 +34,7 @@ void TSSAplotter::GetHists(std::string infilename) {
     std::vector<double> pTbins;
     std::vector<double> xFbins;
     float bhs_max_pT = 8.0;
-    float bhs_max_xF = 0.2;
+    float bhs_max_xF = 0.15;
     int nBins_pT = 6;
     int nBins_xF = 6;
     for (int i=0; i<nBins_pT; i++) {

@@ -10,14 +10,15 @@
 #include <utility>
 
 class PHCompositeNode;
-class RunHeaderv1;
-class Gl1Packetv1;
+class RunHeader;
+class Gl1Packet;
 class RawClusterContainer;
 class PHG4TruthInfoContainer;
 class GlobalVertex;
 class PHG4VtxPoint;
 class TFile;
 class TH1;
+class TH2;
 class BinnedHistSet;
 
 class Diphoton
@@ -91,10 +92,11 @@ class neutralMesonTSSA : public SubsysReco
   // In InitRun()
   void GetRunNum();
   int GetSpinInfo(); // spin patterns, beam polarization and crossing shift for this run
+  /* void CountLumi(); */
   // In process_event()
+  void GetTrigger();
   void GetBunchNum();
   void GetSpins(); // blue and yellow spins for this event
-  void CountLumi();
   void FindGoodClusters();
   void FindDiphotons();
   void FillPhiHists(std::string which, int index); // which = pi0, eta, pi0bkgr, etabkgr
@@ -103,6 +105,8 @@ class neutralMesonTSSA : public SubsysReco
   void ClearVectors();
   // In End()
   void DeleteStuff();
+  // Other info
+  void PrintTrigger();
 
  private:
   bool isMonteCarlo;
@@ -114,8 +118,8 @@ class neutralMesonTSSA : public SubsysReco
   PHG4TruthInfoContainer* m_truthInfo = nullptr;
   GlobalVertex* gVtx = nullptr;
   PHG4VtxPoint* mcVtx = nullptr;
-  RunHeaderv1* runHeader = nullptr;
-  Gl1Packetv1* gl1Packet = nullptr;
+  RunHeader* runHeader = nullptr;
+  Gl1Packet* gl1Packet = nullptr;
 
   // spin info
   static const int NBUNCHES = 120;
@@ -127,6 +131,7 @@ class neutralMesonTSSA : public SubsysReco
   int sphenixBunch = 0;
   int bspin = 0;
   int yspin = 0;
+  long long gl1pScalers[NBUNCHES] = {0};
   float lumiUpBlue = 0;
   float lumiDownBlue = 0;
   /* float relLumiBlue; */
@@ -135,6 +140,16 @@ class neutralMesonTSSA : public SubsysReco
   float lumiDownYellow = 0;
   /* float relLumiYellow; */
   float polYellow = 0;
+
+  // cluster distributions
+  TH1* h_clusterE = nullptr;
+  TH1* h_clusterEta = nullptr;
+  TH1* h_clusterPhi = nullptr;
+  TH2* h_clusterEta_Phi = nullptr;
+  TH1* h_clusterpT = nullptr;
+  TH1* h_clusterxF = nullptr;
+  TH1* h_clusterChi2 = nullptr;
+  TH1* h_clusterChi2zoomed = nullptr;
 
   // diphoton distributions
   TH1* h_diphotonMass = nullptr;
@@ -154,7 +169,7 @@ class neutralMesonTSSA : public SubsysReco
   std::vector<float>* goodclusters_Chi2 = nullptr;
 
   // diphotons and cuts
-  float min_diphotonPt = 0.3;
+  float min_diphotonPt = 1.0;
   float max_asym = 0.6;
   float min_deltaR = 0.0;
   float max_deltaR = 999.9;
@@ -182,7 +197,7 @@ class neutralMesonTSSA : public SubsysReco
   int nBins_pT = 6;
   float bhs_max_pT = 8.0;
   int nBins_xF = 6;
-  float bhs_max_xF = 0.2;
+  float bhs_max_xF = 0.15;
   int nHistBins_phi = 16;
   PhiHists* pi0Hists= nullptr;
   PhiHists* etaHists= nullptr;
@@ -191,7 +206,31 @@ class neutralMesonTSSA : public SubsysReco
 
   // counters for events
   long int n_events_total = 0;
-  long int n_events_with_vertex = 0;
+  bool mbdNtrigger = false;
+  bool mbdStrigger = false;
+  bool mbdtrigger = false;
+  long int mbdcoinc_withoutNandS = 0;
+  long int n_events_mbdtrigger = 0;
+  long int n_events_mbdtrigger_vtx1 = 0;
+  long int n_events_mbdtrigger_vtx2 = 0;
+  long int n_events_mbdtrigger_vtx3 = 0;
+  bool mbdvertex = false;
+  bool globalvertex = false;
+  long int n_events_mbdvtx_first1k = 0;
+  long int n_events_globalvtx_first1k = 0;
+  long int first_mbdvtx = 0;
+  long int first_globalvtx = 0;
+  long int n_events_mbdvtx_with_mbdtrig = 0;
+  long int n_events_mbdvtx_without_mbdtrig = 0;
+  long int n_events_globalvtx_with_mbdtrig = 0;
+  long int n_events_globalvtx_without_mbdtrig = 0;
+  long int n_events_globalvtx_with_mbdvtx = 0;
+  long int n_events_globalvtx_without_mbdvtx = 0;
+  long int n_events_with_mbdvertex = 0;
+  long int n_events_with_globalvertex = 0;
+  long int n_events_with_vtx10 = 0;
+  long int n_events_with_vtx30 = 0;
+  long int n_events_with_vtx50 = 0;
   long int n_events_with_good_vertex = 0;
   long int n_events_positiveCaloE = 0;
 

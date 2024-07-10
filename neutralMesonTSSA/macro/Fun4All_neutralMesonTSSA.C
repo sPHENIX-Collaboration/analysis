@@ -15,6 +15,8 @@
 #include <caloreco/RawClusterBuilderTemplate.h>
 #include <caloreco/RawClusterPositionCorrection.h>
 
+#include <Calo_Calib.C>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libneutralMesonTSSA.so)
@@ -51,12 +53,14 @@ void Fun4All_neutralMesonTSSA(
   }
 
   // Tower calibrations
-  CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB");
-  calibEMC->set_detector_type(CaloTowerDefs::CEMC);
-  calibEMC->set_directURL("/sphenix/u/bseidlitz/work/temp24Calib/emcalCalib_withMask_may25.root");
-  se->registerSubsystem(calibEMC);
+  Process_Calo_Calib();  // this line handles the calibrations, dead/hot tower masking and reruns the clusterizer
+  /* CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB"); */
+  /* calibEMC->set_detector_type(CaloTowerDefs::CEMC); */
+  /* calibEMC->set_directURL("/sphenix/u/bseidlitz/work/temp24Calib/emcalCalib_withMask_may25.root"); */
+  /* se->registerSubsystem(calibEMC); */
 
   // Clusterizer
+  /*
   RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
   ClusterBuilder->set_threshold_energy(0.03);  // for when using basic calibration
@@ -66,6 +70,7 @@ void Fun4All_neutralMesonTSSA(
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
   ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC2");
   se->registerSubsystem(ClusterBuilder);
+  */
 
   neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
   /* eval->set_min_clusterE(0.5); */

@@ -212,7 +212,7 @@ std::string BinnedHistSet::GetBinnedQuantityUnits() {
 }
 
 void BinnedHistSet::MakeHists() {
-    std::cout << "Entering MakeHists for " << name_base << "; nbins=" << nbins << "\n";
+    /* std::cout << "Entering MakeHists for " << name_base << "; nbins=" << nbins << "\n"; */
     std::string title_prefix = this->GetTitlePrefix(); // Hold the first part of the title string
     /* std::cout << "Got title_prefix = " << title_prefix << std::endl; */
     this->GetAxisLabels(); // Hold the axis label part of the title string
@@ -369,7 +369,7 @@ void BinnedHistSet::PlotAllHistsWithFits(std::string outpdfname, bool response=f
 	}
 	if (fitfunc == "mass") {
 	    TF1* fit = new TF1("fit", "[0] + [1]*sqrt(x) + [2]*x + [3]*x^2 + [4]*x^3 + [5]*exp(-0.5*((x-[6])/[7])^2)", 0.0, 1.0);
-	    fit->SetParLimits(5, hist->GetMaximum()/20.0, hist->GetMaximum());
+	    fit->SetParLimits(5, hist->GetMaximum()/20.0, hist->GetMaximum()*1.2);
 	    fit->SetParLimits(6, 0.05, 0.35);
 	    fit->SetParLimits(7, 0.01, 0.10);
 	    fit->SetParameter(5, hist->GetMaximum()/2.0);
