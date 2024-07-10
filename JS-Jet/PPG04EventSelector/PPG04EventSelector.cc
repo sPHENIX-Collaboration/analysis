@@ -7,7 +7,7 @@
 #include <phool/getClass.h>
 
 // tower info
-#include <calobase/TowerInfo,h>
+#include <calobase/TowerInfo.h>
 #include <calobase/TowerInfoContainer.h>
 
 // standard includes
@@ -20,6 +20,17 @@
 #include <jetbase/JetMap.h>
 #include <jetbase/Jetv1.h>
 #include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
+
+// minbias
+#include <calotrigger/MinimumBiasInfo.h>
+#include <calotrigger/MinimumBiasInfov1.h>
+
+// global vertex
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/GlobalVertexMapv1.h>
 
 int PPG04EventSelector::process_event(PHCompositeNode *topNode)
 {
@@ -28,7 +39,6 @@ int PPG04EventSelector::process_event(PHCompositeNode *topNode)
   {
     if(!A_cut(topNode))
     {
-      if(Verbosity() > 0) std::cout << "PPG04EventSelector::process_event(PHCompositeNode *topNode) Event failed A cut" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   }
@@ -38,40 +48,57 @@ int PPG04EventSelector::process_event(PHCompositeNode *topNode)
   {
     if(!badChi2_cut(topNode))
     {
-      if(Verbosity() > 0) std::cout << "PPG04EventSelector::process_event(PHCompositeNode *topNode) Event failed tower bad chi2 cut" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   }
 
   
   // MC event selection based on leading R = 0.4 truth jet pT
-  if(m_MC_do_event_select)
+  if(m_do_MCLeadingTruthJetpT_cut)
   {
-    if(!MC_event_select(topNode))
+    if(!MCLeadingTruthJetpT_cut(topNode))
     {
-      if(Verbosity() > 0) std::cout << "EventSelector::process_event(PHCompositeNode *topNode) Event failed MC event selection" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   }
+
+  // MinBias event selection
+  if(m_do_minBias_cut)
+  {
+    if(!minBias_cut(topNode))
+    {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  }
+
+  // zvtx cut
+  if(m_do_zvtx_cut)
+  {
+    if(!zvtx_cut(topNode))
+    {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  }
+
 
   // if we get here, event passes all cuts
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 // template for cut
-bool PPG04EventSelector::A_cut(PHCompositeNode *topNode)
+bool PPG04EventSelector::A_cut(PHCompositeNode */*topNode*/)
 {
   // do stuff here
 
   // get value from node
-  while(false)
-  {
-    // suppress unused variable warning since we aren't actually doing anything
-    std::cout << "TopNode: " << topNode->GetName() << std::endl;
-    double cut_value_from_the_node = 0; 
+  // while(false)
+  // {
+  //   // suppress unused variable warning since we aren't actually doing anything
+  //   std::cout << "TopNode: " << topNode->getName() << std::endl;
+  //   double cut_value_from_the_node = 0; 
 
-    if(cut_value_from_the_node < m_A_cut) return false;
-  }
+  //   if(cut_value_from_the_node < m_A_cut){ return false; }
+  // }
 
   return true;
 }
@@ -114,10 +141,10 @@ bool PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode)
 	  
 	  if (tower->get_isBadChi2() && !tower->get_isHot() && !tower->get_isNoCalib())
 	    {
-	      if(Verbosity())
-		{
-		  std::cout << "PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode) Tower has bad chi2" << std::endl;
-		}
+        if(Verbosity() > 0)
+        {
+          std::cout << "PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode) Tower is bad chi2" << std::endl;
+        }
 	      return false;
 	    }
 	}
@@ -126,32 +153,79 @@ bool PPG04EventSelector::badChi2_cut(PHCompositeNode *topNode)
   return true;
 }
 
-
 // MC event selection based on leading R = 0.4 truth jet pT
-bool PPG04EventSelector::MC_event_select(PHCompositeNode *topNode)
+bool PPG04EventSelector::MCLeadingTruthJetpT_cut(PHCompositeNode *topNode)
 {
   // get truth jet nodes
-  JetMap *truthjets = findNode::getClass<JetMap>(topNode, "AntiKt_Truth_r04");
+  JetContainer *truthjets = findNode::getClass<JetContainer>(topNode, "AntiKt_Truth_r04");
   if(!truthjets) 
   {
-    std::cout << "EventSelector::MC_event_select(PHCompositeNode *topNode) Could not find truth jet nodes" << std::endl;
+    std::cout << "PPG04EventSelector::MCLeadingTruthJetpT_cut(PHCompositeNode *topNode) Could not find truth jet nodes" << std::endl;
     exit(-1); // this is a fatal error
   }
 
   // get leading truth jet pT
   float leading_truth_pt = -1;
-  for(JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
+  // for(JetMap::Iter iter = truthjets->begin(); iter != truthjets->end(); ++iter)
+  // {
+    // Jet *jet = iter->second;
+  for(auto jet: *truthjets)
   {
-    Jet *jet = iter->second;
     if(jet->get_pt() > leading_truth_pt) leading_truth_pt = jet->get_pt();
   }
 
   // check if event passes selection
-  if( (leading_truth_pt < m_MC_event_selection_jetpT_range.first) || (leading_truth_pt > m_MC_event_selection_jetpT_range.second))
+  if( (leading_truth_pt < m_MCLeadingTruthJetpT_range.first) || (leading_truth_pt > m_MCLeadingTruthJetpT_range.second))
   {
-    if(Verbosity() > 0) std::cout << "EventSelector::MC_event_select(PHCompositeNode *topNode) Event failed MC event selection" << std::endl;
+    if(Verbosity() > 0) {std::cout << "PPG04EventSelector::MC_event_select(PHCompositeNode *topNode) Event failed MC event selection. Leading truth jet pT: " << leading_truth_pt << std::endl;}
     return false; 
   }
+
+  return true;
+}
+
+// MinBias event selection
+bool PPG04EventSelector::minBias_cut(PHCompositeNode *topNode)
+{
+  // get minbias info
+  MinimumBiasInfo *minbias = findNode::getClass<MinimumBiasInfov1>(topNode, "MinimumBiasInfo");
+  if(!minbias)
+  {
+    std::cout << "PPG04EventSelector::minBias_cut(PHCompositeNode *topNode) Could not find MinBiasInfo node" << std::endl;
+    exit(-1); // this is a fatal error
+  }
+
+  // check if event passes selection
+  if(!minbias->isAuAuMinimumBias())
+  {
+    if(Verbosity() > 0) {std::cout << "PPG04EventSelector::minBias_cut(PHCompositeNode *topNode) Event failed MinBias event selection" << std::endl;}
+    return false;
+  }
+  return true;
+}
+
+// zvtx cut
+bool PPG04EventSelector::zvtx_cut(PHCompositeNode *topNode)
+{
+   // get global vertex map node
+    GlobalVertexMap *vtxMap = findNode::getClass<GlobalVertexMapv1>(topNode,"GlobalVertexMap");
+    if (!vtxMap)
+    {
+      std::cout << "PPG04EventSelector::zvtx_cut(PHCompositeNode *topNode) Could not find global vertex map node" << std::endl;
+      exit(-1); // this is a fatal error
+    }
+
+    if (!vtxMap->get(0))
+    {
+      if(Verbosity() > 0) {std::cout << "PPG04EventSelector::zvtx_cut(PHCompositeNode *topNode) No primary vertex" << std::endl;}
+      return false;
+    }
+
+    if( (vtxMap->get(0)->get_z() < m_zvtx_range.first) || (vtxMap->get(0)->get_z() > m_zvtx_range.second))
+    {
+      if(Verbosity() > 0){std::cout << "PPG04EventSelector::zvtx_cut(PHCompositeNode *topNode) Vertex cut failed: " << vtxMap->get(0)->get_z() << std::endl;}
+      return false;
+    }   
 
   return true;
 }

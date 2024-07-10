@@ -1,0 +1,83 @@
+#pragma once
+
+#include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllServer.h>
+#include <phool/recoConsts.h>
+
+#include <GlobalVariables.C>
+#include <G4_Global.C>
+#include <G4_Mbd.C>
+
+#include <neutralmesontssa/neutralMesonTSSA.h>
+
+#include <caloreco/CaloTowerCalib.h>
+#include <caloreco/RawClusterBuilderTemplate.h>
+#include <caloreco/RawClusterPositionCorrection.h>
+
+R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libcalo_reco.so)
+R__LOAD_LIBRARY(libneutralMesonTSSA.so)
+
+void Fun4All_neutralMesonTSSA(
+                     int nEvents = 1,
+                     const char *filelist1 = "dst_calo_cluster.list",
+                     const char *filelist2 = "dst_truth.list",
+		     const string outname = "neutralMesonTSSA_hists.root",
+		     bool isMC = false)
+{
+  // this convenience library knows all our i/o objects so you don't
+  // have to figure out what is in each dst type
+  gSystem->Load("libg4dst.so");
+  /* gSystem->Load("libneutralMesonTSSA.so"); */
+
+  Fun4AllServer *se = Fun4AllServer::instance();
+  se->Verbosity(0);  // set it to 1 if you want event printouts
+
+  recoConsts *rc = recoConsts::instance();
+  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_uint64Flag("TIMESTAMP", 0);
+
+  Fun4AllInputManager *inCluster = new Fun4AllDstInputManager("DSTCaloCluster");
+  std::cout << "Adding file list " << filelist1 << std::endl;
+  inCluster->AddListFile(filelist1,1);
+  se->registerInputManager(inCluster);
+
+  Fun4AllInputManager *inTruth = new Fun4AllDstInputManager("DSTTruth");
+  if (isMC) {
+      std::cout << "Adding file list " << filelist2 << std::endl;
+      inTruth -> AddListFile(filelist2,1);
+      se -> registerInputManager(inTruth);
+  }
+
+  // Tower calibrations
+  CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB");
+  calibEMC->set_detector_type(CaloTowerDefs::CEMC);
+  calibEMC->set_directURL("/sphenix/u/bseidlitz/work/temp24Calib/emcalCalib_withMask_may25.root");
+  se->registerSubsystem(calibEMC);
+
+  // Clusterizer
+  RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
+  ClusterBuilder->Detector("CEMC");
+  ClusterBuilder->set_threshold_energy(0.03);  // for when using basic calibration
+  std::string emc_prof = getenv("CALIBRATIONROOT");
+  emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
+  ClusterBuilder->LoadProfile(emc_prof);
+  ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
+  ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC2");
+  se->registerSubsystem(ClusterBuilder);
+
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
+  /* eval->set_min_clusterE(0.5); */
+  /* eval->set_max_clusterChi2(4.0); */
+  se -> registerSubsystem(eval);
+  
+  se->run(nEvents);
+  se->End();
+  
+  delete se;
+  cout << "Analysis Completed" << endl;
+  
+  gSystem->Exit(0);
+}
+

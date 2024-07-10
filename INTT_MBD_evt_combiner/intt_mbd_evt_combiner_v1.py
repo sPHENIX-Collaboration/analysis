@@ -1,4 +1,4 @@
-from ROOT import TFile, TTree, TH2F, TH1F
+from ROOT import *
 import sys
 
 # note : the function to merge the trees
@@ -11,7 +11,7 @@ def merge_trees(outputfile, tree1, tree2) :
         tree1.GetListOfBranches().Add(branch)
         tree1.GetListOfLeaves().Add(branch.GetLeaf(branch.GetName()))
         tree2.GetListOfBranches().Remove(branch)
-    tree1.Write()
+    tree1.Write("", TObject.kOverwrite)
 
 def sync_mbd_intt_DST(outputfname, f_mbd_name, t_mbd_name, f_intt_name, t_intt_name, Nevent):
     
@@ -50,18 +50,28 @@ def sync_mbd_intt_DST(outputfname, f_mbd_name, t_mbd_name, f_intt_name, t_intt_n
 
     # note : TH2F to show the clock difference as a function of event
     # note : if the two trees are synchronized, the clock difference should be constant
-    intt_mbd_bco = TH2F("intt_mbd_bco", "INTT - MBD", 100, 0, run_event * 1.5, 100, -10, 100000)
-    intt_mbd_bco.GetXaxis().SetTitle("evt")
-    intt_mbd_bco.GetYaxis().SetTitle("clock_diff")
+    intt_mbd_bco_presync = TH2F("intt_mbd_bco_presync", "INTT - MBD", 100, 0, run_event * 1.5, 100, -10, 100000)
+    intt_mbd_bco_presync.GetXaxis().SetTitle("evt")
+    intt_mbd_bco_presync.GetYaxis().SetTitle("clock_diff")
     
     # note : TH1F to show the 1D projection of the previous TH2F 
-    intt_mbd_bco_1D = TH1F("intt_mbd_bco_1D", "INTT - MBD", 100, -10, 100000)
-    intt_mbd_bco_1D.GetXaxis().SetTitle("clock_diff")
-    intt_mbd_bco_1D.GetYaxis().SetTitle("entry")
+    intt_mbd_bco_presync_1D = TH1F("intt_mbd_bco_presync_1D", "INTT - MBD", 100, -10, 100000)
+    intt_mbd_bco_presync_1D.GetXaxis().SetTitle("clock_diff")
+    intt_mbd_bco_presync_1D.GetYaxis().SetTitle("entry")
+    
+    intt_mbd_bco_postsync = TH2F("intt_mbd_bco_postsync", "INTT - MBD", 100, 0, run_event * 1.5, 100, -10, 100000)
+    intt_mbd_bco_postsync.GetXaxis().SetTitle("evt")
+    intt_mbd_bco_postsync.GetYaxis().SetTitle("clock_diff")
+    
+    intt_mbd_bco_postsync_1D = TH1F("intt_mbd_bco_postsync_1D", "INTT - MBD", 100, -10, 100000)
+    intt_mbd_bco_postsync_1D.GetXaxis().SetTitle("clock_diff")
+    intt_mbd_bco_postsync_1D.GetYaxis().SetTitle("entry")
 
     # note : the variables used in the loop
     prev_mbdclk = 0
     prev_inttbcofull = 0
+    import sys
+
     mbd_evt_offset = 0
     intt_evt_offset = 0
 
@@ -70,69 +80,60 @@ def sync_mbd_intt_DST(outputfname, f_mbd_name, t_mbd_name, f_intt_name, t_intt_n
         t_mbd.GetEntry(entry + mbd_evt_offset)
         t_intt.GetEntry(entry + intt_evt_offset)
 
-        # note : keep the synchronized events from INTT and MBD
-        t_intt_clone.Fill()
-        t_mbd_clone.Fill()
-
-        # note : the other variables used for synchronization checking, comment out them first, to make it inclusive 
-        # INTT_evtseq = t_intt.event_counter
-        # MBD_evtseq = t_mbd.event
-        # bbcq = t_mbd.MBD_north_charge_sum + t_mbd.MBD_south_charge_sum
-        # nintt = t_intt.NClus
-        
-        # note : the variables used for synchronization checking
-        # todo : if the name of the clock information is different, change it here, the following two lines
         mbdclk = t_mbd.femclk
         inttbcofull = t_intt.INTT_BCO
         inttbco16bit = inttbcofull & 0xFFFF
-        # note : the clock difference between the current and the previous event for both MBD and INTT
         mbd_prvdiff = (mbdclk - prev_mbdclk) & 0xFFFF
         intt_prvdiff = inttbcofull - prev_inttbcofull
-        
+
         if (entry % 1000) == 0:
             print(entry, hex(mbdclk), hex(inttbco16bit), "(mbd-intt)", hex((mbdclk - inttbco16bit) & 0xFFFF), "(MBD, femclk-prev)", hex(mbd_prvdiff), "(INTT, bco-prev)", hex(intt_prvdiff))
-        
-        # note : to fill the MBD_charge_sum and INTT_NClus for synchronization check, comment out them first, to make it inclusive 
-        # if t_mbd.MBD_south_charge_sum > 200 and t_mbd.MBD_north_charge_sum > 200:
-        #     h_qmbd_nintt.Fill(nintt, bbcq)
-        
-        intt_mbd_bco.Fill(entry, (mbdclk - inttbco16bit) & 0xFFFF)
-        intt_mbd_bco_1D.Fill((mbdclk - inttbco16bit) & 0xFFFF)
-        
-        # note : keep the clock information for "this" event in order to compare it with the next event
+
+        intt_mbd_bco_presync.Fill(entry, (mbdclk - inttbco16bit) & 0xFFFF)
+        intt_mbd_bco_presync_1D.Fill((mbdclk - inttbco16bit) & 0xFFFF)
+
         prev_mbdclk = mbdclk
         prev_inttbcofull = inttbcofull
         
-        # note : the part to do the synchronization check
-        # note : in "this" event, we first check the clock difference between MBD and INTT in the next event
-        # note : if the clock_diff_thisnext is different from clock_diff_thisevt, we skip the next INTT event.
-        t_intt.GetEntry(entry + 1 + intt_evt_offset)
-        next_inttbco16bit = t_intt.INTT_BCO & 0xFFFF # todo : if the name of the clock information is different, change it here
+        is_sync = False
+            
+        while entry + 1 + intt_evt_offset < t_intt_Nevt: 
+            t_intt.GetEntry(entry + 1 + intt_evt_offset)
+            next_inttbco16bit = t_intt.INTT_BCO & 0xFFFF
+            
+            t_mbd.GetEntry(entry + 1)
+            next_mbdclk = t_mbd.femclk
+            
+            if ((next_mbdclk - next_inttbco16bit) & 0xFFFF) != ((mbdclk - inttbco16bit) & 0xFFFF):
+                intt_evt_offset += 1
+            else: # break the while loop
+                is_sync = True
+                break
+            
+        if is_sync:
+            intt_mbd_bco_postsync.Fill(entry, (mbdclk - inttbco16bit) & 0xFFFF)
+            intt_mbd_bco_postsync_1D.Fill((mbdclk - inttbco16bit) & 0xFFFF)
+            t_intt_clone.Fill() # only fill when synchronized
+            t_mbd_clone.Fill()
         
-        t_mbd.GetEntry(entry + 1)
-        next_mbdclk = t_mbd.femclk # todo : if the name of the clock information is different, change it here
-        
-        if ((next_mbdclk - next_inttbco16bit) & 0xFFFF) != ((mbdclk - inttbco16bit) & 0xFFFF):
-            intt_evt_offset += 1
 
     print("--> INTT Nevent post-sync: ",t_intt_clone.GetEntries())
     print("--> MBD Nevent post-sync: ",t_mbd_clone.GetEntries())
 
-    # note : after the looping, merge the trees
     merge_trees(outfile, t_intt_clone, t_mbd_clone)
 
-    # note : write the histograms, and merged tree into file
-    # h_qmbd_nintt.Write()
-    intt_mbd_bco.Write()
-    intt_mbd_bco_1D.Write()
+    intt_mbd_bco_presync.Write("", TObject.kOverwrite)
+    intt_mbd_bco_presync_1D.Write("", TObject.kOverwrite)
+    intt_mbd_bco_postsync.Write("", TObject.kOverwrite)
+    intt_mbd_bco_postsync_1D.Write("", TObject.kOverwrite)
     f_intt.Close()
     f_mbd.Close()
     outfile.Close()
 
     print("--> Synchronization done")
     print("--> Merged file:", outputfname, ", Tree name: ", t_intt_name)
-    print("--> TH2F plot: intt_mbd_bco, can be checked in the merged file")
-    print("--> TH1F plot: intt_mbd_bco_1D, can be checked in the merged file")
+    print("--> TH2F plot: intt_mbd_bco_presync, can be checked in the merged file")
+    print("--> TH1F plot: intt_mbd_bco_presync_1D, can be checked in the merged file")
 
 
 
@@ -164,8 +165,12 @@ if __name__ == '__main__' :
 
     if len(args) == 6:
         Nevent = int(args[5])
+        
+    gBenchmark.Start('InttMbdEvtCombiner')
     
     sync_mbd_intt_DST(outputfname, f_mbd, t_mbd, f_intt, t_intt, Nevent)
+    
+    gBenchmark.Show('InttMbdEvtCombiner')
 
 
 # Nevent = 10000

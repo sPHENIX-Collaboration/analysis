@@ -31,16 +31,21 @@ using namespace std;
 
 struct VtxData
 {
-    bool isdata;
+    bool isdata, is_min_bias;
     int event, NClusLayer1, NTruthVtx;
+    uint64_t INTT_BCO;
     float TruthPV_x, TruthPV_y, TruthPV_z;
     float PV_x, PV_y, PV_z;
-    float Centrality_bimp, Centrality_impactparam, Centrality_mbd, Centrality_mbdquantity;
+    float PV_z_rand; // For acceptance correction
+    float Centrality_bimp, Centrality_impactparam, Centrality_mbd;
+    float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
 };
 
 void SetVtxMinitree(TTree *outTree, VtxData &vtxdata)
 {
     outTree->Branch("event", &vtxdata.event);
+    outTree->Branch("INTT_BCO", &vtxdata.INTT_BCO);
+    outTree->Branch("is_min_bias", &vtxdata.is_min_bias);
     outTree->Branch("NClusLayer1", &vtxdata.NClusLayer1);
     if (!vtxdata.isdata)
     {
@@ -51,14 +56,18 @@ void SetVtxMinitree(TTree *outTree, VtxData &vtxdata)
         outTree->Branch("Centrality_bimp", &vtxdata.Centrality_bimp);
         outTree->Branch("Centrality_impactparam", &vtxdata.Centrality_impactparam);
     }
-    outTree->Branch("Centrality_mbd", &vtxdata.Centrality_mbd);
-    outTree->Branch("Centrality_mbdquantity", &vtxdata.Centrality_mbdquantity);
+    outTree->Branch("MBD_centrality", &vtxdata.Centrality_mbd);
+    outTree->Branch("mbd_south_charge_sum", &vtxdata.mbd_south_charge_sum);
+    outTree->Branch("mbd_north_charge_sum", &vtxdata.mbd_north_charge_sum);
+    outTree->Branch("mbd_charge_sum", &vtxdata.mbd_charge_sum);
+    outTree->Branch("mbd_charge_asymm", &vtxdata.mbd_charge_asymm);
+    outTree->Branch("mbd_z_vtx", &vtxdata.mbd_z_vtx);
     outTree->Branch("PV_x", &vtxdata.PV_x);
     outTree->Branch("PV_y", &vtxdata.PV_y);
     outTree->Branch("PV_z", &vtxdata.PV_z);
 }
 
-std::map<int, vector<float>> EvtVtx_map_tklcluster(const char *vtxfname)
+std::map<int, vector<float>> EvtVtx_map_event(const char *vtxfname)
 {
     std::map<int, vector<float>> EvtVtx_map;
 
@@ -77,6 +86,37 @@ std::map<int, vector<float>> EvtVtx_map_tklcluster(const char *vtxfname)
     }
 
     return EvtVtx_map;
+}
+
+std::map<uint64_t, vector<float>> EvtVtx_map_inttbco(const char *vtxfname)
+{
+    std::map<uint64_t, vector<float>> EvtVtx_map;
+
+    TFile *f = new TFile(vtxfname, "READ");
+    TTree *t = (TTree *)f->Get("minitree");
+    uint64_t intt_bco;
+    float PV_x, PV_y, PV_z;
+    t->SetBranchAddress("INTT_BCO", &intt_bco);
+    t->SetBranchAddress("PV_x", &PV_x);
+    t->SetBranchAddress("PV_y", &PV_y);
+    t->SetBranchAddress("PV_z", &PV_z);
+    for (int ev = 0; ev < t->GetEntriesFast(); ev++)
+    {
+        t->GetEntry(ev);
+        EvtVtx_map[intt_bco] = {PV_x, PV_y, PV_z};
+    }
+
+    return EvtVtx_map;
+}
+
+TH1F *VtxZ_ReweiHist(const char *filename = "/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/VtxZ_reweight.root")
+{
+    TFile *f = new TFile(filename, "READ");
+    TH1F *h = (TH1F *)f->Get("VtxZ_reweight");
+    h->SetDirectory(0);
+    f->Close();
+    
+    return h;
 }
 
 #endif
