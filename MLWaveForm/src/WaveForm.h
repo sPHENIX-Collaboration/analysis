@@ -6,6 +6,7 @@
 #include <fun4all/SubsysReco.h>
 
 #include <string>
+#include <fstream>
 
 class PHCompositeNode;
 
@@ -51,6 +52,8 @@ class WaveForm : public SubsysReco
   void Print(const std::string &what = "ALL") const override;
 
  private:
+
+  std::fstream outfile;
 };
 
 #endif // WAVEFORM_H

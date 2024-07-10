@@ -75,6 +75,7 @@
 WaveForm::WaveForm(const std::string &name):
  SubsysReco(name)
 {
+  outfile.open("data.txt",std::fstream::out);
   std::cout << "WaveForm::WaveForm(const std::string &name) Calling ctor" << std::endl;
 }
 
@@ -137,6 +138,7 @@ int WaveForm::EndRun(const int runnumber)
 int WaveForm::End(PHCompositeNode * /*topNode*/)
 {
   std::cout << "WaveForm::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+  outfile.close();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
