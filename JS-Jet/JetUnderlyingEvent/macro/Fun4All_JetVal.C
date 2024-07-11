@@ -47,9 +47,17 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_03_27/dst_truth_jet.list",
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2023");  
 
   PHG4CentralityReco *cent = new PHG4CentralityReco();
-  cent->Verbosity(0);
+  cent->Verbosity(verbosity);
   cent->GetCalibrationParameters().ReadFromFile("centrality", "xml", 0, 0, string(getenv("CALIBRATIONROOT")) + string("/Centrality/"));
   se->registerSubsystem( cent );
+<<<<<<< HEAD:JS-Jet/JetValidation/macro/Fun4All_JetVal.C
+  
+  Enable::VERBOSITY = verbosity;
+  HIJetReco();
+
+  JetValidation *myJetVal = new JetValidation("AntiKt_Tower_r04_Sub1", "AntiKt_Truth_r04", outname);
+=======
+>>>>>>> 07b79f5351fbab0f10c9a719c1cb49f741419ec1:JS-Jet/JetUnderlyingEvent/macro/Fun4All_JetVal.C
 
   HIJetReco();
  
@@ -69,11 +77,8 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_03_27/dst_truth_jet.list",
   in3->AddListFile(filelistglobal,1);
   se->registerInputManager(in3);
   
-  Fun4AllInputManager *in4 = new Fun4AllDstInputManager("DSTbbc");
-  in4->AddListFile(filelistg4hit,1);
-  se->registerInputManager(in4);
-  
-  se->run(5000);
+  se->run(-1);
+
   se->End();
 
   gSystem->Exit(0);

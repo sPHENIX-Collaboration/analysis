@@ -15,26 +15,36 @@ echo HOST=`hostname`
 
 ulimit -c 0	# no core files
 
-# get dst fname
-#let line=$1+1
-#dst_fname=`sed -n "${line}p" dst_bbc_g4hit.list`
-#dst_truth_fname=`sed -n "${line}p" dst_truth.list`
-
 dst_fname=$1
-
-# create subdirectory
-#savedir=`printf "bbc%02d" ${1}`
-#savedir=${dst_fname%.root}
-#savedir=`echo ${savedir} | sed 's:-:/:'`
-#echo mkdir -p ${savedir}
-#mkdir -p ${savedir}
-#cd ${savedir}
 
 if echo ${dst_fname} | grep '.root$'
 then
-  out_fname=`echo $dst_fname | sed 's/^.*DST/CHECK/'`
+  #out_fname=`echo $dst_fname | sed 's/^.*DST/CHECK/'`
+  out_fname=${dst_fname##*/}
+  out_fname=CHK_${out_fname}
+echo $out_fname
+
+  #savedir=G4Hits${dst_fname##*/G4Hits}
+  #savedir=${savedir%/*}
+  savedir=CHECK
+  mkdir -p $savedir
+
+  out_fname=${savedir}/${out_fname}
 else
+  # this is assumed to be a list file
   out_fname=`head -1 ${dst_fname} |  sed 's/^.*DST/CHECK/' | sed 's/-[0-9]*.root/.root/'`
+
+  # create subdirectory
+  #savedir=`printf "bbc%02d" ${1}`
+  savedir=${dst_fname%.root}
+  savedir=${dst_fname##*/}
+  #savedir=`echo ${savedir} | sed 's:-:/:'`
+  echo mkdir -p ${savedir}
+  mkdir -p ${savedir}
+  #cd ${savedir}
+
+  out_fname=${savedir}/${out_fname}
+
 fi
 echo $out_fname
 
@@ -46,5 +56,6 @@ fi
 
 # for bbc analysis
 #ln -sf ../../Run_BbcCheck.C .
+echo root.exe -b -q Run_BbcCheck.C\(${nevents},\"${dst_fname}\",\"${out_fname}\"\)
 root.exe -b -q Run_BbcCheck.C\(${nevents},\"${dst_fname}\",\"${out_fname}\"\)
 

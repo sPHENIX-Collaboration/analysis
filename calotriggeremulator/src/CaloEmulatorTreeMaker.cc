@@ -1,4 +1,18 @@
 #include "CaloEmulatorTreeMaker.h"
+//for emc clusters
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawClusterUtility.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTower.h>
+#include <calobase/RawTowerContainer.h>
+#include <mbd/MbdPmtContainerV1.h>
+#include <mbd/MbdPmtHitV1.h>
+#include <HepMC/SimpleVector.h> 
+//for vetex information
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
 #include <vector>
 
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -20,6 +34,7 @@ CaloEmulatorTreeMaker::CaloEmulatorTreeMaker(const std::string &name, const std:
   
 {
   useCaloTowerBuilder = false;
+  useLL1=false;
   _foutname = outfilename;  
 }
 
@@ -42,57 +57,64 @@ int CaloEmulatorTreeMaker::Init(PHCompositeNode *topNode)
   
   _tree = new TTree("ttree","a persevering date tree");
 
-  _tree->Branch("trigger_sum_emcal",b_trigger_sum_emcal,"trigger_sum_emcal[6144]/i");
-  _tree->Branch("trigger_sumkey_emcal",b_trigger_sumkey_emcal,"trigger_sumkey_emcal[6144]/i");
-  _tree->Branch("trigger_sum_smpl_emcal",b_trigger_sum_smpl_emcal,"trigger_sum_smpl_emcal[6144]/i");
-  _tree->Branch("trigger_sum_hcalin",b_trigger_sum_hcalin,"trigger_sum_hcalin[384]/i");
-  _tree->Branch("trigger_sumkey_hcalin",b_trigger_sumkey_hcalin,"trigger_sumkey_hcalin[384]/i");
-  _tree->Branch("trigger_sum_smpl_hcalin",b_trigger_sum_smpl_hcalin,"trigger_sum_smpl_hcalin[384]/i");
-  _tree->Branch("trigger_sum_hcalout",b_trigger_sum_hcalout,"trigger_sum_hcalout[384]/i");
-  _tree->Branch("trigger_sumkey_hcalout",b_trigger_sumkey_hcalout,"trigger_sumkey_hcalout[384]/i");
-  _tree->Branch("trigger_sum_smpl_hcalout",b_trigger_sum_smpl_hcalout,"trigger_sum_smpl_hcalout[384]/i");
+  if (useLL1)
+    {
+      _tree->Branch("trigger_sum_emcal",b_trigger_sum_emcal,"trigger_sum_emcal[6144]/i");
+      _tree->Branch("trigger_sumkey_emcal",b_trigger_sumkey_emcal,"trigger_sumkey_emcal[6144]/i");
+      _tree->Branch("trigger_sum_smpl_emcal",b_trigger_sum_smpl_emcal,"trigger_sum_smpl_emcal[6144]/i");
+      _tree->Branch("trigger_sum_hcalin",b_trigger_sum_hcalin,"trigger_sum_hcalin[384]/i");
+      _tree->Branch("trigger_sumkey_hcalin",b_trigger_sumkey_hcalin,"trigger_sumkey_hcalin[384]/i");
+      _tree->Branch("trigger_sum_smpl_hcalin",b_trigger_sum_smpl_hcalin,"trigger_sum_smpl_hcalin[384]/i");
+      _tree->Branch("trigger_sum_hcalout",b_trigger_sum_hcalout,"trigger_sum_hcalout[384]/i");
+      _tree->Branch("trigger_sumkey_hcalout",b_trigger_sumkey_hcalout,"trigger_sumkey_hcalout[384]/i");
+      _tree->Branch("trigger_sum_smpl_hcalout",b_trigger_sum_smpl_hcalout,"trigger_sum_smpl_hcalout[384]/i");
   
 
-  _tree->Branch("trigger_sum_emcal_ll1",b_trigger_sum_emcal_ll1, "trigger_sum_emcal_ll1[384]/i");
-  _tree->Branch("trigger_sumkey_emcal_ll1",b_trigger_sumkey_emcal_ll1, "trigger_sumkey_emcal_ll1[384]/i");
-  _tree->Branch("trigger_sum_smpl_emcal_ll1",b_trigger_sum_smpl_emcal_ll1, "trigger_sum_smpl_emcal_ll1[384]/i");
-  _tree->Branch("trigger_sum_hcal_ll1",b_trigger_sum_hcal_ll1, "trigger_sum_hcal_ll1[384]/i");
-  _tree->Branch("trigger_sumkey_hcal_ll1",b_trigger_sumkey_hcal_ll1, "trigger_sumkey_hcal_ll1[384]/i");
-  _tree->Branch("trigger_sum_smpl_hcal_ll1",b_trigger_sum_smpl_hcal_ll1, "trigger_sum_smpl_hcal_ll1[384]/i");
+      _tree->Branch("trigger_sum_emcal_ll1",b_trigger_sum_emcal_ll1, "trigger_sum_emcal_ll1[384]/i");
+      _tree->Branch("trigger_sumkey_emcal_ll1",b_trigger_sumkey_emcal_ll1, "trigger_sumkey_emcal_ll1[384]/i");
+      _tree->Branch("trigger_sum_smpl_emcal_ll1",b_trigger_sum_smpl_emcal_ll1, "trigger_sum_smpl_emcal_ll1[384]/i");
+      _tree->Branch("trigger_sum_hcal_ll1",b_trigger_sum_hcal_ll1, "trigger_sum_hcal_ll1[384]/i");
+      _tree->Branch("trigger_sumkey_hcal_ll1",b_trigger_sumkey_hcal_ll1, "trigger_sumkey_hcal_ll1[384]/i");
+      _tree->Branch("trigger_sum_smpl_hcal_ll1",b_trigger_sum_smpl_hcal_ll1, "trigger_sum_smpl_hcal_ll1[384]/i");
 
-  _tree->Branch("triggered_sums",&b_triggered_sums, "triggered_sums/i");
-  _tree->Branch("gl1_clock",&b_gl1_clock, "gl1_clock/l");
-  _tree->Branch("gl1_triggervec",&b_gl1_triggervec, "gl1_triggervec/l");
+      _tree->Branch("triggered_sums",&b_triggered_sums, "triggered_sums/i");
 
-  _tree->Branch("trigger_bits",&b_trigger_bits);
-  _tree->Branch("trigger_raw_bits",&b_trigger_raw_bits);
+      _tree->Branch("trigger_bits",&b_trigger_bits);
+      _tree->Branch("trigger_raw_bits",&b_trigger_raw_bits);
 
-  _tree->Branch("trigger_sum_jet",b_trigger_sum_jet, "trigger_sum_jet[288]/i");
-  _tree->Branch("trigger_sum_smpl_jet",b_trigger_sum_smpl_jet, "trigger_sum_smpl_jet[288]/i");
-  _tree->Branch("trigger_sumkey_jet",b_trigger_sumkey_jet, "trigger_sumkey_jet[288]/i");
+      _tree->Branch("trigger_sum_jet",b_trigger_sum_jet, "trigger_sum_jet[288]/i");
+      _tree->Branch("trigger_sum_smpl_jet",b_trigger_sum_smpl_jet, "trigger_sum_smpl_jet[288]/i");
+      _tree->Branch("trigger_sumkey_jet",b_trigger_sumkey_jet, "trigger_sumkey_jet[288]/i");
 
-  _tree->Branch("trigger_sum_smpl_jet_input",b_trigger_sum_smpl_jet_input, "trigger_sum_smpl_jet_input[384]/i");
-  _tree->Branch("trigger_sum_jet_input",b_trigger_sum_jet_input, "trigger_sum_jet_input[384]/i");
-  _tree->Branch("trigger_sumkey_jet_input",b_trigger_sumkey_jet_input, "trigger_sumkey_jet_input[384]/i");
+      _tree->Branch("trigger_sum_smpl_jet_input",b_trigger_sum_smpl_jet_input, "trigger_sum_smpl_jet_input[384]/i");
+      _tree->Branch("trigger_sum_jet_input",b_trigger_sum_jet_input, "trigger_sum_jet_input[384]/i");
+      _tree->Branch("trigger_sumkey_jet_input",b_trigger_sumkey_jet_input, "trigger_sumkey_jet_input[384]/i");
 
-  _tree->Branch("trigger_raw_sum_smpl_emcal",b_trigger_raw_sum_smpl_emcal, "trigger_raw_sum_smpl_emcal[6144]/i");
-  _tree->Branch("trigger_raw_sum_emcal",b_trigger_raw_sum_emcal, "trigger_raw_sum_emcal[6144]/i");
-  _tree->Branch("trigger_raw_sumkey_emcal",b_trigger_raw_sumkey_emcal, "trigger_raw_sumkey_emcal[6144]/i");
+      _tree->Branch("trigger_raw_sum_smpl_emcal",b_trigger_raw_sum_smpl_emcal, "trigger_raw_sum_smpl_emcal[6144]/i");
+      _tree->Branch("trigger_raw_sum_emcal",b_trigger_raw_sum_emcal, "trigger_raw_sum_emcal[6144]/i");
+      _tree->Branch("trigger_raw_sumkey_emcal",b_trigger_raw_sumkey_emcal, "trigger_raw_sumkey_emcal[6144]/i");
 
-  _tree->Branch("trigger_raw_sum_smpl_emcal_ll1",b_trigger_raw_sum_smpl_emcal_ll1, "trigger_raw_sum_smpl_emcal_ll1[384]/i");
-  _tree->Branch("trigger_raw_sum_emcal_ll1",b_trigger_raw_sum_emcal_ll1, "trigger_raw_sum_emcal[384]/i");
-  _tree->Branch("trigger_raw_sumkey_emcal_ll1",b_trigger_raw_sumkey_emcal_ll1, "trigger_raw_sumkey_emcal[384]/i");
+      _tree->Branch("trigger_raw_sum_smpl_emcal_ll1",b_trigger_raw_sum_smpl_emcal_ll1, "trigger_raw_sum_smpl_emcal_ll1[384]/i");
+      _tree->Branch("trigger_raw_sum_emcal_ll1",b_trigger_raw_sum_emcal_ll1, "trigger_raw_sum_emcal[384]/i");
+      _tree->Branch("trigger_raw_sumkey_emcal_ll1",b_trigger_raw_sumkey_emcal_ll1, "trigger_raw_sumkey_emcal[384]/i");
 
-  _tree->Branch("trigger_raw_sum_smpl_jet",b_trigger_raw_sum_smpl_jet, "trigger_raw_sum_smpl_jet[288]/i");
-  _tree->Branch("trigger_raw_sum_jet",b_trigger_raw_sum_jet, "trigger_raw_sum_jet[288]/i");
-  _tree->Branch("trigger_raw_sumkey_jet",b_trigger_raw_sumkey_jet, "trigger_raw_sumkey_jet[288]/i");
+      _tree->Branch("trigger_raw_sum_smpl_jet",b_trigger_raw_sum_smpl_jet, "trigger_raw_sum_smpl_jet[288]/i");
+      _tree->Branch("trigger_raw_sum_jet",b_trigger_raw_sum_jet, "trigger_raw_sum_jet[288]/i");
+      _tree->Branch("trigger_raw_sumkey_jet",b_trigger_raw_sumkey_jet, "trigger_raw_sumkey_jet[288]/i");
 
-  _tree->Branch("trigger_raw_sum_smpl_jet_input",b_trigger_raw_sum_smpl_jet_input, "trigger_raw_sum_smpl_jet_input[384]/i");
-  _tree->Branch("trigger_raw_sum_jet_input",b_trigger_raw_sum_jet_input, "trigger_raw_sum_jet_input[384]/i");
-  _tree->Branch("trigger_raw_sumkey_jet_input",b_trigger_raw_sumkey_jet_input, "trigger_raw_sumkey_jet_input[384]/i");
-
+      _tree->Branch("trigger_raw_sum_smpl_jet_input",b_trigger_raw_sum_smpl_jet_input, "trigger_raw_sum_smpl_jet_input[384]/i");
+      _tree->Branch("trigger_raw_sum_jet_input",b_trigger_raw_sum_jet_input, "trigger_raw_sum_jet_input[384]/i");
+      _tree->Branch("trigger_raw_sumkey_jet_input",b_trigger_raw_sumkey_jet_input, "trigger_raw_sumkey_jet_input[384]/i");
+    }
 
   _i_event = 0;
+  _tree->Branch("gl1_clock",&b_gl1_clock, "gl1_clock/l");
+  _tree->Branch("gl1_scaled",b_gl1_scaled, "gl1_scaled[64]/l");
+  _tree->Branch("gl1_live",b_gl1_live, "gl1_live[64]/l");
+  _tree->Branch("gl1_raw",b_gl1_raw, "gl1_raw[64]/l");
+  _tree->Branch("gl1_rawvec",&b_gl1_rawvec, "gl1_rawvec/l");
+  _tree->Branch("gl1_livevec",&b_gl1_livevec, "gl1_livevec/l");
+  _tree->Branch("gl1_scaledvec",&b_gl1_scaledvec, "gl1_scaledvec/l");
 
   _tree->Branch("emcal_good",&b_emcal_good);
   _tree->Branch("emcal_energy",&b_emcal_energy);
@@ -109,6 +131,24 @@ int CaloEmulatorTreeMaker::Init(PHCompositeNode *topNode)
   _tree->Branch("hcalout_time",&b_hcalout_time);
   _tree->Branch("hcalout_phibin",&b_hcalout_phibin);
   _tree->Branch("hcalout_etabin",&b_hcalout_etabin);
+
+  _tree->Branch("mbd_vertex_z", &b_vertex_z, "mbd_vertex_z/F");
+  // _tree->Branch("mbd_vertex_y", &b_vertex_y, "mbd_vertex_y/F");
+  // _tree->Branch("mbd_vertex_x", &b_vertex_x, "mbd_vertex_x/F");
+  // _tree->Branch("mbd_charge", b_mbd_charge, "mbd_charge[128]/F");
+  // _tree->Branch("mbd_time", b_mbd_time, "mbd_time[128]/F");
+  // _tree->Branch("mbd_ipmt", b_mbd_ipmt, "mbd_ipmt[128]/I");
+  // _tree->Branch("mbd_side", b_mbd_side, "mbd_side[128]/I");
+  _tree->Branch("cluster_n",&b_cluster_n);
+  _tree->Branch("cluster_ecore",&b_cluster_ecore);
+  _tree->Branch("cluster_pt",&b_cluster_pt);
+  _tree->Branch("cluster_prob",&b_cluster_prob);
+  _tree->Branch("cluster_chi2",&b_cluster_chi2);
+  _tree->Branch("cluster_phi",&b_cluster_phi);
+  _tree->Branch("cluster_eta",&b_cluster_eta);
+  _tree->Branch("cluster_iso",&b_cluster_iso);
+
+
 
   std::cout << "Done initing the treemaker"<<std::endl;  
   return Fun4AllReturnCodes::EVENT_OK;
@@ -131,14 +171,26 @@ void CaloEmulatorTreeMaker::SetVerbosity(int verbo){
 void CaloEmulatorTreeMaker::reset_tree_vars()
 {
   if (Verbosity()) std::cout << __FUNCTION__ << __LINE__<<std::endl;
+  b_cluster_n = 0;
+  b_cluster_prob.clear();
+  b_cluster_chi2.clear();
+  b_cluster_ecore.clear();
+  b_cluster_pt.clear();
+  b_cluster_phi.clear();
+  b_cluster_eta.clear();
+  b_cluster_iso.clear();
+
+  b_emcal_good.clear();
   b_emcal_energy.clear();
   b_emcal_time.clear();
   b_emcal_phibin.clear();
   b_emcal_etabin.clear();
+  b_hcalin_good.clear();
   b_hcalin_energy.clear();
   b_hcalin_time.clear();
   b_hcalin_phibin.clear();
   b_hcalin_etabin.clear();
+  b_hcalout_good.clear();  
   b_hcalout_energy.clear();
   b_hcalout_time.clear();
   b_hcalout_phibin.clear();
@@ -181,12 +233,70 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
 
   _trigger_primitives_hcal_ll1 = findNode::getClass<TriggerPrimitiveContainer>(topNode, "TRIGGERPRIMITIVES_HCAL_LL1");
 
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertexmap)
+    {
+      // std::cout << PHWHERE << " Fatal Error - GlobalVertexMap node is missing"<< std::endl;
+      std::cout << "pi0EtaByEta GlobalVertexMap node is missing" << std::endl;
+      // return Fun4AllReturnCodes::ABORTRUN;
+    }
+  float vtx_z = 0;
+  b_vertex_z = -999;
+  if (vertexmap && !vertexmap->empty())
+    {
+      GlobalVertex* vtx = vertexmap->begin()->second;
+      if (vtx)
+	{
+	  vtx_z = vtx->get_z();
+	  b_vertex_z = vtx_z;
+	}
+    }
+
+  // b_vertex_x = -99;
+  // b_vertex_y = -99;
+  // b_vertex_z = -99;
+  // MbdVertex *vtx = nullptr;
+  // //Vertex information
+  // MbdVertexMap *vtxContainer = findNode::getClass<MbdVertexMap>(topNode,"MbdVertexMap");
+  // while (true)
+  //   {
+  //     if (!vtxContainer)
+  // 	{
+  // 	  break;
+  // 	}
+  //     if (vtxContainer->empty())
+  // 	{
+  // 	  break;
+  // 	}
+
+  //     //More vertex information
+  //     vtx = vtxContainer->begin()->second;
+  //     if(!vtx)
+  // 	{
+  // 	  break;
+  // 	}
+  //     b_vertex_x = vtx->get_x();
+  //     b_vertex_y = vtx->get_y();
+  //     b_vertex_z = vtx->get_z();
+    
+  //     break;
+  //   }
 
   if (_gl1_packet)
     {
       b_gl1_clock = _gl1_packet->lValue(0, "BCO");
-      b_gl1_triggervec = _gl1_packet->lValue(0, "TriggerVector");
+      b_gl1_rawvec = _gl1_packet->lValue(0, "TriggerInput");
+      b_gl1_livevec = _gl1_packet->lValue(0, "TriggerVector");
+      b_gl1_scaledvec = _gl1_packet->lValue(0, "ScaledVector");
+      
+      for (int i = 0; i < 64; i++)
+	{
+	  b_gl1_scaled[i] = _gl1_packet->lValue(i, 2);
+	  b_gl1_raw[i] = _gl1_packet->lValue(i, 0);
+	  b_gl1_live[i] = _gl1_packet->lValue(i, 1);
+	}
     }
+
   std::vector<unsigned int>::iterator it;
   std::vector<unsigned int> *sum;
   TriggerPrimitiveContainerv1::Range range;
@@ -542,9 +652,27 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
    
    if (useCaloTowerBuilder)
     {
+
+      MbdPmtContainer *_pmts_mbd = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+
+      if (_pmts_mbd)
+	{
+
+	  int npmt = 128;//_pmts_mbd->get_npmt();
+	  for ( int ipmt = 0; ipmt < npmt; ipmt++)
+	    {
+	      MbdPmtHit *_tmp_pmt = _pmts_mbd->get_pmt(ipmt);
+
+	      b_mbd_charge[ipmt] = _tmp_pmt->get_q();
+	      b_mbd_time[ipmt] = _tmp_pmt->get_time();
+	      b_mbd_side[ipmt] = ipmt/64;
+	      b_mbd_ipmt[ipmt] = ipmt;
+	    }
+
+	}
       _towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
 
-	  int size;
+      int size;
       if (_towers)
 	{
 
@@ -608,11 +736,64 @@ int CaloEmulatorTreeMaker::process_event(PHCompositeNode *topNode)
 	    }
 	}
     }
-  if (Verbosity()) std::cout << __FILE__ << " "<< __LINE__<<" "<<std::endl;
+   {   
 
-  _tree->Fill();
+     RawClusterContainer* clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_CEMC");
+     if (!clusterContainer)
+       {
+	 std::cout << PHWHERE << "funkyCaloStuff::process_event - Fatal Error - CLUSTER_CEMC node is missing. " << std::endl;
+	 return 0;
+       }
 
-  return Fun4AllReturnCodes::EVENT_OK;
+     //////////////////////////////////////////
+     // geometry for hot tower/cluster masking
+     std::string towergeomnodename = "TOWERGEOM_CEMC";
+     RawTowerGeomContainer* m_geometry = findNode::getClass<RawTowerGeomContainer>(topNode, towergeomnodename);
+     if (!m_geometry)
+       {
+	 std::cout << Name() << "::"
+		   << "CreateNodeTree"
+		   << ": Could not find node " << towergeomnodename << std::endl;
+	 throw std::runtime_error("failed to find TOWERGEOM node in RawClusterDeadHotMask::CreateNodeTree");
+       }
+
+     RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
+     RawClusterContainer::ConstIterator clusterIter;
+     RawClusterContainer::ConstIterator clusterIter2;
+     
+     for (clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
+       {
+	 RawCluster* recoCluster = clusterIter->second;
+
+	 CLHEP::Hep3Vector vertex(0, 0, vtx_z);
+	 CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+
+
+	 
+	 double e   = E_vec_cluster.mag();
+	 double phi = E_vec_cluster.phi();
+	 double eta   = E_vec_cluster.pseudoRapidity();
+	 double pt  = E_vec_cluster.perp();
+	 float prob = recoCluster->get_prob();
+	 float chi2 = recoCluster->get_chi2();
+	 float iso = recoCluster->get_et_iso();
+	 if (pt < 0.3) continue;
+	 b_cluster_n++;	 
+	 b_cluster_ecore.push_back(e);
+	 b_cluster_pt.push_back(pt);
+	 b_cluster_phi.push_back(phi);
+	 b_cluster_eta.push_back(eta);
+	 b_cluster_prob.push_back(prob);
+	 b_cluster_chi2.push_back(chi2);
+	 b_cluster_iso.push_back(iso);
+       }
+   }
+   
+   if (Verbosity()) std::cout << __FILE__ << " "<< __LINE__<<" "<<std::endl;
+   
+   _tree->Fill();
+   
+   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 

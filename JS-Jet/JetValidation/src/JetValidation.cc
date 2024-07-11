@@ -1,8 +1,7 @@
-
 //module for producing a TTree with jet information for doing jet validation studies
 // for questions/bugs please contact Virginia Bailey vbailey13@gsu.edu
 #include <fun4all/Fun4AllBase.h>
-#include <jetvalidation/JetValidation.h>
+#include <JetValidation.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 #include <phool/PHCompositeNode.h>
@@ -20,8 +19,12 @@
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
-
+#include <ffarawobjects/Gl1Packet.h>
 #include <jetbackground/TowerBackground.h>
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawClusterUtility.h>
+#include <calobase/RawTowerDefs.h>
 
 #include <TTree.h>
 #include <iostream>
@@ -29,13 +32,6 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
-
-#include "fastjet/ClusterSequence.hh"
-#include "fastjet/contrib/SoftDrop.hh"                                                                                          
-
-using namespace fastjet;
-
-// ROOT, for histogramming.                                                                                                                                                                                 
 
 #include "TH1.h"
 #include "TH2.h"
@@ -63,6 +59,12 @@ JetValidation::JetValidation(const std::string& recojetname, const std::string& 
   , m_phi()
   , m_e()
   , m_pt()
+  , m_cleta()
+  , m_clphi()
+  , m_cle()
+  , m_clecore()
+  , m_clpt()
+  , m_clprob()
   , m_sub_et()
   , m_truthID()
   , m_truthNComponent()
@@ -107,11 +109,20 @@ int JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("b", &m_impactparam);
   m_T->Branch("id", &m_id);
   m_T->Branch("nComponent", &m_nComponent);
+  m_T->Branch("triggerVector", &m_triggerVector);
 
   m_T->Branch("eta", &m_eta);
   m_T->Branch("phi", &m_phi);
   m_T->Branch("e", &m_e);
   m_T->Branch("pt", &m_pt);
+
+  m_T->Branch("cleta", &m_cleta);
+  m_T->Branch("clphi", &m_clphi);
+  m_T->Branch("cle", &m_cle);
+  m_T->Branch("clecore", &m_clecore);
+  m_T->Branch("clpt", &m_clpt);
+  m_T->Branch("clprob", &m_clprob);
+
   if(m_doUnsubJet)
     {
       m_T->Branch("pt_unsub", &m_unsub_pt);
@@ -223,11 +234,12 @@ int JetValidation::process_event(PHCompositeNode *topNode)
         << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+  else
+    {
+      GlobalVertex *vtx = vertexmap->begin()->second;
+      m_zvtx = vtx->get_z();
+    }
 
-    GlobalVertex *vtx = vertexmap->begin()->second;
-  m_zvtx = vtx->get_z();
-  
- 
   //calorimeter towers
   TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
   TowerInfoContainer *towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
@@ -256,7 +268,8 @@ int JetValidation::process_event(PHCompositeNode *topNode)
   }
 
   //get the event centrality/impact parameter from HIJING
-  m_centrality =  cent_node->get_centile(CentralityInfo::PROP::bimp);
+  //m_centrality =  cent_node->get_centile(CentralityInfo::PROP::mbd_NS);
+  m_centrality = (int)(100*cent_node->get_centile(CentralityInfo::PROP::mbd_NS));
   m_impactparam =  cent_node->get_quantity(CentralityInfo::PROP::bimp);
 
   //get reco jets
@@ -424,6 +437,60 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 	  m_subseed_cut.push_back(passesCut);
 	}
     }
+
+  //grab the gl1 data
+  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
+  if (!gl1PacketInfo)
+    {
+      std::cout << PHWHERE << "caloTreeGen::process_event: GL1Packet node is missing. Output related to this node will be empty" << std::endl;
+    }
+
+  if (gl1PacketInfo)
+    {
+      uint64_t triggervec = gl1PacketInfo->getTriggerVector();
+      for (int i = 0; i < 64; i++)
+	{
+	  bool trig_decision = ((triggervec & 0x1U) == 0x1U);
+	  m_triggerVector.push_back(trig_decision);
+	  triggervec = (triggervec >> 1U) & 0xffffffffU;
+	}
+    }
+
+  //get clusters
+  RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_CEMC");
+  if (!clusterContainer)
+    {
+      std::cout << PHWHERE << "caloTreeGen::process_event: CLUSTERINFO_CEMC node is missing. Output related to this node will be empty" << std::endl;
+      return 0;
+    }
+  RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
+  RawClusterContainer::ConstIterator clusterIter;
+  for (clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
+    {
+      RawCluster *recoCluster = clusterIter->second;
+
+      CLHEP::Hep3Vector vertex(0, 0, 0);
+      if (m_zvtx != -9999)
+	{
+	  vertex.setZ(m_zvtx);
+	}
+      CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+      CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
+
+      float clusE = E_vec_cluster_Full.mag();
+      float clusEcore = E_vec_cluster.mag();
+      float clus_eta = E_vec_cluster.pseudoRapidity();
+      float clus_phi = E_vec_cluster.phi();
+      float clus_pt = E_vec_cluster.perp();
+      float clus_prob = recoCluster->get_prob();
+      
+      m_cle.push_back(clusE);
+      m_clecore.push_back(clusEcore);
+      m_cleta.push_back(clus_eta);
+      m_clphi.push_back(clus_phi);
+      m_clpt.push_back(clus_pt);
+      m_clprob.push_back(clus_prob);
+    }
   
   //fill the tree
   m_T->Fill();
@@ -463,6 +530,15 @@ int JetValidation::ResetEvent(PHCompositeNode *topNode)
   m_e_rawseed.clear();
   m_pt_rawseed.clear();
   m_rawseed_cut.clear();
+  
+  m_triggerVector.clear();
+
+  m_cle.clear();
+  m_clecore.clear();
+  m_cleta.clear();
+  m_clphi.clear();
+  m_clpt.clear();
+  m_clprob.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
