@@ -11,15 +11,18 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  WaveForm.h
+  WaveForm.h \
+  WaveFormPacket.h
 
 lib_LTLIBRARIES = \
   libWaveForm.la
 
 libWaveForm_la_SOURCES = \
-  WaveForm.cc
+  WaveForm.cc \
+  WaveFormPacket.cc
 
 libWaveForm_la_LIBADD = \
+  -lffarawobjects \
   -lcalo_io \
   -lphool \
   -lSubsysReco
