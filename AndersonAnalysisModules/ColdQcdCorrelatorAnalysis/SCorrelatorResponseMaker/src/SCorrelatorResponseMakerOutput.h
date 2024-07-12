@@ -10,6 +10,9 @@
 #ifndef SCORRELATORJETTREEMAKEROUTPUT_H
 #define SCORRELATORJETTREEMAKEROUTPUT_H
 
+// make common namespaces implicit
+using namespace std;
+
 
 
 namespace SColdQcdCorrelatorAnalysis {
@@ -19,7 +22,38 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   struct SCorrelatorResponseMakerOutput {
 
-    /* TODO fill in */
+    // event level info
+    Types::GenInfo  evtGen;
+    Types::RecoInfo evtRec;
+
+    // jet level info
+    vector<Types::JetInfo> jetGen;
+    vector<Types::JetInfo> jetRec;
+
+    // constituent level info
+    vector<vector<Types::CstInfo>> cstGen;
+    vector<vector<Types::CstInfo>> cstRec;
+
+    // ------------------------------------------------------------------------
+    //! Reset variables
+    // ------------------------------------------------------------------------
+    void Reset()
+      evtGen.Reset();
+      evtRec.Reset();
+      jetGen.clear();
+      jetRec.clear();
+      cstGen.clear();
+      cstRec.clear();
+      return;
+    }  // end 'Reset()'
+
+    // ------------------------------------------------------------------------
+    //! Set tree addresses
+    // ------------------------------------------------------------------------
+    void SetTreeAddresses(TTree* tree) {
+      /* TODO fill in */
+      return;
+    }  // end 'SetTreeAddresses(TTree*)'
 
   };  // end SCorrelatorResponseMakerOutput
 
@@ -30,30 +64,32 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   struct SCorrelatorResponseMakerLegacyOutput {
 
-    // output response tree event-level address members
-    //   - FIXME should be consolidated into a single class/struct for ease-of-maintenance
-    //   - TODO add non-pair values (e.g. sum of particle energy, fraction of cst.s matched)
-    pair<int,    int>    m_matchNumJets;
-    pair<int,    int>    m_matchNumTrks;
-    pair<double, double> m_matchVtxX;
-    pair<double, double> m_matchVtxY;
-    pair<double, double> m_matchVtxZ;
-    // output response tree jet-level address members
-    pair<vector<uint32_t>, vector<uint32_t>> m_matchJetID;
-    pair<vector<uint64_t>, vector<uint64_t>> m_matchJetNumCst;
-    pair<vector<double>,   vector<double>>   m_matchJetEne;
-    pair<vector<double>,   vector<double>>   m_matchJetPt;
-    pair<vector<double>,   vector<double>>   m_matchJetEta;
-    pair<vector<double>,   vector<double>>   m_matchJetPhi;
-    pair<vector<double>,   vector<double>>   m_matchJetArea;
+    // event level info 
+    //   - TODO add non-pair values
+    pair<int,    int>    numJets = {numeric_limits<int>::max(),    numeric_limits<int>::max()};
+    pair<int,    int>    numTrks = {numeric_limits<int>::max(),    numeric_limits<int>::max()};
+    pair<double, double> vtxX    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+    pair<double, double> vtxY    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+    pair<double, double> vtxZ    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+
+    // jet level info
+    pair<vector<uint32_t>, vector<uint32_t>> jetID;
+    pair<vector<uint64_t>, vector<uint64_t>> jetNumCst;
+    pair<vector<double>,   vector<double>>   jetEne;
+    pair<vector<double>,   vector<double>>   jetPt;
+    pair<vector<double>,   vector<double>>   jetEta;
+    pair<vector<double>,   vector<double>>   jetPhi;
+    pair<vector<double>,   vector<double>>   jetArea;
+
     // output response tree cst-level address members
-    pair<vector<vector<int>>,    vector<vector<int>>>    m_matchCstID;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstZ;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstDr;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstEne;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstJt;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstEta;
-    pair<vector<vector<double>>, vector<vector<double>>> m_matchCstPhi;
+    pair<vector<vector<int>>,    vector<vector<int>>>    cstID;
+    pair<vector<vector<double>>, vector<vector<double>>> cstZ;
+    pair<vector<vector<double>>, vector<vector<double>>> cstDr;
+    pair<vector<vector<double>>, vector<vector<double>>> cstEne;
+    pair<vector<vector<double>>, vector<vector<double>>> cstJt;
+    pair<vector<vector<double>>, vector<vector<double>>> cstEta;
+    pair<vector<vector<double>>, vector<vector<double>>> cstPhi;
+
 
 
     // ------------------------------------------------------------------------
@@ -61,10 +97,43 @@ namespace SColdQcdCorrelatorAnalysis {
     // ------------------------------------------------------------------------
     void Reset() {
 
-      /* TODO fill in */
+      numJets = {numeric_limits<int>::max(),    numeric_limits<int>::max()};
+      numTrks = {numeric_limits<int>::max(),    numeric_limits<int>::max()};
+      vtxX    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+      vtxY    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+      vtxZ    = {numeric_limits<double>::max(), numeric_limits<double>::max()};
+      jetID.first.clear();
+      jetID.second.clear();
+      jetNumCst.first.clear();
+      jetNumCst.second.clear();
+      jetEne.first.clear();
+      jetEne.second.clear();
+      jetPt.first.clear();
+      jetPt.second.clear();
+      jetEta.first.clear();
+      jetEta.second.clear();
+      jetPhi.first.clear();
+      jetPhi.second.clear();
+      jetArea.first.clear();
+      jetArea.second.clear();
+      cstID.first.clear();
+      cstID.second.clear();
+      cstZ.first.clear();
+      cstZ.second.clear();
+      cstDr.first.clear();
+      cstDr.second.clear();
+      cstEne.first.clear();
+      cstEne.second.clear();
+      cstJt.first.clear();
+      cstJt.second.clear();
+      cstEta.first.clear();
+      cstEta.second.clear();
+      cstPhi.first.clear();
+      cstPhi.second.clear();
       return;
 
     }  // end 'Reset()'
+
 
 
     // ------------------------------------------------------------------------
