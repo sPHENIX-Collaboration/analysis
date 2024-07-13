@@ -5,7 +5,14 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <TH1.h>
+#include <TTree.h>
+#include <TH2.h>
+
 #include <string>
+#include <cstdio>
+#include <vector>
+#include <map>
 
 class PHCompositeNode;
 
@@ -51,6 +58,10 @@ class CalorimeterTowerENC : public SubsysReco
   void Print(const std::string &what = "ALL") const override;
 
  private:
+	TH1F *E2P, *E3P, *E2C, *E3C, *E2T, *E3T; //particle method and calo tower method as well as truth 
+	TH1F *tows, *comps;
+	TH1F *energyP, *energyC;
+	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 };
 
 #endif // CALORIMETERTOWERENC_H

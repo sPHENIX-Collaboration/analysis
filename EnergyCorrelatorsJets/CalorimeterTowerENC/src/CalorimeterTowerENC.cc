@@ -4,7 +4,7 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  12 July 2024						//
+//		Date of Last Update:  13 July 2024						//
 //		version: v0.0									//
 //												//
 //												//
@@ -25,7 +25,9 @@ int CalorimeterTowerENC::Init(PHCompositeNode *topNode)
 {	
 	//book histograms and TTrees
 }
-
+int CalorimeterTowerENC::RecordHits( /*some data struct*/){
+	//record where the particles are located and which towers are seeing hits
+	for(auto p: 
 int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 	//need to process the events, this is really going to be a minor thing, need to pull my existing ENC code to do it better
 }
