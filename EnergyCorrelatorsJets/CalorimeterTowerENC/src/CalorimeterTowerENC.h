@@ -5,6 +5,24 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include <g4eval/JetTruthEval.h>
+
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfoContainerv1.h>
+#include <calobase/TowerInfoContainerv2.h>
+#include <calobase/TowerInfov2.h>
+#include <calobase/TowerInfov1.h>
+#include <calobase/TowerInfo.h>
+#include <calobase/RawTowerDefs.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+#include <calobase/DeadHotMapLoader.h>
+
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4Hit.h>
+
 #include <TH1.h>
 #include <TTree.h>
 #include <TH2.h>
@@ -13,55 +31,69 @@
 #include <cstdio>
 #include <vector>
 #include <map>
+#include <utility>
+#include <unordered_set>
 
 class PHCompositeNode;
+class Jet; 
+class JetContainer; 
+class PHG4Hit;
+class PHG4Particle; 
+class PHG4Shower;
+class PHG4TruthInfoContainer;
+class JetTruthEval; 
 
 class CalorimeterTowerENC : public SubsysReco
 {
  public:
 
-  CalorimeterTowerENC(const std::string &name = "CalorimeterTowerENC");
+  	CalorimeterTowerENC(const std::string &name = "CalorimeterTowerENC");
 
-  ~CalorimeterTowerENC() override;
+  	~CalorimeterTowerENC() override;
 
   /** Called during initialization.
       Typically this is where you can book histograms, and e.g.
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
    */
-  int Init(PHCompositeNode *topNode) override;
+  	int Init(PHCompositeNode *topNode) override;
 
   /** Called for first event when run number is known.
       Typically this is where you may want to fetch data from
       database, because you know the run number. A place
       to book histograms which have to know the run number.
    */
-  int InitRun(PHCompositeNode *topNode) override {return 0;};
+  	int InitRun(PHCompositeNode *topNode) override {return 0;};
 
   /** Called for each event.
       This is where you do the real work.
    */
-  int process_event(PHCompositeNode *topNode) override;
-
+  	int process_event(PHCompositeNode *topNode) override;
+	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimenterID, TowerInfoContainer*);
+	float getPt();
+	float getR();
+	int GetTowerNumber(std::pair<float, float>, std::map<float, int>, std::pair<float, float>);
+	int RecordHits( Jet* );	
   /// Clean up internals after each event.
-  int ResetEvent(PHCompositeNode *topNode) override {return 0;};
+  	int ResetEvent(PHCompositeNode *topNode) override {return 0;};
 
   /// Called at the end of each run.
-  int EndRun(const int runnumber) override;
+  	int EndRun(const int runnumber) override;
 
   /// Called at the end of all processing.
-  int End(PHCompositeNode *topNode) override;
+  	int End(PHCompositeNode *topNode) override;
 
   /// Reset
-  int Reset(PHCompositeNode * /*topNode*/) override;
+  	int Reset(PHCompositeNode * /*topNode*/) override;
 
-  void Print(const std::string &what = "ALL") const override;
+  	void Print(const std::string &what = "ALL") const override;
 
  private:
 	TH1F *E2P, *E3P, *E2C, *E3C, *E2T, *E3T; //particle method and calo tower method as well as truth 
 	TH1F *tows, *comps;
 	TH1F *energyP, *energyC;
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
+	JetTruthEval* truth_evaluater; 
 };
 
 #endif // CALORIMETERTOWERENC_H
