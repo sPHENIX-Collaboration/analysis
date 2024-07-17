@@ -4,7 +4,7 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  13 July 2024						//
+//		Date of Last Update:  16 July 2024						//
 //		version: v0.0									//
 //												//
 //												//
@@ -40,14 +40,25 @@ float HerwigJetSpectra::getR(HepMC::GenParticle* p1, HepMC::GenParticle* p2){
 	float R=sqrt(pow(eta_dist,2) + pow(phi_dist, 2));
 	return R;
 }
-std::unordered_map<int, std::pair<std::pair<float, float>, std::pair <float, float>>> CalorimeterTowerENC::GetTowerMaps(RawTowerGeomContainer_Cylinder v1*, RawTowerDefs::Calorimenter ID)
+std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> CalorimeterTowerENC::GetTowerMaps(RawTowerGeomContainer_Cylinder v1*, RawTowerDefs::Calorimenter ID)
 {
 	//ge thte geometry map for the towers in the first event to may it easy to serarc
+	//the idea is put the menan in and the associate a key with it 
 	
 	
-int CalorimeterTowerENC::GetTowerNumber(std::pair<float, float> part)
+int CalorimeterTowerENC::GetTowerNumber(std::pair<float, float> part, std::map<float, std::map< float, int>> Calomap, std::pair<float, float> delta)
 {
-	
+	for(auto t:Calomap)
+	{
+		if( part.first < t.first + delta.first && part.first >= t.first - delta.first){
+			//checking the eta bounds first
+			for (auto tp:t.second){
+				if(part.second < tp.first + delta.second && part.second >= tp.first - delta.second) return tp.second;
+			}
+		}
+	}
+	return -1;
+}
 int CalorimeterTowerENC::RecordHits( /*some data struct*/){
 	//record where the particles are located and which towers are seeing hits
 	std::unordered_set<std::pair<float, float>> particle_coords; //This will store the location of each particle which then I can use tho capture the relevant towe
