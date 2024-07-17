@@ -1,0 +1,21 @@
+* Generate run list
+#+begin_src bash
+fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort > runs-<tag>.list
+#+end_src
+- <tag>: p001-5
+
+Example:
+#+begin_src bash
+fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort > runs-p004.list
+#+end_src
+
+* Get number of runs in <tag>
+#+begin_src bash
+fd <tag> CEMC_BadTowerMap | wc -l
+#+end_src
+- <tag>: p001-5
+
+Example:
+#+begin_src bash
+fd p004 CEMC_BadTowerMap | wc -l
+#+end_src
