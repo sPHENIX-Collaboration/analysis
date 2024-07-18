@@ -31,7 +31,7 @@ namespace myAnalysis {
     void plots(const string& i_input, const string &output, const string &hotFile);
 
     UInt_t  ntowers   = 24576;
-    Float_t threshold = 150;
+    Float_t threshold = 120;
 }
 
 void myAnalysis::plots(const string& i_input, const string &output, const string &hotFile) {
@@ -86,7 +86,7 @@ void myAnalysis::plots(const string& i_input, const string &output, const string
     c1->SetRightMargin(.12);
 
     for(UInt_t i = 0; i < h2BadTowersVec.size(); ++i) {
-        h2BadTowersVec[i]->SetMaximum(500);
+        h2BadTowersVec[i]->SetMaximum(400);
         h2BadTowersVec[i]->GetYaxis()->SetTitleOffset(0.9);
         h2BadTowersVec[i]->Draw("colz1");
 

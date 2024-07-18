@@ -4,26 +4,37 @@ CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
 #+end_src
 - <tag>: 2024p001-6
 
-* Generate run list for runs that have bad tower map
+* Generate dst list from run list
 #+begin_src bash
-fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort > runs-<tag>.list
+CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
 #+end_src
-- <tag>: p001-5
+- <tag>: 2024p001-6
 
 Example:
 #+begin_src bash
-fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort > runs-p004.list
+CreateDstList.pl --build new --cdb 2024p004 DST_CALO_run2pp --list files/runs-p004.list
+#+end_src
+
+* Generate run list for runs that have bad tower map
+#+begin_src bash
+fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-<tag>.list
+#+end_src
+- <tag>: p001-6
+
+Example:
+#+begin_src bash
+fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-p004.list
 #+end_src
 
 * Get number of runs in <tag>
 #+begin_src bash
-fd <tag> CEMC_BadTowerMap | wc -l
+fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq | wc -l
 #+end_src
-- <tag>: p001-5
+- <tag>: p001-6
 
 Example:
 #+begin_src bash
-fd p004 CEMC_BadTowerMap | wc -l
+fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq | wc -l
 #+end_src
 
 * Bad Tower Status
