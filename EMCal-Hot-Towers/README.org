@@ -1,5 +1,11 @@
 * Generate run list
 #+begin_src bash
+CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
+#+end_src
+- <tag>: 2024p001-6
+
+* Generate run list for runs that have bad tower map
+#+begin_src bash
 fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort > runs-<tag>.list
 #+end_src
 - <tag>: p001-5
@@ -19,3 +25,8 @@ Example:
 #+begin_src bash
 fd p004 CEMC_BadTowerMap | wc -l
 #+end_src
+
+* Bad Tower Status
+- 1: Dead
+- 2: Hot
+- 3: Cold

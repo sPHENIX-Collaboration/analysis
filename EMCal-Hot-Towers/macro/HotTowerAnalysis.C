@@ -36,18 +36,15 @@ namespace myAnalysis {
     void process_event();
     void finalize(const string &i_output);
 
-    TH1F* hHotTowers;
-    TH1F* hHotTowersS1;
-    TH1F* hHotTowersS2;
-    TH1F* hHotTowersS3;
+    TH1F* hBadTowers;
+    TH1F* hBadTowersDead;
+    TH1F* hBadTowersHot;
+    TH1F* hBadTowersCold;
 
-    TH2F* h2HotTowers;
-    TH2F* h2HotTowersS1;
-    TH2F* h2HotTowersS2;
-    TH2F* h2HotTowersS3;
-
-    TH1F* hHotTowersMasked;
-    TH2F* h2HotTowersMasked;
+    TH2F* h2BadTowers;
+    TH2F* h2BadTowersDead;
+    TH2F* h2BadTowersHot;
+    TH2F* h2BadTowersCold;
 
     TH1F* hHotTowerStatus;
 
@@ -72,18 +69,15 @@ namespace myAnalysis {
 
 void myAnalysis::init_hists() {
 
-    hHotTowers   = new TH1F("hHotTowers", "Hot Towers; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
-    hHotTowersS1 = new TH1F("hHotTowersS1", "Hot Towers: Status 1; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
-    hHotTowersS2 = new TH1F("hHotTowersS2", "Hot Towers: Status 2; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
-    hHotTowersS3 = new TH1F("hHotTowersS3", "Hot Towers: Status 3; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
+    hBadTowers   = new TH1F("hBadTowers", "Bad Towers; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
+    hBadTowersDead = new TH1F("hBadTowersDead", "Bad Towers: Dead; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
+    hBadTowersHot = new TH1F("hBadTowersHot", "Bad Towers: Hot; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
+    hBadTowersCold = new TH1F("hBadTowersCold", "Bad Towers: Cold; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
 
-    h2HotTowers   = new TH2F("h2HotTowers", "Hot Towers; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
-    h2HotTowersS1 = new TH2F("h2HotTowersS1", "Hot Towers: Status 1; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
-    h2HotTowersS2 = new TH2F("h2HotTowersS2", "Hot Towers: Status 2; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
-    h2HotTowersS3 = new TH2F("h2HotTowersS3", "Hot Towers: Status 3; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
-
-    hHotTowersMasked  = new TH1F("hHotTowersMasked", "Hot Towers; Tower Index; Runs", ntowers, -0.5, ntowers-0.5);
-    h2HotTowersMasked = new TH2F("h2HotTowersMasked", "Hot Towers; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
+    h2BadTowers   = new TH2F("h2BadTowers", "Bad Towers; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
+    h2BadTowersDead = new TH2F("h2BadTowersDead", "Bad Towers: Dead; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
+    h2BadTowersHot = new TH2F("h2BadTowersHot", "Bad Towers: Hot; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
+    h2BadTowersCold = new TH2F("h2BadTowersCold", "Bad Towers: Cold; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
 
     hHotTowerStatus = new TH1F("hHotTowerStatus", "Hot Tower Status; Status; Towers", nStatus, -0.5, nStatus-0.5);
 }
@@ -166,37 +160,26 @@ void myAnalysis::process_event() {
             Float_t hotMap_val = m_cdbttree_hotMap->GetIntValue(key, m_fieldname_hotMap);
 
             if ((m_doHotChi2 && fraction_badChi2 > fraction_badChi2_threshold) || hotMap_val != 0) {
-                hHotTowers->Fill(channel);
-                h2HotTowers->Fill(phibin, etabin);
+                hBadTowers->Fill(channel);
+                h2BadTowers->Fill(phibin, etabin);
                 hHotTowerStatus->Fill(hotMap_val);
 
+                // Dead
                 if(hotMap_val == 1) {
-                    hHotTowersS1->Fill(channel);
-                    h2HotTowersS1->Fill(phibin, etabin);
+                    hBadTowersDead->Fill(channel);
+                    h2BadTowersDead->Fill(phibin, etabin);
                 }
+                // Hot
                 if(hotMap_val == 2) {
-                    hHotTowersS2->Fill(channel);
-                    h2HotTowersS2->Fill(phibin, etabin);
+                    hBadTowersHot->Fill(channel);
+                    h2BadTowersHot->Fill(phibin, etabin);
                 }
+                // Cold
                 if(hotMap_val == 3) {
-                    hHotTowersS3->Fill(channel);
-                    h2HotTowersS3->Fill(phibin, etabin);
+                    hBadTowersCold->Fill(channel);
+                    h2BadTowersCold->Fill(phibin, etabin);
                 }
             }
-        }
-    }
-
-    for (UInt_t channel = 0; channel < ntowers; ++channel) {
-        UInt_t key    = TowerInfoDefs::encode_emcal(channel);
-        UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
-        UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
-
-        Float_t counts = h2HotTowers->GetBinContent(phibin+1, etabin+1);
-
-        // if a tower is always flagged as hot then it's probably because the tower is dead
-        if(counts < runs.size()) {
-            hHotTowersMasked->SetBinContent(channel+1, counts);
-            h2HotTowersMasked->SetBinContent(phibin+1, etabin+1, counts);
         }
     }
 
@@ -208,18 +191,15 @@ void myAnalysis::finalize(const string &i_output) {
      TFile output(i_output.c_str(),"recreate");
      output.cd();
 
-     hHotTowers->Write();
-     hHotTowersS1->Write();
-     hHotTowersS2->Write();
-     hHotTowersS3->Write();
+     hBadTowers->Write();
+     hBadTowersDead->Write();
+     hBadTowersHot->Write();
+     hBadTowersCold->Write();
 
-     h2HotTowers->Write();
-     h2HotTowersS1->Write();
-     h2HotTowersS2->Write();
-     h2HotTowersS3->Write();
-
-     hHotTowersMasked->Write();
-     h2HotTowersMasked->Write();
+     h2BadTowers->Write();
+     h2BadTowersDead->Write();
+     h2BadTowersHot->Write();
+     h2BadTowersCold->Write();
 
      hHotTowerStatus->Write();
 
