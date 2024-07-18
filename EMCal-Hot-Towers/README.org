@@ -26,7 +26,7 @@ Example:
 fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-p004.list
 #+end_src
 
-* Get number of runs in <tag>
+* Get number of runs that have bad tower map
 #+begin_src bash
 fd <tag> CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq | wc -l
 #+end_src
