@@ -41,3 +41,23 @@ fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq | wc -l
 - 1: Dead
 - 2: Hot
 - 3: Cold
+
+* Fun4All Quick Tests
+
+** After editing Makefile.am
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+#+end_src
+
+#+begin_src
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+#+end_src
+
+** After editing .cc or .h
+#+begin_src bash
+make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+#+end_src
+
+#+begin_src
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+#+end_src
