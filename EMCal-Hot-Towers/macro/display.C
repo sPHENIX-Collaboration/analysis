@@ -28,13 +28,14 @@ using std::max;
 using std::ofstream;
 
 namespace myAnalysis {
-    void plots(const string& i_input, const string &output, const string &hotFile);
+    void plots(const string& i_input, const string &output);
 
     UInt_t  ntowers   = 24576;
-    Float_t threshold = 120;
+    Float_t threshold = 150;
+    Float_t zMax      = 500;
 }
 
-void myAnalysis::plots(const string& i_input, const string &output, const string &hotFile) {
+void myAnalysis::plots(const string& i_input, const string &output) {
     TFile input(i_input.c_str());
 
     TCanvas* c1 = new TCanvas();
@@ -83,10 +84,10 @@ void myAnalysis::plots(const string& i_input, const string &output, const string
     }
 
     c1->SetLeftMargin(.1);
-    c1->SetRightMargin(.12);
+    c1->SetRightMargin(.13);
 
     for(UInt_t i = 0; i < h2BadTowersVec.size(); ++i) {
-        h2BadTowersVec[i]->SetMaximum(400);
+        h2BadTowersVec[i]->SetMaximum(zMax);
         h2BadTowersVec[i]->GetYaxis()->SetTitleOffset(0.9);
         h2BadTowersVec[i]->Draw("colz1");
 
@@ -119,20 +120,13 @@ void myAnalysis::plots(const string& i_input, const string &output, const string
 
     UInt_t ctr[4] = {0};
 
-    ofstream output2(hotFile);
-
     for(UInt_t i = 1; i <= ntowers; ++i) {
         UInt_t towerIndex = i-1;
         if(hBadTowers->GetBinContent(i) > 0)             ++ctr[0];
         if(hBadTowers->GetBinContent(i) >= threshold)    ++ctr[1];
         if(hBadTowersHot->GetBinContent(i) > 0)          ++ctr[2];
-        if(hBadTowersHot->GetBinContent(i) >= threshold) {
-            output2 << towerIndex << endl;
-            ++ctr[3];
-        }
+        if(hBadTowersHot->GetBinContent(i) >= threshold) ++ctr[3];
     }
-
-    output2.close();
 
     cout << "Bad Towers" << endl
          << "All: "                              << ctr[0] << ", " << ctr[0]*100./ntowers << " %" << endl
@@ -145,41 +139,35 @@ void myAnalysis::plots(const string& i_input, const string &output, const string
     input.Close();
 }
 
-void display(const string &input, const string &output="plots.pdf", const string &hotFile="hot.list") {
+void display(const string &input, const string &output="plots.pdf") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
     cout << "output: " << output << endl;
-    cout << "Hot Towers File: " << hotFile << endl;
     cout << "#############################" << endl;
 
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    myAnalysis::plots(input, output, hotFile);
+    myAnalysis::plots(input, output);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 4){
-        cout << "usage: ./display input [output] [hotFile]" << endl;
+if(argc < 2 || argc > 3){
+        cout << "usage: ./display input [output]" << endl;
         cout << "input: input root file" << endl;
         cout << "output: output pdf file" << endl;
-        cout << "Hot Tower File: output hot tower list" << endl;
         return 1;
     }
 
     string output  = "plots.pdf";
-    string hotFile = "hot.list";
 
     if(argc >= 3) {
         output = argv[2];
     }
-    if(argc >= 4) {
-        hotFile = argv[3];
-    }
 
-    display(argv[1], output, hotFile);
+    display(argv[1], output);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
