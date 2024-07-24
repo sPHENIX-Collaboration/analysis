@@ -4,8 +4,8 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  16 July 2024						//
-//		version: v0.0									//
+//		Date of Last Update:  24 July 2024						//
+//		version: v0.1									//
 //												//
 //												//
 //		This project is a study on energy correlators using particle jets and 		//
@@ -42,6 +42,54 @@ float CalorimeterTowerENC::getR(std::pair<float, float> p1, std::pair<float,floa
 	float R=sqrt(pow(eta_dist,2) + pow(phi_dist, 2));
 	return R;
 }
+void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::undordered_set<int> tower_set, TowerInfoContainer* data, RawTowerGeomContainer_Cylinderv1* geom, RawTowerDefs::CalorimeterId calo, float jete, std::map<std::string, TH1F*> histograms, int npt)
+{
+	geom->set_calorimerter_id(calo);
+	for(auto i:tower_set){
+		auto tower_1 = data->get_tower_at_channel(i);
+		auto key_1 = data->encode_key(i);
+		int phibin_1 = data->getTowerPhibin(key_1);
+		int etabin_1 = data->getTowerEtabin(key_1);
+		float phi_center_1 = geom->get_phicenter(key_1);
+		float eta_center_1 = geom->get_etacenter(key_1);
+		float energy_1= tower_1->get_energy(); 
+		//there is probably a smart way to collect the group of sizes n, but I can really just do it by hand for rn 
+		for(auto j:tower_set){
+			if (i >= j) continue;
+			auto tower_2 = data->get_tower_at_channel(j);
+			auto key_2 = data->encode_key(j);
+			int phibin_2 = data->getTowerPhibin(key_2);
+			int etabin_2 = data->getTowerEtabin(key_2);
+			float phi_center_2 = geom->get_phicenter(key_2);
+			float eta_center_2 = geom->get_etacenter(key_2);
+			float energy_2 = tower_2->get_energy();
+			std::pair<float, float> tower_center_1 {eta_center_1, phi_center_1}, tower_center_2 {eta_center_2, phi_center_2};
+			float R_12=(tower_center_1, tower_center_2);
+			float e2c=energy_1*energy_2 / ((float) pow(jete,2));
+			histograms["R_sep"]->Fill(R_12);
+			histograms["E2C"]->Fill(R_12, e2c);
+			if( npt >= 3){
+				for( auto k:tower_set){
+					if( j >= k || i >= k) continue;
+					auto tower_3 = data->get_tower_at_channel(k);
+					auto key_3 = data->encode_key(k);
+					int phibin_3 = data->getTowerPhibin(key_3);
+					int etabin_3 = data->getTowerEtabin(key_3);
+					float phi_center_3 = geom->get_phicenter(key_3);
+					float eta_center_3 = geom->get_etacenter(key_3);
+					float energy_3 = data->get_energy();
+					std::pair<float, float> tower_center_3 {eta_center_3, phi_center_3};
+					float R_13=(tower_center_1, tower_center_3);
+					float R_23=(tower_cernter_2, tower_center_3);
+					float e3c=energy_3*e2c/(float)jete;
+					float R_L = std::max(R_12, R_13);
+					R_L=std::max(R_L, R_23);
+					histograms["E3C"]->Fill(R_L, e3c);
+				}
+			}
+		}
+	}
+}
 void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, int version)
 {
 	//this is the processor that allows for read out of the tower energies given the set of towers in the phi-eta plane
@@ -51,16 +99,35 @@ void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<in
 	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
 	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+	float jete_em = 0, jete_ih=0, jete_oh=0;
 	for(auto i:em)
 	{
-		emcal_geom->set_calorimeter_id(RawTowerDefs::CEMC);
 		try{
 			auto tower_e=emcal_tower_energy->get_tower_at_key(i);
+			jete_em+=tower_e->get_energy();
 		}
-		catch(std::exception& e){
-			std::cout<<"Could not access the tower of that key" <<std::endl;
+		catch(std::exception& e) { continue; }
+	}
+	for(auto i:ih)
+	{
+		try{
+			auto tower_e=ihcal_tower_energy->get_tower_at_key(i);
+			jete_ih+=tower_e->get_energy();
 		}
-		
+		catch(std::exception& e) { continue; }
+	}
+	for(auto i:oh)
+	{
+		try{
+			auto tower_e=ohcal_tower_energy->get_tower_at_key(i);
+			jete_oh+=tower_e->get_energy();
+		}
+		catch(std::exception& e) { continue; }
+	}
+	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    JetHistos.at(version)["EMC"], jete_em);
+	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  JetHistos.at(version)["IHC"], jete_ih);
+	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, JetHistos.at(version)["OHC"], jete_oh);
+	return;
 }
 void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, int version)
 {
