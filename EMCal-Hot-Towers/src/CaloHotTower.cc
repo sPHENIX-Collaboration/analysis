@@ -172,6 +172,7 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
+  UInt_t i = 0;
   // initialize histograms
   for(auto idx : hotTowerIndex) {
 
@@ -188,10 +189,12 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
     etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
     phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
-    name  = "RefTower_"+to_string(phibin)+"_"+to_string(etabin);
+    name  = "RefTower_"+to_string(phibin)+"_"+to_string(etabin)+"_"+to_string(i);
     title = "Reference Tower: iphi: " + to_string(phibin) + ", ieta: " + to_string(etabin) + "; ADC; Counts";
     h = new TH1F(name.c_str(), title.c_str(), bins_energy, energy_low, energy_high);
     hRefTowerEnergy.push_back(h);
+
+    ++i;
   }
 
   // CDBInterface::instance()->Verbosity(0);
