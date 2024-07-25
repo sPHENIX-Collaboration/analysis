@@ -261,11 +261,6 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
 }
 
 //____________________________________________________________________________..
-Int_t CaloHotTower::ResetEvent(PHCompositeNode *topNode) {
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
 Int_t CaloHotTower::End(PHCompositeNode *topNode) {
   cout << "CaloHotTower::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Min Energy: " << energy_min << ", Max Energy: " << energy_max << endl;

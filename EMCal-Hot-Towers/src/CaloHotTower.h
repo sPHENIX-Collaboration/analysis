@@ -33,9 +33,6 @@ class CaloHotTower : public SubsysReco
    */
   Int_t process_event(PHCompositeNode *topNode) override;
 
-  /// Clean up internals after each event.
-  Int_t ResetEvent(PHCompositeNode *topNode) override;
-
   /// Called at the end of all processing.
   Int_t End(PHCompositeNode *topNode) override;
 
