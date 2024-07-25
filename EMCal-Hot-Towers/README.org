@@ -61,3 +61,10 @@ make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./b
 #+begin_src
 make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
 #+end_src
+
+* Condor Tips
+
+** Allocate more memory to an idle job
+#+begin_src bash
+condor_hold -all && condor_qedit <job id> RequestMemory <Memory (MB)> && condor_release -all
+#+end_src
