@@ -103,9 +103,12 @@ CaloHotTower::CaloHotTower(const string &name):
  iEvent(0),
  energy_min(9999),
  energy_max(0),
- bins_energy(3000),
+ bins_energy(2000),
  energy_low(0),
- energy_high(1.5e4),
+ energy_high(1e4),
+ bins_status(4),
+ status_low(-0.5),
+ status_high(3.5),
  m_emcTowerNode("TOWERS_CEMC"),
  m_outputFile("test.root"),
  m_calibName_hotMap("CEMC_BadTowerMap")
@@ -185,6 +188,16 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
     auto h = new TH1F(name.c_str(), title.c_str(), bins_energy, energy_low, energy_high);
     hHotTowerEnergy.push_back(h);
 
+    name  = "HotTowerComplement_"+to_string(phibin)+"_"+to_string(etabin);
+    title = "Hot Tower Complement: iphi: " + to_string(phibin) + ", ieta: " + to_string(etabin) + "; ADC; Counts";
+    h = new TH1F(name.c_str(), title.c_str(), bins_energy, energy_low, energy_high);
+    hHotTowerComplementEnergy.push_back(h);
+
+    name  = "HotTowerStatus_"+to_string(phibin)+"_"+to_string(etabin);
+    title = "Hot Tower Status: iphi: " + to_string(phibin) + ", ieta: " + to_string(etabin) + "; Status; Counts";
+    h = new TH1F(name.c_str(), title.c_str(), bins_status, status_low, status_high);
+    hHotTowerStatus.push_back(h);
+
     key    = TowerInfoDefs::encode_emcal(idx.second);
     etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
     phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
@@ -197,8 +210,6 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
     ++i;
   }
 
-  // CDBInterface::instance()->Verbosity(0);
-
   string calibdir = CDBInterface::instance()->getUrl(m_calibName_hotMap);
 
   if (calibdir.empty()) {
@@ -210,6 +221,15 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
 
   // print used DB files
   CDBInterface::instance()->Print();
+
+  // Fill in tower status for the common hot towers
+  for (UInt_t i = 0; i < hotTowerIndex.size(); i++) {
+    UInt_t towerIndex = hotTowerIndex[i].first;
+    UInt_t key        = TowerInfoDefs::encode_emcal(towerIndex);
+    Int_t hotMap_val  = m_cdbttree_hotMap->GetIntValue(key, "status");
+
+    hHotTowerStatus[i]->Fill(hotMap_val);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -233,13 +253,19 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     Int_t hotMap_val  = m_cdbttree_hotMap->GetIntValue(key, "status");
     TowerInfo* tower  = towers->get_tower_at_channel(towerIndex);
     Float_t energy    = tower->get_energy();
-
-    energy_min = min(energy_min, energy);
-    energy_max = max(energy_max, energy);
+    Bool_t isBadChi2  = tower->get_isBadChi2();
 
     // status 2: hot tower
-    if(hotMap_val == 2) {
+    if(hotMap_val == 2 && !isBadChi2) {
       hHotTowerEnergy[i]->Fill(energy);
+      energy_min = min(energy_min, energy);
+      energy_max = max(energy_max, energy);
+    }
+
+    if(hotMap_val != 2 && !isBadChi2) {
+      hHotTowerComplementEnergy[i]->Fill(energy);
+      energy_min = min(energy_min, energy);
+      energy_max = max(energy_max, energy);
     }
 
     towerIndex = hotTowerIndex[i].second;
@@ -247,13 +273,13 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     hotMap_val = m_cdbttree_hotMap->GetIntValue(key, "status");
     tower      = towers->get_tower_at_channel(towerIndex);
     energy     = tower->get_energy();
-
-    energy_min = min(energy_min, energy);
-    energy_max = max(energy_max, energy);
+    isBadChi2  = tower->get_isBadChi2();
 
     // status 0: good tower
-    if(!hotMap_val) {
+    if(!hotMap_val && !isBadChi2) {
       hRefTowerEnergy[i]->Fill(energy);
+      energy_min = min(energy_min, energy);
+      energy_max = max(energy_max, energy);
     }
   }
 
@@ -267,11 +293,19 @@ Int_t CaloHotTower::End(PHCompositeNode *topNode) {
 
   TFile output(m_outputFile.c_str(),"recreate");
   output.mkdir("Hot");
+  output.mkdir("HotComplement");
+  output.mkdir("HotStatus");
   output.mkdir("Ref");
 
   for(UInt_t i = 0; i < hotTowerIndex.size(); ++i) {
     output.cd("Hot");
     hHotTowerEnergy[i]->Write();
+
+    output.cd("HotStatus");
+    hHotTowerStatus[i]->Write();
+
+    output.cd("HotComplement");
+    hHotTowerComplementEnergy[i]->Write();
 
     output.cd("Ref");
     hRefTowerEnergy[i]->Write();
