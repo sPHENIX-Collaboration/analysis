@@ -106,9 +106,6 @@ CaloHotTower::CaloHotTower(const string &name):
  bins_energy(2000),
  energy_low(0),
  energy_high(1e4),
- bins_status(4),
- status_low(-0.5),
- status_high(3.5),
  m_emcTowerNode("TOWERS_CEMC"),
  m_outputFile("test.root"),
  m_calibName_hotMap("CEMC_BadTowerMap")
@@ -193,11 +190,6 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
     h = new TH1F(name.c_str(), title.c_str(), bins_energy, energy_low, energy_high);
     hHotTowerComplementEnergy.push_back(h);
 
-    name  = "HotTowerStatus_"+to_string(phibin)+"_"+to_string(etabin);
-    title = "Hot Tower Status: iphi: " + to_string(phibin) + ", ieta: " + to_string(etabin) + "; Status; Counts";
-    h = new TH1F(name.c_str(), title.c_str(), bins_status, status_low, status_high);
-    hHotTowerStatus.push_back(h);
-
     key    = TowerInfoDefs::encode_emcal(idx.second);
     etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
     phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
@@ -221,15 +213,6 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
 
   // print used DB files
   CDBInterface::instance()->Print();
-
-  // Fill in tower status for the common hot towers
-  for (UInt_t i = 0; i < hotTowerIndex.size(); i++) {
-    UInt_t towerIndex = hotTowerIndex[i].first;
-    UInt_t key        = TowerInfoDefs::encode_emcal(towerIndex);
-    Int_t hotMap_val  = m_cdbttree_hotMap->GetIntValue(key, "status");
-
-    hHotTowerStatus[i]->Fill(hotMap_val);
-  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -294,15 +277,11 @@ Int_t CaloHotTower::End(PHCompositeNode *topNode) {
   TFile output(m_outputFile.c_str(),"recreate");
   output.mkdir("Hot");
   output.mkdir("HotComplement");
-  output.mkdir("HotStatus");
   output.mkdir("Ref");
 
   for(UInt_t i = 0; i < hotTowerIndex.size(); ++i) {
     output.cd("Hot");
     hHotTowerEnergy[i]->Write();
-
-    output.cd("HotStatus");
-    hHotTowerStatus[i]->Write();
 
     output.cd("HotComplement");
     hHotTowerComplementEnergy[i]->Write();
