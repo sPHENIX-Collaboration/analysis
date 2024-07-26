@@ -38,10 +38,6 @@ namespace myAnalysis {
     Int_t readHotTowerIndexFile(const string &hotList);
 
     vector<pair<UInt_t,UInt_t>> hotTowerIndex;
-
-    // UInt_t  ntowers   = 24576;
-    // Float_t threshold = 150;
-    // Float_t zMax      = 500;
 }
 
 Int_t myAnalysis::readHotTowerIndexFile(const string &hotList) {
@@ -108,29 +104,35 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
         UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
-        string name  = "Hot/HotTower_"+to_string(phibin)+"_"+to_string(etabin);
-        string lHot  = "Hot: (" + to_string(phibin) + "," + to_string(etabin) + ")";
-        auto hHot    = (TH1F*)input.Get(name.c_str());
+        string name = "Hot/HotTower_"+to_string(phibin)+"_"+to_string(etabin);
+        string lHot = "Hot (Status = 2): (" + to_string(phibin) + "," + to_string(etabin) + ")";
+        auto hHot   = (TH1F*)input.Get(name.c_str());
+
+        name            = "HotComplement/HotTowerComplement_"+to_string(phibin)+"_"+to_string(etabin);
+        string lHotComp = "Hot (Status #neq 2): (" + to_string(phibin) + "," + to_string(etabin) + ")";
+        auto hHotComp   = (TH1F*)input.Get(name.c_str());
 
         key    = TowerInfoDefs::encode_emcal(idx.second);
         etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
         phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
-        name         = "Ref/RefTower_"+to_string(phibin)+"_"+to_string(etabin)+"_"+to_string(i);
-        string lRef  = "Ref: (" + to_string(phibin) + "," + to_string(etabin) + ")";
-        auto hRef    = (TH1F*)input.Get(name.c_str());
+        name        = "Ref/RefTower_"+to_string(phibin)+"_"+to_string(etabin)+"_"+to_string(i);
+        string lRef = "Ref (Status = 0): (" + to_string(phibin) + "," + to_string(etabin) + ")";
+        auto hRef   = (TH1F*)input.Get(name.c_str());
 
         gPad->SetLogy();
-        hHot->SetStats(0);
         hHot->SetLineColor(kRed);
         hHot->GetYaxis()->SetTitleOffset(0.9);
         hHot->Draw();
+        hHotComp->SetLineColor(kGreen+2);
+        hHotComp->Draw("same");
         hRef->SetLineColor(kBlue);
         hRef->Draw("same");
 
-        TLegend *leg = new TLegend(0.7,.82,0.9,.92);
-        leg->SetFillStyle(0);
+        TLegend *leg = new TLegend(0.52,.75,0.72,.92);
+        // leg->SetFillStyle(0);
         leg->AddEntry(hHot,lHot.c_str(),"f");
+        leg->AddEntry(hHotComp,lHotComp.c_str(),"f");
         leg->AddEntry(hRef,lRef.c_str(),"f");
         leg->Draw("same");
 
@@ -144,7 +146,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         hHot->GetYaxis()->SetTitle("Hot/Ref");
         hHot->Draw();
 
-        TLine* line = new TLine(0, 1, 1.5e4, 1);
+        TLine* line = new TLine(0, 1, 1e4, 1);
         line->SetLineColor(kBlack);
         line->SetLineStyle(9);
         // line->SetLineWidth(1);
