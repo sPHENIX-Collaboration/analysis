@@ -72,6 +72,11 @@ class CalorimeterTowerENC : public SubsysReco
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimenterID, TowerInfoContainer*);
 	float getPt();
 	float getR();
+	void GetENCCalo(PHCompositeNode*, std::undordered_set<int>, TowerInfoContainer*, RawTowerGeomGontianer_Cylinderv1*, RawTowerDefs::CalorimeterId, float, std::map<std::string, TH1F*>, int); 
+	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
+	void GetE2C(PHCompositeNode*, std::map<PHG4Particles*, std::pair<float, float>>);
+	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
+	void GetE3C(PHCompositeNode*, std::map<PHG4Particles*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, int>, std::pair<float, float>);
 	int RecordHits( Jet* );	
   /// Clean up internals after each event.
@@ -89,11 +94,14 @@ class CalorimeterTowerENC : public SubsysReco
   	void Print(const std::string &what = "ALL") const override;
 
  private:
-	TH1F *E2P, *E3P, *E2C, *E3C, *E2T, *E3T; //particle method and calo tower method as well as truth 
-	TH1F *tows, *comps;
+	int n_evts=0;
+	TH1F *E2P, *E3P, *E2C_E, *E3C_E, *E2C_I, *E3C_I, *E2C_O, *E3C_O; //particle method and calo tower method as well as truth 
+	TH1F *tows_e, *tows_i, *tows_o, *comps;
 	TH1F *energyP, *energyC;
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 	JetTruthEval* truth_evaluater; 
+	std::map<std::string, std::map<std::string, TH1F*>> histogram_map {{"Particles",{ {"E2C", E2P}, {"E3C", E3P}, {"R_sep", RP}, {"E", energyP}, {"N", comps}}}, {"EMCal",{ {"E2C", E2C_E}, {"E3C", E3C_E}, {"R_sep", RC_E}, {"E", energyC_E}, {"N", tows_e}}}, {"IHCal",{ {"E2C", E2C_I}, {"E3C", E3C_I}, {"R_sep", RC_I}, {"E", energyC_I}, {"N", tows_i}}},{"OHCal",{ {"E2C", E2C_O}, {"E3C", E3C_O}, {"R_sep", RC_O}, {"E", energyC_O}, {"N", tows_o}}}};
+	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
 };
 
 #endif // CALORIMETERTOWERENC_H

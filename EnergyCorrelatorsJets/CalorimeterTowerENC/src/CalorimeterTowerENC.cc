@@ -24,6 +24,15 @@ CalorimeterTowerENC::CalorimeterTowerENC(const std::string &name){
 int CalorimeterTowerENC::Init(PHCompositeNode *topNode)
 {	
 	//book histograms and TTrees
+	for(auto h:histogram_map){
+		std::string typelabel = h.first;
+		auto hists=h.second;
+		hists["E2C"]=new TH1F(Form("e2c_%s", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelable.c_str()), 30, -0.05, 0.45); 
+		hists["E3C"]=new TH1F(Form("e3c_%s", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), 30, -0.05, 0.45); 
+		hists["R_sep"]=new TH1F(Form("R_%s", typelabel.c_str()), Form("#Delta R_{12} between compotents in jet from %s; #delta R_{12}; < N >", typelable.c_str()), 30, -0.05, 0.45);
+		hists["E"]=new TH1F(Form("e_%s", typelabel.c_str()), Form("Jet energy from %s; E [GeV]; N_{jet}", typelabel.c_str()), 50, -0.5, 49.5); 
+		hists["N"]=new TH1F(Form("n_%s", typelabel.c_str()), Form("N compoents from %s; N_{components}; N_{jet}", typelabel.c_str()), 500, -0.5, 499.5); 
+		 
 }
 
 float CalorimeterTowerENC::getPt(PHG4Particle* p)
@@ -124,9 +133,12 @@ void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<in
 		}
 		catch(std::exception& e) { continue; }
 	}
-	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    JetHistos.at(version)["EMC"], jete_em);
-	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  JetHistos.at(version)["IHC"], jete_ih);
-	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, JetHistos.at(version)["OHC"], jete_oh);
+	histogram_map["EMCal"]["E"]->Fill(jete_em);
+	histogram_map["IHCal"]["E"]->Fill(jete_ih);
+	histogram_map["OHCal"]["E"]->Fill(jete_oh);
+	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    histogram_map["EMCal"], jete_em);
+	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  histogram_map["IHCal"], jete_ih);
+	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, histogram_map["OHCal"], jete_oh);
 	return;
 }
 void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, int version)
@@ -244,25 +256,49 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	std::unordered_set<int> jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal; 
 	for(auto pc:jet_coord)
 	{
-		int tne=GetTowerNumber(pc, EMCALMAP.second, EMCALMAP.first);
+		int tne=GetTowerNumber(pc, EMCALMAP.first, EMCALMAP.second);
 		jet_towers_emcal.insert(tne);
-		int tni=GetTowerNumber(pc, IHCALMAP.second, IHCALMAP.first);
+		int tni=GetTowerNumber(pc, IHCALMAP.first, IHCALMAP.second);
 		jet_towers_ihcal.insert(tni);
-		int tno=GetTowerNumber(pc, OHCALMAP.second, OHCALMAP.first);
+		int tno=GetTowerNumber(pc, OHCALMAP.first, OHCALMAP.second);
 		jet_towers_ohcal.insert(tno);
 	}
-	getE2C(jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal, 2, topNode);
-	getE3C(jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal, 2, topNode);
+	getE2C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal);
+	getE3C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal);
 	return 1;
 }
 	       	
 int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 	//need to process the events, this is really going to be a minor thing, need to pull my existing ENC code to do it better
+	//for the first event build the  tower number map that is needed
+	n_evts++;
+	try{
+		auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
+		auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+		auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
+		auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+		auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
+		auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+		if(EMCALMAP.size() == 0 )  EMCALMAP=GetTowerMaps(emcal_geom, RawTowerDefs::CEMC, emcal_tower_energy);
+		if(IHCALMAP.size() == 0 )  IHCALMAP=GetTowerMaps(ihcal_geom, RawTowerDefs::HCALIN, ihcal_tower_energy);
+		if(OHCALMAP.size() == 0 )  OHCALMAP=GetTowerMaps(ohcal_geom, RawTowerDefs::HCALOUT, ohcal_tower_energy);
+		auto jet = findNode::getClass<JetContainer> (topNode, "");
+	
+	
 }
 int CalorimeterTowerENC::End(PHCompositeNode *topNode){
-
+	return 1;
 }
 void CalorimeterTowerENC::Print(const std::string &what)
 {
+	TFile* f=new TFile("Calorimeter_Tower_ENC.root", "RECREATE");
 	//printing the stuff out 
+	for(auto hs:histogram_map){
+		for(auto h:hs){
+			h.second->Write();
+		}
+	}
+	f->Write();
+	f->Close();
+	return;
 }
