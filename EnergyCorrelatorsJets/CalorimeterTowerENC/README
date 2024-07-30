@@ -1,0 +1,2 @@
+This is an analysis node to allow fpr the comparison of a jet with fully identified particle components to the towers of the region of an identified jet for the impact of the ENC. 
+Right now, it takes in the truth jet from the TRUTH_JET DST nodes and gets the data on the calos from the DST_CALO_CLUSTER nodes. Next step would be to use the reco form instead of the base truth object to introduce a bettter set of detector effects

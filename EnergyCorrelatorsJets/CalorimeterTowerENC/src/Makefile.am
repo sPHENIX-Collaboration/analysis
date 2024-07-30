@@ -21,7 +21,11 @@ libCalorimeterTowerENC_la_SOURCES = \
 
 libCalorimeterTowerENC_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \
+  -lfun4all \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets 
 
 BUILT_SOURCES = testexternals.cc
 
