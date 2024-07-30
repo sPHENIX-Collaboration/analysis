@@ -70,8 +70,8 @@ class CalorimeterTowerENC : public SubsysReco
    */
   	int process_event(PHCompositeNode *topNode) override;
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimenterID, TowerInfoContainer*);
-	float getPt();
-	float getR();
+	float getPt(PHG4Particle*);
+	float getR(std::pair<float, float>, std::pair<float, float>);
 	void GetENCCalo(PHCompositeNode*, std::undordered_set<int>, TowerInfoContainer*, RawTowerGeomGontianer_Cylinderv1*, RawTowerDefs::CalorimeterId, float, std::map<std::string, TH1F*>, int); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particles*, std::pair<float, float>>);
@@ -94,7 +94,7 @@ class CalorimeterTowerENC : public SubsysReco
   	void Print(const std::string &what = "ALL") const override;
 
  private:
-	int n_evts=0;
+	int n_evts=0, Nj=1;
 	TH1F *E2P, *E3P, *E2C_E, *E3C_E, *E2C_I, *E3C_I, *E2C_O, *E3C_O; //particle method and calo tower method as well as truth 
 	TH1F *tows_e, *tows_i, *tows_o, *comps;
 	TH1F *energyP, *energyC;
