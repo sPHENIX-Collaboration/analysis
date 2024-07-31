@@ -44,7 +44,7 @@ int CalorimeterTowerENC::Init(PHCompositeNode *topNode)
 		hists["E"]=new TH1F(Form("e_%s", typelabel.c_str()), Form("Jet energy from %s; E [GeV]; N_{jet}", typelabel.c_str()), 50, -0.5, 49.5); 
 		hists["N"]=new TH1F(Form("n_%s", typelabel.c_str()), Form("N compoents from %s; N_{components}; N_{jet}", typelabel.c_str()), 500, -0.5, 499.5); 
 	}
-	return 1; 
+	return 0; 
 }
 
 float CalorimeterTowerENC::getPt(PHG4Particle* p)
@@ -402,7 +402,7 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		std::cout<<"Failed to run on event " <<n_evts <<"\n Skipping Event" <<std::endl;	
 		n_evts--;
 	}
-	return 1;
+	return Fun4AllReturnCodes::EVENT_OK;
 	
 	
 }
