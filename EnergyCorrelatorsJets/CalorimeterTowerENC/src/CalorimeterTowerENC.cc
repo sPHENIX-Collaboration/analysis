@@ -272,7 +272,7 @@ std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> Calori
 		try{
 			int key=calokey->encode_key(i);
 			int phibin=calokey->getTowerPhiBin(key);
-			int etabin=calokey->getTowerPhiBin(key);
+			int etabin=calokey->getTowerEtaBin(key);
 			float eta=geom->get_etacenter(etabin);
 			float phi=geom->get_phicenter(phibin);
 			std::pair g { eta, phi};
