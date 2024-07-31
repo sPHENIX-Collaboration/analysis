@@ -1,7 +1,9 @@
 #! /bin/bash
 
 source /opt/sphenix/core/bin/sphenix_setup.sh -n
-export MYINSTALL=/sphenix/user/sgross/install
+echo $MYINSTALL
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
+runs=${5:-'0'}
 
-root -b -q CompareParticlesToTowers.C\( $1, $2, $3, $4 \)
+root -b -q CompareParticlesToTowers.C\( $1, $2, $3, $4, $runs \)
+#the structre is truth jet, calorimer tower file, truth reco and global files then the number of events, defaults to all events

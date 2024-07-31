@@ -60,7 +60,7 @@ class CalorimeterTowerENC : public SubsysReco
 {
  public:
 
-  	CalorimeterTowerENC(const std::string &name = "CalorimeterTowerENC");
+  	CalorimeterTowerENC(int n_run, int n_segment, const std::string &name = "CalorimeterTowerENC");
 
   	~CalorimeterTowerENC() override {};
 
@@ -88,7 +88,7 @@ class CalorimeterTowerENC : public SubsysReco
 	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float, std::map<std::string, TH1F*>, int); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
-	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
+	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>);
 	void GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, std::map<float, int>>, std::pair<float, float>);
 	int RecordHits(PHCompositeNode* topNode, Jet*);	
@@ -108,6 +108,7 @@ class CalorimeterTowerENC : public SubsysReco
 
  private:
 	int n_evts=0, Nj=1;
+	std::string outfilename="";
 	TH1F *E2P, *E3P, *E2C_E, *E3C_E, *E2C_I, *E3C_I, *E2C_O, *E3C_O; //particle method and calo tower method as well as truth 
 	TH1F *RP, *RC_O, *RC_I, *RC_E;
 	TH1F *tows_e, *tows_i, *tows_o, *comps;
