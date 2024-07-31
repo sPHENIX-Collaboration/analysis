@@ -382,6 +382,7 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 	//need to process the events, this is really going to be a minor thing, need to pull my existing ENC code to do it better
 	//for the first event build the  tower number map that is needed
 	n_evts++;
+	std::cout<<"Running on event " <<n_evts<<std::endl;
 	try{
 		auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
 		auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
