@@ -7,7 +7,7 @@
 #include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllInputManager.h>
-#include <fun4all/Fun4AllDSTInputManager.h>
+#include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/SubsysReco.h>
 #include <calorimetertowerenc/CalorimeterTowerENC.h>
 
@@ -16,24 +16,24 @@ R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libCalorimeterTowerENC.so)
 
-int CompareParticlesToTowers(std::string truthjetfile, std::string calotowersfile, std::string truthrecofile, std::string globalrecofile, std::string n_evts)
+int CompareParticlesToTowers(std::string truthjetfile, std::string calotowersfile, std::string truthrecofile, std::string globalrecofile, std::string n_evt)
 {
-	std::cout<<"Input truth jet: " <<truthjet <<"\n Input calo towers: " <<calotowers <<"\n Input truth reco: " <<truthreco <<"\n Input Global reco: " 
-			<<globalreco <<"\n Run for " <<n_evts <<" events" <<std::endl;
-	Global_Reco(); 
+	std::cout<<"Input truth jet: " <<truthjetfile <<"\n Input calo towers: " <<calotowersfile <<"\n Input truth reco: " <<truthrecofile <<"\n Input Global reco: " 
+			<<globalrecofile <<"\n Run for " <<n_evt <<" events" <<std::endl;
+//	Global_Reco(); 
 	Fun4AllServer* se=Fun4AllServer::instance();
-	Fun4AllDSTInputManager *truthjet   = new Fun4AllDSTInputManager("truthjet");
-	Fun4AllDSTInputManager *calotower  = new Fun4AllDSTInputManager("calotower");
-	Fun4AllDSTInputManager *globalreco = new Fun4AllDSTInputManager("globalreco");
-	Fun4AllDSTInputManager *truthreco  = new Fun4AllDSTInputManager("truthreco");
-	std::vector<std::pari<std::string, Fun4AllDSTInputManager*> inputdst {{truthjetfile, truthjet}, {calotowersfile, calotowers}, {truthrecofile, truthreco}, {globalrecofile, globalreco}};
-	int n_evts=std::stoi(n_evts), run_number=0, DST_Segment=0;
+	Fun4AllDstInputManager *truthjet   = new Fun4AllDstInputManager("truthjet");
+	Fun4AllDstInputManager *calotower  = new Fun4AllDstInputManager("calotower");
+	Fun4AllDstInputManager *globalreco = new Fun4AllDstInputManager("globalreco");
+	Fun4AllDstInputManager *truthreco  = new Fun4AllDstInputManager("truthreco");
+	std::vector<std::pair<std::string, Fun4AllDstInputManager*>> inputdst {{truthjetfile, truthjet}, {calotowersfile, calotower}, {truthrecofile, truthreco}, {globalrecofile, globalreco}};
+	int n_evts=std::stoi(n_evt), run_number=0, DST_Segment=0;
 	for(auto input:inputdst)
 	{
 		std::stringstream filename (input.first);
 		std::string runf="", segnf="", substr;
 		if(run_number == 0){
-			while(std::getline(filename, substr, "-")){
+			while(std::getline(filename, substr, '-')){
 				if(run_number >= 0){
 					runf=substr;
 					try{
@@ -41,7 +41,7 @@ int CompareParticlesToTowers(std::string truthjetfile, std::string calotowersfil
 					}
 					catch(std::exception& e){ run_number = -1; }
 				}
-				else if(DST_Segement >= 0){
+				else if(DST_Segment >= 0){
 					segnf=substr;
 					try{
 						DST_Segment=std::stoi(segnf);
@@ -61,8 +61,9 @@ int CompareParticlesToTowers(std::string truthjetfile, std::string calotowersfil
 		catch(std::exception& e) {}
 	}
 	CalorimeterTowerENC* CalEval=new CalorimeterTowerENC(run_number, DST_Segment);
-	se->RegisterSubsystem(CalEval);
-	se->Run(n_evts);
+	se->registerSubsystem(CalEval);
+	se->run(n_evts);
 	se->Print();
-	return 1;
+	return 0;
 }
+#endif
