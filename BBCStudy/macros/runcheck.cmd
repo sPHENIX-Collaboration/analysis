@@ -32,17 +32,13 @@ echo $out_fname
   out_fname=${savedir}/${out_fname}
 else
   # this is assumed to be a list file
-  out_fname=`head -1 ${dst_fname} |  sed 's/^.*DST/CHECK/' | sed 's/-[0-9]*.root/.root/'`
 
   # create subdirectory
-  #savedir=`printf "bbc%02d" ${1}`
-  savedir=${dst_fname%.root}
-  savedir=${dst_fname##*/}
-  #savedir=`echo ${savedir} | sed 's:-:/:'`
+  savedir=CHECK
   echo mkdir -p ${savedir}
   mkdir -p ${savedir}
-  #cd ${savedir}
 
+  out_fname=`head -1 ${dst_fname} |  sed 's/^.*DST/CHECK/' | sed 's/-[0-9]*.root/.root/'`
   out_fname=${savedir}/${out_fname}
 
 fi
