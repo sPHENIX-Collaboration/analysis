@@ -30,20 +30,22 @@ CalorimeterTowerENC::CalorimeterTowerENC(int n_run, int n_segment, const std::st
 	outfilename="Calorimeter_tower_ENC-"+run.str()+"-"+seg.str()+".root";
 	jethits=new TH2F("jethits", "Location of particle energy deposition from truth jets; #eta; #varphi; N_{hits}", 200, -1.15, 1.05, 200, -3.1416, 3.1415);
 	comptotows=new TH2F("comp_to_towers", "Particle energy deposition versus EMCal tower energy per EMCAL tower; E_{particle} [GeV]; E_{emcal} [GeV]; N", 50, -0.5, 49.5, 50, -0.5, 49.5 );  
-}
-
-int CalorimeterTowerENC::Init(PHCompositeNode *topNode)
-{	
-	//book histograms and TTrees
-	for(auto h:histogram_map){
+	for(auto h:this->histogram_map){
 		std::string typelabel = h.first;
 		auto hists=h.second;
+		std::cout<<"Making the histograms for " <<h.first <<std::endl;
 		hists["E2C"]=new TH1F(Form("e2c_%s", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()), 30, -0.05, 0.45); 
 		hists["E3C"]=new TH1F(Form("e3c_%s", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), 30, -0.05, 0.45); 
 		hists["R_sep"]=new TH1F(Form("R_%s", typelabel.c_str()), Form("#Delta R_{12} between compotents in jet from %s; #delta R_{12}; < N >", typelabel.c_str()), 30, -0.05, 0.45);
 		hists["E"]=new TH1F(Form("e_%s", typelabel.c_str()), Form("Jet energy from %s; E [GeV]; N_{jet}", typelabel.c_str()), 50, -0.5, 49.5); 
 		hists["N"]=new TH1F(Form("n_%s", typelabel.c_str()), Form("N compoents from %s; N_{components}; N_{jet}", typelabel.c_str()), 500, -0.5, 499.5); 
+		for(auto h1:hists) std::cout<<"Have a histogram with tag " <<h1.first <<" that has name " <<h1.second->GetName()  <<std::endl;
 	}
+}
+
+int CalorimeterTowerENC::Init(PHCompositeNode *topNode)
+{	
+	//book histograms and TTrees
 	return 0; 
 }
 
@@ -228,6 +230,8 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::map<PHG4Particle
 	//this is the processor that allows for particle read of jet in the phi-eta plane
 	float jet_total_e=0;
 	for(auto p1:jet) jet_total_e+=p1.first->get_e();
+	std::cout<<"The histogram map has size " <<histogram_map.size() <<std::endl;
+	for(auto h:histogram_map) for(auto h1:h.second) std::cout<<"The histogram map for " <<h.first <<" has tag " << h1.first /*<< "which is a histogram with name " <<h1.second->GetName()*/ <<std::endl;
 	histogram_map["Particles"]["E"]->Fill(jet_total_e);
 	histogram_map["Particles"]["N"]->Fill(jet.size());
 	for(auto p1it=jet.begin(); p1it != jet.end(); ++p1it )
@@ -331,7 +335,10 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	std::set<std::pair<float, float>> particle_coords; //This will store the location of each particle which then I can use tho capture the relevant towe
 	std::unordered_set<PHG4Particle*> jetparticles;
 	std::map<int, float> jettowenergy, emtowerenergy;
-	auto _truthinfo=findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");	
+	auto _truthinfo=findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+	auto particles=_truthinfo->GetMap();	
+	//std::cout<<"Indicies for the truth map are ";
+	//for(auto p:particles) std::cout<<p.first <<std::endl; 
 	for( auto& iter:truth_jet->get_comp_vec()){
 		Jet::SRC source = iter.first;
 		unsigned int idx = iter.second;
@@ -339,9 +346,12 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 			std::cout<<"This jet has data that is not a particle" <<std::endl;
 			return -1;
 		}
-		PHG4Particle* truth_part = _truthinfo->GetParticle(idx);
+			if (particles.find(idx) == particles.end()) std::cout<<"Index is not in map for index " <<idx <<std::endl;	
+			else { 
+				PHG4Particle* truth_part = _truthinfo->GetParticle(idx);
 		//PHG4Hit* truth_hit = _truthinfo->GetHit(idx);
-		jetparticles.insert(truth_part); 
+				jetparticles.insert(truth_part);
+			}
 		//jethits.insert(truth_hit);
 	}
 	std::map<PHG4Particle*, std::pair<float, float>> jet_particle_map;
@@ -393,9 +403,9 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		if(EMCALMAP.first.size() == 0 )  EMCALMAP=GetTowerMaps(emcal_geom, RawTowerDefs::CEMC, emcal_tower_energy);
 		if(IHCALMAP.first.size() == 0 )  IHCALMAP=GetTowerMaps(ihcal_geom, RawTowerDefs::HCALIN, ihcal_tower_energy);
 		if(OHCALMAP.first.size() == 0 )  OHCALMAP=GetTowerMaps(ohcal_geom, RawTowerDefs::HCALOUT, ohcal_tower_energy);
-		auto jets = findNode::getClass<JetMap> (topNode, "AntiKt_Truth_r04");
+		auto jets = findNode::getClass<JetContainer> (topNode, "AntiKt_Truth_r04");
 		Nj=jets->size();
-		for(auto j:*jets) RecordHits(topNode, j.second);
+		for(auto j:*jets) RecordHits(topNode, j);
 		
 	}
 	catch(std::exception& e ) {

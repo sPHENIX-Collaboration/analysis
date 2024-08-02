@@ -28,6 +28,8 @@
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
 #include <jetbase/JetMapv1.h>
 #include <jetbase/JetMap.h>
 #include <jetbase/Jetv1.h>
