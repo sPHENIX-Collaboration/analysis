@@ -532,7 +532,7 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
         return;
       }
 
-      daughtersID.push_back(g4particle->get_barcode());
+      daughtersID[idecay] = g4particle->get_barcode();
     }
   }
 
@@ -568,7 +568,7 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
                 if(daughtersID[idau] == (*it)->barcode())
                 {
                   nMatches++;
-                  daughtersID.erase(daughtersID.begin() + idau);
+                  daughtersID[idau] = -99999;
                 }
               }
             }
