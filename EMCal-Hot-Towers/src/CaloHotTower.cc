@@ -103,9 +103,10 @@ CaloHotTower::CaloHotTower(const string &name):
  iEvent(0),
  energy_min(9999),
  energy_max(0),
- bins_energy(2000),
+ bins_energy(3277),
  energy_low(0),
- energy_high(1e4),
+ energy_high(16385), // 2^14 is the max value
+ bins_events(1),
  m_emcTowerNode("TOWERS_CEMC"),
  m_outputFile("test.root"),
  m_calibName_hotMap("CEMC_BadTowerMap")
@@ -172,6 +173,8 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
+  hEvents = new TH1F("hEvents","Events; Status; Counts", bins_events,0,bins_events);
+
   UInt_t i = 0;
   // initialize histograms
   for(auto idx : hotTowerIndex) {
@@ -221,7 +224,7 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
 Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
 
   if(iEvent%20 == 0) cout << "Progress: " << iEvent << endl;
-  iEvent++;
+  ++iEvent;
 
   // Get TowerInfoContainer
   TowerInfoContainer* towers = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
@@ -230,7 +233,7 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  for (UInt_t i = 0; i < hotTowerIndex.size(); i++) {
+  for (UInt_t i = 0; i < hotTowerIndex.size(); ++i) {
     UInt_t towerIndex = hotTowerIndex[i].first;
     UInt_t key        = towers->encode_key(towerIndex);
     Int_t hotMap_val  = m_cdbttree_hotMap->GetIntValue(key, "status");
@@ -266,6 +269,8 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     }
   }
 
+  hEvents->Fill(0);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -275,6 +280,10 @@ Int_t CaloHotTower::End(PHCompositeNode *topNode) {
   cout << "Min Energy: " << energy_min << ", Max Energy: " << energy_max << endl;
 
   TFile output(m_outputFile.c_str(),"recreate");
+
+  output.cd();
+  hEvents->Write();
+
   output.mkdir("Hot");
   output.mkdir("HotComplement");
   output.mkdir("Ref");

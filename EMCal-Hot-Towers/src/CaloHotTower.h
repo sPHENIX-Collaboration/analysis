@@ -57,6 +57,8 @@ class CaloHotTower : public SubsysReco
   Float_t energy_low;
   Float_t energy_high;
 
+  UInt_t bins_events;
+
   std::string m_emcTowerNode;
   std::string m_outputFile;
   std::string m_hotTowerIndexFile;
@@ -67,6 +69,7 @@ class CaloHotTower : public SubsysReco
   std::vector<TH1F*> hRefTowerEnergy; // filled only for runs where tower is identified as good (status = 0)
   std::vector<TH1F*> hHotTowerEnergy; // filled for only runs where tower is identified as hot (status = 2)
   std::vector<TH1F*> hHotTowerComplementEnergy; // filled only for runs where tower is identified as not hot (status != 2)
+  TH1F* hEvents;
 
   CDBTTree* m_cdbttree_hotMap;
 };
