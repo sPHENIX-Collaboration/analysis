@@ -103,9 +103,9 @@ CaloHotTower::CaloHotTower(const string &name):
  iEvent(0),
  energy_min(9999),
  energy_max(0),
- bins_energy(3277),
+ bins_energy(3280),
  energy_low(0),
- energy_high(16385), // 2^14 is the max value
+ energy_high(16400), // 2^14 is the max value
  bins_events(1),
  m_emcTowerNode("TOWERS_CEMC"),
  m_outputFile("test.root"),
