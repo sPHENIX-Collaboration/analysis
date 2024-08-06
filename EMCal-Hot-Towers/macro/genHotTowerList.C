@@ -28,7 +28,7 @@ namespace myAnalysis {
     void analyze(const string& i_input, const string &output);
 
     UInt_t  ntowers   = 24576;
-    Float_t threshold = 150;
+    Float_t threshold = 199;
     Float_t thresholdNoise = 20;
 }
 
