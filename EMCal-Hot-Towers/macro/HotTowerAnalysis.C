@@ -20,6 +20,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::to_string;
 using std::vector;
 using std::pair;
 
@@ -48,13 +49,19 @@ namespace myAnalysis {
 
     TH1F* hHotTowerStatus;
 
+    vector<TH2F*> h2HotTowerFrequency_vec;
+
     vector<UInt_t> runs;
     recoConsts* rc;
 
-    UInt_t ntowers  = 24576;
-    UInt_t bins_phi = 256;
-    UInt_t bins_eta = 96;
-    UInt_t nStatus  = 4;
+    UInt_t ntowers     = 24576;
+    UInt_t bins_phi    = 256;
+    UInt_t bins_eta    = 96;
+    UInt_t bins_status = 2;
+    UInt_t nStatus     = 4;
+
+    // run threshold above which towers are considered to be frequently hot
+    UInt_t threshold = 199;
 
     Float_t fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
@@ -80,6 +87,18 @@ void myAnalysis::init_hists() {
     h2BadTowersCold = new TH2F("h2BadTowersCold", "Bad Towers: Cold; #phi Index; #eta Index", bins_phi, -0.5, bins_phi-0.5, bins_eta, -0.5, bins_eta-0.5);
 
     hHotTowerStatus = new TH1F("hHotTowerStatus", "Hot Tower Status; Status; Towers", nStatus, -0.5, nStatus-0.5);
+
+    for(UInt_t i = 0; i < ntowers; ++i) {
+        UInt_t key    = TowerInfoDefs::encode_emcal(i);
+        UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
+        UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
+        string name  = "h2HotTowerFrequency_" + to_string(phibin) + "_" + to_string(etabin);
+        string title = "Hot Tower Run Frequency: (" + to_string(phibin) + "," + to_string(etabin) + "); Run; isHot";
+
+       auto h = new TH2F(name.c_str(),title.c_str(), runs.size(), 0, runs.size(), bins_status, -0.5, bins_status-0.5);
+
+       h2HotTowerFrequency_vec.push_back(h);
+    }
 }
 
 Int_t myAnalysis::init(const string &input) {
@@ -122,6 +141,7 @@ Int_t myAnalysis::init(const string &input) {
 
 void myAnalysis::process_event() {
 
+    UInt_t bin_run = 1;
     for(auto run : runs) {
         cout << "Run: " << run << endl;
 
@@ -131,6 +151,7 @@ void myAnalysis::process_event() {
 
         if (calibdir.empty()) {
             cout << "Run: " << run << ", Missing: " << m_calibName_hotMap << endl;
+            ++bin_run;
             continue;
         }
 
@@ -173,6 +194,7 @@ void myAnalysis::process_event() {
                 if(hotMap_val == 2) {
                     hBadTowersHot->Fill(channel);
                     h2BadTowersHot->Fill(phibin, etabin);
+                    h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,2,1);
                 }
                 // Cold
                 if(hotMap_val == 3) {
@@ -180,32 +202,49 @@ void myAnalysis::process_event() {
                     h2BadTowersCold->Fill(phibin, etabin);
                 }
             }
+
+            if(hotMap_val != 2) {
+                h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,1,1);
+            }
         }
+        ++bin_run;
     }
 
   // print used DB files
   CDBInterface::instance()->Print();
 }
 
-void myAnalysis::finalize(const string &i_output) {
-     TFile output(i_output.c_str(),"recreate");
-     output.cd();
+void myAnalysis::finalize(const string& i_output) {
+  TFile output(i_output.c_str(), "recreate");
+  output.cd();
 
-     hBadTowers->Write();
-     hBadTowersDead->Write();
-     hBadTowersHot->Write();
-     hBadTowersCold->Write();
+  hBadTowers->Write();
+  hBadTowersDead->Write();
+  hBadTowersHot->Write();
+  hBadTowersCold->Write();
 
-     h2BadTowers->Write();
-     h2BadTowersDead->Write();
-     h2BadTowersHot->Write();
-     h2BadTowersCold->Write();
+  h2BadTowers->Write();
+  h2BadTowersDead->Write();
+  h2BadTowersHot->Write();
+  h2BadTowersCold->Write();
 
-     hHotTowerStatus->Write();
+  hHotTowerStatus->Write();
 
-     output.Close();
+  output.mkdir("h2HotTowerFrequency");
+  output.cd("h2HotTowerFrequency");
+
+  for (UInt_t i = 0; i < ntowers; ++i) {
+        if (hBadTowersHot->GetBinContent(i + 1) >= threshold) {
+            for (UInt_t j = 1; j <= runs.size(); ++j) {
+                h2HotTowerFrequency_vec[i]->GetYaxis()->SetBinLabel(1, "0");
+                h2HotTowerFrequency_vec[i]->GetYaxis()->SetBinLabel(2, "1");
+            }
+            h2HotTowerFrequency_vec[i]->Write();
+        }
+  }
+
+  output.Close();
 }
-
 
 void Fun4All_HotTower(const string &input, const string &output = "test.root") {
     cout << "#############################" << endl;
@@ -223,7 +262,7 @@ void Fun4All_HotTower(const string &input, const string &output = "test.root") {
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 3){
+if(argc < 2 || argc > 3) {
         cout << "usage: ./hotAna inputFile [outputFile]" << endl;
         cout << "inputFile: containing list of run numbers" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
