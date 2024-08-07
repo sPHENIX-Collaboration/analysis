@@ -349,7 +349,8 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  CalorimeterTowerENC.h
+  CalorimeterTowerENC.h \
+  MethodHistograms.h
 
 lib_LTLIBRARIES = \
   libCalorimeterTowerENC.la

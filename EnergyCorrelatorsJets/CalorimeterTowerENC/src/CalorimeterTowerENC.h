@@ -49,6 +49,8 @@
 #include <unordered_set>
 #include <set>
 
+#include "MethodHistograms.h" 
+
 class PHCompositeNode;
 class Jet; 
 class JetContainer; 
@@ -88,7 +90,7 @@ class CalorimeterTowerENC : public SubsysReco
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, TowerInfoContainer*);
 	float getPt(PHG4Particle*);
 	float getR(std::pair<float, float>, std::pair<float, float>);
-	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float, std::map<std::string, TH1F*>, int); 
+	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  MethodHistograms*, int); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>);
@@ -112,17 +114,10 @@ class CalorimeterTowerENC : public SubsysReco
  private:
 	int n_evts=0, Nj=1;
 	std::string outfilename="";
-	TH1F *E2P, *E3P, *E2C_E, *E3C_E, *E2C_I, *E3C_I, *E2C_O, *E3C_O; //particle method and calo tower method as well as truth 
-	TH1F *RP, *RC_O, *RC_I, *RC_E;
-	TH1F *tows_e, *tows_i, *tows_o, *comps;
-	TH1F *energyP, *energyC_E, *energyC_I, *energyC_O;
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
-	std::map<std::string, TH1F*> parthists  {{"E2C", E2P}, {"E3C", E3P}, {"R_sep", RP}, {"E", energyP}, {"N", comps}};
-	std::map<std::string, TH1F*> emhists {{"E2C", E2C_E}, {"E3C", E3C_E}, {"R_sep", RC_E}, {"E", energyC_E}, {"N", tows_e}};
-	std::map<std::string, TH1F*> ihhists {{"E2C", E2C_I}, {"E3C", E3C_I}, {"R_sep", RC_I}, {"E", energyC_I}, {"N", tows_i}};
-	std::map<std::string, TH1F*> ohhists {{"E2C", E2C_O}, {"E3C", E3C_O}, {"R_sep", RC_O}, {"E", energyC_O}, {"N", tows_o}};
-	std::map<std::string, std::map<std::string, TH1F*>> histogram_map {{"Particles", parthists}, {"EMCal",emhists}, {"IHCal",ihhists},{"OHCal",ohhists}};
+	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal;
+	std::map<std::string, MethodHistograms*> histogram_map; 
 	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
 };
 
