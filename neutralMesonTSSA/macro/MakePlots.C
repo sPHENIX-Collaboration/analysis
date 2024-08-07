@@ -2,8 +2,8 @@
 
 R__LOAD_LIBRARY(libTSSAplotter.so)
 
-int MakePlots(std::string infilename) {
+int MakePlots(std::string infilename, std::string outfilename = "NMhist.pdf") {
     TSSAplotter t;
-    t.main(infilename);
+    t.main(infilename, outfilename);
     return 0;
 }

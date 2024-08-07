@@ -4,6 +4,10 @@
 #include <TStyle.h>
 #include <TROOT.h>
 #include <TLatex.h>
+#include <TLegend.h>
+#include <TLegendEntry.h>
+
+#include <string>
 
 TSSAplotter::TSSAplotter() {}
 
@@ -12,6 +16,25 @@ TSSAplotter::~TSSAplotter() {}
 void TSSAplotter::GetHists(std::string infilename) {
     TFile* infile = new TFile(infilename.c_str(), "READ");
     
+    nClusters = (TH1*)infile->Get("h_nClusters");
+    nGoodClusters = (TH1*)infile->Get("h_nGoodClusters");
+    vtxz = (TH1*)infile->Get("h_vtxz");
+    clusterE = (TH1*)infile->Get("h_clusterE");
+    clusterEta = (TH1*)infile->Get("h_clusterEta");
+    clusterEta_vtxz = (TH2*)infile->Get("h_clusterEta_vtxz");
+    clusterPhi = (TH1*)infile->Get("h_clusterPhi");
+    clusterEta_Phi = (TH2*)infile->Get("h_clusterEta_Phi");
+    clusterpT = (TH1*)infile->Get("h_clusterpT");
+    clusterxF = (TH1*)infile->Get("h_clusterxF");
+    clusterpT_xF = (TH2*)infile->Get("h_clusterpT_xF");
+    clusterChi2 = (TH1*)infile->Get("h_clusterChi2");
+    clusterChi2zoomed = (TH1*)infile->Get("h_clusterChi2zoomed");
+    mesonClusterChi2 = (TH1*)infile->Get("h_mesonClusterChi2");
+    goodClusterEta_Phi = (TH2*)infile->Get("h_goodClusterEta_Phi");
+
+    nDiphotons = (TH1*)infile->Get("h_nDiphotons");
+    nRecoPi0s = (TH1*)infile->Get("h_nRecoPi0s");
+    nRecoEtas = (TH1*)infile->Get("h_nRecoEtas");
     diphoton_mass = (TH1*)infile->Get("h_diphotonMass");
     diphoton_pT = (TH1*)infile->Get("h_diphotonpT");
     diphoton_xF = (TH1*)infile->Get("h_diphotonxF");
@@ -124,6 +147,27 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_etabkgr_yellow_down_phi_xF->GetHistsFromFile("h_etabkgr_phi_xF_yellow_down");
 }
 
+double TSSAplotter::RelLumiAsym(double Nup, double Ndown, double relLumi) {
+    double asym = (Nup - relLumi*Ndown)/(Nup + relLumi*Ndown);
+    return asym;
+}
+
+double TSSAplotter::RelLumiError(double Nup, double Ndown, double relLumi) {
+    double asym = RelLumiAsym(Nup, Ndown, relLumi);
+    double numerator = Nup - relLumi*Ndown;
+    /* double num_err = sqrt(Nup) - relLumi*sqrt(Ndown); */
+    double num_err = sqrt(Nup + (relLumi*relLumi*Ndown));
+    double num_rel_err = num_err/numerator;
+    double denominator = Nup + relLumi*Ndown;
+    /* double den_err = sqrt(Nup) + relLumi*sqrt(Ndown); */
+    double den_err = sqrt(Nup + (relLumi*relLumi*Ndown));
+    double den_rel_err = den_err/denominator;
+    
+    double error = asym*sqrt((num_rel_err*num_rel_err) + (den_rel_err*den_rel_err));
+    /* std::cout << Form("numerator=%f, num_err=%f, num_rel_err=%f\ndenominator=%f, den_err=%f, den_rel_err=%f\nasym=%f, asym_err=%f, asym_rel_err=%f\n", numerator, num_err, num_rel_err, denominator, den_err, den_rel_err, asym, error, (error/asym)); */
+    return error;
+}
+
 double TSSAplotter::SqrtAsym(double NLup, double NLdown, double NRup, double NRdown) {
     double asym = (sqrt(NLup*NRdown)-sqrt(NRup*NLdown))/(sqrt(NLup*NRdown)+sqrt(NRup*NLdown));
     return asym;
@@ -139,12 +183,33 @@ double TSSAplotter::SqrtError(double NLup, double NLdown, double NRup, double NR
     return asym_err;
 }
 
-TGraphErrors* TSSAplotter::SqrtGraph(TH1* phi_up, TH1* phi_down) {
+TGraphErrors* TSSAplotter::RelLumiGraph(TH1* phi_up, TH1* phi_down, double relLumi) {
     TGraphErrors* gr = new TGraphErrors();
     int nbins = phi_up->GetNbinsX();
     for (int i = 0; i < nbins; i++)
     {
 	float phi = i*(2*PI/nbins) - (PI - PI/nbins);
+	int phibin = i;
+	
+	double Nup = phi_up->GetBinContent(1+phibin);
+	double Ndown = phi_down->GetBinContent(1+phibin);
+	/* double NupErr = phi_up->GetBinError(1+phibin); */
+	/* double NdownErr = phi_down->GetBinError(1+phibin); */
+
+	double asym = RelLumiAsym(Nup, Ndown, relLumi);
+	double err = RelLumiError(Nup, Ndown, relLumi);
+	gr->SetPoint(i, phi, asym);
+	gr->SetPointError(i, 0, err);
+    }
+    return gr;
+}
+
+TGraphErrors* TSSAplotter::SqrtGraph(TH1* phi_up, TH1* phi_down) {
+    TGraphErrors* gr = new TGraphErrors();
+    int nbins = (int)(phi_up->GetNbinsX() / 2);
+    for (int i = 0; i < nbins; i++)
+    {
+	float phi = i*(PI/nbins) - (PI/2 - PI/nbins/2);
 	int phibinL = i; // N_Left
 	int phibinR = (phibinL + (int)(nbins/2.)) % nbins; // N_Right
 	
@@ -178,25 +243,118 @@ void TSSAplotter::PlotOneAsym(std::string type, std::string title, TPad* pad, TG
 	fit_upper = PI;
     }
 
-    TF1* fit = new TF1("fitsqrt", "[0]*sin(x - [1])", fit_lower, fit_upper);
-    fit->SetParLimits(0, 0.0001, 0.4);
-    fit->SetParameter(0, 0.01);
-    /* fit->SetParLimits(1, 3.041592, 3.241592); */
-    fit->SetParLimits(1, 0.0, 2*PI);
-    fit->SetParameter(1, 3.141592);
-    fit->SetParName(0, "#epsilon");
-    fit->SetParName(1, "#phi_{0}");
+    TF1* fit = nullptr;
+    if (type == "sqrt" || type == "rellumi") {
+	fit = new TF1("asymfit", "[0]*sin(x - [1])", fit_lower, fit_upper);
+	fit->SetParLimits(0, 0.00001, 0.4);
+	fit->SetParameter(0, 0.01);
+	/* fit->SetParLimits(1, 3.041592, 3.241592); */
+	fit->SetParLimits(1, 0.0, 2*PI);
+	fit->SetParameter(1, 3.141592);
+	fit->SetParName(0, "#epsilon");
+	fit->SetParName(1, "#phi_{0}");
+    }
+    else {
+	std::cout << "Invalid type option " << type << "; exiting!" << std::endl;
+	return;
+    }
 
     gr->SetTitle(title.c_str());
     gr->GetXaxis()->SetTitle("#phi");
-    gr->GetYaxis()->SetTitle("Raw Asymmetry");
+    if (type == "sqrt") {
+	gr->GetYaxis()->SetTitle("Raw Asymmetry (Square Root)");
+    }
+    else {
+	gr->GetYaxis()->SetTitle("Raw Asymmetry (Rel. Lumi.)");
+    }
     gStyle->SetOptFit();
     gStyle->SetOptStat(0);
     gr->Draw("ap");
-    gr->Fit("fitsqrt", "Q");
-    gr->GetXaxis()->SetRangeUser(-PI/2, PI/2);
+    gr->Fit("asymfit", "Q");
+    gr->GetXaxis()->SetRangeUser(fit_lower, fit_upper);
     gr->GetYaxis()->SetRangeUser(-0.05, 0.05);
     pad->Update();
+}
+
+void TSSAplotter::CompareOneAsym(std::string title, std::string outfilename, TGraphErrors* rl, TGraphErrors* sqrt) {
+    TCanvas* c1 = new TCanvas(title.c_str(), "", 1600, 900);
+    c1->cd();
+    double fit_lower = -PI;
+    double fit_upper = PI;
+
+    TF1* fit_rl = new TF1("fit_rl", "[0]*sin(x - [1])", fit_lower, fit_upper);
+    fit_rl->SetParLimits(0, 0.00001, 0.4);
+    fit_rl->SetParameter(0, 0.01);
+    fit_rl->SetParLimits(1, 0.0, 2*PI);
+    fit_rl->SetParameter(1, 3.141592);
+    fit_rl->SetParName(0, "#epsilon");
+    fit_rl->SetParName(1, "#phi_{0}");
+    fit_rl->SetLineColor(kRed);
+
+    rl->SetTitle(title.c_str());
+    rl->GetXaxis()->SetTitle("#phi");
+    rl->GetYaxis()->SetTitle("Raw Asymmetry");
+    rl->GetXaxis()->SetRangeUser(fit_lower, fit_upper);
+    rl->GetYaxis()->SetRangeUser(-0.02, 0.02);
+    for (int i=0; i<rl->GetN(); i++) {
+	std::cout << "Point " << i << ": x=" << rl->GetPointX(i) << ", y=" << rl->GetPointY(i) << " +- " << rl->GetErrorY(i) << std::endl;
+    }
+
+    int rl_marker = rl->GetMarkerStyle();
+    int rl_mcolor = rl->GetMarkerColor();
+    int rl_lcolor = rl->GetLineColor();
+    rl->SetMarkerStyle(kStar);
+    rl->SetMarkerColor(kRed);
+    rl->SetLineColor(kRed);
+
+    TF1* fit_sqrt = new TF1("fit_sqrt", "[0]*sin(x - [1])", fit_lower/2.0, fit_upper/2.0);
+    fit_sqrt->SetParLimits(0, 0.00001, 0.4);
+    fit_sqrt->SetParameter(0, 0.01);
+    fit_sqrt->SetParLimits(1, 0.0, 2*PI);
+    fit_sqrt->SetParameter(1, 3.141592);
+    fit_sqrt->SetParName(0, "#epsilon");
+    fit_sqrt->SetParName(1, "#phi_{0}");
+    fit_sqrt->SetLineColor(kBlue);
+
+    sqrt->SetTitle(title.c_str());
+    sqrt->GetXaxis()->SetTitle("#phi");
+    sqrt->GetYaxis()->SetTitle("Raw Asymmetry");
+    sqrt->GetXaxis()->SetRangeUser(fit_lower, fit_upper);
+    sqrt->GetYaxis()->SetRangeUser(-0.05, 0.05);
+
+    int sqrt_marker = sqrt->GetMarkerStyle();
+    int sqrt_mcolor = sqrt->GetMarkerColor();
+    int sqrt_lcolor = sqrt->GetLineColor();
+    sqrt->SetMarkerStyle(kCircle);
+    sqrt->SetMarkerColor(kBlue);
+    sqrt->SetLineColor(kBlue);
+    std::cout << "sqrt nPoints = " << sqrt->GetN() << std::endl;
+    std::cout << "rl nPoints = " << rl->GetN() << std::endl;
+
+    gStyle->SetOptFit(0);
+    gStyle->SetOptStat(0);
+    rl->Draw("ap");
+    rl->Fit("fit_rl", "Q");
+    sqrt->Draw("p");
+    sqrt->Fit("fit_sqrt", "Q");
+    TLatex* tl_rl = new TLatex;
+    tl_rl->SetTextColor(kRed);
+    tl_rl->DrawLatexNDC(0.20, 0.75, Form("#splitline{#epsilon = %f #pm %f}{#phi_{0} = %f #pm %f}", fit_rl->GetParameter(0), fit_rl->GetParError(0), fit_rl->GetParameter(1), fit_rl->GetParError(1)));
+    TLatex* tl_sqrt = new TLatex;
+    tl_sqrt->SetTextColor(kBlue);
+    tl_sqrt->DrawLatexNDC(0.20, 0.25, Form("#splitline{#epsilon = %f #pm %f}{#phi_{0} = %f #pm %f}", fit_sqrt->GetParameter(0), fit_sqrt->GetParError(0), fit_sqrt->GetParameter(1), fit_sqrt->GetParError(1)));
+    TLegend leg(0.75, 0.75, 0.9, 0.9, "", "NB NDC");
+    leg.AddEntry(rl, "Rel. Lumi", "ep");
+    leg.AddEntry(sqrt, "Geometric", "ep");
+    leg.Draw();
+
+    c1->SaveAs(outfilename.c_str());
+    rl->SetMarkerStyle(rl_marker);
+    rl->SetMarkerColor(rl_mcolor);
+    rl->SetLineColor(rl_lcolor);
+    sqrt->SetMarkerStyle(sqrt_marker);
+    sqrt->SetMarkerColor(sqrt_mcolor);
+    sqrt->SetLineColor(sqrt_lcolor);
 }
 
 void TSSAplotter::PlotAsymsBinned(std::string type, std::string which, BinnedHistSet* bhs_up, BinnedHistSet* bhs_down, std::string outfilename) {
@@ -209,9 +367,22 @@ void TSSAplotter::PlotAsymsBinned(std::string type, std::string which, BinnedHis
 	pad->cd();
 	gStyle->SetPadLeftMargin(0.15);
 	gROOT->ForceStyle();
+	c1->Update();
 	TH1* phi_up = bhs_up->hist_vec[i];
 	TH1* phi_down = bhs_down->hist_vec[i];
-	TGraphErrors* gr = SqrtGraph(phi_up, phi_down);
+	TGraphErrors* gr = nullptr;
+	if (type == "sqrt") {
+	    gr = SqrtGraph(phi_up, phi_down);
+	}
+	else {
+	    bool blue = (which.find("Blue") != std::string::npos);
+	    if (blue) {
+		gr = RelLumiGraph(phi_up, phi_down, relLumiBlue);
+	    }
+	    else {
+		gr = RelLumiGraph(phi_up, phi_down, relLumiYellow);
+	    }
+	}
 	std::string title_type = "";
 	if (type == "sqrt") title_type = "Square Root Asymmetry";
 	if (type == "rellumi") title_type = "Rel. Lumi. Asymmetry";
@@ -236,16 +407,70 @@ void TSSAplotter::PlotAsymsBinned(std::string type, std::string which, BinnedHis
     delete c1;
 }
 
-int TSSAplotter::main(std::string infilename) {
-    std::string outfilename = "NMhists.pdf";
+int TSSAplotter::main(std::string infilename, std::string outfilename) {
+    /* std::string outfilename = "NMhists.pdf"; */
     std::string outfilename_start = outfilename + "(";
     std::string outfilename_end = outfilename + ")";
 
     GetHists(infilename);
 
     TCanvas* c = new TCanvas("c", "c", 1600, 900);
-    diphoton_mass->Draw();
+    nClusters->Draw();
     c->SaveAs(outfilename_start.c_str());
+    nGoodClusters->Draw();
+    c->SaveAs(outfilename.c_str());
+    vtxz->Draw();
+    c->SaveAs(outfilename.c_str());
+    clusterE->Draw();
+    c->SetLogy();
+    c->SaveAs(outfilename.c_str());
+    clusterEta->Draw();
+    c->SetLogy(0);
+    c->SaveAs(outfilename.c_str());
+    clusterEta_vtxz->Draw("colz");
+    c->SaveAs(outfilename.c_str());
+    clusterPhi->Draw();
+    c->SaveAs(outfilename.c_str());
+    clusterEta_Phi->Draw("colz");
+    c->SaveAs(outfilename.c_str());
+    clusterpT->Draw();
+    c->SetLogy();
+    c->SaveAs(outfilename.c_str());
+    clusterxF->Draw();
+    c->SaveAs(outfilename.c_str());
+    clusterpT_xF->Draw("colz");
+    c->SetLogy(0);
+    c->SetLogz();
+    c->SaveAs(outfilename.c_str());
+    clusterChi2->Draw();
+    c->SetLogy();
+    c->SaveAs(outfilename.c_str());
+    clusterChi2zoomed->Draw();
+    c->SaveAs(outfilename.c_str());
+    clusterChi2zoomed->Sumw2();
+    clusterChi2zoomed->Scale(1.0/clusterChi2zoomed->Integral());
+    clusterChi2zoomed->Draw();
+    mesonClusterChi2->SetLineColor(kRed);
+    mesonClusterChi2->Sumw2();
+    mesonClusterChi2->Scale(1.0/mesonClusterChi2->Integral());
+    mesonClusterChi2->Draw("same");
+    c->SaveAs(outfilename.c_str());
+    clusterChi2zoomed->Scale(clusterChi2zoomed->GetEntries()/clusterChi2zoomed->Integral());
+    mesonClusterChi2->Scale(mesonClusterChi2->GetEntries()/mesonClusterChi2->Integral());
+    /* goodClusterEta_Phi->Draw("colz"); */
+    /* c->SetLogy(0); */
+    /* c->SaveAs(outfilename.c_str()); */
+
+    nDiphotons->Draw();
+    c->SetLogy(0);
+    c->SaveAs(outfilename.c_str());
+    nRecoPi0s->Draw();
+    c->SaveAs(outfilename.c_str());
+    nRecoEtas->Draw();
+    c->SaveAs(outfilename.c_str());
+    c->SetLogy(0);
+    diphoton_mass->Draw();
+    c->SaveAs(outfilename.c_str());
     diphoton_pT->Draw();
     c->SetLogy();
     c->SaveAs(outfilename.c_str());
@@ -256,6 +481,14 @@ int TSSAplotter::main(std::string infilename) {
     bhs_diphotonMass_pT->PlotAllHistsWithFits(outfilename, false, "mass");
     bhs_diphotonMass_xF->PlotAllHistsWithFits(outfilename, false, "mass");
 
+    TGraphErrors* gr_rl = RelLumiGraph(bhs_pi0_blue_up_phi_pT->hist_vec[0], bhs_pi0_blue_down_phi_pT->hist_vec[0], relLumiBlue);
+    TGraphErrors* gr_sqrt = SqrtGraph(bhs_pi0_blue_up_phi_pT->hist_vec[0], bhs_pi0_blue_down_phi_pT->hist_vec[0]);
+    CompareOneAsym("#pi^{0} Blue Beam Raw Asymmetries", outfilename, gr_rl, gr_sqrt);
+    CompareOneAsym("#pi^{0} Blue Beam Raw Asymmetries", outfilename, gr_rl, gr_sqrt);
+
+    PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
+    PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
+    PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_xF, bhs_pi0_blue_down_phi_xF, outfilename);
     PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
     PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_xF, bhs_pi0_blue_down_phi_xF, outfilename);
 
