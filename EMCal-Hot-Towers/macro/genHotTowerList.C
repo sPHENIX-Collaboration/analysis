@@ -28,8 +28,8 @@ namespace myAnalysis {
     void analyze(const string& i_input, const string &output);
 
     UInt_t  ntowers   = 24576;
-    Float_t threshold = 199;
-    Float_t thresholdNoise = 20;
+    Float_t threshold;
+    Float_t thresholdNoise;
 }
 
 void myAnalysis::analyze(const string& i_input, const string &output) {
@@ -87,34 +87,46 @@ void myAnalysis::analyze(const string& i_input, const string &output) {
     f.close();
 }
 
-void genHotTowerList(const string &input, const string &output="hot.list") {
+void genHotTowerList(const string &input, Int_t threshold = 100, Int_t thresholdNoise = 20, const string &output="hot.list") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
     cout << "output: " << output << endl;
-    cout << "threshold: " << myAnalysis::threshold << endl;
-    cout << "Noise threshold: " << myAnalysis::thresholdNoise << endl;
+    cout << "threshold: " << threshold << endl;
+    cout << "Noise threshold: " << thresholdNoise << endl;
     cout << "#############################" << endl;
 
+    myAnalysis::threshold      = threshold;
+    myAnalysis::thresholdNoise = thresholdNoise;
     myAnalysis::analyze(input, output);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 3){
-        cout << "usage: ./genHotTowerList input [output]" << endl;
+if(argc < 2 || argc > 5){
+        cout << "usage: ./genHotTowerList input [threshold] [thresholdNoise] [output]" << endl;
         cout << "input: input root file" << endl;
-        cout << "output: output hot tower list" << endl;
+        cout << "threshold: minimum number of runs to be considered frequently hot. Default: 100" << endl;
+        cout << "thresholdNoise: maximum number of runs to be considered not hot frequently. Default: 20" << endl;
+        cout << "output: output hot tower list. Default: hot.list" << endl;
         return 1;
     }
 
-    string output = "hot.list";
+    string output        = "hot.list";
+    Int_t threshold      = 100;
+    Int_t thresholdNoise = 20;
 
     if(argc >= 3) {
+        threshold = atoi(argv[2]);
+    }
+    if(argc >= 4) {
+        thresholdNoise = atoi(argv[3]);
+    }
+    if(argc >= 5) {
         output = argv[2];
     }
 
-    genHotTowerList(argv[1], output);
+    genHotTowerList(argv[1], threshold, thresholdNoise, output);
 
     cout << "======================================" << endl;
     cout << "done" << endl;

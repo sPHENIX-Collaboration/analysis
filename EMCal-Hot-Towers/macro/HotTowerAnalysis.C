@@ -61,7 +61,7 @@ namespace myAnalysis {
     UInt_t nStatus     = 4;
 
     // run threshold above which towers are considered to be frequently hot
-    UInt_t threshold = 199;
+    UInt_t threshold;
 
     Float_t fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
@@ -133,6 +133,10 @@ Int_t myAnalysis::init(const string &input) {
 
     // Close the file
     file.close();
+
+    threshold = runs.size()/2;
+
+    cout << "threshold: " << threshold << endl;
 
     init_hists();
 
