@@ -30,9 +30,9 @@ using std::ofstream;
 namespace myAnalysis {
     void plots(const string& i_input, const string &output);
 
-    UInt_t  ntowers   = 24576;
-    Float_t threshold = 150;
-    Float_t zMax      = 500;
+    UInt_t ntowers = 24576;
+    UInt_t threshold;
+    Float_t zMax = 1000;
 }
 
 void myAnalysis::plots(const string& i_input, const string &output) {
@@ -59,6 +59,11 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto h2BadTowersCold = (TH2F*)input.Get("h2BadTowersCold");
 
     auto hHotTowerStatus = (TH1F*)input.Get("hHotTowerStatus");
+
+    auto h2HotTowerFrequency_dummy = (TH2F*)input.Get("h2HotTowerFrequency/h2HotTowerFrequency_27_7");
+
+    threshold = h2HotTowerFrequency_dummy->GetEntries()/2;
+    cout << "threshold: " << threshold << endl;
 
     vector<TH1F*> hBadTowersVec  = {hBadTowers, hBadTowersDead, hBadTowersHot, hBadTowersCold};
     vector<TH2F*> h2BadTowersVec = {h2BadTowers, h2BadTowersDead, h2BadTowersHot, h2BadTowersCold};
