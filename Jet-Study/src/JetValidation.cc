@@ -1,28 +1,37 @@
 // module for producing a TTree with jet information for doing jet validation studies
 //  for questions/bugs please contact Virginia Bailey vbailey13@gsu.edu
 #include <JetValidation.h>
-#include <ffaobjects/EventHeader.h>
-#include <ffarawobjects/Gl1Packet.h>
-#include <fun4all/Fun4AllBase.h>
-#include <fun4all/Fun4AllReturnCodes.h>
-#include <fun4all/PHTFileServer.h>
-#include <globalvertex/GlobalVertex.h>
-#include <globalvertex/GlobalVertexMap.h>
-#include <jetbase/JetContainer.h>
-#include <jetbase/JetMap.h>
-#include <jetbase/Jetv1.h>
-#include <jetbase/Jetv2.h>
-#include <phool/PHCompositeNode.h>
-#include <phool/getClass.h>
-
+// -- c++
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
-
+// -- event / trigger
+#include <ffaobjects/EventHeader.h>
+#include <ffarawobjects/Gl1Packet.h>
+// -- fun4all
+#include <fun4all/Fun4AllBase.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/PHTFileServer.h>
+// -- vertex
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+// -- jet
+#include <jetbase/JetContainer.h>
+// -- DST node
+#include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
+// -- root
 #include <TFile.h>
 #include <TTree.h>
+// -- Tower stuff
+#include <calobase/TowerInfo.h>
+#include <calobase/TowerInfoDefs.h>
+#include <calobase/TowerInfoContainer.h>
+
+using std::cout;
+using std::endl;
 
 //____________________________________________________________________________..
 JetValidation::JetValidation()
