@@ -81,6 +81,8 @@ class TrackAndClusterMatchingQA : public SubsysReco
   void set_TrackMinSiliconHits(int d) { _track_min_silicon_hits = d; }
   int get_TrackMinSiliconHits() { return _track_min_silicon_hits; }
 
+  void set_UseOriginWhenNoVertex(bool b) { _use_origin_when_no_vertex = b; }
+
   float GetDeltaR(float track_phi, float cluster_phi, float track_eta, float cluster_eta);
 
   bool IsAcceptableTrack(SvtxTrack *track, GlobalVertex *vtx);
@@ -94,6 +96,7 @@ class TrackAndClusterMatchingQA : public SubsysReco
   std::string _em_clusters_name = "";
   std::string _em_retowered_towers_name = "";
   bool _apply_tower_selection = true;
+  bool _use_origin_when_no_vertex = false;
 
   //Track selection
   float _track_min_pt = 0.5;
@@ -136,7 +139,7 @@ class TrackAndClusterMatchingQA : public SubsysReco
   TH2 *_h2Track_TPC_Hits_vs_Eta;
   TH2 *_h2Track_TPC_Hits_vs_Pt;
 
-  TH1 *_h1deta;   
+  TH1 *_h1deta;
   TH1 *_h1dphi;
   TH1 *_h2phi_vs_deta;
   TH1 *_h1min_dR;

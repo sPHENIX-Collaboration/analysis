@@ -10,6 +10,9 @@
 #ifndef SCORRELATORJETTREEMAKERINPUT_H
 #define SCORRELATORJETTREEMAKERINPUT_H
 
+// make common namespaces implicit
+using namespace std;
+
 
 
 namespace SColdQcdCorrelatorAnalysis {
@@ -26,6 +29,9 @@ namespace SColdQcdCorrelatorAnalysis {
     vector<Types::JetInfo>         jets;
     vector<vector<Types::CstInfo>> csts; 
 
+    // ------------------------------------------------------------------------
+    //! Reset addresses
+    // ------------------------------------------------------------------------
     void Reset() {
       evt.Reset();
       jets.clear();
@@ -33,6 +39,9 @@ namespace SColdQcdCorrelatorAnalysis {
       return;
     }  // end 'Reset()'
 
+    // -----------------------------------------------------------------------
+    //! Set addresses on a TTree
+    // ------------------------------------------------------------------------
     void SetTreeAddresses(TTree* tree) {
       /* TODO fill in */
       return;
@@ -54,6 +63,9 @@ namespace SColdQcdCorrelatorAnalysis {
     vector<Types::JetInfo>         jets;
     vector<vector<Types::CstInfo>> csts; 
 
+    // ------------------------------------------------------------------------
+    //! Reset addresses
+    // ------------------------------------------------------------------------
     void Reset() {
       evt.Reset();
       jets.clear();
@@ -61,6 +73,9 @@ namespace SColdQcdCorrelatorAnalysis {
       return;
     }  // end 'Reset()'
 
+    // -----------------------------------------------------------------------
+    //! Set addresses on a TTree
+    // ------------------------------------------------------------------------
     void SetTreeAddresses(TTree* tree) {
       /* TODO fill in */
       return;
