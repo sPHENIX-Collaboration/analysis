@@ -1,0 +1,70 @@
+# All local jobs are part of the vanilla universe.
+Universe        = vanilla
+
+# We want email if the job completed successfully. This can
+# be set to Always, Error, or Never.
+Notification    = Never
+
+# The executable we want to run.
+# Executable   = /sphenix/user/gmattson/analysis/pythiaEMCalAna/macro/condor/dummy.sh
+Executable   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/checkhotmaps.sh
+
+# The argument to pass to the executable.
+Arguments       = $(Process)
+
+# The requirement line specifies which machines we want to
+# run this job on.  Any arbitrary classad expression can
+# be used.
+#Requirements    = CPU_Speed >= 1
+
+# Rank is an expression that states how to rank machines which 
+# have already met the requirements expression.  Essentially, 
+# rank expresses preference.  A higher numeric value equals better 
+# rank.  Condor will give the job the machine with the highest rank.
+#Rank		= CPU_Speed
+
+# This tells Condor the maximum virtual image size to which
+# you believe your program will grow during its execution.
+request_memory = 2048MB
+# request_memory = 4096MB
+# request_memory = 8192MB
+
+# Jobs with higher numerical priority will run before jobs 
+# with lower numerical priority (-20 to 20).
+#Priority        = +20
+
+
+# Used to give jobs a directory with respect to file input 
+# and output.
+Initialdir   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor
+
+# Input file given to the job.
+#Input           = /dev/null
+
+# The job's stdout is sent to this file.
+Output   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/out/hotmaps/job_$(Process).out
+
+# The job's stderr is sent to this file.
+Error   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/err/hotmaps/job_$(Process).err
+
+# The condor log file for this job, useful when debugging.
+Log   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/log/hotmaps/job_$(Process).log
+
+# Email address to send notification to.
+###Notify_user     = mattson5@illinois.edu
+
+# add hold to resolve eviction problems
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+
+# Limit to 1k jobs running at a time
+concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:2300
+
+# This should be the last command and tells condor to queue the
+# job.  If a number is placed after the command (i.e. Queue 15)
+# then the job will be submitted N times.  Use the $(Process)
+# macro to make your input/output and log files unique.
+
+# Aug10 -- 1461
+
+Queue 1461
+

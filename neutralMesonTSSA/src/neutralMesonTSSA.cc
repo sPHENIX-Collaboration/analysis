@@ -124,8 +124,8 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 
   // Check for MBDNS coincidence trigger
   GetTrigger();
-  /* if (!mbdtrigger) return Fun4AllReturnCodes::ABORTEVENT; */
-  if (!photontrigger) return Fun4AllReturnCodes::ABORTEVENT;
+  if (!mbdtrigger) return Fun4AllReturnCodes::ABORTEVENT;
+  /* if (!photontrigger) return Fun4AllReturnCodes::ABORTEVENT; */
 
   // Information on clusters
   // Name of node is different in MC and RD
@@ -341,6 +341,7 @@ int neutralMesonTSSA::End(PHCompositeNode *topNode)
 {
   std::cout << "neutralMesonTSSA::End(PHCompositeNode *topNode) This is the End..." << std::endl;
   std::cout << "Processed " << n_events_total << " total events.\n";
+  std::cout << "" << n_events_photontrigger << " events with photon > 3GeV trigger\n";
   std::cout << "" << n_events_mbdtrigger << " events with MBDN&S trigger\n";
   /* std::cout << "\t(" << mbdcoinc_withoutNandS << " *without* MBDN AND MBDS individually)\n"; */
   /* std::cout << "\t" << n_events_mbdtrigger_vtx1 << " with MBD trigger, |z_vtx| < T1\n"; */
@@ -446,6 +447,22 @@ void neutralMesonTSSA::MakePhiHists(std::string which)
 	titlewhich = "#eta Background, |#eta| < 0.35";
 	etaBkgrHists_lowEta = hists;
     }
+    else if (which == "pi0_highEta") {
+	titlewhich = "#pi^{0}, |#eta| > 0.35";
+	pi0Hists_highEta = hists;
+    }
+    else if (which == "eta_highEta") {
+	titlewhich = "#eta, |#eta| > 0.35";
+	etaHists_highEta = hists;
+    }
+    else if (which == "pi0bkgr_highEta") {
+	titlewhich = "#pi^{0} Background, |#eta| > 0.35";
+	pi0BkgrHists_highEta = hists;
+    }
+    else if (which == "etabkgr_highEta") {
+	titlewhich = "#eta Background, |#eta| > 0.35";
+	etaBkgrHists_highEta = hists;
+    }
     else {
 	std::cout << PHWHERE << ":: Invalid arguments!" << std::endl;
 	return;
@@ -457,14 +474,14 @@ void neutralMesonTSSA::MakePhiHists(std::string which)
 	/* pTbins.push_back(i*(bhs_max_pT/nBins_pT)); */
     /* } */
     /* pTbins.push_back(bhs_max_pT); */
-    std::vector<double> xFbins = {-0.15, -0.10, -0.6, -0.3, 0.0, 0.3, 0.6, 0.10, 0.15};
+    std::vector<double> xFbins = {-0.15, -0.10, -0.06, -0.03, 0.0, 0.03, 0.06, 0.10, 0.15};
     /* std::vector<double> xFbins; */
     /* for (int i=0; i<nBins_xF; i++) { */
 	/* xFbins.push_back(2*bhs_max_xF*i/nBins_xF - bhs_max_xF); */
     /* } */
     /* xFbins.push_back(bhs_max_xF); */
-    std::vector<double> etabins = {-2.0, -1.15, -0.35, 0.35, 1.15, 2.0};
-    std::vector<double> vtxzbins = {-100.0, -50.0, -30.0, 30.0, 50.0, 100.0};
+    std::vector<double> etabins = {-2.0, -1.15, -0.35, 0.0, 0.35, 1.15, 2.0};
+    std::vector<double> vtxzbins = {-100.0, -50.0, -30.0, 0.0, 30.0, 50.0, 100.0};
 
     hists->phi_pT = new BinnedHistSet(Form("%sphi_pT", nameprefix.c_str()), Form("%s #phi Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "p_{T} (GeV)", pTbins);
     hists->phi_pT_blue_up = new BinnedHistSet(Form("%sphi_pT_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi^{B} (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "p_{T} (GeV)", pTbins);
@@ -519,18 +536,19 @@ void neutralMesonTSSA::MakeAllHists()
 {
     // clusters
     int nbins_etaphi = 200;
-    double eta_upper = 1.45;
+    double eta_upper = 1.60;
     double phi_upper = PI;
     int nbins_pT = 100;
     int nbins_xF = 100;
-    double pT_upper = 15.0;
+    double pT_upper = 20.0;
     double xF_upper = 0.15;
-    h_nClusters = new TH1F("h_nClusters", "Total Number of Clusters per Event;# Clusters;Counts", 500, 1300, 2800);
+    double vtxz_upper = 150.0;
+    h_nClusters = new TH1F("h_nClusters", "Total Number of Clusters per Event;# Clusters;Counts", 500, 800, 2800);
     h_nGoodClusters = new TH1F("h_nGoodClusters", "Number of \"Good\" Clusters per Event;# Clusters;Counts", 10, -0.5, 9.5);
-    h_vtxz = new TH1F("h_vtxz", "Vertex z Distribution;z_{vtx} (cm);Counts", nbins_etaphi, -100.0, 100.0);
+    h_vtxz = new TH1F("h_vtxz", "Vertex z Distribution;z_{vtx} (cm);Counts", nbins_etaphi, -vtxz_upper, vtxz_upper);
     h_clusterE = new TH1F("h_clusterE", "Cluster Energy Distribution;Cluster E (GeV);Counts", nbins_pT, 0.0, pT_upper);
     h_clusterEta = new TH1F("h_clusterEta", "Cluster #eta Distribution;Cluster #eta;Counts", nbins_etaphi, -eta_upper, eta_upper);
-    h_clusterEta_vtxz = new TH2F("h_clusterEta_vtxz", "Cluster #eta v. Vertex z;Vertex z (cm);Cluster #eta", nbins_etaphi, -100.0, 100.0, nbins_etaphi, -eta_upper, eta_upper);
+    h_clusterEta_vtxz = new TH2F("h_clusterEta_vtxz", "Cluster #eta v. Vertex z;Vertex z (cm);Cluster #eta", nbins_etaphi, -vtxz_upper, vtxz_upper, nbins_etaphi, -eta_upper, eta_upper);
     h_clusterPhi = new TH1F("h_clusterPhi", "Cluster #phi Distribution;Cluster #phi;Counts", nbins_etaphi, -phi_upper, phi_upper);
     h_clusterEta_Phi = new TH2F("h_clusterEta_Phi", "Cluster Position;Cluster #eta;Cluster #phi (rad)", nbins_etaphi, -eta_upper, eta_upper, nbins_etaphi, -phi_upper, phi_upper);
     h_clusterpT = new TH1F("h_clusterpT", "Cluster Transverse Momentum Distribution;Cluster p_{T} (GeV);Counts", nbins_pT, 0.0, pT_upper);
@@ -552,7 +570,7 @@ void neutralMesonTSSA::MakeAllHists()
 
     std::vector<double> pTbins;
     std::vector<double> xFbins;
-    int nbins_bhs = 25;
+    int nbins_bhs = 20;
     for (int i=0; i<nbins_bhs; i++) {
 	pTbins.push_back(i*(pT_upper/nbins_bhs));
 	xFbins.push_back(2*xF_upper*i/nbins_bhs - xF_upper);
@@ -573,6 +591,10 @@ void neutralMesonTSSA::MakeAllHists()
     MakePhiHists("eta_lowEta");
     MakePhiHists("pi0bkgr_lowEta");
     MakePhiHists("etabkgr_lowEta");
+    MakePhiHists("pi0_highEta");
+    MakePhiHists("eta_highEta");
+    MakePhiHists("pi0bkgr_highEta");
+    MakePhiHists("etabkgr_highEta");
 }
 
 void neutralMesonTSSA::MakeVectors()
@@ -675,10 +697,17 @@ int neutralMesonTSSA::GetSpinInfo()
 
     // Check if spin info is valid
     if (spinPatternYellow[0] == -999) spinDB_status = 1;
-
+    if (lumiUpBlue == 0) spinDB_status = 2;
+    int badRunFlag = spin_cont.GetBadRunFlag();
+    /* std::cout << "badRunFlag = " << badRunFlag << std::endl; */
+    if (badRunFlag) spinDB_status = 3;
+    
     if (spinDB_status)
     {
-	std::cout << PHWHERE << ":: Run number " << runNum << " not found in spin DB! Skipping this run!" << std::endl;
+	std::cout << PHWHERE << ":: Run number " << runNum << " has bad spin DB info! Skipping this run!" << std::endl;
+	if (spinDB_status == 1) std::cout << "Spin pattern not stored" << std::endl;
+	if (spinDB_status == 2) std::cout << "GL1P scalers empty" << std::endl;
+	if (spinDB_status == 3) std::cout << "BadRunFlag set" << std::endl;
 	/* std::cout << PHWHERE << ":: Run number " << runNum << " not found in spin DB! Exiting!" << std::endl; */
 	/* exit(1); */
     }
@@ -893,26 +922,31 @@ void neutralMesonTSSA::FillPhiHists(std::string which, int index)
     std::vector<Diphoton>* vec = nullptr;
     PhiHists* hists = nullptr;
     PhiHists* hists_lowEta = nullptr;
+    PhiHists* hists_highEta = nullptr;
 
     if (which == "pi0") {
 	vec = pi0s;
 	hists = pi0Hists;
 	hists_lowEta = pi0Hists_lowEta;
+	hists_highEta = pi0Hists_highEta;
     }
     if (which == "eta") {
 	vec = etas;
 	hists = etaHists;
 	hists_lowEta = etaHists_lowEta;
+	hists_highEta = etaHists_highEta;
     }
     if (which == "pi0bkgr") {
 	vec = pi0Bkgr;
 	hists = pi0BkgrHists;
 	hists_lowEta = pi0BkgrHists_lowEta;
+	hists_highEta = pi0BkgrHists_highEta;
     }
     if (which == "etabkgr") {
 	vec = etaBkgr;
 	hists = etaBkgrHists;
 	hists_lowEta = etaBkgrHists_lowEta;
+	hists_highEta = etaBkgrHists_highEta;
     }
 
     if (!vec || !hists || !hists_lowEta) {
@@ -951,6 +985,13 @@ void neutralMesonTSSA::FillPhiHists(std::string which, int index)
 	    hists_lowEta->phi_eta_blue_up->FillHists(d.eta, phiblue);
 	    hists_lowEta->phi_vtxz_blue_up->FillHists(d.vtxz, phiblue);
 	}
+	if (abs(d.eta) > 0.35)
+	{
+	    hists_highEta->phi_pT_blue_up->FillHists(d.pT, phiblue);
+	    hists_highEta->phi_xF_blue_up->FillHists(xFblue, phiblue);
+	    hists_highEta->phi_eta_blue_up->FillHists(d.eta, phiblue);
+	    hists_highEta->phi_vtxz_blue_up->FillHists(d.vtxz, phiblue);
+	}
     }
     if (bspin == -1) {
 	hists->phi_pT_blue_down->FillHists(d.pT, phiblue);
@@ -963,6 +1004,13 @@ void neutralMesonTSSA::FillPhiHists(std::string which, int index)
 	    hists_lowEta->phi_xF_blue_down->FillHists(xFblue, phiblue);
 	    hists_lowEta->phi_eta_blue_down->FillHists(d.eta, phiblue);
 	    hists_lowEta->phi_vtxz_blue_down->FillHists(d.vtxz, phiblue);
+	}
+	if (abs(d.eta) > 0.35)
+	{
+	    hists_highEta->phi_pT_blue_down->FillHists(d.pT, phiblue);
+	    hists_highEta->phi_xF_blue_down->FillHists(xFblue, phiblue);
+	    hists_highEta->phi_eta_blue_down->FillHists(d.eta, phiblue);
+	    hists_highEta->phi_vtxz_blue_down->FillHists(d.vtxz, phiblue);
 	}
     }
     if (yspin == 1) {
@@ -977,6 +1025,13 @@ void neutralMesonTSSA::FillPhiHists(std::string which, int index)
 	    hists_lowEta->phi_eta_yellow_up->FillHists(d.eta, phiyellow);
 	    hists_lowEta->phi_vtxz_yellow_up->FillHists(d.vtxz, phiyellow);
 	}
+	if (abs(d.eta) > 0.35)
+	{
+	    hists_highEta->phi_pT_yellow_up->FillHists(d.pT, phiyellow);
+	    hists_highEta->phi_xF_yellow_up->FillHists(xFyellow, phiyellow);
+	    hists_highEta->phi_eta_yellow_up->FillHists(d.eta, phiyellow);
+	    hists_highEta->phi_vtxz_yellow_up->FillHists(d.vtxz, phiyellow);
+	}
     }
     if (yspin == -1) {
 	hists->phi_pT_yellow_down->FillHists(d.pT, phiyellow);
@@ -989,6 +1044,13 @@ void neutralMesonTSSA::FillPhiHists(std::string which, int index)
 	    hists_lowEta->phi_xF_yellow_down->FillHists(xFyellow, phiyellow);
 	    hists_lowEta->phi_eta_yellow_down->FillHists(d.eta, phiyellow);
 	    hists_lowEta->phi_vtxz_yellow_down->FillHists(d.vtxz, phiyellow);
+	}
+	if (abs(d.eta) > 0.35)
+	{
+	    hists_highEta->phi_pT_yellow_down->FillHists(d.pT, phiyellow);
+	    hists_highEta->phi_xF_yellow_down->FillHists(xFyellow, phiyellow);
+	    hists_highEta->phi_eta_yellow_down->FillHists(d.eta, phiyellow);
+	    hists_highEta->phi_vtxz_yellow_down->FillHists(d.vtxz, phiyellow);
 	}
     }
 }

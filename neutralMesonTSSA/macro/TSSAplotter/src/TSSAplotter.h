@@ -68,6 +68,14 @@ class TSSAplotter {
 	BinnedHistSet* bhs_pi0_blue_down_phi_xF = nullptr;
 	BinnedHistSet* bhs_pi0_yellow_up_phi_xF = nullptr;
 	BinnedHistSet* bhs_pi0_yellow_down_phi_xF = nullptr;
+	BinnedHistSet* bhs_pi0_blue_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0_blue_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0_yellow_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0_yellow_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0_blue_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0_blue_down_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0_yellow_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0_yellow_down_phi_vtxz = nullptr;
 
 	BinnedHistSet* bhs_eta_blue_up_phi_pT = nullptr;
 	BinnedHistSet* bhs_eta_blue_down_phi_pT = nullptr;
@@ -77,6 +85,14 @@ class TSSAplotter {
 	BinnedHistSet* bhs_eta_blue_down_phi_xF = nullptr;
 	BinnedHistSet* bhs_eta_yellow_up_phi_xF = nullptr;
 	BinnedHistSet* bhs_eta_yellow_down_phi_xF = nullptr;
+	BinnedHistSet* bhs_eta_blue_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_eta_blue_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_eta_yellow_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_eta_yellow_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_eta_blue_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_eta_blue_down_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_eta_yellow_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_eta_yellow_down_phi_vtxz = nullptr;
 
 	BinnedHistSet* bhs_pi0bkgr_blue_up_phi_pT = nullptr;
 	BinnedHistSet* bhs_pi0bkgr_blue_down_phi_pT = nullptr;
@@ -86,6 +102,14 @@ class TSSAplotter {
 	BinnedHistSet* bhs_pi0bkgr_blue_down_phi_xF = nullptr;
 	BinnedHistSet* bhs_pi0bkgr_yellow_up_phi_xF = nullptr;
 	BinnedHistSet* bhs_pi0bkgr_yellow_down_phi_xF = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_blue_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_blue_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_yellow_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_yellow_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_blue_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_blue_down_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_yellow_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_pi0bkgr_yellow_down_phi_vtxz = nullptr;
 
 	BinnedHistSet* bhs_etabkgr_blue_up_phi_pT = nullptr;
 	BinnedHistSet* bhs_etabkgr_blue_down_phi_pT = nullptr;
@@ -95,4 +119,12 @@ class TSSAplotter {
 	BinnedHistSet* bhs_etabkgr_blue_down_phi_xF = nullptr;
 	BinnedHistSet* bhs_etabkgr_yellow_up_phi_xF = nullptr;
 	BinnedHistSet* bhs_etabkgr_yellow_down_phi_xF = nullptr;
+	BinnedHistSet* bhs_etabkgr_blue_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_etabkgr_blue_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_etabkgr_yellow_up_phi_eta = nullptr;
+	BinnedHistSet* bhs_etabkgr_yellow_down_phi_eta = nullptr;
+	BinnedHistSet* bhs_etabkgr_blue_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_etabkgr_blue_down_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_etabkgr_yellow_up_phi_vtxz = nullptr;
+	BinnedHistSet* bhs_etabkgr_yellow_down_phi_vtxz = nullptr;
 };

@@ -219,6 +219,10 @@ class neutralMesonTSSA : public SubsysReco
   PhiHists* etaHists_lowEta = nullptr;
   PhiHists* pi0BkgrHists_lowEta = nullptr;
   PhiHists* etaBkgrHists_lowEta = nullptr;
+  PhiHists* pi0Hists_highEta = nullptr;
+  PhiHists* etaHists_highEta = nullptr;
+  PhiHists* pi0BkgrHists_highEta = nullptr;
+  PhiHists* etaBkgrHists_highEta = nullptr;
 
   // counters for events
   long int n_events_total = 0;

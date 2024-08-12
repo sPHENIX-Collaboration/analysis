@@ -14,10 +14,13 @@
 #include <neutralmesontssa/neutralMesonTSSA.h>
 
 #include <caloreco/CaloTowerCalib.h>
+#include <caloreco/CaloTowerStatus.h>
 #include <caloreco/RawClusterBuilderTemplate.h>
 #include <caloreco/RawClusterPositionCorrection.h>
 
 #include <Calo_Calib.C>
+
+#include <fstream>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
@@ -34,12 +37,10 @@ std::string GetFirstFile(const char* filelist)
   return firstfile;
 }
 
-void Fun4All_neutralMesonTSSA(
+void Fun4All_checkHotMaps(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
-                     const char *filelist2 = "dst_truth.list",
-		     const string outname = "neutralMesonTSSA_hists.root",
-		     bool isMC = false)
+		     const string outname = "dummyhists.root")
 {
   // this convenience library knows all our i/o objects so you don't
   // have to figure out what is in each dst type
@@ -47,7 +48,7 @@ void Fun4All_neutralMesonTSSA(
   /* gSystem->Load("libneutralMesonTSSA.so"); */
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);  // set it to 1 if you want event printouts
+  se->Verbosity(1);  // set it to 1 if you want event printouts
   CDBInterface::instance()->Verbosity(1);
 
   // conditions DB flags and timestamp
@@ -63,15 +64,15 @@ void Fun4All_neutralMesonTSSA(
   inCluster->AddListFile(filelist1,1);
   se->registerInputManager(inCluster);
 
-  Fun4AllInputManager *inTruth = new Fun4AllDstInputManager("DSTTruth");
-  if (isMC) {
-      std::cout << "Adding file list " << filelist2 << std::endl;
-      inTruth -> AddListFile(filelist2,1);
-      se -> registerInputManager(inTruth);
-  }
-
   // Tower calibrations
-  Process_Calo_Calib();  // this line handles the calibrations, dead/hot tower masking and reruns the clusterizer
+  /* Process_Calo_Calib();  // this line handles the calibrations, dead/hot tower masking and reruns the clusterizer */
+  CaloTowerStatus *statusEMC = new CaloTowerStatus("TowerStatusEMC");
+  /* statusEMC->Verbosity(1); */
+  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+  statusEMC->set_doAbortNoHotMap(true);
+  /* statusEMC->set_time_cut(1); */
+  se->registerSubsystem(statusEMC);
+
   /* CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB"); */
   /* calibEMC->set_detector_type(CaloTowerDefs::CEMC); */
   /* calibEMC->set_directURL("/sphenix/u/bseidlitz/work/temp24Calib/emcalCalib_withMask_may25.root"); */
@@ -90,7 +91,7 @@ void Fun4All_neutralMesonTSSA(
   se->registerSubsystem(ClusterBuilder);
   */
 
-  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, false);
   /* eval->set_min_clusterE(0.5); */
   /* eval->set_max_clusterChi2(4.0); */
   se -> registerSubsystem(eval);

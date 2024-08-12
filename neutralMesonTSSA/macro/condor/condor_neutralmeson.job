@@ -7,7 +7,7 @@ Notification    = Never
 
 # The executable we want to run.
 # Executable   = /sphenix/user/gmattson/analysis/pythiaEMCalAna/macro/condor/dummy.sh
-Executable   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/do_analysis.csh
+Executable   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/do_analysis.sh
 
 # The argument to pass to the executable.
 Arguments       = $(Process)
@@ -68,6 +68,9 @@ concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:2300
 # caloruns_validspin -- 1647
 # July9DSTs -- 17020
 # July30DSTs -- 34177
+# Aug10 DSTs -- 27201
+# condor limits number of jobs per submission
 
-Queue 5000
+# Queue 27201
+Queue 20000
 

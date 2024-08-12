@@ -9,6 +9,59 @@
 
 #include <string>
 
+void normalize_hist(TH1* hist, double norm=1.0) {
+    hist->Sumw2();
+    hist->Scale(norm/hist->Integral());
+}
+
+void SetupPad(TPad* pad, bool logy=false) {
+    pad->Clear();
+    pad->Draw();
+    pad->cd();
+    pad->SetFillColor(0);
+    pad->SetBorderMode(0);
+    pad->SetBorderSize(2);
+    pad->SetFrameBorderMode(0);
+    pad->SetFrameBorderMode(0);
+    pad->SetLogy(logy);
+    pad->SetLeftMargin(0.12);
+}
+
+void set_draw_style(TH1* hist, int color, int marker_style=7) {
+    hist->SetStats(10);
+    hist->SetMarkerStyle(marker_style);
+    hist->SetMarkerSize(1.5);
+    hist->SetMarkerColor(color);
+    hist->SetLineColor(color);
+    hist->GetXaxis()->CenterTitle(true);
+    hist->GetXaxis()->SetLabelFont(42);
+    hist->GetXaxis()->SetLabelSize(0.035);
+    hist->GetXaxis()->SetTitleSize(0.05);
+    hist->GetXaxis()->SetTitleOffset(0.8);
+    hist->GetXaxis()->SetTitleFont(42);
+    hist->GetYaxis()->CenterTitle(true);
+    hist->GetYaxis()->SetLabelFont(42);
+    hist->GetYaxis()->SetLabelSize(0.035);
+    hist->GetYaxis()->SetTitleSize(0.05);
+    hist->GetYaxis()->SetTitleFont(42);
+}
+
+void PlotSingleHist(TH1* hist, std::string outpdfname, bool logy=false, bool normalized=false) {
+    TCanvas *c1 = new TCanvas("c1", "c1",0,50,1600,900);
+    SetupPad(c1, logy);
+    if (normalized) {
+	normalize_hist(hist);
+	hist->GetYaxis()->SetTitle("Normalized Counts");
+    }
+    /* else hist->GetYaxis()->SetTitle("Counts"); */
+    set_draw_style(hist, 1, 20);
+    hist->SetStats(0);
+    hist->Draw("e1 x0");
+    c1->Modified();
+    c1->SaveAs(outpdfname.c_str());
+    delete c1;
+}
+
 TSSAplotter::TSSAplotter() {}
 
 TSSAplotter::~TSSAplotter() {}
@@ -38,11 +91,11 @@ void TSSAplotter::GetHists(std::string infilename) {
     diphoton_mass = (TH1*)infile->Get("h_diphotonMass");
     diphoton_pT = (TH1*)infile->Get("h_diphotonpT");
     diphoton_xF = (TH1*)infile->Get("h_diphotonxF");
-    double pT_upper = 15.0;
+    double pT_upper = 20.0;
     double xF_upper = 0.15;
     std::vector<double> pTbinsMass;
     std::vector<double> xFbinsMass;
-    int nbins_bhs = 25;
+    int nbins_bhs = 20;
     for (int i=0; i<nbins_bhs; i++) {
 	pTbinsMass.push_back(i*(pT_upper/nbins_bhs));
 	xFbinsMass.push_back(2*xF_upper*i/nbins_bhs - xF_upper);
@@ -54,6 +107,7 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_diphotonMass_xF = new BinnedHistSet(diphoton_mass, "x_{F}", xFbinsMass);
     bhs_diphotonMass_xF->GetHistsFromFile("h_diphotonMass_xF");
 
+    /*
     std::vector<double> pTbins;
     std::vector<double> xFbins;
     float bhs_max_pT = 8.0;
@@ -68,6 +122,14 @@ void TSSAplotter::GetHists(std::string infilename) {
     }
     pTbins.push_back(bhs_max_pT);
     xFbins.push_back(bhs_max_xF);
+    */
+    std::vector<double> pTbins = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 20.0};
+    std::vector<double> xFbins = {-0.15, -0.10, -0.06, -0.03, 0.03, 0.06, 0.10, 0.15};
+    std::vector<double> etabins = {-2.0, -1.15, -0.35, 0.35, 1.15, 2.0};
+    std::vector<double> vtxzbins = {-100.0, -50.0, -30.0, 30.0, 50.0, 100.0};
+    /* std::vector<double> xFbins = {-0.15, -0.10, -0.06, -0.03, 0.0, 0.03, 0.06, 0.10, 0.15}; */
+    /* std::vector<double> etabins = {-2.0, -1.15, -0.35, 0.0, 0.35, 1.15, 2.0}; */
+    /* std::vector<double> vtxzbins = {-100.0, -50.0, -30.0, 0.0, 30.0, 50.0, 100.0}; */
 
     int nHistBins_phi = 16;
     std::string nameprefix = "h_pi0_";
@@ -88,6 +150,22 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_pi0_blue_down_phi_xF->GetHistsFromFile("h_pi0_phi_xF_blue_down");
     bhs_pi0_yellow_up_phi_xF->GetHistsFromFile("h_pi0_phi_xF_yellow_up");
     bhs_pi0_yellow_down_phi_xF->GetHistsFromFile("h_pi0_phi_xF_yellow_down");
+    bhs_pi0_blue_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0_blue_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0_yellow_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0_yellow_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0_blue_up_phi_eta->GetHistsFromFile("h_pi0_phi_eta_blue_up");
+    bhs_pi0_blue_down_phi_eta->GetHistsFromFile("h_pi0_phi_eta_blue_down");
+    bhs_pi0_yellow_up_phi_eta->GetHistsFromFile("h_pi0_phi_eta_yellow_up");
+    bhs_pi0_yellow_down_phi_eta->GetHistsFromFile("h_pi0_phi_eta_yellow_down");
+    bhs_pi0_blue_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0_blue_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0_yellow_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0_yellow_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "x_{F}", vtxzbins);
+    bhs_pi0_blue_up_phi_vtxz->GetHistsFromFile("h_pi0_phi_vtxz_blue_up");
+    bhs_pi0_blue_down_phi_vtxz->GetHistsFromFile("h_pi0_phi_vtxz_blue_down");
+    bhs_pi0_yellow_up_phi_vtxz->GetHistsFromFile("h_pi0_phi_vtxz_yellow_up");
+    bhs_pi0_yellow_down_phi_vtxz->GetHistsFromFile("h_pi0_phi_vtxz_yellow_down");
 
     nameprefix = "h_eta_";
     titlewhich = "#eta";
@@ -107,6 +185,22 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_eta_blue_down_phi_xF->GetHistsFromFile("h_eta_phi_xF_blue_down");
     bhs_eta_yellow_up_phi_xF->GetHistsFromFile("h_eta_phi_xF_yellow_up");
     bhs_eta_yellow_down_phi_xF->GetHistsFromFile("h_eta_phi_xF_yellow_down");
+    bhs_eta_blue_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_eta_blue_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_eta_yellow_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_eta_yellow_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_eta_blue_up_phi_eta->GetHistsFromFile("h_eta_phi_eta_blue_up");
+    bhs_eta_blue_down_phi_eta->GetHistsFromFile("h_eta_phi_eta_blue_down");
+    bhs_eta_yellow_up_phi_eta->GetHistsFromFile("h_eta_phi_eta_yellow_up");
+    bhs_eta_yellow_down_phi_eta->GetHistsFromFile("h_eta_phi_eta_yellow_down");
+    bhs_eta_blue_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_eta_blue_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_eta_yellow_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_eta_yellow_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "x_{F}", vtxzbins);
+    bhs_eta_blue_up_phi_vtxz->GetHistsFromFile("h_eta_phi_vtxz_blue_up");
+    bhs_eta_blue_down_phi_vtxz->GetHistsFromFile("h_eta_phi_vtxz_blue_down");
+    bhs_eta_yellow_up_phi_vtxz->GetHistsFromFile("h_eta_phi_vtxz_yellow_up");
+    bhs_eta_yellow_down_phi_vtxz->GetHistsFromFile("h_eta_phi_vtxz_yellow_down");
 
     nameprefix = "h_pi0bkgr_";
     titlewhich = "#pi^{0} Background";
@@ -126,6 +220,22 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_pi0bkgr_blue_down_phi_xF->GetHistsFromFile("h_pi0bkgr_phi_xF_blue_down");
     bhs_pi0bkgr_yellow_up_phi_xF->GetHistsFromFile("h_pi0bkgr_phi_xF_yellow_up");
     bhs_pi0bkgr_yellow_down_phi_xF->GetHistsFromFile("h_pi0bkgr_phi_xF_yellow_down");
+    bhs_pi0bkgr_blue_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0bkgr_blue_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0bkgr_yellow_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0bkgr_yellow_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_pi0bkgr_blue_up_phi_eta->GetHistsFromFile("h_pi0bkgr_phi_eta_blue_up");
+    bhs_pi0bkgr_blue_down_phi_eta->GetHistsFromFile("h_pi0bkgr_phi_eta_blue_down");
+    bhs_pi0bkgr_yellow_up_phi_eta->GetHistsFromFile("h_pi0bkgr_phi_eta_yellow_up");
+    bhs_pi0bkgr_yellow_down_phi_eta->GetHistsFromFile("h_pi0bkgr_phi_eta_yellow_down");
+    bhs_pi0bkgr_blue_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0bkgr_blue_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0bkgr_yellow_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_pi0bkgr_yellow_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "x_{F}", vtxzbins);
+    bhs_pi0bkgr_blue_up_phi_vtxz->GetHistsFromFile("h_pi0bkgr_phi_vtxz_blue_up");
+    bhs_pi0bkgr_blue_down_phi_vtxz->GetHistsFromFile("h_pi0bkgr_phi_vtxz_blue_down");
+    bhs_pi0bkgr_yellow_up_phi_vtxz->GetHistsFromFile("h_pi0bkgr_phi_vtxz_yellow_up");
+    bhs_pi0bkgr_yellow_down_phi_vtxz->GetHistsFromFile("h_pi0bkgr_phi_vtxz_yellow_down");
 
     nameprefix = "h_etabkgr_";
     titlewhich = "#eta Background";
@@ -145,6 +255,22 @@ void TSSAplotter::GetHists(std::string infilename) {
     bhs_etabkgr_blue_down_phi_xF->GetHistsFromFile("h_etabkgr_phi_xF_blue_down");
     bhs_etabkgr_yellow_up_phi_xF->GetHistsFromFile("h_etabkgr_phi_xF_yellow_up");
     bhs_etabkgr_yellow_down_phi_xF->GetHistsFromFile("h_etabkgr_phi_xF_yellow_down");
+    bhs_etabkgr_blue_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_etabkgr_blue_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_etabkgr_yellow_up_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_etabkgr_yellow_down_phi_eta = new BinnedHistSet(Form("%sphi_eta_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "#eta", etabins);
+    bhs_etabkgr_blue_up_phi_eta->GetHistsFromFile("h_etabkgr_phi_eta_blue_up");
+    bhs_etabkgr_blue_down_phi_eta->GetHistsFromFile("h_etabkgr_phi_eta_blue_down");
+    bhs_etabkgr_yellow_up_phi_eta->GetHistsFromFile("h_etabkgr_phi_eta_yellow_up");
+    bhs_etabkgr_yellow_down_phi_eta->GetHistsFromFile("h_etabkgr_phi_eta_yellow_down");
+    bhs_etabkgr_blue_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_up", nameprefix.c_str()), Form("%s Blue Beam Spin-Up #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_etabkgr_blue_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_blue_down", nameprefix.c_str()), Form("%s Blue Beam Spin-Down #phi^{B} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_etabkgr_yellow_up_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_up", nameprefix.c_str()), Form("%s Yellow Beam Spin-Up #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "z_{vtx}", vtxzbins);
+    bhs_etabkgr_yellow_down_phi_vtxz = new BinnedHistSet(Form("%sphi_vtxz_yellow_down", nameprefix.c_str()), Form("%s Yellow Beam Spin-Down #phi^{Y} Distribution;#phi (rad);Counts", titlewhich.c_str()), nHistBins_phi, -1.0*PI, PI, "x_{F}", vtxzbins);
+    bhs_etabkgr_blue_up_phi_vtxz->GetHistsFromFile("h_etabkgr_phi_vtxz_blue_up");
+    bhs_etabkgr_blue_down_phi_vtxz->GetHistsFromFile("h_etabkgr_phi_vtxz_blue_down");
+    bhs_etabkgr_yellow_up_phi_vtxz->GetHistsFromFile("h_etabkgr_phi_vtxz_yellow_up");
+    bhs_etabkgr_yellow_down_phi_vtxz->GetHistsFromFile("h_etabkgr_phi_vtxz_yellow_down");
 }
 
 double TSSAplotter::RelLumiAsym(double Nup, double Ndown, double relLumi) {
@@ -359,11 +485,12 @@ void TSSAplotter::CompareOneAsym(std::string title, std::string outfilename, TGr
 
 void TSSAplotter::PlotAsymsBinned(std::string type, std::string which, BinnedHistSet* bhs_up, BinnedHistSet* bhs_down, std::string outfilename) {
     TCanvas* c1 = new TCanvas(which.c_str(), "", 1600, 900);
-    c1->Divide(3, 2, 0.025, 0.025);
+    c1->Divide(4, 2, 0.025, 0.025);
     
     int nbins = bhs_up->nbins;
     for (int i=1; i<=nbins; i++) {
 	TPad* pad = (TPad*)c1->GetPad(i);
+	if (!pad) return;
 	pad->cd();
 	gStyle->SetPadLeftMargin(0.15);
 	gROOT->ForceStyle();
@@ -413,45 +540,30 @@ int TSSAplotter::main(std::string infilename, std::string outfilename) {
     std::string outfilename_end = outfilename + ")";
 
     GetHists(infilename);
-
     TCanvas* c = new TCanvas("c", "c", 1600, 900);
-    nClusters->Draw();
-    c->SaveAs(outfilename_start.c_str());
-    nGoodClusters->Draw();
-    c->SaveAs(outfilename.c_str());
-    vtxz->Draw();
-    c->SaveAs(outfilename.c_str());
-    clusterE->Draw();
-    c->SetLogy();
-    c->SaveAs(outfilename.c_str());
-    clusterEta->Draw();
-    c->SetLogy(0);
-    c->SaveAs(outfilename.c_str());
+
+    PlotSingleHist(nClusters, outfilename_start);
+    PlotSingleHist(nGoodClusters, outfilename);
+    PlotSingleHist(vtxz, outfilename);
+    PlotSingleHist(clusterE, outfilename, true);
+    PlotSingleHist(clusterEta, outfilename);
     clusterEta_vtxz->Draw("colz");
     c->SaveAs(outfilename.c_str());
-    clusterPhi->Draw();
-    c->SaveAs(outfilename.c_str());
+    PlotSingleHist(clusterPhi, outfilename);
     clusterEta_Phi->Draw("colz");
     c->SaveAs(outfilename.c_str());
-    clusterpT->Draw();
-    c->SetLogy();
-    c->SaveAs(outfilename.c_str());
-    clusterxF->Draw();
-    c->SaveAs(outfilename.c_str());
+    PlotSingleHist(clusterpT, outfilename, true);
+    PlotSingleHist(clusterxF, outfilename, true);
     clusterpT_xF->Draw("colz");
     c->SetLogy(0);
     c->SetLogz();
     c->SaveAs(outfilename.c_str());
-    clusterChi2->Draw();
+    PlotSingleHist(clusterChi2, outfilename, true);
+    PlotSingleHist(clusterChi2zoomed, outfilename, true);
     c->SetLogy();
-    c->SaveAs(outfilename.c_str());
+    normalize_hist(clusterChi2zoomed);
     clusterChi2zoomed->Draw();
-    c->SaveAs(outfilename.c_str());
-    clusterChi2zoomed->Sumw2();
-    clusterChi2zoomed->Scale(1.0/clusterChi2zoomed->Integral());
-    clusterChi2zoomed->Draw();
-    mesonClusterChi2->SetLineColor(kRed);
-    mesonClusterChi2->Sumw2();
+    normalize_hist(mesonClusterChi2);
     mesonClusterChi2->Scale(1.0/mesonClusterChi2->Integral());
     mesonClusterChi2->Draw("same");
     c->SaveAs(outfilename.c_str());
@@ -461,22 +573,12 @@ int TSSAplotter::main(std::string infilename, std::string outfilename) {
     /* c->SetLogy(0); */
     /* c->SaveAs(outfilename.c_str()); */
 
-    nDiphotons->Draw();
-    c->SetLogy(0);
-    c->SaveAs(outfilename.c_str());
-    nRecoPi0s->Draw();
-    c->SaveAs(outfilename.c_str());
-    nRecoEtas->Draw();
-    c->SaveAs(outfilename.c_str());
-    c->SetLogy(0);
-    diphoton_mass->Draw();
-    c->SaveAs(outfilename.c_str());
-    diphoton_pT->Draw();
-    c->SetLogy();
-    c->SaveAs(outfilename.c_str());
-    diphoton_xF->Draw();
-    c->SetLogy();
-    c->SaveAs(outfilename.c_str());
+    PlotSingleHist(nDiphotons, outfilename);
+    PlotSingleHist(nRecoPi0s, outfilename);
+    PlotSingleHist(nRecoEtas, outfilename);
+    PlotSingleHist(diphoton_mass, outfilename);
+    PlotSingleHist(diphoton_pT, outfilename, true);
+    PlotSingleHist(diphoton_xF, outfilename, true);
 
     bhs_diphotonMass_pT->PlotAllHistsWithFits(outfilename, false, "mass");
     bhs_diphotonMass_xF->PlotAllHistsWithFits(outfilename, false, "mass");
@@ -489,8 +591,12 @@ int TSSAplotter::main(std::string infilename, std::string outfilename) {
     PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
     PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
     PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_xF, bhs_pi0_blue_down_phi_xF, outfilename);
+    PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_eta, bhs_pi0_blue_down_phi_eta, outfilename);
+    PlotAsymsBinned("rellumi", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_vtxz, bhs_pi0_blue_down_phi_vtxz, outfilename);
     PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_pT, bhs_pi0_blue_down_phi_pT, outfilename);
     PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_xF, bhs_pi0_blue_down_phi_xF, outfilename);
+    PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_eta, bhs_pi0_blue_down_phi_eta, outfilename);
+    PlotAsymsBinned("sqrt", "#pi^{0} Blue Beam", bhs_pi0_blue_up_phi_vtxz, bhs_pi0_blue_down_phi_vtxz, outfilename);
 
     diphoton_mass->Draw();
     c->SetLogy(0);
