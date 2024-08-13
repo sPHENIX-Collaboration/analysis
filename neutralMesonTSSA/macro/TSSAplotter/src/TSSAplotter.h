@@ -57,8 +57,8 @@ class TSSAplotter {
 	BinnedHistSet* bhs_diphotonMass_pT = nullptr;
 	BinnedHistSet* bhs_diphotonMass_xF = nullptr;
 
-	double relLumiBlue = 0.99771;
-	double relLumiYellow = 1.00360;
+	double relLumiBlue = 0.99978;
+	double relLumiYellow = 0.99846;
 
 	BinnedHistSet* bhs_pi0_blue_up_phi_pT = nullptr;
 	BinnedHistSet* bhs_pi0_blue_down_phi_pT = nullptr;

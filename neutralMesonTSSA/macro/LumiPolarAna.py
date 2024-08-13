@@ -3,6 +3,7 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
 # import seaborn as sns
 
 # sns.set(style='whitegrid')
@@ -10,9 +11,10 @@ import matplotlib.pyplot as plt
 class LumiPolarAna:
     matches = []
     scalers = []
+    runtimes = []
     has_scalers = False
     runinfo = {}
-    logdir = './condor/out'
+    logdir = 'condor/out'
     df = pd.DataFrame()
 
     # def __init__(self):
@@ -29,6 +31,9 @@ class LumiPolarAna:
                 if m2:
                     # print('Found GL1P scalers in ', filename, ': ', m2.group(1), sep='')
                     self.scalers.append(m2.group(1))
+                m3 = re.search(r'(\d+\.\d+)u', line) # GL1p scalers
+                if m3:
+                    self.runtimes.append(m3.group(1))
         return
 
     def ScanAllFiles(self):
@@ -82,6 +87,13 @@ class LumiPolarAna:
         print(self.df.describe())
         return
 
+    def ReadRunTimes(self, filename):
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            self.runtimes = []
+            for line in lines:
+                self.runtimes.append(float(line[:-2]))
+
     def GetDataFrame(self, filename):
         try:
             self.df = pd.read_csv(filename)
@@ -90,6 +102,11 @@ class LumiPolarAna:
         print(self.df)
         # print(self.df.describe())
         return True
+
+    def WriteRunTimes(self, filename):
+        with open(filename, 'w') as f:
+            for time in self.runtimes:
+                f.write(time+'\n')
 
     def WriteDataFrame(self, filename):
         self.df.to_csv(filename)
@@ -104,6 +121,15 @@ class LumiPolarAna:
         yellow_rel = yellow_up_total / yellow_down_total
         print(f'Blue relative luminosity = {blue_rel}')
         print(f'Yellow relative luminosity = {yellow_rel}')
+
+    def PlotRunTimes(self, outprefix='python_plots/'):
+        x = np.array(self.runtimes)
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18,12))
+        ax.hist(x/60, 100)
+        ax.set_title('neutralMesonTSSA Job Run Times')
+        ax.set_xlabel('Run Time (min)')
+        ax.set_ylabel('Counts')
+        plt.savefig(outprefix + 'runtimes.png')
 
     def PlotPol(self, outprefix='python_plots/pol_'):
         x = self.df['RunNum']
@@ -193,13 +219,21 @@ class LumiPolarAna:
         # plt.show()
 
 if __name__ == "__main__":
+    rewrite_files = False
+    if len(sys.argv) > 1 and sys.argv[1] == '--rewrite':
+        rewrite_files = True
     lpa = LumiPolarAna()
     csvfile = 'lumipol.csv'
     csvisgood = lpa.GetDataFrame(csvfile)
-    if not csvisgood:
+    runtimefile = 'runtimes.csv'
+    if rewrite_files or not csvisgood:
         lpa.ScanAllFiles()
+        lpa.WriteRunTimes(runtimefile)
         lpa.MakeDataFrame()
         lpa.WriteDataFrame(csvfile)
+    if not rewrite_files:
+        lpa.ReadRunTimes(runtimefile)
+    lpa.PlotRunTimes()
     lpa.GetRelLumi()
     # lpa.PlotPol()
     # lpa.PlotRel()

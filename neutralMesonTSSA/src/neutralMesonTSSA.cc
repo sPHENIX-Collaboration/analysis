@@ -17,6 +17,7 @@
 #include <TH1F.h>
 #include <TH2F.h>
 #include <TFile.h>
+#include <TTree.h>
 #include <TLorentzVector.h>
 #include <TString.h>
 
@@ -47,10 +48,11 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
 
-neutralMesonTSSA::neutralMesonTSSA(const std::string &name, std::string histname, bool isMC):
+neutralMesonTSSA::neutralMesonTSSA(const std::string &name, std::string histname, std::string treename, bool isMC):
  SubsysReco(name),
  isMonteCarlo(isMC),
- outfilename(histname)
+ outfilename_hists(histname),
+ outfilename_trees(treename)
 {
   std::cout << "neutralMesonTSSA::neutralMesonTSSA(const std::string &name) Calling ctor" << std::endl;
 }
@@ -66,16 +68,38 @@ int neutralMesonTSSA::Init(PHCompositeNode *topNode)
 {
   std::cout << "neutralMesonTSSA::Init(PHCompositeNode *topNode) Initializing" << std::endl;
 
-  min_pi0Mass = pi0MassMean - 2.5*pi0MassSigma;
-  max_pi0Mass = pi0MassMean + 2.5*pi0MassSigma;
-  min_etaMass = etaMassMean - 2.5*etaMassSigma;
-  max_etaMass = etaMassMean + 2.5*etaMassSigma;
-
-  outfile = new TFile(outfilename.c_str(), "RECREATE");
-  outfile->cd();
-
+  outfile_hists = new TFile(outfilename_hists.c_str(), "RECREATE");
+  outfile_hists->cd();
   MakeAllHists();
+
   MakeVectors();
+
+  outfile_trees = new TFile(outfilename_trees.c_str(), "RECREATE");
+  outfile_trees->cd();
+  tree_clusters = new TTree("Clusters", "Tree for cluster information");
+  tree_clusters->Branch("clusterE", goodclusters_E);
+  tree_clusters->Branch("clusterEcore", goodclusters_Ecore);
+  tree_clusters->Branch("clusterEta", goodclusters_Eta);
+  tree_clusters->Branch("clusterPhi", goodclusters_Phi);
+  tree_clusters->Branch("clusterpT", goodclusters_pT);
+  tree_clusters->Branch("clusterxF", goodclusters_xF);
+  tree_clusters->Branch("clusterChi2", goodclusters_Chi2);
+  tree_clusters->Branch("vtxz", &vtxz);
+  tree_clusters->Branch("minbiastrig", &mbdtrigger);
+  tree_clusters->Branch("photontrig", &photontrigger);
+
+  tree_diphotons = new TTree("Diphotons", "Tree for diphoton information");
+  tree_diphotons->Branch("diphotonE", diphoton_E);
+  tree_diphotons->Branch("diphotonM", diphoton_M);
+  tree_diphotons->Branch("diphotonEta", diphoton_Eta);
+  tree_diphotons->Branch("diphotonPhi", diphoton_Phi);
+  tree_diphotons->Branch("diphotonpT", diphoton_pT);
+  tree_diphotons->Branch("diphotonxF", diphoton_xF);
+  tree_diphotons->Branch("diphotonClusterIndex1", diphoton_clus1index);
+  tree_diphotons->Branch("diphotonClusterIndex2", diphoton_clus2index);
+  tree_diphotons->Branch("vtxz", &vtxz);
+  tree_diphotons->Branch("minbiastrig", &mbdtrigger);
+  tree_diphotons->Branch("photontrig", &photontrigger);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -94,8 +118,8 @@ int neutralMesonTSSA::InitRun(PHCompositeNode *topNode)
   }
 
   GetRunNum();
-  int good_spin = GetSpinInfo();
-  if (good_spin)
+  int bad_spin = GetSpinInfo();
+  if (bad_spin)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -108,6 +132,7 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 {
   /* std::cout << "neutralMesonTSSA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl; */
   n_events_total++;
+  h_nEvents->Fill(1);
   if (n_events_total%10000 == 0) std::cout << "Event " << n_events_total << std::endl;
   /* if (n_events_total < 1000) return Fun4AllReturnCodes::ABORTEVENT; */
   /* std::cout << "Greg info: starting process_event. n_events_total = " << n_events_total << std::endl; */
@@ -124,6 +149,8 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 
   // Check for MBDNS coincidence trigger
   GetTrigger();
+  if (mbdtrigger) h_nEvents->Fill(2);
+  if (photontrigger) h_nEvents->Fill(4);
   if (!mbdtrigger) return Fun4AllReturnCodes::ABORTEVENT;
   /* if (!photontrigger) return Fun4AllReturnCodes::ABORTEVENT; */
 
@@ -193,10 +220,13 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
       PHG4TruthInfoContainer::ConstVtxIterator vtxIter = vtx_range.first;
       mcVtx = vtxIter->second;
       n_events_with_globalvertex++;
-      if (abs(mcVtx->get_z()) > 30.0) {
-	  /* std::cout << "Greg info: vertex z is " << mcVtx->get_z() << "\n"; */
-	  return Fun4AllReturnCodes::ABORTEVENT;
-      }
+      vtxz = mcVtx->get_z();
+      h_vtxz->Fill(vtxz);
+      h_nEvents->Fill(3);
+      /* if (abs(mcVtx->get_z()) > 30.0) { */
+	  /* /1* std::cout << "Greg info: vertex z is " << mcVtx->get_z() << "\n"; *1/ */
+	  /* return Fun4AllReturnCodes::ABORTEVENT; */
+      /* } */
       n_events_with_good_vertex++;
   }
   else {
@@ -230,6 +260,9 @@ int neutralMesonTSSA::process_event(PHCompositeNode *topNode)
 	  }
 	  globalvertex = true;
 	  n_events_with_globalvertex++;
+	  vtxz = gVtx->get_z();
+	  h_vtxz->Fill(vtxz);
+	  h_nEvents->Fill(3);
 	  if (mbdtrigger) n_events_globalvtx_with_mbdtrig++;
 	  if (!mbdtrigger) n_events_globalvtx_without_mbdtrig++;
 	  if (mbdvertex) n_events_globalvtx_with_mbdvtx++;
@@ -307,11 +340,16 @@ int neutralMesonTSSA::ResetEvent(PHCompositeNode *topNode)
 {
   /* std::cout << "neutralMesonTSSA::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl; */
   
-  // Clear the data containers and vertex info
+  // Fill the trees
+  tree_clusters->Fill();
+  tree_diphotons->Fill();
+  
+  // Clear the data containers, triggers and vertex info
   m_clusterContainer = nullptr;
   m_truthInfo = nullptr;
   gVtx = nullptr;
   mcVtx = nullptr;
+  vtxz = -9999999.9;
   gl1Packet = nullptr;
   mbdNtrigger = false;
   mbdStrigger = false;
@@ -361,8 +399,10 @@ int neutralMesonTSSA::End(PHCompositeNode *topNode)
   std::cout << "" << n_events_with_vtx50 << " events with GlobalVertex |z| < 50cm.\n";
   std::cout << "" << n_events_positiveCaloE << " events with positive calo E.\n";
 
-  outfile->Write();
-  outfile->Close();
+  outfile_hists->Write();
+  outfile_hists->Close();
+  outfile_trees->Write();
+  outfile_trees->Close();
 
   DeleteStuff();
 
@@ -534,18 +574,27 @@ void neutralMesonTSSA::MakePhiHists(std::string which)
 
 void neutralMesonTSSA::MakeAllHists()
 {
-    // clusters
+    // trigger & vertex
+    // h_nEvents: 1 = all events; 2 = minbias trig; 3 = GlobalVertex; 4 = photon trig
+    h_nEvents = new TH1F("h_nEvents", "Number of Events Processed", 4, 0.5, 4.5);
+    h_nEvents->GetXaxis()->SetBinLabel(1, "All Events");
+    h_nEvents->GetXaxis()->SetBinLabel(2, "Minbias Trig");
+    h_nEvents->GetXaxis()->SetBinLabel(3, "GlobalVertex");
+    h_nEvents->GetXaxis()->SetBinLabel(4, "Photon Trig");
+    int nbins_vtxz = 100;
+    double vtxz_upper = 150.0;
+    h_vtxz = new TH1F("h_vtxz", "Vertex z Distribution;z_{vtx} (cm);Counts", nbins_vtxz, -vtxz_upper, vtxz_upper);
+
+    // all clusters
     int nbins_etaphi = 200;
-    double eta_upper = 1.60;
+    double eta_upper = 2.00;
     double phi_upper = PI;
     int nbins_pT = 100;
     int nbins_xF = 100;
     double pT_upper = 20.0;
     double xF_upper = 0.15;
-    double vtxz_upper = 150.0;
     h_nClusters = new TH1F("h_nClusters", "Total Number of Clusters per Event;# Clusters;Counts", 500, 800, 2800);
     h_nGoodClusters = new TH1F("h_nGoodClusters", "Number of \"Good\" Clusters per Event;# Clusters;Counts", 10, -0.5, 9.5);
-    h_vtxz = new TH1F("h_vtxz", "Vertex z Distribution;z_{vtx} (cm);Counts", nbins_etaphi, -vtxz_upper, vtxz_upper);
     h_clusterE = new TH1F("h_clusterE", "Cluster Energy Distribution;Cluster E (GeV);Counts", nbins_pT, 0.0, pT_upper);
     h_clusterEta = new TH1F("h_clusterEta", "Cluster #eta Distribution;Cluster #eta;Counts", nbins_etaphi, -eta_upper, eta_upper);
     h_clusterEta_vtxz = new TH2F("h_clusterEta_vtxz", "Cluster #eta v. Vertex z;Vertex z (cm);Cluster #eta", nbins_etaphi, -vtxz_upper, vtxz_upper, nbins_etaphi, -eta_upper, eta_upper);
@@ -557,7 +606,16 @@ void neutralMesonTSSA::MakeAllHists()
     h_clusterChi2 = new TH1F("h_clusterChi2", "Cluster #chi^{2} Distribution;Cluster #chi^{2};Counts", 200, 0.0, 30.0);
     h_clusterChi2zoomed = new TH1F("h_clusterChi2zoomed", "Cluster #chi^{2} Distribution;Cluster #chi^{2};Counts", 200, 0.0, 5.0);
     h_mesonClusterChi2 = new TH1F("h_mesonClusterChi2", "Cluster #chi^{2} for #pi^{0} and #eta Clusters;Cluster #chi^{2};Counts", 200, 0.0, 5.0);
+
+    // good clusters
+    h_goodClusterE = new TH1F("h_goodClusterE", "Energy Distribution of \"Good\" Clusters;Cluster E (GeV);Counts", nbins_pT, 0.0, pT_upper);
+    h_goodClusterEta = new TH1F("h_goodClusterEta", "#eta Distribution of \"Good\" Clusters;Cluster #eta;Counts", nbins_etaphi, -eta_upper, eta_upper);
+    h_goodClusterEta_vtxz = new TH2F("h_goodClusterEta_vtxz", "\"Good\" Cluster #eta v. Vertex z;Vertex z (cm);Cluster #eta", nbins_etaphi, -vtxz_upper, vtxz_upper, nbins_etaphi, -eta_upper, eta_upper);
+    h_goodClusterPhi = new TH1F("h_goodClusterPhi", "#phi Distribution of \"Good\" Clusters;Cluster #phi;Counts", nbins_etaphi, -phi_upper, phi_upper);
     h_goodClusterEta_Phi = new TH2F("h_goodClusterEta_Phi", "Angular Position of \"Good\" Clusters;Cluster #eta;Cluster #phi (rad)", nbins_etaphi, -eta_upper, eta_upper, nbins_etaphi, -phi_upper, phi_upper);
+    h_goodClusterpT = new TH1F("h_goodClusterpT", "Transverse Momentum Distribution of \"Good\" Clusters;Cluster p_{T} (GeV);Counts", nbins_pT, 0.0, pT_upper);
+    h_goodClusterxF = new TH1F("h_goodClusterxF", "x_{F} Distribution of \"Good\" Clusters;Cluster x_{F};Counts", nbins_xF, -1.0*xF_upper, xF_upper);
+    h_goodClusterpT_xF = new TH2F("h_goodClusterpT_xF", "\"Good\" Cluster x_{F} vs p_{T};Cluster p_{T} (GeV);Cluster x_{F}", nbins_pT, 0.0, pT_upper, nbins_xF, -1.0*xF_upper, xF_upper);
 
     // diphotons
     h_nDiphotons = new TH1F("h_nDiphotons", "Number of Diphotons per Event;# #gamma #gamma pairs;Counts", 100, -0.5, 99.5);
@@ -565,8 +623,14 @@ void neutralMesonTSSA::MakeAllHists()
     h_nRecoEtas = new TH1F("h_nRecoEtas", "Number of Reconstructed #eta{}s per Event;# #eta{}s;Counts", 10, -0.5, 9.5);
     int nbins_mass = 100;
     h_diphotonMass = new TH1F("h_diphotonMass", "Diphoton Mass Distribution;Diphoton Mass (GeV);Counts", nbins_mass, 0.0, 1.0);
-    h_diphotonpT = new TH1F("h_diphotonpT", "Diphoton p_{T} Distribution;Diphoton p_{T} (GeV);Counts", nbins_pT, 0.0, pT_upper);
+    h_diphotonE = new TH1F("h_diphotonE", "Diphoton Energy Distribution;Diphoton E (GeV);Counts", nbins_pT, 0.0, pT_upper);
+    h_diphotonEta = new TH1F("h_diphotonEta", "Diphoton #eta Distribution;Diphoton #eta;Counts", nbins_etaphi, -eta_upper, eta_upper);
+    h_diphotonEta_vtxz = new TH2F("h_diphotonEta_vtxz", "Diphoton #eta v. Vertex z;Vertex z (cm);Diphoton #eta", nbins_etaphi, -vtxz_upper, vtxz_upper, nbins_etaphi, -eta_upper, eta_upper);
+    h_diphotonPhi = new TH1F("h_diphotonPhi", "Diphoton #phi Distribution;Diphoton #phi;Counts", nbins_etaphi, -phi_upper, phi_upper);
+    h_diphotonEta_Phi = new TH2F("h_diphotonEta_Phi", "Diphoton Position;Diphoton #eta;Diphoton #phi (rad)", nbins_etaphi, -eta_upper, eta_upper, nbins_etaphi, -phi_upper, phi_upper);
+    h_diphotonpT = new TH1F("h_diphotonpT", "Diphoton Transverse Momentum Distribution;Diphoton p_{T} (GeV);Counts", nbins_pT, 0.0, pT_upper);
     h_diphotonxF = new TH1F("h_diphotonxF", "Diphoton x_{F} Distribution;Diphoton x_{F};Counts", nbins_xF, -1.0*xF_upper, xF_upper);
+    h_diphotonpT_xF = new TH2F("h_diphotonpT_xF", "Diphoton x_{F} vs p_{T};Diphoton p_{T} (GeV);Diphoton x_{F}", nbins_pT, 0.0, pT_upper, nbins_xF, -1.0*xF_upper, xF_upper);
 
     std::vector<double> pTbins;
     std::vector<double> xFbins;
@@ -583,6 +647,7 @@ void neutralMesonTSSA::MakeAllHists()
     bhs_diphotonMass_pT->MakeHists();
     bhs_diphotonMass_xF->MakeHists();
 
+    /*
     MakePhiHists("pi0");
     MakePhiHists("eta");
     MakePhiHists("pi0bkgr");
@@ -595,15 +660,27 @@ void neutralMesonTSSA::MakeAllHists()
     MakePhiHists("eta_highEta");
     MakePhiHists("pi0bkgr_highEta");
     MakePhiHists("etabkgr_highEta");
+    */
 }
 
 void neutralMesonTSSA::MakeVectors()
 {
     goodclusters_E = new std::vector<float>;
+    goodclusters_Ecore = new std::vector<float>;
     goodclusters_Eta = new std::vector<float>;
     goodclusters_Phi = new std::vector<float>;
-    goodclusters_Ecore = new std::vector<float>;
+    goodclusters_pT = new std::vector<float>;
+    goodclusters_xF = new std::vector<float>;
     goodclusters_Chi2 = new std::vector<float>;
+
+    diphoton_E = new std::vector<float>;
+    diphoton_M = new std::vector<float>;
+    diphoton_Eta = new std::vector<float>;
+    diphoton_Phi = new std::vector<float>;
+    diphoton_pT = new std::vector<float>;
+    diphoton_xF = new std::vector<float>;
+    diphoton_clus1index = new std::vector<int>;
+    diphoton_clus2index = new std::vector<int>;
 
     pi0s = new std::vector<Diphoton>;
     etas = new std::vector<Diphoton>;
@@ -752,8 +829,8 @@ void neutralMesonTSSA::FindGoodClusters()
     /* std::cout << "cluster container size is " << m_clusterContainer->size() << std::endl; */
     int nClusters = 0;
     int nGoodClusters = 0;
-    double vtxz = -999999.9;
-    if (gVtx) vtxz = gVtx->get_z();
+    /* double vtxz = -999999.9; */
+    /* if (gVtx) vtxz = gVtx->get_z(); */
 
     for (clusterIter = clusterRange.first; clusterIter != clusterRange.second; clusterIter++)
     {
@@ -790,6 +867,8 @@ void neutralMesonTSSA::FindGoodClusters()
 	float clus_eta = E_vec_cluster.pseudoRapidity();
 	float clus_phi = E_vec_cluster.phi();
 	float clus_chi2 = recoCluster->get_chi2();
+	float clus_pT = clusE/TMath::CosH(clus_eta);
+	float clus_xF = 2.0*(clusE*TMath::TanH(clus_eta))/200.0;
 
 	nClusters++;
 	h_clusterE->Fill(clusE);
@@ -797,9 +876,9 @@ void neutralMesonTSSA::FindGoodClusters()
 	h_clusterEta_vtxz->Fill(vtxz, clus_eta);
 	h_clusterPhi->Fill(clus_phi);
 	h_clusterEta_Phi->Fill(clus_eta, clus_phi);
-	h_clusterpT->Fill(clusE/TMath::CosH(clus_eta));
-	h_clusterxF->Fill(2.0*(clusE*TMath::TanH(clus_eta))/200.0);
-	h_clusterpT_xF->Fill(clusE/TMath::CosH(clus_eta), 2.0*(clusE*TMath::TanH(clus_eta))/200.0);
+	h_clusterpT->Fill(clus_pT);
+	h_clusterxF->Fill(clus_xF);
+	h_clusterpT_xF->Fill(clus_pT, clus_xF);
 	h_clusterChi2->Fill(clus_chi2);
 	h_clusterChi2zoomed->Fill(clus_chi2);
 
@@ -809,18 +888,26 @@ void neutralMesonTSSA::FindGoodClusters()
 	if (clus_chi2 > max_clusterChi2) continue;
 
 	nGoodClusters++;
+	h_goodClusterE->Fill(clusE);
+	h_goodClusterEta->Fill(clus_eta);
+	h_goodClusterEta_vtxz->Fill(vtxz, clus_eta);
+	h_goodClusterPhi->Fill(clus_phi);
 	h_goodClusterEta_Phi->Fill(clus_eta, clus_phi);
+	h_goodClusterpT->Fill(clus_pT);
+	h_goodClusterxF->Fill(clus_xF);
+	h_goodClusterpT_xF->Fill(clus_pT, clus_xF);
 	/* std::cout << "Populating goodcluster vectors" << std::endl; */
 	goodclusters_E->push_back(clusE);
+	goodclusters_Ecore->push_back(clusEcore);
 	goodclusters_Eta->push_back(clus_eta);
 	goodclusters_Phi->push_back(clus_phi);
-	goodclusters_Ecore->push_back(clusEcore);
+	goodclusters_pT->push_back(clus_pT);
+	goodclusters_xF->push_back(clus_xF);
 	goodclusters_Chi2->push_back(clus_chi2);
 	/* std::cout << "Done" << std::endl; */
     }
     h_nClusters->Fill(nClusters);
     h_nGoodClusters->Fill(nGoodClusters);
-    h_vtxz->Fill(vtxz);
     return;
 }
 
@@ -830,8 +917,8 @@ void neutralMesonTSSA::FindDiphotons()
     int nRecoPi0s = 0;
     int nRecoEtas = 0;
 
-    double vtxz = -999999.9;
-    if (gVtx) vtxz = gVtx->get_z();
+    /* double vtxz = -999999.9; */
+    /* if (gVtx) vtxz = gVtx->get_z(); */
 
     int nClusters = goodclusters_E->size();
     if (nClusters < 2) return;
@@ -871,11 +958,26 @@ void neutralMesonTSSA::FindDiphotons()
 	    if (dR < min_deltaR) continue;
 	    if (dR > max_deltaR) continue;
 
+	    h_diphotonE->Fill(diphoton.E());
 	    h_diphotonMass->Fill(diphoton.M());
-	    bhs_diphotonMass_pT->FillHists(diphoton.Perp(), diphoton.M());
-	    bhs_diphotonMass_xF->FillHists(xF, diphoton.M());
+	    h_diphotonEta->Fill(diphoton.Eta());
+	    h_diphotonEta_vtxz->Fill(diphoton.Eta(), vtxz);
+	    h_diphotonPhi->Fill(diphoton.Phi());
+	    h_diphotonEta_Phi->Fill(diphoton.Eta(), diphoton.Phi());
 	    h_diphotonpT->Fill(diphoton.Perp());
 	    h_diphotonxF->Fill(xF);
+	    h_diphotonpT_xF->Fill(diphoton.Perp(), xF);
+	    bhs_diphotonMass_pT->FillHists(diphoton.Perp(), diphoton.M());
+	    bhs_diphotonMass_xF->FillHists(xF, diphoton.M());
+
+	    diphoton_E->push_back(diphoton.E());
+	    diphoton_M->push_back(diphoton.M());
+	    diphoton_Eta->push_back(diphoton.Eta());
+	    diphoton_Phi->push_back(diphoton.Phi());
+	    diphoton_pT->push_back(diphoton.Perp());
+	    diphoton_xF->push_back(xF);
+	    diphoton_clus1index->push_back(lead_idx);
+	    diphoton_clus2index->push_back(sub_idx);
 
 	    Diphoton d;
 	    d.mass = diphoton.M();
@@ -889,21 +991,21 @@ void neutralMesonTSSA::FindDiphotons()
 	    std::vector<Diphoton>* vec = nullptr;
 	    if (InRange(diphoton.M(), pi0MassRange)) {
 		nRecoPi0s++;
-		vec = pi0s;
+		/* vec = pi0s; */
 		h_mesonClusterChi2->Fill(leadChi2);
 		h_mesonClusterChi2->Fill(subChi2);
 	    }
 	    if (InRange(diphoton.M(), etaMassRange)) {
 		nRecoEtas++;
-		vec = etas;
+		/* vec = etas; */
 		h_mesonClusterChi2->Fill(leadChi2);
 		h_mesonClusterChi2->Fill(subChi2);
 	    }
 	    if (InRange(diphoton.M(), pi0BkgrLowRange) || InRange(diphoton.M(), pi0BkgrHighRange)) {
-		vec = pi0Bkgr;
+		/* vec = pi0Bkgr; */
 	    }
 	    if (InRange(diphoton.M(), etaBkgrLowRange) || InRange(diphoton.M(), etaBkgrHighRange)) {
-		vec = etaBkgr;
+		/* vec = etaBkgr; */
 	    }
 
 	    if (vec) {
@@ -1077,7 +1179,18 @@ void neutralMesonTSSA::ClearVectors()
     goodclusters_Ecore->clear();
     goodclusters_Eta->clear();
     goodclusters_Phi->clear();
+    goodclusters_pT->clear();
+    goodclusters_xF->clear();
     goodclusters_Chi2->clear();
+
+    diphoton_E->clear();
+    diphoton_M->clear();
+    diphoton_Eta->clear();
+    diphoton_Phi->clear();
+    diphoton_pT->clear();
+    diphoton_xF->clear();
+    diphoton_clus1index->clear();
+    diphoton_clus2index->clear();
 
     pi0s->clear();
     etas->clear();
@@ -1087,9 +1200,11 @@ void neutralMesonTSSA::ClearVectors()
 
 void neutralMesonTSSA::DeleteStuff()
 {
-    delete pi0Hists; delete etaHists; delete pi0BkgrHists; delete etaBkgrHists;
-    delete goodclusters_E; delete goodclusters_Eta; delete goodclusters_Phi; delete goodclusters_Ecore; delete goodclusters_Chi2;
+    /* delete pi0Hists; delete etaHists; delete pi0BkgrHists; delete etaBkgrHists; */
+    delete goodclusters_E; delete goodclusters_Ecore; delete goodclusters_Eta; delete goodclusters_Phi; delete goodclusters_pT; delete goodclusters_xF; delete goodclusters_Chi2;
+    delete diphoton_E; delete diphoton_M; delete diphoton_Eta; delete diphoton_Phi; delete diphoton_pT; delete diphoton_xF; delete diphoton_clus1index; delete diphoton_clus2index;
     delete pi0s; delete etas; delete pi0Bkgr; delete etaBkgr;
+    delete outfile_hists; delete outfile_trees;
 }
 
 void neutralMesonTSSA::GetTrigger()

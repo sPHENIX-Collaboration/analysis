@@ -38,7 +38,8 @@ void Fun4All_neutralMesonTSSA(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
                      const char *filelist2 = "dst_truth.list",
-		     const string outname = "neutralMesonTSSA_hists.root",
+		     const string outname_hists = "neutralMesonTSSA_hists.root",
+		     const string outname_trees = "neutralMesonTSSA_trees.root",
 		     bool isMC = false)
 {
   // this convenience library knows all our i/o objects so you don't
@@ -90,7 +91,7 @@ void Fun4All_neutralMesonTSSA(
   se->registerSubsystem(ClusterBuilder);
   */
 
-  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname_hists, outname_trees, isMC);
   /* eval->set_min_clusterE(0.5); */
   /* eval->set_max_clusterChi2(4.0); */
   se -> registerSubsystem(eval);
