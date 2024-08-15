@@ -26,8 +26,13 @@
 #include <TTree.h>
 // -- Tower stuff
 #include <calobase/TowerInfo.h>
+#include <calobase/RawTowerDefs.h>
 #include <calobase/TowerInfoDefs.h>
 #include <calobase/TowerInfoContainer.h>
+// -- Cluster stuff
+#include <calobase/RawCluster.h>
+#include <calobase/RawClusterContainer.h>
+#include <calobase/RawClusterUtility.h>
 
 using std::cout;
 using std::endl;
@@ -44,13 +49,25 @@ JetValidation::JetValidation()
   , m_outputQAFile(nullptr)
   , m_outputTreeFileName("test.root")
   , m_outputQAFileName("qa.root")
+  , m_clusterNode("CLUSTERINFO_CEMC")
+  , m_emcTowerNodeBase("TOWERINFO_CALIB_CEMC")
+  , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
+  , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
+  , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_emcTowerNodeSub("TOWERINFO_CALIB_CEMC_RETOWER_SUB1")
+  , m_ihcalTowerNodeSub("TOWERINFO_CALIB_HCALIN_SUB1")
+  , m_ohcalTowerNodeSub("TOWERINFO_CALIB_HCALOUT_SUB1")
   , m_zvtx_max(30) /*cm*/
+  , m_zvtx_max2(20) /*cm*/
+  , m_zvtx_max3(10) /*cm*/
+  , m_lowEnergyThreshold(1) /*GeV*/
+  , m_lowPtThreshold(10) /*GeV*/
+  , m_highPtThreshold(20) /*GeV*/
+  , m_highPtJetCtr(0) /*GeV*/
   , m_bins_pt(200)
   , m_pt_low(0) /*GeV*/
-  , m_pt_high(100) /*GeV*/
-  , m_bins_events(3)
-  , m_events_low(-0.5)
-  , m_events_high(2.5)
+  , m_pt_high(200) /*GeV*/
+  , m_bins_events(5)
   , m_bins_zvtx(200)
   , m_zvtx_low(-50)
   , m_zvtx_high(50)
@@ -108,6 +125,28 @@ Int_t JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("zvtx", &m_zvtx);
   m_T->Branch("triggerVector", &m_triggerVector);
 
+  m_T->Branch("towersCEMCBase_isGood", &m_towersCEMCBase_isGood);
+  m_T->Branch("towersCEMCBase_energy", &m_towersCEMCBase_energy);
+  m_T->Branch("towersCEMCBase_time",   &m_towersCEMCBase_time);
+
+  m_T->Branch("towersCEMC_isGood",  &m_towersCEMC_isGood);
+  m_T->Branch("towersIHCal_isGood", &m_towersIHCal_isGood);
+  m_T->Branch("towersOHCal_isGood", &m_towersOHCal_isGood);
+
+  m_T->Branch("towersCEMC_energy",  &m_towersCEMC_energy);
+  m_T->Branch("towersIHCal_energy", &m_towersIHCal_energy);
+  m_T->Branch("towersOHCal_energy", &m_towersOHCal_energy);
+
+  m_T->Branch("towersCEMCSub_energy",  &m_towersCEMCSub_energy);
+  m_T->Branch("towersIHCalSub_energy", &m_towersIHCalSub_energy);
+  m_T->Branch("towersOHCalSub_energy", &m_towersOHCalSub_energy);
+
+  m_T->Branch("cluster_energy", &m_cluster_energy);
+  m_T->Branch("cluster_eta",    &m_cluster_eta);
+  m_T->Branch("cluster_phi",    &m_cluster_phi);
+  m_T->Branch("cluster_chi",    &m_cluster_chi);
+  m_T->Branch("cluster_towerIndex", &m_cluster_towerIndex);
+
   m_T->Branch("nJet_r02", &m_nJet_r02, "nJet_r02/I");
   m_T->Branch("nComponent_r02", &m_nComponent_r02);
   m_T->Branch("id_r02", &m_id_r02);
@@ -139,7 +178,7 @@ Int_t JetValidation::Init(PHCompositeNode *topNode)
   hJetPt_r04 = new TH1F("hJetPt_r04", "Jet: R = 0.4 and |z| < 30 cm; p_{T} [GeV]; Counts", m_bins_pt, m_pt_low, m_pt_high);
   hJetPt_r06 = new TH1F("hJetPt_r06", "Jet: R = 0.6 and |z| < 30 cm; p_{T} [GeV]; Counts", m_bins_pt, m_pt_low, m_pt_high);
 
-  hEvents    = new TH1F("hEvents","Events; Status; Counts", m_bins_events, m_events_low, m_events_high);
+  hEvents    = new TH1F("hEvents","Events; Status; Counts", m_bins_events, 0, m_bins_events);
   hZVtx      = new TH1F("hZVtx","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -182,6 +221,45 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
   ++m_eventZVtx30;
   hEvents->Fill(2);
 
+  if(abs(m_zvtx) < m_zvtx_max2) hEvents->Fill(3);
+  if(abs(m_zvtx) < m_zvtx_max3) hEvents->Fill(4);
+
+  // Get TowerInfoContainer
+  // Base EMCal Towers
+  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNodeBase.c_str());
+
+  // unsubtracted
+  TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
+  TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
+  TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
+
+  // subtracted
+  TowerInfoContainer* towersCEMCSub  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNodeSub.c_str());
+  TowerInfoContainer* towersIHCalSub = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNodeSub.c_str());
+  TowerInfoContainer* towersOHCalSub = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNodeSub.c_str());
+
+  if (!towersCEMCBase || !towersCEMC    || !towersIHCal    || !towersOHCal    ||
+      !towersCEMCSub  || !towersIHCalSub || !towersOHCalSub) {
+    cout << PHWHERE << "JetValidation::process_event Could not find one of "
+         << m_emcTowerNodeBase  << ", "
+         << m_emcTowerNode      << ", "
+         << m_ihcalTowerNode    << ", "
+         << m_ohcalTowerNode    << ", "
+         << m_emcTowerNodeSub   << ", "
+         << m_ihcalTowerNodeSub << ", "
+         << m_ohcalTowerNodeSub
+         << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  //Information on clusters
+  RawClusterContainer* clusterContainer = findNode::getClass<RawClusterContainer>(topNode,m_clusterNode.c_str());
+
+  if(!clusterContainer) {
+    cout << PHWHERE << "JetValidation::process_event Could not find node: " << m_clusterNode << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   // interface to reco jets
   JetContainer *jets_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r02);
   JetContainer *jets_r04 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r04);
@@ -201,7 +279,7 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
 
   // R = 0.2
   for (auto jet : *jets_r02) {
-    if (jet->get_pt() < 1) continue;  // to remove noise jets
+    if (jet->get_pt() < m_lowPtThreshold) continue;  // to remove noise jets
 
     m_id_r02.push_back(jet->get_id());
     m_nComponent_r02.push_back(jet->size_comp());
@@ -215,9 +293,10 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
     ++m_nJet_r02;
   }
 
+  Bool_t hasHighPtJet = false;
   // R = 0.4
   for (auto jet : *jets_r04) {
-    if (jet->get_pt() < 1) continue;  // to remove noise jets
+    if (jet->get_pt() < m_lowPtThreshold) continue;  // to remove noise jets
 
     m_id_r04.push_back(jet->get_id());
     m_nComponent_r04.push_back(jet->size_comp());
@@ -228,12 +307,89 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
 
     hJetPt_r04->Fill(jet->get_pt());
 
+    if(jet->get_pt() >= m_highPtThreshold) {
+      hasHighPtJet = true;
+      ++m_highPtJetCtr;
+    }
+
     ++m_nJet_r04;
+  }
+
+  if(hasHighPtJet) {
+    // loop over base towers
+    for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
+      TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
+      m_towersCEMCBase_isGood.push_back(tower->get_isGood());
+      m_towersCEMCBase_time.push_back(tower->get_time_float());
+      m_towersCEMCBase_energy.push_back(tower->get_energy());
+    }
+
+    // loop over towers
+    for(UInt_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex) {
+      // unsubtracted
+      TowerInfo* tower = towersCEMC->get_tower_at_channel(towerIndex);
+
+      m_towersCEMC_energy.push_back(tower->get_energy());
+      m_towersCEMC_isGood.push_back(tower->get_isGood());
+
+      tower = towersIHCal->get_tower_at_channel(towerIndex);
+      m_towersIHCal_energy.push_back(tower->get_energy());
+      m_towersIHCal_isGood.push_back(tower->get_isGood());
+
+      tower = towersOHCal->get_tower_at_channel(towerIndex);
+      m_towersOHCal_energy.push_back(tower->get_energy());
+      m_towersOHCal_isGood.push_back(tower->get_isGood());
+
+      // subtracted
+      tower = towersCEMCSub->get_tower_at_channel(towerIndex);
+      m_towersCEMCSub_energy.push_back(tower->get_energy());
+
+      tower = towersIHCalSub->get_tower_at_channel(towerIndex);
+      m_towersIHCalSub_energy.push_back(tower->get_energy());
+
+      tower = towersOHCalSub->get_tower_at_channel(towerIndex);
+      m_towersOHCalSub_energy.push_back(tower->get_energy());
+    }
+
+    RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
+    RawClusterContainer::ConstIterator clusterIter;
+
+    CLHEP::Hep3Vector vertex(0,0,m_zvtx);
+    // loop over all clusters in event
+    for(clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; ++clusterIter) {
+      RawCluster* recoCluster = clusterIter -> second;
+
+      CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*recoCluster, vertex);
+      // CLHEP::Hep3Vector E_vec_cluster_Full = RawClusterUtility::GetEVec(*recoCluster, vertex);
+
+      Float_t clusE    = E_vec_cluster.mag();
+      Float_t clus_eta = E_vec_cluster.pseudoRapidity();
+      Float_t clus_phi = E_vec_cluster.phi();
+      Float_t clus_chi = recoCluster->get_chi2();
+
+      // ignore noise clusters
+      if(clusE < m_lowEnergyThreshold) continue;
+
+      m_cluster_energy.push_back(clusE);
+      m_cluster_eta.push_back(clus_eta);
+      m_cluster_phi.push_back(clus_phi);
+      m_cluster_chi.push_back(clus_chi);
+
+      std::vector<Double_t> cluster_towerIndex;
+      RawCluster::TowerConstRange towers = recoCluster->get_towers();
+      RawCluster::TowerConstIterator toweriter;
+
+      // loop over towers in the cluster
+      for (toweriter = towers.first; toweriter != towers.second; toweriter++) {
+          cluster_towerIndex.push_back(TowerInfoDefs::decode_emcal(TowerInfoDefs::encode_emcal(RawTowerDefs::decode_index1(toweriter->first), RawTowerDefs::decode_index2(toweriter->first))));
+      }
+      m_cluster_towerIndex.push_back(cluster_towerIndex);
+    }
   }
 
   // R = 0.6
   for (auto jet : *jets_r06) {
-    if (jet->get_pt() < 1) continue;  // to remove noise jets
+    if (jet->get_pt() < m_lowPtThreshold) continue;  // to remove noise jets
 
     m_id_r06.push_back(jet->get_id());
     m_nComponent_r06.push_back(jet->size_comp());
@@ -301,6 +457,29 @@ Int_t JetValidation::ResetEvent(PHCompositeNode *topNode)
 
   m_triggerVector.clear();
 
+  m_towersCEMCBase_isGood.clear();
+  m_towersCEMCBase_energy.clear();
+  m_towersCEMCBase_time.clear();
+
+  m_towersCEMC_isGood.clear();
+  m_towersIHCal_isGood.clear();
+  m_towersOHCal_isGood.clear();
+
+  m_towersCEMC_energy.clear();
+  m_towersIHCal_energy.clear();
+  m_towersOHCal_energy.clear();
+
+  m_towersCEMCSub_energy.clear();
+  m_towersIHCalSub_energy.clear();
+  m_towersOHCalSub_energy.clear();
+
+  m_cluster_energy.clear();
+  m_cluster_eta.clear();
+  m_cluster_phi.clear();
+  m_cluster_chi.clear();
+
+  m_cluster_towerIndex.clear();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -312,6 +491,8 @@ Int_t JetValidation::End(PHCompositeNode *topNode)
   cout << "Jets (R=0.2): " << m_nJets_r02 << endl;
   cout << "Jets (R=0.4): " << m_nJets_r04 << endl;
   cout << "Jets (R=0.6): " << m_nJets_r06 << endl;
+  cout << "Jets (R=0.4) with pT >= " << m_highPtThreshold << ": " << m_highPtJetCtr << endl;
+
   cout << "JetValidation::End - Output to " << m_outputTreeFileName << endl;
   m_outputTreeFile->cd();
 

@@ -59,8 +59,22 @@ class JetValidation : public SubsysReco
   TFile* m_outputQAFile;
   std::string m_outputTreeFileName;
   std::string m_outputQAFileName;
+  std::string m_clusterNode;
+  std::string m_emcTowerNodeBase;
+  std::string m_emcTowerNode;
+  std::string m_ihcalTowerNode;
+  std::string m_ohcalTowerNode;
+  std::string m_emcTowerNodeSub;
+  std::string m_ihcalTowerNodeSub;
+  std::string m_ohcalTowerNodeSub;
 
   Float_t m_zvtx_max;
+  Float_t m_zvtx_max2;
+  Float_t m_zvtx_max3;
+  Float_t m_lowEnergyThreshold;
+  Float_t m_lowPtThreshold;
+  Float_t m_highPtThreshold;
+  UInt_t  m_highPtJetCtr;
 
   TH1F* hJetPt_r02;
   TH1F* hJetPt_r04;
@@ -73,8 +87,6 @@ class JetValidation : public SubsysReco
   Float_t m_pt_high;
 
   UInt_t m_bins_events;
-  Float_t m_events_low;
-  Float_t m_events_high;
 
   UInt_t m_bins_zvtx;
   Float_t m_zvtx_low;
@@ -93,6 +105,27 @@ class JetValidation : public SubsysReco
   Int_t m_nJets_r04;
   Int_t m_nJets_r06;
   Float_t m_zvtx;
+
+  //! tower info
+  std::vector<Bool_t>  m_towersCEMCBase_isGood;
+  std::vector<Float_t> m_towersCEMCBase_energy;
+  std::vector<Float_t> m_towersCEMCBase_time;
+  std::vector<Bool_t>  m_towersCEMC_isGood;
+  std::vector<Bool_t>  m_towersIHCal_isGood;
+  std::vector<Bool_t>  m_towersOHCal_isGood;
+  std::vector<Float_t> m_towersCEMC_energy;
+  std::vector<Float_t> m_towersIHCal_energy;
+  std::vector<Float_t> m_towersOHCal_energy;
+  std::vector<Float_t> m_towersCEMCSub_energy;
+  std::vector<Float_t> m_towersIHCalSub_energy;
+  std::vector<Float_t> m_towersOHCalSub_energy;
+
+  //! cluster info
+  std::vector<Float_t> m_cluster_energy;
+  std::vector<Float_t> m_cluster_eta;
+  std::vector<Float_t> m_cluster_phi;
+  std::vector<Float_t> m_cluster_chi;
+  std::vector<std::vector<Double_t>> m_cluster_towerIndex;
 
   //! trigger info
   std::vector<bool> m_triggerVector;
