@@ -13,7 +13,6 @@
 // -- fun4all
 #include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllReturnCodes.h>
-#include <fun4all/PHTFileServer.h>
 // -- vertex
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
@@ -32,6 +31,8 @@
 
 using std::cout;
 using std::endl;
+using std::string;
+using std::to_string;
 
 //____________________________________________________________________________..
 JetValidation::JetValidation()
@@ -39,6 +40,8 @@ JetValidation::JetValidation()
   , m_recoJetName_r02("AntiKt_Tower_r02_Sub1")
   , m_recoJetName_r04("AntiKt_Tower_r04_Sub1")
   , m_recoJetName_r06("AntiKt_Tower_r06_Sub1")
+  , m_outputTreeFile(nullptr)
+  , m_outputQAFile(nullptr)
   , m_outputTreeFileName("test.root")
   , m_outputQAFileName("qa.root")
   , m_zvtx_max(30) /*cm*/
@@ -82,21 +85,21 @@ JetValidation::JetValidation()
   , m_e_r06()
   , m_pt_r06()
 {
-  std::cout << "JetValidation::JetValidation(const std::string &name) Calling ctor" << std::endl;
+  cout << "JetValidation::JetValidation(const std::string &name) Calling ctor" << endl;
 }
 
 //____________________________________________________________________________..
 JetValidation::~JetValidation()
 {
-  std::cout << "JetValidation::~JetValidation() Calling dtor" << std::endl;
+  cout << "JetValidation::~JetValidation() Calling dtor" << endl;
 }
 
 //____________________________________________________________________________..
 Int_t JetValidation::Init(PHCompositeNode *topNode)
 {
-  std::cout << "JetValidation::Init(PHCompositeNode *topNode) Initializing" << std::endl;
-  PHTFileServer::get().open(m_outputTreeFileName, "RECREATE");
-  std::cout << "JetValidation::Init - Output to " << m_outputTreeFileName << std::endl;
+  cout << "JetValidation::Init(PHCompositeNode *topNode) Initializing" << endl;
+  m_outputTreeFile = new TFile(m_outputTreeFileName.c_str(),"RECREATE");
+  cout << "JetValidation::Init - Output to " << m_outputTreeFileName << endl;
 
   // configure Tree
   m_T = new TTree("T", "T");
@@ -129,8 +132,8 @@ Int_t JetValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("e_r06", &m_e_r06);
   m_T->Branch("pt_r06", &m_pt_r06);
 
-  PHTFileServer::get().open(m_outputQAFileName, "RECREATE");
-  std::cout << "JetValidation::Init - Output to " << m_outputQAFileName << std::endl;
+  m_outputQAFile = new TFile(m_outputQAFileName.c_str(),"RECREATE");
+  cout << "JetValidation::Init - Output to " << m_outputQAFileName << endl;
 
   hJetPt_r02 = new TH1F("hJetPt_r02", "Jet: R = 0.2 and |z| < 30 cm; p_{T} [GeV]; Counts", m_bins_pt, m_pt_low, m_pt_high);
   hJetPt_r04 = new TH1F("hJetPt_r04", "Jet: R = 0.4 and |z| < 30 cm; p_{T} [GeV]; Counts", m_bins_pt, m_pt_low, m_pt_high);
@@ -145,14 +148,14 @@ Int_t JetValidation::Init(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t JetValidation::process_event(PHCompositeNode *topNode)
 {
-  if (m_event % 20 == 0) std::cout << "Progress: " << m_event << std::endl;
+  if (m_event % 20 == 0) cout << "Progress: " << m_event << endl;
   ++m_event;
   hEvents->Fill(0);
 
   EventHeader* eventInfo = findNode::getClass<EventHeader>(topNode,"EventHeader");
   if(!eventInfo)
   {
-    std::cout << PHWHERE << "JetValidation::process_event - Fatal Error - EventHeader node is missing. " << std::endl;
+    cout << PHWHERE << "JetValidation::process_event - Fatal Error - EventHeader node is missing. " << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -162,7 +165,7 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
   // zvertex
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap) {
-    std::cout << "JetValidation::process_event - Error can not find global vertex node " << std::endl;
+    cout << "JetValidation::process_event - Error can not find global vertex node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
   if (vertexmap->empty()) {
@@ -184,11 +187,10 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
   JetContainer *jets_r04 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r04);
   JetContainer *jets_r06 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r06);
   if (!jets_r02 || !jets_r04 || !jets_r06) {
-    std::cout
-        << "JetValidation::process_event - Error can not find one of DST Reco JetContainer node "
-        << m_recoJetName_r02 << ", "
-        << m_recoJetName_r04 << ", "
-        << m_recoJetName_r06 << ", " << std::endl;
+    cout << "JetValidation::process_event - Error can not find one of DST Reco JetContainer node "
+         << m_recoJetName_r02 << ", "
+         << m_recoJetName_r04 << ", "
+         << m_recoJetName_r06 << ", " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -249,7 +251,7 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
   Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
   if (!gl1PacketInfo)
   {
-    std::cout << PHWHERE << "caloTreeGen::process_event: GL1Packet node is missing. Output related to this node will be empty" << std::endl;
+    cout << PHWHERE << "JetValidation::process_event: GL1Packet node is missing. Output related to this node will be empty" << endl;
   }
 
   if (gl1PacketInfo)
@@ -305,19 +307,22 @@ Int_t JetValidation::ResetEvent(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t JetValidation::End(PHCompositeNode *topNode)
 {
-  std::cout << "Events With Z Vtx: " << m_eventZVtx << ", " << m_eventZVtx * 100./m_event << " %" << std::endl;
-  std::cout << "Events With |Z| < 30 cm: " << m_eventZVtx30 << ", " << m_eventZVtx30 * 100./m_event << " %" << std::endl;
-  std::cout << "Jets (R=0.2): " << m_nJets_r02 << std::endl;
-  std::cout << "Jets (R=0.4): " << m_nJets_r04 << std::endl;
-  std::cout << "Jets (R=0.6): " << m_nJets_r06 << std::endl;
-
-  std::cout << "JetValidation::End - Output to " << m_outputTreeFileName << std::endl;
-  PHTFileServer::get().cd(m_outputTreeFileName);
+  cout << "Events With Z Vtx: " << m_eventZVtx << ", " << m_eventZVtx * 100./m_event << " %" << endl;
+  cout << "Events With |Z| < 30 cm: " << m_eventZVtx30 << ", " << m_eventZVtx30 * 100./m_event << " %" << endl;
+  cout << "Jets (R=0.2): " << m_nJets_r02 << endl;
+  cout << "Jets (R=0.4): " << m_nJets_r04 << endl;
+  cout << "Jets (R=0.6): " << m_nJets_r06 << endl;
+  cout << "JetValidation::End - Output to " << m_outputTreeFileName << endl;
+  m_outputTreeFile->cd();
 
   m_T->Write();
 
-  std::cout << "JetValidation::End - Output to " << m_outputQAFileName << std::endl;
-  PHTFileServer::get().cd(m_outputQAFileName);
+  m_outputTreeFile->Close();
+  delete m_outputTreeFile;
+
+  cout << "JetValidation::End - Output to " << m_outputQAFileName << endl;
+
+  m_outputQAFile->cd();
 
   hEvents->Write();
   hZVtx->Write();
@@ -325,6 +330,9 @@ Int_t JetValidation::End(PHCompositeNode *topNode)
   hJetPt_r04->Write();
   hJetPt_r06->Write();
 
-  std::cout << "JetValidation::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+  m_outputQAFile->Close();
+  delete m_outputQAFile;
+
+  cout << "JetValidation::End(PHCompositeNode *topNode) This is the End..." << endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }

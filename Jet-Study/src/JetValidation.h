@@ -12,6 +12,7 @@
 
 class PHCompositeNode;
 class TTree;
+class TFile;
 
 class JetValidation : public SubsysReco
 {
@@ -54,6 +55,8 @@ class JetValidation : public SubsysReco
   std::string m_recoJetName_r02;
   std::string m_recoJetName_r04;
   std::string m_recoJetName_r06;
+  TFile* m_outputTreeFile;
+  TFile* m_outputQAFile;
   std::string m_outputTreeFileName;
   std::string m_outputQAFileName;
 
