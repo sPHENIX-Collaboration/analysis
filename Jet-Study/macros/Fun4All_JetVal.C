@@ -36,7 +36,9 @@ R__LOAD_LIBRARY(libJetValidation.so)
 void Fun4All_JetVal(const string &inputFile,
                     const string &outputTreeFile = "tree.root",
                     const string &outputQAFile   = "qa.root",
-                    UInt_t nEvents = 0)
+                    UInt_t nEvents = 0,
+                    Int_t interestEvent = 0,
+                    Int_t neighbors = 0)
 {
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
@@ -44,6 +46,8 @@ void Fun4All_JetVal(const string &inputFile,
   cout << "output tree: "  << outputTreeFile << endl;
   cout << "output QA: "    << outputQAFile << endl;
   cout << "Events: "       << nEvents << endl;
+  cout << "Interest Event: " << interestEvent << endl;
+  cout << "Neighbors: "       << neighbors << endl;
   cout << "#############################" << endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -63,6 +67,10 @@ void Fun4All_JetVal(const string &inputFile,
   JetValidation *myJetVal = new JetValidation();
   myJetVal->set_outputTreeFileName(outputTreeFile);
   myJetVal->set_outputQAFileName(outputQAFile);
+  if(interestEvent) {
+    myJetVal->set_interestEvent(interestEvent);
+    myJetVal->set_neighbors(neighbors);
+  }
   se->registerSubsystem(myJetVal);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
@@ -77,18 +85,22 @@ void Fun4All_JetVal(const string &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 5){
-        cout << "usage: ./bin/Fun4All_JetVal inputFile [outputTreeFile] [outputQAFile] [events]" << endl;
+    if(argc < 2 || argc > 7){
+        cout << "usage: ./bin/Fun4All_JetVal inputFile [outputTreeFile] [outputQAFile] [events] [interestEvent] [neighbors]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "outputTreeFile: name of output Tree file. Default: tree.root" << endl;
         cout << "outputQAFile: name of output QA file. Default: qa.root" << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
+        cout << "interestEvent: specific event to filter. Default: 0" << endl;
+        cout << "neighbors: number of events to save before or after the interest event. Default: 0" << endl;
         return 1;
     }
 
     string outputTreeFile = "tree.root";
     string outputQAFile   = "qa.root";
     UInt_t events         = 0;
+    Int_t interestEvent   = 0;
+    Int_t neighbors       = 0;
 
     if(argc >= 3) {
         outputTreeFile = argv[2];
@@ -99,8 +111,14 @@ int main(int argc, char* argv[]) {
     if(argc >= 5) {
         events = atoi(argv[4]);
     }
+    if(argc >= 6) {
+        interestEvent = atoi(argv[5]);
+    }
+    if(argc >= 7) {
+        neighbors = atoi(argv[6]);
+    }
 
-    Fun4All_JetVal(argv[1], outputTreeFile, outputQAFile, events);
+    Fun4All_JetVal(argv[1], outputTreeFile, outputQAFile, events, interestEvent, neighbors);
 
     cout << "done" << endl;
     return 0;
