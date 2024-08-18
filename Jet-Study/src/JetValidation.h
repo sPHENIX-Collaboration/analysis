@@ -51,6 +51,15 @@ class JetValidation : public SubsysReco
     this->m_zvtx_max = m_zvtx_max;
   }
 
+  void set_interestEvent(Int_t m_interestEvent) {
+    this->m_interestEvent = m_interestEvent;
+    this->m_saveTowerInfo = true;
+  }
+
+  void set_neighbors(UInt_t m_neighbors) {
+    this->m_neighbors = m_neighbors;
+  }
+
  private:
   std::string m_recoJetName_r02;
   std::string m_recoJetName_r04;
@@ -75,6 +84,9 @@ class JetValidation : public SubsysReco
   Float_t m_lowPtThreshold;
   Float_t m_highPtThreshold;
   UInt_t  m_highPtJetCtr;
+  Bool_t  m_saveTowerInfo;
+  Int_t   m_interestEvent;
+  UInt_t  m_neighbors;
 
   TH1F* hJetPt_r02;
   TH1F* hJetPt_r04;

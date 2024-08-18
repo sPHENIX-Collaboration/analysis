@@ -64,6 +64,9 @@ JetValidation::JetValidation()
   , m_lowPtThreshold(10) /*GeV*/
   , m_highPtThreshold(20) /*GeV*/
   , m_highPtJetCtr(0) /*GeV*/
+  , m_saveTowerInfo(false)
+  , m_interestEvent(0)
+  , m_neighbors(0)
   , m_bins_pt(200)
   , m_pt_low(0) /*GeV*/
   , m_pt_high(200) /*GeV*/
@@ -201,26 +204,37 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
   m_globalEvent = eventInfo->get_EvtSequence();
   m_run         = eventInfo->get_RunNumber();
 
+  if(m_saveTowerInfo && abs(m_globalEvent-m_interestEvent) > m_neighbors) {
+    if(m_globalEvent > m_interestEvent) return Fun4AllReturnCodes::ABORTRUN;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   // zvertex
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap) {
     cout << "JetValidation::process_event - Error can not find global vertex node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
-  if (vertexmap->empty()) {
+  if (vertexmap->empty() && !m_saveTowerInfo) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  GlobalVertex *vtx = vertexmap->begin()->second;
-  m_zvtx = vtx->get_z();
+  if(!vertexmap->empty()) {
+    GlobalVertex *vtx = vertexmap->begin()->second;
+    m_zvtx = vtx->get_z();
+  }
+  else m_zvtx = -9999;
+
   hZVtx->Fill(m_zvtx);
   ++m_eventZVtx;
   hEvents->Fill(1);
 
-  if(abs(m_zvtx) >= m_zvtx_max) return Fun4AllReturnCodes::ABORTEVENT;
-  ++m_eventZVtx30;
-  hEvents->Fill(2);
+  if(abs(m_zvtx) >= m_zvtx_max && !m_saveTowerInfo) return Fun4AllReturnCodes::ABORTEVENT;
 
+  if(abs(m_zvtx) < m_zvtx_max)  {
+    hEvents->Fill(2);
+    ++m_eventZVtx30;
+  }
   if(abs(m_zvtx) < m_zvtx_max2) hEvents->Fill(3);
   if(abs(m_zvtx) < m_zvtx_max3) hEvents->Fill(4);
 
@@ -315,7 +329,7 @@ Int_t JetValidation::process_event(PHCompositeNode *topNode)
     ++m_nJet_r04;
   }
 
-  if(hasHighPtJet) {
+  if(hasHighPtJet || m_saveTowerInfo) {
     // loop over base towers
     for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
       TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
