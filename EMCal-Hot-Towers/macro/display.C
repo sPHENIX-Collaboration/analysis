@@ -44,9 +44,17 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     c1->SetCanvasSize(1500, 1000);
     c1->SetLeftMargin(.13);
+    c1->SetTopMargin(.08);
     c1->SetRightMargin(.05);
 
-    c1->Print((output + "[").c_str(), "pdf portrait");
+    gStyle->SetTitleStyle(0);
+    gStyle->SetTitleFontSize(0.08);
+    gStyle->SetTitleW(1);
+    gStyle->SetTitleH(0.08);
+    gStyle->SetTitleFillColor(0);
+    gStyle->SetTitleBorderSize(0);
+    gStyle->SetTitleXOffset(1);
+    gStyle->SetTitleYOffset(1);
 
     auto hBadTowers    = (TH1F*)input.Get("hBadTowers");
     auto hBadTowersDead  = (TH1F*)input.Get("hBadTowersDead");
@@ -58,6 +66,9 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto h2BadTowersHot = (TH2F*)input.Get("h2BadTowersHot");
     auto h2BadTowersCold = (TH2F*)input.Get("h2BadTowersCold");
 
+    auto hSigma = (TH1F*)input.Get("hSigma");
+    auto hSigmaFreqHot = (TH1F*)input.Get("hSigmaFreqHot");
+
     auto hHotTowerStatus = (TH1F*)input.Get("hHotTowerStatus");
 
     auto h2HotTowerFrequency_dummy = (TH2F*)input.Get("h2HotTowerFrequency/h2HotTowerFrequency_27_7");
@@ -65,11 +76,80 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     threshold = h2HotTowerFrequency_dummy->GetEntries()/2;
     cout << "threshold: " << threshold << endl;
 
+
     vector<TH1F*> hBadTowersVec  = {hBadTowers, hBadTowersDead, hBadTowersHot, hBadTowersCold};
     vector<TH2F*> h2BadTowersVec = {h2BadTowers, h2BadTowersDead, h2BadTowersHot, h2BadTowersCold};
-    vector<string> label         = {"Status #neq 0", "Dead", "Hot", "Cold"};
+    // vector<string> label         = {"Status #neq 0", "Dead", "Hot", "Cold"};
 
+    string dirName = "hHotTowerSigma";
+    TDirectory* dir = (TDirectory*) input.Get(dirName.c_str());
+    if (!dir)
+    {
+      cerr << "Directory not found: " << dirName << endl;
+      input.Close();
+      return;
+    }
+
+    TIter nextkey(dir->GetListOfKeys());
+    TKey* key;
+
+    string outputSigma = "sigma.pdf";
+    stringstream name;
+
+    c1->Print((outputSigma + "[").c_str(), "pdf portrait");
     c1->cd();
+
+    gPad->SetLogy();
+
+    hSigma->Rebin(5);
+
+    auto sigma_threshold = new TLine(5, 0, 5, hSigma->GetMaximum()*1.05);
+    sigma_threshold->SetLineColor(kOrange);
+    sigma_threshold->SetLineWidth(3);
+
+    hSigma->SetTitle("Towers");
+    hSigma->SetLineColor(kBlue);
+    hSigma->Draw();
+    sigma_threshold->Draw("same");
+    c1->Print((string(hSigma->GetName()) + ".png").c_str());
+
+    hSigmaFreqHot->Rebin(5);
+
+    hSigmaFreqHot->SetLineColor(kRed);
+    hSigmaFreqHot->Draw("same");
+
+    auto leg = new TLegend(0.5,.75,0.7,.9);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hSigma,"Flagged Hot #leq 50% of Runs","f");
+    leg->AddEntry(hSigmaFreqHot,"Flagged Hot > 50% of Runs","f");
+    leg->AddEntry(sigma_threshold,"Sigma Threshold","l");
+    leg->Draw("same");
+
+    c1->Print((string(hSigma->GetName()) + ".png").c_str());
+    c1->Print(outputSigma.c_str(), "pdf portrait");
+
+    gPad->SetLogy(0);
+
+    while ((key = (TKey*) nextkey())) {
+        name.str("");
+        name << dirName << "/" << key->GetName();
+
+        auto h = (TH1F*)input.Get(name.str().c_str());
+        h->Rebin(5);
+
+        sigma_threshold = new TLine(5, 0, 5, h->GetMaximum()*1.05);
+        sigma_threshold->SetLineColor(kRed);
+        sigma_threshold->SetLineWidth(3);
+        h->Draw();
+        sigma_threshold->Draw("same");
+
+        c1->Print((string(h->GetName()) + "-sigma.png").c_str());
+        c1->Print(outputSigma.c_str(), "pdf portrait");
+    }
+
+    c1->Print((outputSigma + "]").c_str(), "pdf portrait");
+
+    c1->Print((output + "[").c_str(), "pdf portrait");
 
     TLine* line = new TLine(0, threshold, ntowers, threshold);
     line->SetLineColor(kRed);
@@ -80,20 +160,34 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     latex.SetTextSize(0.05);
 
     for(UInt_t i = 0; i < hBadTowersVec.size(); ++i) {
+
         hBadTowersVec[i]->Draw();
         line->Draw("same");
-        latex.DrawLatexNDC(0.39,0.87, label[i].c_str());
 
         c1->Print((string(hBadTowersVec[i]->GetName()) + ".png").c_str());
-        c1->Print((output).c_str(), "pdf portrait");
+        c1->Print(output.c_str(), "pdf portrait");
     }
 
-    c1->SetLeftMargin(.1);
-    c1->SetRightMargin(.13);
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+    gPad->SetGrid();
 
     for(UInt_t i = 0; i < h2BadTowersVec.size(); ++i) {
         h2BadTowersVec[i]->SetMaximum(zMax);
-        h2BadTowersVec[i]->GetYaxis()->SetTitleOffset(0.9);
+
+        h2BadTowersVec[i]->GetXaxis()->SetLimits(0,256);
+        h2BadTowersVec[i]->GetXaxis()->SetNdivisions(32, false);
+        h2BadTowersVec[i]->GetXaxis()->SetLabelSize(0.04);
+        h2BadTowersVec[i]->GetXaxis()->SetTickSize(0.01);
+        h2BadTowersVec[i]->GetYaxis()->SetTickSize(0.01);
+        h2BadTowersVec[i]->GetYaxis()->SetLabelSize(0.04);
+        h2BadTowersVec[i]->GetYaxis()->SetLimits(0,96);
+        h2BadTowersVec[i]->GetYaxis()->SetNdivisions(12, false);
+        h2BadTowersVec[i]->GetYaxis()->SetTitleOffset(0.5);
+
         h2BadTowersVec[i]->Draw("colz1");
 
         c1->Print((string(h2BadTowersVec[i]->GetName()) + ".png").c_str());
