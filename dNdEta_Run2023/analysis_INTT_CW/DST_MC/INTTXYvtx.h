@@ -7,6 +7,8 @@
 #include "../sigmaEff.h"
 #include "../sPhenixStyle.C"
 #include "gaus_func.h"
+#include "ana_map_folder/ana_map_v1.h"
+namespace ana_map_version = ANA_MAP_V3;
 
 // note : this class mainly focus on two things 
 // note : 1. find a single vertex for the whole run
@@ -37,7 +39,19 @@ class INTTXYvtx {
     public:
         INTTXYvtx(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, bool draw_event_display = true, double peek = 3.32405, double angle_diff_new_l = 0.0, double angle_diff_new_r = 3, bool print_message_opt = true);
         INTTXYvtx(string run_type, string out_folder_directory);
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, double TrigZvtxMC, bool PhiCheckTag, Long64_t bco_full);
+        void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            double TrigZvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full,
+            int is_min_bias, // note : for data and MC
+            int is_min_bias_wozdc // note : for data only 
+        );
         virtual void ClearEvt();
         virtual void PrintPlots();
         virtual void EndRun();
@@ -51,8 +65,45 @@ class INTTXYvtx {
         void TH1F_FakeClone(TH1F*hist_in, TH1F*hist_out);
         void TH2F_FakeClone(TH2F*hist_in, TH2F*hist_out);
         void TH2F_FakeRebin(TH2F*hist_in, TH2F*hist_out);
-        vector<pair<double,double>> FillLine_FindVertex(pair<double,double> window_center, double segmentation = 0.005, double window_width = 3.0, int N_bins = 100);
-    
+        vector<pair<double,double>> FillLine_FindVertex(pair<double,double> window_center, double segmentation = 0.005, double window_width = 5.0, int N_bins = 100, bool draw_plot = true);
+        vector<double> LineFill_bkgrm_Get_covariance() {return Get_covariance_TH2(xy_hist_bkgrm);};
+
+        // note : for the delta phi study
+        void RunDeltaPhiStudy();
+        TProfile * Get_final_angle_diff_inner_phi_degree_coarseX_peak_profile() {return final_angle_diff_inner_phi_degree_coarseX_peak_profile;};
+        TH1F * Get_final_angle_diff_inner_phi_degree_coarseX_peak_profile_hist() {
+            
+            TH1F * angle_diff_correction_degree_hist = new TH1F( 
+                "",
+                "",
+                final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetNbinsX(), 
+                final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetXaxis() -> GetXmin(), 
+                final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetXaxis() -> GetXmax() 
+            );
+            
+            for (int i = 0; i < final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetNbinsX(); i++) { 
+                angle_diff_correction_degree_hist -> SetBinContent(i+1, final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetBinContent(i+1));
+            }
+
+            return angle_diff_correction_degree_hist;
+        }
+        TH1F * Get_final_DCA_mm_inner_phi_degree_coarseX_peak_profile_hist() {
+            
+            TH1F * DCA_mm_correction_degree_hist = new TH1F( 
+                "",
+                "",
+                final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> GetNbinsX(), 
+                final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> GetXaxis() -> GetXmin(), 
+                final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> GetXaxis() -> GetXmax() 
+            );
+            
+            for (int i = 0; i < final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> GetNbinsX(); i++) { 
+                DCA_mm_correction_degree_hist -> SetBinContent(i+1, final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> GetBinContent(i+1));
+            }
+
+            return DCA_mm_correction_degree_hist;
+        }
+
     protected:
         TCanvas * c1;
         TLatex * ltx;
@@ -65,6 +116,7 @@ class INTTXYvtx {
         TF1 * bkg_fit_pol2;
         TF1 * draw_pol2_line;
         TF1 * correlation_fit_MC;
+        TF1 * gaus_pol2_fit;
 
         TF1 * horizontal_fit_inner;
         TF1 * horizontal_fit_angle_diff_inner;
@@ -88,6 +140,7 @@ class INTTXYvtx {
         TH1F * angle_diff_new;
         TH1F * angle_diff_new_bkg_remove;
         TH1F * angle_diff_new_bkg_remove_final;
+        TH1F * angle_diff_radian;
         TH2F * inner_pos_xy;
         TH2F * outer_pos_xy;
         TH2F * inner_outer_pos_xy;
@@ -101,19 +154,41 @@ class INTTXYvtx {
         TH2F * DCA_distance_outer_X;
         TH2F * DCA_distance_outer_Y;
 
-        TH2F * DCA_distance_inner_phi;
-        TH2F * DCA_distance_inner_phi_peak;
+        TH2F *     DCA_distance_inner_phi;
+        TH2F *     DCA_distance_inner_phi_peak;
         TProfile * DCA_distance_inner_phi_peak_profile;
-        TH2F * DCA_distance_outer_phi;
-        TH2F * DCA_distance_outer_phi_peak;
+        TH2F *     DCA_distance_outer_phi;
+        TH2F *     DCA_distance_outer_phi_peak;
         TProfile * DCA_distance_outer_phi_peak_profile;
 
-        TH2F * angle_diff_inner_phi;
-        TH2F * angle_diff_inner_phi_peak;
+        TH2F *     angle_diff_inner_phi;
+        TH2F *     angle_diff_inner_phi_peak;
         TProfile * angle_diff_inner_phi_peak_profile;
-        TH2F * angle_diff_outer_phi;
-        TH2F * angle_diff_outer_phi_peak;
+        TH2F *     angle_diff_outer_phi;
+        TH2F *     angle_diff_outer_phi_peak;
         TProfile * angle_diff_outer_phi_peak_profile;
+
+        // note : those are for shifting the peak to the center 
+        TH2F *     final_DCA_mm_inner_phi_degree_coarseX;
+        TH2F *     final_DCA_mm_inner_phi_degree_coarseX_peak;
+        TProfile * final_DCA_mm_inner_phi_degree_coarseX_peak_profile;
+        
+        TH2F *     final_DCA_cm_inner_phi_radian_coarseX;
+        TH2F *     final_DCA_cm_inner_phi_radian_coarseX_peak;
+        TProfile * final_DCA_cm_inner_phi_radian_coarseX_peak_profile;
+
+        TH2F *     final_angle_diff_inner_phi_radian_coarseX;
+        TH2F *     final_angle_diff_inner_phi_radian_coarseX_peak;
+        TProfile * final_angle_diff_inner_phi_radian_coarseX_peak_profile;
+        TH2F *     final_angle_diff_inner_phi_degree_coarseX;
+        TH2F *     final_angle_diff_inner_phi_degree_coarseX_peak;
+        TProfile * final_angle_diff_inner_phi_degree_coarseX_peak_profile;
+        TH1F *     final_angle_diff_radian_before;
+        TH1F *     final_angle_diff_radian_post;
+        TH2F *     final_angle_diff_radian_DCA_2D_before;
+        TH2F *     final_angle_diff_radian_DCA_2D_post;
+        TH1F *     final_DCA_cm_before;
+        TH1F *     final_DCA_cm_post;
 
         TGraph * angle_diff_inner_phi_peak_profile_graph;
         TGraph * angle_diff_outer_phi_peak_profile_graph;
@@ -126,12 +201,16 @@ class INTTXYvtx {
         TH2F * DCA_distance_outer_phi_peak_final;
         TH2F * angle_diff_outer_phi_peak_final;
 
+        TH2F * xy_hist;
+        TH2F * xy_hist_bkgrm;
 
         // note : to keep the cluster pair information
         // note : this is the vector for the whole run, not event by event
         vector<pair<type_pos,type_pos>> cluster_pair_vec;
         double Clus_InnerPhi_Offset;
         double Clus_OuterPhi_Offset;
+        double Clus_InnerPhi_Offset_radian;
+        double Clus_OuterPhi_Offset_radian;
         double vtxXcorrection;
         double vtxYcorrection;
         double current_vtxX;
@@ -149,6 +228,8 @@ class INTTXYvtx {
             {{1,-1},3}
         };
 
+        double radian_correction = 180./M_PI;
+
         pair<double,double> beam_origin;
         pair<double,double> DCA_cut;
         string out_folder_directory;
@@ -165,10 +246,21 @@ class INTTXYvtx {
         int N_clu_cutl;
         int N_clu_cut;
 
+        // TFile * file_out;
+        // TTree * tree_out;
+        // double out_quadrant_corner_X;
+        // double out_quadrant_corner_Y;
+        // double out_quadrant_center_X;
+        // double out_quadrant_center_X;
+        // double out_line_filled_mean_X;
+        // double out_line_filled_mean_Y;
+        // double out_line_filled_stddev_X;
+        // double out_line_filled_stddev_Y;
+
         void Init();
         void InitHist();
         void InitCanvas();
-        void InitTreeOut();
+        virtual void InitTreeOut();
         void InitRest();    
         void InitGraph();    
 
@@ -177,12 +269,14 @@ class INTTXYvtx {
         void PrintPlotsVTXxy(string sub_out_folder_name, int print_option = 0);
         void ClearHist(int print_option = 0);
 
+        double get_dist_offset(TH1F * hist_in, int check_N_bin); // note : check_N_bin 1 to N bins of hist
         double get_radius(double x, double y);
         void Characterize_Pad(TPad *pad, float left = 0.15, float right = 0.1, float top = 0.1, float bottom = 0.12, bool set_logY = false, int setgrid_bool = 0);
         std::vector<double> calculateDistanceAndClosestPoint(double x1, double y1, double x2, double y2, double target_x, double target_y);
         double calculateAngleBetweenVectors(double x1, double y1, double x2, double y2, double targetX, double targetY);
         void TH2F_threshold(TH2F * hist, double threshold);
-        void TH2F_threshold_advanced(TH2F * hist, double threshold);
+        void TH2F_threshold_advanced(TH2F * hist, double threshold); // note : for each column
+        void TH2F_threshold_advanced_row(TH2F * hist, double threshold); // note : for each row
         void TH2F_threshold_advanced_2(TH2F * hist, double threshold);
         pair<type_pos,type_pos> GetTangentPointsAtCircle(double CenterX, double CenterY, double R, double XX, double YY);
         type_pos PolarToCartesian(double radius, double angleDegrees);
@@ -194,13 +288,16 @@ class INTTXYvtx {
         void DrawTH2F(TH2F * hist_in, string output_directory, vector<string> plot_name);
         pair<double,double> GetCircleAngle(double fit_range_l, double fit_range_r);
         vector<double> SumTH2FColumnContent(TH2F * hist_in);
+        vector<double> SumTH2FColumnContent_row(TH2F * hist_in);
         vector<pair<double,double>> Get4vtx(pair<double,double> origin, double length);
         vector<pair<double,double>> Get4vtxAxis(pair<double,double> origin, double length);
         vector<double> subMacroVTXxyCorrection(int test_index, int trial_index, bool draw_plot_opt);
         virtual void subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, double cos_fit_ranger, double guas_fit_range);
         pair<double,double> Get_possible_zvtx(double rvtx, vector<double> p0, vector<double> p1);
         int find_quadrant(pair<double,double> Origin, pair<double,double> check_point);
-        
+        vector<double> Get_covariance_TH2(TH2F * hist_in);      
+
+        TH1F * PrintPlots_bkgrm_helper(TH1F * hist_in, double signal_region);
 
         // note : from the INTTXYvtxEvt.h
         void TH2FSampleLineFill(TH2F * hist_in, double segmentation, std::pair<double,double> inner_clu, std::pair<double,double> outer_clu);
@@ -242,9 +339,27 @@ void INTTXYvtx::Init()
 {
     InitHist();
     InitCanvas();
-    // InitTreeOut();
+    InitTreeOut();
     InitRest();
     InitGraph();
+}
+
+void INTTXYvtx::InitTreeOut()
+{
+    // file_out = new TFile(Form("%s/run_XY_tree.root",out_folder_directory.c_str()),"RECREATE");
+    // file_out -> cd();
+
+    // tree_out = new TTree("tree", "tree avg VtxXY");
+    // tree_out -> Branch("quadrant_corner_X",&out_quadrant_corner_X);
+    // tree_out -> Branch("quadrant_corner_Y",&out_quadrant_corner_Y);
+    // tree_out -> Branch("quadrant_center_X",&out_quadrant_center_X);
+    // tree_out -> Branch("quadrant_center_X",&out_quadrant_center_X);
+    // tree_out -> Branch("line_filled_mean_X",&out_line_filled_mean_X);
+    // tree_out -> Branch("line_filled_mean_Y",&out_line_filled_mean_Y);
+    // tree_out -> Branch("line_filled_stddev_X",&out_line_filled_stddev_X);
+    // tree_out -> Branch("line_filled_stddev_Y",&out_line_filled_stddev_Y);
+
+    return;
 }
 
 void INTTXYvtx::InitGraph()
@@ -276,6 +391,11 @@ void INTTXYvtx::InitRest()
     gaus_fit -> SetParNames("size", "mean", "width", "offset");
     gaus_fit -> SetNpx(1000);
 
+    gaus_pol2_fit = new TF1("gaus_pol2_fit", gaus_pol2_func, -5, 5, 7);
+    gaus_pol2_fit -> SetLineWidth(2);
+    gaus_pol2_fit -> SetLineColor(2);
+    gaus_pol2_fit -> SetNpx(1000);
+
     gaus_fit_MC = new TF1("gaus_fit_MC",gaus_func,-10,10,4);
     gaus_fit_MC -> SetLineColor(2);
     gaus_fit_MC -> SetLineWidth(2);
@@ -298,19 +418,19 @@ void INTTXYvtx::InitRest()
     gaus_fit_angle_diff -> SetParNames("size", "mean", "width", "offset");
     gaus_fit_angle_diff -> SetNpx(1000);
 
-    horizontal_fit_inner = new TF1("horizontal_fit_inner","pol0",0,360);
+    horizontal_fit_inner = new TF1("horizontal_fit_inner","pol0",-360,360);
     horizontal_fit_inner -> SetLineWidth(2);
     horizontal_fit_inner -> SetLineColor(2);
 
-    horizontal_fit_angle_diff_inner = new TF1("horizontal_fit_angle_diff_inner","pol0",0,360);
+    horizontal_fit_angle_diff_inner = new TF1("horizontal_fit_angle_diff_inner","pol0",-360,360);
     horizontal_fit_angle_diff_inner -> SetLineWidth(2);
     horizontal_fit_angle_diff_inner -> SetLineColor(2);
 
-    horizontal_fit_outer = new TF1("horizontal_fit_outer","pol0",0,360);
+    horizontal_fit_outer = new TF1("horizontal_fit_outer","pol0",-360,360);
     horizontal_fit_outer -> SetLineWidth(2);
     horizontal_fit_outer -> SetLineColor(2);
 
-    horizontal_fit_angle_diff_outer = new TF1("horizontal_fit_angle_diff_outer","pol0",0,360);
+    horizontal_fit_angle_diff_outer = new TF1("horizontal_fit_angle_diff_outer","pol0",-360,360);
     horizontal_fit_angle_diff_outer -> SetLineWidth(2);
     horizontal_fit_angle_diff_outer -> SetLineColor(2);
 
@@ -383,8 +503,8 @@ void INTTXYvtx::InitHist()
 {
     angle_correlation = new TH2F("","angle_correlation",361,0,361,361,0,361);
     angle_correlation -> SetStats(0);
-    angle_correlation -> GetXaxis() -> SetTitle("Inner Phi [degree]");
-    angle_correlation -> GetYaxis() -> SetTitle("Outer Phi [degree]");
+    angle_correlation -> GetXaxis() -> SetTitle("Inner cluster #Phi [degree]");
+    angle_correlation -> GetYaxis() -> SetTitle("Outer cluster #Phi [degree]");
     angle_correlation -> GetXaxis() -> SetNdivisions(505);
 
     angle_diff_DCA_dist = new TH2F("","angle_diff_DCA_dist",100,-1.5,1.5,100,-3.5,3.5);
@@ -399,6 +519,10 @@ void INTTXYvtx::InitHist()
     angle_diff -> GetYaxis() -> SetTitle("Entry");
     angle_diff -> GetXaxis() -> SetNdivisions(505);
 
+    angle_diff_radian = new TH1F("","angle_diff_radian;#Delta#phi (Inner - Outer) [radian];Entry",100,-0.052359878,0.052359878);
+    angle_diff_radian -> SetStats(0);
+    angle_diff_radian -> GetXaxis() -> SetNdivisions(505);
+
     angle_diff_new = new TH1F("angle_diff_new","angle_diff_new",100, angle_diff_new_l, angle_diff_new_r);
     angle_diff_new -> SetStats(0);
     angle_diff_new -> GetXaxis() -> SetTitle("|Inner - Outer| [degree]");
@@ -410,18 +534,6 @@ void INTTXYvtx::InitHist()
     angle_diff_new_bkg_remove_final -> GetXaxis() -> SetTitle("|Inner - Outer| [degree]");
     angle_diff_new_bkg_remove_final -> GetYaxis() -> SetTitle("Entry");
     angle_diff_new_bkg_remove_final -> GetXaxis() -> SetNdivisions(505);
-
-    angle_diff_inner_phi = new TH2F("","angle_diff_inner_phi",361,0,361,100,-1.5,1.5);
-    angle_diff_inner_phi -> SetStats(0);
-    angle_diff_inner_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    angle_diff_inner_phi -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
-    angle_diff_inner_phi -> GetXaxis() -> SetNdivisions(505);
-
-    angle_diff_outer_phi = new TH2F("","angle_diff_outer_phi",361,0,361,100,-1.5,1.5);
-    angle_diff_outer_phi -> SetStats(0);
-    angle_diff_outer_phi -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    angle_diff_outer_phi -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
-    angle_diff_outer_phi -> GetXaxis() -> SetNdivisions(505);
 
     inner_pos_xy = new TH2F("","inner_pos_xy",360,-100,100,360,-100,100);
     inner_pos_xy -> SetStats(0);
@@ -446,18 +558,6 @@ void INTTXYvtx::InitHist()
     DCA_point -> GetXaxis() -> SetTitle("X pos [mm]");
     DCA_point -> GetYaxis() -> SetTitle("Y pos [mm]");
     DCA_point -> GetXaxis() -> SetNdivisions(505);
-
-    DCA_distance_inner_phi = new TH2F("","DCA_distance_inner_phi",100,0,360,100,-10,10);
-    DCA_distance_inner_phi -> SetStats(0);
-    DCA_distance_inner_phi -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    DCA_distance_inner_phi -> GetYaxis() -> SetTitle("DCA [mm]");
-    DCA_distance_inner_phi -> GetXaxis() -> SetNdivisions(505);
-
-    DCA_distance_outer_phi = new TH2F("","DCA_distance_outer_phi",100,0,360,100,-10,10);
-    DCA_distance_outer_phi -> SetStats(0);
-    DCA_distance_outer_phi -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    DCA_distance_outer_phi -> GetYaxis() -> SetTitle("DCA [mm]");
-    DCA_distance_outer_phi -> GetXaxis() -> SetNdivisions(505);
 
     DCA_distance = new TH1F("","DCA_distance",100,-10,10);
     DCA_distance -> SetStats(0);
@@ -501,30 +601,124 @@ void INTTXYvtx::InitHist()
     DCA_distance_outer_Y -> GetYaxis() -> SetTitle("DCA [mm]");
     DCA_distance_outer_Y -> GetXaxis() -> SetNdivisions(505);
 
+    DCA_distance_inner_phi = new TH2F("","DCA_distance_inner_phi;Inner cluster #Phi [radian];DCA [cm]",100,-M_PI,M_PI,100,-1,1);
+    DCA_distance_inner_phi -> SetStats(0);
+    DCA_distance_inner_phi -> GetXaxis() -> SetNdivisions(505);
 
-    DCA_distance_inner_phi_peak_final = new TH2F("","DCA_distance_inner_phi_peak_final",100,0,360,100,-10,10);
+    DCA_distance_outer_phi = new TH2F("","DCA_distance_outer_phi;Outer cluster #Phi [radian];DCA [cm]",100,-M_PI,M_PI,100,-1,1);
+    DCA_distance_outer_phi -> SetStats(0);
+    DCA_distance_outer_phi -> GetXaxis() -> SetNdivisions(505);
+
+    DCA_distance_inner_phi_peak_final = new TH2F("","DCA_distance_inner_phi_peak_final;Inner cluster #Phi [radian];DCA [cm]",100,-M_PI,M_PI,100,-1,1);
     DCA_distance_inner_phi_peak_final -> SetStats(0);
-    DCA_distance_inner_phi_peak_final -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    DCA_distance_inner_phi_peak_final -> GetYaxis() -> SetTitle("DCA [mm]");
     DCA_distance_inner_phi_peak_final -> GetXaxis() -> SetNdivisions(505);
 
-    DCA_distance_outer_phi_peak_final = new TH2F("","DCA_distance_outer_phi_peak_final",100,0,360,100,-10,10);
+    DCA_distance_outer_phi_peak_final = new TH2F("","DCA_distance_outer_phi_peak_final;Outer cluster #Phi [radian];DCA [cm]",100,-M_PI,M_PI,100,-1,1);
     DCA_distance_outer_phi_peak_final -> SetStats(0);
-    DCA_distance_outer_phi_peak_final -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    DCA_distance_outer_phi_peak_final -> GetYaxis() -> SetTitle("DCA [mm]");
     DCA_distance_outer_phi_peak_final -> GetXaxis() -> SetNdivisions(505);
 
-    angle_diff_inner_phi_peak_final = new TH2F("","angle_diff_inner_phi_peak_final",361,0,361,100,-1.5,1.5);
+    angle_diff_inner_phi = new TH2F("","angle_diff_inner_phi;Inner cluster #Phi [radian];#Delta#Phi (Inner - Outer) [radian]",100,-M_PI,M_PI,100,-0.03,0.03);
+    angle_diff_inner_phi -> SetStats(0);
+    angle_diff_inner_phi -> GetXaxis() -> SetNdivisions(505);
+
+    angle_diff_outer_phi = new TH2F("","angle_diff_outer_phi;Outer cluster #Phi [radian];#Delta#Phi (Inner - Outer) [radian]",100,-M_PI,M_PI,100,-0.03,0.03);
+    angle_diff_outer_phi -> SetStats(0);
+    angle_diff_outer_phi -> GetXaxis() -> SetNdivisions(505);
+
+    angle_diff_inner_phi_peak_final = new TH2F("","angle_diff_inner_phi_peak_final;Inner cluster #Phi [radian];#Delta#Phi (Inner - Outer) [radian]",100,-M_PI,M_PI,100,-0.03,0.03);
     angle_diff_inner_phi_peak_final -> SetStats(0);
-    angle_diff_inner_phi_peak_final -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    angle_diff_inner_phi_peak_final -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
     angle_diff_inner_phi_peak_final -> GetXaxis() -> SetNdivisions(505);
 
-    angle_diff_outer_phi_peak_final = new TH2F("","angle_diff_outer_phi_peak_final",361,0,361,100,-1.5,1.5);
+    angle_diff_outer_phi_peak_final = new TH2F("","angle_diff_outer_phi_peak_final;Outer cluster #Phi [radian];#Delta#Phi (Inner - Outer) [radian]",100,-M_PI,M_PI,100,-0.03,0.03);
     angle_diff_outer_phi_peak_final -> SetStats(0);
-    angle_diff_outer_phi_peak_final -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    angle_diff_outer_phi_peak_final -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
     angle_diff_outer_phi_peak_final -> GetXaxis() -> SetNdivisions(505);
+
+
+    
+
+    final_angle_diff_inner_phi_radian_coarseX = new TH2F(
+        "",
+        "final_angle_diff_inner_phi_radian_coarseX;Inner cluster #Phi [radian];#Delta#Phi (Inner - Outer) [radian]",
+        ana_map_version::final_angle_diff_inner_phi_radian_coarseX_XNbins, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Xmin, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Xmax,
+        ana_map_version::final_angle_diff_inner_phi_radian_coarseX_YNbins, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Ymin, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Ymax
+    );
+    final_angle_diff_inner_phi_radian_coarseX -> SetStats(0);
+    final_angle_diff_inner_phi_radian_coarseX -> GetXaxis() -> SetNdivisions(505);
+
+    final_angle_diff_inner_phi_degree_coarseX = new TH2F(
+        "",
+        "final_angle_diff_inner_phi_degree_coarseX;Inner cluster #Phi [degree];#Delta#Phi (Inner - Outer) [degree]",
+        final_angle_diff_inner_phi_radian_coarseX -> GetNbinsX(), 0, 360,
+        final_angle_diff_inner_phi_radian_coarseX -> GetNbinsY(), final_angle_diff_inner_phi_radian_coarseX -> GetYaxis() -> GetXmin() * radian_correction, final_angle_diff_inner_phi_radian_coarseX -> GetYaxis() -> GetXmax() * radian_correction
+    );
+    final_angle_diff_inner_phi_degree_coarseX -> SetStats(0);
+    final_angle_diff_inner_phi_degree_coarseX -> GetXaxis() -> SetNdivisions(505);
+
+    final_angle_diff_radian_before = new TH1F("","final_angle_diff_radian_before;#Delta#phi (Inner - Outer) [radian];Entry",200,-0.045,0.045);
+    final_angle_diff_radian_before -> SetStats(0);
+    final_angle_diff_radian_before -> GetXaxis() -> SetNdivisions(505);
+
+    final_angle_diff_radian_post = new TH1F(
+        "",
+        "final_angle_diff_radian_post;#Delta#phi (Inner - Outer) [radian];Entry",
+        final_angle_diff_radian_before -> GetNbinsX(),
+        final_angle_diff_radian_before -> GetXaxis() -> GetXmin(),
+        final_angle_diff_radian_before -> GetXaxis() -> GetXmax()
+    );
+    final_angle_diff_radian_post -> SetStats(0);
+    final_angle_diff_radian_post -> GetXaxis() -> SetNdivisions(505);
+
+
+    final_angle_diff_radian_DCA_2D_before = new TH2F("","final_angle_diff_radian_DCA_2D_before;Inner - Outer [radian];DCA distance [cm]",100,-1.5/radian_correction,1.5/radian_correction,100,-0.35,0.35);
+    final_angle_diff_radian_DCA_2D_before -> SetStats(0);
+    final_angle_diff_radian_DCA_2D_before -> GetXaxis() -> SetNdivisions(505);
+
+    final_angle_diff_radian_DCA_2D_post = new TH2F(
+        "",
+        "final_angle_diff_radian_DCA_2D_post;Inner - Outer [radian];DCA distance [cm]",
+        final_angle_diff_radian_DCA_2D_before -> GetNbinsX(),
+        final_angle_diff_radian_DCA_2D_before -> GetXaxis() -> GetXmin(),
+        final_angle_diff_radian_DCA_2D_before -> GetXaxis() -> GetXmax(),
+        final_angle_diff_radian_DCA_2D_before -> GetNbinsY(),
+        final_angle_diff_radian_DCA_2D_before -> GetYaxis() -> GetXmin(),
+        final_angle_diff_radian_DCA_2D_before -> GetYaxis() -> GetXmax()
+    );
+    final_angle_diff_radian_DCA_2D_post -> GetXaxis() -> SetNdivisions(505);
+
+    final_DCA_cm_inner_phi_radian_coarseX = new TH2F(
+        "",
+        "final_DCA_cm_inner_phi_radian_coarseX;Inner cluster #Phi [radian];DCA [cm]",
+        ana_map_version::final_angle_diff_inner_phi_radian_coarseX_XNbins, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Xmin, ana_map_version::final_angle_diff_inner_phi_radian_coarseX_Xmax,
+        100, -1., 1. // note : unit cm
+    );
+    final_DCA_cm_inner_phi_radian_coarseX -> GetXaxis() -> SetNdivisions(505);
+
+    final_DCA_mm_inner_phi_degree_coarseX = new TH2F(
+        "",
+        "final_DCA_mm_inner_phi_degree_coarseX;Inner cluster #Phi [degree];DCA [mm]",
+        final_DCA_cm_inner_phi_radian_coarseX -> GetNbinsX(), 0, 360,
+        final_DCA_cm_inner_phi_radian_coarseX -> GetNbinsY(), final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmin() * 10, final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmax() * 10 // note : unit mm
+    );
+    final_DCA_mm_inner_phi_degree_coarseX -> GetXaxis() -> SetNdivisions(505);
+
+    final_DCA_cm_before = new TH1F(
+        "",
+        "final_DCA_cm_before;DCA [cm];Entry",
+        final_DCA_cm_inner_phi_radian_coarseX -> GetNbinsY(),
+        final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmin(),
+        final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmax()
+    );
+    final_DCA_cm_before -> GetXaxis() -> SetNdivisions(505);
+
+    final_DCA_cm_post = new TH1F(
+        "",
+        "final_DCA_cm_post;DCA [cm];Entry",
+        final_DCA_cm_inner_phi_radian_coarseX -> GetNbinsY(),
+        final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmin(),
+        final_DCA_cm_inner_phi_radian_coarseX -> GetYaxis() -> GetXmax()
+    );
+    final_DCA_cm_post -> GetXaxis() -> SetNdivisions(505);
+    
 
 }
 
@@ -538,7 +732,9 @@ void INTTXYvtx::ProcessEvt(
     int NvtxMC,
     double TrigZvtxMC,
     bool PhiCheckTag,
-    Long64_t bco_full
+    Long64_t bco_full,
+    int is_min_bias,
+    int is_min_bias_wozdc
 )
 {
     if (event_i%10000 == 0) {cout<<"In INTTXYvtx class, running event : "<<event_i<<endl;}
@@ -548,6 +744,10 @@ void INTTXYvtx::ProcessEvt(
     // note : the Move these two in the beginning of the function, in order to avoid those event-reject cuts
     N_cluster_correlation -> Fill(temp_sPH_inner_nocolumn_vec.size(),temp_sPH_outer_nocolumn_vec.size());
     N_cluster_correlation_close -> Fill(temp_sPH_inner_nocolumn_vec.size(),temp_sPH_outer_nocolumn_vec.size());
+
+    // todo : for the data, the is_min_bias_wozdc is used
+    if (run_type == "MC" && is_min_bias_wozdc == 0) {return; cout<<"In INTTXYvtx class, MC, not min bias event"<<endl;}
+    if (run_type != "MC" && is_min_bias_wozdc == 0) {return; cout<<"In INTTXYvtx class, data, not min bias event"<<endl;}
 
     if (total_NClus < zvtx_cal_require) {return; cout<<"return confirmation"<<endl;}   
     
@@ -604,7 +804,7 @@ void INTTXYvtx::ClearEvt()
 pair<vector<TH2F *>, vector<TH1F*>> INTTXYvtx::GetHistFinal()
 {
     return {
-        {DCA_distance_inner_phi_peak_final, angle_diff_inner_phi_peak_final, DCA_distance_outer_phi_peak_final, angle_diff_outer_phi_peak_final},
+        {DCA_distance_inner_phi_peak_final, angle_diff_inner_phi_peak_final, DCA_distance_outer_phi_peak_final, angle_diff_outer_phi_peak_final, xy_hist, xy_hist_bkgrm},
         {angle_diff_new_bkg_remove_final}
     };
 }
@@ -613,443 +813,33 @@ void INTTXYvtx::PrintPlots()
 {   
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     inner_outer_pos_xy -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/inner_outer_pos_xy.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     inner_pos_xy -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/inner_pos_xy.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     outer_pos_xy -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/outer_pos_xy.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     N_cluster_correlation -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/N_cluster_correlation.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     N_cluster_correlation_close -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/N_cluster_correlation_close.pdf",out_folder_directory.c_str()));
     c1 -> Clear();
-}
-
-void INTTXYvtx::MacroVTXxyCorrection(bool phi_correction, bool calculate_XY, int N_trial, double fit_range_l, double fit_range_r)
-{
-    for (int i = 0; i < N_trial; i++)
-    {   
-        // note : since we are now calculating the exact vertex position, not the amount of the offset, we don't have the correction for now
-        // current_vtxX += vtxXcorrection;
-        // current_vtxY += vtxYcorrection;
-
-        string sub_out_folder_name = Form("%s/PhiCorr%i_vtxYX%i_trial_%i",out_folder_directory.c_str(),phi_correction, calculate_XY, i);
-        if (filesystem::exists(sub_out_folder_name.c_str()) == false)system(Form("mkdir %s",sub_out_folder_name.c_str()));
-
-        pair<double,double> new_vtxYX = GetVTXxyCorrection(phi_correction, calculate_XY, i, fit_range_l, fit_range_r);
-        PrintPlotsVTXxy(sub_out_folder_name);
-        ClearHist();
-        
-        if (calculate_XY == true)
-        {
-            current_vtxX = new_vtxYX.first;
-            current_vtxY = new_vtxYX.second;
-        }
-     }
-
-}
-
-pair<double,double> INTTXYvtx::GetVTXxyCorrection(bool phi_correction, bool calculate_XY, int trial_index, double fit_range_l, double fit_range_r)
-{
-    cout<<"Trial : "<<trial_index<<"---------------------------- ---------------------------- ----------------------------"<<endl;
-
-    for (int i = 0; i < cluster_pair_vec.size(); i++)
-    {
-        vector<double> DCA_info_vec = calculateDistanceAndClosestPoint(
-            cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y,
-            cluster_pair_vec[i].second.x, cluster_pair_vec[i].second.y,
-            current_vtxX, current_vtxY
-        );
-
-        double DCA_sign = calculateAngleBetweenVectors(
-            cluster_pair_vec[i].second.x, cluster_pair_vec[i].second.y,
-            cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y,
-            current_vtxX, current_vtxY
-        );
-
-        if (phi_correction == true)
-        {
-            // cout<<"option selected "<<endl;
-            Clus_InnerPhi_Offset = (cluster_pair_vec[i].first.y - current_vtxY < 0) ? atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi());
-            Clus_OuterPhi_Offset = (cluster_pair_vec[i].second.y - current_vtxY < 0) ? atan2(cluster_pair_vec[i].second.y - current_vtxY, cluster_pair_vec[i].second.x - current_vtxX) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].second.y - current_vtxY, cluster_pair_vec[i].second.x - current_vtxX) * (180./TMath::Pi());
-        }
-        else // note : phi_correction == false 
-        {
-            Clus_InnerPhi_Offset = (cluster_pair_vec[i].first.y < 0) ? atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()); 
-            Clus_OuterPhi_Offset = (cluster_pair_vec[i].second.y < 0) ? atan2(cluster_pair_vec[i].second.y, cluster_pair_vec[i].second.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].second.y, cluster_pair_vec[i].second.x) * (180./TMath::Pi()); 
-        }
-
-
-        // double phi_test = (cluster_pair_vec[i].first.y < 0) ? atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi());
-        // double phi_test_offset = (cluster_pair_vec[i].first.y - current_vtxY < 0) ? atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi());
-        // cout<<"angle offset test : "<<phi_test<<", "<<phi_test_offset<<endl;
-    
-        angle_correlation -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
-        angle_diff_DCA_dist -> Fill(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset, DCA_sign);
-        angle_diff -> Fill(abs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset));
-        angle_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
-        angle_diff_outer_phi -> Fill(Clus_OuterPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
-        DCA_point -> Fill(DCA_info_vec[1], DCA_info_vec[2]);
-        DCA_distance_inner_phi -> Fill(Clus_InnerPhi_Offset, DCA_sign);
-        DCA_distance_outer_phi -> Fill(Clus_OuterPhi_Offset, DCA_sign);
-        DCA_distance -> Fill(DCA_sign);
-        DCA_distance_inner_X -> Fill(cluster_pair_vec[i].first.x, DCA_sign);
-        DCA_distance_inner_Y -> Fill(cluster_pair_vec[i].first.y, DCA_sign);
-        DCA_distance_outer_X -> Fill(cluster_pair_vec[i].second.x, DCA_sign);
-        DCA_distance_outer_Y -> Fill(cluster_pair_vec[i].second.y, DCA_sign);
-    } // note : end of the loop for the cluster pair
-    
-    DCA_distance_inner_phi_peak = (TH2F*)DCA_distance_inner_phi -> Clone();
-    TH2F_threshold(DCA_distance_inner_phi_peak, 0.5); // todo : the background cut can be modified, the ratio 0.5
-    DCA_distance_inner_phi_peak_profile =  DCA_distance_inner_phi_peak->ProfileX("DCA_distance_inner_phi_peak_profile");
-
-    for (int iBin = 1; iBin <= DCA_distance_inner_phi_peak_profile->GetNbinsX(); ++iBin)
-    {
-        double xPoint = DCA_distance_inner_phi_peak_profile->GetXaxis()->GetBinCenter(iBin);
-        double yPoint = DCA_distance_inner_phi_peak_profile->GetBinContent(iBin);
-        cout <<"(" << xPoint << ", " << yPoint << ")" << endl;
-
-    }
-
-    cos_fit -> SetParameters(2, 1.49143e-02,  185, 0.3); // todo : we may have to apply more constaints on the fitting
-    // cos_fit -> SetParLimits(0,0,1000); // note : the amplitude has to be positive
-    cos_fit -> SetParLimits(2,0,360); // note : the peak location has to be positive
-    DCA_distance_inner_phi_peak_profile -> Fit(cos_fit, "N","",fit_range_l, fit_range_r);
-
-    // note : here is the test with a gaus fitting to find the peak
-    gaus_fit -> SetParameters(-4.5, 197, 50, 0);
-    gaus_fit -> SetParLimits(0,-100,0); // note : the gaus distribution points down
-    // DCA_distance_inner_phi_peak_profile -> Fit(gaus_fit, "N","",100, 260);
-    // cout<<"test, gaus fit range : "<<gaus_fit->GetParameter(1) - 25<<" "<<gaus_fit->GetParameter(1) + 25<<endl;
-    DCA_distance_inner_phi_peak_profile -> Fit(gaus_fit, "N","",cos_fit->GetParameter(2) - 25, cos_fit->GetParameter(2) + 25); // note : what we want and need is the peak position, so we fit the peak again    
-
-    // note : We found that the tangent points are not independent to the radius of the given positions with the same phi.
-    // note : which means that we have to use the position from the real geometry.
-    // note : in order to find the position of the real INTT geometry with the given phi.
-    // todo : to have higher efficiency, using a map with true geometry can be better.
-    // type_pos dummy_pos;
-    double dummy_pos_phi;
-    type_pos dummy_pos_select;
-    double dummy_pos_phi_select;
-    for (int i = 0; i < cluster_pair_vec.size(); i++)
-    {   
-        // note : here is for inner only
-        dummy_pos_phi = (cluster_pair_vec[i].first.y < 0) ? atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi());
-
-        if (i == 0){
-            dummy_pos_select = {cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y};
-            dummy_pos_phi_select = dummy_pos_phi;
-        }
-        else
-        {
-            if (fabs(dummy_pos_phi - gaus_fit->GetParameter(1)) < fabs(dummy_pos_phi_select - gaus_fit->GetParameter(1)))
-            {
-                dummy_pos_select = {cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y};
-                dummy_pos_phi_select = dummy_pos_phi;
-            }
-        }
-    }
-
-    // type_pos dummy_pos = PolarToCartesian(fabs(cos_fit->GetParameter(0)) * 2., gaus_fit->GetParameter(1));
-    cout<<"test, dummy_pos_select : "<< dummy_pos_select.x <<", "<< dummy_pos_select.y << " dummy_pos_phi_select : "<< dummy_pos_phi_select <<" difference : "<<fabs(dummy_pos_phi_select - gaus_fit->GetParameter(1))<<endl;
-    pair<type_pos,type_pos> tangent_points = GetTangentPointsAtCircle(current_vtxX, current_vtxY, fabs(cos_fit->GetParameter(0)), dummy_pos_select.x, dummy_pos_select.y);
-    cout<<"test, tangent_points : "<< tangent_points.first.x <<", "<< tangent_points.first.y <<", "<< tangent_points.second.x <<", "<< tangent_points.second.y <<endl;
-
-
-    angle_diff_inner_phi_peak = (TH2F*)angle_diff_inner_phi -> Clone();
-    TH2F_threshold_advanced(angle_diff_inner_phi_peak, 0.5);
-    angle_diff_inner_phi_peak_profile =  angle_diff_inner_phi_peak->ProfileX("angle_diff_inner_phi_peak_profile");
-    gaus_fit_angle_diff -> SetParameters(-0.5, 197, 50, 0);
-    gaus_fit_angle_diff -> SetParLimits(0,-100,0); // note : the gaus distribution points down
-    angle_diff_inner_phi_peak_profile -> Fit(gaus_fit_angle_diff, "N","",100, 260);
-
-    // note : find the vertex correction by the outer ring basis
-    // note : no fitting!
-    DCA_distance_outer_phi_peak = (TH2F*)DCA_distance_outer_phi -> Clone();
-    TH2F_threshold(DCA_distance_outer_phi_peak, 0.5);
-    DCA_distance_outer_phi_peak_profile =  DCA_distance_outer_phi_peak->ProfileX("DCA_distance_outer_phi_peak_profile");
-
-    // note : the angle diff plot with background removal and profile extraction for the outher barrel
-    angle_diff_outer_phi_peak = (TH2F*)angle_diff_outer_phi -> Clone();
-    TH2F_threshold_advanced(angle_diff_outer_phi_peak, 0.5);
-    // angle_diff_outer_phi_peak_profile =  angle_diff_outer_phi_peak->ProfileX("angle_diff_outer_phi_peak_profile");
-
-
-    if (tangent_points.first.y > tangent_points.second.y)
-    {
-        return {tangent_points.first.x, tangent_points.first.y};
-    }
-    else
-    {
-        return {tangent_points.second.x, tangent_points.second.y};
-    }
-
-}
-
-void INTTXYvtx::MacroVTXxyCorrection_new(double fit_range_l, double fit_range_r, int N_trial, pair<double,double> vertex_in)
-{
-    string sub_out_folder_name;
-    type_pos correction;
-    pair<double,double> correction_circle;
-    vector<double> Xpos_vec; Xpos_vec.clear(); // note : the correction axis in the unit of degree
-    vector<double> Ypos_vec_stddev; Ypos_vec_stddev.clear();
-    vector<double> XE_vec; XE_vec.clear();
-    vector<double> YE_vec_stddev; YE_vec_stddev.clear();
-
-    vector<double> Ypos_vec_pol0_chi2; Ypos_vec_pol0_chi2.clear();
-    vector<double> Ypos_vec_pol0_fitE; Ypos_vec_pol0_fitE.clear();
-    vector<double> Ypos_vec_pol0_chi2_angle_diff; Ypos_vec_pol0_chi2_angle_diff.clear();
-    vector<double> Ypos_vec_pol0_fitE_angle_diff; Ypos_vec_pol0_fitE_angle_diff.clear();
-    vector<double> YE_vec_pol0; YE_vec_pol0.clear();
-
-
-    double moving_unit = 10; // todo : the moving unit can be optimized
-    double moving_unit_radius = 0.2;
-    double tested_angle;
-    double given_radius;
-    vector<double> info_vec; info_vec.clear();
-    
-    sub_out_folder_name = Form("%s/New_trial_circle",out_folder_directory.c_str());
-    if (filesystem::exists(sub_out_folder_name.c_str()) == false) {system(Form("mkdir %s",sub_out_folder_name.c_str()));}
-    // correction_circle = GetCircleAngle(fit_range_l,fit_range_r);
-    // correction_circle = {4.5026156,182.8746}; // note : for test this is for run 20869
-
-    // note : the new test is to check how would the chi2 and fitE change with the given radius and the angle starting from the true vertex
-    // note : this is a test with MC since we can not tell the true  vertex in the real data
-    correction_circle = {0,0};
-
-    // PrintPlotsVTXxy(sub_out_folder_name, 1);
-    // ClearHist(1);
-
-    TH2F * angle_radius_relation_angle_stddev = new TH2F("angle_radius_relation_angle_stddev","angle_radius_relation_angle_stddev",N_trial,0,N_trial,N_trial,0,N_trial);
-
-    TH2F * angle_radius_relation_chi2_inner = new TH2F("angle_radius_relation_chi2_inner","angle_radius_relation_chi2_inner",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_fitE_inner = new TH2F("angle_radius_relation_fitE_inner","angle_radius_relation_fitE_inner",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_chi2_angle_diff_inner = new TH2F("angle_radius_relation_chi2_angle_diff_inner","angle_radius_relation_chi2_angle_diff_inner",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_fitE_angle_diff_inner = new TH2F("angle_radius_relation_fitE_angle_diff_inner","angle_radius_relation_fitE_angle_diff_inner",N_trial,0,N_trial,N_trial,0,N_trial);
-    
-    TH2F * angle_radius_relation_chi2_outer = new TH2F("angle_radius_relation_chi2_outer","angle_radius_relation_chi2_outer",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_fitE_outer = new TH2F("angle_radius_relation_fitE_outer","angle_radius_relation_fitE_outer",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_chi2_angle_diff_outer = new TH2F("angle_radius_relation_chi2_angle_diff_outer","angle_radius_relation_chi2_angle_diff_outer",N_trial,0,N_trial,N_trial,0,N_trial);
-    TH2F * angle_radius_relation_fitE_angle_diff_outer = new TH2F("angle_radius_relation_fitE_angle_diff_outer","angle_radius_relation_fitE_angle_diff_outer",N_trial,0,N_trial,N_trial,0,N_trial);
-
-    TH2F * chi2_fitE_relation_DCA = new TH2F("chi2_fitE_relation_DCA","chi2_fitE_relation_DCA",100,0,7,100,0,0.3);
-    TH2F * chi2_fitE_relation_angle_diff = new TH2F("chi2_fitE_relation_angle_diff","chi2_fitE_relation_angle_diff",100,0,0.3,100,0,0.04);
-
-    double small_chi2, small_chi2_X, small_chi2_Y;
-    double small_fitE, small_fitE_X, small_fitE_Y; // note : from DCA-inner phi
-    double small_chi2_angle_diff, small_chi2_X_angle_diff, small_chi2_Y_angle_diff;
-    double small_fitE_angle_diff, small_fitE_X_angle_diff, small_fitE_Y_angle_diff; // note : from angle diff - inner phi
-
-    double small_chi2_outer, small_chi2_X_outer, small_chi2_Y_outer;
-    double small_fitE_outer, small_fitE_X_outer, small_fitE_Y_outer; // note : from DCA-outer phi
-    double small_chi2_angle_diff_outer, small_chi2_X_angle_diff_outer, small_chi2_Y_angle_diff_outer;
-    double small_fitE_angle_diff_outer, small_fitE_X_angle_diff_outer, small_fitE_Y_angle_diff_outer; // note : from angle diff - outer phi
-    
-    double small_stddev, small_stddev_X, small_stddev_Y;
-
-    // note : N_trial has to be odd -> even_number + 0 + event_number
-    for (int i1 = 0; i1 < N_trial; i1++)
-    {
-        // given_radius = correction_circle.first + (i1 - ((N_trial - 1)/2) ) * moving_unit_radius;
-        given_radius = correction_circle.first + (i1) * moving_unit_radius;
-
-        // note : N_trial has to be odd -> even_number + 0 + event_number
-        for (int i = 0; i < N_trial; i++)
-        {   
-            sub_out_folder_name = Form("%s/New_trial_%i_%i",out_folder_directory.c_str(), i1, i);
-            if (filesystem::exists(sub_out_folder_name.c_str()) == false) {system(Form("mkdir %s",sub_out_folder_name.c_str()));}
-            // tested_angle = correction_circle.second + (i - ((N_trial - 1)/2) ) * moving_unit - 90.;
-            tested_angle = correction_circle.second + (i - ((N_trial - 1)/2) ) * moving_unit + 180;
-
-            // cout<<"test : "<<correction_circle.first<<" "<<beam_origin.first<<" "<<beam_origin.second<<endl;
-            // cout<<"test : "<<correction.x<<" "<<correction.y<<endl;
-
-            correction = PolarToCartesian(given_radius, tested_angle);
-            current_vtxX = beam_origin.first + correction.x;
-            current_vtxY = beam_origin.second + correction.y;
-
-            cout<<"scan step: "<<i1<<" "<<i<<endl;
-            cout<<"Given radius: "<<given_radius<<" given angle: "<<tested_angle<<endl;
-            cout<<"Vertex XY in this test: "<<current_vtxX<<" "<<current_vtxY<<endl;
-
-            info_vec = GetVTXxyCorrection_new((i1*N_trial)+i);
-            // cout<<"given angle: "<<tested_angle<<endl;
-            cout<<"Pol1 fit, chi2: "<<horizontal_fit_inner->GetChisquare()<<" NDF :"<<horizontal_fit_inner->GetNDF()<<" fit error: #pm "<<horizontal_fit_inner->GetParError(0)<<endl;
-            
-            Xpos_vec.push_back(tested_angle);
-            XE_vec.push_back(0);
-            Ypos_vec_stddev.push_back(info_vec[0]);
-            YE_vec_stddev.push_back(info_vec[1]);
-            Ypos_vec_pol0_chi2.push_back(info_vec[2]); // note : DCA inner phi, pol0 reduced chi2
-            Ypos_vec_pol0_fitE.push_back(info_vec[3]); // note : DCA inner phi, pol0 fit error
-            Ypos_vec_pol0_chi2_angle_diff.push_back(info_vec[4]); // note : angle diff - inner phi, pol0 reduced chi2
-            Ypos_vec_pol0_fitE_angle_diff.push_back(info_vec[5]); // note : angle diff - inner phi, pol0 fit error
-            YE_vec_pol0.push_back(0);
-
-            angle_radius_relation_angle_stddev -> SetBinContent(i+1,i1+1, info_vec[0]);
-            angle_radius_relation_chi2_inner -> SetBinContent(i+1,i1+1, info_vec[2]); 
-            angle_radius_relation_fitE_inner -> SetBinContent(i+1,i1+1, info_vec[3]);
-            angle_radius_relation_chi2_angle_diff_inner -> SetBinContent(i+1,i1+1, info_vec[4]);
-            angle_radius_relation_fitE_angle_diff_inner -> SetBinContent(i+1,i1+1, info_vec[5]);
-
-            angle_radius_relation_chi2_outer -> SetBinContent(i+1,i1+1, info_vec[6]); 
-            angle_radius_relation_fitE_outer -> SetBinContent(i+1,i1+1, info_vec[7]);
-            angle_radius_relation_chi2_angle_diff_outer -> SetBinContent(i+1,i1+1, info_vec[8]);
-            angle_radius_relation_fitE_angle_diff_outer -> SetBinContent(i+1,i1+1, info_vec[9]);
-
-            chi2_fitE_relation_DCA -> Fill(info_vec[2],info_vec[3]);
-            chi2_fitE_relation_angle_diff -> Fill(info_vec[4],info_vec[5]);
-
-            if (i1 == 0 && i1 == 0)
-            {
-                small_stddev = info_vec[0];
-                small_chi2 = info_vec[2];
-                small_fitE = info_vec[3];
-                small_chi2_angle_diff = info_vec[4];
-                small_fitE_angle_diff = info_vec[5];
-
-                small_chi2_outer = info_vec[6];
-                small_fitE_outer = info_vec[7];
-                small_chi2_angle_diff_outer = info_vec[8];
-                small_fitE_angle_diff_outer = info_vec[9];
-            }
-            else
-            {
-                if (info_vec[0] < small_stddev)
-                {
-                    small_stddev = info_vec[0];
-                    small_stddev_X = current_vtxX;
-                    small_stddev_Y = current_vtxY;
-                }
-
-                if (info_vec[2] < small_chi2)
-                {
-                    small_chi2 = info_vec[2];
-                    small_chi2_X = current_vtxX;
-                    small_chi2_Y = current_vtxY;
-
-                }
-                if (info_vec[3] < small_fitE)
-                {
-                    small_fitE = info_vec[3];
-                    small_fitE_X = current_vtxX;
-                    small_fitE_Y = current_vtxY;
-                }
-
-                if (info_vec[4] < small_chi2_angle_diff)
-                {
-                    small_chi2_angle_diff = info_vec[4];
-                    small_chi2_X_angle_diff = current_vtxX;
-                    small_chi2_Y_angle_diff = current_vtxY;
-
-                }
-                if (info_vec[5] < small_fitE_angle_diff)
-                {
-                    small_fitE_angle_diff = info_vec[5];
-                    small_fitE_X_angle_diff = current_vtxX;
-                    small_fitE_Y_angle_diff = current_vtxY;
-                }
-
-
-                if (info_vec[6] < small_chi2_outer)
-                {
-                    small_chi2_outer = info_vec[6];
-                    small_chi2_X_outer = current_vtxX;
-                    small_chi2_Y_outer = current_vtxY;
-
-                }
-                if (info_vec[7] < small_fitE_outer)
-                {
-                    small_fitE_outer = info_vec[7];
-                    small_fitE_X_outer = current_vtxX;
-                    small_fitE_Y_outer = current_vtxY;
-                }
-
-                if (info_vec[8] < small_chi2_angle_diff_outer)
-                {
-                    small_chi2_angle_diff_outer = info_vec[8];
-                    small_chi2_X_angle_diff_outer = current_vtxX;
-                    small_chi2_Y_angle_diff_outer = current_vtxY;
-
-                }
-                if (info_vec[9] < small_fitE_angle_diff_outer)
-                {
-                    small_fitE_angle_diff_outer = info_vec[9];
-                    small_fitE_X_angle_diff_outer = current_vtxX;
-                    small_fitE_Y_angle_diff_outer = current_vtxY;
-                }
-
-
-            }
-
-            PrintPlotsVTXxy(sub_out_folder_name, 1);
-            ClearHist(1);
-        }
-
-        DrawTGraphErrors(Xpos_vec, Ypos_vec_stddev, XE_vec, YE_vec_stddev, out_folder_directory, {Form("angle_diff_pos_relation_%i",i1), "Correction angle [degree]", "Angle diff StdDev [degree]"});
-        DrawTGraphErrors(Xpos_vec, Ypos_vec_pol0_chi2, XE_vec, YE_vec_pol0, out_folder_directory, {Form("Pol0_chi2_pos_relation_%i",i1), "Correction angle [degree]", "Pol0 fit reduced #chi^{2}"});
-        DrawTGraphErrors(Xpos_vec, Ypos_vec_pol0_fitE, XE_vec, YE_vec_pol0, out_folder_directory, {Form("Pol0_fitE_pos_relation_%i",i1), "Correction angle [degree]", "Pol0 fit fit error [mm]"});
-        DrawTGraphErrors(Xpos_vec, Ypos_vec_pol0_chi2_angle_diff, XE_vec, YE_vec_pol0, out_folder_directory, {Form("Pol0_chi2_angle_diff_pos_relation_%i",i1), "Correction angle [degree]", "Pol0 fit reduced #chi^{2}"});
-        DrawTGraphErrors(Xpos_vec, Ypos_vec_pol0_fitE_angle_diff, XE_vec, YE_vec_pol0, out_folder_directory, {Form("Pol0_fitE_angle_diff_pos_relation_%i",i1), "Correction angle [degree]", "Pol0 fit fit error [mm]"});
-
-        cout<<"Given radius : "<<given_radius<<endl;
-
-        Xpos_vec.clear();
-        XE_vec.clear();
-        Ypos_vec_stddev.clear();
-        YE_vec_stddev.clear();
-        Ypos_vec_pol0_chi2.clear();
-        Ypos_vec_pol0_fitE.clear();
-        Ypos_vec_pol0_chi2_angle_diff.clear();
-        Ypos_vec_pol0_fitE_angle_diff.clear();
-        YE_vec_pol0.clear();
-    }
-
-    DrawTH2F(angle_radius_relation_angle_stddev, out_folder_directory, {Form("angle_radius_relation_angle_stddev"), "Correction angle [index]", "Radius [index]", "Angle diff StdDev [degree]"});
-
-    DrawTH2F(angle_radius_relation_chi2_inner, out_folder_directory, {Form("angle_radius_relation_chi2_inner"), "Correction angle [index]", "Radius [index]", "Pol0 fit reduced #chi^{2}"});
-    DrawTH2F(angle_radius_relation_fitE_inner, out_folder_directory, {Form("angle_radius_relation_fitE_inner"), "Correction angle [index]", "Radius [index]", "Pol0 fit fit error [mm]"});
-    DrawTH2F(angle_radius_relation_chi2_angle_diff_inner, out_folder_directory, {Form("angle_radius_relation_chi2_angle_diff_inner"), "Correction angle [index]", "Radius [index]", "Pol0 fit reduced #chi^{2}"});
-    DrawTH2F(angle_radius_relation_fitE_angle_diff_inner, out_folder_directory, {Form("angle_radius_relation_fitE_angle_diff_inner"), "Correction angle [index]", "Radius [index]", "Pol0 fit fit error [mm]"});
-    
-    DrawTH2F(angle_radius_relation_chi2_outer, out_folder_directory, {Form("angle_radius_relation_chi2_outer"), "Correction angle [index]", "Radius [index]", "Pol0 fit reduced #chi^{2}"});
-    DrawTH2F(angle_radius_relation_fitE_outer, out_folder_directory, {Form("angle_radius_relation_fitE_outer"), "Correction angle [index]", "Radius [index]", "Pol0 fit fit error [mm]"});
-    DrawTH2F(angle_radius_relation_chi2_angle_diff_outer, out_folder_directory, {Form("angle_radius_relation_chi2_angle_diff_outer"), "Correction angle [index]", "Radius [index]", "Pol0 fit reduced #chi^{2}"});
-    DrawTH2F(angle_radius_relation_fitE_angle_diff_outer, out_folder_directory, {Form("angle_radius_relation_fitE_angle_diff_outer"), "Correction angle [index]", "Radius [index]", "Pol0 fit fit error [mm]"});
-
-    DrawTH2F(chi2_fitE_relation_DCA, out_folder_directory, {Form("chi2_fitE_relation_DCA"), "Pol0 fit reduced #chi^{2}", "Pol0 fit fit error [mm]",""});
-    DrawTH2F(chi2_fitE_relation_angle_diff, out_folder_directory, {Form("chi2_fitE_relation_angle_diff"), "Pol0 fit reduced #chi^{2}", "Pol0 fit fit error [mm]",""});
-
-    cout<<"with current scan range and step, the best stddev is : "<<small_stddev<<" at : "<<small_stddev_X<<", "<<small_stddev_Y<<endl;
-    cout<<"with current scan range and step, the (inner) best chi2 is : "<<small_chi2<<" at : "<<small_chi2_X<<", "<<small_chi2_Y<<endl;
-    cout<<"with current scan range and step, the (inner) best fitE is : "<<small_fitE<<" at : "<<small_fitE_X<<", "<<small_fitE_Y<<endl;
-    cout<<"with current scan range and step, the (inner) best chi2_angle_diff is : "<<small_chi2_angle_diff<<" at : "<<small_chi2_X_angle_diff<<", "<<small_chi2_Y_angle_diff<<endl;
-    cout<<"with current scan range and step, the (inner) best fitE_angle_diff is : "<<small_fitE_angle_diff<<" at : "<<small_fitE_X_angle_diff<<", "<<small_fitE_Y_angle_diff<<endl;
-
-    cout<<"with current scan range and step, the (outer) best chi2 is : "<<small_chi2_outer<<" at : "<<small_chi2_X_outer<<", "<<small_chi2_Y_outer<<endl;
-    cout<<"with current scan range and step, the (outer) best fitE is : "<<small_fitE_outer<<" at : "<<small_fitE_X_outer<<", "<<small_fitE_Y_outer<<endl;
-    cout<<"with current scan range and step, the (outer) best chi2_angle_diff is : "<<small_chi2_angle_diff_outer<<" at : "<<small_chi2_X_angle_diff_outer<<", "<<small_chi2_Y_angle_diff_outer<<endl;
-    cout<<"with current scan range and step, the (outer) best fitE_angle_diff is : "<<small_fitE_angle_diff_outer<<" at : "<<small_fitE_X_angle_diff_outer<<", "<<small_fitE_Y_angle_diff_outer<<endl;
-
-    MacroVTXxyCorrection_new_function_call_count += 1;
 }
 
 // note : the pair here would be {radius of the circle, possible correction angle}
@@ -1169,8 +959,8 @@ vector<pair<double,double>> INTTXYvtx::MacroVTXSquare(double length, int N_trial
     }
 
     if (draw_plot_opt == true) {DrawTGraphErrors(grr_x, grr_y, grr_E, grr_E, out_folder_directory, {Form("Square_scan_history_%.1fmm_%iTrials", original_length, N_trial), "nth scan", "Winner index", "APL"});}
-    if (draw_plot_opt == true) {Draw2TGraph(All_FitError_angle_X, All_FitError_angle_Y, Winner_FitError_angle_X, Winner_FitError_angle_Y, out_folder_directory, {Form("Angle_diff_fit_error_%iTrials", N_trial), "n iteration", "#Delta#phi fit error [degree]"});}
-    if (draw_plot_opt == true) {Draw2TGraph(All_FitError_DCA_X, All_FitError_DCA_Y, Winner_FitError_DCA_X, Winner_FitError_DCA_Y, out_folder_directory, {Form("DCA_fit_error_%iTrials", N_trial), "n iteration", "DCA fit error [mm]"});}
+    if (draw_plot_opt == true) {Draw2TGraph(All_FitError_angle_X, All_FitError_angle_Y, Winner_FitError_angle_X, Winner_FitError_angle_Y, out_folder_directory, {Form("Angle_diff_fit_error_%iTrials", N_trial), "n iteration", "#Delta#phi fit error [radian]"});}
+    if (draw_plot_opt == true) {Draw2TGraph(All_FitError_DCA_X, All_FitError_DCA_Y, Winner_FitError_DCA_X, Winner_FitError_DCA_Y, out_folder_directory, {Form("DCA_fit_error_%iTrials", N_trial), "n iteration", "DCA fit error [cm]"});}
 
     return {
         vtx_vec[small_index], // note : the best vertex 
@@ -1257,11 +1047,21 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
             // cout<<"option selected "<<endl;
             Clus_InnerPhi_Offset = (cluster_pair_vec[i].first.y - current_vtxY < 0) ? atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y - current_vtxY, cluster_pair_vec[i].first.x - current_vtxX) * (180./TMath::Pi());
             Clus_OuterPhi_Offset = (cluster_pair_vec[i].second.y - current_vtxY < 0) ? atan2(cluster_pair_vec[i].second.y - current_vtxY, cluster_pair_vec[i].second.x - current_vtxX) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].second.y - current_vtxY, cluster_pair_vec[i].second.x - current_vtxX) * (180./TMath::Pi());
+
+            // note : to have the radian
+            Clus_InnerPhi_Offset_radian = atan2(cluster_pair_vec[i].first.y  - current_vtxY, cluster_pair_vec[i].first.x  - current_vtxX);
+            Clus_OuterPhi_Offset_radian = atan2(cluster_pair_vec[i].second.y - current_vtxY, cluster_pair_vec[i].second.x - current_vtxX);
+
         }
         else // note : phi_correction == false 
         {
             Clus_InnerPhi_Offset = (cluster_pair_vec[i].first.y < 0) ? atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()); 
             Clus_OuterPhi_Offset = (cluster_pair_vec[i].second.y < 0) ? atan2(cluster_pair_vec[i].second.y, cluster_pair_vec[i].second.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].second.y, cluster_pair_vec[i].second.x) * (180./TMath::Pi()); 
+
+            // note : to have the radian
+            Clus_InnerPhi_Offset_radian = atan2(cluster_pair_vec[i].first.y,  cluster_pair_vec[i].first.x);
+            Clus_OuterPhi_Offset_radian = atan2(cluster_pair_vec[i].second.y, cluster_pair_vec[i].second.x);
+
         }
 
         // double phi_test = (cluster_pair_vec[i].first.y < 0) ? atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y, cluster_pair_vec[i].first.x) * (180./TMath::Pi());
@@ -1271,11 +1071,7 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
         angle_correlation -> Fill(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
         angle_diff_DCA_dist -> Fill(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset, DCA_sign);
         angle_diff -> Fill(abs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset));
-        angle_diff_inner_phi -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
-        angle_diff_outer_phi -> Fill(Clus_OuterPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
         DCA_point -> Fill(DCA_info_vec[1], DCA_info_vec[2]);
-        DCA_distance_inner_phi -> Fill(Clus_InnerPhi_Offset, DCA_sign);
-        DCA_distance_outer_phi -> Fill(Clus_OuterPhi_Offset, DCA_sign);
         DCA_distance -> Fill(DCA_sign);
         DCA_distance_inner_X -> Fill(cluster_pair_vec[i].first.x, DCA_sign);
         DCA_distance_inner_Y -> Fill(cluster_pair_vec[i].first.y, DCA_sign);
@@ -1283,11 +1079,19 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
         DCA_distance_outer_Y -> Fill(cluster_pair_vec[i].second.y, DCA_sign);
 
         angle_diff_new -> Fill(abs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset));
+        angle_diff_radian -> Fill(Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian);
+
+        // note : for the special treatment
+        DCA_distance_inner_phi -> Fill(Clus_InnerPhi_Offset_radian, DCA_sign / 10.);
+        DCA_distance_outer_phi -> Fill(Clus_OuterPhi_Offset_radian, DCA_sign / 10.);
+        angle_diff_inner_phi   -> Fill(Clus_InnerPhi_Offset_radian, Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian);
+        angle_diff_outer_phi   -> Fill(Clus_OuterPhi_Offset_radian, Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian);
+
     } // note : end of the loop for the cluster pair
 
     // note : ----------- ----------- ----------- ---------- ----------- ----------- ---------- ----------- ----------- ----------- -----------
     DCA_distance_inner_phi_peak = (TH2F*)DCA_distance_inner_phi -> Clone();
-    TH2F_threshold(DCA_distance_inner_phi_peak, 0.5); // todo : the background cut can be modified, the ratio 0.5
+    TH2F_threshold_advanced_2(DCA_distance_inner_phi_peak, 0.5); // todo : the background cut can be modified, the ratio 0.5
     DCA_distance_inner_phi_peak_profile =  DCA_distance_inner_phi_peak->ProfileX("DCA_distance_inner_phi_peak_profile");
     // TGraph * DCA_distance_inner_phi_peak_profile_graph = new TGraph();
     double point_index = 0;
@@ -1313,9 +1117,9 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
     horizontal_fit_inner -> SetParameter(0,0);
 
     // todo : the fit range of the gaussian fit can be modified here 
-    DCA_distance_inner_phi_peak_profile_graph -> Fit(horizontal_fit_inner,"NQ","",0,360);
-    DCA_distance_inner_phi_peak_profile_graph -> Fit(gaus_fit, "NQ","",cos_fit->GetParameter(2) - guas_fit_range, cos_fit->GetParameter(2) + guas_fit_range); // note : what we want and need is the peak position, so we fit the peak again 
-    DCA_distance_inner_phi_peak_profile_graph -> Fit(cos_fit, "NQ","",cos_fit_rangel, cos_fit_ranger);
+    DCA_distance_inner_phi_peak_profile_graph -> Fit(horizontal_fit_inner,"NQ","",-M_PI, M_PI);
+    // DCA_distance_inner_phi_peak_profile_graph -> Fit(gaus_fit, "NQ","",cos_fit->GetParameter(2) - guas_fit_range, cos_fit->GetParameter(2) + guas_fit_range); // note : what we want and need is the peak position, so we fit the peak again 
+    // DCA_distance_inner_phi_peak_profile_graph -> Fit(cos_fit, "NQ","",cos_fit_rangel, cos_fit_ranger);
 
     // note : ----------- ----------- ----------- ---------- ----------- ----------- ---------- ----------- ----------- ----------- -----------
     angle_diff_new_bkg_remove = (TH1F*)angle_diff_new -> Clone();
@@ -1339,11 +1143,11 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
     }
 
     horizontal_fit_angle_diff_inner -> SetParameter(0,0);
-    angle_diff_inner_phi_peak_profile_graph -> Fit(horizontal_fit_angle_diff_inner,"NQ","",0,360);
+    angle_diff_inner_phi_peak_profile_graph -> Fit(horizontal_fit_angle_diff_inner,"NQ","",-M_PI, M_PI);
 
     // note : ----------- ----------- ----------- ---------- ----------- ----------- ---------- ----------- ----------- ----------- -----------
     DCA_distance_outer_phi_peak = (TH2F*)DCA_distance_outer_phi -> Clone();
-    TH2F_threshold(DCA_distance_outer_phi_peak, 0.5); // todo : the background cut can be modified, the ratio 0.5
+    TH2F_threshold_advanced_2(DCA_distance_outer_phi_peak, 0.5); // todo : the background cut can be modified, the ratio 0.5
     DCA_distance_outer_phi_peak_profile =  DCA_distance_outer_phi_peak->ProfileX("DCA_distance_outer_phi_peak_profile");
     // TGraph * DCA_distance_outer_phi_peak_profile_graph = new TGraph();
     point_index = 0;
@@ -1358,7 +1162,7 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
        
     horizontal_fit_outer -> SetParameter(0,0);
     // todo : the fit range of the gaussian fit can be modified here 
-    DCA_distance_outer_phi_peak_profile_graph -> Fit(horizontal_fit_outer,"NQ","",0,360);
+    DCA_distance_outer_phi_peak_profile_graph -> Fit(horizontal_fit_outer,"NQ","",-M_PI, M_PI);
 
     // note : ----------- ----------- ----------- ---------- ----------- ----------- ---------- ----------- ----------- ----------- -----------
     angle_diff_outer_phi_peak = (TH2F*)angle_diff_outer_phi -> Clone();
@@ -1377,7 +1181,7 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
     }
 
     horizontal_fit_angle_diff_outer -> SetParameter(0,0);
-    angle_diff_outer_phi_peak_profile_graph -> Fit(horizontal_fit_angle_diff_outer,"NQ","",0,360);
+    angle_diff_outer_phi_peak_profile_graph -> Fit(horizontal_fit_angle_diff_outer,"NQ","",-M_PI, M_PI);
     // note : ----------- ----------- ----------- ---------- ----------- ----------- ---------- ----------- ----------- ----------- -----------
 
 
@@ -1396,124 +1200,127 @@ void INTTXYvtx::subMacroPlotWorking(bool phi_correction, double cos_fit_rangel, 
     // }; 
 }
 
+
+
 void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
 {
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_correlation -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_correlation.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_DCA_dist -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_DCA_dist.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff -> SetMinimum(0);
     angle_diff -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_inner_phi -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_inner_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_outer_phi -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/angle_diff_outer_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_point -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_point.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_phi -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_phi -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_phi.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance -> Draw("hist");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_phi_peak -> SetStats(0);
-    DCA_distance_inner_phi_peak -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    DCA_distance_inner_phi_peak -> GetYaxis() -> SetTitle("DCA [mm]");
+    DCA_distance_inner_phi_peak -> GetXaxis() -> SetTitle( DCA_distance_inner_phi -> GetXaxis() -> GetTitle() );
+    DCA_distance_inner_phi_peak -> GetYaxis() -> SetTitle( DCA_distance_inner_phi -> GetYaxis() -> GetTitle() );
     DCA_distance_inner_phi_peak -> Draw("colz0");
     DCA_distance_inner_phi_peak_profile -> Draw("same");
     // cos_fit -> Draw("l same");
     // gaus_fit -> Draw("l same");
     horizontal_fit_inner -> Draw("l same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.4f cm, %.4f cm}", current_vtxX/10., current_vtxY/10.));
     // draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Fit: -%.2f cos(%.2f(x - %.2f)) + %.2f}", cos_fit -> GetParameter(0), cos_fit -> GetParameter(1), cos_fit -> GetParameter(2), cos_fit -> GetParameter(3)));
-    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.3f}", horizontal_fit_inner -> GetChisquare() / double(horizontal_fit_inner -> GetNDF()), horizontal_fit_inner->GetParError(0)));
+    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.4f}", horizontal_fit_inner -> GetChisquare() / double(horizontal_fit_inner -> GetNDF()), horizontal_fit_inner->GetParError(0)));
     c1 -> Print(Form("%s/DCA_distance_inner_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     DCA_distance_outer_phi_peak -> SetStats(0);
-    DCA_distance_outer_phi_peak -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    DCA_distance_outer_phi_peak -> GetYaxis() -> SetTitle("DCA [mm]");
+    DCA_distance_outer_phi_peak -> GetXaxis() -> SetTitle( DCA_distance_outer_phi -> GetXaxis() -> GetTitle() );
+    DCA_distance_outer_phi_peak -> GetYaxis() -> SetTitle( DCA_distance_outer_phi -> GetYaxis() -> GetTitle() );
     DCA_distance_outer_phi_peak -> Draw("colz0");
     DCA_distance_outer_phi_peak_profile -> Draw("same");
     horizontal_fit_outer -> Draw("l same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.4f cm, %.4f cm}", current_vtxX/10., current_vtxY/10.));
+    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.4f}", horizontal_fit_outer -> GetChisquare() / double(horizontal_fit_outer -> GetNDF()), horizontal_fit_outer->GetParError(0)));
     c1 -> Print(Form("%s/DCA_distance_outer_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
     
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_X -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_X.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_inner_Y -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_inner_Y.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_X -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_X.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     DCA_distance_outer_Y -> Draw("colz0");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/DCA_distance_outer_Y.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
@@ -1521,37 +1328,327 @@ void INTTXYvtx::PrintPlotsVTXxy(string sub_out_folder_name, int print_option)
     angle_diff_new -> SetMinimum(0);
     angle_diff_new -> Draw("hist");
     angle_diff_new_bkg_remove -> Draw("hist same");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.4, 0.80, Form("#color[2]{Dist. StdDev: %.4f}", angle_diff_new_bkg_remove->GetStdDev()));
     c1 -> Print(Form("%s/angle_diff_new.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    angle_diff_radian -> SetMinimum(0);
+    angle_diff_radian -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    // gaus_fit_MC -> SetParameters(angle_diff_radian -> GetBinContent(angle_diff_radian -> GetMaximumBin()), angle_diff_radian -> GetMean(), angle_diff_radian -> GetStdDev() * 0.2, 0);
+
+    // angle_diff_radian -> Fit(gaus_fit_MC,"NQ","", -1. * (angle_diff_radian -> GetStdDev() * 0.4), (angle_diff_radian -> GetStdDev() * 0.4 ) );
+    // gaus_fit_MC -> SetRange( (gaus_fit_MC -> GetParameter(1) - gaus_fit_MC -> GetParameter(2)), (gaus_fit_MC -> GetParameter(1) + gaus_fit_MC -> GetParameter(2)) );
+    
+    // draw_text -> DrawLatex(0.2, 0.84, Form("Fit mean: %.4f", gaus_fit_MC -> GetParameter(1)));
+    // draw_text -> DrawLatex(0.2, 0.80, Form("Fit width: %.4f", gaus_fit_MC -> GetParameter(2)));
+
+    double angle_diff_radian_bkg_level = get_dist_offset(angle_diff_radian, 15);
+    gaus_pol2_fit -> SetParameters(
+        angle_diff_radian -> GetBinContent(angle_diff_radian -> GetMaximumBin()) - angle_diff_radian_bkg_level, angle_diff_radian -> GetMean(), angle_diff_radian -> GetStdDev() * 0.2,
+        angle_diff_radian_bkg_level, 0, -0.003490, 0
+    );
+    angle_diff_radian -> Fit(gaus_pol2_fit,"NQ");
+    gaus_pol2_fit -> Draw("l same");
+    
+    // gaus_fit_MC -> Draw("l same");
+    c1 -> Print(Form("%s/angle_diff_radian.pdf", sub_out_folder_name.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_inner_phi_peak -> SetStats(0);
-    angle_diff_inner_phi_peak -> GetXaxis() -> SetTitle("Inner phi [degree]");
-    angle_diff_inner_phi_peak -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
+    angle_diff_inner_phi_peak -> GetXaxis() -> SetTitle( angle_diff_inner_phi -> GetXaxis() -> GetTitle() );
+    angle_diff_inner_phi_peak -> GetYaxis() -> SetTitle( angle_diff_inner_phi -> GetYaxis() -> GetTitle() );
     angle_diff_inner_phi_peak -> Draw("colz0");
     angle_diff_inner_phi_peak_profile -> Draw("same");
     horizontal_fit_angle_diff_inner -> Draw("l same");
     // gaus_fit_angle_diff -> Draw("lsame");
-    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.4f cm, %.4f cm}", current_vtxX/10., current_vtxY/10.));
+    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.4f}", horizontal_fit_angle_diff_inner -> GetChisquare() / double(horizontal_fit_angle_diff_inner -> GetNDF()), horizontal_fit_angle_diff_inner->GetParError(0)));
     c1 -> Print(Form("%s/angle_diff_inner_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     angle_diff_outer_phi_peak -> SetStats(0);
-    angle_diff_outer_phi_peak -> GetXaxis() -> SetTitle("Outer phi [degree]");
-    angle_diff_outer_phi_peak -> GetYaxis() -> SetTitle("Inner - Outer [degree]");
+    angle_diff_outer_phi_peak -> GetXaxis() -> SetTitle( angle_diff_outer_phi -> GetXaxis() -> GetTitle() );
+    angle_diff_outer_phi_peak -> GetYaxis() -> SetTitle( angle_diff_outer_phi -> GetYaxis() -> GetTitle() );
     angle_diff_outer_phi_peak -> Draw("colz0");
     angle_diff_outer_phi_peak_profile -> Draw("same");
     horizontal_fit_angle_diff_outer -> Draw("l same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s, peak : %f", plot_text.c_str(), peek));
-    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.3f mm, %.3f mm}", current_vtxX, current_vtxY));
+    // ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s, peak : %f", plot_text.c_str(), peek));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    draw_text -> DrawLatex(0.25, 0.84, Form("#color[2]{Assumed vertex: %.4f cm, %.4f cm}", current_vtxX/10., current_vtxY/10.));
+    draw_text -> DrawLatex(0.25, 0.80, Form("#color[2]{Pol0 fit chi2/NDF: %.3f, fit error: %.4f}", horizontal_fit_angle_diff_outer -> GetChisquare() / double(horizontal_fit_angle_diff_outer -> GetNDF()), horizontal_fit_angle_diff_outer->GetParError(0)));
     c1 -> Print(Form("%s/angle_diff_outer_phi_peak.pdf", sub_out_folder_name.c_str()));
     c1 -> Clear(); 
+}
+
+TH1F * INTTXYvtx::PrintPlots_bkgrm_helper(TH1F * hist_in, double signal_region)
+{
+    c1 -> cd();
+    hist_in -> SetMinimum(0);
+    hist_in -> SetMaximum( hist_in -> GetBinContent( hist_in -> GetMaximumBin() ) * 1.8);
+    hist_in -> Draw("hist");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    
+    double hist_in_bkg_level = get_dist_offset(hist_in, 15);
+
+    bkg_fit_pol2 -> SetParameters(hist_in_bkg_level, 0, -0.0034906585, 0, signal_region);
+    bkg_fit_pol2 -> FixParameter(4, signal_region);
+    bkg_fit_pol2 -> SetParLimits(2, -100, 0);
+    hist_in -> Fit(bkg_fit_pol2,"NQ");
+
+    draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+
+    TH1F * hist_in_bkgrm = (TH1F*)hist_in -> Clone();
+    hist_in_bkgrm -> SetLineColor(8);
+    for (int i = 0; i < hist_in_bkgrm -> GetNbinsX(); i++)
+    {
+        double rest_bincontent = hist_in -> GetBinContent(i+1) - draw_pol2_line -> Eval(hist_in -> GetBinCenter(i+1));
+        rest_bincontent = (rest_bincontent < 0) ? 0 : rest_bincontent;
+        hist_in_bkgrm -> SetBinContent(i+1, rest_bincontent);
+    }
+    
+    gaus_fit_MC -> SetParameters(hist_in_bkgrm -> GetBinContent(hist_in_bkgrm -> GetMaximumBin()), hist_in_bkgrm -> GetMean(), hist_in_bkgrm -> GetStdDev() * 0.2, 0);
+    hist_in_bkgrm -> Fit(gaus_fit_MC,"NQ","", -1. * (hist_in_bkgrm -> GetStdDev() * 0.7), (hist_in_bkgrm -> GetStdDev() * 0.7 ));
+    gaus_fit_MC -> SetRange(gaus_fit_MC -> GetParameter(1) - gaus_fit_MC -> GetParameter(2) * 2., gaus_fit_MC -> GetParameter(1) + gaus_fit_MC -> GetParameter(2) * 2.);
+
+    draw_text -> DrawLatex(0.21, 0.86, Form("Fit mean: %.6f", gaus_fit_MC -> GetParameter(1)));
+    draw_text -> DrawLatex(0.21, 0.82, Form("Fit width: %.6f", gaus_fit_MC -> GetParameter(2)));
+    draw_text -> DrawLatex(0.21, 0.78, Form("Hist StdDev: %.6f", hist_in_bkgrm -> GetStdDev()));
+
+    draw_pol2_line -> Draw("l same");
+    hist_in_bkgrm -> Draw("hist same");
+    gaus_fit_MC -> Draw("l same");
+
+    c1 -> Print(Form("%s/%s.pdf", out_folder_directory.c_str(), hist_in -> GetName()));
+    c1 -> Clear();
+
+    return hist_in_bkgrm;
+}
+
+void INTTXYvtx::RunDeltaPhiStudy()
+{
+    for (int i = 0; i < cluster_pair_vec.size(); i++)
+    {
+        if ( i % 100000 == 0 ) {cout<<" In RunDeltaPhiStudy, i : "<<i<<endl;}
+
+        Clus_InnerPhi_Offset = (cluster_pair_vec[i].first.y - beam_origin.second < 0) ? atan2(cluster_pair_vec[i].first.y - beam_origin.second, cluster_pair_vec[i].first.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].first.y - beam_origin.second, cluster_pair_vec[i].first.x - beam_origin.first) * (180./TMath::Pi());
+        Clus_OuterPhi_Offset = (cluster_pair_vec[i].second.y - beam_origin.second < 0) ? atan2(cluster_pair_vec[i].second.y - beam_origin.second, cluster_pair_vec[i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(cluster_pair_vec[i].second.y - beam_origin.second, cluster_pair_vec[i].second.x - beam_origin.first) * (180./TMath::Pi());
+
+        // note : to have the radian
+        Clus_InnerPhi_Offset_radian = atan2(cluster_pair_vec[i].first.y  - beam_origin.second, cluster_pair_vec[i].first.x  - beam_origin.first);
+        Clus_OuterPhi_Offset_radian = atan2(cluster_pair_vec[i].second.y - beam_origin.second, cluster_pair_vec[i].second.x - beam_origin.first);
+
+        double DCA_sign = calculateAngleBetweenVectors(
+            cluster_pair_vec[i].second.x, cluster_pair_vec[i].second.y,
+            cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y,
+            beam_origin.first, beam_origin.second
+        );
+
+        final_angle_diff_inner_phi_degree_coarseX -> Fill(Clus_InnerPhi_Offset, Clus_InnerPhi_Offset - Clus_OuterPhi_Offset);
+        final_angle_diff_inner_phi_radian_coarseX -> Fill(Clus_InnerPhi_Offset_radian, Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian);
+        final_angle_diff_radian_before            -> Fill(Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian);
+
+        final_angle_diff_radian_DCA_2D_before -> Fill(Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian, DCA_sign * 0.1);
+
+        final_DCA_cm_before -> Fill(DCA_sign * 0.1);
+        final_DCA_cm_inner_phi_radian_coarseX -> Fill(Clus_InnerPhi_Offset_radian, DCA_sign * 0.1);
+        final_DCA_mm_inner_phi_degree_coarseX -> Fill(Clus_InnerPhi_Offset, DCA_sign);
+
+    } // note : end of the loop for the cluster pair
+
+    final_angle_diff_inner_phi_degree_coarseX_peak = (TH2F*)final_angle_diff_inner_phi_degree_coarseX -> Clone();
+    TH2F_threshold_advanced(final_angle_diff_inner_phi_degree_coarseX_peak, 0.5); // todo : threshold ratio can be modified here
+    final_angle_diff_inner_phi_degree_coarseX_peak_profile =  final_angle_diff_inner_phi_degree_coarseX_peak->ProfileX("final_angle_diff_inner_phi_degree_coarseX_peak_profile");
+
+    final_angle_diff_inner_phi_radian_coarseX_peak = (TH2F*)final_angle_diff_inner_phi_radian_coarseX -> Clone();
+    TH2F_threshold_advanced(final_angle_diff_inner_phi_radian_coarseX_peak, 0.5); // todo : threshold ratio can be modified here
+    final_angle_diff_inner_phi_radian_coarseX_peak_profile =  final_angle_diff_inner_phi_radian_coarseX_peak->ProfileX("final_angle_diff_inner_phi_radian_coarseX_peak_profile");
+
+    final_DCA_cm_inner_phi_radian_coarseX_peak = (TH2F*)final_DCA_cm_inner_phi_radian_coarseX -> Clone();
+    TH2F_threshold_advanced(final_DCA_cm_inner_phi_radian_coarseX_peak, 0.5); // todo : threshold ratio can be modified here
+    final_DCA_cm_inner_phi_radian_coarseX_peak_profile =  final_DCA_cm_inner_phi_radian_coarseX_peak->ProfileX("final_DCA_cm_inner_phi_radian_coarseX_peak_profile");
+
+    final_DCA_mm_inner_phi_degree_coarseX_peak = (TH2F*)final_DCA_mm_inner_phi_degree_coarseX -> Clone();
+    TH2F_threshold_advanced(final_DCA_mm_inner_phi_degree_coarseX_peak, 0.5); // todo : threshold ratio can be modified here
+    final_DCA_mm_inner_phi_degree_coarseX_peak_profile =  final_DCA_mm_inner_phi_degree_coarseX_peak->ProfileX("final_DCA_mm_inner_phi_degree_coarseX_peak_profile");
+
+    cout<<"// for the radian case"<<endl;
+    cout<<"vector<double> angle_diff_correction_radian = {";
+    for (int i = 0; i < final_angle_diff_inner_phi_radian_coarseX_peak_profile -> GetNbinsX(); i++)
+    {
+        if (i == final_angle_diff_inner_phi_radian_coarseX_peak_profile -> GetNbinsX() - 1)
+        {
+            cout<<final_angle_diff_inner_phi_radian_coarseX_peak_profile -> GetBinContent(i+1)<<"};"<<endl;
+            break;
+        }
+        cout<<final_angle_diff_inner_phi_radian_coarseX_peak_profile -> GetBinContent(i+1)<<", ";
+    } 
+
+    cout<<"// for the degree case"<<endl;
+    cout<<"vector<double> angle_diff_correction_degree = {";
+    for (int i = 0; i < final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetNbinsX(); i++)
+    {
+        if (i == final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetNbinsX() - 1)
+        {
+            cout<<final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetBinContent(i+1)<<"};"<<endl;
+            break;
+        }
+        cout<<final_angle_diff_inner_phi_degree_coarseX_peak_profile -> GetBinContent(i+1)<<", ";
+    }
+
+    // note : after the correction
+    for (int i = 0; i < cluster_pair_vec.size(); i++)
+    {
+        // note : to have the radian
+        Clus_InnerPhi_Offset_radian = atan2(cluster_pair_vec[i].first.y  - beam_origin.second, cluster_pair_vec[i].first.x  - beam_origin.first);
+        Clus_OuterPhi_Offset_radian = atan2(cluster_pair_vec[i].second.y - beam_origin.second, cluster_pair_vec[i].second.x - beam_origin.first);
+
+        double angle_correction_radian = final_angle_diff_inner_phi_radian_coarseX_peak_profile -> GetBinContent( final_angle_diff_inner_phi_radian_coarseX_peak_profile -> FindBin(Clus_InnerPhi_Offset_radian) );
+        double eventual_angle_diff_radian = (Clus_InnerPhi_Offset_radian - Clus_OuterPhi_Offset_radian) - angle_correction_radian;
+
+        // note : unit : mm
+        double DCA_sign = calculateAngleBetweenVectors(
+            cluster_pair_vec[i].second.x, cluster_pair_vec[i].second.y,
+            cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y,
+            beam_origin.first, beam_origin.second
+        );
+
+        double DCA_sign_cm_correction = DCA_sign * 0.1 - final_DCA_cm_inner_phi_radian_coarseX_peak_profile -> GetBinContent( final_DCA_cm_inner_phi_radian_coarseX_peak_profile -> FindBin(Clus_InnerPhi_Offset_radian) );
+        
+        final_angle_diff_radian_post -> Fill( eventual_angle_diff_radian );
+
+        final_angle_diff_radian_DCA_2D_post -> Fill(eventual_angle_diff_radian, DCA_sign_cm_correction);
+
+        final_DCA_cm_post -> Fill(DCA_sign_cm_correction);
+
+    } // note : end of the loop for the cluster pair
+
+    // note : print the plots
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_DCA_cm_inner_phi_radian_coarseX -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_DCA_cm_inner_phi_radian_coarseX.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_DCA_cm_inner_phi_radian_coarseX_peak -> Draw("colz0");
+    final_DCA_cm_inner_phi_radian_coarseX_peak_profile -> Draw("same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_DCA_cm_inner_phi_radian_coarseX_peak.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_DCA_mm_inner_phi_degree_coarseX -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_DCA_mm_inner_phi_degree_coarseX.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_DCA_mm_inner_phi_degree_coarseX_peak -> Draw("colz0");
+    final_DCA_mm_inner_phi_degree_coarseX_peak_profile -> Draw("same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_DCA_mm_inner_phi_degree_coarseX_peak.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_inner_phi_degree_coarseX -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_inner_phi_degree_coarseX.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_inner_phi_degree_coarseX_peak -> Draw("colz0");
+    final_angle_diff_inner_phi_degree_coarseX_peak_profile -> Draw("same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_inner_phi_degree_coarseX_peak.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_inner_phi_radian_coarseX -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_inner_phi_radian_coarseX.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_inner_phi_radian_coarseX_peak -> Draw("colz0");
+    final_angle_diff_inner_phi_radian_coarseX_peak_profile -> Draw("same");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_inner_phi_radian_coarseX_peak.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_radian_DCA_2D_before -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_radian_DCA_2D_before.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_angle_diff_radian_DCA_2D_post -> Draw("colz0");
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    c1 -> Print(Form("%s/final_angle_diff_radian_DCA_2D_post.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TH1F * final_angle_diff_radian_before_bkgrm = PrintPlots_bkgrm_helper(final_angle_diff_radian_before, ana_map_version::signal_region / radian_correction);
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TH1F * final_angle_diff_radian_post_bkgrm = PrintPlots_bkgrm_helper(final_angle_diff_radian_post, ana_map_version::signal_region / radian_correction);
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TLegend * legend = new TLegend(0.2,0.75,0.45,0.9);
+    // legend -> SetMargin(0);
+    legend->SetTextSize(0.03);
+
+    final_angle_diff_radian_before_bkgrm -> SetLineColor(4);
+    final_angle_diff_radian_before_bkgrm -> Draw("hist");
+    final_angle_diff_radian_post_bkgrm -> SetLineColor(2);
+    final_angle_diff_radian_post_bkgrm -> Draw("hist same");
+
+    legend -> AddEntry(final_angle_diff_radian_before_bkgrm, "Original", "f");
+    legend -> AddEntry(final_angle_diff_radian_post_bkgrm, "#Delta#phi mean shift", "f");
+
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    legend -> Draw("same");
+
+    c1 -> Print(Form("%s/final_angle_diff_radian_comp.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+    legend -> Clear();
+
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TH1F * final_DCA_cm_before_bkgrm = PrintPlots_bkgrm_helper(final_DCA_cm_before, 0.03);
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    TH1F * final_DCA_cm_post_bkgrm = PrintPlots_bkgrm_helper(final_DCA_cm_post, 0.03);
+
+    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    final_DCA_cm_before_bkgrm -> SetLineColor(4);
+    final_DCA_cm_before_bkgrm -> Draw("hist");
+    final_DCA_cm_post_bkgrm -> SetLineColor(2);
+    final_DCA_cm_post_bkgrm -> Draw("hist same");
+
+    legend -> AddEntry(final_DCA_cm_before_bkgrm, "Original", "f");
+    legend -> AddEntry(final_DCA_cm_post_bkgrm, "DCA mean shift", "f");
+
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    legend -> Draw("same");
+
+    c1 -> Print(Form("%s/final_DCA_cm_comp.pdf", out_folder_directory.c_str()));
+    c1 -> Clear();
+    legend -> Clear();
+
+    cout<<"End of RunDeltaPhiStudy"<<endl;
 }
 
 void INTTXYvtx::ClearHist(int print_option)
@@ -1578,6 +1675,7 @@ void INTTXYvtx::ClearHist(int print_option)
     // angle_diff_outer_phi_peak -> Reset("ICESM");
 
     angle_diff_new -> Reset("ICESM");
+    angle_diff_radian -> Reset("ICESM");
     // angle_diff_new_bkg_remove -> Reset("ICESM");
 
     delete angle_diff_new_bkg_remove;
@@ -1594,6 +1692,11 @@ void INTTXYvtx::EndRun()
     inner_outer_pos_xy -> Reset("ICESM");
     N_cluster_correlation -> Reset("ICESM");
     N_cluster_correlation_close -> Reset("ICESM");
+
+    // file_out -> cd();
+    // tree_out -> SetDirectory(file_out);
+    // tree_out -> Write();
+    // file_out -> Close();
 
     // c1 -> Delete();
     // ltx -> Delete();
@@ -1680,6 +1783,34 @@ void INTTXYvtx::TH2F_threshold_advanced(TH2F * hist, double threshold)
         max_cut = big_num * threshold;
 
         for(int yi = 0; yi < hist -> GetNbinsY(); yi++){
+            if (hist -> GetBinContent(xi + 1, yi +1) < max_cut){ hist -> SetBinContent(xi + 1, yi +1, 0); }
+        }
+    }
+}
+
+void INTTXYvtx::TH2F_threshold_advanced_row(TH2F * hist, double threshold)
+{
+    double big_num, max_cut;
+
+    // note : this function removes the background of the 2D histogram by the following method
+    // note : 1. find the maximum bin content of each row and then time with the threshold ratio
+    // note : so the background removal is performed row by row
+
+    for (int yi = 0; yi < hist -> GetNbinsY(); yi++)
+    {
+        for(int xi = 0; xi < hist -> GetNbinsX(); xi++)
+        {
+            if (xi == 0) {big_num = hist -> GetBinContent(xi + 1, yi +1);}
+            else 
+            {
+                if (hist -> GetBinContent(xi + 1, yi +1) > big_num) {big_num = hist -> GetBinContent(xi + 1, yi +1);}
+            }
+        }
+
+        max_cut = big_num * threshold;
+
+        for(int xi = 0; xi < hist -> GetNbinsX(); xi++)
+        {
             if (hist -> GetBinContent(xi + 1, yi +1) < max_cut){ hist -> SetBinContent(xi + 1, yi +1, 0); }
         }
     }
@@ -1985,7 +2116,7 @@ void INTTXYvtx::DrawTGraphErrors(vector<double> x_vec, vector<double> y_vec, vec
     if (plot_name.size() == 4){g -> Draw(plot_name[3].c_str());}
     else {g -> Draw("AP");}
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
     g -> Delete();
@@ -2021,7 +2152,7 @@ void INTTXYvtx::Draw2TGraph(vector<double> x1_vec, vector<double> y1_vec, vector
     legend -> AddEntry(g1, "Tested vertex candidates", "p");
     legend -> AddEntry(g2, "Better performed candidates", "p");
     legend -> Draw("same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
     g1 -> Delete();
@@ -2044,7 +2175,7 @@ void INTTXYvtx::DrawTH2F(TH2F * hist_in, string output_directory, vector<string>
     hist_in -> Draw("colz0");
 
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), plot_name[0].c_str()));
     c1 -> Clear();
 }
@@ -2056,6 +2187,19 @@ vector<double> INTTXYvtx::SumTH2FColumnContent(TH2F * hist_in)
         double sum = 0;
         for (int j = 0; j < hist_in -> GetNbinsY(); j++){
             sum += hist_in -> GetBinContent(i+1, j+1);
+        }
+        sum_vec.push_back(sum);
+    }
+    return sum_vec;
+}
+
+vector<double> INTTXYvtx::SumTH2FColumnContent_row(TH2F * hist_in)
+{
+    vector<double> sum_vec; sum_vec.clear();
+    for (int i = 0; i < hist_in -> GetNbinsY(); i++){
+        double sum = 0;
+        for (int j = 0; j < hist_in -> GetNbinsX(); j++){
+            sum += hist_in -> GetBinContent(j+1, i+1);
         }
         sum_vec.push_back(sum);
     }
@@ -2187,19 +2331,39 @@ void INTTXYvtx::TH2FSampleLineFill(TH2F * hist_in, double segmentation, std::pai
     }
 }
 
-vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> window_center, double segmentation, double window_width, int N_bins)
+// note : the input is still mm
+vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> window_center, double segmentation, double window_width, int N_bins, bool draw_plot)
 {
-    TH2F * xy_hist = new TH2F("","xy_hist", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
-    xy_hist -> SetStats(0);
-    xy_hist -> GetXaxis() -> SetTitle("X axis [mm]");
-    xy_hist -> GetYaxis() -> SetTitle("Y axis [mm]");
-    xy_hist -> GetXaxis() -> SetNdivisions(505);
+    // note : set the histogram to be cm
+    xy_hist = new TH2F(
+        "",
+        "xy_hist", 
+        N_bins, 
+        (-1 * window_width / 2. + window_center.first) * 0.1, 
+        (window_width / 2. + window_center.first) * 0.1, 
+        N_bins, 
+        (-1 * window_width / 2. + window_center.second) * 0.1, 
+        (window_width / 2. + window_center.second) * 0.1
+    );
+    xy_hist -> GetXaxis() -> SetTitle("X axis [cm]");
+    xy_hist -> GetYaxis() -> SetTitle("Y axis [cm]");
 
-    TH2F * xy_hist_bkgrm = new TH2F("","xy_hist_bkgrm", N_bins, -1 * window_width / 2. + window_center.first, window_width / 2. + window_center.first, N_bins, -1 * window_width / 2. + window_center.second, window_width / 2. + window_center.second);
-    xy_hist_bkgrm -> SetStats(0);
-    xy_hist_bkgrm -> GetXaxis() -> SetTitle("X axis [mm]");
-    xy_hist_bkgrm -> GetYaxis() -> SetTitle("Y axis [mm]");
-    xy_hist_bkgrm -> GetXaxis() -> SetNdivisions(505);
+    xy_hist_bkgrm = new TH2F(
+        "",
+        "xy_hist_bkgrm", 
+        N_bins, 
+        (-1 * window_width / 2. + window_center.first) * 0.1, 
+        (window_width / 2. + window_center.first) * 0.1, 
+        N_bins, 
+        (-1 * window_width / 2. + window_center.second) * 0.1, 
+        (window_width / 2. + window_center.second) * 0.1
+    );
+    xy_hist_bkgrm -> GetXaxis() -> SetTitle("X axis [cm]");
+    xy_hist_bkgrm -> GetYaxis() -> SetTitle("Y axis [cm]");
+
+    // cout<<"test test size and bin of the hist xy_hist : "<<xy_hist -> GetNbinsX()<<" "<<xy_hist -> GetNbinsY()<<endl;
+    // cout<<"test test bin width of the hist xy_hist : "<<xy_hist -> GetXaxis() -> GetBinWidth(1)<<" "<<xy_hist -> GetYaxis() -> GetBinWidth(1)<<endl;
+    // cout<<"draw_plot status : "<<draw_plot<<endl;
 
     
     for (int i = 0; i < cluster_pair_vec.size(); i++)
@@ -2225,7 +2389,7 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
 
         if (fabs(Clus_InnerPhi_Offset - Clus_OuterPhi_Offset) < 5)
         {
-            TH2FSampleLineFill(xy_hist, segmentation, {cluster_pair_vec[i].first.x, cluster_pair_vec[i].first.y}, {DCA_info_vec[1], DCA_info_vec[2]});
+            TH2FSampleLineFill(xy_hist, segmentation * 0.1, {(cluster_pair_vec[i].first.x) * 0.1, (cluster_pair_vec[i].first.y) * 0.1}, {(DCA_info_vec[1]) * 0.1, (DCA_info_vec[2]) * 0.1});
             // note : the DCA cut may be biased since the DCA was calculated with respect to the vertex calculated by the quadrant method
             // if (DCA_cut.first < DCA_sign && DCA_sign < DCA_cut.second)
             // {
@@ -2239,36 +2403,98 @@ vector<pair<double,double>> INTTXYvtx::FillLine_FindVertex(pair<double,double> w
     TH2F_FakeClone(xy_hist,xy_hist_bkgrm);
     TH2F_threshold_advanced_2(xy_hist_bkgrm, 0.7);
 
-    double reco_vtx_x = xy_hist_bkgrm->GetMean(1); // + xy_hist_bkgrm -> GetXaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
-    double reco_vtx_y = xy_hist_bkgrm->GetMean(2); // + xy_hist_bkgrm -> GetYaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
+    // note : the unit is cm here
+    double reco_vtx_x     = xy_hist_bkgrm->GetMean(1); // + xy_hist_bkgrm -> GetXaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
+    double reco_vtx_y     = xy_hist_bkgrm->GetMean(2); // + xy_hist_bkgrm -> GetYaxis() -> GetBinWidth(1) / 2.; // note : the TH2F calculate the GetMean based on the bin center, no need to apply additional offset
+    double reco_vtx_x_err = xy_hist_bkgrm->GetMeanError(1);
+    double reco_vtx_y_err = xy_hist_bkgrm->GetMeanError(2);
+    double reco_vtx_x_std = xy_hist_bkgrm->GetStdDev(1);
+    double reco_vtx_y_std = xy_hist_bkgrm->GetStdDev(2);
 
-    TGraph * reco_vertex_gr = new TGraph(); 
-    reco_vertex_gr -> SetMarkerStyle(50);
-    reco_vertex_gr -> SetMarkerColor(2);
-    reco_vertex_gr -> SetMarkerSize(1);
-    reco_vertex_gr -> SetPoint(reco_vertex_gr -> GetN(), reco_vtx_x, reco_vtx_y);
+    // cout<<"test : in the line filled, the process is almost done"<<endl;
 
+    if (draw_plot)
+    {
+        TGraph * reco_vertex_gr = new TGraph(); 
+        reco_vertex_gr -> SetMarkerStyle(50);
+        reco_vertex_gr -> SetMarkerColor(2);
+        reco_vertex_gr -> SetMarkerSize(1);
+        reco_vertex_gr -> SetPoint(reco_vertex_gr -> GetN(), reco_vtx_x, reco_vtx_y); // note : change the unit to cm
 
-    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    xy_hist -> Draw("colz0");
-    // draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.3f mm, %.3f mm", reco_vtx_x, reco_vtx_y));
-    // draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.3f mm, %.3f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
-    // reco_vertex_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    c1 -> Print(Form("%s/Run_xy_hist.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
+        // note : change the unit to cm, for the presentation
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        xy_hist -> SetStats(0);
+        // xy_hist -> GetXaxis() -> SetLimits( xy_hist -> GetXaxis() -> GetBinLowEdge(1) * 0.1, (xy_hist -> GetXaxis() -> GetBinLowEdge( xy_hist -> GetNbinsX() ) + xy_hist -> GetXaxis() -> GetBinWidth( xy_hist -> GetNbinsX() )) * 0.1 );
+        // xy_hist -> GetYaxis() -> SetLimits( xy_hist -> GetYaxis() -> GetBinLowEdge(1) * 0.1, (xy_hist -> GetYaxis() -> GetBinLowEdge( xy_hist -> GetNbinsY() ) + xy_hist -> GetYaxis() -> GetBinWidth( xy_hist -> GetNbinsY() )) * 0.1 );
+        xy_hist -> GetXaxis() -> SetNdivisions(505);
+        xy_hist -> Draw("colz0");
+        // draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.3f mm, %.3f mm", reco_vtx_x, reco_vtx_y));
+        // draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.3f mm, %.3f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
+        // reco_vertex_gr -> Draw("p same");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Run_xy_hist.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
 
-    // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    xy_hist_bkgrm -> Draw("colz0");
-    draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.4f mm, %.4f mm", reco_vtx_x, reco_vtx_y));
-    draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.4f mm, %.4f mm", xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)));
-    reco_vertex_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-    c1 -> Print(Form("%s/Run_xy_hist_bkgrm.pdf",out_folder_directory.c_str()));
-    c1 -> Clear();
+        // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        xy_hist_bkgrm -> SetStats(0);
+        // xy_hist_bkgrm -> GetYaxis() -> SetLimits( xy_hist_bkgrm -> GetYaxis() -> GetBinLowEdge(1) * 0.1, (xy_hist_bkgrm -> GetYaxis() -> GetBinLowEdge( xy_hist_bkgrm -> GetNbinsY() ) + xy_hist_bkgrm -> GetYaxis() -> GetBinWidth( xy_hist_bkgrm -> GetNbinsY() )) * 0.1 );
+        // xy_hist_bkgrm -> GetXaxis() -> SetLimits( xy_hist_bkgrm -> GetXaxis() -> GetBinLowEdge(1) * 0.1, (xy_hist_bkgrm -> GetXaxis() -> GetBinLowEdge( xy_hist_bkgrm -> GetNbinsX() ) + xy_hist_bkgrm -> GetXaxis() -> GetBinWidth( xy_hist_bkgrm -> GetNbinsX() )) * 0.1 );
+        xy_hist_bkgrm -> GetXaxis() -> SetNdivisions(505);
+        xy_hist_bkgrm -> Draw("colz0");
+        draw_text -> DrawLatex(0.21, 0.71+0.13, Form("Vertex of the Run: %.5f cm, %.5f cm", reco_vtx_x, reco_vtx_y));
+        draw_text -> DrawLatex(0.21, 0.67+0.13, Form("Vertex error: %.5f cm, %.5f cm", reco_vtx_x_err, reco_vtx_y_err));
+        reco_vertex_gr -> Draw("p same");
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+        c1 -> Print(Form("%s/Run_xy_hist_bkgrm.pdf",out_folder_directory.c_str()));
+        c1 -> Clear();
 
-    return {{reco_vtx_x,reco_vtx_y},{xy_hist_bkgrm->GetMeanError(1), xy_hist_bkgrm->GetMeanError(2)}};
-    
+        // cout<<"test : hello, can you see me ?"<<endl;
+    }
+
+    // note: change the unit from cm to mm
+    return {{reco_vtx_x * 10.,reco_vtx_y * 10.}, {reco_vtx_x_err * 10.,reco_vtx_y_err * 10.}, {reco_vtx_x_std * 10.,reco_vtx_y_std * 10.}};   
+}
+
+// todo : the input histogram should be in the unit of cm
+vector<double> INTTXYvtx::Get_covariance_TH2(TH2F * hist_in)
+{
+    double X_mean = hist_in -> GetMean(1);
+    double Y_mean = hist_in -> GetMean(2);
+
+    double denominator = 0;
+    double variance_x  = 0; 
+    double variance_y  = 0;
+    double covariance = 0;
+
+    for (int xi = 0; xi < hist_in -> GetNbinsX(); xi++){
+        for (int yi = 0; yi < hist_in -> GetNbinsY(); yi++){
+            double cell_weight = hist_in -> GetBinContent(xi+1, yi+1);
+            double cell_x = hist_in -> GetXaxis() -> GetBinCenter(xi+1);
+            double cell_y = hist_in -> GetYaxis() -> GetBinCenter(yi+1);
+
+            denominator += pow(cell_weight, 2);
+            variance_x  += pow(cell_x - X_mean, 2) * pow(cell_weight,2);
+            variance_y  += pow(cell_y - Y_mean, 2) * pow(cell_weight,2);
+            covariance  += (cell_x - X_mean) * (cell_y - Y_mean) * pow(cell_weight,2);
+        }
+    }
+
+    // note : the histogram is in the unit of cm, we change it back to mm
+    return {X_mean * 10., Y_mean * 10., (variance_x/denominator) * 10., (variance_y/denominator) * 10., (covariance/denominator) * 10.};
+}
+
+//note : accumulate the number of entries from both sides of the histogram
+double INTTXYvtx::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
+{
+    if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}
+    double total_entry = 0;
+    for (int i = 0; i < check_N_bin; i++)
+    {
+        total_entry += hist_in -> GetBinContent(i+1); // note : 1, 2, 3.....
+        total_entry += hist_in -> GetBinContent(hist_in -> GetNbinsX() - i);
+    }
+
+    return total_entry/double(2. * check_N_bin);
 }
 
 #endif
