@@ -54,6 +54,33 @@ void Characterize_Pad(TPad *pad, float left = 0.15, float right = 0.1, float top
 	
 }
 
+vector<double> Get_coveriance_TH2 (TH2F * hist_in)
+{
+    double X_mean = hist_in -> GetMean(1);
+    double Y_mean = hist_in -> GetMean(2);
+
+    double denominator = 0;
+    double variance_x  = 0; 
+    double variance_y  = 0;
+    double covariance = 0;
+
+    for (int xi = 0; xi < hist_in -> GetNbinsX(); xi++){
+        for (int yi = 0; y1 < hist_in -> GetNbinsY(); yi++)
+        {
+            double cell_weight = hist_in -> GetBinContent(xi+1, yi+1);
+            double cell_x = hist_in -> GetXaxis() -> GetBinCenter(xi+1);
+            double cell_y = hist_in -> GetYaxis() -> GetBinCenter(yi+1);
+
+            denominator += pow(cell_weight, 2);
+            variance_x  += pow(cell_x - X_mean, 2) * pow(cell_weight,2);
+            variance_y  += pow(cell_y - Y_mean, 2) * pow(cell_weight,2);
+            covariance  += (cell_x - X_mean) * (cell_y - Y_mean) * pow(cell_weight,2);
+        }
+    }
+
+    return {variance_x/denominator, variance_y/denominator, covariance/denominator};
+}
+
 void Geo1Scan_Ana()
 {
     // string folder_direction = "/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/20869/folder_beam_inttall-00020869-0000_event_base_ana_cluster_full_survey_3.32_excludeR1500_20kEvent_3HotCut_VTXxy_geo3/complete_file";
