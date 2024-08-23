@@ -55,9 +55,6 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     c1->cd();
 
-    TLatex latex;
-    latex.SetTextSize(0.05);
-
     for(UInt_t i = 1; i <= hEvents->GetNbinsX(); ++i) {
         hEvents->GetXaxis()->SetBinLabel(i, label[i-1].c_str());
     }
@@ -90,12 +87,16 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->Print((output).c_str(), "pdf portrait");
 
     hJetPt_r02->SetLineColor(kRed);
-    hJetPt_r04->SetLineColor(kGreen);
+    hJetPt_r04->SetLineColor(kGreen+2);
     hJetPt_r06->SetLineColor(kBlue);
 
-    hJetPt_r02->Rebin(5);
-    hJetPt_r04->Rebin(5);
-    hJetPt_r06->Rebin(5);
+    hJetPt_r02->SetMarkerColor(kRed);
+    hJetPt_r04->SetMarkerColor(kGreen+2);
+    hJetPt_r06->SetMarkerColor(kBlue);
+
+    hJetPt_r02->Rebin(2);
+    hJetPt_r04->Rebin(2);
+    hJetPt_r06->Rebin(2);
 
     hJetPt_r02->Scale(1./hJetPt_r02->Integral(1,hJetPt_r02->FindBin(35)));
     hJetPt_r04->Scale(1./hJetPt_r04->Integral(1,hJetPt_r02->FindBin(35)));
@@ -109,20 +110,29 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r02->SetMaximum(1);
     hJetPt_r02->SetMinimum(1e-4);
     hJetPt_r02->GetXaxis()->SetRangeUser(10,40);
-    hJetPt_r02->GetYaxis()->SetTitle("Normalized Yield / 5 GeV");
+    hJetPt_r02->GetYaxis()->SetTitle("Normalized Yield / 2 GeV");
     hJetPt_r02->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
     hJetPt_r02->GetYaxis()->SetTitleOffset(1);
 
-    hJetPt_r02->Draw("HIST");
-    hJetPt_r04->Draw("same HIST");
-    hJetPt_r06->Draw("same HIST");
+    hJetPt_r02->Draw();
+    hJetPt_r04->Draw("same");
+    hJetPt_r06->Draw("same");
 
-    auto *leg = new TLegend(0.75, .7, 0.95, .92);
+    TLatex latex;
+    latex.SetTextSize(0.04);
+    latex.DrawLatexNDC(0.13,0.96,"#bf{#it{sPHENIX}} Internal #it{p+p} #sqrt{s}=200 GeV");
+    latex.DrawLatexNDC(0.65,0.65,"|Vertex Z| < 30 cm");
+    latex.DrawLatexNDC(0.65,0.6,"Underlying Event Subtracted");
+    latex.DrawLatexNDC(0.1,0.04,"Run 46941-49763 (6/28/24-7/31/24)");
+    latex.SetTextSize(0.05);
+    latex.DrawLatexNDC(0.74,0.89,"Anti-k_{t}");
+
+    auto *leg = new TLegend(0.65, .7, 0.95, .88);
     leg->SetFillStyle(0);
-    leg->SetHeader("Anti-k_{t}","C");
-    leg->AddEntry(hJetPt_r02, "R = 0.2", "f");
-    leg->AddEntry(hJetPt_r04, "R = 0.4", "f");
-    leg->AddEntry(hJetPt_r06, "R = 0.6", "f");
+    // leg->SetHeader("Anti-k_{t}","C");
+    leg->AddEntry(hJetPt_r02, "R = 0.2", "ple");
+    leg->AddEntry(hJetPt_r04, "R = 0.4", "ple");
+    leg->AddEntry(hJetPt_r06, "R = 0.6", "ple");
     leg->Draw("same");
 
     gPad->SetLogy();
@@ -143,15 +153,15 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r02->SetMinimum(0);
     hJetPt_r02->SetMaximum(3);
 
-    hJetPt_r02->Draw("HIST");
-    hJetPt_r04->Draw("same HIST");
+    hJetPt_r02->Draw();
+    hJetPt_r04->Draw("same");
     line->Draw("same");
 
-    leg = new TLegend(0.55, .75, 0.75, .92);
+    leg = new TLegend(0.5, .77, 0.7, .94);
     leg->SetHeader("Anti-k_{t}","C");
     leg->SetFillStyle(0);
-    leg->AddEntry(hJetPt_r02, "R = 0.2 / R = 0.6", "f");
-    leg->AddEntry(hJetPt_r04, "R = 0.4 / R = 0.6", "f");
+    leg->AddEntry(hJetPt_r02, "R = 0.2 / R = 0.6", "ple");
+    leg->AddEntry(hJetPt_r04, "R = 0.4 / R = 0.6", "ple");
     leg->Draw("same");
 
     gPad->SetLogy(0);
