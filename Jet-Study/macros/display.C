@@ -38,7 +38,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->SetTickx();
     c1->SetTicky();
 
-    c1->SetCanvasSize(1500, 1000);
+    c1->SetCanvasSize(1700, 1000);
     c1->SetLeftMargin(.13);
     c1->SetRightMargin(.05);
 
@@ -51,7 +51,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto hJetPt_r04 = (TH1F*)input.Get("hJetPt_r04");
     auto hJetPt_r06 = (TH1F*)input.Get("hJetPt_r06");
 
-    vector<string> label = {"All", "Has Z Vtx", "|Z| < 30 cm"};
+    vector<string> label = {"All", "Has Z Vtx", "|Z| < 30 cm", "|Z| < 20 cm", "|Z| < 10 cm"};
 
     c1->cd();
 
@@ -93,15 +93,29 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r04->SetLineColor(kGreen);
     hJetPt_r06->SetLineColor(kBlue);
 
-    hJetPt_r02->Rebin(10);
-    hJetPt_r04->Rebin(10);
-    hJetPt_r06->Rebin(10);
+    hJetPt_r02->Rebin(5);
+    hJetPt_r04->Rebin(5);
+    hJetPt_r06->Rebin(5);
 
-    hJetPt_r02->SetMaximum(1e10);
+    hJetPt_r02->Scale(1./hJetPt_r02->Integral(1,hJetPt_r02->FindBin(35)));
+    hJetPt_r04->Scale(1./hJetPt_r04->Integral(1,hJetPt_r02->FindBin(35)));
+    hJetPt_r06->Scale(1./hJetPt_r06->Integral(1,hJetPt_r02->FindBin(35)));
 
-    hJetPt_r02->Draw();
-    hJetPt_r04->Draw("same");
-    hJetPt_r06->Draw("same");
+    cout << "Integral" << endl;
+    cout << "Jet R = 0.2: " << hJetPt_r02->Integral(1,hJetPt_r02->FindBin(35)) << endl;
+    cout << "Jet R = 0.4: " << hJetPt_r04->Integral(1,hJetPt_r02->FindBin(35)) << endl;
+    cout << "Jet R = 0.6: " << hJetPt_r06->Integral(1,hJetPt_r02->FindBin(35)) << endl;
+
+    hJetPt_r02->SetMaximum(1);
+    hJetPt_r02->SetMinimum(1e-4);
+    hJetPt_r02->GetXaxis()->SetRangeUser(10,40);
+    hJetPt_r02->GetYaxis()->SetTitle("Normalized Yield / 5 GeV");
+    hJetPt_r02->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
+    hJetPt_r02->GetYaxis()->SetTitleOffset(1);
+
+    hJetPt_r02->Draw("HIST");
+    hJetPt_r04->Draw("same HIST");
+    hJetPt_r06->Draw("same HIST");
 
     auto *leg = new TLegend(0.75, .7, 0.95, .92);
     leg->SetFillStyle(0);
@@ -112,6 +126,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->Draw("same");
 
     gPad->SetLogy();
+    gPad->SetGrid(0,0);
 
     c1->Print("Jet-pT.png");
     c1->Print((output).c_str(), "pdf portrait");
@@ -119,19 +134,20 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r02->Divide(hJetPt_r06);
     hJetPt_r04->Divide(hJetPt_r06);
 
-    auto line = new TLine(0, 1, 100, 1);
+    auto line = new TLine(10, 1, 40, 1);
     line->SetLineColor(kBlue);
     line->SetLineStyle(9);
     line->SetLineWidth(3);
 
     hJetPt_r02->GetYaxis()->SetTitle("ratio");
-    hJetPt_r02->SetMaximum(2);
+    hJetPt_r02->SetMinimum(0);
+    hJetPt_r02->SetMaximum(3);
 
-    hJetPt_r02->Draw();
-    hJetPt_r04->Draw("same");
+    hJetPt_r02->Draw("HIST");
+    hJetPt_r04->Draw("same HIST");
     line->Draw("same");
 
-    leg = new TLegend(0.65, .75, 0.85, .92);
+    leg = new TLegend(0.55, .75, 0.75, .92);
     leg->SetHeader("Anti-k_{t}","C");
     leg->SetFillStyle(0);
     leg->AddEntry(hJetPt_r02, "R = 0.2 / R = 0.6", "f");
