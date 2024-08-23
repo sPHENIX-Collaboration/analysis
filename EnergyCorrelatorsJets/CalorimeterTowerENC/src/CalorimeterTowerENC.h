@@ -90,10 +90,10 @@ class CalorimeterTowerENC : public SubsysReco
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, TowerInfoContainer*);
 	float getPt(PHG4Particle*);
 	float getR(std::pair<float, float>, std::pair<float, float>);
-	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  MethodHistograms*, int); 
+	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  std::string, int); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
-	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>);
+	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*);
 	void GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, std::map<float, int>>, std::pair<float, float>);
 	int RecordHits(PHCompositeNode* topNode, Jet*);	
@@ -110,13 +110,14 @@ class CalorimeterTowerENC : public SubsysReco
   	int Reset(PHCompositeNode * /*topNode*/) override {return 0;};
 
   	void Print(const std::string &what = "ALL") const override;
+	std::string outfilename="";
 
  private:
 	int n_evts=0, Nj=1;
-	std::string outfilename="";
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
 	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal;
+	TH1F* number_of_jets;
 	std::map<std::string, MethodHistograms*> histogram_map; 
 	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
 };

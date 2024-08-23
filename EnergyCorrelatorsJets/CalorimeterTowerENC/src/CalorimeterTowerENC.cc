@@ -4,8 +4,8 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  29 July 2024						//
-//		version: v0.1									//
+//		Date of Last Update:  22 August 2024						//
+//		version: v1.1									//
 //												//
 //												//
 //		This project is a study on energy correlators using particle jets and 		//
@@ -29,7 +29,8 @@ CalorimeterTowerENC::CalorimeterTowerENC(int n_run, int n_segment, const std::st
 	seg << n_segment;
 	outfilename="Calorimeter_tower_ENC-"+run.str()+"-"+seg.str()+".root";
 	jethits=new TH2F("jethits", "Location of particle energy deposition from truth jets; #eta; #varphi; N_{hits}", 200, -1.15, 1.05, 200, -3.1416, 3.1415);
-	comptotows=new TH2F("comp_to_towers", "Particle energy deposition versus EMCal tower energy per EMCAL tower; E_{particle} [GeV]; E_{emcal} [GeV]; N", 50, -0.5, 49.5, 50, -0.5, 49.5 );  
+	comptotows=new TH2F("comp_to_towers", "Particle energy deposition versus EMCal tower energy per EMCAL tower; E_{particle} [GeV]; E_{emcal} [GeV]; N", 50, -0.5, 49.5, 50, -0.05, 4.95 ); 
+	number_of_jets=new TH1F("nJ", "Number of Jets per event; N_{jet}", 100, -0.5, 99.5); 
 	Particles=new MethodHistograms("Particles");
 	EMCal=new MethodHistograms("EMCAL");
 	IHCal=new MethodHistograms("IHCAL");
@@ -69,9 +70,12 @@ float CalorimeterTowerENC::getR(std::pair<float, float> p1, std::pair<float,floa
 	float R=sqrt(pow(eta_dist,2) + pow(phi_dist, 2));
 	return R;
 }
-void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_set<int> tower_set, TowerInfoContainer* data, RawTowerGeomContainer_Cylinderv1* geom, RawTowerDefs::CalorimeterId calo, float jete, MethodHistograms* histograms, int npt)
+void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_set<int> tower_set, TowerInfoContainer* data, RawTowerGeomContainer_Cylinderv1* geom, RawTowerDefs::CalorimeterId calo, float jete, std::string caloh, int npt)
 {
 	geom->set_calorimeter_id(calo);
+	MethodHistograms* histograms=histogram_map.at(caloh);
+	histograms->E->Fill(jete);
+	histograms->N->Fill(tower_set.size());
 	for(auto i:tower_set){
 		if(!geom) continue;
 		if(i < 0 || i >= (int) data->size() ) continue;
@@ -80,7 +84,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 		auto key_1 = data->encode_key(i);
 		int phibin_1 = data->getTowerPhiBin(key_1);
 		int etabin_1 = data->getTowerEtaBin(key_1);
-		std::cout<<"Phibin: " <<phibin_1 <<" Etabin: " <<etabin_1 <<std::endl;
+		//std::cout<<"Phibin: " <<phibin_1 <<" Etabin: " <<etabin_1 <<std::endl;
 		if(etabin_1 < 0 || phibin_1 < 0 ||  phibin_1 >= geom->get_phibins() || etabin_1 >= geom->get_etabins() ) continue;
 		float phi_center_1 = geom->get_phicenter(phibin_1);
 		float eta_center_1 = geom->get_etacenter(etabin_1);
@@ -166,30 +170,40 @@ void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<in
 	histogram_map["emcal"]->N->Fill(em.size());
 	histogram_map["ihcal"]->N->Fill(ih.size());
 	histogram_map["ohcal"]->N->Fill(oh.size());
-	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, histogram_map["emcal"], 2);
-	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, histogram_map["ihcal"], 2);
-	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, histogram_map["ohcal"], 2);
+	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, "emcal", 2);
+	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, "ihcal", 2);
+	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, "ohcal", 2);
 	return;
 }
-void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, std::map<int, float> emtowere)
+void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, std::map<int, float>* emtowere)
 {
 	//this is the processor that allows for read out of the tower energies given the set of towers in the phi-eta plane
 	auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
-	auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+	auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_CEMC");
 	auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
-	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALIN");
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
-	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALOUT");
 	float jete_em = 0, jete_ih=0, jete_oh=0;
+	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
+		 jete_oh+=ohcal_tower_energy->get_tower_at_channel(n)->get_energy();
+	//	std::cout<<"For tower at channel " <<n <<" the energy is : " <<ohcal_tower_energy->get_tower_at_channel(n)->get_energy() <<std::endl;
+	}
+	std::cout<<"Total energy found in the ohcal is " <<jete_oh <<std::endl;
+	jete_oh=0;
 	for(auto i:em)
 	{
 		try{
-			std::cout<<"The IHcal is looking for the tower key " <<i <<std::endl;
-			if( i >= (int) emcal_tower_energy->size() || i <= 0 ) continue;
-			auto tower_e=emcal_tower_energy->get_tower_at_key(i);
+			if( i <= 0 ) continue;
+			if(n_evts <10 ) std::cout<<"The tower number in use is " <<i <<std::endl;
+			auto tower_e=emcal_tower_energy->get_tower_at_channel(i);
 			if(tower_e){
-				jete_em+=tower_e->get_energy();
-				emtowere[i]+=tower_e->get_energy();
+				auto et=tower_e->get_energy();
+				if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i-1)->get_energy();
+				if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i+1)->get_energy();
+				jete_em+=et;
+				std::cout<<"The added energy is " <<et <<" total energy " <<jete_em <<std::endl;; 
+				(*emtowere)[i]+=tower_e->get_energy();
 			}
 		}
 		catch(std::exception& e) { continue; }
@@ -197,8 +211,7 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 	for(auto i:ih)
 	{
 		try{
-			std::cout<<"The IHcal is looking for the tower key " <<i <<std::endl;
-			if( i >= (int) ihcal_tower_energy->size() || i <= 0 ) continue;
+			if( i <= 0 ) continue;
 			auto tower_e=ihcal_tower_energy->get_tower_at_key(i);
 			if(tower_e) jete_ih+=tower_e->get_energy();
 		}
@@ -207,16 +220,18 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 	for(auto i:oh)
 	{
 		try{
-			std::cout<<"The IHcal is looking for the tower key " <<i <<std::endl;
-			if( i >= (int) ohcal_tower_energy->size() || i <= 0 ) continue;
-			auto tower_e=ohcal_tower_energy->get_tower_at_key(i);
+			if( i <= 0 ) continue;
+			auto tower_e=ohcal_tower_energy->get_tower_at_channel(i);
+	//		std::cout<<"Jet Tower: We get the energy for the tower at channel " <<i <<" as " <<tower_e->get_energy() <<std::endl;
 			if(tower_e) jete_oh+=tower_e->get_energy();
 		}
 		catch(std::exception& e) { continue; }
 	}
-	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, histogram_map["emcal"], 3);
-	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, histogram_map["ihcal"], 3);
-	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, histogram_map["ohcal"], 3);
+	//std::cout<<"Checked " <<em.size() <<" towers in the outer hcal \n Got an energy in the ohcal part of the jet of " <<jete_oh <<std::endl; 
+//	histogram_map["ohcal"]->E->Fill(jete_oh);
+	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, "emcal", 3);
+	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, "ihcal", 3);
+	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, "ohcal", 3);
 	return;
 }
 
@@ -295,7 +310,9 @@ std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> Calori
 	geom->set_calorimeter_id(caloid);
 	for(int i = 0; i<(int) calokey->size(); i++){
 		try{
+	//		std::cout<<"The channel number is " <<i <<std::endl;
 			int key=calokey->encode_key(i);
+			//int tower=calokey->get_tower_at_key(key);
 			int phibin=calokey->getTowerPhiBin(key);
 			int etabin=calokey->getTowerEtaBin(key);
 			float eta=geom->get_etacenter(etabin);
@@ -307,7 +324,7 @@ std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> Calori
 				std::pair <double, double> phibounds=geom->get_phibounds(etabin);
 				deltas.second=abs(phibounds.first - phibounds.second)/2.;
 			}
-			gs[key]=g;
+			gs[i]=g;
 		}
 		catch(std::exception& e){ 
 			std::pair<float, float> g {-5.0, -20.0 };
@@ -342,23 +359,34 @@ std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> Calori
 }
 int CalorimeterTowerENC::GetTowerNumber(std::pair<float, float> part, std::map<float, std::map< float, int>> Calomap, std::pair<float, float> delta)
 {
+	int keynumber=-1;
+	part.second+=PI;
+//	std::cout<<"The particle is centered around eta = " <<part.first <<" phi = " <<part.second <<std::endl;
+	if (abs(part.first) > 1.2 ) return keynumber;
 	for(auto t:Calomap)
 	{
 		if( part.first < t.first + delta.first && part.first >= t.first - delta.first){
 			//checking the eta bounds first
 			for (auto tp:t.second){
-				if(part.second < tp.first + delta.second && part.second >= tp.first - delta.second) return tp.second;
+				if(part.second < tp.first + delta.second && part.second >= tp.first - delta.second){
+					if(n_evts < 10 ) std::cout<<"Found a good bin centered in eta at " <<t.first <<" in phi at "<<tp.first <<" with bin number " <<tp.second <<std::endl;
+				 	keynumber=tp.second;
+					break;
+				}
 			}
 		}
 	}
-	return -1;
+//	if(n_evts < 10 ) std::cout<<" The particle is at eta= " <<part.first <<" and phi = " <<part.second <<std::endl;
+	return keynumber;
 }
 int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	//record where the particles are located and which towers are seeing hits
 	std::set<std::pair<float, float>> particle_coords; //This will store the location of each particle which then I can use tho capture the relevant towe
 	std::unordered_set<PHG4Particle*> jetparticles;
+	std::undorder_set<PHG4Hits*> jethits;
 	std::map<int, float> jettowenergy, emtowerenergy;
 	auto _truthinfo=findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+//	auto _truthhits=findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_BH_1");
 	auto particles=_truthinfo->GetMap();	
 	//std::cout<<"Indicies for the truth map are ";
 	//for(auto p:particles) std::cout<<p.first <<std::endl; 
@@ -372,8 +400,9 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 			if (particles.find(idx) == particles.end()) std::cout<<"Index is not in map for index " <<idx <<std::endl;	
 			else { 
 				PHG4Particle* truth_part = _truthinfo->GetParticle(idx);
-		//PHG4Hit* truth_hit = _truthinfo->GetHit(idx);
+				PHG4Shower* truth_shower = _truthinfo->GetShower(idx);
 				jetparticles.insert(truth_part);
+				auto showerhits=truth_shower->g4Hit_ids()
 			}
 		//jethits.insert(truth_hit);
 	}
@@ -381,11 +410,13 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	for(auto p:jetparticles){
 	       //take in the identified particles that make up the subjet and then we overap that in the towers
 		std::pair<float, float> particle_coord; 
-		particle_coord.first = atanh(p->get_pz()/sqrt(pow(p->get_py(),2) + pow(p->get_px(),2)));
+		particle_coord.first = atanh(p->get_pz()/sqrt(pow(p->get_py(),2) + pow(p->get_px(),2) + pow(p->get_pz(), 2)));
 		particle_coord.second = atan2(p->get_py(), p->get_px());
 		particle_coords.insert(particle_coord);	
 		jet_particle_map[p]=particle_coord;
 		jethits->Fill(particle_coord.first, particle_coord.second);
+		if ( n_evts < 10 ) std::cout<<"The particle we are looking for is located at eta = " <<particle_coord.first 
+				<<" phi = " << particle_coord.second <<std::endl;
 		int towernumberemcal=GetTowerNumber(particle_coord, EMCALMAP.first, EMCALMAP.second);
 		if(jettowenergy.find(towernumberemcal) == jettowenergy.end())jettowenergy[towernumberemcal]=0; 
 		jettowenergy[towernumberemcal]+=p->get_e();
@@ -396,16 +427,24 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	std::unordered_set<int> jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal; 
 	for(auto pc:particle_coords)
 	{
+		if(abs(pc.first) > 1.2) continue;
+		if ( n_evts < 10 ) std::cout<<"The particle we are looking for is located at eta = " <<pc.first 
+				<<" phi = " << pc.second <<std::endl;
 		int tne=GetTowerNumber(pc, EMCALMAP.first, EMCALMAP.second);
-		jet_towers_emcal.insert(tne);
+		if(tne != -1){ jet_towers_emcal.insert(tne);
+			std::cout<<"The identified tower number for the emcal is " <<tne <<std::endl;
+		}
 		emtowerenergy[tne]=0;
 		int tni=GetTowerNumber(pc, IHCALMAP.first, IHCALMAP.second);
-		jet_towers_ihcal.insert(tni);
+		if(tni != -1) jet_towers_ihcal.insert(tni);
+		std::cout<<"Particle added to the ihcal in bin " <<tni <<std::endl;
 		int tno=GetTowerNumber(pc, OHCALMAP.first, OHCALMAP.second);
-		jet_towers_ohcal.insert(tno);
+		if (tno != -1) jet_towers_ohcal.insert(tno);
+		std::cout<<"Particle added to the ohcal in bin " <<tno <<std::endl;
 	}
+	std::cout<<"We have loaded in particles " <<particle_coords.size() <<std::endl;
 //	getE2C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal);
-	GetE3C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal, emtowerenergy); //get both values filled in one 
+	GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy); //get both values filled in one 
 	for(auto m:jettowenergy) comptotows->Fill(m.second, emtowerenergy[m.first]);
 		
 	return 1;
@@ -418,17 +457,18 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 	std::cout<<"Running on event " <<n_evts<<std::endl;
 	try{
 		auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
-		auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+		auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_CEMC");
 		auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
-		auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+		auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALIN");
 		auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
-		auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+		auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALOUT");
 		if(EMCALMAP.first.size() == 0 )  EMCALMAP=GetTowerMaps(emcal_geom, RawTowerDefs::CEMC, emcal_tower_energy);
 		if(IHCALMAP.first.size() == 0 )  IHCALMAP=GetTowerMaps(ihcal_geom, RawTowerDefs::HCALIN, ihcal_tower_energy);
 		if(OHCALMAP.first.size() == 0 )  OHCALMAP=GetTowerMaps(ohcal_geom, RawTowerDefs::HCALOUT, ohcal_tower_energy);
 		auto jets = findNode::getClass<JetContainer> (topNode, "AntiKt_Truth_r04");
 		Nj=jets->size();
 		for(auto j:*jets) RecordHits(topNode, j);
+		number_of_jets->Fill(Nj);
 		
 	}
 	catch(std::exception& e ) {
@@ -444,6 +484,7 @@ int CalorimeterTowerENC::End(PHCompositeNode *topNode){
 }
 void CalorimeterTowerENC::Print(const std::string &what) const
 {
+	std::cout<<"Printing the files out now to a file named: " <<outfilename <<std::endl;
 	TFile* f=new TFile(outfilename.c_str(), "RECREATE");
 	//printing the stuff out 
 	for(auto hs:histogram_map){
@@ -458,6 +499,7 @@ void CalorimeterTowerENC::Print(const std::string &what) const
 	}
 	jethits->Write();
 	comptotows->Write();
+	number_of_jets->Write();
 	f->Write();
 	f->Close();
 	return;
