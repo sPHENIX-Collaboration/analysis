@@ -7,6 +7,8 @@
 // -- root includes --
 #include <TH2F.h>
 #include <TF1.h>
+#include <TDirectory.h>
+#include <TKey.h>
 #include <TFile.h>
 #include <TLine.h>
 #include <TLegend.h>
