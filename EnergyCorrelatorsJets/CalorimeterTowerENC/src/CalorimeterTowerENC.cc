@@ -4,7 +4,7 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  22 August 2024						//
+//		Date of Last Update:  26 August 2024						//
 //		version: v1.1									//
 //												//
 //												//
@@ -179,11 +179,11 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 {
 	//this is the processor that allows for read out of the tower energies given the set of towers in the phi-eta plane
 	auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
-	auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_CEMC");
+	auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
 	auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
-	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALIN");
+	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
-	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_SIM_HCALOUT");
+	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
 	float jete_em = 0, jete_ih=0, jete_oh=0;
 	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
 		 jete_oh+=ohcal_tower_energy->get_tower_at_channel(n)->get_energy();
@@ -199,8 +199,8 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 			auto tower_e=emcal_tower_energy->get_tower_at_channel(i);
 			if(tower_e){
 				auto et=tower_e->get_energy();
-				if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i-1)->get_energy();
-				if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i+1)->get_energy();
+				/*if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i-1)->get_energy();
+				if(et == 0 && i > 1) et+=emcal_tower_energy->get_tower_at_channel(i+1)->get_energy();*/
 				jete_em+=et;
 				std::cout<<"The added energy is " <<et <<" total energy " <<jete_em <<std::endl;; 
 				(*emtowere)[i]+=tower_e->get_energy();
@@ -383,7 +383,7 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	//record where the particles are located and which towers are seeing hits
 	std::set<std::pair<float, float>> particle_coords; //This will store the location of each particle which then I can use tho capture the relevant towe
 	std::unordered_set<PHG4Particle*> jetparticles;
-	std::undorder_set<PHG4Hits*> jethits;
+/*	std::set<std::pair<float, float>> circle_jet;*/
 	std::map<int, float> jettowenergy, emtowerenergy;
 	auto _truthinfo=findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 //	auto _truthhits=findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_BH_1");
@@ -400,9 +400,9 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 			if (particles.find(idx) == particles.end()) std::cout<<"Index is not in map for index " <<idx <<std::endl;	
 			else { 
 				PHG4Particle* truth_part = _truthinfo->GetParticle(idx);
-				PHG4Shower* truth_shower = _truthinfo->GetShower(idx);
+			//	PHG4Shower* truth_shower = _truthinfo->GetShower(idx);
 				jetparticles.insert(truth_part);
-				auto showerhits=truth_shower->g4Hit_ids()
+			//	auto showerhits=truth_shower->g4Hit_ids()
 			}
 		//jethits.insert(truth_hit);
 	}
@@ -422,10 +422,44 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 		jettowenergy[towernumberemcal]+=p->get_e();
 		
 	}
+	//find the center of the jet and go to R=0.4 to try to correct for particles not being in the right place
+	//this is a fast way to get around the G4Hit version
+	/*std::pair<float, float> jet_center {0,0};
+	for(auto p:jet_particle_map){
+		jet_center.first+=p.second.first;
+		jet_center.second+=p.second.second;
+	}
+	jet_center.first=jet_center.first/(float)jet_particle_map.size();
+	jet_center.second=jet_center.second/(float)jet_particle_map.size();
+	int netabin=1+0.4*EMCALMAP.second.first, nphibin=1+0.4*EMCALMAP.second.second;
+	for(int etabin=0; etabin< netabin; etabin++)
+	{
+		for(int phibin=0; phibin<nphibin; phibin++)
+		{
+			float deta=EMCALMAP.second.first*etabin;
+			float dphi=EMCALMAP.second.second*phibin;
+			float R=sqrt(pow(deta,2)+pow(dphi,2));
+			if(R > 0.4 ) continue;
+			std::pair<float, float> tow_center, neg_tow_center;
+			tow_center.first=jet_center.first+deta;
+			tow_center.second=jet_center.first+dphi;
+			circle_jet.insert(tow_center);
+			tow_center.first=jet_center.first+deta;
+			tow_center.second=jet_center.first-dphi;
+			circle_jet.insert(tow_center);
+			tow_center.first=jet_center.first-deta;
+			tow_center.second=jet_center.first-dphi;
+			circle_jet.insert(tow_center);
+			tow_center.first=jet_center.first-deta;
+			tow_center.second=jet_center.first+dphi;
+			circle_jet.insert(tow_center);
+			}
+	}//this gets the jet centers using emcal binning, using the undorded set allows for double writes to be ok
+	*/	
 //	getE2C(jet_particle_map, topNode); 
 	GetE3C(topNode, jet_particle_map); //get both in one call
 	std::unordered_set<int> jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal; 
-	for(auto pc:particle_coords)
+	for(auto pc:particle_coords/*circle_jet*/)
 	{
 		if(abs(pc.first) > 1.2) continue;
 		if ( n_evts < 10 ) std::cout<<"The particle we are looking for is located at eta = " <<pc.first 
