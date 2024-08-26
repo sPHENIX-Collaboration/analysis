@@ -10,15 +10,9 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/SubsysReco.h>
-
-#include <fun4all/Fun4AllDstOutputManager.h>
-#include <fun4all/Fun4AllOutputManager.h>
-#include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllUtils.h>
 
 #include <phool/recoConsts.h>
-
-#include <g4centrality/PHG4CentralityReco.h>
 
 #include <jetvalidation/JetValidation.h>
 
