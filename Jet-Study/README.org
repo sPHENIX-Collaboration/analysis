@@ -12,17 +12,22 @@ CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
 
 Example:
 #+begin_src bash
-CreateDstList.pl --build new --cdb 2024p004 DST_CALO_run2pp --list files/good-runs-p004.list
+CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --list files/runs-ana430-2024p007-good-with-bad-tower-maps.list
+#+end_src
+
+* Generate list of runs that contain bad tower maps
+#+begin_src bash
+find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list
 #+end_src
 
 * Generate subset of good run list that contains the bad tower maps
 Note: Still command is still in progress
 #+begin_src bash
-./genGoodRuns.py && \
-fd p004 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > temp.list && comm -12 runList.txt temp.list > good-runs-p004.list && \
-fd p005 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > temp.list && comm -12 runList.txt temp.list > good-runs-p005.list && \
-fd p006 CEMC_BadTowerMap | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > temp.list && comm -12 runList.txt temp.list > good-runs-p006.list && \
-cat good-runs-p004.list good-runs-p005.list good-runs-p006.list | sort | uniq > good-runs.list
+echo "Generating Good Run List" && ./genGoodRuns.py && \
+echo "Generating Bad Tower Maps Run List" && find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list && \
+echo "Generating ana430 2024p007 Run List" && CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --printruns > runs-ana430-2024p007.list && \
+echo "Generating Good ana430 2024p007 Run List"  && comm -12 runList.txt runs-ana430-2024p007.list > runs-ana430-2024p007-good.list && \
+echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 runs-ana430-2024p007-good.list runs-hot-maps.list > runs-ana430-2024p007-good-with-bad-tower-maps.list
 #+end_src
 
 * Fun4All Quick Tests
