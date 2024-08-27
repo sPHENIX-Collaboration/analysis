@@ -39,7 +39,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->SetTicky();
 
     c1->SetCanvasSize(1700, 1000);
-    c1->SetLeftMargin(.13);
+    c1->SetLeftMargin(.15);
     c1->SetRightMargin(.05);
 
     c1->Print((output + "[").c_str(), "pdf portrait");
@@ -68,6 +68,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     c1->Print((string(hEvents->GetName()) + ".png").c_str());
     c1->Print((output).c_str(), "pdf portrait");
+
+    c1->SetCanvasSize(1200, 1000);
 
     gStyle->SetOptStat(1111);
     hZVtx->SetStats();
@@ -112,17 +114,17 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r02->GetXaxis()->SetRangeUser(10,40);
     hJetPt_r02->GetYaxis()->SetTitle("Normalized Yield / 2 GeV");
     hJetPt_r02->GetXaxis()->SetTitle("Jet p_{T} [GeV]");
-    hJetPt_r02->GetYaxis()->SetTitleOffset(1);
+    hJetPt_r02->GetYaxis()->SetTitleOffset(1.5);
 
     hJetPt_r02->Draw();
     hJetPt_r04->Draw("same");
     hJetPt_r06->Draw("same");
 
     TLatex latex;
-    latex.SetTextSize(0.04);
-    latex.DrawLatexNDC(0.13,0.96,"#bf{#it{sPHENIX}} Internal #it{p+p} #sqrt{s}=200 GeV");
-    latex.DrawLatexNDC(0.65,0.65,"|Vertex Z| < 30 cm");
-    latex.DrawLatexNDC(0.65,0.6,"Underlying Event Subtracted");
+    latex.SetTextSize(0.035);
+    latex.DrawLatexNDC(0.15,0.96,"#bf{#it{sPHENIX}} Internal #it{p+p} #sqrt{s}=200 GeV");
+    latex.DrawLatexNDC(0.57,0.65,"|Vertex Z| < 30 cm");
+    latex.DrawLatexNDC(0.57,0.6,"Underlying Event Subtracted");
     latex.DrawLatexNDC(0.1,0.04,"Run 46941-49763 (6/28/24-7/31/24)");
     latex.SetTextSize(0.05);
     latex.DrawLatexNDC(0.74,0.89,"Anti-k_{t}");
@@ -157,7 +159,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hJetPt_r04->Draw("same");
     line->Draw("same");
 
-    leg = new TLegend(0.5, .77, 0.7, .94);
+    leg = new TLegend(0.4, .77, 0.6, .94);
     leg->SetHeader("Anti-k_{t}","C");
     leg->SetFillStyle(0);
     leg->AddEntry(hJetPt_r02, "R = 0.2 / R = 0.6", "ple");
