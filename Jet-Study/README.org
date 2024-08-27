@@ -28,6 +28,7 @@ cat good-runs-p004.list good-runs-p005.list good-runs-p006.list | sort | uniq > 
 * Fun4All Quick Tests
 
 ** After editing Makefile.am
+Jet Validation:
 #+begin_src bash
 rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_new_2024p006-00049763-00000.root tree.root qa.root 100 2>/dev/null
 #+end_src
@@ -36,13 +37,32 @@ rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL
 rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_new_2024p006-00049763-00000.root","tree.root","qa.root", 100)'
 #+end_src
 
+Event Validation:
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051285-00000.root tree.root qa.root 100 2>/dev/null
+#+end_src
+
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051285-00000.root","tree.root","qa.root", 100)'
+#+end_src
+
 ** After editing .cc or .h
+Jet Validation:
 #+begin_src bash
 make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_new_2024p006-00049763-00000.root tree.root qa.root 100 2>/dev/null
 #+end_src
 
 #+begin_src bash
 make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_new_2024p006-00049763-00000.root","tree.root","qa.root", 100)'
+#+end_src
+
+Event Validation:
+#+begin_src bash
+make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051285-00000.root tree.root qa.root 100 2>/dev/null
+#+end_src
+
+#+begin_src bash
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051285-00000.root","tree.root","qa.root", 100)'
 #+end_src
 
 * Condor Tips
