@@ -20,7 +20,7 @@ f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloHotTower', he
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
-f4a.add_argument('-n', '--submissions', type=int, default=9, help='Number of submissions. Default: 1.')
+f4a.add_argument('-n', '--submissions', type=int, default=9, help='Number of submissions. Default: 9.')
 f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10000.')
 
 args = parser.parse_args()
@@ -90,7 +90,7 @@ def create_f4a_jobs():
             i += 1
 
     for x in arr:
-        print(x)
+        print(x[:-4])
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
