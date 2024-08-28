@@ -118,10 +118,10 @@ Int_t myAnalysis::read(const string &inputFile) {
 
 void myAnalysis::write(const string &outputFile) {
    ofstream output(outputFile);
-   output << "run,Events_Jet6,Events_Jet6_bkg,Jet6_fraction"
-             << ",Events_Jet8,Events_Jet8_bkg,Jet8_fraction"
-             << ",Events_Jet10,Events_Jet10_bkg,Jet10_fraction"
-             << ",Events_Jet12,Events_Jet12_bkg,Jet12_fraction" << endl;
+   output << "run,Events_Jet6,Events_Jet6_bkg,Jet6_bkg_fraction"
+             << ",Events_Jet8,Events_Jet8_bkg,Jet8_bkg_fraction"
+             << ",Events_Jet10,Events_Jet10_bkg,Jet10_bkg_fraction"
+             << ",Events_Jet12,Events_Jet12_bkg,Jet12_bkg_fraction" << endl;
 
    stringstream s;
    for(auto info : runs) {
