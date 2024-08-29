@@ -3,26 +3,22 @@
 void Fun4All_Intt_RecoCluster( )
   // int run_num,
   // 			       int nevents=10,
-  // 			       bool is_official = true, 
-  // 			       bool use_cdb = true
   // 			       )
 {
 
   //  gSystem->ListLibraries();
   
-
   ////////////////////////////////////////////////////////////////////////
   int run_num = 50889;
   int nevents = 100000;
   string run_type = "physics";
   string run_num_str = string( "000" ) + to_string( run_num );
 
+  string list_file = string( "list_run" ) + to_string( run_num ) + ".txt";
   
   ////////////////////////////////////////////////////////////////////////
   // Config for input/output files
   ////////////////////////////////////////////////////////////////////////
-  // string run_type = GetRunType( run_num );
-  // string run_num_str = GetRunNum8digits( run_num );
 
   // output_base format: {run_tpye}_intt_{run number}
   // For example, cosmics_intt_01234567
@@ -52,25 +48,15 @@ void Fun4All_Intt_RecoCluster( )
   recoConsts *rc = recoConsts::instance();
 
   Enable::CDB = true;
-  // global tag
   rc->set_StringFlag("CDB_GLOBALTAG",CDB::global_tag);
-  // cout << "CDB_GLOBALTAG : " << CDB::global_tag << endl;
-  // cout << "CDB_GLOBALTAG : " << rc->get_StringFlag("CDB_GLOBALTAG") << endl;
-
   // 64 bit timestamp
   rc->set_uint64Flag("TIMESTAMP",CDB::timestamp);
-  //cout<<"TIMESTAMP : "<<CDB::timestamp<<endl;
-  //rc->set_uint64Flag("TIMESTAMP",20869);
-  //cout<<"TIMESTAMP : "<<rc->get_uint64Flag("TIMESTAMP")<<endl;
   rc->set_IntFlag("RUNNUMBER", run_num );
   
   //--input
-  //  auto files = GetDsts( run_num, is_official, "", "no_hot" );
-  string dst_streaming = "/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_physics_gl1_intt-00050889_special.root";
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST");
-  in->fileopen( dst_streaming );
-  
   in->Verbosity(2);
+  in->AddListFile( list_file ); 
   se->registerInputManager(in);
      
   //Enable::BBC = true;
@@ -91,7 +77,8 @@ void Fun4All_Intt_RecoCluster( )
 
   inttdecode->LoadHotChannelMapLocal( cdb_hot_list );
 
-  //inttdecode->SetCalibBCO( cdb_bco, InttCombinedRawDataDecoder::FILE);
+  if( run_num == 50377 ) // BCO diff selection to get only hits from triggered collision
+    inttdecode->SetCalibBCO( cdb_bco, InttCombinedRawDataDecoder::FILE); 
 
   //inttdecode->SetCalibDAC("CDBTTree_INTT_DACMAP.root", InttCombinedRawDataDecoder::FILE);
   inttdecode->SetCalibDAC( cdbtree_name_dac, InttCombinedRawDataDecoder::FILE ); // not InttCombinedRawDataDecoder::CDB
@@ -100,7 +87,6 @@ void Fun4All_Intt_RecoCluster( )
   
   //////////////////////////////////////
   //Intt_Cells();
-  //Intt_Clustering( is_z_clustering );
   Intt_Clustering();
 
   //output
@@ -116,5 +102,4 @@ void Fun4All_Intt_RecoCluster( )
   cout << "Output: " << output_dst << endl;
 
   delete se;
-
 }
