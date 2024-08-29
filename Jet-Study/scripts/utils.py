@@ -86,7 +86,7 @@ def create_f4a_jobs():
             i += 1
 
     for x in arr:
-        print(x)
+        print(x[:-4])
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
