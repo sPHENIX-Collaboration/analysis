@@ -22,41 +22,35 @@ void HowToUse()
   return;
 }
 
-string GetDataPath( int run, int mode, bool is_official )
+string GetDataPath( int run, int mode  )
 {
   string data = "/sphenix/u/nukazuka/INTT/QA/raw_hit/2024/root/InttRawHitQA_run000";
+  //data = "/sphenix/u/nukazuka/INTT/QA/trkr_hit/2024/root/InttTrkrHitQA_run000";
   if( mode == 1 )
-    data = "/sphenix/u/nukazuka/INTT/QA/trkr_hit/2024/root/InttTrkrHitQA_run000";
+    data = "./results/InttHitCorrelation_run000";
   else if( mode == 2 )
-    data = "";
+    data = "./results/InttClusterCorrelation_run000";
   else if( mode == 3 )
     data = "";
-  
-  data += to_string( run );
-  if( is_official == true )
-    data += "_official.root";
-  else
-    data += "_special.root";
+  data += to_string( run ) + ".root";
 
   return data;
 }
 
-string GetOutputPath( int run, int mode, bool is_official, string suffix = ".pdf", bool is_preliminary = false )
+string GetOutputPath( int run, int mode, string suffix = ".pdf", bool is_preliminary = false )
 {
-  string output = "results/hit_num_correlation_";
+  string output = "results/correlation_";
 
   if( mode == 0 )
     output += "InttRaw_";
   else if( mode == 1 )
-    output += "TrkrHit_";
+    output += "hit_";
   else if( mode == 2 )
-    output += "TrkrCluster_";
+    output += "cluster_";
   else if( mode == 3 )
-    output += "TrkrCluster_tracklet_";
+    output += "cluster_tracklet_";
   
   output += "000" + to_string( run );
-  if( is_official == false )
-    output += "_special";
 
   if( is_preliminary == false )
     output += "_internal";
@@ -67,17 +61,17 @@ string GetOutputPath( int run, int mode, bool is_official, string suffix = ".pdf
   return output;
 }
 
-int correlation_analysis( int run = 50377, int mode = 0, bool is_official = true, bool is_preliminary = false )
+int correlation_analysis( int run = 50889, int mode = 1, bool is_preliminary = false )
 {
   if( run == 9999 )
     {
-      int runs[3] = { 50377, 49737, 49743 };
+      //      int runs[3] = { 50377, 49737, 49743 };
+      int runs[3] = { 50377, 49737, 50889 }; // trigger, extended, streaming
       for( int i=0; i<3; i++ ) // run
-	for( int j=0; j<4; j++ ) // mode
+	for( int j=1; j<4; j++ ) // mode (raw hit, hit w/o hot, cluster, cluster associated to tracklet
 	  for( int k=0; k<2; k++ )
 	    correlation_analysis( runs[i],              // run
 				  j,                    // mode
-				  true,                 // is_official
 				  (k==0 ? true : false) // internal or preliminary
 				  );
     }
@@ -88,14 +82,8 @@ int correlation_analysis( int run = 50377, int mode = 0, bool is_official = true
       return 0;
     }
 
-  if( mode == 2 )
-    {
-      cerr << "mode 2 is not ready" << endl;
-      return 0;
-    }
-  
   SetsPhenixStyle();
-  string data = GetDataPath( run, mode, is_official );
+  string data = GetDataPath( run, mode );
   cout << data << endl;
   
   TFile* tf = new TFile( data.c_str(), "READ" );
@@ -107,9 +95,9 @@ int correlation_analysis( int run = 50377, int mode = 0, bool is_official = true
   
   TCanvas* c = new TCanvas( "canvas", "title", 800, 800 );
   TH2D* hist = (TH2D*)tf->Get( "inner_outer_barrels" );
-  DrawHitNumCorrelation( c, hist, mode, is_preliminary );
+  DrawHitNumCorrelation( c, hist, run, mode, is_preliminary );
   
-  string output = GetOutputPath( run, mode, is_official, ".pdf", is_preliminary );
+  string output = GetOutputPath( run, mode, ".pdf", is_preliminary );
   c->Print( output.c_str() );
 
   cout << "Output: " << output << endl;
