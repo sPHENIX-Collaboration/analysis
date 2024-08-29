@@ -9,21 +9,26 @@ private:
   
   int sigma_ = 3;
   int nloop_ = 60;
-
+  int page_num_limit_ = 200;
+  int good_counter_ = 0;
+  
   bool is_geant_ = false;
   //bool does_reverse_ = false;
 
   /////////////////////////////////////////////////////////////////////////
   // Variables/Objects for I/O                                           //
   /////////////////////////////////////////////////////////////////////////
-  string data_dir_ = "/sphenix/u/nukazuka/work_now/analysis/tracking/hinakos/work/F4AInttRead/macro/results/";
+  //  string data_dir_ = "/sphenix/u/nukazuka/work_now/analysis/tracking/hinakos/work/F4AInttRead/macro/results/";
+  string data_dir_ = "./results/";
   string fname_input_; 
   
   string dir_output_ = "results/tracking/";
   TString fname_output_;
   TFile *f_input_;
   TFile *f_output_; 
-
+  string output_pdf_ = "";
+  string output_good_pdf_ = "";
+  
   /////////////////////////////////////////////////////////////////////////
   // Histograms                                                          //
   /////////////////////////////////////////////////////////////////////////
@@ -181,7 +186,8 @@ private:
   void InitOutput();
   void InitHist();
   void InitTree();
-
+  void InitCanvas();
+  
   void ResetVariables();
   //void Reset();
   void ResetTempTreeVariables();
@@ -194,9 +200,13 @@ private:
   void ProcessEvent_Draw( clustEvent event );
   void EndProcess();
 public:
-  Analysis(int run_no = 41981, bool mag_on = true, bool debug = false );
+  Analysis(int run_no = 50889, bool mag_on = true, bool debug = false );
 
   void Begin();
+
+  void SetPageNumLimit( int val ){ page_num_limit_ = val; };
 };
 
+#ifndef Analysis_cc
 #include "Analysis.cc"
+#endif

@@ -36,9 +36,10 @@
 #include <ffarawobjects/InttRawHit.h>
 #include <ffarawobjects/InttRawHitContainer.h>
 
-#include "inttxyvertexfinder/InttVertexMapv1.h"
-#include "inttxyvertexfinder/InttVertex3D.h"
-#include "inttxyvertexfinder/InttVertex3DMap.h"
+#include <inttxyvertexfinder/InttVertex.h>
+#include <inttxyvertexfinder/InttVertexMapv1.h>
+#include <inttxyvertexfinder/InttVertex3D.h>
+#include <inttxyvertexfinder/InttVertex3DMap.h>
 
 #include <globalvertex/SvtxVertex.h>
 #include <globalvertex/SvtxVertexMap.h>
@@ -64,6 +65,7 @@
 
 #include "InttEvent.h"
 #include "InttRawData.h"
+
 // truth
 //  To get vertex
 #include <globalvertex/GlobalVertexMap.h>
@@ -93,6 +95,12 @@ class TH2;
 class TNtuple;
 class TTree;
 class InttRawData;
+
+struct ClustInfo
+{
+  int layer;
+  Acts::Vector3 pos;
+};
 
 /// Definition of this analysis module class
 class InttAna : public SubsysReco
@@ -142,6 +150,9 @@ class InttAna : public SubsysReco
   /// SubsysReco event processing method
   int process_event(PHCompositeNode *);
 
+  /// Clean up internals after each event.
+  int ResetEvent(PHCompositeNode *topNode) override;
+
   /// SubsysReco end processing method
   int End(PHCompositeNode *);
 
@@ -150,7 +161,6 @@ class InttAna : public SubsysReco
   // void getPHG4Particle(PHCompositeNode *);
   void getHEPMCTruth(PHCompositeNode *topNode);
   void getPHG4Particle(PHCompositeNode *topNode);
-
 
   void setInttRawData(InttRawData *rawModule) { _rawModule = rawModule; }
   void readRawHit(PHCompositeNode *);
@@ -189,7 +199,7 @@ class InttAna : public SubsysReco
   TH1* h_zvtxseed_;
   TTree *m_hepmctree;
 
-    /// HEPMC Tree variables
+  /// HEPMC Tree variables
   int m_evt=0;
   double m_xvtx;
   double m_yvtx;
@@ -213,8 +223,27 @@ class InttAna : public SubsysReco
   int m_numparticlesinevent;
   int m_truthpid;
   double m_vertex;
+  double vertex_[10][3]{ {-9999} };
+  TVector3* intt_vertex_pos_;
 
-
+  double mbdqn_ = 0;
+  double mbdqs_ = 0;
+  double mbdz_ = 0;
+  uint64_t bco_ = 0;
+  int evtseq_ = -1;
+  double vtx_sim_[3]{-9999, -9999, -9999};
+  int nclusmvtx_[3] = {0, 0, 0};
+  int nclusadd_ = 0;
+  int nclusadd2_ = 0;
+  int nclus_inner_ = 0;
+  int nclus_outer_ = 0;
+  int nemc_ = -9999;
+  int nemc1_ = -9999;
+  double zvtx_ = -9999;
+  static int evtCount;
+  static int ievt;
+  std::vector < ClustInfo > clusters_[2]; // inner=0; outer=1
+  
   void InitHists();
   void InitTrees();
   void InitTuples();
@@ -224,13 +253,33 @@ class InttAna : public SubsysReco
   PHHepMCGenEventMap *hepmceventmap;
   PHG4InEvent *phg4inevent;
   TrkrClusterContainer *m_clusterMap;
-  GlobalVertexMap *vertexs;
+  GlobalVertexMap *vertices;
   InttEventInfo *inttevthead;
   SvtxVertexMap *svtxvertexmap;
   MbdOut *mbdout;
   SvtxVertex *svtxvertex;
-
+  InttVertex3DMap *inttvertexmap;
+  InttVertexMap *intt_vertex_map;
+  SvtxTrackMap *svtxtrackmap;
   
+  Gl1RawHit *gl1raw_;
+  InttRawHit *inttraw_;
+  InttVertex3D *zvtxobj_;
+  
+  int process_event_gl1(PHCompositeNode *topNode );
+
+  int process_event_mbd(PHCompositeNode *topNode );
+  int process_event_global_vertex(PHCompositeNode *topNode );
+  int process_event_svtx_vertex(PHCompositeNode *topNode );
+  
+  int process_event_intt_raw(PHCompositeNode *topNode );
+  int process_event_intt_vertex(PHCompositeNode *topNode );
+  int process_event_intt_cluster(PHCompositeNode *topNode );
+  int process_event_intt_cluster_pair(PHCompositeNode *topNode );
+  int process_event_mvtx(PHCompositeNode *topNode );
+  int process_event_emcal(PHCompositeNode *topNode );
+  int process_event_fill(PHCompositeNode *topNode );
+
 };
 
 #endif

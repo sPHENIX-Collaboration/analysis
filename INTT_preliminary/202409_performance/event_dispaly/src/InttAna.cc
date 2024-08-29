@@ -2,6 +2,8 @@
 
 using namespace std;
 
+int InttAna::evtCount = 0;
+int InttAna::ievt = 0;
 
 InttAna::InttAna(const std::string &name, const std::string &filename)
     : SubsysReco(name), _rawModule(nullptr), fname_(filename), anafile_(nullptr), h_zvtxseed_(nullptr)
@@ -20,7 +22,7 @@ int InttAna::Init(PHCompositeNode * /*topNode*/)
     std::cout << "Beginning Init in InttAna" << std::endl;
   }
 
-  anafile_	= new TFile( fname_.c_str(), "recreate");
+  anafile_ = new TFile( fname_.c_str(), "recreate");
 
   this->InitHists();
   this->InitTrees();
@@ -143,7 +145,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   hepmceventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
   if (!hepmceventmap)
   {
-    if( Verbosity() > 1 )
+    if( Verbosity() > 3 )
       {
 	cout << PHWHERE << "hepmceventmap node is missing." << endl;
     // return Fun4AllReturnCodes::ABORTEVENT;
@@ -154,7 +156,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   phg4inevent = findNode::getClass<PHG4InEvent>(topNode, "PHG4INEVENT");
   if (!phg4inevent)
     {
-      if( Verbosity() > 1 )
+      if( Verbosity() > 3 )
 	{
 	  cout << PHWHERE << "PHG4INEVENT node is missing." << endl;
 	  // return Fun4AllReturnCodes::ABORTEVENT;
@@ -172,129 +174,242 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   
-  vertexs =
-      findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  if (!vertexs)
+  inttevthead = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
+  
+  
+  gl1raw_ = findNode::getClass<Gl1RawHit>(topNode, "GL1RAWHIT");  
+  if( !gl1raw_ )
   {
-    if( Verbosity() > 1 )
+    if( Verbosity() > 3 )
+      {
+	cerr << "No Gl1Raw" << endl;
+      }
+    
+  }
+
+  mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
+  if (!mbdout)
+  {
+    if( Verbosity() > 3 )
+      {
+	cout << "MbdOut node is missing." << endl;
+      }    
+  }
+
+  vertices =
+      findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertices)
+  {
+    if( Verbosity() > 3 )
       {
 	cout << PHWHERE << "GlobalVertexMap node is missing." << endl;
       }
     // return Fun4AllReturnCodes::ABORTEVENT;
   }
   
-  inttevthead = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
-  
+
   svtxvertexmap = findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
   if( !svtxvertexmap )
     {
-      if( Verbosity() > 1 )
+      if( Verbosity() > 3 )
 	{
 	  cout << PHWHERE << "SvtxVertexMap node is missing." << endl;
 	}
     }
-  
-  svtxvertex = nullptr;
-  if (svtxvertexmap)
-  {
-    if( Verbosity() > 2 )
-      {
-	cout << "svtxvertex: size : " << svtxvertexmap->size() << endl;
-      }
-    
-    for (SvtxVertexMap::ConstIter iter = svtxvertexmap->begin(); iter != svtxvertexmap->end(); ++iter)
-      {
-	svtxvertex = iter->second;
-	if( Verbosity() > 2 )
-	  {
-	    std::cout << std::endl
-		      << "SvtxVertex"
-		      << " " << svtxvertex->get_x()
-		      << " " << svtxvertex->get_y()
-		      << " " << svtxvertex->get_z()
-		      << " " << svtxvertex->get_id() << endl;
-	  }
-	
-      }
-  }
 
+  inttvertexmap = findNode::getClass<InttVertex3DMap>(topNode, "InttVertexMap");
+  if( !inttvertexmap )
+    {
+      if( Verbosity() > 1 )
+	{
+	  cout << PHWHERE  << "InttVertex3DMap node is missing." << endl;
+	}
+      
+      //return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
-  mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
-  if (!mbdout)
-  {
-    if( Verbosity() > 1 )
-      {
-	cout << "MbdOut node is missing." << endl;
-      }    
-  }
+  intt_vertex_map = findNode::getClass<InttVertexMapv1>(topNode, "InttVertexMap");
+  if( !intt_vertex_map )
+    {
+      if( Verbosity() > 1 )
+	{
+	  cout << PHWHERE  << "InttVertexMap node is missing." << endl;
+	}
+      
+    }
 
+  /////////////
+  // SvtxTrack
+  svtxtrackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
 
-  
   return Fun4AllReturnCodes::EVENT_OK;
 } // end of int InttAna::GetNodes(PHCompositeNode *topNode)
 
 int InttAna::process_event(PHCompositeNode *topNode)
 {
-  static int ievt = 0;
-  if( Verbosity() > 3 )
+  
+  if( Verbosity() > 2 )
     {
       cout << "InttEvt::process evt : " << ievt++ << endl;
     }
   
   // readRawHit(topNode);
-  this->GetNodes( topNode );
+  this->GetNodes( topNode );    
+  // this->process_event_gl1( topNode );
+  // this->process_event_mbd( topNode );
+  // this->process_event_global_vertex( topNode );
+  // this->process_event_svtx_vertex( topNode );
   
-  double vtx_sim[3]{-9999, -9999, -9999};
-
-  std::map<GlobalVertex::VTXTYPE, std::string> sourcemap{
-      {GlobalVertex::VTXTYPE::UNDEFINED, "UNDEFINED"},
-      {GlobalVertex::VTXTYPE::TRUTH, "TRUTH"},
-      {GlobalVertex::VTXTYPE::SMEARED, "SMEARED"},
-      {GlobalVertex::VTXTYPE::MBD, "MBD"},
-      {GlobalVertex::VTXTYPE::SVTX, "SVTX"},
-      {GlobalVertex::VTXTYPE::SVTX_MBD, "SVTX_MBD"}};
-  //   enum VTXTYPE
-  std::string s_vtxid = "NULL";
-
-  if (vertexs)
-  {
-    if (!vertexs->empty())
+  if( Verbosity() > 3 )
     {
-
-      for (auto vertex : *vertexs)
-      {
-        if( Verbosity() > 2 )
-	  {
-	    std::cout << "map entry" << std::endl;
-	  }
-	
-        std::map<GlobalVertex::VTXTYPE, std::string>::iterator itr_src;
-        itr_src = sourcemap.find((GlobalVertex::VTXTYPE)vertex.first);
-        if (itr_src != sourcemap.end())
-        {
-          s_vtxid = itr_src->second;
-        }
-
-        if (vertex.first == GlobalVertex::VTXTYPE::TRUTH)
-        {
-          vtx_sim[0] = vertex.second->get_x();
-          vtx_sim[1] = vertex.second->get_y();
-          vtx_sim[2] = vertex.second->get_z();
-        }
-
-        if( Verbosity() > 2 )
-	  {
-	    std::cout << std::endl
-		      << "A " << vertex.second->get_x()
-		      << " " << vertex.second->get_y()
-		      << " " << vertex.second->get_z()
-		      << " " << vertex.second->get_id()
-		      << " " << s_vtxid << std::endl;
-	  }
-	
-      }
+      cout << "bco 0x" << hex << bco_ << dec << endl;
     }
+  
+  this->process_event_intt_raw( topNode );
+  this->process_event_intt_vertex( topNode ); // bco_ is overwritten, this should be before process_event_intt_cluster because intt_vertex_pos_ is needed in the function
+  this->process_event_intt_cluster( topNode );
+  this->process_event_intt_cluster_pair( topNode );
+  // this->process_event_mvtx( topNode );
+  // this->process_event_emcal( topNode );
+  
+  // fill evtbco_info
+  m_evtbcoinfo.clear();
+  m_evtbcoinfo.evt_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->getEvtSequence()     : -1;
+  m_evtbcoinfo.evt_intt = (inttraw_ != nullptr)    ? inttraw_->get_event_counter() : -1;
+  m_evtbcoinfo.evt_mbd  = (mbdout   != nullptr)    ? mbdout->get_evt()             : -1;
+  m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->get_bco()            : 0;
+  m_evtbcoinfo.bco_intt = (inttevthead != nullptr) ? inttevthead->get_bco_full()   : 0;
+  m_evtbcoinfo.bco_mbd  = (mbdout   != nullptr)    ? mbdout->get_femclock()        : 0;
+
+  if( Verbosity() > 2 )
+    {
+      cout << "event : " << m_evtbcoinfo.evt_gl1 << " "
+       << m_evtbcoinfo.evt_intt << " "
+       << m_evtbcoinfo.evt_mbd << " :  "
+       << hex << m_evtbcoinfo.bco_gl1 << dec << " "
+       << hex << m_evtbcoinfo.bco_intt << dec << " "
+       << hex << m_evtbcoinfo.bco_mbd << dec << " : "
+       << hex << m_evtbcoinfo.bco_gl1 - m_evtbcoinfo_prev.bco_gl1 << dec << " "
+       << hex << m_evtbcoinfo.bco_intt - m_evtbcoinfo_prev.bco_intt << dec << " "
+       << hex << m_evtbcoinfo.bco_mbd - m_evtbcoinfo_prev.bco_mbd << dec << endl;
+    }
+    
+
+  /////////////
+  if( Verbosity() > 2 )
+    {
+      cout << "evtCount : " << evtCount << " " << evtseq_ << " " << hex << bco_ << dec << endl;
+    }
+  
+  this->process_event_fill( topNode );
+  m_evtbcoinfo_prev.copy(m_evtbcoinfo);
+
+  evtCount++;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int InttAna::ResetEvent(PHCompositeNode *topNode)
+{
+
+  for( int i=0; i<10; i++ )
+    for( int j=0; j<3; j++ )
+      vertex_[i][j] = -9999;
+
+  for( int i=0; i<3; i++ )
+    {
+      vtx_sim_[i] = -9999;
+      nclusmvtx_[i] = 0;
+    }
+
+  // double 
+  mbdqn_ = mbdqs_ = mbdz_ = 0;
+  zvtx_
+    = m_xvtx = m_yvtx = m_zvtx
+    = m_x1 = m_x2
+    = m_truthenergy = m_trutheta = m_truththeta = m_truthphi
+    = m_truthpx = m_truthpy = m_truthpz = m_truthpt
+    = m_truthp = m_vertex
+    = -9999.;
+  
+  // uint64
+  bco_ = 0;
+
+  // int
+  evtseq_ = -1;
+  nclusadd_ = nclusadd2_ = nclus_inner_ = nclus_outer_ = nemc_ = nemc1_
+    = m_partid1 = m_partid2 = m_mpi = m_process_id = m_status
+    = m_numparticlesinevent =  m_truthpid
+    = 0;
+
+  // vector
+  for( auto& cluster : clusters_ )
+    cluster.erase( cluster.begin(), cluster.end() );
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int InttAna::End(PHCompositeNode * /*topNode*/)
+{
+  if (Verbosity() > 1)
+  {
+    std::cout << "Ending InttAna analysis package" << std::endl;
   }
+
+  //  m_hepmctree->Write();
+
+  if (anafile_ != nullptr)
+  {
+    //anafile_->Write();
+    anafile_->WriteTObject( h_dca2d_zero, h_dca2d_zero->GetName() );
+    anafile_->WriteTObject( h2_dca2d_zero, h2_dca2d_zero->GetName() );
+    anafile_->WriteTObject( h2_dca2d_len, h2_dca2d_len->GetName() );
+    anafile_->WriteTObject( h_zvtx, h_zvtx->GetName() );
+    anafile_->WriteTObject( h_eta, h_eta->GetName() );
+    anafile_->WriteTObject( h_phi, h_phi->GetName() );
+    anafile_->WriteTObject( h_theta, h_theta->GetName() );
+
+    anafile_->WriteTObject( h_ntp_clus, h_ntp_clus->GetName() );
+    //    anafile_->WriteTObject( h_ntp_emcclus, h_ntp_emcclus->GetName() );
+    anafile_->WriteTObject( h_ntp_cluspair, h_ntp_cluspair->GetName() );
+    //    anafile_->WriteTObject( h_ntp_emccluspair, h_ntp_emccluspair->GetName() );
+    anafile_->WriteTObject( h_ntp_evt, h_ntp_evt->GetName() );
+    anafile_->WriteTObject( h_zvtxseed_, h_zvtxseed_->GetName() );
+    anafile_->WriteTObject( h_t_evt_bco, h_t_evt_bco->GetName() );
+    anafile_->WriteTObject( m_hepmctree, m_hepmctree->GetName() );
+    
+    anafile_->Close();
+  }
+
+  return 0;
+}
+
+int InttAna::process_event_gl1(PHCompositeNode *topNode )
+{
+
+  if (gl1raw_)
+  {
+    bco_ = gl1raw_->get_bco();
+    evtseq_ = gl1raw_->getEvtSequence();
+  }
+
+  return 0;
+}
+
+int InttAna::process_event_mbd(PHCompositeNode *topNode )
+{
+  if( !mbdout )
+    return 0;
+
+  mbdqs_ = (mbdout != nullptr) ? mbdout->get_q(0) : -9999;
+  mbdqn_ = (mbdout != nullptr) ? mbdout->get_q(1) : -9999;
+  //  double mbdt0 = (mbdout!=nullptr) ?  mbdout->get_t0() : -9999;
+  mbdz_ = (mbdout != nullptr) ? mbdout->get_zvtx() : -9999;
+  
+  if( mbdout != nullptr && mbdout->isValid() )
+    {
+      vtx_sim_[2] = mbdout->get_zvtx();
+    }
   
   /*
     MbdVertexMap *mbdvertexmap = findNode::getClass<MbdVertexMap>(topNode, "MbdVertexMap");
@@ -330,29 +445,126 @@ int InttAna::process_event(PHCompositeNode *topNode)
 	}
   */
   
-  
-  
-  double mbdqs = (mbdout != nullptr) ? mbdout->get_q(0) : -9999;
-  double mbdqn = (mbdout != nullptr) ? mbdout->get_q(1) : -9999;
-  //  double mbdt0 = (mbdout!=nullptr) ?  mbdout->get_t0() : -9999;
-  double mbdz = (mbdout != nullptr) ? mbdout->get_zvtx() : -9999;
-  if( mbdout != nullptr && mbdout->isValid() )
+  return 0;
+}
+
+
+int InttAna::process_event_global_vertex(PHCompositeNode *topNode )
+{
+
+  if( vertices )
+    return 0;
+
+  std::map < GlobalVertex::VTXTYPE, std::string > sourcemap
     {
-      vtx_sim[2] = mbdout->get_zvtx();
-    }
+      { GlobalVertex::VTXTYPE::UNDEFINED, "UNDEFINED" },
+      { GlobalVertex::VTXTYPE::TRUTH,     "TRUTH"     },
+      { GlobalVertex::VTXTYPE::SMEARED,   "SMEARED"   },
+      { GlobalVertex::VTXTYPE::MBD,       "MBD"       },
+      { GlobalVertex::VTXTYPE::SVTX,      "SVTX"      },
+      { GlobalVertex::VTXTYPE::SVTX_MBD,  "SVTX_MBD"  }
+    };
   
-  Gl1RawHit *gl1raw = findNode::getClass<Gl1RawHit>(topNode, "GL1RAWHIT");
-  if (!gl1raw)
+  //   enum VTXTYPE
+  std::string s_vtxid = "NULL";
+
+  if (vertices)
   {
-    if( Verbosity() > 1 )
+    if (!vertices->empty())
+    {
+
+      for (auto vertex : *vertices)
       {
-	cout << "No Gl1Raw" << endl;
+        if( Verbosity() > 2 )
+	  {
+	    std::cout << "map entry" << std::endl;
+	  }
+	
+        std::map<GlobalVertex::VTXTYPE, std::string>::iterator itr_src;
+        itr_src = sourcemap.find((GlobalVertex::VTXTYPE)vertex.first);
+        if (itr_src != sourcemap.end())
+        {
+          s_vtxid = itr_src->second;
+        }
+
+        if (vertex.first == GlobalVertex::VTXTYPE::TRUTH)
+        {
+          vtx_sim_[0] = vertex.second->get_x();
+          vtx_sim_[1] = vertex.second->get_y();
+          vtx_sim_[2] = vertex.second->get_z();
+        }
+
+        if( Verbosity() > 2 )
+	  {
+	    std::cout << std::endl
+		      << "A " << vertex.second->get_x()
+		      << " " << vertex.second->get_y()
+		      << " " << vertex.second->get_z()
+		      << " " << vertex.second->get_id()
+		      << " " << s_vtxid << std::endl;
+	  }
+	
       }
-    
+    }
   }
 
+
+  if (hepmceventmap != nullptr || phg4inevent != nullptr)
+  {
+    xvtx_sim = vertices->find(GlobalVertex::TRUTH)->second->get_x();
+    yvtx_sim = vertices->find(GlobalVertex::TRUTH)->second->get_y();
+    zvtx_sim = vertices->find(GlobalVertex::TRUTH)->second->get_z();
+    
+    // TODO:
+    if (hepmceventmap != nullptr)
+      getHEPMCTruth(topNode);
+    else if (phg4inevent != nullptr)
+      getPHG4Particle(topNode);
+  }
+  
+  
+  return 0;
+}
+
+int InttAna::process_event_svtx_vertex(PHCompositeNode *topNode )
+{
+
+  svtxvertex = nullptr;
+  if( svtxvertexmap )
+  {
+    if( Verbosity() > 3 )
+      {
+	cout << "svtxvertex: size : " << svtxvertexmap->size() << endl;
+      }
+    
+    for (SvtxVertexMap::ConstIter iter = svtxvertexmap->begin(); iter != svtxvertexmap->end(); ++iter)
+      {
+	svtxvertex = iter->second;
+	if( Verbosity() > 2 )
+	  {
+	    std::cout << std::endl
+		      << "SvtxVertex"
+		      << " " << svtxvertex->get_x()
+		      << " " << svtxvertex->get_y()
+		      << " " << svtxvertex->get_z()
+		      << " " << svtxvertex->get_id() << endl;
+	  }
+	
+      }
+  }
+
+  return 0;
+}
+
+
+int InttAna::process_event_intt_raw(PHCompositeNode *topNode )
+{
+
   InttRawHitContainer *inttrawmap = findNode::getClass<InttRawHitContainer>(topNode, "INTTRAWHIT");
-  InttRawHit *inttraw = (inttrawmap != nullptr && inttrawmap->get_nhits() > 0) ? inttrawmap->get_hit(0) : nullptr;
+  inttraw_ = (inttrawmap != nullptr && inttrawmap->get_nhits() > 0) ? inttrawmap->get_hit(0) : nullptr;
+
+  //cout << "#INTT raw hit: " << inttrawmap->get_nhits() << endl;
+  
   /////////////
   //  InttEvent from RawModule (not standard way)
   InttEvent *inttEvt = nullptr;
@@ -360,308 +572,65 @@ int InttAna::process_event(PHCompositeNode *topNode)
   {
     inttEvt = _rawModule->getInttEvent();
   }
-  uint64_t bco = 0;
-  int evtseq = -1;
+  
+  bco_ = 0;
+  evtseq_ = -1;
+  
   if (inttEvt != NULL)
   {
-    bco = inttEvt->bco;
-    evtseq = inttEvt->evtSeq;
-  }
-
-  if (hepmceventmap != nullptr || phg4inevent != nullptr)
-  {
-    xvtx_sim = vertexs->find(GlobalVertex::TRUTH)->second->get_x();
-    yvtx_sim = vertexs->find(GlobalVertex::TRUTH)->second->get_y();
-    zvtx_sim = vertexs->find(GlobalVertex::TRUTH)->second->get_z();
-
-    // TODO:
-    if (hepmceventmap != nullptr)
-      getHEPMCTruth(topNode);
-    else if (phg4inevent != nullptr)
-      getPHG4Particle(topNode);
+    bco_ = inttEvt->bco;
+    evtseq_ = inttEvt->evtSeq;
   }
 
   if (inttevthead)
   {
-    bco = inttevthead->get_bco_full();
+    bco_ = inttevthead->get_bco_full();
     // evtseq = inttEvt->evtSeq;
   }
 
-  if( Verbosity() > 2 )
-    {
-      cout << "bco 0x" << hex << bco << dec << endl;
-    }
-  
-  if (gl1raw)
-  {
-    bco = gl1raw->get_bco();
-    evtseq = gl1raw->getEvtSequence();
-  }
+  return 0;
+}
 
-  double vertex[10][3]{ {-9999} };
+int InttAna::process_event_intt_cluster(PHCompositeNode *topNode )
+{
 
-  InttVertex3DMap *inttvertexmap = findNode::getClass<InttVertex3DMap>(topNode, "InttVertexMap");
-  if( !inttvertexmap )
-    {
-      if( Verbosity() > 1 )
-	{
-	  cout << PHWHERE  << "InttVertex3DMap node is missing." << endl;
-	}
-      
-      //return Fun4AllReturnCodes::ABORTEVENT;
-    }
-
-  TVector3* intt_vertex_pos = new TVector3();
-
-  InttVertexMap *intt_vertex_map = findNode::getClass<InttVertexMapv1>(topNode, "InttVertexMap");
-  if( !intt_vertex_map )
-    {
-      if( Verbosity() > 1 )
-	{
-	  cout << PHWHERE  << "InttVertexMap node is missing." << endl;
-	}
-      
-    }
-  else
-    {
-      if( Verbosity() > 2 )
-	{
-	  cout << "#vertex from InttVertexMapV1: " << intt_vertex_map->size() << endl;
-	  intt_vertex_map->identify();
-	}
-      
-      InttVertexMap::ConstIter iter_begin = intt_vertex_map->begin();
-      InttVertexMap::ConstIter iter_end = intt_vertex_map->end();
-      for( auto iter=iter_begin; iter!= iter_end; iter++ )
-	{
-	  InttVertex* intt_vertex = (*iter).second;
-	  if( Verbosity() > 2 )
-	    {
-	      cout << intt_vertex->isValid() << "\t"
-		   << "( "
-		   << setw(8) << setprecision(5) << intt_vertex->get_x() << ", "
-		   << setw(8) << setprecision(5) << intt_vertex->get_y() << ", "
-		   << setw(8) << setprecision(5) << intt_vertex->get_z()
-		   << " )"
-		   << endl;
-	    }
-	  
-	  if( iter == iter_begin )
-	    {
-	      intt_vertex_pos->SetXYZ( intt_vertex->get_x(), 
-				       intt_vertex->get_y(),
-				       intt_vertex->get_z() );
-	    }
-	}
-      
-    }
-
-  InttVertex3D *zvtxobj = NULL;
-  if( inttvertexmap )
-    {
-      int ivtx = 0;
-      if( Verbosity() > 2 )
-	{
-	  cout << "vertex map size : " << inttvertexmap->size() << endl;
-	}
-      
-      InttVertex3DMap::ConstIter biter_beg = inttvertexmap->begin();
-      InttVertex3DMap::ConstIter biter_end = inttvertexmap->end();
-      // cout<<"vertex map size : after size "<<endl;
-      // inttvertexmap->identify();
-      
-      for (InttVertex3DMap::ConstIter biter = biter_beg; biter != biter_end; ++biter)
-	{
-	  InttVertex3D *vtxobj = biter->second;
-	  if (vtxobj)
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "vtxobj" << ivtx << endl;
-		}
-	      
-	      vtxobj->identify();
-	      vertex[ivtx][0] = vtxobj->get_x();
-	      vertex[ivtx][1] = vtxobj->get_y();
-	      vertex[ivtx][2] = vtxobj->get_z();
-	      if (ivtx == 2)
-		{
-		  zvtxobj = vtxobj;
-		}
-	    }
-	  else
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "no vtx object : " << ivtx << endl;
-		}
-	    }
-	  ivtx++;
-	  if (ivtx >= 10)
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "n_vertex exceeded : " << ivtx << endl;
-		}
-	      
-	      break;
-	    }
-	}
-    }
-  else
-    {
-      // zvtxobj = new InttVertex3D(); // impossible as constructor protected
-    }
-  
-  
-  ////
-  // fill evtbco_info
-  m_evtbcoinfo.clear();
-  m_evtbcoinfo.evt_gl1 = (gl1raw != nullptr) ? gl1raw->getEvtSequence() : -1;
-  m_evtbcoinfo.evt_intt = (inttraw != nullptr) ? inttraw->get_event_counter() : -1;
-  m_evtbcoinfo.evt_mbd = (mbdout != nullptr) ? mbdout->get_evt() : -1;
-  m_evtbcoinfo.bco_gl1 = (gl1raw != nullptr) ? gl1raw->get_bco() : 0;
-  m_evtbcoinfo.bco_intt = (inttevthead != nullptr) ? inttevthead->get_bco_full() : 0;
-  m_evtbcoinfo.bco_mbd = (mbdout != nullptr) ? mbdout->get_femclock() : 0;
-
-  if( Verbosity() > 2 )
-    {
-      cout << "event : " << m_evtbcoinfo.evt_gl1 << " "
-       << m_evtbcoinfo.evt_intt << " "
-       << m_evtbcoinfo.evt_mbd << " :  "
-       << hex << m_evtbcoinfo.bco_gl1 << dec << " "
-       << hex << m_evtbcoinfo.bco_intt << dec << " "
-       << hex << m_evtbcoinfo.bco_mbd << dec << " : "
-       << hex << m_evtbcoinfo.bco_gl1 - m_evtbcoinfo_prev.bco_gl1 << dec << " "
-       << hex << m_evtbcoinfo.bco_intt - m_evtbcoinfo_prev.bco_intt << dec << " "
-       << hex << m_evtbcoinfo.bco_mbd - m_evtbcoinfo_prev.bco_mbd << dec << endl;
-    }
-  
-  /////////////
-  int nclusadd = 0, nclusadd2 = 0;
-  int nclus_inner = 0, nclus_outer = 0;
-  for (unsigned int inttlayer = 0; inttlayer < 4; inttlayer++)
-  {
-    for (const auto &hitsetkey : m_clusterMap->getHitSetKeys(TrkrDefs::TrkrId::inttId, inttlayer + 3))
-    {
-      auto range = m_clusterMap->getClusters(hitsetkey);
-
-      for (auto clusIter = range.first; clusIter != range.second; ++clusIter)
-      {
-        nclusadd++;
-        const auto cluster = clusIter->second;
-        if (cluster->getAdc() > 40)
-          nclusadd2++;
-
-        if (inttlayer < 2)
-          nclus_inner++;
-        else
-          nclus_outer++;
-      }
-    }
-  }
-
-  /////////////
-  // MVTX cluster
-  std::set<TrkrDefs::TrkrId> detectors;
-  detectors.insert(TrkrDefs::TrkrId::mvtxId);
-  int nclusmvtx[3] = {0, 0, 0};
-  for (const auto &det : detectors)
-  {
-    for (const auto &layer : {0, 1, 2})
-    {
-      for (const auto &hitsetkey : m_clusterMap->getHitSetKeys(det, layer))
-      {
-        auto range = m_clusterMap->getClusters(hitsetkey);
-        for (auto citer = range.first; citer != range.second; ++citer)
-        {
-          // const auto ckey = citer->first;
-          // const auto cluster = citer->second;
-          // const auto global = m_tGeometry->getGlobalPosition(ckey, cluster);
-          nclusmvtx[layer]++;
-        }
-      }
-    }
-  }
-
-  /////////////
-  // SvtxTrack
-  SvtxTrackMap *svtxtrackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
-
-  /////////////
-  // EMC Cluster
-  //RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_POS_COR_CEMC");
-  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
-  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
-  int nemc = -9999, nemc1 = -9999;
-  // if (!clusterContainer)
-  // {
-  //   std::cout << PHWHERE << "InttAna::process_event - Fatal Error - CLUSTER_POS_COR_CEMC node is missing. " << std::endl;
-  // }
-  // else
-  // {
-  //   float ntpval_emccls[20];
-  //   // This is how we iterate over items in the container.
-  //   RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
-  //   RawClusterContainer::ConstIterator clusterIter;
-
-  //   nemc = clusterContainer->size();
-  //   nemc1 = 0;
-
-  //   for (clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
-  //   {
-  //     RawCluster *recoCluster = clusterIter->second;
-
-  //     ntpval_emccls[0] = nemc;
-  //     ntpval_emccls[1] = evtseq;
-  //     ntpval_emccls[2] = recoCluster->get_x();
-  //     ntpval_emccls[3] = recoCluster->get_y();
-  //     ntpval_emccls[4] = recoCluster->get_z();
-  //     ntpval_emccls[5] = recoCluster->get_energy();
-  //     ntpval_emccls[6] = recoCluster->get_ecore();
-  //     ntpval_emccls[7] = recoCluster->getNTowers();
-
-  //     h_ntp_emcclus->Fill(ntpval_emccls);
-
-  //     if (recoCluster->get_ecore() > 0.15)
-  //       nemc1++;
-  //   }
-  // }
-
-  /////////////
-  static int evtCount = 0;
-
-  if( Verbosity() > 2 )
-    {
-      cout << "evtCount : " << evtCount << " " << evtseq << " " << hex << bco << dec << endl;
-    }
-  
-  struct ClustInfo
-  {
-    int layer;
-    Acts::Vector3 pos;
-  };
-
+  ////////////////////////////////
+  // single cluster analysis    //
+  ////////////////////////////////
   float ntpval[20];
   int nCluster = 0;
   bool exceedNwrite = false;
-  // std::vector<Acts::Vector3> clusters[2]; // inner=0; outer=1
-  std::vector<ClustInfo> clusters[2]; // inner=0; outer=1
-  for (unsigned int inttlayer = 0; inttlayer < 4; inttlayer++)
+  // std::vector<Acts::Vector3> clusters_[2]; // inner=0; outer=1
+  
+  for( unsigned int inttlayer = 0; inttlayer < 4; inttlayer++ )
   {
+
     int layer = (inttlayer < 2 ? 0 : 1);
-    for (const auto &hitsetkey : m_clusterMap->getHitSetKeys(TrkrDefs::TrkrId::inttId, inttlayer + 3))
+    
+    for( const auto &hitsetkey : m_clusterMap->getHitSetKeys(TrkrDefs::TrkrId::inttId, inttlayer + 3) )
     {
+      
       auto range = m_clusterMap->getClusters(hitsetkey);
 
-      for (auto clusIter = range.first; clusIter != range.second; ++clusIter)
+      for( auto clusIter = range.first; clusIter != range.second; ++clusIter )
       {
+
+        nclusadd_++;
+
         const auto cluskey = clusIter->first;
         const auto cluster = clusIter->second;
 
-        int ladder_z = InttDefs::getLadderZId(cluskey);
+	if (cluster->getAdc() > 40)
+          nclusadd2_++;
+	
+        if (inttlayer < 2)
+          nclus_inner_++;
+        else
+          nclus_outer_++;
+
+        int ladder_z   = InttDefs::getLadderZId(cluskey);
         int ladder_phi = InttDefs::getLadderPhiId(cluskey);
-        int size = cluster->getSize();
+        int size       = cluster->getSize();
 
         // cout    <<cluster->getPosition(0)<<" "
         //         <<cluster->getPosition(1)<<" : "
@@ -673,10 +642,10 @@ int InttAna::process_event(PHCompositeNode *topNode)
         {
           if( Verbosity() > 1 )
 	    {
-	      cout << "xyz : " << globalPos.x() << " " << globalPos.y() << " " << globalPos.z() << " :  "
-               << cluster->getPosition(0) << " "
-               << cluster->getPosition(1) << " : "
-               << cluster->getAdc() << " " << size << " " << inttlayer << " " << ladder_z << " " << ladder_phi << endl;
+	      cout << "cluster xyz : " << globalPos.x() << " " << globalPos.y() << " " << globalPos.z() << " :  "
+		   << cluster->getPosition(0) << " "
+		   << cluster->getPosition(1) << " : "
+		   << cluster->getAdc() << " " << size << " " << inttlayer << " " << ladder_z << " " << ladder_phi << endl;
 	    }
 	  
         }
@@ -695,16 +664,16 @@ int InttAna::process_event(PHCompositeNode *topNode)
 
         ClustInfo info;
         info.layer = inttlayer;
-        info.pos = globalPos;
+        info.pos   = globalPos;
 
         // clusters[layer].push_back(globalPos);
-        clusters[layer].push_back(info);
+        clusters_[layer].push_back(info);
         nCluster++;
 
-        ntpval[0] = nclusadd;          // bco_full
-        ntpval[1] = nclusadd2;         // bco_full
-        ntpval[2] = bco;               // bco_full
-        ntpval[3] = evtseq;            // evtCount;
+        ntpval[0] = nclusadd_;          // bco_full
+        ntpval[1] = nclusadd2_;         // bco_full
+        ntpval[2] = bco_;               // bco_full
+        ntpval[3] = evtseq_;            // evtCount;
         ntpval[4] = size;              // size
         ntpval[5] = cluster->getAdc(); // size
         ntpval[6] = globalPos.x();
@@ -717,13 +686,13 @@ int InttAna::process_event(PHCompositeNode *topNode)
         ntpval[13] = cluster->getPosition(1);
         ntpval[14] = cluster->getPhiSize();
         ntpval[15] = cluster->getZSize();
-        ntpval[16] = vertex[2][2]; // zvtx;
+        ntpval[16] = vertex_[2][2]; // zvtx;
         // ntpval[17] = xvtx_sim;
         // ntpval[18] = yvtx_sim;
         // ntpval[19] = zvtx_sim;
-	ntpval[17] = intt_vertex_pos->X();
-	ntpval[18] = intt_vertex_pos->Y();
-	ntpval[19] = intt_vertex_pos->Z();
+	ntpval[17] = intt_vertex_pos_->X();
+	ntpval[18] = intt_vertex_pos_->Y();
+	ntpval[19] = intt_vertex_pos_->Z();
 
 	h_ntp_clus->Fill(ntpval);
         // = new TNtuple("ntp_clus", "Cluster Ntuple", "bco_full:evt:size:adc:x:y:z:lay:lad:sen");
@@ -731,13 +700,15 @@ int InttAna::process_event(PHCompositeNode *topNode)
     }
   }
 
-  if( Verbosity() > 2 )
-    {
-      cout << "nCluster : " << nCluster << endl;
-    }
-  
-  double zvtx = -9999.;
+  //  cout << "#INTT cluster: " << nclusadd_ << endl;
 
+  return 0;
+}
+
+int InttAna::process_event_intt_cluster_pair(PHCompositeNode *topNode )
+{
+
+  // cluster pair analysis
   struct cluspair
   {
     float p1_ang;
@@ -752,21 +723,22 @@ int InttAna::process_event(PHCompositeNode *topNode)
 
   vector<cluspair> vcluspair;
 
+  int nCluster = nclusadd_;
   if (nCluster < 300)
   // if(nCluster<500)
   {
-    if( Verbosity() > 2 )
-      {
-	cout << "#cluster " << nCluster << " is less than 300." << endl;
-      }
+    // if( Verbosity() > 2 )
+    //   {
+    // 	cout << "#cluster " << nCluster << " is less than 300." << endl;
+    //   }
     
     float ntpval2[20];
     Acts::Vector3 beamspot = Acts::Vector3(xbeam_, ybeam_, 0);
     vector<double> vz_array;
-    for (auto c1 = clusters[0].begin(); c1 != clusters[0].end(); ++c1) // inner
+    for (auto c1 = clusters_[0].begin(); c1 != clusters_[0].end(); ++c1) // inner
     {
 
-      for (auto c2 = clusters[1].begin(); c2 != clusters[1].end(); ++c2) // outer
+      for (auto c2 = clusters_[1].begin(); c2 != clusters_[1].end(); ++c2) // outer
       {
         Acts::Vector3 p1 = c1->pos - beamspot;
         Acts::Vector3 p2 = c2->pos - beamspot;
@@ -824,8 +796,8 @@ int InttAna::process_event(PHCompositeNode *topNode)
         h2_dca2d_len->Fill(dca_p0, len_p0);
         // cout<<"dca : "<<dca_p0<<endl;
         //
-        ntpval2[0] = nclusadd;
-        ntpval2[1] = nclusadd2;
+        ntpval2[0] = nclusadd_;
+        ntpval2[1] = nclusadd2_;
         ntpval2[2] = 0;
         ntpval2[3] = evtCount;
         ntpval2[4] = p1_ang;
@@ -840,7 +812,7 @@ int InttAna::process_event(PHCompositeNode *topNode)
         ntpval2[13] = vx;
         ntpval2[14] = vy;
         ntpval2[15] = vz;
-        ntpval2[16] = vertex[2][2]; // zvtx;
+        ntpval2[16] = vertex_[2][2]; // zvtx;
 
         if (evtCount < 10000)
           h_ntp_cluspair->Fill(ntpval2);
@@ -884,16 +856,16 @@ int InttAna::process_event(PHCompositeNode *topNode)
         }
       }
       if (zcount > 0)
-        zvtx = zsum / zcount;
+        zvtx_ = zsum / zcount;
 
       if( Verbosity() > 2 )
 	{
-	  cout << "ZVTX: " << zvtx << " " << zcenter << " " << zmean << " " << zrms << " " << zbin << endl;
+	  cout << "ZVTX: " << zvtx_ << " " << zcenter << " " << zmean << " " << zrms << " " << zbin << endl;
 	}
       
     }
 
-    h_zvtx->Fill(zvtx);
+    h_zvtx->Fill(zvtx_);
 
     // float ntpval_emcpair[20];
     // if (clusterContainer != nullptr)
@@ -911,14 +883,14 @@ int InttAna::process_event(PHCompositeNode *topNode)
     //     {
     //       RawCluster *recoCluster = clusterIter->second;
 
-    //       float the1 = atan2(clspair.p1_r, (clspair.p1_z - vertex[2][2]));
-    //       float the2 = atan2(clspair.p2_r, (clspair.p2_z - vertex[2][2]));
+    //       float the1 = atan2(clspair.p1_r, (clspair.p1_z - vertex_[2][2]));
+    //       float the2 = atan2(clspair.p2_r, (clspair.p2_z - vertex_[2][2]));
 
     //       Acts::Vector3 emcpos = Acts::Vector3(recoCluster->get_x(), recoCluster->get_y(), recoCluster->get_z());
     //       Acts::Vector3 emcposc = emcpos - beamspot;
     //       float ephi = atan2(emcposc.y(), emcposc.x());
     //       float er = sqrt(emcposc.x() * emcposc.x() + emcposc.y() * emcposc.y());
-    //       float ethe = atan2(er, emcposc.z() - vertex[2][2]);
+    //       float ethe = atan2(er, emcposc.z() - vertex_[2][2]);
 
     //       ntpval_emcpair[0] = nclusadd;
     //       ntpval_emcpair[1] = evtseq;
@@ -928,9 +900,9 @@ int InttAna::process_event(PHCompositeNode *topNode)
     //       ntpval_emcpair[5] = clspair.p2_z;
     //       ntpval_emcpair[6] = clspair.dca_p0;
     //       ntpval_emcpair[7] = clspair.len_p0;
-    //       ntpval_emcpair[8] = vertex[1][0];  // x-vertex
-    //       ntpval_emcpair[9] = vertex[1][1];  // y-vertex
-    //       ntpval_emcpair[10] = vertex[2][2]; // y-vertex
+    //       ntpval_emcpair[8] = vertex_[1][0];  // x-vertex
+    //       ntpval_emcpair[9] = vertex_[1][1];  // y-vertex
+    //       ntpval_emcpair[10] = vertex_[2][2]; // y-vertex
     //       ntpval_emcpair[11] = ephi;
     //       ntpval_emcpair[12] = recoCluster->get_z(); // EMCal
     //       ntpval_emcpair[13] = recoCluster->get_ecore();
@@ -944,6 +916,209 @@ int InttAna::process_event(PHCompositeNode *topNode)
     //   }
     // }
   }
+  
+  if( Verbosity() > 2 )
+    {
+      cout << "nCluster : " << nCluster << endl;
+    }
+  
+  return 0;
+}
+
+int InttAna::process_event_intt_vertex(PHCompositeNode *topNode )
+{
+
+  intt_vertex_pos_ = new TVector3();
+
+  if( intt_vertex_map )
+    {
+      if( Verbosity() > 2 )
+	{
+	  cout << "#vertex from InttVertexMapV1: " << intt_vertex_map->size() << endl;
+	  intt_vertex_map->identify();
+	}
+      
+      InttVertexMap::ConstIter iter_begin = intt_vertex_map->begin();
+      InttVertexMap::ConstIter iter_end = intt_vertex_map->end();
+
+      int ivtx = 0;
+      for( auto iter=iter_begin; iter!= iter_end; iter++, ivtx++ )
+	{
+	  if( ivtx >= 10 )
+	    {	      
+	      break;
+	    }
+	  
+	  InttVertex* intt_vertex = (*iter).second;
+	  //if( Verbosity() > 2 )
+	    {
+	      cout << endl << "INTT vertex map"
+		   << intt_vertex->isValid() << "\t"
+		   << "( "
+		   << setw(8) << setprecision(5) << intt_vertex->get_x() << ", "
+		   << setw(8) << setprecision(5) << intt_vertex->get_y() << ", "
+		   << setw(8) << setprecision(5) << intt_vertex->get_z()
+		   << " )"
+		   << endl;
+	    }
+
+	    if( intt_vertex )
+	      {
+		vertex_[ ivtx ][ 0 ] = intt_vertex->get_x();
+		vertex_[ ivtx ][ 1 ] = intt_vertex->get_y();
+		vertex_[ ivtx ][ 2 ] = intt_vertex->get_z();
+
+	      }
+	    
+	  if( iter == iter_begin )
+	    {
+	      intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
+				       intt_vertex->get_y(),
+				       intt_vertex->get_z() );
+	    }
+	}
+      
+    }
+
+  zvtxobj_ = NULL;
+  if( inttvertexmap )
+    {
+      int ivtx = 0;
+      if( Verbosity() > 2 )
+	{
+	  cout << "vertex map size : " << inttvertexmap->size() << endl;
+	}
+      
+      InttVertex3DMap::ConstIter biter_beg = inttvertexmap->begin();
+      InttVertex3DMap::ConstIter biter_end = inttvertexmap->end();
+      // cout<<"vertex map size : after size "<<endl;
+      // inttvertexmap->identify();
+      
+      for (InttVertex3DMap::ConstIter biter = biter_beg; biter != biter_end; ++biter)
+	{
+	  InttVertex3D *vtxobj = biter->second;
+	  if (vtxobj)
+	    {
+	      if( Verbosity() > 2 )
+		{
+		  cout << "vtxobj" << ivtx << endl;
+		}
+	      
+	      vtxobj->identify();
+	      vertex_[ivtx][0] = vtxobj->get_x();
+	      vertex_[ivtx][1] = vtxobj->get_y();
+	      vertex_[ivtx][2] = vtxobj->get_z();
+	      if (ivtx == 2)
+		{
+		  zvtxobj_ = vtxobj;
+		}
+	    }
+	  else
+	    {
+	      if( Verbosity() > 2 )
+		{
+		  cout << "no vtx object : " << ivtx << endl;
+		}
+	    }
+	  ivtx++;
+	  if (ivtx >= 10)
+	    {
+	      if( Verbosity() > 2 )
+		{
+		  cout << "n_vertex exceeded : " << ivtx << endl;
+		}
+	      
+	      break;
+	    }
+	}
+    }
+  else
+    {
+      // zvtxobj_ = new InttVertex3D(); // impossible as constructor protected
+    }
+
+  return 0;
+}
+
+
+int InttAna::process_event_mvtx(PHCompositeNode *topNode )
+{
+
+  /////////////
+  // MVTX cluster
+  std::set<TrkrDefs::TrkrId> detectors;
+  detectors.insert(TrkrDefs::TrkrId::mvtxId);
+
+  for (const auto &det : detectors)
+  {
+    for (const auto &layer : {0, 1, 2})
+    {
+      for (const auto &hitsetkey : m_clusterMap->getHitSetKeys(det, layer))
+      {
+        auto range = m_clusterMap->getClusters(hitsetkey);
+        for (auto citer = range.first; citer != range.second; ++citer)
+        {
+          // const auto ckey = citer->first;
+          // const auto cluster = citer->second;
+          // const auto global = m_tGeometry->getGlobalPosition(ckey, cluster);
+          nclusmvtx_[layer]++;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+
+int InttAna::process_event_emcal(PHCompositeNode *topNode )
+{
+
+  /////////////
+  // EMC Cluster
+  //RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_POS_COR_CEMC");
+  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_POS_COR_CEMC");
+  // RawClusterContainer *clusterContainer = findNode::getClass<RawClusterContainer>(topNode,"CLUSTER_CEMC");
+
+  // if (!clusterContainer)
+  // {
+  //   std::cout << PHWHERE << "InttAna::process_event - Fatal Error - CLUSTER_POS_COR_CEMC node is missing. " << std::endl;
+  // }
+  // else
+  // {
+  //   float ntpval_emccls[20];
+  //   // This is how we iterate over items in the container.
+  //   RawClusterContainer::ConstRange clusterEnd = clusterContainer->getClusters();
+  //   RawClusterContainer::ConstIterator clusterIter;
+
+  //   nemc = clusterContainer->size();
+  //   nemc1 = 0;
+
+  //   for (clusterIter = clusterEnd.first; clusterIter != clusterEnd.second; clusterIter++)
+  //   {
+  //     RawCluster *recoCluster = clusterIter->second;
+
+  //     ntpval_emccls[0] = nemc;
+  //     ntpval_emccls[1] = evtseq;
+  //     ntpval_emccls[2] = recoCluster->get_x();
+  //     ntpval_emccls[3] = recoCluster->get_y();
+  //     ntpval_emccls[4] = recoCluster->get_z();
+  //     ntpval_emccls[5] = recoCluster->get_energy();
+  //     ntpval_emccls[6] = recoCluster->get_ecore();
+  //     ntpval_emccls[7] = recoCluster->getNTowers();
+
+  //     h_ntp_emcclus->Fill(ntpval_emccls);
+
+  //     if (recoCluster->get_ecore() > 0.15)
+  //       nemc1++;
+  //   }
+  // }
+
+  return 0;
+}
+
+int InttAna::process_event_fill(PHCompositeNode *topNode )
+{
 
   if( Verbosity() > 2 )
     {
@@ -951,62 +1126,59 @@ int InttAna::process_event(PHCompositeNode *topNode)
     }
   
   float ntpval3[40];
-  ntpval3[0] = nclusadd;  // bco_full
-  ntpval3[1] = nclusadd2; // bco_full
-  ntpval3[2] = bco;
-  ntpval3[3] = evtseq;
-  ntpval3[4] = vertex[2][2]; // zvtx;
-  ntpval3[5] = zvtx;         // zrms;
+  ntpval3[0] = nclusadd_;  // bco_full
+  ntpval3[1] = nclusadd2_; // bco_full
+  ntpval3[2] = bco_;
+  ntpval3[3] = evtseq_;
+  ntpval3[4] = vertex_[2][2]; // zvtx;
+  ntpval3[5] = zvtx_;         // zrms;
   ntpval3[6] = 0;            // zmean;
   ntpval3[7] = 0;            // zcenter;
-  ntpval3[8] = mbdz;
-  ntpval3[9] = mbdqn;         // mbdt.bqn;
+  ntpval3[8] = mbdz_;
+  ntpval3[9] = mbdqn_;         // mbdt.bqn;
   
-  ntpval3[10] = mbdqs;        // mbdt.bqs;
+  ntpval3[10] = mbdqs_;        // mbdt.bqs;
   ntpval3[11] = 0;            // mbdt.femclk;
-  ntpval3[12] = vertex[1][0]; // x-vertex
-  ntpval3[13] = vertex[1][1]; // y-vertex
-  ntpval3[14] = vertex[2][2]; // y-vertex
+  ntpval3[12] = vertex_[1][0]; // x-vertex
+  ntpval3[13] = vertex_[1][1]; // y-vertex
+  ntpval3[14] = vertex_[2][2]; // y-vertex
 
-  ntpval3[15] = nclus_inner;  // x-vertex
-  ntpval3[16] = nclus_outer;  // y-vertex
+  ntpval3[15] = nclus_inner_;  // x-vertex
+  ntpval3[16] = nclus_outer_;  // y-vertex
 
-  if( zvtxobj != nullptr )
+  if( zvtxobj_ != nullptr )
     {
-      ntpval3[17] = zvtxobj->get_nclus();
-      ntpval3[18] = zvtxobj->get_ntracklet();
-      ntpval3[19] = zvtxobj->get_chi2ndf();
+      ntpval3[17] = zvtxobj_->get_nclus();
+      ntpval3[18] = zvtxobj_->get_ntracklet();
+      ntpval3[19] = zvtxobj_->get_chi2ndf();
       
-      ntpval3[20] = zvtxobj->get_width();
-      ntpval3[21] = zvtxobj->get_ngroup();
-      ntpval3[22] = (zvtxobj->get_good()) ? 1 : 0;
-      ntpval3[23] = zvtxobj->get_peakratio();
+      ntpval3[20] = zvtxobj_->get_width();
+      ntpval3[21] = zvtxobj_->get_ngroup();
+      ntpval3[22] = (zvtxobj_->get_good()) ? 1 : 0;
+      ntpval3[23] = zvtxobj_->get_peakratio();
     }
   else
     {
-      ntpval3[17] = 0.0;
-      ntpval3[18] = 0.0;
-      ntpval3[19] = 0.0;
-      ntpval3[20] = 0.0;
-      ntpval3[21] = 0.0;
-      ntpval3[22] = 0.0;
-      ntpval3[23] = 0.0;
+      ntpval3[17] = ntpval3[18] = ntpval3[19]
+	= ntpval3[20] = ntpval3[21] = ntpval3[22]
+	= ntpval3[23]
+	= 0.0;
     }
   
-  ntpval3[24] = vtx_sim[0]; // sim x-vertex
-  ntpval3[25] = vtx_sim[1]; // sim y-vertex
-  ntpval3[26] = vtx_sim[2]; // sim z-vertex
+  ntpval3[24] = vtx_sim_[0]; // sim x-vertex
+  ntpval3[25] = vtx_sim_[1]; // sim y-vertex
+  ntpval3[26] = vtx_sim_[2]; // sim z-vertex
 
   ntpval3[27] = (svtxvertex != nullptr) ? svtxvertex->get_x() : -9999; // svtx vertex x
   ntpval3[28] = (svtxvertex != nullptr) ? svtxvertex->get_y() : -9999; // svtx vertex y
   ntpval3[29] = (svtxvertex != nullptr) ? svtxvertex->get_z() : -9999; // svtx vertex z
 
-  ntpval3[30] = nclusmvtx[0];
-  ntpval3[31] = nclusmvtx[1];
-  ntpval3[32] = nclusmvtx[2];
+  ntpval3[30] = nclusmvtx_[0];
+  ntpval3[31] = nclusmvtx_[1];
+  ntpval3[32] = nclusmvtx_[2];
   ntpval3[33] = (svtxtrackmap != nullptr) ? svtxtrackmap->size() : -9999;
-  ntpval3[34] = nemc;
-  ntpval3[35] = nemc1;
+  ntpval3[34] = nemc_;
+  ntpval3[35] = nemc1_;
 
   h_ntp_evt->Fill(ntpval3);
   // h_ntp_evt = new TNtuple("ntp_evt", "Event Ntuple",
@@ -1020,47 +1192,10 @@ int InttAna::process_event(PHCompositeNode *topNode)
 
   h_t_evt_bco->Fill();
 
-  m_evtbcoinfo_prev.copy(m_evtbcoinfo);
-
-  evtCount++;
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-int InttAna::End(PHCompositeNode * /*topNode*/)
-{
-  if (Verbosity() > 1)
-  {
-    std::cout << "Ending InttAna analysis package" << std::endl;
-  }
-
-  //  m_hepmctree->Write();
-
-  if (anafile_ != nullptr)
-  {
-    //anafile_->Write();
-    anafile_->WriteTObject( h_dca2d_zero, h_dca2d_zero->GetName() );
-    anafile_->WriteTObject( h2_dca2d_zero, h2_dca2d_zero->GetName() );
-    anafile_->WriteTObject( h2_dca2d_len, h2_dca2d_len->GetName() );
-    anafile_->WriteTObject( h_zvtx, h_zvtx->GetName() );
-    anafile_->WriteTObject( h_eta, h_eta->GetName() );
-    anafile_->WriteTObject( h_phi, h_phi->GetName() );
-    anafile_->WriteTObject( h_theta, h_theta->GetName() );
-
-    anafile_->WriteTObject( h_ntp_clus, h_ntp_clus->GetName() );
-    //    anafile_->WriteTObject( h_ntp_emcclus, h_ntp_emcclus->GetName() );
-    anafile_->WriteTObject( h_ntp_cluspair, h_ntp_cluspair->GetName() );
-    //    anafile_->WriteTObject( h_ntp_emccluspair, h_ntp_emccluspair->GetName() );
-    anafile_->WriteTObject( h_ntp_evt, h_ntp_evt->GetName() );
-    anafile_->WriteTObject( h_zvtxseed_, h_zvtxseed_->GetName() );
-    anafile_->WriteTObject( h_t_evt_bco, h_t_evt_bco->GetName() );
-    anafile_->WriteTObject( m_hepmctree, m_hepmctree->GetName() );
-    
-    anafile_->Close();
-  }
-
   return 0;
 }
+  
+
 
 void InttAna::readRawHit(PHCompositeNode *topNode)
 {

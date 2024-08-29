@@ -1,8 +1,8 @@
 #include "Read_DST.hh"
 
-void Read_DST(int run_no = 41981
+void Read_DST(int run_num = 50889
               /*const string &input_file = "/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_beam_intt-00041892_no_hot_special.root"*/,
-	      int nEvents = 10)
+	      int nEvents = 100 )
 {
   //gSystem->ListLibraries();
 
@@ -21,46 +21,44 @@ void Read_DST(int run_no = 41981
   rc->set_StringFlag("CDB_GLOBALTAG", CDB::global_tag);
   // 64 bit timestamp
   rc->set_uint64Flag("TIMESTAMP", CDB::timestamp);
-  rc->set_IntFlag("RUNNUMBER", run_no );
+  rc->set_IntFlag("RUNNUMBER", run_num );
 
   // TrkrHit reconstructions
   // Mvtx_Cells();
   // Load ActsGeometry object
   TrackingInit();
 
-  // const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_beam_intt-000%d_special.root",run_no);
-  //  const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_physics_intt-000%d_no_hot_special.root", run_no);
-  // const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_beam_intt-000%d_special.root",run_no);
+  // const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_beam_intt-000%d_special.root",run_num);
+  //  const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_physics_intt-000%d_no_hot_special.root", run_num);
+  // const string &input_file = Form("/sphenix/tg/tg01/commissioning/INTT/data/dst_files/2024/DST_beam_intt-000%d_special.root",run_num);
   Fun4AllDstInputManager *in = new Fun4AllDstInputManager("Dst");
-  auto dsts = GetDsts( run_no, false, "no_hot", "temp" );
-  bool is_official = true;
-  for( auto& dst : dsts )
+
+  string dst_file = "";
+  if( run_num == 50889 ) // steaming mode
     {
-      if( is_official == true && dst.find( "official" ) == string::npos )
-	continue;
-      
-      in->fileopen( dst );
+
+      dst_file = "data/DST_physics_intt-00050889_no_hot.root";
     }
-  //  in->fileopen(input_file.c_str());
+  else if( run_num == 50377 ) // triggered mode
+    {
+      dst_file = "data/DST_physics_intt-00050377_no_hot.root";
+    }
+
+  in->fileopen( dst_file );  
   se->registerInputManager(in);
 
-  /*AnaTutorial *ana = new AnaTutorial();
-  ana->analyzeTruth(true);
-  ana->analyzeClusters(true);
-  se->registerSubsystem(ana);*/
+  InttXYVertexFinder* intt_xy = new InttXYVertexFinder();
+  //  intt_xy->SetOutDirectory( "./results" ); // not implemented yet
+  intt_xy->EnableQA( true );
+  se->registerSubsystem( intt_xy );
 
   InttZVertexFinder* intt_z = new InttZVertexFinder();
-  //intt_z->SetOutDirectory( "./results" );
-  //intt_z->EnableQA( true );
+  intt_z->SetOutDirectory( "./results" );
+  intt_z->EnableQA( true );
   //  intt_z->Verbosity( 0 );
   se->registerSubsystem( intt_z );
-
-  InttXYVertexFinder* intt_xy = new InttXYVertexFinder();
-  //  intt_xy->SetOutDirectory( "./results" );
-  //intt_xy->EnableQA( true );
-  se->registerSubsystem( intt_xy );
   
-  string output = "results/InttAna_run" + to_string( run_no ) + ".root";
+  string output = "results/InttAna_run" + to_string( run_num ) + ".root";
   InttAna *inttana = new InttAna( "InttAna", output );
   inttana->Verbosity( 2 ); // 0: minimum, 1: some, 2: detailed
   se->registerSubsystem( inttana );
@@ -68,7 +66,12 @@ void Read_DST(int run_no = 41981
   // Fun4AllOutputManager *out = new Fun4AllDstOutputManager("out","test.root");
   // se->registerOutputManager(out);
 
-  se->run(nEvents);
+  if( run_num == 50889 )
+    se->skip( 9117 ); // to skip the strange event
+  else if( run_num == 50377 )
+    se->skip( 200 ); // to skip the strange event
+  
+  se->run( nEvents );
 
   se->End();
   delete se;

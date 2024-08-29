@@ -1,11 +1,13 @@
-#define __CINT__
+#include <sPhenixStyle.C>
 #include "analysis_tracking.hh"
 #include "Analysis.hh"
 
-int run_this( int run = 41981 )
+int run_this( int run = 50889 )
 {
 
+  SetsPhenixStyle();
   Analysis* ana = new Analysis( run , true, false );
+  ana->SetPageNumLimit( 400 );
   ana->Begin();
 
   return 0;
