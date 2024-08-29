@@ -63,11 +63,11 @@ make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST
 
 Event Validation:
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051285-00000.root tree.root qa.root 100 2>/dev/null
+make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
 #+end_src
 
 #+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051285-00000.root","tree.root","qa.root", 100)'
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
 #+end_src
 
 * Condor Tips

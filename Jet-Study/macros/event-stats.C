@@ -33,6 +33,10 @@ namespace myAnalysis {
         UInt_t evt_Jet8_bkg;
         UInt_t evt_Jet10_bkg;
         UInt_t evt_Jet12_bkg;
+        UInt_t evt_Jet6_CEMC_bkg;
+        UInt_t evt_Jet8_CEMC_bkg;
+        UInt_t evt_Jet10_CEMC_bkg;
+        UInt_t evt_Jet12_CEMC_bkg;
     };
 
     vector<RunInfo> runs;
@@ -74,6 +78,11 @@ Int_t myAnalysis::read(const string &inputFile) {
           UInt_t evt_Jet10_bkg = hEvents_Jet10->GetBinContent(2);
           UInt_t evt_Jet12_bkg = hEvents_Jet12->GetBinContent(2);
 
+          UInt_t evt_Jet6_CEMC_bkg  = hEvents_Jet6->GetBinContent(3);
+          UInt_t evt_Jet8_CEMC_bkg  = hEvents_Jet8->GetBinContent(3);
+          UInt_t evt_Jet10_CEMC_bkg = hEvents_Jet10->GetBinContent(3);
+          UInt_t evt_Jet12_CEMC_bkg = hEvents_Jet12->GetBinContent(3);
+
           stringstream ss(rootFile);
           string token;
 
@@ -99,6 +108,11 @@ Int_t myAnalysis::read(const string &inputFile) {
           info.evt_Jet10_bkg = evt_Jet10_bkg;
           info.evt_Jet12_bkg = evt_Jet12_bkg;
 
+          info.evt_Jet6_CEMC_bkg = evt_Jet6_CEMC_bkg;
+          info.evt_Jet8_CEMC_bkg = evt_Jet8_CEMC_bkg;
+          info.evt_Jet10_CEMC_bkg = evt_Jet10_CEMC_bkg;
+          info.evt_Jet12_CEMC_bkg = evt_Jet12_CEMC_bkg;
+
           runs.push_back(info);
 
           cout << "File: " << rootFile << ", Run: " << run << endl;
@@ -118,10 +132,10 @@ Int_t myAnalysis::read(const string &inputFile) {
 
 void myAnalysis::write(const string &outputFile) {
    ofstream output(outputFile);
-   output << "run,Events_Jet6,Events_Jet6_bkg,Jet6_bkg_fraction"
-             << ",Events_Jet8,Events_Jet8_bkg,Jet8_bkg_fraction"
-             << ",Events_Jet10,Events_Jet10_bkg,Jet10_bkg_fraction"
-             << ",Events_Jet12,Events_Jet12_bkg,Jet12_bkg_fraction" << endl;
+   output << "run,Events_Jet6,Events_Jet6_bkg,Events_Jet6_CEMC_bkg,Jet6_bkg_fraction,Jet6_CEMC_bkg_fraction"
+             << ",Events_Jet8,Events_Jet8_bkg,Events_Jet8_CEMC_bkg,Jet8_bkg_fraction,Jet8_CEMC_bkg_fraction"
+             << ",Events_Jet10,Events_Jet10_bkg,Events_Jet10_CEMC_bkg,Jet10_bkg_fraction,Jet10_CEMC_bkg_fraction"
+             << ",Events_Jet12,Events_Jet12_bkg,Events_Jet12_CEMC_bkg,Jet12_bkg_fraction,Jet12_CEMC_bkg_fraction" << endl;
 
    stringstream s;
    for(auto info : runs) {
@@ -131,10 +145,15 @@ void myAnalysis::write(const string &outputFile) {
        Float_t fraction_Jet10 = (info.evt_Jet10) ? (Int_t)(info.evt_Jet10_bkg*1e4/info.evt_Jet10)/100. : 0;
        Float_t fraction_Jet12 = (info.evt_Jet12) ? (Int_t)(info.evt_Jet12_bkg*1e4/info.evt_Jet12)/100. : 0;
 
-       s << info.run << "," << info.evt_Jet6  << "," << info.evt_Jet6_bkg  << "," << fraction_Jet6
-                     << "," << info.evt_Jet8  << "," << info.evt_Jet8_bkg  << "," << fraction_Jet8
-                     << "," << info.evt_Jet10 << "," << info.evt_Jet10_bkg << "," << fraction_Jet10
-                     << "," << info.evt_Jet12 << "," << info.evt_Jet12_bkg << "," << fraction_Jet12 << endl;
+       Float_t fraction_CEMC_Jet6  = (info.evt_Jet6)  ? (Int_t)(info.evt_Jet6_CEMC_bkg*1e4/info.evt_Jet6)/100.   : 0;
+       Float_t fraction_CEMC_Jet8  = (info.evt_Jet8)  ? (Int_t)(info.evt_Jet8_CEMC_bkg*1e4/info.evt_Jet8)/100.   : 0;
+       Float_t fraction_CEMC_Jet10 = (info.evt_Jet10) ? (Int_t)(info.evt_Jet10_CEMC_bkg*1e4/info.evt_Jet10)/100. : 0;
+       Float_t fraction_CEMC_Jet12 = (info.evt_Jet12) ? (Int_t)(info.evt_Jet12_CEMC_bkg*1e4/info.evt_Jet12)/100. : 0;
+
+       s << info.run << "," << info.evt_Jet6  << "," << info.evt_Jet6_bkg  << "," << info.evt_Jet6_CEMC_bkg  << "," << fraction_Jet6 << "," << fraction_CEMC_Jet6
+                     << "," << info.evt_Jet8  << "," << info.evt_Jet8_bkg  << "," << info.evt_Jet8_CEMC_bkg  << "," << fraction_Jet8 << "," << fraction_CEMC_Jet8
+                     << "," << info.evt_Jet10  << "," << info.evt_Jet10_bkg  << "," << info.evt_Jet10_CEMC_bkg  << "," << fraction_Jet10 << "," << fraction_CEMC_Jet10
+                     << "," << info.evt_Jet12  << "," << info.evt_Jet12_bkg  << "," << info.evt_Jet12_CEMC_bkg  << "," << fraction_Jet12 << "," << fraction_CEMC_Jet12 << endl;
 
        output << s.str();
    }

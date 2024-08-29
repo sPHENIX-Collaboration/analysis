@@ -43,7 +43,7 @@ EventValidation::EventValidation()
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
-  , m_saveHistMax(100)
+  , m_saveHistMax(5)
   , m_use_zvtx(true)
   , m_zvtx_max(30) /*cm*/
   , m_zvtx_max2(20) /*cm*/
@@ -357,14 +357,12 @@ Int_t EventValidation::End(PHCompositeNode *topNode)
 
   UInt_t ctr[2] = {0};
   for(UInt_t i = 0; i < h2TowerEnergy.size(); ++i) {
-    if(m_hasBkgCEMC_vec[i] || m_hasBkg_vec[i]) {
-      if(m_hasBkgCEMC_vec[i] || ++ctr[0] < m_saveHistMax){
-        m_outputQAFile->cd(dirNameCEMC.str().c_str());
-        h2TowerEnergyCEMC[i]->Write();
-      }
+    if(m_hasBkgCEMC_vec[i] && ++ctr[0] <= m_saveHistMax) {
+      m_outputQAFile->cd(dirNameCEMC.str().c_str());
+      h2TowerEnergyCEMC[i]->Write();
     }
 
-    if(m_hasBkg_vec[i] && ++ctr[1] < m_saveHistMax) {
+    if(m_hasBkg_vec[i] && ++ctr[1] <= m_saveHistMax) {
       m_outputQAFile->cd(dirName.str().c_str());
       h2TowerEnergy[i]->Write();
     }
