@@ -43,11 +43,13 @@ EventValidation::EventValidation()
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_saveHistMax(100)
+  , m_use_zvtx(true)
   , m_zvtx_max(30) /*cm*/
   , m_zvtx_max2(20) /*cm*/
   , m_zvtx_max3(10) /*cm*/
   , m_bins_events(5)
-  , m_bins_events_jets(2)
+  , m_bins_events_jets(3)
   , m_bins_phi(64)
   , m_bins_eta(24)
   , m_bins_zvtx(200)
@@ -84,7 +86,8 @@ Int_t EventValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("event", &m_globalEvent, "event/I");
   m_T->Branch("run", &m_run, "run/I");
   m_T->Branch("zvtx", &m_zvtx);
-  m_T->Branch("hasBkg", &m_hasBkg);
+  m_T->Branch("hasBkg", & m_hasBkg);
+  m_T->Branch("hasBkgCEMC", &m_hasBkgCEMC);
   m_T->Branch("triggerVector", &m_triggerVector);
 
   m_T->Branch("towersCEMCBase_isGood", &m_towersCEMCBase_isGood);
@@ -130,17 +133,17 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
   hEvents->Fill(0);
 
   // zvertex
-  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap) {
     cout << PHWHERE << "EventValidation::process_event - Fatal Error - GlobalVertexMap node is missing. " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
-  if (vertexmap->empty()) {
+  if (m_use_zvtx && vertexmap->empty()) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   // grab the gl1 data
-  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
+  Gl1Packet* gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
   if (!gl1PacketInfo) {
     cout << PHWHERE << "EventValidation::process_event - Fatal Error - GL1Packet node is missing. " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
@@ -153,14 +156,17 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
     triggervec = (triggervec >> 1U) & 0xffffffffU;
   }
 
-  GlobalVertex *vtx = vertexmap->begin()->second;
-  m_zvtx = vtx->get_z();
+  if(!vertexmap->empty()) {
+    GlobalVertex *vtx = vertexmap->begin()->second;
+    m_zvtx = vtx->get_z();
 
-  hZVtx->Fill(m_zvtx);
-  ++m_eventZVtx;
-  hEvents->Fill(1);
+    hZVtx->Fill(m_zvtx);
+    ++m_eventZVtx;
+    hEvents->Fill(1);
+  }
+  else m_zvtx = -9999;
 
-  if(abs(m_zvtx) >= m_zvtx_max) return Fun4AllReturnCodes::ABORTEVENT;
+  if(m_use_zvtx && abs(m_zvtx) >= m_zvtx_max) return Fun4AllReturnCodes::ABORTEVENT;
 
   if(abs(m_zvtx) < m_zvtx_max)  {
     hEvents->Fill(2);
@@ -189,6 +195,7 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
   }
 
   vector<Float_t> towerEnergy(towersCEMC->size());
+  vector<Float_t> towerEnergyCEMC(towersCEMC->size());
   stringstream name;
   stringstream title;
 
@@ -199,6 +206,14 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
   title << "Tower Energy, Run: " << m_run << ", Event: " << m_globalEvent << ", Z: " << (Int_t)(m_zvtx*10)/10. << " cm; Tower Index #phi; Tower Index #eta";
 
   auto h2 = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
+
+  name.str("");
+  title.str("");
+
+  name << "h2TowerEnergyCEMC_" << m_run << "_" << m_globalEvent;
+  title << "Tower Energy EMCal, Run: " << m_run << ", Event: " << m_globalEvent << ", Z: " << (Int_t)(m_zvtx*10)/10. << " cm; Tower Index #phi; Tower Index #eta";
+
+  auto h2CEMC = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
 
   // loop over towers
   for(UInt_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex) {
@@ -211,6 +226,10 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
     m_towersCEMC_isGood.push_back(tower->get_isGood());
 
     Float_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
+
+    towerEnergyCEMC[towerIndex] = energy;
+
+    h2CEMC->SetBinContent(iphi+1,ieta+1,energy);
 
     tower = towersIHCal->get_tower_at_channel(towerIndex);
     m_towersIHCal_energy.push_back(tower->get_energy());
@@ -230,35 +249,42 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
   }
 
   h2TowerEnergy.push_back(h2);
+  h2TowerEnergyCEMC.push_back(h2CEMC);
 
-  m_hasBkg = isBackgroundEvent(towerEnergy);
+  m_hasBkgCEMC = isBackgroundEvent(towerEnergyCEMC);
+  m_hasBkg     = (m_hasBkgCEMC) ? m_hasBkgCEMC : isBackgroundEvent(towerEnergy);
 
+  m_hasBkgCEMC_vec.push_back(m_hasBkgCEMC);
   m_hasBkg_vec.push_back(m_hasBkg);
 
-  if(abs(m_zvtx) < m_zvtx_max)  {
-    if(m_triggerVector[20]) {
+  if(!m_use_zvtx || (m_use_zvtx && abs(m_zvtx) < m_zvtx_max)) {
+    if(m_triggerVector[(Int_t)Trigger::JET_6]) {
       hEvents_Jet6->Fill(0);
       if(m_hasBkg) hEvents_Jet6->Fill(1);
+      if(m_hasBkgCEMC) hEvents_Jet6->Fill(2);
     }
 
-    if(m_triggerVector[21]) {
+    if(m_triggerVector[(Int_t)Trigger::JET_8]) {
       hEvents_Jet8->Fill(0);
       if(m_hasBkg) hEvents_Jet8->Fill(1);
+      if(m_hasBkgCEMC) hEvents_Jet8->Fill(2);
     }
 
-    if(m_triggerVector[22]) {
+    if(m_triggerVector[(Int_t)Trigger::JET_10]) {
       hEvents_Jet10->Fill(0);
       if(m_hasBkg) hEvents_Jet10->Fill(1);
+      if(m_hasBkgCEMC) hEvents_Jet10->Fill(2);
     }
 
-    if(m_triggerVector[23]) {
+    if(m_triggerVector[(Int_t)Trigger::JET_12]) {
       hEvents_Jet12->Fill(0);
       if(m_hasBkg) hEvents_Jet12->Fill(1);
+      if(m_hasBkgCEMC) hEvents_Jet12->Fill(2);
     }
   }
 
   // looping over base emcal towers is time intensive so only do this when event has background
-  if(m_hasBkg) {
+  if(m_hasBkgCEMC || m_hasBkg) {
     // loop over base towers
     for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
       TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
@@ -266,10 +292,10 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       m_towersCEMCBase_time.push_back(tower->get_time_float());
       m_towersCEMCBase_energy.push_back(tower->get_energy());
     }
-  }
 
-  // fill the tree
-  m_T->Fill();
+    // fill the tree
+    m_T->Fill();
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -321,19 +347,30 @@ Int_t EventValidation::End(PHCompositeNode *topNode)
   hEvents_Jet12->Write();
 
   stringstream dirName("");
+  stringstream dirNameCEMC("");
 
-  dirName << "h2TowerEnergy/" << m_run;
+  dirName << "h2TowerEnergy/" << m_run << "/Total";
   m_outputQAFile->mkdir(dirName.str().c_str());
-  m_outputQAFile->cd(dirName.str().c_str());
 
-  UInt_t ctr = 0;
+  dirNameCEMC << "h2TowerEnergy/" << m_run << "/CEMC";
+  m_outputQAFile->mkdir(dirNameCEMC.str().c_str());
+
+  UInt_t ctr[2] = {0};
   for(UInt_t i = 0; i < h2TowerEnergy.size(); ++i) {
-    if(m_hasBkg_vec[i]) {
+    if(m_hasBkgCEMC_vec[i] || m_hasBkg_vec[i]) {
+      if(m_hasBkgCEMC_vec[i] || ++ctr[0] < m_saveHistMax){
+        m_outputQAFile->cd(dirNameCEMC.str().c_str());
+        h2TowerEnergyCEMC[i]->Write();
+      }
+    }
+
+    if(m_hasBkg_vec[i] && ++ctr[1] < m_saveHistMax) {
+      m_outputQAFile->cd(dirName.str().c_str());
       h2TowerEnergy[i]->Write();
-      ++ctr;
     }
   }
-  cout << "Background Events Tagged: " << ctr << endl;
+  cout << "CEMC Background Events Tagged: " << ctr[0] << endl;
+  cout << "Background Events Tagged: "      << ctr[1] << endl;
 
   m_outputQAFile->Close();
   delete m_outputQAFile;

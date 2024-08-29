@@ -63,6 +63,10 @@ class EventValidation : public SubsysReco
     this->m_bkg_towers = m_bkg_towers;
   }
 
+  void set_use_zvtx(Bool_t m_use_zvtx) {
+    this->m_use_zvtx = m_use_zvtx;
+  }
+
   Bool_t isBackgroundEvent(std::vector<Float_t> &towerEnergy);
 
  private:
@@ -75,6 +79,15 @@ class EventValidation : public SubsysReco
   std::string m_ihcalTowerNode;
   std::string m_ohcalTowerNode;
 
+  enum class Trigger {
+      JET_6  = 20,
+      JET_8  = 21,
+      JET_10 = 22,
+      JET_12 = 23
+  };
+
+  UInt_t  m_saveHistMax;
+  Bool_t  m_use_zvtx;
   Float_t m_zvtx_max;
   Float_t m_zvtx_max2;
   Float_t m_zvtx_max3;
@@ -87,6 +100,7 @@ class EventValidation : public SubsysReco
   TH1F* hZVtx;
 
   std::vector<TH2F*> h2TowerEnergy;
+  std::vector<TH2F*> h2TowerEnergyCEMC;
 
   UInt_t m_bins_events;
   UInt_t m_bins_events_jets;
@@ -102,6 +116,7 @@ class EventValidation : public SubsysReco
   Float_t m_bkg_tower_neighbor_energy;
   UInt_t  m_bkg_towers;
   std::vector<Bool_t> m_hasBkg_vec;
+  std::vector<Bool_t> m_hasBkgCEMC_vec;
 
   //! Output Tree variables
   TTree* m_T;
@@ -114,6 +129,7 @@ class EventValidation : public SubsysReco
   Int_t m_eventZVtx30;
   Float_t m_zvtx;
   Bool_t m_hasBkg;
+  Bool_t m_hasBkgCEMC;
 
   //! tower info
   std::vector<Bool_t>  m_towersCEMCBase_isGood;
