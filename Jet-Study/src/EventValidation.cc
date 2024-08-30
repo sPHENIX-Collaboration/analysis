@@ -86,7 +86,7 @@ Int_t EventValidation::Init(PHCompositeNode *topNode)
   m_T->Branch("event", &m_globalEvent, "event/I");
   m_T->Branch("run", &m_run, "run/I");
   m_T->Branch("zvtx", &m_zvtx);
-  m_T->Branch("hasBkg", & m_hasBkg);
+  m_T->Branch("hasBkg", &m_hasBkg);
   m_T->Branch("hasBkgCEMC", &m_hasBkgCEMC);
   m_T->Branch("triggerVector", &m_triggerVector);
 
