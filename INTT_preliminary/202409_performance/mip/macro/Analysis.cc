@@ -1,17 +1,19 @@
-#define analysis_cxx
-#include "analysis.h"
-#include <TH2.h>
-#include <TStyle.h>
-#include <TCanvas.h>
+#define Analysis_cxx
+#include "Analysis.hh"
 
-analysis::analysis(TTree *tree, int run ) : fChain(0) 
+//////////////////////////////////////////////////////////////////////
+// Constructor                                                      //
+//////////////////////////////////////////////////////////////////////
+Analysis::Analysis( int run ) :
+  fChain(0),
+  run_( run )
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
-
-  if (tree == 0)
+  TTree* tree = 0;
+  //if (tree == 0)
     {
-      string file_name = "tracking_run" + to_string( run ) + ".root";
+      string file_name = "results/tracking_run" + to_string( run_ ) + ".root";
       cout << file_name << endl;
       // TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject( file_name.c_str() );
       TFile *f = new TFile( file_name.c_str() );
@@ -27,20 +29,80 @@ analysis::analysis(TTree *tree, int run ) : fChain(0)
   Init(tree);
 }
 
-analysis::~analysis()
+//////////////////////////////////////////////////////////////////////
+// Destructor                                                       //
+//////////////////////////////////////////////////////////////////////
+Analysis::~Analysis()
 {
    if (!fChain) return;
    delete fChain->GetCurrentFile();
 }
 
-Int_t analysis::GetEntry(Long64_t entry)
+//////////////////////////////////////////////////////////////////////
+// private functions                                                //
+//////////////////////////////////////////////////////////////////////
+string Analysis::GetDate()
+{
+  
+  TDatime dt;
+  int year	= dt.GetYear();
+  int month	= dt.GetMonth();
+  int day	= dt.GetDay();
+
+  // format: mm/dd/yyyy
+  std::stringstream ss;
+  ss << month << "/" << day << "/" << year;
+
+  return ss.str();
+}
+
+void Analysis::DrawWords()
+{
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Writting words in the canvas                                              //
+  ///////////////////////////////////////////////////////////////////////////////
+  TLatex* tex = new TLatex();
+
+  double line_height = 0.05;
+  double first_margin = 0.005;  
+  double pos_y = 1.0 - top_margin_ + first_margin;// - line_height;
+
+  // Date
+  tex->DrawLatexNDC( 0.7, pos_y,
+		     string("#it{" + GetDate() + "}").c_str() );
+
+  // sPHENIX Internal or sPHENIX Prelimnary
+  pos_y -= line_height - first_margin + 0.025;
+  double pos_x = 0.2;
+  if( is_preliminary_ == false )
+    {
+      tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
+    }
+  else
+    {
+
+      pos_x = 0.4;
+      tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
+    }
+
+  // p+p 200 GeV
+  pos_y -= line_height;
+  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV, Run 50889 " );
+
+  pos_y -= line_height;
+  tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
+}
+
+
+Int_t Analysis::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
    if (!fChain) return 0;
    return fChain->GetEntry(entry);
 }
 
-Long64_t analysis::LoadTree(Long64_t entry)
+Long64_t Analysis::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
    if (!fChain) return -5;
@@ -53,7 +115,7 @@ Long64_t analysis::LoadTree(Long64_t entry)
    return centry;
 }
 
-void analysis::Init(TTree *tree)
+void Analysis::Init(TTree *tree)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -84,8 +146,11 @@ void analysis::Init(TTree *tree)
    adc_out = 0;
    is_associated_out = 0;
    track_incoming_theta_out = 0;
+
    // Set branch addresses and branch pointers
-   if (!tree) return;
+   if (!tree)
+     return;
+   
    fChain = tree;
    fCurrent = -1;
    fChain->SetMakeClass(1);
@@ -114,18 +179,18 @@ void analysis::Init(TTree *tree)
    fChain->SetBranchAddress("z_vertex", &z_vertex, &b_z_vertex);
    Notify();
    
-
   int bin_num = 20;
   double xmin = 0;
   double xmax = 600;
   
-  string title = "DAC distribution;DAC;Entries";
+  string title = "DAC distribution;DAC [arb. units];Counts";
   hist_all = new TH1D( "ADC", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
   // hist_all->SetFillColorAlpha( kGray, 0.2 );
   // hist_all->SetLineColorAlpha( kBlack, 1 );
   hist_all->SetFillColorAlpha( kGreen+2, 0.2 );
   hist_all->SetLineColorAlpha( hist_all->GetFillColor(), 1 );
   hist_all->SetLineWidth( 2 );
+  HistSetting( hist_all );
   
   hist_aso = new TH1D( "Track_assoiation", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
   //hist_aso->SetFillColorAlpha( kRed + 2, 0.1 );
@@ -134,44 +199,49 @@ void analysis::Init(TTree *tree)
   hist_aso->SetFillColorAlpha( kBlue, 0.1 );
   hist_aso->SetLineColorAlpha( hist_aso->GetFillColor(), 1 );
   hist_aso->SetLineWidth( 2 );
-
+  HistSetting( hist_aso );
+  
   hist_no_aso = new TH1D( "Track_not_assoiated", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
   hist_no_aso->SetFillColorAlpha( kGray, 0.1 );
   hist_no_aso->SetLineColorAlpha( hist_no_aso->GetFillColor(), 1 );
   hist_no_aso->SetLineWidth( 1 );
+  HistSetting( hist_no_aso );
   
   hist_ang90 = new TH1D( "Top_pm5", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", this_cut, "",
   hist_ang90->SetFillColorAlpha( kBlue, 0.1 );
   //hist_ang90->SetFillColorAlpha( kRed - 4 , 0.2 );
   hist_ang90->SetLineColorAlpha( hist_ang90->GetFillColor(), 1 );
   hist_ang90->SetLineWidth( 3 );
-  
+  HistSetting( hist_ang90 );
+    
   hist_ang45 = new TH1D( "Ang40_45", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
   hist_ang45->SetFillColorAlpha( kRed, 0.1 );
   hist_ang45->SetLineColorAlpha( hist_ang45->GetFillColor(), 1 );
   hist_ang45->SetLineWidth( 3 );
+  HistSetting( hist_ang45 );
   
   hist_ang35 = new TH1D( "Ang30_35", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
   hist_ang35->SetFillColorAlpha( kSpring-1, 0.1 );
   hist_ang35->SetLineColorAlpha( hist_ang35->GetFillColor(), 1 );
   hist_ang35->SetLineWidth( 3 );
+  HistSetting( hist_ang35 );
   
   hist_ang25 = new TH1D( "Ang20_25", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
   hist_ang25->SetFillColorAlpha( kOrange+1, 0.1 );
   hist_ang25->SetLineColorAlpha( hist_ang25->GetFillColor(), 1 );
   hist_ang25->SetLineWidth( 3 );
-
-
+  HistSetting( hist_ang25 );
+  
   hist_correlation = new TH2D( "nhit_correlation_barrel",
-			       "Cluster correlation b/w barrels;#cluster_{Inner};#cluster_{Outer};Entries",
+			       "Cluster correlation b/w barrels;#cluster_{Inner};#cluster_{Outer};Counts",
 			       80, 0, 80,
 			       80, 0, 80 );
 			       /* 100, 0, 100, */
 			       /* 100, 0, 100 ); */
-			       
+  HistSetting( hist_correlation );
 }
 
-Bool_t analysis::Notify()
+Bool_t Analysis::Notify()
 {
    // The Notify() function is called when a new file is opened. This
    // can be either for a new TTree in a TChain or when when a new TTree
@@ -182,15 +252,7 @@ Bool_t analysis::Notify()
    return kTRUE;
 }
 
-void analysis::Show(Long64_t entry)
-{
-// Print contents of entry.
-// If entry is not specified, print current entry
-   if (!fChain) return;
-   fChain->Show(entry);
-}
-
-Int_t analysis::Cut(Long64_t entry)
+Int_t Analysis::Cut(Long64_t entry)
 {
 // This function may be called from Loop.
 // returns  1 if entry is accepted.
@@ -198,11 +260,15 @@ Int_t analysis::Cut(Long64_t entry)
    return 1;
 }
 
-void analysis::Loop()
+///////////////////////////////////////////////////////////////////////
+// public functions                                                  //
+///////////////////////////////////////////////////////////////////////
+
+void Analysis::Loop()
 {
 //   In a ROOT session, you can do:
-//      root> .L analysis.C
-//      root> analysis t
+//      root> .L Analysis.C
+//      root> Analysis t
 //      root> t.GetEntry(12); // Fill t data members with entry number 12
 //      root> t.Show();       // Show values of entry 12
 //      root> t.Show(16);     // Read and show values of entry 16
@@ -250,11 +316,11 @@ void analysis::Loop()
        /* if( is_good_event && does_z_cut && fabs( z_vertex ) > 25 ) */
        /* 	 is_good_event = false; */
 
-       if( is_good_event )
-	 cout << setw(4) << cluster_num_in << "\t"
-	      << setw(4) << cluster_num_out << "\t"
-	      << setw(7) << setprecision(4) << left << cluster_num_in / cluster_num_out << "\t"
-	      << endl;
+       // if( is_good_event )
+       // 	 cout << setw(4) << cluster_num_in << "\t"
+       // 	      << setw(4) << cluster_num_out << "\t"
+       // 	      << setw(7) << setprecision(4) << left << cluster_num_in / cluster_num_out << "\t"
+       // 	      << endl;
 
        //is_good_event = true;
        int hit_num_inner = 0, hit_num_outer = 0;
@@ -327,9 +393,133 @@ void analysis::Loop()
 	   hit_num_outer++;
 	 }
 
-       if(  hit_num_inner != 0  && hit_num_outer != 0 )
-	 hist_correlation->Fill( hit_num_inner, hit_num_outer );
+       //       if(  hit_num_inner != 0  && hit_num_outer != 0 )
+       hist_correlation->Fill( hit_num_inner, hit_num_outer );
        
        //break;
      }
+
+
+   
 }
+
+void Analysis::Draw()
+{
+
+  SetsPhenixStyle();
+  string output = "results/mip_" + to_string( run_ ) + ".pdf";
+  TCanvas* c = new TCanvas( output.c_str(), "title", 800, 800 );
+  c->Print( ((string)c->GetName() + "[").c_str() );
+
+  auto hist_temp = (TH1D*)hist_ang90->Clone();
+  hist_temp->SetLineColor( kBlack );
+  hist_temp->SetFillColorAlpha( kBlack, 0.1 );
+  hist_temp->Draw();
+  this->DrawWords();
+  c->Print( c->GetName() );
+  
+  vector < TH1D* > hists;
+  // hists.push_back( hist_all );
+  // hists.push_back( hist_aso );
+  //hists.push_back( hist_no_aso );
+  hists.push_back( hist_ang90 );
+  hists.push_back( hist_ang45 );
+  hists.push_back( hist_ang35 );
+  // hists.push_back( hist_ang25 );
+
+  //  gStyle->SetOptFit( true );
+  //  mh->SetStatsFormat( 111111 );
+  
+  vector < TF1* > functions;
+  for( auto hist : hists )
+    {
+      TF1* f = new TF1( "f", "landau", 35, 600 );
+      f->SetLineColor( hist->GetLineColor() );
+      f->SetLineStyle( 7 );
+      //hist->Fit( f );
+      functions.push_back( f );
+    }
+
+  for( auto& hist : hists )
+    hist->Draw( (hist == hists[0] ? "" : "same" ) );
+
+  for( auto& f : functions )
+    {
+      f->Draw( "same" );  
+      
+      TLine* line = new TLine();
+      line->SetLineColor( f->GetLineColor() );
+      line->SetLineStyle( 3 );
+      line->DrawLine( f->GetParameter(1), 0, f->GetParameter(1), 1e3 );
+    }
+
+  gPad->Update();
+  this->DrawWords();
+  c->Print( c->GetName() );
+
+  // mh->SetYmin( 1 );
+  // mh->Draw( "HIST" );
+  // for( auto& f : functions )
+  //   f->Draw( "same" );  
+  // gPad->SetLogy( true );
+  // c->Print( c->GetName() );  
+
+  for( auto& hist : hists )
+    {
+      hist->Scale( 1.0 / hist->GetEntries() );
+      hist->Draw( (hist == hists[0] ? "HISTE" : "HISTE same" ) );
+    }
+  
+  gPad->SetLogy( false );
+
+  for( auto hist : hists )
+    {
+      TF1* f = new TF1( "f", "landau", 35, 600 );
+      f->SetLineColor( hist->GetLineColor() );
+      f->SetLineStyle( 7 );
+      hist->Fit( f );
+      //functions.push_back( f );
+      f->Draw( "same" );
+
+      TLine* line = new TLine();
+      line->SetLineColor( f->GetLineColor() );
+      line->SetLineStyle( 3 );
+      line->DrawLine( f->GetParameter(1), 0, f->GetParameter(1), 0.3 );
+    }
+  this->DrawWords();
+  c->Print( c->GetName() );  
+
+  /*
+  this_cut = "!(adc_in==210 && size_in==1) && fabs(z_vertex)<23 && is_associated_in";
+  //string cut = "!(adc_in==210 && size_in==1)";
+  auto hist_theta = Draw( tr, "theta", "#theta distribution;#theta;Entries", 180, -90, 90,
+			"track_incoming_theta_in", this_cut, "", kBlack, 0.1 );
+  hist_theta->Draw();
+  c->Print( c->GetName() );  
+
+  this_cut = "!(adc_in==210 && size_in==1) && is_associated_in";
+  auto hist_z = Draw( tr, "z_vertex", "z_{vtx} distribution;z_{vtx} (cm);Entries", 100, -50, 50,
+		      "z_vertex", this_cut, "", kBlack, 0.1 );
+  hist_z->Draw();
+  c->Print( c->GetName() );  
+  */
+  
+  hist_correlation->Draw( "colz" );
+  gPad->SetLogz( true );
+  //  DrawStats( hist_correlation, 0.7, 0.7, 0.9, 0.9 );
+  this->DrawWords();
+  c->Print( c->GetName() );  
+  c->Print( ((string)c->GetName() + "]").c_str() );
+
+  
+}
+
+void Analysis::Show(Long64_t entry)
+{
+// Print contents of entry.
+// If entry is not specified, print current entry
+   if (!fChain) return;
+   fChain->Show(entry);
+}
+
+
