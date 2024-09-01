@@ -12,6 +12,8 @@
 #include "vector"
 
 #include <sPhenixStyle.C>
+#include "HistSetting.hh"
+#include "MipHist.hh"
 
 class Analysis
 {
@@ -20,12 +22,15 @@ private:
   Int_t           fCurrent; //!current Tree number in a TChain
 
   int run_ = 0;
-
+  int adc7_ = 210;
+  int cluster_size_max_ = 9999;
+  
   bool is_preliminary_ = false;
   
   double top_margin_ = 0.05; // 0.1;
   double right_margin_ = 0.05; // 0.15;
-
+  double adc7_modification_factor_ = 0.35;
+  
   // Fixed size dimensions of array or collections stored in the TTree if any.
 
   // Declaration of leaf types
@@ -77,6 +82,15 @@ private:
   TBranch        *b_z_vertex;   //!
 
   //TH1D* hist;
+  vector < MipHist* > hists_;
+  MipHist* hist_all_;
+  MipHist* hist_aso_;
+  MipHist* hist_no_aso_;
+  MipHist* hist_ang90_;
+  MipHist* hist_ang45_;
+  MipHist* hist_ang35_;
+  MipHist* hist_ang25_;
+
   TH1D* hist_all;
   TH1D* hist_aso;
   TH1D* hist_no_aso;
@@ -96,7 +110,11 @@ private:
 
   string GetDate();
   void DrawWords();
-
+  void FillClusterInfo( int mode = 0 ); // 0: inner, 1: outer
+  void ModifyAdcs();
+  void ModifyAdc( TH1D* hist );
+  void ModifyAdc( TH1D* hist, int mode ); // mode: 0: ADC7, 1: ADC14
+  
   template < typename TH >
   void DrawStats( TH* hist, double xmin, double ymin, double xmax, double ymax, int font = 4)
   {
@@ -135,18 +153,6 @@ private:
     st->Draw("same");
   }
 
-  template < class T >
-  void HistSetting( T* hist)
-  {
-    hist->GetXaxis()->SetLabelSize( 0.05 );
-    hist->GetXaxis()->SetTitleSize( 0.05 );
-    hist->GetXaxis()->CenterTitle();
-    
-    hist->GetYaxis()->SetLabelSize( 0.05 );
-    hist->GetYaxis()->SetTitleSize( 0.05 );
-    hist->GetYaxis()->CenterTitle();
-
-  }
   
 public:
 
