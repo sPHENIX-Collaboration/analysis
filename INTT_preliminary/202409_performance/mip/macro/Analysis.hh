@@ -20,17 +20,23 @@ class Analysis
 private:
   TTree          *fChain;   //!pointer to the analyzed TTree or TChain
   Int_t           fCurrent; //!current Tree number in a TChain
-
+  TCanvas* c_;
+  
   int run_ = 0;
   int adc7_ = 210;
-  int cluster_size_max_ = 9999;
-  
-  bool is_preliminary_ = false;
+  int counter_too_large_cluster_ = 0;
+  int cluster_size_max_ = 5;
+  int hit_num_inner_ = 0;
+  int hit_num_outer_ = 0;
   
   double top_margin_ = 0.05; // 0.1;
   double right_margin_ = 0.05; // 0.15;
   double adc7_modification_factor_ = 0.35;
-  
+
+  bool is_preliminary_ = false;
+  bool does_adc7_correction_ = true;
+  bool does_adc14_correction_ = true;
+ 
   // Fixed size dimensions of array or collections stored in the TTree if any.
 
   // Declaration of leaf types
@@ -86,18 +92,24 @@ private:
   MipHist* hist_all_;
   MipHist* hist_aso_;
   MipHist* hist_no_aso_;
-  MipHist* hist_ang90_;
-  MipHist* hist_ang45_;
-  MipHist* hist_ang35_;
-  MipHist* hist_ang25_;
+  MipHist* hist_ang85_; // 85 - 90 deg
+  MipHist* hist_ang45_; // 45 - 55 deg
+  MipHist* hist_ang35_; // 35 - 45 deg
+  MipHist* hist_ang25_; // 25 - 35 deg
 
-  TH1D* hist_all;
-  TH1D* hist_aso;
-  TH1D* hist_no_aso;
-  TH1D* hist_ang90;
-  TH1D* hist_ang45;
-  TH1D* hist_ang35;
-  TH1D* hist_ang25;
+  MipHist* hist_ang80_; // 80 - 90 deg
+  MipHist* hist_ang70_; // 70 - 80 deg
+  MipHist* hist_ang60_; // 60 - 70 deg
+  MipHist* hist_ang50_; // 50 - 60 deg
+  MipHist* hist_ang40_; // 40 - 50 deg
+  MipHist* hist_ang30_; // 30 - 40 deg
+  MipHist* hist_ang20_; // 20 - 30 deg
+  MipHist* hist_ang10_; // 10 - 20 deg
+  MipHist* hist_ang0_ ; //  0 - 10 deg
+
+  MipHist* hist_ang10_11_ ; //  10 - 11 deg
+  MipHist* hist_ang20_21_ ; //  20 - 21 deg
+  MipHist* hist_ang30_31_ ; //  30 - 31 deg
 
   TH2D* hist_correlation;
   
@@ -109,11 +121,11 @@ private:
   virtual Bool_t   Notify();
 
   string GetDate();
+  void DrawSingle( MipHist* mip_hist );
+  void DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, bool use_color_palette = false );
+
   void DrawWords();
   void FillClusterInfo( int mode = 0 ); // 0: inner, 1: outer
-  void ModifyAdcs();
-  void ModifyAdc( TH1D* hist );
-  void ModifyAdc( TH1D* hist, int mode ); // mode: 0: ADC7, 1: ADC14
   
   template < typename TH >
   void DrawStats( TH* hist, double xmin, double ymin, double xmax, double ymax, int font = 4)
@@ -160,8 +172,15 @@ public:
   
   virtual void     Loop();
   virtual void     Show(Long64_t entry = -1);
-  void SetPreliminary( bool flag ){ is_preliminary_ = flag;};
+
   void Draw();
+  void InitParameter();
+
+  void Print();
+  
+  void SetAdc7Correction( bool flag=true ){ does_adc7_correction_ = flag; };
+  void SetAdc14Correction( bool flag=true ){ does_adc14_correction_ = flag; };
+  void SetPreliminary( bool flag ){ is_preliminary_ = flag;};
 };
 
 #endif

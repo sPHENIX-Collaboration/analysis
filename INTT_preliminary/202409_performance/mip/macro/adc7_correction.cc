@@ -8,7 +8,7 @@ int adc7_correction( int mode = 0)
   gStyle->SetOptStat( 111111 );
   gStyle->SetOptFit( true );
 
-  int event_num = 1e8;
+  int event_num = 1e7;
   double range_max = 650;
   TF1* f = new TF1( "f", "landau", 0, range_max );
   f->SetLineColor( kAzure + 1 );
@@ -21,7 +21,7 @@ int adc7_correction( int mode = 0)
     f->FixParameter( 1, 90 ); // from caclulation, 85.7 keV -> 589 mV -> DAC 90
   
   f->FixParameter( 2, 3.251 );
-  f->SetNpx( 1e5 );
+  f->SetNpx( 1e4 );
 
   double bins[22]
     = {
@@ -36,6 +36,7 @@ int adc7_correction( int mode = 0)
 			 "Landau distribution and DAC distributions;DAC [arb. units];Counts", 21, bins );
   hist->SetLineWidth( 3 );
   hist->SetLineColor( kBlack );
+  hist->Sumw2();
 
   TRandom3* randamer = new TRandom3( 0 );
   for( int i=0; i<event_num; i++ )
@@ -43,13 +44,15 @@ int adc7_correction( int mode = 0)
       hist->Fill( f->GetRandom( 0, range_max, randamer ) );
     }
 
+  hist->Scale( 1.0 / hist->GetEntries() );
+  
   int digits = TMath::Log10( event_num ) + 2;
   double sum = 0.0;
   double sum_partial = 0.0;
-  int content_adc7 = 0;
+  double content_adc7 = 0;
   for( int i=1; i<hist->GetNbinsX()+1; i++ )
     {
-      int content = hist->GetBinContent(i);
+      double content = hist->GetBinContent(i);
       sum += content;
 
       double edge = hist->GetBinLowEdge(i);
@@ -62,14 +65,14 @@ int adc7_correction( int mode = 0)
       cout << setw(3) << i << " "
 	   << setw(3) << edge << " "
 	   << setw( digits ) << content << " "
-	   << setw( digits ) << setprecision(3) << 100 * sum / hist->GetEntries() << "% "
-	   << setw( digits ) << setprecision(3) << 100 * content_adc7 / sum_partial << "% "
+	   << setw( digits ) << setprecision(3) << 100. * sum / hist->GetEntries() << "% "
+	   << setw( digits ) << setprecision(3) << 100. * content_adc7 / sum_partial << "% "
 	   << endl;
 
     }
 
   TF1* f_fit = new TF1( "f_fit", "landau", 0, 600 );
-  f_fit->SetNpx( 1e5 );
+  f_fit->SetNpx( 1e4 );
   f_fit->SetParameters( f->GetParameter(0), f->GetParameter(1), f->GetParameter(2) );
   hist->Fit( f_fit );
 
@@ -79,7 +82,9 @@ int adc7_correction( int mode = 0)
     f->SetParameter( 0, f_fit->GetParameter(0) );
 
   TCanvas* c = new TCanvas( "canvas", "title", 800, 800 );
-  hist->Draw();
+
+  hist->GetYaxis()->SetRangeUser( 1e-7, 10 );
+  hist->Draw( "HISTE" );
   f->Draw( "same" );
   f_fit->Draw( "same" );
 

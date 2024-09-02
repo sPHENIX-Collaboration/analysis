@@ -15,7 +15,11 @@ private:
   
   string name_;
   string title_;
-  
+  string tag_ = "";;
+
+  bool does_adc7_correction_ = true;
+  bool does_adc14_correction_ = true;
+
   TH1D* hist_raw_; // contains all data
   TH1D* hist_; // contains modified data
   TH1D* hist_shc_adc7_; // contains only data of Single-Hit Cluster (SHC)
@@ -34,14 +38,22 @@ public:
   void FillSingleHitCluster( int val );
   void FillDoubleHitCluster( int val );
 
-  void Drawline(){};
+  void DrawLine( TF1* f );
 
-  TF1* GetFunction(){ return f_;};
-  TH1D* GetHist(){ return hist_;};
-  TH1D* GetNormalizedHist();
+  int		GetColor(){ return color_;};
+  double	GetAlpha(){ return alpha_;}
+  TF1*		GetFunction(){ return f_;};
+  TH1D*		GetHist(){ return hist_;};
+  TF1*		GetNormalizedFunction( double top_val = 1.0);
+  TH1D*		GetNormalizedHist( double top_val = 1.0 );
+  string	GetTag(){ return tag_;};
+  
   void ModifyAdc();
-  void SetColorAlpha( int color, double alpha );
-
+  void SetColorAlpha( int color, double alpha, bool does_all = false );
+  void SetAdc7Correction( bool flag=true ){ does_adc7_correction_ = flag; };
+  void SetAdc14Correction( bool flag=true ){ does_adc14_correction_ = flag; };
+  void SetTag( string tag ){ tag_ = tag;}
+  
   void Print();
 };
 

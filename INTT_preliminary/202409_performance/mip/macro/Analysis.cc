@@ -18,15 +18,10 @@ Analysis::Analysis( int run ) :
       // TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject( file_name.c_str() );
       TFile *f = new TFile( file_name.c_str() );
       f->GetObject("clus_tree",tree);
-
-      /*
-      if (!f || !f->IsOpen()) {
-	f = new TFile("tracking_run41981.root");
-      }
-      f->GetObject("clus_tree",tree);
-      */
+      
     }
-  Init(tree);
+    
+  Init( tree );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -34,8 +29,196 @@ Analysis::Analysis( int run ) :
 //////////////////////////////////////////////////////////////////////
 Analysis::~Analysis()
 {
-   if (!fChain) return;
+   if (!fChain)
+     return;
+
    delete fChain->GetCurrentFile();
+}
+
+//////////////////////////////////////////////////////////////////////
+// Init                                                             //
+//////////////////////////////////////////////////////////////////////
+void Analysis::Init(TTree *tree)
+{
+   // The Init() function is called when the selector needs to initialize
+   // a new tree or chain. Typically here the branch addresses and branch
+   // pointers of the tree will be set.
+   // It is normally not necessary to make changes to the generated
+   // code, but the routine can be extended by the user if needed.
+   // Init() will be called many times when running on PROOF
+   // (once per file to be processed).
+
+   // Set object pointer
+   x_in = 0;
+   y_in = 0;
+   z_in = 0;
+   r_in = 0;
+   size_in = 0;
+   phi_in = 0;
+   theta_in = 0;
+   adc_in = 0;
+   is_associated_in = 0;
+   track_incoming_theta_in = 0;
+   x_out = 0;
+   y_out = 0;
+   z_out = 0;
+   r_out = 0;
+   size_out = 0;
+   phi_out = 0;
+   theta_out = 0;
+   adc_out = 0;
+   is_associated_out = 0;
+   track_incoming_theta_out = 0;
+
+   // Set branch addresses and branch pointers
+   if( !tree )
+     return;
+   
+   fChain = tree;
+   fCurrent = -1;
+   fChain->SetMakeClass(1);
+
+   fChain->SetBranchAddress("evt_clus"			, &evt_clus, &b_evt_clus				      );
+   fChain->SetBranchAddress("x_in"			, &x_in, &b_x_in					      );
+   fChain->SetBranchAddress("y_in"			, &y_in, &b_y_in					      );
+   fChain->SetBranchAddress("z_in"			, &z_in, &b_z_in					      );
+   fChain->SetBranchAddress("r_in"			, &r_in, &b_r_in					      );
+   fChain->SetBranchAddress("size_in"			, &size_in, &b_size_in					      );
+   fChain->SetBranchAddress("phi_in"			, &phi_in, &b_phi_in					      );
+   fChain->SetBranchAddress("theta_in"			, &theta_in, &b_theta_in				      );
+   fChain->SetBranchAddress("adc_in"			, &adc_in, &b_adc_in					      );
+   fChain->SetBranchAddress("is_associated_in"		, &is_associated_in, &b_is_associated_in		      );
+   fChain->SetBranchAddress("track_incoming_theta_in"	, &track_incoming_theta_in, &b_track_incoming_theta_in	      );
+   fChain->SetBranchAddress("x_out"			, &x_out, &b_x_out					      );
+   fChain->SetBranchAddress("y_out"			, &y_out, &b_y_out					      );
+   fChain->SetBranchAddress("z_out"			, &z_out, &b_z_out					      );
+   fChain->SetBranchAddress("r_out"			, &r_out, &b_r_out					      );
+   fChain->SetBranchAddress("size_out"			, &size_out, &b_size_out				      );
+   fChain->SetBranchAddress("phi_out"			, &phi_out, &b_phi_out					      );
+   fChain->SetBranchAddress("theta_out"			, &theta_out, &b_theta_out				      );
+   fChain->SetBranchAddress("adc_out"			, &adc_out, &b_adc_out					      );
+   fChain->SetBranchAddress("is_associated_out"		, &is_associated_out, &b_is_associated_out		      );
+   fChain->SetBranchAddress("track_incoming_theta_out"	, &track_incoming_theta_out, &b_track_incoming_theta_out      );
+   fChain->SetBranchAddress("z_vertex"			, &z_vertex, &b_z_vertex				      );
+   Notify();
+   
+  string title = "ADC distribution;ADC [arb. units];Counts [arb. units]";
+
+  hist_all_ = new MipHist( "Raw", title );  
+  hist_all_->SetColorAlpha( kGreen+2, 0.2 );
+  hist_all_->SetTag( "Raw ADC" );
+
+  hist_aso_ = new MipHist( "Track_assoiation", title );
+  hist_aso_->SetColorAlpha( kRed, 0.1 );
+  hist_aso_->SetTag( "Tracklet asso." );
+
+  hist_no_aso_ = new MipHist( "Track_not_assoiated", title );
+  hist_no_aso_->SetColorAlpha( kBlack, 0.1 );
+  hist_no_aso_->SetTag( "No tracklet asso." );
+
+  ///////////////////////////////////////////////////////////////
+  // Misaki's config
+  ///////////////////////////////////////////////////////////////
+  hist_ang85_ = new MipHist( "Ang85_90", title );
+  hist_ang85_->SetColorAlpha( kBlue, 0.1 );
+  hist_ang85_->SetTag( "85#circ < |#theta^{INTT}| #leq 90#circ" );
+
+  hist_ang45_ = new MipHist( "Ang40_45", title );
+  hist_ang45_->SetColorAlpha( kRed, 0.1 );
+  hist_ang45_->SetTag( "40#circ < |#theta^{INTT}| #leq 45#circ" );
+
+  hist_ang35_ = new MipHist( "Ang30_35", title );
+  hist_ang35_->SetColorAlpha( kSpring-1, 0.1 );
+  hist_ang35_->SetTag( "30#circ < |#theta^{INTT}| #leq 35#circ" );
+
+  hist_ang25_ = new MipHist( "Ang20_25", title );
+  hist_ang25_->SetColorAlpha( kOrange+1, 0.1 );
+  hist_ang25_->SetTag( "20#circ < |#theta^{INTT}| #leq 25#circ" );
+
+  ///////////////////////////////////////////////////////////////
+  // my config                                                 //
+  ///////////////////////////////////////////////////////////////
+  hist_ang80_ = new MipHist( "Ang80_90", title );
+  hist_ang80_->SetColorAlpha( kRed, 0.1 );
+  hist_ang80_->SetTag( "80#circ < |#theta^{INTT}| #leq 90#circ" );
+
+  hist_ang70_ = new MipHist( "Ang70_80", title );
+  hist_ang70_->SetColorAlpha( kRed, 0.1 );
+  hist_ang70_->SetTag( "70#circ < |#theta^{INTT}| #leq 80#circ" );
+
+  hist_ang60_ = new MipHist( "Ang60_70", title );
+  hist_ang60_->SetColorAlpha( kRed, 0.1 );
+  hist_ang60_->SetTag( "60#circ < |#theta^{INTT}| #leq 70#circ" );
+
+  hist_ang50_ = new MipHist( "Ang50_60", title );
+  hist_ang50_->SetColorAlpha( kRed, 0.1 );
+  hist_ang50_->SetTag( "50#circ < |#theta^{INTT}| #leq 60#circ" );
+
+  hist_ang40_ = new MipHist( "Ang40_50", title );
+  hist_ang40_->SetColorAlpha( kRed, 0.1 );
+  hist_ang40_->SetTag( "40#circ < |#theta^{INTT}| #leq 50#circ" );
+
+  hist_ang30_ = new MipHist( "Ang30_40", title );
+  hist_ang30_->SetColorAlpha( kRed, 0.1 );
+  hist_ang30_->SetTag( "30#circ < |#theta^{INTT}| #leq 40#circ" );
+
+  hist_ang20_ = new MipHist( "Ang20_30", title );
+  hist_ang20_->SetColorAlpha( kRed, 0.1 );
+  hist_ang20_->SetTag( "20#circ < |#theta^{INTT}| #leq 30#circ" );
+
+  hist_ang10_ = new MipHist( "Ang10_20", title );
+  hist_ang10_->SetColorAlpha( kRed, 0.1 );
+  hist_ang10_->SetTag( "10#circ < |#theta^{INTT}| #leq 20#circ" );
+
+  hist_ang0_ = new MipHist( "Ang0_10", title );
+  hist_ang0_->SetColorAlpha( kRed, 0.1 );
+  hist_ang0_->SetTag( "0#circ < |#theta^{INTT}| #leq 10#circ" );
+
+  ///////////////////////////////////////////////////////////////
+  // fine selection                                            //
+  ///////////////////////////////////////////////////////////////
+  hist_ang10_11_ = new MipHist( "Ang10_11", title );
+  hist_ang10_11_->SetColorAlpha( kRed, 0.1 );
+  hist_ang10_11_->SetTag( "10#circ < |#theta^{INTT}| #leq 11#circ" );
+
+  hist_ang20_21_ = new MipHist( "Ang20_21", title );
+  hist_ang20_21_->SetColorAlpha( kRed, 0.1 );
+  hist_ang20_21_->SetTag( "20#circ < |#theta^{INTT}| #leq 21#circ" );
+
+  hist_ang30_31_ = new MipHist( "Ang30_31", title );
+  hist_ang30_31_->SetColorAlpha( kRed, 0.1 );
+  hist_ang30_31_->SetTag( "30#circ < |#theta^{INTT}| #leq 31#circ" );
+
+  ///////////////////////////////////////////////////////////////
+  // put all into a vector                                     //
+  ///////////////////////////////////////////////////////////////
+  hists_.push_back( hist_all_ );
+  hists_.push_back( hist_aso_ );
+  hists_.push_back( hist_no_aso_ );
+  hists_.push_back( hist_ang85_ );
+  hists_.push_back( hist_ang45_ );
+  hists_.push_back( hist_ang35_ );
+  hists_.push_back( hist_ang25_ );
+
+  hists_.push_back( hist_ang80_ );
+  hists_.push_back( hist_ang70_ );
+  hists_.push_back( hist_ang60_ );
+  hists_.push_back( hist_ang50_ );
+  hists_.push_back( hist_ang40_ );
+  hists_.push_back( hist_ang30_ );
+  hists_.push_back( hist_ang20_ );
+  hists_.push_back( hist_ang10_ );
+  hists_.push_back( hist_ang0_ );
+  
+  hists_.push_back( hist_ang10_11_ );
+  hists_.push_back( hist_ang20_21_ );
+  hists_.push_back( hist_ang30_31_ );
+  
+  hist_correlation = new TH2D( "nhit_correlation_barrel",
+			       "Cluster correlation between barrels;Number of clusters at inner barrel;Number of clusters at outer barrel;",
+			       100, 0, 100, 
+			       100, 0, 100 ); 
+  HistSetting( hist_correlation );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -74,15 +257,14 @@ void Analysis::DrawWords()
 
   // sPHENIX Internal or sPHENIX Prelimnary
   pos_y -= line_height - first_margin + 0.025;
-  double pos_x = 0.2;
+  double pos_x = 0.45 - right_margin_;
   if( is_preliminary_ == false )
     {
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
     }
   else
     {
-
-      pos_x = 0.4;
+      //pos_x = 0.6;
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
     }
 
@@ -94,181 +276,34 @@ void Analysis::DrawWords()
   tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
 }
 
-
 Int_t Analysis::GetEntry(Long64_t entry)
 {
 // Read contents of entry.
-   if (!fChain) return 0;
+   if (!fChain)
+     return 0;
+   
    return fChain->GetEntry(entry);
 }
 
 Long64_t Analysis::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
-   if (!fChain) return -5;
+   if (!fChain)
+     return -5;
+   
    Long64_t centry = fChain->LoadTree(entry);
-   if (centry < 0) return centry;
-   if (fChain->GetTreeNumber() != fCurrent) {
-      fCurrent = fChain->GetTreeNumber();
-      Notify();
-   }
+   if (centry < 0)
+     return centry;
+   
+   if (fChain->GetTreeNumber() != fCurrent)
+     {
+       fCurrent = fChain->GetTreeNumber();
+       Notify();
+     }
+   
    return centry;
 }
 
-void Analysis::Init(TTree *tree)
-{
-   // The Init() function is called when the selector needs to initialize
-   // a new tree or chain. Typically here the branch addresses and branch
-   // pointers of the tree will be set.
-   // It is normally not necessary to make changes to the generated
-   // code, but the routine can be extended by the user if needed.
-   // Init() will be called many times when running on PROOF
-   // (once per file to be processed).
-
-   // Set object pointer
-   x_in = 0;
-   y_in = 0;
-   z_in = 0;
-   r_in = 0;
-   size_in = 0;
-   phi_in = 0;
-   theta_in = 0;
-   adc_in = 0;
-   is_associated_in = 0;
-   track_incoming_theta_in = 0;
-   x_out = 0;
-   y_out = 0;
-   z_out = 0;
-   r_out = 0;
-   size_out = 0;
-   phi_out = 0;
-   theta_out = 0;
-   adc_out = 0;
-   is_associated_out = 0;
-   track_incoming_theta_out = 0;
-
-   // Set branch addresses and branch pointers
-   if (!tree)
-     return;
-   
-   fChain = tree;
-   fCurrent = -1;
-   fChain->SetMakeClass(1);
-
-   fChain->SetBranchAddress("evt_clus", &evt_clus, &b_evt_clus);
-   fChain->SetBranchAddress("x_in", &x_in, &b_x_in);
-   fChain->SetBranchAddress("y_in", &y_in, &b_y_in);
-   fChain->SetBranchAddress("z_in", &z_in, &b_z_in);
-   fChain->SetBranchAddress("r_in", &r_in, &b_r_in);
-   fChain->SetBranchAddress("size_in", &size_in, &b_size_in);
-   fChain->SetBranchAddress("phi_in", &phi_in, &b_phi_in);
-   fChain->SetBranchAddress("theta_in", &theta_in, &b_theta_in);
-   fChain->SetBranchAddress("adc_in", &adc_in, &b_adc_in);
-   fChain->SetBranchAddress("is_associated_in", &is_associated_in, &b_is_associated_in);
-   fChain->SetBranchAddress("track_incoming_theta_in", &track_incoming_theta_in, &b_track_incoming_theta_in);
-   fChain->SetBranchAddress("x_out", &x_out, &b_x_out);
-   fChain->SetBranchAddress("y_out", &y_out, &b_y_out);
-   fChain->SetBranchAddress("z_out", &z_out, &b_z_out);
-   fChain->SetBranchAddress("r_out", &r_out, &b_r_out);
-   fChain->SetBranchAddress("size_out", &size_out, &b_size_out);
-   fChain->SetBranchAddress("phi_out", &phi_out, &b_phi_out);
-   fChain->SetBranchAddress("theta_out", &theta_out, &b_theta_out);
-   fChain->SetBranchAddress("adc_out", &adc_out, &b_adc_out);
-   fChain->SetBranchAddress("is_associated_out", &is_associated_out, &b_is_associated_out);
-   fChain->SetBranchAddress("track_incoming_theta_out", &track_incoming_theta_out, &b_track_incoming_theta_out);
-   fChain->SetBranchAddress("z_vertex", &z_vertex, &b_z_vertex);
-   Notify();
-   
-  int bin_num = 20;
-  double xmin = 0;
-  double xmax = 600;
-  
-  string title = "DAC distribution;DAC [arb. units];Counts";
-  hist_all = new TH1D( "ADC", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
-  // hist_all->SetFillColorAlpha( kGray, 0.2 );
-  // hist_all->SetLineColorAlpha( kBlack, 1 );
-  hist_all->SetFillColorAlpha( kGreen+2, 0.2 );
-  hist_all->SetLineColorAlpha( hist_all->GetFillColor(), 1 );
-  hist_all->SetLineWidth( 2 );
-  HistSetting( hist_all );
-
-  hist_all_ = new MipHist( "name", "title" );  
-  hist_all_->SetColorAlpha( kGreen+2, 0.2 );
-
-  hist_aso_ = new MipHist( "Track_assoiation", title.c_str() );
-  hist_aso_->SetColorAlpha( kBlue, 0.1 );
-
-  hist_no_aso_ = new MipHist( "Track_not_assoiated", title.c_str() );
-  hist_no_aso_->SetColorAlpha( kGray, 0.1 );
-
-  hist_ang90_ = new MipHist( "Top_pm5", title.c_str() );
-  hist_ang90_->SetColorAlpha( kBlue, 0.1 );
-
-  hist_ang45_ = new MipHist( "Ang40_45", title.c_str() );
-  hist_ang45_->SetColorAlpha( kRed, 0.1 );
-
-  hist_ang35_ = new MipHist( "Ang30_35", title.c_str() );
-  hist_ang35_->SetColorAlpha( kSpring-1, 0.1 );
-
-  hist_ang25_ = new MipHist( "Ang20_25", title.c_str() );
-  hist_ang25_->SetColorAlpha( kOrange+1, 0.1 );
-
-  hists_.push_back( hist_all_ );
-  hists_.push_back( hist_aso_ );
-  hists_.push_back( hist_no_aso_ );
-  hists_.push_back( hist_ang90_ );
-  hists_.push_back( hist_ang45_ );
-  hists_.push_back( hist_ang35_ );
-  hists_.push_back( hist_ang25_ );
-
-  hist_aso = new TH1D( "Track_assoiation", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
-  //hist_aso->SetFillColorAlpha( kRed + 2, 0.1 );
-  //hist_aso->SetFillColorAlpha( kViolet + 1, 0.1 );
-  //  hist_aso->SetFillColorAlpha( kGreen + 2, 0.1 );
-  hist_aso->SetFillColorAlpha( kBlue, 0.1 );
-  hist_aso->SetLineColorAlpha( hist_aso->GetFillColor(), 1 );
-  hist_aso->SetLineWidth( 2 );
-  HistSetting( hist_aso );
-  
-  hist_no_aso = new TH1D( "Track_not_assoiated", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", cut, "",
-  hist_no_aso->SetFillColorAlpha( kGray, 0.1 );
-  hist_no_aso->SetLineColorAlpha( hist_no_aso->GetFillColor(), 1 );
-  hist_no_aso->SetLineWidth( 1 );
-  HistSetting( hist_no_aso );
-  
-  hist_ang90 = new TH1D( "Top_pm5", title.c_str(), bin_num, xmin, xmax) ; // , "adc_in", this_cut, "",
-  hist_ang90->SetFillColorAlpha( kBlue, 0.1 );
-  //hist_ang90->SetFillColorAlpha( kRed - 4 , 0.2 );
-  hist_ang90->SetLineColorAlpha( hist_ang90->GetFillColor(), 1 );
-  hist_ang90->SetLineWidth( 3 );
-  HistSetting( hist_ang90 );
-    
-  hist_ang45 = new TH1D( "Ang40_45", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
-  hist_ang45->SetFillColorAlpha( kRed, 0.1 );
-  hist_ang45->SetLineColorAlpha( hist_ang45->GetFillColor(), 1 );
-  hist_ang45->SetLineWidth( 3 );
-  HistSetting( hist_ang45 );
-  
-  hist_ang35 = new TH1D( "Ang30_35", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
-  hist_ang35->SetFillColorAlpha( kSpring-1, 0.1 );
-  hist_ang35->SetLineColorAlpha( hist_ang35->GetFillColor(), 1 );
-  hist_ang35->SetLineWidth( 3 );
-  HistSetting( hist_ang35 );
-  
-  hist_ang25 = new TH1D( "Ang20_25", title.c_str(), bin_num, xmin, xmax) ; // ,   "adc_in", this_cut, "",
-  hist_ang25->SetFillColorAlpha( kOrange+1, 0.1 );
-  hist_ang25->SetLineColorAlpha( hist_ang25->GetFillColor(), 1 );
-  hist_ang25->SetLineWidth( 3 );
-  HistSetting( hist_ang25 );
-  
-  hist_correlation = new TH2D( "nhit_correlation_barrel",
-			       "Cluster correlation b/w barrels;#cluster_{Inner};#cluster_{Outer};Counts",
-			       80, 0, 80,
-			       80, 0, 80 );
-			       /* 100, 0, 100, */
-			       /* 100, 0, 100 ); */
-  HistSetting( hist_correlation );
-}
 
 Bool_t Analysis::Notify()
 {
@@ -289,68 +324,76 @@ Int_t Analysis::Cut(Long64_t entry)
    return 1;
 }
 
-void Analysis::ModifyAdcs()
+void Analysis::DrawSingle( MipHist* mip_hist )
 {
+  int color = mip_hist->GetColor();
+  double alpha = mip_hist->GetAlpha();
+
+  mip_hist->SetColorAlpha( kBlack, 0.1, true );
   
-  this->ModifyAdc( hist_all );
-  // this->ModifyAdc( hist_aso );
-  // this->ModifyAdc( hist_no_aso );
-  //this->ModifyAdc( hist_ang90 );
-  // this->ModifyAdc( hist_ang45 );
-  // this->ModifyAdc( hist_ang35 );
-  // this->ModifyAdc( hist_ang25 );
-  
+  HistSetting1D( mip_hist->GetHist() );
+  mip_hist->GetHist()->Draw();
+  this->DrawWords();
+
+  string page_title = string("Title: ") + mip_hist->GetHist()->GetName();
+  c_->Print( c_->GetName(), page_title.c_str() );
+
+  string output = c_->GetName();
+  output = output.substr( 0, output.find_last_of("_") ) + "_" + mip_hist->GetHist()->GetName();
+  if( is_preliminary_ == true )
+    output += "_preliminary.pdf";
+  else
+    output += "_internal.pdf";
+    
+  c_->Print( output.c_str() );
+
+  // restore color and alpha
+  mip_hist->SetColorAlpha( color, alpha, true );
 }
 
-void Analysis::ModifyAdc( TH1D* hist )
+void Analysis::DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, bool use_color_palette )
 {
-  this->ModifyAdc( hist, 0 );
-  this->ModifyAdc( hist, 1 );
-}
 
-void Analysis::ModifyAdc( TH1D* hist, int mode )
-{
-  //  auto hist = hist_all;
-  int index_over_under_flow = 0;
-  int adc = adc7_;
-
-  if( mode == 1 ) // for 2-hit cluster with ADC14 = 2 * DAC 210
+  TLegend* leg = new TLegend( 0.5, 0.75 - mip_hists.size() * 0.05, 0.8, 0.75);
+  int counter = 0;
+  for( auto& mip_hist : mip_hists )
     {
-      index_over_under_flow = hist->GetNbinsX() + 1;
-      adc = adc7_ * 2;
-    }
+      //double top_val = 0.05 * ++counter + 1;
+      double top_val = ++counter ;
+      
+      auto hist = mip_hist->GetNormalizedHist( top_val );
+      HistSetting1D( hist );
 
-  int index_adc = 0;
-  for( int i=1; i<hist->GetNbinsX() + 1; i++ )
-    {
-      double bin_low = hist->GetBinLowEdge( i );
-      double bin_high = bin_low + hist->GetBinWidth( i );
+      hist->GetYaxis()->SetRangeUser( 0, 0.2 );
 
-      if( bin_low <= adc && adc < bin_high )
+      if( use_color_palette )
 	{
-	  index_adc = i;
-	  break;
+	  hist->SetFillStyle( 0 );
+	  hist->SetFillColorAlpha( kWhite, 0 );
+	  hist->Draw( (mip_hist == mip_hists[0] ? "HISTE PLC" : "HISTE PLC same" ) );
 	}
-    }
-  
-  int num_cluster_adc                     = hist->GetBinContent( index_adc );
-  int num_single_hit_cluster_adc          = hist->GetBinContent( index_over_under_flow );
-  int num_multiple_hit_cluster_adc        = num_cluster_adc - num_single_hit_cluster_adc;
-  int num_modified_single_hit_cluster_adc = num_single_hit_cluster_adc * adc7_modification_factor_;
-  if( mode == 1 )
-    num_modified_single_hit_cluster_adc *= adc7_modification_factor_;
-  
-  int num_modified_cluster_adc            = num_modified_single_hit_cluster_adc + num_multiple_hit_cluster_adc;
-  
-  cout << "ModifyAdc" << endl;
-  cout << "Index of ADC: " << index_adc << endl;
-  cout << "#ADC: " << num_cluster_adc << endl;
-  cout << "#ADC (single-hit cluster): " << num_single_hit_cluster_adc << endl;
-  cout << "#ADC (multiple-hit cluster): " << num_multiple_hit_cluster_adc << endl;
-  cout << "Modified #ADC (single-hit cluster): " << num_modified_single_hit_cluster_adc << endl;
-  cout << "Moddified #ADC: " << num_modified_cluster_adc << endl;
+      else 
+	hist->Draw( (mip_hist == mip_hists[0] ? "HISTE" : "HISTE same" ) );
 
-  hist->SetBinContent( index_adc, num_modified_cluster_adc );
+      leg->AddEntry( hist, mip_hist->GetTag().c_str() );
+      // auto f = mip_hist->GetNormalizedFunction( top_val );
+      // f->Draw( "same" );
+      // mip_hist->DrawLine( f );
+      
+    }
+
+  leg->Draw();
+  this->DrawWords();
+  c_->Print( c_->GetName() );  
+
+  string output = c_->GetName();
+  output = output.substr( 0, output.find_last_of("_") ) + "_" + output_tag;
+  if( is_preliminary_ == true )
+    output += "_preliminary.pdf";
+  else
+    output += "_internal.pdf";
+
+  c_->Print( output.c_str() );
 }
 
 void Analysis::FillClusterInfo( int mode )
@@ -398,14 +441,24 @@ void Analysis::FillClusterInfo( int mode )
     {
       
       if( (*size)[i] > cluster_size_max_ )
-	continue;
-      /* if( fabs( z_vertex - (*z)[i] ) > 5 ) */
+	{
+	  counter_too_large_cluster_++;
+	  continue;
+	}
+
+      /* if( fabs( z_vertex - (*z)[i] ) > 5 ) */ // no need...
       /*   continue; */
-	   
+	         
       int adc = (*adcs)[i];
       bool is_single_hit_cluster_adc7  = ( (*size)[i] == 1 && adc == adc7_ );
-      bool is_double_hit_cluster_adc14 = ( (*size)[i] == 2 && adc == adc7_ * 2);
 
+      // Modification of bins containig 1 hit with ADC7, No need to use it because it's not fair modification.
+      // bool is_double_hit_cluster_adc7  = ( (*size)[i] == 2 
+      // 					   && (adc == 245 || adc == 255 || adc == 390 )
+      // 					   );
+      // is_single_hit_cluster_adc7 = is_single_hit_cluster_adc7 || is_double_hit_cluster_adc7;
+      
+      bool is_double_hit_cluster_adc14 = ( (*size)[i] == 2 && adc == adc7_ * 2 );
       hist_all_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
 	
       // if this cluster is not associated with a tracklet, store info here and skip the rest parts
@@ -417,18 +470,87 @@ void Analysis::FillClusterInfo( int mode )
 	}
 	   
       hist_aso_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+      ///////////////////////////////////////////////////////////////
+      // Misaki's config                                           //
+      ///////////////////////////////////////////////////////////////
+      double angle_abs = fabs( (*track_incoming_theta)[i] );
+      
+      if( 85 <= angle_abs )
+	{
+	  hist_ang85_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 40 < angle_abs && angle_abs <= 45 )
+	{
+	  hist_ang45_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 30 < angle_abs && angle_abs <= 35 )
+	{
+	  hist_ang35_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 20 < angle_abs && angle_abs <= 25 )
+	{
+	  hist_ang25_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+  
+      ///////////////////////////////////////////////////////////////
+      // My config                                                 //
+      ///////////////////////////////////////////////////////////////
+      if( 80 < angle_abs && angle_abs <= 90 )
+	{
+	  hist_ang80_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 70 < angle_abs && angle_abs <= 80 )
+	{
+	  hist_ang70_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 60 < angle_abs && angle_abs <= 70 )
+	{
+	  hist_ang60_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 50 < angle_abs && angle_abs <= 60 )
+	{
+	  hist_ang50_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 40 < angle_abs && angle_abs <= 50 )
+	{
+	  hist_ang40_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 30 < angle_abs && angle_abs <= 40 )
+	{
+	  hist_ang30_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 20 < angle_abs && angle_abs <= 30 )
+	{
+	  hist_ang20_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 10 < angle_abs && angle_abs <= 20 )
+	{
+	  hist_ang10_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 0 < angle_abs && angle_abs <= 10 )
+	{
+	  hist_ang0_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else
+	cout << (*track_incoming_theta)[i] << endl;
 
-      if( (*track_incoming_theta)[i] > 85 )
-	hist_ang90_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
-      else if( 40 < (*track_incoming_theta)[i] && (*track_incoming_theta)[i] < 45 )
-	hist_ang45_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
-      else if( 30 < (*track_incoming_theta)[i] && (*track_incoming_theta)[i] < 35 )
-	hist_ang35_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
-      else if( 20 < (*track_incoming_theta)[i] && (*track_incoming_theta)[i] < 25 )
-	hist_ang25_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
-	
+      ///////////////////////////////////////////////////////////////
+      // Fine selection                                            //
+      ///////////////////////////////////////////////////////////////
+      if( 10 < angle_abs && angle_abs <= 11 )
+	{
+	  hist_ang10_11_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 20 < angle_abs && angle_abs <= 21 )
+	{
+	  hist_ang20_21_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+      else if( 30 < angle_abs && angle_abs <= 31 )
+	{
+	  hist_ang30_31_->FillAll( adc, is_single_hit_cluster_adc7, is_double_hit_cluster_adc14 );
+	}
+
     } // end of for( int i=0; i<adc->size(); i++ )
-
 
 }
 
@@ -438,53 +560,40 @@ void Analysis::FillClusterInfo( int mode )
 
 void Analysis::Loop()
 {
-//   In a ROOT session, you can do:
-//      root> .L Analysis.C
-//      root> Analysis t
-//      root> t.GetEntry(12); // Fill t data members with entry number 12
-//      root> t.Show();       // Show values of entry 12
-//      root> t.Show(16);     // Read and show values of entry 16
-//      root> t.Loop();       // Loop on all entries
-//
-
-//     This is the loop skeleton where:
-//    jentry is the global entry number in the chain
-//    ientry is the entry number in the current Tree
-//  Note that the argument to GetEntry must be:
-//    jentry for TChain::GetEntry
-//    ientry for TTree::GetEntry and TBranch::GetEntry
-//
-//       To read only selected branches, Insert statements like:
-// METHOD1:
-//    fChain->SetBranchStatus("*",0);  // disable all branches
-//    fChain->SetBranchStatus("branchname",1);  // activate branchname
-// METHOD2: replace line
-//    fChain->GetEntry(jentry);       //read all branches
-//by  b_branchname->GetEntry(ientry); //read only this branch
-   if (fChain == 0) return;
+  //     This is the loop skeleton where:
+  //    jentry is the global entry number in the chain
+  //    ientry is the entry number in the current Tree
+  //  Note that the argument to GetEntry must be:
+  //    jentry for TChain::GetEntry
+  //    ientry for TTree::GetEntry and TBranch::GetEntry
+  
+  if( fChain == 0 )
+    return;
 
    Long64_t nentries = fChain->GetEntriesFast();
 
    bool does_z_cut = true;
-   bool does_adc7_cut = true;
-   //does_adc7_cut = false;
-   
-   bool does_double_adc7_cut = true;
-   //does_double_adc7_cut = false;
    
    for (Long64_t jentry=0; jentry<nentries;jentry++)
      {
        Long64_t ientry = LoadTree(jentry);
+
+       int hit_num_inner = std::count( is_associated_in->begin(), is_associated_in->end(), true );
+       int hit_num_outer = std::count( is_associated_out->begin(), is_associated_out->end(), true );
+       hist_correlation->Fill( hit_num_inner, hit_num_outer );
+       
        if (ientry < 0)
 	 break;
 
+       fChain->GetEntry(jentry);
+       
        double cluster_num_in = adc_in->size();
        double cluster_num_out = adc_out->size();
        double cluster_num = cluster_num_in + cluster_num_out;
        double cluster_num_asymmetry = fabs(cluster_num_in - cluster_num_out) / cluster_num;
-       fChain->GetEntry(jentry);
 
        bool is_good_event = true;
+
        if( cluster_num_in <= 3
 	   || cluster_num_out <= 3
 	   || cluster_num <= 6
@@ -492,25 +601,6 @@ void Analysis::Loop()
 	   )
 	 is_good_event = false;
 
-       // if( is_good_event )
-       // 	 cout << cluster_num_in << "\t"
-       // 	      << cluster_num_out << "\t"
-       // 	      << cluster_num << "\t"
-       // 	      << cluster_num_asymmetry
-       // 	      << endl;
-       
-       
-       /* if( is_good_event && does_z_cut && fabs( z_vertex ) > 25 ) */
-       /* 	 is_good_event = false; */
-
-       // if( is_good_event )
-       // 	 cout << setw(4) << cluster_num_in << "\t"
-       // 	      << setw(4) << cluster_num_out << "\t"
-       // 	      << setw(7) << setprecision(4) << left << cluster_num_in / cluster_num_out << "\t"
-       // 	      << endl;
-       
-       //is_good_event = true;
-       int hit_num_inner = 0, hit_num_outer = 0;
        ////////////////////////////////////////////////////////////////////
        // Loop over inner hits
        if( is_good_event == false )
@@ -519,167 +609,12 @@ void Analysis::Loop()
        this->FillClusterInfo( 0 );
        this->FillClusterInfo( 1 );
 
-       /*
-       for( int i=0; i<adc_in->size(); i++ )
-	 {
-
-	   if( is_good_event == false )
-	     continue;
-	   
-	   if( (*size_in)[i] > cluster_size_max_ )
-	     continue;
-	   / * if( fabs( z_vertex - (*z_in)[i] ) > 5 ) * /
-       / *   continue; * /
-	   
-	   int adc = (*adc_in)[i];
-	   hist_all->Fill( adc );
-
-	   bool is_single_hit_cluster_adc7 = ( does_adc7_cut && (*size_in)[i] == 1 && adc == adc7_ );
-	   bool is_double_hit_cluster_adc14 = does_double_adc7_cut && (*size_in)[i] == 2 && adc == adc7_ * 2;
-	   if( is_single_hit_cluster_adc7 )
-	       hist_all->Fill( -9999 );
-	   else if( is_double_hit_cluster_adc14 )	     
-	     hist_all->Fill( hist_all->GetNbinsX()+1 );
-
-	   // if this cluster is not associated with a tracklet, store info here and skip the rest parts
-	   if( (*is_associated_in)[i] == false )
-	     {
-
-	       hist_no_aso->Fill( adc );
-	       if( is_single_hit_cluster_adc7 )
-		 hist_no_aso->Fill( -9999 );
-	       else if( is_double_hit_cluster_adc14 )
-		 hist_no_aso->Fill( hist_no_aso->GetNbinsX()+1 );
-
-	       continue;
-	     }
-	   
-	   hist_aso->Fill( adc );
-	   if( is_single_hit_cluster_adc7 )
-	     hist_aso->Fill( -9999 );
-	   else if( is_double_hit_cluster_adc14 )
-	     hist_aso->Fill( hist_aso->GetNbinsX()+1 );
-
-	   if( (*track_incoming_theta_in)[i] > 85 )
-	     hist_ang90->Fill( adc );
-	   else if( 40 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 45 )
-	     hist_ang45->Fill( adc );
-	   else if( 30 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 35 )
-	     hist_ang35->Fill( adc );
-	   else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-	     hist_ang25->Fill( adc );
-
-	   if( is_single_hit_cluster_adc7 )
-	     {
-	       if( (*track_incoming_theta_in)[i] > 85 )
-		 hist_ang90->Fill( -9999 );
-	       else if( 40 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 45 )
-		 hist_ang45->Fill( -9999 );
-	       else if( 30 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 35 )
-		 hist_ang35->Fill( -9999 );
-	       else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-		 hist_ang25->Fill( -9999 );
-	     }
-	   else if( is_double_hit_cluster_adc14 )
-	     {
-	       if( (*track_incoming_theta_in)[i] > 85 )
-		 hist_ang90->Fill( hist_ang90->GetNbinsX()+1 );
-	       else if( 40 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 45 )
-		 hist_ang45->Fill( hist_ang45->GetNbinsX()+1 );
-	       else if( 30 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 35 )
-		 hist_ang35->Fill( hist_ang35->GetNbinsX()+1 );
-	       else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-		 hist_ang25->Fill( hist_ang25->GetNbinsX()+1 );
-	     }
-
-	   hit_num_inner++;
-	 }
-
-       ////////////////////////////////////////////////////////////////////
-       // Loop over outer hits
-       for( int i=0; i<adc_out->size(); i++ )
-	 {
-
-	   if( (*size_out)[i] > cluster_size_max_ )
-	     continue;
-	   
-	   if( is_good_event == false )
-	     continue;
-
-	   int adc = (*adc_out)[i];
-	   hist_all->Fill( adc );
-	   
-	   bool is_single_hit_cluster_adc7 = ( does_adc7_cut && (*size_out)[i] == 1 && adc == adc7_ );
-	   bool is_double_hit_cluster_adc14 = does_double_adc7_cut && (*size_out)[i] == 2 && adc == adc7_ * 2;
-	   if( is_single_hit_cluster_adc7 )
-	       hist_all->Fill( -9999 ) ;
-	   else if( is_double_hit_cluster_adc14 )
-	     hist_all->Fill( hist_all->GetNbinsX()+1 );
-
-	   if( (*is_associated_out)[i] == false )
-	     {
-	       hist_no_aso->Fill( adc );
-
-	       if( is_single_hit_cluster_adc7 )
-		 hist_no_aso->Fill( -9999 );
-	       else if( is_double_hit_cluster_adc14 )
-		 hist_no_aso->Fill( hist_no_aso->GetNbinsX()+1 );
-	       
-	       continue;
-	     }
-
-	   hist_aso->Fill( adc );
-	   if( is_single_hit_cluster_adc7 )
-	     hist_aso->Fill( -9999 );
-	   else if( is_double_hit_cluster_adc14 )
-	     hist_aso->Fill( hist_aso->GetNbinsX()+1 );
-
-	   if( (*track_incoming_theta_out)[i] > 85 )
-	     hist_ang90->Fill( adc );
-	   else if( 40 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 45 )
-	     hist_ang45->Fill( adc );
-	   else if( 30 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 35 )
-	     hist_ang35->Fill( adc );
-	   else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-	     hist_ang25->Fill( adc );
-
-	   if( is_single_hit_cluster_adc7 )
-	     {
-	       if( (*track_incoming_theta_out)[i] > 85 )
-		 hist_ang90->Fill( -9999 );
-	       else if( 40 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 45 )
-		 hist_ang45->Fill( -9999 );
-	       else if( 30 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 35 )
-		 hist_ang35->Fill( -9999 );
-	       else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-		 hist_ang25->Fill( -9999 );
-	     }
-	   else if( is_double_hit_cluster_adc14 )
-	     {
-	       if( (*track_incoming_theta_out)[i] > 85 )
-		 hist_ang90->Fill( hist_ang90->GetNbinsX()+1 );
-	       else if( 40 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 45 )
-		 hist_ang45->Fill( hist_ang45->GetNbinsX()+1 );
-	       else if( 30 < (*track_incoming_theta_out)[i] && (*track_incoming_theta_out)[i] < 35 )
-		 hist_ang35->Fill( hist_ang35->GetNbinsX()+1 );
-	       else if( 20 < (*track_incoming_theta_in)[i] && (*track_incoming_theta_in)[i] < 25 )
-		 hist_ang25->Fill( hist_ang25->GetNbinsX()+1 );
-	     }
-
-	   hit_num_outer++;
-	 }
-
-       //       if(  hit_num_inner != 0  && hit_num_outer != 0 )
-       hist_correlation->Fill( hit_num_inner, hit_num_outer );
-       
-       //break;
-       */
      }
-
-   this->ModifyAdcs();
 
    for( auto& hist : hists_ )
      {
+       hist->SetAdc7Correction( does_adc7_correction_ );
+       hist->SetAdc14Correction( does_adc14_correction_ );
        hist->ModifyAdc();
        //hist->Print();
      }
@@ -690,83 +625,130 @@ void Analysis::Draw()
 {
 
   SetsPhenixStyle();
-  string output = "results/mip_" + to_string( run_ ) + ".pdf";
-  TCanvas* c = new TCanvas( output.c_str(), "title", 800, 800 );
-  c->Print( ((string)c->GetName() + "[").c_str() );
-
-  hist_all_->GetHist()->Draw( "same" );
-  c->Print( c->GetName() );
+  this->InitParameter();
   
-  auto hist_temp = (TH1D*)hist_ang90_->GetHist()->Clone();
-  hist_temp->SetLineColor( kBlack );
-  hist_temp->SetFillColorAlpha( kBlack, 0.1 );
-  hist_temp->Draw();
-  this->DrawWords();
-  c->Print( c->GetName() );
+  string output = "results/mip_" + to_string( run_ );
+  if( is_preliminary_ == true )
+    output += "_preliminary.pdf";
+  else
+    output += "_internal.pdf";
 
-  vector < MipHist* > mip_hists;
-  mip_hists.push_back( hist_ang90_ );
-  mip_hists.push_back( hist_ang45_ );
-  mip_hists.push_back( hist_ang35_ );
+  TFile* tf_output = new TFile( (output.substr(0, output.size()-4) + ".root").c_str(), "RECREATE" );
   
-  vector < TH1D* > hists;
-  // hists.push_back( hist_all_->GetHist() );
-  // hists.push_back( hist_aso_->GetHist() );
-  //hists.push_back( hist_no_aso_->GetHist() );
-  hists.push_back( hist_ang90_->GetHist() );
-  hists.push_back( hist_ang45_->GetHist() );
-  hists.push_back( hist_ang35_->GetHist() );
-  // hists.push_back( hist_ang25_->GetHist() );
+  c_ = new TCanvas( output.c_str(), "title", 800, 800 );
+  c_->Print( ((string)c_->GetName() + "[").c_str() );
 
-  //  gStyle->SetOptFit( true );
-  //  mh->SetStatsFormat( 111111 );
-  
-  for( auto& mip_hist : mip_hists )
-    {
-      mip_hist->GetHist()->Draw( (mip_hist == mip_hists[0] ? "" : "same" ) );
-    }
+  // drawing a single hist
+  for( auto& mip_hist : hists_ )
+    this->DrawSingle( mip_hist );
 
-  gPad->Update();
-  this->DrawWords();
-  c->Print( c->GetName() );
+  //  if( false )
+  { // same as Misaki
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_ang85_ );
+    mip_hists.push_back( hist_ang45_ );
+    mip_hists.push_back( hist_ang35_ );
+    this->DrawMultiple( mip_hists, "85-90_40-45_30-35" );
+  }
 
-  for( auto& mip_hist : mip_hists )
-    {     
-      mip_hist->GetNormalizedHist()->Draw( (mip_hist == mip_hists[0] ? "HISTE" : "HISTE same" ) );
-    }
-  
-  gPad->SetLogy( false );
-  for( auto& mip_hist : mip_hists )
-    {
-      mip_hist->GetNormalizedHist()->Draw( (mip_hist == mip_hists[0] ? "HISTE" : "HISTE same" ) );
-    }
+  //  if( false )
+  { // show cuts effect
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_all_ );
+    //mip_hists.push_back( hist_aso_ );
+    mip_hists.push_back( hist_ang85_ );
+    this->DrawMultiple( mip_hists, "raw_only_top_angle" );
+  }
 
-  this->DrawWords();
-  c->Print( c->GetName() );  
+  //  if( false )
+  { // tracklet association or not
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_aso_ );
+    mip_hists.push_back( hist_no_aso_ );
+    this->DrawMultiple( mip_hists, "associated_not_associated" );
+  }
 
-  /*
-  this_cut = "!(adc_in==210 && size_in==1) && fabs(z_vertex)<23 && is_associated_in";
-  //string cut = "!(adc_in==210 && size_in==1)";
-  auto hist_theta = Draw( tr, "theta", "#theta distribution;#theta;Entries", 180, -90, 90,
-			"track_incoming_theta_in", this_cut, "", kBlack, 0.1 );
-  hist_theta->Draw();
-  c->Print( c->GetName() );  
+  gStyle -> SetPalette( kLightTemperature );
+  //  if( false )
+  { // all my config
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_ang80_ );
+    mip_hists.push_back( hist_ang70_ );
+    mip_hists.push_back( hist_ang60_ );
+    mip_hists.push_back( hist_ang50_ );
+    mip_hists.push_back( hist_ang40_ );
+    mip_hists.push_back( hist_ang30_ );
+    mip_hists.push_back( hist_ang20_ );
+    mip_hists.push_back( hist_ang10_ );
+    mip_hists.push_back( hist_ang0_ );
 
-  this_cut = "!(adc_in==210 && size_in==1) && is_associated_in";
-  auto hist_z = Draw( tr, "z_vertex", "z_{vtx} distribution;z_{vtx} (cm);Entries", 100, -50, 50,
-		      "z_vertex", this_cut, "", kBlack, 0.1 );
-  hist_z->Draw();
-  c->Print( c->GetName() );  
-  */
+    this->DrawMultiple( mip_hists, "all", true );
+  }
 
+  { // all my config
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_ang80_ );
+    mip_hists.push_back( hist_ang50_ );
+    mip_hists.push_back( hist_ang20_ );
+    mip_hists.push_back( hist_ang0_ );
+    this->DrawMultiple( mip_hists, "80-90_50-60_20-30_0-10", true );
+  }
+
+  { // all my config
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_ang10_11_ );
+    mip_hists.push_back( hist_ang20_21_ );
+    mip_hists.push_back( hist_ang30_31_ );
+    this->DrawMultiple( mip_hists, "10-11_20-21_30-31", true );
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // #cluster correlation                                             //
+  //////////////////////////////////////////////////////////////////////
+  gStyle -> SetPalette( kBird );
+
+  top_margin_ = right_margin_ = 0.13;
+  c_->SetTopMargin( top_margin_ );
+  c_->SetBottomMargin( 0.13 );
+  c_->SetRightMargin( right_margin_ );
+  c_->SetLeftMargin( 0.13 );
+
+  hist_correlation->GetYaxis()->SetTitleOffset( 1.2 );
   hist_correlation->Draw( "colz" );
   gPad->SetLogz( true );
   //  DrawStats( hist_correlation, 0.7, 0.7, 0.9, 0.9 );
   this->DrawWords();
-  c->Print( c->GetName() );  
-  c->Print( ((string)c->GetName() + "]").c_str() );
-
+  c_->Print( c_->GetName() );
   
+  string output_correlation = output.substr( 0, output.find_last_of("_") ) + "_cluster_correlation";
+  if( is_preliminary_ == true )
+    output_correlation += "_preliminary.pdf";
+  else
+    output_correlation += "_internal.pdf";
+    
+  c_->Print( output_correlation.c_str() );
+  
+  c_->Print( ((string)c_->GetName() + "]").c_str() );
+
+  for( auto& mip_hist : hists_ )
+    tf_output->WriteTObject( mip_hist->GetHist(), mip_hist->GetHist()->GetName() );
+
+  tf_output->WriteTObject( hist_correlation, hist_correlation->GetName() );
+  tf_output->Close();
+}
+
+void Analysis::InitParameter()
+{
+
+  adc7_ = 210;
+  counter_too_large_cluster_ = 0;
+  cluster_size_max_ = 5;
+  hit_num_inner_ = 0;
+  hit_num_outer_ = 0;
+  
+  top_margin_ = 0.05; // 0.1;
+  right_margin_ = 0.05; // 0.15;
+  adc7_modification_factor_ = 0.35;
 }
 
 void Analysis::Show(Long64_t entry)
@@ -777,4 +759,9 @@ void Analysis::Show(Long64_t entry)
    fChain->Show(entry);
 }
 
+void Analysis::Print()
+{
 
+  for( auto& hist : hists_ )
+    hist->Print();
+}
