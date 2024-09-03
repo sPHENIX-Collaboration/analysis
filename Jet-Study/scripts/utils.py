@@ -20,7 +20,7 @@ f4a.add_argument('-d', '--output', type=str, default='test', help='Output Direct
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--submissions', type=int, default=9, help='Number of submissions. Default: 9.')
-f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10k.')
+# f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10k.')
 
 args = parser.parse_args()
 
@@ -34,7 +34,7 @@ def create_f4a_jobs():
     memory         = args.memory
     log            = args.log
     n              = args.submissions
-    p              = args.concurrency
+    # p              = args.concurrency
 
     concurrency_limit = 2308032
 
@@ -47,7 +47,7 @@ def create_f4a_jobs():
     print(f'Requested memory per job: {memory}GB')
     print(f'Condor log file: {log}')
     print(f'Submissions: {n}')
-    print(f'Concurrency: {p}')
+    # print(f'Concurrency: {p}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(f4a, output_dir)
@@ -79,7 +79,9 @@ def create_f4a_jobs():
                 file.write('output          = stdout/job-$(Process).out\n')
                 file.write('error           = error/job-$(Process).err\n')
                 file.write(f'request_memory = {memory}GB\n')
-                file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
+                file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
+                file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
+                # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
                 file.write(f'queue input_dst from {filename}')
 
             arr[i%n] = arr[i%n] + f'cd {job_dir} && condor_submit genFun4All.sub && '
