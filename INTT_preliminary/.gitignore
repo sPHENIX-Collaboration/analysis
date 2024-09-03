@@ -1,0 +1,7 @@
+*.root
+*.pdf
+*.png
+*~
+build
+install
+results

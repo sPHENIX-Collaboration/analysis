@@ -5,6 +5,9 @@
 #include "PrivateCluReader.C"
 #include "../private_cluster_gen/InttConversion_new.h"
 #include "../private_cluster_gen/InttClustering.h"
+#include "ReadMCselfgen/MCSelfGenReader.C"
+#include "ReadF4ANtupleMC/ReadF4ANtupleMC.C"
+#include "ReadF4ANtupleData/ReadF4ANtupleData.C"
 
 class INTTReadTree
 {
@@ -14,7 +17,20 @@ class INTTReadTree
         vector<vector<double>> temp_sPH_nocolumn_vec;
         vector<vector<double>> temp_sPH_nocolumn_rz_vec;
         
-        INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed = 65539, int N_ladder = 14, double offset_range = 0.2, vector<string> included_ladder_vec = {}, int apply_geo_offset = 1, vector<pair<double,double>> ladder_offset_vec = {});
+        INTTReadTree(
+            int data_type, 
+            string input_directory, 
+            string MC_list_name, 
+            string tree_name, 
+            int clu_size_cut, 
+            int clu_sum_adc_cut, 
+            int random_seed = 65539, 
+            int N_ladder = 14, 
+            double offset_range = 0.2, 
+            vector<string> included_ladder_vec = {}, 
+            int apply_geo_offset = 1, 
+            vector<vector<double>> ladder_offset_vec = {}
+        );
         void EvtInit(long long event_i);
         void EvtSetCluGroup();
         long long GetNEvt();
@@ -28,15 +44,31 @@ class INTTReadTree
         int GetNvtxMC();
         string GetRunType();
         Long64_t GetBCOFull();
+        double GetMBDRecoZ();
+        int GetIsMinBias();
+        int GetIsMinBiasWoZDC();
+        double GetMBDNorthChargeSum();
+        double GetMBDSouthChargeSum();
         void EvtClear();
-        map<string, pair<double,double>> GetLadderOffsetMap();
+        map<string, vector<double>> GetLadderOffsetMap();
         void EndRun();
         void gen_ladder_offset();
         void clear_ladder_offset_map() {ladder_offset_map.clear();}
         void set_random_seed(int random_seed_in) {random_seed = random_seed_in;}
+        void set_ladder_offset(map<string, vector<double>> input_map) {ladder_offset_map = input_map;}
 
     private : 
-        string data_type_list[6] = {"MC","data_DST","data_private", "data_private_geo1", "MC_geo_test", "MC_inner_phi_rotation"};
+        string data_type_list[9] = {
+            "MC",
+            "data_DST",
+            "data_private", 
+            "data_private_geo1", 
+            "MC_geo_test", 
+            "MC_inner_phi_rotation", 
+            "MC_selfgen", 
+            "data_F4A", 
+            "data_F4A_inner_phi_rotation"
+        };
         long long N_event;
 
         string input_directory; 
@@ -50,6 +82,10 @@ class INTTReadTree
         int data_type;   
         int N_ladder;
         int NvtxMC; 
+        int is_min_bias;  // note : for data and MC
+        int is_min_bias_wozdc; // note : only for data
+        double MBD_south_charge_sum, MBD_north_charge_sum;
+        double MBD_reco_z;
         double TrigXvtxMC;
         double TrigYvtxMC;
         double TrigZvtxMC;
@@ -59,15 +95,22 @@ class INTTReadTree
 
         vector<vector<float>>  true_track_info;
         vector<string> included_ladder_vec;
-        vector<pair<double,double>> ladder_offset_vec;
-        map<string, pair<double,double>> ladder_offset_map;
+        vector<vector<double>> ladder_offset_vec;
+        map<string, vector<double>> ladder_offset_map;
 
         TChain * chain_in;
         PrivateCluReader * inttCluData; // note : the class to read the private gen cluster file
-        INTTDSTchain * inttDSTMC; // note : the class to read the MC sample with TChain
         InttConversion * inttConv; // note : the class to conver the server_module into ladder name
+        MCSelfGenReader * inttMCselfgen; // note : the class to read the self generated MC sample
         TFile * file_in = nullptr;
         TTree * tree;
+
+        // note : the class to read the MC sample 
+        // INTTDSTchain * inttDSTMC;    // note : read with TChain
+        ReadF4ANtupleMC * inttDSTMC; // note : read with TTree, this is the latest
+        ReadF4ANtupleData * inttDSTData; // note : read with TTree, this is the latest, for the data produced by F4A
+
+        vector<int> MBin_NClus_cut_vec;
 
         string run_type_out;
 
@@ -82,13 +125,17 @@ class INTTReadTree
         void TTreeInit_private();
         void TTreeInit_private_geo1();
         void TChainInit_MC_geo_test();
+        void TTreeInit_MC_selfgen();
+        void TTreeInit_data_F4A();
         double get_radius(double x, double y);
         pair<double,double> rotatePoint(double x, double y);
-        pair<double, double> offset_correction(map<string,pair<double,double>> input_map);
+        vector<double> offset_correction(map<string,vector<double>> input_map);
+        void read_centrality_cut();        // note : for the selfgen MC
+        int get_centrality_bin(int NClus); // note : for the selfgen MC
 
 };
 
-INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed, int N_ladder, double offset_range, vector<string> included_ladder_vec, int apply_geo_offset, vector<pair<double,double>> ladder_offset_vec)
+INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list_name, string tree_name, int clu_size_cut, int clu_sum_adc_cut, int random_seed, int N_ladder, double offset_range, vector<string> included_ladder_vec, int apply_geo_offset, vector<vector<double>> ladder_offset_vec)
 :data_type(data_type), input_directory(input_directory), MC_list_name(MC_list_name), tree_name(tree_name), clu_size_cut(clu_size_cut), clu_sum_adc_cut(clu_sum_adc_cut), random_seed(random_seed), N_ladder(N_ladder), offset_range(offset_range), included_ladder_vec(included_ladder_vec), apply_geo_offset(apply_geo_offset), ladder_offset_vec(ladder_offset_vec)
 {
     temp_sPH_inner_nocolumn_vec.clear();
@@ -103,6 +150,8 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
     ladder_offset_map.clear();
 
     true_track_info.clear();
+
+    MBin_NClus_cut_vec.clear();
 
     if (data_type_list[data_type] == "MC" || data_type_list[data_type] == "MC_inner_phi_rotation") 
     {
@@ -130,27 +179,101 @@ INTTReadTree::INTTReadTree(int data_type, string input_directory, string MC_list
     else if (data_type_list[data_type] == "MC_geo_test")
     {
         run_type_out = "MC";
-        std::cout<<"--- INTTReadTree -> input data type: MC geometry test ---"<<std::endl;
+        // std::cout<<"--- INTTReadTree -> input data type: MC geometry test ---"<<std::endl; // note : was used
         TChainInit_MC_geo_test();
+        // std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl; // note : was used
+    }
+    else if (data_type_list[data_type] == "MC_selfgen")
+    {
+        run_type_out = "MC";
+        read_centrality_cut();
+        TTreeInit_MC_selfgen();
+    }
+    else if (data_type_list[data_type] == "data_F4A" || data_type_list[data_type] == "data_F4A_inner_phi_rotation")
+    {
+        run_type_out = "data";
+        std::cout<<"--- INTTReadTree -> input data type: data F4A ---"<<std::endl;
+        TTreeInit_data_F4A();
         std::cout<<"--- INTTReadTree -> Initialization done ---"<<std::endl;
     }
 
 }
 
+void INTTReadTree::read_centrality_cut()
+{
+    TFile * file_MBin_cut = TFile::Open(Form("%s/MBin_NClus_cut.root", input_directory.c_str()));
+    TTree * tree_MBin_cut = (TTree*)file_MBin_cut->Get("tree");
+    vector<int> *MBinCut_vec; MBinCut_vec = 0;
+    tree_MBin_cut -> SetBranchAddress("MBinCut", &MBinCut_vec);
+    tree_MBin_cut -> GetEntry(0);
+    cout<<"check MBinCut_vec size : "<<MBinCut_vec->size()<<endl;
+    for (int i = 0; i < MBinCut_vec->size(); i++) {MBin_NClus_cut_vec.push_back(MBinCut_vec->at(i));}
+
+    file_MBin_cut -> Close();
+    return;
+}
+
+int INTTReadTree::get_centrality_bin(int NClus)
+{
+    int MBin_id = -1;
+    for (int i = 0; i < MBin_NClus_cut_vec.size(); i++)
+    {
+        if (NClus > MBin_NClus_cut_vec[i]) {MBin_id = i; break;}
+    }
+
+    if (MBin_id == -1) { MBin_id = MBin_NClus_cut_vec.size(); }
+
+    return MBin_id;
+}
+
+void INTTReadTree::TTreeInit_MC_selfgen()
+{
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
+    tree = (TTree *)file_in->Get(tree_name.c_str());   
+    N_event = tree -> GetEntries();
+    inttMCselfgen = new MCSelfGenReader(tree);
+}
+
+void INTTReadTree::TTreeInit_data_F4A()
+{
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
+    tree = (TTree *)file_in->Get(tree_name.c_str());   
+    N_event = tree -> GetEntries();
+    inttDSTData = new ReadF4ANtupleData(tree);
+}
+
 void INTTReadTree::TChainInit_MC()
 {
-    chain_in = new TChain(tree_name.c_str());
-    inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
-    N_event = chain_in->GetEntries();
-    std::printf("inttDSTMC N event : %lli \n", N_event);
+    // note : this is the latest format, probably fixed
+    // note : the idea is that, for the avgVTXxy, we are going to read the merged file
+    // note : for the evtVTXz, and evtTracklet, we are going to read the separated files for each condor job
+    // note : which means, we might not necessarily need to use TChain
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
+    tree = (TTree *)file_in->Get(tree_name.c_str());   
+    N_event = tree -> GetEntries();
+    inttDSTMC = new ReadF4ANtupleMC(tree);
+
+    // chain_in = new TChain(tree_name.c_str());
+    // inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
+    // N_event = chain_in->GetEntries();
+    // std::printf("inttDSTMC N event : %lli \n", N_event); // note : was used
 }
 
 void INTTReadTree::TChainInit_MC_geo_test()
 {
-    chain_in = new TChain(tree_name.c_str());
-    inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
-    N_event = chain_in->GetEntries();
-    std::printf("inttDSTMC N event : %lli \n", N_event);
+    // note : this is the latest format, probably fixed
+    // note : the idea is that, for the avgVTXxy, we are going to read the merged file
+    // note : for the evtVTXz, and evtTracklet, we are going to read the separated files for each condor job
+    // note : which means, we might not necessarily need to use TChain
+    file_in = TFile::Open(Form("%s/%s.root", input_directory.c_str(), MC_list_name.c_str()));
+    tree = (TTree *)file_in->Get(tree_name.c_str());   
+    N_event = tree -> GetEntries();
+    inttDSTMC = new ReadF4ANtupleMC(tree);
+
+    // chain_in = new TChain(tree_name.c_str());
+    // inttDSTMC = new INTTDSTchain(chain_in, input_directory, MC_list_name);
+    // N_event = chain_in->GetEntries();
+    // std::printf("inttDSTMC N event : %lli \n", N_event); // note : was used
     // gen_ladder_offset();
 }
 
@@ -160,7 +283,7 @@ void INTTReadTree::TTreeInit_private()
     tree = (TTree *)file_in->Get(tree_name.c_str());
     inttCluData = new PrivateCluReader(tree);
     N_event = tree -> GetEntries();
-    std::printf("private gen tree, N event : %lli \n", N_event);
+    // std::printf("private gen tree, N event : %lli \n", N_event); // note : was used
 
 }
 
@@ -171,7 +294,7 @@ void INTTReadTree::TTreeInit_private_geo1()
     tree = (TTree *)file_in->Get(tree_name.c_str());
     inttCluData = new PrivateCluReader(tree);
     N_event = tree -> GetEntries();
-    std::printf("private gen tree, N event : %lli \n", N_event);
+    // std::printf("private gen tree, N event : %lli \n", N_event); // note : was used
     inttConv = new InttConversion();
 
     if (N_ladder != included_ladder_vec.size()) {cout<<"In INTTReadTree, there is an error in ladder offset generation"<<endl; exit(1);}    
@@ -185,27 +308,85 @@ void INTTReadTree::EvtInit(long long event_i)
         inttDSTMC->LoadTree(event_i);
         inttDSTMC->GetEntry(event_i);
 
-        evt_length = inttDSTMC->NClus;
-        bco_full   = -1;
-        NvtxMC     = inttDSTMC->NTruthVtx;
-        TrigXvtxMC = inttDSTMC->TruthPV_trig_x;
-        TrigYvtxMC = inttDSTMC->TruthPV_trig_y;
-        TrigZvtxMC = inttDSTMC->TruthPV_trig_z;
-        Centrality_bimp = inttDSTMC->centrality_bimp; // note : the centrality bin information, these two are similar, but a bit different in terms of the definition which leads to the different result, but they more and less have positive correlation
-        Centrality_mbd = inttDSTMC->centrality_mbd;   // note : the centrality bin information,
-        for (int track_i = 0; track_i < inttDSTMC->UniqueAncG4P_Eta->size(); track_i++) {true_track_info.push_back({inttDSTMC->UniqueAncG4P_Eta->at(track_i),inttDSTMC->UniqueAncG4P_Phi->at(track_i),float(inttDSTMC->UniqueAncG4P_PID->at(track_i))});}
+        evt_length           = inttDSTMC->NClus;
+        bco_full             = -1;
+        is_min_bias          = inttDSTMC->is_min_bias;
+        is_min_bias_wozdc    = inttDSTMC->is_min_bias_wozdc; 
+        MBD_south_charge_sum = inttDSTMC->MBD_south_charge_sum;
+        MBD_north_charge_sum = inttDSTMC->MBD_north_charge_sum;
+        MBD_reco_z           = inttDSTMC->MBD_z_vtx * 10.; // note : from cm to mm
+        NvtxMC               = inttDSTMC->NTruthVtx;
+        TrigXvtxMC           = inttDSTMC->TruthPV_trig_x;
+        TrigYvtxMC           = inttDSTMC->TruthPV_trig_y;
+        TrigZvtxMC           = inttDSTMC->TruthPV_trig_z;
+        Centrality_bimp      = inttDSTMC->MBD_centrality; // note : same thing for both
+        Centrality_mbd       = inttDSTMC->MBD_centrality; // note : same thing for both
+        for (int track_i = 0; track_i < inttDSTMC->PrimaryG4P_Eta->size(); track_i++) {true_track_info.push_back({inttDSTMC->PrimaryG4P_Eta->at(track_i),inttDSTMC->PrimaryG4P_Phi->at(track_i),float(inttDSTMC->PrimaryG4P_PID->at(track_i))});}
     }
     else if (data_type_list[data_type] == "data_private" || data_type_list[data_type] == "data_private_geo1")
     {
         inttCluData->LoadTree(event_i);
         inttCluData->GetEntry(event_i);
 
-        evt_length = inttCluData->x->size();
-        bco_full   = inttCluData->bco_full;
-        NvtxMC     = -1;
-        TrigXvtxMC = -1000.;
-        TrigYvtxMC = -1000.;
-        TrigZvtxMC = -1000.;
+        evt_length           = inttCluData->x->size();
+        bco_full             = inttCluData->bco_full;
+        is_min_bias          = 1;
+        is_min_bias_wozdc    = 1;
+        MBD_south_charge_sum = -1000;
+        MBD_north_charge_sum = -1000;
+        MBD_reco_z           = -10000;
+        NvtxMC               = -1;
+        TrigXvtxMC           = -1000.;
+        TrigYvtxMC           = -1000.;
+        TrigZvtxMC           = -1000.;
+    }
+    else if (data_type_list[data_type] == "MC_selfgen")
+    {
+        inttMCselfgen->LoadTree(event_i);
+        inttMCselfgen->GetEntry(event_i);
+
+        evt_length           = inttMCselfgen->NClus;
+        bco_full             = -1;
+        NvtxMC               = 1;
+        is_min_bias          = 1;
+        is_min_bias_wozdc    = 1;
+        MBD_south_charge_sum = -1000;
+        MBD_north_charge_sum = -1000;
+        MBD_reco_z           = -10000;
+        TrigXvtxMC           = inttMCselfgen->TruthPV_x;
+        TrigYvtxMC           = inttMCselfgen->TruthPV_y;
+        TrigZvtxMC           = inttMCselfgen->TruthPV_z;
+        Centrality_bimp = get_centrality_bin(inttMCselfgen->NClus);
+        Centrality_mbd = get_centrality_bin(inttMCselfgen->NClus);
+
+        // cout<<"inttMCselfgen->NClus : "<<inttMCselfgen->NClus<<" Centrality_bimp : "<<Centrality_bimp<<endl;
+        
+        for (int track_i = 0; track_i < inttMCselfgen->PrimaryG4P_Eta->size(); track_i++) {
+            true_track_info.push_back({
+                inttMCselfgen->PrimaryG4P_Eta->at(track_i),
+                inttMCselfgen->PrimaryG4P_Phi->at(track_i),
+                float(inttMCselfgen->PrimaryG4P_PID->at(track_i))
+            });
+        }
+    }
+    else if (data_type_list[data_type] == "data_F4A" || data_type_list[data_type] == "data_F4A_inner_phi_rotation") 
+    {
+        inttDSTData->LoadTree(event_i);
+        inttDSTData->GetEntry(event_i);
+
+        evt_length           = inttDSTData->NClus;
+        bco_full             = inttDSTData->INTT_BCO;
+        NvtxMC               = 1;
+        is_min_bias          = inttDSTData->is_min_bias;
+        is_min_bias_wozdc    = inttDSTData->is_min_bias_wozdc;
+        MBD_south_charge_sum = inttDSTData->MBD_south_charge_sum;
+        MBD_north_charge_sum = inttDSTData->MBD_north_charge_sum;
+        MBD_reco_z           = inttDSTData->MBD_z_vtx * 10.; // note : cm to mm
+        TrigXvtxMC           = -1000;
+        TrigYvtxMC           = -1000;
+        TrigZvtxMC           = -1000;
+        Centrality_bimp      = inttDSTData->MBD_centrality;
+        Centrality_mbd       = inttDSTData->MBD_centrality;
     }
 }
 
@@ -216,29 +397,36 @@ vector<double> INTTReadTree::GetTrigvtxMC() {return {TrigXvtxMC,TrigYvtxMC,TrigZ
 int INTTReadTree::GetNvtxMC() {return NvtxMC;}
 string INTTReadTree::GetRunType() { return run_type_out; }
 Long64_t INTTReadTree::GetBCOFull() {return bco_full;}
-map<string, pair<double,double>> INTTReadTree::GetLadderOffsetMap() {return ladder_offset_map;}
+map<string, vector<double>> INTTReadTree::GetLadderOffsetMap() {return ladder_offset_map;}
 float INTTReadTree::GetCentralityBin() {return Centrality_bimp;}
 vector<vector<float>> INTTReadTree::GetTrueTrackInfo() {return true_track_info;}
+double INTTReadTree::GetMBDRecoZ() {return MBD_reco_z;}
+int INTTReadTree::GetIsMinBias() {return is_min_bias;}
+int INTTReadTree::GetIsMinBiasWoZDC() {return is_min_bias_wozdc;}
+double INTTReadTree::GetMBDNorthChargeSum() {return MBD_north_charge_sum;}
+double INTTReadTree::GetMBDSouthChargeSum() {return MBD_south_charge_sum;}
 
 unsigned long INTTReadTree::GetEvtNClusPost() 
 { 
     return temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(); 
 }
 
-pair<double, double> INTTReadTree::offset_correction(map<string,pair<double,double>> input_map)
+vector<double> INTTReadTree::offset_correction(map<string,vector<double>> input_map)
 {
     double N_pair = 0;
     double sum_x = 0;
     double sum_y = 0;
+    double sum_z = 0;
 
     for (const auto& pair : input_map)
     {
         N_pair += 1;
-        sum_x += pair.second.first;
-        sum_y += pair.second.second;
+        sum_x += pair.second[0];
+        sum_y += pair.second[1];
+        sum_z += pair.second[2];
     }
 
-    return {sum_x/N_pair, sum_y/N_pair};
+    return {sum_x/N_pair, sum_y/N_pair, sum_z/N_pair};
 }
 
 void INTTReadTree::EvtSetCluGroup()
@@ -247,7 +435,7 @@ void INTTReadTree::EvtSetCluGroup()
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
         {
             if (int(inttDSTMC -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
-            if (int(inttDSTMC -> ClusAdc -> at(clu_i)) < clu_sum_adc_cut) continue;
+            if (int(inttDSTMC -> ClusAdc -> at(clu_i)) <= clu_sum_adc_cut) continue;
 
             // double clu_x = inttDSTMC -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
             // double clu_y = inttDSTMC -> ClusY -> at(clu_i) * 10;
@@ -278,7 +466,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTMC -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTMC -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTMC -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTMC -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTMC -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });
             }
             
@@ -293,7 +486,12 @@ void INTTReadTree::EvtSetCluGroup()
                     clu_y, 
                     clu_z, 
                     inttDSTMC -> ClusLayer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
-                    clu_phi
+                    clu_phi,
+                    int(inttDSTMC -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTMC -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTMC -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTMC -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTMC -> ClusZSize       -> at(clu_i))  // note : raw_z_size
                 });            
             }        
         }
@@ -303,7 +501,7 @@ void INTTReadTree::EvtSetCluGroup()
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
         {
             if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) continue; 
-            if (int(inttCluData -> sum_adc_conv -> at(clu_i)) < clu_sum_adc_cut) continue;
+            if (int(inttCluData -> sum_adc_conv -> at(clu_i)) <= clu_sum_adc_cut) continue;
 
             double clu_x = inttCluData -> x -> at(clu_i);
             double clu_y = inttCluData -> y -> at(clu_i);
@@ -351,112 +549,113 @@ void INTTReadTree::EvtSetCluGroup()
         }
     }
 
-    else if (data_type_list[data_type] == "data_private_geo1"){
-        for (int clu_i = 0; clu_i < evt_length; clu_i++)
-        {
-            if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) {continue;} 
-            if (int(inttCluData -> sum_adc_conv -> at(clu_i)) < clu_sum_adc_cut) {continue;}
+    // else if (data_type_list[data_type] == "data_private_geo1"){
+    //     for (int clu_i = 0; clu_i < evt_length; clu_i++)
+    //     {
+    //         if (int(inttCluData -> size -> at(clu_i)) > clu_size_cut) {continue;} 
+    //         if (int(inttCluData -> sum_adc_conv -> at(clu_i)) <= clu_sum_adc_cut) {continue;}
 
-            string ladder_name = inttConv -> GetLadderName(Form("intt%i_%i", inttCluData -> server -> at(clu_i) - 3001, inttCluData -> module -> at(clu_i)));
+    //         string ladder_name = inttConv -> GetLadderName(Form("intt%i_%i", inttCluData -> server -> at(clu_i) - 3001, inttCluData -> module -> at(clu_i)));
 
-            // note : the following selections only keeps a small portion of INTT clusters
-            // if (inttCluData -> server -> at(clu_i) - 3001 > 3) {continue;} // note : only the 3001, 3002, 3003, 3004 are included in the study (south)
-            if ((ladder_name).substr(0,4) == "B0L1") {continue;}
-            if ((ladder_name).substr(0,4) == "B1L1") {continue;}
-            // if (inttCluData -> column -> at(clu_i) > 5) {continue;} // note : only the column 1, 2, 3, 4, 5 are included in the study (south type B sensor only)
+    //         // note : the following selections only keeps a small portion of INTT clusters
+    //         // if (inttCluData -> server -> at(clu_i) - 3001 > 3) {continue;} // note : only the 3001, 3002, 3003, 3004 are included in the study (south)
+    //         if ((ladder_name).substr(0,4) == "B0L1") {continue;}
+    //         if ((ladder_name).substr(0,4) == "B1L1") {continue;}
+    //         // if (inttCluData -> column -> at(clu_i) > 5) {continue;} // note : only the column 1, 2, 3, 4, 5 are included in the study (south type B sensor only)
 
-            if ( (ladder_name).substr(0,6) == "B0L001") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L004") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L007") {continue;}
-            if ( (ladder_name).substr(0,6) == "B0L010") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L001") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L004") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L007") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B0L010") {continue;}
 
-            if ( (ladder_name).substr(0,6) == "B1L001") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L002") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L005") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L006") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L009") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L010") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L013") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L014") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L001") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L002") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L005") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L006") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L009") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L010") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L013") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L014") {continue;}
 
-            // note : because the corresponding hald-ladder of this one, the B1L015S, has no data
-            if ( (ladder_name).substr(0,6) == "B0L011") {continue;}
-            if ( (ladder_name).substr(0,6) == "B1L015") {continue;}
+    //         // note : because the corresponding hald-ladder of this one, the B1L015S, has no data
+    //         if ( (ladder_name).substr(0,6) == "B0L011") {continue;}
+    //         if ( (ladder_name).substr(0,6) == "B1L015") {continue;}
 
-            // note : for the hypothesis test
-            // if ( (ladder_name).substr(0,6) == "B1L004") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L003") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L007") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L005") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L011") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L008") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B1L012") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B0L009") {continue;} // note : pair
-            // if ( (ladder_name).substr(0,6) == "B0L000") {continue;}
-            // if ( (ladder_name).substr(0,6) == "B1L000") {continue;} // note : pair
+    //         // note : for the hypothesis test
+    //         // if ( (ladder_name).substr(0,6) == "B1L004") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L003") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L007") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L005") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L011") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L008") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B1L012") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B0L009") {continue;} // note : pair
+    //         // if ( (ladder_name).substr(0,6) == "B0L000") {continue;}
+    //         // if ( (ladder_name).substr(0,6) == "B1L000") {continue;} // note : pair
 
-            double clu_x_offset = ladder_offset_map[(ladder_name).substr(0,6)].first;
-            double clu_y_offset = ladder_offset_map[(ladder_name).substr(0,6)].second;
+    //         double clu_x_offset = ladder_offset_map[(ladder_name).substr(0,6)].first;
+    //         double clu_y_offset = ladder_offset_map[(ladder_name).substr(0,6)].second;
 
-            double clu_x = inttCluData -> x -> at(clu_i) + clu_x_offset;
-            double clu_y = inttCluData -> y -> at(clu_i) + clu_y_offset;
-            double clu_z = inttCluData -> z -> at(clu_i);
-            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
-            int    clu_layer = inttCluData -> layer -> at(clu_i); // note : should be 0 or 1
-            double clu_radius = get_radius(clu_x, clu_y);
+    //         double clu_x = inttCluData -> x -> at(clu_i) + clu_x_offset;
+    //         double clu_y = inttCluData -> y -> at(clu_i) + clu_y_offset;
+    //         double clu_z = inttCluData -> z -> at(clu_i);
+    //         double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+    //         int    clu_layer = inttCluData -> layer -> at(clu_i); // note : should be 0 or 1
+    //         double clu_radius = get_radius(clu_x, clu_y);
 
-            temp_sPH_nocolumn_vec[0].push_back( clu_x );
-            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+    //         temp_sPH_nocolumn_vec[0].push_back( clu_x );
+    //         temp_sPH_nocolumn_vec[1].push_back( clu_y );
             
-            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
-            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+    //         temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+    //         temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
             
 
-            if (clu_layer == 0) {// note : inner
-                temp_sPH_inner_nocolumn_vec.push_back({
-                    -1, 
-                    -1, 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> size -> at(clu_i)), 
-                    clu_x, 
-                    clu_y, 
-                    clu_z, 
-                    clu_layer, 
-                    clu_phi
-                });
-            }
+    //         if (clu_layer == 0) {// note : inner
+    //             temp_sPH_inner_nocolumn_vec.push_back({
+    //                 -1, 
+    //                 -1, 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> size -> at(clu_i)), 
+    //                 clu_x, 
+    //                 clu_y, 
+    //                 clu_z, 
+    //                 clu_layer, 
+    //                 clu_phi
+    //             });
+    //         }
             
-            if (clu_layer == 1) {// note : outer
-                temp_sPH_outer_nocolumn_vec.push_back({
-                    -1, 
-                    -1, 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> sum_adc_conv -> at(clu_i)), 
-                    int(inttCluData -> size -> at(clu_i)), 
-                    clu_x, 
-                    clu_y, 
-                    clu_z, 
-                    clu_layer, 
-                    clu_phi
-                });            
-            }        
-        }
-    }
+    //         if (clu_layer == 1) {// note : outer
+    //             temp_sPH_outer_nocolumn_vec.push_back({
+    //                 -1, 
+    //                 -1, 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> sum_adc_conv -> at(clu_i)), 
+    //                 int(inttCluData -> size -> at(clu_i)), 
+    //                 clu_x, 
+    //                 clu_y, 
+    //                 clu_z, 
+    //                 clu_layer, 
+    //                 clu_phi
+    //             });            
+    //         }        
+    //     }
+    // }
 
     else if (data_type_list[data_type] == "MC_geo_test"){
         for (int clu_i = 0; clu_i < evt_length; clu_i++)
         {
-            if (inttDSTMC -> ClusLadderZId -> at(clu_i) != 0) continue; // note : only the south-side sensor B is included in the study
+            // if (inttDSTMC -> ClusLadderZId -> at(clu_i) != 0) continue; // note : only the south-side sensor B is included in the study
             if (int(inttDSTMC -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
-            if (int(inttDSTMC -> ClusAdc -> at(clu_i)) < clu_sum_adc_cut) continue;
+            if (int(inttDSTMC -> ClusAdc -> at(clu_i)) <= clu_sum_adc_cut) continue;
 
-            double clu_x_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))].first;
-            double clu_y_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))].second;
+            double clu_x_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][0];
+            double clu_y_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][1];
+            double clu_z_offset = ladder_offset_map[Form("%i_%i",inttDSTMC -> ClusLayer -> at(clu_i), inttDSTMC -> ClusLadderPhiId -> at(clu_i))][2];
 
             double clu_x = inttDSTMC -> ClusX -> at(clu_i) * 10 + clu_x_offset; // note : change the unit from cm to mm
             double clu_y = inttDSTMC -> ClusY -> at(clu_i) * 10 + clu_y_offset;
-            double clu_z = inttDSTMC -> ClusZ -> at(clu_i) * 10;
+            double clu_z = inttDSTMC -> ClusZ -> at(clu_i) * 10 + clu_z_offset;
             double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
             int    clu_layer = (inttDSTMC -> ClusLayer -> at(clu_i) == 3 || inttDSTMC -> ClusLayer -> at(clu_i) == 4) ? 0 : 1;
             double clu_radius = get_radius(clu_x, clu_y);
@@ -499,6 +698,128 @@ void INTTReadTree::EvtSetCluGroup()
             }        
         }
     }
+
+    else if (data_type_list[data_type] == "MC_selfgen"){
+        for (int clu_i = 0; clu_i < evt_length; clu_i++)
+        {
+            if (int(inttMCselfgen -> phi_size -> at(clu_i)) > clu_size_cut) continue; 
+            if (int(inttMCselfgen -> adc -> at(clu_i)) <= clu_sum_adc_cut) continue;
+
+            // double clu_x = inttMCselfgen -> X -> at(clu_i) * 10; // note : change the unit from cm to mm
+            // double clu_y = inttMCselfgen -> Y -> at(clu_i) * 10;
+
+            int    clu_layer = (inttMCselfgen -> layer -> at(clu_i) == 3 || inttMCselfgen -> layer -> at(clu_i) == 4) ? 0 : 1;
+            // note : this is for rotating the clusters in the inner barrel by 180 degrees.
+            double clu_x = inttMCselfgen -> X -> at(clu_i) * 10; // note : change the unit from cm to mm
+            double clu_y = inttMCselfgen -> Y -> at(clu_i) * 10;
+            double clu_z = inttMCselfgen -> Z -> at(clu_i) * 10;
+            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+            double clu_radius = get_radius(clu_x, clu_y);
+
+            temp_sPH_nocolumn_vec[0].push_back( clu_x );
+            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+            
+            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+            
+
+            if (clu_layer == 0) {// note : inner
+                temp_sPH_inner_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> phi_size -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttMCselfgen -> layer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
+                    clu_phi
+                });
+            }
+            
+            if (clu_layer == 1) {// note : outer
+                temp_sPH_outer_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> adc -> at(clu_i)), 
+                    int(inttMCselfgen -> phi_size -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttMCselfgen -> layer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
+                    clu_phi
+                });            
+            }        
+        }
+    }
+
+    else if (data_type_list[data_type] == "data_F4A" || data_type_list[data_type] == "data_F4A_inner_phi_rotation"){
+        for (int clu_i = 0; clu_i < evt_length; clu_i++)
+        {
+            if (int(inttDSTData -> ClusPhiSize -> at(clu_i)) > clu_size_cut) continue; 
+            if (int(inttDSTData -> ClusAdc -> at(clu_i)) <= clu_sum_adc_cut) continue;
+
+            // double clu_x = inttDSTData -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
+            // double clu_y = inttDSTData -> ClusY -> at(clu_i) * 10;
+
+            int    clu_layer = (inttDSTData -> ClusLayer -> at(clu_i) == 3 || inttDSTData -> ClusLayer -> at(clu_i) == 4) ? 0 : 1;
+            // note : this is for rotating the clusters in the inner barrel by 180 degrees.
+            double clu_x = (data_type_list[data_type] == "data_F4A_inner_phi_rotation" && clu_layer == 0)? rotatePoint(inttDSTData -> ClusX -> at(clu_i) * 10, inttDSTData -> ClusY -> at(clu_i) * 10).first  : inttDSTData -> ClusX -> at(clu_i) * 10; // note : change the unit from cm to mm
+            double clu_y = (data_type_list[data_type] == "data_F4A_inner_phi_rotation" && clu_layer == 0)? rotatePoint(inttDSTData -> ClusX -> at(clu_i) * 10, inttDSTData -> ClusY -> at(clu_i) * 10).second : inttDSTData -> ClusY -> at(clu_i) * 10;
+            double clu_z = inttDSTData -> ClusZ -> at(clu_i) * 10;
+            double clu_phi = (clu_y < 0) ? atan2(clu_y,clu_x) * (180./TMath::Pi()) + 360 : atan2(clu_y,clu_x) * (180./TMath::Pi());
+            double clu_radius = get_radius(clu_x, clu_y);
+
+            temp_sPH_nocolumn_vec[0].push_back( clu_x );
+            temp_sPH_nocolumn_vec[1].push_back( clu_y );
+            
+            temp_sPH_nocolumn_rz_vec[0].push_back( clu_z );
+            temp_sPH_nocolumn_rz_vec[1].push_back( ( clu_phi > 180 ) ? clu_radius * -1 : clu_radius );
+            
+
+            if (clu_layer == 0) {// note : inner
+                temp_sPH_inner_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttDSTData -> ClusAdc -> at(clu_i)), 
+                    int(inttDSTData -> ClusAdc -> at(clu_i)), 
+                    int(inttDSTData -> ClusPhiSize -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttDSTData -> ClusLayer -> at(clu_i), // note : should be 3 or 4, for the inner layer, this is for the mega cluster search
+                    clu_phi,
+                    int(inttDSTData -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTData -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTData -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTData -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTData -> ClusZSize       -> at(clu_i))  // note : raw_z_size
+                });
+            }
+            
+            if (clu_layer == 1) {// note : outer
+                temp_sPH_outer_nocolumn_vec.push_back({
+                    -1, 
+                    -1, 
+                    int(inttDSTData -> ClusAdc -> at(clu_i)), 
+                    int(inttDSTData -> ClusAdc -> at(clu_i)), 
+                    int(inttDSTData -> ClusPhiSize -> at(clu_i)), 
+                    clu_x, 
+                    clu_y, 
+                    clu_z, 
+                    inttDSTData -> ClusLayer -> at(clu_i), // note : should be 5 or 6, for the outer layer, this is for the mega cluster search
+                    clu_phi,
+                    int(inttDSTData -> ClusLayer       -> at(clu_i)), // note : raw_layer_id
+                    int(inttDSTData -> ClusLadderPhiId -> at(clu_i)), // note : raw_ladder_id
+                    int(inttDSTData -> ClusLadderZId   -> at(clu_i)), // note : raw_Z_id
+                    int(inttDSTData -> ClusPhiSize     -> at(clu_i)), // note : raw_phi_size
+                    int(inttDSTData -> ClusZSize       -> at(clu_i))  // note : raw_z_size
+                });            
+            }        
+        }
+    }
     
 }
 
@@ -536,16 +857,16 @@ void INTTReadTree::gen_ladder_offset()
 
             for (int phi_i = 0; phi_i < N_layer_ladder; phi_i++)
             {
-                ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range)};
+                ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range), rand -> Uniform(-offset_range, offset_range)};
                 // ladder_offset_map[Form("%i_%i", layer_i, phi_i)] = {100., 100.};
             }
         }
 
         // note : it's possible that the whole system has a systematic offset, so we need to correct it
-        pair<double,double> XY_correction = offset_correction(ladder_offset_map);
+        vector<double> XYZ_correction = offset_correction(ladder_offset_map);
         for (const auto& pair : ladder_offset_map)
         {
-            ladder_offset_map[pair.first] = {pair.second.first - XY_correction.first, pair.second.second - XY_correction.second};
+            ladder_offset_map[pair.first] = {pair.second[0] - XYZ_correction[0], pair.second[1] - XYZ_correction[1], pair.second[2] - XYZ_correction[2]};
         }
         
     }
