@@ -49,9 +49,11 @@ EventValidation::EventValidation()
   , m_zvtx_max2(20) /*cm*/
   , m_zvtx_max3(10) /*cm*/
   , m_bins_events(5)
-  , m_bins_events_jets(3)
+  , m_bins_events_A(300)
+  , m_bins_events_jets(5)
   , m_bins_phi(64)
   , m_bins_eta(24)
+  , m_events_A_high(3e6)
   , m_bins_zvtx(200)
   , m_zvtx_low(-50)
   , m_zvtx_high(50)
@@ -106,10 +108,21 @@ Int_t EventValidation::Init(PHCompositeNode *topNode)
   cout << "EventValidation::Init - Output to " << m_outputQAFileName << endl;
 
   hEvents       = new TH1F("hEvents","Events; Status; Counts", m_bins_events, 0, m_bins_events);
-  hEvents_Jet6  = new TH1F("hEvents_Jet6","Events: Jet 6 GeV, |Z| < 30 cm; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet8  = new TH1F("hEvents_Jet8","Events: Jet 8 GeV, |Z| < 30 cm; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet10 = new TH1F("hEvents_Jet10","Events: Jet 10 GeV, |Z| < 30 cm; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet12 = new TH1F("hEvents_Jet12","Events: Jet 12 GeV, |Z| < 30 cm; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
+  hEvents_Jet6  = new TH1F("hEvents_Jet6","Events: Jet 6 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
+  hEvents_Jet8  = new TH1F("hEvents_Jet8","Events: Jet 8 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
+  hEvents_Jet10 = new TH1F("hEvents_Jet10","Events: Jet 10 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
+  hEvents_Jet12 = new TH1F("hEvents_Jet12","Events: Jet 12 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
+
+  hEvents_Jet6_A  = new TH1F("hEvents_Jet6_A","Events: Jet 6 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet8_A  = new TH1F("hEvents_Jet8_A","Events: Jet 8 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet10_A = new TH1F("hEvents_Jet10_A","Events: Jet 10 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet12_A = new TH1F("hEvents_Jet12_A","Events: Jet 12 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+
+  hEvents_Jet6_bkg_A  = new TH1F("hEvents_Jet6_bkg_A","Background Events: Jet 6 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet8_bkg_A  = new TH1F("hEvents_Jet8_bkg_A","Background Events: Jet 8 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet10_bkg_A = new TH1F("hEvents_Jet10_bkg_A","Background Events: Jet 10 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+  hEvents_Jet12_bkg_A = new TH1F("hEvents_Jet12_bkg_A","Background Events: Jet 12 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
+
   hZVtx = new TH1F("hZVtx","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -259,27 +272,51 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
 
   if(!m_use_zvtx || (m_use_zvtx && abs(m_zvtx) < m_zvtx_max)) {
     if(m_triggerVector[(Int_t)Trigger::JET_6]) {
-      hEvents_Jet6->Fill(0);
-      if(m_hasBkg) hEvents_Jet6->Fill(1);
-      if(m_hasBkgCEMC) hEvents_Jet6->Fill(2);
+      hEvents_Jet6_A->Fill(m_globalEvent);
+      hEvents_Jet6->Fill((Int_t)EventStatus::trigger);
+      if(m_hasBkg) {
+        hEvents_Jet6_bkg_A->Fill(m_globalEvent);
+        hEvents_Jet6->Fill((Int_t)EventStatus::triggerBkg);
+      }
+      if(m_hasBkgCEMC) hEvents_Jet6->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_mbdNS);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_8]) {
-      hEvents_Jet8->Fill(0);
-      if(m_hasBkg) hEvents_Jet8->Fill(1);
-      if(m_hasBkgCEMC) hEvents_Jet8->Fill(2);
+      hEvents_Jet8_A->Fill(m_globalEvent);
+      hEvents_Jet8->Fill((Int_t)EventStatus::trigger);
+      if(m_hasBkg) {
+        hEvents_Jet8_bkg_A->Fill(m_globalEvent);
+        hEvents_Jet8->Fill((Int_t)EventStatus::triggerBkg);
+      }
+      if(m_hasBkgCEMC) hEvents_Jet8->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_mbdNS);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_10]) {
-      hEvents_Jet10->Fill(0);
-      if(m_hasBkg) hEvents_Jet10->Fill(1);
-      if(m_hasBkgCEMC) hEvents_Jet10->Fill(2);
+      hEvents_Jet10_A->Fill(m_globalEvent);
+      hEvents_Jet10->Fill((Int_t)EventStatus::trigger);
+      if(m_hasBkg){
+        hEvents_Jet10_bkg_A->Fill(m_globalEvent);
+        hEvents_Jet10->Fill((Int_t)EventStatus::triggerBkg);
+      }
+      if(m_hasBkgCEMC) hEvents_Jet10->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_12]) {
-      hEvents_Jet12->Fill(0);
-      if(m_hasBkg) hEvents_Jet12->Fill(1);
-      if(m_hasBkgCEMC) hEvents_Jet12->Fill(2);
+      hEvents_Jet12_A->Fill(m_globalEvent);
+      hEvents_Jet12->Fill((Int_t)EventStatus::trigger);
+      if(m_hasBkg) {
+        hEvents_Jet12_bkg_A->Fill(m_globalEvent);
+        hEvents_Jet12->Fill((Int_t)EventStatus::triggerBkg);
+      }
+      if(m_hasBkgCEMC) hEvents_Jet12->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
     }
   }
 
@@ -345,6 +382,19 @@ Int_t EventValidation::End(PHCompositeNode *topNode)
   hEvents_Jet8->Write();
   hEvents_Jet10->Write();
   hEvents_Jet12->Write();
+
+  m_outputQAFile->mkdir("time");
+  m_outputQAFile->cd("time");
+
+  hEvents_Jet6_A->Write();
+  hEvents_Jet8_A->Write();
+  hEvents_Jet10_A->Write();
+  hEvents_Jet12_A->Write();
+
+  hEvents_Jet6_bkg_A->Write();
+  hEvents_Jet8_bkg_A->Write();
+  hEvents_Jet10_bkg_A->Write();
+  hEvents_Jet12_bkg_A->Write();
 
   stringstream dirName("");
   stringstream dirNameCEMC("");
