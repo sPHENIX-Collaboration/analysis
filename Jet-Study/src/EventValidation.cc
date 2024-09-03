@@ -276,11 +276,11 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       hEvents_Jet6->Fill((Int_t)EventStatus::trigger);
       if(m_hasBkg) {
         hEvents_Jet6_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet6->Fill((Int_t)EventStatus::triggerBkg);
+        hEvents_Jet6->Fill((Int_t)EventStatus::trigger_bkg);
       }
-      if(m_hasBkgCEMC) hEvents_Jet6->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_hasBkgCEMC) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_bkgCEMC);
       if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_mbdNS);
-      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet6->Fill((Int_t)EventStatus::trigger_mbdNS_bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_8]) {
@@ -288,11 +288,11 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       hEvents_Jet8->Fill((Int_t)EventStatus::trigger);
       if(m_hasBkg) {
         hEvents_Jet8_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet8->Fill((Int_t)EventStatus::triggerBkg);
+        hEvents_Jet8->Fill((Int_t)EventStatus::trigger_bkg);
       }
-      if(m_hasBkgCEMC) hEvents_Jet8->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_hasBkgCEMC) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_bkgCEMC);
       if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_mbdNS);
-      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet8->Fill((Int_t)EventStatus::trigger_mbdNS_bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_10]) {
@@ -300,11 +300,11 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       hEvents_Jet10->Fill((Int_t)EventStatus::trigger);
       if(m_hasBkg){
         hEvents_Jet10_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet10->Fill((Int_t)EventStatus::triggerBkg);
+        hEvents_Jet10->Fill((Int_t)EventStatus::trigger_bkg);
       }
-      if(m_hasBkgCEMC) hEvents_Jet10->Fill((Int_t)EventStatus::triggerBkgCEMC);
+      if(m_hasBkgCEMC) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_bkgCEMC);
       if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS);
-      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS_bkg);
     }
 
     if(m_triggerVector[(Int_t)Trigger::JET_12]) {
@@ -312,11 +312,11 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       hEvents_Jet12->Fill((Int_t)EventStatus::trigger);
       if(m_hasBkg) {
         hEvents_Jet12_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet12->Fill((Int_t)EventStatus::triggerBkg);
+        hEvents_Jet12->Fill((Int_t)EventStatus::trigger_bkg);
       }
-      if(m_hasBkgCEMC) hEvents_Jet12->Fill((Int_t)EventStatus::triggerBkgCEMC);
-      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS);
-      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet10->Fill((Int_t)EventStatus::trigger_mbdNS_Bkg);
+      if(m_hasBkgCEMC) hEvents_Jet12->Fill((Int_t)EventStatus::trigger_bkgCEMC);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1]) hEvents_Jet12->Fill((Int_t)EventStatus::trigger_mbdNS);
+      if(m_triggerVector[(Int_t)Trigger::MBD_NS_1] && m_hasBkg) hEvents_Jet12->Fill((Int_t)EventStatus::trigger_mbdNS_bkg);
     }
   }
 

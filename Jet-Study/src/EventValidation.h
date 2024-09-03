@@ -89,10 +89,10 @@ class EventValidation : public SubsysReco
 
   enum class EventStatus {
       trigger           = 0,
-      triggerBkg        = 1,
-      triggerBkgCEMC    = 2,
+      trigger_bkg       = 1,
+      trigger_bkgCEMC   = 2,
       trigger_mbdNS     = 3,
-      trigger_mbdNS_Bkg = 4
+      trigger_mbdNS_bkg = 4
   };
 
   UInt_t  m_saveHistMax;
