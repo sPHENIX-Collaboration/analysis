@@ -1,13 +1,10 @@
-#include "Fun4All_Intt_Correlation.hh"
+#include "Fun4All_InttStreamingTiming.hh"
 
-int Fun4All_Intt_Correlation( int run_num = 50889,
-			      int nevents = 10000,
-			      bool does_hit_correlation = true,
-			      bool does_cluster_correlation = true,
-			      int fphx_bco = -1
-			      )
+int Fun4All_InttStreamingTiming( int trigger_bit = -1 ) // -1 means no requirement
 {
 
+  int run_num = 50889;
+  int nevents = 10000000;
   //gSystem->ListLibraries();
 
   int skip_num = 0;
@@ -26,39 +23,17 @@ int Fun4All_Intt_Correlation( int run_num = 50889,
   // DST input section                                           //
   //////////////////////////////////////////////////////////////////
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTin");
-
-  if( run_num == 50889 ) // streaming readout mode
-    {
-      string data = "results/DST_physics_intt-00050889_no_hot";
-      if( fphx_bco != 9999 )
-	data += "_FPHX_BCO_" + to_string( fphx_bco ) + ".root";
-      else
-	data += ".root";
-
-      in->fileopen( data );
-    }
-  else if( run_num == 50377 ) // triggered mode
-    {
-      in->fileopen( "results/DST_physics_intt-00050377_no_hot.root" );
-      skip_num = 150000;
-    }
-  
+  in->fileopen( "results/DST_physics_intt-00050889_no_hot.root" );  
   se->registerInputManager(in);
   
   //////////////////////////////////////////////////////////////////
   // Analysis moduel                                              //
   //////////////////////////////////////////////////////////////////
   // for #hit correlation
-  InttHitCorrelation* hit_cor = new InttHitCorrelation();
-  hit_cor->SetFphxBco( fphx_bco );
-  if( does_hit_correlation == true )
-    se->registerSubsystem( hit_cor );
-  
-  // for #cluster correlation
-  InttClusterCorrelation* cluster_cor = new InttClusterCorrelation();
-  cluster_cor->SetFphxBco( fphx_bco );
-  if( does_cluster_correlation == true )
-    se->registerSubsystem( cluster_cor );
+  InttStreamingTiming* ist = new InttStreamingTiming();
+  ist->SetTriggerRequirement( trigger_bit );
+  ist->SetMaxEvent( nevents );
+  se->registerSubsystem( ist );
   
   //////////////////////////////////////////////////////////////////
   // Analyze!                                                     //
@@ -67,12 +42,8 @@ int Fun4All_Intt_Correlation( int run_num = 50889,
   se->run( nevents );
   se->End();
 
-  if( does_hit_correlation == true )
-    hit_cor->Print();
-  
-  if( does_cluster_correlation == true )
-    cluster_cor->Print();
-  
+  ist->Print();
+    
   delete se;
   return 0;
 }

@@ -126,6 +126,7 @@ public:
   vector<double> get_crossframe(double cx, double cy, double rad, double p1_x, double p1_y);
   
   void SetTrackInfoToCluster( ); // int i, bool flag, double theta, double phi )
+  void Print();
 };
 
 #ifndef clustEvent_cc

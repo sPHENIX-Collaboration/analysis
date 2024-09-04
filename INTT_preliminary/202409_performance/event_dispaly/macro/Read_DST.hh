@@ -17,8 +17,10 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
 
 #include <inttread/InttAna.h>
-#include <inttxyvertexfinder/InttZVertexFinder.h>
-#include <inttxyvertexfinder/InttXYVertexFinder.h>
+// #include <inttxyvertexfinder/InttZVertexFinder.h>
+// #include <inttxyvertexfinder/InttXYVertexFinder.h>
+#include <InttZVertexFinder.h>
+#include <InttXYVertexFinder.h>
 
 R__LOAD_LIBRARY(libinttread.so)
 //R__LOAD_LIBRARY(libanatutorial.so)

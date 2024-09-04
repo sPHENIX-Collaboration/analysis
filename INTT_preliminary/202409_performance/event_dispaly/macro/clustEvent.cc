@@ -866,3 +866,18 @@ void clustEvent::SetTrackInfoToCluster( ) // int i, bool flag, double theta, dou
   return;
 }
 
+void clustEvent::Print()
+{
+  cout << "+" << string( 100, '-' ) << "+" << endl;
+  cout << "| " << "Event: " << ievt << endl;
+  cout << "| " << "Magnet: " << mag_on << endl;
+  cout << "| " << "#cluster: " << vclus.size() << endl;
+  cout << "| " << "#truth track: " << vtruth.size() << endl;
+  cout << "| " << "#track: " << vtrack.size() << endl;
+  cout << "| " << "DCA: "
+       << "x = " << dca_mean[0] << ", " 
+       << "y = " << dca_mean[1] << ", " 
+       << "z = " << dca_mean[2] << endl;
+  cout << "+" << string( 100, '-' ) << "+" << endl;
+
+}

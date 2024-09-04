@@ -114,7 +114,7 @@ void DrawHitNumCorrelation( TCanvas* c, TH2D* hist, int run, int mode, bool is_p
 
   // p+p 200 GeV
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV " );
+  tex->DrawLatexNDC( pos_x, pos_y, ("#it{p+p} 200 GeV, Run " + to_string(run) ).c_str());
 
   if( run == 50889 )
     {

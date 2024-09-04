@@ -50,18 +50,18 @@ void InttAna::InitTrees()
 {
 
   h_t_evt_bco = new TTree("t_evt_bco", "Event Tree for BCO");
-  h_t_evt_bco->Branch("evt_gl1", &(m_evtbcoinfo.evt_gl1), "evt_gl1/I");
-  h_t_evt_bco->Branch("evt_intt", &(m_evtbcoinfo.evt_intt), "evt_intt/i");
-  h_t_evt_bco->Branch("evt_mbd", &(m_evtbcoinfo.evt_mbd), "evt_mbd/i");
-  h_t_evt_bco->Branch("bco_gl1", &(m_evtbcoinfo.bco_gl1), "bco_gl1/l");
-  h_t_evt_bco->Branch("bco_intt", &(m_evtbcoinfo.bco_intt), "bco_intt/l");
-  h_t_evt_bco->Branch("bco_mbd", &(m_evtbcoinfo.bco_mbd), "bco_mbd/l");
-  h_t_evt_bco->Branch("pevt_gl1", &(m_evtbcoinfo_prev.evt_gl1), "pevt_gl1/I");
-  h_t_evt_bco->Branch("pevt_intt", &(m_evtbcoinfo_prev.evt_intt), "pevt_intt/i");
-  h_t_evt_bco->Branch("pevt_mbd", &(m_evtbcoinfo_prev.evt_mbd), "pevt_mbd/i");
-  h_t_evt_bco->Branch("pbco_gl1", &(m_evtbcoinfo_prev.bco_gl1), "pbco_gl1/l");
-  h_t_evt_bco->Branch("pbco_intt", &(m_evtbcoinfo_prev.bco_intt), "pbco_intt/l");
-  h_t_evt_bco->Branch("pbco_mbd", &(m_evtbcoinfo_prev.bco_mbd), "pbco_mbd/l");
+  h_t_evt_bco->Branch("evt_gl1"		, &(m_evtbcoinfo.evt_gl1	), "evt_gl1/I"		);
+  h_t_evt_bco->Branch("evt_intt"	, &(m_evtbcoinfo.evt_intt	), "evt_intt/i"		);
+  h_t_evt_bco->Branch("evt_mbd"		, &(m_evtbcoinfo.evt_mbd	), "evt_mbd/i"		);
+  h_t_evt_bco->Branch("bco_gl1"		, &(m_evtbcoinfo.bco_gl1	), "bco_gl1/l"		);
+  h_t_evt_bco->Branch("bco_intt"	, &(m_evtbcoinfo.bco_intt	), "bco_intt/l"		);
+  h_t_evt_bco->Branch("bco_mbd"		, &(m_evtbcoinfo.bco_mbd	), "bco_mbd/l"		);
+  h_t_evt_bco->Branch("pevt_gl1"	, &(m_evtbcoinfo_prev.evt_gl1	), "pevt_gl1/I"		);
+  h_t_evt_bco->Branch("pevt_intt"	, &(m_evtbcoinfo_prev.evt_intt	), "pevt_intt/i"	);
+  h_t_evt_bco->Branch("pevt_mbd"	, &(m_evtbcoinfo_prev.evt_mbd	), "pevt_mbd/i"		);
+  h_t_evt_bco->Branch("pbco_gl1"	, &(m_evtbcoinfo_prev.bco_gl1	), "pbco_gl1/l"		);
+  h_t_evt_bco->Branch("pbco_intt"	, &(m_evtbcoinfo_prev.bco_intt	), "pbco_intt/l"	);
+  h_t_evt_bco->Branch("pbco_mbd"	, &(m_evtbcoinfo_prev.bco_mbd	), "pbco_mbd/l"		);
 
   m_hepmctree = new TTree("hepmctree", "A tree with hepmc truth particles");
   m_hepmctree->Branch("m_evt", &m_evt, "m_evt/I");
@@ -177,7 +177,8 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   inttevthead = findNode::getClass<InttEventInfo>(topNode, "INTTEVENTHEADER");
   
   
-  gl1raw_ = findNode::getClass<Gl1RawHit>(topNode, "GL1RAWHIT");  
+  //gl1raw_ = findNode::getClass<Gl1RawHit>(topNode, "GL1RAWHIT");  
+  gl1raw_ = findNode::getClass<Gl1Packetv2>(topNode, "GL1RAWHIT");  
   if( !gl1raw_ )
   {
     if( Verbosity() > 3 )
@@ -217,16 +218,16 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
 	}
     }
 
-  inttvertexmap = findNode::getClass<InttVertex3DMap>(topNode, "InttVertexMap");
-  if( !inttvertexmap )
-    {
-      if( Verbosity() > 1 )
-	{
-	  cout << PHWHERE  << "InttVertex3DMap node is missing." << endl;
-	}
+  // inttvertexmap = findNode::getClass<InttVertex3DMap>(topNode, "InttVertexMap");
+  // if( !inttvertexmap )
+  //   {
+  //     if( Verbosity() > 1 )
+  // 	{
+  // 	  cout << PHWHERE  << "InttVertex3DMap node is missing." << endl;
+  // 	}
       
-      //return Fun4AllReturnCodes::ABORTEVENT;
-    }
+  //     //return Fun4AllReturnCodes::ABORTEVENT;
+  //   }
 
   intt_vertex_map = findNode::getClass<InttVertexMapv1>(topNode, "InttVertexMap");
   if( !intt_vertex_map )
@@ -260,11 +261,6 @@ int InttAna::process_event(PHCompositeNode *topNode)
   // this->process_event_global_vertex( topNode );
   // this->process_event_svtx_vertex( topNode );
   
-  if( Verbosity() > 3 )
-    {
-      cout << "bco 0x" << hex << bco_ << dec << endl;
-    }
-  
   this->process_event_intt_raw( topNode );
   this->process_event_intt_vertex( topNode ); // bco_ is overwritten, this should be before process_event_intt_cluster because intt_vertex_pos_ is needed in the function
   this->process_event_intt_cluster( topNode );
@@ -277,30 +273,27 @@ int InttAna::process_event(PHCompositeNode *topNode)
   m_evtbcoinfo.evt_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->getEvtSequence()     : -1;
   m_evtbcoinfo.evt_intt = (inttraw_ != nullptr)    ? inttraw_->get_event_counter() : -1;
   m_evtbcoinfo.evt_mbd  = (mbdout   != nullptr)    ? mbdout->get_evt()             : -1;
-  m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->get_bco()            : 0;
+  //m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->get_bco()            : 0;
+  m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->getBCO()            : 0;
   m_evtbcoinfo.bco_intt = (inttevthead != nullptr) ? inttevthead->get_bco_full()   : 0;
   m_evtbcoinfo.bco_mbd  = (mbdout   != nullptr)    ? mbdout->get_femclock()        : 0;
 
   if( Verbosity() > 2 )
     {
-      cout << "event : " << m_evtbcoinfo.evt_gl1 << " "
-       << m_evtbcoinfo.evt_intt << " "
-       << m_evtbcoinfo.evt_mbd << " :  "
-       << hex << m_evtbcoinfo.bco_gl1 << dec << " "
-       << hex << m_evtbcoinfo.bco_intt << dec << " "
-       << hex << m_evtbcoinfo.bco_mbd << dec << " : "
-       << hex << m_evtbcoinfo.bco_gl1 - m_evtbcoinfo_prev.bco_gl1 << dec << " "
-       << hex << m_evtbcoinfo.bco_intt - m_evtbcoinfo_prev.bco_intt << dec << " "
-       << hex << m_evtbcoinfo.bco_mbd - m_evtbcoinfo_prev.bco_mbd << dec << endl;
-    }
-    
-
-  /////////////
-  if( Verbosity() > 2 )
-    {
+      cout << "event : "
+	   << m_evtbcoinfo.evt_gl1 << " "
+	   << m_evtbcoinfo.evt_intt << " "
+	   << m_evtbcoinfo.evt_mbd << " :  "
+	   << hex << m_evtbcoinfo.bco_gl1 << dec << " "
+	   << hex << m_evtbcoinfo.bco_intt << dec << " "
+	   << hex << m_evtbcoinfo.bco_mbd << dec << " : "
+	   << hex << m_evtbcoinfo.bco_gl1 - m_evtbcoinfo_prev.bco_gl1 << dec << " "
+	   << hex << m_evtbcoinfo.bco_intt - m_evtbcoinfo_prev.bco_intt << dec << " "
+	   << hex << m_evtbcoinfo.bco_mbd - m_evtbcoinfo_prev.bco_mbd << dec << endl;
       cout << "evtCount : " << evtCount << " " << evtseq_ << " " << hex << bco_ << dec << endl;
     }
   
+
   this->process_event_fill( topNode );
   m_evtbcoinfo_prev.copy(m_evtbcoinfo);
 
@@ -389,7 +382,8 @@ int InttAna::process_event_gl1(PHCompositeNode *topNode )
 
   if (gl1raw_)
   {
-    bco_ = gl1raw_->get_bco();
+    //bco_ = gl1raw_->get_bco();
+    bco_ = gl1raw_->getBCO();
     evtseq_ = gl1raw_->getEvtSequence();
   }
 
@@ -477,7 +471,7 @@ int InttAna::process_event_global_vertex(PHCompositeNode *topNode )
       {
         if( Verbosity() > 2 )
 	  {
-	    std::cout << "map entry" << std::endl;
+	    std::cout << "GlobalVertex map entry" << std::endl;
 	  }
 	
         std::map<GlobalVertex::VTXTYPE, std::string>::iterator itr_src;
@@ -497,7 +491,7 @@ int InttAna::process_event_global_vertex(PHCompositeNode *topNode )
         if( Verbosity() > 2 )
 	  {
 	    std::cout << std::endl
-		      << "A " << vertex.second->get_x()
+		      << " " << vertex.second->get_x()
 		      << " " << vertex.second->get_y()
 		      << " " << vertex.second->get_z()
 		      << " " << vertex.second->get_id()
@@ -640,7 +634,7 @@ int InttAna::process_event_intt_cluster(PHCompositeNode *topNode )
 
         if (nCluster < 5)
         {
-          if( Verbosity() > 1 )
+          if( Verbosity() > 2 )
 	    {
 	      cout << "cluster xyz : " << globalPos.x() << " " << globalPos.y() << " " << globalPos.z() << " :  "
 		   << cluster->getPosition(0) << " "
@@ -917,11 +911,6 @@ int InttAna::process_event_intt_cluster_pair(PHCompositeNode *topNode )
     // }
   }
   
-  if( Verbosity() > 2 )
-    {
-      cout << "nCluster : " << nCluster << endl;
-    }
-  
   return 0;
 }
 
@@ -949,93 +938,103 @@ int InttAna::process_event_intt_vertex(PHCompositeNode *topNode )
 	      break;
 	    }
 	  
-	  InttVertex* intt_vertex = (*iter).second;
-	  //if( Verbosity() > 2 )
-	    {
-	      cout << endl << "INTT vertex map"
-		   << intt_vertex->isValid() << "\t"
+	  InttVertex* intt_vertex = iter->second;
+	  if( Verbosity() > 2 )
+	  {
+	    cout << endl << "INTT vertex map\t"
+		 << ivtx << "\t"	      
+		 << intt_vertex->isValid() << "\t"
 		   << "( "
-		   << setw(8) << setprecision(5) << intt_vertex->get_x() << ", "
-		   << setw(8) << setprecision(5) << intt_vertex->get_y() << ", "
-		   << setw(8) << setprecision(5) << intt_vertex->get_z()
-		   << " )"
-		   << endl;
-	    }
-
-	    if( intt_vertex )
-	      {
-		vertex_[ ivtx ][ 0 ] = intt_vertex->get_x();
-		vertex_[ ivtx ][ 1 ] = intt_vertex->get_y();
-		vertex_[ ivtx ][ 2 ] = intt_vertex->get_z();
-
-	      }
-	    
-	  if( iter == iter_begin )
+		 << setw(8) << setprecision(5) << intt_vertex->get_x() << ", "
+		 << setw(8) << setprecision(5) << intt_vertex->get_y() << ", "
+		 << setw(8) << setprecision(5) << intt_vertex->get_z()
+		 << " )"
+		 << endl;
+	  }
+	  
+	  
+	  if( intt_vertex )
 	    {
-	      intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
-				       intt_vertex->get_y(),
-				       intt_vertex->get_z() );
+	      //intt_vertex->identify();
+	      vertex_[ ivtx ][ 0 ] = intt_vertex->get_x();
+	      vertex_[ ivtx ][ 1 ] = intt_vertex->get_y();
+	      vertex_[ ivtx ][ 2 ] = intt_vertex->get_z();
+	      if( ivtx == 2 )
+		{
+		  zvtxobj_ = intt_vertex;
+		  intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
+					    intt_vertex->get_y(),
+					    vertex_[2][2] );
+		}
 	    }
+	  
+	  // if( iter == iter_begin )
+	  //   {
+	  //     intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
+	  // 				intt_vertex->get_y(),
+	  // 				intt_vertex->get_z() );
+	  //   }
 	}
+      
       
     }
-
-  zvtxobj_ = NULL;
-  if( inttvertexmap )
-    {
-      int ivtx = 0;
-      if( Verbosity() > 2 )
-	{
-	  cout << "vertex map size : " << inttvertexmap->size() << endl;
-	}
+  
+  // //  zvtxobj_ = NULL;
+  // if( inttvertexmap )
+  //   {
+  //     int ivtx = 0;
+  //     if( Verbosity() > 2 )
+  // 	{
+  // 	  cout << "vertex map size : " << inttvertexmap->size() << endl;
+  // 	}
       
-      InttVertex3DMap::ConstIter biter_beg = inttvertexmap->begin();
-      InttVertex3DMap::ConstIter biter_end = inttvertexmap->end();
-      // cout<<"vertex map size : after size "<<endl;
-      // inttvertexmap->identify();
+  //     InttVertex3DMap::ConstIter biter_beg = inttvertexmap->begin();
+  //     InttVertex3DMap::ConstIter biter_end = inttvertexmap->end();
+  //     // cout<<"vertex map size : after size "<<endl;
+  //     // inttvertexmap->identify();
       
-      for (InttVertex3DMap::ConstIter biter = biter_beg; biter != biter_end; ++biter)
-	{
-	  InttVertex3D *vtxobj = biter->second;
-	  if (vtxobj)
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "vtxobj" << ivtx << endl;
-		}
+  //     for (InttVertex3DMap::ConstIter biter = biter_beg; biter != biter_end; ++biter)
+  // 	{
+  // 	  InttVertex3D *vtxobj = biter->second;
+  // 	  if (vtxobj)
+  // 	    {
+  // 	      if( Verbosity() > 2 )
+  // 		{
+  // 		  cout << "vtxobj" << ivtx << endl;
+  // 		}
 	      
-	      vtxobj->identify();
-	      vertex_[ivtx][0] = vtxobj->get_x();
-	      vertex_[ivtx][1] = vtxobj->get_y();
-	      vertex_[ivtx][2] = vtxobj->get_z();
-	      if (ivtx == 2)
-		{
-		  zvtxobj_ = vtxobj;
-		}
-	    }
-	  else
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "no vtx object : " << ivtx << endl;
-		}
-	    }
-	  ivtx++;
-	  if (ivtx >= 10)
-	    {
-	      if( Verbosity() > 2 )
-		{
-		  cout << "n_vertex exceeded : " << ivtx << endl;
-		}
+  // 	      vtxobj->identify();
+  // 	      vertex_[ivtx][0] = vtxobj->get_x();
+  // 	      vertex_[ivtx][1] = vtxobj->get_y();
+  // 	      vertex_[ivtx][2] = vtxobj->get_z();
+  // 	      // if (ivtx == 2)
+  // 	      // 	{
+  // 	      // 	  zvtxobj_ = vtxobj;
+  // 	      // 	}
+  // 	    }
+  // 	  else
+  // 	    {
+  // 	      if( Verbosity() > 2 )
+  // 		{
+  // 		  cout << "no vtx object : " << ivtx << endl;
+  // 		}
+  // 	    }
+  // 	  ivtx++;
+  // 	  if (ivtx >= 10)
+  // 	    {
+  // 	      if( Verbosity() > 2 )
+  // 		{
+  // 		  cout << "n_vertex exceeded : " << ivtx << endl;
+  // 		}
 	      
-	      break;
-	    }
-	}
-    }
-  else
-    {
-      // zvtxobj_ = new InttVertex3D(); // impossible as constructor protected
-    }
+  // 	      break;
+  // 	    }
+  // 	}
+  //   }
+  // else
+  //   {
+  //     // zvtxobj_ = new InttVertex3D(); // impossible as constructor protected
+  //   }
 
   return 0;
 }
@@ -1195,8 +1194,6 @@ int InttAna::process_event_fill(PHCompositeNode *topNode )
   return 0;
 }
   
-
-
 void InttAna::readRawHit(PHCompositeNode *topNode)
 {
   TrkrHitSetContainer *m_hits = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");

@@ -372,6 +372,7 @@ void Analysis::ProcessEvent()
         }
 
       dotracking(event, h_dphi_nocut_ );
+      
       ntrack_ = event.vtrack.size();
       h_dcaz_one_->Reset();
       for (int itrk = 0; itrk < ntrack_; itrk++)
@@ -514,6 +515,9 @@ void Analysis::ProcessEvent()
 
       // from dca_mean
       dotracking(event, h_dphi_nocut_ );
+      // event.Print();
+      // cout << zvtx_one_ << "\t" << z_vtx_ << endl;
+      
       ntrack_ = event.vtrack.size();
       evt_clus_ = ievt;
       evt_track_ = ievt;
@@ -794,9 +798,10 @@ void Analysis::ProcessEvent_Draw( clustEvent event )
     if( page_counter_ < page_num_limit_ )
       c_->Print( output_pdf_.c_str() );
 
-    if( event.vclus.size() > 10 
+    if( event.vclus.size() > 5 
 	&& event.GetAssociatedClusterRatio() > 0.7
 	&& event.vtrack.size() > 3 
+	&& event.vtrack.size() < 15
 	&& fabs(event.dca_mean[2]) < 23
 	)
       {
