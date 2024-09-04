@@ -3,8 +3,9 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = \
   -I$(includedir) \
   -I$(OFFLINE_MAIN)/include \
-  -I/sphenix/tg/tg01/commissioning/INTT/work/genki/repos/INTT/general_codes/hachiya/INTTVtx/install/include \
   -isystem`root-config --incdir`
+
+#  -I/sphenix/tg/tg01/commissioning/INTT/work/genki/repos/INTT/general_codes/hachiya/INTTVtx/install/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
@@ -47,8 +48,8 @@ libinttread_la_LDFLAGS = \
   -lphg4hit \
   -lg4dst \
   -lg4eval \
-  -lintt \
-  -lInttXYVertexFinder 
+  -lintt 
+#  -lInttXYVertexFinder 
 
 ################################################
 # linking tests

@@ -8,8 +8,8 @@ private:
   bool debug_;
   
   int sigma_ = 3;
-  int nloop_ = 60;
-  int page_num_limit_ = 200;
+  int nloop_ = 50;
+  int page_num_limit_ = 10;
   int good_counter_ = 0;
   
   bool is_geant_ = false;
@@ -204,6 +204,7 @@ public:
 
   void Begin();
 
+  void SetDebugMode( bool flag ){ debug_ = flag;};
   void SetPageNumLimit( int val ){ page_num_limit_ = val; };
 };
 

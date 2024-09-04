@@ -59,6 +59,7 @@ private:
   int run_num_ = 0;
   int year_ = 2024;
   int is_official_ = true;
+  int fphx_bco_in_use_ = -1;
 
   int event_counter_by_myself_  = 0; // because the event counter is not reliable, I count it by myself for histogram normalization
   
@@ -70,6 +71,7 @@ private:
   
   // objects to be output
   TH2D* hist_barrel_correlation_; // #hit correlation b/w the inner and the outer barrels
+  TH2D* hist_barrel_correlation_no_adc0_; // #hit correlation b/w the inner and the outer barrels, ADC > 1
   
   // nodes
   InttRawHitContainer*    node_inttrawhit_map_;
@@ -130,6 +132,7 @@ public:
 
   void Print(const std::string &what = "ALL") const override;
 
+  void SetFphxBco( int val = -1 ){ fphx_bco_in_use_ = val;};
   void SetOutputDir( std::string dir = "" );
   //void SetYear( int year ){ year_ = year;};
 };

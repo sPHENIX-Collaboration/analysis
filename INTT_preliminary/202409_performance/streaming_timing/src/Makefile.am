@@ -11,18 +11,16 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  InttHitCorrelation.h \
-  InttClusterCorrelation.h \
+  InttStreamingTiming.h \
   InttQaCommon.h 
 
 lib_LTLIBRARIES = \
-  libInttCorrelation.la
+  libInttStreamingTiming.la
 
-libInttCorrelation_la_SOURCES = \
-  InttHitCorrelation.cc \
-  InttClusterCorrelation.cc
+libInttStreamingTiming_la_SOURCES = \
+  InttStreamingTiming.cc
 
-libInttCorrelation_la_LIBADD = \
+libInttStreamingTiming_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lffaobjects \
@@ -36,7 +34,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libInttCorrelation.la
+testexternals_LDADD   = libInttStreamingTiming.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

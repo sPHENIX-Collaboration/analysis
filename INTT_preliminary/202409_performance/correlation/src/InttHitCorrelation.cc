@@ -349,7 +349,13 @@ void InttHitCorrelation::SetOutputDir( string dir )
     }
 
   string run_num_str = string( 8 - to_string(run_num_).size(), '0' ) + to_string( run_num_ );
-  output_root_ = output_dir_ + output_basename_ + run_num_str + ".root";
+  output_root_ = output_dir_ + output_basename_ + run_num_str;
+
+  if( fphx_bco_in_use_ == -1 )
+    output_root_ += ".root";
+  else
+    output_root_ += "_FPHX_BCO_" + to_string( fphx_bco_in_use_ ) + ".root";
+  
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -375,6 +381,11 @@ int InttHitCorrelation::InitRun(PHCompositeNode *topNode)
 				       "Inner barrel vs Outer barrel;#hit_{Inner};#hit_{Outer};Entries",
 				       500, 0, 500,
 				       500, 0, 500 );
+  
+  hist_barrel_correlation_no_adc0_ = new TH2D( "inner_outer_barrels_no_adc0",
+					       "Inner barrel vs Outer barrel;#hit_{Inner};#hit_{Outer};Entries",
+					       500, 0, 500,
+					       500, 0, 500 );
   
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -403,6 +414,7 @@ int InttHitCorrelation::process_event(PHCompositeNode *topNode)
   auto bco_event_counter_pair = this->GetBcoEventCounter(); // first: uint16_t (FPHX BCO), second: int (event counter)
 
   int hit_num_barrel[ 2 ][ InttQa::kBco_max ] = { { 0 } }; // 0: inner, 1:outer
+  int hit_num_barrel_no_adc0[ 2 ][ InttQa::kBco_max ] = { { 0 } }; // 0: inner, 1:outer
   
   for( int i=0; i<hits.size(); i++ )
     {
@@ -449,6 +461,12 @@ int InttHitCorrelation::process_event(PHCompositeNode *topNode)
       // 	   << endl;
       
       hit_num_barrel[ barrel ][  bco_event_counter_pair[i].first ]++;
+
+      auto adc = hits[i].second;
+      // ADC > 0, DAC0 can be 30 or 35. adc > 35 works for both cases
+      if( adc > 35 )
+	hit_num_barrel_no_adc0[ barrel ][  bco_event_counter_pair[i].first ]++; 
+	
     }
 
   for( int bco=0; bco<InttQa::kBco_max; bco++ )
@@ -460,6 +478,7 @@ int InttHitCorrelation::process_event(PHCompositeNode *topNode)
 	continue;
       
       hist_barrel_correlation_->Fill( hit_num_barrel[ 0 ][ bco ], hit_num_barrel[ 1 ][ bco ] );
+      hist_barrel_correlation_no_adc0_->Fill( hit_num_barrel_no_adc0[ 0 ][ bco ], hit_num_barrel_no_adc0[ 1 ][ bco ] );
     }
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -476,6 +495,7 @@ int InttHitCorrelation::EndRun(const int runnumber)
    
   // Barrel correlation
   tf_output_->WriteTObject( hist_barrel_correlation_, hist_barrel_correlation_->GetName() );
+  tf_output_->WriteTObject( hist_barrel_correlation_no_adc0_, hist_barrel_correlation_no_adc0_->GetName() );
   
   // Close the ROOT file
   tf_output_->Close();

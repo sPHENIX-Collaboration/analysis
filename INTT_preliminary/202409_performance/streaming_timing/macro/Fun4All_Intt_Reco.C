@@ -1,14 +1,9 @@
-#include "Fun4All_Intt_RecoCluster.hh"
+#include "Fun4All_Intt_Reco.hh"
 
-void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
-  // int run_num,
-  // 			       int nevents=10,
-  // 			       )
+void Fun4All_Intt_Reco( )
 {
 
   //  gSystem->ListLibraries();
-  TStopwatch* watch = new TStopwatch();
-  watch->Start();
   
   ////////////////////////////////////////////////////////////////////////
   int run_num = 50889;
@@ -28,19 +23,15 @@ void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
   string output_dst = string("results/") + "DST" + output_base;
 
   output_dst += "_no_hot";
-  output_dst += "_FPHX_BCO_" + to_string( fphx_bco );
+
   output_dst +=  ".root"; 
 
   string  cdb_hot_list = kIntt_cdb_dir + "cdb_49737_special.root";
   cdb_hot_list = kIntt_cdb_dir + "cdb_00050377_special.root";
   cout << "Hot channel CDB is forced to be " << cdb_hot_list  << endl;
 
-  string cdb_bco = kIntt_cdb_dir + "bco_diff_map/"
-    + "cdb_bco_" + run_num_str + "_official" + ".root";
-
   string cdbtree_name_dac = kIntt_cdb_dir
     + "dac_map/"
-    //  + "cdb_intt_dac_30_45_60_90_120_150_180_210.root";
     + "cdb_intt_dac_35_45_60_90_120_150_180_210_streaming.root";
   
   Fun4AllServer* se = Fun4AllServer::instance();
@@ -74,21 +65,17 @@ void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
   //////////////////////////////////////
   InttCombinedRawDataDecoder* inttdecode = new InttCombinedRawDataDecoder();
   //  inttdecode->Verbosity(1);
-  inttdecode->runInttStandalone( true );
+  //inttdecode->runInttStandalone( true );
   inttdecode->writeInttEventHeader( true );
-
   inttdecode->LoadHotChannelMapLocal( cdb_hot_list );
 
-  if( run_num == 50377 ) // BCO diff selection to get only hits from triggered collision
-    inttdecode->SetCalibBCO( cdb_bco, InttCombinedRawDataDecoder::FILE); 
-
   inttdecode->SetCalibDAC( cdbtree_name_dac, InttCombinedRawDataDecoder::FILE ); // not InttCombinedRawDataDecoder::CDB
-  inttdecode->set_fphxBcoFilter( fphx_bco );
+  //  inttdecode->SetBCODiffSelectionTolerance( 0 );
   se->registerSubsystem( inttdecode );
   
   //////////////////////////////////////
   //Intt_Cells();
-  Intt_Clustering();
+  //Intt_Clustering();
 
   //output
   Fun4AllOutputManager* out = new Fun4AllDstOutputManager("DST", output_dst );
@@ -98,14 +85,8 @@ void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
   se->End();
 
   cout << "CDB (hot channel) " << cdb_hot_list << endl;
-  cout << "CDB (BCO diff) " << cdb_bco << endl;
   cout << "CDB (DAC map)    " << cdbtree_name_dac << endl;
-  cout << "FPHX BCO: " << fphx_bco << endl;
   cout << "Output: " << output_dst << endl;
 
-  watch->Stop();
-  cout << "----------------------------------" << endl;
-  cout << "Real time: " << watch->RealTime() << endl;
-  cout << "CPU time:  " << watch->CpuTime() << endl;  
   delete se;
 }

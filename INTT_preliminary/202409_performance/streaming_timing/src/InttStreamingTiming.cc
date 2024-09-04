@@ -1,17 +1,16 @@
-#include "InttHitCorrelation.h"
+#include "InttStreamingTiming.h"
 
 using namespace std;
 
 //____________________________________________________________________________..
-InttHitCorrelation::InttHitCorrelation(const std::string &name, bool is_official ):
-  SubsysReco(name), is_official_(is_official)
+InttStreamingTiming::InttStreamingTiming(const std::string &name) : 
+  SubsysReco(name) 
 {
-
   
 }
 
 //____________________________________________________________________________..
-InttHitCorrelation::~InttHitCorrelation()
+InttStreamingTiming::~InttStreamingTiming()
 {
 
 }
@@ -19,8 +18,21 @@ InttHitCorrelation::~InttHitCorrelation()
 /////////////////////////////////////////////////////////////////////////
 // private
 /////////////////////////////////////////////////////////////////////////
-int InttHitCorrelation::GetNodes(PHCompositeNode *topNode)
+int InttStreamingTiming::GetNodes(PHCompositeNode *topNode)
 {
+
+  /////////////////////////////////////////////////////////////////////////
+  // GL1 raw hit node
+  string gl1_raw_node_name = "GL1RAWHIT";
+  gl1_ = findNode::getClass<Gl1Packetv2>( topNode, gl1_raw_node_name);
+  //Gl1Packet* gl1  = findNode::getClass<Gl1Packet>(topNode, "GL1RAWHIT");
+  
+  if( !gl1_ )
+    {
+      
+      cerr << PHWHERE << gl1_raw_node_name << " node is missing." << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
   
   /////////////////////////////////////////////////////////////////////////
   // INTT raw hit
@@ -52,17 +64,13 @@ int InttHitCorrelation::GetNodes(PHCompositeNode *topNode)
   return 0;
 }
 
-vector < std::pair < uint16_t, int > > InttHitCorrelation::GetBcoEventCounter()
+vector < std::pair < uint16_t, int > > InttStreamingTiming::GetBcoEventCounter()
 {
-  //cout << "vector < std::pair < uint16_t, int > > InttHitCorrelation::GetBcoEventCounter()" << endl;
+  //cout << "vector < std::pair < uint16_t, int > > InttStreamingTiming::GetBcoEventCounter()" << endl;
   vector < pair < InttNameSpace::Online_s,  unsigned int > > online_hits = this->GetHits(  node_trkrhitset_map_->getHitSets() );
 
   vector < InttRawHit* > raw_hits = this->GetRawHitsWithoutClone();
   vector < std::pair < uint16_t, int > > rtn;
-  
-  // if( raw_hits.size() > 20 )
-  //   return rtn;
-  InttDacMap* dac_map = new InttDacMap();
   
   int counter = 0;
   for( int i=0; i<online_hits.size(); i++ )
@@ -92,35 +100,6 @@ vector < std::pair < uint16_t, int > > InttHitCorrelation::GetBcoEventCounter()
       // InttNameSpace::Offline_s
       auto offline_hit = InttNameSpace::ToOffline( online_hit );
 
-      // consistency confirmed, no need anymore
-      // if( online_hit.chp != raw_data.chip
-      // 	  || online_hit.chn != raw_data.channel )
-      // 	{
-      
-      // 	  cout << setw(4) << online_hit.chp
-      // 	       << setw(5) << online_hit.chn
-      // 	       << endl;
-	  
-      // 	  cout << setw(4) << raw_data.chip
-      // 	       << setw(5) << raw_data.channel
-      // 	       << " | "
-      // 	       << setw(3) << raw_data.felix_server
-      // 	       << setw(5) << raw_data.felix_channel
-      // 	       << endl;
-	  
-      // 	  cout << "---------------------------------------------------" << endl;
-      // 	}
-
-      // cout << "TrkrHit: "
-      // 	   << setw(4) << i
-      // 	   << ": " 
-      // 	   << setw(3) << raw_data.felix_server
-      // 	   << setw(5) << raw_data.felix_channel
-      // 	   << setw(4) << raw_data.chip
-      // 	   << setw(6) << raw_data.channel
-      // 	   << setw(4) << dac
-      // 	   << " vs ";
-	//	   << endl;
       vector < int > used_index( raw_hits.size() );
       
       for( int j=0; j<raw_hits.size(); j++ )
@@ -151,29 +130,11 @@ vector < std::pair < uint16_t, int > > InttHitCorrelation::GetBcoEventCounter()
 	  if( is_same == false )
 	    continue;
 
-	  auto adc_raw		= raw_hit->get_adc();
-
-	  
 	  auto bco_raw		= raw_hit->get_FPHX_BCO();
 	  int event_counter_raw	= raw_hit->get_event_counter(); // uint32_t IttRawHit::get_event_counter()
 	  pair < uint16_t, int > bco_event_counter( bco_raw, event_counter_raw );
 	  rtn.push_back( bco_event_counter );
 	  counter++;
-	  //if( felix_raw == raw_data.felix_server )
-	  //	  if( felix_ch_raw == raw_data.felix_channel && felix_ch_raw != 0 )
-	    // cout << "RawHit: "
-	    // 	 << setw(4) << j
-	    // 	 << ": " 
-	    // 	 << setw(3) << felix_raw
-	    // 	 << setw(5) << felix_ch_raw
-	    // 	 << setw(4) << chip_raw
-	    // 	 << setw(6) << chan_raw
-	    // 	 << setw(4) << adc_raw
-	    // 	 << endl;
-	  		
-	  // cout << "( "
-	  //      << setw(3) << bco_raw << ", " << setw(1) << adc_raw << "-> " << dac
-	  //      << "), ";
 	  //used_index.push_back( j );
 	  //raw_hits.erase( raw_hits.begin() + j );
 	  //break;
@@ -189,7 +150,43 @@ vector < std::pair < uint16_t, int > > InttHitCorrelation::GetBcoEventCounter()
   return rtn;
 }
 
-bool InttHitCorrelation::IsSame( InttRawHit* hit1, InttRawHit* hit2 )
+std::vector < int > InttStreamingTiming::GetTriggerBits()
+{
+
+  uint64_t trigger_vector = gl1_->getScaledVector();
+  
+  vector < int > rtn;
+  while( trigger_vector != 0 )
+    {
+      int this_bit = 0 ;
+      this_bit = trigger_vector & 1;
+      // cout << std::bitset<32>(trigger_vector) << "  "
+      // 	   << this_bit << "\t";
+
+      trigger_vector = trigger_vector >> 1;
+
+      //cout << std::bitset<32>(trigger_vector) << endl;
+
+      rtn.push_back( this_bit );
+    }
+
+
+  // for( int i=0; i<rtn.size() ; i++ )
+  //   {
+  //     if( i == 6 || i == 7 )
+  // 	continue;
+      
+  //     if( rtn[i] != 0 )
+  // 	{
+  // 	  cout << trigger_names_[ i ] << ",\t";
+  // 	}
+  //   }
+  // cout << endl;
+  
+  return rtn;
+}
+
+bool InttStreamingTiming::IsSame( InttRawHit* hit1, InttRawHit* hit2 )
 {
 
   if( hit1->get_word() != hit2->get_word() ) // only this might be enough
@@ -219,7 +216,7 @@ bool InttHitCorrelation::IsSame( InttRawHit* hit1, InttRawHit* hit2 )
   return true;
 };
 
-vector < InttRawHit* > InttHitCorrelation::GetRawHits()
+vector < InttRawHit* > InttStreamingTiming::GetRawHits()
 {
   vector < InttRawHit* > hits;
   auto raw_hit_num = node_inttrawhit_map_->get_nhits();
@@ -234,7 +231,7 @@ vector < InttRawHit* > InttHitCorrelation::GetRawHits()
   return hits;
 }
 
-vector < InttRawHit* > InttHitCorrelation::GetRawHitsWithoutClone()
+vector < InttRawHit* > InttStreamingTiming::GetRawHitsWithoutClone()
 {
 
   auto hits = this->GetRawHits();
@@ -267,7 +264,7 @@ vector < InttRawHit* > InttHitCorrelation::GetRawHitsWithoutClone()
 }
 
 vector < pair < InttNameSpace::Online_s,  unsigned int > >
-InttHitCorrelation::GetHits( TrkrHitSetContainer::ConstRange hitsets )
+InttStreamingTiming::GetHits( TrkrHitSetContainer::ConstRange hitsets )
 {
   /*!
     @param ConstRange hitsets This is ConstRange = std::pair< ConstIterator, ConstIterator >
@@ -341,7 +338,7 @@ InttHitCorrelation::GetHits( TrkrHitSetContainer::ConstRange hitsets )
 // public
 /////////////////////////////////////////////////////////////////////////
 
-void InttHitCorrelation::SetOutputDir( string dir )
+void InttStreamingTiming::SetOutputDir( string dir )
 {
   if( dir != "" )
     {
@@ -350,18 +347,20 @@ void InttHitCorrelation::SetOutputDir( string dir )
 
   string run_num_str = string( 8 - to_string(run_num_).size(), '0' ) + to_string( run_num_ );
   output_root_ = output_dir_ + output_basename_ + run_num_str + ".root";
+  output_txt_ = output_dir_ + output_basename_ + run_num_str + ".dat";
+  
 }
 
 /////////////////////////////////////////////////////////////////////////
 // Fun4All stuff
 /////////////////////////////////////////////////////////////////////////
 
-int InttHitCorrelation::Init(PHCompositeNode *topNode)
+int InttStreamingTiming::Init(PHCompositeNode *topNode)
 {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::InitRun(PHCompositeNode *topNode)
+int InttStreamingTiming::InitRun(PHCompositeNode *topNode)
 {
 
   // If an user sets the run number to recoConsts, it works. Can I assume it?
@@ -371,135 +370,162 @@ int InttHitCorrelation::InitRun(PHCompositeNode *topNode)
   this->SetOutputDir();
   tf_output_ = new TFile( output_root_.c_str(), "RECREATE" );
 
-  hist_barrel_correlation_ = new TH2D( "inner_outer_barrels",
-				       "Inner barrel vs Outer barrel;#hit_{Inner};#hit_{Outer};Entries",
-				       500, 0, 500,
-				       500, 0, 500 );
-  
+  // just a FPHX BCO distribution
+  hist_fphx_bco_ = new TH1D( "fphx_bco", "FPHX BCO;INTT Local Clock [BCO];Counts",
+			     120, 0, 120 );
+
+  hist_fphx_bco_raw_ = new TH1D( "fphx_bco_raw", "FPHX BCO (raw);INTT Local Clock [BCO];Counts",
+				 120, 0, 120 );
+
+  hist_streaming_offset_ = new TH1D( "streaming_offset",
+				     "BCO_{GL1} - BCO_{INTT GTM}; BCO_{GL1} - BCO_{INTT GTM} [BCO]; Counts",
+				     256, -128, 128 );
+    
+
+  ofs_ = ofstream( output_txt_.c_str() ); // overwrite mode
+  ofs_ << "#event" << "\t" // # means comment out
+      << "GL1_BCO" << "\t"
+      << "INTT_GTM_BCO" << "\t";
+  for( int i=0; i<120; i++ )
+    {
+      ofs_ << "FPHX" << i << "\t";
+    }
+
+  ofs_ << "\n"; // don't forget line break
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::process_event(PHCompositeNode *topNode)
+int InttStreamingTiming::process_event(PHCompositeNode *topNode)
 {
-
+  
   // Get nodes to access data
   auto status = this->GetNodes(topNode);
-
+  
   // If a node is not available, skip this event
   if (status == Fun4AllReturnCodes::ABORTEVENT)
     return Fun4AllReturnCodes::ABORTEVENT;
 
+  // If no hit is found, skip it
   if( node_trkrhitset_map_->size() == 0 )
-    return Fun4AllReturnCodes::EVENT_OK;
+    {
+      return Fun4AllReturnCodes::EVENT_OK;
+    }
 
+  ////////////////////////////////////////////////////////////////////////
+  // Get parameters of this event                                       //
+  ////////////////////////////////////////////////////////////////////////
   event_counter_by_myself_++;
-  
-  auto hits = GetHits( node_trkrhitset_map_->getHitSets() ); // get TrkrHitSet of INTT only, this is ConstRange = std::pair< ConstIterator, ConstIterator >
+  auto bco_gl1 =  (gl1_->getBCO() & 0xFFFFFFFFFF);
+  auto bco_intt = (node_inttrawhit_map_->get_hit( 0 )->get_bco());  
 
-  //int bco_full = 0;
+  auto trigger_bits = this->GetTriggerBits(); // 0, 1, 2, ...
+  // if MBD N&S >= 1 triiger was not fired, skip it
+  if( required_trigger_bit_ != -1 )
+    if( trigger_bits[ required_trigger_bit_ ] == 0 )
+      {
+	return Fun4AllReturnCodes::EVENT_OK;      
+      }
 
+  event_counter_++;
+
+  ////////////////////////////////////////////////////////////////////////
+  // Get TrkrHit on INTT                                                //
+  ////////////////////////////////////////////////////////////////////////
+  // get TrkrHitSet of INTT only, this is ConstRange = std::pair< ConstIterator, ConstIterator >
+  auto hits = GetHits( node_trkrhitset_map_->getHitSets() );
   // FPHX BCO and event counter
   auto bco_event_counter_pair = this->GetBcoEventCounter(); // first: uint16_t (FPHX BCO), second: int (event counter)
 
-  int hit_num_barrel[ 2 ][ InttQa::kBco_max ] = { { 0 } }; // 0: inner, 1:outer
-  
+  ////////////////////////////////////////////////////////////////////////
+  // loop over all hits                                                 //
+  ////////////////////////////////////////////////////////////////////////
+  int counts[ 128 ] = { 0 }; // BCO bin for this event
   for( int i=0; i<hits.size(); i++ )
     {
-      ////////////////////////////////////////////
-      // struct Online_s                        //
-      //   int lyr, int ldr,  int arm           //
-      //   int chp, int chn                     //
-      ////////////////////////////////////////////
-      auto online_hit = hits[i].first;
+      auto adc = hits[i].second;
+      int bco_fphx = bco_event_counter_pair[i].first;
 
-      ////////////////////////////////////////////
-      // struct RawData_s:                      //
-      //   int felix_server, int felix_channel  //
-      //   int chip,         int channel,       //
-      //----------------------------------------//
-      //  chip == Online_s::chp                 //
-      //  channel == online_s::chn  (0-255)     //
-      ////////////////////////////////////////////
-      // InttNameSpace::RawData_s
-      auto raw_data  = InttNameSpace::ToRawData( online_hit );
-      
-      ////////////////////////////////////////////
-      // struct Offline_s                       //
-      //   int layer,     int ladder_phi,       //
-      //   int ladder_z (0-3),                  //
-      //   int strip_x :                        //
-      //   int strip_y : chip column            //
-      ////////////////////////////////////////////
-      // InttNameSpace::Offline_s
-      auto offline_hit = InttNameSpace::ToOffline( online_hit );
+      //      counts[ bco_fphx ]++;
+      counts[ bco_fphx ]++;
+      hist_fphx_bco_raw_->Fill( bco_event_counter_pair[i].first ); // take all hits
+      if( adc > 35 )
+	{
+	  //counts[ bco_fphx ]++;
+	  hist_fphx_bco_->Fill( bco_event_counter_pair[i].first ); // take hits with ADC>1
+	  
+	  auto bco_hit = bco_intt + bco_fphx;
+	  int diff = bco_hit - bco_gl1;
+	  hist_streaming_offset_->Fill( diff );
+	} // end of if( adc > 35 )
 
-      //////////////////////////////////////////////////////////
-      //////////////////////////////////////////////////////////
-      //void TH2INTT::SetLadderIContent(int barrel_id, int layer_id, int ladder_id, int side, double content)
-      int barrel = ( offline_hit.layer <= 4     ? 0 : 1 ); // 0: innter barrel, 1: outer, maybe
-      int layer  = ( offline_hit.layer % 2 == 1 ? 0 : 1 ); // 0: inner layer, 1: outer layer, maybe
-      int side   = ( offline_hit.ladder_z <= 1  ? 0 : 1 ); // 0: south, 1; north
-      // cout << setw(3) << offline_hit.layer
-      // 	   << setw(3) << barrel
-      // 	   << setw(3) << layer
-      // 	   << setw(4) << offline_hit.ladder_phi
-      // 	   << setw(3) << side
-      // 	   << setw(3) << offline_hit.ladder_z
-      // 	   << endl;
-      
-      hit_num_barrel[ barrel ][  bco_event_counter_pair[i].first ]++;
-    }
+    } // end of for( int i=0; i<hits.size(); i++ )
 
-  for( int bco=0; bco<InttQa::kBco_max; bco++ )
+  auto raw_hits = this->GetRawHitsWithoutClone();
+  for( auto& hit : raw_hits )
     {
-
-      // if no hit on INTT, skip it
-      if( hit_num_barrel[ 0 ][  bco ] == 0 
-	  && hit_num_barrel[ 1 ][  bco ] == 0 )
-	continue;
+      int bco_fphx = hit->get_FPHX_BCO();
+      counts[ bco_fphx ]++;
+    }
+  
+  // write #hit for each BCO in this event to a text file
+  if( event_counter_by_myself_ < event_max_ )
+    {
+      //      stringstream ss;
+      ofs_ << event_counter_by_myself_ << "\t"
+	   << bco_gl1 << "\t" 
+	   << bco_intt << "\t";
       
-      hist_barrel_correlation_->Fill( hit_num_barrel[ 0 ][ bco ], hit_num_barrel[ 1 ][ bco ] );
+      for( auto& val : counts )
+	ofs_ << val << "\t";
+      
+      ofs_ << "\n";
+
+      //ofs_ << ss.str();      
     }
   
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::ResetEvent(PHCompositeNode *topNode)
+int InttStreamingTiming::ResetEvent(PHCompositeNode *topNode)
 {
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::EndRun(const int runnumber)
+int InttStreamingTiming::EndRun(const int runnumber)
 {
-   
+
+  ofs_.close();
+
   // Barrel correlation
-  tf_output_->WriteTObject( hist_barrel_correlation_, hist_barrel_correlation_->GetName() );
+  tf_output_->WriteTObject( hist_fphx_bco_, hist_fphx_bco_->GetName() );
+  tf_output_->WriteTObject( hist_fphx_bco_raw_, hist_fphx_bco_raw_->GetName() );
+  tf_output_->WriteTObject( hist_streaming_offset_, hist_streaming_offset_->GetName() );
   
   // Close the ROOT file
   tf_output_->Close();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::End(PHCompositeNode *topNode)
+int InttStreamingTiming::End(PHCompositeNode *topNode)
 {
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int InttHitCorrelation::Reset(PHCompositeNode *topNode)
+int InttStreamingTiming::Reset(PHCompositeNode *topNode)
 {
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-void InttHitCorrelation::Print(const std::string &what) const
+void InttStreamingTiming::Print(const std::string &what) const
 {
 
   int width = 100;
   cout << string( width, '-' ) << endl;
-  cout << "InttHitCorrelation" << endl;
+  cout << "InttStreamingTiming" << endl;
   cout << "  - Output (ROOT): " << output_root_ << endl;
   cout << string( width, '-' ) << endl;
 }

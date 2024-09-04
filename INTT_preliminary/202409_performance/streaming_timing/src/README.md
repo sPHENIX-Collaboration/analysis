@@ -1,10 +1,8 @@
-# INTT QA
-This is an analysis module for QA using INTTRAWHIT.
+# INTT streaming timing
+Analysis to show the timing plot of the INTT streaming data
 
 ## Modules
-- InttRawHitQA
-- InttCloneRawHitQA
-- InttFineDelayScan
+- InttStreamingTiming
 
 ## Common libraries
 - InttQaCommon: Variables, and functions for general use are here. Namespace InttQa is used.

@@ -32,14 +32,19 @@
 // #include <globalvertex/MbdVertexMap.h>
 #include <mbd/MbdOut.h>
 #include <ffarawobjects/Gl1RawHit.h>
+#include <ffarawobjects/Gl1Packetv2.h>
 
 #include <ffarawobjects/InttRawHit.h>
 #include <ffarawobjects/InttRawHitContainer.h>
 
-#include <inttxyvertexfinder/InttVertex.h>
-#include <inttxyvertexfinder/InttVertexMapv1.h>
-#include <inttxyvertexfinder/InttVertex3D.h>
-#include <inttxyvertexfinder/InttVertex3DMap.h>
+// #include <inttxyvertexfinder/InttVertex.h>
+// #include <inttxyvertexfinder/InttVertexMapv1.h>
+// #include <inttxyvertexfinder/InttVertex3D.h>
+// #include <inttxyvertexfinder/InttVertex3DMap.h>
+#include <intt/InttVertex.h>
+#include <intt/InttVertexMapv1.h>
+// #include <inttxyvertexfinder/InttVertex3D.h>
+// #include <inttxyvertexfinder/InttVertex3DMap.h>
 
 #include <globalvertex/SvtxVertex.h>
 #include <globalvertex/SvtxVertexMap.h>
@@ -258,13 +263,15 @@ class InttAna : public SubsysReco
   SvtxVertexMap *svtxvertexmap;
   MbdOut *mbdout;
   SvtxVertex *svtxvertex;
-  InttVertex3DMap *inttvertexmap;
+  //InttVertex3DMap *inttvertexmap;
   InttVertexMap *intt_vertex_map;
   SvtxTrackMap *svtxtrackmap;
   
-  Gl1RawHit *gl1raw_;
+  //Gl1RawHit *gl1raw_;
+  Gl1Packet *gl1raw_;
   InttRawHit *inttraw_;
-  InttVertex3D *zvtxobj_;
+  //InttVertex3D *zvtxobj_;
+  InttVertex *zvtxobj_;
   
   int process_event_gl1(PHCompositeNode *topNode );
 
