@@ -109,7 +109,7 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
   int bindown = (bmax == 1  ?  64 : bmax - 1);
   
   bool nextdoor_consec = (hcal_phi_consec->GetBinContent(binup) < 2 && hcal_phi_consec->GetBinContent(bindown) < 2);
-  bool nextdoor_total = (hcal_phi->GetBinContent(binup) < 3 && hcal_phi->GetBinContent(bindown) < 3);
+  bool nextdoor_total = (hcal_phi->GetBinContent(binup) < 2 && hcal_phi->GetBinContent(bindown) < 2);
 
   bool bad = (hcal_phi_consec->GetBinContent(bmax) > 4 &&  nextdoor_total && nextdoor_consec);
   
