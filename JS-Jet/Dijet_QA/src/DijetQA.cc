@@ -187,12 +187,13 @@ void DijetQA::FindPairs(JetContainer* jets)
 	for(auto j1: *jets)
 	{
 		assert(j1);
+		if(j1->get_pt() < 1) continue; //cut on 1 GeV jets
 		if(j1->get_pt() > pt_leading){
 			pt_leading=j1->get_pt();
 			jet_leading=j1;
 		}
 		for(auto j2: *jets){
-			if(j2 == j1 ) continue;
+			if(j2 == j1 || j2->get_pt() < 1) continue;
 			if(abs(j2->get_phi() -j1->get_phi()) > 3 && abs(j2->get_phi() - j1->get_phi() ) < 3.3 )  {
 				if(j2->get_pt() > j1->get_pt() ){
 					jet_pair1=j2;
