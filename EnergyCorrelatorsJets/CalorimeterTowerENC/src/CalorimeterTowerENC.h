@@ -117,7 +117,7 @@ class CalorimeterTowerENC : public SubsysReco
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
 	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal;
-	TH1F* number_of_jets;
+	TH1F* number_of_jets, *EM_energy, *OH_energy, *IH_energy;
 	std::map<std::string, MethodHistograms*> histogram_map; 
 	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
 };
