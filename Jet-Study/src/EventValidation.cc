@@ -43,6 +43,7 @@ EventValidation::EventValidation()
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_saveTree(false)
   , m_saveHistMax(5)
   , m_use_zvtx(true)
   , m_zvtx_max(30) /*cm*/
@@ -80,29 +81,31 @@ EventValidation::~EventValidation()
 Int_t EventValidation::Init(PHCompositeNode *topNode)
 {
   cout << "EventValidation::Init(PHCompositeNode *topNode) Initializing" << endl;
-  m_outputTreeFile = new TFile(m_outputTreeFileName.c_str(),"RECREATE");
-  cout << "EventValidation::Init - Output to " << m_outputTreeFileName << endl;
 
-  // configure Tree
-  m_T = new TTree("T", "T");
-  m_T->Branch("event", &m_globalEvent, "event/I");
-  m_T->Branch("run", &m_run, "run/I");
-  m_T->Branch("zvtx", &m_zvtx);
-  m_T->Branch("hasBkg", &m_hasBkg);
-  m_T->Branch("hasBkgCEMC", &m_hasBkgCEMC);
-  m_T->Branch("triggerVector", &m_triggerVector);
+  if(m_saveTree) {
+    m_outputTreeFile = new TFile(m_outputTreeFileName.c_str(),"RECREATE");
+    cout << "EventValidation::Init - Output to " << m_outputTreeFileName << endl;
+    // configure Tree
+    m_T = new TTree("T", "T");
+    m_T->Branch("event", &m_globalEvent, "event/I");
+    m_T->Branch("run", &m_run, "run/I");
+    m_T->Branch("zvtx", &m_zvtx);
+    m_T->Branch("hasBkg", &m_hasBkg);
+    m_T->Branch("hasBkgCEMC", &m_hasBkgCEMC);
+    m_T->Branch("triggerVector", &m_triggerVector);
 
-  m_T->Branch("towersCEMCBase_isGood", &m_towersCEMCBase_isGood);
-  m_T->Branch("towersCEMCBase_energy", &m_towersCEMCBase_energy);
-  m_T->Branch("towersCEMCBase_time",   &m_towersCEMCBase_time);
+    m_T->Branch("towersCEMCBase_isGood", &m_towersCEMCBase_isGood);
+    m_T->Branch("towersCEMCBase_energy", &m_towersCEMCBase_energy);
+    m_T->Branch("towersCEMCBase_time",   &m_towersCEMCBase_time);
 
-  m_T->Branch("towersCEMC_isGood",  &m_towersCEMC_isGood);
-  m_T->Branch("towersIHCal_isGood", &m_towersIHCal_isGood);
-  m_T->Branch("towersOHCal_isGood", &m_towersOHCal_isGood);
+    m_T->Branch("towersCEMC_isGood",  &m_towersCEMC_isGood);
+    m_T->Branch("towersIHCal_isGood", &m_towersIHCal_isGood);
+    m_T->Branch("towersOHCal_isGood", &m_towersOHCal_isGood);
 
-  m_T->Branch("towersCEMC_energy",  &m_towersCEMC_energy);
-  m_T->Branch("towersIHCal_energy", &m_towersIHCal_energy);
-  m_T->Branch("towersOHCal_energy", &m_towersOHCal_energy);
+    m_T->Branch("towersCEMC_energy",  &m_towersCEMC_energy);
+    m_T->Branch("towersIHCal_energy", &m_towersIHCal_energy);
+    m_T->Branch("towersOHCal_energy", &m_towersOHCal_energy);
+  }
 
   m_outputQAFile = new TFile(m_outputQAFileName.c_str(),"RECREATE");
   cout << "EventValidation::Init - Output to " << m_outputQAFileName << endl;
@@ -361,7 +364,7 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
   }
 
   // looping over base emcal towers is time intensive so only do this when event has background
-  if(m_hasBkgCEMC || m_hasBkg) {
+  if(m_saveTree && (m_hasBkgCEMC || m_hasBkg)) {
     // loop over base towers
     for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
       TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
@@ -403,13 +406,13 @@ Int_t EventValidation::End(PHCompositeNode *topNode)
   cout << "Events With Z Vtx: " << m_eventZVtx << ", " << m_eventZVtx * 100./m_event << " %" << endl;
   cout << "Events With |Z| < 30 cm: " << m_eventZVtx30 << ", " << m_eventZVtx30 * 100./m_event << " %" << endl;
 
-  cout << "EventValidation::End - Output to " << m_outputTreeFileName << endl;
-  m_outputTreeFile->cd();
-
-  m_T->Write();
-
-  m_outputTreeFile->Close();
-  delete m_outputTreeFile;
+  if(m_saveTree) {
+    cout << "EventValidation::End - Output to " << m_outputTreeFileName << endl;
+    m_outputTreeFile->cd();
+    m_T->Write();
+    m_outputTreeFile->Close();
+    delete m_outputTreeFile;
+  }
 
   cout << "EventValidation::End - Output to " << m_outputQAFileName << endl;
 

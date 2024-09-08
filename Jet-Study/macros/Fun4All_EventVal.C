@@ -65,6 +65,7 @@ void Fun4All_EventVal(const string &inputFile,
   myEventVal->set_outputQAFileName(outputQAFile);
   myEventVal->set_bkg_tower_neighbor_energy(0.3);
   myEventVal->set_use_zvtx(false);
+  myEventVal->set_saveTree(false);
   se->registerSubsystem(myEventVal);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");

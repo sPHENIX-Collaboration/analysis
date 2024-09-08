@@ -67,6 +67,10 @@ class EventValidation : public SubsysReco
     this->m_use_zvtx = m_use_zvtx;
   }
 
+  void set_saveTree(Bool_t m_saveTree) {
+    this->m_saveTree = m_saveTree;
+  }
+
   Bool_t isBackgroundEvent(std::vector<Float_t> &towerEnergy);
 
  private:
@@ -95,6 +99,7 @@ class EventValidation : public SubsysReco
       trigger_mbdNS_bkg = 4
   };
 
+  Bool_t  m_saveTree;
   UInt_t  m_saveHistMax;
   Bool_t  m_use_zvtx;
   Float_t m_zvtx_max;
