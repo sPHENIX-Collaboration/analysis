@@ -32,6 +32,7 @@ using std::map;
 namespace myAnalysis
 {
   Int_t read(const string &inputFile);
+  Int_t readZDCNS(const string &inputFile);
   void init();
   void write(const string &outputFile);
   void plot(const string &output);
@@ -77,6 +78,8 @@ namespace myAnalysis
 
   vector<RunInfo> runs;
 
+  unordered_map<string,Float_t> zdc_NS_vec;
+
   TGraph* hJet6_bkg;
   TGraph* hJet8_bkg;
   TGraph* hJet10_bkg;
@@ -113,6 +116,45 @@ void myAnalysis::init() {
   hJet8_mbdNS_bkg  = new TGraph();
   hJet10_mbdNS_bkg = new TGraph();
   hJet12_mbdNS_bkg = new TGraph();
+}
+
+Int_t myAnalysis::readZDCNS(const string &inputFile) {
+  // Create an input stream
+  std::ifstream file(inputFile);
+
+  // Check if the file was successfully opened
+  if (!file.is_open()) {
+        cerr << "Failed to open cuts file: " << inputFile << endl;
+        return 1;
+  }
+
+  string line;
+  // skip header
+  std::getline(file, line);
+  while (std::getline(file, line))
+  {
+        std::istringstream lineStream(line);
+        string cell;
+        char comma;
+
+        UInt_t run;
+        Float_t zdc_NS;
+
+        if (lineStream >> run >> comma >> zdc_NS)
+        {
+          zdc_NS_vec[to_string(run)] = zdc_NS;
+        }
+        else
+        {
+          cerr << "Failed to parse line: " << line << endl;
+          return 1;
+        }
+  }
+
+  // Close the file
+  file.close();
+
+  return 0;
 }
 
 Int_t myAnalysis::read(const string &inputFile) {
@@ -234,44 +276,61 @@ void myAnalysis::write(const string &outputFile) {
              << ",Events_Jet12,Events_Jet12_mbdNS,Events_Jet12_bkg,Events_Jet12_mbdNS_bkg,Events_Jet12_bkgCEMC,Jet12_bkg_fraction,Jet12_mbdNS_bkg_fraction,Jet12_bkgCEMC_fraction" << endl;
 
    stringstream s;
-   Float_t runIndex = 0.5;
-   Float_t jt = 0.2;
-   for(auto info : runs) {
-       s.str("");
-       Float_t fraction_Jet6_bkg  = (info.evt_Jet6)  ? (Int_t)(info.evt_Jet6_bkg*1e4/info.evt_Jet6)/100.   : 0;
-       Float_t fraction_Jet8_bkg  = (info.evt_Jet8)  ? (Int_t)(info.evt_Jet8_bkg*1e4/info.evt_Jet8)/100.   : 0;
-       Float_t fraction_Jet10_bkg = (info.evt_Jet10) ? (Int_t)(info.evt_Jet10_bkg*1e4/info.evt_Jet10)/100. : 0;
-       Float_t fraction_Jet12_bkg = (info.evt_Jet12) ? (Int_t)(info.evt_Jet12_bkg*1e4/info.evt_Jet12)/100. : 0;
+   Float_t max_frac = 0;
+   for (auto info : runs) {
+      // ensure that the run has a corresponding zdc rate recorded
+      if (!zdc_NS_vec.count(info.run)) continue;
 
-       Float_t fraction_Jet6_mbdNS_bkg  = (info.evt_Jet6_mbdNS)  ? (Int_t)(info.evt_Jet6_mbdNS_bkg*1e4/info.evt_Jet6_mbdNS)/100.   : 0;
-       Float_t fraction_Jet8_mbdNS_bkg  = (info.evt_Jet8_mbdNS)  ? (Int_t)(info.evt_Jet8_mbdNS_bkg*1e4/info.evt_Jet8_mbdNS)/100.   : 0;
-       Float_t fraction_Jet10_mbdNS_bkg = (info.evt_Jet10_mbdNS) ? (Int_t)(info.evt_Jet10_mbdNS_bkg*1e4/info.evt_Jet10_mbdNS)/100. : 0;
-       Float_t fraction_Jet12_mbdNS_bkg = (info.evt_Jet12_mbdNS) ? (Int_t)(info.evt_Jet12_mbdNS_bkg*1e4/info.evt_Jet12_mbdNS)/100. : 0;
+      s.str("");
+      Float_t fraction_Jet6_bkg = (info.evt_Jet6) ? (Int_t) (info.evt_Jet6_bkg * 1e4 / info.evt_Jet6) / 100. : 0;
+      Float_t fraction_Jet8_bkg = (info.evt_Jet8) ? (Int_t) (info.evt_Jet8_bkg * 1e4 / info.evt_Jet8) / 100. : 0;
+      Float_t fraction_Jet10_bkg = (info.evt_Jet10) ? (Int_t) (info.evt_Jet10_bkg * 1e4 / info.evt_Jet10) / 100. : 0;
+      Float_t fraction_Jet12_bkg = (info.evt_Jet12) ? (Int_t) (info.evt_Jet12_bkg * 1e4 / info.evt_Jet12) / 100. : 0;
 
-       Float_t fraction_bkgCEMC_Jet6  = (info.evt_Jet6)  ? (Int_t)(info.evt_Jet6_bkgCEMC*1e4/info.evt_Jet6)/100.   : 0;
-       Float_t fraction_bkgCEMC_Jet8  = (info.evt_Jet8)  ? (Int_t)(info.evt_Jet8_bkgCEMC*1e4/info.evt_Jet8)/100.   : 0;
-       Float_t fraction_bkgCEMC_Jet10 = (info.evt_Jet10) ? (Int_t)(info.evt_Jet10_bkgCEMC*1e4/info.evt_Jet10)/100. : 0;
-       Float_t fraction_bkgCEMC_Jet12 = (info.evt_Jet12) ? (Int_t)(info.evt_Jet12_bkgCEMC*1e4/info.evt_Jet12)/100. : 0;
+      Float_t fraction_Jet6_mbdNS_bkg = (info.evt_Jet6_mbdNS) ? (Int_t) (info.evt_Jet6_mbdNS_bkg * 1e4 / info.evt_Jet6_mbdNS) / 100. : 0;
+      Float_t fraction_Jet8_mbdNS_bkg = (info.evt_Jet8_mbdNS) ? (Int_t) (info.evt_Jet8_mbdNS_bkg * 1e4 / info.evt_Jet8_mbdNS) / 100. : 0;
+      Float_t fraction_Jet10_mbdNS_bkg = (info.evt_Jet10_mbdNS) ? (Int_t) (info.evt_Jet10_mbdNS_bkg * 1e4 / info.evt_Jet10_mbdNS) / 100. : 0;
+      Float_t fraction_Jet12_mbdNS_bkg = (info.evt_Jet12_mbdNS) ? (Int_t) (info.evt_Jet12_mbdNS_bkg * 1e4 / info.evt_Jet12_mbdNS) / 100. : 0;
 
-       hJet6_bkg->AddPoint(runIndex-2*jt,fraction_Jet6_bkg);
-       hJet8_bkg->AddPoint(runIndex-jt, fraction_Jet8_bkg);
-       hJet10_bkg->AddPoint(runIndex+jt, fraction_Jet10_bkg);
-       hJet12_bkg->AddPoint(runIndex+2*jt, fraction_Jet12_bkg);
+      Float_t fraction_bkgCEMC_Jet6 = (info.evt_Jet6) ? (Int_t) (info.evt_Jet6_bkgCEMC * 1e4 / info.evt_Jet6) / 100. : 0;
+      Float_t fraction_bkgCEMC_Jet8 = (info.evt_Jet8) ? (Int_t) (info.evt_Jet8_bkgCEMC * 1e4 / info.evt_Jet8) / 100. : 0;
+      Float_t fraction_bkgCEMC_Jet10 = (info.evt_Jet10) ? (Int_t) (info.evt_Jet10_bkgCEMC * 1e4 / info.evt_Jet10) / 100. : 0;
+      Float_t fraction_bkgCEMC_Jet12 = (info.evt_Jet12) ? (Int_t) (info.evt_Jet12_bkgCEMC * 1e4 / info.evt_Jet12) / 100. : 0;
 
-       hJet6_mbdNS_bkg->AddPoint(runIndex-2*jt, fraction_Jet6_mbdNS_bkg);
-       hJet8_mbdNS_bkg->AddPoint(runIndex-jt, fraction_Jet8_mbdNS_bkg);
-       hJet10_mbdNS_bkg->AddPoint(runIndex+jt, fraction_Jet10_mbdNS_bkg);
-       hJet12_mbdNS_bkg->AddPoint(runIndex+2*jt, fraction_Jet12_mbdNS_bkg);
+      max_frac = max(max_frac, fraction_Jet6_bkg);
+      max_frac = max(max_frac, fraction_Jet8_bkg);
+      max_frac = max(max_frac, fraction_Jet10_bkg);
+      max_frac = max(max_frac, fraction_Jet12_bkg);
 
-       ++runIndex;
+      max_frac = max(max_frac, fraction_Jet6_mbdNS_bkg);
+      max_frac = max(max_frac, fraction_Jet8_mbdNS_bkg);
+      max_frac = max(max_frac, fraction_Jet10_mbdNS_bkg);
+      max_frac = max(max_frac, fraction_Jet12_mbdNS_bkg);
 
-       s << info.run << "," << info.evt_Jet6  << "," << info.evt_Jet6_mbdNS << "," << info.evt_Jet6_bkg << "," << info.evt_Jet6_mbdNS_bkg   << "," << info.evt_Jet6_bkgCEMC  << "," << fraction_Jet6_bkg << "," << fraction_Jet6_mbdNS_bkg << "," << fraction_bkgCEMC_Jet6
-                     << "," << info.evt_Jet8 << "," << info.evt_Jet8_mbdNS << "," << info.evt_Jet8_bkg << "," << info.evt_Jet8_mbdNS_bkg   << "," << info.evt_Jet8_bkgCEMC  << "," << fraction_Jet8_bkg << "," << fraction_Jet8_mbdNS_bkg << "," << fraction_bkgCEMC_Jet8
-                     << "," << info.evt_Jet10 << "," << info.evt_Jet10_mbdNS << "," << info.evt_Jet10_bkg << "," << info.evt_Jet10_mbdNS_bkg  << "," << info.evt_Jet10_bkgCEMC << "," << fraction_Jet10_bkg << "," << fraction_Jet10_mbdNS_bkg << "," << fraction_bkgCEMC_Jet10
-                     << "," << info.evt_Jet12 << "," << info.evt_Jet12_mbdNS << "," << info.evt_Jet12_bkg << "," << info.evt_Jet12_mbdNS_bkg  << "," << info.evt_Jet12_bkgCEMC << "," << fraction_Jet12_bkg << "," << fraction_Jet12_mbdNS_bkg << "," << fraction_bkgCEMC_Jet12 << endl;
+      hJet6_bkg->AddPoint(zdc_NS_vec[info.run],fraction_Jet6_bkg);
+      hJet8_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet8_bkg);
+      hJet10_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet10_bkg);
+      hJet12_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet12_bkg);
 
-       output << s.str();
+      hJet6_mbdNS_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet6_mbdNS_bkg);
+      hJet8_mbdNS_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet8_mbdNS_bkg);
+      hJet10_mbdNS_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet10_mbdNS_bkg);
+      hJet12_mbdNS_bkg->AddPoint(zdc_NS_vec[info.run], fraction_Jet12_mbdNS_bkg);
+
+      // print outlier
+      if(zdc_NS_vec[info.run] < 3) cout << "Run: " << info.run << ", ZDC NS: " << zdc_NS_vec[info.run] << ", frac: " << fraction_Jet6_bkg << endl;
+
+      if(zdc_NS_vec[info.run] >= 3 && fraction_Jet12_bkg > 15) cout << "Run: " << info.run << ", ZDC NS: " << zdc_NS_vec[info.run] << ", frac: " << fraction_Jet12_bkg << endl;
+
+      s << info.run << "," << info.evt_Jet6 << "," << info.evt_Jet6_mbdNS << "," << info.evt_Jet6_bkg << "," << info.evt_Jet6_mbdNS_bkg << "," << info.evt_Jet6_bkgCEMC << "," << fraction_Jet6_bkg << "," << fraction_Jet6_mbdNS_bkg << "," << fraction_bkgCEMC_Jet6
+        << "," << info.evt_Jet8 << "," << info.evt_Jet8_mbdNS << "," << info.evt_Jet8_bkg << "," << info.evt_Jet8_mbdNS_bkg << "," << info.evt_Jet8_bkgCEMC << "," << fraction_Jet8_bkg << "," << fraction_Jet8_mbdNS_bkg << "," << fraction_bkgCEMC_Jet8
+        << "," << info.evt_Jet10 << "," << info.evt_Jet10_mbdNS << "," << info.evt_Jet10_bkg << "," << info.evt_Jet10_mbdNS_bkg << "," << info.evt_Jet10_bkgCEMC << "," << fraction_Jet10_bkg << "," << fraction_Jet10_mbdNS_bkg << "," << fraction_bkgCEMC_Jet10
+        << "," << info.evt_Jet12 << "," << info.evt_Jet12_mbdNS << "," << info.evt_Jet12_bkg << "," << info.evt_Jet12_mbdNS_bkg << "," << info.evt_Jet12_bkgCEMC << "," << fraction_Jet12_bkg << "," << fraction_Jet12_mbdNS_bkg << "," << fraction_bkgCEMC_Jet12 << endl;
+
+      output << s.str();
    }
+
+   cout << "max frac: " << max_frac << endl;
 
    output.close();
 }
@@ -281,149 +340,114 @@ void myAnalysis::plot(const string &output) {
     c1->SetTickx();
     c1->SetTicky();
 
-    c1->SetCanvasSize(1700, 1000);
-    c1->SetLeftMargin(.15);
-    c1->SetRightMargin(.05);
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.08);
+    c1->SetRightMargin(.02);
     c1->SetBottomMargin(.1);
 
     gPad->SetGrid(0,1);
 
-    gStyle->SetTitleXOffset(0.7);
-    gStyle->SetTitleYOffset(1);
+    gStyle->SetTitleXOffset(0.9);
+    gStyle->SetTitleYOffset(0.7);
+
+    Float_t leg_x_low  = 0.15;
+    Float_t leg_x_high = 0.25;
+    Float_t leg_y_low  = 0.8;
+    Float_t leg_y_high = 0.9;
 
     c1->Print((output + "[").c_str(), "pdf portrait");
 
-    auto hDummy = new TH1F("h","; Runs; Fraction of Background Events [%]",runs.size(),0,runs.size());
-    for(UInt_t i = 1; i <= hDummy->GetNbinsX(); ++i) {
-        hDummy->GetXaxis()->SetBinLabel(i, runs[i-1].run.c_str());
-    }
-
-    hDummy->GetYaxis()->SetRangeUser(0,40);
-    hDummy->Draw();
-
-    hJet8_bkg->SetMarkerColor(kRed);
-    hJet10_bkg->SetMarkerColor(kBlue);
-    hJet12_bkg->SetMarkerColor(kGreen+2);
-
-    hJet6_mbdNS_bkg->SetMarkerStyle(kCircle);
-    hJet8_mbdNS_bkg->SetMarkerStyle(kCircle);
-    hJet10_mbdNS_bkg->SetMarkerStyle(kCircle);
-    hJet12_mbdNS_bkg->SetMarkerStyle(kCircle);
-
-    hJet6_mbdNS_bkg->SetMarkerSize(2);
-    hJet8_mbdNS_bkg->SetMarkerSize(2);
-    hJet10_mbdNS_bkg->SetMarkerSize(2);
-    hJet12_mbdNS_bkg->SetMarkerSize(2);
-
+    hJet6_mbdNS_bkg->SetMarkerColor(kRed);
     hJet8_mbdNS_bkg->SetMarkerColor(kRed);
-    hJet10_mbdNS_bkg->SetMarkerColor(kBlue);
-    hJet12_mbdNS_bkg->SetMarkerColor(kGreen+2);
+    hJet10_mbdNS_bkg->SetMarkerColor(kRed);
+    hJet12_mbdNS_bkg->SetMarkerColor(kRed);
 
-    hJet6_bkg->Draw("same P");
-    hJet8_bkg->Draw("same P");
-    hJet10_bkg->Draw("same P");
-    hJet12_bkg->Draw("same P");
-
+    // gPad->SetLogy();
+    hJet6_bkg->GetYaxis()->SetRangeUser(0,40);
+    hJet6_bkg->GetXaxis()->SetLimits(3,9);
+    hJet6_bkg->SetTitle("; #LT ZDC NS #GT [kHz]; Fraction of Background Events [%]");
+    hJet6_bkg->Draw("AP");
     hJet6_mbdNS_bkg->Draw("same P");
-    hJet8_mbdNS_bkg->Draw("same P");
-    hJet10_mbdNS_bkg->Draw("same P");
-    hJet12_mbdNS_bkg->Draw("same P");
 
-    auto *leg = new TLegend(0.55, .7, 0.95, .9);
+    auto leg = new TLegend(leg_x_low, leg_y_low, leg_x_high, leg_y_high);
 
-    leg->SetTextSize(0.03);
+    leg->SetTextSize(0.05);
     leg->SetFillStyle(0);
     leg->AddEntry(hJet6_bkg, "Jet 6 GeV", "p");
-    leg->AddEntry(hJet8_bkg, "Jet 8 GeV", "p");
-    leg->AddEntry(hJet10_bkg, "Jet 10 GeV", "p");
-    leg->AddEntry(hJet12_bkg, "Jet 12 GeV", "p");
-
     leg->AddEntry(hJet6_mbdNS_bkg, "Jet 6 GeV && MBD NS #geq 1", "p");
-    leg->AddEntry(hJet8_mbdNS_bkg, "Jet 8 GeV && MBD NS #geq 1", "p");
-    leg->AddEntry(hJet10_mbdNS_bkg, "Jet 10 GeV && MBD NS #geq 1", "p");
-    leg->AddEntry(hJet12_mbdNS_bkg, "Jet 12 GeV && MBD NS #geq 1", "p");
-
     leg->Draw("same");
 
-    c1->Print("hEventStats.png");
+    c1->Print("Jet6-bkg-vs-zdc-v1.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    c1->SetCanvasSize(1300, 1000);
+    hJet6_bkg->GetYaxis()->SetRangeUser(0,12);
 
-    hDummy->GetXaxis()->SetRangeUser(0,2);
-
-    c1->Print("hEventStats-store-1.png");
+    c1->Print("Jet6-bkg-vs-zdc-v2.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    hDummy->GetXaxis()->SetRangeUser(2,4);
-    hDummy->GetYaxis()->SetRangeUser(0,2.5);
+    hJet8_bkg->GetYaxis()->SetRangeUser(0,40);
+    hJet8_bkg->GetXaxis()->SetLimits(3,9);
+    hJet8_bkg->SetTitle("; #LT ZDC NS #GT [kHz]; Fraction of Background Events [%]");
+    hJet8_bkg->Draw("AP");
+    hJet8_mbdNS_bkg->Draw("same P");
 
-    c1->Print("hEventStats-store-2.png");
+    leg = new TLegend(leg_x_low, leg_y_low, leg_x_high, leg_y_high);
+
+    leg->SetTextSize(0.05);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hJet8_bkg, "Jet 8 GeV", "p");
+    leg->AddEntry(hJet8_mbdNS_bkg, "Jet 8 GeV && MBD NS #geq 1", "p");
+    leg->Draw("same");
+
+    c1->Print("Jet8-bkg-vs-zdc-v1.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    hDummy->GetXaxis()->SetRangeUser(4,6);
-    hDummy->GetYaxis()->SetRangeUser(0,4);
-
-    c1->Print("hEventStats-store-3.png");
+    hJet8_bkg->GetYaxis()->SetRangeUser(0,25);
+    c1->Print("Jet8-bkg-vs-zdc-v2.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    hDummy->GetXaxis()->SetRangeUser(6,8);
-    hDummy->GetYaxis()->SetRangeUser(0,7);
+    hJet10_bkg->GetYaxis()->SetRangeUser(0,40);
+    hJet10_bkg->GetXaxis()->SetLimits(3,9);
+    hJet10_bkg->SetTitle("; #LT ZDC NS #GT [kHz]; Fraction of Background Events [%]");
+    hJet10_bkg->Draw("AP");
+    hJet10_mbdNS_bkg->Draw("same P");
 
-    c1->Print("hEventStats-store-4.png");
+    leg = new TLegend(leg_x_low, leg_y_low, leg_x_high, leg_y_high);
+
+    leg->SetTextSize(0.05);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hJet10_bkg, "Jet 10 GeV", "p");
+    leg->AddEntry(hJet10_mbdNS_bkg, "Jet 10 GeV && MBD NS #geq 1", "p");
+    leg->Draw("same");
+
+    c1->Print("Jet10-bkg-vs-zdc-v1.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    hDummy->GetXaxis()->SetRangeUser(8,10);
-    hDummy->GetYaxis()->SetRangeUser(0,8);
+    hJet12_bkg->GetYaxis()->SetRangeUser(0,40);
+    hJet12_bkg->GetXaxis()->SetLimits(3,9);
+    hJet12_bkg->SetTitle("; #LT ZDC NS #GT [kHz]; Fraction of Background Events [%]");
+    hJet12_bkg->Draw("AP");
+    hJet12_mbdNS_bkg->Draw("same P");
 
-    c1->Print("hEventStats-store-5.png");
+    leg = new TLegend(leg_x_low, leg_y_low, leg_x_high, leg_y_high);
+
+    leg->SetTextSize(0.05);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hJet12_bkg, "Jet 12 GeV", "p");
+    leg->AddEntry(hJet12_mbdNS_bkg, "Jet 12 GeV && MBD NS #geq 1", "p");
+    leg->Draw("same");
+
+    c1->Print("Jet12-bkg-vs-zdc-v1.png");
     c1->Print((output).c_str(), "pdf portrait");
 
-    gStyle->SetOptTitle();
-    gStyle->SetTitleStyle(0);
-    gStyle->SetTitleW(1);
-    gStyle->SetTitleH(0.05);
-    gStyle->SetTitleFillColor(0);
-    gStyle->SetTitleBorderSize(0);
-
-    c1->SetBottomMargin(.15);
-    c1->SetRightMargin(.1);
-
-    for(UInt_t i = 0; i < triggerIdx.size(); ++i) {
-      runs[0].hEvents_JetX_bkg[i]->Divide(runs[0].hEvents_JetX[i]);
-      runs[0].hEvents_JetX_bkg[i]->Scale(100);
-      runs[0].hEvents_JetX_bkg[i]->GetXaxis()->SetRangeUser(0,4.5e5);
-      runs[0].hEvents_JetX_bkg[i]->SetTitle(("Run: " + runs[0].run + ", Trigger: " + triggerIdx[i] + " GeV; Global Event; Fraction of Background Events [%]").c_str());
-    }
-
-    runs[0].hEvents_JetX_bkg[1]->SetLineColor(kRed);
-    runs[0].hEvents_JetX_bkg[2]->SetLineColor(kBlue);
-    runs[0].hEvents_JetX_bkg[3]->SetLineColor(kGreen+2);
-
-    runs[0].hEvents_JetX_bkg[3]->GetYaxis()->SetRangeUser(0,50);
-
-    // runs[0].hEvents_JetX_bkg[0]->Draw("HIST");
-    // runs[0].hEvents_JetX_bkg[1]->Draw("HIST same");
-    // runs[0].hEvents_JetX_bkg[2]->Draw("HIST same");
-    runs[0].hEvents_JetX_bkg[3]->Draw("HIST");
-
-    c1->Print(("hEvents-" + runs[0].run + "-" + triggerIdx[3] + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
-
-    runs[0].hEvents_JetX_bkg[0]->GetYaxis()->SetRangeUser(0,12);
-    runs[0].hEvents_JetX_bkg[0]->Draw("HIST");
-
-    c1->Print(("hEvents-" + runs[0].run + "-" + triggerIdx[0] + ".png").c_str());
-
-    c1->Print((output).c_str(), "pdf portrait");
     c1->Print((output + "]").c_str(), "pdf portrait");
-
 }
 
-void event_stats(const string &inputFile, const string &outputFile="stats.csv", const string &outputPlotFile="stats.pdf") {
+void event_stats(const string &inputFile, const string &inputZDCNSFile, const string &outputFile="stats.csv", const string &outputPlotFile="stats.pdf") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << inputFile << endl;
+    cout << "input ZDC: " << inputZDCNSFile << endl;
     cout << "output: " << outputFile << endl;
     cout << "output plots: " << outputPlotFile << endl;
     cout << "#############################" << endl;
@@ -432,6 +456,7 @@ void event_stats(const string &inputFile, const string &outputFile="stats.csv", 
     SetsPhenixStyle();
 
     if(myAnalysis::read(inputFile)) return;
+    if(myAnalysis::readZDCNS(inputZDCNSFile)) return;
     myAnalysis::init();
     myAnalysis::write(outputFile);
     myAnalysis::plot(outputPlotFile);
@@ -439,9 +464,10 @@ void event_stats(const string &inputFile, const string &outputFile="stats.csv", 
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 4){
-        cout << "usage: ./event-stats inputFile [outputFile] [outputPlotFile]" << endl;
-        cout << "inputFile: input root file" << endl;
+if(argc < 3 || argc > 5){
+        cout << "usage: ./event-stats inputFile inputZDCNSFile [outputFile] [outputPlotFile]" << endl;
+        cout << "inputFile: input list file" << endl;
+        cout << "inputZDCNSFile: input csv file" << endl;
         cout << "outputFile: output csv file" << endl;
         cout << "outputPlotFile: output plot file" << endl;
         return 1;
@@ -450,14 +476,14 @@ if(argc < 2 || argc > 4){
     string outputFile     = "stats.csv";
     string outputPlotFile = "stats.pdf";
 
-    if(argc >= 3) {
+    if(argc >= 4) {
         outputFile = argv[2];
     }
-    if(argc >= 4) {
+    if(argc >= 5) {
         outputPlotFile = argv[3];
     }
 
-    event_stats(argv[1], outputFile, outputPlotFile);
+    event_stats(argv[1], argv[2], outputFile, outputPlotFile);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
