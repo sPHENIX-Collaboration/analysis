@@ -153,7 +153,8 @@ vector < std::pair < uint16_t, int > > InttStreamingTiming::GetBcoEventCounter()
 std::vector < int > InttStreamingTiming::GetTriggerBits()
 {
 
-  uint64_t trigger_vector = gl1_->getScaledVector();
+  //uint64_t trigger_vector = gl1_->getScaledVector();
+  uint64_t trigger_vector = gl1_->getLiveVector();
   
   vector < int > rtn;
   while( trigger_vector != 0 )

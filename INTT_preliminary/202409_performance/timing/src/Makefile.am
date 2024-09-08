@@ -11,16 +11,18 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
+  InttTriggerTiming.h \
   InttStreamingTiming.h \
   InttQaCommon.h 
 
 lib_LTLIBRARIES = \
-  libInttStreamingTiming.la
+  libInttTiming.la
 
-libInttStreamingTiming_la_SOURCES = \
+libInttTiming_la_SOURCES = \
+  InttTriggerTiming.cc \
   InttStreamingTiming.cc
 
-libInttStreamingTiming_la_LIBADD = \
+libInttTiming_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lffaobjects \
@@ -34,7 +36,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libInttStreamingTiming.la
+testexternals_LDADD   = libInttTiming.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
