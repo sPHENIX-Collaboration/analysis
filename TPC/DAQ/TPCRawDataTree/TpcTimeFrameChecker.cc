@@ -34,14 +34,16 @@
 using namespace std;
 
 TpcTimeFrameChecker::TpcTimeFrameChecker(const int packet_id)
-  : m_packet_id(packet_id)
-  , m_HistoPrefix("TpcTimeFrameBuilder_Packet" + to_string(packet_id))
+  : 
+  SubsysReco("TpcTimeFrameChecker" + to_string(packet_id)), 
+  m_packet_id(packet_id),
+  m_HistoPrefix("TpcTimeFrameBuilder_Packet" + to_string(packet_id))
 {
   Fun4AllHistoManager *hm = QAHistManagerDef::getHistoManager();
   assert(hm);
 
   TH1 *h = new TH1D(TString(m_HistoPrefix.c_str()) + "_Normalization",  //
-                    TString(m_HistoPrefix.c_str()) + " Normalization;Items;Count", 10, .5, 10.5);
+                    TString(m_HistoPrefix.c_str()) + " Normalization;Items;Count", 20, .5, 20.5);
   int i = 1;
   h->GetXaxis()->SetBinLabel(i++, "Packet");
   h->GetXaxis()->SetBinLabel(i++, "Lv1-Taggers");
@@ -55,7 +57,7 @@ TpcTimeFrameChecker::TpcTimeFrameChecker(const int packet_id)
   h->GetXaxis()->SetBinLabel(i++, "DMA_WORD_INVALID");
 
   h->GetYaxis()->SetBinLabel(i++, "TimeFrameSizeLimitError");
-  assert(i <= 10);
+  assert(i <= 20);
   h->GetXaxis()->LabelsOption("v");
   hm->registerHisto(h);
 
@@ -82,8 +84,13 @@ int TpcTimeFrameChecker::InitRun(PHCompositeNode *)
     m_TaggerTree = new TTree("TaggerTree", "Each entry is one tagger for level 1 trigger or endat tag");
     
     m_TaggerTree->Branch("packet", &m_packet_id, "packet/I");
-    m_TaggerTree->Branch("RCDAQEvent", &m_frame, "frame/I");
-
+    m_TaggerTree->Branch("frame", &m_frame, "frame/I");
+    m_TaggerTree->Branch("datastream_last_lvl1_count", &m_datastream_last_lvl1_count, 
+      "datastream_last_lvl1_count/i");
+    m_TaggerTree->Branch("datastream_last_endat_count", &  m_datastream_last_endat_count  ,
+     "datastream_last_endat_count/i");
+    m_TaggerTree->Branch("datastream_last_bco", &m_datastream_last_bco, "datastream_last_bco/l");
+    m_TaggerTree->Branch("tagger", &m_payload);
   }
 
 
@@ -165,7 +172,7 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
     return 0;
   }
 
-  if (m_verbosity)
+  if (Verbosity())
   {
     cout << __PRETTY_FUNCTION__ << " : received packet ";
     packet->identify();
@@ -189,7 +196,7 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
   assert(l2 >= 0);
   unsigned int payload_length = 2 * (unsigned int) l2;  // int to uint16
 
-  TH1D *h_PacketLength = dynamic_cast<TH1D *>(hm->getHisto(
+  TH1I *h_PacketLength = dynamic_cast<TH1I *>(hm->getHisto(
       m_HistoPrefix + "_PacketLength"));
   assert(h_PacketLength);
   h_PacketLength->Fill(payload_length);
@@ -201,6 +208,12 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
     if ((buffer[index] & 0xFF00) == FEE_MAGIC_KEY)
     {
       unsigned int fee_id = buffer[index] & 0xff;
+
+      if (Verbosity())
+      {
+        cout << __PRETTY_FUNCTION__ << " : buffer["<< index <<"] received FEE data from FEE " << fee_id <<". payload_length = "<<payload_length<< endl;
+      }
+
       ++index;
       if (fee_id < MAX_FEECOUNT)
       {
@@ -212,6 +225,13 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
             cout << __PRETTY_FUNCTION__ << " : Error : unexpected reach at payload length at position " << index << endl;
             break;
           }
+
+          if (Verbosity())
+          {
+            cout << __PRETTY_FUNCTION__ << " : buffer[" << index << "] -> " <<hex<<buffer[index]<<dec << endl;
+          }
+
+          ++index;
         }
         h_norm->Fill("DMA_WORD_FEE", 1);
       }
@@ -224,19 +244,40 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
     }
     else if ((buffer[index] & 0xFF00) == GTM_MAGIC_KEY)
     {
+      if (Verbosity())
+      {
+        cout << __PRETTY_FUNCTION__ << " : buffer["<< index <<"] received GTM data "
+         << hex << buffer[index]<<dec 
+         <<". payload_length = "<<payload_length << endl;
+      }
+
       // watch out for any data corruption
       if (index + DAM_DMA_WORD_BYTE_LENGTH > payload_length)
       {
-        cout << __PRETTY_FUNCTION__ << " : Error : unexpected reach at payload length at position " << index << endl;
+        cout << __PRETTY_FUNCTION__ << " : Error : unexpected reach at payload length at position "
+         << index << endl;
         break;
       }
-      decode_gtm_data(&buffer[index]);
+      if (decode_gtm_data(&buffer[index]) == 0)
+      {
+        process_gtm_data(m_payload);
+
+        // record the last LV1 readings
+        if (m_payload.is_lvl1)
+        {
+          m_datastream_last_lvl1_count = m_payload.lvl1_count;
+          m_datastream_last_endat_count = m_payload.endat_count;
+          m_datastream_last_bco = m_payload.bco;
+        }
+      }      
+
       index += DAM_DMA_WORD_BYTE_LENGTH;
       h_norm->Fill("DMA_WORD_GTM", 1);
     }
     else
     {
-      cout << __PRETTY_FUNCTION__ << " : Error : Unknown data type at position " << index << ": " << hex << buffer[index] << dec << endl;
+      cout << __PRETTY_FUNCTION__ << " : Error : Unknown data type at position " 
+      << index << ": " << hex << buffer[index] << dec << endl;
       // not FEE data, e.g. GTM data or other stream, to be decoded
       index += DAM_DMA_WORD_BYTE_LENGTH;
       h_norm->Fill("DMA_WORD_INVALID", 1);
@@ -247,6 +288,30 @@ int TpcTimeFrameChecker::ProcessPacket(Packet *packet)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+int TpcTimeFrameChecker::process_gtm_data(const gtm_payload & payload)
+{
+  if (Verbosity())
+  {
+    cout << __PRETTY_FUNCTION__ << " : received GTM data: " << endl;
+    cout << "  pkt_type: " << hex << payload.pkt_type << dec << endl;
+    cout << "  is_endat: " << payload.is_endat << endl;
+    cout << "  is_lvl1: " << payload.is_lvl1 << endl;
+    cout << "  is_modebit: " << payload.is_modebit << endl;
+    cout << "  bco: " << hex << payload.bco << dec << endl;
+    cout << "  lvl1_count: " << payload.lvl1_count << endl;
+    cout << "  endat_count: " << payload.endat_count << endl;
+    cout << "  last_bco: " << hex << payload.last_bco << dec << endl;
+    cout << "  modebits: " << hex << (unsigned int) payload.modebits << dec << endl;
+    cout << "  userbits: " << hex << (unsigned int) payload.userbits << dec << endl;
+  }
+
+  if (m_TaggerTree)
+  {
+    m_TaggerTree->Fill();
+  }
+
+  return 0;
+}
 
 int TpcTimeFrameChecker::decode_gtm_data(uint16_t dat[16])
 {
