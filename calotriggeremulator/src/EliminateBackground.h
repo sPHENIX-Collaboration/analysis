@@ -27,10 +27,13 @@ class EliminateBackground : public SubsysReco
   //! event processing method
   int process_event(PHCompositeNode*) override;
 
+  void SetToKeep(bool keep) {m_keep = keep; }
   //! end of run method
   int End(PHCompositeNode*) override;
 
  private:
+  bool m_keep = false;
+  
   TH2* hcal{nullptr};
   TH1* hcal_phi{nullptr};
   TH1* hcal_phi_consec{nullptr};
