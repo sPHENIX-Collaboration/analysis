@@ -136,13 +136,13 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 	std::cout << "DijetQA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
 	++m_event;  
 	//Setup the node search
-	JetContainer* jets=findNode::getClass< JetContainer>(topNode, "AntiKt_Tower_r04");
+	JetContainer* jets=findNode::getClass< JetContainer>(topNode, "AntiKt_Truth_r04");
 	if(!jets){
 		std::cout<<"No jet container found" <<std::endl;
 		--m_event;
 		return -1; 
 	}
-	CentralityInfo* cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+/*	CentralityInfo* cent_node = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
 	if(!cent_node){
 		std::cout<<"No centrality info found" <<std::endl;
 		--m_event;
@@ -172,7 +172,7 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 		std::cout<<"Could not find the calo towers" <<std::endl;
 		--m_event;
 		return -1;
-	}
+	}*/
 	//JetMap* jets=findNode::getClass<JetMap>(topNode, "AntiKt_Tower_r04");
 	FindPairs(jets);
 	m_T->Fill();
@@ -183,7 +183,10 @@ void DijetQA::FindPairs(JetContainer* jets)
 	//find all pairs that are potenital dijets and measure the kinematics
 	//prety sure I'm doing this right
 	Jet* jet_leading=NULL, *jet_pair1=NULL, *jet_pair2=NULL;
+	std::cout<<"Finding jet pairs" <<std::endl;
 	float pt_leading=0, pt1=0, pt2=0;
+	m_nJet=jets->size();
+	std::cout<<"number of jets is" <<m_nJet<<std::endl;
 	for(auto j1: *jets)
 	{
 		assert(j1);
