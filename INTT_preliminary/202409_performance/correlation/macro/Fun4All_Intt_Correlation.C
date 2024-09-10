@@ -3,7 +3,8 @@
 int Fun4All_Intt_Correlation( int run_num = 50889,
 			      int nevents = 10000,
 			      bool does_hit_correlation = true,
-			      bool does_cluster_correlation = true
+			      bool does_cluster_correlation = true,
+			      int fphx_bco = -1
 			      )
 {
 
@@ -28,11 +29,18 @@ int Fun4All_Intt_Correlation( int run_num = 50889,
 
   if( run_num == 50889 ) // streaming readout mode
     {
-      in->fileopen( "results/DST_physics_intt-00050889_no_hot.root" );
+      string data = "results/DST_physics_intt-00050889_no_hot";
+      if( fphx_bco != 9999 )
+	data += "_FPHX_BCO_" + to_string( fphx_bco ) + ".root";
+      else
+	data += ".root";
+
+      in->fileopen( data );
     }
   else if( run_num == 50377 ) // triggered mode
     {
       in->fileopen( "results/DST_physics_intt-00050377_no_hot.root" );
+      skip_num = 150000;
     }
   
   se->registerInputManager(in);
@@ -42,11 +50,13 @@ int Fun4All_Intt_Correlation( int run_num = 50889,
   //////////////////////////////////////////////////////////////////
   // for #hit correlation
   InttHitCorrelation* hit_cor = new InttHitCorrelation();
+  hit_cor->SetFphxBco( fphx_bco );
   if( does_hit_correlation == true )
     se->registerSubsystem( hit_cor );
   
   // for #cluster correlation
   InttClusterCorrelation* cluster_cor = new InttClusterCorrelation();
+  cluster_cor->SetFphxBco( fphx_bco );
   if( does_cluster_correlation == true )
     se->registerSubsystem( cluster_cor );
   

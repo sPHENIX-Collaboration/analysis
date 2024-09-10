@@ -50,7 +50,14 @@ void InttClusterCorrelation::SetOutputDir( string dir )
     }
 
   string run_num_str = string( 8 - to_string(run_num_).size(), '0' ) + to_string( run_num_ );
-  output_root_ = output_dir_ + output_basename_ + run_num_str + ".root";
+  output_root_ = output_dir_ + output_basename_ + run_num_str;
+
+  if( fphx_bco_in_use_ == -1 )
+    output_root_ += ".root";
+  else
+    output_root_ += "_FPHX_BCO_" + to_string( fphx_bco_in_use_ ) + ".root";
+  
+
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -81,6 +88,11 @@ int InttClusterCorrelation::InitRun(PHCompositeNode *topNode)
 				       500, 0, 500,
 				       500, 0, 500 );
   
+  hist_barrel_correlation_no_adc0_ = new TH2D( "inner_outer_barrels_no_adc0",
+					       "Inner barrel vs Outer barrel;#cluster_{Inner};#cluster_{Outer};Entries",
+					       500, 0, 500,
+					       500, 0, 500 );
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -91,10 +103,17 @@ int InttClusterCorrelation::process_event(PHCompositeNode *topNode)
 
   // If a node is not available, skip this event
   if (status == Fun4AllReturnCodes::ABORTEVENT)
-    return Fun4AllReturnCodes::ABORTEVENT;
+    {
+      // for counting the number of events
+      hist_barrel_correlation_->Fill( -1, -1 );
+      hist_barrel_correlation_no_adc0_->Fill( -1, -1 );
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
   int cluster_num_inner = 0;
   int cluster_num_outer = 0;
+  int hit_num_barrel[ 2 ] = { 0 }; // 0: inner, 1: outer
+  int hit_num_barrel_no_adc0[ 2 ] = { 0 }; // 0: inner, 1: outer
 
   ///  vector < TrkrCluster* > clusters;
 
@@ -114,12 +133,24 @@ int InttClusterCorrelation::process_event(PHCompositeNode *topNode)
 	    {
 	      const auto cluskey = clusIter->first;
 	      const auto cluster = clusIter->second;
-
-	      if( inttlayer < 2 )
-		cluster_num_inner++;
-	      else
-		cluster_num_outer++;
 	      
+
+	      int layer_index = 0; // 0: inner, 1: outer
+	      if( inttlayer < 2 )
+		{
+		  cluster_num_inner++;
+		}
+	      else
+		{
+		  layer_index = 1;
+		  cluster_num_outer++;
+		}
+
+	      hit_num_barrel[ layer_index ]++;
+	      
+	      if( cluster->getAdc() > 35 )
+		hit_num_barrel_no_adc0[ layer_index ]++;
+
 	      // getLocalX ()	;  getLocalY	() ;
 	      // getAdc ()		;  getMaxAdc	() ;  getOverlap () ;
 	      // getEdge ()	;  getTime	() ;  getSize () ;  getPhiSize () ;  getZSize () ;
@@ -137,8 +168,8 @@ int InttClusterCorrelation::process_event(PHCompositeNode *topNode)
 	}
     }
   
-  if( cluster_num_outer != 0 || cluster_num_inner != 0 )
-    hist_barrel_correlation_->Fill( cluster_num_inner, cluster_num_outer );
+  hist_barrel_correlation_->Fill( cluster_num_inner, cluster_num_outer );
+  hist_barrel_correlation_no_adc0_->Fill( hit_num_barrel_no_adc0[0], hit_num_barrel_no_adc0[1] );
   
   event_counter_by_myself_++;
   
@@ -153,7 +184,9 @@ int InttClusterCorrelation::ResetEvent(PHCompositeNode *topNode)
 
 int InttClusterCorrelation::EndRun(const int runnumber)
 {
+
   tf_output_->WriteTObject( hist_barrel_correlation_, hist_barrel_correlation_->GetName() );
+  tf_output_->WriteTObject( hist_barrel_correlation_no_adc0_, hist_barrel_correlation_no_adc0_->GetName() );
 
   // Close the ROOT file
   tf_output_->Close();

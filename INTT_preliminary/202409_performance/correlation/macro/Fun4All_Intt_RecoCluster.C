@@ -1,12 +1,14 @@
 #include "Fun4All_Intt_RecoCluster.hh"
 
-void Fun4All_Intt_RecoCluster( )
+void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
   // int run_num,
   // 			       int nevents=10,
   // 			       )
 {
 
   //  gSystem->ListLibraries();
+  TStopwatch* watch = new TStopwatch();
+  watch->Start();
   
   ////////////////////////////////////////////////////////////////////////
   int run_num = 50889;
@@ -26,7 +28,7 @@ void Fun4All_Intt_RecoCluster( )
   string output_dst = string("results/") + "DST" + output_base;
 
   output_dst += "_no_hot";
-
+  output_dst += "_FPHX_BCO_" + to_string( fphx_bco );
   output_dst +=  ".root"; 
 
   string  cdb_hot_list = kIntt_cdb_dir + "cdb_49737_special.root";
@@ -80,9 +82,8 @@ void Fun4All_Intt_RecoCluster( )
   if( run_num == 50377 ) // BCO diff selection to get only hits from triggered collision
     inttdecode->SetCalibBCO( cdb_bco, InttCombinedRawDataDecoder::FILE); 
 
-  //inttdecode->SetCalibDAC("CDBTTree_INTT_DACMAP.root", InttCombinedRawDataDecoder::FILE);
   inttdecode->SetCalibDAC( cdbtree_name_dac, InttCombinedRawDataDecoder::FILE ); // not InttCombinedRawDataDecoder::CDB
-  //  inttdecode->SetBCODiffSelectionTolerance( 0 );
+  inttdecode->set_fphxBcoFilter( fphx_bco );
   se->registerSubsystem( inttdecode );
   
   //////////////////////////////////////
@@ -99,7 +100,12 @@ void Fun4All_Intt_RecoCluster( )
   cout << "CDB (hot channel) " << cdb_hot_list << endl;
   cout << "CDB (BCO diff) " << cdb_bco << endl;
   cout << "CDB (DAC map)    " << cdbtree_name_dac << endl;
+  cout << "FPHX BCO: " << fphx_bco << endl;
   cout << "Output: " << output_dst << endl;
 
+  watch->Stop();
+  cout << "----------------------------------" << endl;
+  cout << "Real time: " << watch->RealTime() << endl;
+  cout << "CPU time:  " << watch->CpuTime() << endl;  
   delete se;
 }

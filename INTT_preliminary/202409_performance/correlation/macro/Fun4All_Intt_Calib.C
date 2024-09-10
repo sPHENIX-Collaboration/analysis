@@ -1,6 +1,6 @@
 #include "Fun4All_Intt_Calib.hh"
 
-void Fun4All_Intt_Calib(int run_num = 51178,
+void Fun4All_Intt_Calib(int run_num = 50889,
 			 int nevents = 1000,
 			 bool is_official = true
 			 )

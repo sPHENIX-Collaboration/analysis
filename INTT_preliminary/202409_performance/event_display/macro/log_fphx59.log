@@ -1,0 +1,369 @@
+   ------------------------------------------------------------------
+  | Welcome to ROOT 6.26/06                        https://root.cern |
+  | (c) 1995-2021, The ROOT Team; conception: R. Brun, F. Rademakers |
+  | Built for linuxx8664gcc on Jul 28 2022, 18:08:51                 |
+  | From tags/v6-26-06@v6-26-06                                      |
+  | With g++ (GCC) 12.1.0                                            |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q'       |
+   ------------------------------------------------------------------
+
+
+Processing Read_DST.C( 50889, 0, 59 )...
+ActsGeomInit: Use survey geometry? ACTSGEOM::inttsurvey=1
+Registering Subsystem MakeActsGeometry
+InttXYVertexFinder::InttXYVertexFinder(const std::string &name) Calling ctor
+InttXYVertexFinder::Init(PHCompositeNode *topNode) Initializing
+Registering Subsystem InttXYVertexFinder
+InttZVertexFinder::InttZVertexFinder(const std::string &name) Calling ctor
+InttZVertexFinder::Init(PHCompositeNode *topNode) Initializing
+Registering Subsystem InttZVertexFinder
+Registering Subsystem GlobalVertexReco
+Beginning Init in InttAna
+Registering Subsystem InttAna
+Fun4AllServer: Runnumber forced to 50889 by RUNNUMBER IntFlag
+Fun4AllServer::setRun(): run 50889 uses CDB TIMESTAMP 6
+Fun4AllServer::BeginRun: Run number 50889 uses RECO TIMESTAMP: Sat Sep  7 15:15:53 2024
+Fun4AllServer::BeginRun: InitRun for MakeActsGeometry
+/home/phnxbld/sPHENIX/gcc-12.1.0/new/source/coresoftware/offline/packages/trackreco/MakeActsGeometry.cc:503: Magnetic field FIELDMAP_TRACKING with rescale 1
+tgeo-sphenix-mms.json not found locally, use repo version
+sphenix-mm-material.json not found locally, use repo version
+using Acts material file : /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_new/new.7/share/calibrations/ACTS/sphenix-mm-material.json
+Using Acts TGeoResponse file : /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_new/new.7/share/tgeo-sphenix-mms.json
+Mag field now /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/FIELDMAP_TRACKING/8e/4d/8e4d6c3b1660540a658da3a275af2bde_sphenix3dtrackingmapxyz.root with rescale 1
+Warning in <TGeoManager::Import>: TGeoMananager in lock mode. NOT IMPORTING new geometry
+Warning in <TGeoMatrix::dtor>: Registered matrix ID was removed
+Warning in <TGeoMatrix::dtor>: Registered matrix ID was removed
+Warning in <TGeoMatrix::dtor>: Registered matrix ID was removed
+Warning in <TGeoMatrix::dtor>: Registered matrix ID was removed
+15:16:06    MagneticFiel   INFO      Read magnetic field map from ROOT file '"/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/FIELDMAP_TRACKING/8e/4d/8e4d6c3b1660540a658da3a275af2bde_sphenix3dtrackingmapxyz.root"'
+15:16:06    MagneticFiel   INFO      Use XYZ field map
+Use Intt survey geometry? m_inttSurvey =1
+AlignmentTransformation: use global translation perturbations = 1
+AlignmentTransformation: use INTT survey geometry = 0
+AlignmentTransformation: localVerbosity = 0
+AlignmentTransformation: Reading alignment parameters from database file: /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/TRACKINGALIGNMENT/8c/7a/8c7a4bd674c9ed3fd85fc5a9e216cf1d_tracking_alignment_parameters_empty.txt
+WARNING: you are reading an obsolete alignment parameters file
+     --- setting global rotation parameters to zero!
+Fun4AllServer::BeginRun: InitRun for InttXYVertexFinder
+InttXYVertexFinder::InitRun(PHCompositeNode *topNode) Initializing for Run XXX
+Fun4AllServer::BeginRun: InitRun for InttZVertexFinder
+InttZVertexFinder::InitRun(PHCompositeNode *topNode) Initializing for Run XXX
+Fun4AllServer::BeginRun: InitRun for GlobalVertexReco
+Fun4AllServer::BeginRun: InitRun for InttAna
+InttAna::InitRun beamcenter 0 0
+Registering Subsystem CDBInterface
+Fun4AllServer::BeginRun: InitRun for CDBInterface
+--------------------------------------
+
+List of Nodes in Fun4AllServer:
+Node Tree under TopNode TOP
+TOP (PHCompositeNode)/
+   DST (PHCompositeNode)/
+      GL1 (PHCompositeNode)/
+         GL1RAWHIT (IO,Gl1Packetv2)
+      INTT (PHCompositeNode)/
+         INTTRAWHIT (IO,InttRawHitContainerv2)
+         G4HIT_INTT (IO,PHG4HitContainer)
+         INTTEVENTHEADER (IO,InttEventInfov1)
+         InttVertexMap (IO,InttVertexMapv1)
+      MVTX (PHCompositeNode)/
+         G4HIT_MVTX (IO,PHG4HitContainer)
+      TPC (PHCompositeNode)/
+         G4HIT_TPC (IO,PHG4HitContainer)
+      MICROMEGAS (PHCompositeNode)/
+         G4HIT_MICROMEGAS (IO,PHG4HitContainer)
+      G4TruthInfo (IO,PHG4TruthInfoContainer)
+      TRKR (PHCompositeNode)/
+         TRKR_HITSET (IO,TrkrHitSetContainerv1)
+         TRKR_CLUSTER (IO,TrkrClusterContainerv4)
+         TRKR_CLUSTERHITASSOC (IO,TrkrClusterHitAssocv3)
+         TRKR_CLUSTERCROSSINGASSOC (IO,TrkrClusterCrossingAssocv1)
+      alignmentTransformationContainer (PHDataNode)
+      alignmentTransformationContainerTransient (PHDataNode)
+      GLOBAL (PHCompositeNode)/
+         GlobalVertexMap (IO,GlobalVertexMapv1)
+   RUN (PHCompositeNode)/
+      FIELD_CONFIG (IO,PHFieldConfigv1)
+      MVTX (PHCompositeNode)/
+         G4GEOPARAM_MVTX (IO,PdbParameterMapContainer)
+      INTT (PHCompositeNode)/
+         G4GEOPARAM_INTT (IO,PdbParameterMapContainer)
+      TPC (PHCompositeNode)/
+         G4GEOPARAM_TPC (IO,PdbParameterMapContainer)
+      TPC_ENDCAP (PHCompositeNode)/
+         G4GEOPARAM_TPC_ENDCAP (IO,PdbParameterMapContainer)
+      MICROMEGAS (PHCompositeNode)/
+         G4GEOPARAM_MICROMEGAS (IO,PdbParameterMapContainer)
+      CYLINDERGEOM_MVTX (IO,PHG4CylinderGeomContainer)
+      CYLINDERGEOM_INTT (IO,PHG4CylinderGeomContainer)
+      CYLINDERCELLGEOM_SVTX (IO,PHG4TpcCylinderGeomContainer)
+      CYLINDERGEOM_MICROMEGAS_FULL (IO,PHG4CylinderGeomContainer)
+      GEOMETRY_IO (IO,PHGeomIOTGeo)
+      CdbUrl (IO,CdbUrlSavev1)
+   PAR (PHCompositeNode)/
+      GEOMETRY (PHDataNode)
+      SVTX (PHCompositeNode)/
+         ActsGeometry (PHDataNode)
+
+
+Fun4AllServer::run - processing event 1 from run 50889
+Fun4AllServer::process_event processing MakeActsGeometry
+Fun4AllServer::process_event processing InttXYVertexFinder
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Warning in <Fit>: Fit data is empty 
+Fun4AllServer::process_event processing InttZVertexFinder
+evt : 0, good pair count : 3 3
+InttZVertex:process_evt status = good
+Fun4AllServer::process_event processing GlobalVertexReco
+Fun4AllServer::process_event processing InttAna
+
+InttEvt::process evt : 0
+../src/InttAna.cc:150: hepmceventmap node is missing.
+../src/InttAna.cc:161: PHG4INEVENT node is missing.
+MbdOut node is missing.
+../src/InttAna.cc:217: SvtxVertexMap node is missing.
+GlobalVertexMapv1: size = 0
+#vertex from InttVertexMapV1: 3
+InttVertexMapv1: size = 3
+---InttVertexv1--------------------------------
+vertexid: 0
+ (x,y,z) =  (0.4, 0.4, -9999) cm
+         ( nan , nan , nan )
+  err  = ( nan , nan , nan )
+         ( nan , nan , nan )
+-----------------------------------------------
+---InttVertexv1--------------------------------
+vertexid: 1
+ (x,y,z) =  (0, 0, -9999) cm
+         ( nan , nan , nan )
+  err  = ( nan , nan , nan )
+         ( nan , nan , nan )
+-----------------------------------------------
+---InttVertexv1--------------------------------
+vertexid: 2
+ (x,y,z) =  (-0.0188185, 0.198181, -999.9) cm
+         ( nan , nan , nan )
+  err  = ( nan , nan , nan )
+         ( nan , nan , nan )
+-----------------------------------------------
+
+INTT vertex map	0	0	(      0.4,      0.4,    -9999 )
+
+INTT vertex map	1	0	(        0,        0,    -9999 )
+
+INTT vertex map	2	0	( -0.018818,  0.19818,   -999.9 )
+cluster xyz : 5.5752 4.7356 -16.572 :  -0.2301 2 : 35 1 0 1 2
+cluster xyz : -1.4715 6.9393 -18.572 :  -0.6201 0 : 60 1 0 1 4
+cluster xyz : -1.5466 6.9185 -18.572 :  -0.5421 0 : 60 1 0 1 4
+cluster xyz : 2.7608 -7.1618 -14.572 :  0.6162 4 : 95 2 0 1 10
+cluster xyz : 1.4067 -7.5328 3.6275 :  -0.7878 -2.4 : 135 2 0 2 10
+ exceed : ncluster limit.  no more cluster xyz printed
+End of loop over cluster pairs
+zvtx determination as vz_array size 6 is larger than 3
+ZVTX: 19.628 19.75 2.408 24.518 140
+event : 1002 1 -1 :  1b05c69626fb7 5c69626f8b 0 : 1b05c69626fb7 5c69626f8b 0
+evtCount : 0 -1 5c69626f8b
+value assignments for fill
+0
