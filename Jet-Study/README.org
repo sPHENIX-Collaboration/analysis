@@ -4,6 +4,16 @@ CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
 #+end_src
 - <tag>: 2024p001-7
 
+* Generate run list where specific triggers are enabled
+#+begin_src bash
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
+#+end_src
+
+Example: Ensure that MBD NS >= 1 and Jet 8, 10, and 12 GeV trigger are enabled
+#+begin_src bash
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-MBD-NS-1-and-Jet-12.list
+#+end_src
+
 * Generate dst list from run list
 #+begin_src bash
 CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
