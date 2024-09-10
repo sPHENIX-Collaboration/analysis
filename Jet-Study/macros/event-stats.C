@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <fstream>
 #include <regex>
+#include <unordered_map>
 
 // -- root includes --
 #include <TH1F.h>
@@ -27,7 +28,7 @@ using std::stringstream;
 using std::min;
 using std::max;
 using std::ofstream;
-using std::map;
+using std::unordered_map;
 
 namespace myAnalysis
 {
