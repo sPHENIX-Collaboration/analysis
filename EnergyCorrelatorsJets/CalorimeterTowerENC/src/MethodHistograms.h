@@ -13,6 +13,7 @@ struct MethodHistograms{
 	TH1F* E=new TH1F(Form("e_%s", typelabel.c_str()), Form("Jet energy from %s; E [GeV]; N_{jet}", typelabel.c_str()), 50000, -0.5, 49.5); 
 	TH1F* N=new TH1F(Form("n_%s", typelabel.c_str()), Form("N compoents from %s; N_{components}; N_{jet}", typelabel.c_str()), 50, -0.5, 49.5); 
 	TH1F* pt=new TH1F(Form("pt_%s", typelabel.c_str()), Form("Jet transverse energy from %s; p_{T} [GeV]; N_{jet}", typelabel.c_str()), 50000, -0.5, 49.5); 
+	TH2F* R_pt=new TH2F(Form("R_pt_%s", typelabel.c_str()), Form("p_{T} of consitituents relative to relative distance from jet axis from %s; R/R^{jet}_{max}; #frac{p_{T}^{consitituent}}{p_{T}^{jet}}; N_{consituent}", typelabel.c_str()), 20, -0.05, 0.95, 50, -0.05, 0.95);
 	std::vector<TH1F*> histsvector {E2C, E3C, R, E, N, pt};
 };
 #endif
