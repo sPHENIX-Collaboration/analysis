@@ -84,11 +84,16 @@ def create_f4a_jobs():
                 # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
                 file.write(f'queue input_dst from {filename}')
 
-            arr[i%n] = arr[i%n] + f'cd {job_dir} && condor_submit genFun4All.sub && '
+            arr[i%n] = arr[i%n] + f'{run}\n'
             i += 1
 
+    i = 0
     for x in arr:
-        print(x[:-4])
+        with open(f'{output_dir}/sub-{i}.txt', mode="w") as file:
+            file.write(x)
+
+        print(f'xargs -L 1 -I {{}} bash -c \'cd {output_dir}/{{}} && condor_submit genFun4All.sub\' < {output_dir}/sub-{i}.txt')
+        i += 1
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
