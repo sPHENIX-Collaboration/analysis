@@ -47,18 +47,23 @@ class JetValidation : public SubsysReco
     this->m_outputQAFileName = m_outputQAFileName;
   }
 
-  void set_zvtx_max(Float_t m_zvtx_max) {
-    this->m_zvtx_max = m_zvtx_max;
+  void set_saveTree(Bool_t m_saveTree) {
+    this->m_saveTree = m_saveTree;
   }
 
-  void set_interestEvent(Int_t m_interestEvent) {
-    this->m_interestEvent = m_interestEvent;
-    this->m_saveTowerInfo = true;
+  void set_bkg_tower_energy(Float_t m_bkg_tower_energy) {
+    this->m_bkg_tower_energy = m_bkg_tower_energy;
   }
 
-  void set_neighbors(UInt_t m_neighbors) {
-    this->m_neighbors = m_neighbors;
+  void set_bkg_tower_neighbor_energy(Float_t m_bkg_tower_neighbor_energy) {
+    this->m_bkg_tower_neighbor_energy = m_bkg_tower_neighbor_energy;
   }
+
+  void set_bkg_towers(UInt_t m_bkg_towers) {
+    this->m_bkg_towers = m_bkg_towers;
+  }
+
+  Bool_t isBackgroundEvent(std::vector<Float_t> &towerEnergy);
 
  private:
   std::string m_recoJetName_r02;
@@ -68,7 +73,6 @@ class JetValidation : public SubsysReco
   TFile* m_outputQAFile;
   std::string m_outputTreeFileName;
   std::string m_outputQAFileName;
-  std::string m_clusterNode;
   std::string m_emcTowerNodeBase;
   std::string m_emcTowerNode;
   std::string m_ihcalTowerNode;
@@ -77,22 +81,122 @@ class JetValidation : public SubsysReco
   std::string m_ihcalTowerNodeSub;
   std::string m_ohcalTowerNodeSub;
 
-  Float_t m_zvtx_max;
-  Float_t m_zvtx_max2;
-  Float_t m_zvtx_max3;
-  Float_t m_lowEnergyThreshold;
+  enum class Trigger {
+      MBD_NS_1 = 10,
+      JET_6    = 20,
+      JET_8    = 21,
+      JET_10   = 22,
+      JET_12   = 23
+  };
+
+  enum class EventStatus {
+      ALL                 = 0,
+      ZVTX                = 1,
+      ZVTX60              = 2,
+      ZVTX50              = 3,
+      ZVTX30              = 4,
+      ZVTX20              = 5,
+      ZVTX10              = 6,
+      ALL_MBDNS1          = 7,
+      ALL_MBDNS1_JET8     = 8,
+      ALL_MBDNS1_JET10    = 9,
+      ALL_MBDNS1_JET12    = 10,
+      ZVTX60_MBDNS1       = 11,
+      ZVTX60_MBDNS1_JET8  = 12,
+      ZVTX60_MBDNS1_JET10 = 13,
+      ZVTX60_MBDNS1_JET12 = 14,
+      ZVTX60_JET8         = 15,
+      ZVTX60_JET10        = 16,
+      ZVTX60_JET12        = 17
+  };
+
+  enum class JetEvent_Status {
+      ALL_MBDNS1          = 0,
+      ALL_MBDNS1_JET8     = 1,
+      ALL_MBDNS1_JET10    = 2,
+      ALL_MBDNS1_JET12    = 3,
+      ZVTX60_MBDNS1       = 4,
+      ZVTX60_MBDNS1_JET8  = 5,
+      ZVTX60_MBDNS1_JET10 = 6,
+      ZVTX60_MBDNS1_JET12 = 7,
+      ZVTX60              = 8,
+      ZVTX60_JET8         = 9,
+      ZVTX60_JET10        = 10,
+      ZVTX60_JET12        = 11
+  };
+
+  std::vector<std::string> JetEvent_Status_vec = {
+      "ALL_MBDNS1",
+      "ALL_MBDNS1_JET8",
+      "ALL_MBDNS1_JET10",
+      "ALL_MBDNS1_JET12",
+      "ZVTX60_MBDNS1",
+      "ZVTX60_MBDNS1_JET8",
+      "ZVTX60_MBDNS1_JET10",
+      "ZVTX60_MBDNS1_JET12",
+      "ZVTX60",
+      "ZVTX60_JET8",
+      "ZVTX60_JET10",
+      "ZVTX60_JET12"
+  };
+
+  Bool_t  m_saveTree;
+  Float_t m_zvtx_max[5] = {60,50,30,20,10}; /*cm*/
   Float_t m_lowPtThreshold;
   Float_t m_highPtThreshold;
+  Float_t m_subLeadPtThreshold;
   UInt_t  m_highPtJetCtr;
-  Bool_t  m_saveTowerInfo;
-  Int_t   m_interestEvent;
-  UInt_t  m_neighbors;
+  UInt_t m_bins_phi;
+  UInt_t m_bins_eta;
+  Float_t m_eta_low;
+  Float_t m_eta_high;
 
-  TH1F* hJetPt_r02;
-  TH1F* hJetPt_r04;
-  TH1F* hJetPt_r06;
   TH1F* hEvents;
+  TH1F* hEventsBkg;
   TH1F* hZVtx;
+
+  // Jet Histograms
+  // pt
+  std::vector<TH1F*> hJetPt_r02;
+  std::vector<TH1F*> hJetPt_r04;
+  std::vector<TH1F*> hJetPt_r06;
+
+  std::vector<TH1F*> hJetPt_r02_bkg;
+  std::vector<TH1F*> hJetPt_r04_bkg;
+  std::vector<TH1F*> hJetPt_r06_bkg;
+
+  std::vector<TH1F*> hJetPt_r02_nobkg;
+  std::vector<TH1F*> hJetPt_r04_nobkg;
+  std::vector<TH1F*> hJetPt_r06_nobkg;
+
+  // deltaPhi
+  std::vector<TH1F*> hJetDeltaPhi_r02;
+  std::vector<TH1F*> hJetDeltaPhi_r04;
+  std::vector<TH1F*> hJetDeltaPhi_r06;
+
+  std::vector<TH1F*> hJetDeltaPhi_r02_bkg;
+  std::vector<TH1F*> hJetDeltaPhi_r04_bkg;
+  std::vector<TH1F*> hJetDeltaPhi_r06_bkg;
+
+  std::vector<TH1F*> hJetDeltaPhi_r02_nobkg;
+  std::vector<TH1F*> hJetDeltaPhi_r04_nobkg;
+  std::vector<TH1F*> hJetDeltaPhi_r06_nobkg;
+
+  // eta_phi
+  std::vector<TH2F*> h2JetEtaPhi_r02;
+  std::vector<TH2F*> h2JetEtaPhi_r04;
+  std::vector<TH2F*> h2JetEtaPhi_r06;
+
+  std::vector<TH2F*> h2JetEtaPhi_r02_bkg;
+  std::vector<TH2F*> h2JetEtaPhi_r04_bkg;
+  std::vector<TH2F*> h2JetEtaPhi_r06_bkg;
+
+  std::vector<TH2F*> h2JetEtaPhi_r02_nobkg;
+  std::vector<TH2F*> h2JetEtaPhi_r04_nobkg;
+  std::vector<TH2F*> h2JetEtaPhi_r06_nobkg;
+
+  std::vector<TH2F*> h2TowerEnergy;
+  std::vector<TH2F*> h2TowerEnergySub;
 
   UInt_t  m_bins_pt;
   Float_t m_pt_low;
@@ -104,15 +208,17 @@ class JetValidation : public SubsysReco
   Float_t m_zvtx_low;
   Float_t m_zvtx_high;
 
+  Float_t m_bkg_tower_energy;
+  Float_t m_bkg_tower_neighbor_energy;
+  UInt_t  m_bkg_towers;
+
   //! Output Tree variables
-  TTree *m_T;
+  TTree* m_T;
 
   //! eventwise quantities
   Int_t m_run;
   Int_t m_globalEvent;
   Int_t m_event;
-  Int_t m_eventZVtx;
-  Int_t m_eventZVtx30;
   Int_t m_nJets_r02;
   Int_t m_nJets_r04;
   Int_t m_nJets_r06;
@@ -132,15 +238,8 @@ class JetValidation : public SubsysReco
   std::vector<Float_t> m_towersIHCalSub_energy;
   std::vector<Float_t> m_towersOHCalSub_energy;
 
-  //! cluster info
-  std::vector<Float_t> m_cluster_energy;
-  std::vector<Float_t> m_cluster_eta;
-  std::vector<Float_t> m_cluster_phi;
-  std::vector<Float_t> m_cluster_chi;
-  std::vector<std::vector<Double_t>> m_cluster_towerIndex;
-
   //! trigger info
-  std::vector<bool> m_triggerVector;
+  std::vector<bool> m_scaledVector;
 
   //! reconstructed jets R = 0.2
   Int_t m_nJet_r02;

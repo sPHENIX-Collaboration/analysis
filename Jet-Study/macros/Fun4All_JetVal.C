@@ -11,6 +11,9 @@
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllUtils.h>
+#include <fun4all/Fun4AllBase.h>
+
+#include <caloreco/CaloTowerStatus.h>
 
 #include <phool/recoConsts.h>
 
@@ -23,16 +26,13 @@ using std::pair;
 using std::istringstream;
 
 #include "HIJetReco.C"
-#include <Calo_Calib.C>
 
 R__LOAD_LIBRARY(libJetValidation.so)
 
 void Fun4All_JetVal(const string &inputFile,
                     const string &outputTreeFile = "tree.root",
                     const string &outputQAFile   = "qa.root",
-                    UInt_t nEvents = 0,
-                    Int_t interestEvent = 0,
-                    Int_t neighbors = 0)
+                    UInt_t nEvents = 0)
 {
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
@@ -40,8 +40,6 @@ void Fun4All_JetVal(const string &inputFile,
   cout << "output tree: "  << outputTreeFile << endl;
   cout << "output QA: "    << outputQAFile << endl;
   cout << "Events: "       << nEvents << endl;
-  cout << "Interest Event: " << interestEvent << endl;
-  cout << "Neighbors: "       << neighbors << endl;
   cout << "#############################" << endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -54,17 +52,35 @@ void Fun4All_JetVal(const string &inputFile,
   Int_t runnumber = runseg.first;
   rc->set_uint64Flag("TIMESTAMP", runnumber);
 
-  Process_Calo_Calib();
+  std::cout << "status setters" << std::endl;
+  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
+  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+  statusEMC->set_time_cut(1);
+  statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
+  statusEMC->Verbosity(Fun4AllBase::VERBOSITY_MORE);
+  se->registerSubsystem(statusEMC);
+
+  CaloTowerStatus *statusHCalIn = new CaloTowerStatus("HCALINSTATUS");
+  statusHCalIn->set_detector_type(CaloTowerDefs::HCALIN);
+  statusHCalIn->set_time_cut(2);
+  statusHCalIn->set_inputNodePrefix("TOWERINFO_CALIB_");
+  statusHCalIn->Verbosity(Fun4AllBase::VERBOSITY_MORE);
+  se->registerSubsystem(statusHCalIn);
+
+  CaloTowerStatus *statusHCALOUT = new CaloTowerStatus("HCALOUTSTATUS");
+  statusHCALOUT->set_detector_type(CaloTowerDefs::HCALOUT);
+  statusHCALOUT->set_time_cut(2);
+  statusHCALOUT->set_inputNodePrefix("TOWERINFO_CALIB_");
+  statusHCALOUT->Verbosity(Fun4AllBase::VERBOSITY_MORE);
+  se->registerSubsystem(statusHCALOUT);
 
   HIJetReco();
 
   JetValidation *myJetVal = new JetValidation();
   myJetVal->set_outputTreeFileName(outputTreeFile);
   myJetVal->set_outputQAFileName(outputQAFile);
-  if(interestEvent) {
-    myJetVal->set_interestEvent(interestEvent);
-    myJetVal->set_neighbors(neighbors);
-  }
+  myJetVal->set_bkg_tower_neighbor_energy(0.3); /*GeV*/
+  myJetVal->set_saveTree(false);
   se->registerSubsystem(myJetVal);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DSTcalo");
@@ -79,22 +95,18 @@ void Fun4All_JetVal(const string &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 2 || argc > 7){
-        cout << "usage: ./bin/Fun4All_JetVal inputFile [outputTreeFile] [outputQAFile] [events] [interestEvent] [neighbors]" << endl;
+    if(argc < 2 || argc > 5){
+        cout << "usage: ./bin/Fun4All_JetVal inputFile [outputTreeFile] [outputQAFile] [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
         cout << "outputTreeFile: name of output Tree file. Default: tree.root" << endl;
         cout << "outputQAFile: name of output QA file. Default: qa.root" << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
-        cout << "interestEvent: specific event to filter. Default: 0" << endl;
-        cout << "neighbors: number of events to save before or after the interest event. Default: 0" << endl;
         return 1;
     }
 
     string outputTreeFile = "tree.root";
     string outputQAFile   = "qa.root";
     UInt_t events         = 0;
-    Int_t interestEvent   = 0;
-    Int_t neighbors       = 0;
 
     if(argc >= 3) {
         outputTreeFile = argv[2];
@@ -105,14 +117,8 @@ int main(int argc, char* argv[]) {
     if(argc >= 5) {
         events = atoi(argv[4]);
     }
-    if(argc >= 6) {
-        interestEvent = atoi(argv[5]);
-    }
-    if(argc >= 7) {
-        neighbors = atoi(argv[6]);
-    }
 
-    Fun4All_JetVal(argv[1], outputTreeFile, outputQAFile, events, interestEvent, neighbors);
+    Fun4All_JetVal(argv[1], outputTreeFile, outputQAFile, events);
 
     cout << "done" << endl;
     return 0;
