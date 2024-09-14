@@ -11,7 +11,7 @@ psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_sc
 
 Example: Ensure that MBD NS >= 1 and Jet 8, 10, and 12 GeV trigger are enabled
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-MBD-NS-1-and-Jet-12.list
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger-10-21-22-23.list
 #+end_src
 
 * Generate dst list from run list
@@ -35,9 +35,11 @@ Note: Still command is still in progress
 #+begin_src bash
 echo "Generating Good Run List" && ./genGoodRuns.py && \
 echo "Generating Bad Tower Maps Run List" && find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list && \
-echo "Generating ana430 2024p007 Run List" && CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --printruns > runs-ana430-2024p007.list && \
-echo "Generating Good ana430 2024p007 Run List"  && comm -12 runList.txt runs-ana430-2024p007.list > runs-ana430-2024p007-good.list && \
-echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 runs-ana430-2024p007-good.list runs-hot-maps.list > runs-ana430-2024p007-good-with-bad-tower-maps.list
+echo "Generating ana430 2024p007 Run List" && CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --printruns > runs-ana430.list && \
+echo "Generating Runs with MBD NS >= 1 and Jet X GeV triggers enabled" && psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list && \
+echo "Generating Good ana430 2024p007 Run List"  && comm -12 runList.txt runs-ana430.list > runs-ana430-good.list && \
+echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 runs-ana430-good.list runs-hot-maps.list > runs-ana430-good-maps.list && \
+echo "Generating Good ana430 2024p007 with triggers" && comm -12 runs-ana430-good-maps.list runs-trigger.list > runs-ana430-good-maps-trigger.list
 #+end_src
 
 * Fun4All Quick Tests
@@ -45,11 +47,11 @@ echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 
 ** After editing Makefile.am
 Jet Validation:
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_new_2024p006-00049763-00000.root tree.root qa.root 100 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_ana430_2024p007-00046649-00058.root tree.root qa.root 100 2>/dev/null
 #+end_src
 
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_new_2024p006-00049763-00000.root","tree.root","qa.root", 100)'
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_ana430_2024p007-00046649-00058.root","tree.root","qa.root", 100)'
 #+end_src
 
 Event Validation:
@@ -64,11 +66,11 @@ rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL
 ** After editing .cc or .h
 Jet Validation:
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_new_2024p006-00049763-00000.root tree.root qa.root 100 2>/dev/null
+make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALO_run2pp_ana430_2024p007-00046649-00058.root tree.root qa.root 100 2>/dev/null
 #+end_src
 
 #+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_new_2024p006-00049763-00000.root","tree.root","qa.root", 100)'
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALO_run2pp_ana430_2024p007-00046649-00058.root","tree.root","qa.root", 100)'
 #+end_src
 
 Event Validation:
