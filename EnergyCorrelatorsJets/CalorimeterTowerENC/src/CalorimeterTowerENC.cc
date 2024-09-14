@@ -94,7 +94,8 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 		float phi_center_1 = geom->get_phicenter(phibin_1);
 		float eta_center_1 = geom->get_etacenter(etabin_1);
 		float energy_1= tower_1->get_energy(); 
-		if(abs(energy_1) > 0 ) ntow++;
+		if(abs(energy_1) <= 0.01 )continue; //10 MeV threshold for consideration
+		 ntow++;
 		//there is probably a smart way to collect the group of sizes n, but I can really just do it by hand for rn 
 		for(auto j:tower_set){
 			if (i >= j) continue;
@@ -107,6 +108,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 			float eta_center_2 = geom->get_etacenter(etabin_2);
 			if(etabin_2 < 0 || phibin_2 < 0 ||  phibin_2 >= geom->get_phibins() || etabin_2 >= geom->get_etabins() ) continue;
 			float energy_2 = tower_2->get_energy();
+			if(abs(energy_2) <= 0.01) continue; //10 MeV threshold for consideration
 			std::pair<float, float> tower_center_1 {eta_center_1, phi_center_1}, tower_center_2 {eta_center_2, phi_center_2};
 			float R_12=getR(tower_center_1, tower_center_2);
 			if(n_evts < 2) 	std::cout<<"Seperation is R="<<R_12<<std::endl;
@@ -115,6 +117,8 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 			float e2c=energy_1*energy_2 / jet2;
 			if(e2c != 0 ) histograms->R->Fill(R_12);
 			e2c=e2c/((float) Nj);
+			std::cout<<"The 2 point energy correlator is " <<e2c <<std::endl;
+			if(!std::isnormal(e2c) ) continue;
 			histograms->E2C->Fill(R_12, e2c/*/(float) Nj*/);
 			if( npt >= 3){
 				for( auto k:tower_set){
@@ -137,6 +141,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 					float R_L = std::max(R_12, R_13);
 					R_L=std::max(R_L, R_23);
 					e3c=e3c/((float) Nj);
+					if(!std::isnormal(e3c)) continue;
 					histograms->E3C->Fill(R_L, e3c/*/(float) Nj*/);
 				}
 			}
