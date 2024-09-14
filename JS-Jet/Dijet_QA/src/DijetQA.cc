@@ -111,15 +111,15 @@ int DijetQA::Init(PHCompositeNode *topNode)
 	m_T->Branch("cent", &m_centrality);
 	m_T->Branch("zvtx", &m_zvtx);
 	m_T->Branch("b", &m_impactparam);
-	m_T->Branch("A_{jj}", &m_Ajj);
-	m_T->Branch("x_{j}", &m_xj);
-	m_T->Branch("p_{T, l}", &m_ptl);
-	m_T->Branch("p_{T, sl}", &m_ptsl);
-	m_T->Branch("#phi_{l}", &m_phil);
-	m_T->Branch("#Delta #phi", &m_dphi);
-	m_T->Branch("#eta_{l}", &m_etal);
-	m_T->Branch("#eta_{sl}", &m_etasl);
-	m_T->Branch("#Delta #eta", &m_deltaeta);
+	m_T->Branch("A_jj", &m_Ajj);
+	m_T->Branch("x_j", &m_xj);
+	m_T->Branch("p_Tl", &m_ptl);
+	m_T->Branch("p_Tsl", &m_ptsl);
+	m_T->Branch("phi_l", &m_phil);
+	m_T->Branch("Delta_phi", &m_dphi);
+	m_T->Branch("eta_l", &m_etal);
+	m_T->Branch("eta_sl", &m_etasl);
+	m_T->Branch("Delta_eta", &m_deltaeta);
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -189,14 +189,15 @@ void DijetQA::FindPairs(JetContainer* jets)
 	std::cout<<"number of jets is" <<m_nJet<<std::endl;
 	for(auto j1: *jets)
 	{
-		assert(j1);
+		//assert(j1);
 		if(j1->get_pt() < 1) continue; //cut on 1 GeV jets
 		if(j1->get_pt() > pt_leading){
 			pt_leading=j1->get_pt();
 			jet_leading=j1;
 		}
-		for(auto j2: *jets){
-			if(j2 == j1 || j2->get_pt() < 1) continue;
+		for(auto j2:(*jets)){
+			if(j2 < j1) continue;
+			if(/*j2 == j1 ||*/ j2->get_pt() < 1) continue;
 			if(abs(j2->get_phi() -j1->get_phi()) > 3 && abs(j2->get_phi() - j1->get_phi() ) < 3.3 )  {
 				if(j2->get_pt() > j1->get_pt() ){
 					jet_pair1=j2;
@@ -209,6 +210,8 @@ void DijetQA::FindPairs(JetContainer* jets)
 			}
 		}
 	}
+	std::cout<<"Finished search for pairs" <<std::endl;
+	if(jet_pair1) std::cout<<"jetpair 1 object has a pt of " <<jet_pair1->get_pt()<<std::endl;
 	if(jet_pair1 && jet_pair2){
 	pt1=jet_pair1->get_pt();
 	pt2=jet_pair2->get_pt();
@@ -224,6 +227,7 @@ void DijetQA::FindPairs(JetContainer* jets)
 	m_deltaeta=m_etal-m_etasl;
 	std::cout<<"highest pt jet is " <<jet_leading->get_pt() <<" and highest pt in a pair is " <<jet_pair1->get_pt() <<std::endl;
 	}
+	else std::cout<<"Did not find a pair of jets" <<std::endl;
 	return;
 		
 }
