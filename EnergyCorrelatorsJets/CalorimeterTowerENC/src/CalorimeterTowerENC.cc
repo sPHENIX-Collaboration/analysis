@@ -4,8 +4,8 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  26 August 2024						//
-//		version: v1.1									//
+//		Date of Last Update:  15 Sept 2024						//
+//		version: v1.5									//
 //												//
 //												//
 //		This project is a study on energy correlators using particle jets and 		//
@@ -502,6 +502,7 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 //			if(n_evts < 10 ) std::cout<<"The identified tower number for the emcal is " <<tne <<std::endl;
 		}
 		emtowerenergy[tne]=0;
+		emtowerenergykt[tne]=0;
 		int tni=GetTowerNumber(pc, IHCALMAP.first, IHCALMAP.second);
 		if(tni != -1) jet_towers_ihcal.insert(tni);
 //		if(n_evts < 10) std::cout<<"Particle added to the ihcal in bin " <<tni <<std::endl;
@@ -514,10 +515,211 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet){
 	if(jet_towers_emcal.size() == 0 || jet_towers_ohcal.size() == 0 ) return 1;
 	GetE3C(topNode, jet_particle_map); //get both in one call
 	GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy); //get both values filled in one 
+	GetE3C(topNode, kt_towers_emcal, kt_towers_ihcal, kt_towers_ohcal, &emtowerenergykt); 
 	for(auto m:jettowenergy) comptotows->Fill(m.second, emtowerenergy[m.first]);
 	return 1;
 }
-	       	
+std::map<std::pair<float, float>, std::vector<std::undordered_set<int>>> FindAntiKTTowers(PHCompositeNode* topNode)
+{
+		auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
+		auto emcal_tower_energy =  findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+		auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
+		auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+		auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
+		auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+		//This is a fake anti-kt process, really using E_T instead to allow for jet ID without tracking 
+		//For this I will just mao all the energy onto a "single" calo, with the Get Tower number to squash 
+		//emcal down to hcal 
+		std::map<int, float> emcal_to_hcal_energy;
+		std::map<int, std::pair<float, float>> hcal_tower_pos;
+		std::map<std::pair<float, float>, std::vector<std::undordered_set<int>>> tower_jets; 	
+		for(int i=0; i<(int)emcal_tower_energy->size(); i++)
+		{
+			auto tower =emcal_tower_energy->get_tower_at_channel(i);
+			float energy=tower->get_energy();
+			if(energy==0) continue;
+			auto key=emcal_tower_energy->encode_key(i);
+			int phibin = emcal_tower_energy->getTowerPhiBin(key);
+			int etabin = emcal_tower_energy->getTowerEtaBin(key);
+			auto phi=emcal_geom->get_phicenter(phibin);
+			auto eta=emcal_geom->get_etacenter(etabin);	
+			energy=energy/cosh(eta);
+			std::pair<float, float> coords {eta, phi};
+			int hcal_tower_n=GetTowerNumber(coords, OHCALMAP.first, OHCALMAP.second);
+			if(emcal_to_hcal_energy.find(hcal_tower_n) == emcal_to_hcal_energy.end())
+				emcal_to_hcal_energy[hcal_tower_n]=energy;
+			else emcal_to_hcal_energy[hcal_tower_n]+=energy;
+		}
+		for(int i=0; i<(int)ihcal_tower_energy->size(); i++)
+		{
+			auto tower =ihcal_tower_energy->get_tower_at_channel(i);
+			float energy=tower->get_energy();
+			if(energy==0) continue;
+			auto key=ihcal_tower_energy->encode_key(i);
+			int phibin = ihcal_tower_energy->getTowerPhiBin(key);
+			int etabin = ihcal_tower_energy->getTowerEtaBin(key);
+			auto phi=ihcal_geom->get_phicenter(phibin);
+			auto eta=ihcal_geom->get_etacenter(etabin);	
+			energy=energy/cosh(eta);
+			if(emcal_to_hcal_energy.find(i) == emcal_to_hcal_energy.end())
+				emcal_to_hcal_energy[i]=energy;
+			else emcal_to_hcal_energy[i]+=energy;
+		}	
+		for(int i=0; i<(int)ohcal_tower_energy->size(); i++)
+		{
+			auto tower =ohcal_tower_energy->get_tower_at_channel(i);
+			float energy=tower->get_energy();
+			if(energy==0) continue;
+			auto key=ohcal_tower_energy->encode_key(i);
+			int phibin = ohcal_tower_energy->getTowerPhiBin(key);
+			int etabin = ohcal_tower_energy->getTowerEtaBin(key);
+			auto phi=ohcal_geom->get_phicenter(phibin);
+			auto eta=ohcal_geom->get_etacenter(etabin);	
+			energy=energy/cosh(eta);
+			std::pair<float, float> coords {eta, phi};
+			if(emcal_to_hcal_energy.find(i) == emcal_to_hcal_energy.end())
+				emcal_to_hcal_energy[i]=energy;
+			else emcal_to_hcal_energy[i]+=energy;
+			hcal_tower_pos[i]= coords;
+
+		}	
+		float etmin=1.0;
+		float max_found=0;
+		int max_bin=0;
+		for(auto e:emcal_to_hcal_energy){
+			if(e.second > max_found){
+				max_found=e.second;
+				max_bin=e.first;
+			}
+		}
+		while( max_found > etmin) 
+		{
+			//now I need to find the jets that look correct 
+			auto tower=ohcal_tower_energy->get_tower_at_channel(max_bin);
+			auto key=ohcal_tower_energy->encode_key(max_bin);
+			std::map<int, float> candidates;
+			std::unordered_set<int> jettows;
+			auto central=hcal_tower_pos[max_bin];
+			for(auto c:hcal_tower_pos){
+				float R=getR(central, c.second);
+				if(R < 0.8 && emcal_to_hcal_energy[c.first] > etmin ) candidates[c.first]=R;
+			}
+			candidates[central]=0.;
+			bool found_all_parts=false;
+			while(!found_all_parts)
+			{
+				//to recombine, need to make an assumption that all the particles are massless
+				//I think this is close enough for right now 
+				std::map<int, float> di;
+				for( auto c:candidates) di[c.first] = pow(emcal_to_hcal_energy[c.first], -2);
+				std::map<std::pair<int, int>, float> dij;
+				for(auto c:candidates){
+					for(auto d:candidates){
+						if(c.first >= d.first)continue; //avoid double counting
+						std::pair <int, int> couple {c.first, d.first};
+						float aktc=pow(emcal_to_hcal_energy[c.first], -2);
+						float aktd=pow(emcal_to_hcal_energy[d.first], -2);
+						float delta=getR(hcal_tower_pos[c.first], hcal_tower_pos[d.first]);
+						delta=pow(delta/0.4, 2);
+						dij[couple]=(std::min(aktc, aktd) * delta);
+					}
+				}
+				std::pair<int,int> mergecoords {-1,-1}
+				float minmerge=10000000.;
+				for(auto d:di){
+					 if(d.second < minmerge){
+						minmerge=d.second; 
+						mergecoords.first=d.first;
+					}
+				}
+				for(auto d:dij){
+					if(d.second < minmerge){
+						minmerge=d.second;
+						mergecoords=d.first;
+					}
+				}
+				if(mergecoords.second != -1){
+					//this means that we have to merge particles 
+					int c = mergecoords.first, d = mergecoords.second;
+					int newparticleindex=((--candidates.end())->first) + mergecoords.first*mergecoords.second;
+					float E=0., px=0., py=0.,pz=0.;
+					E=emcal_to_hcal_energy[c]*cosh(hcal_tower_pos[c].first);
+					E+=emcal_to_hcal_energy[d]*cosh(hcal_tower_pos[d].first);
+					px=emcal_to_hcal_energy[c]*cos(hcal_tower_pos[c].second);
+					px+=emcal_to_hcal_energy[d]*cos(hcal_tower_pos[d].second);
+					py=emcal_to_hcal_energy[c]*sin(hcal_tower_pos[c].second);
+					py+=emcal_to_hcal_energy[d]*sin(hcal_tower_pos[d].second);
+					E=emcal_to_hcal_energy[c]*sinh(hcal_tower_pos[c].first);
+					E+=emcal_to_hcal_energy[d]*sinh(hcal_tower_pos[d].first);
+					float eta=0., phi=0.;
+					eta=atanh(pz/E);
+					phi=atan(py/px);
+					std::pair<float, float> coords {eta, phi};
+					candidates[newparticleindex]=getR(central, coords);
+					candidates.erase(c);
+					candidates.erase(d);
+					//only record the tower indexs
+					if(c < (int)ohcal_tower_energy.size()) jettows.insert(c);
+					if(d < (int)ohcal_tower_energy.size()) jettows.insert(d);
+					emcal_to_hcal_energy[newparticleindex]=E/cosh(eta);
+					hcal_tower_pos[newparticleindex]=coords;
+				}
+				else{
+					found_all_parts=true; 
+					for(auto c:candidates){
+						if(emcal_to_hcal_energy.find(c.first) != emcal_to_hcal_energy.end()) 
+							emcal_to_hcal_energy.erase(c);
+						}
+					continue;
+				}
+				if(candidates.size() <= 1){
+					found_all_parts=true;
+					continue;
+				}
+				continue;
+			}
+			for(auto e:emcal_to_hcal_energy){
+				if(e.second > max_found){
+					max_found=e.second;
+					max_bin=e.first;
+				}
+			}
+			std::unordered_set<int> emcaltowers;
+			for(auto c:jettows)
+			{
+				auto coord=hcal_tower_pos[c];
+				int cbin=GetTowerNumber(coord, EMCALMAP.first, EMCALMAP.second);
+				emcaltowers.insert(cbin);
+				for(int i=0; i<4; i++){
+					for(int j=0; j < 8; j++)
+					{
+						std::pair<float, float> moveitminus, moveitplus;
+						moveitminus.first=coord.first-(2.2/96.)*i;
+						moveitminus.second=coord.second-(3.14159/128.)*(j-4);
+						moveitplus.first=coord.first+(2.2/96.)*i;
+						moveitplus.second=coord.second+(3.14159/128.)*(j-4);
+						int testbin=GetTowerNumber(moveitminus, OHCALMAP.first, OHCALMAP.second);
+						if(testbin == c){
+							int dbin=GetTowerNumber(moveitminus, EMCALMAP.first, EMCALMAP.second);
+						 	emcaltowers.insert(dbin) 
+						}
+						int testbin=GetTowerNumber(moveitplus, OHCALMAP.first, OHCALMAP.second);
+						if(testbin == c){
+							int dbin=GetTowerNumber(moveitplus, EMCALMAP.first, EMCALMAP.second);
+						 	emcaltowers.insert(dbin) 
+						}
+					}
+				}
+			}
+			std::vector<std::unordered_set<int>> tows {emcaltowers, jettows, jettows};
+			tower_jets[central]=tows;
+			continue
+		}
+
+		}
+		return tower_jets;
+	
+}
 int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 	//need to process the events, this is really going to be a minor thing, need to pull my existing ENC code to do it better
 	//for the first event build the  tower number map that is needed
@@ -555,13 +757,15 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		OH_energy->Fill(ohcal_energy);
 		IH_energy->Fill(ihcal_energy);
 		Nj=jets->size();
+		auto towerktjets=FindAntiKTTowers(topNode);
 		for(auto j:*jets){
-			this->histogram_map["parts"]->pt->Fill(j->get_pt());
-			if(j->get_pt() < 10){ //put in a 10 GeV cut on the jets
+			if(j->get_pt() < jet_cutoff){ //put in a 10 GeV cut on the jets
 				Nj--;
 				continue;
 			}
-			 RecordHits(topNode, j);
+			this->histogram_map["parts"]->pt->Fill(j->get_pt());
+			MatchKtTowers(towerktjets, j)
+			RecordHits(topNode, j);
 		}
 		number_of_jets->Fill(Nj);
 		

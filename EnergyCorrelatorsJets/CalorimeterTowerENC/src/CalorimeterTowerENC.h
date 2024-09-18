@@ -68,7 +68,7 @@ class CalorimeterTowerENC : public SubsysReco
 {
  public:
 
-  	CalorimeterTowerENC(int n_run, int n_segment, const std::string &name = "CalorimeterTowerENC");
+  	CalorimeterTowerENC(int n_run, int n_segment, float jet_cutoff=1.0, const std::string &name = "CalorimeterTowerENC");
 
   	~CalorimeterTowerENC() override {};
 
@@ -100,6 +100,8 @@ class CalorimeterTowerENC : public SubsysReco
 	void GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, std::map<float, int>>, std::pair<float, float>);
 	int RecordHits(PHCompositeNode* topNode, Jet*);	
+	std::map<std::pair<float, float>, std::vector<std::undordered_set<int>>> FindAntiKTTowers(PHCompositeNode*);
+	//This is returning a map of jet axes with a set of towers that correspond to that jet for each calo, EM, IH, OH
   /// Clean up internals after each event.
   	int ResetEvent(PHCompositeNode *topNode) override {return 0;};
 
@@ -117,6 +119,7 @@ class CalorimeterTowerENC : public SubsysReco
 
  private:
 	int n_evts=0, Nj=1;
+	float jet_cutoff=1.0; 
 	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
 	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal;
