@@ -68,7 +68,7 @@ class CalorimeterTowerENC : public SubsysReco
 {
  public:
 
-  	CalorimeterTowerENC(int n_run, int n_segment, float jet_cutoff=1.0, const std::string &name = "CalorimeterTowerENC");
+  	CalorimeterTowerENC(int n_run, int n_segment, float jet_min=1.0, const std::string &name = "CalorimeterTowerENC");
 
   	~CalorimeterTowerENC() override {};
 
@@ -96,11 +96,12 @@ class CalorimeterTowerENC : public SubsysReco
 	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  std::string, int); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
-	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*);
+	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*, bool);
 	void GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, std::map<float, int>>, std::pair<float, float>);
-	int RecordHits(PHCompositeNode* topNode, Jet*);	
-	std::map<std::pair<float, float>, std::vector<std::undordered_set<int>>> FindAntiKTTowers(PHCompositeNode*);
+	int RecordHits(PHCompositeNode* topNode, Jet*, std::vector<std::unordered_set<int>>);	
+	std::map<std::pair<float, float>, std::vector<std::unordered_set<int>>> FindAntiKTTowers(PHCompositeNode*);
+	std::map<Jet*, std::pair<float, float>> MatchKtTowers(std::map<std::pair<float, float>, std::vector<std::unordered_set<int>>>, JetContainer*); 
 	//This is returning a map of jet axes with a set of towers that correspond to that jet for each calo, EM, IH, OH
   /// Clean up internals after each event.
   	int ResetEvent(PHCompositeNode *topNode) override {return 0;};
@@ -120,12 +121,14 @@ class CalorimeterTowerENC : public SubsysReco
  private:
 	int n_evts=0, Nj=1;
 	float jet_cutoff=1.0; 
-	TH2F *jethits, *comptotows; //phi-eta hit map and correlation plots for cross checks
+	TH2F *jethits, *comptotows, *calojethits; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
-	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal;
+	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal, *EMCalKT, *IHCalKT, *OHCalKT;
 	TH1F* number_of_jets, *EM_energy, *OH_energy, *IH_energy;
 	std::map<std::string, MethodHistograms*> histogram_map; 
 	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
+	std::map<int, int> emcal_lookup;
+	std::map<int, std::vector<int>> hcal_lookup;
 };
 
 #endif // CALORIMETERTOWERENC_H

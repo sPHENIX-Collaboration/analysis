@@ -1,0 +1,44 @@
+make  all-am
+make[1]: Entering directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/CalorimeterTowerENC/src/build'
+/bin/sh ./libtool  --tag=CXX   --mode=compile /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"calorimetertowerenc\" -DPACKAGE_TARNAME=\"calorimetertowerenc\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"calorimetertowerenc\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"calorimetertowerenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I..  -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.437/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include   -g -O2 -std=c++17 -Wall -Werror -MT CalorimeterTowerENC.lo -MD -MP -MF .deps/CalorimeterTowerENC.Tpo -c -o CalorimeterTowerENC.lo ../CalorimeterTowerENC.cc
+libtool: compile:  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"calorimetertowerenc\" -DPACKAGE_TARNAME=\"calorimetertowerenc\" -DPACKAGE_VERSION=\"1.00\" "-DPACKAGE_STRING=\"calorimetertowerenc 1.00\"" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"calorimetertowerenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I.. -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.437/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include -g -O2 -std=c++17 -Wall -Werror -MT CalorimeterTowerENC.lo -MD -MP -MF .deps/CalorimeterTowerENC.Tpo -c ../CalorimeterTowerENC.cc  -fPIC -DPIC -o .libs/CalorimeterTowerENC.o
+../CalorimeterTowerENC.cc: In constructor 'CalorimeterTowerENC::CalorimeterTowerENC(int, int, float, const std::string&)':
+../CalorimeterTowerENC.cc:23:26: error: 'jetmin' was not declared in this scope; did you mean 'jet_min'?
+   23 |         this->jet_cutoff=jetmin;
+      |                          ^~~~~~
+      |                          jet_min
+../CalorimeterTowerENC.cc: In member function 'int CalorimeterTowerENC::RecordHits(PHCompositeNode*, Jet*, std::vector<std::unordered_set<int> >)':
+../CalorimeterTowerENC.cc:532:15: error: no matching function for call to 'CalorimeterTowerENC::GetE3C(PHCompositeNode*&, std::unordered_set<int>&, std::unordered_set<int>&, std::unordered_set<int>&, std::map<int, float>*)'
+  532 |         GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy); //get both values filled in one
+      |         ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:206:6: note: candidate: 'void CalorimeterTowerENC::GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*, bool)'
+  206 | void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, std::map<int, float>* emtowere, bool is_kt)
+      |      ^~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:206:6: note:   candidate expects 6 arguments, 5 provided
+../CalorimeterTowerENC.cc:300:6: note: candidate: 'void CalorimeterTowerENC::GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float> >)'
+  300 | void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::map<PHG4Particle*, std::pair<float, float>> jet)
+      |      ^~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:300:6: note:   candidate expects 2 arguments, 5 provided
+../CalorimeterTowerENC.cc:533:40: error: no matching function for call to 'CalorimeterTowerENC::GetE3C(PHCompositeNode*&, __gnu_cxx::__alloc_traits<std::allocator<std::unordered_set<int> >, std::unordered_set<int> >::value_type&, __gnu_cxx::__alloc_traits<std::allocator<std::unordered_set<int> >, std::unordered_set<int> >::value_type&, __gnu_cxx::__alloc_traits<std::allocator<std::unordered_set<int> >, std::unordered_set<int> >::value_type&, std::map<int, float>*)'
+  533 |         if(kt_towers.size() > 0) GetE3C(topNode, kt_towers[0], kt_towers[1], kt_towers[2], &emtowerenergykt);
+      |                                  ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:206:6: note: candidate: 'void CalorimeterTowerENC::GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*, bool)'
+  206 | void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, std::map<int, float>* emtowere, bool is_kt)
+      |      ^~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:206:6: note:   candidate expects 6 arguments, 5 provided
+../CalorimeterTowerENC.cc:300:6: note: candidate: 'void CalorimeterTowerENC::GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float> >)'
+  300 | void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::map<PHG4Particle*, std::pair<float, float>> jet)
+      |      ^~~~~~~~~~~~~~~~~~~
+../CalorimeterTowerENC.cc:300:6: note:   candidate expects 2 arguments, 5 provided
+../CalorimeterTowerENC.cc: In member function 'std::map<std::pair<float, float>, std::vector<std::unordered_set<int> > > CalorimeterTowerENC::FindAntiKTTowers(PHCompositeNode*)':
+../CalorimeterTowerENC.cc:574:29: error: unused variable 'phibin' [-Werror=unused-variable]
+  574 |                         int phibin = ihcal_tower_energy->getTowerPhiBin(key);
+      |                             ^~~~~~
+../CalorimeterTowerENC.cc:683:41: error: 'jetpt' was not declared in this scope; did you mean 'getpt'?
+  683 |                                         jetpt=E/cosh(eta);
+      |                                         ^~~~~
+      |                                         getpt
+cc1plus: all warnings being treated as errors
+make[1]: *** [CalorimeterTowerENC.lo] Error 1
+make[1]: Leaving directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/CalorimeterTowerENC/src/build'
+make: *** [all] Error 2
