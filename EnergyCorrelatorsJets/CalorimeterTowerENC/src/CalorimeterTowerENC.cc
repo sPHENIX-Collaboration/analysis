@@ -4,8 +4,8 @@
 //		Calorimeter Tower Jets N Point-Energy Correlator Study				//
 //		Author: Skadi Grossberndt							//
 //		Date of First Commit: 12 July 2024						//
-//		Date of Last Update:  15 Sept 2024						//
-//		version: v1.5									//
+//		Date of Last Update:  23 Sept 2024						//
+//		version: v2.0									//
 //												//
 //												//
 //		This project is a study on energy correlators using particle jets and 		//
@@ -41,9 +41,11 @@ CalorimeterTowerENC::CalorimeterTowerENC(int n_run, int n_segment, float jet_min
 	EMCal=new MethodHistograms("EMCAL");
 	IHCal=new MethodHistograms("IHCAL");
 	OHCal=new MethodHistograms("OHCAL");
+	AllCal=new MethodHistograms("ALLCAL");
 	EMCalKT=new MethodHistograms("EMCAL_kt");
 	IHCalKT=new MethodHistograms("IHCAL_kt");
 	OHCalKT=new MethodHistograms("OHCAL_kt");
+	AllCalKT=new MethodHistograms("ALLCAL_kt");
 	histogram_map["parts"]=Particles;
 	histogram_map["emcal"]=EMCal;
 	histogram_map["ihcal"]=IHCal;
@@ -51,7 +53,8 @@ CalorimeterTowerENC::CalorimeterTowerENC(int n_run, int n_segment, float jet_min
 	histogram_map["emcalkt"]=EMCalKT;
 	histogram_map["ihcalkt"]=IHCalKT;
 	histogram_map["ohcalkt"]=OHCalKT;
-	
+	histogram_map["allcal"]=AllCal;
+	histogram_map["allcalkt"]=AllCallKT;
 	for(auto h:this->histogram_map){
 		std::string typelabel = h.first;
 		//auto hists=h.second;
@@ -83,7 +86,81 @@ float CalorimeterTowerENC::getR(std::pair<float, float> p1, std::pair<float,floa
 	float R=sqrt(pow(eta_dist,2) + pow(phi_dist, 2));
 	return R;
 }
-void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_set<int> tower_set, TowerInfoContainer* data, RawTowerGeomContainer_Cylinderv1* geom, RawTowerDefs::CalorimeterId calo, float jete, std::string caloh, int npt)
+void CalorimeterTowerENC::GetENCCalo(std::map<int, float> allcal, RawTowerGeomContainer_Cylinderv1* geom, TowerInfoContainer* data, MethodHistograms* histograms, float jete_tot)
+{
+	geom->set_calorimeter_id(RawTowerDefs::HCALOUT);
+	int ntow=0; 
+	float jete=0.0;
+	for(auto e:allcal) jete+=e.second;
+	for(auto e:allcal)
+	{
+		if(e.second >= 0.01) ntow++; //10MeV threshold
+		if(!geom) continue;
+		auto key1=data->encode_key(i);
+		int phibin_1=data->getTowerPhiBin(key_1);
+		int etabin_1=data->getTowerEtabin(key_1);
+		if(etabin_1 < 0 || phibin_1 < 0 ||  phibin_1 >= geom->get_phibins() || etabin_1 >= geom->get_etabins() ) continue;
+		float phi_center_1 = geom->get_phicenter(phibin_1);
+		float eta_center_1 = geom->get_etacenter(etabin_1);
+		for(auto f:allcal)
+		{
+			if(e.first >= f.first) continue;
+			auto key_2 = data->encode_key(j);
+			auto tower_2 = data->get_tower_at_channel(j);
+			int phibin_2 = data->getTowerPhiBin(key_2);
+			int etabin_2 = data->getTowerEtaBin(key_2);
+			float phi_center_2 = geom->get_phicenter(phibin_2);
+			float eta_center_2 = geom->get_etacenter(etabin_2);
+			if(etabin_2 < 0 || phibin_2 < 0 ||  phibin_2 >= geom->get_phibins() || etabin_2 >= geom->get_etabins() ) continue;
+			std::pair<float, float> tower_center_1 {eta_center_1, phi_center_1}, tower_center_2 {eta_center_2, phi_center_2};
+			float R_12=getR(tower_center_1, tower_center_2);
+			histograms->R_geom->Fill(R_12);
+			float jet2=pow(jete,2);
+			float jet2t=pow(jete_tot,2);
+			if (n_evts < 2) std::cout<<"The jet energy divsor is " <<jet2<<std::endl;
+			float e2c=e.second*f.second / jet2;
+			float e2c_all=e.second*f.second /jet2t; 
+			if(abs(energy_1) <= 0.01 )continue; //10 MeV threshold for consideration
+			if(abs(energy_2) <= 0.01) continue; //10 MeV threshold for consideration
+			if(e2c != 0 ) histograms->R->Fill(R_12);
+			e2c=e2c/((float) Nj);
+			e2c_all=e2c_all/((float) Nj);
+			std::cout<<"The 2 point energy correlator is " <<e2c <<std::endl;
+			if(!std::isnormal(e2c) ) continue;
+			histograms->E2C->Fill(R_12, e2c/*/(float) Nj*/);
+			for(auto g:allcal)
+			{
+				if( f.first >= g.first || e.first >= g.first) continue;
+				if(g.first < 0 /*|| k >= (int) data->size()*/ ) continue;
+				auto key_3 = data->encode_key(g.first);
+				int phibin_3 = data->getTowerPhiBin(key_3);
+				int etabin_3 = data->getTowerEtaBin(key_3);
+				if(etabin_3 < 0 || phibin_3 < 0 ||  phibin_3 >= geom->get_phibins() || etabin_3 >= geom->get_etabins() ) continue;
+				float phi_center_3 = geom->get_phicenter(phibin_3);
+				float eta_center_3 = geom->get_etacenter(etabin_3);
+				std::pair<float, float> tower_center_3 {eta_center_3, phi_center_3};
+				float R_13=getR(tower_center_1, tower_center_3);
+				float R_23=getR(tower_center_2, tower_center_3);
+				float e3c=e.second*f.second*g.second;
+				float jete3=pow(jete, 3);
+				float jete3t=pow(jete_tot, 3);
+				float e3c_all=e3c/jete3t;
+				e3c=e3c/jete3;
+				float R_L = std::max(R_12, R_13);
+				R_L=std::max(R_L, R_23);
+				e3c=e3c/((float) Nj);
+				e3c_all=e3c_all/((float) Nj);
+				if(!std::isnormal(e3c)) continue;
+				histograms->E3C->Fill(R_L, e3c/*/(float) Nj*/);
+				if(std::isnormal(e3c_all)) histograms->E3C_pt->Fill(R_L, e3c_all);
+			}
+		}
+	}
+	histograms->N->Fill(n_tow);
+	histograms->E->Fill(jete);
+}
+		
+void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_set<int> tower_set, TowerInfoContainer* data, RawTowerGeomContainer_Cylinderv1* geom, RawTowerDefs::CalorimeterId calo, float jete, std::string caloh, int npt, float jete_tot, std::map<int, float>* allcal_e)
 {
 	geom->set_calorimeter_id(calo);
 	MethodHistograms* histograms=histogram_map.at(caloh);
@@ -103,7 +180,10 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 		float phi_center_1 = geom->get_phicenter(phibin_1);
 		float eta_center_1 = geom->get_etacenter(etabin_1);
 		float energy_1= tower_1->get_energy(); 
-		if(abs(energy_1) <= 0.01 )continue; //10 MeV threshold for consideration
+		int ih=i;
+		if(caloh.find("emcal") != std::string::npos) ih=emcal_lookup[i];
+		if(allcal_e->find(ih) == allcal_e->end()) (*allcal_e)[ih]=energy_1;
+		else allcal_e->at(i)+=energy_1;
 		 ntow++;
 		//there is probably a smart way to collect the group of sizes n, but I can really just do it by hand for rn 
 		for(auto j:tower_set){
@@ -117,18 +197,24 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 			float eta_center_2 = geom->get_etacenter(etabin_2);
 			if(etabin_2 < 0 || phibin_2 < 0 ||  phibin_2 >= geom->get_phibins() || etabin_2 >= geom->get_etabins() ) continue;
 			float energy_2 = tower_2->get_energy();
-			if(abs(energy_2) <= 0.01) continue; //10 MeV threshold for consideration
 			std::pair<float, float> tower_center_1 {eta_center_1, phi_center_1}, tower_center_2 {eta_center_2, phi_center_2};
 			float R_12=getR(tower_center_1, tower_center_2);
+			histograms->R_geom->Fill(R_12);
 			if(n_evts < 2) 	std::cout<<"Seperation is R="<<R_12<<std::endl;
 			float jet2=pow(jete,2);
+			float jet2t=pow(jete_tot,2);
 			if (n_evts < 2) std::cout<<"The jet energy divsor is " <<jet2<<std::endl;
 			float e2c=energy_1*energy_2 / jet2;
+			float e2c_all=energy_1*energy_2 /jet2t; 
+			if(abs(energy_1) <= 0.01 )continue; //10 MeV threshold for consideration
+			if(abs(energy_2) <= 0.01) continue; //10 MeV threshold for consideration
 			if(e2c != 0 ) histograms->R->Fill(R_12);
 			e2c=e2c/((float) Nj);
+			e2c_all=e2c_all/((float) Nj);
 			std::cout<<"The 2 point energy correlator is " <<e2c <<std::endl;
 			if(!std::isnormal(e2c) ) continue;
 			histograms->E2C->Fill(R_12, e2c/*/(float) Nj*/);
+			if(std::isnormal(e2c_all)) histograms->E2C_pt->Fill(R_12, e2c_all);
 			if( npt >= 3){
 				for( auto k:tower_set){
 					if( j >= k || i >= k) continue;
@@ -146,19 +232,23 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 					float R_23=getR(tower_center_2, tower_center_3);
 					float e3c=energy_3*energy_2*energy_1;
 					float jete3=pow(jete, 3);
+					float jete3t=pow(jete_tot, 3);
+					float e3c_all=e3c/jete3t;
 					e3c=e3c/jete3;
 					float R_L = std::max(R_12, R_13);
 					R_L=std::max(R_L, R_23);
 					e3c=e3c/((float) Nj);
+					e3c_all=e3c_all/((float) Nj);
 					if(!std::isnormal(e3c)) continue;
 					histograms->E3C->Fill(R_L, e3c/*/(float) Nj*/);
+					if(std::isnormal(e3c_all)) histograms->E3C_pt->Fill(R_L, e3c_all);
 				}
 			}
 		}
 	}
 	histograms->N->Fill(ntow);
 }
-void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh)
+void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, float jete)
 {
 	//this is the processor that allows for read out of the tower energies given the set of towers in the phi-eta plane
 	auto emcal_geom =  findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
@@ -192,15 +282,16 @@ void CalorimeterTowerENC::GetE2C(PHCompositeNode* topNode, std::unordered_set<in
 		}
 		catch(std::exception& e) { continue; }
 	}
+	std::map<int, float> allcal_e;
 	histogram_map["emcal"]->E->Fill(jete_em);
 	histogram_map["ihcal"]->E->Fill(jete_ih);
 	histogram_map["ohcal"]->E->Fill(jete_oh);
 	histogram_map["emcal"]->N->Fill(em.size());
 	histogram_map["ihcal"]->N->Fill(ih.size());
 	histogram_map["ohcal"]->N->Fill(oh.size());
-	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, "emcal", 2);
-	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, "ihcal", 2);
-	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, "ohcal", 2);
+	GetENCCalo(topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, "emcal", 2, jete, &allcal_e);
+	GetENCCalo(topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, "ihcal", 2, jete, &allcal_e);
+	GetENCCalo(topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, "ohcal", 2, jete, &allcal_e);
 	return;
 }
 void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<int> em, std::unordered_set<int> ih, std::unordered_set<int> oh, std::map<int, float>* emtowere, bool is_kt)
@@ -258,16 +349,35 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 	//std::cout<<"Checked " <<em.size() <<" towers in the outer hcal \n Got an energy in the ohcal part of the jet of " <<jete_oh <<std::endl; 
 //	histogram_map["ohcal"]->E->Fill(jete_oh);
 	std::vector<std::thread> calo_thread; 
-	std::string emcal_label="emcal", ihcal_label="ihcal", ohcal_label="ohcal";
+	std::string emcal_label="emcal", ihcal_label="ihcal", ohcal_label="ohcal", all="allcal";
 	if(!is_kt){
 		emcal_label+="kt";
 		ihcal_label+="kt";
 		ohcal_label+="kt";
+		all+="kt";
 	}
-	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC,    jete_em, emcal_label, 3));
-	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, ihcal_label, 3));
-	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, ohcal_label, 3));
+	std::map<int, float> allcal, allcal_em, allcal_ih, allcal_oh;
+	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,em, emcal_tower_energy, emcal_geom, RawTowerDefs::CEMC, jete_em, emcal_label, 3, jete, &allcal_em));
+	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,ih, ihcal_tower_energy, ihcal_geom, RawTowerDefs::HCALIN,  jete_ih, ihcal_label, 3, jete, &allcal_ih));
+	calo_thread.push_back(std::thread(&CalorimeterTowerENC::GetENCCalo, this, topNode,oh, ohcal_tower_energy, ohcal_geom, RawTowerDefs::HCALOUT, jete_oh, ohcal_label, 3, jete, &allcal_oh));
 	for(int t=0; t<(int)calo_thread.size(); t++) calo_thread.at(t).join();
+	for(auto e:allcal_em)
+	{
+		if(allcal.find(e.first)==allcal.end()) allcal[e.first]=e.second;
+		else allcal[e.first]+=e.second;
+	}
+	for(auto e:allcal_ih)
+	{
+		if(allcal.find(e.first)==allcal.end()) allcal[e.first]=e.second;
+		else allcal[e.first]+=e.second;
+	}
+	for(auto e:allcal_ih)
+	{
+		if(allcal.find(e.first)==allcal.end()) allcal[e.first]=e.second;
+		else allcal[e.first]+=e.second;
+	}
+	MethodHistogram* hs=histogram_map[all];
+	GetENCCalo(allcal, ohcal_geom, ohcal_tower_energy, hs, jete);
 	return;
 }
 
@@ -633,8 +743,21 @@ std::map<std::pair<float, float>, std::vector<std::unordered_set<int>>> Calorime
 			candidates[max_bin]=0.;
 			if(candidates.size() > 2) std::cout<<"The number of candidate towers is " <<candidates.size() <<" with total E_T " <<jet_pt  <<std::endl;
 			if(jet_pt < 0.005*jet_cutoff){
-				for(auto c:candidates) emcal_to_hcal_energy.erase(c.first);
+				for(auto c:candidates){
+					std::cout<<"The Number of bins still in play is now " <<emcal_to_hcal_energy.size() <<std::endl;
+					std::cout<<"The tower needing to leave has bin number=" <<c.first <<" and R=" <<c.second <<std::endl;
+					if(emcal_to_hcal_energy.find(c.first) != emcal_to_hcal_energy.end()) emcal_to_hcal_energy.erase(c.first);
+					std::cout<<"Now the energy bins should have decreased by 1? " <<emcal_to_hcal_energy.size() <<std::endl;
+				}
 				std::cout<<"Jet Energy was below half a percent of the cutoff" <<std::endl; 
+				max_found=0.0;
+				for(auto e:emcal_to_hcal_energy){
+				if(e.second > max_found){
+					max_found=e.second;
+					max_bin=e.first;
+				}
+			}
+				
 				continue;
 			} 
 			bool found_all_parts=false;
@@ -744,7 +867,7 @@ std::map<std::pair<float, float>, std::vector<std::unordered_set<int>>> Calorime
 			continue;
 		}
 
-		
+		std::cout<<"Identified jets: " <<tower_jets.size() <<std::endl;	
 		return tower_jets;
 	
 }
@@ -765,6 +888,7 @@ std::map<Jet*, std::pair<float,float>> CalorimeterTowerENC::MatchKtTowers(std::m
 		}
 		coords[jet]=closest;
 	}
+	std::cout<<"Matched the jets in the calo to the nearest jet axis" <<std::endl;
 	return coords;
 }
 int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){

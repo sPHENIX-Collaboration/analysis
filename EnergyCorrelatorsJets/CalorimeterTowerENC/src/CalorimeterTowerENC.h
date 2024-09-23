@@ -93,10 +93,11 @@ class CalorimeterTowerENC : public SubsysReco
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, TowerInfoContainer*);
 	float getPt(PHG4Particle*);
 	float getR(std::pair<float, float>, std::pair<float, float>);
-	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  std::string, int); 
-	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>);
+	void GetENCCalo(std::map<int, float>, RawTowerGeomContainer_Cylinderv1*, MethodHistograms*);
+	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  std::string, int, float, std::map<int, float>*); 
+	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, float);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
-	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*, bool);
+	void GetE3C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, std::map<int, float>*, bool, float);
 	void GetE3C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
 	int GetTowerNumber(std::pair<float, float>, std::map<float, std::map<float, int>>, std::pair<float, float>);
 	int RecordHits(PHCompositeNode* topNode, Jet*, std::vector<std::unordered_set<int>>);	
