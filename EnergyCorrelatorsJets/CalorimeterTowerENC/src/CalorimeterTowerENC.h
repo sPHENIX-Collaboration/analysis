@@ -93,7 +93,7 @@ class CalorimeterTowerENC : public SubsysReco
 	std::pair<std::map<float, std::map<float, int>>, std::pair<float, float>> GetTowerMaps(RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, TowerInfoContainer*);
 	float getPt(PHG4Particle*);
 	float getR(std::pair<float, float>, std::pair<float, float>);
-	void GetENCCalo(std::map<int, float>, RawTowerGeomContainer_Cylinderv1*, MethodHistograms*);
+	void GetENCCalo(std::map<int, float>, RawTowerGeomContainer_Cylinderv1*, TowerInfoContainer*, MethodHistograms*, float);
 	void GetENCCalo(PHCompositeNode*, std::unordered_set<int>, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, RawTowerDefs::CalorimeterId, float,  std::string, int, float, std::map<int, float>*); 
 	void GetE2C(PHCompositeNode*, std::unordered_set<int>, std::unordered_set<int>, std::unordered_set<int>, float);
 	void GetE2C(PHCompositeNode*, std::map<PHG4Particle*, std::pair<float, float>>);
@@ -124,7 +124,7 @@ class CalorimeterTowerENC : public SubsysReco
 	float jet_cutoff=1.0; 
 	TH2F *jethits, *comptotows, *calojethits; //phi-eta hit map and correlation plots for cross checks
 	//JetTruthEval* truth_evaluater;
-	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal, *EMCalKT, *IHCalKT, *OHCalKT;
+	MethodHistograms *Particles, *EMCal, *IHCal, *OHCal, *EMCalKT, *IHCalKT, *OHCalKT, *AllCal, *AllCalKT;
 	TH1F* number_of_jets, *EM_energy, *OH_energy, *IH_energy;
 	std::map<std::string, MethodHistograms*> histogram_map; 
 	std::pair< std::map<float, std::map<float, int>>, std::pair<float, float>> EMCALMAP, IHCALMAP, OHCALMAP;
