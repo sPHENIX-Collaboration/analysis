@@ -100,7 +100,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         h->GetXaxis()->SetBinLabel(i, string(1,char('A'+i-1)).c_str());
         hBkg->GetXaxis()->SetBinLabel(i, string(1,char('A'+i-1)).c_str());
         h->SetBinContent(i,hEvents->GetBinContent(i));
-        hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i)/hEvents->GetBinContent(i)*100.);
+        if(hEvents->GetBinContent(i)) hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i)/hEvents->GetBinContent(i)*100.);
         latex.DrawLatexNDC(0.65,0.85-0.07*(i-1),(string(1,char('A'+i-1)) + ": " + labelA[i-1]).c_str());
 
         cout << labelA[i-1] << ": " << hEvents->GetBinContent(i) << ", " << hEventsBkg->GetBinContent(i) << ", " << hEventsBkg->GetBinContent(i)/hEvents->GetBinContent(i)*100 << " %" << endl;
@@ -139,7 +139,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     latex.SetTextSize(0.08);
 
     h->SetBinContent(1,hEvents->GetBinContent(1));
-    hBkg->SetBinContent(1,hEventsBkg->GetBinContent(1)/hEvents->GetBinContent(1)*100.);
+    if(hEvents->GetBinContent(1)) hBkg->SetBinContent(1,hEventsBkg->GetBinContent(1)/hEvents->GetBinContent(1)*100.);
     cout << endl;
     cout << labelB[0] << ": " << hEvents->GetBinContent(1) << ", " << hEventsBkg->GetBinContent(1) << ", " << hEventsBkg->GetBinContent(1)/hEvents->GetBinContent(1)*100 << " %" << endl;
     for(UInt_t i = 1; i <= h->GetNbinsX(); ++i) {
@@ -150,7 +150,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     for(UInt_t i = 2; i <= h->GetNbinsX(); ++i) {
       h->SetBinContent(i,hEvents->GetBinContent(i+6));
-      hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+6)/hEvents->GetBinContent(i+6)*100.);
+      if(hEvents->GetBinContent(i+6)) hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+6)/hEvents->GetBinContent(i+6)*100.);
       cout << labelB[i-1] << ": " << hEvents->GetBinContent(i+6) << ", " << hEventsBkg->GetBinContent(i+6) << ", " << hEventsBkg->GetBinContent(i+6)/hEvents->GetBinContent(i+6)*100 << " %" << endl;
     }
     cout << endl;
@@ -193,7 +193,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     latex.SetTextSize(0.07);
 
     h->SetBinContent(1,hEvents->GetBinContent(3));
-    hBkg->SetBinContent(1,hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100.);
+    if(hEvents->GetBinContent(3)) hBkg->SetBinContent(1,hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100.);
     cout << endl;
     cout << labelC[0] << ": " << hEvents->GetBinContent(3) << ", " << hEventsBkg->GetBinContent(3) << ", " << hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100 << " %" << endl;
     for(UInt_t i = 1; i <= h->GetNbinsX(); ++i) {
@@ -204,7 +204,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     for(UInt_t i = 2; i <= h->GetNbinsX(); ++i) {
       h->SetBinContent(i,hEvents->GetBinContent(i+14));
-      hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+14)/hEvents->GetBinContent(i+14)*100.);
+      if(hEvents->GetBinContent(i+14)) hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+14)/hEvents->GetBinContent(i+14)*100.);
       cout << labelC[i-1] << ": " << hEvents->GetBinContent(i+14) << ", " << hEventsBkg->GetBinContent(i+14) << ", " << hEventsBkg->GetBinContent(i+14)/hEvents->GetBinContent(i+14)*100 << " %" << endl;
     }
     cout << endl;
@@ -244,7 +244,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     latex.SetTextSize(0.05);
 
     h->SetBinContent(1,hEvents->GetBinContent(3));
-    hBkg->SetBinContent(1,hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100.);
+    if(hEvents->GetBinContent(3)) hBkg->SetBinContent(1,hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100.);
     cout << endl;
     cout << labelD[0] << ": " << hEvents->GetBinContent(3) << ", " << hEventsBkg->GetBinContent(3) << ", " << hEventsBkg->GetBinContent(3)/hEvents->GetBinContent(3)*100 << " %" << endl;
     for(UInt_t i = 1; i <= h->GetNbinsX(); ++i) {
@@ -255,7 +255,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     for(UInt_t i = 2; i <= h->GetNbinsX(); ++i) {
       h->SetBinContent(i,hEvents->GetBinContent(i+10));
-      hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+10)/hEvents->GetBinContent(i+10)*100.);
+      if(hEvents->GetBinContent(i+10)) hBkg->SetBinContent(i,hEventsBkg->GetBinContent(i+10)/hEvents->GetBinContent(i+10)*100.);
       cout << labelD[i-1] << ": " << hEvents->GetBinContent(i+10) << ", " << hEventsBkg->GetBinContent(i+10) << ", " << hEventsBkg->GetBinContent(i+10)/hEvents->GetBinContent(i+10)*100 << " %" << endl;
     }
     cout << endl;
