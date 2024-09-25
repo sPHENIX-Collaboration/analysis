@@ -548,6 +548,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     auto px = h2JetEtaPhi_r04_ZVTX60->ProjectionX();
     px->GetYaxis()->SetTitle("Counts");
+    px->SetMinimum(0);
     auto py = h2JetEtaPhi_r04_ZVTX60->ProjectionY();
     py->GetYaxis()->SetTitle("Counts");
 
@@ -560,6 +561,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->Print((output).c_str(), "pdf portrait");
 
     px = h2JetEtaPhi_r04_ZVTX60_bkg->ProjectionX();
+    px->SetMinimum(0);
     px->GetYaxis()->SetTitle("Counts");
     py = h2JetEtaPhi_r04_ZVTX60_bkg->ProjectionY();
     py->GetYaxis()->SetTitle("Counts");
