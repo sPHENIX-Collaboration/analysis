@@ -28,7 +28,7 @@ def filter_golden_runs(file_catalog_run_numbers, production_cursor):
     query = """
     SELECT runnumber
     FROM goodruns
-    WHERE (emcal_auto).runclass = 'GOLDEN'
+    WHERE (emcal_auto).runclass = 'GOLDEN' and (ohcal_auto).runclass = 'GOLDEN' and (ihcal_auto).runclass = 'GOLDEN'
     """
     production_cursor.execute(query)
     golden_runs = {row.runnumber for row in production_cursor.fetchall()}
