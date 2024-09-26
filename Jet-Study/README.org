@@ -42,6 +42,12 @@ echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 
 echo "Generating Good ana430 2024p007 with triggers" && comm -12 runs-ana430-good-maps.list runs-trigger.list > runs-ana430-good-maps-trigger.list
 #+end_src
 
+Note:
+In case psql does not work on sphnx0X nodes run this from local computer to generate the runs with triggers enabled:
+#+begin_src bash
+ssh daq01 "psql daq -h db1.sphenix.bnl.gov -c \"select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;\"" -At > runs-trigger.list
+#+end_src
+
 * Generate run list (ana435)
 #+begin_src bash
 echo "Generating ana435 2024p007 Run List" && CreateDstList.pl --build ana435 --cdb 2024p007 DST_CALO_run2pp --printruns > runs-ana435.list && \
