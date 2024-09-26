@@ -316,12 +316,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->AddEntry(hJetPt_r04_ZVTX60_MBDNS1_JET12, "MBD NS #geq 1 && Jet 12 GeV", "l");
 
     hJetPt_r04_ZVTX60_MBDNS1->GetYaxis()->SetTitleOffset(1);
-    hJetPt_r04_ZVTX60_MBDNS1->SetTitle("Jet: R = 0.4, |Z| < 60 cm");
+    hJetPt_r04_ZVTX60_MBDNS1->SetTitle("Jet: Anti-k_{t} R = 0.4 and jet |#eta| < 0.6, |Z| < 60 cm");
 
     hJetPt_r04_ZVTX60_MBDNS1->SetLineColor(kRed);
     hJetPt_r04_ZVTX60_MBDNS1_JET8->SetLineColor(kBlue);
     hJetPt_r04_ZVTX60_MBDNS1_JET10->SetLineColor(kGreen+2);
-    hJetPt_r04_ZVTX60_MBDNS1_JET12->SetLineColor(kOrange);
+    hJetPt_r04_ZVTX60_MBDNS1_JET12->SetLineColor(kMagenta);
 
     hJetPt_r04_ZVTX60_MBDNS1->Rebin(5);
     hJetPt_r04_ZVTX60_MBDNS1_JET8->Rebin(5);
@@ -371,12 +371,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hJetPt_r04_ZVTX60_MBDNS1_bkg->GetYaxis()->SetTitleOffset(1);
     hJetPt_r04_ZVTX60_MBDNS1_bkg->GetXaxis()->SetRangeUser(10,40);
-    hJetPt_r04_ZVTX60_MBDNS1_bkg->SetTitle("Background Jet: R = 0.4, |Z| < 60 cm");
+    hJetPt_r04_ZVTX60_MBDNS1_bkg->SetTitle("Background Jet: Anti-k_{t} R = 0.4 and jet |#eta| < 0.6, |Z| < 60 cm");
 
     hJetPt_r04_ZVTX60_MBDNS1_bkg->SetLineColor(kRed);
     hJetPt_r04_ZVTX60_MBDNS1_JET8_bkg->SetLineColor(kBlue);
     hJetPt_r04_ZVTX60_MBDNS1_JET10_bkg->SetLineColor(kGreen+2);
-    hJetPt_r04_ZVTX60_MBDNS1_JET12_bkg->SetLineColor(kOrange);
+    hJetPt_r04_ZVTX60_MBDNS1_JET12_bkg->SetLineColor(kMagenta);
 
     hJetPt_r04_ZVTX60_MBDNS1_bkg->Draw();
     hJetPt_r04_ZVTX60_MBDNS1_JET8_bkg->Draw("same");
@@ -415,12 +415,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->AddEntry(hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12, "MBD NS #geq 1 && Jet 12 GeV", "l");
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1->GetYaxis()->SetTitleOffset(1);
-    hJetDeltaPhi_r04_ZVTX60_MBDNS1->SetTitle("Jet: R = 0.4, |Z| < 60 cm");
+    hJetDeltaPhi_r04_ZVTX60_MBDNS1->SetTitle("Jet: Anti-k_{t} R = 0.4 and jet |#eta| < 0.6, |Z| < 60 cm");
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1->SetLineColor(kRed);
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET8->SetLineColor(kBlue);
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET10->SetLineColor(kGreen+2);
-    hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12->SetLineColor(kOrange);
+    hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12->SetLineColor(kMagenta);
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1->Draw();
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET8->Draw("same");
@@ -455,12 +455,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->AddEntry(hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12_bkg, "MBD NS #geq 1 && Jet 12 GeV", "l");
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_bkg->GetYaxis()->SetTitleOffset(1);
-    hJetDeltaPhi_r04_ZVTX60_MBDNS1_bkg->SetTitle("Background Jet: R = 0.4, |Z| < 60 cm");
+    hJetDeltaPhi_r04_ZVTX60_MBDNS1_bkg->SetTitle("Background Jet: Anti-k_{t} R = 0.4 and jet |#eta| < 0.6, |Z| < 60 cm");
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_bkg->SetLineColor(kRed);
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET8_bkg->SetLineColor(kBlue);
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET10_bkg->SetLineColor(kGreen+2);
-    hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12_bkg->SetLineColor(kOrange);
+    hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET12_bkg->SetLineColor(kMagenta);
 
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_bkg->Draw();
     hJetDeltaPhi_r04_ZVTX60_MBDNS1_JET8_bkg->Draw("same");
