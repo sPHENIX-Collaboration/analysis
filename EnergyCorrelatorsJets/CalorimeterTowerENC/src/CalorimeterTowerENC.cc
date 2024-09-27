@@ -167,7 +167,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 	MethodHistograms* histograms=histogram_map.at(caloh);
 	histograms->E->Fill(jete);
 	int ntow=0;
-//	std::cout<<"taking data on a jet size " <<tower_set.size() <<std::endl;
+	std::cout<<"taking data on a jet size " <<tower_set.size() <<std::endl;
 	for(auto i:tower_set){
 		if(!geom) continue;
 		if(i < 0/* || i >= (int) data->size()*/ ) continue;
@@ -182,7 +182,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 		float eta_center_1 = geom->get_etacenter(etabin_1);
 		float energy_1= tower_1->get_energy(); 
 		int ih=i;
-		if(caloh.find("emcal") != std::string::npos) ih=emcal_lookup[i];
+		if(caloh.find("emcal") != std::string::npos && emcal_lookup.find(i) !=emcal_lookup.end()) ih=emcal_lookup[i];
 		if(allcal_e->find(ih) == allcal_e->end()) (*allcal_e)[ih]=energy_1;
 		else allcal_e->at(i)+=energy_1;
 		 ntow++;
@@ -201,18 +201,17 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 			std::pair<float, float> tower_center_1 {eta_center_1, phi_center_1}, tower_center_2 {eta_center_2, phi_center_2};
 			float R_12=getR(tower_center_1, tower_center_2);
 			histograms->R_geom->Fill(R_12);
-			if(n_evts < 2) 	std::cout<<"Seperation is R="<<R_12<<std::endl;
+			if(n_evts < 2 && energy_1 >0 && energy_2 >0 ) 	std::cout<<"Seperation is R="<<R_12<<std::endl;
 			float jet2=pow(jete,2);
 			float jet2t=pow(jete_tot,2);
-			if (n_evts < 2) std::cout<<"The jet energy divsor is " <<jet2<<std::endl;
+			if (n_evts < 2&& energy_1 >0 && energy_2 >0 ) std::cout<<"The jet energy divsor is " <<jet2 <<" Total is " <<jet2t <<std::endl;
 			float e2c=energy_1*energy_2 / jet2;
 			float e2c_all=energy_1*energy_2 /jet2t; 
-			if(abs(energy_1) <= 0.01 )continue; //10 MeV threshold for consideration
-			if(abs(energy_2) <= 0.01) continue; //10 MeV threshold for consideration
+			if(abs(energy_1) <= 0.001 )continue; //1 MeV threshold for consideration
+			if(abs(energy_2) <= 0.001) continue; //1 MeV threshold for consideration
 			if(e2c != 0 ) histograms->R->Fill(R_12);
 			e2c=e2c/((float) Nj);
 			e2c_all=e2c_all/((float) Nj);
-			std::cout<<"The 2 point energy correlator is " <<e2c <<std::endl;
 			if(!std::isnormal(e2c) ) continue;
 			histograms->E2C->Fill(R_12, e2c/*/(float) Nj*/);
 			if(std::isnormal(e2c_all)) histograms->E2C_pt->Fill(R_12, e2c_all);
@@ -231,6 +230,7 @@ void CalorimeterTowerENC::GetENCCalo(PHCompositeNode* topNode, std::unordered_se
 					std::pair<float, float> tower_center_3 {eta_center_3, phi_center_3};
 					float R_13=getR(tower_center_1, tower_center_3);
 					float R_23=getR(tower_center_2, tower_center_3);
+					if(abs(energy_3) <= 0.001)continue;
 					float e3c=energy_3*energy_2*energy_1;
 					float jete3=pow(jete, 3);
 					float jete3t=pow(jete_tot, 3);
@@ -939,9 +939,9 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 				continue;
 			}
 			this->histogram_map["parts"]->pt->Fill(j->get_pt());
-			jetThreads.push_back(std::thread(&CalorimeterTowerENC::RecordHits/*(*/, this, topNode, j, towerktjets[coordinatedjets[j]]));
+			/*jetThreads.push_back(std::thread(&*/CalorimeterTowerENC::RecordHits(/*, this,*/ topNode, j, towerktjets[coordinatedjets[j]]);
 		}
-		for(int t=0; t<(int)jetThreads.size(); t++) jetThreads.at(t).join();
+	//	for(int t=0; t<(int)jetThreads.size(); t++) jetThreads.at(t).join();
 		number_of_jets->Fill(Nj);
 		
 	}
@@ -962,9 +962,9 @@ void CalorimeterTowerENC::Print(const std::string &what) const
 	TFile* f=new TFile(outfilename.c_str(), "RECREATE");
 	//printing the stuff out 
 	for(auto hs:histogram_map){
-		hs.second->R->Scale(1/(float)hs.second->N->GetEntries()); //average over number of jets
-		//hs.second->E2C->Scale(1/(float)hs.second->E2C->GetBinWidth(5)); //correct for binning
-		//hs.second->E3C->Scale(1/(float)hs.second->E3C->GetBinWidth(5)); //correct for binning
+		//hs.second->R->Scale(1/(float)hs.second->N->GetEntries()); //average over number of jets
+		hs.second->E2C->Scale(1/(float)hs.second->E2C->GetBinWidth(5)); //correct for binning
+		hs.second->E3C->Scale(1/(float)hs.second->E3C->GetBinWidth(5)); //correct for binning
 		//hs.second->E2C->Scale(1/(float)n_evts); //average over events
 		//hs.second->E3C->Scale(1/(float)n_evts); //average over events
 		for(auto h:hs.second->histsvector){
