@@ -40,7 +40,7 @@ echo "Generating Runs with MBD NS >= 1 and Jet X GeV triggers enabled" && psql -
 echo "Generating Good ana430 2024p007 Run List"  && comm -12 runList.txt runs-ana430.list > runs-ana430-good.list && \
 echo "Generating Good ana430 2024p007 with Bad Tower Maps Run List" && comm -12 runs-ana430-good.list runs-hot-maps.list > runs-ana430-good-maps.list && \
 echo "Generating Good ana430 2024p007 with triggers" && comm -12 runs-ana430-good-maps.list runs-trigger.list > runs-ana430-good-maps-trigger.list
-echo "Remove any known bad runs" && comm -23 runs-ana430-good-maps-trigger.list runs-bad.list >  runs-ana430-good-maps-trigger-clean.list
+echo "Remove any known bad runs" && comm -23 runs-ana430-good-maps-trigger.list bad-runs.list >  runs-ana430-good-maps-trigger-clean.list
 #+end_src
 
 Note:
@@ -51,11 +51,17 @@ ssh daq01 "psql daq -h db1.sphenix.bnl.gov -c \"select runnumber from gl1_scaled
 
 * Generate run list (ana435)
 #+begin_src bash
+echo "Generating Good Run List" && ./genGoodRuns.py && \
 echo "Generating ana435 2024p007 Run List" && CreateDstList.pl --build ana435 --cdb 2024p007 DST_CALO_run2pp --printruns > runs-ana435.list && \
 echo "Generating Bad Tower Maps Run List" && find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list && \
 echo "Generating Runs with MBD NS >= 1 and Jet X GeV triggers enabled" && psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger-B.list && \
 echo "Generating ana435 2024p007 with Bad Tower Maps"  && comm -12 runs-ana435.list runs-hot-maps.list > runs-ana435-maps.list && \
 echo "Generating Good ana435 2024p007 with Triggers Run List" && comm -12 runs-ana435-maps.list runs-trigger-B.list > runs-ana435-maps-trigger.list
+#+end_src
+
+* Access the good run database
+#+begin_src bash
+psql Production -h sphnxproddbmaster.sdcc.bnl.gov
 #+end_src
 
 * Fun4All Quick Tests
