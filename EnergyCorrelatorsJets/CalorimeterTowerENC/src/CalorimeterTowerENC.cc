@@ -377,8 +377,8 @@ void CalorimeterTowerENC::GetE3C(PHCompositeNode* topNode, std::unordered_set<in
 		if(allcal.find(e.first)==allcal.end()) allcal[e.first]=e.second;
 		else allcal[e.first]+=e.second;
 	}
-	MethodHistograms* hs=histogram_map[all];
-	GetENCCalo(allcal, ohcal_geom, ohcal_tower_energy, hs, jete);
+	//MethodHistograms* hs=histogram_map[all];
+	//GetENCCalo(allcal, ohcal_geom, ohcal_tower_energy, hs, jete);
 	return;
 }
 
@@ -743,15 +743,15 @@ std::map<std::pair<float, float>, std::vector<std::unordered_set<int>>> Calorime
 				}
 			}
 			candidates[max_bin]=0.;
-			if(candidates.size() > 2) std::cout<<"The number of candidate towers is " <<candidates.size() <<" with total E_T " <<jet_pt  <<std::endl;
+		//	if(candidates.size() > 2) std::cout<<"The number of candidate towers is " <<candidates.size() <<" with total E_T " <<jet_pt  <<std::endl;
 			if(jet_pt < 0.005*jet_cutoff){
 				for(auto c:candidates){
-					std::cout<<"The Number of bins still in play is now " <<emcal_to_hcal_energy.size() <<std::endl;
-					std::cout<<"The tower needing to leave has bin number=" <<c.first <<" and R=" <<c.second <<std::endl;
+		//			std::cout<<"The Number of bins still in play is now " <<emcal_to_hcal_energy.size() <<std::endl;
+		//			std::cout<<"The tower needing to leave has bin number=" <<c.first <<" and R=" <<c.second <<std::endl;
 					if(emcal_to_hcal_energy.find(c.first) != emcal_to_hcal_energy.end()) emcal_to_hcal_energy.erase(c.first);
-					std::cout<<"Now the energy bins should have decreased by 1? " <<emcal_to_hcal_energy.size() <<std::endl;
+		//			std::cout<<"Now the energy bins should have decreased by 1? " <<emcal_to_hcal_energy.size() <<std::endl;
 				}
-				std::cout<<"Jet Energy was below half a percent of the cutoff" <<std::endl; 
+		//		std::cout<<"Jet Energy was below half a percent of the cutoff" <<std::endl; 
 				max_found=0.0;
 				for(auto e:emcal_to_hcal_energy){
 				if(e.second > max_found){
