@@ -15,7 +15,7 @@ all: bin/Fun4All_JetVal bin/Fun4All_EventVal bin/event-stats
 
 bin/Fun4All_JetVal: macros/Fun4All_JetVal.C
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lg4jets -ljetbase -ljetbackground -ljetbackground_io -lcalo_reco
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lffamodules -lmbd -lglobalvertex -lg4jets -ljetbase -ljetbackground -ljetbackground_io -lcalo_reco
 
 bin/Fun4All_EventVal: macros/Fun4All_EventVal.C
 	mkdir -p bin

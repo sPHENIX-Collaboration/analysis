@@ -5,13 +5,14 @@
 // root includes --
 #include <TSystem.h>
 #include <TROOT.h>
+#include <TF1.h>
 
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllUtils.h>
-#include <fun4all/Fun4AllBase.h>
 
 #include <caloreco/CaloTowerStatus.h>
 
@@ -19,12 +20,19 @@
 
 #include <jetvalidation/JetValidation.h>
 
+#include <ffamodules/CDBInterface.h>
+
+#include <globalvertex/GlobalVertexReco.h>
+
+#include <mbd/MbdReco.h>
+
 using std::cout;
 using std::endl;
 using std::string;
 using std::pair;
 using std::istringstream;
 
+#include "Calo_Calib.C"
 #include "HIJetReco.C"
 
 R__LOAD_LIBRARY(libJetValidation.so)
@@ -52,27 +60,22 @@ void Fun4All_JetVal(const string &inputFile,
   Int_t runnumber = runseg.first;
   rc->set_uint64Flag("TIMESTAMP", runnumber);
 
-  std::cout << "status setters" << std::endl;
-  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
-  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  statusEMC->set_time_cut(1);
-  statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
-  statusEMC->Verbosity(Fun4AllBase::VERBOSITY_MORE);
-  se->registerSubsystem(statusEMC);
+  // Geometry
+  cout << "Adding Geometry file" << endl;
+  Fun4AllInputManager* intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
+  string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
+  intrue2->AddFile(geoLocation);
+  se->registerInputManager(intrue2);
 
-  CaloTowerStatus *statusHCalIn = new CaloTowerStatus("HCALINSTATUS");
-  statusHCalIn->set_detector_type(CaloTowerDefs::HCALIN);
-  statusHCalIn->set_time_cut(2);
-  statusHCalIn->set_inputNodePrefix("TOWERINFO_CALIB_");
-  statusHCalIn->Verbosity(Fun4AllBase::VERBOSITY_MORE);
-  se->registerSubsystem(statusHCalIn);
+  // MBD/BBC Reconstruction
+  MbdReco* mbdreco = new MbdReco();
+  se->registerSubsystem(mbdreco);
 
-  CaloTowerStatus *statusHCALOUT = new CaloTowerStatus("HCALOUTSTATUS");
-  statusHCALOUT->set_detector_type(CaloTowerDefs::HCALOUT);
-  statusHCALOUT->set_time_cut(2);
-  statusHCALOUT->set_inputNodePrefix("TOWERINFO_CALIB_");
-  statusHCALOUT->Verbosity(Fun4AllBase::VERBOSITY_MORE);
-  se->registerSubsystem(statusHCALOUT);
+  // Official vertex storage
+  GlobalVertexReco* gvertex = new GlobalVertexReco();
+  se->registerSubsystem(gvertex);
+
+  Process_Calo_Calib();
 
   HIJetReco();
 
