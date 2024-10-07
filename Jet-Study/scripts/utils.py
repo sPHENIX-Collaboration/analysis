@@ -81,7 +81,7 @@ def create_f4a_jobs():
 
             with open(f'{job_dir}/genFun4All.sub', mode="w") as file:
                 file.write(f'executable     = ../{os.path.basename(executable)}\n')
-                file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/tree-$(Process).root output/qa-$(Process).root\n')
+                file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/tree-$(Process).root output/qa-$(Process).root {job_dir}/output\n')
                 file.write(f'log            = {log}\n')
                 file.write('output          = stdout/job-$(Process).out\n')
                 file.write('error           = error/job-$(Process).err\n')

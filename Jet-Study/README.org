@@ -81,3 +81,18 @@ make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("D
 #+begin_src bash
 condor_hold -all && condor_qedit <job id> RequestMemory <Memory (MB)> && condor_release -all
 #+end_src
+
+* Post Condor Run Notes
+
+** Check if any jobs failed due to bad input and list the specific segments:
+#+begin_src bash
+rg "No Root Tree T" */stdout | rg -o "DST.*root" | tee bad-segments.list && cat bad-segments.list | cut -d "-" -f2 | uniq | sort | awk '{x=$0+0;print x}' > runs-with-bad-segments.list
+#+end_src
+Note: Must be in the general condor directory for the "*/stdout" to work.
+
+* Bash Tips
+
+** Remove Leading Zeros
+#+begin_src bash
+echo 01234 | awk '{x=$0+0;print x}'
+#+end_src
