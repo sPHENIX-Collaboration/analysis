@@ -92,6 +92,7 @@ void Fun4All_JetVal(const string &inputFile,
 
   se->run(nEvents);
   se->End();
+  // se->PrintTimer();
 
   gSystem->Exit(0);
 }
