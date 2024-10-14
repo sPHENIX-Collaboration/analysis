@@ -11,6 +11,7 @@ subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory.')
 status = subparser.add_parser('status', help='Get status of Condor.')
+gen = subparser.add_parser('gen', help='Generate run lists.')
 
 f4a.add_argument('-i', '--run-list', type=str, help='Run List', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='scripts/genStatus.sh', help='Job script to execute. Default: scripts/genStatus.sh')
@@ -20,6 +21,11 @@ f4a.add_argument('-d', '--output', type=str, default='test', help='Output Direct
 f4a.add_argument('-s', '--memory', type=float, default=0.2, help='Memory (units of GB) to request per condor submission. Default: 0.2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--submissions', type=int, default=1, help='Number of submissions. Default: 1.')
+
+gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
+gen.add_argument('-t', '--ana-tag', type=str, default='ana437', help='ana tag. Default: ana437')
+gen.add_argument('-s', '--script', type=str, default='scripts/getGoodRunList.py', help='Good run generation script. Default: scripts/getGoodRunList.py')
+gen.add_argument('-b', '--bad', type=str, default='files/bad-runs.list', help='List of known bad runs. Default: files/bad-runs.list')
 
 args = parser.parse_args()
 
@@ -98,8 +104,55 @@ def get_condor_status():
     print('User')
     print(pd.DataFrame(dt_user).to_string(index=False))
 
+def create_run_lists():
+    ana_tag  = args.ana_tag
+    output   = os.path.realpath(args.output)+'/'+ana_tag
+    gen_runs = os.path.realpath(args.script)
+    bad_runs = os.path.realpath(args.bad)
+    dst_tag  = 'DST_CALOFITTING_run2pp'
+
+    print(f'Tag: {ana_tag}')
+    print(f'DST: {dst_tag}')
+    print(f'Output: {output}')
+    print(f'Good Runs Script: {gen_runs}')
+    print(f'Known Bad Runs: {bad_runs}')
+
+    os.makedirs(output,exist_ok=True)
+
+    print('Generating Good Run List')
+    subprocess.run(f'{gen_runs}'.split(),cwd=output)
+
+    print('Generating Bad Tower Maps Run List')
+    subprocess.run(['bash','-c','find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'],cwd=output)
+
+    print(f'Generating {ana_tag} 2024p007 Run List')
+    subprocess.run(['bash','-c',f'CreateDstList.pl --build {ana_tag} --cdb 2024p007 {dst_tag} --printruns > runs-{ana_tag}.list'],cwd=output)
+
+    print('Generating Runs with MBD NS >= 1 and Jet X GeV triggers enabled')
+    subprocess.run(['bash','-c',f'psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c \'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;\' -At > runs-trigger-all.list'],cwd=output)
+    subprocess.run(['bash','-c',f'psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c \'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and (scaledown21 != -1 or scaledown22 != -1 or scaledown23 != -1) order by runnumber;\' -At > runs-trigger-any.list'],cwd=output)
+
+    print(f'Generating Good {ana_tag} 2024p007 Run List')
+    subprocess.run(['bash','-c',f'comm -12 runList.txt runs-{ana_tag}.list > runs-{ana_tag}-good.list'],cwd=output)
+
+    print(f'Generating Good {ana_tag} 2024p007 with Bad Tower Maps Run List')
+    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good.list runs-hot-maps.list > runs-{ana_tag}-good-maps.list'],cwd=output)
+
+    print(f'Generating Good {ana_tag} 2024p007 with triggers')
+    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good-maps.list runs-trigger-all.list > runs-{ana_tag}-good-maps-trigger-all.list'],cwd=output)
+    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good-maps.list runs-trigger-any.list > runs-{ana_tag}-good-maps-trigger-any.list'],cwd=output)
+
+    print('Remove any known bad runs')
+    subprocess.run(['bash','-c',f'comm -23 runs-{ana_tag}-good-maps-trigger-all.list {bad_runs} >  runs-{ana_tag}-good-maps-trigger-all-clean.list'],cwd=output)
+    subprocess.run(['bash','-c',f'comm -23 runs-{ana_tag}-good-maps-trigger-any.list {bad_runs} >  runs-{ana_tag}-good-maps-trigger-any-clean.list'],cwd=output)
+
+    print('Run Stats')
+    subprocess.run(['bash','-c','wc -l *'],cwd=output)
+
 if __name__ == '__main__':
     if(args.command == 'f4a'):
         create_f4a_jobs()
     if(args.command == 'status'):
         get_condor_status()
+    if(args.command == 'gen'):
+        create_run_lists()

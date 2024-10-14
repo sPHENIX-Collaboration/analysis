@@ -71,14 +71,14 @@ def main():
 
     print(df.drop_duplicates(['runnumber','dataset']))
 
-    os.makedirs('files',exist_ok=True)
+    os.makedirs('files/hists',exist_ok=True)
 
     for index in df.drop_duplicates(['runnumber','dataset']).index:
         dataset = df["dataset"][index]
         run = df["runnumber"][index]
         print(f'Processing: {run},{dataset}')
 
-        df[(df['runnumber']==run) & (df['dataset']==dataset)]['full_file_path'].to_csv(f'files/{run}_{dataset}.list', index=False, header=False)
+        df[(df['runnumber']==run) & (df['dataset']==dataset)]['full_file_path'].to_csv(f'files/hists/{run}_{dataset}.list', index=False, header=False)
 
 if __name__ == "__main__":
     main()
