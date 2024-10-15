@@ -33,7 +33,7 @@ CalorimeterTowerENC::CalorimeterTowerENC(int n_run, int n_segment, float jet_min
 	calojethits=new TH2F("calojethits", "Location of energy deposition from calo only anti-k_{T} jets; #eta; #varphi; N_{hits}", 200, -1.15, 1.05, 200, -3.1416, 3.1415);
 	comptotows=new TH2F("comp_to_towers", "Particle energy deposition versus EMCal tower energy per EMCAL tower; E_{particle} [GeV]; E_{emcal} [GeV]; N", 50, -0.5, 49.5, 50, -0.05, 4.95 ); 
 	number_of_jets=new TH1F("nJ", "Number of Jets per event; N_{jet}; events", 100, -0.5, 99.5);
-	cont_pos=new TH1F("Continuous_approx", "Monte Carlo approximation to ideal resolution; R_L; < #sum  pairlikes >", 60, -0.05, 0.85);
+	//cont_pos=new TH1F("Continuous_approx", "Monte Carlo approximation to ideal resolution; R_L; < #sum  pairlikes >", 60, -0.05, 0.85);
 	EM_energy=new TH1F("emcal_energy", "Total energy in emcal; E [GeV]; events", 200, -0.25, 99.75);
 	IH_energy=new TH1F("ihcal_energy", "Total energy in ihcal; E [GeV]; events", 200, -0.25, 99.75);
 	OH_energy=new TH1F("ohcal_energy", "Total energy in ohcal; E [GeV]; events", 200, -0.25, 99.75);
@@ -558,7 +558,7 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 	float axis_phi=truth_jet->get_phi(), axis_eta=truth_jet->get_eta();
 	float edge_R=0;
 	float jet_energy=truth_jet->get_e();
-	int rdivbins=Particles->R_geom->GetNbins();	
+	int rdivbins=Particles->R_geom->GetNbinsX();	
 	float rbinsides=Particles->R_geom->GetBinWidth(5);
 	for(auto p:jetparticles){
 		std::pair<float, float> particle_coord; 
@@ -572,7 +572,7 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 		std::pair<float, float> particle_coord; 
 		particle_coord.first = atanh(p->get_pz()/sqrt(pow(p->get_py(),2) + pow(p->get_px(),2) + pow(p->get_pz(), 2)));
 		particle_coord.second = atan2(p->get_py(), p->get_px());
-		float angle_off=acos((particle_coord.second-axis_phi)/(particles_coord.first-axis.eta)); //this is the anglular offset of the particle circle
+		//float angle_off=acos((particle_coord.second-axis_phi)/(particle_coord.first-axis_eta)); //this is the anglular offset of the particle circle
 		particle_coords.insert(particle_coord);	
 		jet_particle_map[p]=particle_coord;
 		jethits->Fill(particle_coord.first, particle_coord.second);
