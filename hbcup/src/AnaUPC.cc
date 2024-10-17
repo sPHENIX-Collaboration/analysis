@@ -49,7 +49,9 @@
 #include <TH2.h>
 #include <TNtuple.h>
 #include <TTree.h>
-#include <TLorentzVector.h>
+//#include <TLorentzVector.h>
+#include <Math/Vector4D.h>
+
 
 /// C++ includes
 #include <cassert>
@@ -104,9 +106,12 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
 
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
 
-  h_phi = new TH1D("h_phi", ";Counts;#phi [rad]", 50, -6, 6);
-  h_mass = new TH1F("h_mass", ";Counts;#mass [GeV]", 1200, 0, 6);
-  h2_eta_phi = new TH2F("h2_phi_eta", ";#eta;#phi [rad]", 10, -1, 1, 50, -6, 6);
+  h_phi = new TH1F("h_phi", "#phi [rad]", 60, -M_PI, M_PI);
+  h2_eta_phi = new TH2F("h2_phi_eta", ";#eta;#phi [rad]", 24, -5.0, 5.0, 60, -M_PI, M_PI);
+  h_mass = new TH1F("h_mass", "mass [GeV]", 1200, 0, 6);
+  h_pt = new TH1F("h_pt", "p_{T}", 200, 0, 2);
+  h_y = new TH1F("h_y", "y", 24, -1.2, 1.2);
+  h_eta = new TH1F("h_eta", "#eta", 24, -5.0, 5.0);
 
   return 0;
 }
@@ -179,10 +184,6 @@ int AnaUPC::End(PHCompositeNode * /*topNode*/)
     m_clustertree->Write();
   }
   */
-
-  /// Write out any other histograms
-  h_phi->Write();
-  h2_eta_phi->Write();
 
   /// Write and close the outfile
   m_outfile->Write();
@@ -266,9 +267,7 @@ void AnaUPC::getHEPMCTruth(PHCompositeNode *topNode)
         std::cout << " Iterating over an event" << std::endl;
       }
       /// Loop over all the truth particles and get their information
-      for (HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin();
-           iter != truthevent->particles_end();
-           ++iter)
+      for (HepMC::GenEvent::particle_const_iterator iter = truthevent->particles_begin(); iter != truthevent->particles_end(); ++iter)
       {
         /// Get each pythia particle characteristics
         m_truthenergy = (*iter)->momentum().e();
@@ -312,9 +311,7 @@ void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
   PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
 
   /// Loop over the G4 truth (stable) particles
-  for (PHG4TruthInfoContainer::ConstIterator iter = range.first;
-       iter != range.second;
-       ++iter)
+  for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
   {
     /// Get this truth particle
     const PHG4Particle *truth = iter->second;
@@ -447,7 +444,8 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
     m_tracktree->Fill();
   }
   
-  TLorentzVector v1, v2;
+  //TLorentzVector v1, v2;
+  ROOT::Math::XYZTVector v1, v2;
 
   // make pairs
   //for (auto &iter1 : *trackmap)
@@ -474,9 +472,19 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
       double e2 = sqrt( E_MASS*E_MASS + px2*px2 + py2*py2 + pz2*pz2 );
       v2.SetPxPyPzE( px2, py2, pz2, e2 );
 
-      TLorentzVector sum = v1 + v2;
+      //TLorentzVector sum = v1 + v2;
+      ROOT::Math::XYZTVector sum = v1 + v2;
       double invmass = sum.M();
+      double pt = sum.Pt();
+      double y = sum.Rapidity();
+      double eta = sum.Eta();
+      double phi = sum.Phi();
       h_mass->Fill( invmass );
+      h_pt->Fill( pt );
+      h_y->Fill( y );
+      h_eta->Fill( eta );
+      h2_eta_phi->Fill( eta, phi );
+      h_phi->Fill( phi );
     }
   }
 

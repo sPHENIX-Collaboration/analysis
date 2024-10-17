@@ -95,6 +95,9 @@ class AnaUPC : public SubsysReco
   TH1 *h_phi;
   TH2 *h2_eta_phi;
   TH1 *h_mass;
+  TH1 *h_y;
+  TH1 *h_eta;
+  TH1 *h_pt;
   const double E_MASS = 0.000510998950;  // electron mass [Gev]
 
   SvtxEvalStack *m_svtxEvalStack = nullptr;
