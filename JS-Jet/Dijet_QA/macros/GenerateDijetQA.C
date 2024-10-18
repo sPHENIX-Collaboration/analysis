@@ -25,13 +25,13 @@ R__LOAD_LIBRARY(libffamodules.so);
 R__LOAD_LIBRARY(libffarawmodules.so);
 R__LOAD_LIBRARY(libphhepmc.so);
 
-int GenerateDijetQA(std::string filename="")
+int GenerateDijetQA(std::string filename="", std::string runn="0", std::string seg="0")
 {
 	SetsPhenixStyle();
 	Fun4AllServer* se=Fun4AllServer::instance();
 	Fun4AllDstInputManager *in=new Fun4AllDstInputManager("in");
 	in->fileopen(filename);
-	DijetQA* dqa=new DijetQA();
+	DijetQA* dqa=new DijetQA(runn, seg);
 	se->registerInputManager(in);
 	se->registerSubsystem(dqa);
 	se->run();

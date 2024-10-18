@@ -31,6 +31,8 @@
 
 #include "TTree.h"
 #include "TFile.h"
+#include "TH1.h" 
+#include "TH2.h" 
 
 class PHCompositeNode;
 
@@ -38,7 +40,7 @@ class DijetQA : public SubsysReco
 {
  public:
 
-  DijetQA(const std::string &name = "DijetQA", const std::string &outputfilename = "DijetQA.root", int phismear=0);
+  DijetQA(const std::string run_number="0", const std::string segment_number="0", const std::string &name = "DijetQA", int phismear=0);
 
   ~DijetQA() override;
 
@@ -89,12 +91,14 @@ class DijetQA : public SubsysReco
 				//Should set to integer multilple of hcal phi tower size ->Pi/32 
 	int ntowers_opening=1;
 	float DeltaPhi=ntowers_opening*DeltaPhiOne; 
-	std::string m_outputFileName; 
+	std::string m_run, m_seg; 
 	std::pair<float, float> m_etaRange, m_ptRange;
 	TTree* m_T;
 	int m_event, m_nJet, m_nJetPair;
 	float m_centrality, m_zvtx, m_impactparam, m_Ajj, m_xj, m_ptl, m_ptsl;
 	float m_phil, m_phisl, m_dphil, m_dphi, m_etal, m_etasl, m_deltaeta;
+	TH1F* h_Ajj, *h_xj, *h_pt;
+	TH2F* h_Ajj_pt, *h_xj_pt;
 		//use the above single tower width and tunable parameter to keep things more safely defined
 };
 

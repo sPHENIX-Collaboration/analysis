@@ -68,9 +68,10 @@
 #include <phool/PHCompositeNode.h>
 
 //____________________________________________________________________________..
-DijetQA::DijetQA(const std::string &name, const std::string &outputfilename, int phismear/*=0*/): 
+DijetQA::DijetQA(const std::string run_number, const std::string segment_number, const std::string &name, int phismear/*=0*/): 
  SubsysReco(name)
- , m_outputFileName(outputfilename)
+ , m_run(run_number)
+ , m_seg(segment_number)
  , m_etaRange(-1.1, 1.1)
  , m_ptRange(0, 100)
  , m_T(nullptr)
@@ -120,6 +121,11 @@ int DijetQA::Init(PHCompositeNode *topNode)
 	m_T->Branch("eta_l", &m_etal);
 	m_T->Branch("eta_sl", &m_etasl);
 	m_T->Branch("Delta_eta", &m_deltaeta);
+	h_Ajj=new TH1F("h_Ajj", "A_{jj} for identified jet pairs; A_{jj}; N_{pairs}", 100, -0.005, 0.995);
+	h_xj=new TH1F("h_xj", "x_{j} for identified jet pairs; x_{j}; N_{pairs}", 100, -0.005, 0.995);
+	h_pt=new TH1F("h_pt", "p_{T} for leading jets in identified pairs; p_{T} [GeV]; N_{jet}", 70, -0.5, 69.5);
+	h_Ajj_pt=new TH2F("h_Ajj_pt", "A_{jj} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; A_{jj}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
+	h_xj_pt=new TH2F("h_xj_pt", "x_{j} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; x_{j}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -182,23 +188,27 @@ void DijetQA::FindPairs(JetContainer* jets)
 {
 	//find all pairs that are potenital dijets and measure the kinematics
 	//prety sure I'm doing this right
-	Jet* jet_leading=NULL, *jet_pair1=NULL, *jet_pair2=NULL;
+	Jet* jet_leading=NULL;
 	std::cout<<"Finding jet pairs" <<std::endl;
 	float pt_leading=0, pt1=0, pt2=0;
 	m_nJet=jets->size();
 	std::cout<<"number of jets is" <<m_nJet<<std::endl;
+	std::vector<std::pair<Jet*, Jet*> >jet_pairs;
+	bool set_leading=false;
 	for(auto j1: *jets)
 	{
 		//assert(j1);
-		if(j1->get_pt() < 1) continue; //cut on 1 GeV jets
+		Jet *jet_pair1=NULL, *jet_pair2=NULL;
+		if(j1->get_pt() < 1 || abs(j1->get_eta()) > 1.1 ) continue; //cut on 1 GeV jets
 		if(j1->get_pt() > pt_leading){
+			set_leading=true;
 			pt_leading=j1->get_pt();
 			jet_leading=j1;
 		}
 		for(auto j2:(*jets)){
 			if(j2 < j1) continue;
-			if(/*j2 == j1 ||*/ j2->get_pt() < 1) continue;
-			if(abs(j2->get_phi() -j1->get_phi()) > 3 && abs(j2->get_phi() - j1->get_phi() ) < 3.3 )  {
+			if(/*j2 == j1 ||*/ j2->get_pt() < 1 || abs(j2->get_eta()) > 1.1 ) continue;
+			if(abs(j2->get_phi() -j1->get_phi()) > 2.75 )  {
 				if(j2->get_pt() > j1->get_pt() ){
 					jet_pair1=j2;
 					jet_pair2=j1;
@@ -207,25 +217,45 @@ void DijetQA::FindPairs(JetContainer* jets)
 					jet_pair1=j1;
 					jet_pair2=j2;
 				}
+				jet_pairs.push_back(std::make_pair(jet_pair1, jet_pair2));
+				if(set_leading && jet_pair1 && jet_pair2){
+					pt1=jet_pair1->get_pt();
+					pt2=jet_pair2->get_pt();
+					m_Ajj=(pt1-pt2)/(pt1+pt2);
+					m_xj=pt2/pt1;
+					m_ptl=pt1;
+					m_ptsl=pt2;
+					m_phil=jet_pair1->get_phi();
+					m_phisl=jet_pair2->get_phi();
+					m_dphi=m_phil-m_phisl;
+					m_etal=jet_pair1->get_eta();
+					m_etasl=jet_pair2->get_eta();
+					m_deltaeta=m_etal-m_etasl;
+				//	m_T->Fill();
+				}
+				set_leading=false;
 			}
 		}
 	}
 	std::cout<<"Finished search for pairs" <<std::endl;
+	m_nJetPair=jet_pairs.size();
+	float Ajj=0., xj=0.;
+	if(jet_pairs.size() > 0 ) {
+	for(auto js:jet_pairs){
+	Jet* jet_pair1=js.first, *jet_pair2=js.second;
+	if(!jet_pair1 || !jet_pair2)continue;
 	if(jet_pair1) std::cout<<"jetpair 1 object has a pt of " <<jet_pair1->get_pt()<<std::endl;
-	if(jet_pair1 && jet_pair2){
-	pt1=jet_pair1->get_pt();
-	pt2=jet_pair2->get_pt();
-	m_Ajj=(pt1-pt2)/(pt1+pt2);
-	m_xj=pt2/pt1;
-	m_ptl=pt1;
-	m_ptsl=pt2;
-	m_phil=jet_pair1->get_phi();
-	m_phisl=jet_pair2->get_phi();
-	m_dphi=m_phil-m_phisl;
-	m_etal=jet_pair1->get_eta();
-	m_etasl=jet_pair2->get_eta();
-	m_deltaeta=m_etal-m_etasl;
-	std::cout<<"highest pt jet is " <<jet_leading->get_pt() <<" and highest pt in a pair is " <<jet_pair1->get_pt() <<std::endl;
+		pt1=jet_pair1->get_pt();
+		pt2=jet_pair2->get_pt();
+		Ajj=(pt1-pt2)/(pt1+pt2);
+		xj=pt2/pt1;
+		h_Ajj->Fill(Ajj);
+		h_xj->Fill(xj);
+		h_pt->Fill(pt1);
+		h_Ajj_pt->Fill(pt1, Ajj);
+		h_xj_pt->Fill(pt1, xj);
+		std::cout<<"highest pt jet is " <<jet_leading->get_pt() <<" and highest pt in a pair is " <<jet_pair1->get_pt() <<std::endl;
+		}
 	}
 	else std::cout<<"Did not find a pair of jets" <<std::endl;
 	return;
@@ -262,8 +292,14 @@ int DijetQA::Reset(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 void DijetQA::Print(const std::string &what) const
 {
-  	TFile* f=new TFile("Dijet_QA.root", "RECREATE");
+	std::cout<<"The dijet analysis done running" <<std::endl;
+  	TFile* f=new TFile(Form("Dijet_QA_run-%s-%s.root",m_run.c_str(), m_seg.c_str()), "RECREATE");
 	m_T->Write(); 
+	h_Ajj->Write();
+	h_xj->Write();
+	h_pt->Write();
+	h_Ajj_pt->Write();
+	h_xj_pt->Write();
 	f->Write();
 	f->Close();
  	std::cout << "DijetQA::Print(const std::string &what) const Printing info for " << what << std::endl;
