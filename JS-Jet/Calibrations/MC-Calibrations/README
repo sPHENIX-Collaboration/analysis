@@ -3,7 +3,7 @@ Anthony Hodges, UIUC, <ahodges4@illinois.edu>
 
 This directory contains tools for performing the sPHENIX jet energy scale calibration.
 
-Jet_Resp_Condor_histMaker.C - this code expects single files that our output from the JetValidation macro under the "JetValidation" sub directory. It can be run over one, large output file or multiple output files that will be combined via hadd at the end. 
+Jet_Resp_Condor_histMaker.C - this code expects single files that our output from the JetValidation macro under the "JetValidation" sub directory. It can be run over one, large output file or multiple output files that will be combined via hadd at the end. As the name implies it can be run via conder for the latter.
 
 The output are TH2D histograms that have the jet response (either p_T_Reco or P_T_Reco/P_T_truth depending on the setting) as a function of the truth jet p_T. 
 
