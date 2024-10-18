@@ -599,11 +599,15 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 				circumfrence_included=0.;
 			}
 			else{
-				circumfrence_included=2*acos(intersection);
+				try{
+					circumfrence_included=2*acos(intersection);
+				}
+				catch(std::exception& e) {};
 				if( R_L+R > edge_R && circumfrence_included > 3.14159) circumfrence_included = 2*3.14159-circumfrence_included;
 				else if(R_L +R < edge_R && circumfrence_included < 3.14159 ) circumfrence_included = 2*3.14159 - circumfrence_included;
 			}
 			circumfrence_included=R_L*circumfrence_included;
+			if(!std::isnormal(circumfrence_included)) continue;
 			Particles->R_geom->Fill(R_L, circumfrence_included);
 		}
 	}
@@ -665,9 +669,28 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 //	if(n_evts < 10)	std::cout<<"We have loaded in particles " <<particle_coords.size() <<std::endl;
 //	getE2C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal);
 	if(jet_towers_emcal.size() == 0 || jet_towers_ohcal.size() == 0 ) return 1;
-	GetE3C(topNode, jet_particle_map); //get both in one call
-	GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy, false, jet_energy); //get both values filled in one 
-	if(kt_towers.size() > 0) GetE3C(topNode, kt_towers[0], kt_towers[1], kt_towers[2], &emtowerenergykt, true, jet_energy); 
+	try{
+		std::cout<<" The kt map has size " <<kt_towers.size() <<std::endl;
+	}
+	catch(std::exception& e) {std::cout<<"Couldn't access the map to get size" <<std::endl;}
+	try{
+		std::cout<<"The tows emcal bit has size " <<kt_towers[0].size() <<std::endl;
+	}
+	catch(std::exception& e){std::cout<<"Nothing in the 0th element " <<std::endl;}
+	try{
+		std::cout<<"The tows ihcal bit has size " <<kt_towers[1].size() <<std::endl;
+	}
+	catch(std::exception& e){std::cout<<"Nothing in the 1st element " <<std::endl;}
+	try{
+		std::cout<<"The tows ohcal bit has size " <<kt_towers[2].size() <<std::endl;
+	}
+	catch(std::exception& e){std::cout<<"Nothing in the 2nd element " <<std::endl;}
+try{	GetE3C(topNode, jet_particle_map); }//get both in one call
+	catch(std::exception& e) {std::cout<<"unable to run the particle map, \n Exception " <<e.what() <<std::endl;}
+	try{GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy, false, jet_energy); }//get both values filled in one 
+	catch(std::exception& e) {std::cout<<"unable to run the tower map, \n Exception " <<e.what() <<std::endl;}
+	try{if(kt_towers.size() > 0) GetE3C(topNode, kt_towers[0], kt_towers[1], kt_towers[2], &emtowerenergykt, true, jet_energy); }
+	catch(std::exception& e) {std::cout<<"unable to run the kt map, \n Exception " <<e.what() <<std::endl;}
 	for(auto m:jettowenergy) comptotows->Fill(m.second, emtowerenergy[m.first]);
 	return 1;
 }
@@ -935,7 +958,8 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		if(IHCALMAP.first.size() == 0 )  IHCALMAP=GetTowerMaps(ihcal_geom, RawTowerDefs::HCALIN, ihcal_tower_energy);
 		if(OHCALMAP.first.size() == 0 )  OHCALMAP=GetTowerMaps(ohcal_geom, RawTowerDefs::HCALOUT, ohcal_tower_energy);
 		auto jets = findNode::getClass<JetContainer> (topNode, "AntiKt_Truth_r04");
-		float emcal_energy=0, ihcal_energy=0, ohcal_energy=0;
+		float emcal_energy=0, ihcal_energy=0, ohcal_energy=0;	
+		try{
 		for(int i=0; i<(int)emcal_tower_energy->size(); i++ ){
 			auto tower = emcal_tower_energy->get_tower_at_channel(i);
 			float energy=tower->get_energy();
@@ -954,11 +978,11 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		EM_energy->Fill(emcal_energy);
 		OH_energy->Fill(ohcal_energy);
 		IH_energy->Fill(ihcal_energy);
-		Nj=jets->size();
+		try{Nj=jets->size();
 		auto towerktjets=FindAntiKTTowers(topNode);
-		auto coordinatedjets=MatchKtTowers(towerktjets, jets);
+		try{auto coordinatedjets=MatchKtTowers(towerktjets, jets);
 		std::vector<std::thread> jetThreads;
-		for(auto j:*jets){
+		try{for(auto j:*jets){
 			if(j->get_pt() < jet_cutoff){ //put in a 10 GeV cut on the jets
 				Nj--;
 				continue;
@@ -968,10 +992,17 @@ int CalorimeterTowerENC::process_event(PHCompositeNode *topNode){
 		}
 	//	for(int t=0; t<(int)jetThreads.size(); t++) jetThreads.at(t).join();
 		number_of_jets->Fill(Nj);
-		
+		}
+		catch(std::exception& e4) {std::cout<<"The threads objects are the problems \n Exception: "<<e4.what() <<std::endl;}
+		}
+		catch(std::exception& e3) {std::cout<<"The matches are the problems \n Exception: "<<e3.what() <<std::endl;}
+		}
+		catch(std::exception& e2) {std::cout<<"The anti-kt objects are the problems \n Exception: "<<e2.what() <<std::endl;}
+		}
+		catch(std::exception& e1) {std::cout<<"The energy objects are the problems \n Exception: "<<e1.what() <<std::endl;}
 	}
 	catch(std::exception& e ) {
-		std::cout<<"Failed to run on event " <<n_evts <<"\n Skipping Event" <<std::endl;	
+		std::cout<<"Failed to run on event " <<n_evts <<"\n Skipping Event" <<" \n Exception was " <<e.what() <<std::endl;	
 		n_evts--;
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
