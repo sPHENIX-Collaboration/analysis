@@ -668,11 +668,13 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 	}
 //	if(n_evts < 10)	std::cout<<"We have loaded in particles " <<particle_coords.size() <<std::endl;
 //	getE2C(topNode, jet_towers_ihcal, jet_towers_ohcal, jet_towers_emcal);
+	bool kt_tows_good=false;
 	if(jet_towers_emcal.size() == 0 || jet_towers_ohcal.size() == 0 ) return 1;
 	try{
 		std::cout<<" The kt map has size " <<kt_towers.size() <<std::endl;
 	}
 	catch(std::exception& e) {std::cout<<"Couldn't access the map to get size" <<std::endl;}
+	if(kt_towers.size() > 0){
 	try{
 		std::cout<<"The tows emcal bit has size " <<kt_towers[0].size() <<std::endl;
 	}
@@ -683,13 +685,15 @@ int CalorimeterTowerENC::RecordHits(PHCompositeNode* topNode, Jet* truth_jet, st
 	catch(std::exception& e){std::cout<<"Nothing in the 1st element " <<std::endl;}
 	try{
 		std::cout<<"The tows ohcal bit has size " <<kt_towers[2].size() <<std::endl;
+		kt_tows_good=true;
 	}
 	catch(std::exception& e){std::cout<<"Nothing in the 2nd element " <<std::endl;}
+	}
 try{	GetE3C(topNode, jet_particle_map); }//get both in one call
 	catch(std::exception& e) {std::cout<<"unable to run the particle map, \n Exception " <<e.what() <<std::endl;}
 	try{GetE3C(topNode, jet_towers_emcal, jet_towers_ihcal, jet_towers_ohcal, &emtowerenergy, false, jet_energy); }//get both values filled in one 
 	catch(std::exception& e) {std::cout<<"unable to run the tower map, \n Exception " <<e.what() <<std::endl;}
-	try{if(kt_towers.size() > 0) GetE3C(topNode, kt_towers[0], kt_towers[1], kt_towers[2], &emtowerenergykt, true, jet_energy); }
+	try{if(kt_towers.size() > 0 && kt_tows_good) GetE3C(topNode, kt_towers[0], kt_towers[1], kt_towers[2], &emtowerenergykt, true, jet_energy); }
 	catch(std::exception& e) {std::cout<<"unable to run the kt map, \n Exception " <<e.what() <<std::endl;}
 	for(auto m:jettowenergy) comptotows->Fill(m.second, emtowerenergy[m.first]);
 	return 1;

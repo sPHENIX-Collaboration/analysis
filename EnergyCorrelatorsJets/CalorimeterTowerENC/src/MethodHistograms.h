@@ -5,14 +5,16 @@
 #include <string>
 #include <vector>
 struct MethodHistograms{
-	MethodHistograms(std::string vers): typelabel(vers){};
+	MethodHistograms(std::string vers, float max=0.85): typelabel(vers), maxR(max){};
 	std::string typelabel="NONE";
-	TH1F* E2C=new TH1F(Form("e2c_%s", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()), 60, -0.05, 0.85); 
-	TH1F* E3C=new TH1F(Form("e3c_%s", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), 60, -0.05, 0.85); 
-	TH1F* E2C_pt=new TH1F(Form("e2c_%s_jetpt", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()), 60, -0.05, 0.85); 
-	TH1F* E3C_pt=new TH1F(Form("e3c_%s_jetpt", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), 60, -0.05, 0.85); 
-	TH1F* R=new TH1F(Form("R_%s", typelabel.c_str()), Form("#Delta R_{12} between compotents in jet from %s; #Delta R_{12}; < N >", typelabel.c_str()), 60, -0.05, 0.85);
-	TH1F* R_geom=new TH1F(Form("R_%s_geom", typelabel.c_str()), Form("#Delta R_{12} between canidate geometry in jet from %s; #Delta R_{12}; < N >", typelabel.c_str()), 60, -0.05, 0.85);
+	float maxR=0.85;
+	int nbins=(maxR)/0.85*60; //set 60 bins for the 0.4 jet
+	TH1F* E2C=new TH1F(Form("e2c_%s", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()),nbins, -0.05, maxR); 
+	TH1F* E3C=new TH1F(Form("e3c_%s", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), nbins, -0.05, maxR); 
+	TH1F* E2C_pt=new TH1F(Form("e2c_%s_jetpt", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()), nbins, -0.05, maxR); 
+	TH1F* E3C_pt=new TH1F(Form("e3c_%s_jetpt", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), nbins, -0.05, maxR); 
+	TH1F* R=new TH1F(Form("R_%s", typelabel.c_str()), Form("#Delta R_{12} between compotents in jet from %s; #Delta R_{12}; < N >", typelabel.c_str()), nbins, -0.05, maxR);
+	TH1F* R_geom=new TH1F(Form("R_%s_geom", typelabel.c_str()), Form("#Delta R_{12} between canidate geometry in jet from %s; #Delta R_{12}; < N >", typelabel.c_str()), nbins, -0.05, maxR);
 	TH1F* E=new TH1F(Form("e_%s", typelabel.c_str()), Form("Jet energy from %s; E [GeV]; N_{jet}", typelabel.c_str()), 5000, -0.5, 49.5); 
 	TH1F* N=new TH1F(Form("n_%s", typelabel.c_str()), Form("N compoents from %s; N_{components}; N_{jet}", typelabel.c_str()), 50, -0.5, 49.5); 
 	TH1F* pt=new TH1F(Form("pt_%s", typelabel.c_str()), Form("Jet transverse energy from %s; p_{T} [GeV]; N_{jet}", typelabel.c_str()), 5000, -0.5, 49.5); 
