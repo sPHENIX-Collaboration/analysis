@@ -3,6 +3,8 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllUtils.h>
+#include <ffamodules/CDBInterface.h>
 #include <phool/recoConsts.h>
 
 #include <GlobalVariables.C>
@@ -21,6 +23,17 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libneutralMesonTSSA.so)
 
+std::string GetFirstFile(const char* filelist)
+{
+  std::string firstfile = "";
+  ifstream in(filelist);
+  if (in.good())
+  {
+    std::getline(in, firstfile);
+  }
+  return firstfile;
+}
+
 void Fun4All_neutralMesonTSSA(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
@@ -35,10 +48,15 @@ void Fun4All_neutralMesonTSSA(
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);  // set it to 1 if you want event printouts
+  CDBInterface::instance()->Verbosity(1);
 
+  // conditions DB flags and timestamp
   recoConsts *rc = recoConsts::instance();
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
-  rc->set_uint64Flag("TIMESTAMP", 0);
+  std::string firstfile = GetFirstFile(filelist1);
+  pair<int, int> runseg = Fun4AllUtils::GetRunSegment(firstfile);
+  int runnumber = runseg.first;
+  rc->set_uint64Flag("TIMESTAMP", runnumber);
 
   Fun4AllInputManager *inCluster = new Fun4AllDstInputManager("DSTCaloCluster");
   std::cout << "Adding file list " << filelist1 << std::endl;

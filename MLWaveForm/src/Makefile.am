@@ -12,6 +12,7 @@ AM_LDFLAGS = \
 
 pkginclude_HEADERS = \
   WaveForm.h \
+  WaveFormNtuple.h \
   WaveFormPacket.h
 
 lib_LTLIBRARIES = \
@@ -19,6 +20,7 @@ lib_LTLIBRARIES = \
 
 libWaveForm_la_SOURCES = \
   WaveForm.cc \
+  WaveFormNtuple.cc \
   WaveFormPacket.cc
 
 libWaveForm_la_LIBADD = \

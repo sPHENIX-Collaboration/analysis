@@ -7,7 +7,6 @@
 #include <g4main/Fun4AllDstPileupInputManager.h>
 
 #include <G4_Magnet.C>
-#include <G4_Tracking.C>
 #include <QA.C>
 #include <G4_Global.C>
 #include <FROG.h>
@@ -140,35 +139,6 @@ void Fun4All_MDC2reco(vector<string> myInputLists = {"condorJob/fileLists/produc
     myFinder->setEtaRange(-10., 10.); //Note: sPHENIX acceptance is |eta| <= 1.1
     se->registerSubsystem(myFinder);
   }
-
-  //Run the tracking if not already done
-  if (HFjets::Enable::runTracking)
-  {
-    Enable::MICROMEGAS=true;
-
-    G4MAGNET::magfield_rescale = 1.;
-    MagnetInit();
-    MagnetFieldInit();
-
-    Mvtx_Cells();
-    Intt_Cells();
-    TPC_Cells();
-    Micromegas_Cells();
-
-    TrackingInit();
-
-    Mvtx_Clustering();
-    Intt_Clustering();
-    TPC_Clustering();
-    Micromegas_Clustering();
-
-    Tracking_Reco();
-  }
-
-  // Commenting out these 3 lines, as the tables seem to be outdated for this analysis package
-  //SvtxTruthRecoTableEval *tables = new SvtxTruthRecoTableEval();
-  //tables->Verbosity(verbosity);
-  //se->registerSubsystem(tables);
 
   Global_Reco();
 

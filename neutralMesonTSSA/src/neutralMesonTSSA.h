@@ -24,7 +24,7 @@ class BinnedHistSet;
 class Diphoton
 {
   public:
-    float mass, E, eta, phi, pT, xF;
+    float mass, E, eta, phi, pT, xF, vtxz;
     /* Diphoton() {} */
     /* ~Diphoton() {} */
 };
@@ -34,6 +34,8 @@ class PhiHists
   public:
     BinnedHistSet *phi_pT, *phi_pT_blue_up, *phi_pT_blue_down, *phi_pT_yellow_up, *phi_pT_yellow_down;
     BinnedHistSet *phi_xF, *phi_xF_blue_up, *phi_xF_blue_down, *phi_xF_yellow_up, *phi_xF_yellow_down;
+    BinnedHistSet *phi_eta, *phi_eta_blue_up, *phi_eta_blue_down, *phi_eta_yellow_up, *phi_eta_yellow_down;
+    BinnedHistSet *phi_vtxz, *phi_vtxz_blue_up, *phi_vtxz_blue_down, *phi_vtxz_yellow_up, *phi_vtxz_yellow_down;
     /* PhiHists() {} */
     /* ~PhiHists() {} */
 };
@@ -142,16 +144,26 @@ class neutralMesonTSSA : public SubsysReco
   float polYellow = 0;
 
   // cluster distributions
+  TH1* h_nClusters = nullptr;
+  TH1* h_nGoodClusters = nullptr;
+  TH1* h_vtxz = nullptr;
   TH1* h_clusterE = nullptr;
   TH1* h_clusterEta = nullptr;
+  TH2* h_clusterEta_vtxz = nullptr;
   TH1* h_clusterPhi = nullptr;
   TH2* h_clusterEta_Phi = nullptr;
   TH1* h_clusterpT = nullptr;
   TH1* h_clusterxF = nullptr;
+  TH2* h_clusterpT_xF = nullptr;
   TH1* h_clusterChi2 = nullptr;
   TH1* h_clusterChi2zoomed = nullptr;
+  TH1* h_mesonClusterChi2 = nullptr;
+  TH2* h_goodClusterEta_Phi = nullptr;
 
   // diphoton distributions
+  TH1* h_nDiphotons = nullptr;
+  TH1* h_nRecoPi0s = nullptr;
+  TH1* h_nRecoEtas = nullptr;
   TH1* h_diphotonMass = nullptr;
   BinnedHistSet* bhs_diphotonMass_pT = nullptr;
   BinnedHistSet* bhs_diphotonMass_xF = nullptr;
@@ -160,7 +172,7 @@ class neutralMesonTSSA : public SubsysReco
 
   // clusters and cuts
   float min_clusterE = 1.0;
-  float max_clusterE = 8.0;
+  float max_clusterE = 9.0;
   float max_clusterChi2 = 4.0;
   std::vector<float>* goodclusters_E = nullptr;
   std::vector<float>* goodclusters_Eta = nullptr;
@@ -194,26 +206,36 @@ class neutralMesonTSSA : public SubsysReco
 
   // phi histograms for asymmetries
   const float PI = 3.141592;
-  int nBins_pT = 6;
-  float bhs_max_pT = 8.0;
-  int nBins_xF = 6;
+  int nBins_pT = 8;
+  float bhs_max_pT = 12.0;
+  int nBins_xF = 8;
   float bhs_max_xF = 0.15;
   int nHistBins_phi = 16;
-  PhiHists* pi0Hists= nullptr;
-  PhiHists* etaHists= nullptr;
-  PhiHists* pi0BkgrHists= nullptr;
-  PhiHists* etaBkgrHists= nullptr;
+  PhiHists* pi0Hists = nullptr;
+  PhiHists* etaHists = nullptr;
+  PhiHists* pi0BkgrHists = nullptr;
+  PhiHists* etaBkgrHists = nullptr;
+  PhiHists* pi0Hists_lowEta = nullptr;
+  PhiHists* etaHists_lowEta = nullptr;
+  PhiHists* pi0BkgrHists_lowEta = nullptr;
+  PhiHists* etaBkgrHists_lowEta = nullptr;
+  PhiHists* pi0Hists_highEta = nullptr;
+  PhiHists* etaHists_highEta = nullptr;
+  PhiHists* pi0BkgrHists_highEta = nullptr;
+  PhiHists* etaBkgrHists_highEta = nullptr;
 
   // counters for events
   long int n_events_total = 0;
   bool mbdNtrigger = false;
   bool mbdStrigger = false;
   bool mbdtrigger = false;
+  bool photontrigger = false;
   long int mbdcoinc_withoutNandS = 0;
   long int n_events_mbdtrigger = 0;
   long int n_events_mbdtrigger_vtx1 = 0;
   long int n_events_mbdtrigger_vtx2 = 0;
   long int n_events_mbdtrigger_vtx3 = 0;
+  long int n_events_photontrigger = 0;
   bool mbdvertex = false;
   bool globalvertex = false;
   long int n_events_mbdvtx_first1k = 0;

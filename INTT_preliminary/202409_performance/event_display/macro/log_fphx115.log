@@ -1,0 +1,27 @@
+   ------------------------------------------------------------------
+  | Welcome to ROOT 6.26/06                        https://root.cern |
+  | (c) 1995-2021, The ROOT Team; conception: R. Brun, F. Rademakers |
+  | Built for linuxx8664gcc on Jul 28 2022, 18:08:51                 |
+  | From tags/v6-26-06@v6-26-06                                      |
+  | With g++ (GCC) 12.1.0                                            |
+  | Try '.help', '.demo', '.license', '.credits', '.quit'/'.q'       |
+   ------------------------------------------------------------------
+
+
+Processing Read_DST.C( 50889, 0, 115 )...
+ActsGeomInit: Use survey geometry? ACTSGEOM::inttsurvey=1
+Registering Subsystem MakeActsGeometry
+InttXYVertexFinder::InttXYVertexFinder(const std::string &name) Calling ctor
+InttXYVertexFinder::Init(PHCompositeNode *topNode) Initializing
+Registering Subsystem InttXYVertexFinder
+InttZVertexFinder::InttZVertexFinder(const std::string &name) Calling ctor
+InttZVertexFinder::Init(PHCompositeNode *topNode) Initializing
+Registering Subsystem InttZVertexFinder
+Registering Subsystem GlobalVertexReco
+Beginning Init in InttAna
+Registering Subsystem InttAna
+Fun4AllServer: Runnumber forced to 50889 by RUNNUMBER IntFlag
+Fun4AllServer::End: End for MakeActsGeometry
+Fun4AllServer::End: End for InttXYVertexFinder
+INTTXYvtx is not initialized, abort in PrintPlots
+0

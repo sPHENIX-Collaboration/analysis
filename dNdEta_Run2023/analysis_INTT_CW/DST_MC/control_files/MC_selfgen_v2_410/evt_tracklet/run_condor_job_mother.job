@@ -1,0 +1,17 @@
+Universe           = vanilla
+Initialdir         = /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/MC_selfgen_v2_410/evt_tracklet/condor_outputs
+Executable         = /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/MC_selfgen_v2_410/evt_tracklet/run_root_sub_the_file_number.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 172800
+nEvents            = NEVENTS
+InputfilelistIdx   = INPUTFILELISTIDX
+FileName           = FILENAME
+skipEvt            = 0
+Output             = /sphenix/user/ChengWei/sPH_dNdeta/self_gen_singleMu_v2/complete_file/evt_tracklet/CW_log/condor_the_file_number.out
+Error              = /sphenix/user/ChengWei/sPH_dNdeta/self_gen_singleMu_v2/complete_file/evt_tracklet/CW_log/condor_the_file_number.err
+Log                = /sphenix/user/ChengWei/sPH_dNdeta/self_gen_singleMu_v2/complete_file/evt_tracklet/CW_log/condor_the_file_number.log
+Arguments          = "$(nEvents) $(InputfilelistIdx) $(FileName) $(skipEvt)"
+Queue 1
+

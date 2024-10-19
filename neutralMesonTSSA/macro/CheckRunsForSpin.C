@@ -79,7 +79,8 @@ int ReadSpinDB(int runnumber, unsigned int qa_level)
   ////////////////////////////////////////////////////
 
   if (bluespin[0] == -999) return false;
-  else return true;
+  if (badrun) return false;
+  return true;
 
 }
 
