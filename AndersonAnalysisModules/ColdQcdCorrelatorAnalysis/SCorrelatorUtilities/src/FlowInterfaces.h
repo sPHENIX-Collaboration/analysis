@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'FlowInterfaces.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Particle flow-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   FlowInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Particle flow-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_FLOWINTERFACES_H
 #define SCORRELATORUTILITIES_FLOWINTERFACES_H

@@ -1,24 +1,36 @@
-// ----------------------------------------------------------------------------
-// 'GenTools.cc'
-// Derek Anderson
-// 03.06.2024
-//
-// Collection of frequent event-level generator methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   GEvtTools.cc
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Collection of frequent event-level generator methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
-#define SCORRELATORUTILITIES_GENTOOLS_CC
+#define SCORRELATORUTILITIES_GEVTTOOLS_CC
 
 // namespace definition
-#include "GenTools.h"
+#include "GEvtTools.h"
 
 // make common namespaces implicit
 using namespace std;
 
 
 
+// event-level generator methods ==============================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Get total number of final state particles
+  // --------------------------------------------------------------------------
+  /*! A specific subset can specified by the
+   *  subset identifier (Const::Subset).
+   *  Optionally, a specific charge can be
+   *  specified to get the total number of
+   *  final state particles with that charge.
+   */
   int64_t Tools::GetNumFinalStatePars(
     PHCompositeNode* topNode,
     const vector<int> evtsToGrab,
@@ -83,6 +95,15 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get sum of energy for all final state particles
+  // --------------------------------------------------------------------------
+  /*! A specific subset can specified by the
+   *  subset identifier (Const::Subset).
+   *  Optionally, a specific charge can be
+   *  specified to get the total number of
+   *  final state particles with that charge.
+   */
   double Tools::GetSumFinalStateParEne(
     PHCompositeNode* topNode,
     const vector<int> evtsToGrab,
@@ -147,7 +168,14 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  Types::ParInfo Tools::GetPartonInfo(PHCompositeNode* topNode, const int event, const int status) {
+  // --------------------------------------------------------------------------
+  //! Pull information of a parton with a specified status from a subevent
+  // --------------------------------------------------------------------------
+  Types::ParInfo Tools::GetPartonInfo(
+    PHCompositeNode* topNode,
+    const int event,
+    const int status
+  ) {
 
     // pick out relevant sub-sevent to grab
     HepMC::GenEvent* genEvt = Interfaces::GetGenEvent(topNode, event);

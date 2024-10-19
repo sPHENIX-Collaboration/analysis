@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'NodeInterfaces.cc'
-// Derek Anderson
-// 03.05.2024
-//
-// F4A node-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   NodeInterfaces.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  F4A node-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_NODEINTERFACES_CC
 
@@ -17,9 +18,13 @@ using namespace findNode;
 
 
 
+// node interfaces ============================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
-  // remove forbidden characters from a node name
+  // --------------------------------------------------------------------------
+  //! Remove forbidden characters from a node name
+  // --------------------------------------------------------------------------
   void Interfaces::CleanseNodeName(string& nameToClean) {
 
     for (const auto& [bad, good] : Const::MapBadOntoGoodStrings()) {
@@ -34,9 +39,13 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // generic methods ----------------------------------------------------------
-
-  template <typename T> void Interfaces::CreateNode(PHCompositeNode* topNode, string newNodeName, T& objectInNode) {
+  // --------------------------------------------------------------------------
+  //! Create node
+  // --------------------------------------------------------------------------
+  template <typename T> void Interfaces::CreateNode(
+    PHCompositeNode* topNode,
+    string newNodeName, T& objectInNode
+  ) {
 
     // make sure node name is okay
     CleanseNodeName(newNodeName);

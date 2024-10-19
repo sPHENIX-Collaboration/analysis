@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'ClustInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// Calorimeter-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ClustInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Calorimeter cluster-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_CLUSTINTERFACES_H
 #define SCORRELATORUTILITIES_CLUSTINTERFACES_H
@@ -21,7 +22,7 @@
 #include <phool/PHIODataNode.h>
 #include <phool/PHNodeIterator.h>
 #include <phool/PHCompositeNode.h>
-// CalooBase libraries
+// CaloBase libraries
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterUtility.h>
 #include <calobase/RawClusterContainer.h>
@@ -45,4 +46,3 @@ namespace SColdQcdCorrelatorAnalysis {
 #endif
 
 // end ------------------------------------------------------------------------
-

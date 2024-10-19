@@ -1,14 +1,15 @@
-// ----------------------------------------------------------------------------
-// 'RecoTools.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Collection of frequent event-level reconstruction methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   REvtTools.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Collection of frequent event-level reconstruction methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
-#ifndef SCORRELATORUTILITIES_RECOTOOLS_H
-#define SCORRELATORUTILITIES_RECOTOOLS_H
+#ifndef SCORRELATORUTILITIES_REVTTOOLS_H
+#define SCORRELATORUTILITIES_REVTTOOLS_H
 
 // c++ utilities
 #include <cmath>
@@ -38,7 +39,7 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Tools {
 
-    // reco tools -------------------------------------------------------------
+    // event-level reconstructed tools ----------------------------------------
 
     int64_t GetNumTrks(PHCompositeNode* topNode);
     double  GetSumTrkMomentum(PHCompositeNode* topNode);
@@ -50,4 +51,3 @@ namespace SColdQcdCorrelatorAnalysis {
 #endif
 
 // end ------------------------------------------------------------------------
-

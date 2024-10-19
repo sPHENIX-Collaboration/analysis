@@ -1,14 +1,15 @@
-// ----------------------------------------------------------------------------
-// 'GenInfo.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Utility class to hold event-level generator
-// information.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   GEvtInfo.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Utility class to hold event-level generator
+ *  information.
+ */
+/// ---------------------------------------------------------------------------
 
-#ifndef SCORRELATORUTILITIES_GENINFO_H
-#define SCORRELATORUTILITIES_GENINFO_H
+#ifndef SCORRELATORUTILITIES_GEVTINFO_H
+#define SCORRELATORUTILITIES_GEVTINFO_H
 
 // c++ utilities
 #include <limits>
@@ -33,23 +34,28 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // GenInfo definition -----------------------------------------------------
-
-    class GenInfo {
+    // ------------------------------------------------------------------------
+    //! Event-level generator info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate event-level
+     *  generator (truth) information. Can
+     *  be built by pointing class to a
+     *  F4A node and providing a list of
+     *  subevents to process.
+     */ 
+    class GEvtInfo {
 
       private:
 
-        // atomic data members
-        int    nChrgPar = numeric_limits<int>::max();
-        int    nNeuPar  = numeric_limits<int>::max();
-        bool   isEmbed  = false;
-        double eSumChrg = numeric_limits<double>::max();
-        double eSumNeu  = numeric_limits<double>::max();
-
-        // hard scatter products
+        // data members
+        int                    nChrgPar = numeric_limits<int>::max();
+        int                    nNeuPar  = numeric_limits<int>::max();
+        bool                   isEmbed  = false;
+        double                 eSumChrg = numeric_limits<double>::max();
+        double                 eSumNeu  = numeric_limits<double>::max();
         pair<ParInfo, ParInfo> partons;
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 
@@ -81,17 +87,17 @@ namespace SColdQcdCorrelatorAnalysis {
         static vector<string> GetListOfMembers();
 
         // default ctor/dtor
-        GenInfo();
-        ~GenInfo();
+        GEvtInfo();
+        ~GEvtInfo();
 
-        // ctor accepting PHCompositeNode* and list of subevents
-        GenInfo(const Const::Init init);
-        GenInfo(PHCompositeNode* topNode, const bool embed, vector<int> evtsToGrab);
+        // ctors accepting arguments
+        GEvtInfo(const Const::Init init);
+        GEvtInfo(PHCompositeNode* topNode, const bool embed, vector<int> evtsToGrab);
 
       // identify this class to ROOT
-      ClassDefNV(GenInfo, 1);
+      ClassDefNV(GEvtInfo, 1);
 
-    };  // end GenInfo definition
+    };  // end GEvtInfo definition
 
   }  // end Types namespace
 }  // end SColdQcdCorrelatorAnalysis namespace

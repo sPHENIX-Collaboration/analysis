@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'ParTools.cc'
-// Derek Anderson
-// 03.06.2024
-//
-// Particle-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ParTools.cc
+ *  \author Derek Anderson
+ *  \file   03.06.2024
+ *
+ *  Particle-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_PARINTERFACES_CC
 
@@ -17,8 +18,13 @@ using namespace findNode;
 
 
 
+// particle interfaces ========================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Get PHG4Particle container
+  // --------------------------------------------------------------------------
   PHG4TruthInfoContainer* Interfaces::GetTruthContainer(PHCompositeNode* topNode) {
 
     PHG4TruthInfoContainer* container = getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -34,6 +40,21 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get primary particles from PHG4Particle container
+  // --------------------------------------------------------------------------
+  PHG4TruthInfoContainer::ConstRange Interfaces::GetPrimaries(PHCompositeNode* topNode) {
+
+    PHG4TruthInfoContainer* particles = GetTruthContainer(topNode);
+    return particles -> GetPrimaryParticleRange();
+
+  }  // end 'GetPrimaries(PHCompositeNode*)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Get map of HepMC events
+  // --------------------------------------------------------------------------
   PHHepMCGenEventMap* Interfaces::GetMcEventMap(PHCompositeNode* topNode) {
 
     PHHepMCGenEventMap* mapMcEvts = getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
@@ -49,6 +70,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get a specific HepMC event
+  // --------------------------------------------------------------------------
   PHHepMCGenEvent* Interfaces::GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
 
     PHHepMCGenEventMap* mcEvtMap = GetMcEventMap(topNode);
@@ -65,6 +89,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get the corresponding GenEvt object from a specific HepMC event
+  // --------------------------------------------------------------------------
   HepMC::GenEvent* Interfaces::GetGenEvent(PHCompositeNode* topNode, const int iEvtToGrab) {
 
     PHHepMCGenEvent* mcEvt  = GetMcEvent(topNode, iEvtToGrab);

@@ -1,17 +1,17 @@
 /// ---------------------------------------------------------------------------
-/*! \file   ClustInfo.cc
+/*! \file   TwrInfo.cc
  *  \author Derek Anderson
- *  \date   03.01.2024
+ *  \date   08.04.2024
  *
  *  Utility class to hold information from
  *  calorimeter clusters.
  */
 /// ---------------------------------------------------------------------------
 
-#define SCORRELATORUTILITIES_CLUSTINFO_CC
+#define SCORRELATORUTILITIES_TWRINFO_CC
 
 // class definition
-#include "ClustInfo.h"
+#include "TwrInfo.h"
 
 // make comon namespaces implicit
 using namespace std;
@@ -25,11 +25,12 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Set data members to absolute minima
   // --------------------------------------------------------------------------
-  void Types::ClustInfo::Minimize() {
+  void Types::TwrInfo::Minimize() {
 
     system  = -1 * numeric_limits<int>::max();
+    status  = -1 * numeric_limits<int>::max();
+    channel = -1 * numeric_limits<int>::max();
     id      = -1 * numeric_limits<int>::max();
-    nTwr    = -1 * numeric_limits<int>::max();
     ene     = -1. * numeric_limits<double>::max();
     rho     = -1. * numeric_limits<double>::max();
     eta     = -1. * numeric_limits<double>::max();
@@ -49,11 +50,12 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Set data members to absolute maxima
   // --------------------------------------------------------------------------
-  void Types::ClustInfo::Maximize() {
+  void Types::TwrInfo::Maximize() {
 
     system  = numeric_limits<int>::max();
+    status  = numeric_limits<int>::max();
+    channel = numeric_limits<int>::max();
     id      = numeric_limits<int>::max();
-    nTwr    = numeric_limits<int>::max();
     ene     = numeric_limits<double>::max();
     rho     = numeric_limits<double>::max();
     eta     = numeric_limits<double>::max();
@@ -75,7 +77,7 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Reset object by maximizing data members
   // --------------------------------------------------------------------------
-  void Types::ClustInfo::Reset() {
+  void Types::TwrInfo::Reset() {
 
     Maximize();
     return;
@@ -85,9 +87,14 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
   // --------------------------------------------------------------------------
-  //! Pull relevant information from a F4A RawCluster
+  //! Pull relevant information from a F4A RawTower
   // --------------------------------------------------------------------------
-  void Types::ClustInfo::SetInfo(const RawCluster* clust, optional<ROOT::Math::XYZVector> vtx, optional<int> sys) {
+  void Types::TwrInfo::SetInfo(
+    const int sys,
+    const RawTower* tower,
+    PHCompositeNode* topNode,
+    optional<ROOT::Math::XYZVector> vtx
+  ) {
 
     // if no vertex provided, use origin
     ROOT::Math::XYZVector vtxToUse(0., 0., 0.);
@@ -95,59 +102,146 @@ namespace SColdQcdCorrelatorAnalysis {
       vtxToUse = vtx.value();
     }
 
-    // if subsystem ID provided, set data member
-    if (sys.has_value()) {
-      system = sys.value();
-    }
+    // grab raw key for geometry
+    const int rawKey = tower -> get_key();
 
-    // grab position
-    ROOT::Math::XYZVector position(
-      clust -> get_position().x(),
-      clust -> get_position().y(),
-      clust -> get_position().z()
+    // grab position in (x, y, z)
+    ROOT::Math::XYZVector xyzPos = Tools::GetTowerPositionXYZ(
+      rawKey,
+      sys,
+      topNode
+    );
+
+    // grab position in (rho, eta, phi)
+    ROOT::Math::RhoEtaPhiVector rhfPos = Tools::GetTowerPositionRhoEtaPhi(
+      rawKey,
+      sys,
+      vtxToUse.z(),
+      topNode
     );
 
     // grab momentum
-    ROOT::Math::PxPyPzEVector momentum = Tools::GetClustMomentum(clust -> get_energy(), position, vtxToUse);
+    ROOT::Math::PxPyPzEVector momentum = Tools::GetTowerMomentum(
+      tower -> get_energy(),
+      rhfPos
+    );
 
     // set remaining members
-    id   = clust -> get_id();
-    nTwr = clust -> getNTowers();
-    ene  = clust -> get_energy();
-    rho  = clust -> get_r();
-    eta  = momentum.Eta();
-    phi  = momentum.Phi();
-    px   = momentum.Px();
-    py   = momentum.Py();
-    pz   = momentum.Pz();
-    rx   = position.X();
-    ry   = position.Y();
-    rz   = position.Z();
+    system  = sys;
+    status  = Const::TowerStatus::NA;
+    id      = rawKey;
+    ene     = tower -> get_energy();
+    rho     = rhfPos.Rho();
+    eta     = rhfPos.Eta();
+    phi     = rhfPos.Phi();
+    px      = momentum.Px();
+    py      = momentum.Py();
+    pz      = momentum.Pz();
+    rx      = xyzPos.x();
+    ry      = xyzPos.y();
+    rz      = xyzPos.z();
     return;
 
-  }  // end 'SetInfo(RawCluster*, optional<ROOT::Math::XYZVector>, optional<int>)'
+  }  // end 'SetInfo(int, RawTower*, PHCompositeNode*, optional<ROOT::Math::XYZVector>)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A TowerInfo
+  // --------------------------------------------------------------------------
+  void Types::TwrInfo::SetInfo(
+    const int sys,
+    const int chan,
+    TowerInfo* tower,
+    PHCompositeNode* topNode, 
+    optional<ROOT::Math::XYZVector> vtx
+  ) {
+
+    // if no vertex provided, use origin
+    ROOT::Math::XYZVector vtxToUse(0., 0., 0.);
+    if (vtx.has_value()) {
+      vtxToUse = vtx.value();
+    }
+
+    // get raw tower key 
+    const auto indices = Tools::GetTowerIndices(chan, sys, topNode);
+    const int  rawKey  = Tools::GetRawTowerKey(Const::MapIndexOntoID()[ sys ], indices);
+
+    // grab position in (x, y, z)
+    ROOT::Math::XYZVector xyzPos = Tools::GetTowerPositionXYZ(
+      rawKey,
+      sys,
+      topNode
+    );
+
+    // grab position in (rho, eta, phi)
+    ROOT::Math::RhoEtaPhiVector rhfPos = Tools::GetTowerPositionRhoEtaPhi(
+      rawKey,
+      sys,
+      vtxToUse.z(),
+      topNode
+    );
+
+    // grab momentum
+    ROOT::Math::PxPyPzEVector momentum = Tools::GetTowerMomentum(
+      tower -> get_energy(),
+      rhfPos
+    );
+
+    // set remaining members
+    system  = sys;
+    status  = Tools::GetTowerStatus(tower);
+    channel = chan;
+    id      = get<0>(indices);
+    ene     = tower -> get_energy();
+    rho     = rhfPos.Rho();
+    eta     = rhfPos.Eta();
+    phi     = rhfPos.Phi();
+    px      = momentum.Px();
+    py      = momentum.Py();
+    pz      = momentum.Pz();
+    rx      = xyzPos.x();
+    ry      = xyzPos.y();
+    rz      = xyzPos.z();
+    return;
+
+  }  // end 'SetInfo(int, int, TowerInfo*, PHCompositeNode*, optional<ROOT::Math::XYZVector>)'
 
 
 
   // --------------------------------------------------------------------------
   //! Check if object is within provided bounds (explicit minimum, maximum)
   // --------------------------------------------------------------------------
-  bool Types::ClustInfo::IsInAcceptance(const ClustInfo& minimum, const ClustInfo& maximum) const {
+  bool Types::TwrInfo::IsInAcceptance(const TwrInfo& minimum, const TwrInfo& maximum) const {
 
     return ((*this >= minimum) && (*this <= maximum));
 
-  }  // end 'IsInAcceptance(ClustInfo&, ClustInfo&)'
+  }  // end 'IsInAcceptance(TwrInfo&, TwrInfo&)'
 
 
 
   // --------------------------------------------------------------------------
   //! Check if object is within provided bounds (set by pair)
   // --------------------------------------------------------------------------
-  bool Types::ClustInfo::IsInAcceptance(const pair<ClustInfo, ClustInfo>& range) const {
+  bool Types::TwrInfo::IsInAcceptance(const pair<TwrInfo, TwrInfo>& range) const {
 
     return ((*this >= range.first) && (*this <= range.second));
 
-  }  // end 'IsInAcceptance(pair<ClustInfo, ClustInfo>&)'
+  }  // end 'IsInAcceptance(pair<TwrInfo, TwrInfo>&)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Check if tower is good
+  // --------------------------------------------------------------------------
+  bool Types::TwrInfo::IsGood() const {
+
+    return (
+      (status == Const::TowerStatus::Good) ||
+      (status == Const::TowerStatus::NA)
+    );
+
+  }  // end 'IsGood()'
 
 
 
@@ -156,12 +250,13 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Get list of data fields
   // --------------------------------------------------------------------------
-  vector<string> Types::ClustInfo::GetListOfMembers() {
+  vector<string> Types::TwrInfo::GetListOfMembers() {
 
     vector<string> members = {
       "system",
+      "status",
+      "channel",
       "id",
-      "nTwr",
       "ene",
       "rho",
       "eta",
@@ -184,11 +279,10 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Overloaded less-than comparison
   // --------------------------------------------------------------------------
-  bool Types::operator <(const ClustInfo& lhs, const ClustInfo& rhs) {
+  bool Types::operator <(const TwrInfo& lhs, const TwrInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
     const bool isLessThan = (
-      (lhs.nTwr < rhs.nTwr) &&
       (lhs.ene  < rhs.ene)  &&
       (lhs.rho  < rhs.rho)  &&
       (lhs.eta  < rhs.eta)  &&
@@ -202,18 +296,17 @@ namespace SColdQcdCorrelatorAnalysis {
     );
     return isLessThan;
 
-  }  // end 'operator <(ClustInfo&, ClustInfo&) const'
+  }  // end 'operator <(TwrInfo&, TwrInfo&) const'
 
 
 
   // --------------------------------------------------------------------------
   //! Overloaded greater-than comparison
   // --------------------------------------------------------------------------
-  bool Types::operator >(const ClustInfo& lhs, const ClustInfo& rhs) {
+  bool Types::operator >(const TwrInfo& lhs, const TwrInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
     const bool isGreaterThan = (
-      (lhs.nTwr > rhs.nTwr) &&
       (lhs.ene  > rhs.ene)  &&
       (lhs.rho  > rhs.rho)  &&
       (lhs.eta  > rhs.eta)  &&
@@ -227,18 +320,17 @@ namespace SColdQcdCorrelatorAnalysis {
     );
     return isGreaterThan;
 
-  }  // end 'operator >(ClustInfo&, ClustInfo&)'
+  }  // end 'operator >(TwrInfo&, TwrInfo&)'
 
 
 
   // --------------------------------------------------------------------------
   //! Overloaded less-than-or-equal-to comparison
   // --------------------------------------------------------------------------
-  bool Types::operator <=(const ClustInfo& lhs, const ClustInfo& rhs) {
+  bool Types::operator <=(const TwrInfo& lhs, const TwrInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
     const bool isLessThanOrEqualTo = (
-      (lhs.nTwr <= rhs.nTwr) &&
       (lhs.ene  <= rhs.ene)  &&
       (lhs.rho  <= rhs.rho)  &&
       (lhs.eta  <= rhs.eta)  &&
@@ -252,18 +344,17 @@ namespace SColdQcdCorrelatorAnalysis {
     );
     return isLessThanOrEqualTo;
 
-  }  // end 'operator <=(ClustInfo&, ClustInfo&) const'
+  }  // end 'operator <=(TwrInfo&, TwrInfo&) const'
 
 
 
   // --------------------------------------------------------------------------
   //! Overloaded greater-than-or-equal-to comparison
   // --------------------------------------------------------------------------
-  bool Types::operator >=(const ClustInfo& lhs, const ClustInfo& rhs) {
+  bool Types::operator >=(const TwrInfo& lhs, const TwrInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
     const bool isGreaterThanOrEqualTo = (
-      (lhs.nTwr >= rhs.nTwr) &&
       (lhs.ene  >= rhs.ene)  &&
       (lhs.rho  >= rhs.rho)  &&
       (lhs.eta  >= rhs.eta)  &&
@@ -277,7 +368,7 @@ namespace SColdQcdCorrelatorAnalysis {
     );
     return isGreaterThanOrEqualTo;
 
-  }  // end 'operator >=(ClustInfo&, ClustInfo&)'
+  }  // end 'operator >=(TwrInfo&, TwrInfo&)'
 
 
 
@@ -286,7 +377,7 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Default class constructor
   // --------------------------------------------------------------------------
-  Types::ClustInfo::ClustInfo() {
+  Types::TwrInfo::TwrInfo() {
 
      /* nothing to do */
 
@@ -297,7 +388,7 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Default class destructor
   // --------------------------------------------------------------------------
-  Types::ClustInfo::~ClustInfo() {
+  Types::TwrInfo::~TwrInfo() {
 
     /* nothing to do */
 
@@ -308,7 +399,7 @@ namespace SColdQcdCorrelatorAnalysis {
   // --------------------------------------------------------------------------
   //! Constructor accepting initialization option (minimize or maximize)
   // --------------------------------------------------------------------------
-  Types::ClustInfo::ClustInfo(const Const::Init init) {
+  Types::TwrInfo::TwrInfo(const Const::Init init) {
 
     switch (init) {
       case Const::Init::Minimize:
@@ -327,13 +418,35 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
   // --------------------------------------------------------------------------
-  //! Constructor accepting a F4A RawCluster and possibly a vertex
+  //! Constructor accepting a F4A RawTower
   // --------------------------------------------------------------------------
-  Types::ClustInfo::ClustInfo(const RawCluster* clust, optional<ROOT::Math::XYZVector> vtx, optional<int> sys) {
+  Types::TwrInfo::TwrInfo(
+    const int sys,
+    const RawTower* tower,
+    PHCompositeNode* topNode,
+    optional<ROOT::Math::XYZVector> vtx
+  ) {
 
-    SetInfo(clust, vtx, sys);
+    SetInfo(sys, tower, topNode, vtx);
 
-  }  // end ctor(RawCluster*, optional<ROOT::Math::XYZVector>, optional<int>)'
+  }  // end ctor(int, RawTower*, PHCompositeNode*, optional<ROOT::Math::XYZVector>)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A TowerInfo
+  // --------------------------------------------------------------------------
+  Types::TwrInfo::TwrInfo(
+    const int sys,
+    const int chan,
+    TowerInfo* tower,
+    PHCompositeNode* topNode,
+    optional<ROOT::Math::XYZVector> vtx
+  ) {
+
+    SetInfo(sys, chan, tower, topNode, vtx);
+
+  }  // end ctor(int, int, TowerInfo*, PHCompositeNode*, optional<ROOT::Math::XYZVector>)'
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 
