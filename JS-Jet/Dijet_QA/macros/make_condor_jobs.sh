@@ -17,9 +17,9 @@ for i in $(seq 0 ${nFile}); do
 	echo "Universe 	= vanilla " > $fname
 	echo "Executable 	= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/macros/GenerateDijetQA.sh " >>$fname
 	echo "Arguments       	= ${truthj} $nRun $i">> $fname 
-	echo "Output  		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/CalorimeterTowerENC/macros/condor_files/condor_${i}.out " >> $fname
-	echo "Error 		=/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/CalorimeterTowerENC/macros/condor_files/condor_${i}.err " >> $fname
-	echo "Log  		=/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/CalorimeterTowerENC/macros/condor_files/condor_${i}.log" >> $fname
+	echo "Output  		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/macros/condor_files/condor_${i}.out " >> $fname
+	echo "Error 		=/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/macros/condor_files/condor_${i}.err " >> $fname
+	echo "Log  		=/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/macros/condor_files/condor_${i}.log" >> $fname
 	echo "Initialdir  	= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/JS-Jet/Dijet_QA/root_output" >> $fname
 	echo "PeriodicHold 	= (NumJobStarts>=1 && JobStatus == 1)" >>$fname
 	echo "accounting_group = group_phenix.u " >> $fname

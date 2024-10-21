@@ -91,7 +91,12 @@ DijetQA::DijetQA(const std::string run_number, const std::string segment_number,
  , m_etasl(-1)
  , m_deltaeta(-1)
 {
-  std::cout << "DijetQA::DijetQA(const std::string &name) Calling ctor" << std::endl;
+	std::cout << "DijetQA::DijetQA(const std::string &name) Calling ctor" << std::endl;
+	int n=0.; 
+	try{ n=std::stoi(run_number); }
+	catch(std::exception& e){};
+	if(n < 100) m_recoJetName="AntiKt_Truth_r04";
+	else m_recoJetName="AntiKt_Tower_r04";
 }
 
 //____________________________________________________________________________..
@@ -126,6 +131,11 @@ int DijetQA::Init(PHCompositeNode *topNode)
 	h_pt=new TH1F("h_pt", "p_{T} for leading jets in identified pairs; p_{T} [GeV]; N_{jet}", 70, -0.5, 69.5);
 	h_Ajj_pt=new TH2F("h_Ajj_pt", "A_{jj} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; A_{jj}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
 	h_xj_pt=new TH2F("h_xj_pt", "x_{j} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; x_{j}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
+	h_Ajj_l=new TH1F("h_Ajj_l", "A_{jj} for event leading jet pairs; A_{jj}; N_{pairs}", 100, -0.005, 0.995);
+	h_xj_l=new TH1F("h_xj_l", "x_{j} for event leading jet pairs; x_{j}; N_{pairs}", 100, -0.005, 0.995);
+	h_pt_l=new TH1F("h_pt_l", "p_{T} for leading jets in event leading pair; p_{T} [GeV]; N_{jet}", 70, -0.5, 69.5);
+	h_Ajj_pt_l=new TH2F("h_Ajj_pt_l", "A_{jj} of event leading dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; A_{jj}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
+	h_xj_pt_l=new TH2F("h_xj_pt_l", "x_{j} of event leading dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; x_{j}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -142,7 +152,7 @@ int DijetQA::process_event(PHCompositeNode *topNode)
 	std::cout << "DijetQA::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
 	++m_event;  
 	//Setup the node search
-	JetContainer* jets=findNode::getClass< JetContainer>(topNode, "AntiKt_Truth_r04");
+	JetContainer* jets=findNode::getClass< JetContainer>(topNode, m_recoJetName)/*"AntiKt_Truth_r04")*/;
 	if(!jets){
 		std::cout<<"No jet container found" <<std::endl;
 		--m_event;
@@ -231,6 +241,11 @@ void DijetQA::FindPairs(JetContainer* jets)
 					m_etal=jet_pair1->get_eta();
 					m_etasl=jet_pair2->get_eta();
 					m_deltaeta=m_etal-m_etasl;
+					h_Ajj_l->Fill(m_Ajj);
+					h_xj_l->Fill(m_xj);
+					h_pt_l->Fill(m_ptl);
+					h_Ajj_pt_l->Fill(m_ptl, m_Ajj);
+					h_xj_pt_l->Fill(m_ptl, m_xj);
 				//	m_T->Fill();
 				}
 				set_leading=false;
@@ -294,12 +309,17 @@ void DijetQA::Print(const std::string &what) const
 {
 	std::cout<<"The dijet analysis done running" <<std::endl;
   	TFile* f=new TFile(Form("Dijet_QA_run-%s-%s.root",m_run.c_str(), m_seg.c_str()), "RECREATE");
-	m_T->Write(); 
+	//m_T->Write(); 
 	h_Ajj->Write();
 	h_xj->Write();
 	h_pt->Write();
 	h_Ajj_pt->Write();
 	h_xj_pt->Write();
+	h_Ajj_l->Write();
+	h_xj_l->Write();
+	h_pt_l->Write();
+	h_Ajj_pt_l->Write();
+	h_xj_pt_l->Write();
 	f->Write();
 	f->Close();
  	std::cout << "DijetQA::Print(const std::string &what) const Printing info for " << what << std::endl;
