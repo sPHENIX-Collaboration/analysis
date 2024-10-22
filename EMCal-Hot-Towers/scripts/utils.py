@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All_CaloHotTower.')
+gen = subparser.add_parser('gen', help='Generate run lists.')
 
 f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists', required=True)
 f4a.add_argument('-i2', '--hot-tower-list', type=str, help='Hot Tower List', required=True)
@@ -22,6 +23,10 @@ f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--submissions', type=int, default=9, help='Number of submissions. Default: 9.')
 f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10000.')
+
+gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
+gen.add_argument('-t', '--ana-tag', type=str, default='ana437', help='ana tag. Default: ana437')
+gen.add_argument('-n', '--events', type=int, default=500000, help='Minimum number of events. Default: 500k')
 
 args = parser.parse_args()
 
@@ -92,6 +97,31 @@ def create_f4a_jobs():
     for x in arr:
         print(x[:-4])
 
+def create_run_lists():
+    ana_tag   = args.ana_tag
+    threshold = args.events
+    output  = os.path.realpath(args.output)+'/'+ana_tag
+
+    print(f'Tag: {ana_tag}')
+    print(f'Threshold: {threshold}')
+    print(f'Output: {output}')
+
+    os.makedirs(output,exist_ok=True)
+
+    print('Generating Bad Tower Maps Run List')
+    subprocess.run(['bash','-c','find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'],cwd=output)
+
+    print(f'Generating {ana_tag}_2024p007 minimum statistics Run List')
+    subprocess.run(['bash','-c',f'psql FileCatalog -c "select runnumber from datasets where dataset = \'{ana_tag}_2024p007\' GROUP BY runnumber having SUM(events) >= {threshold};" -At | sort > runs-min-stats.list'],cwd=output)
+
+    print(f'Generating {ana_tag} 2024p007 Run List')
+    subprocess.run(['bash','-c',f'comm -12 runs-hot-maps.list runs-min-stats.list > runs-{ana_tag}.list'],cwd=output)
+
+    print('Run Stats')
+    subprocess.run(['bash','-c','wc -l *'],cwd=output)
+
 if __name__ == '__main__':
     if(args.command == 'f4a'):
         create_f4a_jobs()
+    if(args.command == 'gen'):
+        create_run_lists()
