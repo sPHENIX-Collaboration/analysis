@@ -97,10 +97,10 @@ class DijetQA : public SubsysReco
 	int m_event, m_nJet, m_nJetPair;
 	float m_centrality, m_zvtx, m_impactparam, m_Ajj, m_xj, m_ptl, m_ptsl;
 	float m_phil, m_phisl, m_dphil, m_dphi, m_etal, m_etasl, m_deltaeta;
-	TH1F* h_Ajj, *h_xj, *h_pt;
-	TH2F* h_Ajj_pt, *h_xj_pt;
-	TH1F* h_Ajj_l, *h_xj_l, *h_pt_l;
-	TH2F* h_Ajj_pt_l, *h_xj_pt_l;
+	TH1F* h_Ajj, *h_xj, *h_pt, *h_dphi;
+	TH2F* h_Ajj_pt, *h_xj_pt, *h_dphi_pt, *h_dphi_Ajj;
+	TH1F* h_Ajj_l, *h_xj_l, *h_pt_l, *h_dphi_l;
+	TH2F* h_Ajj_pt_l, *h_xj_pt_l, *h_dphi_pt_l, *h_dphi_Ajj_l;
 	std::string m_recoJetName="AntiKT_Truth_r04";
 		//use the above single tower width and tunable parameter to keep things more safely defined
 };

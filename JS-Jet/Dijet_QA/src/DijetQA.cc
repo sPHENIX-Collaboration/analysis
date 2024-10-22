@@ -129,13 +129,20 @@ int DijetQA::Init(PHCompositeNode *topNode)
 	h_Ajj=new TH1F("h_Ajj", "A_{jj} for identified jet pairs; A_{jj}; N_{pairs}", 100, -0.005, 0.995);
 	h_xj=new TH1F("h_xj", "x_{j} for identified jet pairs; x_{j}; N_{pairs}", 100, -0.005, 0.995);
 	h_pt=new TH1F("h_pt", "p_{T} for leading jets in identified pairs; p_{T} [GeV]; N_{jet}", 70, -0.5, 69.5);
+	h_dphi=new TH1F("h_dphi", "#Delta #varphi for identified jet pairs; #delta #phi; N_{pairs}", 64, -3.1416, 3.1416);
 	h_Ajj_pt=new TH2F("h_Ajj_pt", "A_{jj} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; A_{jj}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
 	h_xj_pt=new TH2F("h_xj_pt", "x_{j} as a function of leading jet $p_{T}$; p_{T}^{leading} [GeV]; x_{j}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
+	h_dphi_pt=new TH2F("h_dphi_pt", "#delta #varphi of dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; #Delta #varphi; N_{pairs}", 70, -0.5, 69.5, 64, -3.1416, 3.1416);
+	h_dphi_Ajj=new TH2F("h_dphi_Ajj", "A_{jj} of dijet pair as a function of #Delta #varphi; #Delta #varphi; A_{jj}; N_{pairs}", 64, -3.1416, 3.1416, 100, -0.005, 0.995);
 	h_Ajj_l=new TH1F("h_Ajj_l", "A_{jj} for event leading jet pairs; A_{jj}; N_{pairs}", 100, -0.005, 0.995);
 	h_xj_l=new TH1F("h_xj_l", "x_{j} for event leading jet pairs; x_{j}; N_{pairs}", 100, -0.005, 0.995);
 	h_pt_l=new TH1F("h_pt_l", "p_{T} for leading jets in event leading pair; p_{T} [GeV]; N_{jet}", 70, -0.5, 69.5);
+	h_dphi_l=new TH1F("h_dphi_l", "#Delta #varphi for leading jet pairs; #delta #phi; N_{pairs}", 64, -3.1416, 3.1416);
 	h_Ajj_pt_l=new TH2F("h_Ajj_pt_l", "A_{jj} of event leading dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; A_{jj}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
 	h_xj_pt_l=new TH2F("h_xj_pt_l", "x_{j} of event leading dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; x_{j}; N_{pairs}", 70, -0.5, 69.5, 100, -0.005, 0.995);
+	h_dphi_pt_l=new TH2F("h_dphi_pt_l", "#delta #varphi of event leading dijet pair as a function of leading jet p_{T}; p_{T}^{leading} [GeV]; #Delta #varphi; N_{pairs}", 70, -0.5, 69.5, 64, -3.1416, 3.1416);
+	h_dphi_Ajj_l=new TH2F("h_dphi_Ajj_l", "A_{jj} of event leading dijet pair as a function of #Delta #varphi; #Delta #varphi^{leading}; A_{jj}; N_{pairs}", 64, -3.1416, 3.1416, 100, -0.005, 0.995);
+
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -244,8 +251,11 @@ void DijetQA::FindPairs(JetContainer* jets)
 					h_Ajj_l->Fill(m_Ajj);
 					h_xj_l->Fill(m_xj);
 					h_pt_l->Fill(m_ptl);
+					h_dphi_l->Fill(m_dphi);
 					h_Ajj_pt_l->Fill(m_ptl, m_Ajj);
 					h_xj_pt_l->Fill(m_ptl, m_xj);
+					h_dphi_pt_l->Fill(m_ptl, m_dphi);
+					h_dphi_Ajj_l->Fill(m_dphi, m_Ajj);
 				//	m_T->Fill();
 				}
 				set_leading=false;
@@ -262,13 +272,24 @@ void DijetQA::FindPairs(JetContainer* jets)
 	if(jet_pair1) std::cout<<"jetpair 1 object has a pt of " <<jet_pair1->get_pt()<<std::endl;
 		pt1=jet_pair1->get_pt();
 		pt2=jet_pair2->get_pt();
+		if(pt1 < pt2){
+			auto j=jet_pair1;
+			jet_pair1=jet_pair2;
+			jet_pair2=j;
+			pt1=jet_pair1->get_pt();
+			pt2=jet_pair2->get_pt();
+		}
+		float dphi=jet_pair1->get_phi() - jet_pair2->get_phi();
 		Ajj=(pt1-pt2)/(pt1+pt2);
 		xj=pt2/pt1;
 		h_Ajj->Fill(Ajj);
 		h_xj->Fill(xj);
 		h_pt->Fill(pt1);
+		h_dphi->Fill(dphi);
 		h_Ajj_pt->Fill(pt1, Ajj);
 		h_xj_pt->Fill(pt1, xj);
+		h_dphi_pt->Fill(pt1, dphi);
+		h_dphi_Ajj->Fill(dphi, Ajj);
 		std::cout<<"highest pt jet is " <<jet_leading->get_pt() <<" and highest pt in a pair is " <<jet_pair1->get_pt() <<std::endl;
 		}
 	}
@@ -313,13 +334,19 @@ void DijetQA::Print(const std::string &what) const
 	h_Ajj->Write();
 	h_xj->Write();
 	h_pt->Write();
+	h_dphi->Write();
 	h_Ajj_pt->Write();
 	h_xj_pt->Write();
+	h_dphi_pt->Write();
+	h_dphi_Ajj->Write();
 	h_Ajj_l->Write();
 	h_xj_l->Write();
 	h_pt_l->Write();
+	h_dphi_l->Write();
 	h_Ajj_pt_l->Write();
 	h_xj_pt_l->Write();
+	h_dphi_pt_l->Write();
+	h_dphi_Ajj_l->Write();
 	f->Write();
 	f->Close();
  	std::cout << "DijetQA::Print(const std::string &what) const Printing info for " << what << std::endl;
