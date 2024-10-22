@@ -1,13 +1,13 @@
-// ----------------------------------------------------------------------------
-// 'VtxTools.cc'
-// Derek Anderson
-// 02.29.2024
-//
-// Collection of frequent vertex-related methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   VtxInterfaces.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Vertex-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
-#define SCORRELATORUTILITIES_VTXTOOLS_CC
+#define SCORRELATORUTILITIES_VTXINTERFACES_CC
 
 // namespace definition
 #include "VtxInterfaces.h"
@@ -18,8 +18,13 @@ using namespace findNode;
 
 
 
+// vertex interfaces ==========================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Get vertex map from node tree
+  // --------------------------------------------------------------------------
   GlobalVertexMap* Interfaces::GetVertexMap(PHCompositeNode* topNode) {
 
     // get vertex map
@@ -40,6 +45,12 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get a specific vertex from vertex map
+  // -------------------------------------------------------------------------
+  /*! If no index is provided, returns the primary
+   *  vertex (stored as the 1st vertex in the map)
+   */ 
   GlobalVertex* Interfaces::GetGlobalVertex(PHCompositeNode* topNode, optional<int> iVtxToGrab) {
 
     // get vertex map
@@ -66,6 +77,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get primary vertex as a ROOT XYZVector
+  // --------------------------------------------------------------------------
   ROOT::Math::XYZVector Interfaces::GetRecoVtx(PHCompositeNode* topNode) {
 
     const GlobalVertex* vtx = GetGlobalVertex(topNode);

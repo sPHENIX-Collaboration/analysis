@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TrkInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// Track-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkInterfaces.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Track-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_TRKINTERFACES_CC
 
@@ -13,11 +14,17 @@
 
 // make common namespaces implicit
 using namespace std;
+using namespace findNode;
 
 
+
+// track interfaces ===========================================================
 
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Generate TF1 for DCA sigma based on provided parameters
+  // --------------------------------------------------------------------------
   TF1* Interfaces::GetSigmaDcaTF1(
     const string name,
     const vector<float> params,
@@ -39,10 +46,13 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Grab track map from node tree
+  // --------------------------------------------------------------------------
   SvtxTrackMap* Interfaces::GetTrackMap(PHCompositeNode* topNode) {
 
     // grab track map
-    SvtxTrackMap* mapTrks = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+    SvtxTrackMap* mapTrks = getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
     if (!mapTrks) {
       cerr << PHWHERE
            << "PANIC: SvtxTrackMap node is missing!"

@@ -1,8 +1,10 @@
 # SCorrelatorUtilities 
 
 Collected here useful types, methods, and constant used throughout the sPHENIX Cold QCD Energy-Energy
-Correlator analysis. There are three components:
+Correlator analysis. There are four components:
 
+  - `Constants::`: enums and methods used to consolidate important constants as well as mappings between
+     various flags, nodes, etc.;
   - `Types::`: classes used to consolidate relevant information and operations on said information from things
      like tracks, calorimeter clusters, jets, etc.;
   - `Tools::`: methods defining frequently used operations and calculations; and
@@ -12,13 +14,10 @@ Each component has an "all-in-one" header which collects all of the relevant con
 For example, to use a data type in another module make sure to include the following with your other includes:
 
 ```
+// includes
 #include "<path-to-install>/scorrelatorutilities/Types.h"
-```
 
-And if you are utilizing a data-type in ROOT I/O operations, don't forget to load the utilities library in
-the driver macro:
-
-```
+// and where you load libraries
 R__LOAD_LIBRARY(<path-to-install>/libscorrelatorutilities.so)
 ```
 

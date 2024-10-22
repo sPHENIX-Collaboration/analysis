@@ -1,14 +1,11 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# 'RunCorrelatorJetTreeMakerOnCondor.sh'
-# Derek Anderson
-# 01.06.2022
+# @file   RunCorrelatorJetTreeMakerOnCondor.sh
+# @author Derek Anderson
+# @date   01.06.2022
 #
-# Script to run correlator jet tree
-# module via condor.
-#
-# Derived from code by Cameron Dean
-# and Antonio Silva (thanks!!)
+# Script to run correlator jet tree module via condor.
+# Derived from code by Cameron Dean and Antonio Silva.
 # -----------------------------------------------------------------------------
 
 # grab home directory and set up environment

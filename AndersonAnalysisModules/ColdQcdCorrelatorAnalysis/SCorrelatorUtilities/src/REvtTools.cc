@@ -1,24 +1,30 @@
-// ----------------------------------------------------------------------------
-// 'RecoTools.cc'
-// Derek Anderson
-// 03.06.2024
-//
-// Collection of frequent event-level reconstruction methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   REvtTools.cc
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Collection of frequent event-level reconstruction methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
-#define SCORRELATORUTILITIES_RECOTOOLS_CC
+#define SCORRELATORUTILITIES_REVTTOOLS_CC
 
 // namespace definition
-#include "RecoTools.h"
+#include "REvtTools.h"
 
 // make common namespaces implicit
 using namespace std;
 
 
 
+// event-level reconstructed methods ==========================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Get total number of tracks
+  // --------------------------------------------------------------------------
   int64_t Tools::GetNumTrks(PHCompositeNode* topNode) {
 
     // grab size of track map
@@ -29,6 +35,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get sum of track momentum
+  // --------------------------------------------------------------------------
   double Tools::GetSumTrkMomentum(PHCompositeNode* topNode) {
 
     // grab track map
@@ -56,6 +65,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get sum of energy from a calorimeter
+  // --------------------------------------------------------------------------
   double Tools::GetSumCaloEne(PHCompositeNode* topNode, const string store) {
 
     // grab clusters

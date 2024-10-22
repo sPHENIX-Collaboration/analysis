@@ -1,13 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'Fun4All_RunCorrelatorJetTreeMaker.C'
-// Derek Anderson
-// 12.11.2022
-//
-// A F4A macro to run the correlator jet tree make module
-//
-// Initially derived from code by Cameron Dean and Antonio
-// Silva (thanks!!)
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   Fun4All_RunCorrelatorJetTreeMaker.C
+ *  \author Derek Anderson
+ *  \date   12.11.2022
+ *
+ *  A F4A macro to run the correlator jet tree maker module. Initially
+ *  derived from code by Cameron Dean and Antonio Silva.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef FUN4ALL_RUNCORRELATORJETTREEMAKER_C
 #define FUN4ALL_RUNCORRELATORJETTREEMAKER_C
@@ -19,27 +18,31 @@
 #include <utility>
 // f4a/sphenix utilities
 #include <FROG.h>
-#include <G4_Magnet.C>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <g4main/Fun4AllDstPileupInputManager.h>
 // tracking utilities
+#include <g4eval/SvtxEvaluator.h>
+#include <g4eval/SvtxTruthRecoTableEval.h>
+// calo/pf/jet libraries
+#include <jetbackground/RetowerCEMC.h>
+#include <caloreco/RawClusterBuilderTopo.h>
+#include <particleflowreco/ParticleFlowReco.h>
+// module definition
+#include <scorrelatorjettreemaker/SCorrelatorJetTreeMaker.h>
+// macro options
+#include "RetowerOptions.h"
+#include "TopoClusterOptions.h"
+#include "JetTreeMakerOptions.h"
+
+// sphenix macros
+#include <G4_Magnet.C>
+#include <G4_TrkrSimulation.C>
 #include <Trkr_QA.C>
 #include <Trkr_Reco.C>
 #include <Trkr_Eval.C>
 #include <Trkr_RecoInit.C>
 #include <Trkr_Clustering.C>
 #include <Trkr_Diagnostics.C>
-#include <G4_TrkrSimulation.C>
-#include <g4eval/SvtxEvaluator.h>
-#include <g4eval/SvtxTruthRecoTableEval.h>
-// calo/pf libraries
-#include <caloreco/RawClusterBuilderTopo.h>
-#include <particleflowreco/ParticleFlowReco.h>
-// module definition
-#include <scorrelatorjettreemaker/SCorrelatorJetTreeMaker.h>
-// macro options
-#include "TopoClusterOptions.h"
-#include "JetTreeMakerOptions.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -50,6 +53,7 @@ R__LOAD_LIBRARY(libg4eval.so)
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libparticleflow.so)
+R__LOAD_LIBRARY(libjetbackground.so)
 R__LOAD_LIBRARY(libscorrelatorutilities.so)
 R__LOAD_LIBRARY(libscorrelatorjettreemaker.so)
 
@@ -68,8 +72,8 @@ static const vector<string> VecInFilesDefault = {
 static const string OutFileDefault = "test.root";
 
 // other default arguments
-static const int NEvtDefault = 10;
-static const int VerbDefault = 0;
+static const int    NEvtDefault = 10;
+static const int    VerbDefault = 0;
 static const size_t NTopoClusts = 2;
 static const size_t NTopoPar    = 3;
 
@@ -86,11 +90,15 @@ void Fun4All_RunCorrelatorJetTreeMaker(
 
   // options ------------------------------------------------------------------
 
-  // tracking/pf options
+  // tracking/pf/tower options
   const bool   runTracking(false);
   const bool   runParticleFlow(false);
   const bool   doTruthTableReco(false);
+  const bool   doEMCalRetower(true);
   const double nSigma(1.5);
+
+  // get retower configuration
+  RetowerOptions::RetowerConfig cfg_retower = RetowerOptions::GetConfig();
 
   // get topocluster configurations
   TopoClusterOptions::TopoClusterConfig cfg_topoClustECal = TopoClusterOptions::GetConfig(
@@ -163,6 +171,14 @@ void Fun4All_RunCorrelatorJetTreeMaker(
     if (runTracking) {
       ffaServer -> registerSubsystem(tables);
     }
+  }
+
+  // do EMCal retowering ------------------------------------------------------
+
+  if (doEMCalRetower) {
+    RetowerCEMC* retower = RetowerOptions::CreateRetowerer(cfg_retower);
+    retower   -> Verbosity(verbosity);
+    ffaServer -> registerSubsystem(retower);
   }
 
   // do particle flow reconstruction ------------------------------------------

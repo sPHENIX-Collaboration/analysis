@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TrkInfo.cc'
-// Derek Anderson
-// 03.05.2024
-//
-// Utility class to hold information from tracks.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Utility class to hold information from tracks.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_TRKINFO_CC
 
@@ -18,8 +19,11 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // internal methods ---------------------------------------------------------
+  // private methods ==========================================================
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute minima
+  // --------------------------------------------------------------------------
   void Types::TrkInfo::Minimize() {
 
     id         = -1 * numeric_limits<int>::max();
@@ -50,6 +54,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute maxima
+  // --------------------------------------------------------------------------
   void Types::TrkInfo::Maximize() {
 
     id         = numeric_limits<int>::max();
@@ -79,8 +86,11 @@ namespace SColdQcdCorrelatorAnalysis {
   }  // end 'Maximize()'
 
 
-  // public methods -----------------------------------------------------------
+  // public methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Reset object by maximizing data members
+  // --------------------------------------------------------------------------
   void Types::TrkInfo::Reset() {
 
     Maximize();
@@ -90,6 +100,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A SvtxTrack
+  // --------------------------------------------------------------------------
   void Types::TrkInfo::SetInfo(SvtxTrack* track, PHCompositeNode* topNode) {
 
     // do relevant calculations
@@ -125,6 +138,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (explicit minimum, maximum)
+  // --------------------------------------------------------------------------
   bool Types::TrkInfo::IsInAcceptance(const TrkInfo& minimum, const TrkInfo& maximum) const {
 
     return ((*this >= minimum) && (*this <= maximum));
@@ -133,6 +149,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (set by pair)
+  // --------------------------------------------------------------------------
   bool Types::TrkInfo::IsInAcceptance(const pair<TrkInfo, TrkInfo>& range) const {
 
     return ((*this >= range.first) && (*this <= range.second));
@@ -141,6 +160,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within pt-dependent DCA cut
+  // --------------------------------------------------------------------------
   bool Types::TrkInfo::IsInSigmaDcaCut(
     const pair<float, float> nSigCut,
     const pair<float, float> ptFitMax,
@@ -161,6 +183,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is from the primary vertex
+  // --------------------------------------------------------------------------
   bool Types::TrkInfo::IsFromPrimaryVtx(PHCompositeNode* topNode) {
 
     GlobalVertex* primVtx   = Interfaces::GetGlobalVertex(topNode);
@@ -171,8 +196,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // static methods -----------------------------------------------------------
+  // static methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Get list of data fields
+  // --------------------------------------------------------------------------
   vector<string> Types::TrkInfo::GetListOfMembers() {
 
     vector<string> members = {
@@ -205,8 +233,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // overloaded operators -----------------------------------------------------
+  // overloaded operators =====================================================
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <(const TrkInfo& lhs, const TrkInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -238,6 +269,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >(const TrkInfo& lhs, const TrkInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -269,6 +303,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <=(const TrkInfo& lhs, const TrkInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -300,6 +337,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >=(const TrkInfo& lhs, const TrkInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -331,8 +371,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
+  // --------------------------------------------------------------------------
+  //! Default class constructor
+  // --------------------------------------------------------------------------
   Types::TrkInfo::TrkInfo() {
 
     /* nothing to do */
@@ -341,6 +384,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Default class destructor
+  // --------------------------------------------------------------------------
   Types::TrkInfo::~TrkInfo() {
 
     /* nothing to do */
@@ -349,6 +395,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting initialization option (minimize or maximize)
+  // --------------------------------------------------------------------------
   Types::TrkInfo::TrkInfo(const Const::Init init) {
 
     switch (init) {
@@ -367,6 +416,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A SvtxTrack
+  // --------------------------------------------------------------------------
   Types::TrkInfo::TrkInfo(SvtxTrack* track, PHCompositeNode* topNode) {
 
     SetInfo(track, topNode);
