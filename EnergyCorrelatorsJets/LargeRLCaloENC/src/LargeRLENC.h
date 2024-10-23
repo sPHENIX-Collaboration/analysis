@@ -14,14 +14,14 @@
 #include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
-
+#define PI 3.14159265358979323464
 struct DijetQATypePlots{
 	DijetQATypePlots(){
 		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 70 MeV EMCAL; #% Towers > 500 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
 		bad_occ_em_h_rat=new TH2F("h_bad_occupancy_EM_H_rat", "Occupancy for events that fail OHCAL ratio cut; #% Towers #geq 70 MeV EMCAL; (#% Towers #geq 500 MeV OHCAL + #% Towers #geq 100 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
 		bad_occ_em_oh=new TH2F("h_bad_occupancy_EM_OH", "Occupancy for events that pass  OHCAL ratio cut but otherwise fail; #% Towers #geq 70 MeV EMCAL; #% Towers > 500 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
 		bad_occ_em_h=new TH2F("h_bad_occupancy_EM_H", "Occupancy for events that pass OHCAL ratio cut but otherwise fail; #% Towers #geq 70 MeV EMCAL; (#% Towers #geq 500 MeV OHCAL + #% Towers #geq 100 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		ohcal_bad_hits=new TH2F("h_ohcal_bad_hits", "Energy depositon for events that fail the OHCAL ratio cut; #eta; #varphi; E [GeV]", 24, -1.1, 1.1, 64, -3.1416, 3.1415);
+		ohcal_bad_hits=new TH2F("h_ohcal_bad_hits", "Energy depositon for events that fail the OHCAL ratio cut; #eta; #varphi; E [GeV]", 24, -1.1, 1.1, 64, -PI, PI);
 		emcal_occup=new TH1F("h_EMCAL_occupancy", "Occupancy of EMCAL all events; #% Towers #geq 70 MeV EMCAL; N_{evts}", 100, -0.005, 0.995);
 		ihcal_occup=new TH1F("h_IHCAL_occupancy", "Occupancy of IHCAL all events; #% Towers #geq 100 MeV IHCAL; N_{evts}", 100, -0.005, 0.995);
 		ohcal_occup=new TH1F("h_OHCAL_occupancy", "Occupancy of OHCAL all events; #% Towers #geq 500 MeV OHCAL; N_{evts}", 100, -0.005, 0.995);
@@ -48,12 +48,12 @@ class EventSelectionCut{
 			JetCuts->Branch("Lead_pt", &m_lpt, "p_{T} of Leading Jet/F");
 			JetCuts->Branch("Subleading_pt", &m_slpt, "p_{T} of subleading jet (pair if dijet pair exists)/F");
 			JetCuts->Branch("Lead_eta", &m_etal, "#eta of leading jet center/F");
-			JetCuts->Branch("Subleading_eta", &m_etasl, "#eta of subleading jet center/F");
-			JetCuts->Branch("delta_phi", &m_deltaphi, "#Delta #varphi between leading and subleading jet/F");
-			JetCuts->Branch("ohcal_ratio", &m_ohcalrat, "E_{OHCAL} to E_{allCal}/F");
-			JetCuts->Branch("isDijet", &m_isdijet, "Passes Dijet event cuts/B");
-			JetCuts->Branch("negE", &m_hasnege, "Has a negative energy jet/B");
-			JetCuts->Branch("passes", &passesCuts, "Passes cut/B");
+			JetCuts->Branch("Subleading_eta", &m_etasl, "#eta subleading jet center/F");
+			JetCuts->Branch("delta_phi", &m_deltaphi, "m_deltaphi/F");
+			JetCuts->Branch("ohcal_ratio", &m_ohcalrat, "m_ohcalrat/F");
+			JetCuts->Branch("isDijet", &m_isdijet, "m_isDijet/O");
+			JetCuts->Branch("negE", &m_hasnege, "m_hasnege/O");
+			JetCuts->Branch("passes", &passesCuts, "passesCuts/O");
 		};
 		TTree* JetCuts; //This is a QA testing ttree to allow for immediate QA
 		bool passesTheCut(JetContianerv2* eventjets, float hcalratio){
@@ -80,7 +80,8 @@ class EventSelectionCut{
 					}
 				}
 			if(leadjetpt < leadingpt) good=false;
-			float leadeta=leadjet->get_eta(), leadphi=leadjet->get_phi();
+			leadeta=leadjet->get_eta();
+		       	leadphi=leadjet->get_phi();
 			if(abs(leadeta) > deltaeta ) good=false; //getting rid of events that have the leading jet outside of acceptance region
 			for(auto j:jets){
 				float phi=j->get_phi();
@@ -108,6 +109,8 @@ class EventSelectionCut{
 			JetCuts->Fill();
 			return good;
 		}
+		float getLeadPhi(){ return leadphi;}
+		float getLeadEta(){ return leadeta;}
 	private:
 		float leadingpt;
 		float subleadingpt; 
@@ -124,6 +127,8 @@ class EventSelectionCut{
 		float m_etasl=0.;
 		float m_deltaphi=0.;
 		float m_ohcalrat=0.;
+		float leadphi=0.;
+		float leadeta=0.
 		bool m_isdijet=false;
 		bool m_hasnege=false;
 };
@@ -134,7 +139,7 @@ class LargeRLENC : public SubsysReco
 {
  public:
 
-  LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string &name = "LargeRLENC");
+  LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string vari="E", const std::string &name = "LargeRLENC");
 
   ~LargeRLENC() override;
 
@@ -143,7 +148,8 @@ class LargeRLENC : public SubsysReco
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
    */
-  int Init(PHCompositeNode *topNode) override;
+  int Init(PHCompositeNode *topNode) override {
+  };
 
   /** Called for first event when run number is known.
       Typically this is where you may want to fetch data from
@@ -172,10 +178,21 @@ class LargeRLENC : public SubsysReco
   void Print(const std::string &what = "ALL") const override;
 
  private:
-	bool isRealData;
-	int nRun, nSegment;
+	
+  	bool isRealData;
+	int nRun, nSegment, m_Njets;
 	float jetMinpT;
+	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
+	std::map<std::string, <std::array<std::map<float, float>,3>> m_e2c, m_e3c; 
+	std::map< std::string, std::array<std::map<std::array<float, 3>, float>, 3>> m_e3c_full;
+	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > m_pt;
+	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
-	MethodHistograms* FullHcal, *TowardRegion, *AwayRegion, *TransverseRegion;
+	std::vector<MethodHistograms*>* FullHcal, *TowardRegion, *AwayRegion, *TransverseRegion;
+	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
+	std::array<float, 3> m_vertex;
+	std::vector<std::array<float, 4>> m_dijets;
+	std::vector<float> m_pt;
+	float m_xjl, m_Ajjl;
 };
 #endif // LARGERLENC_H
