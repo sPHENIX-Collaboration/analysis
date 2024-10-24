@@ -56,11 +56,12 @@ class EventSelectionCut{
 			JetCuts->Branch("passes", &passesCuts, "passesCuts/O");
 		};
 		TTree* JetCuts; //This is a QA testing ttree to allow for immediate QA
-		bool passesTheCut(JetContianerv2* eventjets, float hcalratio){
+		bool passesTheCut(JetContianerv2* eventjets, float hcalratio, std::array<float,3> vertex){
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
 			if(hcalratio > maxOHCAL) good=false;
+			if(abs(vetex[2]) > 30 ) good=false; //cut on z=30 vertex
 			float leadjetpt=0., subleadjetpt=0.;
 			bool haspartner=false;
 		       	Jet* leadjet, *subleadjet;
@@ -111,7 +112,36 @@ class EventSelectionCut{
 		}
 		float getLeadPhi(){ return leadphi;}
 		float getLeadEta(){ return leadeta;}
+		void getDijets(JetContainerv2* event_jets, std::vector<std::array<float, 3>>* dijet_sets)
+		{
+			std::vector<std::pair<Jet*, Jet*>> dijet_pairs;
+			for(auto jet1:event_jets){
+				float eta1=jet1->get_eta(), phi1=jet1->get_phi();
+				if(abs(eta1) > deltaeta) continue; //keep R=0.4 jets in sPHENIX acceptance
+				if(jet1->get_pt() < 1.) continue; //reject jets below 1 GeV
+				for(auto jet2=jet1+1; jet2!=event_jets.end(), ++jet2){
+					if(jet1 == jet2) continue; //just double check
+					if(jet2->get_pt() < deltaeta) continue;
+					float eta2=jet2->get_phi(), phi2=jet2->getphi();
+					if(abs(eta2) > 0.7)continue;
+					if(abs(phi1 - phi2) >= deltaphi)dijet_pairs.push_back(std::make_pair(jet1, jet2));
+				}
+			}
+			for(auto dj:dijet_pairs){
+				float pt1=jet1->get_pt(), pt2=jet2->get_pt();
+				if(pt1 < pt2){
+					float ptt=pt1;
+					pt1=pt2;
+					pt2=ptt;
+				}
+				float xj=pt2/pt1, Ajj=(pt1-pt2)/(pt1+pt2);
+				std::array<float, 3> dijet_kin={pt1, Ajj, xj};
+				dijet_sets.push_back(dijet_kin);
+			}
+			return;
+		}			
 	private:
+
 		float leadingpt;
 		float subleadingpt; 
 		float etaedge;
@@ -185,7 +215,7 @@ class LargeRLENC : public SubsysReco
 	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
 	std::map<std::string, <std::array<std::map<float, float>,3>> m_e2c, m_e3c; 
 	std::map< std::string, std::array<std::map<std::array<float, 3>, float>, 3>> m_e3c_full;
-	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > m_pt;
+	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > m_pt_evt;
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
 	std::vector<MethodHistograms*>* FullHcal, *TowardRegion, *AwayRegion, *TransverseRegion;

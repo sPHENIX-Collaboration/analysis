@@ -54,7 +54,7 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 JetContainerv2* LargeRLENC::getJets(std::string algo, std::string radius, std::array<float, 3> vertex, PHCompositeNode* topNode)
 {
 	//This is just running the Fastjet reco 
-	
+	fastjet::JetReco		
 	
 }
 void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomContainer_Cylinderv1* geom, std::map<std::array<float, 3>, float>* towers, RawTowerDefs::CalorimeterId td)
@@ -143,7 +143,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	emcal_occup->Fill(emcal_occupancy); //filling in the occupancy plots for easy QA while going 
 	ihcal_occup->Fill(ihcal_occupancy);
 	ohcal_occup->Fill(ohcal_occupancy);
-	isDijet=eventCut->passesTheCut(jets, ohcal_rat/*, vertex*/);	
+
+	isDijet=eventCut->passesTheCut(jets, ohcal_rat, vertex);	
 	if(!isDijet){ //stores some data about the bad cuts to look for any arrising structure
 		if(ohcal_rat > 0.9){
 		       ohcal_rat_occup->Fill(ohcal_rat, ohcal_occupancy);
@@ -155,12 +156,15 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	}
 	else{
 		float lead_phi=eventCut->GetLeadPhi();
+		eventCut->getDijets(jets, &m_dijets);
+		m_vertex=vertex;
 		//this is running the actual analysis
 		LargeRLENC::CaloRegion(*emcal_towers, *ihcal_towers, *ohcal_towers, 0, FullHCal,         jetMinpT, which_variable, vertex, lead_phi);
 		LargeRLENC::CaloRegion(*emcal_towers, *ihcal_towers, *ohcal_towers, 1, TowardRegion,     jetMinpT, which_variable, vertex, lead_phi);
 		LargeRLENC::CaloRegion(*emcal_towers, *ihcal_towers, *ohcal_towers, 2, AwayRegion,       jetMinpT, which_variible, vertex, lead_phi);
 		LargeRLENC::CaloRegion(*emcal_towers, *ihcal_towers, *ohcal_towers, 3, TransverseRegion, jetMinpT, which_variable, vertex, lead_phi);
-	      	for(auto t:analysis_threads) t.join();
+		DijetQA->Fill();
+
 	}
 	return 1;
 }
