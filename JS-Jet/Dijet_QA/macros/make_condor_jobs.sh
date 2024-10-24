@@ -1,15 +1,16 @@
 !# /bin/bash
-nRun=${1:-'0'}
-submit=${2:-'test'}
-nFile=${3:-'0'}
+dstlist=${1:-'data'}
+nRun=${2:-'0'}
+submit=${3:-'test'}
+nFile=${4:-'0'}
 i=0
 if [[ $nFile -eq 0 ]]; then 
 	nFile=`wc -l < dst_truth_jet.list`
 fi 
 for i in $(seq 0 ${nFile}); do 
-	fname="condor_files/condor_segment_"$i".job" 	 
+	fname="condor_files/condor_"$dstlist"_segment_"$i".job" 	 
 	#truthf=`sed "${i}q;d" dst_truth_reco.list`
-	truthj=`sed "${i}q;d" dst_truth_jet.list`
+	truthj=`sed "${i}q;d" dst_truth_jet_"$dstlist".list`
 	#g4hitf=`sed "${i}q;d" dst_truth_g4hit.list`
 	#caloclusterf=`sed "${i}q;d" dst_calo_cluster.list`
 	#globalf=`sed "${i}q;d" dst_global.list`
