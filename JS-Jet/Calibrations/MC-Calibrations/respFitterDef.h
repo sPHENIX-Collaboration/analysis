@@ -2,7 +2,7 @@ const int verbosity = 0;
 
 const float etaStart = -0.7;
 const float etaEnd = 0.7;
-const float etaGap = 0.3;
+const float etaGap = 0.35;
 
 const int extraBins = 2; //two inclusive eta bins: 1) Has the differential eta-jes calibration, one has the integrated eta-jes calibration
 
