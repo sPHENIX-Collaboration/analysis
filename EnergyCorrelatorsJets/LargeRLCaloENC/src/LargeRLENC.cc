@@ -5,7 +5,7 @@
 //			Author: Skadi Grossberndt						//
 //			Depends on: Calorimeter Tower ENC 					//
 //			First Commit date: 18 Oct 2024						//
-//			Most recent Commit: 23 Oct 2024						//
+//			Most recent Commit: 24 Oct 2024						//
 //			version: v0.1								//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,12 +51,42 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	JetEvtObs->Branch("p_T", m_pt_evt, 128000, "region/C:calo/C:eta/F:phi/F:pt/F");
 
 }
-JetContainerv2* LargeRLENC::getJets(std::string algo, std::string radius, std::array<float, 3> vertex, PHCompositeNode* topNode)
+JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::array<float, 3> vertex, PHCompositeNode* topNode)
 {
 	//This is just running the Fastjet reco 
-	fastjet::JetReco		
-	
-}
+	JetContainer* fastjetCont=new JetContinainer();
+	std::vector<fastjet::Pseudojet> jet_objs;
+	float radius_float=0.;
+	std::string rs=""; //striped down string to convert to float
+	for(auto c:radius)
+		if(isdigit(c))
+			rs+=c;
+	radius_float=stof(rs);
+	radius_float=radius_float*0.1; //put the value to the correct range
+	fastjet::JetDefinition fjd=(fastjet::antikt_algorithm,  radius_float);
+	if(input=="towers"){
+		TowerJetInput* ti=new TowerJetInput(Jet::HCALOUT_TOWER); //use the outer hcal to get the jets as that is the area I need anyway 
+		auto psjets=ti->get_input(topNode);
+		for(auto p:psjets) jet_objs.push_back(fastjet::Psuedojet(p->get_px(), p->get_py(), p->get_pz(), p->get_energy()));
+	}
+	else if(input=="clusters"){
+		ClusterJetInput* ci=new ClusterJetInput(Jet::HCALOUT_CLUSTER);
+		auto psjets=c1->get_input(topNode);
+		for(auto p:psjets) jet_objs.push_back(fastjet::Psuedojet(p->get_px(), p->get_py(), p->get_pz(), p->get_energy()));
+	}
+	fastjet::ClusterSequence cs(jet_objs, jetdef);	
+	auto js=cs.inclusive_jets();
+	for(auto j:js)
+	{
+		Jetv2* jet=new Jetv2();
+		jet->set_px(j.px());
+		jet->set_py(j.py());
+		jet->set_pz(j.pz());
+		jet->set_e( j.e() );
+		fastjetCont->add_jet(jet);
+	}
+	return fastjetCont;
+}	
 void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomContainer_Cylinderv1* geom, std::map<std::array<float, 3>, float>* towers, RawTowerDefs::CalorimeterId td)
 {
 	geom->set_calorimeter_id(td);
@@ -82,7 +112,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
 	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
 	//look for the jet objects 
-	JetContainerv2* jets=NULL;
+	JetContainer* jets=NULL;
 	bool foundJetConts=false, isDijet=false;
 	try{
 		if(!isRealData) jets = findNode::getClass<JetContainer>(topNode, "AntiKt_Truth_r04"); //look for the r_04 truth jets

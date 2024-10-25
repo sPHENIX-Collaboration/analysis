@@ -2,29 +2,35 @@
 //  -*- C++ -*-.
 #ifndef LARGERLENC_H
 #define LARGERLENC_H
-
+//fun4all
 #include <fun4all/SubsysReco.h>
-#include <MethodHistorgrams.h>
+
+//fastjet
+#include <fastjet/Pseudojets>
+//c++
 #include <thread>
 #include <map>
 #include <utility>
 #include <vector>
 #include <string>
+//root
 #include <TH1.h>
 #include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
+//Homebrews 
+#include <MethodHistorgrams.h>
 #define PI 3.14159265358979323464
 struct DijetQATypePlots{
 	DijetQATypePlots(){
-		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 70 MeV EMCAL; #% Towers > 500 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h_rat=new TH2F("h_bad_occupancy_EM_H_rat", "Occupancy for events that fail OHCAL ratio cut; #% Towers #geq 70 MeV EMCAL; (#% Towers #geq 500 MeV OHCAL + #% Towers #geq 100 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_oh=new TH2F("h_bad_occupancy_EM_OH", "Occupancy for events that pass  OHCAL ratio cut but otherwise fail; #% Towers #geq 70 MeV EMCAL; #% Towers > 500 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h=new TH2F("h_bad_occupancy_EM_H", "Occupancy for events that pass OHCAL ratio cut but otherwise fail; #% Towers #geq 70 MeV EMCAL; (#% Towers #geq 500 MeV OHCAL + #% Towers #geq 100 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
+		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
+		bad_occ_em_h_rat=new TH2F("h_bad_occupancy_EM_H_rat", "Occupancy for events that fail OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
+		bad_occ_em_oh=new TH2F("h_bad_occupancy_EM_OH", "Occupancy for events that pass  OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
+		bad_occ_em_h=new TH2F("h_bad_occupancy_EM_H", "Occupancy for events that pass OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
 		ohcal_bad_hits=new TH2F("h_ohcal_bad_hits", "Energy depositon for events that fail the OHCAL ratio cut; #eta; #varphi; E [GeV]", 24, -1.1, 1.1, 64, -PI, PI);
-		emcal_occup=new TH1F("h_EMCAL_occupancy", "Occupancy of EMCAL all events; #% Towers #geq 70 MeV EMCAL; N_{evts}", 100, -0.005, 0.995);
-		ihcal_occup=new TH1F("h_IHCAL_occupancy", "Occupancy of IHCAL all events; #% Towers #geq 100 MeV IHCAL; N_{evts}", 100, -0.005, 0.995);
-		ohcal_occup=new TH1F("h_OHCAL_occupancy", "Occupancy of OHCAL all events; #% Towers #geq 500 MeV OHCAL; N_{evts}", 100, -0.005, 0.995);
+		emcal_occup=new TH1F("h_EMCAL_occupancy", "Occupancy of EMCAL all events; #% Towers #geq 10 MeV EMCAL; N_{evts}", 100, -0.005, 0.995);
+		ihcal_occup=new TH1F("h_IHCAL_occupancy", "Occupancy of IHCAL all events; #% Towers #geq 10 MeV IHCAL; N_{evts}", 100, -0.005, 0.995);
+		ohcal_occup=new TH1F("h_OHCAL_occupancy", "Occupancy of OHCAL all events; #% Towers #geq 10 MeV OHCAL; N_{evts}", 100, -0.005, 0.995);
 		ohcal_rat_occup=new TH2F("h_OHCAL_rat", "Occupancy of OHCAL as function of OHCAL ratio; #frac{E_{OHCAL}}{E_{ALL CALS}}; #% Towers #geq 500 MeV; N_{evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
 	}
 	TH2F* bad_occ_em_oh_rat;
