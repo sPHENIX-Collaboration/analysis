@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <unordered_set>
 
 // root includes --
 #include <TSystem.h>
@@ -52,6 +53,7 @@ namespace myAnalysis {
 
     TH1F* hHotTowerStatus;
 
+    TH1F* hSigmaGood;
     TH1F* hSigma;
     TH1F* hSigmaFreqHot;
 
@@ -102,6 +104,7 @@ void myAnalysis::init_hists() {
     hHotTowerStatus = new TH1F("hHotTowerStatus", "Hot Tower Status; Status; Towers", m_nStatus, -0.5, m_nStatus-0.5);
 
     hSigma        = new TH1F("hSigma", "Towers (Flagged Hot #leq 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
+    hSigmaGood    = new TH1F("hSigmaGood", "Towers (Flagged Hot for 0% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
     hSigmaFreqHot = new TH1F("hSigmaFreqHot", "Towers (Flagged Hot > 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
 
     stringstream name, title;
@@ -173,6 +176,7 @@ void myAnalysis::process_event() {
     UInt_t bin_run = 1;
     Float_t sigma_min = 9999;
     Float_t sigma_max = 0;
+    std::unordered_set<UInt_t> badSigma;
 
     for(auto run : runs) {
         cout << "Run: " << run << endl;
@@ -202,6 +206,8 @@ void myAnalysis::process_event() {
             }
         }
 
+        Bool_t hasBadSigma = false;
+
         for (UInt_t channel = 0; channel < m_ntowers; ++channel) {
             UInt_t key    = TowerInfoDefs::encode_emcal(channel);
             UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
@@ -212,9 +218,14 @@ void myAnalysis::process_event() {
                 fraction_badChi2 = m_cdbttree_chi2->GetFloatValue(key, m_fieldname_chi2);
             }
             Int_t hotMap_val = m_cdbttree_hotMap->GetIntValue(key, m_fieldname_hotMap);
-            Float_t sigma_val  = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
+            Float_t sigma_val = 0;
+            if(!hasBadSigma) sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
+            if(std::isnan(sigma_val) || std::isinf(sigma_val)) {
+              hasBadSigma = true;
+              badSigma.insert(run);
+            }
 
-            hHotTowerSigma_vec[channel]->Fill(sigma_val);
+            if(!hasBadSigma) hHotTowerSigma_vec[channel]->Fill(sigma_val);
 
             if ((m_doHotChi2 && fraction_badChi2 > m_fraction_badChi2_threshold) || hotMap_val != 0) {
                 hBadTowers->Fill(channel);
@@ -232,8 +243,10 @@ void myAnalysis::process_event() {
                     h2BadTowersHot->Fill(phibin, etabin);
                     h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,2,1);
 
-                    sigma_min = min(sigma_min, sigma_val);
-                    if(sigma_val < 100) sigma_max = max(sigma_max, sigma_val);
+                    if(!hasBadSigma) {
+                      sigma_min = min(sigma_min, sigma_val);
+                      if(sigma_val < 100) sigma_max = max(sigma_max, sigma_val);
+                    }
                 }
                 // Cold
                 if(hotMap_val == 3) {
@@ -249,11 +262,21 @@ void myAnalysis::process_event() {
         ++bin_run;
     }
 
+    cout << "###################" << endl;
+    cout << "Runs with Bad Sigma" << endl;
+
+    for(auto run : badSigma) {
+      cout << "Run: " << run << endl;
+    }
+
+    cout << "###################" << endl;
+
   // print used DB files
   CDBInterface::instance()->Print();
 
   UInt_t runs_processed = runs.size()-runsMissingHotMap.size();
   cout << "Sigma Min: " << sigma_min << ", Sigma Max: " << sigma_max << endl;
+  cout << "Runs with bad sigma (nan or inf): " << badSigma.size() << endl;
   cout << "Runs Missing HotMap: " << runsMissingHotMap.size() << endl;
   cout << "Runs Processed: " << runs_processed << ", " << runs_processed*100./runs.size() << " %" << endl;
 }
@@ -290,6 +313,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   UInt_t ctr[2] = {0};
   for (UInt_t i = 0; i < m_ntowers; ++i) {
         if (hBadTowersHot->GetBinContent(i + 1)) ++ctr[0];
+        else hSigmaGood->Add(hHotTowerSigma_vec[i]);
 
         if (hBadTowersHot->GetBinContent(i + 1) >= m_threshold) {
             for (UInt_t j = 1; j <= runs.size(); ++j) {
@@ -309,6 +333,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   }
 
   output.cd();
+  hSigmaGood->Write();
   hSigma->Write();
   hSigmaFreqHot->Write();
 

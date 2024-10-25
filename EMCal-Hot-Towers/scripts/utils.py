@@ -112,7 +112,7 @@ def create_run_lists():
     subprocess.run(['bash','-c','find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'],cwd=output)
 
     print(f'Generating {ana_tag}_2024p007 minimum statistics Run List')
-    subprocess.run(['bash','-c',f'psql FileCatalog -c "select runnumber from datasets where dataset = \'{ana_tag}_2024p007\' GROUP BY runnumber having SUM(events) >= {threshold};" -At | sort > runs-min-stats.list'],cwd=output)
+    subprocess.run(['bash','-c',f'psql FileCatalog -c "select runnumber from datasets where dataset = \'{ana_tag}_2024p007\' GROUP BY runnumber having SUM(events) >= {threshold} and runnumber > 46619;" -At | sort > runs-min-stats.list'],cwd=output)
 
     print(f'Generating {ana_tag} 2024p007 Run List')
     subprocess.run(['bash','-c',f'comm -12 runs-hot-maps.list runs-min-stats.list > runs-{ana_tag}.list'],cwd=output)
