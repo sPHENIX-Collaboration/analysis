@@ -38,23 +38,25 @@ namespace myAnalysis {
     Int_t init(const string &input);
     void init_hists();
 
-    void process_event();
+    Int_t process_event();
     void finalize(const string &i_output, const string &outputMissingHotMap);
 
     TH1F* hBadTowers;
     TH1F* hBadTowersDead;
     TH1F* hBadTowersHot;
+    TH1F* hBadTowersHotChi2;
     TH1F* hBadTowersCold;
 
     TH2F* h2BadTowers;
     TH2F* h2BadTowersDead;
     TH2F* h2BadTowersHot;
+    TH2F* h2BadTowersHotChi2;
     TH2F* h2BadTowersCold;
 
     TH1F* hHotTowerStatus;
 
-    TH1F* hSigmaGood;
-    TH1F* hSigma;
+    TH1F* hSigmaNeverHot;
+    TH1F* hSigmaHot;
     TH1F* hSigmaFreqHot;
 
     vector<TH2F*> h2HotTowerFrequency_vec;
@@ -68,7 +70,7 @@ namespace myAnalysis {
     UInt_t m_bins_phi    = 256;
     UInt_t m_bins_eta    = 96;
     UInt_t m_bins_status = 2;
-    UInt_t m_nStatus     = 4;
+    UInt_t m_nStatus     = 5;
 
     UInt_t m_bins_sigma  = 500;
     Float_t m_sigma_low  = 0;
@@ -86,7 +88,7 @@ namespace myAnalysis {
     string m_fieldname_hotMap = "status";
     string m_sigma_hotMap     = "CEMC_sigma";
 
-    Bool_t m_doHotChi2 = false;
+    Bool_t m_doHotChi2 = true;
 }
 
 void myAnalysis::init_hists() {
@@ -94,17 +96,19 @@ void myAnalysis::init_hists() {
     hBadTowers   = new TH1F("hBadTowers", "Bad Towers; Tower Index; Runs", m_ntowers, -0.5, m_ntowers-0.5);
     hBadTowersDead = new TH1F("hBadTowersDead", "Bad Towers: Dead; Tower Index; Runs", m_ntowers, -0.5, m_ntowers-0.5);
     hBadTowersHot = new TH1F("hBadTowersHot", "Bad Towers: Hot; Tower Index; Runs", m_ntowers, -0.5, m_ntowers-0.5);
+    hBadTowersHotChi2 = new TH1F("hBadTowersHotChi2", "Bad Towers: Hot Chi2; Tower Index; Runs", m_ntowers, -0.5, m_ntowers-0.5);
     hBadTowersCold = new TH1F("hBadTowersCold", "Bad Towers: Cold; Tower Index; Runs", m_ntowers, -0.5, m_ntowers-0.5);
 
     h2BadTowers   = new TH2F("h2BadTowers", "Bad Towers; #phi Index; #eta Index", m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
     h2BadTowersDead = new TH2F("h2BadTowersDead", "Bad Towers: Dead; #phi Index; #eta Index", m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
     h2BadTowersHot = new TH2F("h2BadTowersHot", "Bad Towers: Hot; #phi Index; #eta Index", m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
+    h2BadTowersHotChi2 = new TH2F("h2BadTowersHotChi2", "Bad Towers: Hot Chi2; #phi Index; #eta Index", m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
     h2BadTowersCold = new TH2F("h2BadTowersCold", "Bad Towers: Cold; #phi Index; #eta Index", m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
 
     hHotTowerStatus = new TH1F("hHotTowerStatus", "Hot Tower Status; Status; Towers", m_nStatus, -0.5, m_nStatus-0.5);
 
-    hSigma        = new TH1F("hSigma", "Towers (Flagged Hot #leq 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
-    hSigmaGood    = new TH1F("hSigmaGood", "Towers (Flagged Hot for 0% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
+    hSigmaHot        = new TH1F("hSigmaHot", "Towers (Flagged Hot #leq 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
+    hSigmaNeverHot    = new TH1F("hSigmaNeverHot", "Towers (Flagged Hot for 0% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
     hSigmaFreqHot = new TH1F("hSigmaFreqHot", "Towers (Flagged Hot > 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
 
     stringstream name, title;
@@ -171,7 +175,7 @@ Int_t myAnalysis::init(const string &input) {
     return 0;
 }
 
-void myAnalysis::process_event() {
+Int_t myAnalysis::process_event() {
 
     UInt_t bin_run = 1;
     Float_t sigma_min = 9999;
@@ -183,25 +187,27 @@ void myAnalysis::process_event() {
 
         rc->set_uint64Flag("TIMESTAMP", run);
 
+        Bool_t hasHotMap = true;
         string calibdir = CDBInterface::instance()->getUrl(m_calibName_hotMap);
 
-        if (calibdir.empty()) {
+        std::unique_ptr<CDBTTree> m_cdbttree_hotMap = nullptr;
+
+        if (!calibdir.empty()) m_cdbttree_hotMap = std::make_unique<CDBTTree>(calibdir);
+        else {
             cout << "Run: " << run << ", Missing: " << m_calibName_hotMap << endl;
             runsMissingHotMap.push_back(run);
-            ++bin_run;
-            continue;
+            hasHotMap = false;
         }
 
-        CDBTTree* m_cdbttree_hotMap = new CDBTTree(calibdir);
-
-        CDBTTree* m_cdbttree_chi2;
+        std::unique_ptr<CDBTTree> m_cdbttree_chi2 = nullptr;
+        Bool_t hasHotChi2 = m_doHotChi2;
 
         if(m_doHotChi2) {
             calibdir = CDBInterface::instance()->getUrl(m_calibName_chi2);
 
-            if(!calibdir.empty()) m_cdbttree_chi2 = new CDBTTree(calibdir);
+            if(!calibdir.empty()) m_cdbttree_chi2 = std::make_unique<CDBTTree>(calibdir);
             else {
-                m_doHotChi2 = false;
+                hasHotChi2 = false;
                 cout << "Run: " << run << ", Missing: " << m_calibName_chi2 << endl;
             }
         }
@@ -214,12 +220,27 @@ void myAnalysis::process_event() {
             UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
             Float_t fraction_badChi2 = 0;
-            if(m_doHotChi2) {
+            if(hasHotChi2) {
                 fraction_badChi2 = m_cdbttree_chi2->GetFloatValue(key, m_fieldname_chi2);
             }
-            Int_t hotMap_val = m_cdbttree_hotMap->GetIntValue(key, m_fieldname_hotMap);
+
+            Int_t hotMap_val = 0;
+            if (hasHotMap) {
+                hotMap_val = m_cdbttree_hotMap->GetIntValue(key, m_fieldname_hotMap);
+            }
+
+            // ensure hotMap_val is within range
+            // 0: Good
+            // 1: Dead
+            // 2: Hot
+            // 3: Cold
+            if(hotMap_val > 3) {
+              cout << "ERROR: Unknown hotMap value: " << hotMap_val << endl;
+              return 1;
+            }
+
             Float_t sigma_val = 0;
-            if(!hasBadSigma) sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
+            if(!hasBadSigma && hasHotMap) sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
             if(std::isnan(sigma_val) || std::isinf(sigma_val)) {
               hasBadSigma = true;
               badSigma.insert(run);
@@ -227,7 +248,7 @@ void myAnalysis::process_event() {
 
             if(!hasBadSigma) hHotTowerSigma_vec[channel]->Fill(sigma_val);
 
-            if ((m_doHotChi2 && fraction_badChi2 > m_fraction_badChi2_threshold) || hotMap_val != 0) {
+            if (hasHotMap && hotMap_val != 0) {
                 hBadTowers->Fill(channel);
                 h2BadTowers->Fill(phibin, etabin);
                 hHotTowerStatus->Fill(hotMap_val);
@@ -254,8 +275,20 @@ void myAnalysis::process_event() {
                     h2BadTowersCold->Fill(phibin, etabin);
                 }
             }
+            // Normal Status but Hot due to badChi2
+            else if (hasHotChi2 && fraction_badChi2 > m_fraction_badChi2_threshold) {
+                hotMap_val = 4; // assign a separate status for Hot due to badChi2
 
-            if(hotMap_val != 2) {
+                hBadTowers->Fill(channel);
+                h2BadTowers->Fill(phibin, etabin);
+
+                hBadTowersHotChi2->Fill(channel);
+                h2BadTowersHotChi2->Fill(phibin, etabin);
+
+                hHotTowerStatus->Fill(hotMap_val);
+            }
+
+            if(hasHotMap && hotMap_val == 0) {
                 h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,1,1);
             }
         }
@@ -279,6 +312,8 @@ void myAnalysis::process_event() {
   cout << "Runs with bad sigma (nan or inf): " << badSigma.size() << endl;
   cout << "Runs Missing HotMap: " << runsMissingHotMap.size() << endl;
   cout << "Runs Processed: " << runs_processed << ", " << runs_processed*100./runs.size() << " %" << endl;
+
+  return 0;
 }
 
 void myAnalysis::finalize(const string &i_output, const string &outputMissingHotMap) {
@@ -299,21 +334,29 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   hBadTowersDead->Write();
   hBadTowersHot->Write();
   hBadTowersCold->Write();
+  hBadTowersHotChi2->Write();
 
   h2BadTowers->Write();
   h2BadTowersDead->Write();
   h2BadTowersHot->Write();
   h2BadTowersCold->Write();
+  h2BadTowersHotChi2->Write();
 
   hHotTowerStatus->Write();
 
   output.mkdir("h2HotTowerFrequency");
   output.mkdir("hHotTowerSigma");
 
-  UInt_t ctr[2] = {0};
+  UInt_t ctr[5] = {0};
+  UInt_t ctr_freq[5] = {0};
   for (UInt_t i = 0; i < m_ntowers; ++i) {
-        if (hBadTowersHot->GetBinContent(i + 1)) ++ctr[0];
-        else hSigmaGood->Add(hHotTowerSigma_vec[i]);
+        if (hBadTowersHot->GetBinContent(i + 1))     ++ctr[0];
+        else hSigmaNeverHot->Add(hHotTowerSigma_vec[i]);
+
+        if (hBadTowersDead->GetBinContent(i + 1))    ++ctr[1];
+        if (hBadTowersCold->GetBinContent(i + 1))    ++ctr[2];
+        if (hBadTowersHotChi2->GetBinContent(i + 1)) ++ctr[3];
+        if (hBadTowers->GetBinContent(i + 1))        ++ctr[4];
 
         if (hBadTowersHot->GetBinContent(i + 1) >= m_threshold) {
             for (UInt_t j = 1; j <= runs.size(); ++j) {
@@ -327,18 +370,35 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
             hHotTowerSigma_vec[i]->Write();
 
             hSigmaFreqHot->Add(hHotTowerSigma_vec[i]);
-            ++ctr[1];
+            ++ctr_freq[0];
         }
-        else hSigma->Add(hHotTowerSigma_vec[i]);
+        else hSigmaHot->Add(hHotTowerSigma_vec[i]);
+
+        if (hBadTowersDead->GetBinContent(i + 1)    >= m_threshold) ++ctr_freq[1];
+        if (hBadTowersCold->GetBinContent(i + 1)    >= m_threshold) ++ctr_freq[2];
+        if (hBadTowersHotChi2->GetBinContent(i + 1) >= m_threshold) ++ctr_freq[3];
+        if (hBadTowers->GetBinContent(i + 1) >= m_threshold)        ++ctr_freq[4];
   }
 
   output.cd();
-  hSigmaGood->Write();
-  hSigma->Write();
+  hSigmaNeverHot->Write();
+  hSigmaHot->Write();
   hSigmaFreqHot->Write();
 
   cout << "Towers flagged hot: " << ctr[0] << ", " << ctr[0]*100./m_ntowers << " %" << endl;
-  cout << "Towers flagged hot more than 50% of runs: " << ctr[1] << ", " << ctr[1]*100./m_ntowers << " %" << endl;
+  cout << "Towers flagged hot more than 50% of runs: " << ctr_freq[0] << ", " << ctr_freq[0]*100./m_ntowers << " %" << endl;
+
+  cout << "Towers flagged dead: " << ctr[1] << ", " << ctr[1]*100./m_ntowers << " %" << endl;
+  cout << "Towers flagged dead more than 50% of runs: " << ctr_freq[1] << ", " << ctr_freq[1]*100./m_ntowers << " %" << endl;
+
+  cout << "Towers flagged cold: " << ctr[2] << ", " << ctr[2]*100./m_ntowers << " %" << endl;
+  cout << "Towers flagged cold more than 50% of runs: " << ctr_freq[2] << ", " << ctr_freq[2]*100./m_ntowers << " %" << endl;
+
+  cout << "Towers flagged hot chi2: " << ctr[3] << ", " << ctr[3]*100./m_ntowers << " %" << endl;
+  cout << "Towers flagged hot chi2 more than 50% of runs: " << ctr_freq[3] << ", " << ctr_freq[3]*100./m_ntowers << " %" << endl;
+
+  cout << "Towers flagged bad: " << ctr[4] << ", " << ctr[4]*100./m_ntowers << " %" << endl;
+  cout << "Towers flagged bad more than 50% of runs: " << ctr_freq[4] << ", " << ctr_freq[4]*100./m_ntowers << " %" << endl;
 
   output.Close();
 }
@@ -354,7 +414,9 @@ void Fun4All_HotTower(const string &input, const string &output = "test.root", c
     Int_t ret = myAnalysis::init(input);
     if(ret) return;
 
-    myAnalysis::process_event();
+    ret = myAnalysis::process_event();
+    if(ret) return;
+
     myAnalysis::finalize(output, outputMissingHotMap);
 }
 
