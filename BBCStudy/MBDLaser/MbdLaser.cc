@@ -4,7 +4,8 @@
 #include <phool/getClass.h>
 #include <phool/recoConsts.h>
 #include <fun4all/Fun4AllServer.h>
-#include <ffaobjects/EventHeaderv1.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+#include <ffaobjects/EventHeader.h>
 
 #include <mbd/MbdDefs.h>
 #include <mbd/MbdOut.h>
@@ -36,22 +37,10 @@
 using namespace std;
 using namespace MbdDefs;
 
-/*
-const Double_t index_refract = 1.4585;
-const Double_t v_ckov = 1.0/index_refract;  // velocity threshold for CKOV
-const Double_t C = 29.9792458; // cm/ns
-*/
-
 //---------------------------------------------------------------->
-MbdLaser::MbdLaser(const string &name) : SubsysReco(name),
-    _tree( 0 ),
-     //T1(0), //tree from DST
-    f_evt( 0 ),
-    _tres( 0.05 ),
-    _savefname( "mbdlaser.root" ),
-    _savefile( 0 )
+MbdLaser::MbdLaser(const string &name) : SubsysReco(name)
 { 
-
+  _savefname = "mbdlaser.root";
 }
 
 //----------------------------------------------------------------->
@@ -77,9 +66,9 @@ int MbdLaser::Init(PHCompositeNode *topNode)
     name = "h_mbdq"; name += ipmt;
     title = "mbd charge, ch "; title += ipmt;
     h_mbdq[ipmt] = new TH1F(name,title,1600,0,16000);
-    
-   
-    
+
+
+
     // TGraph to track mean of mbdq distribution
     name = "g_mbdq"; name += ipmt;
     title = "mbdq, ch "; title += ipmt;
@@ -88,21 +77,21 @@ int MbdLaser::Init(PHCompositeNode *topNode)
     g_mbdq[ipmt]->SetTitle(name);
 
     /*
-    name = "h_tdiff_ch"; name += ipmt;
-    title = "tdiff, ch "; title += ipmt;
-    h_tdiff_ch[ipmt] = new TH1F(name,title,600,-3,3);
-    */
+       name = "h_tdiff_ch"; name += ipmt;
+       title = "tdiff, ch "; title += ipmt;
+       h_tdiff_ch[ipmt] = new TH1F(name,title,600,-3,3);
+       */
   }
   //Time 
   for (int ipmt=0; ipmt<128; ipmt++)
   { 
-     //Time A for each ch filled with (t)
+    //Time A for each ch filled with (t)
     name = "h_mbdt"; name += ipmt;
     title = "mbd Time, ch "; title += ipmt;
     h_mbdt[ipmt] = new TH1F(name,title,128,-0.5,127.5);
 
 
-   // TGraph to track mean of mbdq distribution
+    // TGraph to track mean of mbdq distribution
     name = "g_mbdt"; name += ipmt;
     title = "mbdt, ch "; title += ipmt;
     g_mbdt[ipmt] = new TGraphErrors();
@@ -110,7 +99,7 @@ int MbdLaser::Init(PHCompositeNode *topNode)
     g_mbdt[ipmt]->SetTitle(name);
 
 
-   }
+  }
 
   for (int iarm=0; iarm<2; iarm++)
   {
@@ -121,12 +110,12 @@ int MbdLaser::Init(PHCompositeNode *topNode)
     hevt_mbdt[iarm]->SetLineColor(4);
   }
 
-   // Time vs ch filled with (btt,pmt)
+  // Time vs ch filled with (btt,pmt)
   h2_mbdbtt = new TH2F("h2_mbdtt","Time[ADC] vs Ch",128,-0.5,127.5,250,0.,25.);
   h2_mbdbtt->GetXaxis()->SetTitle("ch");
   h2_mbdbtt->GetYaxis()->SetTitle("Time");
 
-   //charge A vs ch D-2 filled with(bq,pmt)
+  //charge A vs ch D-2 filled with(bq,pmt)
   h2_mbdbq = new TH2F("h2_mbdbq","Charge[ADC] vs Ch", 128,-0.5,127.5,1600,0.,16000.);
   h2_mbdbq->GetXaxis()->SetTitle("ch");
   h2_mbdbq->GetYaxis()->SetTitle("Charge");
@@ -134,7 +123,7 @@ int MbdLaser::Init(PHCompositeNode *topNode)
 
 
 
-  
+
   c_mbdt = new TCanvas("c_mbdt","MBD Times",1200,800);
   c_mbdt->Divide(1,2);
 
@@ -158,7 +147,14 @@ int MbdLaser::process_event(PHCompositeNode *topNode)
 {
   nprocessed++;
 
-  //f_evt = _evtheader->get_EvtSequence();
+  // skip the first 100 events
+  // these are bad since the laser takes time to ramp up
+  f_evt = _evtheader->get_EvtSequence();
+  if ( f_evt<100 )
+  {
+    return Fun4AllReturnCodes::DISCARDEVENT;
+  }
+
   //if(f_evt%1==0) cout << PHWHERE << "Event " << f_evt << "\t" << ", nprocessed = " << nprocessed << endl;
 
   // Initialize Variables
@@ -175,28 +171,28 @@ int MbdLaser::process_event(PHCompositeNode *topNode)
     Float_t q = _mbdpmts->get_pmt(ipmt)->get_q();
     Float_t t = _mbdpmts->get_pmt(ipmt)->get_time();
     //Float_t phi = mbdgeom->get_phi(ipmt);   // get phi angle
-       
+
     h_mbdq[ipmt]->Fill( q );
-     //cout << ipmt << ":\t" << q << "\t" << t << endl;
-    
+    //cout << ipmt << ":\t" << q << "\t" << t << endl;
+
     h_mbdt[ipmt]->Fill( t );
-   // cout << ipmt << ":\t" << q << "\t" << t << endl;
-   
-   // declear variables 
-   Float_t bq   = _mbdpmts->get_pmt(ipmt)->get_q();
-   Float_t btt  = _mbdpmts->get_pmt(ipmt)->get_time();
-   Short_t pmt =_mbdpmts->get_pmt(ipmt)->get_pmt();
-   cout << " bq = " << bq << ":\t" << "btt = " <<btt << ":\t" << "pmt = " <<pmt<<endl;
+    // cout << ipmt << ":\t" << q << "\t" << t << endl;
+
+    // declear variables 
+    Float_t bq   = _mbdpmts->get_pmt(ipmt)->get_q();
+    Float_t btt  = _mbdpmts->get_pmt(ipmt)->get_time();
+    Short_t pmt =_mbdpmts->get_pmt(ipmt)->get_pmt();
+    //cout << " bq = " << bq << ":\t" << "btt = " <<btt << ":\t" << "pmt = " <<pmt<<endl;
 
 
-  //Fill 2D charge vs ch and Time vs ch
-  h2_mbdbtt->Fill(pmt,btt);
-  h2_mbdbq->Fill(pmt,bq);
+    //Fill 2D charge vs ch and Time vs ch
+    h2_mbdbtt->Fill(pmt,btt);
+    h2_mbdbq->Fill(pmt,bq);
 
   }
- 
 
- // LaserDST(topNode);
+
+  // LaserDST(topNode);
 
   return 0;
 }
@@ -206,8 +202,8 @@ void MbdLaser::GetNodes(PHCompositeNode *topNode)
 {
   // Get the DST objects
 
-  //_evtheader = findNode::getClass<EventHeaderv1>(topNode, "EventHeader");
-  //if (!_evtheader && f_evt<10) cout << PHWHERE << " EventHeader node not found on node tree" << endl;
+  _evtheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  if (!_evtheader && f_evt<10) cout << PHWHERE << " EventHeader node not found on node tree" << endl;
 
   // MbdOut
   _mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
@@ -224,10 +220,10 @@ int MbdLaser::End(PHCompositeNode *topNode)
 {
   _savefile->cd();
 
-   //Filling g_mbdq and g_mbdt
+  //Filling g_mbdq and g_mbdt
   for (int ipmt=0; ipmt<MBD_N_PMT; ipmt++)
   {
-    
+
     // Fill info on q distribution and t
     f_ch = ipmt;
     f_qmean = h_mbdq[ipmt]->GetMean();
@@ -249,7 +245,7 @@ int MbdLaser::End(PHCompositeNode *topNode)
 
   }
 
-    _savefile->Write();
+  _savefile->Write();
   _savefile->Close();
 
   return 0;
@@ -257,7 +253,7 @@ int MbdLaser::End(PHCompositeNode *topNode)
 
 void MbdLaser::LaserDST(PHCompositeNode *topNode)
 {
- 
+
   //Float_t r = (4.4049/4.05882);
   Float_t r = 1.0;
 
@@ -272,10 +268,10 @@ void MbdLaser::LaserDST(PHCompositeNode *topNode)
     {
       h_mbdq[ipmt]->Fill( q*r );
       h_mbdt[ipmt]->Fill(t);
-     // cout << ipmt << ":\t" << q << "\t" << t << endl;
+      // cout << ipmt << ":\t" << q << "\t" << t << endl;
     }
 
-   // cout << ipmt << ":\t" << q << "\t" << t << endl;
+    // cout << ipmt << ":\t" << q << "\t" << t << endl;
   }
 
 }

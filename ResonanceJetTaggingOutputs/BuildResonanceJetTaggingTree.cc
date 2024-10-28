@@ -71,6 +71,7 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
   , m_truth_jetcontainer_name("")
   , m_dorec(true)
   , m_dotruth(false)
+  , m_stable_mother(true)
   , m_nDaughters(0)
   , m_svtx_evalstack(nullptr)
   , m_trackeval(nullptr)
@@ -121,6 +122,10 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
     case ResonanceJetTagging::TAG::LAMBDAC:
       m_tag_pdg = 4122;
       m_nDaughters = 3;
+      break;
+    case ResonanceJetTagging::TAG::LAMBDAS:
+      m_tag_pdg = 3122;
+      m_nDaughters = 2;
       break;
   }
 }
@@ -173,6 +178,8 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
     case ResonanceJetTagging::TAG::DPLUS:
       [[fallthrough]];
     case ResonanceJetTagging::TAG::LAMBDAC:
+      [[fallthrough]];
+    case ResonanceJetTagging::TAG::LAMBDAS:
       return loopHFHadronic(topNode);
       break;
     default:
@@ -443,26 +450,71 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
   PHG4Particle *g4particle = nullptr;
   PHG4Particle *g4parent = nullptr;
   std::vector<HepMC::GenParticle*> mcTags(m_nDaughters);
+  std::vector<int> daughtersID(m_nDaughters);
 
   PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 
   // Truth map
   SvtxPHG4ParticleMap_v1 *dst_reco_truth_map = findNode::getClass<SvtxPHG4ParticleMap_v1>(topNode, "SvtxPHG4ParticleMap");
 
-  if (dst_reco_truth_map)
+  if(m_stable_mother)
   {
-    for (int idecay = 0; idecay < m_nDaughters; idecay++)
+    if (dst_reco_truth_map)
     {
-      std::map<float, std::set<int>> truth_set = dst_reco_truth_map->get(decays[idecay]);
-      const auto &best_weight = truth_set.rbegin();
-      int best_truth_id = *best_weight->second.rbegin();
-      g4particle = truthinfo->GetParticle(best_truth_id);
-      mcTags[idecay] = getMother(topNode, g4particle);
-      if (mcTags[idecay] == nullptr)
+      for (int idecay = 0; idecay < m_nDaughters; idecay++)
+      {
+        std::map<float, std::set<int>> truth_set = dst_reco_truth_map->get(decays[idecay]);
+        const auto &best_weight = truth_set.rbegin();
+        int best_truth_id = *best_weight->second.rbegin();
+        g4particle = truthinfo->GetParticle(best_truth_id);
+        mcTags[idecay] = getMother(topNode, g4particle);
+        if (mcTags[idecay] == nullptr)
+        {
+          return;
+        }
+      }
+    }
+    else
+    {
+      SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+      if(!trackmap) return;
+
+      for (int idecay = 0; idecay < m_nDaughters; idecay++)
+      {
+        SvtxTrack *track = trackmap->get(decays[idecay]);
+        if(!track) return;
+        g4particle = m_trackeval->max_truth_particle_by_nclusters(track);
+
+        if(!g4particle)
+        {
+          return;
+        }
+
+        g4parent = truthinfo->GetParticle(g4particle->get_primary_id());
+
+        if(g4parent == nullptr)
+        {
+          return;
+        }
+
+        mcTags[idecay] = hepMCGenEvent->barcode_to_particle(g4parent->get_barcode());
+        if(mcTags[idecay] == nullptr)
+        {
+          return;
+        }
+      }
+    }
+
+    // check is decays are from the same mother, otherwise it is background
+    for (int idecay = 1; idecay < m_nDaughters; idecay++)
+    {
+      if (mcTags[idecay]->barcode() != mcTags[idecay - 1]->barcode())
       {
         return;
       }
     }
+
+    mcTag = mcTags[0];
   }
   else
   {
@@ -480,39 +532,53 @@ void BuildResonanceJetTaggingTree::findMatchedTruthD0(PHCompositeNode *topNode, 
         return;
       }
 
-      g4parent = truthinfo->GetParticle(g4particle->get_primary_id());
-
-      if(g4parent == nullptr)
-      {
-        return;
-      }
-
-      mcTags[idecay] = hepMCGenEvent->barcode_to_particle(g4parent->get_barcode());
-      if(mcTags[idecay] == nullptr)
-      {
-        return;
-      }
+      daughtersID[idecay] = g4particle->get_barcode();
     }
   }
 
-  // check is decays are from the same mother, otherwise it is background
-  for (int idecay = 1; idecay < m_nDaughters; idecay++)
-  {
-    if (mcTags[idecay]->barcode() != mcTags[idecay - 1]->barcode())
-    {
-      return;
-    }
-  }
 
-  mcTag = mcTags[0];
+
+
 
   for(auto mcJet : *m_truth_taggedJetContainer)
   {
     for(auto comp : mcJet->get_comp_vec())
     {
-      if(comp.first == Jet::SRC::VOID && int(comp.second) == mcTag->barcode())
+      if(m_stable_mother)
       {
-        mcTagJet = mcJet;
+        if(comp.first == Jet::SRC::VOID && int(comp.second) == mcTag->barcode())
+        {
+          mcTagJet = mcJet;
+        }
+      }
+      else
+      {
+        if(comp.first == Jet::SRC::VOID)
+        {
+          HepMC::GenParticle* TheMother = hepMCGenEvent->barcode_to_particle(int(comp.second));
+          HepMC::GenVertex *TagVertex = TheMother->end_vertex();
+          int nMatches = 0;
+          //if HEPMC vertex exists
+          if(TagVertex)
+          {
+            for (HepMC::GenVertex::particle_iterator it = TagVertex->particles_begin(HepMC::descendants); it != TagVertex->particles_end(HepMC::descendants); ++it)
+            {
+              for(unsigned int idau = 0; idau < daughtersID.size(); idau++)
+              {
+                if(daughtersID[idau] == (*it)->barcode())
+                {
+                  nMatches++;
+                  daughtersID[idau] = -99999;
+                }
+              }
+            }
+          }
+          if(nMatches == m_nDaughters)
+          {
+            mcTag = TheMother;
+            mcTagJet = mcJet;
+          }
+        }
       }
     }
 

@@ -37,6 +37,8 @@ libBBCStudy_la_LIBADD = \
   -lSubsysReco \
   -lg4detectors \
   -lmbd_io \
+  -lfun4allraw \
+  -lffarawobjects \
   -lglobalvertex_io \
   -lphg4hit
 

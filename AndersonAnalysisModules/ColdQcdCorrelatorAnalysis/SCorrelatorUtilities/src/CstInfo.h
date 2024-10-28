@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'CstInfo.h'
-// Derek Anderson
-// 03.03.2024
-//
-// Utility class to hold information from
-// jet constituents.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   CstInfo.h
+ *  \author Derek Anderson
+ *  \date   03.03.2024
+ *
+ *  Utility class to hold information from
+ *  jet constituents.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_CSTINFO_H
 #define SCORRELATORUTILITIES_CSTINFO_H
@@ -15,16 +16,36 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <cassert>
 #include <utility>
 #include <optional>
 // root libraries
 #include <Rtypes.h>
 #include <Math/Vector3D.h>
+#include <Math/Vector4D.h>
 // fastjet libraries
 #include <fastjet/PseudoJet.hh>
+// phool libraries
+#include <phool/PHCompositeNode.h>
+// PHG4 libraries
+#include <g4main/PHG4Particle.h>
+// calobase libraries
+#include <calobase/RawTower.h>
+#include <calobase/TowerInfo.h>
+#include <calobase/RawCluster.h>
+// trackbase libraries
+#include <trackbase_historic/SvtxTrack.h>
+// particle flow libraries
+#include <particleflowreco/ParticleFlowElement.h>
+// jetbase libraries
+#include <jetbase/Jet.h>
+#include <jetbase/JetContainer.h>
 // analysis utilities
 #include "JetInfo.h"
+#include "TwrTools.h"
 #include "Constants.h"
+#include "ClustTools.h"
+#include "CstInterfaces.h"
 
 // make common namespaces implicit
 using namespace std;
@@ -34,8 +55,14 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // CstInfo definition -----------------------------------------------------
-
+    // ------------------------------------------------------------------------
+    //! Constituent info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate information
+     *  about jet constituents. Can be built
+     *  from FastJet PseudoJets's or F4A
+     *  tracks, clusters, or particles.
+     */
     class CstInfo {
 
       private:
@@ -57,7 +84,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double eta     = numeric_limits<double>::max();
         double phi     = numeric_limits<double>::max();
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 
@@ -100,7 +127,14 @@ namespace SColdQcdCorrelatorAnalysis {
         // public methods
         void Reset();
         void SetInfo(fastjet::PseudoJet& pseudojet);
-        void SetJetInfo(const Types::JetInfo& jet);
+        void SetInfo(SvtxTrack* track);
+        void SetInfo(const ParticleFlowElement* flow);
+        void SetInfo(const int sys, RawTower* tower, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        void SetInfo(const int sys, const int chan, TowerInfo* info, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        void SetInfo(const RawCluster* cluster, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        void SetInfo(PHG4Particle* particle, const int event);
+        void SetInfo(const pair<Jet::SRC, unsigned int>& itCst, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt, optional<int> event = nullopt);
+        void SetJetInfo(const int id, const Types::JetInfo& jet);
         bool IsInAcceptance(const CstInfo& minimum, const CstInfo& maximum) const;
         bool IsInAcceptance(const pair<CstInfo, CstInfo>& range) const;
 
@@ -120,6 +154,13 @@ namespace SColdQcdCorrelatorAnalysis {
         // ctors accepting arguments
         CstInfo(const Const::Init init);
         CstInfo(fastjet::PseudoJet& pseudojet);
+        CstInfo(SvtxTrack* track);
+        CstInfo(const ParticleFlowElement* flow);
+        CstInfo(const int sys, RawTower* tower, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        CstInfo(const int sys, const int chan, TowerInfo* info, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        CstInfo(const RawCluster* cluster, optional<ROOT::Math::XYZVector> vtx = nullopt);
+        CstInfo(PHG4Particle* particle, const int event);
+        CstInfo(const pair<Jet::SRC, unsigned int>& itCst, PHCompositeNode* topNode, optional<ROOT::Math::XYZVector> vtx = nullopt, optional<int> event = nullopt);
 
       // identify this class to ROOT
       ClassDefNV(CstInfo, 1)

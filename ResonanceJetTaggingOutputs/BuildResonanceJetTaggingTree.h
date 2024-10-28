@@ -56,6 +56,8 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   bool getDoRecunstructed() { return m_dorec; }
   void setDoTruth(bool b) { m_dotruth = b; }
   bool getDoTruth() { return m_dotruth; }
+  void setStableMother(bool b) { m_stable_mother = b; }
+  bool getStableMother() { return m_stable_mother; }
 
   void setTagContainerName(const std::string &tagContName) { m_tagcontainer_name = tagContName; }
   std::string getTagContainerName() { return m_tagcontainer_name; }
@@ -78,6 +80,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   JetContainerv1* m_truth_taggedJetContainer;
   bool m_dorec;
   bool m_dotruth;
+  bool m_stable_mother;
   int m_nDaughters;
   SvtxEvalStack *m_svtx_evalstack = nullptr;
   SvtxTrackEval *m_trackeval = nullptr;

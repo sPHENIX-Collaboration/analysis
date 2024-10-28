@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'FlowInfo.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Utility class to hold information from
-// particle flow elements.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   FlowInfo.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *   Utility class to hold information from
+ *   particle flow elements.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_FLOWINFO_H
 #define SCORRELATORUTILITIES_FLOWINFO_H
@@ -31,8 +32,14 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // FlowInfo definition ----------------------------------------------------
-
+    // ------------------------------------------------------------------------
+    //! Particle flow info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate information
+     *  about particle flow objects (PFOs).
+     *  Can be built from F4A ParticleFlow-
+     *  Elements.
+     */
     class FlowInfo {
 
       private:
@@ -49,7 +56,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double pz   = numeric_limits<double>::max();
         double pt   = numeric_limits<double>::max();
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 

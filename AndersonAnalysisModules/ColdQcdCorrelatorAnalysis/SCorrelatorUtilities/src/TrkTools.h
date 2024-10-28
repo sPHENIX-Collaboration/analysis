@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'TrkTools.h'
-// Derek Anderson
-// 10.30.2023
-//
-// Collection of frequent track-related methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkTools.h
+ *  \author Derek Anderson
+ *  \date   10.30.2023
+ *
+ *  Collection of frequent track-related methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_TRKTOOLS_H
 #define SCORRELATORUTILITIES_TRKTOOLS_H

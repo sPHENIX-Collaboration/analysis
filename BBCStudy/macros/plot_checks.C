@@ -11,6 +11,12 @@ int do_ihcal = 0;
 int calc_gain_corr = 1;
 
 const int MAXRUNS = 20000;
+
+int nruns = 0;
+
+void fit_across_runs(TGraphErrors *gainvals[], const char *flist);
+void plot_bz();
+
 Double_t bqmeansum[MAXRUNS];            // bq mean in sum of two arms
 Double_t bqmeansumerr[MAXRUNS];
 Double_t bqmeantot[2][MAXRUNS];         // bq mean in each arm
@@ -33,6 +39,10 @@ TH1 *h_emcale[MAXRUNS];
 TH1 *h_ohcale[MAXRUNS];
 TH1 *h_ihcale[MAXRUNS];
 
+TH1 *h_bz[MAXRUNS];
+
+TCanvas *cv[100];
+int icv = 0;
 
 // Get mean gain for each channel across runs, and write out the values
 void fit_across_runs(TGraphErrors *gainvals[], const char *flist)
@@ -59,6 +69,32 @@ void fit_across_runs(TGraphErrors *gainvals[], const char *flist)
   meangainfile.close();
 }
 
+
+TH2 *h2_bzvsirun{nullptr};
+void plot_bz()
+{
+  int nbinsx = h_bz[0]->GetNbinsX();
+  double xmin = h_bz[0]->GetBinLowEdge(1);
+  double xmax = h_bz[0]->GetBinLowEdge(nbinsx+1);
+  h2_bzvsirun = new TH2F("h2_bzvsirun","MBD_z vs run idx",nruns,0,nruns,nbinsx,xmin,xmax);
+
+  for (int irun=0; irun<nruns; irun++)
+  {
+    if ( h_bz[irun]->Integral() == 0 )
+    {
+      cout << irun << endl;
+    }
+    for (int ibin=1; ibin<=nbinsx; ibin++)
+    {
+      float val = h_bz[irun]->GetBinContent(ibin);
+      h2_bzvsirun->SetBinContent(irun+1,ibin,val);
+    }
+  }
+
+  cv[icv] = new TCanvas("bz","bz",1000,600);
+  h2_bzvsirun->Draw("colz");
+}
+
 void plot_checks(const char *flistname = "c.list")
 {
 
@@ -67,13 +103,16 @@ void plot_checks(const char *flistname = "c.list")
   TString dir = "results/plot_checks_"; dir += flistname;
   dir.ReplaceAll(".list","/");
   TString name = "mkdir -p " + dir;
+  cout << name << endl;
   gSystem->Exec( name );
 
   TString dstfname;
-  int nruns = 0;
   while ( flist >> dstfname )
   {
     tfile[nruns] = new TFile(dstfname,"READ");
+
+    h_bz[nruns] = (TH1*)tfile[nruns]->Get("h_bz");
+
     h_bbcqsum[nruns] = (TH1*)tfile[nruns]->Get("h_bbcqsum");
     h_bbcqtot[0][nruns] = (TH1*)tfile[nruns]->Get("h_bbcqtot0");
     h_bbcqtot[1][nruns] = (TH1*)tfile[nruns]->Get("h_bbcqtot1");
@@ -91,7 +130,7 @@ void plot_checks(const char *flistname = "c.list")
 
     for (int ipmt=0; ipmt<128; ipmt++)
     {
-      name = "h_bbcq"; name += ipmt;
+      name = "h_q"; name += ipmt;
       h_bbcq[nruns][ipmt] = (TH1*)tfile[nruns]->Get(name);
       bqmean[ipmt][nruns] = h_bbcq[nruns][ipmt]->GetMean();
       bqmeanerr[ipmt][nruns] = h_bbcq[nruns][ipmt]->GetMeanError();
@@ -101,6 +140,9 @@ void plot_checks(const char *flistname = "c.list")
     nruns++;
   }
   cout << "Processed " << nruns << " runs." << endl;
+
+  plot_bz();
+  return;
 
   TCanvas *bc = new TCanvas("bc","mean fits",800,600);
   TString title;

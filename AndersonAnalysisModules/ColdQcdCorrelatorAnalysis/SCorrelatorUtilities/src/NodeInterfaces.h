@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'NodeInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// F4A node-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   NodeInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  F4A node-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_NODEINTERFACES_H
 #define SCORRELATORUTILITIES_NODEINTERFACES_H

@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TrkInfo.h'
-// Derek Anderson
-// 03.05.2024
-//
-// Utility class to hold information from tracks.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Utility class to hold information from tracks.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_TRKINFO_H
 #define SCORRELATORUTILITIES_TRKINFO_H
@@ -35,8 +36,13 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // TrkInfo definition -----------------------------------------------------
-
+    // ------------------------------------------------------------------------
+    //! Constituent info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate information
+     *  about tracks. Can be built from a
+     *  F4A SvtxTrack.
+     */
     class TrkInfo {
 
       private:
@@ -65,7 +71,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double vy         = numeric_limits<double>::max();
         double vz         = numeric_limits<double>::max();
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 

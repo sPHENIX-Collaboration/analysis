@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'ParInterfaces.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Particle-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ParTools.h
+ *  \author Derek Anderson
+ *  \file   03.06.2024
+ *
+ *  Particle-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_PARINTERFACES_H
 #define SCORRELATORUTILITIES_PARINTERFACES_H
@@ -39,10 +40,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
     // particle interfaces ----------------------------------------------------
 
-    PHG4TruthInfoContainer* GetTruthContainer(PHCompositeNode* topNode);
-    PHHepMCGenEventMap*     GetMcEventMap(PHCompositeNode* topNode);
-    PHHepMCGenEvent*        GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab);
-    HepMC::GenEvent*        GetGenEvent(PHCompositeNode* topNode, const int iEvtToGrab);
+    PHG4TruthInfoContainer*            GetTruthContainer(PHCompositeNode* topNode);
+    PHG4TruthInfoContainer::ConstRange GetPrimaries(PHCompositeNode* topNode);
+    PHHepMCGenEventMap*                GetMcEventMap(PHCompositeNode* topNode);
+    PHHepMCGenEvent*                   GetMcEvent(PHCompositeNode* topNode, const int iEvtToGrab);
+    HepMC::GenEvent*                   GetGenEvent(PHCompositeNode* topNode, const int iEvtToGrab);
 
   }  // end Interfaces namespace
 }  // end SColdQcdCorrealtorAnalysis namespace
