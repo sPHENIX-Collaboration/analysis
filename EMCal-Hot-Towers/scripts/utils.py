@@ -112,10 +112,13 @@ def create_run_lists():
     subprocess.run(['bash','-c','find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'],cwd=output)
 
     print(f'Generating {ana_tag}_2024p007 minimum statistics Run List')
-    subprocess.run(['bash','-c',f'psql FileCatalog -c "select runnumber from datasets where dataset = \'{ana_tag}_2024p007\' GROUP BY runnumber having SUM(events) >= {threshold} and runnumber > 46619;" -At | sort > runs-min-stats.list'],cwd=output)
+    subprocess.run(['bash','-c',f'psql FileCatalog -c "select runnumber from datasets where dataset = \'{ana_tag}_2024p007\' and dsttype=\'DST_CALOFITTING_run2pp\' GROUP BY runnumber having SUM(events) >= {threshold} and runnumber > 46619 order by runnumber;" -At > runs-{ana_tag}.list'],cwd=output)
 
-    print(f'Generating {ana_tag} 2024p007 Run List')
-    subprocess.run(['bash','-c',f'comm -12 runs-hot-maps.list runs-min-stats.list > runs-{ana_tag}.list'],cwd=output)
+    print(f'Generating Timestamp Run List')
+    subprocess.run(['bash','-c',f'psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber, brtimestamp from run where runnumber > 46619 order by runnumber;" -At --csv > runs-timestamp.list'],cwd=output)
+
+    print(f'Generating {ana_tag}_2024p007 Timestamp Run List')
+    subprocess.run(['bash','-c',f'join -t \',\' runs-{ana_tag}.list runs-timestamp.list > runs-{ana_tag}-timestamp.list'],cwd=output)
 
     print('Run Stats')
     subprocess.run(['bash','-c','wc -l *'],cwd=output)

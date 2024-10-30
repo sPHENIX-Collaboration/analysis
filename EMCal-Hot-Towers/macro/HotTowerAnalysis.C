@@ -11,6 +11,8 @@
 #include <TH2F.h>
 #include <TFile.h>
 #include <TMath.h>
+#include <TDatime.h>
+#include <TGraph.h>
 
 #include <calobase/TowerInfoDefs.h>
 #include <cdbobjects/CDBTTree.h>
@@ -38,7 +40,7 @@ namespace myAnalysis {
     Int_t init(const string &input);
     void init_hists();
 
-    Int_t process_event();
+    Int_t process_event(const string &outputRunStats);
     void finalize(const string &i_output, const string &outputMissingHotMap);
 
     TH1F* hBadTowers;
@@ -59,10 +61,22 @@ namespace myAnalysis {
     TH1F* hSigmaHot;
     TH1F* hSigmaFreqHot;
 
+    TH1F* hAcceptance;
+    TH1F* hFracHot;
+    TH1F* hFracDead;
+    TH1F* hFracCold;
+    TH1F* hFracBadChi2;
+
+    TH1F* hAcceptanceVsTime;
+    TH1F* hHotVsTime;
+    TH1F* hDeadVsTime;
+    TH1F* hColdVsTime;
+    TH1F* hBadChi2VsTime;
+
     vector<TH2F*> h2HotTowerFrequency_vec;
     vector<TH1F*> hHotTowerSigma_vec;
 
-    vector<UInt_t> runs;
+    vector<pair<UInt_t,string>> runs;
     vector<UInt_t> runsMissingHotMap;
     recoConsts* rc;
 
@@ -75,6 +89,9 @@ namespace myAnalysis {
     UInt_t m_bins_sigma  = 500;
     Float_t m_sigma_low  = 0;
     Float_t m_sigma_high = 50;
+
+    UInt_t m_bins_acceptance = 101;
+    UInt_t m_bins_time       = 50000;
 
     // run threshold above which towers are considered to be frequently hot
     UInt_t m_threshold;
@@ -89,6 +106,7 @@ namespace myAnalysis {
     string m_sigma_hotMap     = "CEMC_sigma";
 
     Bool_t m_doHotChi2 = true;
+    Bool_t m_doTime    = true;
 }
 
 void myAnalysis::init_hists() {
@@ -110,6 +128,42 @@ void myAnalysis::init_hists() {
     hSigmaHot        = new TH1F("hSigmaHot", "Towers (Flagged Hot #leq 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
     hSigmaNeverHot    = new TH1F("hSigmaNeverHot", "Towers (Flagged Hot for 0% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
     hSigmaFreqHot = new TH1F("hSigmaFreqHot", "Towers (Flagged Hot > 50% of Runs); sigma; Counts", m_bins_sigma, m_sigma_low, m_sigma_high);
+
+    hAcceptance  = new TH1F("hAcceptance", "Acceptance; Acceptance [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+    hFracHot     = new TH1F("hFracHot", "Fraction of Hot Towers; Hot Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+    hFracDead    = new TH1F("hFracDead", "Fraction of Dead Towers; Dead Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+    hFracCold    = new TH1F("hFracCold", "Fraction of Cold Towers; Cold Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+    hFracBadChi2 = new TH1F("hFracBadChi2", "Fraction of Bad Chi2 Towers; Bad Chi2 Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+
+    if(m_doTime) {
+      TDatime d(runs[0].second.c_str());
+      UInt_t start = d.Convert();
+
+      d.Set(runs[runs.size()-1].second.c_str());
+      UInt_t end = d.Convert();
+
+      hAcceptanceVsTime = new TH1F("hAcceptanceVsTime", "Acceptance; Time; Acceptance [%]", m_bins_time, start, end);
+      hAcceptanceVsTime->SetTitle("Acceptance; Time; Acceptance [%]");
+      hAcceptanceVsTime->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hAcceptanceVsTime->GetXaxis()->SetTimeFormat("%m/%d");
+      // hAcceptanceVsTime->GetXaxis()->SetTimeFormat("%m/%d %H");
+
+      hHotVsTime = new TH1F("hHotVsTime", "Hot; Time; Hot Towers [%]", m_bins_time, start, end);
+      hHotVsTime->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hHotVsTime->GetXaxis()->SetTimeFormat("%m/%d");
+
+      hDeadVsTime = new TH1F("hDeadVsTime", "Dead; Time; Dead Towers [%]", m_bins_time, start, end);
+      hDeadVsTime->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hDeadVsTime->GetXaxis()->SetTimeFormat("%m/%d");
+
+      hColdVsTime = new TH1F("hColdVsTime", "Cold; Time; Cold Towers [%]", m_bins_time, start, end);
+      hColdVsTime->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hColdVsTime->GetXaxis()->SetTimeFormat("%m/%d");
+
+      hBadChi2VsTime = new TH1F("hBadChi2VsTime", "BadChi2; Time; Bad Chi2 Towers [%]", m_bins_time, start, end);
+      hBadChi2VsTime->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hBadChi2VsTime->GetXaxis()->SetTimeFormat("%m/%d");
+    }
 
     stringstream name, title;
     for (UInt_t i = 0; i < m_ntowers; ++i) {
@@ -146,7 +200,7 @@ Int_t myAnalysis::init(const string &input) {
 
     // Check if the file was successfully opened
     if (!file.is_open()) {
-        cerr << "Failed to open cuts file: " << input << endl;
+        cerr << "Failed to open file: " << input << endl;
         return 1;
     }
 
@@ -157,9 +211,18 @@ Int_t myAnalysis::init(const string &input) {
         std::istringstream lineStream(line);
 
         UInt_t runnumber;
+        string timestamp;
+        string date;
+        string time;
+        char comma;
 
-        if (lineStream >> runnumber) {
-            runs.push_back(runnumber);
+        if (m_doTime && lineStream >> runnumber >> comma >> date >> time) {
+            timestamp = date+" "+time;
+            runs.push_back(make_pair(runnumber,timestamp));
+        }
+        else if (lineStream >> runnumber) {
+            timestamp = "";
+            runs.push_back(make_pair(runnumber,timestamp));
         }
         else {
             cerr << "Failed to parse line: " << line << endl;
@@ -175,15 +238,27 @@ Int_t myAnalysis::init(const string &input) {
     return 0;
 }
 
-Int_t myAnalysis::process_event() {
+Int_t myAnalysis::process_event(const string &outputRunStats) {
 
     UInt_t bin_run = 1;
     Float_t sigma_min = 9999;
     Float_t sigma_max = 0;
+    UInt_t ctr_overwrite = 0;
     std::unordered_set<UInt_t> badSigma;
 
-    for(auto run : runs) {
-        cout << "Run: " << run << endl;
+    ofstream file(outputRunStats);
+    file << "Run,Acceptance,Dead,Hot,Cold,BadChi2" << endl;
+
+    for(auto p : runs) {
+        UInt_t run = p.first;
+        string timestamp = p.second;
+        TDatime d;
+
+        if(m_doTime) {
+          d.Set(timestamp.c_str());
+          cout << "Run: " << run << ", Timestamp: " << timestamp << endl;
+        }
+        else cout << "Run: " << run << endl;
 
         rc->set_uint64Flag("TIMESTAMP", run);
 
@@ -213,6 +288,8 @@ Int_t myAnalysis::process_event() {
         }
 
         Bool_t hasBadSigma = false;
+        UInt_t acceptance = 0;
+        UInt_t bad_ctr[4] = {0};
 
         for (UInt_t channel = 0; channel < m_ntowers; ++channel) {
             UInt_t key    = TowerInfoDefs::encode_emcal(channel);
@@ -257,12 +334,14 @@ Int_t myAnalysis::process_event() {
                 if(hotMap_val == 1) {
                     hBadTowersDead->Fill(channel);
                     h2BadTowersDead->Fill(phibin, etabin);
+                    ++bad_ctr[0];
                 }
                 // Hot
                 if(hotMap_val == 2) {
                     hBadTowersHot->Fill(channel);
                     h2BadTowersHot->Fill(phibin, etabin);
                     h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,2,1);
+                    ++bad_ctr[1];
 
                     if(!hasBadSigma) {
                       sigma_min = min(sigma_min, sigma_val);
@@ -273,6 +352,7 @@ Int_t myAnalysis::process_event() {
                 if(hotMap_val == 3) {
                     hBadTowersCold->Fill(channel);
                     h2BadTowersCold->Fill(phibin, etabin);
+                    ++bad_ctr[2];
                 }
             }
             // Normal Status but Hot due to badChi2
@@ -286,18 +366,60 @@ Int_t myAnalysis::process_event() {
                 h2BadTowersHotChi2->Fill(phibin, etabin);
 
                 hHotTowerStatus->Fill(hotMap_val);
+                ++bad_ctr[3];
             }
 
             if(hasHotMap && hotMap_val == 0) {
                 h2HotTowerFrequency_vec[channel]->SetBinContent(bin_run,1,1);
+                ++acceptance;
             }
         }
+
+        if(hasHotMap) {
+          stringstream s;
+          Float_t acc = (Int_t)(acceptance*1e4/m_ntowers)/100.;
+          hAcceptance->Fill(acc);
+
+          Float_t accDead = (Int_t)(bad_ctr[0]*1e4/m_ntowers)/100.;
+          hFracDead->Fill(accDead);
+
+          Float_t accHot = (Int_t)(bad_ctr[1]*1e4/m_ntowers)/100.;
+          hFracHot->Fill(accHot);
+
+          Float_t accCold = (Int_t)(bad_ctr[2]*1e4/m_ntowers)/100.;
+          hFracCold->Fill(accCold);
+
+          Float_t accBadChi2 = (Int_t)(bad_ctr[3]*1e4/m_ntowers)/100.;
+          hFracBadChi2->Fill(accBadChi2);
+
+          if(m_doTime) {
+            Int_t bin_time = hAcceptanceVsTime->FindBin(d.Convert());
+            if(hAcceptanceVsTime->GetBinContent(bin_time)) {
+               cout << "WARNING: Bin Overwrite" << endl;
+               ++ctr_overwrite;
+            }
+            hAcceptanceVsTime->SetBinContent(bin_time, acc);
+
+            hHotVsTime->SetBinContent(bin_time, accHot);
+            hDeadVsTime->SetBinContent(bin_time, accDead);
+            hColdVsTime->SetBinContent(bin_time, accCold);
+            hBadChi2VsTime->SetBinContent(bin_time, accBadChi2);
+          }
+          file << run << "," << acc
+                      << "," << accDead
+                      << "," << accHot
+                      << "," << accCold
+                      << "," << accBadChi2
+                             << endl;
+        }
+
         ++bin_run;
     }
 
+    file.close();
+
     cout << "###################" << endl;
     cout << "Runs with Bad Sigma" << endl;
-
     for(auto run : badSigma) {
       cout << "Run: " << run << endl;
     }
@@ -311,6 +433,7 @@ Int_t myAnalysis::process_event() {
   cout << "Sigma Min: " << sigma_min << ", Sigma Max: " << sigma_max << endl;
   cout << "Runs with bad sigma (nan or inf): " << badSigma.size() << endl;
   cout << "Runs Missing HotMap: " << runsMissingHotMap.size() << endl;
+  cout << "Runs with overlap time bin: " << ctr_overwrite << endl;
   cout << "Runs Processed: " << runs_processed << ", " << runs_processed*100./runs.size() << " %" << endl;
 
   return 0;
@@ -343,6 +466,19 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   h2BadTowersHotChi2->Write();
 
   hHotTowerStatus->Write();
+
+  hAcceptance->Write();
+  hFracDead->Write();
+  hFracHot->Write();
+  hFracCold->Write();
+  hFracBadChi2->Write();
+  if(m_doTime) {
+    hAcceptanceVsTime->Write();
+    hDeadVsTime->Write();
+    hHotVsTime->Write();
+    hColdVsTime->Write();
+    hBadChi2VsTime->Write();
+  }
 
   output.mkdir("h2HotTowerFrequency");
   output.mkdir("hHotTowerSigma");
@@ -403,18 +539,27 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   output.Close();
 }
 
-void Fun4All_HotTower(const string &input, const string &output = "test.root", const string &outputMissingHotMap = "missingHotMap.csv") {
+void HotTowerAnalysis(const string &input,
+                      const string &output = "test.root",
+                      const Bool_t doTime = true,
+                      const string &outputMissingHotMap = "missingHotMap.csv",
+                      const string &outputRunStats = "acceptance.csv") {
+
     cout << "#############################" << endl;
     cout << "Input Parameters" << endl;
     cout << "input: "  << input << endl;
     cout << "output: " << output << endl;
+    cout << "doTime: " << doTime << endl;
     cout << "outputMissingHotMap: " << outputMissingHotMap << endl;
+    cout << "outputRunStats: " << outputRunStats << endl;
     cout << "#############################" << endl;
+
+    myAnalysis::m_doTime = doTime;
 
     Int_t ret = myAnalysis::init(input);
     if(ret) return;
 
-    ret = myAnalysis::process_event();
+    ret = myAnalysis::process_event(outputRunStats);
     if(ret) return;
 
     myAnalysis::finalize(output, outputMissingHotMap);
@@ -422,25 +567,35 @@ void Fun4All_HotTower(const string &input, const string &output = "test.root", c
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 4) {
-        cout << "usage: ./hotAna inputFile [outputFile], [outputMissingHotMap]" << endl;
+if(argc < 2 || argc > 6) {
+        cout << "usage: ./hotAna inputFile [outputFile] [doTime] [outputMissingHotMap] [outputRunStats]" << endl;
         cout << "inputFile: containing list of run numbers" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
+        cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: false." << endl;
         cout << "outputMissingHotMap: location of outputMissingHotMap file. Default: missingHotMap.csv." << endl;
+        cout << "outputRunStats: location of outputRunStats file. Default: acceptance.csv." << endl;
         return 1;
     }
 
     string outputFile          = "test.root";
+    Bool_t doTime              = true;
     string outputMissingHotMap = "missingHotMap.csv";
+    string outputRunStats = "acceptance.csv";
 
     if(argc >= 3) {
         outputFile = argv[2];
     }
     if(argc >= 4) {
-        outputMissingHotMap = argv[3];
+        doTime = atoi(argv[3]);
+    }
+    if(argc >= 5) {
+        outputMissingHotMap = argv[4];
+    }
+    if(argc >= 6) {
+        outputRunStats = argv[5];
     }
 
-    Fun4All_HotTower(argv[1], outputFile, outputMissingHotMap);
+    HotTowerAnalysis(argv[1], outputFile, doTime, outputMissingHotMap, outputRunStats);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
