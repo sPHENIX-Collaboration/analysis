@@ -94,7 +94,7 @@ namespace myAnalysis {
     UInt_t m_bins_time       = 50000;
 
     // run threshold above which towers are considered to be frequently hot
-    UInt_t m_threshold;
+    UInt_t m_threshold = 400;
 
     Float_t m_fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
@@ -441,7 +441,7 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
 
 void myAnalysis::finalize(const string &i_output, const string &outputMissingHotMap) {
 
-  m_threshold = (runs.size() - runsMissingHotMap.size()) / 2;
+  m_threshold = min(m_threshold, (UInt_t)(runs.size() - runsMissingHotMap.size()) / 2);
   cout << "threshold: " << m_threshold << endl;
 
   ofstream file(outputMissingHotMap);

@@ -27,7 +27,7 @@ R__LOAD_LIBRARY(libcalo_io.so)
 namespace myAnalysis {
     void analyze(const string& i_input, const string &output);
 
-    UInt_t  ntowers   = 24576;
+    UInt_t  ntowers = 24576;
     Float_t threshold;
     Float_t thresholdNoise;
 }
