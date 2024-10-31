@@ -15,6 +15,7 @@
 #include <TLatex.h>
 #include <TCanvas.h>
 #include <TDatime.h>
+#include <TGaxis.h>
 
 // -- sPHENIX Style
 #include "sPhenixStyle.C"
@@ -277,6 +278,30 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     c1->Print((string(hAcceptanceVsTime->GetName()) + ".png").c_str());
     c1->Print((output).c_str(), "pdf portrait");
+
+    // compute averages
+    UInt_t bin_change = hAcceptanceVsTime->FindBin(d.Convert());
+    Float_t acceptanceTotal[2] = {0};
+    UInt_t bin_ctr[2] = {0};
+    for(UInt_t i = 1; i <= hAcceptanceVsTime->GetNbinsX(); ++i) {
+        Float_t val = hAcceptanceVsTime->GetBinContent(i);
+        if(i < bin_change && val != 0) {
+           acceptanceTotal[0] += val;
+           ++bin_ctr[0];
+        }
+        if(i >= bin_change && val != 0) {
+           acceptanceTotal[1] += hAcceptanceVsTime->GetBinContent(i);
+           ++bin_ctr[1];
+        }
+    }
+
+    cout << "#########################" << endl;
+    cout << "Average Acceptance" << endl;
+    cout << "Bin Change: " << bin_change << endl;
+    cout << "Overall: " << (acceptanceTotal[0]+acceptanceTotal[1])/(bin_ctr[0]+bin_ctr[1]) << " %" << endl;
+    cout << "0 mrad: " << acceptanceTotal[0]/bin_ctr[0] << " %" << endl;
+    cout << "1.5 mrad: " << acceptanceTotal[1]/bin_ctr[1] << " %" << endl;
+    cout << "#########################" << endl;
 
     // ----------------------------
 
