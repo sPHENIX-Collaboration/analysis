@@ -26,15 +26,20 @@
 #include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
+#include <simqa_modules/QAG4SimulationTracking.h>
+#include <qautils/QAHistManagerDef.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libdecayfinder.so)
 R__LOAD_LIBRARY(libhftrackefficiency.so)
+R__LOAD_LIBRARY(libsimqa_modules.so)
 
 int Fun4All_HFG(std::string processID = "0")
 {
-  int nEvents = 2e3;
-  std::string channel = "D2Kpi";
+  int nEvents = 2e2;
+  std::string channel = "Ds2KKpi";
+  std::string outDir = "/sphenix/tg/tg01/hf/cdean/selected_hf_simulations/" + channel;
   //F4A setup
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -46,21 +51,41 @@ int Fun4All_HFG(std::string processID = "0")
   //Generator setup
 
   Input::PYTHIA8 = true;
+  int particleID = 421;
 
   if (channel == "bs2jpsiks0")
   {
     PYTHIA8::config_file = "steeringCards/pythia8_bs2jpsiks0.cfg";
     EVTGENDECAYER::DecayFile = "decFiles/Bs2JpsiKS0.DEC";
+    particleID = 531;
   }
   else if (channel == "b2DX")
   {
     PYTHIA8::config_file = "steeringCards/pythia8_b2DX.cfg";
     EVTGENDECAYER::DecayFile = "decFiles/b2DX.DEC";
+    particleID = 5;
   }
   else if (channel == "D2Kpi")
   {
     PYTHIA8::config_file = "steeringCards/pythia8_D2Kpi.cfg";
     EVTGENDECAYER::DecayFile = "decFiles/D2Kpi.DEC";
+  }
+  else if ((channel == "Dp2KKpi") || (channel == "Ds2KKpi"))
+  {
+    PYTHIA8::config_file = "steeringCards/pythia8_D2KKpi.cfg";
+    EVTGENDECAYER::DecayFile = "decFiles/D2KKpi.DEC";
+    if (channel == "Dp2KKpi") particleID = 411;
+    else particleID = 431;
+  }
+  else if (channel == "Kshort2pipi")
+  {
+    PYTHIA8::config_file = "steeringCards/pythia8_K2pipi.cfg";
+    EVTGENDECAYER::DecayFile = "decFiles/K2pipi.DEC";
+    particleID = 310;
+  }
+  else if (channel == "minBias")
+  {
+    std::cout << "Min bias simulations" << std::endl; 
   }
   else
   {
@@ -73,29 +98,20 @@ int Fun4All_HFG(std::string processID = "0")
   InputInit();
 
   PHPy8ParticleTrigger * p8_hf_signal_trigger = new PHPy8ParticleTrigger();
-  if (channel == "bs2jpsiks0")
-  {
-    p8_hf_signal_trigger->AddParticles(531);
-    p8_hf_signal_trigger->AddParticles(-531);
-  }
-  else if (channel == "b2DX")
-  {
-    p8_hf_signal_trigger->AddParticles(5);
-    p8_hf_signal_trigger->AddParticles(-5);
-  }
-  else
-  {
-    p8_hf_signal_trigger->AddParticles(421);
-    p8_hf_signal_trigger->AddParticles(-421);
-  }
-  p8_hf_signal_trigger->SetPtLow(1.);
+  p8_hf_signal_trigger->SetPtLow(0.);
   p8_hf_signal_trigger->SetEtaHighLow(1.3, -1.3); // sample a rapidity range higher than the sPHENIX tracking pseudorapidity
   p8_hf_signal_trigger->SetStableParticleOnly(false); // process unstable particles that include quarks
   p8_hf_signal_trigger->PrintConfig();
-  INPUTGENERATOR::Pythia8->register_trigger(p8_hf_signal_trigger);
-  INPUTGENERATOR::Pythia8->set_trigger_OR();
 
-  Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia8);
+  if (channel != "minBias")
+  {
+    p8_hf_signal_trigger->AddParticles(particleID);
+    p8_hf_signal_trigger->AddParticles(-1*particleID);
+    INPUTGENERATOR::Pythia8->register_trigger(p8_hf_signal_trigger);
+    INPUTGENERATOR::Pythia8->set_trigger_OR();
+  
+    Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia8);
+  }
 
   InputRegister();
 
@@ -112,10 +128,12 @@ int Fun4All_HFG(std::string processID = "0")
   FlagHandler *flag = new FlagHandler();
   se->registerSubsystem(flag);
 
-
   DecayFinder *myFinder = new DecayFinder("myFinder");
   myFinder->Verbosity(INT_MAX);
   if (channel == "bs2jpsiks0") myFinder->setDecayDescriptor("[B_s0 -> {J/psi -> e^+ e^-} {K_S0 -> pi^+ pi^-}]cc");
+  else if  (channel == "Kshort2pipi") myFinder->setDecayDescriptor("K_S0 -> pi^- pi^+");
+  else if  (channel == "Dp2KKpi") myFinder->setDecayDescriptor("[D+ -> {phi -> K^+ K^-} pi^+]cc");
+  else if  (channel == "Ds2KKpi") myFinder->setDecayDescriptor("[D_s+ -> {phi -> K^+ K^-} pi^+]cc");
   else myFinder->setDecayDescriptor("[D0 -> K^- pi^+]cc");
   myFinder->saveDST(1);
   myFinder->allowPi0(1);
@@ -124,7 +142,7 @@ int Fun4All_HFG(std::string processID = "0")
   myFinder->setPTmin(0.16); //Note: sPHENIX min pT is 0.2 GeV for tracking
   myFinder->setEtaRange(-1.2, 1.2); //Note: sPHENIX acceptance is |eta| <= 1.1
   myFinder->useDecaySpecificEtaRange(false);
-  se->registerSubsystem(myFinder);  
+  if (channel != "minBias") se->registerSubsystem(myFinder);  
 
   //Simulation setup
 
@@ -170,20 +188,18 @@ int Fun4All_HFG(std::string processID = "0")
 
   HFTrackEfficiency *myTrackEff = new HFTrackEfficiency("myTrackEff");
   myTrackEff->Verbosity(INT_MAX);
+  //myTrackEff->setTruthRecoMatchingPercentage(100.);
   myTrackEff->setDFNodeName("myFinder");
   myTrackEff->triggerOnDecay(1);
   myTrackEff->writeSelectedTrackMap(true);
   myTrackEff->writeOutputFile(true);
-  std::string outputHFEffFile = "./outputHFTrackEff_" + channel + "_" + processID + ".root";
+  std::string outputHFEffFile = outDir + "/hfEff/outputHFTrackEff_" + channel + "_" + processID + ".root";
   myTrackEff->setOutputFileName(outputHFEffFile);
-  se->registerSubsystem(myTrackEff);
+  if (channel != "minBias") se->registerSubsystem(myTrackEff);
 
   //Output file handling
 
-  string FullOutFile;
-  if (channel == "bs2jpsiks0") FullOutFile = "./Bs2JpsiKS0_DST_" + processID + ".root";
-  else if (channel == "b2DX") FullOutFile = "./b2DX_DST_" + processID + ".root";
-  else FullOutFile = "./D2Kpi_DST_" + processID + ".root";
+  string FullOutFile = outDir + "/" + channel + "_DST_" + processID + ".root";
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", FullOutFile);
   out->StripNode("G4HIT_PIPE");
   out->StripNode("G4HIT_SVTXSUPPORT");
@@ -197,7 +213,7 @@ int Fun4All_HFG(std::string processID = "0")
   out->StripNode("G4HIT_MICROMEGAS");
   out->StripNode("TRKR_HITSET");
   out->StripNode("TRKR_HITTRUTHASSOC");
-  out->StripNode("TRKR_CLUSTER");
+  //out->StripNode("TRKR_CLUSTER");
   out->StripNode("TRKR_CLUSTERHITASSOC");
   out->StripNode("TRKR_CLUSTERCROSSINGASSOC");
   out->StripNode("TRAINING_HITSET");
@@ -205,16 +221,17 @@ int Fun4All_HFG(std::string processID = "0")
   out->StripNode("TRKR_TRUTHCLUSTERCONTAINER");
   out->StripNode("alignmentTransformationContainer");
   out->StripNode("alignmentTransformationContainerTransient");
-  out->StripNode("SiliconTrackSeedContainer");
-  out->StripNode("TpcTrackSeedContainer");
-  out->StripNode("SvtxTrackSeedContainer");
+  //out->StripNode("SiliconTrackSeedContainer");
+  //out->StripNode("TpcTrackSeedContainer");
+  //out->StripNode("SvtxTrackSeedContainer");
   out->StripNode("ActsTrajectories");
-  out->StripNode("SvtxTrackMap");
+  //out->StripNode("SvtxTrackMap");
   out->StripNode("SvtxAlignmentStateMap");
   out->SaveRunNode(0);
   se->registerOutputManager(out);
 
   se->run(nEvents);
+
   se->End();
   gSystem->Exit(0);
 
