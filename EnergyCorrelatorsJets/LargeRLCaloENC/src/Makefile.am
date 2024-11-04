@@ -21,7 +21,10 @@ libLargeRLENC_la_SOURCES = \
 
 libLargeRLENC_la_LIBADD = \
   -lphool \
-  -lSubsysReco
+  -lSubsysReco \
+  -lfun4all \
+  -lg4eval \
+  -lg4jets 
 
 BUILT_SOURCES = testexternals.cc
 

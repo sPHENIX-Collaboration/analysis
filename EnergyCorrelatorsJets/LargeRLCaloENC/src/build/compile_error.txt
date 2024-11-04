@@ -1,0 +1,80 @@
+make  all-am
+make[1]: Entering directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/src/build'
+/bin/sh ./libtool  --tag=CXX   --mode=compile /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"largerlenc\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I..  -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.443/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include   -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c -o LargeRLENC.lo ../LargeRLENC.cc
+libtool: compile:  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" "-DPACKAGE_STRING=\"largerlenc 1.00\"" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I.. -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.443/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c ../LargeRLENC.cc  -fPIC -DPIC -o .libs/LargeRLENC.o
+../LargeRLENC.cc: In member function 'void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, int, bool, bool, float, float, std::vector<MethodHistograms*>*, int, float*)':
+../LargeRLENC.cc:303:27: error: assignment of read-only location 'j.std::pair<const std::array<float, 3>, float>::first.std::array<float, 3>::operator[](0)'
+  303 |                 j.first[0]=eta_shift;
+../LargeRLENC.cc:304:63: error: assignment of read-only location 'j.std::pair<const std::array<float, 3>, float>::first.std::array<float, 3>::operator[](1)'
+  304 |                 if(vertex[0] != 0 && vertex[1] !=0) j.first[1]=atan2(y,x);
+../LargeRLENC.cc:305:27: error: assignment of read-only location 'j.std::pair<const std::array<float, 3>, float>::first.std::array<float, 3>::operator[](2)'
+  305 |                 j.first[2]=r; //make sure the positions are properly aligned for all caluclations
+../LargeRLENC.cc:381:14: error: no match for 'operator[]' (operand types are 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >' and 'int')
+  381 |         m_e2c[which_calo-1]=e2c;
+      |              ^
+In file included from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/map:61,
+                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.443/include/phool/PHNodeIOManager.h:13,
+                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.443/include/phool/PHIODataNode.h:9,
+                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.443/include/phool/getClass.h:5,
+                 from ../LargeRLENC.h:12,
+                 from ../LargeRLENC.cc:13:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](const key_type&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<float, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> > >; mapped_type = std::array<std::map<float, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  502 |       operator[](const key_type& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:34: note:   no known conversion for argument 1 from 'int' to 'const std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >::key_type&' {aka 'const std::__cxx11::basic_string<char>&'}
+  502 |       operator[](const key_type& __k)
+      |                  ~~~~~~~~~~~~~~~~^~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](key_type&&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<float, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> > >; mapped_type = std::array<std::map<float, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  522 |       operator[](key_type&& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:29: note:   no known conversion for argument 1 from 'int' to 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >::key_type&&' {aka 'std::__cxx11::basic_string<char>&&'}
+  522 |       operator[](key_type&& __k)
+      |                  ~~~~~~~~~~~^~~
+../LargeRLENC.cc:382:14: error: no match for 'operator[]' (operand types are 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >' and 'int')
+  382 |         m_e3c[which_calo-1]=e3c;
+      |              ^
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](const key_type&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<float, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> > >; mapped_type = std::array<std::map<float, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  502 |       operator[](const key_type& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:34: note:   no known conversion for argument 1 from 'int' to 'const std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >::key_type&' {aka 'const std::__cxx11::basic_string<char>&'}
+  502 |       operator[](const key_type& __k)
+      |                  ~~~~~~~~~~~~~~~~^~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](key_type&&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<float, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> > >; mapped_type = std::array<std::map<float, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  522 |       operator[](key_type&& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:29: note:   no known conversion for argument 1 from 'int' to 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<float, float>, 3> >::key_type&&' {aka 'std::__cxx11::basic_string<char>&&'}
+  522 |       operator[](key_type&& __k)
+      |                  ~~~~~~~~~~~^~~
+../LargeRLENC.cc:383:19: error: no match for 'operator[]' (operand types are 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<std::array<float, 3>, float>, 3> >' and 'int')
+  383 |         m_e3c_full[which_calo-1]=e3c_full;
+      |                   ^
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](const key_type&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<std::array<float, 3>, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<std::array<float, 3>, float>, 3> > >; mapped_type = std::array<std::map<std::array<float, 3>, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  502 |       operator[](const key_type& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:34: note:   no known conversion for argument 1 from 'int' to 'const std::map<std::__cxx11::basic_string<char>, std::array<std::map<std::array<float, 3>, float>, 3> >::key_type&' {aka 'const std::__cxx11::basic_string<char>&'}
+  502 |       operator[](const key_type& __k)
+      |                  ~~~~~~~~~~~~~~~~^~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](key_type&&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::array<std::map<std::array<float, 3>, float>, 3>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::array<std::map<std::array<float, 3>, float>, 3> > >; mapped_type = std::array<std::map<std::array<float, 3>, float>, 3>; key_type = std::__cxx11::basic_string<char>]'
+  522 |       operator[](key_type&& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:29: note:   no known conversion for argument 1 from 'int' to 'std::map<std::__cxx11::basic_string<char>, std::array<std::map<std::array<float, 3>, float>, 3> >::key_type&&' {aka 'std::__cxx11::basic_string<char>&&'}
+  522 |       operator[](key_type&& __k)
+      |                  ~~~~~~~~~~~^~~
+../LargeRLENC.cc:384:13: error: no match for 'operator[]' (operand types are 'std::map<std::__cxx11::basic_string<char>, std::map<std::array<float, 3>, float> >' and 'int')
+  384 |         m_pt[which_calo-1]=p_T_save;
+      |             ^
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](const key_type&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::map<std::array<float, 3>, float>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::map<std::array<float, 3>, float> > >; mapped_type = std::map<std::array<float, 3>, float>; key_type = std::__cxx11::basic_string<char>]'
+  502 |       operator[](const key_type& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:502:34: note:   no known conversion for argument 1 from 'int' to 'const std::map<std::__cxx11::basic_string<char>, std::map<std::array<float, 3>, float> >::key_type&' {aka 'const std::__cxx11::basic_string<char>&'}
+  502 |       operator[](const key_type& __k)
+      |                  ~~~~~~~~~~~~~~~~^~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:7: note: candidate: 'std::map<_Key, _Tp, _Compare, _Alloc>::mapped_type& std::map<_Key, _Tp, _Compare, _Alloc>::operator[](key_type&&) [with _Key = std::__cxx11::basic_string<char>; _Tp = std::map<std::array<float, 3>, float>; _Compare = std::less<std::__cxx11::basic_string<char> >; _Alloc = std::allocator<std::pair<const std::__cxx11::basic_string<char>, std::map<std::array<float, 3>, float> > >; mapped_type = std::map<std::array<float, 3>, float>; key_type = std::__cxx11::basic_string<char>]'
+  522 |       operator[](key_type&& __k)
+      |       ^~~~~~~~
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:522:29: note:   no known conversion for argument 1 from 'int' to 'std::map<std::__cxx11::basic_string<char>, std::map<std::array<float, 3>, float> >::key_type&&' {aka 'std::__cxx11::basic_string<char>&&'}
+  522 |       operator[](key_type&& __k)
+      |                  ~~~~~~~~~~~^~~
+make[1]: *** [LargeRLENC.lo] Error 1
+make[1]: Leaving directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/src/build'
+make: *** [all] Error 2

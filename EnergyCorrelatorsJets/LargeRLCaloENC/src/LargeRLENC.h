@@ -4,9 +4,49 @@
 #define LARGERLENC_H
 //fun4all
 #include <fun4all/SubsysReco.h>
+#include <fun4all/Fun4AllBase.h>
+#include <fun4all/Fun4AllReturnCodes.h>
+
+//phool 
+#include <phool/PHCompositeNode.h>
+#include <phool/getClass.h>
+
+//Calo towers 
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfoContainerv1.h>
+#include <calobase/TowerInfoContainerv2.h>
+#include <calobase/TowerInfov2.h>
+#include <calobase/TowerInfov1.h>
+#include <calobase/TowerInfo.h>
+#include <calobase/RawTowerDefs.h>
+#include <calobase/RawTowerContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+
+//G4 opbjects
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+
+//jetbase objetcts 
+#include <jetbase/JetContainer.h>
+#include <jetbase/JetContainerv1.h>
+#include <jetbase/JetMapv1.h>
+#include <jetbase/JetMap.h>
+#include <jetbase/Jetv1.h>
+#include <jetbase/Jetv2.h>
+#include <jetbase/Jet.h> 
+#include <jetbase/TowerJetInput.h>
+#include <jetbase/ClusterJetInput.h>
 
 //fastjet
-#include <fastjet/Pseudojets>
+#include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
+
+//vertex stuff
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
 //c++
 #include <thread>
 #include <map>
@@ -19,8 +59,15 @@
 #include <TFile.h>
 #include <TTree.h>
 //Homebrews 
-#include <MethodHistorgrams.h>
+#include <calorimetertowerenc/MethodHistograms.h> //dont know why the linking against the actual version isnt working, so have to soft link for right now
 #define PI 3.14159265358979323464
+class PHCompositeNode;
+class Jet;
+class JetContainer;
+class PHG4Hit;
+class PHG4Particle;
+class PHG4TruthInfoContainer;
+
 struct DijetQATypePlots{
 	DijetQATypePlots(){
 		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
@@ -44,12 +91,14 @@ struct DijetQATypePlots{
 	TH1F* ohcal_occup;
 	std::vector<TH2F*> QA_2D_plots {bad_occ_em_oh_rat, bad_occ_em_h_rat, bad_occ_em_oh, bad_occ_em_h, ohcal_bad_hits, ohcal_rat_occup};
 	std::vector<TH1F*> QA_1D_plots {emcal_occup, ihcal_occup, ohcal_occup};
-	}
+	};
+
+
 class EventSelectionCut{
 	//maybe this gets some histos added for easier QA-ing of cut safety
 	public:
-		EventSelectionCut(float lpt=12., slpt=7., float det=0.7, float dph=2.75,float maxpct=0.9, bool dj=true, bool ne=false, std::string radius="r04" ): leadingpt(lpt), subleadingpt(slpt), etaedge(det), deltaphi(dph), maxOHCAL(maxpct),isdijet(dj), negativeEnergy(ne){
-			JetCuts=new TTree(Form("cuts_%s", radius) , Form("Jet Cut Kinematics for QA on the Jet Event for jet with radius %s", radius));
+		EventSelectionCut(float lpt=12., float slpt=7., float det=0.7, float dph=2.75,float maxpct=0.9, bool dj=true, bool ne=false, std::string radius="r04" ): leadingpt(lpt), subleadingpt(slpt), etaedge(det), deltaphi(dph), maxOHCAL(maxpct),isdijet(dj), negativeEnergy(ne){
+			JetCuts=new TTree(Form("cuts_%s", radius.c_str()) , Form("Jet Cut Kinematics for QA on the Jet Event for jet with radius %s", radius.c_str()));
 			JetCuts->Branch("N_Jets", &m_nJets, "Number of Jets in Container/I");
 			JetCuts->Branch("Lead_pt", &m_lpt, "p_{T} of Leading Jet/F");
 			JetCuts->Branch("Subleading_pt", &m_slpt, "p_{T} of subleading jet (pair if dijet pair exists)/F");
@@ -59,19 +108,19 @@ class EventSelectionCut{
 			JetCuts->Branch("ohcal_ratio", &m_ohcalrat, "m_ohcalrat/F");
 			JetCuts->Branch("isDijet", &m_isdijet, "m_isDijet/O");
 			JetCuts->Branch("negE", &m_hasnege, "m_hasnege/O");
-			JetCuts->Branch("passes", &passesCuts, "passesCuts/O");
+			JetCuts->Branch("passes", &passesCut, "passesCut/O");
 		};
 		TTree* JetCuts; //This is a QA testing ttree to allow for immediate QA
-		bool passesTheCut(JetContianerv2* eventjets, float hcalratio, std::array<float,3> vertex){
+		bool passesTheCut(JetContainer* eventjets, float hcalratio, std::array<float,3> vertex){
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
 			if(hcalratio > maxOHCAL) good=false;
-			if(abs(vetex[2]) > 30 ) good=false; //cut on z=30 vertex
+			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			float leadjetpt=0., subleadjetpt=0.;
 			bool haspartner=false;
 		       	Jet* leadjet, *subleadjet;
-		       	for(auto j:jets){
+		       	for(auto j: *eventjets){
 				float pt=j->get_pt();
 				if(pt > leadjetpt){
 					if(leadjet)subleadjet=leadjet;
@@ -80,7 +129,7 @@ class EventSelectionCut{
 				       	leadjetpt=pt;
 				       }
 				if(!negativeEnergy){
-					if(j.get_e() < 0){
+					if(j->get_e() < 0){
 						m_hasnege=true;
 				       		good=false;
 					}
@@ -89,28 +138,26 @@ class EventSelectionCut{
 			if(leadjetpt < leadingpt) good=false;
 			leadeta=leadjet->get_eta();
 		       	leadphi=leadjet->get_phi();
-			if(abs(leadeta) > deltaeta ) good=false; //getting rid of events that have the leading jet outside of acceptance region
-			for(auto j:jets){
+			if(abs(leadeta) > etaedge ) good=false; //getting rid of events that have the leading jet outside of acceptance region
+			for(auto j: *eventjets){
 				float phi=j->get_phi();
 				if(abs(phi-leadphi) > deltaphi){
 				       	subleadjet=j;
 					subleadjetpt=j->get_pt();
-					haspartner=true;
-					break;
-				}
+					haspartner=true;break;}
 			}
 			if(subleadjet){ 
 				float sldeta=subleadjet->get_eta();
-				if(abs(sldeta) > deltaeta) good=false;
+				if(abs(sldeta) > etaedge) good=false;
 				m_etasl=sldeta;
-				m_detaphi=subleadjet->get_phi()-leadjet->get_phi();
+				m_deltaphi=subleadjet->get_phi()-leadjet->get_phi();
 
 			}
 			else good=false;
 			if(subleadjetpt < subleadingpt || !haspartner) good=false;
 			passesCut=true;
 			m_isdijet=haspartner;
-			m_nJets=jets->size();
+			m_nJets=eventjets->size();
 			m_lpt=leadjetpt;
 			m_slpt=subleadjetpt;
 			JetCuts->Fill();
@@ -118,23 +165,23 @@ class EventSelectionCut{
 		}
 		float getLeadPhi(){ return leadphi;}
 		float getLeadEta(){ return leadeta;}
-		void getDijets(JetContainerv2* event_jets, std::vector<std::array<float, 3>>* dijet_sets)
+		void getDijets(JetContainer* event_jets, std::vector<std::array<float, 3>>* dijet_sets)
 		{
 			std::vector<std::pair<Jet*, Jet*>> dijet_pairs;
-			for(auto jet1:event_jets){
-				float eta1=jet1->get_eta(), phi1=jet1->get_phi();
-				if(abs(eta1) > deltaeta) continue; //keep R=0.4 jets in sPHENIX acceptance
-				if(jet1->get_pt() < 1.) continue; //reject jets below 1 GeV
-				for(auto jet2=jet1+1; jet2!=event_jets.end(), ++jet2){
-					if(jet1 == jet2) continue; //just double check
-					if(jet2->get_pt() < deltaeta) continue;
-					float eta2=jet2->get_phi(), phi2=jet2->getphi();
+			for(auto jet1=event_jets->begin(); jet1 != event_jets->end(); ++jet1){
+				float eta1=(*jet1)->get_eta(), phi1=(*jet1)->get_phi();
+				if(abs(eta1) > etaedge) continue; //keep R=0.4 jets in sPHENIX acceptance
+				if((*jet1)->get_pt() < 1.) continue; //reject jets below 1 GeV
+				for(auto jet2=jet1; jet2 != event_jets->end(); ++jet2){
+					if((*jet1) == (*jet2)) continue; //just double check
+					if((*jet2)->get_pt() < etaedge) continue;
+					float eta2=(*jet2)->get_eta(), phi2=(*jet2)->get_phi();
 					if(abs(eta2) > 0.7)continue;
-					if(abs(phi1 - phi2) >= deltaphi)dijet_pairs.push_back(std::make_pair(jet1, jet2));
+					if(abs(phi1 - phi2) >= deltaphi)dijet_pairs.push_back(std::make_pair(*jet1, *jet2));
 				}
 			}
 			for(auto dj:dijet_pairs){
-				float pt1=jet1->get_pt(), pt2=jet2->get_pt();
+				float pt1=dj.first->get_pt(), pt2=dj.second->get_pt();
 				if(pt1 < pt2){
 					float ptt=pt1;
 					pt1=pt2;
@@ -142,7 +189,7 @@ class EventSelectionCut{
 				}
 				float xj=pt2/pt1, Ajj=(pt1-pt2)/(pt1+pt2);
 				std::array<float, 3> dijet_kin={pt1, Ajj, xj};
-				dijet_sets.push_back(dijet_kin);
+				dijet_sets->push_back(dijet_kin);
 			}
 			return;
 		}			
@@ -157,78 +204,96 @@ class EventSelectionCut{
 		bool negativeEnergy;
 		bool passesCut=false;
 		int m_nJets=0;
-		float m_lpt=0.;
+		float m_lpt=0. ;
 		float m_slpt=0.;
 		float m_etal=0.;
 		float m_etasl=0.;
 		float m_deltaphi=0.;
 		float m_ohcalrat=0.;
 		float leadphi=0.;
-		float leadeta=0.
+		float leadeta=0.;
 		bool m_isdijet=false;
 		bool m_hasnege=false;
 };
 
-class PHCompositeNode;
 
 class LargeRLENC : public SubsysReco
 {
  public:
 
-  LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string vari="E", const std::string &name = "LargeRLENC");
+  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string vari="E", const std::string &name = "LargeRLENC");
 
-  ~LargeRLENC() override;
+  	~LargeRLENC() override;
 
   /** Called during initialization.
       Typically this is where you can book histograms, and e.g.
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
    */
-  int Init(PHCompositeNode *topNode) override {
-  };
+	int Init(PHCompositeNode *topNode) override { return 1;};
 
-  /** Called for first event when run number is known.
-      Typically this is where you may want to fetch data from
-      database, because you know the run number. A place
-      to book histograms which have to know the run number.
-   */
-  int InitRun(PHCompositeNode *topNode) override;
+  	/** Called for first event when run number is known.
+      	Typically this is where you may want to fetch data from
+      	database, because you know the run number. A place
+      	to book histograms which have to know the run number.
+   	*/
+  	int InitRun(PHCompositeNode *topNode) override {return 1;};
 
-  /** Called for each event.
-      This is where you do the real work.
-   */
-  int process_event(PHCompositeNode *topNode) override;
+  	/** Called for each event.
+      	This is where you do the real work.
+   	*/
+ 	int process_event(PHCompositeNode *topNode) override;
+	
+	/// Clean up internals after each event.
+	int ResetEvent(PHCompositeNode *topNode) override {return 1;};
 
-  /// Clean up internals after each event.
-  int ResetEvent(PHCompositeNode *topNode) override;
+	/// Called at the end of each run.
+	int EndRun(const int runnumber) override {return 1;};
 
-  /// Called at the end of each run.
-  int EndRun(const int runnumber) override;
+	/// Called at the end of all processing.
+	int End(PHCompositeNode *topNode) override;
 
-  /// Called at the end of all processing.
-  int End(PHCompositeNode *topNode) override;
+ 	/// Reset
+  	int Reset(PHCompositeNode * /*topNode*/) override {return 1;};
 
-  /// Reset
-  int Reset(PHCompositeNode * /*topNode*/) override;
+  	void Print(const std::string &what = "ALL") const override;
 
-  void Print(const std::string &what = "ALL") const override;
+	//and now for the unique stuff
+	void addTower(int, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, std::map<std::array<float, 3>, float>*, RawTowerDefs::CalorimeterId);
+	
+	JetContainer* getJets(std::string, std::string, std::array<float, 3>, PHCompositeNode*);
+
+	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, int, std::vector<MethodHistograms*>*, float, std::string, std::array<float, 3>, float);
+
+	void SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, int, bool, bool, float, float, std::vector<MethodHistograms*>*, int, float*);
+	
+	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::pair<float, float>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool);
+
+	float getR(float, float, float, float);
+
 
  private:
-	
+
+	std::string algo, radius;
+	EventSelectionCut* eventCut;	
   	bool isRealData;
-	int nRun, nSegment, m_Njets;
-	float jetMinpT;
+	int nRun, nSegment, m_Njets, n_evts;
+	float jetMinpT, MinpTComp;
 	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
-	std::map<std::string, <std::array<std::map<float, float>,3>> m_e2c, m_e3c; 
-	std::map< std::string, std::array<std::map<std::array<float, 3>, float>, 3>> m_e3c_full;
-	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > m_pt_evt;
+	std::map<int, std::array <std::map<float, float>, 3 > > m_e2c, m_e3c; 
+	std::map< int, std::array<std::map<std::array<float, 3>, float>, 3>> m_e3c_full;
+	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > m_pt_evt;
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
-	std::vector<MethodHistograms*>* FullHcal, *TowardRegion, *AwayRegion, *TransverseRegion;
+	std::vector<MethodHistograms*>* FullCal, *TowardRegion, *AwayRegion, *TransverseRegion;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
-	std::vector<std::array<float, 4>> m_dijets;
-	std::vector<float> m_pt;
+	std::vector<std::array<float, 3>> m_dijets;
+	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
+//	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
+	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup;
+	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
+
 };
 #endif // LARGERLENC_H
