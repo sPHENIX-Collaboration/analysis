@@ -73,6 +73,8 @@ namespace myAnalysis {
     TH1F* hColdVsTime;
     TH1F* hBadChi2VsTime;
 
+    TH1F* hRunStatus;
+
     vector<TH2F*> h2HotTowerFrequency_vec;
     vector<TH1F*> hHotTowerSigma_vec;
 
@@ -135,6 +137,8 @@ void myAnalysis::init_hists() {
     hFracDead    = new TH1F("hFracDead", "Fraction of Dead Towers; Dead Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
     hFracCold    = new TH1F("hFracCold", "Fraction of Cold Towers; Cold Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
     hFracBadChi2 = new TH1F("hFracBadChi2", "Fraction of Bad Chi2 Towers; Bad Chi2 Towers [%]; Runs", m_bins_acceptance, 0, m_bins_acceptance);
+
+    hRunStatus = new TH1F("hRunStatus", "Run Status; Status; Runs", m_bins_status, 0, m_bins_status);
 
     if(m_doTime) {
       TDatime d(runs[0].second.c_str());
@@ -268,7 +272,10 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
 
         std::unique_ptr<CDBTTree> m_cdbttree_hotMap = nullptr;
 
-        if (!calibdir.empty()) m_cdbttree_hotMap = std::make_unique<CDBTTree>(calibdir);
+        if (!calibdir.empty()) {
+          m_cdbttree_hotMap = std::make_unique<CDBTTree>(calibdir);
+          hRunStatus->Fill(0);
+        }
         else {
             cout << "Run: " << run << ", Missing: " << m_calibName_hotMap << endl;
             runsMissingHotMap.push_back(run);
@@ -281,11 +288,14 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
         if(m_doHotChi2) {
             calibdir = CDBInterface::instance()->getUrl(m_calibName_chi2);
 
-            if(!calibdir.empty()) m_cdbttree_chi2 = std::make_unique<CDBTTree>(calibdir);
+            if(!calibdir.empty()) {
+              m_cdbttree_chi2 = std::make_unique<CDBTTree>(calibdir);
+              hRunStatus->Fill(1);
+            }
             else {
-                cout << "Run: " << run << ", Missing: " << m_calibName_chi2 << endl;
-                runsMissingBadChi2.push_back(run);
-                hasHotChi2 = false;
+              cout << "Run: " << run << ", Missing: " << m_calibName_chi2 << endl;
+              runsMissingBadChi2.push_back(run);
+              hasHotChi2 = false;
             }
         }
 
@@ -462,6 +472,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
   TFile output(i_output.c_str(), "recreate");
   output.cd();
 
+  hRunStatus->Write();
   hBadTowers->Write();
   hBadTowersDead->Write();
   hBadTowersHot->Write();
