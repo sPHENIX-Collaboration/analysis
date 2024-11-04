@@ -59,7 +59,7 @@
 #include <TFile.h>
 #include <TTree.h>
 //Homebrews 
-#include <calorimetertowerenc/MethodHistograms.h> //dont know why the linking against the actual version isnt working, so have to soft link for right now
+#include <calorimetertowerenc/MethodHistograms.h> 
 #define PI 3.14159265358979323464
 class PHCompositeNode;
 class Jet;
@@ -223,7 +223,7 @@ class LargeRLENC : public SubsysReco
 
   	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string vari="E", const std::string &name = "LargeRLENC");
 
-  	~LargeRLENC() override;
+  	~LargeRLENC() override {};
 
   /** Called during initialization.
       Typically this is where you can book histograms, and e.g.
@@ -251,7 +251,7 @@ class LargeRLENC : public SubsysReco
 	int EndRun(const int runnumber) override {return 1;};
 
 	/// Called at the end of all processing.
-	int End(PHCompositeNode *topNode) override;
+	int End(PHCompositeNode *topNode) override {return 1;};
 
  	/// Reset
   	int Reset(PHCompositeNode * /*topNode*/) override {return 1;};
@@ -274,7 +274,7 @@ class LargeRLENC : public SubsysReco
 
  private:
 
-	std::string algo, radius;
+	std::string algo, radius, output_file_name;
 	EventSelectionCut* eventCut;	
   	bool isRealData;
 	int nRun, nSegment, m_Njets, n_evts;

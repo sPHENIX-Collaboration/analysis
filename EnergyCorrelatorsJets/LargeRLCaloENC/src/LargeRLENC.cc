@@ -5,8 +5,8 @@
 //			Author: Skadi Grossberndt						//
 //			Depends on: Calorimeter Tower ENC 					//
 //			First Commit date: 18 Oct 2024						//
-//			Most recent Commit: 24 Oct 2024						//
-//			version: v0.1								//
+//			Most recent Commit: 4 Nov 2024						//
+//			version: v1.0							//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -51,6 +51,7 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	this->radius="r04";
 	this->eventCut=new EventSelectionCut();
 	this->which_variable=vari;
+	this->output_file_name="Large_RL_ENC_def_"+algo+"_dijets_anti_kT_"+radius+"-"+std::to_string(nRun)+"-"+std::to_string(nSegment)+".root";
 	DijetQA=new TTree("DijetQA", "Dijet Event QA");
 	DijetQA->Branch("N_jets", &m_Njets);
 	DijetQA->Branch("x_j_L",  &m_xjl);
@@ -421,4 +422,22 @@ float LargeRLENC::getR(float eta1, float phi1, float eta2, float phi2)
 	float dphi=phi1-phi2;
 	float rsq=pow(deta, 2)+ pow(dphi, 2);
 	return sqrt(rsq);
+}
+void LargeRLENC::Print(const std::string &what) const
+{
+	TFile* f1=new TFile(output_file_name.c_str(), "RECREATE");
+	DijetQA->Write();
+	EEC->Write();
+	JetEvtObs->Write();
+	emcal_occup->Write();
+	ihcal_occup->Write();
+	ohcal_occup->Write();
+	ohcal_rat_occup->Write();
+	ohcal_bad_hits->Write();
+	bad_occ_em_oh->Write();
+	bad_occ_em_h->Write();
+	eventCut->JetCuts->Write();
+	f1->Write();
+	f1->Close();
+	return;	
 }

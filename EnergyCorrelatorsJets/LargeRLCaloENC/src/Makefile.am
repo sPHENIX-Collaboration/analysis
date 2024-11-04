@@ -24,7 +24,8 @@ libLargeRLENC_la_LIBADD = \
   -lSubsysReco \
   -lfun4all \
   -lg4eval \
-  -lg4jets 
+  -lg4jets \
+  -lCalorimeterTowerENC 
 
 BUILT_SOURCES = testexternals.cc
 
