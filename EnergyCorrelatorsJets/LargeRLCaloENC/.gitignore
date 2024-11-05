@@ -1,0 +1,8 @@
+root_output/
+*.tex
+*.txt
+*.root
+src/build/
+macros/*.list
+macros/*make*
+macros/condor_files/
