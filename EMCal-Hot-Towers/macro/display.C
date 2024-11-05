@@ -62,6 +62,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     gStyle->SetTitleXOffset(1);
     gStyle->SetTitleYOffset(1);
 
+    auto hRunStatus = (TH1F*)input.Get("hRunStatus");
+
     auto hBadTowers    = (TH1F*)input.Get("hBadTowers");
     auto hBadTowersDead  = (TH1F*)input.Get("hBadTowersDead");
     auto hBadTowersHot  = (TH1F*)input.Get("hBadTowersHot");
@@ -184,12 +186,25 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     for(UInt_t i = 0; i < hBadTowersVec.size(); ++i) {
 
         // hBadTowersVec[i]->GetYaxis()->SetTitle(hBadTowersTitle[i].c_str());
+        Float_t norm = (i < hBadTowersVec.size()-1) ? hRunStatus->GetBinContent(1) : hRunStatus->GetBinContent(2);
+        cout << "norm: " << norm << endl;
+        hBadTowersVec[i]->Scale(100./norm);
+
+        hBadTowersVec[i]->GetYaxis()->SetTitle("Runs [%]");
         hBadTowersVec[i]->GetYaxis()->SetTitleOffset(1.3);
-        hBadTowersVec[i]->Draw();
+        if(hBadTowersVec[i]->GetMaximum() <= 100) hBadTowersVec[i]->GetYaxis()->SetRangeUser(0,100);
+        hBadTowersVec[i]->Draw("HIST");
+
+        auto line = new TLine(0, threshold*100/norm, ntowers, threshold*100/norm);
+        line->SetLineColor(kRed);
+        line->SetLineStyle(9);
+        line->SetLineWidth(3);
         line->Draw("same");
 
         c1->Print((string(hBadTowersVec[i]->GetName()) + ".png").c_str());
         c1->Print(output.c_str(), "pdf portrait");
+
+        delete line;
     }
 
     c1->SetCanvasSize(2900, 1000);
@@ -246,6 +261,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2BadTowersHotChi2->Draw("colz1");
 
     c1->Print((string(h2BadTowersHotChi2->GetName()) + "-threshold.png").c_str());
+    c1->Print((output).c_str(), "pdf portrait");
+
+    h2BadTowersHotChi2->SetMinimum(0);
+    h2BadTowersHotChi2->SetMaximum(100);
+
+    c1->Print((string(h2BadTowersHotChi2->GetName()) + "-zoom.png").c_str());
     c1->Print((output).c_str(), "pdf portrait");
 
     // ----------------------------
