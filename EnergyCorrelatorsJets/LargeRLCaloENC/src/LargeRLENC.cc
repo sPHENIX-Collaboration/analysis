@@ -175,18 +175,21 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	float emcal_energy=0., ihcal_energy=0, ohcal_energy=0, total_energy=0, ohcal_rat=0;
 	std::map<std::array<float, 3>, float> *ihcal_towers=NULL, *emcal_towers=NULL, *ohcal_towers=NULL; //these are just to collect the non-zero towers to decrease the processing time 
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
+		if(! emcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=emcal_tower_energy->get_tower_at_channel(n)->get_energy();
 		if(energy > 0.01)//put zero supression into effect
 			addTower(n, emcal_tower_energy, emcal_geom, emcal_towers, RawTowerDefs::CEMC   );
 		emcal_energy+=energy;
 	}
 	for(int n=0; n<(int) ihcal_tower_energy->size(); n++){
+		if(! ihcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ihcal_tower_energy->get_tower_at_channel(n)->get_energy();
 		if(energy > 0.01) //zero suppression is at 10 MeV in IHCAL
 			addTower(n, ihcal_tower_energy, ihcal_geom, ihcal_towers, RawTowerDefs::HCALIN  );
 		ihcal_energy+=energy;
 	}
 	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
+		if(! ohcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ohcal_tower_energy->get_tower_at_channel(n)->get_energy();
 		if(energy > 0.01) //10 MeV cutoff 
 			addTower(n, ohcal_tower_energy, ohcal_geom, ohcal_towers, RawTowerDefs::HCALOUT );
