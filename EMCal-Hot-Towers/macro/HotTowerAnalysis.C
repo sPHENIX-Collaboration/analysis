@@ -95,18 +95,21 @@ namespace myAnalysis {
 
     UInt_t m_bins_acceptance = 101;
     UInt_t m_bins_time       = 50000;
+    Int_t m_maxRuns = 0;  // default process all
 
     // run threshold above which towers are considered to be frequently hot
     UInt_t m_threshold = 400;
 
     Float_t m_fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
+    // string m_detector = "HCALIN";
+    // string m_detector = "HCALOUT";
     string m_calibName_chi2 = m_detector + "_hotTowers_fracBadChi2";
     string m_fieldname_chi2 = "fraction";
 
     string m_calibName_hotMap = m_detector + "_BadTowerMap";
     string m_fieldname_hotMap = "status";
-    string m_sigma_hotMap     = "CEMC_sigma";
+    string m_sigma_hotMap     = m_detector + "_sigma";
 
     Bool_t m_doHotChi2 = true;
     Bool_t m_doTime    = true;
@@ -172,7 +175,7 @@ void myAnalysis::init_hists() {
 
     stringstream name, title;
     for (UInt_t i = 0; i < m_ntowers; ++i) {
-      UInt_t key = TowerInfoDefs::encode_emcal(i);
+      UInt_t key = (m_detector == "CEMC") ? TowerInfoDefs::encode_emcal(i) : TowerInfoDefs::encode_hcal(i);
       UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
       UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
       name.str("");
@@ -255,6 +258,8 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
     file << "Run,Acceptance,Dead,Hot,Cold,BadChi2" << endl;
 
     for(auto p : runs) {
+        if (m_maxRuns && bin_run > m_maxRuns) break;
+
         UInt_t run = p.first;
         string timestamp = p.second;
         TDatime d;
@@ -304,7 +309,7 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
         UInt_t bad_ctr[4] = {0};
 
         for (UInt_t channel = 0; channel < m_ntowers; ++channel) {
-            UInt_t key    = TowerInfoDefs::encode_emcal(channel);
+            UInt_t key = (m_detector == "CEMC") ? TowerInfoDefs::encode_emcal(channel) : TowerInfoDefs::encode_hcal(channel);
             UInt_t etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
             UInt_t phibin = TowerInfoDefs::getCaloTowerPhiBin(key);
 
@@ -441,13 +446,13 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
   // print used DB files
   CDBInterface::instance()->Print();
 
-  UInt_t runs_processed = runs.size()-runsMissingHotMap.size();
+  UInt_t runs_processed = bin_run-runsMissingHotMap.size()-1;
   cout << "Sigma Min: " << sigma_min << ", Sigma Max: " << sigma_max << endl;
   cout << "Runs with bad sigma (nan or inf): " << badSigma.size() << endl;
   cout << "Runs Missing HotMap: " << runsMissingHotMap.size() << endl;
   cout << "Runs Missing Bad Chi2: " << runsMissingBadChi2.size() << endl;
   cout << "Runs with overlap time bin: " << ctr_overwrite << endl;
-  cout << "Runs Processed: " << runs_processed << ", " << runs_processed*100./runs.size() << " %" << endl;
+  cout << "Runs Processed: " << runs_processed << ", " << runs_processed*100./(bin_run-1) << " %" << endl;
 
   return 0;
 }
@@ -455,6 +460,7 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
 void myAnalysis::finalize(const string &i_output, const string &outputMissingHotMap, const string &outputMissingBadChi2) {
 
   m_threshold = min(m_threshold, (UInt_t)(runs.size() - runsMissingHotMap.size()) / 2);
+  if(m_maxRuns) m_threshold = min(m_threshold, (UInt_t)(m_maxRuns - runsMissingHotMap.size()) / 2);
   cout << "threshold: " << m_threshold << endl;
 
   ofstream file(outputMissingHotMap);
@@ -562,6 +568,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
 void HotTowerAnalysis(const string &input,
                       const string &output = "test.root",
                       const Bool_t doTime = true,
+                      const Int_t maxRuns = 0,
                       const string &outputMissingHotMap = "missingHotMap.csv",
                       const string &outputMissingBadChi2 = "missingBadChi2.csv",
                       const string &outputRunStats = "acceptance.csv") {
@@ -574,37 +581,55 @@ void HotTowerAnalysis(const string &input,
     cout << "outputMissingHotMap: " << outputMissingHotMap << endl;
     cout << "outputMissingBadChi2: " << outputMissingBadChi2 << endl;
     cout << "outputRunStats: " << outputRunStats << endl;
-    cout << "#############################" << endl;
 
     myAnalysis::m_doTime = doTime;
+    myAnalysis::m_maxRuns = maxRuns;
+
+    if (myAnalysis::m_detector == "HCALIN" || myAnalysis::m_detector == "HCALOUT") {
+      myAnalysis::m_bins_phi = 64;
+      myAnalysis::m_bins_eta = 24;
+      myAnalysis::m_ntowers = myAnalysis::m_bins_phi * myAnalysis::m_bins_eta;
+    }
+
+    cout << "Detector: " << myAnalysis::m_detector << endl;
 
     Int_t ret = myAnalysis::init(input);
     if(ret) return;
+
+    if(maxRuns) cout << "Processing: " << min((Int_t) myAnalysis::runs.size(), maxRuns) << " Runs" << endl;
+    else        cout << "Processing: " << myAnalysis::runs.size() << " Runs" << endl;
+    cout << "#############################" << endl;
 
     ret = myAnalysis::process_event(outputRunStats);
     if(ret) return;
 
     myAnalysis::finalize(output, outputMissingHotMap, outputMissingBadChi2);
+
+    cout << "======================================" << endl;
+    cout << "done" << endl;
+    std::quick_exit(0);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 7) {
-        cout << "usage: ./hotAna inputFile [outputFile] [doTime] [outputMissingHotMap] [outputMissingBadChi2] [outputRunStats]" << endl;
+if(argc < 2 || argc > 8) {
+        cout << "usage: ./hotAna inputFile [outputFile] [doTime] [maxRuns] [outputMissingHotMap] [outputMissingBadChi2] [outputRunStats]" << endl;
         cout << "inputFile: containing list of run numbers" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
         cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: false." << endl;
+        cout << "maxRuns: Max runs to process (useful when testing). Default: 0 (means run all)." << endl;
         cout << "outputMissingHotMap: location of outputMissingHotMap file. Default: missingHotMap.csv." << endl;
         cout << "outputMissingBadChi2: location of outputMissingBadChi2 file. Default: missingBadChi2.csv." << endl;
         cout << "outputRunStats: location of outputRunStats file. Default: acceptance.csv." << endl;
         return 1;
     }
 
-    string outputFile          = "test.root";
-    Bool_t doTime              = true;
-    string outputMissingHotMap = "missingHotMap.csv";
+    string outputFile           = "test.root";
+    Bool_t doTime               = true;
+    Int_t maxRuns               = 0;
+    string outputMissingHotMap  = "missingHotMap.csv";
     string outputMissingBadChi2 = "missingBadChi2.csv";
-    string outputRunStats = "acceptance.csv";
+    string outputRunStats       = "acceptance.csv";
 
     if (argc >= 3) {
         outputFile = argv[2];
@@ -613,19 +638,20 @@ if(argc < 2 || argc > 7) {
         doTime = atoi(argv[3]);
     }
     if (argc >= 5) {
-        outputMissingHotMap = argv[4];
+        maxRuns = atoi(argv[4]);
     }
     if (argc >= 6) {
-        outputMissingBadChi2 = argv[5];
+        outputMissingHotMap = argv[5];
     }
     if (argc >= 7) {
-        outputRunStats = argv[6];
+        outputMissingBadChi2 = argv[6];
+    }
+    if (argc >= 8) {
+        outputRunStats = argv[7];
     }
 
-    HotTowerAnalysis(argv[1], outputFile, doTime, outputMissingHotMap, outputMissingBadChi2, outputRunStats);
+    HotTowerAnalysis(argv[1], outputFile, doTime, maxRuns, outputMissingHotMap, outputMissingBadChi2, outputRunStats);
 
-    cout << "======================================" << endl;
-    cout << "done" << endl;
     return 0;
 }
 # endif
