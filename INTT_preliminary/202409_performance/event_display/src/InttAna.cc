@@ -9,6 +9,27 @@ InttAna::InttAna(const std::string &name, const std::string &filename)
     : SubsysReco(name), _rawModule(nullptr), fname_(filename), anafile_(nullptr), h_zvtxseed_(nullptr)
 {
   xbeam_ = ybeam_ = 0.0;
+
+  // object
+  zvtxobj_ = nullptr;
+
+  // nodes
+  inttrawmap = nullptr;
+  m_tGeometry = nullptr;
+  hepmceventmap = nullptr;
+  phg4inevent = nullptr;
+  m_clusterMap = nullptr;
+  vertices = nullptr;
+  inttevthead = nullptr;
+  svtxvertexmap = nullptr;
+  mbdout = nullptr;
+  svtxvertex = nullptr;
+  //  inttvertexmap = nullptr;
+  intt_vertex_map = nullptr;
+  svtxtrackmap = nullptr;
+
+  // vector object
+  vertex_pos_intt_ = new TVector3();
 }
 
 InttAna::~InttAna()
@@ -62,6 +83,16 @@ void InttAna::InitTrees()
   h_t_evt_bco->Branch("pbco_gl1"	, &(m_evtbcoinfo_prev.bco_gl1	), "pbco_gl1/l"		);
   h_t_evt_bco->Branch("pbco_intt"	, &(m_evtbcoinfo_prev.bco_intt	), "pbco_intt/l"	);
   h_t_evt_bco->Branch("pbco_mbd"	, &(m_evtbcoinfo_prev.bco_mbd	), "pbco_mbd/l"		);
+
+  tree_event_ = new TTree( "tree_event", "Event-base TTree" );
+  tree_event_->Branch( "nclus", &nclusadd_, "nclus/I" );
+  tree_event_->Branch( "nclus_in", &nclus_inner_, "nclus_in/I" );
+  tree_event_->Branch( "nclus_out", &nclus_outer_, "nclus_out/I" );
+  tree_event_->Branch( "vertex_z_mbd", &vertex_z_mbd_, "vertex_z_mnd/D" );
+  tree_event_->Branch( "vertex_intt", &vertex_pos_intt_ ); // TVector3  
+  tree_event_->Branch( "bco_gl1"       	, &(m_evtbcoinfo.bco_gl1	), "bco_gl1/l"		);
+  tree_event_->Branch( "bco_intt"	, &(m_evtbcoinfo.bco_intt	), "bco_intt/l"		);
+  
 
   m_hepmctree = new TTree("hepmctree", "A tree with hepmc truth particles");
   m_hepmctree->Branch("m_evt", &m_evt, "m_evt/I");
@@ -136,10 +167,19 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   {
     if( Verbosity() > 1 )
       {
-	std::cout << PHWHERE << "No ActsGeometry on node tree. Bailing." << std::endl;
+	std::cerr << PHWHERE << "No ActsGeometry on node tree. Bailing." << std::endl;
       }
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  inttrawmap = findNode::getClass<InttRawHitContainer>(topNode, "INTTRAWHIT");
+  if( !inttrawmap )
+    {
+      if( Verbosity() > 1 )
+	{
+	  cerr << PHWHERE << "INTTRAWHIT code is missing." << endl;
+	}
+    }
   
   // TODO:
   hepmceventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
@@ -147,7 +187,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   {
     if( Verbosity() > 3 )
       {
-	cout << PHWHERE << "hepmceventmap node is missing." << endl;
+	cerr << PHWHERE << "hepmceventmap node is missing." << endl;
     // return Fun4AllReturnCodes::ABORTEVENT;
       }
   }
@@ -158,7 +198,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
     {
       if( Verbosity() > 3 )
 	{
-	  cout << PHWHERE << "PHG4INEVENT node is missing." << endl;
+	  cerr << PHWHERE << "PHG4INEVENT node is missing." << endl;
 	  // return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
@@ -169,7 +209,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
     {
       if( Verbosity() > 1 )
 	{
-	  cout << PHWHERE << "TrkrClusterContainer node is missing." << endl;
+	  cerr << PHWHERE << "TrkrClusterContainer node is missing." << endl;
 	}
       return Fun4AllReturnCodes::ABORTEVENT;
     }
@@ -193,7 +233,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   {
     if( Verbosity() > 3 )
       {
-	cout << "MbdOut node is missing." << endl;
+	cerr << "MbdOut node is missing." << endl;
       }    
   }
 
@@ -203,7 +243,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   {
     if( Verbosity() > 3 )
       {
-	cout << PHWHERE << "GlobalVertexMap node is missing." << endl;
+	cerr << PHWHERE << "GlobalVertexMap node is missing." << endl;
       }
     // return Fun4AllReturnCodes::ABORTEVENT;
   }
@@ -214,7 +254,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
     {
       if( Verbosity() > 3 )
 	{
-	  cout << PHWHERE << "SvtxVertexMap node is missing." << endl;
+	  cerr << PHWHERE << "SvtxVertexMap node is missing." << endl;
 	}
     }
 
@@ -223,7 +263,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
   //   {
   //     if( Verbosity() > 1 )
   // 	{
-  // 	  cout << PHWHERE  << "InttVertex3DMap node is missing." << endl;
+  // 	  cerr << PHWHERE  << "InttVertex3DMap node is missing." << endl;
   // 	}
       
   //     //return Fun4AllReturnCodes::ABORTEVENT;
@@ -234,7 +274,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
     {
       if( Verbosity() > 1 )
 	{
-	  cout << PHWHERE  << "InttVertexMap node is missing." << endl;
+	  cerr << PHWHERE  << "InttVertexMap node is missing." << endl;
 	}
       
     }
@@ -249,7 +289,7 @@ int InttAna::GetNodes(PHCompositeNode *topNode)
 int InttAna::process_event(PHCompositeNode *topNode)
 {
   
-  if( Verbosity() > 2 )
+  if( Verbosity() > 1 )
     {
       cout << endl << "InttEvt::process evt : " << ievt++ << endl;
     }
@@ -262,7 +302,7 @@ int InttAna::process_event(PHCompositeNode *topNode)
   // this->process_event_svtx_vertex( topNode );
   
   this->process_event_intt_raw( topNode );
-  this->process_event_intt_vertex( topNode ); // bco_ is overwritten, this should be before process_event_intt_cluster because intt_vertex_pos_ is needed in the function
+  this->process_event_intt_vertex( topNode ); // bco_ is overwritten, this should be before process_event_intt_cluster because vertex_pos_intt_ is needed in the function
   this->process_event_intt_cluster( topNode );
   this->process_event_intt_cluster_pair( topNode );
   // this->process_event_mvtx( topNode );
@@ -273,24 +313,36 @@ int InttAna::process_event(PHCompositeNode *topNode)
   m_evtbcoinfo.evt_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->getEvtSequence()     : -1;
   m_evtbcoinfo.evt_intt = (inttraw_ != nullptr)    ? inttraw_->get_event_counter() : -1;
   m_evtbcoinfo.evt_mbd  = (mbdout   != nullptr)    ? mbdout->get_evt()             : -1;
-  //m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->get_bco()            : 0;
+  //m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->get_bco()            : 0;  
   m_evtbcoinfo.bco_gl1  = (gl1raw_  != nullptr)    ? gl1raw_->getBCO()            : 0;
-  m_evtbcoinfo.bco_intt = (inttevthead != nullptr) ? inttevthead->get_bco_full()   : 0;
+
+  if( inttevthead != nullptr )
+    m_evtbcoinfo.bco_intt = inttevthead->get_bco_full();
+  else if( inttrawmap != nullptr )
+    {
+      if( inttrawmap->get_nhits() > 0 )
+	m_evtbcoinfo.bco_intt = (inttrawmap->get_hit( 0 )->get_bco());
+    }
+  else
+    m_evtbcoinfo.bco_intt =  0;
+  
   m_evtbcoinfo.bco_mbd  = (mbdout   != nullptr)    ? mbdout->get_femclock()        : 0;
 
-  if( Verbosity() > 2 )
+  if( Verbosity() > 3 )
     {
       cout << "event : "
 	   << m_evtbcoinfo.evt_gl1 << " "
 	   << m_evtbcoinfo.evt_intt << " "
 	   << m_evtbcoinfo.evt_mbd << " :  "
+	   << "INTT BCO " << setw( 20 ) << m_evtbcoinfo.bco_intt << "\t"
 	   << hex << m_evtbcoinfo.bco_gl1 << dec << " "
 	   << hex << m_evtbcoinfo.bco_intt << dec << " "
 	   << hex << m_evtbcoinfo.bco_mbd << dec << " : "
 	   << hex << m_evtbcoinfo.bco_gl1 - m_evtbcoinfo_prev.bco_gl1 << dec << " "
 	   << hex << m_evtbcoinfo.bco_intt - m_evtbcoinfo_prev.bco_intt << dec << " "
 	   << hex << m_evtbcoinfo.bco_mbd - m_evtbcoinfo_prev.bco_mbd << dec << endl;
-      cout << "evtCount : " << evtCount << " " << evtseq_ << " " << hex << bco_ << dec << endl;
+
+      //cout << "evtCount : " << evtCount << " " << evtseq_ << " " << hex << bco_ << dec << endl;
     }
   
 
@@ -323,6 +375,7 @@ int InttAna::ResetEvent(PHCompositeNode *topNode)
     = m_truthenergy = m_trutheta = m_truththeta = m_truthphi
     = m_truthpx = m_truthpy = m_truthpz = m_truthpt
     = m_truthp = m_vertex
+    = vertex_z_mbd_
     = -9999.;
   
   // uint64
@@ -370,7 +423,7 @@ int InttAna::End(PHCompositeNode * /*topNode*/)
     anafile_->WriteTObject( h_zvtxseed_, h_zvtxseed_->GetName() );
     anafile_->WriteTObject( h_t_evt_bco, h_t_evt_bco->GetName() );
     anafile_->WriteTObject( m_hepmctree, m_hepmctree->GetName() );
-    
+    anafile_->WriteTObject( tree_event_, tree_event_->GetName() );
     anafile_->Close();
   }
 
@@ -482,7 +535,11 @@ int InttAna::process_event_global_vertex(PHCompositeNode *topNode )
           vtx_sim_[1] = vertex.second->get_y();
           vtx_sim_[2] = vertex.second->get_z();
         }
+	else if( vertex.first == GlobalVertex::VTXTYPE::MBD )
+	  {
+	    vertex_z_mbd_ = vertex.second->get_z();
 
+	  }
         if( Verbosity() > 2 )
 	  {
 	    std::cout << "GlobalVertex map entry" << std::endl;
@@ -550,7 +607,9 @@ int InttAna::process_event_svtx_vertex(PHCompositeNode *topNode )
 int InttAna::process_event_intt_raw(PHCompositeNode *topNode )
 {
 
-  InttRawHitContainer *inttrawmap = findNode::getClass<InttRawHitContainer>(topNode, "INTTRAWHIT");
+  if( inttrawmap == nullptr )
+    return 0;
+  
   inttraw_ = (inttrawmap != nullptr && inttrawmap->get_nhits() > 0) ? inttrawmap->get_hit(0) : nullptr;
 
   //cout << "#INTT raw hit: " << inttrawmap->get_nhits() << endl;
@@ -680,9 +739,9 @@ int InttAna::process_event_intt_cluster(PHCompositeNode *topNode )
         // ntpval[17] = xvtx_sim;
         // ntpval[18] = yvtx_sim;
         // ntpval[19] = zvtx_sim;
-	ntpval[17] = intt_vertex_pos_->X();
-	ntpval[18] = intt_vertex_pos_->Y();
-	ntpval[19] = intt_vertex_pos_->Z();
+	ntpval[17] = vertex_pos_intt_->X();
+	ntpval[18] = vertex_pos_intt_->Y();
+	ntpval[19] = vertex_pos_intt_->Z();
 
 	h_ntp_clus->Fill(ntpval);
         // = new TNtuple("ntp_clus", "Cluster Ntuple", "bco_full:evt:size:adc:x:y:z:lay:lad:sen");
@@ -913,7 +972,7 @@ int InttAna::process_event_intt_cluster_pair(PHCompositeNode *topNode )
 int InttAna::process_event_intt_vertex(PHCompositeNode *topNode )
 {
 
-  intt_vertex_pos_ = new TVector3();
+  vertex_pos_intt_ = new TVector3();
 
   if( intt_vertex_map )
     {
@@ -958,7 +1017,7 @@ int InttAna::process_event_intt_vertex(PHCompositeNode *topNode )
 	      if( ivtx == 2 )
 		{
 		  zvtxobj_ = intt_vertex;
-		  intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
+		  vertex_pos_intt_->SetXYZ( intt_vertex->get_x(), 
 					    intt_vertex->get_y(),
 					    vertex_[2][2] );
 		}
@@ -966,7 +1025,7 @@ int InttAna::process_event_intt_vertex(PHCompositeNode *topNode )
 	  
 	  // if( iter == iter_begin )
 	  //   {
-	  //     intt_vertex_pos_->SetXYZ( intt_vertex->get_x(), 
+	  //     vertex_pos_intt_->SetXYZ( intt_vertex->get_x(), 
 	  // 				intt_vertex->get_y(),
 	  // 				intt_vertex->get_z() );
 	  //   }
@@ -1131,15 +1190,16 @@ int InttAna::process_event_fill(PHCompositeNode *topNode )
   ntpval3[7] = 0;            // zcenter;
   ntpval3[8] = mbdz_;
   ntpval3[9] = mbdqn_;         // mbdt.bqn;
-  
+
   ntpval3[10] = mbdqs_;        // mbdt.bqs;
   ntpval3[11] = 0;            // mbdt.femclk;
   ntpval3[12] = vertex_[1][0]; // x-vertex
   ntpval3[13] = vertex_[1][1]; // y-vertex
   ntpval3[14] = vertex_[2][2]; // y-vertex
 
-  ntpval3[15] = nclus_inner_;  // x-vertex
-  ntpval3[16] = nclus_outer_;  // y-vertex
+
+  ntpval3[15] = nclus_inner_;  // 
+  ntpval3[16] = nclus_outer_;  //
 
   if( zvtxobj_ != nullptr )
     {
@@ -1151,22 +1211,38 @@ int InttAna::process_event_fill(PHCompositeNode *topNode )
       ntpval3[21] = zvtxobj_->get_ngroup();
       ntpval3[22] = (zvtxobj_->get_good()) ? 1 : 0;
       ntpval3[23] = zvtxobj_->get_peakratio();
+
     }
   else
     {
+
       ntpval3[17] = ntpval3[18] = ntpval3[19]
 	= ntpval3[20] = ntpval3[21] = ntpval3[22]
 	= ntpval3[23]
 	= 0.0;
+
     }
   
   ntpval3[24] = vtx_sim_[0]; // sim x-vertex
   ntpval3[25] = vtx_sim_[1]; // sim y-vertex
   ntpval3[26] = vtx_sim_[2]; // sim z-vertex
 
-  ntpval3[27] = (svtxvertex != nullptr) ? svtxvertex->get_x() : -9999; // svtx vertex x
-  ntpval3[28] = (svtxvertex != nullptr) ? svtxvertex->get_y() : -9999; // svtx vertex y
-  ntpval3[29] = (svtxvertex != nullptr) ? svtxvertex->get_z() : -9999; // svtx vertex z
+
+  if( svtxvertex != nullptr )
+    {
+
+      ntpval3[27] = svtxvertex->get_x();
+      ntpval3[28] = svtxvertex->get_y();
+      ntpval3[29] = svtxvertex->get_z();
+
+    }
+  else
+    {
+
+      ntpval3[27] = ntpval3[28] = ntpval3[29]
+	= -9999;
+    }
+
 
   ntpval3[30] = nclusmvtx_[0];
   ntpval3[31] = nclusmvtx_[1];
@@ -1178,9 +1254,9 @@ int InttAna::process_event_fill(PHCompositeNode *topNode )
   ntpval3[35] = 0;
 
   h_ntp_evt->Fill(ntpval3);
-
   h_t_evt_bco->Fill();
-
+  tree_event_->Fill();
+  
   return 0;
 }
   
