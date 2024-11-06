@@ -1,14 +1,15 @@
-// ----------------------------------------------------------------------------
-// 'GenTools.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Collection of frequent event-level generator methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   GEvtTools.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Collection of frequent event-level generator methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
-#ifndef SCORRELATORUTILITIES_GENTOOLS_H
-#define SCORRELATORUTILITIES_GENTOOLS_H
+#ifndef SCORRELATORUTILITIES_GEVTTOOLS_H
+#define SCORRELATORUTILITIES_GEVTTOOLS_H
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -44,7 +45,7 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Tools {
 
-    // gen tools --------------------------------------------------------------
+    // event-level generator tools --------------------------------------------
 
     int64_t        GetNumFinalStatePars(PHCompositeNode* topNode, const vector<int> evtsToGrab, const Const::Subset subset, optional<float> chargeToGrab = nullopt);
     double         GetSumFinalStateParEne(PHCompositeNode* topNode, const vector<int> evtsToGrab, const Const::Subset subset, optional<float> chargeToGrab = nullopt);

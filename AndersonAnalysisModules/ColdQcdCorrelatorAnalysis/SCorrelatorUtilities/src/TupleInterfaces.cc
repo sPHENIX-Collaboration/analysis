@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TupleInterfaces.cc'
-// Derek Anderson
-// 03.05.2024
-//
-// TNtuple-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TupleInterfaces.cc
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  TNtuple-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_TUPLEINTERFACES_CC
 
@@ -16,8 +17,13 @@ using namespace std;
 
 
 
+// tuple interfaces ===========================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Add a tag to a vector of TNtuple leaves
+  // --------------------------------------------------------------------------
   void Interfaces::AddTagToLeaves(const string tag, vector<string>& leaves) {
 
     for (string& leaf : leaves) {
@@ -29,6 +35,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Combine two vectors of TNtuple leaves
+  // --------------------------------------------------------------------------
   void Interfaces::CombineLeafLists(const vector<string>& addends, vector<string>& toAddTo) {
 
     for (string addend : addends) {
@@ -40,6 +49,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Flatten a vector of TNtuple leaves into a colon-separated string
+  // --------------------------------------------------------------------------
   string Interfaces::FlattenLeafList(const vector<string>& leaves) {
 
     string flattened("");

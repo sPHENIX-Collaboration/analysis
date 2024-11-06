@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'ClustInterfaces.cc'
-// Derek Anderson
-// 02.23.2024
-//
-// Calorimeter-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ClustInterfaces.cc
+ *  \author Derek Anderson
+ *  \date   02.23.2024
+ *
+ *  Calorimeter cluster-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_CLUSTINTERFACES_CC
 
@@ -17,10 +18,13 @@ using namespace findNode;
 
 
 
+// cluster interfaces =========================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
-  // cluster methods --------------------------------------------------------
-
+  // --------------------------------------------------------------------------
+  //! Get raw cluster container from node tree
+  // --------------------------------------------------------------------------
   RawClusterContainer* Interfaces::GetClusterStore(PHCompositeNode* topNode, const string node) {
 
     // grab clusters
@@ -37,6 +41,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get raw clusters from container
+  // --------------------------------------------------------------------------
   RawClusterContainer::ConstRange Interfaces::GetClusters(PHCompositeNode* topNode, const string store) {
 
     // get store and return range of clusters

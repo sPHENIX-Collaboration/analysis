@@ -1,16 +1,17 @@
-// ----------------------------------------------------------------------------
-// 'GenInfo.cc'
-// Derek Anderson
-// 03.06.2024
-//
-// Utility class to hold event-level generator
-// information.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   GEvtInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Utility class to hold event-level generator
+ *  information.
+ */
+/// ---------------------------------------------------------------------------
 
-#define SCORRELATORUTILITIES_GENINFO_CC
+#define SCORRELATORUTILITIES_GEVTINFO_CC
 
 // class definition
-#include "GenInfo.h"
+#include "GEvtInfo.h"
 
 // make comon namespaces implicit
 using namespace std;
@@ -19,10 +20,12 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
+  // private methods ==========================================================
 
-  // internal methods ---------------------------------------------------------
-
-  void Types::GenInfo::Minimize() {
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute minima
+  // --------------------------------------------------------------------------
+  void Types::GEvtInfo::Minimize() {
 
     // minimize atomic members
     nChrgPar = -1 * numeric_limits<int>::max();
@@ -38,7 +41,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  void Types::GenInfo::Maximize() {
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute maxima
+  // --------------------------------------------------------------------------
+  void Types::GEvtInfo::Maximize() {
 
     // maximize atomic members
     nChrgPar = numeric_limits<int>::max();
@@ -54,9 +60,12 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // public methods -----------------------------------------------------------
+  // public methods ===========================================================
 
-  void Types::GenInfo::Reset() {
+  // --------------------------------------------------------------------------
+  //! Reset object by maximizing data members
+  // --------------------------------------------------------------------------
+  void Types::GEvtInfo::Reset() {
 
     // reset embed flag
     isEmbed = false;
@@ -69,7 +78,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  void Types::GenInfo::SetInfo(
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A node and a list of subevents
+  // --------------------------------------------------------------------------
+  void Types::GEvtInfo::SetInfo(
     PHCompositeNode* topNode,
     const bool embed,
     const vector<int> evtsToGrab
@@ -100,9 +112,12 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // static methods -----------------------------------------------------------
+  // static methods ===========================================================
 
-  vector<string> Types::GenInfo::GetListOfMembers() {
+  // --------------------------------------------------------------------------
+  //! Get list of data fields
+  // --------------------------------------------------------------------------
+  vector<string> Types::GEvtInfo::GetListOfMembers() {
 
     // get parton members
     vector<string> membersParA = ParInfo::GetListOfMembers();
@@ -128,9 +143,12 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
-  Types::GenInfo::GenInfo() {
+  // --------------------------------------------------------------------------
+  //! Default class constructor
+  // --------------------------------------------------------------------------
+  Types::GEvtInfo::GEvtInfo() {
 
     /* nothing to do */
 
@@ -138,7 +156,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  Types::GenInfo::~GenInfo() {
+  // --------------------------------------------------------------------------
+  //! Default class destructor
+  // --------------------------------------------------------------------------
+  Types::GEvtInfo::~GEvtInfo() {
 
     /* nothing to do */
 
@@ -146,7 +167,10 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  Types::GenInfo::GenInfo(const Const::Init init) {
+  // --------------------------------------------------------------------------
+  //! Constructor accepting initialization option (minimize or maximize)
+  // --------------------------------------------------------------------------
+  Types::GEvtInfo::GEvtInfo(const Const::Init init) {
 
     switch (init) {
       case Const::Init::Minimize:
@@ -164,7 +188,14 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  Types::GenInfo::GenInfo(PHCompositeNode* topNode, const bool embed, vector<int> evtsToGrab) {
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A node and a list of subevents
+  // --------------------------------------------------------------------------
+  Types::GEvtInfo::GEvtInfo(
+    PHCompositeNode* topNode,
+    const bool embed,
+    vector<int> evtsToGrab
+  ) {
 
     SetInfo(topNode, embed, evtsToGrab);
 

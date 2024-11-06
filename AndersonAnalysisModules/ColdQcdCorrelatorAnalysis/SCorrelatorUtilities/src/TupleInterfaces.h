@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TupleInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// TNtuple-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TupleInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  TNtuple-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_TUPLEINTERFACES_H
 #define SCORRELATORUTILITIES_TUPLEINTERFACES_H

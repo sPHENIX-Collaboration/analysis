@@ -1,14 +1,15 @@
-// ----------------------------------------------------------------------------
-// 'RecoInfo.h'
-// Derek Anderson
-// 03.06.2024
-//
-// Utility class to hold event-level reconstructed
-// information.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   REvtInfo.h
+ *  \author Derek Anderson
+ *  \date   03.06.2024
+ *
+ *  Utility class to hold event-level reconstructed
+ *  information.
+ */
+/// ---------------------------------------------------------------------------
 
-#ifndef SCORRELATORUTILITIES_RECOINFO_H
-#define SCORRELATORUTILITIES_RECOINFO_H
+#ifndef SCORRELATORUTILITIES_REVTNFO_H
+#define SCORRELATORUTILITIES_REVTNFO_H
 
 // c++ utilities
 #include <cmath>
@@ -34,9 +35,14 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // RecoInfo definition ----------------------------------------------------
-
-    class RecoInfo {
+    // ------------------------------------------------------------------------
+    //! Event-level reconstructed info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate event-level
+     *  reconstructed information. Can be
+     *  by pointing class to a F4A node.
+     */ 
+    class REvtInfo {
 
       private:
 
@@ -51,7 +57,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double vz        = numeric_limits<double>::max();
         double vr        = numeric_limits<double>::max();
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 
@@ -87,17 +93,17 @@ namespace SColdQcdCorrelatorAnalysis {
         static vector<string> GetListOfMembers();
 
         // default ctor/dtor
-        RecoInfo();
-        ~RecoInfo();
+        REvtInfo();
+        ~REvtInfo();
 
         // ctors accepting arguments
-        RecoInfo(Const::Init init);
-        RecoInfo(PHCompositeNode* topNode);
+        REvtInfo(Const::Init init);
+        REvtInfo(PHCompositeNode* topNode);
 
       // identify this class to ROOT
-      ClassDefNV(RecoInfo, 1)
+      ClassDefNV(REvtInfo, 1)
 
-    };  // end RecoInfo definition
+    };  // end REvtInfo definition
 
   }  // end Types namespace
 }  // end SColdQcdCorrelatorAnalysis namespace

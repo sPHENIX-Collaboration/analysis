@@ -1,13 +1,13 @@
-// ----------------------------------------------------------------------------
-// 'SCorrelatorJetTreeMaker.cc'
-// Derek Anderson
-// 12.04.2022
-//
-// A module to produce a tree of jets for the sPHENIX
-// Cold QCD Energy-Energy Correlator analysis.
-//
-// Initially derived from code by Antonio Silva (thanks!!)
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   SCorrelatorJetTreeMaker.cc
+ *  \author Derek Anderson
+ *  \date   12.04.2022
+ *
+ *  A module to produce a tree of jets for the sPHENIX
+ *  Cold QCD Energy-Energy Correlator analysis. Initially
+ *  derived from code by Antonio Silva.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORJETTREE_CC
 
@@ -24,8 +24,11 @@ using namespace findNode;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
+  // --------------------------------------------------------------------------
+  //! Module ctor accepting name and debug on/off flag
+  // --------------------------------------------------------------------------
   SCorrelatorJetTreeMaker::SCorrelatorJetTreeMaker(const string& name, const bool debug) : SubsysReco(name) {
 
     if (debug && (Verbosity() > 1)) {
@@ -41,6 +44,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Module ctor accepting config struct
+  // --------------------------------------------------------------------------
   SCorrelatorJetTreeMaker::SCorrelatorJetTreeMaker(SCorrelatorJetTreeMakerConfig& config) : SubsysReco(config.moduleName) {
 
     m_config = config;
@@ -57,6 +63,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Module dtor
+  // --------------------------------------------------------------------------
   SCorrelatorJetTreeMaker::~SCorrelatorJetTreeMaker() {
 
     // print debug statement
@@ -65,19 +74,25 @@ namespace SColdQcdCorrelatorAnalysis {
     }
 
     // clean up dangling pointers
-    //   - FIXME use smart pointers instead
     if (m_evalStack) {
-      delete m_evalStack;
       m_evalStack = NULL;
       m_trackEval = NULL;
+    }
+
+    if (m_recoNode) {
+      m_recoNode = NULL;
+      m_trueNode = NULL;
     }
 
   }  // end dtor
 
 
 
-  // F4A methods --------------------------------------------------------------
+  // F4A methods ==============================================================
 
+  // --------------------------------------------------------------------------
+  //! F4A module initialization
+  // --------------------------------------------------------------------------
   int SCorrelatorJetTreeMaker::Init(PHCompositeNode* topNode) {
 
     // print debug statement
@@ -94,6 +109,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Process an event inside F4A
+  // --------------------------------------------------------------------------
   int SCorrelatorJetTreeMaker::process_event(PHCompositeNode* topNode) {
 
     // print debug statement
@@ -116,18 +134,25 @@ namespace SColdQcdCorrelatorAnalysis {
 
     // if needed, check reconstructed vtx
     if (m_config.doVtxCut) {
-      const bool isGoodVtx = IsGoodVertex( ROOT::Math::XYZVector(m_recoOutput.evt.GetVX(), m_recoOutput.evt.GetVY(), m_recoOutput.evt.GetVZ()) );
-      if (!isGoodVtx) return Fun4AllReturnCodes::DISCARDEVENT;
+      const bool isGoodVtx = IsGoodVertex(
+        ROOT::Math::XYZVector(
+          m_recoOutput.evt.GetVX(),
+          m_recoOutput.evt.GetVY(),
+          m_recoOutput.evt.GetVZ()
+        )
+      );
+      if (!isGoodVtx) {
+        return Fun4AllReturnCodes::EVENT_OK;
+      }
     }
 
     // find jets
-    MakeRecoJets(topNode);
-    if (m_config.isSimulation) {
-      MakeTrueJets(topNode);
+    if (m_config.readJetNodes) {
+      ReadJetNodes(topNode);
+    } else {
+      MakeJets(topNode);
+      GetJetVariables(topNode);
     }
-
-    // grab jet/cst-wise variables
-    GetJetVariables(topNode);
 
     // fill output trees
     FillTrees();
@@ -137,6 +162,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! F4A module wind-down
+  // --------------------------------------------------------------------------
   int SCorrelatorJetTreeMaker::End(PHCompositeNode* topNode) {
 
     // print debug statements

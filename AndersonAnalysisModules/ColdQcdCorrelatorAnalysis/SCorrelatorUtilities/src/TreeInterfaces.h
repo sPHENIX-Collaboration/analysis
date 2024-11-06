@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TreeInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// TTree-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TreeInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  TTree-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_TREEINTERFACES_H
 #define SCORRELATORUTILITIES_TREEINTERFACES_H
