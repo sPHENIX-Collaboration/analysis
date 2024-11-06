@@ -1,17 +1,22 @@
 #include "Fun4All_Intt_RecoCluster.hh"
 
-void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
-  // int run_num,
-  // 			       int nevents=10,
-  // 			       )
+void Fun4All_Intt_RecoCluster( int run_num = 50889,
+			       int fphx_bco = -1
+			       )
 {
 
+  /////////////////////////////////////////////////
+  // Run 50377: triggered only                   //
+  // Run 50379: triggered + extended             //
+  // Run 50889: streaming (FPHX BCO cut applied) //
+  /////////////////////////////////////////////////
+  
   //  gSystem->ListLibraries();
   TStopwatch* watch = new TStopwatch();
   watch->Start();
   
   ////////////////////////////////////////////////////////////////////////
-  int run_num = 50889;
+
   int nevents = 100000;
   string run_type = "physics";
   string run_num_str = string( "000" ) + to_string( run_num );
@@ -28,12 +33,15 @@ void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
   string output_dst = string("results/") + "DST" + output_base;
 
   output_dst += "_no_hot";
-  output_dst += "_FPHX_BCO_" + to_string( fphx_bco );
+  if( run_num == 50889 )
+    output_dst += "_FPHX_BCO_" + to_string( fphx_bco );
+  
   output_dst +=  ".root"; 
 
-  string  cdb_hot_list = kIntt_cdb_dir + "cdb_49737_special.root";
-  cdb_hot_list = kIntt_cdb_dir + "cdb_00050377_special.root";
-  cout << "Hot channel CDB is forced to be " << cdb_hot_list  << endl;
+  // string  cdb_hot_list = kIntt_cdb_dir + "cdb_49737_special.root";
+  // cdb_hot_list = kIntt_cdb_dir + "cdb_00050377_special.root";
+  // cout << "Hot channel CDB is forced to be " << cdb_hot_list  << endl;
+  string  cdb_hot_list = string( "data/hotmap_cdb/hotmap_run_000" ) + to_string( run_num ) + ".root";
 
   string cdb_bco = kIntt_cdb_dir + "bco_diff_map/"
     + "cdb_bco_" + run_num_str + "_official" + ".root";
@@ -83,7 +91,12 @@ void Fun4All_Intt_RecoCluster( int fphx_bco = 63 )
     inttdecode->SetCalibBCO( cdb_bco, InttCombinedRawDataDecoder::FILE); 
 
   inttdecode->SetCalibDAC( cdbtree_name_dac, InttCombinedRawDataDecoder::FILE ); // not InttCombinedRawDataDecoder::CDB
-  inttdecode->set_fphxBcoFilter( fphx_bco );
+
+  if( run_num == 50889 )
+    inttdecode->set_fphxBcoFilter( fphx_bco );
+  else
+    inttdecode->set_fphxBcoFilter( -1 );
+  
   se->registerSubsystem( inttdecode );
   
   //////////////////////////////////////

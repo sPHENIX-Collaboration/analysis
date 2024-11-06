@@ -53,6 +53,7 @@ void InttClusterCorrelation::SetOutputDir( string dir )
   output_root_ = output_dir_ + output_basename_ + run_num_str;
 
   if( fphx_bco_in_use_ == -1 )
+    //output_root_ += "_with_gl1.root";
     output_root_ += ".root";
   else
     output_root_ += "_FPHX_BCO_" + to_string( fphx_bco_in_use_ ) + ".root";
