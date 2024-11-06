@@ -8,13 +8,13 @@ class Analysis
 private:
   string root_path_ = "";
   string text_path_ = "";
-  string output_ = "results/streaming_timing_run00050889.pdf";
+  string output_ = "results/streaming_timing_run00050889";
   
   bool is_preliminary_ = false;
   bool is_logy_ = false;
   
   int shift_value_ = 5;
-  int process_num_ = 100;
+  int process_num_ = 10000;
   int streaming_offset_ = 23;
   int event_num_;
   
