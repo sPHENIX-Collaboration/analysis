@@ -12,7 +12,7 @@
 R__LOAD_LIBRARY(libfun4allraw.so)
 R__LOAD_LIBRARY(libTPCRawDataTree.so)
 
-int Fun4All_TpcTimeFrameChecker(const int nEvents = 1000,
+int Fun4All_TpcTimeFrameChecker(const int nEvents = 10000,
                                 const string &inputFile = "/direct/sphenix+lustre01/sphnxpro/physics/tpc/physics/TPC_ebdc00_physics-00052482-0000.evt"  //
 )
 {
@@ -26,7 +26,7 @@ int Fun4All_TpcTimeFrameChecker(const int nEvents = 1000,
   {
     TpcTimeFrameChecker *checker = new TpcTimeFrameChecker(i);
     // checker->Verbosity(1);
-    checker->setDebugTTreeFile("Fun4All_TpcTimeFrameChecker_qa" + to_string(i) + ".root");
+    checker->setDebugTTreeFile("TpcTimeFrameChecker" + to_string(i) + ".root");
     se->registerSubsystem(checker);
   }
 

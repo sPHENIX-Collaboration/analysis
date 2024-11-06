@@ -213,12 +213,24 @@ void Analysis::Init(TTree *tree)
   hists_.push_back( hist_ang10_11_ );
   hists_.push_back( hist_ang20_21_ );
   hists_.push_back( hist_ang30_31_ );
-  
-  hist_correlation = new TH2D( "nhit_correlation_barrel",
+
+  hist_association_ = new TH1D( "association_ratio", "Ratio of associated hits", 100, 0, 1 );
+  HistSetting( hist_association_ );
+
+  hist_association_in_ = new TH1D( "association_ratio_in", "Ratio of associated hits", 100, 0, 1 );
+  HistSetting( hist_association_in_ );
+
+  hist_association_out_ = new TH1D( "association_ratio_out", "Ratio of associated hits", 100, 0, 1 );
+  HistSetting( hist_association_out_ );
+
+  hist_association_in_out_ = new TH2D( "association_ratio_in_out", "Ratio of associated hits", 100, 0, 1, 100, 0, 1 );
+  HistSetting( hist_association_in_out_ );
+
+  hist_correlation_ = new TH2D( "nhit_correlation_barrel",
 			       "Cluster correlation between barrels;Number of clusters at inner barrel;Number of clusters at outer barrel;",
 			       100, 0, 100, 
 			       100, 0, 100 ); 
-  HistSetting( hist_correlation );
+  HistSetting( hist_correlation_ );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -226,6 +238,7 @@ void Analysis::Init(TTree *tree)
 //////////////////////////////////////////////////////////////////////
 string Analysis::GetDate()
 {
+  return "9/13/2024";
   
   TDatime dt;
   int year	= dt.GetYear();
@@ -270,10 +283,13 @@ void Analysis::DrawWords()
 
   // p+p 200 GeV
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV, Run 50889 " );
+  tex->DrawLatexNDC( pos_x, pos_y, "Run-24 #it{p+p} 200 GeV" );
 
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
+  tex->DrawLatexNDC( pos_x, pos_y, "Run 50889 " );
+
+  pos_y -= line_height;
+  tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming readout " );
 }
 
 Int_t Analysis::GetEntry(Long64_t entry)
@@ -324,6 +340,28 @@ Int_t Analysis::Cut(Long64_t entry)
    return 1;
 }
 
+TBox* Analysis::DrawExpectedPeakRegion( double theta_min, double theta_max )
+{
+  double pos_min = GetExpectedPeakPosition( theta_max );
+  double pos_max = GetExpectedPeakPosition( theta_min );
+
+  double alpha = 0.3;
+  if( pos_max - pos_min < 3 )
+    {
+      pos_max = pos_min + 3;
+      alpha = 0.8;
+    }
+  else if( pos_max - pos_min < 10 )
+    {
+      alpha = 0.8;
+    }
+
+  TBox* box = new TBox( pos_min, 0, pos_max, 0.3 );
+  box->SetFillColorAlpha( kAzure-1, alpha );
+  box->Draw();
+  return box;
+}
+
 void Analysis::DrawSingle( MipHist* mip_hist )
 {
   int color = mip_hist->GetColor();
@@ -354,7 +392,7 @@ void Analysis::DrawSingle( MipHist* mip_hist )
 void Analysis::DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, bool use_color_palette )
 {
 
-  TLegend* leg = new TLegend( 0.5, 0.75 - mip_hists.size() * 0.05, 0.8, 0.75);
+  TLegend* leg = new TLegend( 0.5, 0.65 - mip_hists.size() * 0.05, 0.7, 0.7);
   int counter = 0;
   for( auto& mip_hist : mip_hists )
     {
@@ -364,7 +402,7 @@ void Analysis::DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, 
       auto hist = mip_hist->GetNormalizedHist( top_val );
       HistSetting1D( hist );
 
-      hist->GetYaxis()->SetRangeUser( 0, 0.2 );
+      hist->GetYaxis()->SetRangeUser( 0, 0.3 );
 
       if( use_color_palette )
 	{
@@ -394,6 +432,114 @@ void Analysis::DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, 
     output += "_internal.pdf";
 
   c_->Print( output.c_str() );
+}
+
+void Analysis::DrawMultiPanel( vector < MipHist* >& mip_hists, string output_tag )
+{
+  TCanvas* c = new TCanvas( "aaa", "title", 2500, 1000);
+  c->Clear();
+  c->Divide( 4, 2 );
+  
+  double top_val = 0.4;
+
+  TBox* box;
+  for( int i=0; i<mip_hists.size(); i++ )
+    {
+      c->cd(i+1);
+      auto mip_hist = mip_hists[i];
+
+      // values to restore configuration
+      int color = mip_hist->GetColor();
+      double alpha = mip_hist->GetAlpha();
+
+      mip_hist->SetColorAlpha( kBlack, 0.1, true );
+      auto hist = mip_hist->GetNormalizedHist( top_val );
+      hist->GetYaxis()->SetRangeUser( 0, 0.3 );
+      
+      HistSetting1D( hist );
+      hist->GetXaxis()->SetLabelSize( 0.07 );
+      hist->GetXaxis()->SetTitleSize( 0.07 );
+      hist->GetXaxis()->SetTitleOffset( 1 );
+
+      hist->GetYaxis()->SetLabelSize( 0.07 );
+      hist->GetYaxis()->SetTitleSize( 0.07 );
+      hist->GetYaxis()->SetTitleOffset( 1.2 );
+      
+      hist->Draw( "HISTE" );
+      // TLegend* leg = new TLegend( 0.5, 0.65, 0.92, 0.92);
+      // leg->AddEntry( hist, mip_hist->GetTag().c_str() );
+      // leg->Draw();
+
+      TLatex* tex = new TLatex();
+      tex->SetTextSize( 0.1 );
+      tex->DrawLatexNDC( 0.35, 0.8, mip_hist->GetTag().c_str() );
+      
+      double theta_min = stoi( string(hist->GetName()).substr( 3, 2 ) );
+      double theta_max = stoi( string(hist->GetName()).substr( 6, 2 ) );
+      box = DrawExpectedPeakRegion( theta_min, theta_max );
+      
+      // restore color and alpha
+      mip_hist->SetColorAlpha( color, alpha, true );
+    }
+
+  {
+    c->cd(8);
+    ///////////////////////////////////////////////////////////////////////////////
+    // Writting words in the canvas                                              //
+    ///////////////////////////////////////////////////////////////////////////////
+    TLatex* tex = new TLatex();
+    tex->SetTextSize( 0.1 );
+    double line_height = 0.1;
+    double first_margin = 0.005;  
+    double pos_y = 0.85; //1.0 - top_margin_ + first_margin;// - line_height;
+    double pos_x = 0.0; // 0.45 - right_margin_;
+
+    // Date
+    tex->DrawLatexNDC( pos_x, pos_y,
+		       string("#it{" + GetDate() + "}").c_str() );
+
+    // sPHENIX Internal or sPHENIX Prelimnary
+    pos_y -= line_height - first_margin + 0.025;
+    if( is_preliminary_ == false )
+      {
+	tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
+      }
+    else
+      {
+	//pos_x = 0.6;
+	tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
+      }
+
+    // p+p 200 GeV
+    pos_y -= line_height;
+    tex->DrawLatexNDC( pos_x, pos_y, "Run-24, #it{p+p} 200 GeV" );
+  
+    pos_y -= line_height;
+    tex->DrawLatexNDC( pos_x, pos_y, "Run 50889 " );
+  
+    pos_y -= line_height;
+    tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming readout " );
+
+    pos_y -= line_height;
+    //    TLegend* leg = new TLegend( pos_x, pos_y );
+    TLegend* leg = new TLegend( pos_x, 0.1, pos_x + 0.6, pos_y + 0.01 );
+    leg->SetTextSize( 0.1 );
+    leg->AddEntry( box, "Expected peak region", "f" );
+    leg->Draw();
+  }
+
+  
+  string page_title = string("Title: Multi panel");// + mip_hist->GetHist()->GetName();
+  c_->Print( c_->GetName(), page_title.c_str() );
+  string output = c_->GetName();
+  output = output.substr( 0, output.find_last_of("_") ) + "_" + output_tag;
+  if( is_preliminary_ == true )
+    output += "_preliminary.pdf";
+  else
+    output += "_internal.pdf";
+
+  c->Print( output.c_str() );
+
 }
 
 void Analysis::FillClusterInfo( int mode )
@@ -554,6 +700,29 @@ void Analysis::FillClusterInfo( int mode )
 
 }
 
+
+double Analysis::GetExpectedPeakPosition( double theta )
+{
+  double thickness = 320; // um
+  double path_length = thickness / TMath::Sin( TMath::Pi() * theta / 180 );
+  //cout << "Path length: " << path_length << endl;
+  
+  double energy_loss_per_cm = 1.15; // MeV/g/cm/cm
+  double density = 2.329; // g/cm^3
+  double energy_loss = path_length * energy_loss_per_cm * density / 10; // keV
+  //cout << "Energy loss: " << energy_loss << " keV" << endl;
+  
+  double energy_electron_hole = 3.62; // eV/pair
+  double elementaly_charge = 1.602e-19; // C
+  double charge = energy_loss * 1000 / energy_electron_hole * elementaly_charge / 1e-15; // fC
+  //cout << "Charge: " << charge << " fC" << endl;
+  
+  double pulse_height = charge * 100 + 210;
+  double dac = (pulse_height - 210 ) / 4;
+
+  return dac;
+}
+
 ///////////////////////////////////////////////////////////////////////
 // public functions                                                  //
 ///////////////////////////////////////////////////////////////////////
@@ -580,7 +749,7 @@ void Analysis::Loop()
 
        int hit_num_inner = std::count( is_associated_in->begin(), is_associated_in->end(), true );
        int hit_num_outer = std::count( is_associated_out->begin(), is_associated_out->end(), true );
-       hist_correlation->Fill( hit_num_inner, hit_num_outer );
+       hist_correlation_->Fill( hit_num_inner, hit_num_outer );
        
        if (ientry < 0)
 	 break;
@@ -591,20 +760,49 @@ void Analysis::Loop()
        double cluster_num_out = adc_out->size();
        double cluster_num = cluster_num_in + cluster_num_out;
        double cluster_num_asymmetry = fabs(cluster_num_in - cluster_num_out) / cluster_num;
+       double associated_cluster_num_in = count( is_associated_in->begin(), is_associated_in->end(), true );
+       double associated_cluster_num_out = count( is_associated_out->begin(), is_associated_out->end(), true );
+
+       double associated_cluster_num = associated_cluster_num_in + associated_cluster_num_out;
+
+       double associated_ratio = associated_cluster_num / cluster_num;
+       double associated_ratio_in = associated_cluster_num_in / cluster_num_in;
+       double associated_ratio_out = associated_cluster_num_out / cluster_num_out;
+
+       hist_association_->Fill( associated_ratio );
+       hist_association_in_out_->Fill( associated_ratio_in, associated_ratio_out );
+       hist_association_in_->Fill( associated_ratio_in );
+       hist_association_out_->Fill( associated_ratio_out );
 
        bool is_good_event = true;
-
        if( cluster_num_in <= 3
 	   || cluster_num_out <= 3
 	   || cluster_num <= 6
-	   || cluster_num_asymmetry > 0.1
+	   //|| cluster_num_asymmetry > 0.1
 	   )
 	 is_good_event = false;
 
+       if( associated_ratio > 1 || associated_ratio_in > 1 || associated_ratio_out > 1 )
+	 cout << associated_cluster_num << " / " << cluster_num << "=" << associated_ratio << "\t"
+	      << associated_ratio_in << "\t"
+	      << associated_ratio_out << "\t"
+	      << endl;
+
+       double associated_threshold = 0.4;
+       if( associated_ratio_in  < associated_threshold || 
+	   associated_ratio_out < associated_threshold || 
+	   associated_ratio     < associated_threshold )
+	 is_good_event = false;
+              
        ////////////////////////////////////////////////////////////////////
        // Loop over inner hits
        if( is_good_event == false )
 	 continue;
+
+       // cout << cluster_num << "\t"
+       // 	    << associated_cluster_num << "\t"
+       // 	    << associated_ratio
+       // 	    << endl;
        
        this->FillClusterInfo( 0 );
        this->FillClusterInfo( 1 );
@@ -702,6 +900,18 @@ void Analysis::Draw()
     this->DrawMultiple( mip_hists, "10-11_20-21_30-31", true );
   }
 
+  { // all my config
+    vector < MipHist* > mip_hists;
+    mip_hists.push_back( hist_ang80_ );
+    mip_hists.push_back( hist_ang70_ );
+    mip_hists.push_back( hist_ang60_ );
+    mip_hists.push_back( hist_ang50_ );
+    mip_hists.push_back( hist_ang40_ );
+    mip_hists.push_back( hist_ang30_ );
+    mip_hists.push_back( hist_ang20_ );
+    this->DrawMultiPanel( mip_hists, "multi_panel" );
+  }
+
   //////////////////////////////////////////////////////////////////////
   // #cluster correlation                                             //
   //////////////////////////////////////////////////////////////////////
@@ -713,10 +923,10 @@ void Analysis::Draw()
   c_->SetRightMargin( right_margin_ );
   c_->SetLeftMargin( 0.13 );
 
-  hist_correlation->GetYaxis()->SetTitleOffset( 1.2 );
-  hist_correlation->Draw( "colz" );
+  hist_correlation_->GetYaxis()->SetTitleOffset( 1.2 );
+  hist_correlation_->Draw( "colz" );
   gPad->SetLogz( true );
-  //  DrawStats( hist_correlation, 0.7, 0.7, 0.9, 0.9 );
+  //  DrawStats( hist_correlation_, 0.7, 0.7, 0.9, 0.9 );
   this->DrawWords();
   c_->Print( c_->GetName() );
   
@@ -733,7 +943,11 @@ void Analysis::Draw()
   for( auto& mip_hist : hists_ )
     tf_output->WriteTObject( mip_hist->GetHist(), mip_hist->GetHist()->GetName() );
 
-  tf_output->WriteTObject( hist_correlation, hist_correlation->GetName() );
+  tf_output->WriteTObject( hist_association_, hist_association_->GetName() );
+  tf_output->WriteTObject( hist_association_in_out_, hist_association_in_out_->GetName() );
+  tf_output->WriteTObject( hist_association_in_, hist_association_in_->GetName() );
+  tf_output->WriteTObject( hist_association_out_, hist_association_out_->GetName() );
+  tf_output->WriteTObject( hist_correlation_, hist_correlation_->GetName() );
   tf_output->Close();
 }
 

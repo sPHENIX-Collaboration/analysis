@@ -43,20 +43,10 @@ class TpcTimeFrameChecker: public SubsysReco
   std::string getDebugTTreeFile() const { return m_debugTTreeFile; }
   void setDebugTTreeFile(const std::string& debugTTree) { m_debugTTreeFile = debugTTree; }
   
+
   int ProcessPacket(Packet *);
-  
-  struct gtm_payload {
-      unsigned short pkt_type = 0;
-      bool is_endat = false;
-      bool is_lvl1 = false;
-      bool is_modebit = false;
-      unsigned long long bco = 0;
-      unsigned int lvl1_count = 0;
-      unsigned int endat_count = 0;
-      unsigned long long last_bco = 0;
-      unsigned char modebits = 0;
-      unsigned char userbits = 0;
-  };
+
+  void setVerbosity(const int i) { m_verbosity = i; }
 
  protected:
 
@@ -80,15 +70,25 @@ class TpcTimeFrameChecker: public SubsysReco
   static const uint16_t MAX_CHANNELS = 8 * 32;  // that many channels per FEE
   static const uint16_t HEADER_LENGTH = 5;
 
+  int decode_gtm_data(uint16_t gtm[DAM_DMA_WORD_BYTE_LENGTH]);
+
+  struct gtm_payload {
+      unsigned short pkt_type = 0;
+      bool is_endat = false;
+      bool is_lvl1 = false;
+      bool is_modebit = false;
+      unsigned long long bco = 0;
+      unsigned int lvl1_count = 0;
+      unsigned int endat_count = 0;
+      unsigned long long last_bco = 0;
+      unsigned char modebits = 0;
+      unsigned char userbits = 0;
+  };
   gtm_payload m_payload;
   int m_frame = 0;
-  unsigned int m_datastream_last_lvl1_count = 0;
-  unsigned int m_datastream_last_endat_count = 0;
-  unsigned long long m_datastream_last_bco = 0;
 
-  int decode_gtm_data(uint16_t gtm[DAM_DMA_WORD_BYTE_LENGTH]);
-  int process_gtm_data(const gtm_payload & payload);
 
+  int m_verbosity = 0;
   int m_packet_id = 0;
 
   //! common prefix for QA histograms
