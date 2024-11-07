@@ -6,3 +6,5 @@ src/build/
 macros/*.list
 macros/*make*
 macros/condor_files/
+macros/data_lists/
+macros/*/*.list

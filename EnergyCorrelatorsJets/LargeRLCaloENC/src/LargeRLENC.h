@@ -53,6 +53,7 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <math.h>
 //root
 #include <TH1.h>
 #include <TH2.h>
@@ -119,7 +120,7 @@ class EventSelectionCut{
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			float leadjetpt=0., subleadjetpt=0.;
 			bool haspartner=false;
-		       	Jet* leadjet, *subleadjet;
+		       	Jet* leadjet=NULL, *subleadjet=NULL;
 		       	for(auto j: *eventjets){
 				float pt=j->get_pt();
 				if(pt > leadjetpt){
@@ -136,15 +137,20 @@ class EventSelectionCut{
 					}
 				}
 			if(leadjetpt < leadingpt) good=false;
+			if(!leadjet) good=false; 
+			else{
 			leadeta=leadjet->get_eta();
+			m_etal=leadeta;
 		       	leadphi=leadjet->get_phi();
 			if(abs(leadeta) > etaedge ) good=false; //getting rid of events that have the leading jet outside of acceptance region
 			for(auto j: *eventjets){
 				float phi=j->get_phi();
-				if(abs(phi-leadphi) > deltaphi){
+				if(abs(phi-leadphi) > deltaphi && abs(phi-leadphi) <= PI){
 				       	subleadjet=j;
 					subleadjetpt=j->get_pt();
-					haspartner=true;break;}
+					haspartner=true;
+
+				break;}
 			}
 			if(subleadjet){ 
 				float sldeta=subleadjet->get_eta();
@@ -154,6 +160,7 @@ class EventSelectionCut{
 
 			}
 			else good=false;
+			}
 			if(subleadjetpt < subleadingpt || !haspartner) good=false;
 			passesCut=true;
 			m_isdijet=haspartner;
@@ -230,14 +237,14 @@ class LargeRLENC : public SubsysReco
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
    */
-	int Init(PHCompositeNode *topNode) override { return 1;};
+	int Init(PHCompositeNode *topNode) override { return Fun4AllReturnCodes::EVENT_OK;}
 
   	/** Called for first event when run number is known.
       	Typically this is where you may want to fetch data from
       	database, because you know the run number. A place
       	to book histograms which have to know the run number.
    	*/
-  	int InitRun(PHCompositeNode *topNode) override {return 1;};
+  	int InitRun(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
 
   	/** Called for each event.
       	This is where you do the real work.
@@ -245,16 +252,16 @@ class LargeRLENC : public SubsysReco
  	int process_event(PHCompositeNode *topNode) override;
 	
 	/// Clean up internals after each event.
-	int ResetEvent(PHCompositeNode *topNode) override {return 1;};
+	int ResetEvent(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
 
 	/// Called at the end of each run.
-	int EndRun(const int runnumber) override {return 1;};
+	int EndRun(const int runnumber) override {return Fun4AllReturnCodes::EVENT_OK;}
 
 	/// Called at the end of all processing.
-	int End(PHCompositeNode *topNode) override {return 1;};
+	int End(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;};
 
  	/// Reset
-  	int Reset(PHCompositeNode * /*topNode*/) override {return 1;};
+  	int Reset(PHCompositeNode * /*topNode*/) override {return Fun4AllReturnCodes::EVENT_OK;};
 
   	void Print(const std::string &what = "ALL") const override;
 
@@ -269,7 +276,7 @@ class LargeRLENC : public SubsysReco
 	
 	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::pair<float, float>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool);
 
-	float getR(float, float, float, float);
+	float getR(float, float, float, float, bool print=false);
 
 
  private:
@@ -285,7 +292,7 @@ class LargeRLENC : public SubsysReco
 	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > m_pt_evt;
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
-	std::vector<MethodHistograms*>* FullCal, *TowardRegion, *AwayRegion, *TransverseRegion;
+	std::vector<MethodHistograms*> FullCal, TowardRegion, AwayRegion, TransverseRegion;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
