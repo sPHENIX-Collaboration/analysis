@@ -93,9 +93,11 @@ dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, c
     , _get_reco_cluster(true)
     , _get_centrality(true)
     , _get_intt_data(true)
-    , _get_inttrawhit(true)
+    , _get_inttrawhit(false)
     , _get_trkr_hit(true)
     , _get_phg4_info(true)
+    , _get_pmt_info(true)
+    , _get_trigger_info(true)
     , _outputFile(outputfile)
     , IsData(isData)
     , eventheader(nullptr)
@@ -156,16 +158,19 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
         outtree->Branch("MBD_north_charge_sum", &mbd_north_charge_sum);
         outtree->Branch("MBD_charge_sum", &mbd_charge_sum);
         outtree->Branch("MBD_charge_asymm", &mbd_charge_asymm);
-        if (_get_pmt_info)
-        {
-            for (unsigned int i = 0; i < 128; i++)
-            {
-                std::ostringstream pmtNumber;
-                pmtNumber << std::setfill('0') << std::setw(3) << std::to_string(i);
-                std::string branchName = "MBD_PMT" + pmtNumber.str() + "_charge";
-                outtree->Branch(branchName.c_str(), &m_pmt_q[i]);
-            }
-        }
+        outtree->Branch("MBD_nhitsoverths_south", &mbd_nhitsoverths_south);
+        outtree->Branch("MBD_nhitsoverths_north", &mbd_nhitsoverths_north);
+        outtree->Branch("MBD_PMT_charge", &m_pmt_q, "MBD_PMT_charge[128]/F");
+        // if (_get_pmt_info)
+        // {
+        //     for (unsigned int i = 0; i < 128; i++)
+        //     {
+        //         std::ostringstream pmtNumber;
+        //         pmtNumber << std::setfill('0') << std::setw(3) << std::to_string(i);
+        //         std::string branchName = "MBD_PMT" + pmtNumber.str() + "_charge";
+        //         outtree->Branch(branchName.c_str(), &m_pmt_q[i]);
+        //     }
+        // }
     }
     if (_get_intt_data)
     {
@@ -256,6 +261,19 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
             outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
         }
+        // GL1 trigger information
+        if (_get_trigger_info)
+        {
+            outtree->Branch("GL1Packet_BCO", &GL1Packet_BCO_);
+            outtree->Branch("triggervec", &triggervec_);
+            outtree->Branch("firedTriggers", &firedTriggers_);
+            outtree->Branch("firedTriggers_name", &firedTriggers_name_);
+            outtree->Branch("firedTriggers_checkraw", &firedTriggers_checkraw_);
+            outtree->Branch("firedTriggers_prescale", &firedTriggers_prescale_);
+            outtree->Branch("firedTriggers_scalers", &firedTriggers_scalers_);
+            outtree->Branch("firedTriggers_livescalers", &firedTriggers_livescalers_);
+            outtree->Branch("firedTriggers_rawscalers", &firedTriggers_rawscalers_);
+        }
     }
 
     return Fun4AllReturnCodes::EVENT_OK;
@@ -340,6 +358,17 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
             intt_bco = intteventinfo->get_bco_full();
         }
+
+        if (_get_trigger_info)
+        {
+            gl1packet = findNode::getClass<Gl1Packet>(topNode, "GL1RAWHIT");
+            if (!gl1packet)
+            {
+                std::cout << __FILE__ << "::" << __func__ << " - Gl1Packet missing, doing nothing." << std::endl;
+                exit(1);
+            }
+            GetTriggerInfo(topNode);
+        }
     }
 
     // event_ = InputFileListIndex * NEvtPerFile + eventNum;
@@ -393,7 +422,45 @@ int dNdEtaINTT::Reset(PHCompositeNode *topNode)
 
 //____________________________________________________________________________..
 void dNdEtaINTT::Print(const std::string &what) const { std::cout << "dNdEtaINTT::Print(const std::string &what) const Printing info for " << what << std::endl; }
+//____________________________________________________________________________..
+void dNdEtaINTT::GetTriggerInfo(PHCompositeNode *topNode)
+{
+    std::cout << "Get GL1 trigger info." << std::endl;
 
+    GL1Packet_BCO_ = (gl1packet->lValue(0, "BCO") & 0xFFFFFFFFFFU); // Only the lower 40 bits are retained
+
+    firedTriggers_.clear();
+    firedTriggers_name_.clear();
+    firedTriggers_checkraw_.clear();
+    firedTriggers_prescale_.clear();
+    firedTriggers_scalers_.clear();
+    firedTriggers_livescalers_.clear();
+    firedTriggers_rawscalers_.clear();
+
+    // Set up Trigger Analyzer
+    triggeranalyzer = new TriggerAnalyzer();
+    triggeranalyzer->decodeTriggers(topNode);
+    
+    triggervec_ = gl1packet->getTriggerVector(); // just to get the original triggervec
+    
+    for (int i = 0; i < 64; i++)
+    {
+        bool trig_decision = ((triggervec_ & 0x1U) == 0x1U);
+        if (trig_decision)
+        {
+            firedTriggers_.push_back(i);
+            firedTriggers_name_.push_back(triggeranalyzer->getTriggerName(i));
+            firedTriggers_checkraw_.push_back(triggeranalyzer->checkRawTrigger(i));
+            firedTriggers_prescale_.push_back(triggeranalyzer->getTriggerPrescale(i));
+            firedTriggers_scalers_.push_back(triggeranalyzer->getTriggerScalers(i));
+            firedTriggers_livescalers_.push_back(triggeranalyzer->getTriggerLiveScalers(i));
+            firedTriggers_rawscalers_.push_back(triggeranalyzer->getTriggerRawScalers(i));
+        }
+        triggervec_ = (triggervec_ >> 1U) & 0xffffffffU;
+    }
+    
+    triggervec_ = gl1packet->getTriggerVector(); // just to get the original triggervec
+}
 //____________________________________________________________________________..
 void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
 {
@@ -545,8 +612,7 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         // Glauber parameter information
         ncoll_ = eventheader->get_ncoll();
         npart_ = eventheader->get_npart();
-        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_
-                  << ")" << std::endl;
+        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
         std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
     }
 
@@ -567,13 +633,22 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     bool mbd_zvtx = (fabs(mbd_z_vtx) < 60) ? true : false;
     is_min_bias_wozdc = (IsData) ? (mbd_ntube && mbd_sn_q_imbalence && mbd_zvtx) : (npart_ > 0);
 
+    int hits_n = 0;
+    int hits_s = 0;
+
     if (_get_pmt_info)
     {
         for (int i = 0; i < 128; i++)
         {
             m_pmt_q[i] = m_mbdpmtcontainer->get_pmt(i)->get_q();
+            if (i < 64 && m_pmt_q[i] > cthresh)
+                hits_s++;
+            else if (i >= 64 && m_pmt_q[i] > cthresh)
+                hits_n++;
         }
     }
+    mbd_nhitsoverths_south = hits_s;
+    mbd_nhitsoverths_north = hits_n;
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetInttRawHitInfo(PHCompositeNode *topNode)
@@ -1071,4 +1146,11 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PrimaryG4P_isStable_);
     CleanVec(PrimaryG4P_Charge_);
     CleanVec(PrimaryG4P_isChargeHadron_);
+    CleanVec(firedTriggers_);
+    CleanVec(firedTriggers_name_);
+    CleanVec(firedTriggers_checkraw_);
+    CleanVec(firedTriggers_prescale_);
+    CleanVec(firedTriggers_scalers_);
+    CleanVec(firedTriggers_livescalers_);
+    CleanVec(firedTriggers_rawscalers_);
 }

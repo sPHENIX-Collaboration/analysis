@@ -14,4 +14,4 @@
 
 // headers and library for analysis modules
 #include "InttStreamingTiming.h"
-R__LOAD_LIBRARY( libInttStreamingTiming.so )
+R__LOAD_LIBRARY( libInttTiming.so )

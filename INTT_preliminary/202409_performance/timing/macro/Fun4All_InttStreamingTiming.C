@@ -4,7 +4,7 @@ int Fun4All_InttStreamingTiming( int trigger_bit = -1 ) // -1 means no requireme
 {
 
   int run_num = 50889;
-  int nevents = 1000;
+  int nevents = 100000;
   //gSystem->ListLibraries();
 
   int skip_num = 0;
