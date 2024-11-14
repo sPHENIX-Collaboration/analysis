@@ -270,9 +270,9 @@ class LargeRLENC : public SubsysReco
 	
 	JetContainer* getJets(std::string, std::string, std::array<float, 3>, PHCompositeNode*);
 
-	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, int, std::vector<MethodHistograms*>*, float, std::string, std::array<float, 3>, float);
+	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
-	void SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, int, bool, bool, float, float, std::vector<MethodHistograms*>*, int, float*);
+	void SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, int, float*);
 	
 	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::pair<float, float>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool);
 
@@ -293,6 +293,7 @@ class LargeRLENC : public SubsysReco
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
 	std::vector<MethodHistograms*> FullCal, TowardRegion, AwayRegion, TransverseRegion;
+	std::vector<std::vector<MethodHistograms*>> Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
