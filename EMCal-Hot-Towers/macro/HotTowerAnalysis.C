@@ -336,6 +336,7 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
             Float_t sigma_val = 0;
             if(!hasBadSigma && hasHotMap) sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
             if(std::isnan(sigma_val) || std::isinf(sigma_val)) {
+              cout << "WARNING: sigma does not exist for channel: " << channel << ", key: " << key << endl;
               hasBadSigma = true;
               badSigma.insert(run);
             }
