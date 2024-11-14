@@ -74,7 +74,6 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	EEC->Branch("3_pt",      &m_e3c, 128000/*, "region/C:calo/C:r_l/F:e3c/F"*/);
 	EEC->Branch("3_pt_full", &m_e3c_full, 128000/*, "region/C:calo/C:r_12/F:r_13/F:r_23/F:e3c/F"*/);
 	JetEvtObs=new TTree("JetEvtObs", "Tree for Event shape jet observable studies");
-	JetEvtObs->Branch("p_T_simple", &m_pt, 128000);
 	JetEvtObs->Branch("p_T", &m_pt_evt, 128000/*, "region/C:calo/C:eta/F:phi/F:pt/F"*/);
 	emcal_occup=new TH1F("emcal_occup", "Occupancy in the emcal in individual runs; Percent of Towers; N_{evts}", 100, -0.05, 99.5);
 	ihcal_occup=new TH1F("ihcal_occup", "Occupancy in the ihcal in individual runs; Percent of Towers; N_{evts}", 100, -0.05, 99.5);
@@ -86,7 +85,7 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	MinpTComp=0.01; //10 MeV cut on tower/components
 	std::cout<<"Setup complete"<<std::endl;
 }
-JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::array<float, 3> vertex, PHCompositeNode* topNode)
+JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::array<float, 3> vertex, float ohcal_rat, PHCompositeNode* topNode)
 {
 	//This is just running the Fastjet reco 
 	JetContainerv1* fastjetCont=new JetContainerv1();
@@ -117,6 +116,7 @@ JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::ar
 				int etabin=ohcal_tower_energy->getTowerEtaBin(key);
 				float phicenter=ohcal_geom->get_phicenter(phibin);
 				float etacenter=ohcal_geom->get_etacenter(etabin);
+				energy=energy/ohcal_rat; //scale the energy to an approriate level to get ~total calo energy
 				//use E=p for this as an approximation
 				float px=energy*(1/(float)cosh(etacenter))*cos(phicenter);	
 				float py=energy*(1/(float)cosh(etacenter))*sin(phicenter);
@@ -140,7 +140,7 @@ JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::ar
 	}
 	fastjet::ClusterSequence cs(jet_objs, fjd);	
 	auto js=cs.inclusive_jets();
-	std::cout<<"Fastjet Cluseter found : " <<js.size() <<std::endl;
+	std::cout<<"Fastjet Clusterzer found : " <<js.size() <<std::endl;
 	for(auto j:js)
 	{
 		auto jet=fastjetCont->add_jet();
@@ -211,11 +211,6 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	}
 	catch(std::exception& e){std::cout<<"Could not find the vertex. \n Setting to origin" <<std::endl;}
 	//std::cout<<__LINE__<<std::endl;
-	if(jets==NULL || !foundJetConts) jets=getJets(algo, radius, vertex, topNode);
-	if(!jets || jets->size() == 0 ){
-		std::cout<<"Didn't find any jets, skipping event" <<std::endl;
-		return -1/*FUN4ALL::*/;
-	}
 	//std::cout<<__LINE__<<std::endl;
 	float emcal_energy=0., ihcal_energy=0, ohcal_energy=0, total_energy=0, ohcal_rat=0;
 	std::map<std::array<float, 3>, float> ihcal_towers, emcal_towers, ohcal_towers; //these are just to collect the non-zero towers to decrease the processing time 
@@ -252,6 +247,11 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	ihcal_occup->Fill(ihcal_occupancy);
 	ohcal_occup->Fill(ohcal_occupancy);
 	//std::cout<<__LINE__<<std::endl;
+	if(jets==NULL || !foundJetConts) jets=getJets(algo, radius, vertex, ohcal_rat, topNode);
+	if(!jets || jets->size() == 0 ){
+		std::cout<<"Didn't find any jets, skipping event" <<std::endl;
+		return -1/*FUN4ALL::*/;
+	}
 
 	isDijet=eventCut->passesTheCut(jets, ohcal_rat, vertex);	
 	//std::cout<<__LINE__<<std::endl;
@@ -273,6 +273,10 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		eventCut->getDijets(jets, &m_dijets);
 	//std::cout<<__LINE__<<std::endl;
 		m_vertex=vertex;
+		m_etotal=total_energy;
+		m_eemcal=emcal_energy;
+		m_eihcal=ihcal_energy;
+		m_eohcal=ohcal_energy;
 		//this is running the actual analysis
 	//std::cout<<__LINE__<<std::endl;
 	std::cout<<"The histovector has size " <<FullCal.size() <<std::endl;

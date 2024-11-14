@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <map>
+#include <algorithm>
 #include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllUtils.h>
 #include <fun4all/Fun4AllServer.h>
@@ -13,11 +14,19 @@
 #include <fun4all/SubsysReco.h>
 #include <Calo_Calib.C>
 #include <largerlenc/LargeRLENC.h>
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetReco.h>
+#include <jetbase/TowerJetInput.h>
+#include <jetbackground/RetowerCEMC.h>
+#include <TFile.h>
+#include <TTree.h>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libLargeRLENC.so)
+R__LOAD_LIBRARY(libjetbase.so)
+R__LOAD_LIBRARY(libjetbackgorund.so);
 
 int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0")
 {
@@ -71,6 +80,41 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 	rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
 	rc->set_uint64Flag("TIMESTAMP", run_number);
 	CDBInterface::instance() -> Verbosity(1);*/
+	bool nojets=true, retower_needed=true;
+	if(data){ //check if the jet objects have already been constructed and retowering needed
+		TFile* f1=new TFile(data_dst.c_str(), "READ");
+		if(f1->IsOpen())
+		{
+			TTree* T=(TTree*) f1->GetObject("T");
+			auto brlist=T->GetListOfBranches();
+			for(int b=0; b<(int) brlist->Entries(); b++)
+			{
+				std::string branch_name (brlist[b]->GetName());
+				std::transform(branch_name.begin, branch_name.end(), std::tolower);
+				if(branch_name.find("retower")!= std::string::npos) retower_needed=false;
+				if(branch_name.find("antikt")!= std::string::npos) nojets=false;
+			}
+		}
+	}
+	if(data && retower_needed){
+		RetowerCEMC* rtcemc=new RetowerCEMC();
+		rtcemc->Verbosity(0);
+		rtcemc->set_tower_info(true);
+		rtcemc->set_frac_cut(0.5);
+		se->RegisterSubsystem(rtcemc);
+	}
+	if(data && nojets){ //if no jet objects, run fastjet
+		JetReco* data_jets=new JetReco();
+		data_jets->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER);
+		data_jets->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO);
+		data_jets->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO);
+	i	data_jets->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4), "AntiKt_TowerInfo_r04");
+		data_jets->set_algo_node("ANTIKT");
+		data_jets->set_input_node("TOWER");
+		data_jets->Verbosity(0);
+		se->registerSubsystem(data_jets);
+		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
+		}
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
 	se->registerSubsystem(rlenc);

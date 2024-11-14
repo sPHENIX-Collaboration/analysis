@@ -237,7 +237,18 @@ class LargeRLENC : public SubsysReco
       register them to Fun4AllServer (so they can be output to file
       using Fun4AllServer::dumpHistos() method).
    */
-	int Init(PHCompositeNode *topNode) override { return Fun4AllReturnCodes::EVENT_OK;}
+	int Init(PHCompositeNode *topNode/*, bool* has_retower, bool *has_jets*/) override {
+	// this first section is a backup way to get the status of the towers or jets
+	/*	*has_retower=true;
+		*has_jets=true;
+		if(data){
+			auto jets = findNode::getClass<JetContainer>(topNode, "AntiKt_Towers_r04");
+			auto retower = findNode::getClass<TowerInfoContainer(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+			if(!jets) (*has_jets)=false;
+			if(!retower) (*has_retower)=false;
+		}*/
+		return Fun4AllReturnCodes::EVENT_OK;
+	}
 
   	/** Called for first event when run number is known.
       	Typically this is where you may want to fetch data from
@@ -268,7 +279,7 @@ class LargeRLENC : public SubsysReco
 	//and now for the unique stuff
 	void addTower(int, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, std::map<std::array<float, 3>, float>*, RawTowerDefs::CalorimeterId);
 	
-	JetContainer* getJets(std::string, std::string, std::array<float, 3>, PHCompositeNode*);
+	JetContainer* getJets(std::string, std::string, std::array<float, 3>, float ohcal_rat, PHCompositeNode*);
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
