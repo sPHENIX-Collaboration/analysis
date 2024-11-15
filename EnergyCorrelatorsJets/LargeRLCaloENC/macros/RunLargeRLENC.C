@@ -26,7 +26,7 @@ R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libLargeRLENC.so)
 R__LOAD_LIBRARY(libjetbase.so)
-R__LOAD_LIBRARY(libjetbackgorund.so);
+R__LOAD_LIBRARY(libjetbackground.so)
 
 int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0")
 {
@@ -80,7 +80,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 	rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
 	rc->set_uint64Flag("TIMESTAMP", run_number);
 	CDBInterface::instance() -> Verbosity(1);*/
-	bool nojets=true, retower_needed=true;
+/*	bool nojets=true, retower_needed=true;
 	if(data){ //check if the jet objects have already been constructed and retowering needed
 		TFile* f1=new TFile(data_dst.c_str(), "READ");
 		if(f1->IsOpen())
@@ -114,7 +114,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 		data_jets->Verbosity(0);
 		se->registerSubsystem(data_jets);
 		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
-		}
+		}*/
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
 	se->registerSubsystem(rlenc);

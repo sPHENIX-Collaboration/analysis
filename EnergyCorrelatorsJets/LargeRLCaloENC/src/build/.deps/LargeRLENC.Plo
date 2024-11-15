@@ -397,6 +397,8 @@ LargeRLENC.lo: ../LargeRLENC.cc /usr/include/stdc-predef.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBranch.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBranchCacheInfo.h \
  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBits.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TInterpreter.h \
+ /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TInterpreterValue.h \
  /sphenix/user/sgross/install_dir/include/calorimetertowerenc/MethodHistograms.h
 /usr/include/stdc-predef.h:
 ../LargeRLENC.h:
@@ -827,4 +829,6 @@ LargeRLENC.lo: ../LargeRLENC.cc /usr/include/stdc-predef.h \
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBranch.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBranchCacheInfo.h:
 /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TBits.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TInterpreter.h:
+/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include/TInterpreterValue.h:
 /sphenix/user/sgross/install_dir/include/calorimetertowerenc/MethodHistograms.h:

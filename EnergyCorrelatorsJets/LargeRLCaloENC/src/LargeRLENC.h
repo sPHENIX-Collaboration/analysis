@@ -59,6 +59,7 @@
 #include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TInterpreter.h>
 //Homebrews 
 #include <calorimetertowerenc/MethodHistograms.h> 
 #define PI 3.14159265358979323464
@@ -90,6 +91,7 @@ struct DijetQATypePlots{
 	TH1F* emcal_occup;
 	TH1F* ihcal_occup;
 	TH1F* ohcal_occup;
+	TH1F* ohcal_rat_h;
 	std::vector<TH2F*> QA_2D_plots {bad_occ_em_oh_rat, bad_occ_em_h_rat, bad_occ_em_oh, bad_occ_em_h, ohcal_bad_hits, ohcal_rat_occup};
 	std::vector<TH1F*> QA_1D_plots {emcal_occup, ihcal_occup, ohcal_occup};
 	};
@@ -116,7 +118,8 @@ class EventSelectionCut{
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
-			if(hcalratio > maxOHCAL) good=false;
+			if(hcalratio < 0 ) return false;
+			if(hcalratio >0.95 /* maxOHCAL*/) good=false;
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			float leadjetpt=0., subleadjetpt=0.;
 			bool haspartner=false;
@@ -161,14 +164,14 @@ class EventSelectionCut{
 			}
 			else good=false;
 			}
-			if(subleadjetpt < subleadingpt || !haspartner) good=false;
-			passesCut=true;
+			//if(subleadjetpt < subleadingpt || !haspartner) good=false;
+			passesCut=good;
 			m_isdijet=haspartner;
 			m_nJets=eventjets->size();
 			m_lpt=leadjetpt;
 			m_slpt=subleadjetpt;
 			JetCuts->Fill();
-			return good;
+			return true;
 		}
 		float getLeadPhi(){ return leadphi;}
 		float getLeadEta(){ return leadeta;}
@@ -311,7 +314,7 @@ class LargeRLENC : public SubsysReco
 	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
 //	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
-	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup;
+	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup, *ohcal_rat_h;
 	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
 
 };
