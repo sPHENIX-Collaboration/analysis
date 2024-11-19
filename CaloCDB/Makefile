@@ -9,11 +9,16 @@ ROOT_LIBFLAGS = `root-config --libs`
 sPHENIX_CPPFLAGS = -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib
 
-all: bin/genStatus bin/Fun4All_CaloCDB
+all: bin/genStatus bin/genFittingStatus bin/Fun4All_CaloCDB
 
 bin/genStatus: macros/genStatus.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcdbobjects -lcalo_io
+
+bin/genFittingStatus: macros/genFittingStatus.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcdbobjects -lcalo_io
+
 
 bin/Fun4All_CaloCDB: macros/Fun4All_CaloCDB.C
 	mkdir -p bin
@@ -21,6 +26,7 @@ bin/Fun4All_CaloCDB: macros/Fun4All_CaloCDB.C
 
 clean:
 	rm bin/genStatus
+	rm bin/genFittingStatus
 	rm bin/Fun4All_CaloCDB
 
 # end
