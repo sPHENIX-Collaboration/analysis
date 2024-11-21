@@ -16,10 +16,10 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 {
 
 	n_evts=0;
-	gInterpreter->GenerateDictionary("std::map<int, std::map<std::array<float,3>,float>>");
-	gInterpreter->GenerateDictionary("std::map<int, std::array<std::map<float, float>,3>>");
-	gInterpreter->GenerateDictionary("std::map< int, std::array<std::map<std::array<float, 3>, float>, 3>>");
-	gInterpreter->GenerateDictionary("std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > >");
+	gInterpreter->GenerateDictionary("map<int, map<array<float,3>,float>>", "map;array");
+	gInterpreter->GenerateDictionary("map<int, array<map<float, float>,3>>", "map");
+	gInterpreter->GenerateDictionary("map< int, array<map<array<float, 3>, float>, 3>>", "map");
+	gInterpreter->GenerateDictionary("map< string, array< map< std::pair< float, float >, float >, 3 > >", "map;string;utility");
 	
 	MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
 	fc=new MethodHistograms("Full_CAL", 3.9); 
@@ -89,6 +89,13 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	bad_occ_em_oh=new TH2F("bad_occ_em_oh", "EMCAL to OHCAL tower deposition of \" Bad Hit\" events; Percent EMCAL towers; Percent OHCAL Towers; N_{evts}", 100, -0.5, 99.5, 100, -0.5, 99.5);
 	bad_occ_em_h=new TH2F("em_allh_bad_hits", "Emcal_occ to Average hcal energy deposition of \" Bad Hit\" events;Percent EMCAL Towers; Average Percent HCAL towers; N_{evts}", 100, -0.5, 99.5, 100, -0.5, 99.5);
 	MinpTComp=0.01; //10 MeV cut on tower/components
+	if(n_segment%15 == 0 ){
+		write_to_file=true;
+		std::string text_out_filename="Missing_pT_for_felix_run-"+std::to_string(nRun)+"-"+std::to_string(nSegment)+".csv";
+		text_out_file.open(text_out_filename.c_str());
+		text_out_file<<"Region, Calorimeter, tower eta, tower phi, tower p_T"<<std::endl;
+	}
+	else write_to_file=false;
 	std::cout<<"Setup complete"<<std::endl;
 }
 JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::array<float, 3> vertex, float ohcal_rat, PHCompositeNode* topNode)
@@ -178,6 +185,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	//This is where I can be a bit clever with allowing for the parrelization for easier crosschecks
 	n_evts++;
 	std::cout<<"Running on event : " <<n_evts<<std::endl;
+	if(write_to_file) text_out_file<<"\n \nEvent " <<n_evts <<std::endl;
 	auto emcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC"   );
 	auto emcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC"   );
 	auto ihcal_geom= findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
@@ -185,7 +193,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
 	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
 	//look for the jet objects 
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	JetContainer* jets=NULL;
 	bool foundJetConts=false, isDijet=false;
 	try{
@@ -197,7 +205,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		foundJetConts=true;
 	}
 	catch(std::exception& e){ std::cout<<"Did not find a jet container object, will attempt to reconstruct the jets" <<std::endl;}
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	std::array<float, 3> vertex={0.,0.,0.}; //set the initial vertex to origin 
 	try{
 		GlobalVertexMap* vertexmap=findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -216,8 +224,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		}
 	}
 	catch(std::exception& e){std::cout<<"Could not find the vertex. \n Setting to origin" <<std::endl;}
-	//std::cout<<__LINE__<<std::endl;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	float emcal_energy=0., ihcal_energy=0., ohcal_energy=0., total_energy=0., ohcal_rat=0.;
 	std::map<std::array<float, 3>, float> ihcal_towers, emcal_towers, ohcal_towers; //these are just to collect the non-zero towers to decrease the processing time 
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
@@ -227,7 +235,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 			addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC   );
 		emcal_energy+=energy;
 	}
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	for(int n=0; n<(int) ihcal_tower_energy->size(); n++){
 		if(! ihcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ihcal_tower_energy->get_tower_at_channel(n)->get_energy();
@@ -235,7 +243,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 			addTower(n, ihcal_tower_energy, ihcal_geom, &ihcal_towers, RawTowerDefs::HCALIN  );
 		ihcal_energy+=energy;
 	}
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
 		if(! ohcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ohcal_tower_energy->get_tower_at_channel(n)->get_energy();
@@ -243,7 +251,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 			addTower(n, ohcal_tower_energy, ohcal_geom, &ohcal_towers, RawTowerDefs::HCALOUT );
 		ohcal_energy+=energy;
 	}
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	total_energy=emcal_energy+ihcal_energy+ohcal_energy;
 	ohcal_rat=ohcal_energy/(float)total_energy; //take the ratio at the whole calo as that is the region of interest
 	float emcal_occupancy=emcal_towers.size()/((float)emcal_tower_energy->size())*100.;
@@ -253,7 +261,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	ihcal_occup->Fill(ihcal_occupancy);
 	ohcal_occup->Fill(ohcal_occupancy);
 	ohcal_rat_h->Fill(ohcal_rat);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	if(jets==NULL || !foundJetConts) jets=getJets(algo, radius, vertex, ohcal_rat, topNode);
 	if(!jets || jets->size() == 0 ){
 		std::cout<<"Didn't find any jets, skipping event" <<std::endl;
@@ -261,11 +269,11 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	}
 	if(ohcal_rat > 1 || ohcal_rat < 0 )std::cout<<"Strange values of hcal ratio ohcal energy " <<ohcal_energy << "\n ihcal energy : " <<ihcal_energy <<"\n emcal energy " <<emcal_energy <<std::endl;
 	isDijet=eventCut->passesTheCut(jets, ohcal_rat, vertex);	
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	if(!isDijet){ //stores some data about the bad cuts to look for any arrising structure
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		if(ohcal_rat > 0.9){
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		       ohcal_rat_occup->Fill(ohcal_rat, ohcal_occupancy);
 		       for(auto p:ohcal_towers)ohcal_bad_hits->Fill(p.first[0], p.first[1], p.second);
 		}
@@ -274,29 +282,28 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	       	return Fun4AllReturnCodes::EVENT_OK;
 	}
 	else{
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		float lead_phi=eventCut->getLeadPhi();
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		eventCut->getDijets(jets, &m_dijets);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		m_vertex=vertex;
 		m_etotal=total_energy;
 		m_eemcal=emcal_energy;
 		m_eihcal=ihcal_energy;
 		m_eohcal=ohcal_energy;
 		//this is running the actual analysis
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	std::cout<<"The histovector has size " <<FullCal.size() <<std::endl;
 		LargeRLENC::CaloRegion(emcal_towers, ihcal_towers, ohcal_towers, jetMinpT, which_variable, vertex, lead_phi);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	//	LargeRLENC::CaloRegion(emcal_towers, ihcal_towers, ohcal_towers, 1, &TowardRegion,     jetMinpT, which_variable, vertex, lead_phi);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	//	LargeRLENC::CaloRegion(emcal_towers, ihcal_towers, ohcal_towers, 2, &AwayRegion,       jetMinpT, which_variable, vertex, lead_phi);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	//	LargeRLENC::CaloRegion(emcal_towers, ihcal_towers, ohcal_towers, 3, &TransverseRegion, jetMinpT, which_variable, vertex, lead_phi);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 		DijetQA->Fill();
-
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -364,15 +371,27 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 		region_ints[region]=phi_lim;
 	}
 	float total_e=0.;
-	//std::cout<<__LINE__<<std::endl;
-	SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, 1, &total_e);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
+	//SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, 1, &total_e);
+	//the emcal has become a bit of a problem, I think I need to be more careful about it, potentially retower always?
+	////std::cout<<__LINE__<<std::endl;
 	SingleCaloENC(ihcal, jetMinpT, vertex, transverse, energy, region_ints, 2, &total_e);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	SingleCaloENC(ohcal, jetMinpT, vertex, transverse, energy, region_ints, 3, &total_e);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	EEC->Fill();
 	JetEvtObs->Fill();
+	if(write_to_file){
+		for(auto t:m_pt_evt){
+			int i=0;
+			for(auto v:t.second){
+				for(auto x:v){
+					text_out_file<<t.first<<", "<<i<<", "<<x.first.first<<", "<<x.first.second<<", "<<x.second<<std::endl;
+				}
+				i++;
+			}
+		}
+	}
 	return;
 }
 void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, /*int region,*/ bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges,/* std::vector<MethodHistograms*>* Histos,*/ int which_calo, float* total_e_region)
@@ -383,7 +402,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	std::map<std::array<float, 3>, float> p_T_save;
 	int n=0;
 	std::array<float,4> e_region {0., 0., 0., 0.}; //get the energy in the relevant region 
-	while(i !=cal.end()){ //restrict the region to the region of intrest to reduce the data size ahead of fact
+	while(i !=cal.end()){
 		n++;
 		auto j=i->first;
 		auto j_val=i->second;
@@ -412,36 +431,39 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		}
 		if(!ha || !hc) continue;
 		else{
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			cal[j]=j_val;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			e_region[region_index]+=j_val;
 			e_region[0]+=j_val;
 //		       	++i;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			pT=j_val; //right now using p approx E, can probably improve soon
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			pT=pT/cosh(eta_shift);
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			if(pT > MinpTComp) p_T_save[j]=pT;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 			hc->pt->Fill(pT);
 			full_hc->pt->Fill(pT);
-	////std::cout<<__LINE__<<std::endl;
+	//////std::cout<<__LINE__<<std::endl;
 			bool printout=false;
 		//	if(n % 100000==0  && n_evts <=2 ) printout=true;
 		//	else printout=false;
 			float R=getR(j[0], j[1], eventCut->getLeadEta(), eventCut->getLeadPhi(), printout );
-	////std::cout<<__LINE__<<std::endl;
+	//////std::cout<<__LINE__<<std::endl;
 			if(n_evts < 5 && printout) std::cout<<"R val is " <<R <<" \n with inputs " <<j[0] <<", " <<j[1] <<" , " <<eventCut->getLeadEta() <<" , " <<eventCut->getLeadPhi() <<std::endl;
 			hc->R_pt->Fill(R,pT);
 			full_hc->R_pt->Fill(R,pT);
 		}
 	}
+	for(int i=0; i<(int)e_region.size(); i++)
+		if(e_region[i]==0.) 
+			e_region[i]=1.; //just correcting for any nan inputs
 	std::map<std::array<float, 3>, float> cal_2=cal;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	std::map<int, std::map<float, float>> e2c, e3c;
-	//std::cout<<__LINE__<<std::endl;
+	////std::cout<<__LINE__<<std::endl;
 	std::map<int, std::map<std::array<float, 3>, float>> e3c_full;
 	for(int i=0; i<4; i++){
 		std::map<float, float> dummy {{0.,0.}};
@@ -451,31 +473,31 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		std::map<std::array<float, 3>, float> dummy_2{{dummy_array, 0.}}; 
 		e3c_full[i]=dummy_2;
 	} //just make sure the maps are initialized to be in working order ahead of the calculations
-	std::cout<<__LINE__<<std::endl;
+	//std::cout<<__LINE__<<std::endl;
 	//hc->N->Fill((int)cal.size());
 	full_hc->N->Fill((int)cal.size());
-	std::cout<<__LINE__<<std::endl;
+	//std::cout<<__LINE__<<std::endl;
 	//hc->E->Fill(e_region);
 	full_hc->E->Fill(e_region[0]);
-	std::cout<<__LINE__<<std::endl;
+	//std::cout<<__LINE__<<std::endl;
 	(*total_e_region)+=e_region[0];
-	std::cout<<__LINE__<<std::endl;
+	//std::cout<<__LINE__<<std::endl;
 	//std::cout<<"Runing over " <<cal.size() <<" correlators options" <<std::endl;
 	for(auto i=cal.begin(); i != cal.end(); ++i){
-		std::cout<<__LINE__<<std::endl;
+		//std::cout<<__LINE__<<std::endl;
 		auto j=cal_2.find(i->first);
 		if(j != cal_2.end()) 
 			cal_2.erase(j); //getting rid of double counting by removing the base value from the second map 
-		std::cout<<__LINE__<<std::endl;
+		//std::cout<<__LINE__<<std::endl;
 		auto cal_3=cal_2;
 		auto k=cal_3.find(j->first);
 		if(k != cal_3.end()) 
 			cal_3.erase(k); //getting rid of double counting by removing the base value from the third map 
-		std::cout<<__LINE__<<std::endl;
+		//std::cout<<__LINE__<<std::endl;
 		std::vector<std::pair<float, std::pair<float, float> > > point_correlator ((int)cal_2.size()); //allow for easy looping over the towers to parrelize
-		std::cout<<__LINE__<<std::endl;
+		//std::cout<<__LINE__<<std::endl;
 		std::vector< std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > > > threept_full ((int) cal_2.size());
-		std::cout<<__LINE__<<std::endl;
+		//std::cout<<__LINE__<<std::endl;
 		std::vector<std::thread> calculating_threads; 
 		int index=0;
 		std::map<int, int> region_index; //gives a way to pull the relevant region after the fact to fill hc
@@ -506,8 +528,8 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			m=e3c[0].find(v.first);
 			if(l == e2c[0].end()) e2c[0][v.first]=v.second.first;
 			if(l != e2c[0].end()) e2c[0][v.first]+=v.second.first;
-			if(m == e3c[0].end()) e2c[0][v.first]=v.second.second;
-			if(m != e3c[0].end()) e2c[0][v.first]+=v.second.second;
+			if(m == e3c[0].end()) e3c[0][v.first]=v.second.second;
+			if(m != e3c[0].end()) e3c[0][v.first]+=v.second.second;
 			Region_vector[region_index[index]][0]->R->Fill(v.first);
 			Region_vector[region_index[index]][which_calo]->R->Fill(v.first);
 			full_ha->R->Fill(v.first);
@@ -515,6 +537,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			index++;
 		}
 		index=0;
+		//std::cout<<__LINE__<<std::endl;
 		for(auto v:threept_full){
 			for(auto w:v.second){
 				std::array<float, 3> key= {v.first, w.first.first, w.first.second};
@@ -527,18 +550,21 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			}
 		}
 	}
+		//std::cout<<__LINE__<<std::endl;
 	for(auto es:e2c){
 		for(auto v:es.second){
 			auto vs=v.second*pow(e_region[es.first], -2);
 	        	Region_vector[es.first][which_calo]->E2C->Fill(v.first, vs);
 		}
 	}
+		//std::cout<<__LINE__<<std::endl;
 	for(auto es:e3c){
 		for(auto v:es.second){
 			auto vf=v.second*pow(e_region[es.first], -3);
 			Region_vector[es.first][which_calo]->E3C->Fill(v.first, vf);
 		}
 	}
+		//std::cout<<__LINE__<<std::endl;
 	for(auto es:e3c_full)
 	{
 		for(auto v:es.second){
@@ -549,9 +575,13 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			full_hc->E3C->Fill(R_L, vf);
 		}
 	}
+		//std::cout<<__LINE__<<std::endl;
 	for(auto e:e2c) m_e2c[e.first][which_calo-1]=e.second;
+		//std::cout<<__LINE__<<std::endl;
 	for(auto e:e3c) m_e3c[e.first][which_calo-1]=e.second;
+		//std::cout<<__LINE__<<std::endl;
 	for(auto e:e3c_full) m_e3c_full[e.first][which_calo-1]=e.second;
+		//std::cout<<__LINE__<<std::endl;
 	m_pt[which_calo-1]=p_T_save;
 	return;
 }
@@ -566,7 +596,6 @@ void LargeRLENC::CalculateENC(std::pair<std::array<float, 3>, float> point_1, st
 	enc_out->first=R_L;
 	enc_out->second.first=e2c;
 	enc_out->second.second=0.;
-	std::cout<<"About to run the computations on " <<cal.size() <<" towers" <<std::endl;
 	threept_full->first=R_L;
 	for(auto i:cal)
 	{

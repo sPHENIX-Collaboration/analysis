@@ -54,6 +54,9 @@
 #include <vector>
 #include <string>
 #include <math.h>
+#include <array>
+#include <iostream>
+#include <fstream>
 //root
 #include <TH1.h>
 #include <TH2.h>
@@ -272,7 +275,10 @@ class LargeRLENC : public SubsysReco
 	int EndRun(const int runnumber) override {return Fun4AllReturnCodes::EVENT_OK;}
 
 	/// Called at the end of all processing.
-	int End(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;};
+	int End(PHCompositeNode *topNode) override {
+		if(write_to_file) this->text_out_file.close();
+		return Fun4AllReturnCodes::EVENT_OK;
+	};
 
  	/// Reset
   	int Reset(PHCompositeNode * /*topNode*/) override {return Fun4AllReturnCodes::EVENT_OK;};
@@ -314,6 +320,8 @@ class LargeRLENC : public SubsysReco
 	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
 //	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
+	std::fstream text_out_file;
+	bool write_to_file;
 	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup, *ohcal_rat_h;
 	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
 
