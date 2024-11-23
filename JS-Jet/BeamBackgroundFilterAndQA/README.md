@@ -53,7 +53,15 @@ void MyModule::process_event(PHCompositeNode* topNode) {
 }
 ```
 
-The code is structured like so:
+The user has the option to either throw away or keep events in which
+a filter has identified beam background. In either case, the results
+of each filter (and the overall result) are stored as integer flags in
+`recoConsts` with the value of 0 for NO beam background and 1 FOR
+beam background. The module `TestPHFlags` illustrates how to
+retrieve these flags in downstream modules.
+
+
+Lastly, the overall code structure is:
 
   - **`BaseBeamBackgroundFilter.h:`** A base class for all filters to
     be applied, consolidates common functionality across filters. New

@@ -18,7 +18,8 @@ pkginclude_HEADERS = \
   BeamBackgroundFilterAndQADefs.h \
   BaseBeamBackgroundFilter.h \
   NullFilter.h \
-  StreakSidebandFilter.h
+  StreakSidebandFilter.h \
+  TestPHFlags.h
 
 if ! MAKEROOT6
   ROOT5_DICTS = \
@@ -29,7 +30,8 @@ libbeambackgroundfilterandqa_la_SOURCES = \
   $(ROOT5_DICTS) \
   BeamBackgroundFilterAndQA.cc \
   NullFilter.cc \
-  StreakSidebandFilter.cc
+  StreakSidebandFilter.cc \
+  TestPHFlags.cc
 
 libbeambackgroundfilterandqa_la_LDFLAGS = \
   -L$(libdir) \

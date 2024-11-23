@@ -29,6 +29,8 @@ to_copy = [
   "src/NullFilter.h",
   "src/StreakSidebandFilter.cc",
   "src/StreakSidebandFilter.h",
+  "src/TestPHFlags.cc",
+  "src/TestPHFlags.h",
   "src/autogen.sh",
   "src/configure.ac",
   "src/Makefile.am",

@@ -16,8 +16,8 @@
 #include <beambackgroundfilterandqa/BeamBackgroundFilterAndQA.h>
 #include <beambackgroundfilterandqa/NullFilter.h>
 #include <beambackgroundfilterandqa/StreakSidebandFilter.h>
+#include <beambackgroundfilterandqa/TestPHFlags.h>
 #include <ffamodules/CDBInterface.h>
-#include <ffamodules/FlagHandler.h>
 #include <FROG.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
@@ -38,7 +38,7 @@ R__LOAD_LIBRARY(libfun4allraw.so)
 void Fun4All_TestBeamBackgroundFilterAndQA(
   const int runnumber = 47152,
   const int nEvents = 10,
-  const int verbosity = 5,
+  const int verbosity = 0,
   const std::string inFile = "DST_CALO_run2pp_ana437_2024p007-00047152-00160.root",
   const std::string outFile = "test_bbfaq.root"
 ) {
@@ -95,6 +95,10 @@ void Fun4All_TestBeamBackgroundFilterAndQA(
   filter -> SetConfig(cfg_filter);
   filter -> Verbosity(verbosity);
   f4a    -> registerSubsystem(filter);
+
+  // confirm that background flags exist
+  TestPHFlags* flags = new TestPHFlags("TestPHFlags");
+  f4a -> registerSubsystem(flags);
 
   // run modules and exit -----------------------------------------------------
 
