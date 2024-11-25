@@ -13,6 +13,11 @@ void Analysis::Init( string data_no_suffix )
   root_path_ = data_no_suffix + ".root";
   text_path_ = data_no_suffix + ".dat";
 
+  if( is_preliminary_ == true )
+    output_ += "_preliminary.pdf";
+  else
+    output_ += "_internal.pdf";
+  
   // Init data an outptut ROOT file
   this->InitRoot();
 
@@ -30,7 +35,7 @@ void Analysis::Init( string data_no_suffix )
   else
     {
       ymin_ = 0.0;
-      ymax_ = 400;
+      ymax_ = 600;
     }
 
   return;
@@ -46,14 +51,15 @@ void Analysis::InitRoot()
    */
   TFile* tf = new TFile( root_path_.c_str(), "READ" );
   
-  string title = ";INTT Local Clock [BCO];Counts";
+  string title = ";Beam clock [BCO];Number of INTT hits";
 
   hist_fphx_bco_raw_ = (TH1D*)tf->Get( "fphx_bco_raw" );
   hist_fphx_bco_raw_->SetTitle( title.c_str() );
   
   hist_fphx_bco_ = (TH1D*)tf->Get( "fphx_bco" );
   this->ConfigureHist( hist_fphx_bco_ );
-  hist_fphx_bco_->SetLineColor( kGray + 1 );
+  //hist_fphx_bco_->SetLineColor( kGray + 1 );
+  hist_fphx_bco_->SetLineColor( kBlue + 1 );
   //hist_fphx_bco_->SetLineStyle( 2 );
   
   TH1D* hist_offset = (TH1D*)tf->Get( "streaming_offset" );
@@ -119,6 +125,7 @@ void Analysis::InitText()
 
 string Analysis::GetDate()
 {
+  return "9/13/2024";
   
   TDatime dt;
   int year	= dt.GetYear();
@@ -157,28 +164,26 @@ void Analysis::DrawWords( Event* event )
     }
   else
     {
-
-      pos_x = 0.4;
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
     }
 
   // p+p 200 GeV
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV, Run 50889" );
+  tex->DrawLatexNDC( pos_x, pos_y, "Run-24 #it{p+p} 200 GeV, Run 50889" );
 
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
+  tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming readout " );
 
   pos_y -= line_height;
   stringstream ss;
   ss << "BCO " << event->GetInttGtmBco();
   tex->DrawLatexNDC( pos_x, pos_y, ss.str().c_str() );
 
-  pos_y -= line_height;
-  if( event->IsGl1Correspondings() )
-    tex->DrawLatexNDC( pos_x, pos_y, "GL1 match!" );
-  else
-    tex->DrawLatexNDC( pos_x, pos_y, "GL1 not match" );
+  // pos_y -= line_height;
+  // if( event->IsGl1Correspondings() )
+  //   tex->DrawLatexNDC( pos_x, pos_y, "GL1 match!" );
+  // else
+  //   tex->DrawLatexNDC( pos_x, pos_y, "GL1 not match" );
 
 }
 
@@ -264,10 +269,30 @@ void Analysis::Draw()
 	&& ( event->GetHitNumMaxEvent() / event->GetHitNumMachingGl1() < 3 ) // suppression of the highest peak
 	;
 
+      condition = true
+	// && event->GetBinMoreThan( 10 ) < 30 // for low background
+	// || event->GetBinMoreThan( 50 ) < 3  // for some high peaks
+	&& ( event->IsGl1Correspondings() == true )     // for GL1 maching event
+	//&& ( event->IsHitInAbortGap() == false )        // no hit in abort gap
+	&& ( event->GetHitNumMachingGl1() > 30 )        // high GL1 peak 
+	&& ( event->GetFatPeakNum( ignore_smaller_than ) > 10  )            // few fat peaks
+	//	&& ( event->GetHitNumMaxEvent() / event->GetHitNumMachingGl1() < 3 ) // suppression of the highest peak
+	;
+      
+	if( event->GetInttGtmBco() == 396912729035 )
+	//if( event->GetInttGtmBco() == 396903901595 )
+	{
+	  cout << "The event!!!" << endl;
+	  condition = true;
+	}
+      else
+	continue;
+
+	
       if( !condition )
        	continue;
 
-      cout << event->GetFatPeakNum( ignore_smaller_than ) << endl;
+      //cout << event->GetFatPeakNum( ignore_smaller_than ) << endl;
       // if( event->GetInttGtmBco() != 396957258755 )
       //  	continue;
 
@@ -284,10 +309,18 @@ void Analysis::Draw()
 
       event->GetHist()->Draw( "same" );
       event->GetHistGl1Match()->Draw( "same" );
+
+      TLegend* leg = new TLegend( 0.2, 0.55, 0.35, 0.7);
+      leg->AddEntry( hist_fphx_bco_, "#INTT hits (100k strobes average)", "l" );
+      leg->AddEntry( event->GetHist(), "#INTT hits (Single strobe)", "l" );
+      leg->AddEntry( event->GetHistGl1Match(), "#INTT hits (Matching trigger timing)", "l" );
+      leg->SetTextSize( 0.04 );
       
       this->DrawWords( event );
-      this->DrawGl1Timing( event );
+      // this->DrawGl1Timing( event );
+      leg->Draw();
       c->Print( c->GetName() );
+
       if( counter > process_num_ )
 	break;
 

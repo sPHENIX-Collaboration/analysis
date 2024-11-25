@@ -11,22 +11,19 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  TPCRawDataTree.h\
-  TpcTimeFrameChecker.h
+  TPCRawDataTree.h
 
 lib_LTLIBRARIES = \
   libTPCRawDataTree.la
 
 libTPCRawDataTree_la_SOURCES = \
-  TPCRawDataTree.cc\
-  TpcTimeFrameChecker.cc
+  TPCRawDataTree.cc
 
 
 libTPCRawDataTree_la_LIBADD = \
   -ltpc \
   -lphool \
-  -lSubsysReco \
-  -lqautils
+  -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
 

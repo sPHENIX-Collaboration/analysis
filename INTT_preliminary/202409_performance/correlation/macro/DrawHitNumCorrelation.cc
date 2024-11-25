@@ -29,7 +29,7 @@ void ConfigureHist( TH2D* hist, int mode )
 
 string GetDate()
 {
-  
+  return "9/13/2024";
   TDatime dt;
   int year	= dt.GetYear();
   int month	= dt.GetMonth();
@@ -77,6 +77,7 @@ void DrawHitNumCorrelation( TCanvas* c, TH2D* hist, int run, int mode, bool is_p
   //   hist->Rebin2D(2, 2);
 
   hist->Draw( "colz" );
+  cout << "hit num: " << hist->GetEntries() << endl;
   ConfigureHist( hist, mode );
   gPad->SetLogz( true );
 
@@ -91,16 +92,16 @@ void DrawHitNumCorrelation( TCanvas* c, TH2D* hist, int run, int mode, bool is_p
   ///////////////////////////////////////////////////////////////////////////////
   TLatex* tex = new TLatex();
   double line_height = 0.05;
-  double first_margin = 0.005;  
+  double first_margin = 0.012;  
   double pos_y = 1.0 - top_margin + first_margin;// - line_height;
 
   // Date
-  tex->DrawLatexNDC( 0.6, pos_y,
+  tex->DrawLatexNDC( 0.65, pos_y,
 		     string("#it{" + GetDate() + "}").c_str() );
 
   // sPHENIX Internal or sPHENIX Prelimnary
-  pos_y -= line_height - first_margin + 0.025;
-  double pos_x = 0.2;
+  //  pos_y -= line_height - first_margin + 0.025;
+  double pos_x = 0.18;
   if( is_preliminary == false )
     {
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
@@ -108,18 +109,26 @@ void DrawHitNumCorrelation( TCanvas* c, TH2D* hist, int run, int mode, bool is_p
   else
     {
 
-      pos_x = 0.4;
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
     }
 
   // p+p 200 GeV
-  pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, ("#it{p+p} 200 GeV, Run " + to_string(run) ).c_str());
+  pos_y -= line_height - first_margin + 0.03;
+  //  pos_y -= line_height;
+  //  tex->DrawLatexNDC( pos_x, pos_y, ("Run-24 #it{p+p} 200 GeV, Run " + to_string(run) ).c_str());
+  tex->DrawLatexNDC( pos_x, pos_y, ("Run-24 #it{p+p} 200 GeV") );
 
+  pos_y -= line_height;
+  tex->DrawLatexNDC( pos_x, pos_y, ("Run " + to_string(run) ).c_str());
+
+  pos_y -= line_height;
   if( run == 50889 )
     {
-      pos_y -= line_height;
-      tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
+      tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming readout" );
+    }
+  else
+    {
+      tex->DrawLatexNDC( pos_x, pos_y, "INTT Triggered mode" );
 
     }
   

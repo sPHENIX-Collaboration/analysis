@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'VtxInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// Collection of vertex-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   VtxInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Vertex-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_VTXINTERFACES_H
 #define SCORRELATORUTILITIES_VTXINTERFACES_H

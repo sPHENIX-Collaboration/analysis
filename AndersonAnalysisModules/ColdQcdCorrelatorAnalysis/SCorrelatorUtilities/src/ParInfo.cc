@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'ParInfo.cc'
-// Derek Anderson
-// 03.04.2024
-//
-// Utility class to hold information from
-// generated particles.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ParInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.04.2024
+ *
+ *  Utility class to hold information from
+ *  generated particles.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_PARINFO_CC
 
@@ -19,8 +20,11 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // internal methods ---------------------------------------------------------
+  // private methods ==========================================================
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute minima
+  // --------------------------------------------------------------------------
   void Types::ParInfo::Minimize() {
 
     pid     = -1 * numeric_limits<int>::max();
@@ -46,6 +50,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute maxima
+  // --------------------------------------------------------------------------
   void Types::ParInfo::Maximize() {
 
     pid     = numeric_limits<int>::max();
@@ -71,8 +78,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // public methods -----------------------------------------------------------
+  // public methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Reset object by maximizing data members
+  // --------------------------------------------------------------------------
   void Types::ParInfo::Reset() {
 
     Maximize();
@@ -82,6 +92,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a HepMC GenParticle
+  // --------------------------------------------------------------------------
   void Types::ParInfo::SetInfo(const HepMC::GenParticle* particle, const int event) {
 
     pid     = particle -> pdg_id();
@@ -103,6 +116,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A PHG4Particle
+  // --------------------------------------------------------------------------
   void Types::ParInfo::SetInfo(const PHG4Particle* particle, const int event) {
 
     // set basic info
@@ -128,6 +144,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (explicit minimum, maximum)
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsInAcceptance(const ParInfo& minimum, const ParInfo& maximum) const {
 
     return ((*this >= minimum) && (*this <= maximum));
@@ -136,6 +155,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (set by pair)
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsInAcceptance(const pair<ParInfo, ParInfo>& range) const {
 
     return ((*this >= range.first) && (*this <= range.second));
@@ -144,6 +166,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if particle is final state
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsFinalState() const {
 
     return (status == 1);
@@ -152,6 +177,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if particle is a hard-scatter product
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsHardScatterProduct() const {
 
     const bool isHardScatter = (
@@ -164,6 +192,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if particle is a parton
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsParton() const {
 
     const bool isLightQuark   = ((pid == Const::Parton::Down)    || (pid == Const::Parton::Up));
@@ -176,6 +207,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if particle is an outgoing parton from a hard scatter
+  // --------------------------------------------------------------------------
   bool Types::ParInfo::IsOutgoingParton() const {
 
     return (IsHardScatterProduct() && IsParton());
@@ -184,8 +218,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // static methods -----------------------------------------------------------
+  // static methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Get list of data fields
+  // --------------------------------------------------------------------------
   vector<string> Types::ParInfo::GetListOfMembers() {
 
     vector<string> members = {
@@ -212,8 +249,12 @@ namespace SColdQcdCorrelatorAnalysis {
   }  // end 'GetListOfMembers()'
 
 
-  // overloaded operators -----------------------------------------------------
 
+  // overloaded operators =====================================================
+
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <(const ParInfo& lhs, const ParInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -232,6 +273,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >(const ParInfo& lhs, const ParInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -250,6 +294,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <=(const ParInfo& lhs, const ParInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -268,6 +315,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >=(const ParInfo& lhs, const ParInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -286,8 +336,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
+  // --------------------------------------------------------------------------
+  //! Default class constructor
+  // --------------------------------------------------------------------------
   Types::ParInfo::ParInfo() {
 
     /* nothing to do */
@@ -296,6 +349,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Default class destructor
+  // --------------------------------------------------------------------------
   Types::ParInfo::~ParInfo() {
 
     /* nothing to do */
@@ -304,6 +360,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting initialization option (minimize or maximize)
+  // --------------------------------------------------------------------------
   Types::ParInfo::ParInfo(const Const::Init init) {
 
     switch (init) {
@@ -322,6 +381,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a HepMC GenParticle
+  // --------------------------------------------------------------------------
   Types::ParInfo::ParInfo(HepMC::GenParticle* particle, const int event) {
 
     SetInfo(particle, event);
@@ -330,6 +392,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A PHG4Particle
+  // --------------------------------------------------------------------------
   Types::ParInfo::ParInfo(PHG4Particle* particle, const int event) {
 
     SetInfo(particle, event);

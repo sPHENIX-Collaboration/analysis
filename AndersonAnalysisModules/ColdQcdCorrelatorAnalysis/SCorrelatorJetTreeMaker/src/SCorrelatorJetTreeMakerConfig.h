@@ -1,13 +1,13 @@
-// ----------------------------------------------------------------------------
-// 'SCorrelatorJetTreeMakerConfig.h'
-// Derek Anderson
-// 03.22.2024
-//
-// A module to produce a tree of jets for the sPHENIX
-// Cold QCD Energy-Energy Correlator analysis.
-//
-// Initially derived from code by Antonio Silva (thanks!!)
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   SCorrelatorJetTreeMakerConfig.h
+ *  \author Derek Anderson
+ *  \date   03.22.2024
+ *
+ *  A module to produce a tree of jets for the sPHENIX
+ *  Cold QCD Energy-Energy Correlator analysis. Initially
+ *  derived from code by Antonio Silva.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORJETTREEMAKERCONFIG_H
 #define SCORRELATORJETTREEMAKERCONFIG_H
@@ -19,17 +19,20 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // SCorrelatorJetTreeMakerConfig definition ---------------------------------
-
+  // --------------------------------------------------------------------------
+  //! User options for module
+  // --------------------------------------------------------------------------
   struct SCorrelatorJetTreeMakerConfig {
 
     // system options
     int    verbosity       {0};
+    bool   readJetNodes    {false};
     bool   isDebugOn       {false};
     bool   isSimulation    {true};
     bool   isEmbed         {false};
-    bool   isLegacy        {true};
     string moduleName      {""};
+    string inRecoNodeName  {""};
+    string inTrueNodeName  {""};
     string outFileName     {""};
     string recoJetTreeName {""};
     string trueJetTreeName {""};
@@ -55,8 +58,10 @@ namespace SColdQcdCorrelatorAnalysis {
     // constituent cuts
     pair<Types::TrkInfo,   Types::TrkInfo>   trkAccept;
     pair<Types::FlowInfo,  Types::FlowInfo>  flowAccept;
-    pair<Types::ClustInfo, Types::ClustInfo> ecalAccept;
-    pair<Types::ClustInfo, Types::ClustInfo> hcalAccept;
+    pair<Types::TwrInfo,   Types::TwrInfo>   eTwrAccept;
+    pair<Types::TwrInfo,   Types::TwrInfo>   hTwrAccept;
+    pair<Types::ClustInfo, Types::ClustInfo> eClustAccept;
+    pair<Types::ClustInfo, Types::ClustInfo> hClustAccept;
     pair<Types::ParInfo,   Types::ParInfo>   parAccept;
 
     // for pt-dependent dca cuts

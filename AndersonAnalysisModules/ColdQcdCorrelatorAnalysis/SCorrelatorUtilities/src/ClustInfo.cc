@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'ClustInfo.cc'
-// Derek Anderson
-// 03.01.2024
-//
-// Utility class to hold information from
-// calorimeter clusters.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ClustInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.01.2024
+ *
+ *  Utility class to hold information from
+ *  calorimeter clusters.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_CLUSTINFO_CC
 
@@ -19,8 +20,11 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // internal methods ---------------------------------------------------------
+  // private methods ==========================================================
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute minima
+  // --------------------------------------------------------------------------
   void Types::ClustInfo::Minimize() {
 
     system  = -1 * numeric_limits<int>::max();
@@ -40,6 +44,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
   }  // end 'Minimize()'
 
+
+
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute maxima
+  // --------------------------------------------------------------------------
   void Types::ClustInfo::Maximize() {
 
     system  = numeric_limits<int>::max();
@@ -61,8 +70,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // public methods -----------------------------------------------------------
+  // public methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Reset object by maximizing data members
+  // --------------------------------------------------------------------------
   void Types::ClustInfo::Reset() {
 
     Maximize();
@@ -72,6 +84,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A RawCluster
+  // --------------------------------------------------------------------------
   void Types::ClustInfo::SetInfo(const RawCluster* clust, optional<ROOT::Math::XYZVector> vtx, optional<int> sys) {
 
     // if no vertex provided, use origin
@@ -114,6 +129,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (explicit minimum, maximum)
+  // --------------------------------------------------------------------------
   bool Types::ClustInfo::IsInAcceptance(const ClustInfo& minimum, const ClustInfo& maximum) const {
 
     return ((*this >= minimum) && (*this <= maximum));
@@ -122,6 +140,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (set by pair)
+  // --------------------------------------------------------------------------
   bool Types::ClustInfo::IsInAcceptance(const pair<ClustInfo, ClustInfo>& range) const {
 
     return ((*this >= range.first) && (*this <= range.second));
@@ -130,12 +151,15 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // static methods -----------------------------------------------------------
+  // static methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Get list of data fields
+  // --------------------------------------------------------------------------
   vector<string> Types::ClustInfo::GetListOfMembers() {
 
     vector<string> members = {
-      "sys",
+      "system",
       "id",
       "nTwr",
       "ene",
@@ -155,8 +179,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // overloaded operators -----------------------------------------------------
+  // overloaded operators =====================================================
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <(const ClustInfo& lhs, const ClustInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -179,6 +206,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >(const ClustInfo& lhs, const ClustInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -201,6 +231,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <=(const ClustInfo& lhs, const ClustInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -223,6 +256,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >=(const ClustInfo& lhs, const ClustInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -245,24 +281,33 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
+  // --------------------------------------------------------------------------
+  //! Default class constructor
+  // --------------------------------------------------------------------------
   Types::ClustInfo::ClustInfo() {
 
-     // nothing to do //
+     /* nothing to do */
 
   }  // end ctor()
 
 
 
+  // --------------------------------------------------------------------------
+  //! Default class destructor
+  // --------------------------------------------------------------------------
   Types::ClustInfo::~ClustInfo() {
 
-    // nothing to do //
+    /* nothing to do */
 
   }  // end dtor()
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting initialization option (minimize or maximize)
+  // --------------------------------------------------------------------------
   Types::ClustInfo::ClustInfo(const Const::Init init) {
 
     switch (init) {
@@ -281,6 +326,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A RawCluster and possibly a vertex
+  // --------------------------------------------------------------------------
   Types::ClustInfo::ClustInfo(const RawCluster* clust, optional<ROOT::Math::XYZVector> vtx, optional<int> sys) {
 
     SetInfo(clust, vtx, sys);

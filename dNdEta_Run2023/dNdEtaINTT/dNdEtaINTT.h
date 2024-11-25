@@ -56,6 +56,8 @@
 #include <trackbase_historic/SvtxTrackMap.h>
 
 #include <calotrigger/MinimumBiasInfo.h>
+#include <calotrigger/TriggerAnalyzer.h>
+#include <calotrigger/TriggerRunInfoReco.h>
 #include <centrality/CentralityInfo.h>
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
@@ -65,19 +67,21 @@
 #include <mbd/MbdPmtContainer.h>
 #include <mbd/MbdPmtHit.h>
 
+#include <ffarawobjects/Gl1Packet.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <math.h>
 #include <string>
 
+#include <TDatabasePDG.h>
 #include <TFile.h>
 #include <TLorentzVector.h>
-#include <TTree.h>
-#include <TVector3.h>
-#include <TDatabasePDG.h>
 #include <TParticle.h>
 #include <TParticlePDG.h>
+#include <TTree.h>
+#include <TVector3.h>
 
 class PHCompositeNode;
 class SvtxTrack;
@@ -154,6 +158,8 @@ class dNdEtaINTT : public SubsysReco
 
     void GetPHG4(bool b) { _get_phg4_info = b; }
 
+    void GetTrigger(bool b) { _get_trigger_info = b; }
+
   private:
     void ResetVectors();
     void GetHEPMCInfo(PHCompositeNode *topNode);
@@ -163,6 +169,7 @@ class dNdEtaINTT : public SubsysReco
     void GetInttRawHitInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
+    void GetTriggerInfo(PHCompositeNode *topNode);
 
     bool _get_hepmc_info;
     bool _get_truth_cluster;
@@ -173,6 +180,7 @@ class dNdEtaINTT : public SubsysReco
     bool _get_trkr_hit;
     bool _get_phg4_info;
     bool _get_pmt_info;
+    bool _get_trigger_info;
 
     unsigned int eventNum = 0;
     std::string _outputFile;
@@ -183,7 +191,8 @@ class dNdEtaINTT : public SubsysReco
     TTree *outtree;
     int event_, evt_sequence_;
     uint64_t intt_bco;
-    // Centrality and MBD stuff
+    // Centrality and MBD information
+    double cthresh = 0.25;
     float centrality_bimp_;
     float centrality_impactparam_;
     float centrality_mbd_;
@@ -200,6 +209,8 @@ class dNdEtaINTT : public SubsysReco
     float mbd_charge_asymm;
     float mbd_z_vtx;
     float m_pmt_q[128];
+    int mbd_nhitsoverths_south;
+    int mbd_nhitsoverths_north;
     bool is_min_bias;
     bool is_min_bias_wozdc;
 
@@ -288,6 +299,17 @@ class dNdEtaINTT : public SubsysReco
     std::vector<double> PrimaryG4P_Charge_;
     std::vector<bool> PrimaryG4P_isChargeHadron_;
 
+    // GL1 Packet trigger information
+    uint64_t GL1Packet_BCO_ = 0;
+    uint64_t triggervec_ = 0;
+    std::vector<int> firedTriggers_;
+    std::vector<std::string> firedTriggers_name_;
+    std::vector<bool> firedTriggers_checkraw_;
+    std::vector<int> firedTriggers_prescale_;
+    std::vector<uint64_t> firedTriggers_scalers_;
+    std::vector<uint64_t> firedTriggers_livescalers_;
+    std::vector<uint64_t> firedTriggers_rawscalers_;
+
     EventHeader *eventheader = nullptr;
     InttEventInfo *intteventinfo = nullptr;
 
@@ -314,6 +336,9 @@ class dNdEtaINTT : public SubsysReco
     GlobalVertex *m_glbvtx = nullptr;
     MbdVertexMapv1 *m_mbdvtxmap = nullptr;
     MbdVertex *m_mbdvtx = nullptr;
+
+    Gl1Packet *gl1packet = nullptr;
+    TriggerAnalyzer *triggeranalyzer = nullptr;
 };
 
 #endif // DNDETAINTT_H
