@@ -1,10 +1,9 @@
 
-#ifndef FINDDIJETS_H
-#define FINDDIJETS_H
+#ifndef DIJETHISTOMAKER_H
+#define DIJETHISTOMAKER_H
 
 #include <fun4all/SubsysReco.h>
 #include <calotrigger/TriggerAnalyzer.h>
-#include <DijetEventDisplay.h>
 #include <string>
 #include <array>
 #include "TMath.h"
@@ -16,6 +15,7 @@ class PHCompositeNode;
 class TowerInfoContainer;
 class JetContainer;
 class PHG4TruthInfoContainer;
+
 struct jetty
 {
   float pt = 0;
@@ -29,15 +29,15 @@ struct jetty
   float edep = 0;
   float edep_em = 0;
   float edep_hd = 0;
-
 };
-class FindDijets : public SubsysReco
+
+class DijetHistoMaker : public SubsysReco
 {
  public:
 
-  FindDijets(const std::string &name = "FindDijets", const std::string &outfilename = "trees_finddijets.root");
+  DijetHistoMaker(const std::string &name = "DijetHistoMaker", const std::string &outfilename = "histos.root");
 
-  virtual ~FindDijets();
+  virtual ~DijetHistoMaker();
 
   int Init(PHCompositeNode *topNode) override;
 
@@ -60,18 +60,16 @@ class FindDijets : public SubsysReco
   void SetIsSim(bool use) {isSim = use;}
   void SetPtCut(float pt) {pt_cut = pt;}
   double get_Dr(struct jetty jet1, struct jetty jet2);
-  void DrawDijets(bool d) { drawDijets = d; }
  private:
 
 
   TriggerAnalyzer *triggeranalyzer{nullptr};;  
-  DijetEventDisplay *dijeteventdisplay{nullptr};
-
 
   int _verbosity;
 
   float pt_cut = 4;
   float dphi_cut[3] = {TMath::Pi()/2., 3.*TMath::Pi()/4., 7.*TMath::Pi()/8.};
+  float eta_cut[3] = {0.7, 0.9, 1.1};
   float pt_cut1[3] = {10., 20., 30.};
   float pt_cut2[3] = {5., 10., 15.};
   std::string _foutname;
@@ -83,7 +81,6 @@ class FindDijets : public SubsysReco
   std::array<std::string, 8> m_jet_triggernames;;
 
   TF1 *fsmear{nullptr};
-  bool drawDijets{false};
   double isocut = 1.0;
 };
 

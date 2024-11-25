@@ -1,4 +1,4 @@
-#include "FindDijets.h"
+#include "DijetHistoMaker.h"
 //for emc clusters
 #include <TH1.h>
 #include <TH2.h>
@@ -55,7 +55,7 @@
 #include <map>
 
 //____________________________________________________________________________..
-FindDijets::FindDijets(const std::string &name, const std::string &outfilename):
+DijetHistoMaker::DijetHistoMaker(const std::string &name, const std::string &outfilename):
   SubsysReco(name)
   
 {
@@ -73,7 +73,7 @@ FindDijets::FindDijets(const std::string &name, const std::string &outfilename):
 }
 
 //____________________________________________________________________________..
-FindDijets::~FindDijets()
+DijetHistoMaker::~DijetHistoMaker()
 {
   // if (h_jes)
   //   {
@@ -86,7 +86,7 @@ FindDijets::~FindDijets()
 }
 
 //____________________________________________________________________________..
-int FindDijets::Init(PHCompositeNode *topNode)
+int DijetHistoMaker::Init(PHCompositeNode *topNode)
 {
 
   // TFile *fnew = new TFile("/sphenix/user/dlis/Projects/CaloTriggerEmulator/analysis/calotriggeremulator/src/jesjer.root","r");
@@ -312,13 +312,13 @@ int FindDijets::Init(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int FindDijets::InitRun(PHCompositeNode *topNode)
+int DijetHistoMaker::InitRun(PHCompositeNode *topNode)
 {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-void FindDijets::process_truth_jets(JetContainer *jets)
+void DijetHistoMaker::process_truth_jets(JetContainer *jets)
 {
 
   fsmear = new TF1("fg","gaus", 0, 2);
@@ -519,7 +519,7 @@ void FindDijets::process_truth_jets(JetContainer *jets)
     }
   return;
 }
-int FindDijets::process_event(PHCompositeNode *topNode)
+int DijetHistoMaker::process_event(PHCompositeNode *topNode)
 {
 
 
@@ -1181,19 +1181,19 @@ int FindDijets::process_event(PHCompositeNode *topNode)
 
 
 
-void FindDijets::GetNodes(PHCompositeNode* topNode)
+void DijetHistoMaker::GetNodes(PHCompositeNode* topNode)
 {
 
 
 }
 
-int FindDijets::ResetEvent(PHCompositeNode *topNode)
+int DijetHistoMaker::ResetEvent(PHCompositeNode *topNode)
 {
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-double FindDijets::get_Dr(struct jetty jet1, struct jetty jet2)
+double DijetHistoMaker::get_Dr(struct jetty jet1, struct jetty jet2)
 {
   float dphi = jet1.phi - jet2.phi;
 
@@ -1210,17 +1210,17 @@ double FindDijets::get_Dr(struct jetty jet1, struct jetty jet2)
 }
 
 //____________________________________________________________________________..
-int FindDijets::EndRun(const int runnumber)
+int DijetHistoMaker::EndRun(const int runnumber)
 {
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int FindDijets::End(PHCompositeNode *topNode)
+int DijetHistoMaker::End(PHCompositeNode *topNode)
 {
   if (Verbosity() > 0)
     {
-      std::cout << "FindDijets::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+      std::cout << "DijetHistoMaker::End(PHCompositeNode *topNode) This is the End..." << std::endl;
     }
   std::cout<<"Total events: "<<_i_event<<std::endl;
   hm->dumpHistos(_foutname.c_str());
@@ -1229,11 +1229,11 @@ int FindDijets::End(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int FindDijets::Reset(PHCompositeNode *topNode)
+int DijetHistoMaker::Reset(PHCompositeNode *topNode)
 {
   if (Verbosity() > 0)
     {
-      std::cout << "FindDijets::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
+      std::cout << "DijetHistoMaker::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
     }
   return Fun4AllReturnCodes::EVENT_OK;
 }

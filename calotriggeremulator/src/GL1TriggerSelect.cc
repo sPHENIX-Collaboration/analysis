@@ -46,15 +46,18 @@ int GL1TriggerSelect::process_event(PHCompositeNode* topNode)
   
 
   uint64_t triggervec = gl1PacketInfo->getScaledVector();
-  bool mbd_event = (((triggervec >> m_triggerbit) & 0x1U) == 0x1U);
-  
-  if (!mbd_event)
+
+  for (auto &bit: m_triggerbits)
     {
-      std::cout << " GL1TriggerSelect ABORTING EVENT" << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
+      if (((triggervec >> bit) & 0x1U) == 0x1U)
+	{
+	  return Fun4AllReturnCodes::EVENT_OK;
+	}
     }
-      std::cout << " GL1TriggerSelect SELECT EVENT" << std::endl;
-  return Fun4AllReturnCodes::EVENT_OK;
+
+  return Fun4AllReturnCodes::ABORTEVENT;
+  
+  
   
 }
 

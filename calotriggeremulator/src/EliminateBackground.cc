@@ -99,8 +99,8 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
       unsigned int towerkey = hcalout_towers->encode_key(channel);
       int ieta = hcalout_towers->getTowerEtaBin(towerkey);
       int iphi = hcalout_towers->getTowerPhiBin(towerkey);
-      //short good = (tower->get_isGood() ? 1:0);
-      //      if (!good) continue;
+      short good = (tower->get_isGood() ? 1:0);
+      if (!good) continue;
       if (energy > HCAL_TOWER_ENERGY_CUT)
 	{
 	  hcal->Fill(ieta, iphi, energy);
@@ -136,11 +136,7 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
 
   if (hcal_phi_consec->GetBinContent(bmax) >= CONSECUTIVE_COUNT_CUT)
     {
-      if (hcal_proj->GetMaximumBin() != bmax)
-	{
-	  std::cout << " SIKE not the max " <<std::endl;
-	  return Fun4AllReturnCodes::EVENT_OK;
-	}
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
       if (Verbosity()) std::cout << "EVENT ELIMINATED" << std::endl;
       if (m_keep)
 	{
@@ -154,12 +150,7 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
     }
   if (hcal_phi->GetBinContent(bmax) >= COUNT_CUT)
     {
-      if (hcal_proj->GetMaximumBin() != bmax)
-	{
-	  std::cout << " SIKE not the max " <<std::endl;
-	  return Fun4AllReturnCodes::EVENT_OK;
-	}
-
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
       if (Verbosity()) std::cout << "EVENT ELIMINATED" << std::endl;
       if (m_keep)
 	{	  
@@ -179,12 +170,7 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
 
   if (bad)
     {
-      if (hcal_proj->GetMaximumBin() != bmax)
-	{
-	  trash->setIsTrash(false);
-	  std::cout << " SIKE not the max " <<std::endl;
-	  return Fun4AllReturnCodes::EVENT_OK;
-	}
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
       trash->setIsTrash(true);
       if (!m_keep) return Fun4AllReturnCodes::ABORTEVENT;
     }

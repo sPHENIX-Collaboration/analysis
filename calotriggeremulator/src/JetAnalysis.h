@@ -1,21 +1,11 @@
 
-#ifndef CALOEMULATORTREEMAKER_H
-#define CALOEMULATORTREEMAKER_H
+#ifndef JETANALYSIS_H
+#define JETANALYSIS_H
 
 #include <fun4all/SubsysReco.h>
 #include <calotrigger/TriggerAnalyzer.h>
 #include <string>
 #include <vector>
-#include <ffarawobjects/Gl1Packet.h>
-#include <ffarawobjects/Gl1Packetv1.h>
-#include <ffarawobjects/Gl1Packetv2.h>
-#include <calotrigger/LL1Out.h>
-#include <calotrigger/LL1Outv1.h>
-#include <calotrigger/TriggerPrimitive.h>
-#include <calotrigger/TriggerPrimitivev1.h>
-#include <calotrigger/TriggerPrimitiveContainer.h>
-#include <calotrigger/TriggerPrimitiveContainerv1.h>
-#include <calotrigger/TriggerDefs.h>
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfoContainerv1.h>
 #include <calobase/TowerInfoContainerv2.h>
@@ -30,24 +20,23 @@
 #include <jetbase/JetContainerv1.h>
 #include <jetbase/Jetv2.h>
 
-#include "TTree.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TProfile.h"
 #include "TFile.h"
 
 
 class PHCompositeNode;
-class TriggerPrimitive;
-class TriggerPrimitiveContainer;
-class LL1Out;
 class TowerInfoContainer;
 class JetContainer;
 class PHG4TruthInfoContainer;
-class CaloEmulatorTreeMaker : public SubsysReco
+class JetAnalysis : public SubsysReco
 {
  public:
 
-  CaloEmulatorTreeMaker(const std::string &name = "CaloEmulatorTreeMaker", const std::string &outfilename = "trees_caloemulator.root");
+  JetAnalysis(const std::string &name = "JetAnalysis", const std::string &outfilename = "hist_jetanalysis.root");
 
-  virtual ~CaloEmulatorTreeMaker();
+  virtual ~JetAnalysis();
 
   int Init(PHCompositeNode *topNode) override;
 
@@ -66,12 +55,8 @@ class CaloEmulatorTreeMaker : public SubsysReco
   int Reset(PHCompositeNode * /*topNode*/) override;
 
   void SetVerbosity(int verbo) ;
-  void SetTrigger(const std::string trigger) {_trigger = trigger;}
-  void UseCaloTowerBuilder(bool use) {useCaloTowerBuilder = use;}
-  void CaloTowerBuilderNodename(const std::string nodename) {m_calo_nodename = nodename;}
-  void UseLL1(bool use) {useLL1 = use;}
-  void SaveCalo(bool use) {save_calo = use;}
   void SetIsSim(bool use) {isSim = use;}
+
   void SetPtCut(float pt) {pt_cut = pt;}
   Double_t getDPHI(Double_t phi1, Double_t phi2);
  private:
@@ -81,8 +66,7 @@ class CaloEmulatorTreeMaker : public SubsysReco
   int _verbosity;
 
   float pt_cut = 4;
-  float pt_cut_truth = 4;
-  bool save_calo = true;
+
   TFile *_f;
   TTree *_tree;
   std::string _trigger;
@@ -242,52 +226,58 @@ class CaloEmulatorTreeMaker : public SubsysReco
   std::vector<float>  b_truth_particle_eta = {};
   std::vector<float>  b_truth_particle_phi = {};
 
-
   int b_njet_2 = 0;
   std::vector<float> b_jet_pt_2 = {};
   std::vector<float> b_jet_et_2 = {};
+  std::vector<float> b_jet_mass_2 = {};
   std::vector<float> b_jet_eta_2 = {};
   std::vector<float> b_jet_phi_2 = {};
-  std::vector<float> b_jet_emcal_2 = {};
-  std::vector<float> b_jet_hcalin_2 = {};
-  std::vector<float> b_jet_hcalout_2 = {};
-  std::vector<float> b_jet_eccen_2 = {};
+  std::vector<float> b_jet_emcal_frac_2 = {};
+  std::vector<float> b_jet_emcal_tower_frac_2 = {};
+  std::vector<float> b_jet_hcalin_frac_2 = {};
+  std::vector<float> b_jet_hcalout_frac_2 = {};
 
   int b_njet_4 = 0;
   std::vector<float> b_jet_pt_4 = {};
   std::vector<float> b_jet_et_4 = {};
+  std::vector<float> b_jet_mass_4 = {};
   std::vector<float> b_jet_eta_4 = {};
   std::vector<float> b_jet_phi_4 = {};
   std::vector<float> b_jet_emcal_4 = {};
+  std::vector<float> b_jet_et_em_4 = {};
+  std::vector<float> b_jet_emcal_tower_frac_4 = {};
   std::vector<float> b_jet_hcalin_4 = {};
   std::vector<float> b_jet_hcalout_4 = {};
-  std::vector<float> b_jet_eccen_4 = {};
+
+  int b_njet_4nosub = 0;
+  std::vector<float> b_jet_pt_4nosub = {};
+  std::vector<float> b_jet_et_4nosub = {};
+  std::vector<float> b_jet_mass_4nosub = {};
+  std::vector<float> b_jet_eta_4nosub = {};
+  std::vector<float> b_jet_phi_4nosub = {};
+  std::vector<float> b_jet_emcal_frac_4nosub = {};
+  std::vector<float> b_jet_emcal_tower_frac_4nosub = {};
+  std::vector<float> b_jet_hcalin_frac_4nosub = {};
+  std::vector<float> b_jet_hcalout_frac_4nosub = {};
 
   int b_njet_6 = 0;
   std::vector<float> b_jet_pt_6 = {};
   std::vector<float> b_jet_et_6 = {};
+  std::vector<float> b_jet_mass_6 = {};
   std::vector<float> b_jet_eta_6 = {};
   std::vector<float> b_jet_phi_6 = {};
-  std::vector<float> b_jet_emcal_6 = {};
-  std::vector<float> b_jet_hcalin_6 = {};
-  std::vector<float> b_jet_hcalout_6 = {};
-  std::vector<float> b_jet_eccen_6 = {};
-  int b_ntruth_jet_2 = 0;
-  std::vector<float> b_truth_jet_pt_2 = {};
-  std::vector<float> b_truth_jet_eta_2 = {};
-  std::vector<float> b_truth_jet_phi_2 = {};
+  std::vector<float> b_jet_emcal_frac_6 = {};
+  std::vector<float> b_jet_emcal_tower_frac_6 = {};
+  std::vector<float> b_jet_hcalin_frac_6 = {};
+  std::vector<float> b_jet_hcalout_frac_6 = {};
 
-  int b_ntruth_jet_4 = 0;
-  std::vector<float> b_truth_jet_pt_4 = {};
-  std::vector<float> b_truth_jet_eta_4 = {};
-  std::vector<float> b_truth_jet_phi_4 = {};
+  int trash;
+  int r1;
+  float emcal_energy;
+  float energy;
+  float spread;
 
-  int b_ntruth_jet_6 = 0;
-  std::vector<float> b_truth_jet_pt_6 = {};
-  std::vector<float> b_truth_jet_eta_6 = {};
-  std::vector<float> b_truth_jet_phi_6 = {};
 
-  int trash{0};
 };
 
 #endif 

@@ -27,15 +27,22 @@ libemulatortreemaker_la_LIBADD = \
   -ljetbackground\
   -lg4jets \
   -ljetbase \
+  -lqautils \
   libtrash_io.la
 
 pkginclude_HEADERS = \
   FindOutlier.h \
   FindDijets.h \
+  TriggerPerformance.h \
+  RandomConeAna.h \
+  JetCalibration.h \
+  DijetEventDisplay.h \
+  DijetTreeMaker.h \
   CopyCutVertex.h \
   EliminateBackground.h \
   GL1TriggerSelect.h \
   CaloEmulatorTreeMaker.h \
+  MbdEmulatorTreeMaker.h \	
   CaloEmulatorTreeMakerLinkDef.h \
   TrashInfo.h \
   TrashInfov1.h
@@ -56,10 +63,16 @@ libtrash_io_la_SOURCES = \
 libemulatortreemaker_la_SOURCES = \
   CaloEmulatorTreeMaker.cc \
   EliminateBackground.cc \
+  DijetEventDisplay.cc \
+  RandomConeAna.cc \
+  DijetTreeMaker.cc \
+  JetCalibration.cc \
+  TriggerPerformance.cc \
   FindOutlier.cc \
   FindDijets.cc \
   CopyCutVertex.cc \
-  GL1TriggerSelect.cc
+  GL1TriggerSelect.cc \
+  MbdEmulatorTreeMaker.cc
 
 %_Dict.cc: %.h %LinkDef.h
 	rootcint -f $@ @CINTDEFS@ $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $^
