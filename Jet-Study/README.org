@@ -1,0 +1,98 @@
+* Generate run list
+#+begin_src bash
+CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
+#+end_src
+- <tag>: 2024p001-7
+
+* Generate run list where specific triggers are enabled
+#+begin_src bash
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
+#+end_src
+
+Example: Ensure that MBD NS >= 1 and Jet 8, 10, and 12 GeV trigger are enabled
+#+begin_src bash
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list
+#+end_src
+
+* Generate dst list from run list
+#+begin_src bash
+CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
+#+end_src
+- <tag>: 2024p001-7
+
+Example:
+#+begin_src bash
+CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --list files/runs-ana430-2024p007-good-with-bad-tower-maps.list
+#+end_src
+
+* Generate list of runs that contain bad tower maps
+#+begin_src bash
+find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list
+#+end_src
+
+* Access the good run database
+#+begin_src bash
+psql Production -h sphnxproddbmaster.sdcc.bnl.gov
+#+end_src
+
+* Fun4All Quick Tests
+
+** After editing Makefile.am
+Jet Validation:
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root tree.root qa.root 100 2>/dev/null
+#+end_src
+
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root","tree.root","qa.root", 100)'
+#+end_src
+
+Event Validation:
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
+#+end_src
+
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
+#+end_src
+
+** After editing .cc or .h
+Jet Validation:
+#+begin_src bash
+make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root tree.root qa.root 100 2>/dev/null
+#+end_src
+
+#+begin_src bash
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root","tree.root","qa.root", 100)'
+#+end_src
+
+Event Validation:
+#+begin_src bash
+make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
+#+end_src
+
+#+begin_src bash
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
+#+end_src
+
+* Condor Tips
+
+** Allocate more memory to an idle job
+#+begin_src bash
+condor_hold -all && condor_qedit <job id> RequestMemory <Memory (MB)> && condor_release -all
+#+end_src
+
+* Post Condor Run Notes
+
+** Check if any jobs failed due to bad input and list the specific segments:
+#+begin_src bash
+rg "No Root Tree T" */stdout | rg -o "DST.*root" | tee bad-segments.list && cat bad-segments.list | cut -d "-" -f2 | uniq | sort | awk '{x=$0+0;print x}' > runs-with-bad-segments.list
+#+end_src
+Note: Must be in the general condor directory for the "*/stdout" to work.
+
+* Bash Tips
+
+** Remove Leading Zeros
+#+begin_src bash
+echo 01234 | awk '{x=$0+0;print x}'
+#+end_src
