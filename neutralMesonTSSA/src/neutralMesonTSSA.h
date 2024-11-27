@@ -105,8 +105,8 @@ class neutralMesonTSSA : public SubsysReco
   /* void FillClusterTree(); */
   void FindDiphotons();
   /* void FillDiphotonTree(); */
-  void FillPhiHists(std::string which, int index); // which = pi0, eta, pi0bkgr, etabkgr
-  void FillAllPhiHists();
+  /* void FillPhiHists(std::string which, int index); // which = pi0, eta, pi0bkgr, etabkgr */
+  /* void FillAllPhiHists(); */
   // In ResetEvent()
   void ClearVectors();
   // In End()
@@ -120,6 +120,7 @@ class neutralMesonTSSA : public SubsysReco
   std::string outfilename_trees;
   TFile* outfile_hists = nullptr;
   TFile* outfile_trees = nullptr;
+  TTree* tree_event = nullptr;
   TTree* tree_clusters = nullptr;
   TTree* tree_diphotons = nullptr;
 
@@ -150,24 +151,33 @@ class neutralMesonTSSA : public SubsysReco
   float lumiDownYellow = 0;
   /* float relLumiYellow; */
   float polYellow = 0;
+  float crossingAngle = -999.9;
+  float crossingAngleIntended = -999.9;
 
   // trigger & event-level info
   bool mbdNtrigger = false;
   bool mbdStrigger = false;
-  bool mbdtrigger = false;
-  bool photontrigger = false;
+  bool mbdtrigger_live = false;
+  bool photontrigger_live = false;
+  bool mbdtrigger_scaled = false;
+  bool photontrigger_scaled = false;
   bool mbdvertex = false;
   bool globalvertex = false;
   TH1* h_nEvents = nullptr;
   float vtxz = -9999999.9;
   TH1* h_vtxz = nullptr;
+  TH1* h_crossingAngle = nullptr;
+
+  // tower-level info
+  TH2* h_towerEta_Phi_500MeV = nullptr;
+  TH2* h_towerEta_Phi_800MeV = nullptr;
 
   // cluster distributions
-  TH1* h_nClusters = nullptr;
+  TH1* h_nAllClusters = nullptr;
   TH1* h_nGoodClusters = nullptr;
   TH1* h_clusterE = nullptr;
   TH1* h_clusterEta = nullptr;
-  TH2* h_clusterEta_vtxz = nullptr;
+  TH2* h_clusterVtxz_Eta = nullptr;
   TH1* h_clusterPhi = nullptr;
   TH2* h_clusterEta_Phi = nullptr;
   TH1* h_clusterpT = nullptr;
@@ -178,7 +188,7 @@ class neutralMesonTSSA : public SubsysReco
   TH1* h_mesonClusterChi2 = nullptr;
   TH1* h_goodClusterE = nullptr;
   TH1* h_goodClusterEta = nullptr;
-  TH2* h_goodClusterEta_vtxz = nullptr;
+  TH2* h_goodClusterVtxz_Eta = nullptr;
   TH1* h_goodClusterPhi = nullptr;
   TH2* h_goodClusterEta_Phi = nullptr;
   TH1* h_goodClusterpT = nullptr;
@@ -192,19 +202,24 @@ class neutralMesonTSSA : public SubsysReco
   TH1* h_diphotonE = nullptr;
   TH1* h_diphotonMass = nullptr;
   TH1* h_diphotonEta = nullptr;
-  TH2* h_diphotonEta_vtxz = nullptr;
+  TH2* h_diphotonVtxz_Eta = nullptr;
   TH1* h_diphotonPhi = nullptr;
   TH2* h_diphotonEta_Phi = nullptr;
   TH1* h_diphotonpT = nullptr;
   TH1* h_diphotonxF = nullptr;
   TH2* h_diphotonpT_xF = nullptr;
+  TH1* h_diphotonAsym = nullptr;
+  TH1* h_diphotonDeltaR = nullptr;
+  TH2* h_diphotonAsym_DeltaR = nullptr;
   BinnedHistSet* bhs_diphotonMass_pT = nullptr;
   BinnedHistSet* bhs_diphotonMass_xF = nullptr;
 
   // clusters and cuts
-  float min_clusterE = 1.0;
-  float max_clusterE = 9.0;
-  float max_clusterChi2 = 4.0;
+  float min_clusterE = 0.5;
+  float max_clusterE = 30.0;
+  float max_clusterChi2 = 1000.0;
+  int nAllClusters = 0;
+  int nGoodClusters = 0;
   std::vector<float>* goodclusters_E = nullptr;
   std::vector<float>* goodclusters_Ecore = nullptr;
   std::vector<float>* goodclusters_Eta = nullptr;
@@ -215,7 +230,7 @@ class neutralMesonTSSA : public SubsysReco
 
   // diphotons and cuts
   float min_diphotonPt = 1.0;
-  float max_asym = 0.6;
+  float max_asym = 1.0;
   float min_deltaR = 0.0;
   float max_deltaR = 999.9;
   std::vector<float>* diphoton_E = nullptr;
@@ -226,6 +241,8 @@ class neutralMesonTSSA : public SubsysReco
   std::vector<float>* diphoton_xF = nullptr;
   std::vector<int>* diphoton_clus1index = nullptr;
   std::vector<int>* diphoton_clus2index = nullptr;
+  std::vector<float>* diphoton_deltaR = nullptr;
+  std::vector<float>* diphoton_asym = nullptr;
 
   std::pair<float, float> pi0MassRange{0.117, 0.167};
   std::pair<float, float> pi0BkgrLowRange{0.047, 0.097};

@@ -40,7 +40,8 @@ std::string GetFirstFile(const char* filelist)
 void Fun4All_checkHotMaps(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
-		     const string outname = "dummyhists.root")
+		     const string outname_hists = "dummyhists.root",
+		     const string outname_trees = "dummytrees.root")
 {
   // this convenience library knows all our i/o objects so you don't
   // have to figure out what is in each dst type
@@ -91,7 +92,7 @@ void Fun4All_checkHotMaps(
   se->registerSubsystem(ClusterBuilder);
   */
 
-  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, false);
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname_hists, outname_trees, false);
   /* eval->set_min_clusterE(0.5); */
   /* eval->set_max_clusterChi2(4.0); */
   se -> registerSubsystem(eval);

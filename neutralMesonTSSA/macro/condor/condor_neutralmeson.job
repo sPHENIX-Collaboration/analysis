@@ -7,10 +7,15 @@ Notification    = Never
 
 # The executable we want to run.
 # Executable   = /sphenix/user/gmattson/analysis/pythiaEMCalAna/macro/condor/dummy.sh
-Executable   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/do_analysis.sh
+Executable   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/neutralmeson.sh
 
 # The argument to pass to the executable.
-Arguments       = $(Process)
+offset = 4228
+# offset = 20000
+jobnum = $$([ $(Process) + $(offset) ])
+# Arguments       = $(Process)
+# Arguments       = $$([$(Process) + 20000])
+Arguments       = $(jobnum)
 
 # The requirement line specifies which machines we want to
 # run this job on.  Any arbitrary classad expression can
@@ -42,13 +47,18 @@ Initialdir   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor
 #Input           = /dev/null
 
 # The job's stdout is sent to this file.
-Output   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/out/job_$(Process).out
+# Output   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/out/job_$(Process).out
+# Output   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/out/job_$$([$(Process) + 20000]).out
+Output   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/out/NM/job_$(jobnum).out
 
 # The job's stderr is sent to this file.
-Error   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/err/job_$(Process).err
+# Error   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/err/job_$(Process).err
+# Error   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/err/job_$$([$(Process) + 20000]).err
+Error   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/err/NM/job_$(jobnum).err
 
 # The condor log file for this job, useful when debugging.
-Log   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/log/job_$(Process).log
+# Log   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/log/job_$(Process).log
+Log   = /sphenix/user/gmattson/analysis/neutralMesonTSSA/macro/condor/log/NM/job_$(jobnum).log
 
 # Email address to send notification to.
 ###Notify_user     = mattson5@illinois.edu
@@ -68,9 +78,13 @@ concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:2300
 # caloruns_validspin -- 1647
 # July9DSTs -- 17020
 # July30DSTs -- 34177
-# Aug10 DSTs -- 27201
-# condor limits number of jobs per submission
+# Aug10 DSTs -- 27192
+# Aug26 DSTs -- 36326
+# Oct1 DSTs -- 23764
+# Nov7 DSTs -- 6892
 
-# Queue 27201
-Queue 20000
+Queue 1
+# condor limits number of jobs per submission
+# Queue 20000
+# Queue 3764
 

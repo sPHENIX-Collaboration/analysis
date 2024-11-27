@@ -12,41 +12,84 @@ class LumiPolarAna:
     matches = []
     scalers = []
     runtimes = []
+    errors = []
     has_scalers = False
     runinfo = {}
-    logdir = 'condor/out'
+    logdir_nm = 'condor/out/NM'
+    logdir_tssa = 'condor/out/tssahists'
     df = pd.DataFrame()
 
     # def __init__(self):
 
     def ScanFile(self, filename):
+        hasmatch = False
+        jobnum = ''
+        # print(filename)
+        m0 = re.search(r'job_(\d+)', filename)
+        if m0:
+            jobnum = m0.group(1)
+            # print(f'Jobnum = {jobnum}')
+            if int(jobnum) > 6892:
+                return
+
         with open(filename, 'r') as f:
+            lines = []
+            error = ''
             for line in f:
+                lines.append(line)
                 # print(line, end='')
                 m = re.search(r'^\d{5},.*$', line) # runnum, pol, luminosity
                 if m:
                     # print('Found match in ', filename, ': ', m.group(), sep='')
                     self.matches.append(m.group())
+                    hasmatch = True
                 m2 = re.search(r'MBDNS GL1p scalers: \[(\d.*)\]$', line) # GL1p scalers
                 if m2:
                     # print('Found GL1P scalers in ', filename, ': ', m2.group(1), sep='')
                     self.scalers.append(m2.group(1))
-                m3 = re.search(r'(\d+\.\d+)u', line) # GL1p scalers
+                m3 = re.search(r'real\s+(\d+)m(\d+\.\d+)s', line) # job execution time
                 if m3:
-                    self.runtimes.append(m3.group(1))
+                    time_min = int(m3.group(1))
+                    time_sec = float(m3.group(2))
+                    # print(f'Found time {time_min + (time_sec/60)}')
+                    self.runtimes.append(time_min + (time_sec/60))
+                m4 = re.search(r'^error:.*$', line)
+                if m4:
+                    self.errors.append(jobnum + ', ' + m4.group(0))
+            if not hasmatch:
+                print(f'No matches found in log {filename}')
         return
 
     def ScanAllFiles(self):
-        # files = glob(self.logdir + '/job_0.out')
-        files = glob(self.logdir + '/*.out')
+        # files = glob(self.logdir_nm + '/job_0.out')
+        files = glob(self.logdir_nm + '/*.out')
+        files = sorted(files)
         print(f'Reading {len(files)} log files')
         # print('Reading the following log files:')
         # print(files)
         for i, file in enumerate(files):
             if i % 1000 == 0:
                 print(f'Reading file {i}')
+            # if i > 6892:
+            #     break
             self.ScanFile(file)
+        with open('NMerrors.txt', 'w') as outfile:
+            outfile.writelines([i+'\n' for i in self.errors])
         return
+
+    def ScanTSSALogs(self):
+        tssa_runtimes = []
+        files = glob(self.logdir_tssa + '/*.out')
+        for file in files:
+            with open(file, 'r') as f:
+                for line in f:
+                    m = re.search(r'real\s+(\d+)m(\d+\.\d+)s', line) # job execution time
+                    if m:
+                        time_min = int(m.group(1))
+                        time_sec = float(m.group(2))
+                        # print(f'Found time {time_min + (time_sec/60)}')
+                        tssa_runtimes.append((time_min*60) + time_sec)
+        return tssa_runtimes
 
     def MakeDataFrame(self):
         print('Found', len(self.matches), 'matches,', len(self.scalers), 'scalers')
@@ -106,7 +149,7 @@ class LumiPolarAna:
     def WriteRunTimes(self, filename):
         with open(filename, 'w') as f:
             for time in self.runtimes:
-                f.write(time+'\n')
+                f.write(str(time)+'\n')
 
     def WriteDataFrame(self, filename):
         self.df.to_csv(filename)
@@ -119,17 +162,46 @@ class LumiPolarAna:
         yellow_up_total = self.df['YellowLumiUp'].sum()
         yellow_down_total = self.df['YellowLumiDown'].sum()
         yellow_rel = yellow_up_total / yellow_down_total
-        print(f'Blue relative luminosity = {blue_rel}')
-        print(f'Yellow relative luminosity = {yellow_rel}')
+        print(f'Naive method blue relative luminosity = {blue_rel}')
+        print(f'Naive method yellow relative luminosity = {yellow_rel}')
+
+        blue_runbyrun_total = self.df['BlueLumiUp'] + self.df['BlueLumiDown']
+        blue_runbyrun_rel = self.df['BlueLumiUp'] / self.df['BlueLumiDown']
+        yellow_runbyrun_total = self.df['YellowLumiUp'] + self.df['YellowLumiDown']
+        yellow_runbyrun_rel = self.df['YellowLumiUp'] / self.df['YellowLumiDown']
+        blue_rel = ((blue_runbyrun_total * blue_runbyrun_rel).sum()) / (blue_runbyrun_total.sum())
+        yellow_rel = ((yellow_runbyrun_total * yellow_runbyrun_rel).sum()) / (yellow_runbyrun_total.sum())
+        print(f'Correct method blue relative luminosity = {blue_rel}')
+        print(f'Correct method yellow relative luminosity = {yellow_rel}')
+
+    def GetPol(self):
+        blue_runbyrun_total = self.df['BlueLumiUp'] + self.df['BlueLumiDown']
+        blue_runbyrun_pol = self.df['BluePol']
+        yellow_runbyrun_total = self.df['YellowLumiUp'] + self.df['YellowLumiDown']
+        yellow_runbyrun_pol = self.df['YellowPol']
+        blue_pol = ((blue_runbyrun_total * blue_runbyrun_pol).sum()) / (blue_runbyrun_total.sum())
+        yellow_pol = ((yellow_runbyrun_total * yellow_runbyrun_pol).sum()) / (yellow_runbyrun_total.sum())
+        print(f'Correct method blue polarization = {blue_pol}')
+        print(f'Correct method yellow polarization = {yellow_pol}')
 
     def PlotRunTimes(self, outprefix='python_plots/'):
         x = np.array(self.runtimes)
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18,12))
-        ax.hist(x/60, 100)
+        ax.hist(x, 100)
         ax.set_title('neutralMesonTSSA Job Run Times')
         ax.set_xlabel('Run Time (min)')
         ax.set_ylabel('Counts')
         plt.savefig(outprefix + 'runtimes.png')
+
+    def PlotTSSATimes(self, outprefix='python_plots/'):
+        tssa_runtimes = self.ScanTSSALogs()
+        x = np.array(tssa_runtimes)
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(18,12))
+        ax.hist(x, 20)
+        ax.set_title('TSSAhistmaker Job Run Times')
+        ax.set_xlabel('Run Time (sec)')
+        ax.set_ylabel('Counts')
+        plt.savefig(outprefix + 'tssa_runtimes.png')
 
     def PlotPol(self, outprefix='python_plots/pol_'):
         x = self.df['RunNum']
@@ -234,6 +306,8 @@ if __name__ == "__main__":
     if not rewrite_files:
         lpa.ReadRunTimes(runtimefile)
     lpa.PlotRunTimes()
+    lpa.PlotTSSATimes()
     lpa.GetRelLumi()
+    lpa.GetPol()
     # lpa.PlotPol()
     # lpa.PlotRel()
