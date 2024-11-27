@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'JetInfo.cc'
-// Derek Anderson
-// 03.04.2024
-//
-// Utility class to hold information from jets.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   JetInfo.cc
+ *  \author Derek Anderson
+ *  \date   03.04.2024
+ *
+ *  Utility class to hold information from jets.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_JETINFO_CC
 
@@ -18,8 +19,11 @@ using namespace std;
 
 namespace SColdQcdCorrelatorAnalysis {
 
-  // internal methods ---------------------------------------------------------
+  // private methods ==========================================================
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute minima
+  // --------------------------------------------------------------------------
   void Types::JetInfo::Minimize() {
 
     jetID = numeric_limits<uint32_t>::min();
@@ -38,6 +42,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Set data members to absolute maxima
+  // --------------------------------------------------------------------------
   void Types::JetInfo::Maximize() {
 
     jetID = numeric_limits<uint32_t>::max();
@@ -56,8 +63,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // public methods -----------------------------------------------------------
+  // public methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Reset object by maximizing data members
+  // --------------------------------------------------------------------------
   void Types::JetInfo::Reset() {
 
     Maximize();
@@ -67,6 +77,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a fastjet PseudoJet
+  // --------------------------------------------------------------------------
   void Types::JetInfo::SetInfo(fastjet::PseudoJet& pseudojet) {
 
     nCsts = pseudojet.constituents().size();
@@ -83,6 +96,28 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Pull relevant information from a F4A Jet
+  // --------------------------------------------------------------------------
+  void Types::JetInfo::SetInfo(Jet& jet) {
+
+    nCsts = jet.size_comp();
+    ene   = jet.get_e();
+    px    = jet.get_px();
+    py    = jet.get_py();
+    pz    = jet.get_pz();
+    pt    = jet.get_pt();
+    eta   = jet.get_eta();
+    phi   = jet.get_phi();
+    return;
+
+  }  // end 'SetInfo(Jet& jet)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (explicit minimum, maximum)
+  // --------------------------------------------------------------------------
   bool Types::JetInfo::IsInAcceptance(const JetInfo& minimum, const JetInfo& maximum) const {
 
     return ((*this >= minimum) && (*this <= maximum));
@@ -91,6 +126,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Check if object is within provided bounds (set by pair)
+  // --------------------------------------------------------------------------
   bool Types::JetInfo::IsInAcceptance(const pair<JetInfo, JetInfo>& range) const {
 
     return ((*this >= range.first) && (*this <= range.second));
@@ -99,8 +137,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // static methods -----------------------------------------------------------
+  // static methods ===========================================================
 
+  // --------------------------------------------------------------------------
+  //! Get list of data fields
+  // --------------------------------------------------------------------------
   vector<string> Types::JetInfo::GetListOfMembers() {
 
     vector<string> members = {
@@ -121,8 +162,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // overloaded operators -----------------------------------------------------
+  // overloaded operators =====================================================
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <(const JetInfo& lhs, const JetInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -143,6 +187,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >(const JetInfo& lhs, const JetInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -163,6 +210,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded less-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator <=(const JetInfo& lhs, const JetInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -183,6 +233,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Overloaded greater-than-or-equal-to comparison
+  // --------------------------------------------------------------------------
   bool Types::operator >=(const JetInfo& lhs, const JetInfo& rhs) {
 
     // note that some quantities aren't relevant for this comparison
@@ -203,9 +256,11 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
-  // ctor/dtor ----------------------------------------------------------------
+  // ctor/dtor ================================================================
 
-  // default ctor/dtor
+  // --------------------------------------------------------------------------
+  //! Default class constructor
+  // --------------------------------------------------------------------------
   Types::JetInfo::JetInfo() {
 
     /* nothing to do */
@@ -214,6 +269,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Default class destructor
+  // --------------------------------------------------------------------------
   Types::JetInfo::~JetInfo() {
 
     /* nothing to do */
@@ -222,6 +280,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting initialization option (minimize or maximize)
+  // --------------------------------------------------------------------------
   Types::JetInfo::JetInfo(const Const::Init init) {
 
     switch (init) {
@@ -240,11 +301,25 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a fastjet PseudoJet
+  // --------------------------------------------------------------------------
   Types::JetInfo::JetInfo(fastjet::PseudoJet& pseudojet) {
 
     SetInfo(pseudojet);
 
   }  // ctor(PseudoJet&)'
+
+
+
+  // --------------------------------------------------------------------------
+  //! Constructor accepting a F4A Jet
+  // --------------------------------------------------------------------------
+  Types::JetInfo::JetInfo(Jet& jet) {
+
+    SetInfo(jet);
+
+  }  // ctor(Jet&)'
 
 }  // end SColdQcdCorrelatorAnalysis namespace
 

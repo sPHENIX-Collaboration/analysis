@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'TopoClusterOptions.h'
-// Derek Anderson
-// 04.12.2024
-//
-// Options for the RawClusterBuilderTopo module
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TopoClusterOptions.h
+ *  \author Derek Anderson
+ *  \date   04.12.2024
+ *
+ * Options for the RawClusterBuilderTopo module
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef TOPOCLUSTEROPTIONS_H
 #define TOPOCLUSTEROPTIONS_H
@@ -23,14 +24,21 @@ using namespace std;
 
 namespace TopoClusterOptions {
 
-  // possible calo combinations -----------------------------------------------
+  // possible calo combinations ===============================================
 
   enum Combo {ECalOnly, BothCalos};
 
 
 
-  // TopoClusterConfig definition ---------------------------------------------
+  // TopoClusterConfig definition =============================================
 
+  // --------------------------------------------------------------------------
+  //! Topo-Cluster Configuration
+  // --------------------------------------------------------------------------
+  /*! A lightweight POD struct consolidating
+   *  options for the RawClusterBuilderTopo
+   *  module.
+   */ 
   struct TopoClusterConfig {
 
     // i/o options
@@ -56,7 +64,7 @@ namespace TopoClusterOptions {
 
 
 
-  // options ------------------------------------------------------------------
+  // options ==================================================================
 
   // calo options
   const pair<bool, bool> enableECal = {true,  true};
@@ -74,8 +82,11 @@ namespace TopoClusterOptions {
 
 
 
-  // set up configuration -----------------------------------------------------
+  // set up configuration =====================================================
 
+  // --------------------------------------------------------------------------
+  //! Generate RawClusterBuilderTopo configuration
+  // --------------------------------------------------------------------------
   TopoClusterConfig GetConfig(const int combo, const int verbosity, const string module, const string node) {
 
     TopoClusterConfig cfg {
@@ -97,8 +108,11 @@ namespace TopoClusterOptions {
 
 
 
-  // initialize topocluster builder -------------------------------------------
+  // initialize topocluster builder ===========================================
 
+  // --------------------------------------------------------------------------
+  //! Instantiate RawClusterBuilderTopo module with given configuration
+  // --------------------------------------------------------------------------
   RawClusterBuilderTopo* CreateBuilder(TopoClusterConfig& config) {
 
     RawClusterBuilderTopo* builder = new RawClusterBuilderTopo(config.moduleName.data());

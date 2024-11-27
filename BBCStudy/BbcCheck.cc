@@ -157,11 +157,11 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   c_bbct->Divide(1,2);
 
   // MBD triggers
-  mbdtrigbits.push_back(0x0400);    // MBDNS>=1
-  mbdtrigbits.push_back(0x0800);    // MBDNS>=2
-  mbdtrigbits.push_back(0x1000);    // MBD60
-  mbdtrigbits.push_back(0x2000);    // MBD30
-  mbdtrigbits.push_back(0x4000);    // MBD10
+  mbdtrigbits.push_back(0x0400);    // MBDNS>=1(pp) or 2(AuAu)
+  mbdtrigbits.push_back(0x0800);    // MBDNS>=2(pp) or 1(AuAu)
+  mbdtrigbits.push_back(0x1000);    // MBD60 (or MBD10)
+  mbdtrigbits.push_back(0x2000);    // MBD30 (or MBD30)
+  mbdtrigbits.push_back(0x4000);    // MBD10 (or MBD60)
 
   return 0;
 }
@@ -345,14 +345,14 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
       float vtx_z = vtx->get_z();
       if ( !isnan(f_bz) && vtx_z != f_bz )
       {
-        cout << "ERROR, vertices do not match " << vtx_z << "\t" << f_bz << endl;
+        cout << "ERROR, mbdvertexmap does not match " << vtx_z << "\t" << f_bz << endl;
       }
       else
       {
         static int counter = 0;
         if ( counter<3 )
         {
-          cout << "GOOD, mbd vertices match " << vtx_z << "\t" << f_bz << endl;
+          cout << "GOOD, mbdvertexmap vertex matches " << vtx_z << "\t" << f_bz << endl;
           counter++;
         }
       }
@@ -386,6 +386,15 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
       if ( vtx_z != f_bz )
       {
         cout << "ERROR, vertices do not match " << vtx_z << "\t" << f_bz << endl;
+      }
+      else
+      {
+        static int counter = 0;
+        if ( counter<3 )
+        {
+          cout << "GOOD, globalvertexmap vertex matches " << vtx_z << "\t" << f_bz << endl;
+          counter++;
+        }
       }
     }
   }

@@ -1,10 +1,11 @@
-// ----------------------------------------------------------------------------
-// 'JetInfo.h'
-// Derek Anderson
-// 03.04.2024
-//
-// Utility class to hold information from jets.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   JetInfo.h
+ *  \author Derek Anderson
+ *  \date   03.04.2024
+ *
+ *  Utility class to hold information from jets.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_JETINFO_H
 #define SCORRELATORUTILITIES_JETINFO_H
@@ -18,6 +19,8 @@
 #include <Rtypes.h>
 // fastjet libraries
 #include <fastjet/PseudoJet.hh>
+// fun4all types
+#include <jetbase/Jet.h>
 // analysis utilities
 #include "Constants.h"
 
@@ -29,9 +32,14 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-  // JetInfo definition -------------------------------------------------------
-
-  class JetInfo {
+    // ------------------------------------------------------------------------
+    //! Jet info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate information
+     *  about jets. Can be built from either
+     *  fastjet pseudojets or F4A Jet objects.
+     */
+    class JetInfo {
 
       private:
 
@@ -47,7 +55,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double   phi   = numeric_limits<double>::max();
         double   area  = numeric_limits<double>::max();
 
-        // internal methods
+        // private methods
         void Minimize();
         void Maximize();
 
@@ -80,6 +88,7 @@ namespace SColdQcdCorrelatorAnalysis {
         // public methods
         void Reset();
         void SetInfo(fastjet::PseudoJet& pseudojet);
+        void SetInfo(Jet& jet);
         bool IsInAcceptance(const JetInfo& minimum, const JetInfo& maximum) const;
         bool IsInAcceptance(const pair<JetInfo, JetInfo>& range) const;
 
@@ -99,6 +108,7 @@ namespace SColdQcdCorrelatorAnalysis {
         // ctors accepting arguments
         JetInfo(const Const::Init init);
         JetInfo(fastjet::PseudoJet& pseudojet);
+        JetInfo(Jet& jet);
 
       // identify this class to ROOT
       ClassDefNV(JetInfo, 1)

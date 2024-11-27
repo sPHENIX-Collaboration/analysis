@@ -1,3 +1,6 @@
+#ifndef VECTOR_STDDEV_H
+#define VECTOR_STDDEV_H
+
 double  vector_average (vector <double> input_vector) {
 	return accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
 }
@@ -16,3 +19,5 @@ double vector_stddev (vector <double> input_vector){
 
 	return sqrt( sum_subt / double(input_vector.size()-1) );
 }	
+
+#endif

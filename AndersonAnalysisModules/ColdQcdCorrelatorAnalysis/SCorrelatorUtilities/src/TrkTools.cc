@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'TrkTools.cc'
-// Derek Anderson
-// 02.29.2024
-//
-// Collection of frequent track-related methods utilized
-// in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkTools.cc
+ *  \author Derek Anderson
+ *  \date   02.29.2024
+ *
+ *  Collection of frequent track-related methods utilized
+ *  in the sPHENIX Cold QCD Energy-Energy Correlator analysis.
+ */
+/// ---------------------------------------------------------------------------
 
 #define SCORRELATORUTILITIES_TRKTOOLS_CC
 
@@ -17,8 +18,13 @@ using namespace std;
 
 
 
+// track methods ==============================================================
+
 namespace SColdQcdCorrelatorAnalysis {
 
+  // --------------------------------------------------------------------------
+  //! Get no. of layers hit from a specific subsystem
+  // --------------------------------------------------------------------------
   int Tools::GetNumLayer(SvtxTrack* track, const int16_t sys) {
 
     // grab track seed
@@ -99,6 +105,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get no. of clusters from a specific subsystem
+  // --------------------------------------------------------------------------
   int Tools::GetNumClust(SvtxTrack* track, const int16_t sys) {
 
     // grab track seed
@@ -143,6 +152,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get barcode of matching truth particle
+  // --------------------------------------------------------------------------
   int Tools::GetMatchID(SvtxTrack* track, SvtxTrackEval* trackEval) {
 
     // get best match from truth particles
@@ -161,6 +173,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Does track have the relevant seed?
+  // --------------------------------------------------------------------------
   bool Tools::IsGoodTrackSeed(SvtxTrack* track, const bool requireSiSeeds) {
 
     // get track seeds
@@ -178,6 +193,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Is track connected to the primary vertex?
+  // --------------------------------------------------------------------------
   bool Tools::IsFromPrimaryVtx(SvtxTrack* track, PHCompositeNode* topNode) {
 
     // get id of vertex associated with track
@@ -195,6 +213,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get uncertainty on track pt from fit
+  // --------------------------------------------------------------------------
   double Tools::GetTrackDeltaPt(SvtxTrack* track) {
 
     // grab covariances
@@ -218,6 +239,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get track XY and Z DCA
+  // --------------------------------------------------------------------------
   pair<double, double> Tools::GetTrackDcaPair(SvtxTrack* track, PHCompositeNode* topNode) {
 
     // get global vertex and convert to acts vector
@@ -232,6 +256,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get track seed
+  // --------------------------------------------------------------------------
   TrackSeed* Tools::GetTrackSeed(SvtxTrack* track, const int16_t sys) {
 
     // get both track seeds
@@ -265,6 +292,9 @@ namespace SColdQcdCorrelatorAnalysis {
 
 
 
+  // --------------------------------------------------------------------------
+  //! Get track's associated vertex
+  // --------------------------------------------------------------------------
   ROOT::Math::XYZVector Tools::GetTrackVertex(SvtxTrack* track, PHCompositeNode* topNode) {
 
     // get vertex associated with track

@@ -1,10 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'TrkInterfaces.h'
-// Derek Anderson
-// 03.05.2024
-//
-// Track-related interfaces.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   TrkInterfaces.h
+ *  \author Derek Anderson
+ *  \date   03.05.2024
+ *
+ *  Track-related interfaces.
+ */
+/// ---------------------------------------------------------------------------
+
 
 #ifndef SCORRELATORUTILITIES_TRKINTERFACES_H
 #define SCORRELATORUTILITIES_TRKINTERFACES_H

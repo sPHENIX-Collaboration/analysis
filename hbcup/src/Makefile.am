@@ -15,16 +15,23 @@ AM_LDFLAGS = \
   -lg4eval
 
 pkginclude_HEADERS = \
-  hijbkg_upc.h
+  hijbkg_upc.h \
+  AnaUPC.h
 
 lib_LTLIBRARIES = \
   libhbcup.la
 
 libhbcup_la_SOURCES = \
-  hijbkg_upc.cc
+  hijbkg_upc.cc \
+  AnaUPC.cc
 
 libhbcup_la_LIBADD = \
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
   -lphool \
+  -lfun4all \
+  -lg4detectors_io \
+  -lg4dst \
   -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc

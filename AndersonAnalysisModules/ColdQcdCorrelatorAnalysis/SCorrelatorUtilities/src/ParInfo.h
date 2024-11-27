@@ -1,11 +1,12 @@
-// ----------------------------------------------------------------------------
-// 'ParInfo.h'
-// Derek Anderson
-// 03.04.2024
-//
-// Utility class to hold information from
-// generated particles.
-// ----------------------------------------------------------------------------
+/// ---------------------------------------------------------------------------
+/*! \file   ParInfo.h
+ *  \author Derek Anderson
+ *  \date   03.04.2024
+ *
+ *  Utility class to hold information from
+ *  generated particles.
+ */
+/// ---------------------------------------------------------------------------
 
 #ifndef SCORRELATORUTILITIES_PARINFO_H
 #define SCORRELATORUTILITIES_PARINFO_H
@@ -38,8 +39,14 @@ using namespace std;
 namespace SColdQcdCorrelatorAnalysis {
   namespace Types {
 
-    // ParInfo definition -----------------------------------------------------
-
+    // ------------------------------------------------------------------------
+    //! Particle info
+    // ------------------------------------------------------------------------
+    /*! A class to consolidate information
+     *  about generated particles. Can be
+     *  built from HepMC GenParticle or
+     *  F4A PHG4Particle objects.
+     */
     class ParInfo {
 
       private:
@@ -63,7 +70,7 @@ namespace SColdQcdCorrelatorAnalysis {
         double vz      = numeric_limits<double>::max();
         double vr      = numeric_limits<double>::max();
 
-        //internal methods
+        // private methods
         void Minimize();
         void Maximize();
 
