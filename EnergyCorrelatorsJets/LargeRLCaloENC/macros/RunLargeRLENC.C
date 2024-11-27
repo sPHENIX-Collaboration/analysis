@@ -20,6 +20,7 @@
 #include <jetbackground/RetowerCEMC.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <fstream>
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalo_io.so)
@@ -80,12 +81,12 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 	rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
 	rc->set_uint64Flag("TIMESTAMP", run_number);
 	CDBInterface::instance() -> Verbosity(1);*/
-/*	bool nojets=true, retower_needed=true;
-	if(data){ //check if the jet objects have already been constructed and retowering needed
+	bool nojets=true, retower_needed=true;
+/*	if(data){ //check if the jet objects have already been constructed and retowering needed
 		TFile* f1=new TFile(data_dst.c_str(), "READ");
 		if(f1->IsOpen())
 		{
-			TTree* T=(TTree*) f1->GetObject("T");
+			TTree* T=(TTree*) f1->Get("T");
 			auto brlist=T->GetListOfBranches();
 			for(int b=0; b<(int) brlist->Entries(); b++)
 			{
@@ -116,6 +117,8 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
 		}*/
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
+	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
+	//std::fstream* ofs=new std::fstream(text_out_filename);
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
 	se->registerSubsystem(rlenc);
 	std::cout<<"Runing for " <<n_evt <<" events" <<std::endl;

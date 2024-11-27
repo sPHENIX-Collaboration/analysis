@@ -106,6 +106,7 @@ class EventSelectionCut{
 		EventSelectionCut(float lpt=12., float slpt=7., float det=0.7, float dph=2.75,float maxpct=0.9, bool dj=true, bool ne=false, std::string radius="r04" ): leadingpt(lpt), subleadingpt(slpt), etaedge(det), deltaphi(dph), maxOHCAL(maxpct),isdijet(dj), negativeEnergy(ne){
 			JetCuts=new TTree(Form("cuts_%s", radius.c_str()) , Form("Jet Cut Kinematics for QA on the Jet Event for jet with radius %s", radius.c_str()));
 			JetCuts->Branch("N_Jets", &m_nJets, "Number of Jets in Container/I");
+			JetCuts->Branch("z_vtx", &m_zvtx, "z vertex position/F");
 			JetCuts->Branch("Lead_pt", &m_lpt, "p_{T} of Leading Jet/F");
 			JetCuts->Branch("Subleading_pt", &m_slpt, "p_{T} of subleading jet (pair if dijet pair exists)/F");
 			JetCuts->Branch("Lead_eta", &m_etal, "#eta of leading jet center/F");
@@ -124,6 +125,7 @@ class EventSelectionCut{
 			if(hcalratio < 0 ) return false;
 			if(hcalratio >0.95 /* maxOHCAL*/) good=false;
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
+			m_zvtx=vertex[2];
 			float leadjetpt=0., subleadjetpt=0.;
 			bool haspartner=false;
 		       	Jet* leadjet=NULL, *subleadjet=NULL;
@@ -217,6 +219,7 @@ class EventSelectionCut{
 		bool negativeEnergy;
 		bool passesCut=false;
 		int m_nJets=0;
+		float m_zvtx=0.;
 		float m_lpt=0. ;
 		float m_slpt=0.;
 		float m_etal=0.;
@@ -233,8 +236,20 @@ class EventSelectionCut{
 class LargeRLENC : public SubsysReco
 {
  public:
-
-  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const std::string vari="E", const std::string &name = "LargeRLENC");
+	enum Regions{
+		Full, 
+		Towards, 
+		Away, 
+		TransverseMax,
+		TransverseMin
+	};
+	enum Calorimeter{
+		All, 
+		EMCAL,
+		IHCAL,
+		OHCAL
+	};
+  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
 
   	~LargeRLENC() override {};
 
@@ -276,7 +291,7 @@ class LargeRLENC : public SubsysReco
 
 	/// Called at the end of all processing.
 	int End(PHCompositeNode *topNode) override {
-		if(write_to_file) this->text_out_file.close();
+//		if(write_to_file) this->text_out_file->close();
 		return Fun4AllReturnCodes::EVENT_OK;
 	};
 
@@ -307,9 +322,12 @@ class LargeRLENC : public SubsysReco
 	int nRun, nSegment, m_Njets, n_evts;
 	float jetMinpT, MinpTComp;
 	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
-	std::map<int, std::array <std::map<float, float>, 3 > > m_e2c, m_e3c; 
-	std::map< int, std::array<std::map<std::array<float, 3>, float>, 3>> m_e3c_full;
-	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > m_pt_evt;
+	int m_region, m_calo; 
+	std::vector<std::pair<int, std::vector< std::pair<float, float> > > > t_e2c, t_e3c; //make this an indexable object
+	float m_rl, m_rm, m_ri, m_e2c, m_e3c, m_Et, m_vtx, m_vty, m_vtz, m_philead, m_etalead;
+	std::vector<std::pair< int, std::vector< std::pair< std::array<float, 3>, float> > > > t_e3c_full;
+	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > t_pt_evt;
+	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC, *JetEvtObs;
 	std::vector<MethodHistograms*> FullCal, TowardRegion, AwayRegion, TransverseRegion;
@@ -317,13 +335,14 @@ class LargeRLENC : public SubsysReco
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
-	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
+//	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
 //	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
-	std::fstream text_out_file;
-	bool write_to_file;
+	//std::fstream* text_out_file;
+//	bool write_to_file;
 	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup, *ohcal_rat_h;
 	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
+	std::vector<std::array<float, 3>> m_emcal, m_ihcal, m_ohcal; //3 points, eta, phi, et
 
 };
 #endif // LARGERLENC_H

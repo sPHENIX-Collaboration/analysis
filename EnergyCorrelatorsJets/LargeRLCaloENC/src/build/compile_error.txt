@@ -1,39 +1,29 @@
 make  all-am
 make[1]: Entering directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/src/build'
-/bin/sh ./libtool  --tag=CXX   --mode=compile /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"largerlenc\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I..  -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.445/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include   -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c -o LargeRLENC.lo ../LargeRLENC.cc
-libtool: compile:  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" "-DPACKAGE_STRING=\"largerlenc 1.00\"" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I.. -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.445/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c ../LargeRLENC.cc  -fPIC -DPIC -o .libs/LargeRLENC.o
-In file included from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/map:61,
-                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.445/include/phool/PHNodeIOManager.h:13,
-                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.445/include/phool/PHIODataNode.h:9,
-                 from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.445/include/phool/getClass.h:5,
-                 from ../LargeRLENC.h:12,
-                 from ../LargeRLENC.cc:13:
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h: In instantiation of 'std::map<_Key, _Tp, _Compare, _Alloc>::map(_InputIterator, _InputIterator) [with _InputIterator = double; _Key = float; _Tp = float; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]':
-../LargeRLENC.cc:436:38:   required from here
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:285:38: error: no matching function for call to 'std::_Rb_tree<float, std::pair<const float, float>, std::_Select1st<std::pair<const float, float> >, std::less<float>, std::allocator<std::pair<const float, float> > >::_M_insert_range_unique(double&, double&)'
-  285 |         { _M_t._M_insert_range_unique(__first, __last); }
-      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
-In file included from /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/map:60:
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1098:9: note: candidate: 'template<class _InputIterator> std::__enable_if_t<std::is_same<_Val, typename std::iterator_traits<_InputIterator>::value_type>::value> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_insert_range_unique(_InputIterator, _InputIterator) [with _Key = float; _Val = std::pair<const float, float>; _KeyOfValue = std::_Select1st<std::pair<const float, float> >; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]'
- 1098 |         _M_insert_range_unique(_InputIterator __first, _InputIterator __last)
-      |         ^~~~~~~~~~~~~~~~~~~~~~
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1098:9: note:   template argument deduction/substitution failed:
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h: In substitution of 'template<class _InputIterator> std::__enable_if_t<std::is_same<std::pair<const float, float>, typename std::iterator_traits< <template-parameter-1-1> >::value_type>::value, void> std::_Rb_tree<float, std::pair<const float, float>, std::_Select1st<std::pair<const float, float> >, std::less<float>, std::allocator<std::pair<const float, float> > >::_M_insert_range_unique(_InputIterator, _InputIterator) [with _InputIterator = double]':
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:285:31:   required from 'std::map<_Key, _Tp, _Compare, _Alloc>::map(_InputIterator, _InputIterator) [with _InputIterator = double; _Key = float; _Tp = float; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]'
-../LargeRLENC.cc:436:38:   required from here
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1098:9: error: no type named 'value_type' in 'struct std::iterator_traits<double>'
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h: In instantiation of 'std::map<_Key, _Tp, _Compare, _Alloc>::map(_InputIterator, _InputIterator) [with _InputIterator = double; _Key = float; _Tp = float; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]':
-../LargeRLENC.cc:436:38:   required from here
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1107:9: note: candidate: 'template<class _InputIterator> std::__enable_if_t<(! std::is_same<_Val, typename std::iterator_traits<_InputIterator>::value_type>::value)> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_insert_range_unique(_InputIterator, _InputIterator) [with _Key = float; _Val = std::pair<const float, float>; _KeyOfValue = std::_Select1st<std::pair<const float, float> >; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]'
- 1107 |         _M_insert_range_unique(_InputIterator __first, _InputIterator __last)
-      |         ^~~~~~~~~~~~~~~~~~~~~~
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1107:9: note:   template argument deduction/substitution failed:
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h: In substitution of 'template<class _InputIterator> std::__enable_if_t<(! std::is_same<std::pair<const float, float>, typename std::iterator_traits< <template-parameter-1-1> >::value_type>::value), void> std::_Rb_tree<float, std::pair<const float, float>, std::_Select1st<std::pair<const float, float> >, std::less<float>, std::allocator<std::pair<const float, float> > >::_M_insert_range_unique(_InputIterator, _InputIterator) [with _InputIterator = double]':
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_map.h:285:31:   required from 'std::map<_Key, _Tp, _Compare, _Alloc>::map(_InputIterator, _InputIterator) [with _InputIterator = double; _Key = float; _Tp = float; _Compare = std::less<float>; _Alloc = std::allocator<std::pair<const float, float> >]'
-../LargeRLENC.cc:436:38:   required from here
-/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/include/c++/12.1.0/bits/stl_tree.h:1106:59: error: no type named 'value_type' in 'struct std::iterator_traits<double>'
- 1106 |         __enable_if_t<!__same_value_type<_InputIterator>::value>
-      |                                                           ^~~~~
+/bin/sh ./libtool  --tag=CXX   --mode=compile /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" -DPACKAGE_STRING=\"largerlenc\ 1.00\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I..  -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.448/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include   -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c -o LargeRLENC.lo ../LargeRLENC.cc
+libtool: compile:  /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/gcc/12.1.0-57c96/x86_64-centos7/bin/g++ -DPACKAGE_NAME=\"largerlenc\" -DPACKAGE_TARNAME=\"largerlenc\" -DPACKAGE_VERSION=\"1.00\" "-DPACKAGE_STRING=\"largerlenc 1.00\"" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"largerlenc\" -DVERSION=\"1.00\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -I. -I.. -I/sphenix/user/sgross/install_dir/include -I/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_ana/ana.448/include -isystem/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/include -g -O2 -std=c++17 -Wall -Werror -MT LargeRLENC.lo -MD -MP -MF .deps/LargeRLENC.Tpo -c ../LargeRLENC.cc  -fPIC -DPIC -o .libs/LargeRLENC.o
+../LargeRLENC.cc: In member function 'void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float> >, int, float*)':
+../LargeRLENC.cc:681:30: error: qualified-id in declaration before '(' token
+  681 | void LargeRLENC::CalculateENC(std::pair<std::array<float, 3>, float> point_1, std::pair<std::array<float, 3>, float> point_2, std::map<std::array<float, 3>, float> cal, std::pair<float, std::pair<float, float>>* enc_out, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > > *threept_full, bool transverse, bool energy)
+      |                              ^
+../LargeRLENC.cc:711:23: error: qualified-id in declaration before '(' token
+  711 | float LargeRLENC::getR(float eta1, float phi1, float eta2, float phi2, bool print)
+      |                       ^
+../LargeRLENC.cc:720:23: error: qualified-id in declaration before '(' token
+  720 | void LargeRLENC::Print(const std::string &what) const
+      |                       ^
+../LargeRLENC.cc:754:2: error: expected '}' at end of input
+  754 | }
+      |  ^
+../LargeRLENC.cc:648:9: note: to match this '{'
+  648 |         {
+      |         ^
+../LargeRLENC.cc:754:2: error: expected '}' at end of input
+  754 | }
+      |  ^
+../LargeRLENC.cc:440:1: note: to match this '{'
+  440 | {
+      | ^
 make[1]: *** [LargeRLENC.lo] Error 1
 make[1]: Leaving directory `/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/src/build'
 make: *** [all] Error 2
