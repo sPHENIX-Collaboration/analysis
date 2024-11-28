@@ -11,15 +11,26 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  JetValidation.h
+  JetValidation.h \
+  EMJetVal.h 
 
 lib_LTLIBRARIES = \
-  libJetValidation.la
+  libJetValidation.la \
+  libEMJetVal.la
 
 libJetValidation_la_SOURCES = \
   JetValidation.cc
 
 libJetValidation_la_LIBADD = \
+  -lphool \
+  -lSubsysReco \
+  -lfun4all \
+  -lg4dst \
+  -lg4eval \
+  -lg4jets
+libEMJetVal_la_SOURCES = \
+  EMJetVal.cc
+libEMJetVal_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lfun4all \
