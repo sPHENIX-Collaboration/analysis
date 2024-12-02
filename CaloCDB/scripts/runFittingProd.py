@@ -47,17 +47,26 @@ def main():
     df = get_file_paths()
 
     print(df)
-
-    print(df.drop_duplicates(['runnumber','dataset']))
+    df.drop_duplicates(subset=['runnumber','dataset'], inplace=True)
+    print(df)
 
     os.makedirs('files/hists',exist_ok=True)
 
-    for index in df.drop_duplicates(['runnumber','dataset']).index:
-        dataset = df["dataset"][index]
-        run = df["runnumber"][index]
+    if os.path.exists('completedruns.txt'):
+        with open('completedruns.txt') as f:
+            completed_runs_datasets = set(line.strip() for line in f)
+
+    fdf = df[~df.apply(lambda row: f"{row['runnumber']},{row['dataset']}" in completed_runs_datasets, axis=1)]
+
+    for index in fdf.index:
+        dataset = fdf["dataset"][index]
+        run = fdf["runnumber"][index]
         print(f'Processing: {run},{dataset}')
 
-        df[(df['runnumber']==run) & (df['dataset']==dataset)]['full_file_path'].to_csv(f'files/hists/{run}_{dataset}.list', index=False, header=False)
+        with open('completedruns.txt', 'a') as f:
+            f.write(f"{run},{dataset}\n")
+
+        fdf[(fdf['runnumber']==run) & (fdf['dataset']==dataset)]['full_file_path'].to_csv(f'files/hists/{run}_{dataset}.list', index=False, header=False)
 
 if __name__ == "__main__":
     main()
