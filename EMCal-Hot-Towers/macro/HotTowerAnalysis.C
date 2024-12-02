@@ -617,7 +617,7 @@ if(argc < 2 || argc > 8) {
         cout << "usage: ./hotAna inputFile [outputFile] [doTime] [maxRuns] [outputMissingHotMap] [outputMissingBadChi2] [outputRunStats]" << endl;
         cout << "inputFile: containing list of run numbers" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
-        cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: false." << endl;
+        cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: true." << endl;
         cout << "maxRuns: Max runs to process (useful when testing). Default: 0 (means run all)." << endl;
         cout << "outputMissingHotMap: location of outputMissingHotMap file. Default: missingHotMap.csv." << endl;
         cout << "outputMissingBadChi2: location of outputMissingBadChi2 file. Default: missingBadChi2.csv." << endl;

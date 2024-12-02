@@ -43,20 +43,20 @@ root -b -l -q 'macro/HotTowerAnalysis.C("files/ana437/runs-ana437.list","test.ro
 
 ** After editing Makefile.am
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root hot.list test.root 5000 2>/dev/null
 #+end_src
 
 #+begin_src
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root","hot.list","test.root",5000)'
 #+end_src
 
 ** After editing .cc or .h
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root hot.list test.root 5000 2>/dev/null
 #+end_src
 
 #+begin_src
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root","hot.list","test.root",5000)'
 #+end_src
 
 * Condor Tips

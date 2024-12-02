@@ -7,7 +7,7 @@
 ROOT_CPPFLAGS = `root-config --cflags`
 ROOT_LIBFLAGS = `root-config --libs`
 sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcdbobjects -lffamodules -lphool
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcalo_reco -lcdbobjects -lffamodules -lphool
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloHotTower
 
 all: bin/hotAna bin/plots bin/genHotTowerList bin/Fun4All_CaloHotTower bin/plots-hot
