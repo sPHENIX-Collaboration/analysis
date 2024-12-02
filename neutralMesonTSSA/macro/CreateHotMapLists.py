@@ -3,9 +3,9 @@ import re
 import numpy as np
 
 def makejoblists():
-    goldenrunlist = 'emcal_goodruns.txt'
+    goldenrunlist = 'filelists/RD/2024/Nov7/GoldenFEMrunList.txt'
     joblistdir = 'condor/job_filelists/hotmapcheck/'
-    runlistdir = 'filelists/RD/2024/Aug10/'
+    runlistdir = 'filelists/RD/2024/Nov7/'
 
     dstlists = glob.glob(runlistdir+'dst*')
 
@@ -32,9 +32,11 @@ def makegoodrunlist():
                 if m1:
                     runnum[i] = m1.group(1)
                 # check if analysis finished (exited early = no hot map)
-                m2 = re.search('Analysis Completed', line)
+                # m2 = re.search('Analysis Completed', line)
+                m2 = re.search('Global Tag: ProdA_2024, domain: CEMC_BadTowerMap, timestamp: \d{5}... reply: /cvmfs', line)
                 if m2:
                     hasmap[i] = 1
+
     outfile = 'emcal_withmaps.txt'
     with open(outfile, 'w') as h:
         for i in range(len(runnum)):

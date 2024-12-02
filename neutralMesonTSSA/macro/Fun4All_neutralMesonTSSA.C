@@ -38,7 +38,8 @@ void Fun4All_neutralMesonTSSA(
                      int nEvents = 1,
                      const char *filelist1 = "dst_calo_cluster.list",
                      const char *filelist2 = "dst_truth.list",
-		     const string outname = "neutralMesonTSSA_hists.root",
+		     const string outname_hists = "neutralMesonTSSA_hists.root",
+		     const string outname_trees = "neutralMesonTSSA_trees.root",
 		     bool isMC = false)
 {
   // this convenience library knows all our i/o objects so you don't
@@ -70,15 +71,24 @@ void Fun4All_neutralMesonTSSA(
       se -> registerInputManager(inTruth);
   }
 
-  // Tower calibrations
-  Process_Calo_Calib();  // this line handles the calibrations, dead/hot tower masking and reruns the clusterizer
+  // Tower calibrations & masking
+  /* Process_Calo_Calib();  // this line handles the calibrations, dead/hot tower masking and reruns the clusterizer */
+
+  CaloTowerStatus *statusEMC = new CaloTowerStatus("TowerStatusEMC");
+  /* statusEMC->Verbosity(1); */
+  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+  statusEMC->set_doAbortNoHotMap(true);
+  statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
+  /* statusEMC->set_time_cut(1); */
+  se->registerSubsystem(statusEMC);
+
   /* CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB"); */
   /* calibEMC->set_detector_type(CaloTowerDefs::CEMC); */
   /* calibEMC->set_directURL("/sphenix/u/bseidlitz/work/temp24Calib/emcalCalib_withMask_may25.root"); */
   /* se->registerSubsystem(calibEMC); */
 
   // Clusterizer
-  /*
+  /*/1* */
   RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
   ClusterBuilder->set_threshold_energy(0.03);  // for when using basic calibration
@@ -86,11 +96,11 @@ void Fun4All_neutralMesonTSSA(
   emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
   ClusterBuilder->LoadProfile(emc_prof);
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
-  ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC2");
+  /* ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC2"); */
   se->registerSubsystem(ClusterBuilder);
-  */
+  /* *1/ */
 
-  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname, isMC);
+  neutralMesonTSSA *eval = new neutralMesonTSSA("neutralMesonTSSA", outname_hists, outname_trees, isMC);
   /* eval->set_min_clusterE(0.5); */
   /* eval->set_max_clusterChi2(4.0); */
   se -> registerSubsystem(eval);
