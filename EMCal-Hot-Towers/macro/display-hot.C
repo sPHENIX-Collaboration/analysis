@@ -102,6 +102,10 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
     // l1.SetTextSize(0.05);
 
     auto hHotMap = (TH1F*)inputHot.Get("hBadTowersHot");
+    auto hRunStatus = (TH1F*)inputHot.Get("hRunStatus");
+
+    UInt_t nRuns = hRunStatus->GetBinContent(1);
+    cout << "Total Runs: " << nRuns << endl;
 
     stringstream s;
 
@@ -125,7 +129,7 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
         Int_t overFlowHotComp = hHotComp->GetBinContent(hHotComp->GetNbinsX()+1);
         if(hHotComp->Integral()) hHotComp->Scale(1./hHotComp->Integral());
 
-        UInt_t nRuns = hHotMap->GetBinContent(idx.first+1);
+        UInt_t nRunsHot = hHotMap->GetBinContent(idx.first+1);
 
         key    = TowerInfoDefs::encode_emcal(idx.second);
         etabin = TowerInfoDefs::getCaloTowerEtaBin(key);
@@ -154,7 +158,7 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
         l1.DrawLatexNDC(0.57,0.7, name.c_str());
 
         s.str("");
-        s << "#color[2]{Runs: " << nRuns << ", (" << (Int_t)(nRuns*10000./305)/100. << " %)}";
+        s << "#color[2]{Runs: " << nRunsHot << ", (" << (Int_t)(nRunsHot*10000./nRuns)/100. << " %)}";
 
         l2.DrawLatexNDC(0.2,0.85, s.str().c_str());
 
