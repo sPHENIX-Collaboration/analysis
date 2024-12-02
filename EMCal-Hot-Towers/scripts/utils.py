@@ -11,6 +11,7 @@ subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All_CaloHotTower.')
 gen = subparser.add_parser('gen', help='Generate run lists.')
+status = subparser.add_parser('status', help='Get status of Condor.')
 
 f4a.add_argument('-i', '--run-list-dir', type=str, help='Directory of run lists', required=True)
 f4a.add_argument('-i2', '--hot-tower-list', type=str, help='Hot Tower List', required=True)
@@ -104,6 +105,37 @@ def create_f4a_jobs():
 
     print(f'while read run; do cd {output_dir}/$run && condor_submit genFun4All.sub; done <{output_dir}/runs.list;')
 
+def get_condor_status():
+    hosts = [f'sphnx{x:02}' for x in range(1,9)]
+    hosts.append('sphnxdev01')
+
+    dt_all = []
+    dt_user = []
+
+    for host in hosts:
+        print(f'Progress: {host}')
+
+        a = subprocess.run(['bash','-c',f'ssh {host} "condor_q | tail -n 3 | head -n 2"'], capture_output=True, encoding="utf-8")
+        total   = int(a.stdout.split('\n')[-3].split('jobs')[0].split(':')[1])
+        idle    = int(a.stdout.split('\n')[-3].split('idle')[0].split(',')[-1])
+        running = int(a.stdout.split('\n')[-3].split('running')[0].split(',')[-1])
+        held    = int(a.stdout.split('\n')[-3].split('held')[0].split(',')[-1])
+
+        dt_user.append({'host': host, 'total': total, 'idle': idle, 'running': running, 'held': held})
+
+        total   = int(a.stdout.split('\n')[-2].split('jobs')[0].split(':')[1])
+        idle    = int(a.stdout.split('\n')[-2].split('idle')[0].split(',')[-1])
+        running = int(a.stdout.split('\n')[-2].split('running')[0].split(',')[-1])
+        held    = int(a.stdout.split('\n')[-2].split('held')[0].split(',')[-1])
+
+        dt_all.append({'host': host, 'total': total, 'idle': idle, 'running': running, 'held': held})
+
+    print('All')
+    print(pd.DataFrame(dt_all).to_string(index=False))
+
+    print('User')
+    print(pd.DataFrame(dt_user).to_string(index=False))
+
 def create_run_lists():
     ana_tag   = args.ana_tag
     threshold = args.events
@@ -138,3 +170,5 @@ if __name__ == '__main__':
         create_f4a_jobs()
     if(args.command == 'gen'):
         create_run_lists()
+    if(args.command == 'status'):
+        get_condor_status()
