@@ -5,8 +5,8 @@
 //			Author: Skadi Grossberndt						//
 //			Depends on: Calorimeter Tower ENC 					//
 //			First Commit date: 18 Oct 2024						//
-//			Most recent Commit: 30 Nov 2024						//
-//			version: v2.5 restucture to ttree, diagnose issues			//
+//			Most recent Commit: 2 Dec 2024						//
+//			version: v2.5 fix issue with method histograms, add bin width 		//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,25 +22,26 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	gInterpreter->GenerateDictionary("map< string, array< map< std::pair< float, float >, float >, 3 > >", "map;string;utility");*/
 	
 	MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
-	fc=new MethodHistograms("Full_CAL", 3.9); 
-	fe=new MethodHistograms("Full_EMCAL", 3.9);
-	fi=new MethodHistograms("Full_IHCAL", 3.9);
-	fo=new MethodHistograms("Full_OHCAL", 3.9); //Full OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+	//set bin widths to tower size
+	fc=new MethodHistograms("Full_CAL", 3.9, 0.1); 
+	fe=new MethodHistograms("Full_EMCAL", 3.9, 0.025);
+	fi=new MethodHistograms("Full_IHCAL", 3.9, 0.1);
+	fo=new MethodHistograms("Full_OHCAL", 3.9, 0.1); //Full OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
 	
-	tc=new MethodHistograms("Towards_Region_CAL", 3.9);
-	te=new MethodHistograms("Towards_Region_EMCAL", 3.9);
-	ti=new MethodHistograms("Towards_Region_IHCAL", 3.9);
-	to=new MethodHistograms("Towards_Region_OHCAL", 3.9); //Towards_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+	tc=new MethodHistograms("Towards_Region_CAL", 3.9, 0.1);
+	te=new MethodHistograms("Towards_Region_EMCAL", 3.9, 0.025);
+	ti=new MethodHistograms("Towards_Region_IHCAL", 3.9, 0.1);
+	to=new MethodHistograms("Towards_Region_OHCAL", 3.9, 0.1); //Towards_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
 
-	ac=new MethodHistograms("Away_Region_CAL", 3.9);
-	ae=new MethodHistograms("Away_Region_EMCAL", 3.9);
-	ai=new MethodHistograms("Away_Region_IHCAL", 3.9);
-	ao=new MethodHistograms("Away_Region_OHCAL", 3.9); //Away_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+	ac=new MethodHistograms("Away_Region_CAL", 3.9, 0.1);
+	ae=new MethodHistograms("Away_Region_EMCAL", 3.9, 0.025);
+	ai=new MethodHistograms("Away_Region_IHCAL", 3.9, 0.1);
+	ao=new MethodHistograms("Away_Region_OHCAL", 3.9, 0.1); //Away_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
 	
-	trc=new MethodHistograms("Transverse_Region_CAL", 3.9);
-	tre=new MethodHistograms("Transverse_Region_EMCAL", 3.9);
-	tri=new MethodHistograms("Transverse_Region_IHCAL", 3.9);
-	tro=new MethodHistograms("Transverse_Region_OHCAL", 3.9); //Transverse_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+	trc=new MethodHistograms("Transverse_Region_CAL", 3.9, 0.1);
+	tre=new MethodHistograms("Transverse_Region_EMCAL", 3.9, 0.025);
+	tri=new MethodHistograms("Transverse_Region_IHCAL", 3.9, 0.1);
+	tro=new MethodHistograms("Transverse_Region_OHCAL", 3.9, 0.1); //Transverse_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
 
 	std::vector<MethodHistograms*> hf {fc, fe, fi, fo}, ht {tc, te, ti, to}, ha{ac, ae, ai, ao}, htr{trc, tre, tri, tro};
 	this->FullCal=hf;
@@ -134,7 +135,6 @@ JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::ar
 	if(input=="towers" || input.find("ower") != std::string::npos){
 //		TowerJetInput* ti=new TowerJetInput(Jet::HCALOUT_TOWER); //use the outer hcal to get the jets as that is the area I need anyway 
 //		auto psjets=ti->get_input(topNode);
-		//so right now the object is not being found so unfortunately I guess I just have to load in the tower objects??????
 		std::vector<std::array<float, 4>> psjets;	
 		auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
 		auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
@@ -266,7 +266,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
 		if(! emcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=emcal_tower_energy->get_tower_at_channel(n)->get_energy();
-		if(energy > 0.01)//put zero supression into effect
+		if(energy > 0.03)//put zero supression into effect
 			addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC   );
 		emcal_energy+=energy;
 	}
@@ -428,7 +428,7 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 	}
 	float total_e=0.;
 	//////std::cout<<__LINE__<<std::endl;
-	//SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, 1, &total_e);
+	SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, 1, &total_e);
 	//the emcal has become a bit of a problem, I think I need to be more careful about it, potentially retower always?
 	//std::cout<<__LINE__<<std::endl;
 	SingleCaloENC(ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL, &total_e);
@@ -476,17 +476,25 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		int region_index=0;
 		for(auto x:phi_edges){ //grab the correct region
 			if(x.first==0) continue;
+			if(j[1] < 0 ) j[1]=2*PI+j[1];
+			if(j[1] > 2*PI) j[1]=j[1]-2*PI;
 			if( j[1] < x.second.first || j[1] > x.second.second)continue;
 			else{
 				region_index=x.first;
 				if(region_index >= 3) region_index=3;
 				ha=Region_vector.at(region_index).at(0); 
 				hc=Region_vector.at(region_index).at(which_calo);
+//				if(region_index == 1 && which_calo == 3) std::cout<<"The identified region has a histogram named " <<ha->R->GetTitle() <<std::endl;
+				break;
 			}
 		}
-		if(!ha || !hc) continue;
+		if(!ha || !hc){
+//			 std::cout<<"\n which failed??? have filled pt in towards??????\n Region index is " <<region_index <<std::endl;
+			 continue;
+		}
 		else{
 	//////std::cout<<__LINE__<<std::endl;
+//			if( which_calo == 3) std::cout<<"\n should have filled pt in towards?????? \n Region histogram gives " << hc->pt->GetName() <<std::endl;
 			cal[j]=j_val;
 	////std::cout<<__LINE__<<std::endl;
 			e_region[region_index]+=j_val;
@@ -499,7 +507,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	////std::cout<<__LINE__<<std::endl;
 			if(pT > MinpTComp) p_T_save[j]=pT;
 	////std::cout<<__LINE__<<std::endl;
-		hc->pt->Fill(pT);
+			hc->pt->Fill(pT);
 			full_hc->pt->Fill(pT);
 	////std::cout<<__LINE__<<std::endl;
 			bool printout=false;
@@ -540,7 +548,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	////////std::cout<<__LINE__<<std::endl;
 	(*total_e_region)+=e_region[0];
 	//////std::cout<<__LINE__<<std::endl;
-	std::cout<<"Runing over " <<cal.size() <<" correlators options" <<std::endl;
+//	std::cout<<"Runing over " <<cal.size() <<" correlators options" <<std::endl;
 	for(auto i=cal.begin(); i != cal.end(); ++i){
 		std::array<float, 3> tower {i->first[0], i->first[1], i->second}; 
 		if(which_calo == LargeRLENC::Calorimeter::EMCAL)m_emcal.push_back(tower);
@@ -574,12 +582,15 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 				if(regions_val >=3) regions_val = 3;
 				if(regions_val==0) continue;
 				if( l.first[1] < x.second.first || l.first[1] > x.second.second)continue;
-				else
+				else{
 					
 					region_index[index]=regions_val;
+				//	if(n_evts <= 7 ) std::cout<<"The selected region is " <<regions_val<<std::endl;
+					break;
+				}
 				}
 		}
-		std::cout<<"Need to run " <<calculating_threads.size() <<" computational threads" <<std::endl;
+//		std::cout<<"Need to run " <<calculating_threads.size() <<" computational threads" <<std::endl;
 		for(int t=0; t<(int) calculating_threads.size(); t++) calculating_threads[t].join();
 		index=0;
 		for(auto v:point_correlator){
@@ -727,11 +738,27 @@ void LargeRLENC::CalculateENC(std::pair<std::array<float, 3>, float> point_1, st
 	}
 	return;
 }
-void LargeRLENC::JetEventObservablesBuilding(std::map<std::array<float, 3>, float> calorimeter_input, std::map<std::array<float,3>, std::map<float, float>>> Etir_output )
+void LargeRLENC::JetEventObservablesBuilding(std::array<float, 3> central_tower, std::map<std::array<float, 3>, float> calorimeter_input, std::map<float, float>* Etir_output )
 {
 	//This is the Jet Event observable. Ideally I would seperate this out 
 	//Input is of the form <tower r, tower eta, tower phi>, tower E (vertex corrected)
 	//Output is <tower r, tower eta, tower phi>, <R=0.1-1.0, ETir> 
+
+	for(int r=0; r<10; r++)
+	{
+		float Rmax=(r+1)/10.;
+		(*Etir_output)[Rmax]=0.;
+	}
+	(*Etir_output)[-1.0]=0; //full calorimeter holding 
+	for(auto tower_energy:calorimeter_input){
+		if(tower_energy.first==central_tower) continue; //don't double count
+		float RVal=getR(tower_energy.first[1], tower_energy.first[2], central_tower[1], central_tower[2]);
+		for(auto et=Etir_output->begin(); et != Etir_output->end(); ++et)
+		{
+			if(et->first > RVal)et->second+=tower_energy.second/((float) cosh(tower_energy.first[1]));
+		}
+	}
+	return; 
 }
 float LargeRLENC::getR(float eta1, float phi1, float eta2, float phi2, bool print)
 {

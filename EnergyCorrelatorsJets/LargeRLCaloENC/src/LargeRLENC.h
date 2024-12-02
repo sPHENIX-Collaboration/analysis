@@ -103,7 +103,15 @@ struct DijetQATypePlots{
 class EventSelectionCut{
 	//maybe this gets some histos added for easier QA-ing of cut safety
 	public:
-		EventSelectionCut(float lpt=12., float slpt=7., float det=0.7, float dph=2.75,float maxpct=0.9, bool dj=true, bool ne=false, std::string radius="r04" ): leadingpt(lpt), subleadingpt(slpt), etaedge(det), deltaphi(dph), maxOHCAL(maxpct),isdijet(dj), negativeEnergy(ne){
+		EventSelectionCut(float lpt=12., float slpt=7., float det=0.7, float dph=2.94,float maxpct=0.9, bool dj=true, bool ne=false, std::string radius="r04" ): 
+				leadingpt(lpt), 
+				subleadingpt(slpt), 
+				etaedge(det), //keep full jet in calo
+				deltaphi(dph), //two hcal towers
+				maxOHCAL(maxpct),
+				isdijet(dj), 
+				negativeEnergy(ne)
+		{
 			JetCuts=new TTree(Form("cuts_%s", radius.c_str()) , Form("Jet Cut Kinematics for QA on the Jet Event for jet with radius %s", radius.c_str()));
 			JetCuts->Branch("N_Jets", &m_nJets, "Number of Jets in Container/I");
 			JetCuts->Branch("z_vtx", &m_zvtx, "z vertex position/F");
@@ -122,7 +130,7 @@ class EventSelectionCut{
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
-			if(hcalratio < 0 ) return false;
+			if(hcalratio < 0 ) good=false;
 			if(hcalratio >0.95 /* maxOHCAL*/) good=false;
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			m_zvtx=vertex[2];
@@ -153,7 +161,7 @@ class EventSelectionCut{
 			if(abs(leadeta) > etaedge ) good=false; //getting rid of events that have the leading jet outside of acceptance region
 			for(auto j: *eventjets){
 				float phi=j->get_phi();
-				if(abs(phi-leadphi) > deltaphi && abs(phi-leadphi) <= PI){
+				if(abs(phi-leadphi) > deltaphi && abs(phi-leadphi) <= PI+0.2){
 				       	subleadjet=j;
 					subleadjetpt=j->get_pt();
 					haspartner=true;
@@ -176,7 +184,7 @@ class EventSelectionCut{
 			m_lpt=leadjetpt;
 			m_slpt=subleadjetpt;
 			JetCuts->Fill();
-			return true;
+			return passesCut;
 		}
 		float getLeadPhi(){ return leadphi;}
 		float getLeadEta(){ return leadeta;}
@@ -311,6 +319,7 @@ class LargeRLENC : public SubsysReco
 	
 	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::pair<float, float>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool);
 
+	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
 
 

@@ -5,9 +5,12 @@
 #include <string>
 #include <vector>
 struct MethodHistograms{
-	MethodHistograms(std::string vers, float max=0.85): typelabel(vers), maxR(max){};
+	MethodHistograms(std::string vers, float max=0.85, float bin=0.): typelabel(vers), maxR(max), binwidth(bin){
+		if(binwidth > 0 ) nbins=maxR/binwidth;
+	}
 	std::string typelabel="NONE";
 	float maxR=0.85;
+	float binwidth=0.;
 	int nbins=(maxR)/0.85*60; //set 60 bins for the 0.4 jet
 	TH1F* E2C=new TH1F(Form("e2c_%s", typelabel.c_str()), Form("2 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{2} }{d R_{L}}", typelabel.c_str()),nbins, -0.05, maxR); 
 	TH1F* E3C=new TH1F(Form("e3c_%s", typelabel.c_str()), Form("3 point energy correlator measured from %s; R_{L}; #frac{ d #varepsilon_{3} }{d R_{L}}", typelabel.c_str()), nbins, -0.05, maxR); 
