@@ -266,7 +266,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
 		if(! emcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=emcal_tower_energy->get_tower_at_channel(n)->get_energy();
-		if(energy > 0.03)//put zero supression into effect
+		if(energy > 0.1)//put zero supression into effect
 			addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC   );
 		emcal_energy+=energy;
 	}
