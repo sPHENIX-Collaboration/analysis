@@ -12,6 +12,7 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/SubsysReco.h>
+#include <ffamodules/CDBInterface.h>
 #include <Calo_Calib.C>
 #include <largerlenc/LargeRLENC.h>
 #include <jetbase/FastJetAlgo.h>
@@ -29,7 +30,7 @@ R__LOAD_LIBRARY(libLargeRLENC.so)
 R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 
-int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0")
+int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0", const std::string& dbtag="ProdA_2024")
 {
 	std::cout<<"actually processing this thing" <<std::endl;
 	std::map<std::string, std::string> input_files {{data_dst, "data"}, {truthjetfile, "truthjet"}, {calotowersfile, "calotowers"}, {truthrecofile, "truthreco"}, {globalrecofile, "globalreco"}};
@@ -77,12 +78,13 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 		}
 		catch(std::exception& e){std::cout<<"Unable to load file " <<f.first <<std::endl;}
 	}
-/*	recoConsts *rc = recoConsts::instance();
+	recoConsts *rc = recoConsts::instance();
 	rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
 	rc->set_uint64Flag("TIMESTAMP", run_number);
-	CDBInterface::instance() -> Verbosity(1);*/
+	CDBInterface::instance() -> Verbosity(1);
+	Process_Calo_Calib();
 	bool nojets=true, retower_needed=true;
-/*	if(data){ //check if the jet objects have already been constructed and retowering needed
+	if(data){ //check if the jet objects have already been constructed and retowering needed
 		TFile* f1=new TFile(data_dst.c_str(), "READ");
 		if(f1->IsOpen())
 		{
@@ -115,9 +117,9 @@ int RunLargeRLENC(std::string data_dst="none", std::string truthjetfile="none", 
 		data_jets->Verbosity(0);
 		se->registerSubsystem(data_jets);
 		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
-		}*/
+		}
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
-	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
+//	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
 	//std::fstream* ofs=new std::fstream(text_out_filename);
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
 	se->registerSubsystem(rlenc);
