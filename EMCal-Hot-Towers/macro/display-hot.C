@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 
 // -- root includes --
 #include <TH2F.h>
@@ -34,7 +35,7 @@ using std::pair;
 R__LOAD_LIBRARY(libcalo_io.so)
 
 namespace myAnalysis {
-    void plots(const string& i_input, const string &hotMap, const string &output);
+    void plots(const string& i_input, const string &hotMap, const string &outputDir);
     Int_t readHotTowerIndexFile(const string &hotList);
 
     vector<pair<UInt_t,UInt_t>> hotTowerIndex;
@@ -81,7 +82,7 @@ Int_t myAnalysis::readHotTowerIndexFile(const string &hotList) {
   return 0;
 }
 
-void myAnalysis::plots(const string& i_input, const string &hotMap, const string &output) {
+void myAnalysis::plots(const string& i_input, const string &hotMap, const string &outputDir) {
     TFile input(i_input.c_str());
     TFile inputHot(hotMap.c_str());
 
@@ -92,6 +93,9 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
     c1->SetCanvasSize(1500, 1000);
     c1->SetLeftMargin(.13);
     c1->SetRightMargin(.05);
+
+    string outputEnergyDir = outputDir + "/energy/";
+    string output = outputEnergyDir + "energy.pdf";
 
     c1->Print((output + "[").c_str(), "pdf portrait");
 
@@ -169,8 +173,8 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
         leg->AddEntry(hRef,lRef.c_str(),"f");
         leg->Draw("same");
 
-        c1->Print((string(hHot->GetName()) + ".png").c_str());
-        c1->Print((output).c_str(), "pdf portrait");
+        c1->Print((outputEnergyDir + string(hHot->GetName()) + ".png").c_str());
+        c1->Print(output.c_str(), "pdf portrait");
 
         gPad->SetLogy(0);
         hHot->Rebin(10);
@@ -189,7 +193,7 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
         Float_t high = max(hHot->GetMaximum(), h->GetMaximum());
         hHot->GetYaxis()->SetRangeUser(0, high);
 
-        TLine* line = new TLine(0, 1, 1e4, 1);
+        TLine* line = new TLine(0, 1, 1.6e4, 1);
         line->SetLineColor(kBlack);
         line->SetLineStyle(9);
         // line->SetLineWidth(1);
@@ -202,8 +206,8 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
         leg->SetTextSize(0.03);
         leg->Draw("same");
 
-        c1->Print((string(hHot->GetName()) + "-ratio.png").c_str());
-        c1->Print((output).c_str(), "pdf portrait");
+        c1->Print((outputEnergyDir + string(hHot->GetName()) + "-ratio.png").c_str());
+        c1->Print(output.c_str(), "pdf portrait");
 
         ++i;
     }
@@ -214,13 +218,13 @@ void myAnalysis::plots(const string& i_input, const string &hotMap, const string
     input.Close();
 }
 
-void display_hot(const string &input, const string &hotList, const string &hotMap, const string &output="plots.pdf") {
+void display_hot(const string &input, const string &hotList, const string &hotMap, const string &outputDir=".") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
     cout << "hotList: "  << hotList << endl;
     cout << "hotMap: "  << hotMap << endl;
-    cout << "output: " << output << endl;
+    cout << "outputDir: " << outputDir << endl;
     cout << "#############################" << endl;
 
     // set sPHENIX plotting style
@@ -229,26 +233,28 @@ void display_hot(const string &input, const string &hotList, const string &hotMa
     Int_t ret = myAnalysis::readHotTowerIndexFile(hotList);
     if(ret) return;
 
-    myAnalysis::plots(input, hotMap, output);
+    std::filesystem::create_directories(outputDir + "/energy");
+
+    myAnalysis::plots(input, hotMap, outputDir);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 4 || argc > 5){
-        cout << "usage: ./plots-hot input hotList hotMap [output]" << endl;
+        cout << "usage: ./plots-hot input hotList hotMap [outputDir]" << endl;
         cout << "input: input root file" << endl;
         cout << "hotList: list of hot and reference towers" << endl;
-        cout << "output: output pdf file" << endl;
+        cout << "outputDir: output directory" << endl;
         return 1;
     }
 
-    string output  = "plots.pdf";
+    string outputDir  = ".";
 
     if(argc >= 5) {
-        output = argv[4];
+        outputDir = argv[4];
     }
 
-    display_hot(argv[1], argv[2], argv[3], output);
+    display_hot(argv[1], argv[2], argv[3], outputDir);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
