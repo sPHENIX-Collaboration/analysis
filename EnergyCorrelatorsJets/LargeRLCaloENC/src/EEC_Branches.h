@@ -47,16 +47,17 @@ class CaloAndRegion{
 
 class EnergyEnergyCorrelator{
 	public:
-/*		enum CorrelatorOrder{
+		enum CorrelatorOrder{
 			E2C,
 			E3C,
 			E3C_3D
-		};*/
+		};
 		EnergyEnergyCorrelator(int which_corr){
 				this->corr_order=which_corr;
 			};
 		~EnergyEnergyCorrelator(){}
 		int corr_order;	
-		float r_L, val, r_0, r_2;
+		std::vector<float> r_L, r_med, r_s, val;
 		std::vector<CaloAndRegion*> cr;
-		void AssignVals(
+		void AssignVals(){
+			
