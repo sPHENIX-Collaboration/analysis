@@ -61,7 +61,7 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	this->jetMinpT=jet_min_pT;
 	this->algo="Tower";
 	this->radius="r04";
-	this->eventCut=new EventSelectionCut();
+	this->eventCut=new DijetEventCuts();
 	this->which_variable=vari;
 	this->output_file_name="Large_RL_ENC_def_"+algo+"_dijets_anti_kT_"+radius+"-"+std::to_string(nRun)+"-"+std::to_string(nSegment)+".root";
 	DijetQA=new TTree("DijetQA", "Dijet Event QA");
@@ -261,6 +261,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	catch(std::exception& e){std::cout<<"Could not find the vertex. \n Setting to origin" <<std::endl;}
 	//std::cout<<__LINE__<<std::endl;
 	//////////std::cout<<__LINE__<<std::endl;
+	int emcal_oc=0; //allow for occupancy to be calculated seperate from the other bits
 	float emcal_energy=0., ihcal_energy=0., ohcal_energy=0., total_energy=0., ohcal_rat=0.;
 	std::map<std::array<float, 3>, float> ihcal_towers, emcal_towers, ohcal_towers; //these are just to collect the non-zero towers to decrease the processing time 
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
@@ -268,6 +269,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		float energy=emcal_tower_energy->get_tower_at_channel(n)->get_energy();
 		if(energy > 0.1)//put zero supression into effect
 			addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC   );
+		if(energy > 0.01) emcal_oc++;
 		emcal_energy+=energy;
 	}
 	//std::cout<<__LINE__<<std::endl;
@@ -294,7 +296,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	//////////std::cout<<__LINE__<<std::endl;
 	total_energy=emcal_energy+ihcal_energy+ohcal_energy;
 	ohcal_rat=ohcal_energy/(float)total_energy; //take the ratio at the whole calo as that is the region of interest
-	float emcal_occupancy=emcal_towers.size()/((float)emcal_tower_energy->size())*100.;
+	float emcal_occupancy=emcal_oc/((float)emcal_tower_energy->size())*100.;
 	float ihcal_occupancy=ihcal_towers.size()/((float)ihcal_tower_energy->size())*100.;
 	float ohcal_occupancy=ohcal_towers.size()/((float)ohcal_tower_energy->size())*100.;
 	emcal_occup->Fill(emcal_occupancy); //filling in the occupancy plots for easy QA while going 
@@ -312,9 +314,9 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	//////////std::cout<<__LINE__<<std::endl;
 	if(!isDijet){ //stores some data about the bad cuts to look for any arrising structure
 	//////////std::cout<<__LINE__<<std::endl;
+		ohcal_rat_occup->Fill(ohcal_rat, ohcal_occupancy);
 		if(ohcal_rat > 0.9){
 	//////////std::cout<<__LINE__<<std::endl;
-		       ohcal_rat_occup->Fill(ohcal_rat, ohcal_occupancy);
 		       for(auto p:ohcal_towers)ohcal_bad_hits->Fill(p.first[0], p.first[1], p.second);
 		}
 		bad_occ_em_oh->Fill(emcal_occupancy, ohcal_occupancy);
@@ -722,20 +724,26 @@ void LargeRLENC::CalculateENC(std::pair<std::array<float, 3>, float> point_1, st
 	threept_full->first=R_L;
 	for(auto i:cal)
 	{
-		float R_13=getR(point_1.first[0], point_1.first[1], i.first[0], i.first[1]);
+/*		float R_13=getR(point_1.first[0], point_1.first[1], i.first[0], i.first[1]);
 		float R_23=getR(point_2.first[0], point_2.first[1], i.first[0], i.first[1]);
 		float maxRL=std::max(R_L, R_13); //so I need to change the output sturcutre because I'm not sure if I am matching correctly
 		maxRL=std::max(maxRL, R_23);
-		//else{ //unclear what this else what suppose to be for??
+		if(maxRL > R_L) continue;
+		else{ 
 			float e3c=e2c*i.second;
 			if(!energy) e3c=e3c*ptoE;
 			if(transverse) e3c=e3c/(cosh(i.first[0]));
-			if(maxRL==R_L)enc_out->second.second+=e3c;
+			enc_out->second.second+=e3c;
 			std::pair<float, float> rs {R_13, R_23};
 			std::pair<std::pair<float, float>, float> ec {rs, e3c};
 			threept_full->second.push_back(ec);
-		//}
-	}
+		}
+		*/
+		if(i.second != 0 ) enc_out->second.second+=e2c*i.second;
+		std::pair<float, float> rs {0,0};
+		std::pair<std::pair<float, float>, float> ec{rs, 0};
+		threept_full->second.push_back(ec);
+	} //currently just fill 0 and worry about it later...need to deal with speed/memory concerns
 	return;
 }
 void LargeRLENC::JetEventObservablesBuilding(std::array<float, 3> central_tower, std::map<std::array<float, 3>, float> calorimeter_input, std::map<float, float>* Etir_output )
