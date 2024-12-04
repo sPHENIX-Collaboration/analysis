@@ -89,8 +89,8 @@ namespace myAnalysis {
     UInt_t m_bins_status = 2;
     UInt_t m_nStatus     = 5;
 
-    UInt_t m_bins_sigma  = 500;
-    Float_t m_sigma_low  = 0;
+    UInt_t m_bins_sigma  = 1000;
+    Float_t m_sigma_low  = -50;
     Float_t m_sigma_high = 50;
 
     UInt_t m_bins_acceptance = 101;
