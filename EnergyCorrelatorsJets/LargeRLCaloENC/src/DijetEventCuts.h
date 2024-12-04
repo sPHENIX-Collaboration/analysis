@@ -41,12 +41,14 @@ class DijetEventCuts{
 			JetCuts->Branch("Subleading_eta", &m_etasl, "#eta subleading jet center/F");
 			JetCuts->Branch("delta_phi", &m_deltaphi, "m_deltaphi/F");
 			JetCuts->Branch("ohcal_ratio", &m_ohcalrat, "m_ohcalrat/F");
+			JetCuts->Branch("lead_ohcal_ratio", &m_leadER, "m_leadER/F");
+			JetCuts->Branch("subleading_ohcal_ratio", &m_leadER, "m_leadER/F");
 			JetCuts->Branch("isDijet", &m_isdijet, "m_isDijet/O");
 			JetCuts->Branch("negE", &m_hasnege, "m_hasnege/O");
 			JetCuts->Branch("passes", &passesCut, "passesCut/O");
 		};
 		TTree* JetCuts; //This is a QA testing ttree to allow for immediate QA
-		bool passesTheCut(JetContainer* eventjets, float hcalratio, std::array<float,3> vertex){
+		bool passesTheCut(JetContainer* eventjets, std::vector<float> ohcal_ratio_jets, float hcalratio, std::array<float,3> vertex){
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
@@ -55,8 +57,10 @@ class DijetEventCuts{
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			m_zvtx=vertex[2];
 			float leadjetpt=0., subleadjetpt=0.;
+			float leadingenergyratio=0., subleadingenergyratio=0.;
 			bool haspartner=false;
 		       	Jet* leadjet=NULL, *subleadjet=NULL;
+			int index=0; //associate the jet with its energy ratios
 		       	for(auto j: *eventjets){
 				float pt=j->get_pt();
 				if(pt > leadjetpt){
@@ -64,6 +68,7 @@ class DijetEventCuts{
 					leadjet=j;
 				       	subleadjetpt=leadjetpt;
 				       	leadjetpt=pt;
+					leadenergyratio=ohcal_ratio_jets.at(index);
 				       }
 				if(!negativeEnergy){
 					if(j->get_e() < 0){
@@ -71,30 +76,39 @@ class DijetEventCuts{
 				       		good=false;
 					}
 					}
+				index++;
 				}
 			if(leadjetpt < leadingpt) good=false;
 			if(!leadjet) good=false; 
 			else{
 			leadeta=leadjet->get_eta();
 			m_etal=leadeta;
+			m_leadER=leadenergy_ratio;
 		       	leadphi=leadjet->get_phi();
 			if(abs(leadeta) > etaedge ) good=false; //getting rid of events that have the leading jet outside of acceptance region
+			if( m_leadER > maxOHCAL ) good=false; 
 			for(auto j: *eventjets){
 				float phi=j->get_phi();
+				int index=0;
 				if(abs(phi-leadphi) > deltaphi && abs(phi-leadphi) <= PI+0.2){
 				       	subleadjet=j;
 					subleadjetpt=j->get_pt();
 					haspartner=true;
-
+					subleadenergyratio=ohcal_ratio_jets.at(index);
+					
 				break;}
+				index++;
 			}
 			if(subleadjet){ 
 				float sldeta=subleadjet->get_eta();
 				if(abs(sldeta) > etaedge) good=false;
 				m_etasl=sldeta;
 				m_deltaphi=subleadjet->get_phi()-leadjet->get_phi();
+				m_subleadingER=subleadenergyratio;
+				if(m_subleadingER > maxOHCAL) good=false
 
 			}
+			
 			else good=false;
 			}
 			//if(subleadjetpt < subleadingpt || !haspartner) good=false;
@@ -138,13 +152,13 @@ class DijetEventCuts{
 		}			
 	private:
 
-		float leadingpt;
-		float subleadingpt; 
-		float etaedge;
-		float deltaphi;
-		float maxOHCAL;
-		bool isdijet;
-		bool negativeEnergy;
+		float leadingpt=0.;
+		float subleadingpt=0.; 
+		float etaedge=0.;
+		float deltaphi=0.;
+		float maxOHCAL=0.;
+		bool isdijet=false;
+		bool negativeEnergy=false;
 		bool passesCut=false;
 		int m_nJets=0;
 		float m_zvtx=0.;
@@ -156,6 +170,8 @@ class DijetEventCuts{
 		float m_ohcalrat=0.;
 		float leadphi=0.;
 		float leadeta=0.;
+		float m_subleadingER=0.;
+		float m_leadER=0.
 		bool m_isdijet=false;
 		bool m_hasnege=false;
 };

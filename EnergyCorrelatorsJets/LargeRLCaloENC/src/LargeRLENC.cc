@@ -183,6 +183,90 @@ JetContainer* LargeRLENC::getJets(std::string input, std::string radius, std::ar
 	}
 	return fastjetCont;
 }	
+float LargeRLENC::MatchtoTowers(Jet* jet, PHCompositeNode* topNode)
+{
+	//For the case where we don't already have the source pieces
+		
+}
+std::vector<float> LargeRLENC::getJetEnergyRatios(JetContainer* jets, PHCompositeNode* topNode)
+{
+	//get the energy ballence in each calorimeter for each jet
+	std::vector<float> ohcal_ratio;
+	auto emcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC"   );
+	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+
+	for(auto j: *jets)
+	{
+		bool has_towers=false;
+		float ohcal_energy=0., allcal_energy=0.; 
+		for(auto& iter:j->get_comp_vec()){
+			Jet::SRC source=iter.first; //get source of object
+			if(source < Jet::SRC::CEMC_TOWER ||  source==Jet::SRC::HEPMC_IMPORT || source > Jet::SRC::HCALOUT_TOWERINFOR_SIM)continue;
+			else{
+				if(source== Jet::SRC::HCALOUT_TOWER || source == Jet::SRC::HCALOUT_CLUSTER || source == Jet::SRC::HCALOUT_TOWER_SUB1 ){
+					int tower_id=iter.second;
+					float e=ohcal_tower_energy->gettower_at_channel(tower_id)->get_energy();
+					ohcal_energy+= e//functionally the same as below, I just want to make things readable
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::HCALOUT_TOWERINFO || source == Jet::SRC::HCALOUT_TOWER_SUB1CS ){
+					int tower_id=iter.second;
+					float e=ohcal_tower_energy->gettower_at_channel(tower_id)->get_energy();
+					ohcal_energy+= e//functionally the same as below, I just want to make things readable
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::HCALOUT_TOWERINFO_SIM || source == Jet::SRC::HCALOUT_TOWERINFO_SUB1 || source==Jet::SRC::HCALOUT_TOWERINFO_EMBED ){
+					int tower_id=iter.second;
+					float e=ohcal_tower_energy->gettower_at_channel(tower_id)->get_energy();
+					ohcal_energy+= e//functionally the same as below, I just want to make things readable
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::HCALIN_TOWER || source == Jet::SRC::HCALIN_CLUSTER || source == Jet::SRC::HCALIN_TOWER_SUB1 ){
+					int tower_id=iter.second;
+					float e=ihcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::HCALIN_TOWERINFO || source == Jet::SRC::HCALIN_TOWER_SUB1CS ){
+					int tower_id=iter.second;
+					float e=ihcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::HCALIN_TOWERINFO_SIM || source == Jet::SRC::HCALIN_TOWERINFO_SUB1 || source==Jet::SRC::HCALIN_TOWERINFO_EMBED ){
+					int tower_id=iter.second;
+					float e=ihcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					allcal_energy+= e
+				}
+				
+				else if(source== Jet::SRC::CEMC_TOWER || source == Jet::SRC::CEMC_CLUSTER || source == Jet::SRC::CEMC_TOWER_SUB1 ){
+					int tower_id=iter.second;
+					float e=emcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					ohcal_energy+= e//functionally the same as below, I just want to make things readable
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::CEMC_TOWERINFO || source == Jet::SRC::CEMC_TOWER_SUB1CS ){
+					int tower_id=iter.second;
+					float e=emcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					allcal_energy+= e
+				}
+				else if(source== Jet::SRC::CEMC_TOWERINFO_SIM || source == Jet::SRC::CEMC_TOWERINFO_SUB1 || source==Jet::SRC::CEMC_TOWERINFO_EMBED ){
+					int tower_id=iter.second;
+					float e=emcal_tower_energy->get_tower_at_channel(tower_id)->get_energy();
+					allcal_energy+= e
+				}
+			}
+		}
+		if(ohcal_energy == 0 || allcal_energy== 0 )
+		{
+			ohcal_ratio.push_back(MatchtoTowers(j)); //if there is no 
+		}
+		else{
+			ohcal_energy=ohcal_energy/allcal_energy;
+			ohcal_ratio.push_back(ohcal_energy);
+		}
+	}
+	return ohcal_ratio;
+}
 void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomContainer_Cylinderv1* geom, std::map<std::array<float, 3>, float>* towers, RawTowerDefs::CalorimeterId td)
 {
 	if(!geom) return;
@@ -310,7 +394,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		return Fun4AllReturnCodes::EVENT_OK;
 	}
 	if(ohcal_rat > 1 || ohcal_rat < 0 )std::cout<<"Strange values of hcal ratio ohcal energy " <<ohcal_energy << "\n ihcal energy : " <<ihcal_energy <<"\n emcal energy " <<emcal_energy <<std::endl;
-	isDijet=eventCut->passesTheCut(jets, ohcal_rat, vertex);	
+	std::vector<float> ohcal_jet_rat=getJetEnergyRatios(jets); //get the energy ballence in each individual jet
+	isDijet=eventCut->passesTheCut(jets, ohcal_jet_rat, ohcal_rat, vertex);	
 	//////////std::cout<<__LINE__<<std::endl;
 	if(!isDijet){ //stores some data about the bad cuts to look for any arrising structure
 	//////////std::cout<<__LINE__<<std::endl;
