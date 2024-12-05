@@ -150,8 +150,8 @@ void myAnalysis::plots(const string& i_input, const string &outputDir) {
 
     auto leg = new TLegend(0.5,.75,0.7,.9);
     leg->SetFillStyle(0);
-    leg->AddEntry(hSigma,("Flagged Hot #leq " + to_string(threshold) + " Runs").c_str(),"f");
-    leg->AddEntry(hSigmaFreqHot,("Flagged Hot > " + to_string(threshold) +" Runs").c_str(),"f");
+    leg->AddEntry(hSigma,("Flagged Hot < " + to_string(threshold) + " Runs").c_str(),"f");
+    leg->AddEntry(hSigmaFreqHot,("Flagged Hot #geq " + to_string(threshold) +" Runs").c_str(),"f");
     leg->AddEntry(sigma_threshold,"Sigma Threshold","l");
     leg->Draw("same");
 
