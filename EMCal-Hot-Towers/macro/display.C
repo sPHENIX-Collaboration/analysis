@@ -106,7 +106,6 @@ void myAnalysis::plots(const string& i_input, const string &outputDir) {
     threshold = 400;
     cout << "threshold: " << threshold << endl;
 
-
     // vector<string> hBadTowersTitle = {"Runs [with Bad Towers]", "Runs [with Dead Towers]","Runs [with Hot Towers]","Runs [with Cold Towers]","Runs [with BadChi2 Towers]"};
     vector<TH1F*> hBadTowersVec  = {hBadTowers, hBadTowersDead, hBadTowersHot, hBadTowersCold, hBadTowersHotChi2};
     vector<TH2F*> h2BadTowersVec = {h2BadTowers, h2BadTowersDead, h2BadTowersHot, h2BadTowersCold, h2BadTowersHotChi2};
@@ -171,7 +170,7 @@ void myAnalysis::plots(const string& i_input, const string &outputDir) {
         auto h = (TH1F*)input.Get(name.str().c_str());
         h->Rebin(5);
 
-        sigma_threshold = new TLine(5, 0, 5, h->GetMaximum()*1.05);
+        sigma_threshold = new TLine(5, 0, 5, h->GetMaximum()*1.2);
         sigma_threshold->SetLineColor(kRed);
         sigma_threshold->SetLineWidth(3);
         h->Draw();
@@ -190,15 +189,17 @@ void myAnalysis::plots(const string& i_input, const string &outputDir) {
             overFlow = h->Integral(h->FindBin(15),h->GetNbinsX()+1);
         }
 
+        h->GetYaxis()->SetRangeUser(0,h->GetMaximum()*1.2);
+
         name.str("");
         name << "Overflow: " << overFlow << " Runs";
 
-        latex.DrawLatexNDC(0.64,0.85, name.str().c_str());
+        latex.DrawLatexNDC(0.67,0.85, name.str().c_str());
 
         name.str("");
         name << "Underflow: " << h->Integral(0,h->FindBin(xlow)-1) << " Runs";
 
-        latex.DrawLatexNDC(0.64,0.8, name.str().c_str());
+        latex.DrawLatexNDC(0.67,0.8, name.str().c_str());
 
         sigma_threshold->Draw("same");
 
