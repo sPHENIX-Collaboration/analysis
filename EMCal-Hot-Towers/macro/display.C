@@ -545,9 +545,9 @@ void myAnalysis::plots(const string& i_input, const string &outputDir) {
     for(UInt_t i = 1; i <= ntowers; ++i) {
         UInt_t towerIndex = i-1;
         if(hBadTowers->GetBinContent(i) > 0)             ++ctr[0];
-        if(hBadTowers->GetBinContent(i) >= threshold)    ++ctr[1];
+        if(hBadTowers->GetBinContent(i) >= threshold*100./hRunStatus->GetBinContent(1))    ++ctr[1];
         if(hBadTowersHot->GetBinContent(i) > 0)          ++ctr[2];
-        if(hBadTowersHot->GetBinContent(i) >= threshold) ++ctr[3];
+        if(hBadTowersHot->GetBinContent(i) >= threshold*100./hRunStatus->GetBinContent(1)) ++ctr[3];
     }
 
     cout << "Bad Towers" << endl
