@@ -29,13 +29,14 @@
 #include <g4eval/SvtxHitEval.h>
 #include <g4eval/SvtxTruthEval.h>
 #include <g4main/PHG4Hit.h>
+#include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
 #include <phool/getClass.h>
 
 #include <g4detectors/PHG4CylinderGeomContainer.h>
-#include <intt/CylinderGeomIntt.h>
+#include "intt/CylinderGeomIntt.h"
 
 #include <calotrigger/MinimumBiasInfo.h>
 #include <centrality/CentralityInfo.h>
@@ -51,6 +52,7 @@
 #include <trackbase/TrkrDefs.h>
 #include <trackbase/TrkrHitSet.h>
 #include <trackbase/TrkrHitSetContainer.h>
+#include <trackbase/TrkrHitTruthAssoc.h>
 #include <trackbase_historic/ActsTransformations.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
@@ -278,13 +280,23 @@ class dNdEtaINTT : public SubsysReco
     std::vector<uint16_t> InttRawHit_amplitude_;
 
     // TrkrHit information
-    int NTrkrhits_;
+    int NTrkrhits_, NTrkrhits_Layer1_;
     std::vector<uint16_t> TrkrHitRow_;
     std::vector<uint16_t> TrkrHitColumn_;
     std::vector<uint16_t> TrkrHitADC_;
     std::vector<uint8_t> TrkrHitLadderZId_;
     std::vector<uint8_t> TrkrHitLadderPhiId_;
+    std::vector<int> TrkrHitTimeBucketId_;
     std::vector<uint8_t> TrkrHitLayer_;
+    std::vector<float> TrkrHitX_;
+    std::vector<float> TrkrHitY_;
+    std::vector<float> TrkrHitZ_;
+    std::vector<float> TrkrHit_truthHit_x0_; // PHG4Hits associated with TrkrHits
+    std::vector<float> TrkrHit_truthHit_y0_;
+    std::vector<float> TrkrHit_truthHit_z0_;
+    std::vector<float> TrkrHit_truthHit_x1_;
+    std::vector<float> TrkrHit_truthHit_y1_;
+    std::vector<float> TrkrHit_truthHit_z1_;
 
     // PHG4 information (from all PHG4Particles)
     int NPrimaryG4P_;
@@ -298,6 +310,13 @@ class dNdEtaINTT : public SubsysReco
     std::vector<bool> PrimaryG4P_isStable_;
     std::vector<double> PrimaryG4P_Charge_;
     std::vector<bool> PrimaryG4P_isChargeHadron_;
+    std::vector<float> PHG4Hit_x0_;
+    std::vector<float> PHG4Hit_y0_;
+    std::vector<float> PHG4Hit_z0_;
+    std::vector<float> PHG4Hit_x1_;
+    std::vector<float> PHG4Hit_y1_;
+    std::vector<float> PHG4Hit_z1_;
+    std::vector<float> PHG4Hit_edep_;
 
     // GL1 Packet trigger information
     uint64_t GL1Packet_BCO_ = 0;
@@ -328,6 +347,8 @@ class dNdEtaINTT : public SubsysReco
     ActsGeometry *_tgeometry = nullptr;
     PHG4CylinderGeomContainer *_intt_geom_container = nullptr;
     PHG4TruthInfoContainer *m_truth_info = nullptr;
+    PHG4HitContainer *g4hit = nullptr;
+    TrkrHitTruthAssoc *_hit_truth_map = nullptr;
     CentralityInfo *m_CentInfo = nullptr;
     MinimumBiasInfo *_minimumbiasinfo = nullptr;
     MbdOut *m_mbdout = nullptr;
