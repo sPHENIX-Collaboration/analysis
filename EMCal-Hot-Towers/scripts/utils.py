@@ -106,8 +106,11 @@ def create_f4a_jobs():
     print(f'while read run; do cd {output_dir}/$run && condor_submit genFun4All.sub; done <{output_dir}/runs.list;')
 
 def get_condor_status():
-    hosts = [f'sphnx{x:02}' for x in range(1,9)]
+    hosts = [f'sphnxsub{x:02}' for x in range(1,3)]
+    hosts += [f'sphnx{x:02}' for x in range(1,9)]
     hosts.append('sphnxdev01')
+
+    print(f'hosts: {hosts}')
 
     dt_all = []
     dt_user = []
