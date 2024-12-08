@@ -35,6 +35,7 @@ bin/Fun4All_CaloHotTower: macro/Fun4All_CaloHotTower.C
 clean:
 	rm bin/hotAna
 	rm bin/plots
+	rm bin/plots-hot
 	rm bin/genHotTowerList
 	rm bin/Fun4All_CaloHotTower
 
