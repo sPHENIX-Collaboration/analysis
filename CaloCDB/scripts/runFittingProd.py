@@ -47,18 +47,19 @@ def main():
     df = get_file_paths()
 
     print(df)
-    df.drop_duplicates(subset=['runnumber','dataset'], inplace=True)
-    print(df)
+    print(df.drop_duplicates(['runnumber','dataset']))
 
     os.makedirs('files/hists',exist_ok=True)
 
     if os.path.exists('completedruns.txt'):
         with open('completedruns.txt') as f:
             completed_runs_datasets = set(line.strip() for line in f)
+    else:
+        completed_runs_datasets = set()
 
     fdf = df[~df.apply(lambda row: f"{row['runnumber']},{row['dataset']}" in completed_runs_datasets, axis=1)]
 
-    for index in fdf.index:
+    for index in fdf.drop_duplicates(['runnumber','dataset']).index:
         dataset = fdf["dataset"][index]
         run = fdf["runnumber"][index]
         print(f'Processing: {run},{dataset}')

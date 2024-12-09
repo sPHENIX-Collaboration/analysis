@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include<Calo_Calib.C>
+#include"Calo_Calib.C"
 
 
 R__LOAD_LIBRARY(libfun4all.so)
@@ -118,7 +118,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     rc->set_uint64Flag("TIMESTAMP", runnumber);
   } else {
     rc->set_StringFlag("CDB_GLOBALTAG", "MDC2");
-    rc->set_uint64Flag("TIMESTAMP", 6);
+    rc->set_uint64Flag("TIMESTAMP", 22);
   }
     CDBInterface::instance()->Verbosity(1);
   
@@ -128,7 +128,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   GlobalVertexReco *gvertex = new GlobalVertexReco();
   se->registerSubsystem(gvertex);
 
-  if (!isSim) { Process_Calo_Calib(); }
+  Process_Calo_Calib();
 
   /*
   PHG4CentralityReco *cent = new PHG4CentralityReco();
