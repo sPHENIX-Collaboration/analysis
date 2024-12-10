@@ -10,9 +10,13 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcalo_reco -lcdbobjects -lffamodules -lphool
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloHotTower
 
-all: bin/hotAna bin/plots bin/genHotTowerList bin/Fun4All_CaloHotTower bin/plots-hot
+all: bin/hotAna bin/hotTypeAna bin/plots bin/genHotTowerList bin/Fun4All_CaloHotTower bin/plots-hot
 
 bin/hotAna: macro/HotTowerAnalysis.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
+
+bin/hotTypeAna: macro/HotTowerTypeAnalysis.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
 
@@ -34,6 +38,7 @@ bin/Fun4All_CaloHotTower: macro/Fun4All_CaloHotTower.C
 
 clean:
 	rm bin/hotAna
+	rm bin/hotTypeAna
 	rm bin/plots
 	rm bin/plots-hot
 	rm bin/genHotTowerList
