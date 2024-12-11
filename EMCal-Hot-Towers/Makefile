@@ -10,7 +10,7 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcalo_reco -lcdbobjects -lffamodules -lphool
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloHotTower
 
-all: bin/hotAna bin/hotTypeAna bin/plots bin/genHotTowerList bin/Fun4All_CaloHotTower bin/plots-hot
+all: bin/hotAna bin/hotTypeAna bin/plots bin/genHotTowerList bin/convertHotList bin/Fun4All_CaloHotTower bin/plots-hot
 
 bin/hotAna: macro/HotTowerAnalysis.C
 	mkdir -p bin
@@ -28,6 +28,10 @@ bin/genHotTowerList: macro/genHotTowerList.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
 
+bin/convertHotList: macro/convertHotList.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
+
 bin/plots-hot: macro/display-hot.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
@@ -42,6 +46,7 @@ clean:
 	rm bin/plots
 	rm bin/plots-hot
 	rm bin/genHotTowerList
+	rm bin/convertHotList
 	rm bin/Fun4All_CaloHotTower
 
 # end
