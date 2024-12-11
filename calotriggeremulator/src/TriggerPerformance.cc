@@ -39,7 +39,6 @@
 //for vetex information
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
-#include "TrashInfov1.h"
 #include "DijetEventDisplay.h"
 #include <vector>
 
@@ -80,6 +79,8 @@ TriggerPerformance::TriggerPerformance(const std::string &name, const std::strin
 		     -1,
 		     -1,
 		     -1};
+
+  ///////// FOR CALO CALIB ///////////
   m_jet_emu_triggernames = {"Jet 6 GeV",
 			    "Jet 8 GeV",
 			    "Jet 10 GeV",
@@ -102,6 +103,8 @@ TriggerPerformance::~TriggerPerformance()
 int TriggerPerformance::Init(PHCompositeNode *topNode)
 {
   _i_event = 0;
+
+  ///////// FOR CALO CALIB ///////////
   triggeranalyzer = new TriggerAnalyzer();
 
   triggeranalyzer->UseEmulator(m_useEmulator);
@@ -254,7 +257,10 @@ int TriggerPerformance::Init(PHCompositeNode *topNode)
 int TriggerPerformance::InitRun(PHCompositeNode *topNode)
 {
   if (m_useEmulator)
-    m_mbd_prescale = 1;
+    {
+      std::cout << "using emulator " <<std::endl;
+      m_mbd_prescale = 1;
+    }
   else
     {
       triggeranalyzer->decodeTriggers(topNode);
@@ -269,10 +275,12 @@ int TriggerPerformance::process_event(PHCompositeNode *topNode)
 
 
   _i_event++;
-
+  ///////// FOR CALO CALIB ///////////
   triggeranalyzer->decodeTriggers(topNode);
-  
-
+  if (Verbosity())
+    {
+      triggeranalyzer->Print();
+    }
   std::string recoJetName = "AntiKt_Tower_r04_Sub1";
 
   JetContainer *jets_4 = findNode::getClass<JetContainer>(topNode, recoJetName);
@@ -453,7 +461,7 @@ int TriggerPerformance::process_event(PHCompositeNode *topNode)
 
 	  if (energy < 1) continue;
 	  rawclusters.push_back(E_vec_cluster);
-	  if (energy > E_vec_cluster.mag()) max_cluster = E_vec_cluster;
+	  if (energy > max_cluster.mag()) max_cluster = E_vec_cluster;
 	}
     }
   std::string histoname = "_";
@@ -497,6 +505,7 @@ int TriggerPerformance::process_event(PHCompositeNode *topNode)
 	    {
 	      bool firerare = false;
 
+	      ///////// FOR CALO CALIB ///////////
 	      if (m_useEmulator)
 		firerare = triggeranalyzer->didTriggerFire(m_photon_emu_triggernames[j]);
 	      else
@@ -622,6 +631,7 @@ int TriggerPerformance::process_event(PHCompositeNode *topNode)
 	{
 	  bool firerare = false;
 
+	  ///////// FOR CALO CALIB ///////////
 	  if (m_useEmulator)
 	    firerare = triggeranalyzer->didTriggerFire(m_jet_emu_triggernames[j]);
 	  else
@@ -735,7 +745,6 @@ int TriggerPerformance::End(PHCompositeNode *topNode)
     {
       std::cout << "TriggerPerformance::End(PHCompositeNode *topNode) This is the End..." << std::endl;
     }
-  std::cout<<"Total events: "<<_i_event<<" "<< _foutname.c_str() << std::endl;
   hm->dumpHistos(_foutname.c_str());
   return Fun4AllReturnCodes::EVENT_OK;
 }
