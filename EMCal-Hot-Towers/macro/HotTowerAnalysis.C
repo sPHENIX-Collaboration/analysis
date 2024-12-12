@@ -99,6 +99,7 @@ namespace myAnalysis {
 
     // run threshold above which towers are considered to be frequently hot
     UInt_t m_threshold = 400;
+    UInt_t m_threshold_low = 100;
 
     Float_t m_fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
@@ -512,6 +513,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
 
   output.mkdir("h2HotTowerFrequency");
   output.mkdir("hHotTowerSigma");
+  output.mkdir("hHotTowerSigmaLessFreq");
 
   UInt_t ctr[5] = {0};
   UInt_t ctr_freq[5] = {0};
@@ -537,6 +539,10 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
 
             hSigmaFreqHot->Add(hHotTowerSigma_vec[i]);
             ++ctr_freq[0];
+        }
+        else if (hBadTowersHot->GetBinContent(i + 1) >= m_threshold_low) {
+            output.cd("hHotTowerSigmaLessFreq");
+            hHotTowerSigma_vec[i]->Write();
         }
         else hSigmaHot->Add(hHotTowerSigma_vec[i]);
 
