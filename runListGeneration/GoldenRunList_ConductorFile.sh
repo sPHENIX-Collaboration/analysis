@@ -1,388 +1,407 @@
 #!/bin/bash
 
+# Usage:
+# ./GoldenRunList_ConderFile.sh [removeRunsWithMissingMaps] [dontGenerateFileLists]
+#
+# Optional Arguments:
+#   removeRunsWithMissingMaps: If provided, runs that lack bad tower maps are excluded.
+#   dontGenerateFileLists: If provided, the final step of generating DST lists is skipped.
+#
+# The script retrieves, filters, and processes run information based on event criteria, calorimeter quality assurance
+# (Calo QA), runtime, livetime, and bad tower map availability. If removeRunsWithMissingMaps is specified, runs without
+# bad tower maps are removed. If dontGenerateFileLists is specified, the DST list creation step at the end is not executed.
+#
+# Logic, output, and ordering remain unchanged unless dontGenerateFileLists is specified. In that case, all steps occur as
+# before, except for DST list generation.
+
+
 ########################################
-# Steps:
-# 1. Extract initial run numbers from databases.
-# 2. Apply Calorimeter QA filters.
-# 3. Apply run duration and livetime cuts.
-# 4. Identify runs with missing bad tower maps (without removing them).
-# 5. Generate DST lists for the selected runs.
-# 6. Summarize the statistics at each stage.
+# FUNCTIONS
 ########################################
 
-echo "========================================"
-echo "Starting the Golden Run List Generation"
-echo "========================================"
+# Parses arguments to determine whether to remove runs missing bad tower maps
+# and whether to skip generating file lists.
+parse_arguments() {
+    REMOVE_MISSING_MAPS=false
+    DONT_GENERATE_FILELISTS=false
 
-# Create necessary directories
-echo "Creating necessary directories..."
-mkdir -p FileLists/ dst_list/ list/
-echo "Directories created."
-echo "----------------------------------------"
+    for arg in "$@"; do
+        if [[ "$arg" == "removeRunsWithMissingMaps" ]]; then
+            REMOVE_MISSING_MAPS=true
+            echo "Argument detected: Will remove runs missing bad tower maps."
+        fi
+        if [[ "$arg" == "dontGenerateFileLists" ]]; then
+            DONT_GENERATE_FILELISTS=true
+        fi
+    done
 
-# Set the working directory
-workplace=$(pwd)
-echo "Working directory is set to $workplace"
-echo "----------------------------------------"
+    if ! $REMOVE_MISSING_MAPS; then
+        echo "No removal option detected: Missing map runs will be noted but kept."
+    fi
+    echo "----------------------------------------"
+}
 
-# Step 1: Run the Python script to get the initial run numbers
-echo "Step 1: Running Python script to generate initial run lists..."
+# Ensures required directories exist.
+setup_directories() {
+    echo "Setting up directories..."
+    mkdir -p FileLists/ dst_list/ list/
+    echo "Directories ready."
+    echo "----------------------------------------"
+}
 
-python_output=$(python3 << EOF
+# Stores the current working directory path.
+set_workplace() {
+    workplace=$(pwd)
+    echo "Working directory: $workplace"
+    echo "----------------------------------------"
+}
+
+# Extracts initial run numbers from databases and applies Calo QA filters.
+extract_initial_runs() {
+    echo "Step 1: Extracting initial runs from databases..."
+    python_output=$(python3 << EOF
 import pyodbc
 
 def get_all_run_numbers(cursor):
-    # Query to get run numbers with at least 1 million events and runnumber >= 47289
     query = """
     SELECT runnumber
     FROM datasets
-    WHERE dsttype='DST_CALO_run2pp' and dataset = 'ana446_2024p007'
+    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana446_2024p007'
     GROUP BY runnumber
     HAVING SUM(events) >= 1000000 AND runnumber >= 47289;
     """
     cursor.execute(query)
-    run_numbers = [row.runnumber for row in cursor.fetchall()]
-    return run_numbers
+    return [row.runnumber for row in cursor.fetchall()]
 
-def get_golden_run_numbers(detector, file_catalog_run_numbers, production_cursor):
+def get_golden_run_numbers(detector, runlist, cursor):
     query = f"""
     SELECT runnumber
     FROM goodruns
-    WHERE ({detector}_auto).runclass = 'GOLDEN'
+    WHERE ({detector}_auto).runclass='GOLDEN'
     """
-    production_cursor.execute(query)
-    golden_run_numbers = {row.runnumber for row in production_cursor.fetchall()}
-    return golden_run_numbers.intersection(set(file_catalog_run_numbers))
+    cursor.execute(query)
+    golden = {row.runnumber for row in cursor.fetchall()}
+    return golden.intersection(set(runlist))
 
 def main():
-    # Connect to the FileCatalog database
-    file_catalog_conn = pyodbc.connect("DSN=FileCatalog;UID=phnxrc;READONLY=True")
-    file_catalog_cursor = file_catalog_conn.cursor()
-
-    # Get unique run numbers with at least 1 million total events
-    file_catalog_run_numbers = get_all_run_numbers(file_catalog_cursor)
-    file_catalog_run_numbers.sort()
+    fc_conn = pyodbc.connect("DSN=FileCatalog;UID=phnxrc;READONLY=True")
+    fc_cursor = fc_conn.cursor()
+    all_runs = get_all_run_numbers(fc_cursor)
+    all_runs.sort()
     with open('list/list_runnumber_all.txt', 'w') as f:
-        for run_number in file_catalog_run_numbers:
-            f.write(f"{run_number}\n")
-    print(f"TOTAL_RUNS:{len(file_catalog_run_numbers)}")
+        for r in all_runs:
+            f.write(f"{r}\n")
+    print(f"TOTAL_RUNS:{len(all_runs)}")
+    fc_conn.close()
 
-    # Close the FileCatalog database connection
-    file_catalog_conn.close()
+    prod_conn = pyodbc.connect("DSN=Production_write")
+    prod_cursor = prod_conn.cursor()
 
-    # Connect to the Production database
-    production_conn = pyodbc.connect("DSN=Production_write")
-    production_cursor = production_conn.cursor()
-
-    # Filter 'GOLDEN' run numbers for each calorimeter
     detectors = ['emcal', 'ihcal', 'ohcal']
-    golden_run_numbers = set(file_catalog_run_numbers)
-    for detector in detectors:
-        detector_golden_runs = get_golden_run_numbers(detector, file_catalog_run_numbers, production_cursor)
-        golden_run_numbers = golden_run_numbers.intersection(detector_golden_runs)
+    golden_runs = set(all_runs)
+    for d in detectors:
+        golden_runs = golden_runs.intersection(get_golden_run_numbers(d, all_runs, prod_cursor))
 
-    golden_run_numbers = sorted(golden_run_numbers)
+    golden_runs = sorted(golden_runs)
     with open('list/Full_ppGoldenRunList.txt', 'w') as f:
-        for run_number in golden_run_numbers:
-            f.write(f"{run_number}\n")
-    print(f"COMBINED_GOLDEN_RUNS:{len(golden_run_numbers)}")
-
-    # Close the Production database connection
-    production_conn.close()
+        for r in golden_runs:
+            f.write(f"{r}\n")
+    print(f"COMBINED_GOLDEN_RUNS:{len(golden_runs)}")
+    prod_conn.close()
 
 if __name__ == "__main__":
     main()
 EOF
 )
 
-echo "Python script execution completed."
-echo "----------------------------------------"
+    echo "Python extraction completed."
+    echo "----------------------------------------"
 
-# Parse the output to get the counts
-total_runs=$(echo "$python_output" | grep 'TOTAL_RUNS' | cut -d':' -f2)
-combined_golden_runs=$(echo "$python_output" | grep 'COMBINED_GOLDEN_RUNS' | cut -d':' -f2)
+    total_runs=$(echo "$python_output" | grep 'TOTAL_RUNS' | cut -d':' -f2)
+    combined_golden_runs=$(echo "$python_output" | grep 'COMBINED_GOLDEN_RUNS' | cut -d':' -f2)
 
-echo "Summary of initial counts:"
-echo "Total runs after firmware fix and >1M events: $total_runs"
-echo "Number of runs passing Calo QA (all three GOLDEN statuses): $combined_golden_runs"
-echo "----------------------------------------"
+    echo "Summary after initial extraction:"
+    echo "Total initial runs: $total_runs"
+    echo "Runs after Calo QA: $combined_golden_runs"
+    echo "----------------------------------------"
+}
 
-# Step 2: Check that the initial golden run list exists
-echo "Step 2: Checking for the initial golden run list..."
+# Validates that the initial golden run list file exists.
+validate_golden_list() {
+    echo "Step 2: Validating golden run list..."
+    golden_run_list="list/Full_ppGoldenRunList.txt"
+    if [[ ! -f "$golden_run_list" ]]; then
+        echo "[ERROR]: $golden_run_list not found."
+        exit 1
+    fi
+    echo "Golden run list found."
+    echo "----------------------------------------"
+}
 
-golden_run_list="list/Full_ppGoldenRunList.txt"
-if [[ ! -f "$golden_run_list" ]]; then
-    echo "[ERROR] The file $golden_run_list does not exist. Please check the path and try again."
-    exit 1
-fi
-
-echo "Initial golden run list found: $golden_run_list"
-echo "----------------------------------------"
-
-# Function to get total GL1 raw events for a list of runs
-get_total_events() {
+# Retrieves actual event counts from .evt files for a given list of run numbers.
+get_actual_events_from_evt() {
     input_file=$1
     total_events=0
     batch_size=100
     run_numbers=()
+
     while IFS= read -r runnumber; do
-        if [[ -n "$runnumber" ]]; then
-            run_numbers+=("$runnumber")
-            if [[ ${#run_numbers[@]} -ge $batch_size ]]; then
-                run_list=$(printf ",%s" "${run_numbers[@]}")
-                run_list=${run_list:1}
-                query="SELECT SUM(raw) FROM gl1_scalers WHERE runnumber IN (${run_list});"
-                result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query")
-                events=$(echo "$result" | xargs)
-                if [[ "$events" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-                    total_events=$(echo "$total_events + $events" | bc)
-                fi
-                run_numbers=()
-            fi
+        [[ -z "$runnumber" ]] && continue
+        run_numbers+=("$runnumber")
+        if [[ ${#run_numbers[@]} -ge $batch_size ]]; then
+            run_list=$(IFS=,; echo "${run_numbers[*]}")
+            run_numbers=()
+            query="SELECT SUM(lastevent - firstevent + 1) FROM filelist WHERE runnumber IN ($run_list) AND filename LIKE '%GL1_physics_gl1daq%.evt';"
+            result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query")
+            events=$(echo "$result" | xargs)
+            [[ "$events" =~ ^[0-9]+$ ]] && total_events=$(echo "$total_events + $events" | bc)
         fi
     done < "$input_file"
-    # Process remaining runs
+
+    # Processes remaining runs if not empty
     if [[ ${#run_numbers[@]} -gt 0 ]]; then
-        run_list=$(printf ",%s" "${run_numbers[@]}")
-        run_list=${run_list:1}
-        query="SELECT SUM(raw) FROM gl1_scalers WHERE runnumber IN (${run_list});"
+        run_list=$(IFS=,; echo "${run_numbers[*]}")
+        query="SELECT SUM(lastevent - firstevent + 1) FROM filelist WHERE runnumber IN ($run_list) AND filename LIKE '%GL1_physics_gl1daq%.evt';"
         result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query")
         events=$(echo "$result" | xargs)
-        if [[ "$events" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-            total_events=$(echo "$total_events + $events" | bc)
-        fi
+        [[ "$events" =~ ^[0-9]+$ ]] && total_events=$(echo "$total_events + $events" | bc)
     fi
+
     echo "$total_events"
 }
 
-#################################
-# Version 1: Calo QA + run time > 5 mins + livetime > 80%
-#################################
+# Prints a header before applying runtime, livetime, and missing bad tower map filters.
+apply_incremental_cuts_header() {
+    echo "----------------------------------------"
+    echo "Applying incremental cuts: runtime, livetime, and missing bad tower maps"
+    echo "----------------------------------------"
+}
 
-echo "----------------------------------------"
-echo "Processing Version 1: Calo QA + run time > 5 mins + livetime > 80%"
-echo "----------------------------------------"
+# Filters out runs that do not meet the minimum runtime requirement (>5 mins).
+runtime_cut() {
+    input_file="list/Full_ppGoldenRunList.txt"
+    output_file_duration_v1="list/list_runnumber_runtime_v1.txt"
+    > "$output_file_duration_v1"
+    total_runs_duration_v1=0
+    runs_dropped_runtime_v1=0
 
-# Step 3a: Apply run duration filter (>300 seconds)
-input_file="list/Full_ppGoldenRunList.txt"  # Runs after Calo QA
-output_file_duration_v1="list/list_runnumber_runtime_v1.txt"
-> "$output_file_duration_v1"
+    while IFS= read -r runnumber; do
+        [[ -z "$runnumber" ]] && continue
+        query="SELECT runnumber, EXTRACT(EPOCH FROM (ertimestamp - brtimestamp)) AS duration FROM run WHERE runnumber = ${runnumber};"
+        result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query" | tr -d '[:space:]')
+        duration=$(echo "$result" | awk -F '|' '{print $2}')
 
-total_runs_duration_v1=0
-runs_dropped_runtime_v1=0
-
-while IFS= read -r runnumber; do
-    if [[ -z "$runnumber" ]]; then
-        continue
-    fi
-
-    # Query to get the run duration in seconds
-    query="SELECT runnumber, EXTRACT(EPOCH FROM (ertimestamp - brtimestamp)) AS duration FROM run WHERE runnumber = ${runnumber};"
-
-    result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query" | tr -d '[:space:]')
-
-    duration=$(echo "$result" | awk -F '|' '{print $2}')
-
-    if [[ $duration =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        if (( $(echo "$duration > 300" | bc -l) )); then
+        if [[ $duration =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$duration > 300" | bc -l) )); then
             echo "$runnumber" >> "$output_file_duration_v1"
-            total_runs_duration_v1=$((total_runs_duration_v1+1))
+            ((total_runs_duration_v1++))
         else
-            runs_dropped_runtime_v1=$((runs_dropped_runtime_v1+1))
+            ((runs_dropped_runtime_v1++))
         fi
-    else
-        runs_dropped_runtime_v1=$((runs_dropped_runtime_v1+1))
-    fi
+    done < "$input_file"
 
-done < "$input_file"
+    echo "After runtime cut (>5 mins): $total_runs_duration_v1 runs remain."
+    echo "Dropped due to runtime: $runs_dropped_runtime_v1"
+    echo "----------------------------------------"
+}
 
-echo "Total runs after run duration cut (>5 mins): $total_runs_duration_v1"
-echo "Number of runs dropped due to run duration cut: $runs_dropped_runtime_v1"
-echo "----------------------------------------"
+# Filters out runs that do not meet the MB (Minimum Bias) livetime requirement (>80% for trigger index 10).
+livetime_cut() {
+    input_file="list/list_runnumber_runtime_v1.txt"
+    output_file_livetime_v1="list/list_runnumber_livetime_v1.txt"
+    bad_file_livetime_v1="list/list_runnumber_bad_livetime_v1.txt"
+    > "$output_file_livetime_v1"
+    > "$bad_file_livetime_v1"
+    total_runs_livetime_v1=0
+    runs_dropped_livetime_v1=0
 
-# Step 4a: Apply live/raw ratio filter for trigger index 10 (>80%)
-input_file="$output_file_duration_v1"
-output_file_livetime_v1="list/list_runnumber_livetime_v1.txt"
-bad_file_livetime_v1="list/list_runnumber_bad_livetime_v1.txt"
-> "$output_file_livetime_v1"
-> "$bad_file_livetime_v1"
+    while IFS= read -r runnumber; do
+        [[ -z "$runnumber" ]] && continue
+        index_to_check=10
+        query="SELECT index, raw, live FROM gl1_scalers WHERE runnumber = ${runnumber} AND index = ${index_to_check};"
+        result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query")
 
-total_runs_livetime_v1=0
-runs_dropped_livetime_v1=0
-
-while IFS= read -r runnumber; do
-    if [[ -z "$runnumber" ]]; then
-        continue
-    fi
-
-    index_to_check=10  # Trigger index to check for livetime
-
-    # Query to get raw and live counts for the specified trigger index
-    query="SELECT index, raw, live FROM gl1_scalers WHERE runnumber = ${runnumber} AND index = ${index_to_check};"
-    result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query")
-
-    index_pass=false
-
-    while IFS='|' read -r index raw live; do
-        index=$(echo "$index" | xargs)
-        raw=$(echo "$raw" | xargs)
-        live=$(echo "$live" | xargs)
-
-        if [[ "$raw" =~ ^[0-9]+$ ]] && [[ "$live" =~ ^[0-9]+$ ]] && [ "$raw" -ne 0 ]; then
-            ratio=$(echo "scale=2; $live / $raw * 100" | bc -l)
-            if [ "$index" -eq "$index_to_check" ]; then
-                if (( $(echo "$ratio >= 80" | bc -l) )); then
+        index_pass=false
+        while IFS='|' read -r index raw live; do
+            index=$(echo "$index" | xargs)
+            raw=$(echo "$raw" | xargs)
+            live=$(echo "$live" | xargs)
+            if [[ "$raw" =~ ^[0-9]+$ && "$live" =~ ^[0-9]+$ && "$raw" -ne 0 ]]; then
+                ratio=$(echo "scale=2; $live / $raw * 100" | bc -l)
+                if [[ "$index" -eq "$index_to_check" && $(echo "$ratio >= 80" | bc -l) -eq 1 ]]; then
                     index_pass=true
                 fi
             fi
-        fi
-    done <<< "$result"
+        done <<< "$result"
 
-    if [[ "$index_pass" == true ]]; then
-        echo "$runnumber" >> "$output_file_livetime_v1"
-        total_runs_livetime_v1=$((total_runs_livetime_v1+1))
-    else
-        echo "$runnumber" >> "$bad_file_livetime_v1"
-        runs_dropped_livetime_v1=$((runs_dropped_livetime_v1+1))
+        if $index_pass; then
+            echo "$runnumber" >> "$output_file_livetime_v1"
+            ((total_runs_livetime_v1++))
+        else
+            echo "$runnumber" >> "$bad_file_livetime_v1"
+            ((runs_dropped_livetime_v1++))
+        fi
+    done < "$input_file"
+
+    echo "After livetime cut (>80%): $total_runs_livetime_v1 runs remain."
+    echo "Dropped due to livetime: $runs_dropped_livetime_v1"
+    echo "----------------------------------------"
+}
+
+# Identifies runs missing bad tower maps. If requested, removes these runs from the final list.
+missing_bad_tower_maps_step() {
+    echo "Checking for runs missing bad tower maps..."
+
+    input_file="list/list_runnumber_livetime_v1.txt"
+    output_file_final_v1="FileLists/Full_ppGoldenRunList_Version1.txt"
+    bad_tower_runs_file="list/list_runs_missing_bad_tower_maps.txt"
+    cp "$input_file" "$output_file_final_v1"
+
+    available_bad_tower_runs=$(find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq)
+    echo "$available_bad_tower_runs" > list/available_bad_tower_runs.txt
+    grep -Fxvf list/available_bad_tower_runs.txt "$input_file" > "$bad_tower_runs_file"
+
+    total_runs_with_bad_tower=$(grep -Fxf list/available_bad_tower_runs.txt "$input_file" | wc -l)
+    total_runs_missing_bad_tower=$(wc -l < "$bad_tower_runs_file")
+
+    echo "Runs with bad tower maps: $total_runs_with_bad_tower"
+    echo "Runs missing bad tower maps: $total_runs_missing_bad_tower"
+    echo "List of missing map runs: $bad_tower_runs_file"
+    echo "----------------------------------------"
+
+    rm list/available_bad_tower_runs.txt
+
+    if $REMOVE_MISSING_MAPS; then
+        echo "Removing runs missing bad tower maps..."
+        grep -Fxf list/available_bad_tower_runs.txt "list/list_runnumber_livetime_v1.txt" > "$output_file_final_v1"
+        echo "Removal complete."
+        echo "----------------------------------------"
     fi
 
-done < "$input_file"
+    cp "$output_file_final_v1" dst_list/Final_RunNumbers_After_All_Cuts.txt
+    echo "Final run list stored in dst_list/Final_RunNumbers_After_All_Cuts.txt"
+    echo "----------------------------------------"
+}
 
-echo "Total runs after livetime cut (>80% for trigger index 10): $total_runs_livetime_v1"
-echo "Number of runs dropped due to livetime cut: $runs_dropped_livetime_v1"
-echo "----------------------------------------"
+# Creates a .list file used in the DST list generation process.
+create_list_file() {
+    echo "Creating .list file..."
+    cp "FileLists/Full_ppGoldenRunList_Version1.txt" Full_ppGoldenRunList_Version1.list
+    echo ".list file created."
+    echo "----------------------------------------"
+}
 
-# Step 5a: Identify runs with missing bad tower maps (without removing them)
-echo "Identifying runs with missing bad tower maps..."
+# Removes old DST list files before generating new ones.
+clean_old_dst_lists() {
+    echo "Cleaning old DST lists..."
+    rm -f dst_list/*.list
+    echo "Old DST lists removed."
+    echo "----------------------------------------"
+}
 
-input_file="$output_file_livetime_v1"
-output_file_final_v1="FileLists/Full_ppGoldenRunList_Version1.txt"
-bad_tower_runs_file="list/list_runs_missing_bad_tower_maps.txt"
+# Generates DST lists if requested. Skipped if dontGenerateFileLists is specified.
+generate_dst_lists() {
+    echo "Generating DST lists..."
+    cd dst_list
+    CreateDstList.pl --build ana437 --cdb 2024p007 DST_CALO_run2pp --list ../Full_ppGoldenRunList_Version1.list
+    echo "DST lists generated."
+    echo "----------------------------------------"
+    cd ..
+}
 
-# Copy the input file to the final output file (we are not removing runs)
-cp "$input_file" "$output_file_final_v1"
+# Computes event counts and percentages at each stage.
+compute_event_counts() {
+    actual_events_initial=$(get_actual_events_from_evt 'list/list_runnumber_all.txt')
+    actual_events_calo_qa=$(get_actual_events_from_evt 'list/Full_ppGoldenRunList.txt')
+    actual_events_after_runtime=$(get_actual_events_from_evt 'list/list_runnumber_runtime_v1.txt')
+    actual_events_after_livetime=$(get_actual_events_from_evt 'list/list_runnumber_livetime_v1.txt')
+    actual_events_after_badtower=$(get_actual_events_from_evt "FileLists/Full_ppGoldenRunList_Version1.txt")
 
-# Find runs with available bad tower maps
-available_bad_tower_runs=$(find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq)
-echo "$available_bad_tower_runs" > list/available_bad_tower_runs.txt
+    total_runs_after_badtower=$(wc -l < "FileLists/Full_ppGoldenRunList_Version1.txt")
 
-# Identify runs missing bad tower maps
-grep -Fxvf list/available_bad_tower_runs.txt "$input_file" > "$bad_tower_runs_file"
+    percent_runs_calo_qa=$(echo "scale=2; $combined_golden_runs / $total_runs * 100" | bc)
+    percent_runs_after_runtime=$(echo "scale=2; $total_runs_duration_v1 / $total_runs * 100" | bc)
+    percent_runs_after_livetime=$(echo "scale=2; $total_runs_livetime_v1 / $total_runs * 100" | bc)
+    percent_runs_after_badtower=$(echo "scale=2; $total_runs_after_badtower / $total_runs * 100" | bc)
 
-# Count the number of runs with and without bad tower maps
-total_runs_with_bad_tower=$(grep -Fxf list/available_bad_tower_runs.txt "$input_file" | wc -l)
-total_runs_missing_bad_tower=$(wc -l < "$bad_tower_runs_file")
+    percent_actual_events_calo_qa=$(echo "scale=2; $actual_events_calo_qa / $actual_events_initial * 100" | bc)
+    percent_actual_events_after_runtime=$(echo "scale=2; $actual_events_after_runtime / $actual_events_initial * 100" | bc)
+    percent_actual_events_after_livetime=$(echo "scale=2; $actual_events_after_livetime / $actual_events_initial * 100" | bc)
+    percent_actual_events_after_badtower=$(echo "scale=2; $actual_events_after_badtower / $actual_events_initial * 100" | bc)
+}
 
-echo "Total runs with bad tower maps: $total_runs_with_bad_tower"
-echo "Total runs missing bad tower maps: $total_runs_missing_bad_tower"
-echo "List of runs missing bad tower maps saved to $bad_tower_runs_file"
-echo "----------------------------------------"
+# Prints a summary table of the filtering process and final run statistics.
+final_summary() {
+    echo "========================================"
+    echo "Final Summary (Version 1)"
+    printf "%-50s | %-35s | %-25s\n" "Stage" ".evt File Events" "Runs"
+    echo "--------------------------------------------------|-------------------------------------|-------------------------"
 
-# Clean up temporary file
-rm list/available_bad_tower_runs.txt
+    printf "%-50s | %-35s | %-25s\n" \
+    "1) After firmware fix (47289) and >1M events" \
+    "${actual_events_initial} (100%)" \
+    "${total_runs} (100%)"
 
-# Copy the final run numbers to dst_list folder
-cp "$output_file_final_v1" dst_list/Final_RunNumbers_After_All_Cuts.txt
-echo "Final run numbers after all cuts have been copied to dst_list/Final_RunNumbers_After_All_Cuts.txt"
-echo "----------------------------------------"
+    printf "%-50s | %-35s | %-25s\n" \
+    "2) && Golden EMCal/HCal" \
+    "${actual_events_calo_qa} (${percent_actual_events_calo_qa}%)" \
+    "${combined_golden_runs} (${percent_runs_calo_qa}%)"
 
-# Step 6: Create .list file for CreateDstList.pl command
-echo "Creating .list file for CreateDstList.pl..."
-cp "$output_file_final_v1" Full_ppGoldenRunList_Version1.list
-echo ".list file created."
-echo "----------------------------------------"
+    printf "%-50s | %-35s | %-25s\n" \
+    "3) && > 5 minutes" \
+    "${actual_events_after_runtime} (${percent_actual_events_after_runtime}%)" \
+    "${total_runs_duration_v1} (${percent_runs_after_runtime}%)"
 
-# Step 7: Remove existing list files in dst_list directory
-echo "Removing existing list files in dst_list directory..."
-rm -f dst_list/*.list
-echo "Existing list files removed."
-echo "----------------------------------------"
+    printf "%-50s | %-35s | %-25s\n" \
+    "4) && MB livetime > 80%" \
+    "${actual_events_after_livetime} (${percent_actual_events_after_livetime}%)" \
+    "${total_runs_livetime_v1} (${percent_runs_after_livetime}%)"
 
-# Step 8: Create DST lists
-echo "Changing to dst_list directory to generate DST lists..."
-cd dst_list
+    if $REMOVE_MISSING_MAPS; then
+        step_label="5) && With Bad Tower Map Available"
+    else
+        step_label="5) Identified missing Bad Tower Maps (not removed)"
+    fi
 
-echo "Running CreateDstList.pl to generate the DST list..."
-CreateDstList.pl --build ana437 --cdb 2024p007 DST_CALO_run2pp --list ../Full_ppGoldenRunList_Version1.list
-echo "DST list generated and saved to dst_list."
-echo "----------------------------------------"
+    printf "%-50s | %-35s | %-25s\n" \
+    "$step_label" \
+    "${actual_events_after_badtower} (${percent_actual_events_after_badtower}%)" \
+    "${total_runs_after_badtower} (${percent_runs_after_badtower}%)"
 
-cd ..
+    echo "================================================="
+    echo "========================================"
 
-# Calculate total events at each stage
-total_events_initial=$(get_total_events 'list/list_runnumber_all.txt')
-total_events_calo_qa=$(get_total_events 'list/Full_ppGoldenRunList.txt')
-total_events_after_runtime=$(get_total_events 'list/list_runnumber_runtime_v1.txt')
-total_events_after_livetime=$(get_total_events 'list/list_runnumber_livetime_v1.txt')
-total_events_after_all_cuts=$(get_total_events "$output_file_final_v1")
+    if $REMOVE_MISSING_MAPS; then
+        echo "Final golden run list (missing maps removed): $workplace/dst_list/Final_RunNumbers_After_All_Cuts.txt"
+    else
+        echo "Final golden run list (with runs missing maps included): $workplace/dst_list/Final_RunNumbers_After_All_Cuts.txt"
+    fi
 
-# Adjust the counts for runs with and without bad tower maps
-total_runs_after_all_cuts_v1=$(wc -l < "$output_file_final_v1")
+    echo "Done."
+}
 
-# Compute percentages relative to initial totals
-percent_runs_calo_qa=$(echo "scale=2; $combined_golden_runs / $total_runs * 100" | bc)
-percent_runs_after_runtime=$(echo "scale=2; $total_runs_duration_v1 / $total_runs * 100" | bc)
-percent_runs_after_livetime=$(echo "scale=2; $total_runs_livetime_v1 / $total_runs * 100" | bc)
-percent_runs_after_badtower=$(echo "scale=2; $total_runs_after_all_cuts_v1 / $total_runs * 100" | bc)
+########################################
+# MAIN EXECUTION FLOW
+########################################
 
-percent_events_calo_qa=$(echo "scale=2; $total_events_calo_qa / $total_events_initial * 100" | bc)
-percent_events_after_runtime=$(echo "scale=2; $total_events_after_runtime / $total_events_initial * 100" | bc)
-percent_events_after_livetime=$(echo "scale=2; $total_events_after_livetime / $total_events_initial * 100" | bc)
-percent_events_after_all_cuts=$(echo "scale=2; $total_events_after_all_cuts / $total_events_initial * 100" | bc)
-
-# Calculate percentages lost at each step
-percent_runs_lost_calo_qa=$(echo "scale=2; 100 - $percent_runs_calo_qa" | bc)
-percent_runs_lost_after_runtime=$(echo "scale=2; $percent_runs_calo_qa - $percent_runs_after_runtime" | bc)
-percent_runs_lost_after_livetime=$(echo "scale=2; $percent_runs_after_runtime - $percent_runs_after_livetime" | bc)
-percent_runs_lost_after_badtower=0
-
-percent_events_lost_calo_qa=$(echo "scale=2; 100 - $percent_events_calo_qa" | bc)
-percent_events_lost_after_runtime=$(echo "scale=2; $percent_events_calo_qa - $percent_events_after_runtime" | bc)
-percent_events_lost_after_livetime=$(echo "scale=2; $percent_events_after_runtime - $percent_events_after_livetime" | bc)
-percent_events_lost_after_badtower=0
-
-# Final Summary
 echo "========================================"
-echo "Final Summary: Version 1 (Calo QA → Runtime → Livetime)"
-
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" "Stage" "% Initial Events" "Total Events" "Runs" "% Initial Runs"
-echo "--------------------------------------------------|-----------------|-----------------|-----------|-----------------"
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" \
-"1) After firmware fix and >1M events" "100%" "$total_events_initial" "$total_runs" "100%"
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" \
-"2) & pass Calo QA" "${percent_events_calo_qa}%" "$total_events_calo_qa" "$combined_golden_runs" "${percent_runs_calo_qa}%"
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" \
-"3) & > 5 mins" "${percent_events_after_runtime}%" "$total_events_after_runtime" "$total_runs_duration_v1" "${percent_runs_after_runtime}%"
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" \
-"4) & livetime > 80% of MB trigger" "${percent_events_after_livetime}%" "$total_events_after_livetime" "$total_runs_livetime_v1" "${percent_runs_after_livetime}%"
-printf "%-50s | %-15s | %-15s | %-9s | %-15s\n" \
-"5) Final run list (no runs removed for bad tower maps)" "${percent_events_after_all_cuts}%" "$total_events_after_all_cuts" "$total_runs_after_all_cuts_v1" "${percent_runs_after_badtower}%"
-
-echo "================================================="
-
-echo ""
-echo "Percentage of runs lost at each step:"
-echo "After Calo QA: ${percent_runs_lost_calo_qa}% of runs lost"
-echo "After run time > 5 mins: ${percent_runs_lost_after_runtime}% of runs lost"
-echo "After livetime >80%: ${percent_runs_lost_after_livetime}% of runs lost"
-echo "After identifying runs missing bad tower maps: 0% of runs lost (runs are retained)"
-echo ""
-echo "Percentage of events lost at each step:"
-echo "After Calo QA: ${percent_events_lost_calo_qa}% of events lost"
-echo "After run time > 5 mins: ${percent_events_lost_after_runtime}% of events lost"
-echo "After livetime >80%: ${percent_events_lost_after_livetime}% of events lost"
-echo "After identifying runs missing bad tower maps: 0% of events lost (events are retained)"
+echo "Starting the Golden Run List Generation"
 echo "========================================"
+parse_arguments "$@"
+setup_directories
+set_workplace
+extract_initial_runs
+validate_golden_list
+apply_incremental_cuts_header
+runtime_cut
+livetime_cut
+missing_bad_tower_maps_step
+create_list_file
+clean_old_dst_lists
 
-# Copy the missing bad tower maps file to the requested path
-cp "$bad_tower_runs_file" /sphenix/user/patsfan753/tutorials/tutorials/CaloDataAnaRun24pp/list_runs_missing_bad_tower_maps.txt
+# Skip DST list generation if dontGenerateFileLists is specified.
+if ! $DONT_GENERATE_FILELISTS; then
+    generate_dst_lists
+fi
 
-# Copy the runs that fail livetime cut to the requested path
-cp "$bad_file_livetime_v1" /sphenix/user/patsfan753/tutorials/tutorials/CaloDataAnaRun24pp/list_runnumber_bad_livetime_v1.txt
-
-
-cp dst_list/Final_RunNumbers_After_All_Cuts.txt /sphenix/user/patsfan753/tutorials/tutorials/CaloDataAnaRun24pp/FinalGoldenRunList_ana446_2024p007.txt
-
-echo "Files for missing bad tower maps, livetime failures, and the final run list have been copied to:"
-echo "/sphenix/user/patsfan753/tutorials/tutorials/CaloDataAnaRun24pp/"
-echo "Done."
+compute_event_counts
+final_summary
