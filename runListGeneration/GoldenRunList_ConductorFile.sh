@@ -1,29 +1,29 @@
 #!/bin/bash
 
 # Usage:
-# ./GoldenRunList_ConderFile.sh [removeRunsWithMissingMaps] [dontGenerateFileLists]
+# ./GoldenRunList_ConderFile.sh [removeRunsWithMissingMaps] [dontGenerateFileLists] [noRunNumberLimit]
 #
 # Optional Arguments:
 #   removeRunsWithMissingMaps: If provided, runs that lack bad tower maps are excluded.
 #   dontGenerateFileLists: If provided, the final step of generating DST lists is skipped.
+#   noRunNumberLimit: If provided, the run number lower limit (>=47289) is removed from the event selection query.
 #
 # The script retrieves, filters, and processes run information based on event criteria, calorimeter quality assurance
 # (Calo QA), runtime, livetime, and bad tower map availability. If removeRunsWithMissingMaps is specified, runs without
 # bad tower maps are removed. If dontGenerateFileLists is specified, the DST list creation step at the end is not executed.
+# If noRunNumberLimit is specified, the lower run number limit is not applied.
 #
-# Logic, output, and ordering remain unchanged unless dontGenerateFileLists is specified. In that case, all steps occur as
-# before, except for DST list generation.
-
+# Logic, output, and ordering remain unchanged unless dontGenerateFileLists or noRunNumberLimit are specified. In that case,
+# either the DST list generation step is skipped or the run number lower limit is removed from the initial query, respectively.
 
 ########################################
 # FUNCTIONS
 ########################################
 
-# Parses arguments to determine whether to remove runs missing bad tower maps
-# and whether to skip generating file lists.
 parse_arguments() {
     REMOVE_MISSING_MAPS=false
     DONT_GENERATE_FILELISTS=false
+    NO_RUNNUMBER_LIMIT=false
 
     for arg in "$@"; do
         if [[ "$arg" == "removeRunsWithMissingMaps" ]]; then
@@ -33,6 +33,10 @@ parse_arguments() {
         if [[ "$arg" == "dontGenerateFileLists" ]]; then
             DONT_GENERATE_FILELISTS=true
         fi
+        if [[ "$arg" == "noRunNumberLimit" ]]; then
+            NO_RUNNUMBER_LIMIT=true
+            echo "Argument detected: No run number lower limit will be applied."
+        fi
     done
 
     if ! $REMOVE_MISSING_MAPS; then
@@ -41,7 +45,6 @@ parse_arguments() {
     echo "----------------------------------------"
 }
 
-# Ensures required directories exist.
 setup_directories() {
     echo "Setting up directories..."
     mkdir -p FileLists/ dst_list/ list/
@@ -49,27 +52,41 @@ setup_directories() {
     echo "----------------------------------------"
 }
 
-# Stores the current working directory path.
 set_workplace() {
     workplace=$(pwd)
     echo "Working directory: $workplace"
     echo "----------------------------------------"
 }
 
-# Extracts initial run numbers from databases and applies Calo QA filters.
 extract_initial_runs() {
     echo "Step 1: Extracting initial runs from databases..."
-    python_output=$(python3 << EOF
+
+    # Create a temporary Python script dynamically to handle noRunNumberLimit condition
+    python_script=$(cat <<EOF
 import pyodbc
+import sys
+
+no_limit = False
+if "NO_LIMIT" in sys.argv:
+    no_limit = True
 
 def get_all_run_numbers(cursor):
-    query = """
-    SELECT runnumber
-    FROM datasets
-    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana446_2024p007'
-    GROUP BY runnumber
-    HAVING SUM(events) >= 1000000 AND runnumber >= 47289;
-    """
+    if no_limit:
+        query = """
+        SELECT runnumber
+        FROM datasets
+        WHERE dsttype='DST_CALO_run2pp' AND dataset='ana446_2024p007'
+        GROUP BY runnumber
+        HAVING SUM(events) >= 1000000;
+        """
+    else:
+        query = """
+        SELECT runnumber
+        FROM datasets
+        WHERE dsttype='DST_CALO_run2pp' AND dataset='ana446_2024p007'
+        GROUP BY runnumber
+        HAVING SUM(events) >= 1000000 AND runnumber >= 47289;
+        """
     cursor.execute(query)
     return [row.runnumber for row in cursor.fetchall()]
 
@@ -84,6 +101,10 @@ def get_golden_run_numbers(detector, runlist, cursor):
     return golden.intersection(set(runlist))
 
 def main():
+    no_limit_mode = False
+    if "NO_LIMIT" in sys.argv:
+        no_limit_mode = True
+
     fc_conn = pyodbc.connect("DSN=FileCatalog;UID=phnxrc;READONLY=True")
     fc_cursor = fc_conn.cursor()
     all_runs = get_all_run_numbers(fc_cursor)
@@ -107,12 +128,20 @@ def main():
         for r in golden_runs:
             f.write(f"{r}\n")
     print(f"COMBINED_GOLDEN_RUNS:{len(golden_runs)}")
+
     prod_conn.close()
 
 if __name__ == "__main__":
     main()
 EOF
-)
+    )
+
+    # Execute the temporary Python script with or without NO_LIMIT argument
+    if $NO_RUNNUMBER_LIMIT; then
+        python_output=$(python3 <(echo "$python_script") NO_LIMIT)
+    else
+        python_output=$(python3 <(echo "$python_script"))
+    fi
 
     echo "Python extraction completed."
     echo "----------------------------------------"
@@ -126,7 +155,6 @@ EOF
     echo "----------------------------------------"
 }
 
-# Validates that the initial golden run list file exists.
 validate_golden_list() {
     echo "Step 2: Validating golden run list..."
     golden_run_list="list/Full_ppGoldenRunList.txt"
@@ -138,7 +166,6 @@ validate_golden_list() {
     echo "----------------------------------------"
 }
 
-# Retrieves actual event counts from .evt files for a given list of run numbers.
 get_actual_events_from_evt() {
     input_file=$1
     total_events=0
@@ -158,7 +185,6 @@ get_actual_events_from_evt() {
         fi
     done < "$input_file"
 
-    # Processes remaining runs if not empty
     if [[ ${#run_numbers[@]} -gt 0 ]]; then
         run_list=$(IFS=,; echo "${run_numbers[*]}")
         query="SELECT SUM(lastevent - firstevent + 1) FROM filelist WHERE runnumber IN ($run_list) AND filename LIKE '%GL1_physics_gl1daq%.evt';"
@@ -170,14 +196,12 @@ get_actual_events_from_evt() {
     echo "$total_events"
 }
 
-# Prints a header before applying runtime, livetime, and missing bad tower map filters.
 apply_incremental_cuts_header() {
     echo "----------------------------------------"
     echo "Applying incremental cuts: runtime, livetime, and missing bad tower maps"
     echo "----------------------------------------"
 }
 
-# Filters out runs that do not meet the minimum runtime requirement (>5 mins).
 runtime_cut() {
     input_file="list/Full_ppGoldenRunList.txt"
     output_file_duration_v1="list/list_runnumber_runtime_v1.txt"
@@ -204,7 +228,6 @@ runtime_cut() {
     echo "----------------------------------------"
 }
 
-# Filters out runs that do not meet the MB (Minimum Bias) livetime requirement (>80% for trigger index 10).
 livetime_cut() {
     input_file="list/list_runnumber_runtime_v1.txt"
     output_file_livetime_v1="list/list_runnumber_livetime_v1.txt"
@@ -247,7 +270,6 @@ livetime_cut() {
     echo "----------------------------------------"
 }
 
-# Identifies runs missing bad tower maps. If requested, removes these runs from the final list.
 missing_bad_tower_maps_step() {
     echo "Checking for runs missing bad tower maps..."
 
@@ -282,7 +304,6 @@ missing_bad_tower_maps_step() {
     echo "----------------------------------------"
 }
 
-# Creates a .list file used in the DST list generation process.
 create_list_file() {
     echo "Creating .list file..."
     cp "FileLists/Full_ppGoldenRunList_Version1.txt" Full_ppGoldenRunList_Version1.list
@@ -290,7 +311,6 @@ create_list_file() {
     echo "----------------------------------------"
 }
 
-# Removes old DST list files before generating new ones.
 clean_old_dst_lists() {
     echo "Cleaning old DST lists..."
     rm -f dst_list/*.list
@@ -298,7 +318,6 @@ clean_old_dst_lists() {
     echo "----------------------------------------"
 }
 
-# Generates DST lists if requested. Skipped if dontGenerateFileLists is specified.
 generate_dst_lists() {
     echo "Generating DST lists..."
     cd dst_list
@@ -308,7 +327,6 @@ generate_dst_lists() {
     cd ..
 }
 
-# Computes event counts and percentages at each stage.
 compute_event_counts() {
     actual_events_initial=$(get_actual_events_from_evt 'list/list_runnumber_all.txt')
     actual_events_calo_qa=$(get_actual_events_from_evt 'list/Full_ppGoldenRunList.txt')
@@ -329,17 +347,23 @@ compute_event_counts() {
     percent_actual_events_after_badtower=$(echo "scale=2; $actual_events_after_badtower / $actual_events_initial * 100" | bc)
 }
 
-# Prints a summary table of the filtering process and final run statistics.
 final_summary() {
     echo "========================================"
     echo "Final Summary (Version 1)"
     printf "%-50s | %-35s | %-25s\n" "Stage" ".evt File Events" "Runs"
     echo "--------------------------------------------------|-------------------------------------|-------------------------"
 
+    # If NO_RUNNUMBER_LIMIT is true, note that the run number column represents a full run list.
+    if $NO_RUNNUMBER_LIMIT; then
+        run_label="${total_runs} (OVER FULL RUN LIST)"
+    else
+        run_label="${total_runs} (100%)"
+    fi
+
     printf "%-50s | %-35s | %-25s\n" \
     "1) After firmware fix (47289) and >1M events" \
     "${actual_events_initial} (100%)" \
-    "${total_runs} (100%)"
+    "$run_label"
 
     printf "%-50s | %-35s | %-25s\n" \
     "2) && Golden EMCal/HCal" \
@@ -351,7 +375,7 @@ final_summary() {
     "${actual_events_after_runtime} (${percent_actual_events_after_runtime}%)" \
     "${total_runs_duration_v1} (${percent_runs_after_runtime}%)"
 
-    printf "%-50s | %-35s | %-25s\n" \
+    printf "%-50s | %-35s | %-35s\n" \
     "4) && MB livetime > 80%" \
     "${actual_events_after_livetime} (${percent_actual_events_after_livetime}%)" \
     "${total_runs_livetime_v1} (${percent_runs_after_livetime}%)"
@@ -398,7 +422,6 @@ missing_bad_tower_maps_step
 create_list_file
 clean_old_dst_lists
 
-# Skip DST list generation if dontGenerateFileLists is specified.
 if ! $DONT_GENERATE_FILELISTS; then
     generate_dst_lists
 fi
