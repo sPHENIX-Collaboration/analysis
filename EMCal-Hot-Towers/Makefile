@@ -38,7 +38,7 @@ bin/plots-hot: macro/display-hot.C
 
 bin/Fun4All_CaloHotTower: macro/Fun4All_CaloHotTower.C
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphparameter -lffarawobjects
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphparameter -lffarawobjects -lcalotrigger
 
 clean:
 	rm bin/hotAna

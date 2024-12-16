@@ -14,6 +14,8 @@
 
 #include <caloreco/CaloTowerStatus.h>
 
+#include <calotrigger/TriggerRunInfoReco.h>
+
 #include <phool/recoConsts.h>
 
 #include <calohottower/CaloHotTower.h>
@@ -67,6 +69,9 @@ void Fun4All_CaloHotTower(const string  &inputFile,
   // in->AddListFile(inputFile.c_str());
   in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
+
+  TriggerRunInfoReco* triggerruninforeco = new TriggerRunInfoReco();
+  se->registerSubsystem(triggerruninforeco);
 
   // need to set the isBadChi2 flag for the towers
   CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");

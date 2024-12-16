@@ -28,6 +28,7 @@ libCaloHotTower_la_LIBADD = \
 	-lffarawobjects \
 	-lffamodules \
   -lcdbobjects \
+  -lcalotrigger \
   -lSubsysReco
 
 BUILT_SOURCES = testexternals.cc
