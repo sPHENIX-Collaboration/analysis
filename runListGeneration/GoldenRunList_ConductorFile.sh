@@ -27,8 +27,6 @@
 # - Always reported in the final summary.
 # - If removeRunsWithMissingMaps is not given, these runs are kept and DST lists include them.
 # - If removeRunsWithMissingMaps is given, these runs are removed before final DST creation, and reported in the summary.
-#
-# Terminal output uses ANSI styles for clarity.
 ################################################################################
 
 ########################################
