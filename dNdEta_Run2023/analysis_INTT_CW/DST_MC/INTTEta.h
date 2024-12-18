@@ -3,11 +3,30 @@
 
 #include "INTTXYvtxEvt.h"
 #include "MegaTrackFinder.h"
+#include "ana_map_folder/ana_map_v1.h"
+
+// todo : if the centrality bin or the eta and z regions are changed, modify the "ana_map_v1.h" first,
+// todo : and change the following "namespace" name
+namespace ana_map_version = ANA_MAP_V3;
 
 class INTTEta : public INTTXYvtxEvt
 {
     public:
-        INTTEta(string run_type, string out_folder_directory, pair<double,double> beam_origin, int geo_mode_id, double phi_diff_cut = 0.11, pair<double, double> DCA_cut = {-1,1}, int N_clu_cutl = 20, int N_clu_cut = 10000, bool draw_event_display = true, double peek = 3.32405, double angle_diff_new_l = 0.0, double angle_diff_new_r = 3, bool print_message_opt = true):
+        INTTEta(
+            string run_type, 
+            string out_folder_directory, 
+            pair<double,double> beam_origin, 
+            int geo_mode_id, 
+            double phi_diff_cut = 0.11, 
+            pair<double, double> DCA_cut = {-1,1}, 
+            int N_clu_cutl = 20, 
+            int N_clu_cut = 10000, 
+            bool draw_event_display = true, 
+            double peek = 3.32405, 
+            double angle_diff_new_l = 0.0, 
+            double angle_diff_new_r = 3, 
+            bool print_message_opt = true
+        ):
         INTTXYvtxEvt(run_type, out_folder_directory, beam_origin, geo_mode_id, phi_diff_cut, DCA_cut, N_clu_cutl, N_clu_cut, draw_event_display, peek, angle_diff_new_l, angle_diff_new_r, print_message_opt, 2.5, 9)
         {
             track_cluster_ratio_1D.clear();
@@ -16,6 +35,7 @@ class INTTEta : public INTTXYvtxEvt
             track_eta_phi_2D.clear();
             track_eta_z_2D.clear();
             dNdeta_1D_MC.clear();
+            dNdeta_1D_MC_edge_eta_cut.clear();
             final_dNdeta_1D.clear();
             final_dNdeta_1D_MC.clear();
             final_dNdeta_multi_1D.clear();
@@ -39,6 +59,7 @@ class INTTEta : public INTTXYvtxEvt
             outer_used_clu.clear();
 
             coarse_eta_z_2D_MC.clear();
+            coarse_eta_z_2D_fulleta_MC.clear();
             coarse_Reco_SignalNTracklet_Single_eta_z_2D.clear();
             coarse_Reco_SignalNTracklet_Multi_eta_z_2D.clear();
 
@@ -108,7 +129,21 @@ class INTTEta : public INTTXYvtxEvt
             return;
         };
         
-        void ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z, int centrality_bin, vector<vector<float>> true_track_info); 
+        virtual void ProcessEvt(
+            int event_i, 
+            vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+            vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_vec, 
+            vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+            int NvtxMC, 
+            vector<double> TrigvtxMC, 
+            bool PhiCheckTag, 
+            Long64_t bco_full, 
+            pair<double,double> evt_z, 
+            int centrality_bin, 
+            vector<vector<float>> true_track_info,
+            double zvtx_weighting
+        ); 
         // void ProcessEvtMC(int event_i, vector<float> true_track_info, vector<double> TrigvtxMC);
         void ClearEvt() override;
         void PrintPlots() override;
@@ -123,6 +158,7 @@ class INTTEta : public INTTXYvtxEvt
         vector<TH2F *> track_eta_z_2D; 
 
         vector<TH1F *> dNdeta_1D_MC;
+        vector<TH1F *> dNdeta_1D_MC_edge_eta_cut;
         vector<TH2F *> track_eta_z_2D_MC; 
 
         vector<TH1F *> track_delta_eta_1D;
@@ -177,6 +213,38 @@ class INTTEta : public INTTXYvtxEvt
         TH1F * check_inner_layer_clu_phi_1D;
         TH1F * check_outer_layer_clu_phi_1D;
 
+        // note : for the comparison with other files, MC, for example
+        // note : after all the selections, so it is exclusive
+        // note : cut : cluster size, cluster adc
+        // note : min bias cut
+        // note : zvtx quality cut
+        // note: zvtx acceptance cut
+        TH1F * exclusive_NClus_inner;
+        TH1F * exclusive_NClus_outer;
+        TH1F * exclusive_NClus_sum;
+
+        TH1F * exclusive_cluster_inner_adc;
+        TH1F * exclusive_cluster_outer_adc;
+
+        TH2F * exclusive_cluster_inner_eta_adc_2D;
+        TH2F * exclusive_cluster_outer_eta_adc_2D;
+
+        TH2F * exclusive_cluster_inner_eta_phi_2D;
+        TH2F * exclusive_cluster_outer_eta_phi_2D;
+
+        TH1F * exclusive_cluster_inner_eta;
+        TH1F * exclusive_cluster_inner_phi;
+        TH1F * exclusive_cluster_outer_eta;
+        TH1F * exclusive_cluster_outer_phi;
+        TH1F * exclusive_cluster_all_eta;
+        TH1F * exclusive_cluster_all_phi;
+
+        TH1F * exclusive_tight_tracklet_eta; // note : signal region only
+        TH1F * exclusive_tight_tracklet_phi; // note : signal region only
+        TH1F * exclusive_loose_tracklet_eta; // note : signal region only
+        TH1F * exclusive_loose_tracklet_phi; // note : signal region only
+
+
         // vector<pair<bool,clu_info>> inner_clu_phi_map[360]; // note: phi
         // vector<pair<bool,clu_info>> outer_clu_phi_map[360]; // note: phi
         vector<vector<pair<bool,clu_info>>> inner_clu_phi_map; // note: phi
@@ -216,6 +284,8 @@ class INTTEta : public INTTXYvtxEvt
         double Clus_OuterPhi_Offset_1;
         double Clus_OuterPhi_Offset_2;
 
+        double N_reco_cluster_short = 0;
+
 
         TH2F * track_cluster_ratio_multiplicity_2D; // note : x : NClus / NTracks, y : ratio
         TH2F * track_cluster_ratio_multiplicity_2D_MC; // note : x : NClus / NTracks, y : ratio
@@ -239,85 +309,16 @@ class INTTEta : public INTTXYvtxEvt
         vector<int> out_track_eta_i;
         vector<double> out_track_delta_phi_d;
 
-        // todo : if the centrality bin is changed, the following map and vector should be updated
-        map<int,int> centrality_map = {
-            {5, 0},
-            {15, 1},
-            {25, 2},
-            {35, 3},
-            {45, 4},
-            {55, 5},
-            {65, 6},
-            {75, 7},
-            {85, 8},
-            {95, 9}
-        };
-        
         TH1F * eta_region_hist;
-        vector<string> centrality_region = {
-            "0-5%",
-            "5-15%",
-            "15-25%",
-            "25-35%",
-            "35-45%",
-            "45-55%",
-            "55-65%",
-            "65-75%",
-            "75-85%",
-            "85-95%",
-            "0-95%"
-        };
 
+        map<int,int> centrality_map = ana_map_version::centrality_map;
+        vector<string> centrality_region = ana_map_version::centrality_region;
         // note : the following two vectors tell the region of the eta and z, including the edges in both sides.
         // note : so when talking about the number of bins, we have to do size() - 1
-        vector<double> eta_region = { // todo: if the eta region is changed, the following vector should be updated
-            -3.0,
-            -2.8,
-            -2.6,
-            -2.4,
-            -2.2,
-            -2,
-            -1.8,
-            -1.6,
-            -1.4,
-            -1.2,
-            -1,
-            -0.8,
-            -0.6,
-            -0.4,
-            -0.2,
-            0,
-            0.2,
-            0.4,
-            0.6,
-            0.8,
-            1,
-            1.2,
-            1.4,
-            1.6,
-            1.8,
-            2,
-            2.2,
-            2.4,
-            2.6,
-            2.8,
-            3
-        };
-
-        vector<double> z_region = { // todo: if the z region is changed, the following vector should be updated
-            -420, // note unit : mm
-            -380,
-            -340,
-            -300,
-            -260,
-            -220, // note : this part is the peak region
-            -180, // note : this part is the peak region
-            -140,
-            -100,
-            -60,
-            -20,
-            20
-        };
+        vector<double> eta_region = ana_map_version::eta_region;
+        vector<double> z_region = ana_map_version::z_region;
+        pair<double, double> selected_z_region_id = ana_map_version::selected_z_region_id;
+        double signal_region = ana_map_version::signal_region; // note : the signal region of the delta phi distribution, unit : degree
 
         // note : when filling in a z-eta pair, TH2F returns a int, we have a function to convert that number into the index position in X and Y
         // note : Once we have the position index in X and Y, we then convert the X and Y into the index for 1D array
@@ -327,14 +328,14 @@ class INTTEta : public INTTXYvtxEvt
 
         TH2F * coarse_eta_z_map; // note : the reference of the eta and z binning setting
         vector<TH2F *> coarse_eta_z_2D_MC; // note : keep the number of true tracks in each eta and z bin, for each centrality
+        vector<TH2F *> coarse_eta_z_2D_fulleta_MC; // note : no selection on the true level tracks
         vector<TH2F *> coarse_Reco_SignalNTracklet_Single_eta_z_2D; // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the single-cluster-used tracklet)
         vector<TH2F *> coarse_Reco_SignalNTracklet_Multi_eta_z_2D;  // note : // note : keep the counting of the N reco tracklet in the signal region for each eta, z and centrality bin. (for the multi-cluster-used tracklet)
         TH2F * MBin_Z_evt_hist_2D;    // note : keep the number of event as a function of the z vertex and centrality bin
         TH2F * MBin_Z_evt_hist_2D_MC; // note : keep the number of event as a function of the z vertex and centrality bin, but the zvtx info. is given by the MC, the true zvtx
         
 
-        // todo : change the single region cut here
-        double signal_region = 1.; // note : the signal region of the delta phi distribution, unit : degree
+        
         // todo : change the tight zvtx cut here 
         int tight_zvtx_bin = 6; // todo : it can be run by run dependent // note : select the bin that you want to have the quick result out
 
@@ -353,12 +354,13 @@ class INTTEta : public INTTXYvtxEvt
         double convertTo360(double radian);
         void print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int outerNClu);
         double get_clu_eta(vector<double> vertex, vector<double> clu_pos);
-        double get_dist_offset(TH1F * hist_in, int check_N_bin);
+        // double get_dist_offset(TH1F * hist_in, int check_N_bin);
         double get_delta_phi(double angle_1, double angle_2);
         double get_track_phi(double inner_clu_phi_in, double delta_phi_in);
         pair<int,int> GetTH2BinXY(int histNbinsX, int histNbinsY, int binglobal);
         double GetTH2Index1D(pair<int,int> XY_index, int histNbinsX);
         void DrawEtaZGrid();
+        double get_TH1F_Entries(TH1F * hist_in);
 };
 
 void INTTEta::InitHist()
@@ -389,6 +391,11 @@ void INTTEta::InitHist()
         coarse_eta_z_2D_MC[i] -> GetYaxis() -> SetTitle("Z vertex [mm]");
         coarse_eta_z_2D_MC[i] -> GetXaxis() -> SetNdivisions(505);
 
+        coarse_eta_z_2D_fulleta_MC.push_back( new TH2F("","", eta_region.size() - 1, &eta_region[0], z_region.size() - 1, &z_region[0]) );
+        coarse_eta_z_2D_fulleta_MC[i] -> GetXaxis() -> SetTitle("#eta");
+        coarse_eta_z_2D_fulleta_MC[i] -> GetYaxis() -> SetTitle("Z vertex [mm]");
+        coarse_eta_z_2D_fulleta_MC[i] -> GetXaxis() -> SetNdivisions(505);
+
         coarse_Reco_SignalNTracklet_Single_eta_z_2D.push_back( new TH2F("","", eta_region.size() - 1, &eta_region[0], z_region.size() - 1, &z_region[0]) );
         coarse_Reco_SignalNTracklet_Single_eta_z_2D[i] -> GetXaxis() -> SetTitle("#eta");
         coarse_Reco_SignalNTracklet_Single_eta_z_2D[i] -> GetYaxis() -> SetTitle("Z vertex [mm]");
@@ -415,8 +422,8 @@ void INTTEta::InitHist()
         dNdeta_1D[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
         dNdeta_1D[i] -> SetLineColor(TColor::GetColor("#1A3947"));
         dNdeta_1D[i] -> SetLineWidth(2);
-        dNdeta_1D[i] -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
-        dNdeta_1D[i] -> GetXaxis() -> SetTitle("#eta");
+        dNdeta_1D[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D[i] -> GetXaxis() -> SetTitle("N tracklet #eta");
         // dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,50);
         dNdeta_1D[i] -> SetTitleSize(0.06, "X");
         dNdeta_1D[i] -> SetTitleSize(0.06, "Y");
@@ -431,8 +438,8 @@ void INTTEta::InitHist()
         dNdeta_1D_MC[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
         dNdeta_1D_MC[i] -> SetLineColor(TColor::GetColor("#1A3947"));
         dNdeta_1D_MC[i] -> SetLineWidth(2);
-        dNdeta_1D_MC[i] -> GetYaxis() -> SetTitle("dN_{ch}/d#eta");
-        dNdeta_1D_MC[i] -> GetXaxis() -> SetTitle("#eta");
+        dNdeta_1D_MC[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D_MC[i] -> GetXaxis() -> SetTitle("N track #eta");
         // dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,50);
         dNdeta_1D_MC[i] -> SetTitleSize(0.06, "X");
         dNdeta_1D_MC[i] -> SetTitleSize(0.06, "Y");
@@ -440,6 +447,22 @@ void INTTEta::InitHist()
         dNdeta_1D_MC[i] -> GetYaxis() -> SetTitleOffset (1.1);
         dNdeta_1D_MC[i] -> GetXaxis() -> CenterTitle(true);
         dNdeta_1D_MC[i] -> GetYaxis() -> CenterTitle(true);
+
+        dNdeta_1D_MC_edge_eta_cut.push_back(new TH1F("","",Eta_NBin, Eta_Min, Eta_Max));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerStyle(20);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerSize(0.8);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetMarkerColor(TColor::GetColor("#1A3947"));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetLineColor(TColor::GetColor("#1A3947"));
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetLineWidth(2);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetTitle("Entry");
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> SetTitle("N track #eta");
+        // dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetRangeUser(0,50);
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetTitleSize(0.06, "X");
+        dNdeta_1D_MC_edge_eta_cut[i] -> SetTitleSize(0.06, "Y");
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> SetTitleOffset (0.71);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> SetTitleOffset (1.1);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetXaxis() -> CenterTitle(true);
+        dNdeta_1D_MC_edge_eta_cut[i] -> GetYaxis() -> CenterTitle(true);
 
         final_dNdeta_1D.push_back(new TH1F("","",eta_region.size() - 1, &eta_region[0]));
         final_dNdeta_1D[i] -> SetMarkerStyle(20);
@@ -633,6 +656,48 @@ void INTTEta::InitHist()
     clu_used_centrality_2D -> GetYaxis() -> SetTitle("N used each clu");
     clu_used_centrality_2D -> GetXaxis() -> SetNdivisions(505);
 
+    exclusive_NClus_inner        = new TH1F("","exclusive_NClus_inner;NClus inner barrel;Entry",50, 0, 5000);
+    exclusive_NClus_outer        = new TH1F("","exclusive_NClus_outer;NClus outer barrel;Entry",50,0,5000);
+    exclusive_NClus_sum          = new TH1F("","exclusive_NClus_sum;NClus total;Entry",50,0,9000);    
+
+    exclusive_cluster_inner_eta  = new TH1F("","exclusive_cluster_inner_eta;Cluster inner #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_inner_phi  = new TH1F("","exclusive_cluster_inner_phi;Cluster inner #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_cluster_outer_eta  = new TH1F("","exclusive_cluster_outer_eta;Cluster outer #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_outer_phi  = new TH1F("","exclusive_cluster_outer_phi;Cluster outer #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_cluster_all_eta    = new TH1F("","exclusive_cluster_all_eta;Cluster #eta;Entry",50,-3.5,3.5);
+    exclusive_cluster_all_phi    = new TH1F("","exclusive_cluster_all_phi;Cluster #phi [radian];Entry",50,-3.5,3.5);
+
+    exclusive_cluster_inner_adc  = new TH1F("","exclusive_cluster_inner_adc;Cluster inner adc;Entry",50,0,400);
+    exclusive_cluster_outer_adc  = new TH1F("","exclusive_cluster_outer_adc;Cluster outer adc;Entry",50,0,400);
+
+    exclusive_cluster_inner_eta_adc_2D = new TH2F("","exclusive_cluster_inner_eta_adc_2D;Cluster inner #eta; Cluster ADC",
+        2000, exclusive_cluster_inner_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_eta -> GetXaxis() -> GetXmax(), 
+        exclusive_cluster_inner_adc -> GetNbinsX(), exclusive_cluster_inner_adc -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_adc -> GetXaxis() -> GetXmax()
+    );
+
+    exclusive_cluster_outer_eta_adc_2D = new TH2F("","exclusive_cluster_outer_eta_adc_2D;Cluster outer #eta; Cluster ADC",
+        2000, exclusive_cluster_outer_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_eta -> GetXaxis() -> GetXmax(), 
+        exclusive_cluster_outer_adc -> GetNbinsX(), exclusive_cluster_outer_adc -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_adc -> GetXaxis() -> GetXmax()
+    );
+
+    exclusive_cluster_inner_eta_phi_2D = new TH2F(
+        "",
+        "exclusive_cluster_inner_eta_phi_2D;Cluster inner #eta; Cluster inner #phi",
+        2000, exclusive_cluster_inner_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_eta -> GetXaxis() -> GetXmax(),
+        2000, exclusive_cluster_inner_phi -> GetXaxis() -> GetXmin(), exclusive_cluster_inner_phi -> GetXaxis() -> GetXmax()
+    );
+    exclusive_cluster_outer_eta_phi_2D = new TH2F(
+        "",
+        "exclusive_cluster_outer_eta_phi_2D;Cluster outer #eta; Cluster outer #phi",
+        2000, exclusive_cluster_outer_eta -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_eta -> GetXaxis() -> GetXmax(),
+        2000, exclusive_cluster_outer_phi -> GetXaxis() -> GetXmin(), exclusive_cluster_outer_phi -> GetXaxis() -> GetXmax()
+    );
+    
+    exclusive_tight_tracklet_eta = new TH1F("","exclusive_tight_tracklet_eta;Tracklet #eta;Entry",50,-3.5,3.5);
+    exclusive_tight_tracklet_phi = new TH1F("","exclusive_tight_tracklet_phi;Tracklet #phi [radian];Entry",50,-3.5,3.5);
+    exclusive_loose_tracklet_eta = new TH1F("","exclusive_loose_tracklet_eta;Tracklet #eta;Entry",50,-3.5,3.5);
+    exclusive_loose_tracklet_phi = new TH1F("","exclusive_loose_tracklet_phi;Tracklet #phi [radian];Entry",50,-3.5,3.5);
+
     eta_region_hist = new TH1F("","", eta_region.size() - 1, &eta_region[0]);
 
     cout<<" running ? in INTTEta, InitHist"<<endl;
@@ -716,7 +781,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_All -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_All -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_All->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -731,7 +796,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_PhiLoose -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_PhiLoose -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_PhiLoose->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -746,7 +811,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_Z -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_Z -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_Z->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -761,7 +826,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_ZDCA -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_ZDCA -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_ZDCA->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -776,7 +841,7 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
     evt_reco_track_gr_ZDCAPhi -> GetXaxis() -> SetNdivisions(505);
     evt_reco_track_gr_ZDCAPhi -> Draw("ap");
     evt_true_track_gr -> Draw("p same");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     draw_text -> DrawLatex(0.21, 0.90, Form("NTrueTrack: %i, innerNClu: %i, outerNClu: %i", NTrueTrack, innerNClu, outerNClu));
     draw_text -> DrawLatex(0.21, 0.85, Form("NReco_tracklet: %i", evt_reco_track_gr_ZDCAPhi->GetN()));
     coord_line -> DrawLine(-3.5, 0, 3.5, 0);
@@ -1036,7 +1101,22 @@ void INTTEta::print_evt_plot(int event_i, int NTrueTrack, int innerNClu, int out
 // note : this function is the new method, which means that we first put the cluster into a phi map, and then there are two for loops still, but we only check the certain range of the phi 
 // note : this function requires that one cluster can only be used once for single tracklet
 // note : so maybe there should be no background subtraction for this case
-void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_vec, vector<clu_info> temp_sPH_outer_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_vec, vector<vector<double>> temp_sPH_nocolumn_rz_vec, int NvtxMC, vector<double> TrigvtxMC, bool PhiCheckTag, Long64_t bco_full, pair<double,double> evt_z, int centrality_bin, vector<vector<float>> true_track_info){ // note : evt_z : {z, width}
+void INTTEta::ProcessEvt(
+    int event_i, 
+    vector<clu_info> temp_sPH_inner_nocolumn_vec, 
+    vector<clu_info> temp_sPH_outer_nocolumn_vec, 
+    vector<vector<double>> temp_sPH_nocolumn_vec, 
+    vector<vector<double>> temp_sPH_nocolumn_rz_vec, 
+    int NvtxMC, 
+    vector<double> TrigvtxMC, 
+    bool PhiCheckTag, 
+    Long64_t bco_full, 
+    pair<double,double> evt_z, 
+    int centrality_bin, 
+    vector<vector<float>> true_track_info,
+    double zvtx_weighting = 1.0
+)
+{ // note : evt_z : {z, width}
     return_tag = 0;
 
     if (event_i%100 == 0) {cout<<"In INTTEta class, running event : "<<event_i<<endl;}
@@ -1062,8 +1142,9 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
     // if (-220 > evt_z.first + evt_z.second || -180 < evt_z.first - evt_z.second) {return;}
     // if (-100 > evt_z.first + evt_z.second || 100 < evt_z.first - evt_z.second) {return;}
     
-    MBin_Z_evt_hist_2D -> Fill(centrality_map[centrality_bin], evt_z.first);
-    MBin_Z_evt_hist_2D -> Fill(MBin_Z_evt_hist_2D -> GetNbinsX()-1, evt_z.first);
+    // note : for data, the denominator
+    MBin_Z_evt_hist_2D -> Fill(centrality_map[centrality_bin], evt_z.first, zvtx_weighting); 
+    MBin_Z_evt_hist_2D -> Fill(MBin_Z_evt_hist_2D -> GetNbinsX()-1, evt_z.first, zvtx_weighting); 
     
     N_GoodEvent += 1;
     N_GoodEvent_vec[centrality_map[centrality_bin]] += 1;
@@ -1086,11 +1167,25 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         {
             if (true_track_info[track_i][2] == 111 || true_track_info[track_i][2] == 22 || abs(true_track_info[track_i][2]) == 2112){continue;}
 
-            if (true_track_info[track_i][0] > INTT_eta_acceptance_l && true_track_info[track_i][0] < INTT_eta_acceptance_r)
+            // note : coarse eta and z binning, this is for the final dNdeta result
+            coarse_eta_z_2D_fulleta_MC[centrality_map[centrality_bin]]        -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
+            coarse_eta_z_2D_fulleta_MC[coarse_eta_z_2D_fulleta_MC.size() - 1] -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.);
+
+            if (TrigvtxMC[2]*10. > z_region[selected_z_region_id.first] && TrigvtxMC[2]*10. < z_region[selected_z_region_id.second])
             {
-                // note : 1D, fine binning for a detailed check
                 dNdeta_1D_MC[centrality_map[centrality_bin]] -> Fill(true_track_info[track_i][0]);
                 dNdeta_1D_MC[dNdeta_1D_MC.size() - 1]        -> Fill(true_track_info[track_i][0]);
+            }
+
+
+            if (true_track_info[track_i][0] > INTT_eta_acceptance_l && true_track_info[track_i][0] < INTT_eta_acceptance_r)
+            {
+                // note : 1D, fine binning for a detailed check, full zvtx range 
+                if (TrigvtxMC[2]*10. > z_region[selected_z_region_id.first] && TrigvtxMC[2]*10. < z_region[selected_z_region_id.second])
+                {
+                    dNdeta_1D_MC_edge_eta_cut[centrality_map[centrality_bin]]       -> Fill(true_track_info[track_i][0]);
+                    dNdeta_1D_MC_edge_eta_cut[dNdeta_1D_MC_edge_eta_cut.size() - 1] -> Fill(true_track_info[track_i][0]);
+                }
 
                 if (GetTH2BinXY(coarse_eta_z_map -> GetNbinsX(), coarse_eta_z_map -> GetNbinsY(), coarse_eta_z_map -> Fill(true_track_info[track_i][0], TrigvtxMC[2]*10.)).second == tight_zvtx_bin)
                 {
@@ -1121,24 +1216,65 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         // if (evt_NTrack_MC < 10) {cout<<"evt : "<<event_i<<" ---- N reco track : "<<evt_NTrack<<" N true track : "<<evt_NTrack_MC<<" ratio : "<<double(evt_NTrack) / double(evt_NTrack_MC)<<endl;}
     }
 
+    if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+    {
+        exclusive_NClus_inner -> Fill(temp_sPH_inner_nocolumn_vec.size(), zvtx_weighting);
+        exclusive_NClus_outer -> Fill(temp_sPH_outer_nocolumn_vec.size(), zvtx_weighting);
+        exclusive_NClus_sum   -> Fill(temp_sPH_inner_nocolumn_vec.size() + temp_sPH_outer_nocolumn_vec.size(), zvtx_weighting);
+    }
+
     // note : put the cluster into the phi map, the first bool is for the cluster usage.
     // note : false means the cluster is not used
     for (int inner_i = 0; inner_i < temp_sPH_inner_nocolumn_vec.size(); inner_i++) {
         Clus_InnerPhi_Offset = (temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second < 0) ? atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first) * (180./TMath::Pi());
+        double Clus_InnerPhi_Offset_radian = atan2(temp_sPH_inner_nocolumn_vec[inner_i].y - beam_origin.second, temp_sPH_inner_nocolumn_vec[inner_i].x - beam_origin.first);
+
         // cout<<"inner clu phi : "<<Clus_InnerPhi_Offset<<" origin: "<< temp_sPH_inner_nocolumn_vec[inner_i].phi <<endl;
         // cout<<" ("<<Clus_InnerPhi_Offset<<", "<< temp_sPH_inner_nocolumn_vec[inner_i].phi<<")" <<endl;
         inner_clu_phi_map[ int(Clus_InnerPhi_Offset) ].push_back({false,temp_sPH_inner_nocolumn_vec[inner_i]});
         check_inner_layer_clu_phi_1D->Fill(Clus_InnerPhi_Offset);
 
         double clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{temp_sPH_inner_nocolumn_vec[inner_i].x, temp_sPH_inner_nocolumn_vec[inner_i].y, temp_sPH_inner_nocolumn_vec[inner_i].z});
+        
+        if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
+            exclusive_cluster_inner_eta -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_inner_phi -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_eta_phi_2D -> Fill(clu_eta, Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_eta_adc_2D -> Fill(clu_eta, temp_sPH_inner_nocolumn_vec[inner_i].sum_adc, zvtx_weighting);
+
+            exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_all_phi   -> Fill(Clus_InnerPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_inner_adc -> Fill(temp_sPH_inner_nocolumn_vec[inner_i].sum_adc, zvtx_weighting);
+        }
+
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
     }
     for (int outer_i = 0; outer_i < temp_sPH_outer_nocolumn_vec.size(); outer_i++) {
         Clus_OuterPhi_Offset = (temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second < 0) ? atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first) * (180./TMath::Pi());
+        double Clus_OuterPhi_Offset_radian = atan2(temp_sPH_outer_nocolumn_vec[outer_i].y - beam_origin.second, temp_sPH_outer_nocolumn_vec[outer_i].x - beam_origin.first);
+
         outer_clu_phi_map[ int(Clus_OuterPhi_Offset) ].push_back({false,temp_sPH_outer_nocolumn_vec[outer_i]});
         check_outer_layer_clu_phi_1D->Fill(Clus_OuterPhi_Offset);
 
         double clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{temp_sPH_outer_nocolumn_vec[outer_i].x, temp_sPH_outer_nocolumn_vec[outer_i].y, temp_sPH_outer_nocolumn_vec[outer_i].z});
+       
+        if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second]){
+            exclusive_cluster_outer_eta -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_outer_phi -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_eta_phi_2D -> Fill(clu_eta, Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_eta_adc_2D -> Fill(clu_eta, temp_sPH_outer_nocolumn_vec[outer_i].sum_adc, zvtx_weighting);
+
+            exclusive_cluster_all_eta   -> Fill(clu_eta, zvtx_weighting);
+            exclusive_cluster_all_phi   -> Fill(Clus_OuterPhi_Offset_radian, zvtx_weighting);
+
+            exclusive_cluster_outer_adc -> Fill(temp_sPH_outer_nocolumn_vec[outer_i].sum_adc, zvtx_weighting);
+        }
+       
         if (clu_eta > INTT_eta_acceptance_l && clu_eta < INTT_eta_acceptance_r) {effective_total_NClus += 1;}
     }
 
@@ -1164,6 +1300,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
             if (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].first == true) {continue;}
 
             Clus_InnerPhi_Offset = (inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
+            double Clus_InnerPhi_Offset_radian = atan2(inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.y - beam_origin.second, inner_clu_phi_map[inner_phi_i][inner_phi_clu_i].second.x - beam_origin.first);
 
             // todo: change the outer phi scan range
             // note : the outer phi index, -4, -3, -2, -1, 0, 1, 2, 3, 4
@@ -1177,6 +1314,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     if (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].first == true) {continue;}
 
                     Clus_OuterPhi_Offset = (outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second < 0) ? atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi()) + 360 : atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first) * (180./TMath::Pi());
+                    double Clus_OuterPhi_Offset_radian = atan2(outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y - beam_origin.second, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x - beam_origin.first);
                     double delta_phi = get_delta_phi(Clus_InnerPhi_Offset, Clus_OuterPhi_Offset);
                     
                     // if (fabs(delta_phi) > 5.72) {continue;}
@@ -1186,10 +1324,12 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     double outer_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.x, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.y, outer_clu_phi_map[true_scan_i][outer_phi_clu_i].second.z});
                     double delta_eta = inner_clu_eta - outer_clu_eta;
 
-                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta ); // note : all zvtx range and all eta region
+                    // note : all zvtx range and all eta region
+                    track_delta_eta_1D[centrality_map[centrality_bin]] -> Fill( delta_eta ); 
                     track_delta_eta_1D[track_delta_eta_1D.size() - 1]  -> Fill( delta_eta );
 
-                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta); // note : all zvtx range and all eta region 
+                    // note : all zvtx range and all eta region 
+                    track_DeltaPhi_DeltaEta_2D[centrality_map[centrality_bin]]        -> Fill(delta_phi, delta_eta); 
                     track_DeltaPhi_DeltaEta_2D[track_DeltaPhi_DeltaEta_2D.size() - 1] -> Fill(delta_phi, delta_eta);
 
                     pair<double,double> z_range_info = Get_possible_zvtx( 
@@ -1249,15 +1389,22 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                     double eta_z_bin = GetTH2Index1D(GetTH2BinXY(coarse_eta_z_map->GetNbinsX(), coarse_eta_z_map->GetNbinsY(), coarse_eta_z_map -> Fill(Get_eta_pair.second, evt_z.first)), coarse_eta_z_map->GetNbinsX());
                     if (int(eta_z_bin) != -1)
                     {
-                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi); // note : each coarse eta and z bin
-                        final_track_multi_delta_phi_1D[final_track_multi_delta_phi_1D.size() - 1][eta_z_bin] -> Fill(delta_phi);
+                        final_track_multi_delta_phi_1D[centrality_map[centrality_bin]][eta_z_bin]            -> Fill(delta_phi, zvtx_weighting); // note : each coarse eta and z bin
+                        final_track_multi_delta_phi_1D[final_track_multi_delta_phi_1D.size() - 1][eta_z_bin] -> Fill(delta_phi, zvtx_weighting);
 
                         if (fabs(delta_phi) <= signal_region) { 
                             good_tracklet_multi_counting[centrality_map[centrality_bin]][eta_z_bin]          += 1;
                             good_tracklet_multi_counting[good_tracklet_multi_counting.size() - 1][eta_z_bin] += 1;
 
-                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[centrality_map[centrality_bin]]                        -> Fill(Get_eta_pair.second, evt_z.first);
-                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[coarse_Reco_SignalNTracklet_Multi_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first);
+                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[centrality_map[centrality_bin]]                        -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+                            coarse_Reco_SignalNTracklet_Multi_eta_z_2D[coarse_Reco_SignalNTracklet_Multi_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+
+                            if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+                            {
+                                exclusive_loose_tracklet_eta -> Fill(Get_eta_pair.second, zvtx_weighting);
+                                exclusive_loose_tracklet_phi -> Fill( (Clus_InnerPhi_Offset_radian + Clus_OuterPhi_Offset_radian)/2. , zvtx_weighting);
+                            }
+
                         }
 
                     }
@@ -1368,7 +1515,10 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
 
         double inner_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{inner_clu_phi_map[inner_index_0][inner_index_1].second.x, inner_clu_phi_map[inner_index_0][inner_index_1].second.y, inner_clu_phi_map[inner_index_0][inner_index_1].second.z});
         double outer_clu_eta = get_clu_eta({beam_origin.first, beam_origin.second, evt_z.first},{outer_clu_phi_map[outer_index_0][outer_index_1].second.x, outer_clu_phi_map[outer_index_0][outer_index_1].second.y, outer_clu_phi_map[outer_index_0][outer_index_1].second.z});
-        
+
+        double Clus_InnerPhi_Offset_radian = atan2(inner_clu_phi_map[inner_index_0][inner_index_1].second.y - beam_origin.second, inner_clu_phi_map[inner_index_0][inner_index_1].second.x - beam_origin.first);
+        double Clus_OuterPhi_Offset_radian = atan2(outer_clu_phi_map[outer_index_0][outer_index_1].second.y - beam_origin.second, outer_clu_phi_map[outer_index_0][outer_index_1].second.x - beam_origin.first);
+
         if  (Get_eta_pair.second - (inner_clu_eta + outer_clu_eta)/2. > 0.3)
         {
             cout<<" "<<endl;
@@ -1390,8 +1540,12 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
         // cout<<"test_5"<<endl;
         if (fabs(delta_phi) <= signal_region)
         {
-            dNdeta_1D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second);
-            dNdeta_1D[dNdeta_1D.size() - 1]           -> Fill(Get_eta_pair.second);
+            if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+            {
+                dNdeta_1D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second);
+                dNdeta_1D[dNdeta_1D.size() - 1]           -> Fill(Get_eta_pair.second);
+            }
+            
 
             track_eta_z_2D[centrality_map[centrality_bin]] -> Fill(Get_eta_pair.second, evt_z.first);
             track_eta_z_2D[track_eta_z_2D.size() - 1]      -> Fill(Get_eta_pair.second, evt_z.first);
@@ -1438,8 +1592,14 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
                 good_tracklet_counting[centrality_map[centrality_bin]][eta_z_bin]    += 1;
                 good_tracklet_counting[good_tracklet_counting.size() - 1][eta_z_bin] += 1;
 
-                coarse_Reco_SignalNTracklet_Single_eta_z_2D[centrality_map[centrality_bin]]                         -> Fill(Get_eta_pair.second, evt_z.first);
-                coarse_Reco_SignalNTracklet_Single_eta_z_2D[coarse_Reco_SignalNTracklet_Single_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first);
+                coarse_Reco_SignalNTracklet_Single_eta_z_2D[centrality_map[centrality_bin]]                         -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+                coarse_Reco_SignalNTracklet_Single_eta_z_2D[coarse_Reco_SignalNTracklet_Single_eta_z_2D.size() - 1] -> Fill(Get_eta_pair.second, evt_z.first, zvtx_weighting);
+
+                if (evt_z.first > z_region[selected_z_region_id.first] && evt_z.first < z_region[selected_z_region_id.second])
+                {
+                    exclusive_tight_tracklet_eta -> Fill(Get_eta_pair.second, zvtx_weighting);
+                    exclusive_tight_tracklet_phi -> Fill((Clus_InnerPhi_Offset_radian + Clus_OuterPhi_Offset_radian)/2., zvtx_weighting);
+                }
             }
 
             // note : save the information in detail
@@ -1474,6 +1634,7 @@ void INTTEta::ProcessEvt(int event_i, vector<clu_info> temp_sPH_inner_nocolumn_v
     // cout<<"test_8"<<endl;
     if (run_type == "MC")
     {
+        N_reco_cluster_short += (evt_NTrack_MC - evt_NTrack);
         track_correlation_2D -> Fill(evt_NTrack_MC, evt_NTrack);
         track_ratio_2D -> Fill(evt_NTrack_MC, double(evt_NTrack)/double(evt_NTrack_MC));
         track_ratio_1D[centrality_map[centrality_bin]] -> Fill( double(evt_NTrack) / double(evt_NTrack_MC) );
@@ -1566,7 +1727,7 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     mega_track_finding_ratio_2D -> Draw("colz0");
     mega_track_finding_ratio_2D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/mega_track_finding_ratio_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -1574,42 +1735,42 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_inner_track_eta_1D -> Draw("hist");
     cluster3_inner_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_inner_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_outer_track_eta_1D -> Draw("hist");
     cluster3_outer_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_outer_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     mega_track_eta_1D -> Draw("hist");
     mega_track_eta_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/mega_track_eta_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
     
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     check_inner_layer_clu_phi_1D -> Draw("hist");
     check_inner_layer_clu_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/check_inner_layer_clu_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     check_outer_layer_clu_phi_1D -> Draw("hist");
     check_outer_layer_clu_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/check_outer_layer_clu_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     clu4_track_ReducedChi2_1D -> Draw("hist");
     clu4_track_ReducedChi2_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/clu4_track_ReducedChi2_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -1617,7 +1778,7 @@ void INTTEta::PrintPlots()
     clu3_track_ReducedChi2_1D -> Draw("hist");
     clu3_track_ReducedChi2_1D -> SetMinimum(0);
     clu3_track_ReducedChi2_1D -> SetMaximum(clu3_track_ReducedChi2_1D->GetBinContent(clu3_track_ReducedChi2_1D->GetMaximumBin())*1.3);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     coord_line -> DrawLine(mega_track_finder->Get_performance_cut(),0,mega_track_finder->Get_performance_cut(),clu3_track_ReducedChi2_1D->GetBinContent(clu3_track_ReducedChi2_1D->GetMaximumBin())*1.3);
     c1 -> Print( Form("%s/clu3_track_ReducedChi2_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -1630,7 +1791,7 @@ void INTTEta::PrintPlots()
     {
         c1 -> cd();
         track_cluster_ratio_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_cluster_ratio_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1645,7 +1806,7 @@ void INTTEta::PrintPlots()
     {
         c1 -> cd();
         track_cluster_ratio_1D_MC[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_cluster_ratio_1D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1653,31 +1814,33 @@ void INTTEta::PrintPlots()
     c1 -> Print( Form("%s/track_cluster_ratio_1D_MC.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    c1 -> Print( Form("%s/dNdeta_1D.pdf(", out_folder_directory.c_str()) );
-    for (int i = 0; i < dNdeta_1D.size(); i++)
-    {   
-        double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
-        dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
-        dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt));
+    // c1 -> Print( Form("%s/dNdeta_1D.pdf(", out_folder_directory.c_str()) );
+    // for (int i = 0; i < dNdeta_1D.size(); i++)
+    // {   
+    //     double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
+    //     dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
+    //     dNdeta_1D_MC[i] -> Scale(1./double(N_correction_evt));
         
-        dNdeta_1D[i] -> Scale(1./double(dNdeta_1D[i] -> GetBinWidth(1) ));
-        dNdeta_1D[i] -> Scale(1./double(N_correction_evt));
-        dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,800);
-        dNdeta_1D[i] -> Draw("ep");
-        dNdeta_1D_MC[i] -> Draw("hist same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
-        c1 -> Print(Form("%s/dNdeta_1D.pdf", out_folder_directory.c_str()));
-        c1 -> Clear();    
-    }
-    c1 -> Print( Form("%s/dNdeta_1D.pdf)", out_folder_directory.c_str()) );
+    //     dNdeta_1D[i] -> Scale(1./double(dNdeta_1D[i] -> GetBinWidth(1) ));
+    //     dNdeta_1D[i] -> Scale(1./double(N_correction_evt));
+    //     dNdeta_1D[i] -> GetYaxis() -> SetRangeUser(0,800);
+    //     dNdeta_1D[i] -> Draw("ep");
+    //     dNdeta_1D_MC[i] -> Draw("hist same");
+    //     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, inclusive Zvtx",centrality_region[i].c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC = Nevt reco: %.1f", N_correction_evt));
+    //     draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f", dNdeta_1D_MC[i] -> Integral(), dNdeta_1D[i] -> Integral()));
+    //     c1 -> Print(Form("%s/dNdeta_1D.pdf", out_folder_directory.c_str()));
+    //     c1 -> Clear();    
+    // }
+    // c1 -> Print( Form("%s/dNdeta_1D.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     c1 -> Print( Form("%s/track_eta_phi_2D.pdf(", out_folder_directory.c_str()) );
     for (int i = 0; i < track_eta_phi_2D.size(); i++)
     {
         track_eta_phi_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_phi_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1690,7 +1853,7 @@ void INTTEta::PrintPlots()
     {
         track_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1703,7 +1866,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_phi_1D[i] -> SetMinimum(0);
         track_delta_phi_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_phi_1D[i]->GetMaximum() * 1.1);
         coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_phi_1D[i]->GetMaximum() * 1.1);
@@ -1718,7 +1881,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_eta_1D[i] -> SetMinimum(0);
         track_delta_eta_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         // coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_eta_1D[i]->GetMaximum() * 1.1);
         // coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_eta_1D[i]->GetMaximum() * 1.1);
@@ -1733,7 +1896,7 @@ void INTTEta::PrintPlots()
     {
         track_delta_eta_1D_post[i] -> SetMinimum(0);
         track_delta_eta_1D_post[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         // coord_line -> DrawLine(-1*phi_diff_cut, 0, -1 * phi_diff_cut, track_delta_eta_1D_post[i]->GetMaximum() * 1.1);
         // coord_line -> DrawLine(phi_diff_cut, 0, phi_diff_cut, track_delta_eta_1D_post[i]->GetMaximum() * 1.1);
@@ -1748,7 +1911,7 @@ void INTTEta::PrintPlots()
     {
         track_DCA_distance[i] -> SetMinimum(0);
         track_DCA_distance[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         coord_line -> DrawLine(DCA_cut.first, 0, DCA_cut.first, track_DCA_distance[i]->GetMaximum() * 1.05);
         coord_line -> DrawLine(DCA_cut.second, 0, DCA_cut.second, track_DCA_distance[i]->GetMaximum() * 1.05);
@@ -1762,7 +1925,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_phi_DCA_2D.size(); i++)
     {
         track_phi_DCA_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         
         coord_line -> DrawLine(track_phi_DCA_2D[i] -> GetXaxis() -> GetXmin(), DCA_cut.first, track_phi_DCA_2D[i] -> GetXaxis() -> GetXmax(), DCA_cut.first);
@@ -1780,7 +1943,7 @@ void INTTEta::PrintPlots()
     {
         track_ratio_1D[i] -> SetMinimum(0);
         track_ratio_1D[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_ratio_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -1793,36 +1956,41 @@ void INTTEta::PrintPlots()
         c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf(", out_folder_directory.c_str(), i) );
         for (int i1 = 0; i1 < final_track_delta_phi_1D[i].size(); i1++)
         {   
-            double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
-            gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {
+                double hist_offset = get_dist_offset(final_track_delta_phi_1D[i][i1], 15);
+                gaus_pol1_fit->SetParameters( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+                final_track_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            
+            
+                // note : par[0] : size
+                // note : par[1] : ratio of the two gaussians
+                // note : par[2] : mean
+                // note : par[3] : width of gaus 1
+                // note : par[4] : width of gaus 2
+                // note : par[5] : offset
+                // note : par[6] : slope
+                // note : fit with double gaussian function + pol1
+                d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
+                d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
+                d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
+                d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
+                final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+                // note : extract the signal region
+                draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
+                // note : extract the part of pol1 background
+                draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
 
-            // note : par[0] : size
-            // note : par[1] : ratio of the two gaussians
-            // note : par[2] : mean
-            // note : par[3] : width of gaus 1
-            // note : par[4] : width of gaus 2
-            // note : par[5] : offset
-            // note : par[6] : slope
-            // note : fit with double gaussian function + pol1
-            d_gaus_pol1_fit -> SetParameters(final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0.2, 0, final_track_delta_phi_1D[i][i1]->GetStdDev()/2., final_track_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
-            d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
-            d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-            final_track_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
-            // note : extract the signal region
-            draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
-            // note : extract the part of pol1 background
-            draw_pol1_line -> SetParameters(d_gaus_pol1_fit -> GetParameter(5), d_gaus_pol1_fit -> GetParameter(6));
+                // note : fit the background region only by the pol2 function
+                // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
+                bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
+                bkg_fit_pol2 -> FixParameter(4, signal_region);
+                bkg_fit_pol2 -> SetParLimits(2, -100, 0);
+                final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+                // note : extract the background region (which includes the signal region also)
+                draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+            }
 
-            // note : fit the background region only by the pol2 function
-            // note : p[0] + p[1]*(x-p[3])+p[2] * (x-p[3])^2
-            bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
-            bkg_fit_pol2 -> FixParameter(4, signal_region);
-            bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-            final_track_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
-            // note : extract the background region (which includes the signal region also)
-            draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
+           
 
             final_track_delta_phi_1D[i][i1] -> SetMinimum(0);
             final_track_delta_phi_1D[i][i1] -> SetMaximum( final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
@@ -1830,7 +1998,7 @@ void INTTEta::PrintPlots()
             // d_gaus_pol1_fit -> Draw("lsame");
             // draw_d_gaus -> Draw("lsame");
             // draw_pol1_line -> Draw("lsame");
-            draw_pol2_line -> Draw("lsame");
+            if (final_track_delta_phi_1D[i][i1] -> GetEntries() > 0) {draw_pol2_line -> Draw("lsame");}
 
             // gaus_pol1_fit -> Draw("lsame");
             // draw_gaus_line -> SetParameters(fabs(gaus_pol1_fit -> GetParameter(0)), gaus_pol1_fit -> GetParameter(1), fabs(gaus_pol1_fit -> GetParameter(2)), 0);
@@ -1838,17 +2006,17 @@ void INTTEta::PrintPlots()
             // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
             // draw_pol1_line -> Draw("lsame");
 
-            cout<<" "<<endl;
+            // cout<<" "<<endl;
             // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
             // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
-            double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
             // cout<<i<<" "<<i1<<" gaus integral : "<< gaus_integral <<endl;
 
-            double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
+            // double d_gaus_integral = fabs(draw_d_gaus -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
             // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
             double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_delta_phi_1D[i][i1] -> GetBinWidth(1);
-            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            // cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
             int binID_X = eta_z_convert_inverse_map[i1].first;
             int binID_Y = eta_z_convert_inverse_map[i1].second;
@@ -1859,12 +2027,12 @@ void INTTEta::PrintPlots()
             coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             coord_line -> DrawLine(signal_region, 0, signal_region, final_track_delta_phi_1D[i][i1] -> GetBinContent(final_track_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
             draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
             draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
             // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
             // draw_text -> DrawLatex(0.21, 0.80, Form("D-Guassian integral : %.2f", d_gaus_integral));
-            draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
+            // draw_text -> DrawLatex(0.21, 0.80, Form("pol2: %.2f + %.2f(x-%.2f) + %.2f(x-%.2f)^{2}", bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(3), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3)));
             c1 -> Print( Form("%s/final_track_delta_phi_1D_MBin%i.pdf", out_folder_directory.c_str(), i) );
             c1 -> Clear();
         }
@@ -1879,7 +2047,7 @@ void INTTEta::PrintPlots()
         {   
             double hist_offset = get_dist_offset(final_track_multi_delta_phi_1D[i][i1], 15);
             gaus_pol1_fit->SetParameters( final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) - hist_offset, 0, final_track_multi_delta_phi_1D[i][i1]->GetStdDev()/2., hist_offset, 0);
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(gaus_pol1_fit,"NQ");}
 
             // note : par[0] : size
             // note : par[1] : ratio of the two gaussians
@@ -1893,7 +2061,7 @@ void INTTEta::PrintPlots()
             d_gaus_pol1_fit -> SetParLimits(1, 0, 0.5);  // note : the first gaussian is  the main distribution, So it should contain more than 50% of the total distribution
             d_gaus_pol1_fit -> SetParLimits(3, 0, 1000); // note : the width of the gaussian should be positive
             d_gaus_pol1_fit -> SetParLimits(4, 0, 1000); // note : the width of the gaussian should be positive
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(d_gaus_pol1_fit,"NQ");}
             // note : extract the signal region
             draw_d_gaus -> SetParameters(d_gaus_pol1_fit->GetParameter(0), d_gaus_pol1_fit->GetParameter(1), d_gaus_pol1_fit->GetParameter(2), d_gaus_pol1_fit->GetParameter(3), d_gaus_pol1_fit->GetParameter(4));
             // note : extract the part of pol1 background
@@ -1904,7 +2072,7 @@ void INTTEta::PrintPlots()
             bkg_fit_pol2 -> SetParameters(hist_offset, 0, -0.2, 0, signal_region);
             bkg_fit_pol2 -> FixParameter(4, signal_region);
             bkg_fit_pol2 -> SetParLimits(2, -100, 0);
-            final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");
+            if (final_track_multi_delta_phi_1D[i][i1] -> GetEntries() > 0) {final_track_multi_delta_phi_1D[i][i1] -> Fit(bkg_fit_pol2,"NQ");}
             // note : extract the background region (which includes the signal region also)
             draw_pol2_line -> SetParameters(bkg_fit_pol2 -> GetParameter(0), bkg_fit_pol2 -> GetParameter(1), bkg_fit_pol2 -> GetParameter(2), bkg_fit_pol2 -> GetParameter(3));
 
@@ -1922,7 +2090,7 @@ void INTTEta::PrintPlots()
             // draw_pol1_line -> SetParameters(gaus_pol1_fit -> GetParameter(3), gaus_pol1_fit -> GetParameter(4));
             // draw_pol1_line -> Draw("lsame");
 
-            cout<<" "<<endl;
+            // cout<<" "<<endl;
             // final_eta_entry[i].push_back((draw_gaus_line -> GetParameter(1) - 3 * draw_gaus_line -> GetParameter(2)), draw_gaus_line -> GetParameter(1) + 3 * draw_gaus_line -> GetParameter(2));
             // cout<<i<<" "<<i1<<" gaus fit par  : "<<fabs(gaus_pol1_fit -> GetParameter(0))<<" "<<(gaus_pol1_fit -> GetParameter(1))<<" "<<fabs(gaus_pol1_fit -> GetParameter(2))<<endl;
             double gaus_integral = fabs(draw_gaus_line -> Integral( (draw_gaus_line -> GetParameter(1) - 3 * fabs(draw_gaus_line -> GetParameter(2))), draw_gaus_line -> GetParameter(1) + 3 * fabs(draw_gaus_line -> GetParameter(2)) )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
@@ -1932,7 +2100,7 @@ void INTTEta::PrintPlots()
             // cout<<i<<" "<<i1<<" D-gaus integral : "<< d_gaus_integral <<endl;
             
             double pol2_bkg_integral = fabs(draw_pol2_line -> Integral( -1. * signal_region, signal_region )) / final_track_multi_delta_phi_1D[i][i1] -> GetBinWidth(1);
-            cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
+            // cout<<i<<" "<<i1<<" pol2_bkg integral: "<<pol2_bkg_integral<<endl;
 
             // final_dNdeta_multi_1D[i]->SetBinContent(i1 + 1, good_tracklet_multi_counting[i][i1] - pol2_bkg_integral );
             int binID_X = eta_z_convert_inverse_map[i1].first;
@@ -1942,7 +2110,7 @@ void INTTEta::PrintPlots()
             coord_line -> DrawLine(-1*signal_region, 0, -1 * signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             coord_line -> DrawLine(signal_region, 0, signal_region, final_track_multi_delta_phi_1D[i][i1] -> GetBinContent(final_track_multi_delta_phi_1D[i][i1] -> GetMaximumBin()) * 1.5);
             
-            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+            ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
             draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, #eta: %.2f ~ %.2f, Z: %.0f ~ %.0f mm",centrality_region[i].c_str(), eta_region_hist -> GetBinCenter(binID_X) - eta_region_hist -> GetBinWidth(binID_X)/2., eta_region_hist -> GetBinCenter(binID_X) + eta_region_hist -> GetBinWidth(binID_X)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(binID_Y) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(binID_Y)/2.));
             draw_text -> DrawLatex(0.21, 0.85, Form("MBin: %i, #eta bin: %i, Z bin: %i", i, binID_X, binID_Y));
             // draw_text -> DrawLatex(0.21, 0.85, Form("Guassian integral : %.2f", gaus_integral));
@@ -1974,8 +2142,10 @@ void INTTEta::PrintPlots()
         final_dNdeta_1D[i] -> Draw("ep");
         final_dNdeta_1D_MC[i] -> Draw("hist same");
         final_dNdeta_multi_1D[i] -> Draw("ep same");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s, Z: %.2f ~ %.2f",centrality_region[i].c_str(), coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) - coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2., coarse_eta_z_map -> GetYaxis() -> GetBinCenter(tight_zvtx_bin) + coarse_eta_z_map -> GetYaxis() -> GetBinWidth(tight_zvtx_bin)/2.));
+        draw_text -> DrawLatex(0.21, 0.86, Form("Nevt MC : %.1f, Nevt reco : %.1f",N_correction_evt_MC, N_correction_evt));
+        draw_text -> DrawLatex(0.21, 0.82, Form("MC entry : %.2f, tight entry : %.2f, loose entry : %.2f", final_dNdeta_1D_MC[i] -> Integral(), final_dNdeta_1D[i] -> Integral(), final_dNdeta_multi_1D[i] -> Integral()));
         c1 -> Print(Form("%s/final_dNdeta_1D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
     }
@@ -1983,19 +2153,19 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_cluster_ratio_multiplicity_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/track_cluster_ratio_multiplicity_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_cluster_ratio_multiplicity_2D_MC -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/track_cluster_ratio_multiplicity_2D_MC.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_correlation_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     correlation_Line -> Draw("lsame");
     c1 -> Print( Form("%s/track_correlation_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -2003,7 +2173,7 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     track_ratio_2D -> Draw("colz0");
     coord_line -> DrawLine( track_ratio_2D->GetXaxis()->GetXmin(), 1, track_ratio_2D->GetXaxis()->GetXmax(), 1 );
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     correlation_Line -> Draw("lsame");
     c1 -> Print( Form("%s/track_ratio_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
@@ -2011,19 +2181,19 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_correlation_2D -> Draw("colz0");
     correlation_Line -> Draw("lsame");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_correlation_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_diff_reco3P_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_diff_reco3P_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     reco_eta_diff_1D -> Draw("hist");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/reco_eta_diff_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2032,7 +2202,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_DeltaPhi_eta_2D.size(); i++)
     {
         track_DeltaPhi_eta_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_DeltaPhi_eta_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2044,7 +2214,7 @@ void INTTEta::PrintPlots()
     for (int i = 0; i < track_DeltaPhi_DeltaEta_2D.size(); i++)
     {
         track_DeltaPhi_DeltaEta_2D[i] -> Draw("colz0");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_DeltaPhi_DeltaEta_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2052,20 +2222,20 @@ void INTTEta::PrintPlots()
     c1 -> Print( Form("%s/track_DeltaPhi_DeltaEta_2D.pdf)", out_folder_directory.c_str()) );
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    c1 -> Print( Form("%s/dNdeta_1D_MC.pdf(", out_folder_directory.c_str()) );
-    for (int i = 0; i < dNdeta_1D_MC.size(); i++)
-    {
-        // dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
-        // double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
-        // dNdeta_1D_MC[i] -> Scale(1./double(N_GoodEvent));
-        dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,800);
-        dNdeta_1D_MC[i] -> Draw("hist");
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
-        draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
-        c1 -> Print(Form("%s/dNdeta_1D_MC.pdf", out_folder_directory.c_str()));
-        c1 -> Clear();    
-    }
-    c1 -> Print( Form("%s/dNdeta_1D_MC.pdf)", out_folder_directory.c_str()) );
+    // c1 -> Print( Form("%s/dNdeta_1D_MC.pdf(", out_folder_directory.c_str()) );
+    // for (int i = 0; i < dNdeta_1D_MC.size(); i++)
+    // {
+    //     // dNdeta_1D_MC[i] -> Scale(1./double(dNdeta_1D_MC[i] -> GetBinWidth(1) ));
+    //     // double N_correction_evt = (i == dNdeta_1D_MC.size() - 1) ? N_GoodEvent : N_GoodEvent_vec[i];
+    //     // dNdeta_1D_MC[i] -> Scale(1./double(N_GoodEvent));
+    //     dNdeta_1D_MC[i] -> GetYaxis() -> SetRangeUser(0,800);
+    //     dNdeta_1D_MC[i] -> Draw("hist");
+    //     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
+    //     draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
+    //     c1 -> Print(Form("%s/dNdeta_1D_MC.pdf", out_folder_directory.c_str()));
+    //     c1 -> Clear();    
+    // }
+    // c1 -> Print( Form("%s/dNdeta_1D_MC.pdf)", out_folder_directory.c_str()) );
 
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -2074,7 +2244,7 @@ void INTTEta::PrintPlots()
     {
         track_eta_z_2D_MC[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/track_eta_z_2D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2083,7 +2253,7 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     clu_used_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/clu_used_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2091,14 +2261,14 @@ void INTTEta::PrintPlots()
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster4_track_phi_1D -> Draw("hist");
     cluster4_track_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster4_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     cluster3_track_phi_1D -> Draw("hist");
     cluster3_track_phi_1D -> SetMinimum(0);
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2113,7 +2283,7 @@ void INTTEta::PrintPlots()
         }
     }
 
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_inner_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2127,25 +2297,25 @@ void INTTEta::PrintPlots()
             cout<<i+1<<" mega Outer track phi bin center: "<<cluster3_outer_track_phi_1D -> GetBinCenter(i+1)<<" bin content: "<<cluster3_outer_track_phi_1D -> GetBinContent(i+1)<<endl;
         }
     }
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/cluster3_outer_track_phi_1D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     NClu4_track_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/NClu4_track_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     NClu3_track_centrality_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/NClu3_track_centrality_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     coarse_eta_z_map -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/coarse_eta_z_map.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2155,7 +2325,7 @@ void INTTEta::PrintPlots()
     {
         coarse_eta_z_2D_MC[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_eta_z_2D_MC.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2164,13 +2334,13 @@ void INTTEta::PrintPlots()
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     MBin_Z_evt_hist_2D -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/MBin_Z_evt_hist_2D.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
     // note : ----------------------------------------------------------------------------------------------------------------------------------------------------------------
     MBin_Z_evt_hist_2D_MC -> Draw("colz0");
-    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
     c1 -> Print( Form("%s/MBin_Z_evt_hist_2D_MC.pdf", out_folder_directory.c_str()) );
     c1 -> Clear();
 
@@ -2180,7 +2350,7 @@ void INTTEta::PrintPlots()
     {
         coarse_Reco_SignalNTracklet_Single_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_Reco_SignalNTracklet_Single_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2193,7 +2363,7 @@ void INTTEta::PrintPlots()
     {
         coarse_Reco_SignalNTracklet_Multi_eta_z_2D[i] -> Draw("colz0");
         DrawEtaZGrid();
-        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX INTT}} %s", plot_text.c_str()));
+        ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", plot_text.c_str()));
         draw_text -> DrawLatex(0.21, 0.90, Form("Centrality : %s",centrality_region[i].c_str()));
         c1 -> Print(Form("%s/coarse_Reco_SignalNTracklet_Multi_eta_z_2D.pdf", out_folder_directory.c_str()));
         c1 -> Clear();    
@@ -2249,6 +2419,12 @@ void INTTEta::EndRun()
         coarse_eta_z_2D_MC[i] -> Write(Form("NTrueTrack_MBin%i",i));
     }
 
+    // note : 
+    for (int i = 0; i < coarse_eta_z_2D_fulleta_MC.size(); i++)
+    {
+        coarse_eta_z_2D_fulleta_MC[i] -> Write(Form("NTrueTrack_FullEta_MBin%i",i));
+    }
+
     // note : the map for the eta-z reference
     coarse_eta_z_map -> Write("Eta_Z_reference");
     
@@ -2295,26 +2471,57 @@ void INTTEta::EndRun()
     for (int i = 0; i < track_ratio_1D.size(); i++){ track_ratio_1D[i] -> Write(Form("track_ratio_1D_MBin%i",i)); }
     track_ratio_2D -> Write("track_ratio_2D");
 
+    for (int i = 0; i < dNdeta_1D.size(); i++) {dNdeta_1D[i] -> Write(Form("FineBin_Ntracklet_MBin%i",i));}
+    for (int i = 0; i < dNdeta_1D_MC.size(); i++) {dNdeta_1D_MC[i] -> Write(Form("FineBin_NTrueTrack_MBin%i",i));}
+    for (int i = 0; i < dNdeta_1D_MC_edge_eta_cut.size(); i++) {dNdeta_1D_MC_edge_eta_cut[i] -> Write(Form("FineBin_NTrueTrack_EdgeEtaCut_MBin%i",i));}
+
+    exclusive_NClus_inner -> Write("exclusive_NClus_inner");
+    exclusive_NClus_outer -> Write("exclusive_NClus_outer");
+    exclusive_NClus_sum -> Write("exclusive_NClus_sum");
+    
+    exclusive_cluster_inner_eta -> Write("exclusive_cluster_inner_eta");
+    exclusive_cluster_inner_phi -> Write("exclusive_cluster_inner_phi");
+    exclusive_cluster_outer_eta -> Write("exclusive_cluster_outer_eta");
+    exclusive_cluster_outer_phi -> Write("exclusive_cluster_outer_phi");
+    exclusive_cluster_all_eta -> Write("exclusive_cluster_all_eta");
+    exclusive_cluster_all_phi -> Write("exclusive_cluster_all_phi");
+
+    exclusive_cluster_inner_eta_phi_2D -> Write("exclusive_cluster_inner_eta_phi_2D");
+    exclusive_cluster_outer_eta_phi_2D -> Write("exclusive_cluster_outer_eta_phi_2D");
+
+    exclusive_tight_tracklet_eta -> Write("exclusive_tight_tracklet_eta");
+    exclusive_tight_tracklet_phi -> Write("exclusive_tight_tracklet_phi");
+    exclusive_loose_tracklet_eta -> Write("exclusive_loose_tracklet_eta");
+    exclusive_loose_tracklet_phi -> Write("exclusive_loose_tracklet_phi");
+
+    exclusive_cluster_inner_eta_adc_2D -> Write("exclusive_cluster_inner_eta_adc_2D");
+    exclusive_cluster_outer_eta_adc_2D -> Write("exclusive_cluster_outer_eta_adc_2D");
+
+    exclusive_cluster_inner_adc -> Write("exclusive_cluster_inner_adc");
+    exclusive_cluster_outer_adc -> Write("exclusive_cluster_outer_adc");
+
     tree_out -> Write("", TObject::kOverwrite);
 
     out_file -> Close();
 
+    std::cout<<"in N event : "<<N_GoodEvent<<"the total N reco tracks is short in : "<<N_reco_cluster_short<<std::endl;
+
     return;
 }
 
+//note : accumulate the number of entries from both sides of the histogram
+// double INTTEta::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
+// {
+//     if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}
+//     double total_entry = 0;
+//     for (int i = 0; i < check_N_bin; i++)
+//     {
+//         total_entry += hist_in -> GetBinContent(i+1); // note : 1, 2, 3.....
+//         total_entry += hist_in -> GetBinContent(hist_in -> GetNbinsX() - i);
+//     }
 
-double INTTEta::get_dist_offset(TH1F * hist_in, int check_N_bin) // note : check_N_bin 1 to N bins of hist
-{
-    if (check_N_bin < 0 || check_N_bin > hist_in -> GetNbinsX()) {cout<<" wrong check_N_bin "<<endl; exit(1);}
-    double total_entry = 0;
-    for (int i = 0; i < check_N_bin; i++)
-    {
-        total_entry += hist_in -> GetBinContent(i+1); // note : 1, 2, 3.....
-        total_entry += hist_in -> GetBinContent(hist_in -> GetNbinsX() - i);
-    }
-
-    return total_entry/double(2. * check_N_bin);
-}
+//     return total_entry/double(2. * check_N_bin);
+// }
 
 
 double INTTEta::grEY_stddev(TGraphErrors * input_grr)
@@ -2463,6 +2670,14 @@ void INTTEta::DrawEtaZGrid()
 
     // note : draw the horizontal line, to segment the z region
     for (int i = 0; i < z_region.size(); i++) { coord_line -> DrawLine(eta_region[0], z_region[i], eta_region[eta_region.size() - 1], z_region[i]); }
+}
+
+double INTTEta::get_TH1F_Entries(TH1F * hist_in)
+{
+    double entry_counting = 0; 
+    for (int i = 0; i < hist_in -> GetNbinsX(); i++) {entry_counting += hist_in -> GetBinContent(i+1);}
+
+    return entry_counting;
 }
 
 #endif

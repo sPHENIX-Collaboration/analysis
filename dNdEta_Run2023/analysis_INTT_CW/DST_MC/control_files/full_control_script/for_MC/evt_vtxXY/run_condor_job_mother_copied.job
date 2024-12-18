@@ -1,0 +1,20 @@
+Universe           = vanilla
+Initialdir         = /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/full_control_script/for_MC/evt_vtxXY
+Executable         = run_root_mother.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 86400
+# nEvents            = NEVENTS
+# InputfilelistIdx   = INPUTFILELISTIDX
+# FileName           = FILENAME
+# skipEvt            = 0
+data_type          = MC
+control_file       = /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/DST_MC/control_files/full_control_script/for_MC/evt_vtxXY
+output_sub_folder  = evt_vtxXY_vtxApproval
+used_zvtx_folder   = evt_vtxZ_trapezoidal_loop_histout_newcondor
+Output             = /sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_vtxXY_vtxApproval/CW_log/condor_$(process).out
+Error              = /sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_vtxXY_vtxApproval/CW_log/condor_$(process).err
+Log                = /sphenix/user/ChengWei/sPH_dNdeta/Sim_Ntuple_HIJING_new_20240424_HR_test/evt_vtxXY_vtxApproval/CW_log/condor_$(process).log
+Arguments          = "$(data_type) $(control_file) $(process) $(output_sub_folder) $(used_zvtx_folder)"
+Queue 28

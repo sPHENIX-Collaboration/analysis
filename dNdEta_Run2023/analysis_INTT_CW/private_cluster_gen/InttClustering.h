@@ -16,6 +16,27 @@ struct clu_info {
     double z;
     int layer;
     double phi;
+    // vector<double> bco_diff_vec; // note : for the multi-hit cluster, more than one hit was included. so more than one bco_diff
+    int raw_layer_id;
+    int raw_ladder_id;
+    int raw_Z_id;
+    int raw_phi_size;
+    int raw_Z_size;
+};
+
+struct clu_info_private {
+    int column;
+    // int chip_id;
+    double avg_chan;
+    int sum_adc;
+    int sum_adc_conv;
+    int size;
+
+    double x;
+    double y;
+    double z;
+    int layer;
+    double phi;
     vector<double> bco_diff_vec; // note : for the multi-hit cluster, more than one hit was included. so more than one bco_diff
 };
 
@@ -46,7 +67,7 @@ struct hit_pro_info {
 
 namespace InttClustering{
     
-    vector<clu_info> clustering(string server_name, int FC_id, vector<hit_info> single_event, InttConversion * ch_pos_DB)
+    vector<clu_info_private> clustering(string server_name, int FC_id, vector<hit_info> single_event, InttConversion * ch_pos_DB)
     {
 
         // note : [0] : nominal_chip_id, 
@@ -63,7 +84,7 @@ namespace InttClustering{
         }
 
         vector<hit_pro_info>hit_pro_vec; hit_pro_vec.clear(); // note : have the position information
-        vector<clu_info> output_vec; output_vec.clear();
+        vector<clu_info_private> output_vec; output_vec.clear();
 
         int num_hit = 0;
         double chan_truck = 0;

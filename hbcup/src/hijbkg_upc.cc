@@ -38,7 +38,7 @@ hijbkg_upc::~hijbkg_upc()
 }
 
 //____________________________________________________________________________..
-int hijbkg_upc::Init(PHCompositeNode *topNode)
+int hijbkg_upc::Init(PHCompositeNode * /*topNode*/)
 {
   std::cout << "hijbkg_upc::Init(PHCompositeNode *topNode) Initializing" << std::endl;
 
@@ -65,7 +65,7 @@ int hijbkg_upc::Init(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int hijbkg_upc::InitRun(PHCompositeNode *topNode)
+int hijbkg_upc::InitRun(PHCompositeNode * /*topNode*/)
 {
   std::cout << "hijbkg_upc::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
@@ -151,7 +151,7 @@ int hijbkg_upc::process_event(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int hijbkg_upc::ResetEvent(PHCompositeNode *topNode)
+int hijbkg_upc::ResetEvent(PHCompositeNode * /*topNode*/)
 {
 
     m_pid.clear();
@@ -171,7 +171,7 @@ int hijbkg_upc::EndRun(const int runnumber)
 }
 
 //____________________________________________________________________________..
-int hijbkg_upc::End(PHCompositeNode *topNode)
+int hijbkg_upc::End(PHCompositeNode * /*topNode*/)
 {
     out -> cd();
     T -> Write();
@@ -182,7 +182,7 @@ int hijbkg_upc::End(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int hijbkg_upc::Reset(PHCompositeNode *topNode)
+int hijbkg_upc::Reset(PHCompositeNode * /*topNode*/)
 {
     std::cout << "hijbkg_upc::Reset(PHCompositeNode *topNode) being Reset" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;

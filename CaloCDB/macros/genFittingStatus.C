@@ -158,12 +158,12 @@ void myAnalysis::histToCaloCDBTree(string outputfile, string fieldName, Int_t ic
       UInt_t key;
       if (icalo == 0) key = TowerInfoDefs::encode_emcal(ie, ip);
       if (icalo == 1) key = TowerInfoDefs::encode_hcal(ie, ip);
-      Float_t val = hist->GetBinContent(ie + 1, ip + 1);
-      if (val < 1.2 && val > 0.0) { // clean up of cross calib factors for towers with bit flip behavior 
-        cdbttree->SetFloatValue(key, fieldName, val);
-      } else {
-        cdbttree->SetFloatValue(key, fieldName, 1.0);
+      Float_t binval = hist->GetBinContent(ie + 1, ip + 1);
+      Float_t val = 1.0;
+      if (binval < 1.2 && binval > 0.0) { // clean up of cross calib factors for towers with bit flip behavior 
+        val = 1.0/binval; // flip cross calib factor for use in CaloTowerCalib
       }
+      cdbttree->SetFloatValue(key, fieldName, val);
       mean += val;
       count++;
     }

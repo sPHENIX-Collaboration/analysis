@@ -160,8 +160,8 @@ file_list(file_list)
    if (folder_direction.size() == 0) {std::cout<<"There is no folder_direction input ?, run exit"<<std::endl; std::exit(1);}
    if (file_list.size() == 0) {std::cout<<"There is no file_list input ?, run exit"<<std::endl; std::exit(1);}
 
-   std::cout<<"correct input format"<<std::endl;
-   std::cout<<"file_list size : "<<file_list.size()<<std::endl;
+   // std::cout<<"correct input format"<<std::endl; // note : was used
+   // std::cout<<"file_list size : "<<file_list.size()<<std::endl; // note : was used
 
    Init(chain_in);
 }
@@ -189,9 +189,9 @@ MC_list_name(MC_list_name)
 
    read_list(); // note : read the list
 
-   std::cout<<"correct input format"<<std::endl;
-   std::cout<<"Read the list by class"<<std::endl;
-   std::cout<<"file_list size : "<<file_list.size()<<std::endl;
+   // std::cout<<"correct input format"<<std::endl; // note : was used 
+   // std::cout<<"Read the list by class"<<std::endl; // note : was used 
+   // std::cout<<"file_list size : "<<file_list.size()<<std::endl; // note : was used 
 
    Init(chain_in);
 }
@@ -213,7 +213,7 @@ void INTTDSTchain::read_list()
 		}
 		file_list.push_back(list_buffer);
 	}
-	cout<<"size : "<<file_list.size()<<endl;
+	// cout<<"size : "<<file_list.size()<<endl; // note : was used 
 }
 
 INTTDSTchain::~INTTDSTchain()
@@ -304,18 +304,18 @@ void INTTDSTchain::Init(TChain *chain_in)
    fChain -> SetBranchStatus("*",0);
    fChain -> SetBranchStatus("event",1);
    fChain -> SetBranchStatus("NTruthVtx",1);
-   fChain -> SetBranchStatus("TruthPV_x",1);
-   fChain -> SetBranchStatus("TruthPV_y",1);
-   fChain -> SetBranchStatus("TruthPV_z",1);
-   fChain -> SetBranchStatus("TruthPV_Npart",1);
-   fChain -> SetBranchStatus("TruthPV_Nhits",1);
-   fChain -> SetBranchStatus("TruthPV_NClus",1);
-   fChain -> SetBranchStatus("TruthPV_t",1);
-   fChain -> SetBranchStatus("TruthPV_embed",1);
+   // fChain -> SetBranchStatus("TruthPV_x",1);
+   // fChain -> SetBranchStatus("TruthPV_y",1);
+   // fChain -> SetBranchStatus("TruthPV_z",1);
+   // fChain -> SetBranchStatus("TruthPV_Npart",1);
+   // fChain -> SetBranchStatus("TruthPV_Nhits",1);
+   // fChain -> SetBranchStatus("TruthPV_NClus",1);
+   // fChain -> SetBranchStatus("TruthPV_t",1);
+   // fChain -> SetBranchStatus("TruthPV_embed",1);
    fChain -> SetBranchStatus("TruthPV_trig_x",1);  
    fChain -> SetBranchStatus("TruthPV_trig_y",1);  
    fChain -> SetBranchStatus("TruthPV_trig_z",1);  
-   fChain -> SetBranchStatus("TruthPV_trig_Npart",1); 
+   // fChain -> SetBranchStatus("TruthPV_trig_Npart",1); 
    fChain -> SetBranchStatus("ClusLayer",1);
    fChain -> SetBranchStatus("ClusX",1);
    fChain -> SetBranchStatus("ClusY",1);
@@ -328,11 +328,11 @@ void INTTDSTchain::Init(TChain *chain_in)
    fChain -> SetBranchStatus("ClusZSize",1);
    fChain -> SetBranchStatus("ClusLadderZId",1);
    fChain -> SetBranchStatus("ClusLadderPhiId",1);
-   fChain -> SetBranchStatus("Layer1_occupancy",1); 
+   // fChain -> SetBranchStatus("Layer1_occupancy",1); 
    fChain -> SetBranchStatus("NClus",1);           
    fChain -> SetBranchStatus("NTrkrhits",1);
 
-   fChain -> SetBranchStatus("UniqueAncG4P_TrackID", 1);
+   // fChain -> SetBranchStatus("UniqueAncG4P_TrackID", 1);
    fChain -> SetBranchStatus("UniqueAncG4P_Eta", 1);
    fChain -> SetBranchStatus("UniqueAncG4P_Phi", 1);
    fChain -> SetBranchStatus("centrality_bimp",1);
@@ -341,18 +341,18 @@ void INTTDSTchain::Init(TChain *chain_in)
 
    fChain->SetBranchAddress("event", &event, &b_event);
    fChain->SetBranchAddress("NTruthVtx", &NTruthVtx, &b_NTruthVtx);
-   fChain->SetBranchAddress("TruthPV_x", &TruthPV_x, &b_TruthPV_x);
-   fChain->SetBranchAddress("TruthPV_y", &TruthPV_y, &b_TruthPV_y);
-   fChain->SetBranchAddress("TruthPV_z", &TruthPV_z, &b_TruthPV_z);
-   fChain->SetBranchAddress("TruthPV_Npart", &TruthPV_Npart, &b_TruthPV_Npart);
-   fChain->SetBranchAddress("TruthPV_Nhits", &TruthPV_Nhits, &b_TruthPV_Nhits);
-   fChain->SetBranchAddress("TruthPV_NClus", &TruthPV_NClus, &b_TruthPV_NClus);
-   fChain->SetBranchAddress("TruthPV_t", &TruthPV_t, &b_TruthPV_t);
-   fChain->SetBranchAddress("TruthPV_embed", &TruthPV_embed, &b_TruthPV_embed);
+   // fChain->SetBranchAddress("TruthPV_x", &TruthPV_x, &b_TruthPV_x);
+   // fChain->SetBranchAddress("TruthPV_y", &TruthPV_y, &b_TruthPV_y);
+   // fChain->SetBranchAddress("TruthPV_z", &TruthPV_z, &b_TruthPV_z);
+   // fChain->SetBranchAddress("TruthPV_Npart", &TruthPV_Npart, &b_TruthPV_Npart);
+   // fChain->SetBranchAddress("TruthPV_Nhits", &TruthPV_Nhits, &b_TruthPV_Nhits);
+   // fChain->SetBranchAddress("TruthPV_NClus", &TruthPV_NClus, &b_TruthPV_NClus);
+   // fChain->SetBranchAddress("TruthPV_t", &TruthPV_t, &b_TruthPV_t);
+   // fChain->SetBranchAddress("TruthPV_embed", &TruthPV_embed, &b_TruthPV_embed);
    fChain->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x, &b_TruthPV_trig_x);
    fChain->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y, &b_TruthPV_trig_y);
    fChain->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z, &b_TruthPV_trig_z);
-   fChain->SetBranchAddress("TruthPV_trig_Npart", &TruthPV_trig_Npart, &b_TruthPV_trig_Npart);
+   // fChain->SetBranchAddress("TruthPV_trig_Npart", &TruthPV_trig_Npart, &b_TruthPV_trig_Npart);
    // fChain->SetBranchAddress("UniqueAncG4P_Px", &UniqueAncG4P_Px, &b_UniqueAncG4P_Px);
    // fChain->SetBranchAddress("UniqueAncG4P_Py", &UniqueAncG4P_Py, &b_UniqueAncG4P_Py);
    // fChain->SetBranchAddress("UniqueAncG4P_Pz", &UniqueAncG4P_Pz, &b_UniqueAncG4P_Pz);
@@ -366,9 +366,9 @@ void INTTDSTchain::Init(TChain *chain_in)
    // fChain->SetBranchAddress("UniqueAncG4P_ParentPID", &UniqueAncG4P_ParentPID, &b_UniqueAncG4P_ParentPID);
    // fChain->SetBranchAddress("UniqueAncG4P_PrimaryPID", &UniqueAncG4P_PrimaryPID, &b_UniqueAncG4P_PrimaryPID);
    // fChain->SetBranchAddress("UniqueAncG4P_IonCharge", &UniqueAncG4P_IonCharge, &b_UniqueAncG4P_IonCharge);
-   fChain->SetBranchAddress("UniqueAncG4P_TrackID", &UniqueAncG4P_TrackID, &b_UniqueAncG4P_TrackID);
+   // fChain->SetBranchAddress("UniqueAncG4P_TrackID", &UniqueAncG4P_TrackID, &b_UniqueAncG4P_TrackID);
    // fChain->SetBranchAddress("UniqueAncG4P_NClus", &UniqueAncG4P_NClus, &b_UniqueAncG4P_NClus);
-   fChain->SetBranchAddress("Layer1_occupancy", &Layer1_occupancy, &b_Layer1_occupancy);
+   // fChain->SetBranchAddress("Layer1_occupancy", &Layer1_occupancy, &b_Layer1_occupancy);
    fChain->SetBranchAddress("NClus", &NClus, &b_NClus);
    fChain->SetBranchAddress("NTrkrhits", &NTrkrhits, &b_NTrkrhits);
    fChain->SetBranchAddress("ClusLayer", &ClusLayer, &b_ClusLayer);

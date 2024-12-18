@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# \file   RunENCCalculationOnCondor.job
+# \author Derek Anderson
+# \date   03.20.2024
+#
+# Job file to run RunENCCalculation.cxx on condor.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunENCCalculationOnCondor.sh
+Initialdir           = ./
+request_memory       = 8GB
+transfer_input_files = RunENCCalculation.cxx,EnergyCorrelatorOptions.h
+
+# output parameters
+Output = /sphenix/user/danderson/eec/SEnergyCorrelator/log/testCalc.out
+Error  = /sphenix/user/danderson/eec/SEnergyCorrelator/log/testCalc.err
+Log    = /sphenix/user/danderson/eec/SEnergyCorrelator/log/testCalc.log
+
+# queue jobs
+Queue
+
+# end -------------------------------------------------------------------------
