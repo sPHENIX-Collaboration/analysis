@@ -38,7 +38,7 @@ class EliminateBackground : public SubsysReco
   float HCAL_TOWER_ENERGY_CUT{0.03};
   float CONSECUTIVE_ENERGY_CUT{0.03};
 
-  float CONSECUTIVE_COUNT_CUT{5};
+  float CONSECUTIVE_COUNT_CUT{6};
   float COUNT_CUT{8};
 };
 

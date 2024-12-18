@@ -33,5 +33,3 @@ Once you have your trees produced, the raw square root asymmetries are calculate
 
 **Example results:**  
 The asymmetries of Runs 42796+42797 from store 34485 can be seen in `macros/output`
-
-Contact dloom@umich.edu if you have any questions.

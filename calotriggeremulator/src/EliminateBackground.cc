@@ -96,11 +96,13 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
 
   if (hcal_phi_consec->GetBinContent(bmax) > CONSECUTIVE_COUNT_CUT)
     {
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
       if (Verbosity()) std::cout << "EVENT ELIMINATED" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   if (hcal_phi->GetBinContent(bmax) > COUNT_CUT)
     {
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
       if (Verbosity()) std::cout << "EVENT ELIMINATED" << std::endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
@@ -115,8 +117,9 @@ int EliminateBackground::process_event(PHCompositeNode* topNode)
   
   if (bad)
     {
-      if (Verbosity()) std::cout << "EVENT ELIMINATED" << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
+      if (hcal_proj->GetMaximumBin() != bmax) return Fun4AllReturnCodes::EVENT_OK;
+      trash->setIsTrash(true);
+      if (!m_keep) return Fun4AllReturnCodes::ABORTEVENT;
     }
 
   return Fun4AllReturnCodes::EVENT_OK;
