@@ -21,6 +21,20 @@ double gaus_pol1_func(double *x, double *par)
     return par[0] * TMath::Gaus(x[0],par[1],par[2]) + par[3] + par[4]*x[0];
 }
 
+double gaus_pol2_func(double *x, double *par)
+{
+    // note : par[0] : size
+    // note : par[1] : mean
+    // note : par[2] : width
+
+    double gaus_func = par[0] * TMath::Gaus(x[0],par[1],par[2]);
+    double pol2_func = par[3] + par[4]* (x[0]-par[6]) + par[5] * pow((x[0]-par[6]),2);
+
+    return gaus_func + pol2_func;
+}
+
+
+
 double d_gaus_pol1_func(double *x, double *par)
 {
 
