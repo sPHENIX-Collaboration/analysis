@@ -8,30 +8,29 @@ source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 exe=${1}
-input=${2}
-outputTree=${3}
-outputQA=${4}
-submitDir=${5}
+inputJET=${2}
+output=${3}
+submitDir=${4}
 
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
  then
    cd $_CONDOR_SCRATCH_DIR
     # transfer the input file
-    getinputfiles.pl $input
+    while IFS= read -r dst; do
+        getinputfiles.pl $dst
+        echo "File Transferred: `readlink -f $dst`"
+    done < "$inputJET"
  else
    echo "condor scratch NOT set"
    exit -1
 fi
 
-echo "File Transferred: `readlink -f $input`"
-
 # print the environment - needed for debugging
 printenv
 
-mkdir -p output
-$exe $input $outputTree $outputQA
+$exe $inputJET $output
 
 echo "All Done and Transferring Files Back"
-cp -v $outputQA $submitDir
+cp -v $output $submitDir
 
 echo "Finished"

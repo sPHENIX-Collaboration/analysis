@@ -120,9 +120,9 @@ void HIJetReco()
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_SUB1,HIJETS::tower_prefix));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO_SUB1,HIJETS::tower_prefix));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO_SUB1,HIJETS::tower_prefix));
-  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.2, verbosity), "AntiKt_Tower_r02_Sub1");
+  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.2, verbosity), "AntiKt_Tower_r02_Sub1");
   towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4, verbosity), "AntiKt_Tower_r04_Sub1");
-  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.6, verbosity), "AntiKt_Tower_r06_Sub1");
+  // towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.6, verbosity), "AntiKt_Tower_r06_Sub1");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);

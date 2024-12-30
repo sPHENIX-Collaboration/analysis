@@ -1,8 +1,7 @@
 * Generate run list
 #+begin_src bash
-CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
+CreateDstList.pl --build ana450 --cdb 2024p009 DST_JET_run2pp --printruns
 #+end_src
-- <tag>: 2024p001-7
 
 * Generate run list where specific triggers are enabled
 #+begin_src bash
@@ -16,13 +15,7 @@ psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_sc
 
 * Generate dst list from run list
 #+begin_src bash
-CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
-#+end_src
-- <tag>: 2024p001-7
-
-Example:
-#+begin_src bash
-CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --list files/runs-ana430-2024p007-good-with-bad-tower-maps.list
+CreateDstList.pl --build ana450 --cdb 2024p009 DST_JET_run2pp --list <list>
 #+end_src
 
 * Generate list of runs that contain bad tower maps
@@ -66,15 +59,6 @@ make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun
 make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root","tree.root","qa.root", 100)'
 #+end_src
 
-Event Validation:
-#+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
-#+end_src
-
-#+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
-#+end_src
-
 * Condor Tips
 
 ** Allocate more memory to an idle job
@@ -89,6 +73,19 @@ condor_hold -all && condor_qedit <job id> RequestMemory <Memory (MB)> && condor_
 rg "No Root Tree T" */stdout | rg -o "DST.*root" | tee bad-segments.list && cat bad-segments.list | cut -d "-" -f2 | uniq | sort | awk '{x=$0+0;print x}' > runs-with-bad-segments.list
 #+end_src
 Note: Must be in the general condor directory for the "*/stdout" to work.
+
+** Get list of jobs to resubmit in the event that they are held. Convert
+First get the list of process numbers of the jobs that are held:
+#+begin_src bash
+condor_q | rg anarde | cut -d "." -f2 | cut -d " " -f1 > temp.list
+#+end_src
+
+Use the process numbers from the temp.list above to convert into line numbers from the ~jobs.list~ file and extract that subset.
+#+begin_src bash
+while read line_num; do
+    head -n "$((line_num + 1))" "jobs.list" | tail -n 1 >> jobs-resubmit.list
+done < "temp.list"
+#+end_src
 
 * Bash Tips
 
