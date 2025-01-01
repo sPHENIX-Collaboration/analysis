@@ -47,14 +47,13 @@ void Fun4All_JetValv2(const string &input_JET,
 
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
 
-  // pair<Int_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(input_JET);
-  // Int_t runnumber = runseg.first;
-  Int_t runnumber = stoi(input_JET.substr(input_JET.rfind("-")+1,input_JET.rfind(".")-input_JET.rfind("-")-1));
+  Int_t runnumber = (input_JET.find(".root") != string::npos) ? Fun4AllUtils::GetRunSegment(input_JET).first
+                                                              : stoi(input_JET.substr(input_JET.rfind("-")+1,input_JET.rfind(".")-input_JET.rfind("-")-1));
   rc->set_uint64Flag("TIMESTAMP", runnumber);
 
   Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_JET");
-  // in->AddFile(input_JET.c_str());
-  in->AddListFile(input_JET.c_str());
+  if(input_JET.find(".root") != string::npos) in->AddFile(input_JET.c_str());
+  else                                        in->AddListFile(input_JET.c_str());
   se->registerInputManager(in);
 
   // Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DST_JETCALO");
