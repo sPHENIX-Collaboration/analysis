@@ -15,22 +15,26 @@ submitDir=${4}
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
  then
    cd $_CONDOR_SCRATCH_DIR
-    # transfer the input file
-    while IFS= read -r dst; do
-        getinputfiles.pl $dst
-        echo "File Transferred: `readlink -f $dst`"
-    done < "$inputJET"
- else
-   echo "condor scratch NOT set"
-   exit -1
+   # transfer the input file
+   getinputfiles.pl --filelist $inputJET
+else
+  echo "condor scratch NOT set"
+  exit -1
 fi
+
+# extract runnumber from file name
+file=$(basename "$inputJET")
+IFS='-' read -r p1 p2 p3 <<< "$file"
+run=$(echo "$p3" | sed 's/^0*//' | sed 's/\.[^.]*$//') # Remove leading zeros and extension
 
 # print the environment - needed for debugging
 printenv
 
-$exe $inputJET $output
+mkdir -p $run
+
+$exe $inputJET $run/$output
 
 echo "All Done and Transferring Files Back"
-cp -v $output $submitDir
+cp -rv $run $submitDir
 
 echo "Finished"

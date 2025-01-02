@@ -15,7 +15,6 @@ status = subparser.add_parser('status', help='Get status of Condor.')
 
 f4a.add_argument('-i', '--run-list', type=str, help='Run list', required=True)
 f4a.add_argument('-i2', '--run-list-jet-dir', type=str, default='files/dst-jet', help='Directory for DST JET files')
-# f4a.add_argument('-i3', '--run-list-jetcalo-dir', type=str, default='files/dst-jet-calo', help='Directory for DST JETCALO files')
 f4a.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 f4a.add_argument('-m', '--macro', type=str, default='macros/Fun4All_JetValv2.C', help='Fun4All macro. Default: macros/Fun4All_JetValv2.C')
 f4a.add_argument('-m2', '--src', type=str, default='src', help='Directory Containing src files. Default: src')
@@ -24,7 +23,6 @@ f4a.add_argument('-d', '--output', type=str, default='test', help='Output Direct
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--jobs', type=int, default=20000, help='Number of jobs per submission. Default: 20k.')
-# f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10k.')
 
 gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
 gen.add_argument('-t', '--ana-tag', type=str, default='ana437', help='ana tag. Default: ana437')
@@ -34,17 +32,16 @@ gen.add_argument('-b', '--bad', type=str, default='files/bad-runs.list', help='L
 args = parser.parse_args()
 
 def create_f4a_jobs():
-    run_list             = os.path.realpath(args.run_list)
-    run_list_jet_dir     = os.path.realpath(args.run_list_jet_dir)
-    # run_list_jetcalo_dir = os.path.realpath(args.run_list_jetcalo_dir)
-    output_dir           = os.path.realpath(args.output)
-    f4a                  = os.path.realpath(args.f4a)
-    macro                = os.path.realpath(args.macro)
-    src                  = os.path.realpath(args.src)
-    executable           = os.path.realpath(args.executable)
-    memory               = args.memory
-    log                  = args.log
-    jobs                 = args.jobs
+    run_list         = os.path.realpath(args.run_list)
+    run_list_jet_dir = os.path.realpath(args.run_list_jet_dir)
+    output_dir       = os.path.realpath(args.output)
+    f4a              = os.path.realpath(args.f4a)
+    macro            = os.path.realpath(args.macro)
+    src              = os.path.realpath(args.src)
+    executable       = os.path.realpath(args.executable)
+    memory           = args.memory
+    log              = args.log
+    jobs             = args.jobs
     # p              = args.concurrency
 
     concurrency_limit = 2308032
@@ -53,7 +50,6 @@ def create_f4a_jobs():
 
     print(f'Run List: {run_list}')
     print(f'Run List Jet Dir: {run_list_jet_dir}')
-    # print(f'Run List Jet Calo Dir: {run_list_jetcalo_dir}')
     print(f'Fun4All : {macro}')
     print(f'src: {src}')
     print(f'Output Directory: {output_dir}')
@@ -74,16 +70,18 @@ def create_f4a_jobs():
     shutil.copy(run_list, output_dir)
 
     os.makedirs(f'{output_dir}/jobs',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
 
     with open(run_list) as fp:
         for run in fp:
             run = run.strip()
-            os.makedirs(f'{output_dir}/output/{run}',exist_ok=True)
 
             print(f'Processing: {run}')
             ctr = 0
             arr = [[] for _ in range(jpr)]
-            with open(f'{run_list_jet_dir}/dst_jet_run2pp-000{run}.list') as sp:
+            with open(f'{run_list_jet_dir}/dst_jet_run2pp-{int(run):08}.list') as sp:
                 for segment in sp:
                     segment = segment.strip()
                     arr[ctr%jpr].append(segment)
@@ -98,15 +96,12 @@ def create_f4a_jobs():
                     file = f'{output_dir}/jobs/dst_jet_run2pp-{ctr:02}-{int(run):08}.list'
                     np.savetxt(file, np.array(bp),fmt='%s')
 
-                    sp.write(f'{os.path.realpath(file)},{run}\n')
+                    sp.write(f'{os.path.realpath(file)}\n')
                     ctr += 1
-
-    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
-    os.makedirs(f'{output_dir}/error',exist_ok=True)
 
     with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(executable)}\n')
-        file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(input_dstJET) test-$(Process).root {output_dir}/output/$(input_run)\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(input_dstJET) test-$(Process).root {output_dir}/output\n')
         file.write(f'log            = {log}\n')
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')
@@ -114,9 +109,7 @@ def create_f4a_jobs():
         # file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
-        file.write(f'queue input_dstJET,input_run from jobs.list')
-
-    # print(f'while read run; do cd {output_dir}/$run && condor_submit genFun4All.sub; done <{output_dir}/{os.path.basename(run_list)};')
+        file.write(f'queue input_dstJET from jobs.list')
 
 def create_run_lists():
     ana_tag = args.ana_tag
