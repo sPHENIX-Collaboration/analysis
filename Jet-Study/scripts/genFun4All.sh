@@ -12,20 +12,25 @@ inputJET=${2}
 output=${3}
 submitDir=${4}
 
+# extract runnumber from file name
+file=$(basename "$inputJET")
+IFS='-' read -r p1 p2 p3 <<< "$file"
+
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
  then
    cd $_CONDOR_SCRATCH_DIR
-   # transfer the input file
-   getinputfiles.pl --filelist $inputJET
+   # transfer the input file(s)
+   if [[ "$inputJET" =~ \.root$ ]]; then
+     getinputfiles.pl $inputJET
+     run=$(echo "$p2" | sed 's/^0*//') # Remove leading zeros using sed
+   else
+     getinputfiles.pl --filelist $inputJET
+     run=$(echo "$p3" | sed 's/^0*//' | sed 's/\.[^.]*$//') # Remove leading zeros and extension
+   fi
 else
   echo "condor scratch NOT set"
   exit -1
 fi
-
-# extract runnumber from file name
-file=$(basename "$inputJET")
-IFS='-' read -r p1 p2 p3 <<< "$file"
-run=$(echo "$p3" | sed 's/^0*//' | sed 's/\.[^.]*$//') # Remove leading zeros and extension
 
 # print the environment - needed for debugging
 printenv
