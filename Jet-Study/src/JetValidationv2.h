@@ -55,20 +55,6 @@ class JetValidationv2 : public SubsysReco
 
   std::string m_outputFile;
 
-  std::vector<std::string> m_triggers = {"None"
-                                       , "MBD N&S >= 1"
-                                       , "MBD N&S >= 1, vtx < 10 cm"
-                                       , "MBD N&S >= 1, vtx < 30 cm"
-                                       , "MBD N&S >= 1, vtx < 60 cm"
-                                       , "Jet 6 GeV + MBD NS >= 1"
-                                       , "Jet 8 GeV + MBD NS >= 1"
-                                       , "Jet 10 GeV + MBD NS >= 1"
-                                       , "Jet 12 GeV + MBD NS >= 1"
-                                       , "Jet 6 GeV, MBD N&S >= 1, vtx < 10 cm"
-                                       , "Jet 8 GeV, MBD N&S >= 1, vtx < 10 cm"
-                                       , "Jet 10 GeV, MBD N&S >= 1, vtx < 10 cm"
-                                       , "Jet 12 GeV, MBD N&S >= 1, vtx < 10 cm"
-                                      };
   Float_t m_zvtx_max;
 
   UInt_t  m_bins_phi;

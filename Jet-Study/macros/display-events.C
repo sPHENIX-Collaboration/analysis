@@ -48,21 +48,6 @@ namespace myAnalysis {
     UInt_t bins_eta = 24;
     Float_t eta_low = -1.1;
     Float_t eta_high = 1.1;
-
-    vector<string> m_triggers = {"None"
-                               , "MBD N&S >= 1"
-                               , "MBD N&S >= 1, vtx < 10 cm"
-                               , "MBD N&S >= 1, vtx < 30 cm"
-                               , "MBD N&S >= 1, vtx < 60 cm"
-                               , "Jet 6 GeV + MBD NS >= 1"
-                               , "Jet 8 GeV + MBD NS >= 1"
-                               , "Jet 10 GeV + MBD NS >= 1"
-                               , "Jet 12 GeV + MBD NS >= 1"
-                               , "Jet 6 GeV, MBD N&S >= 1, vtx < 10 cm"
-                               , "Jet 8 GeV, MBD N&S >= 1, vtx < 10 cm"
-                               , "Jet 10 GeV, MBD N&S >= 1, vtx < 10 cm"
-                               , "Jet 12 GeV, MBD N&S >= 1, vtx < 10 cm"
-                              };
 }
 
 Int_t myAnalysis::readFile(const string &input, const string &output) {
@@ -146,7 +131,7 @@ void myAnalysis::plots(const string &output) {
     vector<string> suffix_200_500;
     vector<string> suffix_above_500;
 
-    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
         suffix_70_100.push_back("-trigger-"+to_string(i)+"-pt-70-100.pdf");
         suffix_100_200.push_back("-trigger-"+to_string(i)+"-pt-100-200.pdf");
         suffix_200_500.push_back("-trigger-"+to_string(i)+"-pt-200-500.pdf");
@@ -185,7 +170,7 @@ void myAnalysis::plots(const string &output) {
             Int_t leadJetPt    = stoi(tokens[4]);
 
             cout << "Run: " << run << ", Event: " << event
-                 << ", trigger: " << m_triggers[triggerIndex]
+                 << ", trigger: " << JetUtils::m_triggers[triggerIndex]
                  << ", pt: " << leadJetPt << " GeV" << endl;
 
             string suffix = suffix_70_100[triggerIndex];
@@ -258,7 +243,7 @@ void myAnalysis::plots(const string &output) {
         tfile->Close();
     }
 
-    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
         c1->Print((tag + suffix_70_100[i]    + "]").c_str(), "pdf portrait");
         c1->Print((tag + suffix_100_200[i]   + "]").c_str(), "pdf portrait");
         c1->Print((tag + suffix_200_500[i]   + "]").c_str(), "pdf portrait");
@@ -268,18 +253,18 @@ void myAnalysis::plots(const string &output) {
     cout << "----------------------------" << endl;
     cout << "Trigger Pt Stats" << endl;
     // cleaning step, remove extra files
-    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
         if(triggerPtCtr.find(suffix_70_100[i])    == triggerPtCtr.end()) std::remove((tag+suffix_70_100[i]).c_str());
-        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 70 GeV to 100 GeV, Events: " << triggerPtCtr[suffix_70_100[i]] << endl;
+        else cout << "Trigger: " << JetUtils::m_triggers[i] << ", Jet Pt: 70 GeV to 100 GeV, Events: " << triggerPtCtr[suffix_70_100[i]] << endl;
 
         if(triggerPtCtr.find(suffix_100_200[i])   == triggerPtCtr.end()) std::remove((tag+suffix_100_200[i]).c_str());
-        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 100 GeV to 200 GeV, Events: " << triggerPtCtr[suffix_100_200[i]] << endl;
+        else cout << "Trigger: " << JetUtils::m_triggers[i] << ", Jet Pt: 100 GeV to 200 GeV, Events: " << triggerPtCtr[suffix_100_200[i]] << endl;
 
         if(triggerPtCtr.find(suffix_200_500[i])   == triggerPtCtr.end()) std::remove((tag+suffix_200_500[i]).c_str());
-        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 200 GeV to 500 GeV, Events: " << triggerPtCtr[suffix_200_500[i]] << endl;
+        else cout << "Trigger: " << JetUtils::m_triggers[i] << ", Jet Pt: 200 GeV to 500 GeV, Events: " << triggerPtCtr[suffix_200_500[i]] << endl;
 
         if(triggerPtCtr.find(suffix_above_500[i]) == triggerPtCtr.end()) std::remove((tag+suffix_above_500[i]).c_str());
-        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: Above 500 GeV, Events: " << triggerPtCtr[suffix_above_500[i]] << endl;
+        else cout << "Trigger: " << JetUtils::m_triggers[i] << ", Jet Pt: Above 500 GeV, Events: " << triggerPtCtr[suffix_above_500[i]] << endl;
     }
     cout << "----------------------------" << endl;
 

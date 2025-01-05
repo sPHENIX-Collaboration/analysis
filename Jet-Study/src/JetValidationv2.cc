@@ -77,28 +77,28 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
-  hEvents = new TH1F("hEvents","Events; Status; Counts", m_triggers.size(), 0, m_triggers.size());
+  hEvents = new TH1F("hEvents","Events; Status; Counts", JetUtils::m_triggers.size(), 0, JetUtils::m_triggers.size());
 
   stringstream title;
   title << "Jet p_{T} #geq " << m_pt_background << " GeV; Trigger; z [cm]";
-  hTriggerZvtxBkg = new TH2F("hTriggerZvtxBkg",title.str().c_str(), m_triggers.size(), 0, m_triggers.size()
+  hTriggerZvtxBkg = new TH2F("hTriggerZvtxBkg",title.str().c_str(), JetUtils::m_triggers.size(), 0, JetUtils::m_triggers.size()
                                                                   , m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
   hzvtxAll = new TH1F("zvtxAll","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
-  for(UInt_t i = 0; i < m_triggers.size(); ++i) {
-    hEvents->GetXaxis()->SetBinLabel(i+1, m_triggers[i].c_str());
-    hTriggerZvtxBkg->GetXaxis()->SetBinLabel(i+1, m_triggers[i].c_str());
+  for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
+    hEvents->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
+    hTriggerZvtxBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
 
     // zvtx
     string name = "hzvtx_"+to_string(i);
-    string title = "Z Vertex: " + m_triggers[i] + "; z [cm]; counts";
+    string title = "Z Vertex: " + JetUtils::m_triggers[i] + "; z [cm]; counts";
     auto h = new TH1F(name.c_str(),title.c_str(), m_bins_zvtx, m_zvtx_low, m_zvtx_high);
     hzvtx.push_back(h);
 
     // jet
     name = "hjetPhiEtaPt_"+to_string(i);
-    title = "Jet: " + m_triggers[i] + "; #phi; #eta; p_{T} [GeV]";
+    title = "Jet: " + JetUtils::m_triggers[i] + "; #phi; #eta; p_{T} [GeV]";
     auto h3 = new TH3F(name.c_str(),title.c_str(), m_bins_phi, m_phi_low, m_phi_high,
                                                    m_bins_eta, m_eta_low, m_eta_high,
                                                    m_bins_pt, m_pt_low, m_pt_high);
@@ -209,8 +209,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   jetEtaSubLead = (Int_t)(jetEtaSubLead*10)/10.;
 
   Int_t triggerIdx = 0; // default value: None
-  for(UInt_t i = 1; i < m_triggers.size(); ++i) {
-    if(m_triggeranalyzer->didTriggerFire(m_triggers[i])) {
+  for(UInt_t i = 1; i < JetUtils::m_triggers.size(); ++i) {
+    if(m_triggeranalyzer->didTriggerFire(JetUtils::m_triggers[i])) {
       triggerIdx = i;
       break;
     }
@@ -352,8 +352,8 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 {
   cout << "JetValidationv2::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Trigger Summary" << endl;
-  for(UInt_t i = 0; i < m_triggers.size(); ++i) {
-    cout << m_triggers[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
+  for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
+    cout << JetUtils::m_triggers[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
   }
 
   TFile output(m_outputFile.c_str(),"recreate");
@@ -375,7 +375,7 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("zvtx");
   hzvtxAll->Write();
-  for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+  for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
     output.cd("zvtx");
     hzvtx[i]->Write();
 
