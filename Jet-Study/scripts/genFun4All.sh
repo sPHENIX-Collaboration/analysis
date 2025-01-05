@@ -23,6 +23,7 @@ if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
    if [[ "$inputJET" =~ \.root$ ]]; then
      getinputfiles.pl $inputJET
      run=$(echo "$p2" | sed 's/^0*//') # Remove leading zeros using sed
+     echo "File Transferred: $(readlink -f $inputJET)"
    else
      getinputfiles.pl --filelist $inputJET
      run=$(echo "$p3" | sed 's/^0*//' | sed 's/\.[^.]*$//') # Remove leading zeros and extension
