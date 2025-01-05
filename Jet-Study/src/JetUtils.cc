@@ -1,5 +1,8 @@
 #include "JetUtils.h"
 #include <math.h>
+#include <sstream>
+
+using std::stringstream;
 
 bool JetUtils::check_bad_jet_eta(float jet_eta, float zvtx, float jet_radius)
 {
@@ -60,4 +63,19 @@ float JetUtils::get_emcal_maxeta_zcorrected(float zvtx)
   float z = maxz_EM - zvtx;
   float eta_zcorrected = asinh(z / (float) radius_EM);
   return eta_zcorrected;
+}
+
+vector<string> JetUtils::split(const string &s, const char delimiter) {
+    vector<string> result;
+
+    stringstream ss(s);
+    string temp;
+
+    while(getline(ss,temp,delimiter)) {
+        if(!temp.empty()) {
+            result.push_back(temp);
+        }
+    }
+
+    return result;
 }

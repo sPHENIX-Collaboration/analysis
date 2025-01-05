@@ -2,11 +2,17 @@
 #define JETUTILS_H_
 
 #include <iostream>
+#include <string>
+#include <vector>
+
+using std::string;
+using std::vector;
 
 class JetUtils
 {
  public:
   static bool check_bad_jet_eta(float jet_eta, float zvtx, float jet_radius);
+  static vector<string> split(const string &s, const char delimiter);
 
  private:
   static float get_emcal_mineta_zcorrected(float zvtx);
