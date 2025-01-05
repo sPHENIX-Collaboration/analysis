@@ -17,6 +17,9 @@
 // -- sPHENIX Style
 #include "sPhenixStyle.C"
 
+// -- Utils
+#include "jetvalidation/JetUtils.h"
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -28,6 +31,7 @@ using std::min;
 using std::max;
 using std::ofstream;
 using std::unique_ptr;
+using std::unordered_map;
 
 namespace myAnalysis {
     void plots(const string &output);
@@ -44,6 +48,21 @@ namespace myAnalysis {
     UInt_t bins_eta = 24;
     Float_t eta_low = -1.1;
     Float_t eta_high = 1.1;
+
+    vector<string> m_triggers = {"None"
+                               , "MBD N&S >= 1"
+                               , "MBD N&S >= 1, vtx < 10 cm"
+                               , "MBD N&S >= 1, vtx < 30 cm"
+                               , "MBD N&S >= 1, vtx < 60 cm"
+                               , "Jet 6 GeV + MBD NS >= 1"
+                               , "Jet 8 GeV + MBD NS >= 1"
+                               , "Jet 10 GeV + MBD NS >= 1"
+                               , "Jet 12 GeV + MBD NS >= 1"
+                               , "Jet 6 GeV, MBD N&S >= 1, vtx < 10 cm"
+                               , "Jet 8 GeV, MBD N&S >= 1, vtx < 10 cm"
+                               , "Jet 10 GeV, MBD N&S >= 1, vtx < 10 cm"
+                               , "Jet 12 GeV, MBD N&S >= 1, vtx < 10 cm"
+                              };
 }
 
 Int_t myAnalysis::readFile(const string &input, const string &output) {
@@ -120,19 +139,30 @@ void myAnalysis::plots(const string &output) {
 
     // gPad->SetGrid();
 
-    string tag = output.substr(0,output.find("."));
-    const string suffix_70_100 = "-70-100.pdf";
-    const string suffix_100_200 = "-100-200.pdf";
-    const string suffix_200_500 = "-200-500.pdf";
-    const string suffix_above_500 = "-above-500.pdf";
+    string tag = output.substr(0,output.rfind("."));
 
-    c1->Print((tag + suffix_70_100    + "[").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_100_200   + "[").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_200_500   + "[").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_above_500 + "[").c_str(), "pdf portrait");
+    vector<string> suffix_70_100;
+    vector<string> suffix_100_200;
+    vector<string> suffix_200_500;
+    vector<string> suffix_above_500;
+
+    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+        suffix_70_100.push_back("-trigger-"+to_string(i)+"-pt-70-100.pdf");
+        suffix_100_200.push_back("-trigger-"+to_string(i)+"-pt-100-200.pdf");
+        suffix_200_500.push_back("-trigger-"+to_string(i)+"-pt-200-500.pdf");
+        suffix_above_500.push_back("-trigger-"+to_string(i)+"-pt-above-500.pdf");
+
+        c1->Print((tag + suffix_70_100[i]    + "[").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_100_200[i]   + "[").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_200_500[i]   + "[").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_above_500[i] + "[").c_str(), "pdf portrait");
+    }
     c1->cd();
 
     UInt_t ctr = 0;
+
+    unordered_map<string,int> triggerPtCtr;
+
     for(UInt_t i = 0; i < files.size(); ++i) {
         if(i%20 == 0) cout << "Progress: " << i << ", " << (i+1)*100./files.size() << " %" << endl;
 
@@ -147,27 +177,23 @@ void myAnalysis::plots(const string &output) {
 
         for(UInt_t j = 0; j < keysCEMC->GetSize(); ++j) {
             string name  = keysCEMCBase->At(j)->GetName();
-            stringstream ss(name);
-            string temp;
-            char del = '_';
+            vector<string> tokens = JetUtils::split(name,'_');
 
-            getline(ss,temp,del);
-            getline(ss,temp,del);
-            string run   = temp;
+            string run         = tokens[1];
+            string event       = tokens[2];
+            Int_t triggerIndex = stoi(tokens[3]);
+            Int_t leadJetPt    = stoi(tokens[4]);
 
-            getline(ss,temp,del);
-            string event = temp;
+            cout << "Run: " << run << ", Event: " << event
+                 << ", trigger: " << m_triggers[triggerIndex]
+                 << ", pt: " << leadJetPt << " GeV" << endl;
 
-            getline(ss,temp,del);
-            getline(ss,temp,del);
-            Int_t leadJetPt = stoi(temp);
+            string suffix = suffix_70_100[triggerIndex];
+            if(leadJetPt >= 100 && leadJetPt < 200) suffix = suffix_100_200[triggerIndex];
+            if(leadJetPt >= 200 && leadJetPt < 500) suffix = suffix_200_500[triggerIndex];
+            if(leadJetPt >= 500) suffix = suffix_above_500[triggerIndex];
 
-            cout << "Run: " << run << ", Event: " << event << ", pt: " << leadJetPt << " GeV" << endl;
-
-            string suffix = suffix_70_100;
-            if(leadJetPt >= 100 && leadJetPt < 200) suffix = suffix_100_200;
-            if(leadJetPt >= 200 && leadJetPt < 500) suffix = suffix_200_500;
-            if(leadJetPt >= 500) suffix = suffix_above_500;
+            triggerPtCtr[suffix]++;
 
             auto hCEMCBase = (TH2*)tfile->Get(("CEMCBase/"+name).c_str());
 
@@ -232,11 +258,32 @@ void myAnalysis::plots(const string &output) {
         tfile->Close();
     }
 
-    c1->Print((tag + suffix_above_500 + "]").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_200_500   + "]").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_100_200   + "]").c_str(), "pdf portrait");
-    c1->Print((tag + suffix_70_100    + "]").c_str(), "pdf portrait");
-    cout << "Events: " << ctr << endl;
+    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+        c1->Print((tag + suffix_70_100[i]    + "]").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_100_200[i]   + "]").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_200_500[i]   + "]").c_str(), "pdf portrait");
+        c1->Print((tag + suffix_above_500[i] + "]").c_str(), "pdf portrait");
+    }
+
+    cout << "----------------------------" << endl;
+    cout << "Trigger Pt Stats" << endl;
+    // cleaning step, remove extra files
+    for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+        if(triggerPtCtr.find(suffix_70_100[i])    == triggerPtCtr.end()) std::remove((tag+suffix_70_100[i]).c_str());
+        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 70 GeV to 100 GeV, Events: " << triggerPtCtr[suffix_70_100[i]] << endl;
+
+        if(triggerPtCtr.find(suffix_100_200[i])   == triggerPtCtr.end()) std::remove((tag+suffix_100_200[i]).c_str());
+        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 100 GeV to 200 GeV, Events: " << triggerPtCtr[suffix_100_200[i]] << endl;
+
+        if(triggerPtCtr.find(suffix_200_500[i])   == triggerPtCtr.end()) std::remove((tag+suffix_200_500[i]).c_str());
+        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: 200 GeV to 500 GeV, Events: " << triggerPtCtr[suffix_200_500[i]] << endl;
+
+        if(triggerPtCtr.find(suffix_above_500[i]) == triggerPtCtr.end()) std::remove((tag+suffix_above_500[i]).c_str());
+        else cout << "Trigger: " << m_triggers[i] << ", Jet Pt: Above 500 GeV, Events: " << triggerPtCtr[suffix_above_500[i]] << endl;
+    }
+    cout << "----------------------------" << endl;
+
+    cout << "Total Events: " << ctr << endl;
 }
 
 void display_events(const string &input, const string &output="plots.pdf", const string &outputFileList="") {

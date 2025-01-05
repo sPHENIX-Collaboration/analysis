@@ -30,7 +30,7 @@ bin/event-stats: macros/event-stats.C
 
 bin/display-events: macros/display-events.C
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(LIBFLAGS) $(CPPFLAGS)
 
 clean:
 	rm bin/Fun4All_JetVal
