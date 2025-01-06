@@ -80,6 +80,7 @@ class JetValidationv2 : public SubsysReco
   TriggerAnalyzer* m_triggeranalyzer = nullptr;
 
   TH1* hEvents = nullptr;
+  TH1* hEventsBkg = nullptr;
   TH1* hzvtxAll = nullptr;
   TH2* hTriggerZvtxBkg = nullptr;
   std::vector<TH1*> hzvtx;

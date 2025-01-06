@@ -78,6 +78,7 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   se->Print("NODETREE");
 
   hEvents = new TH1F("hEvents","Events; Status; Counts", JetUtils::m_triggers.size(), 0, JetUtils::m_triggers.size());
+  hEventsBkg = new TH1F("hEventsBkg","Events; Status; Counts", JetUtils::m_triggers.size(), 0, JetUtils::m_triggers.size());
 
   stringstream title;
   title << "Jet p_{T} #geq " << m_pt_background << " GeV; Trigger; z [cm]";
@@ -88,6 +89,7 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
 
   for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
     hEvents->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
+    hEventsBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
     hTriggerZvtxBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
 
     // zvtx
@@ -149,6 +151,16 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   m_triggeranalyzer->decodeTriggers(topNode);
 
+  Int_t triggerIdx = 0; // default value: None
+  for(UInt_t i = 1; i < JetUtils::m_triggers.size(); ++i) {
+    if(m_triggeranalyzer->didTriggerFire(JetUtils::m_triggers[i])) {
+      triggerIdx = i;
+      break;
+    }
+  }
+
+  hEvents->Fill(triggerIdx);
+
   // interface to reco jets
   JetContainer* jets_r04 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r04);
   if (!jets_r04) {
@@ -207,14 +219,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   jetEtaLead    = (Int_t)(jetEtaLead*10)/10.;
   jetEtaSubLead = (Int_t)(jetEtaSubLead*10)/10.;
-
-  Int_t triggerIdx = 0; // default value: None
-  for(UInt_t i = 1; i < JetUtils::m_triggers.size(); ++i) {
-    if(m_triggeranalyzer->didTriggerFire(JetUtils::m_triggers[i])) {
-      triggerIdx = i;
-      break;
-    }
-  }
 
   // Get TowerInfoContainer
   // Unsubtracted EMCal Towers
@@ -323,7 +327,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   hIHCal.push_back(hIHCal_);
   hOHCal.push_back(hOHCal_);
 
-  hEvents->Fill(triggerIdx);
+  hEventsBkg->Fill(triggerIdx);
   hzvtx[triggerIdx]->Fill(m_zvtx);
   hTriggerZvtxBkg->Fill(triggerIdx, m_zvtx);
 
@@ -353,7 +357,13 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   cout << "JetValidationv2::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Trigger Summary" << endl;
   for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
-    cout << JetUtils::m_triggers[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
+    UInt_t evts    = hEvents->GetBinContent(i+1);
+    UInt_t evtsBkg = hEventsBkg->GetBinContent(i+1);
+    Float_t frac = (evts) ? evtsBkg*100./evts : 0;
+    cout << JetUtils::m_triggers[i] << ": " << evts << " Events, "
+                                            << evtsBkg << " Background Events, "
+                                            << frac << " %"
+                                            << endl;
   }
 
   TFile output(m_outputFile.c_str(),"recreate");
@@ -371,6 +381,7 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("event");
   hEvents->Write();
+  hEventsBkg->Write();
   hTriggerZvtxBkg->Write();
 
   output.cd("zvtx");
