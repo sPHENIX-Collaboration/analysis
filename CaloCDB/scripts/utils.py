@@ -69,12 +69,13 @@ def create_f4a_jobs():
         file.write('error           = error/job-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
         file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
-        file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
+        # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
         file.write(f'queue input_run from {os.path.basename(run_list)}')
 
 def get_condor_status():
-    hosts = [f'sphnx{x:02}' for x in range(1,9)]
+    hosts = [f'sphnxsub{x:02}' for x in range(1,3)]
+    hosts += [f'sphnx{x:02}' for x in range(1,9)]
     hosts.append('sphnxdev01')
 
     dt_all = []
