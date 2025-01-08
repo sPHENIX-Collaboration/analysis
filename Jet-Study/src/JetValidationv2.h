@@ -55,6 +55,7 @@ class JetValidationv2 : public SubsysReco
 
   std::string m_outputFile;
 
+  UInt_t m_triggerBits;
   Float_t m_zvtx_max;
 
   UInt_t  m_bins_phi;
