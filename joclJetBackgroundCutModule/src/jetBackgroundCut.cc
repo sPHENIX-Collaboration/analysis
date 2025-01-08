@@ -73,11 +73,14 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
   float frcoh = 0;
   float dPhi = NAN;
 
-  if(!towersEM || !towersOH || !geom[1] || !geom[2] || (!mbdvtxmap && !gvtxmap))
+  if(!_missingInfoWarningPrinted)
     {
-      if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/mbdvtxmap/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << mbdvtxmap << "/" << gvtxmap << endl;
-      _missingInfoWarningPrinted = true;
-      return Fun4AllReturnCodes::ABORTEVENT;
+      if(!towersEM || !towersOH || !geom[1] || !geom[2] || (!mbdvtxmap && !gvtxmap))
+	{
+	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/mbdvtxmap/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << mbdvtxmap << "/" << gvtxmap << endl;
+	  _missingInfoWarningPrinted = true;
+	  return Fun4AllReturnCodes::ABORTEVENT;
+	}
     }
 
   if(!gvtxmap)
