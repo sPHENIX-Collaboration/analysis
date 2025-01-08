@@ -76,7 +76,7 @@ def create_f4a_jobs():
 def get_condor_status():
     hosts = [f'sphnxsub{x:02}' for x in range(1,3)]
     hosts += [f'sphnx{x:02}' for x in range(1,9)]
-    hosts.append('sphnxdev01')
+    # hosts.append('sphnxdev01')
 
     dt_all = []
     dt_user = []
