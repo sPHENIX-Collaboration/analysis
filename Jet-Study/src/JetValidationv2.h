@@ -78,10 +78,14 @@ class JetValidationv2 : public SubsysReco
   UInt_t  m_event;
   Float_t m_R;
 
+  enum m_status {ALL, ZVTX60, ZVTX60_BKG, ZVTX60_BKG_EMCAL};
+  std::vector<std::string> m_eventStatus = {"All", "|z| < 60 cm", "|z| < 60 cm and Bkg", "|z| < 60 cm, Bkg, and EMCal"};
+
   TriggerAnalyzer* m_triggeranalyzer = nullptr;
 
   TH1* hEvents = nullptr;
-  TH1* hEventsBkg = nullptr;
+  TH1* hTriggers = nullptr;
+  TH1* hTriggersBkg = nullptr;
   TH1* hzvtxAll = nullptr;
   TH2* hTriggerZvtxBkg = nullptr;
   std::vector<TH1*> hzvtx;

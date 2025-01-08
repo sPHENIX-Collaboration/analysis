@@ -80,8 +80,14 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
-  hEvents = new TH1F("hEvents","Events; Status; Counts", m_triggerBits, 0, m_triggerBits);
-  hEventsBkg = new TH1F("hEventsBkg","Events; Status; Counts", m_triggerBits, 0, m_triggerBits);
+  hEvents = new TH1F("hEvents","Events; Status; Counts", m_eventStatus.size(), 0, m_eventStatus.size());
+
+  for(UInt_t i = 0; i < m_eventStatus.size(); ++i) {
+    hEvents->GetXaxis()->SetBinLabel(i+1, m_eventStatus[i].c_str());
+  }
+
+  hTriggers = new TH1F("hTriggers","Trigger Fired; Trigger; Counts", m_triggerBits, 0, m_triggerBits);
+  hTriggersBkg = new TH1F("hTriggersBkg","Trigger Fired; Trigger; Counts", m_triggerBits, 0, m_triggerBits);
 
   stringstream title;
   title << "Jet p_{T} #geq " << m_pt_background << " GeV; Trigger; z [cm]";
@@ -91,8 +97,8 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hzvtxAll = new TH1F("zvtxAll","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
   for(UInt_t i = 0; i < m_triggerBits; ++i) {
-    hEvents->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
-    hEventsBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
+    hTriggers->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
+    hTriggersBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
     hTriggerZvtxBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
 
     // zvtx
@@ -155,11 +161,14 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   }
 
   hzvtxAll->Fill(m_zvtx);
+  hEvents->Fill(m_status::ALL);
 
   // skip event if zvtx is too large
   if(fabs(m_zvtx) >= m_zvtx_max) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  hEvents->Fill(m_status::ZVTX60);
 
   m_triggeranalyzer->decodeTriggers(topNode);
 
@@ -176,7 +185,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   }
 
   for(auto idx : triggerIdx) {
-    hEvents->Fill(idx);
+    hTriggers->Fill(idx);
   }
 
   // interface to reco jets
@@ -230,6 +239,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   // if event doesn't have a high pt jet then skip to the next event
   if(!hasBkg) return Fun4AllReturnCodes::ABORTEVENT;
+
+  hEvents->Fill(m_status::ZVTX60_BKG);
 
   // round nearest 0.1
   jetPhiLead    = (Int_t)(jetPhiLead*10)/10.;
@@ -347,6 +358,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   // ensure that EMCal has the majority of the energy recorded
   if(totalCEMC <= totalHCal) return Fun4AllReturnCodes::ABORTEVENT;
 
+  hEvents->Fill(m_status::ZVTX60_BKG_EMCAL);
+
   hCEMCBase.push_back(hCEMCBase_);
   hCEMC.push_back(hCEMC_);
   hIHCal.push_back(hIHCal_);
@@ -354,7 +367,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
 
   for(auto idx : triggerIdx) {
-    hEventsBkg->Fill(idx);
+    hTriggersBkg->Fill(idx);
     hzvtx[idx]->Fill(m_zvtx);
     hTriggerZvtxBkg->Fill(idx, m_zvtx);
   }
@@ -385,13 +398,18 @@ Int_t JetValidationv2::ResetEvent(PHCompositeNode *topNode)
 Int_t JetValidationv2::End(PHCompositeNode *topNode)
 {
   cout << "JetValidationv2::End(PHCompositeNode *topNode) This is the End..." << endl;
+  cout << "Events Summary" << endl;
+  for(UInt_t i = 0; i < m_eventStatus.size(); ++i) {
+    cout << m_eventStatus[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
+  }
+  cout << "=========================" << endl;
   cout << "Trigger Summary" << endl;
   for(UInt_t i = 0; i < m_triggerBits; ++i) {
-    UInt_t evts    = hEvents->GetBinContent(i+1);
-    UInt_t evtsBkg = hEventsBkg->GetBinContent(i+1);
-    Float_t frac = (evts) ? evtsBkg*100./evts : 0;
-    cout << JetUtils::m_triggers[i] << ": " << evts << " Events, "
-                                            << evtsBkg << " Background Events, "
+    UInt_t trg    = hTriggers->GetBinContent(i+1);
+    UInt_t trgBkg = hTriggersBkg->GetBinContent(i+1);
+    Float_t frac = (trg) ? trgBkg*100./trg : 0;
+    cout << JetUtils::m_triggers[i] << ": " << trg << " Triggers, "
+                                            << trgBkg << " Triggers Background Event, "
                                             << frac << " %"
                                             << endl;
   }
@@ -401,6 +419,7 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   output.cd();
 
   output.mkdir("event");
+  output.mkdir("trigger");
   output.mkdir("zvtx");
   output.mkdir("jets");
 
@@ -411,7 +430,10 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("event");
   hEvents->Write();
-  hEventsBkg->Write();
+
+  output.cd("trigger");
+  hTriggers->Write();
+  hTriggersBkg->Write();
   hTriggerZvtxBkg->Write();
 
   output.cd("zvtx");
