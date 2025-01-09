@@ -13,6 +13,8 @@
 #include <centrality/CentralityInfo.h>
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
+#include <globalvertex/MbdVertex.h>
+#include <globalvertex/MbdVertexMap.h>
 #include <calobase/RawTower.h>
 #include <calobase/RawTowerContainer.h>
 #include <calobase/RawTowerGeom.h>
@@ -30,14 +32,6 @@
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawClusterUtility.h>
 #include <calobase/RawTowerGeomContainer.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include <HepMC/GenEvent.h>
-#pragma GCC diagnostic pop
-#include <HepMC/GenVertex.h>
-#include <phhepmc/PHHepMCGenEvent.h>
-#include <phhepmc/PHHepMCGenEventMap.h>
 
 #include <TTree.h>
 #include <iostream>
@@ -257,6 +251,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       exit(-1);
     }
   
+  
   //zvertex
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap)
@@ -275,13 +270,50 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     }
   else
     {
-      GlobalVertex *vtx = vertexmap->begin()->second;
-      m_zvtx = vtx->get_z();
+      GlobalVertex *globalVertex = vertexmap->begin()->second;
+      //globalVertex->identify();
+
+      auto mbdStartIter = globalVertex->find_vertexes(GlobalVertex::MBD);
+      auto mbdEndIter = globalVertex->end_vertexes();
+
+      for (auto iter = mbdStartIter; iter != mbdEndIter; ++iter)
+      {
+        const auto &[type, vertexVec] = *iter;
+        if (type != GlobalVertex::MBD) continue;
+        for (const auto *vertex : vertexVec)
+        {
+          if (!vertex) continue; 
+          m_zvtx = vertex->get_z();
+        }
+      }
+
     }
 
-    if (fabs(m_zvtx) > 30) {
+    std::cout << "using vertex " << m_zvtx << std::endl;
+
+  /*
+  MbdVertexMap *vertexmap = findNode::getClass<MbdVertexMap>(topNode,"MbdVertexMap");
+  if (!vertexmap)
+  {
+    std::cout << "MbdVertexMap node is missing" << std::endl;
+  }
+  if (vertexmap && !vertexmap->empty())
+  {
+    MbdVertex *vtx = vertexmap->begin()->second;
+    if (vtx)
+    {
+      m_zvtx = vtx->get_z();
+    }
+    else
+    {
       return Fun4AllReturnCodes::EVENT_OK;
     }
+  }
+  */
+
+  if (fabs(m_zvtx) > 30) {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
 
   //calorimeter towers
   TowerInfoContainer *towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
@@ -626,6 +658,7 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   
   m_triggerVector.clear();
 
+  m_zvtx = 0;
   m_emcaln = 0;
   m_ihcaln = 0;
   m_ohcaln = 0;

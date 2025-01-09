@@ -1,13 +1,13 @@
 import os
 
 # Base directory path containing the .list files
-base_directory = '/sphenix/user/egm2153/calib_study/JetValidation/macro/data_list_files'
+base_directory = '/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/data_list_files'
 
 # Get all files in the directory with the .list extension
 file_list = [f for f in os.listdir(base_directory) if f.endswith('.list')]
 
 # Number of files per output file
-files_per_runlist = 5000
+files_per_runlist = 5785
 
 # Split the file list into chunks of 5000
 for i in range(0, len(file_list), files_per_runlist):
