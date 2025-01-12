@@ -25,7 +25,7 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
 // -- Trigger
-#include <calotrigger/TriggerRunInfoReco.h>
+#include <calotrigger/TriggerRunInfo.h>
 
 // Jet Utils
 #include "JetUtils.h"
