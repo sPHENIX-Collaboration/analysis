@@ -88,7 +88,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
       auto gVtxMapStart = gvtxmap->begin();
       
       GlobalVertex* gvtx = NULL;
-      if(gVtxMapStart)
+      if(gVtxMapStart != gvtxmap->end())
 	{
 	  gvtx = gVtxMapStart->second;
 	}
@@ -102,7 +102,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
     {
       auto mbdVtxMapStart = mbdvtxmap->begin();
       MbdVertex* mbdvtx = NULL;
-      if(mbdVtxMapStart)
+      if(mbdVtxMapStart != mbdvtxmap->end())
 	{
 	  mbdvtx = mbdVtxMapStart->second;
 	}
