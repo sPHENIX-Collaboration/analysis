@@ -45,16 +45,17 @@ void Fun4All_hijbkg(const int nEvents = 0, const std::string& dst_fname = "DST_T
 
   // DST_TRUTH
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTin2");
-  std::string dst_fname2 = std::regex_replace(dst_fname,regex("DST_TRACKS"),"DST_TRUTH");
 
   if (boost::algorithm::ends_with(dst_fname, ".root"))
   {
     in1->AddFile( dst_fname );
+    std::string dst_fname2 = std::regex_replace(dst_fname,regex("DST_TRACKS"),"DST_TRUTH");
     in2->AddFile( dst_fname2 );
   }
   else if (boost::algorithm::ends_with(dst_fname, ".list"))
   {
     in1->AddListFile( dst_fname );
+    std::string list_fname2 = std::regex_replace(dst_fname,regex("dst_tracks"),"dst_truth");
     in2->AddListFile( dst_fname2 );
   }
 
