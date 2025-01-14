@@ -384,7 +384,8 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
     std::cout << "ntracks " << ntracks << std::endl;
   }
 
-  if ( ntracks > 3 || ntracks < 2 )
+  //if ( ntracks > 3 || ntracks < 2 )
+  if ( ntracks != 2 )
   {
     return Fun4AllReturnCodes::DISCARDEVENT;
   }
