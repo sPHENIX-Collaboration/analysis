@@ -33,7 +33,7 @@ class AnaUPC : public SubsysReco
  public:
   /// Constructor
   AnaUPC(const std::string &name = "AnaUPC",
-              const std::string &fname = "AnaUPC.root");
+              const std::string &outputfname = "AnaUPC.root");
 
   // Destructor
   virtual ~AnaUPC();
@@ -85,26 +85,30 @@ class AnaUPC : public SubsysReco
   bool m_analyzeTruth;
 
   /// TFile to hold the following TTrees and histograms
-  TFile *m_outfile;
+  TFile *m_outfile{nullptr};
   //TTree *m_clustertree;
-  TTree *m_tracktree;
-  TTree *m_hepmctree;
-  TTree *m_truthtree;
+  TTree *m_tracktree{nullptr};
+  TTree *m_hepmctree{nullptr};
+  TTree *m_truthtree{nullptr};
   //TTree *m_recojettree;
   //TTree *m_truthjettree;
-  TH1 *h_phi;
-  TH2 *h2_eta_phi;
-  TH1 *h_mass;
-  TH1 *h_y;
-  TH1 *h_eta;
-  TH1 *h_pt;
+ 
+  TH1 *h_phi[2]{nullptr,nullptr};       // [0]=opp. sign, [1]=like sign
+  TH2 *h2_eta_phi[2]{nullptr,nullptr};
+  TH1 *h_mass[2]{nullptr,nullptr};
+  TH1 *h_pt[2]{nullptr,nullptr};
+  TH1 *h_y[2]{nullptr,nullptr};
+  TH1 *h_eta[2]{nullptr,nullptr};
+
+  TH1 *h_trig{nullptr};
+  TH1 *h_ntracks{nullptr};
   const double E_MASS = 0.000510998950;  // electron mass [Gev]
 
-  SvtxEvalStack *m_svtxEvalStack = nullptr;
-  //JetEvalStack *m_jetEvalStack = nullptr;
+  SvtxEvalStack *m_svtxEvalStack{nullptr};
+  //JetEvalStack *m_jetEvalStack{nullptr};
 
   /// Methods for grabbing the data
-  void getTracks(PHCompositeNode *topNode);
+  int getTracks(PHCompositeNode *topNode);
   //void getTruthJets(PHCompositeNode *topNode);
   //void getReconstructedJets(PHCompositeNode *topNode);
   //void getEMCalClusters(PHCompositeNode *topNode);

@@ -106,12 +106,23 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
 
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
 
-  h_phi = new TH1F("h_phi", "#phi [rad]", 60, -M_PI, M_PI);
-  h2_eta_phi = new TH2F("h2_phi_eta", ";#eta;#phi [rad]", 24, -5.0, 5.0, 60, -M_PI, M_PI);
-  h_mass = new TH1F("h_mass", "mass [GeV]", 1200, 0, 6);
-  h_pt = new TH1F("h_pt", "p_{T}", 200, 0, 2);
-  h_y = new TH1F("h_y", "y", 24, -1.2, 1.2);
-  h_eta = new TH1F("h_eta", "#eta", 24, -5.0, 5.0);
+  h_phi[0] = new TH1F("h_phi", "#phi [rad]", 60, -M_PI, M_PI);
+  h2_eta_phi[0] = new TH2F("h2_phi_eta", ";#eta;#phi [rad]", 24, -5.0, 5.0, 60, -M_PI, M_PI);
+  h_mass[0] = new TH1F("h_mass", "mass [GeV]", 1200, 0, 6);
+  h_pt[0] = new TH1F("h_pt", "p_{T}", 200, 0, 2);
+  h_y[0] = new TH1F("h_y", "y", 24, -1.2, 1.2);
+  h_eta[0] = new TH1F("h_eta", "#eta", 24, -5.0, 5.0);
+
+  // like-sign pairs
+  h_phi[1] = new TH1F("h_phi_ls", "#phi [rad]", 60, -M_PI, M_PI);
+  h2_eta_phi[1] = new TH2F("h2_phi_eta_ls", ";#eta;#phi [rad]", 24, -5.0, 5.0, 60, -M_PI, M_PI);
+  h_mass[1] = new TH1F("h_mass_ls", "mass [GeV]", 1200, 0, 6);
+  h_pt[1] = new TH1F("h_pt_ls", "p_{T}", 200, 0, 2);
+  h_y[1] = new TH1F("h_y_ls", "y", 24, -1.2, 1.2);
+  h_eta[1] = new TH1F("h_eta_ls", "#eta", 24, -5.0, 5.0);
+ 
+  h_trig = new TH1F("h_trig", "trig", 16, 0, 16);
+  h_ntracks = new TH1F("h_ntracks", "num tracks", 2000, 0, 2000);
 
   return 0;
 }
@@ -126,6 +137,9 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   {
     std::cout << "Beginning process_event in AnaUPC" << std::endl;
   }
+
+  h_trig->Fill( 0 );  // event counter
+
   /// Get the truth information
   if (m_analyzeTruth)
   {
@@ -136,7 +150,11 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   /// Get the tracks
   if (m_analyzeTracks)
   {
-    getTracks(topNode);
+    int status = getTracks(topNode);
+    if ( status != Fun4AllReturnCodes::EVENT_OK )
+    {
+      return status;
+    }
   }
 
   /// Get calorimeter information
@@ -345,7 +363,7 @@ void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
  * compares the reconstructed track to its truth track counterpart as determined
  * by the
  */
-void AnaUPC::getTracks(PHCompositeNode *topNode)
+int AnaUPC::getTracks(PHCompositeNode *topNode)
 {
   /// SVTX tracks node
   SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
@@ -355,7 +373,20 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
     std::cout << PHWHERE
               << "SvtxTrackMap node is missing, can't collect tracks"
               << std::endl;
-    return;
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
+  // make a cut on low ntracks
+  size_t ntracks = trackmap->size();
+  h_ntracks->Fill( ntracks );
+  if (Verbosity() > 1)
+  {
+    std::cout << "ntracks " << ntracks << std::endl;
+  }
+
+  if ( ntracks > 3 || ntracks < 2 )
+  {
+    return Fun4AllReturnCodes::DISCARDEVENT;
   }
 
   /// EvalStack for truth track matching
@@ -375,8 +406,9 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
 
   if (Verbosity() > 1)
   {
-    std::cout << "Get the SVTX tracks" << std::endl;
+    std::cout << "Get the SVTX tracks " << ntracks << std::endl;
   }
+
   for (auto &iter : *trackmap)
   {
     SvtxTrack *track = iter.second;
@@ -448,7 +480,6 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
   ROOT::Math::XYZTVector v1, v2;
 
   // make pairs
-  //for (auto &iter1 : *trackmap)
   for (auto iter1 = trackmap->begin(); iter1 != trackmap->end(); iter1++)
   {
     for (auto iter2 = iter1; iter2 != trackmap->end(); iter2++)
@@ -456,9 +487,19 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
       if ( iter2 == iter1 ) continue;
 
       //SvtxTrack *track2 = iter2.second;
-      std::cout << "XXX " << iter1->first << "\t" << iter2->first << std::endl;
+      //std::cout << "XXX " << iter1->first << "\t" << iter2->first << std::endl;
       SvtxTrack *track1 = iter1->second;
       SvtxTrack *track2 = iter2->second;
+
+      // same sign or opposite
+      int q1 = track1->get_charge();
+      int q2 = track2->get_charge();
+      //std::cout << "charge " << q1 << "\t" << q2 << std::endl;
+      int type = 0;
+      if ( q1*q2 > 0 )
+      {
+        type = 1;
+      }
 
       double px1 = track1->get_px();
       double py1 = track1->get_py();
@@ -479,15 +520,17 @@ void AnaUPC::getTracks(PHCompositeNode *topNode)
       double y = sum.Rapidity();
       double eta = sum.Eta();
       double phi = sum.Phi();
-      h_mass->Fill( invmass );
-      h_pt->Fill( pt );
-      h_y->Fill( y );
-      h_eta->Fill( eta );
-      h2_eta_phi->Fill( eta, phi );
-      h_phi->Fill( phi );
+
+      h_mass[type]->Fill( invmass );
+      h_pt[type]->Fill( pt );
+      h_y[type]->Fill( y );
+      h_eta[type]->Fill( eta );
+      h2_eta_phi[type]->Fill( eta, phi );
+      h_phi[type]->Fill( phi );
     }
   }
 
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 
