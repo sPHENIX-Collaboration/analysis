@@ -23,7 +23,7 @@ R__LOAD_LIBRARY(libg4dst.so)
 #endif
 
 
-void Fun4All_hijbkg(const int nEvents = 0, const std::string& dst_fname = "DST_TRACKS_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000019-00000.root", const std::string& sysName = "ANAUPC_HIJBKG")
+void Fun4All_hijbkg(const int nEvents = 0, const std::string& input_fname = "DST_TRACKS_sHijing_0_20fm_50kHz_bkg_0_20fm-0000000019-00000.root", const std::string& sysName = "ANAUPC_HIJBKG")
 {
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -32,7 +32,7 @@ void Fun4All_hijbkg(const int nEvents = 0, const std::string& dst_fname = "DST_T
   recoConsts *rc = recoConsts::instance();
   //rc->set_IntFlag("RUNNUMBER",62);
 
-  std::string outfname = std::regex_replace(dst_fname,regex("DST_TRACKS"),"anaupc");
+  std::string outfname = std::regex_replace(input_fname,regex("DST_TRACKS"),"anaupc");
   AnaUPC *anaupc = new AnaUPC("anaupc", outfname);
   anaupc->Verbosity(0);
   anaupc->analyzeTracks(true);
@@ -46,17 +46,22 @@ void Fun4All_hijbkg(const int nEvents = 0, const std::string& dst_fname = "DST_T
   // DST_TRUTH
   Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTin2");
 
-  if (boost::algorithm::ends_with(dst_fname, ".root"))
+  if (boost::algorithm::ends_with(input_fname, ".root"))
   {
-    in1->AddFile( dst_fname );
-    std::string dst_fname2 = std::regex_replace(dst_fname,regex("DST_TRACKS"),"DST_TRUTH");
+    in1->AddFile( input_fname );
+    std::string dst_fname2 = std::regex_replace(input_fname,regex("DST_TRACKS"),"DST_TRUTH");
     in2->AddFile( dst_fname2 );
   }
-  else if (boost::algorithm::ends_with(dst_fname, ".list"))
+  else if (boost::algorithm::ends_with(input_fname, ".list"))
   {
-    in1->AddListFile( dst_fname );
-    std::string list_fname2 = std::regex_replace(dst_fname,regex("dst_tracks"),"dst_truth");
-    in2->AddListFile( dst_fname2 );
+    in1->AddListFile( input_fname );
+    std::string list_fname2 = std::regex_replace(input_fname,regex("dst_tracks"),"dst_truth");
+    in2->AddListFile( list_fname2 );
+  }
+  else
+  {
+    std::cerr << "ERROR, unknown file type " << input_fname << std::endl;
+    gSystem->Exit( 0 );
   }
 
 

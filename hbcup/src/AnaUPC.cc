@@ -42,6 +42,7 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
+#include <ffaobjects/EventHeader.h>
 
 /// ROOT includes
 #include <TFile.h>
@@ -49,8 +50,8 @@
 #include <TH2.h>
 #include <TNtuple.h>
 #include <TTree.h>
-//#include <TLorentzVector.h>
 #include <Math/Vector4D.h>
+#include <Math/VectorUtil.h>
 
 
 /// C++ includes
@@ -58,13 +59,6 @@
 #include <cmath>
 #include <sstream>
 #include <string>
-
-/**
- * This class demonstrates the construction and use of an analysis module
- * within the sPHENIX Fun4All framework. It is intended to show how to
- * obtain physics objects from the analysis tree, and then write them out
- * to a ROOT tree and file for further offline analysis.
- */
 
 /**
  * Constructor of module
@@ -92,6 +86,8 @@ AnaUPC::~AnaUPC()
   delete m_hm;
   delete m_hepmctree;
   delete m_tracktree;
+  delete m_truthtree;
+  delete m_pairtree;
 }
 
 /**
@@ -139,6 +135,14 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   }
 
   h_trig->Fill( 0 );  // event counter
+
+  /// Get the run and eventnumber
+  EventHeader *evthdr = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  if ( evthdr )
+  {
+    m_run = evthdr->get_RunNumber();
+    m_evt = evthdr->get_EvtSequence();
+  }
 
   /// Get the truth information
   if (m_analyzeTruth)
@@ -193,6 +197,11 @@ int AnaUPC::End(PHCompositeNode * /*topNode*/)
   {
     m_hepmctree->Write();
     m_truthtree->Write();
+  }
+
+  if ( m_pairtree )
+  {
+    m_pairtree->Write();
   }
 
   /// If we analyzed the clusters, write them out
@@ -493,11 +502,11 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
       SvtxTrack *track2 = iter2->second;
 
       // same sign or opposite
-      int q1 = track1->get_charge();
-      int q2 = track2->get_charge();
-      //std::cout << "charge " << q1 << "\t" << q2 << std::endl;
+      m_pq1 = track1->get_charge();
+      m_pq2 = track2->get_charge();
+      //std::cout << "charge " << m_pq1 << "\t" << m_pq2 << std::endl;
       int type = 0;
-      if ( q1*q2 > 0 )
+      if ( m_pq1*m_pq2 > 0 )
       {
         type = 1;
       }
@@ -516,18 +525,30 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
 
       //TLorentzVector sum = v1 + v2;
       ROOT::Math::XYZTVector sum = v1 + v2;
-      double invmass = sum.M();
-      double pt = sum.Pt();
-      double y = sum.Rapidity();
-      double eta = sum.Eta();
-      double phi = sum.Phi();
+      m_pm = sum.M();
+      m_ppt = sum.Pt();
+      m_pphi = sum.Phi();
+      m_py = sum.Rapidity();
+      m_peta = sum.Eta();
+      //m_pdphi = ROOT::Math::VectorUtil::DeltaPhi(v1,v2);
+      m_pdphi = ROOT::Math::VectorUtil::DeltaPhi(v1,v2);
+      m_ppt1 = v1.Pt();
+      m_ppz1 = v1.Pz();
+      m_pphi1 = v1.Phi();
+      m_peta1 = v1.Eta();
+      m_ppt2 = v2.Pt();
+      m_ppz2 = v2.Pz();
+      m_pphi2 = v2.Phi();
+      m_peta2 = v2.Eta();
 
-      h_mass[type]->Fill( invmass );
-      h_pt[type]->Fill( pt );
-      h_y[type]->Fill( y );
-      h_eta[type]->Fill( eta );
-      h2_eta_phi[type]->Fill( eta, phi );
-      h_phi[type]->Fill( phi );
+      h_mass[type]->Fill( m_pm );
+      h_pt[type]->Fill( m_ppt );
+      h_y[type]->Fill( m_py );
+      h_eta[type]->Fill( m_peta );
+      h2_eta_phi[type]->Fill( m_peta, m_pphi );
+      h_phi[type]->Fill( m_pphi );
+
+      m_pairtree->Fill();
     }
   }
 
@@ -638,48 +659,6 @@ void AnaUPC::getEMCalClusters(PHCompositeNode *topNode)
  */
 void AnaUPC::initializeTrees()
 {
-  /*
-  m_recojettree = new TTree("jettree", "A tree with reconstructed jets");
-  m_recojettree->Branch("m_recojetpt", &m_recojetpt, "m_recojetpt/D");
-  m_recojettree->Branch("m_recojetid", &m_recojetid, "m_recojetid/I");
-  m_recojettree->Branch("m_recojetpx", &m_recojetpx, "m_recojetpx/D");
-  m_recojettree->Branch("m_recojetpy", &m_recojetpy, "m_recojetpy/D");
-  m_recojettree->Branch("m_recojetpz", &m_recojetpz, "m_recojetpz/D");
-  m_recojettree->Branch("m_recojetphi", &m_recojetphi, "m_recojetphi/D");
-  m_recojettree->Branch("m_recojeteta", &m_recojeteta, "m_recojeteta/D");
-  m_recojettree->Branch("m_recojetenergy", &m_recojetenergy, "m_recojetenergy/D");
-  m_recojettree->Branch("m_truthjetid", &m_truthjetid, "m_truthjetid/I");
-  m_recojettree->Branch("m_truthjetp", &m_truthjetp, "m_truthjetp/D");
-  m_recojettree->Branch("m_truthjetphi", &m_truthjetphi, "m_truthjetphi/D");
-  m_recojettree->Branch("m_truthjeteta", &m_truthjeteta, "m_truthjeteta/D");
-  m_recojettree->Branch("m_truthjetpt", &m_truthjetpt, "m_truthjetpt/D");
-  m_recojettree->Branch("m_truthjetenergy", &m_truthjetenergy, "m_truthjetenergy/D");
-  m_recojettree->Branch("m_truthjetpx", &m_truthjetpx, "m_truthjetpx/D");
-  m_recojettree->Branch("m_truthjetpy", &m_truthjetpy, "m_truthjyetpy/D");
-  m_recojettree->Branch("m_truthjetpz", &m_truthjetpz, "m_truthjetpz/D");
-  m_recojettree->Branch("m_dR", &m_dR, "m_dR/D");
-
-  m_truthjettree = new TTree("truthjettree", "A tree with truth jets");
-  m_truthjettree->Branch("m_truthjetid", &m_truthjetid, "m_truthjetid/I");
-  m_truthjettree->Branch("m_truthjetp", &m_truthjetp, "m_truthjetp/D");
-  m_truthjettree->Branch("m_truthjetphi", &m_truthjetphi, "m_truthjetphi/D");
-  m_truthjettree->Branch("m_truthjeteta", &m_truthjeteta, "m_truthjeteta/D");
-  m_truthjettree->Branch("m_truthjetpt", &m_truthjetpt, "m_truthjetpt/D");
-  m_truthjettree->Branch("m_truthjetenergy", &m_truthjetenergy, "m_truthjetenergy/D");
-  m_truthjettree->Branch("m_truthjetpx", &m_truthjetpx, "m_truthjetpx/D");
-  m_truthjettree->Branch("m_truthjetpy", &m_truthjetpy, "m_truthjetpy/D");
-  m_truthjettree->Branch("m_truthjetpz", &m_truthjetpz, "m_truthjetpz/D");
-  m_truthjettree->Branch("m_dR", &m_dR, "m_dR/D");
-  m_truthjettree->Branch("m_recojetpt", &m_recojetpt, "m_recojetpt/D");
-  m_truthjettree->Branch("m_recojetid", &m_recojetid, "m_recojetid/I");
-  m_truthjettree->Branch("m_recojetpx", &m_recojetpx, "m_recojetpx/D");
-  m_truthjettree->Branch("m_recojetpy", &m_recojetpy, "m_recojetpy/D");
-  m_truthjettree->Branch("m_recojetpz", &m_recojetpz, "m_recojetpz/D");
-  m_truthjettree->Branch("m_recojetphi", &m_recojetphi, "m_recojetphi/D");
-  m_truthjettree->Branch("m_recojeteta", &m_recojeteta, "m_recojeteta/D");
-  m_truthjettree->Branch("m_recojetenergy", &m_recojetenergy, "m_recojetenergy/D");
-  */
-
   m_tracktree = new TTree("tracktree", "A tree with svtx tracks");
   m_tracktree->Branch("m_tr_px", &m_tr_px, "m_tr_px/D");
   m_tracktree->Branch("m_tr_py", &m_tr_py, "m_tr_py/D");
@@ -733,6 +712,26 @@ void AnaUPC::initializeTrees()
   m_truthtree->Branch("m_truthphi", &m_truthphi, "m_truthphi/D");
   m_truthtree->Branch("m_trutheta", &m_trutheta, "m_trutheta/D");
   m_truthtree->Branch("m_truthpid", &m_truthpid, "m_truthpid/I");
+
+  m_pairtree = new TTree("pairs", "opp sign pairs");
+  m_pairtree->Branch("prun", &m_run, "prun/I");
+  m_pairtree->Branch("pevt", &m_evt, "pevt/I");
+  m_pairtree->Branch("pm", &m_pm, "pm/D");
+  m_pairtree->Branch("ppt", &m_ppt, "ppt/D");
+  m_pairtree->Branch("pphi", &m_pphi, "pphi/D");
+  m_pairtree->Branch("py", &m_py, "py/D");
+  m_pairtree->Branch("peta", &m_peta, "peta/D");
+  m_pairtree->Branch("pdphi", &m_pdphi, "pdphi/D");
+  m_pairtree->Branch("ppt1", &m_ppt1, "ppt1/D");
+  m_pairtree->Branch("ppz1", &m_ppz1, "ppz1/D");
+  m_pairtree->Branch("pphi1", &m_pphi1, "pphi1/D");
+  m_pairtree->Branch("peta1", &m_peta1, "peta1/D");
+  m_pairtree->Branch("ppt2", &m_ppt2, "ppt2/D");
+  m_pairtree->Branch("ppz2", &m_ppz2, "ppz2/D");
+  m_pairtree->Branch("pphi2", &m_pphi2, "pphi2/D");
+  m_pairtree->Branch("peta2", &m_peta2, "peta2/D");
+  m_pairtree->Branch("pq1", &m_pq1, "pq1/S");
+  m_pairtree->Branch("pq2", &m_pq2, "pq2/S");
 
   /*
   m_clustertree = new TTree("clustertree", "A tree with emcal clusters");

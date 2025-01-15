@@ -1,6 +1,7 @@
 #ifndef ANAUPC_H
 #define ANAUPC_H
 
+#include <Rtypes.h>
 #include <fun4all/SubsysReco.h>
 
 /// Class declarations for use in the analysis module
@@ -90,8 +91,9 @@ class AnaUPC : public SubsysReco
   TTree *m_tracktree{nullptr};
   TTree *m_hepmctree{nullptr};
   TTree *m_truthtree{nullptr};
-  //TTree *m_recojettree;
-  //TTree *m_truthjettree;
+
+  TTree *m_pairtree{nullptr};
+  TTree *m_lspairtree{nullptr};
  
   TH1 *h_phi[2]{nullptr,nullptr};       // [0]=opp. sign, [1]=like sign
   TH2 *h2_eta_phi[2]{nullptr,nullptr};
@@ -121,6 +123,9 @@ class AnaUPC : public SubsysReco
   /**
    * Make variables for the relevant trees
    */
+
+  Int_t m_run{ 0 };
+  Int_t m_evt{ 0 };
 
   /// HEPMC Tree variables
   int m_partid1;
@@ -166,6 +171,24 @@ class AnaUPC : public SubsysReco
   double m_truthtracketa;
   int m_truthtrackpid;
 
+  /// Pair variables
+  Double_t m_pm{ 0. };    // pair mass
+  Double_t m_ppt{ 0. };
+  Double_t m_pphi{ 0. };
+  Double_t m_py{ 0. };
+  Double_t m_peta{ 0. };
+  Double_t m_pdphi{ 0. };
+  Double_t m_ppt1{ 0. };
+  Double_t m_ppz1{ 0. };
+  Double_t m_pphi1{ 0. };
+  Double_t m_peta1{ 0. };
+  Double_t m_ppt2{ 0. };
+  Double_t m_ppz2{ 0. };
+  Double_t m_pphi2{ 0. };
+  Double_t m_peta2{ 0. };
+  Short_t  m_pq1{ 0 };
+  Short_t  m_pq2{ 0 };
+ 
   /// Reconstructed jet variables
   /*
   double m_recojetpt;
