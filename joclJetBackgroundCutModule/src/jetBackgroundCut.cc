@@ -131,7 +131,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  if(jet)
 	    {
 	      jetEta = jet->get_eta();
-	      jetET = jet->get_e()/cosh(maxJetEta);
+	      jetET = jet->get_e()/cosh(jetEta);
 	      jetPhi = jet->get_phi();
 	    }
 	  else
