@@ -12,6 +12,9 @@
 // -- CDB TTree
 #include <cdbobjects/CDBTTree.h>
 
+// Tower stuff
+#include <calobase/TowerInfoDefs.h>
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -59,25 +62,26 @@ void myAnalysis::analyze(const string& inputFile, const string &output) {
   }
 
   UInt_t ctr[5] = {0};
-  for (UInt_t i = 1; i <= ntowers; ++i)
+  for (UInt_t i = 0; i < ntowers; ++i)
   {
+    UInt_t key = TowerInfoDefs::encode_emcal(i);
     Int_t val = 0;
-    if (hBadTowersDead->GetBinContent(i) >= threshold)
+    if (hBadTowersDead->GetBinContent(i+1) >= threshold)
     {
       val = 1;
       ++ctr[1];
     }
-    else if (hBadTowersHot->GetBinContent(i) >= threshold)
+    else if (hBadTowersHot->GetBinContent(i+1) >= threshold)
     {
       val = 2;
       ++ctr[2];
     }
-    else if (hBadTowersCold->GetBinContent(i) >= threshold)
+    else if (hBadTowersCold->GetBinContent(i+1) >= threshold)
     {
       val = 3;
       ++ctr[3];
     }
-    else if (hBadTowersHotChi2->GetBinContent(i) >= threshold)
+    else if (hBadTowersHotChi2->GetBinContent(i+1) >= threshold)
     {
       val = 4;
       ++ctr[4];
@@ -86,7 +90,7 @@ void myAnalysis::analyze(const string& inputFile, const string &output) {
         ++ctr[0];
     }
 
-    cdbttree->SetIntValue(i-1, fieldName, val);
+    cdbttree->SetIntValue(key, fieldName, val);
   }
 
   cdbttree->Commit();
