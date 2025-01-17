@@ -26,6 +26,17 @@
 
 #include <ana_ppg09_mod/Ana_PPG09_Mod.h>
 
+#include <jetbase/FastJetAlgo.h>
+#include <jetbase/JetReco.h>
+#include <jetbase/TowerJetInput.h>
+
+#include <jetbackground/CopyAndSubtractJets.h>
+#include <jetbackground/DetermineTowerBackground.h>
+#include <jetbackground/FastJetAlgoSub.h>
+#include <jetbackground/RetowerCEMC.h>
+#include <jetbackground/SubtractTowers.h>
+#include <jetbackground/SubtractTowersCS.h>
+
 //Data
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -38,6 +49,7 @@
 #include <calotrigger/TriggerRunInfoReco.h>
 #include <calotrigger/TriggerRunInfov1.h>
 #include <globalqa/GlobalQA.h>
+#include <jetbackgroundcut/jetBackgroundCut.h>
 
 R__LOAD_LIBRARY(libglobalQA.so)
 R__LOAD_LIBRARY(libmbd.so)
@@ -46,13 +58,27 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libcalotrigger.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
 R__LOAD_LIBRARY(libAna_PPG09_Mod.so)
+R__LOAD_LIBRARY(libjetbackgroundcut.so)
+R__LOAD_LIBRARY(libjetbase.so)
+R__LOAD_LIBRARY(libjetbackground.so)
+R__LOAD_LIBRARY(libg4jets.so)
+
+namespace HIJETS
+{
+  bool do_flow = false; // should be set to true once the EPD event plane correction is implemented
+  bool do_CS = false;
+  bool is_pp = true;  // turn off functionality only relevant for nucleon collisions
+  std::string tower_prefix = "TOWERINFO_CALIB";
+  bool do_vertex_type = true;
+  GlobalVertex::VTXTYPE vertex_type = GlobalVertex::MBD;
+}  // namespace HIJETS
 
 void Fun4All_Ana_PPG09_Mod_Skim(
                   const char *filelistcalo = "Skim_Calo_Test.list",
                   const char *filelistjet = "Skim_Jet_Test.list",
                   const string &outname = "Test",
                   int n_skip = 0,
-                  int n_event = 300
+                  int n_event = 2000
 	         )
    {
    gSystem->Load("libg4dst");
@@ -62,7 +88,7 @@ void Fun4All_Ana_PPG09_Mod_Skim(
 
   //---------------
   // Fun4All server
-  //--------------1-
+  //---------------
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(verbosity);
@@ -96,7 +122,6 @@ void Fun4All_Ana_PPG09_Mod_Skim(
     inputFile2 = "DST_JET_run2pp_ana450_2024p009-000"+run_num+"-00000.root";
   }
 
-
   //Data
   recoConsts *rc = recoConsts::instance();
   
@@ -122,8 +147,26 @@ void Fun4All_Ana_PPG09_Mod_Skim(
   TriggerRunInfoReco *triggerruninforeco = new TriggerRunInfoReco();
   se->registerSubsystem(triggerruninforeco);
   
+  JetReco *towerjetreco = new JetReco();
+  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,HIJETS::tower_prefix));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO,HIJETS::tower_prefix));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO,HIJETS::tower_prefix));
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.2, verbosity), "AntiKt_Tower_r02");
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.3, verbosity), "AntiKt_Tower_r03");
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4, verbosity), "AntiKt_Tower_r04");
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.5, verbosity), "AntiKt_Tower_r05");
+  towerjetreco->set_algo_node("ANTIKT");
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(verbosity);
+  se->registerSubsystem(towerjetreco);
+
+  /*
+  jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_Tower_r04_Sub1","JOCL", 3, false);
+  se->registerSubsystem(jocl);
+  */
+
   //Check jet Input first line, see if subtracted or not Sub: AntiKt_Tower_r04_Sub1 Unsub: AntiKt_Tower_r04
-  Ana_PPG09_Mod *APM9 = new Ana_PPG09_Mod("AntiKt_Tower_r04_Sub1", "output/R04_Jets_PPG09_v1_Skim_Run" + run_num +"_" + outname + ".root");  
+  Ana_PPG09_Mod *APM9 = new Ana_PPG09_Mod("AntiKt_Tower_r04", "output/R04_Jets_PPG09_v5_Skim_Run" + run_num +"_" + outname + ".root");  
   se->registerSubsystem(APM9);
   
   //se->run(-1);
@@ -132,6 +175,6 @@ void Fun4All_Ana_PPG09_Mod_Skim(
   se->End();
   
   gSystem->Exit(0);
-  return 0;
+  //return 0;
 }
 #endif

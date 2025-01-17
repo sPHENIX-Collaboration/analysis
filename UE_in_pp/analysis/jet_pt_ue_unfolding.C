@@ -38,7 +38,7 @@ void getLeadSubleadJet(std::vector<float> *pt, std::vector<float> *eta, int &ind
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                              //
 //  Note: 11.26.24                                                                                                              //
-//  This macro creates dijet QA plots and does 1D unfolding of leading jet pT for back-to-back dijet events                     //
+//  This macro creates dijet QA plots and does 2D unfolding of leading jet pT and UE for back-to-back dijet events              //
 //                                                                                                                              //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -63,8 +63,8 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
 
     double ptbins[] = {5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15,16,17,18,20,22,24,26,28,31,35,40,50};
     float dRMax = 0.3;
-    float leadptmin = 10;
-    float subptmin = 5;
+    float leadptmin = 20;
+    float subptmin = 15;
 
     int nptbins = sizeof(ptbins) / sizeof(ptbins[0]) - 1;
     bool doUnfolding = true;
@@ -77,20 +77,20 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
     TProfile* jes_ratio = new TProfile("jes_ratio","",nptbins,ptbins);
 
     //defining Meas and Truth Histograms
-    TH1D* hMeasPT = new TH1D("hMeasPT","",nptbins,ptbins);
-    TH1D* hTruthPT = new TH1D("hTruthPT","",nptbins,ptbins);
+    TH2D* hMeasPT = new TH2D("hMeasPT","",nptbins,ptbins);
+    TH2D* hTruthPT = new TH2D("hTruthPT","",nptbins,ptbins);
 
     // closure test histograms 
-    TH1D* hMeasPTHalf = new TH1D("hMeasPTHalf","",nptbins,ptbins);
-    TH1D* hTruthPTHalf = new TH1D("hTruthPTHalf","",nptbins,ptbins);
+    TH2D* hMeasPTHalf = new TH2D("hMeasPTHalf","",nptbins,ptbins);
+    TH2D* hTruthPTHalf = new TH2D("hTruthPTHalf","",nptbins,ptbins);
 
     //making response matrices
     RooUnfoldResponse *resp_full = new RooUnfoldResponse(hMeasPT,hTruthPT,"resp_full","");
     RooUnfoldResponse *resp_half = new RooUnfoldResponse(hMeasPTHalf,hTruthPTHalf,"resp_half","");
 
     //histograms for errors
-    TH2D* hResponseTruthMeasFull = new TH2D("hResponseTruthMeasFull","",nptbins,ptbins,nptbins,ptbins);
-    TH2D* hResponseTruthMeasHalf = new TH2D("hResponseTruthMeasHalf","",nptbins,ptbins,nptbins,ptbins);
+    //TH2D* hResponseTruthMeasFull = new TH2D("hResponseTruthMeasFull","",nptbins,ptbins,nptbins,ptbins);
+    //TH2D* hResponseTruthMeasHalf = new TH2D("hResponseTruthMeasHalf","",nptbins,ptbins,nptbins,ptbins);
 
     //histograms and responses for inverse testing
     TProfile* inverse_jes_ratio = new TProfile("inverse_jes_ratio","",nptbins,ptbins);
@@ -106,12 +106,12 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
     TString wildcardPath = TString::Format("%sJetValOutput/sim_truth_jet_output.root", inputDirectory); // run 15 dataset
     chain.Add(wildcardPath);
     
-    
-    //for (int i = 0; i < 1000; i++) {
-    //    TString wildcardPath = TString::Format("%sUEinppOutput/sim_run21_jet10_output_%d.root", inputDirectory, i); // run 22 dataset
-    //    chain.Add(wildcardPath);
-    //}
-    
+    /*
+    for (int i = 0; i < 1000; i++) {
+        TString wildcardPath = TString::Format("%sUEinppOutput/sim_run22_jet10_output_%d.root", inputDirectory, i); // run 22 dataset
+        chain.Add(wildcardPath);
+    }
+    */
 
     int m_event;
     int nJet;
@@ -178,14 +178,6 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
         if (negJet) { continue; }
 
         
-        std::vector<float> sort_pt;
-        if (truthPt->size() > 1) {
-            sort_pt = *truthPt;
-            std::sort(sort_pt.begin(), sort_pt.end(), std::greater<>());
-            if (sort_pt[0] < 10.0) std::cout << sort_pt[0] << " " << sort_pt[1] << std::endl;
-        }
-        
-        /*
         // implemented to match truth jet eta cut to reco jet eta cut for run15 dataset
         for (int i = 0; i < truthEta->size();) {
             if (fabs(truthEta->at(i)) > 0.7) {
@@ -199,7 +191,6 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
         }
         int nTruthJet = truthPt->size();
         // implemented to match truth jet eta cut to reco jet eta cut for run15 dataset
-        */
 
         // indices to find leading and subleading jets 
         int ind_truth_lead = -1;

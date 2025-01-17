@@ -15,11 +15,14 @@
 #include <jetbackground/SubtractTowers.h>
 #include <jetbackground/SubtractTowersCS.h>
 
+#include <globalvertex/GlobalVertex.h>
+
 #include <fun4all/Fun4AllServer.h>
 
 R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libjetbackground.so)
+R__LOAD_LIBRARY(libglobalvertex.so)
 
 namespace Enable
 {
@@ -35,6 +38,8 @@ namespace HIJETS
   bool do_CS = false;
   bool is_pp = true;
   std::string tower_prefix = "TOWERINFO_CALIB";
+  bool do_vertex_type = true;
+  GlobalVertex::VTXTYPE vertex_type = GlobalVertex::MBD;
 }  // namespace HIJETS
 
 
@@ -72,10 +77,19 @@ void HIJetReco()
   se->registerSubsystem(rcemc);
 
   JetReco *towerjetreco = new JetReco();
-  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,HIJETS::tower_prefix));
-  towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO,HIJETS::tower_prefix));
-  towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO,HIJETS::tower_prefix));
-  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4), "AntiKt_Tower_r04_Sub1");
+  TowerJetInput *incemc = new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,HIJETS::tower_prefix);
+  TowerJetInput *inihcal = new TowerJetInput(Jet::HCALIN_TOWERINFO,HIJETS::tower_prefix);
+  TowerJetInput *inohcal = new TowerJetInput(Jet::HCALOUT_TOWERINFO,HIJETS::tower_prefix);
+  if (HIJETS::do_vertex_type)
+  {
+    incemc->set_GlobalVertexType(HIJETS::vertex_type);
+    inihcal->set_GlobalVertexType(HIJETS::vertex_type);
+    inohcal->set_GlobalVertexType(HIJETS::vertex_type);
+  }
+  towerjetreco->add_input(incemc);
+  towerjetreco->add_input(inihcal);
+  towerjetreco->add_input(inohcal);
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4), "AntiKt_Tower_r04");
   towerjetreco->set_algo_node("ANTIKT");
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);

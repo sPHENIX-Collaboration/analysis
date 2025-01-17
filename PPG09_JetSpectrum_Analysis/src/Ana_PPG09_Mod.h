@@ -35,10 +35,14 @@ class Ana_PPG09_Mod : public SubsysReco
  std::string m_outputFileName;
 
  double NComp_Cut = 1;
- double RPt_Cut = 1;
- double ZVtx_Cut = 80;
+ double Lead_RPt_Cut = -999;
+ double All_RPt_Cut = 5;
+ double ZVtx_Cut = 60;
 
+ //Jet Info
  TH3F *h_Eta_Phi_Pt_[8];
+
+ //Caloriemter Tower Info
  TH3F *h_EMCal_Raw_Eta_Phi_E_[8];
  TH3F *h_iHCal_Raw_Eta_Phi_E_[8];
  TH3F *h_oHCal_Raw_Eta_Phi_E_[8];
@@ -46,14 +50,20 @@ class Ana_PPG09_Mod : public SubsysReco
  TH3F *h_iHCal_CS_Eta_Phi_E_[8];
  TH3F *h_oHCal_CS_Eta_Phi_E_[8];
  TH3F *h_EMCal_C_Eta_Phi_E_[8];
+ TH3F *h_EMCal_CR_Eta_Phi_E_[8];
  TH3F *h_iHCal_C_Eta_Phi_E_[8];
  TH3F *h_oHCal_C_Eta_Phi_E_[8];
  TH3F *h_EMCal_Jet_Eta_Phi_E_[8];
  TH3F *h_iHCal_Jet_Eta_Phi_E_[8];
  TH3F *h_oHCal_Jet_Eta_Phi_E_[8];
- TH1D *h_ZVtx_[8];
 
- int m_event;
+ //Event Info
+ TH1D *h_ZVtx_[8];
+ TH3F *h_oHCal_TE_Sub_Eta_Phi_E_[8];
+ TH3F *h_iHCal_TE_Sub_Eta_Phi_E_[8];
+ TH3F *h_EMCal_TE_Sub_Eta_Phi_E_[8];
+
+ int m_event = 0;
 };
 
 #endif // ANA_PPG09_MOD_H

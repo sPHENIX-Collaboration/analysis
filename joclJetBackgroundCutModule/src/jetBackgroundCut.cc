@@ -82,19 +82,36 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
-
-  if(!gvtxmap)
-    {
-      auto mbdVtxMapStart = mbdvtxmap->begin();
-      MbdVertex* mbdvtx = mbdVtxMapStart->second;
-      zvtx = mbdvtx->get_z();
-    }
-  else if(gvtxmap)
+  bool gvtxExists = false;
+  if(gvtxmap)
     {
       auto gVtxMapStart = gvtxmap->begin();
-      GlobalVertex* gvtx = gVtxMapStart->second;
-      zvtx = gvtx->get_z();
+      
+      GlobalVertex* gvtx = NULL;
+      if(gVtxMapStart != gvtxmap->end())
+	{
+	  gvtx = gVtxMapStart->second;
+	}
+      if(gvtx)
+	{
+	  zvtx = gvtx->get_z();
+	  gvtxExists = true;
+	}
     }
+  if(!gvtxmap || !gvtxExists)
+    {
+      auto mbdVtxMapStart = mbdvtxmap->begin();
+      MbdVertex* mbdvtx = NULL;
+      if(mbdVtxMapStart != mbdvtxmap->end())
+	{
+	  mbdvtx = mbdVtxMapStart->second;
+	}
+      if(mbdvtx)
+	{
+	  zvtx = mbdvtx->get_z();
+	}
+    }
+
   if(_debug > 1) cout << "Getting jets: " << endl;
   if(zvtx == NAN)
     {
