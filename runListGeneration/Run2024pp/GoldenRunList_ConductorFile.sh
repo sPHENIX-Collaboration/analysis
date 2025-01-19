@@ -4,53 +4,43 @@
 # Golden Run List Generation Script
 #
 # Purpose:
-#   This script produces a final list of "Golden Runs" for further analysis within sPHENIX data-taking. It ensures that each run passes a series of checks:
-#   • Has ≥1M events (and if "noRunNumberLimit" is not specified, also runnumber ≥47289).
-#   • Meets "Golden" Calorimeter QA criteria for EMCal, IHCal, and OHCal.
-#   • Exceeds a minimum runtime of 5 minutes.
-#   • Has an MBD (minimum bias) livetime above 80%.
-#   • (Optionally) Is not missing any bad tower maps, if "removeRunsWithMissingMaps" is supplied.
+#   This script compiles a final list of "Golden Runs" for sPHENIX analysis. The selection criteria are:
+#     • Run contains ≥1M events (and runnumber ≥47289 unless 'noRunNumberLimit' is specified).
+#     • Calorimeter QA designates EMCal, IHCal, and OHCal as "Golden."
+#     • Runtime exceeds 5 minutes.
+#     • MBD (minimum bias) livetime is above 80%.
+#     • (Optional) Runs missing bad tower maps can be removed if 'removeRunsWithMissingMaps' is given.
+#     • (Optional) Runs without a magnet_on='t' entry in 'magnet_info' can be removed if 'removeNoMagnet' is specified.
+#   After constructing this list, the script may also create DST .list files and examine which runs succeeded or failed in generating those lists.
 #
 # Main Steps:
-#   1) Initial run extraction:
-#      - Pull all runs from FileCatalog with ≥1M events.
-#      - If "noRunNumberLimit" isn't provided, further require runnumber ≥47289.
+#   1) FileCatalog extraction:
+#       - Retrieve runs with ≥1M events.
+#         - If 'noRunNumberLimit' is omitted, an additional runnumber ≥47289 criterion is applied.
 #   2) Calo QA filtering:
-#      - Cross-check these runs against the Production_write database to keep only those marked as "Golden" for EMCal, IHCal, and OHCal.
-#   3) Additional cuts:
-#      a) Runtime: Only keep runs with more than 5 minutes of data.
-#      b) Livetime: Only keep runs where MBD livetime >80%.
-#   4) Optional bad tower maps check:
-#      - If "removeRunsWithMissingMaps" is given, discard runs that do not have a valid bad tower map available.
-#   5) Final run list generation:
-#      - Output "Final_RunNumbers_After_All_Cuts.txt" to the "../dst_list/" directory.
-#      - Also produce "Full_ppGoldenRunList_Version1.list" for use with CreateDstList.pl (unless "dontGenerateFileLists" is specified).
-#   6) DST creation verification:
-#      - Compare the final run list to the .list files that were successfully created, to determine how many runs succeeded or failed in generating DST lists.
-#   7) No-run-limit comparison:
-#      - If "noRunNumberLimit" is provided, the script also reports how many runs/events are included when ignoring the runnumber ≥47289 criterion, versus strictly requiring runnumber ≥47289.
+#       - Intersect these runs with the Production_write database to ensure EMCal, IHCal, and OHCal each classify them as Golden.
+#   3) Apply a >5-minute runtime cut.
+#   4) Enforce an MBD livetime >80%.
+#   5) Optionally remove runs lacking valid bad tower maps.
+#   6) Optionally remove runs with no magnet_on='t' if 'removeNoMagnet' is specified.
+#   7) Produce a final run list, optionally create DST .list files, and record which runs succeeded or failed to generate those lists.
+#   8) If 'noRunNumberLimit' is used, a summary comparison is displayed between no-run-limit and run≥47289 scenarios.
 #
 # Usage:
-#   ./GoldenRunList_ConductorFile.sh [removeRunsWithMissingMaps] [dontGenerateFileLists] [noRunNumberLimit]
-#     - removeRunsWithMissingMaps: Exclude runs lacking bad tower maps.
-#     - dontGenerateFileLists: Skip creating DST .list files (for use with CreateDstList.pl).
-#     - noRunNumberLimit: Do not enforce runnumber ≥47289.
+#   ./GoldenRunList_ConductorFile.sh [removeRunsWithMissingMaps] [dontGenerateFileLists] [noRunNumberLimit] [removeNoMagnet]
+#     - removeRunsWithMissingMaps : Exclude runs missing bad tower maps.
+#     - dontGenerateFileLists     : Omit creation of DST .list files.
+#     - noRunNumberLimit          : Omit the runnumber≥47289 cutoff.
+#     - removeNoMagnet            : Exclude runs lacking magnet_on='t' in magnet_info.
 #
-# Output:
-#   - Final text file: ../dst_list/Final_RunNumbers_After_All_Cuts.txt (and optionally ../dst_list/Final_RunNumbers_After_All_Cuts_ge47289.txt).
-#   - Internal .list files for DST creation in the current directory and ../dst_list, unless 'dontGenerateFileLists' was set.
-#
-# Notes:
-#   - Percentages in the summary table are computed two ways:
-#       1) Run-based percentages use the "Stage 1" runs as the 100% reference.
-#       2) Event-based percentages use the total events from "Stage 1."
-#   - The script can also print a comparison for run≥47289 versus no lower limit (if "noRunNumberLimit" is passed).
+# Outputs:
+#   - Final run list: ../dst_list/Final_RunNumbers_After_All_Cuts.txt (plus an optional ge47289 variant).
+#   - A local Full_ppGoldenRunList_Version1.list for DST creation (unless suppressed).
+#   - Console summaries for each step, plus optional no-run-limit comparisons.
 ##############################################################################################################################################################################
 
-
-
 ########################################
-# GLOBAL STYLES FOR OUTPUT
+# GLOBAL STYLES
 ########################################
 BOLD="\e[1m"
 RESET="\e[0m"
@@ -63,6 +53,8 @@ YELLOW="\e[33m"
 # FUNCTIONS
 ########################################
 
+# Prints an error message and exits. If 'dontGenerateFileLists' is set, it
+# additionally clarifies that no DST lists would have been generated.
 error_exit() {
     echo -e "${BOLD}${YELLOW}[ERROR]:${RESET} $1"
     if $DONT_GENERATE_FILELISTS; then
@@ -71,10 +63,13 @@ error_exit() {
     exit 1
 }
 
+# Parses command-line arguments to enable/disable specific features:
+#   removeRunsWithMissingMaps, dontGenerateFileLists, noRunNumberLimit, removeNoMagnet.
 parse_arguments() {
     REMOVE_MISSING_MAPS=false
     DONT_GENERATE_FILELISTS=false
     NO_RUNNUMBER_LIMIT=false
+    REMOVE_NO_MAGNET=false
 
     for arg in "$@"; do
         case "$arg" in
@@ -90,15 +85,24 @@ parse_arguments() {
                 NO_RUNNUMBER_LIMIT=true
                 echo -e "${BOLD}${CYAN}Argument detected:${RESET} No run number lower limit will be applied."
                 ;;
+            removeNoMagnet)
+                REMOVE_NO_MAGNET=true
+                echo -e "${BOLD}${CYAN}Argument detected:${RESET} Removing runs with magnet_off (or missing)."
+                ;;
         esac
     done
 
     if ! $REMOVE_MISSING_MAPS; then
         echo "No removal option detected: Missing-map runs will be kept."
     fi
+    if ! $REMOVE_NO_MAGNET; then
+        echo "No magnet check requested: Runs with magnet_off or missing are kept."
+    fi
     echo "----------------------------------------"
 }
 
+# Removes pre-existing lists, FileLists, and old .list files in ../dst_list to
+# ensure a clean start, then reports the cleanup results to the user.
 clean_previous_data() {
     echo -e "${BOLD}${GREEN}Cleaning old data (dst_list contents, intermediate files)...${RESET}"
 
@@ -108,16 +112,16 @@ clean_previous_data() {
 
     rm -f "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
     rm -f "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts_ge47289.txt"
-
     rm -rf "${workplace}/../dst_list_scratch"
 
     echo "All old data removed. Starting fresh."
     echo "----------------------------------------"
 }
 
+# Creates or verifies the necessary directories: FileLists/, list/,
+# and ../dst_list. Informs the user of the newly set up directories.
 setup_directories() {
     echo -e "${BOLD}${GREEN}Setting up directories...${RESET}"
-
     base_path="${workplace}/.."
     mkdir -p FileLists/
     mkdir -p "${base_path}/dst_list"
@@ -127,12 +131,17 @@ setup_directories() {
     echo "----------------------------------------"
 }
 
+# Captures the current working directory and displays it, storing the
+# path in 'workplace' for subsequent reference.
 set_workplace() {
     workplace=$(pwd)
     echo -e "${BOLD}Working directory:${RESET} $workplace"
     echo "----------------------------------------"
 }
 
+# (Step 1) Queries FileCatalog for runs with ≥1M events. If 'noRunNumberLimit'
+# is disabled, also requires runnumber≥47289. Then intersects these runs with
+# Production_write to keep only Golden EMCal/IHCal/OHCal runs, storing results locally.
 extract_initial_runs() {
     echo -e "${BOLD}${MAGENTA}Step 1:${RESET} Extracting initial runs from databases..."
 
@@ -186,13 +195,10 @@ except:
 
 prod_cursor = prod_conn.cursor()
 detectors = ['emcal', 'ihcal', 'ohcal']
-
 golden_runs = set(all_runs)
 
 for d in detectors:
-    prod_cursor.execute(
-        f"SELECT runnumber FROM goodruns WHERE ({d}_auto).runclass='GOLDEN'"
-    )
+    prod_cursor.execute(f"SELECT runnumber FROM goodruns WHERE ({d}_auto).runclass='GOLDEN'")
     detector_golden = {row.runnumber for row in prod_cursor.fetchall()}
     golden_runs = golden_runs.intersection(detector_golden)
 
@@ -201,7 +207,6 @@ golden_runs = sorted(golden_runs)
 with open('list/Full_ppGoldenRunList.txt', 'w') as f:
     for r in golden_runs:
         f.write(f"{r}\\n")
-
 print(f"COMBINED_GOLDEN_RUNS:{len(golden_runs)}")
 prod_conn.close()
 EOF
@@ -226,6 +231,8 @@ EOF
     fi
 }
 
+# (Step 2) Ensures that a valid 'Full_ppGoldenRunList.txt' was produced.
+# If not found, abort execution since no runs qualified.
 validate_golden_list() {
     echo -e "${BOLD}${MAGENTA}Step 2:${RESET} Validating golden run list..."
     if [[ ! -f "list/Full_ppGoldenRunList.txt" ]]; then
@@ -235,6 +242,9 @@ validate_golden_list() {
     echo "----------------------------------------"
 }
 
+# Summation function for events in .evt files. Given a file of runnumbers,
+# this function batches them in groups of 100 for a SQL IN(...) query,
+# queries the 'filelist' table, and accumulates the total event count.
 get_actual_events_from_evt() {
     input_file=$1
     total_events=0
@@ -244,6 +254,7 @@ get_actual_events_from_evt() {
     while IFS= read -r runnumber; do
         [[ -z "$runnumber" ]] && continue
         run_numbers+=("$runnumber")
+        # Once we hit batch_size, we query in a single shot.
         if [[ ${#run_numbers[@]} -ge $batch_size ]]; then
             run_list=$(IFS=,; echo "${run_numbers[*]}")
             run_numbers=()
@@ -259,7 +270,7 @@ get_actual_events_from_evt() {
         fi
     done < "$input_file"
 
-    # leftover
+    # Handle leftover runs if any remain below the batch size.
     if [[ ${#run_numbers[@]} -gt 0 ]]; then
         run_list=$(IFS=,; echo "${run_numbers[*]}")
         query="SELECT SUM(lastevent - firstevent + 1)
@@ -276,12 +287,18 @@ get_actual_events_from_evt() {
     echo "$total_events"
 }
 
+# Prints a heading indicating that runtime, livetime, and missing bad tower maps
+# will be enforced in the subsequent steps.
 apply_incremental_cuts_header() {
     echo "----------------------------------------"
     echo -e "${BOLD}${MAGENTA}Applying incremental cuts:${RESET} runtime, livetime, and missing bad tower maps"
     echo "----------------------------------------"
 }
 
+# (Step 3) Reads 'Full_ppGoldenRunList.txt', queries the 'run' table to calculate
+# (ertimestamp - brtimestamp). Retains runs with >300s (5 minutes).
+# The result is placed in 'list_runnumber_runtime_v1.txt'.
+# -- ADDED PROGRESS PRINTS EVERY 100 RUNS PROCESSED.
 runtime_cut() {
     input_file="list/Full_ppGoldenRunList.txt"
     output_file_duration_v1="list/list_runnumber_runtime_v1.txt"
@@ -290,8 +307,14 @@ runtime_cut() {
     total_runs_duration_v1=0
     runs_dropped_runtime_v1=0
 
+    # Count total for nice progress prints
+    total_input_runs=$(wc -l < "$input_file")
+    processed=0
+
     while IFS= read -r runnumber; do
+        ((processed++))
         [[ -z "$runnumber" ]] && continue
+
         query="SELECT EXTRACT(EPOCH FROM (ertimestamp - brtimestamp))
                FROM run
                WHERE runnumber = ${runnumber};"
@@ -304,6 +327,11 @@ runtime_cut() {
         else
             (( runs_dropped_runtime_v1++ ))
         fi
+
+        # Print progress every 100 runs
+        if (( processed % 100 == 0 )); then
+            echo "  [Runtime Cut] Processed $processed / $total_input_runs runs so far..."
+        fi
     done < "$input_file"
 
     echo "After runtime cut (>5 mins): $total_runs_duration_v1 runs remain."
@@ -311,6 +339,10 @@ runtime_cut() {
     echo "----------------------------------------"
 }
 
+# (Step 4) Reads the runtime-filtered list, queries 'gl1_scalers' for index=10
+# (minimum bias), ensuring live/raw≥80%. Passing runs are written to
+# 'list_runnumber_livetime_v1.txt'; failing runs go to 'list_runnumber_bad_livetime_v1.txt'.
+# -- ADDED PROGRESS PRINTS EVERY 100 RUNS PROCESSED.
 livetime_cut() {
     input_file="list/list_runnumber_runtime_v1.txt"
     output_file_livetime_v1="list/list_runnumber_livetime_v1.txt"
@@ -321,8 +353,13 @@ livetime_cut() {
     total_runs_livetime_v1=0
     runs_dropped_livetime_v1=0
 
+    total_input_runs=$(wc -l < "$input_file")
+    processed=0
+
     while IFS= read -r runnumber; do
+        ((processed++))
         [[ -z "$runnumber" ]] && continue
+
         index_to_check=10
         query="SELECT raw, live
                FROM gl1_scalers
@@ -349,6 +386,10 @@ livetime_cut() {
             echo "$runnumber" >> "$bad_file_livetime_v1"
             (( runs_dropped_livetime_v1++ ))
         fi
+
+        if (( processed % 100 == 0 )); then
+            echo "  [Livetime Cut] Processed $processed / $total_input_runs runs so far..."
+        fi
     done < "$input_file"
 
     echo "After livetime cut (>80%): $total_runs_livetime_v1 runs remain."
@@ -356,17 +397,48 @@ livetime_cut() {
     echo "----------------------------------------"
 }
 
+# (Step 5) Reads from 'list_runnumber_livetime_v1.txt', producing a
+# "preMagnet" list. If 'removeRunsWithMissingMaps' is set,
+# any runs not found in the known bad tower maps are excluded.
 missing_bad_tower_maps_step() {
     input_file="list/list_runnumber_livetime_v1.txt"
-    output_file_final_v1="FileLists/Full_ppGoldenRunList_Version1.txt"
-    bad_tower_runs_file="list/list_runs_missing_bad_tower_maps.txt"
-    cp "$input_file" "$output_file_final_v1"
+    pre_magnet_file="FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt"
+    cp "$input_file" "$pre_magnet_file"
 
+    bad_tower_runs_file="list/list_runs_missing_bad_tower_maps.txt"
     available_bad_tower_runs=$(find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap \
-                               -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq)
+                               -name "*p0*" | cut -d '-' -f2 | cut -dc -f1 | sort | uniq)
     echo "$available_bad_tower_runs" > list/available_bad_tower_runs.txt
 
-    grep -Fxvf list/available_bad_tower_runs.txt "$input_file" > "$bad_tower_runs_file"
+    total_input_runs=$(wc -l < "$input_file")
+    processed=0
+
+    # Step 1: create an empty file for runs that are MISSING maps
+    > "$bad_tower_runs_file"
+
+    # Step 2: We'll store "available_bad_tower_runs.txt" lines in an array for quick membership checks
+    mapfile -t available_map_array < list/available_bad_tower_runs.txt
+    declare -A avail_map
+    for runmap in "${available_map_array[@]}"; do
+        avail_map["$runmap"]=1
+    done
+
+    # Step 3: read input_file line by line to see if run is in avail_map
+    # if it's NOT, that means it is missing => put it in $bad_tower_runs_file
+    while IFS= read -r runnumber; do
+        ((processed++))
+        [[ -z "$runnumber" ]] && continue
+
+        if [[ -z "${avail_map[$runnumber]}" ]]; then
+            # run is not in the available bad tower array => missing
+            echo "$runnumber" >> "$bad_tower_runs_file"
+        fi
+
+        # Print progress every 100 runs
+        if (( processed % 100 == 0 )); then
+            echo "  [Bad Tower Step] Processed $processed / $total_input_runs runs so far..."
+        fi
+    done < "$input_file"
 
     total_runs_with_bad_tower=$(grep -Fxf list/available_bad_tower_runs.txt "$input_file" | wc -l)
     total_runs_missing_bad_tower=$(wc -l < "$bad_tower_runs_file")
@@ -381,35 +453,115 @@ missing_bad_tower_maps_step() {
 
     if $REMOVE_MISSING_MAPS; then
         echo "Removing runs missing bad tower maps..."
-        grep -Fxf "$bad_tower_runs_file" -v "$output_file_final_v1" > tmp && mv tmp "$output_file_final_v1"
+        grep -Fxf "$bad_tower_runs_file" -v "$pre_magnet_file" > tmp && mv tmp "$pre_magnet_file"
         echo "Removal complete."
         echo "----------------------------------------"
     fi
 
-    cp "$output_file_final_v1" "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
-    echo "Final run list stored in ${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
+    cp "$pre_magnet_file" "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
+    echo "Final run list (pre-magnet step) stored in ${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
     echo "----------------------------------------"
 
     if $NO_RUNNUMBER_LIMIT; then
-        awk '$1 >= 47289' "$output_file_final_v1" > FileLists/Full_ppGoldenRunList_ge47289_Version1.txt
+        awk '$1 >= 47289' "$pre_magnet_file" > FileLists/Full_ppGoldenRunList_ge47289_Version1.txt
         cp FileLists/Full_ppGoldenRunList_ge47289_Version1.txt \
            "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts_ge47289.txt"
 
         if $REMOVE_MISSING_MAPS; then
             missing_maps_ge47289=$(grep -Fxf FileLists/Full_ppGoldenRunList_ge47289_Version1.txt \
-                                       list/list_runs_missing_bad_tower_maps.txt | wc -l)
+                                       "$bad_tower_runs_file" | wc -l)
             export missing_maps_ge47289
         fi
     fi
 }
 
+# (Step 6) If 'removeNoMagnet' is true, read from the preMagnet file
+# and exclude runs where magnet_on != 't'. Otherwise, the preMagnet file
+# is simply renamed to the final run list. We'll also add a small progress print.
+magnet_check_step() {
+    if [[ "$REMOVE_NO_MAGNET" != true ]]; then
+        echo "No magnet check requested, skipping..."
+        mv FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt FileLists/Full_ppGoldenRunList_Version1.txt
+        return
+    fi
+
+    echo "Step 6: Checking magnet_on from 'magnet_info' table..."
+
+    pre_magnet_file="FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt"
+    if [[ ! -f "$pre_magnet_file" ]]; then
+        echo "[ERROR] No 'preMagnet' file found: $pre_magnet_file"
+        return
+    fi
+
+    magnet_off_file="list/list_runs_no_magnet.txt"
+    > "$magnet_off_file"
+
+    final_list_magnet="FileLists/Full_ppGoldenRunList_Version1.txt"
+    > "$final_list_magnet"
+
+    total_runs_magnet_ok=0
+    runs_dropped_magnet=0
+
+    total_input_runs=$(wc -l < "$pre_magnet_file")
+    processed=0
+
+    while IFS= read -r runnumber; do
+        ((processed++))
+        [[ -z "$runnumber" ]] && continue
+
+        query="SELECT magnet_on
+               FROM magnet_info
+               WHERE runnumber=${runnumber};"
+        result=$(psql -h sphnxdaqdbreplica -d daq -t -c "$query" | tr -d '[:space:]')
+
+        if [[ "$result" == "t" ]]; then
+            echo "$runnumber" >> "$final_list_magnet"
+            (( total_runs_magnet_ok++ ))
+        else
+            echo "$runnumber" >> "$magnet_off_file"
+            (( runs_dropped_magnet++ ))
+        fi
+
+        if (( processed % 100 == 0 )); then
+            echo "  [Magnet Check] Processed $processed / $total_input_runs runs so far..."
+        fi
+    done < "$pre_magnet_file"
+
+    echo "Magnet On check: $total_runs_magnet_ok runs are ON"
+    echo "Dropped (magnet off or missing): $runs_dropped_magnet"
+    echo "List of dropped runs: $magnet_off_file"
+    echo "----------------------------------------"
+
+    # Overwrite final list with magnet-checked version
+    cp "$final_list_magnet" "${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
+
+    export total_runs_magnet_off=$runs_dropped_magnet
+}
+
+# Generates Full_ppGoldenRunList_Version1.list from the final text file
+# in FileLists/. If removeNoMagnet is false, the script may rename the
+# preMagnet file to that final name. Issues a warning if the final file
+# is missing.
 create_list_file() {
     echo "Creating final .list file from the final run list..."
-    cp "FileLists/Full_ppGoldenRunList_Version1.txt" Full_ppGoldenRunList_Version1.list
-    echo ".list file created: Full_ppGoldenRunList_Version1.list"
+
+    if [[ ! -f "FileLists/Full_ppGoldenRunList_Version1.txt" ]]; then
+        if [[ -f "FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt" ]]; then
+            mv FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt FileLists/Full_ppGoldenRunList_Version1.txt
+        fi
+    fi
+
+    if [[ -f "FileLists/Full_ppGoldenRunList_Version1.txt" ]]; then
+        cp "FileLists/Full_ppGoldenRunList_Version1.txt" Full_ppGoldenRunList_Version1.list
+        echo ".list file created: Full_ppGoldenRunList_Version1.list"
+    else
+        echo "[WARNING] Could not find 'FileLists/Full_ppGoldenRunList_Version1.txt' to create .list!"
+    fi
     echo "----------------------------------------"
 }
 
+# Removes pre-existing .list files in ../dst_list/ to avoid confusion
+# prior to generating new DST lists.
 clean_old_dst_lists() {
     echo "Removing any old DST lists from the parent 'dst_list' directory..."
     rm -f "${workplace}/../dst_list/"*.list
@@ -417,6 +569,9 @@ clean_old_dst_lists() {
     echo "----------------------------------------"
 }
 
+# If 'dontGenerateFileLists' is not specified, runs CreateDstList.pl on
+# the final .list to build run-specific .list files for DST creation.
+# Prints where the DST lists are saved.
 generate_dst_lists() {
     if $DONT_GENERATE_FILELISTS; then
         echo "[INFO]: Skipping DST list generation due to 'dontGenerateFileLists'."
@@ -443,6 +598,10 @@ generate_dst_lists() {
     cd "$workplace"
 }
 
+# After DST .list files are generated, this function checks which runs
+# successfully produced a dst_calo_run2pp-*.list and which did not.
+# Successful runs are recorded in list_runnumber_createDstSuccess.txt,
+# while failures appear in list_runnumber_createDstFailure.txt.
 apply_createDstList_cut() {
     echo "Collecting CreateDST File List success/failure for the main scenario..."
 
@@ -452,72 +611,75 @@ apply_createDstList_cut() {
         export runs_dropped_createDst=0
         export actual_events_after_createDst=0
         export total_runs_after_createDst=0
-    else
-        final_stage4_file="FileLists/Full_ppGoldenRunList_Version1.txt"
-        if [[ ! -f "$final_stage4_file" ]]; then
-            echo "[ERROR]: Cannot find final stage-4 file: $final_stage4_file"
-            export total_runs_createDst_success=0
-            export runs_dropped_createDst=0
-            export actual_events_after_createDst=0
-            export total_runs_after_createDst=0
-        else
-            success_file="list/list_runnumber_createDstSuccess.txt"
-            failure_file="list/list_runnumber_createDstFailure.txt"
-            > "$success_file"
-            > "$failure_file"
-
-            mapfile -t final_stage4_runs < "$final_stage4_file"
-
-            base_path="${workplace}/../dst_list"
-            created_run_nums=()
-
-            for f in "${base_path}/dst_calo_run2pp-"*.list; do
-                [ -e "$f" ] || continue
-                bn=$(basename "$f" .list)
-                runnum_str=${bn#dst_calo_run2pp-}
-                if [[ "$runnum_str" =~ ^0*([0-9]+)$ ]]; then
-                    runnum=${BASH_REMATCH[1]}
-                    created_run_nums+=("$runnum")
-                fi
-            done
-
-            total_runs_createDst_success=0
-            runs_dropped_createDst=0
-            declare -A in_created
-            for rn in "${created_run_nums[@]}"; do
-                in_created["$rn"]=1
-            done
-
-            for runnumber in "${final_stage4_runs[@]}"; do
-                if [[ -n "${in_created[$runnumber]}" ]]; then
-                    echo "$runnumber" >> "$success_file"
-                    (( total_runs_createDst_success++ ))
-                else
-                    echo "$runnumber" >> "$failure_file"
-                    (( runs_dropped_createDst++ ))
-                fi
-            done
-
-            echo "Runs with successful .list creation: $total_runs_createDst_success"
-            echo "Runs with no .list file: $runs_dropped_createDst"
-            echo "List of runs that failed:  $failure_file"
-            echo "List of runs that succeeded: $success_file"
-            echo "----------------------------------------"
-
-            actual_events_after_createDst=$(get_actual_events_from_evt "$success_file")
-            total_runs_after_createDst=$total_runs_createDst_success
-
-            cp "$success_file" "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt"
-
-            export total_runs_createDst_success
-            export runs_dropped_createDst
-            export actual_events_after_createDst
-            export total_runs_after_createDst
-        fi
+        return
     fi
 
-    # ≥47289 scenario
-    if $NO_RUNNUMBER_LIMIT && ! $DONT_GENERATE_FILELISTS; then
+    final_stage4_file="FileLists/Full_ppGoldenRunList_Version1.txt"
+    if [[ ! -f "$final_stage4_file" ]]; then
+        echo "[ERROR]: Cannot find final stage file: $final_stage4_file"
+        export total_runs_createDst_success=0
+        export runs_dropped_createDst=0
+        export actual_events_after_createDst=0
+        export total_runs_after_createDst=0
+        return
+    fi
+
+    success_file="list/list_runnumber_createDstSuccess.txt"
+    failure_file="list/list_runnumber_createDstFailure.txt"
+    > "$success_file"
+    > "$failure_file"
+
+    mapfile -t final_stage_runs < "$final_stage4_file"
+
+    base_path="${workplace}/../dst_list"
+    created_run_nums=()
+
+    for f in "${base_path}/dst_calo_run2pp-"*.list; do
+        [ -e "$f" ] || continue
+        bn=$(basename "$f" .list)
+        runnum_str=${bn#dst_calo_run2pp-}
+        if [[ "$runnum_str" =~ ^0*([0-9]+)$ ]]; then
+            runnum=${BASH_REMATCH[1]}
+            created_run_nums+=("$runnum")
+        fi
+    done
+
+    total_runs_createDst_success=0
+    runs_dropped_createDst=0
+    declare -A in_created
+    for rn in "${created_run_nums[@]}"; do
+        in_created["$rn"]=1
+    done
+
+    for runnumber in "${final_stage_runs[@]}"; do
+        if [[ -n "${in_created[$runnumber]}" ]]; then
+            echo "$runnumber" >> "$success_file"
+            (( total_runs_createDst_success++ ))
+        else
+            echo "$runnumber" >> "$failure_file"
+            (( runs_dropped_createDst++ ))
+        fi
+    done
+
+    echo "Runs with successful .list creation: $total_runs_createDst_success"
+    echo "Runs with no .list file: $runs_dropped_createDst"
+    echo "List of runs that failed:  $failure_file"
+    echo "List of runs that succeeded: $success_file"
+    echo "----------------------------------------"
+
+    actual_events_after_createDst=$(get_actual_events_from_evt "$success_file")
+    total_runs_after_createDst=$total_runs_createDst_success
+
+    cp "$success_file" "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt"
+
+    export total_runs_createDst_success
+    export runs_dropped_createDst
+    export actual_events_after_createDst
+    export total_runs_after_createDst
+
+    # If noRunNumberLimit is set, repeat the same success/failure process
+    # for the run≥47289 scenario.
+    if $NO_RUNNUMBER_LIMIT; then
         echo "Collecting CreateDST File List success/failure for the '≥47289' scenario..."
         final_stage4_file_ge47289="FileLists/Full_ppGoldenRunList_ge47289_Version1.txt"
         if [[ ! -f "$final_stage4_file_ge47289" ]]; then
@@ -532,7 +694,7 @@ apply_createDstList_cut() {
             > "$success_file_ge47289"
             > "$failure_file_ge47289"
 
-            mapfile -t final_stage4_runs_ge47289 < "$final_stage4_file_ge47289"
+            mapfile -t final_stage_runs_ge47289 < "$final_stage4_file_ge47289"
 
             base_path_scratch="${workplace}/../dst_list"
             created_run_nums_ge47289=()
@@ -554,7 +716,7 @@ apply_createDstList_cut() {
                 in_created_ge47289["$rn"]=1
             done
 
-            for runnumber in "${final_stage4_runs_ge47289[@]}"; do
+            for runnumber in "${final_stage_runs_ge47289[@]}"; do
                 if [[ -n "${in_created_ge47289[$runnumber]}" ]]; then
                     echo "$runnumber" >> "$success_file_ge47289"
                     (( total_runs_createDst_success_ge47289++ ))
@@ -583,142 +745,121 @@ apply_createDstList_cut() {
     fi
 }
 
+# Collates event/run tallies at each stage. The stages are:
+#   1) list_runnumber_all.txt               -> initial
+#   2) Full_ppGoldenRunList.txt             -> calo QA
+#   3) list_runnumber_runtime_v1.txt        -> runtime
+#   4) list_runnumber_livetime_v1.txt       -> livetime
+#   5) Full_ppGoldenRunList_Version1_preMagnet.txt -> optional map check
+#   6) Full_ppGoldenRunList_Version1.txt    -> optional magnet check
+#   7) Full_ppGoldenRunList_Version1_DSTsuccess.txt -> DST creation success
+# Compares these runs to a "Stage1" reference for run-based percentages and
+# to the Stage1 event count for event-based percentages.
 compute_event_counts() {
-    # Runs in list_runnumber_all.txt => "Stage 1" denominator for runs
-    # But the code will handle the difference if noRunNumberLimit is used
+    pre_magnet_file="FileLists/Full_ppGoldenRunList_Version1_preMagnet.txt"
+    final_file="FileLists/Full_ppGoldenRunList_Version1.txt"
+
+    # Stage1 => list/list_runnumber_all.txt
     actual_events_before_cuts=$(get_actual_events_from_evt 'list/list_runnumber_all.txt')
     total_runs_before_cuts=$(wc -l < 'list/list_runnumber_all.txt')
-
-    # Stage 1 events
     actual_events_initial=$actual_events_before_cuts
 
-    # Stage 2 (Calo QA)
+    # Stage2 => list/Full_ppGoldenRunList.txt
     actual_events_calo_qa=$(get_actual_events_from_evt 'list/Full_ppGoldenRunList.txt')
+    runs_after_calo_qa=$(wc -l < 'list/Full_ppGoldenRunList.txt')
 
-    # Stage 3 (runtime)
+    # Stage3 => runtime
     actual_events_after_runtime=$(get_actual_events_from_evt 'list/list_runnumber_runtime_v1.txt')
+    runs_after_runtime=$(wc -l < 'list/list_runnumber_runtime_v1.txt')
 
-    # Stage 4 (livetime)
+    # Stage4 => livetime
     actual_events_after_livetime=$(get_actual_events_from_evt 'list/list_runnumber_livetime_v1.txt')
+    runs_after_livetime=$(wc -l < 'list/list_runnumber_livetime_v1.txt')
 
-    # Stage 5 (missing map removal)
-    actual_events_after_badtower=$(get_actual_events_from_evt 'FileLists/Full_ppGoldenRunList_Version1.txt')
-    total_runs_after_badtower=$(wc -l < "FileLists/Full_ppGoldenRunList_Version1.txt")
-
-    # Stage 6 (DST creation success)
-    if [[ -f FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt ]]; then
-        actual_events_after_createDst=$(get_actual_events_from_evt "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt")
-        total_runs_after_createDst=$(wc -l < "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt")
+    # Stage5 => preMagnet
+    if [[ -f "$pre_magnet_file" ]]; then
+        actual_events_after_badtower=$(get_actual_events_from_evt "$pre_magnet_file")
+        runs_after_badtower=$(wc -l < "$pre_magnet_file")
     else
-        actual_events_after_createDst=0
-        total_runs_after_createDst=0
+        actual_events_after_badtower=0
+        runs_after_badtower=0
     fi
 
-    # For run-based percentages, define STAGE1_RUNS as "the total after Stage 1"
-    # which is total_runs_before_cuts if noRunNumberLimit is used,
-    # or equivalently the same if we forcibly filtered to ≥47289 in Stage 1.
-    # So STAGE1_RUNS is actually 'total_runs_before_cuts'.
-    # We'll recast subsequent run-based percentages using that as 100%.
+    # Stage6 => final
+    if [[ -f "$final_file" ]]; then
+        actual_events_after_magnet=$(get_actual_events_from_evt "$final_file")
+        runs_after_magnet=$(wc -l < "$final_file")
+    else
+        actual_events_after_magnet=0
+        runs_after_magnet=0
+    fi
 
-    STAGE1_RUNS=$total_runs_before_cuts  # denominator for run percentages
+    # Stage7 => DST creation success
+    if [[ -f FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt ]]; then
+        actual_events_after_createDst=$(get_actual_events_from_evt "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt")
+        runs_after_createDst=$(wc -l < "FileLists/Full_ppGoldenRunList_Version1_DSTsuccess.txt")
+    else
+        actual_events_after_createDst=0
+        runs_after_createDst=0
+    fi
 
-    # Next, define how many runs remain after each cut:
-    runs_after_calo_qa=$(wc -l < 'list/Full_ppGoldenRunList.txt')
-    runs_after_runtime=$(( total_runs_duration_v1 ))   # from runtime_cut
-    runs_after_livetime=$(( total_runs_livetime_v1 ))  # from livetime_cut
-    runs_after_badtower=$(( total_runs_after_badtower ))
-    runs_after_createDst=$(( total_runs_after_createDst ))
+    STAGE1_RUNS=$total_runs_before_cuts
+    [[ "$STAGE1_RUNS" -eq 0 ]] && STAGE1_RUNS=1
+    [[ "$actual_events_before_cuts" -eq 0 ]] && actual_events_before_cuts=1
 
-    # Now compute run-based percentages relative to STAGE1_RUNS
+    # run-based percentages
     percent_runs_calo_qa=$(echo "scale=2; 100.0*$runs_after_calo_qa/$STAGE1_RUNS" | bc)
     percent_runs_after_runtime=$(echo "scale=2; 100.0*$runs_after_runtime/$STAGE1_RUNS" | bc)
     percent_runs_after_livetime=$(echo "scale=2; 100.0*$runs_after_livetime/$STAGE1_RUNS" | bc)
     percent_runs_after_badtower=$(echo "scale=2; 100.0*$runs_after_badtower/$STAGE1_RUNS" | bc)
+    percent_runs_after_magnet=$(echo "scale=2; 100.0*$runs_after_magnet/$STAGE1_RUNS" | bc)
     percent_runs_after_createDst=$(echo "scale=2; 100.0*$runs_after_createDst/$STAGE1_RUNS" | bc)
 
-    # For event-based percentages, denominator is "Events Before All Cuts"
-    if [[ "$actual_events_before_cuts" -eq 0 ]]; then
-        percent_actual_events_calo_qa=0
-        percent_actual_events_after_runtime=0
-        percent_actual_events_after_livetime=0
-        percent_actual_events_after_badtower=0
-        percent_events_after_createDst=0
-    else
-        percent_actual_events_calo_qa=$(echo "scale=2; 100.0*$actual_events_calo_qa/$actual_events_before_cuts" | bc)
-        percent_actual_events_after_runtime=$(echo "scale=2; 100.0*$actual_events_after_runtime/$actual_events_before_cuts" | bc)
-        percent_actual_events_after_livetime=$(echo "scale=2; 100.0*$actual_events_after_livetime/$actual_events_before_cuts" | bc)
-        percent_actual_events_after_badtower=$(echo "scale=2; 100.0*$actual_events_after_badtower/$actual_events_before_cuts" | bc)
-        percent_events_after_createDst=$(echo "scale=2; 100.0*$actual_events_after_createDst/$actual_events_before_cuts" | bc)
-    fi
+    # event-based percentages
+    percent_actual_events_calo_qa=$(echo "scale=2; 100.0*$actual_events_calo_qa/$actual_events_before_cuts" | bc)
+    percent_actual_events_after_runtime=$(echo "scale=2; 100.0*$actual_events_after_runtime/$actual_events_before_cuts" | bc)
+    percent_actual_events_after_livetime=$(echo "scale=2; 100.0*$actual_events_after_livetime/$actual_events_before_cuts" | bc)
+    percent_actual_events_after_badtower=$(echo "scale=2; 100.0*$actual_events_after_badtower/$actual_events_before_cuts" | bc)
+    percent_actual_events_after_magnet=$(echo "scale=2; 100.0*$actual_events_after_magnet/$actual_events_before_cuts" | bc)
+    percent_events_after_createDst=$(echo "scale=2; 100.0*$actual_events_after_createDst/$actual_events_before_cuts" | bc)
 
-    # If noRunNumberLimit => also handle ge47289 scenario
-    if $NO_RUNNUMBER_LIMIT; then
-        if [[ -f FileLists/Full_ppGoldenRunList_ge47289_Version1.txt ]]; then
-            ge_temp_list="list/list_runnumber_all_ge47289.txt"
-            awk '$1 >= 47289' list/list_runnumber_all.txt > "$ge_temp_list"
-            actual_events_before_cuts_ge47289=$(get_actual_events_from_evt "$ge_temp_list")
-            total_runs_before_cuts_ge47289=$(wc -l < "$ge_temp_list")
-            rm -f "$ge_temp_list"
-
-            # after missing maps
-            actual_events_after_badtower_ge47289=$(get_actual_events_from_evt "FileLists/Full_ppGoldenRunList_ge47289_Version1.txt")
-            runs_after_badtower_ge47289=$(wc -l < "FileLists/Full_ppGoldenRunList_ge47289_Version1.txt")
-
-            # after DST success
-            if [[ -f FileLists/Full_ppGoldenRunList_ge47289_Version1_DSTsuccess.txt ]]; then
-                actual_events_after_createDst_ge47289=$(get_actual_events_from_evt "FileLists/Full_ppGoldenRunList_ge47289_Version1_DSTsuccess.txt")
-                runs_after_createDst_ge47289=$(wc -l < "FileLists/Full_ppGoldenRunList_ge47289_Version1_DSTsuccess.txt")
-            else
-                actual_events_after_createDst_ge47289=0
-                runs_after_createDst_ge47289=0
-            fi
-
-            export actual_events_before_cuts_ge47289
-            export total_runs_before_cuts_ge47289
-            export actual_events_after_badtower_ge47289
-            export runs_after_badtower_ge47289
-            export actual_events_after_createDst_ge47289
-            export runs_after_createDst_ge47289
-        else
-            actual_events_before_cuts_ge47289=0
-            total_runs_before_cuts_ge47289=0
-            actual_events_after_badtower_ge47289=0
-            runs_after_badtower_ge47289=0
-            actual_events_after_createDst_ge47289=0
-            runs_after_createDst_ge47289=0
-        fi
-    fi
-
-    # Exports for final_summary
     export STAGE1_RUNS
     export runs_after_calo_qa
     export runs_after_runtime
     export runs_after_livetime
     export runs_after_badtower
+    export runs_after_magnet
     export runs_after_createDst
 
     export actual_events_before_cuts
     export total_runs_before_cuts
     export actual_events_initial
+
     export actual_events_calo_qa
     export actual_events_after_runtime
     export actual_events_after_livetime
     export actual_events_after_badtower
+    export actual_events_after_magnet
     export actual_events_after_createDst
 
     export percent_runs_calo_qa
     export percent_runs_after_runtime
     export percent_runs_after_livetime
     export percent_runs_after_badtower
+    export percent_runs_after_magnet
     export percent_runs_after_createDst
 
     export percent_actual_events_calo_qa
     export percent_actual_events_after_runtime
     export percent_actual_events_after_livetime
     export percent_actual_events_after_badtower
+    export percent_actual_events_after_magnet
     export percent_events_after_createDst
 }
 
+# Displays a multi-stage summary table showing how many runs and events remain
+# after each cut. If 'noRunNumberLimit' is active, the script also prints
+# a comparison between the full run range and the run≥47289 scenario.
 final_summary() {
     echo -e "${BOLD}${MAGENTA}========================================${RESET}"
     echo -e "${BOLD}${MAGENTA}Final Summary (Version 1)${RESET}"
@@ -726,34 +867,37 @@ final_summary() {
     printf "%-50s | %-35s | %-25s\n" "Stage" ".evt File Events" "Runs"
     echo "--------------------------------------------------|-------------------------------------|-------------------------"
 
-    # The label for Stage 1 depends on whether we used noRunNumberLimit
     if $NO_RUNNUMBER_LIMIT; then
         stage1_label="≥1M events"
     else
         stage1_label="≥47289 & ≥1M events"
     fi
 
-    # The run count for Stage 1 is STAGE1_RUNS (the number of runs in list_runnumber_all.txt).
+    # Stage 1
     printf "%-50s | %-35s | %-25s\n" \
     "1) $stage1_label" \
     "${actual_events_initial} (100%)" \
     "${STAGE1_RUNS} (100%)"
 
+    # Stage 2
     printf "%-50s | %-35s | %-25s\n" \
     "2) && Golden EMCal/HCal" \
     "${actual_events_calo_qa} (${percent_actual_events_calo_qa}%)" \
     "${runs_after_calo_qa} (${percent_runs_calo_qa}%)"
 
+    # Stage 3
     printf "%-50s | %-35s | %-25s\n" \
     "3) && > 5 minutes" \
     "${actual_events_after_runtime} (${percent_actual_events_after_runtime}%)" \
     "${runs_after_runtime} (${percent_runs_after_runtime}%)"
 
+    # Stage 4
     printf "%-50s | %-35s | %-25s\n" \
     "4) && MB livetime > 80%" \
     "${actual_events_after_livetime} (${percent_actual_events_after_livetime}%)" \
     "${runs_after_livetime} (${percent_runs_after_livetime}%)"
 
+    # Stage 5
     if $REMOVE_MISSING_MAPS; then
         step_label="5) && With Bad Tower Map Available (Removed)"
     else
@@ -764,11 +908,23 @@ final_summary() {
     "${actual_events_after_badtower} (${percent_actual_events_after_badtower}%)" \
     "${runs_after_badtower} (${percent_runs_after_badtower}%)"
 
+    # Stage 6 - magnet
+    if [[ "$REMOVE_NO_MAGNET" == true ]]; then
+        step_label_magnet="6) && Magnet On"
+        printf "%-50s | %-35s | %-25s\n" \
+        "$step_label_magnet" \
+        "${actual_events_after_magnet} (${percent_actual_events_after_magnet}%)" \
+        "${runs_after_magnet} (${percent_runs_after_magnet}%)"
+    fi
+
+    # Stage 7 - DST creation
+    step_label_createDST="7) && CreateDST File List Successes"
     printf "%-50s | %-35s | %-25s\n" \
-    "6) && CreateDST File List Successes" \
+    "$step_label_createDST" \
     "${actual_events_after_createDst} (${percent_events_after_createDst}%)" \
     "${runs_after_createDst} (${percent_runs_after_createDst}%)"
 
+    # Missing map note
     if $REMOVE_MISSING_MAPS; then
         map_note="Removed from final DST"
     else
@@ -779,9 +935,22 @@ final_summary() {
     "-" \
     "${total_runs_missing_bad_tower} (${map_note})"
 
+    # Magnet note
+    if [[ "$REMOVE_NO_MAGNET" == true ]]; then
+        if [[ -z "$total_runs_magnet_off" ]]; then
+            total_runs_magnet_off=0
+        fi
+        mag_note="Removed"
+        printf "%-50s | %-35s | %-25s\n" \
+        "No Magnet-On Runs" \
+        "-" \
+        "${total_runs_magnet_off} (${mag_note})"
+    fi
+
     echo "================================================="
     echo "========================================"
 
+    # Conclude with the final run list path
     if $REMOVE_MISSING_MAPS; then
         echo "Final golden run list (missing maps removed):"
     else
@@ -790,82 +959,65 @@ final_summary() {
     echo " --> ${workplace}/../dst_list/Final_RunNumbers_After_All_Cuts.txt"
     echo "Done."
 
+    # If noRunNumberLimit => additional table comparing full range vs run≥47289
     if $NO_RUNNUMBER_LIMIT; then
         echo ""
         echo "----------------------------------------"
-        echo -e "${BOLD}${MAGENTA}Additional Comparison:${RESET} No-limit(All) vs. ≥47289 scenario"
-        echo "Now also includes a 'Before All Cuts' row for both scenarios."
+        echo -e "${BOLD}${MAGENTA}Additional Comparison (Before & After Cuts):${RESET} No-limit vs. ≥47289 scenario"
         echo ""
-
         cat <<EOCOMPARISON
 
 Metric                                  | NoLimit(All)                | ≥47289                    | ΔValue           | %Lost
 --------------------------------------------------------------------------------------------------------------
 EOCOMPARISON
 
-        # Before All Cuts
-        diff_events_before=$(echo "${actual_events_before_cuts:-0} - ${actual_events_before_cuts_ge47289:-0}" | bc)
-        if (( $(echo "${actual_events_before_cuts:-0} > 0" | bc -l) )); then
-            perc_lost_events_before=$(echo "scale=2; 100.0*$diff_events_before/${actual_events_before_cuts:-0}" | bc)
+        ev_all_initial=${actual_events_before_cuts:-0}
+        ev_ge_initial=${actual_events_before_cuts_ge47289:-0}
+        diff_ev_initial=$(echo "$ev_all_initial - $ev_ge_initial" | bc)
+        if (( ev_all_initial > 0 )); then
+            perc_ev_lost_initial=$(echo "scale=2; 100.0*$diff_ev_initial/$ev_all_initial" | bc)
         else
-            perc_lost_events_before=0
+            perc_ev_lost_initial=0
+        fi
+
+        run_all_initial=${total_runs_before_cuts:-0}
+        run_ge_initial=${total_runs_before_cuts_ge47289:-0}
+        diff_run_initial=$(echo "$run_all_initial - $run_ge_initial" | bc)
+        if (( run_all_initial > 0 )); then
+            perc_run_lost_initial=$(echo "scale=2; 100.0*$diff_run_initial/$run_all_initial" | bc)
+        else
+            perc_run_lost_initial=0
         fi
 
         printf "%-40s | %-20s | %-20s | %-20s | %-20s\n" \
-          "Events Before All Cuts" \
-          "${actual_events_before_cuts:-0}" \
-          "${actual_events_before_cuts_ge47289:-0}" \
-          "$diff_events_before" \
-          "${perc_lost_events_before}%"
-
-        diff_runs_before=$(echo "${total_runs_before_cuts:-0} - ${total_runs_before_cuts_ge47289:-0}" | bc)
-        if (( $(echo "${total_runs_before_cuts:-0} > 0" | bc -l) )); then
-            perc_lost_runs_before=$(echo "scale=2; 100.0*$diff_runs_before/${total_runs_before_cuts:-0}" | bc)
-        else
-            perc_lost_runs_before=0
-        fi
-
+          "Events Before All Cuts" "$ev_all_initial" "$ev_ge_initial" "$diff_ev_initial" "${perc_ev_lost_initial}%"
         printf "%-40s | %-20s | %-20s | %-20s | %-20s\n" \
-          "Runs Before All Cuts" \
-          "${total_runs_before_cuts:-0}" \
-          "${total_runs_before_cuts_ge47289:-0}" \
-          "$diff_runs_before" \
-          "${perc_lost_runs_before}%"
+          "Runs Before All Cuts"   "$run_all_initial" "$run_ge_initial" "$diff_run_initial" "${perc_run_lost_initial}%"
 
         echo ""
-
-        # After All Cuts => DST success
+        # After All Cuts => DST
         ev_all=${actual_events_after_createDst:-0}
         ev_ge=${actual_events_after_createDst_ge47289:-0}
         diff_ev=$(echo "$ev_all - $ev_ge" | bc)
-        if (( $(echo "$ev_all > 0" | bc -l) )); then
+        if (( ev_all > 0 )); then
             perc_ev_lost=$(echo "scale=2; 100.0*$diff_ev/$ev_all" | bc)
         else
             perc_ev_lost=0
         fi
 
-        printf "%-40s | %-20s | %-20s | %-20s | %-20s\n" \
-          "Events After All Cuts" \
-          "$ev_all" \
-          "$ev_ge" \
-          "$diff_ev" \
-          "${perc_ev_lost}%"
-
         run_all=${runs_after_createDst:-0}
         run_ge=${runs_after_createDst_ge47289:-0}
         diff_run=$(echo "$run_all - $run_ge" | bc)
-        if (( $(echo "$run_all > 0" | bc -l) )); then
+        if (( run_all > 0 )); then
             perc_run_lost=$(echo "scale=2; 100.0*$diff_run/$run_all" | bc)
         else
             perc_run_lost=0
         fi
 
         printf "%-40s | %-20s | %-20s | %-20s | %-20s\n" \
-          "Runs After All Cuts" \
-          "$run_all" \
-          "$run_ge" \
-          "$diff_run" \
-          "${perc_run_lost}%"
+          "Events After All Cuts" "$ev_all" "$ev_ge" "$diff_ev" "${perc_ev_lost}%"
+        printf "%-40s | %-20s | %-20s | %-20s | %-20s\n" \
+          "Runs After All Cuts"   "$run_all" "$run_ge" "$diff_run" "${perc_run_lost}%"
 
         echo ""
         echo "≥47289: DST successes = ${runs_after_createDst_ge47289:-0}, events = ${actual_events_after_createDst_ge47289:-0}"
@@ -875,7 +1027,7 @@ EOCOMPARISON
             missing_maps_ge47289=${missing_maps_ge47289:-0}
 
             diff_maps=$(echo "$missing_maps_all - $missing_maps_ge47289" | bc)
-            if (( $(echo "$missing_maps_all > 0" | bc -l) )); then
+            if (( missing_maps_all > 0 )); then
                 perc_maps_lost=$(echo "scale=2; 100.0*$diff_maps/$missing_maps_all" | bc)
             else
                 perc_maps_lost=0
@@ -894,7 +1046,7 @@ EOCOMPARISON
 }
 
 ########################################
-# MAIN EXECUTION FLOW
+# MAIN EXECUTION
 ########################################
 
 echo -e "${BOLD}${GREEN}========================================${RESET}"
@@ -905,12 +1057,17 @@ parse_arguments "$@"
 set_workplace
 setup_directories
 clean_previous_data
+
 extract_initial_runs
 validate_golden_list
+
 apply_incremental_cuts_header
 runtime_cut
 livetime_cut
 missing_bad_tower_maps_step
+
+magnet_check_step
+
 create_list_file
 clean_old_dst_lists
 
