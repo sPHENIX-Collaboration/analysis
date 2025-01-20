@@ -10,7 +10,7 @@ sPHENIX_CPPFLAGS = -I$(MYINSTALL)/include -I$(OFFLINE_MAIN)/include -I$(OFFLINE_
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcalo_reco -lcdbobjects -lffamodules -lphool
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloHotTower
 
-all: bin/hotAna bin/hotTypeAna bin/plots bin/genCDBTTree bin/genHotTowerList bin/convertHotList bin/Fun4All_CaloHotTower bin/plots-hot
+all: bin/hotAna bin/hotTypeAna bin/plots bin/genCDBTTree bin/genHotTowerList bin/convertHotList bin/Fun4All_CaloHotTower bin/Fun4All_CaloHotTowerSim bin/plots-hot
 
 bin/hotAna: macro/HotTowerAnalysis.C
 	mkdir -p bin
@@ -44,6 +44,10 @@ bin/Fun4All_CaloHotTower: macro/Fun4All_CaloHotTower.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphparameter -lffarawobjects -lcalotrigger
 
+bin/Fun4All_CaloHotTowerSim: macro/Fun4All_CaloHotTowerSim.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphparameter
+
 clean:
 	rm bin/hotAna
 	rm bin/hotTypeAna
@@ -52,5 +56,6 @@ clean:
 	rm bin/genHotTowerList
 	rm bin/convertHotList
 	rm bin/Fun4All_CaloHotTower
+	rm bin/Fun4All_CaloHotTowerSim
 
 # end

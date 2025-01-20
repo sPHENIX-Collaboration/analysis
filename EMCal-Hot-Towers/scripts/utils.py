@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All_CaloHotTower.')
+f4aSim = subparser.add_parser('f4aSim', help='Create condor submission directory for Fun4All_CaloHotTowerSim.')
 gen = subparser.add_parser('gen', help='Generate run lists.')
 status = subparser.add_parser('status', help='Get status of Condor.')
 
@@ -24,6 +25,15 @@ f4a.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units 
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--segments', type=int, default=10, help='Number of segments to process. Default: 10.')
 # f4a.add_argument('-p', '--concurrency', type=int, default=10000, help='Max number of jobs running at once. Default: 10000.')
+
+f4aSim.add_argument('-i', '--segment-list', type=str, help='Segment list', required=True)
+f4aSim.add_argument('-e', '--executable', type=str, default='scripts/genFun4AllSim.sh', help='Job script to execute. Default: scripts/genFun4AllSim.sh')
+f4aSim.add_argument('-m', '--macro', type=str, default='macro/Fun4All_CaloHotTowerSim.C', help='Fun4All macro. Default: macro/Fun4All_CaloHotTowerSim.C')
+f4aSim.add_argument('-m2', '--src', type=str, default='src', help='Directory Containing src files. Default: src')
+f4aSim.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_CaloHotTowerSim', help='Fun4All executable. Default: bin/Fun4All_CaloHotTowerSim')
+f4aSim.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
+f4aSim.add_argument('-s', '--memory', type=float, default=0.7, help='Memory (units of GB) to request per condor submission. Default: 0.7 GB.')
+f4aSim.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
 gen.add_argument('-t', '--ana-tag', type=str, default='ana446', help='ana tag. Default: ana446')
@@ -105,10 +115,56 @@ def create_f4a_jobs():
 
     print(f'while read run; do cd {output_dir}/$run && condor_submit genFun4All.sub; done <{output_dir}/runs.list;')
 
+def create_f4aSim_jobs():
+    segment_list   = os.path.realpath(args.segment_list)
+    output_dir     = os.path.realpath(args.output)
+    f4a            = os.path.realpath(args.f4a)
+    macro          = os.path.realpath(args.macro)
+    src            = os.path.realpath(args.src)
+    executable     = os.path.realpath(args.executable)
+    memory         = args.memory
+    log            = args.log
+
+    print(f'Segment List: {segment_list}')
+    print(f'Fun4All : {macro}')
+    print(f'src: {src}')
+    print(f'Output Directory: {output_dir}')
+    print(f'Bin: {f4a}')
+    print(f'Executable: {executable}')
+    print(f'Requested memory per job: {memory}GB')
+    print(f'Condor log file: {log}')
+
+    os.makedirs(output_dir,exist_ok=True)
+    shutil.copy(f4a, output_dir)
+    shutil.copy(macro, output_dir)
+    shutil.copy(segment_list, output_dir)
+    shutil.copytree(src, f'{output_dir}/src', dirs_exist_ok=True)
+    shutil.copy(executable, output_dir)
+
+    try:
+        os.symlink(f'{os.path.basename(segment_list)}',f'{output_dir}/jobs.list')
+    except FileExistsError:
+        print(f'Symlink {output_dir}/jobs.list already exists.')
+
+    os.makedirs(f'{output_dir}/stdout',exist_ok=True)
+    os.makedirs(f'{output_dir}/error',exist_ok=True)
+    os.makedirs(f'{output_dir}/output',exist_ok=True)
+
+    with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
+        file.write(f'executable     = {os.path.basename(executable)}\n')
+        file.write(f'arguments      = {output_dir}/{os.path.basename(f4a)} $(input_dst) output/test-$(Process).root {output_dir}/output\n')
+        file.write(f'log            = {log}\n')
+        file.write('output          = stdout/job-$(Process).out\n')
+        file.write('error           = error/job-$(Process).err\n')
+        file.write(f'request_memory = {memory}GB\n')
+        # file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
+        # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
+        # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
+        file.write(f'queue input_dst from jobs.list')
+
 def get_condor_status():
-    hosts = [f'sphnxsub{x:02}' for x in range(1,3)]
-    hosts += [f'sphnx{x:02}' for x in range(1,9)]
-    hosts.append('sphnxdev01')
+    hosts = [f'sphnxuser{x:02}' for x in range(1,9)]
+    hosts += [f'sphnxsub{x:02}' for x in range(1,3)]
 
     print(f'hosts: {hosts}')
 
@@ -171,6 +227,8 @@ def create_run_lists():
 if __name__ == '__main__':
     if(args.command == 'f4a'):
         create_f4a_jobs()
+    if(args.command == 'f4aSim'):
+        create_f4aSim_jobs()
     if(args.command == 'gen'):
         create_run_lists()
     if(args.command == 'status'):

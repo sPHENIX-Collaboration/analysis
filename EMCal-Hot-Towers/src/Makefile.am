@@ -11,13 +11,15 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  CaloHotTower.h
+  CaloHotTower.h \
+  CaloHotTowerSim.h
 
 lib_LTLIBRARIES = \
   libCaloHotTower.la
 
 libCaloHotTower_la_SOURCES = \
-  CaloHotTower.cc
+  CaloHotTower.cc \
+  CaloHotTowerSim.cc
 
 libCaloHotTower_la_LIBADD = \
   -lcalo_io \
