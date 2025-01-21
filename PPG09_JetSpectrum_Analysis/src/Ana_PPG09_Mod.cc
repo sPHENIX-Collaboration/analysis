@@ -119,14 +119,14 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
   std::cout << "Ana_PPG09_Mod::Init(PHCompositeNode *topNode) Initializing" << std::endl;
   PHTFileServer::get().open(m_outputFileName, "RECREATE");
   std::cout << "Ana_PPG09_Mod::Init - Output to " << m_outputFileName << std::endl;
-  std::cout << "Chosen Jet Cuts: Pt - " << RPt_Cut << " GeV, Z-Vertex - " << ZVtx_Cut << ", Num. of Constits. - " << NComp_Cut << std::endl;
+  std::cout << "Chosen Jet Cuts: Lead Pt >= " << Lead_RPt_Cut << " GeV, All Pt >= " << All_RPt_Cut << " GeV, |Z-Vertex| <= " << ZVtx_Cut << ", Num. of Constits. > " << NComp_Cut << std::endl;
 
   char hname[99];
   //Constructing Histograms
   for(int i = 0; i < 8; i++){
      //Jet Plots
      sprintf(hname,"h_Eta_Phi_Pt_%d",i);
-     h_Eta_Phi_Pt_[i] = new TH3F(hname,hname,22,-1.1,1.1,64,-3.2,3.2,95,5,100);
+     h_Eta_Phi_Pt_[i] = new TH3F(hname,hname,22,-1.1,1.1,64,-3.2,3.2,99,1,100);
      
      //OHCal Tower Plots
      sprintf(hname,"h_oHCal_CS_Eta_Phi_E_%d",i);
@@ -137,8 +137,9 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
      h_oHCal_Raw_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_oHCal_Jet_Eta_Phi_E_%d",i);
      h_oHCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
-         
- 
+     sprintf(hname,"h_oHCal_TE_Sub_Eta_Phi_E_%d",i);
+     h_oHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
+
      //IHCal Tower Plots
      sprintf(hname,"h_iHCal_CS_Eta_Phi_E_%d",i);
      h_iHCal_CS_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
@@ -148,16 +149,22 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
      h_iHCal_Raw_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_iHCal_Jet_Eta_Phi_E_%d",i);
      h_iHCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
+     sprintf(hname,"h_iHCal_TE_Sub_Eta_Phi_E_%d",i);
+     h_iHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
 
      //EMCal Tower/Retower Plots
      sprintf(hname,"h_EMCal_CS_Eta_Phi_E_%d",i);
      h_EMCal_CS_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
+     sprintf(hname,"h_EMCal_CR_Eta_Phi_E_%d",i);
+     h_EMCal_CR_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_EMCal_C_Eta_Phi_E_%d",i);
      h_EMCal_C_Eta_Phi_E_[i] = new TH3F(hname,hname,96,-0.5,95.5,256,-0.5,255.5,200,-100,100);
      sprintf(hname,"h_EMCal_Raw_Eta_Phi_E_%d",i);
      h_EMCal_Raw_Eta_Phi_E_[i] = new TH3F(hname,hname,96,-0.5,95.5,256,-0.5,255.5,200,-100,100);
      sprintf(hname,"h_EMCal_Jet_Eta_Phi_E_%d",i);
      h_EMCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
+     sprintf(hname,"h_EMCal_TE_Sub_Eta_Phi_E_%d",i);
+     h_EMCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
 
      //Event Plots
      sprintf(hname,"h_ZVtx_%d",i);
@@ -170,24 +177,28 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
 {
-  if(Verbosity() > 1){
-     m_event++;
-     if((m_event % 100) == 0) std::cout << "Ana_PPG09_Mod::process_event - Event number = " << m_event << std::endl;
-  }
+  
+  m_event++;
+  if((m_event % 1000) == 0) std::cout << "Ana_PPG09_Mod::process_event - Event number = " << m_event << std::endl;
  
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if(!global_vtxmap || global_vtxmap->empty()){
+     if(Verbosity() > 0){std::cout << "Aborted Event number = " << m_event << ", no global node" << std::endl;}  
      return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   GlobalVertex *vtx = global_vtxmap->begin()->second;
   float vtx_z = NAN;
   if(!vtx){
+     if(Verbosity() > 0){std::cout << "Aborted Event number = " << m_event << ", no z-vertex" << std::endl;}
      return Fun4AllReturnCodes::ABORTEVENT;
   }
   else{
      vtx_z = vtx->get_z();
-     if(vtx_z < -ZVtx_Cut || vtx_z > ZVtx_Cut){return Fun4AllReturnCodes::ABORTEVENT;}
+     if(vtx_z < -ZVtx_Cut || vtx_z > ZVtx_Cut){
+        if(Verbosity() > 0){std::cout << "Aborted Event number = " << m_event << ", z-vertex out of range" << std::endl;}
+        return Fun4AllReturnCodes::ABORTEVENT;
+     }
   }
 
   //Recording Event Triggers
@@ -196,7 +207,7 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
   Gl1Packet *gl1Packet = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
   if(gl1Packet){
      auto scaled_vector = gl1Packet->getScaledVector();
-     for(int i = 0; i < 64; i++){
+     for(int i = 0; i < 32; i++){
         if((scaled_vector & (int)std::pow(2,i)) != 0){
            m_triggers.push_back(i);
         }
@@ -207,22 +218,47 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
   }
   
   JetContainer* jets_Cont = findNode::getClass<JetContainer>(topNode, m_recoJetName);
-  
+  if(!jets_Cont){std::cout << "Jets are Missing !" << std::endl;}
+
+  //Checking 
+  double Lead_Check = 0;
+  for(unsigned int ijet = 0; ijet < jets_Cont->size(); ++ijet){
+     Jet* jet = jets_Cont->get_jet(ijet);
+     if(jet->get_pt() > Lead_Check){Lead_Check = jet->get_pt();}
+  }
+
+  if(Lead_Check < Lead_RPt_Cut){
+     if(Verbosity() > 0){std::cout << "Aborted Event number = " << m_event << ", no jet above lead pt threshold" << std::endl;}
+     return Fun4AllReturnCodes::ABORTEVENT;
+  }
+   
   TowerInfoContainer* towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_CEMC");
   TowerInfoContainer* towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALIN");
   TowerInfoContainer* towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_HCALOUT");
- 
+   if(!towersEM3 || !towersIH3 || !towersOH3){std::cout << "Raw Towers are Missing !" << std::endl;}
+
+  /*
+  TowerInfoContainer* towersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+  TowerInfoContainer* towersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  TowerInfoContainer* towersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT"); 
+  */
+
   TowerInfoContainer* CtowersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
   TowerInfoContainer* CtowersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   TowerInfoContainer* CtowersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
- 
+  TowerInfoContainer* CRtowersEM3 = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC_RETOWER");
+  if(!CtowersEM3 || !CtowersIH3 || !CtowersOH3 || !CRtowersEM3){std::cout << "Calib Towers are Missing !" << std::endl;}
+
   TowerInfoContainer* CStowersEM3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
   TowerInfoContainer* CStowersIH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
   TowerInfoContainer* CStowersOH3 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
+  if(!CStowersEM3 || !CStowersIH3 || !CStowersOH3){std::cout << "Calib Sub. Towers are Missing !" << std::endl;}
 
   double Index_Plots[8] = {0};
   for(unsigned int ijet = 0; ijet < jets_Cont->size(); ++ijet){
      Jet* jet = jets_Cont->get_jet(ijet);
+    
+
      if(ijet == 0){
         for(int k = 0; k < (int)m_triggers.size(); k++){
            if(m_triggers.at(k) == 10){ 
@@ -245,52 +281,108 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
               Index_Plots[4] = 1;
               h_ZVtx_[4]->Fill(vtx_z);
            }
-           if(m_triggers.at(k) == 33){ 
+           if(m_triggers.at(k) == 21){ 
               Index_Plots[5] = 1;
               h_ZVtx_[5]->Fill(vtx_z);
            }
-           if(m_triggers.at(k) == 34){ 
+           if(m_triggers.at(k) == 22){ 
               Index_Plots[6] = 1;
               h_ZVtx_[6]->Fill(vtx_z);
-           }
-           if(m_triggers.at(k) == 35){
+	   }
+           if(m_triggers.at(k) == 23){
               Index_Plots[7] = 1;
               h_ZVtx_[7]->Fill(vtx_z);
            }
         }
-  
+
         for(int k = 0; k < 8; k++){
            if(Index_Plots[k] != 1) continue;
-           for(int Det = 0; Det < 9; Det++){
+	   for(int Det = 0; Det < 3; Det++){
               TowerInfoContainer* towersCal;
-              if(Det == 0){towersCal = towersEM3;}          
-              if(Det == 1){towersCal = towersIH3;}
-              if(Det == 2){towersCal = towersOH3;}
-              if(Det == 3){towersCal = CStowersEM3;}
-              if(Det == 4){towersCal = CStowersIH3;}
-              if(Det == 5){towersCal = CStowersOH3;}
-              if(Det == 6){towersCal = CtowersEM3;}
-              if(Det == 7){towersCal = CtowersIH3;}
-              if(Det == 8){towersCal = CtowersOH3;}
-               
+              TowerInfoContainer* towersSCal;
+              TowerInfoContainer* towersRaw;
+              TowerInfoContainer* towersRCal;
+	      TH3F* RawTowers;
+              TH3F* CalibTowers;
+              TH3F* CalibSubTowers;
+              TH3F* RCalibTowers;
+	      TH3F* SubETowers; 
+
+              if(Det == 0){
+                 towersCal = CtowersEM3;
+		 towersRCal = CRtowersEM3;
+                 towersSCal = CStowersEM3;
+                 towersRaw = towersEM3; 
+                 RawTowers = h_EMCal_Raw_Eta_Phi_E_[k];
+                 CalibTowers = h_EMCal_C_Eta_Phi_E_[k];
+                 CalibSubTowers = h_EMCal_CS_Eta_Phi_E_[k];      
+                 RCalibTowers = h_EMCal_CR_Eta_Phi_E_[k];
+		 SubETowers = h_EMCal_TE_Sub_Eta_Phi_E_[k];
+	      }          
+              if(Det == 1){
+                 towersCal = CtowersIH3;
+                 towersSCal = CStowersIH3;
+                 towersRaw = towersIH3;
+                 RawTowers = h_iHCal_Raw_Eta_Phi_E_[k];
+                 CalibTowers = h_iHCal_C_Eta_Phi_E_[k];
+                 CalibSubTowers = h_iHCal_CS_Eta_Phi_E_[k];
+                 SubETowers = h_iHCal_TE_Sub_Eta_Phi_E_[k];
+	      }
+              if(Det == 2){
+                 towersCal = CtowersOH3;
+                 towersSCal = CStowersOH3;
+                 towersRaw = towersOH3;
+                 RawTowers = h_oHCal_Raw_Eta_Phi_E_[k];
+                 CalibTowers = h_oHCal_C_Eta_Phi_E_[k];
+                 CalibSubTowers = h_oHCal_CS_Eta_Phi_E_[k];
+		 SubETowers = h_oHCal_TE_Sub_Eta_Phi_E_[k];
+              }              
+ 
               int Chan_Num = -1;
-              if(Det == 0 || Det == 6){Chan_Num = 24576;}
+              if(Det == 0){Chan_Num = 24576;}
               else{Chan_Num = 1536;}
               
               for (int channel = 0; channel < Chan_Num; channel++){
-                 TowerInfo *tower = towersCal->get_tower_at_channel(channel);
-                 unsigned int channelkey = towersCal->encode_key(channel);
-                 int ieta = towersCal->getTowerEtaBin(channelkey);
-                 int iphi = towersCal->getTowerPhiBin(channelkey);
-                 if(Det == 0){h_EMCal_Raw_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 1){h_iHCal_Raw_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 2){h_oHCal_Raw_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 3){h_EMCal_CS_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 4){h_iHCal_CS_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 5){h_oHCal_CS_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 6){h_EMCal_C_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 7){h_iHCal_C_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
-                 if(Det == 8){h_oHCal_C_Eta_Phi_E_[k]->Fill(ieta,iphi,tower->get_energy());}
+                 //Raw Towers
+                 float CTowerE = -99;
+		 float CSTowerE = -99;
+		      
+		 TowerInfo *towerRaw = towersRaw->get_tower_at_channel(channel);
+                 unsigned int channelkeyR = towersRaw->encode_key(channel);
+                 int ietaR = towersRaw->getTowerEtaBin(channelkeyR);
+                 int iphiR = towersRaw->getTowerPhiBin(channelkeyR);
+
+                 //Calib Towers
+                 TowerInfo *towerCal = towersCal->get_tower_at_channel(channel);
+                 unsigned int channelkeyC = towersCal->encode_key(channel);
+                 int ietaC = towersCal->getTowerEtaBin(channelkeyC);
+                 int iphiC = towersCal->getTowerPhiBin(channelkeyC);
+                 if(!Det == 0){CTowerE = towerCal->get_energy();}
+
+                 //Calib Subtracted Towers
+		 if(channel < 1536){
+                    TowerInfo *towerSCal = towersSCal->get_tower_at_channel(channel);
+                    unsigned int channelkeySC = towersSCal->encode_key(channel);
+                    int ietaSC = towersSCal->getTowerEtaBin(channelkeySC);
+                    int iphiSC = towersSCal->getTowerPhiBin(channelkeySC); 
+                    CalibSubTowers->Fill(ietaSC,iphiSC,towerSCal->get_energy());
+                    CSTowerE = towerSCal->get_energy();
+
+                    //Calib. Retowers
+		    if(Det == 0){
+	               TowerInfo *towerRCal = towersRCal->get_tower_at_channel(channel);
+                       unsigned int channelkeyRC = towersRCal->encode_key(channel);
+                       int ietaRC = towersRCal->getTowerEtaBin(channelkeyRC);
+                       int iphiRC = towersRCal->getTowerPhiBin(channelkeyRC);
+		       RCalibTowers->Fill(ietaRC,iphiRC,towerRCal->get_energy()); 
+		       CTowerE = towerRCal->get_energy();
+		    }
+		 }
+	
+	         double SubE = std::abs(CTowerE - CSTowerE);	 
+		 SubETowers->Fill(ietaC,iphiC,SubE);
+		 CalibTowers->Fill(ietaC,iphiC,towerCal->get_energy());
+                 RawTowers->Fill(ietaR,iphiR,towerRaw->get_energy());
               }
            }
         }
@@ -298,8 +390,7 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
      
      bool Eta_Check = check_bad_jet_eta(jet->get_eta(), vtx_z, 0.4);
 
-     //Filling Jet Plots  
-     if (jet->get_pt() < RPt_Cut || jet->size_comp() <= NComp_Cut || Eta_Check) continue;
+     if (jet->get_pt() < All_RPt_Cut || jet->size_comp() <= NComp_Cut || Eta_Check) continue;
 
      for(int k = 0; k < 8; k++){
         if(Index_Plots[k] != 1) continue;
@@ -353,6 +444,7 @@ int Ana_PPG09_Mod::ResetEvent(PHCompositeNode *topNode)
 int Ana_PPG09_Mod::End(PHCompositeNode *topNode)
 {
   PHTFileServer::get().cd(m_outputFileName);
+  std::cout << "Saving histograms" << std::endl;
   for(int k = 0; k < 8; k++){
      h_Eta_Phi_Pt_[k]->Write();
      h_EMCal_Raw_Eta_Phi_E_[k]->Write();
@@ -362,11 +454,15 @@ int Ana_PPG09_Mod::End(PHCompositeNode *topNode)
      h_iHCal_CS_Eta_Phi_E_[k]->Write();
      h_oHCal_CS_Eta_Phi_E_[k]->Write();
      h_EMCal_C_Eta_Phi_E_[k]->Write();
+     h_EMCal_CR_Eta_Phi_E_[k]->Write();
      h_iHCal_C_Eta_Phi_E_[k]->Write();
      h_oHCal_C_Eta_Phi_E_[k]->Write();
      h_EMCal_Jet_Eta_Phi_E_[k]->Write();
      h_iHCal_Jet_Eta_Phi_E_[k]->Write();
      h_oHCal_Jet_Eta_Phi_E_[k]->Write();
+     h_EMCal_TE_Sub_Eta_Phi_E_[k]->Write();
+     h_iHCal_TE_Sub_Eta_Phi_E_[k]->Write();
+     h_oHCal_TE_Sub_Eta_Phi_E_[k]->Write();
      h_ZVtx_[k]->Write();
   }
 
