@@ -8,7 +8,7 @@ void Read_DST(int run_num = 50889
   //gSystem->ListLibraries();
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(1);
+  se->Verbosity( 0 );
   recoConsts *rc = recoConsts::instance();
 
   //Enable::MVTX = true;
@@ -53,7 +53,7 @@ void Read_DST(int run_num = 50889
   //  intt_xy->SetOutDirectory( "./results" ); // not implemented yet
   intt_xy->EnableQA( true );
   intt_xy->SetBeamCenter(-0.0188185, 0.198181);
-  se->registerSubsystem( intt_xy );
+  // se->registerSubsystem( intt_xy );
 
   InttZVertexFinder* intt_z = new InttZVertexFinder();
   intt_z->SetOutDirectory( "./results" );
@@ -62,6 +62,10 @@ void Read_DST(int run_num = 50889
   //  intt_z->Verbosity( 0 );
   se->registerSubsystem( intt_z );
 
+  // Learn https://github.com/ChengWeiShih/coldQCD_code/blob/main/ForwardCaloNtuplizer/macro/Fun4All_ForwardCalo.C or something there 
+  MbdReco* mbd_reco = new MbdReco();
+  se->registerSubsystem( mbd_reco );
+  
   GlobalVertexReco* global_vertex = new GlobalVertexReco();
   se->registerSubsystem( global_vertex );
   
@@ -72,13 +76,14 @@ void Read_DST(int run_num = 50889
   output += ".root";
   
   InttAna *inttana = new InttAna( "InttAna", output );
-  inttana->Verbosity( 10 ); // 0: minimum, 1: some, 2: detailed
+  inttana->Verbosity( 1 ); // 0: minimum, 1: some, 2: detailed
   //inttana->SetBeamCenter(-0.0188185, 0.198181);  // 1st 10k version
   se->registerSubsystem( inttana );
 
   // Fun4AllOutputManager *out = new Fun4AllDstOutputManager("out","test.root");
   // se->registerOutputManager(out);
 
+  int skip_num = 0;
   if( run_num == 50889 )
     {
       //   0: not work
@@ -102,9 +107,10 @@ void Read_DST(int run_num = 50889
       // 110: good
       // 115: by skipping ~27000 events, 72385 events can be processed
       // 120: good
+      /*
       if( fphx_bco == 12 )
 	{
-	  se->skip( 1500 );
+	  skip_num = 1500 ;
 	  event_num = 100000;
 	}
       else if( fphx_bco == 13 ) // give up...
@@ -122,26 +128,28 @@ void Read_DST(int run_num = 50889
 	  if( event_num == 0 )
 	    event_num = 73426;
 
-	  se->skip( 5074 );
+	  skip_num = 5074 ;
 	}
       else if( fphx_bco == 63 )
 	{
 	  //se->skip( 9117 ); // to skip the strange event
-	  se->skip( 9117 + 5303 ); // to skip the strange event
+	  //se->skip( 9117 + 5303 ); // to skip the strange event
 	}
       else if( fphx_bco == 105 )
-	se->skip( 80304 );
+	skip_num = 80304 ;
       else if( fphx_bco == 115 )
-	se->skip( 13489 + 14125 );
+	skip_num = 13489 + 14125 ;
       else
-	se->skip( 1000 );
+	skip_num = 1000 ;
+      */
       
     }
   else if( run_num == 50377 )
     {
-      se->skip( 250 ); // to skip the strange event
+      skip_num = 250 ;
     }
-  
+
+  se->skip( skip_num );
   se->run( event_num );
 
   se->End();

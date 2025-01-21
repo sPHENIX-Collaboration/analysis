@@ -6,17 +6,22 @@ private:
   int run_no_;
   bool mag_on_;
   bool debug_;
+  bool is_preliminary_ = false;
   
   int fphx_bco_ = -1;
   
   int sigma_ = 3;
   int nloop_ = 50;
   int page_num_limit_ = 500;
+  int event_counter_ = 0;
+  int page_counter_ = 0;
   int good_counter_ = 0;
-  
-  bool is_geant_ = false;
-  //bool does_reverse_ = false;
 
+  double vertex_range_z_ = 10; // range of z_vertex to select events to be drawn
+  bool is_geant_ = false;
+  //bool does_reverse_ = false;  
+  bool take_too_good_event_ = true;
+  
   /////////////////////////////////////////////////////////////////////////
   // Variables/Objects for I/O                                           //
   /////////////////////////////////////////////////////////////////////////
@@ -58,7 +63,7 @@ private:
   TTree *truth_tree_ ;
   TTree *track_tree_ ;
   TTree *hepmctree_;
-
+  TTree* bco_tree_;
   TNtuple *ntp_clus_;
   TNtuple *ntp_evt_; 
 
@@ -106,7 +111,11 @@ private:
 
   // variables for ntp_evt_
   float vertex_z_ = -9999;
-  
+
+  // variables for bco_tree_
+  ULong64_t bco_intt_ = 0;
+
+  //
   int evt_track_;
   int ntrack_ = 0;
   vector<double> slope_rz_;
@@ -186,7 +195,6 @@ private:
   // Misc variables/objects                                              //
   /////////////////////////////////////////////////////////////////////////
   TCanvas* c_;
-  int page_counter_ = 0;
 
   void Init();
   void InitIO();
@@ -208,12 +216,15 @@ private:
   void ProcessEvent_Draw( clustEvent event );
   void EndProcess();
 public:
-  Analysis(int run_no = 50889, int fphx_bco=-1, bool mag_on = true, bool debug = false );
+  Analysis(int run_no = 50889, int fphx_bco=-1, bool mag_on = true, bool debug = false, bool is_preliminary=false );
 
   void Begin();
 
   void SetDebugMode( bool flag ){ debug_ = flag;};
   void SetPageNumLimit( int val ){ page_num_limit_ = val; };
+  void SetVertexRangeZ( double val ){ vertex_range_z_ = val;};
+  
+  void UseTooGoodEventOnly( bool flag ){ take_too_good_event_ = flag;};
 };
 
 #ifndef Analysis_cc

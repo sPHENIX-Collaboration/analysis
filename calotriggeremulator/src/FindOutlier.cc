@@ -98,7 +98,6 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
   //  if (!trashinfo->isTrash()) return Fun4AllReturnCodes::EVENT_OK;
   
   TowerInfoContainer* emcal_towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
-  if (Verbosity())  std::cout << "emcal" << std::endl;
   h_emcal->Reset();
   int size = emcal_towers->size();
   for (int i = 0; i < size; i++)
@@ -115,7 +114,7 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
   if (Verbosity())  std::cout << "emcal" << std::endl;
   char hname[100];
   TH2F *h = (TH2F*) h_emcal->Clone();
-  sprintf(hname, "h_emcal_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcount);
+  sprintf(hname, "h_emcal_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcounter);
   h->SetName(hname);
   hm->registerHisto(h);
 
@@ -133,7 +132,7 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
 	      int cha = 192*(packetid-6001) + i;
 	      if (emcal_towers->get_tower_at_channel(cha)->get_energy() < 0.03 ) continue;
 	      char name[100];
-	      sprintf(name, "wave_%d_%d", _eventcount, cha);
+	      sprintf(name, "wave_%d_%d", _eventcounter, cha);
 	      auto *h_waveform = new TH1F(name, ";sample; adc", 12, -0.5, 11.5);
 	      
 	      int channel = i;
@@ -160,12 +159,9 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
 	      hm->registerHisto(h_waveform);
 	    }
 	}
-
-      std::cout << " done with waves" <<std::endl;      
     }    
   
   TowerInfoContainer* hcalout_towers = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
-  if (Verbosity())  std::cout << "hcal" << std::endl;  
   h_hcalout->Reset();
   h_hcalout_time->Reset();
   size = hcalout_towers->size();
@@ -183,16 +179,16 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
     }
   if (Verbosity())  std::cout << "hcal" << std::endl;  
   h = (TH2F*) h_hcalout->Clone();
-  sprintf(hname, "h_hcalout_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcount);
+  sprintf(hname, "h_hcalout_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcounter);
   h->SetName(hname);
   hm->registerHisto(h);
   TH2F *ht = (TH2F*) h_hcalout_time->Clone();
-  sprintf(hname, "h_hcalout_time_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcount);
+  sprintf(hname, "h_hcalout_time_%d_%d", (trashinfo->isTrash()? 1 : 0), _eventcounter);
   ht->SetName(hname);
   hm->registerHisto(ht);
 
-  if (Verbosity())  std::cout << "hcal" << std::endl;  
-  tn->Fill(_eventcount, (trashinfo->isTrash()? 1:0), trashinfo->getR1(), trashinfo->getEnergy(), trashinfo->getEMCALEnergy(), trashinfo->getSpread());
+  tn->Fill(_eventcounter, (trashinfo->isTrash()? 1:0), trashinfo->getR1(), trashinfo->getEnergy(), trashinfo->getEMCALEnergy(), trashinfo->getSpread());
+
   if (useWave)
     {
 
@@ -209,7 +205,7 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
 	      int cha = 192*(packetid-8001) + i;
 	      if (hcalout_towers->get_tower_at_channel(cha)->get_energy() < 0.03 ) continue;
 	      char name[100];
-	      sprintf(name, "wave_%d_%d", _eventcount, cha);
+	      sprintf(name, "wave_%d_%d", _eventcounter, cha);
 	      auto *h_waveform = new TH1F(name, ";sample; adc", 12, -0.5, 11.5);
 	  
 	      int channel = i;
@@ -308,11 +304,11 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
   // if (!packet)
   //   return Fun4AllReturnCodes::ABORTRUN;
 
-  // std::cout << "FindOutlier::Found one at " << _eventcounter <<" ch " << binx << " " << biny << " " << std::endl;
+  // std::cout << "FindOutlier::Found one at " << _eventcounterer <<" ch " << binx << " " << biny << " " << std::endl;
   // for (int i = 0; i < 192; i++)
   //   {
   //     char name[100];
-  //     sprintf(name, "wave_%d_%d", i, _eventcounter);
+  //     sprintf(name, "wave_%d_%d", i, _eventcounteryer);
   //     auto *h_waveform = new TH1F(name, ";sample; adc", 12, -0.5, 11.5);
 
   //     int channel = i;
@@ -339,11 +335,7 @@ int FindOutlier::process_event(PHCompositeNode* topNode)
   //     hm->registerHisto(h_waveform);
   //   }
 
-  _eventcount++;
-  if (_eventcount > 1000)
-    {
-      return Fun4AllReturnCodes::ABORTRUN;
-    }
+
   return Fun4AllReturnCodes::EVENT_OK;      
 
   

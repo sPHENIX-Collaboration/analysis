@@ -16,6 +16,8 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
 
 #include <globalvertex/GlobalVertexReco.h>
+#include <MbdReco.h>
+R__LOAD_LIBRARY(libmbd.so)
 
 #include <inttread/InttAna.h>
 // #include <inttxyvertexfinder/InttZVertexFinder.h>

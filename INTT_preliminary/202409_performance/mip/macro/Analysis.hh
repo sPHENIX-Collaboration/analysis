@@ -111,7 +111,11 @@ private:
   MipHist* hist_ang20_21_ ; //  20 - 21 deg
   MipHist* hist_ang30_31_ ; //  30 - 31 deg
 
-  TH2D* hist_correlation;
+  TH1D* hist_association_;
+  TH1D* hist_association_in_;
+  TH1D* hist_association_out_;
+  TH2D* hist_association_in_out_;
+  TH2D* hist_correlation_;
   
   virtual ~Analysis();
   virtual Int_t    Cut(Long64_t entry);
@@ -121,9 +125,12 @@ private:
   virtual Bool_t   Notify();
 
   string GetDate();
+  double GetExpectedPeakPosition( double theta );
   void DrawSingle( MipHist* mip_hist );
   void DrawMultiple( vector < MipHist* >& mip_hists, string output_tag, bool use_color_palette = false );
+  void DrawMultiPanel( vector < MipHist* >& mip_hists, string output_tag );
 
+  TBox* DrawExpectedPeakRegion( double theta_min, double theta_max );
   void DrawWords();
   void FillClusterInfo( int mode = 0 ); // 0: inner, 1: outer
   

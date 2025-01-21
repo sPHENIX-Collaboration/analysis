@@ -4,10 +4,12 @@
 
 #include <fun4all/SubsysReco.h>
 #include <calotrigger/TriggerAnalyzer.h>
+#include <DijetEventDisplay.h>
 #include <string>
 #include <array>
+#include "TMath.h"
 
-
+class TF1;
 
 class Fun4AllHistoManager;
 class PHCompositeNode;
@@ -20,9 +22,13 @@ struct jetty
   float et = 0;
   float eta = 0;
   float phi = 0;
+  float iso = 0;
   float emcal = 0;
   float ihcal = 0;
   float ohcal = 0;
+  float edep = 0;
+  float edep_em = 0;
+  float edep_hd = 0;
 
 };
 class FindDijets : public SubsysReco
@@ -39,6 +45,8 @@ class FindDijets : public SubsysReco
 
   int process_event(PHCompositeNode *topNode) override;
   
+  void process_truth_jets(JetContainer *jets);
+
   void GetNodes (PHCompositeNode *topNode);
 
   int ResetEvent(PHCompositeNode *topNode) override;
@@ -51,15 +59,21 @@ class FindDijets : public SubsysReco
 
   void SetIsSim(bool use) {isSim = use;}
   void SetPtCut(float pt) {pt_cut = pt;}
-
+  double get_Dr(struct jetty jet1, struct jetty jet2);
+  void DrawDijets(bool d) { drawDijets = d; }
  private:
-  TriggerAnalyzer *triggeranalyzer;  
+
+
+  TriggerAnalyzer *triggeranalyzer{nullptr};;  
+  DijetEventDisplay *dijeteventdisplay{nullptr};
+
 
   int _verbosity;
 
   float pt_cut = 4;
-  float pt_cut1[3] = {10., 20., 40.};
-  float pt_cut2[3] = {4., 8., 15.};
+  float dphi_cut[3] = {TMath::Pi()/2., 3.*TMath::Pi()/4., 7.*TMath::Pi()/8.};
+  float pt_cut1[3] = {10., 20., 30.};
+  float pt_cut2[3] = {5., 10., 15.};
   std::string _foutname;
   std::string _nodename;
   std::string m_calo_nodename;
@@ -67,6 +81,10 @@ class FindDijets : public SubsysReco
   bool isSim{0};
   Fun4AllHistoManager *hm{nullptr};
   std::array<std::string, 8> m_jet_triggernames;;
+
+  TF1 *fsmear{nullptr};
+  bool drawDijets{false};
+  double isocut = 1.0;
 };
 
 #endif 

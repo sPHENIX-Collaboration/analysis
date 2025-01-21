@@ -184,13 +184,15 @@ class InttAna : public SubsysReco
   TH1*   h_eta;
   TH1*   h_phi;
   TH1*   h_theta;
+
   TNtuple*  h_ntp_clus; 
   TNtuple*  h_ntp_emcclus; 
   //TTree*  h_t_clus; 
   TNtuple*  h_ntp_cluspair; 
   TNtuple*  h_ntp_emccluspair{nullptr}; 
   TNtuple*  h_ntp_evt; 
-  TTree*  h_t_evt_bco; 
+  TTree*  h_t_evt_bco;
+  TTree*  tree_event_;
 
   float xbeam_;
   float ybeam_;
@@ -229,15 +231,14 @@ class InttAna : public SubsysReco
   int m_truthpid = -9999;
   double m_vertex = -9999;
   double vertex_[10][3]{ {-9999} };
-  TVector3* intt_vertex_pos_;
 
   double mbdqn_ = 0;
   double mbdqs_ = 0;
   double mbdz_ = 0;
   uint64_t bco_ = 0;
   int evtseq_ = -1;
-  double vtx_sim_[3]{-9999, -9999, -9999};
-  int nclusmvtx_[3] = {0, 0, 0};
+  double vtx_sim_[3]{ -9999 };
+  int nclusmvtx_[3] = { 0 };
   int nclusadd_ = 0;
   int nclusadd2_ = 0;
   int nclus_inner_ = 0;
@@ -245,8 +246,14 @@ class InttAna : public SubsysReco
   int nemc_ = -9999;
   int nemc1_ = -9999;
   double zvtx_ = -9999;
+
+  TVector3* vertex_pos_intt_;
+  double vertex_z_mbd_ = -9999;
+
   static int evtCount;
   static int ievt;
+
+
   std::vector < ClustInfo > clusters_[2]; // inner=0; outer=1
   
   void InitHists();
@@ -254,6 +261,7 @@ class InttAna : public SubsysReco
   void InitTuples();
 
   int GetNodes( PHCompositeNode *topNode );
+  InttRawHitContainer *inttrawmap;
   ActsGeometry *m_tGeometry;
   PHHepMCGenEventMap *hepmceventmap;
   PHG4InEvent *phg4inevent;

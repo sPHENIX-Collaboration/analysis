@@ -1,6 +1,7 @@
 #ifndef ANAUPC_H
 #define ANAUPC_H
 
+#include <Rtypes.h>
 #include <fun4all/SubsysReco.h>
 
 /// Class declarations for use in the analysis module
@@ -33,7 +34,7 @@ class AnaUPC : public SubsysReco
  public:
   /// Constructor
   AnaUPC(const std::string &name = "AnaUPC",
-              const std::string &fname = "AnaUPC.root");
+              const std::string &outputfname = "AnaUPC.root");
 
   // Destructor
   virtual ~AnaUPC();
@@ -85,26 +86,31 @@ class AnaUPC : public SubsysReco
   bool m_analyzeTruth;
 
   /// TFile to hold the following TTrees and histograms
-  TFile *m_outfile;
+  TFile *m_outfile{nullptr};
   //TTree *m_clustertree;
-  TTree *m_tracktree;
-  TTree *m_hepmctree;
-  TTree *m_truthtree;
-  //TTree *m_recojettree;
-  //TTree *m_truthjettree;
-  TH1 *h_phi;
-  TH2 *h2_eta_phi;
-  TH1 *h_mass;
-  TH1 *h_y;
-  TH1 *h_eta;
-  TH1 *h_pt;
+  TTree *m_tracktree{nullptr};
+  TTree *m_hepmctree{nullptr};
+  TTree *m_truthtree{nullptr};
+
+  TTree *m_pairtree{nullptr};
+  TTree *m_lspairtree{nullptr};
+ 
+  TH1 *h_phi[2]{nullptr,nullptr};       // [0]=opp. sign, [1]=like sign
+  TH2 *h2_eta_phi[2]{nullptr,nullptr};
+  TH1 *h_mass[2]{nullptr,nullptr};
+  TH1 *h_pt[2]{nullptr,nullptr};
+  TH1 *h_y[2]{nullptr,nullptr};
+  TH1 *h_eta[2]{nullptr,nullptr};
+
+  TH1 *h_trig{nullptr};
+  TH1 *h_ntracks{nullptr};
   const double E_MASS = 0.000510998950;  // electron mass [Gev]
 
-  SvtxEvalStack *m_svtxEvalStack = nullptr;
-  //JetEvalStack *m_jetEvalStack = nullptr;
+  SvtxEvalStack *m_svtxEvalStack{nullptr};
+  //JetEvalStack *m_jetEvalStack{nullptr};
 
   /// Methods for grabbing the data
-  void getTracks(PHCompositeNode *topNode);
+  int getTracks(PHCompositeNode *topNode);
   //void getTruthJets(PHCompositeNode *topNode);
   //void getReconstructedJets(PHCompositeNode *topNode);
   //void getEMCalClusters(PHCompositeNode *topNode);
@@ -117,6 +123,9 @@ class AnaUPC : public SubsysReco
   /**
    * Make variables for the relevant trees
    */
+
+  Int_t m_run{ 0 };
+  Int_t m_evt{ 0 };
 
   /// HEPMC Tree variables
   int m_partid1;
@@ -162,6 +171,24 @@ class AnaUPC : public SubsysReco
   double m_truthtracketa;
   int m_truthtrackpid;
 
+  /// Pair variables
+  Double_t m_pm{ 0. };    // pair mass
+  Double_t m_ppt{ 0. };
+  Double_t m_pphi{ 0. };
+  Double_t m_py{ 0. };
+  Double_t m_peta{ 0. };
+  Double_t m_pdphi{ 0. };
+  Double_t m_ppt1{ 0. };
+  Double_t m_ppz1{ 0. };
+  Double_t m_pphi1{ 0. };
+  Double_t m_peta1{ 0. };
+  Double_t m_ppt2{ 0. };
+  Double_t m_ppz2{ 0. };
+  Double_t m_pphi2{ 0. };
+  Double_t m_peta2{ 0. };
+  Short_t  m_pq1{ 0 };
+  Short_t  m_pq2{ 0 };
+ 
   /// Reconstructed jet variables
   /*
   double m_recojetpt;

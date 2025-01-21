@@ -149,7 +149,7 @@ void clustEvent::charge_check()
     }
 }
 
-void clustEvent::draw_frame(int mode = 0)
+void clustEvent::draw_frame(int mode, bool is_preliminary )
 {
   TH1 *frame;
   string mag;
@@ -168,7 +168,8 @@ void clustEvent::draw_frame(int mode = 0)
 	title = Form("x-y plane {run%d(%s) event %d};x [cm];y [cm]", run_no, mag.c_str(), ievt);
       
       frame = gPad->DrawFrame(-15, -15, 15, 15, title.c_str());
-      this->draw_signature();
+      
+      this->draw_signature( is_preliminary );
     }
   else if (mode == 1) // z-r
     {
@@ -177,7 +178,8 @@ void clustEvent::draw_frame(int mode = 0)
       else
 	title = Form("z-r plane {run%d(%s) event %d};z [cm];r [cm]", run_no, mag.c_str(), ievt);
 
-      frame = gPad->DrawFrame(-25, -15, 25, 15, title.c_str());
+      //frame = gPad->DrawFrame(-25, -15, 25, 15, title.c_str());
+      frame = gPad->DrawFrame(-30, -15, 30, 15, title.c_str());
       this->draw_date();
       
     }
@@ -189,6 +191,7 @@ void clustEvent::draw_frame(int mode = 0)
 
 string clustEvent::GetDate()
 {
+  return "9/13/2024";
   
   TDatime dt;
   int year	= dt.GetYear();
@@ -213,44 +216,60 @@ void clustEvent::draw_signature( bool is_preliminary = false )
   double first_margin = 0.005;
   double top_margin = 0.1;  
   double pos_y = 1.0 - top_margin + first_margin;// - line_height;
+  pos_y = 1.0 - line_height + 0.004 + 0.01;
 
   // sPHENIX Internal or sPHENIX Prelimnary
-  pos_y -= line_height - first_margin + 0.025;
-  double pos_x = 0.2;
+  // pos_y -= line_height - first_margin + 0.025;
+  double pos_x = 0.175;
   if( is_preliminary == false )
     {
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
     }
   else
     {
-
-      pos_x = 0.4;
-      tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
+      if( bco_intt == 396907563635 ||
+	  bco_intt == 396904684235 ||
+	  bco_intt == 396904268555 )
+	tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
     }
 
-  // p+p 200 GeV
+    // p+p 200 GeV
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV " );
+  tex->DrawLatexNDC( pos_x, pos_y,
+		     ( string("Run-24 #it{p+p} 200 GeV Run" ) + to_string( run_no ) ).c_str()
+		     );
 
-  if( run_no == 50889 )
-    {
-      pos_y -= line_height;
-      tex->DrawLatexNDC( pos_x, pos_y, "INTT Streaming Readout " );
-
-    }
+  // tex->DrawLatexNDC( 0.2, pos_y, "Run-24 #it{p+p} 200 GeV" ); // no run number version 
 
 }
 
 void clustEvent::draw_date()
 {
   TLatex* tex = new TLatex();
+  double line_height = 0.05;
   double first_margin = 0.005;
   double top_margin = 0.1;  
   double pos_y = 1.0 - top_margin + first_margin;// - line_height;
+  pos_y = 1.0 - line_height + 0.004 + 0.01;
 
+  // top line
+  if( run_no == 50889 )
+    {
+      //pos_y -= line_height;
+      tex->DrawLatexNDC( 0.175, pos_y, "INTT Streaming readout" );
+
+    }
+
+  // second line
+  pos_y -= line_height;
   // Date
-  tex->DrawLatexNDC( 0.65, pos_y,
+  tex->DrawLatexNDC( 0.7, pos_y,
 		     string("#it{" + GetDate() + "}").c_str() );
+
+  // tex->DrawLatexNDC( 0.175, pos_y,
+  // 		     (string("BCO ") + to_string( bco_intt ) ).c_str()
+  // 		     );
+  tex->DrawLatexNDC( 0.175, pos_y, "Single crossing" );
 
   return;
 }
@@ -878,6 +897,74 @@ int clustEvent::GetGoodTrackNum( bool dca_range_cut,
   
   return counter;
 }
+
+double clustEvent::GetTrackLeftRightAsymmetry()
+{
+  int num_right = 0, num_left = 0;
+  for( auto& track : vtrack )
+    {
+      double phi = track->getphi_tracklet(); // in rad
+
+      //          phi = pi/2
+      //                   |
+      //           up-left | up-right
+      //                   |
+      //                   |
+      // phi = pi ---------+--------- phi = 0
+      //                   |
+      //                   |
+      //         down-left | down-right
+      //                   |
+      //                   phi = 3 pi / 4
+      //
+      // LR asymmetry = (L - R) / (L + R)
+      // UD asymmetry = (U - D) / (U + D)
+      //
+      if( 0 <= phi && phi < TMath::Pi()/2 )
+	num_right++;
+      else if( 3.0 * TMath::Pi()/2 < phi )
+	num_right++;
+      else
+	num_left++;
+    }
+
+  if( vtrack.size() == 0 )
+    return 9999;
+
+  if( num_right == 0 )
+    return -100;
+  else if( num_left == 0 )
+    return 100;
+
+  
+  return 1.0 * (num_left - num_right) / (num_left + num_right);
+}
+
+double clustEvent::GetTrackUpDownAsymmetry()
+{
+  int num_up = 0, num_down = 0;
+  for( auto& track : vtrack )
+    {
+      double phi = track->getphi_tracklet(); // in rad
+
+      if( 0 <= phi && phi < TMath::Pi() )
+	num_up++;
+      else
+	num_down++;
+    }
+
+  if( vtrack.size() == 0 )
+    return 9999;
+
+  if( num_up == 0 )
+    return -100;
+  else if( num_down == 0 )
+    return 100;
+
+  
+  return 1.0 * (num_up - num_down) / (num_up + num_down);
+}
+
 
 void clustEvent::SetTrackInfoToCluster( ) // int i, bool flag, double theta, double phi )
 {
