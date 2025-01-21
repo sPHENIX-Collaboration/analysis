@@ -65,7 +65,6 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 
   float zvtx = NAN;
   float maxJetET = 0;
-  float maxJetEta = NAN;
   float maxJetPhi = NAN;
   float subJetET = 0;
   float subJetPhi = NAN;
@@ -131,7 +130,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  if(jet)
 	    {
 	      jetEta = jet->get_eta();
-	      jetET = jet->get_e()/cosh(maxJetEta);
+	      jetET = jet->get_e()/cosh(jetEta);
 	      jetPhi = jet->get_phi();
 	    }
 	  else
@@ -142,11 +141,12 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  if(_debug > 2) cout << "found a good jet!" << endl;
 	  if(jetET > maxJetET)
 	    {
-	      subJetET = maxJetET;
-	      subJetPhi = maxJetPhi;
-	      maxJetET = jetET;
+	      if(maxJetET){
+	         subJetET = maxJetET;
+	         subJetPhi = maxJetPhi;
+	      }
+              maxJetET = jetET;
 	      maxJetPhi = jetPhi;
-	      maxJetEta = jetEta;
 	    }
 	  else if(jetET > subJetET)
 	    {
@@ -191,6 +191,8 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 		  frcoh += tower->get_energy()/cosh(towerEta);
 		}
 	    }
+
+
 	  frcem /= maxJetET;
 	  frcoh /= maxJetET;
 	}
@@ -213,9 +215,13 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
   bool failsLoEm = failsLoEmFracETCut(frcem, maxJetET, dPhiCut, isDijet);
   bool failsHiEm = failsHiEmFracETCut(frcem, maxJetET, dPhiCut, isDijet);
   bool failsIhCut = failsIhFracCut(frcem, frcoh);
+  
   bool failsAnyCut = failsLoEm || failsHiEm || failsIhCut;
 
-  if(failsAnyCut && _doAbort) return Fun4AllReturnCodes::ABORTEVENT;
+  if(failsAnyCut && _doAbort){ 
+
+     return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   _rc->set_IntFlag("failsLoEmJetCut",failsLoEm);
   _rc->set_IntFlag("failsHiEmJetCut",failsHiEm);
