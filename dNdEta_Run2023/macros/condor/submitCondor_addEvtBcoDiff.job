@@ -1,0 +1,18 @@
+Universe           = vanilla
+initialDir         = /gpfs/mnt/gpfs02/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/macros
+Executable         = $(initialDir)/addBranchEvtBcoDiff.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 3600
+Myindex            = $(Process)
+Extension          = $INT(Myindex,%05d)
+filedir            = /sphenix/tg/tg01/hf/hjheng/ppg02/dst/Data_Run54280_20241204_ProdA2024
+infile             = ntuple_$(Extension).root
+outfile            = ntuple_wEvtBcoDiff_$(Extension).root
+softwareversion    = new
+Output             = $(initialDir)/condor/condorLog/addBranchEvtBcoDiff_$(Process).out
+Error              = $(initialDir)/condor/condorLog/addBranchEvtBcoDiff_$(Process).err
+Log                = $(initialDir)/condor/condorLog/addBranchEvtBcoDiff_$(Process).log
+Arguments          = "$(filedir) $(infile) $(outfile) $(softwareversion)"
+Queue 326

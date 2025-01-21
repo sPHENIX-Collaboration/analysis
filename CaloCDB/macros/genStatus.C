@@ -33,7 +33,6 @@ namespace myAnalysis
 
   // utils
   pair<string, string> getRunDataset(const string &input);
-  void makeDir(const string &output);
   Int_t readHists(const string &input);
 
   pair<string, string> run_dataset;
@@ -51,27 +50,6 @@ namespace myAnalysis
   UInt_t hcal_bins_eta = 24;
   UInt_t hcal_bins_phi = 64;
 }  // namespace myAnalysis
-
-void myAnalysis::makeDir(const string &output)
-{
-  if (std::filesystem::exists(output))
-  {
-    std::cout << "Directory '" << output << "' already exists." << std::endl;
-  }
-  else
-  {
-    try
-    {
-      std::filesystem::create_directory(output);
-      std::cout << "Directory '" << output << "' created successfully." << std::endl;
-    }
-    catch (const std::filesystem::filesystem_error &e)
-    {
-      // Handle other potential errors
-      std::cerr << "Error creating directory: " << e.what() << std::endl;
-    }
-  }
-}
 
 pair<string, string> myAnalysis::getRunDataset(const string &input)
 {
@@ -209,8 +187,7 @@ void myAnalysis::analyze(const string &output)
 
   t << output << "/" << run << "_" << dataset;
 
-  makeDir(output);
-  makeDir(t.str());
+  std::filesystem::create_directories(t.str());
 
   string detector = "CEMC";
   // fracBadChi2

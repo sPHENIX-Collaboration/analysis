@@ -20,7 +20,7 @@ def get_file_paths(threshold=500000):
                 FROM
                     datasets
                 WHERE
-                    dsttype LIKE 'HIST_CALO%') h
+                    dsttype = 'HIST_CALOQA_run2pp') h
             ON
                 d.dataset = h.dataset AND d.runnumber = h.runnumber AND d.segment = h.segment
             WHERE
@@ -42,7 +42,7 @@ def get_file_paths(threshold=500000):
                 FROM
                     datasets
                 WHERE
-                    dsttype LIKE 'HIST_CALO%') h
+                    dsttype = 'HIST_CALOQA_run2pp') h
             ON
                 d.dataset = h.dataset AND d.runnumber = h.runnumber AND d.segment = h.segment
             WHERE
@@ -58,7 +58,7 @@ def get_file_paths(threshold=500000):
     ON
         f.lfn = a.filename
     WHERE
-        a.filename LIKE 'HIST_CALO%';
+        a.filename LIKE 'HIST_CALOQA_run2pp%';
     """
 
     with psycopg2.connect(f"dbname=FileCatalog") as conn:
