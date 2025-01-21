@@ -5,7 +5,7 @@ export MYINSTALL=/sphenix/u/jkvapil/sw/install
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source $OPT_SPHENIX/bin/setup_local.sh $MYINSTALL
 
-nEvents=10
+nEvents=0
 
 inputFiles="{"
 for fileList in "${@:2}"

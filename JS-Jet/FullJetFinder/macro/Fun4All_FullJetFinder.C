@@ -11,6 +11,7 @@
 #include <jetbase/JetReco.h>
 #include <g4jets/TruthJetInput.h>
 #include <jetbackground/RetowerCEMC.h>
+#include <jetbase/TrackJetInput.h>
 
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
@@ -59,6 +60,8 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   int verbosity = 0;
 
   bool whichR[7] = {false, false, true,false, false, false, false};
+
+  FullJetFinder::TYPE jet_type = FullJetFinder::TYPE::CHARGEJET;
 
   //std::string outDir = "./";
 
@@ -128,6 +131,8 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
       truthjetreco->Verbosity(0);
       se->registerSubsystem(truthjetreco);
 
+  if(jet_type == FullJetFinder::TYPE::FULLJET){
+
         RetowerCEMC *rcemc = new RetowerCEMC(); 
   rcemc->Verbosity(verbosity); 
   rcemc->set_towerinfo(true);
@@ -165,10 +170,11 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   pfr->Verbosity(verbosity);
   se->registerSubsystem(pfr);
 
- 
+  }
 
   JetReco *towerjetreco = new JetReco();
-  towerjetreco->add_input(new ParticleFlowJetInput());
+  if(jet_type == FullJetFinder::TYPE::FULLJET)towerjetreco->add_input(new ParticleFlowJetInput());
+  if(jet_type == FullJetFinder::TYPE::CHARGEJET)towerjetreco->add_input(new TrackJetInput(Jet::TRACK));
   /*if(whichR[0])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.2, verbosity), "AntiKt_reco_r02");
   if(whichR[1])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.3, verbosity), "AntiKt_reco_r03");
   if(whichR[2])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4, verbosity), "AntiKt_reco_r04");
@@ -178,7 +184,7 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   if(whichR[6])towerjetreco->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.8, verbosity), "AntiKt_reco_r08");*/
   if(whichR[0])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.2, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r02");
   if(whichR[1])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.3, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r03");
-  if(whichR[2])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.4, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r04");
+  if(whichR[2])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.4, VERBOSITY, verbosity, CALC_AREA, CONSTITUENT_MIN_PT, 0.3}}), "AntiKt_reco_r04");
   if(whichR[3])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.5, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r05");
   if(whichR[4])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.6, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r06");
   if(whichR[5])towerjetreco->add_algo(new FastJetAlgo({{Jet::ANTIKT, JET_R, 0.7, VERBOSITY, verbosity, CALC_AREA}}), "AntiKt_reco_r07");
@@ -188,7 +194,7 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
  
-  FullJetFinder *myJetVal = new FullJetFinder(outputRecoFile);//{"AntiKt_r02","AntiKt_r03","AntiKt_r04","AntiKt_r05","AntiKt_r06"});
+  FullJetFinder *myJetVal = new FullJetFinder(outputRecoFile,jet_type);//{"AntiKt_r02","AntiKt_r03","AntiKt_r04","AntiKt_r05","AntiKt_r06"});
   if(whichR[0])myJetVal->add_input("AntiKt_reco_r02", "C_AntiKt_Truth_r02","AntiKt_r02");
   if(whichR[1])myJetVal->add_input("AntiKt_reco_r03", "C_AntiKt_Truth_r03","AntiKt_r03");
   if(whichR[2])myJetVal->add_input("AntiKt_reco_r04", "C_AntiKt_Truth_r04","AntiKt_r04");
@@ -197,8 +203,8 @@ void Fun4All_FullJetFinder(std::string outDir = "./", std::vector<std::string> m
   if(whichR[5])myJetVal->add_input("AntiKt_reco_r07", "C_AntiKt_Truth_r07","AntiKt_r07");
   if(whichR[6])myJetVal->add_input("AntiKt_reco_r08", "C_AntiKt_Truth_r08","AntiKt_r08");
   myJetVal->doFiducialAcceptance(true);
-  myJetVal->setPtRangeReco(10, 100);
-  myJetVal->setPtRangeTruth(30, 100);
+  myJetVal->setPtRangeReco(5, 100);
+  myJetVal->setPtRangeTruth(10, 100);
   myJetVal->doTruth(true);
   se->registerSubsystem(myJetVal);
 

@@ -36,8 +36,14 @@ class TTree;
 class FullJetFinder : public SubsysReco {
   public:
 
+enum TYPE {
+  FULLJET,
+  CHARGEJET,
+  CALOJET
+}; 
+
   //note max 10 inputs allowed
-  FullJetFinder(	const std::string &outputfilename = "myjetanalysis.root");
+  FullJetFinder(	const std::string &outputfilename = "myjetanalysis.root", FullJetFinder::TYPE jet_type = FullJetFinder::TYPE::FULLJET);
 
   ~FullJetFinder() override;
 
@@ -111,6 +117,7 @@ class FullJetFinder : public SubsysReco {
     float eta;
     float phi;
     float pt;
+    int charge;
     float DCA_xy;
     float DCA_xy_unc;
     float sDCA_xy;
@@ -186,7 +193,7 @@ class FullJetFinder : public SubsysReco {
       float chisq;
       int ndf;
       GlobalVertex::VTXTYPE vtxtype;
-    using List = std::vector<PrimaryVertex>;
+      using List = PrimaryVertex;
   };
 
   class Container: public PHObject
@@ -221,6 +228,7 @@ class FullJetFinder : public SubsysReco {
   TTree *m_T[10];
   std::vector<float>jetR;
   TH1I *m_stat;
+  FullJetFinder::TYPE m_jet_type;
 
   //! main branch
   Container* m_container[10];

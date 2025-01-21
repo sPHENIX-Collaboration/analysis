@@ -62,7 +62,7 @@
 
 
 //____________________________________________________________________________..
-FullJetFinder::FullJetFinder(const std::string& outputfilename):
+FullJetFinder::FullJetFinder(const std::string& outputfilename, FullJetFinder::TYPE jet_type):
  SubsysReco("FullJetFinder")
  , m_recoJetName()
  , m_truthJetName()
@@ -71,6 +71,7 @@ FullJetFinder::FullJetFinder(const std::string& outputfilename):
  , m_ptRangeTruth(0, 100)
  , m_doTruthJets(0)
  , m_T()
+ , m_jet_type(jet_type)
 {
   std::cout << "FullJetFinder::FullJetFinder(const std::string &name) Calling ctor" << std::endl;
 }
@@ -90,7 +91,7 @@ void FullJetFinder::Container::Reset()
   impactparam = -1;
   recojets.clear();
   truthjets.clear();
-  primaryVertex.clear();
+  //primaryVertex.clear();
 }
 
 //____________________________________________________________________________..
@@ -123,6 +124,8 @@ int FullJetFinder::Init(PHCompositeNode *topNode)
   m_stat->GetXaxis()->SetBinLabel(1,"n_events");
   m_stat->GetXaxis()->SetBinLabel(2,"GV_exists");
   m_stat->GetXaxis()->SetBinLabel(3,"GV_notempty");
+  m_stat->GetXaxis()->SetBinLabel(4,"GV_SVTX_vtx");
+  m_stat->GetXaxis()->SetBinLabel(5,"GV_in_10cm");
 
 
 
@@ -139,6 +142,7 @@ int FullJetFinder::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int FullJetFinder::process_event(PHCompositeNode *topNode)
 {  
+    //std::cout<<"NEW EVENT"<<std::endl;
   //std::cout<<"NEW Fun4All EVENT"<<std::endl<<std::endl;
   m_stat->Fill(0);
   //centrality
@@ -241,16 +245,27 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
     //get Particle Flow container
     ParticleFlowElementContainer *pflowContainer = findNode::getClass<ParticleFlowElementContainer>(topNode, "ParticleFlowElements");
 
-    if(!pflowContainer){
+    if(!pflowContainer && m_jet_type==TYPE::FULLJET){
       std::cout << PHWHERE
           << "ParticleFlowElements node is missing, can't collect particles"
           << std::endl;
       return -1;
     }
-    std::cout<<"EVENT"<<std::endl;
+  
+
+    SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if (!trackmap)
+  {
+    std::cout << PHWHERE
+          << "SvtxTrackMap node is missing, can't collect particles"
+          << std::endl;
+      return -1;
+  }
+
+  GlobalVertex *prim_vtx = nullptr;
 
     for(auto vertex : *vertexmap){
-    std::cout<<"map entry"<<std::endl;
+    //std::cout<<"map entry"<<std::endl;
     PrimaryVertex primary;
     std::vector<GlobalVertex::VTXTYPE> source;
     source.clear();
@@ -264,24 +279,41 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
     primary.chisq = vertex.second->get_chisq();
     primary.ndf = vertex.second->get_ndof();
     
-     std::cout<<std::endl<<"A "<<vertex.second->get_x()<<" "<<vertex.second->get_y()<<" "<<vertex.second->get_z()<<" "<<vertex.second->get_id()<<" "<<vertex.first<<std::endl;
-     for(auto vx :vertex.second->begin_vertexes()->second){
-        std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
-     }
+     //std::cout<<std::endl<<"A "<<vertex.second->get_x()<<" "<<vertex.second->get_y()<<" "<<vertex.second->get_z()<<" "<<vertex.second->get_id()<<" "<<vertex.first<<std::endl;
+     //for(auto vx :vertex.second->begin_vertexes()->second){
+     //   std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<vx->get_chisq()<<std::endl;
+     //}
 
-    /*for (auto iter = vertex.second->begin_vertexes();   iter != vertex.second->end_vertexes();   ++iter){
+    for (auto iter = vertex.second->begin_vertexes();   iter != vertex.second->end_vertexes();   ++iter){
       source.push_back(iter->first);
       GlobalVertex::VertexVector vtx = iter->second;
-      std::cout<<"vertex source "<<iter->first<<std::endl;
-      for(auto vx :vtx){
-        std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
-      }
-    }*/
-    if((std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) && (std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::MBD) != source.end())) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX_MBD;
-    else if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX;
+      //std::cout<<"vertex source "<<iter->first<<std::endl;
+      if(iter->first == 400){
+        
+        prim_vtx = vertex.second;
+      } 
+
+      
+      //for(auto vx :vtx){
+      //  std::cout<<"vx "<<vx->get_x()<<" "<<vx->get_y()<<" "<<vx->get_z()<<" "<<vx->get_chisq()<<std::endl;
+
+        
+      //}
+    }
+  
+  if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) == source.end()) return Fun4AllReturnCodes::ABORTEVENT;
+  m_stat->Fill(3);
+
+    //if((std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) && (std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::MBD) != source.end())) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX_MBD;
+    if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::SVTX) != source.end()) primary.vtxtype = GlobalVertex::VTXTYPE::SVTX;
     else if(std::find(source.begin(), source.end(), GlobalVertex::VTXTYPE::MBD) != source.end()) primary.vtxtype = GlobalVertex::VTXTYPE::MBD;
-    m_container[input]->primaryVertex.push_back(primary);
+    m_container[input]->primaryVertex = primary;
   }
+
+  if(prim_vtx->get_z() > 10) return Fun4AllReturnCodes::ABORTEVENT;
+ m_stat->Fill(4);
+
+  
 
     int nrecojet = -1;
 
@@ -291,7 +323,7 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
       if(jet->get_pt() < m_ptRangeReco.first || jet->get_pt() > m_ptRangeReco.second) continue;
       if (not (std::abs(jet->get_eta()) <= 1.1 - (doFiducial?jetR.at(input):0))) continue;
 
-      //std::cout<<jet->get_pt()<<std::endl;
+      //std::cout<<"jet pt "<<jet->get_pt()<<std::endl;
       nrecojet++;
 
       int nChtracks = 0;
@@ -300,43 +332,33 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
 
       //loop over jet constituents
       for (const auto& comp : jet->get_comp_vec()){
-        ParticleFlowElement *pflow = pflowContainer->getParticleFlowElement(comp.second);
+        ParticleFlowElement *pflow = nullptr;
+
+        SvtxTrack *trk = nullptr;
+
+        if(m_jet_type==TYPE::FULLJET){
+          pflow = pflowContainer->getParticleFlowElement(comp.second);
+          trk = pflow->get_track();
+        }
+        else if(m_jet_type==TYPE::CHARGEJET){
+          trk = trackmap->get(comp.second);
+        }
+
+         //for (SvtxTrackMap::ConstIter iter = trackmap->begin(); iter != trackmap->end(); ++iter){
+            //const SvtxTrack *track = iter->second;
+
+            //std::cout<<iter->first<<" "<<track->get_id()<<std::endl;
+          //}
+
         //if charged track
-        if(pflow->get_track()){
+        if(trk){
           chConstituent track_properties;
 
-          //get vertex associated to tarck
-          int id = pflow->get_track()->get_vertex_id();
-          GlobalVertex *vtx = vertexmap->get(id);
-          //skip if track without vertex
-          if (vtx == nullptr){
-            std::cout << "MyJetAnalysis::process_event - Fatal Error - Gvtx null." << std::endl;
-            continue;
-          }
-          nChtracks++;
-
-          float DCA_xy, DCA_xy_unc;
-          float DCA_3d, chi2_3d;
-          GetDistanceFromVertex(pflow->get_track(),vtx,DCA_xy,DCA_xy_unc,DCA_3d,chi2_3d); //rerutn DCA_XY vector, val ||DCA|| + unc DCA
-          double dot = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py();
-          double sign = int(dot/std::abs(dot));
-
-          double dot_3d = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py() + (pflow->get_track()->get_z() - vtx->get_z()) * jet->get_pz();
-          double sign_3d = int(dot_3d/std::abs(dot_3d));
-
-          //tarcking team way - no uncertainty of vertex in DCA calculation
-          /*Acts::Vector3 vtxActs(vtx->get_x(), vtx->get_y(), vtx->get_z());
-          std::pair<std::pair<float, float>, std::pair<float, float>> DCApair;
-          DCApair = TrackAnalysisUtils::get_dca(pflow->get_track(),vtxActs);
-          double dot2 = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py();
-          double sign2 = int(dot2/std::abs(dot2));*/
-      
-          //get some track quality values
-          int n_mvtx_hits = 0;
+             int n_mvtx_hits = 0;
           int n_intt_hits = 0;
           int n_tpc_hits = 0;
-
-          for (const auto& ckey : TrackAnalysisUtils::get_cluster_keys(pflow->get_track())){
+//std::cout<<"C"<<std::endl;
+          for (const auto& ckey : TrackAnalysisUtils::get_cluster_keys(trk)){
             switch (TrkrDefs::getTrkrId(ckey)){
               case TrkrDefs::mvtxId:
                 n_mvtx_hits++;
@@ -350,17 +372,64 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
             }
           }
 
+          //std::cout << "x:"<<trk->get_x()<< " y:"<<trk->get_y()<< " z:"<<trk->get_z()<< " eta:"<<trk->get_eta()<< " pt:"<<trk->get_pt()<< " chi2:"<<trk->get_chisq()/trk->get_ndf()<<" "<<n_mvtx_hits<<" "<<n_intt_hits<<" "<<n_tpc_hits<<"charge: "<<trk->get_charge();
+
+          //get vertex associated to tarck
+          int id = trk->get_vertex_id();
+          //std::cout<<id<<std::endl;
+          GlobalVertex *vtx = prim_vtx;//vertexmap->get(id);
+          //skip if track without vertex
+
+
+          float DCA_xy = -999;
+          float DCA_xy_unc = -999;
+          float DCA_3d = -999;
+          float chi2_3d = 1;
+          double sign = -999;
+          double sign_3d= -999;
+
+          if (vtx == nullptr){
+            std::cout << "MyJetAnalysis::process_event - Track does not have assigned vertex" << std::endl;
+            //std::cout << "x:"<<pflow->get_track()->get_x()<< " y:"<<pflow->get_track()->get_y()<< " z:"<<pflow->get_track()->get_z()<< " eta:"<<pflow->get_track()->get_eta()<< " pt:"<<pflow->get_track()->get_pt()<<std::endl;
+            //continue;
+          } else if(n_mvtx_hits > 0 && n_intt_hits > 0){
+              GetDistanceFromVertex(trk,vtx,DCA_xy,DCA_xy_unc,DCA_3d,chi2_3d);
+              double dot = (trk->get_x() - vtx->get_x()) * jet->get_px() + (trk->get_y() - vtx->get_y()) * jet->get_py();
+              sign = int(dot/std::abs(dot));
+
+              double dot_3d = (trk->get_x() - vtx->get_x()) * jet->get_px() + (trk->get_y() - vtx->get_y()) * jet->get_py() + (trk->get_z() - vtx->get_z()) * jet->get_pz();
+              sign_3d = int(dot_3d/std::abs(dot_3d));
+
+              //std::cout<<" signdca:"<< sign*std::abs(DCA_xy/DCA_xy_unc)<<std::endl;
+          }
+          nChtracks++;
+//std::cout<<"B"<<std::endl;
+          
+           //rerutn DCA_XY vector, val ||DCA|| + unc DCA
+          
+
+          //tarcking team way - no uncertainty of vertex in DCA calculation
+          /*Acts::Vector3 vtxActs(vtx->get_x(), vtx->get_y(), vtx->get_z());
+          std::pair<std::pair<float, float>, std::pair<float, float>> DCApair;
+          DCApair = TrackAnalysisUtils::get_dca(pflow->get_track(),vtxActs);
+          double dot2 = (pflow->get_track()->get_x() - vtx->get_x()) * jet->get_px() + (pflow->get_track()->get_y() - vtx->get_y()) * jet->get_py();
+          double sign2 = int(dot2/std::abs(dot2));*/
+      
+          //get some track quality values
+       
+//std::cout<<"D"<<std::endl;
 
           /*m_chi2ndf[input]->Fill(pflow->get_track()->get_chisq()/pflow->get_track()->get_ndf());
           m_mvtxcl[input]->Fill(m_nmaps);
           m_inttcl[input]->Fill(m_nintt);
           m_mtpccl[input]->Fill(m_ntpc);*/
-          track_properties.pflowtype = pflow->get_type();
+          if(m_jet_type==TYPE::FULLJET)track_properties.pflowtype = pflow->get_type();
           track_properties.vtx_id = id;
-          track_properties.e = pflow->get_e();
-          track_properties.eta = pflow->get_eta();
-          track_properties.phi = pflow->get_phi();
-          track_properties.pt = pflow->get_pt();
+          if(m_jet_type==TYPE::FULLJET)track_properties.e = pflow->get_e();
+          track_properties.eta = trk->get_eta();
+          track_properties.phi = trk->get_phi();
+          track_properties.pt = trk->get_pt();
+          track_properties.charge = trk->get_charge();
           track_properties.DCA_xy = DCA_xy;
           track_properties.DCA_xy_unc = DCA_xy_unc;
           track_properties.sDCA_xy = sign*std::abs(DCA_xy/DCA_xy_unc);
@@ -369,12 +438,12 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
           track_properties.n_mvtx = n_mvtx_hits;
           track_properties.n_intt = n_intt_hits;
           track_properties.n_tpc = n_tpc_hits;
-          track_properties.chisq = pflow->get_track()->get_chisq();
-          track_properties.ndf = pflow->get_track()->get_ndf();
-
+          track_properties.chisq = trk->get_chisq();
+          track_properties.ndf = trk->get_ndf();
+//std::cout<<"E"<<std::endl;
           recojet.chConstituents.push_back(track_properties);
         } // end if(pflow->get_track())
-        else{ //neutral tracl
+        else if(m_jet_type==TYPE::FULLJET){ //neutral tracl
           neConstituent neutral_properties;
           neutral_properties.pflowtype = pflow->get_type();
           neutral_properties.e = pflow->get_e();
@@ -383,7 +452,7 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
           recojet.neConstituents.push_back(neutral_properties);
         }
       } // end for (const auto& comp : jet->get_comp_vec())
-
+//std::cout<<"F"<<std::endl;
       //recojet.id = jet->get_id();
       recojet.id = nrecojet;
       recojet.area = jet->get_property(recojet_area_index);
@@ -397,12 +466,12 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
       recojet.phi = jet->get_phi();
       recojet.m = jet->get_mass();
       recojet.e = jet->get_e();
-
+//std::cout<<"G"<<std::endl;
       m_container[input]->recojets.push_back(recojet);
     } // end for (Jet* jet : *jets)
     m_container[input]->reco_jet_n = static_cast<int>(nrecojet+1);
 
-
+//std::cout<<"H"<<std::endl;
   
     //get truth jets
     if(m_doTruthJets){
