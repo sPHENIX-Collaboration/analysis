@@ -60,6 +60,11 @@ make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bi
 make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetValv2.C("DST_JET_run2pp_ana450_2024p009-00053860-00038.root","test.root", 100)'
 #+end_src
 
+** Build joclJetBackgroundCutModule
+#+begin_src bash
+rm -rf build-joclJetBackgroundCutModule && mkdir build-joclJetBackgroundCutModule && cd build-joclJetBackgroundCutModule && ../joclJetBackgroundCutModule/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build-joclJetBackgroundCutModule
+#+end_src
+
 * Condor Tips
 
 ** Allocate more memory to an idle job
@@ -115,10 +120,20 @@ awk '{ sum += $1 } END { print sum }' <file>
 #+end_src
 
 * PSQL Tips
-Load the contents of a file into a temporary table with psql:
+** Load the contents of a file into a temporary table with psql:
 #+begin_src psql
 create temp table tmp_runs (id int);
 \copy tmp_runs (id) from '<path/to/file>' WITH (FORMAT csv);
+#+end_src
+
+** Access ana build info
+#+begin_src bash
+psql phnxbld
+#+end_src
+
+Example:
+#+begin_src bash
+psql phnxbld -c "select * from buildtags where date > '2025-01-01 00:00:00' and build like 'ana%' and reponame = 'sPHENIX-Collaboration/coresoftware.git' order by date;"
 #+end_src
 
 * Misc Tips
