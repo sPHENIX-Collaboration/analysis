@@ -39,6 +39,7 @@ void SpinDBQA::SetRunList(std::string runlist)
 
 void SpinDBQA::ReadSpinDBData()
 {
+  std::cout << "Reading data from spin database. This may take several minutes..." << std::endl;
   for (const auto &run : runlistvect)
   {
     runnumber = run;
@@ -82,6 +83,7 @@ void SpinDBQA::doQA()
   for (const auto &run : runlistvect)
   {
     runnumber = run;
+    std::cout << "Processing QA on run: " << runnumber << std::endl;
     std::string stringMarkdown = "";
     CNIHjetQA(stringMarkdown);
     if (runnumber >= 45236)

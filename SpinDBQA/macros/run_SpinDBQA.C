@@ -8,7 +8,7 @@ R__LOAD_LIBRARY(libSpinDBQA.so)
 
 void run_SpinDBQA()
 {
-    std::string runfile = "runnumbers_test.dat";
+    std::string runfile = "runnumbers.dat";
     std::string CNIpath = "/gpfs02/eic/cnipol/jet_run24/results";
     std::string mdfile = "README.md";
 
