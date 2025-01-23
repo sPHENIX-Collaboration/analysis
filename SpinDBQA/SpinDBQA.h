@@ -22,7 +22,7 @@ public:
     SpinDBQA();
     ~SpinDBQA() = default;
 
-    void SetCNIPath(std::string cnipath){_cnipathname = cnipath;};
+    void SetCNIPath(std::string cnipath = "/gpfs02/eic/cnipol/jet_run24/results"){_cnipathname = cnipath;};
     void SetMarkdownFilename(std::string markdownfile = "README.md"){_markdownfilename = markdownfile;};
     //void SetHtmlFilename(std::string htmlfile = "runsummary.html") = {htmlfilename = htmlfile};
 
@@ -49,7 +49,7 @@ private:
     std::map<std::string, std::vector<int>> map_spindbqa_markdown;
     std::map<std::string, std::vector<int>> map_spindbqa_html;
     
-    std::string _cnipathname;
+    std::string _cnipathname = "/gpfs02/eic/cnipol/jet_run24/results";
     std::string _markdownfilename;
     std::string _htmlfilename;
 
