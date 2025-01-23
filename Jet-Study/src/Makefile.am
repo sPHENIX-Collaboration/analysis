@@ -14,6 +14,7 @@ pkginclude_HEADERS = \
   JetValidation.h \
   JetValidationv2.h \
   JetUtils.h \
+  EventCheck.h \
   EventValidation.h
 
 lib_LTLIBRARIES = \
@@ -23,6 +24,7 @@ libJetValidation_la_SOURCES = \
   JetValidation.cc \
   JetValidationv2.cc \
   JetUtils.cc \
+  EventCheck.cc \
   EventValidation.cc
 
 libJetValidation_la_LIBADD = \
