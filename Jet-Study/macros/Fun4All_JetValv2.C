@@ -12,11 +12,20 @@
 #include <fun4all/Fun4AllUtils.h>
 #include <fun4all/SubsysReco.h>
 
+// jets --
+#include <jetbase/JetReco.h>
+#include <jetbase/TowerJetInput.h>
+#include <jetbackground/FastJetAlgoSub.h>
+
+// jet background cut
+#include <jetbackgroundcut/jetBackgroundCut.h>
+
 #include <calotrigger/TriggerRunInfoReco.h>
 
 #include <phool/recoConsts.h>
 
 #include <jetvalidation/JetValidationv2.h>
+#include <jetvalidation/EventCheck.h>
 
 using std::cout;
 using std::endl;
@@ -29,14 +38,14 @@ using std::string;
 R__LOAD_LIBRARY(libJetValidation.so)
 
 void Fun4All_JetValv2(const string &input_JET,
-                      // const string &input_JETCALO = "",
+                      const string &input_JETCALO,
                       const string &outputFile = "test.root",
                       UInt_t nEvents = 0)
 {
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
   cout << "input file: " << input_JET << endl;
-  // cout << "input file: " << input_JETCALO << endl;
+  cout << "input file: " << input_JETCALO << endl;
   cout << "output file: " << outputFile << endl;
   cout << "Events: " << nEvents << endl;
   cout << "#############################" << endl;
@@ -56,15 +65,34 @@ void Fun4All_JetValv2(const string &input_JET,
   else                                        in->AddListFile(input_JET.c_str());
   se->registerInputManager(in);
 
-  // Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DST_JETCALO");
-  // // in2->AddFile(input_JETCALO.c_str());
-  // in2->AddListFile(input_JETCALO.c_str());
-  // se->registerInputManager(in2);
+  Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DST_JETCALO");
+  if(input_JETCALO.find(".root") != string::npos) in2->AddFile(input_JETCALO.c_str());
+  else                                            in2->AddListFile(input_JETCALO.c_str());
+  se->registerInputManager(in2);
 
   TriggerRunInfoReco *triggerruninforeco = new TriggerRunInfoReco();
   se->registerSubsystem(triggerruninforeco);
 
-  // Process_Calo_Calib();
+  EventCheck *myEventCheck = new EventCheck();
+  myEventCheck->set_zvtx_max(30); /*cm*/
+  myEventCheck->set_trigger(17); /*Jet 8 GeV + MBD NS >= 1*/
+  se->registerSubsystem(myEventCheck);
+
+  Process_Calo_Calib();
+
+  string jetreco_input_prefix = "TOWERINFO_CALIB";
+  JetReco *towerjetreco = new JetReco();
+  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,jetreco_input_prefix));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO,jetreco_input_prefix));
+  towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO,jetreco_input_prefix));
+  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4), "AntiKt_Tower_r04");
+  towerjetreco->set_algo_node("ANTIKT");
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(0);
+  se->registerSubsystem(towerjetreco);
+
+  jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_Tower_r04","JOCL", 0, false);
+  se->registerSubsystem(jocl);
 
   JetValidationv2 *myJetVal = new JetValidationv2();
   myJetVal->set_outputFile(outputFile);
@@ -76,15 +104,17 @@ void Fun4All_JetValv2(const string &input_JET,
   cout << "All done!" << endl;
 
   gSystem->Exit(0);
+  std::quick_exit(0);
 }
 
 #ifndef __CINT__
 int main(int argc, char *argv[])
 {
-  if (argc < 2 || argc > 4)
+  if (argc < 3 || argc > 5)
   {
-    cout << "usage: ./bin/Fun4All_JetValv2 input_JET [outputFile] [events]" << endl;
+    cout << "usage: ./bin/Fun4All_JetValv2 input_JET input_JETCALO [outputFile] [events]" << endl;
     cout << "input_JET: Location of fileList containing dst JET." << endl;
+    cout << "input_JETCALO: Location of fileList containing dst JETCALO." << endl;
     cout << "outputFile: name of output QA file. Default: test.root" << endl;
     cout << "events: Number of events to analyze. Default: all" << endl;
     return 1;
@@ -93,16 +123,16 @@ int main(int argc, char *argv[])
   string outputFile = "test.root";
   UInt_t events = 0;
 
-  if (argc >= 3)
-  {
-    outputFile = argv[2];
-  }
   if (argc >= 4)
   {
-    events = atoi(argv[3]);
+    outputFile = argv[3];
+  }
+  if (argc >= 5)
+  {
+    events = atoi(argv[4]);
   }
 
-  Fun4All_JetValv2(argv[1], outputFile, events);
+  Fun4All_JetValv2(argv[1], argv[2], outputFile, events);
 
   cout << "done" << endl;
   return 0;

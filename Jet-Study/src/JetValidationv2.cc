@@ -18,6 +18,8 @@
 // -- DST node
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
+// -- flags
+#include <phool/recoConsts.h>
 // -- root
 #include <TFile.h>
 // -- Tower stuff
@@ -39,13 +41,13 @@ using std::stringstream;
 //____________________________________________________________________________..
 JetValidationv2::JetValidationv2()
   : SubsysReco("JetValidationv2")
-  , m_recoJetName_r04("AntiKt_Tower_r04_Sub1")
-  , m_emcTowerNodeBase("TOWERINFO_CALIB_CEMC_RETOWER")
-  , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER_SUB1")
-  , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN_SUB1")
-  , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT_SUB1")
+  , m_recoJetName_r04("AntiKt_Tower_r04")
+  , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
+  , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
+  , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_triggerBit(17) /*Jet 8 GeV + MBD NS >= 1*/
   , m_triggerBits(42)
-  , m_zvtx_max(60)
+  , m_zvtx_max(30) /*cm*/
   , m_bins_phi(64)
   , m_phi_low(-M_PI)
   , m_phi_high(M_PI)
@@ -55,7 +57,7 @@ JetValidationv2::JetValidationv2()
   , m_bins_pt(400)
   , m_pt_low(0) /*GeV*/
   , m_pt_high(200) /*GeV*/
-  , m_pt_background(70) /*GeV*/
+  , m_pt_background(60) /*GeV*/
   , m_bins_zvtx(400)
   , m_zvtx_low(-100)
   , m_zvtx_high(100)
@@ -86,35 +88,11 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
     hEvents->GetXaxis()->SetBinLabel(i+1, m_eventStatus[i].c_str());
   }
 
-  hTriggers = new TH1F("hTriggers","Trigger Fired; Trigger; Counts", m_triggerBits, 0, m_triggerBits);
-  hTriggersBkg = new TH1F("hTriggersBkg","Trigger Fired; Trigger; Counts", m_triggerBits, 0, m_triggerBits);
-
-  stringstream title;
-  title << "Jet p_{T} #geq " << m_pt_background << " GeV; Trigger; z [cm]";
-  hTriggerZvtxBkg = new TH2F("hTriggerZvtxBkg",title.str().c_str(), m_triggerBits, 0, m_triggerBits
-                                                                  , m_bins_zvtx, m_zvtx_low, m_zvtx_high);
-
   hzvtxAll = new TH1F("zvtxAll","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
-  for(UInt_t i = 0; i < m_triggerBits; ++i) {
-    hTriggers->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
-    hTriggersBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
-    hTriggerZvtxBkg->GetXaxis()->SetBinLabel(i+1, JetUtils::m_triggers[i].c_str());
-
-    // zvtx
-    string name = "hzvtx_"+to_string(i);
-    string title = "Z Vertex: " + JetUtils::m_triggers[i] + "; z [cm]; counts";
-    auto h = new TH1F(name.c_str(),title.c_str(), m_bins_zvtx, m_zvtx_low, m_zvtx_high);
-    hzvtx.push_back(h);
-
-    // jet
-    name = "hjetPhiEtaPt_"+to_string(i);
-    title = "Jet: " + JetUtils::m_triggers[i] + "; #phi; #eta; p_{T} [GeV]";
-    auto h3 = new TH3F(name.c_str(),title.c_str(), m_bins_phi, m_phi_low, m_phi_high,
-                                                   m_bins_eta, m_eta_low, m_eta_high,
-                                                   m_bins_pt, m_pt_low, m_pt_high);
-    hjetPhiEtaPt.push_back(h3);
-  }
+  hjetPhiEtaPt = new TH3F("hjetPhiEtaPt", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
+                                                                        , m_bins_eta, m_eta_low, m_eta_high
+                                                                        , m_bins_pt, m_pt_low, m_pt_high);
 
   m_triggeranalyzer = new TriggerAnalyzer();
 
@@ -168,24 +146,20 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  hEvents->Fill(m_status::ZVTX60);
+  hEvents->Fill(m_status::ZVTX30);
 
   m_triggeranalyzer->decodeTriggers(topNode);
 
+  // skip event if it did not fire the desired trigger
+  if(!m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   vector<Int_t> triggerIdx;
-  for(UInt_t i = 0; i < m_triggerBits; ++i) {
+  for(Int_t i = 0; i < m_triggerBits; ++i) {
     if(m_triggeranalyzer->didTriggerFire(i)) {
       triggerIdx.push_back(i);
     }
-  }
-
-  // default value: None
-  if(triggerIdx.empty()) {
-    triggerIdx.push_back(41);
-  }
-
-  for(auto idx : triggerIdx) {
-    hTriggers->Fill(idx);
   }
 
   // interface to reco jets
@@ -214,6 +188,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     // exclude jets near the edge of the detector
     if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
 
+    hjetPhiEtaPt->Fill(phi, eta, pt);
+
     if(pt >= m_pt_background) {
       hasBkg = true;
     }
@@ -240,7 +216,35 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   // if event doesn't have a high pt jet then skip to the next event
   if(!hasBkg) return Fun4AllReturnCodes::ABORTEVENT;
 
-  hEvents->Fill(m_status::ZVTX60_BKG);
+  cout << "Background Jet: " << jetPtLead << " GeV, Event: " << m_globalEvent << endl;
+
+  recoConsts* rc = recoConsts::instance();
+
+  Bool_t failsLoEmJetCut = rc->get_IntFlag("failsLoEmJetCut");
+  Bool_t failsHiEmJetCut = rc->get_IntFlag("failsHiEmJetCut");
+  Bool_t failsIhJetCut   = rc->get_IntFlag("failsIhJetCut");
+  Bool_t failsAnyJetCut  = rc->get_IntFlag("failsAnyJetCut");
+
+  hEvents->Fill(m_status::ZVTX30_BKG);
+
+  if(failsLoEmJetCut) {
+    hEvents->Fill(m_status::ZVTX30_BKG_failsLoEmJetCut);
+  }
+  if(failsHiEmJetCut) {
+    hEvents->Fill(m_status::ZVTX30_BKG_failsHiEmJetCut);
+  }
+  if(failsIhJetCut) {
+    hEvents->Fill(m_status::ZVTX30_BKG_failsIhJetCut);
+  }
+  if(!failsAnyJetCut) {
+    hEvents->Fill(m_status::ZVTX30_BKG_failsNoneJetCut);
+  }
+  else {
+    // okay to skip the event since the background jet is correctly flagged
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  cout << "Background Jet Not Flagged!" << endl;
 
   // round nearest 0.1
   jetPhiLead    = (Int_t)(jetPhiLead*10)/10.;
@@ -250,17 +254,13 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   jetEtaSubLead = (Int_t)(jetEtaSubLead*10)/10.;
 
   // Get TowerInfoContainer
-  // Unsubtracted EMCal Towers
-  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNodeBase.c_str());
-
   // Subtracted Towers
   TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
   TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
   TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
 
-  if (!towersCEMCBase || !towersCEMC || !towersIHCal || !towersOHCal) {
+  if (!towersCEMC || !towersIHCal || !towersOHCal) {
     cout << PHWHERE << "JetValidation::process_event Could not find one of "
-         << m_emcTowerNodeBase      << ", "
          << m_emcTowerNode      << ", "
          << m_ihcalTowerNode    << ", "
          << m_ohcalTowerNode    << ", "
@@ -287,13 +287,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << jetPtLead << "_" << jetPtSubLead;
 
-  name << "hCEMCBase_" << nameSuffix.str();
-  title << "CEMC: " << titleSuffix.str();
-
-  auto hCEMCBase_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
-
-  name.str("");
-  title.str("");
   name << "hCEMC_" << nameSuffix.str();
   title << "CEMC: " << titleSuffix.str();
 
@@ -313,9 +306,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   auto hOHCal_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
 
-  Float_t totalCEMC = 0;
-  Float_t totalHCal = 0;
-
   // loop over towers
   for(UInt_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex) {
     UInt_t key  = TowerInfoDefs::encode_hcal(towerIndex);
@@ -332,58 +322,21 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
     hCEMC_->SetBinContent(iphi+1, ieta+1, energy);
 
-    totalCEMC += energy;
-
-    tower = towersCEMCBase->get_tower_at_channel(towerIndex);
-    energy = (tower->get_isGood()) ? tower->get_energy() : 0;
-
-    hCEMCBase_->SetBinContent(iphi+1, ieta+1, energy);
-
     // HCal
     tower = towersIHCal->get_tower_at_channel(towerIndex);
     energy = (tower->get_isGood()) ? tower->get_energy() : 0;
 
     hIHCal_->SetBinContent(iphi+1, ieta+1, energy);
 
-    totalHCal += energy;
-
     tower = towersOHCal->get_tower_at_channel(towerIndex);
     energy = (tower->get_isGood()) ? tower->get_energy() : 0;
 
     hOHCal_->SetBinContent(iphi+1, ieta+1, energy);
-
-    totalHCal += energy;
   }
 
-  // ensure that EMCal has the majority of the energy recorded
-  if(totalCEMC <= totalHCal) return Fun4AllReturnCodes::ABORTEVENT;
-
-  hEvents->Fill(m_status::ZVTX60_BKG_EMCAL);
-
-  hCEMCBase.push_back(hCEMCBase_);
   hCEMC.push_back(hCEMC_);
   hIHCal.push_back(hIHCal_);
   hOHCal.push_back(hOHCal_);
-
-
-  for(auto idx : triggerIdx) {
-    hTriggersBkg->Fill(idx);
-    hzvtx[idx]->Fill(m_zvtx);
-    hTriggerZvtxBkg->Fill(idx, m_zvtx);
-  }
-
-  for (auto jet : *jets_r04) {
-    Float_t phi = jet->get_phi();
-    Float_t eta = jet->get_eta();
-    Float_t pt = jet->get_pt();
-
-    // exclude jets near the edge of the detector
-    if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
-
-    for(auto idx : triggerIdx) {
-      hjetPhiEtaPt[idx]->Fill(phi, eta, pt);
-    }
-  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -402,28 +355,15 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   for(UInt_t i = 0; i < m_eventStatus.size(); ++i) {
     cout << m_eventStatus[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
   }
-  cout << "=========================" << endl;
-  cout << "Trigger Summary" << endl;
-  for(UInt_t i = 0; i < m_triggerBits; ++i) {
-    UInt_t trg    = hTriggers->GetBinContent(i+1);
-    UInt_t trgBkg = hTriggersBkg->GetBinContent(i+1);
-    Float_t frac = (trg) ? trgBkg*100./trg : 0;
-    cout << JetUtils::m_triggers[i] << ": " << trg << " Triggers, "
-                                            << trgBkg << " Triggers Background Event, "
-                                            << frac << " %"
-                                            << endl;
-  }
 
   TFile output(m_outputFile.c_str(),"recreate");
 
   output.cd();
 
   output.mkdir("event");
-  output.mkdir("trigger");
   output.mkdir("zvtx");
   output.mkdir("jets");
 
-  output.mkdir("CEMCBase");
   output.mkdir("CEMC");
   output.mkdir("IHCal");
   output.mkdir("OHCal");
@@ -431,29 +371,13 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   output.cd("event");
   hEvents->Write();
 
-  output.cd("trigger");
-  hTriggers->Write();
-  hTriggersBkg->Write();
-  hTriggerZvtxBkg->Write();
-
   output.cd("zvtx");
   hzvtxAll->Write();
-  for(UInt_t i = 0; i < m_triggerBits; ++i) {
-    if(hzvtx[i]->GetEntries()) {
-      output.cd("zvtx");
-      hzvtx[i]->Write();
-    }
 
-    if(hjetPhiEtaPt[i]->GetEntries()) {
-      output.cd("jets");
-      hjetPhiEtaPt[i]->Write();
-    }
-  }
+  output.cd("jets");
+  hjetPhiEtaPt->Write();
 
   for(UInt_t i = 0; i < hCEMC.size(); ++i) {
-    output.cd("CEMCBase");
-    hCEMCBase[i]->Write();
-
     output.cd("CEMC");
     hCEMC[i]->Write();
 

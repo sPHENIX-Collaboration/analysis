@@ -45,17 +45,29 @@ class JetValidationv2 : public SubsysReco
     this->m_outputFile = m_outputFile;
   }
 
+  void set_zvtx_max(Float_t m_zvtx_max) {
+    this->m_zvtx_max = m_zvtx_max;
+  }
+
+  void set_trigger(Int_t m_triggerBit) {
+    this->m_triggerBit = m_triggerBit;
+  }
+
+  void set_pt_background(Float_t m_pt_background) {
+    this->m_pt_background = m_pt_background;
+  }
+
  private:
   std::string m_recoJetName_r04;
 
-  std::string m_emcTowerNodeBase;
   std::string m_emcTowerNode;
   std::string m_ihcalTowerNode;
   std::string m_ohcalTowerNode;
 
   std::string m_outputFile;
 
-  UInt_t m_triggerBits;
+  Int_t m_triggerBit;
+  Int_t m_triggerBits;
   Float_t m_zvtx_max;
 
   UInt_t  m_bins_phi;
@@ -78,19 +90,26 @@ class JetValidationv2 : public SubsysReco
   UInt_t  m_event;
   Float_t m_R;
 
-  enum m_status {ALL, ZVTX60, ZVTX60_BKG, ZVTX60_BKG_EMCAL};
-  std::vector<std::string> m_eventStatus = {"All", "|z| < 60 cm", "|z| < 60 cm and Bkg", "|z| < 60 cm, Bkg, and EMCal"};
+  enum m_status {ALL, ZVTX30, ZVTX30_BKG
+                            , ZVTX30_BKG_failsLoEmJetCut
+                            , ZVTX30_BKG_failsHiEmJetCut
+                            , ZVTX30_BKG_failsIhJetCut
+                            , ZVTX30_BKG_failsNoneJetCut
+                };
+
+  std::vector<std::string> m_eventStatus = {"All", "|z| < 30 cm"
+                                                 , "|z| < 30 cm and Bkg"
+                                                 , "|z| < 30 cm and Bkg and failsLoEmJetCut"
+                                                 , "|z| < 30 cm and Bkg and failsHiEmJetCut"
+                                                 , "|z| < 30 cm and Bkg and failsIhJetCut"
+                                                 , "|z| < 30 cm and Bkg and failsNoneJetCut"
+                                           };
 
   TriggerAnalyzer* m_triggeranalyzer = nullptr;
 
   TH1* hEvents = nullptr;
-  TH1* hTriggers = nullptr;
-  TH1* hTriggersBkg = nullptr;
   TH1* hzvtxAll = nullptr;
-  TH2* hTriggerZvtxBkg = nullptr;
-  std::vector<TH1*> hzvtx;
-  std::vector<TH3*> hjetPhiEtaPt;
-  std::vector<TH2*> hCEMCBase;
+  TH3* hjetPhiEtaPt;
   std::vector<TH2*> hCEMC;
   std::vector<TH2*> hIHCal;
   std::vector<TH2*> hOHCal;
