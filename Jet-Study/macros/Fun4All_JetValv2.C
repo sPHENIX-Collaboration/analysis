@@ -6,24 +6,19 @@
 #include <TROOT.h>
 #include <TSystem.h>
 
+// fun4all includes --
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllUtils.h>
 #include <fun4all/SubsysReco.h>
 
-// jets --
-#include <jetbase/JetReco.h>
-#include <jetbase/TowerJetInput.h>
-#include <jetbackground/FastJetAlgoSub.h>
-
-// jet background cut
+// jet background cut includes --
 #include <jetbackgroundcut/jetBackgroundCut.h>
-
-#include <calotrigger/TriggerRunInfoReco.h>
 
 #include <phool/recoConsts.h>
 
+// My Analysis includes --
 #include <jetvalidation/JetValidationv2.h>
 #include <jetvalidation/EventCheck.h>
 
@@ -70,9 +65,6 @@ void Fun4All_JetValv2(const string &input_JET,
   else                                            in2->AddListFile(input_JETCALO.c_str());
   se->registerInputManager(in2);
 
-  TriggerRunInfoReco *triggerruninforeco = new TriggerRunInfoReco();
-  se->registerSubsystem(triggerruninforeco);
-
   EventCheck *myEventCheck = new EventCheck();
   myEventCheck->set_zvtx_max(30); /*cm*/
   myEventCheck->set_trigger(17); /*Jet 8 GeV + MBD NS >= 1*/
@@ -80,18 +72,7 @@ void Fun4All_JetValv2(const string &input_JET,
 
   Process_Calo_Calib();
 
-  string jetreco_input_prefix = "TOWERINFO_CALIB";
-  JetReco *towerjetreco = new JetReco();
-  towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,jetreco_input_prefix));
-  towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO,jetreco_input_prefix));
-  towerjetreco->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO,jetreco_input_prefix));
-  towerjetreco->add_algo(new FastJetAlgoSub(Jet::ANTIKT, 0.4), "AntiKt_Tower_r04");
-  towerjetreco->set_algo_node("ANTIKT");
-  towerjetreco->set_input_node("TOWER");
-  towerjetreco->Verbosity(0);
-  se->registerSubsystem(towerjetreco);
-
-  jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_Tower_r04","JOCL", 0, false);
+  jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_unsubtracted_r04","JOCL", 0, false);
   se->registerSubsystem(jocl);
 
   JetValidationv2 *myJetVal = new JetValidationv2();

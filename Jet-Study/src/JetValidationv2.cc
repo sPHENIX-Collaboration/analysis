@@ -41,7 +41,7 @@ using std::stringstream;
 //____________________________________________________________________________..
 JetValidationv2::JetValidationv2()
   : SubsysReco("JetValidationv2")
-  , m_recoJetName_r04("AntiKt_Tower_r04")
+  , m_recoJetName_r04("AntiKt_unsubtracted_r04")
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
@@ -254,7 +254,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   jetEtaSubLead = (Int_t)(jetEtaSubLead*10)/10.;
 
   // Get TowerInfoContainer
-  // Subtracted Towers
   TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
   TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
   TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
