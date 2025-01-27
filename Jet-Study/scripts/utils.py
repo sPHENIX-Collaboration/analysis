@@ -22,9 +22,10 @@ f4a.add_argument('-m', '--macro', type=str, default='macros/Fun4All_JetValv2.C',
 f4a.add_argument('-m2', '--src', type=str, default='src', help='Directory Containing src files. Default: src')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/Fun4All_JetValv2', help='Fun4All executable. Default: bin/Fun4All_JetValv2')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+f4a.add_argument('-s', '--memory', type=float, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--jobs', type=int, default=20000, help='Number of jobs per submission. Default: 20k.')
+f4a.add_argument('-t', '--ana-tag', type=str, default='ana462_2024p010_v001', help='ana tag. Default: ana462_2024p010_v001')
 
 gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
 gen.add_argument('-t', '--ana-tag', type=str, default='ana437', help='ana tag. Default: ana437')
@@ -43,6 +44,7 @@ def create_f4a_jobs():
     macro                 = os.path.realpath(args.macro)
     src                   = os.path.realpath(args.src)
     executable            = os.path.realpath(args.executable)
+    ana_tag               = args.ana_tag
     memory                = args.memory
     log                   = args.log
     jobs                  = args.jobs
@@ -62,6 +64,7 @@ def create_f4a_jobs():
     print(f'Run List Jet Dir: {run_list_jet_dir}')
     print(f'Run List Jet Calo Dir: {run_list_jet_calo_dir}')
     print(f'Fun4All : {macro}')
+    print(f'Ana Tag: {ana_tag}')
     print(f'src: {src}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
@@ -91,7 +94,7 @@ def create_f4a_jobs():
         jobs_list = 'jobs.list'
 
         if os.path.exists(f'{output_dir}/{jobs_list}'):
-            os.remove(file_path)
+            os.remove(f'{output_dir}/{jobs_list}')
             print(f'File {output_dir}/{jobs_list} deleted successfully.')
 
         with open(run_list) as fp:
@@ -99,21 +102,26 @@ def create_f4a_jobs():
                 run = run.strip()
 
                 print(f'Processing: {run}')
-                ctr = 0
-                arr1 = [[] for _ in range(jpr)]
-                with open(f'{run_list_jet_dir}/dst_jet_run2pp-{int(run):08}.list') as sp:
-                    for segment in sp:
-                        segment = segment.strip()
-                        arr1[ctr%jpr].append(segment)
-                        ctr += 1
+                # ensure that run exists
+                if not os.path.exists(f'{run_list_jet_dir}/dst_jet_run2pp-{int(run):08}.list'):
+                    print(f'Missing: {run}')
+                    continue
+
+                # get common segments from both files
+                command = f'comm -12 <(cut -d"-" -f3 {run_list_jet_dir}/dst_jet_run2pp-{int(run):08}.list | cut -d "." -f1 | sort) <(cut -d"-" -f3 {run_list_jet_calo_dir}/dst_jetcalo_run2pp-{int(run):08}.list | cut -d "." -f1 | sort)'
+
+                segments = subprocess.run(['bash','-c',command], capture_output=True, encoding="utf-8").stdout.strip().split('\n')
 
                 ctr = 0
+                arr1 = [[] for _ in range(jpr)]
                 arr2 = [[] for _ in range(jpr)]
-                with open(f'{run_list_jet_calo_dir}/dst_jetcalo_run2pp-{int(run):08}.list') as sp:
-                    for segment in sp:
-                        segment = segment.strip()
-                        arr2[ctr%jpr].append(segment)
-                        ctr += 1
+
+                for segment in segments:
+                    dst_jet     = f'DST_JET_run2pp_{ana_tag}-{int(run):08}-{segment}.root'
+                    dst_jetcalo = f'DST_JETCALO_run2pp_{ana_tag}-{int(run):08}-{segment}.root'
+                    arr1[ctr%jpr].append(dst_jet)
+                    arr2[ctr%jpr].append(dst_jetcalo)
+                    ctr += 1
 
                 ctr = 0
                 with open(f'{output_dir}/{jobs_list}',mode='a') as sp:

@@ -4,7 +4,7 @@ export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
 export MYINSTALL="$HOME/Documents/sPHENIX/install"
 
-source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.458
+source /opt/sphenix/core/bin/sphenix_setup.sh -n new
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 exe=${1}
