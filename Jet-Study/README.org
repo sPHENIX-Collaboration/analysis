@@ -48,21 +48,22 @@ psql FileCatalog
 ** After editing Makefile.am
 Jet Validation:
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana450_2024p009-00053860-00038.root test.root 100 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root test.root 3000 2>/dev/null
 #+end_src
 
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetValv2.C("DST_JET_run2pp_ana450_2024p009-00053860-00038.root","test.root", 100)'
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
+#+end_src
 #+end_src
 
 ** After editing .cc or .h
 Jet Validation:
 #+begin_src bash
-make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana450_2024p009-00053860-00038.root test.root 100 2>/dev/null
+make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root test.root 3000 2>/dev/null
 #+end_src
 
 #+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetValv2.C("DST_JET_run2pp_ana450_2024p009-00053860-00038.root","test.root", 100)'
+make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
 #+end_src
 
 ** Build joclJetBackgroundCutModule
