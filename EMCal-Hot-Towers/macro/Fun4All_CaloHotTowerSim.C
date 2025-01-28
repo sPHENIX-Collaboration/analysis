@@ -18,6 +18,8 @@
 
 #include <calohottower/CaloHotTowerSim.h>
 
+#include "Calo_Calib.C"
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -40,7 +42,7 @@ void Fun4All_CaloHotTowerSim(const string &inputFile,
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc    = recoConsts::instance();
 
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
 
   pair<Int_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(inputFile);
   Int_t runnumber = runseg.first;
@@ -66,14 +68,7 @@ void Fun4All_CaloHotTowerSim(const string &inputFile,
   in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
 
-  // need to set the isBadChi2 flag for the towers
-  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
-  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  statusEMC->set_time_cut(1);
-  statusEMC->set_inputNodePrefix("TOWERINFO_CALIB_");
-  statusEMC->Verbosity(Fun4AllBase::VERBOSITY_MORE);
-  statusEMC->set_directURL_hotMap("/direct/sphenix+u/anarde/Documents/sPHENIX/analysis/EMCal-Hot-Towers/files/ana446/cdb/CEMC_hotTowers_status_50_ana446_2024p007.root");
-  se->registerSubsystem(statusEMC);
+  Process_Calo_Calib();
 
   CaloHotTowerSim *calo = new CaloHotTowerSim();
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);

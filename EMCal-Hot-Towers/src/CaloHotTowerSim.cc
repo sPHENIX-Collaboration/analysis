@@ -102,6 +102,7 @@ CaloHotTowerSim::CaloHotTowerSim(const string &name):
  m_min_towerE(0.1), /*GeV*/
  m_energy_min(9999), /*GeV*/
  m_energy_max(0), /*GeV*/
+ m_avgBadTowers(0),
  m_emcTowerNode("TOWERINFO_CALIB_CEMC"),
  m_outputFile("test.root")
 {
@@ -155,6 +156,8 @@ Int_t CaloHotTowerSim::process_event(PHCompositeNode *topNode) {
 
     Float_t energy = tower->get_energy();
 
+    if (tower->get_isHot()) ++m_avgBadTowers;
+
     if (energy >= m_min_towerE)
     {
       h2TowerControlEnergy->Fill(iphi, ieta, energy);
@@ -176,6 +179,7 @@ Int_t CaloHotTowerSim::process_event(PHCompositeNode *topNode) {
 Int_t CaloHotTowerSim::End(PHCompositeNode *topNode) {
   cout << "CaloHotTowerSim::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Min Energy: " << m_energy_min << ", Max Energy: " << m_energy_max << endl;
+  cout << "Avg Bad Towers: " << m_avgBadTowers/hEvents->GetBinContent(1) << endl;
 
   TFile output(m_outputFile.c_str(),"recreate");
 

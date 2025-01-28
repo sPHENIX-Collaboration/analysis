@@ -52,6 +52,8 @@ class CaloHotTowerSim : public SubsysReco
   Float_t m_energy_min;
   Float_t m_energy_max;
 
+  UInt_t m_avgBadTowers;
+
   std::string m_emcTowerNode;
   std::string m_outputFile;
 
