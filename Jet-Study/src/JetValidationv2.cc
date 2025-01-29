@@ -64,8 +64,8 @@ JetValidationv2::JetValidationv2()
   , m_bins_frac(140)
   , m_frac_low(-0.2)
   , m_frac_high(1.2)
-  , m_bins_ET(140)
-  , m_ET_low(60)
+  , m_bins_ET(190)
+  , m_ET_low(10)
   , m_ET_high(200)
   , m_event(0)
   , m_R(0.4)
@@ -231,11 +231,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     }
   }
 
-  // if event doesn't have a high pt jet then skip to the next event
-  if(!hasBkg) return Fun4AllReturnCodes::ABORTEVENT;
-
-  cout << "Background Jet: " << jetPtLead << " GeV, Event: " << m_globalEvent << endl;
-
   recoConsts* rc = recoConsts::instance();
 
   Bool_t failsLoEmJetCut = rc->get_IntFlag("failsLoEmJetCut");
@@ -249,6 +244,15 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   Float_t maxJetET = rc->get_FloatFlag("maxJetET");
   Float_t dPhi     = rc->get_FloatFlag("dPhi");
 
+  h2ETVsFracCEMC->Fill(frcem, maxJetET);
+
+  // if event doesn't have a high pt jet then skip to the next event
+  if(!hasBkg) return Fun4AllReturnCodes::ABORTEVENT;
+
+  h2FracOHCalVsFracCEMC->Fill(frcem, frcoh);
+
+  cout << "Background Jet: " << jetPtLead << " GeV, Event: " << m_globalEvent << endl;
+
   cout << "isDijet: " << isDijet
        << ", frcem: " << frcem
        << ", frcoh: " << frcoh
@@ -256,9 +260,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
        << ", dPhi: " << dPhi << endl;
 
   hEvents->Fill(m_status::ZVTX30_BKG);
-
-  h2ETVsFracCEMC->Fill(frcem, maxJetET);
-  h2FracOHCalVsFracCEMC->Fill(frcem, frcoh);
 
   if(failsLoEmJetCut) {
     hEvents->Fill(m_status::ZVTX30_BKG_failsLoEmJetCut);

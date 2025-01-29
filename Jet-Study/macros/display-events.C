@@ -50,8 +50,8 @@ namespace myAnalysis {
     Bool_t savePlots = true;
     UInt_t triggerBits = 42;
 
-    enum m_event_type {_70_100, _100_200, _200_500, ABOVE_500};
-    vector<string> labels = {"70 GeV to 100 GeV", "100 GeV to 200 GeV", "200 GeV to 500 GeV", "Above 500 GeV"};
+    enum m_event_type {_60_100, _100_200, _200_500, ABOVE_500};
+    vector<string> labels = {"60 GeV to 100 GeV", "100 GeV to 200 GeV", "200 GeV to 500 GeV", "Above 500 GeV"};
 }
 
 Int_t myAnalysis::readFile(const string &input, const string &output) {
@@ -110,17 +110,17 @@ void myAnalysis::plots(const string &output) {
     c1->SetTickx();
     c1->SetTicky();
 
-    c1->SetCanvasSize(2900, 2300);
-    c1->SetLeftMargin(.1);
-    c1->SetRightMargin(.03);
-    c1->SetTopMargin(.05);
-    c1->SetBottomMargin(.6);
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
 
     gStyle->SetOptTitle(1);
     gStyle->SetTitleStyle(0);
     gStyle->SetTitleFontSize(0.08);
     gStyle->SetTitleW(1);
-    gStyle->SetTitleH(0.04);
+    gStyle->SetTitleH(0.08);
     gStyle->SetTitleFillColor(0);
     gStyle->SetTitleBorderSize(0);
     gStyle->SetTitleXOffset(1);
@@ -129,37 +129,25 @@ void myAnalysis::plots(const string &output) {
     string tag = output.substr(0,output.rfind("."));
 
     ofstream event_log(tag+"-events.csv");
-    event_log << "Run,Event,Triggers,pt1,pt2" << endl;
+    event_log << "Run,Event,Triggers,pt1,pt2,frcem,frcoh,maxJetET,dPhi,isDijet" << endl;
 
-    vector<vector<string>> suffix_vec(4);
+    vector<string> suffix_vec;
 
-    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
-        suffix_vec[m_event_type::_70_100].push_back("-trigger-"+to_string(i)+"-pt-70-100.pdf");
-        suffix_vec[m_event_type::_100_200].push_back("-trigger-"+to_string(i)+"-pt-100-200.pdf");
-        suffix_vec[m_event_type::_200_500].push_back("-trigger-"+to_string(i)+"-pt-200-500.pdf");
-        suffix_vec[m_event_type::ABOVE_500].push_back("-trigger-"+to_string(i)+"-pt-above-500.pdf");
+    suffix_vec.push_back("-pt-60-100.pdf");
+    suffix_vec.push_back("-pt-100-200.pdf");
+    suffix_vec.push_back("-pt-200-500.pdf");
+    suffix_vec.push_back("-pt-above-500.pdf");
 
-        c1->Print((tag + suffix_vec[m_event_type::_70_100][i]   + "[").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::_100_200][i]  + "[").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::_200_500][i]  + "[").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::ABOVE_500][i] + "[").c_str(), "pdf portrait");
-    }
+    c1->Print((tag + suffix_vec[m_event_type::_60_100]   + "[").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::_100_200]  + "[").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::_200_500]  + "[").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::ABOVE_500] + "[").c_str(), "pdf portrait");
+
     c1->cd();
 
     UInt_t ctr[5] = {0};
 
-    unordered_map<string,int> triggerPtCtr;
-
     TH1::AddDirectory(kFALSE);
-
-    TH1* hTriggersBkg;
-
-    vector<TH1*> hTriggersBkg_pt;
-
-    hTriggersBkg_pt.push_back(new TH1F("hTriggersBkg_70_100_","",triggerBits,0,triggerBits));
-    hTriggersBkg_pt.push_back(new TH1F("hTriggersBkg_100_200_","",triggerBits,0,triggerBits));
-    hTriggersBkg_pt.push_back(new TH1F("hTriggersBkg_200_500_","",triggerBits,0,triggerBits));
-    hTriggersBkg_pt.push_back(new TH1F("hTriggersBkg_above_100_","",triggerBits,0,triggerBits));
 
     // File Loop
     for(UInt_t i = 0; i < files.size(); ++i) {
@@ -169,22 +157,13 @@ void myAnalysis::plots(const string &output) {
 
         TFile* tfile = TFile::Open(file.c_str());
 
-        TList* keysCEMCBase = ((TDirectory*)tfile->Get("CEMCBase"))->GetListOfKeys();
         TList* keysCEMC     = ((TDirectory*)tfile->Get("CEMC"))->GetListOfKeys();
         TList* keysIHCal    = ((TDirectory*)tfile->Get("IHCal"))->GetListOfKeys();
         TList* keysOHCal    = ((TDirectory*)tfile->Get("OHCal"))->GetListOfKeys();
 
-        auto hTriggersBkg_ = (TH1*)tfile->Get("trigger/hTriggersBkg");
-        if(i == 0) {
-            hTriggersBkg = (TH1*)hTriggersBkg_->Clone();
-        }
-        else {
-            hTriggersBkg->Add(hTriggersBkg_);
-        }
-
         // Event Loop
         for(UInt_t j = 0; j < keysCEMC->GetSize(); ++j) {
-            string name  = keysCEMCBase->At(j)->GetName();
+            string name  = keysCEMC->At(j)->GetName();
             vector<string> tokens = JetUtils::split(name,'_');
 
             string run         = tokens[1];
@@ -192,33 +171,32 @@ void myAnalysis::plots(const string &output) {
             vector<string> triggerIndex = JetUtils::split(tokens[3],'-');
             Int_t leadJetPt    = stoi(tokens[4]);
             Int_t subLeadJetPt = stoi(tokens[5]);
+            Float_t frcem      = stof(tokens[6]);
+            Float_t frcoh      = stof(tokens[7]);
+            Int_t maxJetET     = stoi(tokens[8]);
+            Float_t dPhi       = stof(tokens[9]);
+            Bool_t isDijet     = stoi(tokens[10]);
 
             cout << "Run: " << run << ", Event: " << event
                  << ", trigger: " << tokens[3]
                  << ", pt: " << leadJetPt << " GeV" << endl;
 
-            event_log << run << "," << event << "," << tokens[3] << "," << leadJetPt << "," << subLeadJetPt << endl;
+            event_log << run << "," << event << "," << tokens[3] << "," << leadJetPt << "," << subLeadJetPt
+                      << "," << frcem << "," << frcoh << "," << maxJetET << "," << dPhi << "," << isDijet << endl;
 
-            auto hCEMCBase = (TH2*)tfile->Get(("CEMCBase/"+name).c_str());
-
-            if(hCEMCBase->GetMinimum() > -1) hCEMCBase->SetMinimum(zMin);
-            if(hCEMCBase->GetMaximum() < zMax) hCEMCBase->SetMaximum(zMax);
-
-            // hCEMCBase->GetXaxis()->SetLimits(0,64);
-            // hCEMCBase->GetXaxis()->SetNdivisions(21, false);
-            // hCEMCBase->GetXaxis()->SetLabelSize(0.04);
-            // hCEMCBase->GetXaxis()->SetTickSize(0.01);
-            // hCEMCBase->GetYaxis()->SetTickSize(0.01);
-            // hCEMCBase->GetYaxis()->SetLabelSize(0.04);
-            // hCEMCBase->GetYaxis()->SetLimits(0,24);
-            // hCEMCBase->GetYaxis()->SetNdivisions(11, false);
-            hCEMCBase->GetYaxis()->SetTitleOffset(0.5);
-
-            name  = keysCEMC->At(j)->GetName();
             auto hCEMC = (TH2*)tfile->Get(("CEMC/"+name).c_str());
 
-            hCEMC->SetMinimum(zMin);
+            if(hCEMC->GetMinimum() > -1) hCEMC->SetMinimum(zMin);
             if(hCEMC->GetMaximum() < zMax) hCEMC->SetMaximum(zMax);
+
+            // hCEMC->GetXaxis()->SetLimits(0,64);
+            // hCEMC->GetXaxis()->SetNdivisions(21, false);
+            // hCEMC->GetXaxis()->SetLabelSize(0.04);
+            // hCEMC->GetXaxis()->SetTickSize(0.01);
+            // hCEMC->GetYaxis()->SetTickSize(0.01);
+            // hCEMC->GetYaxis()->SetLabelSize(0.04);
+            // hCEMC->GetYaxis()->SetLimits(0,24);
+            // hCEMC->GetYaxis()->SetNdivisions(11, false);
             hCEMC->GetYaxis()->SetTitleOffset(0.5);
 
             name  = keysIHCal->At(j)->GetName();
@@ -239,9 +217,9 @@ void myAnalysis::plots(const string &output) {
                 hOHCal->GetYaxis()->SetTitleOffset(0.5);
             }
 
-            m_event_type pt_key = m_event_type::_70_100;
+            m_event_type pt_key = m_event_type::_60_100;
 
-            if(leadJetPt >= 70 && leadJetPt < 100) {
+            if(leadJetPt >= 60 && leadJetPt < 100) {
                 ++ctr[1];
             }
             else if(leadJetPt >= 100 && leadJetPt < 200) {
@@ -257,52 +235,24 @@ void myAnalysis::plots(const string &output) {
                 ++ctr[4];
             }
 
-            // Trigger Loop
-            for(auto idx : triggerIndex) {
-                Int_t index = stoi(idx);
-                string suffix = suffix_vec[pt_key][index];
-                hTriggersBkg_pt[pt_key]->Fill(index);
+            string suffix = suffix_vec[pt_key];
 
-                triggerPtCtr[suffix]++;
+            if(savePlots) {
+                hCEMC->Draw("COLZ1");
+                c1->Print((tag+suffix).c_str(), "pdf portrait");
 
-                if(savePlots) {
-
-                    c1->SetCanvasSize(2900, 1000);
-                    c1->SetLeftMargin(.06);
-                    c1->SetRightMargin(.12);
-                    c1->SetTopMargin(.1);
-                    c1->SetBottomMargin(.12);
-
-                    gStyle->SetOptTitle(1);
-                    gStyle->SetTitleStyle(0);
-                    gStyle->SetTitleFontSize(0.08);
-                    gStyle->SetTitleW(1);
-                    gStyle->SetTitleH(0.08);
-                    gStyle->SetTitleFillColor(0);
-                    gStyle->SetTitleBorderSize(0);
-                    gStyle->SetTitleXOffset(1);
-                    gStyle->SetTitleYOffset(1);
-
-                    hCEMCBase->Draw("COLZ1");
+                if(hIHCal->GetMaximum() >= zMin) {
+                    hIHCal->Draw("COLZ1");
                     c1->Print((tag+suffix).c_str(), "pdf portrait");
+                }
 
-                    hCEMC->Draw("COLZ1");
+                if(hOHCal->GetMaximum() >= zMin) {
+                    hOHCal->Draw("COLZ1");
                     c1->Print((tag+suffix).c_str(), "pdf portrait");
-
-                    if(hIHCal->GetMaximum() >= zMin) {
-                        hIHCal->Draw("COLZ1");
-                        c1->Print((tag+suffix).c_str(), "pdf portrait");
-                    }
-
-                    if(hOHCal->GetMaximum() >= zMin) {
-                        hOHCal->Draw("COLZ1");
-                        c1->Print((tag+suffix).c_str(), "pdf portrait");
-                    }
                 }
             }
             ++ctr[0];
         }
-
         tfile->Close();
     }
 
@@ -311,98 +261,16 @@ void myAnalysis::plots(const string &output) {
     // gPad->SetGrid();
     gPad->SetLogy();
 
-    vector<UInt_t> ctr2;
-    for(UInt_t i = 1; i <= hTriggersBkg->GetNbinsX(); ++i) {
-        if(hTriggersBkg->GetBinContent(i)) ctr2.push_back(i);
-    }
-
-    auto hTriggersBkg2 = new TH1F("hTriggersBkg2","Background Event (has jet p_{T} #geq 70 GeV in EMCal); ; Counts", ctr2.size(), 0, ctr2.size());
-    auto hTriggersBkg_70_100    = new TH1F("hTriggersBkg_70_100","", ctr2.size() , 0, ctr2.size());
-    auto hTriggersBkg_100_200   = new TH1F("hTriggersBkg_100_200","", ctr2.size(), 0, ctr2.size());
-    auto hTriggersBkg_200_500   = new TH1F("hTriggersBkg_200_500","", ctr2.size(), 0, ctr2.size());
-    auto hTriggersBkg_above_500 = new TH1F("hTriggersBkg_above_500","", ctr2.size(), 0, ctr2.size());
-
-    for(UInt_t i = 0; i < ctr2.size(); ++i) {
-        string triggerName = hTriggersBkg->GetXaxis()->GetBinLabel(ctr2[i]);
-
-        UInt_t triggerEventsBkg = hTriggersBkg->GetBinContent(ctr2[i]);
-        UInt_t triggerEventsBkg_70_100 = hTriggersBkg_pt[m_event_type::_70_100]->GetBinContent(ctr2[i]);
-        UInt_t triggerEventsBkg_100_200 = hTriggersBkg_pt[m_event_type::_100_200]->GetBinContent(ctr2[i]);
-        UInt_t triggerEventsBkg_200_500 = hTriggersBkg_pt[m_event_type::_200_500]->GetBinContent(ctr2[i]);
-        UInt_t triggerEventsBkg_above_500 = hTriggersBkg_pt[m_event_type::ABOVE_500]->GetBinContent(ctr2[i]);
-
-        hTriggersBkg2->SetBinContent(i+1, triggerEventsBkg);
-        hTriggersBkg_70_100->SetBinContent(i+1, triggerEventsBkg_70_100);
-        hTriggersBkg_100_200->SetBinContent(i+1, triggerEventsBkg_100_200);
-        hTriggersBkg_200_500->SetBinContent(i+1, triggerEventsBkg_200_500);
-        hTriggersBkg_above_500->SetBinContent(i+1, triggerEventsBkg_above_500);
-
-        hTriggersBkg2->GetXaxis()->SetBinLabel(i+1, triggerName.c_str());
-        hTriggersBkg_70_100->GetXaxis()->SetBinLabel(i+1, triggerName.c_str());
-        hTriggersBkg_100_200->GetXaxis()->SetBinLabel(i+1, triggerName.c_str());
-        hTriggersBkg_200_500->GetXaxis()->SetBinLabel(i+1, triggerName.c_str());
-        hTriggersBkg_above_500->GetXaxis()->SetBinLabel(i+1, triggerName.c_str());
-    }
-
-    c1->Print((tag+"-triggers.pdf[").c_str(), "pdf portrait");
-
-    hTriggersBkg2->GetXaxis()->SetLabelSize(0.048);
-    hTriggersBkg2->GetYaxis()->SetRangeUser(5e-1,1e4);
-
-    hTriggersBkg2->LabelsOption("v");
-    hTriggersBkg2->Draw();
-
-    c1->Print((tag+"-triggers.pdf").c_str(), "pdf portrait");
-    c1->Print((tag+"-triggers-single.png").c_str());
-
-    hTriggersBkg_70_100->SetLineColor(kBlue);
-    hTriggersBkg_100_200->SetLineColor(kOrange+7);
-    hTriggersBkg_200_500->SetLineColor(kGreen+3);
-    hTriggersBkg_above_500->SetLineColor(kRed);
-
-    hTriggersBkg_70_100->Draw("same");
-    hTriggersBkg_100_200->Draw("same");
-    hTriggersBkg_200_500->Draw("same");
-    hTriggersBkg_above_500->Draw("same");
-
-    TLegend *leg = new TLegend(0.74,.75,0.8,.92);
-    leg->SetFillStyle(0);
-    leg->AddEntry(hTriggersBkg2,"Jet p_{T} #geq 70 GeV","f");
-    leg->AddEntry(hTriggersBkg_70_100,"70 GeV #leq Jet p_{T} < 100 GeV","f");
-    leg->AddEntry(hTriggersBkg_100_200,"100 GeV #leq Jet p_{T} < 200 GeV","f");
-    leg->AddEntry(hTriggersBkg_200_500,"200 GeV #leq Jet p_{T} < 500 GeV","f");
-    leg->AddEntry(hTriggersBkg_above_500,"Jet p_{T} #geq 500 GeV","f");
-    leg->SetTextSize(0.02);
-    leg->Draw("same");
-
-    c1->Print((tag+"-triggers.pdf").c_str(), "pdf portrait");
-    c1->Print((tag+"-triggers-multiple.png").c_str());
-
-    c1->Print((tag+"-triggers.pdf]").c_str(), "pdf portrait");
-
-
-    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
-        c1->Print((tag + suffix_vec[m_event_type::_70_100][i]   + "]").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::_100_200][i]  + "]").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::_200_500][i]  + "]").c_str(), "pdf portrait");
-        c1->Print((tag + suffix_vec[m_event_type::ABOVE_500][i] + "]").c_str(), "pdf portrait");
-    }
-
-    cout << "----------------------------" << endl;
-    cout << "Trigger Pt Stats" << endl;
+    c1->Print((tag + suffix_vec[m_event_type::_60_100]   + "]").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::_100_200]  + "]").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::_200_500]  + "]").c_str(), "pdf portrait");
+    c1->Print((tag + suffix_vec[m_event_type::ABOVE_500] + "]").c_str(), "pdf portrait");
 
     // cleaning step, remove extra files
-    for(UInt_t i = 0; i < JetUtils::m_triggers.size(); ++i) {
-        for(UInt_t j = 0; j < suffix_vec.size(); ++j) {
-            vector<string> suffix = suffix_vec[j];
-            if(triggerPtCtr.find(suffix[i]) == triggerPtCtr.end() || !savePlots) {
-                std::remove((tag+suffix[i]).c_str());
-            }
-            if(triggerPtCtr.find(suffix[i]) != triggerPtCtr.end()) {
-                cout << "Trigger: " << JetUtils::m_triggers[i]
-                     << ", Jet Pt: " << labels[j]
-                     << ", Events: " << triggerPtCtr[suffix[i]] << endl;
-            }
+    for(UInt_t j = 0; j < labels.size(); ++j) {
+        string suffix = suffix_vec[j];
+        if(ctr[j+1] == 0 || !savePlots) {
+            std::remove((tag+suffix).c_str());
         }
     }
 
