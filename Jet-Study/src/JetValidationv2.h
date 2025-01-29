@@ -87,6 +87,14 @@ class JetValidationv2 : public SubsysReco
   Float_t m_zvtx_low;
   Float_t m_zvtx_high;
 
+  UInt_t m_bins_frac;
+  Float_t m_frac_low;
+  Float_t m_frac_high;
+
+  UInt_t m_bins_ET;
+  Float_t m_ET_low;
+  Float_t m_ET_high;
+
   UInt_t  m_event;
   Float_t m_R;
 
@@ -110,6 +118,10 @@ class JetValidationv2 : public SubsysReco
   TH1* hEvents = nullptr;
   TH1* hzvtxAll = nullptr;
   TH3* hjetPhiEtaPt;
+  TH2* h2ETVsFracCEMC;
+  TH2* h2FracOHCalVsFracCEMC;
+  TH2* h2ETVsFracCEMC_miss;
+  TH2* h2FracOHCalVsFracCEMC_miss;
   std::vector<TH2*> hCEMC;
   std::vector<TH2*> hIHCal;
   std::vector<TH2*> hOHCal;

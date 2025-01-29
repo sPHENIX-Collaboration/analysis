@@ -61,6 +61,12 @@ JetValidationv2::JetValidationv2()
   , m_bins_zvtx(400)
   , m_zvtx_low(-100)
   , m_zvtx_high(100)
+  , m_bins_frac(140)
+  , m_frac_low(-0.2)
+  , m_frac_high(1.2)
+  , m_bins_ET(140)
+  , m_ET_low(60)
+  , m_ET_high(200)
   , m_event(0)
   , m_R(0.4)
 {
@@ -93,6 +99,18 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hjetPhiEtaPt = new TH3F("hjetPhiEtaPt", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
                                                                         , m_bins_eta, m_eta_low, m_eta_high
                                                                         , m_bins_pt, m_pt_low, m_pt_high);
+
+  h2ETVsFracCEMC = new TH2F("h2ETVsFracCEMC","Jet; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]"
+                            , m_bins_frac, m_frac_low, m_frac_high, m_bins_ET, m_ET_low, m_ET_high);
+
+  h2ETVsFracCEMC_miss = new TH2F("h2ETVsFracCEMC_miss","Jet; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]"
+                                 , m_bins_frac, m_frac_low, m_frac_high, m_bins_ET, m_ET_low, m_ET_high);
+
+  h2FracOHCalVsFracCEMC = new TH2F("h2FracOHCalVsFracCEMC","Jet; Fraction of E_{T,Lead Jet} EMCal; Fraction of E_{T,Lead Jet} OHCal"
+                                   , m_bins_frac, m_frac_low, m_frac_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  h2FracOHCalVsFracCEMC_miss = new TH2F("h2FracOHCalVsFracCEMC_miss","Jet; Fraction of E_{T,Lead Jet} EMCal; Fraction of E_{T,Lead Jet} OHCal"
+                                   , m_bins_frac, m_frac_low, m_frac_high, m_bins_frac, m_frac_low, m_frac_high);
 
   m_triggeranalyzer = new TriggerAnalyzer();
 
@@ -225,7 +243,22 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   Bool_t failsIhJetCut   = rc->get_IntFlag("failsIhJetCut");
   Bool_t failsAnyJetCut  = rc->get_IntFlag("failsAnyJetCut");
 
+  Bool_t isDijet   = rc->get_IntFlag("isDijet");
+  Float_t frcem    = rc->get_FloatFlag("frcem");
+  Float_t frcoh    = rc->get_FloatFlag("frcoh");
+  Float_t maxJetET = rc->get_FloatFlag("maxJetET");
+  Float_t dPhi     = rc->get_FloatFlag("dPhi");
+
+  cout << "isDijet: " << isDijet
+       << ", frcem: " << frcem
+       << ", frcoh: " << frcoh
+       << ", maxJetET: " << maxJetET
+       << ", dPhi: " << dPhi << endl;
+
   hEvents->Fill(m_status::ZVTX30_BKG);
+
+  h2ETVsFracCEMC->Fill(frcem, maxJetET);
+  h2FracOHCalVsFracCEMC->Fill(frcem, frcoh);
 
   if(failsLoEmJetCut) {
     hEvents->Fill(m_status::ZVTX30_BKG_failsLoEmJetCut);
@@ -244,6 +277,9 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  h2ETVsFracCEMC_miss->Fill(frcem, maxJetET);
+  h2FracOHCalVsFracCEMC_miss->Fill(frcem, frcoh);
+
   cout << "Background Jet Not Flagged!" << endl;
 
   // round nearest 0.1
@@ -252,6 +288,11 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   jetEtaLead    = (Int_t)(jetEtaLead*10)/10.;
   jetEtaSubLead = (Int_t)(jetEtaSubLead*10)/10.;
+
+  // round the bkg check variables
+  frcem = (Int_t)(frcem*100)/100.;
+  frcoh = (Int_t)(frcoh*100)/100.;
+  dPhi  = (Int_t)(dPhi*10)/10.;
 
   // Get TowerInfoContainer
   TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
@@ -284,7 +325,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     s_triggerIdx += to_string(idx);
   }
 
-  nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << jetPtLead << "_" << jetPtSubLead;
+  nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << jetPtLead << "_" << jetPtSubLead
+            << "_" << frcem << "_" << frcoh << "_" << (Int_t)maxJetET << "_" << dPhi << "_" << isDijet;
 
   name << "hCEMC_" << nameSuffix.str();
   title << "CEMC: " << titleSuffix.str();
@@ -362,6 +404,7 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   output.mkdir("event");
   output.mkdir("zvtx");
   output.mkdir("jets");
+  output.mkdir("bkg_checks");
 
   output.mkdir("CEMC");
   output.mkdir("IHCal");
@@ -375,6 +418,12 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("jets");
   hjetPhiEtaPt->Write();
+
+  output.cd("bkg_checks");
+  h2ETVsFracCEMC->Write();
+  h2FracOHCalVsFracCEMC->Write();
+  h2ETVsFracCEMC_miss->Write();
+  h2FracOHCalVsFracCEMC_miss->Write();
 
   for(UInt_t i = 0; i < hCEMC.size(); ++i) {
     output.cd("CEMC");
