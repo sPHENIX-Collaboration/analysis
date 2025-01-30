@@ -86,6 +86,10 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     auto h2ETVsFracCEMC      = (TH2F*)input.Get("bkg_checks/h2ETVsFracCEMC");
     auto h2ETVsFracCEMC_miss = (TH2F*)input.Get("bkg_checks/h2ETVsFracCEMC_miss");
+
+    h2ETVsFracCEMC->SetTitle("Event");
+    h2ETVsFracCEMC_miss->SetTitle("Event");
+
     auto cut_LoEmFracET1 = new TLine(0.1,10,0.1,200);
     auto cut_LoEmFracET2 = new TF1("cut_LoEmFracET2","50*x+20",-0.2,0.1);
 
@@ -116,10 +120,34 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((string(h2ETVsFracCEMC_miss->GetName()) + ".png").c_str());
 
+    cut_LoEmFracET2 = new TF1("cut_LoEmFracET2","50*x+20",-0.2,0.5);
+    cut_HiEmFracET2 = new TF1("cut_LoEmFracET2","-50*x+70",0.5,1.2);
+    cut_LoEmFracET2->SetLineColor(kRed);
+    cut_HiEmFracET2->SetLineColor(kRed);
+    cut_LoEmFracET2->SetLineWidth(1);
+    cut_HiEmFracET2->SetLineWidth(1);
+
+    h2ETVsFracCEMC->Draw("COLZ1");
+    cut_LoEmFracET2->Draw("same");
+    cut_HiEmFracET2->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2ETVsFracCEMC->GetName()) + "-v2.png").c_str());
+
+    h2ETVsFracCEMC_miss->Draw("COLZ1");
+    cut_LoEmFracET2->Draw("same");
+    cut_HiEmFracET2->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2ETVsFracCEMC_miss->GetName()) + "-v2.png").c_str());
+
     // ----------------------------------------------------------
 
     auto h2FracOHCalVsFracCEMC      = (TH2F*)input.Get("bkg_checks/h2FracOHCalVsFracCEMC");
     auto h2FracOHCalVsFracCEMC_miss = (TH2F*)input.Get("bkg_checks/h2FracOHCalVsFracCEMC_miss");
+
+    h2FracOHCalVsFracCEMC->SetTitle("Event");
+    h2FracOHCalVsFracCEMC_miss->SetTitle("Event");
 
     auto cut_IhFrac = new TF1("cut_IhFrac","0.65-x",-0.2,1.2);
     cut_IhFrac->SetLineColor(kRed);

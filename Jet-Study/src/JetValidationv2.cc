@@ -293,7 +293,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   // round the bkg check variables
   frcem = (Int_t)(frcem*100)/100.;
   frcoh = (Int_t)(frcoh*100)/100.;
-  dPhi  = (Int_t)(dPhi*10)/10.;
+  dPhi  = (Int_t)(dPhi*1000)/1000.;
 
   // Get TowerInfoContainer
   TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
