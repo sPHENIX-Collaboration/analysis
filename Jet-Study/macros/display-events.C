@@ -189,8 +189,6 @@ void myAnalysis::plots(const string &output) {
 
             auto hCEMC = (TH2*)tfile->Get(("CEMC/"+name).c_str());
 
-            if(hCEMC->GetMinimum() > -1) hCEMC->SetMinimum(zMin);
-
             // hCEMC->GetXaxis()->SetLimits(0,64);
             // hCEMC->GetXaxis()->SetNdivisions(21, false);
             // hCEMC->GetXaxis()->SetLabelSize(0.04);
@@ -245,7 +243,13 @@ void myAnalysis::plots(const string &output) {
                 hCEMCBase->Draw("COLZ1");
                 c1->Print((tag+suffix).c_str(), "pdf portrait");
 
+                hCEMCBase->SetMinimum(zMin);
+                c1->Print((tag+suffix).c_str(), "pdf portrait");
+
                 hCEMC->Draw("COLZ1");
+                c1->Print((tag+suffix).c_str(), "pdf portrait");
+
+                hCEMC->SetMinimum(zMin);
                 c1->Print((tag+suffix).c_str(), "pdf portrait");
 
                 if(hIHCal->GetMaximum() >= zMin) {
