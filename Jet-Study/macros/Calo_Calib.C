@@ -61,7 +61,7 @@ void Process_Calo_Calib()
     std::string calibdir = CDBInterface::instance()->getUrl(calibName_hotMap);
     statusEMC->set_directURL_hotMap(calibdir);
   }
-  // se->registerSubsystem(statusEMC);
+  se->registerSubsystem(statusEMC);
 
   CaloTowerStatus *statusHCalIn = new CaloTowerStatus("HCALINSTATUS");
   statusHCalIn->set_detector_type(CaloTowerDefs::HCALIN);
@@ -78,7 +78,7 @@ void Process_Calo_Calib()
   std::cout << "Calibrating EMCal" << std::endl;
   CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB");
   calibEMC->set_detector_type(CaloTowerDefs::CEMC);
-  // se->registerSubsystem(calibEMC);
+  se->registerSubsystem(calibEMC);
 
   std::cout << "Calibrating OHcal" << std::endl;
   CaloTowerCalib *calibOHCal = new CaloTowerCalib("HCALOUT");
