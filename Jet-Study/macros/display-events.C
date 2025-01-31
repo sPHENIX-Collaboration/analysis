@@ -187,7 +187,6 @@ void myAnalysis::plots(const string &output) {
             auto hCEMC = (TH2*)tfile->Get(("CEMC/"+name).c_str());
 
             if(hCEMC->GetMinimum() > -1) hCEMC->SetMinimum(zMin);
-            if(hCEMC->GetMaximum() < zMax) hCEMC->SetMaximum(zMax);
 
             // hCEMC->GetXaxis()->SetLimits(0,64);
             // hCEMC->GetXaxis()->SetNdivisions(21, false);
@@ -203,7 +202,6 @@ void myAnalysis::plots(const string &output) {
             auto hIHCal = (TH2*)tfile->Get(("IHCal/"+name).c_str());
             if(hIHCal->GetMaximum() >= zMin) {
                 hIHCal->SetMinimum(zMin);
-                if(hIHCal->GetMaximum() < zMax) hIHCal->SetMaximum(zMax);
 
                 hIHCal->GetYaxis()->SetTitleOffset(0.5);
             }
@@ -212,7 +210,6 @@ void myAnalysis::plots(const string &output) {
             auto hOHCal = (TH2*)tfile->Get(("OHCal/"+name).c_str());
             if(hOHCal->GetMaximum() >= zMin) {
                 hOHCal->SetMinimum(zMin);
-                if(hOHCal->GetMaximum() < zMax) hOHCal->SetMaximum(zMax);
 
                 hOHCal->GetYaxis()->SetTitleOffset(0.5);
             }
