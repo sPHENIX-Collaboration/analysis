@@ -60,6 +60,7 @@ class JetValidationv2 : public SubsysReco
  private:
   std::string m_recoJetName_r04;
 
+  std::string m_emcTowerBaseNode;
   std::string m_emcTowerNode;
   std::string m_ihcalTowerNode;
   std::string m_ohcalTowerNode;
@@ -71,10 +72,12 @@ class JetValidationv2 : public SubsysReco
   Float_t m_zvtx_max;
 
   UInt_t  m_bins_phi;
+  UInt_t  m_bins_phi_cemc;
   Float_t m_phi_low;
   Float_t m_phi_high;
 
   UInt_t  m_bins_eta;
+  UInt_t  m_bins_eta_cemc;
   Float_t m_eta_low;
   Float_t m_eta_high;
 
@@ -122,6 +125,7 @@ class JetValidationv2 : public SubsysReco
   TH2* h2FracOHCalVsFracCEMC;
   TH2* h2ETVsFracCEMC_miss;
   TH2* h2FracOHCalVsFracCEMC_miss;
+  std::vector<TH2*> hCEMCBase;
   std::vector<TH2*> hCEMC;
   std::vector<TH2*> hIHCal;
   std::vector<TH2*> hOHCal;

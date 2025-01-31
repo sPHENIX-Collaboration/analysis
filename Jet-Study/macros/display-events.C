@@ -129,7 +129,7 @@ void myAnalysis::plots(const string &output) {
     string tag = output.substr(0,output.rfind("."));
 
     ofstream event_log(tag+"-events.csv");
-    event_log << "Run,Event,Triggers,pt1,pt2,frcem,frcoh,maxJetET,dPhi,isDijet" << endl;
+    event_log << "Run,Event,Triggers,zvtx,pt1,pt2,frcem,frcoh,maxJetET,dPhi,isDijet" << endl;
 
     vector<string> suffix_vec;
 
@@ -157,6 +157,7 @@ void myAnalysis::plots(const string &output) {
 
         TFile* tfile = TFile::Open(file.c_str());
 
+        TList* keysCEMCBase = ((TDirectory*)tfile->Get("CEMCBase"))->GetListOfKeys();
         TList* keysCEMC     = ((TDirectory*)tfile->Get("CEMC"))->GetListOfKeys();
         TList* keysIHCal    = ((TDirectory*)tfile->Get("IHCal"))->GetListOfKeys();
         TList* keysOHCal    = ((TDirectory*)tfile->Get("OHCal"))->GetListOfKeys();
@@ -169,19 +170,21 @@ void myAnalysis::plots(const string &output) {
             string run         = tokens[1];
             string event       = tokens[2];
             vector<string> triggerIndex = JetUtils::split(tokens[3],'-');
-            Int_t leadJetPt    = stoi(tokens[4]);
-            Int_t subLeadJetPt = stoi(tokens[5]);
-            Float_t frcem      = stof(tokens[6]);
-            Float_t frcoh      = stof(tokens[7]);
-            Int_t maxJetET     = stoi(tokens[8]);
-            Float_t dPhi       = stof(tokens[9]);
-            Bool_t isDijet     = stoi(tokens[10]);
+            Int_t zvtx         = stoi(tokens[4]);
+            Int_t leadJetPt    = stoi(tokens[5]);
+            Int_t subLeadJetPt = stoi(tokens[6]);
+            Float_t frcem      = stof(tokens[7]);
+            Float_t frcoh      = stof(tokens[8]);
+            Int_t maxJetET     = stoi(tokens[9]);
+            Float_t dPhi       = stof(tokens[10]);
+            Bool_t isDijet     = stoi(tokens[11]);
 
             cout << "Run: " << run << ", Event: " << event
                  << ", trigger: " << tokens[3]
+                 << ", Z: " << zvtx << " cm"
                  << ", pt: " << leadJetPt << " GeV" << endl;
 
-            event_log << run << "," << event << "," << tokens[3] << "," << leadJetPt << "," << subLeadJetPt
+            event_log << run << "," << event << "," << tokens[3] << "," << zvtx << "," << leadJetPt << "," << subLeadJetPt
                       << "," << frcem << "," << frcoh << "," << maxJetET << "," << dPhi << "," << isDijet << endl;
 
             auto hCEMC = (TH2*)tfile->Get(("CEMC/"+name).c_str());
@@ -197,6 +200,10 @@ void myAnalysis::plots(const string &output) {
             // hCEMC->GetYaxis()->SetLimits(0,24);
             // hCEMC->GetYaxis()->SetNdivisions(11, false);
             hCEMC->GetYaxis()->SetTitleOffset(0.5);
+
+            name  = keysCEMCBase->At(j)->GetName();
+            auto hCEMCBase = (TH2*)tfile->Get(("CEMCBase/"+name).c_str());
+            hCEMCBase->GetYaxis()->SetTitleOffset(0.5);
 
             name  = keysIHCal->At(j)->GetName();
             auto hIHCal = (TH2*)tfile->Get(("IHCal/"+name).c_str());
@@ -235,6 +242,9 @@ void myAnalysis::plots(const string &output) {
             string suffix = suffix_vec[pt_key];
 
             if(savePlots) {
+                hCEMCBase->Draw("COLZ1");
+                c1->Print((tag+suffix).c_str(), "pdf portrait");
+
                 hCEMC->Draw("COLZ1");
                 c1->Print((tag+suffix).c_str(), "pdf portrait");
 

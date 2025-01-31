@@ -42,6 +42,7 @@ using std::stringstream;
 JetValidationv2::JetValidationv2()
   : SubsysReco("JetValidationv2")
   , m_recoJetName_r04("AntiKt_unsubtracted_r04")
+  , m_emcTowerBaseNode("TOWERINFO_CALIB_CEMC")
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
@@ -49,9 +50,11 @@ JetValidationv2::JetValidationv2()
   , m_triggerBits(42)
   , m_zvtx_max(30) /*cm*/
   , m_bins_phi(64)
+  , m_bins_phi_cemc(256)
   , m_phi_low(-M_PI)
   , m_phi_high(M_PI)
   , m_bins_eta(24)
+  , m_bins_eta_cemc(96)
   , m_eta_low(-1.1)
   , m_eta_high(1.1)
   , m_bins_pt(400)
@@ -296,12 +299,14 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   dPhi  = (Int_t)(dPhi*1000)/1000.;
 
   // Get TowerInfoContainer
-  TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
-  TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
-  TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
+  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerBaseNode.c_str());
+  TowerInfoContainer* towersCEMC     = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
+  TowerInfoContainer* towersIHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
+  TowerInfoContainer* towersOHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
 
-  if (!towersCEMC || !towersIHCal || !towersOHCal) {
+  if (!towersCEMCBase || !towersCEMC || !towersIHCal || !towersOHCal) {
     cout << PHWHERE << "JetValidation::process_event Could not find one of "
+         << m_emcTowerBaseNode  << ", "
          << m_emcTowerNode      << ", "
          << m_ihcalTowerNode    << ", "
          << m_ohcalTowerNode    << ", "
@@ -326,9 +331,16 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     s_triggerIdx += to_string(idx);
   }
 
-  nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << jetPtLead << "_" << jetPtSubLead
+  nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << (Int_t)m_zvtx << "_" << jetPtLead << "_" << jetPtSubLead
             << "_" << frcem << "_" << frcoh << "_" << (Int_t)maxJetET << "_" << dPhi << "_" << isDijet;
 
+  name << "hCEMCBase_" << nameSuffix.str();
+  title << "CEMC Base: " << titleSuffix.str();
+
+  auto hCEMCBase_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi_cemc, m_phi_low, m_phi_high, m_bins_eta_cemc, m_eta_low, m_eta_high);
+
+  name.str("");
+  title.str("");
   name << "hCEMC_" << nameSuffix.str();
   title << "CEMC: " << titleSuffix.str();
 
@@ -347,6 +359,23 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   title << "OHCal: " << titleSuffix.str();
 
   auto hOHCal_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
+
+  // loop over CEMC towers
+  for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
+    UInt_t key  = TowerInfoDefs::encode_emcal(towerIndex);
+    UInt_t iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    UInt_t ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
+    // map: [0, 127]  -> [128,255], [0,pi]
+    // map: [128, 255] -> [0,127], [-pi,0]
+    iphi = (iphi + m_bins_phi_cemc/2) % m_bins_phi_cemc;
+
+    // EMCal
+    TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
+    Float_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
+
+    hCEMCBase_->SetBinContent(iphi+1, ieta+1, energy);
+  }
 
   // loop over towers
   for(UInt_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex) {
@@ -376,6 +405,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     hOHCal_->SetBinContent(iphi+1, ieta+1, energy);
   }
 
+  hCEMCBase.push_back(hCEMCBase_);
   hCEMC.push_back(hCEMC_);
   hIHCal.push_back(hIHCal_);
   hOHCal.push_back(hOHCal_);
@@ -407,6 +437,7 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   output.mkdir("jets");
   output.mkdir("bkg_checks");
 
+  output.mkdir("CEMCBase");
   output.mkdir("CEMC");
   output.mkdir("IHCal");
   output.mkdir("OHCal");
@@ -427,6 +458,9 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   h2FracOHCalVsFracCEMC_miss->Write();
 
   for(UInt_t i = 0; i < hCEMC.size(); ++i) {
+    output.cd("CEMCBase");
+    hCEMCBase[i]->Write();
+
     output.cd("CEMC");
     hCEMC[i]->Write();
 
