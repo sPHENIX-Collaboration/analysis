@@ -9,7 +9,7 @@ parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total numb
 
 args = parser.parse_args()
 
-with open("Run_List_Generator/FileLists/Full_ppGoldenRunList_Version1.txt") as file_in:
+with open("Run_List_Generator/dst_list/Final_RunNumbers_After_All_Cuts.txt") as file_in:
     lines = [line.rstrip('\n') for line in file_in]
 print(len(lines))
 
