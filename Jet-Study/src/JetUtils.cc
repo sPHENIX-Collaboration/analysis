@@ -1,8 +1,12 @@
 #include "JetUtils.h"
 #include <math.h>
 #include <sstream>
+#include <fstream>
 
 using std::stringstream;
+using std::cout;
+using std::endl;
+using std::make_pair;
 
 vector<string> JetUtils::m_triggers = {"Clock"
                                       ,"ZDC South"
@@ -47,6 +51,60 @@ vector<string> JetUtils::m_triggers = {"Clock"
                                       ,"MBD Laser"
                                       ,"None"
                                      };
+
+int JetUtils::readEventList(const string &input, vector<pair<int, int>> &vec, int nEvents, bool verbose)
+{
+  std::ifstream file(input);
+
+  // Check if the file was successfully opened
+  if (!file.is_open())
+  {
+    cout << "Failed to open file: " << input << endl;
+    return 1;
+  }
+
+  string line;
+
+  // keep header
+  std::getline(file, line);
+
+  // loop over each run
+  while (std::getline(file, line))
+  {
+    std::istringstream lineStream(line);
+
+    int run;
+    int event;
+    char comma;
+
+    if (lineStream >> run >> comma >> event)
+    {
+      for (int i = event - nEvents; i <= event + nEvents; ++i)
+      {
+        vec.push_back(make_pair(run, i));
+      }
+    }
+    else
+    {
+      cout << "Failed to parse line: " << line << endl;
+      return 1;
+    }
+  }
+
+  // print the events of interest
+  if (verbose)
+  {
+    for (auto p : vec)
+    {
+      cout << "Run: " << p.first << ", Event: " << p.second << endl;
+    }
+  }
+
+  // Close the file
+  file.close();
+
+  return 0;
+}
 
 bool JetUtils::check_bad_jet_eta(float jet_eta, float zvtx, float jet_radius)
 {

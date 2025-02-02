@@ -7,12 +7,14 @@
 
 using std::string;
 using std::vector;
+using std::pair;
 
 class JetUtils
 {
  public:
   static bool check_bad_jet_eta(float jet_eta, float zvtx, float jet_radius);
   static vector<string> split(const string &s, const char delimiter);
+  static int readEventList(const string &input, vector<pair<int, int>> &vec, int nEvents=0, bool verbose=false);
 
   static vector<string> m_triggers;
 

@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <vector>
+#include <algorithm>
 // -- event
 #include <ffaobjects/EventHeader.h>
 #include <fun4all/Fun4AllServer.h>
@@ -21,15 +21,16 @@
 
 using std::cout;
 using std::endl;
-using std::string;
 using std::to_string;
 using std::stringstream;
+using std::make_pair;
 
 //____________________________________________________________________________..
 EventCheck::EventCheck()
   : SubsysReco("EventCheck")
   , m_triggerBit(17) /*Jet 8 GeV + MBD NS >= 1*/
   , m_zvtx_max(30) /*cm*/
+  , m_doSpecificEvents(false)
 {
   cout << "EventCheck::EventCheck(const std::string &name) Calling ctor" << endl;
 }
@@ -53,6 +54,23 @@ Int_t EventCheck::Init(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t EventCheck::process_event(PHCompositeNode *topNode)
 {
+  EventHeader* eventInfo = findNode::getClass<EventHeader>(topNode,"EventHeader");
+  if(!eventInfo)
+  {
+    cout << PHWHERE << "EventValidation::process_event - Fatal Error - EventHeader node is missing. " << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  int m_globalEvent = eventInfo->get_EvtSequence();
+  int m_run         = eventInfo->get_RunNumber();
+
+  if (m_doSpecificEvents && std::find(m_eventList_vec.begin(), m_eventList_vec.end(), make_pair(m_run,m_globalEvent)) == m_eventList_vec.end()) {
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  else if(m_doSpecificEvents) {
+    cout << "Event Found! Run: " << m_run << ", Event: " << m_globalEvent << endl;
+  }
+
   TriggerRunInfo* triggerruninfo = findNode::getClass<TriggerRunInfo>(topNode, "TriggerRunInfo");
   if (!triggerruninfo) {
     cout << "EventCheck::process_event - Error can not find TriggerRunInfo node " << endl;

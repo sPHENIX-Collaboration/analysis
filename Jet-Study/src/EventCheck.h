@@ -10,6 +10,13 @@
 
 #include <calotrigger/TriggerAnalyzer.h>
 
+// Jet Utils
+#include "JetUtils.h"
+
+using std::string;
+using std::vector;
+using std::pair;
+
 class PHCompositeNode;
 
 class EventCheck : public SubsysReco
@@ -45,10 +52,19 @@ class EventCheck : public SubsysReco
     this->m_triggerBit = m_triggerBit;
   }
 
+  void set_eventList(const string &m_eventList) {
+    this->m_eventList = m_eventList;
+    m_doSpecificEvents = !JetUtils::readEventList(m_eventList, m_eventList_vec, 0, true);
+  }
+
  private:
 
   int m_triggerBit;
   float m_zvtx_max;
+  bool m_doSpecificEvents;
+  string m_eventList;
+
+  vector<pair<int, int>> m_eventList_vec;
 
   TriggerAnalyzer* m_triggeranalyzer = nullptr;
 };
