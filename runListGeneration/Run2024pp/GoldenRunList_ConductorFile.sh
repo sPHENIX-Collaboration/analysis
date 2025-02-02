@@ -161,7 +161,7 @@ if no_limit:
     query = """
     SELECT runnumber
     FROM datasets
-    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana450_2024p009'
+    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana462_2024p010_v001'
     GROUP BY runnumber
     HAVING SUM(events) >= 1000000;
     """
@@ -169,7 +169,7 @@ else:
     query = """
     SELECT runnumber
     FROM datasets
-    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana450_2024p009'
+    WHERE dsttype='DST_CALO_run2pp' AND dataset='ana462_2024p010_v001'
     GROUP BY runnumber
     HAVING SUM(events) >= 1000000 AND runnumber >= 47289;
     """
