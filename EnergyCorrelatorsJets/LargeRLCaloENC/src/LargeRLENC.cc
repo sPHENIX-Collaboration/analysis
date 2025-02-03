@@ -190,10 +190,9 @@ std::array<float, 3> LargeRLENC::HadronicEnergyBalence(Jet* jet, float ohcal_ihc
 {
 	//For the case where we don't already have the source pieces
 	float hadronic_energy=0., electromagnetic_energy=0.;
-	float ohcal_conversion=ohcal_ihcal_ratio-1.;
+	float ohcal_conversion=ohcal_ihcal_ratio/(float)(ohcal_ihcal_ratio+1.);
 	float jet_phi=jet->get_phi(), jet_eta=jet->get_eta();
 	float i_e=0.;
-	ohcal_conversion=1./ohcal_conversion;
 	try{
 		findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 	}
@@ -577,6 +576,7 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	ohcal_occup->Fill(ohcal_occupancy);
 	ohcal_rat_h->Fill(ohcal_rat);
 	std::vector<float> ohcal_jet_rat, emcal_jet_rat, jet_ie;
+	std::vector<std::array<float, 3>> ohcal_jet_rat_and_ie=getJetEnergyRatios(jets, ohcal_energy/(float)ihcal_energy, topNode);
 	for(auto h:ohcal_jet_rat_and_ie){
 		ohcal_jet_rat.push_back(h[0]);
 		emcal_jet_rat.push_back(h[1]);

@@ -1,0 +1,14 @@
+Universe 	        = vanilla 
+Executable 	= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/RunLargeRLENC.sh 
+Arguments         = none none none none DST_TRUTH_JET_pythia8_Jet30-0000000021-008236.root DST_CALO_CLUSTER_pythia8_Jet30-0000000021-008236.root DST_TRUTH_RECO_pythia8_Jet30-0000000021-008236.root DST_GLOBAL_pythia8_Jet30-0000000021-008236.root 1000 1.0
+Output  	        = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/condor_8236.out 
+Error 		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/condor_8236.err 
+Log  		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/condor_8236.log
+Initialdir  	= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/root_output_30
+PeriodicHold 	= (NumJobStarts>=1 && JobStatus == 1)
+accounting_group = group_phenix.u 
+accounting_group_user = sgross 
+request_memory = 128192MB 
+Priority = 90 
+job_lease_duration = 3600
+Queue 1

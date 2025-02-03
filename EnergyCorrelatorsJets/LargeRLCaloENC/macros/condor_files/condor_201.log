@@ -1,0 +1,146 @@
+000 (4595405.000.000) 2025-01-28 23:08:39 Job submitted from host: <130.199.48.82:9618?addrs=130.199.48.82-9618&alias=rcas2063.rcf.bnl.gov&noUDP&sock=schedd_23786_1176>
+...
+001 (4595405.000.000) 2025-01-29 01:21:49 Job executing on host: <130.199.184.158:9618?addrs=130.199.184.158-9618&alias=spool1767.sdcc.bnl.gov&noUDP&sock=startd_62920_7c34>
+...
+006 (4595405.000.000) 2025-01-29 01:21:58 Image size of job updated: 148332
+	79  -  MemoryUsage of job (MB)
+	79904  -  ResidentSetSize of job (KB)
+...
+006 (4595405.000.000) 2025-01-29 01:22:03 Image size of job updated: 571384
+	79  -  MemoryUsage of job (MB)
+	79912  -  ResidentSetSize of job (KB)
+...
+005 (4595405.000.000) 2025-01-29 01:22:03 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:03, Sys 0 00:00:01  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:03, Sys 0 00:00:01  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        2        2   6681619 
+	   Memory (MB)          :       79   128192    128256 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2025-01-29T06:22:03Z with exit-code 0.
+...
+000 (4596426.000.000) 2025-01-30 00:27:25 Job submitted from host: <130.199.48.82:9618?addrs=130.199.48.82-9618&alias=rcas2063.rcf.bnl.gov&noUDP&sock=schedd_23786_1176>
+...
+001 (4596426.000.000) 2025-01-30 14:16:19 Job executing on host: <130.199.184.213:9618?addrs=130.199.184.213-9618&alias=spool1788.sdcc.bnl.gov&noUDP&sock=startd_11823_ee03>
+...
+006 (4596426.000.000) 2025-01-30 14:16:27 Image size of job updated: 298284
+	63  -  MemoryUsage of job (MB)
+	64268  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:21:27 Image size of job updated: 5042252
+	843  -  MemoryUsage of job (MB)
+	863116  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:26:28 Image size of job updated: 9206864
+	4267  -  MemoryUsage of job (MB)
+	4368724  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:31:29 Image size of job updated: 10414540
+	7312  -  MemoryUsage of job (MB)
+	7487488  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:36:29 Image size of job updated: 14080096
+	9533  -  MemoryUsage of job (MB)
+	9761688  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:41:30 Image size of job updated: 17296700
+	13422  -  MemoryUsage of job (MB)
+	13743976  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:46:38 Image size of job updated: 19602304
+	16275  -  MemoryUsage of job (MB)
+	16665544  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:51:31 Image size of job updated: 22886748
+	18763  -  MemoryUsage of job (MB)
+	19213012  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 14:56:31 Image size of job updated: 26372096
+	21542  -  MemoryUsage of job (MB)
+	22058744  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:01:32 Image size of job updated: 27991772
+	24339  -  MemoryUsage of job (MB)
+	24923032  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:06:32 Image size of job updated: 31379396
+	26492  -  MemoryUsage of job (MB)
+	27127720  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:11:32 Image size of job updated: 34147628
+	29781  -  MemoryUsage of job (MB)
+	30494988  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:16:33 Image size of job updated: 35995720
+	32115  -  MemoryUsage of job (MB)
+	32885104  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:21:34 Image size of job updated: 39467108
+	34448  -  MemoryUsage of job (MB)
+	35274424  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:26:34 Image size of job updated: 41814872
+	37602  -  MemoryUsage of job (MB)
+	38504060  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:31:35 Image size of job updated: 44642776
+	39860  -  MemoryUsage of job (MB)
+	40815968  -  ResidentSetSize of job (KB)
+...
+006 (4596426.000.000) 2025-01-30 15:35:46 Image size of job updated: 47193072
+	39860  -  MemoryUsage of job (MB)
+	40815968  -  ResidentSetSize of job (KB)
+...
+005 (4596426.000.000) 2025-01-30 15:35:47 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 01:04:10, Sys 0 00:07:14  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 01:04:10, Sys 0 00:07:14  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.94        1         1 
+	   Disk (KB)            :     2           2   6681619 
+	   Memory (MB)          : 39860      128192    128256 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2025-01-30T20:35:46Z with exit-code 0.
+...
+000 (4597630.000.000) 2025-02-02 20:58:59 Job submitted from host: <130.199.48.82:9618?addrs=130.199.48.82-9618&alias=rcas2063.rcf.bnl.gov&noUDP&sock=schedd_23786_1176>
+...
+001 (4597630.000.000) 2025-02-02 21:05:23 Job executing on host: <130.199.184.203:9618?addrs=130.199.184.203-9618&alias=spool1778.sdcc.bnl.gov&noUDP&sock=startd_34041_a570>
+...
+006 (4597630.000.000) 2025-02-02 21:05:32 Image size of job updated: 591396
+	0  -  MemoryUsage of job (MB)
+	0  -  ResidentSetSize of job (KB)
+...
+005 (4597630.000.000) 2025-02-02 21:05:32 Job terminated.
+	(1) Normal termination (return value 139)
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        2        2   6681624 
+	   Memory (MB)          :        0   128192    128256 
+	   xferslots            :                           0 
+
+	Job terminated of its own accord at 2025-02-03T02:05:32Z with exit-code 139.
+...
