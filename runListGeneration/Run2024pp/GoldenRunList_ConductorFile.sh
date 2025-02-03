@@ -569,7 +569,7 @@ generate_dst_lists() {
         echo "[WARNING] Could not find final .list file at: $list_path"
         echo "No DST lists will be created."
     else
-        CreateDstList.pl --build ana450 --cdb 2024p009 DST_CALO_run2pp --list "$list_path"
+        CreateDstList.pl --build ana462 --cdb 2024p010_v001 DST_CALO_run2pp --list "$list_path"
         echo "DST lists generated under ${workplace}/../dst_list"
     fi
 
