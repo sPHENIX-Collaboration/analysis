@@ -92,14 +92,14 @@ Int_t EventCheck::process_event(PHCompositeNode *topNode)
   }
 
   // skip event if zvtx is too large
-  if(fabs(m_zvtx) >= m_zvtx_max) {
+  if(!m_doSpecificEvents && fabs(m_zvtx) >= m_zvtx_max) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   m_triggeranalyzer->decodeTriggers(topNode);
 
   // skip event if it did not fire the desired trigger
-  if(!m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
+  if(!m_doSpecificEvents && !m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
