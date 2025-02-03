@@ -117,7 +117,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		rtcemc->set_frac_cut(0.5);
 		se->registerSubsystem(rtcemc);
 	}
-	if(data && nojets){ //if no jet objects, run fastjet
+/*	if(data && nojets){ //if no jet objects, run fastjet
 		JetReco* data_jets=new JetReco("TowerJetReco");
 		data_jets->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER));
 		data_jets->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
@@ -129,7 +129,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		se->registerSubsystem(data_jets);
 		
 		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
-		}
+		}*/
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
 //	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
 	//std::fstream* ofs=new std::fstream(text_out_filename);
