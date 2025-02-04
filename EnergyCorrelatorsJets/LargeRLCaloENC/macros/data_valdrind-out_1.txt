@@ -2047,3 +2047,5 @@
 ==27314==  Uninitialised value was created by a stack allocation
 ==27314==    at 0x4B9EF40: ??? (in /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.26.06.p01/lib/libCore.so)
 ==27314== 
+==27314== Warning: set address range perms: large range [0x59cac000, 0xd9c35000) (defined)
+==27314== Warning: set address range perms: large range [0x59eac000, 0xd9c35000) (defined)
