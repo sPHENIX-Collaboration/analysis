@@ -198,7 +198,13 @@ std::array<float, 3> LargeRLENC::HadronicEnergyBalence(Jet* jet, float ohcal_ihc
 	}
 	catch(std::exception& e){ return {0.,0., 0.};}
 	auto truth_particles_p=findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-	auto truth_particles=truth_particles_p->GetMap();
+	try{
+		truth_particles_p->GetMap();
+	}
+	catch(std::exception& e){std::cout<<"Could not find particle map" <<std::endl;
+		return {0.,0.,0.};
+	}
+	PHG4TruthInfoContainer::Map truth_particles=truth_particles_p->GetMap();
 	for(auto& iter:jet->get_comp_vec()){
 		Jet::SRC source=iter.first;
 		if(source != Jet::SRC::PARTICLE && source != Jet::SRC::CHARGED_PARTICLE && source != Jet::SRC::HEPMC_IMPORT){
@@ -489,11 +495,11 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 				std::cout<<"Jet container for tower sub1 has size: " <<jets->size() <<std::endl;
 				if(!jets || jets->size() == 0){
 					jets = findNode::getClass<JetContainerv1>(topNode, "AntiKt_TowerInfo_r04");
-					std::cout<<"Jet container for towerinfo has size: " <<jets->size() <<std::endl;
+					if(jets) std::cout<<"Jet container for towerinfo has size: " <<jets->size() <<std::endl;
 				}
 				if(!jets || jets->size() == 0){
 					jets = findNode::getClass<JetContainerv1>(topNode, "AntiKt_unsubtracted_r04");
-					std::cout<<"Jet container for unsub has size: " <<jets->size() <<std::endl;
+					if(jets) std::cout<<"Jet container for unsub has size: " <<jets->size() <<std::endl;
 				}
 				//try every possible style
 			}
