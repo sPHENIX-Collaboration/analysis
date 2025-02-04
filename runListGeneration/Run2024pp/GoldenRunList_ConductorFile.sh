@@ -668,13 +668,18 @@ remove_problematic_segments() {
         return
     fi
 
-    # Define where the problematic segments file will be generated.
-    segments_file="list/list_problematic_segments.txt"
+    # Internal Boolean: if true, generate the bad segment file using the embedded Python script.
+    # If false (the default), use the pre-generated file.
+    generateBadSegmentFile=false
 
-    echo "========================================"
-    echo "[INFO] Generating problematic segments file using embedded Python script...this may take some time...."
-    echo "[DEBUG] Starting Python script execution..."
-    python3 <<'EOF' > "$segments_file"
+    if $generateBadSegmentFile; then
+        # Define where the problematic segments file will be generated.
+        segments_file="list/list_problematic_segments.txt"
+
+        echo "========================================"
+        echo "[INFO] Generating problematic segments file using embedded Python script... this may take some time..."
+        echo "[DEBUG] Starting Python script execution..."
+        python3 <<'EOF' > "$segments_file"
 import os
 import sys
 import subprocess
@@ -749,11 +754,16 @@ if __name__ == '__main__':
     subprocess.run(['bash', '-c', command], check=True)
     dprint("Extracted run-segments into", output_segments)
 EOF
+    else
+        segments_file="/sphenix/user/patsfan753/tutorials/tutorials/CaloDataAnaRun24pp/runListGeneration/bad-ana446-2024p007-segments.list"
+        echo "========================================"
+        echo "[INFO] Using pre-generated bad segments file: $segments_file"
+    fi
 
     echo "========================================"
-    echo "[INFO] Problematic segments file generated at: $segments_file"
+    echo "[INFO] Problematic segments file is: $segments_file"
     if [[ ! -f "$segments_file" ]]; then
-        echo "[WARNING] 'removeBadSegments' is set, but $segments_file was not generated. No segments removed."
+        echo "[WARNING] Could not find segments file at $segments_file. No segments removed."
         return
     fi
 
@@ -770,8 +780,8 @@ EOF
         echo "[DEBUG] Extracted run number: '$run_part'"
         echo "[DEBUG] Extracted segment number: '$seg_part'"
 
-        # Determine the corresponding DST .list file to modify:
-        listfile="../dst_list/dst_jet_run2pp-${run_part}.list"
+        # Determine the corresponding DST .list file to modify.
+        listfile="${workplace}/../dst_list/dst_jet_run2pp-${run_part}.list"
         echo "[DEBUG] Looking for DST list file: $listfile"
         if [[ -f "$listfile" ]]; then
             # The DST list lines are expected to contain something like:
