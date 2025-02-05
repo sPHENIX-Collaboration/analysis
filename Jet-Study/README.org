@@ -7,6 +7,10 @@ CreateDstList.pl --build ana462 --cdb 2024p010_v001 DST_JET_run2pp --printruns
 #+begin_src bash
 psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber from magnet_info where magnet_on = 'true' and runnumber >= 47289;" -At
 #+end_src
+
+* Generate runs with MBD N&S>=1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber from gl1_scaledown where scaledown10 != -1 and runnumber >= 47289;" -At
 #+end_src
 
 * Generate Trigger Name List
