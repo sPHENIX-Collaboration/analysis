@@ -33,7 +33,7 @@ class jetBackgroundCut : public SubsysReco
 
   bool failsdPhiCut(float dPhi, bool isDijet)
   {
-    return dPhi > 3*M_PI/4 && isDijet;
+    return dPhi < 3*M_PI/4 && isDijet;
   }
 
   int Init(PHCompositeNode *topNode) override;
