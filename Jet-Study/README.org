@@ -30,7 +30,7 @@ CreateDstList.pl --build ana450 --cdb 2024p009 DST_JET_run2pp --list <list>
 
 * Generate list of runs that contain bad tower maps
 #+begin_src bash
-find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list
+find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > files/runs-hot-maps.list
 #+end_src
 
 * Access the good run database
@@ -53,7 +53,6 @@ rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL
 
 #+begin_src bash
 rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
-#+end_src
 #+end_src
 
 ** After editing .cc or .h
