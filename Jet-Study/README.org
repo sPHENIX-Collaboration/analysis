@@ -3,9 +3,10 @@
 CreateDstList.pl --build ana462 --cdb 2024p010_v001 DST_JET_run2pp --printruns
 #+end_src
 
-* Generate runs with magnetic field off (to exclude them from the good run list):
+* Generate runs with magnetic field on:
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber from magnet_info where magnet_on = 'false' order by runnumber;" -At
+psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber from magnet_info where magnet_on = 'true' and runnumber >= 47289;" -At
+#+end_src
 #+end_src
 
 * Generate Trigger Name List
