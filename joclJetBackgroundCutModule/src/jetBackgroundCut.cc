@@ -20,16 +20,18 @@
 #include <jetbase/Jet.h>
 #include <iostream>
 #include <ffarawobjects/Gl1Packetv2.h>
+#include <globalvertex/GlobalVertex.h>
 using namespace std;
 
 //____________________________________________________________________________..
-jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort):
+jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort, GlobalVertex::VTXTYPE vtxtype):
   SubsysReco(name)//).c_str())
 {
   _name = name;
   _debug = debug;
   _doAbort = doAbort;
   _jetNodeName = jetNodeName;
+  _vtxtype = vtxtype;
 }
 
 //____________________________________________________________________________..
@@ -52,7 +54,6 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 {
 
   TowerInfoContainer *towersEM = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  //TowerInfoContainer *towersIH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   TowerInfoContainer *towersOH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   JetContainer *jets = findNode::getClass<JetContainerv1>(topNode, _jetNodeName);
   MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
@@ -81,40 +82,24 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
-  bool gvtxExists = false;
   if(gvtxmap)
     {
-      auto gVtxMapStart = gvtxmap->begin();
-      
-      GlobalVertex* gvtx = NULL;
-      if(gVtxMapStart != gvtxmap->end())
-	{
-	  gvtx = gVtxMapStart->second;
-	}
+      GlobalVertex* gvtx = gvtxmap->Get(_vtxtype);
       if(gvtx)
 	{
 	  zvtx = gvtx->get_z();
-	  gvtxExists = true;
 	}
-    }
-  if(!gvtxmap || !gvtxExists)
-    {
-      auto mbdVtxMapStart = mbdvtxmap->begin();
-      MbdVertex* mbdvtx = NULL;
-      if(mbdVtxMapStart != mbdvtxmap->end())
+      else
 	{
-	  mbdvtx = mbdVtxMapStart->second;
-	}
-      if(mbdvtx)
-	{
-	  zvtx = mbdvtx->get_z();
+	  if(_debug > 0) cout << "No vertex of specified type found! Aborting event." << endl;
+	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
 
   if(_debug > 1) cout << "Getting jets: " << endl;
   if(zvtx == NAN)
     {
-      cout << "ERROR: NO ZVTX! ABORT EVENT" << endl;
+      if(_debug > 0) cout << "ERROR: NO ZVTX! ABORT EVENT" << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   if(jets)
