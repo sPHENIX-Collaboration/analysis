@@ -22,15 +22,19 @@ public:
     SpinDBQA();
     ~SpinDBQA() = default;
 
-    void SetCNIPath(std::string cnipath){_cnipathname = cnipath;};
+    void SetCNIPath(std::string cnipath = "/gpfs02/eic/cnipol/jet_run24/results"){_cnipathname = cnipath;};
     void SetMarkdownFilename(std::string markdownfile = "README.md"){_markdownfilename = markdownfile;};
-    //void SetHtmlFilename(std::string htmlfile = "runsummary.html") = {htmlfilename = htmlfile};
+    void SetHtmlFilename(std::string htmlfile = "runsummary.html"){_htmlfilename = htmlfile;};
 
     void SetRunList(std::string runlist);
+
+    void DefaultQA(){b_defaultQA = true;};
+    void SetQALevel(int level){b_defaultQA = false; qalevel = level;};
+
     void ReadSpinDBData();
     void doQA();
 
-    //void WriteHtml();
+    void WriteHtml();
     void WriteMarkdown();
 
     //void WriteSpinDBData();
@@ -41,21 +45,28 @@ private:
     SpinDBOutput spin_out;
     SpinDBInput spin_in;
     
-    void LocalPolQA(std::string &stringMarkdown);
-    void GL1pScalersQA(std::string &stringMarkdown);
-    void CNIHjetQA(std::string &stringMarkdown);
+    void LocalPolQA(std::string &stringMarkdown,std::string &stringHtml);
+    void GL1pScalersQA(std::string &stringMarkdown,std::string &stringHtml);
+    void CNIHjetQA(std::string &stringMarkdown,std::string &stringHtml);
+
+    void PrepareHtml();
+    std::string HtmlContent();
 
     std::vector<int> runlistvect;
     std::map<std::string, std::vector<int>> map_spindbqa_markdown;
     std::map<std::string, std::vector<int>> map_spindbqa_html;
     
-    std::string _cnipathname;
+    std::string _cnipathname = "/gpfs02/eic/cnipol/jet_run24/results";
     std::string _markdownfilename;
     std::string _htmlfilename;
 
     int runnumber;
 
-    std::map<int, int> map_defaultQA, map_fillnumber, map_qa_level, map_crossingshift;
+    bool b_defaultQA = true;
+    int qalevel;
+
+    //std::map<int, int> map_defaultQA, 
+    std::map<int, int> map_fillnumber, map_qa_level, map_crossingshift;
     std::map<int, double> map_bluepol, map_yellpol, map_bluepolerr, map_yellpolerr;
     std::map<int, int> map_badrunqa;
     std::map<int, float> map_crossingangle, map_crossanglestd, map_crossanglemin, map_crossanglemax;

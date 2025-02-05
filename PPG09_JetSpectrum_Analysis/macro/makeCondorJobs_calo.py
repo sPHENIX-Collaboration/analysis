@@ -9,13 +9,13 @@ parser.add_argument('-t', '--nTotEvents', default=-1, type=int, help='Total numb
 
 args = parser.parse_args()
 
-with open("Run_List_Generator/FileLists/Full_ppGoldenRunList_Version1.txt") as file_in:
+with open("Run_List_Generator/FileLists/NJA_Full_ppGoldenRunList_Version5.txt") as file_in:
     lines = [line.rstrip('\n') for line in file_in]
 print(len(lines))
 
 inputType = args.inputType.upper()
 
-dstSets = ['DST_JET', 'DST_JETCALO']
+dstSets = ['DST_CALO']
 
 myShell = str(environ['SHELL'])
 goodShells = ['/bin/bash', '/bin/tcsh']
@@ -49,7 +49,6 @@ def makeCondorJob():
         listFile = []
         listFileGeneric = []
         fileStart = "fileLists/productionFiles-{1}-{2}-".format(condorDir, inputType, dstSets[0].lower(), lines[i].lower())
-        fileStart2 = "fileLists/productionFiles-{1}-{2}-".format(condorDir, inputType, dstSets[1].lower(), lines[i].lower())
         with open('listRun.txt','w') as file:
            for i in range(len(lines)):
               Current_Count = 0;
@@ -68,7 +67,6 @@ def makeCondorJob():
                  Current_Count += 1
  
     listFileGeneric.append("$(condorDir)/{0}$INT(Process,%05d).list".format(fileStart))
-    listFileGeneric.append("$(condorDir)/{0}$INT(Process,%05d).list".format(fileStart2))
     listFileGeneric.append("$INT(Process,%05d)")
 
     condorFileName = "{0}/my{1}.job".format(condorDir, inputType)

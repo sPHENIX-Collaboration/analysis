@@ -7,7 +7,8 @@
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
 
-#include <calotrigger/TriggerAnalyzer.h>
+//#include <calotrigger/TriggerAnalyzer.h>
+#include <ffarawobjects/Gl1Packet.h>
 #include <globalvertex/GlobalVertexMapv1.h>
 
 #include <jetbase/JetContainerv1.h>
@@ -122,6 +123,9 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
   std::cout << "Chosen Jet Cuts: Lead Pt >= " << Lead_RPt_Cut << " GeV, All Pt >= " << All_RPt_Cut << " GeV, |Z-Vertex| <= " << ZVtx_Cut << ", Num. of Constits. > " << NComp_Cut << std::endl;
 
   char hname[99];
+
+  h_EventCount = new TH1D("h_EventCount","Events",5,-2.5,2.5);
+  
   //Constructing Histograms
   for(int i = 0; i < 8; i++){
      //Jet Plots
@@ -138,7 +142,7 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
      sprintf(hname,"h_oHCal_Jet_Eta_Phi_E_%d",i);
      h_oHCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_oHCal_TE_Sub_Eta_Phi_E_%d",i);
-     h_oHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
+     h_oHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,12000,-600,600);
 
      //IHCal Tower Plots
      sprintf(hname,"h_iHCal_CS_Eta_Phi_E_%d",i);
@@ -150,7 +154,7 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
      sprintf(hname,"h_iHCal_Jet_Eta_Phi_E_%d",i);
      h_iHCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_iHCal_TE_Sub_Eta_Phi_E_%d",i);
-     h_iHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
+     h_iHCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,12000,-600,600);
 
      //EMCal Tower/Retower Plots
      sprintf(hname,"h_EMCal_CS_Eta_Phi_E_%d",i);
@@ -164,7 +168,7 @@ int Ana_PPG09_Mod::Init(PHCompositeNode *topNode)
      sprintf(hname,"h_EMCal_Jet_Eta_Phi_E_%d",i);
      h_EMCal_Jet_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,200,-100,100);
      sprintf(hname,"h_EMCal_TE_Sub_Eta_Phi_E_%d",i);
-     h_EMCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,600,0,600);
+     h_EMCal_TE_Sub_Eta_Phi_E_[i] = new TH3F(hname,hname,24,-0.5,23.5,64,-0.5,63.5,12000,-600,600);
 
      //Event Plots
      sprintf(hname,"h_ZVtx_%d",i);
@@ -180,7 +184,9 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
   
   m_event++;
   if((m_event % 1000) == 0) std::cout << "Ana_PPG09_Mod::process_event - Event number = " << m_event << std::endl;
- 
+
+  h_EventCount->Fill(-1);
+
   GlobalVertexMap *global_vtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if(!global_vtxmap || global_vtxmap->empty()){
      if(Verbosity() > 0){std::cout << "Aborted Event number = " << m_event << ", no global node" << std::endl;}  
@@ -201,7 +207,7 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
      }
   }
 
-  //Recording Event Triggers
+  ///Recording Event Triggers
   //triggeranalyzer->decodeTriggers(topNode);
   std::vector<int> m_triggers;
   Gl1Packet *gl1Packet = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
@@ -216,7 +222,7 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
   else{
      std::cout << "gl1Packet not found" << std::endl;
   }
-  
+
   JetContainer* jets_Cont = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if(!jets_Cont){std::cout << "Jets are Missing !" << std::endl;}
 
@@ -255,6 +261,9 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
   if(!CStowersEM3 || !CStowersIH3 || !CStowersOH3){std::cout << "Calib Sub. Towers are Missing !" << std::endl;}
 
   double Index_Plots[8] = {0};
+
+  h_EventCount->Fill(1);
+
   for(unsigned int ijet = 0; ijet < jets_Cont->size(); ++ijet){
      Jet* jet = jets_Cont->get_jet(ijet);
     
@@ -379,7 +388,7 @@ int Ana_PPG09_Mod::process_event(PHCompositeNode *topNode)
 		    }
 		 }
 	
-	         double SubE = std::abs(CTowerE - CSTowerE);	 
+	         double SubE = CTowerE - CSTowerE;	 
 		 SubETowers->Fill(ietaC,iphiC,SubE);
 		 CalibTowers->Fill(ietaC,iphiC,towerCal->get_energy());
                  RawTowers->Fill(ietaR,iphiR,towerRaw->get_energy());
@@ -465,6 +474,8 @@ int Ana_PPG09_Mod::End(PHCompositeNode *topNode)
      h_oHCal_TE_Sub_Eta_Phi_E_[k]->Write();
      h_ZVtx_[k]->Write();
   }
+
+  h_EventCount->Write();
 
   std::cout << "Ana_PPG09_Mod::End - Output to " << m_outputFileName << std::endl;
   if(Verbosity() > 5){

@@ -8,10 +8,11 @@
 #include <string>
 #include <vector>
 
-#include <calotrigger/TriggerAnalyzer.h>
+//#include <calotrigger/TriggerAnalyzer.h>
 
 class PHCompositeNode;
 class TH1D;
+class Gl1Packet;
 
 class Ana_PPG09_Mod : public SubsysReco
 {
@@ -30,17 +31,20 @@ class Ana_PPG09_Mod : public SubsysReco
   int Reset(PHCompositeNode * /*topNode*/) override;
 
  private:
- TriggerAnalyzer *triggeranalyzer{nullptr};
+ //TriggerAnalyzer *triggeranalyzer{nullptr};
+ //Gl1Packet *gl1Packet{nullptr};
  std::string m_recoJetName;
  std::string m_outputFileName;
 
  double NComp_Cut = 1;
  double Lead_RPt_Cut = -999;
  double All_RPt_Cut = 5;
- double ZVtx_Cut = 60;
+ double ZVtx_Cut = 30;
 
  //Jet Info
  TH3F *h_Eta_Phi_Pt_[8];
+
+ TH1D *h_EventCount;
 
  //Caloriemter Tower Info
  TH3F *h_EMCal_Raw_Eta_Phi_E_[8];
