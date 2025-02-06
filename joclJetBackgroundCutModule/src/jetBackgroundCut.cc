@@ -9,7 +9,6 @@
 #include <calobase/TowerInfoContainerSimv1.h>
 #include <calobase/TowerInfoContainerSimv2.h>
 #include <globalvertex/GlobalVertexMapv1.h>
-#include <globalvertex/GlobalVertex.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
@@ -20,7 +19,6 @@
 #include <jetbase/Jet.h>
 #include <iostream>
 #include <ffarawobjects/Gl1Packetv2.h>
-#include <globalvertex/GlobalVertex.h>
 using namespace std;
 
 //____________________________________________________________________________..
@@ -84,7 +82,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
     }
   if(gvtxmap)
     {
-      GlobalVertex* gvtx = gvtxmap->Get(_vtxtype);
+      GlobalVertex* gvtx = gvtxmap->get(_vtxtype);
       if(gvtx)
 	{
 	  zvtx = gvtx->get_z();

@@ -5,14 +5,14 @@
 #include <string>
 #include <cmath>
 #include <phool/recoConsts.h>
-#include <globalvertex/GlobalVeretx.h>
+#include <globalvertex/GlobalVertex.h>
 class PHCompositeNode;
 class CentralityInfo;
 class jetBackgroundCut : public SubsysReco
 {
  public:
 
-  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0, GlobalVertex::VTXTYPE vtxtype = MBD);
+  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD);
 
   virtual ~jetBackgroundCut();
 
