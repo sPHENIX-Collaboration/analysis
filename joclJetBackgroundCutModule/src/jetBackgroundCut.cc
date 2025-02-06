@@ -82,6 +82,11 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
     }
   if(gvtxmap)
     {
+      if(gvtxmap->empty())
+	{
+	  if(_debug > 0) cout << "gvtxmap empty - aborting event." << endl;
+	  return Fun4AllReturnCodes::ABORTEVENT;
+	}
       GlobalVertex* gvtx = gvtxmap->begin()->second;//gvtxmap->get(_vtxtype);
       if(gvtx)
 	{
@@ -100,9 +105,15 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	}
       else
 	{
-	  if(_debug > 0) cout << "No vertex of specified type found! Aborting event." << endl;
+	  if(_debug > 0) cout << "gvtx is NULL! Aborting event." << endl;
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
+    }
+
+  if(std::isnan(zvtx))
+    {
+      if(_debug > 0) cout << "zvtx is NAN after attempting to grab it. ABORT EVENT!" << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
     }
 
   if(_debug > 1) cout << "Getting jets: " << endl;
