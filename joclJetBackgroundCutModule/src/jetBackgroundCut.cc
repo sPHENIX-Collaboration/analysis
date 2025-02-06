@@ -54,7 +54,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
   TowerInfoContainer *towersEM = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
   TowerInfoContainer *towersOH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   JetContainer *jets = findNode::getClass<JetContainerv1>(topNode, _jetNodeName);
-  MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
+  //MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
   GlobalVertexMap* gvtxmap = findNode::getClass<GlobalVertexMapv1>(topNode, "GlobalVertexMap");
 
   RawTowerGeomContainer *geom[3];
@@ -73,19 +73,30 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 
   if(!_missingInfoWarningPrinted)
     {
-      if(!towersEM || !towersOH || !geom[1] || !geom[2] || (!mbdvtxmap && !gvtxmap))
+      if(!towersEM || !towersOH || !geom[1] || !geom[2] || !gvtxmap)
 	{
-	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/mbdvtxmap/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << mbdvtxmap << "/" << gvtxmap << endl;
+	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << gvtxmap << endl;
 	  _missingInfoWarningPrinted = true;
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
   if(gvtxmap)
     {
-      GlobalVertex* gvtx = gvtxmap->get(_vtxtype);
+      GlobalVertex* gvtx = gvtxmap->begin()->second;//gvtxmap->get(_vtxtype);
       if(gvtx)
 	{
-	  zvtx = gvtx->get_z();
+	  auto startIter = gvtx->find_vertexes(_vtxtype);
+	  auto endIter = gvtx->end_vertexes();
+	  for(auto iter = startIter; iter != endIter; ++iter)
+	    {
+	      const auto &[type, vertexVec] = *iter;
+	      if(type != _vtxtype) continue;
+	      for(const auto *vertex : vertexVec)
+		{
+		  if(!vertex) continue;
+		  zvtx = vertex->get_z();//gvtx->get_z();
+		}
+	    }
 	}
       else
 	{
