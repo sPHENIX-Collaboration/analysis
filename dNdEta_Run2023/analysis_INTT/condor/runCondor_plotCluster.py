@@ -50,7 +50,10 @@ if __name__ == '__main__':
     condorFile.write("Extension          = $INT(Myindex,%05d)\n")
     condorFile.write("isdata             = {}\n".format(1 if isdata else 0))
     condorFile.write("evtvtxmap          = {}/minitree/VtxEvtMap_{}/minitree_$(Extension).root\n".format(parentdir, filedesc))
-    condorFile.write("infilename         = {}/ntuple_$(Extension).root\n".format(infiledir))
+    if isdata:
+        condorFile.write("infilename         = /sphenix/tg/tg01/hf/hjheng/ppg02/dst/{}/ntuple_wEvtBcoDiff_$(Extension).root\n".format(filedesc))
+    else:
+        condorFile.write("infilename         = /sphenix/tg/tg01/hf/hjheng/ppg02/dst/{}/ntuple_$(Extension).root\n".format(filedesc))
     condorFile.write("outfilename        = {}/hists_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).err\n")

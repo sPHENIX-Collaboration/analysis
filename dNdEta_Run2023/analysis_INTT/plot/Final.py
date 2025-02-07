@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, TFile, TCanvas, TPad, gPad, TLegend, TColor, gROOT, TGraphErrors, TGraphAsymmErrors, TGaxis, kHAlignLeft, kVAlignTop, kHAlignRight, kVAlignBottom
 import numpy
 import math
 import glob
@@ -12,19 +12,48 @@ from array import array
 import json
 from plotUtil import GetHistogram
 from measurements.measurements import *
+import numpy as np
+from closure import GetMbinNum
 
-# gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
-# gROOT.ProcessLine('SetsPhenixStyle()')
 gROOT.SetBatch(True)
 
 TickSize = 0.03
 AxisTitleSize = 0.05
 AxisLabelSize = 0.04
-LeftMargin = 0.18
+LeftMargin = 0.22
 RightMargin = 0.06
-TopMargin = 0.08
+TopMargin = 0.28
 BottomMargin = 0.13
 FillAlpha = 0.5
+
+include_rawhijing = False
+
+# compute uncertainty - weighted average
+def weighted_average(values, uncertainties):
+    """
+    Computes the weighted average and its uncertainty for a given set of values and uncertainties.
+    
+    Parameters:
+    values (list or array): Data points.
+    uncertainties (list or array): Corresponding uncertainties of the data points.
+    
+    Returns:
+    tuple: Weighted average and its uncertainty.
+    """
+    values = np.array(values)
+    uncertainties = np.array(uncertainties)
+    
+    # Compute weights
+    weights = 1 / uncertainties**2
+    
+    # Compute weighted average
+    weighted_avg = np.sum(weights * values) / np.sum(weights)
+    
+    # Compute uncertainty in weighted average
+    weighted_uncertainty = np.sqrt(1 / np.sum(weights))
+    
+    return weighted_avg, weighted_uncertainty
+    
 
 def msrmnt_sphenix_rawhijing_auau_200gev():
     centralitybin = sphenix_centrality_interval()
@@ -33,16 +62,16 @@ def msrmnt_sphenix_rawhijing_auau_200gev():
     dNdEta_eta0, dNdEta_eta0_divnpart2, Centrality, dNdEta_eta0_err, dNdEta_eta0_divnpart2_err, Centrality_err = [], [], [], [], [], []
     
     for i in range(len(centralitybin) - 1):
-        hM_dNdEtafinal = GetHistogram('./corrections/HIJING_Baseline/Centrality{}to{}_Zvtxm30p0tom10p0_noasel/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WGhadron')
+        hM_dNdEtafinal = GetHistogram('./corrections/HIJING_Baseline_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0/Centrality{}to{}_Zvtxm10p0to10p0_noasel/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WGhadron')
 
-        # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
         dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
-        # error propagation
-        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
-        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
-        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))
-        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
-        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_err_centrality / (centnpart[i] / 2.) # error propagation; TODO: include the uncertainty for <npart>
+        list_dNdEta_eta0 = [hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))]
+        list_dNdEta_eta0_err = [hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))]
+        dNdEta_eta0_centrality, dNdEta_eta0_err_centrality = weighted_average(list_dNdEta_eta0, list_dNdEta_eta0_err)
+        # print ('dNdEta_eta0_centrality={}, dNdta_eta0_err_centrality={}'.format(dNdEta_eta0_centrality, dNdEta_eta0_err_centrality))
+        rel_err_dNdEta = dNdEta_eta0_err_centrality / dNdEta_eta0_centrality
+        rel_err_npart = centnparterr[i] / centnpart[i]
+        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_centrality / (centnpart[i] / 2.) * math.sqrt(rel_err_dNdEta**2 + rel_err_npart**2) # error propagation; TODO: include the uncertainty for <npart>
         
         dNdEta_eta0.append(dNdEta_eta0_centrality)
         dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
@@ -66,68 +95,30 @@ def msrmnt_sphenix_rawhijing_auau_200gev():
     return gsphenix_rawhijing_auau_200gev, gsphenix_rawhijing_divnpart2_auau_200gev
 
 
-def msrmnt_sphenix_sim_auau_200gev():
+def msrmnt_sphenix_data_auau_200gev(approach='cms'):
     centralitybin = sphenix_centrality_interval()
     centnpart, centnparterr = sphenix_centralitynpart()
-    del centralitybin[0] # temporarily remove the 0-5% centrality bin for data
-    del centnpart[0]
-    del centnparterr[0]
     
     dNdEta_eta0, dNdEta_eta0_divnpart2, Centrality, dNdEta_eta0_err, dNdEta_eta0_divnpart2_err, Centrality_err = [], [], [], [], [], []
     
     for i in range(len(centralitybin) - 1):
-        hM_dNdEtafinal = GetHistogram('./corrections/HIJING_closure/Centrality{}to{}_Zvtxm30p0tom10p0_noasel/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WEfinal')
+        if approach == 'cms':
+            hM_dNdEtafinal = GetHistogram('./systematics/Centrality{}to{}_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality{}to{}_Zvtxm10p0to10p0_noasel.root'.format(centralitybin[i],centralitybin[i+1],centralitybin[i],centralitybin[i+1]), 'hM_final')
+        elif approach == 'phobos':
+            mbin = GetMbinNum('Centrality{}to{}'.format(centralitybin[i],centralitybin[i+1]))
+            hM_dNdEtafinal = GetHistogram('/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root'.format(mbin,mbin,mbin), 'h1D_dNdEta_reco')
+        else:
+            print ('Approach {} is not supported. Use default approach of cms'.format(approach))
+            hM_dNdEtafinal = GetHistogram('./systematics/Centrality{}to{}_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality{}to{}_Zvtxm10p0to10p0_noasel.root'.format(centralitybin[i],centralitybin[i+1],centralitybin[i],centralitybin[i+1]), 'hM_final')
 
-        # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
         dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
-        # error propagation
-        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
-        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
-        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))
-        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
-        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_err_centrality / (centnpart[i] / 2.) # error propagation; TODO: include the uncertainty for <npart>
-        
-        dNdEta_eta0.append(dNdEta_eta0_centrality)
-        dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
-        Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
-        dNdEta_eta0_err.append(dNdEta_eta0_err_centrality)
-        dNdEta_eta0_divnpart2_err.append(dNdEta_eta0_divnpart2_err_centrality)
-        Centrality_err.append(0)
-
-    dNdEta_eta0 = array('f', dNdEta_eta0)
-    dNdEta_eta0_divnpart2 = array('f', dNdEta_eta0_divnpart2)
-    Centrality = array('f', Centrality)
-    dNdEta_eta0_err = array('f', dNdEta_eta0_err)
-    dNdEta_eta0_divnpart2_err = array('f', dNdEta_eta0_divnpart2_err)
-    Centrality_err = array('f', Centrality_err)
-    centnpart = array('f', centnpart)
-    centnparterr = array('f', centnparterr)
-    gsphenix_sim_auau_200gev = TGraphErrors(len(Centrality), Centrality, dNdEta_eta0, Centrality_err, dNdEta_eta0_err)
-    gsphenix_sim_divnpart2_auau_200gev = TGraphErrors(len(centnpart), centnpart, dNdEta_eta0_divnpart2, centnparterr, dNdEta_eta0_divnpart2_err)
-
-    return gsphenix_sim_auau_200gev, gsphenix_sim_divnpart2_auau_200gev
-
-
-def msrmnt_sphenix_data_auau_200gev():
-    centralitybin = sphenix_centrality_interval()
-    centnpart, centnparterr = sphenix_centralitynpart()
-    del centralitybin[0] # temporarily remove the 0-5% centrality bin for data
-    del centnpart[0]
-    del centnparterr[0]
-    
-    dNdEta_eta0, dNdEta_eta0_divnpart2, Centrality, dNdEta_eta0_err, dNdEta_eta0_divnpart2_err, Centrality_err = [], [], [], [], [], []
-    
-    for i in range(len(centralitybin) - 1):
-        hM_dNdEtafinal = GetHistogram('./corrections/Data_Run20869/Centrality{}to{}_Zvtxm30p0tom10p0_noasel/correction_hists.root'.format(centralitybin[i],centralitybin[i+1]), 'h1WEfinal')
-
-        # nbins = hM_dNdEtafinal_layer12.GetNbinsX()
-        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
-        # error propagation
-        dNdEta_eta0_err_zero = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0))
-        dNdEta_eta0_err_neg = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2))
-        dNdEta_eta0_err_pos = hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.3))
-        dNdEta_eta0_err_centrality = sqrt((dNdEta_eta0_err_zero/3)**2 + (dNdEta_eta0_err_neg/3)**2 + (dNdEta_eta0_err_pos/3)**2)
-        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_err_centrality / (centnpart[i] / 2.) # error propagation; TODO: include the uncertainty for <npart>
+        list_dNdEta_eta0 = [hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))]
+        list_dNdEta_eta0_err = [hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))]
+        dNdEta_eta0_centrality, dNdEta_eta0_err_centrality = weighted_average(list_dNdEta_eta0, list_dNdEta_eta0_err)
+        # print ('dNdEta_eta0_centrality={}, dNdta_eta0_err_centrality={}'.format(dNdEta_eta0_centrality, dNdEta_eta0_err_centrality))
+        rel_err_dNdEta = dNdEta_eta0_err_centrality / dNdEta_eta0_centrality
+        rel_err_npart = centnparterr[i] / centnpart[i]
+        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_centrality / (centnpart[i] / 2.) * math.sqrt(rel_err_dNdEta**2 + rel_err_npart**2) 
         
         dNdEta_eta0.append(dNdEta_eta0_centrality)
         dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
@@ -148,6 +139,8 @@ def msrmnt_sphenix_data_auau_200gev():
     gsphenix_data_divnpart2_auau_200gev = TGraphErrors(len(centnpart), centnpart, dNdEta_eta0_divnpart2, centnparterr, dNdEta_eta0_divnpart2_err)
 
     return gsphenix_data_auau_200gev, gsphenix_data_divnpart2_auau_200gev
+
+
 
 
 def msrmnt_dict():
@@ -174,21 +167,27 @@ def msrmnt_dict():
     msrmntdict['brahms_auau_0p2'] = brahms_auau_0p2()
     
     sphenix_rawhijing_auau_200gev, sphenix_rawhijing_divnpart2_auau_200gev = msrmnt_sphenix_rawhijing_auau_200gev()
-    sphnx_sim_auau_200gev, sphnx_sim_divnpart2_auau_200gev = msrmnt_sphenix_sim_auau_200gev()
-    sphnx_data_auau_200gev, sphnx_data_divnpart2_auau_200gev = msrmnt_sphenix_data_auau_200gev()
+    # sphnx_sim_auau_200gev, sphnx_sim_divnpart2_auau_200gev = msrmnt_sphenix_sim_auau_200gev()
+    sphnx_data_auau_200gev_cmsapp, sphnx_data_divnpart2_auau_200gev_cmsapp = msrmnt_sphenix_data_auau_200gev('cms')
+    sphnx_data_auau_200gev_phobosapp, sphnx_data_divnpart2_auau_200gev_phobosapp = msrmnt_sphenix_data_auau_200gev('phobos')
     
     msrmntdict['sphenix_rawhijing_auau_200gev'] = sphenix_rawhijing_auau_200gev
-    msrmntdict['sphenix_sim_auau_200gev'] = sphnx_sim_auau_200gev
-    msrmntdict['sphenix_data_auau_200gev'] = sphnx_data_auau_200gev
+    # msrmntdict['sphenix_sim_auau_200gev'] = sphnx_sim_auau_200gev
+    msrmntdict['sphenix_data_auau_200gev_cmsapp'] = sphnx_data_auau_200gev_cmsapp
+    msrmntdict['sphenix_data_auau_200gev_cmsapp_redraw'] = sphnx_data_auau_200gev_cmsapp
+    msrmntdict['sphenix_data_auau_200gev_phobosapp'] = sphnx_data_auau_200gev_phobosapp
+    msrmntdict['sphenix_data_auau_200gev_phobosapp_redraw'] = sphnx_data_auau_200gev_phobosapp
     
     # dndeta / (<npart> / 2)
     msrmntdict['phenix_auau_0p2_divnpart2'] = phenix_auau_0p2_divnpart2() # PHENIX only provide dndeta / (<npart>)
     msrmntdict['brahms_auau_0p2_divnpart2'] = brahms_auau_0p2_divnpart2()
     msrmntdict['phobos_auau_0p2_divnpart2'] = phobos_auau_0p2_divnpart2()
     msrmntdict['sphenix_rawhijing_auau_0p2_divnpart2'] = sphenix_rawhijing_divnpart2_auau_200gev
-    msrmntdict['sphenix_sim_auau_0p2_divnpart2'] = sphnx_sim_divnpart2_auau_200gev
-    msrmntdict['sphenix_data_auau_0p2_divnpart2'] = sphnx_data_divnpart2_auau_200gev
-
+    # msrmntdict['sphenix_sim_auau_0p2_divnpart2'] = sphnx_sim_divnpart2_auau_200gev
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_cmsapp'] = sphnx_data_divnpart2_auau_200gev_cmsapp
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_cmsapp_redraw'] = sphnx_data_divnpart2_auau_200gev_cmsapp
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_phobosapp'] = sphnx_data_divnpart2_auau_200gev_phobosapp
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_phobosapp_redraw'] = sphnx_data_divnpart2_auau_200gev_phobosapp
     return msrmntdict
 
 
@@ -201,7 +200,7 @@ def gstyle(g, mstyle, msize, color, lwidth, alpha):
     g.SetFillColorAlpha(color, alpha)
 
 
-def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 1, 3000], canvsize = [800, 500], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Work-in-progress'):
+def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 20, 1200], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
     xmin = axisrange[0]
     xmax = axisrange[1]
     ymin = axisrange[2]
@@ -210,6 +209,7 @@ def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 1, 3000], canvs
     c = TCanvas('c_'+canvname, 'c_'+canvname, canvsize[0], canvsize[1])
     c.cd()
     # Set left margin and logarithmic y-axis
+    gPad.SetTopMargin(TopMargin)
     gPad.SetLeftMargin(LeftMargin)
     gPad.SetLogy()
     # Create a frame for the graph
@@ -219,22 +219,24 @@ def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 1, 3000], canvs
     gframe.GetXaxis().SetTitle('Centrality [%]')
     gframe.GetYaxis().SetTitle('#frac{dN_{ch}}{d#eta}#lbar_{#eta=0}')
     gframe.GetYaxis().SetMoreLogLabels()
-    gframe.GetYaxis().SetTitleOffset(1.7)
+    gframe.GetYaxis().SetTitleOffset(2.1)
     gframe.SetAxisRange(ymin, ymax, 'Y')
     gframe.Draw()
     # Create and draw the x-axis on top
     axis = TGaxis(xmax, ymin, xmin, ymin, xmin, xmax, 511, '-')
     axis.SetLabelOffset(-0.032)
     axis.SetLabelFont(43)
-    axis.SetLabelSize(22)
+    # print('gframe.GetYaxis().GetLabelSize()={}'.format(gframe.GetYaxis().GetLabelSize()))
+    axis.SetLabelSize(30)
     axis.Draw()
     # Create and draw the y-axis on top
     axisup = TGaxis(xmax, ymax, xmin, ymax, xmin, xmax, 511, '+')
     axisup.SetLabelOffset(1)
     axisup.Draw()
     # Create the legend for the TGraphs
-    gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
-    gr_leg.SetTextSize(0.035)
+    # gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
+    gr_leg = TLegend(gPad.GetLeftMargin(), 1 - gPad.GetTopMargin() + 0.02, gPad.GetLeftMargin() + 0.35, 0.97)
+    gr_leg.SetTextSize(0.033)
     gr_leg.SetFillStyle(0)
     # Load measurement dictionaries
     dict_msrmnt= msrmnt_dict()
@@ -242,25 +244,31 @@ def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 1, 3000], canvs
     with open(jsonpath, 'r') as fp:
         grtags = json.load(fp)
         for tagName, par in grtags.items():
+            if not include_rawhijing and 'rawhijing' in tagName:
+                continue
+            
             gr = dict_msrmnt[tagName]
             gstyle(gr, par['markerstyle'], par['markersize'], TColor.GetColor(par['markercolor']), par['linewidth'], par['alpha'])
             gr.Draw(par['DrawOption'][0])
             if par['DrawOption'][1] != '':
                 gr.Draw(par['DrawOption'][1])
-            gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
+            # add legend if par['Legendtext'] does not contain 'redraw'
+            if 'redraw' not in tagName:
+                gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
 
     gr_leg.Draw()
-    sphnxleg = TLegend((1 - RightMargin) - 0.8, (1 - TopMargin) - 0.08, (1 - RightMargin) - 0.4, (1 - TopMargin) - 0.03)
+    sphnxleg = TLegend(gPad.GetLeftMargin()+0.05, (1 - TopMargin) - 0.18, gPad.GetLeftMargin()+0.1, (1 - TopMargin) - 0.06)
+    sphnxleg.SetTextAlign(kHAlignLeft + kVAlignTop)
     sphnxleg.SetTextSize(0.045)
     sphnxleg.SetFillStyle(0)
     sphnxleg.AddEntry('', '#it{#bf{sPHENIX}} ' + prelimtext, '')
-    # sphnxleg/AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
+    sphnxleg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     sphnxleg.Draw()
     c.SaveAs(plotpath + 'dNdEta_eta0_{}.png'.format(canvname));
     c.SaveAs(plotpath + 'dNdEta_eta0_{}.pdf'.format(canvname));
     
     
-def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 0, 7], canvsize = [800, 500], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Work-in-progress'):
+def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 1.49, 5.01], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
     xmin = axisrange[0]
     xmax = axisrange[1]
     ymin = axisrange[2]
@@ -269,19 +277,21 @@ def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 0, 7]
     c = TCanvas('c_'+canvname, 'c_'+canvname, canvsize[0], canvsize[1])
     c.cd()
     # Set left margin and logarithmic y-axis
+    gPad.SetTopMargin(TopMargin)
     gPad.SetLeftMargin(LeftMargin)
     gPad.SetLogy(0)
     # Create a frame for the graph
     gframe = TH1F('gframe_' + canvname, 'gframe_' + canvname, 1, axisrange[0], axisrange[1])
     gframe.GetXaxis().SetTitle('#LTN_{part}#GT')
     gframe.GetYaxis().SetTitle('#LT2/N_{part}#GT #frac{dN_{ch}}{d#eta}#lbar_{#eta=0}')
-    gframe.GetYaxis().SetTitleOffset(1.7)
+    gframe.GetYaxis().SetTitleOffset(1.9)
     gframe.GetXaxis().SetRangeUser(axisrange[0], axisrange[1])
     gframe.SetAxisRange(axisrange[2], axisrange[3], 'Y')
     gframe.Draw()
     # Create the legend for the TGraphs
-    gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
-    gr_leg.SetTextSize(0.035)
+    # gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
+    gr_leg = TLegend(gPad.GetLeftMargin(), 1 - gPad.GetTopMargin() + 0.02, gPad.GetLeftMargin() + 0.35, 0.97)
+    gr_leg.SetTextSize(0.033)
     gr_leg.SetFillStyle(0)
     # Load measurement dictionaries
     dict_msrmnt= msrmnt_dict()
@@ -289,19 +299,26 @@ def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 0, 7]
     with open(jsonpath, 'r') as fp:
         grtags = json.load(fp)
         for tagName, par in grtags.items():
+            if not include_rawhijing and 'rawhijing' in tagName:
+                continue
+            
             gr = dict_msrmnt[tagName]
             gstyle(gr, par['markerstyle'], par['markersize'], TColor.GetColor(par['markercolor']), par['linewidth'], par['alpha'])
             gr.Draw(par['DrawOption'][0])
             if par['DrawOption'][1] != '':
                 gr.Draw(par['DrawOption'][1])
-            gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
+                
+            # add legend if par['Legendtext'] does not contain 'redraw'
+            if 'redraw' not in tagName:
+                gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
 
     gr_leg.Draw()
-    sphnxleg = TLegend((1 - RightMargin) - 0.8, (1 - TopMargin) - 0.08, (1 - RightMargin) - 0.4, (1 - TopMargin) - 0.03)
+    sphnxleg = TLegend(gPad.GetLeftMargin()+0.05, (1 - TopMargin) - 0.18, gPad.GetLeftMargin()+0.1, (1 - TopMargin) - 0.06)
+    sphnxleg.SetTextAlign(kHAlignLeft + kVAlignTop)
     sphnxleg.SetTextSize(0.045)
     sphnxleg.SetFillStyle(0)
     sphnxleg.AddEntry('', '#it{#bf{sPHENIX}} ' + prelimtext, '')
-    # sphnxleg/AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
+    sphnxleg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     sphnxleg.Draw()
     c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.png'.format(canvname));
     c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.pdf'.format(canvname));

@@ -201,6 +201,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PrimaryG4P_Phi", &PrimaryG4P_Phi_);
             outtree->Branch("PrimaryG4P_E", &PrimaryG4P_E_);
             outtree->Branch("PrimaryG4P_PID", &PrimaryG4P_PID_);
+            outtree->Branch("PrimaryG4P_trackID", &PrimaryG4P_trackID_);
             outtree->Branch("PrimaryG4P_isChargeHadron", &PrimaryG4P_isChargeHadron_);
             outtree->Branch("PHG4Hit_x0", &PHG4Hit_x0_);
             outtree->Branch("PHG4Hit_y0", &PHG4Hit_y0_);
@@ -220,6 +221,14 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PrimaryTruthClusPhiSize", &PrimaryTruthClusPhiSize_);
             outtree->Branch("PrimaryTruthClusZSize", &PrimaryTruthClusZSize_);
             outtree->Branch("PrimaryTruthClusNRecoClus", &PrimaryTruthClusNRecoClus_);
+            outtree->Branch("ClusMatchedG4P_MaxE_trackID", &ClusMatchedG4P_MaxE_trackID_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Pt", &ClusMatchedG4P_MaxE_Pt_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_trackID", &ClusMatchedG4P_MaxClusE_trackID_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Pt", &ClusMatchedG4P_MaxClusE_Pt_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Eta", &ClusMatchedG4P_MaxClusE_Eta_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Phi", &ClusMatchedG4P_MaxClusE_Phi_);
         }
         // InttRawHit information
         if (_get_inttrawhit)
@@ -352,7 +361,10 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
                 GetPHG4Info(topNode);
 
             if (_get_hepmc_info)
+            {
+                // std::cout << "[INFO & WARNING] Currently, GetHEPMCInfo method is disabled." << std::endl;
                 GetHEPMCInfo(topNode);
+            }
 
             if (_get_truth_cluster)
                 GetTruthClusterInfo(topNode);
@@ -485,6 +497,7 @@ void dNdEtaINTT::GetTriggerInfo(PHCompositeNode *topNode)
     triggervec_ = gl1packet->getScaledVector(); // just to get the original triggervec
 }
 //____________________________________________________________________________..
+//! error when compiling in ALMA9 with c++20 -> change -IOFFLINEMAIN/include to -isystemOFFLINEMAIN/include in Makefile as a workaround
 void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
 {
     std::cout << "Get HEPMC info." << std::endl;
@@ -573,6 +586,7 @@ void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
         exit(1);
     }
 }
+
 //____________________________________________________________________________..
 void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
 {
@@ -586,14 +600,11 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         // exit(1);
     }
 
-    if (IsData)
+    _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
+    if (!_minimumbiasinfo)
     {
-        _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
-        if (!_minimumbiasinfo)
-        {
-            std::cout << "Error, can't find MinimumBiasInfo. No minimum bias info is filled" << std::endl;
-            // exit(1);
-        }
+        std::cout << "Error, can't find MinimumBiasInfo. No minimum bias info is filled" << std::endl;
+        // exit(1);
     }
 
     m_mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
@@ -635,7 +646,7 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
         // Glauber parameter information
         ncoll_ = eventheader->get_ncoll();
         npart_ = eventheader->get_npart();
-        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
+        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << ")" << std::endl;
         std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
     }
 
@@ -648,17 +659,26 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     mbd_charge_sum = mbd_south_charge_sum + mbd_north_charge_sum;
     mbd_charge_asymm = mbd_charge_sum == 0 ? std::numeric_limits<float>::quiet_NaN() : (float)(mbd_south_charge_sum - mbd_north_charge_sum) / mbd_charge_sum;
     if (m_CentInfo)
-        centrality_mbd_ = m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : std::numeric_limits<float>::quiet_NaN();
+    {
+        if (m_CentInfo->has_centrality_bin(CentralityInfo::PROP::mbd_NS))
+        {
+            centrality_mbd_ = m_CentInfo->get_centrality_bin(CentralityInfo::PROP::mbd_NS);
+        }
+        else
+        {
+            std::cout << "[WARNING/ERROR] No centrality information found in CentralityInfo. Setting centrality_mbd_ to NaN. Please check!" << std::endl;
+            m_CentInfo->identify();
+            centrality_mbd_ = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
     else
+    {
         centrality_mbd_ = std::numeric_limits<float>::quiet_NaN();
-    if (IsData)
-    {
-        is_min_bias = (_minimumbiasinfo) ? _minimumbiasinfo->isAuAuMinimumBias() : false;
     }
-    else
-    {
-        is_min_bias = (npart_ > 0);
-    }
+
+    is_min_bias = (_minimumbiasinfo) ? _minimumbiasinfo->isAuAuMinimumBias() : false;
+
+    std::cout << "[INFO] Is minimum bias: " << is_min_bias << "; Centrality: (centrality_mbd, centrality_mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
 
     // minimum bias criteria without zdc cut (note: the zdc cut has a 99-100% efficiency for the Level-1 trigger events and 100% for central Au+Au event)
     bool mbd_ntube = (mbd_south_npmt >= 2 && mbd_north_npmt >= 2) ? true : false;
@@ -785,7 +805,7 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
             layergeom->find_strip_center_localcoords(ladder_z_index, row, col, local_hit_location);
             LocalUse.SetX(local_hit_location[0]); // local x
             LocalUse.SetY(local_hit_location[2]); // local y
-            TVector3 posworld = layergeom->get_world_from_local_coords(surface, _tgeometry, LocalUse);
+            TVector3 posworld = CylinderGeomInttHelper::get_world_from_local_coords(surface, _tgeometry, LocalUse);
 
             // std::cout << "Hit position: " << posworld.x() << " " << posworld.y() << " " << posworld.z() << std::endl;
 
@@ -924,8 +944,6 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                         for (auto &c : truth_clusters)
                         {
                             // only take at most 1 truth cluster per truth particle
-                            // only take at most 1 truth cluster per truth
-                            // particle
                             bool found = false;
                             if (TrkrDefs::getLayer(c.first) == TrkrDefs::getLayer(ckey))
                             {
@@ -941,6 +959,43 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                 ClusTruthCKeys_.push_back(truth_ckeys.size());
                 ClusNG4Particles_.push_back(truth_particles.size());
                 ClusNPrimaryG4Particles_.push_back(Nprimary);
+
+                // max_truth_cluster_by_energy
+                PHG4Particle *ptcl_maxE = clustereval->max_truth_particle_by_energy(ckey);
+                if (ptcl_maxE)
+                {
+                    ClusMatchedG4P_MaxE_trackID_.push_back(ptcl_maxE->get_track_id());
+                    TLorentzVector p;
+                    p.SetPxPyPzE(ptcl_maxE->get_px(), ptcl_maxE->get_py(), ptcl_maxE->get_pz(), ptcl_maxE->get_e());
+                    ClusMatchedG4P_MaxE_Pt_.push_back(p.Pt());
+                    ClusMatchedG4P_MaxE_Eta_.push_back(p.Eta());
+                    ClusMatchedG4P_MaxE_Phi_.push_back(p.Phi());
+                }
+                else
+                {
+                    ClusMatchedG4P_MaxE_trackID_.push_back(std::numeric_limits<int>::max());
+                    ClusMatchedG4P_MaxE_Pt_.push_back(-1);
+                    ClusMatchedG4P_MaxE_Eta_.push_back(-1);
+                    ClusMatchedG4P_MaxE_Phi_.push_back(-1);
+                }
+                // max_truth_particle_by_cluster_energy
+                PHG4Particle *ptcl_maxClusE = clustereval->max_truth_particle_by_cluster_energy(ckey);
+                if (ptcl_maxClusE)
+                {
+                    ClusMatchedG4P_MaxClusE_trackID_.push_back(ptcl_maxClusE->get_track_id());
+                    TLorentzVector p;
+                    p.SetPxPyPzE(ptcl_maxClusE->get_px(), ptcl_maxClusE->get_py(), ptcl_maxClusE->get_pz(), ptcl_maxClusE->get_e());
+                    ClusMatchedG4P_MaxClusE_Pt_.push_back(p.Pt());
+                    ClusMatchedG4P_MaxClusE_Eta_.push_back(p.Eta());
+                    ClusMatchedG4P_MaxClusE_Phi_.push_back(p.Phi());
+                }
+                else
+                {
+                    ClusMatchedG4P_MaxClusE_trackID_.push_back(std::numeric_limits<int>::max());
+                    ClusMatchedG4P_MaxClusE_Pt_.push_back(-1);
+                    ClusMatchedG4P_MaxClusE_Eta_.push_back(-1);
+                    ClusMatchedG4P_MaxClusE_Phi_.push_back(-1);
+                }
             }
         }
     }
@@ -1094,12 +1149,12 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 
                 for (auto &hit : hits)
                 {
-                    double entry_point[3] = {hit->get_x(0), hit->get_y(0), hit->get_z(0)};
-                    double exit_point[3] = {hit->get_x(1), hit->get_y(1), hit->get_z(1)};
+                    TVector3 entry_point(hit->get_x(0), hit->get_y(0), hit->get_z(0));
+                    TVector3 exit_point(hit->get_x(1), hit->get_y(1), hit->get_z(1));
 
                     // get local coordinates on surface
-                    TVector3 entry_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, entry_point);
-                    TVector3 exit_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, exit_point);
+                    TVector3 entry_local = CylinderGeomInttHelper::get_local_from_world_coords(surface, _tgeometry, entry_point);
+                    TVector3 exit_local = CylinderGeomInttHelper::get_local_from_world_coords(surface, _tgeometry, exit_point);
 
                     // get strip z and phi id (which we needed local coordinates
                     // for)
@@ -1201,6 +1256,7 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
         // particle->identify();
         if (ptcl)
         {
+            PrimaryG4P_trackID_.push_back(ptcl->get_track_id());
             PrimaryG4P_PID_.push_back(ptcl->get_pid());
             TLorentzVector p;
             p.SetPxPyPzE(ptcl->get_px(), ptcl->get_py(), ptcl->get_pz(), ptcl->get_e());
@@ -1261,6 +1317,14 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusTruthCKeys_);
     CleanVec(ClusNG4Particles_);
     CleanVec(ClusNPrimaryG4Particles_);
+    CleanVec(ClusMatchedG4P_MaxE_trackID_);
+    CleanVec(ClusMatchedG4P_MaxE_Pt_);
+    CleanVec(ClusMatchedG4P_MaxE_Eta_);
+    CleanVec(ClusMatchedG4P_MaxE_Phi_);
+    CleanVec(ClusMatchedG4P_MaxClusE_trackID_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Pt_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Eta_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Phi_);
     CleanVec(TruthClusPhiSize_);
     CleanVec(TruthClusZSize_);
     CleanVec(TruthClusNRecoClus_);
@@ -1307,6 +1371,7 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PrimaryG4P_Phi_);
     CleanVec(PrimaryG4P_E_);
     CleanVec(PrimaryG4P_PID_);
+    CleanVec(PrimaryG4P_trackID_);
     CleanVec(PrimaryG4P_ParticleClass_);
     CleanVec(PrimaryG4P_isStable_);
     CleanVec(PrimaryG4P_Charge_);
