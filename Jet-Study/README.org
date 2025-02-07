@@ -13,6 +13,11 @@ psql -h sphnxdaqdbreplica daq -c "select runnumber from magnet_info where magnet
 psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown10 != -1 and runnumber >= 47289;" -At
 #+end_src
 
+* Generate runs with MBD Jet 8 GeV + MBD NS >= 1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown17 != -1 and runnumber >= 47289;" -At
+#+end_src
+
 * Generate Trigger Name List
 #+begin_src bash
 psql -h sphnxdaqdbreplica daq -c "select distinct index,triggername from gl1_triggernames where runnumber >= 46038 and runnumber_last <= 54074 order by index;" -At
