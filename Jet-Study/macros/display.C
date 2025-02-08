@@ -120,27 +120,6 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((string(h2ETVsFracCEMC_miss->GetName()) + ".png").c_str());
 
-    cut_LoEmFracET2 = new TF1("cut_LoEmFracET2","50*x+20",-0.2,0.5);
-    cut_HiEmFracET2 = new TF1("cut_LoEmFracET2","-50*x+70",0.5,1.2);
-    cut_LoEmFracET2->SetLineColor(kRed);
-    cut_HiEmFracET2->SetLineColor(kRed);
-    cut_LoEmFracET2->SetLineWidth(1);
-    cut_HiEmFracET2->SetLineWidth(1);
-
-    h2ETVsFracCEMC->Draw("COLZ1");
-    cut_LoEmFracET2->Draw("same");
-    cut_HiEmFracET2->Draw("same");
-
-    c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2ETVsFracCEMC->GetName()) + "-v2.png").c_str());
-
-    h2ETVsFracCEMC_miss->Draw("COLZ1");
-    cut_LoEmFracET2->Draw("same");
-    cut_HiEmFracET2->Draw("same");
-
-    c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2ETVsFracCEMC_miss->GetName()) + "-v2.png").c_str());
-
     // ----------------------------------------------------------
 
     auto h2FracOHCalVsFracCEMC      = (TH2F*)input.Get("bkg_checks/h2FracOHCalVsFracCEMC");
@@ -162,6 +141,121 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     cut_IhFrac->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((string(h2FracOHCalVsFracCEMC_miss->GetName()) + ".png").c_str());
+
+    // ----------------------------------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.1);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    gStyle->SetOptTitle();
+    gStyle->SetTitleStyle(0);
+    gStyle->SetTitleFontSize(0.08);
+    gStyle->SetTitleW(1);
+    gStyle->SetTitleH(0.09);
+    gStyle->SetTitleFillColor(0);
+    gStyle->SetTitleBorderSize(0);
+    gStyle->SetTitleXOffset(1);
+    gStyle->SetTitleYOffset(0.5);
+
+    auto hjetPhiEtaPt = (TH3*)input.Get("jets/hjetPhiEtaPt");
+
+    hjetPhiEtaPt->GetZaxis()->SetRange(hjetPhiEtaPt->GetZaxis()->FindBin(10),hjetPhiEtaPt->GetNbinsZ());
+    auto hyx = hjetPhiEtaPt->Project3D("yx");
+    hyx->SetTitle("Jet: p_{T} #geq 10 GeV");
+
+    hyx->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10.png").c_str());
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.15);
+    c1->SetRightMargin(.02);
+    c1->SetBottomMargin(.11);
+
+    auto hx = hjetPhiEtaPt->Project3D("x");
+    hx->SetTitle("Jet: p_{T} #geq 10 GeV; #phi; Counts");
+    hx->GetYaxis()->SetTitleOffset(1.4);
+    hx->GetYaxis()->SetRangeUser(0,3e3);
+
+    hx->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10-phi.png").c_str());
+
+    auto hy = hjetPhiEtaPt->Project3D("y");
+    hy->SetTitle("Jet: p_{T} #geq 10 GeV; #eta; Counts");
+    hy->GetYaxis()->SetTitleOffset(1.4);
+
+    hy->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10-eta.png").c_str());
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.1);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    hjetPhiEtaPt->GetZaxis()->SetRange(hjetPhiEtaPt->GetZaxis()->FindBin(60),hjetPhiEtaPt->GetNbinsZ());
+    hyx = hjetPhiEtaPt->Project3D("yx");
+    hyx->SetTitle("Jet: p_{T} #geq 60 GeV");
+
+    hyx->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60.png").c_str());
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.15);
+    c1->SetRightMargin(.02);
+    c1->SetBottomMargin(.11);
+
+    hx = hjetPhiEtaPt->Project3D("x");
+    hx->SetTitle("Jet: p_{T} #geq 60 GeV; #phi; Counts");
+    hx->GetYaxis()->SetTitleOffset(1.4);
+    hx->GetYaxis()->SetRangeUser(0,30);
+
+    hx->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60-phi.png").c_str());
+
+    hy = hjetPhiEtaPt->Project3D("y");
+    hy->SetTitle("Jet: p_{T} #geq 60 GeV; #eta; Counts");
+    hy->GetYaxis()->SetTitleOffset(1.4);
+
+    hy->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60-eta.png").c_str());
+
+    // ----------------------------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.15);
+    c1->SetRightMargin(.12);
+    c1->SetBottomMargin(.12);
+
+    auto hjetConstituentsVsPt = (TH2*)input.Get("jets/hjetConstituentsVsPt");
+
+    gPad->SetLogz();
+    hjetConstituentsVsPt->Draw("COLZ1");
+    hjetConstituentsVsPt->GetXaxis()->SetRangeUser(10,200);
+    hjetConstituentsVsPt->GetYaxis()->SetTitleOffset(1.4);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetConstituentsVsPt->GetName()) + ".png").c_str());
+
+    // ----------------------------------------------------------
+
+    auto hNJetsVsLeadPt = (TH2*)input.Get("jets/hNJetsVsLeadPt");
+    hNJetsVsLeadPt->RebinX(2);
+    hNJetsVsLeadPt->GetXaxis()->SetRangeUser(10,200);
+    hNJetsVsLeadPt->GetYaxis()->SetRangeUser(0,50);
+    hNJetsVsLeadPt->GetYaxis()->SetTitleOffset(1);
+
+    hNJetsVsLeadPt->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hNJetsVsLeadPt->GetName()) + ".png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 

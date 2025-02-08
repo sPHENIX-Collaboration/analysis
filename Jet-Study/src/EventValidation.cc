@@ -4,69 +4,56 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <vector>
-// -- event / trigger
+#include <fstream>
+// -- event
 #include <ffaobjects/EventHeader.h>
-#include <ffarawobjects/Gl1Packet.h>
+#include <fun4all/Fun4AllServer.h>
 // -- fun4all
-#include <fun4all/Fun4AllBase.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 // -- vertex
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
+// -- jet
+#include <jetbase/JetContainer.h>
 // -- DST node
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 // -- root
 #include <TFile.h>
-#include <TTree.h>
 // -- Tower stuff
-#include <calobase/TowerInfo.h>
-#include <calobase/TowerInfoDefs.h>
+#include <calobase/RawTowerDefs.h>
 #include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfo.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerGeom.h>
+
+// Jet Utils
+#include "JetUtils.h"
 
 using std::cout;
 using std::endl;
-using std::string;
 using std::to_string;
-using std::vector;
+using std::make_pair;
 using std::stringstream;
+using std::ofstream;
 
 //____________________________________________________________________________..
 EventValidation::EventValidation()
   : SubsysReco("EventValidation")
-  , m_outputTreeFile(nullptr)
-  , m_outputQAFile(nullptr)
-  , m_outputTreeFileName("test.root")
-  , m_outputQAFileName("qa.root")
-  , m_emcTowerNodeBase("TOWERINFO_CALIB_CEMC")
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
-  , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
-  , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
-  , m_saveTree(false)
-  , m_saveHistMax(5)
-  , m_use_zvtx(true)
-  , m_zvtx_max(30) /*cm*/
-  , m_zvtx_max2(20) /*cm*/
-  , m_zvtx_max3(10) /*cm*/
-  , m_bins_events(5)
-  , m_bins_events_A(300)
-  , m_bins_events_jets(5)
+  , m_ihcTowerNode("TOWERINFO_CALIB_HCALIN")
+  , m_ohcTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_emcGeomNode("TOWERGEOM_CEMC")
+  , m_ihcGeomNode("TOWERGEOM_HCALIN")
+  , m_ohcGeomNode("TOWERGEOM_HCALOUT")
+  , m_recoJetName_r04("AntiKt_unsubtracted_r04")
   , m_bins_phi(64)
+  , m_phi_low(-M_PI)
+  , m_phi_high(M_PI)
   , m_bins_eta(24)
-  , m_events_A_high(3e6)
-  , m_bins_zvtx(200)
-  , m_zvtx_low(-50)
-  , m_zvtx_high(50)
-  , m_bkg_tower_energy(0.6) /*GeV*/
-  , m_bkg_tower_neighbor_energy(0.06) /*GeV*/
-  , m_bkg_towers(6)
-  , m_T(nullptr)
-  , m_run(0)
-  , m_globalEvent(0)
-  , m_event(0)
-  , m_eventZVtx(0)
-  , m_eventZVtx30(0)
+  , m_eta_low(-1.1)
+  , m_eta_high(1.1)
+  , m_R(0.4)
 {
   cout << "EventValidation::EventValidation(const std::string &name) Calling ctor" << endl;
 }
@@ -82,51 +69,9 @@ Int_t EventValidation::Init(PHCompositeNode *topNode)
 {
   cout << "EventValidation::Init(PHCompositeNode *topNode) Initializing" << endl;
 
-  if(m_saveTree) {
-    m_outputTreeFile = new TFile(m_outputTreeFileName.c_str(),"RECREATE");
-    cout << "EventValidation::Init - Output to " << m_outputTreeFileName << endl;
-    // configure Tree
-    m_T = new TTree("T", "T");
-    m_T->Branch("event", &m_globalEvent, "event/I");
-    m_T->Branch("run", &m_run, "run/I");
-    m_T->Branch("zvtx", &m_zvtx);
-    m_T->Branch("hasBkg", &m_hasBkg);
-    m_T->Branch("hasBkgCEMC", &m_hasBkgCEMC);
-    m_T->Branch("triggerVector", &m_triggerVector);
-
-    m_T->Branch("towersCEMCBase_isGood", &m_towersCEMCBase_isGood);
-    m_T->Branch("towersCEMCBase_energy", &m_towersCEMCBase_energy);
-    m_T->Branch("towersCEMCBase_time",   &m_towersCEMCBase_time);
-
-    m_T->Branch("towersCEMC_isGood",  &m_towersCEMC_isGood);
-    m_T->Branch("towersIHCal_isGood", &m_towersIHCal_isGood);
-    m_T->Branch("towersOHCal_isGood", &m_towersOHCal_isGood);
-
-    m_T->Branch("towersCEMC_energy",  &m_towersCEMC_energy);
-    m_T->Branch("towersIHCal_energy", &m_towersIHCal_energy);
-    m_T->Branch("towersOHCal_energy", &m_towersOHCal_energy);
-  }
-
-  m_outputQAFile = new TFile(m_outputQAFileName.c_str(),"RECREATE");
-  cout << "EventValidation::Init - Output to " << m_outputQAFileName << endl;
-
-  hEvents       = new TH1F("hEvents","Events; Status; Counts", m_bins_events, 0, m_bins_events);
-  hEvents_Jet6  = new TH1F("hEvents_Jet6","Events: Jet 6 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet8  = new TH1F("hEvents_Jet8","Events: Jet 8 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet10 = new TH1F("hEvents_Jet10","Events: Jet 10 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-  hEvents_Jet12 = new TH1F("hEvents_Jet12","Events: Jet 12 GeV; Status; Counts", m_bins_events_jets, 0, m_bins_events_jets);
-
-  hEvents_Jet6_A  = new TH1F("hEvents_Jet6_A","Events: Jet 6 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet8_A  = new TH1F("hEvents_Jet8_A","Events: Jet 8 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet10_A = new TH1F("hEvents_Jet10_A","Events: Jet 10 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet12_A = new TH1F("hEvents_Jet12_A","Events: Jet 12 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-
-  hEvents_Jet6_bkg_A  = new TH1F("hEvents_Jet6_bkg_A","Background Events: Jet 6 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet8_bkg_A  = new TH1F("hEvents_Jet8_bkg_A","Background Events: Jet 8 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet10_bkg_A = new TH1F("hEvents_Jet10_bkg_A","Background Events: Jet 10 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-  hEvents_Jet12_bkg_A = new TH1F("hEvents_Jet12_bkg_A","Background Events: Jet 12 GeV; Global Event; Counts", m_bins_events_A, 0, m_events_A_high);
-
-  hZVtx = new TH1F("hZVtx","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
+  // so that the histos actually get written out
+  Fun4AllServer *se = Fun4AllServer::instance();
+  se->Print("NODETREE");
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -141,241 +86,287 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_globalEvent = eventInfo->get_EvtSequence();
-  m_run         = eventInfo->get_RunNumber();
-
-  if (m_event % 20 == 0) cout << "Progress: " << m_event << ", Global: " << m_globalEvent << endl;
-  ++m_event;
-  hEvents->Fill(0);
+  int m_globalEvent = eventInfo->get_EvtSequence();
+  int m_run         = eventInfo->get_RunNumber();
 
   // zvertex
+  Double_t m_zvtx = -9999;
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+
   if (!vertexmap) {
-    cout << PHWHERE << "EventValidation::process_event - Fatal Error - GlobalVertexMap node is missing. " << endl;
+    cout << "JetValidationv2::process_event - Error can not find global vertex node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
-  }
-  if (m_use_zvtx && vertexmap->empty()) {
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
-
-  // grab the gl1 data
-  Gl1Packet* gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
-  if (!gl1PacketInfo) {
-    cout << PHWHERE << "EventValidation::process_event - Fatal Error - GL1Packet node is missing. " << endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  uint64_t triggervec = gl1PacketInfo->getTriggerVector();
-  for (Int_t i = 0; i < 64; ++i) {
-    Bool_t trig_decision = ((triggervec & 0x1U) == 0x1U);
-    m_triggerVector.push_back(trig_decision);
-    triggervec = (triggervec >> 1U) & 0xffffffffU;
   }
 
   if(!vertexmap->empty()) {
-    GlobalVertex *vtx = vertexmap->begin()->second;
+    GlobalVertex* vtx = vertexmap->begin()->second;
     m_zvtx = vtx->get_z();
-
-    hZVtx->Fill(m_zvtx);
-    ++m_eventZVtx;
-    hEvents->Fill(1);
   }
-  else m_zvtx = -9999;
 
-  if(m_use_zvtx && abs(m_zvtx) >= m_zvtx_max) return Fun4AllReturnCodes::ABORTEVENT;
-
-  if(abs(m_zvtx) < m_zvtx_max)  {
-    hEvents->Fill(2);
-    ++m_eventZVtx30;
+  // interface to reco jets
+  JetContainer* jets_r04 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r04);
+  if (!jets_r04) {
+    cout << "EventValidation::process_event - Error can not find DST Reco JetContainer node " << m_recoJetName_r04 << endl;
+    return Fun4AllReturnCodes::ABORTRUN;
   }
-  if(abs(m_zvtx) < m_zvtx_max2) hEvents->Fill(3);
-  if(abs(m_zvtx) < m_zvtx_max3) hEvents->Fill(4);
+
+  Int_t jetPtLead    = 0;
+  Int_t jetPtSubLead = 0;
+
+  Double_t jetPhiLead = 0;
+  Double_t jetPhiSubLead = 0;
+
+  Double_t jetEtaLead = 0;
+  Double_t jetEtaSubLead = 0;
+
+  Int_t jetIdxLead = 0;
+
+  for (UInt_t i = 0; i < jets_r04->size(); ++i) {
+    Jet* jet = jets_r04->get_jet(i);
+
+    Double_t phi = jet->get_phi();
+    Double_t eta = jet->get_eta();
+    Double_t pt = jet->get_pt();
+
+    // exclude jets near the edge of the detector
+    if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
+
+    if((Int_t)pt > jetPtSubLead) {
+      if((Int_t)pt > jetPtLead) {
+        jetPtSubLead = jetPtLead;
+        jetPtLead = pt;
+
+        jetPhiSubLead = jetPhiLead;
+        jetPhiLead = phi;
+
+        jetEtaSubLead = jetEtaLead;
+        jetEtaLead = eta;
+
+        jetIdxLead = i;
+      }
+      else {
+        jetPtSubLead  = pt;
+        jetPhiSubLead = phi;
+        jetEtaSubLead = eta;
+      }
+    }
+  }
+
+  cout << "==============" << endl;
+  cout << "Event Jet Info" << endl;
+  cout << "Z: " << m_zvtx << endl;
+  cout << "Lead Jet pT: " << jetPtLead << ", phi: " << jetPhiLead << ", eta: " << jetEtaLead << ", idx: " << jetIdxLead << endl;
+  cout << "SubLead Jet pT: " << jetPtSubLead << ", phi: " << jetPhiSubLead << ", eta: " << jetEtaSubLead << endl;
+  cout << "==============" << endl;
 
   // Get TowerInfoContainer
-  // Base EMCal Towers
-  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNodeBase.c_str());
-
-  // unsubtracted
   TowerInfoContainer* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
-  TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
-  TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
+  TowerInfoContainer* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ihcTowerNode.c_str());
+  TowerInfoContainer* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, m_ohcTowerNode.c_str());
 
-  if (!towersCEMCBase || !towersCEMC || !towersIHCal || !towersOHCal) {
+  RawTowerGeomContainer* geomCEMC  = findNode::getClass<RawTowerGeomContainer>(topNode, m_emcGeomNode.c_str());
+  RawTowerGeomContainer* geomIHCAL = findNode::getClass<RawTowerGeomContainer>(topNode, m_ihcGeomNode.c_str());
+  RawTowerGeomContainer* geomOHCAL = findNode::getClass<RawTowerGeomContainer>(topNode, m_ohcGeomNode.c_str());
+
+  if (!towersCEMC || !towersIHCal || !towersOHCal) {
     cout << PHWHERE << "EventValidation::process_event Could not find one of "
-         << m_emcTowerNodeBase  << ", "
-         << m_emcTowerNode      << ", "
-         << m_ihcalTowerNode    << ", "
-         << m_ohcalTowerNode
+         << m_emcTowerNode << ", "
+         << m_ihcTowerNode << ", "
+         << m_ohcTowerNode
          << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  vector<Float_t> towerEnergy(towersCEMC->size());
-  vector<Float_t> towerEnergyCEMC(towersCEMC->size());
+  if (!geomCEMC || !geomIHCAL || !geomOHCAL) {
+    cout << PHWHERE << "EventValidation::process_event Could not find one of "
+         << m_emcGeomNode << ", "
+         << m_ihcGeomNode << ", "
+         << m_ohcGeomNode
+         << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  Jet::TYPE_comp_vec comp_vec = jets_r04->get_jet(jetIdxLead)->get_comp_vec();
+
+  Double_t totalCEMCEnergy = 0;
+  Double_t totalIHCalEnergy = 0;
+  Double_t totalOHCalEnergy = 0;
+
+  Double_t totalCEMCPx = 0;
+  Double_t totalIHCalPx = 0;
+  Double_t totalOHCalPx = 0;
+
+  Double_t totalCEMCPy = 0;
+  Double_t totalIHCalPy = 0;
+  Double_t totalOHCalPy = 0;
+
+  Double_t totalCEMCPz = 0;
+  Double_t totalIHCalPz = 0;
+  Double_t totalOHCalPz = 0;
+
+  UInt_t nTowers = 0;
+
   stringstream name;
+  stringstream nameSuffix;
   stringstream title;
+  stringstream titleSuffix;
+
+  titleSuffix << "Run: " << m_run << ", Event: " << m_globalEvent
+              << "; #phi; #eta";
+
+  nameSuffix << m_run << "_" << m_globalEvent;
+
+  name << "CEMC_h2TowerPx_" << nameSuffix.str();
+  title << "CEMC Tower Px: " << titleSuffix.str();
+
+  auto h2TowerPx_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
 
   name.str("");
   title.str("");
+  name << "CEMC_h2TowerPy_" << nameSuffix.str();
+  title << "CEMC Tower Py: " << titleSuffix.str();
 
-  name << "h2TowerEnergy_" << m_run << "_" << m_globalEvent;
-  title << "Tower Energy, Run: " << m_run << ", Event: " << m_globalEvent << ", Z: " << (Int_t)(m_zvtx*10)/10. << " cm; Tower Index #phi; Tower Index #eta";
-
-  auto h2 = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
+  auto h2TowerPy_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
 
   name.str("");
   title.str("");
+  name << "CEMC_h2TowerEnergy_" << nameSuffix.str();
+  title << "CEMC Tower Energy: " << titleSuffix.str();
 
-  name << "h2TowerEnergyCEMC_" << m_run << "_" << m_globalEvent;
-  title << "Tower Energy EMCal, Run: " << m_run << ", Event: " << m_globalEvent << ", Z: " << (Int_t)(m_zvtx*10)/10. << " cm; Tower Index #phi; Tower Index #eta";
+  auto h2TowerEnergy_ = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, m_phi_low, m_phi_high, m_bins_eta, m_eta_low, m_eta_high);
 
-  auto h2CEMC = new TH2F(name.str().c_str(), title.str().c_str(), m_bins_phi, -0.5, m_bins_phi-0.5, m_bins_eta, -0.5, m_bins_eta-0.5);
 
-  // loop over towers
-  for(UInt_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex) {
-    UInt_t key       = TowerInfoDefs::encode_hcal(towerIndex);
-    UInt_t iphi      = TowerInfoDefs::getCaloTowerPhiBin(key);
-    UInt_t ieta      = TowerInfoDefs::getCaloTowerEtaBin(key);
-    TowerInfo* tower = towersCEMC->get_tower_at_channel(towerIndex);
+  name.str("");
+  name << "event-log-" << m_run << "-" << m_globalEvent << ".csv";
 
-    m_towersCEMC_energy.push_back(tower->get_energy());
-    m_towersCEMC_isGood.push_back(tower->get_isGood());
+  ofstream event_log(name.str());
+  event_log << "detector,iphi,ieta,phi,eta,energy,pt,px,py,pz" << endl;
 
-    Float_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
+  for (auto comp : comp_vec) {
+    TowerInfoContainer* towers = nullptr;
+    UInt_t towerIndex = comp.second;
+    string det = "";
+    Double_t* totalEnergy = nullptr;
+    Double_t* totalPx = nullptr;
+    Double_t* totalPy = nullptr;
+    Double_t* totalPz = nullptr;
+    RawTowerGeomContainer* geom = nullptr;
+    RawTowerDefs::CalorimeterId geocaloid{RawTowerDefs::CalorimeterId::NONE};
 
-    towerEnergyCEMC[towerIndex] = energy;
+    if (comp.first == Jet::CEMC_TOWERINFO_RETOWER) {
+      towers = towersCEMC;
+      det = "CEMC";
+      totalEnergy = &totalCEMCEnergy;
+      totalPx = &totalCEMCPx;
+      totalPy = &totalCEMCPy;
+      totalPz = &totalCEMCPz;
+      geocaloid = RawTowerDefs::CalorimeterId::HCALIN;
+      geom = geomIHCAL;
+    }
+    if (comp.first == Jet::HCALIN_TOWERINFO) {
+      towers = towersIHCal;
+      det = "IHCal";
+      totalEnergy = &totalIHCalEnergy;
+      totalPx = &totalIHCalPx;
+      totalPy = &totalIHCalPy;
+      totalPz = &totalIHCalPz;
+      geocaloid = RawTowerDefs::CalorimeterId::HCALIN;
+      geom = geomIHCAL;
+    }
+    if (comp.first == Jet::HCALOUT_TOWERINFO) {
+      towers = towersIHCal;
+      det = "OHCal";
+      totalEnergy = &totalOHCalEnergy;
+      totalPx = &totalOHCalPx;
+      totalPy = &totalOHCalPy;
+      totalPz = &totalOHCalPz;
+      geocaloid = RawTowerDefs::CalorimeterId::HCALOUT;
+      geom = geomOHCAL;
+    }
+    if(towers == nullptr) {
+      cout << "Unknown Detector: " << comp.first << ", Index: " << towerIndex << endl;
+      continue;
+    }
 
-    h2CEMC->SetBinContent(iphi+1,ieta+1,energy);
+    UInt_t calokey = towers->encode_key(towerIndex);
+    Int_t ieta     = towers->getTowerEtaBin(calokey);
+    Int_t iphi     = towers->getTowerPhiBin(calokey);
 
-    tower = towersIHCal->get_tower_at_channel(towerIndex);
-    m_towersIHCal_energy.push_back(tower->get_energy());
-    m_towersIHCal_isGood.push_back(tower->get_isGood());
+    // get the radius of the detector
+    const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(geocaloid, ieta, iphi);
+    RawTowerGeom* tower_geom = geom->get_tower_geometry(key);
+    Double_t r = tower_geom->get_center_radius();
 
-    energy += (tower->get_isGood()) ? tower->get_energy() : 0;
+    if(det == "CEMC") {
+        const RawTowerDefs::keytype EMCal_key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::CEMC, 0, 0);
+        RawTowerGeom *EMCal_tower_geom = geomCEMC->get_tower_geometry(EMCal_key);
+        r = EMCal_tower_geom->get_center_radius();
+    }
 
-    tower = towersOHCal->get_tower_at_channel(towerIndex);
-    m_towersOHCal_energy.push_back(tower->get_energy());
-    m_towersOHCal_isGood.push_back(tower->get_isGood());
+    TowerInfo* tower = towers->get_tower_at_channel(towerIndex);
 
-    energy += (tower->get_isGood()) ? tower->get_energy() : 0;
+    Double_t energy = tower->get_energy();
+    *totalEnergy = *totalEnergy + energy;
 
-    towerEnergy[towerIndex] = energy;
+    Double_t phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+    Double_t towereta = tower_geom->get_eta();
+    Double_t z0 = sinh(towereta) * r;
+    Double_t z = z0 - m_zvtx;
+    Double_t eta = asinh(z / r);  // eta after shift from vertex
+    Double_t pt = energy / cosh(eta);
+    Double_t px = pt * cos(phi);
+    Double_t py = pt * sin(phi);
+    Double_t pz = pt * sinh(eta);
 
-    h2->SetBinContent(iphi+1,ieta+1,energy);
+    *totalPx = *totalPx + px;
+    *totalPy = *totalPy + py;
+    *totalPz = *totalPz + pz;
+
+    if(det == "CEMC") {
+      h2TowerEnergy_->Fill(phi, eta, energy);
+      h2TowerPx_->Fill(phi, eta, px);
+      h2TowerPy_->Fill(phi, eta, py);
+    }
+
+    // ensure tower is flagged as good
+    if(!tower->get_isGood()) {
+      cout << "Bad Tower in Jet" << endl;
+    }
+
+    if(det == "CEMC") {
+      cout << "Detector: " << det << ", iphi: " << iphi << ", ieta: " << ieta << ", energy: " << energy
+           << ", px: " << px << ", py: " << py << ", pz: " << pz << endl;
+      ++nTowers;
+    }
+    event_log << det << "," << iphi << "," << ieta << "," << phi << "," << eta << "," << energy << "," << pt << "," << px << "," << py << "," << pz << endl;
   }
 
-  h2TowerEnergy.push_back(h2);
-  h2TowerEnergyCEMC.push_back(h2CEMC);
+  event_log.close();
 
-  m_hasBkgCEMC = isBackgroundEvent(towerEnergyCEMC);
-  m_hasBkg     = (m_hasBkgCEMC) ? m_hasBkgCEMC : isBackgroundEvent(towerEnergy);
+  h2TowerEnergy.push_back(h2TowerEnergy_);
+  h2TowerPx.push_back(h2TowerPx_);
+  h2TowerPy.push_back(h2TowerPy_);
 
-  m_hasBkgCEMC_vec.push_back(m_hasBkgCEMC);
-  m_hasBkg_vec.push_back(m_hasBkg);
+  cout << "============" << endl;
+  cout << "Total Energy" << endl;
+  cout << "CEMC: " << totalCEMCEnergy << endl;
+  cout << "IHCal: " << totalIHCalEnergy << endl;
+  cout << "OHCal: " << totalOHCalEnergy << endl;
+  cout << "============" << endl;
 
-  if (!m_use_zvtx || (m_use_zvtx && abs(m_zvtx) < m_zvtx_max)) {
-    if (m_triggerVector[(Int_t) Trigger::JET_6]) {
-      hEvents_Jet6_A->Fill(m_globalEvent);
-      hEvents_Jet6->Fill((Int_t) EventStatus::trigger);
+  Double_t totalPx = totalCEMCPx + totalIHCalPx + totalOHCalPx;
+  Double_t totalPy = totalCEMCPy + totalIHCalPy + totalOHCalPy;
+  Double_t totalPz = totalCEMCPz + totalIHCalPz + totalOHCalPz;
 
-      if (m_hasBkg) {
-        hEvents_Jet6_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet6->Fill((Int_t) EventStatus::trigger_bkg);
-      }
+  Double_t totalPt = sqrt(totalPx*totalPx + totalPy*totalPy);
+  Double_t phi     = atan2(totalPy, totalPx);
+  Double_t eta     = asinh(totalPz / totalPt);
 
-      if (m_hasBkgCEMC) {
-        hEvents_Jet6->Fill((Int_t) EventStatus::trigger_bkgCEMC);
-      }
+  cout << "============" << endl;
+  cout << "Lead Jet: pt: " << (Int_t)totalPt << ", px: " << (Int_t)totalPx << ", py: " << (Int_t)totalPy << ", pz: " << (Int_t)totalPz
+                           << ", phi: " << phi << ", eta: " << eta << ", Towers: " << nTowers << endl;
+  cout << "============" << endl;
 
-      if (m_triggerVector[(Int_t) Trigger::MBD_NS_1]) {
-        hEvents_Jet6->Fill((Int_t) EventStatus::trigger_mbdNS);
-
-        if (m_hasBkg) {
-          hEvents_Jet6->Fill((Int_t) EventStatus::trigger_mbdNS_bkg);
-        }
-      }
-    }
-
-    if (m_triggerVector[(Int_t) Trigger::JET_8]) {
-      hEvents_Jet8_A->Fill(m_globalEvent);
-      hEvents_Jet8->Fill((Int_t) EventStatus::trigger);
-
-      if (m_hasBkg) {
-        hEvents_Jet8_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet8->Fill((Int_t) EventStatus::trigger_bkg);
-      }
-
-      if (m_hasBkgCEMC) {
-        hEvents_Jet8->Fill((Int_t) EventStatus::trigger_bkgCEMC);
-      }
-
-      if (m_triggerVector[(Int_t) Trigger::MBD_NS_1]) {
-        hEvents_Jet8->Fill((Int_t) EventStatus::trigger_mbdNS);
-
-        if (m_hasBkg) {
-          hEvents_Jet8->Fill((Int_t) EventStatus::trigger_mbdNS_bkg);
-        }
-      }
-    }
-
-    if (m_triggerVector[(Int_t) Trigger::JET_10]) {
-      hEvents_Jet10_A->Fill(m_globalEvent);
-      hEvents_Jet10->Fill((Int_t) EventStatus::trigger);
-
-      if (m_hasBkg) {
-        hEvents_Jet10_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet10->Fill((Int_t) EventStatus::trigger_bkg);
-      }
-
-      if (m_hasBkgCEMC) {
-        hEvents_Jet10->Fill((Int_t) EventStatus::trigger_bkgCEMC);
-      }
-
-      if (m_triggerVector[(Int_t) Trigger::MBD_NS_1]) {
-        hEvents_Jet10->Fill((Int_t) EventStatus::trigger_mbdNS);
-
-        if (m_hasBkg) {
-          hEvents_Jet10->Fill((Int_t) EventStatus::trigger_mbdNS_bkg);
-        }
-      }
-    }
-
-    if (m_triggerVector[(Int_t) Trigger::JET_12]) {
-      hEvents_Jet12_A->Fill(m_globalEvent);
-      hEvents_Jet12->Fill((Int_t) EventStatus::trigger);
-
-      if (m_hasBkg) {
-        hEvents_Jet12_bkg_A->Fill(m_globalEvent);
-        hEvents_Jet12->Fill((Int_t) EventStatus::trigger_bkg);
-      }
-
-      if (m_hasBkgCEMC) {
-        hEvents_Jet12->Fill((Int_t) EventStatus::trigger_bkgCEMC);
-      }
-
-      if (m_triggerVector[(Int_t) Trigger::MBD_NS_1]) {
-        hEvents_Jet12->Fill((Int_t) EventStatus::trigger_mbdNS);
-
-        if (m_hasBkg) {
-          hEvents_Jet12->Fill((Int_t) EventStatus::trigger_mbdNS_bkg);
-        }
-      }
-    }
-  }
-
-  // looping over base emcal towers is time intensive so only do this when event has background
-  if(m_saveTree && (m_hasBkgCEMC || m_hasBkg)) {
-    // loop over base towers
-    for(UInt_t towerIndex = 0; towerIndex < towersCEMCBase->size(); ++towerIndex) {
-      TowerInfo* tower = towersCEMCBase->get_tower_at_channel(towerIndex);
-      m_towersCEMCBase_isGood.push_back(tower->get_isGood());
-      m_towersCEMCBase_time.push_back(tower->get_time_float());
-      m_towersCEMCBase_energy.push_back(tower->get_energy());
-    }
-
-    // fill the tree
-    m_T->Fill();
-  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -383,134 +374,35 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 Int_t EventValidation::ResetEvent(PHCompositeNode *topNode)
 {
-  m_triggerVector.clear();
-
-  m_towersCEMCBase_isGood.clear();
-  m_towersCEMCBase_energy.clear();
-  m_towersCEMCBase_time.clear();
-
-  m_towersCEMC_isGood.clear();
-  m_towersIHCal_isGood.clear();
-  m_towersOHCal_isGood.clear();
-
-  m_towersCEMC_energy.clear();
-  m_towersIHCal_energy.clear();
-  m_towersOHCal_energy.clear();
-
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 Int_t EventValidation::End(PHCompositeNode *topNode)
 {
-  cout << "Events With Z Vtx: " << m_eventZVtx << ", " << m_eventZVtx * 100./m_event << " %" << endl;
-  cout << "Events With |Z| < 30 cm: " << m_eventZVtx30 << ", " << m_eventZVtx30 * 100./m_event << " %" << endl;
+  cout << "EventValidation::End(PHCompositeNode *topNode) This is the End..." << endl;
+  TFile output(m_outputFile.c_str(),"recreate");
 
-  if(m_saveTree) {
-    cout << "EventValidation::End - Output to " << m_outputTreeFileName << endl;
-    m_outputTreeFile->cd();
-    m_T->Write();
-    m_outputTreeFile->Close();
-    delete m_outputTreeFile;
-  }
+  output.cd();
 
-  cout << "EventValidation::End - Output to " << m_outputQAFileName << endl;
+  output.mkdir("energy");
+  output.mkdir("px");
+  output.mkdir("py");
 
-  m_outputQAFile->cd();
-
-  hEvents->Write();
-  hZVtx->Write();
-
-  hEvents_Jet6->Write();
-  hEvents_Jet8->Write();
-  hEvents_Jet10->Write();
-  hEvents_Jet12->Write();
-
-  m_outputQAFile->mkdir("time");
-  m_outputQAFile->cd("time");
-
-  hEvents_Jet6_A->Write();
-  hEvents_Jet8_A->Write();
-  hEvents_Jet10_A->Write();
-  hEvents_Jet12_A->Write();
-
-  hEvents_Jet6_bkg_A->Write();
-  hEvents_Jet8_bkg_A->Write();
-  hEvents_Jet10_bkg_A->Write();
-  hEvents_Jet12_bkg_A->Write();
-
-  stringstream dirName("");
-  stringstream dirNameCEMC("");
-
-  dirName << "h2TowerEnergy/" << m_run << "/Total";
-  m_outputQAFile->mkdir(dirName.str().c_str());
-
-  dirNameCEMC << "h2TowerEnergy/" << m_run << "/CEMC";
-  m_outputQAFile->mkdir(dirNameCEMC.str().c_str());
-
-  UInt_t ctr[2] = {0};
   for(UInt_t i = 0; i < h2TowerEnergy.size(); ++i) {
-    if(m_hasBkgCEMC_vec[i] && ++ctr[0] <= m_saveHistMax) {
-      m_outputQAFile->cd(dirNameCEMC.str().c_str());
-      h2TowerEnergyCEMC[i]->Write();
-    }
+    output.cd("energy");
+    h2TowerEnergy[i]->Write();
 
-    if(m_hasBkg_vec[i] && ++ctr[1] <= m_saveHistMax) {
-      m_outputQAFile->cd(dirName.str().c_str());
-      h2TowerEnergy[i]->Write();
-    }
+    output.cd("px");
+    h2TowerPx[i]->Write();
+
+    output.cd("py");
+    h2TowerPy[i]->Write();
   }
-  cout << "CEMC Background Events Tagged: " << ctr[0] << endl;
-  cout << "Background Events Tagged: "      << ctr[1] << endl;
 
-  m_outputQAFile->Close();
-  delete m_outputQAFile;
+  output.Close();
 
   cout << "EventValidation::End(PHCompositeNode *topNode) This is the End..." << endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-//____________________________________________________________________________..
-Bool_t EventValidation::isBackgroundEvent(std::vector<Float_t> &towerEnergy) {
-  UInt_t ctr = 0;
-
-  for(UInt_t i = 0; i < m_bins_phi; ++i) {
-    for(UInt_t j = 0; j < m_bins_eta; ++j) {
-      UInt_t key        = TowerInfoDefs::encode_hcal(j,i);
-      UInt_t towerIndex = TowerInfoDefs::decode_hcal(key);
-      Float_t energy    = towerEnergy[towerIndex];
-
-      if(energy < m_bkg_tower_energy) {
-        ctr = 0;
-        continue;
-      }
-
-      // left side
-      key        = (i == 0) ? TowerInfoDefs::encode_hcal(j,m_bins_phi-1) : TowerInfoDefs::encode_hcal(j,i-1);
-      towerIndex = TowerInfoDefs::decode_hcal(key);
-      energy     = towerEnergy[towerIndex];
-
-      if(energy >= m_bkg_tower_neighbor_energy) {
-        ctr = 0;
-        continue;
-      }
-
-      // right side
-      key        = (i == m_bins_phi-1) ? TowerInfoDefs::encode_hcal(j,0) : TowerInfoDefs::encode_hcal(j,i+1);
-      towerIndex = TowerInfoDefs::decode_hcal(key);
-      energy     = towerEnergy[towerIndex];
-
-      if(energy < m_bkg_tower_neighbor_energy){
-        ++ctr;
-        if(ctr >= m_bkg_towers) {
-          cout << "Found Background: (" << i << "," << j-m_bkg_towers+1 << ")" << " to (" << i << "," << j << ")" << endl;
-          return true;
-        }
-      }
-      else ctr = 0;
-    }
-    ctr = 0;
-  }
-
-  return false;
-}

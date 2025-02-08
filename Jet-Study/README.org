@@ -3,24 +3,34 @@
 CreateDstList.pl --build ana462 --cdb 2024p010_v001 DST_JET_run2pp --printruns
 #+end_src
 
-* Generate runs with magnetic field off (to exclude them from the good run list):
+* Generate runs with magnetic field on:
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select runnumber from magnet_info where magnet_on = 'false' order by runnumber;" -At
+psql -h sphnxdaqdbreplica daq -c "select runnumber from magnet_info where magnet_on = 'true' and runnumber >= 47289;" -At
+#+end_src
+
+* Generate runs with MBD N&S>=1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown10 != -1 and runnumber >= 47289;" -At
+#+end_src
+
+* Generate runs with MBD Jet 8 GeV + MBD NS >= 1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown17 != -1 and runnumber >= 47289;" -At
 #+end_src
 
 * Generate Trigger Name List
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c "select distinct index,triggername from gl1_triggernames where runnumber >= 46038 and runnumber_last <= 54074 order by index;" -At
+psql -h sphnxdaqdbreplica daq -c "select distinct index,triggername from gl1_triggernames where runnumber >= 46038 and runnumber_last <= 54074 order by index;" -At
 #+end_src
 
 * Generate run list where specific triggers are enabled
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
+psql -h sphnxdaqdbreplica daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
 #+end_src
 
 Example: Ensure that MBD NS >= 1 and Jet 8, 10, and 12 GeV trigger are enabled
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list
+psql -h sphnxdaqdbreplica daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list
 #+end_src
 
 * Generate dst list from run list
@@ -30,12 +40,12 @@ CreateDstList.pl --build ana450 --cdb 2024p009 DST_JET_run2pp --list <list>
 
 * Generate list of runs that contain bad tower maps
 #+begin_src bash
-find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list
+find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > files/runs-hot-maps.list
 #+end_src
 
 * Access the good run database
 #+begin_src bash
-psql Production -h sphnxproddbmaster.sdcc.bnl.gov
+psql Production -h sphnxproddbmaster.sdcc.bnl.gov -U argouser
 #+end_src
 
 * Access the File Catalog
@@ -53,7 +63,6 @@ rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL
 
 #+begin_src bash
 rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
-#+end_src
 #+end_src
 
 ** After editing .cc or .h

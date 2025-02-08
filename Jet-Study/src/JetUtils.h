@@ -18,6 +18,9 @@ class JetUtils
 
   static vector<string> m_triggers;
 
+  static bool failsLoEmFracETCut(float emFrac, float ET);
+  static bool failsHiEmFracETCut(float emFrac, float ET);
+
  private:
   static float get_emcal_mineta_zcorrected(float zvtx);
   static float get_emcal_maxeta_zcorrected(float zvtx);

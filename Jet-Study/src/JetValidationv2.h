@@ -98,8 +98,25 @@ class JetValidationv2 : public SubsysReco
   Float_t m_ET_low;
   Float_t m_ET_high;
 
+  UInt_t m_bins_constituents;
+  Float_t m_constituents_low;
+  Float_t m_constituents_high;
+
+  UInt_t m_bins_nJets;
+  Float_t m_nJets_low;
+  Float_t m_nJets_high;
+
   UInt_t  m_event;
   Float_t m_R;
+
+  Int_t m_nJets_min;
+  Int_t m_nJets_max;
+
+  Int_t m_constituents_min;
+  Int_t m_constituents_max;
+
+  Int_t m_pt_min;
+  Int_t m_pt_max;
 
   enum m_status {ALL, ZVTX30, ZVTX30_BKG
                             , ZVTX30_BKG_failsLoEmJetCut
@@ -120,11 +137,13 @@ class JetValidationv2 : public SubsysReco
 
   TH1* hEvents = nullptr;
   TH1* hzvtxAll = nullptr;
-  TH3* hjetPhiEtaPt;
-  TH2* h2ETVsFracCEMC;
-  TH2* h2FracOHCalVsFracCEMC;
-  TH2* h2ETVsFracCEMC_miss;
-  TH2* h2FracOHCalVsFracCEMC_miss;
+  TH3* hjetPhiEtaPt = nullptr;
+  TH2* hjetConstituentsVsPt = nullptr;
+  TH2* hNJetsVsLeadPt = nullptr;
+  TH2* h2ETVsFracCEMC = nullptr;
+  TH2* h2FracOHCalVsFracCEMC = nullptr;
+  TH2* h2ETVsFracCEMC_miss = nullptr;
+  TH2* h2FracOHCalVsFracCEMC_miss = nullptr;
   std::vector<TH2*> hCEMCBase;
   std::vector<TH2*> hCEMC;
   std::vector<TH2*> hIHCal;

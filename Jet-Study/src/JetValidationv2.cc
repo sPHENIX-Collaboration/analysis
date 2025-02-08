@@ -37,6 +37,8 @@ using std::endl;
 using std::string;
 using std::to_string;
 using std::stringstream;
+using std::min;
+using std::max;
 
 //____________________________________________________________________________..
 JetValidationv2::JetValidationv2()
@@ -70,8 +72,20 @@ JetValidationv2::JetValidationv2()
   , m_bins_ET(190)
   , m_ET_low(10)
   , m_ET_high(200)
+  , m_bins_constituents(300)
+  , m_constituents_low(0)
+  , m_constituents_high(300)
+  , m_bins_nJets(100)
+  , m_nJets_low(0)
+  , m_nJets_high(100)
   , m_event(0)
   , m_R(0.4)
+  , m_nJets_min(9999)
+  , m_nJets_max(0)
+  , m_constituents_min(9999)
+  , m_constituents_max(0)
+  , m_pt_min(9999)
+  , m_pt_max(0)
 {
   cout << "JetValidationv2::JetValidationv2(const std::string &name) Calling ctor" << endl;
 }
@@ -102,6 +116,12 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hjetPhiEtaPt = new TH3F("hjetPhiEtaPt", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
                                                                         , m_bins_eta, m_eta_low, m_eta_high
                                                                         , m_bins_pt, m_pt_low, m_pt_high);
+
+  hjetConstituentsVsPt = new TH2F("hjetConstituentsVsPt", "Jet; p_{T} [GeV]; Constituents", m_bins_pt, m_pt_low, m_pt_high
+                                                            , m_bins_constituents, m_constituents_low, m_constituents_high);
+
+  hNJetsVsLeadPt = new TH2F("hNJetsVsLeadPt", "Event; Lead p_{T} [GeV]; # of Jets", m_bins_pt, m_pt_low, m_pt_high
+                                                                                  , m_bins_nJets, m_nJets_low, m_nJets_high);
 
   h2ETVsFracCEMC = new TH2F("h2ETVsFracCEMC","Jet; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]"
                             , m_bins_frac, m_frac_low, m_frac_high, m_bins_ET, m_ET_low, m_ET_high);
@@ -199,17 +219,29 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   Float_t jetEtaLead = 0;
   Float_t jetEtaSubLead = 0;
 
+  Int_t nJets = 0;
+
   // trigger
   Bool_t hasBkg = false;
   for (auto jet : *jets_r04) {
     Float_t phi = jet->get_phi();
     Float_t eta = jet->get_eta();
     Float_t pt = jet->get_pt();
+    Int_t constituents = jet->get_comp_vec().size();
 
     // exclude jets near the edge of the detector
     if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
+    ++nJets;
 
     hjetPhiEtaPt->Fill(phi, eta, pt);
+
+    hjetConstituentsVsPt->Fill(pt, constituents);
+
+    m_constituents_min = min(m_constituents_min, constituents);
+    m_constituents_max = max(m_constituents_max, constituents);
+
+    m_pt_min = min(m_pt_min, (Int_t)pt);
+    m_pt_max = max(m_pt_max, (Int_t)pt);
 
     if(pt >= m_pt_background) {
       hasBkg = true;
@@ -233,6 +265,11 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
       }
     }
   }
+
+  hNJetsVsLeadPt->Fill(jetPtLead, nJets);
+
+  m_nJets_min = min(m_nJets_min, nJets);
+  m_nJets_max = max(m_nJets_max, nJets);
 
   recoConsts* rc = recoConsts::instance();
 
@@ -427,6 +464,11 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   for(UInt_t i = 0; i < m_eventStatus.size(); ++i) {
     cout << m_eventStatus[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
   }
+  cout << "=======================" << endl;
+  cout << "Jets Summary" << endl;
+  cout << "Constituents min: " << m_constituents_min << ", max: " << m_constituents_max << endl;
+  cout << "nJets min: " << m_nJets_min << ", max: " << m_nJets_max << endl;
+  cout << "Jet pT min: " << m_pt_min << " GeV, max: " << m_pt_max << " GeV" << endl;
 
   TFile output(m_outputFile.c_str(),"recreate");
 
@@ -450,6 +492,8 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("jets");
   hjetPhiEtaPt->Write();
+  hjetConstituentsVsPt->Write();
+  hNJetsVsLeadPt->Write();
 
   output.cd("bkg_checks");
   h2ETVsFracCEMC->Write();

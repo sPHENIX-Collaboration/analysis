@@ -106,6 +106,16 @@ int JetUtils::readEventList(const string &input, vector<pair<int, int>> &vec, in
   return 0;
 }
 
+bool JetUtils::failsLoEmFracETCut(float emFrac, float ET)
+{
+  return emFrac < 0.1 && ET > (50*emFrac+20);
+}
+
+bool JetUtils::failsHiEmFracETCut(float emFrac, float ET)
+{
+  return emFrac > 0.9 && ET > (-50*emFrac+70);
+}
+
 bool JetUtils::check_bad_jet_eta(float jet_eta, float zvtx, float jet_radius)
 {
   float emcal_mineta = get_emcal_mineta_zcorrected(zvtx);
