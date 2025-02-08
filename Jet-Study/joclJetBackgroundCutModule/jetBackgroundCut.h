@@ -5,14 +5,14 @@
 #include <string>
 #include <cmath>
 #include <phool/recoConsts.h>
-
+#include <globalvertex/GlobalVertex.h>
 class PHCompositeNode;
 class CentralityInfo;
 class jetBackgroundCut : public SubsysReco
 {
  public:
 
-  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0);
+  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD);
 
   virtual ~jetBackgroundCut();
 
@@ -56,6 +56,7 @@ class jetBackgroundCut : public SubsysReco
   int _debug;
   bool _missingInfoWarningPrinted = false;
   std::string _jetNodeName;
+  GlobalVertex::VTXTYPE _vtxtype;
 };
 
 #endif // R24TREEMAKER
