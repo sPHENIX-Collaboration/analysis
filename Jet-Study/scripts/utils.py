@@ -10,9 +10,6 @@ parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All_JetVal.')
-gen = subparser.add_parser('gen', help='Generate run lists.')
-status = subparser.add_parser('status', help='Get status of Condor.')
-
 f4a.add_argument('-i', '--run-list', type=str, help='Run list', required=True)
 f4a.add_argument('-i2', '--run-list-jet-dir', type=str, default='files/dst-jet', help='Directory for DST JET files')
 f4a.add_argument('-i3', '--run-list-jet-calo-dir', type=str, default='files/dst-jet-calo', help='Directory for DST JETCALO files')
@@ -26,13 +23,6 @@ f4a.add_argument('-s', '--memory', type=float, default=2, help='Memory (units of
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 f4a.add_argument('-n', '--jobs', type=int, default=20000, help='Number of jobs per submission. Default: 20k.')
 f4a.add_argument('-t', '--ana-tag', type=str, default='ana462_2024p010_v001', help='ana tag. Default: ana462_2024p010_v001')
-
-gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
-gen.add_argument('-t', '--ana-tag', type=str, default='ana437', help='ana tag. Default: ana437')
-gen.add_argument('-s', '--script', type=str, default='scripts/getGoodRunList.py', help='Good run generation script. Default: scripts/getGoodRunList.py')
-gen.add_argument('-b', '--bad', type=str, default='files/bad-runs.list', help='List of known bad runs. Default: files/bad-runs.list')
-
-args = parser.parse_args()
 
 def create_f4a_jobs():
     run_list              = os.path.realpath(args.run_list)
@@ -150,50 +140,103 @@ def create_f4a_jobs():
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
         file.write(f'queue input_dst,input_dstcalo from {os.path.basename(jobs_list)}')
 
-def create_run_lists():
-    ana_tag = args.ana_tag
-    output  = os.path.realpath(args.output)+'/'+ana_tag
-    gen_runs = os.path.realpath(args.script)
-    bad_runs = os.path.realpath(args.bad)
-    dst_tag  = 'DST_CALOFITTING_run2pp'
+gen = subparser.add_parser('gen', help='Generate run lists.')
+gen.add_argument('-o', '--output', type=str, default='files', help='Output Directory. Default: files')
+gen.add_argument('-r', '--run-min', type=int, default=47289, help='Minimum Run Number. Default: 47289')
+gen.add_argument('-r2', '--events-min', type=int, default=1000000, help='Minimum Events in Run. Default: 1M')
+gen.add_argument('-d', '--dataset', type=str, default='ana462_2024p010_v001', help='Production Dataset. Default: ana462_2024p010_v001')
+gen.add_argument('-d2', '--dsttype', type=str, default='DST_CALO_run2pp', help='Production DST Type. Default: DST_CALO_run2pp')
 
-    print(f'Tag: {ana_tag}')
-    print(f'DST: {dst_tag}')
+def create_run_lists():
+    output  = os.path.realpath(args.output)
+    run_min = args.run_min
+    events_min = args.events_min
+    dataset = args.dataset
+    dsttype = args.dsttype
+
     print(f'Output: {output}')
-    print(f'Good Runs Script: {gen_runs}')
-    print(f'Known Bad Runs: {bad_runs}')
+    print(f'Dataset: {dataset}')
+    print(f'Dst Type: {dsttype}')
+    print(f'Minimum Run Number: {run_min}')
+    print(f'Minimum Events in Run: {events_min}')
 
     os.makedirs(output,exist_ok=True)
 
-    print('Generating Good Run List')
-    subprocess.run(f'{gen_runs}'.split(),cwd=output)
+    # Get list of all runs with magnet on
+    print('Generating Magnet On Run List')
+    command = f'psql -h sphnxdaqdbreplica daq -c "select runnumber from magnet_info where magnet_on = \'true\' and runnumber >= {run_min} order by runnumber;" -At > runs-magnet-on.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
+    # Get list of all runs with MBD N&S >= 1 Enabled
+    print('Generating MBD N&S >= 1 Enabled Run List')
+    command = f'psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown10 != -1 and runnumber >= {run_min};" -At > runs-MBD-NS-1-trigger-on.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
+
+    # Get list of all runs marked as golden in EMCal, IHCal and OHCal
+    print('Generating Golden Run List')
+    command = f'psql Production -h sphnxproddbmaster.sdcc.bnl.gov -c "select runnumber from goodruns WHERE (emcal_auto).runclass = \'GOLDEN\' and (ohcal_auto).runclass = \'GOLDEN\' and (ihcal_auto).runclass = \'GOLDEN\' and runnumber >= {run_min} order by runnumber;" -At > runs-golden.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
+
+    # Get list of all runs that contain a bad tower map
     print('Generating Bad Tower Maps Run List')
-    subprocess.run(['bash','-c','find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'],cwd=output)
+    command = f'find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d \'-\' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
-    print(f'Generating {ana_tag} 2024p007 Run List')
-    subprocess.run(['bash','-c',f'CreateDstList.pl --build {ana_tag} --cdb 2024p007 {dst_tag} --printruns > runs-{ana_tag}.list'],cwd=output)
+    # Get list of all runs with MBD Live time greater than 80%
+    print('Generating MBD Live time 80% Run List')
+    command = f'psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scalers where index = 10 and runnumber >= {run_min} and live*100/raw >= 80 order by runnumber;" -At > runs-MBD-live-time-80.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
-    print('Generating Runs with MBD NS >= 1 and Jet X GeV triggers enabled')
-    subprocess.run(['bash','-c',f'psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c \'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;\' -At > runs-trigger-all.list'],cwd=output)
-    subprocess.run(['bash','-c',f'psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c \'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and (scaledown21 != -1 or scaledown22 != -1 or scaledown23 != -1) order by runnumber;\' -At > runs-trigger-any.list'],cwd=output)
+    # Get list of all runs at least 1M events
+    print('Generating Minimum 1M events Run List')
+    command = f'psql FileCatalog -c "select runnumber from datasets where dsttype = \'{dsttype}\' and dataset = \'{dataset}\' and runnumber >= {run_min} group by runnumber having sum(events) >= {events_min};" -At > runs-events-min-{events_min}.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
-    print(f'Generating Good {ana_tag} 2024p007 Run List')
-    subprocess.run(['bash','-c',f'comm -12 runList.txt runs-{ana_tag}.list > runs-{ana_tag}-good.list'],cwd=output)
+    # Get list of all runs at least 5 minutes duration
+    print('Generating Minimum 5 Minute Duration Run List')
+    command = f'psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runnumber >= {run_min} and ertimestamp - brtimestamp >= interval \'5 minutes\' order by runnumber;" -At > runs-time-min-5.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
-    print(f'Generating Good {ana_tag} 2024p007 with Bad Tower Maps Run List')
-    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good.list runs-hot-maps.list > runs-{ana_tag}-good-maps.list'],cwd=output)
+    print('Generating Good Run List')
+    good_runs = f'runs-good-{dsttype}-{dataset}.list'
+    command = f'comm -12 runs-hot-maps.list <(comm -12 runs-MBD-NS-1-trigger-on.list <(comm -12 runs-magnet-on.list <(comm -12 runs-MBD-live-time-80.list <(comm -12 runs-golden.list runs-events-min-{events_min}.list)))) > {good_runs}'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
-    print(f'Generating Good {ana_tag} 2024p007 with triggers')
-    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good-maps.list runs-trigger-all.list > runs-{ana_tag}-good-maps-trigger-all.list'],cwd=output)
-    subprocess.run(['bash','-c',f'comm -12 runs-{ana_tag}-good-maps.list runs-trigger-any.list > runs-{ana_tag}-good-maps-trigger-any.list'],cwd=output)
-
-    print('Remove any known bad runs')
-    subprocess.run(['bash','-c',f'comm -23 runs-{ana_tag}-good-maps-trigger-all.list {bad_runs} >  runs-{ana_tag}-good-maps-trigger-all-clean.list'],cwd=output)
-    subprocess.run(['bash','-c',f'comm -23 runs-{ana_tag}-good-maps-trigger-any.list {bad_runs} >  runs-{ana_tag}-good-maps-trigger-any-clean.list'],cwd=output)
+    print('Good Runs Less than 5 Minutes')
+    command = f'comm -23 {good_runs} runs-time-min-5.list > {os.path.splitext(good_runs)[0]}-without-time-min-5.list'
+    result = subprocess.run(['bash','-c',command],cwd=output)
+    if(result.returncode != 0):
+        print(f'Error in {command}')
+        return
 
     print('Run Stats')
-    subprocess.run(['bash','-c','wc -l *'],cwd=output)
+    subprocess.run(['bash','-c','wc -l *.list'],cwd=output)
+
+status = subparser.add_parser('status', help='Get status of Condor.')
 
 def get_condor_status():
     hosts = [f'sphnxuser{x:02}' for x in range(1,9)]
@@ -225,6 +268,8 @@ def get_condor_status():
 
     print('User')
     print(pd.DataFrame(dt_user).to_string(index=False))
+
+args = parser.parse_args()
 
 if __name__ == '__main__':
     if(args.command == 'f4a'):
