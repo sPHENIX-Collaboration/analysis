@@ -22,7 +22,7 @@
 using namespace std;
 
 //____________________________________________________________________________..
-jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort, GlobalVertex::VTXTYPE vtxtype):
+jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort, GlobalVertex::VTXTYPE vtxtype, int sysvar):
   SubsysReco(name)//).c_str())
 {
   _name = name;
@@ -30,6 +30,7 @@ jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::str
   _doAbort = doAbort;
   _jetNodeName = jetNodeName;
   _vtxtype = vtxtype;
+  _sysvar = sysvar;
 }
 
 //____________________________________________________________________________..
