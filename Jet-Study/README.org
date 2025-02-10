@@ -134,6 +134,12 @@ Note there must be one number per line.
 awk '{ sum += $1 } END { print sum }' <file>
 #+end_src
 
+** Search any line in one file within another file
+#+begin_src bash
+rg -Ff <pattern file> <input file>
+#+end_src
+Note: pattern file should be interpreted as one line per pattern
+
 * PSQL Tips
 ** Load the contents of a file into a temporary table with psql:
 #+begin_src psql
