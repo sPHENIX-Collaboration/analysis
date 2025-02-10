@@ -32,6 +32,7 @@ jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::str
   _jetNodeName = jetNodeName;
   _vtxtype = vtxtype;
   _sysvar = sysvar;
+  SetDefaultParams();
 }
 
 //____________________________________________________________________________..
@@ -54,7 +55,7 @@ void jetBackgroundCut::CreateNodeTree(PHCompositeNode *topNode)
 {
   PHNodeIterator iter(topNode);
 
-  PHCompositeNode *parNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "RUN"));
+  PHCompositeNode *parNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "PAR"));
   if(!parNode)
     {
       cout << "No RUN node found; cannot create PHParameters for storing cut results. Aborting run!";
@@ -236,11 +237,13 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 
      return Fun4AllReturnCodes::ABORTEVENT;
   }
-
+  PHNodeIterator iter(topNode);
+  PHCompositeNode *parNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "PAR"));
   _cutParams.set_int_param("failsLoEmJetCut",failsLoEm);
   _cutParams.set_int_param("failsHiEmJetCut",failsHiEm);
   _cutParams.set_int_param("failsIhJetCut",failsIhCut);
   _cutParams.set_int_param("failsAnyJetCut",failsAnyCut);
+  _cutParams.UpdateNodeTree(parNode, "JetCutParams");
 
   return Fun4AllReturnCodes::EVENT_OK;
     
