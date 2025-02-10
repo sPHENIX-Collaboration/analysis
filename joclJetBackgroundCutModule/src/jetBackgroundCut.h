@@ -12,23 +12,56 @@ class jetBackgroundCut : public SubsysReco
 {
  public:
 
-  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD);
+  jetBackgroundCut(const std::string jetNodeName, const std::string &name = "jetBackgroundCutModule", const int debug = 0, const bool doAbort = 0, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD, int sysvar = 0);
 
   virtual ~jetBackgroundCut();
 
   bool failsLoEmFracETCut(float emFrac, float ET, bool dPhiCut, bool isDijet)
   {
-    return (emFrac < 0.1 && ET > (50*emFrac+20)) && (dPhiCut || !isDijet);
+    float widen = 0;
+    float shift = 0;
+    if(_sysvar > 0)
+      {
+	widen = 0.05;
+	shift = -2.5;
+      }
+    else if(_sysvar < 0)
+      {
+	widen = -0.05;
+	shift = 2.5;
+      }
+    return (emFrac < (0.1+widen) && ET > (50*emFrac+20+shift)) && (dPhiCut || !isDijet);
   }
 
   bool failsHiEmFracETCut(float emFrac, float ET, bool dPhiCut, bool isDijet)
   {
-    return (emFrac > 0.9 && ET > (-50*emFrac+70)) && (dPhiCut || !isDijet);
+    float widen = 0;
+    float shift = 0;
+    if(_sysvar > 0)
+      {
+	widen = -0.05;
+	shift = -2.5;
+      }
+    else if(_sysvar < 0)
+      {
+	widen = 0.05;
+	shift = 2.5;
+      }
+    return (emFrac > (0.9+widen) && ET > (-50*emFrac+70+shift)) && (dPhiCut || !isDijet);
   }
 
   bool failsIhFracCut(float emFrac, float ohFrac)
   {
-    return emFrac + ohFrac < 0.65;
+    float shift = 0;
+    if(_sysvar > 0)
+      {
+	shift = 0.05;
+      }
+    else if(_sysvar < 0)
+      {
+	shift = -0.05;
+      }
+    return emFrac + ohFrac < 0.65+shift;
   }
 
   bool failsdPhiCut(float dPhi, bool isDijet)
@@ -57,6 +90,7 @@ class jetBackgroundCut : public SubsysReco
   bool _missingInfoWarningPrinted = false;
   std::string _jetNodeName;
   GlobalVertex::VTXTYPE _vtxtype;
+  int _sysvar;
 };
 
 #endif // R24TREEMAKER
