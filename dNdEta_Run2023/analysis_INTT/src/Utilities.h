@@ -3,11 +3,13 @@
 
 #include <vector>
 
-#include <TMath.h>
 #include <TFile.h>
+#include <TMath.h>
 #include <TTree.h>
 
 using namespace std;
+
+#define PI 3.14159265358979323846
 
 template <class T> void CleanVec(std::vector<T> &v)
 {
@@ -18,10 +20,10 @@ template <class T> void CleanVec(std::vector<T> &v)
 float deltaPhi(float phi1, float phi2)
 {
     float dPhi = phi1 - phi2;
-    if (dPhi > TMath::Pi())
-        dPhi -= 2. * TMath::Pi();
-    if (dPhi < -TMath::Pi())
-        dPhi += 2. * TMath::Pi();
+    if (dPhi > PI)
+        dPhi -= 2. * PI;
+    if (dPhi < -1. * PI)
+        dPhi += 2. * PI;
     return dPhi;
 }
 

@@ -10,6 +10,8 @@
 #include <TTreeIndex.h>
 #include <TString.h>
 #include <TLegend.h>
+#include <TStyle.h>
+#include <TText.h>
 
 #include <fstream>
 #include <iostream>
@@ -21,7 +23,7 @@
 #define INCLUDE_ETA_RANGE
 #include "bins.h"
 
-#include "/sphenix/user/hjheng/TrackletAna/analysis/plot/sPHENIXStyle/sPhenixStyle.C"
+#include "/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/release/release_new/new/rootmacros/sPhenixStyle.C"
 
 void convert(TH2 *h1)
 {
@@ -31,7 +33,8 @@ void convert(TH2 *h1)
     {
         for (int j = 1; j <= h1->GetNbinsY(); ++j)
         {
-            double data_pdf = TMath::Gaus(hvz->GetBinCenter(j), -20.72, 6.390, 1);
+            // double data_pdf = TMath::Gaus(hvz->GetBinCenter(j), -20.72, 6.390, 1);
+            double data_pdf = TMath::Gaus(hvz->GetBinCenter(j), -4.03, 9.7, 1);
             if (h1->GetBinContent(i, j))
             {
                 h1->SetBinContent(i, j, data_pdf);
@@ -86,7 +89,6 @@ int main(int argc, char *argv[])
     }
 
     SetsPhenixStyle();
-    // gStyle->SetPalette(kThermometer);
 
     TString datatreefile = TString(argv[1]);
     TString simtreefile = TString(argv[2]);
@@ -101,24 +103,26 @@ int main(int argc, char *argv[])
     int nfeta = neta * 100;
     int nfvz = nvz * 100;
 
+    auto evtsel = "PV_z>=-10&&PV_z<=10";
+
     TH2D *hM_data = new TH2D("hM_data", "hM_data", nfeta, etamin, etamax, nfvz, vzmin, vzmax);
-    tdata->Project("hM_data", "PV_z:recotklraw_eta", "PV_z>=-30&&PV_z<=-10", "");
+    tdata->Project("hM_data", "PV_z:recotklraw_eta", evtsel, "");
     convert(hM_data);
     TH2D *hM_data_coarse = (TH2D *)hM_data->Clone("hM_data_coarse");
     hM_data_coarse->RebinX(nfeta / neta);
     hM_data_coarse->RebinY(nfvz / nvz);
 
     TH2D *hM_sim = new TH2D("hM_sim", "hM_sim", nfeta, etamin, etamax, nfvz, vzmin, vzmax);
-    tsim->Project("hM_sim", "PV_z:recotklraw_eta", "PV_z>=-30&&PV_z<=-10", "");
+    tsim->Project("hM_sim", "PV_z:recotklraw_eta", evtsel, "");
     convert(hM_sim);
     TH2D *hM_sim_coarse = (TH2D *)hM_sim->Clone("hM_sim_coarse");
     hM_sim_coarse->RebinX(nfeta / neta);
     hM_sim_coarse->RebinY(nfvz / nvz);
 
-    // TH2D *hM_ratio = (TH2D *)hM_sim_coarse->Clone("hM_ratio");
-    // hM_ratio->Divide(hM_data_coarse);
+    TH2D *hM_ratio = (TH2D *)hM_sim_coarse->Clone("hM_ratio");
+    hM_ratio->Divide(hM_data_coarse);
     // hM_ratio->SetStats(0);
-    TH2D *hM_ratio = new TH2D("hM_ratio", "hM_ratio", neta, etamin, etamax, nvz, vzmin, vzmax);
+    // TH2D *hM_ratio = new TH2D("hM_ratio", "hM_ratio", neta, etamin, etamax, nvz, vzmin, vzmax);
 
     auto ext_accep_map = (TH2D *)hM_ratio->Clone("ext_accep_map");
     for (int i = 1; i <= neta; i++)
@@ -142,11 +146,11 @@ int main(int argc, char *argv[])
                 ratio = sim / data;
                 ratio_err = ratio * sqrt(pow(sim_err / sim, 2) + pow(data_err / data, 2));
             }
-            hM_ratio->SetBinContent(i, j, ratio);
+            // hM_ratio->SetBinContent(i, j, ratio);
             hM_ratio->SetBinError(i, j, ratio_err);
-            std::cout << "data = " << data << " sim = " << sim << " data_err = " << data_err << " sim_err = " << sim_err << " ratio = " << ratio << " ratio_err = " << ratio_err << std::endl;
+            std::cout << "Bin (eta, vtxz) = (" << hM_data_coarse->GetXaxis()->GetBinCenter(i) << ", " << hM_data_coarse->GetYaxis()->GetBinCenter(j) << "): data = " << data << " +/- " << data_err << ", sim = " << sim << " +/- " << sim_err << ", ratio = " << ratio << " +/- " << ratio_err << std::endl;
 
-            if (hM_ratio->GetBinContent(i, j) < 0.9 || hM_ratio->GetBinContent(i, j) > 1.1)
+            if (hM_ratio->GetBinContent(i, j) < 0.75 || hM_ratio->GetBinContent(i, j) > 1.25)
             {
                 ext_accep_map->SetBinContent(i, j, 0);
             }
@@ -169,61 +173,73 @@ int main(int argc, char *argv[])
     }
 
     TCanvas *c = new TCanvas("c", "c", 800, 700);
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(0.16);
+    gPad->SetTopMargin(0.08);
     c->cd();
     hM_ratio->GetXaxis()->SetTitle("#eta");
-    hM_ratio->GetYaxis()->SetTitle("v_{z} [cm]");
+    hM_ratio->GetYaxis()->SetTitle("vtx_{Z} [cm]");
+    hM_ratio->GetZaxis()->SetRangeUser(hM_ratio->GetMinimum(0)*0.9, hM_ratio->GetMaximum()*1.1);
     gStyle->SetPaintTextFormat("1.3f");
     hM_ratio->SetContour(1000);
     hM_ratio->SetMarkerSize(0.5);
-    hM_ratio->Draw("colztexte");
+    hM_ratio->Draw("colztext");
     drawhoutline(ext_accep_map);
     c->SaveAs(outfilename+".pdf");
 
     c->Clear();
     c->cd();
     hM_data->GetXaxis()->SetTitle("#eta");
-    hM_data->GetYaxis()->SetTitle("v_{z} [cm]");
+    hM_data->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     hM_data->SetContour(1000);
     hM_data->Draw("colz");
-    TLegend *l = new TLegend(0.2, 0.2, 0.4, 0.4);
-    l->SetTextSize(0.04);
-    l->SetFillStyle(0);
-    l->AddEntry("", "Data", "");
-    l->Draw();
+    // TLegend *l = new TLegend(0.2, 0.2, 0.4, 0.4);
+    // l->SetTextSize(0.04);
+    // l->SetFillStyle(0);
+    // l->AddEntry("", "Data", "");
+    // l->Draw();
+    TText *t = new TText();
+    // right and bottom adjusted
+    t->SetTextAlign(31);
+    t->SetTextSize(0.04);
+    t->DrawTextNDC(1-gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, "Data");
     c->SaveAs(outfilename+"_hM_data.pdf");
+    c->SaveAs(outfilename+"_hM_data.png");
 
-    l->Clear();
+    // l->Clear();
     c->Clear();
     c->cd();
     hM_sim->GetXaxis()->SetTitle("#eta");
-    hM_sim->GetYaxis()->SetTitle("v_{z} [cm]");
+    hM_sim->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     hM_sim->SetContour(1000);
     hM_sim->Draw("colz");
-    l->AddEntry("", "Simulation", "");
-    l->Draw();
+    // l->AddEntry("", "Simulation", "");
+    // l->Draw();
+    t->DrawTextNDC(1-gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, "Simulation");
     c->SaveAs(outfilename+"_hM_sim.pdf");
+    c->SaveAs(outfilename+"_hM_sim.png");
 
-    l->Clear();
+    // l->Clear();
     c->Clear();
     c->cd();
     hM_data_coarse->GetXaxis()->SetTitle("#eta");
-    hM_data_coarse->GetYaxis()->SetTitle("v_{z} [cm]");
+    hM_data_coarse->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     hM_data_coarse->SetContour(1000);
     hM_data_coarse->Draw("colz");
-    l->AddEntry("", "Data", "");
-    l->Draw();
+    // l->AddEntry("", "Data", "");
+    // l->Draw();
+    t->DrawTextNDC(1-gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, "Data");
     c->SaveAs(outfilename+"_hM_data_coarse.pdf");
 
-    l->Clear();
+    // l->Clear();
     c->Clear();
     c->cd();
     hM_sim_coarse->GetXaxis()->SetTitle("#eta");
-    hM_sim_coarse->GetYaxis()->SetTitle("v_{z} [cm]");
+    hM_sim_coarse->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     hM_sim_coarse->SetContour(1000);
     hM_sim_coarse->Draw("colz");
-    l->AddEntry("", "Simulation", "");
-    l->Draw();
+    // l->AddEntry("", "Simulation", "");
+    // l->Draw();
+    t->DrawTextNDC(1-gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, "Simulation");
     c->SaveAs(outfilename+"_hM_sim_coarse.pdf");
 
     TFile *fout = new TFile(outfilename+".root", "RECREATE");

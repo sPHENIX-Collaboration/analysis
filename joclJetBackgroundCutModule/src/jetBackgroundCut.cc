@@ -9,7 +9,6 @@
 #include <calobase/TowerInfoContainerSimv1.h>
 #include <calobase/TowerInfoContainerSimv2.h>
 #include <globalvertex/GlobalVertexMapv1.h>
-#include <globalvertex/GlobalVertex.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
@@ -23,13 +22,14 @@
 using namespace std;
 
 //____________________________________________________________________________..
-jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort):
+jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort, GlobalVertex::VTXTYPE vtxtype):
   SubsysReco(name)//).c_str())
 {
   _name = name;
   _debug = debug;
   _doAbort = doAbort;
   _jetNodeName = jetNodeName;
+  _vtxtype = vtxtype;
 }
 
 //____________________________________________________________________________..
@@ -52,10 +52,9 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 {
 
   TowerInfoContainer *towersEM = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  //TowerInfoContainer *towersIH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   TowerInfoContainer *towersOH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   JetContainer *jets = findNode::getClass<JetContainerv1>(topNode, _jetNodeName);
-  MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
+  //MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
   GlobalVertexMap* gvtxmap = findNode::getClass<GlobalVertexMapv1>(topNode, "GlobalVertexMap");
 
   RawTowerGeomContainer *geom[3];
@@ -74,47 +73,53 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 
   if(!_missingInfoWarningPrinted)
     {
-      if(!towersEM || !towersOH || !geom[1] || !geom[2] || (!mbdvtxmap && !gvtxmap))
+      if(!towersEM || !towersOH || !geom[1] || !geom[2] || !gvtxmap)
 	{
-	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/mbdvtxmap/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << mbdvtxmap << "/" << gvtxmap << endl;
+	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << gvtxmap << endl;
 	  _missingInfoWarningPrinted = true;
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
-  bool gvtxExists = false;
   if(gvtxmap)
     {
-      auto gVtxMapStart = gvtxmap->begin();
-      
-      GlobalVertex* gvtx = NULL;
-      if(gVtxMapStart != gvtxmap->end())
+      if(gvtxmap->empty())
 	{
-	  gvtx = gVtxMapStart->second;
+	  if(_debug > 0) cout << "gvtxmap empty - aborting event." << endl;
+	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
+      GlobalVertex* gvtx = gvtxmap->begin()->second;//gvtxmap->get(_vtxtype);
       if(gvtx)
 	{
-	  zvtx = gvtx->get_z();
-	  gvtxExists = true;
+	  auto startIter = gvtx->find_vertexes(_vtxtype);
+	  auto endIter = gvtx->end_vertexes();
+	  for(auto iter = startIter; iter != endIter; ++iter)
+	    {
+	      const auto &[type, vertexVec] = *iter;
+	      if(type != _vtxtype) continue;
+	      for(const auto *vertex : vertexVec)
+		{
+		  if(!vertex) continue;
+		  zvtx = vertex->get_z();//gvtx->get_z();
+		}
+	    }
+	}
+      else
+	{
+	  if(_debug > 0) cout << "gvtx is NULL! Aborting event." << endl;
+	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
     }
-  if(!gvtxmap || !gvtxExists)
+
+  if(std::isnan(zvtx))
     {
-      auto mbdVtxMapStart = mbdvtxmap->begin();
-      MbdVertex* mbdvtx = NULL;
-      if(mbdVtxMapStart != mbdvtxmap->end())
-	{
-	  mbdvtx = mbdVtxMapStart->second;
-	}
-      if(mbdvtx)
-	{
-	  zvtx = mbdvtx->get_z();
-	}
+      if(_debug > 0) cout << "zvtx is NAN after attempting to grab it. ABORT EVENT!" << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
     }
 
   if(_debug > 1) cout << "Getting jets: " << endl;
   if(zvtx == NAN)
     {
-      cout << "ERROR: NO ZVTX! ABORT EVENT" << endl;
+      if(_debug > 0) cout << "ERROR: NO ZVTX! ABORT EVENT" << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   if(jets)

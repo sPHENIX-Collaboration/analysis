@@ -33,6 +33,8 @@ fi
 
 # output file name is $6/$7
 OUTPUTFILE="$6/$7"
+# filename for the file with BCO difference between adjacent events added; add _wEvtBCODiff after ntuple_ in the output file name
+OUTPUTFILE_BCO="${OUTPUTFILE/ntuple_/ntuple_wEvtBcoDiff_}"
 
 # 1st argument: run number
 # 2nd argument: productionTag

@@ -45,7 +45,7 @@ if __name__ == '__main__':
     condorFile.write("InitialDir           = {}\n".format(parentdir))
     condorFile.write("Executable           = $(InitialDir)/runCorrections.sh\n")
     condorFile.write("PeriodicHold         = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("request_memory       = 4GB\n")
+    condorFile.write("request_memory       = 10GB\n")
     condorFile.write("Priority             = 20\n")
     condorFile.write("job_lease_duration   = 3600\n")
     condorFile.write("corrfiletag          = {}\n".format(corrfiletag))

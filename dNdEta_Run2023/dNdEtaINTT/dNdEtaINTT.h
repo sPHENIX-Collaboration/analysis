@@ -36,9 +36,10 @@
 #include <phool/getClass.h>
 
 #include <g4detectors/PHG4CylinderGeomContainer.h>
-#include "intt/CylinderGeomIntt.h"
+#include <intt/CylinderGeomIntt.h>
+#include <intt/CylinderGeomInttHelper.h>
 
-#include <calotrigger/MinimumBiasInfo.h>
+#include "calotrigger/MinimumBiasInfo.h"
 #include <centrality/CentralityInfo.h>
 #include <phool/getClass.h>
 #include <trackbase/ActsGeometry.h>
@@ -252,6 +253,15 @@ class dNdEtaINTT : public SubsysReco
     std::vector<uint8_t> ClusLadderZId_;
     std::vector<uint8_t> ClusLadderPhiId_;
     std::vector<uint32_t> ClusTrkrHitSetKey_;
+    // PHG4Particle matching (for simulation): 1) SvtxClusterEval::max_truth_cluster_by_energy, and 2) max_truth_particle_by_cluster_energy
+    std::vector<int> ClusMatchedG4P_MaxE_trackID_; // max_truth_cluster_by_energy
+    std::vector<float> ClusMatchedG4P_MaxE_Pt_;
+    std::vector<float> ClusMatchedG4P_MaxE_Eta_;
+    std::vector<float> ClusMatchedG4P_MaxE_Phi_;
+    std::vector<int> ClusMatchedG4P_MaxClusE_trackID_; // max_truth_particle_by_cluster_energy
+    std::vector<float> ClusMatchedG4P_MaxClusE_Pt_;
+    std::vector<float> ClusMatchedG4P_MaxClusE_Eta_;
+    std::vector<float> ClusMatchedG4P_MaxClusE_Phi_;
 
     // Truth cluster information
     int NTruthLayers_;
@@ -306,6 +316,7 @@ class dNdEtaINTT : public SubsysReco
     std::vector<float> PrimaryG4P_Phi_;
     std::vector<float> PrimaryG4P_E_;
     std::vector<int> PrimaryG4P_PID_;
+    std::vector<int> PrimaryG4P_trackID_;
     std::vector<TString> PrimaryG4P_ParticleClass_;
     std::vector<bool> PrimaryG4P_isStable_;
     std::vector<double> PrimaryG4P_Charge_;

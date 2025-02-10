@@ -1,38 +1,56 @@
 * Generate run list
 #+begin_src bash
-CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --printruns
+CreateDstList.pl --build ana462 --cdb 2024p010_v001 DST_JET_run2pp --printruns
 #+end_src
-- <tag>: 2024p001-7
+
+* Generate runs with magnetic field on:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from magnet_info where magnet_on = 'true' and runnumber >= 47289;" -At
+#+end_src
+
+* Generate runs with MBD N&S>=1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown10 != -1 and runnumber >= 47289;" -At
+#+end_src
+
+* Generate runs with MBD Jet 8 GeV + MBD NS >= 1 enabled:
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select runnumber from gl1_scaledown where scaledown17 != -1 and runnumber >= 47289;" -At
+#+end_src
+
+* Generate Trigger Name List
+#+begin_src bash
+psql -h sphnxdaqdbreplica daq -c "select distinct index,triggername from gl1_triggernames where runnumber >= 46038 and runnumber_last <= 54074 order by index;" -At
+#+end_src
 
 * Generate run list where specific triggers are enabled
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
+psql -h sphnxdaqdbreplica daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and <scaledownXY> != -1 order by runnumber;' -At > runs-trigger-XY.list
 #+end_src
 
 Example: Ensure that MBD NS >= 1 and Jet 8, 10, and 12 GeV trigger are enabled
 #+begin_src bash
-psql -h sphnxdaqdbreplica -p 5432 -U phnxro daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list
+psql -h sphnxdaqdbreplica daq -c 'select runnumber from gl1_scaledown where runnumber > 46619 and scaledown10 != -1 and scaledown21 != -1 and scaledown22 != -1 and scaledown23 != -1 order by runnumber;' -At > runs-trigger.list
 #+end_src
 
 * Generate dst list from run list
 #+begin_src bash
-CreateDstList.pl --build new --cdb <tag> DST_CALO_run2pp --list <list>
-#+end_src
-- <tag>: 2024p001-7
-
-Example:
-#+begin_src bash
-CreateDstList.pl --build ana430 --cdb 2024p007 DST_CALO_run2pp --list files/runs-ana430-2024p007-good-with-bad-tower-maps.list
+CreateDstList.pl --build ana450 --cdb 2024p009 DST_JET_run2pp --list <list>
 #+end_src
 
 * Generate list of runs that contain bad tower maps
 #+begin_src bash
-find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > runs-hot-maps.list
+find /cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_BadTowerMap -name "*p0*" | cut -d '-' -f2 | cut -d c -f1 | sort | uniq > files/runs-hot-maps.list
 #+end_src
 
 * Access the good run database
 #+begin_src bash
-psql Production -h sphnxproddbmaster.sdcc.bnl.gov
+psql Production -h sphnxproddbmaster.sdcc.bnl.gov -U argouser
+#+end_src
+
+* Access the File Catalog
+#+begin_src bash
+psql FileCatalog
 #+end_src
 
 * Fun4All Quick Tests
@@ -40,39 +58,26 @@ psql Production -h sphnxproddbmaster.sdcc.bnl.gov
 ** After editing Makefile.am
 Jet Validation:
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root tree.root qa.root 100 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root test.root 3000 2>/dev/null
 #+end_src
 
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root","tree.root","qa.root", 100)'
-#+end_src
-
-Event Validation:
-#+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
-#+end_src
-
-#+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
 #+end_src
 
 ** After editing .cc or .h
 Jet Validation:
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_JetVal && make && ./bin/Fun4All_JetVal DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root tree.root qa.root 100 2>/dev/null
+make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bin/Fun4All_JetValv2 DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root test.root 3000 2>/dev/null
 #+end_src
 
 #+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_JetVal.C("DST_CALOFITTING_run2pp_ana437_2024p007-00053376-00000.root","tree.root","qa.root", 100)'
+make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
 #+end_src
 
-Event Validation:
+** Build joclJetBackgroundCutModule
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_EventVal && make && ./bin/Fun4All_EventVal DST_CALO_run2pp_ana430_2024p007-00051334-00000.root tree.root qa.root 500 2>/dev/null
-#+end_src
-
-#+begin_src bash
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_EventVal.C("DST_CALO_run2pp_ana430_2024p007-00051334-00000.root","tree.root","qa.root", 500)'
+rm -rf build-joclJetBackgroundCutModule && mkdir build-joclJetBackgroundCutModule && cd build-joclJetBackgroundCutModule && ../joclJetBackgroundCutModule/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build-joclJetBackgroundCutModule
 #+end_src
 
 * Condor Tips
@@ -90,9 +95,67 @@ rg "No Root Tree T" */stdout | rg -o "DST.*root" | tee bad-segments.list && cat 
 #+end_src
 Note: Must be in the general condor directory for the "*/stdout" to work.
 
+** Get list of jobs to resubmit in the event that they are held. Convert
+First get the list of process numbers of the jobs that are held:
+#+begin_src bash
+condor_q | rg anarde | cut -d "." -f2 | cut -d " " -f1 > temp.list
+#+end_src
+
+Use the process numbers from the temp.list above to convert into line numbers from the ~jobs.list~ file and extract that subset.
+#+begin_src bash
+while read line_num; do
+    head -n "$((line_num + 1))" "jobs.list" | tail -n 1 >> jobs-resubmit.list
+done < "temp.list"
+#+end_src
+
 * Bash Tips
 
 ** Remove Leading Zeros
 #+begin_src bash
 echo 01234 | awk '{x=$0+0;print x}'
+#+end_src
+
+** Loop over output of a command
+Example with `ls` command.
+#+begin_src bash
+ls | while read file; do
+echo "file: $file"
+done
+#+end_src
+
+** Get the basenames from a list of file paths of files
+#+begin_src bash
+awk -F'/' '{print $NF}' <list-file>
+#+end_src
+
+** Get the sum of numbers in a file
+Note there must be one number per line.
+#+begin_src bash
+awk '{ sum += $1 } END { print sum }' <file>
+#+end_src
+
+* PSQL Tips
+** Load the contents of a file into a temporary table with psql:
+#+begin_src psql
+create temp table tmp_runs (id int);
+\copy tmp_runs (id) from '<path/to/file>' WITH (FORMAT csv);
+#+end_src
+
+** Access ana build info
+#+begin_src bash
+psql phnxbld
+#+end_src
+
+Example:
+#+begin_src bash
+psql phnxbld -c "select * from buildtags where date > '2025-01-01 00:00:00' and build like 'ana%' and reponame = 'sPHENIX-Collaboration/coresoftware.git' order by date;"
+#+end_src
+
+* Misc Tips
+
+** Get list of DSTs where there is unknown in the trigger name
+Note: To be run from within ~/gpfs02/sphenix/user/anarde/jets/jets~ directory
+Note: Job ID (Process number) = job list (submission) line numbers - 1. Ex: line 1 is job id 0 and so on.
+#+begin_src bash
+rg "unknown0" stdout/ | cut -d "." -f1 | cut -d"-" -f2 | while read line_num; do head -n "$((line_num + 1))" "highPtJets-dsts.list" | tail -n 1 >> unknown-trigger-dsts.list; done
 #+end_src

@@ -181,8 +181,17 @@ int main(int argc, char **argv)
     std::vector<int> *clusters_layer = 0;
     std::vector<int> *clusters_phisize = 0;
     std::vector<unsigned int> *clusters_adc = 0;
+    bool InttBco_IsToBeRemoved;
 
     events->SetBranchAddress("INTT_BCO", &intt_bco);
+    if (events->GetListOfBranches()->FindObject("InttBco_IsToBeRemoved"))
+    {
+        events->SetBranchAddress("InttBco_IsToBeRemoved", &InttBco_IsToBeRemoved);
+    }
+    else
+    {
+        InttBco_IsToBeRemoved = false;
+    }
     events->SetBranchAddress("NClus", &Nclusters);
     events->SetBranchAddress("ClusX", &clusters_x);
     events->SetBranchAddress("ClusY", &clusters_y);
@@ -206,13 +215,16 @@ int main(int argc, char **argv)
 
         std::cout << "event " << i << " INTT_BCO " << intt_bco << std::endl;
 
-        // // use low-multiplicity events
+        if (InttBco_IsToBeRemoved == true)
+            continue;
+
+        // use low-multiplicity events
         if (Nclusters < 20 || Nclusters > 350)
             continue;
 
         for (int j = 0; j < Nclusters; j++)
         {
-            if (clusters_adc->at(j) < 35)
+            if (clusters_adc->at(j) <= 35)
                 continue;
 
             if (clusters_layer->at(j) == 3 || clusters_layer->at(j) == 4)
