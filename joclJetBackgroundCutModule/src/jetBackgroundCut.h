@@ -6,6 +6,7 @@
 #include <cmath>
 #include <phool/recoConsts.h>
 #include <globalvertex/GlobalVertex.h>
+#include <phparameter/PHParameters.h>
 class PHCompositeNode;
 class CentralityInfo;
 class jetBackgroundCut : public SubsysReco
@@ -81,9 +82,17 @@ class jetBackgroundCut : public SubsysReco
 
   void Print(const std::string &what = "ALL") const override;
 
+  void CreateNodeTree(PHCompositeNode* topNode);
+
+  void SetDefaultParams()
+  {
+    _cutParams.set_int_param("failsLoEmJetCut",0);
+    _cutParams.set_int_param("failsHiEmJetCut",0);
+    _cutParams.set_int_param("failsIhJetCut",0);
+    _cutParams.set_int_param("failsAnyJetCut",0);
+  }
 
  private:
-  recoConsts *_rc;
   bool _doAbort;
   std::string _name;
   int _debug;
@@ -91,6 +100,7 @@ class jetBackgroundCut : public SubsysReco
   std::string _jetNodeName;
   GlobalVertex::VTXTYPE _vtxtype;
   int _sysvar;
+  PHParameters _cutParams;
 };
 
-#endif // R24TREEMAKER
+#endif

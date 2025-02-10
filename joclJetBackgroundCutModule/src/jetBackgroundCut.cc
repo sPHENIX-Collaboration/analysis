@@ -19,11 +19,12 @@
 #include <jetbase/Jet.h>
 #include <iostream>
 #include <ffarawobjects/Gl1Packetv2.h>
+#include <phparameter/PHParameters.h>
 using namespace std;
 
 //____________________________________________________________________________..
 jetBackgroundCut::jetBackgroundCut(const std::string jetNodeName, const std::string &name, const int debug, const bool doAbort, GlobalVertex::VTXTYPE vtxtype, int sysvar):
-  SubsysReco(name)//).c_str())
+  SubsysReco(name), _cutParams(name)
 {
   _name = name;
   _debug = debug;
@@ -43,9 +44,24 @@ jetBackgroundCut::~jetBackgroundCut()
 int jetBackgroundCut::Init(PHCompositeNode *topNode)
 {
 
-  _rc = recoConsts::instance();
-  
+
+  CreateNodeTree(topNode);
+    
   return Fun4AllReturnCodes::EVENT_OK;
+}
+
+void jetBackgroundCut::CreateNodeTree(PHCompositeNode *topNode)
+{
+  PHNodeIterator iter(topNode);
+
+  PHCompositeNode *parNode = dynamic_cast<PHCompositeNode*>(iter.findFirst("PHCompositeNode", "RUN"));
+  if(!parNode)
+    {
+      cout << "No RUN node found; cannot create PHParameters for storing cut results. Aborting run!";
+    }
+
+  _cutParams.SaveToNodeTree(parNode, "JetCutParams");
+
 }
 
 //____________________________________________________________________________..
@@ -55,13 +71,11 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
   TowerInfoContainer *towersEM = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
   TowerInfoContainer *towersOH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
   JetContainer *jets = findNode::getClass<JetContainerv1>(topNode, _jetNodeName);
-  //MbdVertexMap* mbdvtxmap = findNode::getClass<MbdVertexMapv1>(topNode, "MbdVertexMap");
   GlobalVertexMap* gvtxmap = findNode::getClass<GlobalVertexMapv1>(topNode, "GlobalVertexMap");
 
-  RawTowerGeomContainer *geom[3];
-  //geom[0] = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
-  geom[1] = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
-  geom[2] = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+  RawTowerGeomContainer *geom[2];
+  geom[0] = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+  geom[1] = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
 
   float zvtx = NAN;
   float maxJetET = 0;
@@ -72,15 +86,13 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
   float frcoh = 0;
   float dPhi = NAN;
 
-  if(!_missingInfoWarningPrinted)
+  if(!towersEM || !towersOH || !geom[0] || !geom[1] || !gvtxmap)
     {
-      if(!towersEM || !towersOH || !geom[1] || !geom[2] || !gvtxmap)
-	{
-	  if(_debug > 0) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[1] << "/" << geom[2] << "/" << gvtxmap << endl;
-	  _missingInfoWarningPrinted = true;
-	  return Fun4AllReturnCodes::ABORTEVENT;
-	}
+      if(_debug > 0 && !_missingInfoWarningPrinted) cerr << "Missing critical info; abort event. Further warnings will be suppressed. AddressOf towersEM/towersOH/geomIH/geomOH/gvtxmap : " << towersEM << "/" << towersOH << "/" << geom[0] << "/" << geom[1] << "/" << gvtxmap << endl;
+      _missingInfoWarningPrinted = true;
+      return Fun4AllReturnCodes::ABORTEVENT;
     }
+
   if(gvtxmap)
     {
       if(gvtxmap->empty())
@@ -88,7 +100,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	  if(_debug > 0) cout << "gvtxmap empty - aborting event." << endl;
 	  return Fun4AllReturnCodes::ABORTEVENT;
 	}
-      GlobalVertex* gvtx = gvtxmap->begin()->second;//gvtxmap->get(_vtxtype);
+      GlobalVertex* gvtx = gvtxmap->begin()->second;
       if(gvtx)
 	{
 	  auto startIter = gvtx->find_vertexes(_vtxtype);
@@ -100,7 +112,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 	      for(const auto *vertex : vertexVec)
 		{
 		  if(!vertex) continue;
-		  zvtx = vertex->get_z();//gvtx->get_z();
+		  zvtx = vertex->get_z();
 		}
 	    }
 	}
@@ -118,11 +130,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
     }
 
   if(_debug > 1) cout << "Getting jets: " << endl;
-  if(zvtx == NAN)
-    {
-      if(_debug > 0) cout << "ERROR: NO ZVTX! ABORT EVENT" << endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
-    }
+
   if(jets)
     {
       int tocheck = jets->size();
@@ -175,7 +183,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 		  tower = towersEM->get_tower_at_channel(channel);
 		  int key = towersEM->encode_key(channel);
 		  const RawTowerDefs::keytype geomkey = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALIN, towersEM->getTowerEtaBin(key), towersEM->getTowerPhiBin(key));
-		  RawTowerGeom *tower_geom = geom[1]->get_tower_geometry(geomkey);
+		  RawTowerGeom *tower_geom = geom[0]->get_tower_geometry(geomkey);
 		  float radius = 93.5;
 		  float ihEta = tower_geom->get_eta();
 		  float emZ = radius/(tan(2*atan(exp(-ihEta))));
@@ -189,7 +197,7 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
 		  tower = towersOH->get_tower_at_channel(channel);
 		  int key = towersOH->encode_key(channel);
 		  const RawTowerDefs::keytype geomkey = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::HCALOUT, towersOH->getTowerEtaBin(key), towersOH->getTowerPhiBin(key));
-		  RawTowerGeom *tower_geom = geom[2]->get_tower_geometry(geomkey);
+		  RawTowerGeom *tower_geom = geom[1]->get_tower_geometry(geomkey);
 		  float radius = tower_geom->get_center_radius();
 		  float newz = tower_geom->get_center_z() - zvtx;
 		  float newTheta = atan2(radius,newz);
@@ -229,16 +237,16 @@ int jetBackgroundCut::process_event(PHCompositeNode *topNode)
      return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  _rc->set_IntFlag("failsLoEmJetCut",failsLoEm);
-  _rc->set_IntFlag("failsHiEmJetCut",failsHiEm);
-  _rc->set_IntFlag("failsIhJetCut",failsIhCut);
-  _rc->set_IntFlag("failsAnyJetCut",failsAnyCut);
+  _cutParams.set_int_param("failsLoEmJetCut",failsLoEm);
+  _cutParams.set_int_param("failsHiEmJetCut",failsHiEm);
+  _cutParams.set_int_param("failsIhJetCut",failsIhCut);
+  _cutParams.set_int_param("failsAnyJetCut",failsAnyCut);
 
   return Fun4AllReturnCodes::EVENT_OK;
     
 }
 //____________________________________________________________________________..
-int jetBackgroundCut::ResetEvent(PHCompositeNode *topNode)
+int jetBackgroundCut::ResetEvent(PHCompositeNode */*topNode*/)
 {
   if (Verbosity() > 0)
     {
@@ -248,7 +256,7 @@ int jetBackgroundCut::ResetEvent(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int jetBackgroundCut::End(PHCompositeNode *topNode)
+int jetBackgroundCut::End(PHCompositeNode */*topNode*/)
 {
   if (Verbosity() > 0)
     {
@@ -258,7 +266,7 @@ int jetBackgroundCut::End(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int jetBackgroundCut::Reset(PHCompositeNode *topNode)
+int jetBackgroundCut::Reset(PHCompositeNode */*topNode*/)
 {
   if (Verbosity() > 0)
     {
