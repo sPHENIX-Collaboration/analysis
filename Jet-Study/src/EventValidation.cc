@@ -274,7 +274,7 @@ Int_t EventValidation::process_event(PHCompositeNode *topNode)
       geom = geomIHCAL;
     }
     if (comp.first == Jet::HCALOUT_TOWERINFO) {
-      towers = towersIHCal;
+      towers = towersOHCal;
       det = "OHCal";
       totalEnergy = &totalOHCalEnergy;
       totalPx = &totalOHCalPx;
