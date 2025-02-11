@@ -83,7 +83,8 @@ void EvtInttBCODiff(const char *filename = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst
                             .Define("GL1Packet_BCO_diff_prev", [&GL1Packet_BCO_diff_prev](ULong64_t i) { return GL1Packet_BCO_diff_prev[i]; }, {"rdfentry_"})
                             .Define("GL1Packet_BCO_diff_next", [&GL1Packet_BCO_diff_next](ULong64_t i) { return GL1Packet_BCO_diff_next[i]; }, {"rdfentry_"});
 
-    auto df_with_diff_and_flag = df_with_diff.Define("InttBco_IsToBeRemoved", [bcodiffcut](uint64_t INTT_BCO_diff_prev, uint64_t INTT_BCO_diff_next) { return ((INTT_BCO_diff_prev < bcodiffcut && INTT_BCO_diff_prev > 0) || (INTT_BCO_diff_next < bcodiffcut && INTT_BCO_diff_next > 0)); }, {"INTT_BCO_diff_prev", "INTT_BCO_diff_next"});
+    // auto df_with_diff_and_flag = df_with_diff.Define("InttBco_IsToBeRemoved", [bcodiffcut](uint64_t INTT_BCO_diff_prev, uint64_t INTT_BCO_diff_next) { return ((INTT_BCO_diff_prev < bcodiffcut && INTT_BCO_diff_prev > 0) || (INTT_BCO_diff_next < bcodiffcut && INTT_BCO_diff_next > 0)); }, {"INTT_BCO_diff_prev", "INTT_BCO_diff_next"});
+    auto df_with_diff_and_flag = df_with_diff.Define("InttBco_IsToBeRemoved", [bcodiffcut](uint64_t INTT_BCO_diff_next) { return (INTT_BCO_diff_next <= bcodiffcut && INTT_BCO_diff_next > 0); }, {"INTT_BCO_diff_next"});
 
     // get all the column names
     auto all_columns = df_with_diff_and_flag.GetColumnNames();
@@ -126,9 +127,9 @@ void EvtInttBCODiff(const char *filename = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst
         auto hM_NInnerClus_MBDChargeSum_Trig10_IsMB_removed = df_isMB_Trigbit10_removed.Histo2D({"hM_NInnerClus_MBDChargeSum_Trig10_IsMB_removed", "hM_NInnerClus_MBDChargeSum_Trig10_IsMB_removed", 250, 0, 5000, 250, 0, 5000}, "NClus_Layer1", "MBD_charge_sum");
         auto hM_NOuterClus_MBDChargeSum_Trig10_IsMB_removed = df_isMB_Trigbit10_removed.Histo2D({"hM_NOuterClus_MBDChargeSum_Trig10_IsMB_removed", "hM_NOuterClus_MBDChargeSum_Trig10_IsMB_removed", 250, 0, 5000, 250, 0, 5000}, "NOuterClus", "MBD_charge_sum");
 
-        draw2Dhist(hM_NInnerClus_NOuterClus_Trig10_IsMB.GetPtr(), "Number of inner clusters", "Number of outer clusters", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", Form("w. abnormal event removal (adjacent BCO diff < %ld)", bcodiffcut)}, Form("%s/NInnerClus_vs_NOuterClus_Trig10_IsMB", plotdir.c_str()));
-        draw2Dhist(hM_NInnerClus_MBDChargeSum_Trig10_IsMB.GetPtr(), "Number of inner clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", Form("w. abnormal event removal (adjacent BCO diff < %ld)", bcodiffcut)}, Form("%s/NInnerClus_vs_MBDChargeSum_Trig10_IsMB", plotdir.c_str()));
-        draw2Dhist(hM_NOuterClus_MBDChargeSum_Trig10_IsMB.GetPtr(), "Number of outer clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", Form("w. abnormal event removal (adjacent BCO diff < %ld)", bcodiffcut)}, Form("%s/NOuterClus_vs_MBDChargeSum_Trig10_IsMB", plotdir.c_str()));
+        draw2Dhist(hM_NInnerClus_NOuterClus_Trig10_IsMB.GetPtr(), "Number of inner clusters", "Number of outer clusters", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w. abnormal event removal"}, Form("%s/NInnerClus_vs_NOuterClus_Trig10_IsMB", plotdir.c_str()));
+        draw2Dhist(hM_NInnerClus_MBDChargeSum_Trig10_IsMB.GetPtr(), "Number of inner clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w. abnormal event removal"}, Form("%s/NInnerClus_vs_MBDChargeSum_Trig10_IsMB", plotdir.c_str()));
+        draw2Dhist(hM_NOuterClus_MBDChargeSum_Trig10_IsMB.GetPtr(), "Number of outer clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w. abnormal event removal"}, Form("%s/NOuterClus_vs_MBDChargeSum_Trig10_IsMB", plotdir.c_str()));
         draw2Dhist(hM_NInnerClus_NOuterClus_Trig10_IsMB_woBcoDiffEvtRemoval.GetPtr(), "Number of inner clusters", "Number of outer clusters", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w.o abnormal event removal"}, Form("%s/NInnerClus_vs_NOuterClus_Trig10_IsMB_woBcoDiffEvtRemoval", plotdir.c_str()));
         draw2Dhist(hM_NInnerClus_MBDChargeSum_Trig10_IsMB_woBcoDiffEvtRemoval.GetPtr(), "Number of inner clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w.o abnormal event removal"}, Form("%s/NInnerClus_vs_MBDChargeSum_Trig10_IsMB_woBcoDiffEvtRemoval", plotdir.c_str()));
         draw2Dhist(hM_NOuterClus_MBDChargeSum_Trig10_IsMB_woBcoDiffEvtRemoval.GetPtr(), "Number of outer clusters", "MBD Charge Sum", true, std::vector<const char *>{"Is MinBias & Trigger bit 10 (MBD N&S#geq2)", "w.o abnormal event removal"}, Form("%s/NOuterClus_vs_MBDChargeSum_Trig10_IsMB_woBcoDiffEvtRemoval", plotdir.c_str()));
@@ -142,10 +143,10 @@ void EvtInttBCODiff(const char *filename = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst
         TH1F *hM_ratio = new TH1F("hM_ratio", "hM_ratio", 10, 0, 10);
         for (int i = 0; i < 10; i++)
         {
-            float low = i * 0.1;
-            float high = (i + 1) * 0.1;
-            int Nevt_isMB_Trigbit10_woBcoDiffEvtRemoval = *df_isMB_Trigbit_woBcoDiffEvtRemoval.Filter([low, high](float MBD_centrality) { return MBD_centrality >= low && MBD_centrality < high; }, {"MBD_centrality"}).Count();
-            int Nevt_isMB_Trigbit10_wBcoDiffEvtRemoval = *df_isMB_Trigbit10.Filter([low, high](float MBD_centrality) { return MBD_centrality >= low && MBD_centrality < high; }, {"MBD_centrality"}).Count();
+            float low = i * 10;
+            float high = (i + 1) * 10;
+            int Nevt_isMB_Trigbit10_woBcoDiffEvtRemoval = *df_isMB_Trigbit_woBcoDiffEvtRemoval.Filter([low, high](float MBD_centrality) { return MBD_centrality > low && MBD_centrality <= high; }, {"MBD_centrality"}).Count();
+            int Nevt_isMB_Trigbit10_wBcoDiffEvtRemoval = *df_isMB_Trigbit10.Filter([low, high](float MBD_centrality) { return MBD_centrality > low && MBD_centrality <= high; }, {"MBD_centrality"}).Count();
             hM_cent_IsMB_all->SetBinContent(i + 1, Nevt_isMB_Trigbit10_woBcoDiffEvtRemoval);
             hM_cent_IsMB_OuterInnerBranch->SetBinContent(i + 1, Nevt_isMB_Trigbit10_wBcoDiffEvtRemoval);
             hM_ratio->SetBinContent(i + 1, static_cast<double>(Nevt_isMB_Trigbit10_wBcoDiffEvtRemoval) / static_cast<double>(Nevt_isMB_Trigbit10_woBcoDiffEvtRemoval) * 100.);
@@ -164,10 +165,11 @@ void EvtInttBCODiff(const char *filename = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst
         pad2->SetBottomMargin(0.31);
         pad2->Draw();
         pad1->cd();
-        pad1->SetLogy(1);
+        pad1->SetLogy(0);
         hM_cent_IsMB_all->GetXaxis()->SetTitleSize(0);
         hM_cent_IsMB_all->GetXaxis()->SetLabelSize(0);
-        hM_cent_IsMB_all->GetYaxis()->SetRangeUser(hM_cent_IsMB_OuterInnerBranch->GetMinimum(0) * 0.8, hM_cent_IsMB_all->GetMaximum() * 2);
+        // hM_cent_IsMB_all->GetYaxis()->SetRangeUser(hM_cent_IsMB_OuterInnerBranch->GetMinimum(0) * 0.8, hM_cent_IsMB_all->GetMaximum() * 2);
+        hM_cent_IsMB_all->GetYaxis()->SetRangeUser(0, hM_cent_IsMB_all->GetMaximum() * 1.5);
         hM_cent_IsMB_all->GetYaxis()->SetMoreLogLabels(true);
         hM_cent_IsMB_all->GetYaxis()->SetTitle("Counts");
         hM_cent_IsMB_all->GetYaxis()->SetTitleSize(AxisTitleSize);

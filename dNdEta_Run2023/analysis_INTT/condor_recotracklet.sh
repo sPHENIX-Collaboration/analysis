@@ -13,6 +13,6 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 # print the environment - needed for debugging
 # printenv
-./TrackletAna $1 $2 $3 $4 $5 $6 $7 $8 $9
+./TrackletAna $1 $2 $3 $4 $5 $6 $7 $8 $9 ${10}
 
 echo all done

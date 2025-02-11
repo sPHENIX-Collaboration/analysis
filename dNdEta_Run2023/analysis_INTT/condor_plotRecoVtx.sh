@@ -13,6 +13,6 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 # print the environment - needed for debugging
 # printenv
-./plotRecoVtx $1 $2
+./plotRecoVtx $1 $2 $3
 
 echo all done

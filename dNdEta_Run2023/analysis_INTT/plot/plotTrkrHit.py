@@ -63,8 +63,8 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisN
         del c
         c = 0
 
-gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
-gROOT.ProcessLine('SetsPhenixStyle()')
+# gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
+# gROOT.ProcessLine('SetsPhenixStyle()')
 gROOT.SetBatch(True)
 
 if __name__ == '__main__':

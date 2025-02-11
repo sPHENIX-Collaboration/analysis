@@ -28,9 +28,9 @@ if __name__ == '__main__':
     
     if os.path.isfile("{}/hists_merged.root".format(histdir)):
         os.system("rm {}/hists_merged.root".format(histdir))
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
+        os.system("hadd -f -j 20 {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
     else:
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
+        os.system("hadd -f -j 20 {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
 
     os.makedirs(plotdir, exist_ok=True)
 

@@ -84,7 +84,7 @@ void Fun4All_Ana_PPG09_Mod_Skim(
                   const char *filelistjet = "Skim_Jet_Test.list",
                   const string &outname = "Test",
                   int n_skip = 0,
-                  int n_event = 1000
+                  int n_event = 100
 	         )
    {
    gSystem->Load("libg4dst");
@@ -178,8 +178,8 @@ void Fun4All_Ana_PPG09_Mod_Skim(
   Process_Calo_Calib();
 
   //NJA Added: Trigger Info Reco (Dan. Lis)
-  TriggerRunInfoReco *triggerruninforeco = new TriggerRunInfoReco();
-  se->registerSubsystem(triggerruninforeco);
+  // TriggerRunInfoReco *triggerruninforeco = new TriggerRunInfoReco();
+  // se->registerSubsystem(triggerruninforeco);
   /* 
   JetReco *towerjetreco = new JetReco();
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,HIJETS::tower_prefix));
@@ -194,30 +194,30 @@ void Fun4All_Ana_PPG09_Mod_Skim(
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
   */
-  Ana_PPG09_Mod *APM9 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "output/R04_Jets_PPG09_v7_Skim_Run" + run_num +"_" + outname + ".root");
-  se->registerSubsystem(APM9);
+  // Ana_PPG09_Mod *APM9 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "output/R04_Jets_PPG09_v7_Skim_Run" + run_num +"_" + outname + ".root");
+  // se->registerSubsystem(APM9);
 
   jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_unsubtracted_r04","JOCL", 0, true);
   se->registerSubsystem(jocl);
 
-  //Check jet Input first line, see if subtracted or not Sub: AntiKt_Tower_r04_Sub1 Unsub: AntiKt_Tower_r04
-  Ana_PPG09_Mod *APM9_2 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "/sphenix/tg/tg01/jets/napplegate/PPG_09/R04_Jets_PPG09_v7_Skimmer_Run" + run_num +"_" + outname + ".root");  
-  se->registerSubsystem(APM9_2);
+  // //Check jet Input first line, see if subtracted or not Sub: AntiKt_Tower_r04_Sub1 Unsub: AntiKt_Tower_r04
+  // Ana_PPG09_Mod *APM9_2 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "output/R04_Jets_PPG09_v7_Skimmer_Run" + run_num +"_" + outname + ".root");  
+  // se->registerSubsystem(APM9_2);
 
   BeamBackgroundFilterAndQA* filter = new BeamBackgroundFilterAndQA("BeamBackgroundFilterAndQA");
   filter->SetConfig(cfg_filter);
   filter->Verbosity(verbosity);
   se->registerSubsystem(filter);
 
-  Ana_PPG09_Mod *APM9_3 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "/sphenix/tg/tg01/jets/napplegate/PPG_09/R04_Jets_PPG09_v7_Skimmest_Run" + run_num +"_" + outname + ".root");
-  se->registerSubsystem(APM9_3);
+  Ana_PPG09_Mod *APM9 = new Ana_PPG09_Mod("AntiKt_unsubtracted_r04", "output/R04_Jets_PPG09_v7_Skimmest_Run" + run_num +"_" + outname + ".root");
+  APM9 -> setRunnumber(runnumber);
+  se->registerSubsystem(APM9);
 
   se->run(-1);
   //se->run(n_event);
 
   se->End();
-  
+  std::cout << "All done!" << std::endl;
   gSystem->Exit(0);
-  //return 0;
 }
 #endif

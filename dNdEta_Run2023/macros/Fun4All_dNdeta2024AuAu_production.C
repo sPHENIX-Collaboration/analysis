@@ -85,6 +85,8 @@ int Fun4All_dNdeta2024AuAu_production(                          //
 {
     bool centralitycalib = true;
     bool minimumbiascalib = true;
+    bool dointthitunpacking = false;
+    bool doclustering = false;
     bool enable_inttzclustering = false;
 
     // local calibration files
@@ -145,24 +147,33 @@ int Fun4All_dNdeta2024AuAu_production(                          //
     G4Init();
     G4Setup();
 
-    // INTT unpacker - non-standard setup
-    auto inttunpacker = new InttCombinedRawDataDecoder;
-    inttunpacker->Verbosity(0);
-    // inttunpacker->runInttStandalone(true);
-    inttunpacker->runInttStandalone(false);
-    inttunpacker->writeInttEventHeader(true);
-    inttunpacker->set_triggeredMode(true);
-    inttunpacker->LoadHotChannelMapLocal(hotchannel_file);
-    inttunpacker->SetCalibBCO(bcomap_file, InttCombinedRawDataDecoder::FILE);
-    inttunpacker->SetCalibDAC(dac_file, InttCombinedRawDataDecoder::FILE);
-    se->registerSubsystem(inttunpacker);
+    if (dointthitunpacking)
+    {
+        // INTT unpacker - non-standard setup
+        auto inttunpacker = new InttCombinedRawDataDecoder;
+        inttunpacker->Verbosity(0);
+        inttunpacker->runInttStandalone(true);
+        inttunpacker->writeInttEventHeader(true);
+        inttunpacker->set_triggeredMode(true);
+        // inttunpacker->LoadHotChannelMapLocal(hotchannel_file);
+        // inttunpacker->SetCalibBCO(bcomap_file, InttCombinedRawDataDecoder::FILE);
+        // inttunpacker->SetCalibDAC(dac_file, InttCombinedRawDataDecoder::FILE);
+        inttunpacker->LoadHotChannelMapRemote("INTT_HotChannelMap");
+        inttunpacker->SetCalibBCO("INTT_BCOMAP", InttCombinedRawDataDecoder::CDB);
+        inttunpacker->SetCalibDAC("INTT_DACMAP", InttCombinedRawDataDecoder::CDB);
+        inttunpacker->set_bcoFilter(true);
+        se->registerSubsystem(inttunpacker);
+    }
 
     TrackingInit();
 
-    if (enable_inttzclustering)
-        Intt_ZClustering();
-    else
-        Intt_Clustering();
+    if (doclustering)
+    {
+        if (enable_inttzclustering)
+            Intt_ZClustering();
+        else
+            Intt_Clustering();
+    }
 
     if (minimumbiascalib)
     {
@@ -196,6 +207,8 @@ int Fun4All_dNdeta2024AuAu_production(                          //
 
         MinimumBiasClassifier *mb = new MinimumBiasClassifier();
         mb->Verbosity(0);
+        mb->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/scales/cdb_centrality_scale_54280.root");            // Temoporary fix
+        mb->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_54280.root"); // Temoporary fix
         se->registerSubsystem(mb);
     }
 
@@ -203,6 +216,9 @@ int Fun4All_dNdeta2024AuAu_production(                          //
     {
         CentralityReco *cr = new CentralityReco();
         cr->Verbosity(INT_MAX - 1);
+        cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/scales/cdb_centrality_scale_54280.root");
+        cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_54280.root");
+        cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_54280.root");
         se->registerSubsystem(cr);
     }
 
