@@ -19,7 +19,8 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 // -- flags
-#include <phool/recoConsts.h>
+#include <phparameter/PHParameters.h>
+#include <pdbcalbase/PdbParameterMap.h>
 // -- root
 #include <TFile.h>
 // -- Tower stuff
@@ -34,7 +35,6 @@
 
 using std::cout;
 using std::endl;
-using std::string;
 using std::to_string;
 using std::stringstream;
 using std::min;
@@ -210,6 +210,21 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
+  string m_pdbNode = "JetCutParams";
+  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, m_pdbNode.c_str());
+  if (!pdb) {
+    cout << "JetValidationv2::process_event - Error can not find PdbParameterMap Node " << m_pdbNode << endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params("Jet_Cut_Params");
+  pdb_params.FillFrom(pdb);
+
+  Bool_t failsLoEmJetCut = pdb_params.get_int_param("failsLoEmJetCut");
+  Bool_t failsHiEmJetCut = pdb_params.get_int_param("failsHiEmJetCut");
+  Bool_t failsIhJetCut   = pdb_params.get_int_param("failsIhJetCut");
+  Bool_t failsAnyJetCut  = pdb_params.get_int_param("failsAnyJetCut");
+
   Int_t jetPtLead    = 0;
   Int_t jetPtSubLead = 0;
 
@@ -271,18 +286,11 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   m_nJets_min = min(m_nJets_min, nJets);
   m_nJets_max = max(m_nJets_max, nJets);
 
-  recoConsts* rc = recoConsts::instance();
-
-  Bool_t failsLoEmJetCut = rc->get_IntFlag("failsLoEmJetCut");
-  Bool_t failsHiEmJetCut = rc->get_IntFlag("failsHiEmJetCut");
-  Bool_t failsIhJetCut   = rc->get_IntFlag("failsIhJetCut");
-  Bool_t failsAnyJetCut  = rc->get_IntFlag("failsAnyJetCut");
-
-  Bool_t isDijet   = rc->get_IntFlag("isDijet");
-  Float_t frcem    = rc->get_FloatFlag("frcem");
-  Float_t frcoh    = rc->get_FloatFlag("frcoh");
-  Float_t maxJetET = rc->get_FloatFlag("maxJetET");
-  Float_t dPhi     = rc->get_FloatFlag("dPhi");
+  Bool_t isDijet   = pdb_params.get_int_param("isDijet");
+  Float_t frcem    = pdb_params.get_double_param("frcem");
+  Float_t frcoh    = pdb_params.get_double_param("frcoh");
+  Float_t maxJetET = pdb_params.get_double_param("maxJetET");
+  Float_t dPhi     = pdb_params.get_double_param("dPhi");
 
   h2ETVsFracCEMC->Fill(frcem, maxJetET);
 

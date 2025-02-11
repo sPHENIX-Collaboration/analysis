@@ -16,6 +16,9 @@
 class PHCompositeNode;
 class TFile;
 
+using std::string;
+using std::vector;
+
 class JetValidationv2 : public SubsysReco
 {
  public:
@@ -41,7 +44,7 @@ class JetValidationv2 : public SubsysReco
   /// Called at the end of all processing.
   Int_t End(PHCompositeNode *topNode) override;
 
-  void set_outputFile(const std::string &m_outputFile) {
+  void set_outputFile(const string &m_outputFile) {
     this->m_outputFile = m_outputFile;
   }
 
@@ -58,14 +61,14 @@ class JetValidationv2 : public SubsysReco
   }
 
  private:
-  std::string m_recoJetName_r04;
+  string m_recoJetName_r04;
 
-  std::string m_emcTowerBaseNode;
-  std::string m_emcTowerNode;
-  std::string m_ihcalTowerNode;
-  std::string m_ohcalTowerNode;
+  string m_emcTowerBaseNode;
+  string m_emcTowerNode;
+  string m_ihcalTowerNode;
+  string m_ohcalTowerNode;
 
-  std::string m_outputFile;
+  string m_outputFile;
 
   Int_t m_triggerBit;
   Int_t m_triggerBits;
@@ -125,7 +128,7 @@ class JetValidationv2 : public SubsysReco
                             , ZVTX30_BKG_failsNoneJetCut
                 };
 
-  std::vector<std::string> m_eventStatus = {"All", "|z| < 30 cm"
+  vector<string> m_eventStatus = {"All", "|z| < 30 cm"
                                                  , "|z| < 30 cm and Bkg"
                                                  , "|z| < 30 cm and Bkg and failsLoEmJetCut"
                                                  , "|z| < 30 cm and Bkg and failsHiEmJetCut"
@@ -144,10 +147,10 @@ class JetValidationv2 : public SubsysReco
   TH2* h2FracOHCalVsFracCEMC = nullptr;
   TH2* h2ETVsFracCEMC_miss = nullptr;
   TH2* h2FracOHCalVsFracCEMC_miss = nullptr;
-  std::vector<TH2*> hCEMCBase;
-  std::vector<TH2*> hCEMC;
-  std::vector<TH2*> hIHCal;
-  std::vector<TH2*> hOHCal;
+  vector<TH2*> hCEMCBase;
+  vector<TH2*> hCEMC;
+  vector<TH2*> hIHCal;
+  vector<TH2*> hOHCal;
 };
 
 #endif  // JETVALIDATIONv2_H
