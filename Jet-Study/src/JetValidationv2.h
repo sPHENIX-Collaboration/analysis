@@ -67,6 +67,9 @@ class JetValidationv2 : public SubsysReco
   string m_emcTowerNode;
   string m_ihcalTowerNode;
   string m_ohcalTowerNode;
+  string m_emcGeomNode;
+  string m_ihcGeomNode;
+  string m_ohcGeomNode;
 
   string m_outputFile;
 
@@ -147,6 +150,11 @@ class JetValidationv2 : public SubsysReco
   TH2* h2FracOHCalVsFracCEMC = nullptr;
   TH2* h2ETVsFracCEMC_miss = nullptr;
   TH2* h2FracOHCalVsFracCEMC_miss = nullptr;
+  TH2* h2LeadTowPtFracVsJetPt = nullptr;
+  TH2* h2LeadTowPtFracVsJetPt_miss = nullptr;
+  TH2* h2LeadTowPtFracVsJetPtCEMC = nullptr;
+  TH2* h2LeadTowPtFracVsJetPtIHCal = nullptr;
+  TH2* h2LeadTowPtFracVsJetPtOHCal = nullptr;
   vector<TH2*> hCEMCBase;
   vector<TH2*> hCEMC;
   vector<TH2*> hIHCal;

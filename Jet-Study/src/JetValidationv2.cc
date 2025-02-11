@@ -25,8 +25,11 @@
 #include <TFile.h>
 // -- Tower stuff
 #include <calobase/TowerInfoDefs.h>
+#include <calobase/RawTowerDefs.h>
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
+#include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerGeom.h>
 // -- Trigger
 #include <calotrigger/TriggerRunInfo.h>
 
@@ -48,6 +51,9 @@ JetValidationv2::JetValidationv2()
   , m_emcTowerNode("TOWERINFO_CALIB_CEMC_RETOWER")
   , m_ihcalTowerNode("TOWERINFO_CALIB_HCALIN")
   , m_ohcalTowerNode("TOWERINFO_CALIB_HCALOUT")
+  , m_emcGeomNode("TOWERGEOM_CEMC")
+  , m_ihcGeomNode("TOWERGEOM_HCALIN")
+  , m_ohcGeomNode("TOWERGEOM_HCALOUT")
   , m_triggerBit(17) /*Jet 8 GeV + MBD NS >= 1*/
   , m_triggerBits(42)
   , m_zvtx_max(30) /*cm*/
@@ -123,6 +129,22 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hNJetsVsLeadPt = new TH2F("hNJetsVsLeadPt", "Event; Lead p_{T} [GeV]; # of Jets", m_bins_pt, m_pt_low, m_pt_high
                                                                                   , m_bins_nJets, m_nJets_low, m_nJets_high);
 
+  h2LeadTowPtFracVsJetPt = new TH2F("h2LeadTowPtFracVsJetPt","Jet; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  h2LeadTowPtFracVsJetPt_miss = new TH2F("h2LeadTowPtFracVsJetPt_miss","Jet; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  h2LeadTowPtFracVsJetPtCEMC = new TH2F("h2LeadTowPtFracVsJetPtCEMC","Jet: Leading Tower p_{T} from CEMC; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  h2LeadTowPtFracVsJetPtIHCal = new TH2F("h2LeadTowPtFracVsJetPtIHCal","Jet: Leading Tower p_{T} from IHCal; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  h2LeadTowPtFracVsJetPtOHCal = new TH2F("h2LeadTowPtFracVsJetPtOHCal","Jet: Leading Tower p_{T} from OHCal; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+
+  // jet background QA
   h2ETVsFracCEMC = new TH2F("h2ETVsFracCEMC","Jet; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]"
                             , m_bins_frac, m_frac_low, m_frac_high, m_bins_ET, m_ET_low, m_ET_high);
 
@@ -210,6 +232,36 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
+  // Get TowerInfoContainer
+  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerBaseNode.c_str());
+  TowerInfoContainer* towersCEMC     = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
+  TowerInfoContainer* towersIHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
+  TowerInfoContainer* towersOHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
+
+  // Get Geometry Containers
+  RawTowerGeomContainer* geomCEMC  = findNode::getClass<RawTowerGeomContainer>(topNode, m_emcGeomNode.c_str());
+  RawTowerGeomContainer* geomIHCAL = findNode::getClass<RawTowerGeomContainer>(topNode, m_ihcGeomNode.c_str());
+  RawTowerGeomContainer* geomOHCAL = findNode::getClass<RawTowerGeomContainer>(topNode, m_ohcGeomNode.c_str());
+
+  if (!towersCEMCBase || !towersCEMC || !towersIHCal || !towersOHCal) {
+    cout << PHWHERE << "JetValidation::process_event Could not find one of "
+         << m_emcTowerBaseNode  << ", "
+         << m_emcTowerNode      << ", "
+         << m_ihcalTowerNode    << ", "
+         << m_ohcalTowerNode    << ", "
+         << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  if (!geomCEMC || !geomIHCAL || !geomOHCAL) {
+    cout << PHWHERE << "EventValidation::process_event Could not find one of "
+         << m_emcGeomNode << ", "
+         << m_ihcGeomNode << ", "
+         << m_ohcGeomNode
+         << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   string m_pdbNode = "JetCutParams";
   PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, m_pdbNode.c_str());
   if (!pdb) {
@@ -242,7 +294,8 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     Float_t phi = jet->get_phi();
     Float_t eta = jet->get_eta();
     Float_t pt = jet->get_pt();
-    Int_t constituents = jet->get_comp_vec().size();
+    Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
+    Int_t constituents = comp_vec.size();
 
     // exclude jets near the edge of the detector
     if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
@@ -279,6 +332,108 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
         jetEtaSubLead = eta;
       }
     }
+
+    Float_t totalPt = 0;
+    Float_t towPtLead = 0;
+    string  towDetLead = "";
+
+    // loop over constituents
+    for (auto comp : comp_vec) {
+      TowerInfoContainer* towers = nullptr;
+      UInt_t towerIndex = comp.second;
+      RawTowerGeomContainer* geom = nullptr;
+      RawTowerDefs::CalorimeterId geocaloid{RawTowerDefs::CalorimeterId::NONE};
+      string det = "";
+
+      if (comp.first == Jet::CEMC_TOWERINFO_RETOWER) {
+        towers = towersCEMC;
+        // using IHCal geom since there is no EMCal Retowered Geom
+        geocaloid = RawTowerDefs::CalorimeterId::HCALIN;
+        geom = geomIHCAL;
+        det  = "CEMC";
+      }
+      if (comp.first == Jet::HCALIN_TOWERINFO) {
+        towers = towersIHCal;
+        geocaloid = RawTowerDefs::CalorimeterId::HCALIN;
+        geom = geomIHCAL;
+        det  = "IHCal";
+      }
+      if (comp.first == Jet::HCALOUT_TOWERINFO) {
+        towers = towersOHCal;
+        geocaloid = RawTowerDefs::CalorimeterId::HCALOUT;
+        geom = geomOHCAL;
+        det  = "OHCal";
+      }
+      if(towers == nullptr) {
+        cout << "Unknown Detector: " << comp.first << ", Index: " << towerIndex << endl;
+        continue;
+      }
+
+      UInt_t calokey = towers->encode_key(towerIndex);
+      Int_t ieta     = towers->getTowerEtaBin(calokey);
+      Int_t iphi     = towers->getTowerPhiBin(calokey);
+
+      // get the radius of the detector
+      const RawTowerDefs::keytype key = RawTowerDefs::encode_towerid(geocaloid, ieta, iphi);
+      RawTowerGeom* tower_geom = geom->get_tower_geometry(key);
+      Float_t r = tower_geom->get_center_radius();
+
+      // updating to the correct radius of the EMCal
+      if(comp.first == Jet::CEMC_TOWERINFO_RETOWER) {
+          const RawTowerDefs::keytype EMCal_key = RawTowerDefs::encode_towerid(RawTowerDefs::CalorimeterId::CEMC, 0, 0);
+          RawTowerGeom* EMCal_tower_geom = geomCEMC->get_tower_geometry(EMCal_key);
+          r = EMCal_tower_geom->get_center_radius();
+      }
+
+      TowerInfo* tower = towers->get_tower_at_channel(towerIndex);
+      // ensure tower is flagged as good
+      if(!tower->get_isGood()) {
+        cout << "Bad Tower in Jet" << endl;
+        continue;
+      }
+
+      Float_t tower_energy = tower->get_energy();
+
+      // Float_t phi = atan2(tower_geom->get_center_y(), tower_geom->get_center_x());
+      Float_t towereta = tower_geom->get_eta();
+      Float_t z0 = sinh(towereta) * r;
+      Float_t z = z0 - m_zvtx;
+      Float_t tower_eta = asinh(z / r);  // eta after shift from vertex
+      Float_t tower_pt = tower_energy / cosh(tower_eta);
+      // Float_t px = pt * cos(phi);
+      // Float_t py = pt * sin(phi);
+      // Float_t pz = pt * sinh(eta);
+      // Float_t et = energy*pt/sqrt(px*px+py*py+pz*pz);
+
+      totalPt += tower_pt;
+      if(tower_pt > towPtLead) {
+        towPtLead = tower_pt;
+        towDetLead = det;
+      }
+    }
+
+    if(totalPt != 0) {
+      h2LeadTowPtFracVsJetPt->Fill(pt, towPtLead/totalPt);
+      if(towDetLead == "CEMC") {
+        h2LeadTowPtFracVsJetPtCEMC->Fill(pt, towPtLead/totalPt);
+      }
+      if(towDetLead == "IHCal") {
+        h2LeadTowPtFracVsJetPtIHCal->Fill(pt, towPtLead/totalPt);
+      }
+      if(towDetLead == "OHCal") {
+        h2LeadTowPtFracVsJetPtOHCal->Fill(pt, towPtLead/totalPt);
+      }
+
+      if(hasBkg && !failsAnyJetCut) {
+        h2LeadTowPtFracVsJetPt_miss->Fill(pt, towPtLead/totalPt);
+      }
+    }
+
+    // DEBUG
+    // if(pt >= 10) {
+    //   cout << "jet pt: " << pt << " jet et: " << jet->get_et() << ", total tower pt: "
+    //        << totalPt << ", lead tower pt: " << towPtLead << ", ratio pt: " << towPtLead*100./totalPt << ", lead tower det: " << towDetLead << endl;
+    // }
   }
 
   hNJetsVsLeadPt->Fill(jetPtLead, nJets);
@@ -342,22 +497,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   frcem = (Int_t)(frcem*100)/100.;
   frcoh = (Int_t)(frcoh*100)/100.;
   dPhi  = (Int_t)(dPhi*1000)/1000.;
-
-  // Get TowerInfoContainer
-  TowerInfoContainer* towersCEMCBase = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerBaseNode.c_str());
-  TowerInfoContainer* towersCEMC     = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
-  TowerInfoContainer* towersIHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ihcalTowerNode.c_str());
-  TowerInfoContainer* towersOHCal    = findNode::getClass<TowerInfoContainer>(topNode, m_ohcalTowerNode.c_str());
-
-  if (!towersCEMCBase || !towersCEMC || !towersIHCal || !towersOHCal) {
-    cout << PHWHERE << "JetValidation::process_event Could not find one of "
-         << m_emcTowerBaseNode  << ", "
-         << m_emcTowerNode      << ", "
-         << m_ihcalTowerNode    << ", "
-         << m_ohcalTowerNode    << ", "
-         << endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
 
   stringstream name;
   stringstream nameSuffix;
@@ -502,6 +641,11 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   hjetPhiEtaPt->Write();
   hjetConstituentsVsPt->Write();
   hNJetsVsLeadPt->Write();
+  h2LeadTowPtFracVsJetPt->Write();
+  h2LeadTowPtFracVsJetPt_miss->Write();
+  h2LeadTowPtFracVsJetPtCEMC->Write();
+  h2LeadTowPtFracVsJetPtIHCal->Write();
+  h2LeadTowPtFracVsJetPtOHCal->Write();
 
   output.cd("bkg_checks");
   h2ETVsFracCEMC->Write();
