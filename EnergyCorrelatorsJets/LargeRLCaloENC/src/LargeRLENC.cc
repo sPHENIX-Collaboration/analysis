@@ -204,7 +204,8 @@ std::array<float, 3> LargeRLENC::HadronicEnergyBalence(Jet* jet, float ohcal_ihc
 	catch(std::exception& e){std::cout<<"Could not find particle map" <<std::endl;
 		return {0.,0.,0.};
 	}
-	PHG4TruthInfoContainer::Map truth_particles=truth_particles_p->GetMap();
+	std::map<int, PHG4Particle*> truth_particles;
+	for(const auto& a:truth_particles_p->GetMap()) truth_particles[a.first]=a.second;
 	for(auto& iter:jet->get_comp_vec()){
 		Jet::SRC source=iter.first;
 		if(source != Jet::SRC::PARTICLE && source != Jet::SRC::CHARGED_PARTICLE && source != Jet::SRC::HEPMC_IMPORT){
@@ -217,7 +218,7 @@ std::array<float, 3> LargeRLENC::HadronicEnergyBalence(Jet* jet, float ohcal_ihc
 				continue;
 			}
 			else{
-				PHG4Particle* particle = truth_particles[id];
+				PHG4Particle* particle = truth_particles.at(id);
 				int pid=particle->get_pid();
 				if(abs(pid) == 11 || pid== 22){ 
 					//electrons, positrons and photons get put in the emcal
@@ -418,13 +419,13 @@ std::vector<std::array<float,3>> LargeRLENC::getJetEnergyRatios(JetContainerv1* 
 		}
 		if(ohcal_energy == 0. || allcal_energy == 0. || emcal_energy == 0.)
 		{
-			std::cout<<"There is an issue getting an energy value, please check status?"<<ohcal_energy <<"   " <<allcal_energy <<std::endl;
+	//		std::cout<<"There is an issue getting an energy value, please check status?"<<ohcal_energy <<"   " <<allcal_energy <<std::endl;
 			if(has_particle) ohcal_ratio.push_back(HadronicEnergyBalence(j, ohcal_ihcal_ratio, topNode)); //if there is no tower source present, use the particles  
 			else ohcal_ratio.push_back({0.,0.,0.});
 		}
 		else{
 			i_e=(float)i_e/(float)allcal_energy;
-			std::cout<<"The jet moment of inertia is " <<i_e <<std::endl;
+	//		std::cout<<"The jet moment of inertia is " <<i_e <<std::endl;
 			ohcal_energy=ohcal_energy/allcal_energy;
 			emcal_energy=emcal_energy/allcal_energy;
 			ohcal_ratio.push_back({ohcal_energy, emcal_energy, i_e});
@@ -590,8 +591,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	}
 	int i1=0;
 	for(auto j: *jets){
-		IE->Fill(jet_ie.at(i1));
-		E_IE->Fill(j->get_e(), jet_ie.at(i1));
+		if(jet_ie.at(i1) > 0 )IE->Fill(jet_ie.at(i1));
+		if(jet_ie.at(i1) > 0 )E_IE->Fill(j->get_e(), jet_ie.at(i1));
 		i1++;
 	}
 	bool triggered_event = true;
@@ -615,8 +616,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		bad_occ_em_h->Fill(emcal_occupancy, (ohcal_occupancy+ihcal_occupancy)/2.0);
 		i1=0;
 		for(auto j:*jets){
-			badIE->Fill(jet_ie.at(i1));
-			badE_IE->Fill(j->get_e(), jet_ie.at(i1));
+			if(jet_ie.at(i1) > 0 ) badIE->Fill(jet_ie.at(i1));
+			if(jet_ie.at(i1) > 0 )badE_IE->Fill(j->get_e(), jet_ie.at(i1));
 			i1++;
 		}
 	       	return Fun4AllReturnCodes::EVENT_OK;
@@ -624,8 +625,8 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	else{
 		i1=0;
 		for(auto j:*jets){
-			goodIE->Fill(jet_ie.at(i1));
-			goodE_IE->Fill(j->get_e(), jet_ie.at(i1));
+			if(jet_ie.at(i1) > 0 )goodIE->Fill(jet_ie.at(i1));
+			if(jet_ie.at(i1) > 0 )goodE_IE->Fill(j->get_e(), jet_ie.at(i1));
 			i1++;
 		}
 		float lead_phi=eventCut->getLeadPhi();
