@@ -12,25 +12,27 @@
 #ifndef BEAMBACKGROUNDFILTERANDQA_H
 #define BEAMBACKGROUNDFILTERANDQA_H
 
+// module components
+#include "BaseBeamBackgroundFilter.h"
+#include "NullFilter.h"
+#include "StreakSidebandFilter.h"
+
+// f4a libraries
+#include <fun4all/SubsysReco.h>
+
+// phparameters libraries
+#include <phparameter/PHParameters.h>
+
 // c++ utilities
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-// f4a libraries
-#include <fun4all/SubsysReco.h>
-
-// module components
-#include "BaseBeamBackgroundFilter.h"
-#include "NullFilter.h"
-#include "StreakSidebandFilter.h"
-
 // forward declarations
 class Fun4AllHistoManager;
 class PHCompositeNode;
 class QAHistManagerHistDef;
-class recoConsts;
 class TowerInfoContainer;
 
 
@@ -60,6 +62,9 @@ class BeamBackgroundFilterAndQA : public SubsysReco {
       ///! module name
       std::string moduleName = "BeamBackgroundFilterAndQA";
 
+      ///! flag prefix
+      std::string flagPrefix = "HasBeamBackground";
+
       ///! histogram tags
       std::string histTag = "";
 
@@ -85,7 +90,7 @@ class BeamBackgroundFilterAndQA : public SubsysReco {
     Config GetConfig() const {return m_config;}
 
     // f4a methods
-    int Init(PHCompositeNode* /*topNode*/) override;
+    int Init(PHCompositeNode* topNode) override;
     int process_event(PHCompositeNode* topNode) override;
     int End(PHCompositeNode* /*topNode*/) override;
 
@@ -93,17 +98,20 @@ class BeamBackgroundFilterAndQA : public SubsysReco {
 
     // private methods
     void InitFilters();
-    void InitFlags();
+    void InitFlags(PHCompositeNode* topNode);
     void InitHistManager();
     void BuildHistograms();
     void RegisterHistograms();
+    void SetDefaultFlags();
+    void UpdateFlags(PHCompositeNode* topNode);
     bool ApplyFilters(PHCompositeNode* topNode);
+    std::string MakeFlagName(const std::string& filter = "");
 
     ///! histogram manager
     Fun4AllHistoManager* m_manager;
 
-    ///! reco consts (for flags)
-    recoConsts* m_consts;
+    ///! background flags
+    PHParameters m_flags;
 
     ///! module-wide histograms
     std::map<std::string, TH1*> m_hists;

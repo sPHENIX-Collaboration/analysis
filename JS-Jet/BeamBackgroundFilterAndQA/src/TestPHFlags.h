@@ -13,16 +13,17 @@
 #ifndef TESTPHFLAGS_H
 #define TESTPHFLAGS_H
 
-// c++ utilities
-#include <string>
-
 // f4a libraries
 #include <fun4all/SubsysReco.h>
 
+// phparameter libraries
+#include <phparameter/PHParameters.h>
+
+// c++ utilities
+#include <string>
+
 // forward declarations
-class FlagSavev1;
 class PHCompositeNode;
-class recoConsts;
 
 
 
@@ -38,7 +39,7 @@ class TestPHFlags : public SubsysReco
   public:
 
     // ctor/dtor
-    TestPHFlags(const std::string &name = "TestPHFlags", const bool debug = false);
+    TestPHFlags(const std::string& name = "TestPHFlags", const std::string& flags = "HasBeamBackground", const bool debug = false);
     ~TestPHFlags() override;
 
     // f4a methods
@@ -46,11 +47,14 @@ class TestPHFlags : public SubsysReco
 
    private:
 
-     ///! reco consts (for flags)
-     recoConsts* m_consts;
+     ///! to retrieve flags
+     PHParameters m_flags;
 
      ///! turn on/off extra debugging messages
      bool m_doDebug;
+
+     ///! name of node where flags are stored
+     std::string m_flagNode;
 
 };  // end TestPHFlags
 
