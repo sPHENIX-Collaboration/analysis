@@ -39,6 +39,7 @@ libbeambackgroundfilterandqa_la_LDFLAGS = \
   -lcalo_io \
   -lfun4all \
   -lg4detectors_io \
+  -lpdbcalBase \
   -lphg4hit \
   -lphparameter \
   -lg4dst \

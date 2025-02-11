@@ -27,7 +27,6 @@
 #include <phool/getClass.h>
 #include <phool/phool.h>
 #include <phool/PHCompositeNode.h>
-#include <phool/recoConsts.h>
 
 // qa utilities
 #include <qautils/QAHistManagerDef.h>
