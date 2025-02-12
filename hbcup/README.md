@@ -1,4 +1,4 @@
-My work directories:
+# My work directories:
 
 Starlight MC:             /sphenix/user/chiu/upcsims/jordan
 Starlight sPHENIX DSTs:   /sphenix/user/chiu/sphenix_bbc/sim_work/UPC
@@ -6,7 +6,7 @@ Hijing DSTs:              standard sphenix MDC2, run 19 (use CreateFileList.pl t
 Analysis workarea:        /sphenix/user/chiu/sphenix_bbc/sim_work/Ana/UPC
 
 
-Rough steps to generate simulations for a UPC analysis:
+# Rough steps to generate simulations for a UPC analysis:
 
 1. Generate starlight MC events, for all channels and decay modes that can contribute to the real data.
    Other event generators could be used.
