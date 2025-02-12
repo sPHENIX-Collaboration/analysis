@@ -436,7 +436,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
     if(towPtLead != 0) {
       h2LeadTowPtBySubLeadTowPtFracVsJetPt->Fill(pt, towPtSublead/towPtLead);
-      if(hasBkg && !failsAnyJetCut) {
+      if(!failsAnyJetCut) {
         h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss->Fill(pt, towPtSublead/towPtLead);
       }
     }
@@ -452,7 +452,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
       if(towDetLead == "OHCal") {
         h2LeadTowPtFracVsJetPtOHCal->Fill(pt, towPtLead/totalPt);
       }
-      if(hasBkg && !failsAnyJetCut) {
+      if(!failsAnyJetCut) {
         h2LeadTowPtFracVsJetPt_miss->Fill(pt, towPtLead/totalPt);
       }
     }
@@ -467,7 +467,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   if(jetPtLead != 0) {
     Float_t xj = jetPtSubLead*1./jetPtLead;
     h2XjVsJetPt->Fill(jetPtLead, xj);
-    if(hasBkg && !failsAnyJetCut) {
+    if(!failsAnyJetCut) {
       h2XjVsJetPt_miss->Fill(jetPtLead, xj);
     }
     // DEBUG
