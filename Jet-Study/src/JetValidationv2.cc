@@ -75,6 +75,9 @@ JetValidationv2::JetValidationv2()
   , m_bins_frac(140)
   , m_frac_low(-0.2)
   , m_frac_high(1.2)
+  , m_bins_frac2(100)
+  , m_frac2_low(0)
+  , m_frac2_high(1)
   , m_bins_ET(190)
   , m_ET_low(10)
   , m_ET_high(200)
@@ -129,20 +132,32 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hNJetsVsLeadPt = new TH2F("hNJetsVsLeadPt", "Event; Lead p_{T} [GeV]; # of Jets", m_bins_pt, m_pt_low, m_pt_high
                                                                                   , m_bins_nJets, m_nJets_low, m_nJets_high);
 
-  h2LeadTowPtFracVsJetPt = new TH2F("h2LeadTowPtFracVsJetPt","Jet; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
-                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+  h2LeadTowPtFracVsJetPt = new TH2F("h2LeadTowPtFracVsJetPt","Jet; Jet p_{T} [GeV]; Leading Tower p_{T}/#sum Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
 
-  h2LeadTowPtFracVsJetPt_miss = new TH2F("h2LeadTowPtFracVsJetPt_miss","Jet; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
-                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+  h2LeadTowPtFracVsJetPt_miss = new TH2F("h2LeadTowPtFracVsJetPt_miss","Jet; Jet p_{T} [GeV]; Leading Tower p_{T}/#sum Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
 
-  h2LeadTowPtFracVsJetPtCEMC = new TH2F("h2LeadTowPtFracVsJetPtCEMC","Jet: Leading Tower p_{T} from CEMC; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
-                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+  h2LeadTowPtFracVsJetPtCEMC = new TH2F("h2LeadTowPtFracVsJetPtCEMC","Jet: Leading Tower p_{T} from CEMC; Jet p_{T} [GeV]; Leading Tower p_{T}/#sum Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
 
-  h2LeadTowPtFracVsJetPtIHCal = new TH2F("h2LeadTowPtFracVsJetPtIHCal","Jet: Leading Tower p_{T} from IHCal; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
-                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+  h2LeadTowPtFracVsJetPtIHCal = new TH2F("h2LeadTowPtFracVsJetPtIHCal","Jet: Leading Tower p_{T} from IHCal; Jet p_{T} [GeV]; Leading Tower p_{T}/#sum Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
 
-  h2LeadTowPtFracVsJetPtOHCal = new TH2F("h2LeadTowPtFracVsJetPtOHCal","Jet: Leading Tower p_{T} from OHCal; Jet p_{T} [GeV]; Fraction of Leading Tower p_{T}"
-                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac, m_frac_low, m_frac_high);
+  h2LeadTowPtFracVsJetPtOHCal = new TH2F("h2LeadTowPtFracVsJetPtOHCal","Jet: Leading Tower p_{T} from OHCal; Jet p_{T} [GeV]; Leading Tower p_{T}/#sum Tower p_{T}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
+
+  h2LeadTowPtBySubLeadTowPtFracVsJetPt = new TH2F("h2LeadTowPtBySubLeadTowPtFracVsJetPt","Jet; Jet p_{T} [GeV]; p_{T,Tower Sublead}/p_{T, Tower Lead}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
+
+  h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss = new TH2F("h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss","Jet; Jet p_{T} [GeV]; p_{T,Tower Sublead}/p_{T, Tower Lead}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
+
+  h2XjVsJetPt = new TH2F("h2XjVsJetPt","Event; Lead Jet p_{T} [GeV]; x_{j}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
+
+  h2XjVsJetPt_miss = new TH2F("h2XjVsJetPt_miss","Event; Lead Jet p_{T} [GeV]; x_{j}"
+                                   , m_bins_pt, m_pt_low, m_pt_high, m_bins_frac2, m_frac2_low, m_frac2_high);
 
   // jet background QA
   h2ETVsFracCEMC = new TH2F("h2ETVsFracCEMC","Jet; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]"
@@ -334,6 +349,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     }
 
     Float_t totalPt = 0;
+    Float_t towPtSublead = 0;
     Float_t towPtLead = 0;
     string  towDetLead = "";
 
@@ -406,9 +422,22 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
       // Float_t et = energy*pt/sqrt(px*px+py*py+pz*pz);
 
       totalPt += tower_pt;
-      if(tower_pt > towPtLead) {
-        towPtLead = tower_pt;
-        towDetLead = det;
+      if(tower_pt > towPtSublead) {
+        if(tower_pt > towPtLead) {
+          towPtSublead = towPtLead;
+          towPtLead = tower_pt;
+          towDetLead = det;
+        }
+        else {
+          towPtSublead = tower_pt;
+        }
+      }
+    }
+
+    if(towPtLead != 0) {
+      h2LeadTowPtBySubLeadTowPtFracVsJetPt->Fill(pt, towPtSublead/towPtLead);
+      if(hasBkg && !failsAnyJetCut) {
+        h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss->Fill(pt, towPtSublead/towPtLead);
       }
     }
 
@@ -436,6 +465,18 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     // }
   }
 
+  if(jetPtLead != 0) {
+    Float_t xj = jetPtSubLead*1./jetPtLead;
+    h2XjVsJetPt->Fill(jetPtLead, xj);
+    if(hasBkg && !failsAnyJetCut) {
+      h2XjVsJetPt_miss->Fill(jetPtLead, xj);
+    }
+    // DEBUG
+    // if(xj < 0) {
+    //   cout << "xj: " << xj << ", pt lead: " << jetPtLead << " GeV, pt sublead: " << jetPtSubLead << " GeV" << endl;
+    // }
+  }
+
   hNJetsVsLeadPt->Fill(jetPtLead, nJets);
 
   m_nJets_min = min(m_nJets_min, nJets);
@@ -454,7 +495,7 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   h2FracOHCalVsFracCEMC->Fill(frcem, frcoh);
 
-  cout << "Background Jet: " << jetPtLead << " GeV, Event: " << m_globalEvent << endl;
+  cout << "Background Lead Jet: " << jetPtLead << " GeV, Sublead Jet: " << jetPtSubLead << " GeV, Event: " << m_globalEvent << endl;
 
   cout << "isDijet: " << isDijet
        << ", frcem: " << frcem
@@ -646,6 +687,10 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
   h2LeadTowPtFracVsJetPtCEMC->Write();
   h2LeadTowPtFracVsJetPtIHCal->Write();
   h2LeadTowPtFracVsJetPtOHCal->Write();
+  h2LeadTowPtBySubLeadTowPtFracVsJetPt->Write();
+  h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss->Write();
+  h2XjVsJetPt->Write();
+  h2XjVsJetPt_miss->Write();
 
   output.cd("bkg_checks");
   h2ETVsFracCEMC->Write();

@@ -100,6 +100,10 @@ class JetValidationv2 : public SubsysReco
   Float_t m_frac_low;
   Float_t m_frac_high;
 
+  UInt_t m_bins_frac2;
+  Float_t m_frac2_low;
+  Float_t m_frac2_high;
+
   UInt_t m_bins_ET;
   Float_t m_ET_low;
   Float_t m_ET_high;
@@ -150,11 +154,15 @@ class JetValidationv2 : public SubsysReco
   TH2* h2FracOHCalVsFracCEMC = nullptr;
   TH2* h2ETVsFracCEMC_miss = nullptr;
   TH2* h2FracOHCalVsFracCEMC_miss = nullptr;
+  TH2* h2LeadTowPtBySubLeadTowPtFracVsJetPt = nullptr;
+  TH2* h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss = nullptr;
   TH2* h2LeadTowPtFracVsJetPt = nullptr;
   TH2* h2LeadTowPtFracVsJetPt_miss = nullptr;
   TH2* h2LeadTowPtFracVsJetPtCEMC = nullptr;
   TH2* h2LeadTowPtFracVsJetPtIHCal = nullptr;
   TH2* h2LeadTowPtFracVsJetPtOHCal = nullptr;
+  TH2* h2XjVsJetPt = nullptr;
+  TH2* h2XjVsJetPt_miss = nullptr;
   vector<TH2*> hCEMCBase;
   vector<TH2*> hCEMC;
   vector<TH2*> hIHCal;
