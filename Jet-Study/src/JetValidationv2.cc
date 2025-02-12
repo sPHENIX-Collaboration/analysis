@@ -312,24 +312,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
     Int_t constituents = comp_vec.size();
 
-    // exclude jets near the edge of the detector
-    if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
-    ++nJets;
-
-    hjetPhiEtaPt->Fill(phi, eta, pt);
-
-    hjetConstituentsVsPt->Fill(pt, constituents);
-
-    m_constituents_min = min(m_constituents_min, constituents);
-    m_constituents_max = max(m_constituents_max, constituents);
-
-    m_pt_min = min(m_pt_min, (Int_t)pt);
-    m_pt_max = max(m_pt_max, (Int_t)pt);
-
-    if(pt >= m_pt_background) {
-      hasBkg = true;
-    }
-
     if((Int_t)pt > jetPtSubLead) {
       if((Int_t)pt > jetPtLead) {
         jetPtSubLead = jetPtLead;
@@ -346,6 +328,24 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
         jetPhiSubLead = phi;
         jetEtaSubLead = eta;
       }
+    }
+
+    ++nJets;
+    // exclude jets near the edge of the detector
+    if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
+
+    hjetPhiEtaPt->Fill(phi, eta, pt);
+
+    hjetConstituentsVsPt->Fill(pt, constituents);
+
+    m_constituents_min = min(m_constituents_min, constituents);
+    m_constituents_max = max(m_constituents_max, constituents);
+
+    m_pt_min = min(m_pt_min, (Int_t)pt);
+    m_pt_max = max(m_pt_max, (Int_t)pt);
+
+    if(pt >= m_pt_background) {
+      hasBkg = true;
     }
 
     Float_t totalPt = 0;
@@ -452,7 +452,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
       if(towDetLead == "OHCal") {
         h2LeadTowPtFracVsJetPtOHCal->Fill(pt, towPtLead/totalPt);
       }
-
       if(hasBkg && !failsAnyJetCut) {
         h2LeadTowPtFracVsJetPt_miss->Fill(pt, towPtLead/totalPt);
       }
