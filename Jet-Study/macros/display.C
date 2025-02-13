@@ -250,12 +250,77 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto hNJetsVsLeadPt = (TH2*)input.Get("jets/hNJetsVsLeadPt");
     hNJetsVsLeadPt->RebinX(2);
     hNJetsVsLeadPt->GetXaxis()->SetRangeUser(10,200);
-    hNJetsVsLeadPt->GetYaxis()->SetRangeUser(0,50);
+    hNJetsVsLeadPt->GetYaxis()->SetRangeUser(0,70);
     hNJetsVsLeadPt->GetYaxis()->SetTitleOffset(1);
 
     hNJetsVsLeadPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((string(hNJetsVsLeadPt->GetName()) + ".png").c_str());
+
+    // ----------------------------------------------------------
+
+    auto h2LeadTowPtFracVsJetPt = (TH2*)input.Get("jets/h2LeadTowPtFracVsJetPt");
+    h2LeadTowPtFracVsJetPt->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtFracVsJetPt->GetYaxis()->SetTitleOffset(1);
+
+    h2LeadTowPtFracVsJetPt->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2LeadTowPtFracVsJetPt->GetName()) + ".png").c_str());
+
+    auto h2LeadTowPtFracVsJetPt_miss = (TH2*)input.Get("jets/h2LeadTowPtFracVsJetPt_miss");
+    h2LeadTowPtFracVsJetPt_miss->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtFracVsJetPt_miss->GetYaxis()->SetTitleOffset(1);
+
+    h2LeadTowPtFracVsJetPt_miss->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2LeadTowPtFracVsJetPt_miss->GetName()) + ".png").c_str());
+
+    // ----------------------------------------------------------
+
+    gPad->SetLogz();
+    auto h2XjVsJetPt = (TH2*)input.Get("jets/h2XjVsJetPt");
+    h2XjVsJetPt->GetXaxis()->SetRangeUser(10,200);
+    h2XjVsJetPt->GetYaxis()->SetTitleOffset(1);
+
+    h2XjVsJetPt->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt->GetName()) + ".png").c_str());
+
+    auto py = h2XjVsJetPt->ProjectionY();
+    py->GetYaxis()->SetTitle("Counts");
+    py->GetYaxis()->SetTitleOffset(1.5);
+    py->Draw();
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt->GetName()) + "-py.png").c_str());
+
+    auto py_60 = h2XjVsJetPt->ProjectionY("py_60",h2XjVsJetPt->GetXaxis()->FindBin(60), h2XjVsJetPt->GetNbinsX());
+    py_60->GetYaxis()->SetTitle("Counts");
+    py_60->GetYaxis()->SetTitleOffset(1.5);
+    py_60->Draw();
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt->GetName()) + "-py-60.png").c_str());
+
+    auto h2XjVsJetPt_miss = (TH2*)input.Get("jets/h2XjVsJetPt_miss");
+    h2XjVsJetPt_miss->GetXaxis()->SetRangeUser(10,200);
+    h2XjVsJetPt_miss->GetYaxis()->SetTitleOffset(1);
+
+    h2XjVsJetPt_miss->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt_miss->GetName()) + ".png").c_str());
+
+    auto py_miss = h2XjVsJetPt_miss->ProjectionY();
+    py_miss->GetYaxis()->SetTitle("Counts");
+    py_miss->GetYaxis()->SetTitleOffset(1.5);
+    py_miss->Draw();
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt_miss->GetName()) + "-py.png").c_str());
+
+    auto py_miss_60 = h2XjVsJetPt_miss->ProjectionY("py_miss_60",h2XjVsJetPt_miss->GetXaxis()->FindBin(60), h2XjVsJetPt_miss->GetNbinsX());
+    py_miss_60->GetYaxis()->SetTitle("Counts");
+    py_miss_60->GetYaxis()->SetTitleOffset(1.5);
+    py_miss_60->Draw();
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(h2XjVsJetPt_miss->GetName()) + "-py-60.png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 
