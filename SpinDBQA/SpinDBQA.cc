@@ -116,6 +116,7 @@ void SpinDBQA::doQA()
       if (runnumber >= 45236){GL1pScalersQA(stringMarkdown,stringHtml);}
       else{stringHtml += "GL1p Scalers: <font color=\"#800080\">NOT AVAILABLE</font>; ";}
       LocalPolQA(stringMarkdown,stringHtml);
+      CrossingAngleQA(stringMarkdown,stringHtml);
       map_spindbqa_markdown[stringMarkdown].push_back(runnumber);
     }
     
@@ -310,6 +311,23 @@ void SpinDBQA::LocalPolQA(std::string &stringMarkdown, std::string &stringHtml)
     stringHtml += "Local Polarimetry: <font color=\"#11cf17\">GOOD</font>; ";
   }
     // if CNI does not have beam polarizations (see if you can get polarizations from local pol)
+}
+
+void SpinDBQA::CrossingAngleQA(std::string &stringMarkdown, std::string &stringHtml) {
+  // Run crossing angle QA. Simply check the standard deviation per run and cut on a hard threshold.
+  // Currently set to cut three most egregious runs where beams switch from 1.5 mrad to/from head on.
+
+  // Check if crossing angle std exists and if it is above the threshold mark it as bad, good otherwise
+  if (map_crossanglestd[runnumber] > _crossanglestdthreshold)
+  {
+    stringMarkdown += "\u274C Crossing angle variation ";
+    stringHtml += "Crossing angle variation: <font color=\"#ff0000\">BAD</font>; ";
+  }
+  else
+  {
+    stringMarkdown += "\u2705 Crossing angle variation ";
+    stringHtml += "Crossing angle variation: <font color=\"#11cf17\">GOOD</font>; ";
+  }
 }
 
 void SpinDBQA::WriteMarkdown()

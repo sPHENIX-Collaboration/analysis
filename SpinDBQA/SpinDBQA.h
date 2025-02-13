@@ -27,6 +27,7 @@ public:
     void SetHtmlFilename(std::string htmlfile = "runsummary.html"){_htmlfilename = htmlfile;};
 
     void SetRunList(std::string runlist);
+    void SetCrossingAngleStdThreshold(float threshold){_crossanglestdthreshold = threshold;};
 
     void DefaultQA(){b_defaultQA = true;};
     void SetQALevel(int level){b_defaultQA = false; qalevel = level;};
@@ -48,6 +49,7 @@ private:
     void LocalPolQA(std::string &stringMarkdown,std::string &stringHtml);
     void GL1pScalersQA(std::string &stringMarkdown,std::string &stringHtml);
     void CNIHjetQA(std::string &stringMarkdown,std::string &stringHtml);
+    void CrossingAngleQA(std::string &stringMarkdown,std::string &stringHtml);
 
     void PrepareHtml();
     std::string HtmlContent();
@@ -59,6 +61,8 @@ private:
     std::string _cnipathname = "/gpfs02/eic/cnipol/jet_run24/results";
     std::string _markdownfilename;
     std::string _htmlfilename;
+
+    float _crossanglestdthreshold = 0.1;  // mrad, mark runs with crossing angle std above this threshold as bad. Not very elegant to have this hardcoded cut, Dylan's fault
 
     int runnumber;
 
