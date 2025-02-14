@@ -132,6 +132,16 @@ class JetValidationv2 : public SubsysReco
   Int_t m_pt_min;
   Int_t m_pt_max;
 
+  Int_t m_tow_pt_min;
+  Int_t m_tow_pt_max;
+
+  UInt_t m_bins_high_pt_constituents;
+  Float_t m_high_pt_constituents_low;
+  Float_t m_high_pt_constituents_high;
+
+  Int_t m_constituent_pt_threshold;
+  Int_t m_constituent_pt_threshold2;
+
   Float_t m_xj_cut;
 
   enum m_status {ALL, ZVTX30, ZVTX30_BKG
@@ -154,23 +164,32 @@ class JetValidationv2 : public SubsysReco
   TH1* hEvents = nullptr;
   TH1* hzvtxAll = nullptr;
   TH3* hjetPhiEtaPt = nullptr;
-  TH3* hjetPhiEtaPt_jetbkgCut = nullptr;
+  TH3* hjetPhiEtaPt_jetBkgCut = nullptr;
   TH3* hjetPhiEtaPt_xjCut = nullptr;
   TH2* hjetConstituentsVsPt = nullptr;
   TH2* hNJetsVsLeadPt = nullptr;
   TH2* h2ETVsFracCEMC = nullptr;
   TH2* h2FracOHCalVsFracCEMC = nullptr;
-  TH2* h2ETVsFracCEMC_miss = nullptr;
-  TH2* h2FracOHCalVsFracCEMC_miss = nullptr;
+  TH2* h2ETVsFracCEMC_jetBkgCut = nullptr;
+  TH2* h2FracOHCalVsFracCEMC_jetBkgCut = nullptr;
   TH2* h2LeadTowPtBySubLeadTowPtFracVsJetPt = nullptr;
-  TH2* h2LeadTowPtBySubLeadTowPtFracVsJetPt_miss = nullptr;
+  TH2* h2LeadTowPtBySubLeadTowPtFracVsJetPt_jetBkgCut = nullptr;
+  TH2* h2NTowersAbove10VsJetPt = nullptr;
+  TH2* h2NTowersAbove20VsJetPt = nullptr;
+  TH2* h2NTowersAbove10VsJetPt_jetBkgCut = nullptr;
+  TH2* h2NTowersAbove20VsJetPt_jetBkgCut = nullptr;
+  TH2* h2LeadTowPtVsJetPt = nullptr;
+  TH2* h2LeadTowPtVsJetPt_jetBkgCut = nullptr;
+  TH2* h2LeadTowPtVsJetPtCEMC = nullptr;
+  TH2* h2LeadTowPtVsJetPtIHCal = nullptr;
+  TH2* h2LeadTowPtVsJetPtOHCal = nullptr;
   TH2* h2LeadTowPtFracVsJetPt = nullptr;
-  TH2* h2LeadTowPtFracVsJetPt_miss = nullptr;
+  TH2* h2LeadTowPtFracVsJetPt_jetBkgCut = nullptr;
   TH2* h2LeadTowPtFracVsJetPtCEMC = nullptr;
   TH2* h2LeadTowPtFracVsJetPtIHCal = nullptr;
   TH2* h2LeadTowPtFracVsJetPtOHCal = nullptr;
   TH2* h2XjVsJetPt = nullptr;
-  TH2* h2XjVsJetPt_miss = nullptr;
+  TH2* h2XjVsJetPt_jetBkgCut = nullptr;
   vector<TH2*> hCEMCBase;
   vector<TH2*> hCEMC;
   vector<TH2*> hIHCal;
