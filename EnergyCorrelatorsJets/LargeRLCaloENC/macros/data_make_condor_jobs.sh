@@ -31,7 +31,7 @@ for i in $(seq 0 ${nFile}); do
 	
 	echo "Universe 	        = vanilla " > $fname
 	echo "Executable 	= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/RunLargeRLENC.sh " >>$fname
-	echo "Arguments         = ${data} ${datafitting} ${datatrigger} ${datajet} ${truthj} ${caloclusterf} ${truthf} ${globalf} ${nevts} ${minpt}" >> $fname 
+	echo "Arguments         = ${data} ${datafitting} ${datatrigger} ${datajet} none ${truthj} ${caloclusterf} ${truthf} ${globalf} ${nevts} ${minpt}" >> $fname 
 	echo "Output  	        = /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/data_condor_${nRunraw}_${i}.out " >> $fname
 	echo "Error 		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/data_condor_${nRunraw}_${i}.err " >> $fname
 	echo "Log  		= /gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/macros/condor_files/data_condor_${nRunraw}_${i}.log" >> $fname
