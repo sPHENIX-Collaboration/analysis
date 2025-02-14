@@ -161,8 +161,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     gStyle->SetTitleYOffset(0.5);
 
     auto hjetPhiEtaPt = (TH3*)input.Get("jets/hjetPhiEtaPt");
+    auto hjetPhiEtaPt_jetbkgCut = (TH3*)input.Get("jets/hjetPhiEtaPt_jetbkgCut");
+    auto hjetPhiEtaPt_xjCut = (TH3*)input.Get("jets/hjetPhiEtaPt_xjCut");
 
     hjetPhiEtaPt->GetZaxis()->SetRange(hjetPhiEtaPt->GetZaxis()->FindBin(10),hjetPhiEtaPt->GetNbinsZ());
+    hjetPhiEtaPt_jetbkgCut->GetZaxis()->SetRange(hjetPhiEtaPt_jetbkgCut->GetZaxis()->FindBin(10),hjetPhiEtaPt_jetbkgCut->GetNbinsZ());
+    hjetPhiEtaPt_xjCut->GetZaxis()->SetRange(hjetPhiEtaPt_xjCut->GetZaxis()->FindBin(10),hjetPhiEtaPt_xjCut->GetNbinsZ());
     auto hyx = hjetPhiEtaPt->Project3D("yx");
     hyx->SetTitle("Jet: p_{T} #geq 10 GeV");
 
@@ -191,6 +195,54 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hy->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((string(hjetPhiEtaPt->GetName()) + "-10-eta.png").c_str());
+
+    c1->SetRightMargin(.04);
+    gPad->SetLogy();
+    auto hz = hjetPhiEtaPt->Project3D("z");
+    auto hz_jetbkgCut = hjetPhiEtaPt_jetbkgCut->Project3D("z");
+    auto hz_xjCut = hjetPhiEtaPt_xjCut->Project3D("z");
+    hz->SetTitle("Jet; p_{T} [GeV]; Counts");
+    hz->GetYaxis()->SetTitleOffset(1.4);
+
+    hz_jetbkgCut->SetLineColor(kBlue);
+    hz_xjCut->SetLineColor(kRed);
+
+    // rebin to have 5 GeV bins
+    hz->Rebin(10);
+    hz_jetbkgCut->Rebin(10);
+    hz_xjCut->Rebin(10);
+
+    TLegend *leg = new TLegend(0.52,.7,0.72,.85);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hz,"All","f");
+    leg->AddEntry(hz_jetbkgCut,"jet bkg cut","f");
+    leg->AddEntry(hz_xjCut,"jet bkg cut and x_{j} #geq 0.15","f");
+
+    hz->Draw();
+    hz_jetbkgCut->Draw("same");
+    hz_xjCut->Draw("same");
+    leg->Draw("same");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-pt.png").c_str());
+
+    // ratio plots
+    gPad->SetLogy(0);
+
+    hz_jetbkgCut->Divide(hz);
+    hz_xjCut->Divide(hz);
+    hz_jetbkgCut->SetTitle("Jet; p_{T} [GeV]; Ratio");
+    hz_jetbkgCut->GetYaxis()->SetTitleOffset(1);
+
+    leg = new TLegend(0.5,.7,0.7,.85);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hz_jetbkgCut,"jet bkg cut/All","f");
+    leg->AddEntry(hz_xjCut,"jet bkg cut and x_{j} #geq 0.15/All","f");
+
+    hz_jetbkgCut->Draw();
+    hz_xjCut->Draw("same");
+    leg->Draw("same");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((string(hjetPhiEtaPt->GetName()) + "-pt-ratio.png").c_str());
 
     c1->SetCanvasSize(2900, 1000);
     c1->SetLeftMargin(.06);

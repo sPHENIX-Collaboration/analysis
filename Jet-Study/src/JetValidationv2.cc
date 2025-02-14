@@ -95,6 +95,7 @@ JetValidationv2::JetValidationv2()
   , m_constituents_max(0)
   , m_pt_min(9999)
   , m_pt_max(0)
+  , m_xj_cut(0.15)
 {
   cout << "JetValidationv2::JetValidationv2(const std::string &name) Calling ctor" << endl;
 }
@@ -123,6 +124,14 @@ Int_t JetValidationv2::Init(PHCompositeNode *topNode)
   hzvtxAll = new TH1F("zvtxAll","Z Vertex; z [cm]; Counts", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
 
   hjetPhiEtaPt = new TH3F("hjetPhiEtaPt", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
+                                                                        , m_bins_eta, m_eta_low, m_eta_high
+                                                                        , m_bins_pt, m_pt_low, m_pt_high);
+
+  hjetPhiEtaPt_jetbkgCut = new TH3F("hjetPhiEtaPt_jetbkgCut", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
+                                                                        , m_bins_eta, m_eta_low, m_eta_high
+                                                                        , m_bins_pt, m_pt_low, m_pt_high);
+
+  hjetPhiEtaPt_xjCut = new TH3F("hjetPhiEtaPt_xjCut", "Jet; #phi; #eta; p_{T} [GeV]", m_bins_phi, m_phi_low, m_phi_high
                                                                         , m_bins_eta, m_eta_low, m_eta_high
                                                                         , m_bins_pt, m_pt_low, m_pt_high);
 
@@ -301,16 +310,14 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   Float_t jetEtaLead = 0;
   Float_t jetEtaSubLead = 0;
 
-  Int_t nJets = 0;
-
-  // trigger
+  Int_t nJets = jets_r04->size();
   Bool_t hasBkg = false;
+
+  // determine leading and subleading jets
   for (auto jet : *jets_r04) {
     Float_t phi = jet->get_phi();
     Float_t eta = jet->get_eta();
     Float_t pt = jet->get_pt();
-    Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
-    Int_t constituents = comp_vec.size();
 
     if((Int_t)pt > jetPtSubLead) {
       if((Int_t)pt > jetPtLead) {
@@ -329,12 +336,42 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
         jetEtaSubLead = eta;
       }
     }
+  }
 
-    ++nJets;
+  // jet momentum balance
+  Float_t xj = (jetPtLead != 0) ? jetPtSubLead*1./jetPtLead : 0;
+
+  h2XjVsJetPt->Fill(jetPtLead, xj);
+  if(!failsAnyJetCut) {
+    h2XjVsJetPt_miss->Fill(jetPtLead, xj);
+  }
+  // DEBUG
+  // if(xj < 0) {
+  //   cout << "xj: " << xj << ", pt lead: " << jetPtLead << " GeV, pt sublead: " << jetPtSubLead << " GeV" << endl;
+  // }
+
+  hNJetsVsLeadPt->Fill(jetPtLead, nJets);
+
+  m_nJets_min = min(m_nJets_min, nJets);
+  m_nJets_max = max(m_nJets_max, nJets);
+
+  for (auto jet : *jets_r04) {
+    Float_t phi = jet->get_phi();
+    Float_t eta = jet->get_eta();
+    Float_t pt = jet->get_pt();
+    Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
+    Int_t constituents = comp_vec.size();
+
     // exclude jets near the edge of the detector
     if(JetUtils::check_bad_jet_eta(eta, m_zvtx, m_R)) continue;
 
     hjetPhiEtaPt->Fill(phi, eta, pt);
+    if(!failsAnyJetCut) {
+      hjetPhiEtaPt_jetbkgCut->Fill(phi, eta, pt);
+      if(xj >= m_xj_cut) {
+        hjetPhiEtaPt_xjCut->Fill(phi, eta, pt);
+      }
+    }
 
     hjetConstituentsVsPt->Fill(pt, constituents);
 
@@ -463,23 +500,6 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
     //        << totalPt << ", lead tower pt: " << towPtLead << ", ratio pt: " << towPtLead*100./totalPt << ", lead tower det: " << towDetLead << endl;
     // }
   }
-
-  if(jetPtLead != 0) {
-    Float_t xj = jetPtSubLead*1./jetPtLead;
-    h2XjVsJetPt->Fill(jetPtLead, xj);
-    if(!failsAnyJetCut) {
-      h2XjVsJetPt_miss->Fill(jetPtLead, xj);
-    }
-    // DEBUG
-    // if(xj < 0) {
-    //   cout << "xj: " << xj << ", pt lead: " << jetPtLead << " GeV, pt sublead: " << jetPtSubLead << " GeV" << endl;
-    // }
-  }
-
-  hNJetsVsLeadPt->Fill(jetPtLead, nJets);
-
-  m_nJets_min = min(m_nJets_min, nJets);
-  m_nJets_max = max(m_nJets_max, nJets);
 
   Bool_t isDijet   = pdb_params.get_int_param("isDijet");
   Float_t frcem    = pdb_params.get_double_param("frcem");
@@ -679,6 +699,8 @@ Int_t JetValidationv2::End(PHCompositeNode *topNode)
 
   output.cd("jets");
   hjetPhiEtaPt->Write();
+  hjetPhiEtaPt_jetbkgCut->Write();
+  hjetPhiEtaPt_xjCut->Write();
   hjetConstituentsVsPt->Write();
   hNJetsVsLeadPt->Write();
   h2LeadTowPtFracVsJetPt->Write();

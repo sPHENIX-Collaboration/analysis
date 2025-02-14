@@ -77,6 +77,7 @@ void Fun4All_JetValv2(const string &input_JET,
 
   JetValidationv2 *myJetVal = new JetValidationv2();
   myJetVal->set_outputFile(outputFile);
+  myJetVal->set_xj_cut(0.15);
   se->registerSubsystem(myJetVal);
 
   se->run(nEvents);

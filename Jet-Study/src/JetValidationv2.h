@@ -60,6 +60,10 @@ class JetValidationv2 : public SubsysReco
     this->m_pt_background = m_pt_background;
   }
 
+  void set_xj_cut(Float_t m_xj_cut) {
+    this->m_xj_cut = m_xj_cut;
+  }
+
  private:
   string m_recoJetName_r04;
 
@@ -128,6 +132,8 @@ class JetValidationv2 : public SubsysReco
   Int_t m_pt_min;
   Int_t m_pt_max;
 
+  Float_t m_xj_cut;
+
   enum m_status {ALL, ZVTX30, ZVTX30_BKG
                             , ZVTX30_BKG_failsLoEmJetCut
                             , ZVTX30_BKG_failsHiEmJetCut
@@ -148,6 +154,8 @@ class JetValidationv2 : public SubsysReco
   TH1* hEvents = nullptr;
   TH1* hzvtxAll = nullptr;
   TH3* hjetPhiEtaPt = nullptr;
+  TH3* hjetPhiEtaPt_jetbkgCut = nullptr;
+  TH3* hjetPhiEtaPt_xjCut = nullptr;
   TH2* hjetConstituentsVsPt = nullptr;
   TH2* hNJetsVsLeadPt = nullptr;
   TH2* h2ETVsFracCEMC = nullptr;
