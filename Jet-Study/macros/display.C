@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 
 // -- root includes --
 #include <TH2F.h>
@@ -26,12 +27,16 @@ using std::stringstream;
 using std::min;
 using std::max;
 using std::ofstream;
+namespace fs = std::filesystem;
 
 namespace myAnalysis {
     void plots(const string& i_input, const string &output);
 }
 
 void myAnalysis::plots(const string& i_input, const string &output) {
+
+    string outputDir = fs::absolute(output).parent_path().string();
+    fs::create_directories(outputDir);
 
     TFile input(i_input.c_str());
 
@@ -78,7 +83,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hEvents->GetXaxis()->SetLabelSize(0.1);
     hEvents->GetXaxis()->SetRangeUser(1,hEvents->GetNbinsX());
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hEvents->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(hEvents->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
     gPad->SetLogy(0);
@@ -109,7 +114,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     cut_HiEmFracET1->Draw("same");
     cut_HiEmFracET2->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2ETVsFracCEMC->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2ETVsFracCEMC->GetName()) + ".png").c_str());
 
     h2ETVsFracCEMC_jetBkgCut->SetMaximum(5);
     h2ETVsFracCEMC_jetBkgCut->Draw("COLZ1");
@@ -118,7 +123,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     cut_HiEmFracET1->Draw("same");
     cut_HiEmFracET2->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2ETVsFracCEMC_jetBkgCut->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2ETVsFracCEMC_jetBkgCut->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
 
@@ -135,12 +140,12 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2FracOHCalVsFracCEMC->Draw("COLZ1");
     cut_IhFrac->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2FracOHCalVsFracCEMC->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2FracOHCalVsFracCEMC->GetName()) + ".png").c_str());
 
     h2FracOHCalVsFracCEMC_jetBkgCut->Draw("COLZ1");
     cut_IhFrac->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2FracOHCalVsFracCEMC_jetBkgCut->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2FracOHCalVsFracCEMC_jetBkgCut->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
 
@@ -172,7 +177,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hyx->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-10.png").c_str());
 
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.15);
@@ -186,7 +191,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hx->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10-phi.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-10-phi.png").c_str());
 
     auto hy = hjetPhiEtaPt->Project3D("y");
     hy->SetTitle("Jet: p_{T} #geq 10 GeV; #eta; Counts");
@@ -194,7 +199,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hy->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-10-eta.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-10-eta.png").c_str());
 
     c1->SetRightMargin(.04);
     gPad->SetLogy();
@@ -223,7 +228,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hz_xjCut->Draw("same");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-pt.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt.png").c_str());
 
     // ratio plots
     gPad->SetLogy(0);
@@ -242,7 +247,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hz_xjCut->Draw("same");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-pt-ratio.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt-ratio.png").c_str());
 
     c1->SetCanvasSize(2900, 1000);
     c1->SetLeftMargin(.06);
@@ -256,7 +261,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hyx->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-60.png").c_str());
 
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.15);
@@ -270,7 +275,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hx->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60-phi.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-60-phi.png").c_str());
 
     hy = hjetPhiEtaPt->Project3D("y");
     hy->SetTitle("Jet: p_{T} #geq 60 GeV; #eta; Counts");
@@ -278,7 +283,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hy->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetPhiEtaPt->GetName()) + "-60-eta.png").c_str());
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-60-eta.png").c_str());
 
     // ----------------------------------------------------------
 
@@ -295,7 +300,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hjetConstituentsVsPt->GetYaxis()->SetTitleOffset(1.4);
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hjetConstituentsVsPt->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(hjetConstituentsVsPt->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
 
@@ -307,7 +312,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hNJetsVsLeadPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(hNJetsVsLeadPt->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(hNJetsVsLeadPt->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
 
@@ -317,7 +322,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     h2LeadTowPtFracVsJetPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtFracVsJetPt->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt->GetName()) + ".png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.02);
@@ -368,7 +373,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtFracVsJetPt->GetName()) + "-py.png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt->GetName()) + "-py.png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.12);
@@ -380,7 +385,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     h2LeadTowPtFracVsJetPt_jetBkgCut->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtFracVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
 
     // ----------------------------------------------------------
 
@@ -391,21 +396,21 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     h2XjVsJetPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt->GetName()) + ".png").c_str());
 
     auto py = h2XjVsJetPt->ProjectionY();
     py->GetYaxis()->SetTitle("Counts");
     py->GetYaxis()->SetTitleOffset(1.5);
     py->Draw();
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt->GetName()) + "-py.png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt->GetName()) + "-py.png").c_str());
 
     auto py_60 = h2XjVsJetPt->ProjectionY("py_60",h2XjVsJetPt->GetXaxis()->FindBin(60), h2XjVsJetPt->GetNbinsX());
     py_60->SetTitle("Event: Lead Jet p_{T} #geq 60 GeV; x_{j}; Counts");
     py_60->GetYaxis()->SetTitleOffset(1.5);
     py_60->Draw();
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt->GetName()) + "-py-60.png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt->GetName()) + "-py-60.png").c_str());
 
     auto h2XjVsJetPt_jetBkgCut = (TH2*)input.Get("jets/h2XjVsJetPt_jetBkgCut");
     h2XjVsJetPt_jetBkgCut->GetXaxis()->SetRangeUser(10,200);
@@ -413,14 +418,14 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     h2XjVsJetPt_jetBkgCut->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
 
     auto py_jetBkgCut = h2XjVsJetPt_jetBkgCut->ProjectionY();
     py_jetBkgCut->GetYaxis()->SetTitle("Counts");
     py_jetBkgCut->GetYaxis()->SetTitleOffset(1.5);
     py_jetBkgCut->Draw();
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt_jetBkgCut->GetName()) + "-py.png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt_jetBkgCut->GetName()) + "-py.png").c_str());
 
     auto py_jetBkgCut_60 = h2XjVsJetPt_jetBkgCut->ProjectionY("py_jetBkgCut_60",h2XjVsJetPt_jetBkgCut->GetXaxis()->FindBin(60), h2XjVsJetPt_jetBkgCut->GetNbinsX());
     py_jetBkgCut_60->GetYaxis()->SetTitle("Counts");
@@ -428,7 +433,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     py_jetBkgCut_60->GetYaxis()->SetTitleOffset(1.5);
     py_jetBkgCut_60->Draw();
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2XjVsJetPt_jetBkgCut->GetName()) + "-py-60.png").c_str());
+    c1->Print((outputDir + "/" + string(h2XjVsJetPt_jetBkgCut->GetName()) + "-py-60.png").c_str());
 
     // ---------------------------------------------------
 
@@ -437,7 +442,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2LeadTowPtVsJetPt->GetYaxis()->SetTitleOffset(1.2);
     h2LeadTowPtVsJetPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtVsJetPt->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt->GetName()) + ".png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.04);
@@ -476,7 +481,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2LeadTowPtVsJetPt_60_py->Draw("same hist");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtVsJetPt_10_40_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_10_40_py->GetName()) + ".png").c_str());
 
     gPad->SetLogy(0);
     c1->SetLeftMargin(.15);
@@ -488,7 +493,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2LeadTowPtVsJetPt_jetBkgCut->GetYaxis()->SetTitleOffset(1.2);
     h2LeadTowPtVsJetPt_jetBkgCut->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_jetBkgCut->GetName()) + ".png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.04);
@@ -527,7 +532,7 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     h2LeadTowPtVsJetPt_jetBkgCut_60_py->Draw("same hist");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((string(h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetName()) + ".png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 
