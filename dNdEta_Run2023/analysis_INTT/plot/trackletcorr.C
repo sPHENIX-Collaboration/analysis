@@ -7,7 +7,7 @@ void trackletcorr()
     system(Form("mkdir -p %s", plotdir.c_str()));
 
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df("minitree", "/sphenix/tg/tg01/hf/hjheng/ppg02/minitree/TrackletMinitree_Data_Run54280_20250117_ProdA2024/dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0/minitree_segment*.root");
+    ROOT::RDataFrame df("minitree", "/sphenix/tg/tg01/hf/hjheng/ppg02/minitree/TrackletMinitree_Data_Run54280_20250210_ProdA2024/dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet1/minitree_segment*.root");
 
     // is_min_bias && firedTrig10_MBDSNgeq2 && |PV_z| <= 10 && |MBD_z_vtx| <= 10 && MBD_centrality<=70
     auto df_evtsel = df.Filter("is_min_bias && firedTrig10_MBDSNgeq2 && abs(PV_z) <= 10 && abs(MBD_z_vtx) <= 10 && MBD_centrality<=70 && !InttBco_IsToBeRemoved");
@@ -49,9 +49,12 @@ void trackletcorr()
     // remove double counting
     N_clus1PhiSize_or_clus2PhiSize4346 -= N_clus1PhiSize4346_and_clus2PhiSize4346;
 
-    double frac_clus1PhiSize4346_and_clus2PhiSize4346 = static_cast<double>(N_clus1PhiSize4346_and_clus2PhiSize4346) / static_cast<double>(hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1));
-    double frac_clus1PhiSize4346_or_clus2PhiSize4346 = static_cast<double>(N_clus1PhiSize_or_clus2PhiSize4346) / static_cast<double>(hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1));
-    cout << "Total number of entries in hM_clus1PhiSize_clus2PhiSize = " << hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1) << endl                                                                                   //
-         << "Number of entries for bins where both constituent cluster have a phi-size of 43 or 46 = " << N_clus1PhiSize4346_and_clus2PhiSize4346 << " -> Fraction = " << frac_clus1PhiSize4346_and_clus2PhiSize4346 << endl //
-         << "Number of entries for bins where either cluster has a phi-size of 43 or 46 = " << N_clus1PhiSize_or_clus2PhiSize4346 << " -> Fraction = " << frac_clus1PhiSize4346_or_clus2PhiSize4346 << endl;                 //
+    double frac_clus1PhiSize4346_and_clus2PhiSize4346 = static_cast<double>(N_clus1PhiSize4346_and_clus2PhiSize4346) / static_cast<double>(hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1)) * 100;
+    double frac_clus1PhiSize4346_or_clus2PhiSize4346 = static_cast<double>(N_clus1PhiSize_or_clus2PhiSize4346) / static_cast<double>(hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1)) * 100;
+    cout << "Total number of entries in hM_clus1PhiSize_clus2PhiSize = " << hM_clus1PhiSize_clus2PhiSize->Integral(-1, -1, -1, -1) << endl                                  //
+         << "Number of entries for bins where both constituent cluster have a phi-size of 43 or 46 = " << N_clus1PhiSize4346_and_clus2PhiSize4346 << " -> Fraction (%) = "; //
+    print_with_significant_digits(frac_clus1PhiSize4346_and_clus2PhiSize4346, 4);                                                                                           //
+    cout << endl << "Number of entries for bins where either cluster has a phi-size of 43 or 46 = " << N_clus1PhiSize_or_clus2PhiSize4346 << " -> Fraction (%)= ";
+    print_with_significant_digits(frac_clus1PhiSize4346_or_clus2PhiSize4346, 4);
+    cout << endl;
 }

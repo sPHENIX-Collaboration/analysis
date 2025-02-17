@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <fstream>
 #include <unordered_set>
+#include <filesystem>
 
 // root includes --
 #include <TSystem.h>
@@ -29,6 +30,8 @@ using std::vector;
 using std::pair;
 using std::min;
 using std::max;
+
+namespace fs = std::filesystem;
 
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libcdbobjects.so)
@@ -89,8 +92,8 @@ namespace myAnalysis {
     UInt_t m_bins_status = 2;
     UInt_t m_nStatus     = 5;
 
-    UInt_t m_bins_sigma  = 500;
-    Float_t m_sigma_low  = 0;
+    UInt_t m_bins_sigma  = 1000;
+    Float_t m_sigma_low  = -50;
     Float_t m_sigma_high = 50;
 
     UInt_t m_bins_acceptance = 101;
@@ -99,6 +102,7 @@ namespace myAnalysis {
 
     // run threshold above which towers are considered to be frequently hot
     UInt_t m_threshold = 400;
+    UInt_t m_threshold_low = 100;
 
     Float_t m_fraction_badChi2_threshold = 0.01;
     string m_detector = "CEMC";
@@ -334,13 +338,17 @@ Int_t myAnalysis::process_event(const string &outputRunStats) {
             }
 
             Float_t sigma_val = 0;
-            if(!hasBadSigma && hasHotMap) sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
-            if(std::isnan(sigma_val) || std::isinf(sigma_val)) {
-              hasBadSigma = true;
-              badSigma.insert(run);
+            if(!hasBadSigma && hasHotMap) {
+              sigma_val = m_cdbttree_hotMap->GetFloatValue(key, m_sigma_hotMap);
+              if(std::isnan(sigma_val) || std::isinf(sigma_val)) {
+                cout << "WARNING: sigma does not exist for channel: " << channel << ", key: " << key << endl;
+                hasBadSigma = true;
+                badSigma.insert(run);
+              }
+              else {
+                hHotTowerSigma_vec[channel]->Fill(sigma_val);
+              }
             }
-
-            if(!hasBadSigma) hHotTowerSigma_vec[channel]->Fill(sigma_val);
 
             if (hasHotMap && hotMap_val != 0) {
                 hBadTowers->Fill(channel);
@@ -508,6 +516,7 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
 
   output.mkdir("h2HotTowerFrequency");
   output.mkdir("hHotTowerSigma");
+  output.mkdir("hHotTowerSigmaLessFreq");
 
   UInt_t ctr[5] = {0};
   UInt_t ctr_freq[5] = {0};
@@ -533,6 +542,10 @@ void myAnalysis::finalize(const string &i_output, const string &outputMissingHot
 
             hSigmaFreqHot->Add(hHotTowerSigma_vec[i]);
             ++ctr_freq[0];
+        }
+        else if (hBadTowersHot->GetBinContent(i + 1) >= m_threshold_low) {
+            output.cd("hHotTowerSigmaLessFreq");
+            hHotTowerSigma_vec[i]->Write();
         }
         else hSigmaHot->Add(hHotTowerSigma_vec[i]);
 
@@ -569,9 +582,9 @@ void HotTowerAnalysis(const string &input,
                       const string &output = "test.root",
                       const Bool_t doTime = true,
                       const Int_t maxRuns = 0,
-                      const string &outputMissingHotMap = "missingHotMap.csv",
-                      const string &outputMissingBadChi2 = "missingBadChi2.csv",
-                      const string &outputRunStats = "acceptance.csv") {
+                      string outputMissingHotMap = "missingHotMap.csv",
+                      string outputMissingBadChi2 = "missingBadChi2.csv",
+                      string outputRunStats = "acceptance.csv") {
 
     cout << "#############################" << endl;
     cout << "Input Parameters" << endl;
@@ -584,6 +597,13 @@ void HotTowerAnalysis(const string &input,
 
     myAnalysis::m_doTime = doTime;
     myAnalysis::m_maxRuns = maxRuns;
+    string m_outputDir = fs::absolute(output).parent_path().string();
+
+    fs::create_directories(m_outputDir);
+
+    outputRunStats = m_outputDir + "/" + outputRunStats;
+    outputMissingHotMap = m_outputDir + "/" + outputMissingHotMap;
+    outputMissingBadChi2 = m_outputDir + "/" + outputMissingBadChi2;
 
     if (myAnalysis::m_detector == "HCALIN" || myAnalysis::m_detector == "HCALOUT") {
       myAnalysis::m_bins_phi = 64;
@@ -616,7 +636,7 @@ if(argc < 2 || argc > 8) {
         cout << "usage: ./hotAna inputFile [outputFile] [doTime] [maxRuns] [outputMissingHotMap] [outputMissingBadChi2] [outputRunStats]" << endl;
         cout << "inputFile: containing list of run numbers" << endl;
         cout << "outputFile: location of output file. Default: test.root." << endl;
-        cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: false." << endl;
+        cout << "doTime: Do Time Analysis, requires input list to be <run>, <timestamp>. Default: true." << endl;
         cout << "maxRuns: Max runs to process (useful when testing). Default: 0 (means run all)." << endl;
         cout << "outputMissingHotMap: location of outputMissingHotMap file. Default: missingHotMap.csv." << endl;
         cout << "outputMissingBadChi2: location of outputMissingBadChi2 file. Default: missingBadChi2.csv." << endl;

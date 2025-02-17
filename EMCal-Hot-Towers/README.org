@@ -2,7 +2,7 @@
 #+begin_src bash
 ./utils.py gen -t <ana-tag> -n <events> -o <output>
 #+end_src
-By default the <ana-tag> is ana437 which contains the pp dataset. The <events> parameter controls the minimum number of events for a run to be considered and <output> is the location of the directory where the run list is generated.
+By default the <ana-tag> is ana446 which contains the pp dataset. The <events> parameter controls the minimum number of events for a run to be considered and <output> is the location of the directory where the run list is generated.
 
 Example:
 #+begin_src bash
@@ -11,28 +11,36 @@ Example:
 
 Example output:
 #+begin_src text
-files/ana437
- 34k ├──  runs-ana437-timestamp.list
-7.9k ├──  runs-ana437.list
+files/ana446
+ 34k ├──  runs-ana446-timestamp.list
+7.9k ├──  runs-ana446.list
  14k ├──  runs-hot-maps.list
 227k └──  runs-timestamp.list
 #+end_src
 
-- runs-ana437-timestamp.list contains runs that have at least 500k events from ana437 build as well as their start timestamp
-- runs-ana437.list contains just run numbers of the above case
+- runs-ana446-timestamp.list contains runs that have at least 500k events from ana446 build as well as their start timestamp
+- runs-ana446.list contains just run numbers of the above case
 - runs-timestamp.list contains all runs with their timestamp (larger sample for future reference), no minimum event requirement
 
 * Analyze Bad Tower Maps from Run List
 
 Process all runs:
 #+begin_src bash
-root -b -l -q 'macro/HotTowerAnalysis.C("files/ana437/runs-ana437.list","test.root",0)'
+root -b -l -q 'macro/HotTowerAnalysis.C("files/ana446/runs-ana446-timestamp.list","hot.root",0)'
 #+end_src
 
 Process fixed number of runs (ex: 20) which is useful in testing:
 #+begin_src bash
-root -b -l -q 'macro/HotTowerAnalysis.C("files/ana437/runs-ana437.list","test.root",0,20)'
+root -b -l -q 'macro/HotTowerAnalysis.C("files/ana446/runs-ana446-timestamp.list","hot.root",0,20)'
 #+end_src
+
+* Generate Frequent Bad Tower List
+
+Pass in the `hot.root` file generated from the HotTowerAnalysis.C macro to the genHotTowerList.C macro as follows:
+#+begin_src bash
+root -b -l -q 'macro/genHotTowerList.C("hot.root")'
+#+end_src
+This generates hot.list which contains a list of the frequent bad towers and the reference towers.
 
 * Bad Tower Status
 - 1: Dead
@@ -43,20 +51,20 @@ root -b -l -q 'macro/HotTowerAnalysis.C("files/ana437/runs-ana437.list","test.ro
 
 ** After editing Makefile.am
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root hot.list test.root 5000 2>/dev/null
 #+end_src
 
 #+begin_src
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root","hot.list","test.root",5000)'
 #+end_src
 
 ** After editing .cc or .h
 #+begin_src bash
-make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALO_run2pp_new_2024p004-00048089-00000.root files/hot-p004.list test.root 100 2>/dev/null
+make install -j8 --directory build && rm bin/Fun4All_CaloHotTower && make && ./bin/Fun4All_CaloHotTower DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root hot.list test.root 5000 2>/dev/null
 #+end_src
 
 #+begin_src
-make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALO_run2pp_new_2024p004-00048089-00000.root","files/hot-p004.list","test.root",100)'
+make install -j8 --directory build && root -b -l -q 'macro/Fun4All_CaloHotTower.C("DST_CALOFITTING_run2pp_ana446_2024p007-00053376-00000.root","hot.list","test.root",5000)'
 #+end_src
 
 * Condor Tips

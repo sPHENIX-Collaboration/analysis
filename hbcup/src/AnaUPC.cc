@@ -88,6 +88,7 @@ AnaUPC::~AnaUPC()
   delete m_tracktree;
   delete m_truthtree;
   delete m_pairtree;
+  delete m_globaltree;
 }
 
 /**
@@ -119,8 +120,40 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
  
   h_trig = new TH1F("h_trig", "trig", 16, 0, 16);
   h_ntracks = new TH1F("h_ntracks", "num tracks", 2000, 0, 2000);
+  h2_ntrksvsb = new TH2F("h2_ntrksvsb", "num tracks vs b", 220, 0, 22, 2001, -0.5, 2000.5);
+  h2_ntrksvsb->SetXTitle("b [fm]");
+  h2_ntrksvsb->SetYTitle("N_{TRKS}");
 
   return 0;
+}
+
+/**
+ * Main workhorse function where each event is looped over and
+ * data from each event is collected from the node tree for analysis
+ */
+int AnaUPC::GetNodes(PHCompositeNode *topNode)
+{
+  /// EventHeader node
+  evthdr = findNode::getClass<EventHeader>(topNode, "EventHeader");
+
+  /// SVTX tracks node
+  trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+
+  if (!trackmap)
+  {
+    std::cout << PHWHERE << "SvtxTrackMap node is missing, can't collect tracks" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  /// HEPMC info
+  genevent_map = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
+  if (!genevent_map)
+  {
+    std::cout << PHWHERE << "PHHepMCGenEventMap node is missing, can't collect HEPMC info" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  return Fun4AllReturnCodes::EVENT_OK;
 }
 
 /**
@@ -136,12 +169,49 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
 
   h_trig->Fill( 0 );  // event counter
 
+  /// Get all the data nodes
+  int status = GetNodes(topNode);
+  if ( status != Fun4AllReturnCodes::EVENT_OK )
+  {
+    return status;
+  }
+
   /// Get the run and eventnumber
-  EventHeader *evthdr = findNode::getClass<EventHeader>(topNode, "EventHeader");
   if ( evthdr )
   {
     m_run = evthdr->get_RunNumber();
     m_evt = evthdr->get_EvtSequence();
+  }
+
+  /// Get the tracks
+  if (m_analyzeTracks)
+  {
+    status = getTracks(topNode);
+    if ( status != Fun4AllReturnCodes::EVENT_OK )
+    {
+      return status;
+    }
+  }
+
+  PHHepMCGenEvent *genevent = (genevent_map->begin())->second; 
+  if (genevent)
+  {
+    HepMC::GenEvent *event = genevent->getEvent();
+    HepMC::HeavyIon *hi = event->heavy_ion();
+    if ( hi )
+    {
+      m_npart_targ =  hi->Npart_targ();
+      m_npart_proj =  hi->Npart_proj();
+      m_npart = m_npart_targ + m_npart_proj;
+      m_ncoll =  hi->Ncoll();
+      m_ncoll_hard =  hi->Ncoll_hard();
+      //std::cout << "ncoll " << m_ncoll << "\t" << m_ncoll_hard << std::endl;
+      m_bimpact =  hi->impact_parameter();
+      //std::cout << "b ntracks " << m_bimpact << "\t" << m_ntracks << std::endl;
+
+      h2_ntrksvsb->Fill( m_bimpact, m_ntracks );
+      m_globaltree->Fill();
+    }
   }
 
   /// Get the truth information
@@ -149,16 +219,6 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   {
     getHEPMCTruth(topNode);
     getPHG4Truth(topNode);
-  }
-
-  /// Get the tracks
-  if (m_analyzeTracks)
-  {
-    int status = getTracks(topNode);
-    if ( status != Fun4AllReturnCodes::EVENT_OK )
-    {
-      return status;
-    }
   }
 
   /// Get calorimeter information
@@ -178,13 +238,15 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
  */
 int AnaUPC::End(PHCompositeNode * /*topNode*/)
 {
-  if (Verbosity() > 1)
+  if (Verbosity() > 5)
   {
     std::cout << "Ending AnaUPC analysis package" << std::endl;
   }
 
   /// Change to the outfile
   m_outfile->cd();
+
+  m_globaltree->Write();
 
   /// If we analyzed the tracks, write the tree out
   if (m_analyzeTracks)
@@ -374,27 +436,16 @@ void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
  */
 int AnaUPC::getTracks(PHCompositeNode *topNode)
 {
-  /// SVTX tracks node
-  SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
-
-  if (!trackmap)
-  {
-    std::cout << PHWHERE
-              << "SvtxTrackMap node is missing, can't collect tracks"
-              << std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
-  }
-
   // make a cut on low ntracks
-  size_t ntracks = trackmap->size();
-  h_ntracks->Fill( ntracks );
+  m_ntracks = trackmap->size();
+  h_ntracks->Fill( m_ntracks );
   if (Verbosity() > 1)
   {
-    std::cout << "ntracks " << ntracks << std::endl;
+    std::cout << "ntracks " << m_ntracks << std::endl;
   }
 
-  //if ( ntracks > 3 || ntracks < 2 )
-  if ( ntracks != 2 )
+  //if ( m_ntracks > 3 || m_ntracks < 2 )
+  if ( m_ntracks != 2 )
   {
     return Fun4AllReturnCodes::DISCARDEVENT;
   }
@@ -416,7 +467,7 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
 
   if (Verbosity() > 1)
   {
-    std::cout << "Get the SVTX tracks " << ntracks << std::endl;
+    std::cout << "Get the SVTX tracks " << m_ntracks << std::endl;
   }
 
   for (auto &iter : *trackmap)
@@ -701,6 +752,14 @@ void AnaUPC::initializeTrees()
   m_hepmctree->Branch("m_truthpt", &m_truthpt, "m_truthpt/D");
   m_hepmctree->Branch("m_numparticlesinevent", &m_numparticlesinevent, "m_numparticlesinevent/I");
   m_hepmctree->Branch("m_truthpid", &m_truthpid, "m_truthpid/I");
+
+  m_globaltree = new TTree("globaltree", "Global Info");
+  m_globaltree->Branch("run", &m_run, "run/I");
+  m_globaltree->Branch("evt", &m_evt, "evt/I");
+  m_globaltree->Branch("ntrks", &m_ntracks, "ntrks/I");
+  m_globaltree->Branch("npart", &m_npart, "npart/I");
+  m_globaltree->Branch("ncoll", &m_ncoll, "ncoll/I");
+  m_globaltree->Branch("b", &m_bimpact, "b/F");
 
   m_truthtree = new TTree("truthg4tree", "A tree with truth g4 particles");
   m_truthtree->Branch("m_truthenergy", &m_truthenergy, "m_truthenergy/D");

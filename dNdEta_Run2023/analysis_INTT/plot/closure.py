@@ -234,7 +234,7 @@ if __name__ == '__main__':
         # Raw generated hadron distribution
         
     if docompare:
-        hM_dNdeta_1D_Datareco_tight_PostCorrection = GetHistogram("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root".format(MbinNum, MbinNum, MbinNum), 'h1D_dNdEta_reco')
+        hM_dNdeta_1D_Datareco_tight_PostCorrection = GetHistogram("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root".format(MbinNum, MbinNum, MbinNum), 'h1D_dNdEta_reco')
     
     # split the string by '_' and replace some characters
     descstr = filedesc.split('_')

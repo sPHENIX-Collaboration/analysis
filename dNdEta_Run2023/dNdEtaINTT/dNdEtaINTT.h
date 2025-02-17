@@ -173,6 +173,7 @@ class dNdEtaINTT : public SubsysReco
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
     void GetTriggerInfo(PHCompositeNode *topNode);
+    std::vector<int> GetAncestors(PHG4Particle *p);
 
     bool _get_hepmc_info;
     bool _get_truth_cluster;
@@ -259,6 +260,7 @@ class dNdEtaINTT : public SubsysReco
     std::vector<float> ClusMatchedG4P_MaxE_Eta_;
     std::vector<float> ClusMatchedG4P_MaxE_Phi_;
     std::vector<int> ClusMatchedG4P_MaxClusE_trackID_; // max_truth_particle_by_cluster_energy
+    std::vector<int> ClusMatchedG4P_MaxClusE_ancestorTrackID_;
     std::vector<float> ClusMatchedG4P_MaxClusE_Pt_;
     std::vector<float> ClusMatchedG4P_MaxClusE_Eta_;
     std::vector<float> ClusMatchedG4P_MaxClusE_Phi_;

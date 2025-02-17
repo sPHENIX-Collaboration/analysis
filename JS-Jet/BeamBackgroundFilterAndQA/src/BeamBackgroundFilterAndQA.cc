@@ -11,9 +11,9 @@
 
 #define BEAMBACKGROUNDFILTERANDQA_CC
 
-// c++ utiilites
-#include <cassert>
-#include <iostream>
+// module components
+#include "BeamBackgroundFilterAndQA.h"
+#include "BeamBackgroundFilterAndQADefs.h"
 
 // calo base
 #include <calobase/TowerInfoContainer.h>
@@ -27,7 +27,6 @@
 #include <phool/getClass.h>
 #include <phool/phool.h>
 #include <phool/PHCompositeNode.h>
-#include <phool/recoConsts.h>
 
 // qa utilities
 #include <qautils/QAHistManagerDef.h>
@@ -35,9 +34,9 @@
 // root libraries
 #include <TH1.h>
 
-// module components
-#include "BeamBackgroundFilterAndQA.h"
-#include "BeamBackgroundFilterAndQADefs.h"
+// c++ utiilites
+#include <cassert>
+#include <iostream>
 
 // alias for convenience
 namespace bbfqd = BeamBackgroundFilterAndQADefs;
@@ -51,6 +50,8 @@ namespace bbfqd = BeamBackgroundFilterAndQADefs;
 // ----------------------------------------------------------------------------
 BeamBackgroundFilterAndQA::BeamBackgroundFilterAndQA(const std::string& name, const bool debug)
   : SubsysReco(name)
+  , m_manager(nullptr)
+  , m_flags(name)
 {
 
   // print debug message
@@ -69,7 +70,7 @@ BeamBackgroundFilterAndQA::BeamBackgroundFilterAndQA(const std::string& name, co
 BeamBackgroundFilterAndQA::BeamBackgroundFilterAndQA(const Config& config)
   : SubsysReco(config.moduleName)
   , m_manager(nullptr)
-  , m_consts(nullptr)
+  , m_flags(config.moduleName)
   , m_config(config)
 {
 
@@ -106,7 +107,7 @@ BeamBackgroundFilterAndQA::~BeamBackgroundFilterAndQA()
 // ----------------------------------------------------------------------------
 //! Initialize module
 // ----------------------------------------------------------------------------
-int BeamBackgroundFilterAndQA::Init(PHCompositeNode* /*topNode*/)
+int BeamBackgroundFilterAndQA::Init(PHCompositeNode* topNode)
 {
 
   if (m_config.debug)
@@ -116,7 +117,7 @@ int BeamBackgroundFilterAndQA::Init(PHCompositeNode* /*topNode*/)
 
   // initialize relevant filters, histograms
   InitFilters();
-  InitFlags();
+  InitFlags(topNode);
   BuildHistograms();
 
   // if needed, initialize histograms + manager
@@ -142,13 +143,19 @@ int BeamBackgroundFilterAndQA::process_event(PHCompositeNode* topNode)
     std::cout << "BeamBackgroundFilterAndQA::process_event(PHCompositeNode *topNode) Processing event" << std::endl;
   }
 
+  // reset flags
+  SetDefaultFlags();
+
   // check for beam background
   const bool hasBeamBkgd = ApplyFilters(topNode);
+
+  // update flags on node tree
+  UpdateFlags(topNode);
 
   // if debugging, print out flags
   if (m_config.debug)
   {
-    m_consts->PrintIntFlags();
+    m_flags.printint();
   }
 
   // if it does, abort event
@@ -209,21 +216,29 @@ void BeamBackgroundFilterAndQA::InitFilters()
 // ----------------------------------------------------------------------------
 //! Initialize flags
 // ----------------------------------------------------------------------------
-void BeamBackgroundFilterAndQA::InitFlags()
+void BeamBackgroundFilterAndQA::InitFlags(PHCompositeNode* topNode)
 {
 
   // print debug message
   if (m_config.debug && (Verbosity() > 1))
   {
-    std::cout << "BeamBackgroundFilterAndQA::InitFlags() Initializing reco consts and flags" << std::endl;
+    std::cout << "BeamBackgroundFilterAndQA::InitFlags() Initializing flags" << std::endl;
   }
 
-  m_consts = recoConsts::instance();
-  for (const std::string& filterToApply : m_config.filtersToApply)
+  // add node for flags
+  PHNodeIterator itNode(topNode);
+  PHCompositeNode* parNode = dynamic_cast<PHCompositeNode*>(itNode.findFirst("PHCompositeNode", "PAR"));
+  if (!parNode)
   {
-    m_consts->set_IntFlag("HasBeamBackground_" + filterToApply + "Filter", 0);
+    std::cerr << PHWHERE << " WARNING: No PAR node found! Cannot add node for background flags to node tree!" << std::endl;
   }
-  m_consts->set_IntFlag("HasBeamBackground", 0);
+  else
+  {
+    m_flags.SaveToNodeTree(parNode, m_config.flagPrefix);
+  }
+
+  // initialize flags
+  SetDefaultFlags();
   return;
 
 }  // end 'InitFlags()'
@@ -326,6 +341,54 @@ void BeamBackgroundFilterAndQA::RegisterHistograms()
 
 
 // ----------------------------------------------------------------------------
+//! Set default values of flags
+// ----------------------------------------------------------------------------
+void BeamBackgroundFilterAndQA::SetDefaultFlags()
+{
+
+  // print debug message
+  if (m_config.debug && (Verbosity() > 1))
+  {
+    std::cout << "BeamBackgroundFilterAndQA::SetDefaultFlags() Setting defuault flag values" << std::endl;
+  }
+
+  // set default values
+  for (const std::string& filterToApply : m_config.filtersToApply)
+  {
+    m_flags.set_int_param(MakeFlagName(filterToApply), 0);
+  }
+  m_flags.set_int_param(MakeFlagName(), 0);
+  return;
+
+}  // end 'SetDefaultFlags()'
+
+
+
+// ----------------------------------------------------------------------------
+//! Update flags on the node tree
+// ----------------------------------------------------------------------------
+void BeamBackgroundFilterAndQA::UpdateFlags(PHCompositeNode* topNode)
+{
+
+  // print debug message
+  if (m_config.debug && (Verbosity() > 0))
+  {
+    std::cout << "BeamBackgroundFilterAndQA::UpdateFlags(PHCompositeNode*) Updating flags on the node tree" << std::endl;
+  }
+
+  PHNodeIterator itNode(topNode);
+  PHCompositeNode* parNode = dynamic_cast<PHCompositeNode*>(itNode.findFirst("PHCompositeNode", "PAR"));
+  if (parNode)
+  {
+    m_flags.UpdateNodeTree(parNode, m_config.flagPrefix);
+  }
+  return;
+
+}  // end 'UpdateFlags(PHCompositeNode*)'
+
+
+
+// ----------------------------------------------------------------------------
 //! Apply relevant filters
 // ----------------------------------------------------------------------------
 bool BeamBackgroundFilterAndQA::ApplyFilters(PHCompositeNode* topNode)
@@ -345,7 +408,7 @@ bool BeamBackgroundFilterAndQA::ApplyFilters(PHCompositeNode* topNode)
     if (filterFoundBkgd)
     {
       m_hists["nevts_" + filterToApply]->Fill(bbfqd::Status::HasBkgd);
-      m_consts->set_IntFlag("HasBeamBackground_" + filterToApply + "Filter", 1);
+      m_flags.set_int_param(MakeFlagName(filterToApply), 1);
     }
     else
     {
@@ -360,7 +423,7 @@ bool BeamBackgroundFilterAndQA::ApplyFilters(PHCompositeNode* topNode)
   if (hasBkgd)
   {
     m_hists["nevts_overall"]->Fill(bbfqd::Status::HasBkgd);
-    m_consts->set_IntFlag("HasBeamBackground", 1);
+    m_flags.set_int_param(MakeFlagName(), 1);
   }
   else
   {
@@ -369,5 +432,36 @@ bool BeamBackgroundFilterAndQA::ApplyFilters(PHCompositeNode* topNode)
   return hasBkgd;
 
 }  // end 'ApplyFilters(PHCompositeNode*)'
+
+
+
+// ----------------------------------------------------------------------------
+//! Create flag name
+// ----------------------------------------------------------------------------
+/*! Helper method to create a flag (PHParameters) name from a
+ *  provided filter name.  If no filter is provided, method
+ *  will return just the flag prefix.
+ */
+std::string BeamBackgroundFilterAndQA::MakeFlagName(const std::string& filter)
+{
+
+  // print debug message
+  if (m_config.debug && (Verbosity() > 2))
+  {
+    std::cout << "BeamBackgroundFilterAndQA::MakeFlagName(std::string&) Creating flag name" << std::endl;
+  }
+
+  // by default, return flag prefix; otherwise,
+  // combine prefix and filter name
+  if (filter.empty())
+  {
+    return m_config.flagPrefix;
+  }
+  else
+  {
+    return m_config.flagPrefix + "_" + filter + "Filter";
+  }
+
+}  // end 'MakeFlagName(std::string&)'
 
 // end ========================================================================

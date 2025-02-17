@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, TCanvas, TFile, TLegend, TColor, TLine, gROOT, gPad, gSystem, kBlack, kRed, kBlue, kGreen, kOrange, kMagenta, kCyan, kYellow, kViolet, kAzure, kTeal, kSpring, kPink, kGray, kWhite, kDashed, kSolid, kDashDotted, kDashDotted, kDotted, kTRUE, kFALSE
 import numpy
 import math
 import glob
@@ -121,8 +121,29 @@ gROOT.SetBatch(True)
 #         del c
 #         c = 0
 
+def colorset_alt(i):
+    if i == 1:
+        return ['#0F4C75']
+    elif i == 2:
+        return ['#0F4C75', '#810000']
+    elif i == 3:
+        return ['#0F4C75', '#810000', '#7F167F']
+    elif i == 4:
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E']
+    elif i == 5:
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E', '#e99960']
+    elif i == 6:
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB']
+    elif i == 7:
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66']
+    elif i == 8:
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
+    else:
+        print ("Attempt to use more than 5 colors")
+        return ['#0F4C75', '#810000', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
+
 def Draw_1Dhist_datasimcomp(hdata, hsims, gpadmargin, norm, logy, ymaxscale, XaxisName, Ytitle_unit, prelim, simlegtex, evtseltexts, outname):
-    hsimcolor = colorset(len(hsims))
+    hsimcolor = colorset_alt(len(hsims))
 
     hdata.Sumw2()
     for hsim in hsims:

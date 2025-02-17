@@ -13,20 +13,20 @@
 // module definition
 #include "TestPHFlags.h"
 
-// c++ utilities
-#include <iostream>
-#include <vector>
-
 // f4a libraries
 #include <fun4all/Fun4AllReturnCodes.h>
-//#include <ffaobjects/FlagSave.h>
-#include <ffaobjects/FlagSavev1.h>
-#include <phool/recoConsts.h>
+
+// pdbcalbase libraries
+#include <pdbcalbase/PdbParameterMap.h>
 
 // phool libraries
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
-#include <phool/PHFlag.h>
+#include <phool/phool.h>
+
+// c++ utilities
+#include <iostream>
+#include <vector>
 
 
 
@@ -35,18 +35,19 @@
 // ----------------------------------------------------------------------------
 //! Default module constructor
 // ----------------------------------------------------------------------------
-TestPHFlags::TestPHFlags(const std::string& name, const bool debug)
+TestPHFlags::TestPHFlags(const std::string& name, const std::string& flags, const bool debug)
   : SubsysReco(name)
-  , m_consts(nullptr)
+  , m_flags(name)
   , m_doDebug(debug)
+  , m_flagNode(flags)
 {
 
   if (m_doDebug)
   {
-    std::cout << "TestPHFlags::TestPHFlags(const std::string &name) Calling ctor" << std::endl;
+    std::cout << "TestPHFlags::TestPHFlags(std::string &name, std::string&, bool) Calling ctor" << std::endl;
   }
 
-}  // end ctor(std::string&, bool)
+}  // end ctor(std::string&, std::string&, bool)
 
 
 
@@ -64,6 +65,7 @@ TestPHFlags::~TestPHFlags()
 }  // end dtor
 
 
+
 // fun4all methods ============================================================ 
 
 // ----------------------------------------------------------------------------
@@ -77,10 +79,27 @@ int TestPHFlags::process_event(PHCompositeNode* topNode)
     std::cout << "TestPHFlags::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
   }
 
-  // instantiate flags database
-  // and print all int flags
-  m_consts = recoConsts::instance();
-  m_consts->PrintIntFlags();
+  // flags are stored under the PAR node
+  PHNodeIterator itNode(topNode);
+  PHCompositeNode* parNode = dynamic_cast<PHCompositeNode*>(itNode.findFirst("PHCompositeNode", "PAR"));
+  if (!parNode)
+  {
+    std::cerr << PHWHERE << " PANIC: PAR node not found! No flags present, and aborting event!" << std::endl;
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
+  // now retrieve flag node
+  PdbParameterMap* flagNode = findNode::getClass<PdbParameterMap>(parNode, m_flagNode);
+  if (!flagNode)
+  {
+    std::cerr << PHWHERE << " PANIC: " << m_flagNode << " node not found! Aborting event!" << std::endl;
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
+  // now pull all flags from node and print
+  // all int flags
+  m_flags.FillFrom(flagNode);
+  m_flags.printint();
 
   // and then explicitly look for these flags
   std::vector<std::string> flagsToCheck = {
@@ -92,10 +111,10 @@ int TestPHFlags::process_event(PHCompositeNode* topNode)
   // if flag exists, print value
   for (const std::string& flag : flagsToCheck)
   {
-    std::cout << "[" << flag << "] exists? " << m_consts->FlagExist(flag);
-    if (m_consts->FlagExist(flag))
+    std::cout << "[" << flag << "] exists? " << m_flags.exist_int_param(flag);
+    if (m_flags.exist_int_param(flag))
     {
-      std::cout << " : value = " << m_consts->get_IntFlag(flag) << std::endl;
+      std::cout << " : value = " << m_flags.get_int_param(flag) << std::endl;
     }
     else
     {

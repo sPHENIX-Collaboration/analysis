@@ -39,6 +39,7 @@ class Hit : public TObject
     unsigned int ClusADC() { return _clusadc; }
     pair<float, float> Edge();
     int MatchedG4P_trackID() { return matchedG4P_trackID; };
+    int MatchedG4P_ancestor_trackID() { return matchedG4P_ancestor_trackID; };
     float MatchedG4P_Pt() { return matchedG4P_Pt; };
     float MatchedG4P_Eta() { return matchedG4P_Eta; };
     float MatchedG4P_Phi() { return matchedG4P_Phi; };
@@ -47,7 +48,7 @@ class Hit : public TObject
     void SetPos(float, float, float);
     void SetVtx(float, float, float);
     void SetEdge(float, float);
-    void SetMatchedG4P(int, int, int, int);
+    void SetMatchedG4P(int, int, int, int, int);
     void SetMatchedTkl();
     bool IsMatchedTkl();
     void Print();
@@ -75,6 +76,7 @@ class Hit : public TObject
     TVector3 vecvtx;
     TVector3 vecrel;
     int matchedG4P_trackID; // only for simulation (matching)
+    int matchedG4P_ancestor_trackID;
     int matchedG4P_Pt;
     int matchedG4P_Eta;
     int matchedG4P_Phi;
@@ -188,9 +190,10 @@ TVector3 Hit::VecVtx() { return (vecvtx); }
 
 TVector3 Hit::VecRel() { return (vecrel); }
 
-void Hit::SetMatchedG4P(int trackID, int Pt, int Eta, int Phi)
+void Hit::SetMatchedG4P(int trackID, int ancestor_trackID, int Pt, int Eta, int Phi)
 {
     matchedG4P_trackID = trackID;
+    matchedG4P_ancestor_trackID = ancestor_trackID;
     matchedG4P_Pt = Pt;
     matchedG4P_Eta = Eta;
     matchedG4P_Phi = Phi;

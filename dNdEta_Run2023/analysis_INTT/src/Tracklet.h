@@ -127,6 +127,7 @@ class TrackletData
     vector<float> clusphi, cluseta, clusphisize, cluszsize;
     vector<unsigned int> clusadc;
 
+    vector<float> tklclus1x, tklclus1y, tklclus1z, tklclus2x, tklclus2y, tklclus2z;                     // detailed info
     vector<float> tklclus1phi, tklclus1eta, tklclus2phi, tklclus2eta, tklclus1phisize, tklclus2phisize; // 1=inner, 2=outer
     vector<unsigned int> tklclus1adc, tklclus2adc;
 
@@ -135,6 +136,8 @@ class TrackletData
     vector<float> recotklraw_dca3dvtx;
 
     vector<bool> recotkl_isMatchedGChadron;
+    vector<int> recotkl_clus1_matchedtrackID, recotkl_clus2_matchedtrackID;
+    vector<int> recotkl_clus1_matchedAncestorTrackID, recotkl_clus2_matchedAncestorTrackID;
     vector<int> matchedGChadron_trackID;
     vector<float> matchedGChadron_pt, matchedGChadron_eta, matchedGChadron_phi;
 
@@ -147,7 +150,7 @@ class TrackletData
     vector<bool> GenHadron_IsRecotkl;
 };
 
-void SetMinitree(TTree *outTree, TrackletData &tkldata)
+void SetMinitree(TTree *outTree, TrackletData &tkldata, bool detailed = false)
 {
     outTree->Branch("event", &tkldata.event);
     outTree->Branch("INTT_BCO", &tkldata.INTT_BCO);
@@ -180,6 +183,15 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("clusPhiSize", &tkldata.clusphisize);
     outTree->Branch("clusZSize", &tkldata.cluszsize);
     outTree->Branch("clusADC", &tkldata.clusadc);
+    if (detailed)
+    {
+        outTree->Branch("tklclus1x", &tkldata.tklclus1x);
+        outTree->Branch("tklclus1y", &tkldata.tklclus1y);
+        outTree->Branch("tklclus1z", &tkldata.tklclus1z);
+        outTree->Branch("tklclus2x", &tkldata.tklclus2x);
+        outTree->Branch("tklclus2y", &tkldata.tklclus2y);
+        outTree->Branch("tklclus2z", &tkldata.tklclus2z);
+    }
     outTree->Branch("tklclus1Phi", &tkldata.tklclus1phi);
     outTree->Branch("tklclus1Eta", &tkldata.tklclus1eta);
     outTree->Branch("tklclus2Phi", &tkldata.tklclus2phi);
@@ -198,6 +210,10 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     if (!tkldata.isdata)
     {
         outTree->Branch("recotkl_isMatchedGChadron", &tkldata.recotkl_isMatchedGChadron);
+        outTree->Branch("recotkl_clus1_matchedtrackID", &tkldata.recotkl_clus1_matchedtrackID);
+        outTree->Branch("recotkl_clus2_matchedtrackID", &tkldata.recotkl_clus2_matchedtrackID);
+        outTree->Branch("recotkl_clus1_matchedAncestorTrackID", &tkldata.recotkl_clus1_matchedAncestorTrackID);
+        outTree->Branch("recotkl_clus2_matchedAncestorTrackID", &tkldata.recotkl_clus2_matchedAncestorTrackID);
         outTree->Branch("matchedGChadron_pt", &tkldata.matchedGChadron_pt);
         outTree->Branch("matchedGChadron_eta", &tkldata.matchedGChadron_eta);
         outTree->Branch("matchedGChadron_phi", &tkldata.matchedGChadron_phi);
@@ -249,6 +265,12 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.cluszsize);
     CleanVec(tkldata.clusadc);
 
+    CleanVec(tkldata.tklclus1x);
+    CleanVec(tkldata.tklclus1y);
+    CleanVec(tkldata.tklclus1z);
+    CleanVec(tkldata.tklclus2x);
+    CleanVec(tkldata.tklclus2y);
+    CleanVec(tkldata.tklclus2z);
     CleanVec(tkldata.tklclus1phi);
     CleanVec(tkldata.tklclus1eta);
     CleanVec(tkldata.tklclus2phi);
@@ -266,6 +288,10 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.recotklraw_dca3dvtx);
 
     CleanVec(tkldata.recotkl_isMatchedGChadron);
+    CleanVec(tkldata.recotkl_clus1_matchedtrackID);
+    CleanVec(tkldata.recotkl_clus2_matchedtrackID);
+    CleanVec(tkldata.recotkl_clus1_matchedAncestorTrackID);
+    CleanVec(tkldata.recotkl_clus2_matchedAncestorTrackID);
     CleanVec(tkldata.matchedGChadron_trackID);
     CleanVec(tkldata.matchedGChadron_pt);
     CleanVec(tkldata.matchedGChadron_eta);
@@ -383,6 +409,12 @@ void RecoTracklets(TrackletData &tkldata)
             tkldata.recotklraw_dphi.push_back(tkl->dPhi());
             tkldata.recotklraw_dR.push_back(tkl->dR());
 
+            tkldata.tklclus1x.push_back(tkl->Hit1()->posX());
+            tkldata.tklclus1y.push_back(tkl->Hit1()->posY());
+            tkldata.tklclus1z.push_back(tkl->Hit1()->posZ());
+            tkldata.tklclus2x.push_back(tkl->Hit2()->posX());
+            tkldata.tklclus2y.push_back(tkl->Hit2()->posY());
+            tkldata.tklclus2z.push_back(tkl->Hit2()->posZ());
             tkldata.tklclus1phi.push_back(tkl->Hit1()->Phi());
             tkldata.tklclus1eta.push_back(tkl->Hit1()->Eta());
             tkldata.tklclus2phi.push_back(tkl->Hit2()->Phi());
@@ -449,9 +481,17 @@ void RecoTkl_isG4P(TrackletData &tkldata)
 {
     // std::set for the matched G4P track ID
     std::set<int> G4PTrackID_tklmatched;
+    std::set<int> G4PAncestorTrackID_tklmatched;
     for (auto &tkl : tkldata.RecoTkls)
     {
+        tkldata.recotkl_clus1_matchedtrackID.push_back(tkl->Hit1()->MatchedG4P_trackID());
+        tkldata.recotkl_clus2_matchedtrackID.push_back(tkl->Hit2()->MatchedG4P_trackID());
+        tkldata.recotkl_clus1_matchedAncestorTrackID.push_back(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+        tkldata.recotkl_clus2_matchedAncestorTrackID.push_back(tkl->Hit2()->MatchedG4P_ancestor_trackID());
+        // std::cout << "Tracklet (delta phi, delta eta, delta R) = (" << tkl->dPhi() << ", " << tkl->dEta() << ", " << tkl->dR() << ")" << std::endl;
         // std::cout << "Tracklet cluster 1: matched G4P track ID = " << tkl->Hit1()->MatchedG4P_trackID() << " ; cluster 2: matched G4P track ID = " << tkl->Hit2()->MatchedG4P_trackID() << std::endl;
+        // std::cout << "Tracklet cluster 1: matched G4P ancestor track ID = " << tkl->Hit1()->MatchedG4P_ancestor_trackID() << " ; cluster 2: matched G4P ancestor track ID = " << tkl->Hit2()->MatchedG4P_ancestor_trackID() << std::endl //
+                //   << "--------------------------------" << std::endl;                                                                                                                                                                    //
         if ((tkl->Hit1()->MatchedG4P_trackID() == tkl->Hit2()->MatchedG4P_trackID()) && (tkl->Hit1()->MatchedG4P_trackID() != std::numeric_limits<int>::max()))
         {
             // now we have to see if the matched G4P track ID is in the GenHadron_trackID vector
@@ -466,6 +506,7 @@ void RecoTkl_isG4P(TrackletData &tkldata)
 
                 // add the matched G4P track ID to the set
                 G4PTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_trackID());
+                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
             }
             else // it's not generated charged hadron
             {
@@ -474,6 +515,8 @@ void RecoTkl_isG4P(TrackletData &tkldata)
                 tkldata.matchedGChadron_pt.push_back(-1);
                 tkldata.matchedGChadron_eta.push_back(-1);
                 tkldata.matchedGChadron_phi.push_back(-1);
+
+                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
             }
         }
         else
@@ -487,6 +530,7 @@ void RecoTkl_isG4P(TrackletData &tkldata)
     }
 
     // Check for each element in the set if it is in the PrimaryG4P_trackID vector. If it is, set the corresponding element in PrimaryG4P_IsRecotkl to true
+    std::cout << "G4PTrackID_tklmatched size: " << G4PTrackID_tklmatched.size() << std::endl;
     for (auto &trackID : G4PTrackID_tklmatched)
     {
         auto it = std::find(tkldata.PrimaryG4P_trackID.begin(), tkldata.PrimaryG4P_trackID.end(), trackID);
@@ -498,7 +542,8 @@ void RecoTkl_isG4P(TrackletData &tkldata)
     }
 
     // Check for each element in the set if it is in the GenHadron_trackID vector. If it is, set the corresponding element in GenHadron_IsRecotkl to true
-    for (auto &trackID : G4PTrackID_tklmatched)
+    std::cout << "G4PAncestorTrackID_tklmatched size: " << G4PAncestorTrackID_tklmatched.size() << std::endl;
+    for (auto &trackID : G4PAncestorTrackID_tklmatched)
     {
         auto it = std::find(tkldata.GenHadron_trackID.begin(), tkldata.GenHadron_trackID.end(), trackID);
         if (it != tkldata.GenHadron_trackID.end())
@@ -510,6 +555,7 @@ void RecoTkl_isG4P(TrackletData &tkldata)
 
     // clear the set
     G4PTrackID_tklmatched.clear();
+    G4PAncestorTrackID_tklmatched.clear();
 }
 
 #endif

@@ -106,10 +106,11 @@ CaloHotTower::CaloHotTower(const string &name):
  bins_energy(3280),
  energy_low(0),
  energy_high(16400), // 2^14 is the max value
- bins_events(1),
+ bins_events(m_triggers.size()),
  m_emcTowerNode("TOWERS_CEMC"),
  m_outputFile("test.root"),
- m_calibName_hotMap("CEMC_BadTowerMap")
+ m_calibName_hotMap("CEMC_BadTowerMap"),
+ triggeranalyzer(nullptr)
 {
   cout << "CaloHotTower::CaloHotTower(const string &name) Calling ctor" << endl;
 }
@@ -173,7 +174,12 @@ Int_t CaloHotTower::Init(PHCompositeNode *topNode) {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
-  hEvents = new TH1F("hEvents","Events; Status; Counts", bins_events,0,bins_events);
+  hEvents = new TH1F("hEvents","Events; Status; Counts", bins_events, 0, bins_events);
+  for(UInt_t i = 1; i <= bins_events; ++i) {
+    hEvents->GetXaxis()->SetBinLabel(i, m_triggers[i-1].c_str());
+  }
+
+  triggeranalyzer = new TriggerAnalyzer();
 
   UInt_t i = 0;
   // initialize histograms
@@ -233,6 +239,19 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  triggeranalyzer->decodeTriggers(topNode);
+
+  Bool_t isMB = false;
+  for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+    if(triggeranalyzer->didTriggerFire(m_triggers[i])) {
+      isMB = true;
+      hEvents->Fill(i);
+    }
+  }
+
+  // skip event if MBD trigger isn't fired
+  if(!isMB) return Fun4AllReturnCodes::ABORTEVENT;
+
   for (UInt_t i = 0; i < hotTowerIndex.size(); ++i) {
     UInt_t towerIndex = hotTowerIndex[i].first;
     UInt_t key        = towers->encode_key(towerIndex);
@@ -269,8 +288,6 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
     }
   }
 
-  hEvents->Fill(0);
-
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -278,6 +295,10 @@ Int_t CaloHotTower::process_event(PHCompositeNode *topNode) {
 Int_t CaloHotTower::End(PHCompositeNode *topNode) {
   cout << "CaloHotTower::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Min Energy: " << energy_min << ", Max Energy: " << energy_max << endl;
+  cout << "Trigger Summary" << endl;
+  for(UInt_t i = 0; i < m_triggers.size(); ++i) {
+    cout << m_triggers[i] << ": " << hEvents->GetBinContent(i+1) << " Events" << endl;
+  }
 
   TFile output(m_outputFile.c_str(),"recreate");
 
@@ -300,7 +321,6 @@ Int_t CaloHotTower::End(PHCompositeNode *topNode) {
   }
 
   output.Close();
-
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

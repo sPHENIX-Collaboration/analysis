@@ -1,7 +1,7 @@
 # Beam Background Filter and QA
 
 ### Authors:
-Hanpu Jiang, Derek Anderson, Noah Applegate
+Hanpu Jiang, Derek Anderson, Noah Applegate, Joey Clement
 
 ### Description:
 Development repo for a F4A module to filter out events with significant beam

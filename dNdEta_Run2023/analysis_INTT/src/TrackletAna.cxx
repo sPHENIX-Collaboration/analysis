@@ -21,6 +21,7 @@
 
 bool verbose_debug = false;
 bool useetadepadccut = false;
+bool savedetail = true;
 
 int main(int argc, char *argv[])
 {
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
     std::map<uint64_t, vector<float>> EvtVtxMap_inttbco = EvtVtx_map_inttbco(EvtVtx_map_filename.Data()); // use with data
 
     // Vertex Z reweighting
-    TH1F *hM_vtxzweight = VtxZ_ReweiHist("/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/HIJING_ananew_20250131/VtxZ_reweight_HIJING_ananew_20250131.root", "VtxZ_reweight_VtxZm10to10");
+    TH1F *hM_vtxzweight = VtxZ_ReweiHist("/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/HIJING_ananew_20250210/VtxZ_reweight_HIJING_ananew_20250210.root", "VtxZ_reweight_VtxZm10to10");
 
     // Random cluster
     int Nrandclus = RandomHit(randclusset);
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
     vector<int> *ClusLayer = 0;
     vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusPhiSize = 0, *ClusZSize = 0;
     vector<unsigned int> *ClusAdc = 0;
-    vector<int> *ClusMatchedG4P_MaxE_trackID = 0;
+    vector<int> *ClusMatchedG4P_MaxE_trackID = 0, *ClusMatchedG4P_MaxClusE_ancestorTrackID = 0;
     vector<float> *ClusMatchedG4P_MaxE_Pt = 0, *ClusMatchedG4P_MaxE_Eta = 0, *ClusMatchedG4P_MaxE_Phi = 0;
     vector<int> *PrimaryG4P_PID = 0, *PrimaryG4P_trackID = 0;
     vector<float> *PrimaryG4P_Pt = 0, *PrimaryG4P_Eta = 0, *PrimaryG4P_Phi = 0, *PrimaryG4P_E = 0;
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
         t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
         t->SetBranchAddress("ClusMatchedG4P_MaxE_trackID", &ClusMatchedG4P_MaxE_trackID);
+        t->SetBranchAddress("ClusMatchedG4P_MaxClusE_ancestorTrackID", &ClusMatchedG4P_MaxClusE_ancestorTrackID);
         t->SetBranchAddress("ClusMatchedG4P_MaxE_Pt", &ClusMatchedG4P_MaxE_Pt);
         t->SetBranchAddress("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta);
         t->SetBranchAddress("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi);
@@ -132,7 +134,7 @@ int main(int argc, char *argv[])
 
     TFile *outfile = new TFile(outfilename, "RECREATE");
     TTree *minitree = new TTree("minitree", "Minitree of Reconstructed Tracklets");
-    SetMinitree(minitree, tkldata);
+    SetMinitree(minitree, tkldata, savedetail);
 
     for (int i = 0; i < NevtToRun_; i++)
     {
@@ -215,7 +217,7 @@ int main(int argc, char *argv[])
 
             if (!IsData)
             {
-                hit->SetMatchedG4P(ClusMatchedG4P_MaxE_trackID->at(ihit), ClusMatchedG4P_MaxE_Pt->at(ihit), ClusMatchedG4P_MaxE_Eta->at(ihit), ClusMatchedG4P_MaxE_Phi->at(ihit));
+                hit->SetMatchedG4P(ClusMatchedG4P_MaxE_trackID->at(ihit), ClusMatchedG4P_MaxClusE_ancestorTrackID->at(ihit), ClusMatchedG4P_MaxE_Pt->at(ihit), ClusMatchedG4P_MaxE_Eta->at(ihit), ClusMatchedG4P_MaxE_Phi->at(ihit));
             }
 
             tkldata.layers[layer].push_back(hit);

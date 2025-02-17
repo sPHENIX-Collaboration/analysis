@@ -226,6 +226,7 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta_);
             outtree->Branch("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi_);
             outtree->Branch("ClusMatchedG4P_MaxClusE_trackID", &ClusMatchedG4P_MaxClusE_trackID_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_ancestorTrackID", &ClusMatchedG4P_MaxClusE_ancestorTrackID_);
             outtree->Branch("ClusMatchedG4P_MaxClusE_Pt", &ClusMatchedG4P_MaxClusE_Pt_);
             outtree->Branch("ClusMatchedG4P_MaxClusE_Eta", &ClusMatchedG4P_MaxClusE_Eta_);
             outtree->Branch("ClusMatchedG4P_MaxClusE_Phi", &ClusMatchedG4P_MaxClusE_Phi_);
@@ -316,6 +317,34 @@ int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
     if (Verbosity() >= VERBOSITY_MORE)
         std::cout << "dNdEtaINTT::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
+std::vector<int> dNdEtaINTT::GetAncestors(PHG4Particle *p)
+{
+    // std::cout << "In GetG4Ancestor: " << std::endl << "start with original particle: ";
+    // p->identify();
+
+    // check if m_truth_info is available
+    if (!m_truth_info)
+    {
+        std::cout << __func__ << " " << __LINE__ << ": PHG4TruthInfoContainer not found. Exit!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<int> ancestors_trackID;
+    ancestors_trackID.clear();
+
+    PHG4Particle *ancestor = m_truth_info->GetParticle(p->get_parent_id());
+    // PHG4Particle *prevpart = p;
+    while (ancestor != nullptr)
+    {
+        ancestors_trackID.push_back(ancestor->get_track_id());
+        // ancestor->identify();
+        // prevpart = ancestor;
+        ancestor = m_truth_info->GetParticle(ancestor->get_parent_id());
+    }
+    return ancestors_trackID;
 }
 
 //____________________________________________________________________________..
@@ -471,12 +500,18 @@ void dNdEtaINTT::GetTriggerInfo(PHCompositeNode *topNode)
     firedTriggers_livescalers_.clear();
     firedTriggers_rawscalers_.clear();
 
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
     // Set up Trigger Analyzer
     triggeranalyzer = new TriggerAnalyzer();
     triggeranalyzer->decodeTriggers(topNode);
 
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
     // triggervec_ = gl1packet->getTriggerVector(); // just to get the original triggervec
     triggervec_ = gl1packet->getScaledVector();
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
 
     for (int i = 0; i < 64; i++)
     {
@@ -493,6 +528,8 @@ void dNdEtaINTT::GetTriggerInfo(PHCompositeNode *topNode)
         }
         triggervec_ = (triggervec_ >> 1U) & 0xffffffffU;
     }
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
 
     triggervec_ = gl1packet->getScaledVector(); // just to get the original triggervec
 }
@@ -988,6 +1025,15 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                     ClusMatchedG4P_MaxClusE_Pt_.push_back(p.Pt());
                     ClusMatchedG4P_MaxClusE_Eta_.push_back(p.Eta());
                     ClusMatchedG4P_MaxClusE_Phi_.push_back(p.Phi());
+                    // ancestors of the max cluster energy truth particle
+                    std::vector<int> ptcl_maxClusE_ancestorsTrackID = GetAncestors(ptcl_maxClusE);
+                    // if no ancestors, then the trackID of the max cluster energy truth particle is the ancestor
+                    // if has ancestors, then the trackID of the last element of ptcl_maxClusE_ancestorsTrackID is the ancestor trackID
+                    ClusMatchedG4P_MaxClusE_ancestorTrackID_.push_back((ptcl_maxClusE_ancestorsTrackID.size() == 0) ? ptcl_maxClusE->get_track_id() : ptcl_maxClusE_ancestorsTrackID.back());
+                    // std::cout << "Macthed ptcl_maxClusE trackID: " << ptcl_maxClusE->get_track_id() << " - Ancestors of the max cluster energy truth particle: ";
+                    // for (auto &i : ptcl_maxClusE_ancestorsTrackID)
+                    //     std::cout << i << " ";
+                    // std::cout << std::endl;
                 }
                 else
                 {
@@ -1322,6 +1368,7 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusMatchedG4P_MaxE_Eta_);
     CleanVec(ClusMatchedG4P_MaxE_Phi_);
     CleanVec(ClusMatchedG4P_MaxClusE_trackID_);
+    CleanVec(ClusMatchedG4P_MaxClusE_ancestorTrackID_);
     CleanVec(ClusMatchedG4P_MaxClusE_Pt_);
     CleanVec(ClusMatchedG4P_MaxClusE_Eta_);
     CleanVec(ClusMatchedG4P_MaxClusE_Phi_);

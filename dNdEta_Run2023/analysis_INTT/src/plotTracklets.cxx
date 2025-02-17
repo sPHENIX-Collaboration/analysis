@@ -221,7 +221,7 @@ void makehist(TString infname, TString outfname)
         if (InttBco_IsToBeRemoved)
             continue;
         
-        bool InttZvtxle10cm = (PV_z > -10. && PV_z < 10.);
+        bool InttZvtxle10cm = (PV_z >= -10. && PV_z <= 10.);
         bool evtsel = validMbdVtx && MbdNSge0 && is_min_bias && firedTrig10_MBDSNgeq2 && MbdZvtxle10cm && InttZvtxle10cm;
         if (!evtsel)
             continue; 
@@ -286,7 +286,7 @@ void makehist(TString infname, TString outfname)
         
         for (size_t i = 0; i < centrality_cut.size() - 1; i++)
         {
-            if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+            if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
             {
                 for (size_t j = 0; j < recotklraw_eta->size(); j++)
                 {
@@ -304,7 +304,7 @@ void makehist(TString infname, TString outfname)
 
             for (size_t i = 0; i < centrality_cut.size() - 1; i++)
             {
-                if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+                if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {
@@ -322,7 +322,7 @@ void makehist(TString infname, TString outfname)
             hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20->Fill(PV_z, vtxzwei);
             hM_MBDChargeAsymm_Le0p75_VtxZm20to20->Fill(mbd_charge_asymm, vtxzwei);
 
-            if (MBD_centrality >= 0 && MBD_centrality <= 0.7)
+            if (MBD_centrality >= 0 && MBD_centrality <= 70)
             {
                 for (size_t j = 0; j < recotklraw_eta->size(); j++)
                 {
@@ -339,7 +339,7 @@ void makehist(TString infname, TString outfname)
 
             for (size_t i = 0; i < centrality_cut.size() - 1; i++)
             {
-                if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+                if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {

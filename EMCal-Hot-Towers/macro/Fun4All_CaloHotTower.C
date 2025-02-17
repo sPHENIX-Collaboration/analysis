@@ -12,6 +12,10 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllUtils.h>
 
+#include <caloreco/CaloTowerStatus.h>
+
+#include <calotrigger/TriggerRunInfoReco.h>
+
 #include <phool/recoConsts.h>
 
 #include <calohottower/CaloHotTower.h>
@@ -65,6 +69,15 @@ void Fun4All_CaloHotTower(const string  &inputFile,
   // in->AddListFile(inputFile.c_str());
   in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
+
+  TriggerRunInfoReco* triggerruninforeco = new TriggerRunInfoReco();
+  se->registerSubsystem(triggerruninforeco);
+
+  // need to set the isBadChi2 flag for the towers
+  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
+  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+  statusEMC->set_time_cut(1);
+  se->registerSubsystem(statusEMC);
 
   CaloHotTower *calo = new CaloHotTower();
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);

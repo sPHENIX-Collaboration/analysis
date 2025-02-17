@@ -17,16 +17,16 @@ class RawCluster;
 class SvtxTrackMap;
 class JetMap;
 class GlobalVertex;
-class PHHepMCGenEventMap;
 class JetEvalStack;
 class JetRecoEval;
 class SvtxTrackEval;
 class PHG4TruthInfoContainer;
+class PHHepMCGenEventMap;
 class PHHepMCGenEvent;
 class CaloTriggerInfo;
 class JetTruthEval;
 class SvtxEvalStack;
-class JetEvalStack;
+class EventHeader;
 
 /// Definition of this analysis module class
 class AnaUPC : public SubsysReco
@@ -91,9 +91,9 @@ class AnaUPC : public SubsysReco
   TTree *m_tracktree{nullptr};
   TTree *m_hepmctree{nullptr};
   TTree *m_truthtree{nullptr};
+  TTree *m_globaltree{nullptr};
 
   TTree *m_pairtree{nullptr};
-  TTree *m_lspairtree{nullptr};
  
   TH1 *h_phi[2]{nullptr,nullptr};       // [0]=opp. sign, [1]=like sign
   TH2 *h2_eta_phi[2]{nullptr,nullptr};
@@ -104,18 +104,25 @@ class AnaUPC : public SubsysReco
 
   TH1 *h_trig{nullptr};
   TH1 *h_ntracks{nullptr};
+  TH2 *h2_ntrksvsb{nullptr};
   const double E_MASS = 0.000510998950;  // electron mass [Gev]
 
   SvtxEvalStack *m_svtxEvalStack{nullptr};
   //JetEvalStack *m_jetEvalStack{nullptr};
 
   /// Methods for grabbing the data
+  int GetNodes(PHCompositeNode *topNode);
   int getTracks(PHCompositeNode *topNode);
   //void getTruthJets(PHCompositeNode *topNode);
   //void getReconstructedJets(PHCompositeNode *topNode);
   //void getEMCalClusters(PHCompositeNode *topNode);
   void getHEPMCTruth(PHCompositeNode *topNode);
   void getPHG4Truth(PHCompositeNode *topNode);
+
+  /// Data
+  EventHeader *evthdr{nullptr};
+  SvtxTrackMap *trackmap{nullptr};
+  PHHepMCGenEventMap *genevent_map{nullptr};
 
   void initializeVariables();
   void initializeTrees();
@@ -124,8 +131,16 @@ class AnaUPC : public SubsysReco
    * Make variables for the relevant trees
    */
 
+  // Global Info
   Int_t m_run{ 0 };
   Int_t m_evt{ 0 };
+  Int_t m_npart_targ{ 0 };
+  Int_t m_npart_proj{ 0 };
+  Int_t m_npart{ 0 };
+  Int_t m_ncoll{ 0 };
+  Int_t m_ncoll_hard{ 0 };
+  Float_t m_bimpact{ -1. };
+  Int_t m_ntracks{ 0 };
 
   /// HEPMC Tree variables
   int m_partid1;
@@ -144,6 +159,7 @@ class AnaUPC : public SubsysReco
   double m_truthp;
   int m_numparticlesinevent;
   int m_truthpid;
+
 
   /// Track variables
   double m_tr_px;
