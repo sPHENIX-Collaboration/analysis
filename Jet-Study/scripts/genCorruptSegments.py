@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # generate the list of log files that contain Error
     command = f"""while read d; do
                     echo "Processing Dir: $d, $i"
-                    /direct/sphenix+u/anarde/.cargo/bin/rg -l "Error" $d >> {output}
+                    /direct/sphenix+u/anarde/.cargo/bin/rg -il "Error" $d >> {output}
                     echo "logs: $(wc -l {output})"
                     i=$((i+1))
                 done < <(readlink -f {log_dir}/*)"""
