@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <fstream>
 #include <unordered_set>
+#include <filesystem>
 
 // root includes --
 #include <TSystem.h>
@@ -29,6 +30,8 @@ using std::vector;
 using std::pair;
 using std::min;
 using std::max;
+
+namespace fs = std::filesystem;
 
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libcdbobjects.so)
@@ -579,9 +582,9 @@ void HotTowerAnalysis(const string &input,
                       const string &output = "test.root",
                       const Bool_t doTime = true,
                       const Int_t maxRuns = 0,
-                      const string &outputMissingHotMap = "missingHotMap.csv",
-                      const string &outputMissingBadChi2 = "missingBadChi2.csv",
-                      const string &outputRunStats = "acceptance.csv") {
+                      string outputMissingHotMap = "missingHotMap.csv",
+                      string outputMissingBadChi2 = "missingBadChi2.csv",
+                      string outputRunStats = "acceptance.csv") {
 
     cout << "#############################" << endl;
     cout << "Input Parameters" << endl;
@@ -594,6 +597,13 @@ void HotTowerAnalysis(const string &input,
 
     myAnalysis::m_doTime = doTime;
     myAnalysis::m_maxRuns = maxRuns;
+    string m_outputDir = fs::absolute(output).parent_path().string();
+
+    fs::create_directories(m_outputDir);
+
+    outputRunStats = m_outputDir + "/" + outputRunStats;
+    outputMissingHotMap = m_outputDir + "/" + outputMissingHotMap;
+    outputMissingBadChi2 = m_outputDir + "/" + outputMissingBadChi2;
 
     if (myAnalysis::m_detector == "HCALIN" || myAnalysis::m_detector == "HCALOUT") {
       myAnalysis::m_bins_phi = 64;
