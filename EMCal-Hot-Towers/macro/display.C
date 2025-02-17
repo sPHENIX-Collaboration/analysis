@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 
 // -- root includes --
 #include <TH2F.h>
@@ -32,15 +33,21 @@ using std::max;
 using std::ofstream;
 
 namespace myAnalysis {
-    void plots(const string& i_input, const string &output);
+    void plots(const string& i_input, const string &outputDir);
 
     UInt_t ntowers = 24576;
-    UInt_t threshold;
-    Float_t zMax = 1500;
+    UInt_t threshold = 400; // nRuns above which tower is frequently bad
+    Float_t zMax = 1700;
     TDatime d("2024-08-13 16:00:00"); // start of 1.5 mrad
 }
 
-void myAnalysis::plots(const string& i_input, const string &output) {
+void myAnalysis::plots(const string& i_input, const string &outputDir) {
+
+    string outputSigmaDir = outputDir + "/sigma/";
+    string outputAccptDir = outputDir + "/acceptance/";
+    string outputSigma    = outputSigmaDir + "sigma.pdf";
+    string outputAccpt    = outputAccptDir + "plots.pdf";
+
     TFile input(i_input.c_str());
 
     TCanvas* c1 = new TCanvas();
@@ -95,14 +102,26 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto hColdVsTime = (TH1F*)input.Get("hColdVsTime");
     auto hBadChi2VsTime = (TH1F*)input.Get("hBadChi2VsTime");
 
+    auto h2BadTowersFreq = new TH2F("h2BadTowersFreq", "Bad Towers; #phi Index; #eta Index", h2BadTowers->GetNbinsX(), -0.5, h2BadTowers->GetNbinsX()-0.5, h2BadTowers->GetNbinsY(), -0.5, h2BadTowers->GetNbinsY()-0.5);
+
     // threshold = h2HotTowerFrequency_dummy->GetEntries()/2;
-    threshold = 400;
     cout << "threshold: " << threshold << endl;
 
+    for(UInt_t i = 1; i <= h2BadTowers->GetNbinsX(); ++i) {
+        for(UInt_t j = 1; j <= h2BadTowers->GetNbinsY(); ++j) {
+            Double_t val = 0;
+            val = max(val, h2BadTowersDead->GetBinContent(i, j));
+            val = max(val, h2BadTowersHot->GetBinContent(i, j));
+            val = max(val, h2BadTowersCold->GetBinContent(i, j));
+            val = max(val, h2BadTowersHotChi2->GetBinContent(i, j));
+
+            if(val >= threshold) h2BadTowersFreq->SetBinContent(i, j, val);
+        }
+    }
 
     // vector<string> hBadTowersTitle = {"Runs [with Bad Towers]", "Runs [with Dead Towers]","Runs [with Hot Towers]","Runs [with Cold Towers]","Runs [with BadChi2 Towers]"};
     vector<TH1F*> hBadTowersVec  = {hBadTowers, hBadTowersDead, hBadTowersHot, hBadTowersCold, hBadTowersHotChi2};
-    vector<TH2F*> h2BadTowersVec = {h2BadTowers, h2BadTowersDead, h2BadTowersHot, h2BadTowersCold, h2BadTowersHotChi2};
+    vector<TH2F*> h2BadTowersVec = {h2BadTowersFreq, h2BadTowersDead, h2BadTowersHot, h2BadTowersCold, h2BadTowersHotChi2};
     // vector<string> label         = {"Status #neq 0", "Dead", "Hot", "Cold"};
 
     string dirName = "hHotTowerSigma";
@@ -117,7 +136,6 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     TIter nextkey(dir->GetListOfKeys());
     TKey* key;
 
-    string outputSigma = "sigma.pdf";
     stringstream name;
 
     c1->Print((outputSigma + "[").c_str(), "pdf portrait");
@@ -133,9 +151,11 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     hSigma->SetTitle("Towers");
     hSigma->SetLineColor(kBlue);
+    hSigma->GetXaxis()->SetRangeUser(0,30);
+    hSigma->GetYaxis()->SetRangeUser(1,1e7);
     hSigma->Draw();
     sigma_threshold->Draw("same");
-    c1->Print((string(hSigma->GetName()) + ".png").c_str());
+    c1->Print((outputSigmaDir + string(hSigma->GetName()) + ".png").c_str());
 
     hSigmaFreqHot->Rebin(5);
 
@@ -144,15 +164,18 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     auto leg = new TLegend(0.5,.75,0.7,.9);
     leg->SetFillStyle(0);
-    leg->AddEntry(hSigma,"Flagged Hot #leq 50% of Runs","f");
-    leg->AddEntry(hSigmaFreqHot,"Flagged Hot > 50% of Runs","f");
+    leg->AddEntry(hSigma,("Flagged Hot < " + to_string(threshold) + " Runs").c_str(),"f");
+    leg->AddEntry(hSigmaFreqHot,("Flagged Hot #geq " + to_string(threshold) +" Runs").c_str(),"f");
     leg->AddEntry(sigma_threshold,"Sigma Threshold","l");
     leg->Draw("same");
 
-    c1->Print((string(hSigma->GetName()) + ".png").c_str());
+    c1->Print((outputSigmaDir + string(hSigma->GetName()) + ".png").c_str());
     c1->Print(outputSigma.c_str(), "pdf portrait");
 
     gPad->SetLogy(0);
+
+    TLatex latex;
+    latex.SetTextSize(0.05);
 
     while ((key = (TKey*) nextkey())) {
         name.str("");
@@ -161,27 +184,51 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         auto h = (TH1F*)input.Get(name.str().c_str());
         h->Rebin(5);
 
-        sigma_threshold = new TLine(5, 0, 5, h->GetMaximum()*1.05);
+        sigma_threshold = new TLine(5, 0, 5, h->GetMaximum()*1.2);
         sigma_threshold->SetLineColor(kRed);
         sigma_threshold->SetLineWidth(3);
         h->Draw();
+        Int_t overFlow = 0;
+        Int_t xlow = -4;
+        if(string(key->GetName()) == "hHotTowerSigma_27_84") {
+            h->GetXaxis()->SetRangeUser(xlow,30);
+            overFlow = h->Integral(h->FindBin(30),h->GetNbinsX()+1);
+        }
+        else if(string(key->GetName()) == "hHotTowerSigma_27_85") {
+            h->GetXaxis()->SetRangeUser(xlow,20);
+            overFlow = h->Integral(h->FindBin(20),h->GetNbinsX()+1);
+        }
+        else {
+            h->GetXaxis()->SetRangeUser(xlow,15);
+            overFlow = h->Integral(h->FindBin(15),h->GetNbinsX()+1);
+        }
+
+        h->GetYaxis()->SetRangeUser(0,h->GetMaximum()*1.2);
+
+        name.str("");
+        name << "Overflow: " << overFlow << " Runs";
+
+        latex.DrawLatexNDC(0.67,0.85, name.str().c_str());
+
+        name.str("");
+        name << "Underflow: " << h->Integral(0,h->FindBin(xlow)-1) << " Runs";
+
+        latex.DrawLatexNDC(0.67,0.8, name.str().c_str());
+
         sigma_threshold->Draw("same");
 
-        c1->Print((string(h->GetName()) + "-sigma.png").c_str());
+        c1->Print((outputSigmaDir + string(h->GetName()) + "-sigma.png").c_str());
         c1->Print(outputSigma.c_str(), "pdf portrait");
     }
 
     c1->Print((outputSigma + "]").c_str(), "pdf portrait");
 
-    c1->Print((output + "[").c_str(), "pdf portrait");
+    c1->Print((outputAccpt + "[").c_str(), "pdf portrait");
 
     TLine* line = new TLine(0, threshold, ntowers, threshold);
     line->SetLineColor(kRed);
     line->SetLineStyle(9);
     line->SetLineWidth(3);
-
-    TLatex latex;
-    latex.SetTextSize(0.05);
 
     for(UInt_t i = 0; i < hBadTowersVec.size(); ++i) {
 
@@ -201,8 +248,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         line->SetLineWidth(3);
         line->Draw("same");
 
-        c1->Print((string(hBadTowersVec[i]->GetName()) + ".png").c_str());
-        c1->Print(output.c_str(), "pdf portrait");
+        c1->Print((outputAccptDir + string(hBadTowersVec[i]->GetName()) + ".png").c_str());
+        c1->Print(outputAccpt.c_str(), "pdf portrait");
 
         delete line;
     }
@@ -227,47 +274,43 @@ void myAnalysis::plots(const string& i_input, const string &output) {
         h2BadTowersVec[i]->GetYaxis()->SetNdivisions(12, false);
         h2BadTowersVec[i]->GetYaxis()->SetTitleOffset(0.5);
 
+        if(i == 0) h2BadTowersVec[i]->SetMinimum(threshold);
+
         h2BadTowersVec[i]->Draw("colz1");
 
-        c1->Print((string(h2BadTowersVec[i]->GetName()) + ".png").c_str());
-        c1->Print((output).c_str(), "pdf portrait");
+        c1->Print((outputAccptDir +string(h2BadTowersVec[i]->GetName()) + ".png").c_str());
+        c1->Print(outputAccpt.c_str(), "pdf portrait");
     }
-
-    h2BadTowers->SetMinimum(threshold);
-    h2BadTowers->Draw("colz1");
-
-    c1->Print((string(h2BadTowers->GetName()) + "-threshold.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
 
     h2BadTowersDead->SetMinimum(threshold);
     h2BadTowersDead->Draw("colz1");
 
-    c1->Print((string(h2BadTowersDead->GetName()) + "-threshold.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(h2BadTowersDead->GetName()) + "-threshold.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     h2BadTowersHot->SetMinimum(threshold);
     h2BadTowersHot->Draw("colz1");
 
-    c1->Print((string(h2BadTowersHot->GetName()) + "-threshold.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(h2BadTowersHot->GetName()) + "-threshold.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     h2BadTowersCold->SetMinimum(threshold);
     h2BadTowersCold->Draw("colz1");
 
-    c1->Print((string(h2BadTowersCold->GetName()) + "-threshold.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(h2BadTowersCold->GetName()) + "-threshold.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     h2BadTowersHotChi2->SetMinimum(threshold);
     h2BadTowersHotChi2->Draw("colz1");
 
-    c1->Print((string(h2BadTowersHotChi2->GetName()) + "-threshold.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(h2BadTowersHotChi2->GetName()) + "-threshold.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     h2BadTowersHotChi2->SetMinimum(0);
-    h2BadTowersHotChi2->SetMaximum(100);
+    h2BadTowersHotChi2->SetMaximum(40);
 
-    c1->Print((string(h2BadTowersHotChi2->GetName()) + "-zoom.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(h2BadTowersHotChi2->GetName()) + "-zoom.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
@@ -297,8 +340,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     cout << "Max: " << hAcceptanceVsTime->GetXaxis()->GetXmax() << endl;
     axis->Draw();
 
-    c1->Print((string(hAcceptanceVsTime->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hAcceptanceVsTime->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // compute averages
     UInt_t bin_change = hAcceptanceVsTime->FindBin(d.Convert());
@@ -333,8 +376,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     axis->Draw();
     vl->Draw("same");
 
-    c1->Print((string(hDeadVsTime->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hDeadVsTime->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     delete axis;
     axis = new TGaxis(xmax,0.8,xmax,2,196,492,510,"+L");
@@ -349,13 +392,13 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     axis->Draw();
 
 
-    c1->Print((string(hDeadVsTime->GetName()) + "-zoom.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hDeadVsTime->GetName()) + "-zoom.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     delete axis;
-    axis = new TGaxis(xmax,0,xmax,12,0,2950,510,"+L");
+    axis = new TGaxis(xmax,0,xmax, hHotVsTime->GetMaximum()*1.05,0,ntowers*hHotVsTime->GetMaximum()*1.05/100.,510,"+L");
     axis->SetTitle("Towers");
     axis->SetTitleSize(0.05);
     axis->SetTitleOffset(0.6);
@@ -367,11 +410,11 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hHotVsTime->GetYaxis()->SetTitleOffset(0.5);
     axis->Draw();
     vl->SetY1(0);
-    vl->SetY2(12);
+    vl->SetY2(hHotVsTime->GetMaximum()*1.05);
     vl->Draw("same");
 
-    c1->Print((string(hHotVsTime->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hHotVsTime->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     delete axis;
     axis = new TGaxis(xmax,0,xmax,0.5,0,123,510,"+L");
@@ -385,13 +428,14 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hHotVsTime->GetYaxis()->SetTitleOffset(0.6);
     hHotVsTime->GetYaxis()->SetRangeUser(0,0.5);
 
-    c1->Print((string(hHotVsTime->GetName()) + "-zoom.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hHotVsTime->GetName()) + "-zoom.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     delete axis;
-    axis = new TGaxis(xmax,0,xmax,1.05,0,258,510,"+L");
+    axis = new TGaxis(xmax,0,xmax, hColdVsTime->GetMaximum()*1.05,0,ntowers*hColdVsTime->GetMaximum()*1.05/100.,510,"+L");
+
     axis->SetTitle("Towers");
     axis->SetTitleSize(0.05);
     axis->SetTitleOffset(0.6);
@@ -402,31 +446,16 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hColdVsTime->SetMarkerColor(kBlue);
     hColdVsTime->GetYaxis()->SetTitleOffset(0.5);
     axis->Draw();
-    vl->SetY2(1.05);
+    vl->SetY2(hColdVsTime->GetMaximum()*1.05);
     vl->Draw("same");
 
-    c1->Print((string(hColdVsTime->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
-
-    delete axis;
-    axis = new TGaxis(xmax,0,xmax,0.16,0,40,510,"+L");
-    axis->SetTitle("Towers");
-    axis->SetTitleSize(0.05);
-    axis->SetTitleOffset(0.6);
-    axis->SetLabelSize(0.05);
-    axis->Draw();
-    vl->SetY2(0.16);
-
-    hColdVsTime->GetYaxis()->SetTitleOffset(0.6);
-    hColdVsTime->GetYaxis()->SetRangeUser(0,0.16);
-
-    c1->Print((string(hColdVsTime->GetName()) + "-zoom.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hColdVsTime->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     delete axis;
-    axis = new TGaxis(xmax,0,xmax,74,0,18186,510,"+L");
+    axis = new TGaxis(xmax,0,xmax, hBadChi2VsTime->GetMaximum()*1.05,0,ntowers*hBadChi2VsTime->GetMaximum()*1.05/100.,510,"+L");
     axis->SetTitle("Towers");
     axis->SetTitleSize(0.05);
     axis->SetTitleOffset(0.8);
@@ -437,11 +466,11 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     hBadChi2VsTime->SetMarkerColor(kBlue);
     hBadChi2VsTime->GetYaxis()->SetTitleOffset(0.5);
     axis->Draw();
-    vl->SetY2(75);
+    vl->SetY2(hBadChi2VsTime->GetMaximum()*1.05);
     vl->Draw("same");
 
-    c1->Print((string(hBadChi2VsTime->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hBadChi2VsTime->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     delete axis;
     axis = new TGaxis(xmax,0,xmax,1,0,246,510,"+L");
@@ -455,8 +484,8 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     // hBadChi2VsTime->GetYaxis()->SetTitleOffset(0.6);
     hBadChi2VsTime->GetYaxis()->SetRangeUser(0,1);
 
-    c1->Print((string(hBadChi2VsTime->GetName()) + "-zoom.png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hBadChi2VsTime->GetName()) + "-zoom.png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
@@ -468,78 +497,103 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->SetLeftMargin(0.1);
 
     hAcceptance->Draw();
-    c1->Print((string(hAcceptance->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hAcceptance->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     hFracDead->Draw();
-    c1->Print((string(hFracDead->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hFracDead->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     hFracHot->GetXaxis()->SetRangeUser(0,12);
     hFracHot->Draw();
-    c1->Print((string(hFracHot->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hFracHot->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     hFracCold->GetXaxis()->SetRangeUser(0,3);
     hFracCold->Draw();
-    c1->Print((string(hFracCold->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hFracCold->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     hFracBadChi2->GetXaxis()->SetRangeUser(0,80);
     hFracBadChi2->Draw();
-    c1->Print((string(hFracBadChi2->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hFracBadChi2->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
     // ----------------------------
 
     hHotTowerStatus->GetYaxis()->SetTitleOffset(0.9);
     hHotTowerStatus->Draw();
 
-    c1->Print((string(hHotTowerStatus->GetName()) + ".png").c_str());
-    c1->Print((output).c_str(), "pdf portrait");
+    c1->Print((outputAccptDir + string(hHotTowerStatus->GetName()) + ".png").c_str());
+    c1->Print(outputAccpt.c_str(), "pdf portrait");
 
-    c1->Print((output + "]").c_str(), "pdf portrait");
+    // ----------------------------
 
-    UInt_t ctr[4] = {0};
+    c1->Print((outputAccpt + "]").c_str(), "pdf portrait");
 
-    for(UInt_t i = 1; i <= ntowers; ++i) {
-        UInt_t towerIndex = i-1;
-        if(hBadTowers->GetBinContent(i) > 0)             ++ctr[0];
-        if(hBadTowers->GetBinContent(i) >= threshold)    ++ctr[1];
-        if(hBadTowersHot->GetBinContent(i) > 0)          ++ctr[2];
-        if(hBadTowersHot->GetBinContent(i) >= threshold) ++ctr[3];
+    UInt_t ctr[10] = {0};
+
+    for(UInt_t i = 1; i <= h2BadTowers->GetNbinsX(); ++i) {
+        for(UInt_t j = 1; j <= h2BadTowers->GetNbinsY(); ++j) {
+            if(h2BadTowers->GetBinContent(i, j) > 0)                 ++ctr[0];
+            if(h2BadTowersFreq->GetBinContent(i, j) >= threshold)    ++ctr[1];
+            if(h2BadTowersDead->GetBinContent(i, j) > 0)             ++ctr[2];
+            if(h2BadTowersDead->GetBinContent(i, j) >= threshold)    ++ctr[3];
+            if(h2BadTowersHot->GetBinContent(i, j) > 0)              ++ctr[4];
+            if(h2BadTowersHot->GetBinContent(i, j) >= threshold)     ++ctr[5];
+            if(h2BadTowersCold->GetBinContent(i, j) > 0)             ++ctr[6];
+            if(h2BadTowersCold->GetBinContent(i, j) >= threshold)    ++ctr[7];
+            if(h2BadTowersHotChi2->GetBinContent(i, j) > 0)          ++ctr[8];
+            if(h2BadTowersHotChi2->GetBinContent(i, j) >= threshold) ++ctr[9];
+        }
     }
 
     cout << "Bad Towers" << endl
-         << "Any Run: "                              << ctr[0] << ", " << ctr[0]*100./ntowers << " %" << endl
+         << "Any Run: "                          << ctr[0] << ", " << ctr[0]*100./ntowers << " %" << endl
          << "Threshold >= " << threshold << ": " << ctr[1] << ", " << ctr[1]*100./ntowers << " %" << endl << endl;
 
+    cout << "Dead Towers" << endl
+         << "Any Run: "                          << ctr[2] << ", " << ctr[2]*100./ntowers << " %" << endl
+         << "Threshold >= " << threshold << ": " << ctr[3] << ", " << ctr[3]*100./ntowers << " %" << endl << endl;
+
     cout << "Hot Towers" << endl
-         << "Any Run: "                              << ctr[2] << ", " << ctr[2]*100./ntowers << " %" << endl
-         << "Threshold >= " << threshold << ": " << ctr[3] << ", " << ctr[3]*100./ntowers << " %" << endl;
+         << "Any Run: "                          << ctr[4] << ", " << ctr[4]*100./ntowers << " %" << endl
+         << "Threshold >= " << threshold << ": " << ctr[5] << ", " << ctr[5]*100./ntowers << " %" << endl << endl;
+
+    cout << "Cold Towers" << endl
+         << "Any Run: "                          << ctr[6] << ", " << ctr[6]*100./ntowers << " %" << endl
+         << "Threshold >= " << threshold << ": " << ctr[7] << ", " << ctr[7]*100./ntowers << " %" << endl << endl;
+
+    cout << "Bad Chi2 Towers" << endl
+         << "Any Run: "                          << ctr[8] << ", " << ctr[8]*100./ntowers << " %" << endl
+         << "Threshold >= " << threshold << ": " << ctr[9] << ", " << ctr[9]*100./ntowers << " %" << endl;
 
     input.Close();
 }
 
-void display(const string &input, const string &output="plots.pdf") {
+void display(const string &input, const string &outputDir=".") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
-    cout << "output: " << output << endl;
+    cout << "outputDir: " << outputDir << endl;
     cout << "#############################" << endl;
 
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    myAnalysis::plots(input, output);
+    // make the output directories
+    std::filesystem::create_directories(outputDir + "/acceptance");
+    std::filesystem::create_directories(outputDir + "/sigma");
+
+    myAnalysis::plots(input, outputDir);
 }
 
 # ifndef __CINT__
@@ -547,17 +601,17 @@ Int_t main(Int_t argc, char* argv[]) {
 if(argc < 2 || argc > 3){
         cout << "usage: ./display input [output]" << endl;
         cout << "input: input root file" << endl;
-        cout << "output: output pdf file" << endl;
+        cout << "outputDir: output directory" << endl;
         return 1;
     }
 
-    string output  = "plots.pdf";
+    string outputDir = ".";
 
     if(argc >= 3) {
-        output = argv[2];
+        outputDir = argv[2];
     }
 
-    display(argv[1], output);
+    display(argv[1], outputDir);
 
     cout << "======================================" << endl;
     cout << "done" << endl;

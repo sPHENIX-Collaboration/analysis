@@ -10,6 +10,8 @@
 
 #include <TH1.h>
 
+#include <calotrigger/TriggerAnalyzer.h>
+
 class PHCompositeNode;
 class CDBTTree;
 
@@ -57,6 +59,9 @@ class CaloHotTower : public SubsysReco
   Float_t energy_low;
   Float_t energy_high;
 
+  std::vector<std::string> m_triggers = {"MBD N&S >= 1", "MBD N&S >= 1, vtx < 10 cm",
+                                                         "MBD N&S >= 1, vtx < 30 cm",
+                                                         "MBD N&S >= 1, vtx < 60 cm"};
   UInt_t bins_events;
 
   std::string m_emcTowerNode;
@@ -72,6 +77,7 @@ class CaloHotTower : public SubsysReco
   TH1F* hEvents;
 
   CDBTTree* m_cdbttree_hotMap;
+  TriggerAnalyzer* triggeranalyzer;
 };
 
 #endif // CALOHOTTOWER_H

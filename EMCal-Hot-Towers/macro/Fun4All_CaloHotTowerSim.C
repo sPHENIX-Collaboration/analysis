@@ -14,11 +14,11 @@
 
 #include <caloreco/CaloTowerStatus.h>
 
-#include <calotrigger/TriggerRunInfoReco.h>
-
 #include <phool/recoConsts.h>
 
-#include <calohottower/CaloHotTower.h>
+#include <calohottower/CaloHotTowerSim.h>
+
+#include "Calo_Calib.C"
 
 using std::cout;
 using std::endl;
@@ -28,15 +28,13 @@ using std::pair;
 
 R__LOAD_LIBRARY(libCaloHotTower.so)
 
-void Fun4All_CaloHotTower(const string  &inputFile,
-                          const string  &hotTowerFile,
-                          const string  &outputFile = "test.root",
-                          UInt_t nEvents = 0) {
+void Fun4All_CaloHotTowerSim(const string &inputFile,
+                             const string &outputFile = "test.root",
+                             UInt_t nEvents = 0) {
 
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
   cout << "inputFile: "    << inputFile << endl;
-  cout << "hotTowerFile: " << hotTowerFile << endl;
   cout << "outputFile: "   << outputFile << endl;
   cout << "Events: "       << nEvents << endl;
   cout << "#############################" << endl;
@@ -44,7 +42,7 @@ void Fun4All_CaloHotTower(const string  &inputFile,
   Fun4AllServer *se = Fun4AllServer::instance();
   recoConsts *rc    = recoConsts::instance();
 
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_StringFlag("CDB_GLOBALTAG","MDC2");
 
   pair<Int_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(inputFile);
   Int_t runnumber = runseg.first;
@@ -70,19 +68,11 @@ void Fun4All_CaloHotTower(const string  &inputFile,
   in->AddFile(inputFile.c_str());
   se->registerInputManager(in);
 
-  TriggerRunInfoReco* triggerruninforeco = new TriggerRunInfoReco();
-  se->registerSubsystem(triggerruninforeco);
+  Process_Calo_Calib();
 
-  // need to set the isBadChi2 flag for the towers
-  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
-  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  statusEMC->set_time_cut(1);
-  se->registerSubsystem(statusEMC);
-
-  CaloHotTower *calo = new CaloHotTower();
+  CaloHotTowerSim *calo = new CaloHotTowerSim();
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   calo->setOutputFile(outputFile);
-  calo->setHotTowerIndexFile(hotTowerFile);
 
   se->registerSubsystem(calo);
 
@@ -96,10 +86,9 @@ void Fun4All_CaloHotTower(const string  &inputFile,
 
 # ifndef __CINT__
 int main(int argc, char* argv[]) {
-    if(argc < 3 || argc > 5){
-        cout << "usage: ./bin/Fun4All_CaloHotTower inputFile hotTowerFile [outputFile] [events]" << endl;
+    if(argc < 2 || argc > 4){
+        cout << "usage: ./bin/Fun4All_CaloHotTowerSim inputFile [outputFile] [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
-        cout << "hotTowerFile: Location of input hot tower list file." << endl;
         cout << "outputFile: name of output file. Default: diphoton.root" << endl;
         cout << "events: Number of events to analyze. Default: all" << endl;
         return 1;
@@ -108,14 +97,14 @@ int main(int argc, char* argv[]) {
     string outputFile = "test.root";
     UInt_t events     = 0;
 
-    if(argc >= 4) {
-        outputFile = argv[3];
+    if(argc >= 3) {
+        outputFile = argv[2];
     }
-    if(argc >= 5) {
-        events = atoi(argv[4]);
+    if(argc >= 4) {
+        events = atoi(argv[3]);
     }
 
-    Fun4All_CaloHotTower(argv[1], argv[2], outputFile, events);
+    Fun4All_CaloHotTowerSim(argv[1], outputFile, events);
 
     cout << "done" << endl;
     return 0;
