@@ -12,11 +12,11 @@ echo '#!/bin/bash' > earlydata.sh
 
 echo "source /opt/sphenix/core/bin/setup_local.sh ${INSTALLDIR}" >> earlydata.sh
 cat earlydata.config >> earlydata.sh
-
+chmod +x earlydata.sh
 echo '#!/bin/bash' > addcommand.sh
 echo "source /opt/sphenix/core/bin/setup_local.sh ${INSTALLDIR}" >> addcommand.sh
 cat addcommand.config >> addcommand.sh
-
+chmod +x addcommand.sh
 cd ..
 THISREPODIR=`pwd`
 
