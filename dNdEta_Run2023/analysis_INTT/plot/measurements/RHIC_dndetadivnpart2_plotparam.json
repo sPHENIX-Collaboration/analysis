@@ -1,21 +1,31 @@
 {
+    "sphenix_data_auau_0p2_divnpart2_combined":{
+        "markerstyle": 20,
+        "markercolor": "#1A1423",
+        "markersize": 0.8,
+        "linewidth": 1,
+        "alpha": 0.25,
+        "DrawOption": ["5","pX same"],
+        "Legendtext": "sPHENIX (Combined)",
+        "Legendstyle": "pf"
+    },
     "sphenix_data_auau_0p2_divnpart2_phobosapp":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#618264",
         "markersize": 0.8,
-        "linewidth": 0,
-        "alpha": 0.2,
-        "DrawOption": ["3","pX same"],
+        "linewidth": 1,
+        "alpha": 0.4,
+        "DrawOption": ["5","pX same"],
         "Legendtext": "sPHENIX (PHOBOS-inspired approach)",
         "Legendstyle": "pf"
     },
     "sphenix_data_auau_0p2_divnpart2_cmsapp":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#1A1423",
         "markersize": 0.8,
-        "linewidth": 0,
-        "alpha": 0.2,
-        "DrawOption": ["3","pX same"],
+        "linewidth": 1,
+        "alpha": 0.25,
+        "DrawOption": ["5","pX same"],
         "Legendtext": "sPHENIX (CMS-inspired approach)",
         "Legendstyle": "pf"
     },
@@ -59,23 +69,33 @@
         "Legendtext": "BRAHMS [Phys. Rev. Lett. 88, 202301 (2002)]",
         "Legendstyle": "pf"
     },
-    "sphenix_data_auau_0p2_divnpart2_cmsapp_redraw":{
-        "markerstyle": 24,
+    "sphenix_data_auau_0p2_divnpart2_combined_redraw":{
+        "markerstyle": 20,
         "markercolor": "#1A1423",
         "markersize": 0.8,
-        "linewidth": 0,
-        "alpha": 0.2,
-        "DrawOption": ["3 same","pX same"],
-        "Legendtext": "sPHENIX (CMS-inspired approach)",
+        "linewidth": 1,
+        "alpha": 0.25,
+        "DrawOption": ["5 same","pX same"],
+        "Legendtext": "sPHENIX (Combined)",
+        "Legendstyle": "pf"
+    },
+    "sphenix_data_auau_0p2_divnpart2_phobosapp_redraw":{
+        "markerstyle": 20,
+        "markercolor": "#618264",
+        "markersize": 0.8,
+        "linewidth": 1,
+        "alpha": 0.4,
+        "DrawOption": ["5 same","pX same"],
+        "Legendtext": "sPHENIX (PHOBOS-inspired approach)",
         "Legendstyle": "pf"
     },
     "sphenix_data_auau_0p2_divnpart2_cmsapp_redraw":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#1A1423",
         "markersize": 0.8,
-        "linewidth": 0,
-        "alpha": 0.2,
-        "DrawOption": ["3 same","pX same"],
+        "linewidth": 1,
+        "alpha": 0.25,
+        "DrawOption": ["5 same","pX same"],
         "Legendtext": "sPHENIX (CMS-inspired approach)",
         "Legendstyle": "pf"
     }

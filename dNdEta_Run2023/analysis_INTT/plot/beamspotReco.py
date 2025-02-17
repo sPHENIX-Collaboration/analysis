@@ -86,9 +86,9 @@ if __name__ == '__main__':
     
     if os.path.isfile("{}/minitree_merged.root".format(infiledir)):
         os.system("rm {}/minitree_merged.root".format(infiledir))
-        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_00*.root".format(infiledir, infiledir))
+        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_0*.root".format(infiledir, infiledir))
     else:
-        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_00*.root".format(infiledir, infiledir))
+        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_0*.root".format(infiledir, infiledir))
         
     os.makedirs('./BeamspotReco/{}'.format(plotdir), exist_ok=True)
     

@@ -30,12 +30,14 @@ echo "hijingclosuredir: ${hijingclosuredir}"
 echo "datadir: ${datadir}"
 
 # hadd the files in directories
-hadd -f -j 20 ${hijingbaselinedir}/minitree_set1.root ${hijingbaselinedir}/minitree_00{000..499}.root
-hadd -f -j 20 ${hijingclosuredir}/minitree_set2.root ${hijingclosuredir}/minitree_00{500..999}.root
-hadd -f -j 20 ${datadir}/minitree_segment1.root ${datadir}/minitree_00{000..099}.root
-hadd -f -j 20 ${datadir}/minitree_segment2.root ${datadir}/minitree_00{100..199}.root
-hadd -f -j 20 ${datadir}/minitree_segment3.root ${datadir}/minitree_00{200..299}.root
-hadd -f -j 20 ${datadir}/minitree_segment4.root ${datadir}/minitree_00{300..325}.root
+hadd -f -j 20 -k ${hijingbaselinedir}/minitree_set1.root ${hijingbaselinedir}/minitree_00{000..499}.root
+hadd -f -j 20 -k ${hijingclosuredir}/minitree_set2.root ${hijingclosuredir}/minitree_00{500..999}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment1.root ${datadir}/minitree_00{000..299}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment2.root ${datadir}/minitree_00{300..599}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment3.root ${datadir}/minitree_00{600..899}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment4.root ${datadir}/minitree_0{0900..1199}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment5.root ${datadir}/minitree_0{1200..1499}.root
+hadd -f -j 20 -k ${datadir}/minitree_segment6.root ${datadir}/minitree_0{1500..1757}.root
 
 
 # centralities_alice=(0 5 10 20 30 40 50 60 70 80) # ALICE 2010 binnings
@@ -82,6 +84,8 @@ do
     ./Corrections ${datadir}/minitree_segment2.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment2 1
     ./Corrections ${datadir}/minitree_segment3.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment3 1
     ./Corrections ${datadir}/minitree_segment4.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment4 1
+    ./Corrections ${datadir}/minitree_segment5.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment5 1
+    ./Corrections ${datadir}/minitree_segment6.root ${centralities_phobos[i]} ${centralities_phobos[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment6 1
 done
 
 echo "Processing centrality bin: 0 - 70"
@@ -94,3 +98,5 @@ echo "Processing Data Run2024 (run 54280)"
 ./Corrections ${datadir}/minitree_segment2.root 0 70 -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment2 1
 ./Corrections ${datadir}/minitree_segment3.root 0 70 -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment3 1
 ./Corrections ${datadir}/minitree_segment4.root 0 70 -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment4 1
+./Corrections ${datadir}/minitree_segment5.root 0 70 -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment5 1
+./Corrections ${datadir}/minitree_segment6.root 0 70 -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment6 1

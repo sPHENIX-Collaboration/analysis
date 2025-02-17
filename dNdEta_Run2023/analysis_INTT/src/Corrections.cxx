@@ -53,7 +53,7 @@ void calccorr(const TString infilename,              //
     SetsPhenixStyle();
     gStyle->SetOptTitle(0);
     gStyle->SetOptStat(0);
-    gStyle->SetPalette(kThermometer);
+    gStyle->SetPalette(kBird);
 
     TString outbasedir = TString::Format("./plot/corrections/%s", outfiletag.Data());
     TString corfiledir = TString::Format("./plot/corrections/%s", corfiletag.Data());

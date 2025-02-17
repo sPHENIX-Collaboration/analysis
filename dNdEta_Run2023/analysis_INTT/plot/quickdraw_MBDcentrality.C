@@ -10,7 +10,7 @@ void quickdraw_MBDcentrality()
     timer.Start();
 
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df("EventTree", "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Data_Run54280_20250117_ProdA2024/ntuple_00*.root");
+    ROOT::RDataFrame df("EventTree", "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Data_Run54280_20250210_ProdA2024/ntuple_0*.root");
 
     // auto count_all = df.Count();
     // std::cout << "Number of entries in the dataframe: " << *count_all << std::endl;
@@ -48,6 +48,7 @@ void quickdraw_MBDcentrality()
     hM_MBDcentrality_isMinBias->SetLineWidth(2);
     hM_MBDcentrality_Trigbit10->SetLineColor(kTBriGreen);
     hM_MBDcentrality_Trigbit10->SetLineWidth(2);
+    hM_MBDcentrality_Trigbit10->SetLineStyle(2);
     hM_MBDcentrality_Trigbit12->SetLineColor(kTBriYellow);
     hM_MBDcentrality_Trigbit12->SetLineWidth(2);
     hM_MBDcentrality_Trigbit13->SetLineColor(kTBriRed);
@@ -55,17 +56,17 @@ void quickdraw_MBDcentrality()
     hM_MBDcentrality_wocut->Draw("hist");
     hM_MBDcentrality_isMinBias->Draw("hist same");
     hM_MBDcentrality_Trigbit10->Draw("hist same");
-    hM_MBDcentrality_Trigbit12->Draw("hist same");
-    hM_MBDcentrality_Trigbit13->Draw("hist same");
+    // hM_MBDcentrality_Trigbit12->Draw("hist same");
+    // hM_MBDcentrality_Trigbit13->Draw("hist same");
     hM_MBDcentrality_wocut->Draw("hist same");
     c->RedrawAxis();
-    TLegend *l = new TLegend(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.02, 1 - gPad->GetRightMargin() - 0.45, 0.98);
+    TLegend *l = new TLegend(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.05, 1 - gPad->GetRightMargin() - 0.45, 0.98);
     l->SetNColumns(1);
     l->AddEntry(hM_MBDcentrality_wocut.GetPtr(), "Without cut", "l");
-    l->AddEntry(hM_MBDcentrality_isMinBias.GetPtr(), "Is min bias", "l");
+    l->AddEntry(hM_MBDcentrality_isMinBias.GetPtr(), "Is Min. Bias", "l");
     l->AddEntry(hM_MBDcentrality_Trigbit10.GetPtr(), "Is MB & Trigger bit 10 (MBD N&S#geq2)", "l");
-    l->AddEntry(hM_MBDcentrality_Trigbit12.GetPtr(), "Is MB & Trigger bit 12 (MBD N&S#geq2, |vtx|<10cm)", "l");
-    l->AddEntry(hM_MBDcentrality_Trigbit13.GetPtr(), "Is MB & Trigger bit 13 (MBD N&S#geq2, |vtx|<30cm)", "l");
+    // l->AddEntry(hM_MBDcentrality_Trigbit12.GetPtr(), "Is MB & Trigger bit 12 (MBD N&S#geq2, |vtx|<10cm)", "l");
+    // l->AddEntry(hM_MBDcentrality_Trigbit13.GetPtr(), "Is MB & Trigger bit 13 (MBD N&S#geq2, |vtx|<30cm)", "l");
     l->SetTextSize(0.035);
     l->SetBorderSize(0);
     l->SetFillStyle(0);

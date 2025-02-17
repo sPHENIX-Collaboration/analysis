@@ -75,10 +75,10 @@ void Intt_ZClustering()
 int Fun4All_dNdeta2024AuAu_production(                          //
     const int runnumber = 54280,                                //
     const string productionTag = "ProdA_2024",                  //
-    const string calodstlist = "./calolists/calo_54280_0.list", //
+    const string calodstlist = "./calolists/calo_54280_1.list", //
     const string inttdstlist = "./inttlists/intt_54280_0.list", //
     const int nEvents = 10,                                     //
-    const string &outputFile = "testNtuple.root",               //
+    const string &outputFile = "./testNtuple.root",               //
     const int process = 0,                                      //
     const int skip = 0                                          //
 )
@@ -228,7 +228,7 @@ int Fun4All_dNdeta2024AuAu_production(                          //
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, true);
     myAnalyzer->GetINTTdata(true);
     myAnalyzer->GetRecoCluster(true);
-    myAnalyzer->GetInttRawHit(true);
+    myAnalyzer->GetInttRawHit(false);
     myAnalyzer->GetTrkrHit(true);
     myAnalyzer->GetCentrality(true);
     myAnalyzer->GetPMTInfo(true);

@@ -137,9 +137,15 @@ int Fun4All_G4_sPHENIX(                           //
 
             INPUTREADHITS::filename[0] = infile;
         }
+        else if (generator == "SIMPLE")
+        {
+            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.466/SIMPLE/pi-/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-SIMPLE-pi--000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
+
+            INPUTREADHITS::filename[0] = infile;
+        }
         else
         {
-            std::cout << "Generator " << generator << " is not [HIJING, EPOS, AMPT]. Exit" << std::endl;
+            std::cout << "Generator " << generator << " is not [HIJING, EPOS, AMPT, SIMPLE]. Exit" << std::endl;
             return 0;
         }
     }
@@ -249,7 +255,13 @@ int Fun4All_G4_sPHENIX(                           //
     // bool getPMTinfo = getCentralityData && false;
     myAnalyzer->GetPMTInfo(getCentralityData);
     myAnalyzer->GetPHG4(!rundata);
-    myAnalyzer->GetHEPMC(!rundata);
+    if (!rundata)
+    {
+        if (generator == "SIMPLE")
+            myAnalyzer->GetHEPMC(false);
+        else
+            myAnalyzer->GetHEPMC(true);
+    }
     myAnalyzer->GetTrigger(rundata);
 
     se->registerSubsystem(myAnalyzer);

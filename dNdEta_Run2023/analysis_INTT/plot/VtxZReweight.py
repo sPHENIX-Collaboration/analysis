@@ -94,15 +94,15 @@ if __name__ == '__main__':
     
     if os.path.isfile("{}/hists_merged.root".format(datafiledir)):
         os.system("rm {}/hists_merged.root".format(datafiledir))
-        os.system("hadd -j 20 {}/hists_merged.root {}/hists_00*.root".format(datafiledir, datafiledir))
+        os.system("hadd -j 20 {}/hists_merged.root {}/hists_0*.root".format(datafiledir, datafiledir))
     else:
-        os.system("hadd -j 20 {}/hists_merged.root {}/hists_00*.root".format(datafiledir, datafiledir))
+        os.system("hadd -j 20 {}/hists_merged.root {}/hists_0*.root".format(datafiledir, datafiledir))
         
     if os.path.isfile("{}/hists_merged.root".format(simfiledir)):
         os.system("rm {}/hists_merged.root".format(simfiledir))
-        os.system("hadd -j 20 {}/hists_merged.root {}/hists_00*.root".format(simfiledir, simfiledir))
+        os.system("hadd -j 20 {}/hists_merged.root {}/hists_0*.root".format(simfiledir, simfiledir))
     else:
-        os.system("hadd -j 20 {}/hists_merged.root {}/hists_00*.root".format(simfiledir, simfiledir))
+        os.system("hadd -j 20 {}/hists_merged.root {}/hists_0*.root".format(simfiledir, simfiledir))
         
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse_data = GetHistogram("{}/hists_merged.root".format(datafiledir), "hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse")
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse_data.SetName("hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse_data")

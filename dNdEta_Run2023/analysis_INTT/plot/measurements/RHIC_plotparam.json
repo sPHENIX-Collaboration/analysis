@@ -1,20 +1,30 @@
 {
+    "sphenix_data_auau_200gev_combined":{
+        "markerstyle": 20,
+        "markercolor": "#1A1423",
+        "markersize": 0.8,
+        "linewidth": 0,
+        "alpha": 0.25,
+        "DrawOption": ["3 RX","pX RX same"],
+        "Legendtext": "sPHENIX (Combined)",
+        "Legendstyle": "pf"
+    },
     "sphenix_data_auau_200gev_phobosapp":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#618264",
         "markersize": 0.8,
         "linewidth": 0,
-        "alpha": 0.2,
+        "alpha": 0.25,
         "DrawOption": ["3 RX","pX RX same"],
         "Legendtext": "sPHENIX (PHOBOS-inspired approach)",
         "Legendstyle": "pf"
     },
     "sphenix_data_auau_200gev_cmsapp":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#1A1423",
         "markersize": 0.8,
         "linewidth": 0,
-        "alpha": 0.2,
+        "alpha": 0.25,
         "DrawOption": ["3 RX","pX RX same"],
         "Legendtext": "sPHENIX (CMS-inspired approach)",
         "Legendstyle": "pf"
@@ -32,7 +42,7 @@
     "phobos_auau_0p2":{
         "markerstyle": 25,
         "markercolor": "#035397",
-        "markersize": 0.8,
+        "markersize": 0.5,
         "linewidth": 0,
         "alpha": 0.2,
         "DrawOption": ["3 RX same","pX RX same"],
@@ -42,7 +52,7 @@
     "phenix_auau_0p2":{
         "markerstyle": 27,
         "markercolor": "#03B5AA",
-        "markersize": 1,
+        "markersize": 0.7,
         "linewidth": 0,
         "alpha": 0.2,
         "DrawOption": ["3 RX same","pX RX same"],
@@ -52,29 +62,39 @@
     "brahms_auau_0p2":{
         "markerstyle": 28,
         "markercolor": "#7868E6",
-        "markersize": 0.8,
+        "markersize": 0.5,
         "linewidth": 0,
         "alpha": 0.2,
         "DrawOption": ["3 RX same", "pX RX same"],
         "Legendtext": "BRAHMS [Phys. Rev. Lett. 88, 202301 (2002)]",
         "Legendstyle": "pf"
     },
-    "sphenix_data_auau_200gev_cmsapp_redraw":{
-        "markerstyle": 24,
+    "sphenix_data_auau_200gev_combined_redraw":{
+        "markerstyle": 20,
         "markercolor": "#1A1423",
         "markersize": 0.8,
         "linewidth": 0,
-        "alpha": 0.2,
+        "alpha": 0.25,
+        "DrawOption": ["3 RX","pX RX same"],
+        "Legendtext": "sPHENIX (Combined)",
+        "Legendstyle": "pf"
+    },
+    "sphenix_data_auau_200gev_cmsapp_redraw":{
+        "markerstyle": 20,
+        "markercolor": "#1A1423",
+        "markersize": 0.8,
+        "linewidth": 0,
+        "alpha": 0.25,
         "DrawOption": ["3 RX same","pX RX same"],
         "Legendtext": "sPHENIX (CMS-inspired approach)",
         "Legendstyle": "pf"
     },
     "sphenix_data_auau_200gev_phobosapp_redraw":{
-        "markerstyle": 24,
+        "markerstyle": 20,
         "markercolor": "#618264",
         "markersize": 0.8,
         "linewidth": 0,
-        "alpha": 0.2,
+        "alpha": 0.25,
         "DrawOption": ["3 RX same","pX RX same"],
         "Legendtext": "sPHENIX (PHOBOS-inspired approach)",
         "Legendstyle": "pf"

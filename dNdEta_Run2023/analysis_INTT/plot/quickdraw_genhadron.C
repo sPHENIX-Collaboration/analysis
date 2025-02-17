@@ -41,7 +41,7 @@ int GetMbinNum(const std::string &fstr)
 
 TH1D* GetCWHist(int Mbin)
 {
-    TFile *f = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
+    TFile *f = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
     TH1D *h = (TH1D *)f->Get("h1D_dNdEta_truth");
     h->SetDirectory(0);
     f->Close();
@@ -75,10 +75,12 @@ void quickdraw_genhadron()
         hM_genhadron->GetYaxis()->SetTitle("Entries");
         hM_genhadron->GetYaxis()->SetTitleOffset(1.4);
         hM_genhadron->GetYaxis()->SetRangeUser(hM_genhadron->GetMinimum(0) * 0.9, hM_genhadron->GetMaximum() * 1.2);
+        hM_genhadron->SetMarkerSize(0);
         hM_genhadron->GetXaxis()->SetTitle("Gen-hadron #eta");
-        hM_genhadron->Draw("hist");
+        hM_genhadron->Draw("histe");
         hM_CW->SetLineColor(kRed);
-        hM_CW->Draw("hist same");
+        hM_CW->SetMarkerSize(0);
+        hM_CW->Draw("histe same");
         TLegend *l = new TLegend(1 - gPad->GetRightMargin() - 0.35, 1 - gPad->GetTopMargin() - 0.2, 1 - gPad->GetRightMargin() - 0.05, 1 - gPad->GetTopMargin() - 0.05);
         l->SetHeader(Form("Centrality %d-%d%%", (int)centbin[i], (int)centbin[i + 1]));
         l->SetTextAlign(kHAlignLeft + kVAlignTop);

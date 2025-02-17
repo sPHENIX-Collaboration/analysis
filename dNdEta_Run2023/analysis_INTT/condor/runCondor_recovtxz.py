@@ -50,7 +50,7 @@ if __name__ == '__main__':
         os.system('rm ./log_recovtxz/*')
 
     # hadd files under bsresfilepath
-    os.system('hadd -f -j 20 {}/minitree/BeamspotMinitree_{}/minitree_merged.root {}/minitree/BeamspotMinitree_{}/minitree_00*.root'.format(parentdir, filedesc, parentdir, filedesc))
+    os.system('hadd -f -j 20 {}/minitree/BeamspotMinitree_{}/minitree_merged.root {}/minitree/BeamspotMinitree_{}/minitree_0*.root'.format(parentdir, filedesc, parentdir, filedesc))
     
     condorFileName = "submitCondor_recovtxz_{}.job".format('data' if isdata else 'sim')
     condorFile = open("{}".format(condorFileName), "w")

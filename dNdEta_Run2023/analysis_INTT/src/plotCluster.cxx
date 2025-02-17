@@ -141,6 +141,63 @@
 //     //     # hm_cut_v2.SetBinContent(j+1, f.Eval(hm_cut_v2.GetBinCenter(j+1)))
 // }
 
+double cluszbin[56] = {-25.,
+                       -22.57245 - 1.1, //
+                       -22.57245 - 0.9,
+                       -22.57245 + 0.9, //
+                       -20.57245 - 0.9,
+                       -20.57245 + 0.9, //
+                       -18.57245 - 0.9,
+                       -18.57245 + 0.9, //
+                       -16.57245 - 0.9,
+                       -16.57245 + 0.9, //
+                       -14.57245 - 0.9,
+                       -14.57245 + 0.9, //
+                       -12.57245 - 0.7,
+                       -12.57245 + 0.7, //
+                       -10.97245 - 0.7,
+                       -10.97245 + 0.7, //
+                       -9.372450 - 0.7,
+                       -9.372450 + 0.7, //
+                       -7.772450 - 0.7,
+                       -7.772450 + 0.7, //
+                       -6.172450 - 0.7,
+                       -6.172450 + 0.7, //
+                       -4.572450 - 0.7,
+                       -4.572450 + 0.7, //
+                       -2.972450 - 0.7,
+                       -2.972450 + 0.7, //
+                       -1.372450 - 0.7,
+                       -1.372450 + 0.7, //
+                       0.4275496 - 0.7,
+                       0.4275496 + 0.7, //
+                       2.0275495 - 0.7,
+                       2.0275495 + 0.7, //
+                       3.6275494 - 0.7,
+                       3.6275494 + 0.7, //
+                       5.2275495 - 0.7,
+                       5.2275495 + 0.7, //
+                       6.8275494 - 0.7,
+                       6.8275494 + 0.7, //
+                       8.4275493 - 0.7,
+                       8.4275493 + 0.7, //
+                       10.027549 - 0.7,
+                       10.027549 + 0.7, //
+                       11.627549 - 0.7,
+                       11.627549 + 0.7, //
+                       13.627549 - 0.9,
+                       13.627549 + 0.9, //
+                       15.627549 - 0.9,
+                       15.627549 + 0.9, //
+                       17.627550 - 0.9,
+                       17.627550 + 0.9, //
+                       19.627550 - 0.9,
+                       19.627550 + 0.9, //
+                       21.627550 - 0.9,
+                       21.627550 + 0.9, //
+                       21.627550 + 1.1,
+                       25.};
+
 int main(int argc, char *argv[])
 {
     if (argc != 5)
@@ -171,9 +228,9 @@ int main(int argc, char *argv[])
     // TH1F *hM_ClusY_all = new TH1F("hM_ClusY_all", "hM_ClusY_all", 200, -10, 10);
     // TH1F *hM_ClusY_layer1 = new TH1F("hM_ClusY_layer1", "hM_ClusY_layer1", 200, -10, 10);
     // TH1F *hM_ClusY_layer2 = new TH1F("hM_ClusY_layer2", "hM_ClusY_layer2", 200, -10, 10);
-    TH1F *hM_ClusZ_all = new TH1F("hM_ClusZ_all", "hM_ClusZ_all", 200, -25, 25);
-    TH1F *hM_ClusZ_layer1 = new TH1F("hM_ClusZ_layer1", "hM_ClusZ_layer1", 200, -25, 25);
-    TH1F *hM_ClusZ_layer2 = new TH1F("hM_ClusZ_layer2", "hM_ClusZ_layer2", 200, -25, 25);
+    TH1F *hM_ClusZ_all = new TH1F("hM_ClusZ_all", "hM_ClusZ_all", 55, cluszbin);
+    TH1F *hM_ClusZ_layer1 = new TH1F("hM_ClusZ_layer1", "hM_ClusZ_layer1", 55, cluszbin);
+    TH1F *hM_ClusZ_layer2 = new TH1F("hM_ClusZ_layer2", "hM_ClusZ_layer2", 55, cluszbin);
     // TH1F *hM_ClusR_all = new TH1F("hM_ClusR_all", "hM_ClusR_all", 120, 4, 7);
     // TH1F *hM_ClusR_layer1 = new TH1F("hM_ClusR_layer1", "hM_ClusR_layer1", 120, 4, 7);
     // TH1F *hM_ClusR_layer2 = new TH1F("hM_ClusR_layer2", "hM_ClusR_layer2", 120, 4, 7);
@@ -284,9 +341,9 @@ int main(int argc, char *argv[])
     TH2F *hM_ClusZ_ClusPhiPV_all = new TH2F("hM_ClusZ_ClusPhiPV_all", "hM_ClusZ_ClusPhiPV_all", 1000, -25, 25, 350, -3.5, 3.5);
     TH2F *hM_ClusZ_ClusPhiPV_layer1 = new TH2F("hM_ClusZ_ClusPhiPV_layer1", "hM_ClusZ_ClusPhiPV_layer1", 1000, -25, 25, 350, -3.5, 3.5);
     TH2F *hM_ClusZ_ClusPhiPV_layer2 = new TH2F("hM_ClusZ_ClusPhiPV_layer2", "hM_ClusZ_ClusPhiPV_layer2", 1000, -25, 25, 350, -3.5, 3.5);
-    TH2F *hM_ClusZ_ClusPhiPV_all_coarse = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse", "hM_ClusZ_ClusPhiPV_all_coarse", 100, -25, 25, 350, -3.5, 3.5);
-    TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiphisize = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", "hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", 100, -25, 25, 350, -3.5, 3.5);
-    TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", "hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", 100, -25, 25, 350, -3.5, 3.5);
+    TH2F *hM_ClusZ_ClusPhiPV_all_coarse = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse", "hM_ClusZ_ClusPhiPV_all_coarse", 55, cluszbin, 350, -3.5, 3.5);
+    TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiphisize = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", "hM_ClusZ_ClusPhiPV_all_coarse_weiphisize", 55, cluszbin, 350, -3.5, 3.5);
+    TH2F *hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc = new TH2F("hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", "hM_ClusZ_ClusPhiPV_all_coarse_weiclusadc", 55, cluszbin, 350, -3.5, 3.5);
     // TH2F *hM_ClusEta_ClusZSize_all = new TH2F("hM_ClusEta_ClusZSize_all", "hM_ClusEta_ClusZSize_all", 160, -4, 4, 20, 0, 20);
     // TH2F *hM_ClusEta_ClusZSize_layer1 = new TH2F("hM_ClusEta_ClusZSize_layer1", "hM_ClusEta_ClusZSize_layer1", 160, -4, 4, 20, 0, 20);
     // TH2F *hM_ClusEta_ClusZSize_layer2 = new TH2F("hM_ClusEta_ClusZSize_layer2", "hM_ClusEta_ClusZSize_layer2", 160, -4, 4, 20, 0, 20);
@@ -317,6 +374,10 @@ int main(int argc, char *argv[])
     TH2F *hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35 = new TH2F("hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35", "hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35", 120, -3, 3, 250, 0, 250);
     TH2F *hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35 = new TH2F("hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35", "hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35", 120, -3, 3, 250, 0, 250);
     TH2F *hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35 = new TH2F("hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35", "hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35", 120, -3, 3, 250, 0, 250);
+
+    TH1F *hM_mutualdRcluster_all = new TH1F("hM_mutualdRcluster_all", "hM_mutualdRcluster_all", 200, 0, 0.1);
+    TH1F *hM_mutualdRcluster_layer1 = new TH1F("hM_mutualdRcluster_layer1", "hM_mutualdRcluster_layer1", 200, 0, 0.1);
+    TH1F *hM_mutualdRcluster_layer2 = new TH1F("hM_mutualdRcluster_layer2", "hM_mutualdRcluster_layer2", 200, 0, 0.1);
 
     // For cluster ADC cut optimization
     int constscale_low = 5, constscale_high = 55, constscale_step = 1;
@@ -392,7 +453,7 @@ int main(int argc, char *argv[])
     {
         t->SetBranchAddress("firedTriggers", &firedTriggers);
     }
-    
+
     t->SetBranchAddress("INTT_BCO", &INTT_BCO);
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusLadderZId", &ClusLadderZId);
@@ -428,13 +489,26 @@ int main(int argc, char *argv[])
         bool InttZvtxRange = (PV[2] > -10 && PV[2] < 10);
         bool EvtSel = validMbdVtx && MbdNScharnge && firedTrig && MbdZvtxRange && InttZvtxRange;
         cout << "Event " << event << " validMbdVtx: " << validMbdVtx << " MbdNScharnge: " << MbdNScharnge << " firedTrig: " << firedTrig << " MbdZvtxRange: " << MbdZvtxRange << " EvtSel: " << EvtSel << endl;
-        
+
         if (!EvtSel)
             continue;
 
         float vtxzwei = (IsData) ? 1. : hM_vtxzweight->GetBinContent(hM_vtxzweight->FindBin(PV[2]));
 
         cout << "Number of clusters: " << ClusLayer->size() << endl;
+
+        std::vector<std::vector<Hit *>> hits_layer =  {{}, {}};
+        for (size_t i = 0; i < hits_layer.size(); i++)
+        {
+            for (auto &hit : hits_layer[i])
+            {
+                delete hit;
+            }
+            CleanVec(hits_layer[i]);
+        }
+
+        
+
         for (size_t i = 0; i < ClusLayer->size(); i++)
         {
             if (ClusLayer->at(i) < 3 || ClusLayer->at(i) > 6)
@@ -446,6 +520,7 @@ int main(int argc, char *argv[])
             int layer = (ClusLayer->at(i) == 3 || ClusLayer->at(i) == 4) ? 0 : 1;
 
             Hit *hit = new Hit(ClusX->at(i), ClusY->at(i), ClusZ->at(i), PV[0], PV[1], PV[2], layer);
+            hits_layer[layer].push_back(hit);
 
             // hM_ClusX_all->Fill(ClusX->at(i));
             // hM_ClusY_all->Fill(ClusY->at(i));
@@ -704,7 +779,7 @@ int main(int argc, char *argv[])
                 hM_ClusPhiSize_ClusADC_layer2->Fill(ClusPhiSize->at(i), ClusAdc->at(i), vtxzwei);
                 hM_ClusPhiSize_ClusADC_layer2_zoomin->Fill(ClusPhiSize->at(i), ClusAdc->at(i), vtxzwei);
                 hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_zoomin->Fill(hit->Eta(), ClusAdc->at(i) / ClusPhiSize->at(i), vtxzwei);
-                
+
                 // Select perpendicularly incident clusters, i.e cluster |eta|<=0.1
                 if (fabs(hit->Eta()) <= 0.1)
                 {
@@ -768,6 +843,28 @@ int main(int argc, char *argv[])
                 // hM_ClusEta_ClusZSize_layer2->Fill(ClusEta->at(i), ClusZSize->at(i));
                 // hM_ClusZSize_ClusPhiSize_layer2->Fill(ClusZSize->at(i), ClusPhiSize->at(i));
                 // hM_ClusZSize_ClusADC_layer2->Fill(ClusZSize->at(i), ClusAdc->at(i));
+            }
+        }
+
+        
+
+        // calculate the deltaR between two clusters
+        for (size_t i = 0; i < hits_layer[0].size(); i++)
+        {
+            for (size_t j = i+1; j < hits_layer[0].size(); j++)
+            {
+                float dR = deltaR(hits_layer[0][i]->Eta(), hits_layer[0][i]->Phi(), hits_layer[0][j]->Eta(), hits_layer[0][j]->Phi());
+                hM_mutualdRcluster_all->Fill(dR, vtxzwei);
+                hM_mutualdRcluster_layer1->Fill(dR, vtxzwei);
+            }
+        }
+        for (size_t i = 0; i < hits_layer[1].size(); i++)
+        {
+            for (size_t j = i+1; j < hits_layer[1].size(); j++)
+            {
+                float dR = deltaR(hits_layer[1][i]->Eta(), hits_layer[1][i]->Phi(), hits_layer[1][j]->Eta(), hits_layer[1][j]->Phi());
+                hM_mutualdRcluster_all->Fill(dR, vtxzwei);
+                hM_mutualdRcluster_layer2->Fill(dR, vtxzwei);
             }
         }
     }
@@ -933,5 +1030,9 @@ int main(int argc, char *argv[])
     // for intt private cluster adc cut
     hM_ClusEtaPV_EtaDepADCCut_inttprivate->Write();
     hM_ClusEtaPV_ClusADC_all_zoomin_inttprivate->Write();
+
+    hM_mutualdRcluster_all->Write();
+    hM_mutualdRcluster_layer1->Write();
+    hM_mutualdRcluster_layer2->Write();
     fout->Close();
 }

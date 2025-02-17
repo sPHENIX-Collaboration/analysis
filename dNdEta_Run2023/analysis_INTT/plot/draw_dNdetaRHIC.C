@@ -1,19 +1,23 @@
+#include "./util_combine.h"
+
 std::vector<float> v_sphenix_centralitybin = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50};
 int nsphenix = v_sphenix_centralitybin.size() - 1;
-std::vector<TH1D *> v_SPHENIX_dNdeta_cmsapproach;
+std::vector<TH1 *> v_sphenix_dNdeta_cmsapproach_hist;
+std::vector<TGraphAsymmErrors *> v_SPHENIX_dNdeta_cmsapproach;
 std::vector<std::string> v_SPHENIX_labels = {};
 std::string color_sphenix_cmsapproach = "#1A1423";
 // std::string leg_sphenix_cmsapproach = "#splitline{sPHENIX}{(CMS-inspired approach)}";
 std::string leg_sphenix_cmsapproach = "sPHENIX (CMS-inspired approach)";
 int mkstyle_sphenix_cmsapproach = 24;
 
-std::vector<TH1D *> v_SPHENIX_dNdeta_phobosapproach;
+std::vector<TH1 *> v_sphenix_dNdeta_phobosapproach_hist;
+std::vector<TGraphAsymmErrors *> v_SPHENIX_dNdeta_phobosapproach;
 std::string color_sphenix_phobosapproach = "#618264";
 // std::string leg_sphenix_phobosapproach = "#splitline{sPHENIX}{(PHOBOS-inspired approach)}";
 std::string leg_sphenix_phobosapproach = "sPHENIX (PHOBOS-inspired approach)";
 int mkstyle_sphenix_phobosapproach = 24;
 
-bool draw_brahms = true;
+bool draw_brahms = false;
 std::vector<float> v_brahms_centralitybin = {0, 5, 10, 20, 30, 40, 50};
 int nbrahms = v_brahms_centralitybin.size() - 1;
 std::vector<TGraphAsymmErrors *> v_BRAHMS_dNdeta;
@@ -47,44 +51,6 @@ float TopMargin = (docombine) ? ((draw_brahms) ? 0.18 : 0.12) : ((draw_brahms) ?
 float BottomMargin = 0.13;
 float ymax = (docombine) ? 940 : 970;
 float ymin = 50;
-
-int GetMbinNum(const std::string &fstr)
-{
-    if (fstr.find("Centrality0to3") != std::string::npos)
-        return 0;
-    if (fstr.find("Centrality3to6") != std::string::npos)
-        return 1;
-    if (fstr.find("Centrality6to10") != std::string::npos)
-        return 2;
-    if (fstr.find("Centrality10to15") != std::string::npos)
-        return 3;
-    if (fstr.find("Centrality15to20") != std::string::npos)
-        return 4;
-    if (fstr.find("Centrality20to25") != std::string::npos)
-        return 5;
-    if (fstr.find("Centrality25to30") != std::string::npos)
-        return 6;
-    if (fstr.find("Centrality30to35") != std::string::npos)
-        return 7;
-    if (fstr.find("Centrality35to40") != std::string::npos)
-        return 8;
-    if (fstr.find("Centrality40to45") != std::string::npos)
-        return 9;
-    if (fstr.find("Centrality45to50") != std::string::npos)
-        return 10;
-    if (fstr.find("Centrality50to55") != std::string::npos)
-        return 11;
-    if (fstr.find("Centrality55to60") != std::string::npos)
-        return 12;
-    if (fstr.find("Centrality60to65") != std::string::npos)
-        return 13;
-    if (fstr.find("Centrality65to70") != std::string::npos)
-        return 14;
-    if (fstr.find("Centrality0to70") != std::string::npos)
-        return 70;
-
-    return -1; // Default case if no match is found
-}
 
 void BRAHMS_dNdeta()
 {
@@ -146,6 +112,30 @@ void PHOBOS_dNdeta()
     f->Close();
 }
 
+TGraphAsymmErrors* TH1toTGraphAsymmErrors(TH1 *h)
+{
+    int Nbins = h->GetNbinsX();
+
+    std::vector<float> vx, vy, vxerr, vyerr;
+    vx.clear();
+    vy.clear();
+    vxerr.clear();
+    vyerr.clear();
+    for (int i = 1; i <= Nbins; i++)
+    {
+        if (h->GetBinContent(i) <= 0)
+            continue;
+
+        vx.push_back(h->GetBinCenter(i));
+        vy.push_back(h->GetBinContent(i));
+        vxerr.push_back(h->GetBinWidth(i) * 0.49);
+        vyerr.push_back(h->GetBinError(i));
+    }
+
+    TGraphAsymmErrors *g = new TGraphAsymmErrors(vx.size(), vx.data(), vy.data(), vxerr.data(), vxerr.data(), vyerr.data(), vyerr.data());
+    return g;
+}
+
 void SPHENIX_dNdeta()
 {
     for (int i = 0; i < nsphenix; i++)
@@ -156,21 +146,25 @@ void SPHENIX_dNdeta()
         TFile *f = new TFile(Form("./systematics/Centrality%dto%d_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality%dto%d_Zvtxm10p0to10p0_noasel.root", (int)v_sphenix_centralitybin[i], (int)v_sphenix_centralitybin[i + 1], (int)v_sphenix_centralitybin[i], (int)v_sphenix_centralitybin[i + 1]), "READ");
         TH1D *h = (TH1D *)f->Get("hM_final");
         h->SetDirectory(0);
-        v_SPHENIX_dNdeta_cmsapproach.push_back(h);
+        v_sphenix_dNdeta_cmsapproach_hist.push_back(h);
+        TGraphAsymmErrors *g_cms = TH1toTGraphAsymmErrors(h);
+        v_SPHENIX_dNdeta_cmsapproach.push_back(g_cms);
         v_SPHENIX_labels.push_back(Form("%d-%d%%", (int)v_sphenix_centralitybin[i], (int)v_sphenix_centralitybin[i + 1]));
         f->Close();
 
         // PHOBOS-inspired approach
-        TFile *fphobos = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
+        TFile *fphobos = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
         TH1D *hphobos = (TH1D *)fphobos->Get("h1D_dNdEta_reco");
         hphobos->SetDirectory(0);
-        v_SPHENIX_dNdeta_phobosapproach.push_back(hphobos);
+        v_sphenix_dNdeta_phobosapproach_hist.push_back(hphobos);
+        TGraphAsymmErrors *g_phobos = TH1toTGraphAsymmErrors(hphobos);
+        v_SPHENIX_dNdeta_phobosapproach.push_back(g_phobos);
         fphobos->Close();
     }
 }
 
 // a function to combine sPHENIX CMS-inspired and PHOBOS-inspired dN/deta; return a TGraphAsymmErrors object
-TGraphAsymmErrors *sphnex_dNdeta(TH1D *h_phobos, TH1D *h_cms)
+TGraphAsymmErrors *sphnex_dNdeta(TH1 *h_phobos, TH1 *h_cms)
 {
     int Nbins = h_phobos->GetNbinsX();
 
@@ -192,7 +186,7 @@ TGraphAsymmErrors *sphnex_dNdeta(TH1D *h_phobos, TH1D *h_cms)
             continue;
 
         double yerr = (yerr_phobos > yerr_cms) ? yerr_phobos : yerr_cms;
-        double xerr = h_phobos->GetBinWidth(i) / 2;
+        double xerr = h_phobos->GetBinWidth(i) * 0.49;
 
         // cout << "Measurement: " << i << " " << x << " " << y << " " << xerr << " " << yerr << endl;
 
@@ -215,10 +209,12 @@ void draw_dNdetaRHIC()
     PHOBOS_dNdeta();
     if (draw_brahms)
         BRAHMS_dNdeta();
-    auto ts_sphenix_cmsapproach = new THStack("ts_sphenix_cmsapproach", "sPHENIX AuAu 200 GeV (CMS-inspired approach)");
-    auto ts_sphenix_phobosapproach = new THStack("ts_sphenix_phobosapproach", "sPHENIX AuAu 200 GeV (PHOBOS-inspired approach)");
+    // auto ts_sphenix_cmsapproach = new THStack("ts_sphenix_cmsapproach", "sPHENIX AuAu 200 GeV (CMS-inspired approach)");
+    // auto ts_sphenix_phobosapproach = new THStack("ts_sphenix_phobosapproach", "sPHENIX AuAu 200 GeV (PHOBOS-inspired approach)");
     auto mg_phobos = new TMultiGraph();
     auto mg_brahms = new TMultiGraph();
+    auto mg_sphenix_cmsapproach = new TMultiGraph();
+    auto mg_sphenix_phobosapproach = new TMultiGraph();
     auto mg_sphenix = new TMultiGraph();
 
     for (int i = 0; i < nsphenix; i++)
@@ -226,26 +222,24 @@ void draw_dNdetaRHIC()
         v_SPHENIX_dNdeta_cmsapproach[i]->SetMarkerStyle(mkstyle_sphenix_cmsapproach);
         v_SPHENIX_dNdeta_cmsapproach[i]->SetMarkerSize(0.8);
         v_SPHENIX_dNdeta_cmsapproach[i]->SetLineColor(TColor::GetColor(color_sphenix_cmsapproach.c_str()));
-        v_SPHENIX_dNdeta_cmsapproach[i]->SetLineWidth(0);
+        v_SPHENIX_dNdeta_cmsapproach[i]->SetLineWidth(1);
         v_SPHENIX_dNdeta_cmsapproach[i]->SetMarkerColor(TColor::GetColor(color_sphenix_cmsapproach.c_str()));
-        v_SPHENIX_dNdeta_cmsapproach[i]->SetFillColorAlpha(TColor::GetColor(color_sphenix_cmsapproach.c_str()), 0.3);
-        v_SPHENIX_dNdeta_cmsapproach[i]->GetXaxis()->SetRange(v_SPHENIX_dNdeta_cmsapproach[i]->FindFirstBinAbove(0), v_SPHENIX_dNdeta_cmsapproach[i]->FindLastBinAbove(0));
-        ts_sphenix_cmsapproach->Add(v_SPHENIX_dNdeta_cmsapproach[i]);
+        v_SPHENIX_dNdeta_cmsapproach[i]->SetFillColorAlpha(TColor::GetColor(color_sphenix_cmsapproach.c_str()), 0.35);
+        mg_sphenix_cmsapproach->Add(v_SPHENIX_dNdeta_cmsapproach[i], "5 p");
 
         v_SPHENIX_dNdeta_phobosapproach[i]->SetMarkerStyle(mkstyle_sphenix_phobosapproach);
         v_SPHENIX_dNdeta_phobosapproach[i]->SetMarkerSize(0.8);
         v_SPHENIX_dNdeta_phobosapproach[i]->SetLineColor(TColor::GetColor(color_sphenix_phobosapproach.c_str()));
-        v_SPHENIX_dNdeta_phobosapproach[i]->SetLineWidth(0);
+        v_SPHENIX_dNdeta_phobosapproach[i]->SetLineWidth(1);
         v_SPHENIX_dNdeta_phobosapproach[i]->SetMarkerColor(TColor::GetColor(color_sphenix_phobosapproach.c_str()));
-        v_SPHENIX_dNdeta_phobosapproach[i]->SetFillColorAlpha(TColor::GetColor(color_sphenix_phobosapproach.c_str()), 0.3);
-        v_SPHENIX_dNdeta_phobosapproach[i]->GetXaxis()->SetRange(v_SPHENIX_dNdeta_phobosapproach[i]->FindFirstBinAbove(0), v_SPHENIX_dNdeta_phobosapproach[i]->FindLastBinAbove(0));
-        ts_sphenix_phobosapproach->Add(v_SPHENIX_dNdeta_phobosapproach[i]);
+        v_SPHENIX_dNdeta_phobosapproach[i]->SetFillColorAlpha(TColor::GetColor(color_sphenix_phobosapproach.c_str()), 0.7);
+        mg_sphenix_phobosapproach->Add(v_SPHENIX_dNdeta_phobosapproach[i], "5 p");
 
-        TGraphAsymmErrors *g = sphnex_dNdeta(v_SPHENIX_dNdeta_phobosapproach[i], v_SPHENIX_dNdeta_cmsapproach[i]);
+        TGraphAsymmErrors *g = sphnex_dNdeta(v_sphenix_dNdeta_phobosapproach_hist[i], v_sphenix_dNdeta_cmsapproach_hist[i]);
         g->SetMarkerStyle(mkstyle_sphenix_combine);
         g->SetMarkerSize(0.8);
         g->SetLineColor(TColor::GetColor(color_sphenix_combine.c_str()));
-        g->SetLineWidth(0);
+        g->SetLineWidth(1);
         g->SetMarkerColor(TColor::GetColor(color_sphenix_combine.c_str()));
         g->SetFillColorAlpha(TColor::GetColor(color_sphenix_combine.c_str()), 0.3);
         v_sphenix_dNdeta.push_back(g);
@@ -284,11 +278,11 @@ void draw_dNdetaRHIC()
     mg_phobos->Draw("A PF");
     mg_brahms->Draw("PF");
     if (docombine)
-        mg_sphenix->Draw("PF");
+        mg_sphenix->Draw("5 P F");
     else
     {
-        ts_sphenix_cmsapproach->Draw("same nostack e2p");
-        ts_sphenix_phobosapproach->Draw("same nostack e2p");
+        mg_sphenix_phobosapproach->Draw("5 P F");
+        mg_sphenix_cmsapproach->Draw("5 P F");
     }
     // add labels for PHOBOS data
     // for each graph, get the x value of the first point with x < -2 and add a label there
@@ -358,9 +352,10 @@ void draw_dNdetaRHIC()
         for (int i = 0; i < nsphenix; i++)
         {
             double x, y;
-            int bin = v_SPHENIX_dNdeta_phobosapproach[i]->FindLastBinAbove(0);
-            x = v_SPHENIX_dNdeta_phobosapproach[i]->GetBinLowEdge(bin) + v_SPHENIX_dNdeta_phobosapproach[i]->GetBinWidth(bin);
-            y = v_SPHENIX_dNdeta_phobosapproach[i]->GetBinContent(bin) + v_SPHENIX_dNdeta_phobosapproach[i]->GetBinError(bin);
+            // int bin = v_SPHENIX_dNdeta_phobosapproach[i]->FindLastBinAbove(0);
+            x = v_SPHENIX_dNdeta_phobosapproach[i]->GetPointX(v_SPHENIX_dNdeta_phobosapproach[i]->GetN() - 1) + v_SPHENIX_dNdeta_phobosapproach[i]->GetErrorXlow(v_SPHENIX_dNdeta_phobosapproach[i]->GetN() - 1);
+            y = v_SPHENIX_dNdeta_phobosapproach[i]->GetPointY(v_SPHENIX_dNdeta_phobosapproach[i]->GetN() - 1) + v_SPHENIX_dNdeta_phobosapproach[i]->GetErrorYhigh(v_SPHENIX_dNdeta_phobosapproach[i]->GetN() - 1);
+            cout << "phobos: x=" << x << " y=" << y << endl;
             TLatex *lphobos = new TLatex(x, y, v_SPHENIX_labels[i].c_str());
             if (v_sphenix_centralitybin[i] >= 20)
                 lphobos->SetTextAlign(kHAlignLeft + kVAlignBottom);
@@ -371,9 +366,10 @@ void draw_dNdetaRHIC()
             lphobos->SetTextColor(TColor::GetColor(color_sphenix_phobosapproach.c_str()));
             lphobos->Draw();
 
-            bin = v_SPHENIX_dNdeta_cmsapproach[i]->FindFirstBinAbove(0);
-            x = v_SPHENIX_dNdeta_cmsapproach[i]->GetBinLowEdge(bin);
-            y = v_SPHENIX_dNdeta_cmsapproach[i]->GetBinContent(bin) + v_SPHENIX_dNdeta_cmsapproach[i]->GetBinError(bin);
+            // bin = v_SPHENIX_dNdeta_cmsapproach[i]->FindFirstBinAbove(0);
+            x = v_SPHENIX_dNdeta_cmsapproach[i]->GetPointX(0) - v_SPHENIX_dNdeta_cmsapproach[i]->GetErrorXlow(0);
+            y = v_SPHENIX_dNdeta_cmsapproach[i]->GetPointY(0) + v_SPHENIX_dNdeta_cmsapproach[i]->GetErrorYhigh(0);
+            cout << "cms: x=" << x << " y=" << y << endl;
             TLatex *lcms = new TLatex(x, y, v_SPHENIX_labels[i].c_str());
             // set right and center adjusted
             if (v_sphenix_centralitybin[i] >= 20)

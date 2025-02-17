@@ -95,7 +95,7 @@ def msrmnt_sphenix_rawhijing_auau_200gev():
     return gsphenix_rawhijing_auau_200gev, gsphenix_rawhijing_divnpart2_auau_200gev
 
 
-def msrmnt_sphenix_data_auau_200gev(approach='cms'):
+def msrmnt_sphenix_data_auau_200gev(approach='cms'): # approach: 'cms', 'phobos', 'combined'
     centralitybin = sphenix_centrality_interval()
     centnpart, centnparterr = sphenix_centralitynpart()
     
@@ -106,26 +106,55 @@ def msrmnt_sphenix_data_auau_200gev(approach='cms'):
             hM_dNdEtafinal = GetHistogram('./systematics/Centrality{}to{}_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality{}to{}_Zvtxm10p0to10p0_noasel.root'.format(centralitybin[i],centralitybin[i+1],centralitybin[i],centralitybin[i+1]), 'hM_final')
         elif approach == 'phobos':
             mbin = GetMbinNum('Centrality{}to{}'.format(centralitybin[i],centralitybin[i+1]))
-            hM_dNdEtafinal = GetHistogram('/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root'.format(mbin,mbin,mbin), 'h1D_dNdEta_reco')
+            hM_dNdEtafinal = GetHistogram('/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root'.format(mbin,mbin,mbin), 'h1D_dNdEta_reco')
+        elif approach == 'combined':
+            hM_dNdEtafinal_cms = GetHistogram('./systematics/Centrality{}to{}_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality{}to{}_Zvtxm10p0to10p0_noasel.root'.format(centralitybin[i],centralitybin[i+1],centralitybin[i],centralitybin[i+1]), 'hM_final')
+            mbin = GetMbinNum('Centrality{}to{}'.format(centralitybin[i],centralitybin[i+1]))
+            hM_dNdEtafinal_phobos = GetHistogram('/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root'.format(mbin,mbin,mbin), 'h1D_dNdEta_reco')
         else:
-            print ('Approach {} is not supported. Use default approach of cms'.format(approach))
-            hM_dNdEtafinal = GetHistogram('./systematics/Centrality{}to{}_Zvtxm10p0to10p0_noasel/finalhists_systematics_Centrality{}to{}_Zvtxm10p0to10p0_noasel.root'.format(centralitybin[i],centralitybin[i+1],centralitybin[i],centralitybin[i+1]), 'hM_final')
+            sys.exit('Approach {} is not supported. Use default approach of cms'.format(approach))
 
-        dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
-        list_dNdEta_eta0 = [hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))]
-        list_dNdEta_eta0_err = [hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))]
-        dNdEta_eta0_centrality, dNdEta_eta0_err_centrality = weighted_average(list_dNdEta_eta0, list_dNdEta_eta0_err)
-        # print ('dNdEta_eta0_centrality={}, dNdta_eta0_err_centrality={}'.format(dNdEta_eta0_centrality, dNdEta_eta0_err_centrality))
-        rel_err_dNdEta = dNdEta_eta0_err_centrality / dNdEta_eta0_centrality
-        rel_err_npart = centnparterr[i] / centnpart[i]
-        dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_centrality / (centnpart[i] / 2.) * math.sqrt(rel_err_dNdEta**2 + rel_err_npart**2) 
-        
-        dNdEta_eta0.append(dNdEta_eta0_centrality)
-        dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
-        Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
-        dNdEta_eta0_err.append(dNdEta_eta0_err_centrality)
-        dNdEta_eta0_divnpart2_err.append(dNdEta_eta0_divnpart2_err_centrality)
-        Centrality_err.append(0)
+        if approach == 'cms' or approach == 'phobos':
+            dNdEta_eta0_centrality = (hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)) + hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))) / 3.
+            list_dNdEta_eta0 = [hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinContent(hM_dNdEtafinal.FindBin(0.2))]
+            list_dNdEta_eta0_err = [hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(-0.2)), hM_dNdEtafinal.GetBinError(hM_dNdEtafinal.FindBin(0.2))]
+            dNdEta_eta0_centrality, dNdEta_eta0_err_centrality = weighted_average(list_dNdEta_eta0, list_dNdEta_eta0_err)
+            # print ('dNdEta_eta0_centrality={}, dNdta_eta0_err_centrality={}'.format(dNdEta_eta0_centrality, dNdEta_eta0_err_centrality))
+            rel_err_dNdEta = dNdEta_eta0_err_centrality / dNdEta_eta0_centrality
+            rel_err_npart = centnparterr[i] / centnpart[i]
+            dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_centrality / (centnpart[i] / 2.) * math.sqrt(rel_err_dNdEta**2 + rel_err_npart**2) 
+            
+            dNdEta_eta0.append(dNdEta_eta0_centrality)
+            dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
+            Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
+            dNdEta_eta0_err.append(dNdEta_eta0_err_centrality)
+            dNdEta_eta0_divnpart2_err.append(dNdEta_eta0_divnpart2_err_centrality)
+            Centrality_err.append(0)
+        elif approach == 'combined':
+            dNdEta_eta0_centrality_cms = (hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(0)) + hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(-0.2)) + hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(0.2))) / 3.
+            list_dNdEta_eta0_cms = [hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(0)), hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(-0.2)), hM_dNdEtafinal_cms.GetBinContent(hM_dNdEtafinal_cms.FindBin(0.2))]
+            list_dNdEta_eta0_err_cms = [hM_dNdEtafinal_cms.GetBinError(hM_dNdEtafinal_cms.FindBin(0)), hM_dNdEtafinal_cms.GetBinError(hM_dNdEtafinal_cms.FindBin(-0.2)), hM_dNdEtafinal_cms.GetBinError(hM_dNdEtafinal_cms.FindBin(0.2))]
+            dNdEta_eta0_centrality_cms, dNdEta_eta0_err_centrality_cms = weighted_average(list_dNdEta_eta0_cms, list_dNdEta_eta0_err_cms)
+            
+            dNdEta_eta0_centrality_phobos = (hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(0)) + hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(-0.2)) + hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(0.2))) / 3.
+            list_dNdEta_eta0_phobos = [hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(0)), hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(-0.2)), hM_dNdEtafinal_phobos.GetBinContent(hM_dNdEtafinal_phobos.FindBin(0.2))]
+            list_dNdEta_eta0_err_phobos = [hM_dNdEtafinal_phobos.GetBinError(hM_dNdEtafinal_phobos.FindBin(0)), hM_dNdEtafinal_phobos.GetBinError(hM_dNdEtafinal_phobos.FindBin(-0.2)), hM_dNdEtafinal_phobos.GetBinError(hM_dNdEtafinal_phobos.FindBin(0.2))]
+            dNdEta_eta0_centrality_phobos, dNdEta_eta0_err_centrality_phobos = weighted_average(list_dNdEta_eta0_phobos, list_dNdEta_eta0_err_phobos)
+            
+            dNdEta_eta0_centrality = (dNdEta_eta0_centrality_cms + dNdEta_eta0_centrality_phobos) / 2.
+            dNdEta_eta0_err_centrality = max(dNdEta_eta0_err_centrality_cms, dNdEta_eta0_err_centrality_phobos)
+            rel_err_dNdEta = dNdEta_eta0_err_centrality / dNdEta_eta0_centrality
+            rel_err_npart = centnparterr[i] / centnpart[i]
+            dNdEta_eta0_divnpart2_err_centrality = dNdEta_eta0_centrality / (centnpart[i] / 2.) * math.sqrt(rel_err_dNdEta**2 + rel_err_npart**2)
+            
+            dNdEta_eta0.append(dNdEta_eta0_centrality)
+            dNdEta_eta0_divnpart2.append(dNdEta_eta0_centrality / (centnpart[i] / 2.))
+            Centrality.append((centralitybin[i] + centralitybin[i+1]) / 2.)
+            dNdEta_eta0_err.append(dNdEta_eta0_err_centrality)
+            dNdEta_eta0_divnpart2_err.append(dNdEta_eta0_divnpart2_err_centrality)
+            Centrality_err.append(0)
+        else:
+            sys.exit('Approach {} is not supported. Use default approach of cms'.format(approach))
 
     dNdEta_eta0 = array('f', dNdEta_eta0)
     dNdEta_eta0_divnpart2 = array('f', dNdEta_eta0_divnpart2)
@@ -135,13 +164,11 @@ def msrmnt_sphenix_data_auau_200gev(approach='cms'):
     Centrality_err = array('f', Centrality_err)
     centnpart = array('f', centnpart)
     centnparterr = array('f', centnparterr)
-    gsphenix_data_auau_200gev = TGraphErrors(len(Centrality), Centrality, dNdEta_eta0, Centrality_err, dNdEta_eta0_err)
-    gsphenix_data_divnpart2_auau_200gev = TGraphErrors(len(centnpart), centnpart, dNdEta_eta0_divnpart2, centnparterr, dNdEta_eta0_divnpart2_err)
+    gsphenix_data_auau_200gev = TGraphAsymmErrors(len(Centrality), Centrality, dNdEta_eta0, Centrality_err, Centrality_err, dNdEta_eta0_err, dNdEta_eta0_err)
+    gsphenix_data_divnpart2_auau_200gev = TGraphAsymmErrors(len(centnpart), centnpart, dNdEta_eta0_divnpart2, centnparterr, centnparterr, dNdEta_eta0_divnpart2_err, dNdEta_eta0_divnpart2_err)
 
     return gsphenix_data_auau_200gev, gsphenix_data_divnpart2_auau_200gev
-
-
-
+    
 
 def msrmnt_dict():
     msrmntdict = {}
@@ -170,6 +197,7 @@ def msrmnt_dict():
     # sphnx_sim_auau_200gev, sphnx_sim_divnpart2_auau_200gev = msrmnt_sphenix_sim_auau_200gev()
     sphnx_data_auau_200gev_cmsapp, sphnx_data_divnpart2_auau_200gev_cmsapp = msrmnt_sphenix_data_auau_200gev('cms')
     sphnx_data_auau_200gev_phobosapp, sphnx_data_divnpart2_auau_200gev_phobosapp = msrmnt_sphenix_data_auau_200gev('phobos')
+    sphnx_data_auau_200gev_combined, sphnx_data_divnpart2_auau_200gev_combined = msrmnt_sphenix_data_auau_200gev('combined')
     
     msrmntdict['sphenix_rawhijing_auau_200gev'] = sphenix_rawhijing_auau_200gev
     # msrmntdict['sphenix_sim_auau_200gev'] = sphnx_sim_auau_200gev
@@ -177,6 +205,8 @@ def msrmnt_dict():
     msrmntdict['sphenix_data_auau_200gev_cmsapp_redraw'] = sphnx_data_auau_200gev_cmsapp
     msrmntdict['sphenix_data_auau_200gev_phobosapp'] = sphnx_data_auau_200gev_phobosapp
     msrmntdict['sphenix_data_auau_200gev_phobosapp_redraw'] = sphnx_data_auau_200gev_phobosapp
+    msrmntdict['sphenix_data_auau_200gev_combined'] = sphnx_data_auau_200gev_combined
+    msrmntdict['sphenix_data_auau_200gev_combined_redraw'] = sphnx_data_auau_200gev_combined
     
     # dndeta / (<npart> / 2)
     msrmntdict['phenix_auau_0p2_divnpart2'] = phenix_auau_0p2_divnpart2() # PHENIX only provide dndeta / (<npart>)
@@ -188,6 +218,8 @@ def msrmnt_dict():
     msrmntdict['sphenix_data_auau_0p2_divnpart2_cmsapp_redraw'] = sphnx_data_divnpart2_auau_200gev_cmsapp
     msrmntdict['sphenix_data_auau_0p2_divnpart2_phobosapp'] = sphnx_data_divnpart2_auau_200gev_phobosapp
     msrmntdict['sphenix_data_auau_0p2_divnpart2_phobosapp_redraw'] = sphnx_data_divnpart2_auau_200gev_phobosapp
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_combined'] = sphnx_data_divnpart2_auau_200gev_combined
+    msrmntdict['sphenix_data_auau_0p2_divnpart2_combined_redraw'] = sphnx_data_divnpart2_auau_200gev_combined
     return msrmntdict
 
 
@@ -200,7 +232,7 @@ def gstyle(g, mstyle, msize, color, lwidth, alpha):
     g.SetFillColorAlpha(color, alpha)
 
 
-def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 20, 1200], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
+def dNdeta_eta0_Summary(docombine, jsonpath, canvname, axisrange = [-1, 71, 20, 1200], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
     xmin = axisrange[0]
     xmax = axisrange[1]
     ymin = axisrange[2]
@@ -247,6 +279,13 @@ def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 20, 1200], canv
             if not include_rawhijing and 'rawhijing' in tagName:
                 continue
             
+            if docombine:
+                if 'phobosapp' in tagName or 'cmsapp' in tagName:
+                    continue
+            else:
+                if 'combined' in tagName:
+                    continue
+            
             gr = dict_msrmnt[tagName]
             gstyle(gr, par['markerstyle'], par['markersize'], TColor.GetColor(par['markercolor']), par['linewidth'], par['alpha'])
             gr.Draw(par['DrawOption'][0])
@@ -264,11 +303,15 @@ def dNdeta_eta0_Summary(jsonpath, canvname, axisrange = [-1, 71, 20, 1200], canv
     sphnxleg.AddEntry('', '#it{#bf{sPHENIX}} ' + prelimtext, '')
     sphnxleg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     sphnxleg.Draw()
-    c.SaveAs(plotpath + 'dNdEta_eta0_{}.png'.format(canvname));
-    c.SaveAs(plotpath + 'dNdEta_eta0_{}.pdf'.format(canvname));
+    if (docombine):
+        c.SaveAs(plotpath + 'dNdEta_eta0_{}_combine.png'.format(canvname))
+        c.SaveAs(plotpath + 'dNdEta_eta0_{}_combine.pdf'.format(canvname))
+    else:
+        c.SaveAs(plotpath + 'dNdEta_eta0_{}.png'.format(canvname));
+        c.SaveAs(plotpath + 'dNdEta_eta0_{}.pdf'.format(canvname));
     
     
-def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 1.49, 5.01], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
+def dNdeta_eta0_divnpart2_Summary(docombine, jsonpath, canvname, axisrange = [0, 400, 1.49, 5.01], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='Internal'):
     xmin = axisrange[0]
     xmax = axisrange[1]
     ymin = axisrange[2]
@@ -302,6 +345,13 @@ def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 1.49,
             if not include_rawhijing and 'rawhijing' in tagName:
                 continue
             
+            if docombine:
+                if 'phobosapp' in tagName or 'cmsapp' in tagName:
+                    continue
+            else:
+                if 'combined' in tagName:
+                    continue
+                
             gr = dict_msrmnt[tagName]
             gstyle(gr, par['markerstyle'], par['markersize'], TColor.GetColor(par['markercolor']), par['linewidth'], par['alpha'])
             gr.Draw(par['DrawOption'][0])
@@ -320,14 +370,26 @@ def dNdeta_eta0_divnpart2_Summary(jsonpath, canvname, axisrange = [0, 400, 1.49,
     sphnxleg.AddEntry('', '#it{#bf{sPHENIX}} ' + prelimtext, '')
     sphnxleg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     sphnxleg.Draw()
-    c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.png'.format(canvname));
-    c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.pdf'.format(canvname));
+    if (docombine):
+        c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine.png'.format(canvname))
+        c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine.pdf'.format(canvname))
+    else:
+        c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.png'.format(canvname))
+        c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}.pdf'.format(canvname))
 
 
 if __name__ == '__main__':
+    parser = OptionParser(usage='usage: %prog ver [options -h]')
+    parser.add_option('--combine', action='store_true', dest='combine', default=False, help='Combine two analyses')
+    
+    (opt, args) = parser.parse_args()
+    print('opt: {}'.format(opt))
+    
+    combine = opt.combine
+    
     plotpath = './dNdEtaFinal/'
     os.makedirs(plotpath, exist_ok=True)
 
-    dNdeta_eta0_Summary('./measurements/RHIC_plotparam.json', 'RHIC')
-    dNdeta_eta0_divnpart2_Summary('./measurements/RHIC_dndetadivnpart2_plotparam.json', 'RHIC')
+    dNdeta_eta0_Summary(combine, './measurements/RHIC_plotparam.json', 'RHIC')
+    dNdeta_eta0_divnpart2_Summary(combine, './measurements/RHIC_dndetadivnpart2_plotparam.json', 'RHIC')
     

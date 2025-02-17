@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_option("-i", "--runInttData", dest="runInttData", action="store_true", default=False, help="Run INTT data (MBD data otherwise)")
     parser.add_option("-r", "--runnumber", dest="runnumber", default=20869, help="Run number")
     parser.add_option("-p", "--productiontag", dest="productiontag", default="ProdA_2023", help="Production tag")
-    parser.add_option("-g", "--generator", dest="generator", default="HIJING", help="Generator type (HIJING, EPOS, AMPT)")
+    parser.add_option("-g", "--generator", dest="generator", default="HIJING", help="Generator type (HIJING, EPOS, AMPT, SIMPLE)")
     parser.add_option("-n", "--eventPerJob", dest="eventPerJob", default=200, help="Number of events per job")
     parser.add_option("-j", "--nJob", dest="nJob", default=400, help="Number of jobs (queues)")
     parser.add_option("-o", "--outputdir", dest="outputdir", default="HIJING_ana398_zvtx-20cm_dummyAlignParams", help="Output directory (full path required)")

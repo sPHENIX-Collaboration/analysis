@@ -29,8 +29,14 @@ def markerset(i):
         return [20, 21, 33, 34]
     elif i == 5:
         return [20, 21, 33, 34, 47]
+    elif i == 6:
+        return [20, 21, 33, 34, 47, 43]
+    elif i == 7:
+        return [20, 21, 33, 34, 47, 43, 45]
+    elif i == 8:
+        return [20, 21, 33, 34, 47, 43, 45, 49]
     else:
-        print ("Attempt to use more than 5 markers, probably too many histograms. Set all markers to 20")
+        print ("Attempt to use more than 8 markers, probably too many histograms. Set all markers to 20")
         return [20 for _ in range(i)]
 
 def colorset(i):
@@ -44,6 +50,12 @@ def colorset(i):
         return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E']
     elif i == 5:
         return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960']
+    elif i == 6:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB']
+    elif i == 7:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66']
+    elif i == 8:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
     else:
         print ("Attempt to use more than 5 colors")
         return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
@@ -60,6 +72,12 @@ def colorset2(i):
         return ['#f2777a', '#6699cc', '#9999cc', '#99cc99']
     elif i == 5:
         return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960']
+    elif i == 6:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB']
+    elif i == 7:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66']
+    elif i == 8:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
     else:
         print ("Attempt to use more than 5 colors")
         return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
@@ -270,7 +288,7 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisN
     hist.Draw(drawopt)
 
     rightshift = 0.1
-    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, (1-RightMargin)-rightshift, (1-TopMargin)+0.04)
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, 1-gPad.GetRightMargin(), (1-TopMargin)+0.04)
     leg.SetTextAlign(kHAlignRight+kVAlignBottom)
     leg.SetTextSize(0.045)
     leg.SetFillStyle(0)

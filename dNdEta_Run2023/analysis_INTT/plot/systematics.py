@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import TH1F, TH2F, TFile, TCanvas, TLegend, TColor, gROOT, gSystem, kBlack, kGreen, kRed, kBlue, kOrange, kViolet, kAzure, kMagenta, kCyan, kYellow, kGray, kWhite, gPad
+from ROOT import TH1F, TH2F, TFile, TCanvas, TLegend, TColor, gROOT, gSystem, kBlack, kGreen, kRed, kBlue, kOrange, kViolet, kAzure, kMagenta, kCyan, kYellow, kGray, kWhite, gPad, TPad, TLine
 import numpy
 import math
 import glob
@@ -12,11 +12,12 @@ from plotUtil import GetHistogram, markerset, colorset2
 
 TickSize = 0.03
 AxisTitleSize = 0.05
-AxisLabelSize = 0.04
+AxisLabelSize = 0.045
 LeftMargin = 0.15
-RightMargin = 0.08
+RightMargin = 0.05
 TopMargin = 0.08
 BottomMargin = 0.13
+textscale = 2.6
 
 gROOT.SetBatch(True)
 
@@ -66,11 +67,18 @@ def getFinalUncertainty(l_hm):
 def drawcomp(l_hm, l_hmleg, legheader, plotname):
     lmarker = markerset(len(l_hm))
     lcolor = colorset2(len(l_hm) - 1)
-    ms = 1
+    ms = 1.2
     alpha = 0.8
     ymin = 1E9
     ymax = -1
     
+    # take the ratio to the baseline; the baseline is always the first in the list
+    l_ratio = []
+    for i in range(0, len(l_hm)):
+        h_ratio = l_hm[i].Clone('h_ratio_variation{}'.format(i))
+        h_ratio.Divide(l_hm[0])
+        l_ratio.append(h_ratio)
+        
     for hm in l_hm:
         if hm.GetMinimum(0) < ymin:
             ymin = hm.GetMinimum(0)
@@ -81,10 +89,17 @@ def drawcomp(l_hm, l_hmleg, legheader, plotname):
     hdummy = TH1F('hdummy', 'hdummy', l_hm[0].GetNbinsX(), l_hm[0].GetXaxis().GetXmin(), l_hm[0].GetXaxis().GetXmax())
     
     c = TCanvas('c', 'c', 800, 700)
-    gPad.SetTopMargin(0.05*(len(l_hm)+2))
-    c.cd()
+    pad1 = TPad( 'pad1', ' ', 0, 0.3, 1, 1)
+    pad2 = TPad( 'pad2', ' ', 0, 0, 1, 0.3)
+    pad1.SetTopMargin(0.06*(len(l_hm)+2))
+    pad1.SetBottomMargin(0.0)
+    pad1.Draw()
+    pad2.SetTopMargin(0.0)
+    pad2.SetBottomMargin(0.4)
+    pad2.Draw()
+    pad1.cd()
     # set the axis titles and labels for the histograms
-    hdummy.GetXaxis().SetTitle('Pseudorapidity #eta')
+    # hdummy.GetXaxis().SetTitle('Pseudorapidity #eta')
     hdummy.GetYaxis().SetTitle('dN_{ch}/d#eta')
     hdummy.GetYaxis().SetTitleOffset(1.6)
     hdummy.GetYaxis().SetNdivisions(505)
@@ -99,20 +114,54 @@ def drawcomp(l_hm, l_hmleg, legheader, plotname):
     for i in range(1, len(l_hm)):
         l_hm[i].SetMarkerStyle(lmarker[i])
         l_hm[i].SetMarkerColorAlpha(TColor.GetColor(lcolor[i - 1]), alpha)
-        l_hm[i].SetMarkerSize(ms)
+        l_hm[i].SetMarkerSize(ms if lmarker[i] != 33 else ms * 1.4)
         l_hm[i].SetLineColorAlpha(TColor.GetColor(lcolor[i - 1]), alpha)
         l_hm[i].SetLineWidth(0)
         l_hm[i].Draw('pex0 same')
     leg = TLegend(gPad.GetLeftMargin(), 1 - gPad.GetTopMargin() + 0.02, gPad.GetLeftMargin() + 0.2, 0.98)
     leg.SetHeader(legheader)
-    leg.SetTextSize(0.035)
+    leg.SetTextSize(0.045)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     for i in range(len(l_hm)):
         leg.AddEntry(l_hm[i], '{}'.format(l_hmleg[i]), 'p')
     leg.Draw()
     c.RedrawAxis()
-    c.Draw()
+    c.Update()
+    # cd to the pad2 and draw the ratio
+    pad2.cd()
+    for i in range(1, len(l_ratio)):
+        if i == 1:
+            l_ratio[i].GetYaxis().SetTitle('Ratio')
+            l_ratio[i].GetYaxis().SetTitleOffset(0.6)
+            l_ratio[i].GetYaxis().SetRangeUser(0.9, 1.1)
+            l_ratio[i].GetYaxis().SetNdivisions(502)
+            l_ratio[i].GetYaxis().SetTitleSize(AxisTitleSize * textscale)
+            l_ratio[i].GetYaxis().SetLabelSize(AxisLabelSize * textscale)
+            l_ratio[i].GetXaxis().SetTitle('Pseudorapidity #eta')
+            l_ratio[i].GetXaxis().SetTitleSize(AxisTitleSize * textscale)
+            l_ratio[i].GetXaxis().SetLabelSize(AxisLabelSize * textscale)
+            l_ratio[i].GetXaxis().SetTickLength(0.03*textscale)
+            l_ratio[i].SetMarkerStyle(lmarker[i])
+            l_ratio[i].SetMarkerColor(TColor.GetColor(lcolor[i - 1]))
+            l_ratio[i].SetMarkerSize(ms if lmarker[i] != 33 else ms * 1.4)
+            l_ratio[i].SetLineColor(TColor.GetColor(lcolor[i - 1]))
+            l_ratio[i].SetLineWidth(0)
+            l_ratio[i].Draw('pex0')
+        else:
+            l_ratio[i].SetMarkerStyle(lmarker[i])
+            l_ratio[i].SetMarkerColor(TColor.GetColor(lcolor[i - 1]))
+            l_ratio[i].SetMarkerSize(ms if lmarker[i] != 33 else ms * 1.4)
+            l_ratio[i].SetLineColor(TColor.GetColor(lcolor[i - 1]))
+            l_ratio[i].SetLineWidth(0)
+            l_ratio[i].Draw('pex0 same')
+    # draw a horizontal line at 1
+    hline = TLine(l_ratio[1].GetXaxis().GetXmin(), 1, l_ratio[1].GetXaxis().GetXmax(), 1)
+    hline.SetLineColor(kBlack)
+    hline.SetLineWidth(1)
+    hline.SetLineStyle(2)
+    hline.Draw('same')
+    c.Update()
     c.SaveAs(plotname+'.pdf')
     c.SaveAs(plotname+'.png')
     if (c):
@@ -170,6 +219,8 @@ if __name__ == '__main__':
     h1WEfinal_segment2 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment2/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     h1WEfinal_segment3 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment3/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     h1WEfinal_segment4 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment4/{}/correction_hists.root'.format(desc), 'h1WEfinal')
+    h1WEfinal_segment5 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment5/{}/correction_hists.root'.format(desc), 'h1WEfinal')
+    h1WEfinal_segment6 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment6/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     
     # get the uncertainty from the nominal 
     hM_statunc_nominal = h1WEfinal_nominal.Clone('hM_statunc_nominal')
@@ -203,7 +254,9 @@ if __name__ == '__main__':
     hM_reldiff_h1WEfinal_segment2 = getRelativeDiff(h1WEfinal_segment2, h1WEfinal_nominal)
     hM_reldiff_h1WEfinal_segment3 = getRelativeDiff(h1WEfinal_segment3, h1WEfinal_nominal)
     hM_reldiff_h1WEfinal_segment4 = getRelativeDiff(h1WEfinal_segment4, h1WEfinal_nominal)
-    hM_maxreldiff_segment = getMaxRelDiff([hM_reldiff_h1WEfinal_segment2, hM_reldiff_h1WEfinal_segment3, hM_reldiff_h1WEfinal_segment4])
+    hM_reldiff_h1WEfinal_segment5 = getRelativeDiff(h1WEfinal_segment5, h1WEfinal_nominal)
+    hM_reldiff_h1WEfinal_segment6 = getRelativeDiff(h1WEfinal_segment6, h1WEfinal_nominal)
+    hM_maxreldiff_segment = getMaxRelDiff([hM_reldiff_h1WEfinal_segment2, hM_reldiff_h1WEfinal_segment3, hM_reldiff_h1WEfinal_segment4, hM_reldiff_h1WEfinal_segment5, hM_reldiff_h1WEfinal_segment6])
     
     hM_TotalRelUnc = getFinalUncertainty([hM_statunc_nominal,  
                                           hM_maxreldiff_dRcut, 
@@ -281,8 +334,8 @@ if __name__ == '__main__':
     drawcomp([h1WEfinal_nominal, h1WEfinal_clusphisizeSet1],
                 ['Nominal (Cluster #phi-size cut#leq40)', 'w.o cluster #phi-size cut'], 
                 'Cluster #phi-size cut variation, ' + centstr, './systematics/{}/h1WEfinal_clusPhiSizeCut_variation_{}'.format(desc, desc))
-    drawcomp([h1WEfinal_nominal, h1WEfinal_segment2, h1WEfinal_segment3, h1WEfinal_segment4], 
-             ['Nominal (first 1M events)', 'Segment 2 (1-2M events)', 'Segment 3 (2-3M events)', 'Segment 4 (remaining)'],
+    drawcomp([h1WEfinal_nominal, h1WEfinal_segment2, h1WEfinal_segment3, h1WEfinal_segment4, h1WEfinal_segment5, h1WEfinal_segment6], 
+             ['Nominal', 'Segment 2', 'Segment 3', 'Segment 4', 'Segment 5', 'Segment 6'],
              'Run segment variation, ' + centstr, './systematics/{}/h1WEfinal_segment_variation_{}'.format(desc, desc))
     
     # scale the histograms by 100 to get the percentage
@@ -305,17 +358,18 @@ if __name__ == '__main__':
     hM_TotalRelUnc.SetLineWidth(2)
     hM_TotalRelUnc.GetYaxis().SetRangeUser(0, hM_TotalRelUnc.GetMaximum() * 2.0)
     hM_TotalRelUnc.Draw('hist')
-    hM_statunc_nominal.SetMarkerStyle(markersty)
+    hM_statunc_nominal.SetMarkerStyle(20)
     hM_statunc_nominal.SetMarkerColor(TColor.GetColor('#0F4C75'))
     hM_statunc_nominal.SetLineColor(TColor.GetColor('#0F4C75'))
     hM_statunc_nominal.SetLineWidth(3)
     hM_statunc_nominal.Draw('P same')
-    hM_maxreldiff_dRcut.SetMarkerStyle(markersty)
+    hM_maxreldiff_dRcut.SetMarkerStyle(21)
     hM_maxreldiff_dRcut.SetMarkerColor(TColor.GetColor('#99ddff'))
     hM_maxreldiff_dRcut.SetLineColor(TColor.GetColor('#99ddff'))
     hM_maxreldiff_dRcut.SetLineWidth(3)
     hM_maxreldiff_dRcut.Draw('P same')
-    hM_maxreldiff_clusAdcCut.SetMarkerStyle(markersty)
+    hM_maxreldiff_clusAdcCut.SetMarkerStyle(33)
+    hM_maxreldiff_clusAdcCut.SetMarkerSize(1.6)
     hM_maxreldiff_clusAdcCut.SetMarkerColor(TColor.GetColor('#44bb99'))
     hM_maxreldiff_clusAdcCut.SetLineColor(TColor.GetColor('#44bb99'))
     hM_maxreldiff_clusAdcCut.SetLineWidth(3)
@@ -325,12 +379,12 @@ if __name__ == '__main__':
     # hM_maxreldiff_noise.SetLineColor(TColor.GetColor('#aadd00'))
     # hM_maxreldiff_noise.SetLineWidth(2)
     # hM_maxreldiff_noise.Draw('P same')
-    hM_maxreldiff_clusPhiSizeCut.SetMarkerStyle(markersty)
+    hM_maxreldiff_clusPhiSizeCut.SetMarkerStyle(34)
     hM_maxreldiff_clusPhiSizeCut.SetMarkerColor(TColor.GetColor('#e99960'))
     hM_maxreldiff_clusPhiSizeCut.SetLineColor(TColor.GetColor('#e99960'))
     hM_maxreldiff_clusPhiSizeCut.SetLineWidth(3)
     hM_maxreldiff_clusPhiSizeCut.Draw('P same')
-    hM_maxreldiff_segment.SetMarkerStyle(markersty)
+    hM_maxreldiff_segment.SetMarkerStyle(47)
     hM_maxreldiff_segment.SetMarkerColor(TColor.GetColor('#DE7C7D'))
     hM_maxreldiff_segment.SetLineColor(TColor.GetColor('#DE7C7D'))
     hM_maxreldiff_segment.SetLineWidth(3)

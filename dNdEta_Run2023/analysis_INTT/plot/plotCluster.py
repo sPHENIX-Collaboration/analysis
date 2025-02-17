@@ -116,6 +116,8 @@ if __name__ == '__main__':
     hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35')
     hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35')
     
+    hM_mutualdRcluster_all = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_mutualdRcluster_all')
+    
     # Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname)
     Draw_1Dhist(hM_ClusZ_all, isdata, False, False, 1.3, 'Cluster Z [cm]', 'cm', '{}/ClusZ_all'.format(plotdir))
     Draw_1Dhist(hM_ClusZ_layer1, isdata, False, False, 1.3, 'Cluster Z [cm]', 'cm', '{}/ClusZ_layer1'.format(plotdir))
@@ -171,6 +173,8 @@ if __name__ == '__main__':
     Draw_1Dhist(hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
     Draw_1Dhist(hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
     Draw_1Dhist(hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
+    
+    Draw_1Dhist(hM_mutualdRcluster_all, isdata, False, False, 1.3, 'dR(cluster, cluster)', '', '{}/mutualdRcluster_all'.format(plotdir))
 
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname)
     gStyle.SetPalette(kBird)

@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, TCanvas, TFile, TTree, TChain, TLegend, TLatex, TF1, gROOT, gPad, gSystem, kHAlignRight, kVAlignBottom
 import numpy as np
 import math
 import glob
@@ -183,7 +183,7 @@ def Draw_2Dhist_wtext(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, 
     if ZaxisName != '':
         hist.GetZaxis().SetTitle(ZaxisName)
         hist.GetZaxis().SetTitleSize(AxisTitleSize)
-        hist.GetZaxis().SetTitleOffset(1.2)
+        hist.GetZaxis().SetTitleOffset(1.2*(rmargin/0.14))
         
     hist.GetXaxis().SetTitleOffset(1.1)
     hist.GetYaxis().SetTitleOffset(1.3)
@@ -191,8 +191,9 @@ def Draw_2Dhist_wtext(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, 
     hist.SetContour(1000)
     hist.Draw(drawopt)
 
-    rightshift = 0.09 if IsData else 0.1
-    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, (1-RightMargin)-rightshift, (1-TopMargin)+0.04)
+    # rightshift = 0.09 if IsData else 0.1
+    rightshift = 0
+    leg = TLegend((1-RightMargin)-0.2, (1-TopMargin)+0.01, 1-gPad.GetRightMargin(), (1-TopMargin)+0.04)
     leg.SetTextAlign(kHAlignRight+kVAlignBottom)
     leg.SetTextSize(0.045)
     leg.SetFillStyle(0)
@@ -235,9 +236,9 @@ if __name__ == '__main__':
     
     if os.path.isfile("{}/hists_merged.root".format(infiledir)):
         os.system("rm {}/hists_merged.root".format(infiledir))
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
+        os.system("hadd -j 20 -f {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
     else:
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
+        os.system("hadd -j 20 -f {}/hists_merged.root {}/hists_*.root".format(infiledir, infiledir))
     
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10 = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10')
     hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive = GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive')
@@ -260,7 +261,7 @@ if __name__ == '__main__':
     l_hM_INTTVtxZ_MBDVtxZ_Centrality = [GetHistogram('{}/hists_merged.root'.format(infiledir), 'hM_INTTVtxZ_MBDVtxZ_Centrality_{:d}to{:d}'.format(centrality_cut[i], centrality_cut[i+1])) for i in range(len(centrality_cut)-1)]
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, drawopt, outname):
     # Draw_2Dhist_wtext(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisName, addtext, drawopt, outname):
-    Draw_2Dhist_wtext(hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD vtx_{Z} [cm]', 'Entries', "Centrality: 0-70%", 'colz', '{}/{}/InttVtxz_MbdVtxz_MBDCentrality0to70_MBDAsymLe1'.format(plotpath, outdirprefix))
+    Draw_2Dhist_wtext(hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1, True, False, False, 0.18, 'INTT vtx_{Z} [cm]', 'MBD vtx_{Z} [cm]', 'Entries', "Centrality: 0-70%", 'colz', '{}/{}/InttVtxz_MbdVtxz_MBDCentrality0to70_MBDAsymLe1'.format(plotpath, outdirprefix))
     Draw_2Dhist_wtext(hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', "Centrality: 0-70%", 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70'.format(plotpath, outdirprefix))
     Draw_2Dhist_wtext(hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10, True, False, False, 0.15, 'INTT vtx_{Z} [cm]', 'MBD charge asymmetry', 'Entries', "Centrality: 0-70%", 'colz', '{}/{}/InttVtxz_MbdAsymm_MBDCentrality0to70_MBDAsymLe1_VtxZm10to10'.format(plotpath, outdirprefix))
     
