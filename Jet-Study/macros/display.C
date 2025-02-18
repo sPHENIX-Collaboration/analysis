@@ -6,6 +6,7 @@
 #include <filesystem>
 
 // -- root includes --
+#include <TH3.h>
 #include <TH2F.h>
 #include <TF1.h>
 #include <TFile.h>
@@ -317,12 +318,27 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     // ----------------------------------------------------------
 
     auto h2LeadTowPtFracVsJetPt = (TH2*)input.Get("jets/h2LeadTowPtFracVsJetPt");
+    auto h2LeadTowPtFracVsJetPtCEMC = (TH2*)input.Get("jets/h2LeadTowPtFracVsJetPtCEMC");
+    auto h2LeadTowPtFracVsJetPtOHCal = (TH2*)input.Get("jets/h2LeadTowPtFracVsJetPtOHCal");
+
     h2LeadTowPtFracVsJetPt->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtFracVsJetPtCEMC->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtFracVsJetPtOHCal->GetXaxis()->SetRangeUser(10,200);
     h2LeadTowPtFracVsJetPt->GetYaxis()->SetTitleOffset(1);
+    h2LeadTowPtFracVsJetPtCEMC->GetYaxis()->SetTitleOffset(1);
+    h2LeadTowPtFracVsJetPtOHCal->GetYaxis()->SetTitleOffset(1);
 
     h2LeadTowPtFracVsJetPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt->GetName()) + ".png").c_str());
+
+    h2LeadTowPtFracVsJetPtCEMC->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPtCEMC->GetName()) + ".png").c_str());
+
+    h2LeadTowPtFracVsJetPtOHCal->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPtOHCal->GetName()) + ".png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.02);
@@ -331,33 +347,52 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto h2LeadTowPtFracVsJetPt_10_20_py = h2LeadTowPtFracVsJetPt->ProjectionY("h2LeadTowPtFracVsJetPt_10_20",h2LeadTowPtFracVsJetPt->GetXaxis()->FindBin(10),h2LeadTowPtFracVsJetPt->GetXaxis()->FindBin(20)-1);
     auto h2LeadTowPtFracVsJetPt_20_40_py = h2LeadTowPtFracVsJetPt->ProjectionY("h2LeadTowPtFracVsJetPt_20_40",h2LeadTowPtFracVsJetPt->GetXaxis()->FindBin(20),h2LeadTowPtFracVsJetPt->GetXaxis()->FindBin(40)-1);
     auto h2LeadTowPtFracVsJetPt_60_py = h2LeadTowPtFracVsJetPt->ProjectionY("h2LeadTowPtFracVsJetPt_60",h2LeadTowPtFracVsJetPt->GetXaxis()->FindBin(60),h2LeadTowPtFracVsJetPt->GetNbinsX());
+    auto h2LeadTowPtFracVsJetPtCEMC_60_py = h2LeadTowPtFracVsJetPtCEMC->ProjectionY("h2LeadTowPtFracVsJetPtCEMC_60",h2LeadTowPtFracVsJetPtCEMC->GetXaxis()->FindBin(60),h2LeadTowPtFracVsJetPtCEMC->GetNbinsX());
+    auto h2LeadTowPtFracVsJetPtOHCal_60_py = h2LeadTowPtFracVsJetPtOHCal->ProjectionY("h2LeadTowPtFracVsJetPtOHCal_60",h2LeadTowPtFracVsJetPtOHCal->GetXaxis()->FindBin(60),h2LeadTowPtFracVsJetPtOHCal->GetNbinsX());
     h2LeadTowPtFracVsJetPt_10_20_py->SetTitle("Jet; Leading Tower p_{T}/#sum Tower p_{T}; Normalized Counts");
+    h2LeadTowPtFracVsJetPt_60_py->SetTitle("Jet; Leading Tower p_{T}/#sum Tower p_{T}; Counts");
     h2LeadTowPtFracVsJetPt_10_20_py->GetYaxis()->SetTitleOffset(1.4);
     h2LeadTowPtFracVsJetPt_10_20_py->GetXaxis()->SetTitleOffset(1.35);
+    h2LeadTowPtFracVsJetPt_60_py->GetYaxis()->SetTitleOffset(1.4);
+    h2LeadTowPtFracVsJetPt_60_py->GetXaxis()->SetTitleOffset(1.35);
 
     h2LeadTowPtFracVsJetPt_10_20_py->SetLineColor(kGreen+3);
     h2LeadTowPtFracVsJetPt_20_40_py->SetLineColor(kBlue);
     h2LeadTowPtFracVsJetPt_60_py->SetLineColor(kRed);
+    h2LeadTowPtFracVsJetPtCEMC_60_py->SetLineColor(kBlue);
+    h2LeadTowPtFracVsJetPtOHCal_60_py->SetLineColor(kGreen+3);
 
     h2LeadTowPtFracVsJetPt_10_20_py->Rebin(5);
     h2LeadTowPtFracVsJetPt_20_40_py->Rebin(5);
     h2LeadTowPtFracVsJetPt_60_py->Rebin(5);
+    h2LeadTowPtFracVsJetPtCEMC_60_py->Rebin(5);
+    h2LeadTowPtFracVsJetPtOHCal_60_py->Rebin(5);
+
+    Int_t counts_h2LeadTowPtFracVsJetPt_60_py = h2LeadTowPtFracVsJetPt_60_py->Integral();
 
     h2LeadTowPtFracVsJetPt_10_20_py->Scale(1./h2LeadTowPtFracVsJetPt_10_20_py->Integral());
     h2LeadTowPtFracVsJetPt_20_40_py->Scale(1./h2LeadTowPtFracVsJetPt_20_40_py->Integral());
-    h2LeadTowPtFracVsJetPt_60_py->Scale(1./h2LeadTowPtFracVsJetPt_60_py->Integral());
+    h2LeadTowPtFracVsJetPt_60_py->Scale(1./counts_h2LeadTowPtFracVsJetPt_60_py);
+    // h2LeadTowPtFracVsJetPtCEMC_60_py->Scale(1./h2LeadTowPtFracVsJetPtCEMC_60_py->Integral());
+    // h2LeadTowPtFracVsJetPtOHCal_60_py->Scale(1./h2LeadTowPtFracVsJetPtOHCal_60_py->Integral());
 
     Float_t mean_10_20 = h2LeadTowPtFracVsJetPt_10_20_py->GetMean();
     Float_t mean_20_40 = h2LeadTowPtFracVsJetPt_20_40_py->GetMean();
     Float_t mean_60 = h2LeadTowPtFracVsJetPt_60_py->GetMean();
+    Float_t mean_CEMC_60 = h2LeadTowPtFracVsJetPtCEMC_60_py->GetMean();
+    Float_t mean_OHCal_60 = h2LeadTowPtFracVsJetPtOHCal_60_py->GetMean();
 
     stringstream leg_10_20;
     stringstream leg_20_40;
     stringstream leg_60;
+    stringstream leg_CEMC_60;
+    stringstream leg_OHCal_60;
 
     leg_10_20 << "10 GeV #leq Jet p_{T} < 20 GeV, #mu = " << (Int_t)(mean_10_20*1000)/1000.;
     leg_20_40 << "20 GeV #leq Jet p_{T} < 40 GeV, #mu = " << (Int_t)(mean_20_40*1000)/1000.;
     leg_60 << "Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_60*1000)/1000.;
+    leg_CEMC_60 << "CEMC: Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_CEMC_60*1000)/1000.;
+    leg_OHCal_60 << "OHCal: Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_OHCal_60*1000)/1000.;
 
     leg = new TLegend(0.3,.68,0.5,.88);
     leg->SetFillStyle(0);
@@ -374,6 +409,27 @@ void myAnalysis::plots(const string& i_input, const string &output) {
 
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt->GetName()) + "-py.png").c_str());
+
+    leg = new TLegend(0.3,.68,0.5,.88);
+    leg->SetFillStyle(0);
+    leg->AddEntry(h2LeadTowPtFracVsJetPt_60_py,leg_60.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtFracVsJetPtCEMC_60_py,leg_CEMC_60.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtFracVsJetPtOHCal_60_py,leg_OHCal_60.str().c_str(),"f");
+
+    h2LeadTowPtFracVsJetPt_60_py->Scale(counts_h2LeadTowPtFracVsJetPt_60_py);
+    h2LeadTowPtFracVsJetPt_60_py->GetYaxis()->SetRangeUser(0,180);
+
+    cout << "Jets with pT >= 60 GeV:  " << counts_h2LeadTowPtFracVsJetPt_60_py
+         << ", and leading tower from CEMC: " << h2LeadTowPtFracVsJetPtCEMC_60_py->Integral()
+         << ", and leading tower from OHCal: " << h2LeadTowPtFracVsJetPtOHCal_60_py->Integral() << endl;
+
+    h2LeadTowPtFracVsJetPt_60_py->Draw("hist");
+    h2LeadTowPtFracVsJetPtCEMC_60_py->Draw("same hist");
+    h2LeadTowPtFracVsJetPtOHCal_60_py->Draw("same hist");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtFracVsJetPt_60_py->GetName()) + ".png").c_str());
 
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.12);

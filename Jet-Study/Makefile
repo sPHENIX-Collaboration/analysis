@@ -11,7 +11,7 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib
 CPPFLAGS = -I$(MYINSTALL)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lJetValidation
 
-all: bin/Fun4All_JetVal bin/Fun4All_JetValv2 bin/Fun4All_EventVal bin/event-stats bin/display-events
+all: bin/Fun4All_JetVal bin/Fun4All_JetValv2 bin/Fun4All_EventVal bin/event-stats bin/display-events bin/display
 
 bin/Fun4All_JetVal: macros/Fun4All_JetVal.C
 	mkdir -p bin
@@ -29,6 +29,10 @@ bin/event-stats: macros/event-stats.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS)
 
+bin/display: macros/display.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(LIBFLAGS) $(CPPFLAGS)
+
 bin/display-events: macros/display-events.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(LIBFLAGS) $(CPPFLAGS)
@@ -38,6 +42,7 @@ clean:
 	rm bin/Fun4All_JetValv2
 	rm bin/Fun4All_EventVal
 	rm bin/event-stats
+	rm bin/display
 	rm bin/display-events
 
 # end
