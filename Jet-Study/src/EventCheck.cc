@@ -31,6 +31,8 @@ EventCheck::EventCheck()
   , m_triggerBit(17) /*Jet 8 GeV + MBD NS >= 1*/
   , m_zvtx_max(30) /*cm*/
   , m_doSpecificEvents(false)
+  , m_doTriggerCheck(false)
+  , m_doZvtxCheck(false)
 {
   cout << "EventCheck::EventCheck(const std::string &name) Calling ctor" << endl;
 }
@@ -45,6 +47,9 @@ EventCheck::~EventCheck()
 Int_t EventCheck::Init(PHCompositeNode *topNode)
 {
   cout << "EventCheck::Init(PHCompositeNode *topNode) Initializing" << endl;
+  cout << "do Specific Events: " << m_doSpecificEvents << endl;
+  cout << "do trigger check: " << m_doTriggerCheck << endl;
+  cout << "do zvtx check: " << m_doZvtxCheck << endl;
 
   m_triggeranalyzer = new TriggerAnalyzer();
 
@@ -72,7 +77,7 @@ Int_t EventCheck::process_event(PHCompositeNode *topNode)
   }
 
   TriggerRunInfo* triggerruninfo = findNode::getClass<TriggerRunInfo>(topNode, "TriggerRunInfo");
-  if (!triggerruninfo) {
+  if (m_doTriggerCheck && !triggerruninfo) {
     cout << "EventCheck::process_event - Error can not find TriggerRunInfo node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -81,25 +86,27 @@ Int_t EventCheck::process_event(PHCompositeNode *topNode)
   float m_zvtx = -9999;
   GlobalVertexMap* vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
-  if (!vertexmap) {
+  if (m_doZvtxCheck && !vertexmap) {
     cout << "EventCheck::process_event - Error can not find global vertex node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  if(!vertexmap->empty()) {
+  if(m_doZvtxCheck && !vertexmap->empty()) {
     GlobalVertex* vtx = vertexmap->begin()->second;
     m_zvtx = vtx->get_z();
   }
 
   // skip event if zvtx is too large
-  if(!m_doSpecificEvents && fabs(m_zvtx) >= m_zvtx_max) {
+  if(m_doZvtxCheck && !m_doSpecificEvents && fabs(m_zvtx) >= m_zvtx_max) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_triggeranalyzer->decodeTriggers(topNode);
+  if(m_doTriggerCheck) {
+    m_triggeranalyzer->decodeTriggers(topNode);
+  }
 
   // skip event if it did not fire the desired trigger
-  if(!m_doSpecificEvents && !m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
+  if(m_doTriggerCheck && !m_doSpecificEvents && !m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 

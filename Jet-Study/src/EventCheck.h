@@ -46,10 +46,12 @@ class EventCheck : public SubsysReco
 
   void set_zvtx_max(float m_zvtx_max) {
     this->m_zvtx_max = m_zvtx_max;
+    this->m_doZvtxCheck = true;
   }
 
   void set_trigger(int m_triggerBit) {
     this->m_triggerBit = m_triggerBit;
+    this->m_doTriggerCheck = true;
   }
 
   void set_eventList(const string &m_eventList) {
@@ -63,6 +65,8 @@ class EventCheck : public SubsysReco
   float m_zvtx_max;
   bool m_doSpecificEvents;
   string m_eventList;
+  bool m_doTriggerCheck;
+  bool m_doZvtxCheck;
 
   vector<pair<int, int>> m_eventList_vec;
 
