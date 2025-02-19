@@ -494,52 +494,102 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     // ---------------------------------------------------
 
     auto h2LeadTowPtVsJetPt = (TH2*)input.Get("jets/h2LeadTowPtVsJetPt");
+    auto h2LeadTowPtVsJetPtCEMC = (TH2*)input.Get("jets/h2LeadTowPtVsJetPtCEMC");
+    auto h2LeadTowPtVsJetPtOHCal = (TH2*)input.Get("jets/h2LeadTowPtVsJetPtOHCal");
     h2LeadTowPtVsJetPt->GetXaxis()->SetRangeUser(10,200);
     h2LeadTowPtVsJetPt->GetYaxis()->SetTitleOffset(1.2);
     h2LeadTowPtVsJetPt->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt->GetName()) + ".png").c_str());
 
+    h2LeadTowPtVsJetPtCEMC->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtVsJetPtCEMC->GetYaxis()->SetTitleOffset(1.2);
+    h2LeadTowPtVsJetPtCEMC->SetTitle("Jet: Lead p_{T} Tower from CEMC");
+    h2LeadTowPtVsJetPtCEMC->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPtCEMC->GetName()) + ".png").c_str());
+
+    h2LeadTowPtVsJetPtOHCal->GetXaxis()->SetRangeUser(10,200);
+    h2LeadTowPtVsJetPtOHCal->GetYaxis()->SetTitleOffset(1.2);
+    h2LeadTowPtVsJetPtOHCal->SetTitle("Jet: Lead p_{T} Tower from OHCal");
+    h2LeadTowPtVsJetPtOHCal->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPtOHCal->GetName()) + ".png").c_str());
+
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.04);
     c1->SetBottomMargin(.12);
 
-    auto h2LeadTowPtVsJetPt_10_40_py = h2LeadTowPtVsJetPt->ProjectionY("h2LeadTowPtVsJetPt_10_40_py", h2LeadTowPtVsJetPt->GetXaxis()->FindBin(10), h2LeadTowPtVsJetPt->GetXaxis()->FindBin(40)-1);
+    auto h2LeadTowPtVsJetPt_10_60_py = h2LeadTowPtVsJetPt->ProjectionY("h2LeadTowPtVsJetPt_10_60_py", h2LeadTowPtVsJetPt->GetXaxis()->FindBin(10), h2LeadTowPtVsJetPt->GetXaxis()->FindBin(60)-1);
     auto h2LeadTowPtVsJetPt_60_py = h2LeadTowPtVsJetPt->ProjectionY("h2LeadTowPtVsJetPt_60_py", h2LeadTowPtVsJetPt->GetXaxis()->FindBin(60), h2LeadTowPtVsJetPt->GetNbinsX());
+    auto h2LeadTowPtVsJetPtCEMC_60_py = h2LeadTowPtVsJetPtCEMC->ProjectionY("h2LeadTowPtVsJetPtCEMC_60_py", h2LeadTowPtVsJetPtCEMC->GetXaxis()->FindBin(60), h2LeadTowPtVsJetPtCEMC->GetNbinsX());
+    auto h2LeadTowPtVsJetPtOHCal_60_py = h2LeadTowPtVsJetPtOHCal->ProjectionY("h2LeadTowPtVsJetPtOHCal_60_py", h2LeadTowPtVsJetPtOHCal->GetXaxis()->FindBin(60), h2LeadTowPtVsJetPtOHCal->GetNbinsX());
 
-    h2LeadTowPtVsJetPt_10_40_py->Rebin(5);
+    h2LeadTowPtVsJetPt_10_60_py->Rebin(5);
     h2LeadTowPtVsJetPt_60_py->Rebin(5);
-
-    h2LeadTowPtVsJetPt_10_40_py->Scale(1./h2LeadTowPtVsJetPt_10_40_py->Integral());
-    h2LeadTowPtVsJetPt_60_py->Scale(1./h2LeadTowPtVsJetPt_60_py->Integral());
+    h2LeadTowPtVsJetPtCEMC_60_py->Rebin(5);
+    h2LeadTowPtVsJetPtOHCal_60_py->Rebin(5);
 
     h2LeadTowPtVsJetPt_60_py->SetLineColor(kRed);
+    h2LeadTowPtVsJetPtCEMC_60_py->SetLineColor(kBlue);
+    h2LeadTowPtVsJetPtOHCal_60_py->SetLineColor(kGreen+3);
 
-    h2LeadTowPtVsJetPt_10_40_py->SetTitle("Jet; Leading Tower p_{T} [GeV]; Normalized Counts / 2.5 GeV");
-    h2LeadTowPtVsJetPt_10_40_py->GetYaxis()->SetTitleOffset(1.4);
-    h2LeadTowPtVsJetPt_10_40_py->GetXaxis()->SetTitleOffset(1.1);
+    h2LeadTowPtVsJetPt_10_60_py->SetTitle("Jet; Leading Tower p_{T} [GeV]; Counts / 2.5 GeV");
+    h2LeadTowPtVsJetPt_10_60_py->GetYaxis()->SetTitleOffset(1.4);
+    h2LeadTowPtVsJetPt_10_60_py->GetXaxis()->SetTitleOffset(1.1);
 
-    Float_t mean_10_40 = h2LeadTowPtVsJetPt_10_40_py->GetMean();
+    h2LeadTowPtVsJetPt_60_py->SetTitle("Jet; Leading Tower p_{T} [GeV]; Counts / 2.5 GeV");
+    h2LeadTowPtVsJetPt_60_py->GetYaxis()->SetTitleOffset(1.4);
+    h2LeadTowPtVsJetPt_60_py->GetXaxis()->SetTitleOffset(1.1);
+
+    Float_t mean_10_60 = h2LeadTowPtVsJetPt_10_60_py->GetMean();
     mean_60 = h2LeadTowPtVsJetPt_60_py->GetMean();
+    mean_CEMC_60 = h2LeadTowPtVsJetPtCEMC_60_py->GetMean();
+    mean_OHCal_60 = h2LeadTowPtVsJetPtOHCal_60_py->GetMean();
 
-    stringstream leg_10_40;
+    stringstream leg_10_60;
     leg_60.str("");
+    leg_CEMC_60.str("");
+    leg_OHCal_60.str("");
 
-    leg_10_40 << "10 GeV #leq Jet p_{T} < 40 GeV, #mu = " << (Int_t)(mean_10_40*100)/100. << " GeV";
+    leg_10_60 << "10 GeV #leq Jet p_{T} < 60 GeV, #mu = " << (Int_t)(mean_10_60*100)/100. << " GeV";
     leg_60 << "Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_60*100)/100. << " GeV";
+    leg_CEMC_60 << "CEMC: Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_CEMC_60*100)/100. << " GeV";
+    leg_OHCal_60 << "OHCal: Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_OHCal_60*100)/100. << " GeV";
 
     leg = new TLegend(0.3,.68,0.5,.88);
     leg->SetFillStyle(0);
-    leg->AddEntry(h2LeadTowPtVsJetPt_10_40_py,leg_10_40.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtVsJetPt_10_60_py,leg_10_60.str().c_str(),"f");
     leg->AddEntry(h2LeadTowPtVsJetPt_60_py,leg_60.str().c_str(),"f");
 
-    h2LeadTowPtVsJetPt_10_40_py->Draw("hist");
+    gPad->SetLogy();
+    h2LeadTowPtVsJetPt_10_60_py->Draw("hist");
     h2LeadTowPtVsJetPt_60_py->Draw("same hist");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_10_40_py->GetName()) + ".png").c_str());
-
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_10_60_py->GetName()) + ".png").c_str());
     gPad->SetLogy(0);
+
+    leg = new TLegend(0.3,.68,0.5,.88);
+    leg->SetFillStyle(0);
+    leg->AddEntry(h2LeadTowPtVsJetPt_60_py,leg_60.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtVsJetPtCEMC_60_py,leg_CEMC_60.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtVsJetPtOHCal_60_py,leg_OHCal_60.str().c_str(),"f");
+
+    h2LeadTowPtVsJetPt_60_py->GetYaxis()->SetRangeUser(0,105);
+
+    cout << "Jets with pT >= 60 GeV:  " << h2LeadTowPtVsJetPt_60_py->Integral()
+         << ", and leading tower from CEMC: " << h2LeadTowPtVsJetPtCEMC_60_py->Integral()
+         << ", and leading tower from OHCal: " << h2LeadTowPtVsJetPtOHCal_60_py->Integral() << endl;
+
+    h2LeadTowPtVsJetPt_60_py->Draw("hist");
+    h2LeadTowPtVsJetPtCEMC_60_py->Draw("same hist");
+    h2LeadTowPtVsJetPtOHCal_60_py->Draw("same hist");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_60_py->GetName()) + ".png").c_str());
+
     c1->SetLeftMargin(.15);
     c1->SetRightMargin(.12);
     c1->SetBottomMargin(.12);
@@ -555,40 +605,39 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->SetRightMargin(.04);
     c1->SetBottomMargin(.12);
 
-    auto h2LeadTowPtVsJetPt_jetBkgCut_10_40_py = h2LeadTowPtVsJetPt_jetBkgCut->ProjectionY("h2LeadTowPtVsJetPt_jetBkgCut_10_40_py", h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(10), h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(40)-1);
+    auto h2LeadTowPtVsJetPt_jetBkgCut_10_60_py = h2LeadTowPtVsJetPt_jetBkgCut->ProjectionY("h2LeadTowPtVsJetPt_jetBkgCut_10_60_py", h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(10), h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(60)-1);
     auto h2LeadTowPtVsJetPt_jetBkgCut_60_py = h2LeadTowPtVsJetPt_jetBkgCut->ProjectionY("h2LeadTowPtVsJetPt_jetBkgCut_60_py", h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(60), h2LeadTowPtVsJetPt_jetBkgCut->GetNbinsX());
 
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->Rebin(5);
+    h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->Rebin(5);
     h2LeadTowPtVsJetPt_jetBkgCut_60_py->Rebin(5);
-
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->Scale(1./h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->Integral());
-    h2LeadTowPtVsJetPt_jetBkgCut_60_py->Scale(1./h2LeadTowPtVsJetPt_jetBkgCut_60_py->Integral());
 
     h2LeadTowPtVsJetPt_jetBkgCut_60_py->SetLineColor(kRed);
 
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->SetTitle("Jet; Leading Tower p_{T} [GeV]; Normalized Counts / 2.5 GeV");
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetYaxis()->SetTitleOffset(1.4);
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetXaxis()->SetTitleOffset(1.1);
+    h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->SetTitle("Jet; Leading Tower p_{T} [GeV]; Counts / 2.5 GeV");
+    h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->GetYaxis()->SetTitleOffset(1.4);
+    h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->GetXaxis()->SetTitleOffset(1.1);
 
-    mean_10_40 = h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetMean();
+    mean_10_60 = h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->GetMean();
     mean_60 = h2LeadTowPtVsJetPt_jetBkgCut_60_py->GetMean();
 
-    leg_10_40.str("");
+    leg_10_60.str("");
     leg_60.str("");
 
-    leg_10_40 << "10 GeV #leq Jet p_{T} < 40 GeV, #mu = " << (Int_t)(mean_10_40*100)/100. << " GeV";
+    leg_10_60 << "10 GeV #leq Jet p_{T} < 60 GeV, #mu = " << (Int_t)(mean_10_60*100)/100. << " GeV";
     leg_60 << "Jet p_{T} #geq 60 GeV, #mu = " << (Int_t)(mean_60*100)/100. << " GeV";
 
     leg = new TLegend(0.3,.68,0.5,.88);
     leg->SetFillStyle(0);
-    leg->AddEntry(h2LeadTowPtVsJetPt_jetBkgCut_10_40_py,leg_10_40.str().c_str(),"f");
+    leg->AddEntry(h2LeadTowPtVsJetPt_jetBkgCut_10_60_py,leg_10_60.str().c_str(),"f");
     leg->AddEntry(h2LeadTowPtVsJetPt_jetBkgCut_60_py,leg_60.str().c_str(),"f");
 
-    h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->Draw("hist");
+    gPad->SetLogy();
+    h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->Draw("hist");
     h2LeadTowPtVsJetPt_jetBkgCut_60_py->Draw("same hist");
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_jetBkgCut_10_40_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(h2LeadTowPtVsJetPt_jetBkgCut_10_60_py->GetName()) + ".png").c_str());
+    gPad->SetLogy(0);
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 
