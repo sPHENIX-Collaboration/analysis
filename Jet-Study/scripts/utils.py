@@ -53,7 +53,7 @@ def create_f4a_jobs():
     print(f'Run List: {run_list}')
     print(f'Run List Jet Dir: {run_list_jet_dir}')
     print(f'Run List Jet Calo Dir: {run_list_jet_calo_dir}')
-    print(f'Fun4All : {macro}')
+    print(f'Fun4All: {macro}')
     print(f'Ana Tag: {ana_tag}')
     print(f'src: {src}')
     print(f'Output Directory: {output_dir}')
@@ -240,7 +240,6 @@ status = subparser.add_parser('status', help='Get status of Condor.')
 
 def get_condor_status():
     hosts = [f'sphnxuser{x:02}' for x in range(1,9)]
-    hosts += [f'sphnxsub{x:02}' for x in range(1,3)]
 
     dt_all = []
     dt_user = []
