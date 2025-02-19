@@ -207,16 +207,23 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     auto hz = hjetPhiEtaPt->Project3D("z");
     auto hz_jetBkgCut = hjetPhiEtaPt_jetBkgCut->Project3D("z");
     auto hz_xjCut = hjetPhiEtaPt_xjCut->Project3D("z");
-    hz->SetTitle("Jet; p_{T} [GeV]; Counts");
+
+    auto h2LeadTowPtVsJetPt_jetBkgCut = (TH2*)input.Get("jets/h2LeadTowPtVsJetPt_jetBkgCut");
+    h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->SetRange(h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->FindBin(10),h2LeadTowPtVsJetPt_jetBkgCut->GetNbinsX());
+    auto h2LeadTowPtVsJetPt_jetBkgCut_px = h2LeadTowPtVsJetPt_jetBkgCut->ProjectionX("h2LeadTowPtVsJetPt_jetBkgCut_px", 1, h2LeadTowPtVsJetPt_jetBkgCut->GetYaxis()->FindBin(17)-1);
+
+    hz->SetTitle("Jet; p_{T} [GeV]; Counts / 5 GeV");
     hz->GetYaxis()->SetTitleOffset(1.4);
 
     hz_jetBkgCut->SetLineColor(kBlue);
     hz_xjCut->SetLineColor(kRed);
+    h2LeadTowPtVsJetPt_jetBkgCut_px->SetLineColor(kRed);
 
     // rebin to have 5 GeV bins
     hz->Rebin(10);
     hz_jetBkgCut->Rebin(10);
     hz_xjCut->Rebin(10);
+    h2LeadTowPtVsJetPt_jetBkgCut_px->Rebin(10);
 
     auto leg = new TLegend(0.52,.7,0.72,.85);
     leg->SetFillStyle(0);
@@ -231,11 +238,25 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt.png").c_str());
 
+    leg = new TLegend(0.3,.7,0.5,.85);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hz,"All","f");
+    leg->AddEntry(hz_jetBkgCut,"jet bkg cut","f");
+    leg->AddEntry(h2LeadTowPtVsJetPt_jetBkgCut_px,"jet bkg cut and lead tower p_{T} < 17 GeV","f");
+
+    hz->Draw();
+    hz_jetBkgCut->Draw("same");
+    h2LeadTowPtVsJetPt_jetBkgCut_px->Draw("same");
+    leg->Draw("same");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt-lead-tow.png").c_str());
+
     // ratio plots
     gPad->SetLogy(0);
 
     hz_jetBkgCut->Divide(hz);
     hz_xjCut->Divide(hz);
+    h2LeadTowPtVsJetPt_jetBkgCut_px->Divide(hz);
     hz_jetBkgCut->SetTitle("Jet; p_{T} [GeV]; Ratio");
     hz_jetBkgCut->GetYaxis()->SetTitleOffset(1);
 
@@ -249,6 +270,17 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     leg->Draw("same");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt-ratio.png").c_str());
+
+    leg = new TLegend(0.25,.7,0.55,.85);
+    leg->SetFillStyle(0);
+    leg->AddEntry(hz_jetBkgCut,"jet bkg cut/All","f");
+    leg->AddEntry(h2LeadTowPtVsJetPt_jetBkgCut_px,"jet bkg cut and lead tower p_{T} < 17 GeV/All","f");
+
+    hz_jetBkgCut->Draw();
+    h2LeadTowPtVsJetPt_jetBkgCut_px->Draw("same");
+    leg->Draw("same");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(hjetPhiEtaPt->GetName()) + "-pt-lead-tow-ratio.png").c_str());
 
     c1->SetCanvasSize(2900, 1000);
     c1->SetLeftMargin(.06);
@@ -594,8 +626,6 @@ void myAnalysis::plots(const string& i_input, const string &output) {
     c1->SetRightMargin(.12);
     c1->SetBottomMargin(.12);
 
-    auto h2LeadTowPtVsJetPt_jetBkgCut = (TH2*)input.Get("jets/h2LeadTowPtVsJetPt_jetBkgCut");
-    h2LeadTowPtVsJetPt_jetBkgCut->GetXaxis()->SetRangeUser(10,200);
     h2LeadTowPtVsJetPt_jetBkgCut->GetYaxis()->SetTitleOffset(1.2);
     h2LeadTowPtVsJetPt_jetBkgCut->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
