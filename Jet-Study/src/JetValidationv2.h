@@ -64,6 +64,10 @@ class JetValidationv2 : public SubsysReco
     this->m_xj_cut = m_xj_cut;
   }
 
+  void set_isSim(Bool_t m_isSim) {
+    this->m_isSim = m_isSim;
+  }
+
  private:
   string m_recoJetName_r04;
 
@@ -143,6 +147,8 @@ class JetValidationv2 : public SubsysReco
   Int_t m_constituent_pt_threshold2;
 
   Float_t m_xj_cut;
+
+  Bool_t m_isSim;
 
   enum m_status {ALL, ZVTX30, ZVTX30_BKG
                             , ZVTX30_BKG_failsLoEmJetCut

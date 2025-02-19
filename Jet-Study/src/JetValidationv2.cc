@@ -103,6 +103,7 @@ JetValidationv2::JetValidationv2()
   , m_constituent_pt_threshold(10) /*GeV*/
   , m_constituent_pt_threshold2(20) /*GeV*/
   , m_xj_cut(0.15)
+  , m_isSim(false)
 {
   cout << "JetValidationv2::JetValidationv2(const std::string &name) Calling ctor" << endl;
 }
@@ -237,11 +238,11 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
   ++m_event;
 
   TriggerRunInfo* triggerruninfo = findNode::getClass<TriggerRunInfo>(topNode, "TriggerRunInfo");
-  if (!triggerruninfo) {
+  if (!m_isSim && !triggerruninfo) {
     cout << "JetValidationv2::process_event - Error can not find TriggerRunInfo node " << endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
-  if(m_event == 1) {
+  if(!m_isSim && m_event == 1) {
     triggerruninfo->identify();
   }
 
@@ -269,17 +270,21 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   hEvents->Fill(m_status::ZVTX30);
 
-  m_triggeranalyzer->decodeTriggers(topNode);
+  if(!m_isSim) {
+    m_triggeranalyzer->decodeTriggers(topNode);
+  }
 
   // skip event if it did not fire the desired trigger
-  if(!m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
+  if(!m_isSim && !m_triggeranalyzer->didTriggerFire(m_triggerBit)) {
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   vector<Int_t> triggerIdx;
-  for(Int_t i = 0; i < m_triggerBits; ++i) {
-    if(m_triggeranalyzer->didTriggerFire(i)) {
-      triggerIdx.push_back(i);
+  if(!m_isSim) {
+    for(Int_t i = 0; i < m_triggerBits; ++i) {
+      if(m_triggeranalyzer->didTriggerFire(i)) {
+        triggerIdx.push_back(i);
+      }
     }
   }
 
@@ -629,13 +634,21 @@ Int_t JetValidationv2::process_event(PHCompositeNode *topNode)
 
   string s_triggerIdx = "";
 
-  for(auto idx : triggerIdx) {
-    if(!s_triggerIdx.empty()) s_triggerIdx += "-";
-    s_triggerIdx += to_string(idx);
+  if(!m_isSim) {
+    for(auto idx : triggerIdx) {
+      if(!s_triggerIdx.empty()) s_triggerIdx += "-";
+      s_triggerIdx += to_string(idx);
+    }
   }
 
-  nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << (Int_t)m_zvtx << "_" << jetPtLead << "_" << jetPtSubLead
-            << "_" << frcem << "_" << frcoh << "_" << (Int_t)maxJetET << "_" << dPhi << "_" << isDijet;
+  if(!m_isSim) {
+    nameSuffix << m_run << "_" << m_globalEvent << "_" << s_triggerIdx << "_" << (Int_t)m_zvtx << "_" << jetPtLead << "_" << jetPtSubLead
+              << "_" << frcem << "_" << frcoh << "_" << (Int_t)maxJetET << "_" << dPhi << "_" << isDijet;
+  }
+  else {
+    nameSuffix << m_run << "_" << m_globalEvent << "_" << (Int_t)m_zvtx << "_" << jetPtLead << "_" << jetPtSubLead
+              << "_" << frcem << "_" << frcoh << "_" << (Int_t)maxJetET << "_" << dPhi << "_" << isDijet;
+  }
 
   name << "hCEMCBase_" << nameSuffix.str();
   title << "CEMC Base: " << titleSuffix.str();
