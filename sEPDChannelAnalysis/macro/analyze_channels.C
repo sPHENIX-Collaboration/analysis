@@ -143,12 +143,17 @@ void process_directory(const std::string& path,
                 if (!hist || hist->GetEntries() < 100) continue;
                 
 
-                TF1 fitfunc("mipfit", mipFitFunction, FIT_MIN, FIT_MAX, 3);
+                //TF1 fitfunc("mipfit", mipFitFunction, FIT_MIN, FIT_MAX, 3);
+                //try a landau distribution
+                TF1 fitfunc("mipfit","landau",FIT_MIN,FIT_MAX);
                 fitfunc.SetParameters(2200, 100, 100);     
                 hist->Fit(&fitfunc, "QRN0");
-                current_mpv[ch] = fitfunc.GetParameter(2);
+                //current_mpv[ch] = fitfunc.GetParameter(2);
+                current_mpv[ch] = fitfunc.GetParameter(1);
 
-                float mpv = fitfunc.GetParameter(2);
+
+                //float mpv = fitfunc.GetParameter(2);
+                float mpv = fitfunc.GetParameter(1);
 
                 if(verbose){
                     std::cout << "MPV for channel " << ch << " = " << mpv << std::endl;
@@ -172,11 +177,11 @@ void process_directory(const std::string& path,
                     channels[ch].maxFitFunc = fit_clone;
                 } else if (mpv < channels[ch].min_mpv) {
                     delete channels[ch].min_hist;
-                    delete channels[ch].maxFitFunc;
+                    delete channels[ch].minFitFunc;
 
                     channels[ch].min_mpv = mpv;
                     channels[ch].min_hist = hist_clone;
-                    channels[ch].maxFitFunc = fit_clone;
+                    channels[ch].minFitFunc = fit_clone;
                 } else {
                     delete hist_clone; // Only keep needed clones
                     delete fit_clone;
@@ -198,7 +203,7 @@ void process_directory(const std::string& path,
 
 void analyze_channels() {
     std::vector<ChannelData> channels(NUM_CHANNELS);
-    TFile output("channel_analysis_zs20.root", "RECREATE");
+    TFile output("/sphenix/user/ecroft/channel_analysis_landau.root", "RECREATE");
     
     // Create main data tree
     TTree* data_tree = new TTree("rundata", "Per-run channel MPV values");
@@ -209,7 +214,7 @@ void analyze_channels() {
     data_tree->Branch("mpv_values", &current_mpv);
 
     // Count files first for progress tracking
-    const std::string input_dir = "/sphenix/tg/tg01/bulk/ecroft/sEPD/spectra_zs20/";
+    const std::string input_dir = "/sphenix/tg/tg01/bulk/ecroft/sEPD/test/";
     int total_files = count_root_files(input_dir);
     int processed_files = 0;
 

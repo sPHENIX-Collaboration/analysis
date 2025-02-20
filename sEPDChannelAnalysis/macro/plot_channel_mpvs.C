@@ -7,8 +7,8 @@
 #include <sPhenixStyle.C>
 #include <sPhenixStyle.h>
 
-void plot_channel_mpvs(const char* input_filename = "channel_analysis.root", 
-                      const char* output_filename = "channel_mpv_plots.pdf") {
+void plot_channel_mpvs(const char* input_filename = "/sphenix/user/ecroft/channel_analysis_zs20.root", 
+                      const char* output_filename = "/sphenix/user/ecroft/channel_mpv_plots_zs20.pdf") {
     // Open input file
     TFile* input_file = TFile::Open(input_filename, "READ");
     if (!input_file || input_file->IsZombie()) {
