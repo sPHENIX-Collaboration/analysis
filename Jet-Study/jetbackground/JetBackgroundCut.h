@@ -8,12 +8,12 @@
 #include <string>
 class PHCompositeNode;
 class CentralityInfo;
-class jetBackgroundCut : public SubsysReco
+class JetBackgroundCut : public SubsysReco
 {
  public:
-  explicit jetBackgroundCut(const std::string &jetNodeName, const std::string &name = "jetBackgroundCutModule", int debug = 0, bool doAbort = false, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD, int sysvar = 0);
+  explicit JetBackgroundCut(const std::string &jetNodeName, const std::string &name = "JetBackgroundCutModule", int debug = 0, bool doAbort = false, GlobalVertex::VTXTYPE vtxtype = GlobalVertex::MBD, int sysvar = 0);
 
-  ~jetBackgroundCut() override;
+  ~JetBackgroundCut() override;
 
   bool failsLoEmFracETCut(float emFrac, float ET, bool dPhiCut, bool isDijet) const
   {

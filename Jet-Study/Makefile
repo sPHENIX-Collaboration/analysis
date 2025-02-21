@@ -19,11 +19,11 @@ bin/Fun4All_JetVal: macros/Fun4All_JetVal.C
 
 bin/Fun4All_JetValv2: macros/Fun4All_JetValv2.C
 	mkdir -p bin
-	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lcalotrigger -lcalo_reco -lffamodules -ljetbackgroundcut
+	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lcalotrigger -lcalo_reco -lffamodules -ljetbackground
 
 bin/Fun4All_JetValSim: macros/Fun4All_JetValSim.C
 	mkdir -p bin
-	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lcalotrigger -lcalo_reco -lffamodules -ljetbackgroundcut -ljetbase -ljetbackground
+	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lcalotrigger -lcalo_reco -lffamodules -ljetbase -ljetbackground
 
 bin/Fun4All_EventVal: macros/Fun4All_EventVal.C
 	mkdir -p bin

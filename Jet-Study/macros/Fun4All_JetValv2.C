@@ -14,7 +14,7 @@
 #include <fun4all/SubsysReco.h>
 
 // jet background cut includes --
-#include <jetbackgroundcut/jetBackgroundCut.h>
+#include <jetbackground/JetBackgroundCut.h>
 
 #include <phool/recoConsts.h>
 
@@ -72,7 +72,7 @@ void Fun4All_JetValv2(const string &input_JET,
 
   Process_Calo_Calib();
 
-  jetBackgroundCut *jocl = new jetBackgroundCut("AntiKt_unsubtracted_r04","JOCL", 0, false);
+  JetBackgroundCut *jocl = new JetBackgroundCut("AntiKt_unsubtracted_r04","JOCL", 0, false);
   se->registerSubsystem(jocl);
 
   JetValidationv2 *myJetVal = new JetValidationv2();

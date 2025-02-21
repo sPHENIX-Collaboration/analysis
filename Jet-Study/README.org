@@ -75,9 +75,9 @@ make install -j8 --directory build && rm -f bin/Fun4All_JetValv2 && make && ./bi
 make install -j8 --directory build && root -b -l -q 'macros/Fun4All_JetValv2.C("DST_JET_run2pp_ana462_2024p010_v001-00051576-00022.root","DST_JETCALO_run2pp_ana462_2024p010_v001-00051576-00022.root","test.root", 3000)'
 #+end_src
 
-** Build joclJetBackgroundCutModule
+** Build Jet Background Module
 #+begin_src bash
-rm -rf build-joclJetBackgroundCutModule && mkdir build-joclJetBackgroundCutModule && cd build-joclJetBackgroundCutModule && ../joclJetBackgroundCutModule/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build-joclJetBackgroundCutModule
+rm -rf build-JetBackground && mkdir build-JetBackground && cd build-JetBackground && ../jetbackground/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build-JetBackground
 #+end_src
 
 * Condor Tips
