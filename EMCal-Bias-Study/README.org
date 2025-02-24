@@ -1,0 +1,11 @@
+#+title: EMCal Bias Study
+
+* List of all databases
+#+begin_src bash
+psql -h sphnxdbmaster.sdcc.bnl.gov --list
+#+end_src
+
+* Extract EMCal Bias from Database
+#+begin_src bash
+psql -h sphnxdbmaster.sdcc.bnl.gov emcal -c "select *,cast(1000*(bias-66.5-2.5) as int) as gs from vop order by sector,ib,channel asc;" --csv > files/emcal-bias.csv
+#+end_src
