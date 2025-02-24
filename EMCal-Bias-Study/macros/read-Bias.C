@@ -29,11 +29,14 @@ using std::stringstream;
 using std::min;
 using std::max;
 using std::ofstream;
+using std::pair;
+using std::make_pair;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
     void analyze(const string &output);
     Int_t readCSV(const string &filename);
+    pair<Int_t,Int_t> getDetectorCoordinates(Int_t sector, Int_t ib, Int_t channel);
 
     // Define the structure for your data
     struct MyData {
@@ -42,11 +45,34 @@ namespace myAnalysis {
         Int_t channel;
         Float_t bias; // V
         Int_t offset; // mV
+        Int_t iphi;
+        Int_t ieta;
     };
 
     vector<MyData> data;
 
     size_t m_sample_print = 10;
+    Int_t m_nsector_per_2pi = 32;
+    Int_t m_nchannel_per_ib = 64;
+    Int_t m_nib_per_sector = 6;
+    Int_t m_neta = 96;
+    Int_t m_nchannel_per_block = 4;
+    Int_t m_nblock_per_ib = 16;
+}
+
+pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t sector, Int_t ib, Int_t channel) {
+   Int_t ib_phi_low = (sector % m_nsector_per_2pi) * sqrt(m_nchannel_per_ib);
+   Int_t ib_eta_low = (sector >= m_nsector_per_2pi) ? (m_nib_per_sector - 1 - ib) * sqrt(m_nchannel_per_ib) :
+                                                       ib * sqrt(m_nchannel_per_ib) + m_neta / 2;
+
+   Int_t nblock = channel / m_nchannel_per_block;
+   Int_t nblock_phi_low = nblock / sqrt(m_nblock_per_ib) * sqrt(m_nchannel_per_block) + ib_phi_low;
+   Int_t nblock_eta_low = (sqrt(m_nblock_per_ib) - 1 - (nblock % (Int_t)sqrt(m_nblock_per_ib))) * sqrt(m_nchannel_per_block) + ib_eta_low;
+
+   Int_t iphi = (channel % m_nchannel_per_block) % (Int_t)sqrt(m_nchannel_per_block) + nblock_phi_low;
+   Int_t ieta = (channel % m_nchannel_per_block) / sqrt(m_nchannel_per_block) + nblock_eta_low;
+
+   return make_pair(iphi, ieta);
 }
 
 Int_t myAnalysis::readCSV(const string& filename) {
@@ -73,7 +99,8 @@ Int_t myAnalysis::readCSV(const string& filename) {
             // sector
             if (std::getline(ss, cell, ',')) {
                  try {
-                    row.sector = std::stoi(cell);
+                    // sector number in CSV starts at 1 but we need to start at zero
+                    row.sector = std::stoi(cell)-1;
                 } catch (const std::invalid_argument& e) {
                     throw std::runtime_error("Invalid integer in column1: " + cell);
                 } catch (const std::out_of_range& e) {
@@ -108,6 +135,11 @@ Int_t myAnalysis::readCSV(const string& filename) {
             } else {
                  throw std::runtime_error("Error parsing column3");
             }
+
+            pair<Int_t,Int_t> iphi_ieta = getDetectorCoordinates(row.sector, row.ib, row.channel);
+
+            row.iphi = iphi_ieta.first;
+            row.ieta = iphi_ieta.second;
 
             // bias
             if (std::getline(ss, cell, ',')) {
@@ -148,11 +180,13 @@ Int_t myAnalysis::readCSV(const string& filename) {
     cout << "################" << endl;
     cout << "Rows Read: " << data.size() << endl;
     cout << "Sample Rows" << endl;
-    cout << "sector,ib,channel,bias,offset" << endl;
+    cout << "sector,ib,channel,iphi,ieta,bias,offset" << endl;
     for (Int_t i = 0; i < min(data.size(), m_sample_print); ++i) {
         cout << data[i].sector << ","
              << data[i].ib << ","
              << data[i].channel << ","
+             << data[i].iphi << ","
+             << data[i].ieta << ","
              << data[i].bias << ","
              << data[i].offset << endl;
     }
