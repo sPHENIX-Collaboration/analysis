@@ -11,6 +11,7 @@ void run_SpinDBQA()
     std::string CNIpath = "/gpfs02/eic/cnipol/jet_run24/results";
     std::string mdfile = "README.md";
     std::string htmlfile = "runsummary.html";
+    std::string rootfile = "qa_results.root";
 
     SpinDBQA *qa = new SpinDBQA();
     
@@ -31,5 +32,13 @@ void run_SpinDBQA()
 
     qa->SetHtmlFilename(htmlfile);
     qa->WriteHtml();
+    
+    // qa->SetRootFilename(rootfile);
+    // qa->WriteRootFile();
+
+
+    // ======== Write new QA level (WARNING: EXPERT ONLY!)========== //
+    // int newqalevel = 0; 
+    // qa->WriteNewQALevel(newqalevel);
 
 }
