@@ -441,7 +441,7 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
 
     ////////////////////////////////////////////////////
     // Set crossing shift
-    if (map_crossingshift[runnumber])
+    if (map_crossingshift[runnumber] == -999)
     {
       badrunqa = 1;
     }
@@ -521,11 +521,20 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     float bf_phase_distancefromband = map_phasebf[runnumber] > bf_phase_mean ? map_phasebf[runnumber]-(bf_phase_mean+bf_phase_rmse) : (bf_phase_mean-bf_phase_rmse)-map_phasebf[runnumber];
     float yf_phase_distancefromband = map_phaseyf[runnumber] > yf_phase_mean ? map_phaseyf[runnumber]-(yf_phase_mean+yf_phase_rmse) : (yf_phase_mean-yf_phase_rmse)-map_phaseyf[runnumber];
     
-    if (bf_distancefromband > map_asymerrbf[runnumber] || yf_distancefromband > map_asymerryf[runnumber]
-         || bf_phase_distancefromband > map_phaseerrbf[runnumber] || yf_phase_distancefromband > map_phaseerryf[runnumber])
+    // make sure that local polarimetry exists in the first place
+    if (map_asymbf[runnumber] != 0 || map_asymbb[runnumber] != 0 || map_asymyf[runnumber] != 0 
+        || map_asymyb[runnumber] != 0 || map_phasebf[runnumber] != 0 || map_phasebb[runnumber] != 0 
+        || map_phaseyf[runnumber] != 0 || map_phaseyb[runnumber] != 0)
     {
-      badrunqa = 1;
+      if (bf_distancefromband > map_asymerrbf[runnumber] || yf_distancefromband > map_asymerryf[runnumber]
+         || bf_phase_distancefromband > map_phaseerrbf[runnumber] || yf_phase_distancefromband > map_phaseerryf[runnumber])
+      {
+        badrunqa = 1;
+      }
     }
+
+
+    
     spin_cont.SetAsymBlueForward(map_asymbf[runnumber], map_asymerrbf[runnumber]);
     spin_cont.SetAsymBlueBackward(map_asymbb[runnumber], map_asymerrbb[runnumber]);
     spin_cont.SetAsymYellowForward(map_asymyf[runnumber], map_asymerryf[runnumber]);
