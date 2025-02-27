@@ -43,6 +43,7 @@ namespace myAnalysis {
     Int_t readCSV(const string &filename);
     Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map);
     pair<Int_t,Int_t> getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose = false);
+    void setEMCalDim(TH2* hist);
 
     // Define the structure for your data
     struct MyData {
@@ -297,6 +298,19 @@ Int_t myAnalysis::readCSV(const string& filename) {
     return 0;
 }
 
+void myAnalysis::setEMCalDim(TH2* hist) {
+    hist->GetXaxis()->SetLimits(0,256);
+    hist->GetXaxis()->SetNdivisions(32, false);
+    hist->GetXaxis()->SetLabelSize(0.04);
+    hist->GetXaxis()->SetTickSize(0.01);
+    hist->GetYaxis()->SetTickSize(0.01);
+    hist->GetYaxis()->SetLabelSize(0.04);
+    hist->GetYaxis()->SetLimits(0,96);
+    hist->GetYaxis()->SetNdivisions(12, false);
+    hist->GetYaxis()->SetTitleOffset(0.5);
+    hist->GetXaxis()->SetTitleOffset(1);
+}
+
 void myAnalysis::analyze(const string &output) {
     string outputDir = fs::absolute(output).parent_path().string();
     fs::create_directories(outputDir);
@@ -331,34 +345,14 @@ void myAnalysis::analyze(const string &output) {
 
     c1->Print((output + "[").c_str(), "pdf portrait");
 
-    m_hists2D["h2Bias"]->GetXaxis()->SetLimits(0,256);
-    m_hists2D["h2Bias"]->GetXaxis()->SetNdivisions(32, false);
-    m_hists2D["h2Bias"]->GetXaxis()->SetLabelSize(0.04);
-    m_hists2D["h2Bias"]->GetXaxis()->SetTickSize(0.01);
-    m_hists2D["h2Bias"]->GetYaxis()->SetTickSize(0.01);
-    m_hists2D["h2Bias"]->GetYaxis()->SetLabelSize(0.04);
-    m_hists2D["h2Bias"]->GetYaxis()->SetLimits(0,96);
-    m_hists2D["h2Bias"]->GetYaxis()->SetNdivisions(12, false);
-    m_hists2D["h2Bias"]->GetYaxis()->SetTitleOffset(0.5);
-    m_hists2D["h2Bias"]->GetXaxis()->SetTitleOffset(1);
-
+    setEMCalDim(m_hists2D["h2Bias"]);
     m_hists2D["h2Bias"]->SetMinimum((Int_t)min_bias);
 
     m_hists2D["h2Bias"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists2D["h2Bias"]->GetName()) + ".png").c_str());
 
-    m_hists2D["h2Offset"]->GetXaxis()->SetLimits(0,256);
-    m_hists2D["h2Offset"]->GetXaxis()->SetNdivisions(32, false);
-    m_hists2D["h2Offset"]->GetXaxis()->SetLabelSize(0.04);
-    m_hists2D["h2Offset"]->GetXaxis()->SetTickSize(0.01);
-    m_hists2D["h2Offset"]->GetYaxis()->SetTickSize(0.01);
-    m_hists2D["h2Offset"]->GetYaxis()->SetLabelSize(0.04);
-    m_hists2D["h2Offset"]->GetYaxis()->SetLimits(0,96);
-    m_hists2D["h2Offset"]->GetYaxis()->SetNdivisions(12, false);
-    m_hists2D["h2Offset"]->GetYaxis()->SetTitleOffset(0.5);
-    m_hists2D["h2Offset"]->GetXaxis()->SetTitleOffset(1);
-
+    setEMCalDim(m_hists2D["h2Offset"]);
 
     m_hists2D["h2Offset"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
