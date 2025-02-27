@@ -5,6 +5,7 @@
 #include <fstream>
 #include <filesystem>
 #include <sstream>
+#include <unordered_map>
 #include <stdexcept> // For exception handling
 
 // -- root includes --
@@ -19,6 +20,9 @@
 // -- sPHENIX Style
 #include <sPhenixStyle.C>
 
+// TowerInfo
+#include <calobase/TowerInfoDefs.h>
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -31,18 +35,21 @@ using std::max;
 using std::ofstream;
 using std::pair;
 using std::make_pair;
+using std::unordered_map;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
     void analyze(const string &output);
     Int_t readCSV(const string &filename);
-    pair<Int_t,Int_t> getDetectorCoordinates(Int_t sector, Int_t ib, Int_t channel);
+    Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map);
+    pair<Int_t,Int_t> getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose = false);
 
     // Define the structure for your data
     struct MyData {
+        Int_t serial;
         Int_t sector;
         Int_t ib;
-        Int_t channel;
+        Int_t ib_channel;
         Float_t bias; // V
         Int_t offset; // mV
         Int_t iphi;
@@ -50,29 +57,117 @@ namespace myAnalysis {
     };
 
     vector<MyData> data;
+    unordered_map<Int_t,Int_t> serial_to_sector;
+    unordered_map<Int_t,Int_t> ib_channel_to_ADC_channel;
 
     size_t m_sample_print = 10;
-    Int_t m_nsector_per_2pi = 32;
+    Int_t m_nsector = 64;
+    Int_t m_nchannel_per_sector = 384;
     Int_t m_nchannel_per_ib = 64;
-    Int_t m_nib_per_sector = 6;
+    Int_t m_nphi = 256;
     Int_t m_neta = 96;
-    Int_t m_nchannel_per_block = 4;
-    Int_t m_nblock_per_ib = 16;
+
+    Float_t min_bias = 9999;
+    Float_t max_bias = -9999;
+
+    Int_t min_offset = 9999;
+    Int_t max_offset = -9999;
+
+    unordered_map<string,TH2*> m_hists2D;
 }
 
-pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t sector, Int_t ib, Int_t channel) {
-   Int_t ib_phi_low = (sector % m_nsector_per_2pi) * sqrt(m_nchannel_per_ib);
-   Int_t ib_eta_low = (sector >= m_nsector_per_2pi) ? (m_nib_per_sector - 1 - ib) * sqrt(m_nchannel_per_ib) :
-                                                       ib * sqrt(m_nchannel_per_ib) + m_neta / 2;
+pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose) {
 
-   Int_t nblock = channel / m_nchannel_per_block;
-   Int_t nblock_phi_low = nblock / sqrt(m_nblock_per_ib) * sqrt(m_nchannel_per_block) + ib_phi_low;
-   Int_t nblock_eta_low = (sqrt(m_nblock_per_ib) - 1 - (nblock % (Int_t)sqrt(m_nblock_per_ib))) * sqrt(m_nchannel_per_block) + ib_eta_low;
+    Int_t sector = serial_to_sector[serial];
+    Int_t ADC_channel = ib_channel_to_ADC_channel[ib_channel];
 
-   Int_t iphi = (channel % m_nchannel_per_block) % (Int_t)sqrt(m_nchannel_per_block) + nblock_phi_low;
-   Int_t ieta = (channel % m_nchannel_per_block) / sqrt(m_nchannel_per_block) + nblock_eta_low;
+    Int_t ADC_channel_offset = (sector >= 32) ? m_nchannel_per_sector*2*(sector-m_nsector/2)+m_nchannel_per_ib*ib
+                                              : m_nchannel_per_sector*2*sector+m_nchannel_per_ib*ib+m_nchannel_per_sector;
+
+    ADC_channel += ADC_channel_offset;
+
+    UInt_t key = TowerInfoDefs::encode_emcal(ADC_channel);
+
+    Int_t iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    Int_t ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
+   if(verbose) {
+    cout << "##############" << endl;
+    cout << "serial: " << serial << ", ib: " << ib << ", ib_channel: " << ib_channel << endl;
+    cout << "sector: " << sector << ", ib: " << ib << ", channel: " << ADC_channel << endl;
+    cout << "iphi: " << iphi << ", ieta: " << ieta << endl;
+   }
 
    return make_pair(iphi, ieta);
+}
+
+Int_t myAnalysis::readMaps(const string &filename, unordered_map<Int_t,Int_t> &map) {
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file: " + filename);
+    }
+
+    string line;
+
+    // Skip the header line if it exists (optional)
+    if (std::getline(file, line)) {
+        // You might want to process the header here if needed.
+        // For example, you could check if the header is as expected.
+    }
+
+    while (std::getline(file, line)) {
+        stringstream ss(line);
+        string cell;
+        Int_t key;
+        Int_t value;
+
+        // Extract the data from each cell, handling potential errors
+        try {
+            // key
+            if (std::getline(ss, cell, ',')) {
+                 try {
+                    key = std::stoi(cell);
+                } catch (const std::invalid_argument& e) {
+                    throw std::runtime_error("Invalid integer in column1: " + cell);
+                } catch (const std::out_of_range& e) {
+                    throw std::runtime_error("Integer out of range in column1: " + cell);
+                }
+            } else {
+                 throw std::runtime_error("Error parsing column1");
+            }
+
+            // value
+            if (std::getline(ss, cell, ',')) {
+                 try {
+                    value = std::stoi(cell);
+                } catch (const std::invalid_argument& e) {
+                    throw std::runtime_error("Invalid integer in column2: " + cell);
+                } catch (const std::out_of_range& e) {
+                    throw std::runtime_error("Integer out of range in column2: " + cell);
+                }
+            } else {
+                 throw std::runtime_error("Error parsing column2");
+            }
+
+            map[key] = value;
+
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error processing line: " << line << ".  Error: " << e.what() << std::endl;
+            return 1;
+            // You could choose to continue processing or exit here.  For now, continuing.
+        }
+    }
+
+    cout << "################" << endl;
+    cout << "Rows Read: " << map.size() << endl;
+    cout << "Sample Rows" << endl;
+    for (Int_t i = 0; i < min(map.size(), m_sample_print); ++i) {
+        cout << map[i] << endl;
+    }
+
+    file.close();
+    return 0;
 }
 
 Int_t myAnalysis::readCSV(const string& filename) {
@@ -96,11 +191,11 @@ Int_t myAnalysis::readCSV(const string& filename) {
 
         // Extract the data from each cell, handling potential errors
         try {
-            // sector
+            // serial
             if (std::getline(ss, cell, ',')) {
                  try {
-                    // sector number in CSV starts at 1 but we need to start at zero
-                    row.sector = std::stoi(cell)-1;
+                    row.serial = std::stoi(cell);
+                    row.sector = serial_to_sector[row.serial];
                 } catch (const std::invalid_argument& e) {
                     throw std::runtime_error("Invalid integer in column1: " + cell);
                 } catch (const std::out_of_range& e) {
@@ -123,10 +218,10 @@ Int_t myAnalysis::readCSV(const string& filename) {
                  throw std::runtime_error("Error parsing column2");
             }
 
-            // channel
+            // ib channel
             if (std::getline(ss, cell, ',')) {
                  try {
-                    row.channel = std::stoi(cell);
+                    row.ib_channel = std::stoi(cell);
                 } catch (const std::invalid_argument& e) {
                     throw std::runtime_error("Invalid integer in column3: " + cell);
                 } catch (const std::out_of_range& e) {
@@ -136,7 +231,7 @@ Int_t myAnalysis::readCSV(const string& filename) {
                  throw std::runtime_error("Error parsing column3");
             }
 
-            pair<Int_t,Int_t> iphi_ieta = getDetectorCoordinates(row.sector, row.ib, row.channel);
+            pair<Int_t,Int_t> iphi_ieta = getDetectorCoordinates(row.serial, row.ib, row.ib_channel);
 
             row.iphi = iphi_ieta.first;
             row.ieta = iphi_ieta.second;
@@ -145,6 +240,8 @@ Int_t myAnalysis::readCSV(const string& filename) {
             if (std::getline(ss, cell, ',')) {
                 try {
                     row.bias = std::stof(cell);
+                    min_bias = min(min_bias, row.bias);
+                    max_bias = max(max_bias, row.bias);
                 } catch (const std::invalid_argument& e) {
                     throw std::runtime_error("Invalid float in column3: " + cell);
                 } catch (const std::out_of_range& e) {
@@ -159,6 +256,8 @@ Int_t myAnalysis::readCSV(const string& filename) {
             if (std::getline(ss, cell, ',')) {
                  try {
                     row.offset = std::stoi(cell);
+                    min_offset = min(min_offset, row.offset);
+                    max_offset = max(max_offset, row.offset);
                 } catch (const std::invalid_argument& e) {
                     throw std::runtime_error("Invalid integer in column4: " + cell);
                 } catch (const std::out_of_range& e) {
@@ -180,17 +279,19 @@ Int_t myAnalysis::readCSV(const string& filename) {
     cout << "################" << endl;
     cout << "Rows Read: " << data.size() << endl;
     cout << "Sample Rows" << endl;
-    cout << "sector,ib,channel,iphi,ieta,bias,offset" << endl;
+    cout << "sector,ib,ib_channel,iphi,ieta,bias,offset" << endl;
     for (Int_t i = 0; i < min(data.size(), m_sample_print); ++i) {
         cout << data[i].sector << ","
              << data[i].ib << ","
-             << data[i].channel << ","
+             << data[i].ib_channel << ","
              << data[i].iphi << ","
              << data[i].ieta << ","
              << data[i].bias << ","
              << data[i].offset << endl;
     }
     cout << "################" << endl;
+    cout << "Bias Min: " << min_bias << ", Max: " << max_bias << endl;
+    cout << "Offset Min: " << min_offset << ", Max: " << max_offset << endl;
 
     file.close();
     return 0;
@@ -199,39 +300,111 @@ Int_t myAnalysis::readCSV(const string& filename) {
 void myAnalysis::analyze(const string &output) {
     string outputDir = fs::absolute(output).parent_path().string();
     fs::create_directories(outputDir);
+
+    // hists
+    m_hists2D["h2Bias"] = new TH2F("h2Bias","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists2D["h2Offset"] = new TH2F("h2Offset","Offset [mV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    for(auto p : data) {
+        m_hists2D["h2Bias"]->SetBinContent(p.iphi+1, p.ieta+1, p.bias);
+        m_hists2D["h2Offset"]->SetBinContent(p.iphi+1, p.ieta+1, p.offset);
+    }
+
+    TCanvas* c1 = new TCanvas();
+    c1->SetTickx();
+    c1->SetTicky();
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    gStyle->SetOptTitle(1);
+    gStyle->SetTitleStyle(0);
+    gStyle->SetTitleFontSize(0.08);
+    gStyle->SetTitleW(1);
+    gStyle->SetTitleH(0.08);
+    gStyle->SetTitleFillColor(0);
+    gStyle->SetTitleBorderSize(0);
+
+    gPad->SetGrid();
+
+    c1->Print((output + "[").c_str(), "pdf portrait");
+
+    m_hists2D["h2Bias"]->GetXaxis()->SetLimits(0,256);
+    m_hists2D["h2Bias"]->GetXaxis()->SetNdivisions(32, false);
+    m_hists2D["h2Bias"]->GetXaxis()->SetLabelSize(0.04);
+    m_hists2D["h2Bias"]->GetXaxis()->SetTickSize(0.01);
+    m_hists2D["h2Bias"]->GetYaxis()->SetTickSize(0.01);
+    m_hists2D["h2Bias"]->GetYaxis()->SetLabelSize(0.04);
+    m_hists2D["h2Bias"]->GetYaxis()->SetLimits(0,96);
+    m_hists2D["h2Bias"]->GetYaxis()->SetNdivisions(12, false);
+    m_hists2D["h2Bias"]->GetYaxis()->SetTitleOffset(0.5);
+    m_hists2D["h2Bias"]->GetXaxis()->SetTitleOffset(1);
+
+    m_hists2D["h2Bias"]->SetMinimum((Int_t)min_bias);
+
+    m_hists2D["h2Bias"]->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists2D["h2Bias"]->GetName()) + ".png").c_str());
+
+    m_hists2D["h2Offset"]->GetXaxis()->SetLimits(0,256);
+    m_hists2D["h2Offset"]->GetXaxis()->SetNdivisions(32, false);
+    m_hists2D["h2Offset"]->GetXaxis()->SetLabelSize(0.04);
+    m_hists2D["h2Offset"]->GetXaxis()->SetTickSize(0.01);
+    m_hists2D["h2Offset"]->GetYaxis()->SetTickSize(0.01);
+    m_hists2D["h2Offset"]->GetYaxis()->SetLabelSize(0.04);
+    m_hists2D["h2Offset"]->GetYaxis()->SetLimits(0,96);
+    m_hists2D["h2Offset"]->GetYaxis()->SetNdivisions(12, false);
+    m_hists2D["h2Offset"]->GetYaxis()->SetTitleOffset(0.5);
+    m_hists2D["h2Offset"]->GetXaxis()->SetTitleOffset(1);
+
+
+    m_hists2D["h2Offset"]->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists2D["h2Offset"]->GetName()) + ".png").c_str());
+
+    c1->Print((output + "]").c_str(), "pdf portrait");
 }
 
-void read_Bias(const string &input, const string &output="plots.pdf") {
+void read_Bias(const string &input, const string &input_sector, const string &input_channel, const string &output="plots.pdf") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
+    cout << "input sector map: "  << input_sector << endl;
+    cout << "input channel map: "  << input_channel << endl;
     cout << "output: " << output << endl;
     cout << "#############################" << endl;
 
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
-    if(myAnalysis::readCSV(input)) return;
+
+    if(myAnalysis::readMaps(input_sector, myAnalysis::serial_to_sector) ||
+       myAnalysis::readMaps(input_channel, myAnalysis::ib_channel_to_ADC_channel) ||
+       myAnalysis::readCSV(input)) return;
 
     myAnalysis::analyze(output);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 2 || argc > 3){
-        cout << "usage: ./read-Bias input [output]" << endl;
+if(argc < 4 || argc > 5){
+        cout << "usage: ./read-Bias input input_sector input_channel [output]" << endl;
         cout << "input: input csv file" << endl;
+        cout << "input_sector: input sector map" << endl;
+        cout << "input_channel: input channel map" << endl;
         cout << "output: output pdf file" << endl;
         return 1;
     }
 
     string output  = "plots.pdf";
 
-    if(argc >= 3) {
-        output = argv[2];
+    if(argc >= 5) {
+        output = argv[4];
     }
 
-    read_Bias(argv[1], output);
+    read_Bias(argv[1], argv[2], argv[3], output);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
