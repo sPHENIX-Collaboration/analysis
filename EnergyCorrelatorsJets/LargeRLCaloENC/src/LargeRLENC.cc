@@ -723,26 +723,27 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 	SingleCaloENC(ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL, &total_e);
 	return;
 }
-void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, /*int region,*/ bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges,/* std::vector<MethodHistograms*>* Histos,*/ int which_calo, float* total_e_region)
+void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges, LargeRLENC::Calorimeter which_calo, float* total_e_region)
 {
 	MethodHistograms* ha=NULL, *hc=NULL;
 	float base_thresh=0.01;
 	if(which_calo== 1) base_thresh= 0.07;
 	auto i=cal.begin();
-	std::map<std::array<float, 3>, float> p_T_save;
-	int n=0;
 	std::vector<std::array<float,4>> e_region; //get the energy in the relevant region 
-	std::array<int, 20> thresh_size;
+	std::vector<float> thresholds;
+	std::vector<StrippedDownTowers*> strippedCalo;
 	for(int j=0; j<(int)Region_vector.size(); j++){
-		thresh_size[j]=0;
+		float threshold = base_thresh * (1 + i * 0.25);
+		thresholds.push_back(threshold);
 		std::array<float, 4> e_region_1 { 0., 0., 0., 0. };
 		e_region.push_back(e_region_1);
-	} 
+	}
+	//Processs the calorimeter data into my analysis class
+	//Do the vertex shift and add it into the output 
 	while(i !=cal.end()){
-		n++;
 		auto j=i->first;
 		auto j_val=i->second;
-		float pT=0., eta_shift=i->first[0], r=i->first[2];
+		float eta_shift=i->first[0], r=i->first[2];
 		float x=r*cos(i->first[1]), y=r*sin(i->first[1]);
 		if(vertex[0]!=0) x+=vertex[0];
 		if(vertex[1]!=0) y+=vertex[1];
@@ -753,225 +754,86 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		if(eta_shift != eta_shift) std::cout<<"The eta shift returns nan, r="<<r <<" z=" <<z <<" ratio " <<z/r <<std::endl;
 		j[0]=eta_shift;
 		if(vertex[0] != 0 && vertex[1] !=0) j[1]=atan2(y,x);
-		j[2]=r; //make sure the positions are properly aligned for all caluclations	
-		i=cal.erase(i);
-		int region_index=0;
-		for(auto x:phi_edges){ //grab the correct region
-			if(x.first==0) continue;
-			if(j[1] < 0 ) j[1]=2*PI+j[1];
-			if(j[1] > 2*PI) j[1]=j[1]-2*PI;
-			if( j[1] < x.second.first || j[1] > x.second.second)continue;
-			else{
-				region_index=x.first;
-				if(region_index >= 3) region_index=3;
-				ha=Region_vector.at(0).at(region_index).at(0); 
-				hc=Region_vector.at(0).at(region_index).at(which_calo);
+		j[2]=r; //make sure the positions are properly aligned for all caluclations
+		StrippedDownTower* t =new StrippedDownTower(threshold, (int) which_calo); 
+		for(auto x: phi_edges){
+			float phi_low=x.second.first;
+			float phi_up=x.second.second;
+			if(j[1] >= phi_low && j[1] < phi_up){
+				t->tag=x.first;
 				break;
 			}
+			else continue;
 		}
-		if(!ha || !hc){
-			 continue;
-		}
-		else{
-			for(int k = 0; k<(int)Region_vector.size(); k++){
-				float thresh=base_thresh*(1+0.5*k);
-				cal[j]=j_val;
-				if(j_val < thresh || j_val != j_val) continue;
-				e_region[k][region_index]+=j_val;
-				e_region[k][0]+=j_val;
-				thresh_size[k]++;
-	//		       	++i;
-				pT=j_val; //right now using p approx E, can probably improve soon
-				pT=pT/cosh(eta_shift);
-				if(pT > MinpTComp) p_T_save[j]=pT;
-				Region_vector.at(k).at(region_index).at(which_calo)->pt->Fill(pT);
-				Region_vector.at(k).at(0).at(which_calo)	   ->pt->Fill(pT);
-				bool printout=false;
-				float R=getR(j[0], j[1], eventCut->getLeadEta(), eventCut->getLeadPhi(), printout );
-				if(n_evts < 5 && printout) std::cout<<"R val is " <<R <<" \n with inputs " <<j[0] <<", " <<j[1] <<" , " <<eventCut->getLeadEta() <<" , " <<eventCut->getLeadPhi() <<std::endl;
-				Region_vector.at(k).at(region_index).at(which_calo)->R_pt->Fill(R,pT);
-				Region_vector.at(k).at(0).at(which_calo)	   ->R_pt->Fill(R,pT);
-			}
-		}
+		t->r=r;
+		t->phi=j[1];
+		t->eta=j[0];
+		t->E=j_val;
+		strippedCalo.push_back(t);
 	}
-	for(int i=0; i<(int)e_region.size(); i++){
-		for(int j=0; j<(int)e_region[i].size(); j++){
-			if(e_region[i][j]==0.) 
-				e_region[i][j]=1.; //just correcting for any nan inputs
-			Region_vector.at(i).at(j).at(which_calo)->E->Fill(e_region[i][j]);
-		}
-		Region_vector.at(i).at(0).at(which_calo)->E->Fill(e_region[i][0]);
-	}
-	std::map<std::array<float, 3>, float> cal_2=cal;
-	std::map<int, std::map<float, float>> e2c, e3c;
-	std::map<int, std::map<std::array<float, 3>, float>> e3c_full;
-	for(int i=0; i<4; i++){
-		std::map<float, float> dummy {{0.,0.}};
-		e2c[i]=dummy;
-		e3c[i]=dummy;
-		std::array<float, 3> dummy_array {0., 0., 0.};
-		std::map<std::array<float, 3>, float> dummy_2{{dummy_array, 0.}}; 
-		e3c_full[i]=dummy_2;
-		for(int j=0; j<(int)Region_vector.size(); j++){
-			hc=Region_vector.at(j).at(i).at(which_calo);
-			hc->N->Fill(thresh_size[j]);
-		}
-	} //just make sure the maps are initialized to be in working order ahead of the calculations
-	for(int i = 0; i< (int) Region_vector.size(); i++) Region_vector.at(i).at(0).at(which_calo)->N->Fill(thresh_size[i]);
-	(*total_e_region)+=e_region[0][0];
-	for(auto i=cal.begin(); i != cal.end(); ++i){
-		std::array<float, 3> tower {i->first[0], i->first[1], i->second}; 
-		if(which_calo == LargeRLENC::Calorimeter::EMCAL)m_emcal.push_back(tower);
-		else if(which_calo == LargeRLENC::Calorimeter::IHCAL)m_ihcal.push_back(tower);
-		else if(which_calo == LargeRLENC::Calorimeter::OHCAL)m_ohcal.push_back(tower);
-		auto j=cal_2.find(i->first);
-		if(j != cal_2.end()) 
-			cal_2.erase(j); //getting rid of double counting by removing the base value from the second map 
-		auto cal_3=cal_2;
-		auto k=cal_3.find(j->first);
-		if(k != cal_3.end()) 
-			cal_3.erase(k); //getting rid of double counting by removing the base value from the third map 
-		std::vector<std::pair<float,std::vector< std::pair<float, float> > >> point_correlator ((int)cal_2.size());
-		for(int i=0; i<(int)point_correlator.size(); i++){
-			std::vector< std::pair<float, float> > pt_c (20); //allow for easy looping over the towers to parrelize 
-			point_correlator.at(i)=std::make_pair(0.,pt_c);
-		}
-		//now permits various thresholds
-		std::vector< std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > > > threept_full ((int) cal_2.size());
-		std::vector<std::thread> calculating_threads; 
-		int index=0;
-		std::map<int, int> region_index; //gives a way to pull the relevant region after the fact to fill hc
-		for(auto l:cal_2)
-		{
-		 	//threading over all pairs to allow for faster calculation 
-			if(l.second < MinpTComp) continue;
-			calculating_threads.push_back(std::thread(&LargeRLENC::CalculateENC, this, *i, l, cal_3, &point_correlator[index], &threept_full[index], transverse, energy, base_thresh)); 
-			index++;
-			for(auto x:phi_edges){
-				int regions_val=x.first;
-				if(regions_val >=3) regions_val = 3;
-				if(regions_val==0) continue;
-				if( l.first[1] < x.second.first || l.first[1] > x.second.second)continue;
-				else{
-					
-					region_index[index]=regions_val;
-					break;
-				}
-				}
-		}
-		for(int t=0; t<(int) calculating_threads.size(); t++) calculating_threads[t].join();
-		index=0;
-		int threshold_index=0;
-		std::vector<std::vector<std::pair<float, std::pair<float, float> > > > point_correlator_1 (20); //change into a better threshold friendly format
-		for(int j= 0; j< (int) point_correlator_1.size(); j++){
-			 for(int i = 0; i<(int)point_correlator.size(); i++)
-			{
-				point_correlator_1.at(j).push_back(std::make_pair(point_correlator.at(i).first,point_correlator.at(i).second.at(j)));
-			}
-		}
-		for(auto pc_1:point_correlator_1){
-			for(auto v:pc_1){
-			auto l=e2c[region_index[index]].find(v.first);
-			auto m=e3c[region_index[index]].find(v.first);
-			if(v.first != v.first) continue;
-			if(l == e2c[region_index[index]].end()) e2c[region_index[index]][v.first]=v.second.first;
-			if(l != e2c[region_index[index]].end()) e2c[region_index[index]][v.first]+=v.second.first;
-			if(m == e3c[region_index[index]].end()) e2c[region_index[index]][v.first]=v.second.second;
-			if(m != e3c[region_index[index]].end()) e2c[region_index[index]][v.first]+=v.second.second;
-			l=e2c[0].find(v.first);
-			m=e3c[0].find(v.first);
-			if(l == e2c[0].end()) e2c[0][v.first]=v.second.first;
-			if(l != e2c[0].end()) e2c[0][v.first]+=v.second.first;
-			if(m == e3c[0].end()) e3c[0][v.first]=v.second.second;
-			if(m != e3c[0].end()) e3c[0][v.first]+=v.second.second;
-			Region_vector[threshold_index][region_index[index]][0]->R->Fill(v.first); //this needs the threshold
-			Region_vector[threshold_index][region_index[index]][which_calo]->R->Fill(v.first);
-			Region_vector[threshold_index][0][0]->R->Fill(v.first);
-			Region_vector[threshold_index][0][which_calo]->R->Fill(v.first);
-			index++;
-			}
-		
-		index=0;
-		for(auto v:threept_full){
-			for(auto w:v.second){
-				std::array<float, 3> key= {v.first, w.first.first, w.first.second};
-				auto l=e3c_full[region_index[index]].find(key);
-				if(l == e3c_full[region_index[index]].end()) e3c_full[region_index[index]][key]=w.second;
-				else e3c_full[region_index[index]][key]+=w.second;
-				l=e3c_full[0].find(key);
-				if(l == e3c_full[0].end()) e3c_full[0][key]=w.second;
-				else e3c_full[0][key]+=w.second;
-			}
-		}
-	}
-	for(auto es:e2c){
-		std::vector<std::pair<float, float>> holding_2;
-		for(auto v:es.second){
-			auto vs=v.second*std::pow(e_region[threshold_index][es.first], -2);
-	        	Region_vector[threshold_index][es.first][which_calo]->E2C->Fill(v.first, vs);
-			holding_2.push_back(std::make_pair(v.first, vs)); 
-		}
-		t_e2c.push_back(std::make_pair(es.first, holding_2));
-	}
-	for(auto es:e3c){
-		std::vector<std::pair<float, float>> holding_3;
-		for(auto v:es.second){
-			auto vf=v.second*std::pow(e_region[threshold_index][es.first], -3);
-			Region_vector[threshold_index][es.first][which_calo]->E3C->Fill(v.first, vf);
-			holding_3.push_back(std::make_pair(v.first, vf));
-			Region_vector.at(threshold_index).at(0).at(which_calo)->E3C->Fill(v.first, vf);
-		}
-		t_e3c.push_back(std::make_pair(es.first, holding_3));
-	}
-	for(auto es:e3c_full)
+	//Now get the energy regions 
+	for(auto t:strippedCalo)
 	{
-		std::vector< std::pair < std::array<float, 3>, float> > holding_3;
-		for(auto v:es.second){
-			auto vf=v.second*std::pow(e_region[threshold_index][es.first], -3);
-			holding_3.push_back(make_pair(v.first, vf));
-			
+		StrippedDownTower::Regions region_tag=t->tag;
+		for(int i=0; i<(int)t->RegionOutput->size(); i++)
+		{
+			if(t->E < t->RegionOutput->at(i)->threshold) break; //because it is ordered
+			else{
+				e_region.at(i).at(region_tag)+=t->E;
+				e_region.at(i).at(StrippedDownTower::Regions::Full)+=t->E;
+			}
 		}
-		t_e3c_full.push_back(std::make_pair(es.first, holding_3));
 	}
-		threshold_index++;
+	//now I need to actualy run the dataset 
+	std::vector<std::thread> CalculatingThreads; 
+	for(int i=0; i<(int)strippedCalo.size()-1; i++)
+	{
+		StrippedDownTower* t = strippedCalo.at(i);
+		std::vector<StrippedDownTower> CaloCopy;
+		for(int j=i+1; j<(int)strippedCalo.size(); j++) CaloCopy.push_back(*(strippedCalo[i])); //avoid double counting
+		CalculatingThreads.push_back(std::thread(&LargeRLENC::CalculateENC, this, t, CaloCopy, transverse, energy));
 	}
+	for(int k=0; k<(int)CalculatingThreads.size(); k++) CalculatingThreads.at(k).join();
+	//now need to sum over the relevant towers
 	return;
+	
 }
-void LargeRLENC::CalculateENC(std::pair<std::array<float, 3>, float> point_1, std::pair<std::array<float, 3>, float> point_2, std::map<std::array<float, 3>, float> cal, std::pair<float, std::vector<std::pair<float, float>>>* enc_out, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > > *threept_full, bool transverse, bool energy, float calo_min)
+void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDownTower> towerSet, bool transverse, bool energy)
 {
 	//this is the threaded object, I could try nesting the threads, but for now I am going to try to run without the nested threads for the 3pt
-	float R_L=getR(point_1.first[0], point_1.first[1], point_2.first[0], point_2.first[1]);
-	float e2c=0.;
-	if(energy) e2c=(point_1.second) * (point_2.second);
-	else e2c=(point_1.second * ptoE) * (point_2.second * ptoE); //use a basic swap of momenta ratio for each calo
-	if(transverse) e2c=e2c/(cosh(point_1.first[0]) * cosh(point_2.first[0]));
-	enc_out->first=R_L;
-	for(int j = 0; j< (int)enc_out->second.size(); j++){
-		if(point_1.second > calo_min * (1+0.25*j) && point_2.second > calo_min * (1+0.25*j) && e2c==e2c){
-			enc_out->second.at(j)=std::make_pair(e2c, 0);
-			threept_full->first=R_L;
-			for(auto i:cal)
-			{
-				float R_13=getR(point_1.first[0], point_1.first[1], i.first[0], i.first[1]);
-				float R_23=getR(point_2.first[0], point_2.first[1], i.first[0], i.first[1]);
-				float maxRL=std::max(R_L, R_13); //so I need to change the output sturcutre because I'm not sure if I am matching correctly
-				maxRL=std::max(maxRL, R_23);
-				if(maxRL > R_L || i.second < calo_min * ( 1+ 0.25 * j) ) continue;
-				else{ 
-					float e3c=e2c*i.second;
-					if(!energy) e3c=e3c*ptoE;
-					if(transverse) e3c=e3c/(cosh(i.first[0]));
-					if(e3c == e3c ) enc_out->second.at(j).second+=e3c;
-					std::pair<float, float> rs {R_13, R_23};
-					std::pair<std::pair<float, float>, float> ec {rs, e3c};
-					if(j== (int) enc_out->second.size()) threept_full->second.push_back(ec);
-				}
+	std::vector<float> threshold_values;
+	for(int j=0; j<(int)tower1->RegionOutput->size(); j++){
+		threshold_values.push_back(tower1->RegionOutput->at(j)->threshold;
+	}
+	for(int i = 0; i<(int) towerSet.size(); i++){
+		//run over all other towers
+		StrippedDownTower* tower2=&towerSet.at(i); 
+		float R_L=getR(tower1->eta, tower1->phi, tower2->eta, tower2->phi);
+		float e2c=0.;
+		if(energy) e2c=(tower1->E) * (tower2->E);
+		else e2c=(tower1->E * ptoE) * (tower2->E * ptoE); //use a basic swap of momenta ratio for each calo
+		if(transverse) e2c=e2c/(cosh(tower1->eta) * cosh(tower2->eta));
+		float energy1=tower1->E, energy2=tower2->E;
+		int region1=tower1->tag, region2=tower2->tag;
+		bool sameRegion = ( region1 == region2);
+		std::vector<std::pair<std::array<float, 3>, std::pair<float, float>> e3c_relevant;
+		if(i != (int) towerSet.size() - 1){
+			for(int j=i+1; j<(int) towerSet.size(); j++){
+				StrippedDownTower* tower3=&towerSet.at(j);
+				float R_13=getR(tower1->eta, tower1->phi, tower3->eta, tower3->phi);
+				float R_23=getR(tower2->eta, tower2->phi, tower3->eta, tower3->phi);
+				if(R_13 > R_L || R_23 > R_L ) continue;
+				
+		for(auto thresh:threshold_values){
+			int index=tower1->getThresholdIndex(thresh, true);		
+			int index2=tower1->getThresholdIndex(thresh, false);		
+			if(energy1 > thresh && energy2 > thresh){
+				tower1->FullOutput->at(index1)->AddE2CValues(R_L, e2c);
+				if(sameRegion)tower1->RegionOutput->at(index2)->AddE2CValues(R_L, e2c); //this is the two point done noew 
+			}
+		}	
 		
-				if(i.second != 0 && e2c == e2c ) enc_out->second.at(j).second+=e2c*i.second;
-			
-				}
-			} 
-		}
+	}
 	return;
 }
 void LargeRLENC::JetEventObservablesBuilding(std::array<float, 3> central_tower, std::map<std::array<float, 3>, float> calorimeter_input, std::map<float, float>* Etir_output )

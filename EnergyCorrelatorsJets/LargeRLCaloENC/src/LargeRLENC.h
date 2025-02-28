@@ -82,31 +82,6 @@ class PHG4Particle;
 class PHG4TruthInfoContainer;
 class TriggerAnalyzer; 
 
-struct DijetQATypePlots{
-	DijetQATypePlots(){
-		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h_rat=new TH2F("h_bad_occupancy_EM_H_rat", "Occupancy for events that fail OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_oh=new TH2F("h_bad_occupancy_EM_OH", "Occupancy for events that pass  OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h=new TH2F("h_bad_occupancy_EM_H", "Occupancy for events that pass OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		ohcal_bad_hits=new TH2F("h_ohcal_bad_hits", "Energy depositon for events that fail the OHCAL ratio cut; #eta; #varphi; E [GeV]", 24, -1.1, 1.1, 64, -PI, PI);
-		emcal_occup=new TH1F("h_EMCAL_occupancy", "Occupancy of EMCAL all events; #% Towers #geq 10 MeV EMCAL; N_{evts}", 100, -0.005, 0.995);
-		ihcal_occup=new TH1F("h_IHCAL_occupancy", "Occupancy of IHCAL all events; #% Towers #geq 10 MeV IHCAL; N_{evts}", 100, -0.005, 0.995);
-		ohcal_occup=new TH1F("h_OHCAL_occupancy", "Occupancy of OHCAL all events; #% Towers #geq 10 MeV OHCAL; N_{evts}", 100, -0.005, 0.995);
-		ohcal_rat_occup=new TH2F("h_OHCAL_rat", "Occupancy of OHCAL as function of OHCAL ratio; #frac{E_{OHCAL}}{E_{ALL CALS}}; #% Towers #geq 500 MeV; N_{evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-	}
-	TH2F* bad_occ_em_oh_rat=nullptr;
-	TH2F* bad_occ_em_h_rat=nullptr;
-	TH2F* bad_occ_em_oh=nullptr;
-	TH2F* bad_occ_em_h=nullptr;
-	TH2F* ohcal_bad_hits=nullptr;
-	TH2F* ohcal_rat_occup=nullptr;
-	TH1F* emcal_occup=nullptr;
-	TH1F* ihcal_occup=nullptr;
-	TH1F* ohcal_occup=nullptr;
-	TH1F* ohcal_rat_h=nullptr;
-	std::vector<TH2F*> QA_2D_plots {bad_occ_em_oh_rat, bad_occ_em_h_rat, bad_occ_em_oh, bad_occ_em_h, ohcal_bad_hits, ohcal_rat_occup};
-	std::vector<TH1F*> QA_1D_plots {emcal_occup, ihcal_occup, ohcal_occup};
-	};
 
 class LargeRLENC : public SubsysReco
 {
@@ -185,9 +160,9 @@ class LargeRLENC : public SubsysReco
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
-	void SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, int, float*);
+	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, int, float*);
 	
-	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::vector<std::pair<float, float>>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool, float);
+	void CalculateENC(StrippedDownTower*, StrippedDownTower*, std::vector<StrippedDownTower*>, bool, bool, float);
 
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
@@ -210,16 +185,11 @@ class LargeRLENC : public SubsysReco
 	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC/*, *JetEvtObs*/;
-//	std::vector<MethodHistograms*> FullCal, TowardRegion, AwayRegion, TransverseRegion;
 	std::vector<std::vector<std::vector<MethodHistograms*>>> Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
-//	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
-//	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
-	//std::fstream* text_out_file;
-//	bool write_to_file;
 	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup, *ohcal_rat_h;
 	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
 	TH1F* IE, *badIE, *goodIE;
