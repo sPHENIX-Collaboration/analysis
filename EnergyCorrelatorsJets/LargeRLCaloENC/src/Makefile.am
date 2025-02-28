@@ -11,6 +11,7 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
+  HelperStructs.h \
   DijetEventCuts.h \
   LargeRLENC.h 
 

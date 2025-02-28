@@ -795,6 +795,18 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}
 	for(int k=0; k<(int)CalculatingThreads.size(); k++) CalculatingThreads.at(k).join();
 	//now need to sum over the relevant towers
+	
+	std::array<std::vector<TowerOutput*>, 5> AllTowOutput;
+	for(int i=0; i< 5; i++) {
+		AllTowOutput[i]=*(strippedCalo.at(((int)strippedCalo.size() -1))->FullOutput);
+	} //just get it the right range 
+	for(int i=0; i<(int)strippedCalo.size(); i++)
+	{
+		AllTowOutput[0]->Merge(strippedCalo.at(i)->FullOutput);
+		AllTowOutput[strippedCalo.at(i)->tag]->Merge(strippedCalo.at(i)->RegionOutput);
+	}
+	//now push the data out to the plots
+	
 	return;
 	
 }
@@ -816,23 +828,52 @@ void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDow
 		float energy1=tower1->E, energy2=tower2->E;
 		int region1=tower1->tag, region2=tower2->tag;
 		bool sameRegion = ( region1 == region2);
-		std::vector<std::pair<std::array<float, 3>, std::pair<float, float>> e3c_relevant;
+		std::vector<std::pair<std::pair<std::array<float, 3>, std::pair<float, float>>, bool>> e3c_relevant;
 		if(i != (int) towerSet.size() - 1){
 			for(int j=i+1; j<(int) towerSet.size(); j++){
 				StrippedDownTower* tower3=&towerSet.at(j);
 				float R_13=getR(tower1->eta, tower1->phi, tower3->eta, tower3->phi);
 				float R_23=getR(tower2->eta, tower2->phi, tower3->eta, tower3->phi);
 				if(R_13 > R_L || R_23 > R_L ) continue;
-				
+				else{
+					float Rs = std::min(R_13, R_23);
+					float Rm = std::max(R_13, R_23);
+					std::array<float, 3> R {R_L, Rm, Rs}; 
+					float energy3=tower3->E;
+					if(energy) e3c=e2c*energy3;
+					else e3c=e2c* (energy3*	ptoE);
+					if(transverse) e3c=e3c/cosh(tower3->eta);
+					std::pair<float, float> energy_e3 {energy3, e3c};
+					std::pair<std::array<float, 3>, std::pair<float, float>> e3c_sing {R, energy_e3};
+					bool sameRegion3 = ( region1 == tower3->tag);
+					e3c_relevant.push_back(e3c_sing);
+				}
+			}
+		} //caluclate and store the e3c to easily iteratoe over
 		for(auto thresh:threshold_values){
 			int index=tower1->getThresholdIndex(thresh, true);		
 			int index2=tower1->getThresholdIndex(thresh, false);		
 			if(energy1 > thresh && energy2 > thresh){
 				tower1->FullOutput->at(index1)->AddE2CValues(R_L, e2c);
 				if(sameRegion)tower1->RegionOutput->at(index2)->AddE2CValues(R_L, e2c); //this is the two point done noew 
+				for(auto t3:e3c_relevant)
+				{
+					if(t3.first.second.first > thresh){
+						tower1->FullOutput->at(index1)->AddE3CValues(t3.first.second.second, t3.first.first);
+						if(t3.second) tower1->RegionOutput->at(index2)->AddE3CValues(t3.first.second.second, t3.first.first);
+					}
+				}	
 			}
 		}	
 		
+	}//caluclate the flattend e3c
+	for(int i=0; i<(int)tower1->FullOutput->size(); i++)
+	{
+		tower1->FullOutput->at(i)->CalculateFlatE3C();
+	}
+	for(int i=0; i<(int)tower1->RegionOutput->size(); i++)
+	{
+		tower1->RegionOutput->at(i)->CalculateFlatE3C();
 	}
 	return;
 }
