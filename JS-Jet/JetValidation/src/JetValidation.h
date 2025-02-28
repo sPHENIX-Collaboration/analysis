@@ -5,9 +5,15 @@
 
 #include <fun4all/SubsysReco.h>
 #include <jetbase/Jetv1.h>
+#include <jetbase/Jetv2.h>
 
 #include <string>
 #include <vector>
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2D.h>
+
 
 class PHCompositeNode;
 class TTree;
@@ -92,6 +98,7 @@ class JetValidation : public SubsysReco
   int m_doSeeds;
   int m_doUnsubJet;
 
+
   //! Output Tree variables
   TTree *m_T;
 
@@ -102,6 +109,10 @@ class JetValidation : public SubsysReco
   float m_totalCalo;
   int m_centrality;
   float m_impactparam;
+  float m_zvtx;
+
+  //!trigger info
+  std::vector<bool> m_triggerVector;
 
   //! reconstructed jets
   std::vector<int> m_id;
@@ -110,6 +121,14 @@ class JetValidation : public SubsysReco
   std::vector<float> m_phi;
   std::vector<float> m_e;
   std::vector<float> m_pt;
+
+  //! clusters
+  std::vector<float> m_cleta;
+  std::vector<float> m_clphi;
+  std::vector<float> m_cle;
+  std::vector<float> m_clecore;
+  std::vector<float> m_clpt;
+  std::vector<float> m_clprob;
 
   //! unsubtracted jets
   std::vector<float> m_unsub_pt;

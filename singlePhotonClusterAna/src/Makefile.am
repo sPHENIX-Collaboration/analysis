@@ -11,7 +11,7 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64 \
    -lHepMC \
   -lCLHEP \
-  -lg4vertex_io \
+  -lglobalvertex_io \
   -lcalo_io \
   -lg4dst \
   -lg4eval

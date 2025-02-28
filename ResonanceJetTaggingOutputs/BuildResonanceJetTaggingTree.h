@@ -5,7 +5,7 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include <jetbase/JetMapv1.h>
+#include <jetbase/JetContainerv1.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -56,6 +56,8 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   bool getDoRecunstructed() { return m_dorec; }
   void setDoTruth(bool b) { m_dotruth = b; }
   bool getDoTruth() { return m_dotruth; }
+  void setStableMother(bool b) { m_stable_mother = b; }
+  bool getStableMother() { return m_stable_mother; }
 
   void setTagContainerName(const std::string &tagContName) { m_tagcontainer_name = tagContName; }
   std::string getTagContainerName() { return m_tagcontainer_name; }
@@ -66,7 +68,7 @@ class BuildResonanceJetTaggingTree : public SubsysReco
 
  private:
 
-  JetMapv1* getJetMapFromNode(PHCompositeNode *topNode, const std::string &name);
+  JetContainerv1* getJetContainerFromNode(PHCompositeNode *topNode, const std::string &name);
   KFParticle_Container* getKFParticleContainerFromNode(PHCompositeNode *topNode, const std::string &name);
   HepMC::GenEvent* getGenEventFromNode(PHCompositeNode *topNode, const std::string &name);
   /// String to contain the outfile name containing the trees
@@ -74,10 +76,11 @@ class BuildResonanceJetTaggingTree : public SubsysReco
   std::string m_tagcontainer_name;
   std::string m_jetcontainer_name;
   std::string m_truth_jetcontainer_name;
-  JetMapv1* m_taggedJetMap;
-  JetMapv1* m_truth_taggedJetMap;
+  JetContainerv1* m_taggedJetContainer;
+  JetContainerv1* m_truth_taggedJetContainer;
   bool m_dorec;
   bool m_dotruth;
+  bool m_stable_mother;
   int m_nDaughters;
   SvtxEvalStack *m_svtx_evalstack = nullptr;
   SvtxTrackEval *m_trackeval = nullptr;

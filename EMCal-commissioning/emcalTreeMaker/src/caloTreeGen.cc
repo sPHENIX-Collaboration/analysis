@@ -37,7 +37,7 @@
 
 //____________________________________________________________________________..
 caloTreeGen::caloTreeGen(const std::string &name):
-SubsysReco(name)
+SubsysReco("caloTreeGen")
   ,T(nullptr)
   ,Outfile(name)
   ,doClusters(1)
@@ -70,7 +70,7 @@ int caloTreeGen::Init(PHCompositeNode *topNode)
   T -> Branch("emciEta",&m_emciEta);
   T -> Branch("emciPhi",&m_emciPhi);
   
-  T -> Branch("clusterE",&m_clusterE);
+  T -> Branch("clusterEFull",&m_clusterE);
   T -> Branch("clusterPhi",&m_clusterPhi);
   T -> Branch("clusterEta", &m_clusterEta);
   T -> Branch("clustrPt", &m_clusterPt);
@@ -114,8 +114,7 @@ int caloTreeGen::process_event(PHCompositeNode *topNode)
   
   //tower information
   TowerInfoContainer *emcTowerContainer;
-  if(doClusters)emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
-  else emcTowerContainer =  findNode::getClass<TowerInfoContainer>(topNode,"TOWERS_CEMC");
+  emcTowerContainer = findNode::getClass<TowerInfoContainer>(topNode,"TOWERINFO_CALIB_CEMC");
   if(!emcTowerContainer)
     {
       std::cout << PHWHERE << "caloTreeGen::process_event Could not find node TOWERS_CEMC"  << std::endl;

@@ -10,98 +10,32 @@
 #include <fun4all/PHTFileServer.h>
 #include <fun4all/Fun4AllServer.h>
 #include <ffaobjects/EventHeaderv1.h>
+#include <mbd/MbdOut.h>
+#include <mbd/MbdPmtContainer.h>
+#include <mbd/MbdPmtHit.h>
+#include <mbd/MbdGeom.h>
+#include <mbd/MbdDefs.h>
 
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TF1.h>
 #include <TCanvas.h>
 #include <TString.h>
 #include <TLorentzVector.h>
 //#include <TMath.h>
 #include <TDatabasePDG.h>
 #include <TRandom3.h>
-
+#include <TSystem.h>
 
 #include <iostream>
+#include <cmath>
 
 using namespace std;
+using namespace MbdDefs;
 
-const Double_t index_refract = 1.4585;
-const Double_t v_ckov = 1.0/index_refract;  // velocity threshold for CKOV
-const Double_t C = 29.9792458; // cm/ns
-
-// kludge where we have the hardcoded positions of the tubes
-// These are the x,y for the south BBC (in cm).
-// The north inverts the x coordinate (x -> -x)
-const float TubeLoc[64][2] = {
-    { -12.2976,	4.26 },
-    { -12.2976,	1.42 },
-    { -9.83805,	8.52 },
-    { -9.83805,	5.68 },
-    { -9.83805,	2.84 },
-    { -7.37854,	9.94 },
-    { -7.37854,	7.1 },
-    { -7.37854,	4.26 },
-    { -7.37854,	1.42 },
-    { -4.91902,	11.36 },
-    { -4.91902,	8.52 },
-    { -4.91902,	5.68 },
-    { -2.45951,	12.78 },
-    { -2.45951,	9.94 },
-    { -2.45951,	7.1 },
-    { 0,	11.36 },
-    { 0,	8.52 },
-    { 2.45951,	12.78 },
-    { 2.45951,	9.94 },
-    { 2.45951,	7.1 },
-    { 4.91902,	11.36 },
-    { 4.91902,	8.52 },
-    { 4.91902,	5.68 },
-    { 7.37854,	9.94 },
-    { 7.37854,	7.1 },
-    { 7.37854,	4.26 },
-    { 7.37854,	1.42 },
-    { 9.83805,	8.52 },
-    { 9.83805,	5.68 },
-    { 9.83805,	2.84 },
-    { 12.2976,	4.26 },
-    { 12.2976,	1.42 },
-    { 12.2976,	-4.26 },
-    { 12.2976,	-1.42 },
-    { 9.83805,	-8.52 },
-    { 9.83805,	-5.68 },
-    { 9.83805,	-2.84 },
-    { 7.37854,	-9.94 },
-    { 7.37854,	-7.1 },
-    { 7.37854,	-4.26 },
-    { 7.37854,	-1.42 },
-    { 4.91902,	-11.36 },
-    { 4.91902,	-8.52 },
-    { 4.91902,	-5.68 },
-    { 2.45951,	-12.78 },
-    { 2.45951,	-9.94 },
-    { 2.45951,	-7.1 },
-    { 0,	-11.36 },
-    { 0,	-8.52 },
-    { -2.45951,	-12.78 },
-    { -2.45951,	-9.94 },
-    { -2.45951,	-7.1 },
-    { -4.91902,	-11.36 },
-    { -4.91902,	-8.52 },
-    { -4.91902,	-5.68 },
-    { -7.37854,	-9.94 },
-    { -7.37854,	-7.1 },
-    { -7.37854,	-4.26 },
-    { -7.37854,	-1.42 },
-    { -9.83805,	-8.52 },
-    { -9.83805,	-5.68 },
-    { -9.83805,	-2.84 },
-    { -12.2976,	-4.26 },
-    { -12.2976,	-1.42 }
-};    
-
-
+//const Double_t C = 29.9792458; // cm/ns
 
 //____________________________________
 BBCStudy::BBCStudy(const string &name) : SubsysReco(name),
@@ -109,6 +43,7 @@ BBCStudy::BBCStudy(const string &name) : SubsysReco(name),
     f_evt( 0 ),
     _pdg( 0 ),
     _rndm( 0 ),
+    _tres( 0.05 ),
     _savefname( "bbcstudy.root" ),
     _savefile( 0 )
 { 
@@ -137,14 +72,16 @@ int BBCStudy::Init(PHCompositeNode *topNode)
   _tree->Branch("bqn",&f_bbcq[1],"bqn/F");
   _tree->Branch("bts",&f_bbct[0],"bts/F");
   _tree->Branch("btn",&f_bbct[1],"btn/F");
+  _tree->Branch("btes",&f_bbcte[0],"btes/F");
+  _tree->Branch("bten",&f_bbcte[1],"bten/F");
   _tree->Branch("bz",&f_bbcz,"bz/F");
   _tree->Branch("bt0",&f_bbct0,"bt0/F");
 
-  _pdg = new TDatabasePDG();  // database of PDG info on particles
+  _pdg = TDatabasePDG::Instance();  // database of PDG info on particles
   _rndm = new TRandom3(0);
 
   TString name, title;
-  for (int ipmt=0; ipmt<128; ipmt++)
+  for (int ipmt=0; ipmt<MbdDefs::MBD_N_PMT; ipmt++)
   {
     name = "h_bbcq"; name += ipmt;
     title = "bbc charge, ch "; title += ipmt;
@@ -166,14 +103,17 @@ int BBCStudy::Init(PHCompositeNode *topNode)
     //
     name = "hevt_bbct"; name += iarm;
     title = "bbc times, arm "; title += iarm;
-    hevt_bbct[iarm] = new TH1F(name,title,1600,0,16);
+    hevt_bbct[iarm] = new TH1F(name,title,200,7.5,11.5);
     hevt_bbct[iarm]->SetLineColor(4);
   }
   h2_bbcqtot = new TH2F("h2_bbcqtot","north BBCQ vs South BBCQ",300,0,120*900,300,0,120*900);
 
   h_ztrue = new TH1F("h_ztrue","true z-vtx",600,-30,30);
   h_tdiff = new TH1F("h_tdiff","dt (measured - true_time)",6000,-3,3);
-  h2_tdiff_ch = new TH2F("h2_tdiff_ch","dt (measured - true time) vs ch",128,-0.5,127.5,200,-2,2);
+  h2_tdiff_ch = new TH2F("h2_tdiff_ch","dt (measured - true time) vs ch",MBD_N_PMT,-0.5,MBD_N_PMT-0.5,200,-2,2);
+
+  gaussian = new TF1("gaussian","gaus",0,20);
+  gaussian->FixParameter(2,0.05);   // set sigma to 50 ps
 
   c_bbct = new TCanvas("c_bbct","BBC Times",1200,800);
   c_bbct->Divide(1,2);
@@ -184,6 +124,7 @@ int BBCStudy::Init(PHCompositeNode *topNode)
 //___________________________________
 int BBCStudy::InitRun(PHCompositeNode *topNode)
 {
+  _bbcgeom = new MbdGeom();
   GetNodes(topNode);
 
   return 0;
@@ -193,11 +134,12 @@ int BBCStudy::InitRun(PHCompositeNode *topNode)
 //Call user instructions for every event
 int BBCStudy::process_event(PHCompositeNode *topNode)
 {
+  nprocessed++;
+
   //GetNodes(topNode);
 
   f_evt = _evtheader->get_EvtSequence();
-  //if(f_evt%1000==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
-  if(f_evt%100==0) cout << PHWHERE << "Events processed: " << f_evt << endl;
+  if(f_evt%1==0) cout << PHWHERE << "Event " << f_evt << "\t" << ", nprocessed = " << nprocessed << endl;
 
   // Initialize Variables
   f_bbcn[0] = 0;
@@ -206,8 +148,10 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   f_bbcq[1] = 0.;
   f_bbct[0] = -9999.;
   f_bbct[1] = -9999.;
-  f_bbcz = -9999.;
-  f_bbct0 = -9999.;
+  f_bbcte[0] = -9999.;
+  f_bbcte[1] = -9999.;
+  f_bbcz = NAN;
+  f_bbct0 = NAN;
   hevt_bbct[0]->Reset();
   hevt_bbct[1]->Reset();
 
@@ -293,10 +237,10 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
 
   // Go through BBC hits to see what they look like
 
-  float len[128] = {0.};
-  float edep[128] = {0.};
-  float first_time[128];    // First hit time for each tube
-  std::fill_n(first_time, 128, 9999.);
+  float len[MbdDefs::MBD_N_PMT] = {0.};
+  float edep[MbdDefs::MBD_N_PMT] = {0.};
+  float first_time[MbdDefs::MBD_N_PMT];    // First hit time for each tube
+  std::fill_n(first_time, MbdDefs::MBD_N_PMT, 1e12);
 
 
   unsigned int nhits = 0;
@@ -309,8 +253,8 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
   {
     PHG4Hit *this_hit = hit_iter->second;
 
-    unsigned int ch = this_hit->get_layer();  // pmt channel
-    int arm = ch/64;;                         // south=0, north=1
+    unsigned int ipmt = this_hit->get_layer();  // pmt channel
+    int arm = ipmt/64;;                         // south=0, north=1
 
     int trkid = this_hit->get_trkid();
     if ( trkid>0 && f_evt<20 ) cout << "TRKID " << trkid << endl;
@@ -343,8 +287,8 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
       zsign = 1.;
     }
 
-    float tube_x = xsign*TubeLoc[ch%64][0];
-    float tube_y = TubeLoc[ch%64][1];
+    float tube_x = _bbcgeom->get_x(ipmt);
+    float tube_y = _bbcgeom->get_y(ipmt);
     float tube_z = zsign*253.;
     float flight_z = fabs(tube_z - vtxp->get_z());
 
@@ -352,21 +296,23 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     float tdiff = this_hit->get_t(1) - ( vtxp->get_t() + flight_time );
 
     // get the first time
-    if ( this_hit->get_t(1) < first_time[ch] )
+    if ( this_hit->get_t(1) < first_time[ipmt] )
     {
-      if ( fabs( this_hit->get_t(1) ) < 100)
+      if ( fabs( this_hit->get_t(1) ) < 106.5 )
       {
-        first_time[ch] = this_hit->get_t(1) - vtxp->get_t();
+        first_time[ipmt] = this_hit->get_t(1) - vtxp->get_t();
+        Float_t dt = static_cast<float>( _rndm->Gaus( 0, _tres ) ); // get fluctuation in time
+        first_time[ipmt] += dt;
       }
       else
       {
-        cout << "BAD " << ch << "\t" << this_hit->get_t(1) << endl;
+        cout << "BAD " << ipmt << "\t" << this_hit->get_t(1) << endl;
       }
     }
 
     if ( f_evt<10 )
     {
-      cout << "hit " << ch << "\t" << trkid << "\t" << pid
+      cout << "hit " << ipmt << "\t" << trkid << "\t" << pid
         //<< "\t" << v4.M()
         << "\t" << beta
         << "\t" << this_hit->get_path_length()
@@ -381,21 +327,21 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
         << "\t" << tdiff
         << endl;
 
-      //cout << "WWW " << first_time[ch] << endl;
+      //cout << "WWW " << first_time[ipmt] << endl;
     }
 
-    edep[ch] += this_hit->get_edep();
+    edep[ipmt] += this_hit->get_edep();
  
     // get summed path length for particles that can create CKOV light
     // n.p.e. is determined from path length
-    if ( beta > v_ckov && charge != 0. )
+    if ( beta > MbdDefs::v_ckov && charge != 0. )
     {
-      len[ch] += this_hit->get_path_length();
+      len[ipmt] += this_hit->get_path_length();
 
       if ( trkid>0 )
       {
         h_tdiff->Fill( tdiff );
-        h2_tdiff_ch->Fill( ch, tdiff );
+        h2_tdiff_ch->Fill( ipmt, tdiff );
       }
 
       _pids[pid] += 1;
@@ -422,39 +368,42 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     f_bbct[iarm] = 0.;
   }
 
-  for (int ich=0; ich<128; ich++)
-  {
-    //cout << "ZZZ " << ich << "\t" << first_time[ich] << "\t" << edep[ich] << "\t" << len[ich] << endl;
+  vector<float> hit_times[2];   // times of the hits in each [arm]
 
-    int arm = ich/64; // ch 0-63 = south, ch 64-127 = north
+  for (int ipmt=0; ipmt<MbdDefs::MBD_N_PMT; ipmt++)
+  {
+    //cout << "ZZZ " << ipmt << "\t" << first_time[ipmt] << "\t" << edep[ipmt] << "\t" << len[ipmt] << endl;
+
+    int arm = _bbcgeom->get_arm(ipmt); // ch 0-63 = south, ch 64-127 = north
 
     // Fill charge and time info
-    if ( len[ich]>0. )
+    if ( len[ipmt]>0. )
     {
       if ( f_evt<20 )
       {
-        cout << "ich " << ich << "\t" << len[ich] << "\t" << edep[ich] << endl;
+        cout << "ipmt " << ipmt << "\t" << len[ipmt] << "\t" << edep[ipmt] << endl;
       }
 
       // Get charge in BBC tube
-      float npe = len[ich]*(120/3.0);  // we get 120 p.e. per 3 cm
+      float npe = len[ipmt]*(120/3.0);  // we get 120 p.e. per 3 cm
       float dnpe = static_cast<float>( _rndm->Gaus( 0, sqrt(npe) ) ); // get fluctuation in npe
 
       npe += dnpe;  // apply the fluctuations in npe
 
       f_bbcq[arm] += npe;
 
-      h_bbcq[ich]->Fill( npe );
+      h_bbcq[ipmt]->Fill( npe );
       h_bbcqtot[arm]->Fill( npe );
 
       // Now time
-      if ( first_time[ich] < 9999. )
+      if ( first_time[ipmt] < 9999. )
       {
         // Fill evt histogram
-        hevt_bbct[arm]->Fill( first_time[ich] );
+        hevt_bbct[arm]->Fill( first_time[ipmt] );
+        hit_times[arm].push_back( first_time[ipmt] );
 
-        f_bbct[arm] += first_time[ich];
-        //cout << "XXX " << ich << "\t" << f_bbct[arm] << "\t" << first_time[ich] << endl;
+        f_bbct[arm] += first_time[ipmt];
+        //cout << "XXX " << ipmt << "\t" << f_bbct[arm] << "\t" << first_time[ipmt] << endl;
 
       }
       else  // should never happen
@@ -467,28 +416,57 @@ int BBCStudy::process_event(PHCompositeNode *topNode)
     }
   }
 
-  for (int iarm=0; iarm<2; iarm++)
+  // Get best t
+  if ( f_bbcn[0]>0 && f_bbcn[1]> 0 )
   {
-    c_bbct->cd(iarm+1);
-    hevt_bbct[iarm]->Draw();
-
-    if ( f_bbcn[iarm] > 0 )
+    for (int iarm=0; iarm<2; iarm++)
     {
-      f_bbct[iarm] = f_bbct[iarm] / f_bbcn[iarm];
+      c_bbct->cd(iarm+1);
+
+      std::sort( hit_times[iarm].begin(), hit_times[iarm].end() );
+      float earliest = hit_times[iarm][0];
+
+      gaussian->SetParameter(0,5);
+      gaussian->SetParameter(1, earliest);
+      gaussian->SetRange(6, earliest+ 5*0.05);
+      //gaussian->SetParameter(1,hevt_bbct[iarm]->GetMean());
+      //gaussian->SetRange(6,hevt_bbct[iarm]->GetMean()+0.125);
+
+      hevt_bbct[iarm]->Fit(gaussian,"BLR");
+      hevt_bbct[iarm]->Draw();
+
+      if ( f_bbcn[iarm] > 0 )
+      {
+        //f_bbct[iarm] = f_bbct[iarm] / f_bbcn[iarm];
+        f_bbct[iarm] = gaussian->GetParameter(1);
+        f_bbcte[iarm] = earliest;
+      }
     }
+
+    // Now calculate zvtx, t0 from best times
+    f_bbcz = (f_bbct[0] - f_bbct[1])*C/2.0;
+    f_bbct0 = (f_bbct[0] + f_bbct[1])/2.0;
+
   }
 
   c_bbct->Modified();
   c_bbct->Update();
 
-  string response;
-  cout << "Event " << f_evt << " ? ";
-  cin >> response;
-
+  if ( fabs(f_bbcz-f_vz)>5.0 && f_bbcn[0]>1 && f_bbcn[1]>1 )
+  {
+    string response;
+    cout << "Event " << f_evt << " ? ";
+    //cin >> response;
+    //if ( response[0] == 'q' )
+    TString name = "evt_"; name += f_evt; name += ".png";
+    c_bbct->SaveAs( name );
+  }
 
   h2_bbcqtot->Fill( f_bbcq[0], f_bbcq[1] );
 
   _tree->Fill();
+
+  //CheckDST(topNode);
 
   return 0;
 }
@@ -516,6 +494,7 @@ int BBCStudy::End(PHCompositeNode *topNode)
 {
   _savefile->cd();
   _savefile->Write();
+  _savefile->Close();
 
   // print out list of pids that hit BBC
   cout << "PIDs of Particles that hit BBC" << endl;
@@ -535,3 +514,28 @@ int BBCStudy::End(PHCompositeNode *topNode)
   return 0;
 }
 
+void BBCStudy::CheckDST(PHCompositeNode *topNode)
+{
+  // BbcOut
+  _bbcout = findNode::getClass<MbdOut>(topNode, "MbdOut");
+  if(!_bbcout && f_evt<4) cout << PHWHERE << " MbdOut node not found on node tree" << endl;
+
+  // BbcOut
+  _bbcpmts = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+  if(!_bbcpmts && f_evt<4) cout << PHWHERE << " MbdPmtContainer node not found on node tree" << endl;
+
+  Float_t bbcz = _bbcout->get_zvtx();
+  if ( f_bbcz != bbcz )
+  {
+    cout << "ERROR, f_bbcz != bbcz, " << f_bbcz << "\t" << bbcz << endl;
+  }
+
+  for (int iarm=0; iarm<2; iarm++)
+  {
+    if ( f_bbcq[iarm] != _bbcout->get_q(iarm) )
+    {
+      cout << "ERROR, f_bbcq != bbcq, arm " << iarm << "\t" << f_bbcq[iarm] << "\t" << _bbcout->get_q(iarm) << endl;
+    }
+  }
+
+}
