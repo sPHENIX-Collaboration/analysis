@@ -43,7 +43,7 @@ namespace myAnalysis {
     Int_t readCSV(const string &filename);
     Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map);
     pair<Int_t,Int_t> getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose = false);
-    void setEMCalDim(TH2* hist);
+    void setEMCalDim(TH1* hist);
     void writeCSV(const string &filename);
 
     // Define the structure for your data
@@ -68,6 +68,8 @@ namespace myAnalysis {
     Int_t m_nchannel_per_ib = 64;
     Int_t m_nphi = 256;
     Int_t m_neta = 96;
+    Int_t m_nib = 384;
+    Int_t m_nib_per_sector = 6;
 
     Float_t min_bias = 9999;
     Float_t max_bias = -9999;
@@ -75,7 +77,15 @@ namespace myAnalysis {
     Int_t min_offset = 9999;
     Int_t max_offset = -9999;
 
-    unordered_map<string,TH2*> m_hists2D;
+    Int_t m_bins_bias   = 300;
+    Float_t m_bias_low  = 67;
+    Float_t m_bias_high = 70;
+
+    Int_t m_bins_offset   = 300;
+    Float_t m_offset_low  = -2e3;
+    Float_t m_offset_high = 1e3;
+
+    unordered_map<string,TH1*> m_hists;
 }
 
 void myAnalysis::writeCSV(const string &filename) {
@@ -180,7 +190,7 @@ Int_t myAnalysis::readMaps(const string &filename, unordered_map<Int_t,Int_t> &m
             map[key] = value;
 
         } catch (const std::runtime_error& e) {
-            std::cerr << "Error processing line: " << line << ".  Error: " << e.what() << std::endl;
+            cout << "Error processing line: " << line << ".  Error: " << e.what() << std::endl;
             return 1;
             // You could choose to continue processing or exit here.  For now, continuing.
         }
@@ -297,7 +307,7 @@ Int_t myAnalysis::readCSV(const string& filename) {
             data.push_back(row);
 
         } catch (const std::runtime_error& e) {
-            std::cerr << "Error processing line: " << line << ".  Error: " << e.what() << std::endl;
+            cout << "Error processing line: " << line << ".  Error: " << e.what() << std::endl;
             return 1;
             // You could choose to continue processing or exit here.  For now, continuing.
         }
@@ -324,7 +334,7 @@ Int_t myAnalysis::readCSV(const string& filename) {
     return 0;
 }
 
-void myAnalysis::setEMCalDim(TH2* hist) {
+void myAnalysis::setEMCalDim(TH1* hist) {
     hist->GetXaxis()->SetLimits(0,256);
     hist->GetXaxis()->SetNdivisions(32, false);
     hist->GetXaxis()->SetLabelSize(0.04);
@@ -342,12 +352,38 @@ void myAnalysis::analyze(const string &output) {
     fs::create_directories(outputDir);
 
     // hists
-    m_hists2D["h2Bias"] = new TH2F("h2Bias","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
-    m_hists2D["h2Offset"] = new TH2F("h2Offset","Offset [mV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists["h2Bias"] = new TH2F("h2Bias","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists["h2Offset"] = new TH2F("h2Offset","Offset [mV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists["hBias"] = new TH1F("hBias","Tower; Bias [V]; Counts", m_bins_bias, m_bias_low, m_bias_high);
+    m_hists["hOffset"] = new TH1F("hOffset","Tower; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+
+    // dummy hists for labeling
+    m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
+    m_hists["h2DummyIB"] = new TH2F("h2DummyIB","", m_nsector/2, 0, m_nsector/2, m_nib*2/m_nsector, 0, m_nib*2/m_nsector);
+
     for(auto p : data) {
-        m_hists2D["h2Bias"]->SetBinContent(p.iphi+1, p.ieta+1, p.bias);
-        m_hists2D["h2Offset"]->SetBinContent(p.iphi+1, p.ieta+1, p.offset);
+        m_hists["h2Bias"]->SetBinContent(p.iphi+1, p.ieta+1, p.bias);
+        m_hists["hBias"]->Fill(p.bias);
+        m_hists["h2Offset"]->SetBinContent(p.iphi+1, p.ieta+1, p.offset);
+        m_hists["hOffset"]->Fill(p.offset);
     }
+
+    for(UInt_t i = 0; i < m_nsector; ++i) {
+        Int_t x = i % (m_nsector / 2) + 1;
+        Int_t y = (i < (m_nsector / 2)) ? 2 : 1;
+        m_hists["h2DummySector"]->SetBinContent(x,y,i);
+    }
+
+    for(UInt_t i = 0; i < m_nib; ++i) {
+        Int_t val = i % m_nib_per_sector;
+        Int_t x = (i / m_nib_per_sector) % (m_nsector / 2) + 1;
+        Int_t y = (i < (m_nib / 2)) ? m_nib_per_sector - val : m_nib_per_sector + val + 1;
+        m_hists["h2DummyIB"]->SetBinContent(x,y,val);
+    }
+
+    setEMCalDim(m_hists["h2DummySector"]);
+    setEMCalDim(m_hists["h2DummyIB"]);
+    m_hists["h2DummySector"]->SetMarkerSize(1.8);
 
     TCanvas* c1 = new TCanvas();
     c1->SetTickx();
@@ -371,19 +407,54 @@ void myAnalysis::analyze(const string &output) {
 
     c1->Print((output + "[").c_str(), "pdf portrait");
 
-    setEMCalDim(m_hists2D["h2Bias"]);
-    m_hists2D["h2Bias"]->SetMinimum((Int_t)min_bias);
+    setEMCalDim(m_hists["h2Bias"]);
+    m_hists["h2Bias"]->SetMinimum((Int_t)min_bias);
 
-    m_hists2D["h2Bias"]->Draw("COLZ1");
+    m_hists["h2Bias"]->Draw("COLZ");
+
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists2D["h2Bias"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(m_hists["h2Bias"]->GetName()) + ".png").c_str());
 
-    setEMCalDim(m_hists2D["h2Offset"]);
-    m_hists2D["h2Offset"]->SetMinimum(-2000);
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
-    m_hists2D["h2Offset"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists2D["h2Offset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/" + string(m_hists["h2Bias"]->GetName()) + "-labeled.png").c_str());
+
+    // ---------------------------
+
+    setEMCalDim(m_hists["h2Offset"]);
+    m_hists["h2Offset"]->SetMinimum(-2000);
+
+    m_hists["h2Offset"]->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2Offset"]->GetName()) + ".png").c_str());
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2Offset"]->GetName()) + "-labeled.png").c_str());
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.16);
+    c1->SetRightMargin(.05);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    m_hists["hBias"]->Rebin(10);
+    m_hists["hBias"]->Draw("COLZ1");
+    m_hists["hBias"]->GetXaxis()->SetTitleOffset(1);
+    m_hists["hBias"]->GetYaxis()->SetRangeUser(0,4e3);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["hBias"]->GetName()) + ".png").c_str());
+
+    m_hists["hOffset"]->Rebin(10);
+    m_hists["hOffset"]->Draw("COLZ1");
+    m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,4e3);
+    m_hists["hOffset"]->GetXaxis()->SetTitleOffset(1);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["hOffset"]->GetName()) + ".png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
