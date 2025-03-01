@@ -44,6 +44,7 @@ namespace myAnalysis {
     Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map);
     pair<Int_t,Int_t> getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose = false);
     void setEMCalDim(TH2* hist);
+    void writeCSV(const string &filename);
 
     // Define the structure for your data
     struct MyData {
@@ -75,6 +76,31 @@ namespace myAnalysis {
     Int_t max_offset = -9999;
 
     unordered_map<string,TH2*> m_hists2D;
+}
+
+void myAnalysis::writeCSV(const string &filename) {
+    ofstream file(filename);
+
+    if (!file.is_open()) {
+        cout << "Error: Could not open file " << filename << " for writing." << endl;
+        return; // Exit if file cannot be opened
+    }
+
+    file << "sector_serial,sector,ib,ib_channel,iphi,ieta,bias,offset" << endl;
+
+    for(const auto &p : data) {
+       file << p.serial << ","
+            << p.sector << ","
+            << p.ib << ","
+            << p.ib_channel << ","
+            << p.iphi << ","
+            << p.ieta << ","
+            << p.bias << ","
+            << p.offset << endl;
+    }
+
+    file.close();
+    cout << "Data written to " << filename << " successfully." << endl;
 }
 
 pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose) {
@@ -353,6 +379,7 @@ void myAnalysis::analyze(const string &output) {
     c1->Print((outputDir + "/" + string(m_hists2D["h2Bias"]->GetName()) + ".png").c_str());
 
     setEMCalDim(m_hists2D["h2Offset"]);
+    m_hists2D["h2Offset"]->SetMinimum(-2000);
 
     m_hists2D["h2Offset"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
@@ -361,13 +388,18 @@ void myAnalysis::analyze(const string &output) {
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
 
-void read_Bias(const string &input, const string &input_sector, const string &input_channel, const string &output="plots.pdf") {
+void read_Bias(const string &input,
+               const string &input_sector,
+               const string &input_channel,
+               const string &output="plots.pdf",
+               const string &outputCSV="vop.csv") {
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
     cout << "input: "  << input << endl;
     cout << "input sector map: "  << input_sector << endl;
     cout << "input channel map: "  << input_channel << endl;
     cout << "output: " << output << endl;
+    cout << "output CSV: " << outputCSV << endl;
     cout << "#############################" << endl;
 
     // set sPHENIX plotting style
@@ -379,26 +411,32 @@ void read_Bias(const string &input, const string &input_sector, const string &in
        myAnalysis::readCSV(input)) return;
 
     myAnalysis::analyze(output);
+    myAnalysis::writeCSV(outputCSV);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 4 || argc > 5){
-        cout << "usage: ./read-Bias input input_sector input_channel [output]" << endl;
+if(argc < 4 || argc > 6){
+        cout << "usage: ./read-Bias input input_sector input_channel [output] [outputCSV]" << endl;
         cout << "input: input csv file" << endl;
         cout << "input_sector: input sector map" << endl;
         cout << "input_channel: input channel map" << endl;
         cout << "output: output pdf file" << endl;
+        cout << "output CSV: output csv file" << endl;
         return 1;
     }
 
-    string output  = "plots.pdf";
+    string output    = "plots.pdf";
+    string outputCSV = "vop.csv";
 
     if(argc >= 5) {
         output = argv[4];
     }
+    if(argc >= 6) {
+        outputCSV = argv[5];
+    }
 
-    read_Bias(argv[1], argv[2], argv[3], output);
+    read_Bias(argv[1], argv[2], argv[3], output, outputCSV);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
