@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nmax=20000
+nmax=10 #20000
 filecounter=0
 for rn in `ls  lists/dst_calo_run2pp*.list | awk -F'.' '{print $1}' | awk -F'/' '{print $2}' | awk -F'-' '{print $2}'`; do
     rn=$(expr $rn + 0)
@@ -12,7 +12,7 @@ for rn in `ls  lists/dst_calo_run2pp*.list | awk -F'.' '{print $1}' | awk -F'/' 
 	break
     fi
     echo $rn $filecounter
-    bash run_everything.sh $njob $rn $nfile
+    bash run_everything.sh $njob $rn $nfile $USER `pwd`
 done
 
 
