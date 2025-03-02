@@ -45,6 +45,8 @@ int triggercountmodule::Init(PHCompositeNode *topNode)
   _tree->Branch("avgPS",_avgPS,"avgPS[64]/D");
   _tree->Branch("trigCounts",_trigCounts,"trigCounts[3][64]/l");
   _tree->Branch("eMBDlive",_eMBDlive,"eMBDlive[3]/D");
+  _tree->Branch("startBCO",&_startBCO,"startBCO/l");
+  _tree->Branch("endBCO",&_endBCO,"endBCO/l");
   
   _mbzhist = new TH1D("mbzhist","",300,-150,150);
   return Fun4AllReturnCodes::EVENT_OK;
@@ -74,6 +76,7 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
 
   if(_evtn == 0)
     {
+      _startBCO = gl1->lValue(0,"BCO");
       for(int i=0; i<64; ++i)
 	{
 	  _startLive[i] = gl1->lValue(i,1);
@@ -83,6 +86,7 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
     }
   //cout << _evtn << endl;
   ++_evtn;
+  _endBCO = gl1->lValue(0,"BCO");
   for(int i=0; i<64; ++i)
     {
       _endLive[i] = gl1->lValue(i,1);
