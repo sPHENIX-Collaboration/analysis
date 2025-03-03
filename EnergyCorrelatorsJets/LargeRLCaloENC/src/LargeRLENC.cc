@@ -5,8 +5,8 @@
 //			Author: Skadi Grossberndt						//
 //			Depends on: Calorimeter Tower ENC 					//
 //			First Commit date: 18 Oct 2024						//
-//			Most recent Commit: 2 Feb 2025						//
-//			version: v3.0 with Thresholds, unified binning and Jet IE  		//
+//			Most recent Commit: 3 Feb 2025						//
+//			version: v3.5 with new more readable analysis procedure with class	//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -725,15 +725,15 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 }
 void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges, LargeRLENC::Calorimeter which_calo, float* total_e_region)
 {
-	MethodHistograms* ha=NULL, *hc=NULL;
+	//MethodHistograms* ha=NULL, *hc=NULL;
 	float base_thresh=0.01;
 	if(which_calo== 1) base_thresh= 0.07;
 	auto i=cal.begin();
 	std::vector<std::array<float,4>> e_region; //get the energy in the relevant region 
 	std::vector<float> thresholds;
-	std::vector<StrippedDownTowers*> strippedCalo;
+	std::vector<StrippedDownTower*> strippedCalo;
 	for(int j=0; j<(int)Region_vector.size(); j++){
-		float threshold = base_thresh * (1 + i * 0.25);
+		float threshold = base_thresh * (1 + j * 0.25);
 		thresholds.push_back(threshold);
 		std::array<float, 4> e_region_1 { 0., 0., 0., 0. };
 		e_region.push_back(e_region_1);
@@ -755,12 +755,12 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		j[0]=eta_shift;
 		if(vertex[0] != 0 && vertex[1] !=0) j[1]=atan2(y,x);
 		j[2]=r; //make sure the positions are properly aligned for all caluclations
-		StrippedDownTower* t =new StrippedDownTower(threshold, (int) which_calo); 
+		StrippedDownTower* t =new StrippedDownTower(thresholds, (StrippedDownTower::Calorimeter) which_calo); 
 		for(auto x: phi_edges){
 			float phi_low=x.second.first;
 			float phi_up=x.second.second;
 			if(j[1] >= phi_low && j[1] < phi_up){
-				t->tag=x.first;
+				t->tag=(StrippedDownTower::Regions)x.first;
 				break;
 			}
 			else continue;
@@ -772,7 +772,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		strippedCalo.push_back(t);
 	}
 	//Now get the energy regions 
-	for(auto t:strippedCalo)
+	for(auto* t:strippedCalo)
 	{
 		StrippedDownTower::Regions region_tag=t->tag;
 		for(int i=0; i<(int)t->RegionOutput->size(); i++)
@@ -800,13 +800,42 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	for(int i=0; i< 5; i++) {
 		AllTowOutput[i]=*(strippedCalo.at(((int)strippedCalo.size() -1))->FullOutput);
 	} //just get it the right range 
+	std::array<std::array<int, 20>, 5> n_entries_arr;
 	for(int i=0; i<(int)strippedCalo.size(); i++)
 	{
-		AllTowOutput[0]->Merge(strippedCalo.at(i)->FullOutput);
-		AllTowOutput[strippedCalo.at(i)->tag]->Merge(strippedCalo.at(i)->RegionOutput);
+		for(int j=0; j<(int)strippedCalo.at(i)->FullOutput->size(); j++){
+			AllTowOutput[0][j]->Merge(strippedCalo.at(i)->FullOutput->at(j));
+			if(strippedCalo.at(i)->FullOutput->at(j)->RL.size() > 0 ) n_entries_arr[0][j]++;
+		}
+		for(int j=0; j<(int)strippedCalo.at(i)->RegionOutput->size(); j++){
+			AllTowOutput[strippedCalo.at(i)->tag][j]->Merge(strippedCalo.at(i)->RegionOutput->at(j));
+			if(strippedCalo.at(i)->RegionOutput->at(j)->RL.size() > 0 ) n_entries_arr[(int)strippedCalo.at(i)->tag][j]++;
+		}
 	}
 	//now push the data out to the plots
-	
+	for(int region_index=0; region_index<(int)AllTowOutput.size(); region_index++)
+	{
+		for(int threshold_index=0; threshold_index<(int)AllTowOutput[region_index].size(); threshold_index++)
+		{
+			if(threshold_index >= (int)Region_vector.size()) break;
+			int region_shift=region_index;
+			if(region_shift >= 3 ) region_shift=3;
+			AllTowOutput[region_index][threshold_index]->Normalize(e_region[threshold_index][region_shift]);
+			auto Hists=Region_vector[threshold_index][region_shift][which_calo];
+			auto Output=AllTowOutput[region_index][threshold_index];
+			if(region_index < 3) Hists->N->Fill(n_entries_arr[region_index][threshold_index]);
+			else if (region_index==3)Hists->N->Fill(n_entries_arr[region_index][threshold_index]+n_entries_arr[region_index + 1][threshold_index]);
+			else n_entries_arr[region_index][threshold_index]=0;
+			for(int rl_index=0; rl_index >(int)Output->RL.size(); rl_index++)
+			{
+				Hists->R->Fill(Output->RL.at(rl_index));
+				Hists->E2C->Fill(Output->RL.at(rl_index), Output->E2C.at(rl_index));
+				Hists->E3C->Fill(Output->RL.at(rl_index), Output->E3C.at(rl_index));
+			}
+			Hists->E->Fill(e_region[threshold_index][region_shift]);
+		}
+	}
+	 
 	return;
 	
 }
@@ -815,7 +844,7 @@ void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDow
 	//this is the threaded object, I could try nesting the threads, but for now I am going to try to run without the nested threads for the 3pt
 	std::vector<float> threshold_values;
 	for(int j=0; j<(int)tower1->RegionOutput->size(); j++){
-		threshold_values.push_back(tower1->RegionOutput->at(j)->threshold;
+		threshold_values.push_back(tower1->RegionOutput->at(j)->threshold);
 	}
 	for(int i = 0; i<(int) towerSet.size(); i++){
 		//run over all other towers
@@ -840,18 +869,19 @@ void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDow
 					float Rm = std::max(R_13, R_23);
 					std::array<float, 3> R {R_L, Rm, Rs}; 
 					float energy3=tower3->E;
+					float e3c=1;
 					if(energy) e3c=e2c*energy3;
 					else e3c=e2c* (energy3*	ptoE);
 					if(transverse) e3c=e3c/cosh(tower3->eta);
 					std::pair<float, float> energy_e3 {energy3, e3c};
 					std::pair<std::array<float, 3>, std::pair<float, float>> e3c_sing {R, energy_e3};
 					bool sameRegion3 = ( region1 == tower3->tag);
-					e3c_relevant.push_back(e3c_sing);
+					e3c_relevant.push_back(std::make_pair(e3c_sing, sameRegion3));
 				}
 			}
-		} //caluclate and store the e3c to easily iteratoe over
+		} //caluclate and store the e3c to easily iterate over
 		for(auto thresh:threshold_values){
-			int index=tower1->getThresholdIndex(thresh, true);		
+			int index1=tower1->getThresholdIndex(thresh, true);		
 			int index2=tower1->getThresholdIndex(thresh, false);		
 			if(energy1 > thresh && energy2 > thresh){
 				tower1->FullOutput->at(index1)->AddE2CValues(R_L, e2c);

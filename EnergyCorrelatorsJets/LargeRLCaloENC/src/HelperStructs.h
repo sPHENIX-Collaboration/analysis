@@ -6,15 +6,16 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <math.h>
 
 class TowerOutput
 {
 	public:
-		TowerOutput(int tr=0;)
+		TowerOutput(int tr=0)
 		{
 			this->threshold=tr;
 		}
-		~TowerOutput() override {};
+		~TowerOutput(){};
 		void AddE2CValues(float e2c, float rl){
 			int index=-1;
 			//see if we already have an entry in this vertex
@@ -57,18 +58,55 @@ class TowerOutput
 		{
 			std::map<float,float> e3c;
 			for(int i= 0; i<(int)RL_RM_RS.size(); i++){
-				rl=RL_RM_RS.at(i)[0];
+				float rl=RL_RM_RS.at(i)[0];
 				if(e3c.find(rl) != e3c.end()){
-					e3c[rl]+=E3C_Full_shape.at(i);
+					e3c[rl]+=E3C_full_shape.at(i);
 				}
 				else{
-					e3c[rl]=E3C_Full_shape.at(i);
+					e3c[rl]=E3C_full_shape.at(i);
 				}
 			}
 			for(auto r:RL)
 			{
-				if(e3c.find(r) != e3c.end()) e3c.push_back(e3c[r]);
+				if(e3c.find(r) != e3c.end()) E3C.push_back(e3c[r]);
 			} //just keeps the ordering fixed
+			return;
+		}
+		bool Merge(TowerOutput* to)
+		{
+			if(this->threshold != to->threshold){
+				return false;
+			}
+			else
+			{
+				//create a merge function that preserves indexing of unique values 
+				for(int i=0; i <(int)to->RL.size(); i++)
+				{
+					this->AddE2CValues(to->E2C[i], to->RL[i]);
+				}
+				for(int i=0; i < (int)to->RL_RM_RS.size(); i++)
+				{
+					this->AddE3CValues( to->E3C_full_shape[i], to->RL_RM_RS[i]);
+				}
+				this->CalculateFlatE3C();
+				return true;
+			}				
+
+		}
+		void Normalize(float energy)
+		{
+			for(auto e2c: this->E2C)
+			{
+				e2c=e2c*std::pow(energy,-2);
+			}
+			for(auto e3c: this->E3C)
+			{
+				e3c=e3c*std::pow(energy, -3);
+			}
+			for(auto e3c: this->E3C_full_shape)
+			{
+				e3c=e3c*std::pow(energy, -3);
+			}
 			return;
 		}
 	 	float threshold = 0.;
@@ -109,7 +147,7 @@ class StrippedDownTower
 			} 
 			
 		}
-		~StrippedDownTower() override {};
+		~StrippedDownTower(){};
 		int getThresholdIndex(float threshold, bool RegionOrFull)
 		{
 			int index=-1;

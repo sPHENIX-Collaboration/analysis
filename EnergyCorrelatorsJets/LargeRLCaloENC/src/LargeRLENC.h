@@ -72,6 +72,7 @@
 //Homebrews 
 #include <calorimetertowerenc/MethodHistograms.h> 
 #include "DijetEventCuts.h"
+#include "HelperStructs.h"
 
 #define PI 3.14159265358979323464
 class PHCompositeNode;
@@ -160,9 +161,9 @@ class LargeRLENC : public SubsysReco
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
-	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, int, float*);
+	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, LargeRLENC::Calorimeter, float*);
 	
-	void CalculateENC(StrippedDownTower*, StrippedDownTower*, std::vector<StrippedDownTower*>, bool, bool, float);
+	void CalculateENC(StrippedDownTower*, std::vector<StrippedDownTower>, bool, bool);
 
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
