@@ -12,6 +12,7 @@
 #include <TH2F.h>
 #include <TF1.h>
 #include <TFile.h>
+#include <TProfile.h>
 #include <TLine.h>
 #include <TLegend.h>
 #include <TLatex.h>
@@ -39,7 +40,7 @@ using std::unordered_map;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
-    void analyze(const string &output, const string &outputRoot);
+    void analyze(const string &output, const string &outputRoot, const string &input_calib);
     Int_t readCSV(const string &filename);
     Int_t readCSV_EMCal(const string& filename);
     Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map);
@@ -101,6 +102,9 @@ namespace myAnalysis {
     Float_t min_scintillation_ratio = 9999;
     Float_t max_scintillation_ratio = -9999;
 
+    Float_t min_calib = 9999;
+    Float_t max_calib = -9999;
+
     Int_t m_bins_bias   = 300;
     Float_t m_bias_low  = 67;
     Float_t m_bias_high = 70;
@@ -109,9 +113,9 @@ namespace myAnalysis {
     Float_t m_offset_low  = -2e3;
     Float_t m_offset_high = 1e3;
 
-    Int_t m_bins_block_density = 300;
+    Int_t m_bins_block_density = 250;
     Float_t m_block_density_low  = 8;
-    Float_t m_block_density_high = 11;
+    Float_t m_block_density_high = 10.5;
 
     Int_t m_bins_cosmic_MPV = 220;
     Float_t m_cosmic_MPV_low  = -800;
@@ -124,6 +128,10 @@ namespace myAnalysis {
     Int_t m_bins_scintillation_ratio = 120;
     Float_t m_scintillation_ratio_low  = 0;
     Float_t m_scintillation_ratio_high = 6;
+
+    Int_t m_bins_calib = 100;
+    Float_t m_calib_low  = 0;
+    Float_t m_calib_high = 5;
 
     unordered_map<string,TH1*> m_hists;
 }
@@ -517,9 +525,26 @@ void myAnalysis::setEMCalDim(TH1* hist) {
     hist->GetXaxis()->SetTitleOffset(1);
 }
 
-void myAnalysis::analyze(const string &output, const string &outputRoot) {
+void myAnalysis::analyze(const string &output, const string &outputRoot, const string &input_calib) {
     string outputDir = fs::absolute(output).parent_path().string();
     fs::create_directories(outputDir);
+
+    // open calib file
+    // Open the ROOT file
+    TFile* file = TFile::Open(input_calib.c_str());
+
+    if (!file || file->IsZombie()) {
+        cout << "Error: Could not open ROOT file." << endl;
+        return; // Indicate an error
+    }
+
+    m_hists["h2_mevOverADC"] = (TH2F*)file->Get("h2_mevOverADC");
+
+    if (!m_hists["h2_mevOverADC"]) {
+        cout << "Error: Histogram not found in ROOT file." << endl;
+        file->Close();
+        return; // Indicate an error
+    }
 
     // hists
     m_hists["h2Bias"] = new TH2F("h2Bias","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
@@ -528,12 +553,16 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
     m_hists["h2CosmicMPV"] = new TH2F("h2CosmicMPV","Cosmic MPV; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2Light"] = new TH2F("h2Light","Light Transmission [%]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2ScintRatio"] = new TH2F("h2ScintRatio","Scintillation Ratio; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists["h2Calib"] = new TH2F("h2Calib","EMCal Calibration [MeV/ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["hBias"] = new TH1F("hBias","Tower; Bias [V]; Counts", m_bins_bias, m_bias_low, m_bias_high);
     m_hists["hOffset"] = new TH1F("hOffset","Tower; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hBlockDensity"] = new TH1F("hBlockDensity","Tower; Block Density [g/cm^3]; Counts", m_bins_block_density, m_block_density_low, m_block_density_high);
     m_hists["hCosmicMPV"] = new TH1F("hCosmicMPV","Tower; Cosmic MPV; Counts", m_bins_cosmic_MPV, m_cosmic_MPV_low, m_cosmic_MPV_high);
     m_hists["hLight"] = new TH1F("hLight","Tower; Light Transmission [%]; Counts", m_bins_light_transmission, m_light_transmission_low, m_light_transmission_high);
     m_hists["hScintRatio"] = new TH1F("hScintRatio","Tower; Scintillation Ratio; Counts", m_bins_scintillation_ratio, m_scintillation_ratio_low, m_scintillation_ratio_high);
+    m_hists["hCalib"] = new TH1F("hCalib","Tower; EMCal Calibration [MeV/ADC]; Counts", m_bins_calib, m_calib_low, m_calib_high);
+
+    m_hists["h2CalibVsBlockDensity"] = new TH2F("h2CalibVsBlockDensity","EMCal; Block Density [g/cm^3]; EMCal Calibration [MeV/ADC]", m_bins_block_density, m_block_density_low, m_block_density_high, m_bins_calib, m_calib_low, m_calib_high);
 
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
@@ -558,6 +587,22 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
         m_hists["hScintRatio"]->Fill(p.scintillation_ratio);
     }
 
+    for(UInt_t i = 1; i <= m_nphi; ++i) {
+        for(UInt_t j = 1; j <= m_neta; ++j) {
+            Float_t calib = m_hists["h2_mevOverADC"]->GetBinContent(j,i);
+            m_hists["h2Calib"]->SetBinContent(i,j,calib);
+            m_hists["hCalib"]->Fill(calib);
+            min_calib = min(min_calib, calib);
+            max_calib = max(max_calib, calib);
+
+            Float_t bd = m_hists["h2BlockDensity"]->GetBinContent(i,j);
+
+            m_hists["h2CalibVsBlockDensity"]->Fill(bd,calib);
+        }
+    }
+
+    cout << "Calib Min: " << min_calib << ", Max: " << max_calib << endl;
+
     // save plots to root file
     TFile tf(outputRoot.c_str(),"recreate");
     tf.cd();
@@ -566,6 +611,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
     m_hists["h2CosmicMPV"]->Write();
     m_hists["h2Light"]->Write();
     m_hists["h2ScintRatio"]->Write();
+    m_hists["h2Calib"]->Write();
+    m_hists["h2CalibVsBlockDensity"]->Write();
 
     m_hists["hBlockDensity"]->Write();
     m_hists["hCosmicMPV"]->Write();
@@ -593,6 +640,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
     setEMCalDim(m_hists["h2CosmicMPV"]);
     setEMCalDim(m_hists["h2Light"]);
     setEMCalDim(m_hists["h2ScintRatio"]);
+    setEMCalDim(m_hists["h2Calib"]);
 
     setEMCalDim(m_hists["h2DummySector"]);
     setEMCalDim(m_hists["h2DummyIB"]);
@@ -709,6 +757,24 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
 
     // ---------------------------------
 
+    m_hists["h2Calib"]->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + ".png").c_str());
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + "-labeled.png").c_str());
+
+    m_hists["h2Calib"]->SetMinimum(0.5);
+    m_hists["h2Calib"]->SetMaximum(3);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + "-labeled-zoom.png").c_str());
+
+    // ---------------------------------
+
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.16);
     c1->SetRightMargin(.05);
@@ -729,13 +795,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["hOffset"]->GetName()) + ".png").c_str());
 
+    gPad->SetLogy();
+
     m_hists["hBlockDensity"]->Rebin(5);
     m_hists["hBlockDensity"]->Draw();
     m_hists["hBlockDensity"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["hBlockDensity"]->GetName()) + ".png").c_str());
-
-    gPad->SetLogy();
 
     m_hists["hCosmicMPV"]->Draw();
     m_hists["hCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
@@ -752,13 +818,44 @@ void myAnalysis::analyze(const string &output, const string &outputRoot) {
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["hScintRatio"]->GetName()) + ".png").c_str());
 
+    m_hists["hCalib"]->Draw();
+    m_hists["hCalib"]->GetXaxis()->SetTitleOffset(1);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["hCalib"]->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.16);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    gPad->SetLogy(0);
+    gPad->SetGrid(0,0);
+
+    m_hists["h2CalibVsBlockDensity"]->Rebin(5);
+    m_hists["h2CalibVsBlockDensity"]->Draw("COLZ1");
+    m_hists["h2CalibVsBlockDensity"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2CalibVsBlockDensity_px = ((TH2*)m_hists["h2CalibVsBlockDensity"])->ProfileX();
+    h2CalibVsBlockDensity_px->SetLineColor(kRed);
+    h2CalibVsBlockDensity_px->SetMarkerColor(kRed);
+    h2CalibVsBlockDensity_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsBlockDensity"]->GetName()) + ".png").c_str());
+
     c1->Print((output + "]").c_str(), "pdf portrait");
+
+    file->Close();
 }
 
 void read_Bias(const string &input,
                const string &input_sector,
                const string &input_channel,
                const string &input_blockInfo,
+               const string &input_calib,
                const string &output="plots.pdf",
                const string &outputCSV="vop.csv",
                const string &outputRoot="test.root") {
@@ -768,6 +865,7 @@ void read_Bias(const string &input,
     cout << "input sector map: "  << input_sector << endl;
     cout << "input channel map: "  << input_channel << endl;
     cout << "input block info: "  << input_blockInfo << endl;
+    cout << "input calib: "  << input_calib << endl;
     cout << "output: " << output << endl;
     cout << "output CSV: " << outputCSV << endl;
     cout << "output root file: " << outputRoot << endl;
@@ -776,23 +874,30 @@ void read_Bias(const string &input,
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
+    string outputCSVDir = fs::absolute(outputCSV).parent_path().string();
+    string outputRootDir = fs::absolute(outputRoot).parent_path().string();
+
+    fs::create_directories(outputCSVDir);
+    fs::create_directories(outputRootDir);
+
     if(myAnalysis::readMaps(input_sector, myAnalysis::serial_to_sector) ||
        myAnalysis::readMaps(input_channel, myAnalysis::ib_channel_to_ADC_channel) ||
        myAnalysis::readCSV(input) ||
        myAnalysis::readCSV_EMCal(input_blockInfo)) return;
 
-    myAnalysis::analyze(output, outputRoot);
+    myAnalysis::analyze(output, outputRoot, input_calib);
     myAnalysis::writeCSV(outputCSV);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 5 || argc > 8){
-        cout << "usage: ./read-Bias input input_sector input_channel input_blockInfo [output] [outputCSV] [outputRoot]" << endl;
+if(argc < 6 || argc > 9){
+        cout << "usage: ./read-Bias input input_sector input_channel input_blockInfo input_calib [output] [outputCSV] [outputRoot]" << endl;
         cout << "input: input csv file" << endl;
         cout << "input_sector: input sector map" << endl;
         cout << "input_channel: input channel map" << endl;
         cout << "input_blockInfo: input EMCal block info" << endl;
+        cout << "input_calib: input EMCal block info" << endl;
         cout << "output: output pdf file" << endl;
         cout << "output CSV: output csv file" << endl;
         cout << "output root: output root file" << endl;
@@ -803,17 +908,17 @@ if(argc < 5 || argc > 8){
     string outputCSV = "vop.csv";
     string outputRoot = "test.root";
 
-    if(argc >= 6) {
-        output = argv[5];
-    }
     if(argc >= 7) {
-        outputCSV = argv[6];
+        output = argv[6];
     }
     if(argc >= 8) {
-        outputRoot = argv[7];
+        outputCSV = argv[7];
+    }
+    if(argc >= 9) {
+        outputRoot = argv[8];
     }
 
-    read_Bias(argv[1], argv[2], argv[3], argv[4], output, outputCSV, outputRoot);
+    read_Bias(argv[1], argv[2], argv[3], argv[4], argv[5], output, outputCSV, outputRoot);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
