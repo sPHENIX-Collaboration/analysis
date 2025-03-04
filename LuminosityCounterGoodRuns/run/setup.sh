@@ -10,10 +10,15 @@ INSTALLDIR=$2
 
 echo '#!/bin/bash' > earlydata.sh
 
+echo 'source /opt/sphenix/core/bin/sphenix_setup.sh -n new' >> earlydata.sh
+echo 'UN=${2}' >> earlydata.sh
 echo "source /opt/sphenix/core/bin/setup_local.sh ${INSTALLDIR}" >> earlydata.sh
 cat earlydata.config >> earlydata.sh
 chmod +x earlydata.sh
+
 echo '#!/bin/bash' > addcommand.sh
+echo 'source /opt/sphenix/core/bin/sphenix_setup.sh -n new' >> addcommand.sh
+echo 'UN=${2}' >> addcommand.sh
 echo "source /opt/sphenix/core/bin/setup_local.sh ${INSTALLDIR}" >> addcommand.sh
 cat addcommand.config >> addcommand.sh
 chmod +x addcommand.sh
@@ -30,7 +35,7 @@ make install
 cd $THISREPODIR/run
 echo "Entered "`pwd`
 mkdir -p output/err
-mkdir -p outout/out
+mkdir -p output/out
 mkdir -p output/added
 mkdir -p subs
 mkdir -p lists

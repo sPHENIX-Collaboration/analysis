@@ -40,6 +40,10 @@ class triggercountmodule : public SubsysReco
   TTree* _tree;
   int _debug;
   TH1D* _mbzhist;
+  TH1D* _bunchHist;
+  long long unsigned int _startBCO = 0;
+  long long unsigned int _endBCO = 0;
+  int _nBunch = 0;
   int _rn;
   int _lastseg;
   int _nseg;

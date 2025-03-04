@@ -35,10 +35,10 @@ int get_luminosity(string rnlist, int trigger, int zsel)
       tree->SetBranchAddress("avgPS",avgPS);
       tree->SetBranchAddress("tottrigcounts",tottrigcounts);
       tree->GetEntry(0);
-      if(avgPS[trigger] !=0) lumi += ((double)tottrigcounts[zsel][10])*avgPS[10]/avgPS[trigger];
+      if(avgPS[trigger] > 0) lumi += ((double)tottrigcounts[zsel][10])*avgPS[10]/avgPS[trigger];
       //cout << lumi << " " << tottrigcounts[zsel][10] << " " << avgPS[10] << " " << avgPS[trigger] << endl;
     }
-  lumi /= (23e9);
+  lumi /= (26.1e9);
   cout << "Trigger " << trigger << ": " << lumi << " pb^-1" << endl;
   return 0;
 }

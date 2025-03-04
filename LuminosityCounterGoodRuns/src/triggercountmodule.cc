@@ -45,8 +45,12 @@ int triggercountmodule::Init(PHCompositeNode *topNode)
   _tree->Branch("avgPS",_avgPS,"avgPS[64]/D");
   _tree->Branch("trigCounts",_trigCounts,"trigCounts[3][64]/l");
   _tree->Branch("eMBDlive",_eMBDlive,"eMBDlive[3]/D");
+  _tree->Branch("startBCO",&_startBCO,"startBCO/l");
+  _tree->Branch("endBCO",&_endBCO,"endBCO/l");
+  _tree->Branch("nBunch",&_nBunch,"nBunch/I");
   
   _mbzhist = new TH1D("mbzhist","",300,-150,150);
+  _bunchHist = new TH1D("bunchHist","",121,0,121);
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -72,8 +76,11 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
       return Fun4AllReturnCodes::ABORTRUN;
     }
 
+  _bunchHist->Fill(gl1->lValue(0,"BunchNumber"));
+  
   if(_evtn == 0)
     {
+      _startBCO = gl1->lValue(0,"BCO");
       for(int i=0; i<64; ++i)
 	{
 	  _startLive[i] = gl1->lValue(i,1);
@@ -83,13 +90,14 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
     }
   //cout << _evtn << endl;
   ++_evtn;
+  _endBCO = gl1->lValue(0,"BCO");
   for(int i=0; i<64; ++i)
     {
       _endLive[i] = gl1->lValue(i,1);
       if(_debug > 2) cout << "end" << gl1->lValue(i,1) << endl;
       _endScal[i] = gl1->lValue(i,2);
     }
-
+  
   if(_debug > 1) cout << "Getting gl1 trigger vector from: " << gl1 << endl;
   long long unsigned int _trigvec = gl1->getScaledVector();
 
@@ -209,8 +217,19 @@ int triggercountmodule::End(PHCompositeNode *topNode)
     {
       _eMBDlive[i] = _avgPS[10]*_trigCounts[i][10];
     }
+
+  int avgBunchCounts = _bunchHist->Integral() / 121.0;
   
+  for(int i=1; i<122; ++i)
+    {
+      if(_bunchHist->GetBinContent(i) > avgBunchCounts/5)
+	{
+	  _nBunch++;
+	}
+    }
+
   _outfile->cd();
+  _bunchHist->Write();
   _mbzhist->Write();
   _tree->Fill();
   _tree->Write();
