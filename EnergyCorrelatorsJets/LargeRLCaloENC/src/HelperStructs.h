@@ -139,12 +139,14 @@ class StrippedDownTower
 			//initialize the stripped down tower object
 			this->tag = region_tag;
 			this->cal = which_calo;
+			this->RegionOutput=new std::vector<TowerOutput*>;
+			this->FullOutput=new std::vector<TowerOutput*>;
 			for(float threshold:thresholds){
 				TowerOutput* to=new TowerOutput(threshold);
 				TowerOutput* tf=new TowerOutput(threshold);
-				RegionOutput->push_back(to);
-				FullOutput->push_back(tf);
-			} 
+				this->RegionOutput->push_back(to);
+				this->FullOutput->push_back(tf);
+			}
 			
 		}
 		~StrippedDownTower(){};

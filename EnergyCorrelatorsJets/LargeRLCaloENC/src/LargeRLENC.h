@@ -168,12 +168,12 @@ class LargeRLENC : public SubsysReco
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
 	bool triggerCut(bool, PHCompositeNode*);
-
+	DijetEventCuts* eventCut;	
+	
  private:
 
 	std::string algo, radius, output_file_name;
 	std::string ohcal_energy_towers="TOWERINFO_CALIB_HCALOUT", ihcal_energy_towers="TOWERINFO_CALIB_HCALIN", emcal_energy_towers="TOWERINFO_CALIB_CEMC";
-	DijetEventCuts* eventCut;	
   	bool isRealData;
 	int nRun, nSegment, m_Njets, n_evts, n_with_jets=0;
 	float jetMinpT, MinpTComp;

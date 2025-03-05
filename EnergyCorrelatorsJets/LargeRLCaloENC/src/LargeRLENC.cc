@@ -740,9 +740,11 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}
 	//Processs the calorimeter data into my analysis class
 	//Do the vertex shift and add it into the output 
+	std::cout<<__LINE__<<std::endl; 
 	while(i !=cal.end()){
 		auto j=i->first;
 		auto j_val=i->second;
+		if(j_val < base_thresh) continue;
 		float eta_shift=i->first[0], r=i->first[2];
 		float x=r*cos(i->first[1]), y=r*sin(i->first[1]);
 		if(vertex[0]!=0) x+=vertex[0];
@@ -770,6 +772,8 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		t->eta=j[0];
 		t->E=j_val;
 		strippedCalo.push_back(t);
+		std::cout<<__LINE__<<" itteration " <<strippedCalo.size() <<std::endl;
+		++i; 
 	}
 	//Now get the energy regions 
 	for(auto* t:strippedCalo)
@@ -785,7 +789,8 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		}
 	}
 	//now I need to actualy run the dataset 
-	std::vector<std::thread> CalculatingThreads; 
+	std::vector<std::thread> CalculatingThreads;
+	std::cout<<__LINE__<<std::endl; 
 	for(int i=0; i<(int)strippedCalo.size()-1; i++)
 	{
 		StrippedDownTower* t = strippedCalo.at(i);
@@ -795,7 +800,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}
 	for(int k=0; k<(int)CalculatingThreads.size(); k++) CalculatingThreads.at(k).join();
 	//now need to sum over the relevant towers
-	
+	std::cout<<__LINE__<<std::endl;
 	std::array<std::vector<TowerOutput*>, 5> AllTowOutput;
 	for(int i=0; i< 5; i++) {
 		AllTowOutput[i]=*(strippedCalo.at(((int)strippedCalo.size() -1))->FullOutput);
