@@ -11,9 +11,13 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io
 CPPFLAGS = -I$(MYINSTALL)/include
 LIBFLAGS = -L$(MYINSTALL)/lib
 
-all: bin/read-Bias
+all: bin/read-Bias bin/write-Bias
 
 bin/read-Bias: macros/read-Bias.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+
+bin/write-Bias: macros/write-Bias.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
 
