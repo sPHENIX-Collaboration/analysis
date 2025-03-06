@@ -23,6 +23,12 @@ make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB
 make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
 #+end_src
 
+* Event Combiner
+Combine a list of prdfs into one:
+#+begin_src bash
+xargs eventcombiner -vpfi calib-000[run]-0000.prdf < [prdf-list]
+#+end_src
+
 * Condor
 ** Resubmit Failed Jobs
 #+begin_src bas
