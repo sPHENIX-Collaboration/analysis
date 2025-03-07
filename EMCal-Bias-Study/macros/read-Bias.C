@@ -69,6 +69,7 @@ namespace myAnalysis {
         Float_t cosmic_MPV;
         Float_t light_transmission;
         Float_t scintillation_ratio;
+        string fiberType;
     };
 
     vector<MyData> data;
@@ -305,7 +306,7 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
                     throw std::runtime_error("Integer out of range in column1: " + cell);
                 }
             } else {
-                 throw std::runtime_error("Error parsing column1");
+                 throw std::runtime_error("Error parsing channel");
             }
 
             // block density
@@ -320,7 +321,7 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
                     throw std::runtime_error("Float out of range in column2: " + cell);
                 }
             } else {
-                 throw std::runtime_error("Error parsing column2");
+                 throw std::runtime_error("Error parsing block density");
             }
 
             // cosmic MPV
@@ -335,7 +336,7 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
                     throw std::runtime_error("Float out of range in column3: " + cell);
                 }
             } else {
-                 throw std::runtime_error("Error parsing column3");
+                 throw std::runtime_error("Error parsing cosmic MPV");
             }
 
             // light transmission
@@ -351,7 +352,7 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
                 }
 
             } else {
-                throw std::runtime_error("Error parsing column3");
+                throw std::runtime_error("Error parsing light transmission");
             }
 
             // scintillation ratio
@@ -366,7 +367,15 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
                     throw std::runtime_error("Float out of range in column4: " + cell);
                 }
             } else {
-                 throw std::runtime_error("Error parsing column4");
+                 throw std::runtime_error("Error parsing scintillation ratio");
+            }
+
+            // fiber type
+            if (std::getline(ss, cell, ',')) {
+                row.fiberType = cell;
+            }
+            else {
+                throw std::runtime_error("Error parsing fiber type");
             }
 
             datav2.push_back(row);
@@ -380,7 +389,7 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
     cout << "################" << endl;
     cout << "Rows Read: " << data.size() << endl;
     cout << "Sample Rows" << endl;
-    cout << "channel,iphi,ieta,block_density,cosmic_MPV,light_transmission,scintillation_ratio" << endl;
+    cout << "channel,iphi,ieta,block_density,cosmic_MPV,light_transmission,scintillation_ratio,fiberType" << endl;
     for (Int_t i = 0; i < min(datav2.size(), m_sample_print); ++i) {
         cout << datav2[i].channel << ","
              << datav2[i].iphi << ","
@@ -388,7 +397,8 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
              << datav2[i].block_density << ","
              << datav2[i].cosmic_MPV << ","
              << datav2[i].light_transmission << ","
-             << datav2[i].scintillation_ratio << endl;
+             << datav2[i].scintillation_ratio << ","
+             << datav2[i].fiberType << endl;
     }
     cout << "################" << endl;
     cout << "Block Density Min: " << min_block_density << ", Max: " << max_block_density << endl;
