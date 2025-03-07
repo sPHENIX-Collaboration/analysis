@@ -10,6 +10,7 @@
 
 // -- root includes --
 #include <TH2F.h>
+#include <TH3F.h>
 #include <TF1.h>
 #include <TFile.h>
 #include <TProfile.h>
@@ -105,6 +106,12 @@ namespace myAnalysis {
     Float_t min_calib = 9999;
     Float_t max_calib = -9999;
 
+    Float_t min_vbDivDensity = 9999;
+    Float_t max_vbDivDensity = -9999;
+
+    Float_t min_vbDivCosmic = 9999;
+    Float_t max_vbDivCosmic = -9999;
+
     Int_t m_bins_bias   = 300;
     Float_t m_bias_low  = 67;
     Float_t m_bias_high = 70;
@@ -132,6 +139,14 @@ namespace myAnalysis {
     Int_t m_bins_calib = 100;
     Float_t m_calib_low  = 0;
     Float_t m_calib_high = 5;
+
+    Int_t m_bins_vbDivDensity = 320;
+    Float_t m_vbDivDensity_low  = -220;
+    Float_t m_vbDivDensity_high = 100;
+
+    Int_t m_bins_vbDivCosmic = 240;
+    Float_t m_vbDivCosmic_low  = -8;
+    Float_t m_vbDivCosmic_high = 16;
 
     unordered_map<string,TH1*> m_hists;
 }
@@ -556,13 +571,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2Calib"] = new TH2F("h2Calib","EMCal Calibration [MeV/ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["hBias"] = new TH1F("hBias","Tower; Bias [V]; Counts", m_bins_bias, m_bias_low, m_bias_high);
     m_hists["hOffset"] = new TH1F("hOffset","Tower; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hBlockDensity"] = new TH1F("hBlockDensity","Tower; Block Density [g/cm^3]; Counts", m_bins_block_density, m_block_density_low, m_block_density_high);
+    m_hists["hBlockDensity"] = new TH1F("hBlockDensity","Tower; Block Density [g/cm^{3}]; Counts", m_bins_block_density, m_block_density_low, m_block_density_high);
     m_hists["hCosmicMPV"] = new TH1F("hCosmicMPV","Tower; Cosmic MPV; Counts", m_bins_cosmic_MPV, m_cosmic_MPV_low, m_cosmic_MPV_high);
     m_hists["hLight"] = new TH1F("hLight","Tower; Light Transmission [%]; Counts", m_bins_light_transmission, m_light_transmission_low, m_light_transmission_high);
     m_hists["hScintRatio"] = new TH1F("hScintRatio","Tower; Scintillation Ratio; Counts", m_bins_scintillation_ratio, m_scintillation_ratio_low, m_scintillation_ratio_high);
-    m_hists["hCalib"] = new TH1F("hCalib","Tower; EMCal Calibration [MeV/ADC]; Counts", m_bins_calib, m_calib_low, m_calib_high);
-
-    m_hists["h2CalibVsBlockDensity"] = new TH2F("h2CalibVsBlockDensity","EMCal; Block Density [g/cm^3]; EMCal Calibration [MeV/ADC]", m_bins_block_density, m_block_density_low, m_block_density_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["h3CalibOffsetBlockDensity"] = new TH3F("h3CalibOffsetBlockDensity","EMCal; Block Density [g/cm^{3}]; Offset [mV]; EMCal Calibration [MeV/ADC]", m_bins_block_density, m_block_density_low, m_block_density_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["h3CalibOffsetCosmicMPV"] = new TH3F("h3CalibOffsetCosmicMPV","EMCal; Cosmic MPV; Offset [mV]; EMCal Calibration [MeV/ADC]", m_bins_cosmic_MPV, m_cosmic_MPV_low, m_cosmic_MPV_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["h2VbDivDensityCalib"] = new TH2F("h2VbDivDensityCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Block Density [mV*cm^{3}/g]", m_bins_calib, m_calib_low, m_calib_high, m_bins_vbDivDensity, m_vbDivDensity_low, m_vbDivDensity_high);
+    m_hists["h2VbDivCosmicCalib"] = new TH2F("h2VbDivCosmicCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Cosmic MPV [mV]", m_bins_calib, m_calib_low, m_calib_high, m_bins_vbDivCosmic, m_vbDivCosmic_low, m_vbDivCosmic_high);
 
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
@@ -591,17 +607,32 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
         for(UInt_t j = 1; j <= m_neta; ++j) {
             Float_t calib = m_hists["h2_mevOverADC"]->GetBinContent(j,i);
             m_hists["h2Calib"]->SetBinContent(i,j,calib);
-            m_hists["hCalib"]->Fill(calib);
             min_calib = min(min_calib, calib);
             max_calib = max(max_calib, calib);
 
             Float_t bd = m_hists["h2BlockDensity"]->GetBinContent(i,j);
+            Float_t offset = m_hists["h2Offset"]->GetBinContent(i,j);
+            Float_t cosmic = m_hists["h2CosmicMPV"]->GetBinContent(i,j);
 
-            m_hists["h2CalibVsBlockDensity"]->Fill(bd,calib);
+            Float_t vbDivDensity = (bd) ? offset/bd : 0;
+            min_vbDivDensity = min(min_vbDivDensity, vbDivDensity);
+            max_vbDivDensity = max(max_vbDivDensity, vbDivDensity);
+
+            Float_t vbDivCosmic = (cosmic) ? offset/cosmic : 0;
+            min_vbDivCosmic = min(min_vbDivCosmic, vbDivCosmic);
+            max_vbDivCosmic = max(max_vbDivCosmic, vbDivCosmic);
+
+            if(calib) ((TH2*)m_hists["h2VbDivDensityCalib"])->Fill(calib,vbDivDensity);
+            if(cosmic && calib) ((TH2*)m_hists["h2VbDivCosmicCalib"])->Fill(calib,vbDivCosmic);
+
+            if(calib) ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Fill(bd,offset,calib);
+            if(cosmic && calib) ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Fill(cosmic,offset,calib);
         }
     }
 
     cout << "Calib Min: " << min_calib << ", Max: " << max_calib << endl;
+    cout << "vbDivDensity Min: " << min_vbDivDensity << ", Max: " << max_vbDivDensity << endl;
+    cout << "vbDivCosmic Min: " << min_vbDivCosmic << ", Max: " << max_vbDivCosmic << endl;
 
     // save plots to root file
     TFile tf(outputRoot.c_str(),"recreate");
@@ -612,7 +643,10 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2Light"]->Write();
     m_hists["h2ScintRatio"]->Write();
     m_hists["h2Calib"]->Write();
-    m_hists["h2CalibVsBlockDensity"]->Write();
+    m_hists["h3CalibOffsetBlockDensity"]->Write();
+    m_hists["h3CalibOffsetCosmicMPV"]->Write();
+    m_hists["h2VbDivDensityCalib"]->Write();
+    m_hists["h2VbDivCosmicCalib"]->Write();
 
     m_hists["hBlockDensity"]->Write();
     m_hists["hCosmicMPV"]->Write();
@@ -713,9 +747,6 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    m_hists["h2CosmicMPV"]->SetMinimum(0);
-    m_hists["h2CosmicMPV"]->SetMaximum(800);
-
     m_hists["h2CosmicMPV"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + ".png").c_str());
@@ -725,6 +756,12 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled.png").c_str());
+
+    m_hists["h2CosmicMPV"]->SetMinimum(0);
+    m_hists["h2CosmicMPV"]->SetMaximum(800);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -818,6 +855,9 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["hScintRatio"]->GetName()) + ".png").c_str());
 
+    m_hists["hCalib"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("z");
+    m_hists["hCalib"]->SetTitle("EMCal");
+    m_hists["hCalib"]->GetYaxis()->SetTitle("Counts");
     m_hists["hCalib"]->Draw();
     m_hists["hCalib"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
@@ -834,6 +874,9 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     gPad->SetLogy(0);
     gPad->SetGrid(0,0);
 
+    m_hists["h2CalibVsBlockDensity"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("zx");
+
+    m_hists["h2CalibVsBlockDensity"]->SetTitle("EMCal");
     m_hists["h2CalibVsBlockDensity"]->Rebin(5);
     m_hists["h2CalibVsBlockDensity"]->Draw("COLZ1");
     m_hists["h2CalibVsBlockDensity"]->GetXaxis()->SetTitleOffset(1);
@@ -845,6 +888,194 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/" + string(m_hists["h2CalibVsBlockDensity"]->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    m_hists["h2CalibVsCosmicMPV"] = ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Project3D("zx");
+
+    m_hists["h2CalibVsCosmicMPV"]->SetTitle("EMCal");
+    // m_hists["h2CalibVsCosmicMPV"]->Rebin(5);
+    m_hists["h2CalibVsCosmicMPV"]->Draw("COLZ1");
+    m_hists["h2CalibVsCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2CalibVsCosmicMPV_px = ((TH2*)m_hists["h2CalibVsCosmicMPV"])->ProfileX();
+    h2CalibVsCosmicMPV_px->SetLineColor(kRed);
+    h2CalibVsCosmicMPV_px->SetMarkerColor(kRed);
+    h2CalibVsCosmicMPV_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + ".png").c_str());
+
+
+    m_hists["h2CalibVsCosmicMPV"]->GetXaxis()->SetRangeUser(0,800);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + "-zoom.png").c_str());
+
+    // ---------------------------------
+
+    m_hists["h2CalibVsOffset"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("zy");
+
+    m_hists["h2CalibVsOffset"]->SetTitle("EMCal");
+    m_hists["h2CalibVsOffset"]->Rebin(10);
+    m_hists["h2CalibVsOffset"]->Draw("COLZ1");
+    m_hists["h2CalibVsOffset"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2CalibVsOffset_px = ((TH2*)m_hists["h2CalibVsOffset"])->ProfileX();
+    h2CalibVsOffset_px->SetLineColor(kRed);
+    h2CalibVsOffset_px->SetMarkerColor(kRed);
+    h2CalibVsOffset_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsOffset"]->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    m_hists["h2BlockDensityVsOffset"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("xy");
+
+    m_hists["h2BlockDensityVsOffset"]->SetTitle("EMCal");
+    m_hists["h2BlockDensityVsOffset"]->Rebin(10);
+    ((TH2*)m_hists["h2BlockDensityVsOffset"])->RebinY(5);
+    m_hists["h2BlockDensityVsOffset"]->Draw("COLZ1");
+    m_hists["h2BlockDensityVsOffset"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2BlockDensityVsOffset_px = ((TH2*)m_hists["h2BlockDensityVsOffset"])->ProfileX();
+    h2BlockDensityVsOffset_px->SetLineColor(kRed);
+    h2BlockDensityVsOffset_px->SetMarkerColor(kRed);
+    // h2BlockDensityVsOffset_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2BlockDensityVsOffset"]->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    m_hists["h2CosmicMPVOffset"] = ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Project3D("xy");
+
+    m_hists["h2CosmicMPVOffset"]->SetTitle("EMCal");
+    m_hists["h2CosmicMPVOffset"]->Rebin(10);
+    // ((TH2*)m_hists["h2CosmicMPVOffset"])->RebinY(5);
+    m_hists["h2CosmicMPVOffset"]->Draw("COLZ1");
+    m_hists["h2CosmicMPVOffset"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2CosmicMPVOffset_px = ((TH2*)m_hists["h2CosmicMPVOffset"])->ProfileX();
+    h2CosmicMPVOffset_px->SetLineColor(kRed);
+    h2CosmicMPVOffset_px->SetMarkerColor(kRed);
+    // h2CosmicMPVOffset_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + ".png").c_str());
+
+    m_hists["h2CosmicMPVOffset"]->GetYaxis()->SetRangeUser(0,800);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + "-zoom.png").c_str());
+
+    // ---------------------------------
+
+    ((TH2*)m_hists["h2VbDivDensityCalib"])->RebinY(5);
+    m_hists["h2VbDivDensityCalib"]->Draw("COLZ1");
+    m_hists["h2VbDivDensityCalib"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2VbDivDensityCalib_px = ((TH2*)m_hists["h2VbDivDensityCalib"])->ProfileX();
+    h2VbDivDensityCalib_px->SetLineColor(kRed);
+    h2VbDivDensityCalib_px->SetMarkerColor(kRed);
+    h2VbDivDensityCalib_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2VbDivDensityCalib"]->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    ((TH2*)m_hists["h2VbDivCosmicCalib"])->RebinY(5);
+    m_hists["h2VbDivCosmicCalib"]->Draw("COLZ1");
+    m_hists["h2VbDivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
+
+    TH1* h2VbDivCosmicCalib_px = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProfileX();
+    h2VbDivCosmicCalib_px->SetLineColor(kRed);
+    h2VbDivCosmicCalib_px->SetMarkerColor(kRed);
+    h2VbDivCosmicCalib_px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + ".png").c_str());
+
+    m_hists["h2VbDivCosmicCalib"]->GetYaxis()->SetRangeUser(-8,4);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + "-zoom.png").c_str());
+
+    // ---------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.16);
+    c1->SetRightMargin(.05);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    Int_t biny_start = m_hists["h2VbDivDensityCalib"]->GetXaxis()->FindBin(1.5);
+    Int_t biny_end   = m_hists["h2VbDivDensityCalib"]->GetXaxis()->FindBin(2);
+    TH1* h2VbDivDensityCalibA_py = ((TH2*)m_hists["h2VbDivDensityCalib"])->ProjectionY("h2VbDivDensityCalib_py", biny_start, biny_end-1);
+    TH1* h2VbDivDensityCalibB_py = ((TH2*)m_hists["h2VbDivDensityCalib"])->ProjectionY("h2VbDivDensityCalib_0-1.5_py", 1, biny_start-1);
+
+    h2VbDivDensityCalibA_py->Rebin(2);
+    h2VbDivDensityCalibB_py->Rebin(2);
+
+    h2VbDivDensityCalibB_py->GetYaxis()->SetTitle("Counts");
+    h2VbDivDensityCalibB_py->GetYaxis()->SetRangeUser(0,3000);
+    h2VbDivDensityCalibB_py->GetXaxis()->SetTitleOffset(1);
+    h2VbDivDensityCalibB_py->SetLineColor(kRed);
+
+    h2VbDivDensityCalibB_py->Draw();
+    h2VbDivDensityCalibA_py->Draw("same");
+
+    Float_t meanA = (Int_t)(h2VbDivDensityCalibA_py->GetMean()*100)/100.;
+    Float_t meanB = (Int_t)(h2VbDivDensityCalibB_py->GetMean()*100)/100.;
+
+    stringstream legA, legB;
+
+    legB << "0 < Calibration < 1.5, #mu = " << meanB << " [mV*cm^{3}/g]";
+    legA << "1.5 #leq Calibration < 2, #mu = " << meanA << " [mV*cm^{3}/g]";
+
+    auto leg = new TLegend(0.2,.75,0.65,.85);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.04);
+    leg->AddEntry(h2VbDivDensityCalibA_py,legA.str().c_str(),"f");
+    leg->AddEntry(h2VbDivDensityCalibB_py,legB.str().c_str(),"f");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2VbDivDensityCalibA_py->GetName()) + ".png").c_str());
+
+    // ---------------------------------
+
+    biny_start = m_hists["h2VbDivCosmicCalib"]->GetXaxis()->FindBin(1.5);
+    biny_end   = m_hists["h2VbDivCosmicCalib"]->GetXaxis()->FindBin(2);
+    TH1* h2VbDivCosmicCalibA_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_py", biny_start, biny_end-1);
+    TH1* h2VbDivCosmicCalibB_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_0-1.5_py", 1, biny_start-1);
+
+    h2VbDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
+    h2VbDivCosmicCalibB_py->GetYaxis()->SetRangeUser(0,3000);
+    h2VbDivCosmicCalibB_py->GetXaxis()->SetTitleOffset(1);
+    h2VbDivCosmicCalibB_py->SetLineColor(kRed);
+
+    h2VbDivCosmicCalibB_py->Draw();
+    h2VbDivCosmicCalibA_py->Draw("same");
+
+    meanA = (Int_t)(h2VbDivCosmicCalibA_py->GetMean()*100)/100.;
+    meanB = (Int_t)(h2VbDivCosmicCalibB_py->GetMean()*100)/100.;
+
+    legA.str("");
+    legB.str("");
+
+    legB << "0 < Calibration < 1.5, #mu = " << meanB << " [mV]";
+    legA << "1.5 #leq Calibration < 2, #mu = " << meanA << " [mV]";
+
+    leg = new TLegend(0.17,.7,0.31,.8);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.04);
+    leg->AddEntry(h2VbDivCosmicCalibA_py,legA.str().c_str(),"f");
+    leg->AddEntry(h2VbDivCosmicCalibB_py,legB.str().c_str(),"f");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(h2VbDivCosmicCalibA_py->GetName()) + ".png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 
