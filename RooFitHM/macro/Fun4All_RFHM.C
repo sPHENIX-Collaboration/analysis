@@ -64,16 +64,10 @@ void Fun4All_RFHM(const char *filelistcalo = "/sphenix/u/ecroft/sEPDCalibration/
 
     se->registerSubsystem(rfhm);
 
-    QAHistManagerDef::saveQARootFile(outfile_hist);
-    delete se;
-    std::cout << "All done!" << std::endl;
-    gSystem->Exit(0);
-
-
-
-
-
     se->run(1);
     se->End();
 
+
+    QAHistManagerDef::saveQARootFile(outfile_hist);
+    delete se;
 }
