@@ -18,6 +18,7 @@
 #include <TLegend.h>
 #include <TLatex.h>
 #include <TCanvas.h>
+#include <TColor.h>
 
 // -- sPHENIX Style
 #include <sPhenixStyle.C>
@@ -76,6 +77,15 @@ namespace myAnalysis {
     vector<MyDatav2> datav2;
     unordered_map<Int_t,Int_t> serial_to_sector;
     unordered_map<Int_t,Int_t> ib_channel_to_ADC_channel;
+    unordered_map<string, Int_t> m_fiberTypeMap = {
+                                                 {"SG47",1},
+                                                 {"K",2},
+                                                 {"SG",3},
+                                                 {"SG-B",4},
+                                                 {"P-SG",5},
+                                                 {"I-K",6},
+                                                 {"PSG+IK+K",7}
+    };
 
     size_t m_sample_print = 10;
     Int_t m_nsector = 64;
@@ -373,6 +383,9 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
             // fiber type
             if (std::getline(ss, cell, ',')) {
                 row.fiberType = cell;
+                if(!m_fiberTypeMap.contains(row.fiberType)) {
+                    throw std::runtime_error("Error! Unknown Fiber Type: " + row.fiberType);
+                }
             }
             else {
                 throw std::runtime_error("Error parsing fiber type");
@@ -399,6 +412,11 @@ Int_t myAnalysis::readCSV_EMCal(const string& filename) {
              << datav2[i].light_transmission << ","
              << datav2[i].scintillation_ratio << ","
              << datav2[i].fiberType << endl;
+    }
+    cout << "################" << endl;
+    cout << "Fiber Types" << endl;
+    for (const auto& [key, value] : m_fiberTypeMap) {
+        std::cout << "Fiber Type: " << key << ", Key: " << value << std::endl;
     }
     cout << "################" << endl;
     cout << "Block Density Min: " << min_block_density << ", Max: " << max_block_density << endl;
@@ -589,6 +607,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h3CalibOffsetCosmicMPV"] = new TH3F("h3CalibOffsetCosmicMPV","EMCal; Cosmic MPV; Offset [mV]; EMCal Calibration [MeV/ADC]", m_bins_cosmic_MPV, m_cosmic_MPV_low, m_cosmic_MPV_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
     m_hists["h2VbDivDensityCalib"] = new TH2F("h2VbDivDensityCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Block Density [mV*cm^{3}/g]", m_bins_calib, m_calib_low, m_calib_high, m_bins_vbDivDensity, m_vbDivDensity_low, m_vbDivDensity_high);
     m_hists["h2VbDivCosmicCalib"] = new TH2F("h2VbDivCosmicCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Cosmic MPV [mV]", m_bins_calib, m_calib_low, m_calib_high, m_bins_vbDivCosmic, m_vbDivCosmic_low, m_vbDivCosmic_high);
+    m_hists["h2FiberType"] = new TH2F("h2FiberType","Fiber Type; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
 
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
@@ -606,6 +625,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
         m_hists["h2CosmicMPV"]->SetBinContent(p.iphi+1, p.ieta+1, p.cosmic_MPV);
         m_hists["h2Light"]->SetBinContent(p.iphi+1, p.ieta+1, p.light_transmission);
         m_hists["h2ScintRatio"]->SetBinContent(p.iphi+1, p.ieta+1, p.scintillation_ratio);
+        m_hists["h2FiberType"]->SetBinContent(p.iphi+1, p.ieta+1, m_fiberTypeMap[p.fiberType]);
 
         m_hists["hBlockDensity"]->Fill(p.block_density);
         m_hists["hCosmicMPV"]->Fill(p.cosmic_MPV);
@@ -657,6 +677,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h3CalibOffsetCosmicMPV"]->Write();
     m_hists["h2VbDivDensityCalib"]->Write();
     m_hists["h2VbDivCosmicCalib"]->Write();
+    m_hists["h2FiberType"]->Write();
 
     m_hists["hBlockDensity"]->Write();
     m_hists["hCosmicMPV"]->Write();
@@ -685,6 +706,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     setEMCalDim(m_hists["h2Light"]);
     setEMCalDim(m_hists["h2ScintRatio"]);
     setEMCalDim(m_hists["h2Calib"]);
+    setEMCalDim(m_hists["h2FiberType"]);
 
     setEMCalDim(m_hists["h2DummySector"]);
     setEMCalDim(m_hists["h2DummyIB"]);
@@ -756,6 +778,42 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     c1->Print((outputDir + "/" + string(m_hists["h2BlockDensity"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.02);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    // https://github.com/mpetroff/accessible-color-cycles?tab=readme-ov-file#final-results
+    vector<string> myColors = {"#ffffff", "#5790fc", "#f89c20", "#e42536", "#33d433", "#ff00b3", "#7a21dd"};
+
+    Int_t palette[7];
+    for(UInt_t i = 0; i < myColors.size(); ++i) {
+       palette[i] = TColor::GetColor(myColors[i].c_str());
+    }
+
+    gStyle->SetPalette(myColors.size(),palette);
+
+    m_hists["h2FiberType"]->Draw("COL");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2FiberType"]->GetName()) + ".png").c_str());
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/" + string(m_hists["h2FiberType"]->GetName()) + "-labeled.png").c_str());
+
+    // ---------------------------------
+
+    gStyle->SetPalette(kBird);
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
 
     m_hists["h2CosmicMPV"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
