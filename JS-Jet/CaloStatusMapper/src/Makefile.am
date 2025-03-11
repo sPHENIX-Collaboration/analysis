@@ -30,11 +30,14 @@ libcalostatusmapper_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
   -lcalo_io \
+  -lcalotrigger \
   -lfun4all \
   -lg4detectors_io \
   -lphg4hit \
   -lg4dst \
   -lg4eval \
+  -ljetbackground \
+  -ljetqa \
   -lqautils \
   `fastjet-config --libs`
 
