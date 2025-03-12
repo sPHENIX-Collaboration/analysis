@@ -17,6 +17,7 @@ copy_to   = "/sphenix/user/danderson/sphenix/analysis/JS-Jet/CaloStatusMapper"
 
 # what files to copy
 to_copy = [
+  "README.md",
   "Fun4All_TestCaloStatusMapper.C",
   "input/dst_calo_run2pp-00047289.list",
   "input/run42072.list",
