@@ -29,6 +29,24 @@ Combine a list of prdfs into one:
 xargs eventcombiner -vpfi calib-000[run]-0000.prdf < [prdf-list]
 #+end_src
 
+* Fun4All Quick Tests
+
+** After editing Makefile.am
+#+begin_src bash
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/calib-00057609-0000.prdf test.root 20 2>/dev/null
+#+end_src
+
+** After editing .cc or .h
+#+begin_src bash
+make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/calib-00057609-0000.prdf test.root 20 2>/dev/null
+#+end_src
+
+* Display
+Generate plots from the output of the Waveform Fitting results
+#+begin_src bash
+make && ./bin/display scratch/calo/test.list files/runs-gain-map-offsets.csv ADC-plots/plots.pdf
+#+end_src
+
 * Condor
 ** Resubmit Failed Jobs
 #+begin_src bas
