@@ -11,7 +11,6 @@
 
 // -- root includes --
 #include <TH2F.h>
-#include <TH3F.h>
 #include <TF1.h>
 #include <TFile.h>
 #include <TProfile.h>
@@ -69,6 +68,8 @@ namespace myAnalysis {
 
     Int_t m_towEta_low  = 0;
     Int_t m_towEta_high = 7;
+
+    Int_t m_saturation = 16383;
 
     Int_t m_verbosity = 0;
     Bool_t m_saveFig = true;
@@ -185,6 +186,15 @@ Int_t myAnalysis::readFile(const string &input) {
             cout << "File: " << fileName << ", Run: " << run << endl;
             addHist(line, "h2CEMC", m_hists, "_"+run);
             addHist(line, "hEvent", m_hists, "_"+run);
+
+            stringstream name;
+            for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
+                for(Int_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
+                    name.str("");
+                    name << "waveform/h2adc_" << iphi << "_" << ieta;
+                    addHist(line, name.str(), m_hists, "_"+run);
+                }
+            }
         }
         file.close();
     } else {
@@ -343,6 +353,8 @@ void myAnalysis::analyze(const string &output) {
 
     c2->DivideSquare(64,0,0);
 
+    c2->Print((outputDir + "/ADC.pdf[").c_str(), "pdf portrait");
+
     Int_t ctr = 1;
     for(Int_t ieta = m_towEta_high; ieta >= m_towEta_low; --ieta) {
         for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
@@ -369,8 +381,52 @@ void myAnalysis::analyze(const string &output) {
             }
         }
     }
+
     c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
     if(m_saveFig) c2->Print((outputDir + "/ADC.png").c_str());
+
+    for (const auto& [run, offset] : m_runOffset) {
+        ctr = 1;
+        title.str("");
+        title << offset << " mV";
+
+        for(Int_t ieta = m_towEta_high; ieta >= m_towEta_low; --ieta) {
+            for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
+                c2->cd(ctr++);
+
+                name.str("");
+                name << "waveform/h2adc_" << iphi << "_" << ieta << "_" << run;
+
+                m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
+                m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
+                m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
+                m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
+                m_hists[name.str()]->SetTitle("");
+                m_hists[name.str()]->Draw("COL");
+
+                TH1* px = ((TH2*)m_hists[name.str()])->ProfileX();
+                px->SetLineColor(kRed);
+                px->SetMarkerColor(kRed);
+                px->Draw("same");
+
+                TLine* l = new TLine(0, m_saturation, 12, m_saturation);
+                l->SetLineColor(kMagenta);
+                l->SetLineStyle(kDashed);
+
+                l->Draw("same");
+
+                if(iphi == 143 && ieta == 7) {
+                    TLatex latex;
+                    latex.SetTextSize(0.19);
+                    latex.DrawLatex(5,2000,title.str().c_str());
+                }
+            }
+        }
+        c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
+        if(m_saveFig) c2->Print((outputDir + "/adc-" + run + ".png").c_str());
+    }
+
+    c2->Print((outputDir + "/ADC.pdf]").c_str(), "pdf portrait");
 
     cout << "###############" << endl;
 }

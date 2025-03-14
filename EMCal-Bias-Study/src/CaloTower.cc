@@ -81,11 +81,13 @@
 // c++
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 using std::cout;
 using std::endl;
 using std::string;
+using std::stringstream;
 using std::vector;
 using std::pair;
 using std::min;
@@ -101,6 +103,16 @@ CaloTower::CaloTower(const string &name):
  , m_neta(96)
  , m_min_energy(9999)
  , m_max_energy(0)
+ , m_nphi_low(136)
+ , m_nphi_high(143)
+ , m_neta_low(0)
+ , m_neta_high(7)
+ , m_nsamples(12)
+ , m_bins_adc(180)
+ , m_adc_low(0)
+ , m_adc_high(1.8e4)
+ , m_min_adc(9999)
+ , m_max_adc(0)
 {
   cout << "CaloTower::CaloTower(const string &name) Calling ctor" << endl;
 }
@@ -120,6 +132,19 @@ int CaloTower::Init(PHCompositeNode *topNode)
 
   m_hists["h2CEMC"] = new TH2F("h2CEMC","EMCal [ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
   m_hists["hEvent"] = new TH1F("hEvent","Events; Status; Counts", 1, 0, 1);
+
+  stringstream name;
+  stringstream title;
+  for(Int_t iphi = m_nphi_low; iphi <= m_nphi_high; ++iphi) {
+      for(Int_t ieta = m_neta_low; ieta <= m_neta_high; ++ieta) {
+          name.str("");
+          title.str("");
+          name << "h2adc_" << iphi << "_" << ieta;
+          title << "adc: (" << iphi << "," << ieta << "); Sample; adc";
+
+          m_hists[name.str()] = new TH2F(name.str().c_str(), title.str().c_str(), m_nsamples, 0, m_nsamples, m_bins_adc, m_adc_low, m_adc_high);
+      }
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -142,8 +167,8 @@ int CaloTower::process_event(PHCompositeNode *topNode)
   // loop over CEMC towers
   for(UInt_t towerIndex = 0; towerIndex < towers->size(); ++towerIndex) {
     UInt_t key  = TowerInfoDefs::encode_emcal(towerIndex);
-    UInt_t iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-    UInt_t ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+    Int_t iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    Int_t ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
 
     TowerInfo* tower = towers->get_tower_at_channel(towerIndex);
     Float_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
@@ -152,6 +177,19 @@ int CaloTower::process_event(PHCompositeNode *topNode)
     m_max_energy = max(m_max_energy, energy);
 
     ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
+
+    if(m_nphi_low <= iphi && iphi <= m_nphi_high &&
+       m_neta_low <= ieta && ieta <= m_neta_high) {
+      stringstream name;
+      name << "h2adc_" << iphi << "_" << ieta;
+      for(Int_t sample = 0; sample < m_nsamples; ++sample) {
+        Int_t adc = tower->get_waveform_value(sample);
+        m_min_adc = min(m_min_adc, adc);
+        m_max_adc = max(m_max_adc, adc);
+
+        ((TH2*)m_hists[name.str()])->Fill(sample, adc);
+      }
+    }
   }
 
   m_hists["hEvent"]->Fill(0);
@@ -164,15 +202,22 @@ int CaloTower::End(PHCompositeNode *topNode)
 {
   cout << "CaloTower::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Energy: Min: " << m_min_energy << ", Max: " << m_max_energy << endl;
+  cout << "adc: Min: " << m_min_adc << ", Max: " << m_max_adc << endl;
   cout << "Processed Events: " << m_Event << endl;
 
   // scale the hists to get the average tower energy
   TFile output(m_outputFile.c_str(),"recreate");
 
   output.cd();
+  output.mkdir("waveform");
 
-  for (const auto &pair : m_hists) {
-    pair.second->Write();
+  for (const auto& [name, hist] : m_hists) {
+    if(!name.starts_with("h2adc_")) hist->Write();
+  }
+
+  output.cd("waveform");
+  for (const auto& [name, hist] : m_hists) {
+    if(name.starts_with("h2adc_")) hist->Write();
   }
 
   output.Close();

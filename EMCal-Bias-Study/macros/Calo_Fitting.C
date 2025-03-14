@@ -12,7 +12,7 @@ void Process_Calo_Fitting()
 {
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  CaloTowerDefs::BuilderType buildertype = CaloTowerDefs::kPRDFTowerv4;
+  CaloTowerDefs::BuilderType buildertype = CaloTowerDefs::kPRDFWaveform;
 
   /////////////////
   // build towers
