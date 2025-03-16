@@ -102,8 +102,10 @@ namespace myAnalysis {
     Int_t m_offset_step = 100; /*mV*/
 
     // IB to vary the offsets
-    Int_t m_sector = 49;
-    Int_t m_ib = 5;
+    // sector, ib
+    vector<pair<Int_t,Int_t>> m_IB_vary = {make_pair(48,5),
+                                           make_pair(49,5),
+                                           make_pair(51,5)};
 }
 
 pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose) {
@@ -362,9 +364,6 @@ void myAnalysis::analyze(const string &outputDir) {
         }
     }
 
-    // convert the sector to the serial which is used in the file naming convention
-    Int_t m_serial = sector_to_serial[m_sector];
-
     // write the different variations of bias offsets to file
     for(UInt_t v = 0; v < m_variations; ++v) {
         out = outputDir + "/var-" + to_string(v);
@@ -377,6 +376,14 @@ void myAnalysis::analyze(const string &outputDir) {
         // <= is used to include the serial sector 64
         for(UInt_t i = 1; i <= m_nsector; ++i) {
             for(UInt_t j = 0; j < m_nib_per_sector; ++j) {
+                Bool_t isIB = false;
+                for (const auto& [sector, ib] : m_IB_vary) {
+                    if(i == sector_to_serial[sector] && ib == j) {
+                      isIB = true;
+                      // cout << "Found: sector: " << sector << ", serial: " << i << ", ib: " << ib << endl;
+                    }
+                }
+
                 filename.str("");
                 filename << out << "/sector" << i << "-" << j << ".dat";
 
@@ -387,7 +394,7 @@ void myAnalysis::analyze(const string &outputDir) {
                 }
 
                 for(UInt_t k = 0; k < m_nchannel_per_ib; ++k) {
-                    if(i == m_serial && j == m_ib) {
+                    if(isIB) {
                         file << offset << endl;
                     }
                     else {
@@ -405,8 +412,6 @@ void write_Bias(const string &input,
                 const string &input_sector,
                 const string &input_channel,
                 const string &outputDir=".",
-                      Int_t   sector          = 49,
-                      Int_t   ib              = 5,
                       Int_t   variations      = 26,
                       Int_t   startBiasOffset = 500, /*mV*/
                       Int_t   offset_step     = 100 /*mV*/) {
@@ -417,15 +422,11 @@ void write_Bias(const string &input,
     cout << "input sector map: "  << input_sector << endl;
     cout << "input channel map: "  << input_channel << endl;
     cout << "outputDir: " << outputDir << endl;
-    cout << "sector: " << sector << endl;
-    cout << "ib: " << ib << endl;
     cout << "variations: " << variations << endl;
     cout << "start bias offset: " << startBiasOffset << endl;
     cout << "offset step: " << offset_step << endl;
     cout << "#############################" << endl;
 
-    myAnalysis::m_sector = sector;
-    myAnalysis::m_ib = ib;
     myAnalysis::m_variations = variations;
     myAnalysis::m_startBiasOffset = startBiasOffset;
     myAnalysis::m_offset_step = offset_step;
@@ -441,14 +442,12 @@ void write_Bias(const string &input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 4 || argc > 10){
-        cout << "usage: ./write-Bias input input_sector input_channel [outputDir] [sector] [ib] [variations] [startBiasOffset] [offset_step]" << endl;
+if(argc < 4 || argc > 8){
+        cout << "usage: ./write-Bias input input_sector input_channel [outputDir] [variations] [startBiasOffset] [offset_step]" << endl;
         cout << "input: input csv file" << endl;
         cout << "input_sector: input sector map" << endl;
         cout << "input_channel: input channel map" << endl;
         cout << "outputDir: output directory" << endl;
-        cout << "sector: sector number" << endl;
-        cout << "ib: ib number" << endl;
         cout << "variations: number of variations to run" << endl;
         cout << "startBiasOffset: start of the bias offset value" << endl;
         cout << "offset_step: increments of the bias offset variations" << endl;
@@ -456,8 +455,6 @@ if(argc < 4 || argc > 10){
     }
 
     string outputDir = ".";
-    Int_t  sector          = 49;
-    Int_t  ib              = 5;
     Int_t  variations      = 26;
     Int_t  startBiasOffset = 500; /*mV*/
     Int_t  offset_step     = 100; /*mV*/
@@ -466,22 +463,16 @@ if(argc < 4 || argc > 10){
         outputDir = argv[4];
     }
     if(argc >= 6) {
-        sector = atoi(argv[5]);
+        variations = atoi(argv[5]);
     }
     if(argc >= 7) {
-        ib = atoi(argv[6]);
+        startBiasOffset = atoi(argv[6]);
     }
     if(argc >= 8) {
-        variations = atoi(argv[7]);
-    }
-    if(argc >= 9) {
-        startBiasOffset = atoi(argv[8]);
-    }
-    if(argc >= 10) {
-        offset_step = atoi(argv[9]);
+        offset_step = atoi(argv[7]);
     }
 
-    write_Bias(argv[1], argv[2], argv[3], outputDir, sector, ib, variations, startBiasOffset, offset_step);
+    write_Bias(argv[1], argv[2], argv[3], outputDir, variations, startBiasOffset, offset_step);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
