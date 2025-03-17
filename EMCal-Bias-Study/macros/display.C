@@ -72,7 +72,7 @@ namespace myAnalysis {
     Int_t m_saturation = 16383;
 
     Int_t m_verbosity = 0;
-    Bool_t m_saveFig = true;
+    Bool_t m_saveFig = false;
 }
 
 void myAnalysis::setEMCalDim(TH1* hist) {
@@ -210,6 +210,7 @@ void myAnalysis::analyze(const string &output) {
     cout << "Analysis" << endl;
     string outputDir = fs::absolute(output).parent_path().string();
     fs::create_directories(outputDir);
+    fs::create_directories(outputDir+"/images");
 
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
@@ -289,7 +290,7 @@ void myAnalysis::analyze(const string &output) {
         m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
         c1->Print(output.c_str(), "pdf portrait");
-        if(m_saveFig) c1->Print((outputDir + "/" + histName + ".png").c_str());
+        if(m_saveFig) c1->Print((outputDir + "/images/" + histName + ".png").c_str());
 
         title << ", Sector 49 IB 5";
 
@@ -320,7 +321,7 @@ void myAnalysis::analyze(const string &output) {
         gPad->Update();
 
         c1->Print(output.c_str(), "pdf portrait");
-        if(m_saveFig) c1->Print((outputDir + "/" + histName + "-zoom.png").c_str());
+        if(m_saveFig) c1->Print((outputDir + "/images/" + histName + "-zoom.png").c_str());
 
         c1->SetCanvasSize(2900, 1000);
         c1->SetLeftMargin(.06);
@@ -333,13 +334,31 @@ void myAnalysis::analyze(const string &output) {
                 name.str("");
                 name << "hADC_" << iphi << "_" << ieta;
                 Float_t adc = m_hists[histName]->GetBinContent(iphi+1, ieta+1);
+                Float_t adcError = m_hists[histName]->GetBinError(iphi+1, ieta+1);
+                Int_t bin_offset = m_hists[name.str()]->FindBin(offset);
 
-                m_hists[name.str()]->Fill(offset, adc);
+                m_hists[name.str()]->SetBinContent(bin_offset, adc);
+                m_hists[name.str()]->SetBinError(bin_offset, adcError);
             }
         }
     }
 
     c1->Print((output + "]").c_str(), "pdf portrait");
+
+    // save plots to root file
+    name.str("");
+    name << outputDir << "/ADC-biasOffset.root";
+    TFile tf(name.str().c_str(),"recreate");
+    tf.cd();
+    for(UInt_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
+        for(UInt_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
+            name.str("");
+            name << "hADC_" << iphi << "_" << ieta;
+
+            m_hists[name.str()]->Write();
+        }
+    }
+    tf.Close();
 
     TCanvas* c2 = new TCanvas("c2");
     c2->SetTickx();
@@ -369,7 +388,7 @@ void myAnalysis::analyze(const string &output) {
             m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
             m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
             m_hists[name.str()]->SetTitle("");
-            m_hists[name.str()]->Draw("HIST p");
+            m_hists[name.str()]->Draw();
 
             TLatex latex;
             latex.SetTextSize(0.17);
@@ -383,8 +402,9 @@ void myAnalysis::analyze(const string &output) {
     }
 
     c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
-    if(m_saveFig) c2->Print((outputDir + "/ADC.png").c_str());
+    if(m_saveFig) c2->Print((outputDir + "/images/ADC.png").c_str());
 
+    // Waveforms
     for (const auto& [run, offset] : m_runOffset) {
         ctr = 1;
         title.str("");
@@ -423,7 +443,7 @@ void myAnalysis::analyze(const string &output) {
             }
         }
         c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
-        if(m_saveFig) c2->Print((outputDir + "/adc-" + run + ".png").c_str());
+        if(m_saveFig) c2->Print((outputDir + "/images/adc-" + run + ".png").c_str());
     }
 
     c2->Print((outputDir + "/ADC.pdf]").c_str(), "pdf portrait");

@@ -23,6 +23,15 @@ make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB
 make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
 #+end_src
 
+* Update Bias macro
+#+begin_src bash
+make && ./bin/update-Bias output/EMCal-block-info.root bias-update-plots/plots.pdf
+#+end_src
+Alternatively
+#+begin_src bash
+root -b -l -q 'macros/update-Bias.C("output/EMCal-block-info.root","plots/bias-update/plots.pdf")'
+#+end_src
+
 * Event Combiner
 Combine a list of prdfs into one:
 #+begin_src bash
@@ -44,7 +53,11 @@ make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make &&
 * Display
 Generate plots from the output of the Waveform Fitting results
 #+begin_src bash
-make && ./bin/display scratch/calo/test.list files/runs-gain-map-offsets.csv ADC-plots/plots.pdf
+make && ./bin/display scratch/calo/test.list files/runs-gain-map-offsets.csv plots/ADC/plots.pdf
+#+end_src
+Alternatively:
+#+begin_src bash
+root -b -l -q 'macros/display.C("calo/test.list","files/runs-gain-map-offsets.csv","plots/ADC/plots.pdf")'
 #+end_src
 
 * Condor
