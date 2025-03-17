@@ -82,7 +82,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 using std::cout;
 using std::endl;
@@ -103,10 +102,7 @@ CaloTower::CaloTower(const string &name):
  , m_neta(96)
  , m_min_energy(9999)
  , m_max_energy(0)
- , m_nphi_low(136)
- , m_nphi_high(143)
- , m_neta_low(0)
- , m_neta_high(7)
+ , m_ntowIBSide(8)
  , m_nsamples(12)
  , m_bins_adc(180)
  , m_adc_low(0)
@@ -137,8 +133,9 @@ int CaloTower::Init(PHCompositeNode *topNode)
 
   stringstream name;
   stringstream title;
-  for(Int_t iphi = m_nphi_low; iphi <= m_nphi_high; ++iphi) {
-      for(Int_t ieta = m_neta_low; ieta <= m_neta_high; ++ieta) {
+  for (const auto& [phi, eta] : m_nphi_neta_low) {
+    for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+      for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
           name.str("");
           title.str("");
           name << "h2adc_" << iphi << "_" << ieta;
@@ -146,6 +143,7 @@ int CaloTower::Init(PHCompositeNode *topNode)
 
           m_hists[name.str()] = new TH2F(name.str().c_str(), title.str().c_str(), m_nsamples, 0, m_nsamples, m_bins_adc, m_adc_low, m_adc_high);
       }
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -167,23 +165,23 @@ int CaloTower::process_event(PHCompositeNode *topNode)
   }
 
   // loop over CEMC towers
+  stringstream name;
   for(UInt_t towerIndex = 0; towerIndex < towers->size(); ++towerIndex) {
     UInt_t key  = TowerInfoDefs::encode_emcal(towerIndex);
     Int_t iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
     Int_t ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
 
     TowerInfo* tower = towers->get_tower_at_channel(towerIndex);
-    Float_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
-    // Float_t energy = tower->get_energy();
+    Double_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
+    // Double_t energy = tower->get_energy();
     m_min_energy = min(m_min_energy, energy);
     m_max_energy = max(m_max_energy, energy);
 
     ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
 
-    if(m_nphi_low <= iphi && iphi <= m_nphi_high &&
-       m_neta_low <= ieta && ieta <= m_neta_high) {
-      stringstream name;
-      name << "h2adc_" << iphi << "_" << ieta;
+    name.str("");
+    name << "h2adc_" << iphi << "_" << ieta;
+    if(m_hists.contains(name.str())) {
       for(Int_t sample = 0; sample < m_nsamples; ++sample) {
         Int_t adc = tower->get_waveform_value(sample);
         m_min_adc = min(m_min_adc, adc);

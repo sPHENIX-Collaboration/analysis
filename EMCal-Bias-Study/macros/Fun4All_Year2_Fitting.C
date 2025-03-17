@@ -73,6 +73,9 @@ void Fun4All_Year2_Fitting(const string &fname,
   CaloTower *calo = new CaloTower();
   calo->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   calo->setOutputFile(outfile);
+  calo->add_nphi_neta_low(128,0); // S48 IB5
+  calo->add_nphi_neta_low(136,0); // S49 IB5
+  calo->add_nphi_neta_low(152,0); // S51 IB5
   se->registerSubsystem(calo);
 
   Fun4AllInputManager *In = new Fun4AllPrdfInputManager("in");

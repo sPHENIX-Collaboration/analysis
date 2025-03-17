@@ -6,6 +6,7 @@
 #include <fun4all/SubsysReco.h>
 
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 #include <TH1.h>
@@ -39,14 +40,8 @@ class CaloTower : public SubsysReco
     this->m_outputFile = outputFile;
   }
 
-  void set_nphi_range(const Int_t nphi_low, const Int_t nphi_high) {
-    this->m_nphi_low = std::max(0, nphi_low);
-    this->m_nphi_high = std::min(m_nphi-1, nphi_low);
-  }
-
-  void set_neta_range(const Int_t neta_low, const Int_t neta_high) {
-    this->m_neta_low = std::max(0, neta_low);
-    this->m_neta_high = std::min(m_neta-1, neta_low);
+  void add_nphi_neta_low(Int_t nphi_low, Int_t neta_low) {
+    this->m_nphi_neta_low.push_back(std::make_pair(nphi_low,neta_low));
   }
 
  private:
@@ -58,20 +53,17 @@ class CaloTower : public SubsysReco
   Int_t m_nphi;
   Int_t m_neta;
 
-  Float_t m_min_energy;
-  Float_t m_max_energy;
+  Double_t m_min_energy;
+  Double_t m_max_energy;
 
-  Int_t m_nphi_low;
-  Int_t m_nphi_high;
-
-  Int_t m_neta_low;
-  Int_t m_neta_high;
+  std::vector<std::pair<Int_t,Int_t>> m_nphi_neta_low;
+  Int_t m_ntowIBSide;
 
   Int_t m_nsamples;
 
   Int_t m_bins_adc;
-  Float_t m_adc_low;
-  Float_t m_adc_high;
+  Double_t m_adc_low;
+  Double_t m_adc_high;
 
   Int_t m_min_adc;
   Int_t m_max_adc;
