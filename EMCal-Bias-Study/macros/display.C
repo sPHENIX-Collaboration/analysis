@@ -47,6 +47,9 @@ namespace myAnalysis {
     Int_t addHist(const string &fileName, const string &histName, unordered_map<string,TH1*> &histograms, const string &tag = "");
     void setEMCalDim(TH1* hist);
 
+    pair<Int_t, Int_t> getSectorIB(Int_t iphi, Int_t ieta);
+    pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
+
     unordered_map<string,TH1*> m_hists;
     map<string,Int_t> m_runOffset;
 
@@ -69,10 +72,34 @@ namespace myAnalysis {
     Int_t m_towEta_low  = 0;
     Int_t m_towEta_high = 7;
 
+    vector<pair<Int_t,Int_t>> m_nphi_neta_low = {make_pair(128,0)
+                                               , make_pair(136,0)
+                                               , make_pair(152,0)};
+
+    Int_t m_ntowIBSide = 8;
+
     Int_t m_saturation = 16383;
 
     Int_t m_verbosity = 0;
     Bool_t m_saveFig = false;
+}
+
+pair<Int_t, Int_t> myAnalysis::getSectorIB(Int_t iphi, Int_t ieta) {
+    Int_t k = iphi / m_ntowIBSide;
+
+    Int_t sector = (ieta < 48) ? k + 32 : k;
+    Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_nib_per_sector - 1: (ieta - 48) / m_nib_per_sector;
+
+    return make_pair(sector, ib);
+}
+
+pair<Int_t, Int_t> myAnalysis::getSectorIB(Int_t towerIndex) {
+    Int_t k = towerIndex / m_nchannel_per_sector;
+
+    Int_t sector = (k % 2) ? (k - 1) / 2 : k / 2 + 32;
+    Int_t ib = (k % m_nchannel_per_sector) / m_nchannel_per_ib;
+
+    return make_pair(sector, ib);
 }
 
 void myAnalysis::setEMCalDim(TH1* hist) {
@@ -188,11 +215,13 @@ Int_t myAnalysis::readFile(const string &input) {
             addHist(line, "hEvent", m_hists, "_"+run);
 
             stringstream name;
-            for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
-                for(Int_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
-                    name.str("");
-                    name << "waveform/h2adc_" << iphi << "_" << ieta;
-                    addHist(line, name.str(), m_hists, "_"+run);
+            for (const auto& [phi, eta] : m_nphi_neta_low) {
+                for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+                    for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
+                        name.str("");
+                        name << "waveform/h2adc_" << iphi << "_" << ieta;
+                        addHist(line, name.str(), m_hists, "_"+run);
+                    }
                 }
             }
         }
@@ -219,14 +248,16 @@ void myAnalysis::analyze(const string &output) {
     // Individual IB channel response
     stringstream name;
     stringstream title;
-    for(UInt_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
-        for(UInt_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
-            name.str("");
-            title.str("");
-            name << "hADC_" << iphi << "_" << ieta;
-            title << "ADC: (" << iphi << "," << ieta << "); Offset [mV]; ADC";
+    for (const auto& [phi, eta] : m_nphi_neta_low) {
+        for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+            for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
+                name.str("");
+                title.str("");
+                name << "hADC_" << iphi << "_" << ieta;
+                title << "ADC: (" << iphi << "," << ieta << "); Offset [mV]; ADC";
 
-            m_hists[name.str()] = new TH1F(name.str().c_str(), title.str().c_str(), m_bins_offset, m_offset_low, m_offset_high);
+                m_hists[name.str()] = new TH1F(name.str().c_str(), title.str().c_str(), m_bins_offset, m_offset_low, m_offset_high);
+            }
         }
     }
 
@@ -292,54 +323,62 @@ void myAnalysis::analyze(const string &output) {
         c1->Print(output.c_str(), "pdf portrait");
         if(m_saveFig) c1->Print((outputDir + "/images/" + histName + ".png").c_str());
 
-        title << ", Sector 49 IB 5";
+        for (const auto& [phi, eta] : m_nphi_neta_low) {
+            for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+                for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
+                    name.str("");
+                    name << "hADC_" << iphi << "_" << ieta;
+                    Float_t adc = m_hists[histName]->GetBinContent(iphi+1, ieta+1);
+                    Float_t adcError = m_hists[histName]->GetBinError(iphi+1, ieta+1);
+                    Int_t bin_offset = m_hists[name.str()]->FindBin(offset);
 
-        m_hists[histName]->SetTitle(title.str().c_str());
-        m_hists[histName]->GetXaxis()->SetRangeUser(136,144);
-        m_hists[histName]->GetYaxis()->SetRangeUser(0,8);
-        m_hists[histName]->GetXaxis()->SetNdivisions(8, false);
-        m_hists[histName]->GetYaxis()->SetNdivisions(8, false);
-        m_hists[histName]->Draw("COLZ");
-
-        // zoom
-        c1->SetCanvasSize(1500, 1000);
-        c1->SetRightMargin(.18);
-        // c1->SetLeftMargin(.06);
-        // c1->SetTopMargin(.1);
-        // c1->SetBottomMargin(.12);
-
-        TPaletteAxis *palette = (TPaletteAxis*)m_hists[histName]->GetListOfFunctions()->FindObject("palette");
-
-        // // the following lines move the palette. Choose the values you need for the position.
-        Float_t xshift = 0.05;
-        Float_t xlow = 0.83;
-        palette->SetX1NDC(xlow);
-        palette->SetX2NDC(xlow+xshift);
-        // palette->SetY1NDC(0.2);
-        // palette->SetY2NDC(0.8);
-        gPad->Modified();
-        gPad->Update();
-
-        c1->Print(output.c_str(), "pdf portrait");
-        if(m_saveFig) c1->Print((outputDir + "/images/" + histName + "-zoom.png").c_str());
-
-        c1->SetCanvasSize(2900, 1000);
-        c1->SetLeftMargin(.06);
-        c1->SetRightMargin(.12);
-        c1->SetTopMargin(.1);
-        c1->SetBottomMargin(.12);
-
-        for(UInt_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
-            for(UInt_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
-                name.str("");
-                name << "hADC_" << iphi << "_" << ieta;
-                Float_t adc = m_hists[histName]->GetBinContent(iphi+1, ieta+1);
-                Float_t adcError = m_hists[histName]->GetBinError(iphi+1, ieta+1);
-                Int_t bin_offset = m_hists[name.str()]->FindBin(offset);
-
-                m_hists[name.str()]->SetBinContent(bin_offset, adc);
-                m_hists[name.str()]->SetBinError(bin_offset, adcError);
+                    m_hists[name.str()]->SetBinContent(bin_offset, adc);
+                    m_hists[name.str()]->SetBinError(bin_offset, adcError);
+                }
             }
+        }
+    }
+
+    c1->SetCanvasSize(1500, 1000);
+    c1->SetRightMargin(.18);
+    // c1->SetLeftMargin(.06);
+    // c1->SetTopMargin(.1);
+    // c1->SetBottomMargin(.12);
+
+    stringstream imgName;
+    for (const auto &[phi, eta] : m_nphi_neta_low)
+    {
+        pair<Int_t, Int_t> sector_ib = getSectorIB(phi, eta);
+        for (const auto &[run, offset] : m_runOffset)
+        {
+            string histName = "h2CEMC_" + run;
+            title.str("");
+            title << "EMCal [ADC], Run: " << run << ", Offset: " << offset << " mV";
+            title << ", Sector " << sector_ib.first << " IB " << sector_ib.second;
+            imgName.str("");
+            imgName << outputDir << "/images/" << histName << "_" << phi << "_" << eta << "-zoom.png";
+
+            m_hists[histName]->SetTitle(title.str().c_str());
+            m_hists[histName]->GetXaxis()->SetRangeUser(phi, phi+m_ntowIBSide);
+            m_hists[histName]->GetYaxis()->SetRangeUser(eta, eta+m_ntowIBSide);
+            m_hists[histName]->GetXaxis()->SetNdivisions(m_ntowIBSide, false);
+            m_hists[histName]->GetYaxis()->SetNdivisions(m_ntowIBSide, false);
+            m_hists[histName]->Draw("COLZ");
+
+            TPaletteAxis *palette = (TPaletteAxis *) m_hists[histName]->GetListOfFunctions()->FindObject("palette");
+
+            // the following lines move the palette. Choose the values you need for the position.
+            Float_t xshift = 0.05;
+            Float_t xlow = 0.83;
+            palette->SetX1NDC(xlow);
+            palette->SetX2NDC(xlow + xshift);
+            // palette->SetY1NDC(0.2);
+            // palette->SetY2NDC(0.8);
+            gPad->Modified();
+            gPad->Update();
+
+            c1->Print(output.c_str(), "pdf portrait");
+            if (m_saveFig) c1->Print(imgName.str().c_str());
         }
     }
 
@@ -350,12 +389,15 @@ void myAnalysis::analyze(const string &output) {
     name << outputDir << "/ADC-biasOffset.root";
     TFile tf(name.str().c_str(),"recreate");
     tf.cd();
-    for(UInt_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
-        for(UInt_t ieta = m_towEta_low; ieta <= m_towEta_high; ++ieta) {
-            name.str("");
-            name << "hADC_" << iphi << "_" << ieta;
 
-            m_hists[name.str()]->Write();
+    for (const auto& [phi, eta] : m_nphi_neta_low) {
+        for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+            for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
+                name.str("");
+                name << "hADC_" << iphi << "_" << ieta;
+
+                m_hists[name.str()]->Write();
+            }
         }
     }
     tf.Close();
@@ -374,76 +416,102 @@ void myAnalysis::analyze(const string &output) {
 
     c2->Print((outputDir + "/ADC.pdf[").c_str(), "pdf portrait");
 
-    Int_t ctr = 1;
-    for(Int_t ieta = m_towEta_high; ieta >= m_towEta_low; --ieta) {
-        for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
-            c2->cd(ctr++);
-            name.str("");
-            title.str("");
-            name << "hADC_" << iphi << "_" << ieta;
-            title << "(" << iphi << "," << ieta << ")";
-            m_hists[name.str()]->GetYaxis()->SetRangeUser(0,1.6e4);
-            m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
-            m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
-            m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
-            m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
-            m_hists[name.str()]->SetTitle("");
-            m_hists[name.str()]->Draw();
+    for (const auto& [phi, eta] : m_nphi_neta_low) {
+        Int_t ctr = 1;
+        imgName.str("");
+        imgName << outputDir + "/images/ADC_" << phi << "_" << eta << ".png";
 
-            TLatex latex;
-            latex.SetTextSize(0.17);
-            if(ieta == 0) {
-                latex.DrawLatex(-600,6000,title.str().c_str());
-            }
-            else {
-                latex.DrawLatex(-500,6000,title.str().c_str());
-            }
-        }
-    }
-
-    c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
-    if(m_saveFig) c2->Print((outputDir + "/images/ADC.png").c_str());
-
-    // Waveforms
-    for (const auto& [run, offset] : m_runOffset) {
-        ctr = 1;
-        title.str("");
-        title << offset << " mV";
-
-        for(Int_t ieta = m_towEta_high; ieta >= m_towEta_low; --ieta) {
-            for(Int_t iphi = m_towPhi_low; iphi <= m_towPhi_high; ++iphi) {
+        for(Int_t ieta = eta+m_ntowIBSide-1; ieta >= eta; --ieta) {
+            for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
                 c2->cd(ctr++);
-
                 name.str("");
-                name << "waveform/h2adc_" << iphi << "_" << ieta << "_" << run;
-
+                title.str("");
+                name << "hADC_" << iphi << "_" << ieta;
+                title << "(" << iphi << "," << ieta << ")";
+                m_hists[name.str()]->GetYaxis()->SetRangeUser(0,1.6e4);
                 m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
                 m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
                 m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
                 m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
                 m_hists[name.str()]->SetTitle("");
-                m_hists[name.str()]->Draw("COL");
+                m_hists[name.str()]->Draw();
 
-                TH1* px = ((TH2*)m_hists[name.str()])->ProfileX();
-                px->SetLineColor(kRed);
-                px->SetMarkerColor(kRed);
-                px->Draw("same");
-
-                TLine* l = new TLine(0, m_saturation, 12, m_saturation);
-                l->SetLineColor(kMagenta);
-                l->SetLineStyle(kDashed);
-
-                l->Draw("same");
-
-                if(iphi == 143 && ieta == 7) {
-                    TLatex latex;
-                    latex.SetTextSize(0.19);
-                    latex.DrawLatex(5,2000,title.str().c_str());
+                TLatex latex;
+                latex.SetTextSize(0.17);
+                if(ieta == 0) {
+                    latex.DrawLatex(-600,6000,title.str().c_str());
+                }
+                else {
+                    latex.DrawLatex(-500,6000,title.str().c_str());
                 }
             }
         }
         c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
-        if(m_saveFig) c2->Print((outputDir + "/images/adc-" + run + ".png").c_str());
+        if(m_saveFig) c2->Print(imgName.str().c_str());
+    }
+
+    // Waveforms
+    for (const auto &[phi, eta] : m_nphi_neta_low)
+    {
+        for (const auto &[run, offset] : m_runOffset)
+        {
+            Int_t ctr = 1;
+            imgName.str("");
+            imgName << outputDir + "/images/adc_" << phi << "_" << eta << "_" << run << ".png";
+
+            pair<Int_t, Int_t> sector_ib = getSectorIB(phi, eta);
+
+            for (Int_t ieta = eta + m_ntowIBSide - 1; ieta >= eta; --ieta)
+            {
+                for (Int_t iphi = phi; iphi < phi + m_ntowIBSide; ++iphi)
+                {
+                    c2->cd(ctr++);
+
+                    name.str("");
+                    name << "waveform/h2adc_" << iphi << "_" << ieta << "_" << run;
+
+                    m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
+                    m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
+                    m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
+                    m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
+                    m_hists[name.str()]->SetTitle("");
+                    m_hists[name.str()]->Draw("COL");
+
+                    TH1 *px = ((TH2 *) m_hists[name.str()])->ProfileX();
+                    px->SetLineColor(kRed);
+                    px->SetMarkerColor(kRed);
+                    px->Draw("same");
+
+                    TLine *l = new TLine(0, m_saturation, 12, m_saturation);
+                    l->SetLineColor(kMagenta);
+                    l->SetLineStyle(kDashed);
+
+                    l->Draw("same");
+
+                    if (iphi == phi + m_ntowIBSide - 1 && ieta == eta + m_ntowIBSide - 1)
+                    {
+                        title.str("");
+                        title << offset << " mV";
+
+                        TLatex latex;
+                        latex.SetTextSize(0.19);
+                        latex.DrawLatex(5, 2000, title.str().c_str());
+                    }
+                    if (iphi == phi && ieta == eta + m_ntowIBSide - 1)
+                    {
+                        title.str("");
+                        title << "S" << sector_ib.first << " IB" << sector_ib.second;
+
+                        TLatex latex;
+                        latex.SetTextSize(0.19);
+                        latex.DrawLatex(5, 12000, title.str().c_str());
+                    }
+                }
+            }
+
+            c2->Print((outputDir + "/ADC.pdf").c_str(), "pdf portrait");
+            if(m_saveFig) c2->Print(imgName.str().c_str());
+        }
     }
 
     c2->Print((outputDir + "/ADC.pdf]").c_str(), "pdf portrait");
