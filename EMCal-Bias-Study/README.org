@@ -15,7 +15,7 @@ https://docs.google.com/spreadsheets/d/1r8V_NYTaj0hXuvuMlxOB-5J2lB38dfHXbgemcb7W
 
 * Read Bias macro
 #+begin_src bash
-make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv files/EMCal-block-info.csv calibration/emcal_2024_prelim_calibration.root test/plots.pdf files/vop.csv output/EMCal-block-info.root
+make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv files/EMCal-block-info.csv calibration/emcal_2024_prelim_calibration.root plots/EMCal-Info/plots.pdf files/vop.csv output/EMCal-block-info.root
 #+end_src
 
 * Write Bias macro
@@ -25,7 +25,7 @@ make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/I
 
 * Update Bias macro
 #+begin_src bash
-make && ./bin/update-Bias output/EMCal-block-info.root bias-update-plots/plots.pdf
+make && ./bin/update-Bias output/EMCal-block-info.root plots/bias-update-plots/plots.pdf
 #+end_src
 Alternatively
 #+begin_src bash

@@ -577,7 +577,6 @@ void myAnalysis::setEMCalDim(TH1* hist) {
 
 void myAnalysis::analyze(const string &output, const string &outputRoot, const string &input_calib) {
     string outputDir = fs::absolute(output).parent_path().string();
-    fs::create_directories(outputDir);
 
     // open calib file
     // Open the ROOT file
@@ -761,13 +760,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2Bias"]->Draw("COLZ");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Bias"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Bias"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Bias"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Bias"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------
 
@@ -775,13 +774,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     m_hists["h2Offset"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Offset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Offset"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Offset"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Offset"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------
 
@@ -790,13 +789,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     m_hists["h2BlockDensity"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2BlockDensity"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2BlockDensity"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2BlockDensity"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2BlockDensity"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------------
 
@@ -819,13 +818,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2FiberType"]->Draw("COL");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2FiberType"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2FiberType"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2FiberType"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2FiberType"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------------
 
@@ -838,19 +837,19 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     m_hists["h2CosmicMPV"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CosmicMPV"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled.png").c_str());
 
     m_hists["h2CosmicMPV"]->SetMinimum(0);
     m_hists["h2CosmicMPV"]->SetMaximum(800);
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CosmicMPV"]->GetName()) + "-labeled-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -859,13 +858,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     m_hists["h2Light"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Light"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Light"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Light"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Light"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------------
 
@@ -873,31 +872,31 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     m_hists["h2ScintRatio"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2ScintRatio"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2ScintRatio"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2ScintRatio"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2ScintRatio"]->GetName()) + "-labeled.png").c_str());
 
     // ---------------------------------
 
     m_hists["h2Calib"]->Draw("COLZ1");
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Calib"]->GetName()) + ".png").c_str());
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + "-labeled.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Calib"]->GetName()) + "-labeled.png").c_str());
 
     m_hists["h2Calib"]->SetMinimum(0.5);
     m_hists["h2Calib"]->SetMaximum(3);
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2Calib"]->GetName()) + "-labeled-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2Calib"]->GetName()) + "-labeled-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -912,14 +911,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["hBias"]->GetXaxis()->SetTitleOffset(1);
     m_hists["hBias"]->GetYaxis()->SetRangeUser(0,4e3);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hBias"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hBias"]->GetName()) + ".png").c_str());
 
     m_hists["hOffset"]->Rebin(10);
     m_hists["hOffset"]->Draw();
     m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,4e3);
     m_hists["hOffset"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hOffset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hOffset"]->GetName()) + ".png").c_str());
 
     gPad->SetLogy();
 
@@ -927,22 +926,22 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["hBlockDensity"]->Draw();
     m_hists["hBlockDensity"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hBlockDensity"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hBlockDensity"]->GetName()) + ".png").c_str());
 
     m_hists["hCosmicMPV"]->Draw();
     m_hists["hCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hCosmicMPV"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hCosmicMPV"]->GetName()) + ".png").c_str());
 
     m_hists["hLight"]->Draw();
     m_hists["hLight"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hLight"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hLight"]->GetName()) + ".png").c_str());
 
     m_hists["hScintRatio"]->Draw();
     m_hists["hScintRatio"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hScintRatio"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hScintRatio"]->GetName()) + ".png").c_str());
 
     m_hists["hCalib"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("z");
     m_hists["hCalib"]->SetTitle("EMCal");
@@ -950,7 +949,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["hCalib"]->Draw();
     m_hists["hCalib"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["hCalib"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["hCalib"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -976,7 +975,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2CalibVsBlockDensity_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsBlockDensity"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibVsBlockDensity"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -993,12 +992,12 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2CalibVsCosmicMPV_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + ".png").c_str());
 
 
     m_hists["h2CalibVsCosmicMPV"]->GetXaxis()->SetRangeUser(0,800);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + "-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibVsCosmicMPV"]->GetName()) + "-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -1015,7 +1014,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2CalibVsOffset_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CalibVsOffset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibVsOffset"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -1033,7 +1032,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     // h2BlockDensityVsOffset_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2BlockDensityVsOffset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2BlockDensityVsOffset"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -1051,11 +1050,11 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     // h2CosmicMPVOffset_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + ".png").c_str());
 
     m_hists["h2CosmicMPVOffset"]->GetYaxis()->SetRangeUser(0,800);
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + "-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CosmicMPVOffset"]->GetName()) + "-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -1069,7 +1068,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2OffsetDivDensityCalib_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2OffsetDivDensityCalib"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2OffsetDivDensityCalib"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -1083,12 +1082,12 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2OffsetDivCosmicCalib_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2OffsetDivCosmicCalib"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2OffsetDivCosmicCalib"]->GetName()) + ".png").c_str());
 
     m_hists["h2OffsetDivCosmicCalib"]->GetYaxis()->SetRangeUser(-8,4);
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2OffsetDivCosmicCalib"]->GetName()) + "-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2OffsetDivCosmicCalib"]->GetName()) + "-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -1101,12 +1100,12 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     h2VbDivCosmicCalib_px->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + ".png").c_str());
 
     m_hists["h2VbDivCosmicCalib"]->GetYaxis()->SetRangeUser(0,1.2);
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + "-zoom.png").c_str());
+    c1->Print((outputDir + "/images/" + string(m_hists["h2VbDivCosmicCalib"]->GetName()) + "-zoom.png").c_str());
 
     // ---------------------------------
 
@@ -1148,7 +1147,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(h2OffsetDivDensityCalibA_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(h2OffsetDivDensityCalibA_py->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -1182,7 +1181,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(h2OffsetDivCosmicCalibA_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(h2OffsetDivCosmicCalibA_py->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
@@ -1222,7 +1221,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    c1->Print((outputDir + "/" + string(h2VbDivCosmicCalibA_py->GetName()) + ".png").c_str());
+    c1->Print((outputDir + "/images/" + string(h2VbDivCosmicCalibA_py->GetName()) + ".png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 
@@ -1254,9 +1253,11 @@ void read_Bias(const string &input,
 
     string outputCSVDir = fs::absolute(outputCSV).parent_path().string();
     string outputRootDir = fs::absolute(outputRoot).parent_path().string();
+    string outputDir = fs::absolute(output).parent_path().string();
 
     fs::create_directories(outputCSVDir);
     fs::create_directories(outputRootDir);
+    fs::create_directories(outputDir+"/images");
 
     if(myAnalysis::readMaps(input_sector, myAnalysis::serial_to_sector) ||
        myAnalysis::readMaps(input_channel, myAnalysis::ib_channel_to_ADC_channel) ||
