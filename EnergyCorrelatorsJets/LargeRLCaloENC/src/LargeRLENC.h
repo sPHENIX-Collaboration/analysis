@@ -63,6 +63,7 @@
 #include <array>
 #include <iostream>
 #include <fstream>
+#include <set>
 //root
 #include <TH1.h>
 #include <TH2.h>
@@ -101,7 +102,7 @@ class LargeRLENC : public SubsysReco
 		IHCAL,
 		OHCAL
 	};
-  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
+  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const bool pedestal=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
 
   	~LargeRLENC() override {};
 
@@ -168,8 +169,9 @@ class LargeRLENC : public SubsysReco
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
 	bool triggerCut(bool, PHCompositeNode*);
+	void Merger(TowerOutput*, std::vector<TowerOutput*>, std::set<float>, std::set<std::array<float, 3>>);
 	DijetEventCuts* eventCut;	
-	
+		
  private:
 
 	std::string algo, radius, output_file_name;
@@ -197,6 +199,11 @@ class LargeRLENC : public SubsysReco
 	TH2F* E_IE, *badE_IE, *goodE_IE;
 	std::vector<std::array<float, 3>> m_emcal, m_ihcal, m_ohcal; //3 points, eta, phi, et
 	std::array<std::array<TH1F*, 3>, 3> Et_miss_hists;
-
+	std::array<float, 3> thresh_mins;
+	float ohcal_min=0.0075; //7.5 MeV from jet 30 and 10 study
+	float emcal_min=0.05; //50 MeV
+	float ihcal_min=0.0075; //7.5 MeV
+	//all these are conservative vals 
+	int n_steps=10;
 };
 #endif // LARGERLENC_H

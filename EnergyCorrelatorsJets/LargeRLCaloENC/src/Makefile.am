@@ -13,13 +13,16 @@ AM_LDFLAGS = \
 pkginclude_HEADERS = \
   HelperStructs.h \
   DijetEventCuts.h \
-  LargeRLENC.h 
+  LargeRLENC.h \
+  LargeRLENC_LEDPedestalScan.h
 
 lib_LTLIBRARIES = \
   libLargeRLENC.la
 
 libLargeRLENC_la_SOURCES = \
-  LargeRLENC.cc
+  LargeRLENC.cc \
+  LargeRLENC_LEDPedestalScan.cc
+
 
 libLargeRLENC_la_LIBADD = \
   -lphool \

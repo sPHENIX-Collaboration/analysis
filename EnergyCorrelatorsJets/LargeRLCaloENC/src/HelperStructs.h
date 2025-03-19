@@ -11,7 +11,7 @@
 class TowerOutput
 {
 	public:
-		TowerOutput(int tr=0)
+		TowerOutput(float tr=0)
 		{
 			this->threshold=tr;
 		}
@@ -28,11 +28,11 @@ class TowerOutput
 			}
 			if(index > -1 ){
 				//just add to the value if we already have other elements at this fixed value
-				E2C.at(index)+=e2c;
+				this->E2C.at(index)+=e2c;
 			}
 			else{
-				E2C.push_back(e2c);
-				RL.push_back(rl);
+				this->E2C.push_back(e2c);
+				this->RL.push_back(rl);
 			}
 			return;
 		}
@@ -72,40 +72,57 @@ class TowerOutput
 			} //just keeps the ordering fixed
 			return;
 		}
-		bool Merge(TowerOutput* to)
+		bool Merge(std::vector<TowerOutput*> tos)
 		{
-			if(this->threshold != to->threshold){
-				return false;
+			std::map<float, float> e2c;
+			std::map<std::array<float, 3>, float> e3c;
+			for(auto to:tos){
+				if(this->threshold != to->threshold){
+					return false;
+				}
+				for(int i = 0; i < (int)to->RL.size(); i++){
+					if(e2c.find(to->RL.at(i)) !=e2c.end())
+					{
+						e2c[to->RL.at(i)]+=to->E2C.at(i);
+					}
+					else e2c[to->RL.at(i)]=to->E2C.at(i);
+				}
+				for(int i = 0; i < (int)to->RL_RM_RS.size(); i++){
+					if(e3c.find(to->RL_RM_RS.at(i)) != e3c.end())
+					{
+						e3c[to->RL_RM_RS.at(i)]+=to->E3C_full_shape.at(i);
+					}	
+					else  e3c[to->RL_RM_RS.at(i)]+=to->E3C_full_shape.at(i);
+				}
 			}
-			else
-			{
+			
 				//create a merge function that preserves indexing of unique values 
-				for(int i=0; i <(int)to->RL.size(); i++)
-				{
-					this->AddE2CValues(to->E2C[i], to->RL[i]);
+			for(auto e:e2c)
+			{
+				this->AddE2CValues(e.second, e.first);
+			}
+			for(auto e:e3c)
+			{
+					this->AddE3CValues( e.second, e.first);
 				}
-				for(int i=0; i < (int)to->RL_RM_RS.size(); i++)
-				{
-					this->AddE3CValues( to->E3C_full_shape[i], to->RL_RM_RS[i]);
-				}
-				this->CalculateFlatE3C();
-				return true;
-			}				
+			//	this->CalculateFlatE3C();
+			return true;
+		}				
 
-		}
+		
 		void Normalize(float energy)
 		{
 			for(auto e2c: this->E2C)
 			{
-				e2c=e2c*std::pow(energy,-2);
+				e2c=e2c*(float)std::pow(energy,-2);
 			}
 			for(auto e3c: this->E3C)
 			{
-				e3c=e3c*std::pow(energy, -3);
+				e3c=e3c*(float)std::pow(energy, -3);
 			}
 			for(auto e3c: this->E3C_full_shape)
 			{
-				e3c=e3c*std::pow(energy, -3);
+				e3c=e3c*(float)std::pow(energy, -3);
 			}
 			return;
 		}

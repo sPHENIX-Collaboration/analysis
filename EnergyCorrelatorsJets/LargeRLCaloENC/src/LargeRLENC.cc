@@ -5,46 +5,54 @@
 //			Author: Skadi Grossberndt						//
 //			Depends on: Calorimeter Tower ENC 					//
 //			First Commit date: 18 Oct 2024						//
-//			Most recent Commit: 3 Feb 2025						//
-//			version: v3.5 with new more readable analysis procedure with class	//
+//			Most recent Commit: 19 Mar 2025						//
+//			version: v3.9 ready to move to v4 with trees back, led running ready 	//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "LargeRLENC.h"
 
-LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const float jet_min_pT/*=0*/, const bool data/*=false*/, std::fstream* ofs/*=nullptr*/, const std::string vari/*="E"*/, const std::string& name/* = "LargeRLENC"*/) 
+LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const float jet_min_pT/*=0*/, const bool data/*=false*/, const bool pedestal, std::fstream* ofs/*=nullptr*/, const std::string vari/*="E"*/, const std::string& name/* = "LargeRLENC"*/) 
 {
 
 	n_evts=0;
-	/*gInterpreter->GenerateDictionary("CaloTowers", "EEC_Branches.h");
-	gInterpreter->GenerateDictionary("map<int, array<map<float, float>,3>>", "map");
-	gInterpreter->GenerateDictionary("map< int, array<map<array<float, 3>, float>, 3>>", "map");
-	gInterpreter->GenerateDictionary("map< string, array< map< std::pair< float, float >, float >, 3 > >", "map;string;utility");*/
-	for(int i=0; i<20; i++){
+	n_steps=10; 
+	if(pedestal) n_steps=10;
+	else if(!data) n_steps=5;
+	for(int i=0; i<n_steps; i++){
 		MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
 	//set bin widths to tower size
-		float hcal_thresh= 10*(1+0.25*i), emcal_thresh=70*(1+0.25*i);
-		std::string hcal_thresh_s="_"+std::to_string((int)hcal_thresh)+"_MeV_threshold";
+		if(pedestal){
+			ohcal_min=0.007;
+			emcal_min=0.03;
+			ihcal_min=0.005;
+		}
+		float ohcal_thresh= 1000*ohcal_min*(1+3/(float)n_steps*i), emcal_thresh=1000*emcal_min*(1+3/(float)n_steps*i), ihcal_thresh=1000*ihcal_min*(1+3/(float)n_steps*i);
+		thresh_mins[0]=emcal_min;
+		thresh_mins[1]=ihcal_min;
+		thresh_mins[2]=ohcal_min;
+		std::string ihcal_thresh_s="_"+std::to_string((int)ihcal_thresh)+"_MeV_threshold";
+		std::string ohcal_thresh_s="_"+std::to_string((int)ohcal_thresh)+"_MeV_threshold";
 		std::string emcal_thresh_s="_"+std::to_string((int)emcal_thresh)+"_MeV_threshold";
-		fc=new MethodHistograms("Full_CAL"+hcal_thresh_s, 3.9, 0.1); 
+		fc=new MethodHistograms("Full_CAL"+ohcal_thresh_s, 3.9, 0.1); 
 		fe=new MethodHistograms("Full_EMCAL"+emcal_thresh_s, 3.9, 0.1);
-		fi=new MethodHistograms("Full_IHCAL"+hcal_thresh_s, 3.9, 0.1);
-		fo=new MethodHistograms("Full_OHCAL"+hcal_thresh_s, 3.9, 0.1); //Full OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+		fi=new MethodHistograms("Full_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
+		fo=new MethodHistograms("Full_OHCAL"+ohcal_thresh_s, 3.9, 0.1); //Full OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
 	
-		tc=new MethodHistograms("Towards_Region_CAL"+hcal_thresh_s, 3.9, 0.1);
+		tc=new MethodHistograms("Towards_Region_CAL"+ohcal_thresh_s, 3.9, 0.1);
 		te=new MethodHistograms("Towards_Region_EMCAL"+emcal_thresh_s, 3.9, 0.1);
-		ti=new MethodHistograms("Towards_Region_IHCAL"+hcal_thresh_s, 3.9, 0.1);
-		to=new MethodHistograms("Towards_Region_OHCAL"+hcal_thresh_s, 3.9, 0.1); //Towards_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
+		ti=new MethodHistograms("Towards_Region_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
+		to=new MethodHistograms("Towards_Region_OHCAL"+ohcal_thresh_s, 3.9, 0.1); //Towards_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
 
-		ac=new MethodHistograms("Away_Region_CAL"+hcal_thresh_s, 3.9, 0.1);
+		ac=new MethodHistograms("Away_Region_CAL"+ohcal_thresh_s, 3.9, 0.1);
 		ae=new MethodHistograms("Away_Region_EMCAL"+emcal_thresh_s, 3.9, 0.1);
-		ai=new MethodHistograms("Away_Region_IHCAL"+hcal_thresh_s, 3.9, 0.1);
-		ao=new MethodHistograms("Away_Region_OHCAL"+hcal_thresh_s, 3.9, 0.1); //Away_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
+		ai=new MethodHistograms("Away_Region_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
+		ao=new MethodHistograms("Away_Region_OHCAL"+ohcal_thresh_s, 3.9, 0.1); //Away_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~2pi/3)
 	
-		trc=new MethodHistograms("Transverse_Region_CAL"+hcal_thresh_s, 3.9, 0.1);
+		trc=new MethodHistograms("Transverse_Region_CAL"+ihcal_thresh_s, 3.9, 0.1);
 		tre=new MethodHistograms("Transverse_Region_EMCAL"+emcal_thresh_s, 3.9, 0.1);
-		tri=new MethodHistograms("Transverse_Region_IHCAL"+hcal_thresh_s, 3.9, 0.1);
-		tro=new MethodHistograms("Transverse_Region_OHCAL"+hcal_thresh_s, 3.9, 0.1); //Transverse_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+		tri=new MethodHistograms("Transverse_Region_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
+		tro=new MethodHistograms("Transverse_Region_OHCAL"+ohcal_thresh_s, 3.9, 0.1); //Transverse_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
 
 		std::vector<MethodHistograms*> hf {fc, fe, fi, fo}, ht {tc, te, ti, to}, ha{ac, ae, ai, ao}, htr{trc, tre, tri, tro};
 		std::vector<MethodHistograms*> FullCal=hf;
@@ -726,8 +734,7 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges, LargeRLENC::Calorimeter which_calo, float* total_e_region)
 {
 	//MethodHistograms* ha=NULL, *hc=NULL;
-	float base_thresh=0.01;
-	if(which_calo== 1) base_thresh= 0.07;
+	float base_thresh=thresh_mins[which_calo-1];
 	auto i=cal.begin();
 	std::vector<std::array<float,4>> e_region; //get the energy in the relevant region 
 	std::vector<float> thresholds;
@@ -740,11 +747,15 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}
 	//Processs the calorimeter data into my analysis class
 	//Do the vertex shift and add it into the output 
-	std::cout<<__LINE__<<std::endl; 
+	std::cout<<"incoming towers : " <<cal.size() <<std::endl; 
 	while(i !=cal.end()){
 		auto j=i->first;
 		auto j_val=i->second;
-		if(j_val < base_thresh) continue;
+		if(j_val < base_thresh){
+			++i;
+	//		std::cout<<"Failed with tower energy " <<j_val <<std::endl;
+			continue;
+		}
 		float eta_shift=i->first[0], r=i->first[2];
 		float x=r*cos(i->first[1]), y=r*sin(i->first[1]);
 		if(vertex[0]!=0) x+=vertex[0];
@@ -772,10 +783,13 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		t->eta=j[0];
 		t->E=j_val;
 		strippedCalo.push_back(t);
-		std::cout<<__LINE__<<" itteration " <<strippedCalo.size() <<std::endl;
-		++i; 
+		++i;
+		//std::cout<<"Towers is now : " <<(int)strippedCalo.size() <<std::endl; 
 	}
-	//Now get the energy regions 
+	//Now get the energy regions
+	const size_t arr_size = n_steps;
+	std::vector<int> n_valid_towers (arr_size);
+	for(int i=0; i<(int)n_valid_towers.size(); i++) n_valid_towers[i]=0;
 	for(auto* t:strippedCalo)
 	{
 		StrippedDownTower::Regions region_tag=t->tag;
@@ -785,57 +799,101 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			else{
 				e_region.at(i).at(region_tag)+=t->E;
 				e_region.at(i).at(StrippedDownTower::Regions::Full)+=t->E;
+				n_valid_towers[i]++;
+				
 			}
 		}
 	}
+	std::cout<<"The thresholds and their number of towers are \n Threshold     Towers" <<std::endl;
+	for(int i=0; i<(int) n_valid_towers.size(); i++)
+	{
+		std::cout<<strippedCalo.at(0)->RegionOutput->at(i)->threshold <<":    " <<n_valid_towers[i] <<std::endl;
+	}   
 	//now I need to actualy run the dataset 
 	std::vector<std::thread> CalculatingThreads;
-	std::cout<<__LINE__<<std::endl; 
 	for(int i=0; i<(int)strippedCalo.size()-1; i++)
 	{
 		StrippedDownTower* t = strippedCalo.at(i);
 		std::vector<StrippedDownTower> CaloCopy;
-		for(int j=i+1; j<(int)strippedCalo.size(); j++) CaloCopy.push_back(*(strippedCalo[i])); //avoid double counting
+		for(int j=i+1; j<(int)strippedCalo.size(); j++) CaloCopy.push_back(*(strippedCalo[j])); //avoid double counting
+		//CalculateENC(t, CaloCopy, transverse, energy);
 		CalculatingThreads.push_back(std::thread(&LargeRLENC::CalculateENC, this, t, CaloCopy, transverse, energy));
 	}
+	std::cout<<__LINE__<<std::endl;
 	for(int k=0; k<(int)CalculatingThreads.size(); k++) CalculatingThreads.at(k).join();
 	//now need to sum over the relevant towers
-	std::cout<<__LINE__<<std::endl;
 	std::array<std::vector<TowerOutput*>, 5> AllTowOutput;
 	for(int i=0; i< 5; i++) {
-		AllTowOutput[i]=*(strippedCalo.at(((int)strippedCalo.size() -1))->FullOutput);
+		std::vector<TowerOutput*> a;
+		for(auto t:thresholds){
+			a.push_back(new TowerOutput(t));
+		}
+		AllTowOutput[i]=a;
 	} //just get it the right range 
-	std::array<std::array<int, 20>, 5> n_entries_arr;
+	std::array<std::vector<int>, 5> n_entries_arr;
+	std::array<std::vector<std::vector<TowerOutput*>>,5> ToMerge; 
+	std::array<std::vector<std::set<float>>,5> ToMergeRl; 
+	std::array<std::vector<std::set<std::array<float,3>>>,5> ToMergeRlRmRs; 
+	for(auto n:n_entries_arr)n.reserve(arr_size);
+	for(auto n:ToMerge)n.reserve(arr_size);
+	for(auto n:ToMergeRl)n.reserve(arr_size);
+	for(auto n:ToMergeRlRmRs)n.reserve(arr_size);
+	std::cout<<"Max elements: " <<strippedCalo.size()<<std::endl;
 	for(int i=0; i<(int)strippedCalo.size(); i++)
 	{
 		for(int j=0; j<(int)strippedCalo.at(i)->FullOutput->size(); j++){
-			AllTowOutput[0][j]->Merge(strippedCalo.at(i)->FullOutput->at(j));
 			if(strippedCalo.at(i)->FullOutput->at(j)->RL.size() > 0 ) n_entries_arr[0][j]++;
+			else continue;
+			ToMerge[0][j].push_back(strippedCalo.at(i)->FullOutput->at(j));
+			for(auto r:strippedCalo.at(i)->FullOutput->at(j)->RL)ToMergeRl[0][j].insert(r);
+			for(auto r:strippedCalo.at(i)->FullOutput->at(j)->RL_RM_RS)ToMergeRlRmRs[0][j].insert(r);
+			
 		}
 		for(int j=0; j<(int)strippedCalo.at(i)->RegionOutput->size(); j++){
-			AllTowOutput[strippedCalo.at(i)->tag][j]->Merge(strippedCalo.at(i)->RegionOutput->at(j));
 			if(strippedCalo.at(i)->RegionOutput->at(j)->RL.size() > 0 ) n_entries_arr[(int)strippedCalo.at(i)->tag][j]++;
+			else continue;
+			int tagn=strippedCalo.at(i)->tag;
+			ToMerge[tagn][j].push_back(strippedCalo.at(i)->RegionOutput->at(j));
+			for(auto r:strippedCalo.at(i)->RegionOutput->at(j)->RL)ToMergeRl[tagn][j].insert(r);
+			for(auto r:strippedCalo.at(i)->RegionOutput->at(j)->RL_RM_RS)ToMergeRlRmRs[tagn][j].insert(r);
+			
 		}
 	}
+	std::vector<std::thread> Merger_thread;
+	for(int i=0; i<5; i++)
+	{
+		for(int j=0; j<(int)arr_size; j++)
+		{
+			Merger_thread.push_back(std::thread(&LargeRLENC::Merger, this, AllTowOutput[i][j], ToMerge[i][j], ToMergeRl[i][j], ToMergeRlRmRs[i][j]));
+		}
+	}
+	for(int k=0; k<(int)Merger_thread.size(); k++) Merger_thread.at(k).join();
+	
 	//now push the data out to the plots
 	for(int region_index=0; region_index<(int)AllTowOutput.size(); region_index++)
 	{
 		for(int threshold_index=0; threshold_index<(int)AllTowOutput[region_index].size(); threshold_index++)
 		{
-			if(threshold_index >= (int)Region_vector.size()) break;
+			if(threshold_index >= (int)Region_vector.size()) continue;
 			int region_shift=region_index;
+		//	std::cout<<"Threshold index is : " <<threshold_index <<" Region: " << region_shift <<std::endl;
 			if(region_shift >= 3 ) region_shift=3;
+			AllTowOutput[region_index][threshold_index]->CalculateFlatE3C();
 			AllTowOutput[region_index][threshold_index]->Normalize(e_region[threshold_index][region_shift]);
 			auto Hists=Region_vector[threshold_index][region_shift][which_calo];
 			auto Output=AllTowOutput[region_index][threshold_index];
 			if(region_index < 3) Hists->N->Fill(n_entries_arr[region_index][threshold_index]);
 			else if (region_index==3)Hists->N->Fill(n_entries_arr[region_index][threshold_index]+n_entries_arr[region_index + 1][threshold_index]);
 			else n_entries_arr[region_index][threshold_index]=0;
-			for(int rl_index=0; rl_index >(int)Output->RL.size(); rl_index++)
-			{
-				Hists->R->Fill(Output->RL.at(rl_index));
-				Hists->E2C->Fill(Output->RL.at(rl_index), Output->E2C.at(rl_index));
-				Hists->E3C->Fill(Output->RL.at(rl_index), Output->E3C.at(rl_index));
+			int tower_number=(int)Output->RL.size();
+//			std::cout<<"number of entries to fill is " <<(int)Output->E2C.size() <<std::endl;
+			if(tower_number > 0){
+				for(int rl_index=0; rl_index < tower_number; rl_index++)
+				{
+					Hists->R->Fill(Output->RL.at(rl_index));
+					Hists->E2C->Fill(Output->RL.at(rl_index), Output->E2C.at(rl_index));
+					if((int)Output->E3C.size() > rl_index) Hists->E3C->Fill(Output->RL.at(rl_index), Output->E3C.at(rl_index));
+				}
 			}
 			Hists->E->Fill(e_region[threshold_index][region_shift]);
 		}
@@ -843,6 +901,28 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	 
 	return;
 	
+}
+void LargeRLENC::Merger(TowerOutput* output, std::vector<TowerOutput*> inputs, std::set<float> RLs, std::set<std::array<float, 3>> Rlmss)
+{
+	std::map<float, float> e2c;
+	std::map<std::array<float, 3>, float> e3c;
+	for(auto r:RLs) e2c[r]=0.;
+	for(auto r:Rlmss) e3c[r]=0.;
+	for(auto t:inputs)
+	{
+		for(int i=0; i <(int) t->RL.size(); i++)
+		{
+			e2c[t->RL.at(i)]=t->E2C.at(i);
+		}
+		for(int i=0; i< (int) t->RL_RM_RS.size(); i++)
+		{
+			e3c[t->RL_RM_RS.at(i)]=t->E3C_full_shape.at(i);
+		}
+	}
+	for(auto er:e2c) output->AddE2CValues(er.second, er.first);
+	for(auto er:e3c) output->AddE3CValues(er.second, er.first);
+	
+	return;
 }
 void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDownTower> towerSet, bool transverse, bool energy)
 {
@@ -889,8 +969,9 @@ void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDow
 			int index1=tower1->getThresholdIndex(thresh, true);		
 			int index2=tower1->getThresholdIndex(thresh, false);		
 			if(energy1 > thresh && energy2 > thresh){
-				tower1->FullOutput->at(index1)->AddE2CValues(R_L, e2c);
-				if(sameRegion)tower1->RegionOutput->at(index2)->AddE2CValues(R_L, e2c); //this is the two point done noew 
+				tower1->FullOutput->at(index1)->AddE2CValues(e2c, R_L);
+				//std::cout<<"Adding pair " <<R_L <<", "<<e2c <<std::endl;
+				if(sameRegion)tower1->RegionOutput->at(index2)->AddE2CValues(e2c, R_L); //this is the two point done noew 
 				for(auto t3:e3c_relevant)
 				{
 					if(t3.first.second.first > thresh){
@@ -938,10 +1019,10 @@ void LargeRLENC::JetEventObservablesBuilding(std::array<float, 3> central_tower,
 float LargeRLENC::getR(float eta1, float phi1, float eta2, float phi2, bool print)
 {
 	float deta=eta1-eta2; 
-	float dphi=abs(phi1-phi2);
-	if(abs(dphi) > PI ) dphi+=-PI;
-	float rsq=pow(deta, 2)+ pow(dphi, 2);
-	if(print)std::cout<<" The value for R squared is square of "<<dphi <<" + square of " <<deta <<" = "<<rsq <<std::endl;;
+	float dphi=std::abs(phi1-phi2);
+	if(std::abs(dphi) > PI ) dphi+=-PI;
+	float rsq=std::pow(deta, 2)+ std::pow(dphi, 2);
+	if(print)std::cout<<" The value for R squared is square of "<<dphi <<" + square of " <<deta <<" = "<<rsq <<std::endl;
 	return std::sqrt(rsq);
 }
 void LargeRLENC::Print(const std::string &what) const
@@ -1020,7 +1101,7 @@ void LargeRLENC::Print(const std::string &what) const
 		hv->pt->Write();
 		}
 	}
-	f1->Write();
+//	f1->Write();
 	f1->Close();
 	return;	
 }

@@ -39,7 +39,7 @@ for i in $(seq 0 ${nFile}); do
 	echo "PeriodicHold 	= (NumJobStarts>=1 && JobStatus == 1)" >>$fname
 	echo "accounting_group = group_phenix.u " >> $fname
 	echo "accounting_group_user = sgross " >> $fname
-	echo "request_memory = 128192MB " >> $fname
+	echo "request_memory = 4096MB " >> $fname
 	echo "Priority = 90 ">> $fname
 	echo "job_lease_duration = 3600" >> $fname
 	echo "Queue 1" >> $fname 
