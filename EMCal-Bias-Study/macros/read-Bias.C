@@ -698,6 +698,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     tf.cd();
 
     m_hists["h2Bias"]->Write();
+    m_hists["h2Offset"]->Write();
     m_hists["h2BlockDensity"]->Write();
     m_hists["h2CosmicMPV"]->Write();
     m_hists["h2Light"]->Write();
