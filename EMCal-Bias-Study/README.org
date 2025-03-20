@@ -32,6 +32,15 @@ Alternatively
 root -b -l -q 'macros/update-Bias.C("output/EMCal-block-info.root","plots/bias-update/plots.pdf")'
 #+end_src
 
+* Update Offset macro
+#+begin_src bash
+make && ./bin/update-Offset output/EMCal-block-info.root plots/offset-update-plots/plots.pdf
+#+end_src
+Alternatively
+#+begin_src bash
+root -b -l -q 'macros/update-Offset.C("output/EMCal-block-info.root","plots/offset-update/plots.pdf")'
+#+end_src
+
 * Event Combiner
 Combine a list of prdfs into one:
 #+begin_src bash
