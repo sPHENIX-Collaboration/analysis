@@ -11,7 +11,7 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 input_file=${1}
 submitDir=${2}
 run=$(basename $input_file | sed 's/[^0-9]*//g')
-output="calib-000$run-0000.prdf"
+output="data-000$run-0000.prdf"
 
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
  then

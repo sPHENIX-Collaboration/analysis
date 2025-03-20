@@ -27,8 +27,11 @@ def create_event_combine_jobs():
     log        = args.log
     nSegments  = args.nSegments
 
+    calib_dir_base  = os.path.basename(calib_dir)
+
     print(f'Run List: {run_list}')
     print(f'Calib Dir: {calib_dir}')
+    print(f'Calib Dir Base: {calib_dir_base}')
     print(f'Output Directory: {output_dir}')
     print(f'Executable: {executable}')
     print(f'Requested memory per job: {memory}GB')
@@ -42,14 +45,14 @@ def create_event_combine_jobs():
     os.makedirs(f'{output_dir}/output',exist_ok=True)
     os.makedirs(f'{output_dir}/stdout',exist_ok=True)
     os.makedirs(f'{output_dir}/error',exist_ok=True)
-    os.makedirs(f'{output_dir}/calib',exist_ok=True)
+    os.makedirs(f'{output_dir}/{calib_dir_base}',exist_ok=True)
 
     # get list of all PRDF files for the runs
     with open(run_list) as fp:
         for run in fp:
             run = run.strip()
             print(f'run: {run}')
-            command = f'fd {run} {calib_dir} > calib/calib-{run}.list'
+            command = f'fd {run} {calib_dir} > {calib_dir_base}/{calib_dir_base}-{run}.list'
 
             result = subprocess.run(['bash','-c',command],cwd=output_dir)
             if(result.returncode != 0):
@@ -57,13 +60,13 @@ def create_event_combine_jobs():
                 return
 
             # ensure there are correct number of segments
-            segments = int(subprocess.run(['bash','-c',f'wc -l calib/calib-{run}.list'], capture_output=True, encoding="utf-8",cwd=output_dir).stdout.split()[0])
+            segments = int(subprocess.run(['bash','-c',f'wc -l {calib_dir_base}/{calib_dir_base}-{run}.list'], capture_output=True, encoding="utf-8",cwd=output_dir).stdout.split()[0])
             if(segments != nSegments):
                 print(f'ERROR: {run} has {segments}')
                 return
 
     # generate the job list
-    command = f'readlink -f calib/* > jobs.list'
+    command = f'readlink -f {calib_dir_base}/* > jobs.list'
 
     result = subprocess.run(['bash','-c',command],cwd=output_dir)
     if(result.returncode != 0):
