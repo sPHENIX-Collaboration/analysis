@@ -17,14 +17,14 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 
 	n_evts=0;
 	n_steps=10; 
-	if(pedestal) n_steps=10;
+	if(pedestal) n_steps=7;
 	else if(!data) n_steps=10;
 	this->pedestalData=pedestal;
 	for(int i=0; i<n_steps; i++){
 		MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
 	//set bin widths to tower size
 		if(pedestal){
-			ohcal_min=0.007;
+			ohcal_min=0.008;
 			emcal_min=0.03;
 			ihcal_min=0.005;
 			all_min=0.04;
