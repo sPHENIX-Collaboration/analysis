@@ -109,6 +109,7 @@ CaloTower::CaloTower(const string &name):
  , m_adc_high(1.8e4)
  , m_min_adc(9999)
  , m_max_adc(0)
+ , m_doAllWaveforms(false)
 {
   cout << "CaloTower::CaloTower(const string &name) Calling ctor" << endl;
 }
@@ -117,6 +118,12 @@ CaloTower::CaloTower(const string &name):
 CaloTower::~CaloTower()
 {
   cout << "CaloTower::~CaloTower() Calling dtor" << endl;
+
+  for (const auto& [name, hist] : m_hists) {
+    delete hist;
+  }
+
+  cout << "CaloTower::~CaloTower() Finished dtor" << endl;
 }
 
 //____________________________________________________________________________..
@@ -133,15 +140,29 @@ int CaloTower::Init(PHCompositeNode *topNode)
 
   stringstream name;
   stringstream title;
-  for (const auto& [phi, eta] : m_nphi_neta_low) {
-    for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
-      for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
-          name.str("");
-          title.str("");
-          name << "h2adc_" << iphi << "_" << ieta;
-          title << "adc: (" << iphi << "," << ieta << "); Sample; adc";
+  if(!m_doAllWaveforms) {
+    for (const auto& [phi, eta] : m_nphi_neta_low) {
+      for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
+        for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
+            name.str("");
+            title.str("");
+            name << "h2adc_" << iphi << "_" << ieta;
+            title << "adc: (" << iphi << "," << ieta << "); Sample; adc";
 
-          m_hists[name.str()] = new TH2F(name.str().c_str(), title.str().c_str(), m_nsamples, 0, m_nsamples, m_bins_adc, m_adc_low, m_adc_high);
+            m_hists[name.str()] = new TH2F(name.str().c_str(), title.str().c_str(), m_nsamples, 0, m_nsamples, m_bins_adc, m_adc_low, m_adc_high);
+        }
+      }
+    }
+  }
+  else {
+    for (Int_t iphi = 0; iphi < m_nphi; ++iphi) {
+      for (Int_t ieta = 0; ieta < m_neta; ++ieta) {
+        name.str("");
+        title.str("");
+        name << "h2adc_" << iphi << "_" << ieta;
+        title << "adc: (" << iphi << "," << ieta << "); Sample; adc";
+
+        m_hists[name.str()] = new TH2F(name.str().c_str(), title.str().c_str(), m_nsamples, 0, m_nsamples, m_bins_adc, m_adc_low, m_adc_high);
       }
     }
   }
@@ -181,7 +202,7 @@ int CaloTower::process_event(PHCompositeNode *topNode)
 
     name.str("");
     name << "h2adc_" << iphi << "_" << ieta;
-    if(m_hists.contains(name.str())) {
+    if(m_doAllWaveforms || m_hists.contains(name.str())) {
       for(Int_t sample = 0; sample < m_nsamples; ++sample) {
         Int_t adc = tower->get_waveform_value(sample);
         m_min_adc = min(m_min_adc, adc);

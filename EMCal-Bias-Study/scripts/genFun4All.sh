@@ -11,7 +11,8 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 exe=${1}
 input_file=${2}
 events=${3}
-submitDir=${4}
+doAllWaveforms=${4}
+submitDir=${5}
 
 # extract runnumber from file name
 file=$(basename "$input_file")
@@ -32,7 +33,7 @@ fi
 # print the environment - needed for debugging
 printenv
 
-$exe $file $output $events
+$exe $file $output $events $doAllWaveforms
 
 echo "All Done and Transferring Files Back"
 cp -v $output $submitDir

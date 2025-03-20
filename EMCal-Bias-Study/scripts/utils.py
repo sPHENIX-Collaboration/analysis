@@ -89,7 +89,8 @@ f4a = subparser.add_parser('f4a', help='Create condor submission directory for F
 f4a.add_argument('-i', '--runs-dir', type=str, help='Runs Directory', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 f4a.add_argument('-b', '--f4a-bin', type=str, default='bin/Fun4All_Year2_Fitting', help='Fun4All executable. Default: bin/Fun4All_Year2_Fitting')
-f4a.add_argument('-n', '--nEvents', type=int, default=1000, help='Number of events to process. Default: 1000')
+f4a.add_argument('-n', '--nEvents', type=int, default=0, help='Number of events to process. Default: 0 (All)')
+f4a.add_argument('-w', '--all-waveforms', type=int, default=0, help='Do All Waveforms. Default: 0 (false)')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
@@ -99,6 +100,7 @@ def create_f4a_jobs():
     output_dir = os.path.realpath(args.output)
     executable = os.path.realpath(args.executable)
     f4a_bin    = os.path.realpath(args.f4a_bin)
+    doAllWaveforms = args.all_waveforms
     memory     = args.memory
     log        = args.log
     nEvents  = args.nEvents
@@ -109,7 +111,8 @@ def create_f4a_jobs():
     print(f'f4a: {f4a_bin}')
     print(f'Requested memory per job: {memory}GB')
     print(f'Condor log file: {log}')
-    print(f'nEvents: {nEvents}')
+    print(f'nEvents: {nEvents if nEvents else "All"}')
+    print(f'Do All Waveforms: {True if doAllWaveforms else False}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(executable, output_dir)
@@ -127,7 +130,7 @@ def create_f4a_jobs():
 
     with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
         file.write(f'executable     = {os.path.basename(executable)}\n')
-        file.write(f'arguments      = {f4a_bin} $(input_run) {nEvents} {output_dir}/output\n')
+        file.write(f'arguments      = {f4a_bin} $(input_run) {nEvents} {doAllWaveforms} {output_dir}/output\n')
         file.write(f'log            = {log}\n')
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')

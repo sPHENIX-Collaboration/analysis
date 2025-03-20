@@ -59,6 +59,11 @@ rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL
 make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/calib-00057973-0000.prdf test.root 20 2>/dev/null
 #+end_src
 
+*** With Pulser data
+#+begin_src bash
+make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting pulser/data-00058514-0000.prdf test.root 20 1 2>/dev/null
+#+end_src
+
 * Display
 Generate plots from the output of the Waveform Fitting results
 #+begin_src bash

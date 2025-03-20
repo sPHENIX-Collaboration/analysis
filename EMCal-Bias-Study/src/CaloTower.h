@@ -40,6 +40,10 @@ class CaloTower : public SubsysReco
     this->m_outputFile = outputFile;
   }
 
+  void setDoAllWaveforms(const Bool_t doAllWaveforms) {
+    this->m_doAllWaveforms = doAllWaveforms;
+  }
+
   void add_nphi_neta_low(Int_t nphi_low, Int_t neta_low) {
     this->m_nphi_neta_low.push_back(std::make_pair(nphi_low,neta_low));
   }
@@ -67,6 +71,8 @@ class CaloTower : public SubsysReco
 
   Int_t m_min_adc;
   Int_t m_max_adc;
+
+  Bool_t m_doAllWaveforms;
 
   std::unordered_map<std::string,TH1*> m_hists;
 };
