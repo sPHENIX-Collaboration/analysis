@@ -74,6 +74,16 @@ Alternatively:
 root -b -l -q 'macros/display.C("calo/test.list","files/runs-gain-map-offsets.csv","plots/ADC/plots.pdf")'
 #+end_src
 
+** Pulser Runs
+Generate plots from the output of the Waveform Fitting results
+#+begin_src bash
+make && ./bin/displayv2 scratch/pulser/test.list plots/ADC-pulser/plots.pdf
+#+end_src
+Alternatively:
+#+begin_src bash
+root -b -l -q 'macros/displayv2.C("calo/test-pulser.list","plots/ADC-pulser/plots.pdf")'
+#+end_src
+
 * Condor
 ** Resubmit Failed Jobs
 #+begin_src bas
