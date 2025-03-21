@@ -69,6 +69,10 @@ class CaloTower : public SubsysReco
   Double_t m_adc_low;
   Double_t m_adc_high;
 
+  Int_t m_bins_ADC;
+  Double_t m_ADC_low;
+  Double_t m_ADC_high;
+
   Int_t m_min_adc;
   Int_t m_max_adc;
 

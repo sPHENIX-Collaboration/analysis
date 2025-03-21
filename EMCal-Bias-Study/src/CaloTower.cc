@@ -107,6 +107,9 @@ CaloTower::CaloTower(const string &name):
  , m_bins_adc(180)
  , m_adc_low(0)
  , m_adc_high(1.8e4)
+ , m_bins_ADC(1640)
+ , m_ADC_low(0)
+ , m_ADC_high(16400)
  , m_min_adc(9999)
  , m_max_adc(0)
  , m_doAllWaveforms(false)
@@ -135,6 +138,7 @@ int CaloTower::Init(PHCompositeNode *topNode)
 
   m_hists["h2CEMC"] = new TH2F("h2CEMC","EMCal [ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
   m_hists["h2CEMC"]->Sumw2();
+  m_hists["hCEMC"] = new TH1F("hCEMC","EMCal [ADC]; ADC; Counts", m_bins_ADC, m_ADC_low, m_ADC_high);
 
   m_hists["hEvent"] = new TH1F("hEvent","Events; Status; Counts", 1, 0, 1);
 
@@ -199,6 +203,7 @@ int CaloTower::process_event(PHCompositeNode *topNode)
     m_max_energy = max(m_max_energy, energy);
 
     ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
+    m_hists["hCEMC"]->Fill(energy);
 
     name.str("");
     name << "h2adc_" << iphi << "_" << ieta;
