@@ -41,6 +41,7 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 		std::string ohcal_thresh_s="_"+std::to_string((int)ohcal_thresh)+"_MeV_threshold";
 		std::string emcal_thresh_s="_"+std::to_string((int)emcal_thresh)+"_MeV_threshold";
 		std::string allcal_thresh_s="_"+std::to_string((int)allcal_thresh)+"_MeV_threshold";
+			
 		fc=new MethodHistograms("Full_CAL"+allcal_thresh_s, 3.9, 0.1); 
 		fe=new MethodHistograms("Full_EMCAL"+emcal_thresh_s, 3.9, 0.1);
 		fi=new MethodHistograms("Full_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
@@ -71,6 +72,16 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 		Region_vector_1.push_back(TowardRegion);
 		Region_vector_1.push_back(AwayRegion);
 		Region_vector_1.push_back(TransverseRegion);
+		if(pedestal)
+		{
+			for(auto a:Region_vector_1)
+				for(auto b:a){
+					b->E->SetCanExtend(TH1::kAllAxes);
+					b->N->SetCanExtend(TH1::kAllAxes);
+					b->pt->SetCanExtend(TH1::kAllAxes);
+					b->R_pt->SetCanExtend(TH1::kAllAxes);
+				}
+		} //led just does kinda odd things with the energy
 		this->Region_vector.push_back(Region_vector_1);
 	}
 
@@ -1114,6 +1125,8 @@ void LargeRLENC::Print(const std::string &what) const
 	TH1F* h_percent=new TH1F("h_pct", "Percentage of events with a non-empty jet container; Percent; N_{files}", 100, -0.5, 99.5);
 	h_percent->Fill(pct);
 	h_percent->Write();
+	TDirectory* dir_evt=f1->mkdir("event_categorization");
+	dir_evt->cd();
 	std::cout<<"Percentage of events where the jets were present: " <<pct <<std::endl; 
 	emcal_occup->Write();
 	ihcal_occup->Write();
@@ -1130,12 +1143,21 @@ void LargeRLENC::Print(const std::string &what) const
 	badE_IE->Write();
 	goodE_IE->Write();
 	eventCut->JetCuts->Write();
+	std::vector<TDirectory*> thresh_dirs;
+	for(int ti=0; ti < (int)Region_vector.size(); ti++) thresh_dirs.push_back(f1->mkdir(Form("Threshold_Index_%d", ti)));
 	for(int i = 0; i <(int)Region_vector.size(); i++){
+		TDirectory* ti=thresh_dirs[i];
+		ti->cd();
 		auto FullCal=Region_vector.at(i).at(0);
 		auto TowardRegion=Region_vector.at(i).at(1);
 		auto AwayRegion=Region_vector.at(i).at(2);
 		auto TransverseRegion=Region_vector.at(i).at(3);
-		 
+		TDirectory* dir_full=ti->mkdir(Form("Full_Calorimeter_Threshold_index_%d", i));
+		TDirectory* dir_towrd=ti->mkdir(Form("Towards_Region_Threshold_index_%d", i));
+		TDirectory* dir_away=ti->mkdir(Form("Away_Region_Threshold_index_%d", i));
+		TDirectory* dir_trans=ti->mkdir(Form("Transverse_Region_Threshold_index_%d", i));
+		
+		dir_full->cd();
 	for(auto hv:FullCal){
 		for( auto h:hv->histsvector){
 			try{
@@ -1151,6 +1173,7 @@ void LargeRLENC::Print(const std::string &what) const
 		hv->E->Write();
 		hv->pt->Write();
 	}
+	dir_trans->cd();
 	for(auto hv:TransverseRegion){
 		for( auto h:hv->histsvector)if(h) h->Write();	
 		hv->R_pt->Write();
@@ -1161,6 +1184,7 @@ void LargeRLENC::Print(const std::string &what) const
 		hv->E->Write();
 		hv->pt->Write();
 	}
+	dir_away->cd();
 	for(auto hv:AwayRegion){
 		for( auto h:hv->histsvector)if(h) h->Write();
 		hv->R_pt->Write();
@@ -1171,6 +1195,7 @@ void LargeRLENC::Print(const std::string &what) const
 		hv->E->Write();
 		hv->pt->Write();
 	}
+	dir_towrd->cd();
 	for(auto hv:TowardRegion){	
 //		for( auto h:hv->histsvector)if(h) h->Write(); //this stopped working for some reason
 		hv->R_pt->Write();
@@ -1182,7 +1207,8 @@ void LargeRLENC::Print(const std::string &what) const
 		hv->pt->Write();
 		}
 	}
-//	f1->Write();
+	f1->cd();
+	f1->Write();
 	f1->Close();
 	return;	
 }

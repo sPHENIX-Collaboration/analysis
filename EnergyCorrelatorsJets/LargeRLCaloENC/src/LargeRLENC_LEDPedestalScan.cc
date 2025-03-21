@@ -4,6 +4,7 @@ LEDPedestalScan::LEDPedestalScan(const int n_run, const int n_segment, const std
 {
 	encCalc=new LargeRLENC(n_run, n_segment, 1.0, false, true);
 	this->run=n_run;
+	this->segement=n_segment;
 	jet_loc=new TH2F("jet_loc", "Fake Jet locations all jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	jet_loc_center=new TH2F("jet_loc_center", "Fake Jet center all jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	lead_jet_loc=new TH2F("lead_jet_loc", "Fake Jet locations leading jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
@@ -112,7 +113,7 @@ JetContainerv1* LEDPedestalScan::getJets(float radius, std::array<float, 3> vert
 void LEDPedestalScan::Print(const std::string &what) const
 {
 	encCalc->Print(what);
-	TFile* f1=new TFile(Form("LEDPedestal_scan_run_%d.root", run), "RECREATE");
+	TFile* f1=new TFile(Form("LEDPedestal_scan_run_%d_segement_%d.root", run, segement), "RECREATE");
 	jet_loc->Write();
 	jet_loc_center->Write();
 	lead_jet_loc->Write();

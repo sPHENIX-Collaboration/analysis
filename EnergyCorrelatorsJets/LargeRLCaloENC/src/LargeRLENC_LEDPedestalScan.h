@@ -78,5 +78,6 @@ class LEDPedestalScan: public SubsysReco
 		TH2F* jet_loc_center;
 		TH2F* lead_jet_loc_center;
 		int run;
+		int segement;
 };
 #endif
