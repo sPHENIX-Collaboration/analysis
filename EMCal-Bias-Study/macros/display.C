@@ -88,7 +88,7 @@ pair<Int_t, Int_t> myAnalysis::getSectorIB(Int_t iphi, Int_t ieta) {
     Int_t k = iphi / m_ntowIBSide;
 
     Int_t sector = (ieta < 48) ? k + 32 : k;
-    Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_nib_per_sector - 1: (ieta - 48) / m_nib_per_sector;
+    Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_ntowIBSide - 1: (ieta - 48) / m_ntowIBSide;
 
     return make_pair(sector, ib);
 }
