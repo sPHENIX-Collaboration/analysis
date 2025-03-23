@@ -20,23 +20,29 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	if(pedestal) n_steps=7;
 	else if(!data) n_steps=10;
 	this->pedestalData=pedestal;
+	if(pedestal){
+		ohcal_min=0.01;
+		emcal_min=0.03;
+		ihcal_min=0.005;
+		all_min=0.04;
+	}
+	thresh_mins[0]=all_min;
+	thresh_mins[1]=emcal_min;
+	thresh_mins[2]=ihcal_min;
+	thresh_mins[3]=ohcal_min;
 	for(int i=0; i<n_steps; i++){
 		MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
 	//set bin widths to tower size
-		if(pedestal){
-			ohcal_min=0.008;
-			emcal_min=0.03;
-			ihcal_min=0.005;
-			all_min=0.04;
-		}
 		float allcal_thresh=1000*all_min*(1+6/(float)n_steps*i);
 		float emcal_thresh=1000*emcal_min*(1+6/(float)n_steps*i);
 		float ohcal_thresh= 1000*ohcal_min*(1+6/(float)n_steps*i);
 		float ihcal_thresh=1000*ihcal_min*(1+6/(float)n_steps*i);
-		thresh_mins[0]=all_min;
-		thresh_mins[1]=emcal_min;
-		thresh_mins[2]=ihcal_min;
-		thresh_mins[3]=ohcal_min;
+		float at=allcal_thresh/1000.;
+		float et=emcal_thresh/1000.;
+		float it=ihcal_thresh/1000.;
+		float ot=ohcal_thresh/1000.;
+		std::array<float, 4> thresh_step {at, et, it, ot};
+		this->Thresholds.push_back(thresh_step);
 		std::string ihcal_thresh_s="_"+std::to_string((int)ihcal_thresh)+"_MeV_threshold";
 		std::string ohcal_thresh_s="_"+std::to_string((int)ohcal_thresh)+"_MeV_threshold";
 		std::string emcal_thresh_s="_"+std::to_string((int)emcal_thresh)+"_MeV_threshold";
@@ -476,7 +482,7 @@ void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomConta
 	if(td != RawTowerDefs::CEMC) towers->insert(std::make_pair(center, tower->get_energy()));
 	if(td==RawTowerDefs::CEMC){
 		//retowering it by hand for right now to improve running speed 
-		for(int j=0; j<24; j++){
+	/*	for(int j=0; j<24; j++){
 			float hcalbinval=((j+1)*1.1/12.)-1.1;
 			if(center[0] < hcalbinval){
 			 	center[0]=hcalbinval;
@@ -488,9 +494,43 @@ void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomConta
 			float hcalbinval=(j+1)*2*PI/64.;
 			if(center[1] < hcalbinval)  center[1]=hcalbinval;
 			else break;
-		}
+		}*/
+		center[0]=emcal_lookup_table[n].first;
+		center[1]=emcal_lookup_table[n].second;
 		if(towers->find(center) != towers->end()) towers->at(center)+=tower->get_energy();
 		else towers->insert(std::make_pair(center, tower->get_energy()));
+	}
+	return;
+}
+void LargeRLENC::MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, TowerInfoContainer* emcal, RawTowerGeomContainer_Cylinderv1* h_geom, TowerInfoContainer* hcal )
+{
+	em_geom->set_calorimeter_id(RawTowerDefs::CEMC);
+	h_geom->set_calorimeter_id(RawTowerDefs::HCALOUT);
+
+	for(int n=0; n<(int) emcal->size(); n++){
+		auto key=emcal->encode_key(n);
+		int phibin=emcal->getTowerPhiBin(key);
+		int etabin=emcal->getTowerEtaBin(key);
+		float phicenter=em_geom->get_phicenter(phibin);
+		float etacenter=em_geom->get_etacenter(etabin);
+		for(int j=0; j<(int)hcal->size(); hcal++)
+		{
+			bool goodPhi=false, goodEta=false;
+			auto key_h=hcal->encode_key(j);
+			int phibin_h=hcal->getTowerPhiBin(key_h);
+			int etabin_h=hcal->getTowerEtaBin(key_h);
+			float phicenter_h=h_geom->get_phicenter(phibin_h);
+			float etacenter_h=h_geom->get_etacenter(etabin_h);	
+			std::pair<double, double> phi_bounds=h_geom->get_phibounds(phibin_h);
+			std::pair<double, double> eta_bounds=h_geom->get_etabounds(phibin_h);
+			if(phicenter >= phi_bounds.first && phicenter < phi_bounds.second) goodPhi=true; 
+			if(etacenter >= eta_bounds.first && etacenter < eta_bounds.second) goodEta=true;
+			if(goodPhi && goodEta){
+				this->emcal_lookup_table[n]=std::make_pair(etacenter_h, phicenter_h);
+				break;
+			}
+			else continue;
+		}
 	}
 	return;
 }
@@ -512,6 +552,11 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	//look for the jet objects 
 	JetContainerv1* jets=NULL;
 	bool foundJetConts=false, isDijet=false;
+	if(this->emcal_lookup_table.size() == 0  || n_evts==1)
+	{
+		MakeEMCALRetowerMap(emcal_geom, emcal_tower_energy, ohcal_geom, ohcal_tower_energy);
+		std::cout<<"Lookup table has size: " <<this->emcal_lookup_table.size() <<std::endl;
+	}
 	try{
 		if(!isRealData) jets = findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r04"); //look for the r_04 truth jets
 		else{
@@ -753,19 +798,20 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 		std::pair<float, float> phi_lim{phi_min, phi_max}; 
 		region_ints[region]=phi_lim;
 	}
-	float total_e=0.;
-	SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::EMCAL, &total_e);
-	emcal.clear();
-	SingleCaloENC(ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL, &total_e);
-	ihcal.clear();
-	SingleCaloENC(ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL, &total_e);
-	ohcal.clear();
-	if(! this->pedestalData) SingleCaloENC(allcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::All, &total_e);
+	std::vector<std::thread> CaloThreads;
+	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, emcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::EMCAL));
+	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL));
+	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL));
+	if(! this->pedestalData) CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, allcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::All));
+	for(int ct=0; ct<(int)CaloThreads.size(); ct++) CaloThreads[ct].join();
 	allcal.clear();
+	emcal.clear();
+	ohcal.clear();
+	ihcal.clear();
 	
 	return;
 }
-void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges, LargeRLENC::Calorimeter which_calo, float* total_e_region)
+void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float jetMinpT, std::array<float, 3> vertex, bool transverse, bool energy, std::map<int, std::pair<float, float>> phi_edges, LargeRLENC::Calorimeter which_calo)
 {
 	//MethodHistograms* ha=NULL, *hc=NULL;
 	float base_thresh=thresh_mins[which_calo];

@@ -163,7 +163,7 @@ class LargeRLENC : public SubsysReco
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
-	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, LargeRLENC::Calorimeter, float*);
+	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, LargeRLENC::Calorimeter);
 	
 	void CalculateENC(StrippedDownTower*, std::vector<StrippedDownTower>, bool, bool);
 
@@ -172,9 +172,9 @@ class LargeRLENC : public SubsysReco
 	bool triggerCut(bool, PHCompositeNode*);
 	void Merger(TowerOutput*, std::vector<TowerOutput*>, std::set<float>, std::set<std::array<float, 3>>);
 	DijetEventCuts* eventCut;	
-		
+	void MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, TowerInfoContainer* emcal, RawTowerGeomContainer_Cylinderv1* h_geom, TowerInfoContainer* hcal );
+	std::vector<std::array<float, 4>> Thresholds;	
  private:
-
 	std::string algo, radius, output_file_name;
 	std::string ohcal_energy_towers="TOWERINFO_CALIB_HCALOUT", ihcal_energy_towers="TOWERINFO_CALIB_HCALIN", emcal_energy_towers="TOWERINFO_CALIB_CEMC";
   	bool isRealData, pedestalData;
@@ -207,5 +207,6 @@ class LargeRLENC : public SubsysReco
 	float all_min=0.065; //65 MeV
 	//all these are conservative vals 
 	int n_steps=10;
+	std::map<int, std::pair<float, float>> emcal_lookup_table;
 };
 #endif // LARGERLENC_H

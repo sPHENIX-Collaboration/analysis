@@ -9,6 +9,15 @@ LEDPedestalScan::LEDPedestalScan(const int n_run, const int n_segment, const std
 	jet_loc_center=new TH2F("jet_loc_center", "Fake Jet center all jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	lead_jet_loc=new TH2F("lead_jet_loc", "Fake Jet locations leading jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	lead_jet_loc_center=new TH2F("lead_jet_loc_center", "Fake Jet center leading jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
+	this->energy_thresholds = encCalc->Thresholds;
+	for(int i= 0; i<(int) energy_thresholds.size(); i++){	
+		ohcal_energy.push_back(new TH2F(Form("ohcal_energy_%d_MeV",(int)(energy_thresholds[i][3]*1000)), Form("OHCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]",(int)(energy_thresholds[i][3]*1000)), 24, -1.1, 1.1, 64, 0, 2*PI));
+		ihcal_energy.push_back(new TH2F(Form("ihcal_energy_%d_MeV",(int)(energy_thresholds[i][2]*1000)), Form("IHCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]",(int)(energy_thresholds[i][2]*1000)), 24, -1.1, 1.1, 64, 0, 2*PI));
+		emcal_energy.push_back(new TH2F(Form("emcal_energy_%d_MeV",(int)(energy_thresholds[i][1]*1000)), Form("EMCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]",(int)(energy_thresholds[i][1]*1000)), 96, -1.1, 1.1, 256, 0, 2*PI));
+		ohcal_energy_node.push_back(new TH2F(Form("ohcal_energy_node_%d_MeV",(int)(energy_thresholds[i][3]*1000)), Form("OHCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]",(int)(energy_thresholds[i][3]*1000)), 24, -1.1, 1.1, 64, 0, 2*PI));
+		ihcal_energy_node.push_back(new TH2F(Form("ihcal_energy_node_%d_MeV",(int)(energy_thresholds[i][2]*1000)), Form("IHCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]", (int)(energy_thresholds[i][2]*1000)),24, -1.1, 1.1, 64, 0, 2*PI));
+		emcal_energy_node.push_back(new TH2F(Form("emcal_energy_node_%d_MeV",(int)( energy_thresholds[i][1]*1000)), Form("EMCAL energy, E_{tow} #geq %d MeV; #eta; #varphi; E [GeV]", (int)(energy_thresholds[i][1]*1000)), 96, -1.1, 1.1, 256, 0, 2*PI));
+	}
 	n_evts=0;
 }
 int LEDPedestalScan::process_event(PHCompositeNode* topNode)
@@ -24,28 +33,70 @@ int LEDPedestalScan::process_event(PHCompositeNode* topNode)
 	auto ihcal_tower_energy= findNode::getClass<TowerInfoContainer>(topNode, ihcal_energy_towers     );
 	auto ohcal_geom=findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
 	auto ohcal_tower_energy=findNode::getClass<TowerInfoContainer>(topNode, ohcal_energy_towers      );
+	if(n_evts==1) encCalc->MakeEMCALRetowerMap(emcal_geom,emcal_tower_energy, ohcal_geom, ohcal_tower_energy);
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
+		emcal_geom->set_calorimeter_id(RawTowerDefs::CEMC);
+		auto key=emcal_tower_energy->encode_key(n);
+		auto tower=emcal_tower_energy->get_tower_at_channel(n);
+		int phibin=emcal_tower_energy->getTowerPhiBin(key);
+		int etabin=emcal_tower_energy->getTowerEtaBin(key);
+		float phicenter=emcal_geom->get_phicenter(phibin);
+		float etacenter=emcal_geom->get_etacenter(etabin);
+		float te=tower->get_energy();
+		for(int i=0; i<(int)energy_thresholds.size(); i++){
+			if(te > energy_thresholds[i][1]) 
+				emcal_energy_node[i]->Fill(etacenter, phicenter, te);
+			}
 		encCalc->addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC);
 	}
 	for(int n=0; n<(int) ihcal_tower_energy->size(); n++){
+		ihcal_geom->set_calorimeter_id(RawTowerDefs::HCALIN);
+		auto key=ihcal_tower_energy->encode_key(n);
+		auto tower=ihcal_tower_energy->get_tower_at_channel(n);
+		int phibin=ihcal_tower_energy->getTowerPhiBin(key);
+		int etabin=ihcal_tower_energy->getTowerEtaBin(key);
+		float phicenter=ihcal_geom->get_phicenter(phibin);
+		float etacenter=ihcal_geom->get_etacenter(etabin);
+		for(int i=0; i<(int)ihcal_energy_node.size(); i++)
+			if(tower->get_energy() > energy_thresholds[i][2]) 
+				ihcal_energy_node[i]->Fill(etacenter, phicenter, tower->get_energy());
 		encCalc->addTower(n, ihcal_tower_energy, ihcal_geom, &ihcal_towers, RawTowerDefs::HCALIN);
 	}
 	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
+		ohcal_geom->set_calorimeter_id(RawTowerDefs::HCALOUT);
+		auto key=ohcal_tower_energy->encode_key(n);
+		auto tower=ohcal_tower_energy->get_tower_at_channel(n);
+		int phibin=ohcal_tower_energy->getTowerPhiBin(key);
+		int etabin=ohcal_tower_energy->getTowerEtaBin(key);
+		float phicenter=ohcal_geom->get_phicenter(phibin);
+		float etacenter=ohcal_geom->get_etacenter(etabin);
+		for(int i=0; i<(int)ohcal_energy_node.size(); i++)
+			if(tower->get_energy() > energy_thresholds[i][3]) 
+				ohcal_energy_node[i]->Fill(etacenter, phicenter, tower->get_energy());
 		encCalc->addTower(n, ohcal_tower_energy, ohcal_geom, &ohcal_towers, RawTowerDefs::HCALOUT);
 	}
 	//try to build a jet like object
 	std::map<std::array<float, 3>, float> total_array;
 	for(auto e: emcal_towers)
 	{
+		for(int j=0; j<(int)emcal_energy.size(); j++)
+			if(e.second > energy_thresholds[j][1]) 
+				emcal_energy[j]->Fill(e.first[0], e.first[1], e.second);
 		total_array[e.first]=e.second; //retower allready handeled
 	}
 	for(auto i: ihcal_towers)
 	{
+		for(int j=0; j<(int)ihcal_energy.size(); j++)
+			if(i.second > energy_thresholds[j][2]) 
+				ihcal_energy[j]->Fill(i.first[0], i.first[1], i.second);
 		if(total_array.find(i.first) != total_array.end()) total_array[i.first]+=i.second;
 		else total_array[i.first]=i.second;
 	}
 	for(auto o: ohcal_towers)
 	{
+		for(int j=0; j<(int)ohcal_energy.size(); j++)
+			if(o.second > energy_thresholds[j][3]) 
+				ohcal_energy[j]->Fill(o.first[0], o.first[1], o.second);
 		if(total_array.find(o.first) != total_array.end()) total_array[o.first]+=o.second;
 		else total_array[o.first]=o.second;
 	}
@@ -118,6 +169,14 @@ void LEDPedestalScan::Print(const std::string &what) const
 	jet_loc_center->Write();
 	lead_jet_loc->Write();
 	lead_jet_loc_center->Write();
+	for(int i= 0; i<(int)emcal_energy.size(); i++){
+		emcal_energy[i]->Write();
+		ihcal_energy[i]->Write();
+		ohcal_energy[i]->Write();
+		emcal_energy_node[i]->Write();
+		ihcal_energy_node[i]->Write();
+		ohcal_energy_node[i]->Write();
+	}
 	f1->Close();
 	return;
 }

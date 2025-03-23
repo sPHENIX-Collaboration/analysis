@@ -35,7 +35,7 @@ R__LOAD_LIBRARY(libdummy.so)
 R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 
-int RunLargeRLENC_LEDPedestalScan(int run_N, int segment, std::string hcal="none", std::string emcal="none", int n_evts=0, int nskip=0)
+int RunLargeRLENC_LEDPedestalScan(int run_N, int segment, std::string hcal="none", std::string emcal="none", int n_evts=0)
 {
 	Fun4AllServer* se=Fun4AllServer::instance();
 	LEDPedestalScan* sc=new LEDPedestalScan(run_N, segment);
@@ -52,7 +52,6 @@ int RunLargeRLENC_LEDPedestalScan(int run_N, int segment, std::string hcal="none
 	se->Verbosity(0);
 	Process_Calo_Calib();
 	se->registerSubsystem(sc);
-	if(nskip > 0 ) se->skip(nskip);
 	se->run(n_evts);
 	sc->Print();
 	return 0;
