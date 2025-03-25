@@ -20,7 +20,7 @@ make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB
 
 * Write Bias macro
 #+begin_src bash
-make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
+make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test 41 2000 100 1
 #+end_src
 
 * Update Bias macro

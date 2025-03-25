@@ -97,8 +97,8 @@ namespace myAnalysis {
     Int_t min_offset = 9999;
     Int_t max_offset = -9999;
 
-    Int_t m_variations = 26;
-    Int_t m_startBiasOffset = 500; /*mV*/
+    Int_t m_variations = 41;
+    Int_t m_startBiasOffset = 2000; /*mV*/
     Int_t m_offset_step = 100; /*mV*/
 
     // IB to vary the offsets
@@ -106,6 +106,7 @@ namespace myAnalysis {
     vector<pair<Int_t,Int_t>> m_IB_vary = {make_pair(48,5),
                                            make_pair(49,5),
                                            make_pair(51,5)};
+    Bool_t m_varyAllIB = false;
 }
 
 pair<Int_t, Int_t> myAnalysis::getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose) {
@@ -376,7 +377,7 @@ void myAnalysis::analyze(const string &outputDir) {
         // <= is used to include the serial sector 64
         for(UInt_t i = 1; i <= m_nsector; ++i) {
             for(UInt_t j = 0; j < m_nib_per_sector; ++j) {
-                Bool_t isIB = false;
+                Bool_t isIB = m_varyAllIB;
                 for (const auto& [sector, ib] : m_IB_vary) {
                     if(i == sector_to_serial[sector] && ib == j) {
                       isIB = true;
@@ -412,9 +413,10 @@ void write_Bias(const string &input,
                 const string &input_sector,
                 const string &input_channel,
                 const string &outputDir=".",
-                      Int_t   variations      = 26,
-                      Int_t   startBiasOffset = 500, /*mV*/
-                      Int_t   offset_step     = 100 /*mV*/) {
+                      Int_t   variations      = 41,
+                      Int_t   startBiasOffset = 2000, /*mV*/
+                      Int_t   offset_step     = 100, /*mV*/
+                      Bool_t  varyAllIB       = false) {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
@@ -425,11 +427,13 @@ void write_Bias(const string &input,
     cout << "variations: " << variations << endl;
     cout << "start bias offset: " << startBiasOffset << endl;
     cout << "offset step: " << offset_step << endl;
+    cout << "vary all IB: " << varyAllIB << endl;
     cout << "#############################" << endl;
 
     myAnalysis::m_variations = variations;
     myAnalysis::m_startBiasOffset = startBiasOffset;
     myAnalysis::m_offset_step = offset_step;
+    myAnalysis::m_varyAllIB = varyAllIB;
 
     fs::create_directories(outputDir);
 
@@ -442,8 +446,8 @@ void write_Bias(const string &input,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
-if(argc < 4 || argc > 8){
-        cout << "usage: ./write-Bias input input_sector input_channel [outputDir] [variations] [startBiasOffset] [offset_step]" << endl;
+if(argc < 4 || argc > 9){
+        cout << "usage: ./write-Bias input input_sector input_channel [outputDir] [variations] [startBiasOffset] [offset_step] [varyAllIB]" << endl;
         cout << "input: input csv file" << endl;
         cout << "input_sector: input sector map" << endl;
         cout << "input_channel: input channel map" << endl;
@@ -451,13 +455,15 @@ if(argc < 4 || argc > 8){
         cout << "variations: number of variations to run" << endl;
         cout << "startBiasOffset: start of the bias offset value" << endl;
         cout << "offset_step: increments of the bias offset variations" << endl;
+        cout << "varyAllIB: apply the bias offset variations on all ib" << endl;
         return 1;
     }
 
     string outputDir = ".";
-    Int_t  variations      = 26;
-    Int_t  startBiasOffset = 500; /*mV*/
+    Int_t  variations      = 41;
+    Int_t  startBiasOffset = 2000; /*mV*/
     Int_t  offset_step     = 100; /*mV*/
+    Bool_t varyAllIB       = false;
 
     if(argc >= 5) {
         outputDir = argv[4];
@@ -471,8 +477,11 @@ if(argc < 4 || argc > 8){
     if(argc >= 8) {
         offset_step = atoi(argv[7]);
     }
+    if(argc >= 9) {
+        varyAllIB = atoi(argv[8]);
+    }
 
-    write_Bias(argv[1], argv[2], argv[3], outputDir, variations, startBiasOffset, offset_step);
+    write_Bias(argv[1], argv[2], argv[3], outputDir, variations, startBiasOffset, offset_step, varyAllIB);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
