@@ -89,3 +89,60 @@ root -b -l -q 'macros/displayv2.C("calo/test-pulser.list","plots/ADC-pulser/plot
 #+begin_src bas
 rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resubmit.list
 #+end_src
+
+* Data taking instructions for EMCal via LEDs
+
+** Configure EMCal for data taking
+1) Turn EMCal ON (bias and lv).
+2) Turn EMCal Controller Crates ON via vision client GUI.
+3) Run from daq02 to setup the EMCal:
+#+begin_src bash
+/home/phnxrc/haggerty/emcal/offandon/emcalon
+#+end_src
+
+** Setup DAQ
+1) From an SEB machine run:
+#+begin_src bash
+bash ~/samfred/quickscripts/rc_setup_local.sh 5 seb{00..15} && \
+echo "rc_setup_local done" && sleep 2 && \
+ssh opc0 "python3 ~/haggerty/emcal/calcon/ledtest.py 32" && \
+echo "LEDs configured" && sleep 2 && \
+gl1_gtm_client gtm_set_mode 5 0 && \
+echo "gtm_client set" && sleep 2 && \
+gl1_gtm_client gtm_load_modebits 5 /home/phnxrc/operations/gl1_gtm/EMCAL_pulse_100Hz.scheduler && \
+echo "gtm_load_modbits set" && sleep 2 && \
+RunControl.py &
+#+end_src
+
+2) After DAQ work is completed, close Run Control gui and from an SEB machine run:
+#+begin_src bash
+rc_shutdown
+#+end_src
+
+** Load the desired bias offsets
+Run from daq02:
+#+begin_src bash
+ln -sfn <path/to/offsets> /home/phnxrc/haggerty/emcal/config && echo "link set" \
+~/haggerty/emcal/calcon/biasallsectorsfast.py && echo "offsets loaded" \
+~/haggerty/emcal/calcon/emcalsector.py bias --sector 48 && echo "verified"
+#+end_src
+
+After this take run via the Run Control GUI (begin and end).
+
+** Clean Up
+At the end of datataking ensure the original offsets are loaded:
+#+begin_src bash
+ln -sfn /home/phnxrc/haggerty/emcal/vop-1008 /home/phnxrc/haggerty/emcal/config && echo "link set" \
+~/haggerty/emcal/calcon/biasallsectorsfast.py && echo "offsets loaded"
+#+end_src
+
+** View Runs Transfer Status
+1) From local computer run:
+#+begin_src bash
+ssh anarde@cssh.rhic.bnl.gov -L 3128:batch3.phy.bnl.gov:3128
+#+end_src
+Note: replace anarde with your username.
+
+2) Configure the FoxyProxy
+
+3) Nagivate to http://www.sphenix-intra.bnl.gov:7815/cgi-bin/
