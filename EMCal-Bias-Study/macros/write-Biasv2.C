@@ -219,7 +219,7 @@ void myAnalysis::analyze(const string &outputDir) {
                 pair<Int_t, Int_t> phi_eta = getDetectorCoordinates(i, j, k);
                 Int_t binx = phi_eta.first+1;
                 Int_t biny = phi_eta.second+1;
-                Double_t offset = m_hist->GetBinContent(binx,biny);
+                Int_t offset = m_hist->GetBinContent(binx,biny);
                 file << offset << endl;
             }
 

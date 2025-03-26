@@ -133,8 +133,8 @@ rc_shutdown
 ** Load the desired bias offsets
 Run from daq02:
 #+begin_src bash
-ln -sfn <path/to/offsets> /home/phnxrc/haggerty/emcal/config && echo "link set" \
-~/haggerty/emcal/calcon/biasallsectorsfast.py && echo "offsets loaded" \
+ln -sfn <path/to/offsets> /home/phnxrc/haggerty/emcal/config && echo "link set" && \
+~/haggerty/emcal/calcon/biasallsectorsfast.py && echo "offsets loaded" && \
 ~/haggerty/emcal/calcon/emcalsector.py bias --sector 48 && echo "verified"
 #+end_src
 
