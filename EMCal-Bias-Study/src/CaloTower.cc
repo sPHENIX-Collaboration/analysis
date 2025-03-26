@@ -203,7 +203,6 @@ int CaloTower::process_event(PHCompositeNode *topNode)
     m_max_energy = max(m_max_energy, energy);
 
     ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
-    m_hists["hCEMC"]->Fill(energy);
 
     name.str("");
     name << "h2adc_" << iphi << "_" << ieta;
@@ -229,9 +228,19 @@ int CaloTower::End(PHCompositeNode *topNode)
   cout << "CaloTower::End(PHCompositeNode *topNode) This is the End..." << endl;
   cout << "Energy: Min: " << m_min_energy << ", Max: " << m_max_energy << endl;
   cout << "adc: Min: " << m_min_adc << ", Max: " << m_max_adc << endl;
-  cout << "Processed Events: " << m_Event << endl;
 
+  Int_t nEvents = m_hists["hEvent"]->GetBinContent(1);
+  cout << "Events Total: " << m_Event << ", Processed: " << nEvents << endl;
   // scale the hists to get the average tower energy
+  m_hists["h2CEMC"]->Scale(1./nEvents);
+
+  for(Int_t iphi = 1; iphi <= m_nphi; ++iphi) {
+    for(Int_t ieta = 1; ieta <= m_neta; ++ieta) {
+      Double_t energy = ((TH2*)m_hists["h2CEMC"])->GetBinContent(iphi, ieta);
+      m_hists["hCEMC"]->Fill(energy);
+    }
+  }
+  
   TFile output(m_outputFile.c_str(),"recreate");
 
   output.cd();
