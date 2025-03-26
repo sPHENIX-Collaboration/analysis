@@ -23,6 +23,17 @@ make && ./bin/read-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB
 make && ./bin/write-Bias files/emcal-bias.csv files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test 41 2000 100 1
 #+end_src
 
+** Write bias v2
+Allows for reading a root file and 2D histogram and generate the bias offset configuration files.
+#+begin_src bash
+make && ./bin/write-Biasv2 <path/to/rootfile> <histName> files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
+#+end_src
+
+Example:
+#+begin_src bash
+make && ./bin/write-Biasv2 output/EMCal-block-info.root h2Offset files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
+#+end_src
+
 * Update Bias macro
 #+begin_src bash
 make && ./bin/update-Bias output/EMCal-block-info.root plots/bias-update-plots/plots.pdf
