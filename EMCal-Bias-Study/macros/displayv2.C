@@ -73,6 +73,7 @@ namespace myAnalysis {
 
     Int_t m_verbosity = 0;
     Bool_t m_saveFig = false;
+    Bool_t m_saveWaveforms = false;
 }
 
 pair<Int_t, Int_t> myAnalysis::getSectorIBCorner(Int_t sector, Int_t ib) {
@@ -156,10 +157,11 @@ Int_t myAnalysis::readFile(const string &input) {
             m_run.push_back(run);
             cout << "File: " << fileName << ", Run: " << run << endl;
             addHist(tfile, "h2CEMC", m_hists, "_"+run);
+            addHist(tfile, "hCEMC", m_hists, "_"+run);
             addHist(tfile, "hEvent", m_hists, "_"+run);
 
             TList* keysWaveform = ((TDirectory*)tfile->Get("waveform"))->GetListOfKeys();
-            for(UInt_t i = 0; i < keysWaveform->GetSize(); ++i) {
+            for(UInt_t i = 0; i < keysWaveform->GetSize() && m_saveWaveforms; ++i) {
                 string name  = "waveform/" + string(keysWaveform->At(i)->GetName());
                 addHist(tfile, name, m_hists, "_"+run);
             }
@@ -190,18 +192,6 @@ void myAnalysis::analyze(const string &output) {
     // Individual IB channel response
     stringstream name;
     stringstream title;
-    // for (const auto& [phi, eta] : m_nphi_neta_low) {
-    //     for(Int_t iphi = phi; iphi < phi+m_ntowIBSide; ++iphi) {
-    //         for(Int_t ieta = eta; ieta < eta+m_ntowIBSide; ++ieta) {
-    //             name.str("");
-    //             title.str("");
-    //             name << "hADC_" << iphi << "_" << ieta;
-    //             title << "ADC: (" << iphi << "," << ieta << "); Offset [mV]; ADC";
-
-    //             m_hists[name.str()] = new TH1F(name.str().c_str(), title.str().c_str(), m_bins_offset, m_offset_low, m_offset_high);
-    //         }
-    //     }
-    // }
 
     for(UInt_t i = 0; i < m_nsector; ++i) {
         Int_t x = i % (m_nsector / 2) + 1;
@@ -247,27 +237,15 @@ void myAnalysis::analyze(const string &output) {
         cout << "Run: " << run << endl;
         string histName = "h2CEMC_" + run;
         string hist1DName = "hCEMC_" + run;
-        string histEventsName = "hEvent_" + run;
         title.str("");
         title << "EMCal [ADC], Run: " << run;
         m_hists[histName]->SetTitle(title.str().c_str());
+        m_hists[hist1DName]->SetTitle(title.str().c_str());
 
         title.str("");
         title << "EMCal [ADC], Run: " << run << "; ADC; Counts";
 
-        m_hists[hist1DName] = new TH1F(hist1DName.c_str(), title.str().c_str(), m_bins_ADC, m_ADC_low, m_ADC_high);
-
         setEMCalDim(m_hists[histName]);
-
-        cout << "Events: " << m_hists[histEventsName]->GetBinContent(1) << endl;
-        m_hists[histName]->Scale(1./m_hists[histEventsName]->GetBinContent(1));
-
-        for(Int_t iphi = 1; iphi <= m_nphi; ++iphi) {
-            for(Int_t ieta = 1; ieta <= m_neta; ++ieta) {
-                Double_t val = m_hists[histName]->GetBinContent(iphi,ieta);
-                m_hists[hist1DName]->Fill(val);
-            }
-        }
 
         m_hists[histName]->Draw("COLZ");
 
@@ -280,7 +258,7 @@ void myAnalysis::analyze(const string &output) {
         c1->Print(outputFile.c_str(), "pdf portrait");
         c1->Print((outputDir + "/images/" + histName + ".png").c_str());
 
-        m_hists[histName]->SetMaximum(6.5e3);
+        m_hists[histName]->SetMaximum(7e3);
 
         c1->Print(outputFile.c_str(), "pdf portrait");
         c1->Print((outputDir + "/images/" + histName + "-zoom.png").c_str());
@@ -323,67 +301,68 @@ void myAnalysis::analyze(const string &output) {
     c2->DivideSquare(64,0,0);
 
     // Waveforms
-    for (const auto &run : m_run)
-    {
+    if(m_saveWaveforms) {
+      for (const auto &run : m_run)
+      {
         string outputFile = outputDir + "/waveforms-" + run + ".pdf";
         c2->Print((outputFile + "[").c_str(), "pdf portrait");
         for (Int_t sector = 0; sector < m_nsector; ++sector)
         {
-            cout << "Sector: " << sector << endl;
-            for (Int_t ib = 0; ib < m_nib_per_sector; ++ib)
+          cout << "Sector: " << sector << endl;
+          for (Int_t ib = 0; ib < m_nib_per_sector; ++ib)
+          {
+            pair<Int_t, Int_t> phi_eta = getSectorIBCorner(sector, ib);
+            Int_t phi = phi_eta.first;
+            Int_t eta = phi_eta.second;
+            Int_t ctr = 1;
+            imgName.str("");
+            imgName << outputDir + "/images/adc_" << phi << "_" << eta << "_" << run << ".png";
+
+            for (Int_t ieta = eta + m_ntowIBSide - 1; ieta >= eta; --ieta)
             {
-                pair<Int_t, Int_t> phi_eta = getSectorIBCorner(sector, ib);
-                Int_t phi = phi_eta.first;
-                Int_t eta = phi_eta.second;
-                Int_t ctr = 1;
-                imgName.str("");
-                imgName << outputDir + "/images/adc_" << phi << "_" << eta << "_" << run << ".png";
+              for (Int_t iphi = phi; iphi < phi + m_ntowIBSide; ++iphi)
+              {
+                c2->cd(ctr++);
 
-                for (Int_t ieta = eta + m_ntowIBSide - 1; ieta >= eta; --ieta)
+                name.str("");
+                name << "waveform/h2adc_" << iphi << "_" << ieta << "_" << run;
+
+                m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
+                m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
+                m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
+                m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
+                m_hists[name.str()]->SetTitle("");
+                m_hists[name.str()]->Draw("COL");
+
+                TH1 *px = ((TH2 *) m_hists[name.str()])->ProfileX();
+                px->SetLineColor(kRed);
+                px->SetMarkerColor(kRed);
+                px->Draw("same");
+
+                TLine *l = new TLine(0, m_saturation, 12, m_saturation);
+                l->SetLineColor(kMagenta);
+                l->SetLineStyle(kDashed);
+
+                l->Draw("same");
+
+                if (iphi == phi && ieta == eta + m_ntowIBSide - 1)
                 {
-                  for (Int_t iphi = phi; iphi < phi + m_ntowIBSide; ++iphi)
-                  {
-                    c2->cd(ctr++);
+                  title.str("");
+                  title << "S" << sector << " IB" << ib;
 
-                    name.str("");
-                    name << "waveform/h2adc_" << iphi << "_" << ieta << "_" << run;
-
-                    m_hists[name.str()]->GetXaxis()->SetTitleOffset(0.9);
-                    m_hists[name.str()]->GetYaxis()->SetTitleOffset(1.8);
-                    m_hists[name.str()]->GetXaxis()->SetLabelSize(0.07);
-                    m_hists[name.str()]->GetYaxis()->SetLabelSize(0.07);
-                    m_hists[name.str()]->SetTitle("");
-                    m_hists[name.str()]->Draw("COL");
-
-                    TH1 *px = ((TH2 *) m_hists[name.str()])->ProfileX();
-                    px->SetLineColor(kRed);
-                    px->SetMarkerColor(kRed);
-                    px->Draw("same");
-
-                    TLine *l = new TLine(0, m_saturation, 12, m_saturation);
-                    l->SetLineColor(kMagenta);
-                    l->SetLineStyle(kDashed);
-
-                    l->Draw("same");
-
-                    if (iphi == phi && ieta == eta + m_ntowIBSide - 1)
-                    {
-                      title.str("");
-                      title << "S" << sector << " IB" << ib;
-
-                      TLatex latex;
-                      latex.SetTextSize(0.19);
-                      latex.DrawLatex(5, 12000, title.str().c_str());
-                    }
-                  }
+                  TLatex latex;
+                  latex.SetTextSize(0.19);
+                  latex.DrawLatex(5, 12000, title.str().c_str());
                 }
-                c2->Print(outputFile.c_str(), "pdf portrait");
-                if(m_saveFig) c2->Print(imgName.str().c_str());
+              }
             }
+            c2->Print(outputFile.c_str(), "pdf portrait");
+            if (m_saveFig) c2->Print(imgName.str().c_str());
+          }
         }
         c2->Print((outputFile + "]").c_str(), "pdf portrait");
+      }
     }
-
     cout << "###############" << endl;
 }
 
