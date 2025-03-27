@@ -76,8 +76,8 @@ namespace myAnalysis {
 }
 
 pair<Int_t, Int_t> myAnalysis::getSectorIBCorner(Int_t sector, Int_t ib) {
-    Int_t phi = sector % 32 * 8;
-    Int_t eta = (sector > 31) ? (5 - ib) * 8 : ib * 8 + 48;
+    Int_t phi = sector % 32 * m_ntowIBSide;
+    Int_t eta = (sector > 31) ? (5 - ib) * m_ntowIBSide : ib * m_ntowIBSide + 48;
 
     return make_pair(phi, eta);
 }
@@ -86,7 +86,7 @@ pair<Int_t, Int_t> myAnalysis::getSectorIB(Int_t iphi, Int_t ieta) {
     Int_t k = iphi / m_ntowIBSide;
 
     Int_t sector = (ieta < 48) ? k + 32 : k;
-    Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_nib_per_sector - 1: (ieta - 48) / m_nib_per_sector;
+    Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_ntowIBSide - 1: (ieta - 48) / m_ntowIBSide;
 
     return make_pair(sector, ib);
 }
