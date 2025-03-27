@@ -52,7 +52,8 @@ def create_event_combine_jobs():
         for run in fp:
             run = run.strip()
             print(f'run: {run}')
-            command = f'fd {run} {calib_dir} > {calib_dir_base}/{calib_dir_base}-{run}.list'
+            calib_list = f'{calib_dir_base}/{calib_dir_base}-{run}.list'
+            command = f'fd {run} {calib_dir} > {calib_list}'
 
             result = subprocess.run(['bash','-c',command],cwd=output_dir)
             if(result.returncode != 0):
@@ -60,10 +61,11 @@ def create_event_combine_jobs():
                 return
 
             # ensure there are correct number of segments
-            segments = int(subprocess.run(['bash','-c',f'wc -l {calib_dir_base}/{calib_dir_base}-{run}.list'], capture_output=True, encoding="utf-8",cwd=output_dir).stdout.split()[0])
+            segments = int(subprocess.run(['bash','-c',f'wc -l {calib_list}'], capture_output=True, encoding="utf-8",cwd=output_dir).stdout.split()[0])
             if(segments != nSegments):
-                print(f'ERROR: {run} has {segments}')
-                return
+                print(f'ERROR: {run} has {segments} out of {nSegments}, SKIPPING')
+                if os.path.exists(f'{output_dir}/{calib_list}'):
+                    os.remove(f'{output_dir}/{calib_list}')
 
     # generate the job list
     command = f'readlink -f {calib_dir_base}/* > jobs.list'
