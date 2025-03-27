@@ -34,7 +34,6 @@ namespace myAnalysis {
     Int_t readCSV(const string &filename);
     Int_t readMaps(const string &filename, unordered_map<Int_t,Int_t> &map, unordered_map<Int_t,Int_t> &rev_map);
     pair<Int_t,Int_t> getDetectorCoordinates(Int_t serial, Int_t ib, Int_t ib_channel, Bool_t verbose = false);
-    void writeCSV(const string &filename);
 
     // Define the structure for your data
     struct MyData {
