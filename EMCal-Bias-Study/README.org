@@ -62,12 +62,12 @@ xargs eventcombiner -vpfi calib-000[run]-0000.prdf < [prdf-list]
 
 ** After editing Makefile.am
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/calib-00059097-0000.prdf test.root 20 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00059279-0000.prdf test.root 20 2>/dev/null
 #+end_src
 
 ** After editing .cc or .h
 #+begin_src bash
-make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/calib-00059097-0000.prdf test.root 20 2>/dev/null
+make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00059279-0000.prdf test.root 20 2>/dev/null
 #+end_src
 
 *** With Pulser data
@@ -93,6 +93,15 @@ make && ./bin/displayv2 scratch/pulser/test.list plots/ADC-pulser/plots.pdf
 Alternatively:
 #+begin_src bash
 root -b -l -q 'macros/displayv2.C("calo/test-pulser.list","plots/ADC-pulser/plots.pdf")'
+#+end_src
+
+** Ratio plots between the LED tests: default, r0, r1, and r2 taken on 3/27/25
+#+begin_src bash
+make && ./bin/displayv3 plots/03-27-25-ADC-ratios/plots.pdf
+#+end_src
+Alternatively:
+#+begin_src bash
+root -b -l -q 'macros/displayv3.C("plots/03-27-25-ADC-ratios/plots.pdf")'
 #+end_src
 
 * Condor
