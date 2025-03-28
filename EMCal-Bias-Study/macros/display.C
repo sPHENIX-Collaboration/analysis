@@ -65,13 +65,6 @@ namespace myAnalysis {
     Float_t m_offset_low  = -2000;
     Float_t m_offset_high = 500;
 
-    // S49 IB5 range
-    Int_t m_towPhi_low  = 136;
-    Int_t m_towPhi_high = 143;
-
-    Int_t m_towEta_low  = 0;
-    Int_t m_towEta_high = 7;
-
     vector<pair<Int_t,Int_t>> m_nphi_neta_low = {make_pair(128,0)
                                                , make_pair(136,0)
                                                , make_pair(152,0)};

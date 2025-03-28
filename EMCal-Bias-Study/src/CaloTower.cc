@@ -139,6 +139,7 @@ int CaloTower::Init(PHCompositeNode *topNode)
   m_hists["h2CEMC"] = new TH2F("h2CEMC","EMCal [ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
   m_hists["h2CEMC"]->Sumw2();
   m_hists["hCEMC"] = new TH1F("hCEMC","EMCal [ADC]; ADC; Counts", m_bins_ADC, m_ADC_low, m_ADC_high);
+  m_hists["hCEMC"]->Sumw2();
 
   m_hists["hEvent"] = new TH1F("hEvent","Events; Status; Counts", 1, 0, 1);
 
