@@ -34,7 +34,7 @@ class LEDPedestalScan: public SubsysReco
 {
 	public:
 
-	LEDPedestalScan(const int n_run, const int n_segment, const std::string& name="LEDPedestalScan");
+	LEDPedestalScan(const int n_run, const int n_segment, const bool doE2C=false, const bool act_loc=true, const std::string& name="LEDPedestalScan");
 	~LEDPedestalScan() override {} 
 	int Init(PHCompositeNode *topNode/*, bool* has_retower, bool *has_jets*/) override 	  {
 		return Fun4AllReturnCodes::EVENT_OK;
@@ -77,10 +77,15 @@ class LEDPedestalScan: public SubsysReco
 		TH2F* lead_jet_loc;
 		TH2F* jet_loc_center;
 		TH2F* lead_jet_loc_center;
-		std::vector<TH2F*> ohcal_energy, ihcal_energy, emcal_energy;
+		std::vector<TH2F*> ohcal_energy_i, ihcal_energy_i, emcal_energy_i;
 		std::vector<TH2F*> ohcal_energy_node, ihcal_energy_node, emcal_energy_node;
 		std::vector<std::array<float, 4>> energy_thresholds;
+		TH1F* ohcal_energy, *ihcal_energy, *emcal_energy, *allcal_energy;
+		TH1F* ohcal_energy_total, *ihcal_energy_total, *emcal_energy_total, *allcal_energy_total;
+		TH1F* ohcal_hit_plot, *ihcal_hit_plot, *emcal_hit_plot, *allcal_hit_plot;
 		int run;
 		int segement;
+		bool run_e2c;
+		bool local; 
 };
 #endif

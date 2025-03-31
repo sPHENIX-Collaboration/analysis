@@ -16,13 +16,13 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 {
 
 	n_evts=0;
-	n_steps=10; 
-	if(pedestal) n_steps=7;
-	else if(!data) n_steps=10;
+	n_steps=4; 
+	if(pedestal) n_steps=4;
+	else if(!data) n_steps=4;
 	this->pedestalData=pedestal;
 	if(pedestal){
 		ohcal_min=0.01;
-		emcal_min=0.03;
+		emcal_min=0.01;
 		ihcal_min=0.005;
 		all_min=0.04;
 	}
@@ -33,21 +33,21 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 	for(int i=0; i<n_steps; i++){
 		MethodHistograms* fc, *fe, *fi, *fo, *tc, *te, *ti, *to, *ac, *ae, *ai, *ao, *trc, *tre, *tri, *tro;
 	//set bin widths to tower size
-		float allcal_thresh=1000*all_min*(1+6/(float)n_steps*i);
-		float emcal_thresh=1000*emcal_min*(1+6/(float)n_steps*i);
-		float ohcal_thresh= 1000*ohcal_min*(1+6/(float)n_steps*i);
-		float ihcal_thresh=1000*ihcal_min*(1+6/(float)n_steps*i);
-		float at=allcal_thresh/1000.;
-		float et=emcal_thresh/1000.;
-		float it=ihcal_thresh/1000.;
-		float ot=ohcal_thresh/1000.;
+		float allcal_thresh=1000*all_min*(1+7./((float)n_steps-1.)*i);
+		float emcal_thresh=1000*emcal_min*(1+7./((float)n_steps-1.)*i);
+		float ohcal_thresh= 1000*ohcal_min*(1+7./((float)n_steps-1.)*i);
+		float ihcal_thresh=1000*ihcal_min*(1+2./((float)n_steps-1.)*i); //has much smaller gaps
+		float at=all_min*(1+7./((float)n_steps-1.)*i);
+		float et=emcal_min*(1+7./((float)n_steps-1.)*i);
+		float it=ihcal_min*(1+2./((float)n_steps-1.)*i);
+		float ot=ohcal_min*(1+7./((float)n_steps-1.)*i);
 		std::array<float, 4> thresh_step {at, et, it, ot};
 		this->Thresholds.push_back(thresh_step);
 		std::string ihcal_thresh_s="_"+std::to_string((int)ihcal_thresh)+"_MeV_threshold";
 		std::string ohcal_thresh_s="_"+std::to_string((int)ohcal_thresh)+"_MeV_threshold";
 		std::string emcal_thresh_s="_"+std::to_string((int)emcal_thresh)+"_MeV_threshold";
 		std::string allcal_thresh_s="_"+std::to_string((int)allcal_thresh)+"_MeV_threshold";
-			
+		
 		fc=new MethodHistograms("Full_CAL"+allcal_thresh_s, 3.9, 0.1); 
 		fe=new MethodHistograms("Full_EMCAL"+emcal_thresh_s, 3.9, 0.1);
 		fi=new MethodHistograms("Full_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
@@ -67,7 +67,17 @@ LargeRLENC::LargeRLENC(const int n_run/*=0*/, const int n_segment/*=0*/, const f
 		tre=new MethodHistograms("Transverse_Region_EMCAL"+emcal_thresh_s, 3.9, 0.1);
 		tri=new MethodHistograms("Transverse_Region_IHCAL"+ihcal_thresh_s, 3.9, 0.1);
 		tro=new MethodHistograms("Transverse_Region_OHCAL"+ohcal_thresh_s, 3.9, 0.1); //Transverse_Region OHCAL has R ~ 3.83 (delta eta ~ 2.2, delta phi ~pi)
+		if(!pedestalData && !data){
+			MethodHistograms* fc1=new MethodHistograms("Truth_Full_CAL"+allcal_thresh_s, 3.9, 0.1); 
+		
+			MethodHistograms* tc1=new MethodHistograms("Truth_Towards_Region_CAL"+allcal_thresh_s, 3.9, 0.1);
 
+			MethodHistograms* ac1=new MethodHistograms("Truth_Away_Region_CAL"+allcal_thresh_s, 3.9, 0.1);
+		
+			MethodHistograms* trc1=new MethodHistograms("Truth_Transverse_Region_CAL"+allcal_thresh_s, 3.9, 0.1);
+			std::vector<std::vector<MethodHistograms*>> Region_truth {std::vector<MethodHistograms*>{fc1}, std::vector<MethodHistograms*>{tc1}, std::vector<MethodHistograms*>{ac1}, std::vector<MethodHistograms*>{trc1}};
+			this->Tr_Region_vector.push_back(Region_truth);	
+		}	
 		std::vector<MethodHistograms*> hf {fc, fe, fi, fo}, ht {tc, te, ti, to}, ha{ac, ae, ai, ao}, htr{trc, tre, tri, tro};
 		std::vector<MethodHistograms*> FullCal=hf;
 		std::vector<MethodHistograms*> TowardRegion=ht;
@@ -479,8 +489,10 @@ void LargeRLENC::addTower(int n, TowerInfoContainer* energies, RawTowerGeomConta
 	float r=geom->get_radius();
 //	std::cout<<"energy is " <<tower->get_energy()<<std::endl;
 	std::array<float, 3> center {etacenter, phicenter, r};
-	if(td != RawTowerDefs::CEMC) towers->insert(std::make_pair(center, tower->get_energy()));
-	if(td==RawTowerDefs::CEMC){
+	if(td != RawTowerDefs::CEMC && (td != RawTowerDefs::HCALOUT && this->pedestalData)) towers->insert(std::make_pair(center, tower->get_energy()));
+	else if (td == RawTowerDefs::HCALOUT && this->pedestalData) towers->insert(std::make_pair(center, tower->get_energy()/100.));
+
+	else if(td==RawTowerDefs::CEMC){
 		//retowering it by hand for right now to improve running speed 
 	/*	for(int j=0; j<24; j++){
 			float hcalbinval=((j+1)*1.1/12.)-1.1;
@@ -513,7 +525,7 @@ void LargeRLENC::MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, 
 		int etabin=emcal->getTowerEtaBin(key);
 		float phicenter=em_geom->get_phicenter(phibin);
 		float etacenter=em_geom->get_etacenter(etabin);
-		for(int j=0; j<(int)hcal->size(); hcal++)
+		for(int j=0; j<(int) hcal->size(); j++)
 		{
 			bool goodPhi=false, goodEta=false;
 			auto key_h=hcal->encode_key(j);
@@ -522,7 +534,7 @@ void LargeRLENC::MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, 
 			float phicenter_h=h_geom->get_phicenter(phibin_h);
 			float etacenter_h=h_geom->get_etacenter(etabin_h);	
 			std::pair<double, double> phi_bounds=h_geom->get_phibounds(phibin_h);
-			std::pair<double, double> eta_bounds=h_geom->get_etabounds(phibin_h);
+			std::pair<double, double> eta_bounds=h_geom->get_etabounds(etabin_h);
 			if(phicenter >= phi_bounds.first && phicenter < phi_bounds.second) goodPhi=true; 
 			if(etacenter >= eta_bounds.first && etacenter < eta_bounds.second) goodEta=true;
 			if(goodPhi && goodEta){
@@ -620,11 +632,11 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 	catch(std::exception& e){std::cout<<"Could not find the vertex. \n Setting to origin" <<std::endl;}
 	int emcal_oc=0; //allow for occupancy to be calculated seperate from the other bits
 	float emcal_energy=0., ihcal_energy=0., ohcal_energy=0., total_energy=0., ohcal_rat=0.;
-	std::map<std::array<float, 3>, float> ihcal_towers, emcal_towers, ohcal_towers; //these are just to collect the non-zero towers to decrease the processing time 
+	std::map<std::array<float, 3>, float> ihcal_towers, emcal_towers, ohcal_towers, truth_pts; //these are just to collect the non-zero towers to decrease the processing time 
 	for(int n=0; n<(int) emcal_tower_energy->size(); n++){
 		if(! emcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=emcal_tower_energy->get_tower_at_channel(n)->get_energy();
-		if(energy > 0.07)//put zero supression into effect
+		if(energy > emcal_min )//put zero supression into effect
 			addTower(n, emcal_tower_energy, emcal_geom, &emcal_towers, RawTowerDefs::CEMC   );
 		if(energy > 0.01) emcal_oc++;
 		emcal_energy+=energy;
@@ -633,17 +645,50 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		if(n >= (int)ihcal_tower_energy->size()) continue;
 		if(! ihcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ihcal_tower_energy->get_tower_at_channel(n)->get_energy();
-		if(energy > 0.01) //zero suppression is at 10 MeV in IHCAL
+		if(energy > ihcal_min) //zero suppression is at 10 MeV in IHCAL
 			addTower(n, ihcal_tower_energy, ihcal_geom, &ihcal_towers, RawTowerDefs::HCALIN  );
 		ihcal_energy+=energy;
 	}
 	for(int n=0; n<(int) ohcal_tower_energy->size(); n++){
 		if(! ohcal_tower_energy->get_tower_at_channel(n)->get_isGood()) continue;
 		float energy=ohcal_tower_energy->get_tower_at_channel(n)->get_energy();
-		if(energy > 0.01) //10 MeV cutoff 
+		if(energy > ohcal_min ) //10 MeV cutoff 
 			addTower(n, ohcal_tower_energy, ohcal_geom, &ohcal_towers, RawTowerDefs::HCALOUT );
 		ohcal_energy+=energy;
 	}
+	
+	if(!isRealData && !pedestalData){
+		auto hepmc_gen_event= findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+		if(hepmc_gen_event){
+			for( PHHepMCGenEventMap::ConstIter evtIter=hepmc_gen_event->begin(); evtIter != hepmc_gen_event->end(); ++evtIter)
+			{
+				PHHepMCGenEvent* hpev=evtIter->second;
+				if(hpev){
+					HepMC::GenEvent* ev=hpev->getEvent();	
+					if(ev)
+					{
+						for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter !=ev->particles_end(); ++iter){
+							if((*iter))
+							{
+								if(!(*iter)->end_vertex() && (*iter)->status() == 1){
+									float px=(*iter)->momentum().px();
+									float py=(*iter)->momentum().py();
+									float pz=(*iter)->momentum().pz();
+									float E=(*iter)->momentum().e();
+									float phi=atan2(py, px);
+									float eta=atanh(px/(std::sqrt(px*px+py*py+pz*pz)));
+									float r=1.;
+									std::array<float, 3> loc {eta, phi, r};
+									truth_pts[loc]=E;
+
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}	
 	total_energy=emcal_energy+ihcal_energy+ohcal_energy;
 	ohcal_rat=ohcal_energy/(float)total_energy; //take the ratio at the whole calo as that is the region of interest
 	float emcal_occupancy=emcal_oc/((float)emcal_tower_energy->size())*100.;
@@ -720,9 +765,76 @@ int LargeRLENC::process_event(PHCompositeNode* topNode)
 		}
 		//this is running the actual analysis
 		LargeRLENC::CaloRegion(emcal_towers, ihcal_towers, ohcal_towers, jetMinpT, which_variable, vertex, lead_phi);
+		if(!isRealData && !pedestalData) LargeRLENC::TruthRegion(truth_pts, jetMinpT, which_variable, vertex, lead_phi); 
 		DijetQA->Fill();
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
+}
+void LargeRLENC::TruthRegion(std::map<std::array<float, 3>, float> truth, float jetMinpT, std::string variable_of_interest, std::array<float, 3> vertex, float lead_jet_center_phi)
+{
+	bool transverse=false;
+	bool energy=true;
+	float phi_min=0., phi_max=2*PI;
+	int v_o_i_code=0;
+	std::map<int, std::pair<float, float>> region_ints;
+	if(variable_of_interest.find("T") != std::string::npos) v_o_i_code+=2;
+	if(variable_of_interest.find("p") != std::string::npos) v_o_i_code+=1; 
+	switch(v_o_i_code)
+	{
+		case 0:
+			transverse=false;
+			energy=true;
+			break;
+		case 1:
+			transverse=false;
+			energy=false;
+			break;
+		case 2:
+			transverse=true;
+			energy=true;
+			break;
+		case 3:
+			transverse=true;
+			energy=false;
+			break;
+	}
+	for(int region=0; region< 5; region++)
+	{
+		switch(region)
+		{
+			case LargeRLENC::Regions::Full: //go over the full calorimeter
+				phi_min=0;
+				phi_max=2*PI;
+				break;
+			case LargeRLENC::Regions::Towards: //toward region of the detector
+				phi_min=lead_jet_center_phi - PI/3.;
+				phi_max=lead_jet_center_phi + PI/3.;
+				break;
+			case LargeRLENC::Regions::Away: //away region of the detector
+				phi_min=lead_jet_center_phi + 2*PI/3.;
+				phi_max=lead_jet_center_phi + 4*PI/3.;
+				break;
+			case LargeRLENC::Regions::TransverseMax: //transverse region1
+				phi_min=lead_jet_center_phi + PI/3.;
+				phi_max=lead_jet_center_phi + 2*PI/3.; 
+				break;
+			case LargeRLENC::Regions::TransverseMin: //transverse region 2 
+				phi_min=lead_jet_center_phi - PI/3.;
+				phi_max=lead_jet_center_phi - 2*PI/3.; 
+		}
+	}
+	//make sure the bounds are within the region of 0->2*PI
+		if(phi_min < 0) phi_min+=2*PI;
+		if(phi_max < 0) phi_max+=2*PI;
+		if(phi_min > 2*PI) phi_min+=-2*PI;
+		if(phi_max > 2*PI) phi_max+=-2*PI;
+		float holding=std::max(phi_min, phi_max);
+		float holding_2=std::min(phi_min, phi_max);
+		phi_min=holding_2;
+		phi_max=holding;		
+		std::pair<float, float> phi_lim{phi_min, phi_max}; 
+		SingleCaloENC(truth, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::TRUTH);
+		truth.clear();
 }
 void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::map<std::array<float, 3>, float> ihcal, std::map<std::array<float, 3>, float> ohcal, float jetMinpT, std::string variable_of_interest, std::array<float, 3> vertex, float lead_jet_center_phi)
 { 
@@ -798,16 +910,21 @@ void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::ma
 		std::pair<float, float> phi_lim{phi_min, phi_max}; 
 		region_ints[region]=phi_lim;
 	}
-	std::vector<std::thread> CaloThreads;
-	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, emcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::EMCAL));
-	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL));
-	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL));
-	if(! this->pedestalData) CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, allcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::All));
-	for(int ct=0; ct<(int)CaloThreads.size(); ct++) CaloThreads[ct].join();
+//	std::vector<std::thread> CaloThreads;
+//	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, emcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::EMCAL));
+	//CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL));
+//	CaloThreads.push_back(std::thread(&LargeRLENC::SingleCaloENC, this, ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL));
+//	if(! this->pedestalData) 
+	//	CaloThreads.push_back(std::thread(&LargeRLENC::c
+	if(!pedestalData) SingleCaloENC(allcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::All);
+//	for(int ct=0; ct<(int)CaloThreads.size(); ct++) CaloThreads[ct].join();
 	allcal.clear();
+		SingleCaloENC(emcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::EMCAL);
 	emcal.clear();
-	ohcal.clear();
+		SingleCaloENC(ihcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::IHCAL);
 	ihcal.clear();
+		SingleCaloENC(ohcal, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::OHCAL);
+	ohcal.clear();
 	
 	return;
 }
@@ -820,7 +937,11 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	std::vector<float> thresholds;
 	std::vector<StrippedDownTower*> strippedCalo;
 	for(int j=0; j<(int)Region_vector.size(); j++){
-		float threshold = base_thresh * (1 + j * 6/(float) this->n_steps);
+		float n_lim=7.;
+		if(which_calo == LargeRLENC::Calorimeter::OHCAL) n_lim = 7.; 
+		else if(which_calo == LargeRLENC::Calorimeter::IHCAL) n_lim=2.;
+		float threshold = base_thresh * (1 + j * n_lim/((float) this->n_steps-1));
+		if(which_calo == LargeRLENC::Calorimeter::EMCAL) threshold=threshold*16.; //correct for the fact that the emcal has ~16 actual towers going to a single tower object
 		thresholds.push_back(threshold);
 		std::array<float, 4> e_region_1 { 0., 0., 0., 0. };
 		e_region.push_back(e_region_1);
@@ -885,18 +1006,21 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		}
 	}
 	std::cout<<"The thresholds and their number of towers are \n Threshold     Towers" <<std::endl;
+	if(n_valid_towers.size() <= 0 ) return; 
 	for(int i=0; i<(int) n_valid_towers.size(); i++)
 	{
 		std::cout<<strippedCalo.at(0)->RegionOutput->at(i)->threshold <<":    " <<n_valid_towers[i] <<std::endl;
 	}   
 	//now I need to actualy run the dataset 
 	std::vector<std::thread> CalculatingThreads;
+	std::cout<<"Calo object has size " <<strippedCalo.size() <<std::endl;
 	for(int i=0; i<(int)strippedCalo.size()-1; i++)
 	{
+		if(i%200 == 0 ) std::cout<<"Prepping tower for threading : " <<i <<std::endl;
 		StrippedDownTower* t = strippedCalo.at(i);
 		std::vector<StrippedDownTower> CaloCopy;
 		for(int j=i+1; j<(int)strippedCalo.size(); j++) CaloCopy.push_back(*(strippedCalo[j])); //avoid double counting
-		//CalculateENC(t, CaloCopy, transverse, energy);
+//		CalculateENC(t, CaloCopy, transverse, energy);
 		CalculatingThreads.push_back(std::thread(&LargeRLENC::CalculateENC, this, t, CaloCopy, transverse, energy));
 	}
 	std::cout<<"Performing caluclation" <<std::endl;
@@ -949,9 +1073,58 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 			
 		}
 	}
+	std::cout<<"Plotting Energy " <<std::endl;
+	if(which_calo == LargeRLENC::Calorimeter::TRUTH)
+	{
+		for(int region=0; region < 4; region++)
+		{
+			for(int threshold_index=0; threshold_index < (int) n_entries_arr[region].size(); threshold_index++)
+			{
+				Tr_Region_vector[threshold_index][region][which_calo]->E->Fill(e_region[threshold_index][region]);
+				if(region < 3 )
+					 Tr_Region_vector[threshold_index][region][which_calo]->N->Fill(n_entries_arr[region][threshold_index]);
+				else if(region == 3)
+					Tr_Region_vector[threshold_index][region][which_calo]->N->Fill(n_entries_arr[region][threshold_index]+n_entries_arr[region+1][threshold_index]);
+			}
+		}
+		for(auto Tow:strippedCalo)
+		{
+			int n_th=Tow->FullOutput->size();
+			for(int threshold_index=0; threshold_index < n_th; threshold_index++)
+			{
+				int region=Tow->tag;
+				TowerOutput* TF=Tow->FullOutput->at(threshold_index);
+				TowerOutput* TR=Tow->RegionOutput->at(threshold_index);
+				int region_shift=region;
+				if(region_shift > 3 ) region_shift=3;
+				TF->Normalize(e_region[threshold_index][region_shift]);
+				TR->Normalize(e_region[threshold_index][region_shift]);
+				auto Hists=Tr_Region_vector[threshold_index][region_shift][which_calo];
+				auto FullHists=Tr_Region_vector[threshold_index][0][which_calo];
+				if((int)TF->RL.size() > 0 ){
+					for(int i=0; i<(int)TF->RL.size(); i++){
+						FullHists->R->Fill(TF->RL.at(i));
+						FullHists->E2C->Fill(TF->RL.at(i), TF->E2C.at(i));
+						if((int) TF->E3C.size() <= i ) continue; 
+						else FullHists->E3C->Fill(TF->RL.at(i), TF->E3C.at(i));
+					}
+				}
+				if((int)TR->RL.size() > 0 ){
+					for(int i=0; i<(int)TR->RL.size(); i++){
+						Hists->R->Fill(TR->RL.at(i));
+						Hists->E2C->Fill(TR->RL.at(i), TR->E2C.at(i));
+						if((int) TR->E3C.size() <= i ) continue; 
+						else Hists->E3C->Fill(TR->RL.at(i), TR->E3C.at(i));
+					}
+				}
+			}
+		}
+		strippedCalo.clear();
+		return;
+	}
 	for(int region=0; region < 4; region++)
 	{
-		for(int threshold_index=0; threshold_index < (int) n_entries_arr.size(); threshold_index++)
+		for(int threshold_index=0; threshold_index < (int) n_entries_arr[region].size(); threshold_index++)
 		{
 			Region_vector[threshold_index][region][which_calo]->E->Fill(e_region[threshold_index][region]);
 			if(region < 3 )
@@ -1110,13 +1283,13 @@ void LargeRLENC::CalculateENC(StrippedDownTower* tower1, std::vector<StrippedDow
 				tower1->FullOutput->at(index1)->AddE2CValues(e2c, R_L);
 				//std::cout<<"Adding pair " <<R_L <<", "<<e2c <<std::endl;
 				if(sameRegion)tower1->RegionOutput->at(index2)->AddE2CValues(e2c, R_L); //this is the two point done noew 
-				for(auto t3:e3c_relevant)
-				{
-					if(t3.first.second.first > thresh){
-						tower1->FullOutput->at(index1)->AddE3CValues(t3.first.second.second, t3.first.first);
-						if(t3.second) tower1->RegionOutput->at(index2)->AddE3CValues(t3.first.second.second, t3.first.first);
-					}
-				}	
+		//		for(auto t3:e3c_relevant)
+			//	{
+					//if(t3.first.second.first > thresh){
+					//	tower1->FullOutput->at(index1)->AddE3CValues(t3.first.second.second, t3.first.first);
+						//if(t3.second) tower1->RegionOutput->at(index2)->AddE3CValues(t3.first.second.second, t3.first.first);
+				//	}
+			//	}	
 			}
 		}	
 		
@@ -1202,57 +1375,72 @@ void LargeRLENC::Print(const std::string &what) const
 		TDirectory* dir_towrd=ti->mkdir(Form("Towards_Region_Threshold_index_%d", i));
 		TDirectory* dir_away=ti->mkdir(Form("Away_Region_Threshold_index_%d", i));
 		TDirectory* dir_trans=ti->mkdir(Form("Transverse_Region_Threshold_index_%d", i));
-		
-		dir_full->cd();
-	for(auto hv:FullCal){
-		for( auto h:hv->histsvector){
-			try{
-				 if(h) h->Write();
+		if(!isRealData && !pedestalData)
+		{
+			for(auto hr:Tr_Region_vector.at(i))
+			{
+				for(auto hv:hr){
+					hv->R_pt->Write();
+					hv->E2C->Write();
+					hv->E3C->Write();
+					hv->R->Write();
+					hv->N->Write();
+					hv->E->Write();
+					hv->pt->Write();
+				}
 			}
-			catch(std::exception& e){continue;}
+		}	
+		dir_full->cd();
+		for(auto hv:FullCal){
+			for( auto h:hv->histsvector){
+				try{
+					 if(h) h->Write();
+				}
+				catch(std::exception& e){continue;}
+			}
+			hv->R_pt->Write();
+			hv->E2C->Write();
+			hv->E3C->Write();
+			hv->R->Write();
+			hv->N->Write();
+			hv->E->Write();
+			hv->pt->Write();
 		}
-		hv->R_pt->Write();
-		hv->E2C->Write();
-		hv->E3C->Write();
-		hv->R->Write();
-		hv->N->Write();
-		hv->E->Write();
-		hv->pt->Write();
-	}
-	dir_trans->cd();
-	for(auto hv:TransverseRegion){
-		for( auto h:hv->histsvector)if(h) h->Write();	
-		hv->R_pt->Write();
-		hv->E2C->Write();
-		hv->E3C->Write();
-		hv->R->Write();
-		hv->N->Write();
-		hv->E->Write();
-		hv->pt->Write();
-	}
-	dir_away->cd();
-	for(auto hv:AwayRegion){
-		for( auto h:hv->histsvector)if(h) h->Write();
-		hv->R_pt->Write();
-		hv->E2C->Write();
-		hv->E3C->Write();
-		hv->R->Write();
-		hv->N->Write();
-		hv->E->Write();
-		hv->pt->Write();
-	}
-	dir_towrd->cd();
-	for(auto hv:TowardRegion){	
-//		for( auto h:hv->histsvector)if(h) h->Write(); //this stopped working for some reason
-		hv->R_pt->Write();
-		hv->E2C->Write();
-		hv->E3C->Write();
-		hv->R->Write();
-		hv->N->Write();
-		hv->E->Write();
-		hv->pt->Write();
+		dir_trans->cd();
+		for(auto hv:TransverseRegion){
+			for( auto h:hv->histsvector)if(h) h->Write();	
+			hv->R_pt->Write();
+			hv->E2C->Write();
+			hv->E3C->Write();
+			hv->R->Write();
+			hv->N->Write();
+			hv->E->Write();
+			hv->pt->Write();
 		}
-	}
+		dir_away->cd();
+		for(auto hv:AwayRegion){
+			for( auto h:hv->histsvector)if(h) h->Write();
+			hv->R_pt->Write();
+			hv->E2C->Write();
+			hv->E3C->Write();
+			hv->R->Write();
+			hv->N->Write();
+			hv->E->Write();
+			hv->pt->Write();
+		}
+		dir_towrd->cd();
+		for(auto hv:TowardRegion){	
+	//		for( auto h:hv->histsvector)if(h) h->Write(); //this stopped working for some reason
+			hv->R_pt->Write();
+			hv->E2C->Write();
+			hv->E3C->Write();
+			hv->R->Write();
+			hv->N->Write();
+			hv->E->Write();
+			hv->pt->Write();
+			}
+		
+		}
 	f1->cd();
 	f1->Write();
 	f1->Close();

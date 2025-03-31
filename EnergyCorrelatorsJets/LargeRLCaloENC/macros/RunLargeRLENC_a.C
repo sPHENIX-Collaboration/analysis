@@ -48,7 +48,7 @@ std::pair<std::string, std::string> fix_calo_fitting_dst_names(int dst_numb, std
 	return std::make_pair(s, s2);
 
 }
-int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="none", std::string data_trigger="none", std::string data_jet="none", std::string truthfile="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0", const std::string& dbtag="ProdA_2024")
+int RunLargeRLENC_a(std::string data_dst="none", std::string data_fitting_dst="none", std::string data_trigger="none", std::string data_jet="none", std::string truthfile="none", std::string truthjetfile="none", std::string calotowersfile="none", std::string truthrecofile="none", std::string globalrecofile="none", std::string n_evt="0", std::string minpt="1.0", const std::string& dbtag="ProdA_2024")
 {
 	std::cout<<"actually processing this thing" <<std::endl;
 	std::map<std::string, std::string> input_files {{data_dst, "data_calo_dst"}, {data_fitting_dst, "data_fitting"}, {data_trigger,/* "none",*/"data_trigger"}, {data_jet, "data_jet"}, {truthjetfile, "truthjet"}, {calotowersfile, "calotowers"}, {truthrecofile, "truthreco"}, {globalrecofile, "globalreco"}, {truthfile, "truth"}};
@@ -66,10 +66,10 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 	{
 		std::cout<<"working on the file for: " <<f.second <<std::endl;
 		if(f.first.find("none") != std::string::npos) continue;
-		/*if(f.second.find("data_trigger") != std::string::npos  || f.second.find("data_jet")!=std::string::npos){
+	/*	if(f.second.find("data_fitting") != std::string::npos  || f.second.find("data_jet")!=std::string::npos){
 			std::pair<std::string, std::string> calo_fitting_files=fix_calo_fitting_dst_names(segment, f.first); //issue with the most recent pass needs fixing, probably should pick up ana number but meh
-			input_files[calo_fitting_files.first]="data_1_fitting";
-			input_files[calo_fitting_files.second]="data_2_fitting";
+			//input_files[calo_fitting_files.first]="data_1_fitting";
+			//input_files[calo_fitting_files.second]="data_2_fitting";
 			Fun4AllInputManager* inputfile1=new Fun4AllDstInputManager(Form("%s_1", f.second.c_str()));
 			Fun4AllInputManager* inputfile2=new Fun4AllDstInputManager(Form("%s_2", f.second.c_str()));
 			inputfile1->AddFile(calo_fitting_files.first 	);
@@ -77,7 +77,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 			se->registerInputManager(inputfile1);
 			se->registerInputManager(inputfile2);
 			std::cout<<"Calo Fitting file 1: " <<calo_fitting_files.first 	<<std::endl;
-			std::cout<<"Calo Fitting file 2: " <<calo_fitting_files.second 	<<std::endl;
+		//	std::cout<<"Calo Fitting file 2: " <<calo_fitting_files.second 	<<std::endl;
 			input_files.erase(f.first); 
 			continue;
 		}*/
@@ -170,7 +170,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 //	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
 	//std::fstream* ofs=new std::fstream(text_out_filename);
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
-//	LEDPedestalScan* sc=new LEDPedestalScan(run_number, segment, false, false);
+//	LEDPedestalScan* sc=new LEDPedestalScan(run_number, segment, false);
 	se->registerSubsystem(rlenc);
 //	se->registerSubsystem(sc);
 //	dummy* d=new dummy();

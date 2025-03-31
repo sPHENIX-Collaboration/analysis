@@ -38,13 +38,15 @@ class TowerOutput
 		}
 		void AddE3CValues(float e3c, std::array<float, 3> dist){
 			int index=-1;
+			if(RL_RM_RS.size() > 0 ){
 			for(int i = 0; i<(int)RL_RM_RS.size(); i++){
+				if(i >= (int) RL_RM_RS.size()) break;
 				if(dist == RL_RM_RS.at(i)){
 					index = i; 
 					break;
 				}
 				else continue;
-			}
+			}}
 			if(index > -1 ){
 				E3C_full_shape.at(index)+=e3c;
 			}

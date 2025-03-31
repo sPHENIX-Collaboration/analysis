@@ -30,6 +30,7 @@ libLargeRLENC_la_LIBADD = \
   -lfun4all \
   -lg4eval \
   -lg4jets \
+  -lphhepmc \
   -lcalotrigger_io \
   -lcalotrigger \
   -lCalorimeterTowerENC 

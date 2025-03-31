@@ -2,6 +2,8 @@
 //  -*- C++ -*-.
 #ifndef LARGERLENC_H
 #define LARGERLENC_H
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 //fun4all
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
@@ -27,6 +29,10 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4TruthInfoContainer.h>
+
+#include <phhepmc/PHHepMCGenEvent.h>  
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
 
 //jetbase objects 
 #include <jetbase/JetContainer.h>
@@ -101,7 +107,8 @@ class LargeRLENC : public SubsysReco
 		All, 
 		EMCAL,
 		IHCAL,
-		OHCAL
+		OHCAL, 
+		TRUTH
 	};
   	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const bool pedestal=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
 
@@ -160,6 +167,7 @@ class LargeRLENC : public SubsysReco
 	std::array<float,3> HadronicEnergyBalence(Jet*, float, PHCompositeNode*);
 	std::vector<std::array<float,3>> getJetEnergyRatios(JetContainerv1*, float, PHCompositeNode*);	
 	JetContainerv1* getJets(std::string, std::string, std::array<float, 3>, float ohcal_rat, PHCompositeNode*);
+	void TruthRegion (std::map<std::array<float, 3>, float> , float,  std::string, std::array<float, 3>, float);
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
@@ -174,6 +182,7 @@ class LargeRLENC : public SubsysReco
 	DijetEventCuts* eventCut;	
 	void MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, TowerInfoContainer* emcal, RawTowerGeomContainer_Cylinderv1* h_geom, TowerInfoContainer* hcal );
 	std::vector<std::array<float, 4>> Thresholds;	
+	std::map<int, std::pair<float, float>> emcal_lookup_table;
  private:
 	std::string algo, radius, output_file_name;
 	std::string ohcal_energy_towers="TOWERINFO_CALIB_HCALOUT", ihcal_energy_towers="TOWERINFO_CALIB_HCALIN", emcal_energy_towers="TOWERINFO_CALIB_CEMC";
@@ -189,7 +198,7 @@ class LargeRLENC : public SubsysReco
 	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC/*, *JetEvtObs*/;
-	std::vector<std::vector<std::vector<MethodHistograms*>>> Region_vector;
+	std::vector<std::vector<std::vector<MethodHistograms*>>> Region_vector, Tr_Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
@@ -201,12 +210,11 @@ class LargeRLENC : public SubsysReco
 	std::vector<std::array<float, 3>> m_emcal, m_ihcal, m_ohcal; //3 points, eta, phi, et
 	std::array<std::array<TH1F*, 3>, 3> Et_miss_hists;
 	std::array<float, 4> thresh_mins;
-	float ohcal_min=0.0075; //7.5 MeV from jet 30 and 10 study
-	float emcal_min=0.05; //50 MeV
-	float ihcal_min=0.0075; //7.5 MeV
+	float ohcal_min=0.01; //7.5 MeV from jet 30 and 10 study
+	float emcal_min=0.01; //50 MeV
+	float ihcal_min=0.005; //7.5 MeV
 	float all_min=0.065; //65 MeV
 	//all these are conservative vals 
 	int n_steps=10;
-	std::map<int, std::pair<float, float>> emcal_lookup_table;
 };
 #endif // LARGERLENC_H
