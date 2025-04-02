@@ -57,7 +57,8 @@ if __name__ == '__main__':
     condorFile.write("outfilename        = {}/hists_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_plotcluster/condorlog_$(Process).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_plotcluster_$(Process).log\n")
     condorFile.write("Arguments          = \"$(isdata) $(evtvtxmap) $(infilename) $(outfilename)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import TH1F, TH2F, TFile, TCanvas, TLegend, TColor, gROOT, gSystem, gPad, kGreen, kBlack, kOrange
+from ROOT import TH1F, TH2F, TFile, TCanvas, TLegend, TColor, gROOT, gSystem, gPad, kGreen, kBlack, kOrange, TGraphAsymmErrors
 import numpy
 import math
 import glob
@@ -43,9 +43,16 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
     xrange_low = 999 
     xrange_high = -999
     
+    gdatas = []
     for hdata in hdatas:
         hdata.Sumw2()
         # maxbincontent = max(hdata.GetMaximum()+hdata.GetBinError(hdata.GetMaximumBin()), maxbincontent)
+        tgae = TGraphAsymmErrors(hdata)
+        # remove the points with zero bin content
+        for i in range(tgae.GetN()-1, -1, -1):
+            if tgae.GetY()[i] == 0:
+                tgae.RemovePoint(i)
+        gdatas.append(tgae)
     
     xrange_low = hdatas[0].GetXaxis().GetXmin()
     xrange_high = hdatas[0].GetXaxis().GetXmax()
@@ -79,10 +86,11 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
         hsim.SetLineWidth(2)
         if 'generator' in simlegtex[i]: # HIING truth always the first
             hsim.GetYaxis().SetTitle(YaxisName)
-            if logy:
-                hsim.GetYaxis().SetRangeUser(hdata.GetMinimum(0)*0.5, maxbincontent * ymaxscale)
-            else:
-                hsim.GetYaxis().SetRangeUser(0., maxbincontent * ymaxscale)
+            hsim.GetYaxis().SetRangeUser(0, maxbincontent * ymaxscale)
+            # if logy:
+            #     hsim.GetYaxis().SetRangeUser(hdata.GetMinimum(0)*0.5, maxbincontent * ymaxscale)
+            # else:
+            #     hsim.GetYaxis().SetRangeUser(0., maxbincontent * ymaxscale)
                 
             hsim.GetXaxis().SetTitle(XaxisName)
             # hsim.GetXaxis().SetRangeUser(xrange_low, xrange_high)
@@ -97,18 +105,18 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
             hsim.SetMarkerColor(TColor.GetColor(hsimcolor[i]))
             hsim.Draw('E5 same')
     
-    for i, hdata in enumerate(hdatas): # the first is the CMS approach, the second is the PHOBOS approach
-        if hdata.Integral(-1,-1) == 0:
-            continiue
+    for i, gdata in enumerate(gdatas): # the first is the CMS approach, the second is the PHOBOS approach
+        # if hdata.Integral(-1,-1) == 0:
+        #     continiue
         
-        hdata.SetMarkerStyle(24)
-        hdata.SetMarkerSize(0.8)
-        hdata.SetMarkerColor(12 if i == 0 else kGreen-1)
-        hdata.SetLineColor(12 if i == 0 else kGreen-1)
-        hdata.SetLineWidth(0)
-        hdata.SetFillColorAlpha(12 if i == 0 else kGreen-1, 0.3)
-        hdata.GetXaxis().SetRange(hdata.FindFirstBinAbove(0),hdata.FindLastBinAbove(0))
-        hdata.Draw('E5 same')
+        gdata.SetMarkerStyle(34 if i==0 else 47)
+        gdata.SetMarkerSize(1)
+        gdata.SetMarkerColor(TColor.GetColor('#FF6700') if i == 0 else TColor.GetColor('#228B22'))
+        gdata.SetLineColor(TColor.GetColor('#FF6700') if i == 0 else TColor.GetColor('#228B22'))
+        gdata.SetLineWidth(1)
+        gdata.SetFillColorAlpha(TColor.GetColor('#FF6700') if i == 0 else TColor.GetColor('#228B22'), 0.3)
+        gdata.GetXaxis().SetRange(hdata.FindFirstBinAbove(0),hdata.FindLastBinAbove(0))
+        gdata.Draw('5p same')
             
     # Draw the PHOBOS measurement
     if g_phobos:
@@ -135,14 +143,14 @@ def Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisNam
     leg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
     leg.AddEntry('', addstr, '')
     for i, lt in enumerate(datalegtex):
-        leg.AddEntry(hdatas[i], lt, "pf");
+        leg.AddEntry(gdatas[i], lt, "pf");
     for i, lt in enumerate(simlegtex):
         if 'generator' in lt:
             leg.AddEntry(hsims[i], lt, "le");
         else:
             leg.AddEntry(hsims[i], lt, "pl");
     if g_phobos:
-        leg.AddEntry(g_phobos, 'PHOBOS (Phys. Rev. C 83, 024913)', 'pf')
+        leg.AddEntry(g_phobos, 'PHOBOS [Phys. Rev. C 83, 024913]', 'pf')
     leg.Draw()
     c.RedrawAxis()
     c.Draw()
@@ -217,6 +225,12 @@ if __name__ == '__main__':
     simlegtext = []
 
     h1WEfinal_data = GetHistogram("{}/{}/finalhists_systematics_{}.root".format(datahistdir,filedesc,filedesc), 'hM_final')
+    # loop over the bins, for |eta| > 1.1, set the bin content to 0
+    for i in range(1, h1WEfinal_data.GetNbinsX()+1):
+        if abs(h1WEfinal_data.GetBinCenter(i)) > 1.1:
+            h1WEfinal_data.SetBinContent(i, 0)
+            h1WEfinal_data.SetBinError(i, 0)
+    
     l_h1WEfinal_sim = []
     # l_h1WGhadron_sim = []
     for i, simhistd in enumerate(simhistdir):
@@ -226,15 +240,19 @@ if __name__ == '__main__':
         simlegtext.append('HIJING (generator)')
         # From the CMS-style analysis
         # l_h1WEfinal_sim.append(GetHistogram("{}/{}/correction_hists.root".format(simhistd,filedesc), 'h1WEfinal'))
-        # simlegtext.append('Simulation closure (CMS approach)')
+        # simlegtext.append('Simulation closure [The closest-match method]')
         # From the PHOBOS-style analysis
         # if docompare:
         #     l_h1WEfinal_sim.append(GetHistogram("/sphenix/user/ChengWei/INTT/INTT_commissioning/ZeroField/F4A_20869/2024_05_07/folder_Data_CombinedNtuple_Run20869_HotDead_BCO_ADC_Survey/evt_tracklet/complete_file/merged_file_folder/eta_closer_out_test_MultiZBin/hist_for_AN.root", 'dNdeta_1D_MCreco_loose_PostCorrection_corr_Mbin{}'.format(MbinNum)))
-        #     simlegtext.append('Simulation closure (PHOBOS approach)')
+        #     simlegtext.append('Simulation closure [The combinatoric method]')
         # Raw generated hadron distribution
         
     if docompare:
-        hM_dNdeta_1D_Datareco_tight_PostCorrection = GetHistogram("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root".format(MbinNum, MbinNum, MbinNum), 'h1D_dNdEta_reco')
+        hM_dNdeta_1D_Datareco_tight_PostCorrection = GetHistogram("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin{}/Final_Mbin{}_00054280/Final_Mbin{}_00054280.root".format(MbinNum, MbinNum, MbinNum), 'h1D_dNdEta_reco')
+        for i in range(1, hM_dNdeta_1D_Datareco_tight_PostCorrection.GetNbinsX()+1):
+            if abs(hM_dNdeta_1D_Datareco_tight_PostCorrection.GetBinCenter(i)) > 1.1:
+                hM_dNdeta_1D_Datareco_tight_PostCorrection.SetBinContent(i, 0)
+                hM_dNdeta_1D_Datareco_tight_PostCorrection.SetBinError(i, 0)
     
     # split the string by '_' and replace some characters
     descstr = filedesc.split('_')
@@ -254,10 +272,11 @@ if __name__ == '__main__':
     
     aselstr = '' if aselstr == 'noasel' else ', (with additional selection)'
     
-    legstr = centstr + ', ' + zvtxstr + aselstr
+    # legstr = centstr + ', ' + zvtxstr + aselstr
+    legstr = centstr
     
     # Draw_1Dhist_datasimcomp(hdatas, hsims, gpadmargin, logy, ymaxscale, XaxisName, YaxisName, Ytitle_unit, prelim, addstr, datalegtex, simlegtex, outname):
     if docompare:
-        Draw_1Dhist_datasimcomp([h1WEfinal_data, hM_dNdeta_1D_Datareco_tight_PostCorrection], l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.5, 'Pseudorapidity #eta', 'dN_{ch}/d#eta', '', False, legstr, ['Data (CMS approach)', 'Data (PHOBOS approach)'], simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,filedesc))
+        Draw_1Dhist_datasimcomp([h1WEfinal_data, hM_dNdeta_1D_Datareco_tight_PostCorrection], l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.5, 'Pseudorapidity #eta', 'dN_{ch}/d#eta', '', False, legstr, ['Data - The closest-match method', 'Data - The combinatoric method'], simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,filedesc))
     else:
-        Draw_1Dhist_datasimcomp([h1WEfinal_data], l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.5, 'Pseudorapidity #eta', 'dN_{ch}/d#eta', '', False, legstr, ['Data (CMS approach)'], simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,filedesc))
+        Draw_1Dhist_datasimcomp([h1WEfinal_data], l_h1WEfinal_sim, [0.06,0.06,0.15,0.13], False, 1.5, 'Pseudorapidity #eta', 'dN_{ch}/d#eta', '', False, legstr, ['Data - The closest-match method'], simlegtext, './corrections/{}/dNdeta_{}_crosscheck'.format(plotdir,filedesc))

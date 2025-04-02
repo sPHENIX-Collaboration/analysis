@@ -12,11 +12,28 @@ void quickdraw_centralitysim()
 
     ROOT::EnableImplicitMT();
     std::vector<std::string> filelist;
-    for (int i = 200; i < 1000; i++)
+    for (int i = 0; i < 5000; i++)
     {
-        std::string fname = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Sim_HIJING_ananew_20250131/ntuple_" + std::string(TString::Format("%05d", i).Data()) + ".root";
+        std::string fname = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Sim_AMPT_MDC2_ana472_20250310/ntuple_" + std::string(TString::Format("%05d", i).Data()) + ".root";
+        
+        // Check if file exists and is valid
+        TFile *f = TFile::Open(fname.c_str());
+        if (!f || f->IsZombie() || f->GetSize() <= 0) {
+            std::cout << "Skipping invalid or empty file: " << fname << std::endl;
+            if (f) f->Close();
+            continue;
+        }
+        
+        // Check if file contains the required tree
+        if (!f->GetListOfKeys()->Contains("EventTree")) {
+            std::cout << "Skipping file without EventTree: " << fname << std::endl;
+            f->Close();
+            continue;
+        }
+        
+        f->Close();
         std::cout << "Adding file: " << fname << std::endl;
-        filelist.push_back(Form("/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Sim_HIJING_ananew_20250131/ntuple_00%d.root", i));
+        filelist.push_back(fname);
     }
     ROOT::RDataFrame df("EventTree", filelist);
 

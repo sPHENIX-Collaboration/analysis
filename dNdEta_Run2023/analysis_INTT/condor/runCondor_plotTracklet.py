@@ -50,7 +50,8 @@ if __name__ == '__main__':
 
     os.makedirs('./log_plottracklet/', exist_ok=True)
     if not dir_empty('./log_plottracklet/'):
-        os.system('rm ./log_plottracklet/*')
+        os.system('rm -rf ./log_plottracklet/')
+    os.makedirs('./log_plottracklet/', exist_ok=True)
 
     condorFileName = "submitCondor_plottracklet_{}_{}.job".format('data' if isdata else 'sim', 'dRcut'+str(drcut).replace('.', 'p')+'_NominalVtxZ'+('_RandomClusSet'+str(randomclusset))+('_clusAdcCutSet'+str(clusadccutset))+('_clusPhiSizeCutSet'+str(clusphisizecutset)))
     condorFile = open("{}".format(condorFileName), "w")
@@ -68,7 +69,8 @@ if __name__ == '__main__':
     condorFile.write("outfilename        = {}/hists_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_plottracklet/condorlog_$(Process).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_plottracklet_$(Process).log\n")
     condorFile.write("Arguments          = \"$(infilename) $(outfilename)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

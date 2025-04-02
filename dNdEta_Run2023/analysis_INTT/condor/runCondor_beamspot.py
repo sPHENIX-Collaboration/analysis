@@ -37,7 +37,8 @@ if __name__ == '__main__':
 
     os.makedirs('./log_beamspot/', exist_ok=True)
     if not dir_empty('./log_beamspot/'):
-        os.system('rm ./log_beamspot/*')
+        os.system('rm -rf ./log_beamspot/')
+    os.makedirs('./log_beamspot/', exist_ok=True)
 
     
     condorFileName = "submitCondor_BeamspotReco_{}.job".format('data' if isdata else 'sim')
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     condorFile.write("InitialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(InitialDir)/condor_BeamspotReco.sh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
+    # condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
     condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
@@ -60,7 +61,8 @@ if __name__ == '__main__':
     condorFile.write("outputfile         = {}/minitree_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_beamspot/condorlog_$(Process).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_beamspot_$(Process).log\n")
     condorFile.write("Arguments          = \"$(inputfile) $(outputfile) $(dphicut)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

@@ -30,8 +30,8 @@ echo "hijingclosuredir: ${hijingclosuredir}"
 echo "datadir: ${datadir}"
 
 # hadd the files in directories
-hadd -f -j 20 -k ${hijingbaselinedir}/minitree_set1.root ${hijingbaselinedir}/minitree_00{000..499}.root
-hadd -f -j 20 -k ${hijingclosuredir}/minitree_set2.root ${hijingclosuredir}/minitree_00{500..999}.root
+hadd -f -j 20 -k ${hijingbaselinedir}/minitree_set1.root ${hijingbaselinedir}/minitree_{00000..02499}.root
+hadd -f -j 20 -k ${hijingclosuredir}/minitree_set2.root ${hijingclosuredir}/minitree_{02500..04999}.root
 hadd -f -j 20 -k ${datadir}/minitree_segment1.root ${datadir}/minitree_00{000..299}.root
 hadd -f -j 20 -k ${datadir}/minitree_segment2.root ${datadir}/minitree_00{300..599}.root
 hadd -f -j 20 -k ${datadir}/minitree_segment3.root ${datadir}/minitree_00{600..899}.root
@@ -39,35 +39,12 @@ hadd -f -j 20 -k ${datadir}/minitree_segment4.root ${datadir}/minitree_0{0900..1
 hadd -f -j 20 -k ${datadir}/minitree_segment5.root ${datadir}/minitree_0{1200..1499}.root
 hadd -f -j 20 -k ${datadir}/minitree_segment6.root ${datadir}/minitree_0{1500..1757}.root
 
-
-# centralities_alice=(0 5 10 20 30 40 50 60 70 80) # ALICE 2010 binnings
-# length_alice=${#centralities_alice[@]}
-# for ((i=0; i<$length_alice-1; i++))
-# do
-#     echo "Processing centrality bin: ${centralities_alice[i]} - ${centralities_alice[i+1]}"
-#     ./Corrections [infile] [CentLow] [CentHigh] [pvzmin] [pvzmax] [applyc] [applyg] [applym] [estag] [aselstring] [correctionfiletag] [outfilepath] [debug]
-#     echo "Processing HIJING Baseline"
-#     ./Corrections ${hijingbaselinedir}/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 0 0 0 null null ${corrfiletag} ${outfilepath_baseline} 1
-#     ./Corrections ${hijingbaselinedir}/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 0 0 0 null null ${corrfiletag} ${outfilepath_baseline} 1
-#     ./Corrections ${hijingbaselinedir}/minitree_set1.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 0 0 0 null null ${corrfiletag} ${outfilepath_baseline} 1
-#     echo "Processing HIJING Closure"
-#     ./Corrections ${hijingclosuredir}/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 1 0 0 null null ${corrfiletag} ${outfilepath_closure} 1
-#     ./Corrections ${hijingclosuredir}/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 1 0 0 null null ${corrfiletag} ${outfilepath_closure} 1
-#     ./Corrections ${hijingclosuredir}/minitree_set2.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 1 0 0 null null ${corrfiletag} ${outfilepath_closure} 1
-#     echo "Processing Data Run2023"
-#     ./Corrections ${datadir}/minitree_segment1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment1 1
-#     ./Corrections ${datadir}/minitree_segment1.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment1 1
-#     ./Corrections ${datadir}/minitree_segment1.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment1 1
-#     ./Corrections ${datadir}/minitree_segment2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment2 1
-#     ./Corrections ${datadir}/minitree_segment2.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment2 1
-#     ./Corrections ${datadir}/minitree_segment2.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment2 1
-#     ./Corrections ${datadir}/minitree_segment3.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment3 1
-#     ./Corrections ${datadir}/minitree_segment3.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment3 1
-#     ./Corrections ${datadir}/minitree_segment3.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment3 1
-#     ./Corrections ${datadir}/minitree_segment4.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment4 1
-#     ./Corrections ${datadir}/minitree_segment4.root ${centralities_alice[i]} ${centralities_alice[i+1]} -10 0 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment4 1
-#     ./Corrections ${datadir}/minitree_segment4.root ${centralities_alice[i]} ${centralities_alice[i+1]} 0 10 1 1 1 null null ${corrfiletag} ${outfilepath_data}_segment4 1
-# done
+# hadd -f -k ${datadir}/minitree_segment1.root ${datadir}/minitree_00{000..299}.root
+# hadd -f -k ${datadir}/minitree_segment2.root ${datadir}/minitree_00{300..599}.root
+# hadd -f -k ${datadir}/minitree_segment3.root ${datadir}/minitree_00{600..899}.root
+# hadd -f -k ${datadir}/minitree_segment4.root ${datadir}/minitree_0{0900..1199}.root
+# hadd -f -k ${datadir}/minitree_segment5.root ${datadir}/minitree_0{1200..1499}.root
+# hadd -f -k ${datadir}/minitree_segment6.root ${datadir}/minitree_0{1500..1757}.root
 
 centralities_phobos=(0 3 6 10 15 20 25 30 35 40 45 50 55 60 65 70) # PHOBOS 2011 binnings
 length_phobos=${#centralities_phobos[@]}

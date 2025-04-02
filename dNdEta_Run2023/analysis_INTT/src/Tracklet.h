@@ -138,10 +138,15 @@ class TrackletData
     vector<bool> recotkl_isMatchedGChadron;
     vector<int> recotkl_clus1_matchedtrackID, recotkl_clus2_matchedtrackID;
     vector<int> recotkl_clus1_matchedAncestorTrackID, recotkl_clus2_matchedAncestorTrackID;
+    vector<float> recotkl_matchedPG4P_eta, recotkl_matchedPG4P_phi;
+    vector<float> recotkl_matchedGChadron_eta, recotkl_matchedGChadron_phi;
     vector<int> matchedGChadron_trackID;
     vector<float> matchedGChadron_pt, matchedGChadron_eta, matchedGChadron_phi;
 
-    vector<int> PrimaryG4P_trackID;
+    vector<int> G4P_trackID;
+    vector<float> G4P_Pt, G4P_eta, G4P_phi;
+
+    vector<int> PrimaryG4P_trackID, PrimaryG4P_PID;
     vector<float> PrimaryG4P_Pt, PrimaryG4P_eta, PrimaryG4P_phi;
     vector<bool> PrimaryG4P_IsRecotkl;
 
@@ -222,6 +227,7 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata, bool detailed = false)
         outTree->Branch("TruthPV_z", &tkldata.TruthPV_z);
         outTree->Branch("pu0_sel", &tkldata.pu0_sel);
         outTree->Branch("process", &tkldata.process);
+        outTree->Branch("PrimaryG4P_PID", &tkldata.PrimaryG4P_PID);
         outTree->Branch("PrimaryG4P_Pt", &tkldata.PrimaryG4P_Pt);
         outTree->Branch("PrimaryG4P_eta", &tkldata.PrimaryG4P_eta);
         outTree->Branch("PrimaryG4P_phi", &tkldata.PrimaryG4P_phi);
@@ -231,6 +237,13 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata, bool detailed = false)
         outTree->Branch("GenHadron_eta", &tkldata.GenHadron_eta);
         outTree->Branch("GenHadron_phi", &tkldata.GenHadron_phi);
         outTree->Branch("GenHadron_IsRecotkl", &tkldata.GenHadron_IsRecotkl);
+        if (detailed)
+        {
+            outTree->Branch("recotkl_matchedPG4P_eta", &tkldata.recotkl_matchedPG4P_eta);
+            outTree->Branch("recotkl_matchedPG4P_phi", &tkldata.recotkl_matchedPG4P_phi);
+            outTree->Branch("recotkl_matchedGChadron_eta", &tkldata.recotkl_matchedGChadron_eta);
+            outTree->Branch("recotkl_matchedGChadron_phi", &tkldata.recotkl_matchedGChadron_phi);
+        }
     }
 }
 
@@ -296,11 +309,17 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.matchedGChadron_pt);
     CleanVec(tkldata.matchedGChadron_eta);
 
+    CleanVec(tkldata.PrimaryG4P_PID);
     CleanVec(tkldata.PrimaryG4P_trackID);
     CleanVec(tkldata.PrimaryG4P_Pt);
     CleanVec(tkldata.PrimaryG4P_eta);
     CleanVec(tkldata.PrimaryG4P_phi);
     CleanVec(tkldata.PrimaryG4P_IsRecotkl);
+
+    CleanVec(tkldata.G4P_trackID);
+    CleanVec(tkldata.G4P_Pt);
+    CleanVec(tkldata.G4P_eta);
+    CleanVec(tkldata.G4P_phi);
 
     for (auto &genhad : tkldata.GenHadrons)
     {
@@ -313,6 +332,11 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.GenHadron_eta);
     CleanVec(tkldata.GenHadron_phi);
     CleanVec(tkldata.GenHadron_IsRecotkl);
+
+    CleanVec(tkldata.recotkl_matchedPG4P_eta);
+    CleanVec(tkldata.recotkl_matchedPG4P_phi);
+    CleanVec(tkldata.recotkl_matchedGChadron_eta);
+    CleanVec(tkldata.recotkl_matchedGChadron_phi);
 }
 
 bool compare_dR(Tracklet *a, Tracklet *b) { return a->dR() < b->dR(); }
@@ -491,12 +515,32 @@ void RecoTkl_isG4P(TrackletData &tkldata)
         // std::cout << "Tracklet (delta phi, delta eta, delta R) = (" << tkl->dPhi() << ", " << tkl->dEta() << ", " << tkl->dR() << ")" << std::endl;
         // std::cout << "Tracklet cluster 1: matched G4P track ID = " << tkl->Hit1()->MatchedG4P_trackID() << " ; cluster 2: matched G4P track ID = " << tkl->Hit2()->MatchedG4P_trackID() << std::endl;
         // std::cout << "Tracklet cluster 1: matched G4P ancestor track ID = " << tkl->Hit1()->MatchedG4P_ancestor_trackID() << " ; cluster 2: matched G4P ancestor track ID = " << tkl->Hit2()->MatchedG4P_ancestor_trackID() << std::endl //
-                //   << "--------------------------------" << std::endl;                                                                                                                                                                    //
+        //   << "--------------------------------" << std::endl;
+
+        // check if the two clusters in a tracklet are matched to the same G4 particle
         if ((tkl->Hit1()->MatchedG4P_trackID() == tkl->Hit2()->MatchedG4P_trackID()) && (tkl->Hit1()->MatchedG4P_trackID() != std::numeric_limits<int>::max()))
         {
-            // now we have to see if the matched G4P track ID is in the GenHadron_trackID vector
-            auto it = std::find(tkldata.GenHadron_trackID.begin(), tkldata.GenHadron_trackID.end(), tkl->Hit1()->MatchedG4P_trackID());
-            if (it != tkldata.GenHadron_trackID.end())
+            // see if the match G4P track ID is in the G4P_trackID vector
+            auto it_pg4p = std::find(tkldata.G4P_trackID.begin(), tkldata.G4P_trackID.end(), tkl->Hit1()->MatchedG4P_trackID());
+            if (it_pg4p != tkldata.G4P_trackID.end())
+            {
+                int index = std::distance(tkldata.G4P_trackID.begin(), it_pg4p);
+                tkldata.recotkl_matchedPG4P_eta.push_back(tkldata.G4P_eta[index]);
+                tkldata.recotkl_matchedPG4P_phi.push_back(tkldata.G4P_phi[index]);
+
+                // add the matched G4P track ID to the set
+                G4PTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_trackID());
+                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+            }
+            else
+            {
+                tkldata.recotkl_matchedPG4P_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.recotkl_matchedPG4P_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+            }
+
+            // see if the matched G4P track ID is in the GenHadron_trackID vector
+            auto it_genhad = std::find(tkldata.GenHadron_trackID.begin(), tkldata.GenHadron_trackID.end(), tkl->Hit1()->MatchedG4P_trackID());
+            if (it_genhad != tkldata.GenHadron_trackID.end())
             {
                 tkl->SetMatchedGenHardon();
                 tkldata.recotkl_isMatchedGChadron.push_back(true);
@@ -504,32 +548,38 @@ void RecoTkl_isG4P(TrackletData &tkldata)
                 tkldata.matchedGChadron_eta.push_back(tkl->Hit1()->MatchedG4P_Eta());
                 tkldata.matchedGChadron_phi.push_back(tkl->Hit1()->MatchedG4P_Phi());
 
-                // add the matched G4P track ID to the set
-                G4PTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_trackID());
-                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+                tkldata.recotkl_matchedGChadron_eta.push_back(tkl->Hit1()->MatchedG4P_Eta());
+                tkldata.recotkl_matchedGChadron_phi.push_back(tkl->Hit1()->MatchedG4P_Phi());
             }
             else // it's not generated charged hadron
             {
                 tkldata.recotkl_isMatchedGChadron.push_back(false);
-                // if the matched G4P track ID is not in the GenHadron_trackID vector, set the matchedGChadron values to -1
-                tkldata.matchedGChadron_pt.push_back(-1);
-                tkldata.matchedGChadron_eta.push_back(-1);
-                tkldata.matchedGChadron_phi.push_back(-1);
+                // if the matched G4P track ID is not in the GenHadron_trackID vector, set the matchedGChadron values to NAN
+                tkldata.matchedGChadron_pt.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
 
-                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+                tkldata.recotkl_matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.recotkl_matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
             }
         }
         else
         {
             tkldata.recotkl_isMatchedGChadron.push_back(false);
-            // if the two clusters in a tracklet are not matched to the same G4 particle, set the matchedGChadron values to -1
-            tkldata.matchedGChadron_pt.push_back(-1);
-            tkldata.matchedGChadron_eta.push_back(-1);
-            tkldata.matchedGChadron_phi.push_back(-1);
+            // if the two clusters in a tracklet are not matched to the same G4 particle, set the matchedGChadron values to NAN
+            tkldata.matchedGChadron_pt.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+
+            tkldata.recotkl_matchedPG4P_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedPG4P_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
         }
     }
 
-    // Check for each element in the set if it is in the PrimaryG4P_trackID vector. If it is, set the corresponding element in PrimaryG4P_IsRecotkl to true
+    // Check for each element in the set if it is in the PrimaryG4P_trackID vector.
+    // If it is, set the corresponding element in PrimaryG4P_IsRecotkl to true
     std::cout << "G4PTrackID_tklmatched size: " << G4PTrackID_tklmatched.size() << std::endl;
     for (auto &trackID : G4PTrackID_tklmatched)
     {
@@ -541,7 +591,8 @@ void RecoTkl_isG4P(TrackletData &tkldata)
         }
     }
 
-    // Check for each element in the set if it is in the GenHadron_trackID vector. If it is, set the corresponding element in GenHadron_IsRecotkl to true
+    // Check for each element in the set if it is in the GenHadron_trackID vector.
+    // If it is, set the corresponding element in GenHadron_IsRecotkl to true
     std::cout << "G4PAncestorTrackID_tklmatched size: " << G4PAncestorTrackID_tklmatched.size() << std::endl;
     for (auto &trackID : G4PAncestorTrackID_tklmatched)
     {

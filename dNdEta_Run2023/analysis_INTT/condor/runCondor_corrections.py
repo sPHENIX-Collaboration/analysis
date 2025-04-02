@@ -45,7 +45,7 @@ if __name__ == '__main__':
     condorFile.write("InitialDir           = {}\n".format(parentdir))
     condorFile.write("Executable           = $(InitialDir)/runCorrections.sh\n")
     condorFile.write("PeriodicHold         = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("request_memory       = 20GB\n")
+    condorFile.write("request_memory       = 3GB\n")
     condorFile.write("Priority             = 20\n")
     condorFile.write("job_lease_duration   = 3600\n")
     condorFile.write("corrfiletag          = {}\n".format(corrfiletag))
@@ -57,7 +57,8 @@ if __name__ == '__main__':
     condorFile.write("datadir              = {}\n".format(datadir))
     condorFile.write("Output               = $(Initialdir)/condor/log_corrections/condorlog_{}.out\n".format(filedesc))
     condorFile.write("Error                = $(Initialdir)/condor/log_corrections/condorlog_{}.err\n".format(filedesc))
-    condorFile.write("Log                  = $(Initialdir)/condor/log_corrections/condorlog_{}.log\n".format(filedesc))
+    # condorFile.write("Log                  = $(Initialdir)/condor/log_corrections/condorlog_{}.log\n".format(filedesc))
+    condorFile.write("Log                = /tmp/condorlog_hjheng_corrections_{}.log\n".format(filedesc))
     condorFile.write("Arguments            = \"$(corrfiletag) $(outfilepath_baseline) $(outfilepath_closure) $(outfilepath_data) $(hijingbaselinedir) $(hijingclosuredir) $(datadir)\"\n")
     condorFile.write("Queue 1")
     condorFile.close() # Close the file before submitting the job

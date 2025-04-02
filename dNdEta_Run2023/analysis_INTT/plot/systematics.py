@@ -179,9 +179,9 @@ if __name__ == '__main__':
     
     desc = opt.desc
     
-    # deltaR selection - baseline 0.5, variation 0.1, 0.4, 0.6, 1.0
-    # cluster ADC cut - baseline 35, variation 50 and 65
-    # cluster phi-size cut - baseline no cut, variation 5, 10, 20
+    # deltaR selection - baseline 0.5, variation  0.4, 0.6
+    # cluster ADC cut - baseline 35, variation 50 and 0
+    # cluster phi-size cut - baseline 40, variation none
     # random noise cluster
     # Statistical uncertainties in the geometric correction and alpha corrections as propagated to the final dNdEta
     
@@ -203,18 +203,16 @@ if __name__ == '__main__':
     # tracklet delta-R cut
     h1WEfinal_dRcutSet1 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p4_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     h1WEfinal_dRcutSet2 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p6_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    h1WEfinal_dRcutSet3 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p1_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    h1WEfinal_dRcutSet4 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut999p0_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     # cluster ADC cut
     h1WEfinal_clusAdcCutSet1 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet1_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     h1WEfinal_clusAdcCutSet2 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet2_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    # random noise 
-    # h1WEfinal_noiseSet1 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet1_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    # h1WEfinal_noiseSet2 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet2_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    # h1WEfinal_noiseSet3 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet3_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
-    # h1WEfinal_noiseSet4 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet4_clusAdcCutSet0_clusPhiSizeCutSet0_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     # cluster phi-size cut
     h1WEfinal_clusphisizeSet1 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet1_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
+    # strangeness enhanced by 40% in HIJING
+    h1WEfinal_strangeness = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_enhancedstrangeness_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
+    # event generator 
+    h1WEfinal_EPOS = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_EPOS_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
+    h1WEfinal_AMPT = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_AMPT_segment1/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     # different segments 
     h1WEfinal_segment2 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment2/{}/correction_hists.root'.format(desc), 'h1WEfinal')
     h1WEfinal_segment3 = GetHistogram('/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/corrections/Data_Run54280_dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0_segment3/{}/correction_hists.root'.format(desc), 'h1WEfinal')
@@ -233,8 +231,6 @@ if __name__ == '__main__':
     # tracklet delta-R cut
     hM_reldiff_h1WEfinal_dRcutSet1 = getRelativeDiff(h1WEfinal_dRcutSet1, h1WEfinal_nominal)
     hM_reldiff_h1WEfinal_dRcutSet2 = getRelativeDiff(h1WEfinal_dRcutSet2, h1WEfinal_nominal)
-    # hM_reldiff_h1WEfinal_dRcutSet3 = getRelativeDiff(h1WEfinal_dRcutSet3, h1WEfinal_nominal)
-    # hM_reldiff_h1WEfinal_dRcutSet4 = getRelativeDiff(h1WEfinal_dRcutSet4, h1WEfinal_nominal)
     hM_maxreldiff_dRcut = getMaxRelDiff([hM_reldiff_h1WEfinal_dRcutSet1, hM_reldiff_h1WEfinal_dRcutSet2])
     # hM_maxreldiff_dRcut = getMaxRelDiff([hM_reldiff_h1WEfinal_dRcutSet1, hM_reldiff_h1WEfinal_dRcutSet2, hM_reldiff_h1WEfinal_dRcutSet3, hM_reldiff_h1WEfinal_dRcutSet4])
     # cluster ADC cut
@@ -242,14 +238,16 @@ if __name__ == '__main__':
     hM_reldiff_h1WEfinal_clusAdcCutSet2 = getRelativeDiff(h1WEfinal_clusAdcCutSet2, h1WEfinal_nominal)
     # hM_maxreldiff_clusAdcCut = getMaxRelDiff([hM_reldiff_h1WEfinal_clusAdcCutSet1])
     hM_maxreldiff_clusAdcCut = getMaxRelDiff([hM_reldiff_h1WEfinal_clusAdcCutSet1, hM_reldiff_h1WEfinal_clusAdcCutSet2])
-    # random noise 
-    # hM_reldiff_h1WEfinal_noiseSet1 = getRelativeDiff(h1WEfinal_noiseSet1, h1WEfinal_nominal)
-    # hM_reldiff_h1WEfinal_noiseSet2 = getRelativeDiff(h1WEfinal_noiseSet2, h1WEfinal_nominal)
-    # hM_reldiff_h1WEfinal_noiseSet3 = getRelativeDiff(h1WEfinal_noiseSet3, h1WEfinal_nominal)
-    # hM_maxreldiff_noise = getMaxRelDiff([hM_reldiff_h1WEfinal_noiseSet1, hM_reldiff_h1WEfinal_noiseSet2, hM_reldiff_h1WEfinal_noiseSet3])
     # cluster phi-size cut
     hM_reldiff_h1WEfinal_clusPhiSizeCutSet1 = getRelativeDiff(h1WEfinal_clusphisizeSet1, h1WEfinal_nominal)
     hM_maxreldiff_clusPhiSizeCut = getMaxRelDiff([hM_reldiff_h1WEfinal_clusPhiSizeCutSet1])
+    # strangeness enhanced by 40%
+    hM_reldiff_h1WEfinal_strangeness = getRelativeDiff(h1WEfinal_strangeness, h1WEfinal_nominal)
+    hM_maxreldiff_strangeness = getMaxRelDiff([hM_reldiff_h1WEfinal_strangeness])
+    # event generator
+    hM_reldiff_h1WEfinal_EPOS = getRelativeDiff(h1WEfinal_EPOS, h1WEfinal_nominal)
+    hM_reldiff_h1WEfinal_AMPT = getRelativeDiff(h1WEfinal_AMPT, h1WEfinal_nominal)
+    hM_maxreldiff_eventgen = getMaxRelDiff([hM_reldiff_h1WEfinal_EPOS, hM_reldiff_h1WEfinal_AMPT])
     # different segments 
     hM_reldiff_h1WEfinal_segment2 = getRelativeDiff(h1WEfinal_segment2, h1WEfinal_nominal)
     hM_reldiff_h1WEfinal_segment3 = getRelativeDiff(h1WEfinal_segment3, h1WEfinal_nominal)
@@ -261,8 +259,9 @@ if __name__ == '__main__':
     hM_TotalRelUnc = getFinalUncertainty([hM_statunc_nominal,  
                                           hM_maxreldiff_dRcut, 
                                           hM_maxreldiff_clusAdcCut,
-                                          # hM_maxreldiff_noise, 
                                           hM_maxreldiff_clusPhiSizeCut, 
+                                          hM_maxreldiff_strangeness,
+                                          hM_maxreldiff_eventgen,
                                           hM_maxreldiff_segment
                                         ])
     
@@ -280,8 +279,9 @@ if __name__ == '__main__':
             hM_statunc_nominal.SetBinContent(i, 0)
             hM_maxreldiff_dRcut.SetBinContent(i, 0)
             hM_maxreldiff_clusAdcCut.SetBinContent(i, 0)
-            # hM_maxreldiff_noise.SetBinContent(i, 0)
             hM_maxreldiff_clusPhiSizeCut.SetBinContent(i, 0)
+            hM_maxreldiff_strangeness.SetBinContent(i, 0)
+            hM_maxreldiff_eventgen.SetBinContent(i, 0)
             hM_maxreldiff_segment.SetBinContent(i, 0)
             hM_TotalRelUnc.SetBinContent(i, 0)
             hM_TotalUnc.SetBinContent(i, 0)
@@ -296,10 +296,12 @@ if __name__ == '__main__':
     hM_maxreldiff_dRcut.Write()
     hM_maxreldiff_clusAdcCut.SetName('hM_maxreldiff_clusAdcCut')
     hM_maxreldiff_clusAdcCut.Write()
-    # hM_maxreldiff_noise.SetName('hM_maxreldiff_noise')
-    # hM_maxreldiff_noise.Write()
     hM_maxreldiff_clusPhiSizeCut.SetName('hM_maxreldiff_clusPhiSizeCut')
     hM_maxreldiff_clusPhiSizeCut.Write()
+    hM_maxreldiff_strangeness.SetName('hM_maxreldiff_strangeness')
+    hM_maxreldiff_strangeness.Write()
+    hM_maxreldiff_eventgen.SetName('hM_maxreldiff_eventgen')
+    hM_maxreldiff_eventgen.Write()
     hM_maxreldiff_segment.SetName('hM_maxreldiff_segment')
     hM_maxreldiff_segment.Write()
     hM_TotalRelUnc.Write()
@@ -332,8 +334,14 @@ if __name__ == '__main__':
              ['Nominal (Cluster ADC>35)', 'w.o cluster ADC cut', 'Cluster ADC>50'], 
              'Cluster ADC cut variation, ' + centstr, './systematics/{}/h1WEfinal_clusAdcCut_variation_{}'.format(desc, desc))
     drawcomp([h1WEfinal_nominal, h1WEfinal_clusphisizeSet1],
-                ['Nominal (Cluster #phi-size cut#leq40)', 'w.o cluster #phi-size cut'], 
-                'Cluster #phi-size cut variation, ' + centstr, './systematics/{}/h1WEfinal_clusPhiSizeCut_variation_{}'.format(desc, desc))
+             ['Nominal (Cluster #phi-size cut#leq40)', 'w.o cluster #phi-size cut'], 
+             'Cluster #phi-size cut variation, ' + centstr, './systematics/{}/h1WEfinal_clusPhiSizeCut_variation_{}'.format(desc, desc))
+    drawcomp([h1WEfinal_nominal, h1WEfinal_strangeness],
+             ['Nominal', 'Enhanced strangeness by 40%'],
+             'Enhanced strangeness, ' + centstr, './systematics/{}/h1WEfinal_strangeness_variation_{}'.format(desc, desc))
+    drawcomp([h1WEfinal_nominal, h1WEfinal_EPOS, h1WEfinal_AMPT],
+             ['Nominal (HIJING)', 'EPOS', 'AMPT'],
+             'Event generator variation, ' + centstr, './systematics/{}/h1WEfinal_eventgen_variation_{}'.format(desc, desc))
     drawcomp([h1WEfinal_nominal, h1WEfinal_segment2, h1WEfinal_segment3, h1WEfinal_segment4, h1WEfinal_segment5, h1WEfinal_segment6], 
              ['Nominal', 'Segment 2', 'Segment 3', 'Segment 4', 'Segment 5', 'Segment 6'],
              'Run segment variation, ' + centstr, './systematics/{}/h1WEfinal_segment_variation_{}'.format(desc, desc))
@@ -343,8 +351,9 @@ if __name__ == '__main__':
     hM_statunc_nominal.Scale(100)
     hM_maxreldiff_dRcut.Scale(100)
     hM_maxreldiff_clusAdcCut.Scale(100)
-    # hM_maxreldiff_noise.Scale(100)
     hM_maxreldiff_clusPhiSizeCut.Scale(100)
+    hM_maxreldiff_strangeness.Scale(100)
+    hM_maxreldiff_eventgen.Scale(100)
     hM_maxreldiff_segment.Scale(100)
     
     # plot the relative difference
@@ -374,19 +383,24 @@ if __name__ == '__main__':
     hM_maxreldiff_clusAdcCut.SetLineColor(TColor.GetColor('#44bb99'))
     hM_maxreldiff_clusAdcCut.SetLineWidth(3)
     hM_maxreldiff_clusAdcCut.Draw('P same')
-    # hM_maxreldiff_noise.SetMarkerStyle(markersty)
-    # hM_maxreldiff_noise.SetMarkerColor(TColor.GetColor('#aadd00'))
-    # hM_maxreldiff_noise.SetLineColor(TColor.GetColor('#aadd00'))
-    # hM_maxreldiff_noise.SetLineWidth(2)
-    # hM_maxreldiff_noise.Draw('P same')
-    hM_maxreldiff_clusPhiSizeCut.SetMarkerStyle(34)
-    hM_maxreldiff_clusPhiSizeCut.SetMarkerColor(TColor.GetColor('#e99960'))
-    hM_maxreldiff_clusPhiSizeCut.SetLineColor(TColor.GetColor('#e99960'))
-    hM_maxreldiff_clusPhiSizeCut.SetLineWidth(3)
+    hM_maxreldiff_clusPhiSizeCut.SetMarkerStyle(markersty)
+    hM_maxreldiff_clusPhiSizeCut.SetMarkerColor(TColor.GetColor('#aadd00'))
+    hM_maxreldiff_clusPhiSizeCut.SetLineColor(TColor.GetColor('#aadd00'))
+    hM_maxreldiff_clusPhiSizeCut.SetLineWidth(2)
     hM_maxreldiff_clusPhiSizeCut.Draw('P same')
+    hM_maxreldiff_strangeness.SetMarkerStyle(34)
+    hM_maxreldiff_strangeness.SetMarkerColor(TColor.GetColor('#e99960'))
+    hM_maxreldiff_strangeness.SetLineColor(TColor.GetColor('#e99960'))
+    hM_maxreldiff_strangeness.SetLineWidth(3)
+    hM_maxreldiff_strangeness.Draw('P same')
+    hM_maxreldiff_eventgen.SetMarkerStyle(22)
+    hM_maxreldiff_eventgen.SetMarkerColor(TColor.GetColor('#DE7C7D'))
+    hM_maxreldiff_eventgen.SetLineColor(TColor.GetColor('#DE7C7D'))
+    hM_maxreldiff_eventgen.SetLineWidth(3)
+    hM_maxreldiff_eventgen.Draw('P same')
     hM_maxreldiff_segment.SetMarkerStyle(47)
-    hM_maxreldiff_segment.SetMarkerColor(TColor.GetColor('#DE7C7D'))
-    hM_maxreldiff_segment.SetLineColor(TColor.GetColor('#DE7C7D'))
+    hM_maxreldiff_segment.SetMarkerColor(TColor.GetColor('#AA60C8'))
+    hM_maxreldiff_segment.SetLineColor(TColor.GetColor('#AA60C8'))
     hM_maxreldiff_segment.SetLineWidth(3)
     hM_maxreldiff_segment.Draw('P same')
     leg = TLegend(0.2, 0.6, 0.45, 0.91)
@@ -398,8 +412,9 @@ if __name__ == '__main__':
     leg.AddEntry(hM_statunc_nominal, 'Statistical uncertainty in corrections', 'p')
     leg.AddEntry(hM_maxreldiff_dRcut, 'Tracklet #DeltaR cut variation', 'p')
     leg.AddEntry(hM_maxreldiff_clusAdcCut, 'Cluster ADC cut variation', 'p')
-    # leg.AddEntry(hM_maxreldiff_noise, 'Random cluster variation', 'p')
     leg.AddEntry(hM_maxreldiff_clusPhiSizeCut, 'Cluster #phi-size cut variation', 'p')
+    leg.AddEntry(hM_maxreldiff_strangeness, 'Strangeness variation', 'p')
+    leg.AddEntry(hM_maxreldiff_eventgen, 'Event generator variation', 'p')
     leg.AddEntry(hM_maxreldiff_segment, 'Run segment variation', 'p')
     leg.Draw()
     c.RedrawAxis()

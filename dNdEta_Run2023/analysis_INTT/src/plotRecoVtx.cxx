@@ -44,11 +44,14 @@ int main(int argc, char *argv[])
     // for reweighting
     TH1F *hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse = new TH1F("hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse", "hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse", 60, -30, 30);
     TH1F *hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse = new TH1F("hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse", "hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse", 20, -10, 10);
+    TH1F *hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse = new TH1F("hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse", "hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse", 60, -30, 30);
+    TH1F *hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse = new TH1F("hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse", "hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse", 20, -10, 10);
     TH2F *hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive = new TH2F("hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive", "hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive", 160, -40, 40, 200, -1, 1);
     TH2F *hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10 = new TH2F("hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10", "hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10", 200, -10, 10, 200, -1, 1);
     TH2F *hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1 = new TH2F("hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1", "hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1", 160, -40, 40, 160, -40, 40);
     vector<float> centrality_cut = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
     vector<TH1F *> hM_INTTVtxZ_Centrality;
+    vector<TH1F *> hM_MBDVtxZ_Centrality;
     vector<TH1F *> hM_INTTVtxZ_Centrality_MBDAsymLe1;
     vector<TH2F *> hM_INTTVtxZ_MBDVtxZ_Centrality;
     vector<TH1F *> hM_INTTVtxZ_Centrality_MBDAsymLe1_VtxZm10to10;
@@ -56,6 +59,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < centrality_cut.size() - 1; i++)
     {
         hM_INTTVtxZ_Centrality.push_back(new TH1F(Form("hM_INTTVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), Form("hM_INTTVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -40, 40));
+        hM_MBDVtxZ_Centrality.push_back(new TH1F(Form("hM_MBDVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), Form("hM_MBDVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -40, 40));
         hM_INTTVtxZ_Centrality_MBDAsymLe1.push_back(new TH1F(Form("hM_INTTVtxZ_Centrality_%dto%d_MBDAsymLe1", (int)centrality_cut[i], (int)centrality_cut[i + 1]), Form("hM_INTTVtxZ_Centrality_%dto%d_MBDAsymLe1", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -40, 40));
         hM_INTTVtxZ_MBDVtxZ_Centrality.push_back(new TH2F(Form("hM_INTTVtxZ_MBDVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), Form("hM_INTTVtxZ_MBDVtxZ_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -40, 40, 160, -40, 40));
         hM_INTTVtxZ_Centrality_MBDAsymLe1_VtxZm10to10.push_back(new TH1F(Form("hM_INTTVtxZ_Centrality_%dto%d_MBDAsymLe1_VtxZm10to10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), Form("hM_INTTVtxZ_Centrality_%dto%d_MBDAsymLe1_VtxZm10to10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, -10, 10));
@@ -122,7 +126,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (is_min_bias && goodMbdAsymm)
+        if (is_min_bias && firedTrig10 && goodMbdAsymm)
         {
             hM_INTTVtxZ_MBDAsymLe1->Fill(PV_z);
 
@@ -133,6 +137,7 @@ int main(int argc, char *argv[])
                 {
                     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10->Fill(PV_z);
                     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse->Fill(PV_z); // for reweighting
+                    hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse->Fill(mbd_z_vtx); // for reweighting
                     hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10->Fill(PV_z, mbd_charge_asymm);
                 }
             }
@@ -142,6 +147,7 @@ int main(int argc, char *argv[])
                 if (goodCentrality)
                 {
                     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse->Fill(PV_z); // for reweighting
+                    hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse->Fill(mbd_z_vtx);
                 }
             }
 
@@ -153,9 +159,10 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < centrality_cut.size() - 1; i++)
         {
-            if (is_min_bias && MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
+            if (is_min_bias && firedTrig10 && MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
             {
                 hM_INTTVtxZ_Centrality[i]->Fill(PV_z);
+                hM_MBDVtxZ_Centrality[i]->Fill(mbd_z_vtx);
                 hM_INTTVtxZ_MBDVtxZ_Centrality[i]->Fill(PV_z, mbd_z_vtx);
 
                 if (goodMbdAsymm)
@@ -180,12 +187,15 @@ int main(int argc, char *argv[])
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10->Write();
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse->Write(); // for reweighting
     hM_INTTVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse->Write(); // for reweighting
+    hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm30to30_coarse->Write(); // for reweighting
+    hM_MBDVtxZ_Centrality0to70_MBDAsymLe1_VtxZm10to10_coarse->Write(); // for reweighting
     hM_INTTVtxZ_MBDAsymm_Centrality0to70_MBDAsymLe1_VtxZm10to10->Write();
     hM_INTTVtxZ_MBDAsymm_Centrality0to70_Inclusive->Write();
     hM_INTTVtxZ_MBDVtxZ_Centrality0to70_MBDAsymLe1->Write();
     for (int i = 0; i < centrality_cut.size() - 1; i++)
     {
         hM_INTTVtxZ_Centrality[i]->Write();
+        hM_MBDVtxZ_Centrality[i]->Write();
         hM_INTTVtxZ_MBDVtxZ_Centrality[i]->Write();
         hM_INTTVtxZ_Centrality_MBDAsymLe1[i]->Write();
         hM_INTTVtxZ_Centrality_MBDAsymLe1_VtxZm10to10[i]->Write();

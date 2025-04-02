@@ -94,6 +94,7 @@ void calccorr(const TString infilename,              //
         if (applyg)
         {
             faccep = new TFile("./plot/corrections/GeoAccepCorr_Run54280.root", "READ");
+            // faccep = new TFile("./plot/corrections/GeoAccepCorr_Run54280_coarseEta.root", "READ");
             if (!faccep || faccep->IsZombie())
             {
                 cout << "[ERROR] No geometric correction file found - exit" << endl;

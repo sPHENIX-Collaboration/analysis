@@ -19,9 +19,10 @@
 #include "Vertex.h"
 #include "pdgidfunc.h"
 
-bool verbose_debug = false;
+bool verbose_debug = true;
 bool useetadepadccut = false;
 bool savedetail = true;
+bool dotruthmatching = false;
 
 int main(int argc, char *argv[])
 {
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
     std::map<uint64_t, vector<float>> EvtVtxMap_inttbco = EvtVtx_map_inttbco(EvtVtx_map_filename.Data()); // use with data
 
     // Vertex Z reweighting
-    TH1F *hM_vtxzweight = VtxZ_ReweiHist("/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/HIJING_ananew_20250210/VtxZ_reweight_HIJING_ananew_20250210.root", "VtxZ_reweight_VtxZm10to10");
+    TH1F *hM_vtxzweight = VtxZ_ReweiHist("/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/HIJING_MDC2_ana467_20250225/VtxZ_reweight_HIJING_MDC2_ana467_20250225.root", "VtxZ_reweight_VtxZm10to10");
 
     // Random cluster
     int Nrandclus = RandomHit(randclusset);
@@ -89,6 +90,8 @@ int main(int argc, char *argv[])
     vector<int> *PrimaryG4P_PID = 0, *PrimaryG4P_trackID = 0;
     vector<float> *PrimaryG4P_Pt = 0, *PrimaryG4P_Eta = 0, *PrimaryG4P_Phi = 0, *PrimaryG4P_E = 0;
     vector<bool> *PrimaryG4P_isChargeHadron = 0;
+    vector<int> *G4P_trackID = 0;
+    vector<float> *G4P_Pt = 0, *G4P_Eta = 0, *G4P_Phi = 0, *G4P_E = 0;
     t->SetBranchAddress("event", &event);
     t->SetBranchAddress("INTT_BCO", &INTT_BCO);
     if (!IsData)
@@ -98,11 +101,6 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
         t->SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
         t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
-        t->SetBranchAddress("ClusMatchedG4P_MaxE_trackID", &ClusMatchedG4P_MaxE_trackID);
-        t->SetBranchAddress("ClusMatchedG4P_MaxClusE_ancestorTrackID", &ClusMatchedG4P_MaxClusE_ancestorTrackID);
-        t->SetBranchAddress("ClusMatchedG4P_MaxE_Pt", &ClusMatchedG4P_MaxE_Pt);
-        t->SetBranchAddress("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta);
-        t->SetBranchAddress("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi);
         t->SetBranchAddress("PrimaryG4P_PID", &PrimaryG4P_PID);
         t->SetBranchAddress("PrimaryG4P_isChargeHadron", &PrimaryG4P_isChargeHadron);
         t->SetBranchAddress("PrimaryG4P_trackID", &PrimaryG4P_trackID);
@@ -110,6 +108,20 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("PrimaryG4P_Eta", &PrimaryG4P_Eta);
         t->SetBranchAddress("PrimaryG4P_Phi", &PrimaryG4P_Phi);
         t->SetBranchAddress("PrimaryG4P_E", &PrimaryG4P_E);
+        if (dotruthmatching)
+        {
+            t->SetBranchAddress("ClusMatchedG4P_MaxE_trackID", &ClusMatchedG4P_MaxE_trackID);
+            t->SetBranchAddress("ClusMatchedG4P_MaxClusE_ancestorTrackID", &ClusMatchedG4P_MaxClusE_ancestorTrackID);
+            t->SetBranchAddress("ClusMatchedG4P_MaxE_Pt", &ClusMatchedG4P_MaxE_Pt);
+            t->SetBranchAddress("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta);
+            t->SetBranchAddress("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi);
+            t->SetBranchAddress("G4P_trackID", &G4P_trackID);
+            t->SetBranchAddress("G4P_Pt", &G4P_Pt);
+            t->SetBranchAddress("G4P_Eta", &G4P_Eta);
+            t->SetBranchAddress("G4P_Phi", &G4P_Phi);
+            t->SetBranchAddress("G4P_E", &G4P_E);
+        }
+
         InttBco_IsToBeRemoved = false;
     }
     if (IsData)
@@ -183,7 +195,7 @@ int main(int argc, char *argv[])
         tkldata.InttBco_IsToBeRemoved = (IsData) ? InttBco_IsToBeRemoved : false;
 
         // Centrality
-        tkldata.centrality_mbd = centrality_mbd; 
+        tkldata.centrality_mbd = centrality_mbd;
         tkldata.mbd_z_vtx = mbd_z_vtx;
         tkldata.mbd_south_charge_sum = mbd_south_charge_sum;
         tkldata.mbd_north_charge_sum = mbd_north_charge_sum;
@@ -215,7 +227,7 @@ int main(int argc, char *argv[])
             if (ClusPhiSize->at(ihit) > clusphisizecut)
                 continue;
 
-            if (!IsData)
+            if (!IsData && dotruthmatching)
             {
                 hit->SetMatchedG4P(ClusMatchedG4P_MaxE_trackID->at(ihit), ClusMatchedG4P_MaxClusE_ancestorTrackID->at(ihit), ClusMatchedG4P_MaxE_Pt->at(ihit), ClusMatchedG4P_MaxE_Eta->at(ihit), ClusMatchedG4P_MaxE_Phi->at(ihit));
             }
@@ -254,6 +266,7 @@ int main(int argc, char *argv[])
         if (!IsData)
         {
             std::map<int, unsigned int> PrimaryG4PPID_count, absPrimaryG4PPID_count;
+            int Nleptons = 0; // number of electrons and muons
             PrimaryG4PPID_count.clear();
             absPrimaryG4PPID_count.clear();
 
@@ -270,6 +283,7 @@ int main(int argc, char *argv[])
                 bool isChargeHadron_alt = is_chargedHadron(PrimaryG4P_PID->at(ihad));
                 bool twodefsame = (isChargeHadron == isChargeHadron_alt) ? true : false;
 
+                /*
                 if (verbose_debug)
                 {
                     cout << std::left << std::setw(5) << "PID = " << std::setw(5) << PrimaryG4P_PID->at(ihad);
@@ -283,21 +297,27 @@ int main(int argc, char *argv[])
                     cout << std::left << std::setw(30) << " Is charged hadron (alt) = " << std::setw(5) << isChargeHadron_alt;
                     cout << std::left << std::setw(34) << " Two definitions are the same = " << std::setw(5) << twodefsame << endl;
                 }
+                */
 
                 if (verbose_debug)
                 {
                     PrimaryG4PPID_count[PrimaryG4P_PID->at(ihad)]++;
                     absPrimaryG4PPID_count[abs(PrimaryG4P_PID->at(ihad))]++;
+                    if (abs(PrimaryG4P_PID->at(ihad)) == 11 || abs(PrimaryG4P_PID->at(ihad)) == 13)
+                        Nleptons++;
                 }
-                
 
                 tkldata.PrimaryG4P_trackID.push_back(PrimaryG4P_trackID->at(ihad));
+                tkldata.PrimaryG4P_PID.push_back(PrimaryG4P_PID->at(ihad));
                 tkldata.PrimaryG4P_Pt.push_back(PrimaryG4P_Pt->at(ihad));
                 tkldata.PrimaryG4P_eta.push_back(PrimaryG4P_Eta->at(ihad));
                 tkldata.PrimaryG4P_phi.push_back(PrimaryG4P_Phi->at(ihad));
                 tkldata.PrimaryG4P_IsRecotkl.push_back(false); // default
 
-                if (is_chargedHadron(PrimaryG4P_PID->at(ihad)) == false)
+                // if (is_chargedHadron(PrimaryG4P_PID->at(ihad)) == false)
+                //     continue;
+
+                if (is_charged(PrimaryG4P_PID->at(ihad)) == false)
                     continue;
 
                 // GenHadron *genhadron = new GenHadron(PrimaryG4P_Pt->at(ihad), PrimaryG4P_Eta->at(ihad), PrimaryG4P_Phi->at(ihad), PrimaryG4P_E->at(ihad));
@@ -311,30 +331,43 @@ int main(int argc, char *argv[])
             }
             tkldata.NGenHadron = tkldata.GenHadron_PID.size();
 
+            if (dotruthmatching)
+            {
+                for (size_t ig4p = 0; ig4p < G4P_trackID->size(); ig4p++)
+                {
+                    tkldata.G4P_trackID.push_back(G4P_trackID->at(ig4p));
+                    tkldata.G4P_Pt.push_back(G4P_Pt->at(ig4p));
+                    tkldata.G4P_eta.push_back(G4P_Eta->at(ig4p));
+                    tkldata.G4P_phi.push_back(G4P_Phi->at(ig4p));
+                }
+            }
+
             if (verbose_debug)
             {
                 // print PrimaryG4PPID_count
+                // cout << "--------------------------------------------------------------------" << endl;
+                // for (auto it = PrimaryG4PPID_count.begin(); it != PrimaryG4PPID_count.end(); it++)
+                // {
+                //     cout << "PID = " << it->first << "; Count = " << it->second << endl;
+                // }
+                // cout << "--------------------------------------------------------------------" << endl;
+                // for (auto it = absPrimaryG4PPID_count.begin(); it != absPrimaryG4PPID_count.end(); it++)
+                // {
+                //     cout << "|PID| = " << it->first << "; Count = " << it->second << endl;
+                // }
                 cout << "--------------------------------------------------------------------" << endl;
-                for (auto it = PrimaryG4PPID_count.begin(); it != PrimaryG4PPID_count.end(); it++)
-                {
-                    cout << "PID = " << it->first << "; Count = " << it->second << endl;
-                }
+                cout << "Number of charged leptons (electrons and muons) = " << Nleptons << endl;
                 cout << "--------------------------------------------------------------------" << endl;
-                for (auto it = absPrimaryG4PPID_count.begin(); it != absPrimaryG4PPID_count.end(); it++)
-                {
-                    cout << "|PID| = " << it->first << "; Count = " << it->second << endl;
-                }
-                cout << "--------------------------------------------------------------------" << endl;
-
             }
 
-            RecoTkl_isG4P(tkldata); 
+            if (dotruthmatching)
+                RecoTkl_isG4P(tkldata);
         }
 
         cout << "Number of clusters = " << tkldata.cluslayer.size() << "; Number of reco tracklets = " << tkldata.NRecotkl_Raw << endl;
 
-        if (verbose_debug)
-            PrintVecSize(tkldata);
+        // if (verbose_debug)
+            // PrintVecSize(tkldata);
 
         minitree->Fill();
         ResetVec(tkldata);
