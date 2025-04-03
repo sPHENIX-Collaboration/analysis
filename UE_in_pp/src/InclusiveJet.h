@@ -17,6 +17,7 @@
 
 class PHCompositeNode;
 class TTree;
+class SvtxTrackState;
 
 class InclusiveJet : public SubsysReco
 {
@@ -70,6 +71,15 @@ class InclusiveJet : public SubsysReco
   {
     m_doEmcalClusters = flag;
   }
+  void
+  doTracks(int flag) 
+  {
+    m_doTracks = flag;
+  }
+
+  float calculateProjectionEta(SvtxTrackState* projectedState);
+  float calculateProjectionPhi(SvtxTrackState* projectedState);
+
   /** Called during initialization.
       Typically this is where you can book histograms, and e.g.
       register them to Fun4AllServer (so they can be output to file
@@ -115,6 +125,7 @@ class InclusiveJet : public SubsysReco
   int m_doEmcalClusters;
   int m_doTopoclusters;
   int m_doSeeds;
+  int m_doTracks;
 
   //! Output Tree variables
   TTree *m_T;
@@ -201,6 +212,60 @@ class InclusiveJet : public SubsysReco
   float m_cluster_e[10000];
   float m_cluster_eta[10000];
   float m_cluster_phi[10000];
+  int m_cluster_ntowers[10000];
+
+  int m_trkmult;
+  unsigned int _nlayers_maps = 3;
+  unsigned int _nlayers_intt = 4;
+  unsigned int _nlayers_tpc = 48;
+  float m_tr_p[2000];
+  float m_tr_pt[2000];
+  float m_tr_eta[2000];
+  float m_tr_phi[2000];
+  int m_tr_charge[2000];
+  float m_tr_chisq[2000];
+  int m_tr_ndf[2000];
+  int m_tr_nintt[2000];
+  int m_tr_nmaps[2000];
+  int m_tr_ntpc[2000];
+  float m_tr_quality[2000];
+  int m_tr_vertex_id[2000];
+  float m_tr_cemc_eta[2000]; // Projection of track to calorimeters
+  float m_tr_cemc_phi[2000];
+  float m_tr_ihcal_eta[2000];
+  float m_tr_ihcal_phi[2000];
+  float m_tr_ohcal_eta[2000];
+  float m_tr_ohcal_phi[2000];
+  float m_tr_outer_cemc_eta[2000];
+  float m_tr_outer_cemc_phi[2000];
+  float m_tr_outer_ihcal_eta[2000];
+  float m_tr_outer_ihcal_phi[2000];
+  float m_tr_outer_ohcal_eta[2000];
+  float m_tr_outer_ohcal_phi[2000];
+
+  // Calorimeter radii
+  double m_cemcRadius;
+  double m_ihcalRadius;
+  double m_ohcalRadius;
+  double m_cemcOuterRadius;
+  double m_ihcalOuterRadius;
+  double m_ohcalOuterRadius;
+
+  // Vertex ids and positions, also stored on track tree
+  int m_vertex_id[100];
+  float m_vx[100];
+  float m_vy[100];
+  float m_vz[100];
+
+  // Matched truth track
+  int m_tr_truth_is_primary[2000];
+  int m_tr_truth_pid[2000];
+  float m_tr_truth_e[2000];
+  float m_tr_truth_pt[2000];
+  float m_tr_truth_eta[2000];
+  float m_tr_truth_phi[2000];
+  int m_tr_truth_track_id[2000];
+
 
 };
 

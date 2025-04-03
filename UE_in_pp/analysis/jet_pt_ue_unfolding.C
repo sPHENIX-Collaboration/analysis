@@ -30,7 +30,7 @@
 
 using namespace std;
 
-R__LOAD_LIBRARY(/sphenix/user/egm2153/calib_study/JetValidation/analysis/roounfold/libRooUnfold.so)
+R__LOAD_LIBRARY(/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/analysis/roounfold/libRooUnfold.so)
 
 bool isInRange(float truthJetPt, float mcWeight);
 void getLeadSubleadJet(std::vector<float> *pt, std::vector<float> *eta, int &ind_lead, int &ind_sub);
@@ -103,7 +103,7 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
 
     TChain chain("T");
     const char* inputDirectory = "/sphenix/tg/tg01/jets/egm2153/";
-    TString wildcardPath = TString::Format("%sJetValOutput/sim_truth_jet_output.root", inputDirectory); // run 15 dataset
+    TString wildcardPath = TString::Format("%sUEinppOutput/sim_run22_jet10_*_output.root", inputDirectory); // run 15 dataset
     chain.Add(wildcardPath);
     
     /*
@@ -112,6 +112,9 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
         chain.Add(wildcardPath);
     }
     */
+
+    double Jet10GeV_cross_section = 3.646e-6;
+    double Jet30GeV_cross_section = 2.505e-9;
 
     int m_event;
     int nJet;
@@ -177,7 +180,7 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
         if (zvtx < -30 || zvtx > 30) { continue; }
         if (negJet) { continue; }
 
-        
+        /*
         // implemented to match truth jet eta cut to reco jet eta cut for run15 dataset
         for (int i = 0; i < truthEta->size();) {
             if (fabs(truthEta->at(i)) > 0.7) {
@@ -191,6 +194,7 @@ void jet_pt_unfolding(string filename = "jet_pt_unfolding.root") {
         }
         int nTruthJet = truthPt->size();
         // implemented to match truth jet eta cut to reco jet eta cut for run15 dataset
+        */
 
         // indices to find leading and subleading jets 
         int ind_truth_lead = -1;

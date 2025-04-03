@@ -81,6 +81,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   std::string filelisttruth;
   std::string filelistglobal;
   std::string filelisttruthparticle;
+  std::string filelisttracks;
 
   int runnumber = 0;
   int segment = 0;
@@ -109,35 +110,36 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     sseg << std::setw(4) << std::setfill('0') << seg;
     std::cout << sseg.str() << std::endl;
     if (!strcmp(type,"run22_jet10")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet10_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet10_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet10_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet10_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_truthinfo_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run22_jet30")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet30_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet30_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet30_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_jet30_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_truthinfo_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run22_mb")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_mb_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_mb_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_mb_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run22_mb_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_truthinfo_" + sseg.str() + ".list";
+      filelisttracks = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_tracks_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_jet10")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet10_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet10_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet10_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet10_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_truthinfo_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_jet30")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet30_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet30_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet30_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_jet30_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_truthinfo_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_mb")) {
-      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_mb_dst_calo_cluster_" + sseg.str() + ".list";
-      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_mb_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_mb_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_dst_files/run21_mb_dst_truthinfo_" + sseg.str() + ".list";
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_global_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_truthinfo_" + sseg.str() + ".list";
     } else {
       std::cout << "unknown simulation dst type" << std::endl;
     }
@@ -157,7 +159,8 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     } else if (!strcmp(type,"run22_jet30")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet30_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run22_mb")) { 
-      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_mb_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/topo_valid_3sigma_nosplitting_sim_run22_mb_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_mb_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_jet10")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet10_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_jet30")) {
@@ -205,10 +208,10 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   ClusterBuilder->set_nodename("TOPOCLUSTER_ALLCALO");
   ClusterBuilder->set_enable_HCal(true);
   ClusterBuilder->set_enable_EMCal(true);
-  ClusterBuilder->set_noise(0.01, 0.03, 0.03);
+  ClusterBuilder->set_noise(0.0053, 0.0351, 0.0684); // 3sigma of pedestal noise
   ClusterBuilder->set_significance(4.0, 2.0, 1.0);
   ClusterBuilder->allow_corner_neighbor(true);
-  ClusterBuilder->set_do_split(true);
+  ClusterBuilder->set_do_split(false);
   ClusterBuilder->set_minE_local_max(1.0, 2.0, 0.5);
   ClusterBuilder->set_R_shower(0.025);
   ClusterBuilder->set_use_only_good_towers(true);
@@ -223,10 +226,11 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   myJetVal->setEtaRange(-0.7, 0.7);
   if (isSim) myJetVal->doTruth(1);
   myJetVal->doSeeds(0);
-  myJetVal->doTowers(1);
+  myJetVal->doTowers(0);
   if (isSim) myJetVal->doTruthParticles(1);
+  if (isSim) myJetVal->doTracks(1);
   myJetVal->doTopoclusters(1);
-  myJetVal->doEmcalClusters(1);
+  myJetVal->doEmcalClusters(0);
   se->registerSubsystem(myJetVal);
 
   //MDCTreeMaker *tt = new MDCTreeMaker("MDCTreeMaker", outfilename, isSim, 1, 0);
@@ -265,6 +269,12 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     Fun4AllInputManager *in4 = new Fun4AllDstInputManager("DSTtruthparticle");
     in4->AddListFile(filelisttruthparticle,1);
     se->registerInputManager(in4);
+
+    if(!strcmp(type,"run22_mb")) {
+      Fun4AllInputManager *in5 = new Fun4AllDstInputManager("DSTtracks");
+      in5->AddListFile(filelisttracks,1);
+      se->registerInputManager(in5);
+    }
 
     Fun4AllInputManager *intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
     std::string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
