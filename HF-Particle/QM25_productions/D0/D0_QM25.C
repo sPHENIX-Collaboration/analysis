@@ -130,7 +130,7 @@ void D0_QM25()
       string fileName(file->GetName());
       if (fileName.find(".root") != string::npos)
       {
-        //if (fileName.find("53879") != string::npos) continue;
+        if (fileName.find("53879") != string::npos) continue;
         ++currentLoadedFiles;
         if (currentLoadedFiles == maxFiles) break;
         string inputFile = fileDir + fileName;
