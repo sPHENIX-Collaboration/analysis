@@ -12,13 +12,13 @@ void Run_RestDist(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-  std::pair<double, double> vertexXYIncm = {-0.0232717, 0.223173},
+  std::pair<double, double> vertexXYIncm = {-0.0220728, 0.222956},
 
   bool Apply_cut = true, // note : vtxZQA
   bool ApplyVtxZReWeighting = false,
   std::pair<bool, int> ApplyEvtBcoFullDiffCut = {true, 61},
   std::pair<bool, std::pair<double,double>> RequireVtxZRange = {true, {-10, 10}},
-  std::pair<bool, std::pair<double,double>> isClusQA = {true, {35, 500}}, // note : adc, phi size
+  std::pair<bool, std::pair<double,double>> isClusQA = {true, {35, 40}}, // note : adc, phi size
   bool isRotated = true
 )
 {
@@ -148,6 +148,8 @@ void Run_RestDist(
     isClusQA,
     isRotated //note: isRotated
   );
+
+  // RDs4 -> SetInnerBarrelRotation(25.); // todo: 
 
   final_output_file_name = RDs4->GetOutputFileName();
   cout<<"final_output_file_name: "<<final_output_file_name<<endl;

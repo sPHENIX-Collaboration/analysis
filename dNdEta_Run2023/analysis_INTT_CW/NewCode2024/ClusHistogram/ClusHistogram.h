@@ -252,9 +252,9 @@ class ClusHistogram{
         // double VtxZEdge_min = -45; // note : cm
         // double VtxZEdge_max = 45; // note : cm
         // int nVtxZBin = 18;
-        double VtxZEdge_min = -10; // note : cm
-        double VtxZEdge_max = 10; // note : cm
-        int nVtxZBin = 4;
+        double VtxZEdge_min = -20; // note : cm
+        double VtxZEdge_max = 20; // note : cm
+        int nVtxZBin = 8;
         int nVtxZBin_FineBin = 500;
 
         TH1D * h1D_vtxz_template;

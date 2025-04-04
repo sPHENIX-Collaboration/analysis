@@ -286,6 +286,12 @@ void GetMultiplicityMap::DataMCDivision()
                 int correspond_bin = h2D_map[Form("h2D_RatioLayerPhiId_ZId%d",i)] -> FindBin(layer_i, phi_i);
                 double bin_content = h2D_map[Form("h2D_RatioLayerPhiId_ZId%d",i)] -> GetBinContent(correspond_bin);
 
+                if (bin_content == 0)
+                {
+                    std::cout<<"Warning: bin_content == 0, ZID: "<<i<<", Layer: "<<layer_i<<", PhiId: "<<phi_i<<", data multiplicity: "<<temp_h2D_data->GetBinContent(correspond_bin)<<", MC multiplicity: "<<temp_h2D_MC->GetBinContent(correspond_bin)
+                    <<std::endl;
+                }
+
                 h1D_map[Form("h1D_Ratio_ZId%d",i)] -> Fill(bin_content);
                 h1D_map["h1D_Ratio_All"] -> Fill(bin_content);
             }
@@ -296,7 +302,9 @@ void GetMultiplicityMap::DataMCDivision()
 void GetMultiplicityMap::PrepareMulMap()
 {
     h2D_MulMap = new TH2D("h2D_MulMap","h2D_MulMap;(LayerID-3) * 20 + PhiId;ZID", 80, 0, 80, nZbin, Zmin, Zmax);
+    h2D_MaskedMap = new TH2D("h2D_MaskedMap","h2D_MaskedMap;(LayerID-3) * 20 + PhiId;ZID", 80, 0, 80, nZbin, Zmin, Zmax);
     h2D_RatioMap = new TH2D("h2D_RatioMap","h2D_RatioMap;(LayerID-3) * 20 + PhiId;ZID", 80, 0, 80, nZbin, Zmin, Zmax);
+
 
     for (int i : used_zid_data_vec) // note : only good ZID are here 
     {
@@ -311,16 +319,30 @@ void GetMultiplicityMap::PrepareMulMap()
                 double column_ratio = h2D_map[Form("h2D_RatioLayerPhiId_ZId%d",i)] -> GetBinContent(correspond_bin);
                 column_ratio = (column_ratio != column_ratio) ? 0 : column_ratio;
 
+                TH2D * temp_h2D_data = h2D_target_map[Form("h2D_ClusCountLayerPhiId_ZId%d",i)].first; // note : X: Layer {3 - 7}, Y: PhiId {0 -16}
+                TH2D * temp_h2D_MC = h2D_target_map[Form("h2D_ClusCountLayerPhiId_ZId%d",i)].second; // note : X: Layer {3 - 7}, Y: PhiId {0 -16}
+
                 int index_x = (layer_i - 3) * 20 + phi_i + 1; // note : bin index, start at 1
                 int index_y = i + 1; // note : bin index, start at 1
 
-                std::cout<<"ZID: "<<i<<", Layer: "<<layer_i<<", PhiId: "<<phi_i<<", index_x: "<<index_x<<", index_y: "<<index_y<<", Ratio: "<<column_ratio<<std::endl;
+                // std::cout<<"ZID: "<<i<<", Layer: "<<layer_i<<", PhiId: "<<phi_i<<", index_x: "<<index_x<<", index_y: "<<index_y<<", Ratio: "<<column_ratio<<std::endl;
 
                 h2D_RatioMap -> SetBinContent(index_x, index_y, column_ratio);
 
                 if (column_ratio >= Ratio_cut_pair.first && column_ratio <= Ratio_cut_pair.second)
                 {
                     h2D_MulMap -> SetBinContent(index_x, index_y, 1);
+                }
+                else 
+                {
+                    if (temp_h2D_data->GetBinContent(correspond_bin) > 0.000001 || temp_h2D_MC->GetBinContent(correspond_bin) > 0.000001)
+                    {
+                        std::cout<<"Masked: ZID: "<<i<<", Layer: "<<layer_i<<", PhiId: "<<phi_i<<", index_x: "<<index_x<<", index_y: "<<index_y<<", Ratio: "<<column_ratio
+                        <<", Data: "<<temp_h2D_data->GetBinContent(correspond_bin)<<", MC: "<<temp_h2D_MC->GetBinContent(correspond_bin)
+                        <<std::endl;
+                        h2D_MaskedMap -> SetBinContent(index_x, index_y, 1);
+                    }
+                    
                 }
             }
         }
@@ -333,6 +355,7 @@ void GetMultiplicityMap::EndRun()
 
     h2D_RatioMap -> Write();
     h2D_MulMap -> Write();
+    h2D_MaskedMap -> Write();
 
 
     for (auto pair : h2D_target_map){

@@ -1,14 +1,24 @@
 #include "sPhenixStyle.C"
+#include "../Constants.cpp"
 
 int MakePlot_THStack1D()
 {
-    std::string input_file_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/TrackHist/completed/dNdEta/dNdEta_AllSensor_GeoAccCorr_VtxZ10_Mbin70/completed"; 
-    std::string input_file_name = "Data_PreparedNdEtaEach_AlphaCorr_GeoAccCorr_AllSensor_VtxZ10_Mbin70_00054280_00000_DeltaPhi.root";
-    std::string target_plot_name = "hstack1D_DeltaPhi_Eta16_rotated";
+
+    int Mbin = 0;
+    bool isPhiRotated = true;
+
+    std::string input_file_directory = Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin%d/Folder_BaseLine/Run_0/completed", Mbin); 
+    std::string input_file_name = Form("Data_PreparedNdEtaEach_AlphaCorr_AllSensor_VtxZ10_Mbin%d_00054280_00000_DeltaPhi.root", Mbin);
     std::string output_directory = input_file_directory;
-    std::string output_file_name = "hstack1D_DeltaPhi_Eta16_rotated";
-    std::pair<std::string, std::string> axes_label = {"", "Entries (/0.001)"};
+    
+    std::string target_plot_name = (isPhiRotated) ? "hstack1D_DeltaPhi_Eta13_rotated" : "hstack1D_DeltaPhi_Eta13";
+
+    double y_max = 2 * pow(10,6);
+
     std::string sPH_label = "Internal";
+    
+    std::pair<std::string, std::string> axes_label = {"", "Entries (/0.001)"};
+    string rotate_string = (isPhiRotated) ? "Inner clusters rotated by #pi in #phi angle" : "";
     std::vector<std::tuple<double,double,std::string>> additional_text = {
         // {0.2, 0.9, "The cluster pairs post the VtxZ linking requirement are filled"},
 
@@ -17,9 +27,9 @@ int MakePlot_THStack1D()
         // {0.22, 0.82, "Centrality 0-70%"},
         // {0.22, 0.78, "|INTT vtxZ| #leq 10 cm"}
 
-        {0.22, 0.90, "Inner clusters rotated by #pi in #phi angle"},
-        {0.22, 0.86, "#eta: [0.5 - 0.7]"},
-        {0.22, 0.82, "Centrality 0-70%"},
+        {0.22, 0.90, Form("%s", rotate_string.c_str())},
+        {0.22, 0.86, "#eta: [-0.1 - 0.1]"},
+        {0.22, 0.82, Form("Centrality interval: [%s]%%", Constants::centrality_text[Mbin].c_str())},
         {0.22, 0.78, "|INTT vtxZ| #leq 10 cm"}
 
     };
@@ -27,7 +37,6 @@ int MakePlot_THStack1D()
     bool isSetLogY = false;
     bool isSetLogZ = false;
     double y_min = 0;
-    double y_max = 8 * pow(10,6);
     bool set_X_505 = true;
 
     system(Form("mkdir -p %s", output_directory.c_str()));
@@ -102,7 +111,7 @@ int MakePlot_THStack1D()
     // hstack1D_in -> SetMarkerSize(0.8);
     // hstack1D_in -> Draw("hist TEXT90 E");
     temp_h1D -> Draw("hist");
-    hstack1D_in -> Draw("hist same");
+    hstack1D_in -> Draw("same");
 
     ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", sPH_label.c_str())); 
 
@@ -114,7 +123,7 @@ int MakePlot_THStack1D()
         draw_text -> DrawLatex(x, y, text_str.c_str());
     }
 
-    c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), output_file_name.c_str()));
+    c1 -> Print(Form("%s/%s.pdf", output_directory.c_str(), target_plot_name.c_str()));
     c1 -> Clear();
 
     return 0;

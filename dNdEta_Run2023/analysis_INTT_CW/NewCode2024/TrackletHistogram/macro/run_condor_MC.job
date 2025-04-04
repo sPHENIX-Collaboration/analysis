@@ -9,15 +9,15 @@ job_lease_duration = 86400
 
 runnumber          = -1
 nEvents            = -1
-input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/completed
+input_directory    = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_AMPT_MDC2_ana472_20250310/Run7/EvtVtxZ/completed
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
 input_filename     = MC_EvtVtxZProtoTracklet_FieldOff_VtxZReco_$INT(process_shift,%05d).root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/TrackHist_noPhiCut
+output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/sPH_dNdeta/Run24AuAuMC/Sim_AMPT_MDC2_ana472_20250310/Run7/EvtVtxZ/TrackHist_DeltaPhi0p04_001
 macro_name         = Run_PrepareHist_MC
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
 Error              = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).err
 Log                = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).log
 Arguments          = "$INT(process_shift) $(runnumber) $(nEvents) $(output_directory) $(input_directory) $(input_filename) $(macro_name)"
-Queue 50
+Queue 198
