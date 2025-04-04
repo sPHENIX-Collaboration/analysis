@@ -2,6 +2,8 @@
 #define FINALRESULT_H
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <numeric>
@@ -21,13 +23,14 @@
 #include <THStack.h>
 #include <TCanvas.h> // note : for the combined case
 #include <TGraph.h>  // note : for the combined case
-
+#include <TGraphAsymmErrors.h>
 #include <TKey.h>
 #include <TRandom.h> // note : for the offset
 #include <TRandom3.h> // note : for the offset
 
 #include <TColor.h>
 #include <TLegend.h>
+#include <TLine.h>
 
 #include <TObjArray.h>
 
@@ -84,6 +87,15 @@ class FinalResult{
             std::vector<std::tuple<int, std::string, std::string>> legend_text
         );
 
+        void SetPHOBOSData(
+            std::string data_directory_in,
+            std::string data_file_name_in
+        ){
+            PHOBOS_data_directory = data_directory_in;
+            PHOBOS_data_file_name = data_file_name_in;
+            Have_PHOBOS = true;
+        }
+
         std::string GetOutputFileName() {
             return output_folder_name;
         }
@@ -94,6 +106,8 @@ class FinalResult{
         void PrepareGeoOffsetError(std::string file_directory_in, std::string alpha_corr_directory_in);
         void PrepareDeltaPhiError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in); // note : 0.018 and 0.024
         void PrepareClusPhiSizeError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in);
+        void PrepareStrangenessError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in); // note : strangeness enhancement
+        void PrepareGeneratorError(std::vector<std::string> file_directory_vec_in, std::vector<std::string> file_title_in, std::string leg_header_in); // note : generator variation
         void PrepareMCMergedError(std::vector<std::string> file_directory_vec_in); // note : the errror due to different ways of MC merged
         void PrepareFinalError();
         void PrepareFinalResult(double Hist_Y_max);
@@ -134,8 +148,11 @@ class FinalResult{
         std::vector<TH1D*> h1D_GeoOffsetError_vec;
         std::vector<TH1D*> h1D_DeltaPhiError_vec;
         std::vector<TH1D*> h1D_ClusPhiSizeError_vec;
+        std::vector<TH1D*> h1D_StrangenessError_vec;
+        std::vector<TH1D*> h1D_GeneratorError_vec;
         std::vector<TH1D*> h1D_MCMergedError_vec;
 
+        bool Have_PHOBOS = false;
         std::pair<std::pair<double,double>, std::string> AnaDescription;
         std::pair<std::pair<double,double>, std::string> Collision_str;
         std::pair<std::string, std::string> Final_Data_MC_text = {"",""};
@@ -147,17 +164,21 @@ class FinalResult{
         TH1D * h1D_error_GeoOffset = nullptr;
         TH1D * h1D_error_DeltaPhi = nullptr;   
         TH1D * h1D_error_ClusPhiSize = nullptr;
+        TH1D * h1D_error_Strangeness = nullptr;
+        TH1D * h1D_error_Generator = nullptr;
         TH1D * h1D_error_MCMerged = nullptr;     
         TH1D * h1D_error_Final;
 
         // note : the TGraph
         TGraph * gr_dNdEta_baseline;
+        TGraph * gr_recoTracklet_baseline;
 
         // note : for the final results 
         std::pair<double, double> eta_range = {-1.9, 1.9}; // todo : the default eta range
         void PrepareOutputFolderName();
         TH1D * h1D_FindLargestOnes(std::string hist_name, std::vector<TH1D*> h1D_vec_in);
         TGraph * h1D_to_TGraph(TH1D * hist_in);
+        TGraph * GetRatioGr(TGraph * gr_numerator, TGraph * gr_denominator);
         std::string output_folder_name;
         TFile * file_out;
         TTree * tree_out;
@@ -168,19 +189,29 @@ class FinalResult{
         std::pair<double,double> UncRange_GeoOffset = {std::nan("1"), std::nan("1")};
         std::pair<double,double> UncRange_DeltaPhi = {std::nan("1"), std::nan("1")};
         std::pair<double,double> UncRange_ClusPhiSize = {std::nan("1"), std::nan("1")};
+        std::pair<double,double> UncRange_Strangeness = {std::nan("1"), std::nan("1")};
+        std::pair<double,double> UncRange_Generator = {std::nan("1"), std::nan("1")};
         std::pair<double,double> UncRange_Final = {std::nan("1"), std::nan("1")};
 
         TCanvas * c1;
         TPad * pad1;
+        TPad * pad2; // note : for ratio
+        TLine * line;
 
         TLatex * ltx;
         TLatex * draw_text;
         TLegend * leg_errors;
         TLegend * leg_final;
         TLegend * leg_variation;
+        TLegend * leg_variation_recoTracklet;
         TLegend * leg_TruthReco;
 
         double SystUncPlot_Ymax = 0.11;
+
+        // note : PHOBOS data
+        std::string PHOBOS_data_directory;
+        std::string PHOBOS_data_file_name;
+        TGraphAsymmErrors * GetPHOBOSData();
 
 
         // note : for constants 
@@ -193,14 +224,16 @@ class FinalResult{
 
         const std::vector<std::string> color_code = {
             "#9e0142",
-            "#fee08b",
             "#66c2a5",
             "#f46d43",
             "#3288bd",
+            "#fee08b",
             "#5e4fa2",
+            "#00A1FF",
+            "#FF42A1",
             "#000000",
             
-            "#005493",
+            
             "#abdda4",
             "#e6f598",
             "#fdae61",

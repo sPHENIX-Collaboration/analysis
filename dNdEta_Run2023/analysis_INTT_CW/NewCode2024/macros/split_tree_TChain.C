@@ -28,14 +28,27 @@ std::vector<std::string> readFileToVector(const std::string& filePath) {
 
 
 
-void split_tree_TChain() {
+void split_tree_TChain(std::string generator_name, int FileList_index = 1, int File_shift_index = 0) {
 
-    string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131";
-    string input_filelist = "FileList.txt"; 
+    std::map<std::string,std::string> sample_directory ={
+        {"HIJING", "Sim_HIJING_MDC2_ana472_20250307"}, // note : new 
+        {"AMPT", "Sim_AMPT_MDC2_ana472_20250310"}, // note : new
+        {"EPOS", "Sim_EPOS_MDC2_ana472_20250310"}, // note : new 
+        {"HStrange", "Sim_HIJING_strangeness_MDC2_ana472_20250310"} // note : new 
+    };
+
+    string input_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/%s", sample_directory[generator_name].c_str());
+    string output_directory = Form("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/%s/per5k", sample_directory[generator_name].c_str()); // note : auto
+    
+    std::cout << "Input directory: " << input_directory << std::endl;
+    std::cout << "Output directory: " << output_directory << std::endl;
+    
+    system (Form("mkdir -p %s", output_directory.c_str()));
+    
+    string input_filelist = Form("FileList_00%d.txt",FileList_index); 
     string TreeName = "EventTree";
-    int nEvent_EachFile = 10000;
-    string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/per10k";
-    string input_filename_NoSuffix = "ntuple_per10k";
+    int nEvent_EachFile = 5000;
+    string input_filename_NoSuffix = "ntuple_per5k";
 
     std::vector<std::string> file_list = readFileToVector(input_directory + "/" + input_filelist);
     // std::string first_filename = file_list[0].substr(file_list[0].find_last_of("/")+1);
@@ -69,7 +82,7 @@ void split_tree_TChain() {
         // note : Skip the last file if it has no events
         if (startEvent >= nTotalEvents) break;
 
-        std::string job_index = std::to_string( i );
+        std::string job_index = std::to_string( i + File_shift_index );
         int job_index_len = 5;
         job_index.insert(0, job_index_len - job_index.size(), '0');
 

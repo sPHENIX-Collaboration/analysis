@@ -34,11 +34,11 @@ vector<string> read_list(string folder_direction, string MC_list_name)
 int FromTracklet()
 {
 
-    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1/completed";
+    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed";
     std::string input_foldername_NoIndex = "Run_00"; // note : Run_00XXX
-    std::string filename_NoIndex = "MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize500_GeoOffset_test1";
+    std::string filename_NoIndex = "MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_GeoOffset_test1";
 
-    std::string ideal_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/TrackHist_ForGeoOffset/completed/MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize500_ForGeoOffset_merged.root";
+    std::string ideal_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed/Run_NoGeoOffset_00000/MC_TrackHist_VtxZQA_ClusQAAdc35PhiSize40_ColMulMask_test1_00000.root"; // note : to .root
 
     std::string label_text = "Simulation";
 
@@ -95,27 +95,27 @@ int FromTracklet()
     TH1D * h1D_INTTvtxZ_ideal = (TH1D*) file_in_ideal -> Get("h1D_INTTvtxZ");
     h1D_INTTvtxZ_ideal -> SetLineColor(2);
     h1D_INTTvtxZ_ideal -> SetLineWidth(1);
-    h1D_INTTvtxZ_ideal -> Scale(1./h1D_INTTvtxZ_ideal->Integral(-1,-1));
+    h1D_INTTvtxZ_ideal -> Scale(1./h1D_INTTvtxZ_ideal->Integral());
 
     TH1D * h1D_DeltaPhi_ideal = (TH1D*) file_in_ideal -> Get("h1D_PairDeltaPhi_inclusive");
     h1D_DeltaPhi_ideal -> SetLineColor(2);
     h1D_DeltaPhi_ideal -> SetLineWidth(1);
-    h1D_DeltaPhi_ideal -> Scale(1./h1D_DeltaPhi_ideal->Integral(-1,-1));
+    h1D_DeltaPhi_ideal -> Scale(1./h1D_DeltaPhi_ideal->Integral());
 
     TH1D * h1D_DeltaEta_ideal = (TH1D*) file_in_ideal -> Get("h1D_PairDeltaEta_inclusive");
     h1D_DeltaEta_ideal -> SetLineColor(2);
     h1D_DeltaEta_ideal -> SetLineWidth(1);
-    h1D_DeltaEta_ideal -> Scale(1./h1D_DeltaEta_ideal->Integral(-1,-1));
+    h1D_DeltaEta_ideal -> Scale(1./h1D_DeltaEta_ideal->Integral());
 
     TH1D * h1D_Inner_ClusEtaInttZ_ideal = (TH1D*) file_in_ideal -> Get("h1D_Inner_ClusEta_INTTz");
     h1D_Inner_ClusEtaInttZ_ideal -> SetLineColor(2);
     h1D_Inner_ClusEtaInttZ_ideal -> SetLineWidth(1);
-    h1D_Inner_ClusEtaInttZ_ideal -> Scale(1./h1D_Inner_ClusEtaInttZ_ideal->Integral(-1,-1));
+    h1D_Inner_ClusEtaInttZ_ideal -> Scale(1./h1D_Inner_ClusEtaInttZ_ideal->Integral());
 
     TH1D * h1D_Outer_ClusEtaInttZ_ideal = (TH1D*) file_in_ideal -> Get("h1D_Outer_ClusEta_INTTz");
     h1D_Outer_ClusEtaInttZ_ideal -> SetLineColor(2);
     h1D_Outer_ClusEtaInttZ_ideal -> SetLineWidth(1);
-    h1D_Outer_ClusEtaInttZ_ideal -> Scale(1./h1D_Outer_ClusEtaInttZ_ideal->Integral(-1,-1));
+    h1D_Outer_ClusEtaInttZ_ideal -> Scale(1./h1D_Outer_ClusEtaInttZ_ideal->Integral());
 
 
     // Division : ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -152,11 +152,11 @@ int FromTracklet()
         h1D_Inner_ClusEtaInttZ_each = (TH1D*) file_in -> Get("h1D_Inner_ClusEta_INTTz"); 
         h1D_Outer_ClusEtaInttZ_each = (TH1D*) file_in -> Get("h1D_Outer_ClusEta_INTTz"); 
 
-        h1D_INTTvtxZ_each->Scale( 1. / h1D_INTTvtxZ_each -> Integral(-1,-1) );
-        h1D_DeltaPhi_each->Scale( 1. / h1D_DeltaPhi_each -> Integral(-1,-1) );
-        h1D_DeltaEta_each->Scale( 1. / h1D_DeltaEta_each -> Integral(-1,-1) );
-        h1D_Inner_ClusEtaInttZ_each->Scale( 1. / h1D_Inner_ClusEtaInttZ_each -> Integral(-1,-1) );
-        h1D_Outer_ClusEtaInttZ_each->Scale( 1. / h1D_Outer_ClusEtaInttZ_each -> Integral(-1,-1) );
+        h1D_INTTvtxZ_each->Scale( 1. / h1D_INTTvtxZ_each -> Integral() );
+        h1D_DeltaPhi_each->Scale( 1. / h1D_DeltaPhi_each -> Integral() );
+        h1D_DeltaEta_each->Scale( 1. / h1D_DeltaEta_each -> Integral() );
+        h1D_Inner_ClusEtaInttZ_each->Scale( 1. / h1D_Inner_ClusEtaInttZ_each -> Integral() );
+        h1D_Outer_ClusEtaInttZ_each->Scale( 1. / h1D_Outer_ClusEtaInttZ_each -> Integral() );
 
         if (i == 0)
         {

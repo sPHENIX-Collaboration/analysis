@@ -45,6 +45,7 @@ PreparedNdEtaEach::PreparedNdEtaEach(
     PrepareHistFits();
 
     c1 = new TCanvas("c1", "c1", 950, 800);
+    c1 -> Print(Form("%s/%s(", output_directory.c_str(), output_filename_pdf.c_str()));
 
     h1D_alpha_correction_map_in.clear();
     h1D_alpha_correction_map_out.clear();
@@ -200,10 +201,12 @@ void PreparedNdEtaEach::PrepareOutPutFileName()
     
     output_filename_DeltaPhi = output_filename;
     output_filename_dNdEta = output_filename;
+    output_filename_pdf = output_filename;
     
     // todo: check th name 
     output_filename_DeltaPhi += (runnumber != -1) ? Form("_%s_%s_DeltaPhi.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_DeltaPhi.root",job_index.c_str());
-    output_filename_dNdEta   += (runnumber != -1) ? Form("_%s_%s_dNdEta.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_dNdEta.root",job_index.c_str());    
+    output_filename_dNdEta   += (runnumber != -1) ? Form("_%s_%s_dNdEta.root",runnumber_str.c_str(),job_index.c_str()) : Form("_%s_dNdEta.root",job_index.c_str());
+    output_filename_pdf      += (runnumber != -1) ? Form("_%s_%s.pdf",runnumber_str.c_str(),job_index.c_str()) : Form("_%s.pdf",job_index.c_str());
 }
 
 void PreparedNdEtaEach::PrepareOutPutRootFile()
@@ -297,38 +300,53 @@ void PreparedNdEtaEach::PrepareHistFits()
     }
 
     // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    f1_BkgPol2_Fit_map.clear();
-    f1_BkgPol2_Draw_map.clear();
+    // f1_BkgPol2_Fit_map.clear();
+    // f1_BkgPol2_Draw_map.clear();
 
     f1_SigBkgPol2_Fit_map.clear();
     f1_SigBkgPol2_DrawSig_map.clear();
     f1_SigBkgPol2_DrawBkgPol2_map.clear();
 
+    f1_BkgPolTwo_Fit_map.clear();
+
     for (auto &pair : hstack1D_DeltaPhi_map){
         if (pair.first.find("hstack1D_DeltaPhi") != std::string::npos){
 
-            std::string f1_name = pair.first + "_BkgPol2_Fit";
-            f1_BkgPol2_Fit_map.insert(
+            std::string f1_name = pair.first + "_BkgPolTwo_Fit";
+            f1_BkgPolTwo_Fit_map.insert(
                 std::make_pair(
                     f1_name,
-                    new TF1(f1_name.c_str(), bkg_pol2_func, DeltaPhiEdge_min, DeltaPhiEdge_max, 6)
+                    new TF1(f1_name.c_str(), "pol2", DeltaPhiEdge_min, DeltaPhiEdge_max)
                 )
             ).second;
-            f1_BkgPol2_Fit_map[f1_name] -> SetLineColor(2);
-            f1_BkgPol2_Fit_map[f1_name] -> SetNpx(1000);
+            f1_BkgPolTwo_Fit_map[f1_name] -> SetLineColor(6);
+            f1_BkgPolTwo_Fit_map[f1_name] -> SetLineStyle(9);
+            f1_BkgPolTwo_Fit_map[f1_name] -> SetLineWidth(3);
+            f1_BkgPolTwo_Fit_map[f1_name] -> SetNpx(1000);
 
 
-            f1_name = pair.first + "_BkgPol2_Draw";
-            f1_BkgPol2_Draw_map.insert(
-                std::make_pair(
-                    f1_name,
-                    new TF1(f1_name.c_str(), full_pol2_func, DeltaPhiEdge_min, DeltaPhiEdge_max, 4)
-                )
-            ).second;
-            f1_BkgPol2_Draw_map[f1_name] -> SetLineColor(6);
-            f1_BkgPol2_Draw_map[f1_name] -> SetLineStyle(9);
-            f1_BkgPol2_Draw_map[f1_name] -> SetLineWidth(3);
-            f1_BkgPol2_Draw_map[f1_name] -> SetNpx(1000);
+            // f1_name = pair.first + "_BkgPol2_Fit";
+            // f1_BkgPol2_Fit_map.insert(
+            //     std::make_pair(
+            //         f1_name,
+            //         new TF1(f1_name.c_str(), bkg_pol2_func, DeltaPhiEdge_min, DeltaPhiEdge_max, 6)
+            //     )
+            // ).second;
+            // f1_BkgPol2_Fit_map[f1_name] -> SetLineColor(2);
+            // f1_BkgPol2_Fit_map[f1_name] -> SetNpx(1000);
+
+
+            // f1_name = pair.first + "_BkgPol2_Draw";
+            // f1_BkgPol2_Draw_map.insert(
+            //     std::make_pair(
+            //         f1_name,
+            //         new TF1(f1_name.c_str(), full_pol2_func, DeltaPhiEdge_min, DeltaPhiEdge_max, 4)
+            //     )
+            // ).second;
+            // f1_BkgPol2_Draw_map[f1_name] -> SetLineColor(6);
+            // f1_BkgPol2_Draw_map[f1_name] -> SetLineStyle(9);
+            // f1_BkgPol2_Draw_map[f1_name] -> SetLineWidth(3);
+            // f1_BkgPol2_Draw_map[f1_name] -> SetNpx(1000);
 
             
             f1_name = pair.first + "_SigBkgPol2_Fit";
@@ -705,10 +723,26 @@ void PreparedNdEtaEach::PrepareStacks()
             auto temp_hist = (TH1D*) pair.second -> GetStack() -> Last();
             auto temp_hist_rotate = (TH1D*) hstack1D_DeltaPhi_map[pair.first + "_rotated"] -> GetStack() -> Last();
 
+            double hist_offset_rotate = get_dist_offset(temp_hist_rotate, 15); // todo:
 
-            h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Add(temp_hist, temp_hist_rotate, 1, -1);
+            std::string f1_BkgPolTwo_Fit_map_key  = pair.first + "_rotated" + "_BkgPolTwo_Fit";
+            f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> SetParameters(hist_offset_rotate, 0, 0); // SetParameter(0, hist_offset_rotate);
+            temp_hist_rotate -> Fit(f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key], "N");
+
+
+            // todo: two ways of getting the signal
+            // h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Add(temp_hist, temp_hist_rotate, 1, -1);
+            
+            h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] = (TH1D*) temp_hist -> Clone(Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin));
+            TH1D * temp_signal_hist = h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)];
+            for (int hist_i = 1; hist_i <= temp_signal_hist -> GetNbinsX(); hist_i++){
+                // temp_signal_hist -> SetBinContent(hist_i, temp_hist -> GetBinContent(hist_i) - f1_BkgPol0_Fit_map[f1_BkgPol0_Fit_map_key] -> GetParameter(0));
+                temp_signal_hist -> SetBinContent(hist_i, temp_hist -> GetBinContent(hist_i) - f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> Eval(temp_hist -> GetBinCenter(hist_i)));
+            }
+
+
             // h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> SetLineStyle(2);
-
+            h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> SetFillColorAlpha(1,0);
             h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> SetLineColor(8);
 
         }
@@ -858,13 +892,13 @@ void PreparedNdEtaEach::DoFittings()
             
             std::vector<double> N_group_info = find_Ngroup(temp_hist);
 
-            std::string f1_BkgPol2_Fit_map_key  = pair.first + "_BkgPol2_Fit";
-            std::string f1_BkgPol2_Draw_map_key = pair.first + "_BkgPol2_Draw";
+            // std::string f1_BkgPol2_Fit_map_key  = pair.first + "_BkgPol2_Fit";
+            // std::string f1_BkgPol2_Draw_map_key = pair.first + "_BkgPol2_Draw";
 
-            if (f1_BkgPol2_Fit_map.find(f1_BkgPol2_Fit_map_key) == f1_BkgPol2_Fit_map.end()){
-                std::cout<<f1_BkgPol2_Fit_map_key<<" not found in f1_BkgPol2_Fit_map !!"<<std::endl;
-                exit(1);
-            }
+            // if (f1_BkgPol2_Fit_map.find(f1_BkgPol2_Fit_map_key) == f1_BkgPol2_Fit_map.end()){
+            //     std::cout<<f1_BkgPol2_Fit_map_key<<" not found in f1_BkgPol2_Fit_map !!"<<std::endl;
+            //     exit(1);
+            // }
 
             std::string f1_SigBkgPol2_Fit_map_key         = pair.first + "_SigBkgPol2_Fit";
             std::string f1_SigBkgPol2_DrawSig_map_key     = pair.first + "_SigBkgPol2_DrawSig";
@@ -882,28 +916,27 @@ void PreparedNdEtaEach::DoFittings()
             // note : par[0] + par[1]* (x[0]-par[3]) + par[2] * pow((x[0]-par[3]),2);
             // std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
             // todo: the parameters
-            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParameters(hist_offset, 0, 500000, 0, signal_region_l, signal_region_r);
-            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(4, signal_region_l);
-            f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(5, signal_region_r);
-            // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParLimits(2, -100000000, 0);
+            // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParameters(hist_offset, 0, 500000, 0, signal_region_l, signal_region_r);
+            // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(4, signal_region_l);
+            // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> FixParameter(5, signal_region_r);
+            // // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> SetParLimits(2, -100000000, 0);
 
-            // std::cout<<"for "<<f1_BkgPol2_Fit_map_key<<"fit parameters: "<<hist_offset<<", 0, -0.2, 0, "<<signal_region_l<<", "<<signal_region_r<<std::endl;
+            // // std::cout<<"for "<<f1_BkgPol2_Fit_map_key<<"fit parameters: "<<hist_offset<<", 0, -0.2, 0, "<<signal_region_l<<", "<<signal_region_r<<std::endl;
 
-            temp_hist -> Fit(f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key], "N");
+            // temp_hist -> Fit(f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key], "N");
 
-            // std::cout<<"for "<<f1_BkgPol2_Fit_map_key<<"fit parameters: "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(0)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(1)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(2)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(3)<<std::endl;
+            // // std::cout<<"for "<<f1_BkgPol2_Fit_map_key<<"fit parameters: "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(0)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(1)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(2)<<", "<<f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(3)<<std::endl;
 
-            // std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
+            // // std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
 
-            f1_BkgPol2_Draw_map[f1_BkgPol2_Draw_map_key] -> SetParameters(
-                f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(0),
-                f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(1),
-                f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(2),
-                f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(3)
-            );
+            // f1_BkgPol2_Draw_map[f1_BkgPol2_Draw_map_key] -> SetParameters(
+            //     f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(0),
+            //     f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(1),
+            //     f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(2),
+            //     f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> GetParameter(3)
+            // );
 
             // Division:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
             // note : the normal cases, with the peak
             if (pair.first.find("_rotated") == std::string::npos)
@@ -962,6 +995,8 @@ void PreparedNdEtaEach::DoFittings()
             c1 -> cd();
             if (pair.first.find("_rotated") == std::string::npos){
                 auto temp_hist_rotate = (TH1D*) hstack1D_DeltaPhi_map[pair.first + "_rotated"] -> GetStack() -> Last();
+
+                std::string f1_BkgPolTwo_Fit_map_key  = pair.first + "_rotated" + "_BkgPolTwo_Fit";
                 
                 temp_hist -> SetFillColor(0);
                 temp_hist -> SetLineColor(9);
@@ -971,13 +1006,15 @@ void PreparedNdEtaEach::DoFittings()
                 temp_hist_rotate -> SetLineColor(46);
                 
                 temp_hist -> Draw("hist");
-                temp_hist_rotate -> Draw("hist same");
+                temp_hist_rotate -> Draw("ep same");
                 h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Draw("hist same");
+                f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> Draw("l same");
                 c1 -> Write(Form("c1_%s", pair.first.c_str()));
 
-                f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> Draw("l same");
-                f1_BkgPol2_Draw_map[f1_BkgPol2_Draw_map_key] -> Draw("l same");
-                c1 -> Write(Form("c1_%s", f1_BkgPol2_Draw_map_key.c_str()));
+                // f1_BkgPol2_Fit_map[f1_BkgPol2_Fit_map_key] -> Draw("l same");
+                // f1_BkgPol2_Draw_map[f1_BkgPol2_Draw_map_key] -> Draw("l same");
+                // c1 -> Write(Form("c1_%s", f1_BkgPol2_Draw_map_key.c_str()));
+                // c1 -> Write(Form("c1_%s", f1_BkgPolTwo_Fit_map_key.c_str()));
                 c1 -> Clear();
 
                 temp_hist -> Draw("hist");
@@ -985,6 +1022,16 @@ void PreparedNdEtaEach::DoFittings()
                 f1_SigBkgPol2_DrawSig_map[f1_SigBkgPol2_DrawSig_map_key] -> Draw("l same");
                 f1_SigBkgPol2_DrawBkgPol2_map[f1_SigBkgPol2_DrawBkgPol2_map_key] -> Draw("l same");
                 c1 -> Write(Form("c1_%s", f1_SigBkgPol2_Fit_map_key.c_str()));
+                c1 -> Clear();
+
+                // todo : the range of the Y axis, for checking the bkg fittings.
+                temp_hist->SetMinimum(hist_offset * 0.9);
+                temp_hist->SetMaximum(hist_offset * 1.1);
+                temp_hist -> Draw("hist");
+                temp_hist_rotate -> Draw("ep same");
+                h1D_RotatedBkg_DeltaPhi_Signal_map[Form("h1D_RotatedBkg_DeltaPhi_Signal_Eta%d", l_eta_bin)] -> Draw("hist same");
+                f1_BkgPolTwo_Fit_map[f1_BkgPolTwo_Fit_map_key] -> Draw("l same");
+                c1 -> Print(Form("%s/%s", output_directory.c_str(), output_filename_pdf.c_str()));
                 c1 -> Clear();
             }
 
@@ -1007,10 +1054,10 @@ void PreparedNdEtaEach::PrepareMultiplicity()
 
     for (int eta_bin = 0; eta_bin < nEtaBin; eta_bin++){
         
-        double pol2_bkg_integral = fabs(f1_BkgPol2_Draw_map[Form("hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)] -> Integral( cut_GoodProtoTracklet_DeltaPhi->first, cut_GoodProtoTracklet_DeltaPhi->second )) / ((DeltaPhiEdge_max - DeltaPhiEdge_min)/double(nDeltaPhiBin));
+        // double pol2_bkg_integral = fabs(f1_BkgPol2_Draw_map[Form("hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)] -> Integral( cut_GoodProtoTracklet_DeltaPhi->first, cut_GoodProtoTracklet_DeltaPhi->second )) / ((DeltaPhiEdge_max - DeltaPhiEdge_min)/double(nDeltaPhiBin));
         double rotated_bkg_count = get_hstack2D_GoodProtoTracklet_count(hstack2D_GoodProtoTracklet_map[Form("hstack2D_GoodProtoTracklet_EtaVtxZ_rotated")], eta_bin);
 
-        std::cout<<Form("FitBkg: hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)<<": "<<pol2_bkg_integral<<", rotated_bkg_count: "<<rotated_bkg_count<<std::endl;
+        // std::cout<<Form("FitBkg: hstack1D_DeltaPhi_Eta%d_BkgPol2_Draw", eta_bin)<<": "<<pol2_bkg_integral<<", rotated_bkg_count: "<<rotated_bkg_count<<std::endl;
 
         auto temp_h2D = (TH2D*) hstack2D_BestPairEtaVtxZ -> GetStack() -> Last();
 
@@ -1224,6 +1271,8 @@ void PreparedNdEtaEach::DeriveAlphaCorrection()
 
 void PreparedNdEtaEach::EndRun()
 {
+    c1 -> Print(Form("%s/%s)", output_directory.c_str(), output_filename_pdf.c_str()));
+
     std::cout<<111<<std::endl;
 
     file_out_DeltaPhi -> cd();

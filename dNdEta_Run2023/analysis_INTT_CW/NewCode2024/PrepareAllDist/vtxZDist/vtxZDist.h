@@ -127,7 +127,7 @@ class vtxZDist{
         std::vector<double> centrality_edges = Constants::centrality_edges;
         int nCentrality_bin;
 
-        int nVtxZ_bin = 60;
+        int nVtxZ_bin = 120;
         std::pair<double, double> vtxZ_range = {-60, 60};
 
         int nVtxZ_bin_narrow = 20;

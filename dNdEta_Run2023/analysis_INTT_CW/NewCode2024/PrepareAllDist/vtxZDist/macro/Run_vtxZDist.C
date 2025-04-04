@@ -15,9 +15,9 @@ void Run_vtxZDist(
   // std::string output_file_name_suffix = "_TrueXY", // note : for MC
 
 
-  bool Apply_cut = false, // note: vtxZQA cut 
-  bool ApplyVtxZReWeighting = false,
-  std::pair<bool, int> ApplyEvtBcoFullDiffCut = {true, 61},
+  bool Apply_cut = false, // note: vtxZQA cut, don't touch
+  bool ApplyVtxZReWeighting = false, // note : don't touch, regardless data or MC
+  std::pair<bool, int> ApplyEvtBcoFullDiffCut = {true, 61}, // note : don't touch, regardless data or MC
 
   bool IsVtxZQACutKnown = true
 )

@@ -414,21 +414,21 @@ void vtxZDist::PrepareHist()
         h2D_map.insert(
             std::make_pair(
                 "h2D_GoodRecoZ_TruthZ_Centrality",
-                new TH2D("h2D_GoodRecoZ_TruthZ_Centrality","h2D_GoodRecoZ_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+                new TH2D("h2D_GoodRecoZ_TruthZ_Centrality","h2D_GoodRecoZ_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZBin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
             )
         );
 
         h2D_map.insert(
             std::make_pair(
                 "h2D_TruthCount_TruthZ_Centrality",
-                new TH2D("h2D_TruthCount_TruthZ_Centrality","h2D_TruthCount_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+                new TH2D("h2D_TruthCount_TruthZ_Centrality","h2D_TruthCount_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZBin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
             )
         );
 
         h2D_map.insert(
             std::make_pair(
                 "h2D_RecoZEffi_TruthZ_Centrality",
-                new TH2D("h2D_RecoZEffi_TruthZ_Centrality","h2D_RecoZEffi_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZ_bin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
+                new TH2D("h2D_RecoZEffi_TruthZ_Centrality","h2D_RecoZEffi_TruthZ_Centrality;Truth_{z} [cm];Centrality [%]",nVtxZBin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0])
             )
         );
 
@@ -452,7 +452,7 @@ void vtxZDist::PrepareEvent()
         if (runnumber != -1 && MBDNSg2 != 1) {continue;} // todo: assume MC no trigger
 
         // note : for MC
-        if (runnumber == -1 && NTruthVtx != 1) {continue;}
+        // if (runnumber == -1 && NTruthVtx != 1) {continue;}
 
         // note : both data and MC
         if (is_min_bias != 1) {continue;}
@@ -476,7 +476,7 @@ void vtxZDist::PrepareEvent()
         }
         else if (ApplyVtxZReWeighting && h1D_INTT_vtxZ_reweighting == nullptr){
             std::cout << "ApplyVtxZReWeighting is true, but h1D_INTT_vtxZ_reweighting is nullptr" << std::endl;
-            exit(1);
+            exit(1); 
         }
         else {
             INTTvtxZWeighting = 1.0;

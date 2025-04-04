@@ -51,14 +51,29 @@ void FindH1DUpperLowBound(TH1D * major_hist, TH1D * new_hist, bool IsForUpper)
     }
 }
 
+double vector_stddev (vector <double> input_vector){
+	
+	double sum_subt = 0;
+	double average  = accumulate( input_vector.begin(), input_vector.end(), 0.0 ) / double(input_vector.size());
+	
+	// cout<<"average is : "<<average<<endl;
+
+	for (int i=0; i<input_vector.size(); i++){ sum_subt += pow((input_vector[i] - average),2); }
+
+	//cout<<"sum_subt : "<<sum_subt<<endl;
+	// cout<<"print from the function, average : "<<average<<" std : "<<stddev<<endl;
+
+	return sqrt( sum_subt / double(input_vector.size()-1) );
+}
+
 int FromdNdEta()
 {
 
-    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1/completed";
+    std::string input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed";
     std::string input_foldername_NoIndex = "Run_00"; // note : Run_00XXX
-    std::string filename_NoIndex = "MC_PreparedNdEtaEach_AllSensor_VtxZ10_Mbin70_test1";
+    std::string filename_NoIndex = "MC_PreparedNdEtaEach_AllSensor_VtxZ10_Mbin70_test1"; // note : take out the _00001_dNdEta.root
 
-    std::string file_directory_ideal = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/TrackHist_ForGeoOffset/completed/dNdEta/completed/MC_PreparedNdEtaEach_AllSensor_VtxZ10_Mbin70_ForGeoOffset_00001_dNdEta.root";
+    std::string file_directory_ideal = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset/completed/Run_NoGeoOffset_00000/MC_PreparedNdEtaEach_AllSensor_VtxZ10_Mbin70_test1_00000_dNdEta.root";
 
     std::string label_text = "Simulation";
 
@@ -108,12 +123,17 @@ int FromdNdEta()
     TFile * file_in_ideal = TFile::Open(Form("%s", file_directory_ideal.c_str()));
     TH1D * h1D_BestPair_RecoTrackletEtaPerEvt_ideal = (TH1D*)file_in_ideal->Get("h1D_BestPair_RecoTrackletEtaPerEvt");
     h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> SetLineColor(2);
-    h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
+    // h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
 
     TH1D * h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal = (TH1D*)file_in_ideal->Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> SetLineColor(2);
-    h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
+    // h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Integral(-1,-1));
 
+    std::map<int,std::vector<double>> EtaBin_Variation_vec; EtaBin_Variation_vec.clear();
+    for (int i = 0; i < h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> GetNbinsX(); i++)
+    {
+        EtaBin_Variation_vec[i] = {};
+    }
 
     TLatex * ltx = new TLatex();
     ltx->SetNDC();
@@ -141,11 +161,18 @@ int FromdNdEta()
         h1D_BestPair_RecoTrackletEtaPerEvt = (TH1D*) file_in -> Get("h1D_BestPair_RecoTrackletEtaPerEvt");
         h1D_RotatedBkg_RecoTrackletEtaPerEvt = (TH1D*) file_in -> Get("h1D_RotatedBkg_RecoTrackletEtaPerEvt");
 
-        h1D_BestPair_RecoTrackletEtaPerEvt -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt -> Integral(-1, -1));
-        h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Integral(-1, -1));
+        // h1D_BestPair_RecoTrackletEtaPerEvt -> Scale(1. / h1D_BestPair_RecoTrackletEtaPerEvt -> Integral(-1, -1));
+        // h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Scale(1. / h1D_RotatedBkg_RecoTrackletEtaPerEvt -> Integral(-1, -1));
 
         FindH1DUpperLowBound(h1D_RotatedBkg_RecoTrackletEtaPerEvt_LowerBound, h1D_RotatedBkg_RecoTrackletEtaPerEvt, false);
         FindH1DUpperLowBound(h1D_RotatedBkg_RecoTrackletEtaPerEvt_UpperBound, h1D_RotatedBkg_RecoTrackletEtaPerEvt, true);
+
+        for (int eta_bin = 0; eta_bin < h1D_RotatedBkg_RecoTrackletEtaPerEvt -> GetNbinsX(); eta_bin++)
+        {
+            EtaBin_Variation_vec[eta_bin].push_back(
+                (h1D_RotatedBkg_RecoTrackletEtaPerEvt -> GetBinContent(eta_bin + 1) - h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> GetBinContent(eta_bin + 1)) / h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> GetBinContent(eta_bin + 1)
+            );
+        }
 
         if (i == 0)
         {
@@ -181,6 +208,20 @@ int FromdNdEta()
         }
     }
 
+    TH1D * h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma = (TH1D*) h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal -> Clone("h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma");
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> Reset("ICESM");
+    for (int i = 0; i < h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> GetNbinsX(); i++)
+    {
+        double variation_stddev = vector_stddev(EtaBin_Variation_vec[i]);
+        std::cout<<"EtaBin: "<<i+1<<" std: "<<variation_stddev<<std::endl;
+
+        if (variation_stddev != variation_stddev){continue;}// note : skip the nan value
+
+        h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> SetBinContent(i + 1, 3 * vector_stddev(EtaBin_Variation_vec[i]));
+    }
+
+
+
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_LowerBound -> Divide(h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal);
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_UpperBound -> Divide(h1D_RotatedBkg_RecoTrackletEtaPerEvt_ideal);
     TH1D * h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax = (TH1D*) h1D_RotatedBkg_RecoTrackletEtaPerEvt_LowerBound -> Clone("h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax");
@@ -194,7 +235,7 @@ int FromdNdEta()
         h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetBinContent(i, bin_content);
     }
 
-    TFile * file_out = new TFile(Form("%s/FromdNdEta.root", output_directory.c_str()), "RECREATE");
+    TFile * file_out = new TFile(Form("%s/FromdNdEta_New.root", output_directory.c_str()), "RECREATE");
     h2D_BestPair_RecoTrackletEtaPerEvt -> Write();
     h2D_RotatedBkg_RecoTrackletEtaPerEvt -> Write();
 
@@ -213,6 +254,7 @@ int FromdNdEta()
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_LowerBound -> Write();
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_UpperBound -> Write();
     h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> Write();
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> Write();
 
     file_out -> Close();
 
@@ -231,6 +273,31 @@ int FromdNdEta()
     c1 -> Print(Form("%s/c1_RotatedBkg_RecoTrackletEtaPerEvt.pdf", output_directory.c_str()));
     c1 -> Clear();
 
+
+    c1 -> cd();
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> GetXaxis() -> SetTitle("Tracklet #eta");
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> GetYaxis() -> SetTitle("Variation Max in Reco. Tracklets");
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetLineColor(4);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetLineColorAlpha(4, 0);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetMinimum(0);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> SetMaximum(0.1);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax -> Draw("p");
+
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
+    c1 -> Print(Form("%s/h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationMax.pdf", output_directory.c_str()));
+    c1 -> Clear();
+
+    c1 -> cd();
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> GetXaxis() -> SetTitle("Tracklet #eta");
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> GetYaxis() -> SetTitle("3#sigma of variation in Reco. Tracklets");
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> SetLineColorAlpha(4,0);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> SetMinimum(0);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> SetMaximum(0.1);
+    h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma -> Draw("p");
+
+    ltx->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{#bf{sPHENIX}} %s", label_text.c_str()));
+    c1 -> Print(Form("%s/h1D_RotatedBkg_RecoTrackletEtaPerEvt_VariationSigma.pdf", output_directory.c_str()));
+    c1 -> Clear();
 
     return 0;
 }
