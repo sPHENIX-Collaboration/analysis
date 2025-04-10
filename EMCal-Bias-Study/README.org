@@ -120,9 +120,9 @@ rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resub
 /home/phnxrc/haggerty/emcal/offandon/emcalon
 #+end_src
 
-** run-LEDs.py Script
+** run_leds.py Script
 *** General Notes
-- Only run the ~run-LEDs.py~ script via one of the sebXX machines. Ex: seb00.
+- Only run the ~run_leds.py~ script via one of the sebXX machines. Ex: seb00.
 - By default the logs are stored in the LOG_DIR (by default: ~/home/phnxrc/anarde/log/<date>~)
 - Logs directory also contains the information of the runnumber that the bias offset and LED pulse width corresponds to.
 - See all options to the script via the ~--help~ flag.
@@ -137,7 +137,7 @@ Collect LED runs with configuration:
 - LED pulse width range: 26 ns to 32 ns
 - Events per run: 1000
 #+begin_src bash
-/home/phnxrc/anarde/scripts/run-LEDs.py
+/home/phnxrc/anarde/scripts/run_leds.py
 #+end_src
 
 *** Example 2
@@ -147,7 +147,7 @@ Suppose we want to change the bounds of the bias offsets:
 - LED pulse width range: 26 ns to 32 ns
 - Events per run: 1000
 #+begin_src bash
-/home/phnxrc/anarde/scripts/run-LEDs.py --bias-end 1000 --bias-step 500
+/home/phnxrc/anarde/scripts/run_leds.py --bias-end 1000 --bias-step 500
 #+end_src
 Note: If a parameter is not specific in the optional flags then the default value is chosen (as given by Example 1).
 
@@ -158,7 +158,7 @@ Suppose we want to change the bounds of the LED pulse width:
 - LED pulse width range: 28 ns to 30 ns
 - Events per run: 1000
 #+begin_src bash
-/home/phnxrc/anarde/scripts/run-LEDs.py --tp-start 28 --tp-end 30
+/home/phnxrc/anarde/scripts/run_leds.py --tp-start 28 --tp-end 30
 #+end_src
 
 *** Example 4
@@ -168,7 +168,7 @@ Suppose we want to vary the bias offsets while keeping the LED pulse width fixed
 - LED pulse width range: 26 ns
 - Events per run: 1000
 #+begin_src bash
-/home/phnxrc/anarde/scripts/run-LEDs.py --tp-start 26 --tp-end 26
+/home/phnxrc/anarde/scripts/run_leds.py --tp-start 26 --tp-end 26
 #+end_src
 Note: Similarly, one can vary the LED pulse widths by keeping the bias offset range parameters the same by providing the same value for ~--bias-start~ and ~--bias-end~.
 
@@ -178,7 +178,7 @@ Suppose we want to record a single run with a specific bias offset and LED pulse
 - LED pulse width range: 30 ns
 - Events per run: 1000
 #+begin_src bash
-/home/phnxrc/anarde/scripts/run-LEDs.py --bias-start -600 --bias-end -600 --tp-start 30 --tp-end 30
+/home/phnxrc/anarde/scripts/run_leds.py --bias-start -600 --bias-end -600 --tp-start 30 --tp-end 30
 #+end_src
 
 ** View Runs Transfer Status
