@@ -835,6 +835,7 @@ void LargeRLENC::TruthRegion(std::map<std::array<float, 3>, float> truth, float 
 		std::pair<float, float> phi_lim{phi_min, phi_max}; 
 		SingleCaloENC(truth, jetMinpT, vertex, transverse, energy, region_ints, LargeRLENC::Calorimeter::TRUTH);
 		truth.clear();
+		return;
 }
 void LargeRLENC::CaloRegion(std::map<std::array<float, 3>, float> emcal, std::map<std::array<float, 3>, float> ihcal, std::map<std::array<float, 3>, float> ohcal, float jetMinpT, std::string variable_of_interest, std::array<float, 3> vertex, float lead_jet_center_phi)
 { 
@@ -948,7 +949,8 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}
 	//Processs the calorimeter data into my analysis class
 	//Do the vertex shift and add it into the output 
-	std::cout<<"incoming towers : " <<cal.size() <<std::endl; 
+	std::cout<<"Incoming prefiltered towers : " <<cal.size() <<std::endl;
+	if(cal.size() == 0 ) return; 
 	while(i !=cal.end()){
 		auto j=i->first;
 		auto j_val=i->second;
@@ -1013,7 +1015,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 	}   
 	//now I need to actualy run the dataset 
 	std::vector<std::thread> CalculatingThreads;
-	std::cout<<"Calo object has size " <<strippedCalo.size() <<std::endl;
+	//std::cout<<"Calo object has size " <<strippedCalo.size() <<std::endl;
 	for(int i=0; i<(int)strippedCalo.size()-1; i++)
 	{
 		if(i%200 == 0 ) std::cout<<"Prepping tower for threading : " <<i <<std::endl;
@@ -1080,27 +1082,29 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		{
 			for(int threshold_index=0; threshold_index < (int) n_entries_arr[region].size(); threshold_index++)
 			{
-				Tr_Region_vector[threshold_index][region][which_calo]->E->Fill(e_region[threshold_index][region]);
+				Tr_Region_vector[threshold_index][region][0]->E->Fill(e_region[threshold_index][region]);
 				if(region < 3 )
-					 Tr_Region_vector[threshold_index][region][which_calo]->N->Fill(n_entries_arr[region][threshold_index]);
+					 Tr_Region_vector[threshold_index][region][0]->N->Fill(n_entries_arr[region][threshold_index]);
 				else if(region == 3)
-					Tr_Region_vector[threshold_index][region][which_calo]->N->Fill(n_entries_arr[region][threshold_index]+n_entries_arr[region+1][threshold_index]);
+					Tr_Region_vector[threshold_index][region][0]->N->Fill(n_entries_arr[region][threshold_index]+n_entries_arr[region+1][threshold_index]);
 			}
 		}
 		for(auto Tow:strippedCalo)
 		{
 			int n_th=Tow->FullOutput->size();
+			if(n_th == 0 ) continue;
 			for(int threshold_index=0; threshold_index < n_th; threshold_index++)
 			{
 				int region=Tow->tag;
+				//std::cout<<"Threshold index " <<threshold_index<<std::endl;
 				TowerOutput* TF=Tow->FullOutput->at(threshold_index);
 				TowerOutput* TR=Tow->RegionOutput->at(threshold_index);
 				int region_shift=region;
 				if(region_shift > 3 ) region_shift=3;
 				TF->Normalize(e_region[threshold_index][region_shift]);
 				TR->Normalize(e_region[threshold_index][region_shift]);
-				auto Hists=Tr_Region_vector[threshold_index][region_shift][which_calo];
-				auto FullHists=Tr_Region_vector[threshold_index][0][which_calo];
+				auto Hists=Region_vector[threshold_index][region_shift][0];
+				auto FullHists=Region_vector[threshold_index][0][0];
 				if((int)TF->RL.size() > 0 ){
 					for(int i=0; i<(int)TF->RL.size(); i++){
 						FullHists->R->Fill(TF->RL.at(i));
@@ -1122,6 +1126,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		strippedCalo.clear();
 		return;
 	}
+	if(which_calo == LargeRLENC::Calorimeter::TRUTH) return;
 	for(int region=0; region < 4; region++)
 	{
 		for(int threshold_index=0; threshold_index < (int) n_entries_arr[region].size(); threshold_index++)
@@ -1134,7 +1139,7 @@ void LargeRLENC::SingleCaloENC(std::map<std::array<float, 3>, float> cal, float 
 		}
 	}
 	std::cout<<"Plotting all the values" <<std::endl;
- 
+	
 	for(auto Tow:strippedCalo)
 	{
 		int n_th=Tow->FullOutput->size();

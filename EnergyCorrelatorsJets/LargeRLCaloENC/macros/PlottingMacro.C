@@ -13,6 +13,7 @@
 #include <TLatex.h>
 #include <TPad.h>
 #include <TDirectory.h>
+#include <TFitResult.h>
 
 //c++ includes
 #include <string>
@@ -754,6 +755,58 @@ TH1F* regeneratePlot(TH1F* energies)
 	}
 	return thres;
 }
+double fitTheNegSide(TH1F* data_energy, TCanvas* c, TLegend* l, TLegend* ll, float n_evt, int cal)
+{
+	c->cd();
+	c->SetLogy();
+	TH1F* negative_side=new TH1F(Form("neg_data_%s", data_energy->GetName()), Form("Negative Energy Side %s", data_energy->GetTitle()), data_energy->GetNbinsX(), data_energy->GetBinLowEdge(1), data_energy->GetBinLowEdge(data_energy->GetNbinsX()));
+	if(cal==2) data_energy->Rebin(4);
+	for(int i=0; i<data_energy->GetNbinsX(); i++)
+	{
+		float E=data_energy->GetBinCenter(i);
+		if(E > 0 ) break;
+		int N=data_energy->GetBinContent(i);
+		for(int j=0; j<N; j++){
+			negative_side->Fill(E);
+			negative_side->Fill(std::abs(E));
+		}
+	}
+	data_energy->Scale(1/(float)n_evt);
+	negative_side->Scale(1/(float)n_evt);
+	if(cal==2){
+		data_energy->Scale(1/4.0);
+		negative_side->Scale(1/4.0);
+	}
+	TF1* f_fit=new TF1("fit","gaus",data_energy->GetBinLowEdge(1), data_energy->GetBinLowEdge(data_energy->GetNbinsX()));
+	TFitResultPtr p=negative_side->Fit(f_fit, "S");
+	double sigma = p->Parameter(2);
+	data_energy->Draw();
+	if(cal==0){
+		data_energy->GetXaxis()->SetRangeUser(-300, 999);
+		data_energy->GetYaxis()->SetRangeUser(0.01, 1100);
+	}
+	else if(cal==1){
+		data_energy->GetXaxis()->SetRangeUser(-50, 600);
+		data_energy->GetYaxis()->SetRangeUser(0.01, 500);
+	}
+	else{
+		data_energy->GetXaxis()->SetRangeUser(-100, 600);
+		data_energy->GetYaxis()->SetRangeUser(0.01, 500);
+	}
+
+	negative_side->SetMarkerColor(kPink+1);
+	negative_side->SetLineColor(kPink+1);
+//	negative_side->SetMarkerStyle(21);
+	negative_side->Draw("same");
+	f_fit->SetLineColor(kBlack);
+	f_fit->Draw("same");
+	l->AddEntry(negative_side, "E_{tow} < 0, Reflected");
+	l->AddEntry(f_fit, Form("#splitline{Gaussian Fit to Negative Side noise}{ #splitline{#mu = %.3g #pm %.2g MeV}{ #sigma = %3.3g #pm %.1g MeV }}", p->Parameter(1),p->ParError(1), sigma, p->ParError(2)), "l");
+	l->Draw();
+	ll->Draw();
+	return sigma;
+}
+		
 int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int run_d, TFile* fsim10, TFile* fsim30, TFile* fsimMB)
 {
 	SetsPhenixStyle();
@@ -775,7 +828,7 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 	TCanvas* cr8=new TCanvas("AHr", "All Cal Hits");*/
 	std::vector<TFile*> files {fpedestal, fdata, fsim10, fsim30, fsimMB};
 	std::vector<TLegend*> lt {}, ll {}; //lt_ref {};
-	std::vector<TCanvas*> Canvases {c1, c4, c2, c6, c3, c5, c7, c8};
+	std::vector<TCanvas*> Canvases {c1, c4, c2, c5, c3, c6, c7, c8};
 //	std::vector<TCanvas*> Cr {cr1, cr2, cr3, cr4, cr5, cr6, cr7, cr8};
 	std::vector<TPad*> pad_val, pad_rats;
 	for(int i=0; i<8; i++)
@@ -807,8 +860,8 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 		l->SetTextSize(0.04f);
 		l1->SetTextSize(0.04f);
 		l2->SetTextSize(0.04f);
-		l1->AddEntry("", "#it{#bf{sPHENIX}} Internal", "");
-		l1->AddEntry("", "pp #sqrt{s} = 200 GeV", "");
+		l1->AddEntry("", "#it{#bf{sPHENIX}} Preliminary", "");
+		l1->AddEntry("", "p+p #sqrt{s} = 200 GeV", "");
 		//l1->SetFillColorAlpha(0);
 	//	l->SetFillColorAlpha(0);
 		
@@ -849,7 +902,7 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 		pad_val.push_back(p1);
 		pad_rats.push_back(p2);	
 	}
-	std::vector <std::string> label {"Pedestal", "pp, 10 GeV #leq Lead jet p_{T} #leq 30 GeV ", "Pythia8, Lead jet p_{T} #geq 10 GeV","Pythia8, Lead jet p_{T} #geq 30 GeV", "Pythia, Minimum bias Detroit Tune"};
+	std::vector <std::string> label {"Pedestal", "p+p, 10 GeV #leq Lead jet p_{T} #leq 30 GeV ", "Pythia8 + GEANT4 + Noise, Lead jet p_{T} #geq 10 GeV","Pythia8 + GEANT4 + Noise, Lead jet p_{T} #geq 30 GeV", "Pythia, Minimum bias Detroit Tune"};
 
 	std::array<float, 6> maxes {0.,0.,0.,0.,0.,0.};
 	std::vector<std::array<TH1F*,6>> rats{};
@@ -1071,22 +1124,26 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 		//set the y title to reflect the actual plot
 		oh_e->SetYTitle(Form("#frac{1}{N_{events}} %s ", oh_e->GetYaxis()->GetTitle()));
 		oh_h->SetYTitle(Form("#frac{1}{N_{events}} %s) ", oh_h->GetYaxis()->GetTitle()));
-		ih_e->SetYTitle(Form("#frac{1}{{N_{events}} %s ", ih_e->GetYaxis()->GetTitle()));
+		ih_e->SetYTitle(Form("#frac{1}{N_{events}} %s ", ih_e->GetYaxis()->GetTitle()));
 		ih_h->SetYTitle(Form("#frac{1}{N_{events}} %s) ", ih_h->GetYaxis()->GetTitle()));
 		em_e->SetYTitle(Form("#frac{1}{N_{events}} %s ", em_e->GetYaxis()->GetTitle()));
 		em_h->SetYTitle(Form("#frac{1}{N_{events}} %s) ", em_h->GetYaxis()->GetTitle()));
 		a_e->SetYTitle(Form("#frac{1}{N_{events}} %s ", a_e->GetYaxis()->GetTitle()));
 		a_h->SetYTitle(Form("#frac{1}{N_{events}} %s) ", a_h->GetYaxis()->GetTitle()));
 		//set the limits 
-		oh_e->GetYaxis()->SetRangeUser(0.08, 1600);
+		oh_e->GetYaxis()->SetRangeUser(0.08, 500);
 		em_e->GetYaxis()->SetRangeUser(0.08, 25000);
-		ih_e->GetYaxis()->SetRangeUser(0.08, 1600);
+		ih_e->GetYaxis()->SetRangeUser(0.08, 500);
 		a_e->GetYaxis()->SetRangeUser(0.08, 1600);
 		a_h->GetYaxis()->SetRangeUser(0.08, 1600);
 		oh_h->GetYaxis()->SetRangeUser(0.08, 1600);
 		em_h->GetYaxis()->SetRangeUser(0.08, 25000);
 		ih_h->GetYaxis()->SetRangeUser(0.08, 1600);
-
+		oh_h->GetXaxis()->SetRangeUser(0.01, 500);
+		ih_h->GetXaxis()->SetRangeUser(0.01, 500);
+		oh_e->GetXaxis()->SetRangeUser(-100, 600);
+		ih_e->GetXaxis()->SetRangeUser(-100, 600);
+		em_e->GetXaxis()->SetRangeUser(-300, 1000);
 		if(i==0){
 			oh_e->SetLineColor(kGreen);
 			oh_e->SetMarkerColor(kGreen);
@@ -1182,30 +1239,6 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 	/*	TH1F* ih_hg = regeneratePlot(ih_e);	
 		TH1F* oh_hg = regeneratePlot(oh_e);
 		TH1F* em_hg = regeneratePlot(em_e);*/
-		//scale by total number of events
-		oh_e->Scale(1/(float)n_evt_oh);
-		oh_h->Scale(1/(float)n_evt_oh);
-		//oh_hg->Scale(1/(float)n_evt_oh);
-		ih_e->Scale(1/(float)n_evt_ih);
-		ih_h->Scale(1/(float)n_evt_ih);
-		//ih_hg->Scale(1/(float)n_evt_ih);
-		em_e->Scale(1/(float)n_evt_em);
-		em_h->Scale(1/(float)n_evt_em);
-		//em_hg->Scale(1/(float)n_evt_em);
-		a_e->Scale(1/(float)n_evt_a);
-		a_h->Scale(1/(float)n_evt_a);
-		
-		//get the reflected part of the energy 
-	/*	TH1F* oh_e_ref=getReflected(oh_e);
-		TH1F* ih_e_ref=getReflected(ih_e);
-		TH1F* em_e_ref=getReflected(em_e);
-		TH1F* a_e_ref=getReflected(a_e);
-		
-		oh_e_ref->SetMarkerStyle(21);
-		ih_e_ref->SetMarkerStyle(21);
-		em_e_ref->SetMarkerStyle(21);
-		a_e_ref->SetMarkerStyle(21);
-	*/
 		lt[0]->AddEntry(oh_e, Form("%s", label[i].c_str()));
 		//lt_ref[0]->AddEntry(oh_e, Form("%s", label[i].c_str()));
 		//lt_ref[0]->AddEntry(oh_e_ref, Form("%s", label[i].c_str()));
@@ -1230,6 +1263,55 @@ int OneDEnergyPlots(TFile* fpedestal, int run_ph, int run_pe, TFile* fdata, int 
 		lt[7]->AddEntry(a_h, Form("%s", label[i].c_str()));
 		//lt_ref[7]->AddEntry(oh_e, Form("%s", label[i].c_str()));
 		//lt_ref[7]->AddEntry(oh_e_ref, Form("%s", label[i].c_str()));
+		//scale by total number of events
+		if(i==1){ 
+			TCanvas* co=new TCanvas("c_ohcal", "data_ohcal");
+			TCanvas* ci=new TCanvas("c_ihcal", "data_ihcal");
+			TCanvas* ce=new TCanvas("c_emcal", "data_emcal");;
+			co->cd();
+			TLegend* lb1=(TLegend*)ll[0]->Clone();
+			lb1->Draw();
+			ci->cd();
+			TLegend* lb2=(TLegend*)ll[2]->Clone();
+			lb2->Draw();
+			ce->cd();
+			TLegend* lb3=(TLegend*)ll[4]->Clone();
+			lb3->Draw();
+
+			TLegend* lo=(TLegend*)lt[0]->Clone();
+			TLegend* li=(TLegend*)lt[2]->Clone();
+			TLegend* le=(TLegend*)lt[4]->Clone();
+			TH1F* oh_e2=(TH1F*)oh_e->Clone();
+			TH1F* ih_e2=(TH1F*)ih_e->Clone();
+			TH1F* em_e2=(TH1F*)em_e->Clone();
+			double sigma_o=fitTheNegSide(oh_e2, co, lo, lb1, n_evt_oh, 2);
+			double sigma_i=fitTheNegSide(ih_e2, ci, li, lb2, n_evt_ih, 1);
+			double sigma_e=fitTheNegSide(em_e2, ce, le, lb3, n_evt_em, 0);
+		}
+		oh_e->Rebin(4);
+		oh_e->Scale(1/((float)n_evt_oh*4.0));
+		oh_h->Scale(1/(float)n_evt_oh);
+		//oh_hg->Scale(1/(float)n_evt_oh);
+		ih_e->Scale(1/(float)n_evt_ih);
+		ih_h->Scale(1/(float)n_evt_ih);
+		//ih_hg->Scale(1/(float)n_evt_ih);
+		em_e->Scale(1/(float)n_evt_em);
+		em_h->Scale(1/(float)n_evt_em);
+		//em_hg->Scale(1/(float)n_evt_em);
+		a_e->Scale(1/(float)n_evt_a);
+		a_h->Scale(1/(float)n_evt_a);
+
+		//get the reflected part of the energy 
+	/*	TH1F* oh_e_ref=getReflected(oh_e);
+		TH1F* ih_e_ref=getReflected(ih_e);
+		TH1F* em_e_ref=getReflected(em_e);
+		TH1F* a_e_ref=getReflected(a_e);
+		
+		oh_e_ref->SetMarkerStyle(21);
+		ih_e_ref->SetMarkerStyle(21);
+		em_e_ref->SetMarkerStyle(21);
+		a_e_ref->SetMarkerStyle(21);
+	*/
 /*		if(i==0){
 			lt[0]->AddEntry(rats[i][0], "Pedestal / Collision");
 			lt[1]->AddEntry(rats[i][1], "Pedestal / Collision");
