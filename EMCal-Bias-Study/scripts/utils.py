@@ -11,11 +11,11 @@ subparser = parser.add_subparsers(dest='command')
 
 evtComb = subparser.add_parser('evtComb', help='Create condor submission directory for Event Combining.')
 evtComb.add_argument('-i', '--run-list', type=str, help='Run list', required=True)
-evtComb.add_argument('-i2', '--calib-dir', type=str, default='/sphenix/lustre01/sphnxpro/physics/emcal/calib', help='Data Directory. Default: /sphenix/lustre01/sphnxpro/physics/emcal/calib')
+evtComb.add_argument('-i2', '--calib-dir', type=str, default='/sphenix/lustre01/sphnxpro/physics/emcal/led', help='Data Directory. Default: /sphenix/lustre01/sphnxpro/physics/emcal/led')
 evtComb.add_argument('-e', '--executable', type=str, default='scripts/genEventCombine.sh', help='Job script to execute. Default: scripts/genEventCombine.sh')
 evtComb.add_argument('-n', '--nSegments', type=int, default=16, help='Number of segments per run to combine. Default: 16')
 evtComb.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
-evtComb.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+evtComb.add_argument('-s', '--memory', type=float, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 evtComb.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 def create_event_combine_jobs():
