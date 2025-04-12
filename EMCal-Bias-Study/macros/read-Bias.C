@@ -236,12 +236,12 @@ Int_t myAnalysis::readMaps(const string &filename, unordered_map<Int_t,Int_t> &m
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         Int_t key;
         Int_t value;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // key
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -451,11 +451,11 @@ Int_t myAnalysis::readCSV(const string& filename) {
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         MyData row;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // serial
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -587,7 +587,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
         return; // Indicate an error
     }
 
-    m_hists["h2_mevOverADC"] = (TH2F*)file->Get("h2_mevOverADC");
+    m_hists["h2_mevOverADC"] = static_cast<TH2*>(file->Get("h2_mevOverADC"));
 
     if (!m_hists["h2_mevOverADC"]) {
         cout << "Error: Histogram not found in ROOT file." << endl;
@@ -664,14 +664,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
             min_vbDivCosmic = min(min_vbDivCosmic, vbDivCosmic);
             max_vbDivCosmic = max(max_vbDivCosmic, vbDivCosmic);
 
-            if(calib) ((TH2*)m_hists["h2OffsetDivDensityCalib"])->Fill(calib,offsetDivDensity);
+            if(calib) static_cast<TH2*>(m_hists["h2OffsetDivDensityCalib"])->Fill(calib,offsetDivDensity);
             if(cosmic && calib) {
-                ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->Fill(calib,offsetDivCosmic);
-                ((TH2*)m_hists["h2VbDivCosmicCalib"])->Fill(calib,vbDivCosmic);
+                static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->Fill(calib,offsetDivCosmic);
+                static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->Fill(calib,vbDivCosmic);
             }
 
-            if(calib) ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Fill(bd,offset,calib);
-            if(cosmic && calib) ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Fill(cosmic,offset,calib);
+            if(calib) static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Fill(bd,offset,calib);
+            if(cosmic && calib) static_cast<TH3*>(m_hists["h3CalibOffsetCosmicMPV"])->Fill(cosmic,offset,calib);
         }
     }
 
@@ -944,7 +944,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/images/" + string(m_hists["hScintRatio"]->GetName()) + ".png").c_str());
 
-    m_hists["hCalib"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("z");
+    m_hists["hCalib"] = static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Project3D("z");
     m_hists["hCalib"]->SetTitle("EMCal");
     m_hists["hCalib"]->GetYaxis()->SetTitle("Counts");
     m_hists["hCalib"]->Draw();
@@ -963,14 +963,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     gPad->SetLogy(0);
     gPad->SetGrid(0,0);
 
-    m_hists["h2CalibVsBlockDensity"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("zx");
+    m_hists["h2CalibVsBlockDensity"] = static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Project3D("zx");
 
     m_hists["h2CalibVsBlockDensity"]->SetTitle("EMCal");
     m_hists["h2CalibVsBlockDensity"]->Rebin(5);
     m_hists["h2CalibVsBlockDensity"]->Draw("COLZ1");
     m_hists["h2CalibVsBlockDensity"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2CalibVsBlockDensity_px = ((TH2*)m_hists["h2CalibVsBlockDensity"])->ProfileX();
+    TH1* h2CalibVsBlockDensity_px = static_cast<TH2*>(m_hists["h2CalibVsBlockDensity"])->ProfileX();
     h2CalibVsBlockDensity_px->SetLineColor(kRed);
     h2CalibVsBlockDensity_px->SetMarkerColor(kRed);
     h2CalibVsBlockDensity_px->Draw("same");
@@ -980,14 +980,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    m_hists["h2CalibVsCosmicMPV"] = ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Project3D("zx");
+    m_hists["h2CalibVsCosmicMPV"] = static_cast<TH3*>(m_hists["h3CalibOffsetCosmicMPV"])->Project3D("zx");
 
     m_hists["h2CalibVsCosmicMPV"]->SetTitle("EMCal");
     // m_hists["h2CalibVsCosmicMPV"]->Rebin(5);
     m_hists["h2CalibVsCosmicMPV"]->Draw("COLZ1");
     m_hists["h2CalibVsCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2CalibVsCosmicMPV_px = ((TH2*)m_hists["h2CalibVsCosmicMPV"])->ProfileX();
+    TH1* h2CalibVsCosmicMPV_px = static_cast<TH2*>(m_hists["h2CalibVsCosmicMPV"])->ProfileX();
     h2CalibVsCosmicMPV_px->SetLineColor(kRed);
     h2CalibVsCosmicMPV_px->SetMarkerColor(kRed);
     h2CalibVsCosmicMPV_px->Draw("same");
@@ -1002,14 +1002,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    m_hists["h2CalibVsOffset"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("zy");
+    m_hists["h2CalibVsOffset"] = static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Project3D("zy");
 
     m_hists["h2CalibVsOffset"]->SetTitle("EMCal");
     m_hists["h2CalibVsOffset"]->Rebin(10);
     m_hists["h2CalibVsOffset"]->Draw("COLZ1");
     m_hists["h2CalibVsOffset"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2CalibVsOffset_px = ((TH2*)m_hists["h2CalibVsOffset"])->ProfileX();
+    TH1* h2CalibVsOffset_px = static_cast<TH2*>(m_hists["h2CalibVsOffset"])->ProfileX();
     h2CalibVsOffset_px->SetLineColor(kRed);
     h2CalibVsOffset_px->SetMarkerColor(kRed);
     h2CalibVsOffset_px->Draw("same");
@@ -1019,15 +1019,15 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    m_hists["h2BlockDensityVsOffset"] = ((TH3*)m_hists["h3CalibOffsetBlockDensity"])->Project3D("xy");
+    m_hists["h2BlockDensityVsOffset"] = static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Project3D("xy");
 
     m_hists["h2BlockDensityVsOffset"]->SetTitle("EMCal");
     m_hists["h2BlockDensityVsOffset"]->Rebin(10);
-    ((TH2*)m_hists["h2BlockDensityVsOffset"])->RebinY(5);
+    static_cast<TH2*>(m_hists["h2BlockDensityVsOffset"])->RebinY(5);
     m_hists["h2BlockDensityVsOffset"]->Draw("COLZ1");
     m_hists["h2BlockDensityVsOffset"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2BlockDensityVsOffset_px = ((TH2*)m_hists["h2BlockDensityVsOffset"])->ProfileX();
+    TH1* h2BlockDensityVsOffset_px = static_cast<TH2*>(m_hists["h2BlockDensityVsOffset"])->ProfileX();
     h2BlockDensityVsOffset_px->SetLineColor(kRed);
     h2BlockDensityVsOffset_px->SetMarkerColor(kRed);
     // h2BlockDensityVsOffset_px->Draw("same");
@@ -1037,15 +1037,15 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    m_hists["h2CosmicMPVOffset"] = ((TH3*)m_hists["h3CalibOffsetCosmicMPV"])->Project3D("xy");
+    m_hists["h2CosmicMPVOffset"] = static_cast<TH3*>(m_hists["h3CalibOffsetCosmicMPV"])->Project3D("xy");
 
     m_hists["h2CosmicMPVOffset"]->SetTitle("EMCal");
     m_hists["h2CosmicMPVOffset"]->Rebin(10);
-    // ((TH2*)m_hists["h2CosmicMPVOffset"])->RebinY(5);
+    // static_cast<TH2*>(m_hists["h2CosmicMPVOffset"])->RebinY(5);
     m_hists["h2CosmicMPVOffset"]->Draw("COLZ1");
     m_hists["h2CosmicMPVOffset"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2CosmicMPVOffset_px = ((TH2*)m_hists["h2CosmicMPVOffset"])->ProfileX();
+    TH1* h2CosmicMPVOffset_px = static_cast<TH2*>(m_hists["h2CosmicMPVOffset"])->ProfileX();
     h2CosmicMPVOffset_px->SetLineColor(kRed);
     h2CosmicMPVOffset_px->SetMarkerColor(kRed);
     // h2CosmicMPVOffset_px->Draw("same");
@@ -1059,11 +1059,11 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    ((TH2*)m_hists["h2OffsetDivDensityCalib"])->RebinY(5);
+    static_cast<TH2*>(m_hists["h2OffsetDivDensityCalib"])->RebinY(5);
     m_hists["h2OffsetDivDensityCalib"]->Draw("COLZ1");
     m_hists["h2OffsetDivDensityCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2OffsetDivDensityCalib_px = ((TH2*)m_hists["h2OffsetDivDensityCalib"])->ProfileX();
+    TH1* h2OffsetDivDensityCalib_px = static_cast<TH2*>(m_hists["h2OffsetDivDensityCalib"])->ProfileX();
     h2OffsetDivDensityCalib_px->SetLineColor(kRed);
     h2OffsetDivDensityCalib_px->SetMarkerColor(kRed);
     h2OffsetDivDensityCalib_px->Draw("same");
@@ -1073,11 +1073,11 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
-    ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->RebinY(5);
+    static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->RebinY(5);
     m_hists["h2OffsetDivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2OffsetDivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2OffsetDivCosmicCalib_px = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProfileX();
+    TH1* h2OffsetDivCosmicCalib_px = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProfileX();
     h2OffsetDivCosmicCalib_px->SetLineColor(kRed);
     h2OffsetDivCosmicCalib_px->SetMarkerColor(kRed);
     h2OffsetDivCosmicCalib_px->Draw("same");
@@ -1095,7 +1095,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2VbDivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2VbDivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2VbDivCosmicCalib_px = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProfileX();
+    TH1* h2VbDivCosmicCalib_px = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProfileX();
     h2VbDivCosmicCalib_px->SetLineColor(kRed);
     h2VbDivCosmicCalib_px->SetMarkerColor(kRed);
     h2VbDivCosmicCalib_px->Draw("same");
@@ -1118,8 +1118,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     Int_t biny_start = m_hists["h2OffsetDivDensityCalib"]->GetXaxis()->FindBin(1.5);
     Int_t biny_end   = m_hists["h2OffsetDivDensityCalib"]->GetXaxis()->FindBin(2);
-    TH1* h2OffsetDivDensityCalibA_py = ((TH2*)m_hists["h2OffsetDivDensityCalib"])->ProjectionY("h2OffsetDivDensityCalib_py", biny_start, biny_end-1);
-    TH1* h2OffsetDivDensityCalibB_py = ((TH2*)m_hists["h2OffsetDivDensityCalib"])->ProjectionY("h2OffsetDivDensityCalib_0-1.5_py", 1, biny_start-1);
+    TH1* h2OffsetDivDensityCalibA_py = static_cast<TH2*>(m_hists["h2OffsetDivDensityCalib"])->ProjectionY("h2OffsetDivDensityCalib_py", biny_start, biny_end-1);
+    TH1* h2OffsetDivDensityCalibB_py = static_cast<TH2*>(m_hists["h2OffsetDivDensityCalib"])->ProjectionY("h2OffsetDivDensityCalib_0-1.5_py", 1, biny_start-1);
 
     h2OffsetDivDensityCalibA_py->Rebin(2);
     h2OffsetDivDensityCalibB_py->Rebin(2);
@@ -1154,8 +1154,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     biny_start = m_hists["h2OffsetDivCosmicCalib"]->GetXaxis()->FindBin(1.5);
     biny_end   = m_hists["h2OffsetDivCosmicCalib"]->GetXaxis()->FindBin(2);
-    TH1* h2OffsetDivCosmicCalibA_py = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_py", biny_start, biny_end-1);
-    TH1* h2OffsetDivCosmicCalibB_py = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_0-1.5_py", 1, biny_start-1);
+    TH1* h2OffsetDivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_py", biny_start, biny_end-1);
+    TH1* h2OffsetDivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_0-1.5_py", 1, biny_start-1);
 
     h2OffsetDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2OffsetDivCosmicCalibB_py->GetYaxis()->SetRangeUser(0,3000);
@@ -1194,8 +1194,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     biny_start = m_hists["h2VbDivCosmicCalib"]->GetXaxis()->FindBin(2-delta);
     biny_end   = m_hists["h2VbDivCosmicCalib"]->GetXaxis()->FindBin(2+delta);
-    TH1* h2VbDivCosmicCalibA_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_py", biny_start, biny_end-1);
-    TH1* h2VbDivCosmicCalibB_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, biny_start-1);
+    TH1* h2VbDivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_py", biny_start, biny_end-1);
+    TH1* h2VbDivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, biny_start-1);
 
     h2VbDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     // h2VbDivCosmicCalibB_py->GetYaxis()->SetRangeUser(0,3000);
@@ -1270,7 +1270,7 @@ void read_Bias(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* argv[]) {
 if(argc < 6 || argc > 9){
         cout << "usage: ./read-Bias input input_sector input_channel input_blockInfo input_calib [output] [outputCSV] [outputRoot]" << endl;
         cout << "input: input csv file" << endl;
