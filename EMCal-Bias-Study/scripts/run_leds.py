@@ -29,12 +29,12 @@ parser.add_argument('-n'
 
 parser.add_argument('-p1'
                     , '--tp-start', type=int
-                    , default=26, choices=range(10,51)
+                    , default=26
                     , help='LED Pulse Width (Start). Default: 26 ns')
 
 parser.add_argument('-p2'
                     , '--tp-end', type=int
-                    , default=32, choices=range(10,51)
+                    , default=32
                     , help='LED Pulse Width (End). Default: 32 ns')
 
 parser.add_argument('-b1'
@@ -56,8 +56,8 @@ parser.add_argument('-d'
                     , help='Enable Dry Run.')
 
 parser.add_argument('-a'
-                    , '--record-default', action='store_false'
-                    , help='Disable recording run with default offsets.')
+                    , '--record-only-default', action='store_true'
+                    , help='Record run with default offsets only.')
 
 args = parser.parse_args()
 
@@ -93,9 +93,11 @@ if __name__ == '__main__':
     bias_start     = args.bias_start
     bias_end       = args.bias_end
     bias_step      = args.bias_step
-    record_default = args.record_default
+    record_only_default = args.record_only_default
 
     ### Defaults START -- DO NOT CHANGE ###
+    TP_MIN = 10              # ns
+    TP_MAX = 60              # ns
     BIAS_MIN = -2000         # mV
     BIAS_MAX = 2000          # mV
     BIAS_STEP_DEFAULT = -100 # mV
@@ -104,6 +106,11 @@ if __name__ == '__main__':
     # Ensure the starting pulse width is not greater than ending pulse width
     if tp_start > tp_end:
         parser.error(f'LED pulse width start: {tp_start} ns is greater than end: {tp_end} ns.')
+
+    # Ensure that led pulse widths are within acceptable range
+    if tp_start < TP_MIN or tp_end > TP_MAX:
+        parser.error('Bounds for led pulse width exceed default range.'
+                     f'Min: {TP_MIN} ns and Max: {TP_MAX}')
 
     # Ensure that bias offsets are within acceptable range
     if bias_start < BIAS_MIN or bias_end > BIAS_MAX:
@@ -127,39 +134,40 @@ if __name__ == '__main__':
     tee_print(f'Log Dir: {log_dir}', log_file)
     tee_print(f'Minimum events per Run: {nevents}', log_file)
     tee_print(f'Recording time per Run: {run_time} seconds', log_file)
-    tee_print(f'Bias Offset Start: {bias_start} mV', log_file)
-    tee_print(f'Bias Offset End: {bias_end} mV', log_file)
-    tee_print(f'Bias Offset Step: {bias_step} mV', log_file)
+    if not record_only_default:
+        tee_print(f'Bias Offset Start: {bias_start} mV', log_file)
+        tee_print(f'Bias Offset End: {bias_end} mV', log_file)
+        tee_print(f'Bias Offset Step: {bias_step} mV', log_file)
     tee_print(f'LED pulse width Start: {tp_start} ns', log_file)
     tee_print(f'LED pulse width End: {tp_end} ns', log_file)
-    tee_print(f'Record Default: {record_default}', log_file)
+    tee_print(f'Record ONLY Default Bias Offsets: {record_only_default}', log_file)
     tee_print(f'Dry Run: {dry_run}\n', log_file)
 
     # configure DAQ
     # RC setup
-    COMMAND = '~/samfred/quickscripts/rc_setup_local.sh 5 seb{00..15}'
-    execute_command(COMMAND,dry_run)
+    command = '~/samfred/quickscripts/rc_setup_local.sh 5 seb{00..15}'
+    execute_command(command,dry_run)
     tee_print('rc local setup done', log_file)
 
     # GTM setup
-    COMMAND = ('gl1_gtm_client gtm_set_mode 5 0 && '
+    command = ('gl1_gtm_client gtm_set_mode 5 0 && '
                'gl1_gtm_client gtm_load_modebits 5 '
                '/home/phnxrc/operations/gl1_gtm/EMCAL_pulse_100Hz.scheduler')
-    execute_command(COMMAND,dry_run)
+    execute_command(command,dry_run)
     tee_print('gl1_gtm setup done', log_file)
 
     # Set Data Type to LED
-    COMMAND = 'rc_client rc_set_runtype led'
-    execute_command(COMMAND,dry_run)
+    command = 'rc_client rc_set_runtype led'
+    execute_command(command,dry_run)
     tee_print('rc local setup done\n', log_file)
 
-    # Configure the loop over bias offsets
-    bias_vec = ((np.arange(bias_start,bias_end+1,bias_step)-BIAS_MAX)//BIAS_STEP_DEFAULT).tolist()
-    bias_tuple = list(zip(bias_vec, [f'{bias_var_dir}/var-{var}' for var in bias_vec]))
+    bias_tuple = [('original','/home/phnxrc/haggerty/emcal/vop-1008')]
 
-    # Add the default offset to the list of run configurations if not disabled explicity
-    if record_default:
-        bias_tuple = [('original','/home/phnxrc/haggerty/emcal/vop-1008')] + bias_tuple
+    # Add the bias offset variations if not disabled explicitely
+    if not record_only_default:
+        # Configure the loop over bias offsets
+        bias_vec = ((np.arange(bias_start,bias_end+1,bias_step)-BIAS_MAX)//BIAS_STEP_DEFAULT).tolist()
+        bias_tuple += list(zip(bias_vec, [f'{bias_var_dir}/var-{var}' for var in bias_vec]))
 
     # loop over bias offsets
     for item in bias_tuple:

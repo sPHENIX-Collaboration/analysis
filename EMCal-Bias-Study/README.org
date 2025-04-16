@@ -127,7 +127,8 @@ rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resub
 - Logs directory also contains the information of the runnumber that the bias offset and LED pulse width corresponds to.
 - See all options to the script via the ~--help~ flag.
 - Add the flag ~--dry-run~ to simulate the data taking (prints all commands) without actually executing them.
-- A run with the default bias offsets is always recorded. Add the flag ~--record-default~ to disable this.
+- A run with the default bias offsets is always recorded.
+- Add the flag ~--record-only-default~ to not vary the bias offsets and only use the default bias offset configuration.
 
 *** Example 1
 In this example the script is run without any parameters (out-of-box).
