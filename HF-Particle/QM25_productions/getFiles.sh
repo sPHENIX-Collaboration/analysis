@@ -5,7 +5,7 @@ run=$1
 dirStart=${run:0:3}
 dirEnd=$(($dirStart + 1))
 
-buildTag=ana475_2024p018_v001
+buildTag=ana475_2024p017_v001
 
 directory=/sphenix/lustre01/sphnxpro/production/run2pp/physics/${buildTag}/DST_TRKR_TRACKS/run_000${dirStart}00_000${dirEnd}00/dst/
 
