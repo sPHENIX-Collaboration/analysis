@@ -3,7 +3,9 @@
 namespace Constants{
     // std::vector<double> centrality_edges = {0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
     // std::vector<double> centrality_edges = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-    std::vector<double> centrality_edges    = {1, 4, 7, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96, 100};
+    
+    // note : as of Feb 12, 2025, centrality bin: 1-3, 4-6, 7-10, 11-15, and so forth.
+    std::vector<double> centrality_edges    = {1, 4, 7, 11, 16, 21, 26, 31, 36, 41, 46, 51, 56, 61, 66, 71, 76, 81, 86, 91, 96, 100}; 
     std::map<int, std::string> centrality_text = {
         {0, "0-3"},
         {1, "3-6"},
@@ -30,9 +32,9 @@ namespace Constants{
     };
 
     // note : vtxZQA
-    std::pair<double, double> cut_vtxZDiff = {-3, 4.}; // note : MBDz - INTTz
-    std::pair<double, double> cut_TrapezoidalFitWidth = {1.5, 5.5};
-    std::pair<double, double> cut_TrapezoidalFWHM = {2,8};
+    std::pair<double, double> cut_vtxZDiff = {-3.5, 4.5}; // note : MBDz - INTTz
+    std::pair<double, double> cut_TrapezoidalFitWidth = {1.5, 10}; // {2, 7}; // {1.5, 5.5};
+    std::pair<double, double> cut_TrapezoidalFWHM = {2, 14}; // {2.5, 7.8}; // {2,8};
     std::pair<double, double> cut_INTTvtxZError = {-10000, 100000};
 
     // note : for analysis
@@ -46,9 +48,10 @@ namespace Constants{
 
     int HighNClus = 500;
 
+    // note : for the vtxZ reco. efficiency
     double VtxZEdge_min = -45; // note : cm // note : used by vtxZDist.cpp
     double VtxZEdge_max = 45; // note : cm  // note : used by vtxZDist.cpp
-    int nVtxZBin = 18;                      // note : used by vtxZDist.cpp
+    int nVtxZBin = 30;                      // note : used by vtxZDist.cpp
 
     double cut_GoodRecoVtxZ = 1.; // note : cm // note : used by vtxZDist.cpp
 

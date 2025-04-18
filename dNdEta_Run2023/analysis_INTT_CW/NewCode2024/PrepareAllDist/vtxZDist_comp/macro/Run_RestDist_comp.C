@@ -10,8 +10,8 @@ int comp1()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_00054280_merged.root"
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_00054280_merged_merged_001.root"
             ,
             
             {"Data, |Reco. VtxZ| < 10 cm, |BcoFullDiff| > 61", "Data"}
@@ -20,7 +20,7 @@ int comp1()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed") + 
             "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_merged.root",
             {"HIJING, |Reco. VtxZ| < 10 cm", "HIJING_ZWeight"}
         }
@@ -57,7 +57,7 @@ int comp1()
     };
     
 
-    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_NoClusQA";
+    std::string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_NoClusQA";
 
     bool WithVtxZReWeighting = false;
 
@@ -88,8 +88,8 @@ int comp2()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize500_00054280_merged.root",
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize40_00054280_merged_merged_001.root",
             
             {"Data, |MbdVtxZ| < 10 cm, |BcoFullDiff| > 61", "Data"}
         }
@@ -97,8 +97,8 @@ int comp2()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
-            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize500_merged.root",
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed") + 
+            "/MC_RestDist_vtxZQA_VtxZReWeighting_vtxZRangeM10p0to10p0_ClusQAAdc35PhiSize40_merged.root",
 
             {"HIJING, |MbdVtxZ| < 10 cm", "HIJING_ZWeight_withClusQA"}
         }
@@ -138,7 +138,7 @@ int comp2()
     };
     
 
-    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_ClusQA";
+    std::string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed/RestComp_VtxZCut_ClusQA";
 
     bool WithVtxZReWeighting = false;
 
@@ -169,8 +169,8 @@ int comp3()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> data_input_directory_pair_vec = {
         {
-            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed") + 
-            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_00054280_merged.root",
+            std::string("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/completed/RestDist/completed") + 
+            "/Data_RestDist_vtxZQA_EvtBcoFullDiffCut61_00054280_merged_merged_001.root",
             
             {"Data, |MbdVtxZ| < 60 cm, |BcoFullDiff| > 61", "data"}
         }
@@ -178,7 +178,7 @@ int comp3()
 
     std::vector<std::pair<std::string, std::pair<std::string,std::string>>> MC_input_directory_pair_vec = {
         {
-            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/Run3/EvtVtxZ/completed/RestDist/completed") + 
+            std::string("/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed") + 
             "/MC_RestDist_vtxZQA_VtxZReWeighting_merged.root",
 
             {"HIJING, |MbdVtxZ| < 60 cm", "HIJING_ZWeight_noVtxZCut_noClusQA"}
@@ -220,7 +220,7 @@ int comp3()
     };
     
 
-    std::string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/RestDist/completed/RestComp_NoVtxZCut_NoClusQA";
+    std::string output_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/RestDist/completed/RestComp_NoVtxZCut_NoClusQA";
 
     bool WithVtxZReWeighting = false;
 

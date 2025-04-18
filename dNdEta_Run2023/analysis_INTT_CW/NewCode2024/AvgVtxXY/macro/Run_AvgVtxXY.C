@@ -16,7 +16,7 @@ void Run_AvgVtxXY(
   std::pair<double,double> MBD_vtxZ_cut = {-20, 20}, // note : unit : cm
   std::pair<int,int> INTTNClus_cut = {20, 350},
   double ClusAdc_cut = 35,
-  double ClusPhiSize_cut = 39,
+  double ClusPhiSize_cut = 40,
 
   bool HaveGeoOffsetTag = false,
   double random_range_XYZ = 0.02, // note : unit : cm

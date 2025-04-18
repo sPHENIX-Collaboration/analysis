@@ -19,17 +19,21 @@ void Run_RestDist_MC(
   
   // todo : modify here
   std::string output_file_name_suffix = "",
-  std::pair<double, double> vertexXYIncm = {-0.0214921, 0.223299},
+
+  std::pair<double, double> vertexXYIncm = {-0.0218978, 0.223183}, // note : HIJING
+  // std::pair<double, double> vertexXYIncm = {}, // note : HIJING + strangeness increase
+  // std::pair<double, double> vertexXYIncm = {}, // note : AMPT
+  // std::pair<double, double> vertexXYIncm = {}, // note : EPOS
 
   bool Apply_cut = true, // note : vtxZQA
   bool ApplyVtxZReWeighting = true,
   std::pair<bool, int> ApplyEvtBcoFullDiffCut = {false, 61},
   std::pair<bool, std::pair<double,double>> RequireVtxZRange = {true, {-10, 10}},
-  std::pair<bool, std::pair<double,double>> isClusQA = {true, {35, 500}}, // note : adc, phi size
+  std::pair<bool, std::pair<double,double>> isClusQA = {true, {35, 40}}, // note : adc, phi size
   bool isRotated = true,
 
-  std::string vtxZReWeighting_input_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/completed/VtxZDist/completed/vtxZ_comp_withVtxZQA/INTTvtxZReWeight.root",
-  std::string map_name = "HIJING_noZWeight_VtxZQA_Inclusive70"
+  std::string vtxZReWeighting_input_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/VtxZDist/completed/vtxZ_comp_WithVtxZQA_001/INTTvtxZReWeight.root",
+  std::string map_name = "HIJING_noZWeight_WithVtxZQA_Inclusive70"
 )
 {
 

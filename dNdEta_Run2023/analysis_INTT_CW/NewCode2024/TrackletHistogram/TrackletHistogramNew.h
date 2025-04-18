@@ -96,8 +96,8 @@ class TrackletHistogramNew : public ClusHistogram{
         int    nDeltaEtaBin = 100;
 
         // note : for the best pair
-        std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.021}; // note : rad
-        std::pair<double, double> cut_GoodProtoTracklet_DeltaPhi = {-0.021,0.021}; // note : rad
+        std::pair<double, double> cut_bestPair_DeltaPhi = {0,0.04}; // note : rad
+        std::pair<double, double> cut_GoodProtoTracklet_DeltaPhi = {-0.04,0.04}; // note : rad
 
         double typeA_sensor_half_length_incm = Constants::typeA_sensor_half_length_incm;
         double typeB_sensor_half_length_incm = Constants::typeB_sensor_half_length_incm;

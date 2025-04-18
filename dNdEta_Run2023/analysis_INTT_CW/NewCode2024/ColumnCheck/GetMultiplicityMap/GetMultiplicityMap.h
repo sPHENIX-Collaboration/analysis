@@ -104,6 +104,7 @@ class GetMultiplicityMap{
         std::map<std::string, TH2D*> h2D_map;
         std::map<std::string, TH1D*> h1D_map;
         TH2D * h2D_MulMap;
+        TH2D * h2D_MaskedMap;
         TH2D * h2D_RatioMap;
 
         // note : for constant

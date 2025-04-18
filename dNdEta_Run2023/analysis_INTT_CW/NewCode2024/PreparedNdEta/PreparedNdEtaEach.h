@@ -52,7 +52,7 @@ class PreparedNdEtaEach{
         );
 
         std::vector<std::string> GetOutputFileName() {
-            return {output_filename_DeltaPhi, output_filename_dNdEta};
+            return {output_filename_DeltaPhi, output_filename_dNdEta, output_filename_pdf};
         }
 
         std::vector<std::string> GetAlphaCorrectionNameMap() {return alpha_correction_name_map;}
@@ -154,6 +154,7 @@ class PreparedNdEtaEach{
         std::string output_filename;
         std::string output_filename_DeltaPhi;
         std::string output_filename_dNdEta;
+        std::string output_filename_pdf;
         void PrepareOutPutFileName();
         void PrepareOutPutRootFile();
 
@@ -217,11 +218,13 @@ class PreparedNdEtaEach{
         std::vector<std::string> GeoAccCorr_name_map;
 
         // Division:---fitting------------------------------------------------------------------------------------------------
-        std::map<std::string, TF1*> f1_BkgPol2_Fit_map;
-        std::map<std::string, TF1*> f1_BkgPol2_Draw_map;
+        // std::map<std::string, TF1*> f1_BkgPol2_Fit_map;
+        // std::map<std::string, TF1*> f1_BkgPol2_Draw_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_Fit_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_DrawSig_map;
         std::map<std::string, TF1*> f1_SigBkgPol2_DrawBkgPol2_map;
+
+        std::map<std::string, TF1*> f1_BkgPolTwo_Fit_map;
 
         // Division:---Constants------------------------------------------------------------------------------------------------
         int Semi_inclusive_Mbin = Constants::Semi_inclusive_bin;
@@ -231,7 +234,7 @@ class PreparedNdEtaEach{
             51, 61, 70, 79, 88, 98
         };
 
-        std::pair<double,double> BkgRotated_DeltaPhi_Signal_range = {-0.021, 0.021};
+        std::pair<double,double> BkgRotated_DeltaPhi_Signal_range = {-0.026, 0.026};
 
 
         // Division:---the functions------------------------------------------------------------------------------------------------
