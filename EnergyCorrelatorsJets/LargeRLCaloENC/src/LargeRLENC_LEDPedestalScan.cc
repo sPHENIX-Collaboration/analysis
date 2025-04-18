@@ -14,7 +14,7 @@ LEDPedestalScan::LEDPedestalScan(const int n_run, const int n_segment, const boo
 	jet_loc_center=new TH2F("jet_loc_center", "Fake Jet center all jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	lead_jet_loc=new TH2F("lead_jet_loc", "Fake Jet locations leading jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
 	lead_jet_loc_center=new TH2F("lead_jet_loc_center", "Fake Jet center leading jets; #eta; #varphi; #N_{hits}", 24, -1.1, 1.1, 64, 0, 2*PI); 
-	this->energy_thresholds = encCalc->Thresholds;
+	this->energy_thresholds.push_back( encCalc->Thresholds);
 	for(int i= 0; i<(int) energy_thresholds.size(); i++){	
 		ohcal_energy_i.push_back(new TH2F(Form("ohcal_energy_%d_MeV",(int)(energy_thresholds[i][3]*1000)), Form("OHCAL energy, E_{tow} #geq %f MeV; #eta; #varphi; E [GeV]",(float)(energy_thresholds[i][3]*1000)), 24, -1.1, 1.1, 64, 0, 2*PI));
 		ihcal_energy_i.push_back(new TH2F(Form("ihcal_energy_%d_MeV",(int)(energy_thresholds[i][2]*1000)), Form("IHCAL energy, E_{tow} #geq %f MeV; #eta; #varphi; E [GeV]",(float)(energy_thresholds[i][2]*1000)), 24, -1.1, 1.1, 64, 0, 2*PI));

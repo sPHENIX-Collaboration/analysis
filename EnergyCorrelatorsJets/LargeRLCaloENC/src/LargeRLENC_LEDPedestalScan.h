@@ -79,7 +79,7 @@ class LEDPedestalScan: public SubsysReco
 		TH2F* lead_jet_loc_center;
 		std::vector<TH2F*> ohcal_energy_i, ihcal_energy_i, emcal_energy_i;
 		std::vector<TH2F*> ohcal_energy_node, ihcal_energy_node, emcal_energy_node;
-		std::vector<std::array<float, 4>> energy_thresholds;
+		std::vector<std::array<float, 5>> energy_thresholds;
 		TH1F* ohcal_energy, *ihcal_energy, *emcal_energy, *allcal_energy;
 		TH1F* ohcal_energy_total, *ihcal_energy_total, *emcal_energy_total, *allcal_energy_total;
 		TH1F* ohcal_hit_plot, *ihcal_hit_plot, *emcal_hit_plot, *allcal_hit_plot;

@@ -173,7 +173,7 @@ class LargeRLENC : public SubsysReco
 
 	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, LargeRLENC::Calorimeter);
 	
-	void CalculateENC(StrippedDownTower*, std::vector<StrippedDownTower>, bool, bool);
+	void CalculateENC(StrippedDownTowerWithThreshold*, std::vector<StrippedDownTowerWithThreshold>, bool, bool);
 
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
@@ -181,7 +181,7 @@ class LargeRLENC : public SubsysReco
 	void Merger(TowerOutput*, std::vector<TowerOutput*>, std::set<float>, std::set<std::array<float, 3>>);
 	DijetEventCuts* eventCut;	
 	void MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, TowerInfoContainer* emcal, RawTowerGeomContainer_Cylinderv1* h_geom, TowerInfoContainer* hcal );
-	std::array<float, 5> Thresholds;	
+	std::vector<std::array<float, 4>> Thresholds;	
 	std::map<int, std::pair<float, float>> emcal_lookup_table;
  private:
 	std::string algo, radius, output_file_name;
@@ -198,7 +198,7 @@ class LargeRLENC : public SubsysReco
 	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
 	TTree* DijetQA, *EEC/*, *JetEvtObs*/;
-	std::vector<std::vector<MethodHistograms*>> Region_vector, Truth_Region_vector;
+	std::vector<std::vector<std::vector<MethodHistograms*>>> Region_vector, Tr_Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
@@ -210,10 +210,11 @@ class LargeRLENC : public SubsysReco
 	std::vector<std::array<float, 3>> m_emcal, m_ihcal, m_ohcal; //3 points, eta, phi, et
 	std::array<std::array<TH1F*, 3>, 3> Et_miss_hists;
 	std::array<float, 5> thresh_mins;
-	float ohcal_min; //7.5 MeV from jet 30 and 10 study
-	float emcal_min; //50 MeV
-	float ihcal_min; //7.5 MeV
-	float all_min; //65 MeV
+	float ohcal_min=0.01; //7.5 MeV from jet 30 and 10 study
+	float emcal_min=0.01; //50 MeV
+	float ihcal_min=0.005; //7.5 MeV
+	float all_min=0.065; //65 MeV
 	//all these are conservative vals 
+	int n_steps=10;
 };
 #endif // LARGERLENC_H

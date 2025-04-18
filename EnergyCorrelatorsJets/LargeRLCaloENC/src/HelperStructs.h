@@ -152,9 +152,44 @@ class StrippedDownTower
 			All, 
 			EMCAL,
 			IHCAL,
+			OHCAL,
+			TRUTH
+		};
+		StrippedDownTower( float threshold, Calorimeter which_calo=Calorimeter::All, Regions region_tag = Regions::Full){
+			//initialize the stripped down tower object
+			this->tag = region_tag;
+			this->cal = which_calo;
+			this->RegionOutput=new TowerOutput(threshold);
+			this->FullOutput=new TowerOutput(threshold);
+			
+		}
+		~StrippedDownTower(){};
+		float r		=0.;
+		float phi	=0.;
+		float eta	=0.;
+		float E		=0.;
+		Regions	tag	=Regions::Full; 
+		Calorimeter cal =Calorimeter::All;
+		TowerOutput* RegionOutput;
+		TowerOutput* FullOutput;
+};		
+class StrippedDownTowerWithThresholds
+{
+	public:
+		enum Regions{
+			Full, 
+			Towards, 
+			Away, 
+			TransverseMax,
+			TransverseMin
+		};
+		enum Calorimeter{
+			All, 
+			EMCAL,
+			IHCAL,
 			OHCAL
 		};
-		StrippedDownTower( std::vector<float> thresholds, Calorimeter which_calo=Calorimeter::All, Regions region_tag = Regions::Full){
+		StrippedDownTowerWithThresholds( std::vector<float> thresholds, Calorimeter which_calo=Calorimeter::All, Regions region_tag = Regions::Full){
 			//initialize the stripped down tower object
 			this->tag = region_tag;
 			this->cal = which_calo;
@@ -168,7 +203,7 @@ class StrippedDownTower
 			}
 			
 		}
-		~StrippedDownTower(){};
+		~StrippedDownTowerWithThresholds(){};
 		int getThresholdIndex(float threshold, bool RegionOrFull)
 		{
 			int index=-1;
