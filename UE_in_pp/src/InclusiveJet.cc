@@ -83,11 +83,15 @@ InclusiveJet::InclusiveJet(const std::string& recojetname, const std::string& tr
   , m_event(-1)
   , m_nTruthJet(-1)
   , m_nJet(-1)
+  , m_triggerVector()
   , m_nComponent()
   , m_eta()
   , m_phi()
   , m_e()
   , m_pt()
+  , m_jetEmcalE()
+  , m_jetIhcalE()
+  , m_jetOhcalE()
   , m_truthNComponent()
   , m_truthEta()
   , m_truthPhi()
@@ -133,6 +137,10 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("phi", &m_phi);
   m_T->Branch("e", &m_e);
   m_T->Branch("pt", &m_pt);
+
+  m_T->Branch("jetEmcalE", &m_jetEmcalE);
+  m_T->Branch("jetIhcalE", &m_jetIhcalE);
+  m_T->Branch("jetOhcalE", &m_jetOhcalE);
 
   if(m_doTruthJets){
     m_T->Branch("nTruthJet", &m_nTruthJet);
@@ -201,7 +209,10 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("cluster_eta",m_cluster_eta,"cluster_eta[clsmult]/F");
     m_T->Branch("cluster_phi",m_cluster_phi,"cluster_phi[clsmult]/F");
     m_T->Branch("cluster_ntowers",m_cluster_ntowers,"cluster_ntowers[clsmult]/I");
-
+    m_T->Branch("cluster_tower_e",m_cluster_tower_e,"cluster_tower_e[clsmult][500]/F");
+    m_T->Branch("cluster_tower_calo",m_cluster_tower_calo,"cluster_tower_calo[clsmult][500]/I");
+    m_T->Branch("cluster_tower_ieta",m_cluster_tower_ieta,"cluster_tower_ieta[clsmult][500]/I");
+    m_T->Branch("cluster_tower_iphi",m_cluster_tower_iphi,"cluster_tower_iphi[clsmult][500]/I");
   }
 
   if(m_doTruth) {
@@ -479,6 +490,10 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         }
       }
 
+      m_jetEmcalE.push_back(emcalE);
+      m_jetIhcalE.push_back(ihcalE);
+      m_jetOhcalE.push_back(ohcalE);
+
       if (ohcalE/m_e.back() > 0.9) {
         std::cout << "event " << m_event << " emcalE " << emcalE << " ohcalE " << ohcalE << " totalE " << emcalE + ihcalE + ohcalE << " Jet E " << m_e.back() << std::endl;
         return Fun4AllReturnCodes::EVENT_OK;
@@ -486,9 +501,9 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       m_nJet++;
     }
 
-    //if (leadpt < 10.0) { // edited for topocluster resolution study with MB pythia
-    //  return Fun4AllReturnCodes::EVENT_OK; 
-    //}
+    if (leadpt < 10.0) { 
+      return Fun4AllReturnCodes::EVENT_OK; 
+    }
 
   //get truth jets
   if(m_doTruthJets)
@@ -663,6 +678,23 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         m_cluster_eta[m_clsmult] = RawClusterUtility::GetPseudorapidity(*cluster, origin);
         m_cluster_phi[m_clsmult] = RawClusterUtility::GetAzimuthAngle(*cluster, origin);
         m_cluster_ntowers[m_clsmult] = (int)cluster->getNTowers();
+        int m_clstower = 0;
+        for (const auto& [tower_id, tower_e] : cluster->get_towermap())
+        {
+            m_cluster_tower_calo[m_clsmult][m_clstower] = static_cast<int>(RawTowerDefs::decode_caloid(tower_id));
+            m_cluster_tower_ieta[m_clsmult][m_clstower]  = RawTowerDefs::decode_index1(tower_id);
+            m_cluster_tower_iphi[m_clsmult][m_clstower]  = RawTowerDefs::decode_index2(tower_id);
+            m_cluster_tower_e[m_clsmult][m_clstower] = tower_e;
+            m_clstower++;
+            /*
+            std::cout << "Tower ID: " << tower_id
+                      << " | Tower E: " << tower_e
+                      << " | Calorimeter ID: " << static_cast<int>(calo_id)
+                      << " | Index1: " << index1
+                      << " | Index2: " << index2
+                      << std::endl;
+            */
+        }
         m_clsmult++;
         if (m_clsmult == 10000) { break; }
       } 
@@ -892,6 +924,10 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   m_e.clear();
   m_pt.clear();
 
+  m_jetEmcalE.clear();
+  m_jetIhcalE.clear();
+  m_jetOhcalE.clear();
+
   m_truthNComponent.clear();
   m_truthEta.clear();
   m_truthPhi.clear();
@@ -960,7 +996,7 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
     truthpar_pid[i] = 0;
   }
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 2000; i++) {
     m_cluster_e[i] = 0;
     m_cluster_eta[i] = 0;
     m_cluster_phi[i] = 0;
@@ -968,6 +1004,12 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
     m_emcal_cluster_e[i] = 0;
     m_emcal_cluster_eta[i] = 0;
     m_emcal_cluster_phi[i] = 0;
+    for (int j = 0; j < 500; j++) {
+      m_cluster_tower_calo[i][j] = 0;
+      m_cluster_tower_ieta[i][j] = 0;
+      m_cluster_tower_iphi[i][j] = 0;
+      m_cluster_tower_e[i][j] = 0;
+    }
   }
 
   for (int i = 0; i < 2000; i++) {

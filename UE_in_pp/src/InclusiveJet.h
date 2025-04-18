@@ -134,8 +134,6 @@ class InclusiveJet : public SubsysReco
   int m_event;
   int m_nTruthJet;
   int m_nJet;
-  float m_totalCalo;
-  float m_zvtx;
 
   //!trigger info
   std::vector<int> m_triggerVector;
@@ -146,6 +144,9 @@ class InclusiveJet : public SubsysReco
   std::vector<float> m_phi;
   std::vector<float> m_e;
   std::vector<float> m_pt;
+  std::vector<float> m_jetEmcalE;
+  std::vector<float> m_jetIhcalE;
+  std::vector<float> m_jetOhcalE;
 
   //! truth jets
   std::vector<int> m_truthNComponent;
@@ -166,6 +167,9 @@ class InclusiveJet : public SubsysReco
   std::vector<float> m_pt_subseed;
   std::vector<float> m_e_subseed;
   std::vector<int> m_subseed_cut;
+  
+  float m_totalCalo;
+  float m_zvtx;
 
   int m_emcaln = 0;
   float m_emcale[24576] = {0}; 
@@ -204,15 +208,19 @@ class InclusiveJet : public SubsysReco
   int truthpar_pid[100000];
 
   int m_emcal_clsmult;
-  float m_emcal_cluster_e[10000];
-  float m_emcal_cluster_eta[10000];
-  float m_emcal_cluster_phi[10000];
+  float m_emcal_cluster_e[2000];
+  float m_emcal_cluster_eta[2000];
+  float m_emcal_cluster_phi[2000];
 
   int m_clsmult;
-  float m_cluster_e[10000];
-  float m_cluster_eta[10000];
-  float m_cluster_phi[10000];
-  int m_cluster_ntowers[10000];
+  float m_cluster_e[2000];
+  float m_cluster_eta[2000];
+  float m_cluster_phi[2000];
+  int m_cluster_ntowers[2000];
+  int m_cluster_tower_calo[2000][500];
+  int m_cluster_tower_ieta[2000][500];
+  int m_cluster_tower_iphi[2000][500];
+  float m_cluster_tower_e[2000][500];
 
   int m_trkmult;
   unsigned int _nlayers_maps = 3;
