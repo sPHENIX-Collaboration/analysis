@@ -1,0 +1,77 @@
+######################################  Large R_{L} Calorimeter Only Energy Correlators ####################################################
+
+
+This analysis is intended to make measurements of the Energy-Energy Correlator up to large R_{L} across all of the Calorimeters (starting 
+with the Outer HCAL) 
+
+Intended uses are for a first measurement without tracking and additional studies in the vein of "Jet observables without Jets algorithms"
+
+###################################### Output ##############################################################################
+
+Root output is in a combination of TTrees and histograms
+
+TTrees: Store one enetry per event
+
+DijetKinematics--This is a TTree that holds a few branches
+	N_{dijets}: Number of sets of jet (pt>pt_min) pairs that pass angular cut per event 
+	A_jj_l: A_jj for the pT leading pair of dijets
+	x_j_l: x_j for the pT leading pair of dijets
+	Jet_PT: Map of calorimeter (stored as int): 
+			Map of vertex corrected tower position [eta, phi, r]:
+				p_T in tower (approximated via E/p ratio)  (WIP Branch)
+	dijet_sets: branch holding array of pairs of dijet objects as 3 float array [pt_l, A_jj, x_j] for later analyzers
+
+cuts_r[radius]--Stores information about the cuts to allow for QA of biasing in the cuts
+	N_jets: number of identified jets above the p_T cut
+	Lead_pt: p_{T} of the leading jet in the event
+	Subleading_pt: P_{T} of the leading jet's partner if one exists
+	Lead_eta: pseduorapidity of leading jet axis
+	Subleading_eta: pseudorapidity of leading jet's partner axis (if one exists)
+	delta_phi: difference between leading and subleading jet axis phis
+	ohcal_ratio: Percentage of energy deposited in the OHCAL of total energy in event
+	isDijet: Dijet requirement met
+	negE: negative total energy identified
+	passes: all cuts are passed by the event
+
+EEC--Holds information about the energy-energy correlator for later analysis
+	E_Total--Total calorimeter energy 
+	E_CEMC -- Energy in EMCAL
+	E_IHCAL -- Energy in IHCAL
+	E_OHCAL -- Energy in OHCAL
+	vertex -- x,y,z posistion of vertex 
+	2_pt -- 2 point energy correlator (WIP branch)
+		Map of Region stored as Int (full, towards, away, transverse):
+			For each calorimeter map of [R_L:e2c]
+	3_pt -- 3 point energy correlator (WIP branch)
+		Map of Region stored as Int (full, towards, away, transverse):
+			For each calorimeter map of [R_L:e2c]
+
+	3_pt_full -- 3 point energy correlator with full shape (WIP branch)
+		Map of region stored as Int (full, towards, away, transverse):
+			For each calorimeter a map of 
+				array of distances [R_{12/L}, R_{13}, R_{23}]:
+					e3c
+JetEvtObs--Holds info for analysis of kinematics using the method in the above paper
+	p_T-- pt stored in way allowing for event shape varaible analysis (WIP branch)
+		Map of region stored as Int (full, towards, away, transverse):
+			For each calorimeter map of 
+				[Tower Eta, tower phi]:
+					p_T
+
+
+Histograms:
+TH1:
+	MethodHistograms for Full calorimeter, Towards, away and transverse regions defined relative to leading jet axis
+
+	emcal_occup: Occupancy of towers (%) in the emcal per event
+	ihcal_occup: Occupancy of towers (%) in the ihcal per event
+	ohcal_occup: Occupancy of towers (%) in the ohcal per event
+TH2:
+	ohcal_rat_occup: Occupancy of the ohcal and energy in "streak" events: x->(%) energy deposition in ohcal, y->(%) occupancy of towers in ohcal
+	ohcal_bad_hits: Location of energy deposition of "streak" events: x->phi, y->eta, z->hits
+	bad_occ_em_oh: Emcal to OHCAL occupancy of "streak" events: x-> (%) ooccupancy emcal towers, y->(%) occupancy ohcal towers
+	em_allh_bad_hits: EMCAL to  all hcal occupancy of "streak" events: x->(%) occupancy emcal towers, y-> average (%) occupancy of hcal towers
+####################################  Status ###############################################################################
+
+Currently runs ok on MC data, adding in some fixes to get the real data running better including a more correct jet reco
+still need to create the proper dictionary for the ttree to read in the maps correctly
