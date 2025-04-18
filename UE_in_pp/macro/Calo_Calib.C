@@ -85,7 +85,7 @@ void Process_Calo_Calib()
     se->registerSubsystem(calibEMC_MC);
   }
 
-  /*
+  
   //////////////////
   // Clusters
   std::cout << "Building clusters" << std::endl;
@@ -97,7 +97,7 @@ void Process_Calo_Calib()
   ClusterBuilder->LoadProfile(emc_prof);
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
   se->registerSubsystem(ClusterBuilder);
-  */
+  
 
 
   // currently NOT included! 
