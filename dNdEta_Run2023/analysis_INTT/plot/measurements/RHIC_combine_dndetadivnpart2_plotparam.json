@@ -1,0 +1,123 @@
+{
+    "rhic_combine_dndetadivnpart2":{
+        "markerstyle": 47,
+        "markercolor": "#1A1423",
+        "markersize": 1.2,
+        "linestyle": 1,
+        "linewidth": 1,
+        "alpha": 0.4,
+        "DrawOption": ["5","pX same"],
+        "Legendtext": "RHIC Combination (#sqrt{s_{NN}} = 200 GeV)",
+        "Legendstyle": "pf"
+    },
+    "empty":{
+        "markerstyle": 0,
+        "markercolor": "#000000",
+        "markersize": 0,
+        "linestyle": 0,
+        "linewidth": 0,
+        "alpha": 0,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "",
+        "Legendstyle": ""
+    },
+    "sphenix_data_auau_0p2_divnpart2_combined":{
+        "markerstyle": 20,
+        "markercolor": "#BBBE64",
+        "markersize": 0,
+        "linestyle": 1,
+        "linewidth": 0,
+        "alpha": 0.0,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "sPHENIX |#eta| < 0.3",
+        "Legendstyle": "pf"
+    },
+    "phobos_auau_0p2_divnpart2":{
+        "markerstyle": 25,
+        "markercolor": "#035397",
+        "markersize": 1.1,
+        "linestyle": 1,
+        "linewidth": 0,
+        "alpha": 0.2,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "PHOBOS |#eta| < 1",
+        "Legendstyle": "pf"
+    },
+    "phenix_auau_0p2_divnpart2":{
+        "markerstyle": 27,
+        "markercolor": "#03B5AA",
+        "markersize": 1.1,
+        "linestyle": 1,
+        "linewidth": 0,
+        "alpha": 0.2,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "PHENIX |#eta| < 0.35",
+        "Legendstyle": "pf"
+    },
+    "brahms_auau_0p2_divnpart2":{
+        "markerstyle": 28,
+        "markercolor": "#7868E6",
+        "markersize": 1.1,
+        "linestyle": 1,
+        "linewidth": 0,
+        "alpha": 0.2,
+        "DrawOption": ["3 same", "pX same"],
+        "Legendtext": "BRAHMS |#eta| < 0.2",
+        "Legendstyle": "pf"
+    },
+    "sphenix_data_auau_0p2_divnpart2_combined_redraw":{
+        "markerstyle": 20,
+        "markercolor": "#BBBE64",
+        "markersize": 1.1,
+        "linestyle": 1,
+        "linewidth": 0,
+        "alpha": 0.4,
+        "DrawOption": ["3 same","pX same"],
+        "Legendtext": "sPHENIX |#eta| < 0.3",
+        "Legendstyle": "pf"
+    },
+    "rhic_combine_dndetadivnpart2_redraw":{
+        "markerstyle": 47,
+        "markercolor": "#1A1423",
+        "markersize": 1.2,
+        "linestyle": 1,
+        "linewidth": 1,
+        "alpha": 0.3,
+        "DrawOption": ["5 same","pX same"],
+        "Legendtext": "sPHENIX |#eta| < 0.3",
+        "Legendstyle": "pf"
+    },
+    "sphenix_rawhijing_auau_0p2_divnpart2":{
+        "markerstyle": 24,
+        "markercolor": "#d62828",
+        "markersize": 1.1,
+        "linestyle": 7,
+        "linewidth": 2,
+        "alpha": 0.5,
+        "DrawOption": ["L same","L same"],
+        "Legendtext": "HIJING",
+        "Legendstyle": "L"
+    },
+    "sphenix_rawepos_auau_0p2_divnpart2":{
+        "markerstyle": 24,
+        "markercolor": "#fb8500",
+        "markersize": 1.1,
+        "linestyle": 5,
+        "linewidth": 2,
+        "alpha": 0.5,
+        "DrawOption": ["L same","L same"],
+        "Legendtext": "EPOS",
+        "Legendstyle": "L"
+    },
+    "sphenix_rawampt_auau_0p2_divnpart2":{
+        "markerstyle": 24,
+        "markercolor": "#ffb703",
+        "markersize": 1.1,
+        "linestyle": 9,
+        "linewidth": 2,
+        "alpha": 0.5,
+        "DrawOption": ["L same","L same"],
+        "Legendtext": "AMPT",
+        "Legendstyle": "L"
+    }
+}

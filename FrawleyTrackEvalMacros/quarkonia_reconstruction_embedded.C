@@ -82,26 +82,49 @@ void quarkonia_reconstruction_embedded()
   // Open the g4 evaluator output file
   cout << "Reading electron ntuples " << endl; 
   int nevents = 0;
+  double nhittpcin_cum = 0;
+  double nhittpcin_wt = 0;
+
     // The condor job output files -  we open them one at a time and process them
   for(int i=0;i<2000;i++)
     {
+      if(nrecormass > nups_requested)
+	{
+	  cout << "Reached requested number of reco Upsilons, quit out of file loop" << endl;
+	  break;
+	}
+      
       char name[500];
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/eval_output_lm_1/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/feb28_central_nopileup_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
-     //sprintf(name,"/sphenix/user/frawley/fresh_jan25/macros/macros/g4simulations/mar4_central_200khz_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
 
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar2/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_6layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_4layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      //sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_8layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
+      sprintf(name,"/sphenix/user/frawley/macros_newTPC_june6/macros/macros/g4simulations/intt_0layers_eval_output/g4svtx_eval_%i.root_g4svtx_eval.root",i);
 
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output/g4svtx_eval_%i.root",i);
 
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar15_noMVTX_central_200khz_d2fit_eval_output_1/g4svtx_eval_%i.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar17_noMVTX_central_200khz_d2fit_eval_output_2/g4svtx_eval_%i.root",i);
-      //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/mar18_noMVTX_central_200khz_d2fit_eval_output_3/g4svtx_eval_%i.root",i);
-
-      sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations//g4svtx_eval_%i.root",i);
- 
+      /*      
+      // ups states, 100 poins, 80 ns
+      if(ups_state == 1)
+	{
+	  //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups1s_100pions_80ns/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	  //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups1s_100pions_massres_121_30kevts/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	}
+      else if(ups_state == 2)
+	{
+	  //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups2s_100pions_80ns/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	  sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups2s_100pions_massres_121_20kevts/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	}
+      else if(ups_state == 3)
+	{
+	  //sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups3s_100pions_80ns/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	  sprintf(name,"/sphenix/user/frawley/fresh_mar8_testing/macros/macros/g4simulations/eval_output_ups3s_100pions_massres_121_20kevts/g4svtx_eval_%i.root_g4svtx_eval.root_primary_eval.root",i);
+	}
+      else
+	{
+	  cout << "Oops!" << endl;
+	  exit(1);
+	}
+      */
 
 
       cout << "Adding file " << name << endl;
@@ -116,6 +139,7 @@ void quarkonia_reconstruction_embedded()
       ntp_track->Add(name);
       ntp_gtrack->Add(name);
 
+
       cout << "The ntuples contain " << ntp_vertex->GetEntries() << " events " << endl;
 
 
@@ -127,29 +151,42 @@ void quarkonia_reconstruction_embedded()
       // Loop over events
       //=======================
 
+      ntracks = ntp_track->GetEntries();
+      ngtracks = ntp_gtrack->GetEntries();
+
       int nr = 0;
       int ng = 0;
+      //int nev = 1;
+      int nev = ntp_vertex->GetEntries();
 
-      for(int iev=0;iev<ntp_vertex->GetEntries();iev++)
+      for(int iev=0;iev<nev;iev++)
 	{
 	  // drop out when the requested number of reco'd Upsilons has been reached
 	  if(nrecormass > nups_requested)
-	    break;
+	    {
+	      cout << "Reached requested number of reco Upsilons, quit" << endl;
+
+	      break;
+	    }
 
 	  nevents++;
       
 	  int recoget = ntp_vertex->GetEntry(iev);
 
+	  nhittpcin_cum += nhittpcin;
+	  nhittpcin_wt += 1.0;
 
 	  if(verbose)
-	    cout << "iev " << iev
-		 << " event " << event
-		 << " ntracks  (reco) " << ntracks
-		 << " ngtracks (g4) " << ngtracks
-		 << " gvz " << egvz
-		 << " vz " << evz
-		 << endl;
-      
+	    cout 
+	      << "iev " << iev
+	      << " event " << event
+	      << " ntracks  (reco) " << ntracks
+	      << " ngtracks (g4) " << ngtracks
+	      //<< " gvz " << egvz
+	      //	 << " vz " << evz
+	      << endl;
+
+
 	  //============================
 	  // process G4 tracks
 	  // for this event
@@ -160,6 +197,8 @@ void quarkonia_reconstruction_embedded()
 	  int g4trnum_elec[1000];
 	  int g4trnum_pos[1000];
 
+
+
 	  for(int ig=ng;ig<ng+ngtracks;ig++)
 	    {
 	      int recoget1 = ntp_gtrack->GetEntry(ig);
@@ -168,6 +207,7 @@ void quarkonia_reconstruction_embedded()
 		  if(verbose > 0) cout << "Did not get entry for ig = " << ig << endl;
 		  break;
 		}
+
 
 	      // This bookkeeping is needed because the evaluator records for each event the total track count in ntp_vertex, even 
 	      // when it writes out only embedded tracks
@@ -183,9 +223,11 @@ void quarkonia_reconstruction_embedded()
 		  ng = ig+1;
 		}
 
+
 	      if(tembed != embed_flag)
 		//if( tgtrackid != 1 && tgtrackid != 2)      
 		continue;
+
 
 	      // we want only electrons or positrons
 	      if(tflavor != 11 && tflavor != -11)
@@ -243,9 +285,10 @@ void quarkonia_reconstruction_embedded()
 	    {
 	      int recoelec = ntp_gtrack->GetEntry(g4trnum_elec[ielec]);
 
+
 	      if(tembed != embed_flag)
 		continue;
-	  
+
 	      double elec_pT = sqrt(tpx*tpx+tpy*tpy);
 	      double elec_eta = asinh(tpz/sqrt(tpx*tpx+tpy*tpy));
 
@@ -343,6 +386,7 @@ void quarkonia_reconstruction_embedded()
 		  if(verbose > 0) cout << "Did not get entry for ir = " << ir << endl;
 		  break;
 		}
+
 
 	      // This bookkeeping is needed because the evaluator records for each event the total track count in ntp_vertex, even 
 	      // when it writes out only embedded tracks
@@ -452,6 +496,9 @@ void quarkonia_reconstruction_embedded()
   cout << "nrecog4mass = " << nrecog4mass << endl;
 
   cout << "nrecormass = " << nrecormass << endl;
+
+  cout << "nhittpcin per event = " << nhittpcin_cum/nhittpcin_wt << endl;
+
 
   //======================================================
   // End of loop over events and generation of mass histos

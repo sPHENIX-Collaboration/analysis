@@ -14,7 +14,7 @@
 /*HepMC include */
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
-
+#include <HepMC/GenEvent.h>
 class TNtuple;
 class TTree;
 class TFile;
@@ -25,8 +25,9 @@ class RawTowerContainer;
 class RawTowerGeomContainer;
 class JetMap;
 class SvtxTrackMap;
+class SvtxVertexMap;
+class SvtxEvalStack;
 class PHHepMCGenEventMap;
-
 
 class PidCandidate;
 
@@ -120,7 +121,7 @@ private:
 
   int AddJetStructureInformation( type_map_tcan&, type_map_cdata* );
 
-  int AddTrackInformation( type_map_tcan&, SvtxTrackMap*, double );
+  int AddTrackInformation( type_map_tcan&, SvtxTrackMap*, SvtxVertexMap*, SvtxEvalStack*,double );
 
   int WritePidCandidatesToTree( type_map_tcan& );
 

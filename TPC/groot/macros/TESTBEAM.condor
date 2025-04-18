@@ -1,0 +1,18 @@
+Universe        = vanilla
+Notification    = Error
+Executable      = /direct/phenix+u/workarea/hemmick/code/work/CondorLaunch.sh
+Arguments       = "$(Process)"
+Rank            = CPU_Speed
+Image_Size      = 1900MB
+Priority        = +20
+GetEnv          = True
+Initialdir      = /direct/phenix+u/workarea/hemmick/code/work/
+Input           = /dev/null
+Output          = /direct/phenix+u/workarea/hemmick/code/work/logs/TESTBEAM.OUT.$(Process)
+Error           = /direct/phenix+u/workarea/hemmick/code/work/logs/TESTBEAM.ERR.$(Process)
+Log             = /direct/phenix+u/workarea/hemmick/code/work/logs/TESTBEAM.LOG.$(Process)
+Notify_user     = tkhemmick@gmail.com
++Experiment     = "phenix"
++Job_Type       = "cas"
++NewQueue       = True
+Queue 277

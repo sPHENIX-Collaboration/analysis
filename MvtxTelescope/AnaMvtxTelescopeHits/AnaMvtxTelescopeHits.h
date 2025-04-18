@@ -15,23 +15,9 @@
 // #include <GenFit/Track.h>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "TMath.h"
-
-
-namespace PHGenFit {
-  class Track;
-} /* namespace PHGenFit */
-
-namespace genfit {
-  class GFRaveVertexFactory;
-  class Track;
-  class GFRaveVertex;
-} /* namespace genfit */
-
-namespace PHGenFit {
-  class Fitter;
-} /* namespace PHGenFit */
 
 class SvtxTrack;
 class SvtxTrackMap;
@@ -40,6 +26,7 @@ class SvtxVertex;
 class PHCompositeNode;
 class PHG4TruthInfoContainer;
 class SvtxClusterMap;
+class SvtxCluster;
 class SvtxEvalStack;
 class JetMap;
 
@@ -47,6 +34,12 @@ class TFile;
 class TTree;
 class TH1D;
 class TH2D;
+
+
+typedef std::vector<SvtxCluster*> ClusVec;
+typedef std::vector<ClusVec> TrkVec;
+typedef std::multimap<unsigned int, SvtxCluster*> LyrClusMap;
+
 
 class AnaMvtxTelescopeHits: public SubsysReco {
 
@@ -69,12 +62,22 @@ private:
   //                                  const SvtxTrack* intrack, 
   //                                  const SvtxVertex* vertex);
 
+  // int GetTrackCandidates(LyrClusMap* clusmap, TrkVec* trkvec);
+
+  // void LinkClusters(ClusVec* trk, unsigned int next_lyr, LyrClusMap* clusmap, TrkVec* trkvec);
+
+  // ClusVec ChooseBestTrk(TrkVec* trkcnd);
+
+  // double FitTrk(ClusVec* trk);
+
+  double CalcSlope(double x0, double y0, double x1, double y1);
+  double CalcIntecept(double x0, double y0, double m);
+  double CalcProjection(double x, double m, double b);
   //-- Nodes
   SvtxClusterMap* _clustermap;
 
   //-- Flags
-  // TODO: Make setters & getters
-  bool _verbose;                     //! Verbose printing
+
 
   //-- Output
   std::string _foutname;  
@@ -84,15 +87,13 @@ private:
   TH1D* hsize_phi[4];
   TH1D* hsize_z[4]; 
   TH2D* hphiz[4];
+  TH1D* hdphi[4];
+  TH1D* hdz[4];
 
 
   //-- internal variables
   int _ievent;
 
-  int _primary_pid_guess;            //! Particle ID guess for GenFit
-
-  std::string _track_fitting_alg_name;
-  PHGenFit::Fitter* _fitter;
 
 };
 

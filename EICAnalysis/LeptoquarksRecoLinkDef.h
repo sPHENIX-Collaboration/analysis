@@ -1,3 +1,3 @@
 #ifdef __CINT__
-#pragma link C++ class LeptoquarksReco-;
+#pragma link C++ class LeptoquarksReco-!;
 #endif

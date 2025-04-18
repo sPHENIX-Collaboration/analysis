@@ -24,18 +24,22 @@ void look_purity()
   gStyle->SetOptTitle(0);
   */
 
+  //gStyle->SetOptStat(1);
+
   // determines if plots are labeled "HIJING"
   bool hijing = false;
 
   //int n_maps_layer = 3;
   int n_maps_layer = 0;
-  int n_intt_layer = 4;
+  //int n_intt_layer = 4;
+  int n_intt_layer = 0;
   int n_tpc_layer = 48;
     
   double ptmax = 40.0;
   double hptmax = 40.0;
   //double ptstep = 0.25;
   //double ptstep = 1.0;
+  //double ptstep = 2.0;
   //double ptstep = 0.5;
   double ptstep = 0.4;
 
@@ -44,9 +48,8 @@ void look_purity()
   bool pt_resolution_fit = true;
   //bool pt_resolution_fit = false;
   
-  TFile *fin = new TFile("root_files/purity_out.root");  
-  //TFile *fin = new TFile("root_files/zigzags_double_density_100pions_purity_out.root");  
-  //TFile *fin = new TFile("root_files/zigzags_single_density_smear20_100pions_purity_out.root");  
+  TFile *fin = new TFile("root_files/purity_out.root"); 
+  //TFile *fin = new TFile("root_files/purity_out_100pions_noINTT_primvert.root"); 
 
 
   if(!fin)
@@ -322,7 +325,7 @@ void look_purity()
   //==========================================
   // Plot pT resolution extracted above for embedded pions
 
-  TCanvas *c5 = new TCanvas("c5","c5",100,100,800,600);
+  TCanvas *c5 = new TCanvas("c5","c5",100,100,800,800);
   c5->SetLeftMargin(0.14);
   TGraph *grdpt = new TGraph(NPT,pT,dpT);
   grdpt->SetMarkerStyle(20);
@@ -333,10 +336,11 @@ void look_purity()
   TH1D *hdummy2 = new TH1D("hdummy2","#Delta p_{T} vs p_{T}",100,0.0,hptmax);
   hdummy2->SetMinimum(0);
   //hdummy2->SetMaximum(0.05);
-  hdummy2->SetMaximum(0.10);
+  //hdummy2->SetMaximum(0.12);
+  hdummy2->SetMaximum(0.3);
   hdummy2->GetXaxis()->SetTitle("p_{T}");
   hdummy2->GetYaxis()->SetTitle("#Delta p_{T}/p_{T}");
-  hdummy2->GetYaxis()->SetTitleOffset(1.4);
+  hdummy2->GetYaxis()->SetTitleOffset(1.5);
   hdummy2->Draw();
   grdpt->Draw("p");
 
@@ -457,7 +461,7 @@ void look_purity()
     }  
   
   cout << " create canvas c7" << endl;
-  TCanvas *c7 = new TCanvas("c7","c7",60,60,1000,600);
+  TCanvas *c7 = new TCanvas("c7","c7",60,60,800,800);
 
   TH1F *hd = new TH1F("hd","hd",100, 0.0, hptmax);
   hd->SetMinimum(0.0);
@@ -703,8 +707,8 @@ void look_purity()
 	}
 
       TF1 *f = new TF1("f","gaus",low, high);
-      f->SetParameter(1, yield/100.0);
-      f->SetParameter(2, 0.0);
+      f->SetParameter(1, yield/100.0); 
+     f->SetParameter(2, 0.0);
       f->SetParameter(3,0.002);
       f->SetLineColor(kRed);
       h->Fit(f,"R");
@@ -814,12 +818,14 @@ void look_purity()
   TH1D *hreta = 0;
   fin->GetObject("hreta",hreta);
 
-  hgeta->GetXaxis()->SetTitle("#eta");
-  hgeta->GetYaxis()->SetNdivisions(505);
-  hgeta->SetMinimum(0.0);
-  hgeta->Draw();
+  hreta->GetXaxis()->SetTitle("#eta");
+  hreta->GetYaxis()->SetNdivisions(505);
   hreta->SetLineColor(kRed);
-  hreta->Draw("same");
+  hreta->SetMinimum(0.0);
+  hreta->Draw();
+
+  hgeta->Draw("same");
+
 
  TLegend *leta = new TLegend(0.3, 0.35, 1.0, 0.60, dcalab, "NDC");
   leta->SetBorderSize(0);
@@ -952,7 +958,9 @@ void look_purity()
     }
   hzevt->Draw();
 
-  TCanvas *cvtx_res = new TCanvas("cvtx_res","cvtx_res",4,4,800,600);
+  TCanvas *cvtx_res = new TCanvas("cvtx_res","cvtx_res",4,4,1200,800);
+  cvtx_res->Divide(2,2);
+
   TH1D *hzvtx_res = 0;
   fin->GetObject("hzvtx_res",hzvtx_res);
   if(!hzvtx_res)
@@ -962,12 +970,69 @@ void look_purity()
 
   if(hzvtx_res)
     {
+      cvtx_res->cd(1);
+
       hzvtx_res->SetNdivisions(505);
       hzvtx_res->Draw();
       
       TF1 *fvtxres = new TF1("fvtxres","gaus");
-      hzvtx_res->Fit(fvtxres);
+      //hzvtx_res->Fit(fvtxres);
     }
+
+  TH1D *hxvtx_res = 0;
+  fin->GetObject("hxvtx_res",hxvtx_res);
+  if(!hxvtx_res)
+    {
+      cout << "Did not get hxvtx_res" << endl;
+    }
+
+  if(hxvtx_res)
+    {
+      cvtx_res->cd(2);
+
+      hxvtx_res->SetNdivisions(505);
+      hxvtx_res->Draw();
+      
+      TF1 *fvtxres = new TF1("fvtxres","gaus");
+      //hxvtx_res->Fit(fvtxres);
+    }
+
+  TH1D *hyvtx_res = 0;
+  fin->GetObject("hyvtx_res",hyvtx_res);
+  if(!hyvtx_res)
+    {
+      cout << "Did not get hyvtx_res" << endl;
+    }
+
+  if(hyvtx_res)
+    {
+      cvtx_res->cd(3);
+
+      hyvtx_res->SetNdivisions(505);
+      hyvtx_res->Draw();
+      
+      TF1 *fvtxres = new TF1("fvtxres","gaus");
+      //hyvtx_res->Fit(fvtxres);
+    }
+
+  TH1D *hdcavtx_res = 0;
+  fin->GetObject("hdcavtx_res",hdcavtx_res);
+  if(!hdcavtx_res)
+    {
+      cout << "Did not get hdcavtx_res" << endl;
+    }
+
+  if(hdcavtx_res)
+    {
+      cvtx_res->cd(4);
+
+      hdcavtx_res->SetNdivisions(505);
+      hdcavtx_res->Draw();
+      
+      TF1 *fvtxres = new TF1("fvtxres","gaus");
+      //hdcavtx_res->Fit(fvtxres);
+    }
+
 
   TCanvas *g4ntr = new TCanvas("g4ntr","g4ntr",5,10,1200,800);
   g4ntr->Divide(3,1);

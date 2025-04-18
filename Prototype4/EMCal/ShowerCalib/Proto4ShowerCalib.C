@@ -222,20 +222,21 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     PdbParameterMap *info = findNode::getClass<PdbParameterMap>(topNode,
                                                                 "RUN_INFO");
 
-    assert(info);
+    if (info)
+    {
+      PHParameters run_info_copy("RunInfo");
+      run_info_copy.FillFrom(info);
 
-    PHParameters run_info_copy("RunInfo");
-    run_info_copy.FillFrom(info);
+      _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
 
-    _eval_run.beam_mom = run_info_copy.get_double_param("beam_MTNRG_GeV");
+      TH1F *hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
+      assert(hBeam_Mom);
 
-    TH1F *hBeam_Mom = dynamic_cast<TH1F *>(hm->getHisto("hBeam_Mom"));
-    assert(hBeam_Mom);
+      hBeam_Mom->Fill(_eval_run.beam_mom);
 
-    hBeam_Mom->Fill(_eval_run.beam_mom);
-
-    _eval_run.beam_2CH_mm = run_info_copy.get_double_param("beam_2CH_mm");
-    _eval_run.beam_2CV_mm = run_info_copy.get_double_param("beam_2CV_mm");
+      _eval_run.beam_2CH_mm = run_info_copy.get_double_param("beam_2CH_mm");
+      _eval_run.beam_2CV_mm = run_info_copy.get_double_param("beam_2CV_mm");
+    }
   }
 
   EventHeader *eventheader = findNode::getClass<EventHeader>(topNode,
@@ -259,6 +260,16 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
 
       return Fun4AllReturnCodes::DISCARDEVENT;
     }
+  }
+
+  if (isnan(_eval_run.beam_mom))
+  {
+    if (_eval_run.run >= 1209 and _eval_run.run <= 1213)
+      _eval_run.beam_mom = -4;
+    else if (_eval_run.run >= 1214 and _eval_run.run <= 1220)
+      _eval_run.beam_mom = -2;
+    else if (_eval_run.run >= 1221 and _eval_run.run <= 1225)
+      _eval_run.beam_mom = -6;
   }
 
   if (_is_sim)
@@ -536,8 +547,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
       if (col == max_1x1.first)
         if (row == max_1x1.second)
         {
-          _eval_1x1_prod.average_col =  col;
-          _eval_1x1_prod.average_row =  row;
+          _eval_1x1_prod.average_col = col;
+          _eval_1x1_prod.average_row = row;
           _eval_1x1_prod.sum_E = energy_calib;
         }
 
@@ -602,8 +613,8 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   hNormalization->Fill("good_temp", good_temp);
 
   //  bool good_data = good_e and good_temp;
-  bool good_data = good_e and abs(_eval_5x5_prod.average_col - round(_eval_5x5_prod.average_col)) < 0.15  //
-                   and abs(_eval_5x5_prod.average_row - round(_eval_5x5_prod.average_row)) < 0.15;
+  bool good_data = good_e and abs(_eval_5x5_prod.average_col - round(_eval_5x5_prod.average_col)) < 0.1  //
+                   and abs(_eval_5x5_prod.average_row - round(_eval_5x5_prod.average_row)) < 0.1;
   hNormalization->Fill("good_data", good_data);
 
   _eval_run.good_temp = good_temp;
@@ -629,10 +640,11 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
   // calibration file
   //  if (good_data and abs(_eval_run.beam_mom) >= 4 and abs(_eval_run.beam_mom) <= 8  //
   //      )
+  if (good_data)
   {
     assert(fdata.is_open());
 
-    auto range = TOWER_CALIB_CEMC->getTowers();
+    auto range = TOWER_RAW_CEMC->getTowers();
     for (auto it = range.first; it != range.second; ++it)
     {
       RawTower *tower = it->second;
@@ -662,9 +674,17 @@ int Proto4ShowerCalib::process_event(PHCompositeNode *topNode)
     fdata << endl;
   }
 
+  if (valid_hodo_v and valid_hodo_h and cherekov_e and trigger_veto_pass)
+  {
+  PHTFileServer::get().cd(_filename);
+
   TTree *T = dynamic_cast<TTree *>(hm->getHisto("T"));
   assert(T);
   T->Fill();
+
+  PHTFileServer::get().flush(_filename);
+//  PHTFileServer::get().write(_filename);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

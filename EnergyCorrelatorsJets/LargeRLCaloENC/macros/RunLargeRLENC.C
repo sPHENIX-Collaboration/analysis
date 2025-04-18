@@ -52,20 +52,24 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 {
 	std::cout<<"actually processing this thing" <<std::endl;
 	std::map<std::string, std::string> input_files {{data_dst, "data_calo_dst"}, {data_fitting_dst, "data_fitting"}, {data_trigger,/* "none",*/"data_trigger"}, {data_jet, "data_jet"}, {truthjetfile, "truthjet"}, {calotowersfile, "calotowers"}, {truthrecofile, "truthreco"}, {globalrecofile, "globalreco"}, {truthfile, "truth"}};
+
 	Fun4AllServer* se=Fun4AllServer::instance();
 	std::cout<<"Initiated the fun for all server" <<std::endl;
 	int run_number=0, segment=0, n_evts=std::stoi(n_evt);
 //	std::string run_str="", segn_str="", substr="";
 	bool data=true;
+
 	se->Verbosity(0);
 	if(data_dst.find("none") != std::string::npos) data=false;
 	if(data){
 		segment=Fun4AllUtils::GetRunSegment(data_dst).second;
 	}
+
 	for(auto f:input_files)
 	{
 		std::cout<<"working on the file for: " <<f.second <<std::endl;
 		if(f.first.find("none") != std::string::npos) continue;
+
 		/*if(f.second.find("data_trigger") != std::string::npos  || f.second.find("data_jet")!=std::string::npos){
 			std::pair<std::string, std::string> calo_fitting_files=fix_calo_fitting_dst_names(segment, f.first); //issue with the most recent pass needs fixing, probably should pick up ana number but meh
 			input_files[calo_fitting_files.first]="data_1_fitting";
@@ -85,6 +89,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		std::stringstream filename(f.first);
 		if(run_number == 0){
 			std::cout<<"trying to get the run number" <<f.first <<std::endl;
+
 			std::pair<int, int> runseg=Fun4AllUtils::GetRunSegment(f.first);
 			run_number=runseg.first;
 			segment=runseg.second;
@@ -115,6 +120,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		}
 		catch(std::exception& e){std::cout<<"Unable to load file " <<f.first <<std::endl;}
 	}
+
 	if(data){
 		recoConsts *rc = recoConsts::instance();
 		rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
@@ -132,11 +138,13 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		
 	bool nojets=true, retower_needed=true;
 /*	if(data){ //check if the jet objects have already been constructed and retowering needed
+
 		TFile* f1=new TFile(data_dst.c_str(), "READ");
 		if(f1->IsOpen())
 		{
 			TTree* T=(TTree*) f1->Get("T");
 			auto brlist=T->GetListOfBranches();
+
 			for(int b=0; b<(int) brlist->GetEntries(); b++)
 			{
 				std::string branch_name (brlist[b].GetName());
@@ -159,17 +167,19 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 		data_jets->add_input(new TowerJetInput(Jet::HCALIN_TOWERINFO));
 		data_jets->add_input(new TowerJetInput(Jet::HCALOUT_TOWERINFO));
 		data_jets->add_algo(new FastJetAlgo(Jet::ANTIKT, 0.4), "AntiKt_TowerInfo_r04");
+
 		data_jets->set_algo_node("ANTIKT");
 		data_jets->set_input_node("TOWER");
 		data_jets->Verbosity(0);
 		se->registerSubsystem(data_jets);
-		
-		//no background subtracting as these won't be used for real analysis, just to provide rough cuts
+
 		}*/
+
 	std::cout<<"Loaded all subparts in, now loading in the analysis code" <<std::endl;
 //	std::string text_out_filename="/gpfs/mnt/gpfs02/sphenix/user/sgross/sphenix_analysis/EnergyCorrelatorsJets/LargeRLCaloENC/Missing_pT_for_felix_run-"+std::to_string(run_number)+"-"+std::to_string(segment)+".csv";
 	//std::fstream* ofs=new std::fstream(text_out_filename);
 	LargeRLENC* rlenc=new LargeRLENC(run_number, segment, std::stof(minpt), data);
+
 //	LEDPedestalScan* sc=new LEDPedestalScan(run_number, segment, false, false);
 	se->registerSubsystem(rlenc);
 //	se->registerSubsystem(sc);
@@ -178,6 +188,7 @@ int RunLargeRLENC(std::string data_dst="none", std::string data_fitting_dst="non
 	std::cout<<"Runing for " <<n_evt <<" events" <<std::endl;
 	se->run(n_evts);
 //	sc->Print();
+
 	rlenc->Print();
 	return 0;
 }

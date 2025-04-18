@@ -1,0 +1,62 @@
+\documentclass[UKenglish]{beamer}
+
+\usepackage{pgffor}
+\setbeamersize{text margin left=0pt, text margin right=0pt} %new code
+
+\begin{document}
+
+\makeatletter
+\newlength\beamerleftmargin
+\setlength\beamerleftmargin{\Gm@lmargin}
+\makeatother
+
+\begin{frame}{Reconstruction Validation}
+total events=34562205 with MBD vertex
+
+\end{frame}
+
+\newcommand{\p}{../plots/}
+
+\foreach \n in {20859,20864,20867,20868,20869,20876,20877,20878,20880,20883,20885,20888,21199,21200,21518,21520,21560,21561,21562,21564,21565,21567,21568,21578,21579,21580,21581,21584,21587,21589,21594,21598,21599,21608,21609,21615,21616,21626,21627,21663,21665,21674,21678,21679,21681,21682,21683,21703,21704,21705,21707,21709,21719,21733,21739,21740,21744,21745,21747,21748,21750,21751,21754,21769,21770,21772,21774,21776,21778,21780,21782,21783,21785,21787,21788,21792,21793,21795,21796,21798,21813,21889,21891,22026,22027,22033,22034,22037,22046,22946,22948,22949,22950,22951,22979,22982,23020,23049,23050,23051,23052,23053,23055,23058,23059,23060,23536,23537,23539,23543,23547,23550,23552,23557,23558,23561,23562,23563,23566,23568,23572,23574,23575,23582,23590,23592,23594,23604,23605,23617,23618,23619,23671,23672,23676,23681,23682,23687,23690,23693,23694,23695,23696,23697,23699,23702,23714,23718,23721,23722,23723,23724,23725,23726,23727,23728,23735,23737,23738,23739,23740,23743,23745,23746,23761,24316}{
+
+\begin{frame}{run \n \, correlations}
+
+\centering{
+    \includegraphics[width=0.24\textwidth]{\p/emcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_mbd_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/emcal_hcal_correlation_\n.pdf} 
+
+    \includegraphics[width=0.24\textwidth]{\p/zdc_emcal_correlation_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/zdc_e_northSouth_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/zdc_e_northSouth_1n_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/vtx_z_\n.pdf}
+
+    %\includegraphics[width=0.9\textwidth]{status_mod\n.pdf}
+    \hspace{0.3\textwidth}
+}
+\end{frame}
+
+
+\begin{frame}{run \n \, calorimeter}
+
+    \centering{
+    \includegraphics[width=0.24\textwidth]{\p/InvMass_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/cemc_etaphi_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_etaphi_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_etaphi_\n.pdf}
+    
+    \includegraphics[width=0.24\textwidth]{\p/etaphi_clus_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/cemc_proj_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ohcal_proj_\n.pdf}
+    \includegraphics[width=0.24\textwidth]{\p/ihcal_proj_\n.pdf}
+    
+    %\includegraphics[width=0.9\textwidth]{status_mod\n.pdf}
+    \hspace{0.3\textwidth}
+    
+    }
+\end{frame}
+
+}
+
+\end{document}

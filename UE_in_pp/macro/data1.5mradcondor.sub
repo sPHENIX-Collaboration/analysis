@@ -1,0 +1,9 @@
+executable = InclusiveJet.sh
+arguments = 0 $(Process) 0 data_1.5mrad_list_files/dst_jetcalo_run2pp_runlist_0.txt 1.5mrad data_1.5mrad_list_files/dst_jet_run2pp_runlist_0.txt
+output = output_logs/output_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_$(Process).err
+log = /tmp/egm2153_$(Process).log
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+concurrency_limits=CONCURRENCY_LIMIT_DEFAULT:100
+queue 2070

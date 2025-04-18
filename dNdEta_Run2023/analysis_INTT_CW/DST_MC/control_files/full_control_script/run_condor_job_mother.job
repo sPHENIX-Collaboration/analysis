@@ -1,0 +1,20 @@
+Universe           = vanilla
+Initialdir         = control_file_to_be_updated
+Executable         = run_root_mother.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 86400
+# nEvents            = NEVENTS
+# InputfilelistIdx   = INPUTFILELISTIDX
+# FileName           = FILENAME
+# skipEvt            = 0
+data_type          = data_type_to_be_updated
+control_file       = control_file_to_be_updated
+output_sub_folder  = output_sub_folder_name_to_be_updated
+used_zvtx_folder   = used_zvtx_folder_name_to_be_updated
+Output             = condor_output_to_be_updated/CW_log/condor_$(process).out
+Error              = condor_output_to_be_updated/CW_log/condor_$(process).err
+Log                = condor_output_to_be_updated/CW_log/condor_$(process).log
+Arguments          = "$(data_type) $(control_file) $(process) $(output_sub_folder) $(used_zvtx_folder)"
+Queue number_of_jobs_to_be_updated

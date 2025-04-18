@@ -11,6 +11,8 @@
 
 
 
+
+
 class CaloAndRegion{
 	public:
 		CaloAndRegion(int iregion, int icalo){
@@ -65,5 +67,7 @@ class EnergyEnergyCorrelator{
 		int corr_order;	
 		std::vector<float> r_L, r_med, r_s, val;
 		std::vector<CaloAndRegion*> cr;
+
 		void AssignVals(){}
 }			
+

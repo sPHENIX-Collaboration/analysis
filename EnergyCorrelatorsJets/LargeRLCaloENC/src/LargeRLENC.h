@@ -2,8 +2,10 @@
 //  -*- C++ -*-.
 #ifndef LARGERLENC_H
 #define LARGERLENC_H
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 //fun4all
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
@@ -25,16 +27,20 @@
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 
+
 //G4 objects
+
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4TruthInfoContainer.h>
+
 
 #include <phhepmc/PHHepMCGenEvent.h>  
 #include <phhepmc/PHHepMCGenEventMap.h>
 #include <HepMC/GenEvent.h>
 
 //jetbase objects 
+
 #include <jetbase/JetContainer.h>
 #include <jetbase/JetContainerv1.h>
 #include <jetbase/JetMapv1.h>
@@ -53,11 +59,13 @@
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+
 //trigger
 #include <ffarawobjects/Gl1Packetv2.h>
 #include <ffarawobjects/Gl1Packetv1.h>
 #include <calotrigger/TriggerAnalyzer.h>
 #include <calotrigger/TriggerRunInfov1.h>
+
 
 //c++
 #include <thread>
@@ -69,13 +77,16 @@
 #include <array>
 #include <iostream>
 #include <fstream>
+
 #include <set>
+
 //root
 #include <TH1.h>
 #include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TInterpreter.h>
+
 #include <TDirectory.h>
 //Homebrews 
 #include <calorimetertowerenc/MethodHistograms.h> 
@@ -89,7 +100,9 @@ class JetContainer;
 class PHG4Hit;
 class PHG4Particle;
 class PHG4TruthInfoContainer;
+
 class TriggerAnalyzer; 
+
 
 
 class LargeRLENC : public SubsysReco
@@ -107,10 +120,12 @@ class LargeRLENC : public SubsysReco
 		All, 
 		EMCAL,
 		IHCAL,
+
 		OHCAL, 
 		TRUTH
 	};
   	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const bool pedestal=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
+
 
   	~LargeRLENC() override {};
 
@@ -164,6 +179,7 @@ class LargeRLENC : public SubsysReco
 	//and now for the unique stuff
 	void addTower(int, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, std::map<std::array<float, 3>, float>*, RawTowerDefs::CalorimeterId);
 	
+
 	std::array<float,3> HadronicEnergyBalence(Jet*, float, PHCompositeNode*);
 	std::vector<std::array<float,3>> getJetEnergyRatios(JetContainerv1*, float, PHCompositeNode*);	
 	JetContainerv1* getJets(std::string, std::string, std::array<float, 3>, float ohcal_rat, PHCompositeNode*);
@@ -188,6 +204,7 @@ class LargeRLENC : public SubsysReco
 	std::string ohcal_energy_towers="TOWERINFO_CALIB_HCALOUT", ihcal_energy_towers="TOWERINFO_CALIB_HCALIN", emcal_energy_towers="TOWERINFO_CALIB_CEMC";
   	bool isRealData, pedestalData;
 	int nRun, nSegment, m_Njets, n_evts, n_with_jets=0;
+
 	float jetMinpT, MinpTComp;
 	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
 	int m_region, m_calo; 
@@ -197,6 +214,7 @@ class LargeRLENC : public SubsysReco
 	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > t_pt_evt;
 	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
+
 	TTree* DijetQA, *EEC/*, *JetEvtObs*/;
 	std::vector<std::vector<MethodHistograms*>> Region_vector, Truth_Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
@@ -215,5 +233,6 @@ class LargeRLENC : public SubsysReco
 	float ihcal_min; //7.5 MeV
 	float all_min; //65 MeV
 	//all these are conservative vals 
+
 };
 #endif // LARGERLENC_H

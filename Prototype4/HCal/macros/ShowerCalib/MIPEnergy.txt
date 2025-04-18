@@ -1,0 +1,1 @@
+default MIP at 8GeV is: 0.654927 +/- 0.151484

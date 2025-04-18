@@ -1,15 +1,16 @@
 void Fun4All_Ana(int nEvents = 1000,
 	char *input_file = "/gpfs02/phenix/prod/sPHENIX/sunyrefnewinnerhcal/fieldmap/G4Hits_sPHENIX_mu-_eta0.30_40GeV.root",
- 	const char *outFile = "outfile.root")
+ 	//char *input_file ="/sphenix/sim/sim01/cd1_review/single_particle/fieldmap/G4Hits_sPHENIX_e-_eta0.30_16GeV-0003.root",
+        const char *outFile = "outfile.root")
 {
   gSystem->Load("libfun4all");
   gSystem->Load("libphg4hit.so");
   gSystem->Load("libg4detectors.so");
-  gSystem->Load("libg4picoDst.so");
+  gSystem->Load("libg4picoDst.so"); //??
   gSystem->Load("libg4decayer.so");
   gSystem->Load("libg4eval.so");   
   gSystem->Load("libg4hough.so"); 
-  gSystem->Load("libPHAna.so");
+  gSystem->Load("libPHAna.so");//??
 
   ///////////////////////////////////////////
   //

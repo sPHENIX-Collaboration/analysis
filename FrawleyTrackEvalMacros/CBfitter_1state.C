@@ -35,6 +35,14 @@ Double_t CBcalc(Double_t *xx, Double_t *par)
       f = N * A * pow(B - (x-x_mean)/sigma, -n);
     }
 
+  double Nexp = par[5];
+  double slope = par[6];
+  
+  TF1 *fexp = new TF1("fexp","[0]*exp([1]*x)",7,11);
+  fexp->SetParameter(0,Nexp);
+  fexp->SetParameter(1,slope);
+
+  f = f + fexp->Eval(x);
   return f;
 }
 
@@ -94,11 +102,13 @@ void CBfitter_1state()
 {
   gROOT->SetStyle("Plain");
   gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1);
+  gStyle->SetOptFit(0);
   gStyle->SetOptTitle(0);
 
   TFile *file1S, *file2S, *file3S;
   TH1 *recomass1S, *recomass2S, *recomass3S;
+
+  bool draw_gauss = false;
 
   // if all are false, do AuAu 0-10%
   bool pp = false;
@@ -107,18 +117,29 @@ void CBfitter_1state()
   bool AuAu_10pc = true;
 
   //bool do_subtracted = true;
+ 
+  file1S = new TFile("root_files/ntp_quarkonium_out.root");
 
-  //file1S = new TFile("root_files/ups1s_qual3.00_dca2d0.10.root");
-  file1S = new TFile("root_files/upsmass_central_200khz_2dfit_1-3.root");
+  if(!file1S)
+    {
+      cout << "Failed to open file  " << endl;
+      exit(1); 
+    }
 
+  recomass1S = (TH1 *)file1S->Get("recomass0");
 
-  recomass1S = (TH1 *)file1S->Get("recomass");
+  TH1 *recomass = (TH1*)recomass1S->Clone("recomass1");
+  if(!recomass)
+    {
+      cout << "Failed to get recomass histogram  " << endl;
+      exit(1); 
+    }
 
-  TH1 *recomass = (TH1*)recomass1S->Clone("recomass");
+  recomass->GetXaxis()->SetTitle("invariant mass (GeV/c^{2})");
   recomass->Sumw2();
 
-  //int nrebin = 1;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
-  int nrebin = 2;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
+  int nrebin = 1;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
+  //int nrebin = 2;  // set to 2 to match background histo binning, but this worsens resolution slightly. Use 1 for signal fit
   recomass->Rebin(nrebin);
   
   TCanvas *cups = new TCanvas("cups","cups",5,5,800,800);
@@ -127,19 +148,20 @@ void CBfitter_1state()
   recomass->SetMarkerSize(1);
   recomass->SetLineStyle(kSolid);
   recomass->SetLineWidth(2);
-  //recomass->SetMaximum(810);
+  //  recomass->SetMaximum(700);
   recomass->DrawCopy("p");
 
 
-  TF1 *f1S = new TF1("f1S",CBcalc,7,11,5);
+  TF1 *f1S = new TF1("f1S",CBcalc,7,11,7);
   f1S->SetParameter(0, 1.0);     // alpha
   f1S->SetParameter(1, 1.0);      // n
   f1S->SetParameter(2, 9.46);      // xmean
   f1S->SetParameter(3, 0.08);     // sigma
-  //f1S->SetParLimits(3,0.04,0.15);
-  //f1S->SetParameter(4, 300.0);    // N
-  f1S->SetParameter(4, 100.0);    // N
-  //f1S->SetParameter(4, 1000.0);    // N
+  f1S->SetParameter(4, 2000.0);    // N
+  //f1S->SetParameter(4, 200.0);    // N
+  f1S->SetParameter(5,3.5);
+  f1S->SetParameter(6,0.05);
+
   f1S->SetParNames("alpha1S","n1S","m1S","sigma1S","N1S");
   f1S->SetLineColor(kBlue);
   f1S->SetLineWidth(3);
@@ -147,12 +169,46 @@ void CBfitter_1state()
 
   recomass->Fit(f1S);
   f1S->Draw("same");
+  cout << "f1S pars " <<  f1S->GetParameter(3) << "   " << f1S->GetParError(3) << endl;
+
+  char resstr[500];
+  sprintf(resstr,"#sigma_{1S} = %.1f #pm %.1f MeV", f1S->GetParameter(3)*1000, f1S->GetParError(3)*1000);
+  TLatex *res = new TLatex(0.13,0.55,resstr);
+  res->SetNDC();
+  res->SetTextSize(0.05);
+  res->Draw();
+
 
   double binw = recomass->GetBinWidth(1);
   double renorm = 1.0/binw;   // (1 / (bin_width of data in GeV) )
   cout << "renorm = " << renorm << endl;
 
   cout << "Area of f1S is " << renorm * f1S->Integral(7,11) << endl;
+
+  // Extract ratio of yield in central gaussian to total
+
+  TF1 *fgauss = new TF1("fgauss","gaus(0)",7,11);
+  fgauss->SetParameter(0, f1S->GetParameter(4));
+  fgauss->SetParameter(1, f1S->GetParameter(2));
+  fgauss->SetParameter(2, f1S->GetParameter(3));
+  fgauss->SetLineColor(kRed);
+  if(draw_gauss) fgauss->Draw("same");
+
+  // calculate fraction of yield in gaussian
+  double area_fgauss =  fgauss->Integral(7,11) * renorm;
+  double area_f1S = f1S->Integral(7,11) * renorm;
+  double fraction = area_fgauss / area_f1S;
+
+
+  cout << "Parameters of fgauss = " << fgauss->GetParameter(0) << "  " << fgauss->GetParameter(1) << "  " << fgauss->GetParameter(2) << " Area of fgauss is " << renorm * fgauss->Integral(7,11) << " fraction in fgauss " << area_fgauss / area_f1S << endl;
+
+  char labfrac[500];
+  sprintf(labfrac, "Gauss fraction %.2f", fraction);
+  TLatex *lab = new TLatex(0.13,0.75,labfrac);
+  lab->SetNDC();
+  lab->SetTextSize(0.05);
+  if(draw_gauss)  lab->Draw();
+
 
   /*
   TLatex *lab;

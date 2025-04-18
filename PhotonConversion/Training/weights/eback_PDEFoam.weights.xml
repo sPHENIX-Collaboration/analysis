@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<MethodSetup Method="PDEFoam::PDEFoam">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.0 [262656]"/>
+    <Info name="ROOT Release" value="5.34/38 [336422]"/>
+    <Info name="Creator" value="vassalli"/>
+    <Info name="Date" value="Wed Jan 23 17:52:07 2019"/>
+    <Info name="Host" value="Linux cvmfswrite02.sdcc.bnl.gov 3.10.0-693.11.6.el7.x86_64 #1 SMP Wed Jan 3 18:09:42 CST 2018 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/direct/phenix+u/vassalli/sphenix/single/Training"/>
+    <Info name="Training events" value="2540"/>
+    <Info name="TrainingTime" value="3.01337004e-01"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="V" modified="No">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="No">None</Option>
+    <Option name="H" modified="No">False</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="SigBgSeparate" modified="Yes">True</Option>
+    <Option name="TailCut" modified="No">1.000000e-03</Option>
+    <Option name="VolFrac" modified="Yes">5.880000e-02</Option>
+    <Option name="nActiveCells" modified="No">500</Option>
+    <Option name="nSampl" modified="No">2000</Option>
+    <Option name="nBin" modified="No">5</Option>
+    <Option name="Compress" modified="No">True</Option>
+    <Option name="MultiTargetRegression" modified="No">False</Option>
+    <Option name="Nmin" modified="No">100</Option>
+    <Option name="MaxDepth" modified="No">0</Option>
+    <Option name="FillFoamWithOrigWeights" modified="No">False</Option>
+    <Option name="UseYesNoCell" modified="No">False</Option>
+    <Option name="DTLogic" modified="No">None</Option>
+    <Option name="Kernel" modified="No">None</Option>
+    <Option name="TargetSelection" modified="No">Mean</Option>
+  </Options>
+  <Variables NVar="10">
+    <Variable VarIndex="0" Expression="track_deta" Label="track_deta" Title="track_deta" Unit="" Internal="track_deta" Type="F" Min="4.76837158e-07" Max="1.92375803e+00"/>
+    <Variable VarIndex="1" Expression="track_dlayer" Label="track_dlayer" Title="track_dlayer" Unit="" Internal="track_dlayer" Type="I" Min="0.00000000e+00" Max="1.40000000e+01"/>
+    <Variable VarIndex="2" Expression="track_layer" Label="track_layer" Title="track_layer" Unit="" Internal="track_layer" Type="I" Min="0.00000000e+00" Max="2.30000000e+01"/>
+    <Variable VarIndex="3" Expression="track_pT" Label="track_pT" Title="track_pT" Unit="" Internal="track_pT" Type="F" Min="2.38087445e-01" Max="3.41584282e+01"/>
+    <Variable VarIndex="4" Expression="approach_dist" Label="approach_dist" Title="approach_dist" Unit="" Internal="approach_dist" Type="F" Min="1.40332131e-05" Max="1.28133030e+01"/>
+    <Variable VarIndex="5" Expression="vtx_radius" Label="vtx_radius" Title="vtx_radius" Unit="" Internal="vtx_radius" Type="F" Min="5.07211098e-06" Max="2.09999390e+01"/>
+    <Variable VarIndex="6" Expression="vtxTrack_dist" Label="vtxTrack_dist" Title="vtxTrack_dist" Unit="" Internal="vtxTrack_dist" Type="F" Min="2.58899499e-02" Max="8.61121941e+00"/>
+    <Variable VarIndex="7" Expression="photon_m" Label="photon_m" Title="photon_m" Unit="" Internal="photon_m" Type="F" Min="1.04448044e+00" Max="7.13936157e+02"/>
+    <Variable VarIndex="8" Expression="photon_pT" Label="photon_pT" Title="photon_pT" Unit="" Internal="photon_pT" Type="F" Min="2.09014416e-02" Max="5.00876709e+03"/>
+    <Variable VarIndex="9" Expression="cluster_prob" Label="cluster_prob" Title="cluster_prob" Unit="" Internal="cluster_prob" Type="F" Min="0.00000000e+00" Max="9.99874175e-01"/>
+  </Variables>
+  <Spectators NSpec="1">
+    <Spectator SpecIndex="0" Expression="vtx_chi2" Label="vtx_chi2" Title="F" Unit="" Internal="vtx_chi2" Type="F" Min="0.00000000e+00" Max="3.33078735e-36"/>
+  </Spectators>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="0"/>
+  <MVAPdfs/>
+  <Weights SigBgSeparated="1" Frac="1.0000000474974513e-03" DiscrErrCut="-1.0000000000000000e+00" VolFrac="5.8800000697374344e-02" nCells="999" nSampl="2000" nBin="5" EvPerBin="10000" Compress="1" DoRegression="0" CutNmin="1" Nmin="100" CutRMSmin="0" RMSmin="0.0000000000000000e+00" Kernel="0" TargetSelection="0" FillFoamWithOrigWeights="0" UseYesNoCell="0">
+    <Xmin Index="0" Value="4.7683715820312500e-07"/>
+    <Xmin Index="1" Value="0.0000000000000000e+00"/>
+    <Xmin Index="2" Value="0.0000000000000000e+00"/>
+    <Xmin Index="3" Value="2.5165557861328125e-01"/>
+    <Xmin Index="4" Value="1.4033213119546417e-05"/>
+    <Xmin Index="5" Value="5.0721109801088460e-06"/>
+    <Xmin Index="6" Value="2.7607016265392303e-02"/>
+    <Xmin Index="7" Value="1.0444804430007935e+00"/>
+    <Xmin Index="8" Value="2.0901441574096680e-02"/>
+    <Xmin Index="9" Value="0.0000000000000000e+00"/>
+    <Xmax Index="0" Value="1.8281472921371460e+00"/>
+    <Xmax Index="1" Value="1.1001199722290039e+01"/>
+    <Xmax Index="2" Value="1.9000299453735352e+01"/>
+    <Xmax Index="3" Value="2.4809982299804688e+01"/>
+    <Xmax Index="4" Value="8.3478717803955078e+00"/>
+    <Xmax Index="5" Value="2.0999938964843750e+01"/>
+    <Xmax Index="6" Value="8.3622446060180664e+00"/>
+    <Xmax Index="7" Value="5.5674353027343750e+02"/>
+    <Xmax Index="8" Value="3.6789450683593750e+03"/>
+    <Xmax Index="9" Value="9.9857431650161743e-01"/>
+  </Weights>
+</MethodSetup>

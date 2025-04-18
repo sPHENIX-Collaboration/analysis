@@ -6,7 +6,9 @@
 #include <cassert>
 
 /* Fun4All includes */
-#include <g4hough/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxTrackMap_v1.h>
+#include <trackbase_historic/SvtxVertexMap_v1.h>
+//#include <trackbase_historic/SvtxClusterMap_v1.h>
 
 #include <phool/getClass.h>
 
@@ -22,9 +24,12 @@
 #include <g4vertex/GlobalVertexMap.h>
 #include <g4vertex/GlobalVertex.h>
 
+#include <g4main/PHG4VtxPoint.h>
 #include <g4main/PHG4Particle.h>
 
 #include <g4eval/CaloRawTowerEval.h>
+#include <g4eval/SvtxEvalStack.h>
+
 
 /* ROOT includes */
 #include <TLorentzVector.h>
@@ -112,7 +117,8 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_count_R , vdummy ) );
   _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_chargesum_R , vdummy ) );
   _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_rmax_R , vdummy ) );
-
+  _map_tau_candidate_branches.insert( make_pair( PidCandidate::tracks_vertex , vdummy ) );
+  
   /* Add branches to map that defines output tree for event-wise properties */
   _map_event_branches.insert( make_pair( "Et_miss" , dummy ) );
   _map_event_branches.insert( make_pair( "Et_miss_phi" , dummy ) );
@@ -121,6 +127,7 @@ LeptoquarksReco::Init(PHCompositeNode *topNode)
   _map_event_branches.insert( make_pair( "reco_tau_eta" , dummy ) );
   _map_event_branches.insert( make_pair( "reco_tau_phi" , dummy ) );
   _map_event_branches.insert( make_pair( "reco_tau_ptotal" , dummy ) );
+  _map_event_branches.insert( make_pair( "is_lq_event" , dummy ) );
 
 
   /* Create tree for information about full event */
@@ -188,12 +195,23 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
     findNode::getClass<SvtxTrackMap>(topNode,"SvtxTrackMap");
   if (!trackmap)
     {
-      cout << PHWHERE << "SvtxTrackMap node not found on node tree"
+      cout<< PHWHERE << "SvtxTrackMap node not found on node tree"
            << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
 
-  /* Get collection of truth particles from event generator */
+  /* Get vertex collection with all vertices in this event */
+  SvtxVertexMap* vertexmap =
+    findNode::getClass<SvtxVertexMap>(topNode,"SvtxVertexMap");
+  if (!vertexmap)
+    {
+      cout<< PHWHERE << "SvtxVertexMap node not found on node tree"
+          << endl;
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    
+  
+    /* Get collection of truth particles from event generator */
   PHHepMCGenEventMap *genevtmap = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
   if (!genevtmap) {
     cerr << PHWHERE << " ERROR: Can't find PHHepMCGenEventMap" << endl;
@@ -259,7 +277,9 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
       /* add tau candidate to collection */
       tauCandidateMap.insert( make_pair( (iter->second)->get_e(), tc ) );
     }
-
+  
+  /* vertex information */
+  SvtxEvalStack *svtxevalstack = new SvtxEvalStack(topNode);
   
   /* Add jet information to tau candidates */
   AddJetInformation( tauCandidateMap, recojets, &map_calotower );
@@ -268,14 +288,14 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   AddJetStructureInformation( tauCandidateMap, &map_calotower );
 
   /* Add track information to tau candidates */
-  AddTrackInformation( tauCandidateMap, trackmap, recojets->get_par());
+  AddTrackInformation( tauCandidateMap, trackmap, vertexmap, svtxevalstack, recojets->get_par());  
 
   /* Add tag for true Tau particle jet to tau candidates */
   AddTrueTauTag( tauCandidateMap, genevtmap );
 
   /* Add information about tau candidats to output tree */
   WritePidCandidatesToTree( tauCandidateMap );
-
+  
   /* Add global event information to separate tree */
   AddGlobalEventInformation( tauCandidateMap, &map_calotower );
 
@@ -288,6 +308,20 @@ LeptoquarksReco::process_event(PHCompositeNode *topNode)
   return 0;
 }
 
+// Returns average of values while excluding outliers //
+float Average(vector<float> v)
+{
+  double sum = 0;
+  int med_i = v.size()/2;
+  vector<float> temp_v;
+  for(int i=0;(unsigned)i<v.size();i++)
+    if (v[i] > (v[med_i] - v[med_i]*0.2) && v[i] < (v[med_i] + v[med_i]*0.2)) temp_v.push_back(v[i]);
+  
+  for(int j=0;(unsigned)j<temp_v.size();j++) sum = sum + temp_v[j];
+
+  return sum/temp_v.size();
+}
+
 int
 LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventMap *genevtmap )
 {
@@ -295,16 +329,41 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
   TruthTrackerHepMC truth;
   truth.set_hepmc_geneventmap( genevtmap );
 
-  int pdg_lq = 39; // leptoquark
-  int pdg_tau = 15; // tau lepton
+  int pdg_lq = 39; // leptoquark                                                                                                                                                                          
+  int pdg_tau = 15; // tau lepton                                                                                                                                                                         
   int pdg_parton = 0;
+  int pdg_electron = 11; // electron
 
+  // Check if electron exists  //                                                                                                                                                                
+  HepMC::GenParticle* particle_electron = NULL;
+  
+  for (PHHepMCGenEventMap::ReverseIter iter = genevtmap->rbegin(); iter != genevtmap->rend(); ++iter)
+    {
+      PHHepMCGenEvent *genevt = iter->second;
+      HepMC::GenEvent *theEvent = genevt->getEvent();
+            
+      // Loop over all truth particles in event generator collection 
+      for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
+	    p != theEvent->particles_end(); ++p ) {
+	// If final state electron then tag it //
+	if((*p)->pdg_id() == pdg_electron && (*p)->status() == 1) particle_electron = (*p);
+      }
+    }
+            
   /* Search for leptoquark in event */
   HepMC::GenParticle* particle_lq = truth.FindParticle( pdg_lq );
 
-  /* Search for lq->tau decay in event */
-  HepMC::GenParticle* particle_tau = truth.FindDaughterParticle( pdg_tau, particle_lq );
+  // Tag event as LQ event or not //
+  if (particle_lq) ( _map_event_branches.find( "is_lq_event" ) )->second = 1;
+  else ( _map_event_branches.find( "is_lq_event" ) )->second = 0;
 
+  /* Search for lq->tau decay in event */
+  HepMC::GenParticle* particle_tau = NULL;
+
+  // Find tau that comes from LQ or just any tau in event //
+  if(particle_lq) particle_tau = truth.FindDaughterParticle( pdg_tau, particle_lq );
+  else particle_tau = truth.FindParticle(pdg_tau);
+  
   /* Search for lq->quark decay in event.
    * Loop over all quark PDG codes until finding a matching quark. */
   HepMC::GenParticle* particle_quark = NULL;
@@ -334,6 +393,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
                                                          particle_tau->momentum().eta(),
                                                          particle_tau->momentum().phi() );
 
+      
       /* set is_tau = TRUE for PidCandiate with smallest delta_R within reasonable range*/
       if ( best_match )
         {
@@ -349,7 +409,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
           best_match->set_property( PidCandidate::evtgen_etotal, (float)particle_tau->momentum().e() );
           best_match->set_property( PidCandidate::evtgen_eta, (float)particle_tau->momentum().eta() );
           best_match->set_property( PidCandidate::evtgen_phi, (float)particle_tau->momentum().phi() );
-
+	  
           /* Check particle decay if end-vertex found */
           if ( particle_tau->end_vertex() )
             {
@@ -358,8 +418,9 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
               uint tau_decay_hcharged = 0;
               uint tau_decay_lcharged = 0;
 
-              /* Count how many charged particles (hadrons and leptons) a given particle decays into. */
+	      /* Count how many charged particles (hadrons and leptons) a given particle decays into. */
               truth.FindDecayParticles( particle_tau, tau_decay_prong, tau_decay_hcharged, tau_decay_lcharged );
+
 
               /* Update tau candidate entry */
               best_match->set_property( PidCandidate::evtgen_decay_prong, tau_decay_prong );
@@ -375,7 +436,7 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
       PidCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
                                                          particle_quark->momentum().eta(),
                                                          particle_quark->momentum().phi() );
-
+      
       /* set is_uds = TRUE for PidCandiate with smallest delta_R if found */
       if ( best_match )
         {
@@ -385,7 +446,6 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
 	      cout << "ERROR: Try to set PidCandidate::evtgen_pid for PidCandidate with evtgen_pid != 0" << endl;
 	      return -1;
 	    }
-
 	  /* Set properties of PidCandidate */
           best_match->set_property( PidCandidate::evtgen_pid, pdg_parton );
           best_match->set_property( PidCandidate::evtgen_etotal, (float)particle_quark->momentum().e() );
@@ -393,6 +453,32 @@ LeptoquarksReco::AddTrueTauTag( type_map_tcan& tauCandidateMap, PHHepMCGenEventM
           best_match->set_property( PidCandidate::evtgen_phi, (float)particle_quark->momentum().phi() );
         }
     }
+
+  if( particle_electron )
+    {
+      //cout<<"ELECTRON"<<endl;
+      PidCandidate* best_match = FindMinDeltaRCandidate( &tauCandidateMap,
+                                                         particle_electron->momentum().eta(),
+                                                         particle_electron->momentum().phi() );
+
+      /* set electron = TRUE for PidCandiate with smallest delta_R if found */
+      if ( best_match )
+        {
+          /* Check: If PidCandidate::Evtgen_pid has already been set to a value != 0, exit function. */
+          if( best_match->get_property_int( PidCandidate::evtgen_pid ) != 0 )
+            {
+              cout << "ERROR: Try to set PidCandidate::evtgen_pid for PidCandidate with evtgen_pid != 0" << endl;
+              return -1;
+            }
+
+          /* Set properties of PidCandidate */
+          best_match->set_property( PidCandidate::evtgen_pid, pdg_electron );
+          best_match->set_property( PidCandidate::evtgen_etotal, (float)particle_electron->momentum().e() );
+          best_match->set_property( PidCandidate::evtgen_eta, (float)particle_electron->momentum().eta() );
+          best_match->set_property( PidCandidate::evtgen_phi, (float)particle_electron->momentum().phi() );
+        }
+    }
+
 
   return 0;
 }
@@ -719,8 +805,13 @@ LeptoquarksReco::AddJetStructureInformation( type_map_tcan& tauCandidateMap, typ
 }
 
 int
-LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, double R_max )
+LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackMap* trackmap, SvtxVertexMap* vertexmap, SvtxEvalStack *svtxevalstack, double R_max )
 {
+  
+  // Pointers for tracks //
+  SvtxTrackEval* trackeval = svtxevalstack->get_track_eval();
+  SvtxTruthEval* trutheval = svtxevalstack->get_truth_eval();
+
   /* Loop over tau candidates */
   for (type_map_tcan::iterator iter = tauCandidateMap.begin();
        iter != tauCandidateMap.end();
@@ -738,9 +829,12 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
       int tracks_chargesum_R = 0;
       float tracks_rmax_R = 0;
 
+      vector<float> tracks_vertex;
+      vector<float> temp_vertex;
+
       float jet_eta = (iter->second)->get_property_float( PidCandidate::jet_eta );
       float jet_phi = (iter->second)->get_property_float( PidCandidate::jet_phi );
-
+      
       /* Loop over tracks
        * (float) track->get_eta(),     //eta of the track
        * (float) track->get_phi(),     //phi of the track
@@ -748,18 +842,35 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
        * (float) track->get_p(),       //total momentum of track
        * (float) track->get_charge(),  //electric charge of track
        * (float) track->get_quality()  //track quality */
-      for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
+  
+      //Loop over tracks in event //
+    for (SvtxTrackMap::ConstIter track_itr = trackmap->begin();
            track_itr != trackmap->end(); track_itr++) {
 
         SvtxTrack* track = dynamic_cast<SvtxTrack*>(track_itr->second);
 
+	// Get track variables //
         float track_eta = track->get_eta();
         float track_phi = track->get_phi();
         int track_charge = track->get_charge();
-
+	double gvx,gvy,gvz;
+	  
         float delta_R = CalculateDeltaR( track_eta, track_phi, jet_eta, jet_phi );
 
-        /* if save_tracks set true: add track to tree */
+	PHG4Particle* g4particle = trackeval->max_truth_particle_by_nclusters(track);
+
+	// Get true vertex distances //	  
+	PHG4VtxPoint* vtx = trutheval->get_vertex(g4particle);
+	gvx = vtx->get_x();
+	gvy = vtx->get_y();
+	gvz = vtx->get_z();
+	
+
+	
+	// If charged track is within jet then use its vertex //
+	if(delta_R < 0.5 && trutheval->is_primary(g4particle)) tracks_vertex.push_back(sqrt(pow(gvx,2)+pow(gvy,2)+pow(gvz,2)));
+	
+	/* if save_tracks set true: add track to tree */
         if ( _save_tracks )
           {
             float track_data[17] = {(float) _ievent,
@@ -812,10 +923,14 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
               tracks_rmax_R = delta_R;
           }
 
+    } // end loop over reco tracks //
+    // sort vertex array in increasing order //
+    std::sort(tracks_vertex.begin(),tracks_vertex.end());
+    
+    // Compute average vertex distance of tracks in jet //
+    float avg = Average(tracks_vertex);
 
-      } // end loop over reco tracks //
-
-      /* Set track-based properties for tau candidate */
+    /* Set track-based properties for tau candidate */
       (iter->second)->set_property( PidCandidate::tracks_count_r02, tracks_count_r02 );
       (iter->second)->set_property( PidCandidate::tracks_chargesum_r02, tracks_chargesum_r02 );
       (iter->second)->set_property( PidCandidate::tracks_rmax_r02, tracks_rmax_r02 );
@@ -825,6 +940,8 @@ LeptoquarksReco::AddTrackInformation( type_map_tcan& tauCandidateMap, SvtxTrackM
       (iter->second)->set_property( PidCandidate::tracks_count_R, tracks_count_R );
       (iter->second)->set_property( PidCandidate::tracks_chargesum_R, tracks_chargesum_R );
       (iter->second)->set_property( PidCandidate::tracks_rmax_R, tracks_rmax_R );
+      if(avg == avg) (iter->second)->set_property( PidCandidate::tracks_vertex, avg);
+
     } // end loop over tau  candidates
 
   return 0;
@@ -893,7 +1010,7 @@ LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float 
       float phi = (iter->second)->get_property_float( PidCandidate::jet_phi );
 
       float delta_R = CalculateDeltaR( eta, phi, eta_ref_local, phi_ref_local );
-
+      //cout<<delta_R<<endl;
       if ( delta_R < min_delta_R )
         {
           min_delta_R_iter = iter;            ;
@@ -904,7 +1021,7 @@ LeptoquarksReco::FindMinDeltaRCandidate( type_map_tcan *candidates, const float 
   /* set best_candidate to PidCandiate with smallest delta_R within reasonable range*/
   if ( min_delta_R_iter != candidates->end() && min_delta_R < 0.5 )
     best_candidate = min_delta_R_iter->second;
-
+  //cout<<"Min R: "<<min_delta_R<<endl;
   return best_candidate;
 }
 
@@ -947,6 +1064,7 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
        iter_calo != map_towers->end();
        ++iter_calo)
     {
+
       /* define tower iterator */
       RawTowerContainer::ConstRange begin_end = ((iter_calo->second).first)->getTowers();
       RawTowerContainer::ConstIterator rtiter;
@@ -960,7 +1078,7 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
 
           /* check if tower above energy treshold */
           if ( tower_energy < tower_emin )
-            continue;
+	  continue;
 
           /* get eta and phi of tower and check angle delta_R w.r.t. jet axis */
           RawTowerGeom * tower_geom = ((iter_calo->second).second)->get_tower_geometry(tower -> get_key());
@@ -981,11 +1099,11 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
           Ex_sum += tower_energy_t * cos( tower_phi );
           Ey_sum += tower_energy_t * sin( tower_phi );
         }
-    }
-
-  /* calculate Et_miss */
+      }
+  
+  /* calculate Et_miss and phi angle*/
   Et_miss = sqrt( Ex_sum * Ex_sum + Ey_sum * Ey_sum );
-  Et_miss_phi = atan( Ey_sum / Ex_sum );
+  Et_miss_phi = atan2( Ey_sum , Ex_sum );
 
   /* Loop over tau candidates and find tau jet*/
   PidCandidate* the_tau = NULL;
@@ -996,13 +1114,14 @@ LeptoquarksReco::AddGlobalEventInformation( type_map_tcan& tauCandidateMap, type
       if ( ( iter->second)->get_property_int( PidCandidate::evtgen_pid ) == 15 )
         the_tau = iter->second;
     }
-
+  
   /* update event information tree variables */
   /* @TODO make this better protected against errors- if 'find' returns NULL pointer,
      this will lead to a SEGMENTATION FAULT */
   ( _map_event_branches.find( "Et_miss" ) )->second = Et_miss;
   ( _map_event_branches.find( "Et_miss_phi" ) )->second = Et_miss_phi;
 
+  // If tau is found, write variables //
   if ( the_tau )
     {
       ( _map_event_branches.find( "reco_tau_found" ) )->second = 1;

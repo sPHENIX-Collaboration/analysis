@@ -1,0 +1,34 @@
+#+TITLE: Readme
+
+* Description
+
+Create an event display of the EMCal/HCALIN/HCALOUT from a given DST file and a specific event number. The event information is stored in json format.
+
+Event Display Render: https://www.sphenix.bnl.gov/edisplay/
+
+1) Under Geometry select "SPHENIX TPC GEOMETRY".
+2) Click Apply.
+3) Under Event upload json file.
+4) Click Apply.
+5) (Optional) Hit cuts can be adjusted as needed.
+
+* Usage
+
+1 ) Build the module via:
+#+begin_src bash
+./build_package.sh
+#+end_src
+
+2 ) Run the Fun4All macro:
+#+begin_src bash
+root -b -l -q 'macro/Fun4All_CaloTreeGen.C(<input>,<event>,<run>,<tow_cemc_min>,<tow_hcalin_min>,<tow_hcalin_min>,<output_json>,<output_ttree>)'
+#+end_src
+
+- input: Location of fileList or file containing dst.
+- event: Event number to analyze.
+- run: Run number.
+- tow_cemc_min: minimum threshold tower energy for CEMC.
+- tow_hcalin: minimum threshold tower energy for iHCal.
+- tow_hcalout: minimum threshold tower energy for oHCal.
+- output_json: name of event file.
+- output_ttree: name of output file.

@@ -1,4 +1,5 @@
 #include "TruthTrackerHepMC.h"
+#include "DISKinematicsReco.h"
 
 /* ROOT includes */
 #include <TDatabasePDG.h>
@@ -41,7 +42,7 @@ HepMC::GenParticle* TruthTrackerHepMC::FindParticle( int pid )
         if ( (*p)->pdg_id() == pid )
           {
             particle = (*p);
-
+	    
             /* end loop if matching particle found */
             break;
           } // end if matching PID //
@@ -69,12 +70,13 @@ HepMC::GenParticle* TruthTrackerHepMC::FindDaughterParticle( int pid, HepMC::Gen
               particles_end(HepMC::children);
             ++child )
         {
+	  
           /* Has child correct PDG code? */
           if ( (*child)->pdg_id() == pid )
             {
               particle_daughter = (*child);
               UpdateFinalStateParticle( particle_daughter );
-            }
+	    }
         }
     }
 
@@ -97,9 +99,8 @@ HepMC::GenParticle* TruthTrackerHepMC::FindBeamLepton( )
     }
 
   HepMC::GenEvent* genEvent = theEvent->getEvent();
-
+  /* Find beam lepton */
   particle = genEvent->beam_particles().first;
-
   return particle;
 }
 
@@ -121,7 +122,7 @@ HepMC::GenParticle* TruthTrackerHepMC::FindBeamHadron( )
   HepMC::GenEvent* genEvent = theEvent->getEvent();
 
   particle = genEvent->beam_particles().second;
-
+  
   return particle;
 }
 
@@ -130,35 +131,46 @@ HepMC::GenParticle* TruthTrackerHepMC::FindScatteredLepton( )
 {
   HepMC::GenParticle *particle = NULL;
 
-  int pid_beam_lepton = FindBeamLepton()->pdg_id();
-
+  /* @TODO How to select scattered lepton in an unambiguous way for
+     DIS and Exclusive Processes? (Pythia, Sartre, ...)
+     Return NULL pointer for now. */
+  /* In some event generators (SARTRE), no beam particles are created,
+     if so, assume beam lepton is an electron for now */
+  int pid_beam_lepton=0;
+  if(FindBeamLepton()==NULL)
+    {
+      /* Assume electron beam */
+      pid_beam_lepton=11;
+    }
+  else
+    {
+      pid_beam_lepton = FindBeamLepton()->pdg_id();
+    }
   int embedding_id = 1;
-
+  
   PHHepMCGenEvent *genevt = _genevtmap->get(embedding_id);
   HepMC::GenEvent *theEvent = genevt->getEvent();
-
+  
   /* check if GenEvent object found */
   if ( !theEvent )
     {
       cout << "ERROR: Missing GenEvent!" << endl;
       return NULL;
     }
-
   /* Loop over all truth particles in event generator collection */
   for ( HepMC::GenEvent::particle_iterator p = theEvent->particles_begin();
-	p != theEvent->particles_end(); ++p ) {
-
+  	p != theEvent->particles_end(); ++p ) {
+  
     /* check particle status and ID */
     if ( (*p)->status() == 1 &&
-	 (*p)->pdg_id()  == pid_beam_lepton )
+  	 (*p)->pdg_id()  == pid_beam_lepton )
       {
-	particle = (*p);
-
-	/* end loop if matching particle found */
-	break;
+  	particle = (*p);
+  
+  	/* end loop if matching particle found */
+  	break;
       } // end if matching status and PID //
   } // end loop over all particles in event //
-
   return particle;
 }
 
@@ -178,7 +190,8 @@ TruthTrackerHepMC::UpdateFinalStateParticle( HepMC::GenParticle *&particle )
             child != particle->end_vertex()->particles_end(HepMC::children);
             ++child )
         {
-          /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
+        
+	  /* If there is a child of same particle ID, this was not the final state particle- update pointer to particle and repeat */
           if ( (*child)->pdg_id() == particle->pdg_id() )
             {
               particle = (*child);
@@ -209,7 +222,7 @@ TruthTrackerHepMC::FindDecayParticles( HepMC::GenParticle *particle_mother, uint
     {
       /* check if particle decays further */
       if(!(*decay)->end_vertex()){
-
+ 
         /* Get entry from TParticlePDG because HepMC::GenPArticle does not provide charge or class of particle */
         TParticlePDG * pdg_p = TDatabasePDG::Instance()->GetParticle( (*decay)->pdg_id() );
 

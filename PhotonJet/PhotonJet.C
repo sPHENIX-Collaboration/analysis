@@ -20,13 +20,15 @@
 #include <g4jets/JetMap.h>
 #include <g4vertex/GlobalVertex.h>
 #include <g4vertex/GlobalVertexMap.h>
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxVertex.h>
+#include <trackbase_historic/SvtxVertexMap.h>
 
 //evaluation includes
 #include <g4detectors/PHG4ScintillatorSlatContainer.h>
 #include <g4eval/JetEvalStack.h>
 #include <g4eval/SvtxEvalStack.h>
-#include <g4hough/SvtxTrack.h>
-#include <g4hough/SvtxTrackMap.h>
 
 //hepmc includes
 #include <HepMC/GenEvent.h>
@@ -92,7 +94,7 @@ PhotonJet::PhotonJet(const std::string &name)
 
 int PhotonJet::Init(PHCompositeNode *topnode)
 {
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "COLLECTING PHOTON-JET PAIRS FOR THE FOLLOWING: " << endl;
     cout << "GATHERING JETS: " << jet_cone_size << endl;
@@ -185,7 +187,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     recojetsize << "04";
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Gathering RECO Jets:  " << recojetsize.str().c_str() << endl;
     cout << "Gathering TRUTH Jets:  " << truthjetsize.str().c_str() << endl;
@@ -269,6 +271,22 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GlobalVertex *vtx = vertexmap->begin()->second;
   if (vtx == nullptr) return 0;
 
+
+  RawTowerContainer *_cemctowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_CEMC");
+  RawTowerContainer *_hcalintowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALIN");
+  RawTowerContainer *_hcalouttowers = findNode::getClass<RawTowerContainer>(topnode,"TOWER_CALIB_HCALOUT");
+  RawTowerGeomContainer *_cemctowergeom = findNode::getClass<RawTowerGeomContainer>(topnode,"TOWERGEOM_CEMC");
+  RawTowerGeomContainer *_hcalintowergeom = findNode::getClass<RawTowerGeomContainer>(topnode,"TOWERGEOM_HCALIN");
+  RawTowerGeomContainer *_hcalouttowergeom = findNode::getClass<RawTowerGeomContainer>(topnode,"TOWERGEOM_HCALOUT");
+
+
+
+
+
+
+
+
+
   //Make sure all nodes for analysis are here. If one isn't in the NodeTree, bail
   if (!trigger && usetrigger)
   {
@@ -316,6 +334,8 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   SvtxTrackEval *trackeval = svtxevalstack->get_track_eval();
   JetTruthEval *trutheval = _jetevalstack->get_truth_eval();
 
+
+
   //now we have all the nodes, so collect the data from the various nodes
 
   /***********************************************
@@ -332,7 +352,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //return 0;
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Getting HEPMC truth particles " << endl;
   }
@@ -410,7 +430,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   cluseventeta = 0;
   float lastenergy = 0;
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get G4 stable truth particles" << endl;
   }
@@ -443,8 +463,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       trutheta = -9999;
     truthpid = truth->get_pid();
 
-    //find the highest energy photon in the event at midrapidity
-    if (truthpid == 22 && truthenergy > lastenergy && fabs(trutheta) < 1.1)
+    //find the highest energy photon in the event in the eta range
+    if (truthpid == 22 && truthenergy > lastenergy 
+	&& trutheta > etalow && trutheta < etahigh)
     {
       lastenergy = truthenergy;
       cluseventenergy = truthenergy;
@@ -461,13 +482,19 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
    TRUTH JETS
 
    ***************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get the truth jets" << endl;
   }
 
   //loop over the truth jets
   float hardest_jet = 0;
+  // If not truth jet is found that satisfies the requirements,
+  // then the jet 4 vector will be (0,0,0,0)
+  hardest_jetpt = 0;
+  hardest_jetenergy = 0;
+  hardest_jeteta = 0;
+  hardest_jetphi = 0;
   for (JetMap::Iter iter = truth_jets->begin();
        iter != truth_jets->end();
        ++iter)
@@ -565,7 +592,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   //process id, highest energy photon, etc.
   event_tree->Fill();
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "get trigger emulator info" << endl;
   }
@@ -592,7 +619,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GET THE EMCAL CLUSTERS
 
   ************************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Get EMCal Cluster" << endl;
   }
@@ -734,10 +761,9 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
   GET THE SVTX TRACKS
 
   ************************************************/
-
   if (eval_tracked_jets)
   {
-    if (verbosity > 1)
+    if (Verbosity() > 1)
     {
       cout << "Get the Tracks" << endl;
     }
@@ -794,13 +820,13 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       tracktree->Fill();
     }
   }
-
+  
   /***************************************
 
    RECONSTRUCTED JETS
 
    ***************************************/
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "Get all Reco Jets" << endl;
   }
@@ -874,7 +900,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
         {
           if (conste > truthjethighestphoton)
             truthjethighestphoton = conste;
-        }
+	}	
       }
 
       //if the highest energy photon in the jet is 80% of the jets energy
@@ -892,7 +918,7 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
     //their distance in dphi deta space
     else
     {
-      if (verbosity > 1)
+      if (Verbosity() > 1)
       {
         cout << "matching by distance jet" << endl;
       }
@@ -910,11 +936,11 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       //if the jetevalstack can't find a good truth jet
       //try to match reco jet with closest truth jet
       float closestjet = 9999;
-      for (JetMap::Iter iter = truth_jets->begin();
-           iter != truth_jets->end();
-           ++iter)
+      for (JetMap::Iter iter3 = truth_jets->begin();
+           iter3 != truth_jets->end();
+           ++iter3)
       {
-        Jet *jet = iter->second;
+        Jet *jet = iter3->second;
 
         float thisjetpt = jet->get_pt();
         if (thisjetpt < minjetpt)
@@ -954,10 +980,74 @@ int PhotonJet::process_event(PHCompositeNode *topnode)
       }
     }
 
+    //get the reco jet constituents and calculate the dphi deta 
+    //from the jet axis. Added to understand the truth jet - reco jet
+    //azimuthal offset
+
+  
+    
+    for(Jet::ConstIter constiter = jet->begin_comp();
+	constiter != jet->end_comp();
+	++constiter)
+      {
+	Jet::SRC source = constiter->first;
+	unsigned int index = constiter->second;
+	
+	RawTower *thetower = 0;
+	if(source == Jet::CEMC_TOWER)
+	  {
+	    thetower = _cemctowers->getTower(index);
+	  }
+	else if(source == Jet::HCALIN_TOWER)
+	  {
+	    thetower = _hcalintowers->getTower(index);
+	  }
+	else if(source == Jet::HCALOUT_TOWER)
+	  {
+	    thetower = _hcalouttowers->getTower(index);
+	  }
+	
+	assert(thetower);
+
+	int tower_phi_bin = thetower->get_binphi();
+	int tower_eta_bin = thetower->get_bineta();
+	
+	double constphi = -9999;
+	double consteta = -9999;
+	if(source == Jet::CEMC_TOWER)
+	  {
+	    constphi = _cemctowergeom->get_phicenter(tower_phi_bin);
+	    consteta = _cemctowergeom->get_etacenter(tower_eta_bin);
+	  }
+	else if(source == Jet::HCALIN_TOWER)
+	  {
+	    constphi = _hcalintowergeom->get_phicenter(tower_phi_bin);
+	    consteta = _hcalintowergeom->get_etacenter(tower_eta_bin);
+	  }
+	else if(source == Jet::HCALOUT_TOWER)
+	  {
+	    constphi = _hcalouttowergeom->get_phicenter(tower_phi_bin);
+	    consteta = _hcalouttowergeom->get_etacenter(tower_eta_bin);
+	  }
+	float checkdphi = truthjetphi - constphi;
+	if(checkdphi < -1 * TMath::Pi() / 2.)
+	  checkdphi += 2. * TMath::Pi();
+	if(checkdphi > 3. * TMath::Pi() / 2.)
+	  checkdphi -= 2. * TMath::Pi();
+	  
+	constituent_dphis.push_back(checkdphi);
+	constituent_detas.push_back(truthjeteta - consteta);
+
+      }
+
     recojettree->Fill();
+
+    constituent_dphis.resize(0);
+    constituent_detas.resize(0);
+
   }
 
-  if (verbosity > 1)
+  if (Verbosity() > 1)
   {
     cout << "finished event" << endl;
   }
@@ -1175,7 +1265,7 @@ void PhotonJet::GetRecoHadronsAndJets(RawCluster *trig,
 
   if (eval_tracked_jets)
   {
-    if (verbosity > 1)
+    if (Verbosity() > 1)
     {
       cout << "evaluating tracked hadrons opposite the direct photon" << endl;
     }
@@ -1679,6 +1769,9 @@ void PhotonJet::Set_Tree_Branches()
   recojettree->Branch("E_2x2", &E_2x2, "E_2x2/F");
   recojettree->Branch("phi_2x2", &phi_2x2, "phi_2x2/F");
   recojettree->Branch("eta_2x2", &eta_2x2, "eta_2x2/F");
+  recojettree->Branch("constituent_dphis","std::vector<float>",&constituent_dphis);
+  recojettree->Branch("constituent_detas","std::vector<float>",&constituent_detas);
+
 
   isophot_jet_tree = new TTree("isophoton-jets",
                                "a tree with correlated isolated photons and jets");

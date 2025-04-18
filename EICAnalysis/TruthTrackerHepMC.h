@@ -2,9 +2,10 @@
 #define __TRUTHTRACKERHEPMC_H__
 
 /*HepMC include */
+#include <HepMC/GenParticle.h>
 #include <phhepmc/PHHepMCGenEvent.h>
 #include <phhepmc/PHHepMCGenEventMap.h>
-
+//#include <phhepmc/PHHepMCGenParticle.h>
 /**
    Class with helpful functions to trace particle and event information through HepMC event records.
 
