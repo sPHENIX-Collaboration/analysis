@@ -104,6 +104,15 @@ Alternatively:
 root -b -l -q 'macros/displayv3.C("plots/03-27-25-ADC-ratios/plots.pdf")'
 #+end_src
 
+** Old LED Pulse with Scan
+#+begin_src bash
+make && ./bin/display-tp files/tp_scan plots/old_tp_scan/plots.pdf 1
+#+end_src
+Alternatively:
+#+begin_src bash
+root -b -l -q 'macros/display-tp.C("files/tp_scan","plots/old_tp_scan/plots.pdf",1)'
+#+end_src
+
 * Condor
 ** Resubmit Failed Jobs
 #+begin_src bas
