@@ -5,12 +5,13 @@ lib_LTLIBRARIES = \
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib
+  -L$(OFFLINE_MAIN)/lib \
+	`root-config --libs`
 
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
-  -isystem$(ROOTSYS)/include \
+	-isystem$(OFFLINE_MAIN)/include \
+  -isystem`root-config --incdir` \
 	-DHomogeneousField
 
 pkginclude_HEADERS = \
