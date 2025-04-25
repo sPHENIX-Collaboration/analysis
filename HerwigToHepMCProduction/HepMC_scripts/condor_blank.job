@@ -4,7 +4,7 @@ Arguments       =
 Output  	= /gpfs/mnt/gpfs02
 Error 		= /gpfs/mnt/gpfs02
 Log  		= /gpfs/mnt/gpfs02
-Initialdir  	= /gpfs/mnt/gpfs02
+Initialdir  	= 
 PeriodicHold 	= (NumJobStarts>=1 && JobStatus == 1)
 accounting_group = group_phenix.u
 accounting_group_user =
