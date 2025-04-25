@@ -92,7 +92,7 @@ f4a.add_argument('-i', '--runs-dir', type=str, help='Runs Directory', required=T
 f4a.add_argument('-e', '--executable', type=str, default='scripts/genFun4All.sh', help='Job script to execute. Default: scripts/genFun4All.sh')
 f4a.add_argument('-b', '--f4a-bin', type=str, default='bin/Fun4All_Year2_Fitting', help='Fun4All executable. Default: bin/Fun4All_Year2_Fitting')
 f4a.add_argument('-n', '--nEvents', type=int, default=0, help='Number of events to process. Default: 0 (All)')
-f4a.add_argument('-w', '--all-waveforms', type=int, default=0, help='Do All Waveforms. Default: 0 (false)')
+f4a.add_argument('-w', '--all-waveforms', type=int, default=1, help='Do All Waveforms. Default: 1 (true)')
 f4a.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')

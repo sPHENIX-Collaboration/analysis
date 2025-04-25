@@ -34,7 +34,7 @@ using std::string;
 void Fun4All_Year2_Fitting(const string &fname,
                            const string &outfile = "test.root",
                            int nEvents = 0,
-                           bool doAllWaveforms = false,
+                           bool doAllWaveforms = true,
                            const string &dbtag = "ProdA_2024")
 {
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -104,14 +104,14 @@ int main(int argc, char *argv[])
     cout << "input: input PRDF." << endl;
     cout << "outFile: name of output QA file. Default: test.root" << endl;
     cout << "events: Number of events to analyze. Default: all" << endl;
-    cout << "doAllWaveforms: Analyze all waveforms. Default: false" << endl;
+    cout << "doAllWaveforms: Analyze all waveforms. Default: true" << endl;
     cout << "dbtag: Database Tag. Default: ProdA_2024" << endl;
     return 1;
   }
 
   string outFile = "test.root";
   UInt_t events = 0;
-  Bool_t doAllWaveforms = false;
+  Bool_t doAllWaveforms = true;
   string dbtag = "ProdA_2024";
 
   if (argc >= 3)
