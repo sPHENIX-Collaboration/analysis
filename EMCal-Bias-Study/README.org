@@ -122,11 +122,17 @@ rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resub
 * Data taking instructions for EMCal via LEDs
 
 ** Configure EMCal for data taking
-1) Turn EMCal ON (bias and lv).
-2) Turn EMCal Controller Crates ON via vision client GUI.
-3) Run from daq02 to setup the EMCal:
+1) Turn EMCal Controller Crates ON.
+#+begin_src bash
+/home/phnxrc/haggerty/emcal/offandon/comms-on
+#+end_src
+2) Turn EMCal ON (bias and lv).
 #+begin_src bash
 /home/phnxrc/haggerty/emcal/offandon/emcalon
+#+end_src
+3) Check the gain and voltage looks normal.
+#+begin_src bash
+/home/phnxrc/haggerty/emcal/calcon/emcalsector.py voltage --sector 0 && /home/phnxrc/haggerty/emcal/calcon/emcalsector.py gain --sector 0
 #+end_src
 
 ** run_leds.py Script
@@ -189,6 +195,16 @@ Suppose we want to record a single run with a specific bias offset and LED pulse
 - Events per run: 1000
 #+begin_src bash
 /home/phnxrc/anarde/scripts/run_leds.py --bias-start -600 --bias-end -600 --tp-start 30 --tp-end 30
+#+end_src
+
+** Clean up
+1) Turn EMCal ON (bias and lv).
+#+begin_src bash
+/home/phnxrc/haggerty/emcal/offandon/emcaloff
+#+end_src
+2) Turn EMCal Controller Crates OFF.
+#+begin_src bash
+/home/phnxrc/haggerty/emcal/offandon/comms-off
 #+end_src
 
 ** View Runs Transfer Status
