@@ -62,12 +62,12 @@ xargs eventcombiner -vpfi calib-000[run]-0000.prdf < [prdf-list]
 
 ** After editing Makefile.am
 #+begin_src bash
-rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00059279-0000.prdf test.root 20 2>/dev/null
+rm -rf build && mkdir build && cd build && ../src/autogen.sh --prefix=$MYINSTALL && cd .. && make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00061221-0000.prdf test.root 20 2>/dev/null
 #+end_src
 
 ** After editing .cc or .h
 #+begin_src bash
-make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00059279-0000.prdf test.root 20 2>/dev/null
+make install -j8 --directory build && rm -f bin/Fun4All_Year2_Fitting && make && ./bin/Fun4All_Year2_Fitting data/data-00061221-0000.prdf test.root 20 2>/dev/null
 #+end_src
 
 *** With Pulser data
