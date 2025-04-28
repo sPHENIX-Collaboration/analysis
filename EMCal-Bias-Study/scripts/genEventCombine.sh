@@ -10,6 +10,7 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 input_file=${1}
 submitDir=${2}
+minEvents=${3} # minimum number of events required in the SEB
 run=$(basename $input_file | sed 's/[^0-9]*//g')
 output="data-000$run-0000.prdf"
 
@@ -18,7 +19,12 @@ if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
    cd $_CONDOR_SCRATCH_DIR
    # transfer the input file(s)
    while read fp; do
-       cp -v $fp .
+       events=$(dpipe -d n -s f -i $fp | wc -l)
+       if (( events < minEvents )); then
+          echo "SKIPPING SEB $fp, Events: $events"
+       else
+          cp -v $fp .
+       fi
    done < "$input_file"
 else
   echo "condor scratch NOT set"

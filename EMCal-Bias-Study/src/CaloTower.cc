@@ -137,11 +137,13 @@ int CaloTower::Init(PHCompositeNode *topNode)
   se->Print("NODETREE");
 
   m_hists["h2CEMC"] = new TH2F("h2CEMC","EMCal [ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+  m_hists["h2ZS"] = new TH2F("h2ZS","Events [Zero Suppression]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
   m_hists["h2CEMC"]->Sumw2();
   m_hists["hCEMC"] = new TH1F("hCEMC","EMCal [ADC]; ADC; Counts", m_bins_ADC, m_ADC_low, m_ADC_high);
   m_hists["hCEMC"]->Sumw2();
 
   m_hists["hEvent"] = new TH1F("hEvent","Events; Status; Counts", 1, 0, 1);
+  m_hists["h2Event"] = new TH2F("h2Event","Events [Not Zero Suppressed]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
 
   stringstream name;
   stringstream title;
@@ -199,15 +201,23 @@ int CaloTower::process_event(PHCompositeNode *topNode)
 
     TowerInfo* tower = towers->get_tower_at_channel(towerIndex);
     Double_t energy = (tower->get_isGood()) ? tower->get_energy() : 0;
+    Bool_t isZS     = tower->get_isZS(); // zero suppression info
+
     // Double_t energy = tower->get_energy();
     m_min_energy = min(m_min_energy, energy);
     m_max_energy = max(m_max_energy, energy);
 
-    ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
+    if (isZS) {
+      ((TH2*) m_hists["h2ZS"])->Fill(iphi, ieta);
+    }
+    else {
+      ((TH2*)m_hists["h2CEMC"])->Fill(iphi, ieta, energy);
+      ((TH2*)m_hists["h2Event"])->Fill(iphi, ieta);
+    }
 
     name.str("");
     name << "h2adc_" << iphi << "_" << ieta;
-    if(m_doAllWaveforms || m_hists.contains(name.str())) {
+    if((!isZS) && (m_doAllWaveforms || m_hists.contains(name.str()))) {
       for(Int_t sample = 0; sample < m_nsamples; ++sample) {
         Int_t adc = tower->get_waveform_value(sample);
         m_min_adc = min(m_min_adc, adc);
@@ -233,7 +243,7 @@ int CaloTower::End(PHCompositeNode *topNode)
   Int_t nEvents = m_hists["hEvent"]->GetBinContent(1);
   cout << "Events Total: " << m_Event << ", Processed: " << nEvents << endl;
   // scale the hists to get the average tower energy
-  m_hists["h2CEMC"]->Scale(1./nEvents);
+  m_hists["h2CEMC"]->Divide(m_hists["h2Event"]);
 
   for(Int_t iphi = 1; iphi <= m_nphi; ++iphi) {
     for(Int_t ieta = 1; ieta <= m_neta; ++ieta) {

@@ -14,6 +14,7 @@ evtComb.add_argument('-i', '--run-list', type=str, help='Run list', required=Tru
 evtComb.add_argument('-i2', '--calib-dir', type=str, default='/sphenix/lustre01/sphnxpro/physics/emcal/led', help='Data Directory. Default: /sphenix/lustre01/sphnxpro/physics/emcal/led')
 evtComb.add_argument('-e', '--executable', type=str, default='scripts/genEventCombine.sh', help='Job script to execute. Default: scripts/genEventCombine.sh')
 evtComb.add_argument('-n', '--nSegments', type=int, default=16, help='Number of segments per run to combine. Default: 16')
+evtComb.add_argument('-n2', '--nEvents', type=int, default=100, help='Minimum number of segments in each SEB. Default: 100')
 evtComb.add_argument('-d', '--output', type=str, default='test', help='Output Directory. Default: ./test')
 evtComb.add_argument('-s', '--memory', type=float, default=2, help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 evtComb.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
@@ -26,6 +27,7 @@ def create_event_combine_jobs():
     memory     = args.memory
     log        = args.log
     nSegments  = args.nSegments
+    nEvents    = args.nEvents
 
     calib_dir_base  = os.path.basename(calib_dir)
 
@@ -37,6 +39,7 @@ def create_event_combine_jobs():
     print(f'Requested memory per job: {memory}GB')
     print(f'Condor log file: {log}')
     print(f'nSegments: {nSegments}')
+    print(f'Mininum Number of Events per SEB: {nEvents}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(executable, output_dir)
@@ -75,17 +78,20 @@ def create_event_combine_jobs():
         print(f'Error in {command}')
         return
 
-    with open(f'{output_dir}/genEventCombine.sub', mode="w") as file:
+    with open(f'{output_dir}/genEventCombine.sub', mode="w", encoding="utf-8") as file:
         file.write(f'executable     = {os.path.basename(executable)}\n')
-        file.write(f'arguments      = $(input_run) {output_dir}/output\n')
+        file.write(f'arguments      = $(input_run) {output_dir}/output {nEvents}\n')
         file.write(f'log            = {log}\n')
-        file.write('output          = stdout/job-$(Process).out\n')
-        file.write('error           = error/job-$(Process).err\n')
+        file.write('output          = stdout/job-$(ClusterId)-$(Process).out\n')
+        file.write('error           = error/job-$(ClusterId)-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
         # file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
-        file.write(f'queue input_run from jobs.list')
+        # file.write(f'queue input_run from jobs.list')
+
+    print('\nSubmission Command')
+    print(f'rm -rf /tmp/anarde/dump && mkdir /tmp/anarde/dump && cd {output_dir} && condor_submit genEventCombine.sub -queue "input_run from jobs.list"')
 
 f4a = subparser.add_parser('f4a', help='Create condor submission directory for Fun4All CaloFitting.')
 f4a.add_argument('-i', '--runs-dir', type=str, help='Runs Directory', required=True)
@@ -130,17 +136,20 @@ def create_f4a_jobs():
         print(f'Error in {command}')
         return
 
-    with open(f'{output_dir}/genFun4All.sub', mode="w") as file:
+    with open(f'{output_dir}/genFun4All.sub', mode="w", encoding="utf-8") as file:
         file.write(f'executable     = {os.path.basename(executable)}\n')
         file.write(f'arguments      = {f4a_bin} $(input_run) {nEvents} {doAllWaveforms} {output_dir}/output\n')
         file.write(f'log            = {log}\n')
-        file.write('output          = stdout/job-$(Process).out\n')
-        file.write('error           = error/job-$(Process).err\n')
+        file.write('output          = stdout/job-$(ClusterId)-$(Process).out\n')
+        file.write('error           = error/job-$(ClusterId)-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
         # file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
         # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
-        file.write(f'queue input_run from jobs.list')
+        # file.write(f'queue input_run from jobs.list')
+
+    print('\nSubmission Command')
+    print(f'rm -rf /tmp/anarde/dump && mkdir /tmp/anarde/dump && cd {output_dir} && condor_submit genFun4All.sub -queue "input_run from jobs.list"')
 
 status = subparser.add_parser('status', help='Get status of Condor.')
 
