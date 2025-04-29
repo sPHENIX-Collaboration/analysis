@@ -26,15 +26,10 @@
 
 using namespace HeavyFlavorReco;
 
-R__LOAD_LIBRARY(libkfparticle_sphenix.so)
-R__LOAD_LIBRARY(libcalotrigger.so)
-
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libphool.so)
 R__LOAD_LIBRARY(libcdbobjects.so)
-R__LOAD_LIBRARY(libTrackingDiagnostics.so)
-R__LOAD_LIBRARY(libtrackingqa.so)
 
 void Fun4All_HF_QM25(
     const int nEvents = 100,
@@ -85,7 +80,7 @@ void Fun4All_HF_QM25(
   if (run_pKpi_reco_likeSign) create_hf_directories(pKpi_like_reconstruction_name, pKpi_like_output_dir, pKpi_like_output_reco_file);
   if (run_Kstar_reco) create_hf_directories(Kstar_reconstruction_name, Kstar_output_dir, Kstar_output_reco_file);
   if (run_KK_reco) create_hf_directories(KK_reconstruction_name, KK_output_dir, KK_output_reco_file);
-  if (run_Dstar_reco) create_hf_directories(Dstar_reconstruction_name, Dstar_output_dir, Dstar_output_reco_file);
+  if (run_Lambdapi_reco) create_hf_directories(Lambdapi_reconstruction_name, Lambdapi_output_dir, Lambdapi_output_reco_file);
 
   auto se = Fun4AllServer::instance();
   se->Verbosity(1);
@@ -125,7 +120,7 @@ void Fun4All_HF_QM25(
     se->registerInputManager(hitsinclus);
   }
 
-  if (run_pipi_reco || run_Kpi_reco || run_Kpipi_reco || run_KKpi_reco || run_pKpi_reco) init_kfp_dependencies();
+  if (run_pipi_reco || run_Kpi_reco || run_Kpipi_reco || run_KKpi_reco || run_pKpi_reco || run_Lambdapi_reco) init_kfp_dependencies();
 
   if (run_pipi_reco) reconstruct_pipi_mass();
   if (run_Kpi_reco) reconstruct_Kpi_mass();
@@ -137,7 +132,7 @@ void Fun4All_HF_QM25(
   if (run_pKpi_reco_likeSign) reconstruct_pKpi_mass_likeSign();
   if (run_Kstar_reco) reconstruct_Kstar_mass();
   if (run_KK_reco) reconstruct_KK_mass();
-  if (run_Dstar_reco) reconstruct_Dstar_mass();
+  if (run_Lambdapi_reco) reconstruct_Lambdapi_mass();
 
   se->skip(nSkip);
   se->run(nEvents);
@@ -154,7 +149,7 @@ void Fun4All_HF_QM25(
   if (run_pKpi_reco_likeSign) end_kfparticle(pKpi_like_output_reco_file, pKpi_like_output_dir);
   if (run_Kstar_reco) end_kfparticle(Kstar_output_reco_file, Kstar_output_dir);
   if (run_KK_reco) end_kfparticle(KK_output_reco_file, KK_output_dir);
-  if (run_Dstar_reco) end_kfparticle(Dstar_output_reco_file, Dstar_output_dir);
+  if (run_Lambdapi_reco) end_kfparticle(Lambdapi_output_reco_file, Lambdapi_output_dir);
 
   delete se;
 

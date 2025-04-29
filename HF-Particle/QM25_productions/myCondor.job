@@ -1,14 +1,8 @@
 Universe           = vanilla
-initialDir         = /sphenix/user/cdean/software/analysis/HF-Particle/QM25_productions 
-Executable         = $(initialDir)/runHFreco.sh
+Executable         = runHFreco.sh
 PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
 request_memory     = 4GB
 Priority           = 20
 job_lease_duration = 3600
 Arguments          = $(events) $(file) $(path) $(skip)
-#concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:1000
-#logFile            = $(initialDir)/log/$(processID)
-#Output             = $(logFile).out
-#Error              = $(logFile).err
-#Log                = $(logFile).log
-Queue events file path skip from fileLists/file_run53879_000.list
+Queue events file path skip from fileLists/file_run53877_000.list
