@@ -414,8 +414,8 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["h2Offset"]->Draw("COLZ1");
 
-    // m_hists["h2Offset"]->SetMinimum(0);
-    // m_hists["h2Offset"]->SetMaximum(2);
+    m_hists["h2Offset"]->SetMinimum(-2e3);
+    m_hists["h2Offset"]->SetMaximum(1.8e3);
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
@@ -492,8 +492,8 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["h2NewOffsetV3"]->Draw("COLZ1");
 
-    // m_hists["h2Offset"]->SetMinimum(0);
-    // m_hists["h2Offset"]->SetMaximum(2);
+    m_hists["h2NewOffsetV3"]->SetMinimum(-2e3);
+    m_hists["h2NewOffsetV3"]->SetMaximum(1.8e3);
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
