@@ -5,7 +5,6 @@
 #include <fun4all/SubsysReco.h>
 
 /// Class declarations for use in the analysis module
-class Fun4AllHistoManager;
 class PHCompositeNode;
 class TFile;
 class TTree;
@@ -40,13 +39,13 @@ class AnaUPC : public SubsysReco
   virtual ~AnaUPC();
 
   /// SubsysReco initialize processing method
-  int Init(PHCompositeNode *);
+  int Init(PHCompositeNode *) override;
 
   /// SubsysReco event processing method
-  int process_event(PHCompositeNode *);
+  int process_event(PHCompositeNode *) override;
 
   /// SubsysReco end processing method
-  int End(PHCompositeNode *);
+  int End(PHCompositeNode *) override;
 
   /// Set the minimum jet pT to cut on
   //void setMinJetPt(float minjetpt) { m_minjetpt = minjetpt; }
@@ -60,12 +59,11 @@ class AnaUPC : public SubsysReco
   //void analyzeJets(bool analyzeJets) { m_analyzeJets = analyzeJets; }
   void analyzeTruth(bool analyzeTruth) { m_analyzeTruth = analyzeTruth; }
 
+  int Reset(PHCompositeNode * /*topNode*/) override;
+
  private:
   /// String to contain the outfile name containing the trees
   std::string m_outfilename;
-
-  /// Fun4All Histogram Manager tool
-  Fun4AllHistoManager *m_hm;
 
   /// A float for cutting on jet pt
   //float m_minjetpt;
@@ -105,6 +103,14 @@ class AnaUPC : public SubsysReco
   TH1 *h_trig{nullptr};
   TH1 *h_ntracks{nullptr};
   TH2 *h2_ntrksvsb{nullptr};
+
+  TH1 *h_b_mb{nullptr};
+  TH1 *h_npart_mb{nullptr};
+  TH1 *h_ncoll_mb{nullptr};
+  TH1 *h_b{nullptr};
+  TH1 *h_npart{nullptr};
+  TH1 *h_ncoll{nullptr};
+
   const double E_MASS = 0.000510998950;  // electron mass [Gev]
 
   SvtxEvalStack *m_svtxEvalStack{nullptr};
@@ -116,13 +122,14 @@ class AnaUPC : public SubsysReco
   //void getTruthJets(PHCompositeNode *topNode);
   //void getReconstructedJets(PHCompositeNode *topNode);
   //void getEMCalClusters(PHCompositeNode *topNode);
-  void getHEPMCTruth(PHCompositeNode *topNode);
-  void getPHG4Truth(PHCompositeNode *topNode);
+  void getHEPMCTruth();
+  void getPHG4Truth();
 
   /// Data
-  EventHeader *evthdr{nullptr};
-  SvtxTrackMap *trackmap{nullptr};
-  PHHepMCGenEventMap *genevent_map{nullptr};
+  EventHeader *_evthdr{nullptr};
+  SvtxTrackMap *_trackmap{nullptr};
+  PHG4TruthInfoContainer *_truthinfo{nullptr};
+  PHHepMCGenEventMap *_genevent_map{nullptr};
 
   void initializeVariables();
   void initializeTrees();
@@ -132,15 +139,17 @@ class AnaUPC : public SubsysReco
    */
 
   // Global Info
-  Int_t m_run{ 0 };
-  Int_t m_evt{ 0 };
-  Int_t m_npart_targ{ 0 };
-  Int_t m_npart_proj{ 0 };
-  Int_t m_npart{ 0 };
-  Int_t m_ncoll{ 0 };
-  Int_t m_ncoll_hard{ 0 };
+  Int_t   m_run{ 0 };
+  Int_t   m_evt{ 0 };
+  Int_t   m_npart_targ{ 0 };
+  Int_t   m_npart_proj{ 0 };
+  Int_t   m_npart{ 0 };
+  Int_t   m_ncoll{ 0 };
+  Int_t   m_ncoll_hard{ 0 };
   Float_t m_bimpact{ -1. };
-  Int_t m_ntracks{ 0 };
+  Int_t   m_ntracks{ 0 };       // total reconstructed ntracks
+  Int_t   m_ntrk_sphenix{ 0 };  // monte carlo tracks in sphenix acceptance (>0.4 pt, |eta|<1.1)
+  Int_t   m_ntrk_mc{ 0 };       // total monte carlo charged tracks
 
   /// HEPMC Tree variables
   int m_partid1;
@@ -159,6 +168,7 @@ class AnaUPC : public SubsysReco
   double m_truthp;
   int m_numparticlesinevent;
   int m_truthpid;
+  int m_truthcharge;
 
 
   /// Track variables

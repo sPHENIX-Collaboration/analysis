@@ -35,7 +35,6 @@
 #include <phhepmc/PHHepMCGenEventMap.h>
 
 /// Fun4All includes
-#include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4Particle.h>
@@ -52,6 +51,7 @@
 #include <TTree.h>
 #include <Math/Vector4D.h>
 #include <Math/VectorUtil.h>
+#include <TDatabasePDG.h>
 
 
 /// C++ includes
@@ -66,11 +66,10 @@
 AnaUPC::AnaUPC(const std::string &name, const std::string &filename)
   : SubsysReco(name)
   , m_outfilename(filename)
-  , m_hm(nullptr)
   //, m_mincluspt(0.25)
   , m_analyzeTracks(true)
   //, m_analyzeClusters(true)
-  , m_analyzeTruth(false)
+  , m_analyzeTruth(true)
 {
   /// Initialize variables and trees so we don't accidentally access
   /// memory that was never allocated
@@ -83,7 +82,6 @@ AnaUPC::AnaUPC(const std::string &name, const std::string &filename)
  */
 AnaUPC::~AnaUPC()
 {
-  delete m_hm;
   delete m_hepmctree;
   delete m_tracktree;
   delete m_truthtree;
@@ -124,6 +122,13 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
   h2_ntrksvsb->SetXTitle("b [fm]");
   h2_ntrksvsb->SetYTitle("N_{TRKS}");
 
+  h_b_mb = new TH1F("h_b_mb", "b, MB events", 200, 0, 20);
+  h_npart_mb = new TH1F("h_npart_mb", "npart, MB events", 401, -0.5, 400.5);
+  h_ncoll_mb = new TH1F("h_ncoll_mb", "ncoll, MB events", 1301, -0.5, 1300.5);
+  h_b = new TH1F("h_b", "b", 200, 0, 20);
+  h_npart = new TH1F("h_npart", "npart", 401, -0.5, 400.5);
+  h_ncoll = new TH1F("h_ncoll", "ncoll", 1301, -0.5, 1300.5);
+
   return 0;
 }
 
@@ -134,23 +139,38 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
 int AnaUPC::GetNodes(PHCompositeNode *topNode)
 {
   /// EventHeader node
-  evthdr = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  _evthdr = findNode::getClass<EventHeader>(topNode, "EventHeader");
 
   /// SVTX tracks node
-  trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
-
-  if (!trackmap)
+  _trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+  if (!_trackmap)
   {
     std::cout << PHWHERE << "SvtxTrackMap node is missing, can't collect tracks" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  /// HEPMC info
-  genevent_map = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
-  if (!genevent_map)
+  /// G4 truth particle node
+  _truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+  if (!_truthinfo)
   {
-    std::cout << PHWHERE << "PHHepMCGenEventMap node is missing, can't collect HEPMC info" << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    static int ctr = 0;
+    if ( ctr<4 )
+    {
+      std::cout << PHWHERE << "PHG4TruthInfoContainer node is missing, can't collect G4 truth particles" << std::endl;
+      ctr++;
+    }
+  }
+
+  /// HEPMC info
+  _genevent_map = findNode::getClass<PHHepMCGenEventMap>(topNode,"PHHepMCGenEventMap");
+  if (!_genevent_map)
+  {
+    static int ctr = 0;
+    if ( ctr<4 )
+    {
+      std::cout << PHWHERE << "PHHepMCGenEventMap node is missing, can't collect HEPMC info" << std::endl;
+      ctr++;
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -162,6 +182,8 @@ int AnaUPC::GetNodes(PHCompositeNode *topNode)
  */
 int AnaUPC::process_event(PHCompositeNode *topNode)
 {
+  Reset(topNode);
+
   if (Verbosity() > 5)
   {
     std::cout << "Beginning process_event in AnaUPC" << std::endl;
@@ -177,10 +199,43 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   }
 
   /// Get the run and eventnumber
-  if ( evthdr )
+  if ( _evthdr )
   {
-    m_run = evthdr->get_RunNumber();
-    m_evt = evthdr->get_EvtSequence();
+    m_run = _evthdr->get_RunNumber();
+    m_evt = _evthdr->get_EvtSequence();
+  }
+
+  if ( m_ntracks!=0 || m_ntrk_sphenix!= 0 )
+  {
+    std::cout << PHWHERE << " ERROR, evt m_ntracks m_ntrk_sphenix = " << m_evt << "\t"
+      << m_ntracks << "\t" << m_ntrk_sphenix << std::endl;
+  }
+
+  /// Get global info
+  PHHepMCGenEvent *genevent = (_genevent_map->begin())->second; 
+  HepMC::GenEvent *hepmc_event{nullptr};
+  HepMC::HeavyIon *hepmc_hi{nullptr};
+  if (genevent)
+  {
+    hepmc_event = genevent->getEvent();
+    hepmc_hi = hepmc_event->heavy_ion();
+    if ( hepmc_hi )
+    {
+      m_npart_targ =  hepmc_hi->Npart_targ();
+      m_npart_proj =  hepmc_hi->Npart_proj();
+      m_npart = m_npart_targ + m_npart_proj;
+      m_ncoll =  hepmc_hi->Ncoll();
+      m_ncoll_hard =  hepmc_hi->Ncoll_hard();
+      //std::cout << "ncoll " << m_ncoll << "\t" << m_ncoll_hard << std::endl;
+      m_bimpact =  hepmc_hi->impact_parameter();
+      //std::cout << "b ntracks " << m_bimpact << "\t" << m_ntracks << std::endl;
+
+      //m_globaltree->Fill();
+
+      h_b_mb->Fill( m_bimpact );
+      h_npart_mb->Fill( m_npart );
+      h_ncoll_mb->Fill( m_ncoll );
+    }
   }
 
   /// Get the tracks
@@ -193,32 +248,25 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
     }
   }
 
-  PHHepMCGenEvent *genevent = (genevent_map->begin())->second; 
-  if (genevent)
+  /// Get the truth track information
+  if (m_analyzeTruth && _truthinfo )
   {
-    HepMC::GenEvent *event = genevent->getEvent();
-    HepMC::HeavyIon *hi = event->heavy_ion();
-    if ( hi )
-    {
-      m_npart_targ =  hi->Npart_targ();
-      m_npart_proj =  hi->Npart_proj();
-      m_npart = m_npart_targ + m_npart_proj;
-      m_ncoll =  hi->Ncoll();
-      m_ncoll_hard =  hi->Ncoll_hard();
-      //std::cout << "ncoll " << m_ncoll << "\t" << m_ncoll_hard << std::endl;
-      m_bimpact =  hi->impact_parameter();
-      //std::cout << "b ntracks " << m_bimpact << "\t" << m_ntracks << std::endl;
-
-      h2_ntrksvsb->Fill( m_bimpact, m_ntracks );
-      m_globaltree->Fill();
-    }
+    getPHG4Truth();
   }
 
-  /// Get the truth information
-  if (m_analyzeTruth)
+  // Fill Global info for events that pass cuts
+  if ( hepmc_hi )
   {
-    getHEPMCTruth(topNode);
-    getPHG4Truth(topNode);
+      h2_ntrksvsb->Fill( m_bimpact, m_ntracks );
+
+      if ( m_ntracks<=3 )
+      {
+        h_b->Fill( m_bimpact );
+        h_npart->Fill( m_npart );
+        h_ncoll->Fill( m_ncoll );
+      }
+
+      m_globaltree->Fill();
   }
 
   /// Get calorimeter information
@@ -257,7 +305,6 @@ int AnaUPC::End(PHCompositeNode * /*topNode*/)
   /// If we analyzed the truth particles, write them out
   if (m_analyzeTruth)
   {
-    m_hepmctree->Write();
     m_truthtree->Write();
   }
 
@@ -295,20 +342,8 @@ int AnaUPC::End(PHCompositeNode * /*topNode*/)
  * for example, directly comes out of PYTHIA and thus gives you all of
  * the associated parton information
  */
-void AnaUPC::getHEPMCTruth(PHCompositeNode *topNode)
+void AnaUPC::getHEPMCTruth()
 {
-  /// Get the node from the node tree
-  PHHepMCGenEventMap *hepmceventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
-
-  /// If the node was not properly put on the tree, return
-  if (!hepmceventmap)
-  {
-    std::cout << PHWHERE
-              << "HEPMC event map node is missing, can't collected HEPMC truth particles"
-              << std::endl;
-    return;
-  }
-
   /// Could have some print statements for debugging with verbosity
   if (Verbosity() > 1)
   {
@@ -317,9 +352,7 @@ void AnaUPC::getHEPMCTruth(PHCompositeNode *topNode)
 
   /// You can iterate over the number of events in a hepmc event
   /// for pile up events where you have multiple hard scatterings per bunch crossing
-  for (PHHepMCGenEventMap::ConstIter eventIter = hepmceventmap->begin();
-       eventIter != hepmceventmap->end();
-       ++eventIter)
+  for (PHHepMCGenEventMap::ConstIter eventIter = _genevent_map->begin(); eventIter != _genevent_map->end(); ++eventIter)
   {
     /// Get the event
     PHHepMCGenEvent *hepmcevent = eventIter->second;
@@ -330,9 +363,7 @@ void AnaUPC::getHEPMCTruth(PHCompositeNode *topNode)
       HepMC::GenEvent *truthevent = hepmcevent->getEvent();
       if (!truthevent)
       {
-        std::cout << PHWHERE
-                  << "no evt pointer under phhepmvgeneventmap found "
-                  << std::endl;
+        std::cout << PHWHERE << "no evt pointer under phhepmvgeneventmap found " << std::endl;
         return;
       }
 
@@ -383,21 +414,12 @@ void AnaUPC::getHEPMCTruth(PHCompositeNode *topNode)
  * are the stable particles, e.g. there are not any (for example)
  * partons here.
  */
-void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
+void AnaUPC::getPHG4Truth()
 {
-  /// G4 truth particle node
-  PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-
-  if (!truthinfo)
-  {
-    std::cout << PHWHERE
-              << "PHG4TruthInfoContainer node is missing, can't collect G4 truth particles"
-              << std::endl;
-    return;
-  }
-
   /// Get the primary particle range
-  PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
+  PHG4TruthInfoContainer::Range range = _truthinfo->GetPrimaryParticleRange();
+
+  ROOT::Math::XYZTVector v1;
 
   /// Loop over the G4 truth (stable) particles
   for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter)
@@ -412,11 +434,11 @@ void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
     m_truthp = sqrt(m_truthpx * m_truthpx + m_truthpy * m_truthpy + m_truthpz * m_truthpz);
     m_truthenergy = truth->get_e();
 
-    m_truthpt = sqrt(m_truthpx * m_truthpx + m_truthpy * m_truthpy);
+    v1.SetPxPyPzE( m_truthpx, m_truthpy, m_truthpz, m_truthenergy );
+    m_truthpt = v1.Pt();
+    m_truthphi = v1.Phi();
+    m_trutheta = v1.Eta();
 
-    m_truthphi = atan(m_truthpy / m_truthpx);
-
-    m_trutheta = atanh(m_truthpz / m_truthenergy);
     /// Check for nans
     if (!std::isfinite(m_trutheta))
     {
@@ -424,53 +446,76 @@ void AnaUPC::getPHG4Truth(PHCompositeNode *topNode)
     }
     m_truthpid = truth->get_pid();
 
-    /// Fill the g4 truth tree
-    m_truthtree->Fill();
+    // Get the singleton instance of the PDG database
+    TDatabasePDG* pdgDB = TDatabasePDG::Instance();
+
+    // Get particle information by PDG code
+    TParticlePDG* particle = pdgDB->GetParticle(m_truthpid);
+
+    if (particle)
+    {
+        m_truthcharge = particle->Charge();
+        if ( m_truthcharge != 0 )
+        {
+          m_ntrk_mc++;  // found charged track in sphenix accept
+        }
+        if ( (fabs(m_trutheta) < 1.1) && (m_truthpt>0.4) && (m_truthcharge!=0) )
+        {
+          m_ntrk_sphenix++;
+          m_truthtree->Fill();
+        }
+    }
+    else
+    {
+      std::cout << "Particle not found!" << std::endl;
+    }
+
+    //std::cout << "pid ch\t" << m_truthpid << "\t" << m_truthcharge << std::endl;
+
   }
 }
 
 /**
- * This method gets the tracks as reconstructed from the tracker. It also
- * compares the reconstructed track to its truth track counterpart as determined
- * by the
+ * This method gets the tracks as reconstructed from the tracker.
  */
 int AnaUPC::getTracks(PHCompositeNode *topNode)
 {
   // make a cut on low ntracks
-  m_ntracks = trackmap->size();
+  m_ntracks = _trackmap->size();
   h_ntracks->Fill( m_ntracks );
   if (Verbosity() > 1)
   {
     std::cout << "ntracks " << m_ntracks << std::endl;
   }
 
-  //if ( m_ntracks > 3 || m_ntracks < 2 )
-  if ( m_ntracks != 2 )
+  if ( m_ntracks > 3 || m_ntracks < 2 )
+  //if ( m_ntracks != 2 )
   {
     return Fun4AllReturnCodes::DISCARDEVENT;
   }
 
   /// EvalStack for truth track matching
-  if (!m_svtxEvalStack)
+  if ( !m_svtxEvalStack && _truthinfo )
   {
     m_svtxEvalStack = new SvtxEvalStack(topNode);
     m_svtxEvalStack->set_verbosity(Verbosity());
   }
 
-  m_svtxEvalStack->next_event(topNode);
+  SvtxTrackEval *trackeval = nullptr;
+  if ( m_svtxEvalStack )
+  {
+    m_svtxEvalStack->next_event(topNode);
 
-  /// Get the track evaluator
-  SvtxTrackEval *trackeval = m_svtxEvalStack->get_track_eval();
-
-  /// Get the range for primary tracks
-  PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+    // Get the track evaluator (only available if eval is run during sim production)
+    trackeval = m_svtxEvalStack->get_track_eval();
+  }
 
   if (Verbosity() > 1)
   {
     std::cout << "Get the SVTX tracks " << m_ntracks << std::endl;
   }
 
-  for (auto &iter : *trackmap)
+  for (auto &iter : *_trackmap)
   {
     SvtxTrack *track = iter.second;
 
@@ -499,10 +544,14 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
     m_tr_z = track->get_z();
 
     /// Get truth track info that matches this reconstructed track
-    PHG4Particle *truthtrack = trackeval->max_truth_particle_by_nclusters(track);
+    PHG4Particle *truthtrack = nullptr;
+    if ( trackeval != nullptr )
+    {
+      truthtrack = trackeval->max_truth_particle_by_nclusters(track);
+    }
     if ( truthtrack != nullptr )
     {
-      m_truth_is_primary = truthinfo->is_primary(truthtrack);
+      m_truth_is_primary = _truthinfo->is_primary(truthtrack);
 
       m_truthtrackpx = truthtrack->get_px();
       m_truthtrackpy = truthtrack->get_py();
@@ -518,7 +567,8 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
     }
     else
     {
-      std::cout << "Missing truth track" << std::endl;
+      // Seems that we often miss the truth track?
+      //std::cout << "Missing truth track" << std::endl;
       m_truth_is_primary = -9999;
 
       m_truthtrackpx = 0.;
@@ -537,13 +587,12 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
     m_tracktree->Fill();
   }
   
-  //TLorentzVector v1, v2;
   ROOT::Math::XYZTVector v1, v2;
 
   // make pairs
-  for (auto iter1 = trackmap->begin(); iter1 != trackmap->end(); iter1++)
+  for (auto iter1 = _trackmap->begin(); iter1 != _trackmap->end(); iter1++)
   {
-    for (auto iter2 = iter1; iter2 != trackmap->end(); iter2++)
+    for (auto iter2 = iter1; iter2 != _trackmap->end(); iter2++)
     {
       if ( iter2 == iter1 ) continue;
 
@@ -736,41 +785,28 @@ void AnaUPC::initializeTrees()
   m_tracktree->Branch("m_truthtracketa", &m_truthtracketa, "m_truthtracketa/D");
   m_tracktree->Branch("m_truthtrackpid", &m_truthtrackpid, "m_truthtrackpid/I");
 
-  m_hepmctree = new TTree("hepmctree", "A tree with hepmc truth particles");
-  m_hepmctree->Branch("m_partid1", &m_partid1, "m_partid1/I");
-  m_hepmctree->Branch("m_partid2", &m_partid2, "m_partid2/I");
-  m_hepmctree->Branch("m_x1", &m_x1, "m_x1/D");
-  m_hepmctree->Branch("m_x2", &m_x2, "m_x2/D");
-  m_hepmctree->Branch("m_mpi", &m_mpi, "m_mpi/I");
-  m_hepmctree->Branch("m_process_id", &m_process_id, "m_process_id/I");
-  m_hepmctree->Branch("m_truthenergy", &m_truthenergy, "m_truthenergy/D");
-  m_hepmctree->Branch("m_trutheta", &m_trutheta, "m_trutheta/D");
-  m_hepmctree->Branch("m_truthphi", &m_truthphi, "m_truthphi/D");
-  m_hepmctree->Branch("m_truthpx", &m_truthpx, "m_truthpx/D");
-  m_hepmctree->Branch("m_truthpy", &m_truthpy, "m_truthpy/D");
-  m_hepmctree->Branch("m_truthpz", &m_truthpz, "m_truthpz/D");
-  m_hepmctree->Branch("m_truthpt", &m_truthpt, "m_truthpt/D");
-  m_hepmctree->Branch("m_numparticlesinevent", &m_numparticlesinevent, "m_numparticlesinevent/I");
-  m_hepmctree->Branch("m_truthpid", &m_truthpid, "m_truthpid/I");
-
   m_globaltree = new TTree("globaltree", "Global Info");
   m_globaltree->Branch("run", &m_run, "run/I");
   m_globaltree->Branch("evt", &m_evt, "evt/I");
-  m_globaltree->Branch("ntrks", &m_ntracks, "ntrks/I");
   m_globaltree->Branch("npart", &m_npart, "npart/I");
   m_globaltree->Branch("ncoll", &m_ncoll, "ncoll/I");
   m_globaltree->Branch("b", &m_bimpact, "b/F");
+  m_globaltree->Branch("totntrks", &m_ntracks, "tottrks/I");
+  m_globaltree->Branch("sphntrks", &m_ntrk_sphenix, "sphntrks/I");
+  m_globaltree->Branch("hijntrks", &m_ntrk_mc, "mcntrks/I");
 
   m_truthtree = new TTree("truthg4tree", "A tree with truth g4 particles");
-  m_truthtree->Branch("m_truthenergy", &m_truthenergy, "m_truthenergy/D");
-  m_truthtree->Branch("m_truthp", &m_truthp, "m_truthp/D");
-  m_truthtree->Branch("m_truthpx", &m_truthpx, "m_truthpx/D");
-  m_truthtree->Branch("m_truthpy", &m_truthpy, "m_truthpy/D");
-  m_truthtree->Branch("m_truthpz", &m_truthpz, "m_truthpz/D");
-  m_truthtree->Branch("m_truthpt", &m_truthpt, "m_truthpt/D");
-  m_truthtree->Branch("m_truthphi", &m_truthphi, "m_truthphi/D");
-  m_truthtree->Branch("m_trutheta", &m_trutheta, "m_trutheta/D");
-  m_truthtree->Branch("m_truthpid", &m_truthpid, "m_truthpid/I");
+  m_truthtree->Branch("evt", &m_evt, "evt/I");
+  m_truthtree->Branch("m_e", &m_truthenergy, "m_truthe/D");
+  m_truthtree->Branch("m_p", &m_truthp, "m_truthp/D");
+  m_truthtree->Branch("m_px", &m_truthpx, "m_truthpx/D");
+  m_truthtree->Branch("m_py", &m_truthpy, "m_truthpy/D");
+  m_truthtree->Branch("m_pz", &m_truthpz, "m_truthpz/D");
+  m_truthtree->Branch("m_pt", &m_truthpt, "m_truthpt/D");
+  m_truthtree->Branch("m_phi", &m_truthphi, "m_truthphi/D");
+  m_truthtree->Branch("m_eta", &m_trutheta, "m_trutheta/D");
+  m_truthtree->Branch("m_pid", &m_truthpid, "m_truthpid/I");
+  m_truthtree->Branch("m_q", &m_truthcharge, "m_truthcharge/I");
 
   m_pairtree = new TTree("pairs", "opp sign pairs");
   m_pairtree->Branch("prun", &m_run, "prun/I");
@@ -855,6 +891,10 @@ void AnaUPC::initializeVariables()
   m_truthtracketa = -99;
   m_truthtrackpid = -99;
 
+  m_ntracks = 0;
+  m_ntrk_sphenix = 0;
+  m_ntrk_mc = 0;
+
   /*
   m_recojetpt = -99;
   m_recojetid = -99;
@@ -877,3 +917,11 @@ void AnaUPC::initializeVariables()
   m_dR = -99;
   */
 }
+
+int AnaUPC::Reset(PHCompositeNode * /*topNode*/)
+{
+  //std::cout << "In Reset()" << std::endl;
+  initializeVariables();
+  return 0;
+}
+
