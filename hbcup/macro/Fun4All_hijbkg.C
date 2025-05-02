@@ -37,7 +37,7 @@ void Fun4All_hijbkg(const int nEvents = 0, const std::string& input_fname = "DST
   anaupc->Verbosity(0);
   anaupc->analyzeTracks(true);
   //anaupc->analyzeClusters(true);
-  anaupc->analyzeTruth(false);
+  anaupc->analyzeTruth(true);
   se->registerSubsystem(anaupc);
 
   // DST_TRACK
