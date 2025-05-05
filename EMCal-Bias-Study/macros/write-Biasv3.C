@@ -15,6 +15,7 @@
 #include <TMath.h>
 #include <TCanvas.h>
 #include <TLegend.h>
+#include <TProfile.h>
 
 // -- common utils
 #include "myUtils.C"
@@ -161,6 +162,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hNewOffset"] = new TH1F("hNewOffset","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hNewOffsetV2"] = new TH1F("hNewOffsetV2","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hNewOffsetV3"] = new TH1F("hNewOffsetV3","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hCosmicMPVDeltaOffset"] = new TH2F("hCosmicMPVDeltaOffset","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
 
     m_hists["h2GainFactors"] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone("h2GainFactors"));
     m_hists["h2GainFactors"]->SetTitle("Gain Factors");
@@ -200,6 +202,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             m_hists["hCosmicMPVv0"]->Fill(mpv_v0);
             m_hists["hCosmicMPVv1"]->Fill(mpv_v1);
             m_hists["hCosmicMPVv2"]->Fill(mpv);
+            static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->Fill(deltaOffsetV3, mpv);
 
             static_cast<TH2*>(m_hists["h2GainFactors"])->SetBinContent(i, j, gain);
             m_hists["hGainFactors"]->Fill(gain);
@@ -217,6 +220,18 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             m_hists["hNewOffset"]->Fill(updateOffset);
             m_hists["hNewOffsetV2"]->Fill(updateOffsetV2);
             m_hists["hNewOffsetV3"]->Fill(updateOffsetV3);
+
+            if((i == 153 && j == 12) || (i == 180 && j == 30)){
+                cout << "##########################" << endl;
+                cout << "EXAMPLE step through tower phi = " << i-1 << " and tower eta = " << j-1 << endl;
+                cout << "Cosmic MPV: " << mpv << endl;
+                cout << "Gain: " << gain << endl;
+                cout << "Default Offset: " << offset << endl;
+                cout << "Delta Offset v1: " << deltaOffset  << " mV" << endl;
+                cout << "Delta Offset v2: " << deltaOffsetV2 << " mV" << endl;
+                cout << "Delta Offset v3: " << deltaOffsetV3 << " mV" << endl;
+                cout << "##########################" << endl;
+            }
         }
     }
 
@@ -247,6 +262,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hDeltaOffsetV3"]->Write();
     m_hists["h2NewOffsetV3"]->Write();
     m_hists["hNewOffsetV3"]->Write();
+    m_hists["hCosmicMPVDeltaOffset"]->Write();
 
     tf.Close();
 
@@ -598,6 +614,29 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hNewOffsetV3-overlay.png").c_str());
+
+    // ----------------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.1);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    gPad->SetGrid();
+
+    m_hists["hCosmicMPVDeltaOffset"]->Draw("COLZ1");
+
+    m_hists["hCosmicMPVDeltaOffset"]->GetXaxis()->SetRangeUser(-2e3,1.1e3);
+    m_hists["hCosmicMPVDeltaOffset"]->GetYaxis()->SetRangeUser(0,8e2);
+
+    TH1* px = static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCosmicMPVDeltaOffset.png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
