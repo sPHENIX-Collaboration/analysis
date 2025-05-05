@@ -64,6 +64,26 @@ namespace myAnalysis {
     Double_t m_mpv_low = -800;
     Double_t m_mpv_high = 1400;
 
+    unordered_map<Int_t, string> m_fiberTypeMap = {
+                                                 {1,"SG47"},
+                                                 {2,"K"},
+                                                 {3,"SG"},
+                                                 {4,"SG-B"},
+                                                 {5,"P-SG"},
+                                                 {6,"I-K"},
+                                                 {7,"PSG+IK+K"}
+    };
+
+    unordered_map<string, Int_t> m_myFiberTypeMap = {
+                                                 {"SG47",0},
+                                                 {"K",6},
+                                                 {"SG",3},
+                                                 {"SG-B",2},
+                                                 {"P-SG",4},
+                                                 {"I-K",5},
+                                                 {"PSG+IK+K",1}
+    };
+
     Bool_t m_saveFig = true;
 }
 
@@ -129,6 +149,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
 
     m_hists["h2DummySector"] = static_cast<TH2*>(tfile->Get("h2DummySector"));
     m_hists["h2DummyIB"] = static_cast<TH2*>(tfile->Get("h2DummyIB"));
+    m_hists["h2FiberType"] = static_cast<TH2*>(tfile->Get("h2FiberType"));
 
     tfile->Close();
 
@@ -163,6 +184,18 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hNewOffsetV2"] = new TH1F("hNewOffsetV2","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hNewOffsetV3"] = new TH1F("hNewOffsetV3","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hCosmicMPVDeltaOffset"] = new TH2F("hCosmicMPVDeltaOffset","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hFiberTypeDeltaOffset"] = new TH2F("hFiberTypeDeltaOffset","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hFiberTypeCosmicMPV"] = new TH2F("hFiberTypeCosmicMPV","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
+
+    stringstream title;
+    for (const auto &[name, val] : m_myFiberTypeMap) {
+        title.str("");
+        title << "Cosmic MPV: " << name << "; Cosmic MPV; Counts";
+        m_hists[name] = new TH1F(name.c_str(),title.str().c_str(), m_bins_mpv, m_mpv_low, m_mpv_high);
+
+        m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+        m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+    }
 
     m_hists["h2GainFactors"] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone("h2GainFactors"));
     m_hists["h2GainFactors"]->SetTitle("Gain Factors");
@@ -187,6 +220,9 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             Double_t mpv_v1 = static_cast<TH2*>(m_hists["h2CosmicMPVv1"])->GetBinContent(i,j);
             Double_t mpv = static_cast<TH2*>(m_hists[cosmicHistName])->GetBinContent(i,j);
             Double_t offset = static_cast<TH2*>(m_hists[offsetHistName])->GetBinContent(i,j);
+            Int_t temp_fiberType = static_cast<TH2*>(m_hists["h2FiberType"])->GetBinContent(i,j);
+            string fiberTypeName = m_fiberTypeMap[temp_fiberType];
+            Int_t fiberType = m_myFiberTypeMap[fiberTypeName];
             Double_t gain = targetMPV / mpv;
 
             Double_t deltaOffset = TMath::Log(gain) / kFactor;
@@ -202,7 +238,10 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             m_hists["hCosmicMPVv0"]->Fill(mpv_v0);
             m_hists["hCosmicMPVv1"]->Fill(mpv_v1);
             m_hists["hCosmicMPVv2"]->Fill(mpv);
+            m_hists[fiberTypeName]->Fill(mpv);
             static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->Fill(deltaOffsetV3, mpv);
+            static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->Fill(fiberType, deltaOffsetV2);
+            static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv);
 
             static_cast<TH2*>(m_hists["h2GainFactors"])->SetBinContent(i, j, gain);
             m_hists["hGainFactors"]->Fill(gain);
@@ -263,6 +302,17 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["h2NewOffsetV3"]->Write();
     m_hists["hNewOffsetV3"]->Write();
     m_hists["hCosmicMPVDeltaOffset"]->Write();
+    m_hists["hFiberTypeDeltaOffset"]->Write();
+    m_hists["hFiberTypeCosmicMPV"]->Write();
+
+    cout << "####################################" << endl;
+    cout << "Average Cosmic MPV by Fiber Type" << endl;
+    for (const auto &[val, name] : m_fiberTypeMap) {
+        Double_t avg = m_hists[name]->GetMean();
+        cout << "Fiber Type: " << name << ", Avg Cosmic MPV: " << avg << endl;
+        m_hists[name]->Write();
+    }
+    cout << "####################################" << endl;
 
     tf.Close();
 
@@ -637,6 +687,43 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hCosmicMPVDeltaOffset.png").c_str());
+
+    // ----------------------------------------------
+
+    gPad->SetGrid();
+    gPad->SetLogz();
+
+    m_hists["hFiberTypeDeltaOffset"]->Draw("COLZ1");
+
+    m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetRangeUser(-2e3,1.1e3);
+    m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetLabelSize(0.05);
+
+    px = static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetLineWidth(3);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hFiberTypeDeltaOffset.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["hFiberTypeCosmicMPV"]->Draw("COLZ1");
+
+    m_hists["hFiberTypeCosmicMPV"]->GetYaxis()->SetRangeUser(0,8e2);
+    m_hists["hFiberTypeCosmicMPV"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetLabelSize(0.05);
+
+    px = static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetLineWidth(3);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hFiberTypeCosmicMPV.png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
