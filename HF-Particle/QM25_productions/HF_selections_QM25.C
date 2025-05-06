@@ -153,7 +153,7 @@ void reconstruct_pipi_mass()
   kfparticle->use2Dmatching(use_2D_matching);
   kfparticle->getTriggerInfo(get_trigger_info);
   kfparticle->getDetectorInfo(get_detector_info);
-  kfparticle->saveDST(save_tracks_to_DST);
+  kfparticle->saveDST(true);
   kfparticle->setContainerName(pipi_reconstruction_name);
   kfparticle->magFieldFile("FIELDMAP_TRACKING");
 
