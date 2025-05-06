@@ -153,7 +153,7 @@ void reconstruct_pipi_mass()
   kfparticle->use2Dmatching(use_2D_matching);
   kfparticle->getTriggerInfo(get_trigger_info);
   kfparticle->getDetectorInfo(get_detector_info);
-  kfparticle->saveDST(true);
+  kfparticle->saveDST(save_tracks_to_DST);
   kfparticle->setContainerName(pipi_reconstruction_name);
   kfparticle->magFieldFile("FIELDMAP_TRACKING");
 
@@ -163,6 +163,12 @@ void reconstruct_pipi_mass()
   kfparticle->setFlightDistancechi2(-1.);
   kfparticle->setMinDIRA(0.95);
   kfparticle->setDecayLengthRange(0.1, FLT_MAX);
+  kfparticle->setDecayLengthRange_XY(-10000, FLT_MAX);
+  kfparticle->setDecayTimeRange_XY(-10000, FLT_MAX);
+  kfparticle->setDecayTimeRange(-10000, FLT_MAX);
+  kfparticle->setMinDecayTimeSignificance(-1e5);
+  kfparticle->setMinDecayLengthSignificance(-1e5);
+  kfparticle->setMinDecayLengthSignificance_XY(-1e5);
 
   //Track parameters
   kfparticle->setMinimumTrackPT(0.0);
@@ -171,10 +177,11 @@ void reconstruct_pipi_mass()
   kfparticle->setMaximumTrackchi2nDOF(100.);
   kfparticle->setMinTPChits(20);
   kfparticle->setMinMVTXhits(0);
-
+  kfparticle->setMinINTThits(0);
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(20);
   kfparticle->setMaximumDaughterDCA(0.5); //5 mm
+  kfparticle->setMaximumDaughterDCA_XY(100); //5 mm
 
   //Parent parameters
   kfparticle->setMotherPT(0);
