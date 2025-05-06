@@ -202,6 +202,8 @@ void myAnalysis::analyze(const string &outputDir) {
     fs::create_directories(outputDir);
 
     stringstream filename;
+    ofstream log("bias-log.csv");
+    log << "serial,ib,ib_channel,iphi,ieta,offset" << endl;
 
     // first write the original set of offsets
     // <= is used to include the serial sector 64
@@ -221,11 +223,14 @@ void myAnalysis::analyze(const string &outputDir) {
                 Int_t biny = phi_eta.second+1;
                 Int_t offset = m_hist->GetBinContent(binx,biny);
                 file << offset << endl;
+                log << i << "," << j << "," << k << "," << phi_eta.first << "," << phi_eta.second << "," << offset << endl;
             }
 
             file.close();
         }
     }
+
+    log.close();
 }
 
 void write_Biasv2(const string &input,
@@ -256,7 +261,7 @@ void write_Biasv2(const string &input,
 # ifndef __CINT__
 Int_t main(Int_t argc, char* argv[]) {
 if(argc < 5 || argc > 6){
-        cout << "usage: ./write-Biasv2 input input_hist input_sector input_channel [outputDir] [variations] [startBiasOffset] [offset_step] [varyAllIB]" << endl;
+        cout << "usage: ./write-Biasv2 input input_hist input_sector input_channel [outputDir]" << endl;
         cout << "input: input root file" << endl;
         cout << "input_hist: input 2D bias offset histogram" << endl;
         cout << "input_sector: input sector map" << endl;
