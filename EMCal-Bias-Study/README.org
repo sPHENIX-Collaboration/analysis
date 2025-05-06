@@ -34,6 +34,12 @@ Example:
 make && ./bin/write-Biasv2 output/EMCal-block-info.root h2Offset files/serial-to-sector.csv files/IB-channel-to-ADC-channel.csv scratch/bias-test
 #+end_src
 
+** Write bias v3
+Generate a set of updated bias offsets based on the cosmic MPVs and led fit k parameter.
+#+begin_src bash
+make && ./bin/write-Biasv3 output/EMCal-block-info.root output plots/update-offsets
+#+end_src
+
 * Update Bias macro
 #+begin_src bash
 make && ./bin/update-Bias output/EMCal-block-info.root plots/bias-update-plots/plots.pdf
