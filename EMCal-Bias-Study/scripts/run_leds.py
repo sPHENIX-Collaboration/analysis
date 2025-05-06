@@ -29,13 +29,13 @@ parser.add_argument('-n'
 
 parser.add_argument('-p1'
                     , '--tp-start', type=int
-                    , default=26
-                    , help='LED Pulse Width (Start). Default: 26 ns')
+                    , default=24
+                    , help='LED Pulse Width (Start). Default: 24 ns')
 
 parser.add_argument('-p2'
                     , '--tp-end', type=int
-                    , default=32
-                    , help='LED Pulse Width (End). Default: 32 ns')
+                    , default=40
+                    , help='LED Pulse Width (End). Default: 40 ns')
 
 parser.add_argument('-b1'
                     , '--bias-start', type=int
@@ -58,6 +58,10 @@ parser.add_argument('-d'
 parser.add_argument('-a'
                     , '--record-only-default', action='store_true'
                     , help='Record run with default offsets only.')
+
+parser.add_argument('-s'
+                    , '--specific', action='store_true'
+                    , help='Record run with default offset and the specific offset.')
 
 args = parser.parse_args()
 
@@ -94,6 +98,10 @@ if __name__ == '__main__':
     bias_end       = args.bias_end
     bias_step      = args.bias_step
     record_only_default = args.record_only_default
+    record_specific = args.specific
+
+    if record_specific:
+        record_only_default = False
 
     ### Defaults START -- DO NOT CHANGE ###
     TP_MIN = 10              # ns
@@ -113,17 +121,17 @@ if __name__ == '__main__':
                      f'Min: {TP_MIN} ns and Max: {TP_MAX}')
 
     # Ensure that bias offsets are within acceptable range
-    if bias_start < BIAS_MIN or bias_end > BIAS_MAX:
+    if not record_specific and (bias_start < BIAS_MIN or bias_end > BIAS_MAX):
         parser.error('Bounds for bias range exceed default.'
         f' Bias Min: {BIAS_MIN} mV and Max: {BIAS_MAX} mV.')
 
     # Ensure that the beginning isn't bigger than the end.
     # Leads to an empty range of bias offsets.
-    if bias_start > bias_end:
+    if not record_specific and bias_start > bias_end:
         parser.error(f'Bias Start: {bias_start} mV > End: {bias_end} mV.')
 
     # Ensure that the bias step is a multiple of the default bias step.
-    if bias_step % BIAS_STEP_DEFAULT != 0:
+    if not record_specific and bias_step % BIAS_STEP_DEFAULT != 0:
         parser.error(f'Bias step is not a multiple of {BIAS_STEP_DEFAULT}.')
 
     os.makedirs(log_dir,exist_ok=True)
@@ -134,13 +142,14 @@ if __name__ == '__main__':
     tee_print(f'Log Dir: {log_dir}', log_file)
     tee_print(f'Minimum events per Run: {nevents}', log_file)
     tee_print(f'Recording time per Run: {run_time} seconds', log_file)
-    if not record_only_default:
+    if not record_specific and not record_only_default:
         tee_print(f'Bias Offset Start: {bias_start} mV', log_file)
         tee_print(f'Bias Offset End: {bias_end} mV', log_file)
         tee_print(f'Bias Offset Step: {bias_step} mV', log_file)
     tee_print(f'LED pulse width Start: {tp_start} ns', log_file)
     tee_print(f'LED pulse width End: {tp_end} ns', log_file)
     tee_print(f'Record ONLY Default Bias Offsets: {record_only_default}', log_file)
+    tee_print(f'Record with Specific Bias Offsets: {record_specific}', log_file)
     tee_print(f'Dry Run: {dry_run}\n', log_file)
 
     # configure DAQ
@@ -164,10 +173,13 @@ if __name__ == '__main__':
     bias_tuple = [('original','/home/phnxrc/haggerty/emcal/vop-1008')]
 
     # Add the bias offset variations if not disabled explicitely
-    if not record_only_default:
+    if not record_specific and not record_only_default:
         # Configure the loop over bias offsets
         bias_vec = ((np.arange(bias_start,bias_end+1,bias_step)-BIAS_MAX)//BIAS_STEP_DEFAULT).tolist()
         bias_tuple += list(zip(bias_vec, [f'{bias_var_dir}/var-{var}' for var in bias_vec]))
+
+    if record_specific:
+        bias_tuple += [('new',bias_var_dir)]
 
     # loop over bias offsets
     for item in bias_tuple:
@@ -202,7 +214,7 @@ if __name__ == '__main__':
                       )
 
             execute_command(command, dry_run)
-            tee_print('Run Recorded\n', log_file)
+            tee_print(f'Run Recorded at {str(datetime.datetime.now())}\n', log_file)
             ### END RUN ###
 
     ### CLEAN UP ###

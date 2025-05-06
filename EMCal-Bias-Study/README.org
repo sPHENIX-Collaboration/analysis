@@ -208,6 +208,14 @@ Suppose we want to record a single run with a specific bias offset and LED pulse
 /home/phnxrc/anarde/scripts/run_leds.py --bias-start -600 --bias-end -600 --tp-start 30 --tp-end 30
 #+end_src
 
+*** Example 6
+Suppose we want to record a set of LED runs given a specific bias offset directory.
+- LED pulse width range: 24 ns to 40 ns
+- Events per run: 1000
+#+begin_src bash
+/home/phnxrc/anarde/scripts/run_leds.py -i /home/phnxrc/haggerty/emcal/apurva/05-05-25-new-bias --tp-start 24 --tp-end 40 --specific
+#+end_src
+
 ** Clean up
 1) Turn EMCal ON (bias and lv).
 #+begin_src bash
