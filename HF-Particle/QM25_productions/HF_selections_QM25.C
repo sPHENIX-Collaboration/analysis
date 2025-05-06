@@ -153,7 +153,7 @@ void reconstruct_pipi_mass()
   kfparticle->use2Dmatching(use_2D_matching);
   kfparticle->getTriggerInfo(get_trigger_info);
   kfparticle->getDetectorInfo(get_detector_info);
-  kfparticle->saveDST(save_tracks_to_DST);
+  kfparticle->saveDST(true);
   kfparticle->setContainerName(pipi_reconstruction_name);
   kfparticle->magFieldFile("FIELDMAP_TRACKING");
 
@@ -169,7 +169,8 @@ void reconstruct_pipi_mass()
   kfparticle->setMinimumTrackIPchi2(-1.);
   kfparticle->setMinimumTrackIP(-1.);
   kfparticle->setMaximumTrackchi2nDOF(100.);
-  kfparticle->setMinTPChits(25);
+  kfparticle->setMinTPChits(20);
+  kfparticle->setMinMVTXhits(0);
 
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(20);
