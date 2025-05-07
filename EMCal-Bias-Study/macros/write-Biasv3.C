@@ -10,12 +10,16 @@
 
 // -- root includes --
 #include <TFile.h>
+#include <TF1.h>
+#include <TFitResult.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TH3.h>
 #include <TMath.h>
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TProfile.h>
+#include <TPaveStats.h>
 
 // -- common utils
 #include "myUtils.C"
@@ -55,6 +59,10 @@ namespace myAnalysis {
     UInt_t m_bins_gain = 50;
     Double_t m_gain_low = 0;
     Double_t m_gain_high = 25;
+
+    UInt_t m_bins_gainCalib = 25;
+    Double_t m_gainCalib_low = 0;
+    Double_t m_gainCalib_high = 2.5;
 
     UInt_t m_bins_offset = 210;
     Double_t m_offset_low = -3.5e3;
@@ -150,6 +158,8 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["h2DummySector"] = static_cast<TH2*>(tfile->Get("h2DummySector"));
     m_hists["h2DummyIB"] = static_cast<TH2*>(tfile->Get("h2DummyIB"));
     m_hists["h2FiberType"] = static_cast<TH2*>(tfile->Get("h2FiberType"));
+    m_hists["h2Calib"] = static_cast<TH2*>(tfile->Get("h2Calib"));
+    m_hists["hCalib"] = static_cast<TH3*>(tfile->Get("h3CalibOffsetCosmicMPV"))->Project3D("z");
 
     tfile->Close();
 
@@ -176,6 +186,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hCosmicMPVv1"] = new TH1F("hCosmicMPVv1","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
     m_hists["hCosmicMPVv2"] = new TH1F("hCosmicMPVv2","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
     m_hists["hGainFactors"] = new TH1F("hGainFactors","Gain Factors; Gain Factor; Counts", m_bins_gain, m_gain_low, m_gain_high);
+    m_hists["hGainCalibFactors"] = new TH1F("hGainCalibFactors","Gain Factors; Gain Factor; Counts", m_bins_gainCalib, m_gainCalib_low, m_gainCalib_high);
     m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffsetV2"] = new TH1F("hDeltaOffsetV2","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
@@ -187,6 +198,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hFiberTypeDeltaOffset"] = new TH2F("hFiberTypeDeltaOffset","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hFiberTypeCosmicMPV"] = new TH2F("hFiberTypeCosmicMPV","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
     m_hists["hDeltaOffsetGain"] = new TH2F("hDeltaOffsetGain","#Delta Offset vs Gain Factor; Gain Factor; #Delta Offset [mV]", m_bins_gain, m_gain_low, m_gain_high, m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["h2GainCalibFactors"] = new TH2F("h2GainCalibFactors","Gain Factors; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
     stringstream title;
     for (const auto &[name, val] : m_myFiberTypeMap) {
@@ -215,18 +227,68 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["h2DeltaOffsetV3"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV3"));
     m_hists["h2NewOffsetV3"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV3"));
 
+    // fit calib hist
+    TF1 *fitFunc = new TF1("fitFunc", "gaus", 0.95, 1.45);
+    Double_t initialAmplitude = m_hists["hCalib"]->GetMaximum();
+    Double_t initialMean = m_hists["hCalib"]->GetMean();
+    Double_t initialSigma = m_hists["hCalib"]->GetRMS();
+
+    fitFunc->SetParameter(0, initialAmplitude);
+    fitFunc->SetParameter(1, initialMean);
+    fitFunc->SetParameter(2, initialSigma);
+
+    // You can also set parameter names for better readability in the stats box
+    fitFunc->SetParName(0, "Amplitude");
+    fitFunc->SetParName(1, "Mean");
+    fitFunc->SetParName(2, "Sigma");
+
+    // Set some visual properties for the fit line
+    fitFunc->SetLineColor(kRed);
+    fitFunc->SetLineWidth(2);
+    fitFunc->SetLineStyle(kDashed); // Optional: make it dashed
+
+    TFitResultPtr fitResult = m_hists["hCalib"]->Fit(fitFunc, "RS"); // Fit within range, store result, quiet
+
+    if (fitResult.Get()) { // Check if TFitResultPtr is valid
+        cout << "\n----------------------------------------------------" << endl;
+        cout << "Fit Results for function: " << fitFunc->GetName() << endl;
+        cout << "----------------------------------------------------" << endl;
+        cout << "Fit Status: " << fitResult->Status() << " (0 means successful)" << endl;
+        if (fitResult->IsValid()) { // Check if the fit is valid (e.g., covariance matrix is good)
+            cout << "Fit is Valid." << endl;
+            for (int i = 0; i < fitFunc->GetNpar(); ++i) {
+                cout << "Parameter " << fitFunc->GetParName(i) << " (" << i << "): "
+                          << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << endl;
+            }
+            cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
+                      << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << endl;
+            cout << "Probability: " << TMath::Prob(fitResult->Chi2(), fitResult->Ndf()) << endl;
+        } else {
+            cout << "Fit is NOT Valid." << endl;
+        }
+        cout << "----------------------------------------------------" << endl;
+    } else {
+        cout << "Fit did not return a valid TFitResultPtr." << endl;
+    }
+
+    Double_t targetCalib = fitResult->Parameter(1);
+
+    cout << "Target Calibration: " << targetCalib << " MeV/ADC" << endl;
+
     for(UInt_t i = 1; i <= myUtils::m_nphi; ++i) {
         for(UInt_t j = 1; j <= myUtils::m_neta; ++j) {
             Double_t mpv_v0 = static_cast<TH2*>(m_hists["h2CosmicMPVv0"])->GetBinContent(i,j);
             Double_t mpv_v1 = static_cast<TH2*>(m_hists["h2CosmicMPVv1"])->GetBinContent(i,j);
             Double_t mpv = static_cast<TH2*>(m_hists[cosmicHistName])->GetBinContent(i,j);
+            Double_t calib = static_cast<TH2*>(m_hists["h2Calib"])->GetBinContent(i,j);
             Double_t offset = static_cast<TH2*>(m_hists[offsetHistName])->GetBinContent(i,j);
             Int_t temp_fiberType = static_cast<TH2*>(m_hists["h2FiberType"])->GetBinContent(i,j);
             string fiberTypeName = m_fiberTypeMap[temp_fiberType];
             Int_t fiberType = m_myFiberTypeMap[fiberTypeName];
-            Double_t gain = targetMPV / mpv;
+            Double_t gainMPV = targetMPV / mpv;
+            Double_t gainCalib = (calib) ? targetCalib / calib : 1;
 
-            Double_t deltaOffset = TMath::Log(gain) / kFactor;
+            Double_t deltaOffset = TMath::Log(gainMPV) / kFactor;
             Double_t updateOffset = offset + deltaOffset;
 
             Double_t deltaOffsetV2 = std::min(deltaOffset, 1000.);
@@ -243,10 +305,12 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->Fill(deltaOffsetV3, mpv);
             static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->Fill(fiberType, deltaOffsetV2);
             static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv);
-            static_cast<TH2*>(m_hists["hDeltaOffsetGain"])->Fill(gain, deltaOffset);
+            static_cast<TH2*>(m_hists["hDeltaOffsetGain"])->Fill(gainMPV, deltaOffset);
 
-            static_cast<TH2*>(m_hists["h2GainFactors"])->SetBinContent(i, j, gain);
-            m_hists["hGainFactors"]->Fill(gain);
+            static_cast<TH2*>(m_hists["h2GainFactors"])->SetBinContent(i, j, gainMPV);
+            static_cast<TH2*>(m_hists["h2GainCalibFactors"])->SetBinContent(i, j, gainCalib);
+            m_hists["hGainFactors"]->Fill(gainMPV);
+            m_hists["hGainCalibFactors"]->Fill(gainCalib);
 
             static_cast<TH2*>(m_hists["h2DeltaOffset"])->SetBinContent(i, j, deltaOffset);
             static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
@@ -266,7 +330,7 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
                 cout << "##########################" << endl;
                 cout << "EXAMPLE step through tower phi = " << i-1 << " and tower eta = " << j-1 << endl;
                 cout << "Cosmic MPV: " << mpv << endl;
-                cout << "Gain: " << gain << endl;
+                cout << "Gain: " << gainMPV << endl;
                 cout << "Default Offset: " << offset << endl;
                 cout << "Delta Offset v1: " << deltaOffset  << " mV" << endl;
                 cout << "Delta Offset v2: " << deltaOffsetV2 << " mV" << endl;
@@ -307,6 +371,8 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hFiberTypeDeltaOffset"]->Write();
     m_hists["hFiberTypeCosmicMPV"]->Write();
     m_hists["hDeltaOffsetGain"]->Write();
+    m_hists["h2GainCalibFactors"]->Write();
+    m_hists["hGainCalibFactors"]->Write();
 
     cout << "####################################" << endl;
     cout << "Average Cosmic MPV by Fiber Type" << endl;
@@ -323,9 +389,6 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
 }
 
 void myAnalysis::make_plots(const string &outputDir) {
-    // set sPHENIX plotting style
-    SetsPhenixStyle();
-
     string output = outputDir + "/plots.pdf";
 
     TCanvas* c1 = new TCanvas();
@@ -340,7 +403,6 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     gStyle->SetOptTitle(1);
     gStyle->SetTitleStyle(0);
-    gStyle->SetTitleFontSize(0.08);
     gStyle->SetTitleW(1);
     gStyle->SetTitleH(0.08);
     gStyle->SetTitleFillColor(0);
@@ -409,6 +471,9 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hCosmicMPVv0"]->Draw();
     m_hists["hCosmicMPVv2"]->Draw("same");
 
+    m_hists["hCosmicMPVv0"]->GetYaxis()->SetTitleOffset(0.9);
+    m_hists["hCosmicMPVv0"]->GetXaxis()->SetTitleOffset(0.9);
+
     stringstream legA, legB;
 
     legA << "Original";
@@ -471,6 +536,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     gPad->SetLogy();
 
     m_hists["hGainFactors"]->Draw();
+    m_hists["hGainFactors"]->GetYaxis()->SetTitleOffset(0.9);
+    m_hists["hGainFactors"]->GetXaxis()->SetTitleOffset(0.9);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hGainFactors.png").c_str());
@@ -581,13 +648,14 @@ void myAnalysis::make_plots(const string &outputDir) {
     // ----------------------------------------------
 
     c1->SetCanvasSize(1400, 1000);
-    c1->SetLeftMargin(.1);
+    c1->SetLeftMargin(.13);
     c1->SetRightMargin(.05);
     c1->SetTopMargin(.1);
     c1->SetBottomMargin(.12);
 
     m_hists["hOffset"]->Rebin(2);
     m_hists["hOffset"]->GetXaxis()->SetRangeUser(-2e3,1e3);
+    m_hists["hOffset"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hOffset"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -604,6 +672,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     // m_hists["hDeltaOffset"]->SetStats();
     m_hists["hDeltaOffset"]->GetYaxis()->SetRangeUser(5e-1,4e3);
     m_hists["hDeltaOffset"]->GetXaxis()->SetRangeUser(-2e3,4e3);
+    m_hists["hDeltaOffset"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hDeltaOffset"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -614,6 +683,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hDeltaOffsetV2"]->Rebin(2);
     m_hists["hDeltaOffsetV2"]->GetYaxis()->SetRangeUser(5e-1,4e3);
     m_hists["hDeltaOffsetV2"]->GetXaxis()->SetRangeUser(-2e3,4e3);
+    m_hists["hDeltaOffsetV2"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hDeltaOffsetV2"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -624,6 +694,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hDeltaOffsetV3"]->Rebin(2);
     m_hists["hDeltaOffsetV3"]->GetYaxis()->SetRangeUser(5e-1,4e3);
     m_hists["hDeltaOffsetV3"]->GetXaxis()->SetRangeUser(-2e3,4e3);
+    m_hists["hDeltaOffsetV3"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hDeltaOffsetV3"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -634,6 +705,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hNewOffset"]->Rebin(2);
     m_hists["hNewOffset"]->GetYaxis()->SetRangeUser(5e-1,3e3);
     m_hists["hNewOffset"]->GetXaxis()->SetRangeUser(-3.5e3,5e3);
+    m_hists["hNewOffset"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hNewOffset"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -644,6 +716,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hNewOffsetV2"]->Rebin(2);
     m_hists["hNewOffsetV2"]->GetYaxis()->SetRangeUser(5e-1,3e3);
     m_hists["hNewOffsetV2"]->GetXaxis()->SetRangeUser(-3.5e3,5e3);
+    m_hists["hNewOffsetV2"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hNewOffsetV2"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -654,6 +727,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hNewOffsetV3"]->Rebin(2);
     m_hists["hNewOffsetV3"]->GetYaxis()->SetRangeUser(5e-1,3e3);
     m_hists["hNewOffsetV3"]->GetXaxis()->SetRangeUser(-3.5e3,5e3);
+    m_hists["hNewOffsetV3"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hNewOffsetV3"]->Draw();
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -689,6 +763,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hCosmicMPVDeltaOffset"]->Draw("COLZ1");
 
     m_hists["hCosmicMPVDeltaOffset"]->GetXaxis()->SetRangeUser(-2e3,1.1e3);
+    m_hists["hCosmicMPVDeltaOffset"]->GetYaxis()->SetTitleOffset(1);
+    m_hists["hCosmicMPVDeltaOffset"]->GetXaxis()->SetTitleOffset(1);
     m_hists["hCosmicMPVDeltaOffset"]->GetYaxis()->SetRangeUser(0,8e2);
 
     TH1* px = static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->ProfileX();
@@ -701,13 +777,19 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     // ----------------------------------------------
 
-    gPad->SetGrid();
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.12);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
     gPad->SetLogz();
 
     m_hists["hFiberTypeDeltaOffset"]->Draw("COLZ1");
 
     m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetRangeUser(-2e3,1.1e3);
     m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetTitleOffset(1);
     m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetLabelSize(0.05);
 
     px = static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->ProfileX();
@@ -725,6 +807,7 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["hFiberTypeCosmicMPV"]->GetYaxis()->SetRangeUser(0,8e2);
     m_hists["hFiberTypeCosmicMPV"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
     m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetLabelSize(0.05);
 
     px = static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->ProfileX();
@@ -749,10 +832,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hDeltaOffsetGain"]->GetYaxis()->SetRangeUser(-2e3,4e3);
     m_hists["hDeltaOffsetGain"]->GetXaxis()->SetRangeUser(0,6);
     m_hists["hDeltaOffsetGain"]->GetYaxis()->SetTitleOffset(1.3);
-    m_hists["hDeltaOffsetGain"]->GetXaxis()->SetLabelSize(0.05);
-    m_hists["hDeltaOffsetGain"]->GetYaxis()->SetLabelSize(0.05);
-    m_hists["hDeltaOffsetGain"]->GetXaxis()->SetTitleSize(0.05);
-    m_hists["hDeltaOffsetGain"]->GetYaxis()->SetTitleSize(0.05);
+    m_hists["hDeltaOffsetGain"]->GetXaxis()->SetTitleOffset(1);
 
     px = static_cast<TH2*>(m_hists["hDeltaOffsetGain"])->ProfileX();
     px->SetLineColor(kRed);
@@ -762,6 +842,83 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hDeltaOffsetGain.png").c_str());
+
+    // ----------------------------------------------
+
+    gPad->SetLogy();
+    gPad->SetGrid(0,0);
+    gStyle->SetOptFit(1111); // Shows Probability, Chi2/NDF, Errors, Values
+
+    m_hists["hCalib"]->Draw();
+    m_hists["hCalib"]->SetStats();
+    m_hists["hCalib"]->SetTitle("EMCal Calibration");
+    m_hists["hCalib"]->GetYaxis()->SetTitle("Counts");
+
+    gPad->Update();
+
+    TPaveStats* st = (TPaveStats*)m_hists["hCalib"]->FindObject("stats");
+    Double_t xlow = 0.5;
+    Double_t ylow = 0.6;
+    st->SetX1NDC(xlow);
+    st->SetY1NDC(ylow);
+    st->SetX2NDC(xlow+0.38);
+    st->SetY2NDC(ylow+0.3);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalib.png").c_str());
+
+    // ----------------------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+    gPad->SetGrid();
+    gPad->SetLogy(0);
+    gPad->SetLogz(0);
+
+    m_hists["h2Calib"]->Draw("COLZ1");
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
+
+    m_hists["h2Calib"]->SetMaximum(3);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["h2GainCalibFactors"]->Draw("COLZ1");
+    m_hists["h2GainCalibFactors"]->SetMinimum(0);
+    m_hists["h2GainCalibFactors"]->SetMaximum(2.2);
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2GainCalibFactors.png").c_str());
+
+    // ----------------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.13);
+    c1->SetRightMargin(.12);
+    c1->SetTopMargin(.1);
+    c1->SetBottomMargin(.12);
+
+    gPad->SetLogy();
+    gPad->SetGrid(0,0);
+
+    m_hists["hGainCalibFactors"]->Draw();
+    m_hists["hGainCalibFactors"]->GetXaxis()->SetTitleOffset(0.9);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hGainCalibFactors.png").c_str());
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
@@ -776,6 +933,9 @@ void write_Biasv3(const string &input,
     cout << "outputDir: " << outputDir << endl;
     cout << "plotDir: " << plotDir << endl;
     cout << "#############################" << endl;
+
+    // set sPHENIX plotting style
+    SetsPhenixStyle();
 
     fs::create_directories(outputDir);
     fs::create_directories(plotDir);
