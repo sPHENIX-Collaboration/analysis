@@ -443,14 +443,22 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["h2GainFactors"]->Draw("COLZ1");
 
-    m_hists["h2GainFactors"]->SetMinimum(0);
-    m_hists["h2GainFactors"]->SetMaximum(2);
-
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactors.png").c_str());
+
+    m_hists["h2GainFactors"]->SetMinimum(0);
+    m_hists["h2GainFactors"]->SetMaximum(2);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactors-zoom-0.png").c_str());
+
+    m_hists["h2GainFactors"]->SetMinimum(1.56);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactors-zoom-1.png").c_str());
 
     // ----------------------------------------------
 
