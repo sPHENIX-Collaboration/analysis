@@ -603,6 +603,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2Light"] = new TH2F("h2Light","Light Transmission [%]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2ScintRatio"] = new TH2F("h2ScintRatio","Scintillation Ratio; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2Calib"] = new TH2F("h2Calib","EMCal Calibration [MeV/ADC]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
+    m_hists["h2CalibInv"] = new TH2F("h2CalibInv","EMCal Calibration [ADC/MeV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["hBias"] = new TH1F("hBias","Tower; Bias [V]; Counts", m_bins_bias, m_bias_low, m_bias_high);
     m_hists["hOffset"] = new TH1F("hOffset","Tower; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hBlockDensity"] = new TH1F("hBlockDensity","Tower; Block Density [g/cm^{3}]; Counts", m_bins_block_density, m_block_density_low, m_block_density_high);
@@ -610,6 +611,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["hLight"] = new TH1F("hLight","Tower; Light Transmission [%]; Counts", m_bins_light_transmission, m_light_transmission_low, m_light_transmission_high);
     m_hists["hScintRatio"] = new TH1F("hScintRatio","Tower; Scintillation Ratio; Counts", m_bins_scintillation_ratio, m_scintillation_ratio_low, m_scintillation_ratio_high);
     m_hists["h3CalibOffsetBlockDensity"] = new TH3F("h3CalibOffsetBlockDensity","EMCal; Block Density [g/cm^{3}]; Offset [mV]; EMCal Calibration [MeV/ADC]", m_bins_block_density, m_block_density_low, m_block_density_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["h3CalibInvOffsetBlockDensity"] = new TH3F("h3CalibInvOffsetBlockDensity","EMCal; Block Density [g/cm^{3}]; Offset [mV]; EMCal Calibration [ADC/MeV]", m_bins_block_density, m_block_density_low, m_block_density_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
     m_hists["h3CalibOffsetCosmicMPV"] = new TH3F("h3CalibOffsetCosmicMPV","EMCal; Cosmic MPV; Offset [mV]; EMCal Calibration [MeV/ADC]", m_bins_cosmic_MPV, m_cosmic_MPV_low, m_cosmic_MPV_high, m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
     m_hists["h2OffsetDivDensityCalib"] = new TH2F("h2OffsetDivDensityCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Block Density [mV*cm^{3}/g]", m_bins_calib, m_calib_low, m_calib_high, m_bins_offsetDivDensity, m_offsetDivDensity_low, m_offsetDivDensity_high);
     m_hists["h2OffsetDivCosmicCalib"] = new TH2F("h2OffsetDivCosmicCalib","EMCal; EMCal Calibration [MeV/ADC]; Offset/Cosmic MPV [mV]", m_bins_calib, m_calib_low, m_calib_high, m_bins_offsetDivCosmic, m_offsetDivCosmic_low, m_offsetDivCosmic_high);
@@ -619,6 +621,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     // track errors
     m_hists["h3CalibOffsetCosmicMPV"]->Sumw2();
     m_hists["h3CalibOffsetBlockDensity"]->Sumw2();
+    m_hists["h3CalibInvOffsetBlockDensity"]->Sumw2();
 
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
@@ -647,7 +650,9 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     for(UInt_t i = 1; i <= m_nphi; ++i) {
         for(UInt_t j = 1; j <= m_neta; ++j) {
             Double_t calib = m_hists["h2_mevOverADC"]->GetBinContent(j,i);
+            Double_t calibInv = (calib) ? 1/calib : 0;
             m_hists["h2Calib"]->SetBinContent(i,j,calib);
+            m_hists["h2CalibInv"]->SetBinContent(i,j,calibInv);
             min_calib = min(min_calib, calib);
             max_calib = max(max_calib, calib);
 
@@ -674,7 +679,10 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
                 static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->Fill(calib,vbDivCosmic);
             }
 
-            if(calib) static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Fill(bd,offset,calib);
+            if(calib) {
+                static_cast<TH3*>(m_hists["h3CalibOffsetBlockDensity"])->Fill(bd,offset,calib);
+                static_cast<TH3*>(m_hists["h3CalibInvOffsetBlockDensity"])->Fill(bd,offset,calibInv);
+            }
             if(cosmic && calib) static_cast<TH3*>(m_hists["h3CalibOffsetCosmicMPV"])->Fill(cosmic,offset,calib);
         }
     }
@@ -708,7 +716,9 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2Light"]->Write();
     m_hists["h2ScintRatio"]->Write();
     m_hists["h2Calib"]->Write();
+    m_hists["h2CalibInv"]->Write();
     m_hists["h3CalibOffsetBlockDensity"]->Write();
+    m_hists["h3CalibInvOffsetBlockDensity"]->Write();
     m_hists["h3CalibOffsetCosmicMPV"]->Write();
     m_hists["h2OffsetDivDensityCalib"]->Write();
     m_hists["h2OffsetDivCosmicCalib"]->Write();
@@ -731,6 +741,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     setEMCalDim(m_hists["h2Light"]);
     setEMCalDim(m_hists["h2ScintRatio"]);
     setEMCalDim(m_hists["h2Calib"]);
+    setEMCalDim(m_hists["h2CalibInv"]);
     setEMCalDim(m_hists["h2FiberType"]);
 
     setEMCalDim(m_hists["h2DummySector"]);
@@ -905,6 +916,18 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     // ---------------------------------
 
+    m_hists["h2CalibInv"]->Draw("COLZ1");
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibInv"]->GetName()) + ".png").c_str());
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/images/" + string(m_hists["h2CalibInv"]->GetName()) + "-labeled.png").c_str());
+
+    // ---------------------------------
+
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.16);
     c1->SetRightMargin(.05);
@@ -955,6 +978,14 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["hCalib"]->GetXaxis()->SetTitleOffset(1);
     c1->Print(output.c_str(), "pdf portrait");
     c1->Print((outputDir + "/images/" + string(m_hists["hCalib"]->GetName()) + ".png").c_str());
+
+    m_hists["hCalibInv"] = static_cast<TH3*>(m_hists["h3CalibInvOffsetBlockDensity"])->Project3D("z");
+    m_hists["hCalibInv"]->SetTitle("EMCal");
+    m_hists["hCalibInv"]->GetYaxis()->SetTitle("Counts");
+    m_hists["hCalibInv"]->Draw();
+    m_hists["hCalibInv"]->GetXaxis()->SetTitleOffset(1);
+    c1->Print(output.c_str(), "pdf portrait");
+    c1->Print((outputDir + "/images/" + string(m_hists["hCalibInv"]->GetName()) + ".png").c_str());
 
     // ---------------------------------
 
