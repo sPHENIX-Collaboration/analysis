@@ -21,7 +21,7 @@
 #include "myUtils.C"
 
 // -- sPHENIX Style
-#include "sPhenixStyle.C"
+#include <sPhenixStyle.C>
 
 using std::cout;
 using std::cerr;
