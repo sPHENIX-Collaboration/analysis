@@ -616,6 +616,10 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2VbDivCosmicCalib"] = new TH2F("h2VbDivCosmicCalib","EMCal; EMCal Calibration [MeV/ADC]; Vb/Cosmic MPV [V]", m_bins_calib, m_calib_low, m_calib_high, m_bins_vbDivCosmic, m_vbDivCosmic_low, m_vbDivCosmic_high);
     m_hists["h2FiberType"] = new TH2F("h2FiberType","Fiber Type; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
 
+    // track errors
+    m_hists["h3CalibOffsetCosmicMPV"]->Sumw2();
+    m_hists["h3CalibOffsetBlockDensity"]->Sumw2();
+
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", m_nsector/2, 0, m_nsector/2, 2, 0, 2);
     m_hists["h2DummyIB"] = new TH2F("h2DummyIB","", m_nsector/2, 0, m_nsector/2, m_nib*2/m_nsector, 0, m_nib*2/m_nsector);
