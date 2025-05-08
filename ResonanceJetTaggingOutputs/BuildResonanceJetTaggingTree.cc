@@ -103,9 +103,9 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
       m_tag_pdg = 413;
       m_nDaughters = 0;
       break;
-    case ResonanceJetTagging::TAG::JPSY:
-      m_tag_pdg = 433;
-      m_nDaughters = 0;
+    case ResonanceJetTagging::TAG::JPSI:
+      m_tag_pdg = 443;
+      m_nDaughters = 2;
       break;
     case ResonanceJetTagging::TAG::K0:
       m_tag_pdg = 310;
