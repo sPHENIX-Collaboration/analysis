@@ -158,6 +158,11 @@ if __name__ == '__main__':
     execute_command(command,dry_run)
     tee_print('rc local setup done', log_file)
 
+    # Turn OFF Zero Suppression / Ensure the Zero Suppression is OFF
+    command = 'dcm_reload_all /home/phnxrc/nozerosuppression/operations/'
+    execute_command(command,dry_run)
+    tee_print('Zero Suppression OFF done', log_file)
+
     # GTM setup
     command = ('gl1_gtm_client gtm_set_mode 5 0 && '
                'gl1_gtm_client gtm_load_modebits 5 '
@@ -222,6 +227,7 @@ if __name__ == '__main__':
     command = (f'ln -sfn {BIAS_DIR} /home/phnxrc/haggerty/emcal/config && '
                 '~/haggerty/emcal/calcon/biasallsectorsfast.py && '
                 'sleep 2 && '
+                'dcm_reload_all /home/phnxrc/operations/ && '
                 'rc_client rc_shutdown')
     execute_command(command, dry_run)
     tee_print('EMCal Configured with default offsets and shutdown rc_client', log_file)
