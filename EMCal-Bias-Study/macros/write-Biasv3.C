@@ -43,13 +43,21 @@ using std::unordered_map;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
-    Int_t analyze(const string &input, const string &outputDir);
+    Int_t analyze();
     void make_plots(const string &outputDir);
     void fillGaps(UInt_t groupSize);
+    TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const string &name = "fitFunc");
+    Int_t readHists(const string &input);
+    void initHists();
+    void saveHists(const string &outputDir);
 
     unordered_map<string,TH1*> m_hists;
 
     string cosmicHistName = "h2CosmicMPV";
+    string cosmicHistNameV0 = cosmicHistName + "v0";
+    string cosmicHistNameV1 = cosmicHistName + "v1";
+    string cosmicHistNameV2 = cosmicHistName + "v2";
+
     string offsetHistName = "h2Offset";
 
     Double_t cosmicMPVMax = 750;
@@ -99,6 +107,145 @@ namespace myAnalysis {
     Bool_t m_saveFig = true;
 }
 
+void myAnalysis::initHists() {
+    m_hists["hCosmicMPVv0"] = new TH1F("hCosmicMPVv0","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hCosmicMPVv1"] = new TH1F("hCosmicMPVv1","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hCosmicMPVv2"] = new TH1F("hCosmicMPVv2","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hGainFactors"] = new TH1F("hGainFactors","Gain Factors; Gain Factor; Counts", m_bins_gain, m_gain_low, m_gain_high);
+    m_hists["hGainCalibInvFactors"] = new TH1F("hGainCalibInvFactors","Gain Factors; Gain Factor; Counts", m_bins_gainCalibInv, m_gainCalibInv_low, m_gainCalibInv_high);
+    m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hDeltaOffsetV2"] = new TH1F("hDeltaOffsetV2","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hDeltaOffsetV3"] = new TH1F("hDeltaOffsetV3","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hDeltaOffsetCalibInv"] = new TH1F("hDeltaOffsetCalibInv","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hNewOffset"] = new TH1F("hNewOffset","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hNewOffsetV2"] = new TH1F("hNewOffsetV2","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hNewOffsetV3"] = new TH1F("hNewOffsetV3","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hCosmicMPVDeltaOffset"] = new TH2F("hCosmicMPVDeltaOffset","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hCosmicMPVDeltaOffsetV3"] = new TH2F("hCosmicMPVDeltaOffsetV3","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hFiberTypeDeltaOffset"] = new TH2F("hFiberTypeDeltaOffset","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hFiberTypeDeltaOffsetV2"] = new TH2F("hFiberTypeDeltaOffsetV2","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hFiberTypeCosmicMPV"] = new TH2F("hFiberTypeCosmicMPV","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
+    m_hists["hFiberTypeCosmicMPVUpdated"] = new TH2F("hFiberTypeCosmicMPVUpdated","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
+
+    m_hists["hCalibInvDeltaOffset"] = new TH2F("hCalibInvDeltaOffset","EMCal Calibration vs #Delta Offset; #Delta Offset [mV]; EMCal Calibration [ADC/MeV]", m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["hFiberTypeDeltaOffsetCalibInv"] = new TH2F("hFiberTypeDeltaOffsetCalibInv","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hFiberTypeCalibInv"] = new TH2F("hFiberTypeCalibInv","EMCal Calibration vs Fiber Type; Fiber Type; EMCal Calibration [ADC/MeV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_calib, m_calib_low, m_calib_high);
+
+    m_hists["hDeltaOffsetGain"] = new TH2F("hDeltaOffsetGain","#Delta Offset vs Gain Factor; Gain Factor; #Delta Offset [mV]", m_bins_gain, m_gain_low, m_gain_high, m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["h2GainCalibInvFactors"] = new TH2F("h2GainCalibInvFactors","Gain Factors; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+
+    for (const auto &[name, val] : m_myFiberTypeMap) {
+        m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+        m_hists["hFiberTypeDeltaOffsetV2"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+        m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+        m_hists["hFiberTypeCosmicMPVUpdated"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+
+        m_hists["hFiberTypeDeltaOffsetCalibInv"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+        m_hists["hFiberTypeCalibInv"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
+    }
+
+    m_hists["h2GainFactors"] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone("h2GainFactors"));
+    m_hists["h2GainFactors"]->SetTitle("Gain Factors");
+
+    m_hists["h2DeltaOffset"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2DeltaOffset"));
+    m_hists["h2DeltaOffset"]->SetTitle("#Delta Offset [mV]");
+
+    m_hists["h2DeltaOffsetCalibInv"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2DeltaOffset"));
+    m_hists["h2DeltaOffsetCalibInv"]->SetTitle("#Delta Offset [mV]");
+
+    // ensuring the max delta offset is 1000 mV
+    m_hists["h2DeltaOffsetV2"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV2"));
+
+    m_hists["h2NewOffset"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2NewOffset"));
+    m_hists["h2NewOffset"]->SetTitle("New Offset [mV]");
+    m_hists["h2NewOffsetV2"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV2"));
+
+    // ensuring the min offset is -2000 mV
+    m_hists["h2DeltaOffsetV3"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV3"));
+    m_hists["h2NewOffsetV3"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV3"));
+}
+
+Int_t myAnalysis::readHists(const string &input) {
+    // Read Hist from input
+    TFile* tfile = TFile::Open(input.c_str());
+    if (!tfile || tfile->IsZombie()) {
+        cout << "Error: Could not open ROOT file: " << input << endl;
+        return 1;
+    }
+    m_hists[cosmicHistName] = static_cast<TH2*>(tfile->Get(cosmicHistName.c_str()));
+
+    if (!m_hists[cosmicHistName]) {
+      cout << "Error: Histogram '" << cosmicHistName << "' not found in file: " << tfile->GetName() << endl;
+      return 1;
+    }
+    m_hists[offsetHistName] = static_cast<TH2*>(tfile->Get(offsetHistName.c_str()));
+
+    if (!m_hists[offsetHistName]) {
+      cout << "Error: Histogram '" << offsetHistName << "' not found in file: " << tfile->GetName() << endl;
+      return 1;
+    }
+
+    m_hists["h2DummySector"] = static_cast<TH2*>(tfile->Get("h2DummySector"));
+    m_hists["h2DummyIB"] = static_cast<TH2*>(tfile->Get("h2DummyIB"));
+    m_hists["h2FiberType"] = static_cast<TH2*>(tfile->Get("h2FiberType"));
+    m_hists["h2Calib"] = static_cast<TH2*>(tfile->Get("h2Calib"));
+    m_hists["h2CalibInv"] = static_cast<TH2*>(tfile->Get("h2CalibInv"));
+    m_hists["hCalib"] = static_cast<TH3*>(tfile->Get("h3CalibOffsetCosmicMPV"))->Project3D("z");
+    m_hists["hCalibInv"] = static_cast<TH3*>(tfile->Get("h3CalibInvOffsetBlockDensity"))->Project3D("z");
+
+    tfile->Close();
+    return 0;
+}
+
+TFitResultPtr myAnalysis::doGausFit(TH1* hist, Double_t start, Double_t end, const string &name) {
+    // fit calib hist
+    TF1 *fitFunc = new TF1(name.c_str(), "gaus", start, end);
+    Double_t initialAmplitude = hist->GetMaximum();
+    Double_t initialMean = hist->GetMean();
+    Double_t initialSigma = hist->GetRMS();
+
+    fitFunc->SetParameter(0, initialAmplitude);
+    fitFunc->SetParameter(1, initialMean);
+    fitFunc->SetParameter(2, initialSigma);
+
+    // You can also set parameter names for better readability in the stats box
+    fitFunc->SetParName(0, "Amplitude");
+    fitFunc->SetParName(1, "Mean");
+    fitFunc->SetParName(2, "Sigma");
+
+    // Set some visual properties for the fit line
+    fitFunc->SetLineColor(kRed);
+    fitFunc->SetLineWidth(2);
+    fitFunc->SetLineStyle(kDashed); // Optional: make it dashed
+
+    TFitResultPtr fitResult = hist->Fit(fitFunc, "RS"); // Fit within range, store result, quiet
+
+    if (fitResult.Get()) { // Check if TFitResultPtr is valid
+        cout << "\n----------------------------------------------------" << endl;
+        cout << "Fit Results for function: " << fitFunc->GetName() << endl;
+        cout << "----------------------------------------------------" << endl;
+        cout << "Fit Status: " << fitResult->Status() << " (0 means successful)" << endl;
+        if (fitResult->IsValid()) { // Check if the fit is valid (e.g., covariance matrix is good)
+            cout << "Fit is Valid." << endl;
+            for (int i = 0; i < fitFunc->GetNpar(); ++i) {
+                cout << "Parameter " << fitFunc->GetParName(i) << " (" << i << "): "
+                          << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << endl;
+            }
+            cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
+                      << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << endl;
+            cout << "Probability: " << TMath::Prob(fitResult->Chi2(), fitResult->Ndf()) << endl;
+        } else {
+            cout << "Fit is NOT Valid." << endl;
+        }
+        cout << "----------------------------------------------------" << endl;
+    } else {
+        cout << "Fit did not return a valid TFitResultPtr." << endl;
+    }
+
+    return fitResult;
+}
+
 void myAnalysis::fillGaps(UInt_t groupSize) {
     // compute averge block MPV and fill in the empty spots
     for(UInt_t i = 0; i < myUtils::m_neta / groupSize; ++i) {
@@ -139,37 +286,7 @@ void myAnalysis::fillGaps(UInt_t groupSize) {
     }
 }
 
-Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
-    // Read Hist from input
-    TFile* tfile = TFile::Open(input.c_str());
-    if (!tfile || tfile->IsZombie()) {
-        cout << "Error: Could not open ROOT file: " << input << endl;
-        return 1;
-    }
-    m_hists[cosmicHistName] = static_cast<TH2*>(tfile->Get(cosmicHistName.c_str()));
-
-    if (!m_hists[cosmicHistName]) {
-      cout << "Error: Histogram '" << cosmicHistName << "' not found in file: " << tfile->GetName() << endl;
-      return 1;
-    }
-    m_hists[offsetHistName] = static_cast<TH2*>(tfile->Get(offsetHistName.c_str()));
-
-    if (!m_hists[offsetHistName]) {
-      cout << "Error: Histogram '" << offsetHistName << "' not found in file: " << tfile->GetName() << endl;
-      return 1;
-    }
-
-    m_hists["h2DummySector"] = static_cast<TH2*>(tfile->Get("h2DummySector"));
-    m_hists["h2DummyIB"] = static_cast<TH2*>(tfile->Get("h2DummyIB"));
-    m_hists["h2FiberType"] = static_cast<TH2*>(tfile->Get("h2FiberType"));
-    m_hists["h2Calib"] = static_cast<TH2*>(tfile->Get("h2Calib"));
-    m_hists["h2CalibInv"] = static_cast<TH2*>(tfile->Get("h2CalibInv"));
-    m_hists["hCalib"] = static_cast<TH3*>(tfile->Get("h3CalibOffsetCosmicMPV"))->Project3D("z");
-    m_hists["hCalibInv"] = static_cast<TH3*>(tfile->Get("h3CalibInvOffsetBlockDensity"))->Project3D("z");
-
-    tfile->Close();
-
-    string cosmicHistNameV0 = cosmicHistName + "v0";
+Int_t myAnalysis::analyze() {
     m_hists[cosmicHistNameV0] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone(cosmicHistNameV0.c_str()));
 
     // by blocks
@@ -177,7 +294,6 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
 
     cout << "Filled in Block Gaps" << endl;
 
-    string cosmicHistNameV1 = cosmicHistName + "v1";
     m_hists[cosmicHistNameV1] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone(cosmicHistNameV1.c_str()));
 
     // by interface boards
@@ -185,110 +301,9 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
 
     cout << "Filled in Interface Board Gaps" << endl;
 
-    string cosmicHistNameV2 = cosmicHistName + "v2";
     m_hists[cosmicHistNameV2] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone(cosmicHistNameV2.c_str()));
 
-    m_hists["hCosmicMPVv0"] = new TH1F("hCosmicMPVv0","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
-    m_hists["hCosmicMPVv1"] = new TH1F("hCosmicMPVv1","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
-    m_hists["hCosmicMPVv2"] = new TH1F("hCosmicMPVv2","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
-    m_hists["hGainFactors"] = new TH1F("hGainFactors","Gain Factors; Gain Factor; Counts", m_bins_gain, m_gain_low, m_gain_high);
-    m_hists["hGainCalibInvFactors"] = new TH1F("hGainCalibInvFactors","Gain Factors; Gain Factor; Counts", m_bins_gainCalibInv, m_gainCalibInv_low, m_gainCalibInv_high);
-    m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hDeltaOffsetV2"] = new TH1F("hDeltaOffsetV2","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hDeltaOffsetV3"] = new TH1F("hDeltaOffsetV3","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hDeltaOffsetCalibInv"] = new TH1F("hDeltaOffsetCalibInv","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hNewOffset"] = new TH1F("hNewOffset","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hNewOffsetV2"] = new TH1F("hNewOffsetV2","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hNewOffsetV3"] = new TH1F("hNewOffsetV3","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hCosmicMPVDeltaOffset"] = new TH2F("hCosmicMPVDeltaOffset","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
-    m_hists["hCosmicMPVDeltaOffsetV3"] = new TH2F("hCosmicMPVDeltaOffsetV3","Cosmic MPV vs #Delta Offset; #Delta Offset [mV]; Cosmic MPV", m_bins_offset, m_offset_low, m_offset_high, m_bins_mpv, m_mpv_low, m_mpv_high);
-    m_hists["hFiberTypeDeltaOffset"] = new TH2F("hFiberTypeDeltaOffset","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hFiberTypeCosmicMPV"] = new TH2F("hFiberTypeCosmicMPV","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
-
-    m_hists["hCalibInvDeltaOffset"] = new TH2F("hCalibInvDeltaOffset","EMCal Calibration vs #Delta Offset; #Delta Offset [mV]; EMCal Calibration [ADC/MeV]", m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
-    m_hists["hFiberTypeDeltaOffsetCalibInv"] = new TH2F("hFiberTypeDeltaOffsetCalibInv","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hFiberTypeCalibInv"] = new TH2F("hFiberTypeCalibInv","EMCal Calibration vs Fiber Type; Fiber Type; EMCal Calibration [ADC/MeV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_calib, m_calib_low, m_calib_high);
-
-    m_hists["hDeltaOffsetGain"] = new TH2F("hDeltaOffsetGain","#Delta Offset vs Gain Factor; Gain Factor; #Delta Offset [mV]", m_bins_gain, m_gain_low, m_gain_high, m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["h2GainCalibInvFactors"] = new TH2F("h2GainCalibInvFactors","Gain Factors; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
-
-    stringstream title;
-    for (const auto &[name, val] : m_myFiberTypeMap) {
-        title.str("");
-        title << "Cosmic MPV: " << name << "; Cosmic MPV; Counts";
-        m_hists[name] = new TH1F(name.c_str(),title.str().c_str(), m_bins_mpv, m_mpv_low, m_mpv_high);
-
-        m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
-        m_hists["hFiberTypeCosmicMPV"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
-
-        m_hists["hFiberTypeDeltaOffsetCalibInv"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
-        m_hists["hFiberTypeCalibInv"]->GetXaxis()->SetBinLabel(val+1,name.c_str());
-    }
-
-    m_hists["h2GainFactors"] = static_cast<TH2*>(m_hists[cosmicHistName]->Clone("h2GainFactors"));
-    m_hists["h2GainFactors"]->SetTitle("Gain Factors");
-
-    m_hists["h2DeltaOffset"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2DeltaOffset"));
-    m_hists["h2DeltaOffset"]->SetTitle("#Delta Offset [mV]");
-
-    m_hists["h2DeltaOffsetCalibInv"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2DeltaOffset"));
-    m_hists["h2DeltaOffsetCalibInv"]->SetTitle("#Delta Offset [mV]");
-
-    // ensuring the max delta offset is 1000 mV
-    m_hists["h2DeltaOffsetV2"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV2"));
-
-    m_hists["h2NewOffset"] = static_cast<TH2*>(m_hists[offsetHistName]->Clone("h2NewOffset"));
-    m_hists["h2NewOffset"]->SetTitle("New Offset [mV]");
-    m_hists["h2NewOffsetV2"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV2"));
-
-    // ensuring the min offset is -2000 mV
-    m_hists["h2DeltaOffsetV3"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV3"));
-    m_hists["h2NewOffsetV3"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV3"));
-
-    // fit calib hist
-    TF1 *fitFunc = new TF1("fitFunc", "gaus", 0, 1.05);
-    Double_t initialAmplitude = m_hists["hCalibInv"]->GetMaximum();
-    Double_t initialMean = m_hists["hCalibInv"]->GetMean();
-    Double_t initialSigma = m_hists["hCalibInv"]->GetRMS();
-
-    fitFunc->SetParameter(0, initialAmplitude);
-    fitFunc->SetParameter(1, initialMean);
-    fitFunc->SetParameter(2, initialSigma);
-
-    // You can also set parameter names for better readability in the stats box
-    fitFunc->SetParName(0, "Amplitude");
-    fitFunc->SetParName(1, "Mean");
-    fitFunc->SetParName(2, "Sigma");
-
-    // Set some visual properties for the fit line
-    fitFunc->SetLineColor(kRed);
-    fitFunc->SetLineWidth(2);
-    fitFunc->SetLineStyle(kDashed); // Optional: make it dashed
-
-    TFitResultPtr fitResult = m_hists["hCalibInv"]->Fit(fitFunc, "RS"); // Fit within range, store result, quiet
-
-    if (fitResult.Get()) { // Check if TFitResultPtr is valid
-        cout << "\n----------------------------------------------------" << endl;
-        cout << "Fit Results for function: " << fitFunc->GetName() << endl;
-        cout << "----------------------------------------------------" << endl;
-        cout << "Fit Status: " << fitResult->Status() << " (0 means successful)" << endl;
-        if (fitResult->IsValid()) { // Check if the fit is valid (e.g., covariance matrix is good)
-            cout << "Fit is Valid." << endl;
-            for (int i = 0; i < fitFunc->GetNpar(); ++i) {
-                cout << "Parameter " << fitFunc->GetParName(i) << " (" << i << "): "
-                          << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << endl;
-            }
-            cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
-                      << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << endl;
-            cout << "Probability: " << TMath::Prob(fitResult->Chi2(), fitResult->Ndf()) << endl;
-        } else {
-            cout << "Fit is NOT Valid." << endl;
-        }
-        cout << "----------------------------------------------------" << endl;
-    } else {
-        cout << "Fit did not return a valid TFitResultPtr." << endl;
-    }
+    TFitResultPtr fitResult = doGausFit(m_hists["hCalibInv"], 0, 1.05); // Fit within range, store result, quiet
 
     Double_t targetCalibInv = fitResult->Parameter(1);
 
@@ -323,11 +338,16 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
             m_hists["hCosmicMPVv0"]->Fill(mpv_v0);
             m_hists["hCosmicMPVv1"]->Fill(mpv_v1);
             m_hists["hCosmicMPVv2"]->Fill(mpv);
-            m_hists[fiberTypeName]->Fill(mpv);
             static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffset"])->Fill(deltaOffset, mpv);
             static_cast<TH2*>(m_hists["hCosmicMPVDeltaOffsetV3"])->Fill(deltaOffsetV3, mpv);
-            static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->Fill(fiberType, deltaOffsetV2);
-            static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv);
+            // only fill in when the original Cosmic MPV value exists
+            // important when correlating with fiber type
+            if (mpv_v0) {
+                static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->Fill(fiberType, deltaOffset);
+                static_cast<TH2*>(m_hists["hFiberTypeDeltaOffsetV2"])->Fill(fiberType, deltaOffsetV2);
+                static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv_v0);
+            }
+            static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPVUpdated"])->Fill(fiberType, mpv);
             static_cast<TH2*>(m_hists["hDeltaOffsetGain"])->Fill(gainMPV, deltaOffset);
 
             if(deltaOffsetCalibInv && calibInv) {
@@ -371,6 +391,10 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
         }
     }
 
+    return 0;
+}
+
+void myAnalysis::saveHists(const string &outputDir) {
     // save plots to root file
     string output = outputDir + "/updated-Offset-info.root";
     TFile tf(output.c_str(),"recreate");
@@ -401,7 +425,9 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     m_hists["hCosmicMPVDeltaOffset"]->Write();
     m_hists["hCosmicMPVDeltaOffsetV3"]->Write();
     m_hists["hFiberTypeDeltaOffset"]->Write();
+    m_hists["hFiberTypeDeltaOffsetV2"]->Write();
     m_hists["hFiberTypeCosmicMPV"]->Write();
+    m_hists["hFiberTypeCosmicMPVUpdated"]->Write();
     m_hists["hDeltaOffsetGain"]->Write();
     m_hists["h2GainCalibInvFactors"]->Write();
     m_hists["hGainCalibInvFactors"]->Write();
@@ -413,7 +439,13 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
 
     cout << "####################################" << endl;
     cout << "Average Cosmic MPV by Fiber Type" << endl;
-    for (const auto &[val, name] : m_fiberTypeMap) {
+    stringstream title;
+    for (const auto &[name, val] : m_myFiberTypeMap) {
+        m_hists[name] = static_cast<TH2*>(m_hists["hFiberTypeCosmicMPV"])->ProjectionY(name.c_str(),val+1,val+1);
+        title.str("");
+        title << "Cosmic MPV: " << name << "; Cosmic MPV; Counts";
+        m_hists[name]->SetTitle(title.str().c_str());
+
         Double_t avg = m_hists[name]->GetMean();
         cout << "Fiber Type: " << name << ", Avg Cosmic MPV: " << avg << endl;
         m_hists[name]->Write();
@@ -421,8 +453,6 @@ Int_t myAnalysis::analyze(const string &input, const string &outputDir) {
     cout << "####################################" << endl;
 
     tf.Close();
-
-    return 0;
 }
 
 void myAnalysis::make_plots(const string &outputDir) {
@@ -843,7 +873,7 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["hFiberTypeDeltaOffset"]->Draw("COLZ1");
 
-    m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetRangeUser(-2e3,1.1e3);
+    m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetRangeUser(-2e3,3e3);
     m_hists["hFiberTypeDeltaOffset"]->GetYaxis()->SetTitleOffset(1.2);
     m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetTitleOffset(1);
     m_hists["hFiberTypeDeltaOffset"]->GetXaxis()->SetLabelSize(0.05);
@@ -859,6 +889,23 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     // ----------------------------------------------
 
+    m_hists["hFiberTypeDeltaOffsetV2"]->Draw("COLZ1");
+
+    m_hists["hFiberTypeDeltaOffsetV2"]->GetYaxis()->SetRangeUser(-2e3,1.1e3);
+    m_hists["hFiberTypeDeltaOffsetV2"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeDeltaOffsetV2"]->GetXaxis()->SetTitleOffset(1);
+    m_hists["hFiberTypeDeltaOffsetV2"]->GetXaxis()->SetLabelSize(0.05);
+
+    px = static_cast<TH2*>(m_hists["hFiberTypeDeltaOffsetV2"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetLineWidth(3);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hFiberTypeDeltaOffsetV2.png").c_str());
+
+    // ----------------------------------------------
     m_hists["hFiberTypeCosmicMPV"]->Draw("COLZ1");
 
     m_hists["hFiberTypeCosmicMPV"]->GetYaxis()->SetRangeUser(0,8e2);
@@ -877,6 +924,23 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     // ----------------------------------------------
 
+    m_hists["hFiberTypeCosmicMPVUpdated"]->Draw("COLZ1");
+
+    m_hists["hFiberTypeCosmicMPVUpdated"]->GetYaxis()->SetRangeUser(0,8e2);
+    m_hists["hFiberTypeCosmicMPVUpdated"]->GetYaxis()->SetTitleOffset(1.2);
+    m_hists["hFiberTypeCosmicMPVUpdated"]->GetXaxis()->SetTitleOffset(1);
+    m_hists["hFiberTypeCosmicMPVUpdated"]->GetXaxis()->SetLabelSize(0.05);
+
+    px = static_cast<TH2*>(m_hists["hFiberTypeCosmicMPVUpdated"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetLineWidth(3);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hFiberTypeCosmicMPVUpdated.png").c_str());
+
+    // ----------------------------------------------
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.13);
     c1->SetRightMargin(.12);
@@ -1109,13 +1173,17 @@ void write_Biasv3(const string &input,
     // set sPHENIX plotting style
     SetsPhenixStyle();
 
+    // create output directories
     fs::create_directories(outputDir);
     fs::create_directories(plotDir);
     fs::create_directories(plotDir+"/images");
 
     TH1::AddDirectory(kFALSE);
 
-    myAnalysis::analyze(input, outputDir);
+    if(myAnalysis::readHists(input)) return;
+    myAnalysis::initHists();
+    myAnalysis::analyze();
+    myAnalysis::saveHists(outputDir);
     myAnalysis::make_plots(plotDir);
 }
 
