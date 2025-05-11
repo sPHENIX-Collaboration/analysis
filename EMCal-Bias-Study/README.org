@@ -135,7 +135,7 @@ rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resub
 ** Configure EMCal for data taking
 1) Turn EMCal Controller Crates ON.
 #+begin_src bash
-/home/phnxrc/haggerty/emcal/offandon/comms-on
+cd /home/phnxrc/haggerty/emcal/offandon && ./comms-on
 #+end_src
 2) Turn EMCal ON (bias and lv).
 #+begin_src bash
@@ -223,7 +223,7 @@ Suppose we want to record a set of LED runs given a specific bias offset directo
 #+end_src
 2) Turn EMCal Controller Crates OFF.
 #+begin_src bash
-/home/phnxrc/haggerty/emcal/offandon/comms-off
+cd /home/phnxrc/haggerty/emcal/offandon && ./comms-off
 #+end_src
 
 ** View Runs Transfer Status
