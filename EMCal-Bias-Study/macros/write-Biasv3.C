@@ -18,6 +18,7 @@
 #include <TMath.h>
 #include <TCanvas.h>
 #include <TLegend.h>
+#include <TLine.h>
 #include <TProfile.h>
 #include <TPaveStats.h>
 
@@ -64,13 +65,21 @@ namespace myAnalysis {
     Double_t targetMPV = 336.7;
     Double_t kFactor  = 4.42e-4; // Units: [1 / mV]
 
-    UInt_t m_bins_gain = 50;
+    UInt_t m_bins_gain = 250;
     Double_t m_gain_low = 0;
     Double_t m_gain_high = 25;
 
-    UInt_t m_bins_gainCalibInv = 40;
+    UInt_t m_bins_gainCalibInv = 250;
     Double_t m_gainCalibInv_low = 0;
-    Double_t m_gainCalibInv_high = 4;
+    Double_t m_gainCalibInv_high = 25;
+
+    UInt_t m_bins_gainRatio = 40;
+    Double_t m_gainRatio_low = 0;
+    Double_t m_gainRatio_high = 4;
+
+    UInt_t m_bins_deltaOffsetRatio = 100;
+    Double_t m_deltaOffsetRatio_low = -5;
+    Double_t m_deltaOffsetRatio_high = 5;
 
     UInt_t m_bins_offset = 210;
     Double_t m_offset_low = -3.5e3;
@@ -113,11 +122,13 @@ void myAnalysis::initHists() {
     m_hists["hCosmicMPVv2"] = new TH1F("hCosmicMPVv2","Cosmic MPV; Cosmic MPV; Counts", m_bins_mpv, m_mpv_low, m_mpv_high);
     m_hists["hGainFactors"] = new TH1F("hGainFactors","Gain Factors; Gain Factor; Counts", m_bins_gain, m_gain_low, m_gain_high);
     m_hists["hGainCalibInvFactors"] = new TH1F("hGainCalibInvFactors","Gain Factors; Gain Factor; Counts", m_bins_gainCalibInv, m_gainCalibInv_low, m_gainCalibInv_high);
+    m_hists["hGainRatio"] = new TH1F("hGainRatio","Gain Factors Ratio; EMCal Calibration / Cosmic MPV; Counts", m_bins_gainRatio, m_gainRatio_low, m_gainRatio_high);
     m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffsetV2"] = new TH1F("hDeltaOffsetV2","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffsetV3"] = new TH1F("hDeltaOffsetV3","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hDeltaOffsetCalibInv"] = new TH1F("hDeltaOffsetCalibInv","#Delta Offset; #Delta Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hDeltaOffsetRatio"] = new TH1F("hDeltaOffsetRatio","#Delta Offset Ratio; EMCal Calibration / Cosmic MPV; Counts", m_bins_deltaOffsetRatio, m_deltaOffsetRatio_low, m_deltaOffsetRatio_high);
     m_hists["hNewOffset"] = new TH1F("hNewOffset","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hNewOffsetV2"] = new TH1F("hNewOffsetV2","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hNewOffsetV3"] = new TH1F("hNewOffsetV3","New Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
@@ -165,6 +176,14 @@ void myAnalysis::initHists() {
     // ensuring the min offset is -2000 mV
     m_hists["h2DeltaOffsetV3"] = static_cast<TH2*>(m_hists["h2DeltaOffset"]->Clone("h2DeltaOffsetV3"));
     m_hists["h2NewOffsetV3"] = static_cast<TH2*>(m_hists["h2NewOffset"]->Clone("h2NewOffsetV3"));
+
+    // track errors
+    m_hists["hGainFactors"]->Sumw2();
+    m_hists["hGainCalibInvFactors"]->Sumw2();
+    m_hists["hGainRatio"]->Sumw2();
+    m_hists["hDeltaOffsetCalibInv"]->Sumw2();
+    m_hists["hDeltaOffset"]->Sumw2();
+    m_hists["hDeltaOffsetRatio"]->Sumw2();
 }
 
 Int_t myAnalysis::readHists(const string &input) {
@@ -310,6 +329,12 @@ Int_t myAnalysis::analyze() {
 
     cout << "Target Calibration: " << targetCalibInv << " ADC/MeV" << endl;
 
+    Double_t min_gainFactorsRatio = 9999;
+    Double_t max_gainFactorsRatio = 0;
+
+    Double_t min_deltaOffsetRatio = 9999;
+    Double_t max_deltaOffsetRatio = 0;
+
     for(UInt_t i = 1; i <= myUtils::m_nphi; ++i) {
         for(UInt_t j = 1; j <= myUtils::m_neta; ++j) {
             Double_t mpv_v0 = static_cast<TH2*>(m_hists["h2CosmicMPVv0"])->GetBinContent(i,j);
@@ -348,7 +373,12 @@ Int_t myAnalysis::analyze() {
                 static_cast<TH2*>(m_hists["hFiberTypeDeltaOffsetV2"])->Fill(fiberType, deltaOffsetV2);
                 static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv_v0);
                 if(calibInv) {
+                    Double_t gainRatio = (gainMPV) ? gainCalibInv / gainMPV : 0;
+                    min_gainFactorsRatio = min(min_gainFactorsRatio, gainRatio);
+                    max_gainFactorsRatio = max(max_gainFactorsRatio, gainRatio);
+
                     static_cast<TH2 *>(m_hists["hCalibInvCosmicMPV"])->Fill(mpv_v0, calibInv);
+                    m_hists["hGainRatio"]->Fill(gainRatio);
                 }
             }
             static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPVUpdated"])->Fill(fiberType, mpv);
@@ -358,6 +388,14 @@ Int_t myAnalysis::analyze() {
                 static_cast<TH2*>(m_hists["hCalibInvDeltaOffset"])->Fill(deltaOffsetCalibInv, calibInv);
                 static_cast<TH2*>(m_hists["hFiberTypeDeltaOffsetCalibInv"])->Fill(fiberType, deltaOffsetCalibInv);
                 static_cast<TH2*>(m_hists["hFiberTypeCalibInv"])->Fill(fiberType, calibInv);
+                m_hists["hDeltaOffset"]->Fill(deltaOffset);
+                m_hists["hDeltaOffsetCalibInv"]->Fill(deltaOffsetCalibInv);
+
+                Double_t deltaOffsetRatio = (deltaOffset) ? deltaOffsetCalibInv / deltaOffset : 0;
+                min_deltaOffsetRatio = min(min_deltaOffsetRatio, deltaOffsetRatio);
+                max_deltaOffsetRatio = max(max_deltaOffsetRatio, deltaOffsetRatio);
+
+                m_hists["hDeltaOffsetRatio"]->Fill(deltaOffsetRatio);
             }
 
             static_cast<TH2*>(m_hists["h2GainFactors"])->SetBinContent(i, j, gainMPV);
@@ -369,10 +407,8 @@ Int_t myAnalysis::analyze() {
             static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
             static_cast<TH2*>(m_hists["h2DeltaOffsetV3"])->SetBinContent(i, j, deltaOffsetV3);
             static_cast<TH2*>(m_hists["h2DeltaOffsetCalibInv"])->SetBinContent(i, j, deltaOffsetCalibInv);
-            m_hists["hDeltaOffset"]->Fill(deltaOffset);
             m_hists["hDeltaOffsetV2"]->Fill(deltaOffsetV2);
             m_hists["hDeltaOffsetV3"]->Fill(deltaOffsetV3);
-            m_hists["hDeltaOffsetCalibInv"]->Fill(deltaOffsetCalibInv);
 
             static_cast<TH2*>(m_hists["h2NewOffset"])->SetBinContent(i, j, updateOffset);
             static_cast<TH2*>(m_hists["h2NewOffsetV2"])->SetBinContent(i, j, updateOffsetV2);
@@ -394,6 +430,11 @@ Int_t myAnalysis::analyze() {
             }
         }
     }
+
+    cout << "Gain Factor Ratio, Min: " << min_gainFactorsRatio << ", Max: " << max_gainFactorsRatio << endl;
+    cout << "Delta Offset Ratio, Min: " << min_deltaOffsetRatio << ", Max: " << max_deltaOffsetRatio << endl;
+    cout << "Delta Offset from Cosmic MPV, Integral: " << m_hists["hDeltaOffset"]->Integral() << endl;
+    cout << "Delta Offset from Calib, Integral: " << m_hists["hDeltaOffsetCalibInv"]->Integral() << endl;
 
     return 0;
 }
@@ -441,6 +482,8 @@ void myAnalysis::saveHists(const string &outputDir) {
     m_hists["hFiberTypeDeltaOffsetCalibInv"]->Write();
     m_hists["hFiberTypeCalibInv"]->Write();
     m_hists["hCalibInvCosmicMPV"]->Write();
+    m_hists["hGainRatio"]->Write();
+    m_hists["hDeltaOffsetRatio"]->Write();
 
     cout << "####################################" << endl;
     cout << "Average Cosmic MPV by Fiber Type" << endl;
@@ -741,10 +784,6 @@ void myAnalysis::make_plots(const string &outputDir) {
     gPad->SetLogy();
     gPad->SetGrid(0,0);
 
-    // gStyle->SetOptStat(1111);
-
-    m_hists["hDeltaOffset"]->Rebin(2);
-    // m_hists["hDeltaOffset"]->SetStats();
     m_hists["hDeltaOffset"]->GetYaxis()->SetRangeUser(5e-1,4e3);
     m_hists["hDeltaOffset"]->GetXaxis()->SetRangeUser(-2e3,4e3);
     m_hists["hDeltaOffset"]->GetXaxis()->SetTitleOffset(0.9);
@@ -1042,36 +1081,134 @@ void myAnalysis::make_plots(const string &outputDir) {
     gPad->SetGrid(0,0);
 
     m_hists["hGainCalibInvFactors"]->Draw();
+    m_hists["hGainCalibInvFactors"]->SetLineColor(kRed);
+    m_hists["hGainCalibInvFactors"]->SetMarkerColor(kRed);
     m_hists["hGainCalibInvFactors"]->GetXaxis()->SetTitleOffset(0.9);
+    m_hists["hGainCalibInvFactors"]->GetXaxis()->SetRangeUser(0,4);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hGainCalibInvFactors.png").c_str());
+
+    m_hists["hGainFactors"]->Draw("same");
+
+    legA.str("");
+    legB.str("");
+
+    legA << "Cosmic MPV";
+    legB << "EMCal Calibration";
+
+    xshift = 0.4;
+    yshift = 0;
+
+    leg = new TLegend(0.2+xshift,.75+yshift,0.65+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.04);
+    leg->AddEntry(m_hists["hGainFactors"],legA.str().c_str(),"pe");
+    leg->AddEntry(m_hists["hGainCalibInvFactors"],legB.str().c_str(),"pe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hGainFactors-overlay.png").c_str());
+
+    // ----------------------------------------------
+
+    gPad->SetLogy(0);
+
+    m_hists["hGainCalibInvFactors"]->Divide(m_hists["hGainFactors"]);
+    m_hists["hGainCalibInvFactors"]->SetTitle("Gain Factors Ratio");
+    m_hists["hGainCalibInvFactors"]->GetYaxis()->SetTitle("Ratio: EMCal Calibration / Cosmic MPV");
+    m_hists["hGainCalibInvFactors"]->GetYaxis()->SetTitleOffset(1);
+    m_hists["hGainCalibInvFactors"]->GetYaxis()->SetRangeUser(0,1.8);
+    m_hists["hGainCalibInvFactors"]->Draw();
+
+    TLine *l = new TLine(0, 1, 4, 1);
+    // l->SetLineColor(kBlue);
+    l->SetLineStyle(kDashed);
+    l->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hGainCalibInvFactors-ratio.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["hGainRatio"]->Draw();
+    // m_hists["hGainRatio"]->SetLineColor(kRed);
+    // m_hists["hGainRatio"]->SetMarkerColor(kRed);
+    m_hists["hGainRatio"]->GetXaxis()->SetTitleOffset(0.9);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hGainRatio.png").c_str());
 
     // ----------------------------------------------
 
     c1->SetCanvasSize(1400, 1000);
     c1->SetLeftMargin(.13);
-    c1->SetRightMargin(.03);
+    c1->SetRightMargin(.05);
     c1->SetTopMargin(.1);
     c1->SetBottomMargin(.12);
-
-    gPad->SetLogy();
-    gPad->SetGrid(0,0);
-
-    m_hists["hGainCalibInvFactors"]->Draw();
-    m_hists["hGainCalibInvFactors"]->GetXaxis()->SetTitleOffset(0.9);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/hGainCalibInvFactors.png").c_str());
-
-    // ----------------------------------------------
+    gPad->SetLogy(0);
 
     m_hists["hDeltaOffsetCalibInv"]->Draw();
+    m_hists["hDeltaOffsetCalibInv"]->SetLineColor(kRed);
+    m_hists["hDeltaOffsetCalibInv"]->SetMarkerColor(kRed);
     m_hists["hDeltaOffsetCalibInv"]->GetXaxis()->SetTitleOffset(0.9);
     m_hists["hDeltaOffsetCalibInv"]->GetXaxis()->SetRangeUser(-2e3,4e3);
+    m_hists["hDeltaOffsetCalibInv"]->GetYaxis()->SetRangeUser(0,1.4e3);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hDeltaOffsetCalibInv.png").c_str());
+
+    m_hists["hDeltaOffset"]->Draw("same");
+
+    legA.str("");
+    legB.str("");
+
+    legA << "Cosmic MPV";
+    legB << "EMCal Calibration";
+
+    xshift = 0.4;
+    yshift = 0;
+
+    leg = new TLegend(0.2+xshift,.75+yshift,0.65+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.04);
+    leg->AddEntry(m_hists["hDeltaOffset"],legA.str().c_str(),"pe");
+    leg->AddEntry(m_hists["hDeltaOffsetCalibInv"],legB.str().c_str(),"pe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hDeltaOffsetCalibInv-overlay.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["hDeltaOffsetCalibInv"]->Divide(m_hists["hDeltaOffset"]);
+    m_hists["hDeltaOffsetCalibInv"]->GetYaxis()->SetTitle("Ratio: EMCal Calibration / Cosmic MPV");
+    m_hists["hDeltaOffsetCalibInv"]->GetYaxis()->SetTitleOffset(0.9);
+    m_hists["hDeltaOffsetCalibInv"]->GetYaxis()->SetRangeUser(0,2.5);
+    m_hists["hDeltaOffsetCalibInv"]->Draw();
+
+    l = new TLine(-2e3, 1, 4e3, 1);
+    // l->SetLineColor(kBlue);
+    l->SetLineStyle(kDashed);
+    l->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hDeltaOffsetCalibInv-ratio.png").c_str());
+
+    // ----------------------------------------------
+
+    gPad->SetLogy(0);
+    gPad->SetGrid();
+
+    m_hists["hDeltaOffsetRatio"]->Draw();
+    // m_hists["hDeltaOffsetRatio"]->SetLineColor(kRed);
+    // m_hists["hDeltaOffsetRatio"]->SetMarkerColor(kRed);
+    m_hists["hDeltaOffsetRatio"]->GetXaxis()->SetTitleOffset(0.9);
+    // m_hists["hDeltaOffsetRatio"]->GetXaxis()->SetRangeUser(-2e3,4e3);
+    m_hists["hDeltaOffsetRatio"]->GetYaxis()->SetRangeUser(0,1200);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hDeltaOffsetRatio.png").c_str());
 
     // ----------------------------------------------
 
