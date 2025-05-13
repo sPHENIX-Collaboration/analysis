@@ -129,6 +129,7 @@ void myAnalysis::initHists() {
     m_hists["hFiberTypeCosmicMPVUpdated"] = new TH2F("hFiberTypeCosmicMPVUpdated","Cosmic MPV vs Fiber Type; Fiber Type; Cosmic MPV", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_mpv, m_mpv_low, m_mpv_high);
 
     m_hists["hCalibInvDeltaOffset"] = new TH2F("hCalibInvDeltaOffset","EMCal Calibration vs #Delta Offset; #Delta Offset [mV]; EMCal Calibration [ADC/MeV]", m_bins_offset, m_offset_low, m_offset_high, m_bins_calib, m_calib_low, m_calib_high);
+    m_hists["hCalibInvCosmicMPV"] = new TH2F("hCalibInvCosmicMPV","EMCal Calibration vs Cosmic MPV; Cosmic MPV; EMCal Calibration [ADC/MeV]", m_bins_mpv, m_mpv_low, m_mpv_high, m_bins_calib, m_calib_low, m_calib_high);
     m_hists["hFiberTypeDeltaOffsetCalibInv"] = new TH2F("hFiberTypeDeltaOffsetCalibInv","#Delta Offset vs Fiber Type; Fiber Type; #Delta Offset [mV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hFiberTypeCalibInv"] = new TH2F("hFiberTypeCalibInv","EMCal Calibration vs Fiber Type; Fiber Type; EMCal Calibration [ADC/MeV]", m_fiberTypeMap.size(), 0, m_fiberTypeMap.size(), m_bins_calib, m_calib_low, m_calib_high);
 
@@ -346,6 +347,9 @@ Int_t myAnalysis::analyze() {
                 static_cast<TH2*>(m_hists["hFiberTypeDeltaOffset"])->Fill(fiberType, deltaOffset);
                 static_cast<TH2*>(m_hists["hFiberTypeDeltaOffsetV2"])->Fill(fiberType, deltaOffsetV2);
                 static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPV"])->Fill(fiberType, mpv_v0);
+                if(calibInv) {
+                    static_cast<TH2 *>(m_hists["hCalibInvCosmicMPV"])->Fill(mpv_v0, calibInv);
+                }
             }
             static_cast<TH2 *>(m_hists["hFiberTypeCosmicMPVUpdated"])->Fill(fiberType, mpv);
             static_cast<TH2*>(m_hists["hDeltaOffsetGain"])->Fill(gainMPV, deltaOffset);
@@ -436,6 +440,7 @@ void myAnalysis::saveHists(const string &outputDir) {
     m_hists["hCalibInvDeltaOffset"]->Write();
     m_hists["hFiberTypeDeltaOffsetCalibInv"]->Write();
     m_hists["hFiberTypeCalibInv"]->Write();
+    m_hists["hCalibInvCosmicMPV"]->Write();
 
     cout << "####################################" << endl;
     cout << "Average Cosmic MPV by Fiber Type" << endl;
@@ -1154,6 +1159,27 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hFiberTypeCalibInv.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["hCalibInvCosmicMPV"]->Draw("COLZ1");
+
+    m_hists["hCalibInvCosmicMPV"]->GetYaxis()->SetRangeUser(0,1.8);
+    m_hists["hCalibInvCosmicMPV"]->GetYaxis()->SetTitleOffset(1);
+    m_hists["hCalibInvCosmicMPV"]->GetXaxis()->SetTitleOffset(1);
+
+    px = static_cast<TH2*>(m_hists["hCalibInvCosmicMPV"])->ProfileX();
+    px->SetLineColor(kRed);
+    px->SetMarkerColor(kRed);
+    px->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalibInvCosmicMPV.png").c_str());
+
+    m_hists["hCalibInvCosmicMPV"]->GetXaxis()->SetRangeUser(0,800);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalibInvCosmicMPV-zoom.png").c_str());
 
     // ----------------------------------------------
     c1->Print((output + "]").c_str(), "pdf portrait");
