@@ -11,15 +11,12 @@
 
 #pragma GCC diagnostic pop
 
-#include <dstarreco/DstarReco.h>
-
 R__LOAD_LIBRARY(libkfparticle_sphenix.so)
 R__LOAD_LIBRARY(libcalotrigger.so)
-R__LOAD_LIBRARY(libDstarReco.so)
 
 namespace HeavyFlavorReco
 {
-  int VERBOSITY = 0;
+  int VERBOSITY_HF = 0;
 
   bool run_Kpi_reco = false;
   bool run_Kpi_reco_likeSign = false;
@@ -28,11 +25,10 @@ namespace HeavyFlavorReco
   bool run_KKpi_reco = false; //Note, 2D matching
   bool run_pKpi_reco = false;
   bool run_pKpi_reco_likeSign = false;
-  bool run_pipi_reco = false;
+  bool run_pipi_reco = true;
   bool run_Kstar_reco = false;
   bool run_KK_reco = false;
-  bool run_Dstar_reco = false;
-  bool run_Lambdapi_reco = true;
+  bool run_Lambdapi_reco = false;
 
   std::string output_dir = "./"; //Top dir of where the output nTuples will be written
   std::string kfp_header = "outputKFParticle_";
@@ -90,17 +86,13 @@ namespace HeavyFlavorReco
   std::string pKpi_like_output_reco_file;
   std::string pKpi_like_output_dir;
 
-  std::string Dstar_reconstruction_name = "Dstar_reco"; //Used for naming output folder, file and node
-  std::string Dstar_output_reco_file;
-  std::string Dstar_output_dir;
-
   std::string Lambdapi_decay_descriptor = "[Xi- -> {Lambda0 -> proton^+ pi^-} pi^-]cc"; //See twiki on how to set this
   std::string Lambdapi_reconstruction_name = "Lambdapi_reco"; //Used for naming output folder, file and node
   std::string Lambdapi_output_reco_file;
   std::string Lambdapi_output_dir;
 
   bool use_pid = true;
-  bool save_tracks_to_DST = true;
+  bool save_tracks_to_DST = false;
   bool dont_use_global_vertex = true;
   bool require_track_and_vertex_match = true;
   bool save_all_vtx_info = true;
@@ -121,7 +113,7 @@ void init_kfp_dependencies()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   GlobalVertexReco* gblvertex = new GlobalVertexReco();
-  gblvertex->Verbosity(VERBOSITY);
+  gblvertex->Verbosity(VERBOSITY_HF);
   se->registerSubsystem(gblvertex);
 
 
@@ -148,7 +140,7 @@ void reconstruct_pipi_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(pipi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(INT_MAX);
 
   kfparticle->setDecayDescriptor(pipi_decay_descriptor);
 
@@ -161,7 +153,7 @@ void reconstruct_pipi_mass()
   kfparticle->use2Dmatching(use_2D_matching);
   kfparticle->getTriggerInfo(get_trigger_info);
   kfparticle->getDetectorInfo(get_detector_info);
-  kfparticle->saveDST(save_tracks_to_DST);
+  kfparticle->saveDST(true);
   kfparticle->setContainerName(pipi_reconstruction_name);
   kfparticle->magFieldFile("FIELDMAP_TRACKING");
 
@@ -169,19 +161,27 @@ void reconstruct_pipi_mass()
   kfparticle->constrainToPrimaryVertex(true);
   kfparticle->setMotherIPchi2(100);
   kfparticle->setFlightDistancechi2(-1.);
-  kfparticle->setMinDIRA(0.999);
+  kfparticle->setMinDIRA(0.95);
   kfparticle->setDecayLengthRange(0.1, FLT_MAX);
+  kfparticle->setDecayLengthRange_XY(-10000, FLT_MAX);
+  kfparticle->setDecayTimeRange_XY(-10000, FLT_MAX);
+  kfparticle->setDecayTimeRange(-10000, FLT_MAX);
+  kfparticle->setMinDecayTimeSignificance(-1e5);
+  kfparticle->setMinDecayLengthSignificance(-1e5);
+  kfparticle->setMinDecayLengthSignificance_XY(-1e5);
 
   //Track parameters
   kfparticle->setMinimumTrackPT(0.0);
   kfparticle->setMinimumTrackIPchi2(-1.);
   kfparticle->setMinimumTrackIP(-1.);
   kfparticle->setMaximumTrackchi2nDOF(100.);
-  kfparticle->setMinTPChits(25);
-
+  kfparticle->setMinTPChits(20);
+  kfparticle->setMinMVTXhits(0);
+  kfparticle->setMinINTThits(0);
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(20);
   kfparticle->setMaximumDaughterDCA(0.5); //5 mm
+  kfparticle->setMaximumDaughterDCA_XY(100); //5 mm
 
   //Parent parameters
   kfparticle->setMotherPT(0);
@@ -199,7 +199,7 @@ void reconstruct_Kstar_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Kstar_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Kstar_decay_descriptor);
 
@@ -250,7 +250,7 @@ void reconstruct_KK_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(KK_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(KK_decay_descriptor);
 
@@ -301,7 +301,7 @@ void reconstruct_Kpi_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Kpi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Kpi_decay_descriptor);
 
@@ -353,7 +353,7 @@ void reconstruct_Kpi_mass_likeSign()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Kpi_like_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Kpi_like_decay_descriptor);
 
@@ -404,7 +404,7 @@ void reconstruct_Kpipi_mass_likeSign()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Kpipi_like_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Kpipi_like_decay_descriptor);
 
@@ -455,7 +455,7 @@ void reconstruct_Kpipi_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Kpipi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Kpipi_decay_descriptor);
 
@@ -506,7 +506,7 @@ void reconstruct_KKpi_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(KKpi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(KKpi_decay_descriptor);
 
@@ -584,7 +584,7 @@ void reconstruct_pKpi_mass()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(pKpi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(pKpi_decay_descriptor);
 
@@ -635,7 +635,7 @@ void reconstruct_pKpi_mass_likeSign()
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(pKpi_like_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(pKpi_like_decay_descriptor);
 
@@ -681,23 +681,13 @@ void reconstruct_pKpi_mass_likeSign()
   se->registerSubsystem(kfparticle);
 }
 
-void reconstruct_Dstar_mass()
-{
-  Fun4AllServer *se = Fun4AllServer::instance();
-
-  DstarReco *myDstarReco = new DstarReco();
-  myDstarReco->setOutputName(Dstar_output_reco_file);
-  se->registerSubsystem(myDstarReco);
-
-}
-
 //adding xi and omega
 void reconstruct_Lambdapi_mass()
 {
   Fun4AllServer *se = Fun4AllServer::instance();
 
   KFParticle_sPHENIX *kfparticle = new KFParticle_sPHENIX(Lambdapi_reconstruction_name);
-  kfparticle->Verbosity(VERBOSITY);
+  kfparticle->Verbosity(VERBOSITY_HF);
 
   kfparticle->setDecayDescriptor(Lambdapi_decay_descriptor);
 

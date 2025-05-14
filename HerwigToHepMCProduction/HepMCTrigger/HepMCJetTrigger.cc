@@ -158,6 +158,7 @@ void HepMCJetTrigger::Print(const std::string &what) const
 bool HepMCJetTrigger::isGoodEvent( HepMC::GenEvent* e1)
 {
 	//this is really just the call to actually evaluate and return the filter
+	if(this->threshold == 0 ) return true;
 	std::vector<fastjet::PseudoJet> jets=findAllJets(e1);
 	int njetsabove=jetsAboveThreshold(jets);
 	if(njetsabove > 0 ) return true;

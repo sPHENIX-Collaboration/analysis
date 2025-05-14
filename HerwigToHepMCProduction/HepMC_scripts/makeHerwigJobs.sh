@@ -9,25 +9,27 @@ triggervalue="0."
 configfile="MB.in"
 configdir="$(pwd)/../config_files"
 condor_testfile="condor_blank.job"
+minseg=0
 user=`id -u -n`
 make_condor_jobs()
 {
-	for i in $(seq 0 ${nfiles}); do 
-		condor_file="condor_file_dir/condor_"$triggertype"_"$i".job"
-		condor_out_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$i".out"
-		condor_err_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$i".err"
-		condor_log_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$i".log"
+	for i in $(seq 0 ${nfiles}); do
+		j=$(( i + minseg )) 
+		condor_file="$(pwd)/condor_file_dir/condor_"$triggertype"_"$j".job"
+		condor_out_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$j".out"
+		condor_err_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$j".err"
+		condor_log_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_"$j".log"
 		if [ "$vebose_mode" = true ]; then
 			echo "Producing condor job file " $condor_file
 		fi
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/Herwig_run.sh" >> $condor_file
-		echo "${blanklines[2]}"$configfile $density $i $triggervalue $(pwd)"/Herwig_"$triggertype"/Herwig_"$triggertype >> $condor_file
+		echo "${blanklines[2]}"$configfile $density $j $triggervalue "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype"/Herwig_"$triggertype>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file
-		echo "${blanklines[6]}"$(pwd)"/Herwig_"$triggertype >>$condor_file
+		echo "${blanklines[6]} /sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype >>$condor_file
 		echo "${blanklines[7]}" >> $condor_file
 		echo "${blanklines[8]}" >> $condor_file #set for me right now
 		echo "${blanklines[9]}" "   "  $user >> $condor_file 
@@ -106,6 +108,7 @@ handle_options(){
 			echo " -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)"
 			echo " -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) "
 			echo " -i, --input 	Specify new input file (Default blank)"
+			echo " -f, --first	Specify a first segment number (Default 0)"
 			exit 0 
 			;;
 		-v | --verbose)
@@ -172,6 +175,16 @@ handle_options(){
 			shift
 			shift
 			;;
+		-f | --first*)
+			if has_argument $@; then 
+				minseg=$(extract_argument $@)
+				if [ "$verbose_mode" = true ]; then 
+					echo "First segement number: " $minseg
+				fi
+			fi
+			shift 
+			shift		
+		;;
 		*) 
 			echo "Invalid option: $1 "
 			exit 1
@@ -181,8 +194,8 @@ handle_options(){
 }
 
 handle_options "$@"
-if [ ! -d "Herwig_"$triggertype ]; then 
-	mkdir -p "Herwig_"$triggertype; 
+if [ ! -d "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype ]; then 
+	mkdir -p "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype; 
 fi 
 make_condor_jobs 
 if [ "$dosubmit" = true ]; then
