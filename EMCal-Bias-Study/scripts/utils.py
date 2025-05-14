@@ -72,9 +72,7 @@ def create_event_combine_jobs():
             # ensure there are correct number of segments
             segments = int(subprocess.run(['bash','-c',f'wc -l {calib_list}'], capture_output=True, encoding="utf-8", cwd=output_dir, check=False).stdout.split()[0])
             if segments != nSegments:
-                print(f'ERROR: {run} has {segments} out of {nSegments}, SKIPPING')
-                if os.path.exists(f'{output_dir}/{calib_list}'):
-                    os.remove(f'{output_dir}/{calib_list}')
+                print(f'WARNING: {run} has {segments} out of {nSegments}')
 
     # generate the job list
     command = f'readlink -f {calib_dir_base}/* > jobs.list'
