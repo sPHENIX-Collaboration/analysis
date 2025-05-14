@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import pandas as pd
-import numpy as np
+"""
+This module is a general utility to configure condor job submission for event combining, waveform fitting etc.
+"""
 import subprocess
 import argparse
 import os
 import shutil
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
@@ -20,6 +22,10 @@ evtComb.add_argument('-s', '--memory', type=float, default=2, help='Memory (unit
 evtComb.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 def create_event_combine_jobs():
+    """
+    This function creates / configures the condor job submission for event combining
+    the individual prdfs into one prdf per run.
+    """
     run_list   = os.path.realpath(args.run_list)
     calib_dir  = os.path.realpath(args.calib_dir)
     output_dir = os.path.realpath(args.output)
@@ -51,21 +57,21 @@ def create_event_combine_jobs():
     os.makedirs(f'{output_dir}/{calib_dir_base}',exist_ok=True)
 
     # get list of all PRDF files for the runs
-    with open(run_list) as fp:
+    with open(run_list, encoding="utf-8") as fp:
         for run in fp:
             run = run.strip()
             print(f'run: {run}')
             calib_list = f'{calib_dir_base}/{calib_dir_base}-{run}.list'
             command = f'fd {run} {calib_dir} > {calib_list}'
 
-            result = subprocess.run(['bash','-c',command],cwd=output_dir)
-            if(result.returncode != 0):
+            result = subprocess.run(['bash','-c',command], cwd=output_dir, check=False)
+            if result.returncode != 0:
                 print(f'Error in {command}')
                 return
 
             # ensure there are correct number of segments
-            segments = int(subprocess.run(['bash','-c',f'wc -l {calib_list}'], capture_output=True, encoding="utf-8",cwd=output_dir).stdout.split()[0])
-            if(segments != nSegments):
+            segments = int(subprocess.run(['bash','-c',f'wc -l {calib_list}'], capture_output=True, encoding="utf-8", cwd=output_dir, check=False).stdout.split()[0])
+            if segments != nSegments:
                 print(f'ERROR: {run} has {segments} out of {nSegments}, SKIPPING')
                 if os.path.exists(f'{output_dir}/{calib_list}'):
                     os.remove(f'{output_dir}/{calib_list}')
@@ -73,8 +79,8 @@ def create_event_combine_jobs():
     # generate the job list
     command = f'readlink -f {calib_dir_base}/* > jobs.list'
 
-    result = subprocess.run(['bash','-c',command],cwd=output_dir)
-    if(result.returncode != 0):
+    result = subprocess.run(['bash','-c',command], cwd=output_dir, check=False)
+    if result.returncode != 0:
         print(f'Error in {command}')
         return
 
@@ -104,6 +110,10 @@ f4a.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of
 f4a.add_argument('-l', '--log', type=str, default='/tmp/anarde/dump/job-$(ClusterId)-$(Process).log', help='Condor log file.')
 
 def create_f4a_jobs():
+    """
+    This function creates / configures the condor job submission for waveform fitting the prdf
+    and generate the histograms containing the waveforms and average ADC.
+    """
     runs_dir   = os.path.realpath(args.runs_dir)
     output_dir = os.path.realpath(args.output)
     executable = os.path.realpath(args.executable)
@@ -120,7 +130,7 @@ def create_f4a_jobs():
     print(f'Requested memory per job: {memory}GB')
     print(f'Condor log file: {log}')
     print(f'nEvents: {nEvents if nEvents else "All"}')
-    print(f'Do All Waveforms: {True if doAllWaveforms else False}')
+    print(f'Do All Waveforms: {bool(doAllWaveforms)}')
 
     os.makedirs(output_dir,exist_ok=True)
     shutil.copy(executable, output_dir)
@@ -131,8 +141,8 @@ def create_f4a_jobs():
     os.makedirs(f'{output_dir}/error',exist_ok=True)
 
     command = f'readlink -f {runs_dir}/* > jobs.list'
-    result = subprocess.run(['bash','-c',command],cwd=output_dir)
-    if(result.returncode != 0):
+    result = subprocess.run(['bash','-c',command], cwd=output_dir, check=False)
+    if result.returncode != 0:
         print(f'Error in {command}')
         return
 
@@ -154,6 +164,9 @@ def create_f4a_jobs():
 status = subparser.add_parser('status', help='Get status of Condor.')
 
 def get_condor_status():
+    """
+    This function gets the status of condor jobs for each submission node: idle / running / held
+    """
     hosts = [f'sphnxuser{x:02}' for x in range(1,9)]
 
     dt_all = []
@@ -162,7 +175,7 @@ def get_condor_status():
     for host in hosts:
         print(f'Progress: {host}')
 
-        a = subprocess.run(['bash','-c',f'ssh {host} "condor_q | tail -n 3 | head -n 2"'], capture_output=True, encoding="utf-8")
+        a = subprocess.run(['bash','-c',f'ssh {host} "condor_q | tail -n 3 | head -n 2"'], capture_output=True, encoding="utf-8", check=False)
         total   = int(a.stdout.split('\n')[-3].split('jobs')[0].split(':')[1])
         idle    = int(a.stdout.split('\n')[-3].split('idle')[0].split(',')[-1])
         running = int(a.stdout.split('\n')[-3].split('running')[0].split(',')[-1])
@@ -186,9 +199,9 @@ def get_condor_status():
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    if(args.command == 'evtComb'):
+    if args.command == 'evtComb':
         create_event_combine_jobs()
-    if(args.command == 'f4a'):
+    if args.command == 'f4a':
         create_f4a_jobs()
-    if(args.command == 'status'):
+    if args.command == 'status':
         get_condor_status()
