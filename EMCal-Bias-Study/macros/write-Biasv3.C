@@ -1030,7 +1030,7 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     gPad->Update();
 
-    TPaveStats* st = (TPaveStats*)m_hists["hCalibInv"]->FindObject("stats");
+    TPaveStats* st = static_cast<TPaveStats*>(m_hists["hCalibInv"]->FindObject("stats"));
     Double_t xlow = 0.7;
     Double_t ylow = 0.62;
     st->SetX1NDC(xlow);
@@ -1354,7 +1354,7 @@ void write_Biasv3(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 2 || argc > 4){
         cout << "usage: ./write-Biasv3 input [outputDir] [plotDir]" << endl;
         cout << "input: input root file" << endl;

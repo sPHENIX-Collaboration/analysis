@@ -115,7 +115,7 @@ Int_t myAnalysis::addHist(const string &fileName, const string &histName, unorde
       return 1;
     }
 
-    TH1 *hist = (TH1 *) file->Get(histName.c_str());
+    TH1 *hist = static_cast<TH1*>(file->Get(histName.c_str()));
     if (!hist) {
       cout << "Error: Histogram '" << histName << "' not found in file: " << fileName << endl;
       file->Close();
@@ -125,7 +125,7 @@ Int_t myAnalysis::addHist(const string &fileName, const string &histName, unorde
     string histNewName = histName+tag;
 
     // Clone the histogram to avoid ownership issues when the file is closed
-    TH1 *clonedHist = (TH1 *) hist->Clone(histNewName.c_str());
+    TH1 *clonedHist = static_cast<TH1*>(hist->Clone(histNewName.c_str()));
 
     histograms[histNewName] = clonedHist;
     if(m_verbosity) {
@@ -152,11 +152,11 @@ Int_t myAnalysis::readOffsets(const string& input) {
     while (std::getline(file, line)) {
         stringstream ss(line);
         string cell;
-        string run;
         Int_t offset;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string run;
             // serial
             if (std::getline(ss, cell, ',')) {
                     run = cell;
@@ -193,11 +193,9 @@ Int_t myAnalysis::readFile(const string &input) {
     cout << "###############" << endl;
     cout << "Read File: " << input << endl;
     std::ifstream file(input);
-    string line;
-
-    TH1::AddDirectory(kFALSE);
 
     if (file.is_open()) {
+        string line;
         while (std::getline(file, line)) {
             // Process each line here
             string fileName = fs::path(line).filename().string();
@@ -358,7 +356,7 @@ void myAnalysis::analyze(const string &output) {
             m_hists[histName]->GetYaxis()->SetNdivisions(m_ntowIBSide, false);
             m_hists[histName]->Draw("COLZ");
 
-            TPaletteAxis *palette = (TPaletteAxis *) m_hists[histName]->GetListOfFunctions()->FindObject("palette");
+            TPaletteAxis *palette = static_cast<TPaletteAxis*>(m_hists[histName]->GetListOfFunctions()->FindObject("palette"));
 
             // the following lines move the palette. Choose the values you need for the position.
             Float_t xshift = 0.05;
@@ -470,7 +468,7 @@ void myAnalysis::analyze(const string &output) {
                     m_hists[name.str()]->SetTitle("");
                     m_hists[name.str()]->Draw("COL");
 
-                    TH1 *px = ((TH2 *) m_hists[name.str()])->ProfileX();
+                    TH1 *px = static_cast<TH2*>(m_hists[name.str()])->ProfileX();
                     px->SetLineColor(kRed);
                     px->SetMarkerColor(kRed);
                     px->Draw("same");
@@ -524,13 +522,14 @@ void display(const string &input,
 
     // set sPHENIX plotting style
     SetsPhenixStyle();
+    TH1::AddDirectory(kFALSE);
 
     if(myAnalysis::readFile(input) || myAnalysis::readOffsets(input_offset)) return ;
     myAnalysis::analyze(output);
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 3 || argc > 4){
         cout << "usage: ./display input input_offset [output]" << endl;
         cout << "input: input TFile list" << endl;

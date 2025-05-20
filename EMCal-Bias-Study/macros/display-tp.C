@@ -123,12 +123,12 @@ Int_t myAnalysis::readADC(const string& input) {
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         Int_t tpwidth;
         Int_t adc;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // tpwidth
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -269,7 +269,7 @@ void display_tp(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 2 || argc > 4){
         cout << "usage: ./display input [output] [verbosity]" << endl;
         cout << "input: input directory" << endl;

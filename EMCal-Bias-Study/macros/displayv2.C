@@ -115,7 +115,7 @@ void myAnalysis::setEMCalDim(TH1* hist) {
 }
 
 Int_t myAnalysis::addHist(TFile* file, const string &histName, unordered_map<string,TH1*> &histograms, const string &tag) {
-    TH1 *hist = (TH1*) file->Get(histName.c_str());
+    TH1 *hist = static_cast<TH1*>(file->Get(histName.c_str()));
     if (!hist) {
       cout << "Error: Histogram '" << histName << "' not found in file: " << file->GetName() << endl;
       return 1;
@@ -124,7 +124,7 @@ Int_t myAnalysis::addHist(TFile* file, const string &histName, unordered_map<str
     string histNewName = histName+tag;
 
     // Clone the histogram to avoid ownership issues when the file is closed
-    TH1 *clonedHist = (TH1 *) hist->Clone(histNewName.c_str());
+    TH1 *clonedHist = static_cast<TH1*>(hist->Clone(histNewName.c_str()));
 
     histograms[histNewName] = clonedHist;
     if(m_verbosity) {
@@ -160,7 +160,7 @@ Int_t myAnalysis::readFile(const string &input) {
             addHist(tfile, "hCEMC", m_hists, "_"+run);
             addHist(tfile, "hEvent", m_hists, "_"+run);
 
-            TList* keysWaveform = ((TDirectory*)tfile->Get("waveform"))->GetListOfKeys();
+            TList* keysWaveform = static_cast<TDirectory*>(tfile->Get("waveform"))->GetListOfKeys();
             for(UInt_t i = 0; i < keysWaveform->GetSize() && m_saveWaveforms; ++i) {
                 string name  = "waveform/" + string(keysWaveform->At(i)->GetName());
                 addHist(tfile, name, m_hists, "_"+run);
@@ -334,7 +334,7 @@ void myAnalysis::analyze(const string &output) {
                 m_hists[name.str()]->SetTitle("");
                 m_hists[name.str()]->Draw("COL");
 
-                TH1 *px = ((TH2 *) m_hists[name.str()])->ProfileX();
+                TH1 *px = static_cast<TH2*>(m_hists[name.str()])->ProfileX();
                 px->SetLineColor(kRed);
                 px->SetMarkerColor(kRed);
                 px->Draw("same");
@@ -382,7 +382,7 @@ void displayv2(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 2 || argc > 3){
         cout << "usage: ./displayv2 input [output]" << endl;
         cout << "input: input TFile list" << endl;

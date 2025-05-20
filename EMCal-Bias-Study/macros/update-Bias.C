@@ -114,13 +114,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
         return; // Indicate an error
     }
 
-    m_hists["h2Bias"]      = (TH2F*)file->Get("h2Bias");
-    m_hists["h2Calib"]     = (TH2F*)file->Get("h2Calib");
-    m_hists["h2CosmicMPV"] = (TH2F*)file->Get("h2CosmicMPV");
-    m_hists["h2VbDivCosmicCalib"] = (TH2F*)file->Get("h2VbDivCosmicCalib");
-    m_hists["h2VbDivCosmicCalib_px"] = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProfileX();
-    m_hists["h2DummySector"] = (TH2F*)file->Get("h2DummySector");
-    m_hists["h2DummyIB"] = (TH2F*)file->Get("h2DummyIB");
+    m_hists["h2Bias"]      = static_cast<TH2*>(file->Get("h2Bias"));
+    m_hists["h2Calib"]     = static_cast<TH2*>(file->Get("h2Calib"));
+    m_hists["h2CosmicMPV"] = static_cast<TH2*>(file->Get("h2CosmicMPV"));
+    m_hists["h2VbDivCosmicCalib"] = static_cast<TH2*>(file->Get("h2VbDivCosmicCalib"));
+    m_hists["h2VbDivCosmicCalib_px"] = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProfileX();
+    m_hists["h2DummySector"] = static_cast<TH2*>(file->Get("h2DummySector"));
+    m_hists["h2DummyIB"] = static_cast<TH2*>(file->Get("h2DummyIB"));
 
     m_hists["h2BiasNew1"] = new TH2F("h2BiasNew1","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2BiasNew2"] = new TH2F("h2BiasNew2","Bias [V]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
@@ -240,9 +240,9 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
             m_hists["hBiasNew3"]->Fill(vbNew3);
 
             if(cosmic && calib) {
-                ((TH2*)m_hists["h2VbNew1DivCosmicCalib"])->Fill(calib,vbNew1DivCosmic);
-                ((TH2*)m_hists["h2VbNew2DivCosmicCalib"])->Fill(calib,vbNew2DivCosmic);
-                ((TH2*)m_hists["h2VbNew3DivCosmicCalib"])->Fill(calib,vbNew3DivCosmic);
+                static_cast<TH2*>(m_hists["h2VbNew1DivCosmicCalib"])->Fill(calib,vbNew1DivCosmic);
+                static_cast<TH2*>(m_hists["h2VbNew2DivCosmicCalib"])->Fill(calib,vbNew2DivCosmic);
+                static_cast<TH2*>(m_hists["h2VbNew3DivCosmicCalib"])->Fill(calib,vbNew3DivCosmic);
             }
         }
     }
@@ -449,7 +449,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2VbNew1DivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2VbNew1DivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2VbNew1DivCosmicCalib_px = ((TH2*)m_hists["h2VbNew1DivCosmicCalib"])->ProfileX();
+    TH1* h2VbNew1DivCosmicCalib_px = static_cast<TH2*>(m_hists["h2VbNew1DivCosmicCalib"])->ProfileX();
     h2VbNew1DivCosmicCalib_px->SetLineColor(kRed);
     h2VbNew1DivCosmicCalib_px->SetMarkerColor(kRed);
     h2VbNew1DivCosmicCalib_px->Draw("same");
@@ -465,7 +465,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2VbNew2DivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2VbNew2DivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2VbNew2DivCosmicCalib_px = ((TH2*)m_hists["h2VbNew2DivCosmicCalib"])->ProfileX();
+    TH1* h2VbNew2DivCosmicCalib_px = static_cast<TH2*>(m_hists["h2VbNew2DivCosmicCalib"])->ProfileX();
     h2VbNew2DivCosmicCalib_px->SetLineColor(kRed);
     h2VbNew2DivCosmicCalib_px->SetMarkerColor(kRed);
     h2VbNew2DivCosmicCalib_px->Draw("same");
@@ -480,7 +480,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2VbNew3DivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2VbNew3DivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2VbNew3DivCosmicCalib_px = ((TH2*)m_hists["h2VbNew3DivCosmicCalib"])->ProfileX();
+    TH1* h2VbNew3DivCosmicCalib_px = static_cast<TH2*>(m_hists["h2VbNew3DivCosmicCalib"])->ProfileX();
     h2VbNew3DivCosmicCalib_px->SetLineColor(kRed);
     h2VbNew3DivCosmicCalib_px->SetMarkerColor(kRed);
     h2VbNew3DivCosmicCalib_px->Draw("same");
@@ -505,8 +505,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2VbDivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2VbDivCosmicCalibA_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2VbDivCosmicCalibB_py = ((TH2*)m_hists["h2VbDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2VbDivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProjectionY("h2VbDivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2VbDivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2VbDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2VbDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2VbDivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -541,8 +541,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2VbNew1DivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2VbNew1DivCosmicCalibA_py = ((TH2*)m_hists["h2VbNew1DivCosmicCalib"])->ProjectionY("h2VbNew1DivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2VbNew1DivCosmicCalibB_py = ((TH2*)m_hists["h2VbNew1DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2VbNew1DivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2VbNew1DivCosmicCalib"])->ProjectionY("h2VbNew1DivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2VbNew1DivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2VbNew1DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2VbNew1DivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2VbNew1DivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -577,8 +577,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2VbNew2DivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2VbNew2DivCosmicCalibA_py = ((TH2*)m_hists["h2VbNew2DivCosmicCalib"])->ProjectionY("h2VbNew2DivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2VbNew2DivCosmicCalibB_py = ((TH2*)m_hists["h2VbNew2DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2VbNew2DivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2VbNew2DivCosmicCalib"])->ProjectionY("h2VbNew2DivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2VbNew2DivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2VbNew2DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2VbNew2DivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2VbNew2DivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -613,8 +613,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2VbNew3DivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2VbNew3DivCosmicCalibA_py = ((TH2*)m_hists["h2VbNew3DivCosmicCalib"])->ProjectionY("h2VbNew3DivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2VbNew3DivCosmicCalibB_py = ((TH2*)m_hists["h2VbNew3DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2VbNew3DivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2VbNew3DivCosmicCalib"])->ProjectionY("h2VbNew3DivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2VbNew3DivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2VbNew3DivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2VbNew3DivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2VbNew3DivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -668,7 +668,7 @@ void update_Bias(const string &input_hists,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 2 || argc > 4){
         cout << "usage: ./read-Bias input_hists [output] [outputRoot]" << endl;
         cout << "input_hists: input EMCal block info hists" << endl;

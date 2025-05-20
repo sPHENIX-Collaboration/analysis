@@ -98,12 +98,12 @@ Int_t myAnalysis::readMaps(const string &filename, unordered_map<Int_t,Int_t> &m
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         Int_t key;
         Int_t value;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // key
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -164,7 +164,7 @@ Int_t myAnalysis::readHist(const string& filename, const string &histName) {
         return 1;
     }
 
-    m_hist = (TH1*) tfile->Get(histName.c_str());
+    m_hist = static_cast<TH1*>(tfile->Get(histName.c_str()));
     if (!m_hist) {
       cout << "Error: Histogram '" << histName << "' not found in file: " << tfile->GetName() << endl;
       return 1;
@@ -259,7 +259,7 @@ void write_Biasv2(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 5 || argc > 6){
         cout << "usage: ./write-Biasv2 input input_hist input_sector input_channel [outputDir]" << endl;
         cout << "input: input root file" << endl;

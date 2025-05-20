@@ -92,11 +92,10 @@ void Fun4All_Year2_Fitting(const string &fname,
   delete se;
   cout << "All done!" << endl;
   std::quick_exit(0);
-  gSystem->Exit(0);
 }
 
 #ifndef __CINT__
-int main(int argc, char *argv[])
+int main(int argc, const char* const argv[])
 {
   if (argc < 2 || argc > 6)
   {

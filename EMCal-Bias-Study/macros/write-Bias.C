@@ -150,12 +150,12 @@ Int_t myAnalysis::readMaps(const string &filename, unordered_map<Int_t,Int_t> &m
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         Int_t key;
         Int_t value;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // key
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -224,11 +224,11 @@ Int_t myAnalysis::readCSV(const string& filename) {
 
     while (std::getline(file, line)) {
         stringstream ss(line);
-        string cell;
         MyData row;
 
         // Extract the data from each cell, handling potential errors
         try {
+            string cell;
             // serial
             if (std::getline(ss, cell, ',')) {
                  try {
@@ -444,7 +444,7 @@ void write_Bias(const string &input,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 4 || argc > 9){
         cout << "usage: ./write-Bias input input_sector input_channel [outputDir] [variations] [startBiasOffset] [offset_step] [varyAllIB]" << endl;
         cout << "input: input csv file" << endl;

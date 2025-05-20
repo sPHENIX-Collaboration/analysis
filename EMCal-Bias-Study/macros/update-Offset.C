@@ -110,13 +110,13 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
         return; // Indicate an error
     }
 
-    m_hists["h2Offset"]      = (TH2F*)file->Get("h2Offset");
-    m_hists["h2Calib"]     = (TH2F*)file->Get("h2Calib");
-    m_hists["h2CosmicMPV"] = (TH2F*)file->Get("h2CosmicMPV");
-    m_hists["h2OffsetDivCosmicCalib"] = (TH2F*)file->Get("h2OffsetDivCosmicCalib");
-    m_hists["h2OffsetDivCosmicCalib_px"] = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProfileX();
-    m_hists["h2DummySector"] = (TH2F*)file->Get("h2DummySector");
-    m_hists["h2DummyIB"] = (TH2F*)file->Get("h2DummyIB");
+    m_hists["h2Offset"]      = static_cast<TH2*>(file->Get("h2Offset"));
+    m_hists["h2Calib"]     = static_cast<TH2*>(file->Get("h2Calib"));
+    m_hists["h2CosmicMPV"] = static_cast<TH2*>(file->Get("h2CosmicMPV"));
+    m_hists["h2OffsetDivCosmicCalib"] = static_cast<TH2*>(file->Get("h2OffsetDivCosmicCalib"));
+    m_hists["h2OffsetDivCosmicCalib_px"] = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProfileX();
+    m_hists["h2DummySector"] = static_cast<TH2*>(file->Get("h2DummySector"));
+    m_hists["h2DummyIB"] = static_cast<TH2*>(file->Get("h2DummyIB"));
 
     m_hists["h2OffsetNew"] = new TH2F("h2OffsetNew","Offset [mV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
     m_hists["h2OffsetNewDelta"] = new TH2F("h2OffsetNewDelta","#Delta Offset [mV]; Tower Index #phi; Tower Index #eta", m_nphi, -0.5, m_nphi-0.5, m_neta, -0.5, m_neta-0.5);
@@ -201,7 +201,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
             m_hists["hOffsetNew"]->Fill(offsetNew);
 
             if(0 < cosmic && cosmic < max_cosmic && calib) {
-                ((TH2*)m_hists["h2OffsetNewDivCosmicCalib"])->Fill(calib,offsetNewDivCosmic);
+                static_cast<TH2*>(m_hists["h2OffsetNewDivCosmicCalib"])->Fill(calib,offsetNewDivCosmic);
             }
         }
     }
@@ -364,7 +364,7 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
     m_hists["h2OffsetNewDivCosmicCalib"]->Draw("COLZ1");
     m_hists["h2OffsetNewDivCosmicCalib"]->GetXaxis()->SetTitleOffset(1);
 
-    TH1* h2OffsetNewDivCosmicCalib_px = ((TH2*)m_hists["h2OffsetNewDivCosmicCalib"])->ProfileX();
+    TH1* h2OffsetNewDivCosmicCalib_px = static_cast<TH2*>(m_hists["h2OffsetNewDivCosmicCalib"])->ProfileX();
     h2OffsetNewDivCosmicCalib_px->SetLineColor(kRed);
     h2OffsetNewDivCosmicCalib_px->SetMarkerColor(kRed);
     h2OffsetNewDivCosmicCalib_px->Draw("same");
@@ -389,8 +389,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2OffsetDivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2OffsetDivCosmicCalibA_py = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2OffsetDivCosmicCalibB_py = ((TH2*)m_hists["h2OffsetDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2OffsetDivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProjectionY("h2OffsetDivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2OffsetDivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2OffsetDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2OffsetDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2OffsetDivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -423,8 +423,8 @@ void myAnalysis::analyze(const string &output, const string &outputRoot, const s
 
     name << "h2OffsetNewDivCosmicCalib_Delta_" << delta << "_py";
 
-    TH1* h2OffsetNewDivCosmicCalibA_py = ((TH2*)m_hists["h2OffsetNewDivCosmicCalib"])->ProjectionY("h2OffsetNewDivCosmicCalib_py", bin_start, bin_end);
-    TH1* h2OffsetNewDivCosmicCalibB_py = ((TH2*)m_hists["h2OffsetNewDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
+    TH1* h2OffsetNewDivCosmicCalibA_py = static_cast<TH2*>(m_hists["h2OffsetNewDivCosmicCalib"])->ProjectionY("h2OffsetNewDivCosmicCalib_py", bin_start, bin_end);
+    TH1* h2OffsetNewDivCosmicCalibB_py = static_cast<TH2*>(m_hists["h2OffsetNewDivCosmicCalib"])->ProjectionY(name.str().c_str(), 1, bin_start-1);
 
     h2OffsetNewDivCosmicCalibB_py->GetYaxis()->SetTitle("Counts");
     h2OffsetNewDivCosmicCalibB_py->GetYaxis()->SetRangeUser(5e-1,1e4);
@@ -478,7 +478,7 @@ void update_Offset(const string &input_hists,
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc < 2 || argc > 4){
         cout << "usage: ./read-Offset input_hists [output] [outputRoot]" << endl;
         cout << "input_hists: input EMCal block info hists" << endl;

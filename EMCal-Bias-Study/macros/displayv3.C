@@ -52,7 +52,6 @@ void myAnalysis::analyze(const string &output) {
     cout << "###############" << endl;
     cout << "Analysis" << endl;
     string outputDir = fs::absolute(output).parent_path().string();
-    string outputStem = fs::absolute(output).filename().stem().string();
     fs::create_directories(outputDir);
     fs::create_directories(outputDir+"/images");
 
@@ -75,7 +74,7 @@ void myAnalysis::analyze(const string &output) {
 
         string hName = histName + "-" + name;
 
-        m_hists[hName] = (TH1*)tfile->Get(histName.c_str());
+        m_hists[hName] = static_cast<TH1*>(tfile->Get(histName.c_str()));
         if (!m_hists[hName]) {
             cout << "Error: Histogram '" << histName << "' not found in file: " << tfile->GetName() << endl;
             return;
@@ -180,7 +179,7 @@ void displayv3(const string &output="plots.pdf") {
 }
 
 # ifndef __CINT__
-Int_t main(Int_t argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
 if(argc > 2){
         cout << "usage: ./displayv3 [output]" << endl;
         cout << "output: output pdf file" << endl;
