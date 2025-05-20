@@ -448,6 +448,9 @@ void myAnalysis::saveHists(const string &outputDir) {
     m_hists[cosmicHistNameV0]->Write();
     m_hists[cosmicHistNameV1]->Write();
     m_hists[cosmicHistNameV2]->Write();
+    m_hists["h2Calib"]->Write();
+    m_hists["h2DummySector"]->Write();
+    m_hists["h2DummyIB"]->Write();
     m_hists["hCosmicMPVv0"]->Write();
     m_hists["hCosmicMPVv1"]->Write();
     m_hists["hCosmicMPVv2"]->Write();
