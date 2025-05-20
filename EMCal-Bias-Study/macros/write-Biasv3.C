@@ -1366,7 +1366,7 @@ if(argc < 2 || argc > 4){
     if(argc >= 3) {
         outputDir = argv[2];
     }
-    if(argc >= 3) {
+    if(argc >= 4) {
         plotDir = argv[3];
     }
 
