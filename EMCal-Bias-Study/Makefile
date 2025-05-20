@@ -11,7 +11,7 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io
 CPPFLAGS = -I$(MYINSTALL)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloTower
 
-all: bin/read-Bias bin/update-Bias bin/update-Offset bin/write-Bias bin/write-Biasv2 bin/write-Biasv3 bin/display bin/displayv2 bin/displayv3 bin/display-tp bin/Fun4All_Year2_Fitting
+all: bin/read-Bias bin/update-Bias bin/update-Offset bin/write-Bias bin/write-Biasv2 bin/write-Biasv3 bin/display bin/displayv2 bin/displayv3 bin/display-tp bin/Fun4All_Year2_Fitting bin/analyze-new-response
 
 bin/read-Bias: macros/read-Bias.C
 	mkdir -p bin
@@ -26,6 +26,10 @@ bin/write-Biasv2: macros/write-Biasv2.C
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
 
 bin/write-Biasv3: macros/write-Biasv3.C
+	mkdir -p bin
+	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+
+bin/analyze-new-response: macros/analyze-new-response.C
 	mkdir -p bin
 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
 
