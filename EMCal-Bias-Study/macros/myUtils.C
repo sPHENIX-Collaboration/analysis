@@ -1,4 +1,10 @@
+#include <iostream>
+#include <fstream>
 #include <string>
+#include <vector>
+#include <filesystem>
+#include <functional>
+#include <concepts>
 
 // root includes --
 #include <TH1.h>
@@ -16,6 +22,12 @@ namespace myUtils {
     pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
     vector<string> split(const string &s, const char delimiter);
 
+    template<typename Func>
+    concept InvocableWithString = std::invocable<Func, const std::string&>;
+
+    template<InvocableWithString Callable>
+    bool readCSV(const std::filesystem::path& filePath, Callable lineHandler, bool skipHeader = true);
+
     Int_t m_nsector = 64;
     Int_t m_nchannel_per_sector = 384;
     Int_t m_nchannel_per_ib = 64;
@@ -24,6 +36,54 @@ namespace myUtils {
     Int_t m_nib = 384;
     Int_t m_nib_per_sector = 6;
     Int_t m_ntowIBSide = 8;
+}
+
+/**
+ * @brief Reads a CSV (or any line-delimited) file and applies a handler function to each line.
+ *
+ * @tparam Callable The type of the function/lambda to be called for each line.
+ * Must be invocable with a 'const std::string&'.
+ * @param filePath The path to the input file.
+ * @param lineHandler A function, lambda, or functor that takes a 'const std::string&' (the line)
+ * and processes it.
+ * @param skipHeader If true, the first line of the file will be read and discarded.
+ * @return true if the file was successfully opened and read, false otherwise.
+ */
+template<myUtils::InvocableWithString Callable> // Using the more general concept for wider applicability
+bool myUtils::readCSV(const std::filesystem::path& filePath, Callable lineHandler, bool skipHeader) {
+    std::ifstream file(filePath);
+
+    if (!file.is_open()) {
+        std::cout << "Error: [" << filePath.string() << "] Could not open file." << std::endl;
+        return false;
+    }
+
+    std::string line;
+
+    if (skipHeader && std::getline(file, line)) {
+        // First line read and discarded (header)
+    }
+
+    while (std::getline(file, line)) {
+        // Optional: Handle potential Windows CRLF (\r\n) issues if the file might
+        // have them and you're on a system that only expects \n.
+        // std::getline usually handles this, but if \r remains:
+        // if (!line.empty() && line.back() == '\r') {
+        //     line.pop_back();
+        // }
+        lineHandler(line); // Call the user-provided function for each line
+    }
+
+    // Check for errors during read operations (other than EOF)
+    if (file.bad()) {
+        std::cout << "Error: [" << filePath.string() << "] I/O error while reading file." << std::endl;
+        return false;
+    }
+    // file.eof() will be true if EOF was reached.
+    // file.fail() might be true if getline failed not due to eof (e.g., badbit also set).
+    // If badbit is not set and eof() is true, it's a successful read to the end.
+
+    return true; // Successfully processed or reached EOF
 }
 
 vector<string> myUtils::split(const string &s, const char delimiter) {
