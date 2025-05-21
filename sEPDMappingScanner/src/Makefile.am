@@ -23,13 +23,16 @@ lib_LTLIBRARIES = \
 libCheckEpdMap_la_SOURCES = \
   CheckEpdMap.cc
 
-# Link against everything the module calls
 libCheckEpdMap_la_LIBADD = \
   -lepd_io \
   -lfun4all \
   -lffamodules \
   -lcdbobjects \
-  -lphool
+  -lphool \
+  -lg4detectors_io \
+  -lphg4hit \
+  -lg4dst \
+  -lg4eval
 
 
 BUILT_SOURCES = testexternals.cc
