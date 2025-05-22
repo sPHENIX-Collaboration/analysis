@@ -5,13 +5,16 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <tuple>
 
 class PHCompositeNode;
 class EpdGeom;
 class TowerInfoContainer;
 class TProfile2D;
 class TH1I;
+class TH2I;
 class TH2F;
+class TH1F;
 
 /**
  * sanity check for the sEPD channel map.
@@ -37,6 +40,10 @@ class CheckEpdMap : public SubsysReco
   int End(PHCompositeNode*) override;
   void PrintReverseTable(std::ostream &os = std::cout) const;
 
+  void setSimulationMode(bool b) { m_simulationMode = b; }
+  void SetOutputFile(const std::string &fname) { outputFile = fname; }
+  //void   SetJobIndex(int idx) { jobIndex = idx; }
+
  private:
     // [0] = south, [1] = north
     TProfile2D* m_profOld [2]{};
@@ -45,6 +52,16 @@ class CheckEpdMap : public SubsysReco
 
     TH1I*  m_diffCount = nullptr;   
     TH2F*  m_diffADC   = nullptr;
+    TH1F*  m_hitCenterDist = nullptr;
+    //TH2I*  hSimMatch[2];
+
+    TH2F*  m_simMatchPolarS01 = nullptr;
+    TH2F*  m_simMatchPolarN01 = nullptr;
+
+    TH2F*  m_simMatchPolarS = nullptr;
+    TH2F*  m_simMatchPolarN = nullptr;
+
+    
 
     std::vector<unsigned> m_keyVec;
    
@@ -52,7 +69,19 @@ class CheckEpdMap : public SubsysReco
     static constexpr int NPHI  = 24;
     mutable int m_reverse[2][NRING][NPHI]{};
 
+    static constexpr int NSEC = 12;
+    static constexpr int NTILE = 31;
+    //map from (arm,sector,tile_id) -> (arm,ring,phi)
+    std::tuple<uint32_t,uint32_t,uint32_t> m_tile_bin[2][NSEC][NTILE]; 
+    std::tuple<uint32_t,uint32_t,uint32_t> m_module_coords[2][NRING][NPHI];
+    //int m_primaryTrackID = std::numeric_limits<unsigned int>::max();;
+
+    TH2F* m_tileHist[2][NRING][NPHI] = {};
     TowerInfoContainer *towers;
+    EpdGeom *geom = nullptr;
+    bool m_simulationMode = false;
+    std::string          outputFile;
+
 
     std::pair<
     std::vector<unsigned>,   // vkey
@@ -61,7 +90,17 @@ class CheckEpdMap : public SubsysReco
 
     void check_map(const std::vector<unsigned>& vkey,
         const std::vector<int> mapped_vals) const;
+
+    int processEventDataMode(PHCompositeNode *topNode);
     
+    int processEventSimulationMode(PHCompositeNode *topNode);
+
+    void BuildSimMap();
+    void InitializeSimMatchMap();
+
+    int Getphimap(int phiindex);
+
+    int Getrmap(int rindex);
     
 
     
