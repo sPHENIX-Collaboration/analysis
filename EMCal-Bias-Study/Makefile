@@ -4,72 +4,86 @@
 # @file
 # @version 0.1
 
-ROOT_CPPFLAGS = `root-config --cflags`
+# Define your compiler and flags (adjust as needed)
+CXX = g++
+CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic \
+-Wshadow -Wconversion -Wsign-conversion -Wnull-dereference \
+-Wformat=2 -Wduplicated-cond -Wuseless-cast -Wold-style-cast \
+-Wnoexcept -Woverloaded-virtual
+
+# ROOT and sPHENIX flags
+ROOT_CPPFLAGS = $(shell root-config --cflags | sed 's/-I/-isystem /g')
 ROOT_LIBFLAGS = `root-config --libs`
-sPHENIX_CPPFLAGS = -I$(OFFLINE_MAIN)/include -I$(OFFLINE_MAIN)/rootmacros
+sPHENIX_CPPFLAGS = -isystem $(OFFLINE_MAIN)/include -isystem $(OFFLINE_MAIN)/rootmacros
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io
+
+# Your project-specific flags
 CPPFLAGS = -I$(MYINSTALL)/include
 LIBFLAGS = -L$(MYINSTALL)/lib -lCaloTower
 
-all: bin/read-Bias bin/update-Bias bin/update-Offset bin/write-Bias bin/write-Biasv2 bin/write-Biasv3 bin/display bin/displayv2 bin/displayv3 bin/display-tp bin/Fun4All_Year2_Fitting bin/analyze-new-response
+# Combine all C++ flags for compilation
+ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS)
 
-bin/read-Bias: macros/read-Bias.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+# Define your source files and output executables
+# Use a wildcard to automatically pick up all .C files in 'macros'
+SRCS = $(wildcard macros/*.C)
 
-bin/write-Bias: macros/write-Bias.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+# List all your executable targets explicitly
+ALL_TARGETS = bin/read-Bias \
+              bin/update-Bias \
+              bin/update-Offset \
+              bin/write-Bias \
+              bin/write-Biasv2 \
+              bin/write-Biasv3 \
+              bin/write-Biasv4 \
+              bin/display \
+              bin/displayv2 \
+              bin/displayv3 \
+              bin/display-tp \
+              bin/Fun4All_Year2_Fitting \
+              bin/analyze-new-response
 
-bin/write-Biasv2: macros/write-Biasv2.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+# Define a stamp file for Cppcheck
+CPPCHECK_STAMP = .cppcheck_ran_stamp
 
-bin/write-Biasv3: macros/write-Biasv3.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+#--- Default target: builds all programs and runs Cppcheck ---
+all: $(ALL_TARGETS) cppcheck
 
-bin/analyze-new-response: macros/analyze-new-response.C
+#--- Rule for building individual executables (adjust as needed if they have unique dependencies) ---
+# This is a pattern rule that says: to build 'bin/X' from 'macros/X.C'
+bin/%: macros/%.C
+	@echo "Building $@ from $<"
 	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/update-Bias: macros/update-Bias.C
-	mkdir -p bin
-	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/update-Offset: macros/update-Offset.C
-	mkdir -p bin
-	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/display: macros/display.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/displayv2: macros/displayv2.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/displayv3: macros/displayv3.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
-
-bin/display-tp: macros/display-tp.C
-	mkdir -p bin
-	g++ -o $@ $< $(ROOT_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_CPPFLAGS) $(sPHENIX_LIBFLAGS)
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(LIBFLAGS)
 
 bin/Fun4All_Year2_Fitting: macros/Fun4All_Year2_Fitting.C
 	mkdir -p bin
 	g++ -g -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS) $(LIBFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lfun4allraw -lphool -lcalo_reco -lffamodules
 
-clean:
-	rm -f bin/read-Bias
-	rm -f bin/update-Bias
-	rm -f bin/update-Offset
-	rm -f bin/write-Bias
-	rm -f bin/display
-	rm -f bin/displayv2
-	rm -f bin/displayv3
-	rm -f bin/display-tp
-	rm -f bin/Fun4All_Year2_Fitting
+#--- Cppcheck target ---
+# This target now creates/updates the stamp file if any SRCS are newer
+$(CPPCHECK_STAMP): $(SRCS)
+	@echo "Running Cppcheck static analysis..."
+    # Cppcheck command with all necessary include paths and suppressions
+	cppcheck --std=c++20 --enable=all "-D R__LOAD_LIBRARY(X)=" \
+	--suppress=missingIncludeSystem \
+	--suppress=missingInclude \
+	--force \
+	--checkers-report=cppcheck_checkers.txt \
+	--check-level=exhaustive \
+	$(SRCS) # Check all source files explicitly listed in SRCS or a specific directory
+	@touch $@ # Update the timestamp of the stamp file after successful run
 
+# Make the 'cppcheck' phony target depend on the actual stamp file target
+# This ensures 'make cppcheck' runs the stamp file rule
+cppcheck: $(CPPCHECK_STAMP)
+
+#--- Clean target ---
+clean:
+	@echo "Cleaning up..."
+	rm -rf bin/ # Remove the entire bin directory
+	rm -f cppcheck_checkers.txt $(CPPCHECK_STAMP) # Remove the stamp file too
+    # Add any other generated files to clean up here
+
+.PHONY: all cppcheck clean
 # end

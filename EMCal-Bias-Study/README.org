@@ -45,6 +45,12 @@ Generate a set of updated bias offsets based on the cosmic MPVs and led fit k pa
 make && ./bin/write-Biasv3 output/EMCal-block-info.root output plots/update-offsets
 #+end_src
 
+** Write bias v4
+Generate a set of updated bias offsets based on the calibration constants, led fit k parameter, and a target saturation threshold of 45 GeV.
+#+begin_src bash
+make && ./bin/write-Biasv4 output/EMCal-block-info.root output plots/update-offsets-v2
+#+end_src
+
 * Update Bias macro
 #+begin_src bash
 make && ./bin/update-Bias output/EMCal-block-info.root plots/bias-update-plots/plots.pdf
