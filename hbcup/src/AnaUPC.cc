@@ -74,7 +74,6 @@ AnaUPC::AnaUPC(const std::string &name, const std::string &filename)
   /// Initialize variables and trees so we don't accidentally access
   /// memory that was never allocated
   initializeVariables();
-  initializeTrees();
 }
 
 /**
@@ -82,11 +81,14 @@ AnaUPC::AnaUPC(const std::string &name, const std::string &filename)
  */
 AnaUPC::~AnaUPC()
 {
-  delete m_hepmctree;
-  delete m_tracktree;
-  delete m_truthtree;
-  delete m_pairtree;
-  delete m_globaltree;
+  std::cout << PHWHERE << "In ~AnaUPC()" << std::endl;
+  /*
+  if ( m_hepmctree!=nullptr )  delete m_hepmctree;
+  if ( m_tracktree!=nullptr )  delete m_tracktree;
+  if ( m_truthtree!=nullptr )  delete m_truthtree;
+  if ( m_pairtree!=nullptr )   delete m_pairtree;
+  if ( m_globaltree!=nullptr ) delete m_globaltree;
+  */
 }
 
 /**
@@ -100,6 +102,7 @@ int AnaUPC::Init(PHCompositeNode * /*topNode*/)
   }
 
   m_outfile = new TFile(m_outfilename.c_str(), "RECREATE");
+  initializeTrees();
 
   h_phi[0] = new TH1F("h_phi", "#phi [rad]", 60, -M_PI, M_PI);
   h2_eta_phi[0] = new TH2F("h2_phi_eta", ";#eta;#phi [rad]", 24, -5.0, 5.0, 60, -M_PI, M_PI);
@@ -182,11 +185,16 @@ int AnaUPC::GetNodes(PHCompositeNode *topNode)
  */
 int AnaUPC::process_event(PHCompositeNode *topNode)
 {
+  if ( m_evt%1000 == 1 )
+  {
+    std::cout << "m_evt " << m_evt << std::endl;
+  }
+
   Reset(topNode);
 
   if (Verbosity() > 5)
   {
-    std::cout << "Beginning process_event in AnaUPC" << std::endl;
+    std::cout << "Beginning process_event in AnaUPC, " << m_evt << std::endl;
   }
 
   h_trig->Fill( 0 );  // event counter
@@ -212,29 +220,37 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   }
 
   /// Get global info
-  PHHepMCGenEvent *genevent = (_genevent_map->begin())->second; 
-  HepMC::GenEvent *hepmc_event{nullptr};
-  HepMC::HeavyIon *hepmc_hi{nullptr};
-  if (genevent)
+
+  if ( _genevent_map )
   {
-    hepmc_event = genevent->getEvent();
-    hepmc_hi = hepmc_event->heavy_ion();
-    if ( hepmc_hi )
+    if (Verbosity()>5)
     {
-      m_npart_targ =  hepmc_hi->Npart_targ();
-      m_npart_proj =  hepmc_hi->Npart_proj();
-      m_npart = m_npart_targ + m_npart_proj;
-      m_ncoll =  hepmc_hi->Ncoll();
-      m_ncoll_hard =  hepmc_hi->Ncoll_hard();
-      //std::cout << "ncoll " << m_ncoll << "\t" << m_ncoll_hard << std::endl;
-      m_bimpact =  hepmc_hi->impact_parameter();
-      //std::cout << "b ntracks " << m_bimpact << "\t" << m_ntracks << std::endl;
+      std::cout << PHWHERE << "processing global info from sim" << std::endl;
+    }
+    PHHepMCGenEvent *genevent = (_genevent_map->begin())->second; 
+    HepMC::GenEvent *hepmc_event{nullptr};
+    HepMC::HeavyIon *hepmc_hi{nullptr};
+    if (genevent)
+    {
+      hepmc_event = genevent->getEvent();
+      hepmc_hi = hepmc_event->heavy_ion();
+      if ( hepmc_hi )
+      {
+        m_npart_targ =  hepmc_hi->Npart_targ();
+        m_npart_proj =  hepmc_hi->Npart_proj();
+        m_npart = m_npart_targ + m_npart_proj;
+        m_ncoll =  hepmc_hi->Ncoll();
+        m_ncoll_hard =  hepmc_hi->Ncoll_hard();
+        //std::cout << "ncoll " << m_ncoll << "\t" << m_ncoll_hard << std::endl;
+        m_bimpact =  hepmc_hi->impact_parameter();
+        //std::cout << "b ntracks " << m_bimpact << "\t" << m_ntracks << std::endl;
 
-      //m_globaltree->Fill();
+        //m_globaltree->Fill();
 
-      h_b_mb->Fill( m_bimpact );
-      h_npart_mb->Fill( m_npart );
-      h_ncoll_mb->Fill( m_ncoll );
+        h_b_mb->Fill( m_bimpact );
+        h_npart_mb->Fill( m_npart );
+        h_ncoll_mb->Fill( m_ncoll );
+      }
     }
   }
 
@@ -255,27 +271,27 @@ int AnaUPC::process_event(PHCompositeNode *topNode)
   }
 
   // Fill Global info for events that pass cuts
-  if ( hepmc_hi )
+  if ( _genevent_map )
   {
-      h2_ntrksvsb->Fill( m_bimpact, m_ntracks );
+    h2_ntrksvsb->Fill( m_bimpact, m_ntracks );
 
-      if ( m_ntracks<=3 )
-      {
-        h_b->Fill( m_bimpact );
-        h_npart->Fill( m_npart );
-        h_ncoll->Fill( m_ncoll );
-      }
+    if ( m_ntracks<=3 )
+    {
+      h_b->Fill( m_bimpact );
+      h_npart->Fill( m_npart );
+      h_ncoll->Fill( m_ncoll );
+    }
 
-      m_globaltree->Fill();
+    m_globaltree->Fill();
   }
 
   /// Get calorimeter information
   /*
-  if (m_analyzeClusters)
-  {
-    getEMCalClusters(topNode);
-  }
-  */
+     if (m_analyzeClusters)
+     {
+     getEMCalClusters(topNode);
+     }
+     */
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -291,42 +307,9 @@ int AnaUPC::End(PHCompositeNode * /*topNode*/)
     std::cout << "Ending AnaUPC analysis package" << std::endl;
   }
 
-  /// Change to the outfile
-  m_outfile->cd();
-
-  m_globaltree->Write();
-
-  /// If we analyzed the tracks, write the tree out
-  if (m_analyzeTracks)
-  {
-    m_tracktree->Write();
-  }
-
-  /// If we analyzed the truth particles, write them out
-  if (m_analyzeTruth)
-  {
-    m_truthtree->Write();
-  }
-
-  if ( m_pairtree )
-  {
-    m_pairtree->Write();
-  }
-
-  /// If we analyzed the clusters, write them out
-  /*
-  if (m_analyzeClusters)
-  {
-    m_clustertree->Write();
-  }
-  */
-
   /// Write and close the outfile
   m_outfile->Write();
   m_outfile->Close();
-
-  /// Clean up pointers and associated histos/trees in TFile
-  delete m_outfile;
 
   if (Verbosity() > 1)
   {
@@ -454,16 +437,16 @@ void AnaUPC::getPHG4Truth()
 
     if (particle)
     {
-        m_truthcharge = particle->Charge();
-        if ( m_truthcharge != 0 )
-        {
-          m_ntrk_mc++;  // found charged track in sphenix accept
-        }
-        if ( (fabs(m_trutheta) < 1.1) && (m_truthpt>0.4) && (m_truthcharge!=0) )
-        {
-          m_ntrk_sphenix++;
-          m_truthtree->Fill();
-        }
+      m_truthcharge = particle->Charge();
+      if ( m_truthcharge != 0 )
+      {
+        m_ntrk_mc++;  // found charged track in sphenix accept
+      }
+      if ( (fabs(m_trutheta) < 1.1) && (m_truthpt>0.4) && (m_truthcharge!=0) )
+      {
+        m_ntrk_sphenix++;
+        m_truthtree->Fill();
+      }
     }
     else
     {
@@ -497,6 +480,7 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
   /// EvalStack for truth track matching
   if ( !m_svtxEvalStack && _truthinfo )
   {
+    std::cout << "getting svtx eval stack" << std::endl;
     m_svtxEvalStack = new SvtxEvalStack(topNode);
     m_svtxEvalStack->set_verbosity(Verbosity());
   }
@@ -586,7 +570,7 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
 
     m_tracktree->Fill();
   }
-  
+
   ROOT::Math::XYZTVector v1, v2;
 
   // make pairs
@@ -663,93 +647,93 @@ int AnaUPC::getTracks(PHCompositeNode *topNode)
  * the IHCal, etc.)
  */
 /*
-void AnaUPC::getEMCalClusters(PHCompositeNode *topNode)
+   void AnaUPC::getEMCalClusters(PHCompositeNode *topNode)
+   {
+/// Get the raw cluster container
+/// Note: other cluster containers exist as well. Check out the node tree when
+/// you run a simulation
+RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+
+if (!clusters)
 {
-  /// Get the raw cluster container
-  /// Note: other cluster containers exist as well. Check out the node tree when
-  /// you run a simulation
-  RawClusterContainer *clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTER_CEMC");
+std::cout << PHWHERE
+<< "EMCal cluster node is missing, can't collect EMCal clusters"
+<< std::endl;
+return;
+}
 
-  if (!clusters)
-  {
-    std::cout << PHWHERE
-              << "EMCal cluster node is missing, can't collect EMCal clusters"
-              << std::endl;
-    return;
-  }
+/// Get the global vertex to determine the appropriate pseudorapidity of the clusters
+GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+if (!vertexmap)
+{
+std::cout << "AnaUPC::getEmcalClusters - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
+assert(vertexmap);  // force quit
 
-  /// Get the global vertex to determine the appropriate pseudorapidity of the clusters
-  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
-  if (!vertexmap)
-  {
-    std::cout << "AnaUPC::getEmcalClusters - Fatal Error - GlobalVertexMap node is missing. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
-    assert(vertexmap);  // force quit
+return;
+}
 
-    return;
-  }
+if (vertexmap->empty())
+{
+std::cout << "AnaUPC::getEmcalClusters - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
+return;
+}
 
-  if (vertexmap->empty())
-  {
-    std::cout << "AnaUPC::getEmcalClusters - Fatal Error - GlobalVertexMap node is empty. Please turn on the do_global flag in the main macro in order to reconstruct the global vertex." << std::endl;
-    return;
-  }
+/// just take a bbc vertex
+GlobalVertex *vtx = nullptr;
+for(auto iter = vertexmap->begin(); iter!= vertexmap->end(); ++iter)
+{
+GlobalVertex* vertex = iter->second;
+if(vertex->find_vtxids(GlobalVertex::MBD) != vertex->end_vtxids())
+{
+vtx = vertex;
+}
+}
+if (vtx == nullptr)
+{
+return;
+}
 
-  /// just take a bbc vertex
-  GlobalVertex *vtx = nullptr;
-  for(auto iter = vertexmap->begin(); iter!= vertexmap->end(); ++iter)
-    {
-      GlobalVertex* vertex = iter->second;
-      if(vertex->find_vtxids(GlobalVertex::MBD) != vertex->end_vtxids())
-	{
-	  vtx = vertex;
-	}
-    }
-  if (vtx == nullptr)
-  {
-    return;
-  }
+/// Trigger emulator
+CaloTriggerInfo *trigger = findNode::getClass<CaloTriggerInfo>(topNode, "CaloTriggerInfo");
 
-  /// Trigger emulator
-  CaloTriggerInfo *trigger = findNode::getClass<CaloTriggerInfo>(topNode, "CaloTriggerInfo");
+/// Can obtain some trigger information if desired
+if (trigger)
+{
+m_E_4x4 = trigger->get_best_EMCal_4x4_E();
+}
+RawClusterContainer::ConstRange begin_end = clusters->getClusters();
+RawClusterContainer::ConstIterator clusIter;
 
-  /// Can obtain some trigger information if desired
-  if (trigger)
-  {
-    m_E_4x4 = trigger->get_best_EMCal_4x4_E();
-  }
-  RawClusterContainer::ConstRange begin_end = clusters->getClusters();
-  RawClusterContainer::ConstIterator clusIter;
+/// Loop over the EMCal clusters
+for (clusIter = begin_end.first; clusIter != begin_end.second; ++clusIter)
+{
+/// Get this cluster
+const RawCluster *cluster = clusIter->second;
 
-  /// Loop over the EMCal clusters
-  for (clusIter = begin_end.first; clusIter != begin_end.second; ++clusIter)
-  {
-    /// Get this cluster
-    const RawCluster *cluster = clusIter->second;
+/// Get cluster characteristics
+/// This helper class determines the photon characteristics
+/// depending on the vertex position
+/// This is important for e.g. eta determination and E_T determination
+CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
+CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
+m_clusenergy = E_vec_cluster.mag();
+m_cluseta = E_vec_cluster.pseudoRapidity();
+m_clustheta = E_vec_cluster.getTheta();
+m_cluspt = E_vec_cluster.perp();
+m_clusphi = E_vec_cluster.getPhi();
 
-    /// Get cluster characteristics
-    /// This helper class determines the photon characteristics
-    /// depending on the vertex position
-    /// This is important for e.g. eta determination and E_T determination
-    CLHEP::Hep3Vector vertex(vtx->get_x(), vtx->get_y(), vtx->get_z());
-    CLHEP::Hep3Vector E_vec_cluster = RawClusterUtility::GetECoreVec(*cluster, vertex);
-    m_clusenergy = E_vec_cluster.mag();
-    m_cluseta = E_vec_cluster.pseudoRapidity();
-    m_clustheta = E_vec_cluster.getTheta();
-    m_cluspt = E_vec_cluster.perp();
-    m_clusphi = E_vec_cluster.getPhi();
+if (m_cluspt < m_mincluspt)
+{
+  continue;
+}
 
-    if (m_cluspt < m_mincluspt)
-    {
-      continue;
-    }
+m_cluspx = m_cluspt * cos(m_clusphi);
+m_cluspy = m_cluspt * sin(m_clusphi);
+m_cluspz = sqrt(m_clusenergy * m_clusenergy - m_cluspx * m_cluspx - m_cluspy * m_cluspy);
 
-    m_cluspx = m_cluspt * cos(m_clusphi);
-    m_cluspy = m_cluspt * sin(m_clusphi);
-    m_cluspz = sqrt(m_clusenergy * m_clusenergy - m_cluspx * m_cluspx - m_cluspy * m_cluspy);
-
-    // fill the cluster tree with all emcal clusters
-    m_clustertree->Fill();
-  }
+// fill the cluster tree with all emcal clusters
+m_clustertree->Fill();
+}
 }
 */
 
@@ -829,17 +813,17 @@ void AnaUPC::initializeTrees()
   m_pairtree->Branch("pq2", &m_pq2, "pq2/S");
 
   /*
-  m_clustertree = new TTree("clustertree", "A tree with emcal clusters");
-  m_clustertree->Branch("m_clusenergy", &m_clusenergy, "m_clusenergy/D");
-  m_clustertree->Branch("m_cluseta", &m_cluseta, "m_cluseta/D");
-  m_clustertree->Branch("m_clustheta", &m_clustheta, "m_clustheta/D");
-  m_clustertree->Branch("m_cluspt", &m_cluspt, "m_cluspt/D");
-  m_clustertree->Branch("m_clusphi", &m_clusphi, "m_clusphi/D");
-  m_clustertree->Branch("m_cluspx", &m_cluspx, "m_cluspx/D");
-  m_clustertree->Branch("m_cluspy", &m_cluspy, "m_cluspy/D");
-  m_clustertree->Branch("m_cluspz", &m_cluspz, "m_cluspz/D");
-  m_clustertree->Branch("m_E_4x4", &m_E_4x4, "m_E_4x4/D");
-  */
+     m_clustertree = new TTree("clustertree", "A tree with emcal clusters");
+     m_clustertree->Branch("m_clusenergy", &m_clusenergy, "m_clusenergy/D");
+     m_clustertree->Branch("m_cluseta", &m_cluseta, "m_cluseta/D");
+     m_clustertree->Branch("m_clustheta", &m_clustheta, "m_clustheta/D");
+     m_clustertree->Branch("m_cluspt", &m_cluspt, "m_cluspt/D");
+     m_clustertree->Branch("m_clusphi", &m_clusphi, "m_clusphi/D");
+     m_clustertree->Branch("m_cluspx", &m_cluspx, "m_cluspx/D");
+     m_clustertree->Branch("m_cluspy", &m_cluspy, "m_cluspy/D");
+     m_clustertree->Branch("m_cluspz", &m_cluspz, "m_cluspz/D");
+     m_clustertree->Branch("m_E_4x4", &m_E_4x4, "m_E_4x4/D");
+     */
 }
 
 /**
@@ -896,26 +880,26 @@ void AnaUPC::initializeVariables()
   m_ntrk_mc = 0;
 
   /*
-  m_recojetpt = -99;
-  m_recojetid = -99;
-  m_recojetpx = -99;
-  m_recojetpy = -99;
-  m_recojetpz = -99;
-  m_recojetphi = -99;
-  m_recojetp = -99;
-  m_recojetenergy = -99;
-  m_recojeteta = -99;
-  m_truthjetid = -99;
-  m_truthjetp = -99;
-  m_truthjetphi = -99;
-  m_truthjeteta = -99;
-  m_truthjetpt = -99;
-  m_truthjetenergy = -99;
-  m_truthjetpx = -99;
-  m_truthjetpy = -99;
-  m_truthjetpz = -99;
-  m_dR = -99;
-  */
+     m_recojetpt = -99;
+     m_recojetid = -99;
+     m_recojetpx = -99;
+     m_recojetpy = -99;
+     m_recojetpz = -99;
+     m_recojetphi = -99;
+     m_recojetp = -99;
+     m_recojetenergy = -99;
+     m_recojeteta = -99;
+     m_truthjetid = -99;
+     m_truthjetp = -99;
+     m_truthjetphi = -99;
+     m_truthjeteta = -99;
+     m_truthjetpt = -99;
+     m_truthjetenergy = -99;
+     m_truthjetpx = -99;
+     m_truthjetpy = -99;
+     m_truthjetpz = -99;
+     m_dR = -99;
+     */
 }
 
 int AnaUPC::Reset(PHCompositeNode * /*topNode*/)
