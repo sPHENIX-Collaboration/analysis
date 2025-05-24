@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <sstream>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <stdexcept> // For exception handling
 
@@ -42,6 +43,7 @@ using std::ofstream;
 using std::pair;
 using std::make_pair;
 using std::unordered_map;
+using std::unordered_set;
 using std::map;
 namespace fs = std::filesystem;
 
@@ -83,6 +85,8 @@ namespace myAnalysis {
     Double_t m_saturate_low  = 0;  // GeV
     Double_t m_saturate_high = 80; // GeV
 
+    unordered_set<string> m_knownBadIB = {"4.1","10.3","10.5","25.2","50.1","54.4"}; // sector.IB
+
     Bool_t m_saveFig = true;
 }
 
@@ -117,14 +121,19 @@ void myAnalysis::initHists() {
     m_hists["h2OffsetNew"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2OffsetNew"));
     m_hists["h2OffsetNew"]->SetTitle("New Offset [mV]");
 
+    m_hists["h2OffsetNewV2"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2OffsetNewV2"));
+    m_hists["h2OffsetNewV2"]->SetTitle("New Offset [mV]");
+
     m_hists["h2DeltaOffset"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2DeltaOffset"));
     m_hists["h2DeltaOffset"]->SetTitle("#Delta Offset [mV]");
+
+    m_hists["h2DeltaOffsetV2"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2DeltaOffsetV2"));
+    m_hists["h2DeltaOffsetV2"]->SetTitle("#Delta Offset [mV]");
 
     m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; Offset [mV]; Counts", m_bins_deltaOffset, m_deltaOffset_low, m_deltaOffset_high);
 
     m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hOffsetNew"] = new TH1F("hOffsetNew","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-
 
     // track errors
     m_hists["hSaturate"]->Sumw2();
@@ -167,10 +176,19 @@ Int_t myAnalysis::analyze() {
             Double_t gainV2 = std::min(gain, TMath::Exp(offset_max*kFactor));      // ensure the delta offset < 1000 mV
             gainV2 = std::max(gainV2, TMath::Exp(kFactor*(offset_min-offset))); // ensure the new offset >= -2000 mV
 
-            Double_t deltaOffset = (saturate) ? TMath::Log(gainV2) / kFactor : 0;
+            pair<Int_t, Int_t> sectorIB_pair = myUtils::getSectorIB(i-1,j-1);
+            string sectorIB = to_string(sectorIB_pair.first) + "." + to_string(sectorIB_pair.second);
+            Bool_t isGoodIB = !(m_knownBadIB.contains(sectorIB));
+
+            Double_t deltaOffset = (isGoodIB && saturate) ? TMath::Log(gainV2) / kFactor : 0;
             Double_t offsetNew = offset + deltaOffset;
             static_cast<TH2*>(m_hists["h2DeltaOffset"])->SetBinContent(i, j, deltaOffset);
             static_cast<TH2*>(m_hists["h2OffsetNew"])->SetBinContent(i, j, offsetNew);
+
+            Double_t deltaOffsetV2 = (isGoodIB && saturate) ? TMath::Log(gain) / kFactor : 0;
+            Double_t offsetNewV2 = offset + deltaOffsetV2;
+            static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
+            static_cast<TH2*>(m_hists["h2OffsetNewV2"])->SetBinContent(i, j, offsetNewV2);
 
             m_hists["hOffset"]->Fill(offset);
             m_hists["hOffsetNew"]->Fill(offsetNew);
@@ -190,6 +208,12 @@ Int_t myAnalysis::analyze() {
             }
         }
     }
+
+    // compute the average bias offset per IB
+    // this is for the offsets without any clamping
+    m_hists["h2OffsetNewV2_avg"] = static_cast<TH2*>(m_hists["h2OffsetNewV2"]->Clone("h2OffsetNewV2_avg"));
+    static_cast<TH2*>(m_hists["h2OffsetNewV2_avg"])->Rebin2D(8,8);
+    m_hists["h2OffsetNewV2_avg"]->Scale(1./myUtils::m_nchannel_per_ib);
 
     cout << "New Saturation [44,46] GeV: " << m_hists["hSaturateV3"]->Integral(m_hists["hSaturateV3"]->FindBin(44), m_hists["hSaturateV3"]->FindBin(46)-1)*100./m_hists["hSaturateV3"]->Integral() << " %" << endl;
     cout << "New Saturation [40,46] GeV: " << m_hists["hSaturateV3"]->Integral(m_hists["hSaturateV3"]->FindBin(40), m_hists["hSaturateV3"]->FindBin(46)-1)*100./m_hists["hSaturateV3"]->Integral() << " %" << endl;
@@ -526,6 +550,38 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay.png").c_str());
+
+    // ----------------------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06f);
+    c1->SetRightMargin(.1f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+
+    m_hists["h2DeltaOffsetV2"]->Draw("COLZ1");
+    m_hists["h2DeltaOffsetV2"]->SetTitle("#Delta Offset [mV]: Target Saturation 45 GeV");
+
+    m_hists["h2DeltaOffsetV2"]->SetMaximum(1e3);
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2DeltaOffsetV2.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["h2OffsetNewV2"]->Draw("COLZ1");
+    m_hists["h2OffsetNewV2"]->SetTitle("New Offset [mV]: Target Saturation 45 GeV");
+
+    m_hists["h2OffsetNewV2"]->SetMaximum(1e3);
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2OffsetNewV2.png").c_str());
 
     // ----------------------------------------------
 
