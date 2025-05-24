@@ -14,8 +14,15 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('-i'
                     , '--bias-var-dir', type=str
-                    , default='/home/phnxrc/haggerty/emcal/apurva/03-25-25-bias'
+                    , nargs='*'
+                    , default=['/home/phnxrc/haggerty/emcal/apurva/05-05-25-bias']
                     , help='Bias Offset Variation Directory')
+
+parser.add_argument('-t'
+                    , '--tags', type=str
+                    , nargs='*'
+                    , default=['new']
+                    , help='Tag for the data logging. Note must match the number of args for bias-var-dir.')
 
 parser.add_argument('-l'
                     , '--log-dir', type=str
@@ -85,7 +92,8 @@ def execute_command(local_command, local_dry_run):
             sys.exit()
 
 if __name__ == '__main__':
-    bias_var_dir   = os.path.realpath(args.bias_var_dir)
+    bias_var_dir   = [os.path.realpath(x) for x in args.bias_var_dir]
+    tags           = args.tags
     dry_run        = args.dry_run
     CURRENT_DATE   = str(datetime.date.today())
     log_dir        = os.path.realpath(args.log_dir) + '/' + CURRENT_DATE
@@ -134,11 +142,16 @@ if __name__ == '__main__':
     if not record_specific and bias_step % BIAS_STEP_DEFAULT != 0:
         parser.error(f'Bias step is not a multiple of {BIAS_STEP_DEFAULT}.')
 
+    # Ensure that the number of tags matches the number of bias directories.
+    if record_specific and len(tags) != len(bias_var_dir):
+        parser.error(f'Number of tags does not match the number of bias directories, tags: {len(tags)}, bias var dir: {len(bias_var_dir)}')
+
     os.makedirs(log_dir,exist_ok=True)
 
     tee_print('##########################', log_file)
     tee_print(f'LOGGING: {str(datetime.datetime.now())}', log_file)
     tee_print(f'Bias Var Dir: {bias_var_dir}', log_file)
+    tee_print(f'Tags: {tags}', log_file)
     tee_print(f'Log Dir: {log_dir}', log_file)
     tee_print(f'Minimum events per Run: {nevents}', log_file)
     tee_print(f'Recording time per Run: {run_time} seconds', log_file)
@@ -181,15 +194,15 @@ if __name__ == '__main__':
     if not record_specific and not record_only_default:
         # Configure the loop over bias offsets
         bias_vec = ((np.arange(bias_start,bias_end+1,bias_step)-BIAS_MAX)//BIAS_STEP_DEFAULT).tolist()
-        bias_tuple += list(zip(bias_vec, [f'{bias_var_dir}/var-{var}' for var in bias_vec]))
+        bias_tuple += list(zip(bias_vec, [f'{bias_var_dir[0]}/var-{var}' for var in bias_vec]))
 
     if record_specific:
-        bias_tuple += [('new',bias_var_dir)]
+        # bias_tuple += [('new',bias_var_dir)]
+        bias_tuple += list(zip(tags, bias_var_dir))
 
     # loop over bias offsets
-    for item in bias_tuple:
-        bias = BIAS_MAX + item[0] * BIAS_STEP_DEFAULT if isinstance(item[0],int) else item[0]
-        bias_dir = item[1]
+    for tag, bias_dir in bias_tuple:
+        bias = BIAS_MAX + tag * BIAS_STEP_DEFAULT if isinstance(tag,int) else tag
 
         command = (f'ln -sfn {bias_dir} /home/phnxrc/haggerty/emcal/config && '
                     '~/haggerty/emcal/calcon/biasallsectorsfast.py')
