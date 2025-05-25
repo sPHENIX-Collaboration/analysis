@@ -139,15 +139,11 @@ rg -vFf <(ls output | cut -d "-" -f2 | awk '{x=$0+0;print x}') jobs.list > resub
 * Data taking instructions for EMCal via LEDs
 
 ** Configure EMCal for data taking
-1) Turn EMCal Controller Crates ON.
-#+begin_src bash
-cd /home/phnxrc/haggerty/emcal/offandon && ./comms-on
-#+end_src
-2) Turn EMCal ON (bias and lv).
+1) Turn EMCal ON (bias and lv).
 #+begin_src bash
 /home/phnxrc/haggerty/emcal/offandon/emcalon
 #+end_src
-3) Check the gain and voltage looks normal.
+2) Check the gain and voltage looks normal.
 #+begin_src bash
 /home/phnxrc/haggerty/emcal/calcon/emcalsector.py voltage --sector 0 && /home/phnxrc/haggerty/emcal/calcon/emcalsector.py gain --sector 0
 #+end_src
