@@ -6,7 +6,7 @@
 
 # Define your compiler and flags (adjust as needed)
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -pedantic \
+CXXFLAGS = -g -std=c++20 -Wall -Wextra -pedantic \
 -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference \
 -Wformat=2 -Wduplicated-cond -Wuseless-cast -Wold-style-cast \
 -Wnoexcept -Woverloaded-virtual
@@ -41,13 +41,15 @@ ALL_TARGETS = bin/read-Bias \
               bin/displayv3 \
               bin/display-tp \
               bin/Fun4All_Year2_Fitting \
-              bin/analyze-new-response
+              bin/analyze-new-response \
+              bin/analyze-new-response-v2
 
 # Define a stamp file for Cppcheck
 CPPCHECK_STAMP = .cppcheck_ran_stamp
 
 #--- Default target: builds all programs and runs Cppcheck ---
-all: $(ALL_TARGETS) cppcheck
+# all: $(ALL_TARGETS) cppcheck
+all: $(ALL_TARGETS)
 
 #--- Rule for building individual executables (adjust as needed if they have unique dependencies) ---
 # This is a pattern rule that says: to build 'bin/X' from 'macros/X.C'
