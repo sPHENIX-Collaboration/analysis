@@ -77,6 +77,7 @@ TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const 
                 cout << "Parameter " << fitFunc->GetParName(static_cast<Int_t>(i)) << " (" << i << "): "
                           << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << endl;
             }
+            cout << "Resolution: Sigma/Mean = " << fitResult->Parameter(2) / fitResult->Parameter(1) << endl;
             cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
                       << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << endl;
             cout << "Probability: " << TMath::Prob(fitResult->Chi2(), static_cast<Int_t>(fitResult->Ndf())) << endl;

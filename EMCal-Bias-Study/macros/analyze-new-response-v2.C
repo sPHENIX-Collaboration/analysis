@@ -70,6 +70,10 @@ namespace myAnalysis {
     Double_t m_gain_low = 0;
     Double_t m_gain_high = 4;
 
+    Int_t m_bins_saturate = 800;
+    Double_t m_saturate_low  = 0;  // GeV
+    Double_t m_saturate_high = 80; // GeV
+
     Double_t m_noiseThreshold = 100; // ADC
 
     Bool_t m_saveFig = true;
@@ -222,15 +226,22 @@ void myAnalysis::initHists() {
     m_hists["h2ResponseNew"] = new TH2F("h2ResponseNew","Response: New; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
     m_hists["h2ResponseNewV2"] = new TH2F("h2ResponseNewV2","Response: New; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
+    m_hists["hResponseRatio"] = new TH1F("hResponseRatio","Ratio: Response [New / Default]; Response [New / Default]; Counts", m_bins_gain, m_gain_low, m_gain_high);
+
     m_hists["hResponseRatioDivGain"] = new TH1F("hResponseRatioDivGain","Ratio: Response [New / Default] / Gain; Response [New / Default] / Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
     m_hists["hResponseRatioVsGain"] = new TH2F("hResponseRatioVsGain","Response [New / Default] Vs Gain; Gain; Response [New / Default]", m_bins_gain, m_gain_low, m_gain_high, m_bins_gain, m_gain_low, m_gain_high);
 
     m_hists["hResponseRatioDivGainV2"] = new TH1F("hResponseRatioDivGainV2","Ratio: Response [New / Default] / Gain; Response [New / Default] / Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
     m_hists["hResponseRatioVsGainV2"] = new TH2F("hResponseRatioVsGainV2","Response [New / Default] Vs Gain; Gain; Response [New / Default]", m_bins_gain, m_gain_low, m_gain_high, m_bins_gain, m_gain_low, m_gain_high);
 
+    m_hists["hSaturateV4"] = new TH1F("hSaturateV4","EMCal Saturation; Energy [GeV]; Counts", m_bins_saturate, m_saturate_low, m_saturate_high);
+    m_hists["h2SaturateV4"] = new TH2F("h2SaturateV4","EMCal Saturation [GeV]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+
     // track errors
+    m_hists["hResponseRatio"]->Sumw2();
     m_hists["hResponseRatioDivGain"]->Sumw2();
     m_hists["hResponseRatioDivGainV2"]->Sumw2();
+    m_hists["hSaturateV4"]->Sumw2();
 }
 
 Int_t myAnalysis::readHists(const string &input) {
@@ -243,6 +254,11 @@ Int_t myAnalysis::readHists(const string &input) {
     m_hists["h2GainFactor"] = static_cast<TH2*>(tfile->Get("h2GainFactorV2")->Clone("h2GainFactor"));
     m_hists["h2GainFactorV2"] = static_cast<TH2*>(tfile->Get("h2GainFactor")->Clone("h2GainFactorV2"));
     m_hists["h2Calib"] = static_cast<TH2*>(tfile->Get("h2Calib"));
+    m_hists["h2SaturateV2"] = static_cast<TH2*>(tfile->Get("h2SaturateV2"));
+    m_hists["h2SaturateV3"] = static_cast<TH2*>(tfile->Get("h2SaturateV3"));
+    m_hists["hSaturate"] = static_cast<TH2*>(tfile->Get("hSaturate"));
+    m_hists["hSaturateV2"] = static_cast<TH2*>(tfile->Get("hSaturateV2"));
+    m_hists["hSaturateV3"] = static_cast<TH2*>(tfile->Get("hSaturateV3"));
     m_hists["h2DummySector"] = static_cast<TH2*>(tfile->Get("h2DummySector"));
     m_hists["h2DummyIB"] = static_cast<TH2*>(tfile->Get("h2DummyIB"));
 
@@ -352,6 +368,8 @@ Int_t myAnalysis::analyze() {
             Double_t responseRatioV2 = (responseDefault) ? responseNewV2 / responseDefault : 0;
             Double_t responseRatioDivGainV2 = (gainV2) ? responseRatioV2 / gainV2 : 0;
 
+            Double_t saturateV2 = static_cast<TH2*>(m_hists["h2SaturateV2"])->GetBinContent(i+1, j+1);
+
             if(responseRatioDivGain) {
                 min_ResponseRatioDivGain = std::min(responseRatioDivGain, min_ResponseRatioDivGain);
                 max_ResponseRatioDivGain = std::max(responseRatioDivGain, max_ResponseRatioDivGain);
@@ -366,10 +384,15 @@ Int_t myAnalysis::analyze() {
                 max_ResponseRatioV2 = std::max(responseRatioV2, max_ResponseRatioV2);
 
                 m_hists["hResponseRatioDivGain"]->Fill(responseRatioDivGain);
-                m_hists["hResponseRatioVsGain"]->Fill(gain, responseRatio);
+                static_cast<TH2*>(m_hists["hResponseRatioVsGain"])->Fill(gain, responseRatio);
+                m_hists["hResponseRatio"]->Fill(responseRatio);
 
                 m_hists["hResponseRatioDivGainV2"]->Fill(responseRatioDivGainV2);
-                m_hists["hResponseRatioVsGainV2"]->Fill(gainV2, responseRatioV2);
+                static_cast<TH2*>(m_hists["hResponseRatioVsGainV2"])->Fill(gainV2, responseRatioV2);
+
+                Double_t saturateV4 = saturateV2 / responseRatio;
+                static_cast<TH2*>(m_hists["h2SaturateV4"])->SetBinContent(i+1, j+1, saturateV4);
+                m_hists["hSaturateV4"]->Fill(saturateV4);
             }
         }
     }
@@ -509,11 +532,16 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
-    // m_hists["h2GainFactor"]->SetMinimum(0.39);
-    // m_hists["h2GainFactor"]->SetMaximum(1.83);
+    m_hists["h2GainFactor"]->SetTitle("Gain");
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor.png").c_str());
+
+    m_hists["h2GainFactor"]->SetMinimum(0.2);
+    m_hists["h2GainFactor"]->SetMaximum(1.1);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor-zoom.png").c_str());
 
     // ----------------------------------------
 
@@ -521,22 +549,14 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
-    m_hists["h2ResponseRatio"]->SetMinimum(0.16);
-    m_hists["h2ResponseRatio"]->SetMaximum(2.57);
-
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatio.png").c_str());
 
-    // ----------------------------------------
-
-    m_hists["h2ResponseRatioDivGain"]->Draw("COLZ1");
-    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
-    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
-
-    m_hists["h2ResponseRatioDivGain"]->SetMinimum(0.64);
+    m_hists["h2ResponseRatio"]->SetMinimum(0.2);
+    m_hists["h2ResponseRatio"]->SetMaximum(1.1);
 
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatioDivGain.png").c_str());
+    if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatio-zoom.png").c_str());
 
     // ----------------------------------------
 
@@ -547,22 +567,80 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetBottomMargin(.12f);
     gStyle->SetOptStat(1111);
 
-    m_hists["hResponseRatioDivGain"]->Draw("hist e");
-    m_hists["hResponseRatioDivGain"]->SetStats();
-    m_hists["hResponseRatioDivGain"]->SetLineColor(kRed);
-    m_hists["hResponseRatioDivGain"]->SetMarkerColor(kRed);
-    m_hists["hResponseRatioDivGain"]->GetXaxis()->SetTitleOffset(0.9f);
-    m_hists["hResponseRatioDivGain"]->GetXaxis()->SetRangeUser(0,3);
+    m_hists["hResponseRatio"]->Draw("hist e");
+    m_hists["hResponseRatio"]->SetStats();
+    m_hists["hResponseRatio"]->SetLineColor(kRed);
+    m_hists["hResponseRatio"]->SetMarkerColor(kRed);
+    m_hists["hResponseRatio"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hResponseRatio"]->GetXaxis()->SetRangeUser(0,3);
 
     gPad->Update();
 
-    TPaveStats* st = static_cast<TPaveStats*>(m_hists["hResponseRatioDivGain"]->FindObject("stats"));
+    TPaveStats* st = static_cast<TPaveStats*>(m_hists["hResponseRatio"]->FindObject("stats"));
     Double_t xlow = 0.68;
     Double_t ylow = 0.62;
     st->SetX1NDC(xlow);
     st->SetY1NDC(ylow);
     st->SetX2NDC(xlow+0.27);
     st->SetY2NDC(ylow+0.28);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hResponseRatio.png").c_str());
+
+    gPad->SetLogy();
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hResponseRatio-logy.png").c_str());
+
+    gPad->SetLogy(0);
+
+    // ----------------------------------------
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06f);
+    c1->SetRightMargin(.1f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+
+    m_hists["h2ResponseRatioDivGain"]->Draw("COLZ1");
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatioDivGain.png").c_str());
+
+    m_hists["h2ResponseRatioDivGain"]->SetMinimum(0.6);
+    m_hists["h2ResponseRatioDivGain"]->SetMaximum(1.3);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatioDivGain-zoom.png").c_str());
+
+    // ----------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.14f);
+    c1->SetRightMargin(.05f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+    gStyle->SetOptFit(1111); // Shows Probability, Chi2/NDF, Errors, Values
+
+    TFitResultPtr fitResult = myUtils::doGausFit(m_hists["hResponseRatioDivGain"], 0.6, 1.05);
+
+    m_hists["hResponseRatioDivGain"]->Draw("e");
+    m_hists["hResponseRatioDivGain"]->SetStats();
+    m_hists["hResponseRatioDivGain"]->SetMarkerColor(kBlack);
+    m_hists["hResponseRatioDivGain"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hResponseRatioDivGain"]->GetXaxis()->SetRangeUser(0,2);
+
+    gPad->Update();
+
+    st = static_cast<TPaveStats*>(m_hists["hResponseRatioDivGain"]->FindObject("stats"));
+    xlow = 0.65;
+    ylow = 0.5;
+    st->SetX1NDC(xlow);
+    st->SetY1NDC(ylow);
+    st->SetX2NDC(xlow+0.3);
+    st->SetY2NDC(ylow+0.4);
+    st->SetTextSize(0.03f);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hResponseRatioDivGain.png").c_str());
@@ -584,8 +662,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetBottomMargin(.12f);
 
     m_hists["hResponseRatioVsGain"]->Draw("COLZ1");
-    // m_hists["hResponseRatioVsGain"]->GetXaxis()->SetRangeUser(0,3);
-    // m_hists["hResponseRatioVsGain"]->GetYaxis()->SetRangeUser(0.35,1.85);
+    m_hists["hResponseRatioVsGain"]->GetXaxis()->SetRangeUser(0.2,1.2);
+    m_hists["hResponseRatioVsGain"]->GetYaxis()->SetRangeUser(0.2,1.2);
     m_hists["hResponseRatioVsGain"]->GetYaxis()->SetTitleOffset(0.85f);
     m_hists["hResponseRatioVsGain"]->GetXaxis()->SetTitleOffset(0.9f);
 
@@ -601,6 +679,102 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hResponseRatioVsGain.png").c_str());
 
+    // ----------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.13f);
+    c1->SetRightMargin(.05f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+    gPad->SetGrid(0,0);
+
+    cout << "Saturate Hists Entries" << endl;
+    cout << "hSaturate: " << m_hists["hSaturate"]->Integral(1, m_bins_saturate) << endl;
+    cout << "hSaturateV2: " << m_hists["hSaturateV2"]->Integral(1, m_bins_saturate) << endl;
+    cout << "hSaturateV3: " << m_hists["hSaturateV3"]->Integral(1, m_bins_saturate) << endl;
+    cout << "hSaturateV4: " << m_hists["hSaturateV4"]->Integral(1, m_bins_saturate) << endl;
+
+    Double_t normalize = m_hists["hSaturateV3"]->Integral(1, m_bins_saturate) / m_hists["hSaturateV4"]->Integral(1, m_bins_saturate);
+
+    m_hists["hSaturateV4"]->Scale(normalize);
+
+    cout << "hSaturateV4 (after normalization): " << m_hists["hSaturateV4"]->Integral(1, m_bins_saturate) << endl;
+
+    m_hists["hSaturate"]->Draw("hist e");
+    m_hists["hSaturate"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,8e3);
+    m_hists["hSaturate"]->Rebin(10);
+
+    m_hists["hSaturateV2"]->Draw("hist e same");
+    m_hists["hSaturateV2"]->Rebin(10);
+    m_hists["hSaturateV2"]->SetLineColor(kRed);
+    m_hists["hSaturateV2"]->SetMarkerColor(kRed);
+
+    m_hists["hSaturateV3"]->Draw("hist e same");
+    m_hists["hSaturateV3"]->Rebin(10);
+    m_hists["hSaturateV3"]->SetLineColor(kBlue);
+    m_hists["hSaturateV3"]->SetMarkerColor(kBlue);
+
+    m_hists["hSaturateV4"]->Draw("hist e same");
+    m_hists["hSaturateV4"]->Rebin(10);
+    m_hists["hSaturateV4"]->SetLineColor(kMagenta);
+    m_hists["hSaturateV4"]->SetMarkerColor(kMagenta);
+
+    stringstream legA, legB, legC, legD;
+
+    legA << "Before Temperature Correction";
+    legB << "After Temperature Correction";
+    legC << "After Adjusting Gain (Expected)";
+    legD << "After Adjusting Gain (Observed)";
+
+    Double_t xshift = -0.08;
+    Double_t yshift = 0.02;
+
+    auto leg = new TLegend(0.2+xshift,.4+yshift,0.54+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.04f);
+    leg->AddEntry(m_hists["hSaturate"],legA.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hSaturateV2"],legB.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hSaturateV3"],legC.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hSaturateV4"],legD.str().c_str(),"lpe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hSaturate-overlay.png").c_str());
+
+    // ----------------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06f);
+    c1->SetRightMargin(.1f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+    gPad->SetLogz(0);
+    gPad->SetGrid();
+
+    m_hists["h2SaturateV3"]->Draw("COLZ1");
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    m_hists["h2SaturateV3"]->SetMinimum(10);
+    m_hists["h2SaturateV3"]->SetMaximum(60);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV3.png").c_str());
+
+    // ----------------------------------------
+
+    m_hists["h2SaturateV4"]->Draw("COLZ1");
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    m_hists["h2SaturateV4"]->SetMinimum(10);
+    m_hists["h2SaturateV4"]->SetMaximum(60);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV4.png").c_str());
+
+    // ----------------------------------------
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
