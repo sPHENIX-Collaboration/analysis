@@ -29,9 +29,8 @@ WITH good_runs AS (
       THEN SUBSTRING(filename FROM 'intt(\d+)')
       END) = 8
 
-  AND
 
-    COUNT(*) = SUM(CASE WHEN transferred_to_sdcc THEN 1 ELSE 0 END)
+  @TRANSFER_CONDITION@
 )
 
 SELECT
@@ -48,5 +47,6 @@ WHERE r.runtype = '@RUNTYPE@'
   AND r.eventsinrun > 0
   AND r.brtimestamp IS NOT NULL
   AND r.ertimestamp IS NOT NULL
-ORDER BY r.runnumber;
+  AND EXTRACT(EPOCH FROM r.ertimestamp - r.brtimestamp) >= 300
+ORDER BY r.runnumber DESC;
 
