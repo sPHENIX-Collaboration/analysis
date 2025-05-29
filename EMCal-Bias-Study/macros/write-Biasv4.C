@@ -73,8 +73,8 @@ namespace myAnalysis {
     Double_t m_gain_low = 0;
     Double_t m_gain_high = 2;
 
-    Int_t m_bins_offset = 30;
-    Double_t m_offset_low = -2e3; // mV
+    Int_t m_bins_offset = 70;
+    Double_t m_offset_low = -6e3; // mV
     Double_t m_offset_high = 1e3; // mV
 
     Int_t m_bins_deltaOffset = 38;
@@ -134,6 +134,7 @@ void myAnalysis::initHists() {
 
     m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hOffsetNew"] = new TH1F("hOffsetNew","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hOffsetNewV2"] = new TH1F("hOffsetNewV2","Bias Offset: Target Saturation = 45 [GeV]; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
 
     // track errors
     m_hists["hSaturate"]->Sumw2();
@@ -143,6 +144,7 @@ void myAnalysis::initHists() {
     m_hists["hGainFactorV2"]->Sumw2();
     m_hists["hOffset"]->Sumw2();
     m_hists["hOffsetNew"]->Sumw2();
+    m_hists["hOffsetNewV2"]->Sumw2();
     m_hists["hDeltaOffset"]->Sumw2();
 }
 
@@ -190,9 +192,12 @@ Int_t myAnalysis::analyze() {
             static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
             static_cast<TH2*>(m_hists["h2OffsetNewV2"])->SetBinContent(i, j, offsetNewV2);
 
-            m_hists["hOffset"]->Fill(offset);
-            m_hists["hOffsetNew"]->Fill(offsetNew);
             m_hists["hDeltaOffset"]->Fill(deltaOffset);
+            if(isGoodIB && saturate) {
+                m_hists["hOffset"]->Fill(offset);
+                m_hists["hOffsetNew"]->Fill(offsetNew);
+                m_hists["hOffsetNewV2"]->Fill(offsetNewV2);
+            }
 
             if(saturate) {
                 Double_t saturateV3 = saturateV2 / gainV2;
@@ -536,12 +541,13 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hOffsetNew"]->SetMarkerColor(kRed);
 
     legA.str("Original");
-    legB.str("New");
+    legB.str("New [with Clamp]");
+    legC.str("New [without Clamp]");
 
-    xshift = 0.5;
+    xshift = -0.05;
     yshift = 0.02;
 
-    leg = new TLegend(0.2+xshift,.75+yshift,0.65+xshift,.85+yshift);
+    leg = new TLegend(0.2+xshift,.6+yshift,0.65+xshift,.85+yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05f);
     leg->AddEntry(m_hists["hOffset"],legA.str().c_str(),"lpe");
@@ -550,6 +556,21 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay.png").c_str());
+
+    m_hists["hOffsetNewV2"]->Draw("hist e same");
+    m_hists["hOffsetNewV2"]->SetLineColor(kBlue);
+    m_hists["hOffsetNewV2"]->SetMarkerColor(kBlue);
+
+    leg->AddEntry(m_hists["hOffsetNewV2"],legC.str().c_str(),"lpe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay-v2.png").c_str());
+
+    m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,3.5e3);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay-v2-zoom.png").c_str());
 
     // ----------------------------------------------
 
