@@ -34,7 +34,6 @@ def execute_command(local_command, local_dry_run):
         result = subprocess.run(['bash','-c',local_command], check=False)
         if result.returncode != 0:
             print(f'Error in {local_command}')
-            sys.exit()
 
 if __name__ == '__main__':
     run_start = args.run_start
