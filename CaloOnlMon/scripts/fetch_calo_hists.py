@@ -15,6 +15,25 @@ parser.add_argument('-i'
                     , required=True
                     , help='Input start runnumber')
 
+parser.add_argument('-e'
+                    , '--run-end', type=int
+                    , default=100000
+                    , help='Input end runnumber')
+
+parser.add_argument('-c'
+                    , '--detectors'
+                    , nargs='+'
+                    , default=['CEMC','IHCAL','OHCAL']
+                    , choices=['CEMC','IHCAL','OHCAL']
+                    , help='Detectors')
+
+parser.add_argument('-n'
+                    , '--hist-types'
+                    , nargs='+', type=int
+                    , default=list(range(1,10))
+                    , choices=list(range(1,10))
+                    , help='Hist Types')
+
 parser.add_argument('-o'
                     , '--output', type=str
                     , default='.'
@@ -36,27 +55,29 @@ def execute_command(local_command, local_dry_run):
             print(f'Error in {local_command}')
 
 if __name__ == '__main__':
-    run_start = args.run_start
-    output    = os.path.realpath(args.output)
-    dry_run   = args.dry_run
+    run_start  = args.run_start
+    run_end    = args.run_end
+    detectors  = args.detectors
+    hist_types = args.hist_types
+    output     = os.path.realpath(args.output)
+    dry_run    = args.dry_run
 
     os.makedirs(output, exist_ok=True)
 
     print(f'Run Start: {run_start}')
+    print(f'Run End: {run_end}')
+    print(f'Detectors: {detectors}')
+    print(f'Hist Types: {hist_types}')
     print(f'Output: {output}')
     print(f'Dry Run: {dry_run}')
 
     # Generate Run List
     command = ('psql -h sphnxdaqdbreplica daq -c '
                '"select runnumber from run '
-               f'where runnumber >= {run_start} and runnumber != -1 and runtype != \'junk\' '
+               f'where runnumber >= {run_start} and runnumber <= {run_end} and runnumber != -1 and runtype != \'junk\' '
                f'and ertimestamp is not null order by runnumber;" -At > {output}/runs.list')
 
     execute_command(command, dry_run)
-
-    hist_types = range(1,10)
-    detectors = ['CEMC','IHCAL','OHCAL']
-
 
     ctr = 1
     for hist_type in hist_types:
@@ -66,7 +87,7 @@ if __name__ == '__main__':
             if(hist_type > 7 and detector != 'CEMC'):
                 continue
 
-            print(f'Processing hist type: {hist_type}, Detector: {detector}, {ctr}/{len(hist_types)*len(detectors)-4}')
+            print(f'Processing hist type: {hist_type}, Detector: {detector}, {ctr}/{len(hist_types)*len(detectors)}')
 
             command = (f'/direct/sphenix+u/anarde/.cargo/bin/rg -f {output}/runs.list '
                     f'<(/direct/sphenix+u/anarde/.cargo/bin/fd {detector}MONDRAW_{hist_type} /sphenix/WWW/run/2025/OnlMonHtml) '
