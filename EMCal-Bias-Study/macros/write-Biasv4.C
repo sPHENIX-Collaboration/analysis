@@ -65,17 +65,21 @@ namespace myAnalysis {
     Int_t m_temperature_diff = 7; // Between 2024 and 2025, there is a 7C diff
     Double_t m_gain_temp_coef = 1-m_temperature_diff*m_gain_per_celsius;
 
+    // voltage info
+    Double_t m_reference_voltage_default = 66.5 * 1e3; // mV
+    Double_t m_reference_voltage_new     = 64.5 * 1e3; // mV
+    Double_t m_reference_voltage_shift   = m_reference_voltage_default - m_reference_voltage_new; // mV
+
     // offset info
-    Int_t offset_max = 1000; // mV
-    Int_t offset_min = -2000; // mV
+    Int_t offset_max = 2400; // mV
 
     Int_t m_bins_gain = 40;
     Double_t m_gain_low = 0;
     Double_t m_gain_high = 2;
 
-    Int_t m_bins_offset = 70;
-    Double_t m_offset_low = -6e3; // mV
-    Double_t m_offset_high = 1e3; // mV
+    Int_t m_bins_offset = 62;
+    Double_t m_offset_low = -3.2e3; // mV
+    Double_t m_offset_high = 3e3; // mV
 
     Int_t m_bins_deltaOffset = 38;
     Double_t m_deltaOffset_low = -2.8e3; // mV
@@ -107,34 +111,25 @@ void myAnalysis::initHists() {
     m_hists["h2GainFactor"]->Scale(1/targetSaturation);
     m_hists["h2GainFactor"]->SetTitle("Gain: Target Saturation 45 GeV");
 
-    m_hists["h2GainFactorV2"] = static_cast<TH2*>(m_hists["h2GainFactor"]->Clone("h2GainFactorV2"));
-    m_hists["h2GainFactorV2"]->SetTitle("Gain: Best");
+    m_hists["h2GainFactorV2"] = new TH2F("h2GainFactorV2","Gain: Best; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
     m_hists["hGainFactor"] = new TH1F("hGainFactor","Gain: Target Saturation = 45 GeV; Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
     m_hists["hGainFactorV2"] = new TH1F("hGainFactorV2","Gain: Best; Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
 
-    m_hists["h2SaturateV3"] = static_cast<TH2*>(m_hists["h2SaturateV2"]->Clone("h2SaturateV3"));
+    m_hists["h2SaturateV3"] = new TH2F("h2SaturateV3","EMCal Saturation [GeV]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
     m_hists["hSaturateV3"] = new TH1F("hSaturateV3","EMCal Saturation; Energy [GeV]; Counts", m_bins_saturate, m_saturate_low, m_saturate_high);
 
     m_hists["hSaturateV3_vs_V2"] = new TH2F("hSaturateV3_vs_V2","EMCal Saturation; Current [GeV]; New [GeV]", m_bins_saturate, m_saturate_low, m_saturate_high, m_bins_saturate, m_saturate_low, m_saturate_high);
 
-    m_hists["h2OffsetNew"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2OffsetNew"));
-    m_hists["h2OffsetNew"]->SetTitle("New Offset [mV]");
+    m_hists["h2OffsetNew"] = new TH2F("h2OffsetNew","New Offset [mV] [Clamp]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+    m_hists["h2OffsetNewV2"] = new TH2F("h2OffsetNewV2","New Offset [mV] [No Clamp]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
-    m_hists["h2OffsetNewV2"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2OffsetNewV2"));
-    m_hists["h2OffsetNewV2"]->SetTitle("New Offset [mV]");
+    m_hists["h2DeltaOffset"] = new TH2F("h2DeltaOffset","#Delta Offset [mV] [Clamp]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+    m_hists["h2DeltaOffsetV2"] = new TH2F("h2DeltaOffsetV2","#Delta Offset [mV] [No Clamp]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
-    m_hists["h2DeltaOffset"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2DeltaOffset"));
-    m_hists["h2DeltaOffset"]->SetTitle("#Delta Offset [mV]");
-
-    m_hists["h2DeltaOffsetV2"] = static_cast<TH2*>(m_hists["h2Offset"]->Clone("h2DeltaOffsetV2"));
-    m_hists["h2DeltaOffsetV2"]->SetTitle("#Delta Offset [mV]");
-
-    m_hists["hDeltaOffset"] = new TH1F("hDeltaOffset","#Delta Offset; Offset [mV]; Counts", m_bins_deltaOffset, m_deltaOffset_low, m_deltaOffset_high);
-
-    m_hists["hOffset"] = new TH1F("hOffset","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hOffsetNew"] = new TH1F("hOffsetNew","Bias Offset; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
-    m_hists["hOffsetNewV2"] = new TH1F("hOffsetNewV2","Bias Offset: Target Saturation = 45 [GeV]; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hOffset"] = new TH1F("hOffset","Bias Offset: Original; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hOffsetNew"] = new TH1F("hOffsetNew","Bias Offset: Clamp; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
+    m_hists["hOffsetNewV2"] = new TH1F("hOffsetNewV2","Bias Offset: No Clamp; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
 
     // track errors
     m_hists["hSaturate"]->Sumw2();
@@ -145,7 +140,6 @@ void myAnalysis::initHists() {
     m_hists["hOffset"]->Sumw2();
     m_hists["hOffsetNew"]->Sumw2();
     m_hists["hOffsetNewV2"]->Sumw2();
-    m_hists["hDeltaOffset"]->Sumw2();
 }
 
 Int_t myAnalysis::readHists(const string &input) {
@@ -175,41 +169,45 @@ Int_t myAnalysis::analyze() {
             Double_t gain = static_cast<TH2*>(m_hists["h2GainFactor"])->GetBinContent(i, j);
             Double_t offset = static_cast<TH2*>(m_hists["h2Offset"])->GetBinContent(i, j);
 
-            Double_t gainV2 = std::min(gain, TMath::Exp(offset_max*kFactor));      // ensure the delta offset < 1000 mV
-            gainV2 = std::max(gainV2, TMath::Exp(kFactor*(offset_min-offset))); // ensure the new offset >= -2000 mV
-
             pair<Int_t, Int_t> sectorIB_pair = myUtils::getSectorIB(i-1,j-1);
             string sectorIB = to_string(sectorIB_pair.first) + "." + to_string(sectorIB_pair.second);
             Bool_t isGoodIB = !(m_knownBadIB.contains(sectorIB));
 
-            Double_t deltaOffset = (isGoodIB && saturate) ? TMath::Log(gainV2) / kFactor : 0;
-            Double_t offsetNew = offset + deltaOffset;
-            static_cast<TH2*>(m_hists["h2DeltaOffset"])->SetBinContent(i, j, deltaOffset);
-            static_cast<TH2*>(m_hists["h2OffsetNew"])->SetBinContent(i, j, offsetNew);
-
-            Double_t deltaOffsetV2 = (isGoodIB && saturate) ? TMath::Log(gain) / kFactor : 0;
-            Double_t offsetNewV2 = offset + deltaOffsetV2;
-            static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
-            static_cast<TH2*>(m_hists["h2OffsetNewV2"])->SetBinContent(i, j, offsetNewV2);
-
-            m_hists["hDeltaOffset"]->Fill(deltaOffset);
             if(isGoodIB && saturate) {
                 m_hists["hOffset"]->Fill(offset);
-                m_hists["hOffsetNew"]->Fill(offsetNew);
-                m_hists["hOffsetNewV2"]->Fill(offsetNewV2);
-            }
-
-            if(saturate) {
-                Double_t saturateV3 = saturateV2 / gainV2;
-                
                 m_hists["hSaturate"]->Fill(saturate);
                 m_hists["hSaturateV2"]->Fill(saturateV2);
-                m_hists["hSaturateV3"]->Fill(saturateV3);
-                m_hists["hGainFactor"]->Fill(gain);
+
+                // with clamp
+                Double_t gainV2 = std::max(gain, TMath::Exp(-kFactor*(offset_max+m_reference_voltage_shift+offset))); // ensure the new offset >= -2400 mV
+                gainV2 = std::min(gainV2, TMath::Exp(kFactor*(offset_max-m_reference_voltage_shift-offset)));         // ensure the new offset <= -2400 mV
+
+                Double_t deltaOffset = TMath::Log(gainV2) / kFactor;
+                Double_t offsetNew = offset + deltaOffset + m_reference_voltage_shift;
+                Double_t saturateV3 = saturateV2 / gainV2;
+
+                static_cast<TH2*>(m_hists["h2DeltaOffset"])->SetBinContent(i, j, deltaOffset);
+                static_cast<TH2*>(m_hists["h2OffsetNew"])->SetBinContent(i, j, offsetNew);
+                m_hists["hOffsetNew"]->Fill(offsetNew);
                 m_hists["hGainFactorV2"]->Fill(gainV2);
+                m_hists["hSaturateV3"]->Fill(saturateV3);
                 static_cast<TH2*>(m_hists["h2GainFactorV2"])->SetBinContent(i, j, gainV2);
                 static_cast<TH2*>(m_hists["h2SaturateV3"])->SetBinContent(i, j, saturateV3);
                 static_cast<TH2*>(m_hists["hSaturateV3_vs_V2"])->Fill(saturateV2, saturateV3);
+
+                // no clamp
+                Double_t deltaOffsetV2 = TMath::Log(gain) / kFactor;
+                Double_t offsetNewV2 = offset + deltaOffsetV2 + m_reference_voltage_shift;
+
+                static_cast<TH2*>(m_hists["h2DeltaOffsetV2"])->SetBinContent(i, j, deltaOffsetV2);
+                static_cast<TH2*>(m_hists["h2OffsetNewV2"])->SetBinContent(i, j, offsetNewV2);
+                m_hists["hOffsetNewV2"]->Fill(offsetNewV2);
+                m_hists["hGainFactor"]->Fill(gain);
+            }
+            else {
+                static_cast<TH2*>(m_hists["h2Saturate"])->SetBinContent(i, j, 0);
+                static_cast<TH2*>(m_hists["h2SaturateV2"])->SetBinContent(i, j, 0);
+                static_cast<TH2*>(m_hists["h2GainFactor"])->SetBinContent(i, j, 0);
             }
         }
     }
@@ -358,7 +356,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/hSaturate-overlay.png").c_str());
 
     m_hists["hSaturateV3"]->Draw("hist e same");
-    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,8e3);
+    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,1.3e4);
     m_hists["hSaturateV3"]->Rebin(10);
     m_hists["hSaturateV3"]->SetLineColor(kBlue);
     m_hists["hSaturateV3"]->SetMarkerColor(kBlue);
@@ -378,6 +376,20 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hSaturate-overlay-v2.png").c_str());
+
+    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,3e3);
+
+    leg->SetTextSize(0.03f);
+    xshift = 0.42;
+    yshift = 0;
+
+    leg->SetX1NDC(0.2+xshift);
+    leg->SetX2NDC(0.3+xshift);
+    leg->SetY1NDC(0.65+yshift);
+    leg->SetY2NDC(0.85+yshift);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hSaturate-overlay-v2-zoom.png").c_str());
 
     // ----------------------------------------------
 
@@ -424,7 +436,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor.png").c_str());
 
     m_hists["h2GainFactor"]->SetMinimum(0.2);
-    m_hists["h2GainFactor"]->SetMaximum(1);
+    m_hists["h2GainFactor"]->SetMaximum(1.2);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor-zoom.png").c_str());
@@ -440,7 +452,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactorV2.png").c_str());
 
     m_hists["h2GainFactorV2"]->SetMinimum(0.2);
-    m_hists["h2GainFactorV2"]->SetMaximum(1);
+    m_hists["h2GainFactorV2"]->SetMaximum(1.2);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactorV2-zoom.png").c_str());
@@ -452,6 +464,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetRightMargin(.05f);
     c1->SetTopMargin(.1f);
     c1->SetBottomMargin(.12f);
+
+    gPad->SetLogy();
 
     m_hists["hGainFactor"]->Draw("hist e");
     m_hists["hGainFactor"]->GetXaxis()->SetTitleOffset(0.9f);
@@ -469,10 +483,10 @@ void myAnalysis::make_plots(const string &outputDir) {
     legA.str("Target Saturation = 45 GeV");
     legB.str("Best given Voltage Limits");
 
-    xshift = 0.2;
+    xshift = 0.18;
     yshift = -0.02;
 
-    leg = new TLegend(0.2+xshift,.75+yshift,0.65+xshift,.85+yshift);
+    leg = new TLegend(0.25+xshift,.75+yshift,0.65+xshift,.85+yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05f);
     leg->AddEntry(m_hists["hGainFactor"],legA.str().c_str(),"lpe");
@@ -481,6 +495,8 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hGainFactor-overlay.png").c_str());
+
+    gPad->SetLogy(0);
 
     // ----------------------------------------------
 
@@ -501,9 +517,10 @@ void myAnalysis::make_plots(const string &outputDir) {
     // ----------------------------------------------
 
     m_hists["h2Offset"]->Draw("COLZ1");
+    m_hists["h2Offset"]->SetTitle("Offset [mV]: Reference = -66.5 V");
 
-    m_hists["h2Offset"]->SetMinimum(-2e3);
-    m_hists["h2Offset"]->SetMaximum(1e3);
+    m_hists["h2Offset"]->SetMinimum(-2.4e3);
+    m_hists["h2Offset"]->SetMaximum(2.4e3);
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
@@ -514,9 +531,10 @@ void myAnalysis::make_plots(const string &outputDir) {
     // ----------------------------------------------
 
     m_hists["h2OffsetNew"]->Draw("COLZ1");
+    m_hists["h2OffsetNew"]->SetTitle("Offset New [mV]: Reference = -64.5 V");
 
-    m_hists["h2OffsetNew"]->SetMinimum(-2e3);
-    m_hists["h2OffsetNew"]->SetMaximum(1e3);
+    m_hists["h2OffsetNew"]->SetMinimum(-2.4e3);
+    m_hists["h2OffsetNew"]->SetMaximum(2.4e3);
 
     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
@@ -532,22 +550,24 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetTopMargin(.1f);
     c1->SetBottomMargin(.12f);
 
+    gPad->SetGrid(0,0);
+
     m_hists["hOffset"]->Draw("hist e");
     m_hists["hOffset"]->GetXaxis()->SetTitleOffset(0.9f);
-    m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,1.2e4);
+    m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,4e3);
 
     m_hists["hOffsetNew"]->Draw("hist e same");
     m_hists["hOffsetNew"]->SetLineColor(kRed);
     m_hists["hOffsetNew"]->SetMarkerColor(kRed);
 
-    legA.str("Original");
-    legB.str("New [with Clamp]");
-    legC.str("New [without Clamp]");
+    legA.str("Original: Reference = -66.5 V");
+    legB.str("New [with Clamp]: Reference = -64.5 V");
+    legC.str("New [without Clamp]: Reference = -64.5 V");
 
     xshift = -0.05;
     yshift = 0.02;
 
-    leg = new TLegend(0.2+xshift,.6+yshift,0.65+xshift,.85+yshift);
+    leg = new TLegend(0.2+xshift,.7+yshift,0.65+xshift,.85+yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05f);
     leg->AddEntry(m_hists["hOffset"],legA.str().c_str(),"lpe");
@@ -567,11 +587,6 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay-v2.png").c_str());
 
-    m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,3.5e3);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay-v2-zoom.png").c_str());
-
     // ----------------------------------------------
 
     c1->SetCanvasSize(2900, 1000);
@@ -579,6 +594,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetRightMargin(.1f);
     c1->SetTopMargin(.1f);
     c1->SetBottomMargin(.12f);
+
+    gPad->SetGrid();
 
     m_hists["h2DeltaOffsetV2"]->Draw("COLZ1");
     m_hists["h2DeltaOffsetV2"]->SetTitle("#Delta Offset [mV]: Target Saturation 45 GeV");
