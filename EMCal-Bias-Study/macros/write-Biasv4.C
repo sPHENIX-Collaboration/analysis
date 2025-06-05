@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <map>
 #include <stdexcept> // For exception handling
+#include <memory>    // For std::unique_ptr
 
 // -- root includes --
 #include <TFile.h>
@@ -53,6 +54,7 @@ namespace myAnalysis {
     Int_t readHists(const string &input);
     void initHists();
     void saveHists(const string &outputDir);
+    void writeHists(map<string, TH1*> &hists, const string &filepath = "test.root");
 
     map<string,TH1*> m_hists;
 
@@ -72,6 +74,10 @@ namespace myAnalysis {
 
     // offset info
     Int_t offset_max = 2400; // mV
+
+    Int_t m_bins_calib = 100;
+    Double_t m_calib_low  = 0;
+    Double_t m_calib_high = 5;
 
     Int_t m_bins_gain = 40;
     Double_t m_gain_low = 0;
@@ -131,6 +137,8 @@ void myAnalysis::initHists() {
     m_hists["hOffsetNew"] = new TH1F("hOffsetNew","Bias Offset: Clamp; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
     m_hists["hOffsetNewV2"] = new TH1F("hOffsetNewV2","Bias Offset: No Clamp; Offset [mV]; Counts", m_bins_offset, m_offset_low, m_offset_high);
 
+    m_hists["hCalibNew"] = new TH1F("hCalibNew","EMCal Calibration 2025 [MeV/ADC]; Calibration [MeV/ADC]; Counts", m_bins_calib, m_calib_low, m_calib_high);
+
     // track errors
     m_hists["hSaturate"]->Sumw2();
     m_hists["hSaturateV2"]->Sumw2();
@@ -140,6 +148,7 @@ void myAnalysis::initHists() {
     m_hists["hOffset"]->Sumw2();
     m_hists["hOffsetNew"]->Sumw2();
     m_hists["hOffsetNewV2"]->Sumw2();
+    m_hists["hCalibNew"]->Sumw2();
 }
 
 Int_t myAnalysis::readHists(const string &input) {
@@ -164,6 +173,7 @@ Int_t myAnalysis::analyze() {
 
     for(Int_t i = 1; i <= myUtils::m_nphi; ++i) {
         for(Int_t j = 1; j <= myUtils::m_neta; ++j) {
+            Double_t calib = static_cast<TH2*>(m_hists["h2Calib"])->GetBinContent(i, j);
             Double_t saturate = static_cast<TH2*>(m_hists["h2Saturate"])->GetBinContent(i, j);
             Double_t saturateV2 = static_cast<TH2*>(m_hists["h2SaturateV2"])->GetBinContent(i, j);
             Double_t gain = static_cast<TH2*>(m_hists["h2GainFactor"])->GetBinContent(i, j);
@@ -179,8 +189,8 @@ Int_t myAnalysis::analyze() {
                 m_hists["hSaturateV2"]->Fill(saturateV2);
 
                 // with clamp
-                Double_t gainV2 = std::max(gain, TMath::Exp(-kFactor*(offset_max+m_reference_voltage_shift+offset))); // ensure the new offset >= -2400 mV
-                gainV2 = std::min(gainV2, TMath::Exp(kFactor*(offset_max-m_reference_voltage_shift-offset)));         // ensure the new offset <= -2400 mV
+                Double_t gainV2 = std::max(gain, TMath::Exp(-kFactor*(offset_max+m_reference_voltage_shift+offset)));  // ensure the new offset >= -2400 mV
+                         gainV2 = std::min(gainV2, TMath::Exp(kFactor*(offset_max-m_reference_voltage_shift-offset))); // ensure the new offset <= 2400 mV
 
                 Double_t deltaOffset = TMath::Log(gainV2) / kFactor;
                 Double_t offsetNew = offset + deltaOffset + m_reference_voltage_shift;
@@ -203,6 +213,10 @@ Int_t myAnalysis::analyze() {
                 static_cast<TH2*>(m_hists["h2OffsetNewV2"])->SetBinContent(i, j, offsetNewV2);
                 m_hists["hOffsetNewV2"]->Fill(offsetNewV2);
                 m_hists["hGainFactor"]->Fill(gain);
+
+                // New Calib
+                Double_t calibNew = calib / gainV2;
+                m_hists["hCalibNew"]->Fill(calibNew);
             }
             else {
                 static_cast<TH2*>(m_hists["h2Saturate"])->SetBinContent(i, j, 0);
@@ -218,23 +232,50 @@ Int_t myAnalysis::analyze() {
     static_cast<TH2*>(m_hists["h2OffsetNewV2_avg"])->Rebin2D(8,8);
     m_hists["h2OffsetNewV2_avg"]->Scale(1./myUtils::m_nchannel_per_ib);
 
+    m_hists["h2CalibNew"] = static_cast<TH2*>(m_hists["h2Calib"]->Clone("h2CalibNew"));
+    m_hists["h2CalibNew"]->Divide(m_hists["h2GainFactorV2"]);
+    m_hists["h2CalibNew"]->SetTitle("EMCal Calibration 2025 [MeV/ADC]");
+
     cout << "New Saturation [44,46] GeV: " << m_hists["hSaturateV3"]->Integral(m_hists["hSaturateV3"]->FindBin(44), m_hists["hSaturateV3"]->FindBin(46)-1)*100./m_hists["hSaturateV3"]->Integral() << " %" << endl;
-    cout << "New Saturation [40,46] GeV: " << m_hists["hSaturateV3"]->Integral(m_hists["hSaturateV3"]->FindBin(40), m_hists["hSaturateV3"]->FindBin(46)-1)*100./m_hists["hSaturateV3"]->Integral() << " %" << endl;
 
     return 0;
+}
+
+void myAnalysis::writeHists(map<string, TH1*> &hists, const string &filepath) {
+    std::unique_ptr<TFile> tf_ptr(TFile::Open(filepath.c_str(), "RECREATE"));
+
+    if (!tf_ptr || tf_ptr->IsZombie()) {
+        cout << "Error: Could not open ROOT file '" << filepath << "' for writing." << endl;
+        return;
+    }
+
+    cout << "Successfully opened ROOT file: " << filepath << endl;
+
+    for (const auto &[name, hist] : hists) {
+        if(hist) {
+            hist->Write();
+        }
+        else {
+            cout << "Warning: Skipping null histogram for name: " << name << endl;
+        }
+    }
+
+    cout << "All valid histograms written to file: " << filepath << endl;
 }
 
 void myAnalysis::saveHists(const string &outputDir) {
     // save plots to root file
     string output = outputDir + "/updated-Offset-info-v2.root";
-    TFile tf(output.c_str(),"recreate");
-    tf.cd();
+    writeHists(m_hists, output);
 
-    for (const auto &[name, hist] : m_hists) {
-        hist->Write();
-    }
+    // save calib to root file
+    map<string, TH1*> hists;
 
-    tf.Close();
+    hists["h2Calib"] = m_hists["h2Calib"];
+    hists["h2CalibNew"] = m_hists["h2CalibNew"];
+
+    output = outputDir + "/EMCal-Calib.root";
+    writeHists(hists, output);
 }
 
 void myAnalysis::make_plots(const string &outputDir) {
@@ -274,7 +315,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2Saturate.png").c_str());
 
     m_hists["h2Saturate"]->SetMinimum(10);
-    m_hists["h2Saturate"]->SetMaximum(30);
+    m_hists["h2Saturate"]->SetMaximum(50);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2Saturate-zoom.png").c_str());
@@ -290,15 +331,10 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV2.png").c_str());
 
     m_hists["h2SaturateV2"]->SetMinimum(10);
-    m_hists["h2SaturateV2"]->SetMaximum(30);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV2-zoom.png").c_str());
-
     m_hists["h2SaturateV2"]->SetMaximum(50);
 
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV2-zoom-v2.png").c_str());
+    if (m_saveFig) c1->Print((outputDir + "/images/h2SaturateV2-zoom.png").c_str());
 
     // ----------------------------------------------
 
@@ -436,7 +472,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor.png").c_str());
 
     m_hists["h2GainFactor"]->SetMinimum(0.2);
-    m_hists["h2GainFactor"]->SetMaximum(1.2);
+    m_hists["h2GainFactor"]->SetMaximum(0.9);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor-zoom.png").c_str());
@@ -452,7 +488,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactorV2.png").c_str());
 
     m_hists["h2GainFactorV2"]->SetMinimum(0.2);
-    m_hists["h2GainFactorV2"]->SetMaximum(1.2);
+    m_hists["h2GainFactorV2"]->SetMaximum(0.9);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactorV2-zoom.png").c_str());
@@ -555,14 +591,15 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hOffset"]->Draw("hist e");
     m_hists["hOffset"]->GetXaxis()->SetTitleOffset(0.9f);
     m_hists["hOffset"]->GetYaxis()->SetRangeUser(0,4e3);
+    m_hists["hOffset"]->SetTitle("Bias Offset");
 
-    m_hists["hOffsetNew"]->Draw("hist e same");
-    m_hists["hOffsetNew"]->SetLineColor(kRed);
-    m_hists["hOffsetNew"]->SetMarkerColor(kRed);
+    m_hists["hOffsetNewV2"]->Draw("hist e same");
+    m_hists["hOffsetNewV2"]->SetLineColor(kBlue);
+    m_hists["hOffsetNewV2"]->SetMarkerColor(kBlue);
 
     legA.str("Original: Reference = -66.5 V");
-    legB.str("New [with Clamp]: Reference = -64.5 V");
-    legC.str("New [without Clamp]: Reference = -64.5 V");
+    legB.str("New [without Clamp]: Reference = -64.5 V");
+    legC.str("New [with Clamp]: Reference = -64.5 V");
 
     xshift = -0.05;
     yshift = 0.02;
@@ -571,17 +608,17 @@ void myAnalysis::make_plots(const string &outputDir) {
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05f);
     leg->AddEntry(m_hists["hOffset"],legA.str().c_str(),"lpe");
-    leg->AddEntry(m_hists["hOffsetNew"],legB.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hOffsetNewV2"],legB.str().c_str(),"lpe");
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/hOffset-overlay.png").c_str());
 
-    m_hists["hOffsetNewV2"]->Draw("hist e same");
-    m_hists["hOffsetNewV2"]->SetLineColor(kBlue);
-    m_hists["hOffsetNewV2"]->SetMarkerColor(kBlue);
+    m_hists["hOffsetNew"]->Draw("hist e same");
+    m_hists["hOffsetNew"]->SetLineColor(kRed);
+    m_hists["hOffsetNew"]->SetMarkerColor(kRed);
 
-    leg->AddEntry(m_hists["hOffsetNewV2"],legC.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hOffsetNew"],legC.str().c_str(),"lpe");
     leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -620,6 +657,68 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2OffsetNewV2.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["h2Calib"]->Draw("COLZ1");
+    m_hists["h2Calib"]->SetTitle("EMCal Calibration 2024 [MeV/ADC]");
+
+    m_hists["h2Calib"]->SetMinimum(0.5);
+    m_hists["h2Calib"]->SetMaximum(3.1);
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
+
+    // ----------------------------------------------
+
+    m_hists["h2CalibNew"]->Draw("COLZ1");
+
+    m_hists["h2CalibNew"]->SetMinimum(0.5);
+    m_hists["h2CalibNew"]->SetMaximum(3.1);
+
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2CalibNew.png").c_str());
+
+    // ----------------------------------------------
+
+    c1->SetCanvasSize(1400, 1000);
+    c1->SetLeftMargin(.13f);
+    c1->SetRightMargin(.05f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+
+    gPad->SetGrid(0,0);
+
+    m_hists["hCalib"]->Draw("hist e");
+    m_hists["hCalib"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hCalib"]->SetTitle("EMCal Calibration [MeV/ADC]");
+    m_hists["hCalib"]->GetYaxis()->SetRangeUser(0,1.6e3);
+
+    m_hists["hCalibNew"]->Draw("hist e same");
+    m_hists["hCalibNew"]->SetLineColor(kRed);
+    m_hists["hCalibNew"]->SetMarkerColor(kRed);
+
+    legA.str("2024");
+    legB.str("2025");
+
+    xshift = 0.5;
+    yshift = 0.02;
+
+    leg = new TLegend(0.2+xshift,.7+yshift,0.65+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05f);
+    leg->AddEntry(m_hists["hCalib"],legA.str().c_str(),"lpe");
+    leg->AddEntry(m_hists["hCalibNew"],legB.str().c_str(),"lpe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalib-overlay.png").c_str());
 
     // ----------------------------------------------
 
