@@ -236,6 +236,19 @@ Int_t myAnalysis::analyze() {
     m_hists["h2CalibNew"]->Divide(m_hists["h2GainFactorV2"]);
     m_hists["h2CalibNew"]->SetTitle("EMCal Calibration 2025 [MeV/ADC]");
 
+    // Fill empty regions with the average value
+    Double_t calibNewMean = static_cast<TH2*>(m_hists["hCalibNew"])->GetMean();
+
+    cout << "h2CalibNew Mean: " << calibNewMean << " MeV/ADC" << endl;
+
+    for(Int_t i = 1; i <= myUtils::m_nphi; ++i) {
+        for(Int_t j = 1; j <= myUtils::m_neta; ++j) {
+            if(static_cast<TH2*>(m_hists["h2CalibNew"])->GetBinContent(i,j) == 0) {
+                static_cast<TH2*>(m_hists["h2CalibNew"])->SetBinContent(i, j, calibNewMean);
+            }
+        }
+    }
+
     cout << "New Saturation [44,46] GeV: " << m_hists["hSaturateV3"]->Integral(m_hists["hSaturateV3"]->FindBin(44), m_hists["hSaturateV3"]->FindBin(46)-1)*100./m_hists["hSaturateV3"]->Integral() << " %" << endl;
 
     return 0;
