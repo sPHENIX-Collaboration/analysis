@@ -61,7 +61,7 @@ rm -f bin/analyze-new-response && make && ./bin/analyze-new-response scratch/cal
 ** Analyze Response v2
 Perform closure test on results from bias offset test that is intended to increase the saturation threshold near 45 GeV.
 #+begin_src bash
-rm -f bin/analyze-new-response-v2 && make && ./bin/analyze-new-response-v2 scratch/calo-v14/test.list files/05-31-25-run-info.csv files/04-26-25-pulse-width-info-slim.csv  output/updated-Offset-info-v2.root output plots/update-offsets-comparison-v2
+rm -f bin/analyze-new-response-v2 && make && ./bin/analyze-new-response-v2 scratch/calo-test/test.list files/05-31-25-run-info.csv output/updated-Offset-info-v2.root output plots/update-offsets-comparison-v2
 #+end_src
 
 * Update Bias macro

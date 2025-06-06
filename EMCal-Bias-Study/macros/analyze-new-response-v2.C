@@ -224,15 +224,11 @@ void myAnalysis::readRun(const string &line) {
 void myAnalysis::initHists() {
     m_hists["h2ResponseDefault"] = new TH2F("h2ResponseDefault","Response: Default; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
     m_hists["h2ResponseNew"] = new TH2F("h2ResponseNew","Response: New; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
-    m_hists["h2ResponseNewV2"] = new TH2F("h2ResponseNewV2","Response: New; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
     m_hists["hResponseRatio"] = new TH1F("hResponseRatio","Ratio: Response [New / Default]; Response [New / Default]; Counts", m_bins_gain, m_gain_low, m_gain_high);
 
     m_hists["hResponseRatioDivGain"] = new TH1F("hResponseRatioDivGain","Ratio: Response [New / Default] / Gain; Response [New / Default] / Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
     m_hists["hResponseRatioVsGain"] = new TH2F("hResponseRatioVsGain","Response [New / Default] Vs Gain; Gain; Response [New / Default]", m_bins_gain, m_gain_low, m_gain_high, m_bins_gain, m_gain_low, m_gain_high);
-
-    m_hists["hResponseRatioDivGainV2"] = new TH1F("hResponseRatioDivGainV2","Ratio: Response [New / Default] / Gain; Response [New / Default] / Gain; Counts", m_bins_gain, m_gain_low, m_gain_high);
-    m_hists["hResponseRatioVsGainV2"] = new TH2F("hResponseRatioVsGainV2","Response [New / Default] Vs Gain; Gain; Response [New / Default]", m_bins_gain, m_gain_low, m_gain_high, m_bins_gain, m_gain_low, m_gain_high);
 
     m_hists["hSaturateV4"] = new TH1F("hSaturateV4","EMCal Saturation; Energy [GeV]; Counts", m_bins_saturate, m_saturate_low, m_saturate_high);
     m_hists["h2SaturateV4"] = new TH2F("h2SaturateV4","EMCal Saturation [GeV]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
@@ -240,7 +236,6 @@ void myAnalysis::initHists() {
     // track errors
     m_hists["hResponseRatio"]->Sumw2();
     m_hists["hResponseRatioDivGain"]->Sumw2();
-    m_hists["hResponseRatioDivGainV2"]->Sumw2();
     m_hists["hSaturateV4"]->Sumw2();
 }
 
@@ -252,7 +247,7 @@ Int_t myAnalysis::readHists(const string &input) {
         return 1;
     }
     m_hists["h2GainFactor"] = static_cast<TH2*>(tfile->Get("h2GainFactorV2")->Clone("h2GainFactor"));
-    m_hists["h2GainFactorV2"] = static_cast<TH2*>(tfile->Get("h2GainFactor")->Clone("h2GainFactorV2"));
+    m_hists["hGainFactor"] = static_cast<TH2*>(tfile->Get("hGainFactorV2")->Clone("hGainFactor"));
     m_hists["h2Calib"] = static_cast<TH2*>(tfile->Get("h2Calib"));
     m_hists["h2SaturateV2"] = static_cast<TH2*>(tfile->Get("h2SaturateV2"));
     m_hists["h2SaturateV3"] = static_cast<TH2*>(tfile->Get("h2SaturateV3"));
@@ -275,12 +270,6 @@ Int_t myAnalysis::analyze() {
 
     Double_t min_ResponseRatio = 9999;
     Double_t max_ResponseRatio = 0;
-
-    Double_t min_ResponseRatioDivGainV2 = 9999;
-    Double_t max_ResponseRatioDivGainV2 = 0;
-
-    Double_t min_ResponseRatioV2 = 9999;
-    Double_t max_ResponseRatioV2 = 0;
 
     Int_t uncalibTowers = 0;
     Int_t noBestWidthTowers = 0;
@@ -340,10 +329,6 @@ Int_t myAnalysis::analyze() {
             key << best_pulse << ",new";
             Int_t runNew = m_runInfo[key.str()];
 
-            key.str("");
-            key << best_pulse << ",newV2";
-            Int_t runNewV2 = m_runInfo[key.str()];
-
             name.str("");
             name << "h2CEMC_" << runDefault;
             Double_t responseDefault = static_cast<TH2*>(m_hists[name.str()])->GetBinContent(i+1, j+1);
@@ -354,19 +339,10 @@ Int_t myAnalysis::analyze() {
             Double_t responseNew = static_cast<TH2*>(m_hists[name.str()])->GetBinContent(i+1, j+1);
             static_cast<TH2*>(m_hists["h2ResponseNew"])->SetBinContent(i+1, j+1, responseNew);
 
-            name.str("");
-            name << "h2CEMC_" << runNewV2;
-            Double_t responseNewV2 = static_cast<TH2*>(m_hists[name.str()])->GetBinContent(i+1, j+1);
-            static_cast<TH2*>(m_hists["h2ResponseNewV2"])->SetBinContent(i+1, j+1, responseNewV2);
-
             Double_t gain = static_cast<TH2*>(m_hists["h2GainFactor"])->GetBinContent(i+1, j+1);
-            Double_t gainV2 = static_cast<TH2*>(m_hists["h2GainFactorV2"])->GetBinContent(i+1, j+1);
 
             Double_t responseRatio = (responseDefault) ? responseNew / responseDefault : 0;
             Double_t responseRatioDivGain = (gain) ? responseRatio / gain : 0;
-
-            Double_t responseRatioV2 = (responseDefault) ? responseNewV2 / responseDefault : 0;
-            Double_t responseRatioDivGainV2 = (gainV2) ? responseRatioV2 / gainV2 : 0;
 
             Double_t saturateV2 = static_cast<TH2*>(m_hists["h2SaturateV2"])->GetBinContent(i+1, j+1);
 
@@ -377,18 +353,9 @@ Int_t myAnalysis::analyze() {
                 min_ResponseRatio = std::min(responseRatio, min_ResponseRatio);
                 max_ResponseRatio = std::max(responseRatio, max_ResponseRatio);
 
-                min_ResponseRatioDivGainV2 = std::min(responseRatioDivGainV2, min_ResponseRatioDivGainV2);
-                max_ResponseRatioDivGainV2 = std::max(responseRatioDivGainV2, max_ResponseRatioDivGainV2);
-
-                min_ResponseRatioV2 = std::min(responseRatioV2, min_ResponseRatioV2);
-                max_ResponseRatioV2 = std::max(responseRatioV2, max_ResponseRatioV2);
-
                 m_hists["hResponseRatioDivGain"]->Fill(responseRatioDivGain);
                 static_cast<TH2*>(m_hists["hResponseRatioVsGain"])->Fill(gain, responseRatio);
                 m_hists["hResponseRatio"]->Fill(responseRatio);
-
-                m_hists["hResponseRatioDivGainV2"]->Fill(responseRatioDivGainV2);
-                static_cast<TH2*>(m_hists["hResponseRatioVsGainV2"])->Fill(gainV2, responseRatioV2);
 
                 Double_t saturateV4 = saturateV2 / responseRatio;
                 static_cast<TH2*>(m_hists["h2SaturateV4"])->SetBinContent(i+1, j+1, saturateV4);
@@ -405,14 +372,6 @@ Int_t myAnalysis::analyze() {
     m_hists["h2ResponseRatioDivGain"]->SetTitle("Ratio: Response [New / Default] / Gain");
     m_hists["h2ResponseRatioDivGain"]->Divide(m_hists["h2GainFactor"]);
 
-    m_hists["h2ResponseRatioV2"] = static_cast<TH2*>(m_hists["h2ResponseNewV2"]->Clone("h2ResponseRatioV2"));
-    m_hists["h2ResponseRatioV2"]->SetTitle("Ratio: Response [New / Default]");
-    m_hists["h2ResponseRatioV2"]->Divide(m_hists["h2ResponseDefault"]);
-
-    m_hists["h2ResponseRatioDivGainV2"] = static_cast<TH2*>(m_hists["h2ResponseRatioV2"]->Clone("h2ResponseRatioDivGainV2"));
-    m_hists["h2ResponseRatioDivGainV2"]->SetTitle("Ratio: Response [New / Default] / Gain");
-    m_hists["h2ResponseRatioDivGainV2"]->Divide(m_hists["h2GainFactorV2"]);
-
     cout << "====================" << endl;
     cout << "Bad Tower Stats" << endl;
     cout << "Uncalibrated or known bad channels: " << uncalibTowers << endl;
@@ -426,12 +385,6 @@ Int_t myAnalysis::analyze() {
     cout << "Response [New / Default] / Gain, Min: " << min_ResponseRatioDivGain << ", Max: " << max_ResponseRatioDivGain << endl;
     cout << "Response [New / Default] / Gain within 5% of unity: " << m_hists["hResponseRatioDivGain"]->Integral(m_hists["hResponseRatioDivGain"]->FindBin(0.95), m_hists["hResponseRatioDivGain"]->FindBin(1.05)-1) * 100 / m_hists["hResponseRatioDivGain"]->Integral() << " %" << endl;
     cout << "Response [New / Default] / Gain within 10% of unity: " << m_hists["hResponseRatioDivGain"]->Integral(m_hists["hResponseRatioDivGain"]->FindBin(0.9), m_hists["hResponseRatioDivGain"]->FindBin(1.1)-1) * 100 / m_hists["hResponseRatioDivGain"]->Integral() << " %" << endl;
-    cout << "====================" << endl;
-    cout << "V2 (no clamping)" << endl;
-    cout << "Response [New / Default], Min: " << min_ResponseRatioV2 << ", Max: " << max_ResponseRatioV2 << endl;
-    cout << "Response [New / Default] / Gain, Min: " << min_ResponseRatioDivGainV2 << ", Max: " << max_ResponseRatioDivGainV2 << endl;
-    cout << "Response [New / Default] / Gain within 5% of unity: " << m_hists["hResponseRatioDivGainV2"]->Integral(m_hists["hResponseRatioDivGainV2"]->FindBin(0.95), m_hists["hResponseRatioDivGainV2"]->FindBin(1.05)-1) * 100 / m_hists["hResponseRatioDivGainV2"]->Integral() << " %" << endl;
-    cout << "Response [New / Default] / Gain within 10% of unity: " << m_hists["hResponseRatioDivGainV2"]->Integral(m_hists["hResponseRatioDivGainV2"]->FindBin(0.9), m_hists["hResponseRatioDivGainV2"]->FindBin(1.1)-1) * 100 / m_hists["hResponseRatioDivGainV2"]->Integral() << " %" << endl;
 
     return 0;
 }
@@ -537,8 +490,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor.png").c_str());
 
-    m_hists["h2GainFactor"]->SetMinimum(0.2);
-    m_hists["h2GainFactor"]->SetMaximum(1.1);
+    m_hists["h2GainFactor"]->SetMinimum(0.1);
+    m_hists["h2GainFactor"]->SetMaximum(0.9);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2GainFactor-zoom.png").c_str());
@@ -552,8 +505,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatio.png").c_str());
 
-    m_hists["h2ResponseRatio"]->SetMinimum(0.2);
-    m_hists["h2ResponseRatio"]->SetMaximum(1.1);
+    m_hists["h2ResponseRatio"]->SetMinimum(0.1);
+    m_hists["h2ResponseRatio"]->SetMaximum(0.9);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatio-zoom.png").c_str());
@@ -572,7 +525,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     m_hists["hResponseRatio"]->SetLineColor(kRed);
     m_hists["hResponseRatio"]->SetMarkerColor(kRed);
     m_hists["hResponseRatio"]->GetXaxis()->SetTitleOffset(0.9f);
-    m_hists["hResponseRatio"]->GetXaxis()->SetRangeUser(0,3);
+    m_hists["hResponseRatio"]->GetXaxis()->SetRangeUser(0,1.5);
 
     gPad->Update();
 
@@ -608,8 +561,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatioDivGain.png").c_str());
 
-    m_hists["h2ResponseRatioDivGain"]->SetMinimum(0.6);
-    m_hists["h2ResponseRatioDivGain"]->SetMaximum(1.3);
+    m_hists["h2ResponseRatioDivGain"]->SetMinimum(0.4);
+    m_hists["h2ResponseRatioDivGain"]->SetMaximum(1.1);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h2ResponseRatioDivGain-zoom.png").c_str());
@@ -623,7 +576,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetBottomMargin(.12f);
     gStyle->SetOptFit(1111); // Shows Probability, Chi2/NDF, Errors, Values
 
-    TFitResultPtr fitResult = myUtils::doGausFit(m_hists["hResponseRatioDivGain"], 0.6, 1.05);
+    TFitResultPtr fitResult = myUtils::doGausFit(m_hists["hResponseRatioDivGain"], 0.87, 1.08);
 
     m_hists["hResponseRatioDivGain"]->Draw("e");
     m_hists["hResponseRatioDivGain"]->SetStats();
@@ -702,7 +655,7 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     m_hists["hSaturate"]->Draw("hist e");
     m_hists["hSaturate"]->GetXaxis()->SetTitleOffset(0.9f);
-    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,8e3);
+    m_hists["hSaturate"]->GetYaxis()->SetRangeUser(0,4e3);
     m_hists["hSaturate"]->Rebin(10);
 
     m_hists["hSaturateV2"]->Draw("hist e same");
@@ -728,9 +681,9 @@ void myAnalysis::make_plots(const string &outputDir) {
     legD << "After Adjusting Gain (Observed)";
 
     Double_t xshift = -0.08;
-    Double_t yshift = 0.02;
+    Double_t yshift = 0.03;
 
-    auto leg = new TLegend(0.2+xshift,.4+yshift,0.54+xshift,.85+yshift);
+    auto leg = new TLegend(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.04f);
     leg->AddEntry(m_hists["hSaturate"],legA.str().c_str(),"lpe");
@@ -781,7 +734,6 @@ void myAnalysis::make_plots(const string &outputDir) {
 
 void analyze_new_response_v2(const string &input_raw,
                   const string &input_raw_info,
-                  const string &input_width,
                   const string &input_hists,
                   const string &outputDir=".",
                   const string &plotDir=".") {
@@ -790,7 +742,6 @@ void analyze_new_response_v2(const string &input_raw,
     cout << "Run Parameters" << endl;
     cout << "input raw: "  << input_raw << endl;
     cout << "input raw info: "  << input_raw_info << endl;
-    cout << "input width: "  << input_width << endl;
     cout << "input hists: "  << input_hists << endl;
     cout << "outputDir: " << outputDir << endl;
     cout << "plotDir: " << plotDir << endl;
@@ -807,17 +758,6 @@ void analyze_new_response_v2(const string &input_raw,
     fs::create_directories(plotDir+"/images");
 
     TH1::AddDirectory(kFALSE);
-
-    // if(!myUtils::readCSV(input_width, myAnalysis::readBestPulseWidth)) return;
-
-    // if(myAnalysis::m_verbosity > 1) {
-    //     cout << "####################" << endl;
-    //     for (const auto& [key, value] : myAnalysis::m_best_pulse) {
-    //         cout << "Key: " << key << ", Best Pulse: " << value << " ns" << endl;
-    //     }
-    //     cout << "Total: " << myAnalysis::m_best_pulse.size() << endl;
-    //     cout << "####################" << endl;
-    // }
 
     if(!myUtils::readCSV(input_raw_info, myAnalysis::readRunInfo)) return;
 
@@ -853,8 +793,8 @@ void analyze_new_response_v2(const string &input_raw,
 
 # ifndef __CINT__
 Int_t main(Int_t argc, const char* const argv[]) {
-if(argc < 2 || argc > 7){
-        cout << "usage: ./analyze-new-response-v2 input_raw input_raw_info input_width input_hists [outputDir] [plotDir]" << endl;
+if(argc < 2 || argc > 6){
+        cout << "usage: ./analyze-new-response-v2 input_raw input_raw_info input_hists [outputDir] [plotDir]" << endl;
         cout << "input: input root file" << endl;
         cout << "outputDir: output directory" << endl;
         cout << "plotDir: plot directory" << endl;
@@ -864,14 +804,14 @@ if(argc < 2 || argc > 7){
     string outputDir = ".";
     string plotDir = ".";
 
-    if(argc >= 6) {
-        outputDir = argv[5];
+    if(argc >= 5) {
+        outputDir = argv[4];
     }
-    if(argc >= 7) {
-        plotDir = argv[6];
+    if(argc >= 6) {
+        plotDir = argv[5];
     }
 
-    analyze_new_response_v2(argv[1], argv[2], argv[3], argv[4], outputDir, plotDir);
+    analyze_new_response_v2(argv[1], argv[2], argv[3], outputDir, plotDir);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
