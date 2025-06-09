@@ -65,7 +65,7 @@ void myAnalysis::analyze()
     Int_t badFiles = 0;
     for(UInt_t i = 0; i < files.size(); ++i) {
         string file = files[i];
-        cout << "Processing: " << fs::path(file).filename() << ", " << i*100./files.size() << " %" << endl;
+        cout << "Processing: " << fs::path(file).filename() << ", " << i*100./static_cast<Double_t>(files.size()) << " %" << endl;
         TChain* chain = new TChain("Multiple");
         chain->Add(file.c_str());
 
@@ -102,7 +102,7 @@ void printStats(const string &input)
 }
 
 #ifndef __CINT__
-Int_t main(Int_t argc, char *argv[])
+Int_t main(Int_t argc, const char* const argv[])
 {
   if (argc < 2 || argc > 2)
   {

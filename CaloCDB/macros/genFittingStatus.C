@@ -108,15 +108,15 @@ Int_t myAnalysis::readHists(const string &input)
     cout << "Reading File: " << line << endl;
     auto tf = TFile::Open(line.c_str());
 
-    auto h = (TProfile2D*) tf->Get("h_CaloFittingQA_cemc_etaphi_ZScrosscalib");
+    auto h = static_cast<TProfile2D*>(tf->Get("h_CaloFittingQA_cemc_etaphi_ZScrosscalib"));
 
     if (h) h_CaloFittingQA_cemc_etaphi_ZScrosscalib->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloFittingQA_ihcal_etaphi_ZScrosscalib");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloFittingQA_ihcal_etaphi_ZScrosscalib"));
 
     if (h) h_CaloFittingQA_ihcal_etaphi_ZScrosscalib->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloFittingQA_ohcal_etaphi_ZScrosscalib");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloFittingQA_ohcal_etaphi_ZScrosscalib"));
 
     if (h) h_CaloFittingQA_ohcal_etaphi_ZScrosscalib->Add(h);
 
@@ -222,7 +222,7 @@ void genFittingStatus(const string &input, const string &output = "output")
 }
 
 #ifndef __CINT__
-Int_t main(Int_t argc, char *argv[])
+Int_t main(Int_t argc, const char* const argv[])
 {
   if (argc < 2 || argc > 3)
   {
