@@ -47,25 +47,9 @@ bin/%: macros/%.C
 	mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(LIBFLAGS)
 
-# all: bin/genStatus bin/genFittingStatus bin/Fun4All_CaloCDB bin/printStats
-
-# bin/genStatus: macros/genStatus.C
-# 	mkdir -p bin
-# 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcdbobjects -lcalo_io
-
-# bin/printStats: macros/printStats.C
-# 	mkdir -p bin
-# 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcalo_io
-
-# bin/genFittingStatus: macros/genFittingStatus.C
-# 	mkdir -p bin
-# 	g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcdbobjects -lcalo_io
-
 bin/Fun4All_CaloCDB: macros/Fun4All_CaloCDB.C
 	mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lffamodules -lmbd -lglobalvertex -lcalo_reco
-    # g++ -o $@ $< $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lffamodules -lmbd -lglobalvertex -lcalo_reco
-
 
 #--- Cppcheck target ---
 # This target now creates/updates the stamp file if any SRCS are newer
