@@ -13,7 +13,7 @@ f4a = subparser.add_parser('f4a', help='Create condor submission directory.')
 status = subparser.add_parser('status', help='Get status of Condor.')
 gen = subparser.add_parser('gen', help='Generate run lists.')
 
-f4a.add_argument('-i', '--run-list', type=str, help='Run List', required=True)
+f4a.add_argument('-i', '--hist-dir', type=str, help='Directory of histogram lists.', required=True)
 f4a.add_argument('-e', '--executable', type=str, default='scripts/genStatus.sh', help='Job script to execute. Default: scripts/genStatus.sh')
 f4a.add_argument('-m', '--macro', type=str, default='macros/genStatus.C', help='Analysis macro. Default: macros/genStatus.C')
 f4a.add_argument('-b', '--f4a', type=str, default='bin/genStatus', help='Analysis executable. Default: bin/genStatus')
@@ -30,7 +30,7 @@ gen.add_argument('-b', '--bad', type=str, default='files/bad-runs.list', help='L
 args = parser.parse_args()
 
 def create_f4a_jobs():
-    run_list   = os.path.realpath(args.run_list)
+    hist_dir   = os.path.realpath(args.hist_dir)
     executable = os.path.realpath(args.executable)
     macro      = os.path.realpath(args.macro)
     f4a        = os.path.realpath(args.f4a)
@@ -41,7 +41,7 @@ def create_f4a_jobs():
 
     concurrency_limit = 2308032
 
-    print(f'Run List: {run_list}')
+    print(f'Hist Dir: {hist_dir}')
     print(f'Fun4All : {macro}')
     print(f'Output Directory: {output_dir}')
     print(f'Bin: {f4a}')
@@ -55,7 +55,9 @@ def create_f4a_jobs():
     shutil.copy(f4a, output_dir)
     shutil.copy(macro, output_dir)
     shutil.copy(executable, output_dir)
-    shutil.copy(run_list, output_dir)
+
+    command = f'readlink -f {hist_dir}/* > jobs.list'
+    subprocess.run(['bash','-c',command],cwd=output_dir)
 
     os.makedirs(f'{output_dir}/stdout',exist_ok=True)
     os.makedirs(f'{output_dir}/error',exist_ok=True)
@@ -68,15 +70,12 @@ def create_f4a_jobs():
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')
         file.write(f'request_memory = {memory}GB\n')
-        file.write(f'PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)\n')
-        # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n')
-        # file.write(f'concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:{int(np.ceil(concurrency_limit/p))}\n')
-        file.write(f'queue input_run from {os.path.basename(run_list)}')
+        file.write(f'queue input_run from jobs.list')
 
 def get_condor_status():
-    hosts = [f'sphnxsub{x:02}' for x in range(1,3)]
-    hosts += [f'sphnx{x:02}' for x in range(1,9)]
-    hosts.append('sphnxdev01')
+    hosts = [f'sphnx{x:02}' for x in range(1,9)]
+    # hosts += [f'sphnxsub{x:02}' for x in range(1,3)]
+    # hosts.append('sphnxdev01')
 
     dt_all = []
     dt_user = []
