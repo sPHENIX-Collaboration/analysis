@@ -15,7 +15,7 @@ CXXFLAGS = -g -std=c++20 -Wall -Wextra -pedantic \
 ROOT_CPPFLAGS = $(shell root-config --cflags | sed 's/-I/-isystem /g')
 ROOT_LIBFLAGS = `root-config --libs`
 sPHENIX_CPPFLAGS = -isystem $(OFFLINE_MAIN)/include -isystem $(OFFLINE_MAIN)/rootmacros
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcdbobjects -lemcNoisyTowerFinder
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcdbobjects -lsphenixnpc -lemcNoisyTowerFinder
 
 # Combine all C++ flags for compilation
 ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS)
@@ -26,6 +26,7 @@ SRCS = $(wildcard macros/*.C)
 
 # List all your executable targets explicitly
 ALL_TARGETS = bin/genStatus \
+              bin/filter-datasets \
               bin/Fun4All_CaloCDB \
               bin/printStats
 
