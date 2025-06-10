@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <map>
 
 // -- root includes --
 #include <TFile.h>
@@ -12,18 +13,15 @@
 
 #include <calobase/TowerInfoDefs.h>
 #include <cdbobjects/CDBTTree.h>
+#include <emcnoisytowerfinder/emcNoisyTowerFinder.h>
 
-using std::cerr;
 using std::cout;
 using std::endl;
-using std::max;
-using std::min;
-using std::ofstream;
-using std::pair;
 using std::string;
 using std::stringstream;
-using std::to_string;
-using std::vector;
+using std::map;
+
+namespace fs = std::filesystem;
 
 namespace myAnalysis
 {
@@ -32,10 +30,11 @@ namespace myAnalysis
   void analyze(const string &output);
 
   // utils
-  pair<string, string> getRunDataset(const string &input);
+  void setRunDataset(const string &input);
   Int_t readHists(const string &input);
 
-  pair<string, string> run_dataset;
+  string m_run;
+  string m_dataset;
 
   TProfile2D *h_CaloValid_cemc_etaphi_badChi2 = nullptr;
   TProfile2D *h_CaloValid_ihcal_etaphi_badChi2 = nullptr;
@@ -49,14 +48,14 @@ namespace myAnalysis
   Int_t cemc_bins_phi = 256;
   Int_t hcal_bins_eta = 24;
   Int_t hcal_bins_phi = 64;
+
 }  // namespace myAnalysis
 
-pair<string, string> myAnalysis::getRunDataset(const string &input)
+void myAnalysis::setRunDataset(const string &input)
 {
-  string basename = std::filesystem::path(input).filename();
-  string run = basename.substr(0, basename.find("_"));
-  string dataset = basename.substr(basename.find("_") + 1, basename.size() - basename.find("_") - 6);
-  return make_pair(run, dataset);
+  string basename = fs::path(input).filename().stem().string();
+  m_run = basename.substr(0, basename.find("_"));
+  m_dataset = basename.substr(basename.find("_") + 1, basename.size() - basename.find("_"));
 }
 
 Int_t myAnalysis::readHists(const string &input)
@@ -67,11 +66,9 @@ Int_t myAnalysis::readHists(const string &input)
   // Check if the file was successfully opened
   if (!file.is_open())
   {
-    cerr << "Failed to open file list: " << input << endl;
+    cout << "Failed to open file list: " << input << endl;
     return 1;
   }
-
-  run_dataset = getRunDataset(input);
 
   cout << "Reading Hists" << endl;
   cout << "======================================" << endl;
@@ -93,36 +90,75 @@ Int_t myAnalysis::readHists(const string &input)
   h_CaloValid_ohcal_etaphi_time_raw = new TProfile2D("ohcal_etaphi_time_raw","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
 
   string line;
+  map<string, Int_t> ctr;
   while (std::getline(file, line))
   {
+    ++ctr["total_files"];
+
     cout << "Reading File: " << line << endl;
     auto tf = TFile::Open(line.c_str());
+
+    if (!tf || tf->IsZombie()) {
+        cout << "Error: Could not open ROOT file: " << line << endl;
+        continue; // Indicate an error
+    }
+
+    ++ctr["successfully_opened_files"];
+
     auto h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_cemc_etaphi_badChi2"));
 
-    if (h) h_CaloValid_cemc_etaphi_badChi2->Add(h);
+    if (h) {
+      h_CaloValid_cemc_etaphi_badChi2->Add(h);
+      ++ctr["h_CaloValid_cemc_etaphi_badChi2"];
+    }
 
     h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ihcal_etaphi_badChi2"));
 
-    if (h) h_CaloValid_ihcal_etaphi_badChi2->Add(h);
+    if (h) {
+      h_CaloValid_ihcal_etaphi_badChi2->Add(h);
+      ++ctr["h_CaloValid_ihcal_etaphi_badChi2"];
+    }
 
     h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ohcal_etaphi_badChi2"));
 
-    if (h) h_CaloValid_ohcal_etaphi_badChi2->Add(h);
+    if (h) {
+      h_CaloValid_ohcal_etaphi_badChi2->Add(h);
+      ++ctr["h_CaloValid_ohcal_etaphi_badChi2"];
+    }
 
     h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_cemc_etaphi_time_raw"));
 
-    if (h) h_CaloValid_cemc_etaphi_time_raw->Add(h);
+    if (h) {
+      h_CaloValid_cemc_etaphi_time_raw->Add(h);
+      ++ctr["h_CaloValid_cemc_etaphi_time_raw"];
+    }
 
     h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ihcal_etaphi_time_raw"));
 
-    if (h) h_CaloValid_ihcal_etaphi_time_raw->Add(h);
+    if (h) {
+      h_CaloValid_ihcal_etaphi_time_raw->Add(h);
+      ++ctr["h_CaloValid_ihcal_etaphi_time_raw"];
+    }
 
     h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ohcal_etaphi_time_raw"));
 
-    if (h) h_CaloValid_ohcal_etaphi_time_raw->Add(h);
+    if (h) {
+      h_CaloValid_ohcal_etaphi_time_raw->Add(h);
+      ++ctr["h_CaloValid_ohcal_etaphi_time_raw"];
+    }
 
     tf->Close();
   }
+
+  cout << "===============================" << endl;
+  cout << "Stats" << endl;
+  cout << "Successfully opened files: " << ctr["successfully_opened_files"] << ", " << ctr["successfully_opened_files"]*100./ctr["total_files"] << " %" << endl;
+  for (const auto& [name, value] : ctr) {
+    if(name.starts_with("h_CaloValid")) {
+      cout << "Hist: " << name << ", Found: " << value << ", " << value * 100./ ctr["successfully_opened_files"] << " %" << endl;
+    }
+  }
+  cout << "===============================" << endl;
 
   // Close the file
   file.close();
@@ -173,43 +209,30 @@ void myAnalysis::histToCaloCDBTree(string outputfile, string fieldName, Int_t ic
   delete cdbttree;
 }
 
-void myAnalysis::analyze(const string &output)
+void myAnalysis::analyze(const string &outputDir)
 {
-  stringstream t;
-
-  t.str("");
-
-  string run = run_dataset.first;
-  string dataset = run_dataset.second;
-
-  cout << "Processing: Run: " << run << ", Dataset: " << dataset << endl;
-
-  t << output << "/" << run << "_" << dataset;
-
-  std::filesystem::create_directories(t.str());
-
   string detector = "CEMC";
   // fracBadChi2
-  string payloadName = t.str() + "/" + detector + "_hotTowers_fracBadChi2" + "_" + dataset + "_" + run + ".root";
+  string payloadName = outputDir + "/" + detector + "_hotTowers_fracBadChi2" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_cemc_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 0, h_CaloValid_cemc_etaphi_badChi2);
   // time
-  payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
+  payloadName = outputDir + "/" + detector + "_meanTime" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_cemc_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 0, h_CaloValid_cemc_etaphi_time_raw);
 
   detector = "HCALIN";
   // fracBadChi2
-  payloadName = t.str() + "/" + detector + "_hotTowers_fracBadChi2" + "_" + dataset + "_" + run + ".root";
+  payloadName = outputDir + "/" + detector + "_hotTowers_fracBadChi2" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_ihcal_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 1, h_CaloValid_ihcal_etaphi_badChi2);
   // time
-  payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
+  payloadName = outputDir + "/" + detector + "_meanTime" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_ihcal_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ihcal_etaphi_time_raw);
 
   detector = "HCALOUT";
   // fracBadChi2
-  payloadName = t.str() + "/" + detector + "_hotTowers_fracBadChi2" + "_" + dataset + "_" + run + ".root";
+  payloadName = outputDir + "/" + detector + "_hotTowers_fracBadChi2" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_ohcal_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 1, h_CaloValid_ohcal_etaphi_badChi2);
   // time
-  payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
+  payloadName = outputDir + "/" + detector + "_meanTime" + "_" + m_dataset + "_" + m_run + ".root";
   if (h_CaloValid_ohcal_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ohcal_etaphi_time_raw);
 }
 
@@ -221,9 +244,40 @@ void genStatus(const string &input, const string &output = "output")
   cout << "output: " << output << endl;
   cout << "#############################" << endl;
 
+  myAnalysis::setRunDataset(input);
+
+  cout << "Processing: Run: " << myAnalysis::m_run << ", Dataset: " << myAnalysis::m_dataset << endl;
+
+  stringstream datasetDir;
+  datasetDir.str("");
+  datasetDir << output << "/" << myAnalysis::m_run << "_" << myAnalysis::m_dataset;
+
+  string outputDir = datasetDir.str();
+
+  string hotMapFile = "EMCalHotMap_"+myAnalysis::m_dataset+"_"+myAnalysis::m_run+".root";
+  string hotMapOutput = datasetDir.str()+ "/" + hotMapFile;
+
+  datasetDir << "/QA";
+
+  // create output & QA directory
+  std::filesystem::create_directories(datasetDir.str());
+
+  string s_input = input;
+  string hotMapOutputQA = datasetDir.str()+ "/" + hotMapFile;
+
   // merges individal qa into one per run
   myAnalysis::readHists(input);
-  myAnalysis::analyze(output);
+  myAnalysis::analyze(outputDir);
+
+  emcNoisyTowerFinder* calo = new emcNoisyTowerFinder();
+  calo->FindHot(s_input, hotMapOutput, "h_CaloValid_cemc_etaphi");
+
+  if (fs::exists(hotMapOutput)) {
+    fs::rename(hotMapOutput, hotMapOutputQA);
+  }
+  else {
+    cout << "ERROR: EMCal Hot Map FAILED to Create." << endl;
+  }
 }
 
 #ifndef __CINT__

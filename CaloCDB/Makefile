@@ -15,14 +15,10 @@ CXXFLAGS = -g -std=c++20 -Wall -Wextra -pedantic \
 ROOT_CPPFLAGS = $(shell root-config --cflags | sed 's/-I/-isystem /g')
 ROOT_LIBFLAGS = `root-config --libs`
 sPHENIX_CPPFLAGS = -isystem $(OFFLINE_MAIN)/include -isystem $(OFFLINE_MAIN)/rootmacros
-sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcdbobjects
-
-# Your project-specific flags
-CPPFLAGS = -I$(MYINSTALL)/include
-LIBFLAGS = -L$(MYINSTALL)/lib -lCaloTower
+sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib -lcalo_io -lcdbobjects -lemcNoisyTowerFinder
 
 # Combine all C++ flags for compilation
-ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(CPPFLAGS)
+ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS)
 
 # Define your source files and output executables
 # Use a wildcard to automatically pick up all .C files in 'macros'
@@ -45,11 +41,11 @@ all: $(ALL_TARGETS)
 bin/%: macros/%.C
 	@echo "Building $@ from $<"
 	mkdir -p bin
-	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
 
 bin/Fun4All_CaloCDB: macros/Fun4All_CaloCDB.C
 	mkdir -p bin
-	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lffamodules -lmbd -lglobalvertex -lcalo_reco
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lfun4all -lphool -lphparameter -lffarawobjects -lffamodules -lmbd -lglobalvertex -lcalo_reco
 
 #--- Cppcheck target ---
 # This target now creates/updates the stamp file if any SRCS are newer
