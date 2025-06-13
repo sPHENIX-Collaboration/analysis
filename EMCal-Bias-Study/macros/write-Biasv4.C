@@ -232,20 +232,21 @@ Int_t myAnalysis::analyze() {
     static_cast<TH2*>(m_hists["h2OffsetNewV2_avg"])->Rebin2D(8,8);
     m_hists["h2OffsetNewV2_avg"]->Scale(1./myUtils::m_nchannel_per_ib);
 
-    m_hists["h2CalibNew"] = static_cast<TH2*>(m_hists["h2Calib"]->Clone("h2CalibNew"));
-    m_hists["h2CalibNew"]->Divide(m_hists["h2GainFactorV2"]);
-    m_hists["h2CalibNew"]->SetTitle("EMCal Calibration 2025 [MeV/ADC]");
+    m_hists["h2CalibNew"] = new TH2F("h2CalibNew","EMCal Calibration 2025 [GeV/ADC]; Tower Index #eta; Tower Index #phi", myUtils::m_neta, -0.5, myUtils::m_neta-0.5, myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5);
 
-    // Fill empty regions with the average value
-    Double_t calibNewMean = static_cast<TH2*>(m_hists["hCalibNew"])->GetMean();
+    // Fill empty regions with the average value in [GeV / ADC]
+    Double_t calibNewMean = static_cast<TH2*>(m_hists["hCalibNew"])->GetMean() / 1000;
 
-    cout << "h2CalibNew Mean: " << calibNewMean << " MeV/ADC" << endl;
+    cout << "h2CalibNew Mean: " << calibNewMean << " GeV/ADC" << endl;
 
     for(Int_t i = 1; i <= myUtils::m_nphi; ++i) {
         for(Int_t j = 1; j <= myUtils::m_neta; ++j) {
-            if(static_cast<TH2*>(m_hists["h2CalibNew"])->GetBinContent(i,j) == 0) {
-                static_cast<TH2*>(m_hists["h2CalibNew"])->SetBinContent(i, j, calibNewMean);
-            }
+            Double_t calib = static_cast<TH2*>(m_hists["h2Calib"])->GetBinContent(i,j);
+            Double_t gain  = static_cast<TH2*>(m_hists["h2GainFactorV2"])->GetBinContent(i,j);
+
+            Double_t calibNew = (gain) ? calib / gain / 1000: calibNewMean;
+
+            static_cast<TH2*>(m_hists["h2CalibNew"])->SetBinContent(j, i, calibNew);
         }
     }
 
