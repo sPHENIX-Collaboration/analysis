@@ -231,7 +231,7 @@ void createLocalEMCalCalibFile(const string &fname, int runNumber)
 #ifndef __CINT__
 int main(int argc, const char* const argv[])
 {
-  if (argc > 5)
+  if (argc > 6)
   {
     cout << "usage: " << argv[0] << " [events] [fname] [iter] [calib_fname] [fieldname]" << endl;
     return 1;
