@@ -307,7 +307,7 @@ def main():
         calib_bin = fit_calib_bin if it >= 4 else tsc_fit_bin
 
         # command = f'root -b -l -q \'{macro}("test-iter{it}.root", "local_calib_copy.root", {it}, "{calib_field}")\''
-        command = f'{calib_bin} test-iter-{it}.root local_calib_copy.root {it} {calib_field}'
+        command = f'{calib_bin} test-iter{it}.root local_calib_copy.root {it} {calib_field}'
         run_command_and_log(command, logger, iter_dir)
 
         logger.info(f'Iter: {it}, local_calib_copy.root updated: {datetime.datetime.now()}')
