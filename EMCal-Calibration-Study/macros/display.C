@@ -53,8 +53,8 @@ namespace myAnalysis {
 
 Int_t myAnalysis::readHists() {
     // Read Hist from input
-    string input_2024 = "/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/output/test-2024.root";
-    string input_2025 = "/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/output/test-2025.root";
+    string input_2024 = "output/test-2024.root";
+    string input_2025 = "output/test-2025.root";
 
     string input = input_2024;
 
@@ -90,8 +90,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetTickx();
     c1->SetTicky();
 
-    c1->SetCanvasSize(1400, 1000);
-    c1->SetLeftMargin(.13f);
+    c1->SetCanvasSize(1200, 1000);
+    c1->SetLeftMargin(.17f);
     c1->SetRightMargin(.03f);
     c1->SetTopMargin(.1f);
     c1->SetBottomMargin(.12f);
@@ -116,17 +116,23 @@ void myAnalysis::make_plots(const string &outputDir) {
     // ----------------------------------------
 
     m_hists["h_InvMass_2025"]->Draw();
-    m_hists["h_InvMass_2025"]->SetTitle("Invariant Mass: 2025 Au+Au; M_{#gamma#gamma} [GeV]; Counts");
+    m_hists["h_InvMass_2025"]->SetTitle("; m_{#gamma#gamma} [GeV]; Counts");
     m_hists["h_InvMass_2025"]->GetXaxis()->SetTitleOffset(1.f);
-    m_hists["h_InvMass_2025"]->GetXaxis()->SetRangeUser(0,1);
+    m_hists["h_InvMass_2025"]->GetYaxis()->SetTitleOffset(1.7f);
+    m_hists["h_InvMass_2025"]->GetXaxis()->SetRangeUser(0,0.5);
 
     stringstream info;
 
-    info << "Runs: 66580, 66592, 66593, 66623, 66624";
+    info << "Au+Au 2025";
 
     TLatex latex;
-    latex.SetTextSize(0.05f);
-    latex.DrawLatex(0.2,2e4,info.str().c_str());
+    latex.SetTextSize(0.04f);
+    latex.DrawLatexNDC(0.85,0.91,"6/10/25");
+    latex.DrawLatexNDC(0.5,0.8,"#bf{#it{sPHENIX}} Preliminary");
+    latex.DrawLatexNDC(0.5,0.8-0.05,"Au+Au 2025 #sqrt{s_{NN}} = 200 GeV");
+    latex.DrawLatexNDC(0.5,0.8-0.05*2,"|z| < 20 cm, N_{Clusters} < 300");
+    latex.DrawLatexNDC(0.5,0.8-0.05*3.3,"1.3 GeV < p_{T,1} < 4 GeV");
+    latex.DrawLatexNDC(0.5,0.8-0.05*4.3,"0.7 GeV < p_{T,2} < 4 GeV");
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print((outputDir + "/images/h_InvMass_2025.png").c_str());
