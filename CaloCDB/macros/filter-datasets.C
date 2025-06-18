@@ -36,7 +36,7 @@ namespace myAnalysis
                             , "CEMC_meanTime", "HCALIN_meanTime", "HCALOUT_meanTime"
                             , "CEMC_hotTowers_fracBadChi2", "HCALIN_hotTowers_fracBadChi2", "HCALOUT_hotTowers_fracBadChi2"};
 
-
+  Bool_t m_debug = false;
 }  // namespace myAnalysis
 
 void myAnalysis::readRunInfo(const string &line) {
@@ -75,7 +75,13 @@ void myAnalysis::analyze(const string& input, const string &outputDir) {
     Bool_t keep = false;
 
     for(const auto &cdbName : m_cdbName) {
+      if(m_debug) {
+        cout << "Attempt to get Calibration" << endl;
+      }
       string cdb = getCalibration(cdbName, std::stoul(run));
+      if(m_debug) {
+        cout << "Get Calibration Calls: " << ++m_ctr["getCalib_calls"] << endl;
+      }
 
       string suffix = (cdbName == "CEMC_BadTowerMap") ? "EMCalHotMap_" + dataset + "-" + run + "cdb.root" :
                                                          cdbName + "_" + dataset + "-" + run + ".root";
@@ -89,7 +95,6 @@ void myAnalysis::analyze(const string& input, const string &outputDir) {
         }
         keep = true;
       }
-
     }
 
     if(keep) {
@@ -110,13 +115,16 @@ void myAnalysis::analyze(const string& input, const string &outputDir) {
   file.close();
 }
 
-void filter_datasets(const string &input, const string &output = ".")
+void filter_datasets(const string &input, const string &output = ".", Bool_t debug = false)
 {
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
   cout << "input: " << input << endl;
   cout << "output: " << output << endl;
+  cout << "Debug: " << ((debug) ? "True" : "False") << endl;
   cout << "#############################" << endl;
+
+  myAnalysis::m_debug = debug;
 
   setGlobalTag("ProdA_2024");
 
@@ -128,22 +136,28 @@ void filter_datasets(const string &input, const string &output = ".")
 #ifndef __CINT__
 Int_t main(Int_t argc, const char* const argv[])
 {
-  if (argc < 2 || argc > 3)
+  if (argc < 2 || argc > 4)
   {
-    cout << "usage: ./filter-datasets input [output]" << endl;
+    cout << "usage: ./" << argv[0] << " input [output] [debug]" << endl;
     cout << "input: input csv" << endl;
-    cout << "output: output directory" << endl;
+    cout << "output: Output directory. Default: ." << endl;
+    cout << "debug: debug mode. Default false" << endl;
     return 1;
   }
 
   string output = ".";
+  Bool_t debug = false;
 
   if (argc >= 3)
   {
     output = argv[2];
   }
+  if (argc >= 4)
+  {
+     debug = std::atoi(argv[3]);
+  }
 
-  filter_datasets(argv[1], output);
+  filter_datasets(argv[1], output, debug);
 
   cout << "======================================" << endl;
   cout << "done" << endl;
