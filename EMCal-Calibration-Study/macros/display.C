@@ -54,13 +54,15 @@ namespace fs = std::filesystem;
 namespace myAnalysis {
     void make_plots(const string &outputDir);
     Int_t readHists();
-    Int_t readCalib();
+    Int_t readCalib(const string &input);
     void initHists();
     map<string,TH1*> m_hists;
 
     Int_t m_bins_calib = 200;
     Double_t m_calib_low  = 0;
     Double_t m_calib_high = 10;
+
+    Int_t m_iter = 0;
 
     Bool_t m_saveFig = true;
 }
@@ -69,8 +71,6 @@ void myAnalysis::initHists() {
     // dummy hists for labeling
     m_hists["h2DummySector"] = new TH2F("h2DummySector","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, 2, 0, 2);
     m_hists["h2DummyIB"] = new TH2F("h2DummyIB","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, myUtils::m_nib*2/myUtils::m_nsector, 0, myUtils::m_nib*2/myUtils::m_nsector);
-
-    m_hists["hCalib"] = new TH1F("hCalib", "EMCal Calibration; Calibration [MeV/ADC]; Counts", m_bins_calib, m_calib_low, m_calib_high);
 
     for(Int_t i = 0; i < myUtils::m_nsector; ++i) {
         Int_t x = i % (myUtils::m_nsector / 2) + 1;
@@ -86,9 +86,8 @@ void myAnalysis::initHists() {
     }
 }
 
-
-Int_t myAnalysis::readCalib() {
-    string input = "output/EMCAL_ADC_to_Etower_2025_initial_v3.root";
+Int_t myAnalysis::readCalib(const string &input) {
+    // string input = "output/EMCAL_ADC_to_Etower_2025_initial_v3.root";
     string ttree = "Multiple";
     unique_ptr<TChain> chain = myUtils::setupTChain(input, ttree);
     if(!chain) {
@@ -104,7 +103,18 @@ Int_t myAnalysis::readCalib() {
     chain->SetBranchAddress("IID", &key);
     chain->SetBranchAddress("FCEMC_calib_ADC_to_ETower", &calib);
 
-    m_hists["h2Calib"] = new TH2F("h2Calib","EMCal Calibration [MeV/ADC]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+    stringstream h2Name, h2Title;
+    stringstream hName, hTitle;
+
+    h2Name << "h2Calib_" << m_iter;
+    h2Title << "EMCal Calibration [MeV/ADC], Iter: " << m_iter << "; Tower Index #phi; Tower Index #eta";
+
+    hName << "hCalib_" << m_iter;
+    hTitle << "EMCal Calibration, Iter: " << m_iter << "; Calibration [MeV/ADC]; Counts";
+
+    m_hists[h2Name.str()] = new TH2F(h2Name.str().c_str(),h2Title.str().c_str(), myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+
+    m_hists[hName.str()] = new TH1F(hName.str().c_str(), hTitle.str().c_str(), m_bins_calib, m_calib_low, m_calib_high);
 
     Int_t min_phi = 9999;
     Int_t max_phi = 0;
@@ -133,13 +143,13 @@ Int_t myAnalysis::readCalib() {
         if(calib) {
             min_calib = std::min(min_calib, calib);
             max_calib = std::max(max_calib, calib);
-            static_cast<TH2*>(m_hists["h2Calib"])->SetBinContent(iphi+1, ieta+1, calib);
-            m_hists["hCalib"]->Fill(calib);
+            static_cast<TH2*>(m_hists[h2Name.str()])->SetBinContent(iphi+1, ieta+1, calib);
+            m_hists[hName.str()]->Fill(calib);
         }
     }
 
     cout << "========================" << endl;
-    cout << "Read Calib Stats" << endl;
+    cout << "Read Calib Stats - Iter: " << m_iter++ << endl;
     cout << "Calib [MeV/ADC] Min: " << min_calib << ", Max: " << max_calib << endl;
     cout << "Phi Min: " << min_phi << ", Max: " << max_phi << endl;
     cout << "Eta Min: " << min_eta << ", Max: " << max_eta << endl;
@@ -282,12 +292,19 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetLeftMargin(.1f);
 
     gPad->SetLogy();
-    m_hists["hCalib"]->Draw();
-    m_hists["hCalib"]->GetXaxis()->SetTitleOffset(0.9f);
-    m_hists["hCalib"]->GetYaxis()->SetTitleOffset(0.9f);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/hCalib.png").c_str());
+    stringstream hName;
+
+    for(Int_t i = 0; i < m_iter; ++i) {
+        hName.str("");
+        hName << "hCalib_" << i;
+        m_hists[hName.str()]->Draw();
+        m_hists[hName.str()]->GetXaxis()->SetTitleOffset(0.9f);
+        m_hists[hName.str()]->GetYaxis()->SetTitleOffset(0.9f);
+
+        c1->Print(output.c_str(), "pdf portrait");
+        if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + ".png").c_str());
+    }
 
     gPad->SetLogy(0);
 
@@ -301,37 +318,64 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     gPad->SetGrid();
 
-    m_hists["h2Calib"]->Draw("COLZ1");
-    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
-    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+    for(Int_t i = 0; i < m_iter; ++i) {
+        hName.str("");
+        hName << "h2Calib_" << i;
+
+        m_hists[hName.str()]->Draw("COLZ1");
+        m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+        m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+        m_hists[hName.str()]->SetMinimum(1);
+        m_hists[hName.str()]->SetMaximum(5);
+
+        c1->Print(output.c_str(), "pdf portrait");
+        if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + ".png").c_str());
+    }
+
+    for(Int_t i = 0; i < m_iter; ++i) {
+        hName.str("");
+        hName << "h2Calib_" << i;
+
+        m_hists[hName.str()]->Draw("COLZ1");
+
+        m_hists[hName.str()]->SetMinimum(1);
+        m_hists[hName.str()]->SetMaximum(5);
+
+        m_hists[hName.str()]->GetYaxis()->SetRangeUser(0,8);
+        m_hists[hName.str()]->GetYaxis()->SetNdivisions(8, false);
+
+        c1->Print(output.c_str(), "pdf portrait");
+        if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + "-zoom-South-IB-5.png").c_str());
+    }
 
 
-    m_hists["h2Calib"]->SetMinimum(1);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
+    // c1->Print(output.c_str(), "pdf portrait");
+    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
 
-    m_hists["h2Calib"]->SetMaximum(5);
+    // m_hists["h2Calib"]->SetMaximum(5);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom.png").c_str());
+    // c1->Print(output.c_str(), "pdf portrait");
+    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom.png").c_str());
 
-    m_hists["h2Calib"]->Draw("COLZ1");
-    m_hists["h2Calib"]->GetYaxis()->SetRangeUser(0,8);
-    m_hists["h2Calib"]->GetYaxis()->SetNdivisions(8, false);
+    // m_hists["h2Calib"]->Draw("COLZ1");
+    // m_hists["h2Calib"]->GetYaxis()->SetRangeUser(0,8);
+    // m_hists["h2Calib"]->GetYaxis()->SetNdivisions(8, false);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom-South-IB-5.png").c_str());
+    // c1->Print(output.c_str(), "pdf portrait");
+    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom-South-IB-5.png").c_str());
 
     // ----------------------------------------
 
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
 
-void display(const string &outputDir=".") {
+void display(const string &input, const string &outputDir=".") {
 
     cout << "#############################" << endl;
     cout << "Run Parameters" << endl;
+    cout << "input: " << input << endl;
     cout << "outputDir: " << outputDir << endl;
     cout << "save figs: " << myAnalysis::m_saveFig << endl;
     cout << "#############################" << endl;
@@ -348,26 +392,27 @@ void display(const string &outputDir=".") {
     myAnalysis::initHists();
 
     if(myAnalysis::readHists()) return;
-    if(myAnalysis::readCalib()) return;
+    if(!myUtils::readCSV(input, myAnalysis::readCalib, false)) return;
 
     myAnalysis::make_plots(outputDir);
 }
 
 # ifndef __CINT__
 Int_t main(Int_t argc, const char* const argv[]) {
-if(argc > 2){
-        cout << "usage: ./display [outputDir]" << endl;
+if(argc < 2 || argc > 3){
+        cout << "usage: ./" << argv[0] << " input [outputDir]" << endl;
+        cout << "input: list of calib files" << endl;
         cout << "outputDir: output directory" << endl;
         return 1;
     }
 
     string outputDir = ".";
 
-    if(argc >= 2) {
-        outputDir = argv[1];
+    if(argc >= 3) {
+        outputDir = argv[2];
     }
 
-    display(outputDir);
+    display(argv[1], outputDir);
 
     cout << "======================================" << endl;
     cout << "done" << endl;
