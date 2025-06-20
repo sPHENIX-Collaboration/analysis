@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 #include <fstream>
 #include <filesystem>
 #include <sstream>
@@ -16,7 +17,7 @@
 #include <TFitResult.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TH3.h>
+#include <TChain.h>
 #include <TMath.h>
 #include <TLatex.h>
 #include <TCanvas.h>
@@ -27,6 +28,12 @@
 
 // -- sPHENIX Style
 #include <sPhenixStyle.C>
+
+// tower mapping
+#include <calobase/TowerInfoDefs.h>
+
+// utils
+#include "myUtils.C"
 
 using std::cout;
 using std::cerr;
@@ -41,14 +48,104 @@ using std::make_pair;
 using std::unordered_map;
 using std::map;
 using std::unordered_set;
+using std::unique_ptr;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
     void make_plots(const string &outputDir);
     Int_t readHists();
+    Int_t readCalib();
+    void initHists();
     map<string,TH1*> m_hists;
 
+    Int_t m_bins_calib = 200;
+    Double_t m_calib_low  = 0;
+    Double_t m_calib_high = 10;
+
     Bool_t m_saveFig = true;
+}
+
+void myAnalysis::initHists() {
+    // dummy hists for labeling
+    m_hists["h2DummySector"] = new TH2F("h2DummySector","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, 2, 0, 2);
+    m_hists["h2DummyIB"] = new TH2F("h2DummyIB","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, myUtils::m_nib*2/myUtils::m_nsector, 0, myUtils::m_nib*2/myUtils::m_nsector);
+
+    m_hists["hCalib"] = new TH1F("hCalib", "EMCal Calibration; Calibration [MeV/ADC]; Counts", m_bins_calib, m_calib_low, m_calib_high);
+
+    for(Int_t i = 0; i < myUtils::m_nsector; ++i) {
+        Int_t x = i % (myUtils::m_nsector / 2) + 1;
+        Int_t y = (i < (myUtils::m_nsector / 2)) ? 2 : 1;
+        static_cast<TH2*>(m_hists["h2DummySector"])->SetBinContent(x,y,i);
+    }
+
+    for(Int_t i = 0; i < myUtils::m_nib; ++i) {
+        Int_t val = i % myUtils::m_nib_per_sector;
+        Int_t x = (i / myUtils::m_nib_per_sector) % (myUtils::m_nsector / 2) + 1;
+        Int_t y = (i < (myUtils::m_nib / 2)) ? myUtils::m_nib_per_sector - val : myUtils::m_nib_per_sector + val + 1;
+        static_cast<TH2*>(m_hists["h2DummyIB"])->SetBinContent(x,y,val);
+    }
+}
+
+
+Int_t myAnalysis::readCalib() {
+    string input = "output/EMCAL_ADC_to_Etower_2025_initial_v3.root";
+    string ttree = "Multiple";
+    unique_ptr<TChain> chain = myUtils::setupTChain(input, ttree);
+    if(!chain) {
+       cout << "ERROR TChain Setup Failed: " << input << ", TTree: " << ttree << endl;
+       return 1;
+    }
+
+    chain->Add(input.c_str());
+
+    Float_t calib;
+    Int_t key;
+
+    chain->SetBranchAddress("IID", &key);
+    chain->SetBranchAddress("FCEMC_calib_ADC_to_ETower", &calib);
+
+    m_hists["h2Calib"] = new TH2F("h2Calib","EMCal Calibration [MeV/ADC]; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
+
+    Int_t min_phi = 9999;
+    Int_t max_phi = 0;
+
+    Int_t min_eta = 9999;
+    Int_t max_eta = 0;
+
+    Float_t min_calib = 9999;
+    Float_t max_calib = 0;
+
+    for(UInt_t i = 0; i < chain->GetEntries(); ++i) {
+        chain->GetEntry(i);
+
+        Int_t iphi = static_cast<Int_t>(TowerInfoDefs::getCaloTowerPhiBin(static_cast<UInt_t>(key)));
+        Int_t ieta = static_cast<Int_t>(TowerInfoDefs::getCaloTowerEtaBin(static_cast<UInt_t>(key)));
+
+        min_phi = std::min(min_phi, iphi);
+        max_phi = std::max(max_phi, iphi);
+
+        min_eta = std::min(min_eta, ieta);
+        max_eta = std::max(max_eta, ieta);
+
+        // GeV -> MeV
+        calib *= 1e3f;
+
+        if(calib) {
+            min_calib = std::min(min_calib, calib);
+            max_calib = std::max(max_calib, calib);
+            static_cast<TH2*>(m_hists["h2Calib"])->SetBinContent(iphi+1, ieta+1, calib);
+            m_hists["hCalib"]->Fill(calib);
+        }
+    }
+
+    cout << "========================" << endl;
+    cout << "Read Calib Stats" << endl;
+    cout << "Calib [MeV/ADC] Min: " << min_calib << ", Max: " << max_calib << endl;
+    cout << "Phi Min: " << min_phi << ", Max: " << max_phi << endl;
+    cout << "Eta Min: " << min_eta << ", Max: " << max_eta << endl;
+    cout << "========================" << endl;
+
+    return 0;
 }
 
 Int_t myAnalysis::readHists() {
@@ -91,7 +188,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     c1->SetTicky();
 
     c1->SetCanvasSize(1200, 1000);
-    c1->SetLeftMargin(.17f);
+    c1->SetLeftMargin(.13f);
     c1->SetRightMargin(.03f);
     c1->SetTopMargin(.1f);
     c1->SetBottomMargin(.12f);
@@ -103,10 +200,14 @@ void myAnalysis::make_plots(const string &outputDir) {
     gStyle->SetTitleFillColor(0);
     gStyle->SetTitleBorderSize(0);
 
+    for (const auto &[name, hist] : m_hists) {
+        if(name.starts_with("h2")) myUtils::setEMCalDim(hist);
+    }
+
     c1->Print((output + "[").c_str(), "pdf portrait");
 
     m_hists["h_InvMass_2024"]->Draw();
-    m_hists["h_InvMass_2024"]->SetTitle("Invariant Mass: 2024 Au+Au, Run: 54912; M_{#gamma#gamma} [GeV]; Counts");
+    m_hists["h_InvMass_2024"]->SetTitle("Invariant Mass: 2024 Au+Au, Run: 54912; m_{#gamma#gamma} [GeV]; Counts");
     m_hists["h_InvMass_2024"]->GetXaxis()->SetTitleOffset(1.f);
     m_hists["h_InvMass_2024"]->GetXaxis()->SetRangeUser(0,1);
 
@@ -114,6 +215,8 @@ void myAnalysis::make_plots(const string &outputDir) {
     if (m_saveFig) c1->Print((outputDir + "/images/h_InvMass_2024.png").c_str());
 
     // ----------------------------------------
+
+    c1->SetLeftMargin(.17f);
 
     m_hists["h_InvMass_2025"]->Draw();
     m_hists["h_InvMass_2025"]->SetTitle("; m_{#gamma#gamma} [GeV]; Counts");
@@ -139,13 +242,15 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     // ----------------------------------------
 
+    c1->SetLeftMargin(.14f);
+
     m_hists["h_InvMass_2024"]->Scale(1./m_hists["h_InvMass_2024"]->Integral(1, m_hists["h_InvMass_2024"]->FindBin(1)-1));
     m_hists["h_InvMass_2025"]->Scale(1./m_hists["h_InvMass_2025"]->Integral(1, m_hists["h_InvMass_2025"]->FindBin(1)-1));
 
     m_hists["h_InvMass_2025"]->Draw("hist");
-    m_hists["h_InvMass_2025"]->SetTitle("Invariant Mass; M_{#gamma#gamma} [GeV]; Normalized Counts");
+    m_hists["h_InvMass_2025"]->SetTitle("Invariant Mass; m_{#gamma#gamma} [GeV]; Normalized Counts");
     m_hists["h_InvMass_2025"]->GetXaxis()->SetTitleOffset(1.f);
-    m_hists["h_InvMass_2025"]->GetYaxis()->SetTitleOffset(1.4f);
+    m_hists["h_InvMass_2025"]->GetYaxis()->SetTitleOffset(1.5f);
     m_hists["h_InvMass_2025"]->GetXaxis()->SetRangeUser(0,1);
     m_hists["h_InvMass_2025"]->GetYaxis()->SetRangeUser(0,9e-3);
     m_hists["h_InvMass_2025"]->SetLineColor(kRed);
@@ -174,6 +279,52 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     // ----------------------------------------
 
+    c1->SetLeftMargin(.1f);
+
+    gPad->SetLogy();
+    m_hists["hCalib"]->Draw();
+    m_hists["hCalib"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hCalib"]->GetYaxis()->SetTitleOffset(0.9f);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalib.png").c_str());
+
+    gPad->SetLogy(0);
+
+    // ----------------------------------------
+
+    c1->SetCanvasSize(2900, 1000);
+    c1->SetLeftMargin(.06f);
+    c1->SetRightMargin(.1f);
+    c1->SetTopMargin(.1f);
+    c1->SetBottomMargin(.12f);
+
+    gPad->SetGrid();
+
+    m_hists["h2Calib"]->Draw("COLZ1");
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+
+    m_hists["h2Calib"]->SetMinimum(1);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
+
+    m_hists["h2Calib"]->SetMaximum(5);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom.png").c_str());
+
+    m_hists["h2Calib"]->Draw("COLZ1");
+    m_hists["h2Calib"]->GetYaxis()->SetRangeUser(0,8);
+    m_hists["h2Calib"]->GetYaxis()->SetNdivisions(8, false);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom-South-IB-5.png").c_str());
+
+    // ----------------------------------------
+
     c1->Print((output + "]").c_str(), "pdf portrait");
 }
 
@@ -194,7 +345,10 @@ void display(const string &outputDir=".") {
 
     TH1::AddDirectory(kFALSE);
 
+    myAnalysis::initHists();
+
     if(myAnalysis::readHists()) return;
+    if(myAnalysis::readCalib()) return;
 
     myAnalysis::make_plots(outputDir);
 }
