@@ -41,7 +41,7 @@ parser.add_argument('-n'
                     , help='Minimum Events (for Run). Default: 500k')
 
 parser.add_argument('-o'
-                    , '--condor-output', type=str
+                    , '--output', type=str
                     , default='test'
                     , help='Output directory for condor.')
 
@@ -51,11 +51,6 @@ parser.add_argument('-m'
                     , help='Memory (units of GB) to request per condor submission. Default: 0.2 GB.')
 
 parser.add_argument('-l'
-                    , '--log-dir', type=str
-                    , default='.'
-                    , help='Log File Directory. Default: Current Directory')
-
-parser.add_argument('-l2'
                     , '--condor-log-dir', type=str
                     , default='/tmp/anarde/dump'
                     , help='Condor log file.')
@@ -178,7 +173,7 @@ def run_command_and_log(command, current_dir = '.', description="Executing comma
         logger.critical(f"An unexpected error occurred while running '{command}': {e}")
         return False
 
-def process_df(df, run_type, bin_filter_datasets, verbose=False):
+def process_df(df, run_type, bin_filter_datasets, output, verbose=False):
     """
     Filter df and get a reduced df that contains the necessary runs with missing / outdated bad tower maps
     """
@@ -237,13 +232,13 @@ def process_df(df, run_type, bin_filter_datasets, verbose=False):
         logger.info(reduced_df.sort_values(by='time').reset_index(drop=True).head().to_string())
 
     # Save CSV of unique run and dataset pairs
-    reduced_df[['runnumber', 'dataset']].drop_duplicates().sort_values(by='runnumber').to_csv(f'{run_type}.csv', index=False, header=True)
+    reduced_df[['runnumber', 'dataset']].drop_duplicates().sort_values(by='runnumber').to_csv(f'{output}/{run_type}.csv', index=False, header=True)
 
     ## DEBUG
-    command = f'{bin_filter_datasets} {run_type}.csv'
+    command = f'{bin_filter_datasets} {output}/{run_type}.csv {output}'
     run_command_and_log(command)
 
-    processed_df = pd.read_csv(f'{run_type}-process.csv')
+    processed_df = pd.read_csv(f'{output}/{run_type}-process.csv')
 
     # Check if any new runs need new cdb maps
     if len(processed_df) == 0:
@@ -263,12 +258,12 @@ def process_df(df, run_type, bin_filter_datasets, verbose=False):
 
     return reduced_process_df
 
-def generate_run_list(reduced_process_df, condor_output):
+def generate_run_list(reduced_process_df, output):
     """
     Generate lists of CaloValid histogram for each run.
     """
-    output = f'{condor_output}/datasets'
-    os.makedirs(output, exist_ok=True)
+    dataset_dir = f'{output}/datasets'
+    os.makedirs(dataset_dir, exist_ok=True)
 
     # 7. Group by 'runnumber' and 'dataset'
     # Iterating over this grouped object is efficient.
@@ -278,45 +273,43 @@ def generate_run_list(reduced_process_df, condor_output):
     for (run, dataset), group_df in grouped:
         logger.info(f'Processing: {run},{dataset}')
 
-        filepath = os.path.join(output, f'{run}_{dataset}.list')
+        filepath = os.path.join(dataset_dir, f'{run}_{dataset}.list')
 
         group_df['full_file_path'].to_csv(filepath, index=False, header=False)
 
-def generate_condor(condor_output, condor_log_dir, condor_log_file, condor_memory, bin_genStatus, executable, do_condor_submit):
+def generate_condor(output, condor_log_dir, condor_log_file, condor_memory, bin_genStatus, executable, do_condor_submit):
     """
     Generate condor submission directory to generate the CDB files for the runs.
     """
     # 9. Condor Submission
-    os.makedirs(condor_output, exist_ok=True)
-
     if os.path.exists(condor_log_dir):
         shutil.rmtree(condor_log_dir)
         logger.info(f"Directory '{condor_log_dir}' and its contents removed.")
 
     os.makedirs(condor_log_dir, exist_ok=True)
 
-    shutil.copy(bin_genStatus, condor_output)
-    shutil.copy(executable, condor_output)
+    shutil.copy(bin_genStatus, output)
+    shutil.copy(executable, output)
 
-    command = f'readlink -f {condor_output}/datasets/* > jobs.list'
-    subprocess.run(['bash','-c',command], cwd=condor_output, check=False)
+    command = f'readlink -f {output}/datasets/* > jobs.list'
+    subprocess.run(['bash','-c',command], cwd=output, check=False)
 
-    os.makedirs(f'{condor_output}/stdout',exist_ok=True)
-    os.makedirs(f'{condor_output}/error',exist_ok=True)
-    os.makedirs(f'{condor_output}/output',exist_ok=True)
+    os.makedirs(f'{output}/stdout',exist_ok=True)
+    os.makedirs(f'{output}/error',exist_ok=True)
+    os.makedirs(f'{output}/output',exist_ok=True)
 
-    with open(f'{condor_output}/genStatus.sub', mode="w", encoding="utf-8") as file:
+    with open(f'{output}/genStatus.sub', mode="w", encoding="utf-8") as file:
         file.write(f'executable     = {os.path.basename(executable)}\n')
-        file.write(f'arguments      = {condor_output}/{os.path.basename(bin_genStatus)} $(input_run) {condor_output}/output\n')
+        file.write(f'arguments      = {output}/{os.path.basename(bin_genStatus)} $(input_run) {output}/output\n')
         file.write(f'log            = {condor_log_file}\n')
         file.write('output          = stdout/job-$(Process).out\n')
         file.write('error           = error/job-$(Process).err\n')
         file.write(f'request_memory = {condor_memory}GB\n')
 
-    command = f'rm -rf {condor_log_dir} && mkdir {condor_log_dir} && cd {condor_output} && condor_submit genStatus.sub -queue "input_run from jobs.list"'
+    command = f'rm -rf {condor_log_dir} && mkdir {condor_log_dir} && cd {output} && condor_submit genStatus.sub -queue "input_run from jobs.list"'
 
     if do_condor_submit:
-        run_command_and_log(command, condor_output)
+        run_command_and_log(command, output)
     else:
         logger.info(f'\nSubmission Command: {command}')
 
@@ -328,21 +321,21 @@ def main():
     run_type   = args.run_type
     min_events = args.min_events
     CURRENT_DATE = str(datetime.date.today())
-    condor_output = os.path.realpath(args.condor_output)
+    output = os.path.realpath(args.output)
     condor_memory = args.memory
     condor_log_dir = os.path.realpath(args.condor_log_dir)
     condor_log_file = os.path.join(condor_log_dir, 'job-$(ClusterId)-$(Process).log')
     do_condor_submit = args.do_condor_submit
     verbose    = args.verbose
 
-    log_dir  = os.path.realpath(args.log_dir)
-    log_file = os.path.join(log_dir, f'log-{CURRENT_DATE}.txt')
+    log_file = os.path.join(output, f'log-{CURRENT_DATE}.txt')
 
     bin_filter_datasets = os.path.realpath(args.bin_filter_datasets)
     bin_genStatus       = os.path.realpath(args.bin_genStatus)
     executable          = os.path.realpath(args.executable)
 
-    os.makedirs(log_dir,exist_ok=True)
+    os.makedirs(output, exist_ok=True)
+
     setup_logging(log_file, logging.DEBUG)
 
     # Database Connection
@@ -354,7 +347,7 @@ def main():
     logger.info(f'LOGGING: {str(datetime.datetime.now())}')
     logger.info(f'Run Type: {run_type}')
     logger.info(f'Min Events: {min_events}')
-    logger.info(f'Condor Output: {condor_output}')
+    logger.info(f'Output Directory: {output}')
     logger.info(f'Condor Memory: {condor_memory}')
     logger.info(f'Do Condor Submission: {do_condor_submit}')
     logger.info(f'Filter Datasets Bin: {bin_filter_datasets}')
@@ -371,13 +364,13 @@ def main():
     df = get_file_paths(engine, run_type, min_events)
 
     # filter and process the initial dataframe
-    reduced_process_df = process_df(df, run_type, bin_filter_datasets, verbose)
+    reduced_process_df = process_df(df, run_type, bin_filter_datasets, output, verbose)
 
     # generate the lists of CaloValid histograms for each identified run
-    generate_run_list(reduced_process_df, condor_output)
+    generate_run_list(reduced_process_df, output)
 
     # generate condor jobs / submit them
-    generate_condor(condor_output, condor_log_dir, condor_log_file, condor_memory, bin_genStatus, executable, do_condor_submit)
+    generate_condor(output, condor_log_dir, condor_log_file, condor_memory, bin_genStatus, executable, do_condor_submit)
 
 logger = logging.getLogger(__name__)
 
