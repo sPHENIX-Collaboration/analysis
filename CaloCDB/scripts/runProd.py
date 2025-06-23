@@ -111,8 +111,6 @@ def get_file_paths(engine, runtype='run3auau', threshold=500000):
 def setup_logging(log_file, log_level):
     """Configures the logging system to output to a file and console."""
 
-    # Create a logger instance
-    # logger = logging.getLogger(__name__) # Use __name__ to get a logger specific to this module
     logger.setLevel(log_level)
 
     # Clear existing handlers to prevent duplicate output if run multiple times
@@ -127,8 +125,6 @@ def setup_logging(log_file, log_level):
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-
-    # return logger
 
 def run_command_and_log(command, current_dir = '.', description="Executing command"):
     """
