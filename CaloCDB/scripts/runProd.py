@@ -52,7 +52,7 @@ parser.add_argument('-m'
 
 parser.add_argument('-l'
                     , '--condor-log-dir', type=str
-                    , default='/tmp/anarde/dump'
+                    , default=''
                     , help='Condor log file.')
 
 parser.add_argument('-s'
@@ -323,7 +323,8 @@ def main():
     CURRENT_DATE = str(datetime.date.today())
     output = os.path.realpath(args.output)
     condor_memory = args.memory
-    condor_log_dir = os.path.realpath(args.condor_log_dir)
+    USER = os.environ.get('USER')
+    condor_log_dir = os.path.realpath(args.condor_log_dir) if args.condor_log_dir else f'/tmp/{USER}/dump'
     condor_log_file = os.path.join(condor_log_dir, 'job-$(ClusterId)-$(Process).log')
     do_condor_submit = args.do_condor_submit
     verbose    = args.verbose
