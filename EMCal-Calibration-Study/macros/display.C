@@ -17,6 +17,7 @@
 #include <TFitResult.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TH3.h>
 #include <TChain.h>
 #include <TMath.h>
 #include <TLatex.h>
@@ -95,8 +96,6 @@ Int_t myAnalysis::readCalib(const string &input) {
        return 1;
     }
 
-    chain->Add(input.c_str());
-
     Float_t calib;
     Int_t key;
 
@@ -115,6 +114,7 @@ Int_t myAnalysis::readCalib(const string &input) {
     m_hists[h2Name.str()] = new TH2F(h2Name.str().c_str(),h2Title.str().c_str(), myUtils::m_nphi, -0.5, myUtils::m_nphi-0.5, myUtils::m_neta, -0.5, myUtils::m_neta-0.5);
 
     m_hists[hName.str()] = new TH1F(hName.str().c_str(), hTitle.str().c_str(), m_bins_calib, m_calib_low, m_calib_high);
+    m_hists[hName.str()]->Sumw2();
 
     Int_t min_phi = 9999;
     Int_t max_phi = 0;
@@ -125,6 +125,7 @@ Int_t myAnalysis::readCalib(const string &input) {
     Float_t min_calib = 9999;
     Float_t max_calib = 0;
 
+    cout << "Iter: " << m_iter << ", Tree Counts: " << chain->GetEntries() << endl;
     for(UInt_t i = 0; i < chain->GetEntries(); ++i) {
         chain->GetEntry(i);
 
@@ -162,6 +163,7 @@ Int_t myAnalysis::readHists() {
     // Read Hist from input
     string input_2024 = "output/test-2024.root";
     string input_2025 = "output/test-2025.root";
+    string emcal_default_2024 = "output/EMCal-block-info.root";
 
     string input = input_2024;
 
@@ -184,6 +186,16 @@ Int_t myAnalysis::readHists() {
     }
     m_hists["h_InvMass_2025"] = static_cast<TH1*>(tfile->Get("h_InvMass")->Clone("h_InvMass_2025"));
     m_hists["h_event_2025"]   = static_cast<TH1*>(tfile->Get("h_event")->Clone("h_event_2025"));
+
+    tfile->Close();
+
+    tfile = TFile::Open(emcal_default_2024.c_str());
+    if (!tfile || tfile->IsZombie()) {
+        cout << "Error: Could not open ROOT file: " << input << endl;
+        return 1;
+    }
+    m_hists["h2Calib_2024"] = static_cast<TH2*>(tfile->Get("h2Calib")->Clone("h2Calib_2024"));
+    m_hists["hCalib_2024"] = static_cast<TH3*>(tfile->Get("h3CalibOffsetBlockDensity"))->Project3D("z");
 
     tfile->Close();
 
@@ -298,7 +310,7 @@ void myAnalysis::make_plots(const string &outputDir) {
     for(Int_t i = 0; i < m_iter; ++i) {
         hName.str("");
         hName << "hCalib_" << i;
-        m_hists[hName.str()]->Draw();
+        m_hists[hName.str()]->Draw("hist e");
         m_hists[hName.str()]->GetXaxis()->SetTitleOffset(0.9f);
         m_hists[hName.str()]->GetYaxis()->SetTitleOffset(0.9f);
 
@@ -307,6 +319,44 @@ void myAnalysis::make_plots(const string &outputDir) {
     }
 
     gPad->SetLogy(0);
+    c1->SetLeftMargin(.13f);
+
+    m_hists["hCalib_10"]->Draw("hist e");
+    m_hists["hCalib_10"]->SetLineColor(kRed);
+    m_hists["hCalib_10"]->SetMarkerColor(kRed);
+    m_hists["hCalib_10"]->SetTitle("EMCal Calibration");
+    m_hists["hCalib_10"]->GetXaxis()->SetTitleOffset(0.9f);
+    m_hists["hCalib_10"]->GetYaxis()->SetTitleOffset(1.4f);
+
+    m_hists["hCalib_2024"]->Draw("hist e same");
+
+    cout << "2024 Counts: " << m_hists["hCalib_2024"]->Integral(1, m_hists["hCalib_2024"]->GetNbinsX()) << endl;
+    cout << "2025 Counts: " << m_hists["hCalib_10"]->Integral(1, m_hists["hCalib_10"]->GetNbinsX()) << endl;
+
+    legA.str("");
+    legB.str("");
+
+    legA << "Run 2024";
+    legB << "Run 2025";
+
+    xshift = 0.45;
+    yshift = 0;
+
+    leg = new TLegend(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.06f);
+    leg->AddEntry(m_hists["hCalib_2024"],legA.str().c_str(),"l");
+    leg->AddEntry(m_hists["hCalib_10"],legB.str().c_str(),"l");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalib-overlay.png").c_str());
+
+    m_hists["hCalib_10"]->GetXaxis()->SetRangeUser(0,5);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/hCalib-overlay-zoom.png").c_str());
+
 
     // ----------------------------------------
 
@@ -318,6 +368,18 @@ void myAnalysis::make_plots(const string &outputDir) {
 
     gPad->SetGrid();
 
+    m_hists["h2Calib_2024"]->Draw("COLZ1");
+    m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
+    m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+
+    m_hists["h2Calib_2024"]->SetMinimum(0.5);
+    m_hists["h2Calib_2024"]->SetMaximum(5);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/h2Calib_2024.png").c_str());
+
+    // ----------------------------------------
+
     for(Int_t i = 0; i < m_iter; ++i) {
         hName.str("");
         hName << "h2Calib_" << i;
@@ -326,7 +388,7 @@ void myAnalysis::make_plots(const string &outputDir) {
         m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
         m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
-        m_hists[hName.str()]->SetMinimum(1);
+        m_hists[hName.str()]->SetMinimum(0.5);
         m_hists[hName.str()]->SetMaximum(5);
 
         c1->Print(output.c_str(), "pdf portrait");
@@ -339,7 +401,7 @@ void myAnalysis::make_plots(const string &outputDir) {
 
         m_hists[hName.str()]->Draw("COLZ1");
 
-        m_hists[hName.str()]->SetMinimum(1);
+        m_hists[hName.str()]->SetMinimum(0.5);
         m_hists[hName.str()]->SetMaximum(5);
 
         m_hists[hName.str()]->GetYaxis()->SetRangeUser(0,8);
@@ -348,23 +410,6 @@ void myAnalysis::make_plots(const string &outputDir) {
         c1->Print(output.c_str(), "pdf portrait");
         if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + "-zoom-South-IB-5.png").c_str());
     }
-
-
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib.png").c_str());
-
-    // m_hists["h2Calib"]->SetMaximum(5);
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom.png").c_str());
-
-    // m_hists["h2Calib"]->Draw("COLZ1");
-    // m_hists["h2Calib"]->GetYaxis()->SetRangeUser(0,8);
-    // m_hists["h2Calib"]->GetYaxis()->SetNdivisions(8, false);
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib-zoom-South-IB-5.png").c_str());
 
     // ----------------------------------------
 
