@@ -1,13 +1,14 @@
 #!/bin/bash
 
-nmax=20000
+nmax=15000
 filecounter=0
 echo `pwd`
-for rn in `ls  lists/dst_calo_run2pp*.list | awk -F'.' '{print $1}' | awk -F'/' '{print $2}' | awk -F'-' '{print $2}'`; do
+LISTDIR=lists
+for rn in `cat fullgoodrunlist.list`; do #`ls  ${LISTDIR}/dst_calofitting_run2pp*.list | awk -F'.' '{print $1}' | awk -F'/' '{print $2}' | awk -F'-' '{print $2}'`; do #`cat fullgoodrunlist.list`; do
     rn=$(expr $rn + 0)
-    nfile=`wc -l lists/dst_calo_run2pp-000${rn}.list | awk '{print $1}'`
-    njob=$(( $nfile + 9 ))
-    njob=$(( $njob / 10 ))
+    nfile=`wc -l ${LISTDIR}/dst_calofitting_run2pp-000${rn}.list | awk '{print $1}'`
+    njob=$(( $nfile + 19 ))
+    njob=$(( $njob / 20 ))
     filecounter=$(( $filecounter + $njob ))
     if [ $filecounter -gt $nmax ]; then
 	break
