@@ -2341,6 +2341,7 @@ def brahms_auau_0p2():
 
 def brahms_auau_0p2_divnpart2():
     # do error propagation
+    # print ("BRAHMS AuAu 0.2 TeV")
     ge = TGraphErrors(brahms_auau_0p2_size)
     ge.SetName('brahms_auau_0p2_divnpart2')
     for i in range(brahms_auau_0p2_size):
@@ -2350,6 +2351,9 @@ def brahms_auau_0p2_divnpart2():
         yerr = y * math.sqrt((brahms_auau_0p2_rawerr[i] / brahms_auau_0p2_raw[i])**2 + (brahms_auau_0p2_nparterr[i] / (brahms_auau_0p2_npart[i]))**2)
         ge.SetPoint(i, x, y)
         ge.SetPointError(i, 0, yerr)
+        
+        # print x, y, yerr
+        # print ("Cent: %f, Npart: %f, dN/deta/Npart^2: %f, dN/deta/Npart^2 err: %f (%f %%)" % (brahms_auau_0p2_cent[i], x, y, yerr, 100 * yerr / y))
         
     return ge
     
@@ -2464,7 +2468,7 @@ def sphenix_centrality_interval():
     return centralitybin
 
 def sphenix_centralitynpart():
-    centnparttable = [363.168, 341.619, 308.052, 266.019, 225.755, 191.139, 160.635, 134.202, 110.972, 91.1852, 73.7764, 58.9440, 46.1803, 35.4752, 26.7252]
-    # centnparterror = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    centnparterror = [11, 10, 9, 8, 7, 7, 6, 6, 6, 6, 6, 5, 4, 3, 3] #! PHOBOS values (currently for testing)
+    centnparttable = [359.3, 331.2, 297.0, 257.3, 219.0, 185.7, 156.0, 130.0, 107.1, 87.1, 69.5, 54.2, 41.4, 30.7, 22.1]
+    centnparterror = [2.1, 2.9, 3.2, 3.8, 4.3, 4.6, 5.0, 5.2, 5.2, 5.1, 5.0, 4.7, 4.4, 3.9, 3.3] # sPHENIX values
+    # centnparterror = [11, 10, 9, 8, 7, 7, 6, 6, 6, 6, 6, 5, 4, 3, 3] #! PHOBOS values (currently for testing)
     return centnparttable, centnparterror

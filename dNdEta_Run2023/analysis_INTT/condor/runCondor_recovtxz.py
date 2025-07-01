@@ -47,7 +47,8 @@ if __name__ == '__main__':
 
     os.makedirs('./log_recovtxz/', exist_ok=True)
     if not dir_empty('./log_recovtxz/'):
-        os.system('rm ./log_recovtxz/*')
+        os.system('rm -rf ./log_recovtxz/')
+    os.makedirs('./log_recovtxz/', exist_ok=True)
 
     # hadd files under bsresfilepath
     os.system('hadd -f -j 20 {}/minitree/BeamspotMinitree_{}/minitree_merged.root {}/minitree/BeamspotMinitree_{}/minitree_0*.root'.format(parentdir, filedesc, parentdir, filedesc))
@@ -58,8 +59,8 @@ if __name__ == '__main__':
     condorFile.write("InitialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(InitialDir)/condor_recovtxz.sh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
-    condorFile.write("request_memory     = 6GB\n")
+    # condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
+    condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
     condorFile.write("Myindex            = $(Process)\n")
@@ -79,7 +80,8 @@ if __name__ == '__main__':
     condorFile.write("makedemoplot       = {}\n".format(1 if makedemoplot else 0))
     condorFile.write("Output             = $(Initialdir)/condor/log_recovtxz/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_recovtxz/condorlog_$(Process).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_recovtxz/condorlog_$(Process).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_recovtxz/condorlog_$(Process).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_recovtx_$(Process).log\n")
     condorFile.write("Arguments          = \"$(isdata) $(nevt) $(dphicut) $(dcacut) $(bsresfilepath) $(infilename) $(outfilename) $(demoplotpath) $(debug) $(makedemoplot)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

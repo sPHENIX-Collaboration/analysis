@@ -4,6 +4,7 @@ import os
 import pwd
 import sys
 import re
+import shutil
 
 def dir_empty(dir_path):
     return not any((True for _ in os.scandir(dir_path)))
@@ -45,9 +46,12 @@ if __name__ == '__main__':
     print ('finaloutfiledir: {}'.format(finaloutfiledir))
     os.makedirs(finaloutfiledir, exist_ok=True)
 
+    if os.path.exists('./log_recotracklet/'):
+        try:
+            os.system('find ./log_recotracklet/ -type f -delete')
+        except Exception as e:
+            print('Failed to delete ./log_recotracklet/. Reason: %s' % e)
     os.makedirs('./log_recotracklet/', exist_ok=True)
-    if not dir_empty('./log_recotracklet/'):
-        os.system('rm ./log_recotracklet/*')
 
     condorFileName = "submitCondor_recotracklet_{}_{}.job".format('data' if isdata else 'sim', 'dRcut'+str(drcut).replace('.', 'p')+('_RandomVtxZ' if randomvtxz else '_NominalVtxZ')+('_RandomClusSet'+str(randomclusset))+('_clusAdcCutSet'+str(clusadccutset))+('_clusPhiSizeCutSet'+str(clusphisizecutset)))
     condorFile = open("{}".format(condorFileName), "w")
@@ -55,11 +59,11 @@ if __name__ == '__main__':
     condorFile.write("InitialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(InitialDir)/condor_recotracklet.sh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
+    # condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
     if isdata:
-        condorFile.write("request_memory       = 10GB\n")
-    else:
         condorFile.write("request_memory       = 6GB\n")
+    else:
+        condorFile.write("request_memory       = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
     condorFile.write("Myindex            = $(Process)\n")
@@ -70,6 +74,7 @@ if __name__ == '__main__':
         condorFile.write("infilename         = /sphenix/tg/tg01/hf/hjheng/ppg02/dst/{}/ntuple_wEvtBcoDiff_$(Extension).root\n".format(filedesc))
     else:
         condorFile.write("infilename         = /sphenix/tg/tg01/hf/hjheng/ppg02/dst/{}/ntuple_$(Extension).root\n".format(filedesc))
+        
     condorFile.write("outfilename        = {}/minitree_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("nevt               = {}\n".format(nEvents))
     condorFile.write("drcut              = {:.3g}\n".format(drcut))
@@ -79,7 +84,8 @@ if __name__ == '__main__':
     condorFile.write("clusphisizecutset  = {}\n".format(clusphisizecutset))
     condorFile.write("Output             = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_recotracklet/condorlog_$(Process).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_recotracklet_$(Process).log\n")
     condorFile.write("Arguments          = \"$(isdata) $(evtvtxmap) $(infilename) $(outfilename) $(nevt) $(drcut) $(randomvtxz) $(randomclusset) $(clusadccutset) $(clusphisizecutset)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

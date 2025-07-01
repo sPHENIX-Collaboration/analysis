@@ -8,16 +8,16 @@ Priority           = 20
 job_lease_duration = 259200
 
 runnumber          = -1
-nEvents            = 30000
-input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102
+nEvents            = -1
+input_directory    = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/per5k
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-input_filename     = ntuple_merged.root
-output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_Ntuple_HIJING_ana443_20241102/GeoOffset_v1
+input_filename     = ntuple_merged_30k_2.root
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/GeoOffset_DeltaPhi0p04
 macro_name         = Run_GeoOffset
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
 Error              = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).err
 Log                = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).log
 Arguments          = "$INT(process_shift) $(runnumber) $(nEvents) $(output_directory) $(input_directory) $(input_filename) $(macro_name)"
-Queue 500
+Queue 800

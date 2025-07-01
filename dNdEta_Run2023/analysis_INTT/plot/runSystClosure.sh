@@ -1,6 +1,6 @@
 #! /bin/bash
 
-xcheckdir=cross-checks-20250203
+xcheckdir=cross-checks-20250313
 
 centralities_phobos=(0 3 6 10 15 20 25 30 35 40 45 50 55 60 65 70) # PHOBOS 2011 binnings
 length_phobos=${#centralities_phobos[@]}

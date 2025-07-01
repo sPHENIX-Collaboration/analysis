@@ -260,7 +260,11 @@ void EvtVtxZProtoTracklet::PrepareRootFile()
         tree_in -> SetBranchAddress("TruthPV_trig_x", &TruthPV_trig_x);
         tree_in -> SetBranchAddress("TruthPV_trig_y", &TruthPV_trig_y);
         tree_in -> SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
+        tree_in -> SetBranchAddress("NTruthVtx", &NTruthVtx);
     }
+
+    tree_in -> SetBranchAddress("is_min_bias", &is_min_bias);
+    tree_in -> SetBranchAddress("MBD_centrality", &MBD_centrality);
 
 
     // note : for the output file
@@ -353,6 +357,8 @@ void EvtVtxZProtoTracklet::PrepareINTTvtxZ()
         gaus_fit_vec[i] -> SetLineWidth(1);
         gaus_fit_vec[i] -> SetNpx(1000);
     }
+
+    reco_INTTvtxZ = new TH1D("reco_INTTvtxZ","reco_INTTvtxZ;INTT vtxZ [cm];Entries",nVtxZ_bin,vtxZ_range.first,vtxZ_range.second);
 }
 
 void EvtVtxZProtoTracklet::PrepareClusterVec()
@@ -519,7 +525,7 @@ void EvtVtxZProtoTracklet::GetINTTvtxZ()
   }
 
   // note : no good proto-tracklet
-  if (line_breakdown_hist->Integral(-1,-1) == 0) {
+  if (line_breakdown_hist->Integral() == 0) {
     return;
   }
 
@@ -535,10 +541,10 @@ void EvtVtxZProtoTracklet::GetINTTvtxZ()
   gaus_fit -> SetParameters(line_breakdown_hist_max_content, line_breakdown_hist_max_center, Half_N_group_half_width, 0);
   gaus_fit -> SetParLimits(0,0,100000);  // note : size 
   gaus_fit -> SetParLimits(2,0.5,1000);   // note : Width
-  gaus_fit -> SetParLimits(3,0,10000);   // note : offset
+  gaus_fit -> SetParLimits(3,-200,10000);   // note : offset
   // todo : the width fit range is 60% of the peak width, // todo : try to use single gaus to fit the distribution
-  double width_fit_range_l = line_breakdown_hist_max_center - Half_N_group_half_width * 0.6;
-  double width_fit_range_r = line_breakdown_hist_max_center + Half_N_group_half_width * 0.6;
+  double width_fit_range_l = line_breakdown_hist_max_center - Half_N_group_half_width * 0.65;
+  double width_fit_range_r = line_breakdown_hist_max_center + Half_N_group_half_width * 0.65;
   line_breakdown_hist -> Fit(gaus_fit, "NQ", "", width_fit_range_l, width_fit_range_r); 
   
   // std::cout<<"evnet_i: "<<", width fitting, SetParameters: "<<line_breakdown_hist_max_content<<" "<<line_breakdown_hist_max_center<<" "<<Half_N_group_half_width<<std::endl;
@@ -578,7 +584,16 @@ void EvtVtxZProtoTracklet::GetINTTvtxZ()
   // }
   // std::cout<<std::endl;
 
-  if (DrawEvtVtxZ && (out_eID_count % 50 == 0 || (out_INTTvtxZ - MBD_z_vtx) < -4.5 || (out_INTTvtxZ - MBD_z_vtx) > 3.0)){
+  if (
+        DrawEvtVtxZ && 
+        (
+            out_eID_count % 50 == 0 || 
+            (out_INTTvtxZ - MBD_z_vtx) < -4.5 || 
+            (out_INTTvtxZ - MBD_z_vtx) > 3.0 || 
+            (out_TrapezoidalFitWidth < 0.9 && out_TrapezoidalFWHM < 6)
+        )
+    )
+  {
     line_breakdown_hist_zoomin = (TH1D*)line_breakdown_hist -> Clone("line_breakdown_hist_zoomin");
 
     line_breakdown_hist_zoomin -> GetXaxis() -> SetRangeUser(
@@ -621,6 +636,8 @@ void EvtVtxZProtoTracklet::GetINTTvtxZ()
 
     INTTvtxZ_EvtDisplay_file_out -> cd();
     c1 -> Write(Form("eID_%d_EvtZDist_ZoomIn", out_eID_count));
+
+    std::cout<<"Printed: eID: "<<out_eID_count<<" NClusGood: "<<evt_sPH_inner_nocolumn_vec_PostCut.size() + evt_sPH_outer_nocolumn_vec_PostCut.size()<<", NClusAll: "<<evt_sPH_inner_nocolumn_vec.size() + evt_sPH_outer_nocolumn_vec.size()<<", INTTvtxZ : "<<out_INTTvtxZ<<" INTTvtxZError : "<<out_INTTvtxZError<<" NgroupTrapezoidal : "<<out_NgroupTrapezoidal<<" NgroupCoarse : "<<out_NgroupCoarse<<" TrapezoidalFitWidth : "<<out_TrapezoidalFitWidth<<" TrapezoidalFWHM : "<<out_TrapezoidalFWHM<<std::endl;
 
     pad_ZoomIn_EvtZDist -> Clear();
     pad_EvtZDist -> Clear();
@@ -835,10 +852,54 @@ void EvtVtxZProtoTracklet::GetTrackletPair(std::vector<pair_str> &input_Tracklet
 
 }
 
+void EvtVtxZProtoTracklet::FillRecoINTTVtxZH1D(int event_index)
+{
+
+    if (event_index % 20 == 0)
+    {
+        std::cout<<"In Filling RecoZ: "<<event_index<<", "<<MBD_z_vtx<<", "<<temp_INTTvtxZ<<", diff: "<<MBD_z_vtx - temp_INTTvtxZ<<std::endl;
+    }
+
+    // =======================================================================================================================================================
+    // note : hard cut
+
+    // note : for data
+    if (runnumber != -1 && out_InttBcoFullDiff_next <= cut_InttBcoFullDIff_next) {return;}
+    if (runnumber != -1 && out_MBDNSg2 != 1) {return;} // todo: assume MC no trigger
+
+    // note : for MC
+    // if (runnumber == -1 && NTruthVtx != 1) {return;}
+
+    // note : both data and MC
+    if (is_min_bias != 1) {return;}
+    if (MBD_z_vtx != MBD_z_vtx) {return;}
+    if (MBD_centrality != MBD_centrality) {return;}
+    if (MBD_centrality < 0 || MBD_centrality > 100) {return;}
+    if (temp_INTTvtxZ != temp_INTTvtxZ) {return;}
+    if (MBD_z_vtx < cut_GlobalMBDvtxZ.first || MBD_z_vtx > cut_GlobalMBDvtxZ.second) {return;} // todo: the hard cut 60 cm 
+
+    if (MBD_centrality > cut_MBD_centrality) {return;} // note : 1 - 70, for example 
+
+    // =======================================================================================================================================================
+    // note : optional cut
+    if ((MBD_z_vtx - temp_INTTvtxZ < cut_vtxZDiff.first || MBD_z_vtx - temp_INTTvtxZ > cut_vtxZDiff.second)) {return;}
+    if ((out_TrapezoidalFitWidth < cut_TrapezoidalFitWidth.first || out_TrapezoidalFitWidth > cut_TrapezoidalFitWidth.second)){return;}
+    if ((out_TrapezoidalFWHM < cut_TrapezoidalFWHM.first || out_TrapezoidalFWHM > cut_TrapezoidalFWHM.second)){return;}
+
+    // =======================================================================================================================================================
+
+    reco_INTTvtxZ -> Fill(temp_INTTvtxZ);
+}
+
 void EvtVtxZProtoTracklet::MainProcess()
 {
     if (HaveGeoOffsetTag == true && CheckGeoOffsetMap() <= 0) {
         std::cout<<"The HaveGeoOffsetTag is true, but the GeoOffsetMap is empty, please check the GeoOffsetMap"<<std::endl;
+        exit(1);
+    }
+
+    if (HaveGeoOffsetTag == false && CheckGeoOffsetMap() > 0.0001) {
+        std::cout<<"The HaveGeoOffsetTag is false, but the GeoOffsetMap has some non-zero numbers, please check the GeoOffsetMap"<<std::endl;
         exit(1);
     }
 
@@ -891,6 +952,7 @@ void EvtVtxZProtoTracklet::MainProcess()
             }
         }
         
+        FillRecoINTTVtxZH1D(i);
 
         tree_out -> Fill();
         // if (RunInttBcoFullDiff) {b_InttBcoFullDiff_next -> Fill();}
@@ -980,6 +1042,7 @@ void EvtVtxZProtoTracklet::EndRun(int close_file_in)
 {   
     file_out -> cd();
     tree_out -> Write();
+    reco_INTTvtxZ -> Write();
     file_out -> Close();
     
     if (DrawEvtVtxZ && INTTvtxZ_EvtDisplay_file_out != nullptr)
@@ -1117,6 +1180,8 @@ void EvtVtxZProtoTracklet::trapezoidal_line_breakdown(TH1D * hist_in, double inn
         line_breakdown(combination_zvtx_range_shape, {mid_point - possible_width, mid_point + possible_width});
     }
 
+    // note : this integral should take the overflow bins into account, since we normalize each of the trapezoidal shape,
+    // note : even if some part of the shape is outside the range, it should be taken into account
     combination_zvtx_range_shape -> Scale(1./ combination_zvtx_range_shape -> Integral(-1,-1));
 
     for (int bin_i = 1; bin_i <= combination_zvtx_range_shape -> GetNbinsX(); bin_i++)

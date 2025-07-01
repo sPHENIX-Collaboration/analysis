@@ -22,8 +22,8 @@ std::vector<float> getuncertainty(std::string filename, std::string histname)
 void print_SystTable()
 {
     // loop over all centrality bins
-    std::vector<float> v_unc_statunccorr_max_allcent, v_unc_dRcut_max_allcent, v_unc_clusAdcCut_max_allcent, v_unc_clusSizeCut_max_allcent, v_unc_segment_max_allcent, v_unc_total_max_allcent;
-    std::vector<float> v_unc_statunccorr_min_allcent, v_unc_dRcut_min_allcent, v_unc_clusAdcCut_min_allcent, v_unc_clusSizeCut_min_allcent, v_unc_segment_min_allcent, v_unc_total_min_allcent;
+    std::vector<float> v_unc_statunccorr_max_allcent, v_unc_dRcut_max_allcent, v_unc_clusAdcCut_max_allcent, v_unc_clusSizeCut_max_allcent, v_unc_segment_max_allcent, v_unc_strangeness_max_allcent, v_unc_generator_max_allcent, v_unc_total_max_allcent;
+    std::vector<float> v_unc_statunccorr_min_allcent, v_unc_dRcut_min_allcent, v_unc_clusAdcCut_min_allcent, v_unc_clusSizeCut_min_allcent, v_unc_segment_min_allcent, v_unc_strangeness_min_allcent, v_unc_generator_min_allcent, v_unc_total_min_allcent;
     for (int i = 0; i < centralitybins.size() - 1; i++)
     {
         std::cout << "Centrality " << (int)centralitybins[i] << "-" << (int)centralitybins[i + 1] << "%" << std::endl;
@@ -33,6 +33,8 @@ void print_SystTable()
         std::vector<float> v_unc_clusAdcCut = getuncertainty(fname, "hM_maxreldiff_clusAdcCut");
         std::vector<float> v_unc_clusSizeCut = getuncertainty(fname, "hM_maxreldiff_clusPhiSizeCut");
         std::vector<float> v_unc_segment = getuncertainty(fname, "hM_maxreldiff_segment");
+        std::vector<float> v_unc_strangeness = getuncertainty(fname, "hM_maxreldiff_strangeness");
+        std::vector<float> v_unc_generator = getuncertainty(fname, "hM_maxreldiff_eventgen");
         std::vector<float> v_unc_total = getuncertainty(fname, "hM_TotalRelUnc");
 
         float unc_statunccorr_max = *std::max_element(v_unc_statunccorr.begin(), v_unc_statunccorr.end());
@@ -40,6 +42,8 @@ void print_SystTable()
         float unc_clusAdcCut_max = *std::max_element(v_unc_clusAdcCut.begin(), v_unc_clusAdcCut.end());
         float unc_clusSizeCut_max = *std::max_element(v_unc_clusSizeCut.begin(), v_unc_clusSizeCut.end());
         float unc_segment_max = *std::max_element(v_unc_segment.begin(), v_unc_segment.end());
+        float unc_strangeness_max = *std::max_element(v_unc_strangeness.begin(), v_unc_strangeness.end());
+        float unc_generator_max = *std::max_element(v_unc_generator.begin(), v_unc_generator.end());
         float unc_total_max = *std::max_element(v_unc_total.begin(), v_unc_total.end());
         // the minimum of non-zero values
         float unc_statunccorr_min = *std::min_element(v_unc_statunccorr.begin(), v_unc_statunccorr.end());
@@ -47,32 +51,38 @@ void print_SystTable()
         float unc_clusAdcCut_min = *std::min_element(v_unc_clusAdcCut.begin(), v_unc_clusAdcCut.end());
         float unc_clusSizeCut_min = *std::min_element(v_unc_clusSizeCut.begin(), v_unc_clusSizeCut.end());
         float unc_segment_min = *std::min_element(v_unc_segment.begin(), v_unc_segment.end());
+        float unc_strangeness_min = *std::min_element(v_unc_strangeness.begin(), v_unc_strangeness.end());
+        float unc_generator_min = *std::min_element(v_unc_generator.begin(), v_unc_generator.end());
         float unc_total_min = *std::min_element(v_unc_total.begin(), v_unc_total.end());
 
-        std::cout << "Max uncertainty for (statunc, dRcut, clusAdcCut, clusSizeCut, segment, total) = (" << unc_statunccorr_max * 100 << ", " << unc_dRcut_max * 100 << ", " << unc_clusAdcCut_max * 100 << ", " << unc_clusSizeCut_max * 100 << ", " << unc_segment_max * 100 << ", " << unc_total_max * 100 << ")" << std::endl;
-        std::cout << "Min uncertainty for (statunc, dRcut, clusAdcCut, clusSizeCut, segment, total) = (" << unc_statunccorr_min * 100 << ", " << unc_dRcut_min * 100 << ", " << unc_clusAdcCut_min * 100 << ", " << unc_clusSizeCut_min * 100 << ", " << unc_segment_min * 100 << ", " << unc_total_min * 100 << ")" << std::endl;
+        std::cout << "Max uncertainty for (statunc, dRcut, clusAdcCut, clusSizeCut, segment, strangeness, generator, total) = (" << unc_statunccorr_max * 100 << ", " << unc_dRcut_max * 100 << ", " << unc_clusAdcCut_max * 100 << ", " << unc_clusSizeCut_max * 100 << ", " << unc_segment_max * 100 << ", " << unc_strangeness_max * 100 << ", " << unc_generator_max * 100 << ", " << unc_total_max * 100 << ")" << std::endl;
+        std::cout << "Min uncertainty for (statunc, dRcut, clusAdcCut, clusSizeCut, segment, strangeness, generator, total) = (" << unc_statunccorr_min * 100 << ", " << unc_dRcut_min * 100 << ", " << unc_clusAdcCut_min * 100 << ", " << unc_clusSizeCut_min * 100 << ", " << unc_segment_min * 100 << ", " << unc_strangeness_min * 100 << ", " << unc_generator_min * 100 << ", " << unc_total_min * 100 << ")" << std::endl;
 
         v_unc_statunccorr_max_allcent.push_back(unc_statunccorr_max);
         v_unc_dRcut_max_allcent.push_back(unc_dRcut_max);
         v_unc_clusAdcCut_max_allcent.push_back(unc_clusAdcCut_max);
         v_unc_clusSizeCut_max_allcent.push_back(unc_clusSizeCut_max);
         v_unc_segment_max_allcent.push_back(unc_segment_max);
+        v_unc_strangeness_max_allcent.push_back(unc_strangeness_max);
+        v_unc_generator_max_allcent.push_back(unc_generator_max);
         v_unc_total_max_allcent.push_back(unc_total_max);
         v_unc_statunccorr_min_allcent.push_back(unc_statunccorr_min);
         v_unc_dRcut_min_allcent.push_back(unc_dRcut_min);
         v_unc_clusAdcCut_min_allcent.push_back(unc_clusAdcCut_min);
         v_unc_clusSizeCut_min_allcent.push_back(unc_clusSizeCut_min);
         v_unc_segment_min_allcent.push_back(unc_segment_min);
+        v_unc_strangeness_min_allcent.push_back(unc_strangeness_min);
+        v_unc_generator_min_allcent.push_back(unc_generator_min);
         v_unc_total_min_allcent.push_back(unc_total_min);
     }
 
     std::cout << "--------------------------------" << std::endl;
-    std::cout << "Max uncertainty for all centralities for (statuncorr, dRcut, clusAdcCut, clusSizeCut, segment, total) = (" << *std::max_element(v_unc_statunccorr_max_allcent.begin(), v_unc_statunccorr_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_dRcut_max_allcent.begin(), v_unc_dRcut_max_allcent.end()) * 100 << ", "
+    std::cout << "Max uncertainty for all centralities for (statuncorr, dRcut, clusAdcCut, clusSizeCut, segment, strangeness, generator, total) = (" << *std::max_element(v_unc_statunccorr_max_allcent.begin(), v_unc_statunccorr_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_dRcut_max_allcent.begin(), v_unc_dRcut_max_allcent.end()) * 100 << ", "
               << *std::max_element(v_unc_clusAdcCut_max_allcent.begin(), v_unc_clusAdcCut_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_segment_max_allcent.begin(), v_unc_segment_max_allcent.end()) * 100 << ", "
-              << *std::max_element(v_unc_total_max_allcent.begin(), v_unc_total_max_allcent.end()) * 100 << ")" << std::endl;
-    std::cout << "Min uncertainty for all centralities for (statuncorr, dRcut, clusAdcCut, clusSizeCut, segment, total) = (" << *std::min_element(v_unc_statunccorr_min_allcent.begin(), v_unc_statunccorr_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100 << ", "
+              << *std::max_element(v_unc_strangeness_max_allcent.begin(), v_unc_strangeness_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_generator_max_allcent.begin(), v_unc_generator_max_allcent.end()) * 100 << ", " << *std::max_element(v_unc_total_max_allcent.begin(), v_unc_total_max_allcent.end()) * 100 << ")" << std::endl;
+    std::cout << "Min uncertainty for all centralities for (statuncorr, dRcut, clusAdcCut, clusSizeCut, segment, strangeness, generator, total) = (" << *std::min_element(v_unc_statunccorr_min_allcent.begin(), v_unc_statunccorr_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100 << ", "
               << *std::min_element(v_unc_clusAdcCut_min_allcent.begin(), v_unc_clusAdcCut_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_segment_min_allcent.begin(), v_unc_segment_min_allcent.end()) * 100 << ", "
-              << *std::min_element(v_unc_total_min_allcent.begin(), v_unc_total_min_allcent.end()) * 100 << ")" << std::endl;
+              << *std::min_element(v_unc_strangeness_min_allcent.begin(), v_unc_strangeness_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_generator_min_allcent.begin(), v_unc_generator_min_allcent.end()) * 100 << ", " << *std::min_element(v_unc_total_min_allcent.begin(), v_unc_total_min_allcent.end()) * 100 << ")" << std::endl;
 
     // print the LaTeX table: for each category, print the min and max uncertainty for all centralities in the format of %.2f-%.2f %
     bool unc_phisize_small = (*std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100 < 0.1) ? true : false;
@@ -82,7 +92,7 @@ void print_SystTable()
     {
         unc_phisize_small_rounded = ceil(*std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100 * 100) / 100;
     }
-    // format to print 3 significant digits
+    // format to print 2 significant digits
     std::ostringstream oss;
     oss << "<" << std::fixed << std::setprecision(2) << unc_phisize_small_rounded;
     std::string unc_phisize_small_str = oss.str();
@@ -93,35 +103,71 @@ void print_SystTable()
     std::cout << "\t\\textbf{Source} & \\textbf{\\phobos approach [\\%]} & \\textbf{\\cms approach [\\%]} \\\\" << std::endl;
     std::cout << "\t\\hline" << std::endl;
     std::cout << "\tStatistical Uncertainty in corrections & & ";
-    print_with_significant_digits(*std::min_element(v_unc_statunccorr_min_allcent.begin(), v_unc_statunccorr_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_statunccorr_min_allcent.begin(), v_unc_statunccorr_min_allcent.end()) * 100, 2);
+    // print the float number, with exactly 1 digit after the decimal point
+    printf("%.1f", *std::min_element(v_unc_statunccorr_min_allcent.begin(), v_unc_statunccorr_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_statunccorr_max_allcent.begin(), v_unc_statunccorr_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_statunccorr_max_allcent.begin(), v_unc_statunccorr_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_statunccorr_max_allcent.begin(), v_unc_statunccorr_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\tTracklet reconstruction cut variation & & ";
-    print_with_significant_digits(*std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100, 2);
+    if (*std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100 < 0.1)
+        printf("%.1e", *std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100);
+    else
+        printf("%.1f", *std::min_element(v_unc_dRcut_min_allcent.begin(), v_unc_dRcut_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_dRcut_max_allcent.begin(), v_unc_dRcut_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_dRcut_max_allcent.begin(), v_unc_dRcut_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_dRcut_max_allcent.begin(), v_unc_dRcut_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\tCluster ADC cut variation & & ";
-    print_with_significant_digits(*std::min_element(v_unc_clusAdcCut_min_allcent.begin(), v_unc_clusAdcCut_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_clusAdcCut_min_allcent.begin(), v_unc_clusAdcCut_min_allcent.end()) * 100, 2);
+    printf("%.1f", *std::min_element(v_unc_clusAdcCut_min_allcent.begin(), v_unc_clusAdcCut_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_clusAdcCut_max_allcent.begin(), v_unc_clusAdcCut_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_clusAdcCut_max_allcent.begin(), v_unc_clusAdcCut_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_clusAdcCut_max_allcent.begin(), v_unc_clusAdcCut_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\tCluster \$\\phi\$-size cut variation & & ";
-    print_with_significant_digits(*std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100, 2);
+    if (*std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100 < 0.1)
+        printf("%.1e", *std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100);
+    else
+        printf("%.1f", *std::min_element(v_unc_clusSizeCut_min_allcent.begin(), v_unc_clusSizeCut_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_clusSizeCut_max_allcent.begin(), v_unc_clusSizeCut_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\tRun segment variation & & ";
-    print_with_significant_digits(*std::min_element(v_unc_segment_min_allcent.begin(), v_unc_segment_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_segment_min_allcent.begin(), v_unc_segment_min_allcent.end()) * 100, 2);
+    printf("%.1f", *std::min_element(v_unc_segment_min_allcent.begin(), v_unc_segment_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_segment_max_allcent.begin(), v_unc_segment_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_segment_max_allcent.begin(), v_unc_segment_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_segment_max_allcent.begin(), v_unc_segment_max_allcent.end()) * 100);
+    std::cout << " \\\\" << std::endl;
+    std::cout << "\tStrangeness variation & & ";
+    // print_with_significant_digits(*std::min_element(v_unc_strangeness_min_allcent.begin(), v_unc_strangeness_min_allcent.end()) * 100, 2);
+    if (*std::min_element(v_unc_strangeness_min_allcent.begin(), v_unc_strangeness_min_allcent.end()) * 100 < 0.1)
+        printf("%.1e", *std::min_element(v_unc_strangeness_min_allcent.begin(), v_unc_strangeness_min_allcent.end()) * 100);
+    else
+        printf("%.1f", *std::min_element(v_unc_strangeness_min_allcent.begin(), v_unc_strangeness_min_allcent.end()) * 100);
+    std::cout << "--";
+    // print_with_significant_digits(*std::max_element(v_unc_strangeness_max_allcent.begin(), v_unc_strangeness_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_strangeness_max_allcent.begin(), v_unc_strangeness_max_allcent.end()) * 100);
+    std::cout << " \\\\" << std::endl;
+    std::cout << "\tGenerator variation & & ";
+    // print_with_significant_digits(*std::min_element(v_unc_generator_min_allcent.begin(), v_unc_generator_min_allcent.end()) * 100, 2);
+    printf("%.1f", *std::min_element(v_unc_generator_min_allcent.begin(), v_unc_generator_min_allcent.end()) * 100);
+    std::cout << "--";
+    // print_with_significant_digits(*std::max_element(v_unc_generator_max_allcent.begin(), v_unc_generator_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_generator_max_allcent.begin(), v_unc_generator_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\tMisalignment & & -- \\\\\\cmidrule(rl){2-3}" << std::endl;
     std::cout << "\t\\textbf{Total} & & ";
-    print_with_significant_digits(*std::min_element(v_unc_total_min_allcent.begin(), v_unc_total_min_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::min_element(v_unc_total_min_allcent.begin(), v_unc_total_min_allcent.end()) * 100, 2);
+    printf("%.1f", *std::min_element(v_unc_total_min_allcent.begin(), v_unc_total_min_allcent.end()) * 100);
     std::cout << "--";
-    print_with_significant_digits(*std::max_element(v_unc_total_max_allcent.begin(), v_unc_total_max_allcent.end()) * 100, 3);
+    // print_with_significant_digits(*std::max_element(v_unc_total_max_allcent.begin(), v_unc_total_max_allcent.end()) * 100, 2);
+    printf("%.1f", *std::max_element(v_unc_total_max_allcent.begin(), v_unc_total_max_allcent.end()) * 100);
     std::cout << " \\\\" << std::endl;
     std::cout << "\t\\hline" << std::endl;
     std::cout << "\t\\end{tabular}" << std::endl;

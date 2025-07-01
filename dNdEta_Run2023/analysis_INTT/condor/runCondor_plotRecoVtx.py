@@ -38,7 +38,7 @@ if __name__ == '__main__':
     condorFile.write("InitialDir         = {}\n".format(parentdir))
     condorFile.write("Executable         = $(InitialDir)/condor_plotRecoVtx.sh\n")
     condorFile.write("PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)\n")
-    condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
+    # condorFile.write("concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100\n")
     condorFile.write("request_memory     = 4GB\n")
     condorFile.write("Priority           = 20\n")
     condorFile.write("job_lease_duration = 3600\n")
@@ -49,7 +49,8 @@ if __name__ == '__main__':
     condorFile.write("outfilename        = {}/hists_$(Extension).root\n".format(finaloutfiledir))
     condorFile.write("Output             = $(Initialdir)/condor/log_plotrecovtx/condorlog_$(Extension).out\n")
     condorFile.write("Error              = $(Initialdir)/condor/log_plotrecovtx/condorlog_$(Extension).err\n")
-    condorFile.write("Log                = $(Initialdir)/condor/log_plotrecovtx/condorlog_$(Extension).log\n")
+    # condorFile.write("Log                = $(Initialdir)/condor/log_plotrecovtx/condorlog_$(Extension).log\n")
+    condorFile.write("Log                = /tmp/condorlog_hjheng_plotrecovtx_$(Process).log\n")
     condorFile.write("Arguments          = \"$(isdata) $(infilename) $(outfilename)\"\n")
     condorFile.write("Queue {}\n".format(nJob))
     condorFile.close() # Close the file before submitting the job

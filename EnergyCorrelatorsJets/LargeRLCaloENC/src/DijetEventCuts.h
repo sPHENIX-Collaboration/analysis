@@ -41,12 +41,20 @@ class DijetEventCuts{
 			JetCuts->Branch("Subleading_eta", &m_etasl, "#eta subleading jet center/F");
 			JetCuts->Branch("delta_phi", &m_deltaphi, "m_deltaphi/F");
 			JetCuts->Branch("ohcal_ratio", &m_ohcalrat, "m_ohcalrat/F");
+
+			JetCuts->Branch("lead_ohcal_ratio", &m_leadER, "m_leadER/F");
+			JetCuts->Branch("subleading_ohcal_ratio", &m_subleadingER, "m_leadER/F");
+			JetCuts->Branch("lead_emcal_ratio", &m_leadER_E, "m_leadER/F");
+			JetCuts->Branch("subleading_emcal_ratio", &m_subleadingER_E, "m_leadER/F");
 			JetCuts->Branch("isDijet", &m_isdijet, "m_isDijet/O");
 			JetCuts->Branch("negE", &m_hasnege, "m_hasnege/O");
+			JetCuts->Branch("Il_E", &m_ile, "Moment of Inertia of leading jet/F");
+			JetCuts->Branch("Isl_E", &m_isle, "Moment of Inertia of subleading jet/F");
 			JetCuts->Branch("passes", &passesCut, "passesCut/O");
 		};
 		TTree* JetCuts; //This is a QA testing ttree to allow for immediate QA
-		bool passesTheCut(JetContainer* eventjets, float hcalratio, std::array<float,3> vertex){
+		bool passesTheCut(JetContainer* eventjets, std::vector<float> ohcal_ratio_jets, std::vector<float> emcal_ratio_jets, float hcalratio, std::array<float,3> vertex, std::vector<float> i_e){
+
 			//check if the particular event passed the cut 
 			bool good=true;
 			m_ohcalrat=hcalratio;
@@ -55,8 +63,13 @@ class DijetEventCuts{
 			if(abs(vertex[2]) > 30 ) good=false; //cut on z=30 vertex
 			m_zvtx=vertex[2];
 			float leadjetpt=0., subleadjetpt=0.;
+
+			float leadingenergyratio=0., subleadingenergyratio=0.; //ohcal energy ratio
+			float leadingenergyratio_E=0., subleadingenergyratio_E=0.; //emcal energy ratio
 			bool haspartner=false;
 		       	Jet* leadjet=NULL, *subleadjet=NULL;
+			int index=0; //associate the jet with its energy ratios
+
 		       	for(auto j: *eventjets){
 				float pt=j->get_pt();
 				if(pt > leadjetpt){
@@ -64,6 +77,11 @@ class DijetEventCuts{
 					leadjet=j;
 				       	subleadjetpt=leadjetpt;
 				       	leadjetpt=pt;
+
+					leadingenergyratio=ohcal_ratio_jets.at(index);
+					leadingenergyratio_E=emcal_ratio_jets.at(index);
+					m_ile=i_e.at(index);
+
 				       }
 				if(!negativeEnergy){
 					if(j->get_e() < 0){
@@ -71,22 +89,37 @@ class DijetEventCuts{
 				       		good=false;
 					}
 					}
+
+				index++;
+
 				}
 			if(leadjetpt < leadingpt) good=false;
 			if(!leadjet) good=false; 
 			else{
 			leadeta=leadjet->get_eta();
 			m_etal=leadeta;
+
+			m_leadER=leadingenergyratio;
+			m_leadER_E=leadingenergyratio_E;
 		       	leadphi=leadjet->get_phi();
 			if(abs(leadeta) > etaedge ) good=false; //getting rid of events that have the leading jet outside of acceptance region
+			if( m_leadER > maxOHCAL ) good=false; 
 			for(auto j: *eventjets){
 				float phi=j->get_phi();
+				int index=0;
+
 				if(abs(phi-leadphi) > deltaphi && abs(phi-leadphi) <= PI+0.2){
 				       	subleadjet=j;
 					subleadjetpt=j->get_pt();
 					haspartner=true;
 
+					subleadingenergyratio=ohcal_ratio_jets.at(index);
+					subleadingenergyratio_E=emcal_ratio_jets.at(index);
+					m_isle=i_e.at(index);
+					
 				break;}
+				index++;
+
 			}
 			if(subleadjet){ 
 				float sldeta=subleadjet->get_eta();
@@ -94,8 +127,13 @@ class DijetEventCuts{
 				m_etasl=sldeta;
 				m_deltaphi=subleadjet->get_phi()-leadjet->get_phi();
 
+				m_subleadingER=subleadingenergyratio;
+				m_subleadingER_E=subleadingenergyratio_E;
+				if(m_subleadingER > maxOHCAL) good=false;
+
 			}
-			else good=false;
+			
+alse;
 			}
 			//if(subleadjetpt < subleadingpt || !haspartner) good=false;
 			passesCut=good;
@@ -138,13 +176,14 @@ class DijetEventCuts{
 		}			
 	private:
 
-		float leadingpt;
-		float subleadingpt; 
-		float etaedge;
-		float deltaphi;
-		float maxOHCAL;
-		bool isdijet;
-		bool negativeEnergy;
+		float leadingpt=0.;
+		float subleadingpt=0.; 
+		float etaedge=0.;
+		float deltaphi=0.;
+		float maxOHCAL=0.;
+		bool isdijet=false;
+		bool negativeEnergy=false;
+
 		bool passesCut=false;
 		int m_nJets=0;
 		float m_zvtx=0.;
@@ -152,10 +191,18 @@ class DijetEventCuts{
 		float m_slpt=0.;
 		float m_etal=0.;
 		float m_etasl=0.;
+
+		float m_ile=0.;
+		float m_isle=0.;
 		float m_deltaphi=0.;
 		float m_ohcalrat=0.;
 		float leadphi=0.;
 		float leadeta=0.;
+
+		float m_subleadingER=0.;
+		float m_leadER=0.;
+		float m_subleadingER_E=0.;
+		float m_leadER_E=0.;
 		bool m_isdijet=false;
 		bool m_hasnege=false;
 };

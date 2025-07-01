@@ -607,5 +607,11 @@ bool is_chargedHadron(int pdgid)
     return (is_hadron && is_charged) ? true : false;
 } 
 
+bool is_charged(int pdgid)
+{
+    bool is_charged = (fabs(charge(pdgid)) > 0) ? true : false;
+    return (is_charged) ? true : false;
+} 
+
 
 #endif

@@ -96,25 +96,25 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
   	TH1F* h_et_away = new TH1F("h_et_away","",netbins, etbins);
 
   	// create topocluster histograms 
-  	int topo_thresholds[] = {-9999,0,100,200,300,500};
+  	int topo_thresholds[] = {-9999,0,100,200,300,500,1000,2000};
 
-  	TH1F* h_ntopo_towards[6];
-  	TH1F* h_ntopo_transverse[6];
-  	TH1F* h_ntopo_away[6];
+  	TH1F* h_ntopo_towards[8];
+  	TH1F* h_ntopo_transverse[8];
+  	TH1F* h_ntopo_away[8];
 
-  	TH1F* h_topo_towards[6];
-  	TH1F* h_topo_transverse[6];
-  	TH1F* h_topo_away[6];
+  	TH1F* h_topo_towards[8];
+  	TH1F* h_topo_transverse[8];
+  	TH1F* h_topo_away[8];
 
-  	TH2F* h_2D_topo_towards[6];
-  	TH2F* h_2D_topo_transverse[6];
-  	TH2F* h_2D_topo_away[6];
+  	TH2F* h_2D_topo_towards[8];
+  	TH2F* h_2D_topo_transverse[8];
+  	TH2F* h_2D_topo_away[8];
 
-  	TH1F* h_sume_topo_towards[6];
-  	TH1F* h_sume_topo_transverse[6];
-  	TH1F* h_sume_topo_away[6];
+  	TH1F* h_sume_topo_towards[8];
+  	TH1F* h_sume_topo_transverse[8];
+  	TH1F* h_sume_topo_away[8];
 
-  	for (int i = 0; i < 6; i++) {
+  	for (int i = 0; i < 8; i++) {
   		h_ntopo_towards[i] = new TH1F(Form("h_ntopo%d_towards",topo_thresholds[i]),"",200,0,200);
   		h_ntopo_transverse[i] = new TH1F(Form("h_ntopo%d_transverse",topo_thresholds[i]),"",200,0,200);
   		h_ntopo_away[i] = new TH1F(Form("h_ntopo%d_away",topo_thresholds[i]),"",200,0,200);
@@ -335,12 +335,12 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
   			float et_towards = 0;
   			float et_transverse = 0;
   			float et_away = 0;
-  			int ntopo_towards[] = {0,0,0,0,0,0};
-  			int ntopo_transverse[] = {0,0,0,0,0,0};
-  			int ntopo_away[] = {0,0,0,0,0,0};
-  			float sume_topo_towards[] = {0,0,0,0,0,0};
-  			float sume_topo_transverse[] = {0,0,0,0,0,0};
-  			float sume_topo_away[] = {0,0,0,0,0,0};
+  			int ntopo_towards[] = {0,0,0,0,0,0,0,0};
+  			int ntopo_transverse[] = {0,0,0,0,0,0,0,0};
+  			int ntopo_away[] = {0,0,0,0,0,0,0,0};
+  			float sume_topo_towards[] = {0,0,0,0,0,0,0,0};
+  			float sume_topo_transverse[] = {0,0,0,0,0,0,0,0};
+  			float sume_topo_away[] = {0,0,0,0,0,0,0,0};
 
   			if (!clusters) { // using towers to find total energy in towards, transverse and away regions 
 	  			for (int i = 0; i < emcaln; i++) {
@@ -407,7 +407,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
 	  				if (fabs(dphi) < M_PI/3.0) { // towards region 
 	  					et_towards += cluster_e[i]/cosh(cluster_eta[i]);
-	  					for (int j = 0; j < 6; j++) {
+	  					for (int j = 0; j < 8; j++) {
 	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_towards[j] += 1;
 	  							sume_topo_towards[j] += cluster_e[i]/cosh(cluster_eta[i]);
@@ -418,7 +418,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
 	  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { // transverse region 
 						et_transverse += cluster_e[i]/cosh(cluster_eta[i]);
-	  					for (int j = 0; j < 6; j++) {
+	  					for (int j = 0; j < 8; j++) {
 	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_transverse[j] += 1;
 	  							sume_topo_transverse[j] += cluster_e[i]/cosh(cluster_eta[i]);
@@ -429,7 +429,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) { // away region 
 	  					et_away += cluster_e[i]/cosh(cluster_eta[i]);
-	  					for (int j = 0; j < 6; j++) {
+	  					for (int j = 0; j < 8; j++) {
 	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_away[j] += 1;
 	  							sume_topo_away[j] += cluster_e[i]/cosh(cluster_eta[i]);
@@ -449,7 +449,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
   			h_ue_transverse->Fill(et_transverse/(secteta*sectphi));
   			h_ue_away->Fill(et_away/(secteta*sectphi));
 
-  			for (int i = 0; i < 6; i++) {
+  			for (int i = 0; i < 8; i++) {
   				h_ntopo_towards[i]->Fill(ntopo_towards[i]);
   				h_ntopo_transverse[i]->Fill(ntopo_transverse[i]);
   				h_ntopo_away[i]->Fill(ntopo_away[i]);

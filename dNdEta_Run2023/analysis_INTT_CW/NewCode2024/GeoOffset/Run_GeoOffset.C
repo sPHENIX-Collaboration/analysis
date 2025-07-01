@@ -8,6 +8,45 @@ R__LOAD_LIBRARY(../EvtVtxZTracklet/libEvtVtxZProtoTracklet.so)
 R__LOAD_LIBRARY(../TrackletHistogram/libTrackletHistogramNew.so)
 R__LOAD_LIBRARY(../PreparedNdEta/libPreparedNdEtaEach.so)
 
+TH2D * GetGoodColMap (std::string ColMulMask_map_dir_in, std::string ColMulMask_map_file_in, std::string map_name_in)
+{
+  TFile * f = TFile::Open(Form("%s/%s", ColMulMask_map_dir_in.c_str(), ColMulMask_map_file_in.c_str()));
+  TH2D * h = (TH2D*)f->Get(map_name_in.c_str());
+  return h;
+}
+
+TH1D * GetDataVtxZH1D (std::string data_vtxZ_directory_file_in, std::string data_vtxZ_hist_name_in)
+{
+  TFile * f2 = TFile::Open(Form("%s", data_vtxZ_directory_file_in.c_str()));
+  TH1D * h2 = (TH1D*)f2->Get(data_vtxZ_hist_name_in.c_str());
+  return h2;
+}
+
+TH1D * GetVtxZReweightH1D (TH1D * data_hist, TH1D * mc_hist)
+{
+    if (data_hist->GetNbinsX() != mc_hist->GetNbinsX()){
+        cout<<"GetVtxZReweightH1D: data_hist->GetNbinsX() != mc_hist->GetNbinsX()"<<endl;
+        exit(1);
+        return nullptr;
+    }
+    if (data_hist->GetXaxis()->GetXmin() != mc_hist->GetXaxis()->GetXmin()){
+        cout<<"GetVtxZReweightH1D: data_hist->GetXaxis()->GetXmin() != mc_hist->GetXaxis()->GetXmin()"<<endl;
+        exit(1);
+        return nullptr;
+    }
+    if (data_hist->GetXaxis()->GetXmax() != mc_hist->GetXaxis()->GetXmax()){
+        cout<<"GetVtxZReweightH1D: data_hist->GetXaxis()->GetXmax() != mc_hist->GetXaxis()->GetXmax()"<<endl;
+        exit(1);
+        return nullptr;
+    }
+
+    TH1D * h3 = (TH1D*)data_hist->Clone("reweight_hist");
+    h3 -> Scale(1.0 / h3->Integral());
+    mc_hist -> Scale(1.0 / mc_hist->Integral());
+    h3->Divide(mc_hist); // note : data / mc
+    return h3;
+}
+
 int Run_GeoOffset(
     int process_id = 0,
     int run_num = -1,
@@ -17,22 +56,40 @@ int Run_GeoOffset(
     string output_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280/completed/BCO_check",
     
     // todo : modify here
-    std::string output_file_name_suffix = "_test1"
+    std::string output_file_name_suffix = "_test1",
+    
+    // todo : the data vertex Z distribution should be updated
+    // std::string data_vtxZ_directory_file = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/completed/VtxZDist/completed/Data_vtxZDist_VtxZQA_EvtBcoFullDiffCut61_00054280_merged.root", // note : full directory
+    // std::string data_vtxZ_hist_name = "h1D_INTTz_Inclusive70",
+
+    // todo: the map file should be updated
+    std::string ColMulMask_map_dir = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/ColumnCheck/baseline/completed/MulMap/completed",
+    std::string ColMulMask_map_file = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize40_00054280.root"
 )
-{   
+{
+    
+    bool Global_GeoOffsetTag = (process_id == 0) ? false : true;
+    int Global_ClusAdcCut = 35;
+    int Global_ClusPhiSizeCut = 40;
+
+    bool is_tracklet_DeltaPhiCut_changed = true;
+    std::pair<double,double> tracklet_DeltaPhiCut = {-0.04, 0.04}; 
+
+    std::string GeoOffset_string = (Global_GeoOffsetTag) ? "" : "_NoGeoOffset";
+
     std::string job_index = std::to_string( process_id );
     int job_index_len = 5;
     job_index.insert(0, job_index_len - job_index.size(), '0');
 
-    std::string final_output_directory = output_directory + Form("/Run_%s", job_index.c_str()); 
+    std::string final_output_directory = output_directory + Form("/Run%s_%s", GeoOffset_string.c_str(), job_index.c_str()); 
     system(Form("if [ ! -d %s ]; then mkdir -p %s; fi", final_output_directory.c_str(), final_output_directory.c_str()));
 
     std::pair<double,double> AvgVtxXY_MBD_vtxZ_cut = {-20, 20};
     std::pair<int,int> AvgVtxXY_INTTNClus_cut = {20, 350};
-    int AvgVtxXY_ClusAdc_cut = 35;
-    int AvgVtxXY_ClusPhiSize_cut = 500;
+    int AvgVtxXY_ClusAdc_cut = Global_ClusAdcCut;
+    int AvgVtxXY_ClusPhiSize_cut = Global_ClusPhiSizeCut;
 
-    bool AvgVtxXY_HaveGeoOffsetTag = true;
+    bool AvgVtxXY_HaveGeoOffsetTag = Global_GeoOffsetTag;
     double AvgVtxXY_random_range_XYZ = 0.025; // note : unit : cm [250 um]
 
     AvgVtxXY * avgXY = new AvgVtxXY(
@@ -79,8 +136,8 @@ int Run_GeoOffset(
     bool evtZ_IsDCACutApplied = true;
     std::pair<std::pair<double,double>,std::pair<double,double>> evtZ_DeltaPhiCutInDegree = {{-0.6,0.6},{-1000.,1000.}}; // note : in degree
     std::pair<std::pair<double,double>,std::pair<double,double>> evtZ_DCAcutIncm = {{-0.1,0.1},{-1000.,1000.}}; // note : in cm
-    int evtZ_ClusAdcCut = 35;
-    int evtZ_ClusPhiSizeCut = 500;
+    int evtZ_ClusAdcCut = Global_ClusAdcCut;
+    int evtZ_ClusPhiSizeCut = Global_ClusPhiSizeCut;
     
     bool evtZ_PrintRecoDetails = false;
     bool evtZ_DrawEvtVtxZ = (process_id < 10) ? true : false;
@@ -90,7 +147,7 @@ int Run_GeoOffset(
     bool evtZ_RunTrackletPair = false;
     bool evtZ_RunTrackletPairRotate = false;
     
-    bool evtZ_HaveGeoOffsetTag = true;
+    bool evtZ_HaveGeoOffsetTag = Global_GeoOffsetTag;
 
     EvtVtxZProtoTracklet * evtVtxZ = new EvtVtxZProtoTracklet(
         process_id,
@@ -126,6 +183,26 @@ int Run_GeoOffset(
     evtVtxZ -> SetGeoOffset(GeoOffset_map);
     evtVtxZ -> MainProcess();
 
+    // TH1D * h1D_MC_INTTRecoVtxZ = (TH1D*) (evtVtxZ -> GetINTTRecovtxZH1D())->Clone("h1D_MC_INTTRecoVtxZ");
+    // TH1D * h1D_data_INTTRecoVtxZ = GetDataVtxZH1D(data_vtxZ_directory_file, data_vtxZ_hist_name);
+    // TH1D * h1D_vtxZReweight = GetVtxZReweightH1D(h1D_data_INTTRecoVtxZ, h1D_MC_INTTRecoVtxZ);
+
+    // TFile * file_out = new TFile(Form("%s/%s", final_output_directory.c_str(), "VtxZ_hist.root"), "recreate");
+    // std::cout<<"test1: h1D_MC_INTTRecoVtxZ->GetName(): "<<h1D_MC_INTTRecoVtxZ->GetName()<<std::endl;
+    // std::cout<<"test1: h1D_MC_INTTRecoVtxZ->GetNbinsX(): "<<h1D_MC_INTTRecoVtxZ->GetNbinsX()<<std::endl;
+    // h1D_MC_INTTRecoVtxZ -> Write("h1D_MC_INTTRecoVtxZ"); 
+    // h1D_data_INTTRecoVtxZ -> Write("h1D_data_INTTRecoVtxZ"); 
+    // h1D_vtxZReweight -> Write("h1D_vtxZReweight"); 
+    // file_out -> Close();
+
+    // for (int i = 0; i < h1D_vtxZReweight->GetNbinsX(); i++){
+    //     cout<<"h1D_vtxZReweight, index: "<<i+1
+    //     <<", center: "<<h1D_vtxZReweight -> GetBinCenter(i+1)
+    //     <<", data: "  <<Form("%.3f",h1D_data_INTTRecoVtxZ->GetBinContent(i+1))
+    //     <<", MC: "    <<Form("%.3f",h1D_MC_INTTRecoVtxZ->GetBinContent(i+1))
+    //     <<", ratio: " <<Form("%.3f",h1D_vtxZReweight->GetBinContent(i+1))<<endl;
+    // }
+
     std::cout<<"test test: closing in EvtVtxZProtoTracklet "<<std::endl;
     evtVtxZ -> EndRun(0); // note : do not close the file_in
 
@@ -134,13 +211,17 @@ int Run_GeoOffset(
 
     // Division : --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    // std::pair<bool, TH1D*> Track_vtxZReweight = {true, h1D_vtxZReweight};
     std::pair<bool, TH1D*> Track_vtxZReweight = {false, nullptr};
     bool Track_BcoFullDiffCut = false;
     bool Track_INTT_vtxZ_QA = true;
-    std::pair<bool, std::pair<double, double>> Track_isClusQA = {true, {35, 500}}; // note : {adc, phi size}
-    bool Track_HaveGeoOffsetTag = true;
+    std::pair<bool, std::pair<double, double>> Track_isClusQA = {true, {Global_ClusAdcCut, Global_ClusPhiSizeCut}}; // note : {adc, phi size}
+    bool Track_HaveGeoOffsetTag = Global_GeoOffsetTag;
     std::pair<bool, int> Track_SetRandomHits = {false, 0};
     bool Track_RandInttZ = false;
+
+    bool Track_ColMulMask = true;
+    
 
     TrackletHistogramNew * THN = new TrackletHistogramNew(
         process_id, 
@@ -159,13 +240,21 @@ int Run_GeoOffset(
         Track_isClusQA,
         Track_HaveGeoOffsetTag,
         Track_SetRandomHits,
-        Track_RandInttZ
+        Track_RandInttZ,
+        Track_ColMulMask
     );
 
     std::string Track_output_filename = THN->GetOutputFileName();
     cout<<"Track: final_output_file_name: "<<Track_output_filename<<endl;
 
     THN -> SetGeoOffset(GeoOffset_map);
+
+    if (Track_ColMulMask){
+        THN -> SetGoodColMap(
+        GetGoodColMap(ColMulMask_map_dir, ColMulMask_map_file, THN->GetGoodColMapName())
+        );
+    }
+
     THN -> MainProcess();
 
     std::cout<<"test test: closing in TrackletHistogramNew "<<std::endl;
@@ -181,6 +270,8 @@ int Run_GeoOffset(
     std::pair<double,double> dNdeta_cut_INTTvtxZ = {-10, 10};
     int dNdeta_SelectedMbin = 70; // note : 0, 1, ---- 10, 70, 100 
 
+    bool dNdeta_ApplyGeoAccCorr = false;
+
     PreparedNdEtaEach * pdndeta = new PreparedNdEtaEach(
         process_id, 
         run_num,
@@ -190,10 +281,15 @@ int Run_GeoOffset(
         output_file_name_suffix,
 
         dNdeta_ApplyAlphaCorr,
+        dNdeta_ApplyGeoAccCorr,
+
         dNdeta_isTypeA,
         dNdeta_cut_INTTvtxZ,
         dNdeta_SelectedMbin
     );
+
+    // todo: if change cut
+    if (is_tracklet_DeltaPhiCut_changed) {pdndeta->SetBkgRotated_DeltaPhi_Signal_range(tracklet_DeltaPhiCut);}
 
     std::vector<std::string> dNdeta_output_filename = pdndeta->GetOutputFileName();
     cout<<"dNdeta: final_output_file_name: "<<dNdeta_output_filename[0]<<endl;

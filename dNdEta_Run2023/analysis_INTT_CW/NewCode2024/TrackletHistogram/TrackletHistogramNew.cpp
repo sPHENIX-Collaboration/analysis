@@ -142,8 +142,8 @@ void TrackletHistogramNew::PrepareHistograms()
     h1D_vtxz_template = new TH1D("h1D_vtxz_template", "h1D_vtxz_template", nVtxZBin, VtxZEdge_min, VtxZEdge_max); // note : coarse
 
     // note : for inclusive 
-    h1D_PairDeltaEta_inclusive = new TH1D("h1D_PairDeltaEta_inclusive", "h1D_PairDeltaEta_inclusive;Pair #eta;Entries", nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max);
-    h1D_PairDeltaPhi_inclusive = new TH1D("h1D_PairDeltaPhi_inclusive", "h1D_PairDeltaPhi_inclusive;Pair #eta;Entries", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max);
+    h1D_PairDeltaEta_inclusive = new TH1D("h1D_PairDeltaEta_inclusive", "h1D_PairDeltaEta_inclusive;Pair #Delta#eta;Entries", nDeltaEtaBin, DeltaEtaEdge_min, DeltaEtaEdge_max);
+    h1D_PairDeltaPhi_inclusive = new TH1D("h1D_PairDeltaPhi_inclusive", "h1D_PairDeltaPhi_inclusive;Pair #Delta#phi;Entries", nDeltaPhiBin, DeltaPhiEdge_min, DeltaPhiEdge_max);
 
     // note : cluster Eta
     h1D_Inner_ClusEta_INTTz = new TH1D("h1D_Inner_ClusEta_INTTz","h1D_Inner_ClusEta_INTTz;ClusEta (Inner, w.r.t INTTz);Entries", nEtaBin, EtaEdge_min, EtaEdge_max);
@@ -296,13 +296,13 @@ void TrackletHistogramNew::PrepareHistograms()
         {
             isInserted = h2D_map.insert( std::make_pair(
                     Form("h2D_TrueEtaVtxZ_Mbin%d", Mbin),
-                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max)
+                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d;PHG4Particle #eta;INTT vtxZ [cm]", Mbin), nEtaBin, EtaEdge_min, EtaEdge_max, nVtxZBin, VtxZEdge_min, VtxZEdge_max)
                 )
             ).second; insert_check.push_back(isInserted);
 
             isInserted = h2D_map.insert( std::make_pair(
                     Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin),
-                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;TruthPV_trig_z [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, nVtxZBin_FineBin, VtxZEdge_min, VtxZEdge_max)
+                    new TH2D(Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin), Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin;PHG4Particle #eta;INTT vtxZ [cm]", Mbin), 540, EtaEdge_min, EtaEdge_max, nVtxZBin_FineBin, VtxZEdge_min, VtxZEdge_max)
                 )
             ).second; insert_check.push_back(isInserted);
         }
@@ -321,7 +321,7 @@ void TrackletHistogramNew::PrepareHistograms()
 
         isInserted = h2D_map.insert( std::make_pair(
                 Form("h2D_TrueEvtCount_vtxZCentrality"),
-                new TH2D(Form("h2D_TrueEvtCount_vtxZCentrality"), Form("h2D_TrueEvtCount_vtxZCentrality;TruthPV_trig_z [cm];Centrality [%]"), nVtxZBin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0]) // note : 0 - 5%
+                new TH2D(Form("h2D_TrueEvtCount_vtxZCentrality"), Form("h2D_TrueEvtCount_vtxZCentrality;INTT vtxZ [cm];Centrality [%]"), nVtxZBin, VtxZEdge_min, VtxZEdge_max, nCentrality_bin, &centrality_edges[0]) // note : 0 - 5%
             )
         ).second; insert_check.push_back(isInserted);
     }
@@ -762,6 +762,11 @@ void TrackletHistogramNew::MainProcess()
         exit(1);
     }
 
+    if (HaveGeoOffsetTag == false && CheckGeoOffsetMap() > 0.0001) {
+        std::cout<<"The HaveGeoOffsetTag is false, but the GeoOffsetMap has some non-zero numbers, please check the GeoOffsetMap"<<std::endl;
+        exit(1);
+    }
+
     if (
         ColMulMask &&
         (
@@ -799,7 +804,7 @@ void TrackletHistogramNew::MainProcess()
         if (runnumber != -1 && MBDNSg2 != 1) {continue;} // todo: assume MC no trigger
 
         // note : for MC
-        if (runnumber == -1 && NTruthVtx != 1) {continue;}
+        // if (runnumber == -1 && NTruthVtx != 1) {continue;}
 
         // note : both data and MC
         if (is_min_bias != 1) {continue;}
@@ -818,21 +823,38 @@ void TrackletHistogramNew::MainProcess()
         }
         // =======================================================================================================================================================
 
+        // =======================================================================================================================================================
+        // note : optional cut
+        if (INTT_vtxZ_QA && (MBD_z_vtx - INTTvtxZ < cut_vtxZDiff.first || MBD_z_vtx - INTTvtxZ > cut_vtxZDiff.second) ) {continue;}
+        if (INTT_vtxZ_QA && (TrapezoidalFitWidth < cut_TrapezoidalFitWidth.first || TrapezoidalFitWidth > cut_TrapezoidalFitWidth.second)){continue;}
+        if (INTT_vtxZ_QA && (TrapezoidalFWHM < cut_TrapezoidalFWHM.first || TrapezoidalFWHM > cut_TrapezoidalFWHM.second)){continue;}
+        if (INTT_vtxZ_QA && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){continue;}
+        // =======================================================================================================================================================
+
+        int InttVtxZ_bin = h1D_vtxz_template->Fill(INTTvtxZ);
+        InttVtxZ_bin = (InttVtxZ_bin == -1) ? -1 : InttVtxZ_bin - 1;
+
+        // int MBDVtxZ_bin = h1D_vtxz_template->Fill(MBD_z_vtx);
+        // MBDVtxZ_bin = (MBDVtxZ_bin == -1) ? -1 : MBDVtxZ_bin - 1;
+
+        // note : everything below is within INTT vtxZ -45 cm  ~ 45 cm
+        if (InttVtxZ_bin == -1) {continue;}
+
 
         // note : for truth
         if (runnumber == -1){
             int NHadrons = 0;
             int NHadrons_OneEtaBin = 0;
 
-            int TruthVtxZ_bin = h1D_vtxz_template->Fill(TruthPV_trig_z);
-            TruthVtxZ_bin = (TruthVtxZ_bin == -1) ? -1 : TruthVtxZ_bin - 1;
+            // int TruthVtxZ_bin = h1D_vtxz_template->Fill(TruthPV_trig_z);
+            // TruthVtxZ_bin = (TruthVtxZ_bin == -1) ? -1 : TruthVtxZ_bin - 1;
 
-            if (TruthVtxZ_bin != -1){
+            if (InttVtxZ_bin != -1){
                 for (int true_i = 0; true_i < NPrimaryG4P; true_i++){
                     if (PrimaryG4P_isChargeHadron->at(true_i) != 1) { continue; }
 
                     // todo : for debug
-                    if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
+                    if (INTTvtxZ >= -10 && INTTvtxZ < 10){
                         NHadrons++;
                         // todo : the selected bin
                         if (PrimaryG4P_Eta->at(true_i) >= -1.1 && PrimaryG4P_Eta->at(true_i) < -0.9){
@@ -840,15 +862,15 @@ void TrackletHistogramNew::MainProcess()
                         }
                     }
                     
-                    h1D_map[Form("h1D_TrueEta_Mbin%d_VtxZ%d", Mbin, TruthVtxZ_bin)] -> Fill(PrimaryG4P_Eta->at(true_i));
-                    h2D_map[Form("h2D_TrueEtaVtxZ_Mbin%d", Mbin)] -> Fill(PrimaryG4P_Eta->at(true_i), TruthPV_trig_z);
-                    h2D_map[Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin)] -> Fill(PrimaryG4P_Eta->at(true_i), TruthPV_trig_z);
+                    h1D_map[Form("h1D_TrueEta_Mbin%d_VtxZ%d", Mbin, InttVtxZ_bin)] -> Fill(PrimaryG4P_Eta->at(true_i));
+                    h2D_map[Form("h2D_TrueEtaVtxZ_Mbin%d", Mbin)] -> Fill(PrimaryG4P_Eta->at(true_i), INTTvtxZ);
+                    h2D_map[Form("h2D_TrueEtaVtxZ_Mbin%d_FineBin", Mbin)] -> Fill(PrimaryG4P_Eta->at(true_i), INTTvtxZ);
                 }
 
-                h2D_map["h2D_TrueEvtCount_vtxZCentrality"]->Fill(TruthPV_trig_z, MBD_centrality);
+                h2D_map["h2D_TrueEvtCount_vtxZCentrality"]->Fill(INTTvtxZ, MBD_centrality);
 
                 // todo : for debug
-                if (TruthPV_trig_z >= -10 && TruthPV_trig_z < 10){
+                if (INTTvtxZ >= -10 && INTTvtxZ < 10){
 
                     h1D_map["debug_h1D_NHadron_Inclusive100"] -> Fill(NHadrons);
                     h1D_map["debug_h1D_NHadron_OneEtaBin_Inclusive100"] -> Fill(NHadrons_OneEtaBin);
@@ -858,12 +880,6 @@ void TrackletHistogramNew::MainProcess()
         }
 
 
-        // =======================================================================================================================================================
-        // note : optional cut
-        if (INTT_vtxZ_QA && (MBD_z_vtx - INTTvtxZ < cut_vtxZDiff.first || MBD_z_vtx - INTTvtxZ > cut_vtxZDiff.second) ) {continue;}
-        if (INTT_vtxZ_QA && (TrapezoidalFitWidth < cut_TrapezoidalFitWidth.first || TrapezoidalFitWidth > cut_TrapezoidalFitWidth.second)){continue;}
-        if (INTT_vtxZ_QA && (TrapezoidalFWHM < cut_TrapezoidalFWHM.first || TrapezoidalFWHM > cut_TrapezoidalFWHM.second)){continue;}
-        if (INTT_vtxZ_QA && (INTTvtxZError < cut_INTTvtxZError.first || INTTvtxZError > cut_INTTvtxZError.second)){continue;}
         // =======================================================================================================================================================
         
         if (vtxZReweight.first && runnumber != -1){
@@ -884,16 +900,6 @@ void TrackletHistogramNew::MainProcess()
         }
 
         // =======================================================================================================================================================
-        
-        int InttVtxZ_bin = h1D_vtxz_template->Fill(INTTvtxZ);
-        InttVtxZ_bin = (InttVtxZ_bin == -1) ? -1 : InttVtxZ_bin - 1;
-
-        // int MBDVtxZ_bin = h1D_vtxz_template->Fill(MBD_z_vtx);
-        // MBDVtxZ_bin = (MBDVtxZ_bin == -1) ? -1 : MBDVtxZ_bin - 1;
-
-        // note : everything below is within INTT vtxZ -45 cm  ~ 45 cm
-        if (InttVtxZ_bin == -1) {continue;}
-
 
         // note : for reconstructed 
         // note : INTT vtxZ range -45 cm ~ 45 cm

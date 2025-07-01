@@ -1,3 +1,25 @@
+// get histogram from TFile. use template to get the histogram type
+template <typename T>
+T *getHist(std::string filename, std::string histname)
+{
+    TFile *f = new TFile(filename.c_str(), "READ");
+    if (!f->IsOpen())
+    {
+        std::cout << "Cannot open file " << filename << std::endl;
+        return nullptr;
+    }
+
+    T *h = dynamic_cast<T *>(f->Get(histname.c_str()));
+    if (!h)
+    {
+        std::cout << "Cannot find histogram " << histname << " in file " << filename << std::endl;
+        return nullptr;
+    }
+    h->SetDirectory(0);
+    f->Close();
+    return h;
+}
+
 void print_with_significant_digits(double value, int sig_digits = 4)
 {
     // Determine the order of magnitude

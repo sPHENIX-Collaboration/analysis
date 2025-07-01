@@ -103,13 +103,13 @@ BuildResonanceJetTaggingTree::BuildResonanceJetTaggingTree(const std::string &na
       m_tag_pdg = 413;
       m_nDaughters = 0;
       break;
-    case ResonanceJetTagging::TAG::JPSY:
-      m_tag_pdg = 433;
-      m_nDaughters = 0;
+    case ResonanceJetTagging::TAG::JPSI:
+      m_tag_pdg = 443;
+      m_nDaughters = 2;
       break;
     case ResonanceJetTagging::TAG::K0:
-      m_tag_pdg = 311;
-      m_nDaughters = 0;
+      m_tag_pdg = 310;
+      m_nDaughters = 2;
       break;
     case ResonanceJetTagging::TAG::GAMMA:
       m_tag_pdg = 22;
@@ -180,6 +180,8 @@ int BuildResonanceJetTaggingTree::process_event(PHCompositeNode *topNode)
     case ResonanceJetTagging::TAG::LAMBDAC:
       [[fallthrough]];
     case ResonanceJetTagging::TAG::LAMBDAS:
+      [[fallthrough]];
+    case ResonanceJetTagging::TAG::K0:
       return loopHFHadronic(topNode);
       break;
     default:
@@ -278,7 +280,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
   KFParticle *recTag = nullptr;
   HepMC::GenParticle *genTag = nullptr;
 
-  std::vector<int> recDaughtersID(m_nDaughters);
+  std::vector<int> recDaughtersID;
   std::vector<int> recJetIndex;
 
   if(m_dorec)
@@ -289,14 +291,11 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
 
       if(!recTagJet) continue;
 
-      int tagID = -1;
-
       for(auto comp : recTagJet->get_comp_vec())
       {
         if(comp.first == Jet::SRC::VOID)
         {
           recTag = kfContainer->get(comp.second);
-          tagID = comp.second;
         }
       }
 
@@ -305,10 +304,7 @@ int BuildResonanceJetTaggingTree::loopHFHadronic(PHCompositeNode *topNode)
         continue;
       }
 
-      for (int iDaughter = 0; iDaughter < m_nDaughters; iDaughter++)
-      {
-        recDaughtersID[iDaughter] = (kfContainer->get(tagID + iDaughter +1))->Id();
-      }
+      recDaughtersID = recTag->DaughterIds();
 
       resetTreeVariables();
 

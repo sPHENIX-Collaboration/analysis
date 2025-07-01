@@ -9,16 +9,16 @@
 #include <g4main/PHG4Particle.h>
 #include <ffaobjects/EventHeader.h>
 
-#include <phhepmc/PHHepMCGenEvent.h>
-#include <phhepmc/PHHepMCGenEventMap.h>
+//#include <phhepmc/PHHepMCGenEvent.h>
+//#include <phhepmc/PHHepMCGenEventMap.h>
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include <HepMC/GenEvent.h>
-#include <HepMC/GenParticle.h>
-#include <HepMC/GenVertex.h>
-#include <HepMC/IteratorRange.h>
-#include <HepMC/SimpleVector.h> 
-#include <HepMC/GenParticle.h>
+//#include <HepMC/GenEvent.h>
+//#include <HepMC/GenParticle.h>
+//#include <HepMC/GenVertex.h>
+//#include <HepMC/IteratorRange.h>
+//#include <HepMC/SimpleVector.h> 
+//#include <HepMC/GenParticle.h>
 #pragma GCC diagnostic pop
 
 #include <TTree.h>

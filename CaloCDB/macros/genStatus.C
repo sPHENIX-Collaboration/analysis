@@ -41,14 +41,14 @@ namespace myAnalysis
   TProfile2D *h_CaloValid_ihcal_etaphi_badChi2 = nullptr;
   TProfile2D *h_CaloValid_ohcal_etaphi_badChi2 = nullptr;
 
-  TProfile2D *h_CaloValid_cemc_etaphi_time = nullptr;
-  TProfile2D *h_CaloValid_ihcal_etaphi_time = nullptr;
-  TProfile2D *h_CaloValid_ohcal_etaphi_time = nullptr;
+  TProfile2D *h_CaloValid_cemc_etaphi_time_raw = nullptr;
+  TProfile2D *h_CaloValid_ihcal_etaphi_time_raw = nullptr;
+  TProfile2D *h_CaloValid_ohcal_etaphi_time_raw = nullptr;
 
-  UInt_t cemc_bins_eta = 96;
-  UInt_t cemc_bins_phi = 256;
-  UInt_t hcal_bins_eta = 24;
-  UInt_t hcal_bins_phi = 64;
+  Int_t cemc_bins_eta = 96;
+  Int_t cemc_bins_phi = 256;
+  Int_t hcal_bins_eta = 24;
+  Int_t hcal_bins_phi = 64;
 }  // namespace myAnalysis
 
 pair<string, string> myAnalysis::getRunDataset(const string &input)
@@ -80,47 +80,46 @@ Int_t myAnalysis::readHists(const string &input)
   delete h_CaloValid_ihcal_etaphi_badChi2;
   delete h_CaloValid_ohcal_etaphi_badChi2;
 
-  delete h_CaloValid_cemc_etaphi_time;
-  delete h_CaloValid_ihcal_etaphi_time;
-  delete h_CaloValid_ohcal_etaphi_time;
+  delete h_CaloValid_cemc_etaphi_time_raw;
+  delete h_CaloValid_ihcal_etaphi_time_raw;
+  delete h_CaloValid_ohcal_etaphi_time_raw;
 
   h_CaloValid_cemc_etaphi_badChi2 = new TProfile2D("cemc_etaphi_badChi2","", cemc_bins_eta, 0, cemc_bins_eta, cemc_bins_phi, 0, cemc_bins_phi);
   h_CaloValid_ihcal_etaphi_badChi2 = new TProfile2D("ihcal_etaphi_badChi2","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
   h_CaloValid_ohcal_etaphi_badChi2 = new TProfile2D("ohcal_etaphi_badChi2","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
 
-  h_CaloValid_cemc_etaphi_time = new TProfile2D("cemc_etaphi_time","", cemc_bins_eta, 0, cemc_bins_eta, cemc_bins_phi, 0, cemc_bins_phi);
-  h_CaloValid_ihcal_etaphi_time = new TProfile2D("ihcal_etaphi_time","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
-  h_CaloValid_ohcal_etaphi_time = new TProfile2D("ohcal_etaphi_time","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
+  h_CaloValid_cemc_etaphi_time_raw = new TProfile2D("cemc_etaphi_time_raw","", cemc_bins_eta, 0, cemc_bins_eta, cemc_bins_phi, 0, cemc_bins_phi);
+  h_CaloValid_ihcal_etaphi_time_raw = new TProfile2D("ihcal_etaphi_time_raw","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
+  h_CaloValid_ohcal_etaphi_time_raw = new TProfile2D("ohcal_etaphi_time_raw","", hcal_bins_eta, 0, hcal_bins_eta, hcal_bins_phi, 0, hcal_bins_phi);
 
   string line;
   while (std::getline(file, line))
   {
     cout << "Reading File: " << line << endl;
     auto tf = TFile::Open(line.c_str());
-
-    auto h = (TProfile2D*) tf->Get("h_CaloValid_cemc_etaphi_badChi2");
+    auto h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_cemc_etaphi_badChi2"));
 
     if (h) h_CaloValid_cemc_etaphi_badChi2->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloValid_ihcal_etaphi_badChi2");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ihcal_etaphi_badChi2"));
 
     if (h) h_CaloValid_ihcal_etaphi_badChi2->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloValid_ohcal_etaphi_badChi2");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ohcal_etaphi_badChi2"));
 
     if (h) h_CaloValid_ohcal_etaphi_badChi2->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloValid_cemc_etaphi_time");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_cemc_etaphi_time_raw"));
 
-    if (h) h_CaloValid_cemc_etaphi_time->Add(h);
+    if (h) h_CaloValid_cemc_etaphi_time_raw->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloValid_ihcal_etaphi_time");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ihcal_etaphi_time_raw"));
 
-    if (h) h_CaloValid_ihcal_etaphi_time->Add(h);
+    if (h) h_CaloValid_ihcal_etaphi_time_raw->Add(h);
 
-    h = (TProfile2D*) tf->Get("h_CaloValid_ohcal_etaphi_time");
+    h = static_cast<TProfile2D*>(tf->Get("h_CaloValid_ohcal_etaphi_time_raw"));
 
-    if (h) h_CaloValid_ohcal_etaphi_time->Add(h);
+    if (h) h_CaloValid_ohcal_etaphi_time_raw->Add(h);
 
     tf->Close();
   }
@@ -133,7 +132,7 @@ Int_t myAnalysis::readHists(const string &input)
 
 void myAnalysis::histToCaloCDBTree(string outputfile, string fieldName, Int_t icalo, TProfile2D *hist)
 {
-  Int_t neta, nphi;
+  UInt_t neta, nphi;
 
   if (icalo != 0 && icalo != 1) return;
 
@@ -150,18 +149,18 @@ void myAnalysis::histToCaloCDBTree(string outputfile, string fieldName, Int_t ic
 
   CDBTTree *cdbttree = new CDBTTree(outputfile);
 
-  Float_t mean = 0;
+  Double_t mean = 0;
   Int_t count = 0;
 
-  for (Int_t ie = 0; ie < neta; ie++)
+  for (UInt_t ie = 0; ie < neta; ie++)
   {
-    for (Int_t ip = 0; ip < nphi; ip++)
+    for (UInt_t ip = 0; ip < nphi; ip++)
     {
       UInt_t key;
       if (icalo == 0) key = TowerInfoDefs::encode_emcal(ie, ip);
       if (icalo == 1) key = TowerInfoDefs::encode_hcal(ie, ip);
-      Float_t val = hist->GetBinContent(ie + 1, ip + 1);
-      cdbttree->SetFloatValue(key, fieldName, val);
+      Float_t val = static_cast<Float_t>(hist->GetBinContent(static_cast<Int_t>(ie) + 1, static_cast<Int_t>(ip) + 1));
+      cdbttree->SetFloatValue(static_cast<Int_t>(key), fieldName, val);
       mean += val;
       count++;
     }
@@ -195,7 +194,7 @@ void myAnalysis::analyze(const string &output)
   if (h_CaloValid_cemc_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 0, h_CaloValid_cemc_etaphi_badChi2);
   // time
   payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
-  if (h_CaloValid_cemc_etaphi_time) histToCaloCDBTree(payloadName, "time", 0, h_CaloValid_cemc_etaphi_time);
+  if (h_CaloValid_cemc_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 0, h_CaloValid_cemc_etaphi_time_raw);
 
   detector = "HCALIN";
   // fracBadChi2
@@ -203,7 +202,7 @@ void myAnalysis::analyze(const string &output)
   if (h_CaloValid_ihcal_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 1, h_CaloValid_ihcal_etaphi_badChi2);
   // time
   payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
-  if (h_CaloValid_ihcal_etaphi_time) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ihcal_etaphi_time);
+  if (h_CaloValid_ihcal_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ihcal_etaphi_time_raw);
 
   detector = "HCALOUT";
   // fracBadChi2
@@ -211,7 +210,7 @@ void myAnalysis::analyze(const string &output)
   if (h_CaloValid_ohcal_etaphi_badChi2) histToCaloCDBTree(payloadName, "fraction", 1, h_CaloValid_ohcal_etaphi_badChi2);
   // time
   payloadName = t.str() + "/" + detector + "_meanTime" + "_" + dataset + "_" + run + ".root";
-  if (h_CaloValid_ohcal_etaphi_time) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ohcal_etaphi_time);
+  if (h_CaloValid_ohcal_etaphi_time_raw) histToCaloCDBTree(payloadName, "time", 1, h_CaloValid_ohcal_etaphi_time_raw);
 }
 
 void genStatus(const string &input, const string &output = "output")
@@ -228,7 +227,7 @@ void genStatus(const string &input, const string &output = "output")
 }
 
 #ifndef __CINT__
-Int_t main(Int_t argc, char *argv[])
+Int_t main(Int_t argc, const char* const argv[])
 {
   if (argc < 2 || argc > 3)
   {

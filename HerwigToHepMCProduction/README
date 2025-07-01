@@ -1,0 +1,53 @@
+########################################## Herwig to HepMC File Generator ###########################################################
+
+Author: Skaydi
+Last Update 17 April 2025 
+
+
+This is a stop gap solution to allow for the generation of HepMC files from a Herwig input.
+Temporary fix before "PHHerwig" can be properly implemented
+
+How it works is generate a .run file, run the makeHerwigJobs script and give it the parameters relevant to the run (run with help option at first for explination of the behavior)
+this will generate a number of events broken into a set number of files with an equal number of events per file, triggers for Jets can be optionally employed 
+#Directories
+The directories are broken down as follows
+
+##config_files
+
+This is where the Herwig input (.in) and run (.run) files live as
+
+After adding a new ".in" File simply do /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/Herwig/bin/Herwig read [.in File name]
+
+## HepMCTrigger
+
+This has the Jet trigger that is implemented on the HepMC output, eventually will add other triggers. 
+This is based on anti-kt r=0.4 jets from fastjet
+
+## HerwigHepMCFilter
+
+A specific instance of running the filter that applies a trigger and a set event output per file number
+
+## HepMC_scripts
+
+This is where the main usage is. 
+
+"condor_blank.job" should be updated for the user 
+
+"condor_file_dir" this is where the condor files go. 
+
+"Herwig_run.sh" this is what the condor job calls, runs events with a random seed and optionally applies a triger
+
+"makeHerwigJobs.sh" script to input parameters of the run 
+This script runs Herwig to create HepMC files given an input configuration
+Options:
+  
+ -h, --help	Display this help message
+ -v, --verbose	Enable verbose job creation (Default false) 
+ -N, --events  	Number of events to generate (Default 1M) 
+ -n, --perfile	Number of events per file (Default 1k) 
+ -s, --submit	Make and submit condor jobs (Default false)
+ -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)
+ -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) 
+ -i, --input 	Specify new input file (Default blank)
+
+

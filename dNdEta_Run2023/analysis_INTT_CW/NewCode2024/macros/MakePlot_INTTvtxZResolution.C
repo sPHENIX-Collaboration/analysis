@@ -3,7 +3,7 @@
 int MakePlot_INTTvtxZResolution()
 {
     bool isTH1D = true;
-    std::string input_file_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_ananew_20250131/Run4/EvtVtxZ/completed/VtxZDist/completed"; 
+    std::string input_file_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/completed/VtxZDist/completed"; 
     std::string input_file_name = "MC_vtxZDist_VtxZQA_merged.root";
     std::string target_plot_name = "h1D_INTTvtxZ_resolution_HighNClus";
     std::string output_directory = input_file_directory;
@@ -17,7 +17,7 @@ int MakePlot_INTTvtxZResolution()
         // {0.2, 0.9, "The cluster pairs post the VtxZ linking requirement are filled"},
 
         {0.22, 0.9, "Au+Au 200 GeV"},
-        {0.22, 0.86, "HIJING"},
+        {0.22, 0.86, "HIJING"},   // todo: ----------> Change this one if needed
         {0.22, 0.82, "NClus > 500"},
         // {0.22, 0.82, "Centrality 0-50%"},
         // {0.22, 0.78, "|INTT vtxZ| #leq 30 cm"}
@@ -26,7 +26,7 @@ int MakePlot_INTTvtxZResolution()
     bool isSetLogY = false;
     bool isSetLogZ = false;
     double y_min = 0;
-    double y_max = 50000;
+    double y_max = 100000;
     bool set_X_505 = true;
     bool DoGausFit = true;
 

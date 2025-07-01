@@ -27,9 +27,9 @@
 #include <g4centrality/PHG4CentralityReco.h>
 #include <trackreco/PHTruthVertexing.h>
 
-#include "calotrigger/MinimumBiasClassifier.h" //! change it to <> after the PR is merged
 #include <caloreco/CaloTowerBuilder.h>
 #include <caloreco/CaloTowerCalib.h>
+#include <calotrigger/MinimumBiasClassifier.h>
 #include <centrality/CentralityReco.h>
 #include <globalvertex/GlobalVertexReco.h>
 #include <mbd/MbdReco.h>
@@ -120,27 +120,43 @@ int Fun4All_G4_sPHENIX(                           //
     {
         if (generator == "HIJING")
         {
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.457/HIJING/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root"; // 500K events
+            // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.457/HIJING/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root"; // 500K events
             // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.457/HIJING/fullSim/magOff/detectorAligned/dstSet_00001/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root"; // 500K events, adding 40% of strange particles
             // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.457/HIJING/fullSim/magOff/detectorAligned/dstSet_00002/dNdeta-sim-HIJING-000-" + std::string(TString::Format("%05d", process).Data()) + ".root"; // 500K events, enable z-clustering
-            INPUTREADHITS::filename[0] = infile;
+
+            // Official production - nominal
+            // INPUTREADHITS::filename[0] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrhit/run0026/DST_TRUTH_sHijing_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            // INPUTREADHITS::filename[1] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrhit/run0026/DST_TRKR_HIT_sHijing_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            // INPUTREADHITS::filename[2] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrcluster/run0026/DST_TRKR_CLUSTER_sHijing_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            // INPUTREADHITS::filename[3] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/mbdepd/run0026/DST_MBD_EPD_sHijing_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+
+            // Official production - enhanced strangeness
+            INPUTREADHITS::filename[0] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrhit/run0027/DST_TRUTH_sHijing_0_20fm-0000000027-" + std::string(TString::Format("%06d", process).Data()) + ".root";            // Official production, MDC2
+            INPUTREADHITS::filename[1] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrhit/run0027/DST_TRKR_HIT_sHijing_0_20fm-0000000027-" + std::string(TString::Format("%06d", process).Data()) + ".root";         // Official production, MDC2
+            INPUTREADHITS::filename[2] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/trkrcluster/run0027/DST_TRKR_CLUSTER_sHijing_0_20fm-0000000027-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            INPUTREADHITS::filename[3] = "/sphenix/lustre01/sphnxpro/mdc2/shijing_hepmc/fm_0_20/nopileup/mbdepd/run0027/DST_MBD_EPD_sHijing_0_20fm-0000000027-" + std::string(TString::Format("%06d", process).Data()) + ".root";           // Official production, MDC2
         }
         else if (generator == "EPOS")
         {
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.419/EPOS/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-EPOS-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
+            // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.419/EPOS/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-EPOS-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
 
-            INPUTREADHITS::filename[0] = infile;
+            INPUTREADHITS::filename[0] = "/sphenix/lustre01/sphnxpro/mdc2/epos/nopileup/trkrhit/run0026/DST_TRUTH_epos_0_153fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";            // Official production, MDC2
+            INPUTREADHITS::filename[1] = "/sphenix/lustre01/sphnxpro/mdc2/epos/nopileup/trkrhit/run0026/DST_TRKR_HIT_epos_0_153fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";         // Official production, MDC2
+            INPUTREADHITS::filename[2] = "/sphenix/lustre01/sphnxpro/mdc2/epos/nopileup/trkrcluster/run0026/DST_TRKR_CLUSTER_epos_0_153fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            INPUTREADHITS::filename[3] = "/sphenix/lustre01/sphnxpro/mdc2/epos/nopileup/mbdepd/run0026/DST_MBD_EPD_epos_0_153fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";           // Official production, MDC2
         }
         else if (generator == "AMPT")
         {
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.419/AMPT/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-AMPT-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
+            // infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.419/AMPT/fullSim/magOff/detectorMisaligned/dstSet_00000/dNdeta-sim-AMPT-000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
 
-            INPUTREADHITS::filename[0] = infile;
+            INPUTREADHITS::filename[0] = "/sphenix/lustre01/sphnxpro/mdc2/ampt/nopileup/trkrhit/run0026/DST_TRUTH_ampt_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";            // Official production, MDC2
+            INPUTREADHITS::filename[1] = "/sphenix/lustre01/sphnxpro/mdc2/ampt/nopileup/trkrhit/run0026/DST_TRKR_HIT_ampt_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";         // Official production, MDC2
+            INPUTREADHITS::filename[2] = "/sphenix/lustre01/sphnxpro/mdc2/ampt/nopileup/trkrcluster/run0026/DST_TRKR_CLUSTER_ampt_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root"; // Official production, MDC2
+            INPUTREADHITS::filename[3] = "/sphenix/lustre01/sphnxpro/mdc2/ampt/nopileup/mbdepd/run0026/DST_MBD_EPD_ampt_0_20fm-0000000026-" + std::string(TString::Format("%06d", process).Data()) + ".root";           // Official production, MDC2
         }
         else if (generator == "SIMPLE")
         {
-            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.466/SIMPLE/pi-/fullSim/magOff/detectorAligned/dstSet_00000/dNdeta-sim-SIMPLE-pi--000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
-
+            infile = "/sphenix/tg/tg01/bulk/dNdeta_INTT_run2023/data/simulation/ana.474/SIMPLE/e-/fullSim/magOff/detectorAligned/dstSet_00001/dNdeta-sim-SIMPLE-e--000-" + std::string(TString::Format("%05d", process).Data()) + ".root";
             INPUTREADHITS::filename[0] = infile;
         }
         else
@@ -226,9 +242,31 @@ int Fun4All_G4_sPHENIX(                           //
 
         CentralityReco *cr = new CentralityReco();
         cr->Verbosity(INT_MAX - 1);
-        cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/scales/cdb_centrality_scale_1.root");
-        cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_1.root");
-        cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_1.root");
+        if (generator == "HIJING")
+        {
+            cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/scales/cdb_centrality_scale_1.root");
+            cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_1.root");
+            cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_1.root");
+        }
+        else if (generator == "EPOS")
+        {
+            cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_scale_epos_magoff.root");
+            cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_epos_magoff.root");
+            cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_epos_magoff.root");
+        }
+        else if (generator == "AMPT")
+        {
+            cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_scale_ampt_magoff.root");
+            cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_ampt_magoff.root");
+            cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_ampt_magoff.root");
+        }
+        else
+        {
+            std::cout << "Generator " << generator << " is not [HIJING, EPOS, AMPT]. Use HIJING as default" << std::endl;
+            cr->setOverwriteScale("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/scales/cdb_centrality_scale_1.root");
+            cr->setOverwriteVtx("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/vertexscales/cdb_centrality_vertex_scale_1.root");
+            cr->setOverwriteDivs("/sphenix/user/dlis/Projects/centrality/cdb/calibrations/divs/cdb_centrality_1.root");
+        }
         se->registerSubsystem(cr);
     }
 
@@ -249,12 +287,14 @@ int Fun4All_G4_sPHENIX(                           //
     dNdEtaINTT *myAnalyzer = new dNdEtaINTT("dNdEtaAnalyzer", outputFile, rundata);
     myAnalyzer->GetINTTdata(getINTTData || !rundata);
     myAnalyzer->GetRecoCluster(getINTTData || !rundata);
+    myAnalyzer->GetTruthCluster(getINTTData || !rundata);
     myAnalyzer->GetInttRawHit(false);
-    myAnalyzer->GetTrkrHit(getINTTData || !rundata);
+    myAnalyzer->GetTrkrHit(getINTTData || !rundata); // disable for the official production, no TRKR_HITSET node
     myAnalyzer->GetCentrality(getCentralityData);
     // bool getPMTinfo = getCentralityData && false;
     myAnalyzer->GetPMTInfo(getCentralityData);
     myAnalyzer->GetPHG4(!rundata);
+    myAnalyzer->GetAllPHG4(!rundata);
     if (!rundata)
     {
         if (generator == "SIMPLE")

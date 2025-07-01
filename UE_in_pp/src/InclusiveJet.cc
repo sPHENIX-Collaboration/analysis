@@ -32,6 +32,24 @@
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawClusterUtility.h>
 #include <calobase/RawTowerGeomContainer.h>
+#include <calobase/RawTowerGeomContainer_Cylinderv1.h>
+
+#include <trackbase_historic/SvtxTrack.h>
+#include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxTrackState.h>
+#include <trackbase/TrkrCluster.h>
+#include <trackbase/TrkrClusterv3.h>
+#include <trackbase/TrkrClusterv4.h>
+#include <trackbase/TrkrHit.h>
+#include <trackbase/TrkrHitSetContainer.h>
+#include <trackbase/TrkrDefs.h>
+#include <trackbase/ActsGeometry.h>
+#include <trackbase/ClusterErrorPara.h>
+#include <trackbase/TpcDefs.h>
+#include <trackbase/TrkrClusterContainer.h>
+#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrClusterHitAssoc.h>
+#include <trackbase/TrkrClusterIterationMapv1.h>
 
 #include <TTree.h>
 #include <iostream>
@@ -60,15 +78,20 @@ InclusiveJet::InclusiveJet(const std::string& recojetname, const std::string& tr
   , m_doEmcalClusters(0)
   , m_doTopoclusters(0)
   , m_doSeeds(0)
+  , m_doTracks(0)
   , m_T(nullptr)
   , m_event(-1)
   , m_nTruthJet(-1)
   , m_nJet(-1)
+  , m_triggerVector()
   , m_nComponent()
   , m_eta()
   , m_phi()
   , m_e()
   , m_pt()
+  , m_jetEmcalE()
+  , m_jetIhcalE()
+  , m_jetOhcalE()
   , m_truthNComponent()
   , m_truthEta()
   , m_truthPhi()
@@ -114,6 +137,10 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("phi", &m_phi);
   m_T->Branch("e", &m_e);
   m_T->Branch("pt", &m_pt);
+
+  m_T->Branch("jetEmcalE", &m_jetEmcalE);
+  m_T->Branch("jetIhcalE", &m_jetIhcalE);
+  m_T->Branch("jetOhcalE", &m_jetOhcalE);
 
   if(m_doTruthJets){
     m_T->Branch("nTruthJet", &m_nTruthJet);
@@ -181,7 +208,11 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("cluster_e",m_cluster_e,"cluster_e[clsmult]/F");
     m_T->Branch("cluster_eta",m_cluster_eta,"cluster_eta[clsmult]/F");
     m_T->Branch("cluster_phi",m_cluster_phi,"cluster_phi[clsmult]/F");
-
+    m_T->Branch("cluster_ntowers",m_cluster_ntowers,"cluster_ntowers[clsmult]/I");
+    m_T->Branch("cluster_tower_e",m_cluster_tower_e,"cluster_tower_e[clsmult][500]/F");
+    m_T->Branch("cluster_tower_calo",m_cluster_tower_calo,"cluster_tower_calo[clsmult][500]/I");
+    m_T->Branch("cluster_tower_ieta",m_cluster_tower_ieta,"cluster_tower_ieta[clsmult][500]/I");
+    m_T->Branch("cluster_tower_iphi",m_cluster_tower_iphi,"cluster_tower_iphi[clsmult][500]/I");
   }
 
   if(m_doTruth) {
@@ -192,6 +223,34 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("truthpar_eta",truthpar_eta,"truthpar_eta[truthpar_n]/F");
     m_T->Branch("truthpar_phi",truthpar_phi,"truthpar_phi[truthpar_n]/F");
     m_T->Branch("truthpar_pid",truthpar_pid,"truthpar_pid[truthpar_n]/I");
+  }
+
+  if(m_doTracks) {
+    m_T->Branch("trkmult",&m_trkmult,"trkmult/I");
+    m_T->Branch("tr_p",m_tr_p,"tr_p[trkmult]/F");
+    m_T->Branch("tr_pt",m_tr_pt,"tr_pt[trkmult]/F");
+    m_T->Branch("tr_eta",m_tr_eta,"tr_eta[trkmult]/F");
+    m_T->Branch("tr_phi",m_tr_phi,"tr_phi[trkmult]/F");
+    m_T->Branch("tr_charge",m_tr_charge,"tr_charge[trkmult]/I");
+    m_T->Branch("tr_chisq",m_tr_chisq,"tr_chisq[trkmult]/F");
+    m_T->Branch("tr_ndf",m_tr_ndf,"tr_ndf[trkmult]/I");
+    m_T->Branch("tr_nintt",m_tr_nintt,"tr_nintt[trkmult]/I");
+    m_T->Branch("tr_nmaps",m_tr_nmaps,"tr_nmaps[trkmult]/I");
+    m_T->Branch("tr_ntpc",m_tr_ntpc,"tr_ntpc[trkmult]/I");
+    m_T->Branch("tr_quality",m_tr_quality,"tr_quality[trkmult]/F");
+    m_T->Branch("tr_vertex_id",m_tr_vertex_id,"tr_vertex_id[trkmult]/I");
+    m_T->Branch("tr_cemc_eta",m_tr_cemc_eta,"tr_cemc_eta[trkmult]/F");
+    m_T->Branch("tr_cemc_phi",m_tr_cemc_phi,"tr_cemc_phi[trkmult]/F");
+    m_T->Branch("tr_ihcal_eta",m_tr_ihcal_eta,"tr_ihcal_eta[trkmult]/F");
+    m_T->Branch("tr_ihcal_phi",m_tr_ihcal_phi,"tr_ihcal_phi[trkmult]/F");
+    m_T->Branch("tr_ohcal_eta",m_tr_ohcal_eta,"tr_ohcal_eta[trkmult]/F");
+    m_T->Branch("tr_ohcal_phi",m_tr_ohcal_phi,"tr_ohcal_phi[trkmult]/F");
+    m_T->Branch("tr_outer_cemc_eta",m_tr_outer_cemc_eta,"tr_outer_cemc_eta[trkmult]/F");
+    m_T->Branch("tr_outer_cemc_phi",m_tr_outer_cemc_phi,"tr_outer_cemc_phi[trkmult]/F");
+    m_T->Branch("tr_outer_ihcal_eta",m_tr_outer_ihcal_eta,"tr_outer_ihcal_eta[trkmult]/F");
+    m_T->Branch("tr_outer_ihcal_phi",m_tr_outer_ihcal_phi,"tr_outer_ihcal_phi[trkmult]/F");
+    m_T->Branch("tr_outer_ohcal_eta",m_tr_outer_ohcal_eta,"tr_outer_ohcal_eta[trkmult]/F");
+    m_T->Branch("tr_outer_ohcal_phi",m_tr_outer_ohcal_phi,"tr_outer_ohcal_phi[trkmult]/F");
   }
   
   return Fun4AllReturnCodes::EVENT_OK;
@@ -362,6 +421,29 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
+  if(m_doTracks){
+    RawTowerGeomContainer_Cylinderv1* cemcGeomContainer = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
+    RawTowerGeomContainer_Cylinderv1* ihcalGeomContainer = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
+    RawTowerGeomContainer_Cylinderv1* ohcalGeomContainer = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
+
+    if(!cemcGeomContainer){
+      std::cout << "ERROR: TOWERGEOM_CEMC not found" << std::endl;
+    }
+    if(!ihcalGeomContainer){
+      std::cout << "ERROR: TOWERGEOM_HCALIN not found" << std::endl;
+    }
+    if(!ohcalGeomContainer){
+      std::cout << "ERROR: TOWERGEOM_HCALOUT not found" << std::endl;
+    }
+
+    m_cemcRadius = cemcGeomContainer->get_radius();
+    m_ihcalRadius = ihcalGeomContainer->get_radius();
+    m_ohcalRadius = ohcalGeomContainer->get_radius();
+    m_cemcOuterRadius = cemcGeomContainer->get_radius() + cemcGeomContainer->get_thickness();
+    m_ihcalOuterRadius = ihcalGeomContainer->get_radius() + ihcalGeomContainer->get_thickness();
+    m_ohcalOuterRadius = ohcalGeomContainer->get_radius() + ohcalGeomContainer->get_thickness();
+  }
+
   //get reco jets
   m_nJet = 0;
   float leadpt = 0;
@@ -407,6 +489,10 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
           ohcalE += tower->get_energy();
         }
       }
+
+      m_jetEmcalE.push_back(emcalE);
+      m_jetIhcalE.push_back(ihcalE);
+      m_jetOhcalE.push_back(ohcalE);
 
       if (ohcalE/m_e.back() > 0.9) {
         std::cout << "event " << m_event << " emcalE " << emcalE << " ohcalE " << ohcalE << " totalE " << emcalE + ihcalE + ohcalE << " Jet E " << m_e.back() << std::endl;
@@ -591,6 +677,24 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         m_cluster_e[m_clsmult] = cluster->get_energy();
         m_cluster_eta[m_clsmult] = RawClusterUtility::GetPseudorapidity(*cluster, origin);
         m_cluster_phi[m_clsmult] = RawClusterUtility::GetAzimuthAngle(*cluster, origin);
+        m_cluster_ntowers[m_clsmult] = (int)cluster->getNTowers();
+        int m_clstower = 0;
+        for (const auto& [tower_id, tower_e] : cluster->get_towermap())
+        {
+            m_cluster_tower_calo[m_clsmult][m_clstower] = static_cast<int>(RawTowerDefs::decode_caloid(tower_id));
+            m_cluster_tower_ieta[m_clsmult][m_clstower]  = RawTowerDefs::decode_index1(tower_id);
+            m_cluster_tower_iphi[m_clsmult][m_clstower]  = RawTowerDefs::decode_index2(tower_id);
+            m_cluster_tower_e[m_clsmult][m_clstower] = tower_e;
+            m_clstower++;
+            /*
+            std::cout << "Tower ID: " << tower_id
+                      << " | Tower E: " << tower_e
+                      << " | Calorimeter ID: " << static_cast<int>(calo_id)
+                      << " | Index1: " << index1
+                      << " | Index2: " << index2
+                      << std::endl;
+            */
+        }
         m_clsmult++;
         if (m_clsmult == 10000) { break; }
       } 
@@ -620,6 +724,189 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       }
     }
   }
+
+  if(m_doTracks) {
+    SvtxTrackMap *trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
+    // Check whether SvtxTrackMap is present in the node tree or not
+    if (!trackmap) {
+      std::cout << PHWHERE << "SvtxTrackMap node is missing, can't collect tracks" << std::endl;
+      return Fun4AllReturnCodes::EVENT_OK;
+    }
+
+    /*
+    SvtxVertexMap *vertexmap = findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
+    if (!vertexmap) {
+      std::cout << PHWHERE << "SvtxVertexMap node is missing, can't collect tracks" << std::endl;
+      return;
+    }
+    */
+
+    /*
+    // EvalStack for truth track matching
+    if(!m_svtxEvalStack){ m_svtxEvalStack = new SvtxEvalStack(topNode); }
+    m_svtxEvalStack->next_event(topNode);
+    SvtxTrackEval *trackeval = m_svtxEvalStack->get_track_eval();
+    */
+
+    m_trkmult = 0;
+    // Looping over tracks in an event
+    for(auto entry : *trackmap) {
+      SvtxTrack *track = entry.second;
+
+      m_tr_p[m_trkmult] = track->get_p();
+      m_tr_pt[m_trkmult] = track->get_pt();
+      m_tr_eta[m_trkmult] = track->get_eta();
+      m_tr_phi[m_trkmult] = track->get_phi();
+    
+      m_tr_charge[m_trkmult] = track->get_charge();
+      m_tr_chisq[m_trkmult] = track->get_chisq();
+      m_tr_ndf[m_trkmult] = track->get_ndf();
+      m_tr_quality[m_trkmult] = track->get_quality();
+      m_tr_vertex_id[m_trkmult] = track->get_vertex_id();
+
+      TrackSeed *silseed = track->get_silicon_seed();
+      TrackSeed *tpcseed = track->get_tpc_seed();
+
+      m_tr_nmaps[m_trkmult] = 0;
+      m_tr_nintt[m_trkmult] = 0;
+      m_tr_ntpc[m_trkmult] = 0;
+
+      if(tpcseed) {
+        for (TrackSeed::ConstClusterKeyIter iter = tpcseed->begin_cluster_keys(); iter != tpcseed->end_cluster_keys(); ++iter) {
+          TrkrDefs::cluskey cluster_key = *iter;
+          unsigned int layer = TrkrDefs::getLayer(cluster_key);
+          if (_nlayers_maps > 0 && layer < _nlayers_maps) {
+            m_tr_nmaps[m_trkmult]++;
+          }
+          if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) {
+            m_tr_nintt[m_trkmult]++;
+          }
+          if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) {
+            m_tr_ntpc[m_trkmult]++;
+          }
+        }
+      } 
+
+      if(silseed) {
+        for (TrackSeed::ConstClusterKeyIter iter = silseed->begin_cluster_keys(); iter != silseed->end_cluster_keys(); ++iter) {
+          TrkrDefs::cluskey cluster_key = *iter;
+          unsigned int layer = TrkrDefs::getLayer(cluster_key);
+          if (_nlayers_maps > 0 && layer < _nlayers_maps) {
+            m_tr_nmaps[m_trkmult]++;
+          }
+          if (_nlayers_intt > 0 && layer >= _nlayers_maps && layer < _nlayers_maps + _nlayers_intt) {
+            m_tr_nintt[m_trkmult]++;
+          }
+          if (_nlayers_tpc > 0 && layer >= (_nlayers_maps + _nlayers_intt) && layer < (_nlayers_maps + _nlayers_intt + _nlayers_tpc)) {
+            m_tr_ntpc[m_trkmult]++;
+            }
+          }
+        }
+
+      // Project tracks to CEMC
+      if(track->find_state(m_cemcRadius) != track->end_states()){
+        m_tr_cemc_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_cemcRadius)->second);
+        m_tr_cemc_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_cemcRadius)->second);
+      }
+      else{
+        m_tr_cemc_eta[m_trkmult] = -999;
+        m_tr_cemc_phi[m_trkmult] = -999;
+      }
+      
+      // Project tracks to inner HCAL
+      if(track->find_state(m_ihcalRadius) != track->end_states()){
+        m_tr_ihcal_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_ihcalRadius)->second);
+        m_tr_ihcal_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_ihcalRadius)->second);
+      }
+      else{
+        m_tr_ihcal_eta[m_trkmult] = -999;
+        m_tr_ihcal_phi[m_trkmult] = -999;
+      }
+
+      // Project tracks to outer HCAL
+      if(track->find_state(m_ohcalRadius) != track->end_states()){
+        m_tr_ohcal_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_ohcalRadius)->second);
+        m_tr_ohcal_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_ohcalRadius)->second);
+      }
+      else{
+        m_tr_ohcal_eta[m_trkmult] = -999;
+        m_tr_ohcal_phi[m_trkmult] = -999;
+      }
+
+      if(track->find_state(m_cemcOuterRadius) != track->end_states()){
+        m_tr_outer_cemc_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_cemcOuterRadius)->second);
+        m_tr_outer_cemc_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_cemcOuterRadius)->second);
+      }
+      else{
+        m_tr_outer_cemc_eta[m_trkmult] = -999;
+        m_tr_outer_cemc_phi[m_trkmult] = -999;
+      }
+      
+      // Project tracks to inner HCAL
+      if(track->find_state(m_ihcalOuterRadius) != track->end_states()){
+        m_tr_outer_ihcal_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_ihcalOuterRadius)->second);
+        m_tr_outer_ihcal_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_ihcalOuterRadius)->second);
+      }
+      else{
+        m_tr_outer_ihcal_eta[m_trkmult] = -999;
+        m_tr_outer_ihcal_phi[m_trkmult] = -999;
+      }
+
+      // Project tracks to outer HCAL
+      if(track->find_state(m_ohcalOuterRadius) != track->end_states()){
+        m_tr_outer_ohcal_eta[m_trkmult] = calculateProjectionEta( track->find_state(m_ohcalOuterRadius)->second);
+        m_tr_outer_ohcal_phi[m_trkmult] = calculateProjectionPhi( track->find_state(m_ohcalOuterRadius)->second);
+      }
+      else{
+        m_tr_outer_ohcal_eta[m_trkmult] = -999;
+        m_tr_outer_ohcal_phi[m_trkmult] = -999;
+      }
+
+      /*
+      // Matching SvtxTracks to G4 truth
+      PHG4Particle *truthtrack = trackeval->max_truth_particle_by_nclusters(track);
+
+      if(truthtrack){
+        m_tr_truth_pid[m_trkmult] =truthtrack->get_pid();
+        m_tr_truth_is_primary[m_trkmult] =truthinfo->is_primary(truthtrack);
+    
+        m_tr_truth_e[m_trkmult] =truthtrack->get_e();
+
+        float px = truthtrack->get_px();
+        float py = truthtrack->get_py();
+        float pz = truthtrack->get_pz();
+
+        m_tr_truth_pt[m_trkmult] = sqrt(px*px+py*py);
+        m_tr_truth_phi[m_trkmult] = atan2(py, px);
+        m_tr_truth_eta[m_trkmult] = atanh(pz/sqrt(px*px+py*py+pz*pz));
+        m_tr_truth_track_id[m_trkmult] = truthtrack->get_track_id();
+      } else{
+        m_tr_truth_pid[m_trkmult] = -999;
+        m_tr_truth_is_primary[m_trkmult] = -999;
+        m_tr_truth_e[m_trkmult] = -999;
+        m_tr_truth_pt[m_trkmult] = -999;
+        m_tr_truth_eta[m_trkmult] = -999;
+        m_tr_truth_phi[m_trkmult] = -999;
+        m_tr_truth_track_id[m_trkmult] = -999;
+      }
+      */
+      m_trkmult++;
+    }
+
+    /*
+    m_vtxmult = 0;
+    for(auto entry : *vertexmap)
+    {
+      SvtxVertex *vertex = entry.second;
+      
+      m_vertex_id[m_vtxmult] = vertex->get_id();
+      m_vx[m_vtxmult] = vertex->get_x();
+      m_vy[m_vtxmult] = vertex->get_y();
+      m_vz[m_vtxmult] = vertex->get_z();
+      m_vtxmult++;
+    }
+    */
+  }
   
   //fill the tree
   m_T->Fill();
@@ -636,6 +923,10 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   m_phi.clear();
   m_e.clear();
   m_pt.clear();
+
+  m_jetEmcalE.clear();
+  m_jetIhcalE.clear();
+  m_jetOhcalE.clear();
 
   m_truthNComponent.clear();
   m_truthEta.clear();
@@ -658,12 +949,13 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   
   m_triggerVector.clear();
 
-  m_zvtx = 0;
+  m_zvtx = -9999;
   m_emcaln = 0;
   m_ihcaln = 0;
   m_ohcaln = 0;
   m_clsmult = 0;
   m_emcal_clsmult = 0;
+  m_trkmult = 0;
 
   for (int i = 0; i < 24576; i++) {
     m_emcale[i] = 0;
@@ -704,16 +996,67 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
     truthpar_pid[i] = 0;
   }
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < 2000; i++) {
     m_cluster_e[i] = 0;
     m_cluster_eta[i] = 0;
     m_cluster_phi[i] = 0;
+    m_cluster_ntowers[i] = 0;
     m_emcal_cluster_e[i] = 0;
     m_emcal_cluster_eta[i] = 0;
     m_emcal_cluster_phi[i] = 0;
+    for (int j = 0; j < 500; j++) {
+      m_cluster_tower_calo[i][j] = 0;
+      m_cluster_tower_ieta[i][j] = 0;
+      m_cluster_tower_iphi[i][j] = 0;
+      m_cluster_tower_e[i][j] = 0;
+    }
+  }
+
+  for (int i = 0; i < 2000; i++) {
+    m_tr_p[i] = 0;
+    m_tr_pt[i] = 0;
+    m_tr_eta[i] = 0;
+    m_tr_phi[i] = 0;
+    m_tr_charge[i] = 0;
+    m_tr_chisq[i] = 0;
+    m_tr_ndf[i] = 0;
+    m_tr_nintt[i] = 0;
+    m_tr_nmaps[i] = 0;
+    m_tr_ntpc[i] = 0;
+    m_tr_quality[i] = 0;
+    m_tr_vertex_id[i] = 0;
+    m_tr_cemc_eta[i] = 0; // Projection of track to calorimeters
+    m_tr_cemc_phi[i] = 0;
+    m_tr_ihcal_eta[i] = 0;
+    m_tr_ihcal_phi[i] = 0;
+    m_tr_ohcal_eta[i] = 0;
+    m_tr_ohcal_phi[i] = 0;
+    m_tr_outer_cemc_eta[i] = 0;
+    m_tr_outer_cemc_phi[i] = 0;
+    m_tr_outer_ihcal_eta[i] = 0;
+    m_tr_outer_ihcal_phi[i] = 0;
+    m_tr_outer_ohcal_eta[i] = 0;
+    m_tr_outer_ohcal_phi[i] = 0;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
+}
+
+float InclusiveJet::calculateProjectionEta(SvtxTrackState* projectedState){
+  float x = projectedState->get_x();// - initialState->get_x();
+  float y = projectedState->get_y();// - initialState->get_y();
+  float z = projectedState->get_z();// - initialState->get_z();
+
+  float theta = acos(z / sqrt(x*x + y*y + z*z) );
+
+  return -log( tan(theta/2.0) );
+}
+
+float InclusiveJet::calculateProjectionPhi(SvtxTrackState* projectedState){
+  float x = projectedState->get_x();// - initialState->get_x();
+  float y = projectedState->get_y();// - initialState->get_y();
+ 
+  return atan2(y,x);
 }
 
 //____________________________________________________________________________..

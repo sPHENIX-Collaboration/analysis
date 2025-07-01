@@ -149,6 +149,8 @@ class dNdEtaINTT : public SubsysReco
 
     void GetRecoCluster(bool b) { _get_reco_cluster = b; }
 
+    void GetTruthCluster(bool b) { _get_truth_cluster = b; }
+
     void GetINTTdata(bool b) { _get_intt_data = b; }
 
     void GetCentrality(bool b) { _get_centrality = b; }
@@ -161,6 +163,8 @@ class dNdEtaINTT : public SubsysReco
 
     void GetPHG4(bool b) { _get_phg4_info = b; }
 
+    void GetAllPHG4(bool b) { _get_allphg4_info = b; }
+
     void GetTrigger(bool b) { _get_trigger_info = b; }
 
   private:
@@ -172,6 +176,7 @@ class dNdEtaINTT : public SubsysReco
     void GetInttRawHitInfo(PHCompositeNode *topNode);
     void GetTrkrHitInfo(PHCompositeNode *topNode);
     void GetPHG4Info(PHCompositeNode *topNode);
+    void GetAllPHG4Info(PHCompositeNode *topNode);
     void GetTriggerInfo(PHCompositeNode *topNode);
     std::vector<int> GetAncestors(PHG4Particle *p);
 
@@ -183,6 +188,7 @@ class dNdEtaINTT : public SubsysReco
     bool _get_inttrawhit;
     bool _get_trkr_hit;
     bool _get_phg4_info;
+    bool _get_allphg4_info;
     bool _get_pmt_info;
     bool _get_trigger_info;
 
@@ -310,7 +316,7 @@ class dNdEtaINTT : public SubsysReco
     std::vector<float> TrkrHit_truthHit_y1_;
     std::vector<float> TrkrHit_truthHit_z1_;
 
-    // PHG4 information (from all PHG4Particles)
+    // PHG4 information (from primary PHG4Particles)
     int NPrimaryG4P_;
     int NPrimaryG4P_promptChargeHadron_;
     std::vector<float> PrimaryG4P_Pt_;
@@ -330,6 +336,15 @@ class dNdEtaINTT : public SubsysReco
     std::vector<float> PHG4Hit_y1_;
     std::vector<float> PHG4Hit_z1_;
     std::vector<float> PHG4Hit_edep_;
+
+    // All PHG4 information (primary + secondary PHG4Particles)
+    int NAllG4P_;
+    std::vector<float> G4P_Pt_;
+    std::vector<float> G4P_Eta_;
+    std::vector<float> G4P_Phi_;
+    std::vector<float> G4P_E_;
+    std::vector<int> G4P_PID_;
+    std::vector<int> G4P_trackID_;
 
     // GL1 Packet trigger information
     uint64_t GL1Packet_BCO_ = 0;

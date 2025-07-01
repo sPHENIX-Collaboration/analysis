@@ -72,7 +72,8 @@ void makehist(TString infname, TString outfname)
     TH2F *hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH2F("hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 350, -3.5, 3.5, 420, -21, 21);
     TH2F *hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH2F("hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 350, -3.5, 3.5, 350, -3.5, 3.5);
 
-    vector<float> centrality_cut = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    // vector<float> centrality_cut = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    vector<float> centrality_cut = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100};
     vector<TH1F *> hM_dEta_reco_Centrality;
     vector<TH1F *> hM_dPhi_reco_Centrality;
     vector<TH1F *> hM_dR_reco_Centrality;

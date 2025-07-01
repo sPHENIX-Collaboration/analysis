@@ -210,6 +210,16 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PHG4Hit_y1", &PHG4Hit_y1_);
             outtree->Branch("PHG4Hit_z1", &PHG4Hit_z1_);
             outtree->Branch("PHG4Hit_edep", &PHG4Hit_edep_);
+            if (_get_allphg4_info)
+            {
+                outtree->Branch("NAllG4P", &NAllG4P_);
+                outtree->Branch("G4P_Pt", &G4P_Pt_);
+                outtree->Branch("G4P_Eta", &G4P_Eta_);
+                outtree->Branch("G4P_Phi", &G4P_Phi_);
+                outtree->Branch("G4P_E", &G4P_E_);
+                outtree->Branch("G4P_PID", &G4P_PID_);
+                outtree->Branch("G4P_trackID", &G4P_trackID_);
+            }
             // Truth cluster information & matching with reco clusters
             outtree->Branch("NTruthLayers", &NTruthLayers_);
             outtree->Branch("ClusTruthCKeys", &ClusTruthCKeys_);
@@ -388,6 +398,9 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
 
             if (_get_phg4_info)
                 GetPHG4Info(topNode);
+
+            if (_get_allphg4_info)
+                GetAllPHG4Info(topNode);
 
             if (_get_hepmc_info)
             {
@@ -1344,6 +1357,40 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
     }
 }
 //____________________________________________________________________________..
+void dNdEtaINTT::GetAllPHG4Info(PHCompositeNode *topNode)
+{
+    std::cout << __FILE__ << "::" << __func__ << "(): Get all PHG4 info." << std::endl;
+
+    m_truth_info = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+    if (!m_truth_info)
+    {
+        std::cout << PHWHERE << "Error, can't find G4TruthInfo" << std::endl;
+        exit(1);
+    }
+
+    const auto prange = m_truth_info->GetParticleRange();
+    for (auto iter = prange.first; iter != prange.second; ++iter)
+    {
+        PHG4Particle *ptcl = iter->second;
+        // particle->identify();
+        if (ptcl)
+        {
+            G4P_PID_.push_back(ptcl->get_pid());
+            G4P_trackID_.push_back(ptcl->get_track_id());
+
+            TLorentzVector p;
+            p.SetPxPyPzE(ptcl->get_px(), ptcl->get_py(), ptcl->get_pz(), ptcl->get_e());
+            G4P_Pt_.push_back(p.Pt());
+            G4P_Eta_.push_back(p.Eta());
+            G4P_Phi_.push_back(p.Phi());
+            G4P_E_.push_back(ptcl->get_e());
+        }
+    }
+
+    NAllG4P_ = G4P_PID_.size();
+}
+
+//____________________________________________________________________________..
 void dNdEtaINTT::ResetVectors()
 {
     CleanVec(ClusLayer_);
@@ -1430,6 +1477,12 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PHG4Hit_y1_);
     CleanVec(PHG4Hit_z1_);
     CleanVec(PHG4Hit_edep_);
+    CleanVec(G4P_Pt_);
+    CleanVec(G4P_Eta_);
+    CleanVec(G4P_Phi_);
+    CleanVec(G4P_E_);
+    CleanVec(G4P_PID_);
+    CleanVec(G4P_trackID_);
     CleanVec(firedTriggers_);
     CleanVec(firedTriggers_name_);
     CleanVec(firedTriggers_checkraw_);

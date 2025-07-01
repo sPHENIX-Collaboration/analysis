@@ -59,7 +59,8 @@ int RandomMerge(
     bool IsShuffle,
     int N_merged_files,
     string input_directory,
-    string input_filename
+    string input_filename,
+    bool mega_merge = false
 )
 {
     std::cout<<std::endl;
@@ -103,27 +104,59 @@ int RandomMerge(
 
     std::vector<std::vector<std::string>> list_splitted = RandomSplit(list, N_merged_files, IsShuffle);
 
+    // for (int i = 0; i < N_merged_files; i++)
+    // {
+    //     std::cout<<"list_splitted["<<i<<"].size(): "<<list_splitted[i].size()<<std::endl;
+
+    //     std::string all_in_one = "";
+
+    //     for (auto filename : list_splitted[i])
+    //     {
+    //         std::cout<<"filename: "<<filename<<std::endl;
+    //         all_in_one += filename + " ";
+    //     }
+
+    //     std::cout<<std::endl;
+    //     system(Form("time hadd %s/%s_merged%s.root %s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str(), all_in_one.c_str()));
+
+    //     system(Form("mkdir -p %s/merged_files_%s_%s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
+
+    //     for (auto filename : list_splitted[i])
+    //     {
+    //         system(Form("mv %s %s/merged_files_%s_%s", filename.c_str(), input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
+    //     }
+    // }
+
     for (int i = 0; i < N_merged_files; i++)
     {
+        std::cout<<std::endl;
         std::cout<<"list_splitted["<<i<<"].size(): "<<list_splitted[i].size()<<std::endl;
 
-        std::string all_in_one = "";
+        // std::string all_in_one = "";
 
-        for (auto filename : list_splitted[i])
-        {
-            std::cout<<"filename: "<<filename<<std::endl;
-            all_in_one += filename + " ";
-        }
-
-        std::cout<<std::endl;
-        system(Form("time hadd %s/%s_merged%s.root %s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str(), all_in_one.c_str()));
+        // for (auto filename : list_splitted[i])
+        // {
+        //     std::cout<<"filename: "<<filename<<std::endl;
+        //     all_in_one += filename + " ";
+        // }
 
         system(Form("mkdir -p %s/merged_files_%s_%s", input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
 
         for (auto filename : list_splitted[i])
         {
+            std::cout<<"filename: "<<filename<<std::endl;
             system(Form("mv %s %s/merged_files_%s_%s", filename.c_str(), input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
         }
+
+        std::string multi_thread_str = (list_splitted[i].size() > 16) ? "-j 8" : "";
+
+        std::cout<<std::endl;
+        system(Form("time hadd %s %s/%s_merged%s.root %s/merged_files_%s_%s/*.root", multi_thread_str.c_str(), input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str(), input_directory.c_str(), input_filename_no_number.c_str(), get_merged_suffix(i, N_merged_files).c_str()));
+    }
+
+    if (mega_merge && N_merged_files > 1)
+    {
+        system(Form("hadd %s/%s_merged.root %s/%s_merged_*.root", input_directory.c_str(), input_filename_no_number.c_str(), input_directory.c_str(), input_filename_no_number.c_str()));
     }
 
     system(Form("rm %s/file_list.txt", input_directory.c_str()));

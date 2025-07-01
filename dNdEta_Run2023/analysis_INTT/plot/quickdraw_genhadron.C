@@ -41,7 +41,7 @@ int GetMbinNum(const std::string &fstr)
 
 TH1D* GetCWHist(int Mbin)
 {
-    TFile *f = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run5/EvtVtxZ/FinalResult/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
+    TFile *f = new TFile(Form("/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin%d/Final_Mbin%d_00054280/Final_Mbin%d_00054280.root", Mbin, Mbin, Mbin), "READ");
     TH1D *h = (TH1D *)f->Get("h1D_dNdEta_truth");
     h->SetDirectory(0);
     f->Close();
@@ -55,7 +55,7 @@ void quickdraw_genhadron()
     system(Form("mkdir -p %s", plotdir.c_str()));
 
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df("minitree", "/sphenix/tg/tg01/hf/hjheng/ppg02/minitree/TrackletMinitree_Sim_HIJING_ananew_20250131/dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0/minitree_set1.root");
+    ROOT::RDataFrame df("minitree", "/sphenix/tg/tg01/hf/hjheng/ppg02/minitree/TrackletMinitree_Sim_HIJING_MDC2_ana467_20250225/dRcut0p5_NominalVtxZ_RandomClusSet0_clusAdcCutSet0_clusPhiSizeCutSet0/minitree_set2.root");
 
     for (int i = 0; i < ncent; i++)
     {
