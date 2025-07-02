@@ -181,7 +181,7 @@ int analyze(int rn, int nseg)
   for(int i=1; i<nseg+1; ++i)
     {
       //cout << "start" << endl;
-      TFile* file = TFile::Open(("/sphenix/tg/tg01/jets/jocl/trigcount/"+to_string(rn)+"/triggercounter_"+to_string(rn)+"_"+to_string(i)+".root").c_str());
+      TFile* file = TFile::Open(("/sphenix/tg/tg01/jets/jocl/trigcount/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+".root").c_str());
       //cout << "gettree" << endl;
       TTree* tree = (TTree*)file->Get("_tree");
       //cout << "gottree" << endl;
@@ -320,7 +320,7 @@ int analyze(int rn, int nseg)
       //cout << i << " " << sumgoodscaled[10] << " " << sumgoodscaled[18] << endl;
       if(i%10 == 0)
 	{
-	  cout << "Segment " << i << " " << tSeg << " " << (rB - rM) << " " << pSum << " " << seghiraw[i] - segloraw[i] << endl;
+	  cout << "Segment " << i << " " << tSeg << " " << (rB - rM) << " " << pSum << " " << seghiraw[10] - segloraw[10] << endl;
 	}
       //cout << "Run " << rn << " Segment " << i << " time: " << tSeg << " beam rate: " << rB << " bunches: " << nBunch <<" MBD live rate: " << rM << " Sum(n*p(n)): " << pSum << " lambda: " << -log(1-rM/rB) << endl
       //cout << i << endl;
