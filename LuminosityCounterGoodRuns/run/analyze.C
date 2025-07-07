@@ -165,25 +165,29 @@ int analyze(int rn, int nseg)
   long long unsigned int sumgoodraw[64] = {0};
   long long unsigned int totraw[64] = {0};
   
-  long long unsigned int trigcounts[3][64] = {0};
-  double embdlive[3] = {0};
+  long long unsigned int trigcounts[6][64] = {0};
+  double embdlive[5] = {0};
 
   long long unsigned int nevt = 0;
 
   double avgPS[64] = {0};
-  long long unsigned int tottrigcounts[3][64] = {0};
-  double totembdlive[3] = {0};
+  long long unsigned int tottrigcounts[6][64] = {0};
+  double totembdlive[5] = {0};
   //TH1D* zhist;
   bool gothist = false;
   float nmbdc = 0;
   float nblair = 0;
   float ttseg = 0;
+  int fillnum = get_fillnum(rn);
   for(int i=1; i<nseg+1; ++i)
     {
       //cout << "start" << endl;
-      TFile* file = TFile::Open(("/sphenix/tg/tg01/jets/jocl/trigcount/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+".root").c_str());
+      //cout << "test1" << endl;
+      TFile* file = TFile::Open(("/sphenix/user/jocl/projects/trigcount_files/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+".root").c_str());
+      //cout << "test2" << endl;
       //cout << "gettree" << endl;
       TTree* tree = (TTree*)file->Get("_tree");
+      //cout << "test3" << endl;
       //cout << "gottree" << endl;
       long long unsigned int segloraw[64] = {0};
       long long unsigned int seghiraw[64] = {0};
@@ -197,6 +201,7 @@ int analyze(int rn, int nseg)
 
       long long unsigned int segevt = 0;
       //cout << "setbranches" << endl;
+      //cout << "test4" << endl;
       tree->SetBranchAddress("badFlag",&badflag);
       tree->SetBranchAddress("startScal",segloscaled);
       tree->SetBranchAddress("endScal",seghiscaled);
@@ -209,8 +214,10 @@ int analyze(int rn, int nseg)
       tree->SetBranchAddress("eMBDlive",embdlive);
       tree->SetBranchAddress("startBCO",&startBCO);
       tree->SetBranchAddress("endBCO",&endBCO);
+      //cout << "test5" << endl;
       //cout << "getentry" << endl;
       tree->GetEntry(0);
+      //cout << "test6" << endl;
       //cout << "gotentry" << endl;
       float tSeg = (endBCO-startBCO)/(9.4e6);
       ttseg += tSeg;
@@ -222,7 +229,8 @@ int analyze(int rn, int nseg)
       //cout << endBCO << " " << startBCO << endl;
       //cout << badflag << endl;
       nevt += segevt;
-      int fillnum = get_fillnum(rn);
+
+      //cout << "test7" << endl;
       int nBunch = -1;
       for(int i=0; i<719; ++i)
         {
@@ -262,25 +270,7 @@ int analyze(int rn, int nseg)
 	      lastscaledscaler[j] = seghiscaled[j];
 	    }
 	}
-      //cout << "histdeal" << endl;
-      /*
-      if(!gothist && !badflag)
-	{
-	  zhist = ((TH1D*)file->Get("mbzhist"))->Clone();
-	  gothist = true;
-	}
-      else if(!badflag)
-	{
-	  zhist->Add((TH1D*)file->Get("mbzhist"));
-	}
-      else
-	{
-	  zhist->Add((TH1D*)file->Get("mbzhist"));
-	  cout << "RN " << rn << " seg " << i << " badflag up" << endl;
-	  //continue;
-	}
-      */
-      for(int j=0; j<3; ++j)
+      for(int j=0; j<5; ++j)
 	{
 	  totembdlive[j] += embdlive[j];
 	}
@@ -303,7 +293,7 @@ int analyze(int rn, int nseg)
       //cout << endl;
       for(int j=0; j<64; ++j)
 	{
-	  for(int k=0; k<3; ++k)
+	  for(int k=0; k<6; ++k)
 	    {
 	      tottrigcounts[k][j] += trigcounts[k][j]; //number of triggers actually in segment for three zvtx selections, all trigger bits
 	    }
@@ -340,51 +330,6 @@ int analyze(int rn, int nseg)
     }
 
 
-  /*
-  int njet_run = 0;
-  int njet_dijet = 0;
-  int njet_frac = 0;
-  float subjet_E, jet_E, dphi, zvtx, frcem, frcoh;
-  float jet_eta[10];
-  float jet_e[10];
-  int njet_event, isdijet;
-  TFile* rnroot = TFile::Open(("/sphenix/user/jocl/projects/run2024_earlydata/temp/output/chi2_hadd_trees/"+to_string(rn)+"_haddtree_calo.root").c_str());
-  if(rnroot)
-    {
-      TTree* rntree = (TTree*) rnroot->Get("jet_tree");
-      rntree->SetBranchAddress("isdijet",&isdijet);
-      rntree->SetBranchAddress("subjet_ET",&subjet_E);
-      rntree->SetBranchAddress("jet_ET",&jet_E);
-      rntree->SetBranchAddress("dphi",&dphi);
-      rntree->SetBranchAddress("jet_eta",jet_eta);
-      rntree->SetBranchAddress("jet_n",&njet_event);
-      rntree->SetBranchAddress("zvtx",&zvtx);
-      rntree->SetBranchAddress("jet_et",jet_e);
-      rntree->SetBranchAddress("frcem",&frcem);
-      rntree->SetBranchAddress("frcoh",&frcem);
-      for(int i=0; i<rntree->GetEntries(); ++i)
-	{
-	  rntree->GetEntry(i);
-	  for(int j=0; j<njet_event; ++j)
-	    {
-	      if((!isdijet || dphi < 3*M_PI/4 || subjet_E < 0.3*jet_E))break;
-	      if(abs(zvtx) > 30) break;
-	      //if((frcem > 0.9 || frcem < 0.1 || frcoh > 0.9 || frcoh < 0.1)) break;      
-	      if(check_bad_jet_eta(jet_eta[j],zvtx,0.4)) continue;
-	      if(jet_e[j] / cosh(jet_eta[j]) < 10) continue;
-	      
-	      
-	      njet_run++;
-	    }
-	  
-	}
-    }
-  //cout << "Run " << rn << " corrected jet 10 lumi: " << ((double)tottrigcounts[0][10])*avgPS[10]/avgPS[18]/26.1e9 << " pb^-1 uncorrected: " << ((double)tottrigcounts[0][10])*((double)(nmbdc))/sumgoodscaled[10]/avgPS[18]/26.1e9 << endl;
-  */
-  //int b10db = get_scaler(rn, 10);
-  //nt b18db = get_scaler(rn, 18);
-  //cout << "Fill: " << get_fillnum(rn) << " Run: " << rn << " Runtime (seconds): " << ttseg << " Scaled bit 10 (from DST): " << sumgoodscaled[10] << " Scaled bit 18 (from DST): " << sumgoodscaled[18] << " Scaled bit 10 (from DB): " << b10db << " Scaled bit 18 (from DB): " << b18db << endl;// " N_{jet}: " << njet_run << endl; 
-  //cout << "Run: " << rn << " MBDNS>=1 Live Triggers: " << nmbdc << " Pileup Correction Factor: " << ((double)nmbdc)/sumgoodlive[10] << " MBD Fraction < 30 cm: " << ((double)zhist->Integral(120,180))/zhist->Integral() << " N_{jet}: " << njet_run << " N_{jet} passing dijet cut: " << njet_dijet << " N_{jet} passing fraction cut: " << njet_frac << endl;
   TFile* outfile = TFile::Open(("triggeroutput_nblair_"+to_string(rn)+".root").c_str(),"RECREATE");
   outfile->cd();
   TTree* outt = new TTree("outt","A persevering date tree");
@@ -396,8 +341,8 @@ int analyze(int rn, int nseg)
   outt->Branch("sumgoodraw",sumgoodraw,"sumgoodraw[64]/l");
   outt->Branch("sumgoodlive",sumgoodlive,"sumgoodlive[64]/l");
   outt->Branch("avgPS",avgPS,"avgPS[64]/D");
-  outt->Branch("tottrigcounts",tottrigcounts,"tottrigcounts[3][64]/l");
-  outt->Branch("totembdlive",totembdlive,"totembdlive[3]/D");
+  outt->Branch("tottrigcounts",tottrigcounts,"tottrigcounts[6][64]/l");
+  outt->Branch("totembdlive",totembdlive,"totembdlive[5]/D");
   outt->Branch("nevt",&nevt,"nevt/l");
   outt->Branch("nmbdc",&nmbdc,"nmbdc/F");
   outt->Branch("nblair",&nblair,"nblair/F");

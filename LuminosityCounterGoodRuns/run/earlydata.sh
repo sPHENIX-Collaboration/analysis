@@ -20,7 +20,7 @@ for i in {1..20}; do
     mkdir -p trigout
     mkdir -p $SUBDIR
     mkdir -p lists
-    mkdir -p /sphenix/tg/tg01/jets/$UN/trigcount/${2}/
+    mkdir -p /sphenix/user/jocl/projects/trigcount_files/${2}/
     mkdir -p ./dsts/$2/${2}_${UPLN}
     #cp -r $5/run_earlydata.C .
     cp -r $5/run_earlydata_2.C .
@@ -38,6 +38,6 @@ for i in {1..20}; do
     mv $DSTFILE ./dsts/$2/${2}_${UPLN}.root
     root -b -q -l 'run_earlydata_2.C('${UPLN}',0,'${2}','${3}')'
     #root -b -q -l 'temp_run.C(1000,"'$DSTFILE'","trigout/tempout_'${2}'_'${UPLN}'_hist.root","trigout/tempout_'${2}'_'${UPLN}'_tree.root","ProdA_2024")'
-    cp trigout/* /sphenix/tg/tg01/jets/$UN/trigcount/${2}/
+    cp trigout/* /sphenix/user/jocl/projects/trigcount_files/${2}/
     rm trigout/*
 done

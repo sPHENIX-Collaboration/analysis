@@ -168,7 +168,7 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
     }
   if(abs(zvtx) > 300)
     {
-      if(_debug > 2) cout << "zvtx > 150. zvtx: " << zvtx << endl;
+      if(_debug > 2) cout << "zvtx > 300. zvtx: " << zvtx << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
 

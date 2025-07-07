@@ -41,9 +41,9 @@ int get_luminosity_182630(string rnlist, int zsel)
 {
   gStyle->SetOptStat(0);
 
-  if(zsel > 2 || zsel < 0)
+  if(zsel > 5 || zsel < 0)
     {
-      cout << "z selection must be between 0 and 2 (inclusive) for |zvtx| < 30/60/200, respectively! Exiting." << endl;
+      cout << "z selection must be between 0 and 5 (inclusive) for |zvtx| < 30/60/200/10/1000/none, respectively! Exiting." << endl;
       return 2;
     }
   const int ntrig = 3;
@@ -60,7 +60,7 @@ int get_luminosity_182630(string rnlist, int zsel)
   //int it = 0;
   float lumi[ntrig] = {0};
   float uclumi[ntrig] = {0};
-  int trigs[ntrig] = {22,26,30};
+  int trigs[ntrig] = {18,22,30};
   cout << "RN   Bit"<<to_string(trigs[0])<<"Corr  Bit"<<to_string(trigs[0])<<"UC   Bit"<<to_string(trigs[1])<<"Corr  Bit"<<to_string(trigs[1])<<"UC   Bit"<<to_string(trigs[2])<<"Corr  Bit"<<to_string(trigs[2])<<"UC (units pb^-1)" << endl << endl;
   while(getline(is, rnstr))
     {
@@ -83,7 +83,7 @@ int get_luminosity_182630(string rnlist, int zsel)
 	  cout << rnstr << " " << 0 << " " << 0 << " " << 0 << " " << 0 << " " << 0 << " " << 0 << endl;
 	  continue;
 	}
-      long long unsigned int tottrigcounts[3][64];
+      long long unsigned int tottrigcounts[6][64];
       double avgPS[64];
       long long unsigned int sumgoodscaled[64];
       long long unsigned int sumgoodraw[64];
@@ -152,12 +152,12 @@ int get_luminosity_182630(string rnlist, int zsel)
       for(int i=0; i<3; ++i)
 	{
 	  int trigger = trigs[i];
-	  if(avgPS[trigger] > 0 && !isnan(avgPS[trigger]) && !isnan(avgPS[10]) && !isnan((trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10])) && !isinf(avgPS[10]) && !isinf(avgPS[trigger]) && !isinf((trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10])) && avgPS[10] > 0)
+	  if(avgPS[trigger] > 0 && !isnan(avgPS[trigger]) && !isnan(avgPS[10]) && !isnan((tottrigcounts[zsel][10])) && !isinf(avgPS[10]) && !isinf(avgPS[trigger]) && !isinf((tottrigcounts[zsel][10])) && avgPS[10] > 0)
 	    {
 	      
-	      float clumiseg = (trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10])*avgPS[10]*((((nmbdc/((double)sumgoodraw[10])))))/avgPS[trigger]/(mbsig*1e9);
-	      float uclumiseg = (trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10])*((double)avgPS[10])/avgPS[trigger]/(mbsig*1e9);//((double)(trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10]))*avgPS[10]/avgPS[trigger]/(mbdsig*1e9;
-	      float blumiseg = (trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10])*avgPS[10]*((((nblair/((double)sumgoodraw[10]))-1)/2)+1)/avgPS[trigger]/(mbsig*1e9);
+	      float clumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nmbdc/((double)sumgoodraw[10])))))/avgPS[trigger]/(mbsig*1e9);
+	      float uclumiseg = (tottrigcounts[zsel][10])*((double)avgPS[10])/avgPS[trigger]/(mbsig*1e9);//((double)(trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10]))*avgPS[10]/avgPS[trigger]/(mbdsig*1e9;
+	      float blumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nblair/((double)sumgoodraw[10]))-1)/2)+1)/avgPS[trigger]/(mbsig*1e9);
 	      uclumi[i] += uclumiseg;
 	      lumi[i] += clumiseg;
 	      cout << " " << fixed << setprecision(7) << clumiseg << " " << uclumiseg;// << " " << blumiseg ;
