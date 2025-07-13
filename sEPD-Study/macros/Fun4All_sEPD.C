@@ -26,7 +26,6 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
-#include <fun4all/Fun4AllUtils.h>
 #include <fun4all/Fun4AllBase.h>
 
 #include <phool/recoConsts.h>
@@ -36,6 +35,7 @@
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &fname,
+                  unsigned int runnumber,
                   const std::string &output = "test.root",
                   int nEvents = 100,
                   const std::string &dbtag = "newcdbtag")
@@ -43,6 +43,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
   std::cout << "input: " << fname << std::endl;
+  std::cout << "Run: " << runnumber << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
@@ -69,9 +70,6 @@ void Fun4All_sEPD(const std::string &fname,
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
 
   recoConsts *rc = recoConsts::instance();
-
-  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname);
-  UInt_t runnumber = static_cast<UInt_t>(runseg.first);
 
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
@@ -123,7 +121,7 @@ void Fun4All_sEPD(const std::string &fname,
   se->registerSubsystem(sepd_validation.get());
 
   std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
-  In->AddFile(fname);
+  In->AddListFile(fname);
   se->registerInputManager(In.get());
 
   se->run(nEvents);
@@ -137,16 +135,16 @@ void Fun4All_sEPD(const std::string &fname,
   std::quick_exit(0);
 }
 
-
 # ifndef __CINT__
-Int_t main(Int_t argc, const char* const argv[])
+int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 2 || args.size() > 5)
+  if (args.size() < 3 || args.size() > 6)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST> [output] [nEvents] [dbtag]" << std::endl;
-    std::cerr << "  input_DST: path to the input file" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag]" << std::endl;
+    std::cerr << "  input_DST: path to the input list file" << std::endl;
+    std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  output_directory: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
@@ -154,24 +152,25 @@ Int_t main(Int_t argc, const char* const argv[])
   }
 
   const std::string& input_dst= args[1];
+  unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[2]));
   std::string output = "test.root";
-  Int_t nEvents = 100;
+  int nEvents = 100;
   std::string dbtag = "newcdbtag";
 
-  if (args.size() >= 3)
-  {
-    output = args[2];
-  }
   if (args.size() >= 4)
   {
-    nEvents = std::stoi(args[3]);
+    output = args[3];
   }
   if (args.size() >= 5)
   {
-    dbtag = args[4];
+    nEvents = std::stoi(args[4]);
+  }
+  if (args.size() >= 6)
+  {
+    dbtag = args[5];
   }
 
-  Fun4All_sEPD(input_dst, output, nEvents, dbtag);
+  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;
