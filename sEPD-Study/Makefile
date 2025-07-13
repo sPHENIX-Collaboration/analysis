@@ -30,7 +30,7 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib \
 								-lphparameter
 
 MY_CPPFLAGS = -I$(MYINSTALL)/include
-MY_LIBFLAGS = -L$(MYINSTALL)/lib -lDetinfo
+MY_LIBFLAGS = -L$(MYINSTALL)/lib -lsEPDValidation
 
 # Combine all C++ flags for compilation
 ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)

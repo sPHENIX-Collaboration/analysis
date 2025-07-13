@@ -16,9 +16,9 @@
 #include <zdcinfo/ZdcReco.h>
 #include <globalvertex/GlobalVertexReco.h>
 #include <centrality/CentralityReco.h>
-#include <eventplaneinfo/EventPlaneReco.h>
-
 #include <calotrigger/MinimumBiasClassifier.h>
+
+#include <eventplaneinfo/EventPlaneReco.h>
 
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -27,17 +27,18 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllUtils.h>
+#include <fun4all/Fun4AllBase.h>
 
 #include <phool/recoConsts.h>
 
-#include <detinfo/Detinfo.h>
+#include <sepdvalidation/sEPDValidation.h>
 
-R__LOAD_LIBRARY(libDetinfo.so)
+R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &fname,
                   const std::string &output = "test.root",
                   int nEvents = 100,
-                  const std::string &dbtag = "ProdA_2024")
+                  const std::string &dbtag = "newcdbtag")
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
@@ -47,8 +48,25 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "########################" << std::endl;
 
+  /* Verbosity Options
+  Quiet mode. Only output critical messages. Intended for batch production mode.
+  VERBOSITY_QUIET = 0,
+
+  Output some useful messages during manual command line running
+  VERBOSITY_SOME = 1,
+
+  Output more messages
+  VERBOSITY_MORE = 2,
+
+  Output even more messages
+  VERBOSITY_EVEN_MORE = 3,
+
+  Output a lot of messages
+  VERBOSITY_A_LOT = 4,
+   */
+
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
 
   recoConsts *rc = recoConsts::instance();
 
@@ -58,12 +76,12 @@ void Fun4All_sEPD(const std::string &fname,
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
   rc->set_uint64Flag("TIMESTAMP", runnumber);
-  CDBInterface::instance()->Verbosity(1);
+  CDBInterface::instance()->Verbosity(Fun4AllBase::VERBOSITY_SOME);
 
   std::unique_ptr<FlagHandler> flag = std::make_unique<FlagHandler>();
   se->registerSubsystem(flag.get());
 
-  // // MBD/BBC Reconstruction
+  // // MBD Reconstruction
   std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
   se->registerSubsystem(mbdreco.get());
 
@@ -79,21 +97,30 @@ void Fun4All_sEPD(const std::string &fname,
 
   // Official vertex storage
   std::unique_ptr<GlobalVertexReco> gvertex = std::make_unique<GlobalVertexReco>();
+  gvertex->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(gvertex.get());
 
+  // Minimum Bias Classifier
   std::unique_ptr<MinimumBiasClassifier> mb = std::make_unique<MinimumBiasClassifier>();
+  mb->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(mb.get());
 
+  // Centrality
   std::unique_ptr<CentralityReco> cent = std::make_unique<CentralityReco>();
+  cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent.get());
 
+  // Event Plane
   std::unique_ptr<EventPlaneReco> epreco = std::make_unique<EventPlaneReco>();
   epreco->set_sepd_epreco(true);
+  epreco->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(epreco.get());
 
-  std::unique_ptr<Detinfo> detana = std::make_unique<Detinfo>();
-  detana->set_filename(output);
-  se->registerSubsystem(detana.get());
+  // sEPD QA
+  std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();
+  sepd_validation->set_filename(output);
+  sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->registerSubsystem(sepd_validation.get());
 
   std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
   In->AddFile(fname);
@@ -129,7 +156,7 @@ Int_t main(Int_t argc, const char* const argv[])
   const std::string& input_dst= args[1];
   std::string output = "test.root";
   Int_t nEvents = 100;
-  std::string dbtag = "ProdA_2024";
+  std::string dbtag = "newcdbtag";
 
   if (args.size() >= 3)
   {

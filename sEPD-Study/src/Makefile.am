@@ -11,22 +11,23 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  Detinfo.h
+  sEPDValidation.h
 
 lib_LTLIBRARIES = \
-  libDetinfo.la
+  libsEPDValidation.la
 
-libDetinfo_la_SOURCES = \
-  Detinfo.cc
+libsEPDValidation_la_SOURCES = \
+  sEPDValidation.cc
 
-libDetinfo_la_LIBADD = \
+libsEPDValidation_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lcentrality_io \
   -lfun4all \
-	-lcdbobjects \
 	-lffamodules \
-  -lglobalvertex_io
+  -lglobalvertex_io \
+  -lcalotrigger_io \
+  -leventplaneinfo_io
 
 BUILT_SOURCES = testexternals.cc
 
@@ -34,7 +35,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libDetinfo.la
+testexternals_LDADD   = libsEPDValidation.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
