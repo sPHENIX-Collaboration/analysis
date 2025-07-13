@@ -101,7 +101,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_hists["h3SEPD_North_Psi3_Q_cent"] = std::make_unique<TH3F>("h2SEPD_North_Psi3_Q_cent","sEPD North: |z| < 10 cm and MB; #Psi^{N}_{3}; |Q^{N}_{3}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
   m_hists["h3SEPD_South_Psi3_Q_cent"] = std::make_unique<TH3F>("h2SEPD_South_Psi3_Q_cent","sEPD South: |z| < 10 cm and MB; #Psi^{N}_{3}; |Q^{N}_{3}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
 
-  for(UInt_t i = 0; i < m_eventType.size(); ++i) {
+  for(unsigned int i = 0; i < m_eventType.size(); ++i) {
     m_hists["hEvent"]->GetXaxis()->SetBinLabel(i+1, m_eventType[i].c_str());
   }
 
@@ -110,7 +110,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
 //____________________________________________________________________________..
 int sEPDValidation::process_event_check(PHCompositeNode *topNode) {
-    m_hists["hEvent"]->Fill(m_event_type::ALL);
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ALL));
 
     TriggerRunInfo* triggerruninfo = findNode::getClass<TriggerRunInfo>(topNode, "TriggerRunInfo");
 
@@ -140,7 +140,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode) {
     m_hists["hVtxZ"]->Fill(m_zvtx);
 
     if(fabs(m_zvtx) < m_zvtx_max) {
-        m_hists["hEvent"]->Fill(m_event_type::ZVTX10);
+        m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
     }
 
     MinimumBiasInfo* m_mb_info = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
@@ -163,7 +163,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode) {
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
-    m_hists["hEvent"]->Fill(m_event_type::ZVTX10_MB);
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -172,7 +172,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode) {
 int sEPDValidation::process_centrality(PHCompositeNode *topNode) {
 
     m_centbin = -9999;
-    Double_t m_cent = -9999;
+    double m_cent = -9999;
     CentralityInfo* centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
     if (!centInfo) {
         std::cout << "sEPDValidation::process_event - Error can not find Centrality Info node " << std::endl;
@@ -203,18 +203,18 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode) {
     }
 
     //sepd
-    UInt_t nchannels_epd = towerinfosEPD->size();
+    unsigned int nchannels_epd = towerinfosEPD->size();
 
-    Double_t sepd_q_south = 0;
-    Double_t sepd_q_north = 0;
+    double sepd_q_south = 0;
+    double sepd_q_north = 0;
 
-    for (UInt_t channel = 0; channel < nchannels_epd; ++channel)
+    for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
     {
-        Double_t charge = towerinfosEPD->get_tower_at_channel(channel)->get_energy();
-        UInt_t key = TowerInfoDefs::encode_epd(channel);
+        double charge = towerinfosEPD->get_tower_at_channel(channel)->get_energy();
+        unsigned int key = TowerInfoDefs::encode_epd(channel);
 
         //sepd charge sums
-        UInt_t arm = TowerInfoDefs::get_epd_arm(key);
+        unsigned int arm = TowerInfoDefs::get_epd_arm(key);
         if (arm == 0)
         {
             sepd_q_south += charge;
@@ -237,23 +237,23 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode) {
 }
 
 //____________________________________________________________________________..
-int sEPDValidation::process_EventPlane(Eventplaneinfo *_EPDS, Eventplaneinfo *_EPDN, Int_t order) {
+int sEPDValidation::process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order) {
 
     std::stringstream suffix;
     suffix << "Psi" << order << "_Q_cent";
 
-    std::pair<Double_t, Double_t> epdsouthQn = _EPDS->get_qvector(order);
-    std::pair<Double_t, Double_t> epdnorthQn = _EPDN->get_qvector(order);
+    std::pair<double, double> epdsouthQn = epd_S->get_qvector(order);
+    std::pair<double, double> epdnorthQn = epd_N->get_qvector(order);
 
-    Double_t Qx_south = epdsouthQn.first;
-    Double_t Qy_south = epdsouthQn.second;
+    double Qx_south = epdsouthQn.first;
+    double Qy_south = epdsouthQn.second;
 
-    Double_t Qx_north = epdnorthQn.first;
-    Double_t Qy_north = epdnorthQn.second;
+    double Qx_north = epdnorthQn.first;
+    double Qy_north = epdnorthQn.second;
 
     // Compute Q vector magnitude
-    Double_t Q_south = std::sqrt(Qx_south*Qx_south + Qy_south*Qy_south);
-    Double_t Q_north = std::sqrt(Qx_north*Qx_north + Qy_north*Qy_north);
+    double Q_south = std::sqrt((Qx_south*Qx_south) + (Qy_south*Qy_south));
+    double Q_north = std::sqrt((Qx_north*Qx_north) + (Qy_north*Qy_north));
 
     // ensure the magnitude of both Q vectors are non-zero
     if(Q_south == 0 || Q_north == 0) {
@@ -263,8 +263,8 @@ int sEPDValidation::process_EventPlane(Eventplaneinfo *_EPDS, Eventplaneinfo *_E
     m_Q_min = std::min(m_Q_min, std::min(Q_south, Q_north));
     m_Q_max = std::max(m_Q_max, std::max(Q_south, Q_north));
 
-    Double_t psi_n_south = _EPDS->GetPsi(Qx_south, Qy_south, order);
-    Double_t psi_n_north = _EPDN->GetPsi(Qx_north, Qy_north, order);
+    double psi_n_south = epd_S->GetPsi(Qx_south, Qy_south, order);
+    double psi_n_north = epd_N->GetPsi(Qx_north, Qy_north, order);
 
     m_psi_min = std::min(m_psi_min, std::min(psi_n_south, psi_n_north));
     m_psi_max = std::max(m_psi_max, std::max(psi_n_south, psi_n_north));
@@ -289,21 +289,25 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode) {
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
-    Eventplaneinfo* _EPDS = epmap->get(EventplaneinfoMap::sEPDS);
-    Eventplaneinfo* _EPDN = epmap->get(EventplaneinfoMap::sEPDN);
+    Eventplaneinfo* epd_S = epmap->get(EventplaneinfoMap::sEPDS);
+    Eventplaneinfo* epd_N = epmap->get(EventplaneinfoMap::sEPDN);
 
     // ensure the ptrs are valid
-    if(!_EPDS || !_EPDN) {
+    if(!epd_S || !epd_N) {
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     // process order 2
-    Int_t ret = process_EventPlane(_EPDS, _EPDN, 2);
-    if(ret) return ret;
+    int ret = process_EventPlane(epd_S, epd_N, 2);
+    if(ret) {
+        return ret;
+    }
 
     // process order 3
-    ret = process_EventPlane(_EPDS, _EPDN, 3);
-    if(ret) return ret;
+    ret = process_EventPlane(epd_S, epd_N, 3);
+    if(ret) {
+        return ret;
+    }
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -319,25 +323,33 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
         return Fun4AllReturnCodes::ABORTRUN;
     }
 
-    Int_t m_globalEvent = eventInfo->get_EvtSequence();
-    // Int_t m_run         = eventInfo->get_RunNumber();
+    int m_globalEvent = eventInfo->get_EvtSequence();
+    // int m_run         = eventInfo->get_RunNumber();
 
     if (m_event % 20 == 0) {
         std::cout << "Progress: " << m_event << ", Global: " << m_globalEvent << std::endl;
     }
     ++m_event;
 
-    Int_t ret = process_event_check(topNode);
-    if(ret) return ret;
+    int ret = process_event_check(topNode);
+    if(ret) {
+        return ret;
+    }
 
     ret = process_centrality(topNode);
-    if(ret) return ret;
+    if(ret) {
+        return ret;
+    }
 
     ret = process_sEPD(topNode);
-    if(ret) return ret;
+    if(ret) {
+        return ret;
+    }
 
     ret = process_EventPlane(topNode);
-    if(ret) return ret;
+    if(ret) {
+        return ret;
+    }
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -356,7 +368,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     std::cout << "Psi: Min " << m_psi_min << ", Max: " << m_psi_max << std::endl;
     std::cout << "Q: Min " << m_Q_min << ", Max: " << m_Q_max << std::endl;
     std::cout << "Events" << std::endl;
-    for(UInt_t i = 0; i < m_eventType.size(); ++i) {
+    for(unsigned int i = 0; i < m_eventType.size(); ++i) {
         std::cout << m_eventType[i] << ": " << m_hists["hEvent"]->GetBinContent(i+1) << std::endl;
     }
     std::cout << "=====================" << std::endl;

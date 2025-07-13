@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <cstdint> // Required for std::uint8_t, std::uint16_t, etc.
 
 // -- ROOT
 #include <TMath.h>
@@ -24,9 +25,9 @@ class sEPDValidation : public SubsysReco
 
   explicit sEPDValidation(const std::string &name = "sEPDValidation");
 
-  Int_t Init(PHCompositeNode *topNode) override;
-  Int_t process_event(PHCompositeNode *topNode) override;
-  Int_t End(PHCompositeNode *topNode) override;
+  int Init(PHCompositeNode *topNode) override;
+  int process_event(PHCompositeNode *topNode) override;
+  int End(PHCompositeNode *topNode) override;
 
   void set_filename(const std::string &file) {
       m_outfile_name = file;
@@ -34,37 +35,37 @@ class sEPDValidation : public SubsysReco
 
  private:
 
- Int_t process_event_check(PHCompositeNode *topNode);
- Int_t process_sEPD(PHCompositeNode *topNode);
- Int_t process_EventPlane(PHCompositeNode *topNode);
- Int_t process_EventPlane(Eventplaneinfo *_EPDS, Eventplaneinfo *_EPDN, Int_t order = 2);
- Int_t process_centrality(PHCompositeNode *topNode);
+ int process_event_check(PHCompositeNode *topNode);
+ int process_sEPD(PHCompositeNode *topNode);
+ int process_EventPlane(PHCompositeNode *topNode);
+ int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
+ int process_centrality(PHCompositeNode *topNode);
 
- Int_t m_event;
+ int m_event;
 
  std::string m_outfile_name;
 
- UInt_t m_bins_zvtx;
- Double_t m_zvtx_low;
- Double_t m_zvtx_high;
+ unsigned int m_bins_zvtx;
+ double m_zvtx_low;
+ double m_zvtx_high;
 
- UInt_t m_bins_centbin;
- Double_t m_centbin_low;
- Double_t m_centbin_high;
+ unsigned int m_bins_centbin;
+ double m_centbin_low;
+ double m_centbin_high;
 
- UInt_t m_bins_sepd_q;
- Double_t m_sepd_q_low;
- Double_t m_sepd_q_high;
+ unsigned int m_bins_sepd_q;
+ double m_sepd_q_low;
+ double m_sepd_q_high;
 
- UInt_t m_bins_psi;
- Double_t m_psi_low;
- Double_t m_psi_high;
+ unsigned int m_bins_psi;
+ double m_psi_low;
+ double m_psi_high;
 
- UInt_t m_bins_Q;
- Double_t m_Q_low;
- Double_t m_Q_high;
+ unsigned int m_bins_Q;
+ double m_Q_low;
+ double m_Q_high;
 
- enum m_event_type
+ enum class EventType : std::uint8_t
  {
    ALL,
    ZVTX10,
@@ -74,25 +75,25 @@ class sEPDValidation : public SubsysReco
  std::vector<std::string> m_eventType = {"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
 
  // Event Vars
- Int_t m_zvtx;
- Int_t m_centbin;
+ double m_zvtx;
+ int m_centbin;
 
  // Cuts
- Double_t m_zvtx_max;
+ double m_zvtx_max;
 
  // Logging Info
- Int_t m_centbin_min;
- Int_t m_centbin_max;
- Double_t m_cent_min;
- Double_t m_cent_max;
- Double_t m_sepd_q_south_min;
- Double_t m_sepd_q_south_max;
- Double_t m_sepd_q_north_min;
- Double_t m_sepd_q_north_max;
- Double_t m_psi_min;
- Double_t m_psi_max;
- Double_t m_Q_min;
- Double_t m_Q_max;
+ int m_centbin_min;
+ int m_centbin_max;
+ double m_cent_min;
+ double m_cent_max;
+ double m_sepd_q_south_min;
+ double m_sepd_q_south_max;
+ double m_sepd_q_north_min;
+ double m_sepd_q_north_max;
+ double m_psi_min;
+ double m_psi_max;
+ double m_Q_min;
+ double m_Q_max;
 
  std::map<std::string, std::unique_ptr<TH1>> m_hists;
 };
