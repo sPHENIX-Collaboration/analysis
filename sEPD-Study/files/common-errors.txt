@@ -1,0 +1,4 @@
+Error in <TROOT::cd>: No such file Rint:/
+Warning in <Fit>: Fit data is empty
+Info in <ROOT::Math::ParameterSettings>: lower/upper bounds outside current parameter value. The value will be set to (low+up)/2
+Error in <Minuit2>: VariableMetricBuilder Initial matrix not pos.def.
