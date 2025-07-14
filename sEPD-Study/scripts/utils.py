@@ -166,6 +166,9 @@ def main():
     condor_log_dir = os.path.realpath(args.condor_log_dir)
     common_errors = os.path.realpath(args.common_errors)
 
+    # Create Dirs
+    os.makedirs(output_dir, exist_ok=True)
+
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
 
@@ -193,9 +196,6 @@ def main():
     if not os.path.exists(src_dir):
         logger.critical(f'Directory: {src_dir} does not exist!')
         sys.exit()
-
-    # Create Dirs
-    os.makedirs(output_dir, exist_ok=True)
 
     # Compute the total number of DSTs in the list files
     total_files = int(subprocess.run(['bash','-c',f'cat {input_list} | xargs -I {{}} sh -c \'test -f "{{}}" && wc -l "{{}}"\' | awk \'{{sum += $1}} END {{print sum}}\''], capture_output=True, encoding='utf-8', check=False).stdout.strip())
