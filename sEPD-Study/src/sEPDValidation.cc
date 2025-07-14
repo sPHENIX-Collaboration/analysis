@@ -96,11 +96,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   // Order 2
   m_hists["h3SEPD_North_Psi2_Q_cent"] = std::make_unique<TH3F>("h2SEPD_North_Psi2_Q_cent", "sEPD North: |z| < 10 cm and MB; #Psi^{N}_{2}; |Q^{N}_{2}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
-  m_hists["h3SEPD_South_Psi2_Q_cent"] = std::make_unique<TH3F>("h2SEPD_South_Psi2_Q_cent", "sEPD South: |z| < 10 cm and MB; #Psi^{N}_{2}; |Q^{N}_{2}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
+  m_hists["h3SEPD_South_Psi2_Q_cent"] = std::make_unique<TH3F>("h2SEPD_South_Psi2_Q_cent", "sEPD South: |z| < 10 cm and MB; #Psi^{S}_{2}; |Q^{N}_{2}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
 
   // Order 3
   m_hists["h3SEPD_North_Psi3_Q_cent"] = std::make_unique<TH3F>("h2SEPD_North_Psi3_Q_cent", "sEPD North: |z| < 10 cm and MB; #Psi^{N}_{3}; |Q^{N}_{3}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
-  m_hists["h3SEPD_South_Psi3_Q_cent"] = std::make_unique<TH3F>("h2SEPD_South_Psi3_Q_cent", "sEPD South: |z| < 10 cm and MB; #Psi^{N}_{3}; |Q^{N}_{3}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
+  m_hists["h3SEPD_South_Psi3_Q_cent"] = std::make_unique<TH3F>("h2SEPD_South_Psi3_Q_cent", "sEPD South: |z| < 10 cm and MB; #Psi^{S}_{3}; |Q^{N}_{3}|; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_Q, m_Q_low, m_Q_high, m_bins_centbin, m_centbin_low, m_centbin_high);
 
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
