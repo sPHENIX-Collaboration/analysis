@@ -239,6 +239,11 @@ def main():
     files_dir = os.path.join(output_dir, 'files')
     os.makedirs(files_dir, exist_ok=True)
 
+    jobs_file = os.path.join(output_dir, 'jobs.list')
+    if os.path.exists(jobs_file):
+        os.remove(jobs_file)
+        logger.info(f"File '{jobs_file}' deleted successfully.")
+
     with open(input_list, mode='r', encoding='utf-8') as file:
         for line in file:
             line = line.strip()
@@ -248,8 +253,8 @@ def main():
             command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
             run_command_and_log(command, logger, files_dir, False)
 
-    command = f'readlink -f {files_dir}/* > jobs.list'
-    run_command_and_log(command, logger, output_dir)
+            command = f'readlink -f {files_dir}/{file_stem}* >> jobs.list'
+            run_command_and_log(command, logger, output_dir, False)
 
     os.makedirs(f'{output_dir}/output', exist_ok=True)
     os.makedirs(f'{output_dir}/stdout', exist_ok=True)
