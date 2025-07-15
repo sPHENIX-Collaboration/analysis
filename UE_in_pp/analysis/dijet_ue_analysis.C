@@ -16,7 +16,7 @@
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
 #include <TTreeReaderArray.h>
-#include <string>
+#include <string.h>
 #include <set>
 #include <TVector3.h>
 #include <map>
@@ -37,11 +37,57 @@ using namespace std;
 //																																			//
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", string outfilename = "dijet_calo_analysis_run21_jet10_topocluster.root", bool sim = false, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false) {
+std::vector<int> run_numbers;
+std::vector<double> collision_rates;
+std::vector<double> pileup_rates;
+std::vector<int> low_pu_runs;
+
+void get_pileup_rate() {
+
+    std::ifstream infile("pileup/0mrad_collision_rates.txt");
+    if (!infile) {
+        std::cerr << "Error: Unable to open input file!" << std::endl;
+        return;
+    }
+    std::string line;
+    while (std::getline(infile, line)) {
+        std::istringstream iss(line);
+        int run_number;
+        double collision_rate;  
+        if (!(iss >> run_number >> collision_rate)) {
+            std::cerr << "Error: Malformed line in input file!" << std::endl;
+            continue;
+        }
+        std::cout << "run_number " << run_number << " collision_rate " << collision_rate << std::endl;
+        run_numbers.push_back(run_number);
+        collision_rates.push_back(collision_rate);
+
+        // Calculate lambda
+        double denominator = 78000.0 * 111.0;
+        double lambda = collision_rate / denominator;
+        double exp_neg_lambda = exp(-lambda);
+        
+        // Calculate pk
+        double pk = 1 - lambda * exp_neg_lambda - exp_neg_lambda;
+        
+        // Calculate pileup rate
+        double pileup_rate = pk / (pk + lambda * exp_neg_lambda);
+        pileup_rates.push_back(pileup_rate);
+    }
+    infile.close();
+
+    for (int i = 0; i < pileup_rates.size(); i++) {
+    	if (pileup_rates[i] < 0.55) { low_pu_runs.push_back(run_numbers[i]); }
+    }
+    
+}
+
+void dijet_ue_analysis(int runnumber = 51274, string outfilename = "dijet_calo_analysis_run21_jet10_topocluster.root", bool sim = false, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, const char* type = "1.5mrad") {
 
 	// create outfile 
 	std::cout << "Creating " << outfilename << std::endl;
-	TFile *out = new TFile(outfilename.c_str(),"RECREATE");
+	string outfilepath = "dijet_analysis_output/" + outfilename;
+	TFile *out = new TFile(outfilepath.c_str(),"RECREATE");
 	
 	// define constants 
 	float deltaeta = 0.0916667;
@@ -144,6 +190,15 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
   	// input datasets from ttrees
  	TChain chain("T");
  	string inputDirectory = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/";
+ 	string infilename;
+ 	if (!strcmp(type,"1.5mrad")) {
+ 		infilename = "output1.5mrad_ana468_" + to_string(runnumber) + "_*.root";
+ 	} else if (!strcmp(type,"0mrad")) {
+ 		infilename = "output_0mrad_ana468_" + to_string(runnumber) + "_*.root";
+ 	} else {
+ 		std::cout << "unknown type" << std::endl;
+ 		return;
+ 	}
 	string wildcardPath = inputDirectory + infilename;
 	chain.Add(wildcardPath.c_str());
 
@@ -164,31 +219,44 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	float emcalphi[24576] = {0.0};
 	int emcalieta[24576] = {0};
 	int emcaliphi[24576] = {0};
+	int emcalstatus[24576] = {0};
 
 	int ihcaln = 0;
-	float ihcale[24576] = {0.0};
-	float ihcaleta[24576] = {0.0};
-	float ihcalphi[24576] = {0.0};
-	int ihcalieta[24576] = {0};
-	int ihcaliphi[24576] = {0};
+	float ihcale[1536] = {0.0};
+	float ihcaleta[1536] = {0.0};
+	float ihcalphi[1536] = {0.0};
+	int ihcalieta[1536] = {0};
+	int ihcaliphi[1536] = {0};
+	int ihcalstatus[1536] = {0};
 
 	int ohcaln = 0;
-	float ohcale[24576] = {0.0};
-	float ohcaleta[24576] = {0.0};
-	float ohcalphi[24576] = {0.0};
-	int ohcalieta[24576] = {0};
-	int ohcaliphi[24576] = {0};
+	float ohcale[1536] = {0.0};
+	float ohcaleta[1536] = {0.0};
+	float ohcalphi[1536] = {0.0};
+	int ohcalieta[1536] = {0};
+	int ohcaliphi[1536] = {0};
+	int ohcalstatus[1536] = {0};
 
 	int clsmult = 0;
-	float cluster_e[10000] = {0.0};
-	float cluster_eta[10000] = {0.0};
-	float cluster_phi[10000] = {0.0};
+	float cluster_e[2000] = {0.0};
+	float cluster_eta[2000] = {0.0};
+	float cluster_phi[2000] = {0.0};
+	int cluster_ntowers[2000];
+    int cluster_tower_calo[200][500];
+    int cluster_tower_ieta[200][500];
+    int cluster_tower_iphi[200][500];
+    float cluster_tower_e[200][500];
 
-	int truthpar_n = 0;
-	float truthpar_e[100000] = {0};
-	float truthpar_eta[100000] = {0};
-	float truthpar_phi[100000] = {0};
-	int truthpar_pid[100000] = {0};
+    chain.SetBranchStatus("*",0);
+
+	chain.SetBranchStatus("m_event",1);
+	chain.SetBranchStatus("nJet",1);
+	chain.SetBranchStatus("zvtx",1);
+	chain.SetBranchStatus("triggerVector",1);
+	chain.SetBranchStatus("eta",1);
+	chain.SetBranchStatus("phi",1);
+	chain.SetBranchStatus("e",1);
+	chain.SetBranchStatus("pt",1);
 
 	chain.SetBranchAddress("m_event",&m_event);
 	chain.SetBranchAddress("nJet",&nJet);
@@ -199,33 +267,79 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	chain.SetBranchAddress("e",&e);
 	chain.SetBranchAddress("pt",&pt);
 
-	chain.SetBranchAddress("emcaln",&emcaln);
-	chain.SetBranchAddress("emcale",emcale);
-	chain.SetBranchAddress("emcaleta",emcaleta);
-	chain.SetBranchAddress("emcalphi",emcalphi);
-	chain.SetBranchAddress("emcalieta",emcalieta);
-	chain.SetBranchAddress("emcaliphi",emcaliphi);
+	if (!clusters) {
+		chain.SetBranchStatus("emcaln", 1);
+		chain.SetBranchStatus("emcale",1);
+		chain.SetBranchStatus("emcaleta", 1);
+		chain.SetBranchStatus("emcalphi", 1);
+		chain.SetBranchStatus("emcalieta", 1);
+		chain.SetBranchStatus("emcaliphi", 1);
 
-	chain.SetBranchAddress("ihcaln",&ihcaln);
-	chain.SetBranchAddress("ihcale",ihcale);
-	chain.SetBranchAddress("ihcaleta",ihcaleta);
-	chain.SetBranchAddress("ihcalphi",ihcalphi);
-	chain.SetBranchAddress("ihcalieta",ihcalieta);
-	chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+		chain.SetBranchStatus("ihcaln", 1);
+		chain.SetBranchStatus("ihcale", 1);
+		chain.SetBranchStatus("ihcaleta", 1);
+		chain.SetBranchStatus("ihcalphi", 1);
+		chain.SetBranchStatus("ihcalieta", 1);
+		chain.SetBranchStatus("ihcaliphi", 1);
 
-	chain.SetBranchAddress("ohcaln",&ohcaln);
-	chain.SetBranchAddress("ohcale",ohcale);
-	chain.SetBranchAddress("ohcaleta",ohcaleta);
-	chain.SetBranchAddress("ohcalphi",ohcalphi);
-	chain.SetBranchAddress("ohcalieta",ohcalieta);
-	chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+		chain.SetBranchStatus("ohcaln", 1);
+		chain.SetBranchStatus("ohcale", 1);
+		chain.SetBranchStatus("ohcaleta", 1);
+		chain.SetBranchStatus("ohcalphi", 1);
+		chain.SetBranchStatus("ohcalieta", 1);
+		chain.SetBranchStatus("ohcaliphi", 1);
+
+		chain.SetBranchAddress("emcaln",&emcaln);
+		chain.SetBranchAddress("emcale",emcale);
+		chain.SetBranchAddress("emcaleta",emcaleta);
+		chain.SetBranchAddress("emcalphi",emcalphi);
+		chain.SetBranchAddress("emcalieta",emcalieta);
+		chain.SetBranchAddress("emcaliphi",emcaliphi);
+		chain.SetBranchAddress("emcalstatus",emcalstatus);
+
+		chain.SetBranchAddress("ihcaln",&ihcaln);
+		chain.SetBranchAddress("ihcale",ihcale);
+		chain.SetBranchAddress("ihcaleta",ihcaleta);
+		chain.SetBranchAddress("ihcalphi",ihcalphi);
+		chain.SetBranchAddress("ihcalieta",ihcalieta);
+		chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+		chain.SetBranchAddress("ihcalstatus",ihcalstatus);
+
+		chain.SetBranchAddress("ohcaln",&ohcaln);
+		chain.SetBranchAddress("ohcale",ohcale);
+		chain.SetBranchAddress("ohcaleta",ohcaleta);
+		chain.SetBranchAddress("ohcalphi",ohcalphi);
+		chain.SetBranchAddress("ohcalieta",ohcalieta);
+		chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+		chain.SetBranchAddress("ohcalstatus",ohcalstatus);
+	}
 
 	if (!emcal_clusters) {
+		chain.SetBranchStatus("clsmult", 1);
+		chain.SetBranchStatus("cluster_e", 1);
+		chain.SetBranchStatus("cluster_eta", 1);
+		chain.SetBranchStatus("cluster_phi", 1);
+		chain.SetBranchStatus("cluster_ntowers", 1);
+		chain.SetBranchStatus("cluster_tower_e", 1);
+		chain.SetBranchStatus("cluster_tower_calo", 1);
+		chain.SetBranchStatus("cluster_tower_ieta", 1);
+		chain.SetBranchStatus("cluster_tower_iphi", 1);
+
 		chain.SetBranchAddress("clsmult",&clsmult);
 		chain.SetBranchAddress("cluster_e",cluster_e);
 		chain.SetBranchAddress("cluster_eta",cluster_eta);
 		chain.SetBranchAddress("cluster_phi",cluster_phi);
+		chain.SetBranchAddress("cluster_ntowers",cluster_ntowers);
+		chain.SetBranchAddress("cluster_tower_e",cluster_tower_e);
+		chain.SetBranchAddress("cluster_tower_calo",cluster_tower_calo);
+		chain.SetBranchAddress("cluster_tower_ieta",cluster_tower_ieta);
+		chain.SetBranchAddress("cluster_tower_iphi",cluster_tower_iphi);
 	} else {
+		chain.SetBranchStatus("emcal_clsmult", 1);
+		chain.SetBranchStatus("emcal_cluster_e", 1);
+		chain.SetBranchStatus("emcal_cluster_eta", 1);
+		chain.SetBranchStatus("emcal_cluster_phi", 1);
+
 		chain.SetBranchAddress("emcal_clsmult",&clsmult);
 		chain.SetBranchAddress("emcal_cluster_e",cluster_e);
 		chain.SetBranchAddress("emcal_cluster_eta",cluster_eta);
@@ -253,6 +367,23 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
         chain.GetEntry(entry);
     	if (eventnumber % 10000 == 0) cout << "event " << eventnumber << endl;
     	eventnumber++;
+
+    	/*
+    	for (int i = 0; i < clsmult; i++) {
+    		if (cluster_e[i] < -1.0) {
+    			std::cout << "event " << entry << " cluster id " << i << " e " << cluster_e[i] << " eta " << cluster_eta[i] << " phi " << cluster_phi[i] << " ntowers " << cluster_ntowers[i] << std::endl;
+    			for (int n = 0; n < cluster_ntowers[i]; n++) {
+  					std::cout << "cluster tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;
+    			}
+    		}
+  			for (int n = 0; n < cluster_ntowers[i]; n++) {
+  				if (cluster_tower_e[i][n] < -1.0) {
+  					std::cout << "event " << entry << " cluster id " << i << " e " << cluster_e[i] << " eta " << cluster_eta[i] << " phi " << cluster_phi[i] << std::endl;
+  					std::cout << "cluster with very negative energy tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;
+  				}
+  			}
+  		}
+  		*/
 
     	// require jet trigger in data
   		bool jettrig = false;
@@ -331,6 +462,19 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  		h_subeta->Fill(sub.Eta());
   			h_aj_ptavg->Fill((lead.Pt()+sub.Pt())/2.0, (lead.Pt()-sub.Pt())/(lead.Pt()+sub.Pt()));
 
+  			bool neg_tower = false;
+  			for (int i = 0; i < clsmult; i++) {
+  				float cluster_energy = cluster_e[i];
+  				for (int n = 0; n < cluster_ntowers[i]; n++) {
+  					if (cluster_tower_e[i][n] < -1.4) {
+  						cluster_energy -= cluster_tower_e[i][n];
+  						std::cout << "cluster with very negative energy tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;	
+  						neg_tower = true;
+  					}
+  				}
+  			}
+  			if (neg_tower) { continue; }
+
   			// define energy variables in the towards, transverse and away regions 
   			float et_towards = 0;
   			float et_transverse = 0;
@@ -344,6 +488,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 
   			if (!clusters) { // using towers to find total energy in towards, transverse and away regions 
 	  			for (int i = 0; i < emcaln; i++) {
+	  				if (emcalstatus[i] & 1 || emcalstatus[i] & 4) { continue; }
 	  				TVector3 em;
 	  				em.SetPtEtaPhi(emcale[i]/cosh(emcaleta[i]),emcaleta[i],emcalphi[i]); // define tower vector
 	  				float dphi = lead.DeltaPhi(em); // find the deltaphi between leading jet and tower
@@ -363,6 +508,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  			}
 
 	  			for (int i = 0; i < ihcaln; i++) {
+	  				if (ihcalstatus[i] & 1 || ihcalstatus[i] & 4) { continue; }
 	  				TVector3 ih;
 	  				ih.SetPtEtaPhi(ihcale[i]/cosh(ihcaleta[i]),ihcaleta[i],ihcalphi[i]);
 	  				float dphi = lead.DeltaPhi(ih);
@@ -382,6 +528,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  			}
 
 	  			for (int i = 0; i < ohcaln; i++) {
+	  				if (ohcalstatus[i] & 1 || ohcalstatus[i] & 4) { continue; }
 	  				TVector3 oh;
 	  				oh.SetPtEtaPhi(ohcale[i]/cosh(ohcaleta[i]),ohcaleta[i],ohcalphi[i]);
 	  				float dphi = lead.DeltaPhi(oh);
@@ -401,46 +548,56 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	  			}
 	  		} else { // using clusters to find total energy in towards, transverse and away regions 
   				for (int i = 0; i < clsmult; i++) {
+  					float cluster_energy = cluster_e[i];
+  					for (int n = 0; n < cluster_ntowers[i]; n++) {
+  						if (cluster_tower_e[i][n] < -1.4) {
+  							cluster_energy -= cluster_tower_e[i][n];
+  							std::cout << "cluster with very negative energy tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;
+  							
+  						}
+  					}
 	  				TVector3 cls;
-	  				cls.SetPtEtaPhi(cluster_e[i]/cosh(cluster_eta[i]),cluster_eta[i],cluster_phi[i]); // define cluster vector 
+	  				cls.SetPtEtaPhi(cluster_energy/cosh(cluster_eta[i]),cluster_eta[i],cluster_phi[i]); // define cluster vector 
 	  				float dphi = lead.DeltaPhi(cls); // find the deltaphi between leading jet and cluster 
-	  				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  				if (fabs(dphi) < M_PI/3.0) { // towards region 
-	  					et_towards += cluster_e[i]/cosh(cluster_eta[i]);
+	  					et_towards += cluster_energy/cosh(cluster_eta[i]);
 	  					for (int j = 0; j < 8; j++) {
-	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+	  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_towards[j] += 1;
-	  							sume_topo_towards[j] += cluster_e[i]/cosh(cluster_eta[i]);
-	  							h_topo_towards[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-	  							h_2D_topo_towards[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  							sume_topo_towards[j] += cluster_energy/cosh(cluster_eta[i]);
+	  							h_topo_towards[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+	  							h_2D_topo_towards[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  						}
 	  					}
-	  					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { // transverse region 
-						et_transverse += cluster_e[i]/cosh(cluster_eta[i]);
+						et_transverse += cluster_energy/cosh(cluster_eta[i]);
 	  					for (int j = 0; j < 8; j++) {
-	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+	  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_transverse[j] += 1;
-	  							sume_topo_transverse[j] += cluster_e[i]/cosh(cluster_eta[i]);
-	  							h_topo_transverse[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-	  							h_2D_topo_transverse[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  							sume_topo_transverse[j] += cluster_energy/cosh(cluster_eta[i]);
+	  							h_topo_transverse[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+	  							h_2D_topo_transverse[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  						}
 	  					}
-	  					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) { // away region 
-	  					et_away += cluster_e[i]/cosh(cluster_eta[i]);
+	  					et_away += cluster_energy/cosh(cluster_eta[i]);
 	  					for (int j = 0; j < 8; j++) {
-	  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+	  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 	  							ntopo_away[j] += 1;
-	  							sume_topo_away[j] += cluster_e[i]/cosh(cluster_eta[i]);
-	  							h_topo_away[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-	  							h_2D_topo_away[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  							sume_topo_away[j] += cluster_energy/cosh(cluster_eta[i]);
+	  							h_topo_away[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+	  							h_2D_topo_away[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  						}
 	  					}
-	  					h_ue_2D_away->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+	  					h_ue_2D_away->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 	  				}
 	  			}
   			}
+
+  			if (et_transverse/(secteta*sectphi) < -0.5) { continue; }
 
   			h_et_towards->Fill(et_towards);
   			h_et_transverse->Fill(et_transverse);

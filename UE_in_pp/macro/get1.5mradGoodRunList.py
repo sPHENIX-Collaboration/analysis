@@ -5,6 +5,7 @@ def get_run_numbers(cursor):
     SELECT runnumber
     FROM datasets
     WHERE filename like 'DST_JETCALO_run2pp%'
+    AND dataset = 'ana468_2024p012_v001'
     GROUP BY runnumber
     HAVING SUM(events) >= 10000 AND runnumber > 51274;
     """
@@ -55,7 +56,7 @@ def main():
     golden_run_numbers.sort()
 
     # Save run numbers to a text file
-    with open('run1.5mradList.txt', 'w') as f:
+    with open('run1.5mradList041825.txt', 'w') as f:
         for run_number in golden_run_numbers:
             f.write(f"{run_number}\n")
     print(f"Number of GOLDEN runs saved to run1.5mradList.txt: {len(golden_run_numbers)}")
