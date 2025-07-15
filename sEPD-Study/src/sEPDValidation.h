@@ -7,7 +7,7 @@
 #include <fun4all/SubsysReco.h>
 
 // -- c++
-#include <cstdint>  // Required for std::uint8_t, std::uint16_t, etc.
+#include <cstdint> // Required for std::uint8_t, std::uint16_t, etc.
 #include <map>
 #include <memory>
 #include <string>
@@ -33,7 +33,7 @@ class sEPDValidation : public SubsysReco
     m_outfile_name = file;
   }
 
- private:
+private:
   int process_event_check(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
@@ -52,9 +52,17 @@ class sEPDValidation : public SubsysReco
   double m_centbin_low;
   double m_centbin_high;
 
-  unsigned int m_bins_sepd_q;
-  double m_sepd_q_low;
-  double m_sepd_q_high;
+  unsigned int m_bins_sepd_charge;
+  double m_sepd_charge_low;
+  double m_sepd_charge_high;
+
+  unsigned int m_bins_sepd_Q;
+  double m_sepd_Q_low;
+  double m_sepd_Q_high;
+
+  unsigned int m_bins_sepd_total_charge;
+  double m_sepd_total_charge_low;
+  double m_sepd_total_charge_high;
 
   unsigned int m_bins_psi;
   double m_psi_low;
@@ -79,20 +87,26 @@ class sEPDValidation : public SubsysReco
 
   // Cuts
   double m_zvtx_max;
+  double m_sepd_charge_threshold;
 
   // Logging Info
   int m_centbin_min;
   int m_centbin_max;
   double m_cent_min;
   double m_cent_max;
-  double m_sepd_q_south_min;
-  double m_sepd_q_south_max;
-  double m_sepd_q_north_min;
-  double m_sepd_q_north_max;
+  double m_sepd_charge_min;
+  double m_sepd_charge_max;
+  double m_sepd_Q_min;
+  double m_sepd_Q_max;
+  double m_sepd_total_charge_south_min;
+  double m_sepd_total_charge_south_max;
+  double m_sepd_total_charge_north_min;
+  double m_sepd_total_charge_north_max;
+  double m_sepd_phi_min;
+  double m_sepd_phi_max;
   double m_psi_min;
   double m_psi_max;
-  double m_Q_min;
-  double m_Q_max;
 
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
+  std::map<std::string, int> m_ctr;
 };

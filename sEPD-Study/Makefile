@@ -27,7 +27,8 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib \
 								-lzdcinfo \
 								-lglobalvertex \
 								-lphool \
-								-lphparameter
+								-lphparameter \
+								-lsphenixnpc
 
 MY_CPPFLAGS = -I$(MYINSTALL)/include
 MY_LIBFLAGS = -L$(MYINSTALL)/lib -lsEPDValidation
@@ -40,7 +41,7 @@ ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
 SRCS = $(wildcard macros/*.C)
 
 # List all your executable targets explicitly
-ALL_TARGETS = bin/Fun4All_sEPD
+ALL_TARGETS = bin/Fun4All_sEPD bin/display
 
 # Define a stamp file for Cppcheck
 CPPCHECK_STAMP = .cppcheck_ran_stamp

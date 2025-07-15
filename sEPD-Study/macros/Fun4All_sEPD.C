@@ -32,6 +32,8 @@
 
 #include <sepdvalidation/sEPDValidation.h>
 
+#include <CDBUtils.C>
+
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &fname,
@@ -98,14 +100,48 @@ void Fun4All_sEPD(const std::string &fname,
   gvertex->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(gvertex.get());
 
+  setGlobalTag(dbtag);
+
+  uint64_t default_centrality_run = 54912;
+  std::string cdb_centrality              = getCalibration("Centrality", runnumber);
+  std::string cdb_centrality_scale        = getCalibration("CentralityScale", runnumber);
+  std::string cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale", runnumber);
+
+  bool useReferenceCDB = cdb_centrality.starts_with("DataBaseException")
+                      || cdb_centrality_scale.starts_with("DataBaseException")
+                      || cdb_centrality_vertex_scale.starts_with("DataBaseException");
+
+  // Check if centrality cdb files exists for the current runs
+  // if not then use the cdb files from the reference run
+  if(useReferenceCDB)
+  {
+    std::cout << "Defaulting the centrality cdb to that from Run " << default_centrality_run << std::endl;
+
+    cdb_centrality              = getCalibration("Centrality", default_centrality_run);
+    cdb_centrality_scale        = getCalibration("CentralityScale", default_centrality_run);
+    cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale", default_centrality_run);
+  }
+
   // Minimum Bias Classifier
   std::unique_ptr<MinimumBiasClassifier> mb = std::make_unique<MinimumBiasClassifier>();
   mb->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  if(useReferenceCDB)
+  {
+    mb->setOverwriteScale(cdb_centrality_scale);
+    mb->setOverwriteVtx(cdb_centrality_vertex_scale);
+  }
+
   se->registerSubsystem(mb.get());
 
   // Centrality
   std::unique_ptr<CentralityReco> cent = std::make_unique<CentralityReco>();
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  if(useReferenceCDB)
+  {
+    cent->setOverwriteDivs(cdb_centrality);
+    cent->setOverwriteScale(cdb_centrality_scale);
+    cent->setOverwriteVtx(cdb_centrality_vertex_scale);
+  }
   se->registerSubsystem(cent.get());
 
   // Event Plane

@@ -27,7 +27,8 @@ libsEPDValidation_la_LIBADD = \
 	-lffamodules \
   -lglobalvertex_io \
   -lcalotrigger_io \
-  -leventplaneinfo_io
+  -leventplaneinfo_io \
+  -lepd_io
 
 BUILT_SOURCES = testexternals.cc
 
