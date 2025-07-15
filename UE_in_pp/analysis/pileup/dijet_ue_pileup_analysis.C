@@ -41,11 +41,12 @@ std::vector<int> run_numbers;
 std::vector<double> collision_rates;
 std::vector<double> pileup_rates;
 //std::vector<double> pileup_bins = {0.0,0.015};
-std::vector<double> pileup_bins = {0.0,0.015,0.02,0.028,0.05};
+//std::vector<double> pileup_bins = {0.0,0.015,0.02,0.028,0.05};
+std::vector<double> pileup_bins = {0.0,0.02,0.03,0.04,0.05};
 
 void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false) {
 
-    std::ifstream infile("1.5mrad_collision_rates.txt");
+    std::ifstream infile("updated_1.5mrad_collision_rates.txt");
     if (!infile) {
         std::cerr << "Error: Unable to open input file!" << std::endl;
         return;
@@ -93,10 +94,13 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
     float jetetamax = 0.7;
     float lead_ptmin = 12;
     float sub_ptmin = 7;
-    float deltaphimin = 2.75;
+    float deltaphimin = 3.0*M_PI/4.0;
 
     for (int pb = 1; pb < pileup_bins.size(); pb++) {
-    	string outfilename = "pileup_UE_analysis_leadjet_15_20_GeV_maxrate_" + to_string(pileup_bins[pb]) +".root";
+    	string outfilename = "pileup_UE_analysis";
+    	if (!clusters) outfilename += "_calo_tower_sum";
+    	if (clusters && emcal_clusters) outfilename += "_emcal_clusters";
+    	outfilename += "_leadjet_15_20_GeV_zvtx_lt_10cm_rate_range_" + to_string(pileup_bins[pb-1]) + "_" + to_string(pileup_bins[pb]) + ".root";
     	std::cout << "Creating " << outfilename << std::endl;
 		TFile *out = new TFile(outfilename.c_str(),"RECREATE");
  
@@ -179,6 +183,10 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 	  	TProfile* h_ue_pt_transverse = new TProfile("h_ue_pt_transverse","",nptbins, ptbins);
 	  	TProfile* h_ue_pt_away = new TProfile("h_ue_pt_away","",nptbins, ptbins);
 
+	  	TH2D* h_et_pt_towards_2D = new TH2D("h_et_pt_towards_2D","",nptbins, ptbins, netbins, etbins);
+	  	TH2D* h_et_pt_transverse_2D = new TH2D("h_et_pt_transverse_2D","", nptbins, ptbins, netbins, etbins);
+	  	TH2D* h_et_pt_away_2D = new TH2D("h_et_pt_away_2D","", nptbins, ptbins, netbins, etbins);
+
 	  	// input datasets from ttrees
 	 	TChain chain("T");
 	 	for (int i = 0; i < run_numbers.size(); i++) {
@@ -187,6 +195,8 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 				chain.Add(wildcardPath.c_str());
 	 		}
 	 	}
+
+		chain.SetBranchStatus("*",0);
 
 		// define ttree branch variables 
 		int m_event;
@@ -198,6 +208,9 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 		vector<float> *phi = nullptr;
 		vector<float> *e = nullptr;
 		vector<float> *pt = nullptr;
+		vector<float> *jetemcale = nullptr;
+		vector<float> *jetihcale = nullptr;
+		vector<float> *jetohcale = nullptr;
 
 		int emcaln = 0;
 		float emcale[24576] = {0.0};
@@ -231,6 +244,18 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 		float truthpar_phi[100000] = {0};
 		int truthpar_pid[100000] = {0};
 
+		chain.SetBranchStatus("m_event",1);
+		chain.SetBranchStatus("nJet",1);
+		chain.SetBranchStatus("zvtx",1);
+		chain.SetBranchStatus("triggerVector",1);
+		chain.SetBranchStatus("eta",1);
+		chain.SetBranchStatus("phi",1);
+		chain.SetBranchStatus("e",1);
+		chain.SetBranchStatus("pt",1);
+		chain.SetBranchStatus("jetEmcalE", 1);
+		chain.SetBranchStatus("jetIhcalE", 1);
+		chain.SetBranchStatus("jetOhcalE", 1);
+
 		chain.SetBranchAddress("m_event",&m_event);
 		chain.SetBranchAddress("nJet",&nJet);
 		chain.SetBranchAddress("zvtx",&zvtx);
@@ -239,34 +264,70 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 		chain.SetBranchAddress("phi",&phi);
 		chain.SetBranchAddress("e",&e);
 		chain.SetBranchAddress("pt",&pt);
+		chain.SetBranchAddress("jetEmcalE", &jetemcale);
+		chain.SetBranchAddress("jetIhcalE", &jetihcale);
+		chain.SetBranchAddress("jetOhcalE", &jetohcale);
 
-		chain.SetBranchAddress("emcaln",&emcaln);
-		chain.SetBranchAddress("emcale",emcale);
-		chain.SetBranchAddress("emcaleta",emcaleta);
-		chain.SetBranchAddress("emcalphi",emcalphi);
-		chain.SetBranchAddress("emcalieta",emcalieta);
-		chain.SetBranchAddress("emcaliphi",emcaliphi);
+		if (!clusters) {
+			chain.SetBranchStatus("emcaln", 1);
+			chain.SetBranchStatus("emcale",1);
+			chain.SetBranchStatus("emcaleta", 1);
+			chain.SetBranchStatus("emcalphi", 1);
+			chain.SetBranchStatus("emcalieta", 1);
+			chain.SetBranchStatus("emcaliphi", 1);
 
-		chain.SetBranchAddress("ihcaln",&ihcaln);
-		chain.SetBranchAddress("ihcale",ihcale);
-		chain.SetBranchAddress("ihcaleta",ihcaleta);
-		chain.SetBranchAddress("ihcalphi",ihcalphi);
-		chain.SetBranchAddress("ihcalieta",ihcalieta);
-		chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+			chain.SetBranchStatus("ihcaln", 1);
+			chain.SetBranchStatus("ihcale", 1);
+			chain.SetBranchStatus("ihcaleta", 1);
+			chain.SetBranchStatus("ihcalphi", 1);
+			chain.SetBranchStatus("ihcalieta", 1);
+			chain.SetBranchStatus("ihcaliphi", 1);
 
-		chain.SetBranchAddress("ohcaln",&ohcaln);
-		chain.SetBranchAddress("ohcale",ohcale);
-		chain.SetBranchAddress("ohcaleta",ohcaleta);
-		chain.SetBranchAddress("ohcalphi",ohcalphi);
-		chain.SetBranchAddress("ohcalieta",ohcalieta);
-		chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+			chain.SetBranchStatus("ohcaln", 1);
+			chain.SetBranchStatus("ohcale", 1);
+			chain.SetBranchStatus("ohcaleta", 1);
+			chain.SetBranchStatus("ohcalphi", 1);
+			chain.SetBranchStatus("ohcalieta", 1);
+			chain.SetBranchStatus("ohcaliphi", 1);
+
+			chain.SetBranchAddress("emcaln",&emcaln);
+			chain.SetBranchAddress("emcale",emcale);
+			chain.SetBranchAddress("emcaleta",emcaleta);
+			chain.SetBranchAddress("emcalphi",emcalphi);
+			chain.SetBranchAddress("emcalieta",emcalieta);
+			chain.SetBranchAddress("emcaliphi",emcaliphi);
+
+			chain.SetBranchAddress("ihcaln",&ihcaln);
+			chain.SetBranchAddress("ihcale",ihcale);
+			chain.SetBranchAddress("ihcaleta",ihcaleta);
+			chain.SetBranchAddress("ihcalphi",ihcalphi);
+			chain.SetBranchAddress("ihcalieta",ihcalieta);
+			chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+
+			chain.SetBranchAddress("ohcaln",&ohcaln);
+			chain.SetBranchAddress("ohcale",ohcale);
+			chain.SetBranchAddress("ohcaleta",ohcaleta);
+			chain.SetBranchAddress("ohcalphi",ohcalphi);
+			chain.SetBranchAddress("ohcalieta",ohcalieta);
+			chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+		}
 
 		if (!emcal_clusters) {
+			chain.SetBranchStatus("clsmult", 1);
+			chain.SetBranchStatus("cluster_e", 1);
+			chain.SetBranchStatus("cluster_eta", 1);
+			chain.SetBranchStatus("cluster_phi", 1);
+
 			chain.SetBranchAddress("clsmult",&clsmult);
 			chain.SetBranchAddress("cluster_e",cluster_e);
 			chain.SetBranchAddress("cluster_eta",cluster_eta);
 			chain.SetBranchAddress("cluster_phi",cluster_phi);
 		} else {
+			chain.SetBranchStatus("emcal_clsmult", 1);
+			chain.SetBranchStatus("emcal_cluster_e", 1);
+			chain.SetBranchStatus("emcal_cluster_eta", 1);
+			chain.SetBranchStatus("emcal_cluster_phi", 1);
+
 			chain.SetBranchAddress("emcal_clsmult",&clsmult);
 			chain.SetBranchAddress("emcal_cluster_e",cluster_e);
 			chain.SetBranchAddress("emcal_cluster_eta",cluster_eta);
@@ -298,7 +359,7 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 	    	// require jet trigger in data
 	  		bool jettrig = false;
 	  		for (auto t : *triggerVector) {
-	  			if (t >= 16 && t <= 23) {
+	  			if (t == 18 || (t == 34 && fabs(zvtx) < 10.0)) {
 	  				jettrig = true;
 	  				break;
 	  			}
@@ -315,7 +376,7 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 	  		// require at least 2 jets in event and z vertex < 30 cm 
 	  		if (!jettrig && !sim) { continue; }
 	  		if (isnan(zvtx)) { continue; }
-	  		if (zvtx < -30 || zvtx > 30) { continue; }
+	  		if (zvtx < -10 || zvtx > 10) { continue; }
 	  		if (negJet) { continue; }
 	  		if (nJet < 2) { continue; }		
 
@@ -340,7 +401,7 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 
 	  		// require leading and subleading jets be above pt threshold and in central eta range 
 	  		if (fabs((*eta)[ind_lead]) > jetetamax || fabs((*eta)[ind_sub]) > jetetamax) { continue; }
-	  		if ((*pt)[ind_lead] < lead_ptmin || (*pt)[ind_sub] < sub_ptmin) { continue; }		
+	  		if ((*pt)[ind_lead] < lead_ptmin || (*pt)[ind_sub] < 0.3*(*pt)[ind_lead]) { continue; }		
 
 	  		// create leading and subleading jet vectors and apply JES calibration correction if applicable 
 	  		TVector3 lead, sub;
@@ -507,6 +568,9 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 	  			h_ue_pt_towards->Fill(lead.Pt(),et_towards);
 	  			h_ue_pt_transverse->Fill(lead.Pt(),et_transverse);
 	  			h_ue_pt_away->Fill(lead.Pt(),et_away);
+	  			h_et_pt_towards_2D->Fill(lead.Pt(),et_towards);
+	  			h_et_pt_transverse_2D->Fill(lead.Pt(),et_transverse);
+	  			h_et_pt_away_2D->Fill(lead.Pt(),et_away);
 
 	  			events++;
 	  		}

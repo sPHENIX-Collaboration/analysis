@@ -87,12 +87,8 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
   	TH2F* h_trans_et_2D_index_ihcal = new TH2F("h_trans_et_2D_index_ihcal","",24,0,24,64,0,64);
   	TH2F* h_trans_et_2D_index_ohcal = new TH2F("h_trans_et_2D_index_ohcal","",24,0,24,64,0,64);
 
-  	TH1F* ohcal_towers[96];
-  	for (int i = 0; i < 12; i++) {
-  		for (int j = 0; j < 8; j++) {
-  			ohcal_towers[8*i+j] = new TH1F(Form("ohcal_towers_%d_%d",2*i,8*j),"",2400,-2,10);
-  		}
-  	}
+  	TH1F* h_ohcal_pos_ue_towers = new TH1F("h_ohcal_pos_ue_towers","",2000,-10,10);
+  	TH1F* h_ohcal_neg_ue_towers = new TH1F("h_ohcal_neg_ue_towers","",2000,-10,10);
 
   	TH1F* h_ue_towards = new TH1F("h_ue_towards","",netbins, etbins);
   	TH1F* h_ue_transverse = new TH1F("h_ue_transverse","",netbins, etbins);
@@ -154,6 +150,8 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
 	string wildcardPath = inputDirectory + infilename;
 	chain.Add(wildcardPath.c_str());
 
+	chain.SetBranchStatus("*",0);
+
 	// define ttree branch variables 
 	int m_event;
 	int nJet;
@@ -197,6 +195,15 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
 	float truthpar_phi[100000] = {0};
 	int truthpar_pid[100000] = {0};
 
+	chain.SetBranchStatus("m_event",1);
+	chain.SetBranchStatus("nJet",1);
+	chain.SetBranchStatus("zvtx",1);
+	chain.SetBranchStatus("triggerVector",1);
+	chain.SetBranchStatus("eta",1);
+	chain.SetBranchStatus("phi",1);
+	chain.SetBranchStatus("e",1);
+	chain.SetBranchStatus("pt",1);
+
 	chain.SetBranchAddress("m_event",&m_event);
 	chain.SetBranchAddress("nJet",&nJet);
 	chain.SetBranchAddress("zvtx",&zvtx);
@@ -206,20 +213,12 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
 	chain.SetBranchAddress("e",&e);
 	chain.SetBranchAddress("pt",&pt);
 
-	chain.SetBranchAddress("emcaln",&emcaln);
-	chain.SetBranchAddress("emcale",emcale);
-	chain.SetBranchAddress("emcaleta",emcaleta);
-	chain.SetBranchAddress("emcalphi",emcalphi);
-	chain.SetBranchAddress("emcalieta",emcalieta);
-	chain.SetBranchAddress("emcaliphi",emcaliphi);
-
-	chain.SetBranchAddress("ihcaln",&ihcaln);
-	chain.SetBranchAddress("ihcale",ihcale);
-	chain.SetBranchAddress("ihcaleta",ihcaleta);
-	chain.SetBranchAddress("ihcalphi",ihcalphi);
-	chain.SetBranchAddress("ihcalieta",ihcalieta);
-	chain.SetBranchAddress("ihcaliphi",ihcaliphi);
-
+	chain.SetBranchStatus("ohcaln", 1);
+	chain.SetBranchStatus("ohcale", 1);
+	chain.SetBranchStatus("ohcaleta", 1);
+	chain.SetBranchStatus("ohcalphi", 1);
+	chain.SetBranchStatus("ohcalieta", 1);
+	chain.SetBranchStatus("ohcaliphi", 1);
 	chain.SetBranchAddress("ohcaln",&ohcaln);
 	chain.SetBranchAddress("ohcale",ohcale);
 	chain.SetBranchAddress("ohcaleta",ohcaleta);
@@ -227,12 +226,52 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
 	chain.SetBranchAddress("ohcalieta",ohcalieta);
 	chain.SetBranchAddress("ohcaliphi",ohcaliphi);
 
+	if (!clusters) {
+		chain.SetBranchStatus("emcaln", 1);
+		chain.SetBranchStatus("emcale",1);
+		chain.SetBranchStatus("emcaleta", 1);
+		chain.SetBranchStatus("emcalphi", 1);
+		chain.SetBranchStatus("emcalieta", 1);
+		chain.SetBranchStatus("emcaliphi", 1);
+
+		chain.SetBranchStatus("ihcaln", 1);
+		chain.SetBranchStatus("ihcale", 1);
+		chain.SetBranchStatus("ihcaleta", 1);
+		chain.SetBranchStatus("ihcalphi", 1);
+		chain.SetBranchStatus("ihcalieta", 1);
+		chain.SetBranchStatus("ihcaliphi", 1);
+
+		chain.SetBranchAddress("emcaln",&emcaln);
+		chain.SetBranchAddress("emcale",emcale);
+		chain.SetBranchAddress("emcaleta",emcaleta);
+		chain.SetBranchAddress("emcalphi",emcalphi);
+		chain.SetBranchAddress("emcalieta",emcalieta);
+		chain.SetBranchAddress("emcaliphi",emcaliphi);
+
+		chain.SetBranchAddress("ihcaln",&ihcaln);
+		chain.SetBranchAddress("ihcale",ihcale);
+		chain.SetBranchAddress("ihcaleta",ihcaleta);
+		chain.SetBranchAddress("ihcalphi",ihcalphi);
+		chain.SetBranchAddress("ihcalieta",ihcalieta);
+		chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+	}
+
 	if (!emcal_clusters) {
+		chain.SetBranchStatus("clsmult", 1);
+		chain.SetBranchStatus("cluster_e", 1);
+		chain.SetBranchStatus("cluster_eta", 1);
+		chain.SetBranchStatus("cluster_phi", 1);
+
 		chain.SetBranchAddress("clsmult",&clsmult);
 		chain.SetBranchAddress("cluster_e",cluster_e);
 		chain.SetBranchAddress("cluster_eta",cluster_eta);
 		chain.SetBranchAddress("cluster_phi",cluster_phi);
 	} else {
+		chain.SetBranchStatus("emcal_clsmult", 1);
+		chain.SetBranchStatus("emcal_cluster_e", 1);
+		chain.SetBranchStatus("emcal_cluster_eta", 1);
+		chain.SetBranchStatus("emcal_cluster_phi", 1);
+
 		chain.SetBranchAddress("emcal_clsmult",&clsmult);
 		chain.SetBranchAddress("emcal_cluster_e",cluster_e);
 		chain.SetBranchAddress("emcal_cluster_eta",cluster_eta);
@@ -401,7 +440,6 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
 	  					h_ue_2D_transverse->Fill(ohcaleta[i],dphi,ohcale[i]/cosh(ohcaleta[i]));
 	  					h_trans_et_2D_index_ohcal->Fill(ohcalieta[i],ohcaliphi[i],ohcale[i]/cosh(ohcaleta[i]));
 	  					h_trans_et_2D_index_total->Fill(ohcalieta[i],ohcaliphi[i],ohcale[i]/cosh(ohcaleta[i]));
-	  					ohcal_towers[8*(ohcalieta[i]/2)+ohcaliphi[i]/8]->Fill(ohcale[i]/cosh(ohcaleta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) {
 	  					et_away += ohcale[i]/cosh(ohcaleta[i]);
 	  					h_ue_2D_away->Fill(ohcaleta[i],dphi,ohcale[i]/cosh(ohcaleta[i]));
@@ -472,6 +510,19 @@ void dijet_ue_tower_spectra_analysis(string infilename = "sim_run21_jet10_output
   			h_ue_pt_towards->Fill(lead.Pt(),et_towards);
   			h_ue_pt_transverse->Fill(lead.Pt(),et_transverse);
   			h_ue_pt_away->Fill(lead.Pt(),et_away);
+
+  			for (int i = 0; i < ohcaln; i++) {
+  				TVector3 oh;
+  				oh.SetPtEtaPhi(ohcale[i]/cosh(ohcaleta[i]),ohcaleta[i],ohcalphi[i]);
+  				float dphi = lead.DeltaPhi(oh);
+				if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) {
+					if (et_transverse > 0) {
+						h_ohcal_pos_ue_towers->Fill(ohcale[i]/cosh(ohcaleta[i]));
+					} else {
+						h_ohcal_neg_ue_towers->Fill(ohcale[i]/cosh(ohcaleta[i]));
+					}
+  				}
+  			}
 
   			events++;
   		}

@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "Calo_Calib.C"
+#include <Calo_Calib.C>
 
 #include "mdctreemaker/MDCTreeMaker.h"
 
@@ -112,29 +112,69 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     if (!strcmp(type,"run22_jet10")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_truthinfo_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet10_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run22_jet20")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet20_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet20_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet20_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet20_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run22_jet30")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_truthinfo_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet30_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run22_jet50")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet50_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet50_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet50_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_jet50_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run22_mb")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_truth_jet_" + sseg.str() + ".list";
       filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_global_" + sseg.str() + ".list"; 
       filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_truthinfo_" + sseg.str() + ".list";
       filelisttracks = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_mb_dst_tracks_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run22_herwig_jet10")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet10_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet10_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet10_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet10_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run22_herwig_jet30")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet30_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet30_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet30_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run22_herwig_jet30_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_jet10")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_truthinfo_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet10_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run21_jet20")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet20_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet20_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet20_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet20_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_jet30")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_truth_jet_" + sseg.str() + ".list";
-      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_global_" + sseg.str() + ".list"; 
-      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_truthinfo_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet30_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run21_jet50")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet50_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet50_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet50_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_jet50_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run21_herwig_jet10")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run21_herwig_jet30")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet30_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet30_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet30_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet30_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_mb")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_mb_dst_truth_jet_" + sseg.str() + ".list";
@@ -147,24 +187,58 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
 
   std::string outfilename;
   if (!isSim) {
-    if (!strcmp(type,"1.5mrad")) {
+    if (!strcmp(type,"1.5mrad_calofitting")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_1.5mrad_ana468_calofitting_jettrigeff_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
+    } else if (!strcmp(type,"1.5mrad")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output1.5mrad_ana468_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
+      } else if (!strcmp(type,"0mrad")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_0mrad_ana468_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
     } else {
-      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
-      //outfilename = "/sphenix/user/egm2153/calib_study/JetValidation/analysis/output_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
+      std::cout << "unknown data dst type" << std::endl;
     }
   } else {
     if (!strcmp(type,"run22_jet10")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet10_3sigma_output_" + to_string(seg) + ".root";
-    } else if (!strcmp(type,"run22_jet30")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet10_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run22_jet20")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet20_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet20_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    }  else if (!strcmp(type,"run22_jet30")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet30_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet30_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run22_jet50")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet50_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_jet50_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run22_mb")) { 
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/topo_valid_3sigma_nosplitting_sim_run22_mb_output_" + to_string(seg) + ".root";
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_mb_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_mb_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type,"run22_herwig_jet10")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_herwig_jet10_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_herwig_jet10_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type,"run22_herwig_jet30")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_herwig_jet30_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run22_herwig_jet30_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_jet10")) {
-      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet10_output_" + to_string(seg) + ".root";
-    } else if (!strcmp(type,"run21_jet30")) {
-      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet30_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet10_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet10_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run21_jet20")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet20_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet20_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    }  else if (!strcmp(type,"run21_jet30")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet30_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet30_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run21_jet50")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet50_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_jet50_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type,"run21_mb")) { 
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type,"run21_herwig_jet10")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_herwig_jet10_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_herwig_jet10_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type,"run21_herwig_jet30")) {
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_herwig_jet30_3sigma_output_" + to_string(seg) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_herwig_jet30_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_mb")) { 
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_output_" + to_string(seg) + ".root";
     }
@@ -180,19 +254,15 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     rc->set_uint64Flag("TIMESTAMP", runnumber);
   } else {
     rc->set_StringFlag("CDB_GLOBALTAG", "MDC2");
-    rc->set_uint64Flag("TIMESTAMP", 22);
+    rc->set_uint64Flag("TIMESTAMP", 21);
   }
     CDBInterface::instance()->Verbosity(1);
-  
-  if (!isSim) {
     
-    MbdReco *mbdreco = new MbdReco();
-    se->registerSubsystem(mbdreco);
+  MbdReco *mbdreco = new MbdReco();
+  se->registerSubsystem(mbdreco);
 
-    GlobalVertexReco *gvertex = new GlobalVertexReco();
-    se->registerSubsystem(gvertex);
-    
-  }
+  GlobalVertexReco *gvertex = new GlobalVertexReco();
+  se->registerSubsystem(gvertex);
 
   Process_Calo_Calib();
 
@@ -215,15 +285,18 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   HIJetReco();
   
   InclusiveJet *myJetVal = new InclusiveJet("AntiKt_Tower_r04", "AntiKt_Truth_r04", outfilename.c_str());
-  myJetVal->setPtRange(5, 100);
+  myJetVal->doJetTriggerCut(false);
+  myJetVal->doJetLeadPtCut(false);
+  myJetVal->setLeadPtCut(5.0);
+  myJetVal->setPtRange(2, 100);
   myJetVal->setEtaRange(-0.7, 0.7);
   if (isSim) myJetVal->doTruth(1);
   myJetVal->doSeeds(0);
-  myJetVal->doTowers(1);
-  if (isSim) myJetVal->doTruthParticles(1);
+  myJetVal->doTowers(0);
+  if (isSim) myJetVal->doTruthParticles(0);
   myJetVal->doTracks(0);
-  myJetVal->doTopoclusters(1);
-  myJetVal->doEmcalClusters(1);
+  myJetVal->doTopoclusters(0);
+  myJetVal->doEmcalClusters(0);
   se->registerSubsystem(myJetVal);
 
   //MDCTreeMaker *tt = new MDCTreeMaker("MDCTreeMaker", outfilename, isSim, 1, 0);
@@ -253,7 +326,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
 
     Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
     intrue->AddListFile(filelisttruth,1);
-    se->registerInputManager(intrue);
+    if (strcmp(type, "run21_herwig_jet10") && strcmp(type, "run21_herwig_jet30")) se->registerInputManager(intrue);
 
     Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
     in3->AddListFile(filelistglobal,1);

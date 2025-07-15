@@ -1,0 +1,7 @@
+executable = analysis_sim.sh
+arguments = $(trig) $(start_seg) $(end_seg) 1
+output = output_logs/output_allsim_1_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_allsim_1_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue trig, start_seg, end_seg from analyze_jets_queue.list
