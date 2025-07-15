@@ -2,14 +2,19 @@
 
 int MakePlot_2Obj()
 {
-    std::string input_file_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Dec042024/completed/Run3/EvtVtxZ/TrackHist/completed/dNdEta/dNdEta_AllSensor_GeoAccCorr_VtxZ10_Mbin70/completed"; 
-    std::string input_file_name = "MC_PreparedNdEtaEach_AlphaCorr_GeoAccCorr_AllSensor_VtxZ10_Mbin70_00002_dNdEta.root";
-    std::string target_plot_name_1 = "h1D_TruedNdEta";
+    std::string input_file_directory_1 = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/old_folder/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin70/Folder_BaseLine/Run_0/completed"; 
+    std::string input_file_name_1 = "Data_PreparedNdEtaEach_AlphaCorr_AllSensor_VtxZ10_Mbin70_00054280_00000_dNdEta.root";
+    std::string target_plot_name_1 = "h1D_RotatedBkg_RecoTrackletEtaPerEvt";
+    
+    std::string input_file_directory_2 = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Feb102025/Run6_EvtZFitWidthChange/EvtVtxZ/FinalResult_10cm_Pol2BkgFit/completed/vtxZ_-10_10cm_MBin70/Folder_DeltaPhiCut/Run_0/completed";
+    std::string input_file_name_2 = "Data_PreparedNdEtaEach_AlphaCorr_AllSensor_VtxZ10_Mbin70_00054280_00000_dNdEta.root";
     std::string target_plot_name_2 = "h1D_RotatedBkg_RecoTrackletEtaPerEvt";
-    std::string output_directory = input_file_directory;
-    std::string output_file_name = "h1D_TruedNdEta";
+    
+    
+    std::string output_directory = input_file_directory_1;
+    std::string output_file_name = "h1D_RotatedBkg_RecoTrackletEtaPerEvt";
     std::pair<std::string, std::string> axes_label = {"Tracklet #eta", "Average Multiplicity Per Event  (/0.2)"};
-    std::string sPH_label = "Simulation";
+    std::string sPH_label = "Internal";
     std::vector<std::tuple<double,double,std::string>> additional_text = {
         // {0.2, 0.9, "The cluster pairs post the VtxZ linking requirement are filled"},
 

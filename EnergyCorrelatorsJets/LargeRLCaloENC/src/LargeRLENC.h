@@ -2,6 +2,10 @@
 //  -*- C++ -*-.
 #ifndef LARGERLENC_H
 #define LARGERLENC_H
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 //fun4all
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllBase.h>
@@ -23,12 +27,20 @@
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/RawTowerGeomContainer_Cylinderv1.h>
 
-//G4 opbjects
+
+//G4 objects
+
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 
-//jetbase objetcts 
+
+#include <phhepmc/PHHepMCGenEvent.h>  
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
+
+//jetbase objects 
+
 #include <jetbase/JetContainer.h>
 #include <jetbase/JetContainerv1.h>
 #include <jetbase/JetMapv1.h>
@@ -47,6 +59,14 @@
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+
+//trigger
+#include <ffarawobjects/Gl1Packetv2.h>
+#include <ffarawobjects/Gl1Packetv1.h>
+#include <calotrigger/TriggerAnalyzer.h>
+#include <calotrigger/TriggerRunInfov1.h>
+
+
 //c++
 #include <thread>
 #include <map>
@@ -57,15 +77,21 @@
 #include <array>
 #include <iostream>
 #include <fstream>
+
+#include <set>
+
 //root
 #include <TH1.h>
 #include <TH2.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TInterpreter.h>
+
+#include <TDirectory.h>
 //Homebrews 
 #include <calorimetertowerenc/MethodHistograms.h> 
-#include <DijetEventCuts.h>
+#include "DijetEventCuts.h"
+#include "HelperStructs.h"
 
 #define PI 3.14159265358979323464
 class PHCompositeNode;
@@ -75,31 +101,9 @@ class PHG4Hit;
 class PHG4Particle;
 class PHG4TruthInfoContainer;
 
-struct DijetQATypePlots{
-	DijetQATypePlots(){
-		bad_occ_em_oh_rat=new TH2F("h_bad_occupancy_EM_OH_rat", "Occupancy for events that fail the OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h_rat=new TH2F("h_bad_occupancy_EM_H_rat", "Occupancy for events that fail OHCAL ratio cut; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_oh=new TH2F("h_bad_occupancy_EM_OH", "Occupancy for events that pass  OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; #% Towers > 10 MeV OHCAL; N_{Evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		bad_occ_em_h=new TH2F("h_bad_occupancy_EM_H", "Occupancy for events that pass OHCAL ratio cut but otherwise fail; #% Towers #geq 10 MeV EMCAL; (#% Towers #geq 10 MeV OHCAL + #% Towers #geq 10 MeV IHCAL)/2", 100, -0.005, 0.995, 100, -0.005, 0.995);
-		ohcal_bad_hits=new TH2F("h_ohcal_bad_hits", "Energy depositon for events that fail the OHCAL ratio cut; #eta; #varphi; E [GeV]", 24, -1.1, 1.1, 64, -PI, PI);
-		emcal_occup=new TH1F("h_EMCAL_occupancy", "Occupancy of EMCAL all events; #% Towers #geq 10 MeV EMCAL; N_{evts}", 100, -0.005, 0.995);
-		ihcal_occup=new TH1F("h_IHCAL_occupancy", "Occupancy of IHCAL all events; #% Towers #geq 10 MeV IHCAL; N_{evts}", 100, -0.005, 0.995);
-		ohcal_occup=new TH1F("h_OHCAL_occupancy", "Occupancy of OHCAL all events; #% Towers #geq 10 MeV OHCAL; N_{evts}", 100, -0.005, 0.995);
-		ohcal_rat_occup=new TH2F("h_OHCAL_rat", "Occupancy of OHCAL as function of OHCAL ratio; #frac{E_{OHCAL}}{E_{ALL CALS}}; #% Towers #geq 500 MeV; N_{evts}", 100, -0.005, 0.995, 100, -0.005, 0.995);
-	}
-	TH2F* bad_occ_em_oh_rat=nullptr;
-	TH2F* bad_occ_em_h_rat=nullptr;
-	TH2F* bad_occ_em_oh=nullptr;
-	TH2F* bad_occ_em_h=nullptr;
-	TH2F* ohcal_bad_hits=nullptr;
-	TH2F* ohcal_rat_occup=nullptr;
-	TH1F* emcal_occup=nullptr;
-	TH1F* ihcal_occup=nullptr;
-	TH1F* ohcal_occup=nullptr;
-	TH1F* ohcal_rat_h=nullptr;
-	std::vector<TH2F*> QA_2D_plots {bad_occ_em_oh_rat, bad_occ_em_h_rat, bad_occ_em_oh, bad_occ_em_h, ohcal_bad_hits, ohcal_rat_occup};
-	std::vector<TH1F*> QA_1D_plots {emcal_occup, ihcal_occup, ohcal_occup};
-	};
+class TriggerAnalyzer; 
+
+
 
 class LargeRLENC : public SubsysReco
 {
@@ -116,9 +120,12 @@ class LargeRLENC : public SubsysReco
 		All, 
 		EMCAL,
 		IHCAL,
-		OHCAL
+
+		OHCAL, 
+		TRUTH
 	};
-  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
+  	LargeRLENC(const int n_run=0, const int n_segment=0, const float jet_min_pT=1.0, const bool data=false, const bool pedestal=false, std::fstream* ofs=nullptr, const std::string vari="E", const std::string &name = "LargeRLENC");
+
 
   	~LargeRLENC() override {};
 
@@ -172,24 +179,32 @@ class LargeRLENC : public SubsysReco
 	//and now for the unique stuff
 	void addTower(int, TowerInfoContainer*, RawTowerGeomContainer_Cylinderv1*, std::map<std::array<float, 3>, float>*, RawTowerDefs::CalorimeterId);
 	
-	JetContainer* getJets(std::string, std::string, std::array<float, 3>, float ohcal_rat, PHCompositeNode*);
+
+	std::array<float,3> HadronicEnergyBalence(Jet*, float, PHCompositeNode*);
+	std::vector<std::array<float,3>> getJetEnergyRatios(JetContainerv1*, float, PHCompositeNode*);	
+	JetContainerv1* getJets(std::string, std::string, std::array<float, 3>, float ohcal_rat, PHCompositeNode*);
+	void TruthRegion (std::map<std::array<float, 3>, float> , float,  std::string, std::array<float, 3>, float);
 
 	void CaloRegion(std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, float, std::string, std::array<float, 3>, float);
 
-	void SingleCaloENC(std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, int, float*);
+	void SingleCaloENC( std::map<std::array<float, 3>, float>, float, std::array<float, 3>, bool, bool, std::map<int, std::pair<float, float>>, LargeRLENC::Calorimeter);
 	
-	void CalculateENC(std::pair<std::array<float, 3>, float>, std::pair<std::array<float, 3>, float>, std::map<std::array<float, 3>, float>, std::pair<float, std::pair<float, float>>*, std::pair<float, std::vector< std::pair< std::pair<float, float>, float > > >  *, bool, bool);
+	void CalculateENC(StrippedDownTower*, std::vector<StrippedDownTower>, bool, bool);
 
 	void JetEventObservablesBuilding(std::array<float, 3>, std::map<std::array<float, 3>, float>, std::map<float, float>*);
 	float getR(float, float, float, float, bool print=false);
-
-
- private:
-
-	std::string algo, radius, output_file_name;
+	bool triggerCut(bool, PHCompositeNode*);
+	void Merger(TowerOutput*, std::vector<TowerOutput*>, std::set<float>, std::set<std::array<float, 3>>);
 	DijetEventCuts* eventCut;	
-  	bool isRealData;
-	int nRun, nSegment, m_Njets, n_evts;
+	void MakeEMCALRetowerMap(RawTowerGeomContainer_Cylinderv1* em_geom, TowerInfoContainer* emcal, RawTowerGeomContainer_Cylinderv1* h_geom, TowerInfoContainer* hcal );
+	std::array<float, 5> Thresholds;	
+	std::map<int, std::pair<float, float>> emcal_lookup_table;
+ private:
+	std::string algo, radius, output_file_name;
+	std::string ohcal_energy_towers="TOWERINFO_CALIB_HCALOUT", ihcal_energy_towers="TOWERINFO_CALIB_HCALIN", emcal_energy_towers="TOWERINFO_CALIB_CEMC";
+  	bool isRealData, pedestalData;
+	int nRun, nSegment, m_Njets, n_evts, n_with_jets=0;
+
 	float jetMinpT, MinpTComp;
 	float ptoE=1.; //need to actually do some studies into this in order to get a meaningful conversion factor
 	int m_region, m_calo; 
@@ -199,20 +214,25 @@ class LargeRLENC : public SubsysReco
 	std::map< std::string, std::array< std::map< std::pair< float, float >, float >, 3 > > t_pt_evt;
 	float m_phi, m_eta; 
 	std::string which_variable; //Which varaible are we caluclating the EEC over (E, E_T, p, p_T)
-	TTree* DijetQA, *EEC, *JetEvtObs;
-	std::vector<MethodHistograms*> FullCal, TowardRegion, AwayRegion, TransverseRegion;
-	std::vector<std::vector<MethodHistograms*>> Region_vector;
+
+	TTree* DijetQA, *EEC/*, *JetEvtObs*/;
+	std::vector<std::vector<MethodHistograms*>> Region_vector, Truth_Region_vector;
 	float m_etotal, m_eemcal, m_eihcal, m_eohcal;
 	std::array<float, 3> m_vertex;
 	std::vector<std::array<float, 3>> m_dijets;
-//	std::map<int, std::map<std::array<float, 3>, float> > m_pt;
-//	std::vector<float> m_pt_evts;
 	float m_xjl, m_Ajjl;
-	//std::fstream* text_out_file;
-//	bool write_to_file;
 	TH1F* emcal_occup, *ihcal_occup, *ohcal_occup, *ohcal_rat_h;
 	TH2F* ohcal_rat_occup, *ohcal_bad_hits, *bad_occ_em_oh, *bad_occ_em_h;
+	TH1F* IE, *badIE, *goodIE;
+	TH2F* E_IE, *badE_IE, *goodE_IE;
 	std::vector<std::array<float, 3>> m_emcal, m_ihcal, m_ohcal; //3 points, eta, phi, et
+	std::array<std::array<TH1F*, 3>, 3> Et_miss_hists;
+	std::array<float, 5> thresh_mins;
+	float ohcal_min; //7.5 MeV from jet 30 and 10 study
+	float emcal_min; //50 MeV
+	float ihcal_min; //7.5 MeV
+	float all_min; //65 MeV
+	//all these are conservative vals 
 
 };
 #endif // LARGERLENC_H

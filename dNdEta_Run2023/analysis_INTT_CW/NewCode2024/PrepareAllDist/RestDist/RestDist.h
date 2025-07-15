@@ -55,6 +55,7 @@ class RestDist{
         std::string GetOutputFileName() {return output_filename;}
         void SetINTTvtxZReweighting(TH1D * h1D_INTT_vtxZ_reweighting_in) {h1D_INTT_vtxZ_reweighting = (TH1D*)h1D_INTT_vtxZ_reweighting_in->Clone("INTT_vtxZ_reweighting");}
         void PrepareEvent();
+        void SetInnerBarrelRotation(double angle_in) {rotate_phi_angle = angle_in;}
         void EndRun();
 
     protected:
@@ -207,11 +208,11 @@ class RestDist{
         std::vector<double> centrality_edges = Constants::centrality_edges;
         int nCentrality_bin;
 
-        int nVtxZ_bin = 60;
-        std::pair<double, double> vtxZ_range = {-60, 60};
+        // int nVtxZ_bin = 60;
+        // std::pair<double, double> vtxZ_range = {-60, 60};
 
-        int nVtxZ_bin_narrow = 20;
-        std::pair<double, double> vtxZ_range_narrow = {-20, 20};
+        // int nVtxZ_bin_narrow = 20;
+        // std::pair<double, double> vtxZ_range_narrow = {-20, 20};
 
         // note : for deta_phi
         double DeltaPhiEdge_min = -0.07; // note : rad ~ -4 degree
@@ -235,6 +236,14 @@ class RestDist{
         std::pair<double, double> cut_GlobalMBDvtxZ = Constants::cut_GlobalMBDvtxZ;
         int cut_InttBcoFullDIff_next = Constants::cut_InttBcoFullDIff_next;
         int Semi_inclusive_bin = Constants::Semi_inclusive_bin;
+
+        std::vector<double> data_edep_bins_vec = {
+            0, 35, 45, 60, 90, 120, 150, 180, 210, 300
+        };
+
+        std::vector<double> MC_edep_bins_vec = {
+            0, 15, 30, 60, 90, 120, 150, 180, 210, 300
+        };
 
 };
 

@@ -2,13 +2,14 @@
 
 int MakePlot_ColumnUniformity()
 {
-    std::string input_file_directory = "/sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/ColumnCheck/completed/MulMap/completed"; 
-    std::string input_file_name = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize39_00054280.root";
+    std::string input_file_directory = "/sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/ColumnCheck/baseline/completed/MulMap/completed"; 
+    std::string input_file_name = "MulMap_BcoFullDiffCut_Mbin70_VtxZ-30to30cm_ClusQAAdc35PhiSize40_00054280.root";
     std::string output_directory = input_file_directory;
 
     std::vector<std::tuple<double,double,std::string>> additional_text = {
-        {0.22, 0.82, "Centrality 0-70%"},
-        {0.22, 0.78, "|MBD vtxZ| #leq 30 cm"}
+        {0.22, 0.86, "Centrality 0-70%"},
+        {0.22, 0.82, "|MBD vtxZ| #leq 30 cm"},
+        {0.22, 0.78, "MC: HIJING"}
     };
 
     std::string sPH_label_data = "Internal";

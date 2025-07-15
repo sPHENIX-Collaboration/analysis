@@ -18,7 +18,7 @@ void Run_EvtVtxZTracklet(
   std::pair<std::pair<double,double>,std::pair<double,double>> DeltaPhiCutInDegree = {{-0.6, 0.6},{-1000.,1000.}}, // note : in degree
   std::pair<std::pair<double,double>,std::pair<double,double>> DCAcutIncm = {{-0.1, 0.1},{-1000.,1000.}}, // note : in cm
   int ClusAdcCut = 35,
-  int ClusPhiSizeCut = 39,
+  int ClusPhiSizeCut = 40,
   
   bool PrintRecoDetails = 1,
   bool DrawEvtVtxZ = 1,
@@ -32,8 +32,13 @@ void Run_EvtVtxZTracklet(
 )
 {
 
-  std::pair<double, double> vertexXYIncm_MC = {-0.0217356, 0.223402}; // note : in cm // note : MC
-  std::pair<double, double> vertexXYIncm_data = {-0.0230601, 0.223231}; // note : in cm // note : data
+  // todo :
+  // std::pair<double, double> vertexXYIncm_MC = {-0.0218978, 0.223183}; // note : in cm // note : MC HIJING
+  // std::pair<double, double> vertexXYIncm_MC = {-0.0216964, 0.223331}; // note : in cm // note : MC HIJING + strangeness
+  std::pair<double, double> vertexXYIncm_MC = {-0.0218667, 0.223296}; // note : in cm // note : MC AMPT
+  // std::pair<double, double> vertexXYIncm_MC = {-0.021907, 0.223293}; // note : in cm // note : MC EPOS
+
+  std::pair<double, double> vertexXYIncm_data = {-0.0220728, 0.222956}; // note : in cm // note : data {Run54280_HR_Feb/Run5}
 
   std::pair<double, double> vertexXYIncm = (run_num == -1) ? vertexXYIncm_MC : vertexXYIncm_data;
 

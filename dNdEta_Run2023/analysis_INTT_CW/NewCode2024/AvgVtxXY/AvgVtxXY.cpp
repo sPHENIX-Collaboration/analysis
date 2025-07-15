@@ -642,6 +642,7 @@ void AvgVtxXY::FindVertexQuadrant(int nIteration, double search_Window_half, std
     {   
         for (int quadrant_i = 0; quadrant_i < 4; quadrant_i++)
         {
+            // note : innerphi_delta_phi_fiterror, innerphi_dca_fiterror
             std::pair<double,double> current_pair = RunSingleCandidate(trial_i, quadrant_i, vtx_vec[quadrant_i]);
 
             gr_map[Form("History_InnerPhi_DeltaPhi_fitErrorAll")] -> SetPoint(
@@ -664,6 +665,7 @@ void AvgVtxXY::FindVertexQuadrant(int nIteration, double search_Window_half, std
             else 
             {
                 if (current_pair.first < small_pair.first && current_pair.second < small_pair.second)
+                // if (current_pair.second < small_pair.second) // note : only consider the DCA fit error
                 {
                     small_index = quadrant_i;
                     small_pair = current_pair;

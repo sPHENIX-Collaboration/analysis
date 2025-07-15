@@ -29,6 +29,7 @@
 #include <TObjArray.h>
 
 #include "structure.h"
+#include "../Constants.h"
 
 class EvtVtxZProtoTracklet{
     public:
@@ -64,6 +65,9 @@ class EvtVtxZProtoTracklet{
         void SetGeoOffset(std::map<std::string, std::vector<double>> input_geo_offset_map);
         void MainProcess();
         void EndRun(int close_file_in = 1);
+        TH1D * GetINTTRecovtxZH1D(){
+            return reco_INTTvtxZ;
+        }
 
     protected:
         struct clu_info{
@@ -135,6 +139,11 @@ class EvtVtxZProtoTracklet{
 
     double INTTvtxZ;
     double INTTvtxZError;
+
+    // note : additional branches used for making the vertex Z distribution
+    int NTruthVtx;
+    bool is_min_bias;
+    float MBD_centrality;
 
     // note : the flag
     int m_withTrig = false;
@@ -275,6 +284,20 @@ class EvtVtxZProtoTracklet{
     std::pair<double,double> Get_eta(std::vector<double>p0, std::vector<double>p1, std::vector<double>p2);
     double grEY_stddev(TGraphErrors * input_grr);
     std::pair<double, double> mirrorPolynomial(double a, double b);
+
+    // note : ---------------------- It's to have a vertex Z distribution ----------------------
+    TH1D * reco_INTTvtxZ;
+    void FillRecoINTTVtxZH1D(int event_index);
+    int nVtxZ_bin = 60;
+    std::pair<double, double> vtxZ_range = {-60, 60};
+
+    std::pair<double, double> cut_vtxZDiff = Constants::cut_vtxZDiff;
+    std::pair<double, double> cut_TrapezoidalFitWidth = Constants::cut_TrapezoidalFitWidth;
+    std::pair<double, double> cut_TrapezoidalFWHM = Constants::cut_TrapezoidalFWHM;
+    std::pair<double, double> cut_GlobalMBDvtxZ = Constants::cut_GlobalMBDvtxZ;
+
+    int cut_InttBcoFullDIff_next = Constants::cut_InttBcoFullDIff_next;
+    int cut_MBD_centrality = 70;
 
     // note : ---------------------- For constants ----------------------
     const int B0L0_index = 3;

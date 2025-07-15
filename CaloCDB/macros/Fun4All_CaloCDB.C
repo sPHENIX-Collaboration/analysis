@@ -32,7 +32,7 @@ using std::istringstream;
 
 #include "Calo_Calib.C"
 
-void Fun4All_CaloCDB(const string &inputFile, UInt_t nEvents = 0)
+void Fun4All_CaloCDB(const string &inputFile, Int_t nEvents = 0)
 {
   cout << "#############################" << endl;
   cout << "Run Parameters" << endl;
@@ -46,8 +46,8 @@ void Fun4All_CaloCDB(const string &inputFile, UInt_t nEvents = 0)
 
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
 
-  pair<Int_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(inputFile);
-  Int_t runnumber = runseg.first;
+  pair<ULong_t, Int_t> runseg = Fun4AllUtils::GetRunSegment(inputFile);
+  ULong_t runnumber = runseg.first;
   rc->set_uint64Flag("TIMESTAMP", runnumber);
 
   // Geometry
@@ -79,7 +79,7 @@ void Fun4All_CaloCDB(const string &inputFile, UInt_t nEvents = 0)
 }
 
 # ifndef __CINT__
-int main(int argc, char* argv[]) {
+Int_t main(Int_t argc, const char* const argv[]) {
     if(argc < 2 || argc > 3){
         cout << "usage: ./bin/Fun4All_CaloCDB inputFile [events]" << endl;
         cout << "inputFile: Location of fileList containing dst." << endl;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    UInt_t events = 0;
+    Int_t events = 0;
 
     if(argc >= 3) {
         events = atoi(argv[2]);

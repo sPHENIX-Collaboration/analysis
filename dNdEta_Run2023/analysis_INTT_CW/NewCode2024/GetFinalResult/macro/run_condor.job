@@ -3,13 +3,13 @@ Initialdir         = /sphenix/user/ChengWei/INTT/INTT_dNdeta_repo/NewCode2024/Ge
 Executable         = run_job.sh
 PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
 concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:100
-request_memory     = 4GB
+request_memory     = 20GB
 Priority           = 20
 job_lease_duration = 86400
 
 job_offset    = 0
 process_shift      = $(Process) + $(job_offset) 
-output_directory   = /sphenix/tg/tg01/commissioning/INTT/work/cwshih/seflgendata/run_54280_HR_Jan172025/Run4/EvtVtxZ/FinalResult
+output_directory   = /sphenix/user/ChengWei/sPH_dNdeta/Run24AuAuMC/Sim_HIJING_MDC2_ana472_20250307/Run7/EvtVtxZ/FinalResult_10cm_Pol2BkgFit_DeltaPhi0p026
 macro_name         = Run_54280
 
 Output             = $(output_directory)/cw_log/condor_$INT(process_shift,%05d).out
