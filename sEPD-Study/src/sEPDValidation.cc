@@ -29,7 +29,6 @@
 #include <centrality/CentralityInfo.h>
 
 // -- Trigger
-#include <calotrigger/TriggerRunInfo.h>
 #include <ffarawobjects/Gl1Packet.h>
 
 // -- Event Plane
@@ -145,19 +144,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 {
   m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ALL));
-
-  TriggerRunInfo *triggerruninfo = findNode::getClass<TriggerRunInfo>(topNode, "TriggerRunInfo");
-
-  if (!triggerruninfo)
-  {
-    std::cout << "sEPDValidation::process_event - Error can not find TriggerRunInfo node " << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  if (m_event == 1)
-  {
-    triggerruninfo->identify();
-  }
 
   // zvertex
   m_zvtx = -9999;
