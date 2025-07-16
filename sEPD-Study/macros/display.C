@@ -51,42 +51,64 @@ using std::unordered_set;
 namespace fs = std::filesystem;
 
 namespace myAnalysis {
-    void make_plots(const string &outputDir);
-    Int_t readHists(const string &input);
-    void initHists();
-    map<string,std::unique_ptr<TH1>> m_hists;
+    void make_plots_psi(TH1* hPsi_x, TH1* hPsi_y, TLegend* leg, TCanvas* c, Int_t n, const string &title, const string &x_title);
+    Bool_t make_plots_QA(const string &input, const string &outputDir, const string &qa_file_path);
+    void make_plots_Q_vec(const string &input, const string &outputDir);
+    void print_stats();
+
+    struct QA_general {
+        std::unique_ptr<TH1> hEvent;
+        std::unique_ptr<TH1> hCentrality;
+        std::unique_ptr<TH1> hVtxZ;
+        std::unique_ptr<TH1> hVtxZ_MB;
+        std::unique_ptr<TH2> h2SEPD_Charge;
+        std::unique_ptr<TH3> h3SEPD_Total_Charge;
+    };
+
+    struct QA_Q_vec {
+        std::unique_ptr<TH3> h3SEPD_Psi_2;
+        std::unique_ptr<TH3> h3SEPD_Psi_3;
+        std::unique_ptr<TH3> h3SEPD_EventPlaneInfo_Psi_2;
+        std::unique_ptr<TH3> h3SEPD_EventPlaneInfo_Psi_3;
+    };
+
     map<string,Int_t> m_ctr;
 
-    // Int_t m_bins_calib = 200;
-    // Double_t m_calib_low  = 0;
-    // Double_t m_calib_high = 10;
-
-    // Int_t m_iter = 0;
-
-    Bool_t m_saveFig = false;
+    Bool_t m_saveFig = true;
 }
 
-void myAnalysis::initHists() {
-    // // dummy hists for labeling
-    // // m_hists["h2DummySector"] = new TH2F("h2DummySector","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, 2, 0, 2);
-    // // m_hists["h2DummyIB"] = new TH2F("h2DummyIB","", myUtils::m_nsector/2, 0, myUtils::m_nsector/2, myUtils::m_nib*2/myUtils::m_nsector, 0, myUtils::m_nib*2/myUtils::m_nsector);
+void myAnalysis::make_plots_psi(TH1 *hPsi_x, TH1 *hPsi_y, TLegend *leg, TCanvas *c, Int_t n, const string &title, const string &x_title)
+{
+  c->cd(n);
+  gPad->SetTopMargin(0.1f);
 
-    // for(Int_t i = 0; i < myUtils::m_nsector; ++i) {
-    //     Int_t x = i % (myUtils::m_nsector / 2) + 1;
-    //     Int_t y = (i < (myUtils::m_nsector / 2)) ? 2 : 1;
-    //     static_cast<TH2*>(m_hists["h2DummySector"])->SetBinContent(x,y,i);
-    // }
+  Double_t y_lim_high = std::max(hPsi_x->GetMaximum(), hPsi_y->GetMaximum()) * 1.1;
 
-    // for(Int_t i = 0; i < myUtils::m_nib; ++i) {
-    //     Int_t val = i % myUtils::m_nib_per_sector;
-    //     Int_t x = (i / myUtils::m_nib_per_sector) % (myUtils::m_nsector / 2) + 1;
-    //     Int_t y = (i < (myUtils::m_nib / 2)) ? myUtils::m_nib_per_sector - val : myUtils::m_nib_per_sector + val + 1;
-    //     static_cast<TH2*>(m_hists["h2DummyIB"])->SetBinContent(x,y,val);
-    // }
+  hPsi_x->Draw();
+  hPsi_x->SetTitle(title.c_str());
+  hPsi_x->GetYaxis()->SetTitle("Events");
+  hPsi_x->GetXaxis()->SetTitle(x_title.c_str());
+  hPsi_x->GetYaxis()->SetRangeUser(0, y_lim_high);
+  hPsi_x->GetYaxis()->SetTitleOffset(1.6f);
+  hPsi_x->GetXaxis()->SetTitleOffset(1.f);
+  gStyle->SetTitleY(.97f);
+
+  hPsi_y->Draw("same");
+  hPsi_y->SetLineColor(kRed);
+
+  stringstream legA, legB;
+
+  legA << "South";
+  legB << "North";
+
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.06f);
+  leg->AddEntry(hPsi_x, legA.str().c_str(), "l");
+  leg->AddEntry(hPsi_y, legB.str().c_str(), "l");
+  leg->Draw("same");
 }
 
-Int_t myAnalysis::readHists(const string &input) {
-
+void myAnalysis::make_plots_Q_vec(const string &input, const string &outputDir) {
     fs::path p(input);
     string stem = p.stem().string();
     string run = myUtils::split(stem,'-')[1];
@@ -95,36 +117,22 @@ Int_t myAnalysis::readHists(const string &input) {
     std::unique_ptr<TFile> tfile(TFile::Open(input.c_str()));
     if (!tfile || tfile->IsZombie()) {
         cout << "Error: Could not open ROOT file: " << input << endl;
-        return 1;
+        return;
     }
 
-    m_hists["hEvent_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hEvent")->Clone(("hEvent_"+run).c_str())));
-    m_hists["hCentrality_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hCentrality")->Clone(("hCentrality_"+run).c_str())));
-    m_hists["hVtxZ_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hVtxZ")->Clone(("hVtxZ_"+run).c_str())));
-    m_hists["hVtxZ_MB_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hVtxZ_MB")->Clone(("hVtxZ_MB_"+run).c_str())));
+    QA_Q_vec qa =
+    {
+      .h3SEPD_Psi_2 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_Psi_2"))),
+      .h3SEPD_Psi_3 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_Psi_3"))),
+      .h3SEPD_EventPlaneInfo_Psi_2 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_EventPlaneInfo_Psi_2"))),
+      .h3SEPD_EventPlaneInfo_Psi_3 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_EventPlaneInfo_Psi_3")))
+    };
 
-    m_hists["h3SEPD_Charge_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("h3SEPD_Charge")->Clone(("h3SEPD_Charge_"+run).c_str())));
-    m_hists["h2SEPD_North_Psi2_Q_cent_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("h2SEPD_North_Psi2_Q_cent")->Clone(("h2SEPD_North_Psi2_Q_cent_"+run).c_str())));
-    m_hists["h2SEPD_South_Psi2_Q_cent_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("h2SEPD_South_Psi2_Q_cent")->Clone(("h2SEPD_South_Psi2_Q_cent_"+run).c_str())));
-
-    m_hists["h2SEPD_North_Psi3_Q_cent_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("h2SEPD_North_Psi3_Q_cent")->Clone(("h2SEPD_North_Psi3_Q_cent_"+run).c_str())));
-    m_hists["h2SEPD_South_Psi3_Q_cent_"+run] = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("h2SEPD_South_Psi3_Q_cent")->Clone(("h2SEPD_South_Psi3_Q_cent_"+run).c_str())));
-
-    tfile->Close();
-
-    return 0;
-}
-
-void myAnalysis::make_plots(const string &outputDir) {
     std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>();
     c1->SetTickx();
     c1->SetTicky();
 
     c1->SetCanvasSize(1200, 1000);
-    c1->SetLeftMargin(.13f);
-    c1->SetRightMargin(.03f);
-    c1->SetTopMargin(.1f);
-    c1->SetBottomMargin(.12f);
 
     gStyle->SetOptTitle(1);
     gStyle->SetTitleStyle(0);
@@ -133,320 +141,211 @@ void myAnalysis::make_plots(const string &outputDir) {
     gStyle->SetTitleFillColor(0);
     gStyle->SetTitleBorderSize(0);
 
-    string output = outputDir + "/plots-EventType.pdf";
+    c1->Divide(2, 2, 0.00025f, 0.00025f);
 
-    c1->Print((output + "[").c_str(), "pdf portrait");
+    string output = outputDir + "/pdf/plots-" + run + ".pdf";
 
-    for (const auto &[name, hist] : m_hists)
-    {
-        if(name.starts_with("hEvent")) {
-            string run = myUtils::split(name,'_')[1];
-            stringstream title;
-            title << "Event Type: " << run;
+    Double_t xshift = 0.5;
+    Double_t yshift = 0;
 
-            hist->Draw();
-            hist->GetXaxis()->SetTitleOffset(1.f);
-            hist->GetYaxis()->SetRangeUser(0, hist->GetMaximum()*1.2);
-            hist->SetTitle(title.str().c_str());
+    std::unique_ptr<TH1> h3SEPD_Psi_2_x(qa.h3SEPD_Psi_2->Project3D("x"));
+    std::unique_ptr<TH1> h3SEPD_Psi_2_y(qa.h3SEPD_Psi_2->Project3D("y"));
+    std::unique_ptr<TH1> h3SEPD_Psi_3_x(qa.h3SEPD_Psi_3->Project3D("x"));
+    std::unique_ptr<TH1> h3SEPD_Psi_3_y(qa.h3SEPD_Psi_3->Project3D("y"));
 
-            c1->Print(output.c_str(), "pdf portrait");
-            if (m_saveFig) c1->Print((outputDir + "/images/" + name + ".png").c_str());
-        }
+    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_2_x(qa.h3SEPD_EventPlaneInfo_Psi_2->Project3D("x"));
+    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_2_y(qa.h3SEPD_EventPlaneInfo_Psi_2->Project3D("y"));
+    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_3_x(qa.h3SEPD_EventPlaneInfo_Psi_3->Project3D("x"));
+    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_3_y(qa.h3SEPD_EventPlaneInfo_Psi_3->Project3D("y"));
+
+    std::unique_ptr<TLegend> leg  = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+    std::unique_ptr<TLegend> leg2 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+    std::unique_ptr<TLegend> leg3 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+    std::unique_ptr<TLegend> leg4 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+
+    make_plots_psi(h3SEPD_Psi_2_x.get(), h3SEPD_Psi_2_y.get(), leg.get(), c1.get(), 1, "Run: " + run + " , |z| < 10 cm and MB", "2#Psi_{2}");
+    make_plots_psi(h3SEPD_Psi_3_x.get(), h3SEPD_Psi_3_y.get(), leg2.get(), c1.get(), 2, "|z| < 10 cm and MB", "3#Psi_{3}");
+    make_plots_psi(h3SEPD_EventPlaneInfo_Psi_2_x.get(), h3SEPD_EventPlaneInfo_Psi_2_y.get(), leg3.get(), c1.get(), 3, "EventPlaneInfo , |z| < 10 cm and MB", "2#Psi_{2}");
+    make_plots_psi(h3SEPD_EventPlaneInfo_Psi_3_x.get(), h3SEPD_EventPlaneInfo_Psi_3_y.get(), leg4.get(), c1.get(), 4, "EventPlaneInfo , |z| < 10 cm and MB", "3#Psi_{3}");
+
+    c1->Update();
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/QA-Q-vec-" + run + ".png").c_str());
+}
+
+Bool_t myAnalysis::make_plots_QA(const string &input, const string &outputDir, const string &qa_file_path) {
+    fs::path p(input);
+    string stem = p.stem().string();
+    string run = myUtils::split(stem,'-')[1];
+
+    cout << "Processing: " << run << endl;
+    std::unique_ptr<TFile> tfile(TFile::Open(input.c_str()));
+    if (!tfile || tfile->IsZombie()) {
+        cout << "Error: Could not open ROOT file: " << input << endl;
+        return false;
     }
 
-    c1->Print((output + "]").c_str(), "pdf portrait");
-
-    // ------------------------------------------------------
-
-    output = outputDir + "/plots-Centrality.pdf";
-
-    c1->Print((output + "[").c_str(), "pdf portrait");
-
-    for (const auto &[name, hist] : m_hists)
+    QA_general qa =
     {
-        if(name.starts_with("hCentrality")) {
-            string run = myUtils::split(name,'_')[1];
-            stringstream title;
-            title << "Centrality: " << run;
+      .hEvent = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hEvent"))),
+      .hCentrality = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hCentrality"))),
+      .hVtxZ = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hVtxZ"))),
+      .hVtxZ_MB = std::unique_ptr<TH1>(static_cast<TH1*>(tfile->Get("hVtxZ_MB"))),
+      .h2SEPD_Charge = std::unique_ptr<TH2>(static_cast<TH2*>(tfile->Get("h2SEPD_Charge"))),
+      .h3SEPD_Total_Charge = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_Total_Charge")))
+    };
 
-            hist->Draw();
-            hist->GetXaxis()->SetTitleOffset(1.f);
-            hist->SetTitle(title.str().c_str());
+    std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>();
+    c1->SetTickx();
+    c1->SetTicky();
 
-            c1->Print(output.c_str(), "pdf portrait");
-            if (m_saveFig) c1->Print((outputDir + "/images/" + name + ".png").c_str());
-        }
+    c1->SetCanvasSize(1200, 1000);
+
+    gStyle->SetOptTitle(1);
+    gStyle->SetTitleStyle(0);
+    gStyle->SetTitleW(1);
+    gStyle->SetTitleH(0.08f);
+    gStyle->SetTitleFillColor(0);
+    gStyle->SetTitleBorderSize(0);
+
+    c1->Divide(2, 2, 0.00025f, 0.00025f);
+
+    string output = outputDir + "/pdf/plots-" + run + ".pdf";
+
+    Bool_t is_good = true;
+    Bool_t no_mb_events = false;
+    Bool_t high_avg_zvtx = false;
+
+    ++m_ctr["run_ctr"];
+    Int_t events = static_cast<Int_t>(qa.hEvent->GetBinContent(3));
+    m_ctr["total_mb_events_all"] += events;
+
+    cout << "Run: " << run;
+    cout << ", Events: " << events << endl;
+
+    if(events == 0) {
+        no_mb_events = true;
+        is_good = false;
+        ++m_ctr["no_mb_events"];
     }
 
-    c1->Print((output + "]").c_str(), "pdf portrait");
+    c1->cd(1);
+    gPad->SetTopMargin(0.1f);
 
-    // ------------------------------------------------------
+    stringstream title;
+    title << "Run: " << run;
 
-    output = outputDir + "/plots-VtxZ.pdf";
+    qa.hEvent->Draw();
+    qa.hEvent->GetXaxis()->SetTitleOffset(1.f);
+    qa.hEvent->GetYaxis()->SetTitleOffset(1.6f);
+    qa.hEvent->GetXaxis()->SetLabelSize(0.05f);
+    qa.hEvent->GetYaxis()->SetRangeUser(0, qa.hEvent->GetMaximum()*1.1);
+    qa.hEvent->SetTitle(title.str().c_str());
+    gStyle->SetTitleY(.97f);
 
-    c1->Print((output + "[").c_str(), "pdf portrait");
+    c1->cd(2);
+    gPad->SetTopMargin(0.1f);
 
-    for (const auto &[name, hist] : m_hists)
-    {
-        if(name.starts_with("hVtxZ") && !name.starts_with("hVtxZ_MB")) {
-            string run = myUtils::split(name,'_')[1];
-            stringstream title;
-            title << "Z Vertex: " << run;
+    qa.hCentrality->Draw();
+    qa.hCentrality->GetXaxis()->SetTitleOffset(1.f);
+    qa.hCentrality->GetYaxis()->SetTitleOffset(1.6f);
 
-            hist->Draw();
-            hist->GetXaxis()->SetTitleOffset(1.f);
-            // hist->GetYaxis()->SetRangeUser(0, hist->GetMaximum()*1.2);
-            hist->SetTitle(title.str().c_str());
+    c1->Update();
+    c1->cd(3);
+    gPad->SetTopMargin(0.1f);
 
-            c1->Print(output.c_str(), "pdf portrait");
-            if (m_saveFig) c1->Print((outputDir + "/images/" + name + ".png").c_str());
-        }
+    Int_t vtx_z_rebin_factor = 4;
+
+    qa.hVtxZ->Draw();
+    qa.hVtxZ->Rebin(vtx_z_rebin_factor);
+    qa.hVtxZ->GetXaxis()->SetTitleOffset(1.f);
+    qa.hVtxZ->GetYaxis()->SetTitleOffset(1.6f);
+    qa.hVtxZ->GetYaxis()->SetRangeUser(0, qa.hVtxZ->GetMaximum()*1.1);
+    gStyle->SetTitleY(1.f);
+
+    qa.hVtxZ_MB->Draw("same");
+    qa.hVtxZ_MB->Rebin(vtx_z_rebin_factor);
+    qa.hVtxZ_MB->SetLineColor(kRed);
+
+    Double_t z_vtx_mb_avg = qa.hVtxZ_MB->GetBinCenter(qa.hVtxZ_MB->GetMaximumBin());
+
+    if(std::fabs(z_vtx_mb_avg) >= 10) {
+        high_avg_zvtx = true;
+        is_good = false;
+        ++m_ctr["high_avg_zvtx"];
     }
 
-    c1->Print((output + "]").c_str(), "pdf portrait");
+    std::unique_ptr<TLine> line = std::make_unique<TLine>(z_vtx_mb_avg, 0, z_vtx_mb_avg, qa.hVtxZ->GetMaximum()*1);
+    line->Draw("same");
+    line->SetLineColor(kBlue);
 
-    // ------------------------------------------------------
+    stringstream legA, legB;
 
-    output = outputDir + "/plots-VtxZ-MB.pdf";
+    legA << "All";
+    legB << "MB";
 
-    c1->Print((output + "[").c_str(), "pdf portrait");
+    Double_t xshift = 0.5;
+    Double_t yshift = 0;
 
-    for (const auto &[name, hist] : m_hists)
-    {
-        if(name.starts_with("hVtxZ_MB")) {
-            string run = myUtils::split(name,'_')[2];
-            stringstream title;
-            title << "Z Vertex (MB): " << run;
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.06f);
+    leg->AddEntry(qa.hVtxZ.get(),legA.str().c_str(),"l");
+    leg->AddEntry(qa.hVtxZ_MB.get(),legB.str().c_str(),"l");
+    leg->Draw("same");
 
-            hist->Draw();
-            hist->GetXaxis()->SetTitleOffset(1.f);
-            hist->SetTitle(title.str().c_str());
-
-            c1->Print(output.c_str(), "pdf portrait");
-            if (m_saveFig) c1->Print((outputDir + "/images/" + name + ".png").c_str());
-        }
-    }
-
-    c1->Print((output + "]").c_str(), "pdf portrait");
-
-    // ------------------------------------------------------
-
-    output = outputDir + "/plots-sEPD-Charge.pdf";
-
-    c1->Print((output + "[").c_str(), "pdf portrait");
-
+    c1->cd(4);
+    gPad->SetTopMargin(0.1f);
+    gPad->SetRightMargin(0.15f);
     gPad->SetLogz();
+    gStyle->SetTitleY(1.f);
 
-    c1->SetLeftMargin(.15f);
-    c1->SetRightMargin(.15f);
+    std::unique_ptr<TH2> h3SEPD_Total_Charge_yx(static_cast<TH2*>(qa.h3SEPD_Total_Charge->Project3D("yx")));
+    h3SEPD_Total_Charge_yx->Draw("COLZ1");
+    h3SEPD_Total_Charge_yx->SetTitle("sEPD Total Charge: |z| < 10 cm and MB");
+    h3SEPD_Total_Charge_yx->GetXaxis()->SetLabelSize(0.035f);
+    h3SEPD_Total_Charge_yx->GetYaxis()->SetTitleOffset(1.6f);
+    h3SEPD_Total_Charge_yx->GetXaxis()->SetTitleOffset(1.f);
 
-    for (const auto &[name, hist] : m_hists)
-    {
-        if(name.starts_with("h3SEPD_Charge")) {
-            string run = myUtils::split(name,'_')[2];
-            stringstream title;
-            title << "sEPD Charge: " << run << "; Total Charge South; Total Charge North";
+    c1->Update();
 
-            std::unique_ptr<TH1> hist_xy = std::unique_ptr<TH1>(dynamic_cast<TH3 *>(hist.get())->Project3D("yx"));
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print((outputDir + "/images/QA-" + run + ".png").c_str());
 
-            hist_xy->Draw("COLZ1");
-            hist_xy->GetYaxis()->SetTitleOffset(1.6f);
-            hist_xy->GetXaxis()->SetTitleOffset(1.f);
-            hist_xy->SetTitle(title.str().c_str());
+    // Open the CSV file for writing
+    std::ofstream qa_file(qa_file_path, std::ios::app);
 
-            c1->Print(output.c_str(), "pdf portrait");
-            if (m_saveFig) c1->Print((outputDir + "/images/" + name + ".png").c_str());
-        }
+    // Check if the file opened successfully
+    if (!qa_file.is_open()) {
+        cout << "Error: Could not open output.csv for writing!" << endl;
+        return false;
     }
 
-    c1->Print((output + "]").c_str(), "pdf portrait");
+    qa_file << run << ","
+            << no_mb_events << ","
+            << high_avg_zvtx << ","
+            << is_good << endl;
 
-    // m_hists["h_InvMass_2024"]->Draw();
-    // m_hists["h_InvMass_2024"]->SetTitle("Invariant Mass: 2024 Au+Au, Run: 54912; m_{#gamma#gamma} [GeV]; Counts");
-    // m_hists["h_InvMass_2024"]->GetXaxis()->SetTitleOffset(1.f);
-    // m_hists["h_InvMass_2024"]->GetXaxis()->SetRangeUser(0,1);
+    if(is_good) {
+        m_ctr["total_mb_events_isGood"] += events;
+    }
 
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h_InvMass_2024.png").c_str());
+    return is_good;
+}
 
-    // // ----------------------------------------
-
-    // c1->SetLeftMargin(.17f);
-
-    // m_hists["h_InvMass_2025"]->Draw();
-    // m_hists["h_InvMass_2025"]->SetTitle("; m_{#gamma#gamma} [GeV]; Counts");
-    // m_hists["h_InvMass_2025"]->GetXaxis()->SetTitleOffset(1.f);
-    // m_hists["h_InvMass_2025"]->GetYaxis()->SetTitleOffset(1.7f);
-    // m_hists["h_InvMass_2025"]->GetXaxis()->SetRangeUser(0,0.5);
-
-    // stringstream info;
-
-    // info << "Au+Au 2025";
-
-    // TLatex latex;
-    // latex.SetTextSize(0.04f);
-    // latex.DrawLatexNDC(0.85,0.91,"6/10/25");
-    // latex.DrawLatexNDC(0.5,0.8,"#bf{#it{sPHENIX}} Preliminary");
-    // latex.DrawLatexNDC(0.5,0.8-0.05,"Au+Au 2025 #sqrt{s_{NN}} = 200 GeV");
-    // latex.DrawLatexNDC(0.5,0.8-0.05*2,"|z| < 20 cm, N_{Clusters} < 300");
-    // latex.DrawLatexNDC(0.5,0.8-0.05*3.3,"1.3 GeV < p_{T,1} < 4 GeV");
-    // latex.DrawLatexNDC(0.5,0.8-0.05*4.3,"0.7 GeV < p_{T,2} < 4 GeV");
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h_InvMass_2025.png").c_str());
-
-    // // ----------------------------------------
-
-    // c1->SetLeftMargin(.14f);
-
-    // m_hists["h_InvMass_2024"]->Scale(1./m_hists["h_InvMass_2024"]->Integral(1, m_hists["h_InvMass_2024"]->FindBin(1)-1));
-    // m_hists["h_InvMass_2025"]->Scale(1./m_hists["h_InvMass_2025"]->Integral(1, m_hists["h_InvMass_2025"]->FindBin(1)-1));
-
-    // m_hists["h_InvMass_2025"]->Draw("hist");
-    // m_hists["h_InvMass_2025"]->SetTitle("Invariant Mass; m_{#gamma#gamma} [GeV]; Normalized Counts");
-    // m_hists["h_InvMass_2025"]->GetXaxis()->SetTitleOffset(1.f);
-    // m_hists["h_InvMass_2025"]->GetYaxis()->SetTitleOffset(1.5f);
-    // m_hists["h_InvMass_2025"]->GetXaxis()->SetRangeUser(0,1);
-    // m_hists["h_InvMass_2025"]->GetYaxis()->SetRangeUser(0,9e-3);
-    // m_hists["h_InvMass_2025"]->SetLineColor(kRed);
-
-    // m_hists["h_InvMass_2024"]->Draw("same hist");
-
-    // m_hists["h_InvMass_2024"]->SetLineColor(kBlue);
-
-    // stringstream legA, legB;
-
-    // legA << "Run 2024 Au+Au";
-    // legB << "Run 2025 Au+Au";
-
-    // Double_t xshift = 0.3;
-    // Double_t yshift = -0.4;
-
-    // auto leg = new TLegend(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-    // leg->SetFillStyle(0);
-    // leg->SetTextSize(0.06f);
-    // leg->AddEntry(m_hists["h_InvMass_2024"],legA.str().c_str(),"l");
-    // leg->AddEntry(m_hists["h_InvMass_2025"],legB.str().c_str(),"l");
-    // leg->Draw("same");
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h_InvMass_overlay.png").c_str());
-
-    // // ----------------------------------------
-
-    // c1->SetLeftMargin(.1f);
-
-    // gPad->SetLogy();
-
-    // stringstream hName;
-
-    // for(Int_t i = 0; i < m_iter; ++i) {
-    //     hName.str("");
-    //     hName << "hCalib_" << i;
-    //     m_hists[hName.str()]->Draw("hist e");
-    //     m_hists[hName.str()]->GetXaxis()->SetTitleOffset(0.9f);
-    //     m_hists[hName.str()]->GetYaxis()->SetTitleOffset(0.9f);
-
-    //     c1->Print(output.c_str(), "pdf portrait");
-    //     if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + ".png").c_str());
-    // }
-
-    // gPad->SetLogy(0);
-    // c1->SetLeftMargin(.13f);
-
-    // m_hists["hCalib_10"]->Draw("hist e");
-    // m_hists["hCalib_10"]->SetLineColor(kRed);
-    // m_hists["hCalib_10"]->SetMarkerColor(kRed);
-    // m_hists["hCalib_10"]->SetTitle("EMCal Calibration");
-    // m_hists["hCalib_10"]->GetXaxis()->SetTitleOffset(0.9f);
-    // m_hists["hCalib_10"]->GetYaxis()->SetTitleOffset(1.4f);
-
-    // m_hists["hCalib_2024"]->Draw("hist e same");
-
-    // cout << "2024 Counts: " << m_hists["hCalib_2024"]->Integral(1, m_hists["hCalib_2024"]->GetNbinsX()) << endl;
-    // cout << "2025 Counts: " << m_hists["hCalib_10"]->Integral(1, m_hists["hCalib_10"]->GetNbinsX()) << endl;
-
-    // legA.str("");
-    // legB.str("");
-
-    // legA << "Run 2024";
-    // legB << "Run 2025";
-
-    // xshift = 0.45;
-    // yshift = 0;
-
-    // leg = new TLegend(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-    // leg->SetFillStyle(0);
-    // leg->SetTextSize(0.06f);
-    // leg->AddEntry(m_hists["hCalib_2024"],legA.str().c_str(),"l");
-    // leg->AddEntry(m_hists["hCalib_10"],legB.str().c_str(),"l");
-    // leg->Draw("same");
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/hCalib-overlay.png").c_str());
-
-    // m_hists["hCalib_10"]->GetXaxis()->SetRangeUser(0,5);
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/hCalib-overlay-zoom.png").c_str());
-
-
-    // // ----------------------------------------
-
-    // c1->SetCanvasSize(2900, 1000);
-    // c1->SetLeftMargin(.06f);
-    // c1->SetRightMargin(.1f);
-    // c1->SetTopMargin(.1f);
-    // c1->SetBottomMargin(.12f);
-
-    // gPad->SetGrid();
-
-    // m_hists["h2Calib_2024"]->Draw("COLZ1");
-    // m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
-    // m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
-
-    // m_hists["h2Calib_2024"]->SetMinimum(0.5);
-    // m_hists["h2Calib_2024"]->SetMaximum(5);
-
-    // c1->Print(output.c_str(), "pdf portrait");
-    // if (m_saveFig) c1->Print((outputDir + "/images/h2Calib_2024.png").c_str());
-
-    // // ----------------------------------------
-
-    // for(Int_t i = 0; i < m_iter; ++i) {
-    //     hName.str("");
-    //     hName << "h2Calib_" << i;
-
-    //     m_hists[hName.str()]->Draw("COLZ1");
-    //     m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
-    //     m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
-
-    //     m_hists[hName.str()]->SetMinimum(0.5);
-    //     m_hists[hName.str()]->SetMaximum(5);
-
-    //     c1->Print(output.c_str(), "pdf portrait");
-    //     if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + ".png").c_str());
-    // }
-
-    // for(Int_t i = 0; i < m_iter; ++i) {
-    //     hName.str("");
-    //     hName << "h2Calib_" << i;
-
-    //     m_hists[hName.str()]->Draw("COLZ1");
-
-    //     m_hists[hName.str()]->SetMinimum(0.5);
-    //     m_hists[hName.str()]->SetMaximum(5);
-
-    //     m_hists[hName.str()]->GetYaxis()->SetRangeUser(0,8);
-    //     m_hists[hName.str()]->GetYaxis()->SetNdivisions(8, false);
-
-    //     c1->Print(output.c_str(), "pdf portrait");
-    //     if (m_saveFig) c1->Print((outputDir + "/images/" + hName.str() + "-zoom-South-IB-5.png").c_str());
-    // }
-
-    // // ----------------------------------------
-
-    // c1->Print((output + "]").c_str(), "pdf portrait");
+void myAnalysis::print_stats() {
+    cout << "=====================" << endl;
+    cout << "Stats" << endl;
+    cout << "Runs: " << m_ctr["run_ctr"] << endl;
+    cout << "No MB Events: " << m_ctr["no_mb_events"]
+         << ", " <<  m_ctr["no_mb_events"] * 100. / m_ctr["run_ctr"] << " %" << endl;
+    cout << "Avg |z| >= 10 cm: " << m_ctr["high_avg_zvtx"]
+         << ", " <<  m_ctr["high_avg_zvtx"] * 100. / m_ctr["run_ctr"] << " %" << endl;
+    cout << "=====================" << endl;
+    cout << "Total Events for |z| < 10 cm and MB: " << m_ctr["total_mb_events_all"] << endl;
+    cout << "Total Events for |z| < 10 cm and MB and isGood: " << m_ctr["total_mb_events_isGood"] << ", " << m_ctr["total_mb_events_isGood"]*100. / m_ctr["total_mb_events_all"] << " %" << endl;
+    cout << "=====================" << endl;
 }
 
 void display(const string &input, const string &outputDir=".") {
@@ -462,16 +361,36 @@ void display(const string &input, const string &outputDir=".") {
     SetsPhenixStyle();
 
     // create output directories
-    fs::create_directories(outputDir);
-    fs::create_directories(outputDir+"/images");
+    fs::create_directories(outputDir+"/QA/images");
+    fs::create_directories(outputDir+"/QA/pdf");
+    fs::create_directories(outputDir+"/QA-Q-vec/images");
+    fs::create_directories(outputDir+"/QA-Q-vec/pdf");
 
-    TH1::AddDirectory(kFALSE);
+    // TH1::AddDirectory(kFALSE);
 
-    myAnalysis::initHists();
+    std::ifstream input_file(input);
 
-    if(!myUtils::readCSV(input, myAnalysis::readHists, false)) return;
+    if (!input_file.is_open()) {
+        cout << "Error: [" << input << "] Could not open file." << endl;
+        return;
+    }
 
-    myAnalysis::make_plots(outputDir);
+    string line;
+
+    string qa_file_path = outputDir+"/qa-runs.csv";
+    std::ofstream qa_file(qa_file_path);
+    qa_file << "run,no_mb_events,high_avg_zvtx,is_good" << endl;
+    qa_file.close();
+
+    while (std::getline(input_file, line)) {
+        bool is_good = myAnalysis::make_plots_QA(line, outputDir+"/QA", qa_file_path);
+
+        if(is_good) {
+            myAnalysis::make_plots_Q_vec(line, outputDir+"/QA-Q-vec");
+        }
+    }
+
+    myAnalysis::print_stats();
 }
 
 # ifndef __CINT__
