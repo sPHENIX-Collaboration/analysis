@@ -72,7 +72,7 @@ namespace myAnalysis {
         std::unique_ptr<TH3> h3SEPD_EventPlaneInfo_Psi_3;
     };
 
-    map<string,Int_t> m_ctr;
+    map<string,UInt_t> m_ctr;
 
     Bool_t m_saveFig = true;
 }
@@ -218,7 +218,7 @@ Bool_t myAnalysis::make_plots_QA(const string &input, const string &outputDir, c
     Bool_t high_avg_zvtx = false;
 
     ++m_ctr["run_ctr"];
-    Int_t events = static_cast<Int_t>(qa.hEvent->GetBinContent(3));
+    UInt_t events = static_cast<UInt_t>(qa.hEvent->GetBinContent(3));
     m_ctr["total_mb_events_all"] += events;
 
     cout << "Run: " << run;
