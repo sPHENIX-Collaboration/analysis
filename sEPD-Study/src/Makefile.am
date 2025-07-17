@@ -11,13 +11,15 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  sEPDValidation.h
+  sEPDValidation.h \
+  JetValidation.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
 
 libsEPDValidation_la_SOURCES = \
-  sEPDValidation.cc
+  sEPDValidation.cc \
+  JetValidation.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \
@@ -28,7 +30,9 @@ libsEPDValidation_la_LIBADD = \
   -lglobalvertex_io \
   -lcalotrigger_io \
   -leventplaneinfo_io \
-  -lepd_io
+  -lepd_io \
+	-ljetbase_io \
+	-ljetbackground_io
 
 BUILT_SOURCES = testexternals.cc
 

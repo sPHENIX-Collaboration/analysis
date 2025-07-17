@@ -41,7 +41,7 @@ ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
 SRCS = $(wildcard macros/*.C)
 
 # List all your executable targets explicitly
-ALL_TARGETS = bin/Fun4All_sEPD bin/display
+ALL_TARGETS = bin/Fun4All_sEPD bin/Fun4All_Jet bin/display
 
 # Define a stamp file for Cppcheck
 CPPCHECK_STAMP = .cppcheck_ran_stamp
@@ -58,6 +58,10 @@ bin/%: macros/%.C
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS)
 
 bin/Fun4All_sEPD: macros/Fun4All_sEPD.C
+	mkdir -p bin
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(MY_LIBFLAGS)
+
+bin/Fun4All_Jet: macros/Fun4All_Jet.C
 	mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(MY_LIBFLAGS)
 
