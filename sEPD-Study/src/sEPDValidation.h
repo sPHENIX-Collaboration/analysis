@@ -48,9 +48,9 @@ private:
   double m_zvtx_low;
   double m_zvtx_high;
 
-  unsigned int m_bins_centbin;
-  double m_centbin_low;
-  double m_centbin_high;
+  unsigned int m_bins_cent;
+  double m_cent_low;
+  double m_cent_high;
 
   unsigned int m_bins_sepd_charge;
   double m_sepd_charge_low;
@@ -83,15 +83,13 @@ private:
 
   // Event Vars
   double m_zvtx;
-  int m_centbin;
+  double m_cent;
 
   // Cuts
   double m_zvtx_max;
   double m_sepd_charge_threshold;
 
   // Logging Info
-  int m_centbin_min;
-  int m_centbin_max;
   double m_cent_min;
   double m_cent_max;
   double m_sepd_charge_min;
