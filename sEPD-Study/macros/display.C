@@ -30,9 +30,6 @@
 // -- sPHENIX Style
 #include <sPhenixStyle.C>
 
-// tower mapping
-#include <calobase/TowerInfoDefs.h>
-
 // utils
 #include "myUtils.C"
 
