@@ -195,7 +195,7 @@ int JetValidation::process_jets(PHCompositeNode *topNode)
 
   int nJets = 0;
 
-  for (auto jet : *jets)
+  for (auto *jet : *jets)
   {
     double phi = jet->get_phi();
     double eta = jet->get_eta();

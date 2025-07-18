@@ -21,11 +21,11 @@ bool JetUtils::check_bad_jet_eta(const double jet_eta, const double zvtx, const 
   double ohcal_mineta = get_ohcal_mineta_zcorrected(zvtx);
   double ohcal_maxeta = get_ohcal_maxeta_zcorrected(zvtx);
   double minlimit = emcal_mineta;
-  if (ihcal_mineta > minlimit) minlimit = ihcal_mineta;
-  if (ohcal_mineta > minlimit) minlimit = ohcal_mineta;
+  minlimit = std::max(ihcal_mineta, minlimit);
+  minlimit = std::max(ohcal_mineta, minlimit);
   double maxlimit = emcal_maxeta;
-  if (ihcal_maxeta < maxlimit) maxlimit = ihcal_maxeta;
-  if (ohcal_maxeta < maxlimit) maxlimit = ohcal_maxeta;
+  maxlimit = std::min(ihcal_maxeta, maxlimit);
+  maxlimit = std::min(ohcal_maxeta, maxlimit);
   minlimit += jet_radius;
   maxlimit -= jet_radius;
   return jet_eta < minlimit || jet_eta > maxlimit;

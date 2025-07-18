@@ -6,23 +6,23 @@
 class JetUtils
 {
  public:
-  static bool check_bad_jet_eta(const double jet_eta, const double zvtx, const double jet_radius);
+  static bool check_bad_jet_eta(double jet_eta, double zvtx, double jet_radius);
 
-  static bool failsLoEmFracETCut(const double emFrac, const double ET);
-  static bool failsHiEmFracETCut(const double emFrac, const double ET);
+  static bool failsLoEmFracETCut(double emFrac, double ET);
+  static bool failsHiEmFracETCut(double emFrac, double ET);
 
-  std::vector<std::string> split(const std::string &s, const char delimiter);
+  static std::vector<std::string> split(const std::string &s, char delimiter);
 
-  static void update_min_max(const double val, double &val_min, double &val_max);
-  static void update_min_max(const int val, int &val_min, int &val_max);
+  static void update_min_max(double val, double &val_min, double &val_max);
+  static void update_min_max(int val, int &val_min, int &val_max);
 
  private:
-  static double get_emcal_mineta_zcorrected(const double zvtx);
-  static double get_emcal_maxeta_zcorrected(const double zvtx);
-  static double get_ihcal_mineta_zcorrected(const double zvtx);
-  static double get_ihcal_maxeta_zcorrected(const double zvtx);
-  static double get_ohcal_mineta_zcorrected(const double zvtx);
-  static double get_ohcal_maxeta_zcorrected(const double zvtx);
+  static double get_emcal_mineta_zcorrected(double zvtx);
+  static double get_emcal_maxeta_zcorrected(double zvtx);
+  static double get_ihcal_mineta_zcorrected(double zvtx);
+  static double get_ihcal_maxeta_zcorrected(double zvtx);
+  static double get_ohcal_mineta_zcorrected(double zvtx);
+  static double get_ohcal_maxeta_zcorrected(double zvtx);
 
   constexpr static double radius_EM = 93.5;
   constexpr static double mineta_EM = -1.13381;
