@@ -144,6 +144,7 @@ void Fun4All_Jet(const std::string &dst_jetcalo,
   // Jet QA
   std::unique_ptr<JetValidation> jet_validation = std::make_unique<JetValidation>();
   jet_validation->set_filename(output);
+  jet_validation->set_jet_pt_min(7);
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation.get());
 

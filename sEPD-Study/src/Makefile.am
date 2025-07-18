@@ -12,14 +12,16 @@ AM_LDFLAGS = \
 
 pkginclude_HEADERS = \
   sEPDValidation.h \
-  JetValidation.h
+  JetValidation.h \
+	JetUtils.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
 
 libsEPDValidation_la_SOURCES = \
   sEPDValidation.cc \
-  JetValidation.cc
+  JetValidation.cc \
+	JetUtils.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \

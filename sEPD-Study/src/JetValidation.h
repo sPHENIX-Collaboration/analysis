@@ -32,9 +32,15 @@ class JetValidation : public SubsysReco
     m_outfile_name = file;
   }
 
+  void set_jet_pt_min(const double jet_pt_min_cut)
+  {
+    m_jet_pt_min_cut = jet_pt_min_cut;
+  }
+
 private:
   int process_event_check(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
+  int process_jets(PHCompositeNode *topNode);
 
   int m_event;
 
@@ -47,6 +53,22 @@ private:
   unsigned int m_bins_cent;
   double m_cent_low;
   double m_cent_high;
+
+  unsigned int m_bins_phi;
+  double m_phi_low;
+  double m_phi_high;
+
+  unsigned int m_bins_eta;
+  double m_eta_low;
+  double m_eta_high;
+
+  unsigned int m_bins_pt;
+  double m_pt_low;
+  double m_pt_high;
+
+  unsigned int m_bins_nJets;
+  double m_nJets_low;
+  double m_nJets_high;
 
   enum class EventType : std::uint8_t
   {
@@ -63,11 +85,23 @@ private:
 
   // Cuts
   double m_zvtx_max;
+  double m_jet_pt_min_cut;
+
+  // jets
+  double m_R;
 
   // Logging Info
   double m_cent_min;
   double m_cent_max;
+  double m_jet_phi_min;
+  double m_jet_phi_max;
+  double m_jet_eta_min;
+  double m_jet_eta_max;
+  double m_jet_pt_min;
+  double m_jet_pt_max;
+  int m_jet_n_min;
+  int m_jet_n_max;
 
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
-  std::map<std::string, int> m_ctr;
+  std::map<std::string, unsigned int> m_ctr;
 };
