@@ -16,6 +16,10 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
+// -- flags
+#include <phparameter/PHParameters.h>
+#include <pdbcalbase/PdbParameterMap.h>
+
 // -- Calo
 #include <calobase/TowerInfo.h>
 #include <calobase/TowerInfoContainer.h>
@@ -59,27 +63,37 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_cent_high(99.5)
   , m_bins_sepd_charge(200)
   , m_sepd_charge_low(0)
-  , m_sepd_charge_high(200)
+  , m_sepd_charge_high(2e4)
+  , m_bins_mbd_charge(80)
+  , m_mbd_charge_low(0)
+  , m_mbd_charge_high(2e3)
   , m_bins_sepd_Q(100)
   , m_sepd_Q_low(-1)
   , m_sepd_Q_high(1)
   , m_bins_sepd_total_charge(200)
   , m_sepd_total_charge_low(0)
-  , m_sepd_total_charge_high(2e4)
+  , m_sepd_total_charge_high(4e4)
+  , m_bins_mbd_total_charge(200)
+  , m_mbd_total_charge_low(0)
+  , m_mbd_total_charge_high(5e3)
   , m_bins_psi(126)
-  , m_psi_low(-3.15)
-  , m_psi_high(3.15)
-  , m_bins_Q(100)
-  , m_Q_low(0)
-  , m_Q_high(200)
+  , m_psi_low(-M_PI)
+  , m_psi_high(M_PI)
   , m_zvtx(9999)
   , m_cent(9999)
+  , m_mbd_total_charge(9999)
   , m_zvtx_max(10) /*cm*/
   , m_sepd_charge_threshold(0.2)
   , m_cent_min(9999)
   , m_cent_max(0)
   , m_sepd_charge_min(9999)
   , m_sepd_charge_max(0)
+  , m_mbd_charge_min(9999)
+  , m_mbd_charge_max(0)
+  , m_mbd_total_charge_min(9999)
+  , m_mbd_total_charge_max(0)
+  , m_mbd_scale_min(9999)
+  , m_mbd_scale_max(0)
   , m_sepd_Q_min(9999)
   , m_sepd_Q_max(0)
   , m_sepd_total_charge_south_min(9999)
@@ -106,8 +120,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_hists["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
   // Charge
-  m_hists["h2SEPD_Charge"] = std::make_unique<TH2F>("h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; Tower Charge; Centrality [%]", m_bins_sepd_charge, m_sepd_charge_low, m_sepd_charge_high, m_bins_cent, m_cent_low, m_cent_high);
-  m_hists["h3SEPD_Total_Charge"] = std::make_unique<TH3F>("h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", m_bins_sepd_total_charge, m_sepd_total_charge_low, m_sepd_total_charge_high, m_bins_sepd_total_charge, m_sepd_total_charge_low, m_sepd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h2SEPD_Charge"] = std::make_unique<TH2F>("h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", m_bins_sepd_total_charge, m_sepd_total_charge_low, m_sepd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h2MBD_Total_Charge"] = std::make_unique<TH2F>("h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", m_bins_mbd_total_charge, m_mbd_total_charge_low, m_mbd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h3SEPD_Total_Charge"] = std::make_unique<TH3F>("h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", m_bins_sepd_charge, m_sepd_charge_low, m_sepd_charge_high, m_bins_sepd_charge, m_sepd_charge_low, m_sepd_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h3MBD_Total_Charge"] = std::make_unique<TH3F>("h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", m_bins_mbd_charge, m_mbd_charge_low, m_mbd_charge_high, m_bins_mbd_charge, m_mbd_charge_low, m_mbd_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h3SEPD_MBD_Total_Charge"] = std::make_unique<TH3F>("h3SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge; Centrality [%]", m_bins_mbd_total_charge, m_mbd_total_charge_low, m_mbd_total_charge_high, m_bins_sepd_total_charge, m_sepd_total_charge_low, m_sepd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
 
   // Q-vectors local
   m_hists["h3SEPD_Q_S_2"] = std::make_unique<TH3F>("h3SEPD_Q_S_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_bins_sepd_Q, m_sepd_Q_low, m_sepd_Q_high, m_bins_sepd_Q, m_sepd_Q_low, m_sepd_Q_high, m_bins_cent, m_cent_low, m_cent_high);
@@ -213,6 +230,41 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
+int sEPDValidation::process_MBD(PHCompositeNode *topNode)
+{
+  MbdPmtContainer *mbd_container = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+  if (!mbd_container)
+  {
+    std::cout << "sEPDValidation::process_event - Error can not find MbdPmtContainer node " << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MbdParams");
+  if (!pdb) {
+    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MbdParams" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params("MbdParams");
+  pdb_params.FillFrom(pdb);
+
+  m_mbd_total_charge = pdb_params.get_double_param("mbd_total_charge");
+  double mbd_total_charge_south = pdb_params.get_double_param("mbd_total_charge_south");
+  double mbd_total_charge_north = pdb_params.get_double_param("mbd_total_charge_north");
+  double mbd_scale = pdb_params.get_double_param("mbd_scale_factor");
+
+  dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
+  dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north, m_cent);
+
+  JetUtils::update_min_max(m_mbd_total_charge, m_mbd_total_charge_min, m_mbd_total_charge_max);
+  JetUtils::update_min_max(mbd_total_charge_south, m_mbd_charge_min, m_mbd_charge_max);
+  JetUtils::update_min_max(mbd_total_charge_north, m_mbd_charge_min, m_mbd_charge_max);
+  JetUtils::update_min_max(mbd_scale, m_mbd_scale_min, m_mbd_scale_max);
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
 int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 {
   TowerInfoContainer *towerinfosEPD = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
@@ -263,8 +315,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       continue;
     }
 
-
-    dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(charge, m_cent);
     JetUtils::update_min_max(charge, m_sepd_charge_min, m_sepd_charge_max);
 
     // expecting Nmips
@@ -310,6 +360,11 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       ++m_ctr["sepd_tower_unknown_arm"];
     }
   }
+
+  double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
+
+  dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(sepd_total_charge, m_cent);
+  dynamic_cast<TH3 *>(m_hists["h3SEPD_MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, sepd_total_charge, m_cent);
 
   // ensure both total charges are nonzero
   if(sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
@@ -476,6 +531,12 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  ret = process_MBD(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
   ret = process_sEPD(topNode);
   if (ret)
   {
@@ -510,6 +571,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Avg towers with unknown arm: " << m_ctr["sepd_tower_unknown_arm"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB)+1) << std::endl;
   std::cout << "Avg towers ZS: " << m_ctr["sepd_tower_zs"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB)+1) << std::endl;
   std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB)+1) << std::endl;
+  std::cout << "=====================" << std::endl;
+  std::cout << "MBD" << std::endl;
+  std::cout << "Mbd Total Charge: Min: " << m_mbd_total_charge_min << ", Max: " << m_mbd_total_charge_max << std::endl;
+  std::cout << "Mbd Total Charge (North / South): Min: " << m_mbd_charge_min << ", Max: " << m_mbd_charge_max << std::endl;
+  std::cout << "Mbd Scale Factor: Min: " << m_mbd_scale_min << ", Max: " << m_mbd_scale_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;

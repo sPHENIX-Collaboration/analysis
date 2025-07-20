@@ -35,6 +35,7 @@ class sEPDValidation : public SubsysReco
 
 private:
   int process_event_check(PHCompositeNode *topNode);
+  int process_MBD(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
@@ -56,6 +57,10 @@ private:
   double m_sepd_charge_low;
   double m_sepd_charge_high;
 
+  unsigned int m_bins_mbd_charge;
+  double m_mbd_charge_low;
+  double m_mbd_charge_high;
+
   unsigned int m_bins_sepd_Q;
   double m_sepd_Q_low;
   double m_sepd_Q_high;
@@ -64,13 +69,13 @@ private:
   double m_sepd_total_charge_low;
   double m_sepd_total_charge_high;
 
+  unsigned int m_bins_mbd_total_charge;
+  double m_mbd_total_charge_low;
+  double m_mbd_total_charge_high;
+
   unsigned int m_bins_psi;
   double m_psi_low;
   double m_psi_high;
-
-  unsigned int m_bins_Q;
-  double m_Q_low;
-  double m_Q_high;
 
   enum class EventType : std::uint8_t
   {
@@ -84,6 +89,7 @@ private:
   // Event Vars
   double m_zvtx;
   double m_cent;
+  double m_mbd_total_charge;
 
   // Cuts
   double m_zvtx_max;
@@ -94,6 +100,12 @@ private:
   double m_cent_max;
   double m_sepd_charge_min;
   double m_sepd_charge_max;
+  double m_mbd_charge_min;
+  double m_mbd_charge_max;
+  double m_mbd_total_charge_min;
+  double m_mbd_total_charge_max;
+  double m_mbd_scale_min;
+  double m_mbd_scale_max;
   double m_sepd_Q_min;
   double m_sepd_Q_max;
   double m_sepd_total_charge_south_min;

@@ -34,7 +34,8 @@ libsEPDValidation_la_LIBADD = \
   -leventplaneinfo_io \
   -lepd_io \
 	-ljetbase_io \
-	-ljetbackground_io
+	-ljetbackground_io \
+	-lphparameter_io
 
 BUILT_SOURCES = testexternals.cc
 
