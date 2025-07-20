@@ -35,7 +35,7 @@ printenv
 
 mkdir -p "$run"
 
-$f4a_bin "test.list" "$run" "$run/$output" "$nEvents" "$dbtag"
+$f4a_bin "test.list" "$run" "$run/$output" "$nEvents" "$dbtag" 1
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"

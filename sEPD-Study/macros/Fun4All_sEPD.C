@@ -40,7 +40,8 @@ void Fun4All_sEPD(const std::string &fname,
                   unsigned int runnumber,
                   const std::string &output = "test.root",
                   int nEvents = 100,
-                  const std::string &dbtag = "newcdbtag")
+                  const std::string &dbtag = "newcdbtag",
+                  bool condor_mode = false)
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
@@ -49,6 +50,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "output: " << output << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
+  std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "########################" << std::endl;
 
   /* Verbosity Options
@@ -115,7 +117,7 @@ void Fun4All_sEPD(const std::string &fname,
   // if not then use the cdb files from the reference run
   if(useReferenceCDB)
   {
-    std::cout << "Defaulting the centrality cdb to that from Run " << default_centrality_run << std::endl;
+    std::cout << "Defaulting centrality cdb from Run " << default_centrality_run << std::endl;
 
     cdb_centrality              = getCalibration("Centrality", default_centrality_run);
     cdb_centrality_scale        = getCalibration("CentralityScale", default_centrality_run);
@@ -130,7 +132,6 @@ void Fun4All_sEPD(const std::string &fname,
     mb->setOverwriteScale(cdb_centrality_scale);
     mb->setOverwriteVtx(cdb_centrality_vertex_scale);
   }
-
   se->registerSubsystem(mb.get());
 
   // Centrality
@@ -153,6 +154,7 @@ void Fun4All_sEPD(const std::string &fname,
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();
   sepd_validation->set_filename(output);
+  sepd_validation->set_condor_mode(condor_mode);
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(sepd_validation.get());
 
@@ -176,14 +178,15 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 6)
+  if (args.size() < 3 || args.size() > 7)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag] [condor_mode]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  output_directory: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
+    std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     return 1;  // Indicate error
   }
 
@@ -192,6 +195,7 @@ int main(int argc, const char* const argv[])
   std::string output = "test.root";
   int nEvents = 100;
   std::string dbtag = "newcdbtag";
+  bool condor_mode = false;
 
   if (args.size() >= 4)
   {
@@ -205,8 +209,12 @@ int main(int argc, const char* const argv[])
   {
     dbtag = args[5];
   }
+  if (args.size() >= 7)
+  {
+    condor_mode = std::stoi(args[6]);
+  }
 
-  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag);
+  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag, condor_mode);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

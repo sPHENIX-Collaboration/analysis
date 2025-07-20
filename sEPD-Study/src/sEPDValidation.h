@@ -33,6 +33,11 @@ class sEPDValidation : public SubsysReco
     m_outfile_name = file;
   }
 
+  void set_condor_mode(const bool condor_mode = true)
+  {
+    m_condor_mode = condor_mode;
+  }
+
 private:
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
@@ -44,6 +49,7 @@ private:
   int m_event;
 
   std::string m_outfile_name;
+  bool m_condor_mode;
 
   unsigned int m_bins_zvtx;
   double m_zvtx_low;

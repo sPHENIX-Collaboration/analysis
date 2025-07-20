@@ -55,6 +55,8 @@
 sEPDValidation::sEPDValidation(const std::string &name)
   : SubsysReco(name)
   , m_event(0)
+  , m_outfile_name("test.root")
+  , m_condor_mode(false)
   , m_bins_zvtx(200) /*cm*/
   , m_zvtx_low(-50)  /*cm*/
   , m_zvtx_high(50)  /*cm*/
@@ -599,22 +601,27 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   }
 
   // local
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->ProjectionX()->Write();
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Project3D("yx")->Write();
+  if(!m_condor_mode)
+  {
+    dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->ProjectionX()->Write();
+    dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->ProjectionX()->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_MBD_Total_Charge"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Project3D("yx")->Write();
 
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_2"].get())->Project3D("yx")->Write();
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_2"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_2"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_2"].get())->Project3D("yx")->Write();
 
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_3"].get())->Project3D("yx")->Write();
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_3"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_3"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_3"].get())->Project3D("yx")->Write();
 
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_2"].get())->Project3D("yx")->Write();
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_2"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Project3D("yx")->Write();
 
-  // Official
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_2"].get())->Project3D("yx")->Write();
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_3"].get())->Project3D("yx")->Write();
-
+    // Official
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_2"].get())->Project3D("yx")->Write();
+    dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_3"].get())->Project3D("yx")->Write();
+  }
   output.Close();
 
   return Fun4AllReturnCodes::EVENT_OK;
