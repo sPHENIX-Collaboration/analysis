@@ -1,4 +1,5 @@
 #include "sEPDValidation.h"
+#include "JetUtils.h"
 
 // -- c++
 #include <iostream>
@@ -206,8 +207,7 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
 
   m_hists["hCentrality"]->Fill(m_cent);
 
-  m_cent_min = std::min(m_cent_min, m_cent);
-  m_cent_max = std::max(m_cent_max, m_cent);
+  JetUtils::update_min_max(m_cent, m_cent_min, m_cent_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -263,10 +263,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       continue;
     }
 
-    m_sepd_charge_min = std::min(m_sepd_charge_min, charge);
-    m_sepd_charge_max = std::max(m_sepd_charge_max, charge);
 
     dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(charge, m_cent);
+    JetUtils::update_min_max(charge, m_sepd_charge_min, m_sepd_charge_max);
 
     // expecting Nmips
     if(charge < m_sepd_charge_threshold)
@@ -275,8 +274,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       continue;
     }
 
-    m_sepd_phi_min = std::min(m_sepd_phi_min, phi);
-    m_sepd_phi_max = std::max(m_sepd_phi_max, phi);
+    JetUtils::update_min_max(phi, m_sepd_phi_min, m_sepd_phi_max);
 
     double q_x_2 = charge*std::cos(2*phi);
     double q_y_2 = charge*std::sin(2*phi);
@@ -364,11 +362,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
 
-  m_sepd_total_charge_south_min = std::min(m_sepd_total_charge_south_min, sepd_total_charge_south);
-  m_sepd_total_charge_south_max = std::max(m_sepd_total_charge_south_max, sepd_total_charge_south);
-
-  m_sepd_total_charge_north_min = std::min(m_sepd_total_charge_north_min, sepd_total_charge_north);
-  m_sepd_total_charge_north_max = std::max(m_sepd_total_charge_north_max, sepd_total_charge_north);
+  JetUtils::update_min_max(sepd_total_charge_south, m_sepd_total_charge_south_min, m_sepd_total_charge_south_max);
+  JetUtils::update_min_max(sepd_total_charge_north, m_sepd_total_charge_north_min, m_sepd_total_charge_north_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
