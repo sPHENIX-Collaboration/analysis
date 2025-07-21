@@ -90,7 +90,16 @@ private:
     ZVTX10_MB
   };
 
+  enum class MinBiasType : std::uint8_t
+  {
+    BKG_HIGH,
+    SIDE_HIT_LOW,
+    ZDC_LOW,
+    MBD_HIGH
+  };
+
   std::vector<std::string> m_eventType = {"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
+  std::vector<std::string> m_MinBias_Type = {"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
 
   // Event Vars
   double m_zvtx;

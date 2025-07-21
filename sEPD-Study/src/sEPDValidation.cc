@@ -117,6 +117,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   // init hists
   m_hists["hEvent"] = std::make_unique<TH1F>("hEvent", "Event Type; Type; Events", m_eventType.size(), 0, m_eventType.size());
+  m_hists["hEventMinBias"] = std::make_unique<TH1F>("hEventMinBias", "Event Type; Type; Events", m_MinBias_Type.size(), 0, m_MinBias_Type.size());
   m_hists["hVtxZ"] = std::make_unique<TH1F>("hVtxZ", "Z Vertex; z [cm]; Events", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
   m_hists["hVtxZ_MB"] = std::make_unique<TH1F>("hVtxZ_MB", "Z Vertex; z [cm]; Events", m_bins_zvtx, m_zvtx_low, m_zvtx_high);
   m_hists["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
@@ -155,6 +156,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_hists["hEvent"]->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
   }
 
+  for (unsigned int i = 0; i < m_MinBias_Type.size(); ++i)
+  {
+    m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -191,6 +197,40 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   {
     std::cout << "sEPDValidation::process_event - Error can not find MinimumBiasInfo node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  if (!pdb) {
+    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MinBiasParams" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params("MinBiasParams");
+  pdb_params.FillFrom(pdb);
+
+  bool minbias_bkg_high     = pdb_params.get_int_param("minbias_background_cut_fail");
+  bool minbias_side_hit_low = pdb_params.get_int_param("minbias_two_hit_min_fail");
+  bool minbias_zdc_low      = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
+  bool minbias_mbd_high     = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
+
+  if (fabs(m_zvtx) < m_zvtx_max)
+  {
+    if (minbias_bkg_high)
+    {
+      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::BKG_HIGH));
+    }
+    if (minbias_side_hit_low)
+    {
+      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::SIDE_HIT_LOW));
+    }
+    if (minbias_zdc_low)
+    {
+      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::ZDC_LOW));
+    }
+    if (minbias_mbd_high)
+    {
+      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::MBD_HIGH));
+    }
   }
 
   // skip event if not minimum bias
