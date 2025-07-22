@@ -2,15 +2,18 @@
 #define FUN4ALL_EMCAL_C
 
 // c++ includes --
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
+#include <memory>
+#include <format>
+#include <vector>
 
 // root includes --
+#include <TF1.h>
+#include <TFile.h>
 #include <TROOT.h>
 #include <TSystem.h>
-#include <TFile.h>
-#include <TF1.h>
 
 #include <caloreco/CaloTowerCalib.h>
 #include <caloreco/CaloTowerStatus.h>
@@ -32,17 +35,12 @@
 
 #include <ffamodules/CDBInterface.h>
 
-#include <litecaloeval/LiteCaloEval.h>
 #include <calib_emc_pi0/pi0EtaByEta.h>
+#include <litecaloeval/LiteCaloEval.h>
 
-#include <mbd/MbdReco.h>
 #include <globalvertex/GlobalVertexReco.h>
-
-using std::cout;
-using std::endl;
-using std::string;
-using std::pair;
-using std::ifstream;
+#include <mbd/MbdReco.h>
+#include <mbd/MbdEvent.h>
 
 R__LOAD_LIBRARY(libcdbobjects)
 R__LOAD_LIBRARY(libfun4all.so)
@@ -56,129 +54,122 @@ R__LOAD_LIBRARY(libg4mbd.so)
 R__LOAD_LIBRARY(libmbd_io.so)
 R__LOAD_LIBRARY(libmbd.so)
 
-void createLocalEMCalCalibFile(const string &fname, int runNumber);
+void createLocalEMCalCalibFile(const std::string &fname, int runNumber);
 
-void Fun4All_EMCal(int nevents = 1e2, const string &fname = "inputdata.txt",int iter = 0, const string &calib_fname="local_calib_copy.root", const string &fieldname = "CEMC_calib_ADC_to_ETower")
+void Fun4All_EMCal(int nevents = 1e2,
+                   const std::string &fname = "inputdata.txt",
+                   int iter = 0,
+                   const std::string &calib_fname = "local_calib_copy.root",
+                   const std::string &fieldname = "CEMC_calib_ADC_to_ETower")
 {
-
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
   CDBInterface::instance()->Verbosity(1);
 
   recoConsts *rc = recoConsts::instance();
 
-  ifstream file(fname);
-  string first_file;
+  std::ifstream file(fname);
+  std::string first_file;
   getline(file, first_file);
 
-  string m_fieldname = fieldname;
+  std::string m_fieldname = fieldname;
 
   //===============
   // conditions DB flags
   //===============
-  pair<int, int> runseg = Fun4AllUtils::GetRunSegment(first_file);
+  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(first_file);
   int runnumber = runseg.first;
-  cout << "run number = " << runnumber << endl;
+  std::cout << "run number = " << runnumber << std::endl;
 
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
-  rc->set_uint64Flag("TIMESTAMP",runnumber);// runnumber);
+  rc->set_uint64Flag("TIMESTAMP", runnumber);  // runnumber);
 
-  Fun4AllInputManager *in = new Fun4AllDstInputManager("DST_TOWERS");
+  std::unique_ptr<Fun4AllInputManager> in = std::make_unique<Fun4AllDstInputManager>("DST_TOWERS");
   in->AddListFile(fname);
-  se->registerInputManager(in);
+  se->registerInputManager(in.get());
 
-  string filename = first_file.substr(first_file.find_last_of("/\\") + 1);
-  string OutFile = Form("OUTHIST_iter%d_%s",iter , filename.c_str());
-
+  std::string filename = first_file.substr(first_file.find_last_of("/\\") + 1);
+  std::string OutFile = std::format("OUTHIST_iter{}_{}", iter, filename);
 
   if (iter == 0)
   {
-    createLocalEMCalCalibFile(calib_fname.c_str(), runnumber);
-    cout << "creating " << calib_fname.c_str() << " and exiting" << endl;
+    createLocalEMCalCalibFile(calib_fname, runnumber);
+    std::cout << "creating " << calib_fname << " and exiting" << std::endl;
     gSystem->Exit(0);
   }
 
   /////////////////////
   // mbd/vertex
   // MBD/BBC Reconstruction
-  MbdReco *mbdreco = new MbdReco();
-  se->registerSubsystem(mbdreco);
+  std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
+  se->registerSubsystem(mbdreco.get());
 
   // Official vertex storage
-  GlobalVertexReco *gvertex = new GlobalVertexReco();
-  se->registerSubsystem(gvertex);
-
-
+  std::unique_ptr<GlobalVertexReco> gvertex = std::make_unique<GlobalVertexReco>();
+  se->registerSubsystem(gvertex.get());
 
   /////////////////////
   // Geometry
   std::cout << "Adding Geometry file" << std::endl;
-  Fun4AllInputManager *intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
-  string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
+  std::unique_ptr<Fun4AllInputManager> intrue2 = std::make_unique<Fun4AllRunNodeInputManager>("DST_GEO");
+  std::string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
   intrue2->AddFile(geoLocation);
-  se->registerInputManager(intrue2);
-
+  se->registerInputManager(intrue2.get());
 
   ////////////////////
   // Calibrate towers
-  CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
+  std::unique_ptr<CaloTowerStatus> statusEMC = std::make_unique<CaloTowerStatus>("CEMCSTATUS");
   statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  //statusEMC->set_doAbortNoHotMap();
+  // statusEMC->set_doAbortNoHotMap();
   statusEMC->set_directURL_hotMap("/sphenix/u/bseidlitz/work/forChris/caloStatusCDB_y2/moreMaps/EMCalHotMap_new_2024p006-48837cdb.root");
-  se->registerSubsystem(statusEMC);
+  se->registerSubsystem(statusEMC.get());
 
-  CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB");
+  std::unique_ptr<CaloTowerCalib> calibEMC = std::make_unique<CaloTowerCalib>("CEMCCALIB");
   calibEMC->set_detector_type(CaloTowerDefs::CEMC);
-  calibEMC->set_directURL(calib_fname.c_str());
+  calibEMC->set_directURL(calib_fname);
   calibEMC->setFieldName(fieldname);
-  se->registerSubsystem(calibEMC);
-
+  se->registerSubsystem(calibEMC.get());
 
   //////////////////
   // Clusters
   std::cout << "Building clusters" << std::endl;
-  RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
+  std::unique_ptr<RawClusterBuilderTemplate> ClusterBuilder = std::make_unique<RawClusterBuilderTemplate>("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
   ClusterBuilder->set_threshold_energy(0.07);  // for when using basic calibration
-  string emc_prof = getenv("CALIBRATIONROOT");
+  std::string emc_prof = getenv("CALIBRATIONROOT");
   emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
   ClusterBuilder->LoadProfile(emc_prof);
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
   ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC");
   ClusterBuilder->set_UseAltZVertex(1);
-  se->registerSubsystem(ClusterBuilder);
-
-/*
-  std::cout << "Applying Position Dependent Correction" << std::endl;
-  RawClusterPositionCorrection *clusterCorrection = new RawClusterPositionCorrection("CEMC");
-  clusterCorrection->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
-  se->registerSubsystem(clusterCorrection);
-*/
+  se->registerSubsystem(ClusterBuilder.get());
 
   ///////////////////
   // analysis modules
-  if (iter==1 || iter==2 || iter==3){
-    LiteCaloEval *eval7e = new LiteCaloEval("CEMCEVALUATOR2", "CEMC", OutFile);
+  if (iter == 1 || iter == 2 || iter == 3)
+  {
+    std::unique_ptr<LiteCaloEval> eval7e = std::make_unique<LiteCaloEval>("CEMCEVALUATOR2", "CEMC", OutFile);
     eval7e->CaloType(LiteCaloEval::CEMC);
     eval7e->set_reqMinBias(false);
     eval7e->setInputTowerNodeName("TOWERINFO_CALIB_CEMC");
-    se->registerSubsystem(eval7e);
+    se->registerSubsystem(eval7e.get());
   }
 
-  if (iter>3){
-    pi0EtaByEta *ca = new pi0EtaByEta("calomodulename", OutFile);
-    ca->set_timing_cut_width(16); // does nothing currently
-    ca->apply_vertex_cut(true); // default
+  if (iter > 3)
+  {
+    std::unique_ptr<pi0EtaByEta> ca = std::make_unique<pi0EtaByEta>("calomodulename", OutFile);
+    ca->set_timing_cut_width(16);  // does nothing currently
+    ca->apply_vertex_cut(true);    // default
     ca->set_vertex_cut(20.);
-    ca->set_pt1BaseClusCut(1.3); // default
-    ca->set_pt2BaseClusCut(0.7); // default
-    ca->set_NclusDeptFac(1.4); // default
+    ca->set_pt1BaseClusCut(1.3);  // default
+    ca->set_pt2BaseClusCut(0.7);  // default
+    ca->set_NclusDeptFac(1.4);    // default
     ca->set_RunTowByTow(true);
     ca->set_reqTrig(false);
     ca->set_GlobalVertexType(GlobalVertex::MBD);
     ca->set_requireVertex(true);
     ca->set_calib_fieldname(m_fieldname);
-    se->registerSubsystem(ca);
+    se->registerSubsystem(ca.get());
   }
 
   se->run(nevents);
@@ -190,16 +181,13 @@ void Fun4All_EMCal(int nevents = 1e2, const string &fname = "inputdata.txt",int 
   gSystem->Exit(0);
 }
 
-
-
-
-void createLocalEMCalCalibFile(const string &fname, int runNumber)
+void createLocalEMCalCalibFile(const std::string &fname, int runNumber)
 {
-  string default_time_independent_calib = (runNumber >= 66580) ? "CEMC_calib_ADC_to_ETower_default" : "cemc_pi0_twrSlope_v1_default";
-  string m_calibName = "getdefault";
+  std::string default_time_independent_calib = (runNumber >= 66580) ? "CEMC_calib_ADC_to_ETower_default" : "cemc_pi0_twrSlope_v1_default";
+  std::string m_calibName = "getdefault";
 
-  string calibdir = CDBInterface::instance()->getUrl(m_calibName);
-  string filePath;
+  std::string calibdir = CDBInterface::instance()->getUrl(m_calibName);
+  std::string filePath;
 
   if (!calibdir.empty())
   {
@@ -218,55 +206,55 @@ void createLocalEMCalCalibFile(const string &fname, int runNumber)
     std::cout << "No specific file for " << m_calibName << " found, using default calib " << default_time_independent_calib << std::endl;
   }
 
-  TFile *f_cdb = new TFile(filePath.c_str());
+  std::unique_ptr<TFile> f_cdb = std::make_unique<TFile>(filePath.c_str());
   f_cdb->Cp(fname.c_str());
   f_cdb->Cp("initial_calib.root");
 
   std::cout << "created local Calib file for run " << runNumber << " named " << fname << std::endl;
-
-  delete f_cdb;
 }
 #endif
 
 #ifndef __CINT__
-int main(int argc, const char* const argv[])
+int main(int argc, const char *const argv[])
 {
-  if (argc > 6)
+  const std::vector<std::string> args(argv, argv + argc);
+
+  if (args.size() > 6)
   {
-    cout << "usage: " << argv[0] << " [events] [fname] [iter] [calib_fname] [fieldname]" << endl;
+    std::cout << "usage: " << args[0] << " [events] [fname] [iter] [calib_fname] [fieldname]" << std::endl;
     return 1;
   }
 
-  Int_t events = 1e2;
-  string fname = "inputdata.txt";
-  Int_t iter = 0;
-  string calib_fname = "local_calib_copy.txt";
-  string fieldname = "CEMC_calib_ADC_to_ETower";
+  int events = 1e2;
+  std::string fname = "inputdata.txt";
+  int iter = 0;
+  std::string calib_fname = "local_calib_copy.txt";
+  std::string fieldname = "CEMC_calib_ADC_to_ETower";
 
-  if (argc >= 2)
+  if (args.size() >= 2)
   {
-    events = std::atoi(argv[1]);
+    events = std::stoi(args[1]);
   }
-  if (argc >= 3)
+  if (args.size() >= 3)
   {
-    fname = argv[2];
+    fname = args[2];
   }
-  if (argc >= 4)
+  if (args.size() >= 4)
   {
-    iter = std::atoi(argv[3]);
+    iter = std::stoi(args[3]);
   }
-  if (argc >= 5)
+  if (args.size() >= 5)
   {
-    calib_fname = argv[4];
+    calib_fname = args[4];
   }
-  if (argc >= 6)
+  if (args.size() >= 6)
   {
-    fieldname = argv[5];
+    fieldname = args[5];
   }
 
   Fun4All_EMCal(events, fname, iter, calib_fname, fieldname);
 
-  cout << "done" << endl;
+  std::cout << "done" << std::endl;
   return 0;
 }
 #endif
