@@ -21,10 +21,10 @@ R__LOAD_LIBRARY(libJetAnalysis.so)
 
 void run(){
     JetAnalysis b;
-    b.setWorkDir("/sphenix/tg/tg01/hf/jkvapil/JET30_r11_v2/");
-    //b.processCondor("/sphenix/tg/tg01/hf/jkvapil/JET30_r11_v2/condorJob/myTestJets/outputData_0*.root");  
+    //b.setWorkDir("/sphenix/tg/tg01/hf/jkvapil/JET30_r11_v2/");
+    b.processCondor("/sphenix/tg/tg01/hf/jkvapil/JET30_R22_npile_full/condorJob/myTestJets/outputData_*.root");  
     //b.setWorkDir("/sphenix/tg/tg01/hf/jkvapil/JET10_r11_10GeV/");
     //b.processCondor("/sphenix/tg/tg01/hf/jkvapil/JET10_r11_10GeV/condorJob/myTestJets/outputData_0*.root"); 
-    b.scanPurityEfficiency();
+    //b.scanPurityEfficiency();
   return;
 }

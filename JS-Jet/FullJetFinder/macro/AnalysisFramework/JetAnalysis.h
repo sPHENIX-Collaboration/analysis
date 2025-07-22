@@ -34,15 +34,16 @@ struct Flavour{
   Flavour getFlavour(FullJetFinder::TruthJets truth_jet);
   bool CheckValue(ROOT::Internal::TTreeReaderValueBase& value);
   void printProgress(int cur, int total);
-  bool scanPurityEfficiency();
+  //bool scanPurityEfficiency();
   void setWorkDir(const std::string &workdir){work_dir_ = workdir;};
   void printHiisto(TH1* h);
 
 
 
-   class MatchedJetContainer: public PHObject
+   /*class MatchedJetContainer: public PHObject
   {
-    public:
+    public: 
+    MatchedJetContainer()=default;
     void Reset();
     GlobalVertex::VTXTYPE vtxtype;
     float reco_pt;
@@ -58,7 +59,7 @@ struct Flavour{
     float truth_jet_nChConstituents;
     float truth_jet_nConstituents;
     ClassDef(MatchedJetContainer,1)
-  };
+  };*/
 
   private:
   std::string work_dir_;
@@ -72,9 +73,9 @@ struct Flavour{
   float m_reco_jet_pt;
   int m_reco_jet_nConstituents;
   int m_reco_jet_nChConstituents;
-  float m_reco_jet_Sdxy_1N;
-  float m_reco_jet_Sdxy_2N;
-  float m_reco_jet_Sdxy_3N;
+  float reco_sdxy_1N;
+  float reco_sdxy_2N;
+  float reco_sdxy_3N;
   float m_truth_jet_pt;
   int m_truth_jet_nConstituents;
   int m_truth_jet_nChConstituents;

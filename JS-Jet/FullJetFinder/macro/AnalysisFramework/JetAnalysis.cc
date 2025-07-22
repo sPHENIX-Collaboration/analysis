@@ -13,9 +13,10 @@
 #include <TChain.h>
 #include <TGraph.h>
 #include <TLegend.h>
+#include <TMath.h>
 
-#include "sPhenixStyle.h"
-#include "sPhenixStyle.C"
+//#include "sPhenixStyle.h"
+//#include "sPhenixStyle.C"
 
 #include "JetAnalysis.h"
 #include <ranges>
@@ -36,7 +37,7 @@ bool CheckValue(ROOT::Internal::TTreeReaderValueBase& value) {
    return true;
 }
 
-void JetAnalysis::MatchedJetContainer::Reset()
+/*void JetAnalysis::MatchedJetContainer::Reset()
 {
     vtxtype = GlobalVertex::VTXTYPE::UNDEFINED;
     reco_pt = NAN;
@@ -51,7 +52,7 @@ void JetAnalysis::MatchedJetContainer::Reset()
     truth_pt = NAN;
     truth_jet_nChConstituents = NAN;
     truth_jet_nConstituents = NAN;
-}
+}*/
 
 bool JetAnalysis::CheckValue(ROOT::Internal::TTreeReaderValueBase& value) {
    if (value.GetSetupStatus() < 0) {
@@ -71,10 +72,10 @@ bool JetAnalysis::processCondor(const std::string &dataFiles) {
    
    jet_container_ = new TTreeReaderValue<FullJetFinder::Container>(reader,"JetContainer");
    TString filename = work_dir_ + "outtree_v2.root";
-   TFile *f = new TFile(filename,"RECREATE");
-   TTree *ttree_out = new TTree("Data", "Data");
-   MatchedJetContainer matched_jets_out;
-   ttree_out->Branch( "matched_jets", &matched_jets_out );
+   //TFile *f = new TFile(filename,"RECREATE");
+   //TTree *ttree_out = new TTree("Data", "Data");
+   //MatchedJetContainer matched_jets_out;
+   //ttree_out->Branch( "matched_jets", &matched_jets_out );
 
 
    TH1D *h_reco_all = new TH1D("h_reco_all","reco_all",400,0,100);
@@ -191,7 +192,7 @@ bool JetAnalysis::processCondor(const std::string &dataFiles) {
       h_pflow[i]->GetXaxis()->SetBinLabel(6,"LEFTOVER_EM_PARTICLE");
     }
 
-TCanvas *c3 = new TCanvas("c3","c3",2400,800);
+   TCanvas *c3 = new TCanvas("c3","c3",2400,800);
     c3->Divide(8,1);
 
    TH1I *h_primvtx[6];
@@ -213,6 +214,92 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
   // int nentries = reader.GetEntries();
    int nentries = tc->GetEntries();
    std::cout<<"events "<<nentries<<std::endl;
+
+
+   // Create a new ROOT file
+TFile *file = new TFile("/sphenix/tg/tg01/hf/jkvapil/JET30_R22_npile_full/HF_matched_jets.root", "RECREATE");
+
+// Create a new TTree
+TTree *tree = new TTree("Data", "A tree with various branches");
+
+// Define variables for branches
+float id;
+float vertex_x, vertex_y, vertex_z;
+float vertex_x_unc, vertex_y_unc, vertex_z_unc;
+float vertex_chisq;
+int vertex_ndf;
+
+float reco_area;
+int reco_num_ChConstituents;
+float reco_px, reco_py, reco_pz, reco_pt, reco_eta, reco_phi, reco_m, reco_e;
+float truth_area;
+int truth_num_ChConstituents;
+float truth_px, truth_py, truth_pz, truth_pt, truth_eta, truth_phi, truth_m, truth_e;
+int truth_flavour;
+
+// Define vectors for leaves
+std::vector<float> track_e, track_eta, track_phi, track_px, track_py, track_pz, track_pt;
+std::vector<int> track_charge;
+std::vector<float> track_DCA_xy, track_DCA_xy_unc, track_sDCA_xy, track_DCA3d, track_sDCA3d;
+std::vector<int> track_n_mvtx, track_n_intt, track_n_tpc;
+std::vector<float> track_chisq;
+std::vector<int> track_ndf;
+
+// Create branches
+tree->Branch("vertex_x", &vertex_x, "vertex_x/F");
+tree->Branch("vertex_y", &vertex_y, "vertex_y/F");
+tree->Branch("vertex_z", &vertex_z, "vertex_z/F");
+tree->Branch("vertex_x_unc", &vertex_x_unc, "vertex_x_unc/F");
+tree->Branch("vertex_y_unc", &vertex_y_unc, "vertex_y_unc/F");
+tree->Branch("vertex_z_unc", &vertex_z_unc, "vertex_z_unc/F");
+tree->Branch("vertex_chisq", &vertex_chisq, "vertex_chisq/F");
+tree->Branch("vertex_ndf", &vertex_ndf, "vertex_ndf/I");
+tree->Branch("id", &id, "id/F");
+tree->Branch("reco_area", &reco_area, "reco_area/F");
+tree->Branch("reco_num_ChConstituents", &reco_num_ChConstituents, "reco_num_ChConstituents/I");
+tree->Branch("reco_px", &reco_px, "reco_px/F");
+tree->Branch("reco_py", &reco_py, "reco_py/F");
+tree->Branch("reco_pz", &reco_pz, "reco_pz/F");
+tree->Branch("reco_pt", &reco_pt, "reco_pt/F");
+tree->Branch("reco_eta", &reco_eta, "reco_eta/F");
+tree->Branch("reco_phi", &reco_phi, "reco_phi/F");
+tree->Branch("reco_m", &reco_m, "reco_m/F");
+tree->Branch("reco_e", &reco_e, "reco_e/F");
+tree->Branch("reco_sdxy_1N", &reco_sdxy_1N, "reco_sdxy_1N/F");
+tree->Branch("reco_sdxy_2N", &reco_sdxy_2N, "reco_sdxy_2N/F");
+tree->Branch("reco_sdxy_3N", &reco_sdxy_3N, "reco_sdxy_3N/F");
+tree->Branch("truth_area", &truth_area, "truth_area/F");
+tree->Branch("truth_num_ChConstituents", &truth_num_ChConstituents, "truth_num_ChConstituents/I");
+tree->Branch("truth_px", &truth_px, "truth_px/F");
+tree->Branch("truth_py", &truth_py, "truth_py/F");
+tree->Branch("truth_pz", &truth_pz, "truth_pz/F");
+tree->Branch("truth_pt", &truth_pt, "truth_pt/F");
+tree->Branch("truth_eta", &truth_eta, "truth_eta/F");
+tree->Branch("truth_phi", &truth_phi, "truth_phi/F");
+tree->Branch("truth_m", &truth_m, "truth_m/F");
+tree->Branch("truth_e", &truth_e, "truth_e/F");
+tree->Branch("truth_flavour", &truth_flavour, "truth_flavour/I");
+
+
+// Create leaves
+tree->Branch("track_e","std::vector<float>", &track_e);
+tree->Branch("track_eta", &track_eta);
+tree->Branch("track_phi", &track_phi);
+tree->Branch("track_px", &track_px);
+tree->Branch("track_py", &track_py);
+tree->Branch("track_pz", &track_pz);
+tree->Branch("track_pt", &track_pt);
+tree->Branch("track_charge", &track_charge);
+tree->Branch("track_DCA_xy", &track_DCA_xy);
+tree->Branch("track_DCA_xy_unc", &track_DCA_xy_unc);
+tree->Branch("track_sDCA_xy", &track_sDCA_xy);
+tree->Branch("track_DCA3d", &track_DCA3d);
+tree->Branch("track_sDCA3d", &track_sDCA3d);
+tree->Branch("track_n_mvtx", &track_n_mvtx);
+tree->Branch("track_n_intt", &track_n_intt);
+tree->Branch("track_n_tpc", &track_n_tpc);
+tree->Branch("track_chisq", &track_chisq);
+tree->Branch("track_ndf", &track_ndf);
 
    //loop over events
    while (reader.Next()) {
@@ -274,6 +361,8 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
 
      
             
+
+
 
 
       //main matching loop
@@ -348,8 +437,8 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
          //std::cout<<id<<" ";
          h_matching[0]->Fill(1.5);
          h_reco_unmatch->Fill((**jet_container_).recojets.at(JetIDR_map[id]).pt);
-         if((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.size() > 0){
-            if((**jet_container_).primaryVertex.at((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::SVTX_MBD){
+         //if((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.size() > 0){
+            /*if((**jet_container_).primaryVertex.at((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::SVTX_MBD){
                   h_primvtx[5]->Fill(0);
                } 
                if((**jet_container_).primaryVertex.at((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::SVTX){
@@ -357,8 +446,8 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
                } 
                if((**jet_container_).primaryVertex.at((**jet_container_).recojets.at(JetIDR_map[id]).chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::MBD){
                   h_primvtx[5]->Fill(2);
-            } 
-         }
+            } */
+         //}
          for(auto con : (**jet_container_).recojets.at(JetIDR_map[id]).chConstituents){
             h_pflow[1]->Fill(static_cast<int>(con.pflowtype));
             h_phi_track_match->Fill(con.phi);
@@ -438,8 +527,8 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
       */
 
       //get vertex info
-      int num_vtx = 0;
-      for(auto vertex : (**jet_container_).primaryVertex){
+      //int num_vtx = 0;
+      /*for(auto vertex : (**jet_container_).primaryVertex){
          num_vtx++;
          if(vertex.vtxtype == GlobalVertex::VTXTYPE::SVTX_MBD) h_primvtx[0]->Fill(0);
          if(vertex.vtxtype == GlobalVertex::VTXTYPE::SVTX) h_primvtx[0]->Fill(1);
@@ -449,11 +538,12 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
             if(vertex.vtxtype == GlobalVertex::VTXTYPE::SVTX) h_primvtx[1]->Fill(1);
             if(vertex.vtxtype == GlobalVertex::VTXTYPE::MBD) h_primvtx[1]->Fill(2);
          }
-      }
-      h_n_vtx ->Fill(num_vtx);
+      }*/
+      //h_n_vtx ->Fill(num_vtx);
 
 //std::cout<<"C"<<std::endl;
       //Main analysis loop
+      int iid = 0;
       for (auto truth_jet : (**jet_container_).truthjets){
          Flavour flavour = getFlavour(truth_jet);  
          for (auto reco_jet : (**jet_container_).recojets){            
@@ -462,28 +552,28 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
             if (std::find(matchedPair.begin(), matchedPair.end(), std::pair(reco_jet.id,truth_jet.id)) == matchedPair.end()) continue;
             //reject doubly matched reco jets  
             if(std::find(doublymatchedR.begin(), doublymatchedR.end(),reco_jet.id) != doublymatchedR.end()){
-               for(auto con : reco_jet.chConstituents) h_pflow[2]->Fill(static_cast<int>(con.pflowtype));
-               for(auto con : reco_jet.neConstituents) h_pflow[2]->Fill(static_cast<int>(con.pflowtype));
+               //for(auto con : reco_jet.chConstituents) h_pflow[2]->Fill(static_cast<int>(con.pflowtype));
+               //for(auto con : reco_jet.neConstituents) h_pflow[2]->Fill(static_cast<int>(con.pflowtype));
                continue;
             } 
             //reject doubly matched truth jets
             if(std::find(doublymatchedT.begin(), doublymatchedT.end(),truth_jet.id) != doublymatchedT.end()){
-               for(auto con : reco_jet.chConstituents) h_pflow[3]->Fill(static_cast<int>(con.pflowtype));
-               for(auto con : reco_jet.neConstituents) h_pflow[3]->Fill(static_cast<int>(con.pflowtype));
+               //for(auto con : reco_jet.chConstituents) h_pflow[3]->Fill(static_cast<int>(con.pflowtype));
+               //for(auto con : reco_jet.neConstituents) h_pflow[3]->Fill(static_cast<int>(con.pflowtype));
                continue;
             } 
 
-            bool good_vertex = false;
-            for( auto chtrk : reco_jet.chConstituents){
-               if(abs((**jet_container_).primaryVertex.at(chtrk.vtx_id).z) < 10) good_vertex = true;
-            }
-            if(!good_vertex) continue;
+            //bool good_vertex = false;
+            //for( auto chtrk : reco_jet.chConstituents){
+            //   if(abs((**jet_container_).primaryVertex.at(chtrk.vtx_id).z) < 10) good_vertex = true;
+           // }
+            //if(!good_vertex) continue;
 
             
 
        
 
-            int n_vtx_in_jet = 0;
+          /*  int n_vtx_in_jet = 0;
             int vtx_1_id_tmp = -1;
             int vtx_2_id_tmp = -1;
 
@@ -503,9 +593,9 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
 
             h_n_vtx_jet->Fill(n_vtx_in_jet);
 
-            if(n_vtx_in_jet != 1) continue;
+            if(n_vtx_in_jet != 1) continue;*/
 
-            if((**jet_container_).primaryVertex.at(reco_jet.chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::SVTX_MBD){
+          /*  if((**jet_container_).primaryVertex.at(reco_jet.chConstituents.at(0).vtx_id).vtxtype == GlobalVertex::VTXTYPE::SVTX_MBD){
                h_primvtx[2]->Fill(0);
                if (flavour.isC & !flavour.isB) h_primvtx[3]->Fill(0);
                if (flavour.isB) h_primvtx[4]->Fill(0);
@@ -519,15 +609,75 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
                h_primvtx[2]->Fill(2);
                if (flavour.isC & !flavour.isB) h_primvtx[3]->Fill(2);
                if (flavour.isB) h_primvtx[4]->Fill(2);
-            } 
+            } */
 
             h_jet_area->Fill(truth_jet.area, reco_jet.area);
 
-            for(auto con : reco_jet.chConstituents) h_pflow[0]->Fill(static_cast<int>(con.pflowtype));
-            for(auto con : reco_jet.neConstituents) h_pflow[0]->Fill(static_cast<int>(con.pflowtype));
+            //for(auto con : reco_jet.chConstituents) h_pflow[0]->Fill(static_cast<int>(con.pflowtype));
+            //for(auto con : reco_jet.neConstituents) h_pflow[0]->Fill(static_cast<int>(con.pflowtype));
 //std::cout<<"E"<<std::endl;
             //reset output container
-            matched_jets_out.Reset();
+            //matched_jets_out.Reset();
+
+
+            
+            vertex_x = (**jet_container_).primaryVertex.x;
+            vertex_y = (**jet_container_).primaryVertex.y;
+            vertex_z = (**jet_container_).primaryVertex.z;
+            vertex_x_unc = (**jet_container_).primaryVertex.x_unc;
+            vertex_y_unc = (**jet_container_).primaryVertex.y_unc;
+            vertex_z_unc = (**jet_container_).primaryVertex.z_unc;
+            vertex_chisq = (**jet_container_).primaryVertex.chisq;
+            vertex_ndf = (**jet_container_).primaryVertex.ndf;
+            id = iid;
+            iid++;
+
+            reco_area = reco_jet.area;
+            reco_num_ChConstituents = reco_jet.num_ChConstituents;
+            reco_px = reco_jet.px; 
+            reco_py = reco_jet.py; 
+            reco_pz = reco_jet.pz; 
+            reco_pt = reco_jet.pt; 
+            reco_eta = reco_jet.eta; 
+            reco_phi = reco_jet.phi; 
+            reco_m = reco_jet.m; 
+            reco_e = reco_jet.e;
+            truth_area = truth_jet.area;
+            truth_num_ChConstituents = truth_jet.num_ChConstituents;
+            truth_px = truth_jet.px; 
+            truth_py = truth_jet.py; 
+            truth_pz = truth_jet.pz; 
+            truth_pt = truth_jet.pt; 
+            truth_eta = truth_jet.eta; 
+            truth_phi = truth_jet.phi; 
+            truth_m = truth_jet.m; 
+            truth_e = truth_jet.e; 
+
+            Flavour fl = getFlavour(truth_jet);
+            if(fl.isB) truth_flavour = 2;
+            else if(fl.isC) truth_flavour = 1;
+            else truth_flavour = 0;
+
+            track_e.clear();
+               track_eta.clear();
+               track_phi.clear();
+               track_px.clear();
+               track_py.clear();
+               track_pz.clear();
+               track_pt.clear();
+               track_charge.clear();
+               track_DCA_xy.clear();
+               track_DCA_xy_unc.clear();
+               track_sDCA_xy.clear();
+               track_DCA3d.clear();
+               track_sDCA3d.clear();
+               track_n_mvtx.clear();
+               track_n_intt.clear();
+               track_n_tpc.clear();
+               track_chisq.clear();
+               track_ndf.clear();
+
+                     
 
             std::vector<double> sDCA_cut;
             
@@ -539,6 +689,26 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
                h_ntpc->Fill(chtrk.pt,chtrk.n_tpc);
                h_chi2ndof->Fill(chtrk.pt,chtrk.chisq/chtrk.ndf);
 
+
+               track_e.push_back(chtrk.e);
+               track_eta.push_back(chtrk.eta);
+               track_phi.push_back(chtrk.phi);
+               track_px.push_back(chtrk.pt * TMath::Cos(chtrk.phi));
+               track_py.push_back(chtrk.pt * TMath::Sin(chtrk.phi));
+               track_pz.push_back(chtrk.pt * TMath::SinH(chtrk.eta));
+               track_pt.push_back(chtrk.pt);
+               track_charge.push_back(chtrk.charge);
+               track_DCA_xy.push_back(chtrk.DCA_xy);
+               track_DCA_xy_unc.push_back(chtrk.DCA_xy_unc);
+               track_sDCA_xy.push_back(chtrk.sDCA_xy);
+               track_DCA3d.push_back(chtrk.DCA3d);
+               track_sDCA3d.push_back(chtrk.sDCA3d);
+               track_n_mvtx.push_back(chtrk.n_mvtx);
+               track_n_intt.push_back(chtrk.n_intt);
+               track_n_tpc.push_back(chtrk.n_tpc);
+               track_chisq.push_back(chtrk.chisq);
+               track_ndf.push_back(chtrk.ndf);
+
                if(abs(chtrk.sDCA3d) < 40){
                   //track quality parameters
                   if (chtrk.n_mvtx < 3) continue;
@@ -549,54 +719,62 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
                   if (chtrk.DCA_xy_unc > 3.0) continue;
 
                   sDCA_cut.push_back(chtrk.sDCA3d);  
-                  matched_jets_out.reco_constituents_Sdxy.push_back(chtrk.sDCA3d);
+                  //matched_jets_out.reco_constituents_Sdxy.push_back(chtrk.sDCA3d);
                   if (flavour.isLF) h_sDCA[0][0]->Fill(chtrk.sDCA3d);
                   if (flavour.isC & !flavour.isB) h_sDCA[0][1]->Fill(chtrk.sDCA3d);
                   if (flavour.isB) h_sDCA[0][2]->Fill(chtrk.sDCA3d);         
                }  
             }
 
+            reco_sdxy_1N = -999;
+            reco_sdxy_2N = -999;
+            reco_sdxy_3N = -999;
+
             //sort from greater to lowest
             std::nth_element(sDCA_cut.begin(), sDCA_cut.begin()+1, sDCA_cut.end(), std::greater<double>());
 
             //most displaced track
             if(sDCA_cut.size() >= 1){
-               matched_jets_out.reco_jet_Sdxy_1N = *(sDCA_cut.begin());
+               //matched_jets_out.reco_jet_Sdxy_1N = *(sDCA_cut.begin());
+               reco_sdxy_1N = *(sDCA_cut.begin());
                if (flavour.isLF) h_sDCA[1][0]->Fill(*(sDCA_cut.begin()));
                if (flavour.isC & !flavour.isB) h_sDCA[1][1]->Fill(*(sDCA_cut.begin()));
                if (flavour.isB) h_sDCA[1][2]->Fill(*(sDCA_cut.begin()));   
             } 
             //secnd most displaced track
             if(sDCA_cut.size() >= 2){
-               matched_jets_out.reco_jet_Sdxy_2N = *(sDCA_cut.begin()+1);
+               reco_sdxy_2N = *(sDCA_cut.begin()+1);
+               //matched_jets_out.reco_jet_Sdxy_2N = *(sDCA_cut.begin()+1);
                if (flavour.isLF) h_sDCA[1][0]->Fill(*(sDCA_cut.begin()+1));
                if (flavour.isC & !flavour.isB) h_sDCA[1][1]->Fill(*(sDCA_cut.begin()+1));
                if (flavour.isB) h_sDCA[1][2]->Fill(*(sDCA_cut.begin()+1));   
             } 
             //third most displaced track
             if(sDCA_cut.size() >= 3){
-               matched_jets_out.reco_jet_Sdxy_3N = *(sDCA_cut.begin()+2);
+               reco_sdxy_3N = *(sDCA_cut.begin()+2);
+               //matched_jets_out.reco_jet_Sdxy_3N = *(sDCA_cut.begin()+2);
                if (flavour.isLF) h_sDCA[1][0]->Fill(*(sDCA_cut.begin()+2));
                if (flavour.isC & !flavour.isB) h_sDCA[1][1]->Fill(*(sDCA_cut.begin()+2));
                if (flavour.isB) h_sDCA[1][2]->Fill(*(sDCA_cut.begin()+2));   
             } 
             //fourth most dispalced track
             if(sDCA_cut.size() >= 4){
-               matched_jets_out.reco_jet_Sdxy_4N = *(sDCA_cut.begin()+3);
+               //matched_jets_out.reco_jet_Sdxy_4N = *(sDCA_cut.begin()+3);
                if (flavour.isLF) h_sDCA[1][0]->Fill(*(sDCA_cut.begin()));
                if (flavour.isC & !flavour.isB) h_sDCA[1][1]->Fill(*(sDCA_cut.begin()+3));
                if (flavour.isB) h_sDCA[1][2]->Fill(*(sDCA_cut.begin()+3));   
             } 
 
-            matched_jets_out.reco_pt = reco_jet.pt;
+           /* matched_jets_out.reco_pt = reco_jet.pt;
             matched_jets_out.reco_jet_nChConstituents = reco_jet.num_ChConstituents;
             matched_jets_out.reco_jet_nConstituents = reco_jet.num_Constituents;
             matched_jets_out.truth_jet_flavour = flavour;
             matched_jets_out.truth_pt = truth_jet.pt;
             matched_jets_out.truth_jet_nChConstituents = truth_jet.num_ChConstituents;
-            matched_jets_out.truth_jet_nConstituents = truth_jet.num_Constituents;
+            matched_jets_out.truth_jet_nConstituents = truth_jet.num_Constituents;*/
 
-            ttree_out->Fill();
+            //ttree_out->Fill();
+            tree->Fill();
          }
       }
    } // TTree entry / event loop
@@ -643,7 +821,7 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
    h_jet_area->SaveAs(qapath + h_jet_area->GetName()+".png");*/
 
 
-   TDirectory *qadir = f->mkdir("QA_histo");
+   TDirectory *qadir = file->mkdir("QA_histo");
    qadir->cd();
    h_reco_all->Write();
    h_truth_all->Write();
@@ -687,9 +865,9 @@ TCanvas *c3 = new TCanvas("c3","c3",2400,800);
    h_n_vtx_jet->Write();
    h_jet_area->Write();
 
-   f->cd();
-   ttree_out->Write("Data", TObject::kOverwrite);
-   f->Close();
+   file->cd();
+   tree->Write("Data", TObject::kOverwrite);
+   file->Close();
    return true;
 }
 
@@ -737,6 +915,8 @@ void JetAnalysis::printProgress(int cur, int total){
    }
 }
 
+/*
+
 bool JetAnalysis::scanPurityEfficiency() {
    //load TTree produced by processing processCondor
    TString filename = work_dir_ + "outtree_v2.root";
@@ -754,8 +934,8 @@ bool JetAnalysis::scanPurityEfficiency() {
    TH1D *efficiency[3][4][n_points];
    TH1D *efficiency_flavour[4]; //flavour: 0 -b, 1- c, 2- lf, 3- inclusive
    double bins[]{10,120};
-   /*TH2D *RM_all = new TH2D("RM_all","RM_all",200,10,110,200,5,105);
-   TH2D *RM_b = new TH2D("RM_b","RM_b",40,10,50,45,5,50);*/
+   //TH2D *RM_all = new TH2D("RM_all","RM_all",200,10,110,200,5,105);
+   //TH2D *RM_b = new TH2D("RM_b","RM_b",40,10,50,45,5,50);
    for (int ipower = 0; ipower < 3; ipower++){
       for (int iflavour = 0; iflavour < 4; iflavour++){
          for (int ipoint = 0; ipoint < n_points; ipoint++){
@@ -769,25 +949,25 @@ bool JetAnalysis::scanPurityEfficiency() {
       efficiency_flavour[iflavour] = new TH1D(name,name,1,bins);   
    }
 
-  /*RM_all->GetXaxis()->SetTitle("pT truth");
-  RM_all->GetYaxis()->SetTitle("pT reco");
-  RM_b->GetXaxis()->SetTitle("pT truth");
-  RM_b->GetYaxis()->SetTitle("pT reco");*/
+  //RM_all->GetXaxis()->SetTitle("pT truth");
+  //RM_all->GetYaxis()->SetTitle("pT reco");
+  //RM_b->GetXaxis()->SetTitle("pT truth");
+  //RM_b->GetYaxis()->SetTitle("pT reco");
 
   
 
 
-   /*TH1D *resolution[10];
-   for (int k = 0; k < 1 ; k++){
-      std::string num_text = std::to_string(bins[k]);
-      std::string rounded = num_text.substr(0, num_text.find(".")+2);
-      std::string num_text2 = std::to_string(bins[k+1]);
-      std::string rounded2 = num_text2.substr(0, num_text2.find(".")+2);
-      TString name = "resolution_pt_truth_"+rounded+"_"+rounded2;
-      resolution[k] = new TH1D(name,name,40,-1,1);
-      resolution[k]->GetXaxis()->SetTitle("dPT = (reco-truth)/truth");
-      resolution[k]->GetYaxis()->SetTitle("probability");
-    }*/
+   //TH1D *resolution[10];
+   //for (int k = 0; k < 1 ; k++){
+   //   std::string num_text = std::to_string(bins[k]);
+   //   std::string rounded = num_text.substr(0, num_text.find(".")+2);
+   //   std::string num_text2 = std::to_string(bins[k+1]);
+   //   std::string rounded2 = num_text2.substr(0, num_text2.find(".")+2);
+   //   TString name = "resolution_pt_truth_"+rounded+"_"+rounded2;
+   //   resolution[k] = new TH1D(name,name,40,-1,1);
+   //   resolution[k]->GetXaxis()->SetTitle("dPT = (reco-truth)/truth");
+   //   resolution[k]->GetYaxis()->SetTitle("probability");
+   // }
   
       //  float tag[4]{0,2.5,5,10};
 
@@ -841,16 +1021,16 @@ bool JetAnalysis::scanPurityEfficiency() {
             if(jets.truth_jet_flavour.isC && !jets.truth_jet_flavour.isB) purity[1][1][ipoint]->Fill(jets.reco_pt);
             if(jets.truth_jet_flavour.isLF) purity[1][2][ipoint]->Fill(jets.reco_pt);
             purity[1][3][ipoint]->Fill(jets.reco_pt);
-            /*if(*m_truth_jet_flavour == 2 && *m_reco_jet_Sdxy_1N > tag[1]){
-            RM_b->Fill(*m_truth_jet_pt,*m_reco_jet_pt);
-            for (int k = 0; k < 9 ; k++){
-            if(*m_reco_jet_pt > 5){
-            if(bins[k] < *m_truth_jet_pt && *m_truth_jet_pt < bins[k+1])
-            resolution[k]->Fill(((*m_reco_jet_pt)-(*m_truth_jet_pt))/(*m_truth_jet_pt));
-            }
-            }
+            //if(*m_truth_jet_flavour == 2 && *m_reco_jet_Sdxy_1N > tag[1]){
+            //RM_b->Fill(*m_truth_jet_pt,*m_reco_jet_pt);
+            //for (int k = 0; k < 9 ; k++){
+            //if(*m_reco_jet_pt > 5){
+            //if(bins[k] < *m_truth_jet_pt && *m_truth_jet_pt < bins[k+1])
+            //resolution[k]->Fill(((*m_reco_jet_pt)-(*m_truth_jet_pt))/(*m_truth_jet_pt));
+            //}
+           // }
 
-            }*/
+            //}
          }
          if(jets.reco_jet_Sdxy_3N > 0.1*ipoint){
             if(jets.truth_jet_flavour.isB) purity[2][0][ipoint]->Fill(jets.reco_pt);
@@ -1024,24 +1204,24 @@ bool JetAnalysis::scanPurityEfficiency() {
 
 
 
-   /*for (int k = 0; k < 9 ; k++){
-      resolution[k]->Scale(1./resolution[k]->Integral());
-      resolution[k]->Scale(1.,"width");
-   }
+   //for (int k = 0; k < 9 ; k++){
+   //   resolution[k]->Scale(1./resolution[k]->Integral());
+   //   resolution[k]->Scale(1.,"width");
+   //}
 
-      TCanvas *c5 = new TCanvas("c5","c5",2000,1200);
-   c5->Divide(6,2);
-   c5->cd(1);
-   c5->cd(1)->SetLogz();
-   RM_all->Draw("colz");
-   c5->cd(2);
-   c5->cd(2)->SetLogz();
-   RM_b->Draw("colz");
-   for (int k = 0; k < 9 ; k++){
-      c5->cd(k+3);
-      c5->cd(k+3)->SetLogy();
-      resolution[k]->Draw();
-   }*/
+   //   TCanvas *c5 = new TCanvas("c5","c5",2000,1200);
+   //c5->Divide(6,2);
+   //c5->cd(1);
+   //c5->cd(1)->SetLogz();
+   //RM_all->Draw("colz");
+   //c5->cd(2);
+   //c5->cd(2)->SetLogz();
+   //RM_b->Draw("colz");
+   //for (int k = 0; k < 9 ; k++){
+   //   c5->cd(k+3);
+   //   c5->cd(k+3)->SetLogy();
+   //   resolution[k]->Draw();
+   //}
 
       //   TCanvas *c5 = new TCanvas("c5","c5",2000,1200);
    //c5->Divide(6,2);
@@ -1177,99 +1357,100 @@ std::cout<<"D"<<std::endl;
   Signi[2][3]->Draw("same");
 std::cout<<"E"<<std::endl;
   
-  /*TCanvas *c = new TCanvas("c", "c", 685, 630);
-  gPad->SetLogz();
-  gPad->SetRightMargin(0.15);
+  //TCanvas *c = new TCanvas("c", "c", 685, 630);
+  //gPad->SetLogz();
+  //gPad->SetRightMargin(0.15);
 
-  TLegend *leg = new TLegend(.12,.78,.4,.9);
-  leg->SetFillStyle(0);
-  leg->AddEntry("","#it{#bf{sPHENIX}} Preliminary","");
-  leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");*/
+  //TLegend *leg = new TLegend(.12,.78,.4,.9);
+  //leg->SetFillStyle(0);
+  //leg->AddEntry("","#it{#bf{sPHENIX}} Preliminary","");
+  //leg->AddEntry("","Au+Au #sqrt{s_{NN}} = 200 GeV","");
 
-  /*TH2D *h = new TH2D("", "", 100, 0, 1, 100, 0, 1);
-  h->GetYaxis()->SetNdivisions(405);
-  h->GetXaxis()->SetNdivisions(405);
-  h->SetXTitle("x-axis title [arb. units]");
-  h->SetYTitle("y-axis title [arb. units]");
-  h->Draw("col z");
-  leg->Draw("same");
-  TLatex l;
-  l.SetNDC();
-  l.SetTextFont(43);
-  l.SetTextSize(25);
-  l.DrawLatex(0.7, 0.965, "#it{7/21/2023}");*/
+  //TH2D *h = new TH2D("", "", 100, 0, 1, 100, 0, 1);
+  //h->GetYaxis()->SetNdivisions(405);
+  //h->GetXaxis()->SetNdivisions(405);
+  //h->SetXTitle("x-axis title [arb. units]");
+  //h->SetYTitle("y-axis title [arb. units]");
+  //h->Draw("col z");
+  //leg->Draw("same");
+  //TLatex l;
+  //l.SetNDC();
+  //l.SetTextFont(43);
+  //l.SetTextSize(25);
+  //l.DrawLatex(0.7, 0.965, "#it{7/21/2023}");
 
   canvas->Print("plot1.pdf");
   canvas->Print("plot1.ps");
   canvas->Print("plot1.png");
    //cc->Divide(10,10);
 
-      /*   for (int k = 0; k < 4 ; k++){
-            cc->cd(4*i+k+1);
-            //eff2[i][0][k]->Draw();
-            //eff2[i][1][k]->Draw();
-            eff2[i][2][k]->Draw("e0");
+      //   for (int k = 0; k < 4 ; k++){
+       //     cc->cd(4*i+k+1);
+       //     //eff2[i][0][k]->Draw();
+       //     //eff2[i][1][k]->Draw();
+       //     eff2[i][2][k]->Draw("e0");
 
-         }*/
+       //  }
 
 
 
- /*  for (int k = 0; k < 100 ; k++){
-      cc->cd(k+1);
-         eff2[0][2][k]->GetYaxis()->SetRangeUser(0,1);
-         std::string num_text = std::to_string(tag[k]);
-         std::string rounded = num_text.substr(0, num_text.find(".")+2);
-TString name = "efficiency, Sdxy > "+ rounded;//std::to_string(tag[k]);
-         eff2[0][2][k]->SetTitle(name);
-   eff2[0][2][k]->GetYaxis()->SetTitle("b-jet efficiency");
-   eff2[0][2][k]->GetXaxis()->SetTitle("pt jet reco");
-      eff2[0][2][k]->Draw("e0");
-      eff2[1][2][k]->Draw("same e0");
-      eff2[2][2][k]->Draw("same e0");*/
-   /*cc->cd(k+5);
-   name = "purity, Sdxy > "+ rounded;
-         purity[0][2][k]->SetTitle(name);
-   purity[0][2][k]->GetYaxis()->SetRangeUser(0,0.15);
-   purity[0][2][k]->GetYaxis()->SetTitle("b-jet purity");
-   purity[0][2][k]->GetXaxis()->SetTitle("pt jet reco");
-   purity[0][2][k]->Draw("e0");
-   purity[1][2][k]->Draw("same e0");
-   purity[2][2][k]->Draw("same e0");*/
+//   for (int k = 0; k < 100 ; k++){
+//      cc->cd(k+1);
+//         eff2[0][2][k]->GetYaxis()->SetRangeUser(0,1);
+//         std::string num_text = std::to_string(tag[k]);
+//         std::string rounded = num_text.substr(0, num_text.find(".")+2);
+//TString name = "efficiency, Sdxy > "+ rounded;//std::to_string(tag[k]);
+//         eff2[0][2][k]->SetTitle(name);
+//   eff2[0][2][k]->GetYaxis()->SetTitle("b-jet efficiency");
+//   eff2[0][2][k]->GetXaxis()->SetTitle("pt jet reco");
+//      eff2[0][2][k]->Draw("e0");
+//      eff2[1][2][k]->Draw("same e0");
+//      eff2[2][2][k]->Draw("same e0");
+//   cc->cd(k+5);
+//   name = "purity, Sdxy > "+ rounded;
+//         purity[0][2][k]->SetTitle(name);
+//   purity[0][2][k]->GetYaxis()->SetRangeUser(0,0.15);
+//   purity[0][2][k]->GetYaxis()->SetTitle("b-jet purity");
+//   purity[0][2][k]->GetXaxis()->SetTitle("pt jet reco");
+//   purity[0][2][k]->Draw("e0");
+//   purity[1][2][k]->Draw("same e0");
+//   purity[2][2][k]->Draw("same e0");
   // }
-/*
-   cc->cd(1);
-   purity[0][0]->GetYaxis()->SetRangeUser(0,1);
-   purity[0][0]->Draw();
-   purity[0][1]->Draw("same");
-   purity[0][2]->Draw("same");
-     cc->cd(2);
-   purity[1][0]->GetYaxis()->SetRangeUser(0,1);
-   purity[1][0]->Draw();
-   purity[1][1]->Draw("same");
-   purity[1][2]->Draw("same");
-     cc->cd(2);
-   purity[2][0]->GetYaxis()->SetRangeUser(0,1);
-   purity[2][0]->Draw();
-   purity[2][1]->Draw("same");
-   purity[2][2]->Draw("same");*/
 
-   /*for (unsigned int ii = 0; ii < 3; ii++){
-     std::cout << ii << std::endl;
-      cc->cd(ii+1);
-      std::cout<<"plotting "<<ii<<" 0"<<std::endl;
-       purity[ii][0]->GetYaxis()->SetRangeUser(0,1);
-      purity[ii][0]->Draw();
-       std::cout<<"plotting "<<ii<<" 1"<<std::endl;
-      purity[ii][1]->Draw("same");
-       std::cout<<"plotting "<<ii<<" 2"<<std::endl;
-      purity[ii][2]->Draw("same");
+//   cc->cd(1);
+//   purity[0][0]->GetYaxis()->SetRangeUser(0,1);
+//   purity[0][0]->Draw();
+//   purity[0][1]->Draw("same");
+//   purity[0][2]->Draw("same");
+//     cc->cd(2);
+//   purity[1][0]->GetYaxis()->SetRangeUser(0,1);
+//   purity[1][0]->Draw();
+//   purity[1][1]->Draw("same");
+ //  purity[1][2]->Draw("same");
+ //    cc->cd(2);
+//   purity[2][0]->GetYaxis()->SetRangeUser(0,1);
+//   purity[2][0]->Draw();
+//   purity[2][1]->Draw("same");
+//   purity[2][2]->Draw("same");
+
+//   for (unsigned int ii = 0; ii < 3; ii++){
+//     std::cout << ii << std::endl;
+//      cc->cd(ii+1);
+//      std::cout<<"plotting "<<ii<<" 0"<<std::endl;
+//       purity[ii][0]->GetYaxis()->SetRangeUser(0,1);
+//      purity[ii][0]->Draw();
+//       std::cout<<"plotting "<<ii<<" 1"<<std::endl;
+//      purity[ii][1]->Draw("same");
+//       std::cout<<"plotting "<<ii<<" 2"<<std::endl;
+//      purity[ii][2]->Draw("same");
      
 
-   }*/
+//   }
 
 
 return true;
 }
+*/
 /*
 void JetAnalysis::printHiisto(TH1* h){
    TCanvas c1;
@@ -1288,11 +1469,11 @@ void JetAnalysis::printHiisto(TH1* h){
 
 
 std::tuple<TCanvas*, TPad**, TH1D**> PrepareCanvas4Pad(UInt_t xAxisBins, Double_t *xAxis){
-    SetsPhenixStyle();
+    //SetsPhenixStyle();
     //prepare main canvas
     TCanvas *FinalSpectrum = new TCanvas("FinalSpectrum3", "FinalSpectrum3",0,45,(685+3*630),630);
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
+    //gStyle->SetOptStat(0);
+    //gStyle->SetOptTitle(0);
     FinalSpectrum->SetHighLightColor(2);
     FinalSpectrum->Range(0,0,1,1);
     FinalSpectrum->SetFillColor(0);
