@@ -1,10 +1,12 @@
 // -- c++ includes --
+#include <format>
+#include <memory>
 #include <string>
 
 // -- root includes --
-#include <TSystem.h>
 #include <TFile.h>
 #include <TH2F.h>
+#include <TSystem.h>
 
 #include <cdbobjects/CDBTTree.h>  // for CDBTTree
 #include <litecaloeval/LiteCaloEval.h>
@@ -13,100 +15,90 @@
 
 #include <sPhenixStyle.C>
 
-using std::string;
-using std::cout;
-using std::endl;
-
 R__LOAD_LIBRARY(libLiteCaloEvalTowSlope.so)
 R__LOAD_LIBRARY(libcdbobjects)
 
+void TSCtoCDBTTree(const char *infile, const char *outputfile, const std::string &m_fieldname);
+void mergeCDBTTrees(const char *infile1, const char *infile2, const char *outputfile, const std::string &m_fieldname);
 
-void TSCtoCDBTTree(const char * infile, const char * outputfile, const string &m_fieldname);
-void mergeCDBTTrees(const char * infile1, const char * infile2, const char * outputfile, const string &m_fieldname);
-
-void doTscFit(const string &hist_fname = "base/combine_out/out1.root", const string &calib_fname = "base/local_calib_copy.root",Int_t iter=1, const string &m_fieldname = "CEMC_calib_ADC_to_ETower")
+void doTscFit(const std::string &hist_fname = "base/combine_out/out1.root",
+              const std::string &calib_fname = "base/local_calib_copy.root",
+              int iter = 1,
+              const std::string &m_fieldname = "CEMC_calib_ADC_to_ETower")
 {
+  std::string fitoutfile = std::format("tsc_fitout_it{}.root", iter);
 
-  string fitoutfile = Form("tsc_fitout_it%d.root",iter);
-
-  if (iter <= 2){
+  if (iter <= 2)
+  {
     LiteCaloEval modlce;
     modlce.CaloType(LiteCaloEval::CEMC);
     modlce.set_spectra_binWidth(0.02);
-    modlce.Get_Histos(hist_fname.c_str(),fitoutfile.c_str());
-    modlce.m_myminbin =  0;  
-    modlce.m_mymaxbin =  96; 
-    modlce.setFitMin(0.40f);
-    modlce.setFitMax(1.2f);
+    modlce.Get_Histos(hist_fname.c_str(), fitoutfile.c_str());
+    modlce.m_myminbin = 0;
+    modlce.m_mymaxbin = 96;
+    modlce.setFitMin(0.40F);
+    modlce.setFitMax(1.2F);
     modlce.set_doQA();
-    //if (iter==2) modlce.set_doQA(true);
-    modlce.FitRelativeShifts(&modlce,110);
+    // if (iter==2) modlce.set_doQA(true);
+    modlce.FitRelativeShifts(&modlce, 110);
   }
 
-  if (iter==3) {
+  if (iter == 3)
+  {
     SetsPhenixStyle();
     LiteCaloEval modlce;
     modlce.CaloType(LiteCaloEval::CEMC);
     modlce.set_spectra_binWidth(0.005);
-    modlce.Get_Histos(hist_fname.c_str(),fitoutfile.c_str());
+    modlce.Get_Histos(hist_fname.c_str(), fitoutfile.c_str());
     modlce.plot_cemc("figures");
   }
-    
 
-   // create the cdbttree from tsc output andd multiply the corrections 
-   // into the base calibration to pickup for pi0 first iteration
+  // create the cdbttree from tsc output andd multiply the corrections
+  // into the base calibration to pickup for pi0 first iteration
 
-  TSCtoCDBTTree(fitoutfile.c_str(),Form("tsc_output_cdb_it%d.root",iter), m_fieldname);
-  mergeCDBTTrees(Form("tsc_output_cdb_it%d.root",iter),calib_fname.c_str(),calib_fname.c_str(), m_fieldname);
+  TSCtoCDBTTree(fitoutfile.c_str(), std::format("tsc_output_cdb_it{}.root", iter).c_str(), m_fieldname);
+  mergeCDBTTrees(std::format("tsc_output_cdb_it{}.root", iter).c_str(), calib_fname.c_str(), calib_fname.c_str(), m_fieldname);
 
   size_t pos = calib_fname.find_last_of('.');
-  string f_calib_save_name = calib_fname;
-  f_calib_save_name.insert(pos,Form("_postTSC_it%d",iter));
+  std::string f_calib_save_name = calib_fname;
+  f_calib_save_name.insert(pos, std::format("_postTSC_it{}", iter));
 
-  TFile* f_calib_mod = new TFile(calib_fname.c_str());
+  std::unique_ptr<TFile> f_calib_mod = std::make_unique<TFile>(calib_fname.c_str());
   f_calib_mod->Cp(f_calib_save_name.c_str());
 
   gSystem->Exit(0);
 }
 
-
-void mergeCDBTTrees(const char * infile1, const char * infile2, const char * outputfile, const string &m_fieldname)
+void mergeCDBTTrees(const char *infile1, const char *infile2, const char *outputfile, const std::string &m_fieldname)
 {
+  std::unique_ptr<CDBTTree> cdbttree1 = std::make_unique<CDBTTree>(infile1);
+  std::unique_ptr<CDBTTree> cdbttree2 = std::make_unique<CDBTTree>(infile2);
+  std::unique_ptr<CDBTTree> cdbttreeOut = std::make_unique<CDBTTree>(outputfile);
 
-  CDBTTree *cdbttree1 = new CDBTTree(infile1);  
-  CDBTTree *cdbttree2 = new CDBTTree(infile2);  
-  CDBTTree *cdbttreeOut = new CDBTTree(outputfile);
-
-  for(UInt_t i = 0; i < 96 ; i++)
+  for (unsigned int i = 0; i < 96; i++)
   {
-    for(UInt_t j = 0; j < 256; j++)
+    for (unsigned int j = 0; j < 256; j++)
     {
-      UInt_t key = TowerInfoDefs::encode_emcal(i,j);
-      float val1 = cdbttree1->GetFloatValue(static_cast<Int_t>(key), m_fieldname);
-      float val2 = cdbttree2->GetFloatValue(static_cast<Int_t>(key), m_fieldname);
-      cdbttreeOut->SetFloatValue(static_cast<Int_t>(key),m_fieldname,val1*val2);
+      unsigned int key = TowerInfoDefs::encode_emcal(i, j);
+      float val1 = cdbttree1->GetFloatValue(static_cast<int>(key), m_fieldname);
+      float val2 = cdbttree2->GetFloatValue(static_cast<int>(key), m_fieldname);
+      cdbttreeOut->SetFloatValue(static_cast<int>(key), m_fieldname, val1 * val2);
     }
   }
 
   cdbttreeOut->Commit();
   cdbttreeOut->WriteCDBTTree();
-  delete cdbttreeOut;
-  delete cdbttree1;
-  delete cdbttree2;
 
-}//end macro
+}  // end macro
 
-
-
-void TSCtoCDBTTree(const char * infile, const char * outputfile, const string &m_fieldname)
+void TSCtoCDBTTree(const char *infile, const char *outputfile, const std::string &m_fieldname)
 {
-
   bool chk4file = gSystem->AccessPathName(infile);
-  TFile *f = nullptr;
+  std::unique_ptr<TFile> f = nullptr;
 
-  if(!chk4file)
+  if (!chk4file)
   {
-    f = new TFile(infile,"READ");
+    f = std::make_unique<TFile>(infile, "READ");
   }
   else
   {
@@ -114,54 +106,66 @@ void TSCtoCDBTTree(const char * infile, const char * outputfile, const string &m
     exit(0);
   }
 
-  //write to cdb tree
-  CDBTTree *cdbttree = new CDBTTree(outputfile);
+  // write to cdb tree
+  std::unique_ptr<CDBTTree> cdbttree = std::make_unique<CDBTTree>(outputfile);
 
-  //gain values lie in the 2d histogram called corrPat
-  TH2F *cp = static_cast<TH2F*>(f->Get("corrPat"));
+  // gain values lie in the 2d histogram called corrPat
+  TH2F *cp = static_cast<TH2F *>(f->Get("corrPat"));
 
-  for(Int_t i = 0; i < 96 ; i++)
+  for (int i = 0; i < 96; i++)
   {
-    for(Int_t j = 0; j < 256; j++)
+    for (int j = 0; j < 256; j++)
     {
-      UInt_t key = TowerInfoDefs::encode_emcal(static_cast<UInt_t>(i),static_cast<UInt_t>(j));
-      float gain = static_cast<Float_t>(1.0 / cp->GetBinContent(i+1,j+1));
-       if (cp->GetBinContent(i+1,j+1) <= 0) gain = 0;
-       if (std::isnan(cp->GetBinContent(i+1,j+1))) {gain = 0; cout << "nan calib from tsc " << i << "," << j << endl;}
-      cdbttree->SetFloatValue(static_cast<Int_t>(key),m_fieldname.c_str(),gain);
+      unsigned int key = TowerInfoDefs::encode_emcal(static_cast<unsigned int>(i), static_cast<unsigned int>(j));
+      float gain = static_cast<Float_t>(1.0 / cp->GetBinContent(i + 1, j + 1));
+      if (cp->GetBinContent(i + 1, j + 1) <= 0)
+      {
+        gain = 0;
+      }
+      if (std::isnan(cp->GetBinContent(i + 1, j + 1)))
+      {
+        gain = 0;
+        std::cout << "nan calib from tsc " << i << "," << j << std::endl;
+      }
+      cdbttree->SetFloatValue(static_cast<int>(key), m_fieldname.c_str(), gain);
     }
   }
 
   cdbttree->Commit();
   cdbttree->WriteCDBTTree();
-  //cdbttree->Print();
+  // cdbttree->Print();
   f->Close();
-  delete f;
-  delete cdbttree;
-
 }
 
-# ifndef __CINT__
-Int_t main(Int_t argc, const char* const argv[]) {
-if(argc < 3 || argc > 5){
-        cout << "usage: ./doTscFit hist_fname calib_fname [iter] [m_fieldname]" << endl;
-        return 1;
-    }
+#ifndef __CINT__
+int main(int argc, const char *const argv[])
+{
+  const std::vector<std::string> args(argv, argv + argc);
 
-    Int_t iter = 1;
-    string m_fieldname = "CEMC_calib_ADC_to_ETower";
+  if (args.size() < 3 || args.size() > 5)
+  {
+    std::cout << "usage: ./doTscFit hist_fname calib_fname [iter] [m_fieldname]" << std::endl;
+    return 1;
+  }
 
-    if(argc >= 4) {
-        iter = std::atoi(argv[3]);
-    }
-    if(argc >= 5) {
-        m_fieldname = argv[4];
-    }
+  const std::string& hist_fname = args[1];
+  const std::string& calib_fname = args[2];
+  int iter = 1;
+  std::string m_fieldname = "CEMC_calib_ADC_to_ETower";
 
-    doTscFit(argv[1], argv[2], iter, m_fieldname);
+  if (args.size() >= 4)
+  {
+    iter = std::stoi(args[3]);
+  }
+  if (args.size() >= 5)
+  {
+    m_fieldname = args[4];
+  }
 
-    cout << "======================================" << endl;
-    cout << "done" << endl;
-    return 0;
+  doTscFit(hist_fname, calib_fname, iter, m_fieldname);
+
+  std::cout << "======================================" << std::endl;
+  std::cout << "done" << std::endl;
+  return 0;
 }
-# endif
+#endif
