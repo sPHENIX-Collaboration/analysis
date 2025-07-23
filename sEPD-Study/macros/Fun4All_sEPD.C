@@ -183,7 +183,7 @@ int main(int argc, const char* const argv[])
     std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag] [condor_mode]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
-    std::cerr << "  output_directory: (optional) path to the output file (default: 'test.root')" << std::endl;
+    std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
