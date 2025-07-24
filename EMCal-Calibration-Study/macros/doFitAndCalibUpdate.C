@@ -43,7 +43,7 @@ int main(int argc, const char *const argv[])
 
   if (args.size() < 3 || args.size() > 5)
   {
-    std::cout << "usage: ./" << args[0] << " hist_fname calib_fname [iter] [m_fieldname]" << std::endl;
+    std::cout << "usage: " << args[0] << " hist_fname calib_fname [iter] [m_fieldname]" << std::endl;
     return 1;
   }
 

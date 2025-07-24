@@ -32,6 +32,7 @@
 #include <fun4all/SubsysReco.h>
 
 #include <phool/recoConsts.h>
+#include <phool/RunnumberRange.h>
 
 #include <ffamodules/CDBInterface.h>
 
@@ -81,12 +82,12 @@ void Fun4All_EMCal(int nevents = 1e2,
   int runnumber = runseg.first;
   std::cout << "run number = " << runnumber << std::endl;
 
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
+  rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
   rc->set_uint64Flag("TIMESTAMP", runnumber);  // runnumber);
 
   std::unique_ptr<Fun4AllInputManager> in = std::make_unique<Fun4AllDstInputManager>("DST_TOWERS");
   in->AddListFile(fname);
-  se->registerInputManager(in.get());
+  se->registerInputManager(in.release());
 
   std::string filename = first_file.substr(first_file.find_last_of("/\\") + 1);
   std::string OutFile = std::format("OUTHIST_iter{}_{}", iter, filename);
@@ -102,11 +103,11 @@ void Fun4All_EMCal(int nevents = 1e2,
   // mbd/vertex
   // MBD/BBC Reconstruction
   std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
-  se->registerSubsystem(mbdreco.get());
+  se->registerSubsystem(mbdreco.release());
 
   // Official vertex storage
   std::unique_ptr<GlobalVertexReco> gvertex = std::make_unique<GlobalVertexReco>();
-  se->registerSubsystem(gvertex.get());
+  se->registerSubsystem(gvertex.release());
 
   /////////////////////
   // Geometry
@@ -114,7 +115,7 @@ void Fun4All_EMCal(int nevents = 1e2,
   std::unique_ptr<Fun4AllInputManager> intrue2 = std::make_unique<Fun4AllRunNodeInputManager>("DST_GEO");
   std::string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
   intrue2->AddFile(geoLocation);
-  se->registerInputManager(intrue2.get());
+  se->registerInputManager(intrue2.release());
 
   ////////////////////
   // Calibrate towers
@@ -122,13 +123,13 @@ void Fun4All_EMCal(int nevents = 1e2,
   statusEMC->set_detector_type(CaloTowerDefs::CEMC);
   // statusEMC->set_doAbortNoHotMap();
   statusEMC->set_directURL_hotMap("/sphenix/u/bseidlitz/work/forChris/caloStatusCDB_y2/moreMaps/EMCalHotMap_new_2024p006-48837cdb.root");
-  se->registerSubsystem(statusEMC.get());
+  se->registerSubsystem(statusEMC.release());
 
   std::unique_ptr<CaloTowerCalib> calibEMC = std::make_unique<CaloTowerCalib>("CEMCCALIB");
   calibEMC->set_detector_type(CaloTowerDefs::CEMC);
   calibEMC->set_directURL(calib_fname);
   calibEMC->setFieldName(fieldname);
-  se->registerSubsystem(calibEMC.get());
+  se->registerSubsystem(calibEMC.release());
 
   //////////////////
   // Clusters
@@ -142,7 +143,7 @@ void Fun4All_EMCal(int nevents = 1e2,
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
   ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC");
   ClusterBuilder->set_UseAltZVertex(1);
-  se->registerSubsystem(ClusterBuilder.get());
+  se->registerSubsystem(ClusterBuilder.release());
 
   ///////////////////
   // analysis modules
@@ -152,7 +153,7 @@ void Fun4All_EMCal(int nevents = 1e2,
     eval7e->CaloType(LiteCaloEval::CEMC);
     eval7e->set_reqMinBias(false);
     eval7e->setInputTowerNodeName("TOWERINFO_CALIB_CEMC");
-    se->registerSubsystem(eval7e.get());
+    se->registerSubsystem(eval7e.release());
   }
 
   if (iter > 3)
@@ -169,7 +170,7 @@ void Fun4All_EMCal(int nevents = 1e2,
     ca->set_GlobalVertexType(GlobalVertex::MBD);
     ca->set_requireVertex(true);
     ca->set_calib_fieldname(m_fieldname);
-    se->registerSubsystem(ca.get());
+    se->registerSubsystem(ca.release());
   }
 
   se->run(nevents);
@@ -183,7 +184,7 @@ void Fun4All_EMCal(int nevents = 1e2,
 
 void createLocalEMCalCalibFile(const std::string &fname, int runNumber)
 {
-  std::string default_time_independent_calib = (runNumber >= 66580) ? "CEMC_calib_ADC_to_ETower_default" : "cemc_pi0_twrSlope_v1_default";
+  std::string default_time_independent_calib = (runNumber >= RunnumberRange::RUN3AUAU_FIRST) ? "CEMC_calib_ADC_to_ETower_default" : "cemc_pi0_twrSlope_v1_default";
   std::string m_calibName = "getdefault";
 
   std::string calibdir = CDBInterface::instance()->getUrl(m_calibName);
@@ -228,7 +229,7 @@ int main(int argc, const char *const argv[])
   int events = 1e2;
   std::string fname = "inputdata.txt";
   int iter = 0;
-  std::string calib_fname = "local_calib_copy.txt";
+  std::string calib_fname = "local_calib_copy.root";
   std::string fieldname = "CEMC_calib_ADC_to_ETower";
 
   if (args.size() >= 2)
