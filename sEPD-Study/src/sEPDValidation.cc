@@ -94,8 +94,10 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_mbd_charge_max(0)
   , m_mbd_total_charge_min(9999)
   , m_mbd_total_charge_max(0)
-  , m_mbd_scale_min(9999)
-  , m_mbd_scale_max(0)
+  , m_vertex_scale_min(9999)
+  , m_vertex_scale_max(0)
+  , m_centrality_scale_min(9999)
+  , m_centrality_scale_max(0)
   , m_sepd_Q_min(9999)
   , m_sepd_Q_max(0)
   , m_sepd_total_charge_south_min(9999)
@@ -281,19 +283,22 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MbdParams");
-  if (!pdb) {
-    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MbdParams" << std::endl;
+  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  if (!pdb)
+  {
+    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MinBiasParams" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PHParameters pdb_params("MbdParams");
+  PHParameters pdb_params("MinBiasParams");
   pdb_params.FillFrom(pdb);
 
-  m_mbd_total_charge = pdb_params.get_double_param("mbd_total_charge");
-  double mbd_total_charge_south = pdb_params.get_double_param("mbd_total_charge_south");
-  double mbd_total_charge_north = pdb_params.get_double_param("mbd_total_charge_north");
-  double mbd_scale = pdb_params.get_double_param("mbd_scale_factor");
+  double mbd_total_charge_south = pdb_params.get_double_param("minbias_mbd_total_charge_south");
+  double mbd_total_charge_north = pdb_params.get_double_param("minbias_mbd_total_charge_north");
+  double vertex_scale           = pdb_params.get_double_param("minbias_vertex_scale");
+  double centrality_scale       = pdb_params.get_double_param("minbias_centrality_scale");
+
+  m_mbd_total_charge = mbd_total_charge_south + mbd_total_charge_north;
 
   dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
   dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north, m_cent);
@@ -301,7 +306,8 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
   JetUtils::update_min_max(m_mbd_total_charge, m_mbd_total_charge_min, m_mbd_total_charge_max);
   JetUtils::update_min_max(mbd_total_charge_south, m_mbd_charge_min, m_mbd_charge_max);
   JetUtils::update_min_max(mbd_total_charge_north, m_mbd_charge_min, m_mbd_charge_max);
-  JetUtils::update_min_max(mbd_scale, m_mbd_scale_min, m_mbd_scale_max);
+  JetUtils::update_min_max(vertex_scale, m_vertex_scale_min, m_vertex_scale_max);
+  JetUtils::update_min_max(centrality_scale, m_centrality_scale_min, m_centrality_scale_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -617,7 +623,8 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "MBD" << std::endl;
   std::cout << "Mbd Total Charge: Min: " << m_mbd_total_charge_min << ", Max: " << m_mbd_total_charge_max << std::endl;
   std::cout << "Mbd Total Charge (North / South): Min: " << m_mbd_charge_min << ", Max: " << m_mbd_charge_max << std::endl;
-  std::cout << "Mbd Scale Factor: Min: " << m_mbd_scale_min << ", Max: " << m_mbd_scale_max << std::endl;
+  std::cout << "Mbd Vertex Scale Factor: Min: " << m_vertex_scale_min << ", Max: " << m_vertex_scale_max << std::endl;
+  std::cout << "Mbd Centrality Scale Factor: Min: " << m_centrality_scale_min << ", Max: " << m_centrality_scale_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;

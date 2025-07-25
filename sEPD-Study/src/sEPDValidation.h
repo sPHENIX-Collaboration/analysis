@@ -119,8 +119,10 @@ private:
   double m_mbd_charge_max;
   double m_mbd_total_charge_min;
   double m_mbd_total_charge_max;
-  double m_mbd_scale_min;
-  double m_mbd_scale_max;
+  double m_vertex_scale_min;
+  double m_vertex_scale_max;
+  double m_centrality_scale_min;
+  double m_centrality_scale_max;
   double m_sepd_Q_min;
   double m_sepd_Q_max;
   double m_sepd_total_charge_south_min;
