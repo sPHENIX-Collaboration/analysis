@@ -81,26 +81,26 @@ void Fun4All_sEPD(const std::string &fname,
   CDBInterface::instance()->Verbosity(Fun4AllBase::VERBOSITY_SOME);
 
   std::unique_ptr<FlagHandler> flag = std::make_unique<FlagHandler>();
-  se->registerSubsystem(flag.get());
+  se->registerSubsystem(flag.release());
 
   // // MBD Reconstruction
   std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
-  se->registerSubsystem(mbdreco.get());
+  se->registerSubsystem(mbdreco.release());
 
   // sEPD Reconstruction--Calib Info
   std::unique_ptr<EpdReco> epdreco = std::make_unique<EpdReco>();
-  se->registerSubsystem(epdreco.get());
+  se->registerSubsystem(epdreco.release());
 
   // ZDC Reconstruction--Calib Info
   std::unique_ptr<ZdcReco> zdcreco = std::make_unique<ZdcReco>();
   zdcreco->set_zdc1_cut(0.0);
   zdcreco->set_zdc2_cut(0.0);
-  se->registerSubsystem(zdcreco.get());
+  se->registerSubsystem(zdcreco.release());
 
   // Official vertex storage
   std::unique_ptr<GlobalVertexReco> gvertex = std::make_unique<GlobalVertexReco>();
   gvertex->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  se->registerSubsystem(gvertex.get());
+  se->registerSubsystem(gvertex.release());
 
   setGlobalTag(dbtag);
 
@@ -132,7 +132,7 @@ void Fun4All_sEPD(const std::string &fname,
     mb->setOverwriteScale(cdb_centrality_scale);
     mb->setOverwriteVtx(cdb_centrality_vertex_scale);
   }
-  se->registerSubsystem(mb.get());
+  se->registerSubsystem(mb.release());
 
   // Centrality
   std::unique_ptr<CentralityReco> cent = std::make_unique<CentralityReco>();
@@ -143,24 +143,24 @@ void Fun4All_sEPD(const std::string &fname,
     cent->setOverwriteScale(cdb_centrality_scale);
     cent->setOverwriteVtx(cdb_centrality_vertex_scale);
   }
-  se->registerSubsystem(cent.get());
+  se->registerSubsystem(cent.release());
 
   // Event Plane
   std::unique_ptr<EventPlaneReco> epreco = std::make_unique<EventPlaneReco>();
   epreco->set_sepd_epreco(true);
   epreco->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  se->registerSubsystem(epreco.get());
+  se->registerSubsystem(epreco.release());
 
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();
   sepd_validation->set_filename(output);
   sepd_validation->set_condor_mode(condor_mode);
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  se->registerSubsystem(sepd_validation.get());
+  se->registerSubsystem(sepd_validation.release());
 
   std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
   In->AddListFile(fname);
-  se->registerInputManager(In.get());
+  se->registerInputManager(In.release());
 
   se->run(nEvents);
   se->End();
