@@ -99,7 +99,7 @@ private:
   };
 
   std::vector<std::string> m_eventType = {"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
-  std::vector<std::string> m_MinBias_Type = {"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
+  std::vector<std::string> m_MinBias_Type = {"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2700"};
 
   // Event Vars
   double m_zvtx;

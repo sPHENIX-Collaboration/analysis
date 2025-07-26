@@ -127,6 +127,7 @@ void Fun4All_sEPD(const std::string &fname,
   // Minimum Bias Classifier
   std::unique_ptr<MinimumBiasClassifier> mb = std::make_unique<MinimumBiasClassifier>();
   mb->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  mb->set_mbd_total_charge_cut(2700);
   if(useReferenceCDB)
   {
     mb->setOverwriteScale(cdb_centrality_scale);
