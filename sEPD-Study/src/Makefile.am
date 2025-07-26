@@ -31,6 +31,7 @@ libsEPDValidation_la_LIBADD = \
 	-lffamodules \
   -lglobalvertex_io \
   -lcalotrigger_io \
+  -lcalotrigger \
   -leventplaneinfo_io \
   -lepd_io \
 	-ljetbase_io \

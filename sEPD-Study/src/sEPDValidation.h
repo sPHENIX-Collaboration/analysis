@@ -67,6 +67,14 @@ private:
   double m_mbd_charge_low;
   double m_mbd_charge_high;
 
+  unsigned int m_bins_mbd_phi;
+  double m_mbd_phi_low;
+  double m_mbd_phi_high;
+
+  unsigned int m_bins_mbd_eta;
+  double m_mbd_eta_low;
+  double m_mbd_eta_high;
+
   unsigned int m_bins_sepd_Q;
   double m_sepd_Q_low;
   double m_sepd_Q_high;
@@ -115,6 +123,16 @@ private:
   double m_cent_max;
   double m_sepd_charge_min;
   double m_sepd_charge_max;
+  double m_mbd_ch_z_min;
+  double m_mbd_ch_z_max;
+  double m_mbd_ch_r_min;
+  double m_mbd_ch_r_max;
+  double m_mbd_ch_phi_min;
+  double m_mbd_ch_phi_max;
+  double m_mbd_ch_eta_min;
+  double m_mbd_ch_eta_max;
+  double m_mbd_ch_charge_min;
+  double m_mbd_ch_charge_max;
   double m_mbd_charge_min;
   double m_mbd_charge_max;
   double m_mbd_total_charge_min;

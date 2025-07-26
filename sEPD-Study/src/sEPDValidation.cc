@@ -31,6 +31,7 @@
 
 // -- MB
 #include <calotrigger/MinimumBiasInfo.h>
+#include <calotrigger/MinimumBiasClassifier.h>
 #include <centrality/CentralityInfo.h>
 
 // -- Trigger
@@ -49,7 +50,9 @@
 
 #include <TFile.h>
 #include <TH2.h>
+#include <TProfile2D.h>
 #include <TH3.h>
+#include <Math/Vector4D.h>
 
 //____________________________________________________________________________..
 sEPDValidation::sEPDValidation(const std::string &name)
@@ -69,6 +72,12 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_bins_mbd_charge(80)
   , m_mbd_charge_low(0)
   , m_mbd_charge_high(2e3)
+  , m_bins_mbd_phi(60)
+  , m_mbd_phi_low(-M_PI)
+  , m_mbd_phi_high(M_PI)
+  , m_bins_mbd_eta(7)
+  , m_mbd_eta_low(3.6)
+  , m_mbd_eta_high(4.3)
   , m_bins_sepd_Q(100)
   , m_sepd_Q_low(-1)
   , m_sepd_Q_high(1)
@@ -90,6 +99,16 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_cent_max(0)
   , m_sepd_charge_min(9999)
   , m_sepd_charge_max(0)
+  , m_mbd_ch_z_min(9999)
+  , m_mbd_ch_z_max(0)
+  , m_mbd_ch_r_min(9999)
+  , m_mbd_ch_r_max(0)
+  , m_mbd_ch_phi_min(9999)
+  , m_mbd_ch_phi_max(0)
+  , m_mbd_ch_eta_min(9999)
+  , m_mbd_ch_eta_max(0)
+  , m_mbd_ch_charge_min(9999)
+  , m_mbd_ch_charge_max(0)
   , m_mbd_charge_min(9999)
   , m_mbd_charge_max(0)
   , m_mbd_total_charge_min(9999)
@@ -126,6 +145,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   // Charge
   m_hists["h2SEPD_Charge"] = std::make_unique<TH2F>("h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", m_bins_sepd_total_charge, m_sepd_total_charge_low, m_sepd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists["h2MBD_North_Charge"] = std::make_unique<TProfile2D>("h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", m_bins_mbd_phi, m_mbd_phi_low, m_mbd_phi_high, m_bins_mbd_eta, m_mbd_eta_low, m_mbd_eta_high);
+  m_hists["h2MBD_South_Charge"] = std::make_unique<TProfile2D>("h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", m_bins_mbd_phi, m_mbd_phi_low, m_mbd_phi_high, m_bins_mbd_eta, -m_mbd_eta_high, -m_mbd_eta_low);
   m_hists["h2MBD_Total_Charge"] = std::make_unique<TH2F>("h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", m_bins_mbd_total_charge, m_mbd_total_charge_low, m_mbd_total_charge_high, m_bins_cent, m_cent_low, m_cent_high);
   m_hists["h3SEPD_Total_Charge"] = std::make_unique<TH3F>("h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", m_bins_sepd_charge, m_sepd_charge_low, m_sepd_charge_high, m_bins_sepd_charge, m_sepd_charge_low, m_sepd_charge_high, m_bins_cent, m_cent_low, m_cent_high);
   m_hists["h3MBD_Total_Charge"] = std::make_unique<TH3F>("h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", m_bins_mbd_charge, m_mbd_charge_low, m_mbd_charge_high, m_bins_mbd_charge, m_mbd_charge_low, m_mbd_charge_high, m_bins_cent, m_cent_low, m_cent_high);
@@ -283,7 +304,14 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode, "MbdGeom");
+  if (!mbdgeom)
+  {
+    std::cout << "sEPDValidation::process_event - Error can not find MbdGeom node " << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PdbParameterMap *pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb)
   {
     std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MinBiasParams" << std::endl;
@@ -299,6 +327,45 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
   double centrality_scale       = pdb_params.get_double_param("minbias_centrality_scale");
 
   m_mbd_total_charge = mbd_total_charge_south + mbd_total_charge_north;
+
+  MinimumBiasClassifier mb;
+
+  int mbd_channels = mbd_container->get_npmt();
+
+  for (int i = 0; i < mbd_channels; ++i)
+  {
+    MbdPmtHit *mbd_pmt = mbd_container->get_pmt(i);
+    bool pass = mb.passesHitCut(mbd_pmt);
+    if (!pass)
+    {
+      continue;
+    }
+
+    // geom
+    double mbd_ch_r = mbdgeom->get_r(i);
+    double mbd_ch_z = mbdgeom->get_z(i);
+    ROOT::Math::XYZTVector vec(mbd_ch_r, 0, mbd_ch_z, 0);
+    double mbd_ch_phi = mbdgeom->get_phi(i);
+    double mbd_ch_eta = vec.Eta();
+    int mbd_arm = mbdgeom->get_arm(i);
+
+    double charge = mbd_pmt->get_q() * vertex_scale * centrality_scale;
+
+    if(mbd_arm == 0)
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2MBD_South_Charge"].get())->Fill(mbd_ch_phi, mbd_ch_eta, charge);
+    }
+    if(mbd_arm == 1)
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2MBD_North_Charge"].get())->Fill(mbd_ch_phi, mbd_ch_eta, charge);
+    }
+
+    JetUtils::update_min_max(mbd_ch_r, m_mbd_ch_r_min, m_mbd_ch_r_max);
+    JetUtils::update_min_max(mbd_ch_z, m_mbd_ch_z_min, m_mbd_ch_z_max);
+    JetUtils::update_min_max(mbd_ch_phi, m_mbd_ch_phi_min, m_mbd_ch_phi_max);
+    JetUtils::update_min_max(mbd_ch_eta, m_mbd_ch_eta_min, m_mbd_ch_eta_max);
+    JetUtils::update_min_max(charge, m_mbd_ch_charge_min, m_mbd_ch_charge_max);
+  }
 
   dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
   dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north, m_cent);
@@ -625,6 +692,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Mbd Total Charge (North / South): Min: " << m_mbd_charge_min << ", Max: " << m_mbd_charge_max << std::endl;
   std::cout << "Mbd Vertex Scale Factor: Min: " << m_vertex_scale_min << ", Max: " << m_vertex_scale_max << std::endl;
   std::cout << "Mbd Centrality Scale Factor: Min: " << m_centrality_scale_min << ", Max: " << m_centrality_scale_max << std::endl;
+  std::cout << "Mbd Channel r: Min: " << m_mbd_ch_r_min << ", Max: " << m_mbd_ch_r_max << std::endl;
+  std::cout << "Mbd Channel z: Min: " << m_mbd_ch_z_min << ", Max: " << m_mbd_ch_z_max << std::endl;
+  std::cout << "Mbd Channel phi: Min: " << m_mbd_ch_phi_min << ", Max: " << m_mbd_ch_phi_max << std::endl;
+  std::cout << "Mbd Channel eta: Min: " << m_mbd_ch_eta_min << ", Max: " << m_mbd_ch_eta_max << std::endl;
+  std::cout << "Mbd Channel charge: Min: " << m_mbd_ch_charge_min << ", Max: " << m_mbd_ch_charge_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
