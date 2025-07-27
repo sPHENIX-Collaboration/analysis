@@ -97,6 +97,14 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_sepd_charge_threshold(0.2)
   , m_cent_min(9999)
   , m_cent_max(0)
+  , m_sepd_z_min(9999)
+  , m_sepd_z_max(0)
+  , m_sepd_r_min(9999)
+  , m_sepd_r_max(0)
+  , m_sepd_phi_min(9999)
+  , m_sepd_phi_max(0)
+  , m_sepd_eta_min(9999)
+  , m_sepd_eta_max(0)
   , m_sepd_charge_min(9999)
   , m_sepd_charge_max(0)
   , m_mbd_ch_z_min(9999)
@@ -123,8 +131,6 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_sepd_total_charge_south_max(0)
   , m_sepd_total_charge_north_min(9999)
   , m_sepd_total_charge_north_max(0)
-  , m_sepd_phi_min(9999)
-  , m_sepd_phi_max(0)
   , m_psi_min(9999)
   , m_psi_max(0)
 {
@@ -421,7 +427,11 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
     double charge = tower->get_energy();
     bool isZS     = tower->get_isZS();
-    double phi    = epdgeom->get_phi(key);
+    double sepd_ch_z = epdgeom->get_z(key);
+    double sepd_ch_r = epdgeom->get_r(key);
+    ROOT::Math::XYZTVector vec(sepd_ch_r, 0, sepd_ch_z, 0);
+    double eta = vec.Eta();
+    double phi = epdgeom->get_phi(key);
 
     // exclude ZS
     if(isZS)
@@ -439,7 +449,10 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       continue;
     }
 
+    JetUtils::update_min_max(sepd_ch_z, m_sepd_z_min, m_sepd_z_max);
+    JetUtils::update_min_max(sepd_ch_r, m_sepd_r_min, m_sepd_r_max);
     JetUtils::update_min_max(phi, m_sepd_phi_min, m_sepd_phi_max);
+    JetUtils::update_min_max(eta, m_sepd_eta_min, m_sepd_eta_max);
 
     double q_x_2 = charge*std::cos(2*phi);
     double q_y_2 = charge*std::sin(2*phi);
@@ -679,7 +692,10 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD Q: Min: " << m_sepd_Q_min << ", Max: " << m_sepd_Q_max << std::endl;
   std::cout << "sEPD Total Charge South: Min: " << m_sepd_total_charge_south_min << ", Max: " << m_sepd_total_charge_south_max << std::endl;
   std::cout << "sEPD Total Charge North: Min " << m_sepd_total_charge_north_min << ", Max: " << m_sepd_total_charge_north_max << std::endl;
+  std::cout << "sEPD z: Min " << m_sepd_z_min << ", Max: " << m_sepd_z_max << std::endl;
+  std::cout << "sEPD r: Min " << m_sepd_r_min << ", Max: " << m_sepd_r_max << std::endl;
   std::cout << "sEPD Phi: Min " << m_sepd_phi_min << ", Max: " << m_sepd_phi_max << std::endl;
+  std::cout << "sEPD Eta: Min " << m_sepd_eta_min << ", Max: " << m_sepd_eta_max << std::endl;
   std::cout << "Psi: Min " << m_psi_min << ", Max: " << m_psi_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "sEPD" << std::endl;

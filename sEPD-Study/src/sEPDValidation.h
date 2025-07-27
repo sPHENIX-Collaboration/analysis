@@ -121,6 +121,14 @@ private:
   // Logging Info
   double m_cent_min;
   double m_cent_max;
+  double m_sepd_z_min;
+  double m_sepd_z_max;
+  double m_sepd_r_min;
+  double m_sepd_r_max;
+  double m_sepd_phi_min;
+  double m_sepd_phi_max;
+  double m_sepd_eta_min;
+  double m_sepd_eta_max;
   double m_sepd_charge_min;
   double m_sepd_charge_max;
   double m_mbd_ch_z_min;
@@ -147,8 +155,6 @@ private:
   double m_sepd_total_charge_south_max;
   double m_sepd_total_charge_north_min;
   double m_sepd_total_charge_north_max;
-  double m_sepd_phi_min;
-  double m_sepd_phi_max;
   double m_psi_min;
   double m_psi_max;
 
