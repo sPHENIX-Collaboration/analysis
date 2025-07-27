@@ -60,6 +60,7 @@ sEPDValidation::sEPDValidation(const std::string &name)
   , m_event(0)
   , m_outfile_name("test.root")
   , m_condor_mode(false)
+  , m_do_ep(true)
   , m_bins_zvtx(200) /*cm*/
   , m_zvtx_low(-50)  /*cm*/
   , m_zvtx_high(50)  /*cm*/
@@ -176,9 +177,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_hists["h3SEPD_Psi_3"] = std::make_unique<TH3F>("h3SEPD_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_psi, m_psi_low, m_psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
   // Official
-  m_hists["h3SEPD_EventPlaneInfo_Psi_2"] = std::make_unique<TH3F>("h3SEPD_EventPlaneInfo_Psi_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_psi, m_psi_low, m_psi_high, m_bins_cent, m_cent_low, m_cent_high);
-
-  m_hists["h3SEPD_EventPlaneInfo_Psi_3"] = std::make_unique<TH3F>("h3SEPD_EventPlaneInfo_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_psi, m_psi_low, m_psi_high, m_bins_cent, m_cent_low, m_cent_high);
+  if(m_do_ep)
+  {
+    m_hists["h3SEPD_EventPlaneInfo_Psi_2"] = std::make_unique<TH3F>("h3SEPD_EventPlaneInfo_Psi_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_psi, m_psi_low, m_psi_high, m_bins_cent, m_cent_low, m_cent_high);
+    m_hists["h3SEPD_EventPlaneInfo_Psi_3"] = std::make_unique<TH3F>("h3SEPD_EventPlaneInfo_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", m_bins_psi, m_psi_low, m_psi_high, m_bins_psi, m_psi_low, m_psi_high, m_bins_cent, m_cent_low, m_cent_high);
+  }
 
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
@@ -671,10 +674,13 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  ret = process_EventPlane(topNode);
-  if (ret)
+  if(m_do_ep)
   {
-    return ret;
+    ret = process_EventPlane(topNode);
+    if (ret)
+    {
+      return ret;
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -696,7 +702,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD r: Min " << m_sepd_r_min << ", Max: " << m_sepd_r_max << std::endl;
   std::cout << "sEPD Phi: Min " << m_sepd_phi_min << ", Max: " << m_sepd_phi_max << std::endl;
   std::cout << "sEPD Eta: Min " << m_sepd_eta_min << ", Max: " << m_sepd_eta_max << std::endl;
-  std::cout << "Psi: Min " << m_psi_min << ", Max: " << m_psi_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "sEPD" << std::endl;
   std::cout << "Avg towers with unknown arm: " << m_ctr["sepd_tower_unknown_arm"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB)+1) << std::endl;
@@ -716,9 +721,13 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
-  std::cout << "process Event Plane, Q mag zero: " << m_ctr["process_EventPlane_Q_mag_zero"] << std::endl;
-  std::cout << "process Event Plane, epmap empty: " << m_ctr["process_EventPlane_epmap_empty"] << std::endl;
-  std::cout << "process Event Plane, epd invalid: " << m_ctr["process_EventPlane_epd_invalid"] << std::endl;
+  if(m_do_ep)
+  {
+    std::cout << "process Event Plane, Psi: Min " << m_psi_min << ", Max: " << m_psi_max << std::endl;
+    std::cout << "process Event Plane, Q mag zero: " << m_ctr["process_EventPlane_Q_mag_zero"] << std::endl;
+    std::cout << "process Event Plane, epmap empty: " << m_ctr["process_EventPlane_epmap_empty"] << std::endl;
+    std::cout << "process Event Plane, epd invalid: " << m_ctr["process_EventPlane_epd_invalid"] << std::endl;
+  }
   std::cout << "=====================" << std::endl;
   std::cout << "Events" << std::endl;
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
@@ -754,8 +763,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Project3D("yx")->Write();
 
     // Official
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_2"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_3"].get())->Project3D("yx")->Write();
+    if(m_do_ep)
+    {
+      dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_2"].get())->Project3D("yx")->Write();
+      dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_3"].get())->Project3D("yx")->Write();
+    }
   }
   output.Close();
 
