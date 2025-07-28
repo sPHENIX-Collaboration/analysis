@@ -201,9 +201,11 @@ def main():
     total_files = int(subprocess.run(['bash','-c',f'cat {input_list} | xargs -I {{}} sh -c \'test -f "{{}}" && wc -l "{{}}"\' | awk \'{{sum += $1}} END {{print sum}}\''], capture_output=True, encoding='utf-8', check=False).stdout.strip())
 
     # Setup Condor Log Dir
+    os.makedirs(condor_log_dir, exist_ok=True)
+
     if os.path.exists(condor_log_dir):
         shutil.rmtree(condor_log_dir)
-        os.makedirs(condor_log_dir)
+        os.makedirs(condor_log_dir, exist_ok=True)
 
     # Copy necessary files to the output directory
     shutil.copy(input_list, output_dir)
