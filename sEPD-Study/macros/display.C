@@ -204,6 +204,8 @@ void myAnalysis::make_plots_QA_overlay(const string &outputDir) {
 
     double ylow = 1e-7;
     double yhigh = 1e-1;
+    double xlow = 0;
+    double xhigh = 2.5e3;
 
     for (const auto &[name, hist] : m_hists)
     {
@@ -221,6 +223,7 @@ void myAnalysis::make_plots_QA_overlay(const string &outputDir) {
           hist->SetTitle("|z| < 10 cm and MB");
           hist->GetYaxis()->SetTitle("Normalized Events");
           hist->GetYaxis()->SetRangeUser(ylow, yhigh);
+          hist->GetXaxis()->SetRangeUser(xlow, xhigh);
           hist->GetYaxis()->SetTitleOffset(1.f);
           hist->GetXaxis()->SetTitleOffset(0.98f);
         }
