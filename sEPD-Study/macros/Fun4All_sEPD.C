@@ -4,6 +4,7 @@
 #include <memory>
 #include <filesystem>
 #include <vector>
+#include <format>
 
 // root includes --
 #include <TSystem.h>
@@ -111,19 +112,20 @@ void Fun4All_sEPD(const std::string &fname,
   std::string cdb_centrality_scale        = getCalibration("CentralityScale", runnumber);
   std::string cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale", runnumber);
 
-  bool useReferenceCDB = cdb_centrality.starts_with("DataBaseException")
-                      || cdb_centrality_scale.starts_with("DataBaseException")
-                      || cdb_centrality_vertex_scale.starts_with("DataBaseException");
+  std::string suffix = std::format("{}.root", runnumber);
+  bool useReferenceCDB = !cdb_centrality.ends_with(suffix)
+                      || !cdb_centrality_scale.ends_with(suffix)
+                      || !cdb_centrality_vertex_scale.ends_with(suffix);
 
   // Check if centrality cdb files exists for the current runs
   // if not then use the cdb files from the reference run
   if(useReferenceCDB)
   {
-    std::cout << "Defaulting centrality cdb from Run " << default_centrality_run << std::endl;
+    std::cout << "Run specific centrality calibration NOT found, using defaults." << std::endl;
 
-    cdb_centrality              = getCalibration("Centrality", default_centrality_run);
+    cdb_centrality              = getCalibration("Centrality_default", runnumber);
     cdb_centrality_scale        = getCalibration("CentralityScale", default_centrality_run);
-    cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale", default_centrality_run);
+    cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale_default", runnumber);
   }
 
   // Minimum Bias Classifier
