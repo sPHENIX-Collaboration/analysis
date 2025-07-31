@@ -14,68 +14,69 @@ from pathlib import Path
 import math
 
 parser = argparse.ArgumentParser()
+subparser = parser.add_subparsers(dest='command')
 
-parser.add_argument('-i'
+f4a = subparser.add_parser('f4a', help='Create condor submission directory.')
+
+f4a.add_argument('-i'
                     , '--input-list', type=str
                     , required=True
                     , help='Input DST List.')
 
-parser.add_argument('-i2'
+f4a.add_argument('-i2'
                     , '--dbtag', type=str
                     , default='newcdbtag'
                     , help='CDB Tag. Default: newcdbtag')
 
-parser.add_argument('-o'
+f4a.add_argument('-o'
                     , '--output-dir', type=str
                     , default='scratch/test'
                     , help='Project Directory. Default: scratch/test')
 
-parser.add_argument('-n'
+f4a.add_argument('-n'
                     , '--events', type=int
                     , default=0
                     , help='Number of events to analyze. Default: All.')
 
-parser.add_argument('-s'
+f4a.add_argument('-s'
                     , '--memory', type=float
                     , default=2
                     , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
-parser.add_argument('-l'
+f4a.add_argument('-l'
                     , '--log-file', type=str
                     , default='log.txt'
                     , help='Log File. Default: log.txt')
 
-parser.add_argument('-l2'
+f4a.add_argument('-l2'
                     , '--condor-log-dir', type=str
                     , default='/tmp/anarde/dump'
                     , help='Condor Log Directory. Default: /tmp/anarde/dump')
 
-parser.add_argument('-f'
+f4a.add_argument('-f'
                     , '--f4a-macro', type=str
                     , default='macros/Fun4All_sEPD.C'
                     , help='Fun4All Macro. Default: macros/Fun4All_sEPD.C')
 
-parser.add_argument('-f2'
+f4a.add_argument('-f2'
                     , '--src-dir', type=str
                     , default='src'
                     , help='Source Files Directory. Default: src')
 
-parser.add_argument('-f3'
+f4a.add_argument('-f3'
                     , '--condor-script', type=str
                     , default='scripts/genFun4All.sh'
                     , help='Condor Script. Default: scripts/genFun4All.sh')
 
-parser.add_argument('-f4'
+f4a.add_argument('-f4'
                     , '--common-errors', type=str
                     , default='files/common-errors.txt'
                     , help='Common Errors. Default: files/common-errors.txt')
 
-parser.add_argument('-b'
+f4a.add_argument('-b'
                     , '--f4a-bin', type=str
                     , default='bin/Fun4All_sEPD'
                     , help='Fun4All Bin. Default: bin/Fun4All_sEPD')
-
-args = parser.parse_args()
 
 def setup_logging(log_file, log_level):
     """Configures the logging system to output to a file and console."""
@@ -149,9 +150,9 @@ def run_command_and_log(command, logger, current_dir = '.', do_logging = True, d
         logger.critical(f"An unexpected error occurred while running '{command}': {e}")
         return False
 
-def main():
+def create_f4a_jobs():
     """
-    Main Function
+    Create Fun4All Jobs
     """
     input_list = os.path.realpath(args.input_list)
     dbtag = args.dbtag
@@ -275,5 +276,111 @@ def main():
     command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
     logger.info(command)
 
+hadd = subparser.add_parser('hadd', help='hadd condor jobs.')
+
+hadd.add_argument('-i'
+                    , '--input-list', type=str
+                    , required=True
+                    , help='Input list of files to combine.')
+
+hadd.add_argument('-o'
+                    , '--output-dir', type=str
+                    , default='scratch/test'
+                    , help='Output Directory. Default: scratch/test')
+
+hadd.add_argument('-n'
+                    , '--hadd-max', type=int
+                    , default=51
+                    , help='Hadd Max at once. Default: 51')
+
+hadd.add_argument('-s'
+                    , '--memory', type=float
+                    , default=0.5
+                    , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+
+hadd.add_argument('-l'
+                    , '--log-file', type=str
+                    , default='log.txt'
+                    , help='Log File. Default: log.txt')
+
+hadd.add_argument('-l2'
+                    , '--condor-log-dir', type=str
+                    , default='/tmp/anarde/dump'
+                    , help='Condor Log Directory. Default: /tmp/anarde/dump')
+
+hadd.add_argument('-f'
+                    , '--condor-script', type=str
+                    , default='scripts/genHadd.sh'
+                    , help='Condor Script. Default: scripts/genHadd.sh')
+
+def hadd_jobs():
+    """
+    hadd condor jobs
+    """
+    input_list     = os.path.realpath(args.input_list)
+    output_dir     = os.path.realpath(args.output_dir)
+    hadd_max       = args.hadd_max
+    log_file       = os.path.join(output_dir, args.log_file)
+    condor_memory  = args.memory
+    condor_script  = os.path.realpath(args.condor_script)
+    condor_log_dir = os.path.realpath(args.condor_log_dir)
+
+    # Create Dirs
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Initialize the logger
+    logger = setup_logging(log_file, logging.DEBUG)
+
+    # Ensure that paths exists
+    if not os.path.isfile(input_list):
+        logger.critical(f'File: {input_list} does not exist!')
+        sys.exit()
+
+    if not os.path.isfile(condor_script):
+        logger.critical(f'File: {condor_script} does not exist!')
+        sys.exit()
+
+    # Print Logs
+    logger.info('#'*40)
+    logger.info(f'LOGGING: {datetime.datetime.now()}')
+    logger.info(f'Input List: {input_list}')
+    logger.info(f'Output Directory: {output_dir}')
+    logger.info(f'Hadd Max: {hadd_max}')
+    logger.info(f'Log File: {log_file}')
+    logger.info(f'Condor Memory: {condor_memory} GB')
+    logger.info(f'Condor Script: {condor_script}')
+    logger.info(f'Condor Log Directory: {condor_log_dir}')
+
+    # Setup Condor Log Dir
+    os.makedirs(condor_log_dir, exist_ok=True)
+
+    if os.path.exists(condor_log_dir):
+        shutil.rmtree(condor_log_dir)
+        os.makedirs(condor_log_dir, exist_ok=True)
+
+    os.makedirs(f'{output_dir}/output', exist_ok=True)
+    os.makedirs(f'{output_dir}/stdout', exist_ok=True)
+    os.makedirs(f'{output_dir}/error', exist_ok=True)
+
+    shutil.copy(condor_script, output_dir)
+    shutil.copy(input_list, output_dir)
+
+    with open(os.path.join(output_dir,'genHadd.sub'), mode='w', encoding='utf-8') as file:
+        file.write(f'executable    = {os.path.basename(condor_script)}\n')
+        file.write(f'arguments     = $(input_dir) {hadd_max} {output_dir}/output\n')
+        file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
+        file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
+        file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
+        file.write(f'request_memory = {condor_memory}GB\n')
+
+    command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from {os.path.basename(input_list)}"'
+    logger.info(command)
+
+args = parser.parse_args()
+
 if __name__ == "__main__":
-    main()
+    if(args.command == 'f4a'):
+        create_f4a_jobs()
+
+    if(args.command == 'hadd'):
+        hadd_jobs()
