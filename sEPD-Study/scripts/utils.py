@@ -38,6 +38,11 @@ f4a.add_argument('-n'
                     , default=0
                     , help='Number of events to analyze. Default: All.')
 
+f4a.add_argument('-e'
+                    , '--do-event-plane'
+                    , action='store_true'
+                    , help='Do Official Event Plane Reco. Default: True.')
+
 f4a.add_argument('-s'
                     , '--memory', type=float
                     , default=2
@@ -157,6 +162,7 @@ def create_f4a_jobs():
     input_list = os.path.realpath(args.input_list)
     dbtag = args.dbtag
     events = args.events
+    do_ep = args.do_event_plane
     output_dir = os.path.realpath(args.output_dir)
     log_file  = os.path.join(output_dir, args.log_file)
     f4a_macro = os.path.realpath(args.f4a_macro)
@@ -223,6 +229,7 @@ def create_f4a_jobs():
     logger.info(f'Input DST List: {input_list}')
     logger.info(f'Total DSTs: {total_files}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
+    logger.info(f'Do Event Plane Reco: {do_ep}')
     logger.info(f'DB Tag: {dbtag}')
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Log File: {log_file}')
@@ -267,7 +274,7 @@ def create_f4a_jobs():
 
     with open(os.path.join(output_dir,'genFun4All.sub'), mode='w', encoding='utf-8') as file:
         file.write(f'executable    = {os.path.basename(condor_script)}\n')
-        file.write(f'arguments     = {f4a_bin} $(input_dst) test-$(ClusterId)-$(Process).root {events} {dbtag} {output_dir}/output\n')
+        file.write(f'arguments     = {f4a_bin} $(input_dst) test-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} {output_dir}/output\n')
         file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
         file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
         file.write('error          = error/job-$(ClusterId)-$(Process).err\n')

@@ -12,7 +12,8 @@ input=${2}
 output=${3}
 nEvents=${4}
 dbtag=${5}
-submitDir=${6}
+do_event_plane_reco=${6}
+submitDir=${7}
 
 # extract runnumber from file name
 file=$(basename "$input")
@@ -35,7 +36,7 @@ printenv
 
 mkdir -p "$run"
 
-$f4a_bin "test.list" "$run" "$run/$output" "$nEvents" "$dbtag" 1
+$f4a_bin "test.list" "$run" "$run/$output" "$nEvents" "$dbtag" 1 "$do_event_plane_reco"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
