@@ -108,46 +108,19 @@ void Fun4All_sEPD(const std::string &fname,
   setGlobalTag(dbtag);
 
   uint64_t default_centrality_run = 54912;
-  std::string cdb_centrality              = getCalibration("Centrality", runnumber);
-  std::string cdb_centrality_scale        = getCalibration("CentralityScale", runnumber);
-  std::string cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale", runnumber);
-
-  std::string suffix = std::format("{}.root", runnumber);
-  bool useReferenceCDB = !cdb_centrality.ends_with(suffix)
-                      || !cdb_centrality_scale.ends_with(suffix)
-                      || !cdb_centrality_vertex_scale.ends_with(suffix);
-
-  // Check if centrality cdb files exists for the current runs
-  // if not then use the cdb files from the reference run
-  if(useReferenceCDB)
-  {
-    std::cout << "Run specific centrality calibration NOT found, using defaults." << std::endl;
-
-    cdb_centrality              = getCalibration("Centrality_default", runnumber);
-    cdb_centrality_scale        = getCalibration("CentralityScale", default_centrality_run);
-    cdb_centrality_vertex_scale = getCalibration("CentralityVertexScale_default", runnumber);
-  }
+  std::string cdb_centrality_scale = getCalibration("CentralityScale", default_centrality_run);
 
   // Minimum Bias Classifier
   std::unique_ptr<MinimumBiasClassifier> mb = std::make_unique<MinimumBiasClassifier>();
   mb->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   mb->set_mbd_total_charge_cut(2100);
-  if(useReferenceCDB)
-  {
-    mb->setOverwriteScale(cdb_centrality_scale);
-    mb->setOverwriteVtx(cdb_centrality_vertex_scale);
-  }
+  mb->setOverwriteScale(cdb_centrality_scale);
   se->registerSubsystem(mb.release());
 
   // Centrality
   std::unique_ptr<CentralityReco> cent = std::make_unique<CentralityReco>();
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  if(useReferenceCDB)
-  {
-    cent->setOverwriteDivs(cdb_centrality);
-    cent->setOverwriteScale(cdb_centrality_scale);
-    cent->setOverwriteVtx(cdb_centrality_vertex_scale);
-  }
+  cent->setOverwriteScale(cdb_centrality_scale);
   se->registerSubsystem(cent.release());
 
   // Event Plane
