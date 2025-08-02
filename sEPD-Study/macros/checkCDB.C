@@ -4,21 +4,28 @@
 // c++ includes
 #include <string>
 #include <iostream>
+#include <format>
 
 void checkCDB(unsigned int runnumber, const std::string &dbtag = "newcdbtag") {
     setGlobalTag(dbtag);
 
-    std::string centrality              = getCalibration("Centrality", runnumber);
-    std::string centrality_scale        = getCalibration("CentralityScale", runnumber);
-    std::string centrality_vertex_scale = getCalibration("CentralityVertexScale", runnumber);
-    std::string mbd_qfit                = getCalibration("MBD_QFIT", runnumber);
-    std::string mbd_qfit_default        = getCalibration("MBD_QFIT_default", runnumber);
+    std::string centrality                      = getCalibration("Centrality", runnumber);
+    std::string centrality_scale                = getCalibration("CentralityScale", runnumber);
+    std::string centrality_vertex_scale         = getCalibration("CentralityVertexScale", runnumber);
+    std::string centrality_default              = getCalibration("Centrality_default", runnumber);
+    std::string centrality_scale_default        = getCalibration("CentralityScale_default", runnumber);
+    std::string centrality_vertex_scale_default = getCalibration("CentralityVertexScale_default", runnumber);
+    std::string mbd_qfit                        = getCalibration("MBD_QFIT", runnumber);
+    std::string mbd_qfit_default                = getCalibration("MBD_QFIT_default", runnumber);
 
-    std::cout << "Centrality: " << centrality << std::endl;
-    std::cout << "Centrality Scale: " << centrality_scale << std::endl;
-    std::cout << "Centrality Vertex Scale: " << centrality_vertex_scale << std::endl;
-    std::cout << "MBD Q-Fit: " << mbd_qfit << std::endl;
-    std::cout << "MBD Q-Fit Default: " << mbd_qfit_default << std::endl;
+    std::cout << std::format("Centrality: {}", centrality) << std::endl;
+    std::cout << std::format("Centrality default: {}", centrality_default) << std::endl;
+    std::cout << std::format("Centrality Scale: {}", centrality_scale) << std::endl;
+    std::cout << std::format("Centrality Scale default: {}", centrality_scale_default) << std::endl;
+    std::cout << std::format("Centrality Vertex Scale: {}", centrality_vertex_scale) << std::endl;
+    std::cout << std::format("Centrality Vertex Scale default: {}", centrality_vertex_scale_default) << std::endl;
+    std::cout << std::format("MBD QFIT: {}", mbd_qfit) << std::endl;
+    std::cout << std::format("MBD QFIT Default: {}", mbd_qfit_default) << std::endl;
 }
 
 # ifndef __CINT__
