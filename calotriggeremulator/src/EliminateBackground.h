@@ -27,13 +27,10 @@ class EliminateBackground : public SubsysReco
   //! event processing method
   int process_event(PHCompositeNode*) override;
 
-  void SetToKeep(bool keep) {m_keep = keep; }
   //! end of run method
   int End(PHCompositeNode*) override;
 
  private:
-  bool m_keep = false;
-  
   TH2* hcal{nullptr};
   TH1* hcal_phi{nullptr};
   TH1* hcal_phi_consec{nullptr};
@@ -41,7 +38,7 @@ class EliminateBackground : public SubsysReco
   float HCAL_TOWER_ENERGY_CUT{0.03};
   float CONSECUTIVE_ENERGY_CUT{0.03};
 
-  float CONSECUTIVE_COUNT_CUT{5};
+  float CONSECUTIVE_COUNT_CUT{6};
   float COUNT_CUT{8};
 };
 

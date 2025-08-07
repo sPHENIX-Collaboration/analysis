@@ -42,6 +42,9 @@ bool dotracking(clustEvent &vCluster, TH2F* h_dphi_nocut )
 	  if (fabs(d_phi) > 0.04)
 	    continue;
 
+	  if( fabs(d_theta) > 0.1 ) // d_theta cut
+	    continue;
+	  
 	  TVector3 u = p2 - p1;
 	  double unorm = sqrt(u.x() * u.x() + u.y() * u.y());
 	  // unit vector in 2D

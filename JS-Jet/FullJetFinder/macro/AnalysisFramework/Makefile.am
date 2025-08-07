@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
+  -isystem$(OFFLINE_MAIN)/include \
   -I$(ROOTSYS)/include
 
 AM_LDFLAGS = \
@@ -17,13 +17,10 @@ lib_LTLIBRARIES = \
   libJetAnalysis.la
 
 pcmdir = $(libdir)
-nobase_dist_pcm_DATA = \
-  JetAnalysis_Dict_rdict.pcm
 
 libJetAnalysis_la_SOURCES = \
-  JetAnalysis.cc \
-  JetAnalysis_Dict.cc
-
+  JetAnalysis.cc
+  
 libJetAnalysis_la_LIBADD = \
   -lphool \
   -lSubsysReco \

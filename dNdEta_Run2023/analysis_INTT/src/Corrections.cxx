@@ -53,24 +53,13 @@ void calccorr(const TString infilename,              //
     SetsPhenixStyle();
     gStyle->SetOptTitle(0);
     gStyle->SetOptStat(0);
-    gStyle->SetPalette(kThermometer);
+    gStyle->SetPalette(kBird);
 
     TString outbasedir = TString::Format("./plot/corrections/%s", outfiletag.Data());
     TString corfiledir = TString::Format("./plot/corrections/%s", corfiletag.Data());
     TString zvtxmin_str = TString::Format("%.1f", PvzMin).ReplaceAll(".", "p").ReplaceAll("-", "m");
     TString zvtxmax_str = TString::Format("%.1f", PvzMax).ReplaceAll(".", "p").ReplaceAll("-", "m");
-    TString asel_tag = (aselstr.EqualTo("") || aselstr.EqualTo("none")) ? "noasel"
-                                                                        : aselstr.ReplaceAll(" ", "_")
-                                                                              .ReplaceAll("&&", "AND")
-                                                                              .ReplaceAll("||", "OR")
-                                                                              .ReplaceAll("(", "")
-                                                                              .ReplaceAll(")", "")
-                                                                              .ReplaceAll("==", "eq")
-                                                                              .ReplaceAll(">", "gt")
-                                                                              .ReplaceAll("<", "lt")
-                                                                              .ReplaceAll(">=", "geq")
-                                                                              .ReplaceAll("<=", "leq")
-                                                                              .ReplaceAll("!", "not");
+    TString asel_tag = (aselstr.EqualTo("") || aselstr.EqualTo("none")) ? "noasel" : aselstr.ReplaceAll(" ", "_").ReplaceAll("&&", "AND").ReplaceAll("||", "OR").ReplaceAll("(", "").ReplaceAll(")", "").ReplaceAll("==", "eq").ReplaceAll(">", "gt").ReplaceAll("<", "lt").ReplaceAll(">=", "geq").ReplaceAll("<=", "leq").ReplaceAll("!", "not");
     TString outdirtag = TString::Format("Centrality%dto%d_Zvtx%sto%s_%s", CentLow, CentHigh, zvtxmin_str.Data(), zvtxmax_str.Data(), asel_tag.Data());
 
     std::cout << "[INFO] Output directory tag: " << outdirtag << std::endl;
@@ -104,7 +93,8 @@ void calccorr(const TString infilename,              //
 
         if (applyg)
         {
-            faccep = new TFile("./plot/corrections/GeoAccepCorr.root", "READ");
+            faccep = new TFile("./plot/corrections/GeoAccepCorr_Run54280.root", "READ");
+            // faccep = new TFile("./plot/corrections/GeoAccepCorr_Run54280_coarseEta.root", "READ");
             if (!faccep || faccep->IsZombie())
             {
                 cout << "[ERROR] No geometric correction file found - exit" << endl;
@@ -130,14 +120,14 @@ void calccorr(const TString infilename,              //
         cout << "[INFO] Applying external event selection corrections" << endl;
     }
 
-    TCut asel = (aselstr.EqualTo("")) ? "1" : aselstr.Data();                                        // Additional event selection (for example, BCO ranges for cross check)
-    TCut vsel = Form("(PV_z<=%f && PV_z>=%f)", PvzMax, PvzMin);                                      // Vertex selection
-    TCut ssel = "1";                                                                                 // Signal range selection (tracklets)
-    TCut csel = Form("(MBD_centrality>=%f && MBD_centrality<=%f)", CentLow * 0.01, CentHigh * 0.01); // Centrality range
-    TCut osel = "(abs(MBD_charge_asymm)<=0.75)";                                                     // Offline event selection
-    TCut psel = (IsData) ? "1" : "1";                                                                // Single diffractive process (simulation) //! TODO
+    TCut asel = (aselstr.EqualTo("")) ? "1" : aselstr.Data();                                                                 // Additional event selection (for example, BCO ranges for cross check)
+    TCut vsel = Form("(PV_z<=%f && PV_z>=%f)", PvzMax, PvzMin);                                                               // Vertex selection
+    TCut ssel = "1";                                                                                                          // Signal range selection (tracklets)
+    TCut csel = Form("(MBD_centrality>%f && MBD_centrality<=%f)", static_cast<float>(CentLow), static_cast<float>(CentHigh)); // Centrality selection
+    TCut osel = (IsData) ? "firedTrig10_MBDSNgeq2==1 && is_min_bias==1" : "is_min_bias==1";                                   // Offline event selection
+    TCut psel = (IsData) ? "1" : "1";                                                                                         // Single diffractive process (simulation) - not used for now
     TCut esel = asel && vsel && csel && osel;
-    TCut gsel = asel && vsel && csel && psel;
+    TCut gsel = asel && vsel && csel && psel && ("is_min_bias==1");
 
     // alpha factor criteria
     float alpha_min = 0.0;
@@ -169,7 +159,7 @@ void calccorr(const TString infilename,              //
     TH2F *h2amapxev_prealpha; // Before alpha correction is applied, for checking
     TH2F *h2amapxev = new TH2F("h2amapxev", "h2amapxev", neta, etab, nvz, vzb);
     TH3F *h3amapxemv = new TH3F("h3amapxemv", "h3amapxemv", neta, etab, nmult, multb, nvz, vzb);
-    /* Trigger efficiency */
+    /* Trigger/event selection efficiency */
     TH1F *h1teff = new TH1F("h1teff", "h1teff", nmult, multb);
     TH1F *h1WGOXteff = new TH1F("h1WGOXteff", "h1WGOXteff", nmult, multb); // passing (gsel && osel)
     TH1F *h1WGXteff = new TH1F("h1WGXteff", "h1WGXteff", nmult, multb);    // passing gsel
@@ -223,7 +213,6 @@ void calccorr(const TString infilename,              //
     }
 
     /*------------------------------------------------------------------------------------------------------*/
-    //! Not really used (?)
     TH2F *haccepmc = 0;
     TH2F *haccepdata = 0;
     TH2F *haccepratio = 0;
@@ -242,13 +231,14 @@ void calccorr(const TString infilename,              //
     // Number of events passing event selection and gen-level selection
     TH1F *h1WEGevent = new TH1F("h1WEGevent", "", nvz, vzb);
     int nWEGentry = tinput->Draw("PV_z>>h1WEGevent", "vtxzwei" * (esel && gsel), "goff");
-    float nWEGevent = h1WEGevent->Integral(-1, -1);
+    float nWEGevent = h1WEGevent->Integral(0, h1WEGevent->GetNbinsX() + 1);
     // Number of events passing gen-level selection
     TH1F *h1WGevent = new TH1F("h1WGevent", "", nvz, vzb);
     tinput->Draw("PV_z>>h1WGevent", "vtxzwei" * (gsel), "goff");
-    float nWGevent = h1WGevent->Integral(-1, -1);
+    float nWGevent = h1WGevent->Integral(0, h1WGevent->GetNbinsX() + 1);
 
     cout << "[INFO] weighted events: " << nWEGevent << ", entries: " << nWEGentry << endl;
+    cout << "[INFO] weighted gen-level events: " << nWGevent << endl;
     if (nWEGentry < 1)
     {
         cout << "[ERROR] No events selected - stopping" << endl;
@@ -294,8 +284,10 @@ void calccorr(const TString infilename,              //
     h1WEvz->Fit("gaus");
 
     /* generator-level hadrons */
-    tinput->Project("h3WEhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "1 && abs(GenHadron_eta)<4" * (esel));
-    tinput->Project("h3WGhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "1 && abs(GenHadron_eta)<4" * (gsel));
+    tinput->Project("h3WEhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "vtxzwei" * (esel && "abs(GenHadron_eta)<4"));
+    tinput->Project("h3WGhadron", "PV_z:NRecotkl_Raw:GenHadron_eta", "vtxzwei" * (gsel && "abs(GenHadron_eta)<4"));
+    // print out number of entries
+    cout << "[INFO] Entries in h3WGhadron: " << h3WGhadron->GetEntries() << endl;
 
     h3WEtruth = (TH3F *)h3WEhadron->Clone("h3WEtruth");
 
@@ -334,8 +326,7 @@ void calccorr(const TString infilename,              //
                         double alpha = truth / raw;
                         double alphaerr = alpha * sqrt(rawerr / raw * rawerr / raw + trutherr / truth * trutherr / truth);
                         if (debug)
-                            printf("   ^ alpha calculation: eta: %2i, vz: %2i, ntl: %2i, alpha: %5.3f [%5.3f], alpha/alphaerr: %5.3f, raw/truth: %9.2f/%9.2f\n", x, z, y, alpha, alphaerr,
-                                   (alpha / alphaerr), raw, truth);
+                            printf("   ^ alpha calculation: eta: %2i, vz: %2i, ntl: %2i, alpha: %5.3f [%5.3f], alpha/alphaerr: %5.3f, raw/truth: %9.2f/%9.2f\n", x, z, y, alpha, alphaerr, (alpha / alphaerr), raw, truth);
 
                         if (alpha > alpha_min && ((alpha / alphaerr > alpha_pull && alpha < 3) || (alpha < 2)))
                         {
@@ -383,8 +374,7 @@ void calccorr(const TString infilename,              //
         cout << "[INFO] Calculate the trigger & offline selection efficiency" << endl;
         tinput->Project("h1WGOXteff", "NRecotkl_Raw", "vtxzwei" * (gsel && osel));
         tinput->Project("h1WGXteff", "NRecotkl_Raw", "vtxzwei" * (gsel));
-        std::cout << "h1WGOXteff: " << h1WGOXteff->Integral(-1, -1) << " h1WGXteff: " << h1WGXteff->Integral(-1, -1)
-                  << " Trigger&offline selection efficiency = " << h1WGOXteff->Integral(-1, -1) / h1WGXteff->Integral(-1, -1) << std::endl;
+        std::cout << "h1WGOXteff: " << h1WGOXteff->Integral(-1, -1) << " h1WGXteff: " << h1WGXteff->Integral(-1, -1) << " Trigger&offline selection efficiency = " << h1WGOXteff->Integral(-1, -1) / h1WGXteff->Integral(-1, -1) << std::endl;
         h1teff = (TH1F *)h1WGOXteff->Clone("h1teff");
         h1teff->Divide(h1WGXteff);
 
@@ -466,7 +456,7 @@ void calccorr(const TString infilename,              //
                     if (gaccepdata && gaccepmc)
                     {
                         alpha = alpha * gaccepratio;
-                        alphaerr = sqrt(pow(alphaerr, 2) + pow(alpha * gaccepratio_err, 2));
+                        // alphaerr = sqrt(pow(alphaerr, 2) + pow(alpha * gaccepratio_err, 2));
                         alphaerr = alphaerr * gaccepratio;
                         if (debug)
                             printf("     & apply geo accep: %.3f", gaccepmc / gaccepdata);
@@ -534,9 +524,21 @@ void calccorr(const TString infilename,              //
     h2WEraw->SetName("h2WEraw");
 
     /* project 1d acceptance */
+    TH1F *h1accep2xe_original = (TH1F *)h2amapxev->ProjectionX();
+    h1accep2xe_original->SetName("h1accep2xe_original");
+    h1accep2xe_original->Scale(1. / h1accep2xe_original->GetMaximum());
     TH1F *h1accep2xe = (TH1F *)h2amapxev->ProjectionX();
     h1accep2xe->SetName("h1accep2xe");
     h1accep2xe->Scale(1. / h1accep2xe->GetMaximum());
+    // loop over the bins to check the acceptance. If the bin content is less than 0.8 (8%), set the bin content to 0 (exclude from the analysis)
+    for (int i = 1; i <= h1accep2xe->GetNbinsX(); i++)
+    {
+        if (h1accep2xe->GetBinContent(i) < 0.8)
+        {
+            h1accep2xe->SetBinContent(i, 0);
+            h1accep2xe->SetBinError(i, 0);
+        }
+    }
 
     /* truth (hadrons within acceptance) */
     TH1F *h1WEtruth = (TH1F *)h3WEtruth->Project3D("x");
@@ -550,13 +552,23 @@ void calccorr(const TString infilename,              //
     h1WEraw->Scale(1. / nWEGevent, "width");
     // h1WEraw->Divide(h1accep2xe);
 
+    /* reconstructed tracklets + acceptance correction */
     TH1F *h1WErawacc = (TH1F *)h3WEraw->Project3D("x");
     h1WErawacc->SetName("h1WErawacc");
     h1WErawacc->Scale(1. / nWEGevent, "width");
     h1WErawacc->Divide(h1accep2xe);
 
+    /* reconstructed tracklets + acceptance correction + alpha correction */
     TH1F *h1WEcorr = (TH1F *)h3WEcorr->Project3D("x");
     h1WEcorr->SetName("h1WEcorr");
+    // print out the bin content of the h1WEcorr histogram and h1accep2xe
+    if (debug)
+    {
+        for (int i = 1; i <= h1WEcorr->GetNbinsX(); i++)
+        {
+            printf("   ^ after alpha correction: bin %2i, h1WEcorr: %.3f, h1accep2xe: %.3f\n", i, h1WEcorr->GetBinContent(i), h1accep2xe->GetBinContent(i));
+        }
+    }
     h1WEcorr->Scale(1. / nWEGevent, "width");
     h1WEcorr->Divide(h1accep2xe);
 
@@ -603,6 +615,8 @@ void calccorr(const TString infilename,              //
             h2WEtcorr->SetBinError(x, y, sumerr);
             h2WEttruth->SetBinContent(x, y, mcsum);
             h2WEttruth->SetBinError(x, y, mcsumerr);
+            if (debug)
+                printf("   ^ before appling trigger correction: eta: %2i, mult: %2i, h2WEtcorr bin content: %.3f +- %.3f\n", x, y, h2WEtcorr->GetBinContent(x, y), h2WEtcorr->GetBinError(x, y));
         }
     }
 
@@ -612,7 +626,7 @@ void calccorr(const TString infilename,              //
         double sdfrac = h1sdf->GetBinContent(y);
         double trigeff = h1teff->GetBinContent(y);
 
-        double totalc = (1 - sdfrac * SDMULT) / trigeff;
+        double totalc = (1 - sdfrac * SDMULT) / trigeff; 
 
         for (int x = 1; x <= neta; x++)
         {
@@ -621,8 +635,7 @@ void calccorr(const TString infilename,              //
                 h2WEtcorr->SetBinContent(x, y, h2WEtcorr->GetBinContent(x, y) * totalc);
                 h2WEtcorr->SetBinError(x, y, h2WEtcorr->GetBinError(x, y) * totalc);
                 if (debug)
-                    printf("   ^ apply trigger correction: eta: %2i, mult: %2i, trigeff: %.3f, sdfrac: %.3f, totalc: %.3f, h2WEtcorr bin content: %.3f +- %.3f\n", x, y, trigeff, sdfrac, totalc,
-                           h2WEtcorr->GetBinContent(x, y), h2WEtcorr->GetBinError(x, y));
+                    printf("   ^ apply trigger correction: eta: %2i, mult: %2i, trigeff: %.3f, sdfrac: %.3f, totalc: %.3f, h2WEtcorr bin content: %.3f +- %.3f\n", x, y, trigeff, sdfrac, totalc, h2WEtcorr->GetBinContent(x, y), h2WEtcorr->GetBinError(x, y));
                 h2WEttruth->SetBinContent(x, y, h2WEttruth->GetBinContent(x, y) * totalc);
                 h2WEttruth->SetBinError(x, y, h2WEttruth->GetBinError(x, y) * totalc);
             }
@@ -645,19 +658,38 @@ void calccorr(const TString infilename,              //
     /* project 2d acceptances */
     TH1F *h1accep3xe = (TH1F *)h3amapxemv->Project3D("x");
     h1accep3xe->SetName("h1accep3xe");
+    TH1F *h1accep3xe_norm = (TH1F *)h3amapxemv->Project3D("x");
+    h1accep3xe_norm->SetName("h1accep3xe_norm");
+    h1accep3xe_norm->Scale(1. / h1accep3xe_norm->GetMaximum());
+    for (int i = 1; i <= h1accep3xe_norm->GetNbinsX(); i++)
+    {
+        if (h1accep3xe_norm->GetBinContent(i) < 0.8)
+        {
+            h1accep3xe->SetBinContent(i, 0);
+            h1accep3xe->SetBinError(i, 0);
+        }
+    }
 
     TH1F *h1accep3xm = (TH1F *)h3amapxemv->Project3D("y");
     h1accep3xm->SetName("h1accep3xm");
 
     TH1F *h1WEtcorr = (TH1F *)h2WEtcorr->ProjectionX();
     h1WEtcorr->SetName("h1WEtcorr");
+    // print out the bin content of the h1WEtcorr histogram and h1accep3xe
+    if (debug)
+    {
+        for (int i = 1; i <= h1WEtcorr->GetNbinsX(); i++)
+        {
+            printf("   ^ after trigger correction: bin %2i, h1WEtcorr: %.3f, h1accep3xe: %.3f\n", i, h1WEtcorr->GetBinContent(i), h1accep3xe->GetBinContent(i));
+        }
+    }
     h1WEtcorr->Scale(1., "width");
     h1WEtcorr->Divide(h1accep3xe);
 
     /* Calculate/apply empty correction */
-    cout << "[INFO] Calculate and apply the empty correction" << endl;
     if (!applyc && !fes)
     {
+        cout << "[INFO] Calculate and apply the empty correction" << endl;
         h1empty = (TH1F *)h1WGhadron->Clone("h1empty");
         h1empty->Divide(h1WEtcorr);
     }
@@ -672,6 +704,7 @@ void calccorr(const TString infilename,              //
         }
     }
 
+    cout << "[INFO] Apply the empty correction" << endl;
     TH1F *h1WEprefinal = (TH1F *)h1WEtcorr->Clone("h1WEprefinal");
     h1WEprefinal->Multiply(h1empty);
 
@@ -695,9 +728,9 @@ void calccorr(const TString infilename,              //
     /* Vertex distribution (passing esel)*/
     ccheck->cd();
     gPad->SetRightMargin(0.09);
-    h1WEvz->GetXaxis()->SetTitle("v_{z} [cm]");
+    h1WEvz->GetXaxis()->SetTitle("vtx_{Z} [cm]");
     h1WEvz->GetYaxis()->SetTitle("Entries");
-    h1WEvz->GetXaxis()->SetRangeUser(-35, -5);
+    h1WEvz->GetXaxis()->SetRangeUser(-12, 12);
     h1WEvz->GetYaxis()->SetRangeUser(0, h1WEvz->GetMaximum() * 1.2);
     h1WEvz->GetYaxis()->SetTitleOffset(1.4);
     h1WEvz->SetLineColor(1);
@@ -710,7 +743,7 @@ void calccorr(const TString infilename,              //
     ccheck->cd();
     gPad->SetRightMargin(0.17);
     h2amapxev_prealpha->GetXaxis()->SetTitle("Tracklet #eta");
-    h2amapxev_prealpha->GetYaxis()->SetTitle("v_{z} [cm]");
+    h2amapxev_prealpha->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     h2amapxev_prealpha->Draw("colz");
     t->DrawLatexNDC(0.5, 0.97, h2amapxev_prealpha->GetName());
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h2amapxev_prealpha->GetName()));
@@ -721,7 +754,7 @@ void calccorr(const TString infilename,              //
     gPad->SetLeftMargin(0.18);
     gPad->SetLogy(0);
     h2WEvzmult->GetYaxis()->SetMoreLogLabels();
-    h2WEvzmult->GetXaxis()->SetTitle("v_{z} [cm]");
+    h2WEvzmult->GetXaxis()->SetTitle("vtx_{Z} [cm]");
     h2WEvzmult->GetYaxis()->SetTitle("Multiplicity");
     h2WEvzmult->GetYaxis()->SetTitleOffset(1.8);
     h2WEvzmult->Draw("colz");
@@ -745,7 +778,7 @@ void calccorr(const TString infilename,              //
     trigeff->SetMarkerColor(1);
     trigeff->SetLineColor(1);
     trigeff->Draw("ALPE");
-    t->DrawLatexNDC(0.5, 0.97, "Trigger & offline selection efficiency");
+    t->DrawLatexNDC(0.5, 0.97, "Offline event selection efficiency");
     ccheck->SaveAs(Form("%s/TriggerEfficiency.pdf", outdir.Data(), trigeff->GetName()));
     ccheck->Clear();
 
@@ -775,7 +808,7 @@ void calccorr(const TString infilename,              //
     gPad->SetLogx(0);
     gPad->SetLogy(0);
     h2amapxev->GetXaxis()->SetTitle("Tracklet #eta");
-    h2amapxev->GetYaxis()->SetTitle("v_{z} [cm]");
+    h2amapxev->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     h2amapxev->Draw("colz");
     t->DrawLatexNDC(0.5, 0.97, Form("%s_postalpha", h2amapxev->GetName()));
     ccheck->SaveAs(Form("%s/%s_postalpha.pdf", outdir.Data(), h2amapxev->GetName()));
@@ -785,13 +818,35 @@ void calccorr(const TString infilename,              //
     ccheck->cd();
     gPad->SetRightMargin(0.09);
     // gStyle->SetPaintTextFormat("1.3f");
-    h1accep2xe->GetXaxis()->SetTitle("Tracklet #eta");
-    h1accep2xe->GetYaxis()->SetTitle("A.U");
-    h1accep2xe->GetYaxis()->SetRangeUser(0, h1accep2xe->GetMaximum() * 1.2);
-    h1accep2xe->SetLineColor(1);
-    h1accep2xe->Draw("histtext");
+    h1accep2xe_original->GetXaxis()->SetTitle("Tracklet #eta");
+    h1accep2xe_original->GetYaxis()->SetTitle("A.U");
+    h1accep2xe_original->GetYaxis()->SetRangeUser(0, h1accep2xe_original->GetMaximum() * 1.7);
+    h1accep2xe_original->SetLineColor(1);
+    h1accep2xe_original->Draw("histtext");
+    h1accep2xe->SetLineColor(2);
+    h1accep2xe->Draw("hist same");
     t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
+    TLegend *leg = new TLegend(0.3, 0.77, 0.85, 0.87);
+    leg->AddEntry(h1accep2xe_original, "Acceptance correction (Original)", "l");
+    leg->AddEntry(h1accep2xe, "Acceptance correction (>0.8)", "l");
+    leg->SetTextSize(0.035);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->Draw();
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1accep2xe->GetName()));
+    ccheck->Clear();
+
+    ccheck->cd();
+    gPad->SetRightMargin(0.09);
+    gPad->SetLogx(0);
+    gPad->SetLogy(0);
+    h1accep3xe->GetXaxis()->SetTitle("Tracklet #eta");
+    h1accep3xe->GetYaxis()->SetTitle("A.U");
+    h1accep3xe->GetYaxis()->SetRangeUser(0, h1accep3xe->GetMaximum() * 1.2);
+    h1accep3xe->SetLineColor(1);
+    h1accep3xe->Draw("histtext");
+    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
+    ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1accep3xe->GetName()));
     ccheck->Clear();
 
     /* Raw tracklets, eta v.s vz*/
@@ -801,26 +856,26 @@ void calccorr(const TString infilename,              //
     gPad->SetLogx(0);
     gPad->SetLogy(0);
     h2WEraw->GetXaxis()->SetTitle("Tracklet #eta");
-    h2WEraw->GetYaxis()->SetTitle("v_{z} [cm]");
+    h2WEraw->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     h2WEraw->GetYaxis()->SetTitleOffset(1.8);
     h2WEraw->Draw("colz");
-    t->DrawLatexNDC(0.5, 0.97, "Reco-tracklets before corrections");
+    t->DrawLatexNDC(0.5, 0.97, "Reco-tracklets before corrections (h2WEraw)");
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h2WEraw->GetName()));
     ccheck->Clear();
 
     /* Gen hadron; eta v.s vz */
-    ccheck->cd();   
+    ccheck->cd();
     gPad->SetRightMargin(0.18);
     gPad->SetLeftMargin(0.18);
     gPad->SetLogx(0);
     gPad->SetLogy(0);
-    h2WGhadron->GetXaxis()->SetTitle("Tracklet #eta");
-    h2WGhadron->GetYaxis()->SetTitle("v_{z} [cm]");
+    h2WGhadron->GetXaxis()->SetTitle("#eta");
+    h2WGhadron->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     h2WGhadron->GetYaxis()->SetTitleOffset(1.8);
     h2WGhadron->Draw("colz");
-    t->DrawLatexNDC(0.5, 0.97, "Generated hadrons");
+    t->DrawLatexNDC(0.5, 0.97, "Generated hadrons (h2WGhadron)");
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h2WGhadron->GetName()));
-    
+
     /* Reco-tracklet after alpha, trigger, and SDF correction in (eta, tracklet multiplicity) */
     ccheck->cd();
     gPad->SetRightMargin(0.18);
@@ -846,7 +901,7 @@ void calccorr(const TString infilename,              //
     h1empty->GetYaxis()->SetRangeUser(0, h1empty->GetMaximum() * 1.2);
     h1empty->SetLineColor(1);
     h1empty->Draw("PE1");
-    t->DrawLatexNDC(0.5, 0.97, legtitle_centrality.Data());
+    t->DrawLatexNDC(0.5, 0.97, "Empty correction");
     ccheck->SaveAs(Form("%s/%s.pdf", outdir.Data(), h1empty->GetName()));
     ccheck->Clear();
 
@@ -877,7 +932,7 @@ void calccorr(const TString infilename,              //
     //         l->SetLineColorAlpha(38, 0.7);
     //         l->Draw("same");
 
-    //         t1->DrawLatexNDC(0.5, 1.0, Form("%.1f < #eta < %.1f, %.1f < v_{z} < %.1f", etab[x - 1], etab[x], vzb[z - 1], vzb[z]));
+    //         t1->DrawLatexNDC(0.5, 1.0, Form("%.1f < #eta < %.1f, %.1f < vtx_{Z} < %.1f", etab[x - 1], etab[x], vzb[z - 1], vzb[z]));
     //     }
 
     //     cfalphavz->SaveAs(Form("%s/alpha1Dfit-etabin%i.pdf", outdir.Data(), x - 1));
@@ -905,7 +960,7 @@ void calccorr(const TString infilename,              //
     //         l->SetLineColorAlpha(38, 0.7);
     //         l->Draw("same");
 
-    //         t1->DrawLatexNDC(0.5, 1.0, Form("%.1f < #eta < %.1f, %.1f < v_{z} < %.1f", etab[x - 1], etab[x], vzb[z - 1], vzb[z]));
+    //         t1->DrawLatexNDC(0.5, 1.0, Form("%.1f < #eta < %.1f, %.1f < vtx_{Z} < %.1f", etab[x - 1], etab[x], vzb[z - 1], vzb[z]));
     //     }
 
     //     cfalphaeta->SaveAs(Form("%s/alpha1Dfit-vzbin%i.pdf", outdir.Data(), z));
@@ -920,18 +975,24 @@ void calccorr(const TString infilename,              //
     TH2D *h2alphafinal = (TH2D *)h2WEcorr->Clone("h2alphafinal");
     h2alphafinal->Divide(h2WEraw);
     h2alphafinal->GetXaxis()->SetTitle("#eta");
-    h2alphafinal->GetYaxis()->SetTitle("v_{z} [cm]");
+    h2alphafinal->GetYaxis()->SetTitle("vtx_{Z} [cm]");
     h2alphafinal->GetYaxis()->SetTitleOffset(1.3);
-    h2alphafinal->GetZaxis()->SetTitle("#alpha (#eta, v_{z})");
+    // h2alphafinal->GetYaxis()->SetRangeUser(-12, 12);
+    h2alphafinal->GetZaxis()->SetTitle("#alpha (#eta, vtx_{Z})");
     h2alphafinal->GetZaxis()->SetTitleOffset(1.3);
     h2alphafinal->GetZaxis()->SetRangeUser(alpha_min, alpha_max);
     gStyle->SetPaintTextFormat("1.3f");
     h2alphafinal->SetMarkerSize(0.6);
     h2alphafinal->SetContour(1000);
     h2alphafinal->Draw("colztext45");
-    TLegend *la = new TLegend(0.18, 0.18, 0.4, 0.3);
-    la->SetHeader(legtitle_centrality.Data(), "l");
-    la->Draw();
+    // TLegend *la = new TLegend(0.18, 0.18, 0.4, 0.3);
+    // la->SetHeader(legtitle_centrality.Data(), "l");
+    // la->Draw();
+    TText *tt = new TText();
+    // right and bottom adjusted
+    tt->SetTextAlign(31);
+    tt->SetTextSize(0.04);
+    tt->DrawTextNDC(1 - gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, legtitle_centrality.Data());
     calpha->SaveAs(Form("%s/alpha2D_inclTklMult.pdf", outdir.Data()));
 
     for (int k = 0; k < nmult; k++)
@@ -939,28 +1000,37 @@ void calccorr(const TString infilename,              //
         calpha->Clear();
         calpha->cd();
         h2alpha_multb[k]->GetXaxis()->SetTitle("#eta");
-        h2alpha_multb[k]->GetYaxis()->SetTitle("v_{z} [cm]");
+        h2alpha_multb[k]->GetYaxis()->SetTitle("vtx_{Z} [cm]");
         h2alpha_multb[k]->GetYaxis()->SetTitleOffset(1.3);
-        h2alpha_multb[k]->GetZaxis()->SetTitle("#alpha (#eta, v_{z})");
+        h2alpha_multb[k]->GetZaxis()->SetTitle("#alpha (#eta, vtx_{Z})");
         h2alpha_multb[k]->GetZaxis()->SetTitleOffset(1.3);
         h2alpha_multb[k]->GetZaxis()->SetRangeUser(alpha_min, alpha_max);
         gStyle->SetPaintTextFormat("1.3f");
         h2alpha_multb[k]->SetMarkerSize(0.6);
         h2alpha_multb[k]->SetContour(1000);
         h2alpha_multb[k]->Draw("colztext45");
-        la->Draw();
+        // la->Draw();
+        tt->DrawTextNDC(1 - gPad->GetRightMargin(), (1 - gPad->GetTopMargin()) + 0.01, legtitle_centrality.Data());
         calpha->SaveAs(Form("%s/alpha2D_TklMultb%d.pdf", outdir.Data(), k));
     }
 
     /* Analysis stages - Closure test*/
     // vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEcorr, h1WEtcorr, h1WEfinal};
-    vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WEcorr, h1WEtcorr, h1WEfinal};
+    // vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEtcorr, h1WEfinal};
+    vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WErawacc, h1WEfinal};
+    // vector<TH1F *> vechist = {h1WGhadron, h1WEraw, h1WEfinal};
     // vector<const char *> vcolor{"#20262E", "#7209b7", "#D04848", "#1C82AD", "#1F8A70", "#FC7300"};
-    vector<const char *> vcolor{"#D04848", "#1C82AD", "#1F8A70", "#FC7300", "#20262E"};
+    // vector<const char *> vcolor{"#D04848", "#1C82AD", "#1F8A70", "#FC7300", "#20262E"};
+    vector<const char *> vcolor{"#D04848", "#1C82AD", "#1F8A70", "#20262E"};
+    // vector<const char *> vcolor{"#D04848", "#1C82AD", "#20262E"};
     // vector<int> vlwidth = {3, 3, 3, 3, 2, 2};
-    vector<int> vlwidth = {3, 3, 3, 3, 3};
+    // vector<int> vlwidth = {3, 3, 3, 3, 3};
+    vector<int> vlwidth = {3, 3, 3, 3};
+    // vector<int> vlwidth = {3, 3, 3};
     // vector<int> vstyle = {1, 1, 1, 1, 2, 1};
-    vector<int> vstyle = {1, 1, 1, 1, 1};
+    // vector<int> vstyle = {1, 1, 1, 1, 1};
+    vector<int> vstyle = {1, 1, 1, 1};
+    // vector<int> vstyle = {1, 1, 1};
     TCanvas *cstage = new TCanvas("cstage", "cstage", CANVASW, CANVASH);
     gPad->SetRightMargin(0.05);
     gPad->SetTopMargin(0.05);
@@ -990,7 +1060,7 @@ void calccorr(const TString infilename,              //
         else
         {
             vechist[i]->SetFillColorAlpha(TColor::GetColor(vcolor[i]), 0.6);
-            vechist[i]->SetMarkerStyle(21);
+            vechist[i]->SetMarkerStyle(54);
             // vechist[i]->SetMarkerSize(0.6);
             vechist[i]->SetMarkerColor(TColor::GetColor(vcolor[i]));
             vechist[i]->Draw("E5 same");
@@ -1000,11 +1070,11 @@ void calccorr(const TString infilename,              //
     TLegend *l1 = new TLegend(0.18, 0.68, 0.5, 0.92);
     l1->SetHeader(legtitle.Data(), "l");
     l1->AddEntry(h1WGhadron, "Truth", "l");
-    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "lf");
-    // l1->AddEntry(h1WErawacc, "Corrected for acceptance", "l");
-    l1->AddEntry(h1WEcorr, "Corrected for accep. & #alpha", "lf");
-    l1->AddEntry(h1WEtcorr, "Corrected for accep. & #alpha, trigger & sdf.", "lf");
-    l1->AddEntry(h1WEfinal, "Corrected for accep. & #alpha, trigger & sdf. & empty event", "lf");
+    l1->AddEntry(h1WEraw, "Reco-tracklets before corrections", "pl");
+    l1->AddEntry(h1WErawacc, "Corrected for acceptance", "pl");
+    // l1->AddEntry(h1WEcorr, "Corrected for accep. & #alpha", "pl");
+    // l1->AddEntry(h1WEtcorr, "Corrected for accep. & #alpha, evt. sel.", "pl");
+    l1->AddEntry(h1WEfinal, "After corrections", "pl");
     l1->SetTextSize(0.03);
     l1->SetFillStyle(0);
     l1->SetBorderSize(0);
@@ -1067,8 +1137,8 @@ int main(int argc, char *argv[])
     float PVzMin = TString(argv[4]).Atof();
     float PVzMax = TString(argv[5]).Atof();
     bool applyc = (TString(argv[6]).Atoi() == 1) ? true : false;
-    bool applyg = (TString(argv[7]).Atoi() == 1) ? true : false;
-    bool applym = (TString(argv[8]).Atoi() == 1) ? true : false;
+    bool applyg = (TString(argv[7]).Atoi() == 1) ? true : false; // geometric difference; applied on data only
+    bool applym = (TString(argv[8]).Atoi() == 1) ? true : false; // geometric difference map; applied on data only
     const TString estag = TString(argv[9]);
     const TString asel_string = TString(argv[10]);
     const TString correctionfiletag = TString(argv[11]);

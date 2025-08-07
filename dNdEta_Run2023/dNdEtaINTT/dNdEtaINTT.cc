@@ -93,9 +93,11 @@ dNdEtaINTT::dNdEtaINTT(const std::string &name, const std::string &outputfile, c
     , _get_reco_cluster(true)
     , _get_centrality(true)
     , _get_intt_data(true)
-    , _get_inttrawhit(true)
+    , _get_inttrawhit(false)
     , _get_trkr_hit(true)
     , _get_phg4_info(true)
+    , _get_pmt_info(true)
+    , _get_trigger_info(true)
     , _outputFile(outputfile)
     , IsData(isData)
     , eventheader(nullptr)
@@ -156,16 +158,19 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
         outtree->Branch("MBD_north_charge_sum", &mbd_north_charge_sum);
         outtree->Branch("MBD_charge_sum", &mbd_charge_sum);
         outtree->Branch("MBD_charge_asymm", &mbd_charge_asymm);
-        if (_get_pmt_info)
-        {
-            for (unsigned int i = 0; i < 128; i++)
-            {
-                std::ostringstream pmtNumber;
-                pmtNumber << std::setfill('0') << std::setw(3) << std::to_string(i);
-                std::string branchName = "MBD_PMT" + pmtNumber.str() + "_charge";
-                outtree->Branch(branchName.c_str(), &m_pmt_q[i]);
-            }
-        }
+        outtree->Branch("MBD_nhitsoverths_south", &mbd_nhitsoverths_south);
+        outtree->Branch("MBD_nhitsoverths_north", &mbd_nhitsoverths_north);
+        outtree->Branch("MBD_PMT_charge", &m_pmt_q, "MBD_PMT_charge[128]/F");
+        // if (_get_pmt_info)
+        // {
+        //     for (unsigned int i = 0; i < 128; i++)
+        //     {
+        //         std::ostringstream pmtNumber;
+        //         pmtNumber << std::setfill('0') << std::setw(3) << std::to_string(i);
+        //         std::string branchName = "MBD_PMT" + pmtNumber.str() + "_charge";
+        //         outtree->Branch(branchName.c_str(), &m_pmt_q[i]);
+        //     }
+        // }
     }
     if (_get_intt_data)
     {
@@ -196,7 +201,25 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PrimaryG4P_Phi", &PrimaryG4P_Phi_);
             outtree->Branch("PrimaryG4P_E", &PrimaryG4P_E_);
             outtree->Branch("PrimaryG4P_PID", &PrimaryG4P_PID_);
+            outtree->Branch("PrimaryG4P_trackID", &PrimaryG4P_trackID_);
             outtree->Branch("PrimaryG4P_isChargeHadron", &PrimaryG4P_isChargeHadron_);
+            outtree->Branch("PHG4Hit_x0", &PHG4Hit_x0_);
+            outtree->Branch("PHG4Hit_y0", &PHG4Hit_y0_);
+            outtree->Branch("PHG4Hit_z0", &PHG4Hit_z0_);
+            outtree->Branch("PHG4Hit_x1", &PHG4Hit_x1_);
+            outtree->Branch("PHG4Hit_y1", &PHG4Hit_y1_);
+            outtree->Branch("PHG4Hit_z1", &PHG4Hit_z1_);
+            outtree->Branch("PHG4Hit_edep", &PHG4Hit_edep_);
+            if (_get_allphg4_info)
+            {
+                outtree->Branch("NAllG4P", &NAllG4P_);
+                outtree->Branch("G4P_Pt", &G4P_Pt_);
+                outtree->Branch("G4P_Eta", &G4P_Eta_);
+                outtree->Branch("G4P_Phi", &G4P_Phi_);
+                outtree->Branch("G4P_E", &G4P_E_);
+                outtree->Branch("G4P_PID", &G4P_PID_);
+                outtree->Branch("G4P_trackID", &G4P_trackID_);
+            }
             // Truth cluster information & matching with reco clusters
             outtree->Branch("NTruthLayers", &NTruthLayers_);
             outtree->Branch("ClusTruthCKeys", &ClusTruthCKeys_);
@@ -208,6 +231,15 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("PrimaryTruthClusPhiSize", &PrimaryTruthClusPhiSize_);
             outtree->Branch("PrimaryTruthClusZSize", &PrimaryTruthClusZSize_);
             outtree->Branch("PrimaryTruthClusNRecoClus", &PrimaryTruthClusNRecoClus_);
+            outtree->Branch("ClusMatchedG4P_MaxE_trackID", &ClusMatchedG4P_MaxE_trackID_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Pt", &ClusMatchedG4P_MaxE_Pt_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Eta", &ClusMatchedG4P_MaxE_Eta_);
+            outtree->Branch("ClusMatchedG4P_MaxE_Phi", &ClusMatchedG4P_MaxE_Phi_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_trackID", &ClusMatchedG4P_MaxClusE_trackID_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_ancestorTrackID", &ClusMatchedG4P_MaxClusE_ancestorTrackID_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Pt", &ClusMatchedG4P_MaxClusE_Pt_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Eta", &ClusMatchedG4P_MaxClusE_Eta_);
+            outtree->Branch("ClusMatchedG4P_MaxClusE_Phi", &ClusMatchedG4P_MaxClusE_Phi_);
         }
         // InttRawHit information
         if (_get_inttrawhit)
@@ -229,12 +261,27 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
         if (_get_trkr_hit)
         {
             outtree->Branch("NTrkrhits", &NTrkrhits_);
+            outtree->Branch("NTrkrhits_Layer1", &NTrkrhits_Layer1_);
             outtree->Branch("TrkrHitRow", &TrkrHitRow_);
             outtree->Branch("TrkrHitColumn", &TrkrHitColumn_);
             outtree->Branch("TrkrHitLadderZId", &TrkrHitLadderZId_);
             outtree->Branch("TrkrHitLadderPhiId", &TrkrHitLadderPhiId_);
+            outtree->Branch("TrkrHitTimeBucketId", &TrkrHitTimeBucketId_);
             outtree->Branch("TrkrHitLayer", &TrkrHitLayer_);
             outtree->Branch("TrkrHitADC", &TrkrHitADC_);
+            outtree->Branch("TrkrHitX", &TrkrHitX_);
+            outtree->Branch("TrkrHitY", &TrkrHitY_);
+            outtree->Branch("TrkrHitZ", &TrkrHitZ_);
+            if (!IsData)
+            {
+                // Truth PHG4Hit matching with TrkrHits
+                outtree->Branch("TrkrHit_truthHit_x0", &TrkrHit_truthHit_x0_);
+                outtree->Branch("TrkrHit_truthHit_y0", &TrkrHit_truthHit_y0_);
+                outtree->Branch("TrkrHit_truthHit_z0", &TrkrHit_truthHit_z0_);
+                outtree->Branch("TrkrHit_truthHit_x1", &TrkrHit_truthHit_x1_);
+                outtree->Branch("TrkrHit_truthHit_y1", &TrkrHit_truthHit_y1_);
+                outtree->Branch("TrkrHit_truthHit_z1", &TrkrHit_truthHit_z1_);
+            }
         }
         // TrkrCluster information
         if (_get_reco_cluster)
@@ -256,6 +303,19 @@ int dNdEtaINTT::Init(PHCompositeNode *topNode)
             outtree->Branch("ClusTrkrHitSetKey", &ClusTrkrHitSetKey_);
             outtree->Branch("ClusTimeBucketId", &ClusTimeBucketId_);
         }
+        // GL1 trigger information
+        if (_get_trigger_info)
+        {
+            outtree->Branch("GL1Packet_BCO", &GL1Packet_BCO_);
+            outtree->Branch("triggervec", &triggervec_);
+            outtree->Branch("firedTriggers", &firedTriggers_);
+            outtree->Branch("firedTriggers_name", &firedTriggers_name_);
+            outtree->Branch("firedTriggers_checkraw", &firedTriggers_checkraw_);
+            outtree->Branch("firedTriggers_prescale", &firedTriggers_prescale_);
+            outtree->Branch("firedTriggers_scalers", &firedTriggers_scalers_);
+            outtree->Branch("firedTriggers_livescalers", &firedTriggers_livescalers_);
+            outtree->Branch("firedTriggers_rawscalers", &firedTriggers_rawscalers_);
+        }
     }
 
     return Fun4AllReturnCodes::EVENT_OK;
@@ -267,6 +327,34 @@ int dNdEtaINTT::InitRun(PHCompositeNode *topNode)
     if (Verbosity() >= VERBOSITY_MORE)
         std::cout << "dNdEtaINTT::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
+std::vector<int> dNdEtaINTT::GetAncestors(PHG4Particle *p)
+{
+    // std::cout << "In GetG4Ancestor: " << std::endl << "start with original particle: ";
+    // p->identify();
+
+    // check if m_truth_info is available
+    if (!m_truth_info)
+    {
+        std::cout << __func__ << " " << __LINE__ << ": PHG4TruthInfoContainer not found. Exit!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<int> ancestors_trackID;
+    ancestors_trackID.clear();
+
+    PHG4Particle *ancestor = m_truth_info->GetParticle(p->get_parent_id());
+    // PHG4Particle *prevpart = p;
+    while (ancestor != nullptr)
+    {
+        ancestors_trackID.push_back(ancestor->get_track_id());
+        // ancestor->identify();
+        // prevpart = ancestor;
+        ancestor = m_truth_info->GetParticle(ancestor->get_parent_id());
+    }
+    return ancestors_trackID;
 }
 
 //____________________________________________________________________________..
@@ -311,8 +399,14 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
             if (_get_phg4_info)
                 GetPHG4Info(topNode);
 
+            if (_get_allphg4_info)
+                GetAllPHG4Info(topNode);
+
             if (_get_hepmc_info)
+            {
+                // std::cout << "[INFO & WARNING] Currently, GetHEPMCInfo method is disabled." << std::endl;
                 GetHEPMCInfo(topNode);
+            }
 
             if (_get_truth_cluster)
                 GetTruthClusterInfo(topNode);
@@ -339,6 +433,17 @@ int dNdEtaINTT::process_event(PHCompositeNode *topNode)
             }
 
             intt_bco = intteventinfo->get_bco_full();
+        }
+
+        if (_get_trigger_info)
+        {
+            gl1packet = findNode::getClass<Gl1Packet>(topNode, "GL1RAWHIT");
+            if (!gl1packet)
+            {
+                std::cout << __FILE__ << "::" << __func__ << " - Gl1Packet missing, doing nothing." << std::endl;
+                exit(1);
+            }
+            GetTriggerInfo(topNode);
         }
     }
 
@@ -393,8 +498,56 @@ int dNdEtaINTT::Reset(PHCompositeNode *topNode)
 
 //____________________________________________________________________________..
 void dNdEtaINTT::Print(const std::string &what) const { std::cout << "dNdEtaINTT::Print(const std::string &what) const Printing info for " << what << std::endl; }
-
 //____________________________________________________________________________..
+void dNdEtaINTT::GetTriggerInfo(PHCompositeNode *topNode)
+{
+    std::cout << "Get GL1 trigger info." << std::endl;
+
+    GL1Packet_BCO_ = (gl1packet->lValue(0, "BCO") & 0xFFFFFFFFFFU); // Only the lower 40 bits are retained
+
+    firedTriggers_.clear();
+    firedTriggers_name_.clear();
+    firedTriggers_checkraw_.clear();
+    firedTriggers_prescale_.clear();
+    firedTriggers_scalers_.clear();
+    firedTriggers_livescalers_.clear();
+    firedTriggers_rawscalers_.clear();
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
+    // Set up Trigger Analyzer
+    triggeranalyzer = new TriggerAnalyzer();
+    triggeranalyzer->decodeTriggers(topNode);
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
+    // triggervec_ = gl1packet->getTriggerVector(); // just to get the original triggervec
+    triggervec_ = gl1packet->getScaledVector();
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
+    for (int i = 0; i < 64; i++)
+    {
+        bool trig_decision = ((triggervec_ & 0x1U) == 0x1U);
+        if (trig_decision)
+        {
+            firedTriggers_.push_back(i);
+            firedTriggers_name_.push_back(triggeranalyzer->getTriggerName(i));
+            firedTriggers_checkraw_.push_back(triggeranalyzer->checkRawTrigger(i));
+            firedTriggers_prescale_.push_back(triggeranalyzer->getTriggerPrescale(i));
+            firedTriggers_scalers_.push_back(triggeranalyzer->getTriggerScalers(i));
+            firedTriggers_livescalers_.push_back(triggeranalyzer->getTriggerLiveScalers(i));
+            firedTriggers_rawscalers_.push_back(triggeranalyzer->getTriggerRawScalers(i));
+        }
+        triggervec_ = (triggervec_ >> 1U) & 0xffffffffU;
+    }
+
+    // std::cout << __FILE__ << "::" << __func__ << "::" << __LINE__ << std::endl;
+
+    triggervec_ = gl1packet->getScaledVector(); // just to get the original triggervec
+}
+//____________________________________________________________________________..
+//! error when compiling in ALMA9 with c++20 -> change -IOFFLINEMAIN/include to -isystemOFFLINEMAIN/include in Makefile as a workaround
 void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
 {
     std::cout << "Get HEPMC info." << std::endl;
@@ -483,6 +636,7 @@ void dNdEtaINTT::GetHEPMCInfo(PHCompositeNode *topNode)
         exit(1);
     }
 }
+
 //____________________________________________________________________________..
 void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
 {
@@ -492,18 +646,15 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
     if (!m_CentInfo)
     {
-        std::cout << PHWHERE << "Error, can't find CentralityInfov1" << std::endl;
-        exit(1);
+        std::cout << PHWHERE << "Error, can't find CentralityInfov1. No centrality info is filled" << std::endl;
+        // exit(1);
     }
 
-    if (IsData)
+    _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
+    if (!_minimumbiasinfo)
     {
-        _minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
-        if (!_minimumbiasinfo)
-        {
-            std::cout << "Error, can't find MinimumBiasInfo" << std::endl;
-            exit(1);
-        }
+        std::cout << "Error, can't find MinimumBiasInfo. No minimum bias info is filled" << std::endl;
+        // exit(1);
     }
 
     m_mbdout = findNode::getClass<MbdOut>(topNode, "MbdOut");
@@ -540,13 +691,12 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
 
     if (!IsData)
     {
-        centrality_bimp_ = m_CentInfo->get_centile(CentralityInfo::PROP::bimp);         // FIX ME
-        centrality_impactparam_ = m_CentInfo->get_quantity(CentralityInfo::PROP::bimp); // FIX ME
+        centrality_bimp_ = (m_CentInfo) ? m_CentInfo->get_centile(CentralityInfo::PROP::bimp) : std::numeric_limits<float>::quiet_NaN();
+        centrality_impactparam_ = (m_CentInfo) ? m_CentInfo->get_quantity(CentralityInfo::PROP::bimp) : std::numeric_limits<float>::quiet_NaN();
         // Glauber parameter information
         ncoll_ = eventheader->get_ncoll();
         npart_ = eventheader->get_npart();
-        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << "); (mbd,mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_
-                  << ")" << std::endl;
+        std::cout << "Centrality: (bimp,impactparam) = (" << centrality_bimp_ << ", " << centrality_impactparam_ << ")" << std::endl;
         std::cout << "Glauber parameter information: (ncoll,npart) = (" << ncoll_ << ", " << npart_ << ")" << std::endl;
     }
 
@@ -558,8 +708,27 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     mbd_north_charge_sum = m_mbdout->get_q(1);
     mbd_charge_sum = mbd_south_charge_sum + mbd_north_charge_sum;
     mbd_charge_asymm = mbd_charge_sum == 0 ? std::numeric_limits<float>::quiet_NaN() : (float)(mbd_south_charge_sum - mbd_north_charge_sum) / mbd_charge_sum;
-    centrality_mbd_ = m_CentInfo->has_centile(CentralityInfo::PROP::mbd_NS) ? m_CentInfo->get_centile(CentralityInfo::PROP::mbd_NS) : std::numeric_limits<float>::quiet_NaN();
-    is_min_bias = (IsData) ? _minimumbiasinfo->isAuAuMinimumBias() : (npart_ > 0);
+    if (m_CentInfo)
+    {
+        if (m_CentInfo->has_centrality_bin(CentralityInfo::PROP::mbd_NS))
+        {
+            centrality_mbd_ = m_CentInfo->get_centrality_bin(CentralityInfo::PROP::mbd_NS);
+        }
+        else
+        {
+            std::cout << "[WARNING/ERROR] No centrality information found in CentralityInfo. Setting centrality_mbd_ to NaN. Please check!" << std::endl;
+            m_CentInfo->identify();
+            centrality_mbd_ = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    else
+    {
+        centrality_mbd_ = std::numeric_limits<float>::quiet_NaN();
+    }
+
+    is_min_bias = (_minimumbiasinfo) ? _minimumbiasinfo->isAuAuMinimumBias() : false;
+
+    std::cout << "[INFO] Is minimum bias: " << is_min_bias << "; Centrality: (centrality_mbd, centrality_mbdquantity) = (" << centrality_mbd_ << ", " << centrality_mbdquantity_ << ")" << std::endl;
 
     // minimum bias criteria without zdc cut (note: the zdc cut has a 99-100% efficiency for the Level-1 trigger events and 100% for central Au+Au event)
     bool mbd_ntube = (mbd_south_npmt >= 2 && mbd_north_npmt >= 2) ? true : false;
@@ -567,13 +736,22 @@ void dNdEtaINTT::GetCentralityInfo(PHCompositeNode *topNode)
     bool mbd_zvtx = (fabs(mbd_z_vtx) < 60) ? true : false;
     is_min_bias_wozdc = (IsData) ? (mbd_ntube && mbd_sn_q_imbalence && mbd_zvtx) : (npart_ > 0);
 
+    int hits_n = 0;
+    int hits_s = 0;
+
     if (_get_pmt_info)
     {
         for (int i = 0; i < 128; i++)
         {
             m_pmt_q[i] = m_mbdpmtcontainer->get_pmt(i)->get_q();
+            if (i < 64 && m_pmt_q[i] > cthresh)
+                hits_s++;
+            else if (i >= 64 && m_pmt_q[i] > cthresh)
+                hits_n++;
         }
     }
+    mbd_nhitsoverths_south = hits_s;
+    mbd_nhitsoverths_north = hits_n;
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetInttRawHitInfo(PHCompositeNode *topNode)
@@ -619,23 +797,120 @@ void dNdEtaINTT::GetTrkrHitInfo(PHCompositeNode *topNode)
         exit(1);
     }
 
+    _intt_geom_container = findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_INTT");
+    if (!_intt_geom_container)
+    {
+        std::cout << PHWHERE << "Error, can't find INTT geometry container" << std::endl;
+        exit(1);
+    }
+
+    _tgeometry = findNode::getClass<ActsGeometry>(topNode, "ActsGeometry");
+    if (!_tgeometry)
+    {
+        std::cout << PHWHERE << "Error, can't find Acts geometry" << std::endl;
+        exit(1);
+    }
+
+    if (!IsData)
+    {
+        _hit_truth_map = findNode::getClass<TrkrHitTruthAssoc>(topNode, "TRKR_HITTRUTHASSOC");
+        if (!_hit_truth_map)
+        {
+            std::cout << PHWHERE << "Error, can't find TRKR_HITTRUTHASSOC" << std::endl;
+            exit(1);
+        }
+
+        g4hit = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_INTT");
+        if (!g4hit)
+        {
+            std::cout << PHWHERE << "Error, can't find G4HIT_INTT" << std::endl;
+            exit(1);
+        }
+    }
+
+    std::set<PHG4Hit *> truth_hits; // unique set of matched PHG4Hits
+    // make sure the set is empty
+    truth_hits.clear();
+
     TrkrHitSetContainer::ConstRange hitset_range = hitsets->getHitSets(TrkrDefs::TrkrId::inttId);
     for (TrkrHitSetContainer::ConstIterator hitset_iter = hitset_range.first; hitset_iter != hitset_range.second; ++hitset_iter)
     {
         TrkrHitSet::ConstRange hit_range = hitset_iter->second->getHits();
+        TrkrHitSet *hitset = hitset_iter->second;
+        auto hitsetkey = hitset->getHitSetKey();
+
+        auto surface = _tgeometry->maps().getSiliconSurface(hitsetkey);
+        auto layergeom = dynamic_cast<CylinderGeomIntt *>(_intt_geom_container->GetLayerGeom(TrkrDefs::getLayer(hitsetkey)));
+        TVector2 LocalUse;
+
         for (TrkrHitSet::ConstIterator hit_iter = hit_range.first; hit_iter != hit_range.second; ++hit_iter)
         {
             TrkrDefs::hitkey hitKey = hit_iter->first;
-            TrkrDefs::hitsetkey hitSetKey = hitset_iter->first;
+
+            // now get the positions from the geometry
+            auto col = InttDefs::getCol(hitKey);
+            auto row = InttDefs::getRow(hitKey);
+            auto ladder_z_index = InttDefs::getLadderZId(hitsetkey);
+            double local_hit_location[3] = {0., 0., 0.};
+            layergeom->find_strip_center_localcoords(ladder_z_index, row, col, local_hit_location);
+            LocalUse.SetX(local_hit_location[0]); // local x
+            LocalUse.SetY(local_hit_location[2]); // local y
+            TVector3 posworld = CylinderGeomInttHelper::get_world_from_local_coords(surface, _tgeometry, LocalUse);
+
+            // std::cout << "Hit position: " << posworld.x() << " " << posworld.y() << " " << posworld.z() << std::endl;
+
+            TrkrHitX_.push_back(posworld.x());
+            TrkrHitY_.push_back(posworld.y());
+            TrkrHitZ_.push_back(posworld.z());
             TrkrHitRow_.push_back(InttDefs::getRow(hitKey));
             TrkrHitColumn_.push_back(InttDefs::getCol(hitKey));
-            TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitSetKey));
-            TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitSetKey));
-            TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitSetKey));
+            TrkrHitLadderZId_.push_back(InttDefs::getLadderZId(hitsetkey));
+            TrkrHitLadderPhiId_.push_back(InttDefs::getLadderPhiId(hitsetkey));
+            TrkrHitTimeBucketId_.push_back(InttDefs::getTimeBucketId(hitsetkey));
+            TrkrHitLayer_.push_back(TrkrDefs::getLayer(hitsetkey));
             TrkrHitADC_.push_back(hit_iter->second->getAdc());
+
+            // https://github.com/sPHENIX-Collaboration/coresoftware/blob/master/simulation/g4simulation/g4eval/SvtxHitEval.cc
+            // std::set<PHG4Hit*> truth_hits;
+            if (!IsData)
+            {
+                TrkrHit *hit = hit_iter->second;
+                if (hit)
+                {
+                    std::multimap<TrkrDefs::hitsetkey, std::pair<TrkrDefs::hitkey, PHG4HitDefs::keytype>> temp_map;
+                    _hit_truth_map->getG4Hits(hitsetkey, hitKey, temp_map); // returns pairs (hitsetkey, std::pair(hitkey, g4hitkey)) for this hitkey only
+                    for (auto &htiter : temp_map)
+                    {
+                        // extract the g4 hit key here and add the g4hit to the set
+                        PHG4HitDefs::keytype g4hitkey = htiter.second.second;
+                        // std::cout << "           hitkey " << hitkey <<  " g4hitkey " << g4hitkey << std::endl;
+                        PHG4Hit *trkrhit_truthhit = nullptr;
+                        trkrhit_truthhit = g4hit->findHit(g4hitkey);
+                        if (trkrhit_truthhit)
+                        {
+                            truth_hits.insert(trkrhit_truthhit);
+                        }
+                    }
+                }
+            }
         }
     }
+
     NTrkrhits_ = TrkrHitRow_.size();
+    NTrkrhits_Layer1_ = std::count_if(TrkrHitLayer_.begin(), TrkrHitLayer_.end(), [](int i) { return i == 3 || i == 4; });
+
+    if (!IsData)
+    {
+        for (auto &hit : truth_hits)
+        {
+            TrkrHit_truthHit_x0_.push_back(hit->get_x(0));
+            TrkrHit_truthHit_y0_.push_back(hit->get_y(0));
+            TrkrHit_truthHit_z0_.push_back(hit->get_z(0));
+            TrkrHit_truthHit_x1_.push_back(hit->get_x(1));
+            TrkrHit_truthHit_y1_.push_back(hit->get_y(1));
+            TrkrHit_truthHit_z1_.push_back(hit->get_z(1));
+        }
+    }
 }
 //____________________________________________________________________________..
 void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
@@ -719,8 +994,6 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                         for (auto &c : truth_clusters)
                         {
                             // only take at most 1 truth cluster per truth particle
-                            // only take at most 1 truth cluster per truth
-                            // particle
                             bool found = false;
                             if (TrkrDefs::getLayer(c.first) == TrkrDefs::getLayer(ckey))
                             {
@@ -736,6 +1009,52 @@ void dNdEtaINTT::GetRecoClusterInfo(PHCompositeNode *topNode)
                 ClusTruthCKeys_.push_back(truth_ckeys.size());
                 ClusNG4Particles_.push_back(truth_particles.size());
                 ClusNPrimaryG4Particles_.push_back(Nprimary);
+
+                // max_truth_cluster_by_energy
+                PHG4Particle *ptcl_maxE = clustereval->max_truth_particle_by_energy(ckey);
+                if (ptcl_maxE)
+                {
+                    ClusMatchedG4P_MaxE_trackID_.push_back(ptcl_maxE->get_track_id());
+                    TLorentzVector p;
+                    p.SetPxPyPzE(ptcl_maxE->get_px(), ptcl_maxE->get_py(), ptcl_maxE->get_pz(), ptcl_maxE->get_e());
+                    ClusMatchedG4P_MaxE_Pt_.push_back(p.Pt());
+                    ClusMatchedG4P_MaxE_Eta_.push_back(p.Eta());
+                    ClusMatchedG4P_MaxE_Phi_.push_back(p.Phi());
+                }
+                else
+                {
+                    ClusMatchedG4P_MaxE_trackID_.push_back(std::numeric_limits<int>::max());
+                    ClusMatchedG4P_MaxE_Pt_.push_back(-1);
+                    ClusMatchedG4P_MaxE_Eta_.push_back(-1);
+                    ClusMatchedG4P_MaxE_Phi_.push_back(-1);
+                }
+                // max_truth_particle_by_cluster_energy
+                PHG4Particle *ptcl_maxClusE = clustereval->max_truth_particle_by_cluster_energy(ckey);
+                if (ptcl_maxClusE)
+                {
+                    ClusMatchedG4P_MaxClusE_trackID_.push_back(ptcl_maxClusE->get_track_id());
+                    TLorentzVector p;
+                    p.SetPxPyPzE(ptcl_maxClusE->get_px(), ptcl_maxClusE->get_py(), ptcl_maxClusE->get_pz(), ptcl_maxClusE->get_e());
+                    ClusMatchedG4P_MaxClusE_Pt_.push_back(p.Pt());
+                    ClusMatchedG4P_MaxClusE_Eta_.push_back(p.Eta());
+                    ClusMatchedG4P_MaxClusE_Phi_.push_back(p.Phi());
+                    // ancestors of the max cluster energy truth particle
+                    std::vector<int> ptcl_maxClusE_ancestorsTrackID = GetAncestors(ptcl_maxClusE);
+                    // if no ancestors, then the trackID of the max cluster energy truth particle is the ancestor
+                    // if has ancestors, then the trackID of the last element of ptcl_maxClusE_ancestorsTrackID is the ancestor trackID
+                    ClusMatchedG4P_MaxClusE_ancestorTrackID_.push_back((ptcl_maxClusE_ancestorsTrackID.size() == 0) ? ptcl_maxClusE->get_track_id() : ptcl_maxClusE_ancestorsTrackID.back());
+                    // std::cout << "Macthed ptcl_maxClusE trackID: " << ptcl_maxClusE->get_track_id() << " - Ancestors of the max cluster energy truth particle: ";
+                    // for (auto &i : ptcl_maxClusE_ancestorsTrackID)
+                    //     std::cout << i << " ";
+                    // std::cout << std::endl;
+                }
+                else
+                {
+                    ClusMatchedG4P_MaxClusE_trackID_.push_back(std::numeric_limits<int>::max());
+                    ClusMatchedG4P_MaxClusE_Pt_.push_back(-1);
+                    ClusMatchedG4P_MaxClusE_Eta_.push_back(-1);
+                    ClusMatchedG4P_MaxClusE_Phi_.push_back(-1);
+                }
             }
         }
     }
@@ -856,12 +1175,15 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
                 // this ever happens (should be very rare) and discard that hit
                 if (entry_hskey != exit_hskey)
                 {
-                    std::cout << "!!! WARNING !!! PHG4Hit crosses TrkrHitsets, "
-                                 "discarding!"
-                              << std::endl;
-                    std::cout << "Discarded PHG4Hit info: " << std::endl;
-                    std::cout << "entry point: ladder (phi, z) ID = (" << entry_ladder_phi_id << ", " << entry_ladder_z_id << ")" << std::endl;
-                    std::cout << "exit point: ladder (phi, z) ID = (" << exit_ladder_phi_id << ", " << exit_ladder_z_id << ")" << std::endl;
+                    if (Verbosity() >= VERBOSITY_MORE)
+                    {
+                        std::cout << "!!! WARNING !!! PHG4Hit crosses TrkrHitsets, "
+                                     "discarding!"
+                                  << std::endl;
+                        std::cout << "Discarded PHG4Hit info: " << std::endl;
+                        std::cout << "entry point: ladder (phi, z) ID = (" << entry_ladder_phi_id << ", " << entry_ladder_z_id << ")" << std::endl;
+                        std::cout << "exit point: ladder (phi, z) ID = (" << exit_ladder_phi_id << ", " << exit_ladder_z_id << ")" << std::endl;
+                    }
                     continue;
                 }
 
@@ -886,12 +1208,12 @@ void dNdEtaINTT::GetTruthClusterInfo(PHCompositeNode *topNode)
 
                 for (auto &hit : hits)
                 {
-                    double entry_point[3] = {hit->get_x(0), hit->get_y(0), hit->get_z(0)};
-                    double exit_point[3] = {hit->get_x(1), hit->get_y(1), hit->get_z(1)};
+                    TVector3 entry_point(hit->get_x(0), hit->get_y(0), hit->get_z(0));
+                    TVector3 exit_point(hit->get_x(1), hit->get_y(1), hit->get_z(1));
 
                     // get local coordinates on surface
-                    TVector3 entry_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, entry_point);
-                    TVector3 exit_local = layergeom[i]->get_local_from_world_coords(surface, _tgeometry, exit_point);
+                    TVector3 entry_local = CylinderGeomInttHelper::get_local_from_world_coords(surface, _tgeometry, entry_point);
+                    TVector3 exit_local = CylinderGeomInttHelper::get_local_from_world_coords(surface, _tgeometry, exit_point);
 
                     // get strip z and phi id (which we needed local coordinates
                     // for)
@@ -946,6 +1268,14 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
         std::cout << PHWHERE << "Error, can't find G4TruthInfo" << std::endl;
         exit(1);
     }
+
+    g4hit = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_INTT");
+    if (!g4hit)
+    {
+        std::cout << PHWHERE << "Error, can't find G4HIT_INTT" << std::endl;
+        exit(1);
+    }
+
     // Truth vertex
     auto vrange = m_truth_info->GetPrimaryVtxRange();
     int NTruthPV = 0, NTruthPV_Embeded0 = 0;
@@ -985,6 +1315,7 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
         // particle->identify();
         if (ptcl)
         {
+            PrimaryG4P_trackID_.push_back(ptcl->get_track_id());
             PrimaryG4P_PID_.push_back(ptcl->get_pid());
             TLorentzVector p;
             p.SetPxPyPzE(ptcl->get_px(), ptcl->get_py(), ptcl->get_pz(), ptcl->get_e());
@@ -1010,7 +1341,55 @@ void dNdEtaINTT::GetPHG4Info(PHCompositeNode *topNode)
     NPrimaryG4P_ = PrimaryG4P_PID_.size();
     NPrimaryG4P_promptChargeHadron_ = tmpv_chargehadron.size();
     CleanVec(tmpv_chargehadron);
+
+    // PHG4Hit
+    PHG4HitContainer::ConstRange hit_begin_end = g4hit->getHits();
+    for (PHG4HitContainer::ConstIterator hiter = hit_begin_end.first; hiter != hit_begin_end.second; ++hiter)
+    {
+        PHG4Hit *hit = hiter->second;
+        PHG4Hit_x0_.push_back(hit->get_x(0));
+        PHG4Hit_y0_.push_back(hit->get_y(0));
+        PHG4Hit_z0_.push_back(hit->get_z(0));
+        PHG4Hit_x1_.push_back(hit->get_x(1));
+        PHG4Hit_y1_.push_back(hit->get_y(1));
+        PHG4Hit_z1_.push_back(hit->get_z(1));
+        PHG4Hit_edep_.push_back(hit->get_edep());
+    }
 }
+//____________________________________________________________________________..
+void dNdEtaINTT::GetAllPHG4Info(PHCompositeNode *topNode)
+{
+    std::cout << __FILE__ << "::" << __func__ << "(): Get all PHG4 info." << std::endl;
+
+    m_truth_info = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+    if (!m_truth_info)
+    {
+        std::cout << PHWHERE << "Error, can't find G4TruthInfo" << std::endl;
+        exit(1);
+    }
+
+    const auto prange = m_truth_info->GetParticleRange();
+    for (auto iter = prange.first; iter != prange.second; ++iter)
+    {
+        PHG4Particle *ptcl = iter->second;
+        // particle->identify();
+        if (ptcl)
+        {
+            G4P_PID_.push_back(ptcl->get_pid());
+            G4P_trackID_.push_back(ptcl->get_track_id());
+
+            TLorentzVector p;
+            p.SetPxPyPzE(ptcl->get_px(), ptcl->get_py(), ptcl->get_pz(), ptcl->get_e());
+            G4P_Pt_.push_back(p.Pt());
+            G4P_Eta_.push_back(p.Eta());
+            G4P_Phi_.push_back(p.Phi());
+            G4P_E_.push_back(ptcl->get_e());
+        }
+    }
+
+    NAllG4P_ = G4P_PID_.size();
+}
+
 //____________________________________________________________________________..
 void dNdEtaINTT::ResetVectors()
 {
@@ -1031,6 +1410,15 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(ClusTruthCKeys_);
     CleanVec(ClusNG4Particles_);
     CleanVec(ClusNPrimaryG4Particles_);
+    CleanVec(ClusMatchedG4P_MaxE_trackID_);
+    CleanVec(ClusMatchedG4P_MaxE_Pt_);
+    CleanVec(ClusMatchedG4P_MaxE_Eta_);
+    CleanVec(ClusMatchedG4P_MaxE_Phi_);
+    CleanVec(ClusMatchedG4P_MaxClusE_trackID_);
+    CleanVec(ClusMatchedG4P_MaxClusE_ancestorTrackID_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Pt_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Eta_);
+    CleanVec(ClusMatchedG4P_MaxClusE_Phi_);
     CleanVec(TruthClusPhiSize_);
     CleanVec(TruthClusZSize_);
     CleanVec(TruthClusNRecoClus_);
@@ -1052,8 +1440,18 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(TrkrHitColumn_);
     CleanVec(TrkrHitLadderZId_);
     CleanVec(TrkrHitLadderPhiId_);
+    CleanVec(TrkrHitTimeBucketId_);
     CleanVec(TrkrHitLayer_);
     CleanVec(TrkrHitADC_);
+    CleanVec(TrkrHitX_);
+    CleanVec(TrkrHitY_);
+    CleanVec(TrkrHitZ_);
+    CleanVec(TrkrHit_truthHit_x0_);
+    CleanVec(TrkrHit_truthHit_y0_);
+    CleanVec(TrkrHit_truthHit_z0_);
+    CleanVec(TrkrHit_truthHit_x1_);
+    CleanVec(TrkrHit_truthHit_y1_);
+    CleanVec(TrkrHit_truthHit_z1_);
     CleanVec(HepMCFSPrtl_Pt_);
     CleanVec(HepMCFSPrtl_Eta_);
     CleanVec(HepMCFSPrtl_Phi_);
@@ -1067,8 +1465,29 @@ void dNdEtaINTT::ResetVectors()
     CleanVec(PrimaryG4P_Phi_);
     CleanVec(PrimaryG4P_E_);
     CleanVec(PrimaryG4P_PID_);
+    CleanVec(PrimaryG4P_trackID_);
     CleanVec(PrimaryG4P_ParticleClass_);
     CleanVec(PrimaryG4P_isStable_);
     CleanVec(PrimaryG4P_Charge_);
     CleanVec(PrimaryG4P_isChargeHadron_);
+    CleanVec(PHG4Hit_x0_);
+    CleanVec(PHG4Hit_y0_);
+    CleanVec(PHG4Hit_z0_);
+    CleanVec(PHG4Hit_x1_);
+    CleanVec(PHG4Hit_y1_);
+    CleanVec(PHG4Hit_z1_);
+    CleanVec(PHG4Hit_edep_);
+    CleanVec(G4P_Pt_);
+    CleanVec(G4P_Eta_);
+    CleanVec(G4P_Phi_);
+    CleanVec(G4P_E_);
+    CleanVec(G4P_PID_);
+    CleanVec(G4P_trackID_);
+    CleanVec(firedTriggers_);
+    CleanVec(firedTriggers_name_);
+    CleanVec(firedTriggers_checkraw_);
+    CleanVec(firedTriggers_prescale_);
+    CleanVec(firedTriggers_scalers_);
+    CleanVec(firedTriggers_livescalers_);
+    CleanVec(firedTriggers_rawscalers_);
 }

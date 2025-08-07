@@ -44,8 +44,8 @@ int CentralityValid::Init(PHCompositeNode * /*unused*/)
 
   hm = new Fun4AllHistoManager("CENTRALITY_VALIDATION_HIST");
 
-  _h_centrality_bin = new TH1D("h_centrality_bin", ";Centrality Bin; 1/N{_Events}",20,-0.025, 0.975);
-  _h_centrality_bin_mb = new TH1D("h_centrality_bin_mb", ";Centrality Bin; 1/N{_Events}",20,-0.025, 0.975);
+  _h_centrality_bin = new TH1D("h_centrality_bin", ";Centrality Bin; 1/N{_Events}",20,0, 1.0);
+  _h_centrality_bin_mb = new TH1D("h_centrality_bin_mb", ";Centrality Bin; 1/N{_Events}",20,0, 1.0);
 
   _he_min_bias = new TEfficiency("he_min_bias",";Min Bias?; Fraction of Events", 1, 0, 1);
   hm->registerHisto(_h_centrality_bin);

@@ -38,11 +38,17 @@ class Hit : public TObject
     float PhiSize() { return _phisize; }
     unsigned int ClusADC() { return _clusadc; }
     pair<float, float> Edge();
+    int MatchedG4P_trackID() { return matchedG4P_trackID; };
+    int MatchedG4P_ancestor_trackID() { return matchedG4P_ancestor_trackID; };
+    float MatchedG4P_Pt() { return matchedG4P_Pt; };
+    float MatchedG4P_Eta() { return matchedG4P_Eta; };
+    float MatchedG4P_Phi() { return matchedG4P_Phi; };
 
     void Update();
     void SetPos(float, float, float);
     void SetVtx(float, float, float);
     void SetEdge(float, float);
+    void SetMatchedG4P(int, int, int, int, int);
     void SetMatchedTkl();
     bool IsMatchedTkl();
     void Print();
@@ -69,6 +75,11 @@ class Hit : public TObject
     TVector3 vechit;
     TVector3 vecvtx;
     TVector3 vecrel;
+    int matchedG4P_trackID; // only for simulation (matching)
+    int matchedG4P_ancestor_trackID;
+    int matchedG4P_Pt;
+    int matchedG4P_Eta;
+    int matchedG4P_Phi;
 };
 
 Hit::Hit()
@@ -179,6 +190,15 @@ TVector3 Hit::VecVtx() { return (vecvtx); }
 
 TVector3 Hit::VecRel() { return (vecrel); }
 
+void Hit::SetMatchedG4P(int trackID, int ancestor_trackID, int Pt, int Eta, int Phi)
+{
+    matchedG4P_trackID = trackID;
+    matchedG4P_ancestor_trackID = ancestor_trackID;
+    matchedG4P_Pt = Pt;
+    matchedG4P_Eta = Eta;
+    matchedG4P_Phi = Phi;
+}
+
 void Hit::Print()
 {
     printf("[Hit::Print()] (posX, posY, posZ) = (%f, %f, %f), (vtxX, vtxY, vtxZ) = (%f, %f, %f), (eta, phi) = (%f, %f) \n", vechit.X(), vechit.Y(), vechit.Z(), vecvtx.X(), vecvtx.Y(), vecvtx.Z(),
@@ -194,28 +214,9 @@ void UpdateHits(vector<Hit *> &Hits, vector<float> PV)
     }
 }
 
-float RandomHit_fraction(int set)
+int RandomHit(int set)
 {
-    float frac = 0;
-    switch (set)
-    {
-    case 0:
-        frac = 0;
-        break;
-    case 1:
-        frac = 1;
-        break;
-    case 2:
-        frac = 3;
-        break;
-    case 3:
-        frac = 5;
-        break;
-    case 4:
-        frac = 10;
-        break;
-    }
-    return frac;
+    return static_cast<int>(35 * set);
 }
 
 Hit *RandomHit(float vx, float vy, float vz, int layer)
@@ -314,13 +315,26 @@ int ConstADCCut(int set)
         cut = 35;
         break;
     case 1:
-        cut = 50;
+        cut = 0;
         break;
     case 2:
-        cut = 66;
+        cut = 50;
         break;
-    case 3:
-        cut = -1;
+    }
+    return cut;
+}
+
+int ConstClusPhiCut(int set)
+{
+    float cut = 0;
+    switch (set)
+    {
+    case 0:
+        cut = 40;
+        break;
+    case 1:
+        cut = 1E6;
+        break;
     }
     return cut;
 }

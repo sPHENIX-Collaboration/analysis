@@ -1,0 +1,9 @@
+# -*- ThePEG-repository -*-
+
+
+cd /Herwig/Cuts
+set /Herwig/Cuts/JetKtCut:MinKT 30.0*GeV
+##################################################
+# Save run for later usage with 'Herwig run'
+##################################################
+#saverun Herwig_Jet30 EventGenerator

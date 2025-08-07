@@ -1,8 +1,11 @@
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <TCanvas.h>
@@ -72,6 +75,57 @@ void draw_demoplot(TH1F *h, TF1 *f, float dcacut, TString plotname)
     delete c;
 }
 
+std::tuple<int, double, double> find_maxGroup(TH1F *hist_in)
+{
+    double maxbin_content = hist_in->GetBinContent(hist_in->GetMaximumBin());
+
+    vector<double> hist_bincontent;
+
+    for (int i = 1; i <= hist_in->GetNbinsX(); i++)
+    {
+        double c = (hist_in->GetBinContent(i) < maxbin_content / 2.0) ? 0.0 : (hist_in->GetBinContent(i) - maxbin_content / 2.0);
+        hist_bincontent.push_back(c);
+    }
+
+    vector<vector<double>> hist_bincontent_groups;
+    vector<double> group;
+    for (size_t i = 0; i < hist_bincontent.size(); i++)
+    {
+        if (hist_bincontent[i] > 0.0)
+        {
+            group.push_back(hist_bincontent[i]);
+        }
+        else if (group.size() > 0)
+        {
+            hist_bincontent_groups.push_back(group);
+            group.clear();
+        }
+    }
+    if (group.size() > 0)
+    {
+        hist_bincontent_groups.push_back(group);
+    }
+
+    int peak_group_id = -1;
+    int nbins = 0;
+    double peak_group_ratio = std::numeric_limits<double>::quiet_NaN();
+    double group_width = std::numeric_limits<double>::quiet_NaN();
+    std::tuple<int, double, double> result;
+
+    for (size_t i = 0; i < hist_bincontent_groups.size(); i++)
+    {
+        if (maxbin_content > hist_bincontent_groups[i].front() && maxbin_content < hist_bincontent_groups[i].back())
+        {
+            peak_group_id = i;
+            nbins = hist_bincontent_groups[i].size();
+            peak_group_ratio = accumulate(hist_bincontent_groups[i].begin(), hist_bincontent_groups[i].end(), 0.0) / accumulate(hist_bincontent.begin(), hist_bincontent.end(), 0.0);
+            group_width = nbins * hist_in->GetBinWidth(1);
+        }
+    }
+
+    return make_tuple(nbins, group_width, peak_group_ratio);
+}
+
 int main(int argc, char *argv[])
 {
     SetsPhenixStyle();
@@ -79,15 +133,14 @@ int main(int argc, char *argv[])
 
     bool IsData = (TString(argv[1]).Atoi() == 1) ? true : false;        //
     int NevtToRun = TString(argv[2]).Atoi();                            //
-    float avgVtxX = TString(argv[3]).Atof();                            // float avgVtxX = -0.0015 (ana.382) / -0.04 (ana.398) /
-    float avgVtxY = TString(argv[4]).Atof();                            // avgVtxY = 0.0012 (ana.382) / 0.24 (ana.398) /
-    float dPhi_cut = TString(argv[5]).Atof();                           // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
-    float dca_cut = TString(argv[6]).Atof();                            // Example: 0.05cm
-    TString infilename = TString(argv[7]);                              // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
-    TString outfilename = TString(argv[8]);                             // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
-    TString demoplotpath = TString(argv[9]);                            // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
-    bool debug = (TString(argv[10]).Atoi() == 1) ? true : false;        //
-    bool makedemoplot = (TString(argv[11]).Atoi() == 1) ? true : false; //
+    float dPhi_cut = TString(argv[3]).Atof();                           // Example: 0.11 radian; 0.001919862 radian = 0.11 degree
+    float dca_cut = TString(argv[4]).Atof();                            // Example: 0.05cm
+    TString bsresfilepath = TString(argv[5]);                           //
+    TString infilename = TString(argv[6]);                              // /sphenix/user/hjheng/TrackletAna/data/INTT/ana382_zvtx-20cm_dummyAlignParams/sim/INTTRecoClusters_sim_merged.root
+    TString outfilename = TString(argv[7]);                             // /sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams
+    TString demoplotpath = TString(argv[8]);                            // ./plot/RecoPV_demo/RecoPV_sim/INTTVtxZ_ana382_zvtx-20cm_dummyAlignParams
+    bool debug = (TString(argv[9]).Atoi() == 1) ? true : false;         //
+    bool makedemoplot = (TString(argv[10]).Atoi() == 1) ? true : false; //
 
     TString idxstr = (IsData) ? "INTT_BCO" : "event";
 
@@ -96,6 +149,12 @@ int main(int argc, char *argv[])
     {
         cout << "argv[" << i << "] = " << argv[i] << endl;
     }
+
+    // get the beamspot
+    std::vector<float> beamspot = getBeamspot(bsresfilepath.Data());
+    float beamspotx = beamspot[0];
+    float beamspoty = beamspot[1];
+    cout << "Beamspot: X = " << beamspotx << ", Y = " << beamspoty << endl;
 
     // system(Form("mkdir -p %s", outfilepath.Data()));
     if (makedemoplot)
@@ -110,9 +169,10 @@ int main(int argc, char *argv[])
     TTreeIndex *index = (TTreeIndex *)t->GetTreeIndex();
     int event, NTruthVtx;
     uint64_t INTT_BCO;
-    bool is_min_bias;
+    bool is_min_bias, InttBco_IsToBeRemoved;
     float TruthPV_trig_x, TruthPV_trig_y, TruthPV_trig_z, centrality_bimp, centrality_impactparam, centrality_mbd;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
+    vector<int> *firedTriggers = 0;
     vector<int> *ClusLayer = 0;
     vector<float> *ClusX = 0, *ClusY = 0, *ClusZ = 0, *ClusPhiSize = 0, *ClusZSize = 0;
     vector<unsigned int> *ClusAdc = 0;
@@ -127,6 +187,7 @@ int main(int argc, char *argv[])
         t->SetBranchAddress("TruthPV_trig_z", &TruthPV_trig_z);
         t->SetBranchAddress("centrality_bimp", &centrality_bimp);
         t->SetBranchAddress("centrality_impactparam", &centrality_impactparam);
+        InttBco_IsToBeRemoved = false;
     }
     t->SetBranchAddress("is_min_bias", &is_min_bias);
     t->SetBranchAddress("MBD_centrality", &centrality_mbd);
@@ -135,6 +196,11 @@ int main(int argc, char *argv[])
     t->SetBranchAddress("MBD_north_charge_sum", &mbd_north_charge_sum);
     t->SetBranchAddress("MBD_charge_sum", &mbd_charge_sum);
     t->SetBranchAddress("MBD_charge_asymm", &mbd_charge_asymm);
+    if (IsData)
+    {
+        t->SetBranchAddress("firedTriggers", &firedTriggers);
+        t->SetBranchAddress("InttBco_IsToBeRemoved", &InttBco_IsToBeRemoved);
+    }
     t->SetBranchAddress("ClusLayer", &ClusLayer);
     t->SetBranchAddress("ClusX", &ClusX);
     t->SetBranchAddress("ClusY", &ClusY);
@@ -173,15 +239,12 @@ int main(int argc, char *argv[])
             if (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4)
                 NClusLayer1_beforecut++;
 
-            if (ClusPhiSize->at(ihit) >= 5)
-                continue;
-
-            if (ClusAdc->at(ihit) < 35)
+            if (ClusAdc->at(ihit) <= 35)
                 continue;
 
             int layer = (ClusLayer->at(ihit) == 3 || ClusLayer->at(ihit) == 4) ? 0 : 1;
 
-            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), avgVtxX, avgVtxY, 0., layer);
+            Hit *hit = new Hit(ClusX->at(ihit), ClusY->at(ihit), ClusZ->at(ihit), beamspotx, beamspoty, 0., layer);
             float edge = (ClusLadderZId->at(ihit) == 0 || ClusLadderZId->at(ihit) == 2) ? 0.8 : 0.5;
             hit->SetEdge(ClusZ->at(ihit) - edge, ClusZ->at(ihit) + edge);
 
@@ -206,29 +269,25 @@ int main(int argc, char *argv[])
                 // y = mx + b
                 float m = (INTTlayer2[j]->posY() - INTTlayer1[i]->posY()) / (INTTlayer2[j]->posX() - INTTlayer1[i]->posX());
                 float b = INTTlayer1[i]->posY() - m * INTTlayer1[i]->posX();
-                // calculate the distance of closest approach from the line to (avgVtxX, avgVtxY)
-                float dca = fabs(m * avgVtxX - avgVtxY + b) / sqrt(m * m + 1);
+                // calculate the distance of closest approach from the line to (beamspotx, beamspoty)
+                float dca = fabs(m * beamspotx - beamspoty + b) / sqrt(m * m + 1);
 
                 if (dca > dca_cut)
                     continue;
 
-                float rho1 = sqrt(pow((INTTlayer1[i]->posX() - avgVtxX), 2) + pow((INTTlayer1[i]->posY() - avgVtxY), 2));
-                float rho2 = sqrt(pow((INTTlayer2[j]->posX() - avgVtxX), 2) + pow((INTTlayer2[j]->posY() - avgVtxY), 2));
+                float rho1 = sqrt(pow((INTTlayer1[i]->posX() - beamspotx), 2) + pow((INTTlayer1[i]->posY() - beamspoty), 2));
+                float rho2 = sqrt(pow((INTTlayer2[j]->posX() - beamspotx), 2) + pow((INTTlayer2[j]->posY() - beamspoty), 2));
                 float z = INTTlayer1[i]->posZ() - (INTTlayer2[j]->posZ() - INTTlayer1[i]->posZ()) / (rho2 - rho1) * rho1;
                 float edge1 = INTTlayer1[i]->Edge().first - (INTTlayer2[j]->Edge().second - INTTlayer1[i]->Edge().first) / (rho2 - rho1) * rho1;
                 float edge2 = INTTlayer1[i]->Edge().second - (INTTlayer2[j]->Edge().first - INTTlayer1[i]->Edge().second) / (rho2 - rho1) * rho1;
 
                 if (debug)
                 {
-                    cout << "----------" << endl
-                         << "Cluster pair (i,j) = (" << i << "," << j << "); position (x1,y1,z1,x2,y2,z2) mm =(" << INTTlayer1[i]->posX() * 10. << "," << INTTlayer1[i]->posY() * 10. << ","
-                         << INTTlayer1[i]->posZ() * 10. << "," << INTTlayer2[j]->posX() * 10. << "," << INTTlayer2[j]->posY() * 10. << "," << INTTlayer2[j]->posZ() * 10. << ")" << endl;
-                    cout << "Cluster [phi1 (deg),eta1,phi2(deg),eta2]=[" << INTTlayer1[i]->Phi() * radianstodegree << "," << INTTlayer1[i]->Eta() << "," << INTTlayer2[j]->Phi() * radianstodegree
-                         << "," << INTTlayer2[j]->Eta() << "]" << endl
-                         << "delta phi (in degree) = " << fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) * radianstodegree << "-> pass dPhi selection (<" << dPhi_cut
-                         << " rad)=" << ((fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) < dPhi_cut) ? 1 : 0) << endl;
+                    cout << "----------" << endl << "Cluster pair (i,j) = (" << i << "," << j << "); position (x1,y1,z1,x2,y2,z2) mm =(" << INTTlayer1[i]->posX() * 10. << "," << INTTlayer1[i]->posY() * 10. << "," << INTTlayer1[i]->posZ() * 10. << "," << INTTlayer2[j]->posX() * 10. << "," << INTTlayer2[j]->posY() * 10. << "," << INTTlayer2[j]->posZ() * 10. << ")" << endl;
+                    cout << "Cluster [phi1 (deg),eta1,phi2(deg),eta2]=[" << INTTlayer1[i]->Phi() * radianstodegree << "," << INTTlayer1[i]->Eta() << "," << INTTlayer2[j]->Phi() * radianstodegree << "," << INTTlayer2[j]->Eta() << "]" << endl
+                         << "delta phi (in degree) = " << fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) * radianstodegree << "-> pass dPhi selection (<" << dPhi_cut << " rad)=" << ((fabs(deltaPhi(INTTlayer1[i]->Phi(), INTTlayer2[j]->Phi())) < dPhi_cut) ? 1 : 0) << endl;
                     cout << "DCA cut = " << dca_cut << " [cm]; vertex candidate (center,edge1,edge2) = (" << z << "," << edge1 << "," << edge2 << "), difference = " << edge2 - edge1 << endl;
-                    cout << "dca w.r.t (avgVtxX [cm], avgVtxY [cm]) (in mm) = " << dca * 10 << endl;
+                    cout << "dca w.r.t (beamspotx [cm], beamspoty [cm]) (in mm) = " << dca * 10 << endl;
                 }
 
                 goodpaircount++;
@@ -251,7 +310,6 @@ int main(int argc, char *argv[])
                             w = 1.;
 
                         hM_vtxzprojseg->Fill(bincenter, w);
-                        // cout << "bincenter = " << bincenter << ", bincontent = " << bincontent << endl;
                     }
                 }
             }
@@ -264,23 +322,6 @@ int main(int argc, char *argv[])
 
         // find the maximum bin of the histogram hM_vtxzedge_dca[2] and fit the histogram with a Gaussian function around the maximum bin
         float maxbincenter = hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin());
-        // TF1 *f1 = new TF1("f1", "[0]*exp(-0.5*((x-[1])/[2])^2) + [3] + [4]*x + [5]*x*x + [6]*x*x*x", maxbincenter - 9, maxbincenter + 9);
-        // f1->SetParName(0, "Norm");
-        // f1->SetParName(1, "#mu");
-        // f1->SetParName(2, "#sigma");
-        // f1->SetParName(3, "p0");
-        // f1->SetParName(4, "p1");
-        // f1->SetParName(5, "p2");
-        // f1->SetParName(6, "p3");
-        // f1->SetParameter(0, hM_vtxzprojseg->GetMaximum());
-        // f1->SetParameter(1, maxbincenter);
-        // f1->SetParameter(2, 5);
-        // f1->SetParLimits(0, hM_vtxzprojseg->GetMaximum() * 0.01, hM_vtxzprojseg->GetMaximum() * 100);
-        // f1->SetParLimits(1, maxbincenter - 10, maxbincenter + 10);
-        // f1->SetParLimits(2, 0.1, 100);
-        // hM_vtxzprojseg->Fit("f1", "R");
-        // float mean = f1->GetParameter(1);
-        // float meanErr = f1->GetParError(1);
 
         TF1 *f1 = new TF1("gaus_fit", gaus_func, maxbincenter - 10, maxbincenter + 10, 4); // Gaussian + const. offset
         f1->SetParameters(hM_vtxzprojseg->GetBinContent(hM_vtxzprojseg->GetMaximumBin()), hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()), 4, 0);
@@ -295,6 +336,13 @@ int main(int argc, char *argv[])
         hM_vtxzprojseg->Fit(f1, "NQ", "", hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()) - 9, hM_vtxzprojseg->GetBinCenter(hM_vtxzprojseg->GetMaximumBin()) + 9);
         float mean = f1->GetParameter(1);
         float meanErr = f1->GetParError(1);
+        float sigma = f1->GetParameter(2);
+        float sigmaErr = f1->GetParError(2);
+
+        std::tuple<int, double, double> maxGroup = find_maxGroup(hM_vtxzprojseg);
+        int maxGroup_nbins = std::get<0>(maxGroup);
+        double maxGroup_width = std::get<1>(maxGroup);
+        double maxGroup_ratio = std::get<2>(maxGroup);
 
         if (debug)
             cout << "Event " << ev << " Reco PVz = " << mean << " +/- " << meanErr << " cm" << endl;
@@ -305,9 +353,18 @@ int main(int argc, char *argv[])
             draw_demoplot(hM_vtxzprojseg, f1, dca_cut, pname);
         }
 
+        // Vertex quality
+        bool isValidMBDZvtx = (mbd_z_vtx != mbd_z_vtx) ? false : true;
+        bool isGoodINTTGausWidth = (sigma >= 3.0 && sigma <= 8.0) ? true : false;
+        bool isMBDINTTZvtxMatch = (IsData && (mean - mbd_z_vtx > -5. && mean - mbd_z_vtx < 3.)) || (!IsData && fabs(mean - mbd_z_vtx) < 4.);
+        bool isGoodINTTGoodPeak = (maxGroup_width > 4. && maxGroup_width < 11.) ? true : false;
+
         vtxdata.isdata = IsData;
+        vtxdata.is_min_bias = is_min_bias;
+        vtxdata.isGoodVtx = isValidMBDZvtx && isGoodINTTGausWidth && isGoodINTTGoodPeak && isMBDINTTZvtxMatch;
         vtxdata.event = event;
         vtxdata.INTT_BCO = INTT_BCO;
+        vtxdata.firedTriggers = (IsData) ? *firedTriggers : vector<int>();
         if (!IsData)
         {
             vtxdata.NTruthVtx = NTruthVtx;
@@ -318,9 +375,13 @@ int main(int argc, char *argv[])
             vtxdata.Centrality_impactparam = centrality_impactparam;
         }
         vtxdata.NClusLayer1 = NClusLayer1_beforecut;
-        vtxdata.PV_x = avgVtxX;
-        vtxdata.PV_y = avgVtxY;
+        vtxdata.PV_x = beamspotx;
+        vtxdata.PV_y = beamspoty;
         vtxdata.PV_z = mean;
+        vtxdata.sigmaGaus_PVz = sigma;
+        vtxdata.sigmaGaus_err_PVz = sigmaErr;
+        vtxdata.maxGroup_ratio = maxGroup_ratio;
+        vtxdata.maxGroup_width = maxGroup_width;
         vtxdata.Centrality_mbd = centrality_mbd;
         vtxdata.mbd_south_charge_sum = mbd_south_charge_sum;
         vtxdata.mbd_north_charge_sum = mbd_north_charge_sum;
@@ -329,8 +390,11 @@ int main(int argc, char *argv[])
         vtxdata.mbd_z_vtx = mbd_z_vtx;
 
         minitree->Fill();
-        dir->cd();
-        hM_vtxzprojseg->Write();
+        if (makedemoplot)
+        {
+            dir->cd();
+            hM_vtxzprojseg->Write();
+        }
     }
 
     outfile->cd();

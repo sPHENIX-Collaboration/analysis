@@ -31,11 +31,14 @@ using namespace std;
 
 struct VtxData
 {
-    bool isdata, is_min_bias;
+    bool isdata, is_min_bias, isGoodVtx;
+    vector<int> firedTriggers;
     int event, NClusLayer1, NTruthVtx;
     uint64_t INTT_BCO;
     float TruthPV_x, TruthPV_y, TruthPV_z;
     float PV_x, PV_y, PV_z;
+    float sigmaGaus_PVz, sigmaGaus_err_PVz; // from the Gaussian fit
+    float maxGroup_ratio, maxGroup_width;   // from the max group method
     float PV_z_rand; // For acceptance correction
     float Centrality_bimp, Centrality_impactparam, Centrality_mbd;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
@@ -46,6 +49,8 @@ void SetVtxMinitree(TTree *outTree, VtxData &vtxdata)
     outTree->Branch("event", &vtxdata.event);
     outTree->Branch("INTT_BCO", &vtxdata.INTT_BCO);
     outTree->Branch("is_min_bias", &vtxdata.is_min_bias);
+    outTree->Branch("isGoodVtx", &vtxdata.isGoodVtx);
+    outTree->Branch("firedTriggers", &vtxdata.firedTriggers);
     outTree->Branch("NClusLayer1", &vtxdata.NClusLayer1);
     if (!vtxdata.isdata)
     {
@@ -65,6 +70,10 @@ void SetVtxMinitree(TTree *outTree, VtxData &vtxdata)
     outTree->Branch("PV_x", &vtxdata.PV_x);
     outTree->Branch("PV_y", &vtxdata.PV_y);
     outTree->Branch("PV_z", &vtxdata.PV_z);
+    outTree->Branch("sigmaGaus_PVz", &vtxdata.sigmaGaus_PVz);
+    outTree->Branch("sigmaGaus_err_PVz", &vtxdata.sigmaGaus_err_PVz);
+    outTree->Branch("maxGroup_ratio", &vtxdata.maxGroup_ratio);
+    outTree->Branch("maxGroup_width", &vtxdata.maxGroup_width);
 }
 
 std::map<int, vector<float>> EvtVtx_map_event(const char *vtxfname)
@@ -109,10 +118,39 @@ std::map<uint64_t, vector<float>> EvtVtx_map_inttbco(const char *vtxfname)
     return EvtVtx_map;
 }
 
-TH1F *VtxZ_ReweiHist(const char *filename = "/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/VtxZ_reweight.root")
+// Get the beamspot from file/minitree
+std::vector<float> getBeamspot(const char *fpath)
+{
+    TString mergename = Form("%s/minitree_merged.root", fpath);
+    // TString cmd = Form("hadd -f -j 20 %s %s/minitree_00*.root", mergename.Data(), fpath);
+    // system(cmd.Data());
+
+    double beamspotx, beamspoty;
+
+    TFile *f = new TFile(mergename, "READ");
+    TTree *t = (TTree *)f->Get("reco_beamspot");
+    double bs_x, bs_y;
+    t->SetBranchAddress("x", &bs_x);
+    t->SetBranchAddress("y", &bs_y);
+    int nentries = t->GetEntries();
+    for (int i = 0; i < nentries; i++)
+    {
+        t->GetEntry(i);
+        beamspotx += bs_x;
+        beamspoty += bs_y;
+    }
+    f->Close();
+
+    beamspotx /= nentries;
+    beamspoty /= nentries;
+
+    return {static_cast<float>(beamspotx), static_cast<float>(beamspoty)};
+}
+
+TH1F *VtxZ_ReweiHist(const char *filename = "/sphenix/user/hjheng/sPHENIXRepo/analysis/dNdEta_Run2023/analysis_INTT/plot/RecoPV_ana/VtxZ_reweight_HIJING_ana419_20240910.root", const char *histname = "VtxZ_reweight_VtxZm10to10")
 {
     TFile *f = new TFile(filename, "READ");
-    TH1F *h = (TH1F *)f->Get("VtxZ_reweight");
+    TH1F *h = (TH1F *)f->Get(histname);
     h->SetDirectory(0);
     f->Close();
     

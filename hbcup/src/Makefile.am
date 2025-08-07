@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
+  -isystem$(OFFLINE_MAIN)/include \
   -I$(ROOTSYS)/include
 
 AM_LDFLAGS = \
@@ -15,15 +15,15 @@ AM_LDFLAGS = \
   -lg4eval
 
 pkginclude_HEADERS = \
-  hijbkg_upc.h \
-  AnaUPC.h
+  AnaUPC.h \
+  UPCTrigStudy.h
 
 lib_LTLIBRARIES = \
   libhbcup.la
 
 libhbcup_la_SOURCES = \
-  hijbkg_upc.cc \
-  AnaUPC.cc
+  AnaUPC.cc \
+  UPCTrigStudy.cc
 
 libhbcup_la_LIBADD = \
   -L$(libdir) \

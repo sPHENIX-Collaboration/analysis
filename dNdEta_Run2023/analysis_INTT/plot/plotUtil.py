@@ -1,4 +1,4 @@
-from ROOT import *
+from ROOT import TH1F, TH2F, TFile, TCanvas, TLegend, TColor, gROOT, gSystem, TPad, gPad, gStyle, kHAlignRight, kVAlignBottom
 
 TickSize = 0.03
 AxisTitleSize = 0.05
@@ -18,20 +18,69 @@ pink_hex = '#FFC0CB'
 yellow_hex = '#ffcc66'
 cyan_hex = '#7FE9DE'
 
+def markerset(i):
+    if i == 1:
+        return [20]
+    elif i == 2:
+        return [20, 21]
+    elif i == 3:
+        return [20, 21, 33]
+    elif i == 4:
+        return [20, 21, 33, 34]
+    elif i == 5:
+        return [20, 21, 33, 34, 47]
+    elif i == 6:
+        return [20, 21, 33, 34, 47, 43]
+    elif i == 7:
+        return [20, 21, 33, 34, 47, 43, 45]
+    elif i == 8:
+        return [20, 21, 33, 34, 47, 43, 45, 49]
+    else:
+        print ("Attempt to use more than 8 markers, probably too many histograms. Set all markers to 20")
+        return [20 for _ in range(i)]
+
 def colorset(i):
     if i == 1:
-        return [blue_hex]
+        return ['#810000']
     elif i == 2:
-        return [blue_hex, red_hex]
+        return ['#810000', '#0F4C75']
     elif i == 3:
-        return [blue_hex, red_hex, green_hex]
+        return ['#810000', '#0F4C75', '#7F167F']
     elif i == 4:
-        return [blue_hex, red_hex, green_hex, orange_hex]
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E']
     elif i == 5:
-        return [blue_hex, red_hex, green_hex, orange_hex, purple_hex]
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960']
+    elif i == 6:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB']
+    elif i == 7:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66']
+    elif i == 8:
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
     else:
         print ("Attempt to use more than 5 colors")
-        return [blue_hex, red_hex, green_hex, orange_hex, purple_hex, pink_hex, yellow_hex, cyan_hex]
+        return ['#810000', '#0F4C75', '#7F167F', '#5E8B7E', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
+    
+
+def colorset2(i):
+    if i == 1:
+        return ['#f2777a']
+    elif i == 2:
+        return ['#f2777a', '#6699cc']
+    elif i == 3:
+        return ['#f2777a', '#6699cc', '#9999cc']
+    elif i == 4:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99']
+    elif i == 5:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960']
+    elif i == 6:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB']
+    elif i == 7:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66']
+    elif i == 8:
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
+    else:
+        print ("Attempt to use more than 5 colors")
+        return ['#f2777a', '#6699cc', '#9999cc', '#99cc99', '#e99960', '#FFC0CB', '#ffcc66', '#7FE9DE']
     
 
 def Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname):
@@ -83,7 +132,7 @@ def Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, ou
     leg.SetTextSize(0.04)
     leg.SetFillStyle(0)
     if IsData:
-        leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Internal", "")
         leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
     else:
         leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")
@@ -230,7 +279,7 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisN
     if ZaxisName != '':
         hist.GetZaxis().SetTitle(ZaxisName)
         hist.GetZaxis().SetTitleSize(AxisTitleSize)
-        hist.GetZaxis().SetTitleOffset(1.1)
+        hist.GetZaxis().SetTitleOffset(1.4)
         
     hist.GetXaxis().SetTitleOffset(1.1)
     hist.GetYaxis().SetTitleOffset(1.3)
@@ -238,13 +287,13 @@ def Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, ZaxisN
     hist.SetContour(1000)
     hist.Draw(drawopt)
 
-    rightshift = 0.09 if IsData else 0.1
-    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, (1-RightMargin)-rightshift, (1-TopMargin)+0.04)
+    rightshift = 0.1
+    leg = TLegend((1-RightMargin)-0.5, (1-TopMargin)+0.01, 1-gPad.GetRightMargin(), (1-TopMargin)+0.04)
     leg.SetTextAlign(kHAlignRight+kVAlignBottom)
     leg.SetTextSize(0.045)
     leg.SetFillStyle(0)
     if IsData:
-        leg.AddEntry("", "#it{#bf{sPHENIX}} Work-in-progress", "")
+        leg.AddEntry("", "#it{#bf{sPHENIX}} Internal", "")
         # leg.AddEntry("", "Au+Au #sqrt{s_{NN}}=200 GeV", "")
     else:
         leg.AddEntry("", "#it{#bf{sPHENIX}} Simulation", "")

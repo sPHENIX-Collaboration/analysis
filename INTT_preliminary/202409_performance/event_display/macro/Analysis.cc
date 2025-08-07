@@ -5,11 +5,12 @@
 /////////////////////////////////////////////////////////////////////////
 // Constractor                                                         //
 /////////////////////////////////////////////////////////////////////////
-Analysis::Analysis(int run_no, int fphx_bco, bool mag_on, bool debug = false ) :
+Analysis::Analysis(int run_no, int fphx_bco, bool mag_on, bool debug, bool is_preliminary  ) :
   run_no_( run_no ),
   fphx_bco_( fphx_bco ),
   mag_on_( mag_on ),
-  debug_( debug )
+  debug_( debug ),
+  is_preliminary_( is_preliminary )
 {
 }
 
@@ -78,6 +79,9 @@ void Analysis::InitInput()
 
   ntp_evt_ = (TNtuple*)f_input_->Get( "ntp_evt" );
   ntp_evt_->SetBranchAddress( "zv", &vertex_z_ );
+
+  bco_tree_ = (TTree*)f_input_->Get( "t_evt_bco" );
+  bco_tree_->SetBranchAddress( "bco_intt", &bco_intt_ );
   
   hepmctree_ = (TTree *)f_input_->Get( "hepmctree" );
   hepmctree_->SetBranchAddress( "m_evt"		, &m_evt_		);
@@ -120,7 +124,7 @@ void Analysis::InitOutput()
   this->InitCanvas();
   c_->cd(1);
   c_->Print( (output_pdf_+"[").c_str() );
-  c_->Print( (output_good_pdf_+"[").c_str() );
+  //  c_->Print( (output_good_pdf_+"[").c_str() );
 
 }
 void Analysis::InitCanvas()
@@ -370,9 +374,6 @@ void Analysis::ProcessEvent()
 
       ntp_clus_->GetEntry(icls); // first cluster in one event
 
-      // if( icls > 765 )
-      // 	break;
-
       clust.set(evt_, 0, x_, y_, z_, adc_, size_, lay_, x_vtx_, y_vtx_, z_vtx_ );
       event.vclus.push_back(clust);
 
@@ -462,8 +463,9 @@ void Analysis::ProcessEvent()
     {
       temp_tree_->GetEntry(ievt);
       ntp_evt_->GetEntry( ievt );
+      bco_tree_->GetEntry( ievt );
       
-      cout << Form("  -----  event %d  -----  ", ievt) << endl;
+      cout << "\r" << "event " << setw(10) << right << ievt;
       ntruth_ = 0;
       ntruth_cut_ = 0;
 	
@@ -471,7 +473,7 @@ void Analysis::ProcessEvent()
       event.ievt = ievt;
       event.mag_on = mag_on_;
       event.run_no = run_no_;
-      // event.bco_full = bco_full;
+      event.bco_intt = bco_intt_;
 
       if(ihit < ntp_clus_->GetEntries() )
         {
@@ -487,8 +489,8 @@ void Analysis::ProcessEvent()
                 }
 	      temp_evt = m_evt_;
             }
-	  cluster clust{};
 
+	  cluster clust{};
 	  clust.set(evt_, 0, x_, y_, z_, adc_, size_, lay_, x_vtx_, y_vtx_, z_vtx_ );
 	  event.vclus.push_back(clust);
 
@@ -751,11 +753,11 @@ void Analysis::ProcessEvent()
       this->ProcessEvent_Draw( event );
       
       event.clear();
-      page_counter_++;
+      event_counter_++;
 
       this->ResetVariables(); // variables need to be reset at the end of event
-      // if( ievt >200 )
-      //  	break;
+      // if( ievt >20 )
+      // 	break;
       
       // if( page_counter_ > page_num_limit_ )
       // 	break;
@@ -775,30 +777,49 @@ void Analysis::ProcessEvent_Draw( clustEvent event )
     if( page_counter_ > page_num_limit_ )
       return;
 
-    if( event.vclus.size() < 10 || event.vclus.size() > 25 )
+    double vertex_range_z = 15;
+    if( event.dca_mean[2] < -vertex_range_z || event.dca_mean[2] > vertex_range_z )
+      return;
+
+    int track_num_min = 5, track_num_max = 200;
+    int cluster_num_tolerance = 5;
+    if( event.vclus.size() < track_num_min * 2 || event.vclus.size() > track_num_max * 2 + cluster_num_tolerance )
       return;
     
-    if( event.dca_mean[2] < -10 || event.dca_mean[2] > 10 )
-      return;
-
     int good_track_num = event.GetGoodTrackNum( true, true, false ); // dca_range_cut, is_deleted, reverse
-    if( good_track_num < 5 || good_track_num > 10 )
+    if( good_track_num < track_num_min || track_num_max < good_track_num )
       return;
 
-    cout << event.vclus.size() << "\t"
+    double ratio = event.GetAssociatedClusterRatio();
+    //    if( ratio < 0.8 || 0.95 < ratio )
+    if( ratio < 0.7 || 0.95 < ratio )
+      return;
+
+    // double up_down_asymmetry = event.GetTrackUpDownAsymmetry();
+    // if( up_down_asymmetry < -0.25 || 0.25 < up_down_asymmetry )
+    //   return;
+    
+    // double left_right_asymmetry = event.GetTrackLeftRightAsymmetry();
+    // // if( left_right_asymmetry < -0.25 || 0.25 < left_right_asymmetry )
+    // //   return;
+    
+    cout << endl
+	 << "Event " << setw(10) << event_counter_ + 1 << " "
+	 << "Page " << setw(3) << page_counter_ + 1 << " "
+	 << event.vclus.size() << "\t"
 	 << good_track_num << "\t"
+	 << ratio << "\t"
 	 << event.dca_mean[2] << "\t"
-	 << endl
-      ;
+	 // << event.GetTrackUpDownAsymmetry() << "\t"
+	 // << event.GetTrackLeftRightAsymmetry()
+	 << endl;
+    
     this->InitCanvas();
     c_->cd(1);
 
-    event.draw_frame(0);
+    event.draw_frame(0, is_preliminary_);
     event.draw_intt(0);
     event.draw_clusters(0, true, kBlack);
-    
-    if (!( no_mc_ ) )
-      cout << "draw_truth" << endl;
     
     if (mag_on_)
       {
@@ -821,7 +842,7 @@ void Analysis::ProcessEvent_Draw( clustEvent event )
     // event.draw_tracklets(0, true, kGray + 1, true, true);
 
     c_->cd(2);
-    event.draw_frame(1);
+    event.draw_frame(1, is_preliminary_);
     event.draw_intt(1);
 
     // event.draw_tracklets(1, false, kGray + 1, false, false);
@@ -833,230 +854,42 @@ void Analysis::ProcessEvent_Draw( clustEvent event )
     event.draw_trackline(1, true, true, true, false);    
     
     if( page_counter_ < page_num_limit_ )
-      c_->Print( output_pdf_.c_str() );
-
-    if( event.vclus.size() > 5 
-	&& event.GetAssociatedClusterRatio() > 0.7
-	&& event.vtrack.size() > 3 
-	&& event.vtrack.size() < 15
-	&& fabs(event.dca_mean[2]) < 23
-	)
       {
-	cout << event.vclus.size() << "\t"
-	     << event.GetAssociatedClusterRatio() << "\t"
-	     << event.vtrack.size() << "\t"
-	     << event.dca_mean[0] << "\t"
-	     << event.dca_mean[1] << "\t"
-	     << event.dca_mean[2] << "\t"
-	     << endl;
-	cout << "GOOD" << endl;
-	c_->Print( output_good_pdf_.c_str() );
+	c_->Print( output_pdf_.c_str() );
 
-	string canvas_name = string("canvas_") + to_string( event.ievt );
-	f_output_->WriteTObject( c_, canvas_name.c_str() );
-	good_counter_++;
+	string output_individual = output_pdf_.substr( 0, output_pdf_.size() - 4 );
+	output_individual += "_bco_" + to_string( event.bco_intt );
+
+	if( is_preliminary_ == true )
+	  output_individual += "_preliminary.pdf";
+	else
+	  output_individual += "_internal.pdf";
+
+	cout << "individual output : " << output_individual << endl;
+	c_->Print( output_individual.c_str() );
       }
 
+    string canvas_name = string("canvas_") + to_string( event.ievt );
+    f_output_->WriteTObject( c_, canvas_name.c_str() );
+
+    page_counter_++;
   }
   
 }
 
-/*  
-void Analysis::ProcessEvent_Draw( clustEvent event )
-{
-        // drawing
-	// if (fabs(event.vclus.size() - 2 * ntrack) < 5 && /*debug_ && * / 10 < event.vclus.size() && event.vclus.size() < 50 /* && && is_geant_ &&*/ /*ievt < 500 * /)
-      // if (ievt < nloop && ievt == 56 /*&& ievt==56*/ /*&& fabs(event.dca_mean[2]) < 2. && ntrack < 20 * /)
-      {
-	if( page_counter_ > 200 )
-	  return;
-
-	// c_->cd(1);
-	// event.draw_truthline(0, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(0, true, kBlack, false, false);
-	// event.draw_clusters(0, true, kBlack);
-	// c_->Print(c_->GetName());
-	// c_->cd(2);
-	// event.draw_truthline(1, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(1, true, kBlack, false, false);
-	// event.draw_clusters(1, true, kBlack);
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// // // event.draw_truthline(0, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(0, false, kBlack, false, false);
-	// event.draw_clusters(0, true, kBlack);
-
-	// c_->cd(2);
-	// // // event.draw_truthline(1, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(1, false, kBlack, false, false);
-	// event.draw_clusters(1, true, kBlack);
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// event.draw_tracklets(0, false, kRed, true, false);
-	// // event.draw_truthline(0, true, TColor::GetColor(232, 85, 98));
-	// c_->cd(2);
-	// event.draw_tracklets(1, false, kRed, true, false);
-	// // event.draw_truthline(1, true, TColor::GetColor(232, 85, 98));
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// event.draw_tracklets(0, false, kAzure + 1, true, true);
-	// // event.draw_truthline(0, true, TColor::GetColor(232, 85, 98));
-	// c_->cd(2);
-	// event.draw_tracklets(1, false, kAzure + 1, true, true);
-	// // event.draw_truthline(1, true, TColor::GetColor(232, 85, 98));
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// event.draw_tracklets(0, false, kPink, false, true, true);
-	// // event.draw_truthline(0, true, TColor::GetColor(232, 85, 98));
-	// c_->cd(2);
-	// event.draw_tracklets(1, false, kPink, false, true, true);
-	// // event.draw_truthline(1, true, TColor::GetColor(232, 85, 98));
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// // event.draw_truthline(0, false, TColor::GetColor(232, 85, 98));
-	// event.draw_truthcurve(0, false, TColor::GetColor(232, 85, 98));
-	// // event.draw_tracklets(0, false, kGray + 1, false, false);
-	// // event.draw_tracklets(0, true, TColor::GetColor(0, 118, 186), true, true);
-	// event.draw_clusters(0, true, kBlack);
-	// // event.draw_trackcurve(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// // event.draw_trackline(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->cd(2);
-	// event.draw_truthline(1, false, TColor::GetColor(232, 85, 98));
-	// // event.draw_tracklets(1, false, kGray + 1, false, false);
-	// // event.draw_tracklets(1, true, TColor::GetColor(0, 118, 186), true, true);
-	// event.draw_clusters(1, true, kBlack);
-	// // event.draw_trackline(1, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->Print(c_->GetName());
-	// TCanvas *c0 = new TCanvas( "c0", "c0", 1200, 600);
-	// c0->Divide(2, 1);
-
-	c_->cd(1);
-	// c0->cd(1);
-	event.draw_frame(0);
-	event.draw_intt(0);
-	// event.draw_truthline(0, false, TColor::GetColor(232, 85, 98));
-	// event.draw_truthcurve(0, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(0, false, kGray + 1, false, false);
-	// event.draw_tracklets(0, true, TColor::GetColor(0, 118, 186), true, true);
-	event.draw_clusters(0, true, kBlack);
-	// event.draw_trackcurve(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	if (!( no_mc_ ))
-	  cout << "draw_truth" << endl;
-	if (mag_on_)
-	  {
-	    // if (!( no_mc_ ))
-	    //     event.draw_truthcurve(0, true, kGray + 1);
-	    // event.draw_trackcurve(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	    event.draw_trackcurve(0, true, TColor::GetColor(232, 85, 98), true, true, false);
-	  }
-	else
-	  {
-	    // if (!( no_mc_ ))
-	    //     event.draw_truthline(0, true, kGray + 1);
-	    event.draw_trackline(0, true, TColor::GetColor(232, 85, 98) /*TColor::GetColor(88, 171, 141)* /, true, true, false);
-
-	    // event.draw_truthline(0, true, TColor::GetColor(232, 85, 98));
-	  }
-	
-	// event.draw_tracklets(0, true, kGray + 1, true, true);
-	c_->cd(2);
-	// c0->cd(2);
-	event.draw_frame(1);
-	event.draw_intt(1);
-	// event.draw_tracklets(1, false, kGray + 1, false, false);
-	// event.draw_tracklets(1, true, TColor::GetColor(0, 118, 186), true, true);
-	event.draw_clusters(1, true, kBlack);
-	// if (!( no_mc_ ))
-	//     event.draw_truthline(1, true, kGray + 1);
-	event.draw_trackline(1, true, TColor::GetColor(232, 85, 98), true, true, false);
-	// event.draw_trackline(1, true, TColor::GetColor(88, 171, 141), true, true, false);
-
-	// event.draw_truthline(1, false, TColor::GetColor(232, 85, 98));
-	// event.draw_tracklets(1, true, kGray + 1, true, true);
-	// if(ievt == 56)
-	// c_->Write();
-	// c0->Write();
-
-	c_->Print(c_->GetName());
-
-	//	cout << event.vclus.size() << "\t"
-	     // << event.vtrack.size() << "\t"
-	     // << event.dca_mean[0] << "\t"
-	     // << event.dca_mean[1] << "\t"
-	     // << event.dca_mean[2] << "\t"
-	//	     << endl;
-	
-	// if( true )
-	//   c_good_->Print( c_good_->GetName() );
-	
-	/*c_->cd(1);
-	  event.draw_clusters(0, false, kBlack);
-	  if(mag_on_)
-	  {
-	  event.draw_trackcurve(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	  event.draw_truthcurve(0, true, TColor::GetColor(232, 85, 98));
-	  }
-	  else{
-	  event.draw_trackline(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	  event.draw_truthline(0, true, TColor::GetColor(232, 85, 98));
-	  }
-	  c_->cd(2);
-	  event.draw_truthline(1, false, TColor::GetColor(232, 85, 98));
-	  event.draw_clusters(1, true, kBlack);
-	  event.draw_trackline(1, true, TColor::GetColor(88, 171, 141), true, true, false);
-
-	  c_->Print(c_->GetName()); * /
-
-	// c_->cd(1);
-	// event.draw_clusters(0, false, kBlack);
-	// event.draw_trackline(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->cd(2);
-	// event.draw_clusters(1, false, kBlack);
-	// event.draw_trackline(1, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->Print(c_->GetName());
-	// c_->cd(1);
-	// event.draw_clusters(0, false, kBlack);
-	// event.draw_trackline(0, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->cd(2);
-	// event.draw_clusters(1, false, kBlack);
-	// event.draw_trackline(1, true, TColor::GetColor(88, 171, 141), true, true, false);
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// // event.draw_trackline(0, false, TColor::GetColor(88, 171, 141), true, true, false);
-	// event.draw_truthline(0, false, kRed);
-	// event.draw_clusters(0, true, kBlack);
-
-	// c_->cd(2);
-	// // event.draw_trackline(1, false, TColor::GetColor(88, 171, 141), true, true, false);
-	// event.draw_truthline(1, false,kRed);
-	// event.draw_clusters(1, true, kBlack);
-	// c_->Print(c_->GetName());
-
-	// c_->cd(1);
-	// event.draw_truthline(0, false, kBlue, true);
-	// event.draw_clusters(0, true, kBlack);
-
-	// c_->cd(2);
-	// event.draw_truthline(1, false, kBlue, true);
-	// event.draw_clusters(1, true, kBlack);
-	// c_->Print(c_->GetName());
-      }
-
-}
-*/
 void Analysis::EndProcess()
 {
   // c_->Print(c_->GetName());
   c_->Print( (output_pdf_+"]").c_str() );
-  c_->Print( (output_good_pdf_+"]").c_str() );
+  //  c_->Print( (output_good_pdf_+"]").c_str() );
   f_output_->Write();
 
+  cout << endl
+       << page_counter_ << " pages of "
+       << event_counter_ << " events "
+       << "(" << 100.0 * page_counter_ / event_counter_ << "%) "
+       << "were saved." << endl;
+  
   vector < TH1F* > h_ = {h_dcax_, h_dcay_, h_dcaz_, h_dphi_, h_dtheta_, h_dca2d_};
   for (int ihst = 0; ihst < h_.size(); ihst++)
     {

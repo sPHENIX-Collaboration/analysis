@@ -7,12 +7,8 @@ class clustEvent
 public:
   int run_no = 0;
   int ievt = 0;
-  // int bco_full = 0;
+  uint64_t bco_intt = 0;
   bool mag_on = false;
-  vector < cluster > vclus;
-  vector < truth* > vtruth;
-  vector < track* > vtrack;
-  vector<int> colorset;
 
   double dcaz_max = 9999;
   double dcaz_min = -9999;
@@ -20,6 +16,11 @@ public:
   double dca2d_min = -9999;
 
   double dca_mean[3] = {0, 0, 0};
+
+  vector < cluster > vclus;
+  vector < truth* > vtruth;
+  vector < track* > vtrack;
+  vector < int > colorset;
 
 public:
   clustEvent();
@@ -53,7 +54,9 @@ public:
 		       bool is_deleted = false,
 		       bool reverse = false );
 
-    
+  double GetTrackLeftRightAsymmetry();
+  double GetTrackUpDownAsymmetry();
+  
   int GetTruthNum()
   {
     return vtruth.size();
@@ -69,7 +72,7 @@ public:
   void charge_check();
   
   void draw_intt(int mode);
-  void draw_frame(int mode = 0);
+  void draw_frame(int mode = 0, bool is_preliminary=false );
   void draw_signature( bool is_preliminary = false );
   void draw_date();
   

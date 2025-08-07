@@ -4,14 +4,14 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, TCanvas, TFile, TGraphAsymmErrors, TLegend, TColor, gROOT, gStyle, gPad, gSystem, kTRUE, kFALSE, kBird, kThermometer, RDataFrame, TF1
 import numpy as np
 import math
 import glob
 from plotUtil import Draw_2Dhist
 
-gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
-gROOT.ProcessLine('SetsPhenixStyle()')
+# gROOT.LoadMacro('./sPHENIXStyle/sPhenixStyle.C')
+# gROOT.ProcessLine('SetsPhenixStyle()')
 gROOT.SetBatch(True)
 
 TickSize = 0.03
@@ -111,7 +111,7 @@ def Draw_HistGraph(h, xaxistitle, yaxistitle, yaxisrange, xaxisbinlabel, outname
     h.SetMarkerSize(1.5)
     h.GetXaxis().SetTitleOffset(1.2)
     h.GetXaxis().SetNdivisions(10, 0, 0, kTRUE)
-    h.GetYaxis().SetTitleOffset(1.3)
+    h.GetYaxis().SetTitleOffset(1.5)
     h.GetYaxis().SetRangeUser(yaxisrange[0], yaxisrange[1])
     # Set bin labels
     for i in range(len(xaxisbinlabel)):
@@ -208,8 +208,8 @@ def Draw_1DEffComp(leff, lcolor, logx, XaxisName, NdivisionArg, legtext, axesran
     leg.AddEntry('', '#it{#bf{sPHENIX}} Simulation', '')
     leg.AddEntry('','Au+Au #sqrt{s_{NN}}=200 GeV','')
     leg.Draw()
-    leg1 = TLegend((1-RightMargin)-0.43, BottomMargin+0.2,
-                   (1-RightMargin)-0.03, BottomMargin+0.05)
+    leg1 = TLegend((1-gPad.GetRightMargin())-0.47, gPad.GetBottomMargin()+0.04,
+                   (1-gPad.GetRightMargin())-0.05, gPad.GetBottomMargin()+0.06*len(legtext))
     leg1.SetTextSize(0.035)
     leg1.SetFillStyle(0)
     for i, eff in enumerate(leff):
@@ -225,7 +225,7 @@ def Draw_1DEffComp(leff, lcolor, logx, XaxisName, NdivisionArg, legtext, axesran
         c = 0
 
 def Draw_2Dhist_eff(hist, logx, logy, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname):
-    gStyle.SetPalette(kThermometer)
+    # gStyle.SetPalette(kThermometer)
     gStyle.SetPaintTextFormat('1.3g')
     c = TCanvas('c', 'c', 800, 700)
     if logx:
@@ -254,8 +254,9 @@ def Draw_2Dhist_eff(hist, logx, logy, logz, norm1, rmargin, XaxisName, YaxisName
     hist.GetYaxis().SetTitleOffset(1.3)
     hist.GetZaxis().SetTitleOffset(1.2)
     hist.GetZaxis().SetLabelSize(AxisLabelSize)
+    hist.GetZaxis().SetRangeUser(0, 1)
     hist.SetContour(1000)
-    hist.SetMarkerSize(0.9)
+    hist.SetMarkerSize(0.7)
     hist.Draw(drawopt)
     c.RedrawAxis()
     c.Draw()
@@ -273,30 +274,28 @@ if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog ver [options -h]")
     parser.add_option("-i", "--infiledir", dest="infiledir", default='/sphenix/user/hjheng/TrackletAna/minitree/INTT/VtxEvtMap_ana382_zvtx-20cm_dummyAlignParams', help="Input file directory")
     parser.add_option("-o", "--outdirprefix", dest="outdirprefix", default='ana382_zvtx-20cm_dummyAlignParams', help="Output file directory")
-    parser.add_option("-p", "--dphi", dest="dphi", default=0.3, help="dphi cut [degree]")
-    parser.add_option("-d", "--dca", dest="dca", default=0.15, help="dca cut [cm]")
+    
+    gStyle.SetPalette(kBird)
 
     (opt, args) = parser.parse_args()
     print('opt: {}'.format(opt)) 
 
     infiledir = opt.infiledir
     outdirprefix = opt.outdirprefix
-    dphi = float(opt.dphi)
-    dca = float(opt.dca)
-    dphitext = '{:.3f}'.format(dphi).replace('.', 'p')
-    dcadtext = '{:.3f}'.format(dca).replace('.', 'p')
 
     plotpath = './RecoPV_ana/'
     os.makedirs('{}/{}'.format(plotpath,outdirprefix), exist_ok=True)
 
     # Input file
-    fname = '{}/dphi{}deg_dca{}cm/INTTVtxZ.root'.format(infiledir, dphitext, dcadtext)
+    fname = '{}/minitree_merged.root'.format(infiledir)
+    # os.system('hadd -f -j 20 {}/minitree_merged.root {}/minitree_00*.root'.format(infiledir, infiledir))
+        
 
     # of clusters in inner layer, percentile
-    df = ROOT.RDataFrame('minitree', fname)
+    df = RDataFrame('minitree', fname).Filter('is_min_bias')
     nparr_NClusInner = df.AsNumpy(columns=['NClusLayer1'])
     NclusInner_percentile = []
-    Binedge_NclusInner_percentile = [0]
+    Binedge_NclusInner_percentile = [1]
     NclusInner_percentile_cut = [0]
     NpercentileDiv = 20
     for i in range(NpercentileDiv-1):
@@ -320,31 +319,44 @@ if __name__ == '__main__':
             sys.exit()
 
     hM_NClusInner_NtruthVtx1 = TH1F('hM_NClusInner_NtruthVtx1', 'hM_NClusInner_NtruthVtx1', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile))
+    hM_NClusInner_NtruthVtx1_absdiffle120cm = TH1F('hM_NClusInner_NtruthVtx1_absdiffle120cm', 'hM_NClusInner_NtruthVtx1_absdiffle120cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile)) # very loose cut
     hM_NClusInner_NtruthVtx1_absdiffle5cm = TH1F('hM_NClusInner_NtruthVtx1_absdiffle5cm', 'hM_NClusInner_NtruthVtx1_absdiffle5cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile))
     hM_NClusInner_NtruthVtx1_absdiffle2cm = TH1F('hM_NClusInner_NtruthVtx1_absdiffle2cm', 'hM_NClusInner_NtruthVtx1_absdiffle2cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile))
     hM_NClusInner_NtruthVtx1_absdiffle1cm = TH1F('hM_NClusInner_NtruthVtx1_absdiffle1cm', 'hM_NClusInner_NtruthVtx1_absdiffle1cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile))
-    hM_Centrality_NtruthVtx1 = TH1F('hM_Centrality_NtruthVtx1', 'hM_Centrality_NtruthVtx1', 10, 0, 10)
-    hM_Centrality_NtruthVtx1_absdiffle5cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle5cm', 'hM_Centrality_NtruthVtx1_absdiffle5cm', 10, 0, 10)
-    hM_Centrality_NtruthVtx1_absdiffle2cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle2cm', 'hM_Centrality_NtruthVtx1_absdiffle2cm', 10, 0, 10)
-    hM_Centrality_NtruthVtx1_absdiffle1cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle1cm', 'hM_Centrality_NtruthVtx1_absdiffle1cm', 10, 0, 10)
-    hM_NClusInner_TruthPVz_NtruthVtx1 = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1', 'hM_NClusInner_TruthPVz_NtruthVtx1', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 20, -45, 5)
-    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 20, -45, 5)
-    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 20, -45, 5)
-    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 20, -45, 5)
-    hM_Centrality_TruthPVz_NtruthVtx1 = TH2F('hM_Centrality_TruthPVz_NtruthVtx1', 'hM_Centrality_TruthPVz_NtruthVtx1', 10, 0, 10, 20, -45, 5)
-    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm', 10, 0, 10, 20, -45, 5)
-    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm', 10, 0, 10, 20, -45, 5)
-    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm', 10, 0, 10, 20, -45, 5)
+    hM_Centrality_NtruthVtx1 = TH1F('hM_Centrality_NtruthVtx1', 'hM_Centrality_NtruthVtx1', 10, 0, 100)
+    hM_Centrality_NtruthVtx1_absdiffle120cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle120cm', 'hM_Centrality_NtruthVtx1_absdiffle120cm', 10, 0, 100) # very loose cut
+    hM_Centrality_NtruthVtx1_absdiffle5cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle5cm', 'hM_Centrality_NtruthVtx1_absdiffle5cm', 10, 0, 100)
+    hM_Centrality_NtruthVtx1_absdiffle2cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle2cm', 'hM_Centrality_NtruthVtx1_absdiffle2cm', 10, 0, 100)
+    hM_Centrality_NtruthVtx1_absdiffle1cm = TH1F('hM_Centrality_NtruthVtx1_absdiffle1cm', 'hM_Centrality_NtruthVtx1_absdiffle1cm', 10, 0, 100)
+    hM_NClusInner_TruthPVz_NtruthVtx1 = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1', 'hM_NClusInner_TruthPVz_NtruthVtx1', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 15, -30, 30)
+    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle120cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle120cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle120cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 15, -30, 30) # very loose cut
+    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 15, -30, 30)
+    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 15, -30, 30)
+    hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm = TH2F('hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm', 'hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm', NpercentileDiv, np.asarray(Binedge_NclusInner_percentile), 15, -30, 30)
+    hM_Centrality_TruthPVz_NtruthVtx1 = TH2F('hM_Centrality_TruthPVz_NtruthVtx1', 'hM_Centrality_TruthPVz_NtruthVtx1', 10, 0, 100, 15, -30, 30)
+    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle120cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle120cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle120cm', 10, 0, 100, 15, -30, 30) # very loose cut
+    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm', 10, 0, 100, 15, -30, 30)
+    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm', 10, 0, 100, 15, -30, 30)
+    hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm = TH2F('hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm', 'hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm', 10, 0, 100, 15, -30, 30)
 
     # Loop events and fill histograms
     f = TFile(fname, 'r')
     tree = f.Get('minitree')
     for idx in range(tree.GetEntries()):
         tree.GetEntry(idx)
+        # skip MBD_centrality = nan
+        if math.isnan(tree.MBD_centrality):
+            continue
+        
+        if tree.is_min_bias == False:
+            continue
+        
         if tree.NTruthVtx == 1:
-            idx = int(((tree.Centrality_mbd / 5) - 1) / 2)
+            idx = int(((tree.MBD_centrality / 5) - 1) / 2)
             l_hM_DiffVtxZ[idx].Fill(tree.PV_z - tree.TruthPV_z)
             hM_NClusInner_NtruthVtx1.Fill(tree.NClusLayer1)
+            if abs(tree.PV_z - tree.TruthPV_z) <= 120:
+                hM_NClusInner_NtruthVtx1_absdiffle120cm.Fill(tree.NClusLayer1)
             if abs(tree.PV_z - tree.TruthPV_z) <= 5:
                 hM_NClusInner_NtruthVtx1_absdiffle5cm.Fill(tree.NClusLayer1)
             if abs(tree.PV_z - tree.TruthPV_z) <= 2:
@@ -352,16 +364,20 @@ if __name__ == '__main__':
             if abs(tree.PV_z - tree.TruthPV_z) <= 1:
                 hM_NClusInner_NtruthVtx1_absdiffle1cm.Fill(tree.NClusLayer1)
 
-            centbin = int(((tree.Centrality_mbd / 5) - 1) / 2)
-            hM_Centrality_NtruthVtx1.Fill(centbin)
+            # centbin = int(((tree.MBD_centrality / 5) - 1) / 2)
+            hM_Centrality_NtruthVtx1.Fill(tree.MBD_centrality)
+            if abs(tree.PV_z - tree.TruthPV_z) <= 120:
+                hM_Centrality_NtruthVtx1_absdiffle120cm.Fill(tree.MBD_centrality)
             if abs(tree.PV_z - tree.TruthPV_z) <= 5:
-                hM_Centrality_NtruthVtx1_absdiffle5cm.Fill(centbin)
+                hM_Centrality_NtruthVtx1_absdiffle5cm.Fill(tree.MBD_centrality)
             if abs(tree.PV_z - tree.TruthPV_z) <= 2:
-                hM_Centrality_NtruthVtx1_absdiffle2cm.Fill(centbin)
+                hM_Centrality_NtruthVtx1_absdiffle2cm.Fill(tree.MBD_centrality)
             if abs(tree.PV_z - tree.TruthPV_z) <= 1:
-                hM_Centrality_NtruthVtx1_absdiffle1cm.Fill(centbin)
+                hM_Centrality_NtruthVtx1_absdiffle1cm.Fill(tree.MBD_centrality)
 
             hM_NClusInner_TruthPVz_NtruthVtx1.Fill(tree.NClusLayer1, tree.TruthPV_z)
+            if abs(tree.PV_z - tree.TruthPV_z) <= 120:
+                hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle120cm.Fill(tree.NClusLayer1, tree.TruthPV_z)
             if abs(tree.PV_z - tree.TruthPV_z) <= 5:
                 hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm.Fill(tree.NClusLayer1, tree.TruthPV_z)
             if abs(tree.PV_z - tree.TruthPV_z) <= 2:
@@ -369,13 +385,15 @@ if __name__ == '__main__':
             if abs(tree.PV_z - tree.TruthPV_z) <= 1:
                 hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm.Fill(tree.NClusLayer1, tree.TruthPV_z)
 
-            hM_Centrality_TruthPVz_NtruthVtx1.Fill(centbin, tree.TruthPV_z)
+            hM_Centrality_TruthPVz_NtruthVtx1.Fill(tree.MBD_centrality, tree.TruthPV_z)
+            if abs(tree.PV_z - tree.TruthPV_z) <= 120:
+                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle120cm.Fill(tree.MBD_centrality, tree.TruthPV_z)
             if abs(tree.PV_z - tree.TruthPV_z) <= 5:
-                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm.Fill(centbin, tree.TruthPV_z)
+                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm.Fill(tree.MBD_centrality, tree.TruthPV_z)
             if abs(tree.PV_z - tree.TruthPV_z) <= 2:
-                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm.Fill(centbin, tree.TruthPV_z)
+                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm.Fill(tree.MBD_centrality, tree.TruthPV_z)
             if abs(tree.PV_z - tree.TruthPV_z) <= 1:
-                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm.Fill(centbin, tree.TruthPV_z)
+                hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm.Fill(tree.MBD_centrality, tree.TruthPV_z)
 
     
     l_res_vtxZ = []
@@ -383,7 +401,7 @@ if __name__ == '__main__':
     h_resolution_cent = TH1F('h_resolution_cent', 'h_resolution_cent', 10, 0, 10)
     h_bias_cent = TH1F('h_bias_cent', 'h_bias_cent', 10, 0, 10)
     for i, hist in enumerate(l_hM_DiffVtxZ):
-        mean, meanerr, sigma, sigmaerr = Draw_1Dhist_fitGaussian(hist, False, True, 50, '#Deltaz(PV_{Truth}, PV_{Reco}) [cm]', 'cm', '{}/{}/DiffVtxZ_Cent{}'.format(plotpath,outdirprefix,5*(2*i+1)))
+        mean, meanerr, sigma, sigmaerr = Draw_1Dhist_fitGaussian(hist, False, True, 50, '#Deltaz(vtx_{Truth}, vtx_{Reco}) [cm]', 'cm', '{}/{}/DiffVtxZ_Cent{}'.format(plotpath,outdirprefix,5*(2*i+1)))
         l_res_vtxZ.append(sigma)
         l_reserr_vtxZ.append(sigmaerr)
         h_bias_cent.SetBinContent(i+1, mean)
@@ -391,32 +409,39 @@ if __name__ == '__main__':
         h_resolution_cent.SetBinContent(i+1, sigma)
         h_resolution_cent.SetBinError(i+1, sigmaerr)
 
-    Draw_HistGraph(h_bias_cent, 'Centrality', '#mu_{#Deltaz}^{Gaussian} [cm]', [-0.35,0.35], ['{}-{}%'.format(10*i, 10*(i+1)) for i in range(len(l_reserr_vtxZ))], '{}/{}/VtxZBias_Cent'.format(plotpath,outdirprefix))
+    Draw_HistGraph(h_bias_cent, 'Centrality', '#mu_{#Deltaz}^{Gaussian} [cm]', [-0.1,0.1], ['{}-{}%'.format(10*i, 10*(i+1)) for i in range(len(l_reserr_vtxZ))], '{}/{}/VtxZBias_Cent'.format(plotpath,outdirprefix))
     Draw_HistGraph(h_resolution_cent, 'Centrality', '#sigma_{#Deltaz}^{Gaussian} [cm]', [0, h_resolution_cent.GetMaximum()*1.5], ['{}-{}%'.format(10*i, 10*(i+1)) for i in range(len(l_reserr_vtxZ))], '{}/{}/VtxZReolution_Cent'.format(plotpath,outdirprefix))
 
     # Efficiency
+    err_RecoPVEff_NClusInner_absdiffle60cm = TGraphAsymmErrors()
+    err_RecoPVEff_NClusInner_absdiffle60cm.Divide(hM_NClusInner_NtruthVtx1_absdiffle120cm, hM_NClusInner_NtruthVtx1)
     err_RecoPVEff_NClusInner_absdiffle5cm = TGraphAsymmErrors()
     err_RecoPVEff_NClusInner_absdiffle5cm.Divide(hM_NClusInner_NtruthVtx1_absdiffle5cm, hM_NClusInner_NtruthVtx1)
     err_RecoPVEff_NClusInner_absdiffle2cm = TGraphAsymmErrors()
     err_RecoPVEff_NClusInner_absdiffle2cm.Divide(hM_NClusInner_NtruthVtx1_absdiffle2cm, hM_NClusInner_NtruthVtx1)
     err_RecoPVEff_NClusInner_absdiffle1cm = TGraphAsymmErrors()
     err_RecoPVEff_NClusInner_absdiffle1cm.Divide(hM_NClusInner_NtruthVtx1_absdiffle1cm, hM_NClusInner_NtruthVtx1)
-    list_eff_NClusInner = [err_RecoPVEff_NClusInner_absdiffle5cm, err_RecoPVEff_NClusInner_absdiffle2cm, err_RecoPVEff_NClusInner_absdiffle1cm]
-    list_color = ['#03001C', '#035397', '#9B0000']
-    list_leg = ['|\Deltaz(PV_{Reco},PV_{Truth})|\leq5cm', '|\Deltaz(PV_{Reco},PV_{Truth})|\leq2cm', '|\Deltaz(PV_{Reco},PV_{Truth})|\leq1cm']
+    list_eff_NClusInner = [err_RecoPVEff_NClusInner_absdiffle60cm, err_RecoPVEff_NClusInner_absdiffle5cm, err_RecoPVEff_NClusInner_absdiffle2cm, err_RecoPVEff_NClusInner_absdiffle1cm]
+    list_color = ['#03001C', '#9B0000', '#035397', '#347928']
+    list_leg = ['|#Deltaz(vtx_{Reco},vtx_{Truth})|#leq120cm', '|#Deltaz(vtx_{Reco},vtx_{Truth})|#leq5cm', '|#Deltaz(vtx_{Reco},vtx_{Truth})|#leq2cm', '|#Deltaz(vtx_{Reco},vtx_{Truth})|#leq1cm']
     Draw_1DEffComp(list_eff_NClusInner, list_color, True, 'Number of clusters (inner)', [], list_leg, [0,10100,0,1.4], '{}/{}/RecoPVEff_NClusInner_EffComp'.format(plotpath,outdirprefix))
 
+    err_RecoPVEff_Centrality_absdiffle120cm = TGraphAsymmErrors()
+    err_RecoPVEff_Centrality_absdiffle120cm.Divide(hM_Centrality_NtruthVtx1_absdiffle120cm, hM_Centrality_NtruthVtx1)
+    # err_RecoPVEff_Centrality_absdiffle120cm.GetXaxis().SetMaxDigits(2)
     err_RecoPVEff_Centrality_absdiffle5cm = TGraphAsymmErrors()
     err_RecoPVEff_Centrality_absdiffle5cm.Divide(hM_Centrality_NtruthVtx1_absdiffle5cm, hM_Centrality_NtruthVtx1)
-    err_RecoPVEff_Centrality_absdiffle5cm.GetXaxis().SetMaxDigits(2)
+    # err_RecoPVEff_Centrality_absdiffle5cm.GetXaxis().SetMaxDigits(2)
     err_RecoPVEff_Centrality_absdiffle2cm = TGraphAsymmErrors()
     err_RecoPVEff_Centrality_absdiffle2cm.Divide(hM_Centrality_NtruthVtx1_absdiffle2cm, hM_Centrality_NtruthVtx1)
     err_RecoPVEff_Centrality_absdiffle1cm = TGraphAsymmErrors()
     err_RecoPVEff_Centrality_absdiffle1cm.Divide(hM_Centrality_NtruthVtx1_absdiffle1cm, hM_Centrality_NtruthVtx1)
-    list_eff_Centrality = [err_RecoPVEff_Centrality_absdiffle5cm, err_RecoPVEff_Centrality_absdiffle2cm, err_RecoPVEff_Centrality_absdiffle1cm]
-    Draw_1DEffComp(list_eff_Centrality, list_color, False, 'Centrality bin', [-10,0,0,kFALSE], list_leg, [0,10,0,1.4], '{}/{}/RecoPVEff_CentralityBin_EffComp'.format(plotpath,outdirprefix))
+    list_eff_Centrality = [err_RecoPVEff_Centrality_absdiffle120cm, err_RecoPVEff_Centrality_absdiffle5cm, err_RecoPVEff_Centrality_absdiffle2cm, err_RecoPVEff_Centrality_absdiffle1cm]
+    Draw_1DEffComp(list_eff_Centrality, list_color, False, 'Centrality', [10,0,0,kTRUE], list_leg, [0,100,0,1.4], '{}/{}/RecoPVEff_CentralityBin_EffComp'.format(plotpath,outdirprefix))
 
     # 2D efficiency
+    eff_RecoPVEff_NClusInner_TruthPVz_absdiffle120cm = hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle120cm.Clone()
+    eff_RecoPVEff_NClusInner_TruthPVz_absdiffle120cm.Divide(hM_NClusInner_TruthPVz_NtruthVtx1)
     eff_RecoPVEff_NClusInner_TruthPVz_absdiffle5cm = hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle5cm.Clone()
     eff_RecoPVEff_NClusInner_TruthPVz_absdiffle5cm.Divide(hM_NClusInner_TruthPVz_NtruthVtx1)
     eff_RecoPVEff_NClusInner_TruthPVz_absdiffle2cm = hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle2cm.Clone()
@@ -424,17 +449,25 @@ if __name__ == '__main__':
     eff_RecoPVEff_NClusInner_TruthPVz_absdiffle1cm = hM_NClusInner_TruthPVz_NtruthVtx1_absdiffle1cm.Clone()
     eff_RecoPVEff_NClusInner_TruthPVz_absdiffle1cm.Divide(hM_NClusInner_TruthPVz_NtruthVtx1)
     # Draw_2Dhist_eff(hist, logx, logy, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname)
-    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle5cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle5cm'.format(plotpath,outdirprefix))
-    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle2cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle2cm'.format(plotpath,outdirprefix))
-    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle1cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle1cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle120cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle120cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle5cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle5cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle2cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle2cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_NClusInner_TruthPVz_absdiffle1cm, True, False, False, False, 0.18, 'Number of clusters (inner)', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_NClusInner_TruthPVz_absdiffle1cm'.format(plotpath,outdirprefix))
 
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle120cm = hM_Centrality_TruthPVz_NtruthVtx1_absdiffle120cm.Clone()
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle120cm.Divide(hM_Centrality_TruthPVz_NtruthVtx1)
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle120cm.GetXaxis().SetNdivisions(10, 0, 0, kTRUE)
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle5cm = hM_Centrality_TruthPVz_NtruthVtx1_absdiffle5cm.Clone()
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle5cm.Divide(hM_Centrality_TruthPVz_NtruthVtx1)
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle5cm.GetXaxis().SetNdivisions(10, 0, 0, kTRUE)
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle2cm = hM_Centrality_TruthPVz_NtruthVtx1_absdiffle2cm.Clone()
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle2cm.Divide(hM_Centrality_TruthPVz_NtruthVtx1)
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle2cm.GetXaxis().SetNdivisions(10, 0, 0, kTRUE)
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle1cm = hM_Centrality_TruthPVz_NtruthVtx1_absdiffle1cm.Clone()
     eff_RecoPVEff_Centrality_TruthPVz_absdiffle1cm.Divide(hM_Centrality_TruthPVz_NtruthVtx1)
-    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle5cm, False, False, False, False, 0.18, 'Centrality bin', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle5cm'.format(plotpath,outdirprefix))
-    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle2cm, False, False, False, False, 0.18, 'Centrality bin', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle2cm'.format(plotpath,outdirprefix))
-    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle1cm, False, False, False, False, 0.18, 'Centrality bin', 'Truth PV_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle1cm'.format(plotpath,outdirprefix))
+    eff_RecoPVEff_Centrality_TruthPVz_absdiffle1cm.GetXaxis().SetNdivisions(10, 0, 0, kTRUE)
+    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle120cm, False, False, False, False, 0.18, 'Centrality', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle120cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle5cm, False, False, False, False, 0.18, 'Centrality', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle5cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle2cm, False, False, False, False, 0.18, 'Centrality', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle2cm'.format(plotpath,outdirprefix))
+    Draw_2Dhist_eff(eff_RecoPVEff_Centrality_TruthPVz_absdiffle1cm, False, False, False, False, 0.18, 'Centrality', 'Truth vtx_{z} [cm]', 'colz text45', '{}/{}/RecoPVEff_Centrality_TruthPVz_absdiffle1cm'.format(plotpath,outdirprefix))
     

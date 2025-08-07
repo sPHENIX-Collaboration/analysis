@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, TF1, TFile, TTree, TCanvas, TGraphErrors, TLatex, gROOT, gPad, kRed, kBlue, kGreen, kBlack, gSystem
 import numpy as np
 import math
 import glob
@@ -86,9 +86,9 @@ if __name__ == '__main__':
     
     if os.path.isfile("{}/minitree_merged.root".format(infiledir)):
         os.system("rm {}/minitree_merged.root".format(infiledir))
-        os.system("hadd -f {}/minitree_merged.root {}/minitree_00*.root".format(infiledir, infiledir))
+        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_0*.root".format(infiledir, infiledir))
     else:
-        os.system("hadd -f {}/minitree_merged.root {}/minitree_00*.root".format(infiledir, infiledir))
+        os.system("hadd -f -j 20 {}/minitree_merged.root {}/minitree_0*.root".format(infiledir, infiledir))
         
     os.makedirs('./BeamspotReco/{}'.format(plotdir), exist_ok=True)
     
@@ -119,3 +119,45 @@ if __name__ == '__main__':
     
     Draw_TGraphErrors(gr_bs_x, ('INTT BCO' if isdata else 'Sub-sample index'), 'Beamspot x [cm]', './BeamspotReco/{}/beamspot_x'.format(plotdir))
     Draw_TGraphErrors(gr_bs_y, ('INTT BCO' if isdata else 'Sub-sample index'), 'Beamspot y [cm]', './BeamspotReco/{}/beamspot_y'.format(plotdir))
+    
+    f.Close()
+    
+    # A TTree to store the beamspot reco results: average x, y
+    f_out = TFile('{}/beamspot_res.root'.format(infiledir), 'recreate')
+    t_out = TTree('minitree', 'minitree')
+    bs_x_mean = np.array([gr_bs_x.GetMean(2)], dtype='float64')
+    bs_y_mean = np.array([gr_bs_y.GetMean(2)], dtype='float64')
+    t_out.Branch('bs_x', bs_x_mean, 'bs_x/D')
+    t_out.Branch('bs_y', bs_y_mean, 'bs_y/D')
+    t_out.Fill()
+    t_out.Write()
+    f_out.Close()
+    
+    # intermediate plots
+    f_check = TFile('{}/minitree_00000.root'.format(infiledir), 'r')
+    d0phi0dist = f_check.Get('d0phi0dist')
+    d0phi0dist_bkgrm = f_check.Get('d0phi0dist_bkgrm')
+    d0phi0dist_bkgrm_prof = f_check.Get('d0phi0dist_bkgrm_prof')
+    maxgraph_rmoutl = f_check.Get('maxgraph_rmoutl')
+    
+    c = TCanvas('c', 'c', 800, 700)
+    gPad.SetRightMargin(0.12)
+    c.cd()
+    d0phi0dist.GetYaxis().SetTitle('DCA w.r.t origin [cm]')
+    d0phi0dist.GetXaxis().SetTitle('#phi_{PCA} [rad]')
+    d0phi0dist.Draw('colz')
+    c.SaveAs('./BeamspotReco/{}/d0phi0dist.png'.format(plotdir))
+    c.SaveAs('./BeamspotReco/{}/d0phi0dist.pdf'.format(plotdir))
+    c.Clear()
+    d0phi0dist_bkgrm.GetYaxis().SetTitle('DCA w.r.t origin [cm]')
+    d0phi0dist_bkgrm.GetXaxis().SetTitle('#phi_{PCA} [rad]')
+    d0phi0dist_bkgrm.Draw('colz')
+    maxgraph_rmoutl.SetMarkerColorAlpha(kRed, 0.5)
+    maxgraph_rmoutl.SetMarkerStyle(20)
+    maxgraph_rmoutl.SetMarkerSize(0.6)
+    maxgraph_rmoutl.SetLineColorAlpha(kRed, 0.5)
+    maxgraph_rmoutl.Draw('p same')
+    c.SaveAs('./BeamspotReco/{}/d0phi0dist_bkgrm_wGraphFit.png'.format(plotdir))
+    c.SaveAs('./BeamspotReco/{}/d0phi0dist_bkgrm_wGraphFit.pdf'.format(plotdir))
+    c.Clear()
+    

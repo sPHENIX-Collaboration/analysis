@@ -10,6 +10,14 @@ export ROOT_INCLUDE_PATH=$MYINSTALL/include:$ROOT_INCLUDE_PATH
 
 source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
+# $7 is the output file name
+# break up the output file name into the directory and the file name
+OUTDIR=$(dirname $7)
+if [ ! -d $OUTDIR ]; then
+    echo "$OUTDIR does not exist, creating it"
+    mkdir -p $OUTDIR
+fi
+
 # print the environment - needed for debugging
 # printenv
 # this is how you run your Fun4All_G4_sPHENIX.C macro in batch:

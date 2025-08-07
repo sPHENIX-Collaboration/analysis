@@ -37,7 +37,15 @@ string GetDataPath( int run, int mode, int fphx_bco )
   if( fphx_bco != -1 )
     data += "_FPHX_BCO_" + to_string( fphx_bco );
 
+  // if( run == 50377 )
+  //   data += "_with_gl1";
+  
   data += ".root";
+
+  if( mode == 2 && run == 50889 )
+    data += ".bak";
+  
+  cout << data << endl;
   return data;
 }
 
@@ -62,7 +70,7 @@ string GetOutputPath( int run, int mode, string suffix = ".pdf", bool is_prelimi
   if( is_preliminary == false )
     output += "_internal";
   else
-    output += "_prelimiary";
+    output += "_preliminary";
   
   output += suffix;
   return output;

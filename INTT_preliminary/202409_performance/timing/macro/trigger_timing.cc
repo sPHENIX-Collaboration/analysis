@@ -11,6 +11,7 @@ void HistSetting( T* hist )
 
 string GetDate()
 {
+  return "9/13/2024";
   
   TDatime dt;
   int year	= dt.GetYear();
@@ -43,7 +44,7 @@ void DrawWords( int run, bool is_preliminary )
 
   // sPHENIX Internal or sPHENIX Prelimnary
   pos_y -= line_height - first_margin + 0.025;
-  double pos_x = 0.55;
+  double pos_x = 0.5;
   if( is_preliminary == false )
     {
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Internal" );
@@ -51,17 +52,19 @@ void DrawWords( int run, bool is_preliminary )
   else
     {
 
-      pos_x = 0.4;
+      pos_x = 0.5;
       tex->DrawLatexNDC( pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary" );
     }
 
   // p+p 200 GeV
   pos_y -= line_height;
-  tex->DrawLatexNDC( pos_x, pos_y, "#it{p+p} 200 GeV" );
+  tex->DrawLatexNDC( pos_x, pos_y, "Run-24 #it{p+p} 200 GeV" );
 
   pos_y -= line_height;
   tex->DrawLatexNDC( pos_x, pos_y, ( string("Run ") + to_string(run)).c_str() );
 
+  pos_y -= line_height;
+  tex->DrawLatexNDC( pos_x, pos_y, "INTT Triggered mode" );
 }
 
 int GetPeakPosition( TH1D* hist )
@@ -133,10 +136,12 @@ int trigger_timing( int run = 50377, bool is_preliminary = false )
   TH1D* hist_raw = (TH1D*)tf->Get( "bco_diff" );
   
   auto hist = GetShiftedHist( hist_raw );
+  hist->SetTitle( ";Crossing relative to GTM [BCO];Counts" );
   //hist->SetLineColor( kRed );
   hist->SetFillColorAlpha( hist->GetLineColor(), 0.1 );
   HistSetting( hist );
-  hist->GetXaxis()->SetRangeUser( -1, 128 );
+  //hist->GetXaxis()->SetRangeUser( -1, 128 );
+  hist->GetXaxis()->SetRangeUser( 0, 128 );
   hist->Draw();
 
   hist_raw->SetLineColor( kGray );

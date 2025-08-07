@@ -4,6 +4,7 @@
 #include <fun4all/SubsysReco.h>
 
 #include <string>
+#include <vector>
 
 // Forward declarations
 class PHCompositeNode;
@@ -17,7 +18,8 @@ class GL1TriggerSelect : public SubsysReco
   //! destructor
   ~GL1TriggerSelect() override;
 
-  void select_trigger(unsigned int bit) { m_triggerbit = bit; }
+  void select_trigger(unsigned int bit) { m_triggerbits.push_back(bit); }
+  void add_trigger(unsigned int bit) { select_trigger(bit); }
   //! full initialization
   int Init(PHCompositeNode*) override;
 
@@ -29,7 +31,7 @@ class GL1TriggerSelect : public SubsysReco
 
  private:
 
-  unsigned int m_triggerbit = 10;
+  std::vector<unsigned int> m_triggerbits;
   int _eventcounter{0};
   int _range{1};
 

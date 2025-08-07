@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import *
+from ROOT import TH1F, TH2F, kRainBow, kBird, kHAlignRight, kVAlignBottom, kHAlignLeft, kVAlignTop, kThermometer, gROOT, gStyle
 import numpy
 import math
 import glob
@@ -30,10 +30,10 @@ if __name__ == '__main__':
     os.makedirs(plotdir, exist_ok=True)
 
     if os.path.isfile("{}/hists_merged.root".format(histdir)):
-        os.system("rm {}/hists_merged.root".format(histdir))
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
+        # os.system("rm {}/hists_merged.root".format(histdir))
+        os.system("hadd -f -j 20 {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
     else:
-        os.system("hadd {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
+        os.system("hadd -f -j 20 {}/hists_merged.root {}/hists_*.root".format(histdir, histdir))
 
     hM_ClusZ_all = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusZ_all')
     hM_ClusZ_layer1 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusZ_layer1')
@@ -41,6 +41,15 @@ if __name__ == '__main__':
     hM_ClusEtaPV_all = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_all')
     hM_ClusEtaPV_layer1 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer1')
     hM_ClusEtaPV_layer2 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer2')
+    hM_ClusEtaPV_all_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_all_ClusADCg35')
+    hM_ClusEtaPV_layer1_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer1_ClusADCg35')
+    hM_ClusEtaPV_layer2_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer2_ClusADCg35')
+    hM_ClusEtaPV_all_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_all_weiClusADCoverPhiSize')
+    hM_ClusEtaPV_layer1_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer1_weiClusADCoverPhiSize')
+    hM_ClusEtaPV_layer2_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer2_weiClusADCoverPhiSize')
+    hM_ClusEtaPV_all_ClusADCg35_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_all_ClusADCg35_weiClusADCoverPhiSize')
+    hM_ClusEtaPV_layer1_ClusADCg35_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer1_ClusADCg35_weiClusADCoverPhiSize')
+    hM_ClusEtaPV_layer2_ClusADCg35_weiClusADCoverPhiSize = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_layer2_ClusADCg35_weiClusADCoverPhiSize')
     hM_ClusPhiPV_all = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiPV_all')
     hM_ClusPhiPV_layer1 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiPV_layer1')
     hM_ClusPhiPV_layer2 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiPV_layer2')
@@ -100,14 +109,31 @@ if __name__ == '__main__':
     hM_ClusPhiSize_ClusADC_all_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiSize_ClusADC_all_zoomin')
     hM_ClusPhiSize_ClusADC_layer1_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiSize_ClusADC_layer1_zoomin')
     hM_ClusPhiSize_ClusADC_layer2_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusPhiSize_ClusADC_layer2_zoomin')
-
-    # Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname):
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_all_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_all_zoomin')
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_zoomin')
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_zoomin = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_zoomin')
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35')
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35')
+    hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35 = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35')
+    
+    hM_mutualdRcluster_all = GetHistogram('{}/hists_merged.root'.format(histdir), 'hM_mutualdRcluster_all')
+    
+    # Draw_1Dhist(hist, IsData, norm1, logy, ymaxscale, XaxisName, Ytitle_unit, outname)
     Draw_1Dhist(hM_ClusZ_all, isdata, False, False, 1.3, 'Cluster Z [cm]', 'cm', '{}/ClusZ_all'.format(plotdir))
     Draw_1Dhist(hM_ClusZ_layer1, isdata, False, False, 1.3, 'Cluster Z [cm]', 'cm', '{}/ClusZ_layer1'.format(plotdir))
     Draw_1Dhist(hM_ClusZ_layer2, isdata, False, False, 1.3, 'Cluster Z [cm]', 'cm', '{}/ClusZ_layer2'.format(plotdir))
     Draw_1Dhist(hM_ClusEtaPV_all, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all'.format(plotdir))
     Draw_1Dhist(hM_ClusEtaPV_layer1, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1'.format(plotdir))
     Draw_1Dhist(hM_ClusEtaPV_layer2, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_all_ClusADCg35, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_ClusADCg35'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer1_ClusADCg35, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_ClusADCg35'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer2_ClusADCg35, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_ClusADCg35'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_all_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_weiClusADCoverPhiSize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer1_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_weiClusADCoverPhiSize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer2_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_weiClusADCoverPhiSize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_all_ClusADCg35_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_ClusADCg35_weiClusADCoverPhiSize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer1_ClusADCg35_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_ClusADCg35_weiClusADCoverPhiSize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer2_ClusADCg35_weiClusADCoverPhiSize, isdata, False, False, 1.3, 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_ClusADCg35_weiClusADCoverPhiSize'.format(plotdir))
     Draw_1Dhist(hM_ClusPhiPV_all, isdata, False, False, 1.3, 'Cluster #phi (w.r.t PV)', '', '{}/ClusPhiPV_all'.format(plotdir))
     Draw_1Dhist(hM_ClusPhiPV_layer1, isdata, False, False, 1.3, 'Cluster #phi (w.r.t PV)', '', '{}/ClusPhiPV_layer1'.format(plotdir))
     Draw_1Dhist(hM_ClusPhiPV_layer2, isdata, False, False, 1.3, 'Cluster #phi (w.r.t PV)', '', '{}/ClusPhiPV_layer2'.format(plotdir))
@@ -121,10 +147,38 @@ if __name__ == '__main__':
     Draw_1Dhist(hM_ClusPhiSize_all, isdata, False, True, 100, 'Cluster #phi size', '', '{}/ClusPhiSize_all'.format(plotdir))
     Draw_1Dhist(hM_ClusPhiSize_layer1, isdata, False, True, 100, 'Cluster #phi size', '', '{}/ClusPhiSize_layer1'.format(plotdir))
     Draw_1Dhist(hM_ClusPhiSize_layer2, isdata, False, True, 100, 'Cluster #phi size', '', '{}/ClusPhiSize_layer2'.format(plotdir))
+    hM_ClusEtaPV_all_avgclusadcoverphisize = hM_ClusEtaPV_all_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_all_avgclusadcoverphisize')
+    hM_ClusEtaPV_layer1_avgclusadcoverphisize = hM_ClusEtaPV_layer1_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_layer1_avgclusadcoverphisize')
+    hM_ClusEtaPV_layer2_avgclusadcoverphisize = hM_ClusEtaPV_layer2_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_layer2_avgclusadcoverphisize')
+    hM_ClusEtaPV_all_avgclusadcoverphisize.Divide(hM_ClusEtaPV_all)
+    hM_ClusEtaPV_layer1_avgclusadcoverphisize.Divide(hM_ClusEtaPV_layer1)
+    hM_ClusEtaPV_layer2_avgclusadcoverphisize.Divide(hM_ClusEtaPV_layer2)
+    print (hM_ClusEtaPV_all_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_all_avgclusadcoverphisize.GetMaximumBin()))
+    # reset the histogram range
+    hM_ClusEtaPV_all_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_all_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_all_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    hM_ClusEtaPV_layer1_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_layer1_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_layer1_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    hM_ClusEtaPV_layer2_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_layer2_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_layer2_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    Draw_1Dhist(hM_ClusEtaPV_all_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_avgclusadcoverphisize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer1_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_avgclusadcoverphisize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer2_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_avgclusadcoverphisize'.format(plotdir))
+    hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize = hM_ClusEtaPV_all_ClusADCg35_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize')
+    hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize = hM_ClusEtaPV_layer1_ClusADCg35_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize')
+    hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize = hM_ClusEtaPV_layer2_ClusADCg35_weiClusADCoverPhiSize.Clone('hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize')
+    hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize.Divide(hM_ClusEtaPV_all_ClusADCg35)
+    hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize.Divide(hM_ClusEtaPV_layer1_ClusADCg35)
+    hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize.Divide(hM_ClusEtaPV_layer2_ClusADCg35)
+    hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize.GetYaxis().SetRangeUser(0, hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize.GetBinContent(hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize.GetMaximumBin())*1.3)
+    Draw_1Dhist(hM_ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_all_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer1_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
+    Draw_1Dhist(hM_ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize, isdata, False, False, 1., 'Cluster #eta (w.r.t PV)', '', '{}/ClusEtaPV_layer2_ClusADCg35_avgclusadcoverphisize'.format(plotdir))
+    
+    Draw_1Dhist(hM_mutualdRcluster_all, isdata, False, False, 1.3, 'dR(cluster, cluster)', '', '{}/mutualdRcluster_all'.format(plotdir))
 
     # Draw_2Dhist(hist, IsData, logz, norm1, rmargin, XaxisName, YaxisName, drawopt, outname)
-    # gStyle.SetPalette(kThermometer)
-    gStyle.SetPalette(kRainBow)
+    gStyle.SetPalette(kBird)
+    # gStyle.SetPalette(kRainBow)
     Draw_2Dhist(hM_ClusX_ClusY_all, isdata, False, False, 0.15, 'Cluster X [cm]', 'Cluster Y [cm]', 'Entries', 'colz', '{}/ClusX_ClusY_all'.format(plotdir))
     Draw_2Dhist(hM_ClusX_ClusY_ClusPhiSize43or46, isdata, True, False, 0.15, 'Cluster X [cm]', 'Cluster Y [cm]', 'Entries', 'colz', '{}/ClusX_ClusY_ClusPhiSize43or46'.format(plotdir))
     Draw_2Dhist(hM_ClusX_ClusY_ClusPhiSize43, isdata, True, False, 0.15, 'Cluster X [cm]', 'Cluster Y [cm]', 'Entries', 'colz', '{}/ClusX_ClusY_ClusPhiSize43'.format(plotdir))
@@ -180,3 +234,9 @@ if __name__ == '__main__':
     Draw_2Dhist(hM_ClusPhiSize_ClusADC_all_zoomin, isdata, False, False, 0.16, 'Cluster #phi size', 'Cluster ADC', 'Entries', 'colz', '{}/ClusPhiSize_ClusADC_all_zoomin'.format(plotdir))
     Draw_2Dhist(hM_ClusPhiSize_ClusADC_layer1_zoomin, isdata, False, False, 0.16, 'Cluster #phi size', 'Cluster ADC', 'Entries', 'colz', '{}/ClusPhiSize_ClusADC_layer1_zoomin'.format(plotdir))
     Draw_2Dhist(hM_ClusPhiSize_ClusADC_layer2_zoomin, isdata, False, False, 0.16, 'Cluster #phi size', 'Cluster ADC', 'Entries', 'colz', '{}/ClusPhiSize_ClusADC_layer2_zoomin'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_all_zoomin, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_all_zoomin'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_zoomin, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_layer1_zoomin'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_zoomin, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_layer2_zoomin'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_all_ClusADCg35'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_layer1_ClusADCg35'.format(plotdir))
+    Draw_2Dhist(hM_ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35, isdata, False, False, 0.16, 'Cluster #eta (w.r.t PV)', 'Cluster ADC/Cluster #phi size', 'Entries', 'colz', '{}/ClusEtaPV_ClusADCoverClusPhiSize_layer2_ClusADCg35'.format(plotdir))

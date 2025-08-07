@@ -1,6 +1,7 @@
-from ROOT import *
+from ROOT import TH1F, TH2F, TFile, TCanvas, TPad, TLegend, TColor, gROOT, TGraphErrors, TGraphAsymmErrors
 from array import array
 import os
+import math
 
 alice_etabins = [-3.50, -3.25, -3.0, -2.75, -2.5, -2.25, -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0]
 
@@ -2340,15 +2341,19 @@ def brahms_auau_0p2():
 
 def brahms_auau_0p2_divnpart2():
     # do error propagation
+    # print ("BRAHMS AuAu 0.2 TeV")
     ge = TGraphErrors(brahms_auau_0p2_size)
     ge.SetName('brahms_auau_0p2_divnpart2')
     for i in range(brahms_auau_0p2_size):
         x = brahms_auau_0p2_npart[i]
         y = brahms_auau_0p2_raw[i] / (brahms_auau_0p2_npart[i] / 2)
         # error propagation
-        yerr = y * sqrt((brahms_auau_0p2_rawerr[i] / brahms_auau_0p2_raw[i])**2 + (brahms_auau_0p2_nparterr[i] / (brahms_auau_0p2_npart[i]))**2)
+        yerr = y * math.sqrt((brahms_auau_0p2_rawerr[i] / brahms_auau_0p2_raw[i])**2 + (brahms_auau_0p2_nparterr[i] / (brahms_auau_0p2_npart[i]))**2)
         ge.SetPoint(i, x, y)
         ge.SetPointError(i, 0, yerr)
+        
+        # print x, y, yerr
+        # print ("Cent: %f, Npart: %f, dN/deta/Npart^2: %f, dN/deta/Npart^2 err: %f (%f %%)" % (brahms_auau_0p2_cent[i], x, y, yerr, 100 * yerr / y))
         
     return ge
     
@@ -2459,12 +2464,11 @@ def phenix_auau_0p0077():
 
 #--------------------------------------------------------------------------------
 def sphenix_centrality_interval():
-    # centralitybin = [0, 5, 15, 25, 35, 45, 55, 65, 75] 
-    # centralitybin = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] 
-    centralitybin = [0, 5, 10, 20, 30, 40, 50, 60, 70]
+    centralitybin = [0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
     return centralitybin
 
 def sphenix_centralitynpart():
-    centnparttable = [348.0, 290.8, 217.9, 144.7, 91.04, 52.42, 27.77, 13.78]
-    centnparterror = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    centnparttable = [359.3, 331.2, 297.0, 257.3, 219.0, 185.7, 156.0, 130.0, 107.1, 87.1, 69.5, 54.2, 41.4, 30.7, 22.1]
+    centnparterror = [2.1, 2.9, 3.2, 3.8, 4.3, 4.6, 5.0, 5.2, 5.2, 5.1, 5.0, 4.7, 4.4, 3.9, 3.3] # sPHENIX values
+    # centnparterror = [11, 10, 9, 8, 7, 7, 6, 6, 6, 6, 6, 5, 4, 3, 3] #! PHOBOS values (currently for testing)
     return centnparttable, centnparterror

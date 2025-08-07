@@ -1,6 +1,8 @@
 #ifndef TRACKLET_H
 #define TRACKLET_H
 
+#include <set>
+
 #include <TTree.h>
 
 #include "GenHadron.h"
@@ -119,26 +121,41 @@ class TrackletData
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
     bool pu0_sel, is_min_bias;
     int process; // single diffractive process
+    bool firedTrig10_MBDSNgeq2, firedTrig12_vtxle10cm, firedTrig13_vtxle30cm, MbdNSge0, MbdZvtxle10cm, validMbdVtx, InttBco_IsToBeRemoved;
 
     vector<int> cluslayer;
     vector<float> clusphi, cluseta, clusphisize, cluszsize;
     vector<unsigned int> clusadc;
 
+    vector<float> tklclus1x, tklclus1y, tklclus1z, tklclus2x, tklclus2y, tklclus2z;                     // detailed info
     vector<float> tklclus1phi, tklclus1eta, tklclus2phi, tklclus2eta, tklclus1phisize, tklclus2phisize; // 1=inner, 2=outer
     vector<unsigned int> tklclus1adc, tklclus2adc;
 
     vector<float> prototkl_eta, prototkl_phi, prototkl_deta, prototkl_dphi, prototkl_dR;
     vector<float> recotklraw_eta, recotklraw_phi, recotklraw_deta, recotklraw_dphi, recotklraw_dR;
+    vector<float> recotklraw_dca3dvtx;
 
-    // vector<float> recotklgm_eta, recotklgm_phi, recotklgm_deta, recotklgm_dphi, recotklgm_dR;
+    vector<bool> recotkl_isMatchedGChadron;
+    vector<int> recotkl_clus1_matchedtrackID, recotkl_clus2_matchedtrackID;
+    vector<int> recotkl_clus1_matchedAncestorTrackID, recotkl_clus2_matchedAncestorTrackID;
+    vector<float> recotkl_matchedPG4P_eta, recotkl_matchedPG4P_phi;
+    vector<float> recotkl_matchedGChadron_eta, recotkl_matchedGChadron_phi;
+    vector<int> matchedGChadron_trackID;
+    vector<float> matchedGChadron_pt, matchedGChadron_eta, matchedGChadron_phi;
 
-    vector<int> GenHadron_PID;
-    vector<float> GenHadron_Pt, GenHadron_eta, GenHadron_phi, GenHadron_E;
+    vector<int> G4P_trackID;
+    vector<float> G4P_Pt, G4P_eta, G4P_phi;
 
-    // vector<float> GenHadron_matched_Pt, GenHadron_matched_eta, GenHadron_matched_phi, GenHadron_matched_E;
+    vector<int> PrimaryG4P_trackID, PrimaryG4P_PID;
+    vector<float> PrimaryG4P_Pt, PrimaryG4P_eta, PrimaryG4P_phi;
+    vector<bool> PrimaryG4P_IsRecotkl;
+
+    vector<int> GenHadron_PID, GenHadron_trackID;
+    vector<float> GenHadron_Pt, GenHadron_eta, GenHadron_phi;
+    vector<bool> GenHadron_IsRecotkl;
 };
 
-void SetMinitree(TTree *outTree, TrackletData &tkldata)
+void SetMinitree(TTree *outTree, TrackletData &tkldata, bool detailed = false)
 {
     outTree->Branch("event", &tkldata.event);
     outTree->Branch("INTT_BCO", &tkldata.INTT_BCO);
@@ -156,14 +173,30 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("PV_y", &tkldata.PV_y);
     outTree->Branch("PV_z", &tkldata.PV_z);
     outTree->Branch("vtxzwei", &tkldata.vtxzwei);
+    outTree->Branch("firedTrig10_MBDSNgeq2", &tkldata.firedTrig10_MBDSNgeq2);
+    outTree->Branch("firedTrig12_vtxle10cm", &tkldata.firedTrig12_vtxle10cm);
+    outTree->Branch("firedTrig13_vtxle30cm", &tkldata.firedTrig13_vtxle30cm);
+    outTree->Branch("MbdNSge0", &tkldata.MbdNSge0);
+    outTree->Branch("MbdZvtxle10cm", &tkldata.MbdZvtxle10cm);
+    outTree->Branch("validMbdVtx", &tkldata.validMbdVtx);
+    outTree->Branch("InttBco_IsToBeRemoved", &tkldata.InttBco_IsToBeRemoved);
 
     outTree->Branch("is_min_bias", &tkldata.is_min_bias);
     outTree->Branch("clusLayer", &tkldata.cluslayer);
     outTree->Branch("clusPhi", &tkldata.clusphi);
     outTree->Branch("clusEta", &tkldata.cluseta);
     outTree->Branch("clusPhiSize", &tkldata.clusphisize);
-    outTree->Branch("clusZSize", &tkldata.cluszsize);    
+    outTree->Branch("clusZSize", &tkldata.cluszsize);
     outTree->Branch("clusADC", &tkldata.clusadc);
+    if (detailed)
+    {
+        outTree->Branch("tklclus1x", &tkldata.tklclus1x);
+        outTree->Branch("tklclus1y", &tkldata.tklclus1y);
+        outTree->Branch("tklclus1z", &tkldata.tklclus1z);
+        outTree->Branch("tklclus2x", &tkldata.tklclus2x);
+        outTree->Branch("tklclus2y", &tkldata.tklclus2y);
+        outTree->Branch("tklclus2z", &tkldata.tklclus2z);
+    }
     outTree->Branch("tklclus1Phi", &tkldata.tklclus1phi);
     outTree->Branch("tklclus1Eta", &tkldata.tklclus1eta);
     outTree->Branch("tklclus2Phi", &tkldata.tklclus2phi);
@@ -172,39 +205,45 @@ void SetMinitree(TTree *outTree, TrackletData &tkldata)
     outTree->Branch("tklclus2PhiSize", &tkldata.tklclus2phisize);
     outTree->Branch("tklclus1ADC", &tkldata.tklclus1adc);
     outTree->Branch("tklclus2ADC", &tkldata.tklclus2adc);
-    // outTree->Branch("prototkl_eta", &tkldata.prototkl_eta);
-    // outTree->Branch("prototkl_phi", &tkldata.prototkl_phi);
-    // outTree->Branch("prototkl_deta", &tkldata.prototkl_deta);
-    // outTree->Branch("prototkl_dphi", &tkldata.prototkl_dphi);
-    // outTree->Branch("prototkl_dR", &tkldata.prototkl_dR);
     outTree->Branch("recotklraw_eta", &tkldata.recotklraw_eta);
     outTree->Branch("recotklraw_phi", &tkldata.recotklraw_phi);
     outTree->Branch("recotklraw_deta", &tkldata.recotklraw_deta);
     outTree->Branch("recotklraw_dphi", &tkldata.recotklraw_dphi);
     outTree->Branch("recotklraw_dR", &tkldata.recotklraw_dR);
+    outTree->Branch("recotklraw_dca3dvtx", &tkldata.recotklraw_dca3dvtx);
 
     if (!tkldata.isdata)
     {
-        // outTree->Branch("NRecotkl_GenMatched", &tkldata.NRecotkl_GenMatched);
+        outTree->Branch("recotkl_isMatchedGChadron", &tkldata.recotkl_isMatchedGChadron);
+        outTree->Branch("recotkl_clus1_matchedtrackID", &tkldata.recotkl_clus1_matchedtrackID);
+        outTree->Branch("recotkl_clus2_matchedtrackID", &tkldata.recotkl_clus2_matchedtrackID);
+        outTree->Branch("recotkl_clus1_matchedAncestorTrackID", &tkldata.recotkl_clus1_matchedAncestorTrackID);
+        outTree->Branch("recotkl_clus2_matchedAncestorTrackID", &tkldata.recotkl_clus2_matchedAncestorTrackID);
+        outTree->Branch("matchedGChadron_pt", &tkldata.matchedGChadron_pt);
+        outTree->Branch("matchedGChadron_eta", &tkldata.matchedGChadron_eta);
+        outTree->Branch("matchedGChadron_phi", &tkldata.matchedGChadron_phi);
         outTree->Branch("TruthPV_x", &tkldata.TruthPV_x);
         outTree->Branch("TruthPV_y", &tkldata.TruthPV_y);
         outTree->Branch("TruthPV_z", &tkldata.TruthPV_z);
         outTree->Branch("pu0_sel", &tkldata.pu0_sel);
         outTree->Branch("process", &tkldata.process);
-        // outTree->Branch("recotklgm_eta", &tkldata.recotklgm_eta);
-        // outTree->Branch("recotklgm_phi", &tkldata.recotklgm_phi);
-        // outTree->Branch("recotklgm_deta", &tkldata.recotklgm_deta);
-        // outTree->Branch("recotklgm_dphi", &tkldata.recotklgm_dphi);
-        // outTree->Branch("recotklgm_dR", &tkldata.recotklgm_dR);
+        outTree->Branch("PrimaryG4P_PID", &tkldata.PrimaryG4P_PID);
+        outTree->Branch("PrimaryG4P_Pt", &tkldata.PrimaryG4P_Pt);
+        outTree->Branch("PrimaryG4P_eta", &tkldata.PrimaryG4P_eta);
+        outTree->Branch("PrimaryG4P_phi", &tkldata.PrimaryG4P_phi);
+        outTree->Branch("PrimaryG4P_IsRecotkl", &tkldata.PrimaryG4P_IsRecotkl);
         outTree->Branch("GenHadron_PID", &tkldata.GenHadron_PID);
         outTree->Branch("GenHadron_Pt", &tkldata.GenHadron_Pt);
         outTree->Branch("GenHadron_eta", &tkldata.GenHadron_eta);
         outTree->Branch("GenHadron_phi", &tkldata.GenHadron_phi);
-        outTree->Branch("GenHadron_E", &tkldata.GenHadron_E);
-        // outTree->Branch("GenHadron_matched_Pt", &tkldata.GenHadron_matched_Pt);
-        // outTree->Branch("GenHadron_matched_eta", &tkldata.GenHadron_matched_eta);
-        // outTree->Branch("GenHadron_matched_phi", &tkldata.GenHadron_matched_phi);
-        // outTree->Branch("GenHadron_matched_E", &tkldata.GenHadron_matched_E);
+        outTree->Branch("GenHadron_IsRecotkl", &tkldata.GenHadron_IsRecotkl);
+        if (detailed)
+        {
+            outTree->Branch("recotkl_matchedPG4P_eta", &tkldata.recotkl_matchedPG4P_eta);
+            outTree->Branch("recotkl_matchedPG4P_phi", &tkldata.recotkl_matchedPG4P_phi);
+            outTree->Branch("recotkl_matchedGChadron_eta", &tkldata.recotkl_matchedGChadron_eta);
+            outTree->Branch("recotkl_matchedGChadron_phi", &tkldata.recotkl_matchedGChadron_phi);
+        }
     }
 }
 
@@ -212,11 +251,19 @@ void ResetVec(TrackletData &tkldata)
 {
     for (size_t i = 0; i < tkldata.layers.size(); i++)
     {
+        for (auto &hit : tkldata.layers[i])
+        {
+            delete hit;
+        }
         CleanVec(tkldata.layers[i]);
     }
+    // delete the pointers and then clear the vector; otherwise, the memory will is not released and will cause memory leak
+    for (auto &tkl : tkldata.ProtoTkls)
+    {
+        delete tkl;
+    }
     CleanVec(tkldata.ProtoTkls);
-    CleanVec(tkldata.RecoTkls);
-    // CleanVec(tkldata.RecoTkls_GenMatched);
+    CleanVec(tkldata.RecoTkls); // Don't need to delete the reco tracklet pointers because they are just pointers to the proto tracklets
 
     CleanVec(tkldata.prototkl_eta);
     CleanVec(tkldata.prototkl_phi);
@@ -231,6 +278,12 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.cluszsize);
     CleanVec(tkldata.clusadc);
 
+    CleanVec(tkldata.tklclus1x);
+    CleanVec(tkldata.tklclus1y);
+    CleanVec(tkldata.tklclus1z);
+    CleanVec(tkldata.tklclus2x);
+    CleanVec(tkldata.tklclus2y);
+    CleanVec(tkldata.tklclus2z);
     CleanVec(tkldata.tklclus1phi);
     CleanVec(tkldata.tklclus1eta);
     CleanVec(tkldata.tklclus2phi);
@@ -245,64 +298,115 @@ void ResetVec(TrackletData &tkldata)
     CleanVec(tkldata.recotklraw_deta);
     CleanVec(tkldata.recotklraw_dphi);
     CleanVec(tkldata.recotklraw_dR);
+    CleanVec(tkldata.recotklraw_dca3dvtx);
 
-    // CleanVec(tkldata.recotklgm_eta);
-    // CleanVec(tkldata.recotklgm_phi);
-    // CleanVec(tkldata.recotklgm_deta);
-    // CleanVec(tkldata.recotklgm_dphi);
-    // CleanVec(tkldata.recotklgm_dR);
+    CleanVec(tkldata.recotkl_isMatchedGChadron);
+    CleanVec(tkldata.recotkl_clus1_matchedtrackID);
+    CleanVec(tkldata.recotkl_clus2_matchedtrackID);
+    CleanVec(tkldata.recotkl_clus1_matchedAncestorTrackID);
+    CleanVec(tkldata.recotkl_clus2_matchedAncestorTrackID);
+    CleanVec(tkldata.matchedGChadron_trackID);
+    CleanVec(tkldata.matchedGChadron_pt);
+    CleanVec(tkldata.matchedGChadron_eta);
 
+    CleanVec(tkldata.PrimaryG4P_PID);
+    CleanVec(tkldata.PrimaryG4P_trackID);
+    CleanVec(tkldata.PrimaryG4P_Pt);
+    CleanVec(tkldata.PrimaryG4P_eta);
+    CleanVec(tkldata.PrimaryG4P_phi);
+    CleanVec(tkldata.PrimaryG4P_IsRecotkl);
+
+    CleanVec(tkldata.G4P_trackID);
+    CleanVec(tkldata.G4P_Pt);
+    CleanVec(tkldata.G4P_eta);
+    CleanVec(tkldata.G4P_phi);
+
+    for (auto &genhad : tkldata.GenHadrons)
+    {
+        delete genhad;
+    }
     CleanVec(tkldata.GenHadrons);
     CleanVec(tkldata.GenHadron_PID);
+    CleanVec(tkldata.GenHadron_trackID);
     CleanVec(tkldata.GenHadron_Pt);
     CleanVec(tkldata.GenHadron_eta);
     CleanVec(tkldata.GenHadron_phi);
-    CleanVec(tkldata.GenHadron_E);
+    CleanVec(tkldata.GenHadron_IsRecotkl);
 
-    // CleanVec(tkldata.GenHadron_matched_Pt);
-    // CleanVec(tkldata.GenHadron_matched_eta);
-    // CleanVec(tkldata.GenHadron_matched_phi);
-    // CleanVec(tkldata.GenHadron_matched_E);
-    
+    CleanVec(tkldata.recotkl_matchedPG4P_eta);
+    CleanVec(tkldata.recotkl_matchedPG4P_phi);
+    CleanVec(tkldata.recotkl_matchedGChadron_eta);
+    CleanVec(tkldata.recotkl_matchedGChadron_phi);
 }
 
 bool compare_dR(Tracklet *a, Tracklet *b) { return a->dR() < b->dR(); }
 
 void ProtoTracklets(TrackletData &tkldata, float cutdr)
 {
-    float Cut_dR = cutdr; // Nominal: 0.5
+    float Cut_dR = cutdr;
 
-    int iComb = 0;
-    // Get all combinations
     for (auto ihitl1 : tkldata.layers[0])
     {
         for (auto ihitl2 : tkldata.layers[1])
         {
-            // iComb++;
-            // if (iComb % 500000 == 0)
-            //     fprintf(stderr, "processing %d of %d combinations (%.3f %%)\n", iComb, nhits1 * nhits2, (float)iComb / (nhits1 * nhits2) * 100.);
+            // float dEta = ihitl2->Eta() - ihitl1->Eta();
+            // float dPhi = deltaPhi(ihitl2->Phi(), ihitl1->Phi());
+            // float dR = sqrt(dEta * dEta + dPhi * dPhi);
 
-            float dEta = ihitl2->Eta() - ihitl1->Eta();
-            float dPhi = deltaPhi(ihitl2->Phi(), ihitl1->Phi());
-            float dR = sqrt(dEta * dEta + dPhi * dPhi);
+            Tracklet *tmptkl = new Tracklet(ihitl1, ihitl2);
 
-            if (dR < Cut_dR)
+            if (tmptkl->dR() < Cut_dR)
             {
-                Tracklet *tmptkl = new Tracklet(ihitl1, ihitl2);
                 tkldata.ProtoTkls.push_back(tmptkl);
 
-                tkldata.prototkl_eta.push_back(tmptkl->Hit1()->Eta());
-                tkldata.prototkl_phi.push_back(tmptkl->Hit1()->Phi());
-                tkldata.prototkl_deta.push_back(tmptkl->dEta());
-                tkldata.prototkl_dphi.push_back(tmptkl->dPhi());
-                tkldata.prototkl_dR.push_back(tmptkl->dR());
+                // tkldata.prototkl_eta.push_back(tmptkl->Hit1()->Eta());
+                // tkldata.prototkl_phi.push_back(tmptkl->Hit1()->Phi());
+                // tkldata.prototkl_deta.push_back(tmptkl->dEta());
+                // tkldata.prototkl_dphi.push_back(tmptkl->dPhi());
+                // tkldata.prototkl_dR.push_back(tmptkl->dR());
             }
             else
-                continue;
+            {
+                delete tmptkl;
+            }
         }
     }
 
     tkldata.NPrototkl = tkldata.ProtoTkls.size();
+}
+
+// 3D DCA calculation
+struct Point3D
+{
+    double x, y, z;
+};
+
+float computeDCA(const Point3D &p1, const Point3D &p2, const Point3D &p3) // p1 and p2 are the coordinates of clusters on tracklets, p3 is the event vertex
+{
+    // Direction vector of the line
+    float dx = p2.x - p1.x;
+    float dy = p2.y - p1.y;
+    float dz = p2.z - p1.z;
+
+    // Vector from p1 to p3
+    float vx = p3.x - p1.x;
+    float vy = p3.y - p1.y;
+    float vz = p3.z - p1.z;
+
+    float denominator = dx * dx + dy * dy + dz * dz;
+    float numerator = vx * dx + vy * dy + vz * dz;
+
+    float t = numerator / denominator; // Projection parameter
+
+    // Compute the closest point on the line
+    float x_c = p1.x + t * dx;
+    float y_c = p1.y + t * dy;
+    float z_c = p1.z + t * dz;
+
+    // Compute the Euclidean distance between p3 and the closest point
+    float dca = std::sqrt((p3.x - x_c) * (p3.x - x_c) + (p3.y - y_c) * (p3.y - y_c) + (p3.z - z_c) * (p3.z - z_c));
+
+    return dca;
 }
 
 void RecoTracklets(TrackletData &tkldata)
@@ -318,7 +422,8 @@ void RecoTracklets(TrackletData &tkldata)
         }
         else
         {
-            tkldata.RecoTkls.push_back(tkl);
+            if (!tkldata.isdata)
+                tkldata.RecoTkls.push_back(tkl);
             tkl->Hit1()->SetMatchedTkl();
             tkl->Hit2()->SetMatchedTkl();
 
@@ -328,6 +433,12 @@ void RecoTracklets(TrackletData &tkldata)
             tkldata.recotklraw_dphi.push_back(tkl->dPhi());
             tkldata.recotklraw_dR.push_back(tkl->dR());
 
+            tkldata.tklclus1x.push_back(tkl->Hit1()->posX());
+            tkldata.tklclus1y.push_back(tkl->Hit1()->posY());
+            tkldata.tklclus1z.push_back(tkl->Hit1()->posZ());
+            tkldata.tklclus2x.push_back(tkl->Hit2()->posX());
+            tkldata.tklclus2y.push_back(tkl->Hit2()->posY());
+            tkldata.tklclus2z.push_back(tkl->Hit2()->posZ());
             tkldata.tklclus1phi.push_back(tkl->Hit1()->Phi());
             tkldata.tklclus1eta.push_back(tkl->Hit1()->Eta());
             tkldata.tklclus2phi.push_back(tkl->Hit2()->Phi());
@@ -336,46 +447,166 @@ void RecoTracklets(TrackletData &tkldata)
             tkldata.tklclus2phisize.push_back(tkl->Hit2()->PhiSize());
             tkldata.tklclus1adc.push_back(tkl->Hit1()->ClusADC());
             tkldata.tklclus2adc.push_back(tkl->Hit2()->ClusADC());
+
+            // calculate DCA w.r.t the event vertex PV_x, PV_y, PV_z
+            // set up Point3D objects for the 3D DCA calculation
+            Point3D p1 = {tkl->Hit1()->posX(), tkl->Hit1()->posY(), tkl->Hit1()->posZ()};
+            Point3D p2 = {tkl->Hit2()->posX(), tkl->Hit2()->posY(), tkl->Hit2()->posZ()};
+            Point3D p3 = {tkldata.PV_x, tkldata.PV_y, tkldata.PV_z};
+            tkldata.recotklraw_dca3dvtx.push_back(computeDCA(p1, p2, p3));
         }
     }
 
-    tkldata.NRecotkl_Raw = tkldata.RecoTkls.size();
+    tkldata.NRecotkl_Raw = tkldata.recotklraw_eta.size();
 }
 
-// Not used in the current analysis
-// void GenMatch_Recotkl(TrackletData &tkldata)
-// {
-//     for (auto &tkl : tkldata.RecoTkls)
-//     {
-//         if (tkl->IsMatchedGenHadron())
-//             continue;
-//         for (auto &ghadron : tkldata.GenHadrons)
-//         {
-//             if (ghadron->IsMatchedToRecotkl() || tkl->IsMatchedGenHadron())
-//                 continue;
-//             // Matching criteria
-//             if (deltaR(tkl->Eta(), tkl->Phi(), ghadron->Eta(), ghadron->Phi()) > 0.1)
-//                 continue;
-//             else
-//             {
-//                 tkl->SetMatchedGenHardon();
-//                 ghadron->SetMatchedToRecotkl();
-//                 tkl->SetGenHadron(ghadron);
-//                 tkldata.RecoTkls_GenMatched.push_back(tkl);
-//                 tkldata.recotklgm_eta.push_back(tkl->Hit1()->Eta());
-//                 tkldata.recotklgm_phi.push_back(tkl->Hit1()->Phi());
-//                 tkldata.recotklgm_deta.push_back(tkl->dEta());
-//                 tkldata.recotklgm_dphi.push_back(tkl->dPhi());
-//                 tkldata.recotklgm_dR.push_back(tkl->dR());
-//                 tkldata.GenHadron_matched_Pt.push_back(ghadron->Pt());
-//                 tkldata.GenHadron_matched_eta.push_back(ghadron->Eta());
-//                 tkldata.GenHadron_matched_phi.push_back(ghadron->Phi());
-//                 tkldata.GenHadron_matched_E.push_back(ghadron->E());
-//             }
-//         }
-//     }
+// function to print the size of all the vectors in the TrackletData object
+void PrintVecSize(TrackletData &tkldata)
+{
+    cout << "Size of the vectors in the TrackletData object:" << endl;
+    cout << "layers[0]: " << tkldata.layers[0].size() << endl;
+    cout << "layers[1]: " << tkldata.layers[1].size() << endl;
+    cout << "ProtoTkls: " << tkldata.ProtoTkls.size() << endl;
+    cout << "RecoTkls: " << tkldata.RecoTkls.size() << endl;
+    cout << "GenHadrons: " << tkldata.GenHadrons.size() << endl;
+    cout << "cluslayer: " << tkldata.cluslayer.size() << endl;
+    cout << "clusphi: " << tkldata.clusphi.size() << endl;
+    cout << "cluseta: " << tkldata.cluseta.size() << endl;
+    cout << "clusphisize: " << tkldata.clusphisize.size() << endl;
+    cout << "cluszsize: " << tkldata.cluszsize.size() << endl;
+    cout << "clusadc: " << tkldata.clusadc.size() << endl;
+    cout << "tklclus1phi: " << tkldata.tklclus1phi.size() << endl;
+    cout << "tklclus1eta: " << tkldata.tklclus1eta.size() << endl;
+    cout << "tklclus2phi: " << tkldata.tklclus2phi.size() << endl;
+    cout << "tklclus2eta: " << tkldata.tklclus2eta.size() << endl;
+    cout << "tklclus1phisize: " << tkldata.tklclus1phisize.size() << endl;
+    cout << "tklclus2phisize: " << tkldata.tklclus2phisize.size() << endl;
+    cout << "tklclus1adc: " << tkldata.tklclus1adc.size() << endl;
+    cout << "tklclus2adc: " << tkldata.tklclus2adc.size() << endl;
+    cout << "prototkl_eta: " << tkldata.prototkl_eta.size() << endl;
+    cout << "prototkl_phi: " << tkldata.prototkl_phi.size() << endl;
+    cout << "prototkl_deta: " << tkldata.prototkl_deta.size() << endl;
+    cout << "prototkl_dphi: " << tkldata.prototkl_dphi.size() << endl;
+    cout << "prototkl_dR: " << tkldata.prototkl_dR.size() << endl;
+    cout << "recotklraw_eta: " << tkldata.recotklraw_eta.size() << endl;
+    cout << "recotklraw_phi: " << tkldata.recotklraw_phi.size() << endl;
+    cout << "recotklraw_deta: " << tkldata.recotklraw_deta.size() << endl;
+    cout << "recotklraw_dphi: " << tkldata.recotklraw_dphi.size() << endl;
+    cout << "recotklraw_dR: " << tkldata.recotklraw_dR.size() << endl;
+    cout << "GenHadron_PID: " << tkldata.GenHadron_PID.size() << endl;
+    cout << "GenHadron_Pt: " << tkldata.GenHadron_Pt.size() << endl;
+    cout << "GenHadron_eta: " << tkldata.GenHadron_eta.size() << endl;
+    cout << "GenHadron_phi: " << tkldata.GenHadron_phi.size() << endl;
+}
 
-//     tkldata.NRecotkl_GenMatched = tkldata.RecoTkls_GenMatched.size();
-// }
+// check if the two clusters in a tracklet are matched to the same G4 particle (primary charged particle, GenHadron_trackID)
+// if they are, set the matchedGChadron values in the Tracklet object
+void RecoTkl_isG4P(TrackletData &tkldata)
+{
+    // std::set for the matched G4P track ID
+    std::set<int> G4PTrackID_tklmatched;
+    std::set<int> G4PAncestorTrackID_tklmatched;
+    for (auto &tkl : tkldata.RecoTkls)
+    {
+        tkldata.recotkl_clus1_matchedtrackID.push_back(tkl->Hit1()->MatchedG4P_trackID());
+        tkldata.recotkl_clus2_matchedtrackID.push_back(tkl->Hit2()->MatchedG4P_trackID());
+        tkldata.recotkl_clus1_matchedAncestorTrackID.push_back(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+        tkldata.recotkl_clus2_matchedAncestorTrackID.push_back(tkl->Hit2()->MatchedG4P_ancestor_trackID());
+        // std::cout << "Tracklet (delta phi, delta eta, delta R) = (" << tkl->dPhi() << ", " << tkl->dEta() << ", " << tkl->dR() << ")" << std::endl;
+        // std::cout << "Tracklet cluster 1: matched G4P track ID = " << tkl->Hit1()->MatchedG4P_trackID() << " ; cluster 2: matched G4P track ID = " << tkl->Hit2()->MatchedG4P_trackID() << std::endl;
+        // std::cout << "Tracklet cluster 1: matched G4P ancestor track ID = " << tkl->Hit1()->MatchedG4P_ancestor_trackID() << " ; cluster 2: matched G4P ancestor track ID = " << tkl->Hit2()->MatchedG4P_ancestor_trackID() << std::endl //
+        //   << "--------------------------------" << std::endl;
+
+        // check if the two clusters in a tracklet are matched to the same G4 particle
+        if ((tkl->Hit1()->MatchedG4P_trackID() == tkl->Hit2()->MatchedG4P_trackID()) && (tkl->Hit1()->MatchedG4P_trackID() != std::numeric_limits<int>::max()))
+        {
+            // see if the match G4P track ID is in the G4P_trackID vector
+            auto it_pg4p = std::find(tkldata.G4P_trackID.begin(), tkldata.G4P_trackID.end(), tkl->Hit1()->MatchedG4P_trackID());
+            if (it_pg4p != tkldata.G4P_trackID.end())
+            {
+                int index = std::distance(tkldata.G4P_trackID.begin(), it_pg4p);
+                tkldata.recotkl_matchedPG4P_eta.push_back(tkldata.G4P_eta[index]);
+                tkldata.recotkl_matchedPG4P_phi.push_back(tkldata.G4P_phi[index]);
+
+                // add the matched G4P track ID to the set
+                G4PTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_trackID());
+                G4PAncestorTrackID_tklmatched.insert(tkl->Hit1()->MatchedG4P_ancestor_trackID());
+            }
+            else
+            {
+                tkldata.recotkl_matchedPG4P_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.recotkl_matchedPG4P_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+            }
+
+            // see if the matched G4P track ID is in the GenHadron_trackID vector
+            auto it_genhad = std::find(tkldata.GenHadron_trackID.begin(), tkldata.GenHadron_trackID.end(), tkl->Hit1()->MatchedG4P_trackID());
+            if (it_genhad != tkldata.GenHadron_trackID.end())
+            {
+                tkl->SetMatchedGenHardon();
+                tkldata.recotkl_isMatchedGChadron.push_back(true);
+                tkldata.matchedGChadron_pt.push_back(tkl->Hit1()->MatchedG4P_Pt());
+                tkldata.matchedGChadron_eta.push_back(tkl->Hit1()->MatchedG4P_Eta());
+                tkldata.matchedGChadron_phi.push_back(tkl->Hit1()->MatchedG4P_Phi());
+
+                tkldata.recotkl_matchedGChadron_eta.push_back(tkl->Hit1()->MatchedG4P_Eta());
+                tkldata.recotkl_matchedGChadron_phi.push_back(tkl->Hit1()->MatchedG4P_Phi());
+            }
+            else // it's not generated charged hadron
+            {
+                tkldata.recotkl_isMatchedGChadron.push_back(false);
+                // if the matched G4P track ID is not in the GenHadron_trackID vector, set the matchedGChadron values to NAN
+                tkldata.matchedGChadron_pt.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+
+                tkldata.recotkl_matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+                tkldata.recotkl_matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+            }
+        }
+        else
+        {
+            tkldata.recotkl_isMatchedGChadron.push_back(false);
+            // if the two clusters in a tracklet are not matched to the same G4 particle, set the matchedGChadron values to NAN
+            tkldata.matchedGChadron_pt.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+
+            tkldata.recotkl_matchedPG4P_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedPG4P_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedGChadron_eta.push_back(std::numeric_limits<float>::quiet_NaN());
+            tkldata.recotkl_matchedGChadron_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+        }
+    }
+
+    // Check for each element in the set if it is in the PrimaryG4P_trackID vector.
+    // If it is, set the corresponding element in PrimaryG4P_IsRecotkl to true
+    std::cout << "G4PTrackID_tklmatched size: " << G4PTrackID_tklmatched.size() << std::endl;
+    for (auto &trackID : G4PTrackID_tklmatched)
+    {
+        auto it = std::find(tkldata.PrimaryG4P_trackID.begin(), tkldata.PrimaryG4P_trackID.end(), trackID);
+        if (it != tkldata.PrimaryG4P_trackID.end())
+        {
+            int index = std::distance(tkldata.PrimaryG4P_trackID.begin(), it);
+            tkldata.PrimaryG4P_IsRecotkl[index] = true;
+        }
+    }
+
+    // Check for each element in the set if it is in the GenHadron_trackID vector.
+    // If it is, set the corresponding element in GenHadron_IsRecotkl to true
+    std::cout << "G4PAncestorTrackID_tklmatched size: " << G4PAncestorTrackID_tklmatched.size() << std::endl;
+    for (auto &trackID : G4PAncestorTrackID_tklmatched)
+    {
+        auto it = std::find(tkldata.GenHadron_trackID.begin(), tkldata.GenHadron_trackID.end(), trackID);
+        if (it != tkldata.GenHadron_trackID.end())
+        {
+            int index = std::distance(tkldata.GenHadron_trackID.begin(), it);
+            tkldata.GenHadron_IsRecotkl[index] = true;
+        }
+    }
+
+    // clear the set
+    G4PTrackID_tklmatched.clear();
+    G4PAncestorTrackID_tklmatched.clear();
+}
 
 #endif

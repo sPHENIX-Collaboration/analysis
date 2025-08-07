@@ -1,13 +1,17 @@
 #include <TNamed.h>
 #include <TH2.h>
 #include <TF1.h>
+#include <TFitResult.h>
+#include <TFitResultPtr.h>
 #include <TGraphErrors.h>
+#include <TStyle.h>
 #include <TProfile.h>
 #include <TString.h>
 #include <TList.h>
 #include <TDirectory.h>
 #include <TCanvas.h>
 #include <TLatex.h>
+#include <TBox.h>
 #include <iostream>
 #include <vector>
 #include "BinnedHistSet.h"
@@ -321,6 +325,10 @@ void BinnedHistSet::PlotAllHistsWithFits(std::string outpdfname, bool response=f
 	hist->Draw("e1 x0");
 	/* hist->Fit(func, "SQ"); */
 	/* TF1* fit1 = hist->GetFunction("fit"); */
+	if (fitfunc == "") {
+	    c1->Modified();
+	    c1->SaveAs(outpdfname.c_str());
+	}
 	if (fitfunc == "gaus") {
 	    if (response) hist->Fit("gaus", "SQ", "", 0.8, 1.3);
 	    else hist->Fit("gaus", "SQ");
@@ -403,6 +411,234 @@ void BinnedHistSet::PlotAllHistsWithFits(std::string outpdfname, bool response=f
 	    hist->GetListOfFunctions()->Clear();
 	    delete fit_latex;
 	    delete fit;
+	}
+	if (fitfunc == "mass2") {
+	    double pi0range_low = 0.08;
+	    double pi0range_high = 0.22;
+	    double etarange_low = 0.45;
+	    double etarange_high = 0.75;
+	    double pi0bkgr_low_low = 0.02;
+	    double pi0bkgr_low_high = 0.07;
+	    double pi0bkgr_high_low = 0.23;
+	    double pi0bkgr_high_high = 0.28;
+	    double etabkgr_low_low = 0.33;
+	    double etabkgr_low_high = 0.43;
+	    double etabkgr_high_low = 0.77;
+	    double etabkgr_high_high = 0.87;
+
+	    // make a dummy hist to fit the eta background, excluding the signal region
+	    TH1* htemp = (TH1*)hist->Clone("htemp");
+	    for (int j=1; j<=htemp->GetNbinsX(); j++) {
+		float bincenter = htemp->GetBinCenter(j);
+		if (bincenter > etarange_low && bincenter < etarange_high) {
+		    htemp->SetBinError(j, 1.0e18);
+		}
+	    }
+	    TF1* fit_etabkgr = new TF1("etabkgr", "[0] + [1]*x + [2]*x^2", 0.30, 1.0);
+	    TFitResultPtr fit_etabkgr_res = htemp->Fit(fit_etabkgr, "SQ", "E1", 0.30, 0.9);
+	    /* std::cout << "fit_etabkgr_res = " << fit_etabkgr_res << std::endl; */
+
+	    // make a dummy hist to fit the eta signal, after subtracting the background
+	    TH1* htemp2 = (TH1*)hist->Clone("htemp2");
+	    for (int j=1; j<=htemp2->GetNbinsX(); j++) {
+		float bincenter = htemp2->GetBinCenter(j);
+		if (bincenter > 0.40 && bincenter < 0.80) {
+		    float signal = htemp2->GetBinContent(j) - fit_etabkgr->Eval(bincenter);
+		    htemp2->SetBinContent(j, signal);
+		    htemp2->SetBinError(j, sqrt(signal));
+		}
+	    }
+	    TF1* fit_etasignal = new TF1("fit_etasignal", "[0]*exp(-0.5*((x-[1])/[2])^2)", 0.30, 1.0);
+	    fit_etasignal->SetParLimits(1, 0.40, 0.80);
+	    fit_etasignal->SetParLimits(2, 0.01, 0.25);
+	    fit_etasignal->SetParameter(1, 0.60);
+	    fit_etasignal->SetParameter(2, 0.05);
+	    TFitResultPtr fit_etasignal_res = htemp2->Fit(fit_etasignal, "SQ", "E1", 0.40, 0.80);
+	    /* std::cout << "fit_etasignal_res = " << fit_etasignal_res << std::endl; */
+	    TF1* fit_eta = new TF1("fit_eta", "[0] + [1]*x + [2]*x^2 + [3]*exp(-0.5*((x-[4])/[5])^2)", 0.30, 1.0);
+	    fit_eta->SetParameter(0, fit_etabkgr->GetParameter(0));
+	    fit_eta->SetParameter(1, fit_etabkgr->GetParameter(1));
+	    fit_eta->SetParameter(2, fit_etabkgr->GetParameter(2));
+	    fit_eta->SetParameter(3, fit_etasignal->GetParameter(0));
+	    fit_eta->SetParameter(4, fit_etasignal->GetParameter(1));
+	    fit_eta->SetParameter(5, fit_etasignal->GetParameter(2));
+
+	    // make a dummy hist to fit the pi0 background, excluding the signal region
+	    htemp = (TH1*)hist->Clone("htemp");
+	    for (int j=1; j<=htemp->GetNbinsX(); j++) {
+		float bincenter = htemp->GetBinCenter(j);
+		if (bincenter > pi0range_low && bincenter < pi0range_high) {
+		    htemp->SetBinError(j, 1.0e18);
+		}
+	    }
+	    TF1* fit_pi0bkgr = new TF1("pi0bkgr", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0.02, 0.30);
+	    TFitResultPtr fit_pi0bkgr_res = htemp->Fit(fit_pi0bkgr, "SQ", "E1", 0.02, 0.30);
+	    /* std::cout << "fit_pi0bkgr_res = " << fit_pi0bkgr_res << std::endl; */
+
+	    // make a dummy hist to fit the pi0 signal, after subtracting the background
+	    htemp2 = (TH1*)hist->Clone("htemp2");
+	    for (int j=1; j<=htemp2->GetNbinsX(); j++) {
+		float bincenter = htemp2->GetBinCenter(j);
+		if (bincenter > pi0range_low && bincenter < pi0range_high) {
+		    float signal = htemp2->GetBinContent(j) - fit_pi0bkgr->Eval(bincenter);
+		    htemp2->SetBinContent(j, signal);
+		    htemp2->SetBinError(j, sqrt(signal));
+		}
+	    }
+	    TF1* fit_pi0signal = new TF1("fit_pi0signal", "[0]*exp(-0.5*((x-[1])/[2])^2)", 0.02, 0.30);
+	    fit_pi0signal->SetParLimits(1, 0.05, 0.25);
+	    fit_pi0signal->SetParLimits(2, 0.01, 0.25);
+	    fit_pi0signal->SetParameter(1, 0.15);
+	    fit_pi0signal->SetParameter(2, 0.05);
+	    TFitResultPtr fit_pi0signal_res = htemp2->Fit(fit_pi0signal, "SQ", "E1", pi0range_low, pi0range_high);
+	    /* std::cout << "fit_pi0signal_res = " << fit_pi0signal_res << std::endl; */
+	    TF1* fit_pi0 = new TF1("fit_pi0", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*exp(-0.5*((x-[5])/[6])^2)", 0.02, 0.30);
+	    fit_pi0->SetParameter(0, fit_pi0bkgr->GetParameter(0));
+	    fit_pi0->SetParameter(1, fit_pi0bkgr->GetParameter(1));
+	    fit_pi0->SetParameter(2, fit_pi0bkgr->GetParameter(2));
+	    fit_pi0->SetParameter(3, fit_pi0bkgr->GetParameter(3));
+	    fit_pi0->SetParameter(4, fit_pi0signal->GetParameter(0));
+	    fit_pi0->SetParameter(5, fit_pi0signal->GetParameter(1));
+	    fit_pi0->SetParameter(6, fit_pi0signal->GetParameter(2));
+
+	    /* // do the pi0 fit last so hist is the most recent thing drawn */
+	    /* TF1* fit_pi0 = new TF1("fit_pi0", "[0] + [1]*x + [2]*x^2 + [3]*x^3 + [4]*exp(-0.5*((x-[5])/[6])^2)", 0.0, 1.0); */
+	    /* fit_pi0->SetParLimits(4, hist->GetMaximum()/20.0, hist->GetMaximum()*1.2); */
+	    /* fit_pi0->SetParLimits(5, 0.05, 0.35); */
+	    /* fit_pi0->SetParLimits(6, 0.01, 0.15); */
+	    /* fit_pi0->SetParameter(4, hist->GetMaximum()/2.0); */
+	    /* fit_pi0->SetParameter(5, 0.150); */
+	    /* fit_pi0->SetParameter(6, 0.025); */
+
+	    /* /1* hist->Fit(fit_pi0, "SQ", "E1", 0.05, 0.45); *1/ */
+	    /* TFitResultPtr fit_pi0_res = hist->Fit(fit_pi0, "SQ", "E1", 0.02, 0.29); */
+	    /* /1* gStyle->SetOptFit(1100); *1/ */
+	    /* gStyle->SetOptFit(0); */
+	    /* mean = fit_pi0->GetParameter(5); */
+	    /* stddev = fit_pi0->GetParameter(6); */
+	    /* fit_pi0->SetLineColor(kRed); */
+	    /* TF1* pi0signal = new TF1("pi0signal", "[0]*exp(-0.5*((x-[1])/[2])^2)", 0.02, 0.29); */
+	    /* TF1* pi0background = new TF1("pi0background", "[0] + [1]*x + [2]*x^2 + [3]*x^3", 0.02, 0.29); */
+	    /* for (int i=0; i<4; i++) { */
+		/* pi0background->SetParameter(i, fit_pi0->GetParameter(i)); */
+		/* pi0background->SetParError(i, fit_pi0->GetParError(i)); */
+		/* if (i<3) { */
+		    /* pi0signal->SetParameter(i, fit_pi0->GetParameter(i+4)); */
+		    /* pi0signal->SetParError(i, fit_pi0->GetParError(i+4)); */
+		/* } */
+	    /* } */
+	    /* pi0signal->SetLineColor(kBlue); */
+	    /* pi0background->SetLineColor(kGreen); */
+	    /* pi0background->SetLineStyle(kDashed); */
+	    hist->Draw("x0 e1");
+	    c1->Modified();
+	    c1->Update();
+	    double ymin = c1->GetUymin();
+	    double ymax = c1->GetUymax();
+	    hist->Print();
+	    std::cout << Form("ymin = %f, ymax = %f\n", ymin, ymax);
+	    fit_eta->SetLineColor(kRed);
+	    fit_etasignal->SetLineColor(kBlue);
+	    fit_etabkgr->SetLineColor(kGreen);
+	    fit_etabkgr->SetLineStyle(kDashed);
+	    fit_eta->Draw("same");
+	    fit_etasignal->Draw("same");
+	    fit_etabkgr->Draw("same");
+	    /* pi0signal->Draw("same"); */
+	    /* pi0background->Draw("same"); */
+	    /* fit->Draw("same"); */
+	    fit_pi0->SetLineColor(kRed);
+	    fit_pi0signal->SetLineColor(kBlue);
+	    fit_pi0bkgr->SetLineColor(kGreen);
+	    fit_pi0bkgr->SetLineStyle(kDashed);
+	    fit_pi0->Draw("same");
+	    fit_pi0signal->Draw("same");
+	    fit_pi0bkgr->Draw("same");
+
+	    TLatex* fit_pi0_latex = new TLatex(0.25, 0.8, "blaahhh");
+	    /* fit_pi0_latex->SetTextSize(fit_pi0_latex->GetTextSize()/1.25); */
+	    fit_pi0_latex->SetTextColor(kBlue);
+	    fit_pi0_latex->SetTextAlign(21);
+	    fit_pi0_latex->DrawLatexNDC(0.35, 0.80, Form("#splitline{#mu=%.5f#pm%.5f}{#sigma=%.5f#pm%.5f}", fit_pi0->GetParameter(5), fit_pi0->GetParError(5), fit_pi0->GetParameter(6), fit_pi0->GetParError(6)));
+
+	    TLatex* fit_eta_latex = new TLatex(0.25, 0.8, "blaahhh");
+	    /* fit_eta_latex->SetTextSize(fit_eta_latex->GetTextSize()/1.25); */
+	    fit_eta_latex->SetTextColor(kBlue);
+	    fit_eta_latex->SetTextAlign(21);
+	    fit_eta_latex->DrawLatexNDC(0.65, 0.50, Form("#splitline{#mu=%.4f#pm%.4f}{#sigma=%.4f#pm%.4f}", fit_etasignal->GetParameter(1), fit_etasignal->GetParError(1), fit_etasignal->GetParameter(2), fit_etasignal->GetParError(2)));
+
+
+	    double pi0signal_int = fit_pi0signal->Integral(pi0range_low, pi0range_high);
+	    double pi0signal_int_err = 0.0;
+	    if (fit_pi0signal_res != -1) pi0signal_int_err = fit_pi0signal->IntegralError(pi0range_low, pi0range_high, fit_pi0signal_res->GetParams(), fit_pi0signal_res->GetCovarianceMatrix().GetMatrixArray());
+	    double pi0background_int = fit_pi0bkgr->Integral(pi0range_low, pi0range_high);
+	    double pi0background_int_err = 0.0;
+	    if (fit_pi0bkgr_res != -1) pi0background_int_err = fit_pi0bkgr->IntegralError(pi0range_low, pi0range_high, fit_pi0bkgr_res->GetParams(), fit_pi0bkgr_res->GetCovarianceMatrix().GetMatrixArray());
+	    double etasignal_int = fit_etasignal->Integral(etarange_low, etarange_high);
+	    double etasignal_int_err = 0.0;
+	    if (fit_etasignal_res != -1) etasignal_int_err = fit_etasignal->IntegralError(etarange_low, etarange_high, fit_etasignal_res->GetParams(), fit_etasignal_res->GetCovarianceMatrix().GetMatrixArray());
+	    double etabackground_int = fit_etabkgr->Integral(etarange_low, etarange_high);
+	    double etabackground_int_err = 0.0;
+	    if (fit_etabkgr_res != -1) etabackground_int_err = fit_etabkgr->IntegralError(etarange_low, etarange_high, fit_etabkgr_res->GetParams(), fit_etabkgr_res->GetCovarianceMatrix().GetMatrixArray());
+	    double pi0_bkgr_fraction = pi0background_int / (pi0signal_int+pi0background_int);
+	    double pi0_sum = pi0signal_int + pi0background_int;
+	    double pi0_err1 = pi0background_int*pi0signal_int_err;
+	    double pi0_err2 = pi0background_int_err*pi0signal_int;
+	    double pi0_bkgr_fraction_err = sqrt((pi0_err1*pi0_err1) + (pi0_err2*pi0_err2))/(pi0_sum*pi0_sum);
+	    /* std::cout << Form("Greg info: pi0background_int = %f, pi0background_int_err = %f\n", pi0background_int, pi0background_int_err); */
+	    /* std::cout << Form("Greg info: pi0signal_int = %f, pi0signal_int_err = %f\n", pi0signal_int, pi0signal_int_err); */
+	    /* std::cout << Form("Greg info: dr = 1/(%f)^2 * sqrt( (%f)^2 + (%f)^2 )\n", pi0_sum, pi0_err1, pi0_err2); */
+	    double eta_bkgr_fraction = etabackground_int / (etasignal_int+etabackground_int);
+	    double eta_sum = etasignal_int + etabackground_int;
+	    double eta_err1 = etabackground_int*etasignal_int_err;
+	    double eta_err2 = etabackground_int_err*etasignal_int;
+	    double eta_bkgr_fraction_err = sqrt((eta_err1*eta_err1) + (eta_err2*eta_err2))/(eta_sum*eta_sum);
+	    /* std::cout << Form("Greg info: etabackground_int = %f, etabackground_int_err = %f\n", etabackground_int, etabackground_int_err); */
+	    /* std::cout << Form("Greg info: etasignal_int = %f, etasignal_int_err = %f\n", etasignal_int, etasignal_int_err); */
+	    /* double eta_bkgr_fraction = etabackground_int / (etasignal_int+etabackground_int); */
+	    
+	    fit_pi0_latex->DrawLatexNDC(0.35, 0.65, Form("r = %.5f#pm%0.5f", pi0_bkgr_fraction, pi0_bkgr_fraction_err));
+	    fit_eta_latex->DrawLatexNDC(0.65, 0.35, Form("r = %.5f#pm%0.5f", eta_bkgr_fraction, eta_bkgr_fraction_err));
+	    
+	    TBox* box_pi0 = new TBox(pi0range_low, ymin, pi0range_high, ymax);
+	    box_pi0->SetLineColorAlpha(2, 0.5);
+	    box_pi0->SetLineStyle(kDotted);
+	    box_pi0->SetFillColorAlpha(2, 0.35);
+	    box_pi0->Draw("same");
+	    TBox* box_eta = new TBox(etarange_low, ymin, etarange_high, ymax);
+	    box_eta->SetLineColorAlpha(4, 0.5);
+	    box_eta->SetLineStyle(kDotted);
+	    box_eta->SetFillColorAlpha(4, 0.35);
+	    box_eta->Draw("same");
+
+	    TBox* box_pi0bkgr_low = new TBox(pi0bkgr_low_low, ymin, pi0bkgr_low_high, ymax);
+	    box_pi0bkgr_low->SetLineColorAlpha(46, 0.5);
+	    box_pi0bkgr_low->SetLineStyle(kDotted);
+	    box_pi0bkgr_low->SetFillColorAlpha(46, 0.35);
+	    box_pi0bkgr_low->Draw("same");
+	    TBox* box_pi0bkgr_high = new TBox(pi0bkgr_high_low, ymin, pi0bkgr_high_high, ymax);
+	    box_pi0bkgr_high->SetLineColorAlpha(46, 0.5);
+	    box_pi0bkgr_high->SetLineStyle(kDotted);
+	    box_pi0bkgr_high->SetFillColorAlpha(46, 0.35);
+	    box_pi0bkgr_high->Draw("same");
+	    TBox* box_etabkgr_low = new TBox(etabkgr_low_low, ymin, etabkgr_low_high, ymax);
+	    box_etabkgr_low->SetLineColorAlpha(38, 0.5);
+	    box_etabkgr_low->SetLineStyle(kDotted);
+	    box_etabkgr_low->SetFillColorAlpha(38, 0.35);
+	    box_etabkgr_low->Draw("same");
+	    TBox* box_etabkgr_high = new TBox(etabkgr_high_low, ymin, etabkgr_high_high, ymax);
+	    box_etabkgr_high->SetLineColorAlpha(38, 0.5);
+	    box_etabkgr_high->SetLineStyle(kDotted);
+	    box_etabkgr_high->SetFillColorAlpha(38, 0.35);
+	    box_etabkgr_high->Draw("same");
+
+	    c1->Modified();
+	    c1->SaveAs(outpdfname.c_str());
+	    hist->GetListOfFunctions()->Clear();
+	    delete fit_pi0_latex; delete fit_eta_latex;
+	    delete fit_pi0; delete fit_pi0signal; delete fit_pi0bkgr;
+	    delete fit_eta; delete fit_etabkgr; delete fit_etasignal;
+	    delete htemp; delete htemp2;
 	}
     }
     delete c1;

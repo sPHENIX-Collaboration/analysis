@@ -39,6 +39,7 @@ int Fun4All_Intt_Correlation( int run_num = 50889,
     }
   else if( run_num == 50377 ) // triggered mode
     {
+      //in->fileopen( "results/DST_physics_gl1_intt-00050377_no_hot.root" );
       in->fileopen( "results/DST_physics_intt-00050377_no_hot.root" );
       skip_num = 150000;
     }

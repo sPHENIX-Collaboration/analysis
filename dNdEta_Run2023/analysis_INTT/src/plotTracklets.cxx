@@ -32,14 +32,14 @@ void makehist(TString infname, TString outfname)
 
     // not zvtx weighted
     TH1F *hM_clusphi = new TH1F("hM_clusphi", "hM_clusphi", 140, -3.5, 3.5);
-    TH1F *hM_cluseta = new TH1F("hM_cluseta", "hM_cluseta", 160, -4, 4);
+    TH1F *hM_cluseta = new TH1F("hM_cluseta", "hM_cluseta", 80, -4, 4);
     TH1F *hM_clusphisize = new TH1F("hM_clusphisize", "hM_clusphisize", 80, 0, 80);
     TH1F *hM_clusadc = new TH1F("hM_clusadc", "hM_clusadc", 200, 0, 20000);
     TH2F *hM_clusphi_clusphisize = new TH2F("hM_clusphi_clusphisize", "hM_clusphi_clusphisize", 140, -3.5, 3.5, 80, 0, 80);
     TH2F *hM_cluseta_clusphisize = new TH2F("hM_cluseta_clusphisize", "hM_cluseta_clusphisize", 160, -4, 4, 80, 0, 80);
     // zvtx weighted
     TH1F *hM_clusphi_zvtxwei = new TH1F("hM_clusphi_zvtxwei", "hM_clusphi_zvtxwei", 140, -3.5, 3.5);
-    TH1F *hM_cluseta_zvtxwei = new TH1F("hM_cluseta_zvtxwei", "hM_cluseta_zvtxwei", 160, -4, 4);
+    TH1F *hM_cluseta_zvtxwei = new TH1F("hM_cluseta_zvtxwei", "hM_cluseta_zvtxwei", 80, -4, 4);
     TH1F *hM_clusphisize_zvtxwei = new TH1F("hM_clusphisize_zvtxwei", "hM_clusphisize_zvtxwei", 80, 0, 80);
     TH2F *hM_clusphi_clusphisize_zvtxwei = new TH2F("hM_clusphi_clusphisize_zvtxwei", "hM_clusphi_clusphisize_zvtxwei", 140, -3.5, 3.5, 80, 0, 80);
     TH2F *hM_cluseta_clusphisize_zvtxwei = new TH2F("hM_cluseta_clusphisize_zvtxwei", "hM_cluseta_clusphisize_zvtxwei", 160, -4, 4, 80, 0, 80);
@@ -55,24 +55,25 @@ void makehist(TString infname, TString outfname)
 
     TH1F *hM_dEta_reco = new TH1F("hM_dEta_reco", "hM_dEta_reco", 200, -3, 3);
     TH1F *hM_dEta_reco_altrange = new TH1F("hM_dEta_reco_altrange", "hM_dEta_reco_altrange", 100, -0.5, 0.5);
-    TH1F *hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 100, -0.5, 0.5);
+    TH1F *hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 100, -0.5, 0.5);
     TH1F *hM_dPhi_reco = new TH1F("hM_dPhi_reco", "hM_dPhi_reco", 200, -0.5, 0.5);
     TH1F *hM_dPhi_reco_altrange = new TH1F("hM_dPhi_reco_altrange", "hM_dPhi_reco_altrange", 200, -0.05, 0.05);
-    TH1F *hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 200, -0.05, 0.05);
+    TH1F *hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 200, -0.05, 0.05);
     TH1F *hM_dR_reco = new TH1F("hM_dR_reco", "hM_dR_reco", 100, 0, 0.5);
-    TH1F *hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 100, 0, 0.5);
+    TH1F *hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 100, 0, 0.5);
     TH1F *hM_dR_reco_altrange = new TH1F("hM_dR_reco_altrange", "hM_dR_reco_altrange", 50, 0, 0.05);
-    TH1F *hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 50, 0, 0.05);
+    TH1F *hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 50, 0, 0.05);
     TH1F *hM_dR_reco_LogX = new TH1F("hM_dR_reco_LogX", "hM_dR_reco_LogX", NBins, edges);
-    TH1F *hM_Eta_reco = new TH1F("hM_Eta_reco", "hM_Eta_reco", 160, -4, 4);
-    TH1F *hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 160, -4, 4);
+    TH1F *hM_Eta_reco = new TH1F("hM_Eta_reco", "hM_Eta_reco", 80, -4, 4);
+    TH1F *hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 80, -4, 4);
     TH1F *hM_Phi_reco = new TH1F("hM_Phi_reco", "hM_Phi_reco", 140, -3.5, 3.5);
-    TH1F *hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 140, -3.5, 3.5);
-    TH2F *hM_Eta_vtxZ_reco_incl = new TH2F("hM_Eta_vtxZ_reco_incl", "hM_Eta_vtxZ_reco_incl", 280, -3.5, 3.5, 300, -50, 10);
-    TH2F *hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH2F("hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 350, -3.5, 3.5, 220, -31, -9);
-    TH2F *hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10 = new TH2F("hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", "hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10", 350, -3.5, 3.5, 350, -3.5, 3.5);
+    TH1F *hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 140, -3.5, 3.5);
+    TH2F *hM_Eta_vtxZ_reco_incl = new TH2F("hM_Eta_vtxZ_reco_incl", "hM_Eta_vtxZ_reco_incl", 280, -3.5, 3.5, 310, -31, 31);
+    TH2F *hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH2F("hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 350, -3.5, 3.5, 420, -21, 21);
+    TH2F *hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20 = new TH2F("hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", "hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20", 350, -3.5, 3.5, 350, -3.5, 3.5);
 
-    vector<float> centrality_cut = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    // vector<float> centrality_cut = {0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+    vector<float> centrality_cut = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90, 100};
     vector<TH1F *> hM_dEta_reco_Centrality;
     vector<TH1F *> hM_dPhi_reco_Centrality;
     vector<TH1F *> hM_dR_reco_Centrality;
@@ -81,12 +82,12 @@ void makehist(TString infname, TString outfname)
     vector<TH1F *> hM_dPhi_reco_Centrality_MBDAsymLe0p75;
     vector<TH1F *> hM_dR_reco_Centrality_MBDAsymLe0p75;
     vector<TH2F *> hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75;
-    vector<TH1F *> hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
-    vector<TH1F *> hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
-    vector<TH1F *> hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
-    vector<TH2F *> hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
-    vector<TH2F *> hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
-    vector<TH1F *> hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10;
+    vector<TH1F *> hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
+    vector<TH1F *> hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
+    vector<TH1F *> hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
+    vector<TH2F *> hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
+    vector<TH2F *> hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
+    vector<TH1F *> hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20;
     
     for (size_t i = 0; i < centrality_cut.size() - 1; i++)
     {
@@ -97,7 +98,7 @@ void makehist(TString infname, TString outfname)
         hM_dR_reco_Centrality.push_back(new TH1F(Form("hM_dR_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                                                  Form("hM_dR_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, 0, 0.5));
         hM_Eta_vtxZ_reco_Centrality.push_back(new TH2F(Form("hM_Eta_vtxZ_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                                                       Form("hM_Eta_vtxZ_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 300, -50, 10));
+                                                       Form("hM_Eta_vtxZ_reco_Centrality_%dto%d", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 310, -31, 31));
         hM_dEta_reco_Centrality_MBDAsymLe0p75.push_back(new TH1F(Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                                                                  Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, -0.5, 0.5));
         hM_dPhi_reco_Centrality_MBDAsymLe0p75.push_back(new TH1F(Form("hM_dPhi_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
@@ -105,46 +106,46 @@ void makehist(TString infname, TString outfname)
         hM_dR_reco_Centrality_MBDAsymLe0p75.push_back(new TH1F(Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                                                                Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, 0, 0.5));
         hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75.push_back(new TH2F(Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                                                                     Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 300,
-                                                                     -50, 10));
-        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(new TH1F(Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                                                                              Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                                                                     Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 310,
+                                                                     -31, 31));
+        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(new TH1F(Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                                                                              Form("hM_dEta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                                                                               100, -0.5, 0.5));
-        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(new TH1F(Form("hM_dPhi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                                                                              Form("hM_dPhi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(new TH1F(Form("hM_dPhi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                                                                              Form("hM_dPhi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
                                                                               200, -0.05, 0.05));
-        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(new TH1F(Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                                                                            Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, 0,
+        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(new TH1F(Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                                                                            Form("hM_dR_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 100, 0,
                                                                             0.5));
-        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(
-            new TH2F(Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                     Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 350, -3.5, 3.5, 220, -31, -9));
+        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(
+            new TH2F(Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                     Form("hM_Eta_vtxZ_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 350, -3.5, 3.5, 420, -21, 21));
 
-        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(
-            new TH2F(Form("hM_Eta_Phi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                     Form("hM_Eta_Phi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 350, -3.5, 3.5));
-        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10.push_back(
-            new TH1F(Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
-                     Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm30tom10", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 160, -4, 4));
+        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(
+            new TH2F(Form("hM_Eta_Phi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                     Form("hM_Eta_Phi_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 280, -3.5, 3.5, 350, -3.5, 3.5));
+        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20.push_back(
+            new TH1F(Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]),
+                     Form("hM_Eta_reco_Centrality_%dto%d_MBDAsymLe0p75_VtxZm20to20", (int)centrality_cut[i], (int)centrality_cut[i + 1]), 80, -4, 4));
     }
 
     // not zvtx weighted
-    TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 70, 0, 3500);
-    TH1F *hM_NClusLayer2 = new TH1F("hM_NClusLayer2", "hM_NClusLayer2", 70, 0, 3500);
+    TH1F *hM_NClusLayer1 = new TH1F("hM_NClusLayer1", "hM_NClusLayer1", 100, 0, 5000);
+    TH1F *hM_NClusLayer2 = new TH1F("hM_NClusLayer2", "hM_NClusLayer2", 100, 0, 5000);
     TH1F *hM_NTklclusLayer1 = new TH1F("hM_NTklclusLayer1", "hM_NTklclusLayer1", 100, 0, 5000);
-    TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 100, 0, 10000);
-    TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 150, 0, 3000);
+    TH1F *hM_NPrototkl = new TH1F("hM_NPrototkl", "hM_NPrototkl", 200, 0, 20000);
+    TH1F *hM_NRecotkl_Raw = new TH1F("hM_NRecotkl_Raw", "hM_NRecotkl_Raw", 100, 0, 5000);
     // zvtx weighted 
-    TH1F *hM_NClusLayer1_zvtxwei = new TH1F("hM_NClusLayer1_zvtxwei", "hM_NClusLayer1_zvtxwei",  70, 0, 3500);
-    TH1F *hM_NClusLayer2_zvtxwei = new TH1F("hM_NClusLayer2_zvtxwei", "hM_NClusLayer2_zvtxwei",  70, 0, 3500);
+    TH1F *hM_NClusLayer1_zvtxwei = new TH1F("hM_NClusLayer1_zvtxwei", "hM_NClusLayer1_zvtxwei",  100, 0, 5000);
+    TH1F *hM_NClusLayer2_zvtxwei = new TH1F("hM_NClusLayer2_zvtxwei", "hM_NClusLayer2_zvtxwei", 100, 0, 5000);
     TH1F *hM_NTklclusLayer1_zvtxwei = new TH1F("hM_NTklclusLayer1_zvtxwei", "hM_NTklclusLayer1_zvtxwei", 100, 0, 5000);
-    TH1F *hM_NPrototkl_zvtxwei = new TH1F("hM_NPrototkl_zvtxwei", "hM_NPrototkl_zvtxwei", 100, 0, 10000);
-    TH1F *hM_NRecotkl_Raw_zvtxwei = new TH1F("hM_NRecotkl_Raw_zvtxwei", "hM_NRecotkl_Raw_zvtxwei", 150, 0, 3000);
+    TH1F *hM_NPrototkl_zvtxwei = new TH1F("hM_NPrototkl_zvtxwei", "hM_NPrototkl_zvtxwei", 200, 0, 20000);
+    TH1F *hM_NRecotkl_Raw_zvtxwei = new TH1F("hM_NRecotkl_Raw_zvtxwei", "hM_NRecotkl_Raw_zvtxwei", 100, 0, 5000);
 
-    TH1F *hM_RecoPVz = new TH1F("hM_RecoPVz", "hM_RecoPVz", 300, -50, 10);
-    TH1F *hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10 = new TH1F("hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10", "hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10", 220, -31, -9);
+    TH1F *hM_RecoPVz = new TH1F("hM_RecoPVz", "hM_RecoPVz", 310, -31, 31);
+    TH1F *hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20 = new TH1F("hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20", "hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20", 420, -21, 21);
     TH1F *hM_MBDChargeAsymm_Le0p75 = new TH1F("hM_MBDChargeAsymm_Le0p75", "hM_MBDChargeAsymm_Le0p75", 100, -1, 1);
-    TH1F *hM_MBDChargeAsymm_Le0p75_VtxZm30tom10 = new TH1F("hM_MBDChargeAsymm_Le0p75_VtxZm30tom10", "hM_MBDChargeAsymm_Le0p75_VtxZm30tom10", 100, -1, 1);
+    TH1F *hM_MBDChargeAsymm_Le0p75_VtxZm20to20 = new TH1F("hM_MBDChargeAsymm_Le0p75_VtxZm20to20", "hM_MBDChargeAsymm_Le0p75_VtxZm20to20", 100, -1, 1);
 
     TFile *f = new TFile(infname, "READ");
     TTree *t = (TTree *)f->Get("minitree");
@@ -154,7 +155,8 @@ void makehist(TString infname, TString outfname)
     float PV_z, TruthPV_z, vtxzwei;
     float MBD_centrality;
     float mbd_south_charge_sum, mbd_north_charge_sum, mbd_charge_sum, mbd_charge_asymm, mbd_z_vtx;
-    bool is_min_bias;
+    bool is_min_bias, InttBco_IsToBeRemoved;
+    bool firedTrig10_MBDSNgeq2, firedTrig12_vtxle10cm, firedTrig13_vtxle30cm, MbdNSge0, MbdZvtxle10cm, validMbdVtx;
     vector<int> *clusLayer = 0;
     vector<float> *clusPhi = 0, *clusEta = 0, *clusPhiSize = 0;
     vector<unsigned int> *clusADC = 0;
@@ -164,6 +166,20 @@ void makehist(TString infname, TString outfname)
     vector<float> *recotklraw_eta = 0, *recotklraw_phi = 0, *recotklraw_deta = 0, *recotklraw_dphi = 0, *recotklraw_dR = 0;
     t->SetBranchAddress("event", &event);
     t->SetBranchAddress("is_min_bias", &is_min_bias);
+    if (t->GetListOfBranches()->FindObject("InttBco_IsToBeRemoved"))
+    {
+        t->SetBranchAddress("InttBco_IsToBeRemoved", &InttBco_IsToBeRemoved);
+    }
+    else
+    {
+        InttBco_IsToBeRemoved = false;
+    }
+    t->SetBranchAddress("firedTrig10_MBDSNgeq2", &firedTrig10_MBDSNgeq2);
+    t->SetBranchAddress("firedTrig12_vtxle10cm", &firedTrig12_vtxle10cm);
+    t->SetBranchAddress("firedTrig13_vtxle30cm", &firedTrig13_vtxle30cm);
+    t->SetBranchAddress("MbdNSge0", &MbdNSge0);
+    t->SetBranchAddress("MbdZvtxle10cm", &MbdZvtxle10cm);
+    t->SetBranchAddress("validMbdVtx", &validMbdVtx);
     t->SetBranchAddress("MBD_centrality", &MBD_centrality);
     t->SetBranchAddress("MBD_z_vtx", &mbd_z_vtx);
     t->SetBranchAddress("MBD_south_charge_sum", &mbd_south_charge_sum);
@@ -201,7 +217,15 @@ void makehist(TString infname, TString outfname)
         Long64_t local = t->LoadTree(index->GetIndex()[ev]);
         t->GetEntry(local);
 
-        cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NTklclusLayer1=" << tklclus1Phi->size() << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;
+        cout << "Event=" << event << "; NClusLayer1=" << NClusLayer1 << "; NTklclusLayer1=" << tklclus1Phi->size() << "; NPrototkl=" << NPrototkl << "; NRecotkl_Raw=" << NRecotkl_Raw << endl;        
+
+        if (InttBco_IsToBeRemoved)
+            continue;
+        
+        bool InttZvtxle10cm = (PV_z >= -10. && PV_z <= 10.);
+        bool evtsel = validMbdVtx && MbdNSge0 && is_min_bias && firedTrig10_MBDSNgeq2 && MbdZvtxle10cm && InttZvtxle10cm;
+        if (!evtsel)
+            continue; 
 
         hM_NClusLayer1->Fill(NClusLayer1);
         hM_NClusLayer2->Fill(NClusLayer2);
@@ -209,6 +233,7 @@ void makehist(TString infname, TString outfname)
         hM_NPrototkl->Fill(NPrototkl);
         hM_NRecotkl_Raw->Fill(NRecotkl_Raw);
 
+        // vtxzwei = 1.;
         hM_NClusLayer1_zvtxwei->Fill(NClusLayer1, vtxzwei);
         hM_NClusLayer2_zvtxwei->Fill(NClusLayer2, vtxzwei);
         hM_NTklclusLayer1_zvtxwei->Fill(tklclus1Phi->size(), vtxzwei);
@@ -217,11 +242,9 @@ void makehist(TString infname, TString outfname)
 
         int NClusLayer1_clusADCgt35 = 0;
 
-        if (PV_z < -40. || PV_z > 0.)
-            continue;
-
         hM_RecoPVz->Fill(PV_z, vtxzwei);
 
+        cout << "Event " << event << " has " << clusPhi->size() << " clusters" << endl;
         for (size_t j = 0; j < clusPhiSize->size(); j++)
         {
             hM_clusphi->Fill(clusPhi->at(j));
@@ -264,7 +287,7 @@ void makehist(TString infname, TString outfname)
         
         for (size_t i = 0; i < centrality_cut.size() - 1; i++)
         {
-            if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+            if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
             {
                 for (size_t j = 0; j < recotklraw_eta->size(); j++)
                 {
@@ -282,7 +305,7 @@ void makehist(TString infname, TString outfname)
 
             for (size_t i = 0; i < centrality_cut.size() - 1; i++)
             {
-                if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+                if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {
@@ -295,38 +318,38 @@ void makehist(TString infname, TString outfname)
             }
         }
 
-        if (fabs(mbd_charge_asymm) <= 0.75 && (PV_z >= -30 && PV_z <= -10))
+        if (fabs(mbd_charge_asymm) <= 0.75 && (PV_z >= -20 && PV_z <= 20))
         {
-            hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Fill(PV_z, vtxzwei);
-            hM_MBDChargeAsymm_Le0p75_VtxZm30tom10->Fill(mbd_charge_asymm, vtxzwei);
+            hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20->Fill(PV_z, vtxzwei);
+            hM_MBDChargeAsymm_Le0p75_VtxZm20to20->Fill(mbd_charge_asymm, vtxzwei);
 
-            if (MBD_centrality >= 0 && MBD_centrality <= 0.7)
+            if (MBD_centrality >= 0 && MBD_centrality <= 70)
             {
                 for (size_t j = 0; j < recotklraw_eta->size(); j++)
                 {
-                    hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_deta->at(j), vtxzwei);
-                    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_dphi->at(j), vtxzwei);
-                    hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_dR->at(j), vtxzwei);
-                    hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_dR->at(j), vtxzwei);
-                    hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_eta->at(j), vtxzwei);
-                    hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_phi->at(j), vtxzwei);
-                    hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
-                    hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Fill(recotklraw_eta->at(j), recotklraw_phi->at(j), vtxzwei);
+                    hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_deta->at(j), vtxzwei);
+                    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_dphi->at(j), vtxzwei);
+                    hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_dR->at(j), vtxzwei);
+                    hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_dR->at(j), vtxzwei);
+                    hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_eta->at(j), vtxzwei);
+                    hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_phi->at(j), vtxzwei);
+                    hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
+                    hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Fill(recotklraw_eta->at(j), recotklraw_phi->at(j), vtxzwei);
                 }
             }
 
             for (size_t i = 0; i < centrality_cut.size() - 1; i++)
             {
-                if (MBD_centrality >= centrality_cut[i] * 0.01 && MBD_centrality < centrality_cut[i + 1] * 0.01)
+                if (MBD_centrality >= centrality_cut[i] && MBD_centrality < centrality_cut[i + 1])
                 {
                     for (size_t j = 0; j < recotklraw_eta->size(); j++)
                     {
-                        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_deta->at(j), vtxzwei);
-                        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dphi->at(j), vtxzwei);
-                        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_dR->at(j), vtxzwei);
-                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
-                        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), recotklraw_phi->at(j), vtxzwei);
-                        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Fill(recotklraw_eta->at(j), vtxzwei);
+                        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_deta->at(j), vtxzwei);
+                        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_dphi->at(j), vtxzwei);
+                        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_dR->at(j), vtxzwei);
+                        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_eta->at(j), PV_z, vtxzwei);
+                        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_eta->at(j), recotklraw_phi->at(j), vtxzwei);
+                        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Fill(recotklraw_eta->at(j), vtxzwei);
                     }
                 }
             }
@@ -344,9 +367,9 @@ void makehist(TString infname, TString outfname)
     hM_NTklclusLayer1_zvtxwei->Write();
     hM_NRecotkl_Raw_zvtxwei->Write();
     hM_RecoPVz->Write();
-    hM_RecoPVz_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_RecoPVz_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_MBDChargeAsymm_Le0p75->Write();
-    hM_MBDChargeAsymm_Le0p75_VtxZm30tom10->Write();
+    hM_MBDChargeAsymm_Le0p75_VtxZm20to20->Write();
     hM_clusphi->Write();
     hM_cluseta->Write();
     hM_clusphisize->Write();
@@ -366,22 +389,22 @@ void makehist(TString infname, TString outfname)
     hM_dEta_reco->Write();
     hM_dEta_reco->Write();
     hM_dEta_reco_altrange->Write();
-    hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_dEta_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_dPhi_reco->Write();
     hM_dPhi_reco_altrange->Write();
-    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_dPhi_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_dR_reco->Write();
-    hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_dR_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_dR_reco_altrange->Write();
-    hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_dR_reco_altrange_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_dR_reco_LogX->Write();
     hM_Eta_reco->Write();
-    hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_Eta_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_Phi_reco->Write();
-    hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     hM_Eta_vtxZ_reco_incl->Write();
-    hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
-    hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm30tom10->Write();
+    hM_Eta_vtxZ_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
+    hM_Eta_Phi_reco_Centrality0to70_MBDAsymLe0p75_VtxZm20to20->Write();
     for (size_t i = 0; i < centrality_cut.size() - 1; i++)
     {
         hM_dEta_reco_Centrality[i]->Write();
@@ -392,12 +415,12 @@ void makehist(TString infname, TString outfname)
         hM_dPhi_reco_Centrality_MBDAsymLe0p75[i]->Write();
         hM_dR_reco_Centrality_MBDAsymLe0p75[i]->Write();
         hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75[i]->Write();
-        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
-        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
-        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
-        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
-        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
-        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm30tom10[i]->Write();
+        hM_dEta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
+        hM_dPhi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
+        hM_dR_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
+        hM_Eta_vtxZ_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
+        hM_Eta_Phi_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
+        hM_Eta_reco_Centrality_MBDAsymLe0p75_VtxZm20to20[i]->Write();
     }
 
     fout->Close();
