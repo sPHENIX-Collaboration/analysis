@@ -8,6 +8,11 @@
 #include <string>
 #include <set>
 #include <cstddef>
+#include <memory>
+#include <map>
+
+// -- root
+#include <TH1.h>
 
 class PHCompositeNode;
 
@@ -53,8 +58,12 @@ class CaloCheck : public SubsysReco
   std::string m_output = "test.root";
   int m_event = 0;
   std::size_t m_processed_event = 0;
+  std::string m_emcTowerNode = "TOWERS_CEMC";
+  int m_globalEvent = -1;
+  int m_run         = -1;
 
   std::set<int> m_events;
+  std::map<std::string, std::unique_ptr<TH1>> m_hists;
 };
 
 #endif  // CALOCHECK_H

@@ -16,10 +16,14 @@
 
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
+#include <fun4all/Fun4AllOutputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllBase.h>
 
 #include <phool/recoConsts.h>
+
+#include <caloreco/CaloTowerStatus.h>
 
 #include <calocheck/CaloCheck.h>
 
@@ -31,6 +35,7 @@ void Fun4All_CaloCheck(const std::string &fname,
                        int nEvents = 0,
                        float badChi2_IB_threshold = 0.5,
                        const std::string &output = "test.root",
+                       const std::string &outputDST = "dst-out.root",
                        const std::string &dbtag = "newcdbtag")
 {
   std::cout << "########################" << std::endl;
@@ -40,6 +45,7 @@ void Fun4All_CaloCheck(const std::string &fname,
   std::cout << std::format("Event List: {}", event_list) << std::endl;
   std::cout << std::format("badChi2_IB_threshold: {}", badChi2_IB_threshold) << std::endl;
   std::cout << std::format("output: {}", output) << std::endl;
+  std::cout << std::format("output DST: {}", outputDST) << std::endl;
   std::cout << std::format("nEvents: {}", nEvents) << std::endl;
   std::cout << std::format("dbtag: {}", dbtag) << std::endl;
   std::cout << "########################" << std::endl;
@@ -74,6 +80,12 @@ void Fun4All_CaloCheck(const std::string &fname,
   std::unique_ptr<FlagHandler> flag = std::make_unique<FlagHandler>();
   se->registerSubsystem(flag.release());
 
+  std::unique_ptr<CaloTowerStatus> statusEMC = std::make_unique<CaloTowerStatus>("CEMCSTATUS");
+  statusEMC->set_detector_type(CaloTowerDefs::CEMC);
+  statusEMC->set_time_cut(1);
+  statusEMC->set_badChi2_IB_threshold(badChi2_IB_threshold);
+  se->registerSubsystem(statusEMC.release());
+
   // Calo Check
   std::unique_ptr<CaloCheck> calo_check = std::make_unique<CaloCheck>();
   calo_check->set_event_list(event_list);
@@ -84,6 +96,13 @@ void Fun4All_CaloCheck(const std::string &fname,
   std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
   In->AddListFile(fname);
   se->registerInputManager(In.release());
+
+  std::unique_ptr<Fun4AllOutputManager> Out = std::make_unique<Fun4AllDstOutputManager>("DSTOUT", outputDST);
+  Out->StripNode("TOWERS_ZDC");
+  Out->StripNode("TOWERS_HCALIN");
+  Out->StripNode("TOWERS_HCALOUT");
+  Out->StripNode("TOWERS_SEPD");
+  se->registerOutputManager(Out.release());
 
   // * // // MBD Reconstruction
   // std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
@@ -156,15 +175,16 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 4 || args.size() > 8)
+  if (args.size() < 4 || args.size() > 9)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> <event_list> [nEvents] [badChi2_IB_threshold] [output] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> <event_list> [nEvents] [badChi2_IB_threshold] [output] [outputDST] [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  event_list: List of events of interest." << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  badChi2_IB_threshold: badChi2 IB threshold (default: 0.5)." << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
+    std::cerr << "  outputDST: (optional) path to the dst output file (default: 'dst-out.root')" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     return 1;  // Indicate error
   }
@@ -175,6 +195,7 @@ int main(int argc, const char* const argv[])
   int nEvents = 0;
   float badChi2_IB_threshold = 0.5;
   std::string output = "test.root";
+  std::string outputDST = "dst-out.root";
   std::string dbtag = "newcdbtag";
 
   if (args.size() >= 5)
@@ -191,10 +212,14 @@ int main(int argc, const char* const argv[])
   }
   if (args.size() >= 8)
   {
-    dbtag = args[7];
+    outputDST = args[7];
+  }
+  if (args.size() >= 9)
+  {
+    dbtag = args[8];
   }
 
-  Fun4All_CaloCheck(input_dst, runnumber, event_list, nEvents, badChi2_IB_threshold, output, dbtag);
+  Fun4All_CaloCheck(input_dst, runnumber, event_list, nEvents, badChi2_IB_threshold, output, outputDST, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

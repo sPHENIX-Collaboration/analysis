@@ -62,10 +62,10 @@
 //____________________________________________________________________________..
 
 #include "CaloCheck.h"
+#include "geometry_constants.h"
 
 // -- c++
 #include <filesystem>
-#include <memory>
 #include <format>
 #include <iostream>
 #include <fstream>
@@ -82,9 +82,14 @@
 // -- CaloBase
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfo.h>
+#include <calobase/TowerInfoDefs.h>
 
 // -- event
 #include <ffaobjects/EventHeader.h>
+
+// -- root
+#include <TFile.h>
+#include <TH2.h>
 
 //____________________________________________________________________________..
 CaloCheck::CaloCheck(const std::string &name)
@@ -171,8 +176,8 @@ int CaloCheck::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  int m_globalEvent = eventInfo->get_EvtSequence();
-  // int m_run         = eventInfo->get_RunNumber();
+  m_globalEvent = eventInfo->get_EvtSequence();
+  m_run         = eventInfo->get_RunNumber();
 
   if (m_event % 20 == 0)
   {
@@ -196,6 +201,47 @@ int CaloCheck::process_calo(PHCompositeNode *topNode)
   if (++m_processed_event == m_events.size())
   {
     return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  TowerInfoContainer *towersCEMC = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
+
+  if (!towersCEMC)
+  {
+    std::cout << PHWHERE << std::format("CaloCheck::process_event - Fatal Error - {} node is missing. ", m_emcTowerNode) << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  std::string histName = std::format("h2_isBadChi2_{}_{}", m_run, m_globalEvent);
+  std::string title = std::format("EMCal isBadChi2: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
+
+  m_hists[histName] = std::make_unique<TH2F>(histName.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+
+  std::string histNameChi2 = std::format("h2_Chi2_{}_{}", m_run, m_globalEvent);
+  title = std::format("EMCal #chi^{{2}}: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
+
+  m_hists[histNameChi2] = std::make_unique<TH2F>(histNameChi2.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+
+  // loop over towers
+  for (std::size_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
+  {
+    unsigned int key = TowerInfoDefs::encode_emcal(towerIndex);
+    unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
+    TowerInfo *tower = towersCEMC->get_tower_at_channel(towerIndex);
+
+    bool isBadChi2 = tower->get_isBadChi2();
+    float chi2 = tower->get_chi2();
+
+    if(std::isfinite(chi2))
+    {
+      dynamic_cast<TH2 *>(m_hists[histNameChi2].get())->Fill(iphi, ieta, chi2);
+    }
+
+    if(isBadChi2)
+    {
+      dynamic_cast<TH2 *>(m_hists[histName].get())->Fill(iphi, ieta);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -223,6 +269,15 @@ int CaloCheck::process_event(PHCompositeNode *topNode)
 int CaloCheck::End([[maybe_unused]] PHCompositeNode *topNode)
 {
   std::cout << "CaloCheck::End(PHCompositeNode *topNode) This is the End..." << std::endl;
+
+  TFile output(m_output.c_str(), "recreate");
+  output.cd();
+
+  for (const auto &[name, hist] : m_hists)
+  {
+    hist->Write();
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

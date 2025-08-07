@@ -18,6 +18,7 @@ sPHENIX_CPPFLAGS = -isystem $(OFFLINE_MAIN)/include -isystem $(OFFLINE_MAIN)/roo
 sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib \
 								-lfun4all \
 								-lcalotrigger \
+		                        -lcalo_io \
 								-lcentrality \
 								-lffamodules \
 								-lmbd \
@@ -29,7 +30,7 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib \
 								-lsphenixnpc
 
 MY_CPPFLAGS = -I$(MYINSTALL)/include
-MY_LIBFLAGS = -L$(MYINSTALL)/lib -lcalo_io -lcalo_reco -lCaloCheck
+MY_LIBFLAGS = -L$(MYINSTALL)/lib -lcalo_reco -lCaloCheck
 
 # Combine all C++ flags for compilation
 ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
