@@ -37,7 +37,7 @@ int get_scaler(int runnumber, int bit)
     }
 }
 */
-int get_luminosity_182630(string rnlist, int zsel)
+int get_luminosity_182630(string rnlist, int zsel, int clt)
 {
   gStyle->SetOptStat(0);
 
@@ -76,7 +76,7 @@ int get_luminosity_182630(string rnlist, int zsel)
 	}
       */
       TFile* file;
-      file = TFile::Open(("output/added_nblair/triggeroutput_nblair_"+rnstr+".root").c_str(),"READ");
+      file = TFile::Open(("output/added_nblair/triggeroutput_nblair_"+rnstr+(clt?"_clt":"")+".root").c_str(),"READ");
       if(!file)
 	{
 	  cerr << "RN " << rnstr << " not found! Continuing." << endl;
