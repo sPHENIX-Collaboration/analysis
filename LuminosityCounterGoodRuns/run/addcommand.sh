@@ -16,10 +16,10 @@ rn=`head -n $line fullgoodrunlist.list | tail -n 1`
 	#cp $file ./srces
     #done
 echo $rn
-nfile=`ls /sphenix/user/jocl/projects/trigcount_files/${rn} | wc -l`
+nfile=`ls /sphenix/user/jocl/projects/trigcount_files/${rn}/*clt* | wc -l`
 
-root -b -q -l "analyze.C(${rn},${nfile})" #>> anaoutput.txt
+root -b -q -l "analyze.C(${rn},${nfile},1)" #>> anaoutput.txt
 
-mv triggeroutput_nblair_${rn}.root output/added_nblair/
+mv triggeroutput_nblair_${rn}_clt.root output/added_nblair/
     #rm -rf srces
 #done

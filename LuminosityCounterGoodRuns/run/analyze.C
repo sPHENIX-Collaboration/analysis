@@ -139,7 +139,7 @@ unsigned int factorial(int n)
   return n*factorial(n-1);
 }
   
-int analyze(int rn, int nseg)
+int analyze(int rn, int nseg, int clt)
 {
 
   ifstream fillnumfile("/sphenix/user/jocl/projects/analysis/LuminosityCounterGoodRuns/run/fillnumbers.txt");
@@ -183,7 +183,7 @@ int analyze(int rn, int nseg)
     {
       //cout << "start" << endl;
       //cout << "test1" << endl;
-      TFile* file = TFile::Open(("/sphenix/user/jocl/projects/trigcount_files/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+".root").c_str());
+      TFile* file = TFile::Open(("/sphenix/user/jocl/projects/trigcount_files/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+(clt?"_clt":"")+".root").c_str());
       //cout << "test2" << endl;
       //cout << "gettree" << endl;
       TTree* tree = (TTree*)file->Get("_tree");
@@ -330,7 +330,7 @@ int analyze(int rn, int nseg)
     }
 
 
-  TFile* outfile = TFile::Open(("triggeroutput_nblair_"+to_string(rn)+".root").c_str(),"RECREATE");
+  TFile* outfile = TFile::Open(("triggeroutput_nblair_"+to_string(rn)+(clt?"_clt":"")+".root").c_str(),"RECREATE");
   outfile->cd();
   TTree* outt = new TTree("outt","A persevering date tree");
   

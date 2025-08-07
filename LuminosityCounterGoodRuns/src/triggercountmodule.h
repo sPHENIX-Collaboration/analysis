@@ -12,7 +12,7 @@ class triggercountmodule : public SubsysReco
 {
  public:
 
-  triggercountmodule(const std::string &filename, int rn, int segn, int maxseg, int debug = 0, const std::string &name = "triggercountmodule");
+  triggercountmodule(const std::string &filename, int rn, int segn, int maxseg, int debug = 0, const std::string &name = "triggercountmodule", int clt = 0);
 
   virtual ~triggercountmodule();
 
@@ -54,10 +54,13 @@ class triggercountmodule : public SubsysReco
   long long unsigned int _endScal[64] = {0};
   long long unsigned int _startRaw[64] = {0};
   long long unsigned int _endRaw[64] = {0};
+  long long unsigned int _prevcheck[4] = {0};
+  long long unsigned int _isblt;
   double _avgPS[64] = {0};
   long long unsigned int _trigCounts[6][64] = {0};
   double _eMBDlive[5] = {0};
   int _badFlag = 0;
+  int _clt;
   GlobalVertex::VTXTYPE _vtxtype = GlobalVertex::MBD;
 };
 

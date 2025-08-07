@@ -55,9 +55,10 @@ R__LOAD_LIBRARY(libtriggercountmodule.so)
 
 void run_earlydata_2(int nproc = 0, int debug = 0, int rn = 0, int nfile = 0, string dir = ".")
 {
+  int clt = 1;
   // towerinfov1=kPRDFTowerv1, v2=:kWaveformTowerv2, v3=kPRDFWaveform, v4=kPRDFTowerv4
   CaloTowerDefs::BuilderType buildertype = CaloTowerDefs::kPRDFTowerv4;
-  string triggercountfilename = dir+"/trigout/triggercounter_5z_"+to_string(rn)+"_"+to_string(nproc)+".root";
+  string triggercountfilename = dir+"/trigout/triggercounter_5z_"+to_string(rn)+"_"+to_string(nproc)+(clt?"_clt":"")+".root";
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
 
@@ -101,7 +102,7 @@ void run_earlydata_2(int nproc = 0, int debug = 0, int rn = 0, int nfile = 0, st
   in_1->AddFile(line1);
   se->registerInputManager( in_1 );
   
-  triggercountmodule* trig = new triggercountmodule(triggercountfilename, rn, nproc, nfile, debug);
+  triggercountmodule* trig = new triggercountmodule(triggercountfilename, rn, nproc, nfile, debug, "triggercountmodule", clt);
   se->registerSubsystem(trig);
   ///////////////////////////////////
   // Validation

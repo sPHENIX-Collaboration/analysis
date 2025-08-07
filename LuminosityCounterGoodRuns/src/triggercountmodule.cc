@@ -11,7 +11,7 @@ using namespace std;
 
 
 //____________________________________________________________________________..
-triggercountmodule::triggercountmodule(const std::string &filename, int rn, int segn, int maxseg, int debug, const std::string &name):
+triggercountmodule::triggercountmodule(const std::string &filename, int rn, int segn, int maxseg, int debug, const std::string &name, int clt):
   SubsysReco(name)//).c_str())
 {
   _rn = rn;
@@ -22,6 +22,7 @@ triggercountmodule::triggercountmodule(const std::string &filename, int rn, int 
   _debug = debug;
   _nseg = segn;
   _lastseg = maxseg;
+  _clt = clt;
 }
 
 //____________________________________________________________________________..
@@ -93,10 +94,14 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
 	  if(_debug > 2) cout << gl1->lValue(i,1) << endl;
 	  _startScal[i] = gl1->lValue(i,2);
 	  _startRaw[i] = gl1->lValue(i,0);
+	  _prevcheck[0] = gl1->lValue(18,0);
+	  _prevcheck[1] = gl1->lValue(22,0);
+	  _prevcheck[2] = gl1->lValue(18,1);
+	  _prevcheck[3] = gl1->lValue(22,1);
 	}
     }
   //cout << _evtn << endl;
-  ++_evtn;
+
   _endBCO = gl1->lValue(0,"BCO");
   for(int i=0; i<64; ++i)
     {
@@ -105,8 +110,26 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
       _endScal[i] = gl1->lValue(i,2);
       _endRaw[i] = gl1->lValue(i,0);
     }
+
+  float ld18 = _endLive[18] - _prevcheck[2];
+  float ld22 = _endLive[22] - _prevcheck[3];
+  float rd18 = _endRaw[18] - _prevcheck[0];
+  float rd22 = _endRaw[22] - _prevcheck[1];
+
+  float lt18 = ld18/rd18;
+  float lt22 = ld22/rd22;
+
+  _isblt = 0;
+  if(_evtn != 0 && _clt)
+    {
+      if(lt18 < 0.1 || lt22 < 0.1)
+	{
+	  _isblt = 1;
+	}
+    }
   
   if(_debug > 1) cout << "Getting gl1 trigger vector from: " << gl1 << endl;
+  ++_evtn;
   long long unsigned int _trigvec = gl1->getScaledVector();
 
   int ismbtrig = (_trigvec >> 10) & 1;
@@ -145,14 +168,17 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
 	{
 	  for(int j=0; j<64; ++j)
 	    {
-	      if((_trigvec >> j) & 1) _trigCounts[i][j]++;
+	      if((_trigvec >> j) & 1)
+		{
+		  if(!_isblt) _trigCounts[i][j]++;
+		}
 	    }
 	}
     }
 
   for(int j=0; j<64; ++j)
     {
-      if((_trigvec >> j) & 1) _trigCounts[5][j]++;
+      if(((_trigvec >> j) & 1) && !_isblt) _trigCounts[5][j]++;
     }
 
   if(!ismbtrig)
