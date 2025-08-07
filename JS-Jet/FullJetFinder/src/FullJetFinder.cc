@@ -310,7 +310,7 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
     m_container[input]->primaryVertex = primary;
   }
 
-  if(prim_vtx->get_z() > 10) return Fun4AllReturnCodes::ABORTEVENT;
+  if(prim_vtx->get_z() > 10 || prim_vtx->get_z() < -10) return Fun4AllReturnCodes::ABORTEVENT;
  m_stat->Fill(4);
 
   
@@ -399,7 +399,7 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
 
               double dot_3d = (trk->get_x() - vtx->get_x()) * jet->get_px() + (trk->get_y() - vtx->get_y()) * jet->get_py() + (trk->get_z() - vtx->get_z()) * jet->get_pz();
               sign_3d = int(dot_3d/std::abs(dot_3d));
-
+//std::cout<<"DCA3d "<<DCA_3d<<" chi23d "<<chi2_3d<<" dot_3d "<<dot_3d<<" sign "<<sign_3d<<std::endl;
               //std::cout<<" signdca:"<< sign*std::abs(DCA_xy/DCA_xy_unc)<<std::endl;
           }
           nChtracks++;
@@ -434,6 +434,7 @@ int FullJetFinder::process_event(PHCompositeNode *topNode)
           track_properties.DCA_xy_unc = DCA_xy_unc;
           track_properties.sDCA_xy = sign*std::abs(DCA_xy/DCA_xy_unc);
           track_properties.DCA3d = DCA_3d;
+//std::cout<<"final "<<sign_3d<<" "<<chi2_3d<<" "<<sign_3d*std::sqrt(chi2_3d)<<std::endl;
           track_properties.sDCA3d = sign_3d*std::sqrt(chi2_3d);
           track_properties.n_mvtx = n_mvtx_hits;
           track_properties.n_intt = n_intt_hits;

@@ -76,6 +76,22 @@ class InclusiveJet : public SubsysReco
   {
     m_doTracks = flag;
   }
+  void
+  doJetTriggerCut(int flag)
+  {
+    m_doTriggerCut = flag;
+  }
+  void 
+  doJetLeadPtCut(int flag)
+  {
+    m_doLeadPtCut = flag;
+  }
+  void
+  setLeadPtCut(float leadpt)
+  {
+    m_doLeadPtCut = true;
+    m_leadPtCut = leadpt;
+  }
 
   float calculateProjectionEta(SvtxTrackState* projectedState);
   float calculateProjectionPhi(SvtxTrackState* projectedState);
@@ -167,9 +183,14 @@ class InclusiveJet : public SubsysReco
   std::vector<float> m_pt_subseed;
   std::vector<float> m_e_subseed;
   std::vector<int> m_subseed_cut;
+
+  bool m_doTriggerCut = false;
+  bool m_doLeadPtCut = true;
   
   float m_totalCalo;
   float m_zvtx;
+
+  float m_leadPtCut = 10.0;
 
   int m_emcaln = 0;
   float m_emcale[24576] = {0}; 

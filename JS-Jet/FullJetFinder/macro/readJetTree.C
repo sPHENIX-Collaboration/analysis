@@ -63,7 +63,7 @@ void printProgress(int cur, int total){
 // Analyze TTree "AntiKt_r04/Data" in the file passed into the function.
 // Returns false in case of errors.
 //takes list of datafiles as entry
-bool readJetTree(const std::string &dataFiles = "/sphenix/tg/tg01/hf/jkvapil/JET30_r11_30GeV/condorJob/myTestJets/outputData_000*.root"){
+bool readJetTree(const std::string &dataFiles = "/sphenix/tg/tg01/hf/jkvapil/JET10_r22_npile_full/condorJob/myTestJets/outputData_000*.root"){
    TChain *tc = new TChain("AntiKt_r04/Data"); //TTRee name
    tc->Add(dataFiles.data());
    int n_events = tc->GetEntries(); //gen total number of events
@@ -74,6 +74,7 @@ bool readJetTree(const std::string &dataFiles = "/sphenix/tg/tg01/hf/jkvapil/JET
    TH1I *h_jet_n = new TH1I("h_jet_n","h_jet_n",2,-0.5,1.5);
    TH1F *h_reco_jet_pt = new TH1F("h_reco_jet_pt","h_reco_jet_pt",100,0,100);
    TH1F *h_reco_track_pt = new TH1F("h_reco_track_pt","h_reco_track_pt",100,0,100);
+   TH1F *h_dca3d = new TH1F("h_dca3d","h_dca3d",100,-10,10);
  
    std::cout<<"Total number of events: "<<n_events<<std::endl;
 
@@ -91,18 +92,21 @@ bool readJetTree(const std::string &dataFiles = "/sphenix/tg/tg01/hf/jkvapil/JET
          //track inside jet loop
          for (auto chConstituent : reco_jet.chConstituents){
             h_reco_track_pt->Fill(chConstituent.pt);
+	   h_dca3d->Fill(chConstituent.sDCA3d);
          }  // for (auto chConstituent : reco_jet.chConstituents)     
       }//f or (auto reco_jet : jet_container->recojets)
    } //while (reader.Next())
 
    //plotting
    TCanvas *c = new TCanvas("c","c",2400,800);
-   c->Divide(3,1);
+   c->Divide(4,1);
    c->cd(1);
    h_jet_n->Draw();
    c->cd(2);
    h_reco_jet_pt->Draw();
    c->cd(3);
    h_reco_track_pt->Draw();
+c->cd(4);
+h_dca3d->Draw();
    return true;
 }

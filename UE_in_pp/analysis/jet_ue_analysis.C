@@ -37,7 +37,60 @@ using namespace std;
 //																																			//
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", string outfilename = "dijet_calo_analysis_run21_jet10_topocluster.root", bool sim = false, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, bool dijet_bkg_cut = true) {
+float get_deta(float eta1, float eta2) {
+  return eta1 - eta2;
+}
+
+float get_dphi(float phi1, float phi2) {
+  float dphi1 = phi1 - phi2;
+  float dphi2 = phi1 - phi2 + 2*TMath::Pi();
+  float dphi3 = phi1 - phi2 - 2*TMath::Pi();
+  if (fabs(dphi1) > fabs(dphi2)) {
+    dphi1 = dphi2;
+  }
+  if (fabs(dphi1) > fabs(dphi3)) {
+    dphi1 = dphi3;
+  }
+  return dphi1;
+}
+
+float get_dR(float eta1, float phi1, float eta2, float phi2) {
+  float deta = get_deta(eta1, eta2);
+  float dphi = get_dphi(phi1, phi2);
+  return sqrt(deta*deta + dphi*dphi);
+}
+
+void match_meas_truth(std::vector<float>* meas_eta, std::vector<float>* meas_phi, std::vector<int>& meas_matched, std::vector<float>* truth_eta, std::vector<float>* truth_phi, std::vector<int>& truth_matched, float jet_radius) {
+  meas_matched.assign(meas_eta->size(), -1);
+  truth_matched.assign(truth_eta->size(), -1);
+  float max_match_dR = jet_radius * 0.75;
+  for (int im = 0; im < meas_eta->size(); ++im) {
+    float min_dR = 100;
+    int match_index = -9999;
+    for (int it = 0; it < truth_eta->size(); ++it) {
+      float dR = get_dR((*meas_eta)[im], (*meas_phi)[im], (*truth_eta)[it], (*truth_phi)[it]);
+      if (dR < min_dR) {
+        match_index = it;
+        min_dR = dR;
+      }
+    }
+    if (min_dR < max_match_dR) {
+      if (truth_matched[match_index] == -1) {
+        meas_matched[im] = match_index;
+        truth_matched[match_index] = im;
+      } else {
+        float dR1 = get_dR((*meas_eta)[truth_matched[match_index]], (*meas_phi)[truth_matched[match_index]], (*truth_eta)[match_index], (*truth_phi)[match_index]);
+        if (min_dR < dR1) {
+          meas_matched[truth_matched[match_index]] = -1;
+          meas_matched[im] = match_index;
+          truth_matched[match_index] = im;
+        }
+      }
+    }
+  }
+}
+
+void jet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", string outfilename = "dijet_calo_analysis_run21_jet10_topocluster.root", bool sim = false, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, bool do_bkg_cut = true, bool dijet_bkg_cut = true, bool do_truth_match = true) {
 
 	// create outfile 
 	std::cout << "Creating " << outfilename << std::endl;
@@ -147,9 +200,12 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	string wildcardPath = inputDirectory + infilename;
 	chain.Add(wildcardPath.c_str());
 
+	chain.SetBranchStatus("*",0);
+
 	// define ttree branch variables 
 	int m_event;
 	int nJet;
+	int nTruthJet;
 	float zvtx;
 
 	vector<int> *triggerVector = nullptr;
@@ -160,6 +216,11 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	vector<float> *jetemcale = nullptr;
 	vector<float> *jetihcale = nullptr;
 	vector<float> *jetohcale = nullptr;
+
+	vector<float> *truthEta = nullptr;
+	vector<float> *truthPhi = nullptr;
+	vector<float> *truthE = nullptr;
+	vector<float> *truthPt = nullptr;
 
 	int emcaln = 0;
 	float emcale[24576] = {0.0};
@@ -193,6 +254,18 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	float truthpar_phi[100000] = {0};
 	int truthpar_pid[100000] = {0};
 
+	chain.SetBranchStatus("m_event",1);
+	chain.SetBranchStatus("nJet",1);
+	chain.SetBranchStatus("zvtx",1);
+	chain.SetBranchStatus("triggerVector",1);
+	chain.SetBranchStatus("eta",1);
+	chain.SetBranchStatus("phi",1);
+	chain.SetBranchStatus("e",1);
+	chain.SetBranchStatus("pt",1);
+	chain.SetBranchStatus("jetEmcalE", 1);
+	chain.SetBranchStatus("jetIhcalE", 1);
+	chain.SetBranchStatus("jetOhcalE", 1);
+
 	chain.SetBranchAddress("m_event",&m_event);
 	chain.SetBranchAddress("nJet",&nJet);
 	chain.SetBranchAddress("zvtx",&zvtx);
@@ -205,37 +278,84 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 	chain.SetBranchAddress("jetIhcalE", &jetihcale);
 	chain.SetBranchAddress("jetOhcalE", &jetohcale);
 
-	chain.SetBranchAddress("emcaln",&emcaln);
-	chain.SetBranchAddress("emcale",emcale);
-	chain.SetBranchAddress("emcaleta",emcaleta);
-	chain.SetBranchAddress("emcalphi",emcalphi);
-	chain.SetBranchAddress("emcalieta",emcalieta);
-	chain.SetBranchAddress("emcaliphi",emcaliphi);
+	if (!clusters) {
+		chain.SetBranchStatus("emcaln", 1);
+		chain.SetBranchStatus("emcale",1);
+		chain.SetBranchStatus("emcaleta", 1);
+		chain.SetBranchStatus("emcalphi", 1);
+		chain.SetBranchStatus("emcalieta", 1);
+		chain.SetBranchStatus("emcaliphi", 1);
 
-	chain.SetBranchAddress("ihcaln",&ihcaln);
-	chain.SetBranchAddress("ihcale",ihcale);
-	chain.SetBranchAddress("ihcaleta",ihcaleta);
-	chain.SetBranchAddress("ihcalphi",ihcalphi);
-	chain.SetBranchAddress("ihcalieta",ihcalieta);
-	chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+		chain.SetBranchStatus("ihcaln", 1);
+		chain.SetBranchStatus("ihcale", 1);
+		chain.SetBranchStatus("ihcaleta", 1);
+		chain.SetBranchStatus("ihcalphi", 1);
+		chain.SetBranchStatus("ihcalieta", 1);
+		chain.SetBranchStatus("ihcaliphi", 1);
 
-	chain.SetBranchAddress("ohcaln",&ohcaln);
-	chain.SetBranchAddress("ohcale",ohcale);
-	chain.SetBranchAddress("ohcaleta",ohcaleta);
-	chain.SetBranchAddress("ohcalphi",ohcalphi);
-	chain.SetBranchAddress("ohcalieta",ohcalieta);
-	chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+		chain.SetBranchStatus("ohcaln", 1);
+		chain.SetBranchStatus("ohcale", 1);
+		chain.SetBranchStatus("ohcaleta", 1);
+		chain.SetBranchStatus("ohcalphi", 1);
+		chain.SetBranchStatus("ohcalieta", 1);
+		chain.SetBranchStatus("ohcaliphi", 1);
+
+		chain.SetBranchAddress("emcaln",&emcaln);
+		chain.SetBranchAddress("emcale",emcale);
+		chain.SetBranchAddress("emcaleta",emcaleta);
+		chain.SetBranchAddress("emcalphi",emcalphi);
+		chain.SetBranchAddress("emcalieta",emcalieta);
+		chain.SetBranchAddress("emcaliphi",emcaliphi);
+
+		chain.SetBranchAddress("ihcaln",&ihcaln);
+		chain.SetBranchAddress("ihcale",ihcale);
+		chain.SetBranchAddress("ihcaleta",ihcaleta);
+		chain.SetBranchAddress("ihcalphi",ihcalphi);
+		chain.SetBranchAddress("ihcalieta",ihcalieta);
+		chain.SetBranchAddress("ihcaliphi",ihcaliphi);
+
+		chain.SetBranchAddress("ohcaln",&ohcaln);
+		chain.SetBranchAddress("ohcale",ohcale);
+		chain.SetBranchAddress("ohcaleta",ohcaleta);
+		chain.SetBranchAddress("ohcalphi",ohcalphi);
+		chain.SetBranchAddress("ohcalieta",ohcalieta);
+		chain.SetBranchAddress("ohcaliphi",ohcaliphi);
+	}
 
 	if (!emcal_clusters) {
+		chain.SetBranchStatus("clsmult", 1);
+		chain.SetBranchStatus("cluster_e", 1);
+		chain.SetBranchStatus("cluster_eta", 1);
+		chain.SetBranchStatus("cluster_phi", 1);
+
 		chain.SetBranchAddress("clsmult",&clsmult);
 		chain.SetBranchAddress("cluster_e",cluster_e);
 		chain.SetBranchAddress("cluster_eta",cluster_eta);
 		chain.SetBranchAddress("cluster_phi",cluster_phi);
 	} else {
+		chain.SetBranchStatus("emcal_clsmult", 1);
+		chain.SetBranchStatus("emcal_cluster_e", 1);
+		chain.SetBranchStatus("emcal_cluster_eta", 1);
+		chain.SetBranchStatus("emcal_cluster_phi", 1);
+
 		chain.SetBranchAddress("emcal_clsmult",&clsmult);
 		chain.SetBranchAddress("emcal_cluster_e",cluster_e);
 		chain.SetBranchAddress("emcal_cluster_eta",cluster_eta);
 		chain.SetBranchAddress("emcal_cluster_phi",cluster_phi);
+	}
+
+	if (sim) {
+		chain.SetBranchStatus("nTruthJet",1);
+		chain.SetBranchStatus("truthE",1);
+		chain.SetBranchStatus("truthPt",1);
+		chain.SetBranchStatus("truthEta",1);
+		chain.SetBranchStatus("truthPhi",1);
+
+		chain.SetBranchAddress("nTruthJet",&nTruthJet);
+		chain.SetBranchAddress("truthE",&truthE);
+		chain.SetBranchAddress("truthPt",&truthPt);
+		chain.SetBranchAddress("truthEta",&truthEta);
+		chain.SetBranchAddress("truthPhi",&truthPhi);
 	}
 
 	// if applyCorr is set, then apply correction factor from MC Jet Calibration 
@@ -255,7 +375,7 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
 
     // main event loop 
     for (Long64_t entry = 0; entry < nEntries; ++entry) {
-    //for (Long64_t entry = 0; entry < 1000000; ++entry) {
+    //for (Long64_t entry = 0; entry < 20000; ++entry) {
         chain.GetEntry(entry);
     	if (eventnumber % 10000 == 0) cout << "event " << eventnumber << endl;
     	eventnumber++;
@@ -304,13 +424,15 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
   		}
 
   		if (fabs((*eta)[ind_lead]) > jetetamax || (*pt)[ind_lead] < lead_ptmin) { continue; }
-  		if (dijet_bkg_cut) {
-  			//Dijet cut - energy of subleading jet should be at least 30% of energy in leading jet and (delta-phi > 3pi/4)
-  			if (fabs((*eta)[ind_sub]) > jetetamax || (*pt)[ind_sub] < 0.3*(*pt)[ind_lead]) { continue; }
-  		} else {
-  			//Energy fraction cut - jet energy in EMCal should be 10-90% of total jet energy, OHCal should be 10-90% and IHCal should be 0-90%
-  			float jete = (*e)[ind_lead];
-  			if ((*jetemcale)[ind_lead]/jete < 0.1 || (*jetemcale)[ind_lead]/jete > 0.9 || (*jetihcale)[ind_lead]/jete > 0.9 || (*jetohcale)[ind_lead]/jete < 0.1 || (*jetohcale)[ind_lead]/jete > 0.9) { continue; }
+  		if (do_bkg_cut) {
+	  		if (dijet_bkg_cut) {
+	  			//Dijet cut - energy of subleading jet should be at least 30% of energy in leading jet and (delta-phi > 3pi/4)
+	  			if (fabs((*eta)[ind_sub]) > jetetamax || (*pt)[ind_sub] < 0.3*(*pt)[ind_lead]) { continue; }
+	  		} else {
+	  			//Energy fraction cut - jet energy in EMCal should be 10-90% of total jet energy, OHCal should be 10-90% and IHCal should be 0-90%
+	  			float jete = (*e)[ind_lead];
+	  			if ((*jetemcale)[ind_lead]/jete < 0.1 || (*jetemcale)[ind_lead]/jete > 0.9 || (*jetihcale)[ind_lead]/jete > 0.9 || (*jetohcale)[ind_lead]/jete < 0.1 || (*jetohcale)[ind_lead]/jete > 0.9) { continue; }
+	  		}
   		}	
 
   		// create leading and subleading jet vectors and apply JES calibration correction if applicable 
@@ -321,6 +443,14 @@ void dijet_ue_analysis(string infilename = "sim_run21_jet10_output_*.root", stri
     	} else {
     		lead.SetPtEtaPhi((*pt)[ind_lead], (*eta)[ind_lead], (*phi)[ind_lead]);
     		if (dijet_bkg_cut) sub.SetPtEtaPhi((*pt)[ind_sub], (*eta)[ind_sub], (*phi)[ind_sub]);
+    	}
+
+    	std::vector<int> reco_matched;
+    	std::vector<int> truth_matched;
+    	if (sim && do_truth_match) {
+    		match_meas_truth(eta, phi, reco_matched, truthEta, truthPhi, truth_matched, 0.4);
+    		if (reco_matched[ind_lead] == -1) { continue; }
+    		if (dijet_bkg_cut && reco_matched[ind_sub] == -1) { continue; }
     	}
 
     	h_vz->Fill(zvtx);
