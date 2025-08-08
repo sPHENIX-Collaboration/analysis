@@ -169,6 +169,12 @@ int CaloCheck::read_event_list(const std::string &event_list)
 //____________________________________________________________________________..
 int CaloCheck::process_event_check(PHCompositeNode *topNode)
 {
+  // Stop after all events of interest have been processed
+  if (m_processed_event == m_events.size())
+  {
+    return Fun4AllReturnCodes::ABORTPROCESSING;
+  }
+
   EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
   if (!eventInfo)
   {
@@ -197,11 +203,6 @@ int CaloCheck::process_event_check(PHCompositeNode *topNode)
 int CaloCheck::process_calo(PHCompositeNode *topNode)
 {
   std::cout << "CaloCheck::process_calo(PHCompositeNode *topNode) Processing Event" << std::endl;
-  // Stop after all events of interest have been processed
-  if (++m_processed_event == m_events.size())
-  {
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
 
   TowerInfoContainer *towersCEMC = findNode::getClass<TowerInfoContainer>(topNode, m_emcTowerNode.c_str());
 
@@ -211,15 +212,30 @@ int CaloCheck::process_calo(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  std::string histName = std::format("h2_isBadChi2_{}_{}", m_run, m_globalEvent);
+  std::string histNameBadChi2 = std::format("h2_isBadChi2_{}_{}", m_run, m_globalEvent);
   std::string title = std::format("EMCal isBadChi2: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
 
-  m_hists[histName] = std::make_unique<TH2F>(histName.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+  m_hists[histNameBadChi2] = std::make_unique<TH2F>(histNameBadChi2.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
 
   std::string histNameChi2 = std::format("h2_Chi2_{}_{}", m_run, m_globalEvent);
   title = std::format("EMCal #chi^{{2}}: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
 
   m_hists[histNameChi2] = std::make_unique<TH2F>(histNameChi2.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+
+  std::string histNameADC = std::format("h2_ADC_{}_{}", m_run, m_globalEvent);
+  title = std::format("EMCal ADC: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
+
+  m_hists[histNameADC] = std::make_unique<TH2F>(histNameADC.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+
+  std::string histNameTime = std::format("h2_Time_{}_{}", m_run, m_globalEvent);
+  title = std::format("EMCal Time: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
+
+  m_hists[histNameTime] = std::make_unique<TH2F>(histNameTime.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
+
+  std::string histNameBadTime = std::format("h2_isBadTime_{}_{}", m_run, m_globalEvent);
+  title = std::format("EMCal isBadTime: Run: {}, Event: {}; Tower Index #phi; Tower Index #eta", m_run, m_globalEvent);
+
+  m_hists[histNameBadTime] = std::make_unique<TH2F>(histNameBadTime.c_str(), title.c_str(), CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS-0.5, CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS-0.5);
 
   // loop over towers
   for (std::size_t towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
@@ -231,18 +247,38 @@ int CaloCheck::process_calo(PHCompositeNode *topNode)
     TowerInfo *tower = towersCEMC->get_tower_at_channel(towerIndex);
 
     bool isBadChi2 = tower->get_isBadChi2();
+    bool isBadTime = tower->get_isBadTime();
     float chi2 = tower->get_chi2();
+    float adc = tower->get_energy();
+    float time = tower->get_time_float();
 
     if(std::isfinite(chi2))
     {
       dynamic_cast<TH2 *>(m_hists[histNameChi2].get())->Fill(iphi, ieta, chi2);
     }
 
+    if(std::isfinite(adc))
+    {
+      dynamic_cast<TH2 *>(m_hists[histNameADC].get())->Fill(iphi, ieta, adc);
+    }
+
+    if(std::isfinite(time))
+    {
+      dynamic_cast<TH2 *>(m_hists[histNameTime].get())->Fill(iphi, ieta, time);
+    }
+
     if(isBadChi2)
     {
-      dynamic_cast<TH2 *>(m_hists[histName].get())->Fill(iphi, ieta);
+      dynamic_cast<TH2 *>(m_hists[histNameBadChi2].get())->Fill(iphi, ieta);
+    }
+
+    if(isBadTime)
+    {
+      dynamic_cast<TH2 *>(m_hists[histNameBadTime].get())->Fill(iphi, ieta);
     }
   }
+
+  ++m_processed_event;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

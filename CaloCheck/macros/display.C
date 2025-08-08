@@ -192,13 +192,13 @@ void display(const std::string &outputDir="plots", bool save_fig = true)
 
     c1->SetCanvasSize(2900, 1000);
     c1->SetLeftMargin(.06F);
-    c1->SetRightMargin(.09F);
+    c1->SetRightMargin(.11F);
     c1->SetTopMargin(.09F);
     c1->SetBottomMargin(.12F);
 
     hist->Draw("COLZ1");
 
-    if(name.starts_with("h2_isBadChi2"))
+    if(name.starts_with("h2_isBadChi2") || name.starts_with("h2_isBadTime"))
     {
       hist->SetMaximum(5);
     }
@@ -217,7 +217,7 @@ void display(const std::string &outputDir="plots", bool save_fig = true)
 
     c1->SetCanvasSize(1300, 1000);
     c1->SetLeftMargin(.09F);
-    c1->SetRightMargin(.13F);
+    c1->SetRightMargin(.19F);
     c1->SetTopMargin(.09F);
     c1->SetBottomMargin(.12F);
 
@@ -233,15 +233,24 @@ void display(const std::string &outputDir="plots", bool save_fig = true)
     hist->GetXaxis()->SetNdivisions(8, false);
     hist->GetYaxis()->SetNdivisions(8, false);
 
-    hist->SetMinimum(0);
+    if(!name.starts_with("h2_ADC") && !name.starts_with("h2_Time"))
+    {
+      hist->SetMinimum(0);
+    }
 
     TPaletteAxis *palette = dynamic_cast<TPaletteAxis *>(hist->GetListOfFunctions()->FindObject("palette"));
     if (palette)
     {
-        float x1 = 0.88;
+        float x1 = 0.82;
         float x1_shift = 0.05;
         float y1 = 0.12;
         float y1_shift = 0.8;
+
+        if(name.starts_with("h2_Chi2"))
+        {
+          y1_shift = 0.75;
+        }
+
         palette->SetX1NDC(x1); // Set the left edge of the palette in NDC coordinates
         palette->SetY1NDC(y1); // Set the bottom edge
         palette->SetX2NDC(x1+x1_shift); // Set the right edge
