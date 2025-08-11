@@ -27,10 +27,11 @@ sPHENIX_LIBFLAGS = -L$(OFFLINE_MAIN)/lib \
 								-lglobalvertex \
 								-lphool \
 								-lphparameter \
-								-lsphenixnpc
+								-lsphenixnpc \
+								-lqautils
 
 MY_CPPFLAGS = -I$(MYINSTALL)/include
-MY_LIBFLAGS = -L$(MYINSTALL)/lib -lcalo_reco -lCaloCheck
+MY_LIBFLAGS = -L$(MYINSTALL)/lib -lcalo_reco -lCaloCheck -lcalovalid
 
 # Combine all C++ flags for compilation
 ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
@@ -40,7 +41,7 @@ ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
 SRCS = $(wildcard macros/*.C)
 
 # List all your executable targets explicitly
-ALL_TARGETS = bin/Fun4All_CaloCheck
+ALL_TARGETS = bin/Fun4All_CaloCheck bin/Fun4All_CaloValid
 
 # Define a stamp file for Cppcheck
 CPPCHECK_STAMP = .cppcheck_ran_stamp
@@ -57,6 +58,10 @@ bin/%: macros/%.C
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS)
 
 bin/Fun4All_CaloCheck: macros/Fun4All_CaloCheck.C
+	mkdir -p bin
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(MY_LIBFLAGS)
+
+bin/Fun4All_CaloValid: macros/Fun4All_CaloValid.C
 	mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) $(MY_LIBFLAGS)
 
