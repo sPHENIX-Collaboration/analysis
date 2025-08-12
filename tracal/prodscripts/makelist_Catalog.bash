@@ -45,19 +45,19 @@ mkdir -p $listdirCLUS && rm -f $listdirCLUS/*.list
 mkdir -p $listdirSEED && rm -f $listdirSEED/*.list
 mkdir -p $listdirTRAC && rm -f $listdirTRAC/*.list
 
-CreateDstList.pl --tag $prodCALO --list $RUNSLIST $DST_CALO
+./myCreateDstList.pl --tag $prodCALO --list $RUNSLIST $DST_CALO
 mv ${dst_CALO}*.list $listdirCALO
 echo $prodCALO $RUNSLIST $DST_CALO -- `ls -1 $listdirCALO/*.list | wc -l` runs found
 
-CreateDstList.pl --tag $prodCLUS --list $RUNSLIST $DST_CLUS
+./myCreateDstList.pl --tag $prodCLUS --list $RUNSLIST $DST_CLUS
 mv ${dst_CLUS}*.list $listdirCLUS
 echo $prodCLUS $RUNSLIST $DST_CLUS -- `ls -1 $listdirCLUS/*.list | wc -l` runs found
 
-CreateDstList.pl --tag $prodSEED --list $RUNSLIST $DST_SEED
+./myCreateDstList.pl --tag $prodSEED --list $RUNSLIST $DST_SEED
 mv ${dst_SEED}*.list $listdirSEED
 echo $prodSEED $RUNSLIST $DST_SEED -- `ls -1 $listdirSEED/*.list | wc -l` runs found
 
-CreateDstList.pl --tag $prodTRAC --list $RUNSLIST $DST_TRAC
+./myCreateDstList.pl --tag $prodTRAC --list $RUNSLIST $DST_TRAC
 mv ${dst_TRAC}*.list $listdirTRAC
 echo $prodTRAC $RUNSLIST $DST_TRAC -- `ls -1 $listdirTRAC/*.list | wc -l` runs found
 
