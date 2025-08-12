@@ -22,7 +22,6 @@ DOIT() {
 	fi	
 }
 
-
 #---- begin user setup -----------------------------
 #
 OUTPUTDIR="./LISTS"

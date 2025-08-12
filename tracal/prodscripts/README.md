@@ -17,7 +17,7 @@ findprod.bash - find out what productions are available for a given DST-type. Se
 ------------------------------------------------------
 
 Notes:
-- run 53877 has ~2600 segments (10000 trigger frames per segment)
+- run 53877 has ~2600 tracking segments
 - note that the number of events in DST_CALO is either 5:1 or 10:1 w.r.t. the number of events in the associated tracking DSTs.
 	- ana468_2024p012_v001 CALO:TRACKS is  5:1  (525 CALO dsts for 53877)
 	- ana492_2024p020_v005 CALO:TRACKS is 10:1  (259 CALO dsts for 53877)

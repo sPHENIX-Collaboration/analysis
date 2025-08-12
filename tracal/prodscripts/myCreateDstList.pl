@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-#WJL version - QUIETER!
+#WJL version - just commented out some printfs
 
 #located in offline/framework/frog/
 
