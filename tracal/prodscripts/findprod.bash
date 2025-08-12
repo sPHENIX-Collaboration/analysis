@@ -28,7 +28,7 @@ datestr=$(date '+%Y%m%d')
 
 CreateDstList.pl --printtags --dataset run2pp > $OUTPUTDIR/catprod.txt
 
-#----- now loop over runs in RUNSLIST and build list of segments where all 4 DSTs exist
+#----- now loop over productions and look for 53877 root files of any dst type
 echo Starting...
 while IFS= read -r prodname; do
 	#echo Start $prodname ------------------------------
