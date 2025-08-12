@@ -5,8 +5,10 @@ prodscripts - just a couple of bash scripts.
 makelist_Catalog.bash - build list of 4-DSTs across all run2pp data for use in FFA
 - loop over QM40 runs list, create 4 separate single-DST-type filelists for DST-types CALO, TRKR_CLUSTER, TRKR_SEED, TRKR_TRACKS
 - loop through runs, then each of these 4 filelists, and find matching sets of 4 DST file names (over all runs & segments)
-- write these DST filename quartets to ./LISTS/catlist_[date].list. This list can be used directly in condor.
-
+- write these DST filename quartets to ./LISTS/catlist_[date].list. This list can be used directly in condor. Each line of this file has the following format:
+```
+0, TRACKS-dst-file-name, SEED-dst-file-name, CLUSTER-dst-file-name, CALO-dst-file-name 
+```
 ------------------------------------------------------
 
 findprod.bash - find out what productions are available for a given DST-type. Search keyed on run 53877.
