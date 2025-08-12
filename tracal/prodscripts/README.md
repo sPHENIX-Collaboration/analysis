@@ -74,7 +74,7 @@ Starting...
 	ana494_2024p021_v001	DST_TRKR_TRACKS 	2628
 	ana495_2024p021_v001	DST_TRKR_TRACKS 	2628
 	ana502_2024p022_v001	DST_CALO        	 259
-	 new_newcdbtag_v007		DST_CALO        	 257
+	 new_newcdbtag_v007	DST_CALO        	 257
 ```
 
 ------------------------------------------------------
