@@ -2,7 +2,7 @@
 #
 # 	use CreateDstList to get filelists for 4 different DST types for all QM40 runs
 # 	and build output list where all 4 segments (CALO, CLUS, SEED, TRACKS) exist!
-#	W.J. Llope,  August 10, 2025
+#		bill llope 20250810
 #
 leading_zero_fill () {
     printf "%0$1d\\n" "$2"
