@@ -12,7 +12,7 @@ DOIT() {
 	OUTDIR=$3
 	dst=`echo "${DST,,}"`		# make lowercase
 	if [ -e $dst-00053877.list ]; then
-	  rm -fq dst_trkr_tracks-00053877.list
+	  rm -fq $dst-00053877.list
 	fi
 	myCreateDstList.pl --tag $prodname --run 53877 $DST
 	if [ -e $dst-00053877.list ]; then
