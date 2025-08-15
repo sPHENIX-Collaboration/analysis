@@ -50,7 +50,9 @@ class PHCompositeNode;
 class TH1;
 class TH2;
 class TProfile2D;
+class TFile;
 class TTree;
+
 class SiliconSeedsAna : public SubsysReco
 {
 public:
@@ -80,12 +82,14 @@ public:
       setClusterContainerName("TOPOCLUSTER_EMCAL");
     }
   }
-  void createTree();
   void setMC(bool input) { isMC = input; }
   void setVtxSkip(bool input) { b_skipvtx = input; }
   void setCaloSkip(bool input) { b_skipcalo = input; }
-  std::tuple<float, float, float> getClusterPos(TrkrDefs::cluskey cluskey, TrkrClusterContainer *clusterContainer);
 
+protected:
+  //std::tuple<float, float, float> getClusterPos(TrkrDefs::cluskey cluskey, TrkrClusterContainer *clusterContainer);
+
+  void createTree();
   void createHistos();
   std::string getHistoPrefix() const;
 
@@ -102,26 +106,31 @@ public:
   void initCaloTreeBranches();
 
   std::string m_clusterContainerName = "TRKR_CLUSTER";
-  std::string m_actsgeometryName = "ActsGeometry";
-  std::string m_trackMapName = "SvtxTrackMap";
-  std::string m_vertexMapName = "SvtxVertexMap";
-  std::string m_emcalClusName = "CLUSTER_CEMC";
-  std::string m_outputfilename = "output_histograms.root";
+  std::string m_actsgeometryName     = "ActsGeometry";
+  std::string m_trackMapName         = "SvtxTrackMap";
+  std::string m_vertexMapName        = "SvtxVertexMap";
+  std::string m_emcalClusName        = "CLUSTER_CEMC";
+  std::string m_outputfilename       = "output_histograms.root";
 
   // std::string m_emcal_node_name = "TOWERINFO_CALIB_CEMC";
   // std::string m_ihcal_node_name = "TOWERINFO_CALIB_HCALIN";
   // std::string m_ohcal_node_name = "TOWERINFO_CALIB_HCALOUT";
   // std::string m_ihcalClus_node_name = "CLUSTER_HCALIN";
   // std::string m_ohcalClus_node_name = "CLUSTER_HCALOUT";
-  SvtxTrackMap *trackmap = nullptr;
-  SvtxTrack *track = nullptr;
-  TrackSeed *si_seed = nullptr;
-  TrkrCluster *trkrCluster = nullptr;
+  SvtxTrackMap *trackmap    = nullptr;
+  SvtxTrack    *track       = nullptr;
+  TrackSeed    *si_seed     = nullptr;
+  TrkrCluster  *trkrCluster = nullptr;
+
+  TFile *m_outfile = nullptr;
+
   // Truth info tree and vectors
   TTree *truthTree = nullptr;
-  std::vector<int> truth_pid;
+  std::vector<int>   truth_pid;
   std::vector<float> truth_px, truth_py, truth_pz, truth_e;
   std::vector<float> truth_pt, truth_eta, truth_phi;
+
+  // SiSeed info tree and vectors
   TTree *trackTree = nullptr;
   int evt = 0;
   std::vector<unsigned int> track_id;
@@ -144,13 +153,15 @@ public:
   std::vector<float> track_phi_emc;
   std::vector<float> track_pt_emc;
 
+  // SiCluster associated to SiSeed info tree and vectors
   TTree *SiClusTree = nullptr;
-  std::vector<int> SiClus_trackid;
-  std::vector<int> SiClus_layer;
+  std::vector<int>   SiClus_trackid;
+  std::vector<int>   SiClus_layer;
   std::vector<float> SiClus_x;
   std::vector<float> SiClus_y;
   std::vector<float> SiClus_z;
 
+  // EMC cluster info tree and vectors
   TTree *caloTree = nullptr;
   int calo_evt = 0;
   std::vector<float> calo_x;
@@ -160,6 +171,24 @@ public:
   std::vector<float> calo_phi;
   std::vector<float> calo_eta;
   std::vector<float> calo_energy;
+  std::vector<float> calo_chi2;
+  std::vector<float> calo_prob;
+
+  // Event based variable info tree 
+  TTree *evtTree = nullptr;
+  //int trk_evt = 0;
+  //int calo_evt = 0;
+  long long evt_bco;
+  int       evt_crossing;
+  int       evt_nintt;
+  int       evt_nintt50;
+  int       evt_nmaps;
+  int       evt_nemc;
+  int       evt_nemc02;
+  float     evt_xvtx;
+  float     evt_yvtx;
+  float     evt_zvtx;
+
 
   double m_emcal_low_cut = 0.3;
   float _caloRadiusEMCal = 93.5;
