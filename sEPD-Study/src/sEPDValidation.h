@@ -51,51 +51,51 @@ private:
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
   int process_centrality(PHCompositeNode *topNode);
 
-  int m_event;
+  int m_event{0};
 
-  std::string m_outfile_name;
-  bool m_condor_mode;
-  bool m_do_ep;
+  std::string m_outfile_name{"test.root"};
+  bool m_condor_mode{false};
+  bool m_do_ep{true};
 
-  unsigned int m_bins_zvtx;
-  double m_zvtx_low;
-  double m_zvtx_high;
+  unsigned int m_bins_zvtx{200};
+  double m_zvtx_low{-50};
+  double m_zvtx_high{50};
 
-  unsigned int m_bins_cent;
-  double m_cent_low;
-  double m_cent_high;
+  unsigned int m_bins_cent{100};
+  double m_cent_low{-0.5};
+  double m_cent_high{99.5};
 
-  unsigned int m_bins_sepd_charge;
-  double m_sepd_charge_low;
-  double m_sepd_charge_high;
+  unsigned int m_bins_sepd_charge{200};
+  double m_sepd_charge_low{0};
+  double m_sepd_charge_high{2e4};
 
-  unsigned int m_bins_mbd_charge;
-  double m_mbd_charge_low;
-  double m_mbd_charge_high;
+  unsigned int m_bins_mbd_charge{80};
+  double m_mbd_charge_low{0};
+  double m_mbd_charge_high{2e3};
 
-  unsigned int m_bins_mbd_phi;
-  double m_mbd_phi_low;
-  double m_mbd_phi_high;
+  unsigned int m_bins_mbd_phi{60};
+  double m_mbd_phi_low{-M_PI};
+  double m_mbd_phi_high{M_PI};
 
-  unsigned int m_bins_mbd_eta;
-  double m_mbd_eta_low;
-  double m_mbd_eta_high;
+  unsigned int m_bins_mbd_eta{7};
+  double m_mbd_eta_low{3.6};
+  double m_mbd_eta_high{4.3};
 
-  unsigned int m_bins_sepd_Q;
-  double m_sepd_Q_low;
-  double m_sepd_Q_high;
+  unsigned int m_bins_sepd_Q{100};
+  double m_sepd_Q_low{-1};
+  double m_sepd_Q_high{1};
 
-  unsigned int m_bins_sepd_total_charge;
-  double m_sepd_total_charge_low;
-  double m_sepd_total_charge_high;
+  unsigned int m_bins_sepd_total_charge{200};
+  double m_sepd_total_charge_low{0};
+  double m_sepd_total_charge_high{4e4};
 
-  unsigned int m_bins_mbd_total_charge;
-  double m_mbd_total_charge_low;
-  double m_mbd_total_charge_high;
+  unsigned int m_bins_mbd_total_charge{200};
+  double m_mbd_total_charge_low{0};
+  double m_mbd_total_charge_high{5e3};
 
-  unsigned int m_bins_psi;
-  double m_psi_low;
-  double m_psi_high;
+  unsigned int m_bins_psi{126};
+  double m_psi_low{-M_PI};
+  double m_psi_high{M_PI};
 
   enum class EventType : std::uint8_t
   {
@@ -112,57 +112,57 @@ private:
     MBD_HIGH
   };
 
-  std::vector<std::string> m_eventType = {"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
-  std::vector<std::string> m_MinBias_Type = {"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
+  std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
+  std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
 
   // Event Vars
-  double m_zvtx;
-  double m_cent;
-  double m_mbd_total_charge;
+  double m_zvtx{9999};
+  double m_cent{9999};
+  double m_mbd_total_charge{9999};
 
   // Cuts
-  double m_zvtx_max;
-  double m_sepd_charge_threshold;
+  double m_zvtx_max{10};
+  double m_sepd_charge_threshold{0.2};
 
   // Logging Info
-  double m_cent_min;
-  double m_cent_max;
-  double m_sepd_z_min;
-  double m_sepd_z_max;
-  double m_sepd_r_min;
-  double m_sepd_r_max;
-  double m_sepd_phi_min;
-  double m_sepd_phi_max;
-  double m_sepd_eta_min;
-  double m_sepd_eta_max;
-  double m_sepd_charge_min;
-  double m_sepd_charge_max;
-  double m_mbd_ch_z_min;
-  double m_mbd_ch_z_max;
-  double m_mbd_ch_r_min;
-  double m_mbd_ch_r_max;
-  double m_mbd_ch_phi_min;
-  double m_mbd_ch_phi_max;
-  double m_mbd_ch_eta_min;
-  double m_mbd_ch_eta_max;
-  double m_mbd_ch_charge_min;
-  double m_mbd_ch_charge_max;
-  double m_mbd_charge_min;
-  double m_mbd_charge_max;
-  double m_mbd_total_charge_min;
-  double m_mbd_total_charge_max;
-  double m_vertex_scale_min;
-  double m_vertex_scale_max;
-  double m_centrality_scale_min;
-  double m_centrality_scale_max;
-  double m_sepd_Q_min;
-  double m_sepd_Q_max;
-  double m_sepd_total_charge_south_min;
-  double m_sepd_total_charge_south_max;
-  double m_sepd_total_charge_north_min;
-  double m_sepd_total_charge_north_max;
-  double m_psi_min;
-  double m_psi_max;
+  double m_cent_min{9999};
+  double m_cent_max{0};
+  double m_sepd_z_min{9999};
+  double m_sepd_z_max{0};
+  double m_sepd_r_min{9999};
+  double m_sepd_r_max{0};
+  double m_sepd_phi_min{9999};
+  double m_sepd_phi_max{0};
+  double m_sepd_eta_min{9999};
+  double m_sepd_eta_max{0};
+  double m_sepd_charge_min{9999};
+  double m_sepd_charge_max{0};
+  double m_mbd_ch_z_min{9999};
+  double m_mbd_ch_z_max{0};
+  double m_mbd_ch_r_min{9999};
+  double m_mbd_ch_r_max{0};
+  double m_mbd_ch_phi_min{9999};
+  double m_mbd_ch_phi_max{0};
+  double m_mbd_ch_eta_min{9999};
+  double m_mbd_ch_eta_max{0};
+  double m_mbd_ch_charge_min{9999};
+  double m_mbd_ch_charge_max{0};
+  double m_mbd_charge_min{9999};
+  double m_mbd_charge_max{0};
+  double m_mbd_total_charge_min{9999};
+  double m_mbd_total_charge_max{0};
+  double m_vertex_scale_min{9999};
+  double m_vertex_scale_max{0};
+  double m_centrality_scale_min{9999};
+  double m_centrality_scale_max{0};
+  double m_sepd_Q_min{9999};
+  double m_sepd_Q_max{0};
+  double m_sepd_total_charge_south_min{9999};
+  double m_sepd_total_charge_south_max{0};
+  double m_sepd_total_charge_north_min{9999};
+  double m_sepd_total_charge_north_max{0};
+  double m_psi_min{9999};
+  double m_psi_max{0};
 
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   std::map<std::string, int> m_ctr;
