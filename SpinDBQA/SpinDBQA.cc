@@ -467,13 +467,19 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     if (map_bluepolbyfill.count(map_fillnumber[runnumber]) == 0 || map_yellpolbyfill.count(map_fillnumber[runnumber]) == 0)
     {
       badrunqa = 1;
-      spin_cont.SetPolarizationBlue(0, -999., -999.);
-      spin_cont.SetPolarizationYellow(0, -999., -999.);
+      for (int i = 0; i < 120; i++)
+      {
+        spin_cont.SetPolarizationBlue(i, -999., -999.);
+        spin_cont.SetPolarizationYellow(i, -999., -999.);
+      }
     }
     else
     {
-      spin_cont.SetPolarizationBlue(0, map_bluepolbyfill[map_fillnumber[runnumber]], map_bluepolbyfillerr[map_fillnumber[runnumber]]);
-      spin_cont.SetPolarizationYellow(0, map_yellpolbyfill[map_fillnumber[runnumber]], map_yellpolbyfillerr[map_fillnumber[runnumber]]);
+      for (int i = 0; i < 120; i++)
+      {
+        spin_cont.SetPolarizationBlue(i, map_bluepolbyfill[map_fillnumber[runnumber]], map_bluepolbyfillerr[map_fillnumber[runnumber]]);
+        spin_cont.SetPolarizationYellow(i, map_yellpolbyfill[map_fillnumber[runnumber]], map_yellpolbyfillerr[map_fillnumber[runnumber]]);
+      }
     }
     
     ////////////////////////////////////////////////////
