@@ -43,7 +43,8 @@ void Fun4All_sEPD(const std::string &fname,
                   int nEvents = 100,
                   const std::string &dbtag = "newcdbtag",
                   bool condor_mode = false,
-                  bool do_ep = true)
+                  bool do_ep = true,
+                  const std::string &q_vec_corr_fname = "")
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
@@ -54,6 +55,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "Do Event Plane Reco: " << do_ep << std::endl;
+  std::cout << "Q vector correction file: " << q_vec_corr_fname << std::endl;
   std::cout << "########################" << std::endl;
 
   /* Verbosity Options
@@ -137,6 +139,7 @@ void Fun4All_sEPD(const std::string &fname,
   sepd_validation->set_filename(output);
   sepd_validation->set_condor_mode(condor_mode);
   sepd_validation->set_do_ep(do_ep);
+  sepd_validation->set_q_vec_corr(q_vec_corr_fname);
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(sepd_validation.release());
 
@@ -160,9 +163,9 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 8)
+  if (args.size() < 3 || args.size() > 9)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag] [condor_mode] [do_ep]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag] [condor_mode] [do_ep] [q_vec_corr_fname]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
@@ -170,6 +173,7 @@ int main(int argc, const char* const argv[])
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     std::cerr << "  Do Event Plane: Do official Event Plane reconstruction." << std::endl;
+    std::cerr << "  q_vec_corr_fname: Q-vector correction file." << std::endl;
     return 1;  // Indicate error
   }
 
@@ -180,6 +184,7 @@ int main(int argc, const char* const argv[])
   std::string dbtag = "newcdbtag";
   bool condor_mode = false;
   bool do_ep = true;
+  std::string q_vec_corr_fname = "";
 
   if (args.size() >= 4)
   {
@@ -201,8 +206,12 @@ int main(int argc, const char* const argv[])
   {
     do_ep = std::stoi(args[7]);
   }
+  if (args.size() >= 9)
+  {
+    q_vec_corr_fname = args[8];
+  }
 
-  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag, condor_mode, do_ep);
+  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag, condor_mode, do_ep, q_vec_corr_fname);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

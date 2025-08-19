@@ -7,11 +7,12 @@
 #include <fun4all/SubsysReco.h>
 
 // -- c++
-#include <cstdint> // Required for std::uint8_t, std::uint16_t, etc.
+#include <cstdint>  // Required for std::uint8_t, std::uint16_t, etc.
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 // -- ROOT
 #include <TH1.h>
@@ -43,7 +44,16 @@ class sEPDValidation : public SubsysReco
     m_do_ep = do_ep;
   }
 
-private:
+  void set_q_vec_corr(const std::string &file)
+  {
+    m_q_vec_corr_fname = file;
+    if (std::filesystem::exists(file))
+    {
+      m_do_q_vec_corr = true;
+    }
+  }
+
+ private:
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
@@ -56,6 +66,8 @@ private:
   std::string m_outfile_name{"test.root"};
   bool m_condor_mode{false};
   bool m_do_ep{true};
+  std::string m_q_vec_corr_fname;
+  bool m_do_q_vec_corr{false};
 
   unsigned int m_bins_zvtx{200};
   double m_zvtx_low{-50};
