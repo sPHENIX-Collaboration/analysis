@@ -19,8 +19,8 @@ void run_SpinDBQA()
     qa->SetCNIPath(CNIpath);
 
     // ==== Set QA level (can either do default qa level or specific choice of qa level) ==== //
-    qa->DefaultQA();
-    //int qa_level = 0xFFFF; qa->SetQALevel(qa_level);
+    //qa->DefaultQA();
+    int qa_level = 0xFFFF; qa->SetQALevel(qa_level);
     //int qa_level = 0; qa->SetQALevel(qa_level);
     // ====================== //
 
@@ -38,7 +38,7 @@ void run_SpinDBQA()
 
 
     // ======== Write new QA level (WARNING: EXPERT ONLY!)========== //
-    // int newqalevel = 0; 
-    // qa->WriteNewQALevel(newqalevel);
+    int newqalevel = 0; 
+    qa->WriteNewQALevel(newqalevel);
 
 }

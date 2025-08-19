@@ -1,5 +1,8 @@
 #include "SpinDBQA.h"
 
+#include <uspin/SpinDBContent.h>
+#include <uspin/SpinDBContentv1.h>
+
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH1F.h>
@@ -17,10 +20,12 @@
 
 
 SpinDBQA::SpinDBQA()
-    : spin_cont(),
-      spin_out("phnxrc"),
+    : spin_out("phnxrc"),
       spin_in()
 {
+
+  spin_cont = new SpinDBContentv1();
+
   locpolbf = new TGraphErrors();
   locpolbf->SetName("locpolbf");
   locpolbb = new TGraphErrors();
@@ -39,6 +44,11 @@ SpinDBQA::SpinDBQA()
   locpolphaseyb = new TGraphErrors();
   locpolphaseyb->SetName("locpolphaseyb");
 
+}
+
+SpinDBQA::~SpinDBQA()
+{
+    delete spin_cont;
 }
 
 
@@ -83,34 +93,36 @@ void SpinDBQA::ReadSpinDBData()
       continue;
     }
     //map_defaultQA[runnumber] = spin_out.GetDefaultQA(runnumber);
-    map_fillnumber[runnumber] = spin_cont.GetFillNumber();
-    map_qa_level[runnumber] = spin_cont.GetQALevel();
-    map_crossingshift[runnumber] = spin_cont.GetCrossingShift();
+    map_fillnumber[runnumber] = spin_cont->GetFillNumber();
+    map_qa_level[runnumber] = spin_cont->GetQALevel();
+    map_crossingshift[runnumber] = spin_cont->GetCrossingShift();
+
+    
     
     for (int i = 0; i < 120; i++)
     {
-      map_bluespin[runnumber].push_back(spin_cont.GetSpinPatternBlue(i));
-      map_yellspin[runnumber].push_back(spin_cont.GetSpinPatternYellow(i));
-      map_mbdns[runnumber].push_back(spin_cont.GetScalerMbdNoCut(i));
-      map_mbdvtx[runnumber].push_back(spin_cont.GetScalerMbdVertexCut(i));
-      map_zdcns[runnumber].push_back(spin_cont.GetScalerZdcNoCut(i));
+      map_bluespin[runnumber].push_back(spin_cont->GetSpinPatternBlue(i));
+      map_yellspin[runnumber].push_back(spin_cont->GetSpinPatternYellow(i));
+      map_mbdns[runnumber].push_back(spin_cont->GetScalerMbdNoCut(i));
+      map_mbdvtx[runnumber].push_back(spin_cont->GetScalerMbdVertexCut(i));
+      map_zdcns[runnumber].push_back(spin_cont->GetScalerZdcNoCut(i));
     }
     
-    spin_cont.GetPolarizationBlue(0, map_bluepol[runnumber], map_bluepolerr[runnumber]);
-    spin_cont.GetPolarizationYellow(0, map_yellpol[runnumber], map_yellpolerr[runnumber]);
-    map_badrunqa[runnumber] = spin_cont.GetBadRunFlag();
-    map_crossingangle[runnumber] = spin_cont.GetCrossAngle();
-    map_crossanglestd[runnumber] = spin_cont.GetCrossAngleStd();
-    map_crossanglemin[runnumber] = spin_cont.GetCrossAngleMin();
-    map_crossanglemax[runnumber] = spin_cont.GetCrossAngleMax();
-    spin_cont.GetAsymBlueForward(map_asymbf[runnumber], map_asymerrbf[runnumber]);
-    spin_cont.GetAsymBlueBackward(map_asymbb[runnumber], map_asymerrbb[runnumber]);
-    spin_cont.GetAsymYellowForward(map_asymyf[runnumber], map_asymerryf[runnumber]);
-    spin_cont.GetAsymYellowBackward(map_asymyb[runnumber], map_asymerryb[runnumber]);
-    spin_cont.GetPhaseBlueForward(map_phasebf[runnumber], map_phaseerrbf[runnumber]);
-    spin_cont.GetPhaseBlueBackward(map_phasebb[runnumber], map_phaseerrbb[runnumber]);
-    spin_cont.GetPhaseYellowForward(map_phaseyf[runnumber], map_phaseerryf[runnumber]);
-    spin_cont.GetPhaseYellowBackward(map_phaseyb[runnumber], map_phaseerryb[runnumber]);
+    spin_cont->GetPolarizationBlue(0, map_bluepol[runnumber], map_bluepolerr[runnumber]);
+    spin_cont->GetPolarizationYellow(0, map_yellpol[runnumber], map_yellpolerr[runnumber]);
+    map_badrunqa[runnumber] = spin_cont->GetBadRunFlag();
+    map_crossingangle[runnumber] = spin_cont->GetCrossAngle();
+    map_crossanglestd[runnumber] = spin_cont->GetCrossAngleStd();
+    map_crossanglemin[runnumber] = spin_cont->GetCrossAngleMin();
+    map_crossanglemax[runnumber] = spin_cont->GetCrossAngleMax();
+    spin_cont->GetAsymBlueForward(map_asymbf[runnumber], map_asymerrbf[runnumber]);
+    spin_cont->GetAsymBlueBackward(map_asymbb[runnumber], map_asymerrbb[runnumber]);
+    spin_cont->GetAsymYellowForward(map_asymyf[runnumber], map_asymerryf[runnumber]);
+    spin_cont->GetAsymYellowBackward(map_asymyb[runnumber], map_asymerryb[runnumber]);
+    spin_cont->GetPhaseBlueForward(map_phasebf[runnumber], map_phaseerrbf[runnumber]);
+    spin_cont->GetPhaseBlueBackward(map_phasebb[runnumber], map_phaseerrbb[runnumber]);
+    spin_cont->GetPhaseYellowForward(map_phaseyf[runnumber], map_phaseerryf[runnumber]);
+    spin_cont->GetPhaseYellowBackward(map_phaseyb[runnumber], map_phaseerryb[runnumber]);
     
     ++ite;
   }
@@ -416,7 +428,6 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
   PrepareUpdatedCrossingShifts();
   PrepareUpdatedSpinPatterns();
 
-  
   for (const auto &run : runlistvect)
   {
     int badrunqa = 0;
@@ -430,13 +441,13 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
       spin_in.CreateRunRow(runnumber,newqalevel);
       printf("\n\nCreated Row for run %d with qa level %d\n\n",runnumber,newqalevel);
     }
-    spin_cont.SetRunNumber(runnumber);
-    spin_cont.SetQALevel(newqalevel);
+    spin_cont->SetRunNumber(runnumber);
+    spin_cont->SetQALevel(newqalevel);
     ////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
     // Set fill number
-    spin_cont.SetFillNumber(map_fillnumber[runnumber]);
+    spin_cont->SetFillNumber(map_fillnumber[runnumber]);
     ////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
@@ -445,7 +456,7 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     {
       badrunqa = 1;
     }
-    spin_cont.SetCrossingShift(map_crossingshift[runnumber]);
+    spin_cont->SetCrossingShift(map_crossingshift[runnumber]);
     ////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
@@ -453,11 +464,11 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     // Set spin patterns
     for (int i = 0; i < 120; i++)
     {
-      spin_cont.SetSpinPatternBlue(i,map_bluespin[runnumber].at(i));
+      spin_cont->SetSpinPatternBlue(i,map_bluespin[runnumber].at(i));
     }
     for (int i = 0; i < 120; i++)
     {
-      spin_cont.SetSpinPatternYellow(i,map_yellspin[runnumber].at(i));
+      spin_cont->SetSpinPatternYellow(i,map_yellspin[runnumber].at(i));
     }
     ////////////////////////////////////////////////////
     
@@ -467,22 +478,38 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     if (map_bluepolbyfill.count(map_fillnumber[runnumber]) == 0 || map_yellpolbyfill.count(map_fillnumber[runnumber]) == 0)
     {
       badrunqa = 1;
-      spin_cont.SetPolarizationBlue(0, -999., -999.);
-      spin_cont.SetPolarizationYellow(0, -999., -999.);
+      for (int i = 0; i < 120; i++)
+      {
+        spin_cont->SetPolarizationBlue(i, -999., -999.);
+        spin_cont->SetPolarizationYellow(i, -999., -999.);
+      }
     }
     else
     {
-      spin_cont.SetPolarizationBlue(0, map_bluepolbyfill[map_fillnumber[runnumber]], map_bluepolbyfillerr[map_fillnumber[runnumber]]);
-      spin_cont.SetPolarizationYellow(0, map_yellpolbyfill[map_fillnumber[runnumber]], map_yellpolbyfillerr[map_fillnumber[runnumber]]);
+      for (int i = 0; i < 120; i++)
+      {
+        if (map_bluepolbyfill[map_fillnumber[runnumber]] < 0 || map_yellpolbyfill[map_fillnumber[runnumber]] < 0)
+        {
+          badrunqa = 1;
+          spin_cont->SetPolarizationBlue(i, -999., -999.);
+          spin_cont->SetPolarizationYellow(i, -999., -999.);
+        }
+        else
+        {
+          spin_cont->SetPolarizationBlue(i, map_bluepolbyfill[map_fillnumber[runnumber]], map_bluepolbyfillerr[map_fillnumber[runnumber]]);
+          spin_cont->SetPolarizationYellow(i, map_yellpolbyfill[map_fillnumber[runnumber]], map_yellpolbyfillerr[map_fillnumber[runnumber]]);
+        }
+        
+      }
     }
     
     ////////////////////////////////////////////////////
-
+    
     ////////////////////////////////////////////////////
     // Set MBD NS GL1p scalers
     for (int i = 0; i < 120; i++)
     {
-      spin_cont.SetScalerMbdNoCut(i,map_mbdns[runnumber].at(i));
+      spin_cont->SetScalerMbdNoCut(i,map_mbdns[runnumber].at(i));
     }
     ////////////////////////////////////////////////////
 
@@ -490,7 +517,7 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     // Set MBD VTX GL1p scalers
     for (int i = 0; i < 120; i++)
     {
-      spin_cont.SetScalerMbdVertexCut(i,map_mbdvtx[runnumber].at(i));
+      spin_cont->SetScalerMbdVertexCut(i,map_mbdvtx[runnumber].at(i));
     }
     ////////////////////////////////////////////////////
 
@@ -498,7 +525,7 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     // Set ZDC NS GL1p scalers
     for (int i = 0; i < 120; i++)
     {
-      spin_cont.SetScalerZdcNoCut(i,map_zdcns[runnumber].at(i));
+      spin_cont->SetScalerZdcNoCut(i,map_zdcns[runnumber].at(i));
     }
     ////////////////////////////////////////////////////
 
@@ -508,10 +535,10 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
     {
       badrunqa = 1;
     }
-    spin_cont.SetCrossAngle(map_crossingangle[runnumber]);
-    spin_cont.SetCrossAngleStd(map_crossanglestd[runnumber]);
-    spin_cont.SetCrossAngleMin(map_crossanglemin[runnumber]);
-    spin_cont.SetCrossAngleMax(map_crossanglemax[runnumber]);
+    spin_cont->SetCrossAngle(map_crossingangle[runnumber]);
+    spin_cont->SetCrossAngleStd(map_crossanglestd[runnumber]);
+    spin_cont->SetCrossAngleMin(map_crossanglemin[runnumber]);
+    spin_cont->SetCrossAngleMax(map_crossanglemax[runnumber]);
     ////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
@@ -535,24 +562,24 @@ void SpinDBQA::WriteNewQALevel(int newqalevel)
 
 
     
-    spin_cont.SetAsymBlueForward(map_asymbf[runnumber], map_asymerrbf[runnumber]);
-    spin_cont.SetAsymBlueBackward(map_asymbb[runnumber], map_asymerrbb[runnumber]);
-    spin_cont.SetAsymYellowForward(map_asymyf[runnumber], map_asymerryf[runnumber]);
-    spin_cont.SetAsymYellowBackward(map_asymyb[runnumber], map_asymerryb[runnumber]);
-    spin_cont.SetPhaseBlueForward(map_phasebf[runnumber], map_phaseerrbf[runnumber]);
-    spin_cont.SetPhaseBlueBackward(map_phasebb[runnumber], map_phaseerrbb[runnumber]);
-    spin_cont.SetPhaseYellowForward(map_phaseyf[runnumber], map_phaseerryf[runnumber]);
-    spin_cont.SetPhaseYellowBackward(map_phaseyb[runnumber], map_phaseerryb[runnumber]);
+    spin_cont->SetAsymBlueForward(map_asymbf[runnumber], map_asymerrbf[runnumber]);
+    spin_cont->SetAsymBlueBackward(map_asymbb[runnumber], map_asymerrbb[runnumber]);
+    spin_cont->SetAsymYellowForward(map_asymyf[runnumber], map_asymerryf[runnumber]);
+    spin_cont->SetAsymYellowBackward(map_asymyb[runnumber], map_asymerryb[runnumber]);
+    spin_cont->SetPhaseBlueForward(map_phasebf[runnumber], map_phaseerrbf[runnumber]);
+    spin_cont->SetPhaseBlueBackward(map_phasebb[runnumber], map_phaseerrbb[runnumber]);
+    spin_cont->SetPhaseYellowForward(map_phaseyf[runnumber], map_phaseerryf[runnumber]);
+    spin_cont->SetPhaseYellowBackward(map_phaseyb[runnumber], map_phaseerryb[runnumber]);
     ////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
     // Set badrun flag
-    spin_cont.SetBadRunFlag(badrunqa);
+    spin_cont->SetBadRunFlag(badrunqa);
     ////////////////////////////////////////////////////
 
     // Update the database and set new default QA
-    spin_in.UpdateDBContent(spin_cont);
-    spin_in.SetDefaultQA(spin_cont);
+    spin_in.UpdateDBContent(*spin_cont);
+    spin_in.SetDefaultQA(*spin_cont);
     
     // ************************************ // 
     
@@ -658,34 +685,44 @@ void SpinDBQA::PrepareUpdatedSpinPatterns()
       continue;
     }
 
-    for (int i = 0; i < 120; ++i)
+    if (map_bluespin.find(RunNumber) != map_bluespin.end())
     {
-      if (s_pattern_blue.at(i) == '-')
+      for (int i = 0; i < 120; ++i)
       {
-        map_bluespin[RunNumber].at(i) = -1;
-      }
-      else if (s_pattern_blue.at(i) == '+')
-      {
-        map_bluespin[RunNumber].at(i) = 1;
-      }
-      else if (s_pattern_blue.at(i) == 'o')
-      {
-        map_bluespin[RunNumber].at(i) = 10;
-      }
+        if (s_pattern_blue.at(i) == '-')
+        {
+          map_bluespin[RunNumber].at(i) = -1;
+        }
+        else if (s_pattern_blue.at(i) == '+')
+        {
+          map_bluespin[RunNumber].at(i) = 1;
+        }
+        else if (s_pattern_blue.at(i) == 'o')
+        {
+          map_bluespin[RunNumber].at(i) = 10;
+        }
+      } 
+    }
 
-      if (s_pattern_yell.at(i) == '-')
+    if (map_yellspin.find(RunNumber) != map_yellspin.end())
+    {
+      for (int i = 0; i < 120; ++i)
       {
-        map_yellspin[RunNumber].at(i) = -1;
-      }
-      else if (s_pattern_yell.at(i) == '+')
-      {
-        map_yellspin[RunNumber].at(i) = 1;
-      }
-      else if (s_pattern_yell.at(i) == 'o')
-      {
-        map_yellspin[RunNumber].at(i) = 10;
+        if (s_pattern_yell.at(i) == '-')
+        {
+          map_yellspin[RunNumber].at(i) = -1;
+        }
+        else if (s_pattern_yell.at(i) == '+')
+        {
+          map_yellspin[RunNumber].at(i) = 1;
+        }
+        else if (s_pattern_yell.at(i) == 'o')
+        {
+          map_yellspin[RunNumber].at(i) = 10;
+        }
       }
     }
+    
   }
   patternsFile.close();
 }

@@ -22,7 +22,7 @@ class SpinDBQA
 {
 public:
     SpinDBQA();
-    ~SpinDBQA() = default;
+    ~SpinDBQA();
 
     void SetCNIPath(std::string cnipath = "/gpfs02/eic/cnipol/jet_run24/results"){_cnipathname = cnipath;};
     void SetMarkdownFilename(std::string markdownfile = "README.md"){_markdownfilename = markdownfile;};
@@ -47,7 +47,7 @@ public:
     //void PrintSpinDBData();
 
 private:
-    SpinDBContent spin_cont;
+    SpinDBContent *spin_cont;
     SpinDBOutput spin_out;
     SpinDBInput spin_in;
     
