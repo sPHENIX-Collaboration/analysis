@@ -38,7 +38,7 @@ int main(int argc, const char* const argv[])
     std::cerr << "usage: " << args[0] << " <runnumber> [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
-    std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
+    std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
     return 1;  // Indicate error
   }
 
