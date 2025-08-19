@@ -344,9 +344,9 @@ def create_f4a_jobs():
 hadd = subparser.add_parser('hadd', help='hadd condor jobs.')
 
 hadd.add_argument('-i'
-                    , '--input-list', type=str
+                    , '--input-dir', type=str
                     , required=True
-                    , help='Input list of files to combine.')
+                    , help='Directory of runs to combine output.')
 
 hadd.add_argument('-o'
                     , '--output-dir', type=str
@@ -382,7 +382,7 @@ def hadd_jobs():
     """
     hadd condor jobs
     """
-    input_list     = os.path.realpath(args.input_list)
+    input_dir     = os.path.realpath(args.input_dir)
     output_dir     = os.path.realpath(args.output_dir)
     hadd_max       = args.hadd_max
     log_file       = os.path.join(output_dir, args.log_file)
@@ -397,8 +397,8 @@ def hadd_jobs():
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that paths exists
-    if not os.path.isfile(input_list):
-        logger.critical(f'File: {input_list} does not exist!')
+    if not os.path.isdir(input_dir):
+        logger.critical(f'Dir: {input_dir} does not exist!')
         sys.exit()
 
     if not os.path.isfile(condor_script):
@@ -408,7 +408,7 @@ def hadd_jobs():
     # Print Logs
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
-    logger.info(f'Input List: {input_list}')
+    logger.info(f'Input Dir: {input_dir}')
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Hadd Max: {hadd_max}')
     logger.info(f'Log File: {log_file}')
@@ -428,7 +428,9 @@ def hadd_jobs():
     os.makedirs(f'{output_dir}/error', exist_ok=True)
 
     shutil.copy(condor_script, output_dir)
-    shutil.copy(input_list, output_dir)
+
+    command = f'readlink -f {input_dir}/* > jobs.list'
+    run_command_and_log(command, logger, output_dir, False)
 
     with open(os.path.join(output_dir,'genHadd.sub'), mode='w', encoding='utf-8') as file:
         file.write(f'executable    = {os.path.basename(condor_script)}\n')
@@ -438,7 +440,7 @@ def hadd_jobs():
         file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
         file.write(f'request_memory = {condor_memory}GB\n')
 
-    command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from {os.path.basename(input_list)}"'
+    command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from jobs.list"'
     logger.info(command)
 
 args = parser.parse_args()
