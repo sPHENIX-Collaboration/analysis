@@ -50,6 +50,7 @@ class sEPDValidation : public SubsysReco
     if (std::filesystem::exists(file))
     {
       m_do_q_vec_corr = true;
+      m_do_q_vec_corr2 = true;
     }
   }
 
@@ -68,6 +69,7 @@ class sEPDValidation : public SubsysReco
   bool m_do_ep{true};
   std::string m_q_vec_corr_fname;
   bool m_do_q_vec_corr{false};
+  bool m_do_q_vec_corr2{false};
 
   unsigned int m_bins_zvtx{200};
   double m_zvtx_low{-50};
