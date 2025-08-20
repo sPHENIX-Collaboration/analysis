@@ -55,7 +55,7 @@ all: $(ALL_TARGETS)
 bin/%: macros/%.C
 	@echo "Building $@ from $<"
 	mkdir -p bin
-	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS)
+	$(CXX) -g $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS)
 
 bin/Fun4All_sEPD: macros/Fun4All_sEPD.C
 	mkdir -p bin
