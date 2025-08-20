@@ -143,9 +143,9 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
     // Read Q vector calib
     m_hists["h3SEPD_Q_N_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_2")->Clone("h3SEPD_Q_N_2_calib")));
-    m_hists["h3SEPD_Q_S_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_2")->Clone("h3SEPD_Q_N_2_calib")));
+    m_hists["h3SEPD_Q_S_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_2")->Clone("h3SEPD_Q_S_2_calib")));
     m_hists["h3SEPD_Q_N_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_3")->Clone("h3SEPD_Q_N_3_calib")));
-    m_hists["h3SEPD_Q_S_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_3")->Clone("h3SEPD_Q_N_3_calib")));
+    m_hists["h3SEPD_Q_S_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_3")->Clone("h3SEPD_Q_S_3_calib")));
 
     // Init Q vector corr hists
     m_hists["h3SEPD_Q_S_corr_2"] = std::make_unique<TH3F>("h3SEPD_Q_S_corr_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_bins_sepd_Q, m_sepd_Q_low, m_sepd_Q_high, m_bins_sepd_Q, m_sepd_Q_low, m_sepd_Q_high, m_bins_cent, m_cent_low, m_cent_high);
