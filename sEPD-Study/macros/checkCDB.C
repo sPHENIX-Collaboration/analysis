@@ -17,6 +17,7 @@ void checkCDB(unsigned int runnumber, const std::string &dbtag = "newcdbtag") {
     std::string centrality_vertex_scale_default = getCalibration("CentralityVertexScale_default", runnumber);
     std::string mbd_qfit                        = getCalibration("MBD_QFIT", runnumber);
     std::string mbd_qfit_default                = getCalibration("MBD_QFIT_default", runnumber);
+    std::string emcal_hotmap                    = getCalibration("CEMC_BadTowerMap", runnumber);
 
     std::cout << std::format("Centrality: {}", centrality) << std::endl;
     std::cout << std::format("Centrality default: {}", centrality_default) << std::endl;
@@ -26,6 +27,7 @@ void checkCDB(unsigned int runnumber, const std::string &dbtag = "newcdbtag") {
     std::cout << std::format("Centrality Vertex Scale default: {}", centrality_vertex_scale_default) << std::endl;
     std::cout << std::format("MBD QFIT: {}", mbd_qfit) << std::endl;
     std::cout << std::format("MBD QFIT Default: {}", mbd_qfit_default) << std::endl;
+    std::cout << std::format("EMCal Bad Tower Map: {}", emcal_hotmap) << std::endl;
 }
 
 # ifndef __CINT__
