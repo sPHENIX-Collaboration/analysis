@@ -38,7 +38,6 @@ int main(int argc, const char* const argv[])
   if (args.size() < 2 || args.size() > 3)
   {
     std::cerr << "usage: " << args[0] << " <runnumber> [dbtag]" << std::endl;
-    std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
     return 1;  // Indicate error
