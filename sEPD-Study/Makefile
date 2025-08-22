@@ -41,7 +41,7 @@ ALL_CPPFLAGS = $(ROOT_CPPFLAGS) $(sPHENIX_CPPFLAGS) $(MY_CPPFLAGS)
 SRCS = $(wildcard macros/*.C)
 
 # List all your executable targets explicitly
-ALL_TARGETS = bin/Fun4All_sEPD bin/Fun4All_Jet bin/display bin/checkCDB
+ALL_TARGETS = bin/Fun4All_sEPD bin/Fun4All_Jet bin/display bin/displayHotMap bin/checkCDB
 
 # Define a stamp file for Cppcheck
 CPPCHECK_STAMP = .cppcheck_ran_stamp
@@ -69,6 +69,11 @@ bin/checkCDB: macros/checkCDB.C
 	@echo "Building $@ from $<"
 	mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS)
+
+bin/displayHotMap: macros/displayHotMap.C
+	@echo "Building $@ from $<"
+	mkdir -p bin
+	$(CXX) $(CXXFLAGS) $(ALL_CPPFLAGS) -o $@ $< $(ROOT_LIBFLAGS) $(sPHENIX_LIBFLAGS) -lcdbobjects
 
 #--- Cppcheck target ---
 # This target now creates/updates the stamp file if any SRCS are newer
