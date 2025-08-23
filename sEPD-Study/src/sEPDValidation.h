@@ -17,6 +17,9 @@
 
 // -- ROOT
 #include <TH1.h>
+#include <TH2.h>
+#include <TH3.h>
+#include <TProfile2D.h>
 #include <TMath.h>
 
 class PHCompositeNode;
@@ -72,45 +75,77 @@ class sEPDValidation : public SubsysReco
   bool m_do_q_vec_corr{false};
   bool m_do_q_vec_corr2{false};
 
-  unsigned int m_bins_zvtx{200};
-  double m_zvtx_low{-50};
-  double m_zvtx_high{50};
+  struct HistConfig
+  {
+    unsigned int m_bins_zvtx{200};
+    double m_zvtx_low{-50};
+    double m_zvtx_high{50};
 
-  unsigned int m_bins_cent{100};
-  double m_cent_low{-0.5};
-  double m_cent_high{99.5};
+    unsigned int m_bins_cent{100};
+    double m_cent_low{-0.5};
+    double m_cent_high{99.5};
 
-  unsigned int m_bins_sepd_charge{200};
-  double m_sepd_charge_low{0};
-  double m_sepd_charge_high{2e4};
+    unsigned int m_bins_sepd_charge{200};
+    double m_sepd_charge_low{0};
+    double m_sepd_charge_high{2e4};
 
-  unsigned int m_bins_mbd_charge{80};
-  double m_mbd_charge_low{0};
-  double m_mbd_charge_high{2e3};
+    unsigned int m_bins_mbd_charge{80};
+    double m_mbd_charge_low{0};
+    double m_mbd_charge_high{2e3};
 
-  unsigned int m_bins_mbd_phi{60};
-  double m_mbd_phi_low{-M_PI};
-  double m_mbd_phi_high{M_PI};
+    unsigned int m_bins_mbd_phi{60};
+    double m_mbd_phi_low{-M_PI};
+    double m_mbd_phi_high{M_PI};
 
-  unsigned int m_bins_mbd_eta{7};
-  double m_mbd_eta_low{3.6};
-  double m_mbd_eta_high{4.3};
+    unsigned int m_bins_mbd_eta{7};
+    double m_mbd_eta_low{3.6};
+    double m_mbd_eta_high{4.3};
 
-  unsigned int m_bins_sepd_Q{100};
-  double m_sepd_Q_low{-1};
-  double m_sepd_Q_high{1};
+    unsigned int m_bins_sepd_Q{100};
+    double m_sepd_Q_low{-1};
+    double m_sepd_Q_high{1};
 
-  unsigned int m_bins_sepd_total_charge{200};
-  double m_sepd_total_charge_low{0};
-  double m_sepd_total_charge_high{4e4};
+    unsigned int m_bins_sepd_total_charge{200};
+    double m_sepd_total_charge_low{0};
+    double m_sepd_total_charge_high{4e4};
 
-  unsigned int m_bins_mbd_total_charge{200};
-  double m_mbd_total_charge_low{0};
-  double m_mbd_total_charge_high{5e3};
+    unsigned int m_bins_mbd_total_charge{200};
+    double m_mbd_total_charge_low{0};
+    double m_mbd_total_charge_high{5e3};
 
-  unsigned int m_bins_psi{126};
-  double m_psi_low{-M_PI};
-  double m_psi_high{M_PI};
+    unsigned int m_bins_psi{126};
+    double m_psi_low{-M_PI};
+    double m_psi_high{M_PI};
+  };
+
+  HistConfig m_hist_config;
+
+  // A struct to hold all histogram configuration data
+  struct HistDef
+  {
+    enum class Type
+    {
+      TH1,
+      TH2,
+      TH3,
+      TProfile2D
+    };
+    Type type;
+    std::string name;
+    std::string title;
+
+    // Axis definitions (use for X, Y, Z as needed)
+    struct Axis
+    {
+      unsigned int bins;
+      double low;
+      double high;
+    };
+    Axis x, y, z;
+  };
+
+  // Helper function to create histograms
+  void create_histogram(const HistDef &def);
 
   enum class EventType : std::uint8_t
   {
@@ -136,48 +171,58 @@ class sEPDValidation : public SubsysReco
   double m_mbd_total_charge{9999};
 
   // Cuts
-  double m_zvtx_max{10};
-  double m_sepd_charge_threshold{0.2};
+  struct EventCuts
+  {
+    double m_zvtx_max{10};
+    double m_sepd_charge_threshold{0.2};
+  };
+
+  EventCuts m_cuts;
 
   // Logging Info
-  double m_cent_min{9999};
-  double m_cent_max{0};
-  double m_sepd_z_min{9999};
-  double m_sepd_z_max{0};
-  double m_sepd_r_min{9999};
-  double m_sepd_r_max{0};
-  double m_sepd_phi_min{9999};
-  double m_sepd_phi_max{0};
-  double m_sepd_eta_min{9999};
-  double m_sepd_eta_max{0};
-  double m_sepd_charge_min{9999};
-  double m_sepd_charge_max{0};
-  double m_mbd_ch_z_min{9999};
-  double m_mbd_ch_z_max{0};
-  double m_mbd_ch_r_min{9999};
-  double m_mbd_ch_r_max{0};
-  double m_mbd_ch_phi_min{9999};
-  double m_mbd_ch_phi_max{0};
-  double m_mbd_ch_eta_min{9999};
-  double m_mbd_ch_eta_max{0};
-  double m_mbd_ch_charge_min{9999};
-  double m_mbd_ch_charge_max{0};
-  double m_mbd_charge_min{9999};
-  double m_mbd_charge_max{0};
-  double m_mbd_total_charge_min{9999};
-  double m_mbd_total_charge_max{0};
-  double m_vertex_scale_min{9999};
-  double m_vertex_scale_max{0};
-  double m_centrality_scale_min{9999};
-  double m_centrality_scale_max{0};
-  double m_sepd_Q_min{9999};
-  double m_sepd_Q_max{0};
-  double m_sepd_total_charge_south_min{9999};
-  double m_sepd_total_charge_south_max{0};
-  double m_sepd_total_charge_north_min{9999};
-  double m_sepd_total_charge_north_max{0};
-  double m_psi_min{9999};
-  double m_psi_max{0};
+  struct LoggingInfo
+  {
+    double m_cent_min{9999};
+    double m_cent_max{0};
+    double m_sepd_z_min{9999};
+    double m_sepd_z_max{0};
+    double m_sepd_r_min{9999};
+    double m_sepd_r_max{0};
+    double m_sepd_phi_min{9999};
+    double m_sepd_phi_max{0};
+    double m_sepd_eta_min{9999};
+    double m_sepd_eta_max{0};
+    double m_sepd_charge_min{9999};
+    double m_sepd_charge_max{0};
+    double m_mbd_ch_z_min{9999};
+    double m_mbd_ch_z_max{0};
+    double m_mbd_ch_r_min{9999};
+    double m_mbd_ch_r_max{0};
+    double m_mbd_ch_phi_min{9999};
+    double m_mbd_ch_phi_max{0};
+    double m_mbd_ch_eta_min{9999};
+    double m_mbd_ch_eta_max{0};
+    double m_mbd_ch_charge_min{9999};
+    double m_mbd_ch_charge_max{0};
+    double m_mbd_charge_min{9999};
+    double m_mbd_charge_max{0};
+    double m_mbd_total_charge_min{9999};
+    double m_mbd_total_charge_max{0};
+    double m_vertex_scale_min{9999};
+    double m_vertex_scale_max{0};
+    double m_centrality_scale_min{9999};
+    double m_centrality_scale_max{0};
+    double m_sepd_Q_min{9999};
+    double m_sepd_Q_max{0};
+    double m_sepd_total_charge_south_min{9999};
+    double m_sepd_total_charge_south_max{0};
+    double m_sepd_total_charge_north_min{9999};
+    double m_sepd_total_charge_north_max{0};
+    double m_psi_min{9999};
+    double m_psi_max{0};
+  };
+
+  LoggingInfo m_logging;
 
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   std::map<std::string, int> m_ctr;
