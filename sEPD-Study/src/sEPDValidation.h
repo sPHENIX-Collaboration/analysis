@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <filesystem>
 
@@ -29,7 +30,7 @@ class sEPDValidation : public SubsysReco
   int process_event(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
-  void set_filename(const std::string &file)
+  void set_filename(std::string_view file)
   {
     m_outfile_name = file;
   }
@@ -44,7 +45,7 @@ class sEPDValidation : public SubsysReco
     m_do_ep = do_ep;
   }
 
-  void set_q_vec_corr(const std::string &file)
+  void set_q_vec_corr(std::string_view file)
   {
     m_q_vec_corr_fname = file;
     if (std::filesystem::exists(file))
