@@ -1,5 +1,7 @@
 #pragma once
 
+#include <phool/getClass.h>
+
 #include <string>
 #include <vector>
 
@@ -42,3 +44,15 @@ class JetUtils
   constexpr static double minz_OH = -301.683;
   constexpr static double maxz_OH = 301.683;
 };
+
+// Add the templated helper function here, outside the class
+template <typename T>
+T* getNode(PHCompositeNode* topNode, const std::string& nodeName)
+{
+    T* node = findNode::getClass<T>(topNode, nodeName);
+    if (!node)
+    {
+        std::cout << "getNode - Error, could not find node: " << nodeName << std::endl;
+    }
+    return node;
+}

@@ -221,11 +221,10 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 
   // zvertex
   m_zvtx = -9999;
-  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  GlobalVertexMap *vertexmap = getNode<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
   if (!vertexmap)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find global vertex node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -242,16 +241,14 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
   }
 
-  MinimumBiasInfo *m_mb_info = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
+  MinimumBiasInfo *m_mb_info = getNode<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
   if (!m_mb_info)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find MinimumBiasInfo node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PdbParameterMap* pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  PdbParameterMap* pdb = getNode<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb) {
-    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MinBiasParams" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -305,10 +302,9 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_centrality(PHCompositeNode *topNode)
 {
-  CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+  CentralityInfo *centInfo = getNode<CentralityInfo>(topNode, "CentralityInfo");
   if (!centInfo)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find Centrality Info node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -324,24 +320,21 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 {
-  MbdPmtContainer *mbd_container = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
+  MbdPmtContainer *mbd_container = getNode<MbdPmtContainer>(topNode, "MbdPmtContainer");
   if (!mbd_container)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find MbdPmtContainer node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  MbdGeom *mbdgeom = findNode::getClass<MbdGeom>(topNode, "MbdGeom");
+  MbdGeom *mbdgeom = getNode<MbdGeom>(topNode, "MbdGeom");
   if (!mbdgeom)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find MbdGeom node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  PdbParameterMap *pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find PdbParameterMap Node MinBiasParams" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -409,17 +402,15 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 {
-  TowerInfoContainer *towerinfosEPD = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
+  TowerInfoContainer *towerinfosEPD = getNode<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
   if (!towerinfosEPD)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find TOWERINFO_CALIB_SEPD node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  EpdGeom *epdgeom = findNode::getClass<EpdGeom>(topNode, "TOWERGEOM_EPD");
+  EpdGeom *epdgeom = getNode<EpdGeom>(topNode, "TOWERGEOM_EPD");
   if (!epdgeom)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find TOWERGEOM_EPD node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -820,10 +811,9 @@ int sEPDValidation::process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *ep
 int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 {
   // get event plane map
-  EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
+  EventplaneinfoMap *epmap = getNode<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
   if (!epmap)
   {
-    std::cout << "sEPDValidation::process_event - Error can not find EventplaneinfoMap node " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
   if (epmap->empty())
@@ -862,10 +852,9 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_event(PHCompositeNode *topNode)
 {
-  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  EventHeader *eventInfo = getNode<EventHeader>(topNode, "EventHeader");
   if (!eventInfo)
   {
-    std::cout << PHWHERE << "sEPDValidation::process_event - Fatal Error - EventHeader node is missing. " << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
