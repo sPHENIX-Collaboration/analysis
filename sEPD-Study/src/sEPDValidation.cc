@@ -964,42 +964,50 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     }
   }
 
+  auto project_and_write = [&](const std::string& hist_name, const std::string& projection) {
+      auto* hist = m_hists[hist_name].get();
+      if (auto* h3 = dynamic_cast<TH3*>(hist)) {
+          h3->Project3D(projection.c_str())->Write();
+      } else if (auto* h2 = dynamic_cast<TH2*>(hist)) {
+          h2->ProjectionX()->Write();
+      }
+  };
+
   // local
   if(!m_condor_mode)
   {
-    dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->ProjectionX()->Write();
-    dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->ProjectionX()->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_MBD_Total_Charge"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Project3D("yx")->Write();
+    project_and_write("h2SEPD_Charge", "x");
+    project_and_write("h2MBD_Total_Charge", "x");
+    project_and_write("h3SEPD_Total_Charge", "yx");
+    project_and_write("h3MBD_Total_Charge", "yx");
 
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_2"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_2"].get())->Project3D("yx")->Write();
+    project_and_write("h3SEPD_Q_S_2", "yx");
+    project_and_write("h3SEPD_Q_N_2", "yx");
 
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_3"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_3"].get())->Project3D("yx")->Write();
+    project_and_write("h3SEPD_Q_S_3", "yx");
+    project_and_write("h3SEPD_Q_N_3", "yx");
 
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_2"].get())->Project3D("yx")->Write();
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Project3D("yx")->Write();
+    project_and_write("h3SEPD_Psi_2", "yx");
+    project_and_write("h3SEPD_Psi_3", "yx");
 
     // Q Vector Correction
     if(m_do_q_vec_corr)
     {
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_corr_2"].get())->Project3D("yx")->Write();
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_corr_2"].get())->Project3D("yx")->Write();
+      project_and_write("h3SEPD_Q_S_corr_2", "yx");
+      project_and_write("h3SEPD_Q_N_corr_2", "yx");
 
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_corr_3"].get())->Project3D("yx")->Write();
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_corr_3"].get())->Project3D("yx")->Write();
+      project_and_write("h3SEPD_Q_S_corr_3", "yx");
+      project_and_write("h3SEPD_Q_N_corr_3", "yx");
 
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr_2"].get())->Project3D("yx")->Write();
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr_3"].get())->Project3D("yx")->Write();
+      project_and_write("h3SEPD_Psi_corr_2", "yx");
+      project_and_write("h3SEPD_Psi_corr_3", "yx");
     }
 
     // Official
     if(m_do_ep)
     {
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_2"].get())->Project3D("yx")->Write();
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_3"].get())->Project3D("yx")->Write();
+      project_and_write("h3SEPD_EventPlaneInfo_Psi_2", "yx");
+      project_and_write("h3SEPD_EventPlaneInfo_Psi_3", "yx");
     }
   }
   output.Close();
