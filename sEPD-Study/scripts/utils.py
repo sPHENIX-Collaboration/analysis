@@ -12,7 +12,6 @@ import shutil
 import logging
 from pathlib import Path
 import math
-import re
 
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
@@ -28,11 +27,6 @@ f4a.add_argument('-i2'
                     , '--dbtag', type=str
                     , default='newcdbtag'
                     , help='CDB Tag. Default: newcdbtag')
-
-f4a.add_argument('-i3'
-                    , '--q-vec-corr-list', type=str
-                    , default=''
-                    , help='Q vector correction file list. Default: ""')
 
 f4a.add_argument('-o'
                     , '--output-dir', type=str
@@ -161,31 +155,12 @@ def run_command_and_log(command, logger, current_dir = '.', do_logging = True, d
         logger.critical(f"An unexpected error occurred while running '{command}': {e}")
         return False
 
-def f4a_read_q_vec_hists(file_name, logger):
-    """ Reads list of Q vector corrections into a dictionary."""
-    q_vec_hists_dict = {}
-    with open(file_name, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            run_match = re.search(r'-(\d+)\.', line)
-
-            if run_match:
-                runnumber = int(run_match.group(1))
-            else:
-                logger.info(f'Error! Cannot extract runnumber from: {line}, skipping')
-                continue
-
-            q_vec_hists_dict[runnumber] = line
-
-    return q_vec_hists_dict
-
 def create_f4a_jobs():
     """
     Create Fun4All Jobs
     """
     input_list = os.path.realpath(args.input_list)
     dbtag = args.dbtag
-    q_vec_corr_list = os.path.realpath(args.q_vec_corr_list) if args.q_vec_corr_list else ''
     events = args.events
     do_ep = args.do_event_plane
     output_dir = os.path.realpath(args.output_dir)
@@ -207,10 +182,6 @@ def create_f4a_jobs():
     # Ensure that paths exists
     if not os.path.isfile(input_list):
         logger.critical(f'File: {input_list} does not exist!')
-        sys.exit()
-
-    if q_vec_corr_list and not os.path.isfile(q_vec_corr_list):
-        logger.critical(f'File: {q_vec_corr_list} does not exist!')
         sys.exit()
 
     if not os.path.isfile(f4a_bin):
@@ -249,9 +220,6 @@ def create_f4a_jobs():
     shutil.copy(f4a_bin, output_dir)
     shutil.copy(common_errors, output_dir)
     shutil.copytree(src_dir, os.path.join(output_dir,'src'), dirs_exist_ok=True)
-    if q_vec_corr_list:
-        q_vec_hists_dict = f4a_read_q_vec_hists(q_vec_corr_list, logger)
-        shutil.copy(q_vec_corr_list, output_dir)
 
     f4a_bin = os.path.join(output_dir, os.path.basename(f4a_bin))
 
@@ -259,7 +227,6 @@ def create_f4a_jobs():
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input DST List: {input_list}')
-    logger.info(f'Input Q-vector correction list: {q_vec_corr_list}')
     logger.info(f'Total DSTs: {total_files}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
     logger.info(f'Do Event Plane Reco: {do_ep}')
@@ -290,39 +257,14 @@ def create_f4a_jobs():
     with open(input_list, mode='r', encoding='utf-8') as file:
         for line in file:
             line = line.strip()
-            run_match = re.search(r'-(\d+)\.', line)
-
-            q_vec_hist_exists = False
-
-            if run_match:
-                runnumber = int(run_match.group(1))
-                if q_vec_corr_list and runnumber in q_vec_hists_dict:
-                    q_vec_hist = q_vec_hists_dict[runnumber]
-                    q_vec_hist_exists = True
-            else:
-                logger.info(f'Error! Cannot extract runnumber from: {line}, skipping')
-                continue
-
-            logger.info(f'Processing: {runnumber}, {os.path.basename(line)}')
+            logger.info(f'Processing: {line}')
             file_stem = Path(line).stem
 
             command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
             run_command_and_log(command, logger, files_dir, False)
 
-            command = f'readlink -f {files_dir}/{file_stem}* > jobs-temp.list'
+            command = f'readlink -f {files_dir}/{file_stem}* >> jobs.list'
             run_command_and_log(command, logger, output_dir, False)
-
-            if q_vec_hist_exists:
-                command = f'sed -i \'s#$#,{q_vec_hist}#\' jobs-temp.list'
-                run_command_and_log(command, logger, output_dir, False)
-            else:
-                command = 'sed -i \'s#$#,none#\' jobs-temp.list'
-                run_command_and_log(command, logger, output_dir, False)
-
-            command = 'cat jobs-temp.list >> jobs.list'
-            run_command_and_log(command, logger, output_dir, False)
-
-    os.remove(os.path.join(output_dir, 'jobs-temp.list'))
 
     os.makedirs(f'{output_dir}/output', exist_ok=True)
     os.makedirs(f'{output_dir}/stdout', exist_ok=True)
@@ -332,13 +274,13 @@ def create_f4a_jobs():
 
     with open(os.path.join(output_dir,'genFun4All.sub'), mode='w', encoding='utf-8') as file:
         file.write(f'executable    = {os.path.basename(condor_script)}\n')
-        file.write(f'arguments     = {f4a_bin} $(input_dst) test-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} $(input_q_vec_hist) {output_dir}/output\n')
+        file.write(f'arguments     = {f4a_bin} $(input_dst) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} {output_dir}/output\n')
         file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
         file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
         file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
         file.write(f'request_memory = {condor_memory}GB\n')
 
-    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst,input_q_vec_hist from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
     logger.info(command)
 
 hadd = subparser.add_parser('hadd', help='hadd condor jobs.')

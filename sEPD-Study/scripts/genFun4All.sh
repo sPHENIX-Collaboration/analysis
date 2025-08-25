@@ -10,15 +10,14 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 f4a_bin=${1}
 input=${2}
 output=${3}
-nEvents=${4}
-dbtag=${5}
-do_event_plane_reco=${6}
-q_vec_hist=${7}
+output_tree=${4}
+nEvents=${5}
+dbtag=${6}
+do_event_plane_reco=${7}
 submitDir=${8}
 
 # extract runnumber from file name
 file=$(basename "$input")
-q_vec_hist_base=$(basename "$q_vec_hist")
 IFS='-' read -r p1 p2 p3 <<< "$file"
 run=$(echo "$p2" | sed 's/^0*//') # Remove leading zeros using sed
 
@@ -28,7 +27,6 @@ if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
    getinputfiles.pl --filelist $input
    ls -lah *.root
    ls *.root > test.list
-   [ -e "$q_vec_hist" ] && cp -v "$q_vec_hist" .
 
  else
    echo "condor scratch NOT set"
@@ -38,9 +36,9 @@ fi
 # print the environment - needed for debugging
 printenv
 
-mkdir -p "$run"
+mkdir -p "$run/hist" "$run/tree"
 
-$f4a_bin "test.list" "$run" "$run/$output" "$nEvents" "$dbtag" 1 "$do_event_plane_reco" "$q_vec_hist_base"
+$f4a_bin "test.list" "$run" "$run/hist/$output" "$run/tree/$output_tree" "$nEvents" "$dbtag" 1 "$do_event_plane_reco"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
