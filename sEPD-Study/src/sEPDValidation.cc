@@ -49,7 +49,6 @@
 // -- sEPD
 #include <epd/EpdGeom.h>
 
-#include <TFile.h>
 #include <Math/Vector4D.h>
 
 //____________________________________________________________________________..
@@ -140,6 +139,21 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
   }
 
+  m_output = std::make_unique<TFile>(m_outtree_name.c_str(),"recreate");
+  m_output->cd();
+
+  // TTree
+  m_tree = new TTree("T","T");
+  m_tree->SetDirectory(m_output.get());
+  m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
+  m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
+  m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("sepd_charge", &m_data.sepd_charge);
+  m_tree->Branch("sepd_phi", &m_data.sepd_phi);
+  m_tree->Branch("sepd_eta", &m_data.sepd_eta);
+  m_tree->Branch("mbd_charge", &m_data.mbd_charge);
+  m_tree->Branch("mbd_phi", &m_data.mbd_phi);
+  m_tree->Branch("mbd_eta", &m_data.mbd_eta);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -162,6 +176,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   {
     GlobalVertex *vtx = vertexmap->begin()->second;
     m_zvtx = vtx->get_z();
+    m_data.event_zvertex = m_zvtx;
   }
 
   m_hists["hVtxZ"]->Fill(m_zvtx);
@@ -241,6 +256,7 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
   }
 
   m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS)*100;
+  m_data.event_centrality = m_cent;
 
   m_hists["hCentrality"]->Fill(m_cent);
 
@@ -302,6 +318,10 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     int mbd_arm = mbdgeom->get_arm(i);
 
     double charge = mbd_pmt->get_q() * vertex_scale * centrality_scale;
+
+    m_data.mbd_charge.push_back(charge);
+    m_data.mbd_phi.push_back(mbd_ch_phi);
+    m_data.mbd_eta.push_back(mbd_ch_eta);
 
     if(mbd_arm == 0)
     {
@@ -392,6 +412,10 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       ++m_ctr["sepd_tower_charge_below_threshold"];
       continue;
     }
+
+    m_data.sepd_charge.push_back(charge);
+    m_data.sepd_phi.push_back(phi);
+    m_data.sepd_eta.push_back(eta);
 
     JetUtils::update_min_max(sepd_ch_z, m_logging.m_sepd_z_min, m_logging.m_sepd_z_max);
     JetUtils::update_min_max(sepd_ch_r, m_logging.m_sepd_r_min, m_logging.m_sepd_r_max);
@@ -581,6 +605,7 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
   }
 
   int m_globalEvent = eventInfo->get_EvtSequence();
+  m_data.event_id = m_globalEvent;
   // int m_run         = eventInfo->get_RunNumber();
 
   if (m_event % 20 == 0)
@@ -622,6 +647,32 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     }
   }
 
+  // Fill the TTree
+  m_tree->Fill();
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
+int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
+{
+  ++m_ctr["event_reset"];
+
+  // Event
+  m_data.event_id = -1;
+  m_data.event_zvertex = 9999;
+  m_data.event_centrality = 9999;
+
+  // sEPD
+  m_data.sepd_charge.clear();
+  m_data.sepd_phi.clear();
+  m_data.sepd_eta.clear();
+
+  // MBD
+  m_data.mbd_charge.clear();
+  m_data.mbd_phi.clear();
+  m_data.mbd_eta.clear();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -659,6 +710,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Mbd Channel charge: Min: " << m_logging.m_mbd_ch_charge_min << ", Max: " << m_logging.m_mbd_ch_charge_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
+  std::cout << std::format("process event, Reset Event Calls : {}", m_ctr["event_reset"]) << std::endl;
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
@@ -725,6 +777,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     }
   }
   output.Close();
+
+  // TTree
+  m_output->cd();
+  m_tree->Write();
+  m_output->Close();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

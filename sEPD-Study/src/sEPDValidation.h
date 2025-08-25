@@ -21,6 +21,8 @@
 #include <TH3.h>
 #include <TProfile2D.h>
 #include <TMath.h>
+#include <TTree.h>
+#include <TFile.h>
 
 class PHCompositeNode;
 
@@ -31,11 +33,18 @@ class sEPDValidation : public SubsysReco
 
   int Init(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
+  // Clean up internals after each event.
+  int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
   void set_filename(std::string_view file)
   {
     m_outfile_name = file;
+  }
+
+  void set_tree_filename(std::string_view file)
+  {
+    m_outtree_name = file;
   }
 
   void set_condor_mode(const bool condor_mode = true)
@@ -69,6 +78,7 @@ class sEPDValidation : public SubsysReco
   int m_event{0};
 
   std::string m_outfile_name{"test.root"};
+  std::string m_outtree_name{"tree.root"};
   bool m_condor_mode{false};
   bool m_do_ep{true};
   std::string m_q_vec_corr_fname;
@@ -226,4 +236,22 @@ class sEPDValidation : public SubsysReco
 
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   std::map<std::string, int> m_ctr;
+
+  struct EventData
+  {
+    int event_id{0};
+    double event_zvertex{9999};
+    double event_centrality{9999};
+    std::vector<double> sepd_charge;
+    std::vector<double> sepd_phi;
+    std::vector<double> sepd_eta;
+    std::vector<double> mbd_charge;
+    std::vector<double> mbd_phi;
+    std::vector<double> mbd_eta;
+  };
+
+  EventData m_data;
+
+  std::unique_ptr<TFile> m_output;
+  TTree* m_tree{nullptr};
 };
