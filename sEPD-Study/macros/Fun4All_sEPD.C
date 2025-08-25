@@ -40,22 +40,22 @@ R__LOAD_LIBRARY(libsEPDValidation.so)
 void Fun4All_sEPD(const std::string &fname,
                   unsigned int runnumber,
                   const std::string &output = "test.root",
+                  const std::string &output_tree = "tree.root",
                   int nEvents = 100,
                   const std::string &dbtag = "newcdbtag",
                   bool condor_mode = false,
-                  bool do_ep = true,
-                  const std::string &q_vec_corr_fname = "")
+                  bool do_ep = false)
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
   std::cout << "input: " << fname << std::endl;
   std::cout << "Run: " << runnumber << std::endl;
   std::cout << "output: " << output << std::endl;
+  std::cout << "output tree: " << output_tree << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "Do Event Plane Reco: " << do_ep << std::endl;
-  std::cout << "Q vector correction file: " << q_vec_corr_fname << std::endl;
   std::cout << "########################" << std::endl;
 
   /* Verbosity Options
@@ -137,9 +137,9 @@ void Fun4All_sEPD(const std::string &fname,
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();
   sepd_validation->set_filename(output);
+  sepd_validation->set_tree_filename(output_tree);
   sepd_validation->set_condor_mode(condor_mode);
   sepd_validation->set_do_ep(do_ep);
-  sepd_validation->set_q_vec_corr(q_vec_corr_fname);
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(sepd_validation.release());
 
@@ -165,26 +165,26 @@ int main(int argc, const char* const argv[])
 
   if (args.size() < 3 || args.size() > 9)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag] [condor_mode] [do_ep] [q_vec_corr_fname]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [output_tree] [nEvents] [dbtag] [condor_mode] [do_ep]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
+    std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     std::cerr << "  Do Event Plane: Do official Event Plane reconstruction." << std::endl;
-    std::cerr << "  q_vec_corr_fname: Q-vector correction file." << std::endl;
     return 1;  // Indicate error
   }
 
   const std::string& input_dst= args[1];
   unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[2]));
   std::string output = "test.root";
+  std::string output_tree = "tree.root";
   int nEvents = 100;
   std::string dbtag = "newcdbtag";
   bool condor_mode = false;
-  bool do_ep = true;
-  std::string q_vec_corr_fname = "";
+  bool do_ep = false;
 
   if (args.size() >= 4)
   {
@@ -192,26 +192,26 @@ int main(int argc, const char* const argv[])
   }
   if (args.size() >= 5)
   {
-    nEvents = std::stoi(args[4]);
+    output_tree = args[4];
   }
   if (args.size() >= 6)
   {
-    dbtag = args[5];
+    nEvents = std::stoi(args[5]);
   }
   if (args.size() >= 7)
   {
-    condor_mode = std::stoi(args[6]);
+    dbtag = args[6];
   }
   if (args.size() >= 8)
   {
-    do_ep = std::stoi(args[7]);
+    condor_mode = std::stoi(args[7]);
   }
   if (args.size() >= 9)
   {
-    q_vec_corr_fname = args[8];
+    do_ep = std::stoi(args[8]);
   }
 
-  Fun4All_sEPD(input_dst, runnumber, output, nEvents, dbtag, condor_mode, do_ep, q_vec_corr_fname);
+  Fun4All_sEPD(input_dst, runnumber, output, output_tree, nEvents, dbtag, condor_mode, do_ep);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

@@ -123,7 +123,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     create_histogram(def);
   }
 
-
   m_hists["h3SEPD_Q_S_2"]->Sumw2();
   m_hists["h3SEPD_Q_N_2"]->Sumw2();
   m_hists["h3SEPD_Q_S_3"]->Sumw2();

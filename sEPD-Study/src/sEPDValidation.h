@@ -57,16 +57,6 @@ class sEPDValidation : public SubsysReco
     m_do_ep = do_ep;
   }
 
-  void set_q_vec_corr(std::string_view file)
-  {
-    m_q_vec_corr_fname = file;
-    if (std::filesystem::exists(file))
-    {
-      m_do_q_vec_corr = true;
-      m_do_q_vec_corr2 = true;
-    }
-  }
-
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
@@ -81,9 +71,6 @@ class sEPDValidation : public SubsysReco
   std::string m_outtree_name{"tree.root"};
   bool m_condor_mode{false};
   bool m_do_ep{true};
-  std::string m_q_vec_corr_fname;
-  bool m_do_q_vec_corr{false};
-  bool m_do_q_vec_corr2{false};
 
   struct HistConfig
   {
