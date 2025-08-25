@@ -130,23 +130,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_hists["h3SEPD_Q_S_3"]->Sumw2();
   m_hists["h3SEPD_Q_N_3"]->Sumw2();
 
-  // Q-vector: 2nd Order Correction
-  m_hists["h3SEPD_Q_S_xx_yy_2"] = std::make_unique<TH3F>("h3SEPD_Q_S_xx_yy_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{xx}; Q_{yy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-  m_hists["h3SEPD_Q_N_xx_yy_2"] = std::make_unique<TH3F>("h3SEPD_Q_N_xx_yy_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{xx}; Q_{yy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-  m_hists["h3SEPD_Q_xy_2"] = std::make_unique<TH3F>("h3SEPD_Q_xy_2", "sEPD Q xy (Order 2): |z| < 10 cm and MB; Q^{S}_{xy}; Q^{N}_{xy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-  m_hists["h3SEPD_Q_S_xx_yy_3"] = std::make_unique<TH3F>("h3SEPD_Q_S_xx_yy_3", "sEPD South Q (Order 3): |z| < 10 cm and MB; Q_{xx}; Q_{yy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-  m_hists["h3SEPD_Q_N_xx_yy_3"] = std::make_unique<TH3F>("h3SEPD_Q_N_xx_yy_3", "sEPD North Q (Order 3): |z| < 10 cm and MB; Q_{xx}; Q_{yy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-  m_hists["h3SEPD_Q_xy_3"] = std::make_unique<TH3F>("h3SEPD_Q_xy_3", "sEPD Q xy (Order 3): |z| < 10 cm and MB; Q^{S}_{xy}; Q^{N}_{xy}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-  m_hists["h3SEPD_Q_S_xx_yy_2"]->Sumw2();
-  m_hists["h3SEPD_Q_N_xx_yy_2"]->Sumw2();
-  m_hists["h3SEPD_Q_xy_2"]->Sumw2();
-
-  m_hists["h3SEPD_Q_S_xx_yy_3"]->Sumw2();
-  m_hists["h3SEPD_Q_N_xx_yy_3"]->Sumw2();
-  m_hists["h3SEPD_Q_xy_3"]->Sumw2();
-
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
     m_hists["hEvent"]->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
@@ -157,81 +140,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
   }
 
-  // Q vector Correction Hists
-  if (m_do_q_vec_corr)
-  {
-    std::unique_ptr<TFile> tfile(TFile::Open(m_q_vec_corr_fname.c_str()));
-    if (!tfile || tfile->IsZombie())
-    {
-      std::cout << std::format("Error: Could not open ROOT file: {}", m_q_vec_corr_fname) << std::endl;
-      m_do_q_vec_corr = false;
-      return Fun4AllReturnCodes::EVENT_OK;
-    }
-
-    if (tfile->Get("h3SEPD_Q_N_2") == nullptr ||
-        tfile->Get("h3SEPD_Q_S_2") == nullptr ||
-        tfile->Get("h3SEPD_Q_N_3") == nullptr ||
-        tfile->Get("h3SEPD_Q_S_3") == nullptr)
-    {
-      std::cout << std::format("Error: Could not get some / all of h3SEPD_Q hists from {}", m_q_vec_corr_fname) << std::endl;
-      m_do_q_vec_corr = false;
-      return Fun4AllReturnCodes::EVENT_OK;
-    }
-
-    if (tfile->Get("h3SEPD_Q_S_xx_yy_2") == nullptr ||
-        tfile->Get("h3SEPD_Q_N_xx_yy_2") == nullptr ||
-        tfile->Get("h3SEPD_Q_xy_2") == nullptr ||
-        tfile->Get("h3SEPD_Q_S_xx_yy_3") == nullptr ||
-        tfile->Get("h3SEPD_Q_N_xx_yy_3") == nullptr ||
-        tfile->Get("h3SEPD_Q_xy_3") == nullptr
-       )
-    {
-      std::cout << std::format("Warning: Could not get some / all of h3SEPD_Q hists for 2nd order correction from {}", m_q_vec_corr_fname) << std::endl;
-      m_do_q_vec_corr2 = false;
-    }
-
-    // keep hists from deleting when tfile is closed
-    TH1::AddDirectory(kFALSE);
-
-    // Read Q vector calib
-    m_hists["h3SEPD_Q_N_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_2")->Clone("h3SEPD_Q_N_2_calib")));
-    m_hists["h3SEPD_Q_S_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_2")->Clone("h3SEPD_Q_S_2_calib")));
-    m_hists["h3SEPD_Q_N_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_3")->Clone("h3SEPD_Q_N_3_calib")));
-    m_hists["h3SEPD_Q_S_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_3")->Clone("h3SEPD_Q_S_3_calib")));
-
-    // Init Q vector corr hists
-    m_hists["h3SEPD_Q_S_corr_2"] = std::make_unique<TH3F>("h3SEPD_Q_S_corr_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-    m_hists["h3SEPD_Q_N_corr_2"] = std::make_unique<TH3F>("h3SEPD_Q_N_corr_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-    m_hists["h3SEPD_Q_S_corr_3"] = std::make_unique<TH3F>("h3SEPD_Q_S_corr_3", "sEPD South Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-    m_hists["h3SEPD_Q_N_corr_3"] = std::make_unique<TH3F>("h3SEPD_Q_N_corr_3", "sEPD North Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-    m_hists["h3SEPD_Q_S_corr_2"]->Sumw2();
-    m_hists["h3SEPD_Q_N_corr_2"]->Sumw2();
-    m_hists["h3SEPD_Q_S_corr_3"]->Sumw2();
-    m_hists["h3SEPD_Q_N_corr_3"]->Sumw2();
-
-    // local
-    m_hists["h3SEPD_Psi_corr_2"] = std::make_unique<TH3F>("h3SEPD_Psi_corr_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-    m_hists["h3SEPD_Psi_corr_3"] = std::make_unique<TH3F>("h3SEPD_Psi_corr_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-    if(m_do_q_vec_corr2)
-    {
-      m_hists["h3SEPD_Q_S_xx_yy_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_xx_yy_2")->Clone("h3SEPD_Q_S_xx_yy_2_calib")));
-      m_hists["h3SEPD_Q_N_xx_yy_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_xx_yy_2")->Clone("h3SEPD_Q_N_xx_yy_2_calib")));
-      m_hists["h3SEPD_Q_xy_2_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_xy_2")->Clone("h3SEPD_Q_xy_2_calib")));
-
-      m_hists["h3SEPD_Q_S_xx_yy_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_S_xx_yy_3")->Clone("h3SEPD_Q_S_xx_yy_3_calib")));
-      m_hists["h3SEPD_Q_N_xx_yy_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_N_xx_yy_3")->Clone("h3SEPD_Q_N_xx_yy_3_calib")));
-      m_hists["h3SEPD_Q_xy_3_calib"] = std::unique_ptr<TH3>(dynamic_cast<TH3*>(tfile->Get("h3SEPD_Q_xy_3")->Clone("h3SEPD_Q_xy_3_calib")));
-
-      // local
-      m_hists["h3SEPD_Psi_corr2_2"] = std::make_unique<TH3F>("h3SEPD_Psi_corr2_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-
-      m_hists["h3SEPD_Psi_corr2_3"] = std::make_unique<TH3F>("h3SEPD_Psi_corr2_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-    }
-  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -455,89 +363,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   double Q_N_x_3 = 0;
   double Q_N_y_3 = 0;
 
-  // Q-vector correction
-  double Q_S_x_2_avg = 0;
-  double Q_S_y_2_avg = 0;
-  double Q_N_x_2_avg = 0;
-  double Q_N_y_2_avg = 0;
-
-  double Q_S_x_3_avg = 0;
-  double Q_S_y_3_avg = 0;
-  double Q_N_x_3_avg = 0;
-  double Q_N_y_3_avg = 0;
-
-  double Q_S_xx_2_avg = 0;
-  double Q_S_yy_2_avg = 0;
-  double Q_S_xy_2_avg = 0;
-
-  double Q_N_xx_2_avg = 0;
-  double Q_N_yy_2_avg = 0;
-  double Q_N_xy_2_avg = 0;
-
-  double Q_S_xx_3_avg = 0;
-  double Q_S_yy_3_avg = 0;
-  double Q_S_xy_3_avg = 0;
-
-  double Q_N_xx_3_avg = 0;
-  double Q_N_yy_3_avg = 0;
-  double Q_N_xy_3_avg = 0;
-
-  if(m_do_q_vec_corr)
-  {
-    int cent_low = (static_cast<int>(m_cent) / 10) * 10;
-    int cent_high = cent_low + 9;
-
-    int cent_bin_low = m_hists["h3SEPD_Q_S_2_calib"]->GetZaxis()->FindBin(cent_low);
-    int cent_bin_high = m_hists["h3SEPD_Q_S_2_calib"]->GetZaxis()->FindBin(cent_high);
-
-    m_hists["h3SEPD_Q_S_2_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-    m_hists["h3SEPD_Q_N_2_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-    m_hists["h3SEPD_Q_S_3_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-    m_hists["h3SEPD_Q_N_3_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-
-    Q_S_x_2_avg =  m_hists["h3SEPD_Q_S_2_calib"]->GetMean(1);
-    Q_S_y_2_avg =  m_hists["h3SEPD_Q_S_2_calib"]->GetMean(2);
-    Q_N_x_2_avg =  m_hists["h3SEPD_Q_N_2_calib"]->GetMean(1);
-    Q_N_y_2_avg =  m_hists["h3SEPD_Q_N_2_calib"]->GetMean(2);
-
-    Q_S_x_3_avg =  m_hists["h3SEPD_Q_S_3_calib"]->GetMean(1);
-    Q_S_y_3_avg =  m_hists["h3SEPD_Q_S_3_calib"]->GetMean(2);
-    Q_N_x_3_avg =  m_hists["h3SEPD_Q_N_3_calib"]->GetMean(1);
-    Q_N_y_3_avg =  m_hists["h3SEPD_Q_N_3_calib"]->GetMean(2);
-
-    if (m_do_q_vec_corr2)
-    {
-      m_hists["h3SEPD_Q_S_xx_yy_2_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-      m_hists["h3SEPD_Q_N_xx_yy_2_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-      m_hists["h3SEPD_Q_xy_2_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-
-      m_hists["h3SEPD_Q_S_xx_yy_3_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-      m_hists["h3SEPD_Q_N_xx_yy_3_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-      m_hists["h3SEPD_Q_xy_3_calib"]->GetZaxis()->SetRange(cent_bin_low, cent_bin_high);
-
-      Q_S_xx_2_avg = m_hists["h3SEPD_Q_S_xx_yy_2_calib"]->GetMean(1);
-      Q_S_yy_2_avg = m_hists["h3SEPD_Q_S_xx_yy_2_calib"]->GetMean(2);
-      Q_N_xx_2_avg = m_hists["h3SEPD_Q_N_xx_yy_2_calib"]->GetMean(1);
-      Q_N_yy_2_avg = m_hists["h3SEPD_Q_N_xx_yy_2_calib"]->GetMean(2);
-
-      Q_S_xy_2_avg = m_hists["h3SEPD_Q_xy_2_calib"]->GetMean(1);
-      Q_N_xy_2_avg = m_hists["h3SEPD_Q_xy_2_calib"]->GetMean(2);
-
-      Q_S_xx_3_avg = m_hists["h3SEPD_Q_S_xx_yy_3_calib"]->GetMean(1);
-      Q_S_yy_3_avg = m_hists["h3SEPD_Q_S_xx_yy_3_calib"]->GetMean(2);
-      Q_N_xx_3_avg = m_hists["h3SEPD_Q_N_xx_yy_3_calib"]->GetMean(1);
-      Q_N_yy_3_avg = m_hists["h3SEPD_Q_N_xx_yy_3_calib"]->GetMean(2);
-
-      Q_S_xy_3_avg = m_hists["h3SEPD_Q_xy_3_calib"]->GetMean(1);
-      Q_N_xy_3_avg = m_hists["h3SEPD_Q_xy_3_calib"]->GetMean(2);
-    }
-
-    if (Verbosity() >= Fun4AllBase::VERBOSITY_SOME)
-    {
-      std::cout << std::format("Cent: {:.2f}, low: {:2d}, high: {:3d}, Q_S_2 avg: ({:.4f}, {:.4f}), Q_N_2 avg: ({:.4f}, {:.4f})", m_cent, cent_bin_low, cent_bin_high, Q_S_x_2_avg, Q_S_y_2_avg, Q_N_x_2_avg, Q_N_y_2_avg) << std::endl;
-    }
-  }
-
   for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
   {
     unsigned int key = TowerInfoDefs::encode_epd(channel);
@@ -632,93 +457,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   Q_N_x_3 /= sepd_total_charge_north;
   Q_N_y_3 /= sepd_total_charge_north;
 
-  // Compute Q vector first order correction
-  double Q_S_x_corr_2 = Q_S_x_2 - Q_S_x_2_avg;
-  double Q_S_y_corr_2 = Q_S_y_2 - Q_S_y_2_avg;
-
-  double Q_S_x_corr_3 = Q_S_x_3 - Q_S_x_3_avg;
-  double Q_S_y_corr_3 = Q_S_y_3 - Q_S_y_3_avg;
-
-  double Q_N_x_corr_2 = Q_N_x_2 - Q_N_x_2_avg;
-  double Q_N_y_corr_2 = Q_N_y_2 - Q_N_y_2_avg;
-
-  double Q_N_x_corr_3 = Q_N_x_3 - Q_N_x_3_avg;
-  double Q_N_y_corr_3 = Q_N_y_3 - Q_N_y_3_avg;
-
-  // Compute Q vector second order correction factors
-  double Q_S_xx_2 = Q_S_x_corr_2 * Q_S_x_corr_2;
-  double Q_S_yy_2 = Q_S_y_corr_2 * Q_S_y_corr_2;
-  double Q_S_xy_2 = Q_S_x_corr_2 * Q_S_y_corr_2;
-
-  double Q_N_xx_2 = Q_N_x_corr_2 * Q_N_x_corr_2;
-  double Q_N_yy_2 = Q_N_y_corr_2 * Q_N_y_corr_2;
-  double Q_N_xy_2 = Q_N_x_corr_2 * Q_N_y_corr_2;
-
-  double Q_S_xx_3 = Q_S_x_corr_3 * Q_S_x_corr_3;
-  double Q_S_yy_3 = Q_S_y_corr_3 * Q_S_y_corr_3;
-  double Q_S_xy_3 = Q_S_x_corr_3 * Q_S_y_corr_3;
-
-  double Q_N_xx_3 = Q_N_x_corr_3 * Q_N_x_corr_3;
-  double Q_N_yy_3 = Q_N_y_corr_3 * Q_N_y_corr_3;
-  double Q_N_xy_3 = Q_N_x_corr_3 * Q_N_y_corr_3;
-
-  double D_S_2 = std::sqrt(Q_S_xx_2_avg * Q_S_yy_2_avg - Q_S_xy_2_avg * Q_S_xy_2_avg);
-  double D_N_2 = std::sqrt(Q_N_xx_2_avg * Q_N_yy_2_avg - Q_N_xy_2_avg * Q_N_xy_2_avg);
-
-  double N_S_2 = D_S_2 * (Q_S_xx_2_avg + Q_S_yy_2_avg + 2 * D_S_2);
-  double N_N_2 = D_N_2 * (Q_S_xx_2_avg + Q_S_yy_2_avg + 2 * D_N_2);
-
-  std::vector<std::vector<double>> X_S_2(2, std::vector<double>(2, 0));
-  std::vector<std::vector<double>> X_N_2(2, std::vector<double>(2, 0));
-
-  // compute second order correction matrix elements
-  if(N_S_2 != 0 && N_N_2 != 0)
-  {
-    X_S_2[0][0] = 1/std::sqrt(N_S_2) * (Q_S_yy_2_avg + D_S_2);
-    X_S_2[0][1] = -1/std::sqrt(N_S_2) * (Q_S_xy_2_avg);
-    X_S_2[1][0] = X_S_2[0][1];
-    X_S_2[1][1] = 1/std::sqrt(N_S_2) * (Q_S_xx_2_avg + D_S_2);
-
-    X_N_2[0][0] = 1/std::sqrt(N_N_2) * (Q_N_yy_2_avg + D_N_2);
-    X_N_2[0][1] = -1/std::sqrt(N_N_2) * (Q_N_xy_2_avg);
-    X_N_2[1][0] = X_N_2[0][1];
-    X_N_2[1][1] = 1/std::sqrt(N_N_2) * (Q_N_xx_2_avg + D_N_2);
-  }
-
-  double D_S_3 = std::sqrt(Q_S_xx_3_avg * Q_S_yy_3_avg - Q_S_xy_3_avg * Q_S_xy_3_avg);
-  double D_N_3 = std::sqrt(Q_N_xx_3_avg * Q_N_yy_3_avg - Q_N_xy_3_avg * Q_N_xy_3_avg);
-
-  double N_S_3 = D_S_3 * (Q_S_xx_3_avg + Q_S_yy_3_avg + 2 * D_S_3);
-  double N_N_3 = D_N_3 * (Q_S_xx_3_avg + Q_S_yy_3_avg + 2 * D_N_3);
-
-  std::vector<std::vector<double>> X_S_3(2, std::vector<double>(2, 0));
-  std::vector<std::vector<double>> X_N_3(2, std::vector<double>(2, 0));
-
-  // compute second order correction matrix elements
-  if(N_S_3 != 0 && N_N_3 != 0)
-  {
-    X_S_3[0][0] = 1/std::sqrt(N_S_3) * (Q_S_yy_3_avg + D_S_3);
-    X_S_3[0][1] = -1/std::sqrt(N_S_3) * (Q_S_xy_3_avg);
-    X_S_3[1][0] = X_S_3[0][1];
-    X_S_3[1][1] = 1/std::sqrt(N_S_3) * (Q_S_xx_3_avg + D_S_3);
-
-    X_N_3[0][0] = 1/std::sqrt(N_N_3) * (Q_N_yy_3_avg + D_N_3);
-    X_N_3[0][1] = -1/std::sqrt(N_N_3) * (Q_N_xy_3_avg);
-    X_N_3[1][0] = X_N_3[0][1];
-    X_N_3[1][1] = 1/std::sqrt(N_N_3) * (Q_N_xx_3_avg + D_N_3);
-  }
-
-  // Compute Q vector second order correction
-  double Q_S_x_corr2_2 = X_S_2[0][0] * Q_S_x_corr_2 + X_S_2[0][1] * Q_S_y_corr_2;
-  double Q_S_y_corr2_2 = X_S_2[1][0] * Q_S_x_corr_2 + X_S_2[1][1] * Q_S_y_corr_2;
-  double Q_N_x_corr2_2 = X_N_2[0][0] * Q_N_x_corr_2 + X_N_2[0][1] * Q_N_y_corr_2;
-  double Q_N_y_corr2_2 = X_N_2[1][0] * Q_N_x_corr_2 + X_N_2[1][1] * Q_N_y_corr_2;
-
-  double Q_S_x_corr2_3 = X_S_3[0][0] * Q_S_x_corr_3 + X_S_3[0][1] * Q_S_y_corr_3;
-  double Q_S_y_corr2_3 = X_S_3[1][0] * Q_S_x_corr_3 + X_S_3[1][1] * Q_S_y_corr_3;
-  double Q_N_x_corr2_3 = X_N_3[0][0] * Q_N_x_corr_3 + X_N_3[0][1] * Q_N_y_corr_3;
-  double Q_N_y_corr2_3 = X_N_3[1][0] * Q_N_x_corr_3 + X_N_3[1][1] * Q_N_y_corr_3;
-
   m_logging.m_sepd_Q_min = std::min(m_logging.m_sepd_Q_min, std::min(Q_S_x_2,
                                         std::min(Q_S_y_2,
                                         std::min(Q_N_x_2,
@@ -748,46 +486,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_2"].get())->Fill(psi_S_2, psi_N_2, m_cent);
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Fill(psi_S_3, psi_N_3, m_cent);
-
-  // Q vector Corrected
-  if(m_do_q_vec_corr)
-  {
-    // 1st order correction
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_corr_2"].get())->Fill(Q_S_x_corr_2, Q_S_y_corr_2, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_corr_2"].get())->Fill(Q_N_x_corr_2, Q_N_y_corr_2, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_corr_3"].get())->Fill(Q_S_x_corr_3, Q_S_y_corr_3, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_corr_3"].get())->Fill(Q_N_x_corr_3, Q_N_y_corr_3, m_cent);
-
-    double psi_S_corr_2 = std::atan2(Q_S_y_corr_2, Q_S_x_corr_2);
-    double psi_N_corr_2 = std::atan2(Q_N_y_corr_2, Q_N_x_corr_2);
-
-    double psi_S_corr_3 = std::atan2(Q_S_y_corr_3, Q_S_x_corr_3);
-    double psi_N_corr_3 = std::atan2(Q_N_y_corr_3, Q_N_x_corr_3);
-
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr_2"].get())->Fill(psi_S_corr_2, psi_N_corr_2, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr_3"].get())->Fill(psi_S_corr_3, psi_N_corr_3, m_cent);
-
-    // 2nd order correction
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_xx_yy_2"].get())->Fill(Q_S_xx_2, Q_S_yy_2, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_xx_yy_2"].get())->Fill(Q_N_xx_2, Q_N_yy_2, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_xy_2"].get())->Fill(Q_S_xy_2, Q_N_xy_2, m_cent);
-
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_xx_yy_3"].get())->Fill(Q_S_xx_3, Q_S_yy_3, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_xx_yy_3"].get())->Fill(Q_N_xx_3, Q_N_yy_3, m_cent);
-    dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_xy_3"].get())->Fill(Q_S_xy_3, Q_N_xy_3, m_cent);
-
-    if (m_do_q_vec_corr2)
-    {
-      double psi_S_corr2_2 = std::atan2(Q_S_y_corr2_2, Q_S_x_corr2_2);
-      double psi_N_corr2_2 = std::atan2(Q_N_y_corr2_2, Q_N_x_corr2_2);
-
-      double psi_S_corr2_3 = std::atan2(Q_S_y_corr2_3, Q_S_x_corr2_3);
-      double psi_N_corr2_3 = std::atan2(Q_N_y_corr2_3, Q_N_x_corr2_3);
-
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr2_2"].get())->Fill(psi_S_corr2_2, psi_N_corr2_2, m_cent);
-      dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_corr2_3"].get())->Fill(psi_S_corr2_3, psi_N_corr2_3, m_cent);
-    }
-  }
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
 
@@ -1018,19 +716,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
     project_and_write("h3SEPD_Psi_2", "yx");
     project_and_write("h3SEPD_Psi_3", "yx");
-
-    // Q Vector Correction
-    if(m_do_q_vec_corr)
-    {
-      project_and_write("h3SEPD_Q_S_corr_2", "yx");
-      project_and_write("h3SEPD_Q_N_corr_2", "yx");
-
-      project_and_write("h3SEPD_Q_S_corr_3", "yx");
-      project_and_write("h3SEPD_Q_N_corr_3", "yx");
-
-      project_and_write("h3SEPD_Psi_corr_2", "yx");
-      project_and_write("h3SEPD_Psi_corr_3", "yx");
-    }
 
     // Official
     if(m_do_ep)
