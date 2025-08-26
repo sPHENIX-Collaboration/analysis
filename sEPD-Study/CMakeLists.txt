@@ -88,6 +88,10 @@ target_link_libraries(displayHotMap PRIVATE
     cdbobjects
 )
 
+# --- Q vector Correction ---
+add_executable(Q_vec_corr macros/Q-vector-correction.C)
+target_link_libraries(Q_vec_corr PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- display ---
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
