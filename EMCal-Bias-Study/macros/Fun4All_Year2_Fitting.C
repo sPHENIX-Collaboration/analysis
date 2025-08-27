@@ -35,7 +35,7 @@ void Fun4All_Year2_Fitting(const string &fname,
                            const string &outfile = "test.root",
                            int nEvents = 0,
                            bool doAllWaveforms = true,
-                           const string &dbtag = "ProdA_2024")
+                           const string &dbtag = "newcdbtag")
 {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
@@ -104,14 +104,14 @@ int main(int argc, const char* const argv[])
     cout << "outFile: name of output QA file. Default: test.root" << endl;
     cout << "events: Number of events to analyze. Default: all" << endl;
     cout << "doAllWaveforms: Analyze all waveforms. Default: true" << endl;
-    cout << "dbtag: Database Tag. Default: ProdA_2024" << endl;
+    cout << "dbtag: Database Tag. Default: newcdbtag" << endl;
     return 1;
   }
 
   string outFile = "test.root";
   UInt_t events = 0;
   Bool_t doAllWaveforms = true;
-  string dbtag = "ProdA_2024";
+  string dbtag = "newcdbtag";
 
   if (argc >= 3)
   {
