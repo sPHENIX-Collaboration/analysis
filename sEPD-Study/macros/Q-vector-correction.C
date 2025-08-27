@@ -81,12 +81,19 @@ void QvectorAnalysis::setup_chain()
     throw std::runtime_error(std::format("Error: Could not open the input file list: {}", m_input_list));
   }
   std::string root_file_path;
+
+  long long prev_events = 0;
   while (std::getline(file_list, root_file_path))
   {
     if (!root_file_path.empty())
     {
       m_chain->Add(root_file_path.c_str());
 
+      long long curr_event = m_chain->GetEntries();
+      long long events = curr_event - prev_events;
+      prev_events = curr_event;
+
+      std::cout << std::format("Reading: {}, Events: {}, Total Events: {}", root_file_path, events, curr_event) << std::endl;
       // Stop reading when enough events have been read
       if (m_events_to_process && m_chain->GetEntries() > m_events_to_process)
       {
@@ -147,7 +154,7 @@ void QvectorAnalysis::run_event_loop()
         double phi = m_event_data.sepd_phi->at(j);
         double eta = m_event_data.sepd_eta->at(j);
 
-        if (m_verbosity && ++ctr["prints_sepd"] < ctr["prints_sepd_const"])
+        if (m_verbosity && ctr["prints_sepd"]++ < ctr["prints_sepd_const"])
         {
           std::cout << std::format("id: {:3d}, Z = {:5.2f}, Cent: {:2d}, Charge: {:5.2f}, Phi: {:3.2f}, Eta: {:3.2f}", m_event_data.event_id, m_event_data.event_zvertex, static_cast<int>(m_event_data.event_centrality), charge, phi, eta) << std::endl;
         }
