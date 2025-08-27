@@ -15,6 +15,8 @@
 // ROOT Includes
 // ====================================================================
 #include <TChain.h>
+#include <TH1.h>
+#include <TH3.h>
 #include <TROOT.h>
 
 // ====================================================================
@@ -30,13 +32,36 @@ class QvectorAnalysis
     , m_events_to_process(events)
     , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
+    , Q_S_x_2_avg(m_cent_bins)
+    , Q_S_y_2_avg(m_cent_bins)
+    , Q_N_x_2_avg(m_cent_bins)
+    , Q_N_y_2_avg(m_cent_bins)
+    , Q_S_x_3_avg(m_cent_bins)
+    , Q_S_y_3_avg(m_cent_bins)
+    , Q_N_x_3_avg(m_cent_bins)
+    , Q_N_y_3_avg(m_cent_bins)
+    , Q_S_xx_2_avg(m_cent_bins)
+    , Q_S_yy_2_avg(m_cent_bins)
+    , Q_S_xy_2_avg(m_cent_bins)
+    , Q_N_xx_2_avg(m_cent_bins)
+    , Q_N_yy_2_avg(m_cent_bins)
+    , Q_N_xy_2_avg(m_cent_bins)
+    , Q_S_xx_3_avg(m_cent_bins)
+    , Q_S_yy_3_avg(m_cent_bins)
+    , Q_S_xy_3_avg(m_cent_bins)
+    , Q_N_xx_3_avg(m_cent_bins)
+    , Q_N_yy_3_avg(m_cent_bins)
+    , Q_N_xy_3_avg(m_cent_bins)
   {
   }
 
   void run()
   {
     setup_chain();
-    run_event_loop();
+    init_hists();
+    run_event_loop_Q1();
+    run_event_loop_Q2();
+    run_event_loop_Q_result();
     save_results();
   }
 
@@ -64,9 +89,46 @@ class QvectorAnalysis
   int m_verbosity;
   std::string m_output_dir;
 
+  size_t m_cent_bins{10};
+
+  // Q vector members
+  // First Order Correction
+  std::vector<double> Q_S_x_2_avg;
+  std::vector<double> Q_S_y_2_avg;
+  std::vector<double> Q_N_x_2_avg;
+  std::vector<double> Q_N_y_2_avg;
+
+  std::vector<double> Q_S_x_3_avg;
+  std::vector<double> Q_S_y_3_avg;
+  std::vector<double> Q_N_x_3_avg;
+  std::vector<double> Q_N_y_3_avg;
+
+  // Second Order Correction
+  std::vector<double> Q_S_xx_2_avg;
+  std::vector<double> Q_S_yy_2_avg;
+  std::vector<double> Q_S_xy_2_avg;
+
+  std::vector<double> Q_N_xx_2_avg;
+  std::vector<double> Q_N_yy_2_avg;
+  std::vector<double> Q_N_xy_2_avg;
+
+  std::vector<double> Q_S_xx_3_avg;
+  std::vector<double> Q_S_yy_3_avg;
+  std::vector<double> Q_S_xy_3_avg;
+
+  std::vector<double> Q_N_xx_3_avg;
+  std::vector<double> Q_N_yy_3_avg;
+  std::vector<double> Q_N_xy_3_avg;
+
+  // Hists
+  std::map<std::string, std::unique_ptr<TH1>> m_hists;
+
   // --- Private Helper Methods ---
   void setup_chain();
-  void run_event_loop();
+  void init_hists();
+  void run_event_loop_Q1();
+  void run_event_loop_Q2();
+  void run_event_loop_Q_result();
   void save_results();
 };
 
@@ -124,7 +186,25 @@ void QvectorAnalysis::setup_chain()
   // m_chain->SetBranchAddress("mbd_eta", &m_event_data.mbd_eta);
 }
 
-void QvectorAnalysis::run_event_loop()
+void QvectorAnalysis::init_hists()
+{
+  unsigned int bins_Q = 100;
+  double Q_low = -1;
+  double Q_high = 1;
+
+  double cent_low = 0;
+  double cent_high = 100;
+
+  m_hists["h_Dummy_Cent"] = std::make_unique<TH1F>("h_Dummy_Cent", "", m_cent_bins, 0, 100);
+
+  m_hists["h3_sEPD_Q_S_2"] = std::make_unique<TH3F>("h3_sEPD_Q_S_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
+  m_hists["h3_sEPD_Q_N_2"] = std::make_unique<TH3F>("h3_sEPD_Q_N_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
+  m_hists["h3_sEPD_Q_S_3"] = std::make_unique<TH3F>("h3_sEPD_Q_S_3", "sEPD South Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
+  m_hists["h3_sEPD_Q_N_3"] = std::make_unique<TH3F>("h3_sEPD_Q_N_3", "sEPD North Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
+}
+
+// Derive First Order Correction
+void QvectorAnalysis::run_event_loop_Q1()
 {
   long long n_entries = m_chain->GetEntries();
   if (m_events_to_process)
@@ -135,16 +215,44 @@ void QvectorAnalysis::run_event_loop()
   std::map<std::string, int> ctr;
   ctr["prints_sepd_const"] = 5;
 
+  std::vector<unsigned int> event_ctr(m_cent_bins);
+
+  // Event Loop
   for (long long i = 0; i < n_entries; ++i)
   {
+    // Load Event Data from TChain
     m_chain->GetEntry(i);
     if (i % 1000 == 0)
     {
-      std::cout << std::format("Processing entry {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
+      std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
 
+    // Identify Centrality Bin
+    size_t cent_bin = static_cast<size_t>(m_hists["h_Dummy_Cent"]->FindBin(m_event_data.event_centrality) - 1);
+
+    // ensure centrality is valid
+    if (cent_bin >= m_cent_bins)
+    {
+      std::cout << std::format("Weird Centrality: {}, Skipping Event: {}\n", m_event_data.event_centrality, m_event_data.event_id);
+      continue;
+    }
+
+    // Loop over each sEPD Channel
     if (m_event_data.sepd_charge && m_event_data.sepd_phi && m_event_data.sepd_eta)
     {
+      double sepd_total_charge_south = 0;
+      double sepd_total_charge_north = 0;
+
+      double Q_S_x_2 = 0;
+      double Q_S_y_2 = 0;
+      double Q_N_x_2 = 0;
+      double Q_N_y_2 = 0;
+
+      double Q_S_x_3 = 0;
+      double Q_S_y_3 = 0;
+      double Q_N_x_3 = 0;
+      double Q_N_y_3 = 0;
+
       size_t n_towers_sepd = m_event_data.sepd_charge->size();
 
       ctr["prints_sepd"] = 0;
@@ -154,14 +262,124 @@ void QvectorAnalysis::run_event_loop()
         double phi = m_event_data.sepd_phi->at(j);
         double eta = m_event_data.sepd_eta->at(j);
 
+        // Q vector Order 2
+        double q_x_2 = charge * std::cos(2 * phi);
+        double q_y_2 = charge * std::sin(2 * phi);
+
+        // Q vector Order 3
+        double q_x_3 = charge * std::cos(3 * phi);
+        double q_y_3 = charge * std::sin(3 * phi);
+
+        // South
+        if (eta < 0)
+        {
+          sepd_total_charge_south += charge;
+          Q_S_x_2 += q_x_2;
+          Q_S_y_2 += q_y_2;
+
+          Q_S_x_3 += q_x_3;
+          Q_S_y_3 += q_y_3;
+        }
+        // North
+        else
+        {
+          sepd_total_charge_north += charge;
+          Q_N_x_2 += q_x_2;
+          Q_N_y_2 += q_y_2;
+
+          Q_N_x_3 += q_x_3;
+          Q_N_y_3 += q_y_3;
+        }
+
         if (m_verbosity && ctr["prints_sepd"]++ < ctr["prints_sepd_const"])
         {
-          std::cout << std::format("id: {:3d}, Z = {:5.2f}, Cent: {:2d}, Charge: {:5.2f}, Phi: {:3.2f}, Eta: {:3.2f}", m_event_data.event_id, m_event_data.event_zvertex, static_cast<int>(m_event_data.event_centrality), charge, phi, eta) << std::endl;
+          std::cout << std::format("id: {:3d}, Z = {:5.2f}, Cent: {:2d}, Charge: {:5.2f}, Phi: {:5.2f}, Eta: {:3.2f}, q_x_2: {:5.2f}, q_y_2: {:5.2f}, q_x_3: {:5.2f}, q_y_3: {:5.2f}", m_event_data.event_id, m_event_data.event_zvertex, static_cast<int>(m_event_data.event_centrality), charge, phi, eta, q_x_2, q_y_2, q_x_3, q_y_3) << std::endl;
         }
       }
+
+      // skip event if either size has zero charge
+      if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
+      {
+        if (sepd_total_charge_south == 0)
+        {
+          ++ctr["sepd_south_zero_charge"];
+        }
+        if (sepd_total_charge_north == 0)
+        {
+          ++ctr["sepd_north_zero_charge"];
+        }
+        continue;
+      }
+
+      Q_S_x_2 /= sepd_total_charge_south;
+      Q_S_y_2 /= sepd_total_charge_south;
+
+      Q_S_x_3 /= sepd_total_charge_south;
+      Q_S_y_3 /= sepd_total_charge_south;
+
+      Q_N_x_2 /= sepd_total_charge_north;
+      Q_N_y_2 /= sepd_total_charge_north;
+
+      Q_N_x_3 /= sepd_total_charge_north;
+      Q_N_y_3 /= sepd_total_charge_north;
+
+      Q_S_x_2_avg[cent_bin] += Q_S_x_2;
+      Q_S_y_2_avg[cent_bin] += Q_S_y_2;
+      Q_N_x_2_avg[cent_bin] += Q_N_x_2;
+      Q_N_y_2_avg[cent_bin] += Q_N_y_2;
+
+      Q_S_x_3_avg[cent_bin] += Q_S_x_3;
+      Q_S_y_3_avg[cent_bin] += Q_S_y_3;
+      Q_N_x_3_avg[cent_bin] += Q_N_x_3;
+      Q_N_y_3_avg[cent_bin] += Q_N_y_3;
+
+      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, m_event_data.event_centrality);
+      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, m_event_data.event_centrality);
+      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_3"].get())->Fill(Q_S_x_3, Q_S_y_3, m_event_data.event_centrality);
+      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_3"].get())->Fill(Q_N_x_3, Q_N_y_3, m_event_data.event_centrality);
+
+      ++event_ctr[cent_bin];
     }
   }
+
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << "Event Stats" << std::endl;
+  std::cout << std::format("Events with SEPD South Charge 0: {}\n", ctr["sepd_south_zero_charge"]);
+  std::cout << std::format("Events with SEPD North Charge 0: {}\n", ctr["sepd_north_zero_charge"]);
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << std::format("Q Vector First Order Correction Averages\n");
+  // Compute Averages for first order correction
+  for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+  {
+    if (event_ctr[cent_bin])
+    {
+      Q_S_x_2_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_S_y_2_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_N_x_2_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_N_y_2_avg[cent_bin] /= event_ctr[cent_bin];
+
+      Q_S_x_3_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_S_y_3_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_N_x_3_avg[cent_bin] /= event_ctr[cent_bin];
+      Q_N_y_3_avg[cent_bin] /= event_ctr[cent_bin];
+    }
+
+    std::cout << std::format("cent_bin: {:2}, Q_S_x_2_avg: {:7.4f}, Q_S_y_2_avg: {:7.4f}, Q_N_x_2_avg: {:7.4f}, Q_N_y_2_avg: {:7.4f}, Q_S_x_3_avg: {:7.4f}, Q_S_y_3_avg: {:7.4f}, Q_N_x_3_avg: {:7.4f}, Q_N_y_3_avg: {:7.4f}\n", cent_bin, Q_S_x_2_avg[cent_bin], Q_S_y_2_avg[cent_bin], Q_N_x_2_avg[cent_bin], Q_N_y_2_avg[cent_bin], Q_S_x_3_avg[cent_bin], Q_S_y_3_avg[cent_bin], Q_N_x_3_avg[cent_bin], Q_N_y_3_avg[cent_bin]);
+  }
+  std::cout << std::format("{:#<20}\n", "");
+
   std::cout << "Event loop finished." << std::endl;
+}
+
+// Apply First Order Correction
+// Derive Second Order Correction
+void QvectorAnalysis::run_event_loop_Q2()
+{
+}
+
+// Apply Second Order Correction
+void QvectorAnalysis::run_event_loop_Q_result()
+{
 }
 
 void QvectorAnalysis::save_results()
