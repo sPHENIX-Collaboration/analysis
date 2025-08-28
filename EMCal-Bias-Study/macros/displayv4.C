@@ -209,7 +209,7 @@ void Displayv4::draw()
       // Pedestal Run
       if(runnumber == "73079")
       {
-          hist->SetMaximum(4e2);
+          hist->SetMaximum(2e2);
       }
 
       hist->GetXaxis()->SetTitleSize(0.06f);
