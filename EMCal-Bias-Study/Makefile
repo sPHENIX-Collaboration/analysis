@@ -39,6 +39,7 @@ ALL_TARGETS = bin/read-Bias \
               bin/display \
               bin/displayv2 \
               bin/displayv3 \
+              bin/displayv4 \
               bin/display-tp \
               bin/Fun4All_Year2_Fitting \
               bin/analyze-new-response \
