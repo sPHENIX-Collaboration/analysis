@@ -9,6 +9,7 @@
 // root includes --
 #include <TH1.h>
 #include <TF1.h>
+#include <TFitResult.h>
 #include <TFitResultPtr.h>
 
 using std::cout;
