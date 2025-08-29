@@ -211,6 +211,11 @@ void Displayv4::draw()
       {
           hist->SetMaximum(2e2);
       }
+      // LED Run
+      if(runnumber == "73172")
+      {
+          hist->SetMaximum(1.6e4);
+      }
 
       hist->GetXaxis()->SetTitleSize(0.06f);
       hist->GetYaxis()->SetTitleSize(0.06f);
@@ -251,6 +256,11 @@ void Displayv4::draw()
       if(runnumber == "73079")
       {
           hist->GetXaxis()->SetRangeUser(0, 5e2);
+      }
+      // LED Run
+      if(runnumber == "73172")
+      {
+          hist->GetXaxis()->SetRangeUser(0, 1.6e4);
       }
 
       c1->Print(output.c_str(), "pdf portrait");
