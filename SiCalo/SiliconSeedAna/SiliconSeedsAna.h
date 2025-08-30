@@ -17,7 +17,7 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/TrackAnalysisUtils.h>
-#include <trackbase_historic/SvtxTrackState_v1.h>
+#include <trackbase_historic/SvtxTrackState.h>
 
 // vertex include
 #include <globalvertex/SvtxVertex.h>
@@ -95,12 +95,13 @@ protected:
 
   void fillTruthTree(PHCompositeNode *topNode);
   void processTrackMap(PHCompositeNode *topNode);
+  void processSiCluster(PHCompositeNode *topNode);
   void processCaloClusters(PHCompositeNode *topNode);
   void processVertexMap(PHCompositeNode *topNode);
 
   // Utility functions for track vector management and EMCal state
   void clearTrackVectors();
-  void fillEMCalState(SvtxTrackState* state);
+  void fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate);
   void initTrackTreeBranches();
   void clearCaloVectors();
   void initCaloTreeBranches();
@@ -129,6 +130,9 @@ protected:
   std::vector<int>   truth_pid;
   std::vector<float> truth_px, truth_py, truth_pz, truth_e;
   std::vector<float> truth_pt, truth_eta, truth_phi;
+  std::vector<int>   truth_vtxid;
+  std::vector<float> truth_vtx_x, truth_vtx_y, truth_vtx_z;
+
 
   // SiSeed info tree and vectors
   TTree *trackTree = nullptr;
@@ -152,14 +156,19 @@ protected:
   std::vector<float> track_eta_emc;
   std::vector<float> track_phi_emc;
   std::vector<float> track_pt_emc;
+  std::vector<float> track_x_oemc;
+  std::vector<float> track_y_oemc;
+  std::vector<float> track_z_oemc;
 
   // SiCluster associated to SiSeed info tree and vectors
-  TTree *SiClusTree = nullptr;
+  TTree *SiClusTree    = nullptr;
+  TTree *SiClusAllTree = nullptr;
   std::vector<int>   SiClus_trackid;
   std::vector<int>   SiClus_layer;
   std::vector<float> SiClus_x;
   std::vector<float> SiClus_y;
   std::vector<float> SiClus_z;
+  std::vector<int>   SiClus_t;
 
   // EMC cluster info tree and vectors
   TTree *caloTree = nullptr;
@@ -185,6 +194,8 @@ protected:
   int       evt_nmaps;
   int       evt_nemc;
   int       evt_nemc02;
+  int       evt_nsiseed;
+  int       evt_nsiseed0;
   float     evt_xvtx;
   float     evt_yvtx;
   float     evt_zvtx;
@@ -192,6 +203,8 @@ protected:
 
   double m_emcal_low_cut = 0.3;
   float _caloRadiusEMCal = 93.5;
+  float _caloThicknessEMCal = 20.4997;
+
   bool isMC = false;
   bool b_skipvtx = false;
   bool b_skipcalo = false;
