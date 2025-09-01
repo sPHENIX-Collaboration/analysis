@@ -88,6 +88,10 @@ target_link_libraries(displayHotMap PRIVATE
     cdbobjects
 )
 
+# --- Bad Tower Map Analysis ---
+add_executable(badTowMapAna macros/BadTowerMapsAnalysis.C)
+target_link_libraries(badTowMapAna PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- Q vector Correction ---
 add_executable(Q_vec_corr macros/Q-vector-correction.C)
 target_link_libraries(Q_vec_corr PRIVATE ${STANDALONE_MACRO_LIBS})
