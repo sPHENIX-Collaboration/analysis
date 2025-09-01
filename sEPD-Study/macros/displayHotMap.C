@@ -24,17 +24,18 @@
 #include <memory>
 #include <string>
 
-void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", const std::string &dbtag = "newcdbtag")
+void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", const std::string &dbtag = "newcdbtag", const std::string &overWriteURL = "")
 {
   std::cout << "##############################################" << std::endl;
   std::cout << "Processing" << std::endl;
   std::cout << std::format("Run: {}", runnumber) << std::endl;
   std::cout << std::format("Output Directory: {}", outputDir) << std::endl;
   std::cout << std::format("dbtag: {}", dbtag) << std::endl;
+  std::cout << std::format("Overwrite URL: {}", overWriteURL) << std::endl;
   std::cout << "##############################################" << std::endl;
 
   setGlobalTag(dbtag);
-  std::string emcal_hotmap = getCalibration("CEMC_BadTowerMap", runnumber);
+  std::string emcal_hotmap = (overWriteURL.empty()) ? getCalibration("CEMC_BadTowerMap", runnumber) : overWriteURL;
 
   if (emcal_hotmap.starts_with("DataBaseException"))
   {
@@ -54,17 +55,28 @@ void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", c
 
   std::map<std::string, std::unique_ptr<TH1>> hists;
 
-  std::string title = std::format("EMCal isBad: Run {} ; Tower Index #phi; Tower Index #eta", runnumber);
+  std::string title;
 
+  title = std::format("EMCal isBad: Run {} ; Tower Index #phi; Tower Index #eta", runnumber);
   hists["h2EMCalBadTowers"] = std::make_unique<TH2F>("h2EMCalBadTowers", title.c_str(), myUtils::m_nphi, 0, myUtils::m_nphi, myUtils::m_neta, 0, myUtils::m_neta);
+
+  title = std::format("EMCal Dead: Run {} ; Tower Index #phi; Tower Index #eta", runnumber);
+  hists["h2EMCalBadTowersDead"] = std::make_unique<TH2F>("h2EMCalBadTowersDead", title.c_str(), myUtils::m_nphi, 0, myUtils::m_nphi, myUtils::m_neta, 0, myUtils::m_neta);
+
+  title = std::format("EMCal Hot: Run {} ; Tower Index #phi; Tower Index #eta", runnumber);
+  hists["h2EMCalBadTowersHot"] = std::make_unique<TH2F>("h2EMCalBadTowersHot", title.c_str(), myUtils::m_nphi, 0, myUtils::m_nphi, myUtils::m_neta, 0, myUtils::m_neta);
+
+  title = std::format("EMCal Cold: Run {} ; Tower Index #phi; Tower Index #eta", runnumber);
+  hists["h2EMCalBadTowersCold"] = std::make_unique<TH2F>("h2EMCalBadTowersCold", title.c_str(), myUtils::m_nphi, 0, myUtils::m_nphi, myUtils::m_neta, 0, myUtils::m_neta);
 
   // dummy hists for labeling
   hists["h2DummySector"] = std::make_unique<TH2F>("h2DummySector", "", myUtils::m_nsector / 2, 0, myUtils::m_nsector / 2, 2, 0, 2);
   hists["h2DummyIB"] = std::make_unique<TH2F>("h2DummyIB", "", myUtils::m_nsector / 2, 0, myUtils::m_nsector / 2, myUtils::m_nib * 2 / myUtils::m_nsector, 0, myUtils::m_nib * 2 / myUtils::m_nsector);
 
-  myUtils::setEMCalDim(hists["h2EMCalBadTowers"].get());
-  myUtils::setEMCalDim(hists["h2DummySector"].get());
-  myUtils::setEMCalDim(hists["h2DummyIB"].get());
+  for (const auto &[name, hist] : hists)
+  {
+    myUtils::setEMCalDim(hist.get());
+  }
 
   // setup Dummy hists
   for (int i = 0; i < myUtils::m_nsector; ++i)
@@ -97,6 +109,18 @@ void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", c
     if (hotMap_val != 0)
     {
       hists["h2EMCalBadTowers"]->Fill(phi, eta);
+      if(hotMap_val == 1)
+      {
+        hists["h2EMCalBadTowersDead"]->Fill(phi, eta);
+      }
+      if(hotMap_val == 2)
+      {
+        hists["h2EMCalBadTowersHot"]->Fill(phi, eta);
+      }
+      if(hotMap_val == 3)
+      {
+        hists["h2EMCalBadTowersCold"]->Fill(phi, eta);
+      }
     }
   }
 
@@ -120,14 +144,24 @@ void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", c
 
   gPad->SetGrid();
 
-  hists["h2EMCalBadTowers"]->Draw("COL");
-  hists["h2DummySector"]->Draw("TEXT MIN0 same");
-  hists["h2DummyIB"]->Draw("TEXT MIN0 same");
+  c1->Print(std::format("{}/h2EMCalBadTowers-{}.pdf[", outputDir, runnumber).c_str(), "pdf portrait");
 
-  hists["h2EMCalBadTowers"]->SetMaximum(5);
+  for (const auto &[name, hist] : hists)
+  {
+    if(name.starts_with("h2EMCalBadTowers"))
+    {
+      hist->Draw("COL");
+      hists["h2DummySector"]->Draw("TEXT MIN0 same");
+      hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
-  c1->Print(std::format("{}/h2EMCalBadTowers.pdf", outputDir).c_str(), "pdf portrait");
-  c1->Print(std::format("{}/h2EMCalBadTowers-{}.png", outputDir, runnumber).c_str());
+      hist->SetMaximum(5);
+
+      c1->Print(std::format("{}/h2EMCalBadTowers-{}.pdf", outputDir, runnumber).c_str(), "pdf portrait");
+      c1->Print(std::format("{}/{}-{}.png", outputDir, name, runnumber).c_str());
+    }
+  }
+
+  c1->Print(std::format("{}/h2EMCalBadTowers-{}.pdf]", outputDir, runnumber).c_str(), "pdf portrait");
 }
 
 #ifndef __CINT__
@@ -135,18 +169,20 @@ int main(int argc, const char *const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 2 || args.size() > 4)
+  if (args.size() < 2 || args.size() > 5)
   {
-    std::cerr << "usage: " << args[0] << " <runnumber> [outputDir] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <runnumber> [outputDir] [dbtag] [overWriteURL]" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  outputDir: Output Plot Directory" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
+    std::cerr << "  overWriteURL: (optional) Direct URL to EMCal Bad Tower Map (default: none)" << std::endl;
     return 1;  // Indicate error
   }
 
   unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[1]));
   std::string outputDir = ".";
   std::string dbtag = "newcdbtag";
+  std::string overWriteURL = "";
 
   if (args.size() >= 3)
   {
@@ -156,8 +192,12 @@ int main(int argc, const char *const argv[])
   {
     dbtag = args[3];
   }
+  if (args.size() >= 5)
+  {
+    overWriteURL = args[4];
+  }
 
-  displayHotMap(runnumber, outputDir, dbtag);
+  displayHotMap(runnumber, outputDir, dbtag, overWriteURL);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;
