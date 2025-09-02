@@ -32,26 +32,26 @@ class QvectorAnalysis
     , m_events_to_process(events)
     , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
-    , Q_S_x_2_avg(m_cent_bins)
-    , Q_S_y_2_avg(m_cent_bins)
-    , Q_N_x_2_avg(m_cent_bins)
-    , Q_N_y_2_avg(m_cent_bins)
-    , Q_S_x_3_avg(m_cent_bins)
-    , Q_S_y_3_avg(m_cent_bins)
-    , Q_N_x_3_avg(m_cent_bins)
-    , Q_N_y_3_avg(m_cent_bins)
-    , Q_S_xx_2_avg(m_cent_bins)
-    , Q_S_yy_2_avg(m_cent_bins)
-    , Q_S_xy_2_avg(m_cent_bins)
-    , Q_N_xx_2_avg(m_cent_bins)
-    , Q_N_yy_2_avg(m_cent_bins)
-    , Q_N_xy_2_avg(m_cent_bins)
-    , Q_S_xx_3_avg(m_cent_bins)
-    , Q_S_yy_3_avg(m_cent_bins)
-    , Q_S_xy_3_avg(m_cent_bins)
-    , Q_N_xx_3_avg(m_cent_bins)
-    , Q_N_yy_3_avg(m_cent_bins)
-    , Q_N_xy_3_avg(m_cent_bins)
+    , m_Q_S_x_2_avg(m_cent_bins)
+    , m_Q_S_y_2_avg(m_cent_bins)
+    , m_Q_N_x_2_avg(m_cent_bins)
+    , m_Q_N_y_2_avg(m_cent_bins)
+    , m_Q_S_x_3_avg(m_cent_bins)
+    , m_Q_S_y_3_avg(m_cent_bins)
+    , m_Q_N_x_3_avg(m_cent_bins)
+    , m_Q_N_y_3_avg(m_cent_bins)
+    , m_Q_S_xx_2_avg(m_cent_bins)
+    , m_Q_S_yy_2_avg(m_cent_bins)
+    , m_Q_S_xy_2_avg(m_cent_bins)
+    , m_Q_N_xx_2_avg(m_cent_bins)
+    , m_Q_N_yy_2_avg(m_cent_bins)
+    , m_Q_N_xy_2_avg(m_cent_bins)
+    , m_Q_S_xx_3_avg(m_cent_bins)
+    , m_Q_S_yy_3_avg(m_cent_bins)
+    , m_Q_S_xy_3_avg(m_cent_bins)
+    , m_Q_N_xx_3_avg(m_cent_bins)
+    , m_Q_N_yy_3_avg(m_cent_bins)
+    , m_Q_N_xy_3_avg(m_cent_bins)
   {
   }
 
@@ -93,32 +93,32 @@ class QvectorAnalysis
 
   // Q vector members
   // First Order Correction
-  std::vector<double> Q_S_x_2_avg;
-  std::vector<double> Q_S_y_2_avg;
-  std::vector<double> Q_N_x_2_avg;
-  std::vector<double> Q_N_y_2_avg;
+  std::vector<double> m_Q_S_x_2_avg;
+  std::vector<double> m_Q_S_y_2_avg;
+  std::vector<double> m_Q_N_x_2_avg;
+  std::vector<double> m_Q_N_y_2_avg;
 
-  std::vector<double> Q_S_x_3_avg;
-  std::vector<double> Q_S_y_3_avg;
-  std::vector<double> Q_N_x_3_avg;
-  std::vector<double> Q_N_y_3_avg;
+  std::vector<double> m_Q_S_x_3_avg;
+  std::vector<double> m_Q_S_y_3_avg;
+  std::vector<double> m_Q_N_x_3_avg;
+  std::vector<double> m_Q_N_y_3_avg;
 
   // Second Order Correction
-  std::vector<double> Q_S_xx_2_avg;
-  std::vector<double> Q_S_yy_2_avg;
-  std::vector<double> Q_S_xy_2_avg;
+  std::vector<double> m_Q_S_xx_2_avg;
+  std::vector<double> m_Q_S_yy_2_avg;
+  std::vector<double> m_Q_S_xy_2_avg;
 
-  std::vector<double> Q_N_xx_2_avg;
-  std::vector<double> Q_N_yy_2_avg;
-  std::vector<double> Q_N_xy_2_avg;
+  std::vector<double> m_Q_N_xx_2_avg;
+  std::vector<double> m_Q_N_yy_2_avg;
+  std::vector<double> m_Q_N_xy_2_avg;
 
-  std::vector<double> Q_S_xx_3_avg;
-  std::vector<double> Q_S_yy_3_avg;
-  std::vector<double> Q_S_xy_3_avg;
+  std::vector<double> m_Q_S_xx_3_avg;
+  std::vector<double> m_Q_S_yy_3_avg;
+  std::vector<double> m_Q_S_xy_3_avg;
 
-  std::vector<double> Q_N_xx_3_avg;
-  std::vector<double> Q_N_yy_3_avg;
-  std::vector<double> Q_N_xy_3_avg;
+  std::vector<double> m_Q_N_xx_3_avg;
+  std::vector<double> m_Q_N_yy_3_avg;
+  std::vector<double> m_Q_N_xy_3_avg;
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
@@ -323,15 +323,15 @@ void QvectorAnalysis::run_event_loop_Q1()
       Q_N_x_3 /= sepd_total_charge_north;
       Q_N_y_3 /= sepd_total_charge_north;
 
-      Q_S_x_2_avg[cent_bin] += Q_S_x_2;
-      Q_S_y_2_avg[cent_bin] += Q_S_y_2;
-      Q_N_x_2_avg[cent_bin] += Q_N_x_2;
-      Q_N_y_2_avg[cent_bin] += Q_N_y_2;
+      m_Q_S_x_2_avg[cent_bin] += Q_S_x_2;
+      m_Q_S_y_2_avg[cent_bin] += Q_S_y_2;
+      m_Q_N_x_2_avg[cent_bin] += Q_N_x_2;
+      m_Q_N_y_2_avg[cent_bin] += Q_N_y_2;
 
-      Q_S_x_3_avg[cent_bin] += Q_S_x_3;
-      Q_S_y_3_avg[cent_bin] += Q_S_y_3;
-      Q_N_x_3_avg[cent_bin] += Q_N_x_3;
-      Q_N_y_3_avg[cent_bin] += Q_N_y_3;
+      m_Q_S_x_3_avg[cent_bin] += Q_S_x_3;
+      m_Q_S_y_3_avg[cent_bin] += Q_S_y_3;
+      m_Q_N_x_3_avg[cent_bin] += Q_N_x_3;
+      m_Q_N_y_3_avg[cent_bin] += Q_N_y_3;
 
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, m_event_data.event_centrality);
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, m_event_data.event_centrality);
@@ -353,18 +353,18 @@ void QvectorAnalysis::run_event_loop_Q1()
   {
     if (event_ctr[cent_bin])
     {
-      Q_S_x_2_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_S_y_2_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_N_x_2_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_N_y_2_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_S_x_2_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_S_y_2_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_N_x_2_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_N_y_2_avg[cent_bin] /= event_ctr[cent_bin];
 
-      Q_S_x_3_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_S_y_3_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_N_x_3_avg[cent_bin] /= event_ctr[cent_bin];
-      Q_N_y_3_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_S_x_3_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_S_y_3_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_N_x_3_avg[cent_bin] /= event_ctr[cent_bin];
+      m_Q_N_y_3_avg[cent_bin] /= event_ctr[cent_bin];
     }
 
-    std::cout << std::format("cent_bin: {:2}, Q_S_x_2_avg: {:7.4f}, Q_S_y_2_avg: {:7.4f}, Q_N_x_2_avg: {:7.4f}, Q_N_y_2_avg: {:7.4f}, Q_S_x_3_avg: {:7.4f}, Q_S_y_3_avg: {:7.4f}, Q_N_x_3_avg: {:7.4f}, Q_N_y_3_avg: {:7.4f}\n", cent_bin, Q_S_x_2_avg[cent_bin], Q_S_y_2_avg[cent_bin], Q_N_x_2_avg[cent_bin], Q_N_y_2_avg[cent_bin], Q_S_x_3_avg[cent_bin], Q_S_y_3_avg[cent_bin], Q_N_x_3_avg[cent_bin], Q_N_y_3_avg[cent_bin]);
+    std::cout << std::format("cent_bin: {:2}, Q_S_x_2_avg: {:7.4f}, Q_S_y_2_avg: {:7.4f}, Q_N_x_2_avg: {:7.4f}, Q_N_y_2_avg: {:7.4f}, Q_S_x_3_avg: {:7.4f}, Q_S_y_3_avg: {:7.4f}, Q_N_x_3_avg: {:7.4f}, Q_N_y_3_avg: {:7.4f}\n", cent_bin, m_Q_S_x_2_avg[cent_bin], m_Q_S_y_2_avg[cent_bin], m_Q_N_x_2_avg[cent_bin], m_Q_N_y_2_avg[cent_bin], m_Q_S_x_3_avg[cent_bin], m_Q_S_y_3_avg[cent_bin], m_Q_N_x_3_avg[cent_bin], m_Q_N_y_3_avg[cent_bin]);
   }
   std::cout << std::format("{:#<20}\n", "");
 
