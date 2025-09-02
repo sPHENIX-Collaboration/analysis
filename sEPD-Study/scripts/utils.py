@@ -41,7 +41,7 @@ f4a.add_argument('-n'
 f4a.add_argument('-e'
                     , '--do-event-plane'
                     , action='store_true'
-                    , help='Do Official Event Plane Reco. Default: True.')
+                    , help='Enable Official Event Plane Reco. Default: False.')
 
 f4a.add_argument('-s'
                     , '--memory', type=float
