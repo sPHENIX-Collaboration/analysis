@@ -147,6 +147,14 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
   m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
   m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("sEPD_Q_S_x_2", &m_data.sEPD_Q_S_x_2, "sEPD_Q_S_x_2/D");
+  m_tree->Branch("sEPD_Q_S_y_2", &m_data.sEPD_Q_S_y_2, "sEPD_Q_S_y_2/D");
+  m_tree->Branch("sEPD_Q_N_x_2", &m_data.sEPD_Q_N_x_2, "sEPD_Q_N_x_2/D");
+  m_tree->Branch("sEPD_Q_N_y_2", &m_data.sEPD_Q_N_y_2, "sEPD_Q_N_y_2/D");
+  m_tree->Branch("sEPD_Q_S_x_3", &m_data.sEPD_Q_S_x_3, "sEPD_Q_S_x_3/D");
+  m_tree->Branch("sEPD_Q_S_y_3", &m_data.sEPD_Q_S_y_3, "sEPD_Q_S_y_3/D");
+  m_tree->Branch("sEPD_Q_N_x_3", &m_data.sEPD_Q_N_x_3, "sEPD_Q_N_x_3/D");
+  m_tree->Branch("sEPD_Q_N_y_3", &m_data.sEPD_Q_N_y_3, "sEPD_Q_N_y_3/D");
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
   m_tree->Branch("sepd_eta", &m_data.sepd_eta);
@@ -479,6 +487,16 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   Q_N_x_3 /= sepd_total_charge_north;
   Q_N_y_3 /= sepd_total_charge_north;
+
+  m_data.sEPD_Q_S_x_2 = Q_S_x_2;
+  m_data.sEPD_Q_S_y_2 = Q_S_y_2;
+  m_data.sEPD_Q_N_x_2 = Q_N_x_2;
+  m_data.sEPD_Q_N_y_2 = Q_N_y_2;
+
+  m_data.sEPD_Q_S_x_3 = Q_S_x_3;
+  m_data.sEPD_Q_S_y_3 = Q_S_y_3;
+  m_data.sEPD_Q_N_x_3 = Q_N_x_3;
+  m_data.sEPD_Q_N_y_3 = Q_N_y_3;
 
   m_logging.m_sepd_Q_min = std::min(m_logging.m_sepd_Q_min, std::min(Q_S_x_2,
                                         std::min(Q_S_y_2,
