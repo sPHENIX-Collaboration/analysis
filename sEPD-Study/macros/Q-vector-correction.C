@@ -17,6 +17,7 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TH1.h>
+#include <TProfile.h>
 #include <TH3.h>
 #include <TROOT.h>
 
@@ -33,46 +34,6 @@ class QvectorAnalysis
     , m_events_to_process(events)
     , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
-    , m_Q_S_x_2_avg(m_cent_bins)
-    , m_Q_S_y_2_avg(m_cent_bins)
-    , m_Q_N_x_2_avg(m_cent_bins)
-    , m_Q_N_y_2_avg(m_cent_bins)
-    , m_Q_S_x_3_avg(m_cent_bins)
-    , m_Q_S_y_3_avg(m_cent_bins)
-    , m_Q_N_x_3_avg(m_cent_bins)
-    , m_Q_N_y_3_avg(m_cent_bins)
-    , m_Q_S_x_2_corr_avg(m_cent_bins)
-    , m_Q_S_y_2_corr_avg(m_cent_bins)
-    , m_Q_N_x_2_corr_avg(m_cent_bins)
-    , m_Q_N_y_2_corr_avg(m_cent_bins)
-    , m_Q_S_x_3_corr_avg(m_cent_bins)
-    , m_Q_S_y_3_corr_avg(m_cent_bins)
-    , m_Q_N_x_3_corr_avg(m_cent_bins)
-    , m_Q_N_y_3_corr_avg(m_cent_bins)
-    , m_Q_S_xx_2_avg(m_cent_bins)
-    , m_Q_S_yy_2_avg(m_cent_bins)
-    , m_Q_S_xy_2_avg(m_cent_bins)
-    , m_Q_N_xx_2_avg(m_cent_bins)
-    , m_Q_N_yy_2_avg(m_cent_bins)
-    , m_Q_N_xy_2_avg(m_cent_bins)
-    , m_Q_S_xx_3_avg(m_cent_bins)
-    , m_Q_S_yy_3_avg(m_cent_bins)
-    , m_Q_S_xy_3_avg(m_cent_bins)
-    , m_Q_N_xx_3_avg(m_cent_bins)
-    , m_Q_N_yy_3_avg(m_cent_bins)
-    , m_Q_N_xy_3_avg(m_cent_bins)
-    , m_Q_S_xx_2_corr_avg(m_cent_bins)
-    , m_Q_S_yy_2_corr_avg(m_cent_bins)
-    , m_Q_S_xy_2_corr_avg(m_cent_bins)
-    , m_Q_N_xx_2_corr_avg(m_cent_bins)
-    , m_Q_N_yy_2_corr_avg(m_cent_bins)
-    , m_Q_N_xy_2_corr_avg(m_cent_bins)
-    , m_Q_S_xx_3_corr_avg(m_cent_bins)
-    , m_Q_S_yy_3_corr_avg(m_cent_bins)
-    , m_Q_S_xy_3_corr_avg(m_cent_bins)
-    , m_Q_N_xx_3_corr_avg(m_cent_bins)
-    , m_Q_N_yy_3_corr_avg(m_cent_bins)
-    , m_Q_N_xy_3_corr_avg(m_cent_bins)
     , m_D_S_2(m_cent_bins)
     , m_D_N_2(m_cent_bins)
     , m_D_S_3(m_cent_bins)
@@ -133,62 +94,6 @@ class QvectorAnalysis
   size_t m_cent_bins{10};
 
   // Q vector members
-  // First Order Correction
-  std::vector<double> m_Q_S_x_2_avg;
-  std::vector<double> m_Q_S_y_2_avg;
-  std::vector<double> m_Q_N_x_2_avg;
-  std::vector<double> m_Q_N_y_2_avg;
-
-  std::vector<double> m_Q_S_x_3_avg;
-  std::vector<double> m_Q_S_y_3_avg;
-  std::vector<double> m_Q_N_x_3_avg;
-  std::vector<double> m_Q_N_y_3_avg;
-
-  // First Order Correction Validation
-  std::vector<double> m_Q_S_x_2_corr_avg;
-  std::vector<double> m_Q_S_y_2_corr_avg;
-  std::vector<double> m_Q_N_x_2_corr_avg;
-  std::vector<double> m_Q_N_y_2_corr_avg;
-
-  std::vector<double> m_Q_S_x_3_corr_avg;
-  std::vector<double> m_Q_S_y_3_corr_avg;
-  std::vector<double> m_Q_N_x_3_corr_avg;
-  std::vector<double> m_Q_N_y_3_corr_avg;
-
-  // Second Order Correction
-  std::vector<double> m_Q_S_xx_2_avg;
-  std::vector<double> m_Q_S_yy_2_avg;
-  std::vector<double> m_Q_S_xy_2_avg;
-
-  std::vector<double> m_Q_N_xx_2_avg;
-  std::vector<double> m_Q_N_yy_2_avg;
-  std::vector<double> m_Q_N_xy_2_avg;
-
-  std::vector<double> m_Q_S_xx_3_avg;
-  std::vector<double> m_Q_S_yy_3_avg;
-  std::vector<double> m_Q_S_xy_3_avg;
-
-  std::vector<double> m_Q_N_xx_3_avg;
-  std::vector<double> m_Q_N_yy_3_avg;
-  std::vector<double> m_Q_N_xy_3_avg;
-
-  // Second Order Correction Validation
-  std::vector<double> m_Q_S_xx_2_corr_avg;
-  std::vector<double> m_Q_S_yy_2_corr_avg;
-  std::vector<double> m_Q_S_xy_2_corr_avg;
-
-  std::vector<double> m_Q_N_xx_2_corr_avg;
-  std::vector<double> m_Q_N_yy_2_corr_avg;
-  std::vector<double> m_Q_N_xy_2_corr_avg;
-
-  std::vector<double> m_Q_S_xx_3_corr_avg;
-  std::vector<double> m_Q_S_yy_3_corr_avg;
-  std::vector<double> m_Q_S_xy_3_corr_avg;
-
-  std::vector<double> m_Q_N_xx_3_corr_avg;
-  std::vector<double> m_Q_N_yy_3_corr_avg;
-  std::vector<double> m_Q_N_xy_3_corr_avg;
-
   // Second Order Correction
   std::vector<double> m_D_S_2;
   std::vector<double> m_D_N_2;
@@ -301,7 +206,7 @@ void QvectorAnalysis::init_hists()
   double psi_low = -M_PI;
   double psi_high = M_PI;
 
-  m_hists["h_Dummy_Cent"] = std::make_unique<TH1F>("h_Dummy_Cent", "", m_cent_bins, 0, 100);
+  m_hists["h_Dummy_Cent"] = std::make_unique<TH1F>("h_Dummy_Cent", "", m_cent_bins, cent_low, cent_high);
 
   m_hists["h3_sEPD_Q_S_2"] = std::make_unique<TH3F>("h3_sEPD_Q_S_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
   m_hists["h3_sEPD_Q_N_2"] = std::make_unique<TH3F>("h3_sEPD_Q_N_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
@@ -316,6 +221,52 @@ void QvectorAnalysis::init_hists()
 
   m_hists["h3_sEPD_Psi_2_corr2"] = std::make_unique<TH3F>("h3_sEPD_Psi_2_corr2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
   m_hists["h3_sEPD_Psi_3_corr2"] = std::make_unique<TH3F>("h3_sEPD_Psi_3_corr2", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_x_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_2_avg", "sEPD South; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_y_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_2_avg", "sEPD South; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_x_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_2_avg", "sEPD North; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_y_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_2_avg", "sEPD North; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_x_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_3_avg", "sEPD South; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_y_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_3_avg", "sEPD South; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_x_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_3_avg", "sEPD North; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_y_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_3_avg", "sEPD North; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_x_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_y_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_x_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_y_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_x_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_y_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_x_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_y_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_xx_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_2_avg", "sEPD South; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_yy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_2_avg", "sEPD South; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_xy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_2_avg", "sEPD South; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xx_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_2_avg", "sEPD North; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_yy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_2_avg", "sEPD North; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_2_avg", "sEPD North; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_xx_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_3_avg", "sEPD South; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_yy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_3_avg", "sEPD South; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_xy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_3_avg", "sEPD South; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xx_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_3_avg", "sEPD North; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_yy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_3_avg", "sEPD North; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_3_avg", "sEPD North; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_xx_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_yy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_xy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xx_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_yy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+
+  m_hists["h_sEPD_Q_S_xx_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_yy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_S_xy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xx_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_yy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
+  m_hists["h_sEPD_Q_N_xy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
 }
 
 void QvectorAnalysis::run_event_loop(int order)
@@ -328,8 +279,6 @@ void QvectorAnalysis::run_event_loop(int order)
 
   std::map<std::string, int> ctr;
   ctr["prints_sepd_const"] = 5;
-
-  std::vector<unsigned int> event_ctr(m_cent_bins);
 
   // Event Loop
   for (long long i = 0; i < n_entries; ++i)
@@ -370,15 +319,15 @@ void QvectorAnalysis::run_event_loop(int order)
     // 1st Order Derive
     if (order == 0)
     {
-      m_Q_S_x_2_avg[cent_bin] += Q_S_x_2;
-      m_Q_S_y_2_avg[cent_bin] += Q_S_y_2;
-      m_Q_N_x_2_avg[cent_bin] += Q_N_x_2;
-      m_Q_N_y_2_avg[cent_bin] += Q_N_y_2;
+      m_hists["h_sEPD_Q_S_x_2_avg"]->Fill(cent, Q_S_x_2);
+      m_hists["h_sEPD_Q_S_y_2_avg"]->Fill(cent, Q_S_y_2);
+      m_hists["h_sEPD_Q_N_x_2_avg"]->Fill(cent, Q_N_x_2);
+      m_hists["h_sEPD_Q_N_y_2_avg"]->Fill(cent, Q_N_y_2);
 
-      m_Q_S_x_3_avg[cent_bin] += Q_S_x_3;
-      m_Q_S_y_3_avg[cent_bin] += Q_S_y_3;
-      m_Q_N_x_3_avg[cent_bin] += Q_N_x_3;
-      m_Q_N_y_3_avg[cent_bin] += Q_N_y_3;
+      m_hists["h_sEPD_Q_S_x_3_avg"]->Fill(cent, Q_S_x_3);
+      m_hists["h_sEPD_Q_S_y_3_avg"]->Fill(cent, Q_S_y_3);
+      m_hists["h_sEPD_Q_N_x_3_avg"]->Fill(cent, Q_N_x_3);
+      m_hists["h_sEPD_Q_N_y_3_avg"]->Fill(cent, Q_N_y_3);
 
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, cent);
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, cent);
@@ -398,44 +347,52 @@ void QvectorAnalysis::run_event_loop(int order)
 
     if (order == 1)
     {
-      // 1st Order Apply
-      double Q_S_x_2_corr = Q_S_x_2 - m_Q_S_x_2_avg[cent_bin];
-      double Q_S_y_2_corr = Q_S_y_2 - m_Q_S_y_2_avg[cent_bin];
-      double Q_N_x_2_corr = Q_N_x_2 - m_Q_N_x_2_avg[cent_bin];
-      double Q_N_y_2_corr = Q_N_y_2 - m_Q_N_y_2_avg[cent_bin];
+      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
 
-      double Q_S_x_3_corr = Q_S_x_3 - m_Q_S_x_3_avg[cent_bin];
-      double Q_S_y_3_corr = Q_S_y_3 - m_Q_S_y_3_avg[cent_bin];
-      double Q_N_x_3_corr = Q_N_x_3 - m_Q_N_x_3_avg[cent_bin];
-      double Q_N_y_3_corr = Q_N_y_3 - m_Q_N_y_3_avg[cent_bin];
+      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+
+      // 1st Order Apply
+      double Q_S_x_2_corr = Q_S_x_2 - Q_S_x_2_avg;
+      double Q_S_y_2_corr = Q_S_y_2 - Q_S_y_2_avg;
+      double Q_N_x_2_corr = Q_N_x_2 - Q_N_x_2_avg;
+      double Q_N_y_2_corr = Q_N_y_2 - Q_N_y_2_avg;
+      double Q_S_x_3_corr = Q_S_x_3 - Q_S_x_3_avg;
+      double Q_S_y_3_corr = Q_S_y_3 - Q_S_y_3_avg;
+      double Q_N_x_3_corr = Q_N_x_3 - Q_N_x_3_avg;
+      double Q_N_y_3_corr = Q_N_y_3 - Q_N_y_3_avg;
 
       // 1st Order Validate
-      m_Q_S_x_2_corr_avg[cent_bin] += Q_S_x_2_corr;
-      m_Q_S_y_2_corr_avg[cent_bin] += Q_S_y_2_corr;
-      m_Q_N_x_2_corr_avg[cent_bin] += Q_N_x_2_corr;
-      m_Q_N_y_2_corr_avg[cent_bin] += Q_N_y_2_corr;
-
-      m_Q_S_x_3_corr_avg[cent_bin] += Q_S_x_3_corr;
-      m_Q_S_y_3_corr_avg[cent_bin] += Q_S_y_3_corr;
-      m_Q_N_x_3_corr_avg[cent_bin] += Q_N_x_3_corr;
-      m_Q_N_y_3_corr_avg[cent_bin] += Q_N_y_3_corr;
+      m_hists["h_sEPD_Q_S_x_2_corr_avg"]->Fill(cent, Q_S_x_2_corr);
+      m_hists["h_sEPD_Q_S_y_2_corr_avg"]->Fill(cent, Q_S_y_2_corr);
+      m_hists["h_sEPD_Q_N_x_2_corr_avg"]->Fill(cent, Q_N_x_2_corr);
+      m_hists["h_sEPD_Q_N_y_2_corr_avg"]->Fill(cent, Q_N_y_2_corr);
+      m_hists["h_sEPD_Q_S_x_3_corr_avg"]->Fill(cent, Q_S_x_3_corr);
+      m_hists["h_sEPD_Q_S_y_3_corr_avg"]->Fill(cent, Q_S_y_3_corr);
+      m_hists["h_sEPD_Q_N_x_3_corr_avg"]->Fill(cent, Q_N_x_3_corr);
+      m_hists["h_sEPD_Q_N_y_3_corr_avg"]->Fill(cent, Q_N_y_3_corr);
 
       // 2nd Order Derive
-      m_Q_S_xx_2_avg[cent_bin] += Q_S_x_2_corr * Q_S_x_2_corr;
-      m_Q_S_yy_2_avg[cent_bin] += Q_S_y_2_corr * Q_S_y_2_corr;
-      m_Q_S_xy_2_avg[cent_bin] += Q_S_x_2_corr * Q_S_y_2_corr;
+      m_hists["h_sEPD_Q_S_xx_2_avg"]->Fill(cent, Q_S_x_2_corr * Q_S_x_2_corr);
+      m_hists["h_sEPD_Q_S_yy_2_avg"]->Fill(cent, Q_S_y_2_corr * Q_S_y_2_corr);
+      m_hists["h_sEPD_Q_S_xy_2_avg"]->Fill(cent, Q_S_x_2_corr * Q_S_y_2_corr);
 
-      m_Q_N_xx_2_avg[cent_bin] += Q_N_x_2_corr * Q_N_x_2_corr;
-      m_Q_N_yy_2_avg[cent_bin] += Q_N_y_2_corr * Q_N_y_2_corr;
-      m_Q_N_xy_2_avg[cent_bin] += Q_N_x_2_corr * Q_N_y_2_corr;
+      m_hists["h_sEPD_Q_N_xx_2_avg"]->Fill(cent, Q_N_x_2_corr * Q_N_x_2_corr);
+      m_hists["h_sEPD_Q_N_yy_2_avg"]->Fill(cent, Q_N_y_2_corr * Q_N_y_2_corr);
+      m_hists["h_sEPD_Q_N_xy_2_avg"]->Fill(cent, Q_N_x_2_corr * Q_N_y_2_corr);
 
-      m_Q_S_xx_3_avg[cent_bin] += Q_S_x_3_corr * Q_S_x_3_corr;
-      m_Q_S_yy_3_avg[cent_bin] += Q_S_y_3_corr * Q_S_y_3_corr;
-      m_Q_S_xy_3_avg[cent_bin] += Q_S_x_3_corr * Q_S_y_3_corr;
+      m_hists["h_sEPD_Q_S_xx_3_avg"]->Fill(cent, Q_S_x_3_corr * Q_S_x_3_corr);
+      m_hists["h_sEPD_Q_S_yy_3_avg"]->Fill(cent, Q_S_y_3_corr * Q_S_y_3_corr);
+      m_hists["h_sEPD_Q_S_xy_3_avg"]->Fill(cent, Q_S_x_3_corr * Q_S_y_3_corr);
 
-      m_Q_N_xx_3_avg[cent_bin] += Q_N_x_3_corr * Q_N_x_3_corr;
-      m_Q_N_yy_3_avg[cent_bin] += Q_N_y_3_corr * Q_N_y_3_corr;
-      m_Q_N_xy_3_avg[cent_bin] += Q_N_x_3_corr * Q_N_y_3_corr;
+      m_hists["h_sEPD_Q_N_xx_3_avg"]->Fill(cent, Q_N_x_3_corr * Q_N_x_3_corr);
+      m_hists["h_sEPD_Q_N_yy_3_avg"]->Fill(cent, Q_N_y_3_corr * Q_N_y_3_corr);
+      m_hists["h_sEPD_Q_N_xy_3_avg"]->Fill(cent, Q_N_x_3_corr * Q_N_y_3_corr);
 
       // Compute Psi
       double psi_S_2 = std::atan2(Q_S_y_2_corr, Q_S_x_2_corr);
@@ -450,16 +407,26 @@ void QvectorAnalysis::run_event_loop(int order)
 
     if (order == 2)
     {
-      // 1st Order Apply
-      double Q_S_x_2_corr = Q_S_x_2 - m_Q_S_x_2_avg[cent_bin];
-      double Q_S_y_2_corr = Q_S_y_2 - m_Q_S_y_2_avg[cent_bin];
-      double Q_N_x_2_corr = Q_N_x_2 - m_Q_N_x_2_avg[cent_bin];
-      double Q_N_y_2_corr = Q_N_y_2 - m_Q_N_y_2_avg[cent_bin];
+      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
 
-      double Q_S_x_3_corr = Q_S_x_3 - m_Q_S_x_3_avg[cent_bin];
-      double Q_S_y_3_corr = Q_S_y_3 - m_Q_S_y_3_avg[cent_bin];
-      double Q_N_x_3_corr = Q_N_x_3 - m_Q_N_x_3_avg[cent_bin];
-      double Q_N_y_3_corr = Q_N_y_3 - m_Q_N_y_3_avg[cent_bin];
+      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+
+      // 1st Order Apply
+      double Q_S_x_2_corr = Q_S_x_2 - Q_S_x_2_avg;
+      double Q_S_y_2_corr = Q_S_y_2 - Q_S_y_2_avg;
+      double Q_N_x_2_corr = Q_N_x_2 - Q_N_x_2_avg;
+      double Q_N_y_2_corr = Q_N_y_2 - Q_N_y_2_avg;
+
+      double Q_S_x_3_corr = Q_S_x_3 - Q_S_x_3_avg;
+      double Q_S_y_3_corr = Q_S_y_3 - Q_S_y_3_avg;
+      double Q_N_x_3_corr = Q_N_x_3 - Q_N_x_3_avg;
+      double Q_N_y_3_corr = Q_N_y_3 - Q_N_y_3_avg;
 
       // 2nd Order Apply
       double Q_S_x_2_corr2 = m_X_S_2[cent_bin][0][0] * Q_S_x_2_corr + m_X_S_2[cent_bin][0][1] * Q_S_y_2_corr;
@@ -473,21 +440,21 @@ void QvectorAnalysis::run_event_loop(int order)
       double Q_N_y_3_corr2 = m_X_N_3[cent_bin][1][0] * Q_N_x_3_corr + m_X_N_3[cent_bin][1][1] * Q_N_y_3_corr;
 
       // 2nd Order Validate
-      m_Q_S_xx_2_corr_avg[cent_bin] += Q_S_x_2_corr2 * Q_S_x_2_corr2;
-      m_Q_S_yy_2_corr_avg[cent_bin] += Q_S_y_2_corr2 * Q_S_y_2_corr2;
-      m_Q_S_xy_2_corr_avg[cent_bin] += Q_S_x_2_corr2 * Q_S_y_2_corr2;
+      m_hists["h_sEPD_Q_S_xx_2_corr_avg"]->Fill(cent, Q_S_x_2_corr2 * Q_S_x_2_corr2);
+      m_hists["h_sEPD_Q_S_yy_2_corr_avg"]->Fill(cent, Q_S_y_2_corr2 * Q_S_y_2_corr2);
+      m_hists["h_sEPD_Q_S_xy_2_corr_avg"]->Fill(cent, Q_S_x_2_corr2 * Q_S_y_2_corr2);
 
-      m_Q_N_xx_2_corr_avg[cent_bin] += Q_N_x_2_corr2 * Q_N_x_2_corr2;
-      m_Q_N_yy_2_corr_avg[cent_bin] += Q_N_y_2_corr2 * Q_N_y_2_corr2;
-      m_Q_N_xy_2_corr_avg[cent_bin] += Q_N_x_2_corr2 * Q_N_y_2_corr2;
+      m_hists["h_sEPD_Q_N_xx_2_corr_avg"]->Fill(cent, Q_N_x_2_corr2 * Q_N_x_2_corr2);
+      m_hists["h_sEPD_Q_N_yy_2_corr_avg"]->Fill(cent, Q_N_y_2_corr2 * Q_N_y_2_corr2);
+      m_hists["h_sEPD_Q_N_xy_2_corr_avg"]->Fill(cent, Q_N_x_2_corr2 * Q_N_y_2_corr2);
 
-      m_Q_S_xx_3_corr_avg[cent_bin] += Q_S_x_3_corr2 * Q_S_x_3_corr2;
-      m_Q_S_yy_3_corr_avg[cent_bin] += Q_S_y_3_corr2 * Q_S_y_3_corr2;
-      m_Q_S_xy_3_corr_avg[cent_bin] += Q_S_x_3_corr2 * Q_S_y_3_corr2;
+      m_hists["h_sEPD_Q_S_xx_3_corr_avg"]->Fill(cent, Q_S_x_3_corr2 * Q_S_x_3_corr2);
+      m_hists["h_sEPD_Q_S_yy_3_corr_avg"]->Fill(cent, Q_S_y_3_corr2 * Q_S_y_3_corr2);
+      m_hists["h_sEPD_Q_S_xy_3_corr_avg"]->Fill(cent, Q_S_x_3_corr2 * Q_S_y_3_corr2);
 
-      m_Q_N_xx_3_corr_avg[cent_bin] += Q_N_x_3_corr2 * Q_N_x_3_corr2;
-      m_Q_N_yy_3_corr_avg[cent_bin] += Q_N_y_3_corr2 * Q_N_y_3_corr2;
-      m_Q_N_xy_3_corr_avg[cent_bin] += Q_N_x_3_corr2 * Q_N_y_3_corr2;
+      m_hists["h_sEPD_Q_N_xx_3_corr_avg"]->Fill(cent, Q_N_x_3_corr2 * Q_N_x_3_corr2);
+      m_hists["h_sEPD_Q_N_yy_3_corr_avg"]->Fill(cent, Q_N_y_3_corr2 * Q_N_y_3_corr2);
+      m_hists["h_sEPD_Q_N_xy_3_corr_avg"]->Fill(cent, Q_N_x_3_corr2 * Q_N_y_3_corr2);
 
       // Compute Psi
       double psi_S_2 = std::atan2(Q_S_y_2_corr2, Q_S_x_2_corr2);
@@ -499,8 +466,6 @@ void QvectorAnalysis::run_event_loop(int order)
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_2_corr2"].get())->Fill(psi_S_2, psi_N_2, cent);
       dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_3_corr2"].get())->Fill(psi_S_3, psi_N_3, cent);
     }
-
-    ++event_ctr[cent_bin];
   }
 
   std::cout << std::format("{:#<20}\n", "");
@@ -508,170 +473,161 @@ void QvectorAnalysis::run_event_loop(int order)
   std::cout << std::format("Events with sEPD South Charge 0: {}\n", ctr["sepd_south_zero_charge"]);
   std::cout << std::format("Events with sEPD North Charge 0: {}\n", ctr["sepd_north_zero_charge"]);
   std::cout << std::format("{:#<20}\n", "");
-  if(order == 0)
+  if (order == 0)
   {
     std::cout << std::format("Q Vector First Order Correction Averages\n");
-    for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
     {
-      if (event_ctr[cent_bin])
-      {
-        m_Q_S_x_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_y_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_x_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_y_2_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(cent_bin + 1);
 
-        m_Q_S_x_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_y_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_x_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_y_3_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(cent_bin + 1);
 
-        std::cout << std::format(
-            "cent_bin: {:2}, "
-            "Q_S_x_2_avg: {:7.4f}, "
-            "Q_S_y_2_avg: {:7.4f}, "
-            "Q_N_x_2_avg: {:7.4f}, "
-            "Q_N_y_2_avg: {:7.4f}, "
-            "Q_S_x_3_avg: {:7.4f}, "
-            "Q_S_y_3_avg: {:7.4f}, "
-            "Q_N_x_3_avg: {:7.4f}, "
-            "Q_N_y_3_avg: {:7.4f}\n",
-            cent_bin,
-            m_Q_S_x_2_avg[cent_bin],
-            m_Q_S_y_2_avg[cent_bin],
-            m_Q_N_x_2_avg[cent_bin],
-            m_Q_N_y_2_avg[cent_bin],
-            m_Q_S_x_3_avg[cent_bin],
-            m_Q_S_y_3_avg[cent_bin],
-            m_Q_N_x_3_avg[cent_bin],
-            m_Q_N_y_3_avg[cent_bin]);
-      }
+      std::cout << std::format(
+          "cent_bin: {:2}, "
+          "Q_S_x_2_avg: {:7.4f}, "
+          "Q_S_y_2_avg: {:7.4f}, "
+          "Q_N_x_2_avg: {:7.4f}, "
+          "Q_N_y_2_avg: {:7.4f}, "
+          "Q_S_x_3_avg: {:7.4f}, "
+          "Q_S_y_3_avg: {:7.4f}, "
+          "Q_N_x_3_avg: {:7.4f}, "
+          "Q_N_y_3_avg: {:7.4f}\n",
+          cent_bin,
+          Q_S_x_2_avg,
+          Q_S_y_2_avg,
+          Q_N_x_2_avg,
+          Q_N_y_2_avg,
+          Q_S_x_3_avg,
+          Q_S_y_3_avg,
+          Q_N_x_3_avg,
+          Q_N_y_3_avg);
     }
   }
 
   if (order == 1)
   {
     std::cout << std::format("Q Vector First Order Correction Validation\n");
-    for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
     {
-      if (event_ctr[cent_bin])
-      {
-        // Order 1 Validate
-        m_Q_S_x_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_y_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_x_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_y_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      // Order 1 Validate
+      double Q_S_x_2_corr_avg = m_hists["h_sEPD_Q_S_x_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_y_2_corr_avg = m_hists["h_sEPD_Q_S_y_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_x_2_corr_avg = m_hists["h_sEPD_Q_N_x_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_y_2_corr_avg = m_hists["h_sEPD_Q_N_y_2_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        m_Q_S_x_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_y_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_x_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_y_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_x_3_corr_avg = m_hists["h_sEPD_Q_S_x_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_y_3_corr_avg = m_hists["h_sEPD_Q_S_y_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_x_3_corr_avg = m_hists["h_sEPD_Q_N_x_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_y_3_corr_avg = m_hists["h_sEPD_Q_N_y_3_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        std::cout << std::format(
-            "cent_bin: {:2}, "
-            "Q_S_x_2_corr_avg: {:7.4f}, "
-            "Q_S_y_2_corr_avg: {:7.4f}, "
-            "Q_N_x_2_corr_avg: {:7.4f}, "
-            "Q_N_y_2_corr_avg: {:7.4f}, "
-            "Q_S_x_3_corr_avg: {:7.4f}, "
-            "Q_S_y_3_corr_avg: {:7.4f}, "
-            "Q_N_x_3_corr_avg: {:7.4f}, "
-            "Q_N_y_3_corr_avg: {:7.4f}\n",
-            cent_bin,
-            m_Q_S_x_2_corr_avg[cent_bin],
-            m_Q_S_y_2_corr_avg[cent_bin],
-            m_Q_N_x_2_corr_avg[cent_bin],
-            m_Q_N_y_2_corr_avg[cent_bin],
-            m_Q_S_x_3_corr_avg[cent_bin],
-            m_Q_S_y_3_corr_avg[cent_bin],
-            m_Q_N_x_3_corr_avg[cent_bin],
-            m_Q_N_y_3_corr_avg[cent_bin]);
-      }
+      std::cout << std::format(
+          "cent_bin: {:2}, "
+          "Q_S_x_2_corr_avg: {:7.4f}, "
+          "Q_S_y_2_corr_avg: {:7.4f}, "
+          "Q_N_x_2_corr_avg: {:7.4f}, "
+          "Q_N_y_2_corr_avg: {:7.4f}, "
+          "Q_S_x_3_corr_avg: {:7.4f}, "
+          "Q_S_y_3_corr_avg: {:7.4f}, "
+          "Q_N_x_3_corr_avg: {:7.4f}, "
+          "Q_N_y_3_corr_avg: {:7.4f}\n",
+          cent_bin,
+          Q_S_x_2_corr_avg,
+          Q_S_y_2_corr_avg,
+          Q_N_x_2_corr_avg,
+          Q_N_y_2_corr_avg,
+          Q_S_x_3_corr_avg,
+          Q_S_y_3_corr_avg,
+          Q_N_x_3_corr_avg,
+          Q_N_y_3_corr_avg);
     }
 
     std::cout << std::format("{:#<20}\n", "");
     std::cout << std::format("Q Vector Second Order Correction Averages\n");
     for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
     {
-      if (event_ctr[cent_bin])
-      {
-        m_Q_S_xx_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_yy_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_xy_2_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_xx_2_avg = m_hists["h_sEPD_Q_S_xx_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_S_yy_2_avg = m_hists["h_sEPD_Q_S_yy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_S_xy_2_avg = m_hists["h_sEPD_Q_S_xy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
 
-        m_Q_N_xx_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_yy_2_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_xy_2_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_N_xx_2_avg = m_hists["h_sEPD_Q_N_xx_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_N_yy_2_avg = m_hists["h_sEPD_Q_N_yy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_N_xy_2_avg = m_hists["h_sEPD_Q_N_xy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
 
-        m_Q_S_xx_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_yy_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_xy_3_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_xx_3_avg = m_hists["h_sEPD_Q_S_xx_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_S_yy_3_avg = m_hists["h_sEPD_Q_S_yy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_S_xy_3_avg = m_hists["h_sEPD_Q_S_xy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
 
-        m_Q_N_xx_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_yy_3_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_xy_3_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_N_xx_3_avg = m_hists["h_sEPD_Q_N_xx_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_N_yy_3_avg = m_hists["h_sEPD_Q_N_yy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+      double Q_N_xy_3_avg = m_hists["h_sEPD_Q_N_xy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
 
-        // Compute N and D terms
-        m_D_S_2[cent_bin] = std::sqrt((m_Q_S_xx_2_avg[cent_bin] * m_Q_S_yy_2_avg[cent_bin]) - (m_Q_S_xy_2_avg[cent_bin] * m_Q_S_xy_2_avg[cent_bin]));
-        m_D_N_2[cent_bin] = std::sqrt((m_Q_N_xx_2_avg[cent_bin] * m_Q_N_yy_2_avg[cent_bin]) - (m_Q_N_xy_2_avg[cent_bin] * m_Q_N_xy_2_avg[cent_bin]));
+      // Compute N and D terms
+      m_D_S_2[cent_bin] = std::sqrt((Q_S_xx_2_avg * Q_S_yy_2_avg) - (Q_S_xy_2_avg * Q_S_xy_2_avg));
+      m_D_N_2[cent_bin] = std::sqrt((Q_N_xx_2_avg * Q_N_yy_2_avg) - (Q_N_xy_2_avg * Q_N_xy_2_avg));
 
-        m_D_S_3[cent_bin] = std::sqrt((m_Q_S_xx_3_avg[cent_bin] * m_Q_S_yy_3_avg[cent_bin]) - (m_Q_S_xy_3_avg[cent_bin] * m_Q_S_xy_3_avg[cent_bin]));
-        m_D_N_3[cent_bin] = std::sqrt((m_Q_N_xx_3_avg[cent_bin] * m_Q_N_yy_3_avg[cent_bin]) - (m_Q_N_xy_3_avg[cent_bin] * m_Q_N_xy_3_avg[cent_bin]));
+      m_D_S_3[cent_bin] = std::sqrt((Q_S_xx_3_avg * Q_S_yy_3_avg) - (Q_S_xy_3_avg * Q_S_xy_3_avg));
+      m_D_N_3[cent_bin] = std::sqrt((Q_N_xx_3_avg * Q_N_yy_3_avg) - (Q_N_xy_3_avg * Q_N_xy_3_avg));
 
-        m_N_S_2[cent_bin] = m_D_S_2[cent_bin] * (m_Q_S_xx_2_avg[cent_bin] + m_Q_S_yy_2_avg[cent_bin] + (2 * m_D_S_2[cent_bin]));
-        m_N_N_2[cent_bin] = m_D_N_2[cent_bin] * (m_Q_N_xx_2_avg[cent_bin] + m_Q_N_yy_2_avg[cent_bin] + (2 * m_D_N_2[cent_bin]));
+      m_N_S_2[cent_bin] = m_D_S_2[cent_bin] * (Q_S_xx_2_avg + Q_S_yy_2_avg + (2 * m_D_S_2[cent_bin]));
+      m_N_N_2[cent_bin] = m_D_N_2[cent_bin] * (Q_N_xx_2_avg + Q_N_yy_2_avg + (2 * m_D_N_2[cent_bin]));
 
-        m_N_S_3[cent_bin] = m_D_S_3[cent_bin] * (m_Q_S_xx_3_avg[cent_bin] + m_Q_S_yy_3_avg[cent_bin] + (2 * m_D_S_3[cent_bin]));
-        m_N_N_3[cent_bin] = m_D_N_3[cent_bin] * (m_Q_N_xx_3_avg[cent_bin] + m_Q_N_yy_3_avg[cent_bin] + (2 * m_D_N_3[cent_bin]));
+      m_N_S_3[cent_bin] = m_D_S_3[cent_bin] * (Q_S_xx_3_avg + Q_S_yy_3_avg + (2 * m_D_S_3[cent_bin]));
+      m_N_N_3[cent_bin] = m_D_N_3[cent_bin] * (Q_N_xx_3_avg + Q_N_yy_3_avg + (2 * m_D_N_3[cent_bin]));
 
-        // Compute matrix elements
-        m_X_S_2[cent_bin][0][0] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (m_Q_S_yy_2_avg[cent_bin] + m_D_S_2[cent_bin]);
-        m_X_S_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_2[cent_bin])) * m_Q_S_xy_2_avg[cent_bin];
-        m_X_S_2[cent_bin][1][0] = m_X_S_2[cent_bin][0][1];
-        m_X_S_2[cent_bin][1][1] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (m_Q_S_xx_2_avg[cent_bin] + m_D_S_2[cent_bin]);
+      // Compute matrix elements
+      m_X_S_2[cent_bin][0][0] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (Q_S_yy_2_avg + m_D_S_2[cent_bin]);
+      m_X_S_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_2[cent_bin])) * Q_S_xy_2_avg;
+      m_X_S_2[cent_bin][1][0] = m_X_S_2[cent_bin][0][1];
+      m_X_S_2[cent_bin][1][1] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (Q_S_xx_2_avg + m_D_S_2[cent_bin]);
 
-        m_X_N_2[cent_bin][0][0] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (m_Q_N_yy_2_avg[cent_bin] + m_D_N_2[cent_bin]);
-        m_X_N_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_2[cent_bin])) * m_Q_N_xy_2_avg[cent_bin];
-        m_X_N_2[cent_bin][1][0] = m_X_N_2[cent_bin][0][1];
-        m_X_N_2[cent_bin][1][1] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (m_Q_N_xx_2_avg[cent_bin] + m_D_N_2[cent_bin]);
+      m_X_N_2[cent_bin][0][0] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (Q_N_yy_2_avg + m_D_N_2[cent_bin]);
+      m_X_N_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_2[cent_bin])) * Q_N_xy_2_avg;
+      m_X_N_2[cent_bin][1][0] = m_X_N_2[cent_bin][0][1];
+      m_X_N_2[cent_bin][1][1] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (Q_N_xx_2_avg + m_D_N_2[cent_bin]);
 
-        m_X_S_3[cent_bin][0][0] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (m_Q_S_yy_3_avg[cent_bin] + m_D_S_3[cent_bin]);
-        m_X_S_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_3[cent_bin])) * m_Q_S_xy_3_avg[cent_bin];
-        m_X_S_3[cent_bin][1][0] = m_X_S_3[cent_bin][0][1];
-        m_X_S_3[cent_bin][1][1] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (m_Q_S_xx_3_avg[cent_bin] + m_D_S_3[cent_bin]);
+      m_X_S_3[cent_bin][0][0] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (Q_S_yy_3_avg + m_D_S_3[cent_bin]);
+      m_X_S_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_3[cent_bin])) * Q_S_xy_3_avg;
+      m_X_S_3[cent_bin][1][0] = m_X_S_3[cent_bin][0][1];
+      m_X_S_3[cent_bin][1][1] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (Q_S_xx_3_avg + m_D_S_3[cent_bin]);
 
-        m_X_N_3[cent_bin][0][0] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (m_Q_N_yy_3_avg[cent_bin] + m_D_N_3[cent_bin]);
-        m_X_N_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_3[cent_bin])) * m_Q_N_xy_3_avg[cent_bin];
-        m_X_N_3[cent_bin][1][0] = m_X_N_3[cent_bin][0][1];
-        m_X_N_3[cent_bin][1][1] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (m_Q_N_xx_3_avg[cent_bin] + m_D_N_3[cent_bin]);
+      m_X_N_3[cent_bin][0][0] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (Q_N_yy_3_avg + m_D_N_3[cent_bin]);
+      m_X_N_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_3[cent_bin])) * Q_N_xy_3_avg;
+      m_X_N_3[cent_bin][1][0] = m_X_N_3[cent_bin][0][1];
+      m_X_N_3[cent_bin][1][1] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (Q_N_xx_3_avg + m_D_N_3[cent_bin]);
 
-        std::cout << std::format(
-            "cent_bin: {:2}, "
-            "Q_S_xx_2_avg: {:7.4f}, "
-            "Q_S_yy_2_avg: {:7.4f}, "
-            "Q_S_xy_2_avg: {:7.4f}, "
-            "Q_N_xx_2_avg: {:7.4f}, "
-            "Q_N_yy_2_avg: {:7.4f}, "
-            "Q_N_xy_2_avg: {:7.4f}, "
-            "Q_S_xx_3_avg: {:7.4f}, "
-            "Q_S_yy_3_avg: {:7.4f}, "
-            "Q_S_xy_3_avg: {:7.4f}, "
-            "Q_N_xx_3_avg: {:7.4f}, "
-            "Q_N_yy_3_avg: {:7.4f}, "
-            "Q_N_xy_3_avg: {:7.4f}\n",
-            cent_bin,
-            m_Q_S_xx_2_avg[cent_bin],
-            m_Q_S_yy_2_avg[cent_bin],
-            m_Q_S_xy_2_avg[cent_bin],
-            m_Q_N_xx_2_avg[cent_bin],
-            m_Q_N_yy_2_avg[cent_bin],
-            m_Q_N_xy_2_avg[cent_bin],
-            m_Q_S_xx_3_avg[cent_bin],
-            m_Q_S_yy_3_avg[cent_bin],
-            m_Q_S_xy_3_avg[cent_bin],
-            m_Q_N_xx_3_avg[cent_bin],
-            m_Q_N_yy_3_avg[cent_bin],
-            m_Q_N_xy_3_avg[cent_bin]);
-      }
+      std::cout << std::format(
+          "cent_bin: {:2}, "
+          "Q_S_xx_2_avg: {:7.4f}, "
+          "Q_S_yy_2_avg: {:7.4f}, "
+          "Q_S_xy_2_avg: {:7.4f}, "
+          "Q_N_xx_2_avg: {:7.4f}, "
+          "Q_N_yy_2_avg: {:7.4f}, "
+          "Q_N_xy_2_avg: {:7.4f}, "
+          "Q_S_xx_3_avg: {:7.4f}, "
+          "Q_S_yy_3_avg: {:7.4f}, "
+          "Q_S_xy_3_avg: {:7.4f}, "
+          "Q_N_xx_3_avg: {:7.4f}, "
+          "Q_N_yy_3_avg: {:7.4f}, "
+          "Q_N_xy_3_avg: {:7.4f}\n",
+          cent_bin,
+          Q_S_xx_2_avg,
+          Q_S_yy_2_avg,
+          Q_S_xy_2_avg,
+          Q_N_xx_2_avg,
+          Q_N_yy_2_avg,
+          Q_N_xy_2_avg,
+          Q_S_xx_3_avg,
+          Q_S_yy_3_avg,
+          Q_S_xy_3_avg,
+          Q_N_xx_3_avg,
+          Q_N_yy_3_avg,
+          Q_N_xy_3_avg);
     }
   }
 
@@ -679,54 +635,51 @@ void QvectorAnalysis::run_event_loop(int order)
   {
     std::cout << std::format("{:#<20}\n", "");
     std::cout << std::format("Q Vector Second Order Correction Validation\n");
-    for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
     {
-      if (event_ctr[cent_bin])
-      {
-        m_Q_S_xx_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_yy_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_xy_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_xx_2_corr_avg = m_hists["h_sEPD_Q_S_xx_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_yy_2_corr_avg = m_hists["h_sEPD_Q_S_yy_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_xy_2_corr_avg = m_hists["h_sEPD_Q_S_xy_2_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        m_Q_N_xx_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_yy_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_xy_2_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_N_xx_2_corr_avg = m_hists["h_sEPD_Q_N_xx_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_yy_2_corr_avg = m_hists["h_sEPD_Q_N_yy_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_xy_2_corr_avg = m_hists["h_sEPD_Q_N_xy_2_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        m_Q_S_xx_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_yy_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_S_xy_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_S_xx_3_corr_avg = m_hists["h_sEPD_Q_S_xx_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_yy_3_corr_avg = m_hists["h_sEPD_Q_S_yy_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_S_xy_3_corr_avg = m_hists["h_sEPD_Q_S_xy_3_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        m_Q_N_xx_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_yy_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
-        m_Q_N_xy_3_corr_avg[cent_bin] /= event_ctr[cent_bin];
+      double Q_N_xx_3_corr_avg = m_hists["h_sEPD_Q_N_xx_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_yy_3_corr_avg = m_hists["h_sEPD_Q_N_yy_3_corr_avg"]->GetBinContent(cent_bin + 1);
+      double Q_N_xy_3_corr_avg = m_hists["h_sEPD_Q_N_xy_3_corr_avg"]->GetBinContent(cent_bin + 1);
 
-        std::cout << std::format(
-            "cent_bin: {:2}, "
-            "Q_S_xx_2_corr_avg: {:7.4f}, "
-            "Q_S_yy_2_corr_avg: {:7.4f}, "
-            "Q_S_xy_2_corr_avg: {:7.4f}, "
-            "Q_N_xx_2_corr_avg: {:7.4f}, "
-            "Q_N_yy_2_corr_avg: {:7.4f}, "
-            "Q_N_xy_2_corr_avg: {:7.4f}, "
-            "Q_S_xx_3_corr_avg: {:7.4f}, "
-            "Q_S_yy_3_corr_avg: {:7.4f}, "
-            "Q_S_xy_3_corr_avg: {:7.4f}, "
-            "Q_N_xx_3_corr_avg: {:7.4f}, "
-            "Q_N_yy_3_corr_avg: {:7.4f}, "
-            "Q_N_xy_3_corr_avg: {:7.4f}\n",
-            cent_bin,
-            m_Q_S_xx_2_corr_avg[cent_bin],
-            m_Q_S_yy_2_corr_avg[cent_bin],
-            m_Q_S_xy_2_corr_avg[cent_bin],
-            m_Q_N_xx_2_corr_avg[cent_bin],
-            m_Q_N_yy_2_corr_avg[cent_bin],
-            m_Q_N_xy_2_corr_avg[cent_bin],
-            m_Q_S_xx_3_corr_avg[cent_bin],
-            m_Q_S_yy_3_corr_avg[cent_bin],
-            m_Q_S_xy_3_corr_avg[cent_bin],
-            m_Q_N_xx_3_corr_avg[cent_bin],
-            m_Q_N_yy_3_corr_avg[cent_bin],
-            m_Q_N_xy_3_corr_avg[cent_bin]);
-      }
+      std::cout << std::format(
+          "cent_bin: {:2}, "
+          "Q_S_xx_2_corr_avg: {:7.4f}, "
+          "Q_S_yy_2_corr_avg: {:7.4f}, "
+          "Q_N_xx_2_corr_avg: {:7.4f}, "
+          "Q_N_yy_2_corr_avg: {:7.4f}, "
+          "Q_S_xx_3_corr_avg: {:7.4f}, "
+          "Q_S_yy_3_corr_avg: {:7.4f}, "
+          "Q_N_xx_3_corr_avg: {:7.4f}, "
+          "Q_N_yy_3_corr_avg: {:7.4f}, "
+          "Q_S_xy_2_corr_avg: {:7.4f}, "
+          "Q_N_xy_2_corr_avg: {:7.4f}, "
+          "Q_S_xy_3_corr_avg: {:7.4f}, "
+          "Q_N_xy_3_corr_avg: {:7.4f}\n",
+          cent_bin,
+          Q_S_xx_2_corr_avg,
+          Q_S_yy_2_corr_avg,
+          Q_N_xx_2_corr_avg,
+          Q_N_yy_2_corr_avg,
+          Q_S_xx_3_corr_avg,
+          Q_S_yy_3_corr_avg,
+          Q_N_xx_3_corr_avg,
+          Q_N_yy_3_corr_avg,
+          Q_S_xy_2_corr_avg,
+          Q_N_xy_2_corr_avg,
+          Q_S_xy_3_corr_avg,
+          Q_N_xy_3_corr_avg);
     }
   }
 
