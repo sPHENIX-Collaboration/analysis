@@ -100,6 +100,10 @@ target_link_libraries(Q_vec_corr PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- display Q vector correction ---
+add_executable(display-Q-vec macros/display-Q-vec.C)
+target_link_libraries(display-Q-vec PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # ====================================================================
 # Optional: Add a Cppcheck Target
 # ====================================================================
