@@ -206,24 +206,45 @@ void Displayv4::draw()
 
       hist->SetTitle(title.c_str());
       hist->SetMaximum(6e3);
-      // Pedestal Run
-      if(runnumber == "73079")
-      {
-          hist->SetMaximum(2e2);
-      }
-      // LED Run
-      if(runnumber == "73172")
-      {
-          hist->SetMaximum(1.6e4);
-      }
 
       hist->GetXaxis()->SetTitleSize(0.06f);
       hist->GetYaxis()->SetTitleSize(0.06f);
       hist->GetXaxis()->SetTitleOffset(0.8f);
       hist->GetYaxis()->SetTitleOffset(0.35f);
 
-      c1->Print(output.c_str(), "pdf portrait");
-      c1->Print(std::format("{}/h2CEMC-{}.png", m_output_dir, runnumber).c_str());
+      // Pedestal Run
+      if(runnumber == "73079")
+      {
+          hist->SetMaximum(2e2);
+      }
+      // LED Run
+      if(runnumber == "73172" || runnumber == "73463" || runnumber == "73571")
+      {
+          hist->SetMaximum(1.6e4);
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}-v1.png", m_output_dir, runnumber).c_str());
+
+          hist->SetMaximum(2e3);
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}-v2.png", m_output_dir, runnumber).c_str());
+
+          hist->SetMaximum(5e2);
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}-v3.png", m_output_dir, runnumber).c_str());
+
+          hist->SetMaximum(1e2);
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}-v4.png", m_output_dir, runnumber).c_str());
+
+          hist->SetMaximum(50);
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}-v5.png", m_output_dir, runnumber).c_str());
+      }
+      else
+      {
+          c1->Print(output.c_str(), "pdf portrait");
+          c1->Print(std::format("{}/h2CEMC-{}.png", m_output_dir, runnumber).c_str());
+      }
     }
   }
 
@@ -258,7 +279,7 @@ void Displayv4::draw()
           hist->GetXaxis()->SetRangeUser(0, 5e2);
       }
       // LED Run
-      if(runnumber == "73172")
+      if(runnumber == "73172" || runnumber == "73463" || runnumber == "73571")
       {
           hist->GetXaxis()->SetRangeUser(0, 1.6e4);
       }
