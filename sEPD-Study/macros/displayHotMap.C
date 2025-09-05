@@ -97,6 +97,9 @@ void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", c
   // bad tower map hist
   unsigned int nTowers = static_cast<unsigned int>(myUtils::m_nphi * myUtils::m_neta);
 
+  // status counters
+  std::map<std::string, int> ctr;
+
   for (unsigned int channel = 0; channel < nTowers; ++channel)
   {
     unsigned int key = TowerInfoDefs::encode_emcal(channel);
@@ -109,20 +112,26 @@ void displayHotMap(unsigned int runnumber, const std::string &outputDir = ".", c
     if (hotMap_val != 0)
     {
       hists["h2EMCalBadTowers"]->Fill(phi, eta);
+      ++ctr["bad"];
       if(hotMap_val == 1)
       {
         hists["h2EMCalBadTowersDead"]->Fill(phi, eta);
+        ++ctr["dead"];
       }
       if(hotMap_val == 2)
       {
         hists["h2EMCalBadTowersHot"]->Fill(phi, eta);
+        ++ctr["hot"];
       }
       if(hotMap_val == 3)
       {
         hists["h2EMCalBadTowersCold"]->Fill(phi, eta);
+        ++ctr["cold"];
       }
     }
   }
+
+  std::cout << std::format("Bad: {}, Dead: {}, Hot: {}, Cold: {}\n", ctr["bad"], ctr["dead"], ctr["hot"], ctr["cold"]);
 
   std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>("c1");
   c1->SetTickx();
