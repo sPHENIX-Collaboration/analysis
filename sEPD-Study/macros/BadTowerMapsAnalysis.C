@@ -46,7 +46,6 @@ class BadTowerMapsAnalysis
   }
 
  private:
-
   struct RunInfo
   {
     int badTowersDead{0};
@@ -61,7 +60,7 @@ class BadTowerMapsAnalysis
 
   // --- Member Variables ---
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
-  std::map<std::string, unsigned int> m_runInfo; // timestamp
+  std::map<std::string, unsigned int> m_runInfo;  // timestamp
   std::map<std::string, int> m_ctr;
   int m_run_start{9999999};
   int m_run_end{0};
@@ -194,7 +193,7 @@ void BadTowerMapsAnalysis::read_time()
       TDatime d(timestamp.c_str());
       m_runInfo[runnumber] = d.Convert();
 
-      if(runnumber == std::to_string(m_run_start) || runnumber == std::to_string(m_run_end))
+      if (runnumber == std::to_string(m_run_start) || runnumber == std::to_string(m_run_end))
       {
         std::cout << std::format("Run: {}, Stamp: {}, Time: {}\n", runnumber, d.AsString(), d.Convert());
       }
@@ -221,10 +220,10 @@ void BadTowerMapsAnalysis::init_hists()
 {
   std::cout << std::format("Processing: Init Hists\n");
 
-  unsigned int delta_time = 120; // 2 minutes
+  unsigned int delta_time = 120;  // 2 minutes
   unsigned int start = m_runInfo[std::to_string(m_run_start)];
   unsigned int end = m_runInfo[std::to_string(m_run_end)];
-  unsigned int bins = (end-start) / delta_time;
+  unsigned int bins = (end - start) / delta_time;
 
   TDatime st(start);
   TDatime ed(end);
@@ -234,12 +233,18 @@ void BadTowerMapsAnalysis::init_hists()
   std::cout << std::format("Bins: {}\n", bins);
 
   m_hists["hDeadVsTime"] = std::make_unique<TH1F>("hDeadVsTime", "EMCal Dead Towers; Time; Towers", bins, start, end);
-  m_hists["hDeadVsTime"]->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
-  m_hists["hDeadVsTime"]->GetXaxis()->SetTimeFormat("%m/%d");
-
+  m_hists["hHotVsTime"] = std::make_unique<TH1F>("hHotVsTime", "EMCal Hot Towers; Time; Towers", bins, start, end);
+  m_hists["hColdVsTime"] = std::make_unique<TH1F>("hColdVsTime", "EMCal Cold Towers; Time; Towers", bins, start, end);
   m_hists["hBadVsTime"] = std::make_unique<TH1F>("hBadVsTime", "EMCal Bad Towers; Time; Towers", bins, start, end);
-  m_hists["hBadVsTime"]->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
-  m_hists["hBadVsTime"]->GetXaxis()->SetTimeFormat("%m/%d");
+
+  for (const auto& [name, hist] : m_hists)
+  {
+    if (name.ends_with("VsTime"))
+    {
+      hist->GetXaxis()->SetTimeDisplay(1);  // The X axis is a time axis
+      hist->GetXaxis()->SetTimeFormat("%m/%d");
+    }
+  }
 }
 
 BadTowerMapsAnalysis::RunInfo BadTowerMapsAnalysis::getBadTowers(TH2* hist)
@@ -250,15 +255,15 @@ BadTowerMapsAnalysis::RunInfo BadTowerMapsAnalysis::getBadTowers(TH2* hist)
     for (int j = 1; j <= hist->GetNbinsY(); ++j)
     {
       int val = static_cast<int>(hist->GetBinContent(i, j));
-      if(val == 1)
+      if (val == 1)
       {
         ++rinfo.badTowersDead;
       }
-      if(val == 2)
+      if (val == 2)
       {
         ++rinfo.badTowersHot;
       }
-      if(val == 3)
+      if (val == 3)
       {
         ++rinfo.badTowersCold;
       }
@@ -276,8 +281,9 @@ void BadTowerMapsAnalysis::analyze()
   TDatime t0(2025, 7, 9, 0, 0, 0);
   TDatime t1(2025, 7, 18, 0, 0, 0);
 
-  for (const auto& [name, hist] : m_hists) {
-    if(name.starts_with("h_hot"))
+  for (const auto& [name, hist] : m_hists)
+  {
+    if (name.starts_with("h_hot"))
     {
       std::string run = getRun(name);
       int time = static_cast<int>(m_runInfo[run]);
@@ -289,11 +295,13 @@ void BadTowerMapsAnalysis::analyze()
       {
         std::cout << std::format("Warning: Bin {} already contains data, Overwriting!\n", bin);
       }
-      if(m_verbosity && tdat >= t0 && tdat < t1)
+      if (m_verbosity && tdat >= t0 && tdat < t1)
       {
         std::cout << std::format("Run {}, Dead Towers: {}\n", run, rinfo.badTowersDead);
       }
       m_hists["hDeadVsTime"]->Fill(time, rinfo.badTowersDead);
+      m_hists["hHotVsTime"]->Fill(time, rinfo.badTowersHot);
+      m_hists["hColdVsTime"]->Fill(time, rinfo.badTowersCold);
       m_hists["hBadVsTime"]->Fill(time, rinfo.getBadTowers());
     }
   }
@@ -307,8 +315,13 @@ void BadTowerMapsAnalysis::save_results()
   std::string output_filename = m_output_dir + "/test.root";
   auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
 
-  m_hists["hDeadVsTime"]->Write();
-  m_hists["hBadVsTime"]->Write();
+  for (const auto& [name, hist] : m_hists)
+  {
+    if (name.ends_with("VsTime"))
+    {
+      hist->Write();
+    }
+  }
 
   output_file->Close();
 
