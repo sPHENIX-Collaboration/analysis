@@ -38,7 +38,7 @@ link_directories(
 # ====================================================================
 set(SPHENIX_LIBS
     calo_io fun4all calotrigger centrality ffamodules mbd epd
-    eventplaneinfo zdcinfo globalvertex phool phparameter sphenixnpc
+    eventplaneinfo zdcinfo globalvertex phool phparameter sphenixnpc cdbobjects
 )
 set(MY_LIBS sEPDValidation)
 
@@ -83,10 +83,7 @@ target_link_libraries(checkCDB PRIVATE ${STANDALONE_MACRO_LIBS})
 
 # --- displayHotMap ---
 add_executable(displayHotMap macros/displayHotMap.C)
-target_link_libraries(displayHotMap PRIVATE
-    ${STANDALONE_MACRO_LIBS}
-    cdbobjects
-)
+target_link_libraries(displayHotMap PRIVATE ${STANDALONE_MACRO_LIBS})
 
 # --- Bad Tower Map Analysis ---
 add_executable(badTowMapAna macros/BadTowerMapsAnalysis.C)
