@@ -229,7 +229,7 @@ void process_single_outdir(const string& input_base_path, const string& outdir_n
             chain.SetBranchAddress("DST#GLOBAL#GlobalVertexMap", &vertexMap);
         }
         
-        const float energy_threshold = 0.1; // GeV
+        const float energy_threshold = 0.1; // 0.1 or 0.5 GeV
         Long64_t nentries = chain.GetEntries();
         int processed_events = 0;
         
@@ -264,31 +264,31 @@ void process_single_outdir(const string& input_base_path, const string& outdir_n
                 }
             }
             
-            // Create 4 histograms with PHYSICAL coordinates
+            // Hit Maps Creation
             
             // 1. EMCAL Tower Distribution (PHYSICAL coordinates)
             TH2F* h2TowerMap_EMCal = new TH2F(Form("h2TowerMap_EMCal_evt%d", event_number),
                                              Form("EMCal Tower Distribution - Run %d Event %d;#eta (pseudorapidity);#phi [rad] (azimuth)", run_number, event_number),
-                                             EMCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,    // Physical η range
-                                             EMCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);   // Physical φ range
+                                             EMCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,    // Physical eta range
+                                             EMCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);   // Physical phi range 
             
             // 2. IHCAL Tower Distribution (PHYSICAL coordinates)
             TH2F* h2TowerMap_IHCal = new TH2F(Form("h2TowerMap_IHCal_evt%d", event_number),
                                              Form("IHCal Tower Distribution - Run %d Event %d;#eta (pseudorapidity);#phi [rad] (azimuth)", run_number, event_number),
-                                             HCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,     // Physical η range
-                                             HCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);    // Physical φ range
+                                             HCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,     // Physical eta range
+                                             HCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);    // Physical phi range 
             
             // 3. OHCAL Tower Distribution (PHYSICAL coordinates)
             TH2F* h2TowerMap_OHCal = new TH2F(Form("h2TowerMap_OHCal_evt%d", event_number),
                                              Form("OHCal Tower Distribution - Run %d Event %d;#eta (pseudorapidity);#phi [rad] (azimuth)", run_number, event_number),
-                                             HCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,     // Physical η range
-                                             HCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);    // Physical φ range
+                                             HCAL_ETA_BINS, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,     // Physical eta range
+                                             HCAL_PHI_BINS, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);    // Physical phi range 
             
             // 4. EMCAL Cluster Hitmap (already in physical coordinates)
             TH2F* h2HitMap_EMCal = new TH2F(Form("h2HitMap_EMCal_evt%d", event_number),
                                            Form("EMCal Hit Map - Run %d Event %d;#eta (pseudorapidity);#phi [rad] (azimuth)", run_number, event_number),
-                                           100, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,               // Physical η range
-                                           64, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);               // Physical φ range
+                                           100, SPHENIX_ETA_MIN, SPHENIX_ETA_MAX,               // Physical eta range
+                                           64, SPHENIX_PHI_MIN, SPHENIX_PHI_MAX);               // Physical phi range 
             
             // 5. Time maps for each tower type
             TH2F* h2TimeMap_EMCal = new TH2F(Form("h2TimeMap_EMCal_evt%d", event_number),
