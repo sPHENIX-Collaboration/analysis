@@ -20,3 +20,6 @@ The average polarizations are:
 
 ### Analysis code
 `macro/polarization.cc`, and other codes in the directory.
+
+## Results
+See [plot](./results/polarization_internal.pdf)
