@@ -95,7 +95,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       // Charge
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, -m_hist_config.m_mbd_eta_high, m_hist_config.m_mbd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, -m_hist_config.m_mbd_eta_high, -m_hist_config.m_mbd_eta_low}},
       {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -498,21 +498,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   m_data.sEPD_Q_N_x_3 = Q_N_x_3;
   m_data.sEPD_Q_N_y_3 = Q_N_y_3;
 
-  m_logging.m_sepd_Q_min = std::min(m_logging.m_sepd_Q_min, std::min(Q_S_x_2,
-                                        std::min(Q_S_y_2,
-                                        std::min(Q_N_x_2,
-                                        std::min(Q_N_y_2,
-                                        std::min(Q_S_x_3,
-                                        std::min(Q_S_y_3,
-                                        std::min(Q_N_x_3, Q_N_y_3))))))));
-
-  m_logging.m_sepd_Q_max = std::max(m_logging.m_sepd_Q_max, std::max(Q_S_x_2,
-                                        std::max(Q_S_y_2,
-                                        std::max(Q_N_x_2,
-                                        std::max(Q_N_y_2,
-                                        std::max(Q_S_x_3,
-                                        std::max(Q_S_y_3,
-                                        std::max(Q_N_x_3, Q_N_y_3))))))));
+  m_logging.m_sepd_Q_min = std::min({m_logging.m_sepd_Q_min, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
+  m_logging.m_sepd_Q_max = std::max({m_logging.m_sepd_Q_max, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, m_cent);
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, m_cent);
@@ -684,6 +671,16 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sepd_charge.clear();
   m_data.sepd_phi.clear();
   m_data.sepd_eta.clear();
+
+  // sEPD Q Vec
+  m_data.sEPD_Q_S_x_2 = 0;
+  m_data.sEPD_Q_S_y_2 = 0;
+  m_data.sEPD_Q_N_x_2 = 0;
+  m_data.sEPD_Q_N_y_2 = 0;
+  m_data.sEPD_Q_S_x_3 = 0;
+  m_data.sEPD_Q_S_y_3 = 0;
+  m_data.sEPD_Q_N_x_3 = 0;
+  m_data.sEPD_Q_N_y_3 = 0;
 
   // MBD
   m_data.mbd_charge.clear();
