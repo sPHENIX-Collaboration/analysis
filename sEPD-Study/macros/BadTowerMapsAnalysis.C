@@ -1,3 +1,10 @@
+#include "myUtils.C"
+
+// sPHENIX includes
+#include <CDBUtils.C>
+#include <calobase/TowerInfoDefs.h>
+#include <cdbobjects/CDBTTree.h>
+
 // ====================================================================
 // Standard C++ Includes
 // ====================================================================
@@ -20,6 +27,7 @@
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TProfile2D.h>
 #include <TROOT.h>
 
 // ====================================================================
@@ -29,12 +37,13 @@ class BadTowerMapsAnalysis
 {
  public:
   // The constructor takes the configuration
-  BadTowerMapsAnalysis(std::string input_list, std::string input_timestamp_list, int verbosity, std::string output_dir)
+  BadTowerMapsAnalysis(std::string input_list, std::string input_timestamp_list, std::string output_dir, std::string dbtag, int verbosity)
     : m_input_list(std::move(input_list))
     , m_input_timestamp_list(std::move(input_timestamp_list))
-    , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
+    , m_verbosity(verbosity)
   {
+    setGlobalTag(dbtag);
   }
 
   void run()
@@ -42,6 +51,7 @@ class BadTowerMapsAnalysis
     read();
     init_hists();
     analyze();
+    fill_results();
     save_results();
   }
 
@@ -51,10 +61,11 @@ class BadTowerMapsAnalysis
     int badTowersDead{0};
     int badTowersHot{0};
     int badTowersCold{0};
+    int badTowersBadChi2{0};
 
     int getBadTowers()
     {
-      return badTowersDead + badTowersHot + badTowersCold;
+      return badTowersDead + badTowersHot + badTowersCold + badTowersBadChi2;
     }
   };
 
@@ -64,12 +75,15 @@ class BadTowerMapsAnalysis
   std::map<std::string, int> m_ctr;
   int m_run_start{9999999};
   int m_run_end{0};
+  std::string m_calibName_chi2{"CEMC_hotTowers_fracBadChi2"};
+  std::string m_fieldname_chi2{"fraction"};
+  double m_fraction_badChi2_threshold{0.01};
 
   // Configuration stored as members
   std::string m_input_list;
   std::string m_input_timestamp_list;
-  int m_verbosity;
   std::string m_output_dir;
+  int m_verbosity;
 
   // --- Private Helper Methods ---
   std::string getRun(const std::string& input);
@@ -77,9 +91,10 @@ class BadTowerMapsAnalysis
   void read_time();
   void read();
   void init_hists();
-  RunInfo getBadTowers(TH2* hist);
+  RunInfo getBadTowers(TH2* hist, std::string& run);
   void analyze();
   void save_results();
+  void fill_results();
 };
 
 std::string BadTowerMapsAnalysis::getRun(const std::string& input)
@@ -235,7 +250,24 @@ void BadTowerMapsAnalysis::init_hists()
   m_hists["hDeadVsTime"] = std::make_unique<TH1F>("hDeadVsTime", "EMCal Dead Towers; Time; Towers", bins, start, end);
   m_hists["hHotVsTime"] = std::make_unique<TH1F>("hHotVsTime", "EMCal Hot Towers; Time; Towers", bins, start, end);
   m_hists["hColdVsTime"] = std::make_unique<TH1F>("hColdVsTime", "EMCal Cold Towers; Time; Towers", bins, start, end);
+  m_hists["hBadChi2VsTime"] = std::make_unique<TH1F>("hBadChi2VsTime", "EMCal Bad #chi^{2} Towers; Time; Towers", bins, start, end);
   m_hists["hBadVsTime"] = std::make_unique<TH1F>("hBadVsTime", "EMCal Bad Towers; Time; Towers", bins, start, end);
+
+  m_hists["h2Dead"] = std::make_unique<TProfile2D>("h2Dead", "EMCal Dead Towers Frac; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi - 0.5, myUtils::m_neta, -0.5, myUtils::m_neta - 0.5);
+  m_hists["h2Hot"] = std::make_unique<TProfile2D>("h2Hot", "EMCal Hot Towers Frac; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi - 0.5, myUtils::m_neta, -0.5, myUtils::m_neta - 0.5);
+  m_hists["h2Cold"] = std::make_unique<TProfile2D>("h2Cold", "EMCal Cold Towers Frac; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi - 0.5, myUtils::m_neta, -0.5, myUtils::m_neta - 0.5);
+  m_hists["h2BadChi2"] = std::make_unique<TProfile2D>("h2BadChi2", "EMCal Bad #chi^{2} Towers Frac; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi - 0.5, myUtils::m_neta, -0.5, myUtils::m_neta - 0.5);
+  m_hists["h2Bad"] = std::make_unique<TProfile2D>("h2Bad", "EMCal Bad Towers Frac; Tower Index #phi; Tower Index #eta", myUtils::m_nphi, -0.5, myUtils::m_nphi - 0.5, myUtils::m_neta, -0.5, myUtils::m_neta - 0.5);
+
+  unsigned int bins_frac = 101;
+  double frac_low = 0;
+  double frac_high = 101;
+
+  m_hists["hDead"] = std::make_unique<TH1F>("hDead", "EMCal Dead Towers; Frac Dead [% of Runs]; Towers", bins_frac, frac_low, frac_high);
+  m_hists["hHot"] = std::make_unique<TH1F>("hHot", "EMCal Hot Towers; Frac Hot [% of Runs]; Towers", bins_frac, frac_low, frac_high);
+  m_hists["hCold"] = std::make_unique<TH1F>("hCold", "EMCal Cold Towers; Frac Cold [% of Runs]; Towers", bins_frac, frac_low, frac_high);
+  m_hists["hBadChi2"] = std::make_unique<TH1F>("hBadChi2", "EMCal Bad #chi^{2} Towers; Frac Bad #chi^{2} [% of Runs]; Towers", bins_frac, frac_low, frac_high);
+  m_hists["hBad"] = std::make_unique<TH1F>("hBad", "EMCal Bad Towers; Frac Bad [% of Runs]; Towers", bins_frac, frac_low, frac_high);
 
   for (const auto& [name, hist] : m_hists)
   {
@@ -247,25 +279,75 @@ void BadTowerMapsAnalysis::init_hists()
   }
 }
 
-BadTowerMapsAnalysis::RunInfo BadTowerMapsAnalysis::getBadTowers(TH2* hist)
+BadTowerMapsAnalysis::RunInfo BadTowerMapsAnalysis::getBadTowers(TH2* hist, std::string& run)
 {
-  RunInfo rinfo;
-  for (int i = 1; i <= hist->GetNbinsX(); ++i)
+  std::string calib_chi2 = getCalibration(m_calibName_chi2, std::stoul(run));
+  bool doHotChi2 = !calib_chi2.starts_with("DataBaseException");
+  if(!doHotChi2)
   {
-    for (int j = 1; j <= hist->GetNbinsY(); ++j)
+    std::cout << std::format("Warning: No {} found for Run: {}\n", m_calibName_chi2, run);
+  }
+
+  std::unique_ptr<CDBTTree> cdbttree_chi2 = (doHotChi2) ? std::make_unique<CDBTTree>(calib_chi2) : nullptr;
+
+  RunInfo rinfo;
+  for (int ieta = 1; ieta <= hist->GetNbinsX(); ++ieta)
+  {
+    for (int iphi = 1; iphi <= hist->GetNbinsY(); ++iphi)
     {
-      int val = static_cast<int>(hist->GetBinContent(i, j));
+      int val = static_cast<int>(hist->GetBinContent(ieta, iphi));
+      int eta = ieta - 1;
+      int phi = iphi - 1;
+
+      int key = static_cast<int>(TowerInfoDefs::encode_emcal(static_cast<unsigned int>(eta), static_cast<unsigned int>(phi)));
+      float fraction_badChi2 = (doHotChi2) ? cdbttree_chi2->GetFloatValue(key, m_fieldname_chi2) : 0;
+      bool isBadChi2 = fraction_badChi2 > m_fraction_badChi2_threshold;
+
+      if(isBadChi2)
+      {
+        ++rinfo.badTowersBadChi2;
+        dynamic_cast<TProfile2D*>(m_hists["h2BadChi2"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2BadChi2"].get())->Fill(phi, eta, 0);
+      }
+
       if (val == 1)
       {
         ++rinfo.badTowersDead;
+        dynamic_cast<TProfile2D*>(m_hists["h2Dead"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2Dead"].get())->Fill(phi, eta, 0);
       }
       if (val == 2)
       {
         ++rinfo.badTowersHot;
+        dynamic_cast<TProfile2D*>(m_hists["h2Hot"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2Hot"].get())->Fill(phi, eta, 0);
       }
       if (val == 3)
       {
         ++rinfo.badTowersCold;
+        dynamic_cast<TProfile2D*>(m_hists["h2Cold"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2Cold"].get())->Fill(phi, eta, 0);
+      }
+
+      if (val != 0 || isBadChi2)
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2Bad"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D*>(m_hists["h2Bad"].get())->Fill(phi, eta, 0);
       }
     }
   }
@@ -285,10 +367,14 @@ void BadTowerMapsAnalysis::analyze()
   {
     if (name.starts_with("h_hot"))
     {
+      if(m_ctr["ctr_runs"]++ % 20 == 0)
+      {
+        std::cout << std::format("Processed: {:4d} Runs\n", m_ctr["ctr_runs"]-1);
+      }
       std::string run = getRun(name);
       int time = static_cast<int>(m_runInfo[run]);
       TDatime tdat(static_cast<unsigned int>(time));
-      RunInfo rinfo = getBadTowers(dynamic_cast<TH2*>(hist.get()));
+      RunInfo rinfo = getBadTowers(dynamic_cast<TH2*>(hist.get()), run);
       int bin = m_hists["hDeadVsTime"]->FindBin(time);
       int val = static_cast<int>(m_hists["hDeadVsTime"]->GetBinContent(bin));
       if (val != 0)
@@ -302,7 +388,31 @@ void BadTowerMapsAnalysis::analyze()
       m_hists["hDeadVsTime"]->Fill(time, rinfo.badTowersDead);
       m_hists["hHotVsTime"]->Fill(time, rinfo.badTowersHot);
       m_hists["hColdVsTime"]->Fill(time, rinfo.badTowersCold);
+      m_hists["hBadChi2VsTime"]->Fill(time, rinfo.badTowersBadChi2);
       m_hists["hBadVsTime"]->Fill(time, rinfo.getBadTowers());
+    }
+  }
+}
+
+void BadTowerMapsAnalysis::fill_results()
+{
+  std::cout << std::format("Processing: Fill Results\n");
+
+  for (int ieta = 1; ieta <= myUtils::m_neta; ++ieta)
+  {
+    for (int iphi = 1; iphi <= myUtils::m_nphi; ++iphi)
+    {
+      double fracDead = dynamic_cast<TProfile2D*>(m_hists["h2Dead"].get())->GetBinContent(iphi, ieta)*100;
+      double fracHot = dynamic_cast<TProfile2D*>(m_hists["h2Hot"].get())->GetBinContent(iphi, ieta)*100;
+      double fracCold = dynamic_cast<TProfile2D*>(m_hists["h2Cold"].get())->GetBinContent(iphi, ieta)*100;
+      double fracBadChi2 = dynamic_cast<TProfile2D*>(m_hists["h2BadChi2"].get())->GetBinContent(iphi, ieta)*100;
+      double fracBad = dynamic_cast<TProfile2D*>(m_hists["h2Bad"].get())->GetBinContent(iphi, ieta)*100;
+
+      m_hists["hDead"]->Fill(fracDead);
+      m_hists["hHot"]->Fill(fracHot);
+      m_hists["hCold"]->Fill(fracCold);
+      m_hists["hBadChi2"]->Fill(fracBadChi2);
+      m_hists["hBad"]->Fill(fracBad);
     }
   }
 }
@@ -317,7 +427,7 @@ void BadTowerMapsAnalysis::save_results()
 
   for (const auto& [name, hist] : m_hists)
   {
-    if (name.ends_with("VsTime"))
+    if (!name.starts_with("h_hot"))
     {
       hist->Write();
     }
@@ -335,20 +445,21 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 3 || argc > 5)
+  if (argc < 3 || argc > 6)
   {
-    std::cout << "Usage: " << argv[0] << " <input_list_file> <input_timestamp_list_file> [verbosity] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_list_file> <input_timestamp_list_file> [output_directory] [dbtag] [verbosity] " << std::endl;
     return 1;
   }
 
   const std::string input_list = argv[1];
   const std::string input_timestamp_list = argv[2];
-  int verbosity = (argc >= 4) ? std::atoi(argv[3]) : 0;
-  std::string output_dir = (argc >= 5) ? argv[4] : ".";
+  std::string output_dir = (argc >= 4) ? argv[3] : ".";
+  std::string dbtag = (argc >= 5) ? argv[4] : "newcdbtag";
+  int verbosity = (argc >= 6) ? std::atoi(argv[5]) : 0;
 
   try
   {
-    BadTowerMapsAnalysis analysis(input_list, input_timestamp_list, verbosity, output_dir);
+    BadTowerMapsAnalysis analysis(input_list, input_timestamp_list, output_dir, dbtag, verbosity);
     analysis.run();
   }
   catch (const std::exception& e)
