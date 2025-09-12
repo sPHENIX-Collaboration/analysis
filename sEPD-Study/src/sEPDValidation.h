@@ -98,10 +98,6 @@ class sEPDValidation : public SubsysReco
     double m_mbd_eta_low{3.6};
     double m_mbd_eta_high{4.3};
 
-    unsigned int m_bins_sepd_Q{100};
-    double m_sepd_Q_low{-1};
-    double m_sepd_Q_high{1};
-
     unsigned int m_bins_sepd_total_charge{200};
     double m_sepd_total_charge_low{0};
     double m_sepd_total_charge_high{4e4};

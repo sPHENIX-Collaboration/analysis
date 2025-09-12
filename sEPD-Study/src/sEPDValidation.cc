@@ -100,15 +100,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH3, "h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-
-      // Q-vector: 1st Order Correction
-      {HistDef::Type::TH3, "h3SEPD_Q_S_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3SEPD_Q_N_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3SEPD_Q_S_3", "sEPD South Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3SEPD_Q_N_3", "sEPD North Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_sepd_Q, m_hist_config.m_sepd_Q_low, m_hist_config.m_sepd_Q_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-
-      {HistDef::Type::TH3, "h3SEPD_Psi_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3SEPD_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}}
   };
 
   // Official
@@ -122,11 +113,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   {
     create_histogram(def);
   }
-
-  m_hists["h3SEPD_Q_S_2"]->Sumw2();
-  m_hists["h3SEPD_Q_N_2"]->Sumw2();
-  m_hists["h3SEPD_Q_S_3"]->Sumw2();
-  m_hists["h3SEPD_Q_N_3"]->Sumw2();
 
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
@@ -501,20 +487,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   m_logging.m_sepd_Q_min = std::min({m_logging.m_sepd_Q_min, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
   m_logging.m_sepd_Q_max = std::max({m_logging.m_sepd_Q_max, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
 
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_S_3"].get())->Fill(Q_S_x_3, Q_S_y_3, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Q_N_3"].get())->Fill(Q_N_x_3, Q_N_y_3, m_cent);
-
-  double psi_S_2 = std::atan2(Q_S_y_2, Q_S_x_2);
-  double psi_N_2 = std::atan2(Q_N_y_2, Q_N_x_2);
-
-  double psi_S_3 = std::atan2(Q_S_y_3, Q_S_x_3);
-  double psi_N_3 = std::atan2(Q_N_y_3, Q_N_x_3);
-
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_2"].get())->Fill(psi_S_2, psi_N_2, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Psi_3"].get())->Fill(psi_S_3, psi_N_3, m_cent);
-
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
 
   JetUtils::update_min_max(sepd_total_charge_south, m_logging.m_sepd_total_charge_south_min, m_logging.m_sepd_total_charge_south_max);
@@ -773,15 +745,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h2MBD_Total_Charge", "x");
     project_and_write("h3SEPD_Total_Charge", "yx");
     project_and_write("h3MBD_Total_Charge", "yx");
-
-    project_and_write("h3SEPD_Q_S_2", "yx");
-    project_and_write("h3SEPD_Q_N_2", "yx");
-
-    project_and_write("h3SEPD_Q_S_3", "yx");
-    project_and_write("h3SEPD_Q_N_3", "yx");
-
-    project_and_write("h3SEPD_Psi_2", "yx");
-    project_and_write("h3SEPD_Psi_3", "yx");
 
     // Official
     if(m_do_ep)
