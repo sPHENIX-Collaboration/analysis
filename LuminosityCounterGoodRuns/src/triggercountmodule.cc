@@ -76,7 +76,7 @@ int triggercountmodule::process_event(PHCompositeNode *topNode)
 
   if(_debug > 1) cout << endl << endl << endl << "triggercountmodule: Beginning event processing" << endl;
 
-    Gl1Packetv2* gl1 = findNode::getClass<Gl1Packetv2>(topNode, "GL1Packet");
+    Gl1Packetv2* gl1 = findNode::getClass<Gl1Packetv2>(topNode, "14001");
   if(!gl1)
     {
       cout << "No trigger info!" << endl;
