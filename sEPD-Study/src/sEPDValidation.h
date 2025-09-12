@@ -109,6 +109,18 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_psi{126};
     double m_psi_low{-M_PI};
     double m_psi_high{M_PI};
+
+    unsigned int m_bins_sepd_phi{60};
+    double m_sepd_phi_low{-M_PI};
+    double m_sepd_phi_high{M_PI};
+
+    unsigned int m_bins_sepd_eta{52};
+    double m_sepd_eta_low{2};
+    double m_sepd_eta_high{4.6};
+
+    unsigned int m_bins_sepd_rbin{16};
+    double m_sepd_rbin_low{-0.5};
+    double m_sepd_rbin_high{15.5};
   };
 
   HistConfig m_hist_config;
@@ -121,6 +133,7 @@ class sEPDValidation : public SubsysReco
       TH1,
       TH2,
       TH3,
+      TProfile,
       TProfile2D
     };
     Type type;
@@ -181,6 +194,8 @@ class sEPDValidation : public SubsysReco
     double m_sepd_z_max{0};
     double m_sepd_r_min{9999};
     double m_sepd_r_max{0};
+    double m_sepd_rbin_min{9999};
+    double m_sepd_rbin_max{0};
     double m_sepd_phi_min{9999};
     double m_sepd_phi_max{0};
     double m_sepd_eta_min{9999};
@@ -236,6 +251,7 @@ class sEPDValidation : public SubsysReco
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;
     std::vector<double> sepd_eta;
+    std::vector<int> sepd_rbin;
     std::vector<double> mbd_charge;
     std::vector<double> mbd_phi;
     std::vector<double> mbd_eta;

@@ -71,6 +71,9 @@ void sEPDValidation::create_histogram(const HistDef &def)
   case HistDef::Type::TH3:
     m_hists[def.name] = std::make_unique<TH3F>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high, def.z.bins, def.z.low, def.z.high);
     break;
+  case HistDef::Type::TProfile:
+    m_hists[def.name] = std::make_unique<TProfile>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high);
+    break;
   case HistDef::Type::TProfile2D:
     m_hists[def.name] = std::make_unique<TProfile2D>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high);
     break;
@@ -96,6 +99,14 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
       {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, -m_hist_config.m_mbd_eta_high, -m_hist_config.m_mbd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_North_ZS", "SEPD North Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_ZS", "SEPD South Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile, "hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
+      {HistDef::Type::TProfile, "hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
       {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -144,6 +155,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
   m_tree->Branch("sepd_eta", &m_data.sepd_eta);
+  m_tree->Branch("sepd_rbin", &m_data.sepd_rbin);
   m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   m_tree->Branch("mbd_eta", &m_data.mbd_eta);
@@ -328,7 +340,10 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     JetUtils::update_min_max(mbd_ch_r, m_logging.m_mbd_ch_r_min, m_logging.m_mbd_ch_r_max);
     JetUtils::update_min_max(mbd_ch_z, m_logging.m_mbd_ch_z_min, m_logging.m_mbd_ch_z_max);
     JetUtils::update_min_max(mbd_ch_phi, m_logging.m_mbd_ch_phi_min, m_logging.m_mbd_ch_phi_max);
-    JetUtils::update_min_max(mbd_ch_eta, m_logging.m_mbd_ch_eta_min, m_logging.m_mbd_ch_eta_max);
+    if (mbd_ch_eta > 0)
+    {
+      JetUtils::update_min_max(mbd_ch_eta, m_logging.m_mbd_ch_eta_min, m_logging.m_mbd_ch_eta_max);
+    }
     JetUtils::update_min_max(charge, m_logging.m_mbd_ch_charge_min, m_logging.m_mbd_ch_charge_max);
   }
 
@@ -389,12 +404,36 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     ROOT::Math::XYZTVector vec(sepd_ch_r, 0, sepd_ch_z, 0);
     double eta = vec.Eta();
     double phi = epdgeom->get_phi(key);
+    int rbin = TowerInfoDefs::get_epd_rbin(key);
+
+    // Ensure phi is in [-pi, pi]
+    if(phi > M_PI)
+    {
+      phi -= 2*M_PI;
+    }
 
     // exclude ZS
     if(isZS)
     {
       ++m_ctr["sepd_tower_zs"];
+      if (eta < 0)
+      {
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_ZS"].get())->Fill(phi, eta, 1);
+      }
       continue;
+    }
+
+    if (eta < 0)
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, eta, 0);
+    }
+    else
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_ZS"].get())->Fill(phi, eta, 0);
     }
 
     JetUtils::update_min_max(charge, m_logging.m_sepd_charge_min, m_logging.m_sepd_charge_max);
@@ -403,17 +442,40 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     if(charge < m_cuts.m_sepd_charge_threshold)
     {
       ++m_ctr["sepd_tower_charge_below_threshold"];
+
+      if (eta < 0)
+      {
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, eta, 1);
+      }
+      else
+      {
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_BelowThresh"].get())->Fill(phi, eta, 1);
+      }
       continue;
+    }
+
+    if (eta < 0)
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, eta, 0);
+    }
+    else
+    {
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_BelowThresh"].get())->Fill(phi, eta, 0);
     }
 
     m_data.sepd_charge.push_back(charge);
     m_data.sepd_phi.push_back(phi);
     m_data.sepd_eta.push_back(eta);
+    m_data.sepd_rbin.push_back(rbin);
 
     JetUtils::update_min_max(sepd_ch_z, m_logging.m_sepd_z_min, m_logging.m_sepd_z_max);
     JetUtils::update_min_max(sepd_ch_r, m_logging.m_sepd_r_min, m_logging.m_sepd_r_max);
     JetUtils::update_min_max(phi, m_logging.m_sepd_phi_min, m_logging.m_sepd_phi_max);
-    JetUtils::update_min_max(eta, m_logging.m_sepd_eta_min, m_logging.m_sepd_eta_max);
+    JetUtils::update_min_max(rbin, m_logging.m_sepd_rbin_min, m_logging.m_sepd_rbin_max);
+    if (eta > 0)
+    {
+      JetUtils::update_min_max(eta, m_logging.m_sepd_eta_min, m_logging.m_sepd_eta_max);
+    }
 
     double q_x_2 = charge*std::cos(2*phi);
     double q_y_2 = charge*std::sin(2*phi);
@@ -427,6 +489,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     if (arm == 0)
     {
       sepd_total_charge_south += charge;
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_Charge"].get())->Fill(phi, eta, charge);
+      dynamic_cast<TProfile *>(m_hists["hSEPD_South_Charge"].get())->Fill(rbin, charge);
 
       Q_S_x_2 += q_x_2;
       Q_S_y_2 += q_y_2;
@@ -438,6 +502,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     else if (arm == 1)
     {
       sepd_total_charge_north += charge;
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_Charge"].get())->Fill(phi, eta, charge);
+      dynamic_cast<TProfile *>(m_hists["hSEPD_North_Charge"].get())->Fill(rbin, charge);
 
       Q_N_x_2 += q_x_2;
       Q_N_y_2 += q_y_2;
@@ -643,6 +709,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sepd_charge.clear();
   m_data.sepd_phi.clear();
   m_data.sepd_eta.clear();
+  m_data.sepd_rbin.clear();
 
   // sEPD Q Vec
   m_data.sEPD_Q_S_x_2 = 0;
@@ -676,6 +743,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD Total Charge North: Min " << m_logging.m_sepd_total_charge_north_min << ", Max: " << m_logging.m_sepd_total_charge_north_max << std::endl;
   std::cout << "sEPD z: Min " << m_logging.m_sepd_z_min << ", Max: " << m_logging.m_sepd_z_max << std::endl;
   std::cout << "sEPD r: Min " << m_logging.m_sepd_r_min << ", Max: " << m_logging.m_sepd_r_max << std::endl;
+  std::cout << "sEPD rbin: Min " << m_logging.m_sepd_rbin_min << ", Max: " << m_logging.m_sepd_rbin_max << std::endl;
   std::cout << "sEPD Phi: Min " << m_logging.m_sepd_phi_min << ", Max: " << m_logging.m_sepd_phi_max << std::endl;
   std::cout << "sEPD Eta: Min " << m_logging.m_sepd_eta_min << ", Max: " << m_logging.m_sepd_eta_max << std::endl;
   std::cout << "=====================" << std::endl;
