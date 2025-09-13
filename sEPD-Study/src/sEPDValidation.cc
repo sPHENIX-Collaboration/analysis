@@ -152,6 +152,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sEPD_Q_S_y_3", &m_data.sEPD_Q_S_y_3, "sEPD_Q_S_y_3/D");
   m_tree->Branch("sEPD_Q_N_x_3", &m_data.sEPD_Q_N_x_3, "sEPD_Q_N_x_3/D");
   m_tree->Branch("sEPD_Q_N_y_3", &m_data.sEPD_Q_N_y_3, "sEPD_Q_N_y_3/D");
+  m_tree->Branch("sEPD_Q_S_x_4", &m_data.sEPD_Q_S_x_4, "sEPD_Q_S_x_4/D");
+  m_tree->Branch("sEPD_Q_S_y_4", &m_data.sEPD_Q_S_y_4, "sEPD_Q_S_y_4/D");
+  m_tree->Branch("sEPD_Q_N_x_4", &m_data.sEPD_Q_N_x_4, "sEPD_Q_N_x_4/D");
+  m_tree->Branch("sEPD_Q_N_y_4", &m_data.sEPD_Q_N_y_4, "sEPD_Q_N_y_4/D");
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
   m_tree->Branch("sepd_eta", &m_data.sepd_eta);
@@ -391,6 +395,11 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   double Q_N_x_3 = 0;
   double Q_N_y_3 = 0;
 
+  double Q_S_x_4 = 0;
+  double Q_S_y_4 = 0;
+  double Q_N_x_4 = 0;
+  double Q_N_y_4 = 0;
+
   for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
   {
     unsigned int key = TowerInfoDefs::encode_epd(channel);
@@ -483,6 +492,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     double q_x_3 = charge*std::cos(3*phi);
     double q_y_3 = charge*std::sin(3*phi);
 
+    double q_x_4 = charge*std::cos(4*phi);
+    double q_y_4 = charge*std::sin(4*phi);
+
     // sepd charge sums
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
     // South
@@ -497,6 +509,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
       Q_S_x_3 += q_x_3;
       Q_S_y_3 += q_y_3;
+
+      Q_S_x_4 += q_x_4;
+      Q_S_y_4 += q_y_4;
     }
     // North
     else if (arm == 1)
@@ -510,6 +525,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
       Q_N_x_3 += q_x_3;
       Q_N_y_3 += q_y_3;
+
+      Q_N_x_4 += q_x_4;
+      Q_N_y_4 += q_y_4;
     }
     else {
       ++m_ctr["sepd_tower_unknown_arm"];
@@ -534,11 +552,17 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   Q_S_x_3 /= sepd_total_charge_south;
   Q_S_y_3 /= sepd_total_charge_south;
 
+  Q_S_x_4 /= sepd_total_charge_south;
+  Q_S_y_4 /= sepd_total_charge_south;
+
   Q_N_x_2 /= sepd_total_charge_north;
   Q_N_y_2 /= sepd_total_charge_north;
 
   Q_N_x_3 /= sepd_total_charge_north;
   Q_N_y_3 /= sepd_total_charge_north;
+
+  Q_N_x_4 /= sepd_total_charge_north;
+  Q_N_y_4 /= sepd_total_charge_north;
 
   m_data.sEPD_Q_S_x_2 = Q_S_x_2;
   m_data.sEPD_Q_S_y_2 = Q_S_y_2;
@@ -550,8 +574,18 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   m_data.sEPD_Q_N_x_3 = Q_N_x_3;
   m_data.sEPD_Q_N_y_3 = Q_N_y_3;
 
-  m_logging.m_sepd_Q_min = std::min({m_logging.m_sepd_Q_min, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
-  m_logging.m_sepd_Q_max = std::max({m_logging.m_sepd_Q_max, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2, Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3});
+  m_data.sEPD_Q_S_x_4 = Q_S_x_4;
+  m_data.sEPD_Q_S_y_4 = Q_S_y_4;
+  m_data.sEPD_Q_N_x_4 = Q_N_x_4;
+  m_data.sEPD_Q_N_y_4 = Q_N_y_4;
+
+  m_logging.m_sepd_Q_min = std::min({m_logging.m_sepd_Q_min, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2,
+                                                             Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3,
+                                                             Q_S_x_4, Q_S_y_4, Q_N_x_4, Q_N_y_4});
+
+  m_logging.m_sepd_Q_max = std::max({m_logging.m_sepd_Q_max, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2,
+                                                             Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3,
+                                                             Q_S_x_4, Q_S_y_4, Q_N_x_4, Q_N_y_4});
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
 
@@ -720,6 +754,10 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sEPD_Q_S_y_3 = 0;
   m_data.sEPD_Q_N_x_3 = 0;
   m_data.sEPD_Q_N_y_3 = 0;
+  m_data.sEPD_Q_S_x_4 = 0;
+  m_data.sEPD_Q_S_y_4 = 0;
+  m_data.sEPD_Q_N_x_4 = 0;
+  m_data.sEPD_Q_N_y_4 = 0;
 
   // MBD
   m_data.mbd_charge.clear();
