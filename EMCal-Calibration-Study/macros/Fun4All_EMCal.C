@@ -83,7 +83,7 @@ void Fun4All_EMCal(int nevents = 1e2,
   std::cout << "run number = " << runnumber << std::endl;
 
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
-  rc->set_uint64Flag("TIMESTAMP", runnumber);  // runnumber);
+  rc->set_uint64Flag("TIMESTAMP", static_cast<unsigned int>(runnumber));  //
 
   std::unique_ptr<Fun4AllInputManager> in = std::make_unique<Fun4AllDstInputManager>("DST_TOWERS");
   in->AddListFile(fname);
@@ -136,7 +136,7 @@ void Fun4All_EMCal(int nevents = 1e2,
   std::cout << "Building clusters" << std::endl;
   std::unique_ptr<RawClusterBuilderTemplate> ClusterBuilder = std::make_unique<RawClusterBuilderTemplate>("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
-  ClusterBuilder->set_threshold_energy(0.07);  // for when using basic calibration
+  ClusterBuilder->set_threshold_energy(0.07f);  // for when using basic calibration
   std::string emc_prof = getenv("CALIBRATIONROOT");
   emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
   ClusterBuilder->LoadProfile(emc_prof);
@@ -162,9 +162,9 @@ void Fun4All_EMCal(int nevents = 1e2,
     ca->set_timing_cut_width(16);  // does nothing currently
     ca->apply_vertex_cut(true);    // default
     ca->set_vertex_cut(20.);
-    ca->set_pt1BaseClusCut(1.3);  // default
-    ca->set_pt2BaseClusCut(0.7);  // default
-    ca->set_NclusDeptFac(1.4);    // default
+    ca->set_pt1BaseClusCut(1.3f);  // default
+    ca->set_pt2BaseClusCut(0.7f);  // default
+    ca->set_NclusDeptFac(1.4f);    // default
     ca->set_RunTowByTow(true);
     ca->set_reqTrig(false);
     ca->set_GlobalVertexType(GlobalVertex::MBD);
