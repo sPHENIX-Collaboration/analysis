@@ -27,15 +27,22 @@ void WritesPhenix(int mode = 0, double pos_x = 0.2, double pos_y = 0.96, double 
   delete tex;
 };
 
-void WriteRunCondition(double pos_x = 0.2, double pos_y = 0.675, bool is_mc = false, double text_size = 0.04)
+void WriteRunCondition(double pos_x = 0.2, double pos_y = 0.675, bool is_mc = false, double text_size = 0.04, bool is_single_line=false )
 {
   TLatex* tex = new TLatex();
   tex->SetTextSize(text_size);
 
   if (is_mc == false)
   {
-    tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p 2024");
-    tex->DrawLatexNDC(pos_x - 0.01, pos_y - 0.05, "#sqrt{s} = 200 GeV");
+    if( is_single_line == false )
+    {
+      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p 2024 #sqrt{s} = 200 GeV");
+    }
+    else
+    {
+      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p 2024");
+      tex->DrawLatexNDC(pos_x - 0.01, pos_y - 0.05, "#sqrt{s} = 200 GeV");
+    }
   }
   else
     tex->DrawLatexNDC(pos_x, pos_y, "Simulation");
