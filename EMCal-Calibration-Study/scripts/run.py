@@ -11,6 +11,8 @@ import datetime
 import time
 import shutil
 import logging
+import textwrap
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
 
@@ -21,7 +23,7 @@ parser.add_argument('-i'
 
 parser.add_argument('-o'
                     , '--project-dir', type=str
-                    , default='/gpfs02/sphenix/user/anarde/EMCal-Calib-Test'
+                    , default='test'
                     , help='Project Directory. Default: .')
 
 parser.add_argument('-it1'
@@ -39,15 +41,10 @@ parser.add_argument('-s'
                     , default=2
                     , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
-parser.add_argument('-l'
-                    , '--log-file', type=str
-                    , default='log.txt'
-                    , help='Log File. Default: log.txt')
-
 parser.add_argument('-l2'
                     , '--condor-log-dir', type=str
-                    , default='/tmp/anarde/dump'
-                    , help='Condor Log Directory. Default: /tmp/anarde/dump')
+                    , default=''
+                    , help='Condor Log Directory. Default: /tmp/<USER>/dump')
 
 parser.add_argument('-p'
                     , '--files-per-hadd', type=int
@@ -61,38 +58,38 @@ parser.add_argument('-s2'
 
 parser.add_argument('-f'
                     , '--f4a-macro', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/Fun4All_EMCal.C'
-                    , help='Fun4All Macro. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/Fun4All_EMCal.C')
+                    , default='macros/Fun4All_EMCal.C'
+                    , help='Fun4All Macro. Default: macros/Fun4All_EMCal.C')
 
 parser.add_argument('-f1'
                     , '--fit-calib-macro', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/doFitAndCalibUpdate.C'
-                    , help='Fit Calib Macro. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/doFitAndCalibUpdate.C')
+                    , default='macros/doFitAndCalibUpdate.C'
+                    , help='Fit Calib Macro. Default: macros/doFitAndCalibUpdate.C')
 
 parser.add_argument('-f2'
                     , '--tsc-fit-macro', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/doTscFit.C'
-                    , help='TSC Calib Macro. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/macros/doTscFit.C')
+                    , default='macros/doTscFit.C'
+                    , help='TSC Calib Macro. Default: macros/doTscFit.C')
 
 parser.add_argument('-f3'
                     , '--condor-script', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/scripts/genCalib.sh'
-                    , help='Condor Script. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/scripts/genCalib.sh')
+                    , default='scripts/genCalib.sh'
+                    , help='Condor Script. Default: scripts/genCalib.sh')
 
 parser.add_argument('-b'
                     , '--f4a-bin', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/Fun4All_EMCal'
-                    , help='Fun4All Bin. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/Fun4All_EMCal')
+                    , default='bin/Fun4All_EMCal'
+                    , help='Fun4All Bin. Default: bin/Fun4All_EMCal')
 
 parser.add_argument('-b1'
                     , '--fit-calib-bin', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/doFitAndCalibUpdate'
-                    , help='Fit Calib Bin. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/doFitAndCalibUpdate')
+                    , default='bin/doFitAndCalibUpdate'
+                    , help='Fit Calib Bin. Default: bin/doFitAndCalibUpdate')
 
 parser.add_argument('-b2'
                     , '--tsc-fit-bin', type=str
-                    , default='/gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/doTscFit'
-                    , help='TSC Calib Bin. Default: /gpfs02/sphenix/user/anarde/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/bin/doTscFit')
+                    , default='bin/doTscFit'
+                    , help='TSC Calib Bin. Default: bin/doTscFit')
 
 parser.add_argument('-f4'
                     , '--calib-field', type=str
@@ -175,24 +172,23 @@ def main():
     """
     Main Function
     """
-    input_list = os.path.realpath(args.input_list)
+    input_list = Path(args.input_list).resolve()
     total_jobs = int(subprocess.run(['bash','-c',f'wc -l {input_list}'], capture_output=True, encoding='utf-8', check=False).stdout.strip().split()[0])
-    project_dir = os.path.realpath(args.project_dir)
+    project_dir = Path(args.project_dir).resolve()
     iter_start = args.iter_start
     iter_end = args.iter_end
     memory = args.memory
-    log_file  = os.path.realpath(args.log_file)
-    log_dir   = os.path.dirname(log_file)
-    condor_log_dir = os.path.realpath(args.condor_log_dir)
+    USER = os.environ.get('USER')
+    condor_log_dir = Path(args.condor_log_dir).resolve() if args.condor_log_dir else Path(f'/tmp/{USER}/dump').resolve()
     files_per_hadd = args.files_per_hadd
     sleep_interval = args.sleep_interval # seconds
-    f4a_macro = os.path.realpath(args.f4a_macro)
-    fit_calib_macro = os.path.realpath(args.fit_calib_macro)
-    tsc_fit_macro = os.path.realpath(args.tsc_fit_macro)
-    f4a_bin = os.path.realpath(args.f4a_bin)
-    fit_calib_bin = os.path.realpath(args.fit_calib_bin)
-    tsc_fit_bin = os.path.realpath(args.tsc_fit_bin)
-    condor_script = os.path.realpath(args.condor_script)
+    f4a_macro = Path(args.f4a_macro).resolve()
+    fit_calib_macro = Path(args.fit_calib_macro).resolve()
+    tsc_fit_macro = Path(args.tsc_fit_macro).resolve()
+    f4a_bin = Path(args.f4a_bin).resolve()
+    fit_calib_bin = Path(args.fit_calib_bin).resolve()
+    tsc_fit_bin = Path(args.tsc_fit_bin).resolve()
+    condor_script = Path(args.condor_script).resolve()
     calib_field = args.calib_field
 
     # Check args
@@ -203,15 +199,15 @@ def main():
         parser.error(f'ERROR: Negative sleep interval: {sleep_interval}.')
 
     # Create Dirs
-    os.makedirs(log_dir,exist_ok=True)
-    os.makedirs(project_dir, exist_ok=True)
+    project_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize the logger
+    log_file  = project_dir / 'log.txt'
     logger = setup_logging(log_file, logging.DEBUG)
 
     if os.path.exists(condor_log_dir):
         shutil.rmtree(condor_log_dir)
-        os.makedirs(condor_log_dir)
+        condor_log_dir.mkdir(parents=True, exist_ok=True)
 
     # Print Logs
     logger.info('#'*40)
@@ -219,10 +215,11 @@ def main():
     logger.info(f'Input DST List: {input_list}')
     logger.info(f'Total Jobs per Iteration: {total_jobs}')
     logger.info(f'Project Directory: {project_dir}')
+    logger.info(f'Condor Memory (per Job): {memory} GB')
+    logger.info(f'Condor Logs: {condor_log_dir}')
+    logger.info(f'Condor Script: {condor_script}')
     logger.info(f'Iteration Start: {iter_start}')
     logger.info(f'Iteration End: {iter_end}')
-    logger.info(f'Condor Memory (per Job): {memory}')
-    logger.info(f'Log File: {log_file}')
     logger.info(f'Files Per hadd: {files_per_hadd}')
     logger.info(f'Fun4All Macro: {f4a_macro}')
     logger.info(f'Fit Calib Macro: {fit_calib_macro}')
@@ -230,7 +227,6 @@ def main():
     logger.info(f'Fun4All Bin: {f4a_bin}')
     logger.info(f'Fit Calib Bin: {fit_calib_bin}')
     logger.info(f'TSC Fit Bin: {tsc_fit_bin}')
-    logger.info(f'Condor Script: {condor_script}')
     logger.info(f'Calib Field: {calib_field}')
 
     # Iteration Loop
@@ -243,38 +239,45 @@ def main():
             run_command_and_log(command, logger, project_dir)
             continue
 
-        iter_dir = os.path.join(project_dir, f'test-iter-{it}')
+        iter_dir = project_dir / f'test-iter-{it}'
+        iter_dir.mkdir(parents=True, exist_ok=True)
 
-        os.makedirs(iter_dir, exist_ok=True)
+        # list of subdirectories to create
+        subdirectories = ['stdout', 'error', 'output']
 
-        os.makedirs(f'{iter_dir}/output', exist_ok=True)
-        os.makedirs(f'{iter_dir}/stdout', exist_ok=True)
-        os.makedirs(f'{iter_dir}/error', exist_ok=True)
+        # Loop through the list and create each one
+        for subdir in subdirectories:
+            (iter_dir / subdir).mkdir(parents=True, exist_ok=True)
+
         if it == 3:
-            os.makedirs(f'{iter_dir}/figures', exist_ok=True)
+            (iter_dir / 'figures').mkdir(parents=True, exist_ok=True)
 
         if it == 1:
-            shutil.copy(f'{project_dir}/local_calib_copy.root', iter_dir)
+            shutil.copy(project_dir / 'local_calib_copy.root', iter_dir)
         else:
-            prev_iter_dir = os.path.join(project_dir, f'test-iter-{it-1}')
-            shutil.copy(f'{prev_iter_dir}/local_calib_copy.root', iter_dir)
+            prev_iter_dir = project_dir / f'test-iter-{it-1}'
+            shutil.copy(prev_iter_dir / 'local_calib_copy.root', iter_dir)
 
-        shutil.copy(f'{condor_script}', iter_dir)
-        shutil.copy(f'{f4a_macro}', iter_dir)
-        shutil.copy(f'{input_list}', iter_dir)
+        shutil.copy(condor_script, iter_dir)
+        shutil.copy(f4a_macro, iter_dir)
+        shutil.copy(input_list, iter_dir)
 
         if it <= 3:
-            shutil.copy(f'{tsc_fit_macro}', iter_dir)
+            shutil.copy(tsc_fit_macro, iter_dir)
         else:
-            shutil.copy(f'{fit_calib_macro}', iter_dir)
+            shutil.copy(fit_calib_macro, iter_dir)
 
-        with open(f'{iter_dir}/genCalib.sub', mode='w', encoding='utf-8') as file:
-            file.write(f'executable    = {os.path.basename(condor_script)}\n')
-            file.write(f'arguments     = {f4a_bin} 0 $(input_dst) {it} {iter_dir}/local_calib_copy.root {calib_field} {iter_dir}/output\n')
-            file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
-            file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
-            file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
-            file.write(f'request_memory = {memory}GB\n')
+        submit_file_content = textwrap.dedent(f"""\
+            arguments      = {f4a_bin} 0 $(input_dst) {it} {iter_dir}/local_calib_copy.root {calib_field} {iter_dir}/output
+            executable     = {os.path.basename(condor_script)}
+            log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+            output         = stdout/job-$(ClusterId)-$(Process).out
+            error          = error/job-$(ClusterId)-$(Process).err
+            request_memory = {memory}GB
+        """)
+
+        with open(iter_dir / 'genCalib.sub', mode='w', encoding='utf-8') as file:
+            file.write(submit_file_content)
 
         logger.info(f'Iter: {it}, Condor Directory Generated: {datetime.datetime.now()}')
 
@@ -293,7 +296,6 @@ def main():
 
             time.sleep(sleep_interval)
 
-
         logger.info(f'Iter: {it}, hadd start: {datetime.datetime.now()}')
 
         command = f'hadd -n {files_per_hadd+1} test-iter{it}.root output/*'
@@ -301,7 +303,7 @@ def main():
 
         logger.info(f'Iter: {it}, hadd finish: {datetime.datetime.now()}')
 
-        shutil.copy(f'{iter_dir}/local_calib_copy.root', f'{iter_dir}/local_calib_copy_{it-1}.root')
+        shutil.copy(iter_dir / 'local_calib_copy.root', iter_dir / f'local_calib_copy_{it-1}.root')
 
         # macro = fit_calib_macro if it >= 4 else tsc_fit_macro
         calib_bin = fit_calib_bin if it >= 4 else tsc_fit_bin
