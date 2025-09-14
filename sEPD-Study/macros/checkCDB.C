@@ -2,37 +2,35 @@
 #include <CDBUtils.C>
 
 // c++ includes
-#include <string>
-#include <iostream>
 #include <format>
+#include <iostream>
+#include <map>
+#include <string>
 
-void checkCDB(unsigned int runnumber, const std::string &dbtag = "newcdbtag") {
-    setGlobalTag(dbtag);
+void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
+{
+  setGlobalTag(dbtag);
 
-    std::string centrality                      = getCalibration("Centrality", runnumber);
-    std::string centrality_scale                = getCalibration("CentralityScale", runnumber);
-    std::string centrality_vertex_scale         = getCalibration("CentralityVertexScale", runnumber);
-    std::string centrality_default              = getCalibration("Centrality_default", runnumber);
-    std::string centrality_scale_default        = getCalibration("CentralityScale_default", runnumber);
-    std::string centrality_vertex_scale_default = getCalibration("CentralityVertexScale_default", runnumber);
-    std::string mbd_qfit                        = getCalibration("MBD_QFIT", runnumber);
-    std::string mbd_qfit_default                = getCalibration("MBD_QFIT_default", runnumber);
-    std::string emcal_hotmap                    = getCalibration("CEMC_BadTowerMap", runnumber);
-    std::string emcal_fracBadChi2               = getCalibration("CEMC_hotTowers_fracBadChi2", runnumber);
+  std::map<std::string, std::string> cdb{
+      {"Centrality", "Centrality"},
+      {"Centrality Default", "Centrality_default"},
+      {"Centrality Scale", "CentralityScale"},
+      {"Centrality Scale Default", "CentralityScale_default"},
+      {"Centrality Vertex Scale", "CentralityVertexScale"},
+      {"Centrality Vertex Scale Default", "CentralityVertexScale_default"},
+      {"MBD QFIT", "MBD_QFIT"},
+      {"MBD QFIT Default", "MBD_QFIT_default"},
+      {"EMCal Bad Tower Map", "CEMC_BadTowerMap"},
+      {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"}};
 
-    std::cout << std::format("Centrality: {}", centrality) << std::endl;
-    std::cout << std::format("Centrality default: {}", centrality_default) << std::endl;
-    std::cout << std::format("Centrality Scale: {}", centrality_scale) << std::endl;
-    std::cout << std::format("Centrality Scale default: {}", centrality_scale_default) << std::endl;
-    std::cout << std::format("Centrality Vertex Scale: {}", centrality_vertex_scale) << std::endl;
-    std::cout << std::format("Centrality Vertex Scale default: {}", centrality_vertex_scale_default) << std::endl;
-    std::cout << std::format("MBD QFIT: {}", mbd_qfit) << std::endl;
-    std::cout << std::format("MBD QFIT Default: {}", mbd_qfit_default) << std::endl;
-    std::cout << std::format("EMCal Bad Tower Map: {}", emcal_hotmap) << std::endl;
-    std::cout << std::format("EMCal Frac Bad Chi2: {}", emcal_fracBadChi2) << std::endl;
+  for (const auto& [description, name] : cdb)
+  {
+    std::string path = getCalibration(name, runnumber);
+    std::cout << std::format("{}: {}, {}\n", description, name, path);
+  }
 }
 
-# ifndef __CINT__
+#ifndef __CINT__
 int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
@@ -59,4 +57,4 @@ int main(int argc, const char* const argv[])
   std::cout << "done" << std::endl;
   return 0;
 }
-# endif
+#endif
