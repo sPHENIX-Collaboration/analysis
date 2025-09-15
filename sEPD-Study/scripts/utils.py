@@ -385,6 +385,165 @@ def hadd_jobs():
     command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from jobs.list"'
     logger.info(command)
 
+data = subparser.add_parser('data', help='Update file lists.')
+
+data.add_argument('-t'
+                    , '--tag', type=str
+                    , default='new_newcdbtag_v008'
+                    , help='Tag. Default: new_newcdbtag_v008')
+
+data.add_argument('-o'
+                    , '--output-dir', type=str
+                    , default='files/run3auau'
+                    , help='Output Directory. Default: files/run3auau')
+
+def get_line_count(file_path: str) -> int:
+    """
+    Checks if a file exists at the given path and, if so, returns the number of lines.
+
+    Args:
+        file_path: A string representing the path to the file.
+
+    Returns:
+        The number of lines in the file if it exists.
+        Returns 0 if the file does not exist.
+    """
+    path = Path(file_path)
+
+    if not path.is_file():
+        print(f"Error: File '{file_path}' not found.")
+        return 0
+
+    # Efficiently count lines using a generator expression
+    with open(path, 'r', encoding='utf-8') as f:
+        line_count = sum(1 for line in f)
+
+    return line_count
+
+def find_file_with_most_lines(directory: str):
+    """
+    Identifies the file with the most lines in a given directory.
+
+    Args:
+        directory: The path to the directory as a string.
+
+    Returns:
+        A tuple containing the filename and line count, or (None, 0) if no files were found.
+    """
+    # Create a Path object for the directory
+    dir_path = Path(directory)
+
+    if not dir_path.is_dir():
+        print(f"Error: Directory '{directory}' not found.")
+        return None, 0
+
+    max_lines = 0
+    file_with_most_lines = None
+
+    # Use iterdir() to get an iterator over the directory contents
+    for path_object in dir_path.iterdir():
+        # Check if the path points to a file
+        if path_object.is_file():
+            try:
+                # Open the file using the Path object and count lines efficiently
+                with path_object.open('r', encoding='utf-8', errors='ignore') as f:
+                    line_count = sum(1 for line in f)
+
+                # Update max_lines and the filename if a new maximum is found
+                if line_count > max_lines:
+                    max_lines = line_count
+                    file_with_most_lines = path_object.name
+
+            except IOError as e:
+                print(f"Could not read file {path_object.name}: {e}")
+
+    return file_with_most_lines, max_lines
+
+def setup_data():
+    """
+    Setup input data lists
+    """
+    tag        = args.tag
+    output_dir = Path(args.output_dir).resolve()
+    log_file = output_dir / 'log.txt'
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if log_file.is_file():
+        try:
+            log_file.unlink()
+            print(f"File '{log_file}' successfully removed.")
+        except OSError as e:
+            # Handle potential permission errors
+            print(f"Error: {e.strerror}")
+
+    # Initialize the logger
+    logger = setup_logging(log_file, logging.DEBUG)
+
+    # Print Logs
+    logger.info('#'*40)
+    logger.info(f'LOGGING: {datetime.datetime.now()}')
+    logger.info(f'tag: {tag}')
+    logger.info(f'Output Directory: {output_dir}')
+    logger.info(f'Log File: {log_file}')
+    logger.info('#'*40)
+
+    run3auau_time_min_5 = output_dir / 'run3auau-time-min-5.list'
+    current_runs = get_line_count(run3auau_time_min_5)
+
+    # Get list of all runnumbers
+    # Type = physics
+    # Duration >= 5 minutes
+    command = 'psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runtype = \'physics\' and runnumber >= 66457 and ertimestamp-brtimestamp > interval \'5 minutes\' order by runnumber;" -At > run3auau-time-min-5.list'
+    run_command_and_log(command, logger, output_dir, False)
+
+    new_runs = get_line_count(run3auau_time_min_5)
+    diff_runs_frac = (new_runs-current_runs)*100/current_runs if current_runs != 0 else 0
+
+    logger.info(f'Runs: Before: {current_runs}, After: {new_runs}, Change: {diff_runs_frac:.2f} %')
+    logger.info(f'Path: {run3auau_time_min_5}')
+
+    # Generate list of DST_CALOFITTING from the above run list
+    dst_dir = output_dir / f'run3auau-{tag}'
+
+    if dst_dir.is_dir():
+        try:
+            shutil.rmtree(dst_dir)
+            logger.info(f"Directory '{dst_dir}' successfully deleted.")
+        except OSError as e:
+            logger.critical(f"Error: {dst_dir} : {e.strerror}")
+            sys.exit()
+
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING'
+    run_command_and_log(command, logger, dst_dir)
+
+    # Write list of runs with DST_CALOFITTING to file
+    run3auau_dsts_time_min_5 = output_dir / f'run3auau-{tag}-time-min-5.list'
+
+    current_runs_dsts = get_line_count(run3auau_dsts_time_min_5)
+
+    command = f'ls run3auau-{tag} | cut -d- -f2 | cut -d. -f1 | awk \'{{x=$0+0;print x}}\' | sort | uniq > run3auau-{tag}-time-min-5.list'
+    run_command_and_log(command, logger, output_dir, False)
+
+    new_runs_dsts = get_line_count(run3auau_dsts_time_min_5)
+    diff_runs_frac = (new_runs_dsts-current_runs_dsts)*100/current_runs_dsts if current_runs_dsts != 0 else 0
+
+    logger.info(f'Runs: Before: {current_runs_dsts}, After: {new_runs_dsts}, Change: {diff_runs_frac:.2f} %')
+    logger.info(f'Path: {run3auau_dsts_time_min_5}')
+
+    # Compile the List of Lists of DST_CALOFITTING
+    command = f'readlink -f run3auau-{tag}/* > run3auau-{tag}.list'
+    run_command_and_log(command, logger, output_dir, False)
+
+    biggest_run, segments = find_file_with_most_lines(dst_dir)
+    logger.info(f'Biggest Run: {biggest_run}, Segments: {segments}')
+
+    # Compile the List of Lists of DST_CALOFITTING for testing
+    command = f'readlink -f {dst_dir / biggest_run} > run3auau-{tag}-test.list'
+    run_command_and_log(command, logger, output_dir, False)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -393,3 +552,6 @@ if __name__ == "__main__":
 
     if args.command == 'hadd':
         hadd_jobs()
+
+    if args.command == 'data':
+        setup_data()
