@@ -149,7 +149,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 
       
       
-      for(int i=0; i<3; ++i)
+      for(int i=0; i<ntrig; ++i)
 	{
 	  int trigger = trigs[i];
 	  if(avgPS[trigger] > 0 && !isnan(avgPS[trigger]) && !isnan(avgPS[10]) && !isnan((tottrigcounts[zsel][10])) && !isinf(avgPS[10]) && !isinf(avgPS[trigger]) && !isinf((tottrigcounts[zsel][10])) && avgPS[10] > 0)
