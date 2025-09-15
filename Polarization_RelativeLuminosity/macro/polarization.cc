@@ -10,12 +10,24 @@ const int kBunch_num_max = 120;
 // It writes, for example,
 //     <Pb> = 50%
 // on the canvas
-void WriteAveragePolarization( double value, string beam, double pos_x, double pos_y, int digits=3 )
+void WriteAveragePolarization( double value, string beam, double pos_x, double pos_y, int digits=2 )
 {
   TLatex* tex = new TLatex();
-  tex->SetTextSize( 0.03 );
+  tex->SetTextSize( 0.04 );
   stringstream ss;
   ss << "#LTP_{" << beam << "}#GT = " << setprecision( digits ) << value << "%";
+
+  tex->DrawLatexNDC( pos_x, pos_y, ss.str().c_str() );
+  delete tex;
+}
+
+void WriteAdditionalMessage( double pos_x, double pos_y )
+{
+  TLatex* tex = new TLatex();
+  tex->SetTextSize( 0.04 );
+  stringstream ss;
+  ss << "Preliminary RHIC Polarimetry Group Results";
+  //ss << "Preliminary CNI Polarimetry Group Results";
 
   tex->DrawLatexNDC( pos_x, pos_y, ss.str().c_str() );
   delete tex;
@@ -187,17 +199,10 @@ int polarization()
     lumi_y = lumi_pos_y + lumi_nega_y;
 
     luminosity_sum += lumi_b;
-    if( pol_b[0] > 30 )
-    {
-      hist_pol_b->Fill(pol_b[0]);
-      hist_weighted_pol_b->Fill(pol_b[0], lumi_b);
-    }
-
-    if( pol_y[0] > 30 )
-    {
-      hist_pol_y->Fill(pol_y[0]);
-      hist_weighted_pol_y->Fill(pol_y[0], lumi_y);
-    }
+    hist_pol_b->Fill(pol_b[0]);
+    hist_weighted_pol_b->Fill(pol_b[0], lumi_b);
+    hist_pol_y->Fill(pol_y[0]);
+    hist_weighted_pol_y->Fill(pol_y[0], lumi_y);
 
   }
 
@@ -212,28 +217,19 @@ int polarization()
   c->SetFillStyle( 0 );
   gPad->SetFrameFillStyle( 0 );
 
-  hist_weighted_pol_b->GetXaxis()->SetRangeUser(30, 65);
+  hist_weighted_pol_b->GetXaxis()->SetRangeUser(35, 65);
   hist_weighted_pol_b->GetXaxis()->SetLabelOffset( 0.0125 );
   hist_weighted_pol_b->GetXaxis()->CenterTitle();
   hist_weighted_pol_b->GetYaxis()->SetTitleOffset( 1.5 );
   hist_weighted_pol_b->GetYaxis()->CenterTitle();
+  hist_weighted_pol_b->GetYaxis()->SetRangeUser( 0, 0.25 );
 
-  TLegend* leg = new TLegend( 0.2, 0.7, 0.4, 0.8 );
-  leg->SetTextSize( 0.04 );
-  leg->SetBorderSize( 0 );
-  leg->SetFillStyle( 0 );
-  leg->AddEntry( hist_weighted_pol_b, "Blue beam", "l" );
-  leg->AddEntry( hist_weighted_pol_y, "Yellow beam", "l" );
-  
+
   for( int mode=0; mode<3; mode++ ) // loop over modes: preliminary, internal, work in progress
   {
     // polarization with luminosity weight
     hist_weighted_pol_b->Draw("HIST");
     hist_weighted_pol_y->Draw("HIST same");
-
-    WriteDate();
-    WritesPhenix( mode );
-    WriteRunCondition( 0.2, 0.875);
 
     string output_pdf = output_base;
     if( mode == 0 )
@@ -243,10 +239,31 @@ int polarization()
     else if( mode == 2 )
       output_pdf += "_wip.pdf";
 
-    int digits = 3;
-    WriteAveragePolarization( hist_weighted_pol_b->GetMean(), "b", 0.2, 0.67, digits );
-    WriteAveragePolarization( hist_weighted_pol_y->GetMean(), "y", 0.2, 0.62, digits );
+    int digits = 2;
+    WriteDate();
+    WritesPhenix( mode );
+    double dy = 0.05, y = 0.89 + dy;
+        
+    y -= dy;
+    WriteRunCondition( 0.2, y); // p+p 2024 sqrt{s} = 200 GeV
 
+    y -= dy;//*1.25;
+    WriteAdditionalMessage( 0.2, y); // Preliminary RHIC Polarimetry Group Results
+
+    y -= dy/2/2;
+    TLegend* leg = new TLegend( 0.2, y-0.1, 0.4, y );
+    leg->SetTextSize( 0.04 );
+    leg->SetBorderSize( 0 );
+    leg->SetFillStyle( 0 );
+    leg->AddEntry( hist_weighted_pol_b, "Blue beam", "l" );
+    leg->AddEntry( hist_weighted_pol_y, "Yellow beam", "l" );
+
+    y -= dy*2.75;
+    WriteAveragePolarization( hist_weighted_pol_b->GetMean(), "b", 0.2, y, digits );
+
+    y -= dy;
+    WriteAveragePolarization( hist_weighted_pol_y->GetMean(), "y", 0.2, y, digits );
+  
     leg->Draw();
     c->Print( output_pdf.c_str() );
   }
