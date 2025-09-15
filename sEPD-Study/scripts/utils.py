@@ -12,6 +12,7 @@ import shutil
 import logging
 from pathlib import Path
 import math
+import textwrap
 
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
@@ -306,11 +307,6 @@ hadd.add_argument('-s'
                     , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
 
 hadd.add_argument('-l'
-                    , '--log-file', type=str
-                    , default='log.txt'
-                    , help='Log File. Default: log.txt')
-
-hadd.add_argument('-l2'
                     , '--condor-log-dir', type=str
                     , default='/tmp/anarde/dump'
                     , help='Condor Log Directory. Default: /tmp/anarde/dump')
@@ -324,26 +320,26 @@ def hadd_jobs():
     """
     hadd condor jobs
     """
-    input_dir     = os.path.realpath(args.input_dir)
-    output_dir     = os.path.realpath(args.output_dir)
+    input_dir     = Path(args.input_dir).resolve()
+    output_dir     = Path(args.output_dir).resolve()
     hadd_max       = args.hadd_max
-    log_file       = os.path.join(output_dir, args.log_file)
+    log_file       = output_dir / 'log.txt'
     condor_memory  = args.memory
-    condor_script  = os.path.realpath(args.condor_script)
-    condor_log_dir = os.path.realpath(args.condor_log_dir)
+    condor_script  = Path(args.condor_script).resolve()
+    condor_log_dir = Path(args.condor_log_dir).resolve()
 
     # Create Dirs
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that paths exists
-    if not os.path.isdir(input_dir):
+    if not input_dir.is_dir():
         logger.critical(f'Dir: {input_dir} does not exist!')
         sys.exit()
 
-    if not os.path.isfile(condor_script):
+    if not condor_script.is_file():
         logger.critical(f'File: {condor_script} does not exist!')
         sys.exit()
 
@@ -358,29 +354,35 @@ def hadd_jobs():
     logger.info(f'Condor Script: {condor_script}')
     logger.info(f'Condor Log Directory: {condor_log_dir}')
 
-    # Setup Condor Log Dir
-    os.makedirs(condor_log_dir, exist_ok=True)
-
-    if os.path.exists(condor_log_dir):
+    if condor_log_dir.is_dir():
         shutil.rmtree(condor_log_dir)
-        os.makedirs(condor_log_dir, exist_ok=True)
 
-    os.makedirs(f'{output_dir}/output', exist_ok=True)
-    os.makedirs(f'{output_dir}/stdout', exist_ok=True)
-    os.makedirs(f'{output_dir}/error', exist_ok=True)
+    # Setup Condor Log Dir
+    condor_log_dir.mkdir(parents=True, exist_ok=True)
+
+    # list of subdirectories to create
+    subdirectories = ['stdout', 'error', 'output']
+
+    # Loop through the list and create each one
+    for subdir in subdirectories:
+        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
 
     shutil.copy(condor_script, output_dir)
 
     command = f'readlink -f {input_dir}/* > jobs.list'
     run_command_and_log(command, logger, output_dir, False)
 
-    with open(os.path.join(output_dir,'genHadd.sub'), mode='w', encoding='utf-8') as file:
-        file.write(f'executable    = {os.path.basename(condor_script)}\n')
-        file.write(f'arguments     = $(input_dir) {hadd_max} {output_dir}/output\n')
-        file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
-        file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
-        file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
-        file.write(f'request_memory = {condor_memory}GB\n')
+    submit_file_content = textwrap.dedent(f"""\
+        executable     = {os.path.basename(condor_script)}
+        arguments      = $(input_dir) {hadd_max} {output_dir}/output
+        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+        output         = stdout/job-$(ClusterId)-$(Process).out
+        error          = error/job-$(ClusterId)-$(Process).err
+        request_memory = {condor_memory}GB
+    """)
+
+    with open(output_dir / 'genHadd.sub', mode='w', encoding='utf-8') as file:
+        file.write(submit_file_content)
 
     command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from jobs.list"'
     logger.info(command)
