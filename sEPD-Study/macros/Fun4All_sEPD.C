@@ -35,6 +35,9 @@
 
 #include <CDBUtils.C>
 
+#include "Calo_Calib.C"
+#include "HIJetReco.C"
+
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &fname,
@@ -133,6 +136,12 @@ void Fun4All_sEPD(const std::string &fname,
     epreco->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
     se->registerSubsystem(epreco.release());
   }
+
+  // Calibrate Towers
+  Process_Calo_Calib();
+
+  // Jet Reco
+  HIJetReco();
 
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();

@@ -37,8 +37,9 @@ link_directories(
 # Define Library Linkages
 # ====================================================================
 set(SPHENIX_LIBS
-    calo_io fun4all calotrigger centrality ffamodules mbd epd
+    calo_io calo_reco fun4all calotrigger centrality ffamodules mbd epd
     eventplaneinfo zdcinfo globalvertex phool phparameter sphenixnpc cdbobjects
+    jetbackground g4jets jetbase particleflow
 )
 set(MY_LIBS sEPDValidation)
 
