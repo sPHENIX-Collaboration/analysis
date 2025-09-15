@@ -8,21 +8,21 @@
 
 // -- c++
 #include <cstdint>  // Required for std::uint8_t, std::uint16_t, etc.
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <filesystem>
 
 // -- ROOT
+#include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
-#include <TProfile2D.h>
 #include <TMath.h>
+#include <TProfile2D.h>
 #include <TTree.h>
-#include <TFile.h>
 
 class PHCompositeNode;
 
@@ -64,6 +64,7 @@ class sEPDValidation : public SubsysReco
   int process_EventPlane(PHCompositeNode *topNode);
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
   int process_centrality(PHCompositeNode *topNode);
+  int process_jets(PHCompositeNode *topNode);
 
   int m_event{0};
 
@@ -79,6 +80,7 @@ class sEPDValidation : public SubsysReco
     double m_zvtx_high{50};
 
     unsigned int m_bins_cent{100};
+    unsigned int m_bins_cent_reduced{10};
     double m_cent_low{-0.5};
     double m_cent_high{99.5};
 
@@ -121,6 +123,26 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_sepd_rbin{16};
     double m_sepd_rbin_low{-0.5};
     double m_sepd_rbin_high{15.5};
+
+    unsigned int m_bins_jet_pt{100};
+    double m_jet_pt_low{0};
+    double m_jet_pt_high{100};
+
+    unsigned int m_bins_jet_eta{24};
+    double m_jet_eta_low{-1};
+    double m_jet_eta_high{1};
+
+    unsigned int m_bins_jet_phi{64};
+    double m_jet_phi_low{-M_PI};
+    double m_jet_phi_high{M_PI};
+
+    unsigned int m_bins_jet_constituents{100};
+    double m_jet_constituents_low{0};
+    double m_jet_constituents_high{100};
+
+    unsigned int m_bins_jet_nEvent{20};
+    double m_jet_nEvent_low{0};
+    double m_jet_nEvent_high{20};
   };
 
   HistConfig m_hist_config;
@@ -228,6 +250,16 @@ class sEPDValidation : public SubsysReco
     double m_sepd_total_charge_north_max{0};
     double m_psi_min{9999};
     double m_psi_max{0};
+    double m_jet_pt_min{9999};
+    double m_jet_pt_max{0};
+    double m_jet_phi_min{9999};
+    double m_jet_phi_max{0};
+    double m_jet_eta_min{9999};
+    double m_jet_eta_max{0};
+    double m_jet_constituents_min{9999};
+    double m_jet_constituents_max{0};
+    int m_jet_nEvent_min{9999};
+    int m_jet_nEvent_max{0};
   };
 
   LoggingInfo m_logging;
@@ -259,10 +291,17 @@ class sEPDValidation : public SubsysReco
     std::vector<double> mbd_charge;
     std::vector<double> mbd_phi;
     std::vector<double> mbd_eta;
+    std::vector<double> jet_pt;
+    std::vector<double> jet_phi;
+    std::vector<double> jet_eta;
   };
 
   EventData m_data;
 
   std::unique_ptr<TFile> m_output;
-  TTree* m_tree{nullptr};
+  TTree *m_tree{nullptr};
+
+  std::string m_recoJetName{"AntiKt_Tower_r02_Sub1"};
+  double m_jet_pt_min_cut{7};     // GeV
+  double m_jet_eta_max_cut{0.9};  // 1.1-R
 };
