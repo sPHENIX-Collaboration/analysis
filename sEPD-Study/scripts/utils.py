@@ -459,6 +459,37 @@ def find_file_with_most_lines(directory: str):
 
     return file_with_most_lines, max_lines
 
+def count_total_lines(directory_path: str) -> int:
+    """
+    Counts the total number of lines across all files in a given directory.
+
+    Args:
+        directory_path: The path to the directory as a string.
+
+    Returns:
+        The total number of lines, or 0 if the directory does not exist.
+    """
+    path_obj = Path(directory_path)
+
+    if not path_obj.is_dir():
+        print(f"Error: Directory '{directory_path}' not found.")
+        return 0
+
+    total_lines = 0
+
+    # Iterate through all items in the directory
+    for item in path_obj.iterdir():
+        # Check if the item is a regular file
+        if item.is_file():
+            try:
+                # Open the file using the Path object and count lines efficiently
+                with item.open('r', encoding='utf-8', errors='ignore') as f:
+                    total_lines += sum(1 for line in f)
+            except IOError as e:
+                print(f"Could not read file {item.name}: {e}")
+
+    return total_lines
+
 def setup_data():
     """
     Setup input data lists
@@ -508,6 +539,7 @@ def setup_data():
 
     if dst_dir.is_dir():
         try:
+            current_segments = count_total_lines(dst_dir)
             shutil.rmtree(dst_dir)
             logger.info(f"Directory '{dst_dir}' successfully deleted.")
         except OSError as e:
@@ -518,6 +550,10 @@ def setup_data():
 
     command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING'
     run_command_and_log(command, logger, dst_dir)
+
+    new_segments = count_total_lines(dst_dir)
+    diff_segments_frac = (new_segments-current_segments)*100/current_segments if current_segments != 0 else 0
+    logger.info(f'Total Segments: Before: {current_segments}, After: {new_segments}, Change: {diff_segments_frac:.2f} %')
 
     # Write list of runs with DST_CALOFITTING to file
     run3auau_dsts_time_min_5 = output_dir / f'run3auau-{tag}-time-min-5.list'
