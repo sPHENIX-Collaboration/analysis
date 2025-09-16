@@ -197,6 +197,7 @@ class sEPDValidation : public SubsysReco
   double m_zvtx{9999};
   double m_cent{9999};
   double m_mbd_total_charge{9999};
+  int m_hasBeamBackground{0};
 
   // Cuts
   struct EventCuts

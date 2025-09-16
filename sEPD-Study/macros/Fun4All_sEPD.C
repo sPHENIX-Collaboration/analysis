@@ -35,6 +35,8 @@
 
 #include <CDBUtils.C>
 
+#include <jetbackground/BeamBackgroundFilterAndQA.h>
+
 #include "Calo_Calib.C"
 #include "HIJetReco.C"
 
@@ -142,6 +144,16 @@ void Fun4All_sEPD(const std::string &fname,
 
   // Jet Reco
   HIJetReco();
+
+  std::unique_ptr<BeamBackgroundFilterAndQA> filter = std::make_unique<BeamBackgroundFilterAndQA>("BeamBackgroundFilterAndQA");
+  filter->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  filter->SetConfig({.debug = false,
+                     .doQA = false,
+                     .doEvtAbort = false,
+                     .filtersToApply = {"StreakSideband"},
+                     .null = {},
+                     .sideband = {}});
+  se->registerSubsystem(filter.release());
 
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();

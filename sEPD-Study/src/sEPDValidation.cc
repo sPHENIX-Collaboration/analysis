@@ -97,6 +97,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH1, "hVtxZ", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
       {HistDef::Type::TH1, "hVtxZ_MB", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
       {HistDef::Type::TH1, "hCentrality", "Centrality; Centrality [%]; Events", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH1, "hBeamBkg", "Beam Background (Streaks): |z| < 10 cm and MB; Centrality [%]; Events", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
       // Charge
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -120,6 +121,12 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH3, "h3Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta; Centrality [%]", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile, "hJet_nEvent", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+
+      // Without Beam Background
+      {HistDef::Type::TH3, "h3Jet_pT_Constituentsv2", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH3, "h3Jet_pT_Phiv2", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH3, "h3Jet_PhiEtav2", "Jet: |z| < 10 cm and MB; #phi; #eta; Centrality [%]", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TProfile, "hJet_nEventv2", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
   };
 
   // Official
@@ -213,6 +220,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
+  // Minimum Bias Check
   PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb)
   {
@@ -226,6 +234,18 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   bool minbias_side_hit_low = pdb_params.get_int_param("minbias_two_hit_min_fail");
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
+
+  // Beam Background Check
+  PdbParameterMap *pdb_bkg = getNode<PdbParameterMap>(topNode, "HasBeamBackground");
+  if (!pdb_bkg)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params_bkg("HasBeamBackground");
+  pdb_params_bkg.FillFrom(pdb_bkg);
+
+  m_hasBeamBackground = pdb_params_bkg.get_int_param("HasBeamBackground");
 
   if (fabs(m_zvtx) < m_cuts.m_zvtx_max)
   {
@@ -695,6 +715,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   }
 
   int n_jets = 0;
+  int n_jetsv2 = 0;
 
   for (auto jet : *jets)
   {
@@ -720,13 +741,31 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Phi"].get())->Fill(pt, phi, m_cent);
       dynamic_cast<TH3 *>(m_hists["h3Jet_PhiEta"].get())->Fill(phi, eta, m_cent);
 
+      // ensure no background exists
+      if (!m_hasBeamBackground)
+      {
+        dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Constituentsv2"].get())->Fill(pt, constituents, m_cent);
+        dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Phiv2"].get())->Fill(pt, phi, m_cent);
+        dynamic_cast<TH3 *>(m_hists["h3Jet_PhiEtav2"].get())->Fill(phi, eta, m_cent);
+        ++n_jetsv2;
+      }
+
       ++n_jets;
     }
   }
 
   dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
+  dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
 
   JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
+
+  // skip event if it contains beam background
+  if (m_hasBeamBackground)
+  {
+    ++m_ctr["process_eventCheck_beamBkg"];
+    m_hists["hBeamBkg"]->Fill(m_cent);
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -762,6 +801,12 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  ret = process_jets(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
   ret = process_MBD(topNode);
   if (ret)
   {
@@ -781,12 +826,6 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     {
       return ret;
     }
-  }
-
-  ret = process_jets(topNode);
-  if (ret)
-  {
-    return ret;
   }
 
   // Fill the TTree
@@ -884,6 +923,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
+  std::cout << std::format("process event, hasBeamBackground: {}", m_ctr["process_eventCheck_beamBkg"]) << std::endl;
   if (m_do_ep)
   {
     std::cout << std::format("process Event Plane, Q vec mag zero: {}", m_ctr["process_EventPlane_Q_mag_zero"]) << std::endl;
@@ -939,6 +979,12 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3Jet_pT_Constituents", "yx");
     project_and_write("h3Jet_pT_Phi", "yx");
     project_and_write("h3Jet_PhiEta", "yx");
+
+    // Without Beam Background
+    project_and_write("h3Jet_pT_Constituentsv2", "x");
+    project_and_write("h3Jet_pT_Constituentsv2", "yx");
+    project_and_write("h3Jet_pT_Phiv2", "yx");
+    project_and_write("h3Jet_PhiEtav2", "yx");
 
     // Official
     if (m_do_ep)
