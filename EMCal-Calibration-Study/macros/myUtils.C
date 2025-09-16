@@ -13,6 +13,7 @@
 #include <TFitResultPtr.h>
 #include <TFitResult.h>
 #include <TChain.h>
+#include <TFile.h>
 
 using std::cout;
 using std::endl;

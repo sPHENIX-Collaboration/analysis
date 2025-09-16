@@ -71,6 +71,14 @@ target_link_libraries(Fun4All_EMCal PRIVATE
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- display ---
+add_executable(displayv2 macros/displayv2.C)
+target_link_libraries(displayv2 PRIVATE ${STANDALONE_MACRO_LIBS})
+
+# --- genDefaultCalib ---
+add_executable(genDefaultCalib macros/genDefaultCalib.C)
+target_link_libraries(genDefaultCalib PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- doTscFit ---
 add_executable(doTscFit macros/doTscFit.C)
 target_link_libraries(doTscFit PRIVATE ${STANDALONE_MACRO_LIBS})
