@@ -20,6 +20,7 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"Centrality Vertex Scale Default", "CentralityVertexScale_default"},
       {"MBD QFIT", "MBD_QFIT"},
       {"MBD QFIT Default", "MBD_QFIT_default"},
+      {"EMCal Calib Default", "CEMC_calib_ADC_to_ETower_default"},
       {"EMCal Bad Tower Map", "CEMC_BadTowerMap"},
       {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"}};
 
