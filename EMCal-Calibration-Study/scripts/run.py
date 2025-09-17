@@ -288,8 +288,8 @@ def main():
         while True:
             jobs = int(subprocess.run(['bash','-c','ls output | wc -l'], capture_output=True, encoding='utf-8', cwd=iter_dir, check=False).stdout.strip())
 
-            if jobs == total_jobs:
-                logger.info(f'Iter: {it}, All Jobs Finished: {datetime.datetime.now()}')
+            if jobs == total_jobs or (total_jobs >= 100 and abs(total_jobs - jobs) <= 5):
+                logger.info(f'Iter: {it}, Most Jobs Finished: {datetime.datetime.now()}')
                 break
 
             logger.info(f'Checking Condor Output Status: {datetime.datetime.now()}, Jobs: {jobs} out of {total_jobs}, {jobs * 100 / total_jobs:0.2f} %')
