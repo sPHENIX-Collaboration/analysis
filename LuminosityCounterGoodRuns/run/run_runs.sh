@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nmax=15000
+nmax=150000
 filecounter=0
 echo `pwd`
 LISTDIR=lists
