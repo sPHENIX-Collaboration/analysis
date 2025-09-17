@@ -68,15 +68,14 @@ class Displayv2
   bool m_debug{false};
 
   const std::string m_calib_default{"/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_calib_ADC_to_ETower_default/da/74/da74db11788df02ed879fa373c50c66c_EMCAL_ADC_to_Etower_2025_initial_v3.root"};
-  // const std::string m_calib_new{"output/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839.root"};
-  // DEBUG
-  const std::string m_calib_new{"calib-73839/test-iter-4/local_calib_copy_iter4.root"};
+  const std::string m_calib_new{"output/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839.root"};
   const std::string m_fieldname{"CEMC_calib_ADC_to_ETower"};
 
   const std::string m_hist_default{"output/test-2025.root"};
-  // const std::string m_hist_new{"output/test-73839.root"};
-  // DEBUG
-  const std::string m_hist_new{"calib-73839/test-iter-4/test-iter4.root"};
+  const std::string m_hist_new{"output/test-73839.root"};
+
+  const std::string m_fitout_default{"output/fitout-66580.root"};
+  const std::string m_fitout_new{"output/fitout-73839.root"};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -95,6 +94,9 @@ void Displayv2::read_hists()
   auto file_default = std::unique_ptr<TFile>(TFile::Open(m_hist_default.c_str()));
   auto file_new = std::unique_ptr<TFile>(TFile::Open(m_hist_new.c_str()));
 
+  auto fitout_default = std::unique_ptr<TFile>(TFile::Open(m_fitout_default.c_str()));
+  auto fitout_new = std::unique_ptr<TFile>(TFile::Open(m_fitout_new.c_str()));
+
   // Check if the file was opened successfully.
   if (!file_default || file_default->IsZombie())
   {
@@ -108,8 +110,24 @@ void Displayv2::read_hists()
     return;
   }
 
+  if (!fitout_default || fitout_default->IsZombie())
+  {
+    std::cout << std::format("Error: Could not open file '{}'\n", m_fitout_default);
+    return;
+  }
+
+  if (!fitout_new || fitout_new->IsZombie())
+  {
+    std::cout << std::format("Error: Could not open file '{}'\n", m_fitout_new);
+    return;
+  }
+
   m_hists["hInvMass_default"] = std::unique_ptr<TH1>(static_cast<TH1*>(file_default->Get("h_InvMass")->Clone("hInvMass_default")));
   m_hists["hInvMass_new"] = std::unique_ptr<TH1>(static_cast<TH1*>(file_new->Get("h_InvMass")->Clone("hInvMass_new")));
+  m_hists["hSigma_default"] = std::unique_ptr<TH1>(static_cast<TH1*>(fitout_default->Get("h_sigma_eta")->Clone("hSigma_default")));
+  m_hists["hSigma_new"] = std::unique_ptr<TH1>(static_cast<TH1*>(fitout_new->Get("h_sigma_eta")->Clone("hSigma_new")));
+  m_hists["hPeak_default"] = std::unique_ptr<TH1>(static_cast<TH1*>(fitout_default->Get("h_peak_eta")->Clone("hPeak_default")));
+  m_hists["hPeak_new"] = std::unique_ptr<TH1>(static_cast<TH1*>(fitout_new->Get("h_peak_eta")->Clone("hPeak_new")));
 }
 
 void Displayv2::init_hists()
@@ -303,8 +321,119 @@ void Displayv2::draw()
 
   // --------------------------------------------
 
-  c1->SetLeftMargin(.12f);
+  c1->SetTopMargin(.02f);
+
   gPad->SetLogy(0);
+
+  m_hists["hSigma_default"]->Draw();
+  m_hists["hSigma_new"]->Draw("same");
+
+  m_hists["hSigma_default"]->SetLineColor(kBlue);
+  m_hists["hSigma_new"]->SetLineColor(kRed);
+
+  m_hists["hSigma_default"]->SetMarkerColor(kBlue);
+  m_hists["hSigma_new"]->SetMarkerColor(kRed);
+
+  m_hists["hSigma_default"]->SetMarkerStyle(kFullDotLarge);
+  m_hists["hSigma_new"]->SetMarkerStyle(kFullDotLarge);
+
+  m_hists["hSigma_default"]->GetYaxis()->SetTitle("#sigma [GeV]");
+  m_hists["hSigma_default"]->GetYaxis()->SetTitleSize(0.06f);
+  m_hists["hSigma_default"]->GetYaxis()->SetTitleOffset(0.8f);
+
+  m_hists["hSigma_default"]->GetXaxis()->SetTitle("Tower Index #eta");
+
+  xshift = 0.5;
+  yshift = 0;
+
+  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.06f);
+  leg->AddEntry(m_hists["hSigma_default"].get(), "Default", "l");
+  leg->AddEntry(m_hists["hSigma_new"].get(), "New", "l");
+  leg->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSigma-overlay").c_str());
+
+  // --------------------------------------------
+
+  m_hists["hSigma_new"]->Draw();
+
+  m_hists["hSigma_new"]->Divide(m_hists["hSigma_default"].get());
+
+  m_hists["hSigma_new"]->GetYaxis()->SetTitle("Ratio #sigma: New / Default");
+  m_hists["hSigma_new"]->GetXaxis()->SetTitle("Tower Index #eta");
+  m_hists["hSigma_new"]->GetYaxis()->SetTitleSize(0.06f);
+  m_hists["hSigma_new"]->GetYaxis()->SetTitleOffset(0.8f);
+  m_hists["hSigma_new"]->GetYaxis()->SetRangeUser(0.4,1.2);
+
+  auto tf1 = std::make_unique<TF1>("fa1", "1", 0, 95);
+
+  tf1->Draw("same");
+  tf1->SetLineColor(kBlue);
+  tf1->SetLineWidth(3);
+  tf1->SetLineStyle(kDashed);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSigma-ratio").c_str());
+
+  // --------------------------------------------
+
+  c1->SetLeftMargin(.13f);
+
+  m_hists["hPeak_default"]->Draw();
+  m_hists["hPeak_new"]->Draw("same");
+
+  m_hists["hPeak_default"]->SetLineColor(kBlue);
+  m_hists["hPeak_new"]->SetLineColor(kRed);
+
+  m_hists["hPeak_default"]->SetMarkerColor(kBlue);
+  m_hists["hPeak_new"]->SetMarkerColor(kRed);
+
+  m_hists["hPeak_default"]->SetMarkerStyle(kFullDotLarge);
+  m_hists["hPeak_new"]->SetMarkerStyle(kFullDotLarge);
+
+  m_hists["hPeak_default"]->GetYaxis()->SetTitle("m_{#gamma#gamma} [GeV]");
+  m_hists["hPeak_default"]->GetYaxis()->SetTitleSize(0.06f);
+  m_hists["hPeak_default"]->GetYaxis()->SetTitleOffset(1.f);
+  m_hists["hPeak_default"]->GetYaxis()->SetRangeUser(0.144, 0.156);
+
+  m_hists["hPeak_default"]->GetXaxis()->SetTitle("Tower Index #eta");
+
+  xshift = 0.5;
+  yshift = -0.5;
+
+  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.06f);
+  leg->AddEntry(m_hists["hPeak_default"].get(), "Default", "l");
+  leg->AddEntry(m_hists["hPeak_new"].get(), "New", "l");
+  leg->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  c1->Print(std::format("{}/images/{}.png", m_output_dir, "hPeak-overlay").c_str());
+
+  // --------------------------------------------
+
+  m_hists["hPeak_new"]->Draw();
+
+  m_hists["hPeak_new"]->Divide(m_hists["hPeak_default"].get());
+
+  m_hists["hPeak_new"]->GetYaxis()->SetTitle("Ratio m_{#gamma#gamma}: New / Default");
+  m_hists["hPeak_new"]->GetXaxis()->SetTitle("Tower Index #eta");
+  m_hists["hPeak_new"]->GetYaxis()->SetTitleSize(0.06f);
+  m_hists["hPeak_new"]->GetYaxis()->SetTitleOffset(1.f);
+  m_hists["hPeak_new"]->GetYaxis()->SetRangeUser(0.99,1.01);
+
+  tf1->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  c1->Print(std::format("{}/images/{}.png", m_output_dir, "hPeak-ratio").c_str());
+
+  // --------------------------------------------
+
+  c1->SetLeftMargin(.12f);
 
   int end_bin = m_hists["hInvMass_default"]->FindBin(0.5)-1;
 
@@ -323,15 +452,19 @@ void Displayv2::draw()
   m_hists["hInvMass_default"]->SetLineWidth(3);
   m_hists["hInvMass_new"]->SetLineWidth(3);
 
+  m_hists["hInvMass_default"]->SetTitle("");
   m_hists["hInvMass_default"]->GetYaxis()->SetTitle("Normalized Counts");
   m_hists["hInvMass_default"]->GetXaxis()->SetTitle("m_{#gamma#gamma} [GeV]");
 
-  auto leg2 = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
-  leg2->SetFillStyle(0);
-  leg2->SetTextSize(0.06f);
-  leg2->AddEntry(m_hists["hInvMass_default"].get(), "Default", "l");
-  leg2->AddEntry(m_hists["hInvMass_new"].get(), "New", "l");
-  leg2->Draw("same");
+  xshift = 0.5;
+  yshift = 0;
+
+  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.06f);
+  leg->AddEntry(m_hists["hInvMass_default"].get(), "Default", "l");
+  leg->AddEntry(m_hists["hInvMass_new"].get(), "New", "l");
+  leg->Draw("same");
 
   c1->Print(output.c_str(), "pdf portrait");
   c1->Print(std::format("{}/images/{}.png", m_output_dir, "hInvMass-overlay").c_str());
@@ -345,8 +478,9 @@ void Displayv2::draw()
 
   m_hists["hCalib_corr"]->Draw("COLZ1");
   m_hists["hCalib_corr"]->GetYaxis()->SetTitleOffset(1.f);
+  m_hists["hCalib_corr"]->SetTitle("");
 
-  auto tf1 = std::make_unique<TF1>("fa1", "x", 0, 10);
+  tf1 = std::make_unique<TF1>("fa1", "x", 0, 10);
 
   tf1->Draw("same");
   tf1->SetLineColor(kRed);
