@@ -79,6 +79,10 @@ target_link_libraries(displayv2 PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(genDefaultCalib macros/genDefaultCalib.C)
 target_link_libraries(genDefaultCalib PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- FillGaps ---
+add_executable(fillGaps macros/fillGaps.C)
+target_link_libraries(fillGaps PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- doTscFit ---
 add_executable(doTscFit macros/doTscFit.C)
 target_link_libraries(doTscFit PRIVATE ${STANDALONE_MACRO_LIBS})
