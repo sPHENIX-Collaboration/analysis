@@ -68,14 +68,14 @@ class Displayv2
   bool m_debug{false};
 
   const std::string m_calib_default{"/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_calib_ADC_to_ETower_default/da/74/da74db11788df02ed879fa373c50c66c_EMCAL_ADC_to_Etower_2025_initial_v3.root"};
-  const std::string m_calib_new{"output/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839.root"};
+  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
   const std::string m_fieldname{"CEMC_calib_ADC_to_ETower"};
 
-  const std::string m_hist_default{"output/test-2025.root"};
-  const std::string m_hist_new{"output/test-73839.root"};
+  const std::string m_hist_default{"output/QA/test-2025.root"};
+  const std::string m_hist_new{"output/QA/test-73839.root"};
 
-  const std::string m_fitout_default{"output/fitout-66580.root"};
-  const std::string m_fitout_new{"output/fitout-73839.root"};
+  const std::string m_fitout_default{"output/QA/fitout-66580.root"};
+  const std::string m_fitout_new{"output/QA/fitout-73839.root"};
 
   // --- Private Helper Methods ---
   void read_hists();
