@@ -143,6 +143,10 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_jet_nEvent{20};
     double m_jet_nEvent_low{0};
     double m_jet_nEvent_high{20};
+
+    unsigned int m_bins_frcem{140};
+    double m_frcem_low{-0.2};
+    double m_frcem_high{1.2};
   };
 
   HistConfig m_hist_config;
@@ -179,7 +183,8 @@ class sEPDValidation : public SubsysReco
   {
     ALL,
     ZVTX10,
-    ZVTX10_MB
+    ZVTX10_MB,
+    ZVTX10_MB_JET
   };
 
   enum class MinBiasType : std::uint8_t
@@ -190,14 +195,32 @@ class sEPDValidation : public SubsysReco
     MBD_HIGH
   };
 
-  std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "|z| < 10 cm & MB"};
+  enum class JetBkgType : std::uint8_t
+  {
+    STREAK,
+    LOEM,
+    HIEM,
+    IH
+  };
+
+  std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "|z| < 10 cm & MB", "Has Jet"};
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
+  std::vector<std::string> m_JetBkg_Type{"Streak", "LoEM", "HiEM", "Ih"};
 
   // Event Vars
   double m_zvtx{9999};
   double m_cent{9999};
   double m_mbd_total_charge{9999};
-  int m_hasBeamBackground{0};
+  bool m_hasBeamBackground{0};
+  bool m_failsLoEmJetCut{0};
+  bool m_failsHiEmJetCut{0};
+  bool m_failsIhJetCut{0};
+  bool m_failsAnyJetCut{0};
+  bool m_isDijet{0};
+  double m_frcem{0};
+  double m_frcoh{0};
+  double m_maxJetET{0};
+  double m_dPhi{0};
 
   // Cuts
   struct EventCuts
@@ -261,6 +284,14 @@ class sEPDValidation : public SubsysReco
     double m_jet_constituents_max{0};
     int m_jet_nEvent_min{9999};
     int m_jet_nEvent_max{0};
+    double m_frcem_min{9999};
+    double m_frcem_max{0};
+    double m_frcoh_min{9999};
+    double m_frcoh_max{0};
+    double m_maxJetET_min{9999};
+    double m_maxJetET_max{0};
+    double m_dPhi_min{9999};
+    double m_dPhi_max{0};
   };
 
   LoggingInfo m_logging;

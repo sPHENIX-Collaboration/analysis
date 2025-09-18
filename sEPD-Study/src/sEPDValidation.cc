@@ -94,10 +94,15 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       // Event
       {HistDef::Type::TH1, "hEvent", "Event Type; Type; Events", {static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size())}},
       {HistDef::Type::TH1, "hEventMinBias", "Event Type; Type; Events", {static_cast<unsigned int>(m_MinBias_Type.size()), 0, static_cast<double>(m_MinBias_Type.size())}},
+      {HistDef::Type::TH1, "hEventJetBkg", "Event Type; Type; Events", {static_cast<unsigned int>(m_JetBkg_Type.size()), 0, static_cast<double>(m_JetBkg_Type.size())}},
       {HistDef::Type::TH1, "hVtxZ", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
       {HistDef::Type::TH1, "hVtxZ_MB", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
       {HistDef::Type::TH1, "hCentrality", "Centrality; Centrality [%]; Events", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH1, "hBeamBkg", "Beam Background (Streaks): |z| < 10 cm and MB; Centrality [%]; Events", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH1, "hJetBkg", "Jet Background: |z| < 10 cm and MB; Centrality [%]; Events", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2frcem", "Event: |z| < 10 cm and MB; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]", {m_hist_config.m_bins_frcem, m_hist_config.m_frcem_low, m_hist_config.m_frcem_high}, {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}},
+      {HistDef::Type::TH2, "h2frcemv2", "Event: |z| < 10 cm and MB; Fraction of E_{T,Lead Jet} EMCal; E_{T,Lead Jet} [GeV]", {m_hist_config.m_bins_frcem, m_hist_config.m_frcem_low, m_hist_config.m_frcem_high}, {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}},
+      {HistDef::Type::TH2, "h2frcem_vs_frcoh", "Event: |z| < 10 cm and MB; Fraction of E_{T,Lead Jet} EMCal; Fraction of E_{T,Lead Jet} OHCal", {m_hist_config.m_bins_frcem, m_hist_config.m_frcem_low, m_hist_config.m_frcem_high}, {m_hist_config.m_bins_frcem, m_hist_config.m_frcem_low, m_hist_config.m_frcem_high}},
 
       // Charge
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -149,6 +154,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   for (unsigned int i = 0; i < m_MinBias_Type.size(); ++i)
   {
     m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
+  }
+
+  for (unsigned int i = 0; i < m_JetBkg_Type.size(); ++i)
+  {
+    m_hists["hEventJetBkg"]->GetXaxis()->SetBinLabel(i + 1, m_JetBkg_Type[i].c_str());
   }
 
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
@@ -247,6 +257,27 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 
   m_hasBeamBackground = pdb_params_bkg.get_int_param("HasBeamBackground");
 
+  // Jet Background Check
+  PdbParameterMap *pdb_jetbkg = getNode<PdbParameterMap>(topNode, "JetCutParams");
+  if (!pdb_jetbkg)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params_jetbkg("JetCutParams");
+  pdb_params_jetbkg.FillFrom(pdb_jetbkg);
+
+  m_isDijet = pdb_params_jetbkg.get_int_param("isDijet");
+  m_frcem = pdb_params_jetbkg.get_double_param("frcem");
+  m_frcoh = pdb_params_jetbkg.get_double_param("frcoh");
+  m_maxJetET = pdb_params_jetbkg.get_double_param("maxJetET");
+  m_dPhi = pdb_params_jetbkg.get_double_param("dPhi");
+
+  m_failsLoEmJetCut = pdb_params_jetbkg.get_int_param("failsLoEmJetCut");
+  m_failsHiEmJetCut = pdb_params_jetbkg.get_int_param("failsHiEmJetCut");
+  m_failsIhJetCut = pdb_params_jetbkg.get_int_param("failsIhJetCut");
+  m_failsAnyJetCut = pdb_params_jetbkg.get_int_param("failsAnyJetCut");
+
   if (fabs(m_zvtx) < m_cuts.m_zvtx_max)
   {
     if (minbias_bkg_high)
@@ -282,6 +313,11 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     ++m_ctr["process_eventCheck_zvtx_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  JetUtils::update_min_max(m_frcem, m_logging.m_frcem_min, m_logging.m_frcem_max);
+  JetUtils::update_min_max(m_frcoh, m_logging.m_frcoh_min, m_logging.m_frcoh_max);
+  JetUtils::update_min_max(m_maxJetET, m_logging.m_maxJetET_min, m_logging.m_maxJetET_max);
+  JetUtils::update_min_max(m_dPhi, m_logging.m_dPhi_min, m_logging.m_dPhi_max);
 
   m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
 
@@ -716,6 +752,8 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
 
   int n_jets = 0;
   int n_jetsv2 = 0;
+  bool hasJet = false;
+  bool hasBkg = m_hasBeamBackground || m_failsAnyJetCut;
 
   for (auto jet : *jets)
   {
@@ -742,7 +780,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       dynamic_cast<TH3 *>(m_hists["h3Jet_PhiEta"].get())->Fill(phi, eta, m_cent);
 
       // ensure no background exists
-      if (!m_hasBeamBackground)
+      if (!hasBkg)
       {
         dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Constituentsv2"].get())->Fill(pt, constituents, m_cent);
         dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Phiv2"].get())->Fill(pt, phi, m_cent);
@@ -750,21 +788,58 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
         ++n_jetsv2;
       }
 
+      hasJet = true;
       ++n_jets;
     }
   }
 
-  dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
-  dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
-
-  JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
-
-  // skip event if it contains beam background
-  if (m_hasBeamBackground)
+  if (hasJet)
   {
-    ++m_ctr["process_eventCheck_beamBkg"];
-    m_hists["hBeamBkg"]->Fill(m_cent);
-    return Fun4AllReturnCodes::ABORTEVENT;
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_JET));
+
+    dynamic_cast<TH2 *>(m_hists["h2frcem"].get())->Fill(m_frcem, m_maxJetET);
+    dynamic_cast<TH2 *>(m_hists["h2frcem_vs_frcoh"].get())->Fill(m_frcem, m_frcoh);
+
+    dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
+
+    JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
+
+    if (m_hasBeamBackground)
+    {
+      m_hists["hEventJetBkg"]->Fill(static_cast<std::uint8_t>(JetBkgType::STREAK));
+
+      ++m_ctr["process_eventCheck_beamBkg"];
+      m_hists["hBeamBkg"]->Fill(m_cent);
+    }
+    if (m_failsLoEmJetCut)
+    {
+      m_hists["hEventJetBkg"]->Fill(static_cast<std::uint8_t>(JetBkgType::LOEM));
+    }
+    if (m_failsHiEmJetCut)
+    {
+      m_hists["hEventJetBkg"]->Fill(static_cast<std::uint8_t>(JetBkgType::HIEM));
+    }
+    if (m_failsIhJetCut)
+    {
+      m_hists["hEventJetBkg"]->Fill(static_cast<std::uint8_t>(JetBkgType::IH));
+    }
+    if (m_failsAnyJetCut)
+    {
+      ++m_ctr["process_eventCheck_jetBkg"];
+      m_hists["hJetBkg"]->Fill(m_cent);
+    }
+    else
+    {
+      dynamic_cast<TH2 *>(m_hists["h2frcemv2"].get())->Fill(m_frcem, m_maxJetET);
+    }
+
+    // skip event if it contains background
+    if (hasBkg)
+    {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
+    dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -918,12 +993,23 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("Jet constituents: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
   std::cout << std::format("Jets per Event: Min {}, Max: {}\n", m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
   std::cout << "=====================" << std::endl;
+  std::cout << "Jets Bkg" << std::endl;
+  std::cout << std::format("frcem: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_frcem_min, m_logging.m_frcem_max);
+  std::cout << std::format("frcoh: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_frcoh_min, m_logging.m_frcoh_max);
+  std::cout << std::format("max Jet ET [GeV]: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_maxJetET_min, m_logging.m_maxJetET_max);
+  std::cout << std::format("dPhi: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_dPhi_min, m_logging.m_dPhi_max);
+  std::cout << "=====================" << std::endl;
   std::cout << "Abort Events Types" << std::endl;
   std::cout << std::format("process event, Reset Event Calls : {}", m_ctr["event_reset"]) << std::endl;
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
   std::cout << std::format("process event, hasBeamBackground: {}", m_ctr["process_eventCheck_beamBkg"]) << std::endl;
+  std::cout << std::format("process event, failsAnyJetCut: {}", m_ctr["process_eventCheck_jetBkg"]) << std::endl;
+  for (unsigned int i = 0; i < m_JetBkg_Type.size(); ++i)
+  {
+    std::cout << std::format("{}: {}\n", m_JetBkg_Type[i], m_hists["hEventJetBkg"]->GetBinContent(i + 1));
+  }
   if (m_do_ep)
   {
     std::cout << std::format("process Event Plane, Q vec mag zero: {}", m_ctr["process_EventPlane_Q_mag_zero"]) << std::endl;

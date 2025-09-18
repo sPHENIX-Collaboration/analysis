@@ -36,6 +36,7 @@
 #include <CDBUtils.C>
 
 #include <jetbackground/BeamBackgroundFilterAndQA.h>
+#include <jetbackground/JetBackgroundCut.h>
 
 #include "Calo_Calib.C"
 #include "HIJetReco.C"
@@ -154,6 +155,11 @@ void Fun4All_sEPD(const std::string &fname,
                      .null = {},
                      .sideband = {}});
   se->registerSubsystem(filter.release());
+
+  std::unique_ptr<JetBackgroundCut> jocl = std::make_unique<JetBackgroundCut>("AntiKt_Tower_r02_Sub1");
+  jocl->set_input_cemc_tower_node("TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+  jocl->set_input_ohcal_tower_node("TOWERINFO_CALIB_HCALOUT_SUB1");
+  se->registerSubsystem(jocl.release());
 
   // sEPD QA
   std::unique_ptr<sEPDValidation> sepd_validation = std::make_unique<sEPDValidation>();
