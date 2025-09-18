@@ -46,7 +46,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
       cout << "z selection must be between 0 and 5 (inclusive) for |zvtx| < 30/60/200/10/1000/none, respectively! Exiting." << endl;
       return 2;
     }
-  const int ntrig = 3;
+  const int ntrig = 4;
   float mbsig = 25.2;
   int upperrun = 53000;
   int lowerrun = 47200;
@@ -60,8 +60,8 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
   //int it = 0;
   float lumi[ntrig] = {0};
   float uclumi[ntrig] = {0};
-  int trigs[ntrig] = {18,22,30};
-  cout << "RN   Bit"<<to_string(trigs[0])<<"Corr  Bit"<<to_string(trigs[0])<<"UC   Bit"<<to_string(trigs[1])<<"Corr  Bit"<<to_string(trigs[1])<<"UC   Bit"<<to_string(trigs[2])<<"Corr  Bit"<<to_string(trigs[2])<<"UC (units pb^-1)" << endl << endl;
+  int trigs[ntrig] = {10,18,22,30};
+  cout << "RN   Bit"<<to_string(trigs[0])<<"Corr  Bit"<<to_string(trigs[0])<<"UC   Bit"<<to_string(trigs[1])<<"Corr  Bit"<<to_string(trigs[1])<<"UC   Bit"<<to_string(trigs[2])<<"Corr  Bit"<<to_string(trigs[2])<<"UC   Bit"<<to_string(trigs[3])<<"Corr  Bit"<<to_string(trigs[3])<<"UC (units pb^-1)" << endl << endl;
   while(getline(is, rnstr))
     {
       //cerr << "RN: " << rnstr << endl;
@@ -149,7 +149,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 
       
       
-      for(int i=0; i<3; ++i)
+      for(int i=0; i<ntrig; ++i)
 	{
 	  int trigger = trigs[i];
 	  if(avgPS[trigger] > 0 && !isnan(avgPS[trigger]) && !isnan(avgPS[10]) && !isnan((tottrigcounts[zsel][10])) && !isinf(avgPS[10]) && !isinf(avgPS[trigger]) && !isinf((tottrigcounts[zsel][10])) && avgPS[10] > 0)
