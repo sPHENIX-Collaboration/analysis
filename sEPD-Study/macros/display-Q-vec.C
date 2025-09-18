@@ -171,7 +171,7 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
         hx->GetYaxis()->SetTitleOffset(1.f);
         hx->GetXaxis()->SetTitleOffset(1.f);
         hx->GetYaxis()->SetMaxDigits(3);
-        hx->GetYaxis()->SetRangeUser(0, hx->GetMaximum()*1.2);
+        hx->GetYaxis()->SetRangeUser(0, hx->GetMaximum()*1.3);
       }
       else
       {
@@ -236,10 +236,24 @@ void DisplayQVec::plot_val1(TCanvas* c1, const std::string& name, const std::str
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+
+  h2->Draw("HIST P");
+  double max_dev = std::max(fabs(h2->GetMaximum()), fabs(h2->GetMinimum()))*1.5;
+
+  h2->GetYaxis()->SetRangeUser(-max_dev, max_dev);
+  h2->GetYaxis()->SetTitleOffset(1.f);
+
+  line->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-zoom.png", m_output_dir, name).c_str());
 }
 
 void DisplayQVec::plot_val2(TCanvas* c1, const std::string& side, int order, const std::string& output)
 {
+  // c1->SetLeftMargin(.11f);
+  // c1->SetRightMargin(.03f);
+
   std::string namex = std::format("h_sEPD_Q_{}_xx_{}_avg", side, order);
   std::string namey = std::format("h_sEPD_Q_{}_yy_{}_avg", side, order);
   std::string namex_corr = std::format("h_sEPD_Q_{}_xx_{}_corr_avg", side, order);
@@ -292,6 +306,22 @@ void DisplayQVec::plot_val2(TCanvas* c1, const std::string& side, int order, con
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, namex).c_str());
+
+  hx_corr->Draw("HIST P");
+  double max_dev = std::max(fabs(hx_corr->GetMaximum())-1, 1-fabs(hx_corr->GetMinimum()))*1.5;
+
+  hx_corr->GetYaxis()->SetTitle(ytitle.c_str());
+  hx_corr->GetYaxis()->SetTitleOffset(1.f);
+  hx_corr->GetXaxis()->SetTitleOffset(1.f);
+
+  hx_corr->GetYaxis()->SetRangeUser(1-max_dev, 1+max_dev);
+  hx_corr->GetYaxis()->SetTitleOffset(1.f);
+  hx_corr->GetYaxis()->SetMaxDigits(3);
+
+  line->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-zoom.png", m_output_dir, namex).c_str());
 }
 
 void DisplayQVec::draw()
@@ -331,6 +361,8 @@ void DisplayQVec::draw()
   plot_overall_psi(c1.get(), 2, "y", output);
   plot_overall_psi(c1.get(), 3, "x", output);
   plot_overall_psi(c1.get(), 3, "y", output);
+  plot_overall_psi(c1.get(), 4, "x", output);
+  plot_overall_psi(c1.get(), 4, "y", output);
 
   // Individual
   plot_psi(c1.get(), "h3_sEPD_Psi_2", 2, "x", kRed, output);
@@ -349,6 +381,14 @@ void DisplayQVec::draw()
   plot_psi(c1.get(), "h3_sEPD_Psi_3_corr", 3, "y", kBlue, output);
   plot_psi(c1.get(), "h3_sEPD_Psi_3_corr2", 3, "y", kGreen+3, output);
 
+  plot_psi(c1.get(), "h3_sEPD_Psi_4", 4, "x", kRed, output);
+  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr", 4, "x", kBlue, output);
+  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr2", 4, "x", kGreen+3, output);
+
+  plot_psi(c1.get(), "h3_sEPD_Psi_4", 4, "y", kRed, output);
+  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr", 4, "y", kBlue, output);
+  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr2", 4, "y", kGreen+3, output);
+
   // Val 1
   plot_val1(c1.get(), "h_sEPD_Q_S_x_2_avg", "h_sEPD_Q_S_x_2_corr_avg", output);
   plot_val1(c1.get(), "h_sEPD_Q_S_y_2_avg", "h_sEPD_Q_S_y_2_corr_avg", output);
@@ -360,10 +400,17 @@ void DisplayQVec::draw()
   plot_val1(c1.get(), "h_sEPD_Q_N_x_3_avg", "h_sEPD_Q_N_x_3_corr_avg", output);
   plot_val1(c1.get(), "h_sEPD_Q_N_y_3_avg", "h_sEPD_Q_N_y_3_corr_avg", output);
 
+  plot_val1(c1.get(), "h_sEPD_Q_S_x_4_avg", "h_sEPD_Q_S_x_4_corr_avg", output);
+  plot_val1(c1.get(), "h_sEPD_Q_S_y_4_avg", "h_sEPD_Q_S_y_4_corr_avg", output);
+  plot_val1(c1.get(), "h_sEPD_Q_N_x_4_avg", "h_sEPD_Q_N_x_4_corr_avg", output);
+  plot_val1(c1.get(), "h_sEPD_Q_N_y_4_avg", "h_sEPD_Q_N_y_4_corr_avg", output);
+
   plot_val1(c1.get(), "h_sEPD_Q_S_xy_2_avg", "h_sEPD_Q_S_xy_2_corr_avg", output);
   plot_val1(c1.get(), "h_sEPD_Q_N_xy_2_avg", "h_sEPD_Q_N_xy_2_corr_avg", output);
   plot_val1(c1.get(), "h_sEPD_Q_S_xy_3_avg", "h_sEPD_Q_S_xy_3_corr_avg", output);
   plot_val1(c1.get(), "h_sEPD_Q_N_xy_3_avg", "h_sEPD_Q_N_xy_3_corr_avg", output);
+  plot_val1(c1.get(), "h_sEPD_Q_S_xy_4_avg", "h_sEPD_Q_S_xy_4_corr_avg", output);
+  plot_val1(c1.get(), "h_sEPD_Q_N_xy_4_avg", "h_sEPD_Q_N_xy_4_corr_avg", output);
 
   // 2nd Order Validation
   plot_val2(c1.get(), "S", 2, output);
@@ -371,6 +418,9 @@ void DisplayQVec::draw()
 
   plot_val2(c1.get(), "S", 3, output);
   plot_val2(c1.get(), "N", 3, output);
+
+  plot_val2(c1.get(), "S", 4, output);
+  plot_val2(c1.get(), "N", 4, output);
 
   c1->Print((output + "]").c_str(), "pdf portrait");
 }
