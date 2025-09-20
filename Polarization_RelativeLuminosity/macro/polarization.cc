@@ -26,7 +26,7 @@ void WriteAdditionalMessage( double pos_x, double pos_y )
   TLatex* tex = new TLatex();
   tex->SetTextSize( 0.04 );
   stringstream ss;
-  ss << "Preliminary RHIC Polarimetry Group Results";
+  ss << "RHIC Polarimetry Group Preliminary Results";
   //ss << "Preliminary CNI Polarimetry Group Results";
 
   tex->DrawLatexNDC( pos_x, pos_y, ss.str().c_str() );
@@ -130,16 +130,16 @@ int polarization()
   /////////////////////////////////////////////////////////////////////////////////////
   // Histograms setup
   /////////////////////////////////////////////////////////////////////////////////////
-  TH1D* hist_pol_b = new TH1D("hist_pol_b", "Blue beam polarization;Polarization [%];Counts", 100, 0, 100);
+  TH1D* hist_pol_b = new TH1D("hist_pol_b", "Blue beam polarization;Polarization [%];Integrated luminosity", 100, 0, 100);
   HistSetting(hist_pol_b, GetSphenixColor());
 
-  TH1D* hist_weighted_pol_b = new TH1D("hist_weighted_pol_b", "Blue beam polarization with luminosity weight;Polarization [%];Counts [a.u.]", 100, 0, 100);
+  TH1D* hist_weighted_pol_b = new TH1D("hist_weighted_pol_b", "Blue beam polarization with luminosity weight;Polarization [%];Integrated luminosity [a.u.]", 100, 0, 100);
   HistSetting(hist_weighted_pol_b, GetSphenixColor());
 
-  TH1D* hist_pol_y = new TH1D("hist_pol_y", "Yellow beam polarization;Polarization [%];Counts", 100, 0, 100);
+  TH1D* hist_pol_y = new TH1D("hist_pol_y", "Yellow beam polarization;Polarization [%];Integrated luminosity", 100, 0, 100);
   HistSetting(hist_pol_y, kOrange + 1);
 
-  TH1D* hist_weighted_pol_y = new TH1D("hist_weighted_pol_y", "Yellow beam polarization with luminosity weight;Polarization [%];Counts [a.u.]", 100, 0, 100);
+  TH1D* hist_weighted_pol_y = new TH1D("hist_weighted_pol_y", "Yellow beam polarization with luminosity weight;Polarization [%];Integrated luminosity [a.u.]", 100, 0, 100);
   HistSetting(hist_weighted_pol_y, kOrange + 1);
 
   Long64_t luminosity_sum = 0;
@@ -219,14 +219,14 @@ int polarization()
 
   hist_weighted_pol_b->GetXaxis()->SetRangeUser(35, 65);
   hist_weighted_pol_b->GetXaxis()->SetLabelOffset( 0.0125 );
-  hist_weighted_pol_b->GetXaxis()->CenterTitle();
+  //hist_weighted_pol_b->GetXaxis()->SetLabelSize( 0.03 );
+  
   hist_weighted_pol_b->GetYaxis()->SetTitleOffset( 1.5 );
-  hist_weighted_pol_b->GetYaxis()->CenterTitle();
-  hist_weighted_pol_b->GetYaxis()->SetRangeUser( 0, 0.25 );
+  hist_weighted_pol_b->GetYaxis()->SetRangeUser( 0, 0.3 );
 
-
-  for( int mode=0; mode<3; mode++ ) // loop over modes: preliminary, internal, work in progress
+  //for( int mode=0; mode<4; mode++ ) // loop over modes: preliminary, internal, work in progress
   {
+    int mode = 3;
     // polarization with luminosity weight
     hist_weighted_pol_b->Draw("HIST");
     hist_weighted_pol_y->Draw("HIST same");
@@ -238,9 +238,11 @@ int polarization()
       output_pdf += "_preliminary.pdf";
     else if( mode == 2 )
       output_pdf += "_wip.pdf";
+    else if( mode == 3 )
+      output_pdf += "_performance.pdf";
 
     int digits = 2;
-    WriteDate();
+    WriteDate( 0.775, 0.955, 0.04, "9/19/2025" );
     WritesPhenix( mode );
     double dy = 0.05, y = 0.89 + dy;
         
@@ -255,15 +257,17 @@ int polarization()
     leg->SetTextSize( 0.04 );
     leg->SetBorderSize( 0 );
     leg->SetFillStyle( 0 );
-    leg->AddEntry( hist_weighted_pol_b, "Blue beam", "l" );
-    leg->AddEntry( hist_weighted_pol_y, "Yellow beam", "l" );
 
-    y -= dy*2.75;
-    WriteAveragePolarization( hist_weighted_pol_b->GetMean(), "b", 0.2, y, digits );
+    stringstream ss_legend_b;
+    ss_legend_b << "Blue beam,  "
+		<< "#LTPol.#GT = " << setprecision( digits ) << hist_weighted_pol_b->GetMean() << "%";
+    leg->AddEntry( hist_weighted_pol_b, ss_legend_b.str().c_str(), "l" );
 
-    y -= dy;
-    WriteAveragePolarization( hist_weighted_pol_y->GetMean(), "y", 0.2, y, digits );
-  
+    stringstream ss_legend_y;
+    ss_legend_y << "Yellow beam, "
+		<< "#LTPol.#GT = " << setprecision( digits ) << hist_weighted_pol_y->GetMean() << "%";
+    leg->AddEntry( hist_weighted_pol_y, ss_legend_y.str().c_str(), "l" );
+      
     leg->Draw();
     c->Print( output_pdf.c_str() );
   }
