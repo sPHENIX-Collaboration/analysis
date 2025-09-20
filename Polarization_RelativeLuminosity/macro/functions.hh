@@ -23,6 +23,10 @@ void WritesPhenix(int mode = 0, double pos_x = 0.2, double pos_y = 0.96, double 
     tex->DrawLatexNDC(pos_x, pos_y, "#it{#bf{sPHENIX}} Preliminary");
   else if (mode == 2)
     tex->DrawLatexNDC(pos_x, pos_y, "#it{#bf{sPHENIX}} Work in Progress");
+  else if (mode == 3)
+    tex->DrawLatexNDC(pos_x, pos_y, "#it{#bf{sPHENIX}} Performance");
+  else if (mode == 4)
+    tex->DrawLatexNDC(pos_x, pos_y, "#it{#bf{sPHENIX}} Simulation Performance");
 
   delete tex;
 };
@@ -36,11 +40,11 @@ void WriteRunCondition(double pos_x = 0.2, double pos_y = 0.675, bool is_mc = fa
   {
     if( is_single_line == false )
     {
-      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p 2024 #sqrt{s} = 200 GeV");
+      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p^{#uparrow} Run2024 #sqrt{s} = 200 GeV");
     }
     else
     {
-      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p 2024");
+      tex->DrawLatexNDC(pos_x, pos_y, "p^{#uparrow}+p^{#uparrow} Run2024");
       tex->DrawLatexNDC(pos_x - 0.01, pos_y - 0.05, "#sqrt{s} = 200 GeV");
     }
   }
@@ -50,7 +54,7 @@ void WriteRunCondition(double pos_x = 0.2, double pos_y = 0.675, bool is_mc = fa
   delete tex;
 }
 
-void WriteDate(double pos_x = 0.775, double pos_y = 0.955, double text_size = 0.04)
+void WriteDate(double pos_x = 0.775, double pos_y = 0.955, double text_size = 0.04, string fixed_date = "" )
 {
   TLatex* tex = new TLatex();
   tex->SetTextSize(text_size);
@@ -61,7 +65,11 @@ void WriteDate(double pos_x = 0.775, double pos_y = 0.955, double text_size = 0.
   int day = now.GetDay();
   stringstream message;
   message << month << "/" << day << "/" << year;
-  tex->DrawLatexNDC(pos_x, pos_y, message.str().c_str());
+
+  if( fixed_date == "" )
+    tex->DrawLatexNDC(pos_x, pos_y, message.str().c_str());
+  else
+    tex->DrawLatexNDC(pos_x, pos_y, fixed_date.c_str());
 
   delete tex;
 };
