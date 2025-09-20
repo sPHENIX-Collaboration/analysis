@@ -24,7 +24,7 @@ for i in {1..20}; do
     mkdir -p ./dsts/$2/${2}_${UPLN}
     #cp -r $5/run_earlydata.C .
     cp -r $5/run_earlydata_2.C .
-    cp -r $5/lists7/dst_calofitting-000${2}.list ./lists/${2}.list
+    cp -r $5/lists/dst_calofitting-000${2}.list ./lists/${2}.list
     cat ./lists/$2.list
     DSTFILE=`sed -n "${UPLN}"p "./lists/${2}.list"`
     echo $DSTFILE
