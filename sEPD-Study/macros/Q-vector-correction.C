@@ -17,9 +17,10 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TH1.h>
-#include <TProfile.h>
 #include <TH3.h>
+#include <TProfile.h>
 #include <TROOT.h>
+#include <TTree.h>
 
 // ====================================================================
 // The Analysis Class
@@ -34,24 +35,6 @@ class QvectorAnalysis
     , m_events_to_process(events)
     , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
-    , m_D_S_2(m_cent_bins)
-    , m_D_N_2(m_cent_bins)
-    , m_N_S_2(m_cent_bins)
-    , m_N_N_2(m_cent_bins)
-    , m_D_S_3(m_cent_bins)
-    , m_D_N_3(m_cent_bins)
-    , m_N_S_3(m_cent_bins)
-    , m_N_N_3(m_cent_bins)
-    , m_D_S_4(m_cent_bins)
-    , m_D_N_4(m_cent_bins)
-    , m_N_S_4(m_cent_bins)
-    , m_N_N_4(m_cent_bins)
-    , m_X_S_2(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
-    , m_X_N_2(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
-    , m_X_S_3(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
-    , m_X_N_3(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
-    , m_X_S_4(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
-    , m_X_N_4(m_cent_bins, std::vector<std::vector<double>>(2, std::vector<double>(2, 0)))
   {
   }
 
@@ -59,30 +42,66 @@ class QvectorAnalysis
   {
     setup_chain();
     init_hists();
-    run_event_loop(0);
-    run_event_loop(1);
-    run_event_loop(2);
+    run_event_loop(Pass::CalculateAverages);
+    run_event_loop(Pass::ApplyRecentering);
+    run_event_loop(Pass::ApplyFlattening);
     save_results();
   }
 
  private:
+  enum class Subdetector
+  {
+    S,
+    N
+  };
+
+  enum class QComponent
+  {
+    X,
+    Y
+  };
+
+  struct QVec
+  {
+    double x{0.0};
+    double y{0.0};
+  };
+
+  struct CorrectionData
+  {
+    // Averages of Qx, Qy, Qx^2, Qy^2, Qxy
+    QVec avg_Q{};
+    double avg_Q_xx{0.0};
+    double avg_Q_yy{0.0};
+    double avg_Q_xy{0.0};
+
+    // Correction matrix
+    std::vector<std::vector<double>> X_matrix{2, std::vector<double>(2, 0.0)};
+  };
+
+  // Holds all correction data
+  // key: [Cent][Harmonic][Subdetector]
+  std::map<int, std::map<int, std::map<Subdetector, CorrectionData>>> m_correction_data;
+
+  // Store harmonic orders and subdetectors for easy iteration
+  const std::vector<int> m_harmonics = {2, 3, 4};
+  const std::vector<Subdetector> m_subdetectors = {Subdetector::S, Subdetector::N};
+  const std::vector<QComponent> m_components = {QComponent::X, QComponent::Y};
+
+  enum class Pass
+  {
+    CalculateAverages,
+    ApplyRecentering,
+    ApplyFlattening
+  };
+
   struct EventData
   {
     int event_id{0};
     double event_zvertex{0.0};
     double event_centrality{0.0};
-    double sEPD_Q_S_x_2{0.0};
-    double sEPD_Q_S_y_2{0.0};
-    double sEPD_Q_N_x_2{0.0};
-    double sEPD_Q_N_y_2{0.0};
-    double sEPD_Q_S_x_3{0.0};
-    double sEPD_Q_S_y_3{0.0};
-    double sEPD_Q_N_x_3{0.0};
-    double sEPD_Q_N_y_3{0.0};
-    double sEPD_Q_S_x_4{0.0};
-    double sEPD_Q_S_y_4{0.0};
-    double sEPD_Q_N_x_4{0.0};
-    double sEPD_Q_N_y_4{0.0};
+
+    std::map<std::string, double> q_vals;
     std::vector<double>* sepd_charge{nullptr};
     std::vector<double>* sepd_phi{nullptr};
     std::vector<double>* sepd_eta{nullptr};
@@ -100,37 +119,7 @@ class QvectorAnalysis
   long long m_events_to_process;
   int m_verbosity;
   std::string m_output_dir;
-
-  size_t m_cent_bins{10};
-
-  // Q vector members
-  // Second Order Correction
-  std::vector<double> m_D_S_2;
-  std::vector<double> m_D_N_2;
-
-  std::vector<double> m_N_S_2;
-  std::vector<double> m_N_N_2;
-
-  std::vector<double> m_D_S_3;
-  std::vector<double> m_D_N_3;
-
-  std::vector<double> m_N_S_3;
-  std::vector<double> m_N_N_3;
-
-  std::vector<double> m_D_S_4;
-  std::vector<double> m_D_N_4;
-
-  std::vector<double> m_N_S_4;
-  std::vector<double> m_N_N_4;
-
-  std::vector<std::vector<std::vector<double>>> m_X_S_2;
-  std::vector<std::vector<std::vector<double>>> m_X_N_2;
-
-  std::vector<std::vector<std::vector<double>>> m_X_S_3;
-  std::vector<std::vector<std::vector<double>>> m_X_N_3;
-
-  std::vector<std::vector<std::vector<double>>> m_X_S_4;
-  std::vector<std::vector<std::vector<double>>> m_X_N_4;
+  int m_cent_bins{10};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
@@ -138,8 +127,8 @@ class QvectorAnalysis
   // --- Private Helper Methods ---
   void setup_chain();
   void init_hists();
-  void run_event_loop(int order);
-  void save_results();
+  void run_event_loop(Pass pass);
+  void save_results() const;
 };
 
 // ====================================================================
@@ -179,18 +168,6 @@ void QvectorAnalysis::setup_chain()
   m_chain->SetBranchStatus("*", false);
   m_chain->SetBranchStatus("event_id", true);
   m_chain->SetBranchStatus("event_centrality", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_x_2", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_y_2", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_x_2", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_y_2", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_x_3", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_y_3", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_x_3", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_y_3", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_x_4", true);
-  m_chain->SetBranchStatus("sEPD_Q_S_y_4", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_x_4", true);
-  m_chain->SetBranchStatus("sEPD_Q_N_y_4", true);
   // m_chain->SetBranchStatus("sepd_charge", true);
   // m_chain->SetBranchStatus("sepd_phi", true);
   // m_chain->SetBranchStatus("sepd_eta", true);
@@ -200,24 +177,33 @@ void QvectorAnalysis::setup_chain()
 
   m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
   m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
-  m_chain->SetBranchAddress("sEPD_Q_S_x_2", &m_event_data.sEPD_Q_S_x_2);
-  m_chain->SetBranchAddress("sEPD_Q_S_y_2", &m_event_data.sEPD_Q_S_y_2);
-  m_chain->SetBranchAddress("sEPD_Q_N_x_2", &m_event_data.sEPD_Q_N_x_2);
-  m_chain->SetBranchAddress("sEPD_Q_N_y_2", &m_event_data.sEPD_Q_N_y_2);
-  m_chain->SetBranchAddress("sEPD_Q_S_x_3", &m_event_data.sEPD_Q_S_x_3);
-  m_chain->SetBranchAddress("sEPD_Q_S_y_3", &m_event_data.sEPD_Q_S_y_3);
-  m_chain->SetBranchAddress("sEPD_Q_N_x_3", &m_event_data.sEPD_Q_N_x_3);
-  m_chain->SetBranchAddress("sEPD_Q_N_y_3", &m_event_data.sEPD_Q_N_y_3);
-  m_chain->SetBranchAddress("sEPD_Q_S_x_4", &m_event_data.sEPD_Q_S_x_4);
-  m_chain->SetBranchAddress("sEPD_Q_S_y_4", &m_event_data.sEPD_Q_S_y_4);
-  m_chain->SetBranchAddress("sEPD_Q_N_x_4", &m_event_data.sEPD_Q_N_x_4);
-  m_chain->SetBranchAddress("sEPD_Q_N_y_4", &m_event_data.sEPD_Q_N_y_4);
   // m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
   // m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
   // m_chain->SetBranchAddress("sepd_eta", &m_event_data.sepd_eta);
   // m_chain->SetBranchAddress("mbd_charge", &m_event_data.mbd_charge);
   // m_chain->SetBranchAddress("mbd_phi", &m_event_data.mbd_phi);
   // m_chain->SetBranchAddress("mbd_eta", &m_event_data.mbd_eta);
+
+  for (int n : m_harmonics)
+  {
+    for (auto det : m_subdetectors)
+    {
+      std::string det_str = (det == Subdetector::S) ? "S" : "N";
+
+      for (auto comp : m_components)
+      {
+        std::string comp_str = (comp == QComponent::X) ? "x" : "y";
+        std::string branch_name = std::format("sEPD_Q_{}_{}_{}", det_str, comp_str, n);
+
+        m_chain->SetBranchStatus(branch_name.c_str(), true);
+        int status = m_chain->SetBranchAddress(branch_name.c_str(), &m_event_data.q_vals[branch_name]);
+        if (status != TTree::kMatch)
+        {
+          throw std::runtime_error(std::format("Failed to find branch '{}'.", branch_name));
+        }
+      }
+    }
+  }
 }
 
 void QvectorAnalysis::init_hists()
@@ -235,95 +221,75 @@ void QvectorAnalysis::init_hists()
 
   m_hists["h_Dummy_Cent"] = std::make_unique<TH1F>("h_Dummy_Cent", "", m_cent_bins, cent_low, cent_high);
 
-  m_hists["h3_sEPD_Q_S_2"] = std::make_unique<TH3F>("h3_sEPD_Q_S_2", "sEPD South Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Q_N_2"] = std::make_unique<TH3F>("h3_sEPD_Q_N_2", "sEPD North Q (Order 2): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Q_S_3"] = std::make_unique<TH3F>("h3_sEPD_Q_S_3", "sEPD South Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Q_N_3"] = std::make_unique<TH3F>("h3_sEPD_Q_N_3", "sEPD North Q (Order 3): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Q_S_4"] = std::make_unique<TH3F>("h3_sEPD_Q_S_4", "sEPD South Q (Order 4): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Q_N_4"] = std::make_unique<TH3F>("h3_sEPD_Q_N_4", "sEPD North Q (Order 4): |z| < 10 cm and MB; Q_{x}; Q_{y}; Centrality [%]", bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
+  // n = 2, 3, 4, etc.
+  for (int n : m_harmonics)
+  {
+    std::string psi_hist_name = std::format("h3_sEPD_Psi_{}", n);
+    std::string psi_corr_hist_name = std::format("h3_sEPD_Psi_{}_corr", n);
+    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
 
-  m_hists["h3_sEPD_Psi_2"] = std::make_unique<TH3F>("h3_sEPD_Psi_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_3"] = std::make_unique<TH3F>("h3_sEPD_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_4"] = std::make_unique<TH3F>("h3_sEPD_Psi_4", "sEPD #Psi (Order 4): |z| < 10 cm and MB; 4#Psi^{S}_{4}; 4#Psi^{N}_{4}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+    m_hists[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
+                                                    std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+    m_hists[psi_corr_hist_name] = std::make_unique<TH3F>(psi_corr_hist_name.c_str(),
+                                                         std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                         bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+    m_hists[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
+                                                          std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                          bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
 
-  m_hists["h3_sEPD_Psi_2_corr"] = std::make_unique<TH3F>("h3_sEPD_Psi_2_corr", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_3_corr"] = std::make_unique<TH3F>("h3_sEPD_Psi_3_corr", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_4_corr"] = std::make_unique<TH3F>("h3_sEPD_Psi_4_corr", "sEPD #Psi (Order 4): |z| < 10 cm and MB; 4#Psi^{S}_{4}; 4#Psi^{N}_{4}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+    // South, North
+    for (auto det : m_subdetectors)
+    {
+      std::string det_str = (det == Subdetector::S) ? "S" : "N";
+      std::string det_name = (det == Subdetector::S) ? "South" : "North";
 
-  m_hists["h3_sEPD_Psi_2_corr2"] = std::make_unique<TH3F>("h3_sEPD_Psi_2_corr2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_3_corr2"] = std::make_unique<TH3F>("h3_sEPD_Psi_3_corr2", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
-  m_hists["h3_sEPD_Psi_4_corr2"] = std::make_unique<TH3F>("h3_sEPD_Psi_4_corr2", "sEPD #Psi (Order 4): |z| < 10 cm and MB; 4#Psi^{S}_{4}; 4#Psi^{N}_{4}; Centrality [%]", bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
+      std::string q_hist_name = std::format("h3_sEPD_Q_{}_{}", det_str, n);
+      m_hists[q_hist_name] = std::make_unique<TH3F>(q_hist_name.c_str(),
+                                                    std::format("sEPD {} Q (Order {}): |z| < 10 cm and MB; Q_{{x}}; Q_{{y}}; Centrality [%]", det_name, n).c_str(),
+                                                    bins_Q, Q_low, Q_high, bins_Q, Q_low, Q_high, m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_x_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_2_avg", "sEPD South; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_2_avg", "sEPD South; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_2_avg", "sEPD North; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_2_avg", "sEPD North; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_x_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_3_avg", "sEPD South; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_3_avg", "sEPD South; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_3_avg", "sEPD North; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_3_avg", "sEPD North; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_x_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_4_avg", "sEPD South; Centrality [%]; <Q_{4,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_4_avg", "sEPD South; Centrality [%]; <Q_{4,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_4_avg", "sEPD North; Centrality [%]; <Q_{4,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_4_avg", "sEPD North; Centrality [%]; <Q_{4,y}>", m_cent_bins, cent_low, cent_high);
+      std::string q_avg_sq_cross_name = std::format("h_sEPD_Q_{}_xy_{}_avg", det_str, n);
+      std::string q_avg_sq_cross_corr_name = std::format("h_sEPD_Q_{}_xy_{}_corr_avg", det_str, n);
 
-  m_hists["h_sEPD_Q_S_x_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_x_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_x_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_x_4_corr_avg", "sEPD South; Centrality [%]; <Q_{4,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_y_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_y_4_corr_avg", "sEPD South; Centrality [%]; <Q_{4,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_x_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_x_4_corr_avg", "sEPD North; Centrality [%]; <Q_{4,x}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_y_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_y_4_corr_avg", "sEPD North; Centrality [%]; <Q_{4,y}>", m_cent_bins, cent_low, cent_high);
+      m_hists[q_avg_sq_cross_name] = std::make_unique<TProfile>(q_avg_sq_cross_name.c_str(),
+                                                                std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", det_name, n).c_str(),
+                                                                m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_xx_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_2_avg", "sEPD South; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_2_avg", "sEPD South; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_2_avg", "sEPD South; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_2_avg", "sEPD North; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_2_avg", "sEPD North; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_2_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_2_avg", "sEPD North; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+      m_hists[q_avg_sq_cross_corr_name] = std::make_unique<TProfile>(q_avg_sq_cross_corr_name.c_str(),
+                                                                     std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", det_name, n).c_str(),
+                                                                     m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_xx_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_3_avg", "sEPD South; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_3_avg", "sEPD South; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_3_avg", "sEPD South; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_3_avg", "sEPD North; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_3_avg", "sEPD North; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_3_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_3_avg", "sEPD North; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+      // X, Y
+      for (auto comp : m_components)
+      {
+        std::string comp_str = (comp == QComponent::X) ? "x" : "y";
+        std::string q_avg_name = std::format("h_sEPD_Q_{}_{}_{}_avg", det_str, comp_str, n);
+        std::string q_avg_corr_name = std::format("h_sEPD_Q_{}_{}_{}_corr_avg", det_str, comp_str, n);
+        std::string q_avg_sq_name = std::format("h_sEPD_Q_{0}_{1}{1}_{2}_avg", det_str, comp_str, n);
+        std::string q_avg_sq_corr_name = std::format("h_sEPD_Q_{0}_{1}{1}_{2}_corr_avg", det_str, comp_str, n);
 
-  m_hists["h_sEPD_Q_S_xx_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_4_avg", "sEPD South; Centrality [%]; <Q_{4,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_4_avg", "sEPD South; Centrality [%]; <Q_{4,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_4_avg", "sEPD South; Centrality [%]; <Q_{4,x} Q_{4,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_4_avg", "sEPD North; Centrality [%]; <Q_{4,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_4_avg", "sEPD North; Centrality [%]; <Q_{4,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_4_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_4_avg", "sEPD North; Centrality [%]; <Q_{4,x} Q_{4,y}>", m_cent_bins, cent_low, cent_high);
+        m_hists[q_avg_name] = std::make_unique<TProfile>(q_avg_name.c_str(),
+                                                         std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str).c_str(),
+                                                         m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_xx_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_2_corr_avg", "sEPD South; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_2_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_2_corr_avg", "sEPD North; Centrality [%]; <Q_{2,x} Q_{2,y}>", m_cent_bins, cent_low, cent_high);
+        m_hists[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(),
+                                                              std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str).c_str(),
+                                                              m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_xx_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_3_corr_avg", "sEPD South; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_3_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_3_corr_avg", "sEPD North; Centrality [%]; <Q_{3,x} Q_{3,y}>", m_cent_bins, cent_low, cent_high);
+        m_hists[q_avg_sq_name] = std::make_unique<TProfile>(q_avg_sq_name.c_str(),
+                                                            std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str).c_str(),
+                                                            m_cent_bins, cent_low, cent_high);
 
-  m_hists["h_sEPD_Q_S_xx_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xx_4_corr_avg", "sEPD South; Centrality [%]; <Q_{4,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_yy_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_yy_4_corr_avg", "sEPD South; Centrality [%]; <Q_{4,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_S_xy_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_S_xy_4_corr_avg", "sEPD South; Centrality [%]; <Q_{4,x} Q_{4,y}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xx_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xx_4_corr_avg", "sEPD North; Centrality [%]; <Q_{4,x}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_yy_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_yy_4_corr_avg", "sEPD North; Centrality [%]; <Q_{4,y}^{2}>", m_cent_bins, cent_low, cent_high);
-  m_hists["h_sEPD_Q_N_xy_4_corr_avg"] = std::make_unique<TProfile>("h_sEPD_Q_N_xy_4_corr_avg", "sEPD North; Centrality [%]; <Q_{4,x} Q_{4,y}>", m_cent_bins, cent_low, cent_high);
+        m_hists[q_avg_sq_corr_name] = std::make_unique<TProfile>(q_avg_sq_corr_name.c_str(),
+                                                                 std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str).c_str(),
+                                                                 m_cent_bins, cent_low, cent_high);
+      }
+    }
+  }
 }
 
-void QvectorAnalysis::run_event_loop(int order)
+void QvectorAnalysis::run_event_loop(Pass pass)
 {
   long long n_entries = m_chain->GetEntries();
   if (m_events_to_process)
@@ -347,8 +313,8 @@ void QvectorAnalysis::run_event_loop(int order)
     double cent = m_event_data.event_centrality;
 
     // Identify Centrality Bin
-    size_t cent_bin = static_cast<size_t>(m_hists["h_Dummy_Cent"]->FindBin(cent) - 1);
-    if (order == 0)
+    int cent_bin = m_hists["h_Dummy_Cent"]->FindBin(cent) - 1;
+    if (pass == Pass::CalculateAverages)
     {
       m_hists["h_Dummy_Cent"]->Fill(cent);
     }
@@ -360,233 +326,133 @@ void QvectorAnalysis::run_event_loop(int order)
       continue;
     }
 
-    double Q_S_x_2 = m_event_data.sEPD_Q_S_x_2;
-    double Q_S_y_2 = m_event_data.sEPD_Q_S_y_2;
-    double Q_N_x_2 = m_event_data.sEPD_Q_N_x_2;
-    double Q_N_y_2 = m_event_data.sEPD_Q_N_y_2;
-
-    double Q_S_x_3 = m_event_data.sEPD_Q_S_x_3;
-    double Q_S_y_3 = m_event_data.sEPD_Q_S_y_3;
-    double Q_N_x_3 = m_event_data.sEPD_Q_N_x_3;
-    double Q_N_y_3 = m_event_data.sEPD_Q_N_y_3;
-
-    double Q_S_x_4 = m_event_data.sEPD_Q_S_x_4;
-    double Q_S_y_4 = m_event_data.sEPD_Q_S_y_4;
-    double Q_N_x_4 = m_event_data.sEPD_Q_N_x_4;
-    double Q_N_y_4 = m_event_data.sEPD_Q_N_y_4;
-
-    // 1st Order Derive
-    if (order == 0)
+    // Store Q-vectors for this event
+    std::map<int, std::map<Subdetector, QVec>> event_q_vectors;
+    for (int n : m_harmonics)
     {
-      m_hists["h_sEPD_Q_S_x_2_avg"]->Fill(cent, Q_S_x_2);
-      m_hists["h_sEPD_Q_S_y_2_avg"]->Fill(cent, Q_S_y_2);
-      m_hists["h_sEPD_Q_N_x_2_avg"]->Fill(cent, Q_N_x_2);
-      m_hists["h_sEPD_Q_N_y_2_avg"]->Fill(cent, Q_N_y_2);
-
-      m_hists["h_sEPD_Q_S_x_3_avg"]->Fill(cent, Q_S_x_3);
-      m_hists["h_sEPD_Q_S_y_3_avg"]->Fill(cent, Q_S_y_3);
-      m_hists["h_sEPD_Q_N_x_3_avg"]->Fill(cent, Q_N_x_3);
-      m_hists["h_sEPD_Q_N_y_3_avg"]->Fill(cent, Q_N_y_3);
-
-      m_hists["h_sEPD_Q_S_x_4_avg"]->Fill(cent, Q_S_x_4);
-      m_hists["h_sEPD_Q_S_y_4_avg"]->Fill(cent, Q_S_y_4);
-      m_hists["h_sEPD_Q_N_x_4_avg"]->Fill(cent, Q_N_x_4);
-      m_hists["h_sEPD_Q_N_y_4_avg"]->Fill(cent, Q_N_y_4);
-
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_2"].get())->Fill(Q_S_x_2, Q_S_y_2, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_2"].get())->Fill(Q_N_x_2, Q_N_y_2, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_3"].get())->Fill(Q_S_x_3, Q_S_y_3, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_3"].get())->Fill(Q_N_x_3, Q_N_y_3, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_S_4"].get())->Fill(Q_S_x_4, Q_S_y_4, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Q_N_4"].get())->Fill(Q_N_x_4, Q_N_y_4, cent);
-
-      // Compute Psi
-      double psi_S_2 = std::atan2(Q_S_y_2, Q_S_x_2);
-      double psi_N_2 = std::atan2(Q_N_y_2, Q_N_x_2);
-
-      double psi_S_3 = std::atan2(Q_S_y_3, Q_S_x_3);
-      double psi_N_3 = std::atan2(Q_N_y_3, Q_N_x_3);
-
-      double psi_S_4 = std::atan2(Q_S_y_4, Q_S_x_4);
-      double psi_N_4 = std::atan2(Q_N_y_4, Q_N_x_4);
-
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_2"].get())->Fill(psi_S_2, psi_N_2, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_3"].get())->Fill(psi_S_3, psi_N_3, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_4"].get())->Fill(psi_S_4, psi_N_4, cent);
+      for (auto det : m_subdetectors)
+      {
+        std::string det_str = (det == Subdetector::S) ? "S" : "N";
+        std::string branch_name_x = std::format("sEPD_Q_{}_x_{}", det_str, n);
+        std::string branch_name_y = std::format("sEPD_Q_{}_y_{}", det_str, n);
+        event_q_vectors[n][det] = {m_event_data.q_vals[branch_name_x], m_event_data.q_vals[branch_name_y]};
+      }
     }
 
-    if (order == 1)
+    // Now process for each harmonic
+    for (int n : m_harmonics)
     {
-      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      const auto& q_S = event_q_vectors[n][Subdetector::S];
+      const auto& q_N = event_q_vectors[n][Subdetector::N];
 
-      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      std::string S_x_avg_name = std::format("h_sEPD_Q_S_x_{}_avg", n);
+      std::string S_y_avg_name = std::format("h_sEPD_Q_S_y_{}_avg", n);
+      std::string N_x_avg_name = std::format("h_sEPD_Q_N_x_{}_avg", n);
+      std::string N_y_avg_name = std::format("h_sEPD_Q_N_y_{}_avg", n);
 
-      double Q_S_x_4_avg = m_hists["h_sEPD_Q_S_x_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_4_avg = m_hists["h_sEPD_Q_S_y_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_4_avg = m_hists["h_sEPD_Q_N_x_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_4_avg = m_hists["h_sEPD_Q_N_y_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      // --- First Pass: Calculate Averages ---
+      if (pass == Pass::CalculateAverages)
+      {
+        std::string hist_Q_S_name = std::format("h3_sEPD_Q_S_{}", n);
+        std::string hist_Q_N_name = std::format("h3_sEPD_Q_N_{}", n);
+        std::string psi_Q_name = std::format("h3_sEPD_Psi_{}", n);
 
-      // 1st Order Apply
-      double Q_S_x_2_corr = Q_S_x_2 - Q_S_x_2_avg;
-      double Q_S_y_2_corr = Q_S_y_2 - Q_S_y_2_avg;
-      double Q_N_x_2_corr = Q_N_x_2 - Q_N_x_2_avg;
-      double Q_N_y_2_corr = Q_N_y_2 - Q_N_y_2_avg;
-      double Q_S_x_3_corr = Q_S_x_3 - Q_S_x_3_avg;
-      double Q_S_y_3_corr = Q_S_y_3 - Q_S_y_3_avg;
-      double Q_N_x_3_corr = Q_N_x_3 - Q_N_x_3_avg;
-      double Q_N_y_3_corr = Q_N_y_3 - Q_N_y_3_avg;
-      double Q_S_x_4_corr = Q_S_x_4 - Q_S_x_4_avg;
-      double Q_S_y_4_corr = Q_S_y_4 - Q_S_y_4_avg;
-      double Q_N_x_4_corr = Q_N_x_4 - Q_N_x_4_avg;
-      double Q_N_y_4_corr = Q_N_y_4 - Q_N_y_4_avg;
+        double psi_S = std::atan2(q_S.y, q_S.x);
+        double psi_N = std::atan2(q_N.y, q_N.x);
 
-      // 1st Order Validate
-      m_hists["h_sEPD_Q_S_x_2_corr_avg"]->Fill(cent, Q_S_x_2_corr);
-      m_hists["h_sEPD_Q_S_y_2_corr_avg"]->Fill(cent, Q_S_y_2_corr);
-      m_hists["h_sEPD_Q_N_x_2_corr_avg"]->Fill(cent, Q_N_x_2_corr);
-      m_hists["h_sEPD_Q_N_y_2_corr_avg"]->Fill(cent, Q_N_y_2_corr);
-      m_hists["h_sEPD_Q_S_x_3_corr_avg"]->Fill(cent, Q_S_x_3_corr);
-      m_hists["h_sEPD_Q_S_y_3_corr_avg"]->Fill(cent, Q_S_y_3_corr);
-      m_hists["h_sEPD_Q_N_x_3_corr_avg"]->Fill(cent, Q_N_x_3_corr);
-      m_hists["h_sEPD_Q_N_y_3_corr_avg"]->Fill(cent, Q_N_y_3_corr);
-      m_hists["h_sEPD_Q_S_x_4_corr_avg"]->Fill(cent, Q_S_x_4_corr);
-      m_hists["h_sEPD_Q_S_y_4_corr_avg"]->Fill(cent, Q_S_y_4_corr);
-      m_hists["h_sEPD_Q_N_x_4_corr_avg"]->Fill(cent, Q_N_x_4_corr);
-      m_hists["h_sEPD_Q_N_y_4_corr_avg"]->Fill(cent, Q_N_y_4_corr);
+        m_hists[S_x_avg_name]->Fill(cent, q_S.x);
+        m_hists[S_y_avg_name]->Fill(cent, q_S.y);
+        m_hists[N_x_avg_name]->Fill(cent, q_N.x);
+        m_hists[N_y_avg_name]->Fill(cent, q_N.y);
 
-      // 2nd Order Derive
-      m_hists["h_sEPD_Q_S_xx_2_avg"]->Fill(cent, Q_S_x_2_corr * Q_S_x_2_corr);
-      m_hists["h_sEPD_Q_S_yy_2_avg"]->Fill(cent, Q_S_y_2_corr * Q_S_y_2_corr);
-      m_hists["h_sEPD_Q_S_xy_2_avg"]->Fill(cent, Q_S_x_2_corr * Q_S_y_2_corr);
+        dynamic_cast<TH3*>(m_hists[hist_Q_S_name].get())->Fill(q_S.x, q_S.y, cent);
+        dynamic_cast<TH3*>(m_hists[hist_Q_N_name].get())->Fill(q_N.x, q_N.y, cent);
+        dynamic_cast<TH3*>(m_hists[psi_Q_name].get())->Fill(psi_S, psi_N, cent);
+      }
 
-      m_hists["h_sEPD_Q_N_xx_2_avg"]->Fill(cent, Q_N_x_2_corr * Q_N_x_2_corr);
-      m_hists["h_sEPD_Q_N_yy_2_avg"]->Fill(cent, Q_N_y_2_corr * Q_N_y_2_corr);
-      m_hists["h_sEPD_Q_N_xy_2_avg"]->Fill(cent, Q_N_x_2_corr * Q_N_y_2_corr);
+      // --- Second Pass: Apply 1st Order, Derive 2nd Order ---
+      if (pass == Pass::ApplyRecentering)
+      {
+        std::string S_x_corr_avg_name = std::format("h_sEPD_Q_S_x_{}_corr_avg", n);
+        std::string S_y_corr_avg_name = std::format("h_sEPD_Q_S_y_{}_corr_avg", n);
+        std::string N_x_corr_avg_name = std::format("h_sEPD_Q_N_x_{}_corr_avg", n);
+        std::string N_y_corr_avg_name = std::format("h_sEPD_Q_N_y_{}_corr_avg", n);
 
-      m_hists["h_sEPD_Q_S_xx_3_avg"]->Fill(cent, Q_S_x_3_corr * Q_S_x_3_corr);
-      m_hists["h_sEPD_Q_S_yy_3_avg"]->Fill(cent, Q_S_y_3_corr * Q_S_y_3_corr);
-      m_hists["h_sEPD_Q_S_xy_3_avg"]->Fill(cent, Q_S_x_3_corr * Q_S_y_3_corr);
+        std::string S_xx_avg_name = std::format("h_sEPD_Q_S_xx_{}_avg", n);
+        std::string S_yy_avg_name = std::format("h_sEPD_Q_S_yy_{}_avg", n);
+        std::string S_xy_avg_name = std::format("h_sEPD_Q_S_xy_{}_avg", n);
+        std::string N_xx_avg_name = std::format("h_sEPD_Q_N_xx_{}_avg", n);
+        std::string N_yy_avg_name = std::format("h_sEPD_Q_N_yy_{}_avg", n);
+        std::string N_xy_avg_name = std::format("h_sEPD_Q_N_xy_{}_avg", n);
 
-      m_hists["h_sEPD_Q_N_xx_3_avg"]->Fill(cent, Q_N_x_3_corr * Q_N_x_3_corr);
-      m_hists["h_sEPD_Q_N_yy_3_avg"]->Fill(cent, Q_N_y_3_corr * Q_N_y_3_corr);
-      m_hists["h_sEPD_Q_N_xy_3_avg"]->Fill(cent, Q_N_x_3_corr * Q_N_y_3_corr);
+        std::string psi_Q_corr_name = std::format("h3_sEPD_Psi_{}_corr", n);
 
-      m_hists["h_sEPD_Q_S_xx_4_avg"]->Fill(cent, Q_S_x_4_corr * Q_S_x_4_corr);
-      m_hists["h_sEPD_Q_S_yy_4_avg"]->Fill(cent, Q_S_y_4_corr * Q_S_y_4_corr);
-      m_hists["h_sEPD_Q_S_xy_4_avg"]->Fill(cent, Q_S_x_4_corr * Q_S_y_4_corr);
+        double Q_S_x_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.x;
+        double Q_S_y_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.y;
+        double Q_N_x_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.x;
+        double Q_N_y_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.y;
 
-      m_hists["h_sEPD_Q_N_xx_4_avg"]->Fill(cent, Q_N_x_4_corr * Q_N_x_4_corr);
-      m_hists["h_sEPD_Q_N_yy_4_avg"]->Fill(cent, Q_N_y_4_corr * Q_N_y_4_corr);
-      m_hists["h_sEPD_Q_N_xy_4_avg"]->Fill(cent, Q_N_x_4_corr * Q_N_y_4_corr);
+        QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
+        QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
 
-      // Compute Psi
-      double psi_S_2 = std::atan2(Q_S_y_2_corr, Q_S_x_2_corr);
-      double psi_N_2 = std::atan2(Q_N_y_2_corr, Q_N_x_2_corr);
+        double psi_S_corr = std::atan2(q_S_corr.y, q_S_corr.x);
+        double psi_N_corr = std::atan2(q_N_corr.y, q_N_corr.x);
 
-      double psi_S_3 = std::atan2(Q_S_y_3_corr, Q_S_x_3_corr);
-      double psi_N_3 = std::atan2(Q_N_y_3_corr, Q_N_x_3_corr);
+        m_hists[S_x_corr_avg_name]->Fill(cent, q_S_corr.x);
+        m_hists[S_y_corr_avg_name]->Fill(cent, q_S_corr.y);
+        m_hists[N_x_corr_avg_name]->Fill(cent, q_N_corr.x);
+        m_hists[N_y_corr_avg_name]->Fill(cent, q_N_corr.y);
 
-      double psi_S_4 = std::atan2(Q_S_y_4_corr, Q_S_x_4_corr);
-      double psi_N_4 = std::atan2(Q_N_y_4_corr, Q_N_x_4_corr);
+        m_hists[S_xx_avg_name]->Fill(cent, q_S_corr.x * q_S_corr.x);
+        m_hists[S_yy_avg_name]->Fill(cent, q_S_corr.y * q_S_corr.y);
+        m_hists[S_xy_avg_name]->Fill(cent, q_S_corr.x * q_S_corr.y);
+        m_hists[N_xx_avg_name]->Fill(cent, q_N_corr.x * q_N_corr.x);
+        m_hists[N_yy_avg_name]->Fill(cent, q_N_corr.y * q_N_corr.y);
+        m_hists[N_xy_avg_name]->Fill(cent, q_N_corr.x * q_N_corr.y);
 
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_2_corr"].get())->Fill(psi_S_2, psi_N_2, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_3_corr"].get())->Fill(psi_S_3, psi_N_3, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_4_corr"].get())->Fill(psi_S_4, psi_N_4, cent);
-    }
+        dynamic_cast<TH3*>(m_hists[psi_Q_corr_name].get())->Fill(psi_S_corr, psi_N_corr, cent);
+      }
 
-    if (order == 2)
-    {
-      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+      // --- Third Pass: Apply 2nd Order, Validate ---
+      if (pass == Pass::ApplyFlattening)
+      {
+        std::string S_xx_corr_avg_name = std::format("h_sEPD_Q_S_xx_{}_corr_avg", n);
+        std::string S_yy_corr_avg_name = std::format("h_sEPD_Q_S_yy_{}_corr_avg", n);
+        std::string S_xy_corr_avg_name = std::format("h_sEPD_Q_S_xy_{}_corr_avg", n);
+        std::string N_xx_corr_avg_name = std::format("h_sEPD_Q_N_xx_{}_corr_avg", n);
+        std::string N_yy_corr_avg_name = std::format("h_sEPD_Q_N_yy_{}_corr_avg", n);
+        std::string N_xy_corr_avg_name = std::format("h_sEPD_Q_N_xy_{}_corr_avg", n);
 
-      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+        std::string psi_Q_corr2_name = std::format("h3_sEPD_Psi_{}_corr2", n);
 
-      double Q_S_x_4_avg = m_hists["h_sEPD_Q_S_x_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_S_y_4_avg = m_hists["h_sEPD_Q_S_y_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_x_4_avg = m_hists["h_sEPD_Q_N_x_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
-      double Q_N_y_4_avg = m_hists["h_sEPD_Q_N_y_4_avg"]->GetBinContent(static_cast<int>(cent_bin)+1);
+        double Q_S_x_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.x;
+        double Q_S_y_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.y;
+        double Q_N_x_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.x;
+        double Q_N_y_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.y;
 
-      // 1st Order Apply
-      double Q_S_x_2_corr = Q_S_x_2 - Q_S_x_2_avg;
-      double Q_S_y_2_corr = Q_S_y_2 - Q_S_y_2_avg;
-      double Q_N_x_2_corr = Q_N_x_2 - Q_N_x_2_avg;
-      double Q_N_y_2_corr = Q_N_y_2 - Q_N_y_2_avg;
+        QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
+        QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
 
-      double Q_S_x_3_corr = Q_S_x_3 - Q_S_x_3_avg;
-      double Q_S_y_3_corr = Q_S_y_3 - Q_S_y_3_avg;
-      double Q_N_x_3_corr = Q_N_x_3 - Q_N_x_3_avg;
-      double Q_N_y_3_corr = Q_N_y_3 - Q_N_y_3_avg;
+        const auto& X_S = m_correction_data[cent_bin][n][Subdetector::S].X_matrix;
+        const auto& X_N = m_correction_data[cent_bin][n][Subdetector::N].X_matrix;
 
-      double Q_S_x_4_corr = Q_S_x_4 - Q_S_x_4_avg;
-      double Q_S_y_4_corr = Q_S_y_4 - Q_S_y_4_avg;
-      double Q_N_x_4_corr = Q_N_x_4 - Q_N_x_4_avg;
-      double Q_N_y_4_corr = Q_N_y_4 - Q_N_y_4_avg;
+        double Q_S_x_corr2 = X_S[0][0] * q_S_corr.x + X_S[0][1] * q_S_corr.y;
+        double Q_S_y_corr2 = X_S[1][0] * q_S_corr.x + X_S[1][1] * q_S_corr.y;
+        double Q_N_x_corr2 = X_N[0][0] * q_N_corr.x + X_N[0][1] * q_N_corr.y;
+        double Q_N_y_corr2 = X_N[1][0] * q_N_corr.x + X_N[1][1] * q_N_corr.y;
 
-      // 2nd Order Apply
-      double Q_S_x_2_corr2 = m_X_S_2[cent_bin][0][0] * Q_S_x_2_corr + m_X_S_2[cent_bin][0][1] * Q_S_y_2_corr;
-      double Q_S_y_2_corr2 = m_X_S_2[cent_bin][1][0] * Q_S_x_2_corr + m_X_S_2[cent_bin][1][1] * Q_S_y_2_corr;
-      double Q_N_x_2_corr2 = m_X_N_2[cent_bin][0][0] * Q_N_x_2_corr + m_X_N_2[cent_bin][0][1] * Q_N_y_2_corr;
-      double Q_N_y_2_corr2 = m_X_N_2[cent_bin][1][0] * Q_N_x_2_corr + m_X_N_2[cent_bin][1][1] * Q_N_y_2_corr;
+        double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
+        double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
 
-      double Q_S_x_3_corr2 = m_X_S_3[cent_bin][0][0] * Q_S_x_3_corr + m_X_S_3[cent_bin][0][1] * Q_S_y_3_corr;
-      double Q_S_y_3_corr2 = m_X_S_3[cent_bin][1][0] * Q_S_x_3_corr + m_X_S_3[cent_bin][1][1] * Q_S_y_3_corr;
-      double Q_N_x_3_corr2 = m_X_N_3[cent_bin][0][0] * Q_N_x_3_corr + m_X_N_3[cent_bin][0][1] * Q_N_y_3_corr;
-      double Q_N_y_3_corr2 = m_X_N_3[cent_bin][1][0] * Q_N_x_3_corr + m_X_N_3[cent_bin][1][1] * Q_N_y_3_corr;
+        m_hists[S_xx_corr_avg_name]->Fill(cent, Q_S_x_corr2 * Q_S_x_corr2);
+        m_hists[S_yy_corr_avg_name]->Fill(cent, Q_S_y_corr2 * Q_S_y_corr2);
+        m_hists[S_xy_corr_avg_name]->Fill(cent, Q_S_x_corr2 * Q_S_y_corr2);
+        m_hists[N_xx_corr_avg_name]->Fill(cent, Q_N_x_corr2 * Q_N_x_corr2);
+        m_hists[N_yy_corr_avg_name]->Fill(cent, Q_N_y_corr2 * Q_N_y_corr2);
+        m_hists[N_xy_corr_avg_name]->Fill(cent, Q_N_x_corr2 * Q_N_y_corr2);
 
-      double Q_S_x_4_corr2 = m_X_S_4[cent_bin][0][0] * Q_S_x_4_corr + m_X_S_4[cent_bin][0][1] * Q_S_y_4_corr;
-      double Q_S_y_4_corr2 = m_X_S_4[cent_bin][1][0] * Q_S_x_4_corr + m_X_S_4[cent_bin][1][1] * Q_S_y_4_corr;
-      double Q_N_x_4_corr2 = m_X_N_4[cent_bin][0][0] * Q_N_x_4_corr + m_X_N_4[cent_bin][0][1] * Q_N_y_4_corr;
-      double Q_N_y_4_corr2 = m_X_N_4[cent_bin][1][0] * Q_N_x_4_corr + m_X_N_4[cent_bin][1][1] * Q_N_y_4_corr;
-
-      // 2nd Order Validate
-      m_hists["h_sEPD_Q_S_xx_2_corr_avg"]->Fill(cent, Q_S_x_2_corr2 * Q_S_x_2_corr2);
-      m_hists["h_sEPD_Q_S_yy_2_corr_avg"]->Fill(cent, Q_S_y_2_corr2 * Q_S_y_2_corr2);
-      m_hists["h_sEPD_Q_S_xy_2_corr_avg"]->Fill(cent, Q_S_x_2_corr2 * Q_S_y_2_corr2);
-
-      m_hists["h_sEPD_Q_N_xx_2_corr_avg"]->Fill(cent, Q_N_x_2_corr2 * Q_N_x_2_corr2);
-      m_hists["h_sEPD_Q_N_yy_2_corr_avg"]->Fill(cent, Q_N_y_2_corr2 * Q_N_y_2_corr2);
-      m_hists["h_sEPD_Q_N_xy_2_corr_avg"]->Fill(cent, Q_N_x_2_corr2 * Q_N_y_2_corr2);
-
-      m_hists["h_sEPD_Q_S_xx_3_corr_avg"]->Fill(cent, Q_S_x_3_corr2 * Q_S_x_3_corr2);
-      m_hists["h_sEPD_Q_S_yy_3_corr_avg"]->Fill(cent, Q_S_y_3_corr2 * Q_S_y_3_corr2);
-      m_hists["h_sEPD_Q_S_xy_3_corr_avg"]->Fill(cent, Q_S_x_3_corr2 * Q_S_y_3_corr2);
-
-      m_hists["h_sEPD_Q_N_xx_3_corr_avg"]->Fill(cent, Q_N_x_3_corr2 * Q_N_x_3_corr2);
-      m_hists["h_sEPD_Q_N_yy_3_corr_avg"]->Fill(cent, Q_N_y_3_corr2 * Q_N_y_3_corr2);
-      m_hists["h_sEPD_Q_N_xy_3_corr_avg"]->Fill(cent, Q_N_x_3_corr2 * Q_N_y_3_corr2);
-
-      m_hists["h_sEPD_Q_S_xx_4_corr_avg"]->Fill(cent, Q_S_x_4_corr2 * Q_S_x_4_corr2);
-      m_hists["h_sEPD_Q_S_yy_4_corr_avg"]->Fill(cent, Q_S_y_4_corr2 * Q_S_y_4_corr2);
-      m_hists["h_sEPD_Q_S_xy_4_corr_avg"]->Fill(cent, Q_S_x_4_corr2 * Q_S_y_4_corr2);
-
-      m_hists["h_sEPD_Q_N_xx_4_corr_avg"]->Fill(cent, Q_N_x_4_corr2 * Q_N_x_4_corr2);
-      m_hists["h_sEPD_Q_N_yy_4_corr_avg"]->Fill(cent, Q_N_y_4_corr2 * Q_N_y_4_corr2);
-      m_hists["h_sEPD_Q_N_xy_4_corr_avg"]->Fill(cent, Q_N_x_4_corr2 * Q_N_y_4_corr2);
-
-      // Compute Psi
-      double psi_S_2 = std::atan2(Q_S_y_2_corr2, Q_S_x_2_corr2);
-      double psi_N_2 = std::atan2(Q_N_y_2_corr2, Q_N_x_2_corr2);
-
-      double psi_S_3 = std::atan2(Q_S_y_3_corr2, Q_S_x_3_corr2);
-      double psi_N_3 = std::atan2(Q_N_y_3_corr2, Q_N_x_3_corr2);
-
-      double psi_S_4 = std::atan2(Q_S_y_4_corr2, Q_S_x_4_corr2);
-      double psi_N_4 = std::atan2(Q_N_y_4_corr2, Q_N_x_4_corr2);
-
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_2_corr2"].get())->Fill(psi_S_2, psi_N_2, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_3_corr2"].get())->Fill(psi_S_3, psi_N_3, cent);
-      dynamic_cast<TH3*>(m_hists["h3_sEPD_Psi_4_corr2"].get())->Fill(psi_S_4, psi_N_4, cent);
+        dynamic_cast<TH3*>(m_hists[psi_Q_corr2_name].get())->Fill(psi_S, psi_N, cent);
+      }
     }
   }
 
@@ -595,302 +461,159 @@ void QvectorAnalysis::run_event_loop(int order)
   std::cout << std::format("Events with sEPD South Charge 0: {}\n", ctr["sepd_south_zero_charge"]);
   std::cout << std::format("Events with sEPD North Charge 0: {}\n", ctr["sepd_north_zero_charge"]);
   std::cout << std::format("{:#<20}\n", "");
-  if (order == 0)
+
+  std::cout << std::format("Pass: {}\n", static_cast<uint8_t>(pass));
+  for (int cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
   {
-    std::cout << std::format("Q Vector First Order Correction Averages\n");
-    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
+    for (int n : m_harmonics)
     {
-      double Q_S_x_2_avg = m_hists["h_sEPD_Q_S_x_2_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_2_avg = m_hists["h_sEPD_Q_S_y_2_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_2_avg = m_hists["h_sEPD_Q_N_x_2_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_2_avg = m_hists["h_sEPD_Q_N_y_2_avg"]->GetBinContent(cent_bin + 1);
+      if (pass == Pass::CalculateAverages)
+      {
+        std::string S_x_avg_name = std::format("h_sEPD_Q_S_x_{}_avg", n);
+        std::string S_y_avg_name = std::format("h_sEPD_Q_S_y_{}_avg", n);
+        std::string N_x_avg_name = std::format("h_sEPD_Q_N_x_{}_avg", n);
+        std::string N_y_avg_name = std::format("h_sEPD_Q_N_y_{}_avg", n);
 
-      double Q_S_x_3_avg = m_hists["h_sEPD_Q_S_x_3_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_3_avg = m_hists["h_sEPD_Q_S_y_3_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_3_avg = m_hists["h_sEPD_Q_N_x_3_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_3_avg = m_hists["h_sEPD_Q_N_y_3_avg"]->GetBinContent(cent_bin + 1);
+        double Q_S_x_avg = m_hists[S_x_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_y_avg = m_hists[S_y_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_x_avg = m_hists[N_x_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_y_avg = m_hists[N_y_avg_name]->GetBinContent(cent_bin + 1);
 
-      double Q_S_x_4_avg = m_hists["h_sEPD_Q_S_x_4_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_4_avg = m_hists["h_sEPD_Q_S_y_4_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_4_avg = m_hists["h_sEPD_Q_N_x_4_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_4_avg = m_hists["h_sEPD_Q_N_y_4_avg"]->GetBinContent(cent_bin + 1);
+        m_correction_data[cent_bin][n][Subdetector::S].avg_Q = {Q_S_x_avg, Q_S_y_avg};
+        m_correction_data[cent_bin][n][Subdetector::N].avg_Q = {Q_N_x_avg, Q_N_y_avg};
 
-      std::cout << std::format(
-          "cent_bin: {:2}, "
-          "Q_S_x_2_avg: {:7.4f}, "
-          "Q_S_y_2_avg: {:7.4f}, "
-          "Q_N_x_2_avg: {:7.4f}, "
-          "Q_N_y_2_avg: {:7.4f}, "
-          "Q_S_x_3_avg: {:7.4f}, "
-          "Q_S_y_3_avg: {:7.4f}, "
-          "Q_N_x_3_avg: {:7.4f}, "
-          "Q_N_y_3_avg: {:7.4f}, "
-          "Q_S_x_4_avg: {:7.4f}, "
-          "Q_S_y_4_avg: {:7.4f}, "
-          "Q_N_x_4_avg: {:7.4f}, "
-          "Q_N_y_4_avg: {:7.4f}\n",
-          cent_bin,
-          Q_S_x_2_avg,
-          Q_S_y_2_avg,
-          Q_N_x_2_avg,
-          Q_N_y_2_avg,
-          Q_S_x_3_avg,
-          Q_S_y_3_avg,
-          Q_N_x_3_avg,
-          Q_N_y_3_avg,
-          Q_S_x_4_avg,
-          Q_S_y_4_avg,
-          Q_N_x_4_avg,
-          Q_N_y_4_avg);
-    }
-  }
+        std::cout << std::format(
+            "Centrality Bin: {}, "
+            "Harmonic: {}, "
+            "Q_S_x_avg: {:13.10f}, "
+            "Q_S_y_avg: {:13.10f}, "
+            "Q_N_x_avg: {:13.10f}, "
+            "Q_N_y_avg: {:13.10f}\n",
+            cent_bin,
+            n,
+            Q_S_x_avg,
+            Q_S_y_avg,
+            Q_N_x_avg,
+            Q_N_y_avg);
+      }
 
-  if (order == 1)
-  {
-    std::cout << std::format("Q Vector First Order Correction Validation\n");
-    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
-    {
-      // Order 1 Validate
-      double Q_S_x_2_corr_avg = m_hists["h_sEPD_Q_S_x_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_2_corr_avg = m_hists["h_sEPD_Q_S_y_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_2_corr_avg = m_hists["h_sEPD_Q_N_x_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_2_corr_avg = m_hists["h_sEPD_Q_N_y_2_corr_avg"]->GetBinContent(cent_bin + 1);
+      if (pass == Pass::ApplyRecentering)
+      {
+        std::string S_x_corr_avg_name = std::format("h_sEPD_Q_S_x_{}_corr_avg", n);
+        std::string S_y_corr_avg_name = std::format("h_sEPD_Q_S_y_{}_corr_avg", n);
+        std::string N_x_corr_avg_name = std::format("h_sEPD_Q_N_x_{}_corr_avg", n);
+        std::string N_y_corr_avg_name = std::format("h_sEPD_Q_N_y_{}_corr_avg", n);
 
-      double Q_S_x_3_corr_avg = m_hists["h_sEPD_Q_S_x_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_3_corr_avg = m_hists["h_sEPD_Q_S_y_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_3_corr_avg = m_hists["h_sEPD_Q_N_x_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_3_corr_avg = m_hists["h_sEPD_Q_N_y_3_corr_avg"]->GetBinContent(cent_bin + 1);
+        double Q_S_x_corr_avg = m_hists[S_x_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_y_corr_avg = m_hists[S_y_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_x_corr_avg = m_hists[N_x_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_y_corr_avg = m_hists[N_y_corr_avg_name]->GetBinContent(cent_bin + 1);
 
-      double Q_S_x_4_corr_avg = m_hists["h_sEPD_Q_S_x_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_y_4_corr_avg = m_hists["h_sEPD_Q_S_y_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_x_4_corr_avg = m_hists["h_sEPD_Q_N_x_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_y_4_corr_avg = m_hists["h_sEPD_Q_N_y_4_corr_avg"]->GetBinContent(cent_bin + 1);
+        // -- Compute 2nd Order Correction --
+        std::string S_xx_avg_name = std::format("h_sEPD_Q_S_xx_{}_avg", n);
+        std::string S_yy_avg_name = std::format("h_sEPD_Q_S_yy_{}_avg", n);
+        std::string S_xy_avg_name = std::format("h_sEPD_Q_S_xy_{}_avg", n);
+        std::string N_xx_avg_name = std::format("h_sEPD_Q_N_xx_{}_avg", n);
+        std::string N_yy_avg_name = std::format("h_sEPD_Q_N_yy_{}_avg", n);
+        std::string N_xy_avg_name = std::format("h_sEPD_Q_N_xy_{}_avg", n);
 
-      std::cout << std::format(
-          "cent_bin: {:2}, "
-          "Q_S_x_2_corr_avg: {:7.4f}, "
-          "Q_S_y_2_corr_avg: {:7.4f}, "
-          "Q_N_x_2_corr_avg: {:7.4f}, "
-          "Q_N_y_2_corr_avg: {:7.4f}, "
-          "Q_S_x_3_corr_avg: {:7.4f}, "
-          "Q_S_y_3_corr_avg: {:7.4f}, "
-          "Q_N_x_3_corr_avg: {:7.4f}, "
-          "Q_N_y_3_corr_avg: {:7.4f}, "
-          "Q_S_x_4_corr_avg: {:7.4f}, "
-          "Q_S_y_4_corr_avg: {:7.4f}, "
-          "Q_N_x_4_corr_avg: {:7.4f}, "
-          "Q_N_y_4_corr_avg: {:7.4f}\n",
-          cent_bin,
-          Q_S_x_2_corr_avg,
-          Q_S_y_2_corr_avg,
-          Q_N_x_2_corr_avg,
-          Q_N_y_2_corr_avg,
-          Q_S_x_3_corr_avg,
-          Q_S_y_3_corr_avg,
-          Q_N_x_3_corr_avg,
-          Q_N_y_3_corr_avg,
-          Q_S_x_4_corr_avg,
-          Q_S_y_4_corr_avg,
-          Q_N_x_4_corr_avg,
-          Q_N_y_4_corr_avg);
-    }
+        double Q_S_xx_avg = m_hists[S_xx_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_yy_avg = m_hists[S_yy_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_xy_avg = m_hists[S_xy_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_xx_avg = m_hists[N_xx_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_yy_avg = m_hists[N_yy_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_xy_avg = m_hists[N_xy_avg_name]->GetBinContent(cent_bin + 1);
 
-    std::cout << std::format("{:#<20}\n", "");
-    std::cout << std::format("Q Vector Second Order Correction Averages\n");
-    for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
-    {
-      double Q_S_xx_2_avg = m_hists["h_sEPD_Q_S_xx_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_yy_2_avg = m_hists["h_sEPD_Q_S_yy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_xy_2_avg = m_hists["h_sEPD_Q_S_xy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        m_correction_data[cent_bin][n][Subdetector::S].avg_Q_xx = Q_S_xx_avg;
+        m_correction_data[cent_bin][n][Subdetector::S].avg_Q_yy = Q_S_yy_avg;
+        m_correction_data[cent_bin][n][Subdetector::S].avg_Q_xy = Q_S_xy_avg;
+        m_correction_data[cent_bin][n][Subdetector::N].avg_Q_xx = Q_N_xx_avg;
+        m_correction_data[cent_bin][n][Subdetector::N].avg_Q_yy = Q_N_yy_avg;
+        m_correction_data[cent_bin][n][Subdetector::N].avg_Q_xy = Q_N_xy_avg;
 
-      double Q_N_xx_2_avg = m_hists["h_sEPD_Q_N_xx_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_yy_2_avg = m_hists["h_sEPD_Q_N_yy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_xy_2_avg = m_hists["h_sEPD_Q_N_xy_2_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        // Compute N and D terms
+        double D_term_S = std::sqrt((Q_S_xx_avg * Q_S_yy_avg) - (Q_S_xy_avg * Q_S_xy_avg));
+        double D_term_N = std::sqrt((Q_N_xx_avg * Q_N_yy_avg) - (Q_N_xy_avg * Q_N_xy_avg));
+        double N_term_S = std::sqrt((Q_S_xx_avg * Q_S_yy_avg) - (Q_S_xy_avg * Q_S_xy_avg));
+        double N_term_N = std::sqrt((Q_N_xx_avg * Q_N_yy_avg) - (Q_N_xy_avg * Q_N_xy_avg));
 
-      double Q_S_xx_3_avg = m_hists["h_sEPD_Q_S_xx_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_yy_3_avg = m_hists["h_sEPD_Q_S_yy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_xy_3_avg = m_hists["h_sEPD_Q_S_xy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        auto& X_S_matrix = m_correction_data[cent_bin][n][Subdetector::S].X_matrix;
+        auto& X_N_matrix = m_correction_data[cent_bin][n][Subdetector::N].X_matrix;
 
-      double Q_N_xx_3_avg = m_hists["h_sEPD_Q_N_xx_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_yy_3_avg = m_hists["h_sEPD_Q_N_yy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_xy_3_avg = m_hists["h_sEPD_Q_N_xy_3_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        X_S_matrix[0][0] = (1. / std::sqrt(N_term_S)) * (Q_S_yy_avg + D_term_S);
+        X_S_matrix[0][1] = (-1. / std::sqrt(N_term_S)) * Q_S_xy_avg;
+        X_S_matrix[1][0] = X_S_matrix[0][1];
+        X_S_matrix[1][1] = (1. / std::sqrt(N_term_S)) * (Q_S_xx_avg + D_term_S);
 
-      double Q_S_xx_4_avg = m_hists["h_sEPD_Q_S_xx_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_yy_4_avg = m_hists["h_sEPD_Q_S_yy_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_S_xy_4_avg = m_hists["h_sEPD_Q_S_xy_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        X_N_matrix[0][0] = (1. / std::sqrt(N_term_N)) * (Q_N_yy_avg + D_term_N);
+        X_N_matrix[0][1] = (-1. / std::sqrt(N_term_N)) * Q_N_xy_avg;
+        X_N_matrix[1][0] = X_N_matrix[0][1];
+        X_N_matrix[1][1] = (1. / std::sqrt(N_term_N)) * (Q_N_xx_avg + D_term_N);
 
-      double Q_N_xx_4_avg = m_hists["h_sEPD_Q_N_xx_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_yy_4_avg = m_hists["h_sEPD_Q_N_yy_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
-      double Q_N_xy_4_avg = m_hists["h_sEPD_Q_N_xy_4_avg"]->GetBinContent(static_cast<int>(cent_bin) + 1);
+        std::cout << std::format(
+            "Centrality Bin: {}, "
+            "Harmonic: {}, "
+            "Q_S_x_corr_avg: {:13.10f}, "
+            "Q_S_y_corr_avg: {:13.10f}, "
+            "Q_N_x_corr_avg: {:13.10f}, "
+            "Q_N_y_corr_avg: {:13.10f}, "
+            "Q_S_xx_avg: {:13.10f}, "
+            "Q_S_yy_avg: {:13.10f}, "
+            "Q_S_xy_avg: {:13.10f}, "
+            "Q_N_xx_avg: {:13.10f}, "
+            "Q_N_yy_avg: {:13.10f}, "
+            "Q_N_xy_avg: {:13.10f}\n",
+            cent_bin,
+            n,
+            Q_S_x_corr_avg,
+            Q_S_y_corr_avg,
+            Q_N_x_corr_avg,
+            Q_N_y_corr_avg,
+            Q_S_xx_avg,
+            Q_S_yy_avg,
+            Q_S_xy_avg,
+            Q_N_xx_avg,
+            Q_N_yy_avg,
+            Q_N_xy_avg);
+      }
 
-      // Compute N and D terms
-      m_D_S_2[cent_bin] = std::sqrt((Q_S_xx_2_avg * Q_S_yy_2_avg) - (Q_S_xy_2_avg * Q_S_xy_2_avg));
-      m_D_N_2[cent_bin] = std::sqrt((Q_N_xx_2_avg * Q_N_yy_2_avg) - (Q_N_xy_2_avg * Q_N_xy_2_avg));
+      if (pass == Pass::ApplyFlattening)
+      {
+        std::string S_xx_corr_avg_name = std::format("h_sEPD_Q_S_xx_{}_corr_avg", n);
+        std::string S_yy_corr_avg_name = std::format("h_sEPD_Q_S_yy_{}_corr_avg", n);
+        std::string S_xy_corr_avg_name = std::format("h_sEPD_Q_S_xy_{}_corr_avg", n);
+        std::string N_xx_corr_avg_name = std::format("h_sEPD_Q_N_xx_{}_corr_avg", n);
+        std::string N_yy_corr_avg_name = std::format("h_sEPD_Q_N_yy_{}_corr_avg", n);
+        std::string N_xy_corr_avg_name = std::format("h_sEPD_Q_N_xy_{}_corr_avg", n);
 
-      m_D_S_3[cent_bin] = std::sqrt((Q_S_xx_3_avg * Q_S_yy_3_avg) - (Q_S_xy_3_avg * Q_S_xy_3_avg));
-      m_D_N_3[cent_bin] = std::sqrt((Q_N_xx_3_avg * Q_N_yy_3_avg) - (Q_N_xy_3_avg * Q_N_xy_3_avg));
+        double Q_S_xx_corr_avg = m_hists[S_xx_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_yy_corr_avg = m_hists[S_yy_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_S_xy_corr_avg = m_hists[S_xy_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_xx_corr_avg = m_hists[N_xx_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_yy_corr_avg = m_hists[N_yy_corr_avg_name]->GetBinContent(cent_bin + 1);
+        double Q_N_xy_corr_avg = m_hists[N_xy_corr_avg_name]->GetBinContent(cent_bin + 1);
 
-      m_D_S_4[cent_bin] = std::sqrt((Q_S_xx_4_avg * Q_S_yy_4_avg) - (Q_S_xy_4_avg * Q_S_xy_4_avg));
-      m_D_N_4[cent_bin] = std::sqrt((Q_N_xx_4_avg * Q_N_yy_4_avg) - (Q_N_xy_4_avg * Q_N_xy_4_avg));
-
-      m_N_S_2[cent_bin] = m_D_S_2[cent_bin] * (Q_S_xx_2_avg + Q_S_yy_2_avg + (2 * m_D_S_2[cent_bin]));
-      m_N_N_2[cent_bin] = m_D_N_2[cent_bin] * (Q_N_xx_2_avg + Q_N_yy_2_avg + (2 * m_D_N_2[cent_bin]));
-
-      m_N_S_3[cent_bin] = m_D_S_3[cent_bin] * (Q_S_xx_3_avg + Q_S_yy_3_avg + (2 * m_D_S_3[cent_bin]));
-      m_N_N_3[cent_bin] = m_D_N_3[cent_bin] * (Q_N_xx_3_avg + Q_N_yy_3_avg + (2 * m_D_N_3[cent_bin]));
-
-      m_N_S_4[cent_bin] = m_D_S_4[cent_bin] * (Q_S_xx_4_avg + Q_S_yy_4_avg + (2 * m_D_S_4[cent_bin]));
-      m_N_N_4[cent_bin] = m_D_N_4[cent_bin] * (Q_N_xx_4_avg + Q_N_yy_4_avg + (2 * m_D_N_4[cent_bin]));
-
-      // Compute matrix elements
-      m_X_S_2[cent_bin][0][0] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (Q_S_yy_2_avg + m_D_S_2[cent_bin]);
-      m_X_S_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_2[cent_bin])) * Q_S_xy_2_avg;
-      m_X_S_2[cent_bin][1][0] = m_X_S_2[cent_bin][0][1];
-      m_X_S_2[cent_bin][1][1] = (1. / std::sqrt(m_N_S_2[cent_bin])) * (Q_S_xx_2_avg + m_D_S_2[cent_bin]);
-
-      m_X_N_2[cent_bin][0][0] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (Q_N_yy_2_avg + m_D_N_2[cent_bin]);
-      m_X_N_2[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_2[cent_bin])) * Q_N_xy_2_avg;
-      m_X_N_2[cent_bin][1][0] = m_X_N_2[cent_bin][0][1];
-      m_X_N_2[cent_bin][1][1] = (1. / std::sqrt(m_N_N_2[cent_bin])) * (Q_N_xx_2_avg + m_D_N_2[cent_bin]);
-
-      m_X_S_3[cent_bin][0][0] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (Q_S_yy_3_avg + m_D_S_3[cent_bin]);
-      m_X_S_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_3[cent_bin])) * Q_S_xy_3_avg;
-      m_X_S_3[cent_bin][1][0] = m_X_S_3[cent_bin][0][1];
-      m_X_S_3[cent_bin][1][1] = (1. / std::sqrt(m_N_S_3[cent_bin])) * (Q_S_xx_3_avg + m_D_S_3[cent_bin]);
-
-      m_X_N_3[cent_bin][0][0] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (Q_N_yy_3_avg + m_D_N_3[cent_bin]);
-      m_X_N_3[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_3[cent_bin])) * Q_N_xy_3_avg;
-      m_X_N_3[cent_bin][1][0] = m_X_N_3[cent_bin][0][1];
-      m_X_N_3[cent_bin][1][1] = (1. / std::sqrt(m_N_N_3[cent_bin])) * (Q_N_xx_3_avg + m_D_N_3[cent_bin]);
-
-      m_X_S_4[cent_bin][0][0] = (1. / std::sqrt(m_N_S_4[cent_bin])) * (Q_S_yy_4_avg + m_D_S_4[cent_bin]);
-      m_X_S_4[cent_bin][0][1] = (-1. / std::sqrt(m_N_S_4[cent_bin])) * Q_S_xy_4_avg;
-      m_X_S_4[cent_bin][1][0] = m_X_S_4[cent_bin][0][1];
-      m_X_S_4[cent_bin][1][1] = (1. / std::sqrt(m_N_S_4[cent_bin])) * (Q_S_xx_4_avg + m_D_S_4[cent_bin]);
-
-      m_X_N_4[cent_bin][0][0] = (1. / std::sqrt(m_N_N_4[cent_bin])) * (Q_N_yy_4_avg + m_D_N_4[cent_bin]);
-      m_X_N_4[cent_bin][0][1] = (-1. / std::sqrt(m_N_N_4[cent_bin])) * Q_N_xy_4_avg;
-      m_X_N_4[cent_bin][1][0] = m_X_N_4[cent_bin][0][1];
-      m_X_N_4[cent_bin][1][1] = (1. / std::sqrt(m_N_N_4[cent_bin])) * (Q_N_xx_4_avg + m_D_N_4[cent_bin]);
-
-      std::cout << std::format(
-          "cent_bin: {:2}, "
-          "Q_S_xx_2_avg: {:7.4f}, "
-          "Q_S_yy_2_avg: {:7.4f}, "
-          "Q_S_xy_2_avg: {:7.4f}, "
-          "Q_N_xx_2_avg: {:7.4f}, "
-          "Q_N_yy_2_avg: {:7.4f}, "
-          "Q_N_xy_2_avg: {:7.4f}, "
-          "Q_S_xx_3_avg: {:7.4f}, "
-          "Q_S_yy_3_avg: {:7.4f}, "
-          "Q_S_xy_3_avg: {:7.4f}, "
-          "Q_N_xx_3_avg: {:7.4f}, "
-          "Q_N_yy_3_avg: {:7.4f}, "
-          "Q_N_xy_3_avg: {:7.4f}, "
-          "Q_S_xx_4_avg: {:7.4f}, "
-          "Q_S_yy_4_avg: {:7.4f}, "
-          "Q_S_xy_4_avg: {:7.4f}, "
-          "Q_N_xx_4_avg: {:7.4f}, "
-          "Q_N_yy_4_avg: {:7.4f}, "
-          "Q_N_xy_4_avg: {:7.4f}\n",
-          cent_bin,
-          Q_S_xx_2_avg,
-          Q_S_yy_2_avg,
-          Q_S_xy_2_avg,
-          Q_N_xx_2_avg,
-          Q_N_yy_2_avg,
-          Q_N_xy_2_avg,
-          Q_S_xx_3_avg,
-          Q_S_yy_3_avg,
-          Q_S_xy_3_avg,
-          Q_N_xx_3_avg,
-          Q_N_yy_3_avg,
-          Q_N_xy_3_avg,
-          Q_S_xx_4_avg,
-          Q_S_yy_4_avg,
-          Q_S_xy_4_avg,
-          Q_N_xx_4_avg,
-          Q_N_yy_4_avg,
-          Q_N_xy_4_avg);
-    }
-  }
-
-  if (order == 2)
-  {
-    std::cout << std::format("{:#<20}\n", "");
-    std::cout << std::format("Q Vector Second Order Correction Validation\n");
-    for (int cent_bin = 0; cent_bin < static_cast<int>(m_cent_bins); ++cent_bin)
-    {
-      double Q_S_xx_2_corr_avg = m_hists["h_sEPD_Q_S_xx_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_yy_2_corr_avg = m_hists["h_sEPD_Q_S_yy_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_xy_2_corr_avg = m_hists["h_sEPD_Q_S_xy_2_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      double Q_N_xx_2_corr_avg = m_hists["h_sEPD_Q_N_xx_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_yy_2_corr_avg = m_hists["h_sEPD_Q_N_yy_2_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_xy_2_corr_avg = m_hists["h_sEPD_Q_N_xy_2_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      double Q_S_xx_3_corr_avg = m_hists["h_sEPD_Q_S_xx_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_yy_3_corr_avg = m_hists["h_sEPD_Q_S_yy_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_xy_3_corr_avg = m_hists["h_sEPD_Q_S_xy_3_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      double Q_N_xx_3_corr_avg = m_hists["h_sEPD_Q_N_xx_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_yy_3_corr_avg = m_hists["h_sEPD_Q_N_yy_3_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_xy_3_corr_avg = m_hists["h_sEPD_Q_N_xy_3_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      double Q_S_xx_4_corr_avg = m_hists["h_sEPD_Q_S_xx_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_yy_4_corr_avg = m_hists["h_sEPD_Q_S_yy_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_S_xy_4_corr_avg = m_hists["h_sEPD_Q_S_xy_4_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      double Q_N_xx_4_corr_avg = m_hists["h_sEPD_Q_N_xx_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_yy_4_corr_avg = m_hists["h_sEPD_Q_N_yy_4_corr_avg"]->GetBinContent(cent_bin + 1);
-      double Q_N_xy_4_corr_avg = m_hists["h_sEPD_Q_N_xy_4_corr_avg"]->GetBinContent(cent_bin + 1);
-
-      std::cout << std::format(
-          "cent_bin: {:2}, "
-          "Q_S_xx_2_corr_avg: {:7.4f}, "
-          "Q_S_yy_2_corr_avg: {:7.4f}, "
-          "Q_N_xx_2_corr_avg: {:7.4f}, "
-          "Q_N_yy_2_corr_avg: {:7.4f}, "
-          "Q_S_xx_3_corr_avg: {:7.4f}, "
-          "Q_S_yy_3_corr_avg: {:7.4f}, "
-          "Q_N_xx_3_corr_avg: {:7.4f}, "
-          "Q_N_yy_3_corr_avg: {:7.4f}, "
-          "Q_S_xx_4_corr_avg: {:7.4f}, "
-          "Q_S_yy_4_corr_avg: {:7.4f}, "
-          "Q_N_xx_4_corr_avg: {:7.4f}, "
-          "Q_N_yy_4_corr_avg: {:7.4f}, "
-          "Q_S_xy_2_corr_avg: {:7.4f}, "
-          "Q_N_xy_2_corr_avg: {:7.4f}, "
-          "Q_S_xy_3_corr_avg: {:7.4f}, "
-          "Q_N_xy_3_corr_avg: {:7.4f}, "
-          "Q_S_xy_4_corr_avg: {:7.4f}, "
-          "Q_N_xy_4_corr_avg: {:7.4f}\n",
-          cent_bin,
-          Q_S_xx_2_corr_avg,
-          Q_S_yy_2_corr_avg,
-          Q_N_xx_2_corr_avg,
-          Q_N_yy_2_corr_avg,
-          Q_S_xx_3_corr_avg,
-          Q_S_yy_3_corr_avg,
-          Q_N_xx_3_corr_avg,
-          Q_N_yy_3_corr_avg,
-          Q_S_xx_4_corr_avg,
-          Q_S_yy_4_corr_avg,
-          Q_N_xx_4_corr_avg,
-          Q_N_yy_4_corr_avg,
-          Q_S_xy_2_corr_avg,
-          Q_N_xy_2_corr_avg,
-          Q_S_xy_3_corr_avg,
-          Q_N_xy_3_corr_avg,
-          Q_S_xy_4_corr_avg,
-          Q_N_xy_4_corr_avg);
+        std::cout << std::format(
+            "Centrality Bin: {}, "
+            "Harmonic: {}, "
+            "Q_S_xx_corr_avg / Q_S_yy_corr_avg: {:13.10f}, "
+            "Q_N_xx_corr_avg / Q_N_yy_corr_avg: {:13.10f}, "
+            "Q_S_xy_corr_avg: {:13.10f}, "
+            "Q_N_xy_corr_avg: {:13.10f}\n",
+            cent_bin,
+            n,
+            Q_S_xx_corr_avg / Q_S_yy_corr_avg,
+            Q_N_xx_corr_avg / Q_N_yy_corr_avg,
+            Q_S_xy_corr_avg,
+            Q_N_xy_corr_avg);
+      }
     }
   }
 
   std::cout << "Event loop finished." << std::endl;
 }
 
-void QvectorAnalysis::save_results()
+void QvectorAnalysis::save_results() const
 {
   std::filesystem::create_directories(m_output_dir);
   std::string output_filename = m_output_dir + "/test.root";
