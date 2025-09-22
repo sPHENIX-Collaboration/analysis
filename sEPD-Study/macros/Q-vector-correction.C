@@ -42,7 +42,7 @@ class QvectorAnalysis
   {
     setup_chain();
     init_hists();
-    run_event_loop(Pass::CalculateAverages);
+    cache_events();
     run_event_loop(Pass::ApplyRecentering);
     run_event_loop(Pass::ApplyFlattening);
     save_results();
@@ -90,7 +90,6 @@ class QvectorAnalysis
 
   enum class Pass
   {
-    CalculateAverages,
     ApplyRecentering,
     ApplyFlattening
   };
@@ -109,6 +108,25 @@ class QvectorAnalysis
     // std::vector<double>* mbd_phi{nullptr};
     // std::vector<double>* mbd_eta{nullptr};
   };
+
+  // Helper to map harmonics to array indices
+  static constexpr size_t harmonic_to_index(int n)
+  {
+    if (n == 2) return 0;
+    if (n == 3) return 1;
+    if (n == 4) return 2;
+    throw std::out_of_range("Invalid harmonic");
+  }
+
+  struct CachedEvent
+  {
+    double centrality;
+    // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
+    // Array for subdetectors [S, N] -> indices [0, 1]
+    std::array<std::array<QVec, 2>, 3> q_vectors;
+  };
+
+  std::vector<CachedEvent> m_event_cache;
 
   // --- Member Variables ---
   EventData m_event_data;
@@ -129,6 +147,7 @@ class QvectorAnalysis
   // --- Private Helper Methods ---
   void setup_chain();
   void init_hists();
+  void cache_events();
   void run_event_loop(Pass pass);
   void save_results() const;
   void process_averages(double cent, int n, QVec q_S, QVec q_N);
@@ -546,7 +565,7 @@ void QvectorAnalysis::print_flattening(int cent_bin, int n) const
       Q_N_xy_corr_avg);
 }
 
-void QvectorAnalysis::run_event_loop(Pass pass)
+void QvectorAnalysis::cache_events()
 {
   long long n_entries = m_chain->GetEntries();
   if (m_events_to_process)
@@ -554,11 +573,14 @@ void QvectorAnalysis::run_event_loop(Pass pass)
     n_entries = std::min(m_events_to_process, n_entries);
   }
 
+  m_event_cache.reserve(static_cast<long unsigned int>(n_entries));
+
   // Event Loop
   for (long long i = 0; i < n_entries; ++i)
   {
     // Load Event Data from TChain
     m_chain->GetEntry(i);
+
     if (i % 1000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
@@ -568,10 +590,7 @@ void QvectorAnalysis::run_event_loop(Pass pass)
 
     // Identify Centrality Bin
     int cent_bin = m_hists1D["h_Cent"]->FindBin(cent) - 1;
-    if (pass == Pass::CalculateAverages)
-    {
-      m_hists1D["h_Cent"]->Fill(cent);
-    }
+    m_hists1D["h_Cent"]->Fill(cent);
 
     // ensure centrality is valid
     if (cent_bin >= m_cent_bins)
@@ -581,32 +600,59 @@ void QvectorAnalysis::run_event_loop(Pass pass)
     }
 
     // Store Q-vectors for this event
-    std::map<int, std::map<Subdetector, QVec>> event_q_vectors;
+    CachedEvent event;
+
+    event.centrality = cent;
     for (int n : m_harmonics)
     {
+      size_t n_idx = harmonic_to_index(n);
       for (auto det : m_subdetectors)
       {
         std::string det_str = (det == Subdetector::S) ? "S" : "N";
         std::string branch_name_x = std::format("sEPD_Q_{}_x_{}", det_str, n);
         std::string branch_name_y = std::format("sEPD_Q_{}_y_{}", det_str, n);
-        event_q_vectors[n][det] = {m_event_data.q_vals[branch_name_x], m_event_data.q_vals[branch_name_y]};
+        size_t det_idx = (det == Subdetector::S) ? 0 : 1;
+        event.q_vectors[n_idx][det_idx] = {m_event_data.q_vals[branch_name_x], m_event_data.q_vals[branch_name_y]};
       }
+
+      process_averages(cent, n, event.q_vectors[n_idx][0], event.q_vectors[n_idx][1]);
     }
 
-    // Now process for each harmonic
+    m_event_cache.push_back(std::move(event));
+  }
+
+  for (int cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+  {
     for (int n : m_harmonics)
     {
-      const auto& q_S = event_q_vectors[n][Subdetector::S];
-      const auto& q_N = event_q_vectors[n][Subdetector::N];
+      compute_averages(cent_bin, n);
+    }
+  }
+}
 
-      // --- First Pass: Calculate Averages ---
-      if (pass == Pass::CalculateAverages)
-      {
-        process_averages(cent, n, q_S, q_N);
-      }
+void QvectorAnalysis::run_event_loop(Pass pass)
+{
+  int event_ctr = 0;
+  size_t n_entries = m_event_cache.size();
+
+  for (const auto& event : m_event_cache)
+  {
+    double cent = event.centrality;
+
+    if (event_ctr % 1000 == 0)
+    {
+      std::cout << std::format("Processing {}/{}: {:.2f} %", event_ctr, n_entries, static_cast<double>(event_ctr) * 100. / static_cast<double>(n_entries)) << std::endl;
+    }
+    ++event_ctr;
+
+    for (int n : m_harmonics)
+    {
+      size_t n_idx = harmonic_to_index(n);
+      const auto& q_S = event.q_vectors[n_idx][0];  // 0 for South
+      const auto& q_N = event.q_vectors[n_idx][1];  // 1 for North
 
       // --- Second Pass: Apply 1st Order, Derive 2nd Order ---
-      else if (pass == Pass::ApplyRecentering)
+      if (pass == Pass::ApplyRecentering)
       {
         process_recentering(cent, n, q_S, q_N);
       }
@@ -626,12 +672,7 @@ void QvectorAnalysis::run_event_loop(Pass pass)
   {
     for (int n : m_harmonics)
     {
-      if (pass == Pass::CalculateAverages)
-      {
-        compute_averages(cent_bin, n);
-      }
-
-      else if (pass == Pass::ApplyRecentering)
+      if (pass == Pass::ApplyRecentering)
       {
         compute_recentering(cent_bin, n);
       }
