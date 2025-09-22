@@ -79,9 +79,12 @@ class QvectorAnalysis
     std::array<std::array<double, 2>, 2> X_matrix{};
   };
 
+  static constexpr size_t m_cent_bins = 10;
   // Holds all correction data
   // key: [Cent][Harmonic][Subdetector]
-  std::map<int, std::map<int, std::map<Subdetector, CorrectionData>>> m_correction_data;
+  // Harmonics {2,3,4} -> 3 elements
+  // Subdetectors {S,N} -> 2 elements
+  std::array<std::array<std::array<CorrectionData, 2>, 3>, m_cent_bins> m_correction_data;
 
   // Store harmonic orders and subdetectors for easy iteration
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
@@ -180,7 +183,6 @@ class QvectorAnalysis
   long long m_events_to_process;
   int m_verbosity;
   std::string m_output_dir;
-  int m_cent_bins{10};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -194,12 +196,12 @@ class QvectorAnalysis
   void run_event_loop(Pass pass);
   void save_results() const;
   void process_averages(double cent, QVec q_S, QVec q_N, const AverageHists& h);
-  void process_recentering(double cent, int n, QVec q_S, QVec q_N, const RecenterHists& h);
-  void process_flattening(double cent, int n, QVec q_S, QVec q_N, const FlatteningHists& h);
+  void process_recentering(double cent, size_t n_idx, QVec q_S, QVec q_N, const RecenterHists& h);
+  void process_flattening(double cent, size_t n_idx, QVec q_S, QVec q_N, const FlatteningHists& h);
 
-  void compute_averages(int cent_bin, int n);
-  void compute_recentering(int cent_bin, int n);
-  void print_flattening(int cent_bin, int n) const;
+  void compute_averages(size_t cent_bin, int n);
+  void compute_recentering(size_t cent_bin, int n);
+  void print_flattening(size_t cent_bin, int n) const;
 
   std::map<int, AverageHists> prepare_average_hists();
   std::map<int, RecenterHists> prepare_recenter_hists();
@@ -379,14 +381,14 @@ void QvectorAnalysis::process_averages(double cent, QVec q_S, QVec q_N, const Av
   h.Psi->Fill(psi_S, psi_N, cent);
 }
 
-void QvectorAnalysis::process_recentering(double cent, int n, QVec q_S, QVec q_N, const RecenterHists& h)
+void QvectorAnalysis::process_recentering(double cent, size_t n_idx, QVec q_S, QVec q_N, const RecenterHists& h)
 {
-  int cent_bin = m_hists1D["h_Cent"]->FindBin(cent) - 1;
+  size_t cent_bin = static_cast<size_t>(m_hists1D["h_Cent"]->FindBin(cent) - 1);
 
-  double Q_S_x_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.x;
-  double Q_S_y_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.y;
-  double Q_N_x_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.x;
-  double Q_N_y_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.y;
+  double Q_S_x_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.x;
+  double Q_S_y_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.y;
+  double Q_N_x_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.x;
+  double Q_N_y_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.y;
 
   QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
   QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
@@ -409,20 +411,20 @@ void QvectorAnalysis::process_recentering(double cent, int n, QVec q_S, QVec q_N
   h.Psi_corr->Fill(psi_S_corr, psi_N_corr, cent);
 }
 
-void QvectorAnalysis::process_flattening(double cent, int n, QVec q_S, QVec q_N, const FlatteningHists& h)
+void QvectorAnalysis::process_flattening(double cent, size_t n_idx, QVec q_S, QVec q_N, const FlatteningHists& h)
 {
-  int cent_bin = m_hists1D["h_Cent"]->FindBin(cent) - 1;
+  size_t cent_bin = static_cast<size_t>(m_hists1D["h_Cent"]->FindBin(cent) - 1);
 
-  double Q_S_x_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.x;
-  double Q_S_y_avg = m_correction_data[cent_bin][n][Subdetector::S].avg_Q.y;
-  double Q_N_x_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.x;
-  double Q_N_y_avg = m_correction_data[cent_bin][n][Subdetector::N].avg_Q.y;
+  double Q_S_x_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.x;
+  double Q_S_y_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.y;
+  double Q_N_x_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.x;
+  double Q_N_y_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.y;
 
   QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
   QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
 
-  const auto& X_S = m_correction_data[cent_bin][n][Subdetector::S].X_matrix;
-  const auto& X_N = m_correction_data[cent_bin][n][Subdetector::N].X_matrix;
+  const auto& X_S = m_correction_data[cent_bin][n_idx][0].X_matrix;
+  const auto& X_N = m_correction_data[cent_bin][n_idx][1].X_matrix;
 
   double Q_S_x_corr2 = X_S[0][0] * q_S_corr.x + X_S[0][1] * q_S_corr.y;
   double Q_S_y_corr2 = X_S[1][0] * q_S_corr.x + X_S[1][1] * q_S_corr.y;
@@ -442,20 +444,24 @@ void QvectorAnalysis::process_flattening(double cent, int n, QVec q_S, QVec q_N,
   h.Psi_corr2->Fill(psi_S, psi_N, cent);
 }
 
-void QvectorAnalysis::compute_averages(int cent_bin, int n)
+void QvectorAnalysis::compute_averages(size_t cent_bin, int n)
 {
+  size_t n_idx = harmonic_to_index(n);
+
   std::string S_x_avg_name = std::format("h_sEPD_Q_S_x_{}_avg", n);
   std::string S_y_avg_name = std::format("h_sEPD_Q_S_y_{}_avg", n);
   std::string N_x_avg_name = std::format("h_sEPD_Q_N_x_{}_avg", n);
   std::string N_y_avg_name = std::format("h_sEPD_Q_N_y_{}_avg", n);
 
-  double Q_S_x_avg = m_profiles[S_x_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_S_y_avg = m_profiles[S_y_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_x_avg = m_profiles[N_x_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_y_avg = m_profiles[N_y_avg_name]->GetBinContent(cent_bin + 1);
+  int bin = static_cast<int>(cent_bin+1);
 
-  m_correction_data[cent_bin][n][Subdetector::S].avg_Q = {Q_S_x_avg, Q_S_y_avg};
-  m_correction_data[cent_bin][n][Subdetector::N].avg_Q = {Q_N_x_avg, Q_N_y_avg};
+  double Q_S_x_avg = m_profiles[S_x_avg_name]->GetBinContent(bin);
+  double Q_S_y_avg = m_profiles[S_y_avg_name]->GetBinContent(bin);
+  double Q_N_x_avg = m_profiles[N_x_avg_name]->GetBinContent(bin);
+  double Q_N_y_avg = m_profiles[N_y_avg_name]->GetBinContent(bin);
+
+  m_correction_data[cent_bin][n_idx][0].avg_Q = {Q_S_x_avg, Q_S_y_avg};
+  m_correction_data[cent_bin][n_idx][1].avg_Q = {Q_N_x_avg, Q_N_y_avg};
 
   std::cout << std::format(
       "Centrality Bin: {}, "
@@ -472,17 +478,21 @@ void QvectorAnalysis::compute_averages(int cent_bin, int n)
       Q_N_y_avg);
 }
 
-void QvectorAnalysis::compute_recentering(int cent_bin, int n)
+void QvectorAnalysis::compute_recentering(size_t cent_bin, int n)
 {
+  size_t n_idx = harmonic_to_index(n);
+
   std::string S_x_corr_avg_name = std::format("h_sEPD_Q_S_x_{}_corr_avg", n);
   std::string S_y_corr_avg_name = std::format("h_sEPD_Q_S_y_{}_corr_avg", n);
   std::string N_x_corr_avg_name = std::format("h_sEPD_Q_N_x_{}_corr_avg", n);
   std::string N_y_corr_avg_name = std::format("h_sEPD_Q_N_y_{}_corr_avg", n);
 
-  double Q_S_x_corr_avg = m_profiles[S_x_corr_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_S_y_corr_avg = m_profiles[S_y_corr_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_x_corr_avg = m_profiles[N_x_corr_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_y_corr_avg = m_profiles[N_y_corr_avg_name]->GetBinContent(cent_bin + 1);
+  int bin = static_cast<int>(cent_bin+1);
+
+  double Q_S_x_corr_avg = m_profiles[S_x_corr_avg_name]->GetBinContent(bin);
+  double Q_S_y_corr_avg = m_profiles[S_y_corr_avg_name]->GetBinContent(bin);
+  double Q_N_x_corr_avg = m_profiles[N_x_corr_avg_name]->GetBinContent(bin);
+  double Q_N_y_corr_avg = m_profiles[N_y_corr_avg_name]->GetBinContent(bin);
 
   // -- Compute 2nd Order Correction --
   std::string S_xx_avg_name = std::format("h_sEPD_Q_S_xx_{}_avg", n);
@@ -492,19 +502,19 @@ void QvectorAnalysis::compute_recentering(int cent_bin, int n)
   std::string N_yy_avg_name = std::format("h_sEPD_Q_N_yy_{}_avg", n);
   std::string N_xy_avg_name = std::format("h_sEPD_Q_N_xy_{}_avg", n);
 
-  double Q_S_xx_avg = m_profiles[S_xx_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_S_yy_avg = m_profiles[S_yy_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_S_xy_avg = m_profiles[S_xy_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_xx_avg = m_profiles[N_xx_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_yy_avg = m_profiles[N_yy_avg_name]->GetBinContent(cent_bin + 1);
-  double Q_N_xy_avg = m_profiles[N_xy_avg_name]->GetBinContent(cent_bin + 1);
+  double Q_S_xx_avg = m_profiles[S_xx_avg_name]->GetBinContent(bin);
+  double Q_S_yy_avg = m_profiles[S_yy_avg_name]->GetBinContent(bin);
+  double Q_S_xy_avg = m_profiles[S_xy_avg_name]->GetBinContent(bin);
+  double Q_N_xx_avg = m_profiles[N_xx_avg_name]->GetBinContent(bin);
+  double Q_N_yy_avg = m_profiles[N_yy_avg_name]->GetBinContent(bin);
+  double Q_N_xy_avg = m_profiles[N_xy_avg_name]->GetBinContent(bin);
 
-  m_correction_data[cent_bin][n][Subdetector::S].avg_Q_xx = Q_S_xx_avg;
-  m_correction_data[cent_bin][n][Subdetector::S].avg_Q_yy = Q_S_yy_avg;
-  m_correction_data[cent_bin][n][Subdetector::S].avg_Q_xy = Q_S_xy_avg;
-  m_correction_data[cent_bin][n][Subdetector::N].avg_Q_xx = Q_N_xx_avg;
-  m_correction_data[cent_bin][n][Subdetector::N].avg_Q_yy = Q_N_yy_avg;
-  m_correction_data[cent_bin][n][Subdetector::N].avg_Q_xy = Q_N_xy_avg;
+  m_correction_data[cent_bin][n_idx][0].avg_Q_xx = Q_S_xx_avg;
+  m_correction_data[cent_bin][n_idx][0].avg_Q_yy = Q_S_yy_avg;
+  m_correction_data[cent_bin][n_idx][0].avg_Q_xy = Q_S_xy_avg;
+  m_correction_data[cent_bin][n_idx][1].avg_Q_xx = Q_N_xx_avg;
+  m_correction_data[cent_bin][n_idx][1].avg_Q_yy = Q_N_yy_avg;
+  m_correction_data[cent_bin][n_idx][1].avg_Q_xy = Q_N_xy_avg;
 
   // Compute N and D terms
   double D_term_S = std::sqrt((Q_S_xx_avg * Q_S_yy_avg) - (Q_S_xy_avg * Q_S_xy_avg));
@@ -513,8 +523,8 @@ void QvectorAnalysis::compute_recentering(int cent_bin, int n)
   double N_term_S = D_term_S * (Q_S_xx_avg + Q_S_yy_avg + (2 * D_term_S));
   double N_term_N = D_term_N * (Q_N_xx_avg + Q_N_yy_avg + (2 * D_term_N));
 
-  auto& X_S_matrix = m_correction_data[cent_bin][n][Subdetector::S].X_matrix;
-  auto& X_N_matrix = m_correction_data[cent_bin][n][Subdetector::N].X_matrix;
+  auto& X_S_matrix = m_correction_data[cent_bin][n_idx][0].X_matrix;
+  auto& X_N_matrix = m_correction_data[cent_bin][n_idx][1].X_matrix;
 
   X_S_matrix[0][0] = (1. / std::sqrt(N_term_S)) * (Q_S_yy_avg + D_term_S);
   X_S_matrix[0][1] = (-1. / std::sqrt(N_term_S)) * Q_S_xy_avg;
@@ -549,7 +559,7 @@ void QvectorAnalysis::compute_recentering(int cent_bin, int n)
       Q_N_xy_avg);
 }
 
-void QvectorAnalysis::print_flattening(int cent_bin, int n) const
+void QvectorAnalysis::print_flattening(size_t cent_bin, int n) const
 {
   std::string S_xx_corr_avg_name = std::format("h_sEPD_Q_S_xx_{}_corr_avg", n);
   std::string S_yy_corr_avg_name = std::format("h_sEPD_Q_S_yy_{}_corr_avg", n);
@@ -558,12 +568,14 @@ void QvectorAnalysis::print_flattening(int cent_bin, int n) const
   std::string N_yy_corr_avg_name = std::format("h_sEPD_Q_N_yy_{}_corr_avg", n);
   std::string N_xy_corr_avg_name = std::format("h_sEPD_Q_N_xy_{}_corr_avg", n);
 
-  double Q_S_xx_corr_avg = m_profiles.at(S_xx_corr_avg_name)->GetBinContent(cent_bin + 1);
-  double Q_S_yy_corr_avg = m_profiles.at(S_yy_corr_avg_name)->GetBinContent(cent_bin + 1);
-  double Q_S_xy_corr_avg = m_profiles.at(S_xy_corr_avg_name)->GetBinContent(cent_bin + 1);
-  double Q_N_xx_corr_avg = m_profiles.at(N_xx_corr_avg_name)->GetBinContent(cent_bin + 1);
-  double Q_N_yy_corr_avg = m_profiles.at(N_yy_corr_avg_name)->GetBinContent(cent_bin + 1);
-  double Q_N_xy_corr_avg = m_profiles.at(N_xy_corr_avg_name)->GetBinContent(cent_bin + 1);
+  int bin = static_cast<int>(cent_bin+1);
+
+  double Q_S_xx_corr_avg = m_profiles.at(S_xx_corr_avg_name)->GetBinContent(bin);
+  double Q_S_yy_corr_avg = m_profiles.at(S_yy_corr_avg_name)->GetBinContent(bin);
+  double Q_S_xy_corr_avg = m_profiles.at(S_xy_corr_avg_name)->GetBinContent(bin);
+  double Q_N_xx_corr_avg = m_profiles.at(N_xx_corr_avg_name)->GetBinContent(bin);
+  double Q_N_yy_corr_avg = m_profiles.at(N_yy_corr_avg_name)->GetBinContent(bin);
+  double Q_N_xy_corr_avg = m_profiles.at(N_xy_corr_avg_name)->GetBinContent(bin);
 
   std::cout << std::format(
       "Centrality Bin: {}, "
@@ -638,7 +650,7 @@ void QvectorAnalysis::cache_events()
     double cent = m_event_data.event_centrality;
 
     // Identify Centrality Bin
-    int cent_bin = m_hists1D["h_Cent"]->FindBin(cent) - 1;
+    size_t cent_bin = static_cast<size_t>(m_hists1D["h_Cent"]->FindBin(cent) - 1);
     m_hists1D["h_Cent"]->Fill(cent);
 
     // ensure centrality is valid
@@ -670,7 +682,7 @@ void QvectorAnalysis::cache_events()
     m_event_cache.push_back(std::move(event));
   }
 
-  for (int cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+  for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
   {
     for (int n : m_harmonics)
     {
@@ -788,13 +800,13 @@ void QvectorAnalysis::run_event_loop(Pass pass)
       // --- Second Pass: Apply 1st Order, Derive 2nd Order ---
       if (pass == Pass::ApplyRecentering)
       {
-        process_recentering(cent, n, q_S, q_N, recenter_hists.at(n));
+        process_recentering(cent, n_idx, q_S, q_N, recenter_hists.at(n));
       }
 
       // --- Third Pass: Apply 2nd Order, Validate ---
       else if (pass == Pass::ApplyFlattening)
       {
-        process_flattening(cent, n, q_S, q_N, flattening_hists.at(n));
+        process_flattening(cent, n_idx, q_S, q_N, flattening_hists.at(n));
       }
     }
   }
@@ -802,7 +814,7 @@ void QvectorAnalysis::run_event_loop(Pass pass)
   std::cout << std::format("{:#<20}\n", "");
 
   std::cout << std::format("Pass: {}\n", static_cast<uint8_t>(pass));
-  for (int cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
+  for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
   {
     for (int n : m_harmonics)
     {
