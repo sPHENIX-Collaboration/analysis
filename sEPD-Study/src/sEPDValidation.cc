@@ -107,13 +107,13 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       // Charge
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, -m_hist_config.m_mbd_eta_high, -m_hist_config.m_mbd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_North_ZS", "SEPD North Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_ZS", "SEPD South Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_ZS", "SEPD South Frac ZS: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, -m_hist_config.m_sepd_eta_high, -m_hist_config.m_sepd_eta_low}},
+      {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.2: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile, "hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
       {HistDef::Type::TProfile, "hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
       {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -403,7 +403,7 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 
     if (mbd_arm == 0)
     {
-      dynamic_cast<TProfile2D *>(m_hists["h2MBD_South_Charge"].get())->Fill(mbd_ch_phi, mbd_ch_eta, charge);
+      dynamic_cast<TProfile2D *>(m_hists["h2MBD_South_Charge"].get())->Fill(mbd_ch_phi, -mbd_ch_eta, charge);
     }
     if (mbd_arm == 1)
     {
@@ -496,7 +496,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       ++m_ctr["sepd_tower_zs"];
       if (eta < 0)
       {
-        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, eta, 1);
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, -eta, 1);
       }
       else
       {
@@ -507,7 +507,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
     if (eta < 0)
     {
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, eta, 0);
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, -eta, 0);
     }
     else
     {
@@ -523,7 +523,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
       if (eta < 0)
       {
-        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, eta, 1);
+        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, -eta, 1);
       }
       else
       {
@@ -534,7 +534,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
     if (eta < 0)
     {
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, eta, 0);
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get())->Fill(phi, -eta, 0);
     }
     else
     {
@@ -570,7 +570,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     if (arm == 0)
     {
       sepd_total_charge_south += charge;
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_Charge"].get())->Fill(phi, eta, charge);
+      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_Charge"].get())->Fill(phi, -eta, charge);
       dynamic_cast<TProfile *>(m_hists["hSEPD_South_Charge"].get())->Fill(rbin, charge);
 
       Q_S_x_2 += q_x_2;
