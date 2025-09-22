@@ -313,13 +313,13 @@ void QvectorAnalysis::init_hists()
     std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
 
     m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                      std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                      std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                       bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
     m_hists3D[psi_corr_hist_name] = std::make_unique<TH3F>(psi_corr_hist_name.c_str(),
-                                                           std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                           std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                            bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
     m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
-                                                            std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; 2#Psi^{{S}}_{0}; 2#Psi^{{N}}_{0}; Centrality [%]", n).c_str(),
+                                                            std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                             bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_cent_bins, cent_low, cent_high);
 
     // South, North
