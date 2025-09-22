@@ -29,11 +29,10 @@ class QvectorAnalysis
 {
  public:
   // The constructor takes the configuration
-  QvectorAnalysis(std::string input_list, long long events, int verbosity, std::string output_dir)
+  QvectorAnalysis(std::string input_list, long long events, std::string output_dir)
     : m_chain(std::make_unique<TChain>("T"))
     , m_input_list(std::move(input_list))
     , m_events_to_process(events)
-    , m_verbosity(verbosity)
     , m_output_dir(std::move(output_dir))
   {
   }
@@ -115,15 +114,24 @@ class QvectorAnalysis
   // Helper to map harmonics to array indices
   static constexpr size_t harmonic_to_index(int n)
   {
-    if (n == 2) return 0;
-    if (n == 3) return 1;
-    if (n == 4) return 2;
+    if (n == 2)
+    {
+      return 0;
+    }
+    if (n == 3)
+    {
+      return 1;
+    }
+    if (n == 4)
+    {
+      return 2;
+    }
     throw std::out_of_range("Invalid harmonic");
   }
 
   struct CachedEvent
   {
-    double centrality;
+    double centrality{0.0};
     // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, 3> q_vectors;
@@ -181,7 +189,6 @@ class QvectorAnalysis
   // Configuration stored as members
   std::string m_input_list;
   long long m_events_to_process;
-  int m_verbosity;
   std::string m_output_dir;
 
   // Hists
@@ -195,7 +202,7 @@ class QvectorAnalysis
   void cache_events();
   void run_event_loop(Pass pass);
   void save_results() const;
-  void process_averages(double cent, QVec q_S, QVec q_N, const AverageHists& h);
+  static void process_averages(double cent, QVec q_S, QVec q_N, const AverageHists& h);
   void process_recentering(double cent, size_t n_idx, QVec q_S, QVec q_N, const RecenterHists& h);
   void process_flattening(double cent, size_t n_idx, QVec q_S, QVec q_N, const FlatteningHists& h);
 
@@ -679,7 +686,7 @@ void QvectorAnalysis::cache_events()
       process_averages(cent, event.q_vectors[n_idx][0], event.q_vectors[n_idx][1], average_hists.at(n));
     }
 
-    m_event_cache.push_back(std::move(event));
+    m_event_cache.push_back(event);
   }
 
   for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
@@ -866,20 +873,19 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 2 || argc > 5)
+  if (argc < 2 || argc > 4)
   {
-    std::cout << "Usage: " << argv[0] << " <input_list_file> [events] [verbosity] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_list_file> [events] [output_directory]" << std::endl;
     return 1;
   }
 
   const std::string input_list = argv[1];
   long long events = (argc >= 3) ? std::atoll(argv[2]) : 0;
-  int verbosity = (argc >= 4) ? std::atoi(argv[3]) : 0;
-  std::string output_dir = (argc >= 5) ? argv[4] : ".";
+  std::string output_dir = (argc >= 4) ? argv[3] : ".";
 
   try
   {
-    QvectorAnalysis analysis(input_list, events, verbosity, output_dir);
+    QvectorAnalysis analysis(input_list, events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
