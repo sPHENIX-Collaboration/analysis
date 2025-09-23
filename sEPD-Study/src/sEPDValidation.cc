@@ -113,6 +113,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH2, "h2SEPD_Channel_Charge", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_charge, m_hist_config.m_sepd_channel_charge_low, m_hist_config.m_sepd_channel_charge_high}},
       {HistDef::Type::TH2, "h2SEPD_Channel_Chargev2", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_chargev2, m_hist_config.m_sepd_channel_chargev2_low, m_hist_config.m_sepd_channel_chargev2_high}},
 
+      {HistDef::Type::TProfile, "hSEPD_Charge", "sEPD Channel Avg Charge: |z| < 10 cm and MB; Channel; Avg Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}},
+
       {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
 
@@ -589,6 +591,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
     // sepd charge sums
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+    dynamic_cast<TProfile *>(m_hists["hSEPD_Charge"].get())->Fill(channel, charge);
     // South
     if (arm == 0)
     {
