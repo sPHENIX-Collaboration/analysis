@@ -79,10 +79,10 @@ class sEPDValidation : public SubsysReco
     double m_zvtx_low{-50};
     double m_zvtx_high{50};
 
-    unsigned int m_bins_cent{100};
-    unsigned int m_bins_cent_reduced{10};
+    unsigned int m_bins_cent{80};
+    unsigned int m_bins_cent_reduced{8};
     double m_cent_low{-0.5};
-    double m_cent_high{99.5};
+    double m_cent_high{79.5};
 
     unsigned int m_bins_sepd_charge{200};
     double m_sepd_charge_low{0};
@@ -227,6 +227,7 @@ class sEPDValidation : public SubsysReco
   {
     double m_zvtx_max{10};
     double m_sepd_charge_threshold{0.2};
+    double m_cent_max{80};
   };
 
   EventCuts m_cuts;

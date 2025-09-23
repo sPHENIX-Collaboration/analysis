@@ -320,6 +320,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   JetUtils::update_min_max(m_dPhi, m_logging.m_dPhi_min, m_logging.m_dPhi_max);
 
   m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
+  m_hists["hCentrality"]->Fill(m_cent);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -336,7 +337,12 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
   m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
   m_data.event_centrality = m_cent;
 
-  m_hists["hCentrality"]->Fill(m_cent);
+  // skip event if centrality is too peripheral
+  if (!std::isfinite(m_cent) || m_cent >= m_cuts.m_cent_max)
+  {
+    ++m_ctr["process_eventCheck_centrality_large"];
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   JetUtils::update_min_max(m_cent, m_logging.m_cent_min, m_logging.m_cent_max);
 
@@ -864,13 +870,13 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
   }
   ++m_event;
 
-  int ret = process_event_check(topNode);
+  int ret = process_centrality(topNode);
   if (ret)
   {
     return ret;
   }
 
-  ret = process_centrality(topNode);
+  ret = process_event_check(topNode);
   if (ret)
   {
     return ret;
@@ -1003,6 +1009,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, Reset Event Calls : {}", m_ctr["event_reset"]) << std::endl;
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
+  std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
   std::cout << std::format("process event, hasBeamBackground: {}", m_ctr["process_eventCheck_beamBkg"]) << std::endl;
   std::cout << std::format("process event, failsAnyJetCut: {}", m_ctr["process_eventCheck_jetBkg"]) << std::endl;
