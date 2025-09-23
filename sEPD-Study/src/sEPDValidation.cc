@@ -196,10 +196,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sEPD_Q_S_y_4", &m_data.sEPD_Q_S_y_4, "sEPD_Q_S_y_4/D");
   m_tree->Branch("sEPD_Q_N_x_4", &m_data.sEPD_Q_N_x_4, "sEPD_Q_N_x_4/D");
   m_tree->Branch("sEPD_Q_N_y_4", &m_data.sEPD_Q_N_y_4, "sEPD_Q_N_y_4/D");
+  m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
   m_tree->Branch("sepd_eta", &m_data.sepd_eta);
-  m_tree->Branch("sepd_rbin", &m_data.sepd_rbin);
   m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   m_tree->Branch("mbd_eta", &m_data.mbd_eta);
@@ -564,10 +564,10 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_BelowThresh"].get())->Fill(phi, eta, 0);
     }
 
+    m_data.sepd_channel.push_back(channel);
     m_data.sepd_charge.push_back(charge);
     m_data.sepd_phi.push_back(phi);
     m_data.sepd_eta.push_back(eta);
-    m_data.sepd_rbin.push_back(rbin);
 
     JetUtils::update_min_max(sepd_ch_z, m_logging.m_sepd_z_min, m_logging.m_sepd_z_max);
     JetUtils::update_min_max(sepd_ch_r, m_logging.m_sepd_r_min, m_logging.m_sepd_r_max);
@@ -943,10 +943,10 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_centrality = 9999;
 
   // sEPD
+  m_data.sepd_channel.clear();
   m_data.sepd_charge.clear();
   m_data.sepd_phi.clear();
   m_data.sepd_eta.clear();
-  m_data.sepd_rbin.clear();
 
   // sEPD Q Vec
   m_data.sEPD_Q_S_x_2 = 0;

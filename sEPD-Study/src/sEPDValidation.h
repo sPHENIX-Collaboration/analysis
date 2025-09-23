@@ -327,10 +327,10 @@ class sEPDValidation : public SubsysReco
     double sEPD_Q_S_y_4{0};
     double sEPD_Q_N_x_4{0};
     double sEPD_Q_N_y_4{0};
+    std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;
     std::vector<double> sepd_eta;
-    std::vector<int> sepd_rbin;
     std::vector<double> mbd_charge;
     std::vector<double> mbd_phi;
     std::vector<double> mbd_eta;
