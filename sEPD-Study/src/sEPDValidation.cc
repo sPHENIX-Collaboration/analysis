@@ -106,19 +106,30 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
       // Charge
       {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+
       {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
       {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
+
+      {HistDef::Type::TH2, "h2SEPD_Channel_Charge", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_charge, m_hist_config.m_sepd_channel_charge_low, m_hist_config.m_sepd_channel_charge_high}},
+      {HistDef::Type::TH2, "h2SEPD_Channel_Chargev2", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_chargev2, m_hist_config.m_sepd_channel_chargev2_low, m_hist_config.m_sepd_channel_chargev2_high}},
+
       {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+
       {HistDef::Type::TProfile2D, "h2SEPD_North_ZS", "SEPD North Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_ZS", "SEPD South Frac ZS: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+
       {HistDef::Type::TProfile2D, "h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.2: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+
       {HistDef::Type::TProfile, "hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
       {HistDef::Type::TProfile, "hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
+
       {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+
       {HistDef::Type::TH3, "h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+
       {HistDef::Type::TH3, "h3SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
       // Jets
@@ -160,6 +171,9 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   {
     m_hists["hEventJetBkg"]->GetXaxis()->SetBinLabel(i + 1, m_JetBkg_Type[i].c_str());
   }
+
+  m_hists["h2SEPD_Channel_Charge"]->Sumw2();
+  m_hists["h2SEPD_Channel_Chargev2"]->Sumw2();
 
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
   m_output->cd();
@@ -521,6 +535,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     }
 
     JetUtils::update_min_max(charge, m_logging.m_sepd_charge_min, m_logging.m_sepd_charge_max);
+
+    dynamic_cast<TH2*>(m_hists["h2SEPD_Channel_Charge"].get())->Fill(channel, charge);
+    dynamic_cast<TH2*>(m_hists["h2SEPD_Channel_Chargev2"].get())->Fill(channel, charge);
 
     // expecting Nmips
     if (charge < m_cuts.m_sepd_charge_threshold)

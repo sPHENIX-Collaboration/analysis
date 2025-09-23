@@ -84,6 +84,16 @@ class sEPDValidation : public SubsysReco
     double m_cent_low{-0.5};
     double m_cent_high{79.5};
 
+    unsigned int m_bins_sepd_channels{744};
+
+    unsigned int m_bins_sepd_channel_charge{300};
+    double m_sepd_channel_charge_low{0};
+    double m_sepd_channel_charge_high{3};
+
+    unsigned int m_bins_sepd_channel_chargev2{210};
+    double m_sepd_channel_chargev2_low{-10};
+    double m_sepd_channel_chargev2_high{200};
+
     unsigned int m_bins_sepd_charge{200};
     double m_sepd_charge_low{0};
     double m_sepd_charge_high{2e4};
