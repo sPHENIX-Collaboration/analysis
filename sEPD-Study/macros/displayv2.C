@@ -1,6 +1,7 @@
 // ====================================================================
 // sPHENIX Includes
 // ====================================================================
+#include <calobase/TowerInfoDefs.h>
 #include <sPhenixStyle.C>
 
 // ====================================================================
@@ -10,10 +11,12 @@
 #include <TF1.h>
 #include <TFile.h>
 #include <TH1.h>
+#include <TH2.h>
 #include <TH3.h>
 #include <TKey.h>
 #include <TLegend.h>
 #include <TLine.h>
+#include <TProfile.h>
 #include <TROOT.h>
 
 // ====================================================================
@@ -61,6 +64,7 @@ class Displayv2
   // --- Private Helper Methods ---
   void read_hists();
   void draw();
+  void draw_sepd_avg_charge(TCanvas* c1, const std::string& output);
 };
 
 // ====================================================================
@@ -101,11 +105,86 @@ void Displayv2::read_hists()
     // Check if the class inherits from TH1 (base histogram class)
     if (cl && cl->InheritsFrom("TH1"))
     {
-        std::string name = key->GetName();
-        std::cout << std::format("Reading Hist: {}\n", name);
-        m_hists[name] = std::unique_ptr<TH1>(static_cast<TH1*>(file->Get(name.c_str())));
+      std::string name = key->GetName();
+      std::cout << std::format("Reading Hist: {}\n", name);
+      m_hists[name] = std::unique_ptr<TH1>(static_cast<TH1*>(file->Get(name.c_str())));
     }
   }
+}
+
+void Displayv2::draw_sepd_avg_charge(TCanvas* c1, const std::string& output)
+{
+  int sepd_channels = 744;
+  int rbins = 16;
+  int bins_charge = 40;
+
+  auto h2S = std::make_unique<TH2F>("h2SEPD_South_Charge_rbin",
+                                    "sEPD South; r_{bin}; Avg Charge",
+                                    rbins, -0.5, rbins - 0.5,
+                                    bins_charge, 0, bins_charge);
+
+  auto h2N = std::make_unique<TH2F>("h2SEPD_North_Charge_rbin",
+                                    "sEPD North; r_{bin}; Avg Charge",
+                                    rbins, -0.5, rbins - 0.5,
+                                    bins_charge, 0, bins_charge);
+
+  for (int channel = 0; channel < sepd_channels; ++channel)
+  {
+    unsigned int key = TowerInfoDefs::encode_epd(channel);
+    int rbin = TowerInfoDefs::get_epd_rbin(key);
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    double avg_charge = m_hists["hSEPD_Charge"]->GetBinContent(channel + 1);
+
+    auto h2 = (arm == 0) ? h2S.get() : h2N.get();
+
+    dynamic_cast<TH2*>(h2)->Fill(rbin, avg_charge);
+  }
+
+  h2S->Draw("COLZ1");
+  h2S->GetYaxis()->SetTitleOffset(1.f);
+  h2S->GetXaxis()->SetTitleOffset(0.7f);
+
+  auto hSpx = dynamic_cast<TH2*>(h2S.get())->ProfileX("hSpx", 2, -1, "s");
+  auto hNpx = dynamic_cast<TH2*>(h2N.get())->ProfileX("hNpx", 2, -1, "s");
+
+  auto hSpx_sigma = hSpx->ProjectionX("hSpx_sigma");
+  auto hNpx_sigma = hNpx->ProjectionX("hNpx_sigma");
+
+  for (int rbin = 1; rbin <= rbins; ++rbin)
+  {
+    double sigma = hSpx->GetBinError(rbin);
+    hSpx_sigma->SetBinError(rbin, sigma * 3);
+
+    sigma = hNpx->GetBinError(rbin);
+    hNpx_sigma->SetBinError(rbin, sigma * 3);
+  }
+
+  hSpx_sigma->Draw("E2 same");
+  hSpx_sigma->SetFillColorAlpha(8, 0.3f);
+
+  hSpx->SetLineColor(kRed);
+  hSpx->SetMarkerColor(kRed);
+  hSpx->SetMarkerStyle(kFullDotLarge);
+  hSpx->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/h2SEPD_South_Charge_rbin.png", m_output_dir).c_str());
+
+  h2N->Draw("COLZ1");
+  h2N->GetYaxis()->SetTitleOffset(1.f);
+  h2N->GetXaxis()->SetTitleOffset(0.7f);
+
+  hNpx_sigma->Draw("E2 same");
+  hNpx_sigma->SetFillColorAlpha(8, 0.3f);
+
+  hNpx->SetLineColor(kRed);
+  hNpx->SetMarkerColor(kRed);
+  hNpx->SetMarkerStyle(kFullDotLarge);
+  hNpx->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/h2SEPD_North_Charge_rbin.png", m_output_dir).c_str());
 }
 
 void Displayv2::draw()
@@ -262,9 +341,9 @@ void Displayv2::draw()
   // --------------------------------
 
   c1->SetRightMargin(.05f);
-  gPad->SetGrid(0,0);
+  gPad->SetGrid(0, 0);
 
-  m_hists["hEventJetBkg"]->Scale(100./m_hists["hEvent"]->GetBinContent(4));
+  m_hists["hEventJetBkg"]->Scale(100. / m_hists["hEvent"]->GetBinContent(4));
 
   m_hists["hEventJetBkg"]->Draw("HIST");
   m_hists["hEventJetBkg"]->SetTitle("Jet Backgrounds Event Type");
@@ -334,7 +413,7 @@ void Displayv2::draw()
   // --------------------------------
 
   m_hists["h2SEPD_South_Charge"]->Draw("COLZ1");
-  m_hists["h2SEPD_South_Charge"]->SetMaximum(35);
+  m_hists["h2SEPD_South_Charge"]->SetMaximum(40);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2sEPD_South_Charge").c_str());
@@ -342,10 +421,14 @@ void Displayv2::draw()
   // --------------------------------
 
   m_hists["h2SEPD_North_Charge"]->Draw("COLZ1");
-  m_hists["h2SEPD_North_Charge"]->SetMaximum(35);
+  m_hists["h2SEPD_North_Charge"]->SetMaximum(40);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2sEPD_North_Charge").c_str());
+
+  // --------------------------------
+
+  draw_sepd_avg_charge(c1.get(), output);
 
   c1->Print((output + "]").c_str(), "pdf portrait");
 
