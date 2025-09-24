@@ -78,7 +78,7 @@ class QvectorAnalysis
     std::array<std::array<double, 2>, 2> X_matrix{};
   };
 
-  static constexpr size_t m_cent_bins = 10;
+  static constexpr size_t m_cent_bins = 8;
   // Holds all correction data
   // key: [Cent][Harmonic][Subdetector]
   // Harmonics {2,3,4} -> 3 elements
@@ -296,8 +296,8 @@ void QvectorAnalysis::init_hists()
   double Q_low = -1;
   double Q_high = 1;
 
-  double cent_low = 0;
-  double cent_high = 100;
+  double cent_low = -0.5;
+  double cent_high = 79.5;
 
   unsigned int bins_psi = 126;
   double psi_low = -M_PI;
