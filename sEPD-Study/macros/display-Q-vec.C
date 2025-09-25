@@ -59,6 +59,15 @@ class DisplayQVec
   int m_cent_bins{8};
   double m_cent_high{79.5};
 
+  enum class Subdetector
+  {
+    S,
+    N
+  };
+
+  static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
+  static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
+
   // --- Private Helper Methods ---
   void read_hists();
   void draw();
@@ -166,6 +175,7 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
     {
         h->GetZaxis()->SetRange(cent_bin, cent_bin);
         auto* hx = h->Project3D(side.c_str());
+        hx->Scale(1./hx->Integral());
         max = std::max(max, hx->GetMaximum());
     }
 
@@ -174,11 +184,12 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
       h->GetZaxis()->SetRange(cent_bin, cent_bin);
       std::string hist_name = std::format("{}", cent_bin);
       auto hx = dynamic_cast<TH1*>(h->Project3D(side.c_str())->Clone(hist_name.c_str()));
+      hx->Scale(1./hx->Integral());
       if (cent_bin == 1)
       {
-        hx->Draw();
+        hx->Draw("HIST");
         hx->SetTitle(title.c_str());
-        hx->GetYaxis()->SetTitle("Events");
+        hx->GetYaxis()->SetTitle("Normalized Events");
         hx->GetYaxis()->SetTitleOffset(1.f);
         hx->GetXaxis()->SetTitleOffset(1.f);
         hx->GetYaxis()->SetMaxDigits(3);
@@ -186,7 +197,7 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
       }
       else
       {
-        hx->Draw("same");
+        hx->Draw("HIST same");
       }
 
       float alpha = static_cast<float>(1.1 - 0.1 * cent_bin);
@@ -367,71 +378,171 @@ void DisplayQVec::draw()
 
   c1->Print((output + "[").c_str(), "pdf portrait");
 
+  // Centrality
+  m_hists["h_Cent"]->Draw();
+  m_hists["h_Cent"]->SetTitle("Run 68144: |z| < 10 cm and MB");
+  m_hists["h_Cent"]->GetYaxis()->SetTitle("Events");
+  m_hists["h_Cent"]->GetXaxis()->SetTitle("Centrality [%]");
+  m_hists["h_Cent"]->GetYaxis()->SetRangeUser(0, m_hists["h_Cent"]->GetMaximum()*1.1);
+  m_hists["h_Cent"]->GetYaxis()->SetMaxDigits(4);
+  m_hists["h_Cent"]->SetLineColor(kBlue);
+  m_hists["h_Cent"]->SetLineWidth(3);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/Centrality.png", m_output_dir).c_str());
+
   // Overall Summary Plots
-  plot_overall_psi(c1.get(), 2, "x", output);
-  plot_overall_psi(c1.get(), 2, "y", output);
-  plot_overall_psi(c1.get(), 3, "x", output);
-  plot_overall_psi(c1.get(), 3, "y", output);
-  plot_overall_psi(c1.get(), 4, "x", output);
-  plot_overall_psi(c1.get(), 4, "y", output);
+  for (int n : m_harmonics)
+  {
+    plot_overall_psi(c1.get(), n, "x", output);
+  }
 
   // Individual
-  plot_psi(c1.get(), "h3_sEPD_Psi_2", 2, "x", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_2_corr", 2, "x", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_2_corr2", 2, "x", kGreen+3, output);
+  for (int n : m_harmonics)
+  {
+    for (auto det : m_subdetectors)
+    {
+      std::string side = (det == Subdetector::S) ? "x" : "y";
+      plot_psi(c1.get(), std::format("h3_sEPD_Psi_{}", n), n, side, kRed, output);
+      plot_psi(c1.get(), std::format("h3_sEPD_Psi_{}_corr", n), n, side, kBlue, output);
+      plot_psi(c1.get(), std::format("h3_sEPD_Psi_{}_corr2", n), n, side, kGreen + 3, output);
+    }
+  }
 
-  plot_psi(c1.get(), "h3_sEPD_Psi_2", 2, "y", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_2_corr", 2, "y", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_2_corr2", 2, "y", kGreen+3, output);
+  std::vector<short int> colors{kRed, kBlue, kGreen+3};
 
-  plot_psi(c1.get(), "h3_sEPD_Psi_3", 3, "x", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_3_corr", 3, "x", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_3_corr2", 3, "x", kGreen+3, output);
+  // Coefficient of Variation
+  for (auto det : m_subdetectors)
+  {
+    std::string det_name = (det == Subdetector::S) ? "South" : "North";
+    size_t ctr = 0;
 
-  plot_psi(c1.get(), "h3_sEPD_Psi_3", 3, "y", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_3_corr", 3, "y", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_3_corr2", 3, "y", kGreen+3, output);
+    double xshift = 0.25;
+    double yshift = 0;
 
-  plot_psi(c1.get(), "h3_sEPD_Psi_4", 4, "x", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr", 4, "x", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr2", 4, "x", kGreen+3, output);
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.06f);
 
-  plot_psi(c1.get(), "h3_sEPD_Psi_4", 4, "y", kRed, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr", 4, "y", kBlue, output);
-  plot_psi(c1.get(), "h3_sEPD_Psi_4_corr2", 4, "y", kGreen+3, output);
+    for (int n : m_harmonics)
+    {
+      std::string name = std::format("h_sEPD_CV_{}_{}", det_name, n);
+      std::string title = std::format("sEPD {}: Coefficient of Variation", det_name);
+      short int color = colors[ctr];
 
-  // Val 1
-  plot_val1(c1.get(), "h_sEPD_Q_S_x_2_avg", "h_sEPD_Q_S_x_2_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_S_y_2_avg", "h_sEPD_Q_S_y_2_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_x_2_avg", "h_sEPD_Q_N_x_2_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_y_2_avg", "h_sEPD_Q_N_y_2_corr_avg", output);
+      auto hist = m_hists[name].get();
 
-  plot_val1(c1.get(), "h_sEPD_Q_S_x_3_avg", "h_sEPD_Q_S_x_3_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_S_y_3_avg", "h_sEPD_Q_S_y_3_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_x_3_avg", "h_sEPD_Q_N_x_3_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_y_3_avg", "h_sEPD_Q_N_y_3_corr_avg", output);
+      if(ctr == 0)
+      {
+        hist->Draw("E2");
+        hist->SetTitle(title.c_str());
+        hist->GetYaxis()->SetRangeUser(0, 0.02);
+      }
+      else
+      {
+        hist->Draw("E2 same");
+      }
 
-  plot_val1(c1.get(), "h_sEPD_Q_S_x_4_avg", "h_sEPD_Q_S_x_4_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_S_y_4_avg", "h_sEPD_Q_S_y_4_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_x_4_avg", "h_sEPD_Q_N_x_4_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_y_4_avg", "h_sEPD_Q_N_y_4_corr_avg", output);
+      hist->SetLineColor(color);
+      hist->SetMarkerColor(color);
+      hist->SetFillColorAlpha(color, 0.2f);
+      hist->SetMarkerStyle(kFullDotLarge);
+      // hist->SetLineWidth(3);
 
-  plot_val1(c1.get(), "h_sEPD_Q_S_xy_2_avg", "h_sEPD_Q_S_xy_2_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_xy_2_avg", "h_sEPD_Q_N_xy_2_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_S_xy_3_avg", "h_sEPD_Q_S_xy_3_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_xy_3_avg", "h_sEPD_Q_N_xy_3_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_S_xy_4_avg", "h_sEPD_Q_S_xy_4_corr_avg", output);
-  plot_val1(c1.get(), "h_sEPD_Q_N_xy_4_avg", "h_sEPD_Q_N_xy_4_corr_avg", output);
+      leg->AddEntry(hist, std::format("Order: {}", n).c_str(), "f");
+      ++ctr;
+    }
 
-  // 2nd Order Validation
-  plot_val2(c1.get(), "S", 2, output);
-  plot_val2(c1.get(), "N", 2, output);
+    leg->Draw("same");
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Psi-CV-{}-overlay.png", m_output_dir, det_name).c_str());
+  }
 
-  plot_val2(c1.get(), "S", 3, output);
-  plot_val2(c1.get(), "N", 3, output);
+  // // Val 1
+  // for (int n : m_harmonics)
+  // {
+  //     plot_val1(c1.get(), std::format("h_sEPD_Q_S_{}_2_avg", n), std::format("h_sEPD_Q_S_x_{}_corr_avg", n), output);
+  //     plot_val1(c1.get(), std::format("h_sEPD_Q_S_{}_2_avg", n), std::format("h_sEPD_Q_S_y_{}_corr_avg", n), output);
+  //     plot_val1(c1.get(), std::format("h_sEPD_Q_N_{}_2_avg", n), std::format("h_sEPD_Q_N_x_{}_corr_avg", n), output);
+  //     plot_val1(c1.get(), std::format("h_sEPD_Q_N_{}_2_avg", n), std::format("h_sEPD_Q_N_y_{}_corr_avg", n), output);
+  // }
 
-  plot_val2(c1.get(), "S", 4, output);
-  plot_val2(c1.get(), "N", 4, output);
+  // // Val 1 pt 2
+  // for (int n : m_harmonics)
+  // {
+  //     plot_val1(c1.get(),std::format("h_sEPD_Q_S_xy_{}_avg", n),std::format("h_sEPD_Q_S_xy_{}_corr_avg", n), output);
+  //     plot_val1(c1.get(),std::format("h_sEPD_Q_N_xy_{}_avg", n),std::format("h_sEPD_Q_N_xy_{}_corr_avg", n), output);
+  // }
+
+  // // 2nd Order Validation
+  // for (int n : m_harmonics)
+  // {
+  //   plot_val2(c1.get(), "S", n, output);
+  //   plot_val2(c1.get(), "N", n, output);
+  // }
+
+  c1->Print((output + "]").c_str(), "pdf portrait");
+
+  // --------------------------------------
+
+  c1 = std::make_unique<TCanvas>("c2");
+  c1->SetTickx();
+  c1->SetTicky();
+
+  c1->SetCanvasSize(2000, 1000);
+  c1->Divide(4, 2, 0.00025f, 0.00025f);
+
+  output = std::format("{}/plots-Psi.pdf", m_output_dir);
+
+  c1->Print((output + "[").c_str(), "pdf portrait");
+
+  for (int n : m_harmonics)
+  {
+    std::string name = std::format("h3_sEPD_Psi_{}_corr2", n);
+    auto h3 = dynamic_cast<TH3*>(m_hists[name].get());
+
+    for (auto det : m_subdetectors)
+    {
+      std::string side = (det == Subdetector::S) ? "x" : "y";
+      std::string det_name = (det == Subdetector::S) ? "South" : "North";
+
+      // identify max
+      double max = 0;
+      for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
+      {
+        h3->GetZaxis()->SetRange(cent_bin, cent_bin);
+        auto* hist = h3->Project3D(side.c_str());
+        max = std::max(max, hist->GetMaximum());
+      }
+
+      for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
+      {
+          c1->cd(cent_bin);
+
+          gPad->SetLeftMargin(.11f);
+          gPad->SetRightMargin(.02f);
+          gPad->SetTopMargin(.1f);
+          gPad->SetBottomMargin(.1f);
+
+          h3->GetZaxis()->SetRange(cent_bin, cent_bin);
+          std::string hist_name = std::format("{}", cent_bin);
+          std::string title = std::format("sEPD {} #Psi_{{{}}}: {}-{}%", det_name, n, (cent_bin-1)*10, cent_bin*10);
+          auto hist = dynamic_cast<TH1*>(h3->Project3D(side.c_str())->Clone(hist_name.c_str()));
+
+          hist->Draw("HIST");
+          hist->SetTitle(title.c_str());
+          hist->GetYaxis()->SetTitle(std::format("Events / (2#pi / {})", hist->GetNbinsX()).c_str());
+          hist->GetYaxis()->SetTitleOffset(1.f);
+          hist->GetXaxis()->SetTitleOffset(1.f);
+          hist->GetYaxis()->SetMaxDigits(3);
+          hist->GetYaxis()->SetRangeUser(0, max * 1.1);
+          hist->SetLineColor(kBlue);
+      }
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/Psi-corr2-{}-{}.png", m_output_dir, n, det_name).c_str());
+    }
+  }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
 }
