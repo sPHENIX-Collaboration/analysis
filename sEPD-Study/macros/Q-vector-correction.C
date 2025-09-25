@@ -651,7 +651,7 @@ void QvectorAnalysis::cache_events()
     // Load Event Data from TChain
     m_chain->GetEntry(i);
 
-    if (i % 1000 == 0)
+    if (i % 100000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
@@ -794,7 +794,7 @@ void QvectorAnalysis::run_event_loop(Pass pass)
   {
     double cent = event.centrality;
 
-    if (event_ctr % 1000 == 0)
+    if (event_ctr % 100000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", event_ctr, n_entries, static_cast<double>(event_ctr) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
@@ -902,6 +902,9 @@ void QvectorAnalysis::validate_results()
                                  n, side, cent_bin, mean, sigma, cv, cv_error);
       }
     }
+
+    // set the range back to full after calculations
+    h_psi_corr2->GetZaxis()->SetRange(1, m_cent_bins);
   }
 }
 
