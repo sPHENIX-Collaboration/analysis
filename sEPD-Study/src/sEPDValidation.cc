@@ -186,6 +186,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
   m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
   m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("hasBkg", &m_data.hasBkg);
   m_tree->Branch("sEPD_Q_S_x_2", &m_data.sEPD_Q_S_x_2, "sEPD_Q_S_x_2/D");
   m_tree->Branch("sEPD_Q_S_y_2", &m_data.sEPD_Q_S_y_2, "sEPD_Q_S_y_2/D");
   m_tree->Branch("sEPD_Q_N_x_2", &m_data.sEPD_Q_N_x_2, "sEPD_Q_N_x_2/D");
@@ -859,13 +860,14 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       dynamic_cast<TH2 *>(m_hists["h2frcemv2"].get())->Fill(m_frcem, m_maxJetET);
     }
 
-    // skip event if it contains background
     if (hasBkg)
     {
-      return Fun4AllReturnCodes::ABORTEVENT;
+      m_data.hasBkg = true;
     }
-
-    dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
+    else
+    {
+      dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -944,6 +946,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_id = -1;
   m_data.event_zvertex = 9999;
   m_data.event_centrality = 9999;
+  m_data.hasBkg = false;
 
   // sEPD
   m_data.sepd_channel.clear();

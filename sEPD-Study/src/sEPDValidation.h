@@ -315,6 +315,7 @@ class sEPDValidation : public SubsysReco
     int event_id{0};
     double event_zvertex{9999};
     double event_centrality{9999};
+    bool hasBkg{false};
     double sEPD_Q_S_x_2{0};
     double sEPD_Q_S_y_2{0};
     double sEPD_Q_N_x_2{0};
