@@ -56,6 +56,8 @@ class DisplayQVec
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
 
   bool m_saveFig{true};
+  int m_cent_bins{8};
+  double m_cent_high{79.5};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -158,9 +160,18 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
 
     auto h = dynamic_cast<TH3*>(m_hists[name].get());
 
-    for (int cent_bin = 1; cent_bin <= 10; ++cent_bin)
+    // identify max
+    double max = 0;
+    for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
     {
-      h->GetZaxis()->SetRange(cent_bin, cent_bin + 1);
+        h->GetZaxis()->SetRange(cent_bin, cent_bin);
+        auto* hx = h->Project3D(side.c_str());
+        max = std::max(max, hx->GetMaximum());
+    }
+
+    for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
+    {
+      h->GetZaxis()->SetRange(cent_bin, cent_bin);
       std::string hist_name = std::format("{}", cent_bin);
       auto hx = dynamic_cast<TH1*>(h->Project3D(side.c_str())->Clone(hist_name.c_str()));
       if (cent_bin == 1)
@@ -171,7 +182,7 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
         hx->GetYaxis()->SetTitleOffset(1.f);
         hx->GetXaxis()->SetTitleOffset(1.f);
         hx->GetYaxis()->SetMaxDigits(3);
-        hx->GetYaxis()->SetRangeUser(0, hx->GetMaximum()*1.3);
+        hx->GetYaxis()->SetRangeUser(0, max*1.1);
       }
       else
       {
@@ -206,7 +217,7 @@ void DisplayQVec::plot_val1(TCanvas* c1, const std::string& name, const std::str
   h->SetMarkerColor(kRed);
   h2->SetMarkerColor(kBlue);
 
-  if (h->GetBinContent(10) < 0)
+  if (h->GetBinContent(m_cent_bins) < 0)
   {
     h->GetYaxis()->SetRangeUser(h->GetMinimum() * 1.1, std::fabs(h->GetMinimum() * 0.35));
   }
@@ -228,7 +239,7 @@ void DisplayQVec::plot_val1(TCanvas* c1, const std::string& name, const std::str
   leg->AddEntry(h2, "Corrected", "pe");
   leg->Draw("same");
 
-  std::unique_ptr<TLine> line = std::make_unique<TLine>(0, 0, 100, 0);
+  std::unique_ptr<TLine> line = std::make_unique<TLine>(0, 0, m_cent_high, 0);
 
   line->SetLineColor(kBlack);
   line->SetLineStyle(kDashed);
@@ -298,7 +309,7 @@ void DisplayQVec::plot_val2(TCanvas* c1, const std::string& side, int order, con
   leg->AddEntry(hx_corr, "Corrected", "p");
   leg->Draw("same");
 
-  std::unique_ptr<TLine> line = std::make_unique<TLine>(0, 1, 100, 1);
+  std::unique_ptr<TLine> line = std::make_unique<TLine>(0, 1, m_cent_high, 1);
 
   line->SetLineColor(kBlack);
   line->SetLineStyle(kDashed);
