@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 // ====================================================================
 // The Analysis Class
@@ -69,6 +70,12 @@ class Displayv4
       return s;
     }
   };
+
+  static inline const std::unordered_set<std::string> led_runs = {"73172",
+                                                                  "73463",
+                                                                  "73571",
+                                                                  "74606",
+                                                                 };
 
   // --- Private Helper Methods ---
   void read_file();
@@ -218,7 +225,7 @@ void Displayv4::draw()
           hist->SetMaximum(2e2);
       }
       // LED Run
-      if(runnumber == "73172" || runnumber == "73463" || runnumber == "73571")
+      if(led_runs.contains(runnumber))
       {
           hist->SetMaximum(1.6e4);
           c1->Print(output.c_str(), "pdf portrait");
@@ -279,7 +286,7 @@ void Displayv4::draw()
           hist->GetXaxis()->SetRangeUser(0, 5e2);
       }
       // LED Run
-      if(runnumber == "73172" || runnumber == "73463" || runnumber == "73571")
+      if(led_runs.contains(runnumber))
       {
           hist->GetXaxis()->SetRangeUser(0, 1.6e4);
       }
