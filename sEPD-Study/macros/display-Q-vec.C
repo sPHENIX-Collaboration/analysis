@@ -75,6 +75,8 @@ class DisplayQVec
   void plot_psi(TCanvas* c1, const std::string& name, int order, const std::string& side, short int color, const std::string& output);
   void plot_val1(TCanvas* c1, const std::string& name, const std::string& name_corr, const std::string& output);
   void plot_val2(TCanvas* c1, const std::string& side, int order, const std::string& output);
+  double get_average(TH1* hist);
+  double max_distance_from_average(TH1* hist, double avg);
 };
 
 // ====================================================================
@@ -162,6 +164,31 @@ void DisplayQVec::plot_overall_psi(TCanvas* c1, int order, const std::string& si
   if(m_saveFig) c1->Print(std::format("{}/images/{}-{}-overlay.png", m_output_dir, name, direction).c_str());
 }
 
+double DisplayQVec::get_average(TH1* hist)
+{
+    double avg = 0;
+
+    for(int bin = 1; bin <= hist->GetNbinsX(); ++bin)
+    {
+        avg += hist->GetBinContent(bin);
+    }
+
+    return avg / hist->GetNbinsX();
+}
+
+double DisplayQVec::max_distance_from_average(TH1* hist, double avg)
+{
+    double dist = 0;
+
+    for(int bin = 1; bin <= hist->GetNbinsX(); ++bin)
+    {
+        double val = hist->GetBinContent(bin);
+        dist = std::max(dist, std::fabs(avg-val));
+    }
+
+    return dist;
+}
+
 void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, const std::string& side, short int color,  const std::string& output)
 {
     std::string direction = (side == "x") ? "South" : "North";
@@ -175,8 +202,10 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
     {
         h->GetZaxis()->SetRange(cent_bin, cent_bin);
         auto* hx = h->Project3D(side.c_str());
-        hx->Scale(1./hx->Integral());
-        max = std::max(max, hx->GetMaximum());
+
+        double average = get_average(hx);
+        double dist = max_distance_from_average(hx, average) / average;
+        max = std::max(max, dist);
     }
 
     for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
@@ -184,16 +213,23 @@ void DisplayQVec::plot_psi(TCanvas* c1, const std::string& name, int order, cons
       h->GetZaxis()->SetRange(cent_bin, cent_bin);
       std::string hist_name = std::format("{}", cent_bin);
       auto hx = dynamic_cast<TH1*>(h->Project3D(side.c_str())->Clone(hist_name.c_str()));
-      hx->Scale(1./hx->Integral());
+
+      double average = get_average(hx);
+
+      hx->Scale(1./average);
+
       if (cent_bin == 1)
       {
         hx->Draw("HIST");
         hx->SetTitle(title.c_str());
         hx->GetYaxis()->SetTitle("Normalized Events");
-        hx->GetYaxis()->SetTitleOffset(1.f);
+        hx->GetYaxis()->SetTitleOffset(1.3f);
         hx->GetXaxis()->SetTitleOffset(1.f);
         hx->GetYaxis()->SetMaxDigits(3);
-        hx->GetYaxis()->SetRangeUser(0, max*1.1);
+
+        double low = std::max(0., 1-max*1.1);
+        double high = 1+max*1.1;
+        hx->GetYaxis()->SetRangeUser(low, high);
       }
       else
       {
@@ -489,7 +525,7 @@ void DisplayQVec::draw()
   c1->SetTickx();
   c1->SetTicky();
 
-  c1->SetCanvasSize(2000, 1000);
+  c1->SetCanvasSize(2200, 1000);
   c1->Divide(4, 2, 0.00025f, 0.00025f);
 
   output = std::format("{}/plots-Psi.pdf", m_output_dir);
@@ -512,15 +548,18 @@ void DisplayQVec::draw()
       {
         h3->GetZaxis()->SetRange(cent_bin, cent_bin);
         auto* hist = h3->Project3D(side.c_str());
-        max = std::max(max, hist->GetMaximum());
+
+        double average = get_average(hist);
+        double dist = max_distance_from_average(hist, average) / average;
+        max = std::max(max, dist);
       }
 
       for (int cent_bin = 1; cent_bin <= m_cent_bins; ++cent_bin)
       {
           c1->cd(cent_bin);
 
-          gPad->SetLeftMargin(.11f);
-          gPad->SetRightMargin(.02f);
+          gPad->SetLeftMargin(.14f);
+          gPad->SetRightMargin(.05f);
           gPad->SetTopMargin(.1f);
           gPad->SetBottomMargin(.1f);
 
@@ -529,13 +568,19 @@ void DisplayQVec::draw()
           std::string title = std::format("sEPD {} #Psi_{{{}}}: {}-{}%", det_name, n, (cent_bin-1)*10, cent_bin*10);
           auto hist = dynamic_cast<TH1*>(h3->Project3D(side.c_str())->Clone(hist_name.c_str()));
 
+          double average = get_average(hist);
+          hist->Scale(1. / average);
+
           hist->Draw("HIST");
           hist->SetTitle(title.c_str());
-          hist->GetYaxis()->SetTitle(std::format("Events / (2#pi / {})", hist->GetNbinsX()).c_str());
-          hist->GetYaxis()->SetTitleOffset(1.f);
+          hist->GetYaxis()->SetTitle(std::format("Normalized Events", hist->GetNbinsX()).c_str());
+          hist->GetYaxis()->SetTitleOffset(1.4f);
           hist->GetXaxis()->SetTitleOffset(1.f);
           hist->GetYaxis()->SetMaxDigits(3);
-          hist->GetYaxis()->SetRangeUser(0, max * 1.1);
+
+          double low = std::max(0., 1 - max * 1.1);
+          double high = 1 + max * 1.1;
+          hist->GetYaxis()->SetRangeUser(low, high);
           hist->SetLineColor(kBlue);
       }
 
