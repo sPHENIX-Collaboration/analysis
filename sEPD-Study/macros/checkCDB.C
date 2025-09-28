@@ -22,7 +22,13 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"MBD QFIT Default", "MBD_QFIT_default"},
       {"EMCal Calib Default", "CEMC_calib_ADC_to_ETower_default"},
       {"EMCal Bad Tower Map", "CEMC_BadTowerMap"},
-      {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"}};
+      {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"},
+      {"EMCal Mean Time", "CEMC_meanTime"},
+      {"HCALIN Frac Bad Chi2", "HCALIN_hotTowers_fracBadChi2"},
+      {"HCALIN Mean Time", "HCALIN_meanTime"},
+      {"HCALOUT Frac Bad Chi2", "HCALOUT_hotTowers_fracBadChi2"},
+      {"HCALOUT Mean Time", "HCALOUT_meanTime"}
+      };
 
   for (const auto& [description, name] : cdb)
   {
