@@ -1,4 +1,9 @@
 // ====================================================================
+// sPHENIX Includes
+// ====================================================================
+#include <calobase/TowerInfoDefs.h>
+
+// ====================================================================
 // Standard C++ Includes
 // ====================================================================
 #include <filesystem>
@@ -9,6 +14,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 // ====================================================================
@@ -17,6 +23,7 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TH1.h>
+#include <TH2.h>
 #include <TH3.h>
 #include <TProfile.h>
 #include <TROOT.h>
@@ -29,9 +36,10 @@ class QvectorAnalysis
 {
  public:
   // The constructor takes the configuration
-  QvectorAnalysis(std::string input_list, long long events, std::string output_dir)
+  QvectorAnalysis(std::string input_list, std::string input_hist, long long events, std::string output_dir)
     : m_chain(std::make_unique<TChain>("T"))
     , m_input_list(std::move(input_list))
+    , m_input_hist(std::move(input_hist))
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
   {
@@ -40,6 +48,7 @@ class QvectorAnalysis
   void run()
   {
     setup_chain();
+    process_hot_channels();
     init_hists();
     cache_events();
     run_event_loop(Pass::ApplyRecentering);
@@ -192,6 +201,7 @@ class QvectorAnalysis
 
   // Configuration stored as members
   std::string m_input_list;
+  std::string m_input_hist;
   long long m_events_to_process;
   std::string m_output_dir;
 
@@ -199,6 +209,11 @@ class QvectorAnalysis
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
   std::map<std::string, std::unique_ptr<TH3>> m_hists3D;
   std::map<std::string, std::unique_ptr<TProfile>> m_profiles;
+
+  // sEPD Bad Channels
+  std::unordered_set<int> m_bad_channels;
+  double m_sEPD_min_avg_charge_threshold = 1;
+  double m_sEPD_sigma_threshold = 3;
 
   // --- Private Helper Methods ---
   void setup_chain();
@@ -218,6 +233,8 @@ class QvectorAnalysis
   std::map<int, AverageHists> prepare_average_hists();
   std::map<int, RecenterHists> prepare_recenter_hists();
   std::map<int, FlatteningHists> prepare_flattening_hists();
+
+  void process_hot_channels();
 };
 
 // ====================================================================
@@ -293,6 +310,93 @@ void QvectorAnalysis::setup_chain()
       }
     }
   }
+}
+
+void QvectorAnalysis::process_hot_channels()
+{
+  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_hist.c_str()));
+
+  // Check if the file was opened successfully.
+  if (!file || file->IsZombie())
+  {
+    throw std::runtime_error(std::format("Could not open file '{}'", m_input_hist));
+  }
+
+  std::string sepd_charge_hist = "hSEPD_Charge";
+
+  auto hist = file->Get(sepd_charge_hist.c_str());
+
+  // Check if the hist is stored in the file
+  if (hist == nullptr)
+  {
+    throw std::runtime_error(std::format("Cannot find hist: {}", sepd_charge_hist));
+  }
+
+  auto hSEPD_Charge = dynamic_cast<TH1*>(hist);
+
+  int sepd_channels = 744;
+  int rbins = 16;
+  int bins_charge = 40;
+
+  auto h2S = std::make_unique<TH2F>("h2SEPD_South_Charge_rbin",
+                                    "sEPD South; r_{bin}; Avg Charge",
+                                    rbins, -0.5, rbins - 0.5,
+                                    bins_charge, 0, bins_charge);
+
+  auto h2N = std::make_unique<TH2F>("h2SEPD_North_Charge_rbin",
+                                    "sEPD North; r_{bin}; Avg Charge",
+                                    rbins, -0.5, rbins - 0.5,
+                                    bins_charge, 0, bins_charge);
+
+  for (int channel = 0; channel < sepd_channels; ++channel)
+  {
+    unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
+    int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    double avg_charge = hSEPD_Charge->GetBinContent(channel + 1);
+
+    auto h2 = (arm == 0) ? h2S.get() : h2N.get();
+
+    dynamic_cast<TH2*>(h2)->Fill(rbin, avg_charge);
+  }
+
+  auto hSpx = dynamic_cast<TH2*>(h2S.get())->ProfileX("hSpx", 2, -1, "s");
+  auto hNpx = dynamic_cast<TH2*>(h2N.get())->ProfileX("hNpx", 2, -1, "s");
+
+  int ctr_hot = 0;
+  for (int channel = 0; channel < sepd_channels; ++channel)
+  {
+    unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
+    int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    auto hprof = (arm == 0) ? hSpx : hNpx;
+
+    double charge = hSEPD_Charge->GetBinContent(channel + 1);
+    double mean_charge = hprof->GetBinContent(rbin + 1);
+    double sigma = hprof->GetBinError(rbin + 1);
+
+    if (charge < m_sEPD_min_avg_charge_threshold || std::fabs(charge - mean_charge) > m_sEPD_sigma_threshold * sigma)
+    {
+      m_bad_channels.insert(channel);
+
+      // hot channel
+      if (charge - mean_charge > 3 * sigma)
+      {
+        std::cout << std::format("Hot Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Sigma: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, sigma, charge);
+        ++ctr_hot;
+      }
+      else
+      {
+        std::cout << std::format("Bad Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, charge);
+      }
+    }
+  }
+
+  std::cout << std::format("Total Bad Channels: {}, Hot: {}\n", m_bad_channels.size(), ctr_hot);
+
+  std::cout << "Finished processing Hot sEPD channels" << std::endl;
 }
 
 void QvectorAnalysis::init_hists()
@@ -941,19 +1045,20 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 2 || argc > 4)
+  if (argc < 3 || argc > 5)
   {
-    std::cout << "Usage: " << argv[0] << " <input_list_file> [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_list_file> <input_hist_file> [events] [output_directory]" << std::endl;
     return 1;
   }
 
   const std::string input_list = argv[1];
-  long long events = (argc >= 3) ? std::atoll(argv[2]) : 0;
-  std::string output_dir = (argc >= 4) ? argv[3] : ".";
+  const std::string input_hist = argv[2];
+  long long events = (argc >= 4) ? std::atoll(argv[3]) : 0;
+  std::string output_dir = (argc >= 5) ? argv[4] : ".";
 
   try
   {
-    QvectorAnalysis analysis(input_list, events, output_dir);
+    QvectorAnalysis analysis(input_list, input_hist, events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
