@@ -116,9 +116,10 @@ class QvectorAnalysis
     double event_centrality{0.0};
 
     std::map<std::string, double> q_vals;
+    std::vector<int>* sepd_channel{nullptr};
     std::vector<double>* sepd_charge{nullptr};
     std::vector<double>* sepd_phi{nullptr};
-    std::vector<double>* sepd_eta{nullptr};
+    // std::vector<double>* sepd_eta{nullptr};
     // std::vector<double>* mbd_charge{nullptr};
     // std::vector<double>* mbd_phi{nullptr};
     // std::vector<double>* mbd_eta{nullptr};
@@ -219,6 +220,7 @@ class QvectorAnalysis
   // --- Private Helper Methods ---
   void setup_chain();
   void init_hists();
+  bool compute_cached_event(CachedEvent &event);
   void cache_events();
   void run_event_loop(Pass pass);
   void validate_results();
@@ -275,8 +277,9 @@ void QvectorAnalysis::setup_chain()
   m_chain->SetBranchStatus("*", false);
   m_chain->SetBranchStatus("event_id", true);
   m_chain->SetBranchStatus("event_centrality", true);
-  // m_chain->SetBranchStatus("sepd_charge", true);
-  // m_chain->SetBranchStatus("sepd_phi", true);
+  m_chain->SetBranchStatus("sepd_channel", true);
+  m_chain->SetBranchStatus("sepd_charge", true);
+  m_chain->SetBranchStatus("sepd_phi", true);
   // m_chain->SetBranchStatus("sepd_eta", true);
   // m_chain->SetBranchStatus("mbd_charge", true);
   // m_chain->SetBranchStatus("mbd_phi", true);
@@ -284,8 +287,9 @@ void QvectorAnalysis::setup_chain()
 
   m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
   m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
-  // m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
-  // m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
+  m_chain->SetBranchAddress("sepd_channel", &m_event_data.sepd_channel);
+  m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
+  m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
   // m_chain->SetBranchAddress("sepd_eta", &m_event_data.sepd_eta);
   // m_chain->SetBranchAddress("mbd_charge", &m_event_data.mbd_charge);
   // m_chain->SetBranchAddress("mbd_phi", &m_event_data.mbd_phi);
@@ -760,6 +764,69 @@ std::map<int, QvectorAnalysis::AverageHists> QvectorAnalysis::prepare_average_hi
   return hists_cache;
 }
 
+bool QvectorAnalysis::compute_cached_event(CachedEvent &event)
+{
+  event.centrality = m_event_data.event_centrality;
+
+  size_t nChannels = m_event_data.sepd_channel->size();
+
+  double sepd_total_charge_south = 0;
+  double sepd_total_charge_north = 0;
+
+  // Loop over all sEPD Channels
+  for (size_t idx = 0; idx < nChannels; ++idx)
+  {
+    int channel = m_event_data.sepd_channel->at(idx);
+    double charge = m_event_data.sepd_charge->at(idx);
+    double phi = m_event_data.sepd_phi->at(idx);
+
+    // Skip Bad Channels
+    if (m_bad_channels.contains(channel))
+    {
+      continue;
+    }
+
+    unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    // arm = 0: South
+    // arm = 1: North
+    double& sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
+
+    // Compute total charge for the respective sEPD arm
+    sepd_total_charge += charge;
+
+    // Compute Raw Q vectors for each harmonic and respective arm
+    for (int n : m_harmonics)
+    {
+      size_t n_idx = harmonic_to_index(n);
+      event.q_vectors[n_idx][arm].x += charge * std::cos(n * phi);
+      event.q_vectors[n_idx][arm].y += charge * std::sin(n * phi);
+    }
+  }
+
+  // Skip Events with Zero sEPD Total Charge in either arm
+  if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
+  {
+    return false;
+  }
+
+  // Normalize the Q-vectors by total charge
+  for (int n : m_harmonics)
+  {
+    size_t n_idx = harmonic_to_index(n);
+    for (auto det : m_subdetectors)
+    {
+      size_t det_idx = (det == Subdetector::S) ? 0 : 1;
+      double sepd_total_charge = (det_idx == 0) ? sepd_total_charge_south : sepd_total_charge_north;
+      event.q_vectors[n_idx][det_idx].x /= sepd_total_charge;
+      event.q_vectors[n_idx][det_idx].y /= sepd_total_charge;
+    }
+  }
+
+  return true;
+}
+
 void QvectorAnalysis::cache_events()
 {
   long long n_entries = m_chain->GetEntries();
@@ -772,13 +839,14 @@ void QvectorAnalysis::cache_events()
 
   std::map<int, AverageHists> average_hists = prepare_average_hists();
 
+  std::map<std::string, int> ctr;
   // Event Loop
   for (long long i = 0; i < n_entries; ++i)
   {
     // Load Event Data from TChain
     m_chain->GetEntry(i);
 
-    if (i % 100000 == 0)
+    if (i % 10000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
@@ -787,35 +855,39 @@ void QvectorAnalysis::cache_events()
 
     // Identify Centrality Bin
     size_t cent_bin = static_cast<size_t>(m_hists1D["h_Cent"]->FindBin(cent) - 1);
-    m_hists1D["h_Cent"]->Fill(cent);
 
     // ensure centrality is valid
     if (cent_bin >= m_cent_bins)
     {
       std::cout << std::format("Weird Centrality: {}, Skipping Event: {}\n", cent, m_event_data.event_id);
+      ++ctr["invalid_cent_bin"];
       continue;
     }
 
-    // Store Q-vectors for this event
     CachedEvent event;
+    bool isGood = compute_cached_event(event);
 
-    event.centrality = cent;
+    // Skip Events with Zero sEPD Total Charge in either arm
+    if (!isGood)
+    {
+      ++ctr["zero_sepd_total_charge"];
+      continue;
+    }
+
     for (int n : m_harmonics)
     {
       size_t n_idx = harmonic_to_index(n);
-      for (auto det : m_subdetectors)
-      {
-        std::string det_str = (det == Subdetector::S) ? "S" : "N";
-        std::string branch_name_x = std::format("sEPD_Q_{}_x_{}", det_str, n);
-        std::string branch_name_y = std::format("sEPD_Q_{}_y_{}", det_str, n);
-        size_t det_idx = (det == Subdetector::S) ? 0 : 1;
-        event.q_vectors[n_idx][det_idx] = {m_event_data.q_vals[branch_name_x], m_event_data.q_vals[branch_name_y]};
-      }
-
       process_averages(cent, event.q_vectors[n_idx][0], event.q_vectors[n_idx][1], average_hists.at(n));
     }
 
+    m_hists1D["h_Cent"]->Fill(cent);
     m_event_cache.push_back(event);
+  }
+
+  std::cout << "Skipped Event Types\n";
+  for (const auto& [name, events] : ctr)
+  {
+    std::cout << std::format("{}: {}, {:.2f} %\n", name, events, events * 100. / static_cast<double>(n_entries));
   }
 
   for (size_t cent_bin = 0; cent_bin < m_cent_bins; ++cent_bin)
