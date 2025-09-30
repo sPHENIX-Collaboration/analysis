@@ -207,6 +207,7 @@ class QvectorAnalysis
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
+  std::map<std::string, std::unique_ptr<TH2>> m_hists2D;
   std::map<std::string, std::unique_ptr<TH3>> m_hists3D;
   std::map<std::string, std::unique_ptr<TProfile>> m_profiles;
 
@@ -314,6 +315,7 @@ void QvectorAnalysis::setup_chain()
 
 void QvectorAnalysis::process_hot_channels()
 {
+  TH1::AddDirectory(kFALSE);
   auto file = std::unique_ptr<TFile>(TFile::Open(m_input_hist.c_str()));
 
   // Check if the file was opened successfully.
@@ -338,15 +340,31 @@ void QvectorAnalysis::process_hot_channels()
   int rbins = 16;
   int bins_charge = 40;
 
-  auto h2S = std::make_unique<TH2F>("h2SEPD_South_Charge_rbin",
-                                    "sEPD South; r_{bin}; Avg Charge",
-                                    rbins, -0.5, rbins - 0.5,
-                                    bins_charge, 0, bins_charge);
+  m_hists2D["h2SEPD_South_Charge_rbin"] = std::make_unique<TH2F>("h2SEPD_South_Charge_rbin",
+                                                                 "sEPD South; r_{bin}; Avg Charge",
+                                                                 rbins, -0.5, rbins - 0.5,
+                                                                 bins_charge, 0, bins_charge);
 
-  auto h2N = std::make_unique<TH2F>("h2SEPD_North_Charge_rbin",
-                                    "sEPD North; r_{bin}; Avg Charge",
-                                    rbins, -0.5, rbins - 0.5,
-                                    bins_charge, 0, bins_charge);
+  m_hists2D["h2SEPD_North_Charge_rbin"] = std::make_unique<TH2F>("h2SEPD_North_Charge_rbin",
+                                                                 "sEPD North; r_{bin}; Avg Charge",
+                                                                 rbins, -0.5, rbins - 0.5,
+                                                                 bins_charge, 0, bins_charge);
+
+  m_hists2D["h2SEPD_South_Charge_rbinv2"] = std::make_unique<TH2F>("h2SEPD_South_Charge_rbinv2",
+                                                                   "sEPD South; r_{bin}; Avg Charge",
+                                                                   rbins, -0.5, rbins - 0.5,
+                                                                   bins_charge, 0, bins_charge);
+
+  m_hists2D["h2SEPD_North_Charge_rbinv2"] = std::make_unique<TH2F>("h2SEPD_North_Charge_rbinv2",
+                                                                   "sEPD North; r_{bin}; Avg Charge",
+                                                                   rbins, -0.5, rbins - 0.5,
+                                                                   bins_charge, 0, bins_charge);
+
+  auto h2S = m_hists2D["h2SEPD_South_Charge_rbin"].get();
+  auto h2N = m_hists2D["h2SEPD_North_Charge_rbin"].get();
+
+  auto h2Sv2 = m_hists2D["h2SEPD_South_Charge_rbinv2"].get();
+  auto h2Nv2 = m_hists2D["h2SEPD_North_Charge_rbinv2"].get();
 
   for (int channel = 0; channel < sepd_channels; ++channel)
   {
@@ -356,13 +374,13 @@ void QvectorAnalysis::process_hot_channels()
 
     double avg_charge = hSEPD_Charge->GetBinContent(channel + 1);
 
-    auto h2 = (arm == 0) ? h2S.get() : h2N.get();
+    auto h2 = (arm == 0) ? h2S : h2N;
 
-    dynamic_cast<TH2*>(h2)->Fill(rbin, avg_charge);
+    h2->Fill(rbin, avg_charge);
   }
 
-  auto hSpx = dynamic_cast<TH2*>(h2S.get())->ProfileX("hSpx", 2, -1, "s");
-  auto hNpx = dynamic_cast<TH2*>(h2N.get())->ProfileX("hNpx", 2, -1, "s");
+  auto hSpx = h2S->ProfileX("hSpx", 2, -1, "s");
+  auto hNpx = h2N->ProfileX("hNpx", 2, -1, "s");
 
   int ctr_hot = 0;
   for (int channel = 0; channel < sepd_channels; ++channel)
@@ -370,6 +388,7 @@ void QvectorAnalysis::process_hot_channels()
     unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
     int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+    auto h2 = (arm == 0) ? h2Sv2 : h2Nv2;
 
     auto hprof = (arm == 0) ? hSpx : hNpx;
 
@@ -391,6 +410,10 @@ void QvectorAnalysis::process_hot_channels()
       {
         std::cout << std::format("Bad Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, charge);
       }
+    }
+    else
+    {
+      h2->Fill(rbin, charge);
     }
   }
 
@@ -1019,6 +1042,11 @@ void QvectorAnalysis::save_results() const
   auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
 
   for (const auto& [name, hist] : m_hists1D)
+  {
+    std::cout << std::format("Saving: {}\n", name);
+    hist->Write();
+  }
+  for (const auto& [name, hist] : m_hists2D)
   {
     std::cout << std::format("Saving: {}\n", name);
     hist->Write();
