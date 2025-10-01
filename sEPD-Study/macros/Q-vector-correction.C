@@ -205,6 +205,7 @@ class QvectorAnalysis
   std::string m_input_hist;
   long long m_events_to_process;
   std::string m_output_dir;
+  bool m_doBadChannelCheck{true};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -781,7 +782,7 @@ bool QvectorAnalysis::compute_cached_event(CachedEvent &event)
     double phi = m_event_data.sepd_phi->at(idx);
 
     // Skip Bad Channels
-    if (m_bad_channels.contains(channel))
+    if (m_doBadChannelCheck && m_bad_channels.contains(channel))
     {
       continue;
     }
