@@ -15,30 +15,20 @@
 #include <TChain.h>
 #include <TFile.h>
 
-using std::cout;
-using std::endl;
-using std::string;
-using std::pair;
-using std::make_pair;
-using std::vector;
-using std::stringstream;
-
-namespace fs = std::filesystem;
-
 namespace myUtils {
     void setEMCalDim(TH1* hist);
 
-    pair<Int_t, Int_t> getSectorIB(Int_t iphi, Int_t ieta);
-    pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
-    vector<string> split(const string &s, const char delimiter);
-    TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const string &name = "fitFunc");
-    std::unique_ptr<TChain> setupTChain(const string& input_filepath, const string& tree_name_in_file);
+    std::pair<Int_t, Int_t> getSectorIB(Int_t iphi, Int_t ieta);
+    std::pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
+    std::vector<std::string> split(const std::string &s, const char delimiter);
+    TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const std::string &name = "fitFunc");
+    std::unique_ptr<TChain> setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file);
 
     template<typename Func>
-    concept InvocableWithString = std::invocable<Func, const string&>;
+    concept InvocableWithString = std::invocable<Func, const std::string&>;
 
     template<InvocableWithString Callable>
-    bool readCSV(const fs::path& filePath, Callable lineHandler, bool skipHeader = true);
+    bool readCSV(const std::filesystem::path& filePath, Callable lineHandler, bool skipHeader = true);
 
     Int_t m_nsector = 64;
     Int_t m_nchannel_per_sector = 384;
@@ -51,10 +41,10 @@ namespace myUtils {
 }
 
 // Function to encapsulate the TChain setup with error checking
-std::unique_ptr<TChain> myUtils::setupTChain(const string& input_filepath, const string& tree_name_in_file) {
+std::unique_ptr<TChain> myUtils::setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file) {
     // 1. Pre-check: Does the file exist at all? (C++17 filesystem or traditional fstream)
-    if (!fs::exists(input_filepath)) { // Using fs::exists
-        cout << "Error: Input file does not exist: " << input_filepath << endl;
+    if (!std::filesystem::exists(input_filepath)) { // Using fs::exists
+        std::cout << "Error: Input file does not exist: " << input_filepath << std::endl;
         return nullptr; // Return a null unique_ptr indicating failure
     }
 
@@ -63,7 +53,7 @@ std::unique_ptr<TChain> myUtils::setupTChain(const string& input_filepath, const
     std::unique_ptr<TFile> file_checker(TFile::Open(input_filepath.c_str(), "READ"));
 
     if (!file_checker || file_checker->IsZombie()) {
-        cout << "Error: Could not open file " << input_filepath << " to check for TTree." << endl;
+        std::cout << "Error: Could not open file " << input_filepath << " to check for TTree." << std::endl;
         return nullptr;
     }
 
@@ -72,7 +62,7 @@ std::unique_ptr<TChain> myUtils::setupTChain(const string& input_filepath, const
     // If the object doesn't exist or isn't a TTree, Get() returns nullptr.
     TTree* tree_obj = dynamic_cast<TTree*>(file_checker->Get(tree_name_in_file.c_str()));
     if (!tree_obj) {
-        cout << "Error: TTree '" << tree_name_in_file << "' not found in file " << input_filepath << endl;
+        std::cout << "Error: TTree '" << tree_name_in_file << "' not found in file " << input_filepath << std::endl;
         return nullptr;
     }
     // File will be automatically closed by file_checker's unique_ptr destructor
@@ -80,7 +70,7 @@ std::unique_ptr<TChain> myUtils::setupTChain(const string& input_filepath, const
     // 3. If everything checks out, create and configure the TChain
     std::unique_ptr<TChain> chain = std::make_unique<TChain>(tree_name_in_file.c_str());
     if (!chain) { // Check if make_unique failed (e.g. out of memory)
-        cout << "Error: Could not create TChain object." << endl;
+        std::cout << "Error: Could not create TChain object." << std::endl;
         return nullptr;
     }
 
@@ -89,17 +79,17 @@ std::unique_ptr<TChain> myUtils::setupTChain(const string& input_filepath, const
     // 4. Verify TChain's state (optional but good final check)
     // GetEntries() will be -1 if no valid trees were added.
     if (chain->GetEntries() == 0) {
-        cout << "Warning: TChain has 0 entries after adding file. This might indicate a problem." << endl;
+        std::cout << "Warning: TChain has 0 entries after adding file. This might indicate a problem." << std::endl;
         // Depending on your logic, you might return nullptr here too.
     } else {
-        cout << "Successfully set up TChain for tree '" << tree_name_in_file
-                  << "' from file '" << input_filepath << "'. Entries: " << chain->GetEntries() << endl;
+        std::cout << "Successfully set up TChain for tree '" << tree_name_in_file
+                  << "' from file '" << input_filepath << "'. Entries: " << chain->GetEntries() << std::endl;
     }
 
     return chain; // Return the successfully created and configured TChain
 }
 
-TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const string &name) {
+TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const std::string &name) {
     // fit calib hist
     TF1 *fitFunc = new TF1(name.c_str(), "gaus", start, end);
     Double_t initialAmplitude = hist->GetMaximum();
@@ -123,26 +113,26 @@ TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const 
     TFitResultPtr fitResult = hist->Fit(fitFunc, "RS"); // Fit within range, store result, quiet
 
     if (fitResult.Get()) { // Check if TFitResultPtr is valid
-        cout << "\n----------------------------------------------------" << endl;
-        cout << "Fit Results for function: " << fitFunc->GetName() << endl;
-        cout << "----------------------------------------------------" << endl;
-        cout << "Fit Status: " << fitResult->Status() << " (0 means successful)" << endl;
+        std::cout << "\n----------------------------------------------------" << std::endl;
+        std::cout << "Fit Results for function: " << fitFunc->GetName() << std::endl;
+        std::cout << "----------------------------------------------------" << std::endl;
+        std::cout << "Fit Status: " << fitResult->Status() << " (0 means successful)" << std::endl;
         if (fitResult->IsValid()) { // Check if the fit is valid (e.g., covariance matrix is good)
-            cout << "Fit is Valid." << endl;
+            std::cout << "Fit is Valid." << std::endl;
             for (UInt_t i = 0; i < static_cast<UInt_t>(fitFunc->GetNpar()); ++i) {
-                cout << "Parameter " << fitFunc->GetParName(static_cast<Int_t>(i)) << " (" << i << "): "
-                          << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << endl;
+                std::cout << "Parameter " << fitFunc->GetParName(static_cast<Int_t>(i)) << " (" << i << "): "
+                          << fitResult->Parameter(i) << " +/- " << fitResult->ParError(i) << std::endl;
             }
-            cout << "Resolution: Sigma/Mean = " << fitResult->Parameter(2) / fitResult->Parameter(1) << endl;
-            cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
-                      << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << endl;
-            cout << "Probability: " << TMath::Prob(fitResult->Chi2(), static_cast<Int_t>(fitResult->Ndf())) << endl;
+            std::cout << "Resolution: Sigma/Mean = " << fitResult->Parameter(2) / fitResult->Parameter(1) << std::endl;
+            std::cout << "Chi^2 / NDF: " << fitResult->Chi2() << " / " << fitResult->Ndf()
+                      << " = " << (fitResult->Ndf() > 0 ? fitResult->Chi2() / fitResult->Ndf() : 0) << std::endl;
+            std::cout << "Probability: " << TMath::Prob(fitResult->Chi2(), static_cast<Int_t>(fitResult->Ndf())) << std::endl;
         } else {
-            cout << "Fit is NOT Valid." << endl;
+            std::cout << "Fit is NOT Valid." << std::endl;
         }
-        cout << "----------------------------------------------------" << endl;
+        std::cout << "----------------------------------------------------" << std::endl;
     } else {
-        cout << "Fit did not return a valid TFitResultPtr." << endl;
+        std::cout << "Fit did not return a valid TFitResultPtr." << std::endl;
     }
 
     return fitResult;
@@ -160,15 +150,15 @@ TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const 
  * @return true if the file was successfully opened and read, false otherwise.
  */
 template<myUtils::InvocableWithString Callable> // Using the more general concept for wider applicability
-bool myUtils::readCSV(const fs::path& filePath, Callable lineHandler, bool skipHeader) {
+bool myUtils::readCSV(const std::filesystem::path& filePath, Callable lineHandler, bool skipHeader) {
     std::ifstream file(filePath);
 
     if (!file.is_open()) {
-        cout << "Error: [" << filePath.string() << "] Could not open file." << endl;
+        std::cout << "Error: [" << filePath.string() << "] Could not open file." << std::endl;
         return false;
     }
 
-    string line;
+    std::string line;
 
     if (skipHeader && std::getline(file, line)) {
         // First line read and discarded (header)
@@ -186,7 +176,7 @@ bool myUtils::readCSV(const fs::path& filePath, Callable lineHandler, bool skipH
 
     // Check for errors during read operations (other than EOF)
     if (file.bad()) {
-        cout << "Error: [" << filePath.string() << "] I/O error while reading file." << endl;
+        std::cout << "Error: [" << filePath.string() << "] I/O error while reading file." << std::endl;
         return false;
     }
     // file.eof() will be true if EOF was reached.
@@ -196,11 +186,11 @@ bool myUtils::readCSV(const fs::path& filePath, Callable lineHandler, bool skipH
     return true; // Successfully processed or reached EOF
 }
 
-vector<string> myUtils::split(const string &s, const char delimiter) {
-    vector<string> result;
+std::vector<std::string> myUtils::split(const std::string &s, const char delimiter) {
+    std::vector<std::string> result;
 
-    stringstream ss(s);
-    string temp;
+    std::stringstream ss(s);
+    std::string temp;
 
     while(getline(ss,temp,delimiter)) {
         if(!temp.empty()) {
@@ -224,20 +214,20 @@ void myUtils::setEMCalDim(TH1* hist) {
     hist->GetXaxis()->SetTitleOffset(1);
 }
 
-pair<Int_t, Int_t> myUtils::getSectorIB(Int_t iphi, Int_t ieta) {
+std::pair<Int_t, Int_t> myUtils::getSectorIB(Int_t iphi, Int_t ieta) {
     Int_t k = iphi / m_ntowIBSide;
 
     Int_t sector = (ieta < 48) ? k + 32 : k;
     Int_t ib = (ieta < 48) ? m_nib_per_sector - ieta / m_ntowIBSide - 1: (ieta - 48) / m_ntowIBSide;
 
-    return make_pair(sector, ib);
+    return std::make_pair(sector, ib);
 }
 
-pair<Int_t, Int_t> myUtils::getSectorIB(Int_t towerIndex) {
+std::pair<Int_t, Int_t> myUtils::getSectorIB(Int_t towerIndex) {
     Int_t k = towerIndex / m_nchannel_per_sector;
 
     Int_t sector = (k % 2) ? (k - 1) / 2 : k / 2 + 32;
     Int_t ib = (k % m_nchannel_per_sector) / m_nchannel_per_ib;
 
-    return make_pair(sector, ib);
+    return std::make_pair(sector, ib);
 }
