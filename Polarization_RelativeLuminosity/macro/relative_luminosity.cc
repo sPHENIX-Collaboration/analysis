@@ -62,16 +62,16 @@ int relative_luminosity()
   /////////////////////////////////////////////////////////////////////////////////////
   double min_x = 0.8, max_x = 1.2;
   int bin = 80;
-  TH1D* hist_lumi_b = new TH1D("hist_lumi_b", "Blue beam relative luminosity;Relative luminosity;Counts", bin, min_x, max_x);
+  TH1D* hist_lumi_b = new TH1D("hist_lumi_b", "Blue beam relative luminosity;Relative luminosity for TSSA;Integrated luminosity", bin, min_x, max_x);
   HistSetting(hist_lumi_b, GetSphenixColor());
 
-  TH1D* hist_weighted_lumi_b = new TH1D("hist_weighted_lumi_b", "Blue beam relative luminosity with luminosity weight;Relative luminosity = #mathcal{L};Counts [a.u.]", bin, min_x, max_x);
+  TH1D* hist_weighted_lumi_b = new TH1D("hist_weighted_lumi_b", "Blue beam relative luminosity with luminosity weight;Relative luminosity = #mathcal{L};Integrated luminosity [a.u.]", bin, min_x, max_x);
   HistSetting(hist_weighted_lumi_b, GetSphenixColor());
 
-  TH1D* hist_lumi_y = new TH1D("hist_lumi_y", "Yellow beam relative luminosity;Relative luminosity;Counts", bin, min_x, max_x);
+  TH1D* hist_lumi_y = new TH1D("hist_lumi_y", "Yellow beam relative luminosity;Relative luminosity for TSSA;Integrated luminosity", bin, min_x, max_x);
   HistSetting(hist_lumi_y, kOrange + 1);
 
-  TH1D* hist_weighted_lumi_y = new TH1D("hist_weighted_lumi_y", "Yellow beam relative luminosity with luminosity weight;Relative luminosity;Counts [a.u.]", bin, min_x, max_x); // #equiv#font[12]{L}^{#uparrow}/#font[12]{L}^{#downarrow}
+  TH1D* hist_weighted_lumi_y = new TH1D("hist_weighted_lumi_y", "Yellow beam relative luminosity with luminosity weight;Relative luminosity for TSSA;Integrated luminosity [a.u.]", bin, min_x, max_x); // #equiv#font[12]{L}^{#uparrow}/#font[12]{L}^{#downarrow}
   HistSetting(hist_weighted_lumi_y, kOrange + 1);
 
   Long64_t luminosity_sum = 0;
@@ -149,17 +149,17 @@ int relative_luminosity()
   c->SetFillStyle( 0 );
   gPad->SetFrameFillStyle( 0 );
 
+  hist_weighted_lumi_y->GetXaxis()->SetNdivisions( 1005 );
   hist_weighted_lumi_y->GetXaxis()->SetRangeUser( 0.9, 1.1);
   hist_weighted_lumi_y->GetXaxis()->SetLabelOffset( 0.0125 );
   hist_weighted_lumi_y->GetXaxis()->SetLabelSize( 0.04 );
-  hist_weighted_lumi_y->GetXaxis()->CenterTitle();
   hist_weighted_lumi_y->GetYaxis()->SetTitleOffset( 1.5 );
-  hist_weighted_lumi_y->GetYaxis()->CenterTitle();
   hist_weighted_lumi_y->GetYaxis()->SetLabelSize( 0.04 );
   hist_weighted_lumi_y->GetYaxis()->SetRangeUser( 0.0, 0.2 );
 
-  for( int mode=0; mode<3; mode++ ) // loop over modes: preliminary, internal, work in progress
+  //for( int mode=0; mode<4; mode++ ) // loop over modes: preliminary, internal, work in progress
   {
+    int mode = 3;
     // polarization with luminosity weight
     hist_weighted_lumi_y->Draw("HIST");
     hist_weighted_lumi_b->Draw("HIST same");
@@ -171,9 +171,11 @@ int relative_luminosity()
       output_pdf += "_preliminary.pdf";
     else if( mode == 2 )
       output_pdf += "_wip.pdf";
+    else if( mode == 3 )
+      output_pdf += "_performance.pdf";
 
     int digits = 2;
-    WriteDate();
+    WriteDate( 0.775, 0.955, 0.04, "9/19/2025" );
     WritesPhenix( mode );
     double dy = 0.05, y = 0.875 + dy;
 
