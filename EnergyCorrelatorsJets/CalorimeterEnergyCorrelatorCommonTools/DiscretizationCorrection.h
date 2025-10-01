@@ -5,7 +5,7 @@
 //		Discretization Correction for two point correlators 	//
 //									//
 //		Skaydi 							//
-//		27 May 2025 						//
+//		1 Oct 2025 						//
 //									//
 //	discretization correction and jet size corrections		//
 //	see attached documentation for derivation and discussion 	//
@@ -14,31 +14,140 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <math.h>
+#include <TH1.h>
 #include <TF1.h>
+#include <map>
+#include <vector>
+#include <string>
+#include <utility>
 
 #define Pi 3.1415926535
 
 class DiscretizationCorrection
 {	
 	public:
-		DiscretizationCorrection()
+		DiscretizationCorrection(bool Discretize=false, float binsize=0., bool SizeCorr=false, float jetradius=0.)
 		{
+			if(Discretize){
+				setIsDiscretizationCorrection(Discretize);
+				setLatticeSize(binsize);
+			}
+			if(SizeCorr){
+				setIsSizeCorrection(SizeCorr);
+				setJetRadius(jetradius);
+			}
 			fillr2s();
-		}			
-		
+		}
 		~DiscretizationCorrection(){};
 		
-		float getLatticeSize();
-		float getJetRadius();
+		float getLatticeSize(){return this->m_latticesize;}
+		float getJetRadius(){return this->m_jetradius;}
 		bool getIsSizeCorrection() { return this->isSizeCorrection;}
 		bool getIsDiscretizationCorrection(){ return this->isDiscretizationCorrection;}
 
-		void setLatticeSize(float binsize);
-		void setJetRadius(float jetradius);
-		void setIsSizeCorrection();
-		void setIsDiscretizationCorrection();
+		void setLatticeSize(float binsize){
+			this->m_latticesize=binsize;
+			return;
+		}
+		void setJetRadius(float jetradius){
+			this->m_jetradius=jetradius;
+			return;
+		}
+		void setIsSizeCorrection(bool size){
+			this->isSizeCorrection=size;
+			return;
+		}
+		void setIsDiscretizationCorrection(bool discr){
+			this->isDiscretizationCorrection=discr;
+			return;
+		}
 	
-		float CalcluateCorrectionFactor(float RL);
+		float GetCorrectionFactor(float RL){
+			if(Correction_factors.find(RL) != Correction_factors.end()){
+				return Correction_factors[RL];
+			}
+			else{
+				bool isLess = true, isBigger=false;
+				float LessVal= 0., BigVal=0., Val=0., diff=0.;
+				for(auto c:Correction_factors)
+				{
+					if(isBigger && ! isLess ) break;
+					if(c.first < RL){
+						LessVal=c.second;
+						isLess=true;
+						isBigger=false;
+						diff=RL-c.first;
+						continue;
+					}
+					else if(c.first == RL) 
+						return c.second;
+					else if(c.first > RL){
+						BigVal=c.second;
+						isLess=false;
+						isBigger=true;
+						float diff2=c.first-RL;
+						float dr=diff2+diff;
+						Val=LessVal*diff/dr+BigVal*diff2/dr;
+						return Val;
+					}
+					else continue;
+				}
+			}
+		}
+
+		void CaluculateCorrectionFactor(float maxRL=this->sPHENIX_maxRL, int order=0)
+		{
+			std::string Plot_title="Efficiency correction factor";
+			if(isSizeCorrection){
+				PlotTitle+=" for R="+std::to_string(m_jetradius)+" jets"
+			}
+			else{
+				PlotTitle+=" for whole calorimeter";
+			}
+			if(isDiscretizationCorrection){
+				PlotTitle+=" with bin width #delta = " +std::to_string(m_latticesize)+" in #eta and #varphi ";
+			}
+			else
+			{
+				PlotTitle+=" on a continuous lattice ";
+			}
+			PlotTitle+="; #Delta R_{L}^{2}; #varepsilon";
+			Correction_factor_hist=new TH1F("h_corr_fact", PlotTitle.c_str(), (int) std::pow(maxRL/m_latticesize,2), 0, std::pow(maxRL,2)); 
+			this->correction_order=order;
+			if(isDiscretizationCorrection)
+			{
+				int nSteps=std::pow(maxRL, 2)/std::pow(m_latticesize,2);
+				for(int i=0; i<nSteps; i++)
+				{
+					float eps=1.;
+					float rl=std::sqrt( (float) i );
+					if(correction_order==0){
+						if(isSizeCorrection)
+						{
+							eps=all_order_continuous_jet(rl)*std::pow(all_order_discrete_jet(rl), -1);
+						}
+						eps=eps*all_order_discrete_full(rl)*std::pow(all_order_continuous_full(rl), -1);	
+						else{
+							if(isSizeCorrection)
+							{
+								eps=order_by_order_cont_jet(rl)*std::pow(all_order_discrete_jet(rl), -1);
+							}
+							eps=eps*all_order_discrete_full(rl)*std::pow(all_order_continuous_full(rl), -1);
+						}
+					}
+					Correction_factors[rl]=eps;
+					Correction_factor_hist->Fill(i, eps);
+				}
+			}
+			else
+			{
+				//no clue how best to do this, this should just be a function???
+				continue;
+			}
+			return;
+
+		}			
+			
 		
 	private:
 		
@@ -46,22 +155,42 @@ class DiscretizationCorrection
 		float m_jetradius		=0.;
 		bool isSizeCorrection		=false;
 		bool isDiscretizationCorrection	=false;
+		float sPHENIX_maxRL 		=std::sqrt(std::pow(PI,2)+std::pow(2.2, 2));
 
 		int correction_order = 3; //how many powers of R_L to expand the elliptic integrals to
 		
-		float first_order_cont_jet(float RL)
+		std::map<float, float> Correction_factors;
+		TH1F* Correction_factor_hist;
+		float order_by_order_cont_jet(float RL)
 		{
-			float ep = 2*PI*std::pow(m_jetradius, 2)*std::sqrt(RL)*( 
+			float ep = R_L*pow(2*PI*std::pow(m_jetradius, 2), -1);
+			float ic = std::sqrt(4*std::pow(m_jetradius, 2)-std::pow(R_L, 2)) + m_jetradius*std::arccos(R_L*std::pow(2*m_jetradius, -1));
+			if(correction_order >=3 ){
+			       	ic+= -R_L/3.*std::pow(std::arccos(R_L*std::pow(2*m_jetradius, -1)), 3);
+			}
+			if(correction_order >= 5 ){
+				ic+=R_L*std::pow(120.*m_jetradius, -1)*(4*std::pow(m_jetradius, 2) - std::pow(R_L, 2))*std::pow(std::arccos(R_L*std::pow(2*m_jetradius, -1)), 5);
+			}
+			if(correction_order > 5)
+			{
+				for(int i=0; i<=correction_order; i++)
+				{
+					if(i%2 != 1) continue;
+					ic+=0; //getting this expansion  is going to be tricky 
+				}
+			}
+			float c = ep*ic;
+			return c;
 		}
-		float all_order_continous_jet(float RL)
+		float all_order_continuous_jet(float RL)
 		{
 			//This is the solution of the integral for geometric pairs at distance RL where both points lie within the jet
 			float I_inc=R_L*std::pow(2*PI*std::pow(m_jetradius, 2), -1)*std::sqrt(4*std::pow(m_jetradius, 2)-std::pow(RL,2)) * all_order_continous_full(RL);
-			float elipint=std::ellint_1f(std::arccos(RL*std::pow(2*m_jetradius, -1)), std::pow(RL*std::pow(m_jetradius, -1), 2)) *all_order_continuous_full(RL);
+			float elipint=std::ellint_2f(std::arccos(RL*std::pow(2*m_jetradius, -1)), std::pow(RL*std::pow(m_jetradius, -1), 2)) *all_order_continuous_full(RL);
 			I_inc+=elipint;
 			return I_inc;
 		}
-		float all_order_continous_full(float RL)
+		float all_order_continuous_full(float RL)
 		{
 			//this is the total pairs in the phase space defined by the points lying within the jet and their pairs at distance R_l irrespective of the pair being in the jet radius
 			float I_Total=std::pow(2*PI, 2)*RL*m_jetradius;
