@@ -18,6 +18,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -55,16 +56,12 @@ class JetAnalysis
   {
     setup_chain();
     process_dead_channels();
+    init_hists();
+    process_events();
     save_results();
-    // init_hists();
-    // cache_events();
-    // run_event_loop(Pass::ApplyRecentering);
-    // run_event_loop(Pass::ApplyFlattening);
-    // validate_results();
   }
 
  private:
-
   struct EventData
   {
     int event_id{0};
@@ -96,24 +93,9 @@ class JetAnalysis
   // --- Private Helper Methods ---
   void setup_chain();
   void process_dead_channels();
-  // void init_hists();
-  // bool compute_cached_event(CachedEvent &event);
-  // void cache_events();
-  // void run_event_loop(Pass pass);
-  // void validate_results();
+  void init_hists();
+  void process_events();
   void save_results() const;
-  // static void process_averages(double cent, QVec q_S, QVec q_N, const AverageHists& h);
-  // void process_recentering(double cent, size_t n_idx, QVec q_S, QVec q_N, const RecenterHists& h);
-  // void process_flattening(double cent, size_t n_idx, QVec q_S, QVec q_N, const FlatteningHists& h);
-
-  // void compute_averages(size_t cent_bin, int n);
-  // void compute_recentering(size_t cent_bin, int n);
-  // void print_flattening(size_t cent_bin, int n) const;
-
-  // std::map<int, AverageHists> prepare_average_hists();
-  // std::map<int, RecenterHists> prepare_recenter_hists();
-  // std::map<int, FlatteningHists> prepare_flattening_hists();
-
 };
 
 // ====================================================================
@@ -258,6 +240,78 @@ void JetAnalysis::process_dead_channels()
   }
 
   std::cout << "Finished... dead_channels" << std::endl;
+}
+
+void JetAnalysis::init_hists()
+{
+  int bins_phi = 64;
+  double phi_low = 0;
+  double phi_high = 2 * std::numbers::pi;
+
+  int bins_eta = 24;
+  double eta_low = -1.152;
+  double eta_high = 1.152;
+
+  m_hists2D["h2JetPhiEta"] = std::make_unique<TH2F>("h2JetPhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
+  m_hists2D["h2JetPhiEtav2"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D["h2JetPhiEta"]->Clone("h2JetPhiEtav2")));
+
+  m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D["h2JetPhiEta"]->Clone("h2Dummy")));
+  m_hists2D["h2Dummy"]->Rebin2D(2, 2);
+}
+
+void JetAnalysis::process_events()
+{
+  std::cout << "Processing... process_events" << std::endl;
+  long long n_entries = m_chain->GetEntries();
+  if (m_events_to_process)
+  {
+    n_entries = std::min(m_events_to_process, n_entries);
+  }
+
+  auto h2Dummy = m_hists2D["h2Dummy"].get();
+  auto h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
+  auto h2JetPhiEta = m_hists2D["h2JetPhiEta"].get();
+  auto h2JetPhiEtav2 = m_hists2D["h2JetPhiEtav2"].get();
+
+  // Event Loop
+  for (long long i = 0; i < n_entries; ++i)
+  {
+    // Load Event Data from TChain
+    m_chain->GetEntry(i);
+
+    if (i % 10000 == 0)
+    {
+      std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
+    }
+
+    size_t nJets = m_event_data.jet_phi->size();
+
+    // Loop over all jets Channels
+    for (size_t idx = 0; idx < nJets; ++idx)
+    {
+      double phi = m_event_data.jet_phi->at(idx);
+      double eta = m_event_data.jet_eta->at(idx);
+
+      // map [-pi,pi] -> [0,2pi]
+      if (phi < 0)
+      {
+        phi += 2.0 * std::numbers::pi;
+      }
+
+      int bin_phi = h2Dummy->GetXaxis()->FindBin(phi);
+      int bin_eta = h2Dummy->GetYaxis()->FindBin(eta);
+      int dead_status = static_cast<int>(h2EMCalBadTowersDeadv2->GetBinContent(bin_phi, bin_eta));
+
+      h2JetPhiEta->Fill(phi, eta);
+
+      if (dead_status == 0)
+      {
+        h2JetPhiEtav2->Fill(phi, eta);
+      }
+    }
+  }
+
+  std::cout << "Finished... process_events" << std::endl;
 }
 
 void JetAnalysis::save_results() const
