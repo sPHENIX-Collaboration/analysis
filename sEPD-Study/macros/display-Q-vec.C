@@ -9,10 +9,12 @@
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH1.h>
+#include <TH2.h>
 #include <TH3.h>
 #include <TKey.h>
 #include <TLegend.h>
 #include <TLine.h>
+#include <TProfile.h>
 #include <TROOT.h>
 
 // ====================================================================
@@ -77,6 +79,7 @@ class DisplayQVec
   void plot_val2(TCanvas* c1, const std::string& side, int order, const std::string& output);
   double get_average(TH1* hist);
   double max_distance_from_average(TH1* hist, double avg);
+  void draw_sepd_avg_charge(TCanvas* c1, const std::string& output, const std::string& name);
 };
 
 // ====================================================================
@@ -382,6 +385,40 @@ void DisplayQVec::plot_val2(TCanvas* c1, const std::string& side, int order, con
   if (m_saveFig) c1->Print(std::format("{}/images/{}-zoom.png", m_output_dir, namex).c_str());
 }
 
+void DisplayQVec::draw_sepd_avg_charge(TCanvas* c1, const std::string& output, const std::string& name)
+{
+  c1->SetLeftMargin(.08f);
+  c1->SetRightMargin(.1f);
+
+  auto h2 = dynamic_cast<TH2*>(m_hists[name].get());
+
+  h2->Draw("COLZ1");
+  h2->GetYaxis()->SetTitleOffset(1.f);
+  h2->GetXaxis()->SetTitleOffset(0.7f);
+
+  auto hpx = h2->ProfileX("hpx", 2, -1, "s");
+  auto hpx_sigma = hpx->ProjectionX("hpx_sigma");
+
+  int rbins = 16;
+
+  for (int rbin = 1; rbin <= rbins; ++rbin)
+  {
+    double sigma = hpx->GetBinError(rbin);
+    hpx_sigma->SetBinError(rbin, sigma * 3);
+  }
+
+  hpx_sigma->Draw("E2 same");
+  hpx_sigma->SetFillColorAlpha(8, 0.3f);
+
+  hpx->SetLineColor(kRed);
+  hpx->SetMarkerColor(kRed);
+  hpx->SetMarkerStyle(kFullDotLarge);
+  hpx->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+}
+
 void DisplayQVec::draw()
 {
   // set sPHENIX plotting style
@@ -493,6 +530,15 @@ void DisplayQVec::draw()
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/Psi-CV-{}-overlay.png", m_output_dir, det_name).c_str());
   }
+
+  // ------------------------------------------------------------
+
+  draw_sepd_avg_charge(c1.get(), output, "h2SEPD_South_Charge_rbin");
+  draw_sepd_avg_charge(c1.get(), output, "h2SEPD_North_Charge_rbin");
+  draw_sepd_avg_charge(c1.get(), output, "h2SEPD_South_Charge_rbinv2");
+  draw_sepd_avg_charge(c1.get(), output, "h2SEPD_North_Charge_rbinv2");
+
+  // ------------------------------------------------------------
 
   // // Val 1
   // for (int n : m_harmonics)
