@@ -50,6 +50,7 @@ set(STANDALONE_MACRO_LIBS
     ROOT::RIO       # For TFile, TTree I/O
     ROOT::Hist      # For TH1, TFitResultPtr,
     ROOT::Graf      # For base graphics classes
+    ROOT::HistPainter # For TPaletteAxis
     ROOT::Gpad      # For TCanvas, TPad,
     ROOT::Tree      # For TTree
     ${SPHENIX_LIBS}
@@ -105,6 +106,10 @@ target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
 # --- displayv2 ---
 add_executable(displayv2 macros/displayv2.C)
 target_link_libraries(displayv2 PRIVATE ${STANDALONE_MACRO_LIBS})
+
+# --- display-Jet-Ana ---
+add_executable(display-Jet-Ana macros/display-Jet-Ana.C)
+target_link_libraries(display-Jet-Ana PRIVATE ${STANDALONE_MACRO_LIBS})
 
 # --- display Q vector correction ---
 add_executable(display-Q-vec macros/display-Q-vec.C)
