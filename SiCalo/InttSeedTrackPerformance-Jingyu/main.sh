@@ -1,0 +1,1 @@
+g++ -o Run `root-config --cflags --libs`  main.C && ./Run $1
