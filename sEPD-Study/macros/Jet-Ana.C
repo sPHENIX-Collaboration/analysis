@@ -311,6 +311,11 @@ void JetAnalysis::process_events()
     }
   }
 
+  int jets = static_cast<int>(h2JetPhiEta->GetEntries());
+  int jets_good = static_cast<int>(h2JetPhiEtav2->GetEntries());
+
+  std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
+
   std::cout << "Finished... process_events" << std::endl;
 }
 
