@@ -147,8 +147,8 @@ class JetAnalysis
   void init_hists();
 
   void correct_QVecs();
-  void compute_QVecs();
-  void process_QVecs();
+  bool compute_QVecs();
+  bool process_QVecs();
   void process_events();
 
   void save_results() const;
@@ -329,7 +329,7 @@ void JetAnalysis::correct_QVecs()
 {
 }
 
-void JetAnalysis::compute_QVecs()
+bool JetAnalysis::compute_QVecs()
 {
   size_t nChannels = m_event_data.sepd_channel->size();
 
@@ -371,7 +371,8 @@ void JetAnalysis::compute_QVecs()
   // Skip Events with Zero sEPD Total Charge in either arm
   if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
   {
-    return;
+    std::cout << std::format("Warning! Q-Vec Zero: Event {}\n", m_event_data.event_id);
+    return false;
   }
 
   // Normalize the Q-vectors by total charge
@@ -386,12 +387,16 @@ void JetAnalysis::compute_QVecs()
       m_event_data.q_vectors[n_idx][det_idx].y /= sepd_total_charge;
     }
   }
+
+  return true;
 }
 
-void JetAnalysis::process_QVecs()
+bool JetAnalysis::process_QVecs()
 {
-  compute_QVecs();
+  bool isGood = compute_QVecs();
   correct_QVecs();
+
+  return isGood;
 }
 
 void JetAnalysis::process_events()
@@ -422,7 +427,11 @@ void JetAnalysis::process_events()
     size_t nJets = m_event_data.jet_phi->size();
 
     // compute and correct the sEPD Q vectors
-    process_QVecs();
+    bool isGood = process_QVecs();
+    if (!isGood)
+    {
+      continue;
+    }
 
     // Loop over all jets
     for (size_t idx = 0; idx < nJets; ++idx)
