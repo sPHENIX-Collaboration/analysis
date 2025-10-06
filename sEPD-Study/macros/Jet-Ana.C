@@ -228,7 +228,7 @@ void JetAnalysis::process_dead_channels()
   std::string title = std::format("EMCal Dead: Run {} ; Tower Index #phi; Tower Index #eta", m_runnumber);
   m_hists2D["h2EMCalBadTowersDead"] = std::make_unique<TH2F>("h2EMCalBadTowersDead", title.c_str(), myUtils::m_nphi, 0, myUtils::m_nphi, myUtils::m_neta, 0, myUtils::m_neta);
 
-  auto h2Dead = m_hists2D["h2EMCalBadTowersDead"].get();
+  auto* h2Dead = m_hists2D["h2EMCalBadTowersDead"].get();
 
   // bad tower map hist
   unsigned int nTowers = static_cast<unsigned int>(myUtils::m_nphi * myUtils::m_neta);
@@ -254,7 +254,7 @@ void JetAnalysis::process_dead_channels()
 
   m_hists2D["h2EMCalBadTowersDeadv2"] = std::unique_ptr<TH2>(static_cast<TH2*>(h2Dead->Clone("h2EMCalBadTowersDeadv2")));
 
-  auto h2Deadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
+  auto* h2Deadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
   h2Deadv2->Rebin2D(myUtils::m_ntowIBSide, myUtils::m_ntowIBSide);
 
   // half of the IB
@@ -314,10 +314,14 @@ void JetAnalysis::init_hists()
   double eta_low = -1.152;
   double eta_high = 1.152;
 
-  m_hists2D["h2JetPhiEta"] = std::make_unique<TH2F>("h2JetPhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
-  m_hists2D["h2JetPhiEtav2"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D["h2JetPhiEta"]->Clone("h2JetPhiEtav2")));
+  int bins_pt = 60;
+  double pt_low = 0;
+  double pt_high = 60;
 
-  m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D["h2JetPhiEta"]->Clone("h2Dummy")));
+  m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high, bins_pt, pt_low, pt_high);
+  m_hists3D["h3JetPhiEtaPtv2"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv2")));
+
+  m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists3D["h3JetPhiEtaPt"]->Project3D("yx")->Clone("h2Dummy")));
   m_hists2D["h2Dummy"]->Rebin2D(2, 2);
 }
 
@@ -399,10 +403,10 @@ void JetAnalysis::process_events()
     n_entries = std::min(m_events_to_process, n_entries);
   }
 
-  auto h2Dummy = m_hists2D["h2Dummy"].get();
-  auto h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
-  auto h2JetPhiEta = m_hists2D["h2JetPhiEta"].get();
-  auto h2JetPhiEtav2 = m_hists2D["h2JetPhiEtav2"].get();
+  auto* h2Dummy = m_hists2D["h2Dummy"].get();
+  auto* h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
+  auto* h3JetPhiEtaPt = m_hists3D["h3JetPhiEtaPt"].get();
+  auto* h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
 
   // Event Loop
   for (long long i = 0; i < n_entries; ++i)
@@ -410,7 +414,7 @@ void JetAnalysis::process_events()
     // Load Event Data from TChain
     m_chain->GetEntry(i);
 
-    if (i % 10000 == 0)
+    if (i % 5000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", i, n_entries, static_cast<double>(i) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
@@ -423,6 +427,7 @@ void JetAnalysis::process_events()
     // Loop over all jets
     for (size_t idx = 0; idx < nJets; ++idx)
     {
+      double pt = m_event_data.jet_pt->at(idx);
       double phi = m_event_data.jet_phi->at(idx);
       double eta = m_event_data.jet_eta->at(idx);
 
@@ -436,17 +441,17 @@ void JetAnalysis::process_events()
       int bin_eta = h2Dummy->GetYaxis()->FindBin(eta);
       int dead_status = static_cast<int>(h2EMCalBadTowersDeadv2->GetBinContent(bin_phi, bin_eta));
 
-      h2JetPhiEta->Fill(phi, eta);
+      h3JetPhiEtaPt->Fill(phi, eta, pt);
 
       if (dead_status == 0)
       {
-        h2JetPhiEtav2->Fill(phi, eta);
+        h3JetPhiEtaPtv2->Fill(phi, eta, pt);
       }
     }
   }
 
-  int jets = static_cast<int>(h2JetPhiEta->GetEntries());
-  int jets_good = static_cast<int>(h2JetPhiEtav2->GetEntries());
+  int jets = static_cast<int>(h3JetPhiEtaPt->GetEntries());
+  int jets_good = static_cast<int>(h3JetPhiEtaPtv2->GetEntries());
 
   std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
 
@@ -479,6 +484,19 @@ void JetAnalysis::save_results() const
     std::cout << std::format("Saving: {}\n", name);
     hist->Write();
   }
+
+  // Save Projections for Convenience
+  auto project_and_write = [&](const std::string& hist_name, const std::string& projection)
+  {
+    auto* hist = m_hists3D.at(hist_name).get();
+    hist->Project3D(projection.c_str())->Write();
+  };
+
+  project_and_write("h3JetPhiEtaPt", "z");
+  project_and_write("h3JetPhiEtaPt", "yx");
+  project_and_write("h3JetPhiEtaPtv2", "z");
+  project_and_write("h3JetPhiEtaPtv2", "yx");
+
   output_file->Close();
 
   std::cout << std::format("Results saved to: {}", output_filename) << std::endl;
