@@ -62,6 +62,28 @@ class JetAnalysis
   }
 
  private:
+  enum class Subdetector
+  {
+    S,
+    N
+  };
+
+  enum class QComponent
+  {
+    X,
+    Y
+  };
+
+  struct QVec
+  {
+    double x{0.0};
+    double y{0.0};
+  };
+
+  // Store harmonic orders and subdetectors for easy iteration
+  static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
+  static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
+
   struct EventData
   {
     int event_id{0};
@@ -71,7 +93,33 @@ class JetAnalysis
     std::vector<double>* jet_pt{nullptr};
     std::vector<double>* jet_phi{nullptr};
     std::vector<double>* jet_eta{nullptr};
+
+    std::vector<int>* sepd_channel{nullptr};
+    std::vector<double>* sepd_charge{nullptr};
+    std::vector<double>* sepd_phi{nullptr};
+
+    // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
+    // Array for subdetectors [S, N] -> indices [0, 1]
+    std::array<std::array<QVec, 2>, 3> q_vectors;
   };
+
+  // Helper to map harmonics to array indices
+  static constexpr size_t harmonic_to_index(int n)
+  {
+    if (n == 2)
+    {
+      return 0;
+    }
+    if (n == 3)
+    {
+      return 1;
+    }
+    if (n == 4)
+    {
+      return 2;
+    }
+    throw std::out_of_range("Invalid harmonic");
+  }
 
   // --- Member Variables ---
   EventData m_event_data;
@@ -84,6 +132,9 @@ class JetAnalysis
   std::string m_output_dir;
   std::string m_dbtag{"newcdbtag"};
 
+  // sEPD Bad Channels
+  std::unordered_set<int> m_bad_channels;
+
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
   std::map<std::string, std::unique_ptr<TH2>> m_hists2D;
@@ -94,7 +145,12 @@ class JetAnalysis
   void setup_chain();
   void process_dead_channels();
   void init_hists();
+
+  void correct_QVecs();
+  void compute_QVecs();
+  void process_QVecs();
   void process_events();
+
   void save_results() const;
 };
 
@@ -139,15 +195,21 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchStatus("event_centrality", true);
   m_chain->SetBranchStatus("jet_phi", true);
   m_chain->SetBranchStatus("jet_eta", true);
-  // m_chain->SetBranchStatus("jet_pt", true);
+  m_chain->SetBranchStatus("jet_pt", true);
+  m_chain->SetBranchStatus("sepd_channel", true);
+  m_chain->SetBranchStatus("sepd_charge", true);
+  m_chain->SetBranchStatus("sepd_phi", true);
 
   m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
   m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
+  m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
   m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
   m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
+  m_chain->SetBranchAddress("sepd_channel", &m_event_data.sepd_channel);
+  m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
+  m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
 
   std::cout << "Finished... setup_chain" << std::endl;
-  // m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
 }
 
 void JetAnalysis::process_dead_channels()
@@ -259,6 +321,75 @@ void JetAnalysis::init_hists()
   m_hists2D["h2Dummy"]->Rebin2D(2, 2);
 }
 
+void JetAnalysis::correct_QVecs()
+{
+}
+
+void JetAnalysis::compute_QVecs()
+{
+  size_t nChannels = m_event_data.sepd_channel->size();
+
+  double sepd_total_charge_south = 0;
+  double sepd_total_charge_north = 0;
+
+  // Loop over all sEPD Channels
+  for (size_t idx = 0; idx < nChannels; ++idx)
+  {
+    int channel = m_event_data.sepd_channel->at(idx);
+    double charge = m_event_data.sepd_charge->at(idx);
+    double phi = m_event_data.sepd_phi->at(idx);
+
+    // Skip Bad Channels
+    if (m_bad_channels.contains(channel))
+    {
+      continue;
+    }
+
+    unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    // arm = 0: South
+    // arm = 1: North
+    double& sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
+
+    // Compute total charge for the respective sEPD arm
+    sepd_total_charge += charge;
+
+    // Compute Raw Q vectors for each harmonic and respective arm
+    for (int n : m_harmonics)
+    {
+      size_t n_idx = harmonic_to_index(n);
+      m_event_data.q_vectors[n_idx][arm].x += charge * std::cos(n * phi);
+      m_event_data.q_vectors[n_idx][arm].y += charge * std::sin(n * phi);
+    }
+  }
+
+  // Skip Events with Zero sEPD Total Charge in either arm
+  if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
+  {
+    return;
+  }
+
+  // Normalize the Q-vectors by total charge
+  for (int n : m_harmonics)
+  {
+    size_t n_idx = harmonic_to_index(n);
+    for (auto det : m_subdetectors)
+    {
+      size_t det_idx = (det == Subdetector::S) ? 0 : 1;
+      double sepd_total_charge = (det_idx == 0) ? sepd_total_charge_south : sepd_total_charge_north;
+      m_event_data.q_vectors[n_idx][det_idx].x /= sepd_total_charge;
+      m_event_data.q_vectors[n_idx][det_idx].y /= sepd_total_charge;
+    }
+  }
+}
+
+void JetAnalysis::process_QVecs()
+{
+  compute_QVecs();
+  correct_QVecs();
+}
+
 void JetAnalysis::process_events()
 {
   std::cout << "Processing... process_events" << std::endl;
@@ -286,7 +417,10 @@ void JetAnalysis::process_events()
 
     size_t nJets = m_event_data.jet_phi->size();
 
-    // Loop over all jets Channels
+    // compute and correct the sEPD Q vectors
+    process_QVecs();
+
+    // Loop over all jets
     for (size_t idx = 0; idx < nJets; ++idx)
     {
       double phi = m_event_data.jet_phi->at(idx);
