@@ -103,24 +103,6 @@ class JetAnalysis
     std::array<std::array<QVec, 2>, 3> q_vectors;
   };
 
-  // Helper to map harmonics to array indices
-  static constexpr size_t harmonic_to_index(int n)
-  {
-    if (n == 2)
-    {
-      return 0;
-    }
-    if (n == 3)
-    {
-      return 1;
-    }
-    if (n == 4)
-    {
-      return 2;
-    }
-    throw std::out_of_range("Invalid harmonic");
-  }
-
   // --- Member Variables ---
   EventData m_event_data;
   std::unique_ptr<TChain> m_chain;
@@ -360,9 +342,9 @@ bool JetAnalysis::compute_QVecs()
     sepd_total_charge += charge;
 
     // Compute Raw Q vectors for each harmonic and respective arm
-    for (int n : m_harmonics)
+    for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
     {
-      size_t n_idx = harmonic_to_index(n);
+      int n = m_harmonics[n_idx];
       m_event_data.q_vectors[n_idx][arm].x += charge * std::cos(n * phi);
       m_event_data.q_vectors[n_idx][arm].y += charge * std::sin(n * phi);
     }
@@ -376,9 +358,8 @@ bool JetAnalysis::compute_QVecs()
   }
 
   // Normalize the Q-vectors by total charge
-  for (int n : m_harmonics)
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    size_t n_idx = harmonic_to_index(n);
     for (auto det : m_subdetectors)
     {
       size_t det_idx = (det == Subdetector::S) ? 0 : 1;
