@@ -331,7 +331,7 @@ void QvectorAnalysis::process_hot_channels()
 
   std::string sepd_charge_hist = "hSEPD_Charge";
 
-  auto hist = file->Get(sepd_charge_hist.c_str());
+  auto* hist = file->Get(sepd_charge_hist.c_str());
 
   // Check if the hist is stored in the file
   if (hist == nullptr)
@@ -339,7 +339,7 @@ void QvectorAnalysis::process_hot_channels()
     throw std::runtime_error(std::format("Cannot find hist: {}", sepd_charge_hist));
   }
 
-  auto hSEPD_Charge = dynamic_cast<TH1*>(hist);
+  auto* hSEPD_Charge = dynamic_cast<TH1*>(hist);
 
   int sepd_channels = 744;
   int rbins = 16;
@@ -368,11 +368,11 @@ void QvectorAnalysis::process_hot_channels()
   m_hists1D["h_sEPD_Bad_Channels"] = std::make_unique<TH1F>("h_sEPD_Bad_Channels", "sEPD Bad Channels; Channel; Status",
                                                            sepd_channels, -0.5, sepd_channels-0.5);
 
-  auto h2S = m_hists2D["h2SEPD_South_Charge_rbin"].get();
-  auto h2N = m_hists2D["h2SEPD_North_Charge_rbin"].get();
+  auto* h2S = m_hists2D["h2SEPD_South_Charge_rbin"].get();
+  auto* h2N = m_hists2D["h2SEPD_North_Charge_rbin"].get();
 
-  auto h2Sv2 = m_hists2D["h2SEPD_South_Charge_rbinv2"].get();
-  auto h2Nv2 = m_hists2D["h2SEPD_North_Charge_rbinv2"].get();
+  auto* h2Sv2 = m_hists2D["h2SEPD_South_Charge_rbinv2"].get();
+  auto* h2Nv2 = m_hists2D["h2SEPD_North_Charge_rbinv2"].get();
 
   auto* hBad = m_hists1D["h_sEPD_Bad_Channels"].get();
 
@@ -384,13 +384,13 @@ void QvectorAnalysis::process_hot_channels()
 
     double avg_charge = hSEPD_Charge->GetBinContent(channel + 1);
 
-    auto h2 = (arm == 0) ? h2S : h2N;
+    auto* h2 = (arm == 0) ? h2S : h2N;
 
     h2->Fill(rbin, avg_charge);
   }
 
-  auto hSpx = h2S->ProfileX("hSpx", 2, -1, "s");
-  auto hNpx = h2N->ProfileX("hNpx", 2, -1, "s");
+  auto* hSpx = h2S->ProfileX("hSpx", 2, -1, "s");
+  auto* hNpx = h2N->ProfileX("hNpx", 2, -1, "s");
 
   int ctr_dead = 0;
   int ctr_hot = 0;
@@ -401,9 +401,9 @@ void QvectorAnalysis::process_hot_channels()
     unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
     int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
-    auto h2 = (arm == 0) ? h2Sv2 : h2Nv2;
+    auto* h2 = (arm == 0) ? h2Sv2 : h2Nv2;
 
-    auto hprof = (arm == 0) ? hSpx : hNpx;
+    auto* hprof = (arm == 0) ? hSpx : hNpx;
 
     double charge = hSEPD_Charge->GetBinContent(channel + 1);
     double mean_charge = hprof->GetBinContent(rbin + 1);
