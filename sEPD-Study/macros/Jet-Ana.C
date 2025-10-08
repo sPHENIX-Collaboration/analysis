@@ -84,6 +84,26 @@ class JetAnalysis
     double y{0.0};
   };
 
+  struct CorrectionData
+  {
+    // Averages of Qx, Qy, Qx^2, Qy^2, Qxy
+    QVec avg_Q{};
+    double avg_Q_xx{0.0};
+    double avg_Q_yy{0.0};
+    double avg_Q_xy{0.0};
+
+    // Correction matrix
+    std::array<std::array<double, 2>, 2> X_matrix{};
+  };
+
+  static constexpr size_t m_bins_cent = 8;
+
+  // Holds all correction data
+  // key: [Cent][Harmonic][Subdetector]
+  // Harmonics {2,3,4} -> 3 elements
+  // Subdetectors {S,N} -> 2 elements
+  std::array<std::array<std::array<CorrectionData, 2>, 3>, m_bins_cent> m_correction_data;
+
   // Store harmonic orders and subdetectors for easy iteration
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
@@ -243,6 +263,169 @@ void JetAnalysis::read_Q_calib()
       m_bad_channels.insert(channel);
     }
   }
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+
+    std::string S_x_avg_name = std::format("h_sEPD_Q_S_x_{}_avg", n);
+    std::string S_y_avg_name = std::format("h_sEPD_Q_S_y_{}_avg", n);
+    std::string N_x_avg_name = std::format("h_sEPD_Q_N_x_{}_avg", n);
+    std::string N_y_avg_name = std::format("h_sEPD_Q_N_y_{}_avg", n);
+
+    auto* h_sEPD_Q_S_x_avg = dynamic_cast<TProfile*>(file->Get(S_x_avg_name.c_str()));
+    auto* h_sEPD_Q_S_y_avg = dynamic_cast<TProfile*>(file->Get(S_y_avg_name.c_str()));
+    auto* h_sEPD_Q_N_x_avg = dynamic_cast<TProfile*>(file->Get(N_x_avg_name.c_str()));
+    auto* h_sEPD_Q_N_y_avg = dynamic_cast<TProfile*>(file->Get(N_y_avg_name.c_str()));
+
+    if (!h_sEPD_Q_S_x_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", S_x_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_S_y_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", S_y_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_N_x_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_x_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_N_y_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_y_avg_name, m_input_Q_calib));
+    }
+
+    std::string S_xx_avg_name = std::format("h_sEPD_Q_S_xx_{}_avg", n);
+    std::string S_yy_avg_name = std::format("h_sEPD_Q_S_yy_{}_avg", n);
+    std::string S_xy_avg_name = std::format("h_sEPD_Q_S_xy_{}_avg", n);
+    std::string N_xx_avg_name = std::format("h_sEPD_Q_N_xx_{}_avg", n);
+    std::string N_yy_avg_name = std::format("h_sEPD_Q_N_yy_{}_avg", n);
+    std::string N_xy_avg_name = std::format("h_sEPD_Q_N_xy_{}_avg", n);
+
+    auto* h_sEPD_Q_S_xx_avg = dynamic_cast<TProfile*>(file->Get(S_xx_avg_name.c_str()));
+    auto* h_sEPD_Q_S_yy_avg = dynamic_cast<TProfile*>(file->Get(S_yy_avg_name.c_str()));
+    auto* h_sEPD_Q_S_xy_avg = dynamic_cast<TProfile*>(file->Get(S_xy_avg_name.c_str()));
+    auto* h_sEPD_Q_N_xx_avg = dynamic_cast<TProfile*>(file->Get(N_xx_avg_name.c_str()));
+    auto* h_sEPD_Q_N_yy_avg = dynamic_cast<TProfile*>(file->Get(N_yy_avg_name.c_str()));
+    auto* h_sEPD_Q_N_xy_avg = dynamic_cast<TProfile*>(file->Get(N_xy_avg_name.c_str()));
+
+    if (!h_sEPD_Q_S_xx_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", S_xx_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_S_yy_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", S_yy_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_S_xy_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", S_xy_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_N_xx_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_xx_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_N_yy_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_yy_avg_name, m_input_Q_calib));
+    }
+    if (!h_sEPD_Q_N_xy_avg)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_xy_avg_name, m_input_Q_calib));
+    }
+
+    for (size_t cent_bin = 0; cent_bin < m_bins_cent; ++cent_bin)
+    {
+      int bin = static_cast<int>(cent_bin)+1;
+
+      double Q_S_x_avg = h_sEPD_Q_S_x_avg->GetBinContent(bin);
+      double Q_S_y_avg = h_sEPD_Q_S_y_avg->GetBinContent(bin);
+      double Q_N_x_avg = h_sEPD_Q_N_x_avg->GetBinContent(bin);
+      double Q_N_y_avg = h_sEPD_Q_N_y_avg->GetBinContent(bin);
+
+      double Q_S_xx_avg = h_sEPD_Q_S_xx_avg->GetBinContent(bin);
+      double Q_S_yy_avg = h_sEPD_Q_S_yy_avg->GetBinContent(bin);
+      double Q_S_xy_avg = h_sEPD_Q_S_xy_avg->GetBinContent(bin);
+      double Q_N_xx_avg = h_sEPD_Q_N_xx_avg->GetBinContent(bin);
+      double Q_N_yy_avg = h_sEPD_Q_N_yy_avg->GetBinContent(bin);
+      double Q_N_xy_avg = h_sEPD_Q_N_xy_avg->GetBinContent(bin);
+
+      // Recentering Params
+      m_correction_data[cent_bin][n_idx][0].avg_Q = {Q_S_x_avg, Q_S_y_avg};
+      m_correction_data[cent_bin][n_idx][1].avg_Q = {Q_N_x_avg, Q_N_y_avg};
+
+      // Flattening Params
+      m_correction_data[cent_bin][n_idx][0].avg_Q_xx = Q_S_xx_avg;
+      m_correction_data[cent_bin][n_idx][0].avg_Q_yy = Q_S_yy_avg;
+      m_correction_data[cent_bin][n_idx][0].avg_Q_xy = Q_S_xy_avg;
+
+      m_correction_data[cent_bin][n_idx][1].avg_Q_xx = Q_N_xx_avg;
+      m_correction_data[cent_bin][n_idx][1].avg_Q_yy = Q_N_yy_avg;
+      m_correction_data[cent_bin][n_idx][1].avg_Q_xy = Q_N_xy_avg;
+
+      // ----
+      // South
+      // ----
+
+      double D_term_S_arg = (Q_S_xx_avg * Q_S_yy_avg) - (Q_S_xy_avg * Q_S_xy_avg);
+      if (D_term_S_arg <= 0)
+      {
+        throw std::runtime_error(std::format(
+            "Invalid calibration data: D-term sqrt argument is non-positive ({}) "
+            "for harmonic n={}, centrality bin {}, subdetector S. "
+            "Check calibration file statistics.",
+            D_term_S_arg, n, cent_bin));
+      }
+      double D_term_S = std::sqrt(D_term_S_arg);
+
+      double N_term_S = D_term_S * (Q_S_xx_avg + Q_S_yy_avg + (2 * D_term_S));
+      if (N_term_S <= 0)
+      {
+        throw std::runtime_error(std::format(
+            "Invalid calibration data: N-term denominator sqrt argument is non-positive ({}) "
+            "for harmonic n={}, centrality bin {}, subdetector S. "
+            "Check calibration file statistics.",
+            N_term_S, n, cent_bin));
+      }
+
+      auto& X_S_matrix = m_correction_data[cent_bin][n_idx][0].X_matrix;
+      X_S_matrix[0][0] = (1. / std::sqrt(N_term_S)) * (Q_S_yy_avg + D_term_S);
+      X_S_matrix[0][1] = (-1. / std::sqrt(N_term_S)) * Q_S_xy_avg;
+      X_S_matrix[1][0] = X_S_matrix[0][1];
+      X_S_matrix[1][1] = (1. / std::sqrt(N_term_S)) * (Q_S_xx_avg + D_term_S);
+
+      // ----
+      // North
+      // ----
+
+      double D_term_N_arg = (Q_N_xx_avg * Q_N_yy_avg) - (Q_N_xy_avg * Q_N_xy_avg);
+      if (D_term_N_arg <= 0)
+      {
+        throw std::runtime_error(std::format(
+            "Invalid calibration data: D-term sqrt argument is non-positive ({}) "
+            "for harmonic n={}, centrality bin {}, subdetector N. "
+            "Check calibration file statistics.",
+            D_term_N_arg, n, cent_bin));
+      }
+      double D_term_N = std::sqrt(D_term_N_arg);
+
+      double N_term_N = D_term_N * (Q_N_xx_avg + Q_N_yy_avg + (2 * D_term_N));
+      if (N_term_N <= 0)
+      {
+        throw std::runtime_error(std::format(
+            "Invalid calibration data: N-term denominator sqrt argument is non-positive ({}) "
+            "for harmonic n={}, centrality bin {}, subdetector N. "
+            "Check calibration file statistics.",
+            N_term_N, n, cent_bin));
+      }
+
+      auto& X_N_matrix = m_correction_data[cent_bin][n_idx][1].X_matrix;
+      X_N_matrix[0][0] = (1. / std::sqrt(N_term_N)) * (Q_N_yy_avg + D_term_N);
+      X_N_matrix[0][1] = (-1. / std::sqrt(N_term_N)) * Q_N_xy_avg;
+      X_N_matrix[1][0] = X_N_matrix[0][1];
+      X_N_matrix[1][1] = (1. / std::sqrt(N_term_N)) * (Q_N_xx_avg + D_term_N);
+    }
+  }
 }
 
 void JetAnalysis::process_dead_channels()
@@ -351,7 +534,6 @@ void JetAnalysis::init_hists()
   double pt_low = 0;
   double pt_high = 50;
 
-  int bins_cent = 8;
   double cent_low = -0.5;
   double cent_high = 79.5;
 
@@ -370,7 +552,7 @@ void JetAnalysis::init_hists()
     std::string name = std::format("h3SP_re_{}", n);
     std::string title = std::format("Scalar Product (Order {}); Centrality [%]; Sample; SP", n);
 
-    m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), bins_cent, cent_low, cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
+    m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), m_bins_cent, cent_low, cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
 
     std::string name_im = std::format("h3SP_im_{}", n);
     m_hists3D[name_im] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_im.c_str())));
@@ -385,7 +567,7 @@ void JetAnalysis::init_hists()
 
     title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
 
-    m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), bins_cent, cent_low, cent_high, bins_SP, SP_low, SP_high);
+    m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, cent_low, cent_high, bins_SP, SP_low, SP_high);
     m_hists2D[name_vn_im] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D[name_vn_re]->Clone(name_vn_im.c_str())));
   }
 
@@ -395,6 +577,34 @@ void JetAnalysis::init_hists()
 
 void JetAnalysis::correct_QVecs()
 {
+  size_t cent_bin = static_cast<size_t>(m_hists2D["h2Vn_re_2"]->GetXaxis()->FindBin(m_event_data.event_centrality) - 1);
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    double Q_S_x_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.x;
+    double Q_S_y_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.y;
+    double Q_N_x_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.x;
+    double Q_N_y_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.y;
+
+    QVec q_S = m_event_data.q_vectors[n_idx][0];
+    QVec q_N = m_event_data.q_vectors[n_idx][1];
+
+    // Apply Recentering
+    QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
+    QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
+
+    const auto& X_S = m_correction_data[cent_bin][n_idx][0].X_matrix;
+    const auto& X_N = m_correction_data[cent_bin][n_idx][1].X_matrix;
+
+    // Apply Flattening
+    double Q_S_x_corr2 = X_S[0][0] * q_S_corr.x + X_S[0][1] * q_S_corr.y;
+    double Q_S_y_corr2 = X_S[1][0] * q_S_corr.x + X_S[1][1] * q_S_corr.y;
+    double Q_N_x_corr2 = X_N[0][0] * q_N_corr.x + X_N[0][1] * q_N_corr.y;
+    double Q_N_y_corr2 = X_N[1][0] * q_N_corr.x + X_N[1][1] * q_N_corr.y;
+
+    m_event_data.q_vectors[n_idx][0] = {Q_S_x_corr2, Q_S_y_corr2};
+    m_event_data.q_vectors[n_idx][1] = {Q_N_x_corr2, Q_N_y_corr2};
+  }
 }
 
 bool JetAnalysis::compute_QVecs()
@@ -568,6 +778,8 @@ void JetAnalysis::process_events()
   jet_hists.h3JetPhiEtaPt = m_hists3D["h3JetPhiEtaPt"].get();
   jet_hists.h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
 
+  auto* hDummyCent = m_hists2D["h2Vn_re_2"]->GetXaxis();
+
   // Event Loop
   for (long long event = 0; event < n_entries; ++event)
   {
@@ -577,6 +789,15 @@ void JetAnalysis::process_events()
     if (event % 5000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", event, n_entries, static_cast<double>(event) * 100. / static_cast<double>(n_entries)) << std::endl;
+    }
+
+    int cent_bin = hDummyCent->FindBin(m_event_data.event_centrality);
+
+    // Skip events in underflow or overflow bins.
+    if (cent_bin <= 0 || cent_bin > static_cast<int>(m_bins_cent))
+    {
+      std::cout << std::format("Warning: Weird Centrality: {}, Skipping Event\n", m_event_data.event_centrality);
+      continue;
     }
 
     // Reset Q-Vectors for the new event
@@ -624,8 +845,6 @@ void JetAnalysis::finalize()
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
-    int bins_cent = m_hists3D[name_re]->GetNbinsX();
-
     auto* prof_re = m_hists3D[name_re]->Project3DProfile("yx");
     auto* prof_im = m_hists3D[name_im]->Project3DProfile("yx");
     auto* prof_res = m_hists3D[name_res]->Project3DProfile("yx");
@@ -633,7 +852,7 @@ void JetAnalysis::finalize()
     auto* h2Vn_re = m_hists2D[name_vn_re].get();
     auto* h2Vn_im = m_hists2D[name_vn_im].get();
 
-    for (int cent_bin = 0; cent_bin < bins_cent; ++cent_bin)
+    for (int cent_bin = 0; cent_bin < static_cast<int>(m_bins_cent); ++cent_bin)
     {
       double cent = h2Vn_re->GetXaxis()->GetBinCenter(cent_bin + 1);
 
