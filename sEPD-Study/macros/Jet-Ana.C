@@ -44,9 +44,10 @@ class JetAnalysis
 {
  public:
   // The constructor takes the configuration
-  JetAnalysis(std::string input_list, unsigned int runnumber, long long events, std::string output_dir)
+  JetAnalysis(std::string input_list, std::string input_Q_calib, unsigned int runnumber, long long events, std::string output_dir)
     : m_chain(std::make_unique<TChain>("T"))
     , m_input_list(std::move(input_list))
+    , m_input_Q_calib(std::move(input_Q_calib))
     , m_runnumber(runnumber)
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
@@ -56,6 +57,7 @@ class JetAnalysis
   void run()
   {
     setup_chain();
+    read_Q_calib();
     process_dead_channels();
     init_hists();
     process_events();
@@ -119,6 +121,7 @@ class JetAnalysis
 
   // Configuration stored as members
   std::string m_input_list;
+  std::string m_input_Q_calib;
   unsigned int m_runnumber;
   long long m_events_to_process;
   std::string m_output_dir;
@@ -136,6 +139,7 @@ class JetAnalysis
 
   // --- Private Helper Methods ---
   void setup_chain();
+  void read_Q_calib();
   void process_dead_channels();
   void init_hists();
 
@@ -207,6 +211,38 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
 
   std::cout << "Finished... setup_chain" << std::endl;
+}
+
+void JetAnalysis::read_Q_calib()
+{
+  TH1::AddDirectory(kFALSE);
+
+  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_Q_calib.c_str()));
+
+  // Check if the file was opened successfully.
+  if (!file || file->IsZombie())
+  {
+    throw std::runtime_error(std::format("Could not open file '{}'", m_input_Q_calib));
+  }
+
+  auto* h_sEPD_Bad_Channels = dynamic_cast<TH1*>(file->Get("h_sEPD_Bad_Channels"));
+
+  if (!h_sEPD_Bad_Channels)
+  {
+    throw std::runtime_error(std::format("Could not find histogram 'h_sEPD_Bad_Channels' in file '{}'", m_input_Q_calib));
+  }
+
+  // Load Bad Channels
+  for (int channel = 0; channel < h_sEPD_Bad_Channels->GetNbinsX(); ++channel)
+  {
+    // sEPD Channel Status
+    // 0: good
+    // non-zero: bad
+    if (h_sEPD_Bad_Channels->GetBinContent(channel + 1))
+    {
+      m_bad_channels.insert(channel);
+    }
+  }
 }
 
 void JetAnalysis::process_dead_channels()
@@ -685,20 +721,21 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 3 || argc > 5)
+  if (argc < 4 || argc > 6)
   {
-    std::cout << "Usage: " << argv[0] << " <input_list_file> <runnumber> [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_list_file> <input_SEPD_Q_vec_calib> <runnumber> [events] [output_directory]" << std::endl;
     return 1;
   }
 
   const std::string input_list = argv[1];
-  unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[2]));
-  long long events = (argc >= 4) ? std::atoll(argv[3]) : 0;
-  std::string output_dir = (argc >= 5) ? argv[4] : ".";
+  const std::string input_Q_calib = argv[2];
+  unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[3]));
+  long long events = (argc >= 5) ? std::atoll(argv[4]) : 0;
+  std::string output_dir = (argc >= 6) ? argv[5] : ".";
 
   try
   {
-    JetAnalysis analysis(input_list, runnumber, events, output_dir);
+    JetAnalysis analysis(input_list, input_Q_calib, runnumber, events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
