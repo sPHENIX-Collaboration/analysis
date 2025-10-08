@@ -203,8 +203,8 @@ void DisplayJetAna::draw()
   c1->SetLeftMargin(.03f);
   c1->SetRightMargin(.07f);
 
-  auto h2JetPhiEta = dynamic_cast<TH2*>(m_hists["h2JetPhiEta"].get());
-  auto h2JetPhiEtav2 = dynamic_cast<TH2*>(m_hists["h2JetPhiEtav2"].get());
+  auto h2JetPhiEta = dynamic_cast<TH2*>(dynamic_cast<TH3*>(m_hists["h3JetPhiEtaPt"].get())->Project3D("yx"));
+  auto h2JetPhiEtav2 = dynamic_cast<TH2*>(dynamic_cast<TH3*>(m_hists["h3JetPhiEtaPtv2"].get())->Project3D("yx"));
 
   h2JetPhiEta->Draw("COLZ1");
   gPad->Update();
