@@ -365,11 +365,16 @@ void QvectorAnalysis::process_hot_channels()
                                                                    rbins, -0.5, rbins - 0.5,
                                                                    bins_charge, 0, bins_charge);
 
+  m_hists1D["h_sEPD_Bad_Channels"] = std::make_unique<TH1F>("h_sEPD_Bad_Channels", "sEPD Bad Channels; Channel; Status",
+                                                           sepd_channels, -0.5, sepd_channels-0.5);
+
   auto h2S = m_hists2D["h2SEPD_South_Charge_rbin"].get();
   auto h2N = m_hists2D["h2SEPD_North_Charge_rbin"].get();
 
   auto h2Sv2 = m_hists2D["h2SEPD_South_Charge_rbinv2"].get();
   auto h2Nv2 = m_hists2D["h2SEPD_North_Charge_rbinv2"].get();
+
+  auto* hBad = m_hists1D["h_sEPD_Bad_Channels"].get();
 
   for (int channel = 0; channel < sepd_channels; ++channel)
   {
@@ -387,7 +392,10 @@ void QvectorAnalysis::process_hot_channels()
   auto hSpx = h2S->ProfileX("hSpx", 2, -1, "s");
   auto hNpx = h2N->ProfileX("hNpx", 2, -1, "s");
 
+  int ctr_dead = 0;
   int ctr_hot = 0;
+  int ctr_cold = 0;
+
   for (int channel = 0; channel < sepd_channels; ++channel)
   {
     unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
@@ -405,15 +413,26 @@ void QvectorAnalysis::process_hot_channels()
     {
       m_bad_channels.insert(channel);
 
-      // hot channel
-      if (charge - mean_charge > 3 * sigma)
+      // dead channel
+      if(charge == 0)
       {
+          hBad->Fill(channel, 1);
+          std::cout << std::format("Dead Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, charge);
+          ++ctr_dead;
+      }
+      // hot channel
+      else if (charge - mean_charge > 3 * sigma)
+      {
+        hBad->Fill(channel, 2);
         std::cout << std::format("Hot Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Sigma: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, sigma, charge);
         ++ctr_hot;
       }
+      // cold channel
       else
       {
-        std::cout << std::format("Bad Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, charge);
+        hBad->Fill(channel, 3);
+        std::cout << std::format("Cold Channel: {:3d}, arm: {}, rbin: {:2d}, Mean Charge: {:5.2f}, Charge: {:5.2f}\n", channel, arm, rbin, mean_charge, charge);
+        ++ctr_cold;
       }
     }
     else
@@ -422,7 +441,7 @@ void QvectorAnalysis::process_hot_channels()
     }
   }
 
-  std::cout << std::format("Total Bad Channels: {}, Hot: {}\n", m_bad_channels.size(), ctr_hot);
+  std::cout << std::format("Total Bad Channels: {}, Dead: {}, Hot: {}, Cold: {}\n", m_bad_channels.size(), ctr_dead, ctr_hot, ctr_cold);
 
   std::cout << "Finished processing Hot sEPD channels" << std::endl;
 }
