@@ -68,6 +68,8 @@ class DisplayJetAna
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
+
+  std::unique_ptr<TProfile> make_profile(const TH2* h2, const std::string &name, const std::string &title);
   void draw();
 };
 
@@ -140,6 +142,28 @@ void DisplayJetAna::init_hists()
 
   myUtils::setEMCalDim(m_hists["h2DummySector"].get());
   myUtils::setEMCalDim(m_hists["h2DummyIB"].get());
+}
+
+std::unique_ptr<TProfile> DisplayJetAna::make_profile(const TH2* h2, const std::string &name, const std::string &title)
+{
+  int bins_x = h2->GetNbinsX();
+  int bins_y = h2->GetNbinsY();
+  double x_low = h2->GetXaxis()->GetXmin();
+  double x_high = h2->GetXaxis()->GetXmax();
+
+  auto hprof = std::make_unique<TProfile>(name.c_str(), title.c_str(), bins_x, x_low, x_high, "s");
+
+  for(int bin_x = 1; bin_x <= bins_x; ++bin_x)
+  {
+    for(int bin_y = 1; bin_y <= bins_y; ++bin_y)
+    {
+        double val = h2->GetBinContent(bin_x, bin_y);
+        double x = hprof->GetBinCenter(bin_x);
+        hprof->Fill(x, val);
+    }
+  }
+
+  return hprof;
 }
 
 void DisplayJetAna::draw()
@@ -273,6 +297,64 @@ void DisplayJetAna::draw()
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPhi-overlay").c_str());
+
+  // -------------------------------------------
+
+  auto* hCentrality = m_hists["hCentrality"].get();
+
+  hCentrality->Draw();
+  hCentrality->SetLineColor(kBlue);
+  hCentrality->SetLineWidth(3);
+  hCentrality->GetYaxis()->SetRangeUser(0, hCentrality->GetMaximum()*1.1);
+  hCentrality->GetYaxis()->SetMaxDigits(3);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hCentrality").c_str());
+
+  // -------------------------------------------
+
+  auto* h2Event = dynamic_cast<TH2*>(m_hists["h2Event"].get());
+  std::string title = "Centrality: |z| < 10 cm and MB; Centrality [%]; Average Events / 25 Samples";
+
+  auto hEvent = make_profile(h2Event, "hEvent", title);
+
+  hEvent->Draw("HIST");
+  hEvent->Draw("p e X0 same");
+
+  hEvent->GetYaxis()->SetMaxDigits(3);
+  hEvent->GetYaxis()->SetTitleOffset(1.f);
+  hEvent->GetXaxis()->SetTitleOffset(0.85f);
+  hEvent->GetYaxis()->SetRangeUser(0, hEvent->GetMaximum()*1.1);
+  hEvent->SetLineWidth(3);
+  hEvent->SetLineColor(kBlue);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hEvent").c_str());
+
+  // -------------------------------------------
+
+  gPad->SetLogy();
+  auto* h2Jet = dynamic_cast<TH2*>(m_hists["h2Jet"].get());
+  title = "Jets: |z| < 10 cm and MB; Centrality [%]; Average Jets / 25 Samples";
+
+  auto hJet = make_profile(h2Jet, "hJet", title);
+
+  hJet->Draw("HIST");
+  hJet->Draw("p e X0 same");
+
+  hJet->GetYaxis()->SetMaxDigits(3);
+  hJet->GetYaxis()->SetTitleOffset(1.f);
+  hJet->GetXaxis()->SetTitleOffset(0.85f);
+
+  double exponent = std::ceil(std::log10(hJet->GetMaximum()));
+  double upper_bound = std::pow(10.0, exponent);
+
+  hJet->GetYaxis()->SetRangeUser(5e-1, upper_bound);
+  hJet->SetLineWidth(3);
+  hJet->SetLineColor(kBlue);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJet").c_str());
 
   c1->Print((output + "]").c_str(), "pdf portrait");
 }
