@@ -165,6 +165,7 @@ class JetAnalysis
   std::map<std::string, std::unique_ptr<TH2>> m_hists2D;
   std::map<std::string, std::unique_ptr<TH3>> m_hists3D;
   std::map<std::string, std::unique_ptr<TProfile>> m_profiles;
+  std::map<std::string, std::unique_ptr<TProfile2D>> m_profiles2D;
 
   // --- Private Helper Methods ---
   void setup_chain();
@@ -572,6 +573,7 @@ void JetAnalysis::init_hists()
 
   for (auto n : m_harmonics)
   {
+    // TH3 for Scalar Product
     std::string name = std::format("h3SP_re_{}", n);
     std::string title = std::format("Scalar Product (Order {}); Centrality [%]; Sample; SP", n);
 
@@ -580,10 +582,24 @@ void JetAnalysis::init_hists()
     std::string name_im = std::format("h3SP_im_{}", n);
     m_hists3D[name_im] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_im.c_str())));
 
+    // TProfile2D for Scalar Product
+    std::string name_re_prof = std::format("h2SP_re_prof_{}", n);
+    std::string name_im_prof = std::format("h2SP_im_prof_{}", n);
+
+    title = std::format("Scalar Product (Order {}); Centrality [%]; Sample", n);
+    m_profiles2D[name_re_prof] = std::make_unique<TProfile2D>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
+    m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
+
+    // TH3 for Detector Resolution
     std::string name_res = std::format("h3SP_res_{}", n);
-    title = std::format("sEPD (Order {}): Q^{{S}}Q^{{N*}}; Centrality [%]; Sample; Q^{{S}}Q^{{N*}}", n);
+    title = std::format("sEPD (Order {0}): Q^{{S}}Q^{{N*}}; Centrality [%]; Sample; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}GT)", n);
     m_hists3D[name_res] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_res.c_str())));
     m_hists3D[name_res]->SetTitle(title.c_str());
+
+    // TProfile2D for Detector Resolution
+    std::string name_res_prof = std::format("h2SP_res_prof_{}", n);
+    title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT); Centrality [%]; Sample", n);
+    m_profiles2D[name_res_prof] = std::make_unique<TProfile2D>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
@@ -728,12 +744,14 @@ void JetAnalysis::compute_SP_resolution(int sample)
   {
     int n = m_harmonics[n_idx];
     std::string name = std::format("h3SP_res_{}", n);
+    std::string name_prof = std::format("h2SP_res_prof_{}", n);
     QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][0];
     QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][1];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
 
     m_hists3D[name]->Fill(cent, sample, SP_res);
+    m_profiles2D[name_prof]->Fill(cent, sample, SP_res);
   }
 }
 
@@ -765,8 +783,14 @@ void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, dou
       std::string name_re = std::format("h3SP_re_{}", n);
       std::string name_im = std::format("h3SP_im_{}", n);
 
+      std::string name_re_prof = std::format("h2SP_re_prof_{}", n);
+      std::string name_im_prof = std::format("h2SP_im_prof_{}", n);
+
       m_hists3D[name_re]->Fill(cent, sample, SP_re);
       m_hists3D[name_im]->Fill(cent, sample, SP_im);
+
+      m_profiles2D[name_re_prof]->Fill(cent, sample, SP_re);
+      m_profiles2D[name_im_prof]->Fill(cent, sample, SP_im);
     }
   }
 }
@@ -887,16 +911,16 @@ void JetAnalysis::finalize()
 {
   for (auto n : m_harmonics)
   {
-    std::string name_re = std::format("h3SP_re_{}", n);
-    std::string name_im = std::format("h3SP_im_{}", n);
-    std::string name_res = std::format("h3SP_res_{}", n);
+    std::string name_re = std::format("h2SP_re_prof_{}", n);
+    std::string name_im = std::format("h2SP_im_prof_{}", n);
+    std::string name_res = std::format("h2SP_res_prof_{}", n);
 
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
-    auto* prof_re = m_hists3D[name_re]->Project3DProfile("yx");
-    auto* prof_im = m_hists3D[name_im]->Project3DProfile("yx");
-    auto* prof_res = m_hists3D[name_res]->Project3DProfile("yx");
+    auto* prof_re = m_profiles2D[name_re].get();
+    auto* prof_im = m_profiles2D[name_im].get();
+    auto* prof_res = m_profiles2D[name_res].get();
 
     auto* h2Vn_re = m_hists2D[name_vn_re].get();
     auto* h2Vn_im = m_hists2D[name_vn_im].get();
@@ -1018,6 +1042,11 @@ void JetAnalysis::save_results() const
     std::cout << std::format("Saving: {}\n", name);
     hist->Write();
   }
+  for (const auto& [name, hist] : m_profiles2D)
+  {
+    std::cout << std::format("Saving: {}\n", name);
+    hist->Write();
+  }
 
   // Save Projections for Convenience
   auto project_and_write = [&](const std::string& hist_name, const std::string& projection)
@@ -1026,24 +1055,10 @@ void JetAnalysis::save_results() const
     hist->Project3D(projection.c_str())->Write();
   };
 
-  // Save Profiles for Convenience
-  auto profile_and_write = [&](const std::string& hist_name, const std::string& profile)
-  {
-    auto* hist = m_hists3D.at(hist_name).get();
-    hist->Project3DProfile(profile.c_str())->Write();
-  };
-
   project_and_write("h3JetPhiEtaPt", "z");
   project_and_write("h3JetPhiEtaPt", "yx");
   project_and_write("h3JetPhiEtaPtv2", "z");
   project_and_write("h3JetPhiEtaPtv2", "yx");
-
-  for (auto n : m_harmonics)
-  {
-    profile_and_write(std::format("h3SP_re_{}", n), "yx");
-    profile_and_write(std::format("h3SP_im_{}", n), "yx");
-    profile_and_write(std::format("h3SP_res_{}", n), "yx");
-  }
 
   output_file->Close();
 

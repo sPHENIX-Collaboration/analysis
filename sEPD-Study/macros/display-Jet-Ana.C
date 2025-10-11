@@ -428,7 +428,7 @@ void DisplayJetAna::draw()
 
   gPad->SetLogy(0);
 
-  auto* h2SP_res_2 = m_hists["h3SP_res_2_pyx"].get();
+  auto* h2SP_res_2 = m_hists["h2SP_res_prof_2"].get();
 
   h2SP_res_2->Draw("COLZ1");
   title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", 2);
@@ -441,7 +441,7 @@ void DisplayJetAna::draw()
   h2SP_res_2->GetYaxis()->SetTitleOffset(0.9f);
 
   c1->Print(output.c_str(), "pdf portrait");
-  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h3SP_res_2_pyx").c_str());
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2SP_res_prof_2").c_str());
 
   // -------------------------------------------
 
@@ -483,18 +483,18 @@ void DisplayJetAna::draw()
 
   for(auto n : m_harmonics)
   {
-    std::string hist_name = std::format("h3SP_res_{}_pyx", n);
-    auto* h2SP_res_pyx = dynamic_cast<TH2*>(m_hists[hist_name].get());
+    std::string hist_name = std::format("h2SP_res_prof_{}", n);
+    auto* h2SP_res_prof = dynamic_cast<TH2*>(m_hists[hist_name].get());
     title = std::format("Detector Resolution; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
 
     std::string hist2D_name = std::format("h2SP_res_{}", n);
-    std::string hist2D_prof_name = std::format("{}_prof", hist2D_name);
+    std::string hist_prof_name = std::format("hSP_res_prof_{}", n);
 
-    auto h2SP_res = make_TH2_res(h2SP_res_pyx, h2Event, hist2D_name, title, 40, 0, 0.03);
-    auto* h2SP_res_prof = h2SP_res->ProfileX(hist2D_prof_name.c_str(), 1, -1, "s");
+    auto h2SP_res = make_TH2_res(h2SP_res_prof, h2Event, hist2D_name, title, 40, 0, 0.03);
+    auto* hSP_res_prof = h2SP_res->ProfileX(hist_prof_name.c_str(), 1, -1, "s");
 
     h2SP_res->Draw("COLZ1");
-    h2SP_res_prof->Draw("same p e X0");
+    hSP_res_prof->Draw("same p e X0");
 
     h2SP_res->GetZaxis()->SetMaxDigits(3);
     h2SP_res->GetYaxis()->SetTitleOffset(1.5f);
@@ -503,10 +503,10 @@ void DisplayJetAna::draw()
     h2SP_res->SetMinimum(0);
     h2SP_res->SetMaximum(2e6);
 
-    h2SP_res_prof->SetMarkerColor(kRed);
-    h2SP_res_prof->SetLineColor(kRed);
-    h2SP_res_prof->SetMarkerStyle(kFullDotLarge);
-    h2SP_res_prof->SetLineWidth(3);
+    hSP_res_prof->SetMarkerColor(kRed);
+    hSP_res_prof->SetLineColor(kRed);
+    hSP_res_prof->SetMarkerStyle(kFullDotLarge);
+    hSP_res_prof->SetLineWidth(3);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist2D_name).c_str());
@@ -529,32 +529,32 @@ void DisplayJetAna::draw()
   {
     for(auto n : m_harmonics)
     {
-        std::string hist_name = std::format("h3SP_{}_{}_pyx", type, n);
-        auto* h2SP_pyx = dynamic_cast<TH2*>(m_hists[hist_name].get());
+        std::string hist_name = std::format("h2SP_{}_prof_{}", type, n);
+        auto* h2SP_prof = dynamic_cast<TH2*>(m_hists[hist_name].get());
         std::string type_cap = (type == "re") ? "Re" : "Im";
         title = std::format("Scalar Product; Centrality [%]; {0}(#LT q_{{{1}}} Q^{{S|N*}}_{{{1}}}#GT)", type_cap, n);
 
         std::string hist2D_name = std::format("h2SP_{}_{}", type, n);
-        std::string hist2D_prof_name = std::format("{}_prof", hist2D_name);
+        std::string hist_prof_name = std::format("hSP_prof_{}", n);
 
-        auto h2SP_re = make_TH2(h2SP_pyx, h2Jet, hist2D_name, title, 75, -0.015, 0.015);
-        auto* h2SP_prof = h2SP_re->ProfileX(hist2D_prof_name.c_str(), 1, -1, "s");
+        auto h2SP = make_TH2(h2SP_prof, h2Jet, hist2D_name, title, 75, -0.015, 0.015);
+        auto* hSP_prof = h2SP->ProfileX(hist_prof_name.c_str(), 1, -1, "s");
 
-        h2SP_re->Draw("COLZ1");
-        h2SP_prof->Draw("same p e X0");
+        h2SP->Draw("COLZ1");
+        hSP_prof->Draw("same p e X0");
         line->Draw("same");
 
-        h2SP_re->GetZaxis()->SetMaxDigits(3);
-        h2SP_re->GetYaxis()->SetTitleOffset(1.5f);
-        h2SP_re->GetXaxis()->SetTitleOffset(1.f);
+        h2SP->GetZaxis()->SetMaxDigits(3);
+        h2SP->GetYaxis()->SetTitleOffset(1.5f);
+        h2SP->GetXaxis()->SetTitleOffset(1.f);
 
-        // h2SP_re->SetMinimum(0);
-        h2SP_re->SetMaximum(1e6);
+        // h2SP->SetMinimum(0);
+        h2SP->SetMaximum(1e6);
 
-        h2SP_prof->SetMarkerColor(kRed);
-        h2SP_prof->SetLineColor(kRed);
-        h2SP_prof->SetMarkerStyle(kFullDotLarge);
-        h2SP_prof->SetLineWidth(3);
+        hSP_prof->SetMarkerColor(kRed);
+        hSP_prof->SetLineColor(kRed);
+        hSP_prof->SetMarkerStyle(kFullDotLarge);
+        hSP_prof->SetLineWidth(3);
 
         c1->Print(output.c_str(), "pdf portrait");
         if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist2D_name).c_str());
