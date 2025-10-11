@@ -62,6 +62,7 @@ class JetAnalysis
     init_hists();
     process_events();
     finalize();
+    validate_results();
     save_results();
   }
 
@@ -97,6 +98,8 @@ class JetAnalysis
   };
 
   static constexpr size_t m_bins_cent = 8;
+  static constexpr double m_cent_low = -0.5;
+  static constexpr double m_cent_high = 79.5;
 
   // Holds all correction data
   // key: [Cent][Harmonic][Subdetector]
@@ -117,6 +120,7 @@ class JetAnalysis
     TH2* h2Event{nullptr};
     TH2* h2Jet{nullptr};
     TH1* hCentrality{nullptr};
+    std::array<TH3*, 3> hPsi{nullptr};
   };
 
   QAHists m_QA_hists;
@@ -177,6 +181,8 @@ class JetAnalysis
   void process_events();
 
   void finalize();
+
+  void validate_results();
   void save_results() const;
 };
 
@@ -539,15 +545,16 @@ void JetAnalysis::init_hists()
   double pt_low = 0;
   double pt_high = 50;
 
-  double cent_low = -0.5;
-  double cent_high = 79.5;
-
   double sample_low = -0.5;
   double sample_high = m_bins_sample-0.5;
 
   int bins_SP = 400;
   double SP_low = -1;
   double SP_high = 1;
+
+  int bins_psi = 126;
+  double psi_low = -std::numbers::pi;
+  double psi_high = std::numbers::pi;
 
   m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]"
                                                       , bins_phi, phi_low, phi_high
@@ -556,19 +563,19 @@ void JetAnalysis::init_hists()
   m_hists3D["h3JetPhiEtaPtv2"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv2")));
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample"
-                                                , m_bins_cent, cent_low, cent_high, m_bins_sample, sample_low, sample_high);
+                                                , m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
   m_hists2D["h2Jet"] = std::make_unique<TH2F>("h2Jet", "Jets; Centrality [%]; Sample"
-                                              , m_bins_cent, cent_low, cent_high, m_bins_sample, sample_low, sample_high);
+                                              , m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
   m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events"
-                                                    , m_bins_cent, cent_low, cent_high);
+                                                    , m_bins_cent, m_cent_low, m_cent_high);
 
   for (auto n : m_harmonics)
   {
     std::string name = std::format("h3SP_re_{}", n);
     std::string title = std::format("Scalar Product (Order {}); Centrality [%]; Sample; SP", n);
 
-    m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), m_bins_cent, cent_low, cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
+    m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
 
     std::string name_im = std::format("h3SP_im_{}", n);
     m_hists3D[name_im] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_im.c_str())));
@@ -583,8 +590,14 @@ void JetAnalysis::init_hists()
 
     title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
 
-    m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, cent_low, cent_high, bins_SP, SP_low, SP_high);
+    m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, bins_SP, SP_low, SP_high);
     m_hists2D[name_vn_im] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D[name_vn_re]->Clone(name_vn_im.c_str())));
+
+
+    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+    m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
+                                                            std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                            bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
   }
 
   m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists3D["h3JetPhiEtaPt"]->Project3D("yx")->Clone("h2Dummy")));
@@ -597,11 +610,19 @@ void JetAnalysis::init_hists()
   m_QA_hists.h2Event = m_hists2D["h2Event"].get();
   m_QA_hists.h2Jet = m_hists2D["h2Jet"].get();
   m_QA_hists.hCentrality = m_hists1D["hCentrality"].get();
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+    m_QA_hists.hPsi[n_idx] = m_hists3D[psi_corr2_hist_name].get();
+  }
 }
 
 void JetAnalysis::correct_QVecs()
 {
-  size_t cent_bin = static_cast<size_t>(m_hists1D["hCentrality"]->FindBin(m_event_data.event_centrality) - 1);
+  double cent = m_event_data.event_centrality;
+  size_t cent_bin = static_cast<size_t>(m_hists1D["hCentrality"]->FindBin(cent) - 1);
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -628,6 +649,11 @@ void JetAnalysis::correct_QVecs()
 
     m_event_data.q_vectors[n_idx][0] = {Q_S_x_corr2, Q_S_y_corr2};
     m_event_data.q_vectors[n_idx][1] = {Q_N_x_corr2, Q_N_y_corr2};
+
+    double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
+    double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
+
+    m_QA_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
   }
 }
 
@@ -897,6 +923,72 @@ void JetAnalysis::finalize()
         }
       }
     }
+  }
+}
+
+void JetAnalysis::validate_results()
+{
+  std::cout << std::format("{:#<{}}\n", "", 40);
+  std::cout << std::format("Validating Results: Compute CV\n");
+  std::cout << std::format("{:#<{}}\n", "", 40);
+
+  for (int n : m_harmonics)
+  {
+    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+
+    auto* h_psi_corr2 = m_hists3D[psi_corr2_hist_name].get();
+    int bins_phi = h_psi_corr2->GetNbinsX();
+
+    // South, North
+    for (auto det : m_subdetectors)
+    {
+      std::string side = (det == Subdetector::S) ? "x" : "y";
+      std::string det_name = (det == Subdetector::S) ? "South" : "North";
+      std::string cv_name = std::format("h_sEPD_CV_{}_{}", det_name, n);
+      std::string cv_title = std::format("sEPD {}: Order {}; Centrality [%]; #sigma/#mu", det_name, n);
+
+      m_hists1D[cv_name] = std::make_unique<TH1F>(cv_name.c_str(), cv_title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+      for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
+      {
+        h_psi_corr2->GetZaxis()->SetRange(cent_bin, cent_bin);
+        auto* h_psi = h_psi_corr2->Project3D(side.c_str());
+
+        int cent_events = static_cast<int>(m_hists1D["hCentrality"]->GetBinContent(cent_bin));
+        int psi_events = static_cast<int>(h_psi->Integral());
+
+        if (cent_events != psi_events)
+        {
+          std::cout << std::format("ERROR: Cent Events: {}, Psi Events: {}\n", cent_events, psi_events);
+        }
+
+        double mean = 0;
+        double M2 = 0;
+
+        for (int phi_bin = 1; phi_bin <= bins_phi; ++phi_bin)
+        {
+          double val = h_psi->GetBinContent(phi_bin);
+          double delta = val - mean;
+          mean += delta / phi_bin;
+          double delta2 = val - mean;
+          M2 += delta * delta2;
+        }
+
+        double sigma = std::sqrt(M2 / bins_phi);
+        double cv = (mean) ? sigma / mean : 0;
+        // Derived from the Delta Method
+        double cv_error = cv * std::sqrt(1. / bins_phi + cv * cv / (2 * bins_phi));
+
+        m_hists1D[cv_name]->SetBinContent(cent_bin, cv);
+        m_hists1D[cv_name]->SetBinError(cent_bin, cv_error);
+
+        std::cout << std::format("n: {}, det: {}, cent: {}, mean: {:6.2f}, sigma: {:5.2f}, cv: {:.2f}, cv_err: {:.4f}\n",
+                                 n, side, cent_bin, mean, sigma, cv, cv_error);
+      }
+    }
+
+    // set the range back to full after calculations
+    h_psi_corr2->GetZaxis()->SetRange(1, m_bins_cent);
   }
 }
 
