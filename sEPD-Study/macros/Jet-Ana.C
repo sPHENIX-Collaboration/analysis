@@ -44,9 +44,9 @@ class JetAnalysis
 {
  public:
   // The constructor takes the configuration
-  JetAnalysis(std::string input_list, std::string input_Q_calib, unsigned int runnumber, long long events, std::string output_dir)
+  JetAnalysis(std::string input_file, std::string input_Q_calib, unsigned int runnumber, long long events, std::string output_dir)
     : m_chain(std::make_unique<TChain>("T"))
-    , m_input_list(std::move(input_list))
+    , m_input_file(std::move(input_file))
     , m_input_Q_calib(std::move(input_Q_calib))
     , m_runnumber(runnumber)
     , m_events_to_process(events)
@@ -161,7 +161,7 @@ class JetAnalysis
   std::unique_ptr<TChain> m_chain;
 
   // Configuration stored as members
-  std::string m_input_list;
+  std::string m_input_file;
   std::string m_input_Q_calib;
   unsigned int m_runnumber;
   long long m_events_to_process;
@@ -211,33 +211,23 @@ void JetAnalysis::setup_chain()
 {
   std::cout << "Processing... setup_chain" << std::endl;
 
-  std::ifstream file_list(m_input_list);
-  if (!file_list.is_open())
+  if (!std::filesystem::exists(m_input_file))
   {
-    throw std::runtime_error(std::format("Error: Could not open the input file list: {}", m_input_list));
+    throw std::runtime_error(std::format("Input file does not exist: {}", m_input_file));
   }
-  std::string root_file_path;
 
-  long long prev_events = 0;
-  while (std::getline(file_list, root_file_path))
+  m_chain->Add(m_input_file.c_str());
+
+  // If GetNtrees() is 0, the file might be corrupted, not a ROOT file, or is missing the TTree.
+  if (m_chain->GetNtrees() == 0)
   {
-    if (!root_file_path.empty())
-    {
-      m_chain->Add(root_file_path.c_str());
-
-      long long curr_event = m_chain->GetEntries();
-      long long events = curr_event - prev_events;
-      prev_events = curr_event;
-
-      std::cout << std::format("Reading: {}, Events: {}, Total Events: {}", root_file_path, events, curr_event) << std::endl;
-      // Stop reading when enough events have been read
-      if (m_events_to_process && m_chain->GetEntries() > m_events_to_process)
-      {
-        break;
-      }
-    }
+    throw std::runtime_error(std::format("Could not find TTree 'T' in file: {}", m_input_file));
   }
-  std::cout << std::format("Successfully chained files. Total entries: {}", m_chain->GetEntries()) << std::endl;
+
+  if (m_chain->GetEntries() == 0)
+  {
+    std::cout << "Warning: Input file contains 0 entries. Job will produce an empty output." << std::endl;
+  }
 
   // Setup branches
   m_chain->SetBranchStatus("*", false);
@@ -1071,7 +1061,11 @@ void JetAnalysis::validate_results()
 void JetAnalysis::save_results() const
 {
   std::filesystem::create_directories(m_output_dir);
-  std::string output_filename = m_output_dir + "/Jet-Ana-test.root";
+
+  std::filesystem::path input_path(m_input_file);
+  std::string output_stem = input_path.stem().string(); 
+  std::string output_filename = std::format("{}/Jet-Ana_{}.root", m_output_dir, output_stem);
+
   auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
 
   for (const auto& [name, hist] : m_hists1D)
@@ -1126,11 +1120,11 @@ int main(int argc, const char* const argv[])
 
   if (argc < 4 || argc > 6)
   {
-    std::cout << "Usage: " << argv[0] << " <input_list_file> <input_SEPD_Q_vec_calib> <runnumber> [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file <input_SEPD_Q_vec_calib> <runnumber> [events] [output_directory]" << std::endl;
     return 1;
   }
 
-  const std::string input_list = argv[1];
+  const std::string input_file = argv[1];
   const std::string input_Q_calib = argv[2];
   unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[3]));
   long long events = (argc >= 5) ? std::atoll(argv[4]) : 0;
@@ -1138,7 +1132,7 @@ int main(int argc, const char* const argv[])
 
   try
   {
-    JetAnalysis analysis(input_list, input_Q_calib, runnumber, events, output_dir);
+    JetAnalysis analysis(input_file, input_Q_calib, runnumber, events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
