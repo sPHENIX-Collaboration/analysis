@@ -169,7 +169,10 @@ class JetAnalysis
 
   // --- Private Helper Methods ---
   void setup_chain();
+
+  void load_correction_data(TFile* file);
   void read_Q_calib();
+
   void process_dead_channels();
   void init_hists();
 
@@ -245,37 +248,8 @@ void JetAnalysis::setup_chain()
   std::cout << "Finished... setup_chain" << std::endl;
 }
 
-void JetAnalysis::read_Q_calib()
+void JetAnalysis::load_correction_data(TFile* file)
 {
-  TH1::AddDirectory(kFALSE);
-
-  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_Q_calib.c_str()));
-
-  // Check if the file was opened successfully.
-  if (!file || file->IsZombie())
-  {
-    throw std::runtime_error(std::format("Could not open file '{}'", m_input_Q_calib));
-  }
-
-  auto* h_sEPD_Bad_Channels = dynamic_cast<TH1*>(file->Get("h_sEPD_Bad_Channels"));
-
-  if (!h_sEPD_Bad_Channels)
-  {
-    throw std::runtime_error(std::format("Could not find histogram 'h_sEPD_Bad_Channels' in file '{}'", m_input_Q_calib));
-  }
-
-  // Load Bad Channels
-  for (int channel = 0; channel < h_sEPD_Bad_Channels->GetNbinsX(); ++channel)
-  {
-    // sEPD Channel Status
-    // 0: good
-    // non-zero: bad
-    if (h_sEPD_Bad_Channels->GetBinContent(channel + 1))
-    {
-      m_bad_channels.insert(channel);
-    }
-  }
-
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
     int n = m_harmonics[n_idx];
@@ -440,6 +414,40 @@ void JetAnalysis::read_Q_calib()
   }
 }
 
+void JetAnalysis::read_Q_calib()
+{
+  TH1::AddDirectory(kFALSE);
+
+  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_Q_calib.c_str()));
+
+  // Check if the file was opened successfully.
+  if (!file || file->IsZombie())
+  {
+    throw std::runtime_error(std::format("Could not open file '{}'", m_input_Q_calib));
+  }
+
+  auto* h_sEPD_Bad_Channels = dynamic_cast<TH1*>(file->Get("h_sEPD_Bad_Channels"));
+
+  if (!h_sEPD_Bad_Channels)
+  {
+    throw std::runtime_error(std::format("Could not find histogram 'h_sEPD_Bad_Channels' in file '{}'", m_input_Q_calib));
+  }
+
+  // Load Bad Channels
+  for (int channel = 0; channel < h_sEPD_Bad_Channels->GetNbinsX(); ++channel)
+  {
+    // sEPD Channel Status
+    // 0: good
+    // non-zero: bad
+    if (h_sEPD_Bad_Channels->GetBinContent(channel + 1))
+    {
+      m_bad_channels.insert(channel);
+    }
+  }
+
+  load_correction_data(file.get());
+}
+
 void JetAnalysis::process_dead_channels()
 {
   std::cout << "Processing... dead_channels" << std::endl;
@@ -601,6 +609,15 @@ void JetAnalysis::init_hists()
     title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT); Centrality [%]; Sample", n);
     m_profiles2D[name_res_prof] = std::make_unique<TProfile2D>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
+    // TProfile for Detector Resolution
+    name_res_prof = std::format("hSP_res_prof_{}", n);
+    title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
+    m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+    name_res_prof = std::format("hSP_res_sqrt_{}", n);
+    title = std::format("; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)}}", n);
+    m_hists1D[name_res_prof] = std::make_unique<TH1F>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
@@ -744,14 +761,16 @@ void JetAnalysis::compute_SP_resolution(int sample)
   {
     int n = m_harmonics[n_idx];
     std::string name = std::format("h3SP_res_{}", n);
-    std::string name_prof = std::format("h2SP_res_prof_{}", n);
+    std::string name2D_prof = std::format("h2SP_res_prof_{}", n);
+    std::string name1D_prof = std::format("hSP_res_prof_{}", n);
     QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][0];
     QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][1];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
 
     m_hists3D[name]->Fill(cent, sample, SP_res);
-    m_profiles2D[name_prof]->Fill(cent, sample, SP_res);
+    m_profiles2D[name2D_prof]->Fill(cent, sample, SP_res);
+    m_profiles[name1D_prof]->Fill(cent, SP_res);
   }
 }
 
@@ -913,14 +932,16 @@ void JetAnalysis::finalize()
   {
     std::string name_re = std::format("h2SP_re_prof_{}", n);
     std::string name_im = std::format("h2SP_im_prof_{}", n);
-    std::string name_res = std::format("h2SP_res_prof_{}", n);
+    std::string name_res = std::format("hSP_res_prof_{}", n);
+    std::string name_res_sqrt = std::format("hSP_res_sqrt_{}", n);
 
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
     auto* prof_re = m_profiles2D[name_re].get();
     auto* prof_im = m_profiles2D[name_im].get();
-    auto* prof_res = m_profiles2D[name_res].get();
+    auto* prof_res = m_profiles[name_res].get();
+    auto* hist_res_sqrt = m_hists1D[name_res_sqrt].get();
 
     auto* h2Vn_re = m_hists2D[name_vn_re].get();
     auto* h2Vn_im = m_hists2D[name_vn_im].get();
@@ -928,19 +949,25 @@ void JetAnalysis::finalize()
     for (int cent_bin = 0; cent_bin < static_cast<int>(m_bins_cent); ++cent_bin)
     {
       double cent = h2Vn_re->GetXaxis()->GetBinCenter(cent_bin + 1);
-
-      for (int sample_bin = 0; sample_bin < m_bins_sample; ++sample_bin)
+      double SP_res = prof_res->GetBinContent(cent_bin + 1);
+      if (SP_res > 0)
       {
-        double SP_re = prof_re->GetBinContent(cent_bin + 1, sample_bin + 1);
-        double SP_im = prof_im->GetBinContent(cent_bin + 1, sample_bin + 1);
-        double SP_res = prof_res->GetBinContent(cent_bin + 1, sample_bin + 1);
+        double SP_res_err = prof_res->GetBinError(cent_bin + 1);
+        double SP_res_sqrt = std::sqrt(SP_res);
+        double SP_res_sqrt_err = SP_res_err / (2 * SP_res_sqrt);
 
-        int nJets = static_cast<int>(m_QA_hists.h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
+        hist_res_sqrt->SetBinContent(cent_bin + 1, SP_res_sqrt);
+        hist_res_sqrt->SetBinError(cent_bin + 1, SP_res_sqrt_err);
 
-        if (SP_res > 0)
+        for (int sample_bin = 0; sample_bin < m_bins_sample; ++sample_bin)
         {
-          double vn_re = SP_re / std::sqrt(SP_res);
-          double vn_im = SP_im / std::sqrt(SP_res);
+          double SP_re = prof_re->GetBinContent(cent_bin + 1, sample_bin + 1);
+          double SP_im = prof_im->GetBinContent(cent_bin + 1, sample_bin + 1);
+
+          int nJets = static_cast<int>(m_QA_hists.h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
+
+          double vn_re = SP_re / SP_res_sqrt;
+          double vn_im = SP_im / SP_res_sqrt;
 
           h2Vn_re->Fill(cent, vn_re, nJets);
           h2Vn_im->Fill(cent, vn_im, nJets);
