@@ -111,7 +111,7 @@ class JetAnalysis
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
 
-  struct QAHists
+  struct AnalysisHists
   {
     TH2* h2Dummy{nullptr};
     TH2* h2EMCalBadTowersDeadv2{nullptr};
@@ -121,9 +121,21 @@ class JetAnalysis
     TH2* h2Jet{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi{nullptr};
+
+    // Histograms for SP method
+    // [harmonic_index]
+    std::array<TH3*, 3> h3SP_re;
+    std::array<TH3*, 3> h3SP_im;
+    std::array<TH3*, 3> h3SP_res;
+
+    // Profiles
+    std::array<TProfile2D*, 3> p2SP_re;
+    std::array<TProfile2D*, 3> p2SP_im;
+    std::array<TProfile2D*, 3> p2SP_res;
+    std::array<TProfile*, 3> p1SP_res;
   };
 
-  QAHists m_QA_hists;
+  AnalysisHists m_hists;
 
   struct EventData
   {
@@ -636,26 +648,32 @@ void JetAnalysis::init_hists()
   m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists3D["h3JetPhiEtaPt"]->Project3D("yx")->Clone("h2Dummy")));
   m_hists2D["h2Dummy"]->Rebin2D(2, 2);
 
-  m_QA_hists.h2Dummy = m_hists2D["h2Dummy"].get();
-  m_QA_hists.h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
-  m_QA_hists.h3JetPhiEtaPt = m_hists3D["h3JetPhiEtaPt"].get();
-  m_QA_hists.h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
-  m_QA_hists.h2Event = m_hists2D["h2Event"].get();
-  m_QA_hists.h2Jet = m_hists2D["h2Jet"].get();
-  m_QA_hists.hCentrality = m_hists1D["hCentrality"].get();
+  m_hists.h2Dummy = m_hists2D["h2Dummy"].get();
+  m_hists.h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
+  m_hists.h3JetPhiEtaPt = m_hists3D["h3JetPhiEtaPt"].get();
+  m_hists.h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
+  m_hists.h2Event = m_hists2D["h2Event"].get();
+  m_hists.h2Jet = m_hists2D["h2Jet"].get();
+  m_hists.hCentrality = m_hists1D["hCentrality"].get();
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
     int n = m_harmonics[n_idx];
-    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
-    m_QA_hists.hPsi[n_idx] = m_hists3D[psi_corr2_hist_name].get();
+    m_hists.hPsi[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_corr2", n)].get();
+    m_hists.h3SP_re[n_idx] = m_hists3D[std::format("h3SP_re_{}", n)].get();
+    m_hists.h3SP_im[n_idx] = m_hists3D[std::format("h3SP_im_{}", n)].get();
+    m_hists.h3SP_res[n_idx] = m_hists3D[std::format("h3SP_res_{}", n)].get();
+    m_hists.p2SP_re[n_idx] = m_profiles2D[std::format("h2SP_re_prof_{}", n)].get();
+    m_hists.p2SP_im[n_idx] = m_profiles2D[std::format("h2SP_im_prof_{}", n)].get();
+    m_hists.p2SP_res[n_idx] = m_profiles2D[std::format("h2SP_res_prof_{}", n)].get();
+    m_hists.p1SP_res[n_idx] = m_profiles[std::format("hSP_res_prof_{}", n)].get();
   }
 }
 
 void JetAnalysis::correct_QVecs()
 {
   double cent = m_event_data.event_centrality;
-  size_t cent_bin = static_cast<size_t>(m_hists1D["hCentrality"]->FindBin(cent) - 1);
+  size_t cent_bin = static_cast<size_t>(m_hists.hCentrality->FindBin(cent) - 1);
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -686,7 +704,7 @@ void JetAnalysis::correct_QVecs()
     double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
     double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
 
-    m_QA_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
+    m_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
   }
 }
 
@@ -754,23 +772,19 @@ bool JetAnalysis::compute_QVecs()
 void JetAnalysis::compute_SP_resolution(int sample)
 {
   double cent = m_event_data.event_centrality;
-  m_QA_hists.h2Event->Fill(cent, sample);
+  m_hists.h2Event->Fill(cent, sample);
 
   // Compute Scalar Product for each harmonic
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    int n = m_harmonics[n_idx];
-    std::string name = std::format("h3SP_res_{}", n);
-    std::string name2D_prof = std::format("h2SP_res_prof_{}", n);
-    std::string name1D_prof = std::format("hSP_res_prof_{}", n);
     QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][0];
     QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][1];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
 
-    m_hists3D[name]->Fill(cent, sample, SP_res);
-    m_profiles2D[name2D_prof]->Fill(cent, sample, SP_res);
-    m_profiles[name1D_prof]->Fill(cent, SP_res);
+    m_hists.h3SP_res[n_idx]->Fill(cent, sample, SP_res);
+    m_hists.p2SP_res[n_idx]->Fill(cent, sample, SP_res);
+    m_hists.p1SP_res[n_idx]->Fill(cent, SP_res);
   }
 }
 
@@ -779,7 +793,7 @@ void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, dou
   size_t nJets = jet_phi_eta.size();
   double cent = m_event_data.event_centrality;
 
-  m_QA_hists.h2Jet->Fill(cent, sample, static_cast<int>(nJets));
+  m_hists.h2Jet->Fill(cent, sample, static_cast<int>(nJets));
 
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
@@ -799,17 +813,11 @@ void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, dou
       double SP_re = jet_Q.x * sEPD_Q.x + jet_Q.y * sEPD_Q.y;
       double SP_im = jet_Q.y * sEPD_Q.x - jet_Q.x * sEPD_Q.y;
 
-      std::string name_re = std::format("h3SP_re_{}", n);
-      std::string name_im = std::format("h3SP_im_{}", n);
+      m_hists.h3SP_re[n_idx]->Fill(cent, sample, SP_re);
+      m_hists.h3SP_im[n_idx]->Fill(cent, sample, SP_im);
 
-      std::string name_re_prof = std::format("h2SP_re_prof_{}", n);
-      std::string name_im_prof = std::format("h2SP_im_prof_{}", n);
-
-      m_hists3D[name_re]->Fill(cent, sample, SP_re);
-      m_hists3D[name_im]->Fill(cent, sample, SP_im);
-
-      m_profiles2D[name_re_prof]->Fill(cent, sample, SP_re);
-      m_profiles2D[name_im_prof]->Fill(cent, sample, SP_im);
+      m_hists.p2SP_re[n_idx]->Fill(cent, sample, SP_re);
+      m_hists.p2SP_im[n_idx]->Fill(cent, sample, SP_im);
     }
   }
 }
@@ -834,15 +842,15 @@ std::vector<std::pair<double, double>> JetAnalysis::process_jets()
       phi += 2.0 * std::numbers::pi;
     }
 
-    int bin_phi = m_QA_hists.h2Dummy->GetXaxis()->FindBin(phi);
-    int bin_eta = m_QA_hists.h2Dummy->GetYaxis()->FindBin(eta);
-    int dead_status = static_cast<int>(m_QA_hists.h2EMCalBadTowersDeadv2->GetBinContent(bin_phi, bin_eta));
+    int bin_phi = m_hists.h2Dummy->GetXaxis()->FindBin(phi);
+    int bin_eta = m_hists.h2Dummy->GetYaxis()->FindBin(eta);
+    int dead_status = static_cast<int>(m_hists.h2EMCalBadTowersDeadv2->GetBinContent(bin_phi, bin_eta));
 
-    m_QA_hists.h3JetPhiEtaPt->Fill(phi, eta, pt);
+    m_hists.h3JetPhiEtaPt->Fill(phi, eta, pt);
 
     if (dead_status == 0)
     {
-      m_QA_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
+      m_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
       jet_phi_eta.push_back(std::make_pair(phi, eta));
     }
   }
@@ -879,7 +887,7 @@ void JetAnalysis::process_events()
     }
 
     double cent = m_event_data.event_centrality;
-    int cent_bin = m_QA_hists.hCentrality->FindBin(cent);
+    int cent_bin = m_hists.hCentrality->FindBin(cent);
 
     // Skip events in underflow or overflow bins.
     if (cent_bin <= 0 || cent_bin > static_cast<int>(m_bins_cent))
@@ -905,9 +913,9 @@ void JetAnalysis::process_events()
       continue;
     }
 
-    int events_cent = static_cast<int>(m_QA_hists.hCentrality->GetBinContent(cent_bin));
+    int events_cent = static_cast<int>(m_hists.hCentrality->GetBinContent(cent_bin));
     int sample = events_cent % m_bins_sample;
-    m_QA_hists.hCentrality->Fill(cent);
+    m_hists.hCentrality->Fill(cent);
 
     std::vector<std::pair<double, double>> jet_phi_eta = process_jets();
 
@@ -918,8 +926,8 @@ void JetAnalysis::process_events()
     compute_SP_resolution(sample);
   }
 
-  int jets = static_cast<int>(m_QA_hists.h3JetPhiEtaPt->GetEntries());
-  int jets_good = static_cast<int>(m_QA_hists.h3JetPhiEtaPtv2->GetEntries());
+  int jets = static_cast<int>(m_hists.h3JetPhiEtaPt->GetEntries());
+  int jets_good = static_cast<int>(m_hists.h3JetPhiEtaPtv2->GetEntries());
 
   std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
 
@@ -928,19 +936,18 @@ void JetAnalysis::process_events()
 
 void JetAnalysis::finalize()
 {
-  for (auto n : m_harmonics)
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    std::string name_re = std::format("h2SP_re_prof_{}", n);
-    std::string name_im = std::format("h2SP_im_prof_{}", n);
-    std::string name_res = std::format("hSP_res_prof_{}", n);
+    int n = m_harmonics[n_idx];
     std::string name_res_sqrt = std::format("hSP_res_sqrt_{}", n);
 
     std::string name_vn_re = std::format("h2Vn_re_{}", n);
     std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
-    auto* prof_re = m_profiles2D[name_re].get();
-    auto* prof_im = m_profiles2D[name_im].get();
-    auto* prof_res = m_profiles[name_res].get();
+    auto* prof_re = m_hists.p2SP_re[n_idx];
+    auto* prof_im = m_hists.p2SP_im[n_idx];
+    auto* prof_res = m_hists.p1SP_res[n_idx];
+
     auto* hist_res_sqrt = m_hists1D[name_res_sqrt].get();
 
     auto* h2Vn_re = m_hists2D[name_vn_re].get();
@@ -964,7 +971,7 @@ void JetAnalysis::finalize()
           double SP_re = prof_re->GetBinContent(cent_bin + 1, sample_bin + 1);
           double SP_im = prof_im->GetBinContent(cent_bin + 1, sample_bin + 1);
 
-          int nJets = static_cast<int>(m_QA_hists.h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
+          int nJets = static_cast<int>(m_hists.h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
 
           double vn_re = SP_re / SP_res_sqrt;
           double vn_im = SP_im / SP_res_sqrt;
@@ -1005,7 +1012,7 @@ void JetAnalysis::validate_results()
         h_psi_corr2->GetZaxis()->SetRange(cent_bin, cent_bin);
         auto* h_psi = h_psi_corr2->Project3D(side.c_str());
 
-        int cent_events = static_cast<int>(m_hists1D["hCentrality"]->GetBinContent(cent_bin));
+        int cent_events = static_cast<int>(m_hists.hCentrality->GetBinContent(cent_bin));
         int psi_events = static_cast<int>(h_psi->Integral());
 
         if (cent_events != psi_events)
