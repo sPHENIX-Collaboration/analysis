@@ -186,6 +186,8 @@ class JetAnalysis
   void read_Q_calib();
 
   void process_dead_channels();
+
+  void create_vn_histograms(int n);
   void init_hists();
 
   void compute_SP_resolution(int sample);
@@ -332,6 +334,9 @@ void JetAnalysis::load_correction_data(TFile* file)
       throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_xy_avg_name, m_input_Q_calib));
     }
 
+    size_t south_idx = static_cast<size_t>(Subdetector::S);
+    size_t north_idx = static_cast<size_t>(Subdetector::N);
+
     for (size_t cent_bin = 0; cent_bin < m_bins_cent; ++cent_bin)
     {
       int bin = static_cast<int>(cent_bin)+1;
@@ -349,17 +354,17 @@ void JetAnalysis::load_correction_data(TFile* file)
       double Q_N_xy_avg = h_sEPD_Q_N_xy_avg->GetBinContent(bin);
 
       // Recentering Params
-      m_correction_data[cent_bin][n_idx][0].avg_Q = {Q_S_x_avg, Q_S_y_avg};
-      m_correction_data[cent_bin][n_idx][1].avg_Q = {Q_N_x_avg, Q_N_y_avg};
+      m_correction_data[cent_bin][n_idx][south_idx].avg_Q = {Q_S_x_avg, Q_S_y_avg};
+      m_correction_data[cent_bin][n_idx][north_idx].avg_Q = {Q_N_x_avg, Q_N_y_avg};
 
       // Flattening Params
-      m_correction_data[cent_bin][n_idx][0].avg_Q_xx = Q_S_xx_avg;
-      m_correction_data[cent_bin][n_idx][0].avg_Q_yy = Q_S_yy_avg;
-      m_correction_data[cent_bin][n_idx][0].avg_Q_xy = Q_S_xy_avg;
+      m_correction_data[cent_bin][n_idx][south_idx].avg_Q_xx = Q_S_xx_avg;
+      m_correction_data[cent_bin][n_idx][south_idx].avg_Q_yy = Q_S_yy_avg;
+      m_correction_data[cent_bin][n_idx][south_idx].avg_Q_xy = Q_S_xy_avg;
 
-      m_correction_data[cent_bin][n_idx][1].avg_Q_xx = Q_N_xx_avg;
-      m_correction_data[cent_bin][n_idx][1].avg_Q_yy = Q_N_yy_avg;
-      m_correction_data[cent_bin][n_idx][1].avg_Q_xy = Q_N_xy_avg;
+      m_correction_data[cent_bin][n_idx][north_idx].avg_Q_xx = Q_N_xx_avg;
+      m_correction_data[cent_bin][n_idx][north_idx].avg_Q_yy = Q_N_yy_avg;
+      m_correction_data[cent_bin][n_idx][north_idx].avg_Q_xy = Q_N_xy_avg;
 
       // ----
       // South
@@ -386,7 +391,7 @@ void JetAnalysis::load_correction_data(TFile* file)
             N_term_S, n, cent_bin));
       }
 
-      auto& X_S_matrix = m_correction_data[cent_bin][n_idx][0].X_matrix;
+      auto& X_S_matrix = m_correction_data[cent_bin][n_idx][south_idx].X_matrix;
       X_S_matrix[0][0] = (1. / std::sqrt(N_term_S)) * (Q_S_yy_avg + D_term_S);
       X_S_matrix[0][1] = (-1. / std::sqrt(N_term_S)) * Q_S_xy_avg;
       X_S_matrix[1][0] = X_S_matrix[0][1];
@@ -417,7 +422,7 @@ void JetAnalysis::load_correction_data(TFile* file)
             N_term_N, n, cent_bin));
       }
 
-      auto& X_N_matrix = m_correction_data[cent_bin][n_idx][1].X_matrix;
+      auto& X_N_matrix = m_correction_data[cent_bin][n_idx][north_idx].X_matrix;
       X_N_matrix[0][0] = (1. / std::sqrt(N_term_N)) * (Q_N_yy_avg + D_term_N);
       X_N_matrix[0][1] = (-1. / std::sqrt(N_term_N)) * Q_N_xy_avg;
       X_N_matrix[1][0] = X_N_matrix[0][1];
@@ -552,6 +557,70 @@ void JetAnalysis::process_dead_channels()
   std::cout << "Finished... dead_channels" << std::endl;
 }
 
+void JetAnalysis::create_vn_histograms(int n)
+{
+  double sample_low = -0.5;
+  double sample_high = m_bins_sample - 0.5;
+
+  int bins_SP = 400;
+  double SP_low = -1;
+  double SP_high = 1;
+
+  int bins_psi = 126;
+  double psi_low = -std::numbers::pi;
+  double psi_high = std::numbers::pi;
+
+  // TH3 for Scalar Product
+  std::string name = std::format("h3SP_re_{}", n);
+  std::string title = std::format("Scalar Product (Order {}); Centrality [%]; Sample; SP", n);
+
+  m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
+
+  std::string name_im = std::format("h3SP_im_{}", n);
+  m_hists3D[name_im] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_im.c_str())));
+
+  // TProfile2D for Scalar Product
+  std::string name_re_prof = std::format("h2SP_re_prof_{}", n);
+  std::string name_im_prof = std::format("h2SP_im_prof_{}", n);
+
+  title = std::format("Scalar Product (Order {}); Centrality [%]; Sample", n);
+  m_profiles2D[name_re_prof] = std::make_unique<TProfile2D>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
+  m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
+
+  // TH3 for Detector Resolution
+  std::string name_res = std::format("h3SP_res_{}", n);
+  title = std::format("sEPD (Order {0}): Q^{{S}}Q^{{N*}}; Centrality [%]; Sample; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}GT)", n);
+  m_hists3D[name_res] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_res.c_str())));
+  m_hists3D[name_res]->SetTitle(title.c_str());
+
+  // TProfile2D for Detector Resolution
+  std::string name_res_prof = std::format("h2SP_res_prof_{}", n);
+  title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT); Centrality [%]; Sample", n);
+  m_profiles2D[name_res_prof] = std::make_unique<TProfile2D>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
+
+  // TProfile for Detector Resolution
+  name_res_prof = std::format("hSP_res_prof_{}", n);
+  title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
+  m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  name_res_prof = std::format("hSP_res_sqrt_{}", n);
+  title = std::format("; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)}}", n);
+  m_hists1D[name_res_prof] = std::make_unique<TH1F>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  std::string name_vn_re = std::format("h2Vn_re_{}", n);
+  std::string name_vn_im = std::format("h2Vn_im_{}", n);
+
+  title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
+
+  m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, bins_SP, SP_low, SP_high);
+  m_hists2D[name_vn_im] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D[name_vn_re]->Clone(name_vn_im.c_str())));
+
+  std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+  m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
+                                                          std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                          bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+}
+
 void JetAnalysis::init_hists()
 {
   int bins_phi = 64;
@@ -569,14 +638,6 @@ void JetAnalysis::init_hists()
   double sample_low = -0.5;
   double sample_high = m_bins_sample-0.5;
 
-  int bins_SP = 400;
-  double SP_low = -1;
-  double SP_high = 1;
-
-  int bins_psi = 126;
-  double psi_low = -std::numbers::pi;
-  double psi_high = std::numbers::pi;
-
   m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]"
                                                       , bins_phi, phi_low, phi_high
                                                       , bins_eta, eta_low, eta_high
@@ -593,56 +654,7 @@ void JetAnalysis::init_hists()
 
   for (auto n : m_harmonics)
   {
-    // TH3 for Scalar Product
-    std::string name = std::format("h3SP_re_{}", n);
-    std::string title = std::format("Scalar Product (Order {}); Centrality [%]; Sample; SP", n);
-
-    m_hists3D[name] = std::make_unique<TH3F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high, bins_SP, SP_low, SP_high);
-
-    std::string name_im = std::format("h3SP_im_{}", n);
-    m_hists3D[name_im] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_im.c_str())));
-
-    // TProfile2D for Scalar Product
-    std::string name_re_prof = std::format("h2SP_re_prof_{}", n);
-    std::string name_im_prof = std::format("h2SP_im_prof_{}", n);
-
-    title = std::format("Scalar Product (Order {}); Centrality [%]; Sample", n);
-    m_profiles2D[name_re_prof] = std::make_unique<TProfile2D>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
-    m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
-
-    // TH3 for Detector Resolution
-    std::string name_res = std::format("h3SP_res_{}", n);
-    title = std::format("sEPD (Order {0}): Q^{{S}}Q^{{N*}}; Centrality [%]; Sample; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}GT)", n);
-    m_hists3D[name_res] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_res.c_str())));
-    m_hists3D[name_res]->SetTitle(title.c_str());
-
-    // TProfile2D for Detector Resolution
-    std::string name_res_prof = std::format("h2SP_res_prof_{}", n);
-    title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT); Centrality [%]; Sample", n);
-    m_profiles2D[name_res_prof] = std::make_unique<TProfile2D>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
-
-    // TProfile for Detector Resolution
-    name_res_prof = std::format("hSP_res_prof_{}", n);
-    title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
-    m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-
-    name_res_prof = std::format("hSP_res_sqrt_{}", n);
-    title = std::format("; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)}}", n);
-    m_hists1D[name_res_prof] = std::make_unique<TH1F>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-
-    std::string name_vn_re = std::format("h2Vn_re_{}", n);
-    std::string name_vn_im = std::format("h2Vn_im_{}", n);
-
-    title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
-
-    m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, bins_SP, SP_low, SP_high);
-    m_hists2D[name_vn_im] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D[name_vn_re]->Clone(name_vn_im.c_str())));
-
-
-    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
-    m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
-                                                            std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
-                                                            bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+    create_vn_histograms(n);
   }
 
   m_hists2D["h2Dummy"] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists3D["h3JetPhiEtaPt"]->Project3D("yx")->Clone("h2Dummy")));
@@ -675,22 +687,25 @@ void JetAnalysis::correct_QVecs()
   double cent = m_event_data.event_centrality;
   size_t cent_bin = static_cast<size_t>(m_hists.hCentrality->FindBin(cent) - 1);
 
+  size_t south_idx = static_cast<size_t>(Subdetector::S);
+  size_t north_idx = static_cast<size_t>(Subdetector::N);
+
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    double Q_S_x_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.x;
-    double Q_S_y_avg = m_correction_data[cent_bin][n_idx][0].avg_Q.y;
-    double Q_N_x_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.x;
-    double Q_N_y_avg = m_correction_data[cent_bin][n_idx][1].avg_Q.y;
+    double Q_S_x_avg = m_correction_data[cent_bin][n_idx][south_idx].avg_Q.x;
+    double Q_S_y_avg = m_correction_data[cent_bin][n_idx][south_idx].avg_Q.y;
+    double Q_N_x_avg = m_correction_data[cent_bin][n_idx][north_idx].avg_Q.x;
+    double Q_N_y_avg = m_correction_data[cent_bin][n_idx][north_idx].avg_Q.y;
 
-    QVec q_S = m_event_data.q_vectors[n_idx][0];
-    QVec q_N = m_event_data.q_vectors[n_idx][1];
+    QVec q_S = m_event_data.q_vectors[n_idx][south_idx];
+    QVec q_N = m_event_data.q_vectors[n_idx][north_idx];
 
     // Apply Recentering
     QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
     QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
 
-    const auto& X_S = m_correction_data[cent_bin][n_idx][0].X_matrix;
-    const auto& X_N = m_correction_data[cent_bin][n_idx][1].X_matrix;
+    const auto& X_S = m_correction_data[cent_bin][n_idx][south_idx].X_matrix;
+    const auto& X_N = m_correction_data[cent_bin][n_idx][north_idx].X_matrix;
 
     // Apply Flattening
     double Q_S_x_corr2 = X_S[0][0] * q_S_corr.x + X_S[0][1] * q_S_corr.y;
@@ -698,8 +713,8 @@ void JetAnalysis::correct_QVecs()
     double Q_N_x_corr2 = X_N[0][0] * q_N_corr.x + X_N[0][1] * q_N_corr.y;
     double Q_N_y_corr2 = X_N[1][0] * q_N_corr.x + X_N[1][1] * q_N_corr.y;
 
-    m_event_data.q_vectors[n_idx][0] = {Q_S_x_corr2, Q_S_y_corr2};
-    m_event_data.q_vectors[n_idx][1] = {Q_N_x_corr2, Q_N_y_corr2};
+    m_event_data.q_vectors[n_idx][south_idx] = {Q_S_x_corr2, Q_S_y_corr2};
+    m_event_data.q_vectors[n_idx][north_idx] = {Q_N_x_corr2, Q_N_y_corr2};
 
     double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
     double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
@@ -774,11 +789,14 @@ void JetAnalysis::compute_SP_resolution(int sample)
   double cent = m_event_data.event_centrality;
   m_hists.h2Event->Fill(cent, sample);
 
+  size_t south_idx = static_cast<size_t>(Subdetector::S);
+  size_t north_idx = static_cast<size_t>(Subdetector::N);
+
   // Compute Scalar Product for each harmonic
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][0];
-    QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][1];
+    QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][south_idx];
+    QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][north_idx];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
 
