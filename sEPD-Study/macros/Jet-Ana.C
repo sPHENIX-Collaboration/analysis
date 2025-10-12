@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <random>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -61,8 +62,6 @@ class JetAnalysis
     process_dead_channels();
     init_hists();
     process_events();
-    finalize();
-    validate_results();
     save_results();
   }
 
@@ -198,9 +197,7 @@ class JetAnalysis
   bool process_QVecs();
   void process_events();
 
-  void finalize();
 
-  void validate_results();
   void save_results() const;
 };
 
@@ -593,17 +590,9 @@ void JetAnalysis::create_vn_histograms(int n)
   title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
   m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-  name_res_prof = std::format("hSP_res_sqrt_{}", n);
-  title = std::format("; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)}}", n);
-  m_hists1D[name_res_prof] = std::make_unique<TH1F>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-  std::string name_vn_re = std::format("h2Vn_re_{}", n);
-  std::string name_vn_im = std::format("h2Vn_im_{}", n);
 
-  title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
 
-  m_hists2D[name_vn_re] = std::make_unique<TH2F>(name_vn_re.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, bins_SP, SP_low, SP_high);
-  m_hists2D[name_vn_im] = std::unique_ptr<TH2>(static_cast<TH2*>(m_hists2D[name_vn_re]->Clone(name_vn_im.c_str())));
 
   std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
   m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
@@ -883,6 +872,13 @@ void JetAnalysis::process_events()
     n_entries = std::min(m_events_to_process, n_entries);
   }
 
+  // Generate Sample Offset
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_int_distribution<> distribution(0, m_bins_sample-1);
+  int sample_offset = distribution(generator);
+  std::cout << std::format("Sample Offset: {}\n", sample_offset);
+
   // Event Loop
   for (long long event = 0; event < n_entries; ++event)
   {
@@ -922,7 +918,7 @@ void JetAnalysis::process_events()
     }
 
     int events_cent = static_cast<int>(m_hists.hCentrality->GetBinContent(cent_bin));
-    int sample = events_cent % m_bins_sample;
+    int sample = (events_cent + sample_offset) % m_bins_sample;
     m_hists.hCentrality->Fill(cent);
 
     std::vector<std::pair<double, double>> jet_phi_eta = process_jets();
@@ -942,121 +938,6 @@ void JetAnalysis::process_events()
   std::cout << "Finished... process_events" << std::endl;
 }
 
-void JetAnalysis::finalize()
-{
-  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
-  {
-    int n = m_harmonics[n_idx];
-    std::string name_res_sqrt = std::format("hSP_res_sqrt_{}", n);
-
-    std::string name_vn_re = std::format("h2Vn_re_{}", n);
-    std::string name_vn_im = std::format("h2Vn_im_{}", n);
-
-    auto* prof_re = m_hists.p2SP_re[n_idx];
-    auto* prof_im = m_hists.p2SP_im[n_idx];
-    auto* prof_res = m_hists.p1SP_res[n_idx];
-
-    auto* hist_res_sqrt = m_hists1D[name_res_sqrt].get();
-
-    auto* h2Vn_re = m_hists2D[name_vn_re].get();
-    auto* h2Vn_im = m_hists2D[name_vn_im].get();
-
-    for (int cent_bin = 0; cent_bin < static_cast<int>(m_bins_cent); ++cent_bin)
-    {
-      double cent = h2Vn_re->GetXaxis()->GetBinCenter(cent_bin + 1);
-      double SP_res = prof_res->GetBinContent(cent_bin + 1);
-      if (SP_res > 0)
-      {
-        double SP_res_err = prof_res->GetBinError(cent_bin + 1);
-        double SP_res_sqrt = std::sqrt(SP_res);
-        double SP_res_sqrt_err = SP_res_err / (2 * SP_res_sqrt);
-
-        hist_res_sqrt->SetBinContent(cent_bin + 1, SP_res_sqrt);
-        hist_res_sqrt->SetBinError(cent_bin + 1, SP_res_sqrt_err);
-
-        for (int sample_bin = 0; sample_bin < m_bins_sample; ++sample_bin)
-        {
-          double SP_re = prof_re->GetBinContent(cent_bin + 1, sample_bin + 1);
-          double SP_im = prof_im->GetBinContent(cent_bin + 1, sample_bin + 1);
-
-          int nJets = static_cast<int>(m_hists.h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
-
-          double vn_re = SP_re / SP_res_sqrt;
-          double vn_im = SP_im / SP_res_sqrt;
-
-          h2Vn_re->Fill(cent, vn_re, nJets);
-          h2Vn_im->Fill(cent, vn_im, nJets);
-        }
-      }
-    }
-  }
-}
-
-void JetAnalysis::validate_results()
-{
-  std::cout << std::format("{:#<{}}\n", "", 40);
-  std::cout << std::format("Validating Results: Compute CV\n");
-  std::cout << std::format("{:#<{}}\n", "", 40);
-
-  for (int n : m_harmonics)
-  {
-    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
-
-    auto* h_psi_corr2 = m_hists3D[psi_corr2_hist_name].get();
-    int bins_phi = h_psi_corr2->GetNbinsX();
-
-    // South, North
-    for (auto det : m_subdetectors)
-    {
-      std::string side = (det == Subdetector::S) ? "x" : "y";
-      std::string det_name = (det == Subdetector::S) ? "South" : "North";
-      std::string cv_name = std::format("h_sEPD_CV_{}_{}", det_name, n);
-      std::string cv_title = std::format("sEPD {}: Order {}; Centrality [%]; #sigma/#mu", det_name, n);
-
-      m_hists1D[cv_name] = std::make_unique<TH1F>(cv_name.c_str(), cv_title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-
-      for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
-      {
-        h_psi_corr2->GetZaxis()->SetRange(cent_bin, cent_bin);
-        auto* h_psi = h_psi_corr2->Project3D(side.c_str());
-
-        int cent_events = static_cast<int>(m_hists.hCentrality->GetBinContent(cent_bin));
-        int psi_events = static_cast<int>(h_psi->Integral());
-
-        if (cent_events != psi_events)
-        {
-          std::cout << std::format("ERROR: Cent Events: {}, Psi Events: {}\n", cent_events, psi_events);
-        }
-
-        double mean = 0;
-        double M2 = 0;
-
-        for (int phi_bin = 1; phi_bin <= bins_phi; ++phi_bin)
-        {
-          double val = h_psi->GetBinContent(phi_bin);
-          double delta = val - mean;
-          mean += delta / phi_bin;
-          double delta2 = val - mean;
-          M2 += delta * delta2;
-        }
-
-        double sigma = std::sqrt(M2 / bins_phi);
-        double cv = (mean) ? sigma / mean : 0;
-        // Derived from the Delta Method
-        double cv_error = cv * std::sqrt(1. / bins_phi + cv * cv / (2 * bins_phi));
-
-        m_hists1D[cv_name]->SetBinContent(cent_bin, cv);
-        m_hists1D[cv_name]->SetBinError(cent_bin, cv_error);
-
-        std::cout << std::format("n: {}, det: {}, cent: {}, mean: {:6.2f}, sigma: {:5.2f}, cv: {:.2f}, cv_err: {:.4f}\n",
-                                 n, side, cent_bin, mean, sigma, cv, cv_error);
-      }
-    }
-
-    // set the range back to full after calculations
-    h_psi_corr2->GetZaxis()->SetRange(1, m_bins_cent);
-  }
-}
 
 void JetAnalysis::save_results() const
 {

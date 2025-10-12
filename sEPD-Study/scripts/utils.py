@@ -17,6 +17,84 @@ import textwrap
 parser = argparse.ArgumentParser()
 subparser = parser.add_subparsers(dest='command')
 
+# ----------------------------
+
+def setup_logging(log_file, log_level):
+    """Configures the logging system to output to a file and console."""
+
+    # Create a logger instance
+    logger = logging.getLogger(__name__) # Use __name__ to get a logger specific to this module
+    logger.setLevel(log_level)
+
+    # Clear existing handlers to prevent duplicate output if run multiple times
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Create a formatter for log messages
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # Create a FileHandler to save logs to a file
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Create a StreamHandler to also output logs to the console (optional)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO) # Console might only show INFO and above
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    return logger
+
+# ----------------------------
+
+def run_command_and_log(command, logger, current_dir = '.', do_logging = True, description="Executing command"):
+    """
+    Runs an external command using subprocess and logs its stdout, stderr, and return code.
+    """
+    if do_logging:
+        logger.info(f"{description}: '{command}'")
+
+    try:
+        # subprocess.run is the recommended high-level API
+        # capture_output=True: captures stdout and stderr
+        # text=True: decodes output as text (usually UTF-8)
+        # check=False: do NOT raise an exception for non-zero exit codes immediately.
+        #              We want to log stderr even on failure before deciding to raise.
+        result = subprocess.run(['bash','-c',command], cwd=current_dir, capture_output=True, text=True, check=False)
+
+        # Log stdout if any
+        if result.stdout and do_logging:
+            # Using logger.debug allows capturing even verbose outputs
+            logger.debug(f"  STDOUT from '{command}':\n{result.stdout.strip()}")
+
+        # Log stderr if any
+        if result.stderr:
+            # Using logger.error for stderr, as it often indicates problems
+            logger.error(f"  STDERR from '{command}':\n{result.stderr.strip()}")
+
+        if do_logging:
+            # Log the return code
+            logger.info(f"  Command exited with code: {result.returncode}")
+
+        # You can choose to raise an exception here if the command failed
+        if result.returncode != 0:
+            logger.error(f"Command failed: '{command}' exited with non-zero code {result.returncode}")
+            # Optionally, raise an error to stop execution
+            # raise subprocess.CalledProcessError(result.returncode, command, output=result.stdout, stderr=result.stderr)
+            return False
+        return True
+
+    except FileNotFoundError:
+        logger.critical(f"Error: Command '{command}' not found. Is it in your PATH?")
+        return False
+    except Exception as e:
+        logger.critical(f"An unexpected error occurred while running '{command}': {e}")
+        return False
+
+# ----------------------------
+
 f4a = subparser.add_parser('f4a', help='Create condor submission directory.')
 
 f4a.add_argument('-i'
@@ -83,78 +161,6 @@ f4a.add_argument('-b'
                     , '--f4a-bin', type=str
                     , default='bin/Fun4All_sEPD'
                     , help='Fun4All Bin. Default: bin/Fun4All_sEPD')
-
-def setup_logging(log_file, log_level):
-    """Configures the logging system to output to a file and console."""
-
-    # Create a logger instance
-    logger = logging.getLogger(__name__) # Use __name__ to get a logger specific to this module
-    logger.setLevel(log_level)
-
-    # Clear existing handlers to prevent duplicate output if run multiple times
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    # Create a formatter for log messages
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    # Create a FileHandler to save logs to a file
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-    # Create a StreamHandler to also output logs to the console (optional)
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO) # Console might only show INFO and above
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    return logger
-
-def run_command_and_log(command, logger, current_dir = '.', do_logging = True, description="Executing command"):
-    """
-    Runs an external command using subprocess and logs its stdout, stderr, and return code.
-    """
-    if do_logging:
-        logger.info(f"{description}: '{command}'")
-
-    try:
-        # subprocess.run is the recommended high-level API
-        # capture_output=True: captures stdout and stderr
-        # text=True: decodes output as text (usually UTF-8)
-        # check=False: do NOT raise an exception for non-zero exit codes immediately.
-        #              We want to log stderr even on failure before deciding to raise.
-        result = subprocess.run(['bash','-c',command], cwd=current_dir, capture_output=True, text=True, check=False)
-
-        # Log stdout if any
-        if result.stdout and do_logging:
-            # Using logger.debug allows capturing even verbose outputs
-            logger.debug(f"  STDOUT from '{command}':\n{result.stdout.strip()}")
-
-        # Log stderr if any
-        if result.stderr:
-            # Using logger.error for stderr, as it often indicates problems
-            logger.error(f"  STDERR from '{command}':\n{result.stderr.strip()}")
-
-        if do_logging:
-            # Log the return code
-            logger.info(f"  Command exited with code: {result.returncode}")
-
-        # You can choose to raise an exception here if the command failed
-        if result.returncode != 0:
-            logger.error(f"Command failed: '{command}' exited with non-zero code {result.returncode}")
-            # Optionally, raise an error to stop execution
-            # raise subprocess.CalledProcessError(result.returncode, command, output=result.stdout, stderr=result.stderr)
-            return False
-        return True
-
-    except FileNotFoundError:
-        logger.critical(f"Error: Command '{command}' not found. Is it in your PATH?")
-        return False
-    except Exception as e:
-        logger.critical(f"An unexpected error occurred while running '{command}': {e}")
-        return False
 
 def create_f4a_jobs():
     """
@@ -284,6 +290,125 @@ def create_f4a_jobs():
     command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
     logger.info(command)
 
+# ----------------------------
+
+jetAna = subparser.add_parser('jetAna', help='jetAna condor jobs.')
+
+jetAna.add_argument('-i'
+                    , '--input-list', type=str
+                    , required=True
+                    , help='List of TTrees to analyze.')
+
+jetAna.add_argument('-i2'
+                    , '--calib', type=str
+                    , required=True
+                    , help='Q Vector Calibrations')
+
+jetAna.add_argument('-f'
+                    , '--jetAna-macro', type=str
+                    , default='macros/Jet-Ana.C'
+                    , help='Jet-Ana Macro. Default: macros/Jet-Ana.C')
+
+jetAna.add_argument('-f2'
+                    , '--jetAna-bin', type=str
+                    , default='bin/Jet-Ana'
+                    , help='Jet-Ana Bin. Default: bin/Jet-Ana')
+
+jetAna.add_argument('-o'
+                    , '--output-dir', type=str
+                    , default='scratch/test'
+                    , help='Output Directory. Default: scratch/test')
+
+jetAna.add_argument('-s'
+                    , '--memory', type=float
+                    , default=0.5
+                    , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+
+jetAna.add_argument('-l'
+                    , '--condor-log-dir', type=str
+                    , default='/tmp/anarde/dump'
+                    , help='Condor Log Directory. Default: /tmp/anarde/dump')
+
+jetAna.add_argument('-f3'
+                    , '--condor-script', type=str
+                    , default='scripts/genJetAna.sh'
+                    , help='Condor Script. Default: scripts/genJetAna.sh')
+
+def jetAna_jobs():
+    """
+    jetAna condor jobs
+    """
+    input_list     = Path(args.input_list).resolve()
+    calib_file     = Path(args.calib).resolve()
+    output_dir     = Path(args.output_dir).resolve()
+    jetAna_macro   = Path(args.jetAna_macro).resolve()
+    jetAna_bin     = Path(args.jetAna_bin).resolve()
+    log_file       = output_dir / 'log.txt'
+    condor_memory  = args.memory
+    condor_script  = Path(args.condor_script).resolve()
+    condor_log_dir = Path(args.condor_log_dir).resolve()
+
+    # Create Dirs
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize the logger
+    logger = setup_logging(log_file, logging.DEBUG)
+
+    # Ensure that files exists
+    for f in [input_list, calib_file, condor_script]:
+        if not f.is_file():
+            logger.critical(f'File: {f} does not exist!')
+            sys.exit()
+
+    # Print Logs
+    logger.info('#'*40)
+    logger.info(f'LOGGING: {datetime.datetime.now()}')
+    logger.info(f'Input File: {input_list}')
+    logger.info(f'Calib: {calib_file}')
+    logger.info(f'Jet Ana Macro: {jetAna_macro}')
+    logger.info(f'Jet Ana Bin: {jetAna_bin}')
+    logger.info(f'Output Directory: {output_dir}')
+    logger.info(f'Log File: {log_file}')
+    logger.info(f'Condor Memory: {condor_memory} GB')
+    logger.info(f'Condor Script: {condor_script}')
+    logger.info(f'Condor Log Directory: {condor_log_dir}')
+
+    if condor_log_dir.is_dir():
+        shutil.rmtree(condor_log_dir)
+
+    # Setup Condor Log Dir
+    condor_log_dir.mkdir(parents=True, exist_ok=True)
+
+    # list of subdirectories to create
+    subdirectories = ['stdout', 'error', 'output']
+
+    # Loop through the list and create each one
+    for subdir in subdirectories:
+        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
+
+    shutil.copy(input_list, output_dir)
+    shutil.copy(jetAna_macro, output_dir)
+    jetAna_bin = shutil.copy(jetAna_bin, output_dir)
+    calib_file = shutil.copy(calib_file, output_dir)
+    shutil.copy(condor_script, output_dir)
+
+    submit_file_content = textwrap.dedent(f"""\
+        executable     = {condor_script.name}
+        arguments      = {jetAna_bin} $(input_tree) {calib_file} {output_dir}/output
+        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+        output         = stdout/job-$(ClusterId)-$(Process).out
+        error          = error/job-$(ClusterId)-$(Process).err
+        request_memory = {condor_memory}GB
+    """)
+
+    with open(output_dir / 'genJetAna.sub', mode='w', encoding='utf-8') as file:
+        file.write(submit_file_content)
+
+    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree from {input_list.name}"'
+    logger.info(command)
+
+# ----------------------------
+
 hadd = subparser.add_parser('hadd', help='hadd condor jobs.')
 
 hadd.add_argument('-i'
@@ -386,6 +511,8 @@ def hadd_jobs():
 
     command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from jobs.list"'
     logger.info(command)
+
+# ----------------------------
 
 data = subparser.add_parser('data', help='Update file lists.')
 
@@ -587,6 +714,9 @@ args = parser.parse_args()
 if __name__ == "__main__":
     if args.command == 'f4a':
         create_f4a_jobs()
+
+    if args.command == 'jetAna':
+        jetAna_jobs()
 
     if args.command == 'hadd':
         hadd_jobs()
