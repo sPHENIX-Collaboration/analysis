@@ -15,11 +15,11 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <random>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <numbers>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -109,6 +109,7 @@ class JetAnalysis
   // Store harmonic orders and subdetectors for easy iteration
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
+  static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
   struct AnalysisHists
   {
@@ -132,6 +133,20 @@ class JetAnalysis
     std::array<TProfile2D*, 3> p2SP_im;
     std::array<TProfile2D*, 3> p2SP_res;
     std::array<TProfile*, 3> p1SP_res;
+
+    // Q Vector - Crosschecks
+    std::array<TProfile*, 3> S_x_corr_avg{nullptr};
+    std::array<TProfile*, 3> S_y_corr_avg{nullptr};
+    std::array<TProfile*, 3> N_x_corr_avg{nullptr};
+    std::array<TProfile*, 3> N_y_corr_avg{nullptr};
+
+    std::array<TProfile*, 3> S_xx_corr_avg{nullptr};
+    std::array<TProfile*, 3> S_yy_corr_avg{nullptr};
+    std::array<TProfile*, 3> S_xy_corr_avg{nullptr};
+
+    std::array<TProfile*, 3> N_xx_corr_avg{nullptr};
+    std::array<TProfile*, 3> N_yy_corr_avg{nullptr};
+    std::array<TProfile*, 3> N_xy_corr_avg{nullptr};
   };
 
   AnalysisHists m_hists;
@@ -190,13 +205,12 @@ class JetAnalysis
   void init_hists();
 
   void compute_SP_resolution(int sample);
-  void compute_SP(int sample, const std::vector<std::pair<double, double>> &jet_phi_eta);
+  void compute_SP(int sample, const std::vector<std::pair<double, double>>& jet_phi_eta);
   std::vector<std::pair<double, double>> process_jets();
   void correct_QVecs();
   bool compute_QVecs();
   bool process_QVecs();
   void process_events();
-
 
   void save_results() const;
 };
@@ -326,7 +340,7 @@ void JetAnalysis::load_correction_data(TFile* file)
 
     for (size_t cent_bin = 0; cent_bin < m_bins_cent; ++cent_bin)
     {
-      int bin = static_cast<int>(cent_bin)+1;
+      int bin = static_cast<int>(cent_bin) + 1;
 
       double Q_S_x_avg = h_sEPD_Q_S_x_avg->GetBinContent(bin);
       double Q_S_y_avg = h_sEPD_Q_S_y_avg->GetBinContent(bin);
@@ -590,14 +604,38 @@ void JetAnalysis::create_vn_histograms(int n)
   title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
   m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-
-
-
-
   std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
   m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
                                                           std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                           bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+
+  // South, North
+  for (auto det : m_subdetectors)
+  {
+    std::string det_str = (det == Subdetector::S) ? "S" : "N";
+    std::string det_name = (det == Subdetector::S) ? "South" : "North";
+
+    std::string q_avg_sq_cross_corr_name = std::format("h_sEPD_Q_{}_xy_{}_corr_avg", det_str, n);
+
+    m_profiles[q_avg_sq_cross_corr_name] = std::make_unique<TProfile>(q_avg_sq_cross_corr_name.c_str(),
+                                                                      std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", det_name, n).c_str(),
+                                                                      m_bins_cent, m_cent_low, m_cent_high);
+    // X, Y
+    for (auto comp : m_components)
+    {
+      std::string comp_str = (comp == QComponent::X) ? "x" : "y";
+      std::string q_avg_corr_name = std::format("h_sEPD_Q_{}_{}_{}_corr_avg", det_str, comp_str, n);
+      std::string q_avg_sq_corr_name = std::format("h_sEPD_Q_{0}_{1}{1}_{2}_corr_avg", det_str, comp_str, n);
+
+      m_profiles[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(),
+                                                               std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str).c_str(),
+                                                               m_bins_cent, m_cent_low, m_cent_high);
+
+      m_profiles[q_avg_sq_corr_name] = std::make_unique<TProfile>(q_avg_sq_corr_name.c_str(),
+                                                                  std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str).c_str(),
+                                                                  m_bins_cent, m_cent_low, m_cent_high);
+    }
+  }
 }
 
 void JetAnalysis::init_hists()
@@ -615,7 +653,7 @@ void JetAnalysis::init_hists()
   double pt_high = 50;
 
   double sample_low = -0.5;
-  double sample_high = m_bins_sample-0.5;
+  double sample_high = m_bins_sample - 0.5;
 
   m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]"
                                                       , bins_phi, phi_low, phi_high
@@ -658,6 +696,19 @@ void JetAnalysis::init_hists()
     m_hists.p2SP_im[n_idx] = m_profiles2D[std::format("h2SP_im_prof_{}", n)].get();
     m_hists.p2SP_res[n_idx] = m_profiles2D[std::format("h2SP_res_prof_{}", n)].get();
     m_hists.p1SP_res[n_idx] = m_profiles[std::format("hSP_res_prof_{}", n)].get();
+
+    m_hists.S_x_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_x_{}_corr_avg", n)].get();
+    m_hists.S_y_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_y_{}_corr_avg", n)].get();
+    m_hists.N_x_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_x_{}_corr_avg", n)].get();
+    m_hists.N_y_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_y_{}_corr_avg", n)].get();
+
+    m_hists.S_xx_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_xx_{}_corr_avg", n)].get();
+    m_hists.S_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_yy_{}_corr_avg", n)].get();
+    m_hists.S_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_xy_{}_corr_avg", n)].get();
+
+    m_hists.N_xx_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xx_{}_corr_avg", n)].get();
+    m_hists.N_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_yy_{}_corr_avg", n)].get();
+    m_hists.N_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xy_{}_corr_avg", n)].get();
   }
 }
 
@@ -692,13 +743,29 @@ void JetAnalysis::correct_QVecs()
     double Q_N_x_corr2 = X_N[0][0] * q_N_corr.x + X_N[0][1] * q_N_corr.y;
     double Q_N_y_corr2 = X_N[1][0] * q_N_corr.x + X_N[1][1] * q_N_corr.y;
 
-    m_event_data.q_vectors[n_idx][south_idx] = {Q_S_x_corr2, Q_S_y_corr2};
-    m_event_data.q_vectors[n_idx][north_idx] = {Q_N_x_corr2, Q_N_y_corr2};
+    QVec q_S_corr2 = {Q_S_x_corr2, Q_S_y_corr2};
+    QVec q_N_corr2 = {Q_N_x_corr2, Q_N_y_corr2};
 
-    double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
-    double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
+    m_event_data.q_vectors[n_idx][south_idx] = q_S_corr2;
+    m_event_data.q_vectors[n_idx][north_idx] = q_N_corr2;
+
+    double psi_S = std::atan2(q_S_corr2.y, q_S_corr2.x);
+    double psi_N = std::atan2(q_N_corr2.y, q_N_corr2.x);
 
     m_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
+
+    m_hists.S_x_corr_avg[n_idx]->Fill(cent, q_S_corr2.x);
+    m_hists.S_y_corr_avg[n_idx]->Fill(cent, q_S_corr2.y);
+    m_hists.N_x_corr_avg[n_idx]->Fill(cent, q_N_corr2.x);
+    m_hists.N_y_corr_avg[n_idx]->Fill(cent, q_N_corr2.y);
+
+    m_hists.S_xx_corr_avg[n_idx]->Fill(cent, q_S_corr2.x * q_S_corr2.x);
+    m_hists.S_yy_corr_avg[n_idx]->Fill(cent, q_S_corr2.y * q_S_corr2.y);
+    m_hists.S_xy_corr_avg[n_idx]->Fill(cent, q_S_corr2.x * q_S_corr2.y);
+
+    m_hists.N_xx_corr_avg[n_idx]->Fill(cent, q_N_corr2.x * q_N_corr2.x);
+    m_hists.N_yy_corr_avg[n_idx]->Fill(cent, q_N_corr2.y * q_N_corr2.y);
+    m_hists.N_xy_corr_avg[n_idx]->Fill(cent, q_N_corr2.x * q_N_corr2.y);
   }
 }
 
@@ -875,7 +942,7 @@ void JetAnalysis::process_events()
   // Generate Sample Offset
   std::random_device rd;
   std::mt19937 generator(rd());
-  std::uniform_int_distribution<> distribution(0, m_bins_sample-1);
+  std::uniform_int_distribution<> distribution(0, m_bins_sample - 1);
   int sample_offset = distribution(generator);
   std::cout << std::format("Sample Offset: {}\n", sample_offset);
 
@@ -938,13 +1005,12 @@ void JetAnalysis::process_events()
   std::cout << "Finished... process_events" << std::endl;
 }
 
-
 void JetAnalysis::save_results() const
 {
   std::filesystem::create_directories(m_output_dir);
 
   std::filesystem::path input_path(m_input_file);
-  std::string output_stem = input_path.stem().string(); 
+  std::string output_stem = input_path.stem().string();
   std::string output_filename = std::format("{}/Jet-Ana_{}.root", m_output_dir, output_stem);
 
   auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
