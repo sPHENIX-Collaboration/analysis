@@ -54,6 +54,7 @@ class DisplayJetAna
   {
     read_hists();
     init_hists();
+    compute_vn();
     draw();
   }
 
@@ -66,13 +67,32 @@ class DisplayJetAna
 
   bool m_saveFig{true};
 
+  // Hists Config
+  int m_bins_cent{8};
+  double m_cent_low{-0.5};
+  double m_cent_high{79.5};
+
+  int m_bins_SP{400};
+  double m_SP_low{-1};
+  double m_SP_high{1};
+
+  int m_bins_sample{25};
+
+  struct HistConfig
+  {
+      int bins{0};
+      double low{0};
+      double high{0};
+  };
+
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
+  void compute_vn();
 
   std::unique_ptr<TProfile> make_profile(const TH2* h2, const std::string &name, const std::string &title);
-  std::unique_ptr<TH2> make_TH2_res(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high);
-  std::unique_ptr<TH2> make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high);
+  std::unique_ptr<TH2> make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high, bool doResolution = false);
+  void draw_sEPD_corr_res(TCanvas* c1, int n, int bins, double low, double high, bool doResolution, std::string &title, const std::string &tag, std::string &output);
   void draw();
 };
 
@@ -145,6 +165,63 @@ void DisplayJetAna::init_hists()
 
   myUtils::setEMCalDim(m_hists["h2DummySector"].get());
   myUtils::setEMCalDim(m_hists["h2DummyIB"].get());
+
+  // Vn
+  for (auto n : m_harmonics)
+  {
+    std::string name_vn = std::format("h2Vn_re_{}", n);
+    std::string title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
+
+    m_hists[name_vn] = std::make_unique<TH2F>(name_vn.c_str(), title.c_str(),
+                                              m_bins_cent, m_cent_low, m_cent_high,
+                                              m_bins_SP, m_SP_low, m_SP_high);
+
+    name_vn = std::format("h2Vn_im_{}", n);
+    m_hists[name_vn] = std::make_unique<TH2F>(name_vn.c_str(), title.c_str(),
+                                              m_bins_cent, m_cent_low, m_cent_high,
+                                              m_bins_SP, m_SP_low, m_SP_high);
+
+  }
+}
+
+void DisplayJetAna::compute_vn()
+{
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+
+    auto* prof_re = dynamic_cast<TH2*>(m_hists[std::format("h2SP_re_prof_{}", n)].get());
+    auto* prof_im = dynamic_cast<TH2*>(m_hists[std::format("h2SP_im_prof_{}", n)].get());
+    auto* prof_res = dynamic_cast<TH2*>(m_hists[std::format("h2SP_res_prof_{}", n)].get());
+
+    auto* h2Vn_re = dynamic_cast<TH2*>(m_hists[std::format("h2Vn_re_{}", n)].get());
+    auto* h2Vn_im = dynamic_cast<TH2*>(m_hists[std::format("h2Vn_im_{}", n)].get());
+
+    auto* h2Jet = dynamic_cast<TH2*>(m_hists["h2Jet"].get());
+
+    for (int cent_bin = 0; cent_bin < static_cast<int>(m_bins_cent); ++cent_bin)
+    {
+      double cent = m_hists["hCentrality"]->GetBinCenter(cent_bin + 1);
+
+      for (int sample_bin = 0; sample_bin < m_bins_sample; ++sample_bin)
+      {
+        double SP_re = prof_re->GetBinContent(cent_bin + 1, sample_bin + 1);
+        double SP_im = prof_im->GetBinContent(cent_bin + 1, sample_bin + 1);
+        double SP_res = prof_res->GetBinContent(cent_bin + 1, sample_bin + 1);
+
+        int nJets = static_cast<int>(h2Jet->GetBinContent(cent_bin + 1, sample_bin + 1));
+
+        if (SP_res > 0)
+        {
+          double vn_re = SP_re / std::sqrt(SP_res);
+          double vn_im = SP_im / std::sqrt(SP_res);
+
+          h2Vn_re->Fill(cent, vn_re, nJets);
+          h2Vn_im->Fill(cent, vn_im, nJets);
+        }
+      }
+    }
+  }
 }
 
 std::unique_ptr<TProfile> DisplayJetAna::make_profile(const TH2* h2, const std::string &name, const std::string &title)
@@ -169,7 +246,7 @@ std::unique_ptr<TProfile> DisplayJetAna::make_profile(const TH2* h2, const std::
   return hprof;
 }
 
-std::unique_ptr<TH2> DisplayJetAna::make_TH2_res(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high)
+std::unique_ptr<TH2> DisplayJetAna::make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high, bool doResolution)
 {
   int bins_x = h2->GetNbinsX();
   int bins_y = h2->GetNbinsY();
@@ -185,9 +262,10 @@ std::unique_ptr<TH2> DisplayJetAna::make_TH2_res(const TH2* h2, const TH2* h2_we
       double val = h2->GetBinContent(bin_x, bin_y);
       double weight = h2_weights->GetBinContent(bin_x, bin_y);
       double x = h2_new->GetXaxis()->GetBinCenter(bin_x);
-      if (val > 0)
+      if ((doResolution && val > 0) || !doResolution)
       {
-        h2_new->Fill(x, std::sqrt(val), weight);
+        val = (doResolution) ? std::sqrt(val) : val;
+        h2_new->Fill(x, val, weight);
       }
     }
   }
@@ -195,27 +273,46 @@ std::unique_ptr<TH2> DisplayJetAna::make_TH2_res(const TH2* h2, const TH2* h2_we
   return h2_new;
 }
 
-std::unique_ptr<TH2> DisplayJetAna::make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high)
+void DisplayJetAna::draw_sEPD_corr_res(TCanvas* c1, int n, int bins, double low, double high, bool doResolution, std::string &title, const std::string &tag, std::string &output)
 {
-  int bins_x = h2->GetNbinsX();
-  int bins_y = h2->GetNbinsY();
-  double x_low = h2->GetXaxis()->GetXmin();
-  double x_high = h2->GetXaxis()->GetXmax();
+  auto* hCentrality = m_hists["hCentrality"].get();
+  std::unique_ptr<TLine> line = std::make_unique<TLine>(hCentrality->GetXaxis()->GetXmin(), 0, hCentrality->GetXaxis()->GetXmax(), 0);
 
-  auto h2_new = std::make_unique<TH2F>(name.c_str(), title.c_str(), bins_x, x_low, x_high, bins, low, high);
+  line->SetLineColor(kBlack);
+  line->SetLineStyle(kDashed);
 
-  for (int bin_x = 1; bin_x <= bins_x; ++bin_x)
+  auto* h2Event = dynamic_cast<TH2*>(m_hists["h2Event"].get());
+
+  std::string hist_name = std::format("h2SP_res_prof_{}", n);
+  auto* h2SP_res_prof = dynamic_cast<TH2*>(m_hists[hist_name].get());
+
+  std::string hist2D_name = std::format("h2SP_res_{}", n);
+  std::string hist_prof_name = std::format("hSP_res_prof_{}", n);
+
+  auto h2SP_res = make_TH2(h2SP_res_prof, h2Event, hist2D_name, title, bins, low, high, doResolution);
+  auto* hSP_res_prof = h2SP_res->ProfileX(hist_prof_name.c_str(), 1, -1, "s");
+
+  h2SP_res->Draw("COLZ1");
+  hSP_res_prof->Draw("same p e X0");
+  if (!doResolution)
   {
-    for (int bin_y = 1; bin_y <= bins_y; ++bin_y)
-    {
-      double val = h2->GetBinContent(bin_x, bin_y);
-      double weight = h2_weights->GetBinContent(bin_x, bin_y);
-      double x = h2_new->GetXaxis()->GetBinCenter(bin_x);
-      h2_new->Fill(x, val, weight);
-    }
+    line->Draw("same");
   }
 
-  return h2_new;
+  h2SP_res->GetZaxis()->SetMaxDigits(3);
+  h2SP_res->GetYaxis()->SetTitleOffset(1.5f);
+  h2SP_res->GetXaxis()->SetTitleOffset(1.f);
+
+  h2SP_res->SetMinimum(0);
+  h2SP_res->SetMaximum(2e6);
+
+  hSP_res_prof->SetMarkerColor(kRed);
+  hSP_res_prof->SetLineColor(kRed);
+  hSP_res_prof->SetMarkerStyle(kFullDotLarge);
+  hSP_res_prof->SetLineWidth(3);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-{}.png", m_output_dir, hist2D_name, tag).c_str());
 }
 
 void DisplayJetAna::draw()
@@ -481,35 +578,20 @@ void DisplayJetAna::draw()
 
   // -------------------------------------------
 
-  for(auto n : m_harmonics)
+  std::vector<HistConfig> histInfo = {{40, 0, 4e-4},
+                                      {40, -8e-5, 8e-5},
+                                      {40, -8e-5, 8e-5}
+                                     }; 
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    std::string hist_name = std::format("h2SP_res_prof_{}", n);
-    auto* h2SP_res_prof = dynamic_cast<TH2*>(m_hists[hist_name].get());
+    int n = m_harmonics[n_idx];
+    // North-South Correlation
+    title = std::format("sEPD N-S Correlation; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
+    draw_sEPD_corr_res(c1.get(), n, histInfo[n_idx].bins, histInfo[n_idx].low, histInfo[n_idx].high, false, title, "Correlation", output);
+
+    // Resolution
     title = std::format("Detector Resolution; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
-
-    std::string hist2D_name = std::format("h2SP_res_{}", n);
-    std::string hist_prof_name = std::format("hSP_res_prof_{}", n);
-
-    auto h2SP_res = make_TH2_res(h2SP_res_prof, h2Event, hist2D_name, title, 40, 0, 0.03);
-    auto* hSP_res_prof = h2SP_res->ProfileX(hist_prof_name.c_str(), 1, -1, "s");
-
-    h2SP_res->Draw("COLZ1");
-    hSP_res_prof->Draw("same p e X0");
-
-    h2SP_res->GetZaxis()->SetMaxDigits(3);
-    h2SP_res->GetYaxis()->SetTitleOffset(1.5f);
-    h2SP_res->GetXaxis()->SetTitleOffset(1.f);
-
-    h2SP_res->SetMinimum(0);
-    h2SP_res->SetMaximum(2e6);
-
-    hSP_res_prof->SetMarkerColor(kRed);
-    hSP_res_prof->SetLineColor(kRed);
-    hSP_res_prof->SetMarkerStyle(kFullDotLarge);
-    hSP_res_prof->SetLineWidth(3);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist2D_name).c_str());
+    draw_sEPD_corr_res(c1.get(), n, 40, 0, 0.02, true, title, "Correlation", output);
   }
 
   // -------------------------------------------
