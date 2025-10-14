@@ -133,6 +133,7 @@ class JetAnalysis
     std::array<TProfile2D*, 3> p2SP_im;
     std::array<TProfile2D*, 3> p2SP_res;
     std::array<TProfile*, 3> p1SP_res;
+    std::array<TProfile*, 3> p1SP_evt_res; // Event Plane Resolution Squared
 
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_corr_avg{nullptr};
@@ -604,6 +605,10 @@ void JetAnalysis::create_vn_histograms(int n)
   title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
   m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
+  std::string name_evt_res_prof = std::format("hSP_evt_res_prof_{}", n);
+  title = std::format("; Centrality [%]; #LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT", n);
+  m_profiles[name_evt_res_prof] = std::make_unique<TProfile>(name_evt_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
   std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
   m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
                                                           std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
@@ -696,6 +701,7 @@ void JetAnalysis::init_hists()
     m_hists.p2SP_im[n_idx] = m_profiles2D[std::format("h2SP_im_prof_{}", n)].get();
     m_hists.p2SP_res[n_idx] = m_profiles2D[std::format("h2SP_res_prof_{}", n)].get();
     m_hists.p1SP_res[n_idx] = m_profiles[std::format("hSP_res_prof_{}", n)].get();
+    m_hists.p1SP_evt_res[n_idx] = m_profiles[std::format("hSP_evt_res_prof_{}", n)].get();
 
     m_hists.S_x_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_x_{}_corr_avg", n)].get();
     m_hists.S_y_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_S_y_{}_corr_avg", n)].get();
@@ -845,10 +851,14 @@ void JetAnalysis::compute_SP_resolution(int sample)
     QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][north_idx];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
+    double norm_S = std::sqrt(sEPD_Q_S.x*sEPD_Q_S.x + sEPD_Q_S.y*sEPD_Q_S.y);
+    double norm_N = std::sqrt(sEPD_Q_N.x*sEPD_Q_N.x + sEPD_Q_N.y*sEPD_Q_N.y);
+    double SP_evt_res = SP_res / (norm_S * norm_N);
 
     m_hists.h3SP_res[n_idx]->Fill(cent, sample, SP_res);
     m_hists.p2SP_res[n_idx]->Fill(cent, sample, SP_res);
     m_hists.p1SP_res[n_idx]->Fill(cent, SP_res);
+    m_hists.p1SP_evt_res[n_idx]->Fill(cent, SP_evt_res);
   }
 }
 
