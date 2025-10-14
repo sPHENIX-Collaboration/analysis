@@ -12,6 +12,7 @@
 #include <TCanvas.h>
 #include <TF1.h>
 #include <TFile.h>
+#include <TGraph.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
@@ -520,7 +521,7 @@ void DisplayJetAna::draw()
   c1->Print((output + "[").c_str(), "pdf portrait");
 
   // -------------------------------------------
-  // Detector Resolution
+  // Reference Flow
   // -------------------------------------------
 
   gPad->SetLogy(0);
@@ -589,10 +590,129 @@ void DisplayJetAna::draw()
     title = std::format("sEPD N-S Correlation; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
     draw_sEPD_corr_res(c1.get(), n, histInfo[n_idx].bins, histInfo[n_idx].low, histInfo[n_idx].high, false, title, "Correlation", output);
 
-    // Resolution
-    title = std::format("Detector Resolution; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
+    // Reference Flow
+    title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
     draw_sEPD_corr_res(c1.get(), n, 40, 0, 0.02, true, title, "Correlation", output);
   }
+
+  // -------------------------------------------
+  // Event Plane Resolution
+  // -------------------------------------------
+
+  // -------------------------------------------
+  //  Presentation by Rosi at WWND2022
+  //  https://indico.cern.ch/event/1039540/contributions/4737615/attachments/2401701/4107451/RReedWWND2022v1.pdf
+  //  Data points from Slide 24
+  // -------------------------------------------
+
+  // sPHENIX MC
+  std::vector<double> evt_res_sPHENIX_MC = {0.34, 0.5, 0.57, 0.55, 0.5, 0.42, 0.32, 0.22};
+
+  // STAR EPD
+  // Centrality binning unevent thus requiring x,y points
+  std::vector<std::pair<double, double>> evt_res_star = {std::make_pair(2.5, 0.29),
+                                                         std::make_pair(7.5, 0.45),
+                                                         std::make_pair(15, 0.52),
+                                                         std::make_pair(25, 0.56),
+                                                         std::make_pair(35, 0.53),
+                                                         std::make_pair(45, 0.44),
+                                                         std::make_pair(55, 0.33),
+                                                         std::make_pair(65, 0.2),
+                                                         std::make_pair(75, 0.06)
+                                                        };
+
+  std::unique_ptr<TGraph> graph_evt_res_star = std::make_unique<TGraph>(evt_res_star.size());
+
+  for (size_t point = 0; point < evt_res_star.size(); ++point)
+  {
+    double x = evt_res_star[point].first;
+    double y = evt_res_star[point].second;
+    graph_evt_res_star->SetPoint(static_cast<int>(point), x, y);
+  }
+
+  std::string hist_name = "evt_res_sPHENIX_MC";
+  m_hists[hist_name] = std::make_unique<TH1F>(hist_name.c_str(),"", m_bins_cent, m_cent_low, m_cent_high);
+  auto* hSP_res_sPHENIX_MC = m_hists[hist_name].get();
+
+  hist_name = std::format("hSP_evt_res_prof_{}", 2);
+  auto* hSP_evt_res_prof = dynamic_cast<TProfile*>(m_hists[hist_name].get());
+
+  title = std::format("Event Plane Resolution; Centrality [%]; #sqrt{{#LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT}}", 2);
+  hist_name = std::format("hSP_evt_res_sqrt_prof_{}", 2);
+  m_hists[hist_name] = std::make_unique<TH1F>(hist_name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+  auto* hSP_sqrt = m_hists[hist_name].get();
+
+  title = std::format("Event Plane Resolution; Centrality [%]; #sqrt{{2#LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT}}", 2);
+  auto* hSP_sqrtv2 = dynamic_cast<TH1*>(hSP_sqrt->Clone("hSP_sqrtv2"));
+  hSP_sqrtv2->SetTitle(title.c_str());
+
+  for (int bin_cent = 1; bin_cent <= m_bins_cent; ++bin_cent)
+  {
+    double val = hSP_evt_res_prof->GetBinContent(bin_cent);
+    double err = hSP_evt_res_prof->GetBinError(bin_cent);
+    hSP_res_sPHENIX_MC->SetBinContent(bin_cent, evt_res_sPHENIX_MC[static_cast<size_t>(bin_cent-1)]);
+    if (val > 0)
+    {
+      val = std::sqrt(val);
+      err /= 2 * val;
+
+      double valv2 = std::sqrt(2) * val;
+      double errv2 = std::sqrt(2) * err;
+
+      hSP_sqrt->SetBinContent(bin_cent, val);
+      hSP_sqrt->SetBinError(bin_cent, err);
+
+      hSP_sqrtv2->SetBinContent(bin_cent, valv2);
+      hSP_sqrtv2->SetBinError(bin_cent, errv2);
+    }
+  }
+
+  hSP_sqrt->Draw("hist l p");
+  hSP_sqrt->SetMarkerColor(kBlue);
+  hSP_sqrt->SetLineColor(kBlue);
+  hSP_sqrt->SetMarkerStyle(kFullDotLarge);
+  hSP_sqrt->SetLineWidth(3);
+  hSP_sqrt->GetYaxis()->SetRangeUser(0, 0.6);
+  hSP_sqrt->GetYaxis()->SetTitleOffset(1.1f);
+  hSP_sqrt->GetXaxis()->SetTitleOffset(1.f);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+
+  hSP_sqrtv2->Draw("hist l p");
+  hSP_sqrtv2->SetMarkerColor(kBlue);
+  hSP_sqrtv2->SetLineColor(kBlue);
+  hSP_sqrtv2->SetMarkerStyle(kFullDotLarge);
+  hSP_sqrtv2->SetLineWidth(3);
+  hSP_sqrtv2->GetYaxis()->SetRangeUser(0, 0.6);
+  hSP_sqrtv2->GetYaxis()->SetTitleOffset(1.1f);
+  hSP_sqrtv2->GetXaxis()->SetTitleOffset(1.f);
+
+  hSP_res_sPHENIX_MC->Draw("same l p");
+  hSP_res_sPHENIX_MC->SetMarkerColor(kRed);
+  hSP_res_sPHENIX_MC->SetLineColor(kRed);
+  hSP_res_sPHENIX_MC->SetMarkerStyle(kFullDotLarge);
+  hSP_res_sPHENIX_MC->SetLineWidth(3);
+
+  graph_evt_res_star->Draw("same l p");
+  graph_evt_res_star->SetMarkerColor(kRed);
+  graph_evt_res_star->SetLineColor(kRed);
+  graph_evt_res_star->SetMarkerStyle(kOpenCircle);
+  graph_evt_res_star->SetLineWidth(2);
+
+  xshift = -0.02;
+  yshift = -0.5;
+
+  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.06f);
+  leg->AddEntry(hSP_sqrtv2, "Run 3 Au+Au: 68144", "lp");
+  leg->AddEntry(hSP_res_sPHENIX_MC, "Rosi WWND2022", "lp");
+  leg->AddEntry(graph_evt_res_star.get(), "STAR EPD", "lp");
+  leg->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-v2.png", m_output_dir, hist_name).c_str());
 
   // -------------------------------------------
   // SP
@@ -611,7 +731,7 @@ void DisplayJetAna::draw()
   {
     for(auto n : m_harmonics)
     {
-        std::string hist_name = std::format("h2SP_{}_prof_{}", type, n);
+        hist_name = std::format("h2SP_{}_prof_{}", type, n);
         auto* h2SP_prof = dynamic_cast<TH2*>(m_hists[hist_name].get());
         std::string type_cap = (type == "re") ? "Re" : "Im";
         title = std::format("Scalar Product; Centrality [%]; {0}(#LT q_{{{1}}} Q^{{S|N*}}_{{{1}}}#GT)", type_cap, n);
@@ -651,7 +771,7 @@ void DisplayJetAna::draw()
   {
     for (auto n : m_harmonics)
     {
-      std::string hist_name = std::format("h2Vn_{}_{}", type, n);
+      hist_name = std::format("h2Vn_{}_{}", type, n);
       std::string hist_prof_name = std::format("{}_prof", hist_name);
 
       auto* h2Vn = dynamic_cast<TH2*>(m_hists[hist_name].get());
