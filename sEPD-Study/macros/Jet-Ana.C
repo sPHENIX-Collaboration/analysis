@@ -141,6 +141,8 @@ class JetAnalysis
     std::array<TProfile2D*, 3> p2SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
+    std::array<TProfile*, 3> p1SP_re{nullptr};
+    std::array<TProfile*, 3> p1SP_re_anti{nullptr};
 
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_corr_avg{nullptr};
@@ -596,18 +598,29 @@ void JetAnalysis::create_vn_histograms(int n)
   m_profiles2D[name_re_prof] = std::make_unique<TProfile2D>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
   m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
 
-  // TH3 for Detector Resolution
+  // TProfile for Scalar Product
+  name_re_prof = std::format("hSP_re_prof_{}", n);
+
+  title = std::format("Scalar Product (Order {0}); Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
+  m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  name_re_prof = std::format("hSP_re_anti_prof_{}", n);
+
+  title = std::format("Scalar Product (Order {0}); Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}}#GT)", n);
+  m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  // TH3 for Reference Flow
   std::string name_res = std::format("h3SP_res_{}", n);
   title = std::format("sEPD (Order {0}): Q^{{S}}Q^{{N*}}; Centrality [%]; Sample; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}GT)", n);
   m_hists3D[name_res] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D[name]->Clone(name_res.c_str())));
   m_hists3D[name_res]->SetTitle(title.c_str());
 
-  // TProfile2D for Detector Resolution
+  // TProfile2D for Reference Flow
   std::string name_res_prof = std::format("h2SP_res_prof_{}", n);
   title = std::format("sEPD: Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT); Centrality [%]; Sample", n);
   m_profiles2D[name_res_prof] = std::make_unique<TProfile2D>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
-  // TProfile for Detector Resolution
+  // TProfile for Reference Flow
   name_res_prof = std::format("hSP_res_prof_{}", n);
   title = std::format("; Centrality [%]; Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT)", n);
   m_profiles[name_res_prof] = std::make_unique<TProfile>(name_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
@@ -707,6 +720,8 @@ void JetAnalysis::init_hists()
     m_hists.p2SP_re[n_idx] = m_profiles2D[std::format("h2SP_re_prof_{}", n)].get();
     m_hists.p2SP_im[n_idx] = m_profiles2D[std::format("h2SP_im_prof_{}", n)].get();
     m_hists.p2SP_res[n_idx] = m_profiles2D[std::format("h2SP_res_prof_{}", n)].get();
+    m_hists.p1SP_re[n_idx] = m_profiles[std::format("hSP_re_prof_{}", n)].get();
+    m_hists.p1SP_re_anti[n_idx] = m_profiles[std::format("hSP_re_anti_prof_{}", n)].get();
     m_hists.p1SP_res[n_idx] = m_profiles[std::format("hSP_res_prof_{}", n)].get();
     m_hists.p1SP_evt_res[n_idx] = m_profiles[std::format("hSP_evt_res_prof_{}", n)].get();
 
@@ -885,6 +900,7 @@ void JetAnalysis::compute_SP(int sample)
     double eta = jet_info[idx].eta;
 
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
+    size_t arm_anti = (eta > 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
 
     // Compute Scalar Product for each harmonic
     for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
@@ -892,8 +908,10 @@ void JetAnalysis::compute_SP(int sample)
       int n = m_harmonics[n_idx];
       QVec jet_Q = {std::cos(n * phi), std::sin(n * phi)};
       QVec sEPD_Q = m_event_data.q_vectors[n_idx][arm];
+      QVec sEPD_Q_anti = m_event_data.q_vectors[n_idx][arm_anti];
 
       double SP_re = jet_Q.x * sEPD_Q.x + jet_Q.y * sEPD_Q.y;
+      double SP_re_anti = jet_Q.x * sEPD_Q_anti.x + jet_Q.y * sEPD_Q_anti.y;
       double SP_im = jet_Q.y * sEPD_Q.x - jet_Q.x * sEPD_Q.y;
 
       m_hists.h3SP_re[n_idx]->Fill(cent, sample, SP_re);
@@ -901,6 +919,9 @@ void JetAnalysis::compute_SP(int sample)
 
       m_hists.p2SP_re[n_idx]->Fill(cent, sample, SP_re);
       m_hists.p2SP_im[n_idx]->Fill(cent, sample, SP_im);
+
+      m_hists.p1SP_re[n_idx]->Fill(cent, SP_re);
+      m_hists.p1SP_re_anti[n_idx]->Fill(cent, SP_re_anti);
     }
   }
 }
