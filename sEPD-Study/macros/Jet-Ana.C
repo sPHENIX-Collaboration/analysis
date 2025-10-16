@@ -96,6 +96,13 @@ class JetAnalysis
     std::array<std::array<double, 2>, 2> X_matrix{};
   };
 
+  struct JetInfo
+  {
+    double pt{0};
+    double phi{0};
+    double eta{0};
+  };
+
   static constexpr size_t m_bins_cent = 8;
   static constexpr double m_cent_low = -0.5;
   static constexpr double m_cent_high = 79.5;
@@ -129,11 +136,11 @@ class JetAnalysis
     std::array<TH3*, 3> h3SP_res;
 
     // Profiles
-    std::array<TProfile2D*, 3> p2SP_re;
-    std::array<TProfile2D*, 3> p2SP_im;
-    std::array<TProfile2D*, 3> p2SP_res;
-    std::array<TProfile*, 3> p1SP_res;
-    std::array<TProfile*, 3> p1SP_evt_res; // Event Plane Resolution Squared
+    std::array<TProfile2D*, 3> p2SP_re{nullptr};
+    std::array<TProfile2D*, 3> p2SP_im{nullptr};
+    std::array<TProfile2D*, 3> p2SP_res{nullptr};
+    std::array<TProfile*, 3> p1SP_res{nullptr};
+    std::array<TProfile*, 3> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
 
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_corr_avg{nullptr};
@@ -206,8 +213,8 @@ class JetAnalysis
   void init_hists();
 
   void compute_SP_resolution(int sample);
-  void compute_SP(int sample, const std::vector<std::pair<double, double>>& jet_phi_eta);
-  std::vector<std::pair<double, double>> process_jets();
+  void compute_SP(int sample);
+  std::vector<JetInfo> process_jets();
   void correct_QVecs();
   bool compute_QVecs();
   bool process_QVecs();
@@ -862,9 +869,11 @@ void JetAnalysis::compute_SP_resolution(int sample)
   }
 }
 
-void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, double>>& jet_phi_eta)
+void JetAnalysis::compute_SP(int sample)
 {
-  size_t nJets = jet_phi_eta.size();
+  std::vector<JetInfo> jet_info = process_jets();
+    
+  size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
 
   m_hists.h2Jet->Fill(cent, sample, static_cast<int>(nJets));
@@ -872,8 +881,8 @@ void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, dou
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
   {
-    double phi = jet_phi_eta[idx].first;
-    double eta = jet_phi_eta[idx].second;
+    double phi = jet_info[idx].phi;
+    double eta = jet_info[idx].eta;
 
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
 
@@ -896,12 +905,12 @@ void JetAnalysis::compute_SP(int sample, const std::vector<std::pair<double, dou
   }
 }
 
-std::vector<std::pair<double, double>> JetAnalysis::process_jets()
+std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets()
 {
   size_t nJets = m_event_data.jet_phi->size();
 
-  std::vector<std::pair<double, double>> jet_phi_eta;
-  jet_phi_eta.reserve(nJets);
+  std::vector<JetInfo> jet_info;
+  jet_info.reserve(nJets);
 
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
@@ -925,11 +934,11 @@ std::vector<std::pair<double, double>> JetAnalysis::process_jets()
     if (dead_status == 0)
     {
       m_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
-      jet_phi_eta.push_back(std::make_pair(phi, eta));
+      jet_info.emplace_back(pt, phi, eta);
     }
   }
 
-  return jet_phi_eta;
+  return jet_info;
 }
 
 bool JetAnalysis::process_QVecs()
@@ -998,10 +1007,8 @@ void JetAnalysis::process_events()
     int sample = (events_cent + sample_offset) % m_bins_sample;
     m_hists.hCentrality->Fill(cent);
 
-    std::vector<std::pair<double, double>> jet_phi_eta = process_jets();
-
     // Scalar Product Method
-    compute_SP(sample, jet_phi_eta);
+    compute_SP(sample);
 
     // Scalar Product Resolution
     compute_SP_resolution(sample);
