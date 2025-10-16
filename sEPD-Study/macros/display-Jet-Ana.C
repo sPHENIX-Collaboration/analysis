@@ -679,7 +679,7 @@ void DisplayJetAna::draw()
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
 
-  hSP_sqrtv2->Draw("hist l p");
+  hSP_sqrtv2->Draw("p e X0");
   hSP_sqrtv2->SetMarkerColor(kBlue);
   hSP_sqrtv2->SetLineColor(kBlue);
   hSP_sqrtv2->SetMarkerStyle(kFullDotLarge);
@@ -687,6 +687,8 @@ void DisplayJetAna::draw()
   hSP_sqrtv2->GetYaxis()->SetRangeUser(0, 0.6);
   hSP_sqrtv2->GetYaxis()->SetTitleOffset(1.1f);
   hSP_sqrtv2->GetXaxis()->SetTitleOffset(1.f);
+
+  hSP_sqrtv2->Draw("same hist l p");
 
   hSP_res_sPHENIX_MC->Draw("same l p");
   hSP_res_sPHENIX_MC->SetMarkerColor(kRed);
@@ -713,6 +715,48 @@ void DisplayJetAna::draw()
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}-v2.png", m_output_dir, hist_name).c_str());
+
+  // -------------------------------------------
+  // SP: Compare regular with anti
+  // -------------------------------------------
+
+  auto* hSP_re_prof = m_hists["hSP_re_prof_2"].get();
+  auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2"].get();
+
+  hSP_re_prof->Draw("p e");
+  hSP_re_prof->SetLineColor(kBlue);
+  hSP_re_prof->SetMarkerColor(kBlue);
+  hSP_re_prof->SetMarkerStyle(kFullDotLarge);
+  hSP_re_prof->SetLineWidth(3);
+
+  hSP_re_prof->GetYaxis()->SetLabelSize(0.05f);
+  hSP_re_prof->GetYaxis()->SetTitleSize(0.05f);
+  hSP_re_prof->GetXaxis()->SetLabelSize(0.06f);
+  hSP_re_prof->GetXaxis()->SetTitleSize(0.06f);
+
+  hSP_re_prof->GetXaxis()->SetTitleOffset(0.9f);
+  hSP_re_prof->GetYaxis()->SetTitleOffset(1.5f);
+
+  hSP_re_prof->GetYaxis()->SetRangeUser(0, 1e-2);
+
+  hSP_re_anti_prof->Draw("same p e");
+  hSP_re_anti_prof->SetLineColor(kRed);
+  hSP_re_anti_prof->SetMarkerColor(kRed);
+  hSP_re_anti_prof->SetMarkerStyle(kFullDotLarge);
+  hSP_re_anti_prof->SetLineWidth(3);
+
+  xshift = -0.02;
+  yshift = -0.5;
+
+  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .75 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.05f);
+  leg->AddEntry(hSP_re_prof, "Opposite-Side Correlation", "lpe");
+  leg->AddEntry(hSP_re_anti_prof, "Same-Side Corrleation", "lpe");
+  leg->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof-overlay.png", m_output_dir).c_str());
 
   // -------------------------------------------
   // SP
