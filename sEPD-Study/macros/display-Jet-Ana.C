@@ -592,7 +592,7 @@ void DisplayJetAna::draw()
 
     // Reference Flow
     title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
-    draw_sEPD_corr_res(c1.get(), n, 40, 0, 0.02, true, title, "Correlation", output);
+    draw_sEPD_corr_res(c1.get(), n, 40, 0, 0.02, true, title, "Ref-Flow", output);
   }
 
   // -------------------------------------------
