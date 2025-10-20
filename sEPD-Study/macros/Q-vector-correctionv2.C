@@ -36,12 +36,13 @@ class QvectorAnalysis
 {
  public:
   // The constructor takes the configuration
-  QvectorAnalysis(std::string input_file, std::string input_hist, std::string input_Q_calib, int pass, long long events, std::string output_dir)
+  QvectorAnalysis(std::string input_file, std::string input_hist, std::string input_Q_calib, int q_vec_ana, int pass, long long events, std::string output_dir)
     : m_chain(std::make_unique<TChain>("T"))
     , m_input_file(std::move(input_file))
     , m_input_hist(std::move(input_hist))
     , m_input_Q_calib(std::move(input_Q_calib))
     , m_pass(static_cast<Pass>(pass))
+    , m_QVecAna(static_cast<QVecAna>(q_vec_ana))
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
   {
@@ -55,6 +56,13 @@ class QvectorAnalysis
     process_events();
     save_results();
   }
+
+  enum class QVecAna
+  {
+    DEFAULT, // All rbins
+    HALF,    // ONLY RBINS 0 to 7
+    HALF1    // ONLY RBINS 1 to 7
+  };
 
   enum class Pass
   {
@@ -197,6 +205,7 @@ class QvectorAnalysis
   std::string m_input_hist;
   std::string m_input_Q_calib;
   Pass m_pass{0};
+  QVecAna m_QVecAna{0};
   long long m_events_to_process;
   std::string m_output_dir;
   bool m_doBadChannelCheck{true};
@@ -211,12 +220,15 @@ class QvectorAnalysis
   std::unordered_set<int> m_bad_channels;
   double m_sEPD_min_avg_charge_threshold{1};
   double m_sEPD_sigma_threshold{3};
+  std::unordered_set<int> m_rbins_skipped;
 
   // --- Private Helper Methods ---
   void setup_chain();
   void init_hists();
   void load_correction_data();
   void process_events();
+
+  bool filter_sEPD(int rbin);
   bool process_sEPD();
   void run_event_loop();
   void validate_results();
@@ -807,6 +819,13 @@ std::map<int, QvectorAnalysis::AverageHists> QvectorAnalysis::prepare_average_hi
   return hists_cache;
 }
 
+bool QvectorAnalysis::filter_sEPD(int rbin)
+{
+  return (m_QVecAna == QVecAna::DEFAULT) ||
+         (m_QVecAna == QVecAna::HALF && rbin <= 7) ||
+         (m_QVecAna == QVecAna::HALF1 && rbin <= 7 && rbin >= 1);
+}
+
 bool QvectorAnalysis::process_sEPD()
 {
   size_t nChannels = m_event_data.sepd_channel->size();
@@ -829,6 +848,13 @@ bool QvectorAnalysis::process_sEPD()
 
     unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+    int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
+
+    if (!filter_sEPD(rbin))
+    {
+      m_rbins_skipped.insert(rbin);
+      continue;
+    }
 
     // arm = 0: South
     // arm = 1: North
@@ -1039,6 +1065,8 @@ void QvectorAnalysis::run_event_loop()
       }
     }
   }
+
+  std::cout << std::format("QVecAna: {}, rbins skipped: {}\n", static_cast<int>(m_QVecAna), m_rbins_skipped.size());
 
   std::cout << "Skipped Event Types\n";
   for (const auto& [name, events] : ctr)
@@ -1393,18 +1421,37 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 4 || argc > 7)
+  if (argc < 4 || argc > 8)
   {
-    std::cout << "Usage: " << argv[0] << " <input_file> <input_hist_file> <input_Q_calib> [pass] [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_file> <input_hist_file> <input_Q_calib> [QVecAna] [pass] [events] [output_directory]" << std::endl;
     return 1;
   }
 
   const std::string input_file = argv[1];
   const std::string input_hist = argv[2];
   const std::string input_Q_calib = argv[3];
-  const std::string pass_str = (argc >= 5) ? argv[4] : "ComputeRecentering"; // Default to the first pass
-  long long events = (argc >= 6) ? std::atoll(argv[5]) : 0;
-  std::string output_dir = (argc >= 7) ? argv[6] : ".";
+  const std::string q_vec_ana_str = (argc >= 5) ? argv[4] : "DEFAULT"; // Default to the first pass
+  const std::string pass_str = (argc >= 6) ? argv[5] : "ComputeRecentering"; // Default to the first pass
+  long long events = (argc >= 7) ? std::atoll(argv[6]) : 0;
+  std::string output_dir = (argc >= 8) ? argv[7] : ".";
+
+  const std::map<std::string, QvectorAnalysis::QVecAna> q_vec_ana_map = {
+      {"DEFAULT", QvectorAnalysis::QVecAna::DEFAULT},
+      {"HALF", QvectorAnalysis::QVecAna::HALF},
+      {"HALF1", QvectorAnalysis::QVecAna::HALF1}
+  };
+
+  QvectorAnalysis::QVecAna q_vec_ana = QvectorAnalysis::QVecAna::DEFAULT;
+  if (q_vec_ana_map.contains(q_vec_ana_str))
+  {
+    q_vec_ana = q_vec_ana_map.at(q_vec_ana_str);
+  }
+  else
+  {
+    std::cout << std::format("Error: Invalid q_vec_ana specified: {}\n", q_vec_ana_str);
+    std::cout << "Available q_vec_anaes are: DEFAULT, HALF, HALF1" << std::endl;
+    return 1;
+  }
 
   const std::map<std::string, QvectorAnalysis::Pass> pass_map = {
       {"ComputeRecentering", QvectorAnalysis::Pass::ComputeRecentering},
@@ -1426,7 +1473,7 @@ int main(int argc, const char* const argv[])
 
   try
   {
-    QvectorAnalysis analysis(input_file, input_hist, input_Q_calib, static_cast<int>(pass), events, output_dir);
+    QvectorAnalysis analysis(input_file, input_hist, input_Q_calib, static_cast<int>(q_vec_ana), static_cast<int>(pass), events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
