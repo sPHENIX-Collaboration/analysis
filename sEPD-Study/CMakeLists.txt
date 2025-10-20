@@ -95,6 +95,10 @@ target_link_libraries(badTowMapAna PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(Q_vec_corr macros/Q-vector-correction.C)
 target_link_libraries(Q_vec_corr PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- Q vector Correction v2 ---
+add_executable(Q-vec-corrv2 macros/Q-vector-correctionv2.C)
+target_link_libraries(Q-vec-corrv2 PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- Jet Ana ---
 add_executable(Jet-Ana macros/Jet-Ana.C)
 target_link_libraries(Jet-Ana PRIVATE ${STANDALONE_MACRO_LIBS})
