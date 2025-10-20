@@ -56,6 +56,13 @@ class QvectorAnalysis
     save_results();
   }
 
+  enum class Pass
+  {
+    ComputeRecentering,
+    ApplyRecentering,
+    ApplyFlattening
+  };
+
  private:
   enum class Subdetector
   {
@@ -101,13 +108,6 @@ class QvectorAnalysis
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
-
-  enum class Pass
-  {
-    ComputeRecentering,
-    ApplyRecentering,
-    ApplyFlattening
-  };
 
   struct EventData
   {
@@ -172,6 +172,11 @@ class QvectorAnalysis
 
   struct FlatteningHists
   {
+    TProfile* S_x_corr2_avg{nullptr};
+    TProfile* S_y_corr2_avg{nullptr};
+    TProfile* N_x_corr2_avg{nullptr};
+    TProfile* N_y_corr2_avg{nullptr};
+
     TProfile* S_xx_corr_avg{nullptr};
     TProfile* S_yy_corr_avg{nullptr};
     TProfile* S_xy_corr_avg{nullptr};
@@ -478,6 +483,7 @@ void QvectorAnalysis::init_hists()
         std::string comp_str = (comp == QComponent::X) ? "x" : "y";
         std::string q_avg_name = std::format("h_sEPD_Q_{}_{}_{}_avg", det_str, comp_str, n);
         std::string q_avg_corr_name = std::format("h_sEPD_Q_{}_{}_{}_corr_avg", det_str, comp_str, n);
+        std::string q_avg_corr2_name = std::format("h_sEPD_Q_{}_{}_{}_corr2_avg", det_str, comp_str, n);
         std::string q_avg_sq_name = std::format("h_sEPD_Q_{0}_{1}{1}_{2}_avg", det_str, comp_str, n);
         std::string q_avg_sq_corr_name = std::format("h_sEPD_Q_{0}_{1}{1}_{2}_corr_avg", det_str, comp_str, n);
 
@@ -498,7 +504,10 @@ void QvectorAnalysis::init_hists()
 
         if (m_pass == Pass::ApplyFlattening)
         {
-          std::string title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str);
+          std::string title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str);
+          m_profiles[q_avg_corr2_name] = std::make_unique<TProfile>(q_avg_corr2_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
+
+          title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str);
           m_profiles[q_avg_sq_corr_name] = std::make_unique<TProfile>(q_avg_sq_corr_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
         }
       }
@@ -571,15 +580,23 @@ void QvectorAnalysis::process_flattening(double cent, size_t n_idx, QVec q_S, QV
   double Q_N_x_corr2 = X_N[0][0] * q_N_corr.x + X_N[0][1] * q_N_corr.y;
   double Q_N_y_corr2 = X_N[1][0] * q_N_corr.x + X_N[1][1] * q_N_corr.y;
 
-  double psi_S = std::atan2(Q_S_y_corr2, Q_S_x_corr2);
-  double psi_N = std::atan2(Q_N_y_corr2, Q_N_x_corr2);
+  QVec q_S_corr2 = {Q_S_x_corr2, Q_S_y_corr2};
+  QVec q_N_corr2 = {Q_N_x_corr2, Q_N_y_corr2};
 
-  h.S_xx_corr_avg->Fill(cent, Q_S_x_corr2 * Q_S_x_corr2);
-  h.S_yy_corr_avg->Fill(cent, Q_S_y_corr2 * Q_S_y_corr2);
-  h.S_xy_corr_avg->Fill(cent, Q_S_x_corr2 * Q_S_y_corr2);
-  h.N_xx_corr_avg->Fill(cent, Q_N_x_corr2 * Q_N_x_corr2);
-  h.N_yy_corr_avg->Fill(cent, Q_N_y_corr2 * Q_N_y_corr2);
-  h.N_xy_corr_avg->Fill(cent, Q_N_x_corr2 * Q_N_y_corr2);
+  double psi_S = std::atan2(q_S_corr2.y, q_S_corr2.x);
+  double psi_N = std::atan2(q_N_corr2.y, q_N_corr2.x);
+
+  h.S_x_corr2_avg->Fill(cent, q_S_corr2.x);
+  h.S_y_corr2_avg->Fill(cent, q_S_corr2.y);
+  h.N_x_corr2_avg->Fill(cent, q_N_corr2.x);
+  h.N_y_corr2_avg->Fill(cent, q_N_corr2.y);
+
+  h.S_xx_corr_avg->Fill(cent, q_S_corr2.x * q_S_corr2.x);
+  h.S_yy_corr_avg->Fill(cent, q_S_corr2.y * q_S_corr2.y);
+  h.S_xy_corr_avg->Fill(cent, q_S_corr2.x * q_S_corr2.y);
+  h.N_xx_corr_avg->Fill(cent, q_N_corr2.x * q_N_corr2.x);
+  h.N_yy_corr_avg->Fill(cent, q_N_corr2.y * q_N_corr2.y);
+  h.N_xy_corr_avg->Fill(cent, q_N_corr2.x * q_N_corr2.y);
 
   h.Psi_corr2->Fill(psi_S, psi_N, cent);
 }
@@ -709,6 +726,11 @@ void QvectorAnalysis::compute_recentering(size_t cent_bin, int n)
 
 void QvectorAnalysis::print_flattening(size_t cent_bin, int n) const
 {
+  std::string S_x_corr2_avg_name = std::format("h_sEPD_Q_S_x_{}_corr2_avg", n);
+  std::string S_y_corr2_avg_name = std::format("h_sEPD_Q_S_y_{}_corr2_avg", n);
+  std::string N_x_corr2_avg_name = std::format("h_sEPD_Q_N_x_{}_corr2_avg", n);
+  std::string N_y_corr2_avg_name = std::format("h_sEPD_Q_N_y_{}_corr2_avg", n);
+
   std::string S_xx_corr_avg_name = std::format("h_sEPD_Q_S_xx_{}_corr_avg", n);
   std::string S_yy_corr_avg_name = std::format("h_sEPD_Q_S_yy_{}_corr_avg", n);
   std::string S_xy_corr_avg_name = std::format("h_sEPD_Q_S_xy_{}_corr_avg", n);
@@ -717,6 +739,11 @@ void QvectorAnalysis::print_flattening(size_t cent_bin, int n) const
   std::string N_xy_corr_avg_name = std::format("h_sEPD_Q_N_xy_{}_corr_avg", n);
 
   int bin = static_cast<int>(cent_bin + 1);
+
+  double Q_S_x_corr2_avg = m_profiles.at(S_x_corr2_avg_name)->GetBinContent(bin);
+  double Q_S_y_corr2_avg = m_profiles.at(S_y_corr2_avg_name)->GetBinContent(bin);
+  double Q_N_x_corr2_avg = m_profiles.at(N_x_corr2_avg_name)->GetBinContent(bin);
+  double Q_N_y_corr2_avg = m_profiles.at(N_y_corr2_avg_name)->GetBinContent(bin);
 
   double Q_S_xx_corr_avg = m_profiles.at(S_xx_corr_avg_name)->GetBinContent(bin);
   double Q_S_yy_corr_avg = m_profiles.at(S_yy_corr_avg_name)->GetBinContent(bin);
@@ -728,12 +755,20 @@ void QvectorAnalysis::print_flattening(size_t cent_bin, int n) const
   std::cout << std::format(
       "Centrality Bin: {}, "
       "Harmonic: {}, "
+      "Q_S_x_corr2_avg: {:13.10f}, "
+      "Q_S_y_corr2_avg: {:13.10f}, "
+      "Q_N_x_corr2_avg: {:13.10f}, "
+      "Q_N_y_corr2_avg: {:13.10f}, "
       "Q_S_xx_corr_avg / Q_S_yy_corr_avg: {:13.10f}, "
       "Q_N_xx_corr_avg / Q_N_yy_corr_avg: {:13.10f}, "
       "Q_S_xy_corr_avg: {:13.10f}, "
       "Q_N_xy_corr_avg: {:13.10f}\n",
       cent_bin,
       n,
+      Q_S_x_corr2_avg,
+      Q_S_y_corr2_avg,
+      Q_N_x_corr2_avg,
+      Q_N_y_corr2_avg,
       Q_S_xx_corr_avg / Q_S_yy_corr_avg,
       Q_N_xx_corr_avg / Q_N_yy_corr_avg,
       Q_S_xy_corr_avg,
@@ -879,6 +914,11 @@ std::map<int, QvectorAnalysis::FlatteningHists> QvectorAnalysis::prepare_flatten
   std::map<int, FlatteningHists> hists_cache;
   for (int n : m_harmonics)
   {
+    std::string S_x_corr2_avg_name = std::format("h_sEPD_Q_S_x_{}_corr2_avg", n);
+    std::string S_y_corr2_avg_name = std::format("h_sEPD_Q_S_y_{}_corr2_avg", n);
+    std::string N_x_corr2_avg_name = std::format("h_sEPD_Q_N_x_{}_corr2_avg", n);
+    std::string N_y_corr2_avg_name = std::format("h_sEPD_Q_N_y_{}_corr2_avg", n);
+
     std::string S_xx_corr_avg_name = std::format("h_sEPD_Q_S_xx_{}_corr_avg", n);
     std::string S_yy_corr_avg_name = std::format("h_sEPD_Q_S_yy_{}_corr_avg", n);
     std::string S_xy_corr_avg_name = std::format("h_sEPD_Q_S_xy_{}_corr_avg", n);
@@ -889,6 +929,11 @@ std::map<int, QvectorAnalysis::FlatteningHists> QvectorAnalysis::prepare_flatten
     std::string psi_Q_corr2_name = std::format("h3_sEPD_Psi_{}_corr2", n);
 
     FlatteningHists h;
+
+    h.S_x_corr2_avg = m_profiles.at(S_x_corr2_avg_name).get();
+    h.S_y_corr2_avg = m_profiles.at(S_y_corr2_avg_name).get();
+    h.N_x_corr2_avg = m_profiles.at(N_x_corr2_avg_name).get();
+    h.N_y_corr2_avg = m_profiles.at(N_y_corr2_avg_name).get();
 
     h.S_xx_corr_avg = m_profiles.at(S_xx_corr_avg_name).get();
     h.S_yy_corr_avg = m_profiles.at(S_yy_corr_avg_name).get();
@@ -1357,13 +1402,31 @@ int main(int argc, const char* const argv[])
   const std::string input_file = argv[1];
   const std::string input_hist = argv[2];
   const std::string input_Q_calib = argv[3];
-  int pass = (argc >= 5) ? std::atoi(argv[4]) : 0;
+  const std::string pass_str = (argc >= 5) ? argv[4] : "ComputeRecentering"; // Default to the first pass
   long long events = (argc >= 6) ? std::atoll(argv[5]) : 0;
   std::string output_dir = (argc >= 7) ? argv[6] : ".";
 
+  const std::map<std::string, QvectorAnalysis::Pass> pass_map = {
+      {"ComputeRecentering", QvectorAnalysis::Pass::ComputeRecentering},
+      {"ApplyRecentering", QvectorAnalysis::Pass::ApplyRecentering},
+      {"ApplyFlattening", QvectorAnalysis::Pass::ApplyFlattening}
+  };
+
+  QvectorAnalysis::Pass pass = QvectorAnalysis::Pass::ComputeRecentering;
+  if (pass_map.contains(pass_str))
+  {
+    pass = pass_map.at(pass_str);
+  }
+  else
+  {
+    std::cout << std::format("Error: Invalid pass specified: {}\n", pass_str);
+    std::cout << "Available passes are: ComputeRecentering, ApplyRecentering, ApplyFlattening" << std::endl;
+    return 1;
+  }
+
   try
   {
-    QvectorAnalysis analysis(input_file, input_hist, input_Q_calib, pass, events, output_dir);
+    QvectorAnalysis analysis(input_file, input_hist, input_Q_calib, static_cast<int>(pass), events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)
