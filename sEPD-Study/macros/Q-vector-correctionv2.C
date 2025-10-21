@@ -336,8 +336,7 @@ void QvectorAnalysis::process_hot_channels()
                                                                    rbins, -0.5, rbins - 0.5,
                                                                    bins_charge, 0, bins_charge);
 
-  m_hists1D["h_sEPD_Bad_Channels"] = std::make_unique<TH1F>("h_sEPD_Bad_Channels", "sEPD Bad Channels; Channel; Status",
-                                                           sepd_channels, -0.5, sepd_channels-0.5);
+  m_profiles["h_sEPD_Bad_Channels"] = std::make_unique<TProfile>("h_sEPD_Bad_Channels", "sEPD Bad Channels; Channel; Status", sepd_channels, -0.5, sepd_channels-0.5);
 
   auto* h2S = m_hists2D["h2SEPD_South_Charge_rbin"].get();
   auto* h2N = m_hists2D["h2SEPD_North_Charge_rbin"].get();
@@ -345,7 +344,7 @@ void QvectorAnalysis::process_hot_channels()
   auto* h2Sv2 = m_hists2D["h2SEPD_South_Charge_rbinv2"].get();
   auto* h2Nv2 = m_hists2D["h2SEPD_North_Charge_rbinv2"].get();
 
-  auto* hBad = m_hists1D["h_sEPD_Bad_Channels"].get();
+  auto* hBad = m_profiles["h_sEPD_Bad_Channels"].get();
 
   for (int channel = 0; channel < sepd_channels; ++channel)
   {
