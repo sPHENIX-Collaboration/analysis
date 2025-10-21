@@ -231,7 +231,6 @@ class QvectorAnalysis
   bool filter_sEPD(int rbin);
   bool process_sEPD();
   void run_event_loop();
-  void validate_results();
   void save_results() const;
   static void process_averages(double cent, QVec q_S, QVec q_N, const AverageHists& h);
   void process_recentering(double cent, size_t n_idx, QVec q_S, QVec q_N, const RecenterHists& h);
@@ -1306,77 +1305,6 @@ void QvectorAnalysis::process_events()
   }
 
   run_event_loop();
-
-  if (m_pass == Pass::ApplyFlattening)
-  {
-    validate_results();
-  }
-}
-
-void QvectorAnalysis::validate_results()
-{
-  std::cout << std::format("{:#<{}}\n", "", 40);
-  std::cout << std::format("Validating Results: Compute CV\n");
-  std::cout << std::format("{:#<{}}\n", "", 40);
-
-  for (int n : m_harmonics)
-  {
-    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
-
-    auto* h_psi_corr2 = m_hists3D[psi_corr2_hist_name].get();
-    int bins_phi = h_psi_corr2->GetNbinsX();
-
-    // South, North
-    for (auto det : m_subdetectors)
-    {
-      std::string side = (det == Subdetector::S) ? "x" : "y";
-      std::string det_name = (det == Subdetector::S) ? "South" : "North";
-      std::string cv_name = std::format("h_sEPD_CV_{}_{}", det_name, n);
-      std::string cv_title = std::format("sEPD {}: Order {}; Centrality [%]; #sigma/#mu", det_name, n);
-
-      m_hists1D[cv_name] = std::make_unique<TH1F>(cv_name.c_str(), cv_title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
-
-      for (int cent_bin = 1; cent_bin <= static_cast<int>(m_cent_bins); ++cent_bin)
-      {
-        h_psi_corr2->GetZaxis()->SetRange(cent_bin, cent_bin);
-        auto* h_psi = h_psi_corr2->Project3D(side.c_str());
-
-        int cent_events = static_cast<int>(m_hists1D["h_Cent"]->GetBinContent(cent_bin));
-        int psi_events = static_cast<int>(h_psi->Integral());
-
-        if (cent_events != psi_events)
-        {
-          std::cout << std::format("ERROR: Cent Events: {}, Psi Events: {}\n", cent_events, psi_events);
-        }
-
-        double mean = 0;
-        double M2 = 0;
-
-        for (int phi_bin = 1; phi_bin <= bins_phi; ++phi_bin)
-        {
-          double val = h_psi->GetBinContent(phi_bin);
-          double delta = val - mean;
-          mean += delta / phi_bin;
-          double delta2 = val - mean;
-          M2 += delta * delta2;
-        }
-
-        double sigma = std::sqrt(M2 / bins_phi);
-        double cv = (mean) ? sigma / mean : 0;
-        // Derived from the Delta Method
-        double cv_error = cv * std::sqrt(1. / bins_phi + cv * cv / (2 * bins_phi));
-
-        m_hists1D[cv_name]->SetBinContent(cent_bin, cv);
-        m_hists1D[cv_name]->SetBinError(cent_bin, cv_error);
-
-        std::cout << std::format("n: {}, det: {}, cent: {}, mean: {:6.2f}, sigma: {:5.2f}, cv: {:.2f}, cv_err: {:.4f}\n",
-                                 n, side, cent_bin, mean, sigma, cv, cv_error);
-      }
-    }
-
-    // set the range back to full after calculations
-    h_psi_corr2->GetZaxis()->SetRange(1, m_cent_bins);
-  }
 }
 
 void QvectorAnalysis::save_results() const

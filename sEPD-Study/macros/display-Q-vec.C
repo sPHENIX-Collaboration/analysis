@@ -48,6 +48,7 @@ class DisplayQVec
   void run()
   {
     read_hists();
+    validate_results();
     draw();
   }
 
@@ -59,6 +60,7 @@ class DisplayQVec
 
   bool m_saveFig{true};
   int m_cent_bins{8};
+  double m_cent_low{-0.5};
   double m_cent_high{79.5};
 
   enum class Subdetector
@@ -72,6 +74,7 @@ class DisplayQVec
 
   // --- Private Helper Methods ---
   void read_hists();
+  void validate_results();
   void draw();
   void plot_overall_psi(TCanvas* c1, int order, const std::string& side, const std::string& output);
   void plot_psi(TCanvas* c1, const std::string& name, int order, const std::string& side, short int color, const std::string& output);
@@ -417,6 +420,72 @@ void DisplayQVec::draw_sepd_avg_charge(TCanvas* c1, const std::string& output, c
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+}
+
+void DisplayQVec::validate_results()
+{
+  std::cout << std::format("{:#<{}}\n", "", 40);
+  std::cout << std::format("Validating Results: Compute CV\n");
+  std::cout << std::format("{:#<{}}\n", "", 40);
+
+  for (int n : m_harmonics)
+  {
+    std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+
+    auto* h_psi_corr2 = dynamic_cast<TH3*>(m_hists[psi_corr2_hist_name].get());
+    int bins_phi = h_psi_corr2->GetNbinsX();
+
+    // South, North
+    for (auto det : m_subdetectors)
+    {
+      std::string side = (det == Subdetector::S) ? "x" : "y";
+      std::string det_name = (det == Subdetector::S) ? "South" : "North";
+      std::string cv_name = std::format("h_sEPD_CV_{}_{}", det_name, n);
+      std::string cv_title = std::format("sEPD {}: Order {}; Centrality [%]; #sigma/#mu", det_name, n);
+
+      m_hists[cv_name] = std::make_unique<TH1F>(cv_name.c_str(), cv_title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
+
+      for (int cent_bin = 1; cent_bin <= static_cast<int>(m_cent_bins); ++cent_bin)
+      {
+        h_psi_corr2->GetZaxis()->SetRange(cent_bin, cent_bin);
+        auto* h_psi = h_psi_corr2->Project3D(side.c_str());
+
+        int cent_events = static_cast<int>(m_hists["h_Cent"]->GetBinContent(cent_bin));
+        int psi_events = static_cast<int>(h_psi->Integral());
+
+        if (cent_events != psi_events)
+        {
+          std::cout << std::format("ERROR: Cent Events: {}, Psi Events: {}\n", cent_events, psi_events);
+        }
+
+        double mean = 0;
+        double M2 = 0;
+
+        for (int phi_bin = 1; phi_bin <= bins_phi; ++phi_bin)
+        {
+          double val = h_psi->GetBinContent(phi_bin);
+          double delta = val - mean;
+          mean += delta / phi_bin;
+          double delta2 = val - mean;
+          M2 += delta * delta2;
+        }
+
+        double sigma = std::sqrt(M2 / bins_phi);
+        double cv = (mean) ? sigma / mean : 0;
+        // Derived from the Delta Method
+        double cv_error = cv * std::sqrt(1. / bins_phi + cv * cv / (2 * bins_phi));
+
+        m_hists[cv_name]->SetBinContent(cent_bin, cv);
+        m_hists[cv_name]->SetBinError(cent_bin, cv_error);
+
+        std::cout << std::format("n: {}, det: {}, cent: {}, mean: {:6.2f}, sigma: {:5.2f}, cv: {:.2f}, cv_err: {:.4f}\n",
+                                 n, side, cent_bin, mean, sigma, cv, cv_error);
+      }
+    }
+
+    // set the range back to full after calculations
+    h_psi_corr2->GetZaxis()->SetRange(1, m_cent_bins);
+  }
 }
 
 void DisplayQVec::draw()
