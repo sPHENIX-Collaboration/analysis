@@ -10,6 +10,7 @@ import subprocess
 import datetime
 import shutil
 import logging
+import time
 from pathlib import Path
 import math
 import textwrap
@@ -289,6 +290,168 @@ def create_f4a_jobs():
 
     command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
     logger.info(command)
+
+# ----------------------------
+
+QVecCalib = subparser.add_parser('QVecCalib', help='Q-vector Calib condor jobs.')
+
+QVecCalib.add_argument('-i'
+                       , '--input-list', type=str
+                       , required=True
+                       , help='List of TTrees to analyze.')
+
+QVecCalib.add_argument('-i2'
+                       , '--QA-hist', type=str
+                       , required=True
+                       , help='QA Hist')
+
+QVecCalib.add_argument('-i3'
+                       , '--QVecAna', type=str
+                       , choices=['DEFAULT', 'HALF', 'HALF1']
+                       , default='DEFAULT'
+                       , help='Q Vector Correction Type. Default: DEFAULT')
+
+QVecCalib.add_argument('-p'
+                       , '--files-per-hadd', type=int
+                       , default=50
+                       , help='Files Per hadd. Default: 50')
+
+QVecCalib.add_argument('-p2'
+                       , '--sleep-interval', type=int
+                       , default=5
+                       , help='Sleep Interval. Default: 5 seconds')
+
+QVecCalib.add_argument('-f'
+                       , '--macro', type=str
+                       , default='macros/Q-vector-correctionv2.C'
+                       , help='Q-Vector Correction Macro. Default: macros/Q-vector-correctionv2.C')
+
+QVecCalib.add_argument('-f2'
+                       , '--Qvec-bin', type=str
+                       , default='bin/Q-vec-corrv2'
+                       , help='Q-Vector Correction Bin. Default: bin/Q-vec-corrv2')
+
+QVecCalib.add_argument('-o'
+                       , '--output-dir', type=str
+                       , default='scratch/test'
+                       , help='Output Directory. Default: scratch/test')
+
+QVecCalib.add_argument('-s'
+                       , '--memory', type=float
+                       , default=0.5
+                       , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+
+QVecCalib.add_argument('-l'
+                       , '--condor-log-dir', type=str
+                       , default='/tmp/anarde/dump'
+                       , help='Condor Log Directory. Default: /tmp/anarde/dump')
+
+QVecCalib.add_argument('-f3'
+                       , '--condor-script', type=str
+                       , default='scripts/genQVecCalib.sh'
+                       , help='Condor Script. Default: scripts/genQVecCalib.sh')
+
+def QVecCalib_jobs():
+    """
+    QVecCalib condor jobs
+    """
+    input_list     = Path(args.input_list).resolve()
+    total_jobs = int(subprocess.run(['bash','-c',f'wc -l {input_list}'], capture_output=True, encoding='utf-8', check=False).stdout.strip().split()[0])
+    QA_hist        = Path(args.QA_hist).resolve()
+    QVecAna        = args.QVecAna
+    files_per_hadd = args.files_per_hadd
+    sleep_interval = args.sleep_interval
+    output_dir     = Path(args.output_dir).resolve()
+    QVecCalib_macro = Path(args.macro).resolve()
+    QVecCalib_bin   = Path(args.Qvec_bin).resolve()
+    log_file       = output_dir / 'log.txt'
+    condor_memory  = args.memory
+    condor_script  = Path(args.condor_script).resolve()
+    condor_log_dir = Path(args.condor_log_dir).resolve()
+
+    # Create Dirs
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize the logger
+    logger = setup_logging(log_file, logging.DEBUG)
+
+    # Ensure that files exists
+    for f in [input_list, QA_hist, condor_script]:
+        if not f.is_file():
+            logger.critical(f'File: {f} does not exist!')
+            sys.exit()
+
+    # Print Logs
+    logger.info('#'*40)
+    logger.info(f'LOGGING: {datetime.datetime.now()}')
+    logger.info(f'Input File: {input_list}')
+    logger.info(f'Jobs: {total_jobs}')
+    logger.info(f'Files per hadd: {files_per_hadd}')
+    logger.info(f'Sleep Interval: {sleep_interval}')
+    logger.info(f'QA Hist: {QA_hist}')
+    logger.info(f'Q Vec Ana: {QVecAna}')
+    logger.info(f'Q Vec Calib Macro: {QVecCalib_macro}')
+    logger.info(f'Q Vec Calib Bin: {QVecCalib_bin}')
+    logger.info(f'Output Directory: {output_dir}')
+    logger.info(f'Log File: {log_file}')
+    logger.info(f'Condor Memory: {condor_memory} GB')
+    logger.info(f'Condor Script: {condor_script}')
+    logger.info(f'Condor Log Directory: {condor_log_dir}')
+
+    if condor_log_dir.is_dir():
+        shutil.rmtree(condor_log_dir)
+
+    # Setup Condor Log Dir
+    condor_log_dir.mkdir(parents=True, exist_ok=True)
+
+    # list of subdirectories to create
+    subdirectories = ['stdout', 'error', 'output']
+    calib_types = ['ComputeRecentering', 'ApplyRecentering', 'ApplyFlattening']
+    calib_hists = ['test-recentering.root', 'test-flattening.root', 'test-QVecCalib.root']
+
+    # Loop through the list and create each one
+    for calib in calib_types:
+        for subdir in subdirectories:
+            (output_dir / calib / subdir).mkdir(parents=True, exist_ok=True)
+
+    input_list = shutil.copy(input_list, output_dir)
+    shutil.copy(QVecCalib_macro, output_dir)
+    QVecCalib_bin = shutil.copy(QVecCalib_bin, output_dir)
+    QA_hist = shutil.copy(QA_hist, output_dir)
+    condor_script = shutil.copy(condor_script, output_dir)
+
+    for idx, (calib, hist) in enumerate(zip(calib_types, calib_hists)):
+        calib_dir = output_dir / calib
+        hadd_hist = calib_dir / hist
+        calib_hist = output_dir / calib_types[idx-1] / calib_hists[idx-1] if idx != 0 else 'none'
+
+        submit_file_content = textwrap.dedent(f"""\
+            executable     = {condor_script}
+            arguments      = {QVecCalib_bin} $(input_tree) {QA_hist} {calib_hist} {QVecAna} {calib} {calib_dir}/output
+            log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+            output         = stdout/job-$(ClusterId)-$(Process).out
+            error          = error/job-$(ClusterId)-$(Process).err
+            request_memory = {condor_memory}GB
+        """)
+
+        with open(calib_dir / 'genQVecCalib.sub', mode='w', encoding='utf-8') as file:
+            file.write(submit_file_content)
+
+        command = f'condor_submit genQVecCalib.sub -queue "input_tree from {input_list}"'
+        run_command_and_log(command, logger, calib_dir, False)
+
+        while True:
+            jobs = int(subprocess.run(['bash','-c','ls output | wc -l'], capture_output=True, encoding='utf-8', cwd=calib_dir, check=False).stdout.strip())
+
+            if jobs == total_jobs:
+                logger.info(f'Stage: {calib}, Jobs Finished at {datetime.datetime.now()}')
+                break
+
+            logger.info(f'Checking Condor Output Status: {datetime.datetime.now()}, Jobs: {jobs} out of {total_jobs}, {jobs * 100 / total_jobs:0.2f} %')
+            time.sleep(sleep_interval)
+
+        command = f'hadd -n {files_per_hadd+1} {hadd_hist} output/*'
+        run_command_and_log(command, logger, calib_dir)
 
 # ----------------------------
 
@@ -714,6 +877,9 @@ args = parser.parse_args()
 if __name__ == "__main__":
     if args.command == 'f4a':
         create_f4a_jobs()
+
+    if args.command == 'QVecCalib':
+        QVecCalib_jobs()
 
     if args.command == 'jetAna':
         jetAna_jobs()
