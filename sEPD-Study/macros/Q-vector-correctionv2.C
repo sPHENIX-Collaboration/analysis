@@ -1121,10 +1121,14 @@ void QvectorAnalysis::load_correction_data()
     std::string N_x_avg_name = std::format("h_sEPD_Q_N_x_{}_avg", n);
     std::string N_y_avg_name = std::format("h_sEPD_Q_N_y_{}_avg", n);
 
+    std::string psi_hist_name = std::format("h3_sEPD_Psi_{}", n);
+
     auto* h_sEPD_Q_S_x_avg = dynamic_cast<TProfile*>(file->Get(S_x_avg_name.c_str()));
     auto* h_sEPD_Q_S_y_avg = dynamic_cast<TProfile*>(file->Get(S_y_avg_name.c_str()));
     auto* h_sEPD_Q_N_x_avg = dynamic_cast<TProfile*>(file->Get(N_x_avg_name.c_str()));
     auto* h_sEPD_Q_N_y_avg = dynamic_cast<TProfile*>(file->Get(N_y_avg_name.c_str()));
+
+    auto* h3_sEPD_Psi = dynamic_cast<TH3*>(file->Get(psi_hist_name.c_str()));
 
     if (!h_sEPD_Q_S_x_avg)
     {
@@ -1142,11 +1146,17 @@ void QvectorAnalysis::load_correction_data()
     {
       throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", N_y_avg_name, m_input_Q_calib));
     }
+    if (!h3_sEPD_Psi)
+    {
+      throw std::runtime_error(std::format("Could not find histogram '{}' in file '{}'", psi_hist_name, m_input_Q_calib));
+    }
 
     m_profiles[S_x_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_S_x_avg->Clone()));
     m_profiles[S_y_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_S_y_avg->Clone()));
     m_profiles[N_x_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_N_x_avg->Clone()));
     m_profiles[N_y_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_N_y_avg->Clone()));
+
+    m_hists3D[psi_hist_name] = std::unique_ptr<TH3>(static_cast<TH3*>(h3_sEPD_Psi->Clone()));
 
     std::string S_xx_avg_name = std::format("h_sEPD_Q_S_xx_{}_avg", n);
     std::string S_yy_avg_name = std::format("h_sEPD_Q_S_yy_{}_avg", n);
@@ -1155,12 +1165,16 @@ void QvectorAnalysis::load_correction_data()
     std::string N_yy_avg_name = std::format("h_sEPD_Q_N_yy_{}_avg", n);
     std::string N_xy_avg_name = std::format("h_sEPD_Q_N_xy_{}_avg", n);
 
+    std::string psi_corr_hist_name = std::format("h3_sEPD_Psi_{}_corr", n);
+
     auto* h_sEPD_Q_S_xx_avg = dynamic_cast<TProfile*>(file->Get(S_xx_avg_name.c_str()));
     auto* h_sEPD_Q_S_yy_avg = dynamic_cast<TProfile*>(file->Get(S_yy_avg_name.c_str()));
     auto* h_sEPD_Q_S_xy_avg = dynamic_cast<TProfile*>(file->Get(S_xy_avg_name.c_str()));
     auto* h_sEPD_Q_N_xx_avg = dynamic_cast<TProfile*>(file->Get(N_xx_avg_name.c_str()));
     auto* h_sEPD_Q_N_yy_avg = dynamic_cast<TProfile*>(file->Get(N_yy_avg_name.c_str()));
     auto* h_sEPD_Q_N_xy_avg = dynamic_cast<TProfile*>(file->Get(N_xy_avg_name.c_str()));
+
+    auto* h3_sEPD_Psi_corr = dynamic_cast<TH3*>(file->Get(psi_corr_hist_name.c_str()));
 
     if(m_pass == Pass::ApplyFlattening)
     {
@@ -1195,6 +1209,8 @@ void QvectorAnalysis::load_correction_data()
       m_profiles[N_xx_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_N_xx_avg->Clone()));
       m_profiles[N_yy_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_N_yy_avg->Clone()));
       m_profiles[N_xy_avg_name] = std::unique_ptr<TProfile>(static_cast<TProfile*>(h_sEPD_Q_N_xy_avg->Clone()));
+
+      m_hists3D[psi_corr_hist_name] = std::unique_ptr<TH3>(static_cast<TH3*>(h3_sEPD_Psi_corr->Clone()));
     }
 
     size_t south_idx = static_cast<size_t>(Subdetector::S);
