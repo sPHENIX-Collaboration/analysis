@@ -45,11 +45,11 @@ class JetAnalysis
 {
  public:
   // The constructor takes the configuration
-  JetAnalysis(std::string input_file, std::string input_Q_calib, unsigned int runnumber, long long events, std::string output_dir)
-    : m_chain(std::make_unique<TChain>("T"))
-    , m_input_file(std::move(input_file))
+  JetAnalysis(std::string input_file, std::string input_Q_calib, unsigned int runnumber, int q_vec_ana, long long events, std::string output_dir)
+    : m_input_file(std::move(input_file))
     , m_input_Q_calib(std::move(input_Q_calib))
     , m_runnumber(runnumber)
+    , m_QVecAna(static_cast<myUtils::QVecAna>(q_vec_ana))
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
   {
@@ -188,6 +188,7 @@ class JetAnalysis
   std::string m_input_file;
   std::string m_input_Q_calib;
   unsigned int m_runnumber;
+  myUtils::QVecAna m_QVecAna{0};
   long long m_events_to_process;
   std::string m_output_dir;
   std::string m_dbtag{"newcdbtag"};
@@ -195,6 +196,7 @@ class JetAnalysis
 
   // sEPD Bad Channels
   std::unordered_set<int> m_bad_channels;
+  std::unordered_set<int> m_rbins_skipped;
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -232,22 +234,11 @@ void JetAnalysis::setup_chain()
 {
   std::cout << "Processing... setup_chain" << std::endl;
 
-  if (!std::filesystem::exists(m_input_file))
-  {
-    throw std::runtime_error(std::format("Input file does not exist: {}", m_input_file));
-  }
+  m_chain = myUtils::setupTChain(m_input_file, "T");
 
-  m_chain->Add(m_input_file.c_str());
-
-  // If GetNtrees() is 0, the file might be corrupted, not a ROOT file, or is missing the TTree.
-  if (m_chain->GetNtrees() == 0)
+  if (m_chain == nullptr)
   {
-    throw std::runtime_error(std::format("Could not find TTree 'T' in file: {}", m_input_file));
-  }
-
-  if (m_chain->GetEntries() == 0)
-  {
-    std::cout << "Warning: Input file contains 0 entries. Job will produce an empty output." << std::endl;
+    throw std::runtime_error(std::format("Error in TChain Setup from file: {}", m_input_file));
   }
 
   // Setup branches
@@ -819,6 +810,13 @@ bool JetAnalysis::compute_QVecs()
 
     unsigned int key = TowerInfoDefs::encode_epd(static_cast<unsigned int>(channel));
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+    int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
+
+    if (!myUtils::filter_sEPD(rbin, m_QVecAna))
+    {
+      m_rbins_skipped.insert(rbin);
+      continue;
+    }
 
     // arm = 0: South
     // arm = 1: North
@@ -1039,6 +1037,7 @@ void JetAnalysis::process_events()
   int jets_good = static_cast<int>(m_hists.h3JetPhiEtaPtv2->GetEntries());
 
   std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
+  std::cout << std::format("QVecAna: {}, rbins skipped: {}\n", static_cast<int>(m_QVecAna), m_rbins_skipped.size());
 
   std::cout << "Finished... process_events" << std::endl;
 }
@@ -1103,21 +1102,34 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 4 || argc > 6)
+  if (argc < 4 || argc > 7)
   {
-    std::cout << "Usage: " << argv[0] << " input_file <input_SEPD_Q_vec_calib> <runnumber> [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file <input_SEPD_Q_vec_calib> <runnumber> [QVecAna] [events] [output_directory]" << std::endl;
     return 1;
   }
 
   const std::string input_file = argv[1];
   const std::string input_Q_calib = argv[2];
   unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[3]));
-  long long events = (argc >= 5) ? std::atoll(argv[4]) : 0;
-  std::string output_dir = (argc >= 6) ? argv[5] : ".";
+  const std::string q_vec_ana_str = (argc >= 5) ? argv[4] : "DEFAULT"; // Default to the first pass
+  long long events = (argc >= 6) ? std::atoll(argv[5]) : 0;
+  std::string output_dir = (argc >= 7) ? argv[6] : ".";
+
+  myUtils::QVecAna q_vec_ana = myUtils::QVecAna::DEFAULT;
+  if (myUtils::q_vec_ana_map.contains(q_vec_ana_str))
+  {
+    q_vec_ana = myUtils::q_vec_ana_map.at(q_vec_ana_str);
+  }
+  else
+  {
+    std::cout << std::format("Error: Invalid q_vec_ana specified: {}\n", q_vec_ana_str);
+    std::cout << "Available q_vec_ana are: DEFAULT, HALF, HALF1" << std::endl;
+    return 1;
+  }
 
   try
   {
-    JetAnalysis analysis(input_file, input_Q_calib, runnumber, events, output_dir);
+    JetAnalysis analysis(input_file, input_Q_calib, runnumber, static_cast<int>(q_vec_ana), events, output_dir);
     analysis.run();
   }
   catch (const std::exception& e)

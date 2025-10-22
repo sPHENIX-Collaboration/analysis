@@ -307,7 +307,6 @@ QVecCalib.add_argument('-i2'
 
 QVecCalib.add_argument('-i3'
                        , '--QVecAna', type=str
-                       , choices=['DEFAULT', 'HALF', 'HALF1']
                        , default='DEFAULT'
                        , help='Q Vector Correction Type. Default: DEFAULT')
 
@@ -444,10 +443,10 @@ def QVecCalib_jobs():
             jobs = int(subprocess.run(['bash','-c','ls output | wc -l'], capture_output=True, encoding='utf-8', cwd=calib_dir, check=False).stdout.strip())
 
             if jobs == total_jobs:
-                logger.info(f'Stage: {calib}, Jobs Finished at {datetime.datetime.now()}')
+                logger.info(f'Stage: {calib}, Jobs Finished')
                 break
 
-            logger.info(f'Checking Condor Output Status: {datetime.datetime.now()}, Jobs: {jobs} out of {total_jobs}, {jobs * 100 / total_jobs:0.2f} %')
+            logger.info(f'Checking Condor Output Status: Jobs: {jobs} out of {total_jobs}, {jobs * 100 / total_jobs:0.2f} %')
             time.sleep(sleep_interval)
 
         command = f'hadd -n {files_per_hadd+1} {hadd_hist} output/*'
@@ -466,6 +465,11 @@ jetAna.add_argument('-i2'
                     , '--calib', type=str
                     , required=True
                     , help='Q Vector Calibrations')
+
+jetAna.add_argument('-i3'
+                    , '--QVecAna', type=str
+                    , default='DEFAULT'
+                    , help='Q Vector Filter Type. Default: DEFAULT')
 
 jetAna.add_argument('-f'
                     , '--jetAna-macro', type=str
@@ -503,6 +507,7 @@ def jetAna_jobs():
     """
     input_list     = Path(args.input_list).resolve()
     calib_file     = Path(args.calib).resolve()
+    QVecAna        = args.QVecAna
     output_dir     = Path(args.output_dir).resolve()
     jetAna_macro   = Path(args.jetAna_macro).resolve()
     jetAna_bin     = Path(args.jetAna_bin).resolve()
@@ -528,6 +533,7 @@ def jetAna_jobs():
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input File: {input_list}')
     logger.info(f'Calib: {calib_file}')
+    logger.info(f'Q Vec Ana: {QVecAna}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
     logger.info(f'Jet Ana Bin: {jetAna_bin}')
     logger.info(f'Output Directory: {output_dir}')
@@ -557,7 +563,7 @@ def jetAna_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) {calib_file} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree) {calib_file} {QVecAna} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err

@@ -10,7 +10,8 @@ source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 jetAna_bin=${1}
 input=${2}
 calib=${3}
-submitDir=${4}
+QVecAna=${4}
+submitDir=${5}
 
 # extract runnumber from file name
 run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)') # Remove leading zeros using sed
@@ -33,7 +34,7 @@ printenv
 
 mkdir -p "$run"
 
-$jetAna_bin "$input_file" "$calib_file" "$run" 0 "$run"
+$jetAna_bin "$input_file" "$calib_file" "$run" "$QVecAna" 0 "$run"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
