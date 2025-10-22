@@ -40,8 +40,7 @@ class QvectorAnalysis
  public:
   // The constructor takes the configuration
   QvectorAnalysis(std::string input_file, std::string input_hist, std::string input_Q_calib, int q_vec_ana, int pass, long long events, std::string output_dir)
-    : m_chain(std::make_unique<TChain>("T"))
-    , m_input_file(std::move(input_file))
+    : m_input_file(std::move(input_file))
     , m_input_hist(std::move(input_hist))
     , m_input_Q_calib(std::move(input_Q_calib))
     , m_pass(static_cast<Pass>(pass))
@@ -249,22 +248,11 @@ void QvectorAnalysis::setup_chain()
 {
   std::cout << "Processing... setup_chain" << std::endl;
 
-  if (!std::filesystem::exists(m_input_file))
-  {
-    throw std::runtime_error(std::format("Input file does not exist: {}", m_input_file));
-  }
+  m_chain = myUtils::setupTChain(m_input_file, "T");
 
-  m_chain->Add(m_input_file.c_str());
-
-  // If GetNtrees() is 0, the file might be corrupted, not a ROOT file, or is missing the TTree.
-  if (m_chain->GetNtrees() == 0)
+  if (m_chain == nullptr)
   {
-    throw std::runtime_error(std::format("Could not find TTree 'T' in file: {}", m_input_file));
-  }
-
-  if (m_chain->GetEntries() == 0)
-  {
-    std::cout << "Warning: Input file contains 0 entries. Job will produce an empty output." << std::endl;
+    throw std::runtime_error(std::format("Error in TChain Setup from file: {}", m_input_file));
   }
 
   // Setup branches
