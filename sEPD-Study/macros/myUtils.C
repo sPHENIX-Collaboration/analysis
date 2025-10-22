@@ -45,12 +45,14 @@ namespace myUtils
   {
     DEFAULT,  // All rbins
     HALF,     // ONLY RBINS 0 to 7
-    HALF1     // ONLY RBINS 1 to 7
+    HALF1,    // ONLY RBINS 1 to 7
+    HALF2     // ONLY RBINS 8 to 15
   };
 
   const std::map<std::string, QVecAna> q_vec_ana_map{{"DEFAULT", QVecAna::DEFAULT},
                                                      {"HALF", QVecAna::HALF},
-                                                     {"HALF1", QVecAna::HALF1}};
+                                                     {"HALF1", QVecAna::HALF1},
+                                                     {"HALF2", QVecAna::HALF2}};
 
   bool filter_sEPD(int rbin, QVecAna ana);
 
@@ -68,7 +70,8 @@ bool myUtils::filter_sEPD(int rbin, QVecAna ana)
 {
   return (ana == QVecAna::DEFAULT) ||
          (ana == QVecAna::HALF && rbin <= 7) ||
-         (ana == QVecAna::HALF1 && rbin <= 7 && rbin >= 1);
+         (ana == QVecAna::HALF1 && rbin <= 7 && rbin >= 1) || 
+         (ana == QVecAna::HALF2 && rbin >= 8);
 }
 
 // Function to encapsulate the TChain setup with error checking
