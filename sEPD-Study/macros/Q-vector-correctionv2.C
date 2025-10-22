@@ -1362,7 +1362,7 @@ int main(int argc, const char* const argv[])
   else
   {
     std::cout << std::format("Error: Invalid q_vec_ana specified: {}\n", q_vec_ana_str);
-    std::cout << "Available q_vec_anaes are: DEFAULT, HALF, HALF1" << std::endl;
+    std::cout << "Available q_vec_ana are: DEFAULT, HALF, HALF1" << std::endl;
     return 1;
   }
 
