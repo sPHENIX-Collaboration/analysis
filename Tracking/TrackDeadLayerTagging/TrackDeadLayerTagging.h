@@ -10,7 +10,9 @@
 #include <trackbase/TrackVertexCrossingAssoc.h>
 #include <trackbase/TrkrClusterContainer.h>
 #include <g4detectors/PHG4CylinderGeomContainer.h>
+#include <g4detectors/PHG4TpcGeomContainer.h>
 #include <trackreco/ActsPropagator.h>
+#include <tpc/TpcGlobalPositionWrapper.h>
 
 //Forward declerations
 class PHCompositeNode;
@@ -27,15 +29,32 @@ struct MissingSensor
   int z_id;
   int local_x;
   int local_y;
-  bool operator==(const MissingSensor& state)
+  // check if two instances of missing sensor are on the same physical sensor
+  // (i.e. ignore event and trackID, and ignore zbin/tbin for TPC)
+  bool isSameSensor(const MissingSensor& othersensor)
   {
-    return (event==state.event)&&
-           (trackID==state.trackID)&&
-           (layer==state.layer)&&
-           (phi_id==state.phi_id)&&
-           (z_id==state.z_id)&&
-           (local_x==state.local_x)&&
-           (local_y==state.local_y);
+    if(layer!=othersensor.layer) return false;
+    if(layer<7) // silicon sensor -- needs all spatial coordinates to agree
+    {
+      return (layer==othersensor.layer)&&
+             (phi_id==othersensor.phi_id)&&
+             (z_id==othersensor.z_id)&&
+             (local_x==othersensor.local_x)&&
+             (local_y==othersensor.local_y);
+    }
+    else if(layer<55) // TPC sensor -- phibin, side and layer are the only meaningful quantities
+    {
+      return (layer==othersensor.layer)&&
+             (z_id==othersensor.z_id)&&
+             (local_x==othersensor.local_x);
+    }
+    else if(layer<57) // TPOT sensor -- tile ID, strip number and layer are the only meaningful quanitities
+    {
+      return (layer==othersensor.layer)&&
+             (phi_id==othersensor.phi_id)&&
+             (local_x==othersensor.local_x);
+    }
+    else return false; // fall through for control flow reasons
   }
 };
 
@@ -55,7 +74,7 @@ class TrackDeadLayerTagging: public SubsysReco
   TrackDeadLayerTagging(const std::string &name="TrackDeadLayerTagging");
 
   //Initialization, called for initialization
-  int Init(PHCompositeNode *);
+  int InitRun(PHCompositeNode *);
 
   //Process Event, called for each event
   int process_event(PHCompositeNode *);
@@ -86,6 +105,9 @@ class TrackDeadLayerTagging: public SubsysReco
   int _localindX;
   int _localindY;
   int _isDead;
+  double _global_x;
+  double _global_y;
+  double _global_z;
 
   // if false, use helix propagation instead of ACTS propagator
   bool useActsPropagator = true;
@@ -98,8 +120,12 @@ class TrackDeadLayerTagging: public SubsysReco
   SvtxVertexMap* _vertexmap = nullptr;
   ActsGeometry* _tGeometry = nullptr;
   PHG4CylinderGeomContainer* _inttGeom = nullptr;
+  PHG4CylinderGeomContainer* _tpotGeom = nullptr;
+  PHG4TpcGeomContainer* _tpcGeom = nullptr;
 
   std::array<std::vector<MissingSensor>,57> _dead_sensors; // per layer
+
+  TpcGlobalPositionWrapper tpcglobal;
   
   TTree* _missing_sensors = nullptr;
 
@@ -110,7 +136,7 @@ class TrackDeadLayerTagging: public SubsysReco
   void get_surfaces();
   bool is_dead(MissingSensor& sensor);
 
-  std::map<Acts::GeometryIdentifier,TrkrDefs::hitsetkey> _surface_map;
+  std::vector<std::map<Acts::GeometryIdentifier,TrkrDefs::hitsetkey>> _surface_maps;
   std::vector<float> getFitParams(TrackSeed* seed);
   std::vector<int> get_missing_layers(SvtxTrack* track);
   std::vector<MissingSpacePoint> get_missing_space_points(SvtxTrack* track, std::vector<int> missing_layers);
