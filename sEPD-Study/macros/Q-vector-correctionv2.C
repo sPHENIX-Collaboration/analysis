@@ -1,3 +1,6 @@
+// -- utils
+#include "myUtils.C"
+
 // ====================================================================
 // sPHENIX Includes
 // ====================================================================
@@ -42,7 +45,7 @@ class QvectorAnalysis
     , m_input_hist(std::move(input_hist))
     , m_input_Q_calib(std::move(input_Q_calib))
     , m_pass(static_cast<Pass>(pass))
-    , m_QVecAna(static_cast<QVecAna>(q_vec_ana))
+    , m_QVecAna(static_cast<myUtils::QVecAna>(q_vec_ana))
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
   {
@@ -56,13 +59,6 @@ class QvectorAnalysis
     process_events();
     save_results();
   }
-
-  enum class QVecAna
-  {
-    DEFAULT, // All rbins
-    HALF,    // ONLY RBINS 0 to 7
-    HALF1    // ONLY RBINS 1 to 7
-  };
 
   enum class Pass
   {
@@ -205,7 +201,7 @@ class QvectorAnalysis
   std::string m_input_hist;
   std::string m_input_Q_calib;
   Pass m_pass{0};
-  QVecAna m_QVecAna{0};
+  myUtils::QVecAna m_QVecAna{0};
   long long m_events_to_process;
   std::string m_output_dir;
   bool m_doBadChannelCheck{true};
@@ -228,7 +224,6 @@ class QvectorAnalysis
   void load_correction_data();
   void process_events();
 
-  bool filter_sEPD(int rbin);
   bool process_sEPD();
   void run_event_loop();
   void save_results() const;
@@ -817,13 +812,6 @@ std::map<int, QvectorAnalysis::AverageHists> QvectorAnalysis::prepare_average_hi
   return hists_cache;
 }
 
-bool QvectorAnalysis::filter_sEPD(int rbin)
-{
-  return (m_QVecAna == QVecAna::DEFAULT) ||
-         (m_QVecAna == QVecAna::HALF && rbin <= 7) ||
-         (m_QVecAna == QVecAna::HALF1 && rbin <= 7 && rbin >= 1);
-}
-
 bool QvectorAnalysis::process_sEPD()
 {
   size_t nChannels = m_event_data.sepd_channel->size();
@@ -848,7 +836,7 @@ bool QvectorAnalysis::process_sEPD()
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
     int rbin = static_cast<int>(TowerInfoDefs::get_epd_rbin(key));
 
-    if (!filter_sEPD(rbin))
+    if (!myUtils::filter_sEPD(rbin, m_QVecAna))
     {
       m_rbins_skipped.insert(rbin);
       continue;
@@ -1378,16 +1366,10 @@ int main(int argc, const char* const argv[])
   long long events = (argc >= 7) ? std::atoll(argv[6]) : 0;
   std::string output_dir = (argc >= 8) ? argv[7] : ".";
 
-  const std::map<std::string, QvectorAnalysis::QVecAna> q_vec_ana_map = {
-      {"DEFAULT", QvectorAnalysis::QVecAna::DEFAULT},
-      {"HALF", QvectorAnalysis::QVecAna::HALF},
-      {"HALF1", QvectorAnalysis::QVecAna::HALF1}
-  };
-
-  QvectorAnalysis::QVecAna q_vec_ana = QvectorAnalysis::QVecAna::DEFAULT;
-  if (q_vec_ana_map.contains(q_vec_ana_str))
+  myUtils::QVecAna q_vec_ana = myUtils::QVecAna::DEFAULT;
+  if (myUtils::q_vec_ana_map.contains(q_vec_ana_str))
   {
-    q_vec_ana = q_vec_ana_map.at(q_vec_ana_str);
+    q_vec_ana = myUtils::q_vec_ana_map.at(q_vec_ana_str);
   }
   else
   {

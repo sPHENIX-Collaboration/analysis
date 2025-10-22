@@ -30,6 +30,19 @@ namespace myUtils {
     template<InvocableWithString Callable>
     bool readCSV(const std::filesystem::path& filePath, Callable lineHandler, bool skipHeader = true);
 
+    enum class QVecAna
+    {
+      DEFAULT,  // All rbins
+      HALF,     // ONLY RBINS 0 to 7
+      HALF1     // ONLY RBINS 1 to 7
+    };
+
+    const std::map<std::string, QVecAna> q_vec_ana_map{{"DEFAULT", QVecAna::DEFAULT},
+                                                       {"HALF", QVecAna::HALF},
+                                                       {"HALF1", QVecAna::HALF1}};
+
+    bool filter_sEPD(int rbin, QVecAna ana);
+
     Int_t m_nsector = 64;
     Int_t m_nchannel_per_sector = 384;
     Int_t m_nchannel_per_ib = 64;
@@ -38,6 +51,13 @@ namespace myUtils {
     Int_t m_nib = 384;
     Int_t m_nib_per_sector = 6;
     Int_t m_ntowIBSide = 8;
+}
+
+bool myUtils::filter_sEPD(int rbin, QVecAna ana)
+{
+  return (ana == QVecAna::DEFAULT) ||
+         (ana == QVecAna::HALF && rbin <= 7) ||
+         (ana == QVecAna::HALF1 && rbin <= 7 && rbin >= 1);
 }
 
 // Function to encapsulate the TChain setup with error checking
