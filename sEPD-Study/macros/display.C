@@ -52,7 +52,6 @@ namespace myAnalysis {
     void make_plots_psi(TH1* hPsi_x, TH1* hPsi_y, TLegend* leg, TCanvas* c, Int_t n, const string &title, const string &x_title);
     Bool_t make_plots_QA(const string &input, const string &outputDir, const string &qa_file_path);
     void make_plots_QA_overlay(const string &outputDir);
-    void make_plots_Q_vec(const string &input, const string &outputDir);
     void print_stats();
 
     struct QA_general {
@@ -64,13 +63,6 @@ namespace myAnalysis {
         std::unique_ptr<TH2> h2SEPD_Charge;
         std::unique_ptr<TH2> h2MBD_Total_Charge;
         std::unique_ptr<TH3> h3SEPD_Total_Charge;
-    };
-
-    struct QA_Q_vec {
-        std::unique_ptr<TH3> h3SEPD_Psi_2;
-        std::unique_ptr<TH3> h3SEPD_Psi_3;
-        std::unique_ptr<TH3> h3SEPD_EventPlaneInfo_Psi_2;
-        std::unique_ptr<TH3> h3SEPD_EventPlaneInfo_Psi_3;
     };
 
     // MBD Charge corresponding to 2% centrality
@@ -112,72 +104,6 @@ void myAnalysis::make_plots_psi(TH1 *hPsi_x, TH1 *hPsi_y, TLegend *leg, TCanvas 
   leg->AddEntry(hPsi_x, legA.str().c_str(), "l");
   leg->AddEntry(hPsi_y, legB.str().c_str(), "l");
   leg->Draw("same");
-}
-
-void myAnalysis::make_plots_Q_vec(const string &input, const string &outputDir) {
-    fs::path p(input);
-    string stem = p.stem().string();
-    string run = myUtils::split(stem,'-')[1];
-
-    cout << "Processing: " << run << endl;
-    std::unique_ptr<TFile> tfile(TFile::Open(input.c_str()));
-    if (!tfile || tfile->IsZombie()) {
-        cout << "Error: Could not open ROOT file: " << input << endl;
-        return;
-    }
-
-    QA_Q_vec qa =
-    {
-      .h3SEPD_Psi_2 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_Psi_2"))),
-      .h3SEPD_Psi_3 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_Psi_3"))),
-      .h3SEPD_EventPlaneInfo_Psi_2 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_EventPlaneInfo_Psi_2"))),
-      .h3SEPD_EventPlaneInfo_Psi_3 = std::unique_ptr<TH3>(static_cast<TH3*>(tfile->Get("h3SEPD_EventPlaneInfo_Psi_3")))
-    };
-
-    std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>();
-    c1->SetTickx();
-    c1->SetTicky();
-
-    c1->SetCanvasSize(1200, 1000);
-
-    gStyle->SetOptTitle(1);
-    gStyle->SetTitleStyle(0);
-    gStyle->SetTitleW(1);
-    gStyle->SetTitleH(0.08f);
-    gStyle->SetTitleFillColor(0);
-    gStyle->SetTitleBorderSize(0);
-
-    c1->Divide(2, 2, 0.00025f, 0.00025f);
-
-    string output = outputDir + "/pdf/plots-" + run + ".pdf";
-
-    Double_t xshift = 0.5;
-    Double_t yshift = 0;
-
-    std::unique_ptr<TH1> h3SEPD_Psi_2_x(qa.h3SEPD_Psi_2->Project3D("x"));
-    std::unique_ptr<TH1> h3SEPD_Psi_2_y(qa.h3SEPD_Psi_2->Project3D("y"));
-    std::unique_ptr<TH1> h3SEPD_Psi_3_x(qa.h3SEPD_Psi_3->Project3D("x"));
-    std::unique_ptr<TH1> h3SEPD_Psi_3_y(qa.h3SEPD_Psi_3->Project3D("y"));
-
-    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_2_x(qa.h3SEPD_EventPlaneInfo_Psi_2->Project3D("x"));
-    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_2_y(qa.h3SEPD_EventPlaneInfo_Psi_2->Project3D("y"));
-    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_3_x(qa.h3SEPD_EventPlaneInfo_Psi_3->Project3D("x"));
-    std::unique_ptr<TH1> h3SEPD_EventPlaneInfo_Psi_3_y(qa.h3SEPD_EventPlaneInfo_Psi_3->Project3D("y"));
-
-    std::unique_ptr<TLegend> leg  = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-    std::unique_ptr<TLegend> leg2 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-    std::unique_ptr<TLegend> leg3 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-    std::unique_ptr<TLegend> leg4 = std::make_unique<TLegend>(0.2+xshift,.65+yshift,0.54+xshift,.85+yshift);
-
-    make_plots_psi(h3SEPD_Psi_2_x.get(), h3SEPD_Psi_2_y.get(), leg.get(), c1.get(), 1, "Run: " + run + " , |z| < 10 cm and MB", "2#Psi_{2}");
-    make_plots_psi(h3SEPD_Psi_3_x.get(), h3SEPD_Psi_3_y.get(), leg2.get(), c1.get(), 2, "|z| < 10 cm and MB", "3#Psi_{3}");
-    make_plots_psi(h3SEPD_EventPlaneInfo_Psi_2_x.get(), h3SEPD_EventPlaneInfo_Psi_2_y.get(), leg3.get(), c1.get(), 3, "EventPlaneInfo , |z| < 10 cm and MB", "2#Psi_{2}");
-    make_plots_psi(h3SEPD_EventPlaneInfo_Psi_3_x.get(), h3SEPD_EventPlaneInfo_Psi_3_y.get(), leg4.get(), c1.get(), 4, "EventPlaneInfo , |z| < 10 cm and MB", "3#Psi_{3}");
-
-    c1->Update();
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print((outputDir + "/images/QA-Q-vec-" + run + ".png").c_str());
 }
 
 void myAnalysis::make_plots_QA_overlay(const string &outputDir) {
@@ -568,8 +494,6 @@ void display(const string &input,
     // create output directories
     fs::create_directories(outputDir+"/QA/images");
     fs::create_directories(outputDir+"/QA/pdf");
-    fs::create_directories(outputDir+"/QA-Q-vec/images");
-    fs::create_directories(outputDir+"/QA-Q-vec/pdf");
 
     TH1::AddDirectory(kFALSE);
 
@@ -587,12 +511,9 @@ void display(const string &input,
     qa_file << "run,no_mb_events,high_avg_zvtx,is_good" << endl;
     qa_file.close();
 
-    while (std::getline(input_file, line)) {
-        bool is_good = myAnalysis::make_plots_QA(line, outputDir+"/QA", qa_file_path);
-
-        if(is_good) {
-            myAnalysis::make_plots_Q_vec(line, outputDir+"/QA-Q-vec");
-        }
+    while (std::getline(input_file, line))
+    {
+        myAnalysis::make_plots_QA(line, outputDir + "/QA", qa_file_path);
     }
 
     myAnalysis::make_plots_QA_overlay(outputDir+"/QA");
