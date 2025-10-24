@@ -11,7 +11,9 @@ jetAna_bin=${1}
 input=${2}
 calib=${3}
 QVecAna=${4}
-submitDir=${5}
+jet_pt_min=${5}
+jet_eta_max=${6}
+submitDir=${7}
 
 # extract runnumber from file name
 run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)') # Remove leading zeros using sed
@@ -34,7 +36,7 @@ printenv
 
 mkdir -p "$run"
 
-$jetAna_bin "$input_file" "$calib_file" "$run" "$QVecAna" 0 "$run"
+$jetAna_bin "$input_file" "$calib_file" "$run" "$QVecAna" 0 "$jet_pt_min" "$jet_eta_max" "$run"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"

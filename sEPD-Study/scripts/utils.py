@@ -471,6 +471,16 @@ jetAna.add_argument('-i3'
                     , default='DEFAULT'
                     , help='Q Vector Filter Type. Default: DEFAULT')
 
+jetAna.add_argument('-j'
+                    , '--jet-pt-min', type=float
+                    , default=7
+                    , help='Minimum Jet pT. Default: 7 [GeV]')
+
+jetAna.add_argument('-j2'
+                    , '--jet-eta-max', type=float
+                    , default=0.9
+                    , help='Maximum Jet eta. Default: 0.9')
+
 jetAna.add_argument('-f'
                     , '--jetAna-macro', type=str
                     , default='macros/Jet-Ana.C'
@@ -508,6 +518,8 @@ def jetAna_jobs():
     input_list     = Path(args.input_list).resolve()
     calib_file     = Path(args.calib).resolve()
     QVecAna        = args.QVecAna
+    jet_pt_min     = args.jet_pt_min
+    jet_eta_max    = args.jet_eta_max
     output_dir     = Path(args.output_dir).resolve()
     jetAna_macro   = Path(args.jetAna_macro).resolve()
     jetAna_bin     = Path(args.jetAna_bin).resolve()
@@ -534,6 +546,8 @@ def jetAna_jobs():
     logger.info(f'Input File: {input_list}')
     logger.info(f'Calib: {calib_file}')
     logger.info(f'Q Vec Ana: {QVecAna}')
+    logger.info(f'Jet pT Min: {jet_pt_min} GeV')
+    logger.info(f'Jet eta Max: {jet_eta_max}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
     logger.info(f'Jet Ana Bin: {jetAna_bin}')
     logger.info(f'Output Directory: {output_dir}')
@@ -563,7 +577,7 @@ def jetAna_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) {calib_file} {QVecAna} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree) {calib_file} {QVecAna} {jet_pt_min} {jet_eta_max} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err

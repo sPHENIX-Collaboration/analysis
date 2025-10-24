@@ -65,6 +65,16 @@ class JetAnalysis
     save_results();
   }
 
+  void set_jet_pt_min(double jet_pt_min)
+  {
+    m_jet_pt_min = jet_pt_min;
+  }
+
+  void set_jet_eta_max(double jet_eta_max)
+  {
+    m_jet_eta_max = jet_eta_max;
+  }
+
  private:
   enum class Subdetector
   {
@@ -197,6 +207,10 @@ class JetAnalysis
   // sEPD Bad Channels
   std::unordered_set<int> m_bad_channels;
   std::unordered_set<int> m_rbins_skipped;
+
+  // Jet Cuts
+  double m_jet_pt_min{7}; /*GeV*/
+  double m_jet_eta_max{0.9};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -938,6 +952,11 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets()
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
 
+    if (pt < m_jet_pt_min || std::fabs(eta) >= m_jet_eta_max)
+    {
+      continue;
+    }
+
     // map [-pi,pi] -> [0,2pi]
     if (phi < 0)
     {
@@ -1102,9 +1121,9 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 4 || argc > 7)
+  if (argc < 4 || argc > 9)
   {
-    std::cout << "Usage: " << argv[0] << " input_file <input_SEPD_Q_vec_calib> <runnumber> [QVecAna] [events] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file <input_SEPD_Q_vec_calib> <runnumber> [QVecAna] [events] [jet_pt_min] [jet_eta_max] [output_directory]" << std::endl;
     return 1;
   }
 
@@ -1113,7 +1132,9 @@ int main(int argc, const char* const argv[])
   unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[3]));
   const std::string q_vec_ana_str = (argc >= 5) ? argv[4] : "DEFAULT"; // Default to the first pass
   long long events = (argc >= 6) ? std::atoll(argv[5]) : 0;
-  std::string output_dir = (argc >= 7) ? argv[6] : ".";
+  double jet_pt_min = (argc >= 7) ? std::stod(argv[6]) : 7;
+  double jet_eta_max = (argc >= 8) ? std::stod(argv[7]) : 0.9;
+  std::string output_dir = (argc >= 9) ? argv[8] : ".";
 
   myUtils::QVecAna q_vec_ana = myUtils::QVecAna::DEFAULT;
   if (myUtils::q_vec_ana_map.contains(q_vec_ana_str))
@@ -1127,9 +1148,22 @@ int main(int argc, const char* const argv[])
     return 1;
   }
 
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << std::format("Run Params\n");
+  std::cout << std::format("Input: {}\n", input_file);
+  std::cout << std::format("Q-vec-calib: {}\n", input_Q_calib);
+  std::cout << std::format("Run Number: {}\n", runnumber);
+  std::cout << std::format("Q-vec Ana: {}\n", q_vec_ana_str);
+  std::cout << std::format("Events: {}\n", events);
+  std::cout << std::format("Jet pT min: {} [GeV]\n", jet_pt_min);
+  std::cout << std::format("Jet eta max: {}\n", jet_eta_max);
+  std::cout << std::format("{:#<20}\n", "");
+
   try
   {
     JetAnalysis analysis(input_file, input_Q_calib, runnumber, static_cast<int>(q_vec_ana), events, output_dir);
+    analysis.set_jet_pt_min(jet_pt_min);
+    analysis.set_jet_eta_max(jet_eta_max);
     analysis.run();
   }
   catch (const std::exception& e)
