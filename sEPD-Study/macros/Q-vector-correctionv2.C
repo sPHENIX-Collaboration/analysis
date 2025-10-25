@@ -120,6 +120,18 @@ class QvectorAnalysis
 
     std::array<std::array<QVec, 2>, 3> q_vectors;
 
+    void reset()
+    {
+      for (auto& q_vec_harmonic : q_vectors)
+      {
+        for (auto& q_vec : q_vec_harmonic)
+        {
+          q_vec.x = 0.0;
+          q_vec.y = 0.0;
+        }
+      }
+    }
+
     std::vector<int>* sepd_channel{nullptr};
     std::vector<double>* sepd_charge{nullptr};
     std::vector<double>* sepd_phi{nullptr};
@@ -491,7 +503,7 @@ void QvectorAnalysis::init_hists()
           std::string title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str);
           m_profiles[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
 
-          title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str);
+          title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str);
           m_profiles[q_avg_sq_name] = std::make_unique<TProfile>(q_avg_sq_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
         }
 
@@ -500,7 +512,7 @@ void QvectorAnalysis::init_hists()
           std::string title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}>", det_name, n, comp_str);
           m_profiles[q_avg_corr2_name] = std::make_unique<TProfile>(q_avg_corr2_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
 
-          title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}", det_name, n, comp_str);
+          title = std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str);
           m_profiles[q_avg_sq_corr_name] = std::make_unique<TProfile>(q_avg_sq_corr_name.c_str(), title.c_str(), m_cent_bins, m_cent_low, m_cent_high);
         }
       }
@@ -984,6 +996,7 @@ void QvectorAnalysis::run_event_loop()
   {
     // Load Event Data from TChain
     m_chain->GetEntry(i);
+    m_event_data.reset();
 
     if (i % 10000 == 0)
     {
