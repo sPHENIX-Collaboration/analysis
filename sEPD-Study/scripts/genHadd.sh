@@ -17,7 +17,7 @@ run=$(basename "$input")
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
  then
    cd $_CONDOR_SCRATCH_DIR
-   cp -rv "$input/hist" "$run"
+   cp -rv "$input" "$run"
    ls -lah
  else
    echo "condor scratch NOT set"
