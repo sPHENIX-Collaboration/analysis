@@ -56,6 +56,7 @@ class DisplayJetAna
     read_hists();
     init_hists();
     compute_vn();
+    compute_vn_subsample();
     draw();
   }
 
@@ -90,6 +91,7 @@ class DisplayJetAna
   void read_hists();
   void init_hists();
   void compute_vn();
+  void compute_vn_subsample();
 
   std::unique_ptr<TProfile> make_profile(const TH2* h2, const std::string &name, const std::string &title);
   std::unique_ptr<TH2> make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high, bool doResolution = false);
@@ -185,7 +187,7 @@ void DisplayJetAna::init_hists()
   }
 }
 
-void DisplayJetAna::compute_vn()
+void DisplayJetAna::compute_vn_subsample()
 {
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -220,6 +222,62 @@ void DisplayJetAna::compute_vn()
           h2Vn_re->Fill(cent, vn_re, nJets);
           h2Vn_im->Fill(cent, vn_im, nJets);
         }
+      }
+    }
+  }
+}
+
+void DisplayJetAna::compute_vn()
+{
+  // create hists
+  for (auto n : m_harmonics)
+  {
+    std::string name = std::format("hVn_re_{}", n);
+    std::string title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
+
+    m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+    name = std::format("hSP_res_sqrt_{}", n);
+    title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
+
+    m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+  }
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+
+    auto* prof_re = dynamic_cast<TProfile*>(m_hists[std::format("hSP_re_prof_{}", n)].get());
+    auto* prof_res = dynamic_cast<TProfile*>(m_hists[std::format("hSP_res_prof_{}", n)].get());
+
+    auto* hSP_res_sqrt = m_hists[std::format("hSP_res_sqrt_{}", n)].get();
+    auto* hVn_re = m_hists[std::format("hVn_re_{}", n)].get();
+
+    for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
+    {
+      double SP_re = prof_re->GetBinContent(cent_bin);
+      double SP_re_err = prof_re->GetBinError(cent_bin);
+      double SP_res = prof_res->GetBinContent(cent_bin);
+      double SP_res_err = prof_res->GetBinError(cent_bin);
+
+      if (SP_res > 0)
+      {
+        // Reference Flow
+        SP_res = std::sqrt(SP_res);
+        SP_res_err /= 2 * SP_res;
+
+        hSP_res_sqrt->SetBinContent(cent_bin, SP_res);
+        hSP_res_sqrt->SetBinError(cent_bin, SP_res_err);
+
+        // Vn
+        double vn_re = SP_re / SP_res;
+
+        double rel_A = SP_re_err / SP_re;
+        double rel_B = SP_res_err / SP_res;
+        double vn_err = std::fabs(vn_re) * std::sqrt(rel_A*rel_A + rel_B*rel_B);
+
+        hVn_re->SetBinContent(cent_bin, vn_re);
+        hVn_re->SetBinError(cent_bin, vn_err);
       }
     }
   }
@@ -596,6 +654,76 @@ void DisplayJetAna::draw()
   }
 
   // -------------------------------------------
+  // North South Correlation
+  // -------------------------------------------
+
+  c1->SetLeftMargin(.16f);
+  c1->SetRightMargin(.05f);
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+    std::string hist_name = std::format("hSP_res_prof_{}", n);
+    auto* hSP_res = m_hists[hist_name].get();
+
+    hSP_res->SetTitle("sEPD N-S Correlation");
+
+    hSP_res->Draw("p e X0");
+    hSP_res->Draw("same hist l p");
+
+    hSP_res->SetMarkerColor(kBlue);
+    hSP_res->SetLineColor(kBlue);
+    hSP_res->SetMarkerStyle(kFullDotLarge);
+    hSP_res->SetLineWidth(3);
+    hSP_res->GetYaxis()->SetRangeUser(histInfo[n_idx].low, histInfo[n_idx].high);
+    hSP_res->GetYaxis()->SetTitleOffset(1.2f);
+    hSP_res->GetXaxis()->SetTitleOffset(0.9f);
+    hSP_res->GetYaxis()->SetLabelSize(0.06f);
+    hSP_res->GetYaxis()->SetTitleSize(0.06f);
+    hSP_res->GetXaxis()->SetLabelSize(0.06f);
+    hSP_res->GetXaxis()->SetTitleSize(0.06f);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+  }
+
+  // -------------------------------------------
+  // Reference FLow
+  // -------------------------------------------
+
+  std::vector<std::pair<double, double>> limits = {std::make_pair(0, 0.02),
+                                                   std::make_pair(0, 0.0018),
+                                                   std::make_pair(0, 0.0018)};
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+    std::string hist_name = std::format("hSP_res_sqrt_{}", n);
+    auto* hSP_res_sqrt = m_hists[hist_name].get();
+
+    // hSP_res->SetTitle("sEPD N-S Correlation");
+
+    hSP_res_sqrt->Draw("p e X0");
+    hSP_res_sqrt->Draw("same hist l p");
+
+    hSP_res_sqrt->SetMarkerColor(kBlue);
+    hSP_res_sqrt->SetLineColor(kBlue);
+    hSP_res_sqrt->SetMarkerStyle(kFullDotLarge);
+    hSP_res_sqrt->SetLineWidth(3);
+    hSP_res_sqrt->GetYaxis()->SetRangeUser(limits[n_idx].first, limits[n_idx].second);
+    hSP_res_sqrt->GetYaxis()->SetMaxDigits(3);
+    hSP_res_sqrt->GetYaxis()->SetTitleOffset(1.2f);
+    hSP_res_sqrt->GetXaxis()->SetTitleOffset(0.9f);
+    hSP_res_sqrt->GetYaxis()->SetLabelSize(0.06f);
+    hSP_res_sqrt->GetYaxis()->SetTitleSize(0.06f);
+    hSP_res_sqrt->GetXaxis()->SetLabelSize(0.06f);
+    hSP_res_sqrt->GetXaxis()->SetTitleSize(0.06f);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+  }
+
+  // -------------------------------------------
   // Event Plane Resolution
   // -------------------------------------------
 
@@ -708,7 +836,7 @@ void DisplayJetAna::draw()
   leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
   leg->SetFillStyle(0);
   leg->SetTextSize(0.06f);
-  leg->AddEntry(hSP_sqrtv2, "Run 3 Au+Au: 68144", "lp");
+  leg->AddEntry(hSP_sqrtv2, "Run 3 Au+Au", "lp");
   leg->AddEntry(hSP_res_sPHENIX_MC, "Rosi WWND2022", "lp");
   leg->AddEntry(graph_evt_res_star.get(), "STAR EPD", "lp");
   leg->Draw("same");
@@ -723,7 +851,9 @@ void DisplayJetAna::draw()
   auto* hSP_re_prof = m_hists["hSP_re_prof_2"].get();
   auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2"].get();
 
-  hSP_re_prof->Draw("p e");
+  hSP_re_prof->Draw("p e X0");
+  hSP_re_prof->Draw("same hist l p");
+  hSP_re_prof->SetTitle("Scalar Product");
   hSP_re_prof->SetLineColor(kBlue);
   hSP_re_prof->SetMarkerColor(kBlue);
   hSP_re_prof->SetMarkerStyle(kFullDotLarge);
@@ -739,7 +869,11 @@ void DisplayJetAna::draw()
 
   hSP_re_prof->GetYaxis()->SetRangeUser(0, 1e-2);
 
-  hSP_re_anti_prof->Draw("same p e");
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof.png", m_output_dir).c_str());
+
+  hSP_re_anti_prof->Draw("same p e X0");
+  hSP_re_anti_prof->Draw("same hist l p");
   hSP_re_anti_prof->SetLineColor(kRed);
   hSP_re_anti_prof->SetMarkerColor(kRed);
   hSP_re_anti_prof->SetMarkerStyle(kFullDotLarge);
@@ -758,10 +892,43 @@ void DisplayJetAna::draw()
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof-overlay.png", m_output_dir).c_str());
 
+
+  // -------------------------------------------
+  // Vn
+  // -------------------------------------------
+
+  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  {
+    int n = m_harmonics[n_idx];
+    hist_name = std::format("hVn_re_{}", n);
+    auto* hVn_re = m_hists[hist_name].get();
+
+    hVn_re->Draw("p e X0");
+    hVn_re->Draw("same hist l p");
+
+    hVn_re->SetMarkerColor(kBlue);
+    hVn_re->SetLineColor(kBlue);
+    hVn_re->SetMarkerStyle(kFullDotLarge);
+    hVn_re->SetLineWidth(3);
+    hVn_re->GetYaxis()->SetRangeUser(0, 0.6);
+    hVn_re->GetYaxis()->SetMaxDigits(3);
+    hVn_re->GetYaxis()->SetTitleOffset(1.2f);
+    hVn_re->GetXaxis()->SetTitleOffset(0.9f);
+    hVn_re->GetYaxis()->SetLabelSize(0.06f);
+    hVn_re->GetYaxis()->SetTitleSize(0.06f);
+    hVn_re->GetXaxis()->SetLabelSize(0.06f);
+    hVn_re->GetXaxis()->SetTitleSize(0.06f);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+  }
+
   // -------------------------------------------
   // SP
   // -------------------------------------------
 
+  c1->SetLeftMargin(.16f);
+  c1->SetRightMargin(.13f);
   gPad->SetLogz();
 
   std::unique_ptr<TLine> line = std::make_unique<TLine>(hCentrality->GetXaxis()->GetXmin(), 0, hCentrality->GetXaxis()->GetXmax(), 0);
