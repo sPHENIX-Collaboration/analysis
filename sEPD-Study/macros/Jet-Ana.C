@@ -158,6 +158,9 @@ class JetAnalysis
     std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{nullptr};
     std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{nullptr};
 
+    // Event Plane Method
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1EP_re{nullptr};
+
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_raw_avg{nullptr};
     std::array<TProfile*, 3> S_y_raw_avg{nullptr};
@@ -667,6 +670,12 @@ void JetAnalysis::create_vn_histograms(int n)
 
     title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}}#GT)", n);
     m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+    // Event Plane Method
+    std::string name_EP_re = std::format("hEP_re_prof_{}_{}", n, pt);
+
+    title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}} / |Q^{{N|S}}_{{{0}}}|#GT)", n);
+    m_profiles[name_EP_re] = std::make_unique<TProfile>(name_EP_re.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
   }
 
   // TH3 for Reference Flow
@@ -836,6 +845,9 @@ void JetAnalysis::init_hists()
       int pt = m_jet_pt_min_vec[idx_pt];
       m_hists.p1SP_re[n_idx][idx_pt] = m_profiles[std::format("hSP_re_prof_{}_{}", n, pt)].get();
       m_hists.p1SP_re_anti[n_idx][idx_pt] = m_profiles[std::format("hSP_re_anti_prof_{}_{}", n, pt)].get();
+
+      // Event Plane Method
+      m_hists.p1EP_re[n_idx][idx_pt] = m_profiles[std::format("hEP_re_prof_{}_{}", n, pt)].get();
     }
   }
 }
@@ -1039,6 +1051,10 @@ void JetAnalysis::compute_SP(int sample)
       double SP_re_anti = jet_Q.x * sEPD_Q_anti.x + jet_Q.y * sEPD_Q_anti.y;
       double SP_im = jet_Q.y * sEPD_Q.x - jet_Q.x * sEPD_Q.y;
 
+      // Event Plane Method
+      double sEPD_Q_norm = std::sqrt(sEPD_Q.x*sEPD_Q.x + sEPD_Q.y*sEPD_Q.y);
+      double EP_re = SP_re / sEPD_Q_norm;
+
       m_hists.h3SP_re[n_idx]->Fill(cent, sample, SP_re);
       m_hists.h3SP_im[n_idx]->Fill(cent, sample, SP_im);
 
@@ -1058,6 +1074,9 @@ void JetAnalysis::compute_SP(int sample)
 
         m_hists.p1SP_re[n_idx][idx_pt]->Fill(cent, SP_re);
         m_hists.p1SP_re_anti[n_idx][idx_pt]->Fill(cent, SP_re_anti);
+
+        // Event Plane Method
+        m_hists.p1EP_re[n_idx][idx_pt]->Fill(cent, EP_re);
       }
     }
   }
