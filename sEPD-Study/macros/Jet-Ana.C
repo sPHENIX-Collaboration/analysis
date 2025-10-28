@@ -140,7 +140,8 @@ class JetAnalysis
     TH2* h2Event{nullptr};
     TH2* h2Jet{nullptr};
     TH1* hCentrality{nullptr};
-    std::array<TH3*, 3> hPsi{nullptr};
+    std::array<TH3*, 3> hPsi_raw{nullptr};
+    std::array<TH3*, 3> hPsi_corr2{nullptr};
 
     // Histograms for SP method
     // [harmonic_index]
@@ -688,8 +689,13 @@ void JetAnalysis::create_vn_histograms(int n)
   title = std::format("; Centrality [%]; #LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT", n);
   m_profiles[name_evt_res_prof] = std::make_unique<TProfile>(name_evt_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-  std::string psi_corr2_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
-  m_hists3D[psi_corr2_hist_name] = std::make_unique<TH3F>(psi_corr2_hist_name.c_str(),
+  std::string psi_hist_name = std::format("h3_sEPD_Psi_{}_raw", n);
+  m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
+                                                          std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                          bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
+  m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
                                                           std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                           bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
@@ -788,7 +794,8 @@ void JetAnalysis::init_hists()
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
     int n = m_harmonics[n_idx];
-    m_hists.hPsi[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_corr2", n)].get();
+    m_hists.hPsi_raw[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_raw", n)].get();
+    m_hists.hPsi_corr2[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_corr2", n)].get();
     m_hists.h3SP_re[n_idx] = m_hists3D[std::format("h3SP_re_{}", n)].get();
     m_hists.h3SP_im[n_idx] = m_hists3D[std::format("h3SP_im_{}", n)].get();
     m_hists.h3SP_res[n_idx] = m_hists3D[std::format("h3SP_res_{}", n)].get();
@@ -870,10 +877,14 @@ void JetAnalysis::correct_QVecs()
     m_event_data.q_vectors[n_idx][south_idx] = q_S_corr2;
     m_event_data.q_vectors[n_idx][north_idx] = q_N_corr2;
 
-    double psi_S = std::atan2(q_S_corr2.y, q_S_corr2.x);
-    double psi_N = std::atan2(q_N_corr2.y, q_N_corr2.x);
+    double psi_S_raw = std::atan2(q_S.y, q_S.x);
+    double psi_N_raw = std::atan2(q_N.y, q_N.x);
 
-    m_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
+    double psi_S_corr2 = std::atan2(q_S_corr2.y, q_S_corr2.x);
+    double psi_N_corr2 = std::atan2(q_N_corr2.y, q_N_corr2.x);
+
+    m_hists.hPsi_raw[n_idx]->Fill(psi_S_raw, psi_N_raw, cent);
+    m_hists.hPsi_corr2[n_idx]->Fill(psi_S_corr2, psi_N_corr2, cent);
 
     m_hists.S_x_raw_avg[n_idx]->Fill(cent, q_S.x);
     m_hists.S_y_raw_avg[n_idx]->Fill(cent, q_S.y);
