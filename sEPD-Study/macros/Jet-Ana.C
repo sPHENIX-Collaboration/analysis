@@ -128,6 +128,9 @@ class JetAnalysis
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
+  // Min Jet pT [GeV]
+  static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
+
   struct AnalysisHists
   {
     TH2* h2Dummy{nullptr};
@@ -151,8 +154,8 @@ class JetAnalysis
     std::array<TProfile2D*, 3> p2SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
-    std::array<TProfile*, 3> p1SP_re{nullptr};
-    std::array<TProfile*, 3> p1SP_re_anti{nullptr};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{nullptr};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{nullptr};
 
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_raw_avg{nullptr};
@@ -652,15 +655,18 @@ void JetAnalysis::create_vn_histograms(int n)
   m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
 
   // TProfile for Scalar Product
-  name_re_prof = std::format("hSP_re_prof_{}", n);
+  for(auto pt : m_jet_pt_min_vec)
+  {
+    name_re_prof = std::format("hSP_re_prof_{}_{}", n, pt);
 
-  title = std::format("Scalar Product (Order {0}); Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
-  m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+    title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
+    m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-  name_re_prof = std::format("hSP_re_anti_prof_{}", n);
+    name_re_prof = std::format("hSP_re_anti_prof_{}_{}", n, pt);
 
-  title = std::format("Scalar Product (Order {0}); Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}}#GT)", n);
-  m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+    title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}}#GT)", n);
+    m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+  }
 
   // TH3 for Reference Flow
   std::string name_res = std::format("h3SP_res_{}", n);
@@ -789,8 +795,6 @@ void JetAnalysis::init_hists()
     m_hists.p2SP_re[n_idx] = m_profiles2D[std::format("h2SP_re_prof_{}", n)].get();
     m_hists.p2SP_im[n_idx] = m_profiles2D[std::format("h2SP_im_prof_{}", n)].get();
     m_hists.p2SP_res[n_idx] = m_profiles2D[std::format("h2SP_res_prof_{}", n)].get();
-    m_hists.p1SP_re[n_idx] = m_profiles[std::format("hSP_re_prof_{}", n)].get();
-    m_hists.p1SP_re_anti[n_idx] = m_profiles[std::format("hSP_re_anti_prof_{}", n)].get();
     m_hists.p1SP_res[n_idx] = m_profiles[std::format("hSP_res_prof_{}", n)].get();
     m_hists.p1SP_evt_res[n_idx] = m_profiles[std::format("hSP_evt_res_prof_{}", n)].get();
 
@@ -819,6 +823,13 @@ void JetAnalysis::init_hists()
     m_hists.N_xx_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xx_{}_corr_avg", n)].get();
     m_hists.N_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_yy_{}_corr_avg", n)].get();
     m_hists.N_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xy_{}_corr_avg", n)].get();
+
+    for(size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
+    {
+      int pt = m_jet_pt_min_vec[idx_pt];
+      m_hists.p1SP_re[n_idx][idx_pt] = m_profiles[std::format("hSP_re_prof_{}_{}", n, pt)].get();
+      m_hists.p1SP_re_anti[n_idx][idx_pt] = m_profiles[std::format("hSP_re_anti_prof_{}_{}", n, pt)].get();
+    }
   }
 }
 
@@ -1000,6 +1011,7 @@ void JetAnalysis::compute_SP(int sample)
   {
     double phi = jet_info[idx].phi;
     double eta = jet_info[idx].eta;
+    double pt = jet_info[idx].pt;
 
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
     size_t arm_anti = (eta > 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1022,8 +1034,20 @@ void JetAnalysis::compute_SP(int sample)
       m_hists.p2SP_re[n_idx]->Fill(cent, sample, SP_re);
       m_hists.p2SP_im[n_idx]->Fill(cent, sample, SP_im);
 
-      m_hists.p1SP_re[n_idx]->Fill(cent, SP_re);
-      m_hists.p1SP_re_anti[n_idx]->Fill(cent, SP_re_anti);
+      // Loop over each jet pT min
+      for (size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
+      {
+        int pt_min = m_jet_pt_min_vec[idx_pt];
+
+        // Ensure the jet has minimum pT before proceeding
+        if (pt < pt_min)
+        {
+          break;
+        }
+
+        m_hists.p1SP_re[n_idx][idx_pt]->Fill(cent, SP_re);
+        m_hists.p1SP_re_anti[n_idx][idx_pt]->Fill(cent, SP_re_anti);
+      }
     }
   }
 }
@@ -1093,6 +1117,8 @@ void JetAnalysis::process_events()
   int sample_offset = distribution(generator);
   std::cout << std::format("Sample Offset: {}\n", sample_offset);
 
+  std::map<std::string, int> ctr;
+
   // Event Loop
   for (long long event = 0; event < n_entries; ++event)
   {
@@ -1113,6 +1139,7 @@ void JetAnalysis::process_events()
     if (cent_bin <= 0 || cent_bin > static_cast<int>(m_bins_cent))
     {
       std::cout << std::format("Warning: Weird Centrality: {}, Skipping Event\n", cent);
+      ++ctr["events_skipped_cent"];
       continue;
     }
 
@@ -1120,6 +1147,7 @@ void JetAnalysis::process_events()
     bool isGood = process_QVecs();
     if (!isGood)
     {
+      ++ctr["events_skipped_bad_Q_vec"];
       continue;
     }
 
@@ -1137,6 +1165,7 @@ void JetAnalysis::process_events()
   int jets = static_cast<int>(m_hists.h3JetPhiEtaPt->GetEntries());
   int jets_good = static_cast<int>(m_hists.h3JetPhiEtaPtv2->GetEntries());
 
+  std::cout << std::format("Event Skipped: Cent (Out of Bounds): {}, Bad Q Vecs: {}\n", ctr["events_skipped_cent"], ctr["events_skipped_bad_Q_vec"]);
   std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
   std::cout << std::format("QVecAna: {}, rbins skipped: {}\n", static_cast<int>(m_QVecAna), m_rbins_skipped.size());
 
