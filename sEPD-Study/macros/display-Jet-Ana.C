@@ -599,6 +599,7 @@ void DisplayJetAna::draw()
   myUtils::setEMCalDim(h2Deadv2);
 
   h2Dead->Draw("COL");
+  h2Dead->SetTitle("EMCal Dead");
   m_hists["h2DummySector"]->Draw("TEXT MIN0 same");
   m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
@@ -625,11 +626,11 @@ void DisplayJetAna::draw()
   gPad->Update();
 
   TPaletteAxis* palette = dynamic_cast<TPaletteAxis*>(h2JetPhiEta->GetListOfFunctions()->FindObject("palette"));
-  palette->SetX2NDC(.97f);
+  palette->SetX2NDC(.96f);
 
-  h2JetPhiEta->SetMaximum(5e3);
+  h2JetPhiEta->SetTitle("Jet: |z| < 10 cm and MB");
   h2JetPhiEta->GetYaxis()->SetTitleOffset(0.4f);
-  h2JetPhiEta->GetZaxis()->SetMaxDigits(2);
+  h2JetPhiEta->GetZaxis()->SetMaxDigits(3);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2JetPhiEta").c_str());
@@ -638,11 +639,11 @@ void DisplayJetAna::draw()
   gPad->Update();
 
   palette = dynamic_cast<TPaletteAxis*>(h2JetPhiEtav2->GetListOfFunctions()->FindObject("palette"));
-  palette->SetX2NDC(.97f);
+  palette->SetX2NDC(.96f);
 
-  h2JetPhiEtav2->SetMaximum(5e3);
+  h2JetPhiEtav2->SetTitle("Jet: |z| < 10 cm and MB");
   h2JetPhiEtav2->GetYaxis()->SetTitleOffset(0.4f);
-  h2JetPhiEtav2->GetZaxis()->SetMaxDigits(2);
+  h2JetPhiEtav2->GetZaxis()->SetMaxDigits(3);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2JetPhiEtav2").c_str());
@@ -653,13 +654,52 @@ void DisplayJetAna::draw()
 
   c1->SetCanvasSize(1400, 1000);
   c1->SetLeftMargin(.16f);
-  c1->SetRightMargin(.02f);
+  c1->SetRightMargin(.03f);
   c1->SetTopMargin(.08f);
   c1->SetBottomMargin(.12f);
 
   output = std::format("{}/plots.pdf", m_output_dir);
 
   c1->Print((output + "[").c_str(), "pdf portrait");
+
+  gPad->SetLogy();
+
+  {
+    auto* hJetPt = dynamic_cast<TH3*>(m_hists["h3JetPhiEtaPt"].get())->Project3D("z");
+    auto* hJetPtv2 = dynamic_cast<TH3*>(m_hists["h3JetPhiEtaPtv2"].get())->Project3D("z");
+
+    hJetPt->Draw();
+    hJetPt->SetTitle("");
+    hJetPt->SetLineColor(kBlue);
+    hJetPt->SetLineWidth(3);
+    hJetPt->GetYaxis()->SetMaxDigits(3);
+    hJetPt->GetYaxis()->SetTitle("Jet Yield / 1 GeV");
+    hJetPt->GetXaxis()->SetLabelSize(0.06f);
+    hJetPt->GetXaxis()->SetTitleSize(0.05f);
+    hJetPt->GetXaxis()->SetTitleOffset(1.1f);
+    hJetPt->GetYaxis()->SetTitleOffset(1.2f);
+    hJetPt->GetXaxis()->SetRangeUser(0, 45);
+
+    hJetPtv2->Draw("same");
+    hJetPtv2->SetLineColor(kRed);
+    hJetPtv2->SetLineWidth(3);
+
+    double xshift = 0.25;
+    double yshift = 0.05;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.06f);
+    leg->AddEntry(hJetPt, "Default", "l");
+    leg->AddEntry(hJetPtv2, "Dead IB Mask", "l");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay").c_str());
+
+    gPad->SetLogy(0);
+  }
+  // -------------------------------------------
 
   auto hJetPhi = h2JetPhiEta->ProjectionX();
   auto hJetPhiv2 = h2JetPhiEtav2->ProjectionX();
