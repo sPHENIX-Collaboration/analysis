@@ -66,6 +66,8 @@ class DisplayJetAna
   std::string m_output_dir;
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
+  // Min Jet pT [GeV]
+  static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
 
   bool m_saveFig{true};
 
@@ -90,6 +92,7 @@ class DisplayJetAna
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
+  void compute_vn(int n, int pt);
   void compute_vn();
   void compute_vn_subsample();
 
@@ -104,44 +107,7 @@ class DisplayJetAna
 // ====================================================================
 void DisplayJetAna::read_hists()
 {
-  TH1::AddDirectory(kFALSE);
-
-  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_file.c_str()));
-
-  // Check if the file was opened successfully.
-  if (!file || file->IsZombie())
-  {
-    std::cout << std::format("Error: Could not open file '{}'\n", m_input_file);
-    return;
-  }
-
-  // Get the list of keys (objects) in the file
-  TList* keyList = file->GetListOfKeys();
-  if (!keyList)
-  {
-    std::cout << std::format("Error: Could not get list of keys\n");
-    return;
-  }
-
-  // Use a TIter to loop through the keys
-  TIter next(keyList);
-  TKey* key;
-
-  std::cout << std::format("Histograms found in {}\n", m_input_file);
-
-  while ((key = static_cast<TKey*>(next())))
-  {
-    // Get the class of the object from its key
-    TClass* cl = gROOT->GetClass(key->GetClassName());
-
-    // Check if the class inherits from TH1 (base histogram class)
-    if (cl && cl->InheritsFrom("TH1"))
-    {
-      std::string name = key->GetName();
-      std::cout << std::format("Reading Hist: {}\n", name);
-      m_hists[name] = std::unique_ptr<TH1>(static_cast<TH1*>(file->Get(name.c_str())));
-    }
-  }
+  m_hists = myUtils::read_hists(m_input_file);
 }
 
 void DisplayJetAna::init_hists()
@@ -227,58 +193,60 @@ void DisplayJetAna::compute_vn_subsample()
   }
 }
 
+void DisplayJetAna::compute_vn(int n, int pt)
+{
+  std::string name = std::format("hVn_re_{}_{}", n, pt);
+  std::string title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
+
+  m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  name = std::format("hSP_res_sqrt_{}", n);
+  title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
+
+  m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+  auto* prof_re = dynamic_cast<TProfile*>(m_hists[std::format("hSP_re_prof_{}_{}", n, pt)].get());
+  auto* prof_res = dynamic_cast<TProfile*>(m_hists[std::format("hSP_res_prof_{}", n)].get());
+
+  auto* hSP_res_sqrt = m_hists[std::format("hSP_res_sqrt_{}", n)].get();
+  auto* hVn_re = m_hists[std::format("hVn_re_{}_{}", n, pt)].get();
+
+  for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
+  {
+    double SP_re = prof_re->GetBinContent(cent_bin);
+    double SP_re_err = prof_re->GetBinError(cent_bin);
+    double SP_res = prof_res->GetBinContent(cent_bin);
+    double SP_res_err = prof_res->GetBinError(cent_bin);
+
+    if (SP_res > 0)
+    {
+      // Reference Flow
+      SP_res = std::sqrt(SP_res);
+      SP_res_err /= 2 * SP_res;
+
+      hSP_res_sqrt->SetBinContent(cent_bin, SP_res);
+      hSP_res_sqrt->SetBinError(cent_bin, SP_res_err);
+
+      // Vn
+      double vn_re = SP_re / SP_res;
+
+      double rel_A = SP_re_err / SP_re;
+      double rel_B = SP_res_err / SP_res;
+      double vn_err = std::fabs(vn_re) * std::sqrt(rel_A * rel_A + rel_B * rel_B);
+
+      hVn_re->SetBinContent(cent_bin, vn_re);
+      hVn_re->SetBinError(cent_bin, vn_err);
+    }
+  }
+}
+
 void DisplayJetAna::compute_vn()
 {
-  // create hists
   for (auto n : m_harmonics)
   {
-    std::string name = std::format("hVn_re_{}", n);
-    std::string title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
-
-    m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-
-    name = std::format("hSP_res_sqrt_{}", n);
-    title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}#GT) }}", n);
-
-    m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-  }
-
-  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
-  {
-    int n = m_harmonics[n_idx];
-
-    auto* prof_re = dynamic_cast<TProfile*>(m_hists[std::format("hSP_re_prof_{}", n)].get());
-    auto* prof_res = dynamic_cast<TProfile*>(m_hists[std::format("hSP_res_prof_{}", n)].get());
-
-    auto* hSP_res_sqrt = m_hists[std::format("hSP_res_sqrt_{}", n)].get();
-    auto* hVn_re = m_hists[std::format("hVn_re_{}", n)].get();
-
-    for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
+    for (auto pt : m_jet_pt_min_vec)
     {
-      double SP_re = prof_re->GetBinContent(cent_bin);
-      double SP_re_err = prof_re->GetBinError(cent_bin);
-      double SP_res = prof_res->GetBinContent(cent_bin);
-      double SP_res_err = prof_res->GetBinError(cent_bin);
-
-      if (SP_res > 0)
-      {
-        // Reference Flow
-        SP_res = std::sqrt(SP_res);
-        SP_res_err /= 2 * SP_res;
-
-        hSP_res_sqrt->SetBinContent(cent_bin, SP_res);
-        hSP_res_sqrt->SetBinError(cent_bin, SP_res_err);
-
-        // Vn
-        double vn_re = SP_re / SP_res;
-
-        double rel_A = SP_re_err / SP_re;
-        double rel_B = SP_res_err / SP_res;
-        double vn_err = std::fabs(vn_re) * std::sqrt(rel_A*rel_A + rel_B*rel_B);
-
-        hVn_re->SetBinContent(cent_bin, vn_re);
-        hVn_re->SetBinError(cent_bin, vn_err);
-      }
+      compute_vn(n, pt);
     }
   }
 }
@@ -848,8 +816,8 @@ void DisplayJetAna::draw()
   // SP: Compare regular with anti
   // -------------------------------------------
 
-  auto* hSP_re_prof = m_hists["hSP_re_prof_2"].get();
-  auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2"].get();
+  auto* hSP_re_prof = m_hists["hSP_re_prof_2_7"].get();
+  auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2_7"].get();
 
   hSP_re_prof->Draw("p e X0");
   hSP_re_prof->Draw("same hist l p");
@@ -897,30 +865,32 @@ void DisplayJetAna::draw()
   // Vn
   // -------------------------------------------
 
-  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+  for (const auto n : m_harmonics)
   {
-    int n = m_harmonics[n_idx];
-    hist_name = std::format("hVn_re_{}", n);
-    auto* hVn_re = m_hists[hist_name].get();
+    for (const auto pt : m_jet_pt_min_vec)
+    {
+      hist_name = std::format("hVn_re_{}_{}", n, pt);
+      auto* hVn_re = m_hists[hist_name].get();
 
-    hVn_re->Draw("p e X0");
-    hVn_re->Draw("same hist l p");
+      hVn_re->Draw("p e X0");
+      hVn_re->Draw("same hist l p");
 
-    hVn_re->SetMarkerColor(kBlue);
-    hVn_re->SetLineColor(kBlue);
-    hVn_re->SetMarkerStyle(kFullDotLarge);
-    hVn_re->SetLineWidth(3);
-    hVn_re->GetYaxis()->SetRangeUser(0, 0.6);
-    hVn_re->GetYaxis()->SetMaxDigits(3);
-    hVn_re->GetYaxis()->SetTitleOffset(1.2f);
-    hVn_re->GetXaxis()->SetTitleOffset(0.9f);
-    hVn_re->GetYaxis()->SetLabelSize(0.06f);
-    hVn_re->GetYaxis()->SetTitleSize(0.06f);
-    hVn_re->GetXaxis()->SetLabelSize(0.06f);
-    hVn_re->GetXaxis()->SetTitleSize(0.06f);
+      hVn_re->SetMarkerColor(kBlue);
+      hVn_re->SetLineColor(kBlue);
+      hVn_re->SetMarkerStyle(kFullDotLarge);
+      hVn_re->SetLineWidth(3);
+      hVn_re->GetYaxis()->SetRangeUser(0, 0.6);
+      hVn_re->GetYaxis()->SetMaxDigits(3);
+      hVn_re->GetYaxis()->SetTitleOffset(1.2f);
+      hVn_re->GetXaxis()->SetTitleOffset(0.9f);
+      hVn_re->GetYaxis()->SetLabelSize(0.06f);
+      hVn_re->GetYaxis()->SetTitleSize(0.06f);
+      hVn_re->GetXaxis()->SetLabelSize(0.06f);
+      hVn_re->GetXaxis()->SetTitleSize(0.06f);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+    }
   }
 
   // -------------------------------------------
