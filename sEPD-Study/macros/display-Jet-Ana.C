@@ -651,11 +651,11 @@ void DisplayJetAna::draw()
 
   // -------------------------------------------
 
-  c1->SetCanvasSize(1200, 1000);
-  c1->SetLeftMargin(.12f);
+  c1->SetCanvasSize(1400, 1000);
+  c1->SetLeftMargin(.16f);
   c1->SetRightMargin(.02f);
-  c1->SetTopMargin(.11f);
-  c1->SetBottomMargin(.09f);
+  c1->SetTopMargin(.08f);
+  c1->SetBottomMargin(.12f);
 
   output = std::format("{}/plots.pdf", m_output_dir);
 
@@ -665,18 +665,21 @@ void DisplayJetAna::draw()
   auto hJetPhiv2 = h2JetPhiEtav2->ProjectionX();
 
   hJetPhi->Draw();
+  hJetPhi->SetTitle("");
   hJetPhi->SetLineColor(kBlue);
   hJetPhi->SetLineWidth(3);
-  hJetPhi->GetYaxis()->SetRangeUser(0, 5.5e4);
+  hJetPhi->GetYaxis()->SetRangeUser(0, hJetPhi->GetMaximum()*1.1);
   hJetPhi->GetYaxis()->SetMaxDigits(3);
   hJetPhi->GetYaxis()->SetTitle("Jet Yield / (2#pi / 64)");
-  hJetPhi->GetYaxis()->SetTitleOffset(1.f);
+  hJetPhi->GetYaxis()->SetTitleOffset(1.2f);
+  hJetPhi->GetXaxis()->SetLabelSize(0.06f);
+  hJetPhi->GetXaxis()->SetTitleSize(0.06f);
 
   hJetPhiv2->Draw("same");
   hJetPhiv2->SetLineColor(kRed);
   hJetPhiv2->SetLineWidth(3);
 
-  double xshift = 0.17;
+  double xshift = 0.25;
   double yshift = 0.05;
 
   std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
@@ -694,10 +697,16 @@ void DisplayJetAna::draw()
   auto* hCentrality = m_hists["hCentrality"].get();
 
   hCentrality->Draw();
+  hCentrality->SetTitle("");
   hCentrality->SetLineColor(kBlue);
   hCentrality->SetLineWidth(3);
   hCentrality->GetYaxis()->SetRangeUser(0, hCentrality->GetMaximum()*1.1);
   hCentrality->GetYaxis()->SetMaxDigits(3);
+  hCentrality->GetXaxis()->SetLabelSize(0.06f);
+  hCentrality->GetXaxis()->SetTitleSize(0.06f);
+  hCentrality->GetYaxis()->SetLabelSize(0.06f);
+  hCentrality->GetYaxis()->SetTitleSize(0.06f);
+  hCentrality->GetXaxis()->SetTitleOffset(0.9f);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hCentrality").c_str());
@@ -712,8 +721,9 @@ void DisplayJetAna::draw()
   hEvent->Draw("HIST");
   hEvent->Draw("p e X0 same");
 
+  hEvent->SetTitle("");
   hEvent->GetYaxis()->SetMaxDigits(3);
-  hEvent->GetYaxis()->SetTitleOffset(1.f);
+  hEvent->GetYaxis()->SetTitleOffset(1.2f);
   hEvent->GetXaxis()->SetTitleOffset(0.85f);
   hEvent->GetYaxis()->SetRangeUser(0, hEvent->GetMaximum()*1.1);
   hEvent->SetLineWidth(3);
@@ -747,25 +757,13 @@ void DisplayJetAna::draw()
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJet").c_str());
 
-  c1->Print((output + "]").c_str(), "pdf portrait");
-
-  // -------------------------------------------
-
-  c1->SetCanvasSize(1400, 1000);
-  c1->SetLeftMargin(.16f);
-  c1->SetRightMargin(.13f);
-  c1->SetTopMargin(.08f);
-  c1->SetBottomMargin(.12f);
-
-  output = std::format("{}/plots-2D.pdf", m_output_dir);
-
-  c1->Print((output + "[").c_str(), "pdf portrait");
-
   // -------------------------------------------
   // Reference Flow
   // -------------------------------------------
 
   gPad->SetLogy(0);
+  c1->SetLeftMargin(.16f);
+  c1->SetRightMargin(.13f);
 
   auto* h2SP_res_2 = m_hists["h2SP_res_prof_2"].get();
 
