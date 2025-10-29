@@ -13,6 +13,8 @@
 #include <TF1.h>
 #include <TFile.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TMultiGraph.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
@@ -67,7 +69,8 @@ class DisplayJetAna
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   // Min Jet pT [GeV]
-  static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
+  // static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
+  static constexpr std::array<int, 3> m_jet_pt_min_vec = {7, 18, 20};
 
   bool m_saveFig{true};
 
@@ -92,6 +95,8 @@ class DisplayJetAna
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
+
+  void compute_vn(TProfile* prof_corr, TProfile* prof_ref, TH1* href_sqrt, TH1* hVn);
   void compute_vn(int n, int pt);
   void compute_vn();
   void compute_vn_subsample();
@@ -100,6 +105,16 @@ class DisplayJetAna
   std::unique_ptr<TH2> make_TH2(const TH2* h2, const TH2* h2_weights, const std::string &name, const std::string &title, int bins, double low, double high, bool doResolution = false);
   void draw_sEPD_corr_res(TCanvas* c1, int n, int bins, double low, double high, bool doResolution, std::string &title, const std::string &tag, std::string &output);
   void draw();
+
+  // plots
+
+  void plot_NS(TCanvas* c1, const std::string& output, const std::string& hist_name, double low, double high);
+  void plot_NS(TCanvas* c1, const std::string& output);
+
+  std::unique_ptr<TGraphErrors> hist_to_graph(TH1* h, double offset);
+  void plot_SP(TCanvas* c1, const std::string& output, const std::string& tag, const std::string& y_title, double low, double high);
+  void plot_SP(TCanvas* c1, const std::string& output);
+  void plot_SP_with_anti(TCanvas* c1, const std::string& output);
 };
 
 // ====================================================================
@@ -193,8 +208,40 @@ void DisplayJetAna::compute_vn_subsample()
   }
 }
 
+void DisplayJetAna::compute_vn(TProfile* prof_corr, TProfile* prof_ref, TH1* href_sqrt, TH1* hVn)
+{
+  for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
+  {
+    double corr = prof_corr->GetBinContent(cent_bin);
+    double corr_err = prof_corr->GetBinError(cent_bin);
+    double ref = prof_ref->GetBinContent(cent_bin);
+    double ref_err = prof_ref->GetBinError(cent_bin);
+
+    if (ref > 0)
+    {
+      // Reference Flow
+      ref = std::sqrt(ref);
+      ref_err /= 2 * ref;
+
+      href_sqrt->SetBinContent(cent_bin, ref);
+      href_sqrt->SetBinError(cent_bin, ref_err);
+
+      // Vn
+      double vn_re = corr / ref;
+
+      double rel_A = corr_err / corr;
+      double rel_B = ref_err / ref;
+      double vn_err = std::fabs(vn_re) * std::sqrt(rel_A * rel_A + rel_B * rel_B);
+
+      hVn->SetBinContent(cent_bin, vn_re);
+      hVn->SetBinError(cent_bin, vn_err);
+    }
+  }
+}
+
 void DisplayJetAna::compute_vn(int n, int pt)
 {
+  // Scalar Product Method
   std::string name = std::format("hVn_re_{}_{}", n, pt);
   std::string title = std::format("Jet v_{{{0}}}; Centrality [%]; v_{{{0}}}", n);
 
@@ -211,33 +258,24 @@ void DisplayJetAna::compute_vn(int n, int pt)
   auto* hSP_res_sqrt = m_hists[std::format("hSP_res_sqrt_{}", n)].get();
   auto* hVn_re = m_hists[std::format("hVn_re_{}_{}", n, pt)].get();
 
-  for (int cent_bin = 1; cent_bin <= static_cast<int>(m_bins_cent); ++cent_bin)
-  {
-    double SP_re = prof_re->GetBinContent(cent_bin);
-    double SP_re_err = prof_re->GetBinError(cent_bin);
-    double SP_res = prof_res->GetBinContent(cent_bin);
-    double SP_res_err = prof_res->GetBinError(cent_bin);
+  compute_vn(prof_re, prof_res, hSP_res_sqrt, hVn_re);
 
-    if (SP_res > 0)
-    {
-      // Reference Flow
-      SP_res = std::sqrt(SP_res);
-      SP_res_err /= 2 * SP_res;
+  // Event Plane Method
+  name = std::format("hVn_EP_{}_{}", n, pt);
+  m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-      hSP_res_sqrt->SetBinContent(cent_bin, SP_res);
-      hSP_res_sqrt->SetBinError(cent_bin, SP_res_err);
+  name = std::format("hEP_res_sqrt_{}", n);
+  title = std::format("Reference Flow; Centrality [%]; #sqrt{{Re(#LT Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}} / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT) }}", n);
 
-      // Vn
-      double vn_re = SP_re / SP_res;
+  m_hists[name] = std::make_unique<TH1F>(name.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-      double rel_A = SP_re_err / SP_re;
-      double rel_B = SP_res_err / SP_res;
-      double vn_err = std::fabs(vn_re) * std::sqrt(rel_A * rel_A + rel_B * rel_B);
+  auto* prof_EP = dynamic_cast<TProfile*>(m_hists[std::format("hEP_re_prof_{}_{}", n, pt)].get());
+  auto* prof_EP_res = dynamic_cast<TProfile*>(m_hists[std::format("hSP_evt_res_prof_{}", n)].get());
 
-      hVn_re->SetBinContent(cent_bin, vn_re);
-      hVn_re->SetBinError(cent_bin, vn_err);
-    }
-  }
+  auto* hEP_res_sqrt = m_hists[std::format("hEP_res_sqrt_{}", n)].get();
+  auto* hVn_EP = m_hists[std::format("hVn_EP_{}_{}", n, pt)].get();
+
+  compute_vn(prof_EP, prof_EP_res, hEP_res_sqrt, hVn_EP);
 }
 
 void DisplayJetAna::compute_vn()
@@ -340,6 +378,183 @@ void DisplayJetAna::draw_sEPD_corr_res(TCanvas* c1, int n, int bins, double low,
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}-{}.png", m_output_dir, hist2D_name, tag).c_str());
+}
+
+void DisplayJetAna::plot_NS(TCanvas* c1, const std::string& output)
+{
+  plot_NS(c1, output, "hSP_res_prof_2", 0, 3.5e-4);
+  plot_NS(c1, output, "hSP_evt_res_prof_2", 0, .16);
+  plot_NS(c1, output, "hSP_res_sqrt_2", 0, .02);
+}
+
+void DisplayJetAna::plot_NS(TCanvas* c1, const std::string& output, const std::string& hist_name, double low, double high)
+{
+  c1->SetLeftMargin(.18f);
+  c1->SetRightMargin(.05f);
+
+  auto* hSP_res = m_hists[hist_name].get();
+
+  hSP_res->Draw("p e X0");
+  hSP_res->Draw("same hist l p");
+
+  hSP_res->SetMarkerColor(kBlue);
+  hSP_res->SetLineColor(kBlue);
+  hSP_res->SetMarkerStyle(kFullDotLarge);
+  hSP_res->SetLineWidth(3);
+  hSP_res->GetYaxis()->SetRangeUser(low, high);
+  hSP_res->GetYaxis()->SetTitleOffset(1.4f);
+  hSP_res->GetXaxis()->SetTitleOffset(0.9f);
+  hSP_res->GetYaxis()->SetLabelSize(0.06f);
+  hSP_res->GetYaxis()->SetTitleSize(0.06f);
+  hSP_res->GetXaxis()->SetLabelSize(0.06f);
+  hSP_res->GetXaxis()->SetTitleSize(0.06f);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+}
+
+std::unique_ptr<TGraphErrors> DisplayJetAna::hist_to_graph(TH1* h, double offset)
+{
+   int bins = h->GetNbinsX();
+   double bin_offset = h->GetBinWidth(1)*offset;
+
+   std::unique_ptr<TGraphErrors> gr = std::make_unique<TGraphErrors>(bins);
+
+   for (int bin = 1; bin <= bins; ++bin)
+   {
+     double value = h->GetBinContent(bin);
+     double xlow = h->GetBinLowEdge(bin);
+     double error = h->GetBinError(bin);
+
+     gr->SetPoint(bin - 1, xlow + bin_offset, value);
+     gr->SetPointError(bin - 1, 0, error);
+   }
+
+   return gr;
+}
+
+void DisplayJetAna::plot_SP(TCanvas* c1, const std::string& output)
+{
+  int n = 2;
+  std::string x_title = "Centrality [%]";
+  std::string title_SP = std::format("; {0}; Re(#LTq_{{{1}}} Q^{{S|N*}}_{{{1}}}#GT)", x_title, n);
+  std::string title_EP = std::format("; {0}; Re(#LTq_{{{1}}} Q^{{S|N*}}_{{{1}}} / |Q^{{S|N}}_{{{1}}}|#GT)", x_title, n);
+  std::string title_vn_SP = std::format("Scalar Product Method; {1}; Jet v_{{{0}}}", n, x_title);
+  std::string title_vn_EP = std::format("Event Plane Method; {1}; Jet v_{{{0}}}", n, x_title);
+
+  plot_SP(c1, output, "hSP_re_prof", title_SP, 0, 0.01);
+  plot_SP(c1, output, "hEP_re_prof", title_EP, 0, 0.25);
+  plot_SP(c1, output, "hVn_re", title_vn_SP, 0, 0.9);
+  plot_SP(c1, output, "hVn_EP", title_vn_EP, 0, 0.9);
+}
+
+void DisplayJetAna::plot_SP(TCanvas* c1, const std::string& output, const std::string& tag, const std::string& title, double low, double high)
+{
+  int n = 2;
+  double offset = 1. / m_jet_pt_min_vec.size();
+
+  auto mg = std::make_unique<TMultiGraph>();
+  mg->SetTitle(title.c_str());
+
+  std::vector<short int> colors = {kRed, kBlue, kGreen+3, kMagenta, kYellow-3, kCyan-3, kOrange+7};
+
+  double xshift = -0.02;
+  double yshift = 0.1;
+
+  auto leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .8 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.04f);
+
+  size_t ctr = 0;
+  for (const auto pt : m_jet_pt_min_vec)
+  {
+    auto* hSP_re_prof = m_hists[std::format("{}_{}_{}", tag, n, pt)].get();
+    double shift = offset / 2 + static_cast<double>(ctr) * offset;
+    auto gr = hist_to_graph(hSP_re_prof, shift);
+
+    gr->SetLineColor(colors[ctr]);
+    gr->SetMarkerColor(colors[ctr]);
+    gr->SetMarkerStyle(kFullDotLarge);
+    gr->SetLineWidth(1);
+
+    std::string label = std::format("Jet p_{{T}}#geq {} GeV", pt);
+    leg->AddEntry(gr.get(), label.c_str(), "lpe");
+
+    mg->Add(gr.release(), "PE");
+
+    ++ctr;
+  }
+
+  mg->Draw("A");
+
+  mg->GetYaxis()->SetLabelSize(0.05f);
+  mg->GetYaxis()->SetTitleSize(0.05f);
+  mg->GetXaxis()->SetLabelSize(0.06f);
+  mg->GetXaxis()->SetTitleSize(0.06f);
+  mg->GetXaxis()->SetTitleOffset(0.9f);
+  mg->GetYaxis()->SetTitleOffset(1.5f);
+  mg->GetXaxis()->SetRangeUser(0, 60);
+
+  leg->Draw("same");
+
+  gPad->SetGrid(1,0);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-pt-overlay.png", m_output_dir, tag).c_str());
+
+  mg->GetYaxis()->SetRangeUser(low, high);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}-pt-overlay-zoom.png", m_output_dir, tag).c_str());
+
+  gPad->SetGrid(0,0);
+}
+
+void DisplayJetAna::plot_SP_with_anti(TCanvas* c1, const std::string& output)
+{
+  auto* hSP_re_prof = m_hists["hSP_re_prof_2_7"].get();
+  auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2_7"].get();
+
+  hSP_re_prof->Draw("p e X0");
+  hSP_re_prof->Draw("same hist l p");
+  hSP_re_prof->SetTitle("Scalar Product");
+  hSP_re_prof->SetLineColor(kBlue);
+  hSP_re_prof->SetMarkerColor(kBlue);
+  hSP_re_prof->SetMarkerStyle(kFullDotLarge);
+  hSP_re_prof->SetLineWidth(3);
+
+  hSP_re_prof->GetYaxis()->SetLabelSize(0.05f);
+  hSP_re_prof->GetYaxis()->SetTitleSize(0.05f);
+  hSP_re_prof->GetXaxis()->SetLabelSize(0.06f);
+  hSP_re_prof->GetXaxis()->SetTitleSize(0.06f);
+
+  hSP_re_prof->GetXaxis()->SetTitleOffset(0.9f);
+  hSP_re_prof->GetYaxis()->SetTitleOffset(1.5f);
+
+  hSP_re_prof->GetYaxis()->SetRangeUser(0, 1e-2);
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof.png", m_output_dir).c_str());
+
+  hSP_re_anti_prof->Draw("same p e X0");
+  hSP_re_anti_prof->Draw("same hist l p");
+  hSP_re_anti_prof->SetLineColor(kRed);
+  hSP_re_anti_prof->SetMarkerColor(kRed);
+  hSP_re_anti_prof->SetMarkerStyle(kFullDotLarge);
+  hSP_re_anti_prof->SetLineWidth(3);
+
+  double xshift = -0.02;
+  double yshift = -0.5;
+
+  auto leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .75 + yshift);
+  leg->SetFillStyle(0);
+  leg->SetTextSize(0.05f);
+  leg->AddEntry(hSP_re_prof, "Opposite-Side Correlation", "lpe");
+  leg->AddEntry(hSP_re_anti_prof, "Same-Side Corrleation", "lpe");
+  leg->Draw("same");
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof-overlay.png", m_output_dir).c_str());
 }
 
 void DisplayJetAna::draw()
@@ -624,72 +839,7 @@ void DisplayJetAna::draw()
   // -------------------------------------------
   // North South Correlation
   // -------------------------------------------
-
-  c1->SetLeftMargin(.16f);
-  c1->SetRightMargin(.05f);
-
-  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
-  {
-    int n = m_harmonics[n_idx];
-    std::string hist_name = std::format("hSP_res_prof_{}", n);
-    auto* hSP_res = m_hists[hist_name].get();
-
-    hSP_res->SetTitle("sEPD N-S Correlation");
-
-    hSP_res->Draw("p e X0");
-    hSP_res->Draw("same hist l p");
-
-    hSP_res->SetMarkerColor(kBlue);
-    hSP_res->SetLineColor(kBlue);
-    hSP_res->SetMarkerStyle(kFullDotLarge);
-    hSP_res->SetLineWidth(3);
-    hSP_res->GetYaxis()->SetRangeUser(histInfo[n_idx].low, histInfo[n_idx].high);
-    hSP_res->GetYaxis()->SetTitleOffset(1.2f);
-    hSP_res->GetXaxis()->SetTitleOffset(0.9f);
-    hSP_res->GetYaxis()->SetLabelSize(0.06f);
-    hSP_res->GetYaxis()->SetTitleSize(0.06f);
-    hSP_res->GetXaxis()->SetLabelSize(0.06f);
-    hSP_res->GetXaxis()->SetTitleSize(0.06f);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
-  }
-
-  // -------------------------------------------
-  // Reference FLow
-  // -------------------------------------------
-
-  std::vector<std::pair<double, double>> limits = {std::make_pair(0, 0.02),
-                                                   std::make_pair(0, 0.0018),
-                                                   std::make_pair(0, 0.0018)};
-
-  for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
-  {
-    int n = m_harmonics[n_idx];
-    std::string hist_name = std::format("hSP_res_sqrt_{}", n);
-    auto* hSP_res_sqrt = m_hists[hist_name].get();
-
-    // hSP_res->SetTitle("sEPD N-S Correlation");
-
-    hSP_res_sqrt->Draw("p e X0");
-    hSP_res_sqrt->Draw("same hist l p");
-
-    hSP_res_sqrt->SetMarkerColor(kBlue);
-    hSP_res_sqrt->SetLineColor(kBlue);
-    hSP_res_sqrt->SetMarkerStyle(kFullDotLarge);
-    hSP_res_sqrt->SetLineWidth(3);
-    hSP_res_sqrt->GetYaxis()->SetRangeUser(limits[n_idx].first, limits[n_idx].second);
-    hSP_res_sqrt->GetYaxis()->SetMaxDigits(3);
-    hSP_res_sqrt->GetYaxis()->SetTitleOffset(1.2f);
-    hSP_res_sqrt->GetXaxis()->SetTitleOffset(0.9f);
-    hSP_res_sqrt->GetYaxis()->SetLabelSize(0.06f);
-    hSP_res_sqrt->GetYaxis()->SetTitleSize(0.06f);
-    hSP_res_sqrt->GetXaxis()->SetLabelSize(0.06f);
-    hSP_res_sqrt->GetXaxis()->SetTitleSize(0.06f);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
-  }
+  plot_NS(c1.get(), output);
 
   // -------------------------------------------
   // Event Plane Resolution
@@ -768,12 +918,14 @@ void DisplayJetAna::draw()
   hSP_sqrt->SetLineColor(kBlue);
   hSP_sqrt->SetMarkerStyle(kFullDotLarge);
   hSP_sqrt->SetLineWidth(3);
-  hSP_sqrt->GetYaxis()->SetRangeUser(0, 0.6);
-  hSP_sqrt->GetYaxis()->SetTitleOffset(1.1f);
+  hSP_sqrt->GetYaxis()->SetRangeUser(0, 0.4);
+  hSP_sqrt->GetYaxis()->SetTitleOffset(1.3f);
   hSP_sqrt->GetXaxis()->SetTitleOffset(1.f);
 
   c1->Print(output.c_str(), "pdf portrait");
   if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
+
+  hSP_sqrt->GetYaxis()->SetRangeUser(0, 0.6);
 
   hSP_sqrtv2->Draw("p e X0");
   hSP_sqrtv2->SetMarkerColor(kBlue);
@@ -813,85 +965,14 @@ void DisplayJetAna::draw()
   if (m_saveFig) c1->Print(std::format("{}/images/{}-v2.png", m_output_dir, hist_name).c_str());
 
   // -------------------------------------------
-  // SP: Compare regular with anti
+  // Scalar Product Plots
   // -------------------------------------------
 
-  auto* hSP_re_prof = m_hists["hSP_re_prof_2_7"].get();
-  auto* hSP_re_anti_prof = m_hists["hSP_re_anti_prof_2_7"].get();
+  // Compare different minimum jet pT cuts
+  plot_SP(c1.get(), output);
 
-  hSP_re_prof->Draw("p e X0");
-  hSP_re_prof->Draw("same hist l p");
-  hSP_re_prof->SetTitle("Scalar Product");
-  hSP_re_prof->SetLineColor(kBlue);
-  hSP_re_prof->SetMarkerColor(kBlue);
-  hSP_re_prof->SetMarkerStyle(kFullDotLarge);
-  hSP_re_prof->SetLineWidth(3);
-
-  hSP_re_prof->GetYaxis()->SetLabelSize(0.05f);
-  hSP_re_prof->GetYaxis()->SetTitleSize(0.05f);
-  hSP_re_prof->GetXaxis()->SetLabelSize(0.06f);
-  hSP_re_prof->GetXaxis()->SetTitleSize(0.06f);
-
-  hSP_re_prof->GetXaxis()->SetTitleOffset(0.9f);
-  hSP_re_prof->GetYaxis()->SetTitleOffset(1.5f);
-
-  hSP_re_prof->GetYaxis()->SetRangeUser(0, 1e-2);
-
-  c1->Print(output.c_str(), "pdf portrait");
-  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof.png", m_output_dir).c_str());
-
-  hSP_re_anti_prof->Draw("same p e X0");
-  hSP_re_anti_prof->Draw("same hist l p");
-  hSP_re_anti_prof->SetLineColor(kRed);
-  hSP_re_anti_prof->SetMarkerColor(kRed);
-  hSP_re_anti_prof->SetMarkerStyle(kFullDotLarge);
-  hSP_re_anti_prof->SetLineWidth(3);
-
-  xshift = -0.02;
-  yshift = -0.5;
-
-  leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .75 + yshift);
-  leg->SetFillStyle(0);
-  leg->SetTextSize(0.05f);
-  leg->AddEntry(hSP_re_prof, "Opposite-Side Correlation", "lpe");
-  leg->AddEntry(hSP_re_anti_prof, "Same-Side Corrleation", "lpe");
-  leg->Draw("same");
-
-  c1->Print(output.c_str(), "pdf portrait");
-  if (m_saveFig) c1->Print(std::format("{}/images/hSP_re_prof-overlay.png", m_output_dir).c_str());
-
-
-  // -------------------------------------------
-  // Vn
-  // -------------------------------------------
-
-  for (const auto n : m_harmonics)
-  {
-    for (const auto pt : m_jet_pt_min_vec)
-    {
-      hist_name = std::format("hVn_re_{}_{}", n, pt);
-      auto* hVn_re = m_hists[hist_name].get();
-
-      hVn_re->Draw("p e X0");
-      hVn_re->Draw("same hist l p");
-
-      hVn_re->SetMarkerColor(kBlue);
-      hVn_re->SetLineColor(kBlue);
-      hVn_re->SetMarkerStyle(kFullDotLarge);
-      hVn_re->SetLineWidth(3);
-      hVn_re->GetYaxis()->SetRangeUser(0, 0.6);
-      hVn_re->GetYaxis()->SetMaxDigits(3);
-      hVn_re->GetYaxis()->SetTitleOffset(1.2f);
-      hVn_re->GetXaxis()->SetTitleOffset(0.9f);
-      hVn_re->GetYaxis()->SetLabelSize(0.06f);
-      hVn_re->GetYaxis()->SetTitleSize(0.06f);
-      hVn_re->GetXaxis()->SetLabelSize(0.06f);
-      hVn_re->GetXaxis()->SetTitleSize(0.06f);
-
-      c1->Print(output.c_str(), "pdf portrait");
-      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, hist_name).c_str());
-    }
-  }
+  // Compare with the anti scalar product
+  plot_SP_with_anti(c1.get(), output);
 
   // -------------------------------------------
   // SP
