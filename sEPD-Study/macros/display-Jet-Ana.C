@@ -47,9 +47,10 @@ class DisplayJetAna
 {
  public:
   // The constructor takes the configuration
-  DisplayJetAna(std::string input_file, std::string output_dir)
+  DisplayJetAna(std::string input_file, std::string output_dir, bool saveFig)
     : m_input_file(std::move(input_file))
     , m_output_dir(std::move(output_dir))
+    , m_saveFig(saveFig)
   {
   }
 
@@ -72,7 +73,7 @@ class DisplayJetAna
   // static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
   static constexpr std::array<int, 3> m_jet_pt_min_vec = {7, 18, 20};
 
-  bool m_saveFig{true};
+  bool m_saveFig{false};
 
   // Hists Config
   int m_bins_cent{8};
@@ -1112,18 +1113,19 @@ int main(int argc, const char* const argv[])
 {
   gROOT->SetBatch(true);
 
-  if (argc < 2 || argc > 3)
+  if (argc < 2 || argc > 4)
   {
-    std::cout << "Usage: " << argv[0] << " <input_file> [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <input_file> [output_directory] [saveFig]" << std::endl;
     return 1;
   }
 
   const std::string input_file = argv[1];
   std::string output_dir = (argc >= 3) ? argv[2] : ".";
+  bool saveFig = (argc >= 4) ? std::atoi(argv[3]) : false;
 
   try
   {
-    DisplayJetAna analysis(input_file, output_dir);
+    DisplayJetAna analysis(input_file, output_dir, saveFig);
     analysis.run();
   }
   catch (const std::exception& e)
