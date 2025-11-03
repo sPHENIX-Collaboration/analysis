@@ -31,6 +31,7 @@
 
 #include <phool/recoConsts.h>
 
+#include <sepdvalidation/CalibrateQVec.h>
 #include <sepdvalidation/sEPDValidation.h>
 
 #include <CDBUtils.C>
@@ -45,6 +46,7 @@ R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &fname,
                   unsigned int runnumber,
+                  const std::string &input_QVecCalib="none",
                   const std::string &output = "test.root",
                   const std::string &output_tree = "tree.root",
                   int nEvents = 100,
@@ -56,6 +58,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "Run Parameters" << std::endl;
   std::cout << "input: " << fname << std::endl;
   std::cout << "Run: " << runnumber << std::endl;
+  std::cout << "QVec Calib: " << input_QVecCalib << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "output tree: " << output_tree << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
@@ -131,6 +134,14 @@ void Fun4All_sEPD(const std::string &fname,
   cent->setOverwriteScale(cdb_centrality_scale);
   se->registerSubsystem(cent.release());
 
+  // sEPD Q Vector Calibration
+  if(input_QVecCalib != "none")
+  {
+    std::unique_ptr<CalibrateQVec> calibQVec = std::make_unique<CalibrateQVec>();
+    calibQVec->set_input_QVecCalib(input_QVecCalib);
+    se->registerSubsystem(calibQVec.release());
+  }
+
   // Event Plane
   if(do_ep)
   {
@@ -144,6 +155,8 @@ void Fun4All_sEPD(const std::string &fname,
   Process_Calo_Calib();
 
   // Jet Reco
+  // Enable::HIJETS_VERBOSITY = 1;
+  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 4;
   HIJetReco();
 
   std::unique_ptr<BeamBackgroundFilterAndQA> filter = std::make_unique<BeamBackgroundFilterAndQA>("BeamBackgroundFilterAndQA");
@@ -190,11 +203,12 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 9)
+  if (args.size() < 3 || args.size() > 10)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [output_tree] [nEvents] [dbtag] [condor_mode] [do_ep]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [input_QVecCalib] [output] [output_tree] [nEvents] [dbtag] [condor_mode] [do_ep]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
+    std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
@@ -206,6 +220,7 @@ int main(int argc, const char* const argv[])
 
   const std::string& input_dst= args[1];
   unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[2]));
+  std::string input_QVecCalib = "none";
   std::string output = "test.root";
   std::string output_tree = "tree.root";
   int nEvents = 100;
@@ -215,30 +230,34 @@ int main(int argc, const char* const argv[])
 
   if (args.size() >= 4)
   {
-    output = args[3];
+    input_QVecCalib = args[3];
   }
   if (args.size() >= 5)
   {
-    output_tree = args[4];
+    output = args[4];
   }
   if (args.size() >= 6)
   {
-    nEvents = std::stoi(args[5]);
+    output_tree = args[5];
   }
   if (args.size() >= 7)
   {
-    dbtag = args[6];
+    nEvents = std::stoi(args[6]);
   }
   if (args.size() >= 8)
   {
-    condor_mode = std::stoi(args[7]);
+    dbtag = args[7];
   }
   if (args.size() >= 9)
   {
-    do_ep = std::stoi(args[8]);
+    condor_mode = std::stoi(args[8]);
+  }
+  if (args.size() >= 10)
+  {
+    do_ep = std::stoi(args[9]);
   }
 
-  Fun4All_sEPD(input_dst, runnumber, output, output_tree, nEvents, dbtag, condor_mode, do_ep);
+  Fun4All_sEPD(input_dst, runnumber, input_QVecCalib, output, output_tree, nEvents, dbtag, condor_mode, do_ep);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

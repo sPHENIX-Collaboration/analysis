@@ -104,6 +104,11 @@ f4a.add_argument('-i'
                     , help='Input DST List.')
 
 f4a.add_argument('-i2'
+                    , '--calib', type=str
+                    , required=True
+                    , help='Q Vector Calibrations.')
+
+f4a.add_argument('-i3'
                     , '--dbtag', type=str
                     , default='newcdbtag'
                     , help='CDB Tag. Default: newcdbtag')
@@ -129,11 +134,6 @@ f4a.add_argument('-s'
                     , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
 f4a.add_argument('-l'
-                    , '--log-file', type=str
-                    , default='log.txt'
-                    , help='Log File. Default: log.txt')
-
-f4a.add_argument('-l2'
                     , '--condor-log-dir', type=str
                     , default='/tmp/anarde/dump'
                     , help='Condor Log Directory. Default: /tmp/anarde/dump')
@@ -167,74 +167,46 @@ def create_f4a_jobs():
     """
     Create Fun4All Jobs
     """
-    input_list = os.path.realpath(args.input_list)
+    input_list = Path(args.input_list).resolve()
+    calib_list = Path(args.calib).resolve()
     dbtag = args.dbtag
     events = args.events
     do_ep = args.do_event_plane
-    output_dir = os.path.realpath(args.output_dir)
-    log_file  = os.path.join(output_dir, args.log_file)
-    f4a_macro = os.path.realpath(args.f4a_macro)
-    f4a_bin = os.path.realpath(args.f4a_bin)
-    src_dir = os.path.realpath(args.src_dir)
+    output_dir = Path(args.output_dir).resolve()
+    log_file  = output_dir / 'log.txt'
+    f4a_macro = Path(args.f4a_macro).resolve()
+    f4a_bin = Path(args.f4a_bin).resolve()
+    src_dir = Path(args.src_dir).resolve()
     condor_memory = args.memory
-    condor_script = os.path.realpath(args.condor_script)
-    condor_log_dir = os.path.realpath(args.condor_log_dir)
-    common_errors = os.path.realpath(args.common_errors)
+    condor_script = Path(args.condor_script).resolve()
+    condor_log_dir = Path(args.condor_log_dir).resolve()
+    common_errors = Path(args.common_errors).resolve()
 
     # Create Dirs
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
 
-    # Ensure that paths exists
-    if not os.path.isfile(input_list):
-        logger.critical(f'File: {input_list} does not exist!')
-        sys.exit()
+    # Ensure that files exists
+    for f in [input_list, calib_list, condor_script, f4a_bin, f4a_macro, common_errors]:
+        if not f.is_file():
+            logger.critical(f'File: {f} does not exist!')
+            sys.exit()
 
-    if not os.path.isfile(f4a_bin):
-        logger.critical(f'File: {f4a_bin} does not exist!')
-        sys.exit()
-
-    if not os.path.isfile(f4a_macro):
-        logger.critical(f'File: {f4a_macro} does not exist!')
-        sys.exit()
-
-    if not os.path.isfile(condor_script):
-        logger.critical(f'File: {condor_script} does not exist!')
-        sys.exit()
-
-    if not os.path.isfile(common_errors):
-        logger.critical(f'File: {common_errors} does not exist!')
-        sys.exit()
-
-    if not os.path.exists(src_dir):
+    # Ensure that directory exists
+    if not src_dir.is_dir():
         logger.critical(f'Directory: {src_dir} does not exist!')
         sys.exit()
 
     # Compute the total number of DSTs in the list files
     total_files = int(subprocess.run(['bash','-c',f'cat {input_list} | xargs -I {{}} sh -c \'test -f "{{}}" && wc -l "{{}}"\' | awk \'{{sum += $1}} END {{print sum}}\''], capture_output=True, encoding='utf-8', check=False).stdout.strip())
 
-    # Setup Condor Log Dir
-    os.makedirs(condor_log_dir, exist_ok=True)
-
-    if os.path.exists(condor_log_dir):
-        shutil.rmtree(condor_log_dir)
-        os.makedirs(condor_log_dir, exist_ok=True)
-
-    # Copy necessary files to the output directory
-    shutil.copy(input_list, output_dir)
-    shutil.copy(f4a_macro, output_dir)
-    shutil.copy(f4a_bin, output_dir)
-    shutil.copy(common_errors, output_dir)
-    shutil.copytree(src_dir, os.path.join(output_dir,'src'), dirs_exist_ok=True)
-
-    f4a_bin = os.path.join(output_dir, os.path.basename(f4a_bin))
-
     # Print Logs
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input DST List: {input_list}')
+    logger.info(f'Calib List: {calib_list}')
     logger.info(f'Total DSTs: {total_files}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
     logger.info(f'Do Event Plane Reco: {do_ep}')
@@ -249,18 +221,41 @@ def create_f4a_jobs():
     logger.info(f'Condor Log Directory: {condor_log_dir}')
     logger.info(f'Common Errors File: {common_errors}')
 
+    shutil.rmtree(condor_log_dir, ignore_errors=True)
+
+    # Setup Condor Log Dir
+    condor_log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy necessary files to the output directory
+    shutil.copy(input_list, output_dir)
+    shutil.copy(calib_list, output_dir)
+    shutil.copy(f4a_macro, output_dir)
+    f4a_bin = shutil.copy(f4a_bin, output_dir)
+    shutil.copy(common_errors, output_dir)
+    shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
+
     CONDOR_SUBMISSION_LIMIT = 20000
 
     files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
     logger.info(f'Files Per Job: {files_per_job}')
 
-    files_dir = os.path.join(output_dir, 'files')
-    os.makedirs(files_dir, exist_ok=True)
+    files_dir = output_dir / 'files'
+    files_dir.mkdir(parents=True, exist_ok=True)
 
-    jobs_file = os.path.join(output_dir, 'jobs.list')
-    if os.path.exists(jobs_file):
-        os.remove(jobs_file)
-        logger.info(f"File '{jobs_file}' deleted successfully.")
+    calib_map = {}
+    # Calib List
+    with open(calib_list, mode='r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()
+            run = Path(line).parts[-3]
+            logger.info(f'Processing: {line}, run: {run}')
+            calib_map[run] = line
+
+    jobs_file = output_dir / 'jobs.list'
+    jobs_file.unlink(missing_ok=True)
+
+    jobs_temp_file = output_dir / 'jobs-temp.list'
+    jobs_temp_file.unlink(missing_ok=True)
 
     with open(input_list, mode='r', encoding='utf-8') as file:
         for line in file:
@@ -271,24 +266,45 @@ def create_f4a_jobs():
             command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
             run_command_and_log(command, logger, files_dir, False)
 
-            command = f'readlink -f {files_dir}/{file_stem}* >> jobs.list'
+            command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
             run_command_and_log(command, logger, output_dir, False)
 
-    os.makedirs(f'{output_dir}/output', exist_ok=True)
-    os.makedirs(f'{output_dir}/stdout', exist_ok=True)
-    os.makedirs(f'{output_dir}/error', exist_ok=True)
+    with open(jobs_temp_file, mode='r', encoding='utf-8') as file_in, \
+         open(jobs_file, mode='w', encoding='utf-8') as file_out:
+        for line in file_in:
+            line = Path(line.strip()).resolve()
+            run = line.stem.split('-')[1].lstrip('0')
+            if run in calib_map:
+                file_out.write(f'{line},{calib_map[run]}\n')
+            else:
+                file_out.write(f'{line},none\n')
+
+    # Remove temp file
+    jobs_temp_file.unlink(missing_ok=True)
+
+    # list of subdirectories to create
+    subdirectories = ['stdout', 'error', 'output']
+
+    # Loop through the list and create each one
+    for subdir in subdirectories:
+        shutil.rmtree(output_dir / subdir, ignore_errors=True)
+        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
 
     shutil.copy(condor_script, output_dir)
 
-    with open(os.path.join(output_dir,'genFun4All.sub'), mode='w', encoding='utf-8') as file:
-        file.write(f'executable    = {os.path.basename(condor_script)}\n')
-        file.write(f'arguments     = {f4a_bin} $(input_dst) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} {output_dir}/output\n')
-        file.write(f'log           = {condor_log_dir}/job-$(ClusterId)-$(Process).log\n')
-        file.write('output         = stdout/job-$(ClusterId)-$(Process).out\n')
-        file.write('error          = error/job-$(ClusterId)-$(Process).err\n')
-        file.write(f'request_memory = {condor_memory}GB\n')
+    submit_file_content = textwrap.dedent(f"""\
+        executable     = {condor_script.name}
+        arguments      = {f4a_bin} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} {output_dir}/output
+        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+        output         = stdout/job-$(ClusterId)-$(Process).out
+        error          = error/job-$(ClusterId)-$(Process).err
+        request_memory = {condor_memory}GB
+    """)
 
-    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
+    with open(output_dir / 'genFun4All.sub', mode='w', encoding='utf-8') as file:
+        file.write(submit_file_content)
+
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst,input_calib from jobs.list"'
     logger.info(command)
 
 # ----------------------------
@@ -568,7 +584,6 @@ def jetAna_jobs():
     # Loop through the list and create each one
     for subdir in subdirectories:
         (output_dir / subdir).mkdir(parents=True, exist_ok=True)
-
 
     calib_map = {}
     # Calib List

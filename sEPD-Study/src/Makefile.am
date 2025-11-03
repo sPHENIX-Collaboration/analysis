@@ -12,6 +12,7 @@ AM_LDFLAGS = \
 
 pkginclude_HEADERS = \
   sEPDValidation.h \
+  CalibrateQVec.h \
   JetValidation.h \
 	JetUtils.h
 
@@ -20,6 +21,7 @@ lib_LTLIBRARIES = \
 
 libsEPDValidation_la_SOURCES = \
   sEPDValidation.cc \
+  CalibrateQVec.cc \
   JetValidation.cc \
 	JetUtils.cc
 
