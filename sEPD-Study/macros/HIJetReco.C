@@ -3,11 +3,10 @@
 
 #include <GlobalVariables.C>
 
-#include <eventplaneinfo/EventPlaneReco.h>
-#include <eventplaneinfo/Eventplaneinfo.h>
-#include <fun4all/Fun4AllServer.h>
 #include <g4jets/TruthJetInput.h>
+
 #include <globalvertex/GlobalVertex.h>
+
 #include <jetbackground/CopyAndSubtractJets.h>
 #include <jetbackground/DetermineEventRho.h>
 #include <jetbackground/DetermineTowerBackground.h>
@@ -17,11 +16,18 @@
 #include <jetbackground/SubtractTowers.h>
 #include <jetbackground/SubtractTowersCS.h>
 #include <jetbackground/TowerRho.h>
+
 #include <jetbase/FastJetOptions.h>
 #include <jetbase/JetReco.h>
 #include <jetbase/TowerJetInput.h>
 #include <jetbase/TrackJetInput.h>
+
 #include <particleflowreco/ParticleFlowJetInput.h>
+
+#include <eventplaneinfo/EventPlaneReco.h>
+#include <eventplaneinfo/Eventplaneinfo.h>
+
+#include <fun4all/Fun4AllServer.h>
 
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
@@ -76,7 +82,7 @@ namespace HIJETS
   ///! Base fastjet options to use. Note that the
   ///! resolution parameter will be overwritten
   ///! to R = 0.2, 0.3, 0.4, and 0.5
-  FastJetOptions fj_opts({Jet::ANTIKT, JET_R, 0.4f, VERBOSITY, static_cast<float>(Enable::HIJETS_VERBOSITY)});
+  FastJetOptions fj_opts({Jet::ANTIKT, JET_R, 0.4F, VERBOSITY, static_cast<float>(Enable::HIJETS_VERBOSITY)});
 
   ///! sets jet node name
   std::string jet_node = "ANTIKT";
@@ -141,10 +147,10 @@ void MakeHITruthJets()
     // book jet reconstruction on chargedparticles
     JetReco *chargedtruthjetreco = new JetReco();
     chargedtruthjetreco->add_input(ctji);
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_ChargedTruth_r02");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.3f), HIJETS::algo_prefix + "_ChargedTruth_r03");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.4f), HIJETS::algo_prefix + "_ChargedTruth_r04");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.5f), HIJETS::algo_prefix + "_ChargedTruth_r05");
+    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_ChargedTruth_r02");
+    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_ChargedTruth_r03");
+    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_ChargedTruth_r04");
+    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_ChargedTruth_r05");
     chargedtruthjetreco->set_algo_node(HIJETS::jet_node);
     chargedtruthjetreco->set_input_node("TRUTH");
     chargedtruthjetreco->Verbosity(verbosity);
@@ -161,10 +167,10 @@ void MakeHITruthJets()
     // book jet reconstruction on all particles
     JetReco *truthjetreco = new JetReco();
     truthjetreco->add_input(tji);
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_Truth_r02");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.3f), HIJETS::algo_prefix + "_Truth_r03");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.4f), HIJETS::algo_prefix + "_Truth_r04");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.5f), HIJETS::algo_prefix + "_Truth_r05");
+    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Truth_r02");
+    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Truth_r03");
+    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Truth_r04");
+    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Truth_r05");
     truthjetreco->set_algo_node(HIJETS::jet_node);
     truthjetreco->set_input_node("TRUTH");
     truthjetreco->Verbosity(verbosity);
@@ -214,7 +220,7 @@ void MakeHITowerJets()
   towerjetreco->add_input(incemc);
   towerjetreco->add_input(inihcal);
   towerjetreco->add_input(inohcal);
-  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_TowerInfo_HIRecoSeedsRaw_r02");
+  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_TowerInfo_HIRecoSeedsRaw_r02");
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
@@ -267,10 +273,10 @@ void MakeHITowerJets()
   towerjetreco->add_input(incemc);
   towerjetreco->add_input(inihcal);
   towerjetreco->add_input(inohcal);
-  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_Tower_r02_Sub1");
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.3f), HIJETS::algo_prefix + "_Tower_r03_Sub1");
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.4f), HIJETS::algo_prefix + "_Tower_r04_Sub1");
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.5f), HIJETS::algo_prefix + "_Tower_r05_Sub1");
+  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Tower_r02_Sub1");
+  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Tower_r03_Sub1");
+  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Tower_r04_Sub1");
+  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Tower_r05_Sub1");
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
@@ -301,10 +307,10 @@ void MakeHITrackJets()
   // book jet reconstruction routines on tracks
   JetReco *trackjetreco = new JetReco();
   trackjetreco->add_input(new TrackJetInput(Jet::SRC::TRACK));
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_Track_r02");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.3f), HIJETS::algo_prefix + "_Track_r03");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.4f), HIJETS::algo_prefix + "_Track_r04");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.5f), HIJETS::algo_prefix + "_Track_r05");
+  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Track_r02");
+  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Track_r03");
+  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Track_r04");
+  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Track_r05");
   trackjetreco->set_algo_node(HIJETS::jet_node);
   trackjetreco->set_input_node("TRACK");
   trackjetreco->Verbosity(verbosity);
@@ -336,10 +342,10 @@ void MakeHIPFlowJets()
   // book jet reconstruction routines on pflow elements
   JetReco *pflowjetreco = new JetReco();
   pflowjetreco->add_input(new ParticleFlowJetInput());
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.2f), HIJETS::algo_prefix + "_ParticleFlow_r02");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.3f), HIJETS::algo_prefix + "_ParticleFlow_r03");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.4f), HIJETS::algo_prefix + "_ParticleFlow_r04");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.5f), HIJETS::algo_prefix + "_ParticleFlow_r05");
+  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_ParticleFlow_r02");
+  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_ParticleFlow_r03");
+  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_ParticleFlow_r04");
+  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_ParticleFlow_r05");
   pflowjetreco->set_algo_node(HIJETS::jet_node);
   pflowjetreco->set_input_node("ELEMENT");
   pflowjetreco->Verbosity(verbosity);
@@ -355,12 +361,24 @@ void MakeHIPFlowJets()
 void HIJetReco()
 {
   // if simulation, make appropriate truth jets
-  if (Enable::HIJETS_MC && Enable::HIJETS_TRUTH) MakeHITruthJets();
+  if (Enable::HIJETS_MC && Enable::HIJETS_TRUTH)
+  {
+    MakeHITruthJets();
+  }
 
   // run approriate jet reconstruction routines
-  if (Enable::HIJETS_TOWER) MakeHITowerJets();
-  if (Enable::HIJETS_TRACK) MakeHITrackJets();
-  if (Enable::HIJETS_PFLOW) MakeHIPFlowJets();
+  if (Enable::HIJETS_TOWER)
+  {
+    MakeHITowerJets();
+  }
+  if (Enable::HIJETS_TRACK)
+  {
+    MakeHITrackJets();
+  }
+  if (Enable::HIJETS_PFLOW)
+  {
+    MakeHIPFlowJets();
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -368,6 +386,9 @@ void HIJetReco()
 // ----------------------------------------------------------------------------
 void DoRhoCalculation()
 {
+  // set verbosity
+  //  int verbosity = std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY);
+
   //---------------
   // Fun4All server
   //---------------
