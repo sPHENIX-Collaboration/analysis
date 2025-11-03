@@ -187,25 +187,12 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
   m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
   m_tree->Branch("hasBkg", &m_data.hasBkg);
-  m_tree->Branch("sEPD_Q_S_x_2", &m_data.sEPD_Q_S_x_2, "sEPD_Q_S_x_2/D");
-  m_tree->Branch("sEPD_Q_S_y_2", &m_data.sEPD_Q_S_y_2, "sEPD_Q_S_y_2/D");
-  m_tree->Branch("sEPD_Q_N_x_2", &m_data.sEPD_Q_N_x_2, "sEPD_Q_N_x_2/D");
-  m_tree->Branch("sEPD_Q_N_y_2", &m_data.sEPD_Q_N_y_2, "sEPD_Q_N_y_2/D");
-  m_tree->Branch("sEPD_Q_S_x_3", &m_data.sEPD_Q_S_x_3, "sEPD_Q_S_x_3/D");
-  m_tree->Branch("sEPD_Q_S_y_3", &m_data.sEPD_Q_S_y_3, "sEPD_Q_S_y_3/D");
-  m_tree->Branch("sEPD_Q_N_x_3", &m_data.sEPD_Q_N_x_3, "sEPD_Q_N_x_3/D");
-  m_tree->Branch("sEPD_Q_N_y_3", &m_data.sEPD_Q_N_y_3, "sEPD_Q_N_y_3/D");
-  m_tree->Branch("sEPD_Q_S_x_4", &m_data.sEPD_Q_S_x_4, "sEPD_Q_S_x_4/D");
-  m_tree->Branch("sEPD_Q_S_y_4", &m_data.sEPD_Q_S_y_4, "sEPD_Q_S_y_4/D");
-  m_tree->Branch("sEPD_Q_N_x_4", &m_data.sEPD_Q_N_x_4, "sEPD_Q_N_x_4/D");
-  m_tree->Branch("sEPD_Q_N_y_4", &m_data.sEPD_Q_N_y_4, "sEPD_Q_N_y_4/D");
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
-  m_tree->Branch("sepd_eta", &m_data.sepd_eta);
-  m_tree->Branch("mbd_charge", &m_data.mbd_charge);
-  m_tree->Branch("mbd_phi", &m_data.mbd_phi);
-  m_tree->Branch("mbd_eta", &m_data.mbd_eta);
+  // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
+  // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
+  // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
   m_tree->Branch("jet_pt", &m_data.jet_pt);
   m_tree->Branch("jet_phi", &m_data.jet_phi);
   m_tree->Branch("jet_eta", &m_data.jet_eta);
@@ -420,9 +407,9 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 
     double charge = mbd_pmt->get_q() * vertex_scale * centrality_scale;
 
-    m_data.mbd_charge.push_back(charge);
-    m_data.mbd_phi.push_back(mbd_ch_phi);
-    m_data.mbd_eta.push_back(mbd_ch_eta);
+    // m_data.mbd_charge.push_back(charge);
+    // m_data.mbd_phi.push_back(mbd_ch_phi);
+    // m_data.mbd_eta.push_back(mbd_ch_eta);
 
     if (mbd_arm == 0)
     {
@@ -475,22 +462,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   double sepd_total_charge_south = 0;
   double sepd_total_charge_north = 0;
-
-  // Setup Q-vectors
-  double Q_S_x_2 = 0;
-  double Q_S_y_2 = 0;
-  double Q_N_x_2 = 0;
-  double Q_N_y_2 = 0;
-
-  double Q_S_x_3 = 0;
-  double Q_S_y_3 = 0;
-  double Q_N_x_3 = 0;
-  double Q_N_y_3 = 0;
-
-  double Q_S_x_4 = 0;
-  double Q_S_y_4 = 0;
-  double Q_N_x_4 = 0;
-  double Q_N_y_4 = 0;
 
   for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
   {
@@ -570,7 +541,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     m_data.sepd_channel.push_back(channel);
     m_data.sepd_charge.push_back(charge);
     m_data.sepd_phi.push_back(phi);
-    m_data.sepd_eta.push_back(eta);
 
     JetUtils::update_min_max(sepd_ch_z, m_logging.m_sepd_z_min, m_logging.m_sepd_z_max);
     JetUtils::update_min_max(sepd_ch_r, m_logging.m_sepd_r_min, m_logging.m_sepd_r_max);
@@ -581,54 +551,16 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
       JetUtils::update_min_max(eta, m_logging.m_sepd_eta_min, m_logging.m_sepd_eta_max);
     }
 
-    double q_x_2 = charge * std::cos(2 * phi);
-    double q_y_2 = charge * std::sin(2 * phi);
-
-    double q_x_3 = charge * std::cos(3 * phi);
-    double q_y_3 = charge * std::sin(3 * phi);
-
-    double q_x_4 = charge * std::cos(4 * phi);
-    double q_y_4 = charge * std::sin(4 * phi);
-
     // sepd charge sums
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
     dynamic_cast<TProfile *>(m_hists["hSEPD_Charge"].get())->Fill(channel, charge);
-    // South
-    if (arm == 0)
-    {
-      sepd_total_charge_south += charge;
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_Charge"].get())->Fill(phi, -eta, charge);
-      dynamic_cast<TProfile *>(m_hists["hSEPD_South_Charge"].get())->Fill(rbin, charge);
 
-      Q_S_x_2 += q_x_2;
-      Q_S_y_2 += q_y_2;
+    std::string detector = (arm == 0) ? "South" : "North";
+    double& sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
 
-      Q_S_x_3 += q_x_3;
-      Q_S_y_3 += q_y_3;
-
-      Q_S_x_4 += q_x_4;
-      Q_S_y_4 += q_y_4;
-    }
-    // North
-    else if (arm == 1)
-    {
-      sepd_total_charge_north += charge;
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_Charge"].get())->Fill(phi, eta, charge);
-      dynamic_cast<TProfile *>(m_hists["hSEPD_North_Charge"].get())->Fill(rbin, charge);
-
-      Q_N_x_2 += q_x_2;
-      Q_N_y_2 += q_y_2;
-
-      Q_N_x_3 += q_x_3;
-      Q_N_y_3 += q_y_3;
-
-      Q_N_x_4 += q_x_4;
-      Q_N_y_4 += q_y_4;
-    }
-    else
-    {
-      ++m_ctr["sepd_tower_unknown_arm"];
-    }
+    sepd_total_charge += charge;
+    dynamic_cast<TProfile2D *>(m_hists[std::format("h2SEPD_{}_Charge", detector)].get())->Fill(phi, -eta, charge);
+    dynamic_cast<TProfile *>(m_hists[std::format("hSEPD_{}_Charge", detector)].get())->Fill(rbin, charge);
   }
 
   double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
@@ -642,47 +574,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     ++m_ctr["process_sEPD_total_charge_zero"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  Q_S_x_2 /= sepd_total_charge_south;
-  Q_S_y_2 /= sepd_total_charge_south;
-
-  Q_S_x_3 /= sepd_total_charge_south;
-  Q_S_y_3 /= sepd_total_charge_south;
-
-  Q_S_x_4 /= sepd_total_charge_south;
-  Q_S_y_4 /= sepd_total_charge_south;
-
-  Q_N_x_2 /= sepd_total_charge_north;
-  Q_N_y_2 /= sepd_total_charge_north;
-
-  Q_N_x_3 /= sepd_total_charge_north;
-  Q_N_y_3 /= sepd_total_charge_north;
-
-  Q_N_x_4 /= sepd_total_charge_north;
-  Q_N_y_4 /= sepd_total_charge_north;
-
-  m_data.sEPD_Q_S_x_2 = Q_S_x_2;
-  m_data.sEPD_Q_S_y_2 = Q_S_y_2;
-  m_data.sEPD_Q_N_x_2 = Q_N_x_2;
-  m_data.sEPD_Q_N_y_2 = Q_N_y_2;
-
-  m_data.sEPD_Q_S_x_3 = Q_S_x_3;
-  m_data.sEPD_Q_S_y_3 = Q_S_y_3;
-  m_data.sEPD_Q_N_x_3 = Q_N_x_3;
-  m_data.sEPD_Q_N_y_3 = Q_N_y_3;
-
-  m_data.sEPD_Q_S_x_4 = Q_S_x_4;
-  m_data.sEPD_Q_S_y_4 = Q_S_y_4;
-  m_data.sEPD_Q_N_x_4 = Q_N_x_4;
-  m_data.sEPD_Q_N_y_4 = Q_N_y_4;
-
-  m_logging.m_sepd_Q_min = std::min({m_logging.m_sepd_Q_min, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2,
-                                     Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3,
-                                     Q_S_x_4, Q_S_y_4, Q_N_x_4, Q_N_y_4});
-
-  m_logging.m_sepd_Q_max = std::max({m_logging.m_sepd_Q_max, Q_S_x_2, Q_S_y_2, Q_N_x_2, Q_N_y_2,
-                                     Q_S_x_3, Q_S_y_3, Q_N_x_3, Q_N_y_3,
-                                     Q_S_x_4, Q_S_y_4, Q_N_x_4, Q_N_y_4});
 
   dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
 
@@ -782,7 +673,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   bool hasJet = false;
   bool hasBkg = m_hasBeamBackground || m_failsAnyJetCut;
 
-  for (auto jet : *jets)
+  for (auto* jet : *jets)
   {
     double pt = jet->get_pt();
     double phi = jet->get_phi();
@@ -952,26 +843,11 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sepd_channel.clear();
   m_data.sepd_charge.clear();
   m_data.sepd_phi.clear();
-  m_data.sepd_eta.clear();
-
-  // sEPD Q Vec
-  m_data.sEPD_Q_S_x_2 = 0;
-  m_data.sEPD_Q_S_y_2 = 0;
-  m_data.sEPD_Q_N_x_2 = 0;
-  m_data.sEPD_Q_N_y_2 = 0;
-  m_data.sEPD_Q_S_x_3 = 0;
-  m_data.sEPD_Q_S_y_3 = 0;
-  m_data.sEPD_Q_N_x_3 = 0;
-  m_data.sEPD_Q_N_y_3 = 0;
-  m_data.sEPD_Q_S_x_4 = 0;
-  m_data.sEPD_Q_S_y_4 = 0;
-  m_data.sEPD_Q_N_x_4 = 0;
-  m_data.sEPD_Q_N_y_4 = 0;
 
   // MBD
-  m_data.mbd_charge.clear();
-  m_data.mbd_phi.clear();
-  m_data.mbd_eta.clear();
+  // m_data.mbd_charge.clear();
+  // m_data.mbd_phi.clear();
+  // m_data.mbd_eta.clear();
 
   // Jets
   m_data.jet_pt.clear();
@@ -990,7 +866,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "stats" << std::endl;
   std::cout << "Cent: Min: " << m_logging.m_cent_min << ", Max: " << m_logging.m_cent_max << std::endl;
   std::cout << "sEPD Charge: Min: " << m_logging.m_sepd_charge_min << ", Max: " << m_logging.m_sepd_charge_max << std::endl;
-  std::cout << "sEPD Q: Min: " << m_logging.m_sepd_Q_min << ", Max: " << m_logging.m_sepd_Q_max << std::endl;
   std::cout << "sEPD Total Charge South: Min: " << m_logging.m_sepd_total_charge_south_min << ", Max: " << m_logging.m_sepd_total_charge_south_max << std::endl;
   std::cout << "sEPD Total Charge North: Min " << m_logging.m_sepd_total_charge_north_min << ", Max: " << m_logging.m_sepd_total_charge_north_max << std::endl;
   std::cout << "sEPD z: Min " << m_logging.m_sepd_z_min << ", Max: " << m_logging.m_sepd_z_max << std::endl;
@@ -1000,7 +875,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD Eta: Min " << m_logging.m_sepd_eta_min << ", Max: " << m_logging.m_sepd_eta_max << std::endl;
   std::cout << "=====================" << std::endl;
   std::cout << "sEPD" << std::endl;
-  std::cout << "Avg towers with unknown arm: " << m_ctr["sepd_tower_unknown_arm"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << "Avg towers ZS: " << m_ctr["sepd_tower_zs"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << "=====================" << std::endl;
