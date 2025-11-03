@@ -9,11 +9,12 @@
 
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
-#include <phool/recoConsts.h>
 
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <fun4all/Fun4AllServer.h>  // for Fun4AllServer
+
+#include <phool/recoConsts.h>
 
 #include <TSystem.h>  // for gSystem
 
@@ -96,7 +97,7 @@ void Process_Calo_Calib()
 
   ////////////////
   // MC Calibration
-  if (isSim)
+  if (isSim && rc->get_uint64Flag("TIMESTAMP")<28) //in run28 and beyond we moved the MC calibration into the waveformsim module for data embedding
   {
     std::string MC_Calib = CDBInterface::instance()->getUrl("CEMC_MC_RECALIB");
     if (MC_Calib.empty())
@@ -118,7 +119,7 @@ void Process_Calo_Calib()
   std::cout << "Building clusters" << std::endl;
   RawClusterBuilderTemplate *ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
-  ClusterBuilder->set_threshold_energy(0.070f);  // for when using basic calibration
+  ClusterBuilder->set_threshold_energy(0.070F);  // for when using basic calibration
   std::string emc_prof = getenv("CALIBRATIONROOT");
   emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
   ClusterBuilder->LoadProfile(emc_prof);
