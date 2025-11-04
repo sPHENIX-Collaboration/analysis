@@ -430,6 +430,13 @@ int CalibrateQVec::process_event(PHCompositeNode* topNode)
   m_CalibQVecParams.set_double_param("Psi2_N", psi2_N);
   m_CalibQVecParams.UpdateNodeTree(m_parNode, "CalibQVec");
 
+  if(Verbosity())
+  {
+    std::cout << std::format("{:#<20}\n", "");
+    std::cout << std::format("South: (Qx,Qy) = ({},{}), Psi: {} pi\n", m_Q[0].x, m_Q[0].y, psi2_S / std::numbers::pi);
+    std::cout << std::format("North: (Qx,Qy) = ({},{}), Psi: {} pi\n", m_Q[1].x, m_Q[1].y, psi2_N / std::numbers::pi);
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
