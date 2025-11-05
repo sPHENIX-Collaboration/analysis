@@ -139,6 +139,7 @@ void Fun4All_sEPD(const std::string &fname,
   {
     std::unique_ptr<CalibrateQVec> calibQVec = std::make_unique<CalibrateQVec>();
     calibQVec->set_input_QVecCalib(input_QVecCalib);
+    calibQVec->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
     se->registerSubsystem(calibQVec.release());
   }
 
