@@ -177,6 +177,14 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_hists["h2SEPD_Channel_Charge"]->Sumw2();
   m_hists["h2SEPD_Channel_Chargev2"]->Sumw2();
 
+  // Check if Calib Q Vecs are present
+  PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
+  if (pdb)
+  {
+    m_calib_Q = true;
+    std::cout << "Calibrated Q Vec Present" << std::endl;
+  }
+
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
   m_output->cd();
 
@@ -190,6 +198,13 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
+  if (m_calib_Q)
+  {
+    m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
+    m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
+    m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
+    m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
+  }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
@@ -583,6 +598,22 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+void sEPDValidation::process_CalibQVec(PHCompositeNode *topNode)
+{
+  if (m_calib_Q)
+  {
+    PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
+
+    PHParameters pdb_params("CalibQVec");
+    pdb_params.FillFrom(pdb);
+
+    m_data.Q_S_x_2 = pdb_params.get_double_param("Q_S_x_2");
+    m_data.Q_S_y_2 = pdb_params.get_double_param("Q_S_y_2");
+    m_data.Q_N_x_2 = pdb_params.get_double_param("Q_N_x_2");
+    m_data.Q_N_y_2 = pdb_params.get_double_param("Q_N_y_2");
+  }
+}
+
 //____________________________________________________________________________..
 int sEPDValidation::process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order)
 {
@@ -813,6 +844,8 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  process_CalibQVec(topNode);
+
   if (m_do_ep)
   {
     ret = process_EventPlane(topNode);
@@ -853,6 +886,12 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.jet_pt.clear();
   m_data.jet_phi.clear();
   m_data.jet_eta.clear();
+
+  // Q Vec
+  m_data.Q_S_x_2 = 0;
+  m_data.Q_S_y_2 = 0;
+  m_data.Q_N_x_2 = 0;
+  m_data.Q_N_y_2 = 0;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

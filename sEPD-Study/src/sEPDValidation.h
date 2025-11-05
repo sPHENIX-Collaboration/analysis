@@ -61,6 +61,7 @@ class sEPDValidation : public SubsysReco
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
+  void process_CalibQVec(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
   int process_centrality(PHCompositeNode *topNode);
@@ -72,6 +73,7 @@ class sEPDValidation : public SubsysReco
   std::string m_outtree_name{"tree.root"};
   bool m_condor_mode{false};
   bool m_do_ep{true};
+  bool m_calib_Q{false};
 
   struct HistConfig
   {
@@ -314,6 +316,10 @@ class sEPDValidation : public SubsysReco
     double event_zvertex{9999};
     double event_centrality{9999};
     bool hasBkg{false};
+    double Q_S_x_2{0};
+    double Q_S_y_2{0};
+    double Q_N_x_2{0};
+    double Q_N_y_2{0};
     std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;

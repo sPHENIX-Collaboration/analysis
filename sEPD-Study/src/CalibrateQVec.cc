@@ -428,6 +428,10 @@ int CalibrateQVec::process_event(PHCompositeNode* topNode)
 
   m_CalibQVecParams.set_double_param("Psi2_S", psi2_S);
   m_CalibQVecParams.set_double_param("Psi2_N", psi2_N);
+  m_CalibQVecParams.set_double_param("Q_S_x_2", m_Q[0].x);
+  m_CalibQVecParams.set_double_param("Q_S_y_2", m_Q[0].y);
+  m_CalibQVecParams.set_double_param("Q_N_x_2", m_Q[1].x);
+  m_CalibQVecParams.set_double_param("Q_N_y_2", m_Q[1].y);
   m_CalibQVecParams.UpdateNodeTree(m_parNode, "CalibQVec");
 
   if(Verbosity())
