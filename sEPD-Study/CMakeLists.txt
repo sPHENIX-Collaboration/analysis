@@ -83,6 +83,10 @@ target_link_libraries(Fun4All_Jet PRIVATE
 add_executable(checkCDB macros/checkCDB.C)
 target_link_libraries(checkCDB PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- checkTree ---
+add_executable(checkTree macros/checkTree.C)
+target_link_libraries(checkTree PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- displayHotMap ---
 add_executable(displayHotMap macros/displayHotMap.C)
 target_link_libraries(displayHotMap PRIVATE ${STANDALONE_MACRO_LIBS})
