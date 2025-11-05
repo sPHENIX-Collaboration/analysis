@@ -1,0 +1,12 @@
+#
+# Descriptor: Kshort2pipi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20241025
+#
+Decay phi
+0.499 K+     K-                                     PHSP; #[Reconstructed PDG2011]
+Enddecay
+End

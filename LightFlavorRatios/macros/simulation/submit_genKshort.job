@@ -1,0 +1,13 @@
+Universe           = vanilla
+Executable         = generateEvents.sh
+getenv          = True
+Output          = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/simulation/logs/Kshort_$(Process).out
+Error           = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/simulation/logs/Kshort_$(Process).err
+Log             = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/simulation/logs/Kshort_$(Process).log
+Initialdir      = /sphenix/user/mjpeters/analysis/LightFlavorRatios/macros/simulation/
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 8GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(Process) 100 Kshort2pipi /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/simulation/
+Queue 1000

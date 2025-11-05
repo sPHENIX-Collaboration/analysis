@@ -1,0 +1,15 @@
+#
+# Descriptor: D2Kpipi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20250529
+#
+Decay D+
+  0.094000000 K-      pi+     pi+                             D_DALITZ; #[Reconstructed PDG2011]
+Enddecay
+Decay D-
+  0.094000000 K+      pi-     pi-                             D_DALITZ; #[Reconstructed PDG2011]
+Enddecay
+End

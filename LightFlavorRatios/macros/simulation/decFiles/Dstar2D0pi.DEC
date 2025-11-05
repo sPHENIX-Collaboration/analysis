@@ -1,0 +1,26 @@
+#
+# Descriptor: Dstar2Dpi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20240226
+#
+
+#Alias             My_D0                  D0
+#Alias             My_anti-D0        anti-D0
+
+Decay D0
+  0.0397         K-       pi+            PHSP;
+Enddecay
+CDecay anti-D0
+
+Decay D*+
+  0.6770    D0  pi+                   VSS;
+Enddecay
+
+Decay D*-
+  0.6770    anti-D0 pi-               VSS;
+Enddecay
+
+End

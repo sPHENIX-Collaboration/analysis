@@ -1,0 +1,31 @@
+#
+# Descriptor: D_(s)^+ -> KKpi including phi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20250530
+#
+
+Alias             My_phi        phi
+
+Decay D_s+
+  0.0450 My_phi  pi+                                     SVS; #[Reconstructed PDG2011]
+  0.0537 K+      K-      pi+                             PHSP; #[Reconstructed PDG2011]
+Enddecay
+Decay D_s-
+  0.0450 My_phi  pi-                                     SVS; #[Reconstructed PDG2011]
+  0.0537 K+      K-      pi-                             PHSP; #[Reconstructed PDG2011]
+Enddecay
+Decay D+
+  0.00570 My_phi  pi+                                     SVS; #[Reconstructed PDG2011]
+  0.00968 K+      K-      pi+                             PHSP; #[Reconstructed PDG2011]
+Enddecay
+Decay D-
+  0.00570 My_phi  pi-                                     SVS; #[Reconstructed PDG2011]
+  0.00968 K-      K+      pi-                             PHSP; #[Reconstructed PDG2011]
+Enddecay
+Decay My_phi
+  0.491   K+      K-                                      VSS; #[Reconstructed PDG2011]
+Enddecay
+End

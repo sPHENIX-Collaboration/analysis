@@ -1,0 +1,13 @@
+Universe           = vanilla
+Executable         = runHFreco.sh
+getenv          = True
+Output          = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/data/logs/run53877_$(Process).out
+Error           = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/data/logs/run53877_$(Process).err
+Log             = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/data/logs/run53877_$(Process).log
+Initialdir      = .
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 8GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(events) $(file) $(path) $(skip)
+Queue events file path skip from fileLists/file_run53877_0.list
