@@ -139,15 +139,16 @@ class JetAnalysis
     TH3* h3JetPhiEtaPtv2{nullptr};
     TH2* h2Event{nullptr};
     TH2* h2Jet{nullptr};
+    TH2* h2JetPtCentrality{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi_raw{nullptr};
     std::array<TH3*, 3> hPsi_corr2{nullptr};
 
     // Histograms for SP method
     // [harmonic_index]
-    std::array<TH3*, 3> h3SP_re;
-    std::array<TH3*, 3> h3SP_im;
-    std::array<TH3*, 3> h3SP_res;
+    std::array<TH3*, 3> h3SP_re{nullptr};
+    std::array<TH3*, 3> h3SP_im{nullptr};
+    std::array<TH3*, 3> h3SP_res{nullptr};
 
     // Profiles
     std::array<TProfile2D*, 3> p2SP_re{nullptr};
@@ -155,11 +156,11 @@ class JetAnalysis
     std::array<TProfile2D*, 3> p2SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{nullptr};
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{nullptr};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{{{}, {}, {}}};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{{{}, {}, {}}};
 
     // Event Plane Method
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1EP_re{nullptr};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1EP_re{{{}, {}, {}}};
 
     // Q Vector - Crosschecks
     std::array<TProfile*, 3> S_x_raw_avg{nullptr};
@@ -193,8 +194,11 @@ class JetAnalysis
 
   struct EventData
   {
+    friend class JetAnalysis;
+
+   private:
     int event_id{0};
-    double event_zvertex{0.0};
+    [[maybe_unused]] double event_zvertex{0.0};
     double event_centrality{0.0};
 
     std::vector<double>* jet_pt{nullptr};
@@ -209,6 +213,7 @@ class JetAnalysis
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, 3> q_vectors;
 
+   public:
     void reset()
     {
       for (auto& q_vec_harmonic : q_vectors)
@@ -264,7 +269,7 @@ class JetAnalysis
 
   void compute_SP_resolution(int sample);
   void compute_SP(int sample);
-  std::vector<JetInfo> process_jets();
+  std::vector<JetInfo> process_jets() const;
   void correct_QVecs();
   bool compute_QVecs();
   bool process_QVecs();
@@ -659,7 +664,7 @@ void JetAnalysis::create_vn_histograms(int n)
   m_profiles2D[name_im_prof] = std::unique_ptr<TProfile2D>(static_cast<TProfile2D*>(m_profiles2D[name_re_prof]->Clone(name_im_prof.c_str())));
 
   // TProfile for Scalar Product
-  for(auto pt : m_jet_pt_min_vec)
+  for (auto pt : m_jet_pt_min_vec)
   {
     name_re_prof = std::format("hSP_re_prof_{}_{}", n, pt);
 
@@ -700,13 +705,13 @@ void JetAnalysis::create_vn_histograms(int n)
 
   std::string psi_hist_name = std::format("h3_sEPD_Psi_{}_raw", n);
   m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                          std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
-                                                          bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+                                                    std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
   psi_hist_name = std::format("h3_sEPD_Psi_{}_corr2", n);
   m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                          std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
-                                                          bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+                                                    std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
   // South, North
   for (auto det : m_subdetectors)
@@ -717,8 +722,8 @@ void JetAnalysis::create_vn_histograms(int n)
     std::string q_avg_sq_cross_raw_name = std::format("h_sEPD_Q_{}_xy_{}_raw_avg", det_str, n);
 
     m_profiles[q_avg_sq_cross_raw_name] = std::make_unique<TProfile>(q_avg_sq_cross_raw_name.c_str(),
-                                                                      std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", det_name, n).c_str(),
-                                                                      m_bins_cent, m_cent_low, m_cent_high);
+                                                                     std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", det_name, n).c_str(),
+                                                                     m_bins_cent, m_cent_low, m_cent_high);
 
     std::string q_avg_sq_cross_corr_name = std::format("h_sEPD_Q_{}_xy_{}_corr_avg", det_str, n);
 
@@ -743,8 +748,8 @@ void JetAnalysis::create_vn_histograms(int n)
                                                                m_bins_cent, m_cent_low, m_cent_high);
 
       m_profiles[q_avg_sq_raw_name] = std::make_unique<TProfile>(q_avg_sq_raw_name.c_str(),
-                                                                  std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str).c_str(),
-                                                                  m_bins_cent, m_cent_low, m_cent_high);
+                                                                 std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str).c_str(),
+                                                                 m_bins_cent, m_cent_low, m_cent_high);
 
       m_profiles[q_avg_sq_corr_name] = std::make_unique<TProfile>(q_avg_sq_corr_name.c_str(),
                                                                   std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str).c_str(),
@@ -763,26 +768,22 @@ void JetAnalysis::init_hists()
   double eta_low = -1.152;
   double eta_high = 1.152;
 
-  int bins_pt = 50;
+  int bins_pt = 500;
   double pt_low = 0;
-  double pt_high = 50;
+  double pt_high = 500;
 
   double sample_low = -0.5;
   double sample_high = m_bins_sample - 0.5;
 
-  m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]"
-                                                      , bins_phi, phi_low, phi_high
-                                                      , bins_eta, eta_low, eta_high
-                                                      , bins_pt, pt_low, pt_high);
+  m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high, bins_pt, pt_low, pt_high);
   m_hists3D["h3JetPhiEtaPtv2"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv2")));
 
-  m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample"
-                                                , m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
-  m_hists2D["h2Jet"] = std::make_unique<TH2F>("h2Jet", "Jets; Centrality [%]; Sample"
-                                              , m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
+  m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
+  m_hists2D["h2Jet"] = std::make_unique<TH2F>("h2Jet", "Jets; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
-  m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events"
-                                                    , m_bins_cent, m_cent_low, m_cent_high);
+  m_hists2D["h2JetPtCentrality"] = std::make_unique<TH2F>("h2JetPtCentrality", "Jets; Centrality [%]; Jet p_{T} [GeV]", m_bins_cent, m_cent_low, m_cent_high, bins_pt, pt_low, pt_high);
+
+  m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
   for (auto n : m_harmonics)
   {
@@ -798,6 +799,7 @@ void JetAnalysis::init_hists()
   m_hists.h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
   m_hists.h2Event = m_hists2D["h2Event"].get();
   m_hists.h2Jet = m_hists2D["h2Jet"].get();
+  m_hists.h2JetPtCentrality = m_hists2D["h2JetPtCentrality"].get();
   m_hists.hCentrality = m_hists1D["hCentrality"].get();
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
@@ -840,7 +842,7 @@ void JetAnalysis::init_hists()
     m_hists.N_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_yy_{}_corr_avg", n)].get();
     m_hists.N_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xy_{}_corr_avg", n)].get();
 
-    for(size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
+    for (size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
     {
       int pt = m_jet_pt_min_vec[idx_pt];
       m_hists.p1SP_re[n_idx][idx_pt] = m_profiles[std::format("hSP_re_prof_{}_{}", n, pt)].get();
@@ -1009,8 +1011,8 @@ void JetAnalysis::compute_SP_resolution(int sample)
     QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][north_idx];
 
     double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
-    double norm_S = std::sqrt(sEPD_Q_S.x*sEPD_Q_S.x + sEPD_Q_S.y*sEPD_Q_S.y);
-    double norm_N = std::sqrt(sEPD_Q_N.x*sEPD_Q_N.x + sEPD_Q_N.y*sEPD_Q_N.y);
+    double norm_S = std::sqrt(sEPD_Q_S.x * sEPD_Q_S.x + sEPD_Q_S.y * sEPD_Q_S.y);
+    double norm_N = std::sqrt(sEPD_Q_N.x * sEPD_Q_N.x + sEPD_Q_N.y * sEPD_Q_N.y);
     double SP_evt_res = SP_res / (norm_S * norm_N);
 
     m_hists.h3SP_res[n_idx]->Fill(cent, sample, SP_res);
@@ -1023,7 +1025,7 @@ void JetAnalysis::compute_SP_resolution(int sample)
 void JetAnalysis::compute_SP(int sample)
 {
   std::vector<JetInfo> jet_info = process_jets();
-    
+
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
 
@@ -1052,7 +1054,7 @@ void JetAnalysis::compute_SP(int sample)
       double SP_im = jet_Q.y * sEPD_Q.x - jet_Q.x * sEPD_Q.y;
 
       // Event Plane Method
-      double sEPD_Q_norm = std::sqrt(sEPD_Q.x*sEPD_Q.x + sEPD_Q.y*sEPD_Q.y);
+      double sEPD_Q_norm = std::sqrt(sEPD_Q.x * sEPD_Q.x + sEPD_Q.y * sEPD_Q.y);
       double EP_re = SP_re / sEPD_Q_norm;
 
       m_hists.h3SP_re[n_idx]->Fill(cent, sample, SP_re);
@@ -1082,12 +1084,14 @@ void JetAnalysis::compute_SP(int sample)
   }
 }
 
-std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets()
+std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 {
   size_t nJets = m_event_data.jet_phi->size();
 
   std::vector<JetInfo> jet_info;
   jet_info.reserve(nJets);
+
+  double cent = m_event_data.event_centrality;
 
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
@@ -1116,6 +1120,8 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets()
     if (dead_status == 0)
     {
       m_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
+      m_hists.h2JetPtCentrality->Fill(cent, pt);
+
       jet_info.emplace_back(pt, phi, eta);
     }
   }
@@ -1271,7 +1277,7 @@ int main(int argc, const char* const argv[])
   const std::string input_file = argv[1];
   const std::string input_Q_calib = argv[2];
   unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[3]));
-  const std::string q_vec_ana_str = (argc >= 5) ? argv[4] : "DEFAULT"; // Default to the first pass
+  const std::string q_vec_ana_str = (argc >= 5) ? argv[4] : "DEFAULT";  // Default to the first pass
   long long events = (argc >= 6) ? std::atoll(argv[5]) : 0;
   double jet_pt_min = (argc >= 7) ? std::stod(argv[6]) : 7;
   double jet_eta_max = (argc >= 8) ? std::stod(argv[7]) : 0.9;

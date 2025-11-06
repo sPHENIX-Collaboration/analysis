@@ -35,7 +35,7 @@ namespace myUtils
 
   std::pair<Int_t, Int_t> getSectorIB(Int_t iphi, Int_t ieta);
   std::pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
-  std::vector<std::string> split(const std::string& s, const char delimiter);
+  std::vector<std::string> split(const std::string& s, char delimiter);
   TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const std::string& name = "fitFunc");
   std::unique_ptr<TChain> setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file);
   std::map<std::string, std::unique_ptr<TH1>> read_hists(const std::string& file_name, const std::string& tag = "");
@@ -335,10 +335,10 @@ void myUtils::setEMCalDim(TH1* hist)
 {
   hist->GetXaxis()->SetLimits(0, m_nphi);
   hist->GetXaxis()->SetNdivisions(32, false);
-  hist->GetXaxis()->SetLabelSize(0.04f);
-  hist->GetXaxis()->SetTickSize(0.01f);
-  hist->GetYaxis()->SetTickSize(0.01f);
-  hist->GetYaxis()->SetLabelSize(0.04f);
+  hist->GetXaxis()->SetLabelSize(0.04F);
+  hist->GetXaxis()->SetTickSize(0.01F);
+  hist->GetYaxis()->SetTickSize(0.01F);
+  hist->GetYaxis()->SetLabelSize(0.04F);
   hist->GetYaxis()->SetLimits(0, m_neta);
   hist->GetYaxis()->SetNdivisions(12, false);
   hist->GetYaxis()->SetTitleOffset(0.5);
