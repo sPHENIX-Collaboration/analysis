@@ -70,8 +70,7 @@ class DisplayJetAna
   std::map<std::string, std::unique_ptr<TH1>> m_hists;
   static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
   // Min Jet pT [GeV]
-  // static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
-  static constexpr std::array<int, 3> m_jet_pt_min_vec = {7, 18, 20};
+  static constexpr std::array<int, 7> m_jet_pt_min_vec = {7, 10, 12, 14, 16, 18, 20};
 
   bool m_saveFig{false};
 
@@ -462,6 +461,11 @@ void DisplayJetAna::plot_SP(TCanvas* c1, const std::string& output, const std::s
   double xshift = -0.02;
   double yshift = 0.1;
 
+  if (tag.starts_with("hVn"))
+  {
+    xshift = 0.5;
+  }
+
   auto leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .8 + yshift);
   leg->SetFillStyle(0);
   leg->SetTextSize(0.04f);
@@ -679,7 +683,10 @@ void DisplayJetAna::draw()
     hJetPt->GetXaxis()->SetTitleSize(0.05f);
     hJetPt->GetXaxis()->SetTitleOffset(1.1f);
     hJetPt->GetYaxis()->SetTitleOffset(1.2f);
-    hJetPt->GetXaxis()->SetRangeUser(0, 45);
+
+    double log_val = std::log10(hJetPt->GetMaximum());
+    double exponent = std::ceil(log_val);
+    hJetPt->GetYaxis()->SetRangeUser(5e-1, std::pow(10, exponent));
 
     hJetPtv2->Draw("same");
     hJetPtv2->SetLineColor(kRed);
@@ -698,8 +705,44 @@ void DisplayJetAna::draw()
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay").c_str());
 
+    hJetPt->GetXaxis()->SetRangeUser(0, 50);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay-zoom").c_str());
+
     gPad->SetLogy(0);
   }
+
+  // -------------------------------------------
+
+  {
+    c1->SetLeftMargin(.12f);
+    c1->SetRightMargin(.1f);
+
+    gPad->SetLogz();
+    auto* h2JetPtCentrality = dynamic_cast<TH2*>(m_hists["h2JetPtCentrality"].get());
+
+    if(h2JetPtCentrality)
+    {
+      h2JetPtCentrality->Draw("COLZ1");
+      h2JetPtCentrality->SetTitle("");
+      h2JetPtCentrality->GetXaxis()->SetLabelSize(0.06f);
+      h2JetPtCentrality->GetXaxis()->SetTitleSize(0.05f);
+      h2JetPtCentrality->GetYaxis()->SetLabelSize(0.06f);
+      h2JetPtCentrality->GetYaxis()->SetTitleSize(0.05f);
+      h2JetPtCentrality->GetXaxis()->SetTitleOffset(1.1f);
+      h2JetPtCentrality->GetYaxis()->SetTitleOffset(1.2f);
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2JetPtCentrality").c_str());
+    }
+
+    gPad->SetLogz(0);
+
+    c1->SetLeftMargin(.16f);
+    c1->SetRightMargin(.03f);
+  }
+
   // -------------------------------------------
 
   auto hJetPhi = h2JetPhiEta->ProjectionX();
