@@ -109,7 +109,11 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
   hJetPt->GetXaxis()->SetTitleSize(0.05f);
   hJetPt->GetXaxis()->SetTitleOffset(1.1f);
   hJetPt->GetYaxis()->SetTitleOffset(1.2f);
-  hJetPt->GetXaxis()->SetRangeUser(0, 45);
+
+  double exponent = std::ceil(std::log10(hJetPt->GetMaximum()));
+  double upper_bound = std::pow(10.0, exponent);
+
+  hJetPt->GetYaxis()->SetRangeUser(5e-1, upper_bound);
 
   hJetPtv2->Draw("same");
   hJetPtv2->SetLineColor(kRed);
@@ -137,9 +141,13 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
     leg->Draw("same");
 
     c2->Print(std::format("{}/images/Jet-pT-{}.png", m_output_dir, run).c_str());
-  }
 
-  gPad->SetLogy(0);
+    hJetPt->GetXaxis()->SetRangeUser(0, 45);
+
+    c2->Print(std::format("{}/images/Jet-pT-{}-zoom.png", m_output_dir, run).c_str());
+
+    hJetPt->GetXaxis()->SetRangeUser(0, hJetPt->GetXaxis()->GetXmax());
+  }
 }
 
 void DisplayJetAnav3::plot_centrality(TCanvas* c1, TCanvas* c2, const std::string& run)
@@ -327,6 +335,8 @@ void DisplayJetAnav3::draw(const std::string& run)
 
   // Jet pT
   plot_jet(c1.get(), c2.get(), run);
+
+  gPad->SetLogy(0);
 
   // Centrality
   plot_centrality(c1.get(), c2.get(), run);
