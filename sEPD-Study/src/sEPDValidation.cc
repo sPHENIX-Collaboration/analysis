@@ -137,6 +137,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       // Jets
       {HistDef::Type::TH3, "h3Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH3, "h3Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]; Centrality [%]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta; Centrality [%]", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile, "hJet_nEvent", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
@@ -209,6 +210,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
   m_tree->Branch("jet_pt", &m_data.jet_pt);
+  m_tree->Branch("jet_energy", &m_data.jet_energy);
   m_tree->Branch("jet_phi", &m_data.jet_phi);
   m_tree->Branch("jet_eta", &m_data.jet_eta);
 
@@ -707,6 +709,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   for (auto* jet : *jets)
   {
     double pt = jet->get_pt();
+    double energy = jet->get_e();
     double phi = jet->get_phi();
     double eta = jet->get_eta();
 
@@ -716,16 +719,19 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     if (pt >= m_jet_pt_min_cut && fabs(eta) < m_jet_eta_max_cut)
     {
       JetUtils::update_min_max(pt, m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
+      JetUtils::update_min_max(energy, m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
       JetUtils::update_min_max(phi, m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
       JetUtils::update_min_max(eta, m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
       JetUtils::update_min_max(constituents, m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
 
       m_data.jet_pt.push_back(pt);
+      m_data.jet_energy.push_back(energy);
       m_data.jet_phi.push_back(phi);
       m_data.jet_eta.push_back(eta);
 
       dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Constituents"].get())->Fill(pt, constituents, m_cent);
       dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Phi"].get())->Fill(pt, phi, m_cent);
+      dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Energy"].get())->Fill(pt, energy, m_cent);
       dynamic_cast<TH3 *>(m_hists["h3Jet_PhiEta"].get())->Fill(phi, eta, m_cent);
 
       // ensure no background exists
@@ -884,6 +890,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 
   // Jets
   m_data.jet_pt.clear();
+  m_data.jet_energy.clear();
   m_data.jet_phi.clear();
   m_data.jet_eta.clear();
 
@@ -930,6 +937,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "=====================" << std::endl;
   std::cout << "Jets" << std::endl;
   std::cout << std::format("Jet pT: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
+  std::cout << std::format("Jet energy: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
   std::cout << std::format("Jet phi: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
   std::cout << std::format("Jet eta: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
   std::cout << std::format("Jet constituents: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
@@ -978,6 +986,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   {
     if (!name.ends_with("calib"))
     {
+      std::cout << std::format("Saving: {}\n", name);
       hist->Write();
     }
   }
@@ -987,10 +996,12 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     auto *hist = m_hists[hist_name].get();
     if (auto *h3 = dynamic_cast<TH3 *>(hist))
     {
+      std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
       h3->Project3D(projection.c_str())->Write();
     }
     else if (auto *h2 = dynamic_cast<TH2 *>(hist))
     {
+      std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
       h2->ProjectionX()->Write();
     }
   };
@@ -1007,6 +1018,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3Jet_pT_Constituents", "x");
     project_and_write("h3Jet_pT_Constituents", "yx");
     project_and_write("h3Jet_pT_Phi", "yx");
+    project_and_write("h3Jet_pT_Energy", "yx");
     project_and_write("h3Jet_PhiEta", "yx");
 
     // Without Beam Background

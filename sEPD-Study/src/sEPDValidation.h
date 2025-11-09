@@ -140,6 +140,14 @@ class sEPDValidation : public SubsysReco
     double m_jet_pt_low{0};
     double m_jet_pt_high{100};
 
+    unsigned int m_bins_jet_ptv2{500};
+    double m_jet_ptv2_low{0};
+    double m_jet_ptv2_high{500};
+
+    unsigned int m_bins_jet_energy{500};
+    double m_jet_energy_low{0};
+    double m_jet_energy_high{500};
+
     unsigned int m_bins_jet_eta{24};
     double m_jet_eta_low{-1};
     double m_jet_eta_high{1};
@@ -287,6 +295,8 @@ class sEPDValidation : public SubsysReco
     double m_psi_max{0};
     double m_jet_pt_min{9999};
     double m_jet_pt_max{0};
+    double m_jet_energy_min{9999};
+    double m_jet_energy_max{0};
     double m_jet_phi_min{9999};
     double m_jet_phi_max{0};
     double m_jet_eta_min{9999};
@@ -327,6 +337,7 @@ class sEPDValidation : public SubsysReco
     // std::vector<double> mbd_phi;
     // std::vector<double> mbd_eta;
     std::vector<double> jet_pt;
+    std::vector<double> jet_energy;
     std::vector<double> jet_phi;
     std::vector<double> jet_eta;
   };
