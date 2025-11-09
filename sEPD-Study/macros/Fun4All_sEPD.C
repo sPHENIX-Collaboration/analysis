@@ -31,6 +31,7 @@
 
 #include <phool/recoConsts.h>
 
+#include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/CalibrateQVec.h>
 #include <sepdvalidation/sEPDValidation.h>
 
@@ -50,6 +51,7 @@ void Fun4All_sEPD(const std::string &fname,
                   const std::string &output = "test.root",
                   const std::string &output_tree = "tree.root",
                   int nEvents = 100,
+                  int nSkip = 0,
                   const std::string &dbtag = "newcdbtag",
                   bool condor_mode = false,
                   bool do_ep = false)
@@ -62,6 +64,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "output: " << output << std::endl;
   std::cout << "output tree: " << output_tree << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
+  std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "Do Event Plane Reco: " << do_ep << std::endl;
@@ -97,7 +100,12 @@ void Fun4All_sEPD(const std::string &fname,
   std::unique_ptr<FlagHandler> flag = std::make_unique<FlagHandler>();
   se->registerSubsystem(flag.release());
 
-  // // MBD Reconstruction
+  // Event Skip
+  std::unique_ptr<EventSkip> evtSkip = std::make_unique<EventSkip>();
+  evtSkip->set_skip(nSkip);
+  se->registerSubsystem(evtSkip.release());
+
+  // MBD Reconstruction
   std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
   se->registerSubsystem(mbdreco.release());
 
@@ -188,7 +196,8 @@ void Fun4All_sEPD(const std::string &fname,
   In->AddListFile(fname);
   se->registerInputManager(In.release());
 
-  se->run(nEvents);
+  se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->run(nEvents+nSkip);
   se->End();
 
   CDBInterface::instance()->Print();  // print used DB files
@@ -204,15 +213,16 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 10)
+  if (args.size() < 3 || args.size() > 11)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [input_QVecCalib] [output] [output_tree] [nEvents] [dbtag] [condor_mode] [do_ep]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [dbtag] [condor_mode] [do_ep]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
+    std::cerr << "  nSkip: (optional) number of events to skip (default: 0)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     std::cerr << "  Do Event Plane: Do official Event Plane reconstruction." << std::endl;
@@ -225,6 +235,7 @@ int main(int argc, const char* const argv[])
   std::string output = "test.root";
   std::string output_tree = "tree.root";
   int nEvents = 100;
+  int nSkip = 0;
   std::string dbtag = "newcdbtag";
   bool condor_mode = false;
   bool do_ep = false;
@@ -247,18 +258,22 @@ int main(int argc, const char* const argv[])
   }
   if (args.size() >= 8)
   {
-    dbtag = args[7];
+    nSkip = std::stoi(args[7]);
   }
   if (args.size() >= 9)
   {
-    condor_mode = std::stoi(args[8]);
+    dbtag = args[8];
   }
   if (args.size() >= 10)
   {
-    do_ep = std::stoi(args[9]);
+    condor_mode = std::stoi(args[9]);
+  }
+  if (args.size() >= 11)
+  {
+    do_ep = std::stoi(args[10]);
   }
 
-  Fun4All_sEPD(input_dst, runnumber, input_QVecCalib, output, output_tree, nEvents, dbtag, condor_mode, do_ep);
+  Fun4All_sEPD(input_dst, runnumber, input_QVecCalib, output, output_tree, nEvents, nSkip, dbtag, condor_mode, do_ep);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;
