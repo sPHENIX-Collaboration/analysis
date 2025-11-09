@@ -12,11 +12,12 @@ AM_LDFLAGS = \
 
 pkginclude_HEADERS = \
   sEPDValidation.h \
+  geometry_constants.h \
   EventSkip.h \
   CaloCheck.h \
   CalibrateQVec.h \
   JetValidation.h \
-	JetUtils.h
+  JetUtils.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
@@ -27,22 +28,22 @@ libsEPDValidation_la_SOURCES = \
   CaloCheck.cc \
   CalibrateQVec.cc \
   JetValidation.cc \
-	JetUtils.cc
+  JetUtils.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \
   -lSubsysReco \
   -lcentrality_io \
   -lfun4all \
-	-lffamodules \
+  -lffamodules \
   -lglobalvertex_io \
   -lcalotrigger_io \
   -lcalotrigger \
   -leventplaneinfo_io \
   -lepd_io \
-	-ljetbase_io \
-	-ljetbackground_io \
-	-lphparameter_io
+  -ljetbase_io \
+  -ljetbackground_io \
+  -lphparameter_io
 
 BUILT_SOURCES = testexternals.cc
 

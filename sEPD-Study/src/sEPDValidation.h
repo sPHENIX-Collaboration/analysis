@@ -2,6 +2,8 @@
 //  -*- C++ -*-.
 #pragma once
 
+#include "geometry_constants.h"
+
 // -- sPHENIX
 #include <eventplaneinfo/Eventplaneinfo.h>
 #include <fun4all/SubsysReco.h>
@@ -66,6 +68,7 @@ class sEPDValidation : public SubsysReco
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
   int process_centrality(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
+  int process_UE(PHCompositeNode *topNode);
 
   int m_event{0};
 
@@ -167,6 +170,13 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_frcem{140};
     double m_frcem_low{-0.2};
     double m_frcem_high{1.2};
+
+    unsigned int m_bins_nTowerUE{CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS + 1};
+    unsigned int m_bins_nStripsUE{3 * CaloGeometry::HCAL_ETA_BINS + 1};
+
+    unsigned int m_bins_v2{100};
+    double m_v2_low{-1};
+    double m_v2_high{1};
   };
 
   HistConfig m_hist_config;
@@ -330,6 +340,7 @@ class sEPDValidation : public SubsysReco
     double Q_S_y_2{0};
     double Q_N_x_2{0};
     double Q_N_y_2{0};
+    float calo_v2{9999};
     std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;

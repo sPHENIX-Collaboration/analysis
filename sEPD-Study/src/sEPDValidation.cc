@@ -52,6 +52,9 @@
 // -- jet
 #include <jetbase/JetContainer.h>
 
+// -- jetbackground
+#include <jetbackground/TowerBackground.h>
+
 #include <Math/Vector4D.h>
 
 //____________________________________________________________________________..
@@ -146,6 +149,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH3, "h3Jet_pT_Phiv2", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3Jet_PhiEtav2", "Jet: |z| < 10 cm and MB; #phi; #eta; Centrality [%]", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TProfile, "hJet_nEventv2", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+
+      // UE
+      {HistDef::Type::TH3, "h3UE", "UE: |z| < 10 cm and MB; v_{2}; Towers; Strips", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}},
+      {HistDef::Type::TH2, "h2UE", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
   };
 
   // Official
@@ -205,6 +212,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
     m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
     m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
+
+    m_tree->Branch("calo_v2", &m_data.calo_v2);
   }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
@@ -602,18 +611,15 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
 void sEPDValidation::process_CalibQVec(PHCompositeNode *topNode)
 {
-  if (m_calib_Q)
-  {
-    PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
+  PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
 
-    PHParameters pdb_params("CalibQVec");
-    pdb_params.FillFrom(pdb);
+  PHParameters pdb_params("CalibQVec");
+  pdb_params.FillFrom(pdb);
 
-    m_data.Q_S_x_2 = pdb_params.get_double_param("Q_S_x_2");
-    m_data.Q_S_y_2 = pdb_params.get_double_param("Q_S_y_2");
-    m_data.Q_N_x_2 = pdb_params.get_double_param("Q_N_x_2");
-    m_data.Q_N_y_2 = pdb_params.get_double_param("Q_N_y_2");
-  }
+  m_data.Q_S_x_2 = pdb_params.get_double_param("Q_S_x_2");
+  m_data.Q_S_y_2 = pdb_params.get_double_param("Q_S_y_2");
+  m_data.Q_N_x_2 = pdb_params.get_double_param("Q_N_x_2");
+  m_data.Q_N_y_2 = pdb_params.get_double_param("Q_N_y_2");
 }
 
 //____________________________________________________________________________..
@@ -802,6 +808,28 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
+int sEPDValidation::process_UE(PHCompositeNode *topNode)
+{
+  auto* towerBkg = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
+
+  if (!towerBkg)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  float v2 = towerBkg->get_v2();
+  int nTowers = towerBkg->get_nTowersUsedForBkg();
+  int nStrips = towerBkg->get_nStripsUsedForFlow();
+
+  m_data.calo_v2 = v2;
+
+  dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
+  dynamic_cast<TH2 *>(m_hists["h2UE"].get())->Fill(m_data.event_centrality, v2);
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
 int sEPDValidation::process_event(PHCompositeNode *topNode)
 {
   EventHeader *eventInfo = getNode<EventHeader>(topNode, "EventHeader");
@@ -850,7 +878,16 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  process_CalibQVec(topNode);
+  if (m_calib_Q)
+  {
+    process_CalibQVec(topNode);
+
+    ret = process_UE(topNode);
+    if (ret)
+    {
+      return ret;
+    }
+  }
 
   if (m_do_ep)
   {
@@ -899,6 +936,9 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.Q_S_y_2 = 0;
   m_data.Q_N_x_2 = 0;
   m_data.Q_N_y_2 = 0;
+
+  // Calo V2
+  m_data.calo_v2 = 9999;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -1026,6 +1066,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3Jet_pT_Constituentsv2", "yx");
     project_and_write("h3Jet_pT_Phiv2", "yx");
     project_and_write("h3Jet_PhiEtav2", "yx");
+
+    // UE
+    project_and_write("h3UE", "x");
+    project_and_write("h3UE", "yx");
+    project_and_write("h3UE", "zx");
 
     // Official
     if (m_do_ep)
