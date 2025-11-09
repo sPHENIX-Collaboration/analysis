@@ -32,6 +32,7 @@
 #include <phool/recoConsts.h>
 
 #include <sepdvalidation/EventSkip.h>
+#include <sepdvalidation/CaloCheck.h>
 #include <sepdvalidation/CalibrateQVec.h>
 #include <sepdvalidation/sEPDValidation.h>
 
@@ -163,8 +164,12 @@ void Fun4All_sEPD(const std::string &fname,
   // Calibrate Towers
   Process_Calo_Calib();
 
+  // Calo Check
+  std::unique_ptr<CaloCheck> calo_check = std::make_unique<CaloCheck>();
+  // se->registerSubsystem(calo_check.release());
+
   // Jet Reco
-  // Enable::HIJETS_VERBOSITY = 1;
+  // Enable::HIJETS_VERBOSITY = 10;
   HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 4;
   HIJetReco();
 
