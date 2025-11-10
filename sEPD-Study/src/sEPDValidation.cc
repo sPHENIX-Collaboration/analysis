@@ -202,6 +202,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
   m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
   m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("event_MBD_Charge_South", &m_data.event_MBD_Charge_South);
+  m_tree->Branch("event_MBD_Charge_North", &m_data.event_MBD_Charge_North);
+  m_tree->Branch("event_sEPD_Charge_South", &m_data.event_sEPD_Charge_South);
+  m_tree->Branch("event_sEPD_Charge_North", &m_data.event_sEPD_Charge_North);
   m_tree->Branch("hasBkg", &m_data.hasBkg);
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
@@ -408,6 +412,9 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
   double vertex_scale = pdb_params.get_double_param("minbias_vertex_scale");
   double centrality_scale = pdb_params.get_double_param("minbias_centrality_scale");
 
+  m_data.event_MBD_Charge_South = mbd_total_charge_south;
+  m_data.event_MBD_Charge_North = mbd_total_charge_north;
+
   m_mbd_total_charge = mbd_total_charge_south + mbd_total_charge_north;
 
   MinimumBiasClassifier mb;
@@ -588,6 +595,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     dynamic_cast<TProfile2D *>(m_hists[std::format("h2SEPD_{}_Charge", detector)].get())->Fill(phi, -eta, charge);
     dynamic_cast<TProfile *>(m_hists[std::format("hSEPD_{}_Charge", detector)].get())->Fill(rbin, charge);
   }
+
+  m_data.event_sEPD_Charge_South = sepd_total_charge_south;
+  m_data.event_sEPD_Charge_North = sepd_total_charge_north;
 
   double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
 
@@ -913,6 +923,10 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_id = -1;
   m_data.event_zvertex = 9999;
   m_data.event_centrality = 9999;
+  m_data.event_MBD_Charge_South = 9999;
+  m_data.event_MBD_Charge_North = 9999;
+  m_data.event_sEPD_Charge_South = 9999;
+  m_data.event_sEPD_Charge_North = 9999;
   m_data.hasBkg = false;
 
   // sEPD

@@ -335,6 +335,10 @@ class sEPDValidation : public SubsysReco
     int event_id{0};
     double event_zvertex{9999};
     double event_centrality{9999};
+    double event_MBD_Charge_South{9999};
+    double event_MBD_Charge_North{9999};
+    double event_sEPD_Charge_South{9999};
+    double event_sEPD_Charge_North{9999};
     bool hasBkg{false};
     double Q_S_x_2{0};
     double Q_S_y_2{0};
