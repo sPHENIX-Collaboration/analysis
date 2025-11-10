@@ -171,7 +171,7 @@ class sEPDValidation : public SubsysReco
     double m_frcem_low{-0.2};
     double m_frcem_high{1.2};
 
-    unsigned int m_bins_nTowerUE{CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS + 1};
+    unsigned int m_bins_nTowerUE{CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS * 3 + 1};
     unsigned int m_bins_nStripsUE{3 * CaloGeometry::HCAL_ETA_BINS + 1};
 
     unsigned int m_bins_v2{100};

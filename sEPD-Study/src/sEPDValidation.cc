@@ -948,7 +948,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 {
   std::cout << "sEPDValidation::End" << std::endl;
 
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "stats" << std::endl;
   std::cout << "Cent: Min: " << m_logging.m_cent_min << ", Max: " << m_logging.m_cent_max << std::endl;
   std::cout << "sEPD Charge: Min: " << m_logging.m_sepd_charge_min << ", Max: " << m_logging.m_sepd_charge_max << std::endl;
@@ -959,11 +959,11 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD rbin: Min " << m_logging.m_sepd_rbin_min << ", Max: " << m_logging.m_sepd_rbin_max << std::endl;
   std::cout << "sEPD Phi: Min " << m_logging.m_sepd_phi_min << ", Max: " << m_logging.m_sepd_phi_max << std::endl;
   std::cout << "sEPD Eta: Min " << m_logging.m_sepd_eta_min << ", Max: " << m_logging.m_sepd_eta_max << std::endl;
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "sEPD" << std::endl;
   std::cout << "Avg towers ZS: " << m_ctr["sepd_tower_zs"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "MBD" << std::endl;
   std::cout << "Mbd Total Charge: Min: " << m_logging.m_mbd_total_charge_min << ", Max: " << m_logging.m_mbd_total_charge_max << std::endl;
   std::cout << "Mbd Total Charge (North / South): Min: " << m_logging.m_mbd_charge_min << ", Max: " << m_logging.m_mbd_charge_max << std::endl;
@@ -974,7 +974,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Mbd Channel phi: Min: " << m_logging.m_mbd_ch_phi_min << ", Max: " << m_logging.m_mbd_ch_phi_max << std::endl;
   std::cout << "Mbd Channel eta: Min: " << m_logging.m_mbd_ch_eta_min << ", Max: " << m_logging.m_mbd_ch_eta_max << std::endl;
   std::cout << "Mbd Channel charge: Min: " << m_logging.m_mbd_ch_charge_min << ", Max: " << m_logging.m_mbd_ch_charge_max << std::endl;
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "Jets" << std::endl;
   std::cout << std::format("Jet pT: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
   std::cout << std::format("Jet energy: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
@@ -982,13 +982,13 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("Jet eta: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
   std::cout << std::format("Jet constituents: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
   std::cout << std::format("Jets per Event: Min {}, Max: {}\n", m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "Jets Bkg" << std::endl;
   std::cout << std::format("frcem: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_frcem_min, m_logging.m_frcem_max);
   std::cout << std::format("frcoh: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_frcoh_min, m_logging.m_frcoh_max);
   std::cout << std::format("max Jet ET [GeV]: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_maxJetET_min, m_logging.m_maxJetET_max);
   std::cout << std::format("dPhi: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_dPhi_min, m_logging.m_dPhi_max);
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "Abort Events Types" << std::endl;
   std::cout << std::format("process event, Reset Event Calls : {}", m_ctr["event_reset"]) << std::endl;
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
@@ -1011,13 +1011,13 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     std::cout << "process Event Plane, epmap empty: " << m_ctr["process_EventPlane_epmap_empty"] << std::endl;
     std::cout << "process Event Plane, epd invalid: " << m_ctr["process_EventPlane_epd_invalid"] << std::endl;
   }
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "Events" << std::endl;
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
     std::cout << m_eventType[i] << ": " << m_hists["hEvent"]->GetBinContent(i + 1) << std::endl;
   }
-  std::cout << "=====================" << std::endl;
+  std::cout << std::format("{:#<20}\n", "");
 
   TFile output(m_outfile_name.c_str(), "recreate");
   output.cd();
