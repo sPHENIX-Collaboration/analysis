@@ -258,6 +258,7 @@ class sEPDValidation : public SubsysReco
     double m_zvtx_max{10};
     double m_sepd_charge_threshold{0.2};
     double m_cent_max{80};
+    double m_jet_pt_threshold{100}; // [GeV]
   };
 
   EventCuts m_cuts;
@@ -339,6 +340,7 @@ class sEPDValidation : public SubsysReco
     double event_MBD_Charge_North{9999};
     double event_sEPD_Charge_South{9999};
     double event_sEPD_Charge_North{9999};
+    double max_jet_pt{-9999};
     bool hasBkg{false};
     double Q_S_x_2{0};
     double Q_S_y_2{0};

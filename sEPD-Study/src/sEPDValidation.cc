@@ -152,7 +152,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
       // UE
       {HistDef::Type::TH3, "h3UE", "UE: |z| < 10 cm and MB; v_{2}; Towers; Strips", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}},
-      {HistDef::Type::TH2, "h2UE", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+      {HistDef::Type::TH3, "h3UE_Jet", "UE: |z| < 10 cm and MB; Jet p_{T}^{max} [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
   };
 
   // Official
@@ -222,6 +222,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
+  m_tree->Branch("max_jet_pt", &m_data.max_jet_pt);
   m_tree->Branch("jet_pt", &m_data.jet_pt);
   m_tree->Branch("jet_energy", &m_data.jet_energy);
   m_tree->Branch("jet_phi", &m_data.jet_phi);
@@ -720,6 +721,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   int n_jets = 0;
   int n_jetsv2 = 0;
   bool hasJet = false;
+  bool hasHighPt = false;
   bool hasBkg = m_hasBeamBackground || m_failsAnyJetCut;
 
   for (auto* jet : *jets)
@@ -759,6 +761,12 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
         ++n_jetsv2;
       }
 
+      if (pt >= m_cuts.m_jet_pt_threshold)
+      {
+        hasHighPt = true;
+      }
+
+      m_data.max_jet_pt = std::max(m_data.max_jet_pt, pt);
       hasJet = true;
       ++n_jets;
     }
@@ -812,6 +820,11 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     {
       dynamic_cast<TProfile *>(m_hists["hJet_nEventv2"].get())->Fill(m_cent, n_jetsv2);
     }
+
+    if (hasHighPt)
+    {
+      std::cout << std::format("High pT Jet. Event: {}, pT: {}\n", m_data.event_id, m_data.max_jet_pt);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -834,7 +847,7 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   m_data.calo_v2 = v2;
 
   dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
-  dynamic_cast<TH2 *>(m_hists["h2UE"].get())->Fill(m_data.event_centrality, v2);
+  dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -927,6 +940,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_MBD_Charge_North = 9999;
   m_data.event_sEPD_Charge_South = 9999;
   m_data.event_sEPD_Charge_North = 9999;
+  m_data.max_jet_pt = -9999;
   m_data.hasBkg = false;
 
   // sEPD
@@ -1085,6 +1099,10 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3UE", "x");
     project_and_write("h3UE", "yx");
     project_and_write("h3UE", "zx");
+
+    project_and_write("h3UE_Jet", "xy");
+    project_and_write("h3UE_Jet", "yz");
+    project_and_write("h3UE_Jet", "xz");
 
     // Official
     if (m_do_ep)
