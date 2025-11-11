@@ -15,13 +15,37 @@ submitDir=${3}
 run=$(basename "$input")
 
 if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
- then
-   cd $_CONDOR_SCRATCH_DIR
-   cp -rv "$input" "$run"
-   ls -lah
- else
-   echo "condor scratch NOT set"
-   exit -1
+then
+    cd $_CONDOR_SCRATCH_DIR
+
+    # Create a single target directory for the files
+    mkdir "$run"
+
+    echo "Attempting to copy old structure: $input/*.root"
+    # Try copying the "old" structure first.
+    # 1>/dev/null 2>&1 silences "No such file or directory" errors.
+    cp -v "$input"/*.root "$run" 1>/dev/null 2>&1
+
+    # Check if any .root files were *actually* copied.
+    # We use 'find' and 'head' to check for *any* file.
+    if ! find "$run" -name "*.root" -print -quit | grep -q .; then
+        echo "Old structure not found or no .root files."
+        echo "Attempting to copy new structure: $input/hist/*.root"
+        
+        # If no files, try copying the "new" structure
+        # This only copies files from /hist, ignoring /tree
+        cp -v "$input"/hist/*.root "$run" 1>/dev/null 2>&1
+    fi
+    
+    # Check again. If still no files, then we have a problem.
+    if ! find "$run" -name "*.root" -print -quit | grep -q .; then
+        echo "ERROR: No .root files found in $input/*.root OR $input/hist/*.root. Exiting."
+        exit 1
+    fi
+
+else
+    echo "condor scratch NOT set"
+    exit -1
 fi
 
 # print the environment - needed for debugging
