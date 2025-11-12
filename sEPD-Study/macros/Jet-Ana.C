@@ -722,7 +722,7 @@ void JetAnalysis::create_vn_histograms(int n)
 
   psi_hist_name = std::format("h2_sEPD_PsiAvg_{}_corr2", n);
   m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
-                                                    std::format("sEPD #Psi Avg (Order {0}): |z| < 10 cm and MB; (#Psi^{{S}}_{{{0}}} + #Psi^{{N}}_{{{0}}}) / 2; Centrality [%]", n).c_str(),
+                                                    std::format("sEPD #Psi Avg (Order {0}): |z| < 10 cm and MB; Average #Psi^{{N,S}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                     bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
   // South, North
@@ -913,7 +913,9 @@ void JetAnalysis::correct_QVecs()
     double psi_S_corr2 = std::atan2(q_S_corr2.y, q_S_corr2.x);
     double psi_N_corr2 = std::atan2(q_N_corr2.y, q_N_corr2.x);
 
-    double psi_avg_corr2 = (psi_S_corr2 / n + psi_N_corr2 / n) / 2;
+    double x_avg = std::cos(psi_S_corr2) + std::cos(psi_N_corr2);
+    double y_avg = std::sin(psi_S_corr2) + std::sin(psi_N_corr2);
+    double psi_avg_corr2 = std::atan2(y_avg, x_avg) / n;
 
     m_hists.hPsi_raw[n_idx]->Fill(psi_S_raw, psi_N_raw, cent);
     m_hists.hPsi_corr2[n_idx]->Fill(psi_S_corr2, psi_N_corr2, cent);

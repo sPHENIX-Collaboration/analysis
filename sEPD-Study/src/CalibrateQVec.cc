@@ -426,8 +426,13 @@ int CalibrateQVec::process_event(PHCompositeNode* topNode)
   double psi2_S = std::atan2(m_Q[0].y, m_Q[0].x) / 2;
   double psi2_N = std::atan2(m_Q[1].y, m_Q[1].x) / 2;
 
+  double x_avg = std::cos(2*psi2_S) + std::cos(2*psi2_N);
+  double y_avg = std::sin(2*psi2_S) + std::sin(2*psi2_N);
+  double psi2_NS = std::atan2(y_avg, x_avg) / 2;
+
   m_CalibQVecParams.set_double_param("Psi2_S", psi2_S);
   m_CalibQVecParams.set_double_param("Psi2_N", psi2_N);
+  m_CalibQVecParams.set_double_param("Psi2_NS", psi2_NS);
   m_CalibQVecParams.set_double_param("Q_S_x_2", m_Q[0].x);
   m_CalibQVecParams.set_double_param("Q_S_y_2", m_Q[0].y);
   m_CalibQVecParams.set_double_param("Q_N_x_2", m_Q[1].x);
