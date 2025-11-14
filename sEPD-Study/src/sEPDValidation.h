@@ -225,32 +225,13 @@ class sEPDValidation : public SubsysReco
     MBD_HIGH
   };
 
-  enum class JetBkgType : std::uint8_t
-  {
-    STREAK,
-    LOEM,
-    HIEM,
-    IH
-  };
-
   std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "|z| < 10 cm & MB", "Has Jet"};
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
-  std::vector<std::string> m_JetBkg_Type{"Streak", "LoEM", "HiEM", "Ih"};
 
   // Event Vars
   double m_zvtx{9999};
   double m_cent{9999};
   double m_mbd_total_charge{9999};
-  bool m_hasBeamBackground{false};
-  bool m_failsLoEmJetCut{false};
-  bool m_failsHiEmJetCut{false};
-  bool m_failsIhJetCut{false};
-  bool m_failsAnyJetCut{false};
-  bool m_isDijet{false};
-  double m_frcem{0};
-  double m_frcoh{0};
-  double m_maxJetET{0};
-  double m_dPhi{0};
 
   // Cuts
   struct EventCuts
@@ -316,14 +297,6 @@ class sEPDValidation : public SubsysReco
     double m_jet_constituents_max{0};
     int m_jet_nEvent_min{9999};
     int m_jet_nEvent_max{0};
-    double m_frcem_min{9999};
-    double m_frcem_max{0};
-    double m_frcoh_min{9999};
-    double m_frcoh_max{0};
-    double m_maxJetET_min{9999};
-    double m_maxJetET_max{0};
-    double m_dPhi_min{9999};
-    double m_dPhi_max{0};
   };
 
   LoggingInfo m_logging;
@@ -341,7 +314,6 @@ class sEPDValidation : public SubsysReco
     double event_sEPD_Charge_South{9999};
     double event_sEPD_Charge_North{9999};
     double max_jet_pt{-9999};
-    bool hasBkg{false};
     double Q_S_x_2{0};
     double Q_S_y_2{0};
     double Q_N_x_2{0};
