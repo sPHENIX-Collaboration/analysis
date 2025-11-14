@@ -108,6 +108,7 @@ class JetAnalysis
 
   struct JetInfo
   {
+    double energy{0};
     double pt{0};
     double phi{0};
     double eta{0};
@@ -137,9 +138,14 @@ class JetAnalysis
     TH2* h2EMCalBadTowersDeadv2{nullptr};
     TH3* h3JetPhiEtaPt{nullptr};
     TH3* h3JetPhiEtaPtv2{nullptr};
+    TH3* h3JetPhiEtaPtv3{nullptr}; // Positive Jet Energy
+    TH3* h3JetPhiEtaPtv4{nullptr}; // Positive Jet Energy and Calo V2 Cut
     TH2* h2Event{nullptr};
     TH2* h2Jet{nullptr};
-    TH2* h2JetPtCentrality{nullptr};
+    TH3* h3JetPtCentralityCaloV2{nullptr};
+    TH3* h3JetEnergyCentralityCaloV2{nullptr};
+    TH2* h2CentralityCaloV2{nullptr};
+    TH2* h2JetPtEnergy{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi_raw{nullptr};
     std::array<TH3*, 3> hPsi_corr2{nullptr};
@@ -159,6 +165,8 @@ class JetAnalysis
     std::array<TProfile*, 3> p1SP_res{nullptr};
     std::array<TProfile*, 3> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
     std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{{{}, {}, {}}};
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_rev2{{{}, {}, {}}}; // Jet Energy > 0
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_rev3{{{}, {}, {}}}; // Jet Energy > 0 and Calo V2 Cut
     std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{{{}, {}, {}}};
 
     // Event Plane Method
@@ -202,7 +210,15 @@ class JetAnalysis
     int event_id{0};
     [[maybe_unused]] double event_zvertex{0.0};
     double event_centrality{0.0};
+    double event_MBD_Charge_South{0.0};
+    double event_MBD_Charge_North{0.0};
+    double event_sEPD_Charge_South{0.0};
+    double event_sEPD_Charge_North{0.0};
+    float calo_v2{0.0};
+    bool has_good_calo_v2{false};
+    double max_jet_pt{0.0};
 
+    std::vector<double>* jet_energy{nullptr};
     std::vector<double>* jet_pt{nullptr};
     std::vector<double>* jet_phi{nullptr};
     std::vector<double>* jet_eta{nullptr};
@@ -243,6 +259,9 @@ class JetAnalysis
   std::string m_dbtag{"newcdbtag"};
   int m_bins_sample{25};
 
+  // Calo V2 Analysis
+  bool m_do_secondary_processing{true};
+
   // sEPD Bad Channels
   std::unordered_set<int> m_bad_channels;
   std::unordered_set<int> m_rbins_skipped;
@@ -250,6 +269,9 @@ class JetAnalysis
   // Jet Cuts
   double m_jet_pt_min{7}; /*GeV*/
   double m_jet_eta_max{0.9};
+
+  // Calo V2 Cuts
+  float m_calo_v2_max{0.48F};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -296,23 +318,54 @@ void JetAnalysis::setup_chain()
 
   // Setup branches
   m_chain->SetBranchStatus("*", false);
-  m_chain->SetBranchStatus("event_id", true);
-  m_chain->SetBranchStatus("event_centrality", true);
-  m_chain->SetBranchStatus("jet_phi", true);
-  m_chain->SetBranchStatus("jet_eta", true);
-  m_chain->SetBranchStatus("jet_pt", true);
-  m_chain->SetBranchStatus("sepd_channel", true);
-  m_chain->SetBranchStatus("sepd_charge", true);
-  m_chain->SetBranchStatus("sepd_phi", true);
 
+  // List of Branches of Interest
+  std::vector<std::string> branchNames = {"event_id", "event_centrality",
+                                          "event_MBD_Charge_South", "event_MBD_Charge_North",
+                                          "event_sEPD_Charge_South", "event_sEPD_Charge_North",
+                                          "calo_v2",
+                                          "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
+                                          "sepd_channel", "sepd_charge", "sepd_phi"};
+
+  // Check Branch Status
+  for(const auto& branchName : branchNames)
+  {
+    TBranch* branch = m_chain->GetBranch(branchName.c_str());
+    if (branch)
+    {
+      // Branch exists: Enable it
+      m_chain->SetBranchStatus(branchName.c_str(), true);
+    }
+    else if (branchName == "calo_v2")
+    {
+      m_do_secondary_processing = false;
+    }
+    else
+    {
+      throw std::runtime_error(std::format("Could not find Branch '{}' in file '{}'", branchName, m_input_file));
+    }
+  }
+
+  // Set branches to variables
   m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
   m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
+  m_chain->SetBranchAddress("event_MBD_Charge_South", &m_event_data.event_MBD_Charge_South);
+  m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
+  m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
+  m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
+  m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
   m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
+  m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
   m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
   m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
   m_chain->SetBranchAddress("sepd_channel", &m_event_data.sepd_channel);
   m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
   m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
+
+  if (m_do_secondary_processing)
+  {
+    m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+  }
 
   std::cout << "Finished... setup_chain" << std::endl;
 }
@@ -673,6 +726,21 @@ void JetAnalysis::create_vn_histograms(int n)
     title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
     m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
+    // with jet energy > 0
+    name_re_prof = std::format("hSP_re_profv2_{}_{}", n, pt);
+
+    title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
+    m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+    if(m_do_secondary_processing)
+    {
+      // With jet energy > 0 and calo v2 cut
+      name_re_prof = std::format("hSP_re_profv3_{}_{}", n, pt);
+
+      title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
+      m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+    }
+
     name_re_prof = std::format("hSP_re_anti_prof_{}_{}", n, pt);
 
     title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{N|S*}}_{{{0}}}#GT)", n);
@@ -722,7 +790,7 @@ void JetAnalysis::create_vn_histograms(int n)
 
   psi_hist_name = std::format("h2_sEPD_PsiAvg_{}_corr2", n);
   m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
-                                                    std::format("sEPD #Psi Avg (Order {0}): |z| < 10 cm and MB; Average #Psi^{{N,S}}_{{{0}}}; Centrality [%]", n).c_str(),
+                                                    std::format("sEPD #Psi Avg (Order {0}): |z| < 10 cm and MB; Average 2#Psi^{{N,S}}_{{{0}}}; Centrality [%]", n).c_str(),
                                                     bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
   // South, North
@@ -784,16 +852,34 @@ void JetAnalysis::init_hists()
   double pt_low = 0;
   double pt_high = 500;
 
+  int bins_energy = 1000;
+  double energy_low = -500;
+  double energy_high = 500;
+
+  unsigned int bins_v2{100};
+  double v2_low{-1};
+  double v2_high{1};
+
   double sample_low = -0.5;
   double sample_high = m_bins_sample - 0.5;
 
   m_hists3D["h3JetPhiEtaPt"] = std::make_unique<TH3F>("h3JetPhiEtaPt", "Jet: |z| < 10 cm and MB; #phi; #eta; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high, bins_pt, pt_low, pt_high);
   m_hists3D["h3JetPhiEtaPtv2"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv2")));
+  m_hists3D["h3JetPhiEtaPtv3"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv3")));
+
+  if (m_do_secondary_processing)
+  {
+    m_hists3D["h3JetPhiEtaPtv4"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv4")));
+
+    m_hists3D["h3JetPtCentralityCaloV2"] = std::make_unique<TH3F>("h3JetPtCentralityCaloV2", "Jets; Jet p_{T} [GeV]; Centrality [%]; v_{2}", bins_pt, pt_low, pt_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+    m_hists3D["h3JetEnergyCentralityCaloV2"] = std::make_unique<TH3F>("h3JetEnergyCentralityCaloV2", "Jets; Jet Energy [GeV]; Centrality [%]; v_{2}", bins_energy, energy_low, energy_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+    m_hists2D["h2CentralityCaloV2"] = std::make_unique<TH2F>("h2CentralityCaloV2", "; Centrality [%]; v_{2}", m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+  }
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
   m_hists2D["h2Jet"] = std::make_unique<TH2F>("h2Jet", "Jets; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
 
-  m_hists2D["h2JetPtCentrality"] = std::make_unique<TH2F>("h2JetPtCentrality", "Jets; Centrality [%]; Jet p_{T} [GeV]", m_bins_cent, m_cent_low, m_cent_high, bins_pt, pt_low, pt_high);
+  m_hists2D["h2JetPtEnergy"] = std::make_unique<TH2F>("h2JetPtEnergy", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]", bins_pt, pt_low, pt_high, bins_energy, energy_low, energy_high);
 
   m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
@@ -809,10 +895,19 @@ void JetAnalysis::init_hists()
   m_hists.h2EMCalBadTowersDeadv2 = m_hists2D["h2EMCalBadTowersDeadv2"].get();
   m_hists.h3JetPhiEtaPt = m_hists3D["h3JetPhiEtaPt"].get();
   m_hists.h3JetPhiEtaPtv2 = m_hists3D["h3JetPhiEtaPtv2"].get();
+  m_hists.h3JetPhiEtaPtv3 = m_hists3D["h3JetPhiEtaPtv3"].get();
   m_hists.h2Event = m_hists2D["h2Event"].get();
   m_hists.h2Jet = m_hists2D["h2Jet"].get();
-  m_hists.h2JetPtCentrality = m_hists2D["h2JetPtCentrality"].get();
   m_hists.hCentrality = m_hists1D["hCentrality"].get();
+  m_hists.h2JetPtEnergy = m_hists2D["h2JetPtEnergy"].get();
+
+  if (m_do_secondary_processing)
+  {
+    m_hists.h3JetPhiEtaPtv4 = m_hists3D["h3JetPhiEtaPtv4"].get();
+    m_hists.h3JetPtCentralityCaloV2 = m_hists3D["h3JetPtCentralityCaloV2"].get();
+    m_hists.h3JetEnergyCentralityCaloV2 = m_hists3D["h3JetEnergyCentralityCaloV2"].get();
+    m_hists.h2CentralityCaloV2 = m_hists2D["h2CentralityCaloV2"].get();
+  }
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -860,6 +955,11 @@ void JetAnalysis::init_hists()
     {
       int pt = m_jet_pt_min_vec[idx_pt];
       m_hists.p1SP_re[n_idx][idx_pt] = m_profiles[std::format("hSP_re_prof_{}_{}", n, pt)].get();
+      m_hists.p1SP_rev2[n_idx][idx_pt] = m_profiles[std::format("hSP_re_profv2_{}_{}", n, pt)].get();
+      if (m_do_secondary_processing)
+      {
+        m_hists.p1SP_rev3[n_idx][idx_pt] = m_profiles[std::format("hSP_re_profv3_{}_{}", n, pt)].get();
+      }
       m_hists.p1SP_re_anti[n_idx][idx_pt] = m_profiles[std::format("hSP_re_anti_prof_{}_{}", n, pt)].get();
 
       // Event Plane Method
@@ -915,7 +1015,7 @@ void JetAnalysis::correct_QVecs()
 
     double x_avg = std::cos(psi_S_corr2) + std::cos(psi_N_corr2);
     double y_avg = std::sin(psi_S_corr2) + std::sin(psi_N_corr2);
-    double psi_avg_corr2 = std::atan2(y_avg, x_avg) / n;
+    double psi_avg_corr2 = std::atan2(y_avg, x_avg);
 
     m_hists.hPsi_raw[n_idx]->Fill(psi_S_raw, psi_N_raw, cent);
     m_hists.hPsi_corr2[n_idx]->Fill(psi_S_corr2, psi_N_corr2, cent);
@@ -1059,6 +1159,7 @@ void JetAnalysis::compute_SP(int sample)
     double phi = jet_info[idx].phi;
     double eta = jet_info[idx].eta;
     double pt = jet_info[idx].pt;
+    double energy = jet_info[idx].energy;
 
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
     size_t arm_anti = (eta > 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1101,6 +1202,18 @@ void JetAnalysis::compute_SP(int sample)
 
         // Event Plane Method
         m_hists.p1EP_re[n_idx][idx_pt]->Fill(cent, EP_re);
+
+        // Ensure Positive Jet Energy
+        if (energy > 0)
+        {
+          m_hists.p1SP_rev2[n_idx][idx_pt]->Fill(cent, SP_re);
+
+          // Calo V2 Cut
+          if (m_event_data.has_good_calo_v2)
+          {
+            m_hists.p1SP_rev3[n_idx][idx_pt]->Fill(cent, SP_re);
+          }
+        }
       }
     }
   }
@@ -1114,10 +1227,12 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   jet_info.reserve(nJets);
 
   double cent = m_event_data.event_centrality;
+  float calo_v2 = m_event_data.calo_v2;
 
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
   {
+    double energy = m_event_data.jet_energy->at(idx);
     double pt = m_event_data.jet_pt->at(idx);
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
@@ -1142,9 +1257,30 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     if (dead_status == 0)
     {
       m_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
-      m_hists.h2JetPtCentrality->Fill(cent, pt);
+      m_hists.h2JetPtEnergy->Fill(pt, energy);
 
-      jet_info.emplace_back(pt, phi, eta);
+      jet_info.emplace_back(energy, pt, phi, eta);
+
+      if(m_do_secondary_processing)
+      {
+        m_hists.h3JetPtCentralityCaloV2->Fill(pt, cent, calo_v2);
+        m_hists.h3JetEnergyCentralityCaloV2->Fill(energy, cent, calo_v2);
+      }
+
+      if (energy > 0)
+      {
+        m_hists.h3JetPhiEtaPtv3->Fill(phi, eta, pt);
+
+        if (m_event_data.has_good_calo_v2)
+        {
+          m_hists.h3JetPhiEtaPtv4->Fill(phi, eta, pt);
+        }
+      }
+      else
+      {
+        std::cout << std::format("Negative Energy Jet! Event: {}, Calo V2: {:.6f}, Jet Energy: {:.2f}, Jet Pt: {:.2f}\n",
+                                 m_event_data.event_id, calo_v2, energy, pt);
+      }
     }
   }
 
@@ -1213,6 +1349,13 @@ void JetAnalysis::process_events()
     int sample = (events_cent + sample_offset) % m_bins_sample;
     m_hists.hCentrality->Fill(cent);
 
+    if (m_do_secondary_processing)
+    {
+      m_hists.h2CentralityCaloV2->Fill(cent, m_event_data.calo_v2);
+    }
+
+    m_event_data.has_good_calo_v2 = std::fabs(m_event_data.calo_v2) < m_calo_v2_max && m_do_secondary_processing;
+
     // Scalar Product Method
     compute_SP(sample);
 
@@ -1221,10 +1364,15 @@ void JetAnalysis::process_events()
   }
 
   int jets = static_cast<int>(m_hists.h3JetPhiEtaPt->GetEntries());
-  int jets_good = static_cast<int>(m_hists.h3JetPhiEtaPtv2->GetEntries());
+  int jets_good_regions = static_cast<int>(m_hists.h3JetPhiEtaPtv2->GetEntries());
+  int jets_positive_energy = static_cast<int>(m_hists.h3JetPhiEtaPtv3->GetEntries());
+  int jets_good_caloV2 = (m_do_secondary_processing) ? static_cast<int>(m_hists.h3JetPhiEtaPtv4->GetEntries()) : 0;
 
   std::cout << std::format("Event Skipped: Cent (Out of Bounds): {}, Bad Q Vecs: {}\n", ctr["events_skipped_cent"], ctr["events_skipped_bad_Q_vec"]);
-  std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f} %\n", jets, jets_good, jets_good * 100. / jets);
+  std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f}, Positive Energy: {}, {:.2f}, Good Calo V2: {}, {:.2f}%\n", jets, jets_good_regions, jets_good_regions * 100. / jets
+                                                                                                                               , jets_positive_energy, jets_positive_energy * 100. / jets
+                                                                                                                               , jets_good_caloV2, jets_good_caloV2 * 100. / jets);
+
   std::cout << std::format("QVecAna: {}, rbins skipped: {}\n", static_cast<int>(m_QVecAna), m_rbins_skipped.size());
 
   std::cout << "Finished... process_events" << std::endl;
@@ -1277,6 +1425,20 @@ void JetAnalysis::save_results() const
   project_and_write("h3JetPhiEtaPt", "yx");
   project_and_write("h3JetPhiEtaPtv2", "z");
   project_and_write("h3JetPhiEtaPtv2", "yx");
+  project_and_write("h3JetPhiEtaPtv3", "z");
+  project_and_write("h3JetPhiEtaPtv3", "yx");
+
+  if (m_do_secondary_processing)
+  {
+    project_and_write("h3JetPhiEtaPtv4", "z");
+    project_and_write("h3JetPhiEtaPtv4", "yx");
+
+    project_and_write("h3JetPtCentralityCaloV2", "xy");
+    project_and_write("h3JetPtCentralityCaloV2", "xz");
+
+    project_and_write("h3JetEnergyCentralityCaloV2", "xy");
+    project_and_write("h3JetEnergyCentralityCaloV2", "xz");
+  }
 
   output_file->Close();
 
