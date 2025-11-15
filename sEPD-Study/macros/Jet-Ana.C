@@ -1237,7 +1237,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
 
-    if (pt < m_jet_pt_min || std::fabs(eta) >= m_jet_eta_max)
+    if (pt < m_jet_pt_min || std::abs(eta) >= m_jet_eta_max)
     {
       continue;
     }
@@ -1349,12 +1349,19 @@ void JetAnalysis::process_events()
     int sample = (events_cent + sample_offset) % m_bins_sample;
     m_hists.hCentrality->Fill(cent);
 
+    float calo_v2 = m_event_data.calo_v2;
+
     if (m_do_secondary_processing)
     {
-      m_hists.h2CentralityCaloV2->Fill(cent, m_event_data.calo_v2);
+      m_hists.h2CentralityCaloV2->Fill(cent, calo_v2);
+
+      if (std::abs(calo_v2) > 0.6F && cent < 50)
+      {
+        std::cout << std::format("High Calo V2! Event: {}, Centrality: {}, Calo V2: {:.6f}\n", m_event_data.event_id, cent, calo_v2);
+      }
     }
 
-    m_event_data.has_good_calo_v2 = std::fabs(m_event_data.calo_v2) < m_calo_v2_max && m_do_secondary_processing;
+    m_event_data.has_good_calo_v2 = std::abs(calo_v2) < m_calo_v2_max && m_do_secondary_processing;
 
     // Scalar Product Method
     compute_SP(sample);
