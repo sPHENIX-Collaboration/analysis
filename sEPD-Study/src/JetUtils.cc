@@ -93,6 +93,11 @@ void JetUtils::update_min_max(const double val, double &val_min, double &val_max
   val_max = std::max(val_max, val);
 }
 
+void JetUtils::update_min_max(const float val, float &val_min, float &val_max) {
+  val_min = std::min(val_min, val);
+  val_max = std::max(val_max, val);
+}
+
 void JetUtils::update_min_max(const int val, int &val_min, int &val_max) {
   val_min = std::min(val_min, val);
   val_max = std::max(val_max, val);

@@ -16,6 +16,7 @@ class JetUtils
   static std::vector<std::string> split(const std::string &s, char delimiter);
 
   static void update_min_max(double val, double &val_min, double &val_max);
+  static void update_min_max(float val, float &val_min, float &val_max);
   static void update_min_max(int val, int &val_min, int &val_max);
 
  private:

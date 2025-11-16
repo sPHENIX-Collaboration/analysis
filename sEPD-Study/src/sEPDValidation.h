@@ -177,6 +177,10 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_v2{100};
     double m_v2_low{-1};
     double m_v2_high{1};
+
+    unsigned int m_bins_sum_E{800};
+    double m_sum_E_low{-1e3};
+    double m_sum_E_high{3e3};
   };
 
   HistConfig m_hist_config;
@@ -297,6 +301,12 @@ class sEPDValidation : public SubsysReco
     double m_jet_constituents_max{0};
     int m_jet_nEvent_min{9999};
     int m_jet_nEvent_max{0};
+
+    // UE
+    float m_UE_calo_v2_min{9999};
+    float m_UE_calo_v2_max{0};
+    float m_UE_sum_E_min{9999};
+    float m_UE_sum_E_max{0};
   };
 
   LoggingInfo m_logging;
@@ -318,6 +328,7 @@ class sEPDValidation : public SubsysReco
     double Q_S_y_2{0};
     double Q_N_x_2{0};
     double Q_N_y_2{0};
+    float UE_sum_E{9999};
     float calo_v2{9999};
     std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;

@@ -141,6 +141,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       // UE
       {HistDef::Type::TH3, "h3UE", "UE: |z| < 10 cm and MB; v_{2}; Towers; Strips", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}},
       {HistDef::Type::TH3, "h3UE_Jet", "UE: |z| < 10 cm and MB; Jet p_{T}^{max} [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH3, "h3UE_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
   };
 
   // Official
@@ -199,6 +200,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
     m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
 
+    m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
     m_tree->Branch("calo_v2", &m_data.calo_v2);
   }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
@@ -733,13 +735,19 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   }
 
   float v2 = towerBkg->get_v2();
+  float sum_E = towerBkg->get_sum_E();
   int nTowers = towerBkg->get_nTowersUsedForBkg();
   int nStrips = towerBkg->get_nStripsUsedForFlow();
 
   m_data.calo_v2 = v2;
+  m_data.UE_sum_E = sum_E;
 
   dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
   dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
+  dynamic_cast<TH3 *>(m_hists["h3UE_SumE"].get())->Fill(sum_E, v2, m_data.event_centrality);
+
+  JetUtils::update_min_max(v2, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
+  JetUtils::update_min_max(sum_E, m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -856,8 +864,9 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.Q_N_x_2 = 0;
   m_data.Q_N_y_2 = 0;
 
-  // Calo V2
+  // UE
   m_data.calo_v2 = 9999;
+  m_data.UE_sum_E = 9999;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -918,6 +927,16 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     std::cout << "process Event Plane, epmap empty: " << m_ctr["process_EventPlane_epmap_empty"] << std::endl;
     std::cout << "process Event Plane, epd invalid: " << m_ctr["process_EventPlane_epd_invalid"] << std::endl;
   }
+
+  // UE
+  if (m_calib_Q)
+  {
+    std::cout << std::format("{:#<20}\n", "");
+    std::cout << "UE" << std::endl;
+    std::cout << std::format("Calo V2: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
+    std::cout << std::format("Sum E: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
+  }
+
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Events" << std::endl;
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
@@ -976,6 +995,9 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3UE_Jet", "xy");
     project_and_write("h3UE_Jet", "yz");
     project_and_write("h3UE_Jet", "xz");
+
+    project_and_write("h3UE_SumE", "yx");
+    project_and_write("h3UE_SumE", "xz");
 
     // Official
     if (m_do_ep)
