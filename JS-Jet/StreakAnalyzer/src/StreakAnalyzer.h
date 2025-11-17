@@ -4,12 +4,6 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-#include <calobase/PhotonClusterContainer.h>
-#include <calobase/PhotonCluster.h>
-
-#include <jetbase/JetContainer.h>
-#include <jetbase/Jet.h>
-
 #include <TMath.h>
 #include <string>
 #include <vector>
@@ -22,17 +16,7 @@ struct Config {
   std::string photon_node = "PHOTONCLUSTER_CEMC";
   std::vector<std::string> jet_nodes = {
   
-   "AntiKt_unsubtracted_r04", //The one we want to use right now
-
-   //may be used in future runs
-   /*
-    "AntiKt_Tower_r04_Sub1",
-    "AntiKt_Tower_r03_Sub1",
-    "AntiKt_Tower_r02_Sub1",
-    "AntiKt_unsubtracted_r04",
-    "AntiKt_unsubtracted_r03",
-    "AntiKt_unsubtracted_r02"
-    */
+   "AntiKt_unsubtracted_r04",
   };
 
   //The Streak event selection cuts
