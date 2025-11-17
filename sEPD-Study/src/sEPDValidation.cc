@@ -131,6 +131,16 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
       {HistDef::Type::TH3, "h3SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
+      // Calo
+      {HistDef::Type::TProfile2D, "h2EMCal_Energy", "EMCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
+      {HistDef::Type::TProfile2D, "h2IHCal_Energy", "IHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
+      {HistDef::Type::TProfile2D, "h2OHCal_Energy", "OHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
+
+      {HistDef::Type::TH3, "h3EMCal_MBD_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+      {HistDef::Type::TH3, "h3IHCal_MBD_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+      {HistDef::Type::TH3, "h3OHCal_MBD_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+      {HistDef::Type::TH3, "h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
+
       // Jets
       {HistDef::Type::TH3, "h3Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
       {HistDef::Type::TH3, "h3Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
@@ -190,6 +200,9 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_MBD_Charge_North", &m_data.event_MBD_Charge_North);
   m_tree->Branch("event_sEPD_Charge_South", &m_data.event_sEPD_Charge_South);
   m_tree->Branch("event_sEPD_Charge_North", &m_data.event_sEPD_Charge_North);
+  m_tree->Branch("event_EMCal_Energy", &m_data.event_EMCal_Energy);
+  m_tree->Branch("event_IHCal_Energy", &m_data.event_IHCal_Energy);
+  m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
@@ -566,6 +579,82 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//____________________________________________________________________________..
+int sEPDValidation::process_Calo(PHCompositeNode *topNode)
+{
+  auto* towersCEMC  = getNode<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  auto* towersIHCal = getNode<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  auto* towersOHCal = getNode<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+
+  if (!towersCEMC || !towersIHCal || !towersOHCal)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  size_t nTowersCEMC = towersCEMC->size();
+  size_t nTowersIHCal = towersIHCal->size();
+  size_t nTowersOHCal = towersOHCal->size();
+
+  if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
+  {
+    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event_id);
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  auto* h2EMCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2EMCal_Energy"].get());
+  auto* h2IHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2IHCal_Energy"].get());
+  auto* h2OHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2OHCal_Energy"].get());
+
+  for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
+  {
+    unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
+    unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
+    auto* towerCEMC = towersCEMC->get_tower_at_channel(towerIndex);
+    if(towerCEMC->get_isGood())
+    {
+      float energy = towerCEMC->get_energy();
+      m_data.event_EMCal_Energy += energy;
+      h2EMCal_Energy->Fill(iphi, ieta, energy);
+    }
+
+    auto* towerIHCal = towersIHCal->get_tower_at_channel(towerIndex);
+    if(towerIHCal->get_isGood())
+    {
+      float energy = towerIHCal->get_energy();
+      m_data.event_IHCal_Energy += energy;
+      h2IHCal_Energy->Fill(iphi, ieta, energy);
+    }
+
+    auto* towerOHCal = towersOHCal->get_tower_at_channel(towerIndex);
+    if(towerOHCal->get_isGood())
+    {
+      float energy = towerOHCal->get_energy();
+      m_data.event_OHCal_Energy += energy;
+      h2OHCal_Energy->Fill(iphi, ieta, energy);
+    }
+  }
+
+  double total_MBD = m_data.event_MBD_Charge_South + m_data.event_MBD_Charge_North;
+  double total_sEPD = m_data.event_sEPD_Charge_South + m_data.event_sEPD_Charge_North;
+  double total_EMCal = m_data.event_EMCal_Energy;
+  double total_IHCal = m_data.event_IHCal_Energy;
+  double total_OHCal = m_data.event_OHCal_Energy;
+
+  dynamic_cast<TH3 *>(m_hists["h3EMCal_MBD_sEPD"].get())->Fill(total_EMCal, total_MBD, total_sEPD);
+  dynamic_cast<TH3 *>(m_hists["h3IHCal_MBD_sEPD"].get())->Fill(total_IHCal, total_MBD, total_sEPD);
+  dynamic_cast<TH3 *>(m_hists["h3OHCal_MBD_sEPD"].get())->Fill(total_OHCal, total_MBD, total_sEPD);
+  dynamic_cast<TH3 *>(m_hists["h3EMCal_IHCal_OHCal"].get())->Fill(total_EMCal, total_IHCal, total_OHCal);
+
+  JetUtils::update_min_max(m_data.event_EMCal_Energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
+  JetUtils::update_min_max(m_data.event_IHCal_Energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
+  JetUtils::update_min_max(m_data.event_OHCal_Energy, m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
 void sEPDValidation::process_CalibQVec(PHCompositeNode *topNode)
 {
   PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
@@ -801,6 +890,12 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  ret = process_Calo(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
   if (m_calib_Q)
   {
     process_CalibQVec(topNode);
@@ -846,6 +941,11 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sepd_channel.clear();
   m_data.sepd_charge.clear();
   m_data.sepd_phi.clear();
+
+  // Calo
+  m_data.event_EMCal_Energy = 0;
+  m_data.event_IHCal_Energy = 0;
+  m_data.event_OHCal_Energy = 0;
 
   // MBD
   // m_data.mbd_charge.clear();
@@ -903,11 +1003,16 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Mbd Channel eta: Min: " << m_logging.m_mbd_ch_eta_min << ", Max: " << m_logging.m_mbd_ch_eta_max << std::endl;
   std::cout << "Mbd Channel charge: Min: " << m_logging.m_mbd_ch_charge_min << ", Max: " << m_logging.m_mbd_ch_charge_max << std::endl;
   std::cout << std::format("{:#<20}\n", "");
+  std::cout << "Calo" << std::endl;
+  std::cout << std::format("EMCal: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
+  std::cout << std::format("IHCal: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
+  std::cout << std::format("OHCal: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
+  std::cout << std::format("{:#<20}\n", "");
   std::cout << "Jets" << std::endl;
-  std::cout << std::format("Jet pT: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
+  std::cout << std::format("Jet pT: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
   std::cout << std::format("Jet energy: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
-  std::cout << std::format("Jet phi: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
-  std::cout << std::format("Jet eta: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
+  std::cout << std::format("Jet phi: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
+  std::cout << std::format("Jet eta: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
   std::cout << std::format("Jet constituents: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
   std::cout << std::format("Jets per Event: Min {}, Max: {}\n", m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
   std::cout << std::format("{:#<20}\n", "");
@@ -986,6 +1091,16 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
     project_and_write("h3Jet_pT_Phi", "yx");
     project_and_write("h3Jet_pT_Energy", "yx");
     project_and_write("h3Jet_PhiEta", "yx");
+
+    // Calo
+    project_and_write("h3EMCal_MBD_sEPD", "yx");
+    project_and_write("h3EMCal_MBD_sEPD", "zx");
+    project_and_write("h3IHCal_MBD_sEPD", "yx");
+    project_and_write("h3IHCal_MBD_sEPD", "zx");
+    project_and_write("h3OHCal_MBD_sEPD", "yx");
+    project_and_write("h3OHCal_MBD_sEPD", "zx");
+    project_and_write("h3EMCal_IHCal_OHCal", "yx");
+    project_and_write("h3EMCal_IHCal_OHCal", "zx");
 
     // UE
     project_and_write("h3UE", "x");

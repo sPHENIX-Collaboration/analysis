@@ -63,6 +63,7 @@ class sEPDValidation : public SubsysReco
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
+  int process_Calo(PHCompositeNode *topNode);
   void process_CalibQVec(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
   int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
@@ -181,6 +182,10 @@ class sEPDValidation : public SubsysReco
     unsigned int m_bins_sum_E{800};
     double m_sum_E_low{-1e3};
     double m_sum_E_high{3e3};
+
+    unsigned int m_bins_Calo_E{600};
+    double m_Calo_E_low{-1e3};
+    double m_Calo_E_high{2e3};
   };
 
   HistConfig m_hist_config;
@@ -302,6 +307,14 @@ class sEPDValidation : public SubsysReco
     int m_jet_nEvent_min{9999};
     int m_jet_nEvent_max{0};
 
+    // Calo
+    double m_EMCal_Energy_min{9999};
+    double m_EMCal_Energy_max{0};
+    double m_IHCal_Energy_min{9999};
+    double m_IHCal_Energy_max{0};
+    double m_OHCal_Energy_min{9999};
+    double m_OHCal_Energy_max{0};
+
     // UE
     float m_UE_calo_v2_min{9999};
     float m_UE_calo_v2_max{0};
@@ -323,6 +336,9 @@ class sEPDValidation : public SubsysReco
     double event_MBD_Charge_North{9999};
     double event_sEPD_Charge_South{9999};
     double event_sEPD_Charge_North{9999};
+    double event_EMCal_Energy{0};
+    double event_IHCal_Energy{0};
+    double event_OHCal_Energy{0};
     double max_jet_pt{-9999};
     double Q_S_x_2{0};
     double Q_S_y_2{0};

@@ -39,7 +39,7 @@ link_directories(
 set(SPHENIX_LIBS
     calo_io calo_reco fun4all calotrigger centrality ffamodules mbd epd
     eventplaneinfo zdcinfo globalvertex phool phparameter sphenixnpc cdbobjects
-    jetbackground g4jets jetbase particleflow
+    jetbackground g4jets jetbase particleflow g4detectors_io
 )
 set(MY_LIBS sEPDValidation)
 
