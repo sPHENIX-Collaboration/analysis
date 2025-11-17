@@ -1,3 +1,9 @@
+#include <calobase/PhotonClusterContainer.h>
+#include <caloreco/PhotonClusterBuilder.h>
+#include <Calobase/PhotonClusterv1.h>
+
+#include <jetbase/JetContainer.h>
+#include <jetbase/Jet.h>
 
 #include "StreakAnalyzer.h"
 
@@ -8,7 +14,7 @@ using namespace streak;
 //-----------------------------------------------------------------------
 bool StreakAnalyzer::pass_cluster_selection(PHCompositeNode* topNode, std::string* why) const
 {
-  auto* phCont = findNode::getClass<PhotonClusterContainer>(topNode, m_cfg.photon_node);
+  auto* phCont = findNode::getClass<RawClusterContainer>(topNode, m_cfg.photon_node);
   if (!phCont) {
     if (m_cfg.verbose && why) (*why) += "PhotonClusterContainer '" + m_cfg.photon_node + "' not found.\n";
     return false;
@@ -18,8 +24,12 @@ bool StreakAnalyzer::pass_cluster_selection(PHCompositeNode* topNode, std::strin
   int n_total = 0, n_pass = 0;
 
   for (auto it = range.first; it != range.second; ++it) {
-    const PhotonCluster* ph = it->second;
+    const RawCluster* rc = it->second;
     if (!ph) continue;
+
+    PhotonClusterv1* ph = dynamic_cast<PhotonClusterv1*>(rc);
+    if (!ph) continue;
+
     ++n_total;
 
     //Getting the photon cluster eta, E and Et from the PhotonClusterBuilder
