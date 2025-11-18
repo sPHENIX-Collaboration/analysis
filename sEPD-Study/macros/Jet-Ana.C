@@ -142,9 +142,14 @@ class JetAnalysis
     TH3* h3JetPhiEtaPtv4{nullptr}; // Positive Jet Energy and Calo V2 Cut
     TH2* h2Event{nullptr};
     TH2* h2Jet{nullptr};
+    TH3* h3EMCal_MBD_sEPD{nullptr};
+    TH3* h3IHCal_MBD_sEPD{nullptr};
+    TH3* h3OHCal_MBD_sEPD{nullptr};
+    TH3* h3EMCal_IHCal_OHCal{nullptr};
     TH3* h3JetPtCentralityCaloV2{nullptr};
     TH3* h3JetEnergyCentralityCaloV2{nullptr};
-    TH2* h2CentralityCaloV2{nullptr};
+    TH3* h3SumECaloV2Centrality{nullptr};
+    TH2* h2CaloESumE{nullptr};
     TH2* h2JetPtEnergy{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi_raw{nullptr};
@@ -214,7 +219,11 @@ class JetAnalysis
     double event_MBD_Charge_North{0.0};
     double event_sEPD_Charge_South{0.0};
     double event_sEPD_Charge_North{0.0};
+    double event_EMCal_Energy{0};
+    double event_IHCal_Energy{0};
+    double event_OHCal_Energy{0};
     float calo_v2{0.0};
+    float UE_sum_E{0.0};
     bool has_good_calo_v2{false};
     double max_jet_pt{0.0};
 
@@ -323,7 +332,8 @@ void JetAnalysis::setup_chain()
   std::vector<std::string> branchNames = {"event_id", "event_centrality",
                                           "event_MBD_Charge_South", "event_MBD_Charge_North",
                                           "event_sEPD_Charge_South", "event_sEPD_Charge_North",
-                                          "calo_v2",
+                                          "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
+                                          "calo_v2", "UE_sum_E",
                                           "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
                                           "sepd_channel", "sepd_charge", "sepd_phi"};
 
@@ -353,6 +363,9 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
   m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
   m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
+  m_chain->SetBranchAddress("event_EMCal_Energy", &m_event_data.event_EMCal_Energy);
+  m_chain->SetBranchAddress("event_IHCal_Energy", &m_event_data.event_IHCal_Energy);
+  m_chain->SetBranchAddress("event_OHCal_Energy", &m_event_data.event_OHCal_Energy);
   m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
   m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
   m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
@@ -365,6 +378,7 @@ void JetAnalysis::setup_chain()
   if (m_do_secondary_processing)
   {
     m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+    m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
   }
 
   std::cout << "Finished... setup_chain" << std::endl;
@@ -860,6 +874,22 @@ void JetAnalysis::init_hists()
   double v2_low{-1};
   double v2_high{1};
 
+  unsigned int bins_sum_E{540};
+  double sum_E_low{-2e2};
+  double sum_E_high{2.5e3};
+
+  unsigned int bins_Calo_E{540};
+  double Calo_E_low{-2e2};
+  double Calo_E_high{2.5e3};
+
+  unsigned int bins_sepd_total_charge{200};
+  double sepd_total_charge_low{0};
+  double sepd_total_charge_high{4e4};
+
+  unsigned int bins_mbd_total_charge{200};
+  double mbd_total_charge_low{0};
+  double mbd_total_charge_high{5e3};
+
   double sample_low = -0.5;
   double sample_high = m_bins_sample - 0.5;
 
@@ -867,13 +897,19 @@ void JetAnalysis::init_hists()
   m_hists3D["h3JetPhiEtaPtv2"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv2")));
   m_hists3D["h3JetPhiEtaPtv3"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv3")));
 
+  m_hists3D["h3EMCal_MBD_sEPD"] = std::make_unique<TH3F>("h3EMCal_MBD_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
+  m_hists3D["h3IHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3IHCal_MBD_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
+  m_hists3D["h3OHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3OHCal_MBD_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
+  m_hists3D["h3EMCal_IHCal_OHCal"] = std::make_unique<TH3F>("h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high);
+
   if (m_do_secondary_processing)
   {
     m_hists3D["h3JetPhiEtaPtv4"] = std::unique_ptr<TH3>(static_cast<TH3*>(m_hists3D["h3JetPhiEtaPt"]->Clone("h3JetPhiEtaPtv4")));
 
     m_hists3D["h3JetPtCentralityCaloV2"] = std::make_unique<TH3F>("h3JetPtCentralityCaloV2", "Jets; Jet p_{T} [GeV]; Centrality [%]; v_{2}", bins_pt, pt_low, pt_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
     m_hists3D["h3JetEnergyCentralityCaloV2"] = std::make_unique<TH3F>("h3JetEnergyCentralityCaloV2", "Jets; Jet Energy [GeV]; Centrality [%]; v_{2}", bins_energy, energy_low, energy_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
-    m_hists2D["h2CentralityCaloV2"] = std::make_unique<TH2F>("h2CentralityCaloV2", "; Centrality [%]; v_{2}", m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+    m_hists3D["h3SumECaloV2Centrality"] = std::make_unique<TH3F>("h3SumECaloV2Centrality", "; Sum E [GeV]; v_{2}; Centrality [%]", bins_sum_E, sum_E_low, sum_E_high, bins_v2, v2_low, v2_high, m_bins_cent, m_cent_low, m_cent_high);
+    m_hists2D["h2CaloESumE"] = std::make_unique<TH2F>("h2CaloESumE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high);
   }
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
@@ -901,12 +937,18 @@ void JetAnalysis::init_hists()
   m_hists.hCentrality = m_hists1D["hCentrality"].get();
   m_hists.h2JetPtEnergy = m_hists2D["h2JetPtEnergy"].get();
 
+  m_hists.h3EMCal_MBD_sEPD = m_hists3D["h3EMCal_MBD_sEPD"].get();
+  m_hists.h3IHCal_MBD_sEPD = m_hists3D["h3IHCal_MBD_sEPD"].get();
+  m_hists.h3OHCal_MBD_sEPD = m_hists3D["h3OHCal_MBD_sEPD"].get();
+  m_hists.h3EMCal_IHCal_OHCal = m_hists3D["h3EMCal_IHCal_OHCal"].get();
+
   if (m_do_secondary_processing)
   {
     m_hists.h3JetPhiEtaPtv4 = m_hists3D["h3JetPhiEtaPtv4"].get();
     m_hists.h3JetPtCentralityCaloV2 = m_hists3D["h3JetPtCentralityCaloV2"].get();
     m_hists.h3JetEnergyCentralityCaloV2 = m_hists3D["h3JetEnergyCentralityCaloV2"].get();
-    m_hists.h2CentralityCaloV2 = m_hists2D["h2CentralityCaloV2"].get();
+    m_hists.h3SumECaloV2Centrality = m_hists3D["h3SumECaloV2Centrality"].get();
+    m_hists.h2CaloESumE = m_hists2D["h2CaloESumE"].get();
   }
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
@@ -1350,10 +1392,24 @@ void JetAnalysis::process_events()
     m_hists.hCentrality->Fill(cent);
 
     float calo_v2 = m_event_data.calo_v2;
+    float UE_sum_E = m_event_data.UE_sum_E;
+
+    double total_MBD = m_event_data.event_MBD_Charge_South + m_event_data.event_MBD_Charge_North;
+    double total_sEPD = m_event_data.event_sEPD_Charge_South + m_event_data.event_sEPD_Charge_North;
+    double total_EMCal = m_event_data.event_EMCal_Energy;
+    double total_IHCal = m_event_data.event_IHCal_Energy;
+    double total_OHCal = m_event_data.event_OHCal_Energy;
+    double total_energy = total_EMCal + total_IHCal + total_OHCal;
+
+    m_hists.h3EMCal_MBD_sEPD->Fill(total_EMCal, total_MBD, total_sEPD);
+    m_hists.h3IHCal_MBD_sEPD->Fill(total_IHCal, total_MBD, total_sEPD);
+    m_hists.h3OHCal_MBD_sEPD->Fill(total_OHCal, total_MBD, total_sEPD);
+    m_hists.h3EMCal_IHCal_OHCal->Fill(total_EMCal, total_IHCal, total_OHCal);
 
     if (m_do_secondary_processing)
     {
-      m_hists.h2CentralityCaloV2->Fill(cent, calo_v2);
+      m_hists.h3SumECaloV2Centrality->Fill(UE_sum_E, calo_v2, cent);
+      m_hists.h2CaloESumE->Fill(total_energy, UE_sum_E);
 
       if (std::abs(calo_v2) > 0.6F && cent < 50)
       {
