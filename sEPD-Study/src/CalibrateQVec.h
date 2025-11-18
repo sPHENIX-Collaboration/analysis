@@ -94,6 +94,8 @@ class CalibrateQVec : public SubsysReco
   // key: [Subdetector]
   // Subdetectors {S,N} -> 2 elements
   std::array<QVec, 2> m_Q;
+  std::array<QVec, 2> m_Q_raw;
+  std::array<QVec, 2> m_Q_recentered;
 
   std::string m_input_QVecCalib{"none"};
 

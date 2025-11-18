@@ -208,6 +208,16 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
   if (m_calib_Q)
   {
+    m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
+    m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
+    m_tree->Branch("Q_N_x_2_raw", &m_data.Q_N_x_2_raw);
+    m_tree->Branch("Q_N_y_2_raw", &m_data.Q_N_y_2_raw);
+
+    m_tree->Branch("Q_S_x_2_recentered", &m_data.Q_S_x_2_recentered);
+    m_tree->Branch("Q_S_y_2_recentered", &m_data.Q_S_y_2_recentered);
+    m_tree->Branch("Q_N_x_2_recentered", &m_data.Q_N_x_2_recentered);
+    m_tree->Branch("Q_N_y_2_recentered", &m_data.Q_N_y_2_recentered);
+
     m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
     m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
     m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
@@ -662,6 +672,16 @@ void sEPDValidation::process_CalibQVec(PHCompositeNode *topNode)
   PHParameters pdb_params("CalibQVec");
   pdb_params.FillFrom(pdb);
 
+  m_data.Q_S_x_2_raw = pdb_params.get_double_param("Q_S_x_2_raw");
+  m_data.Q_S_y_2_raw = pdb_params.get_double_param("Q_S_y_2_raw");
+  m_data.Q_N_x_2_raw = pdb_params.get_double_param("Q_N_x_2_raw");
+  m_data.Q_N_y_2_raw = pdb_params.get_double_param("Q_N_y_2_raw");
+
+  m_data.Q_S_x_2_recentered = pdb_params.get_double_param("Q_S_x_2_recentered");
+  m_data.Q_S_y_2_recentered = pdb_params.get_double_param("Q_S_y_2_recentered");
+  m_data.Q_N_x_2_recentered = pdb_params.get_double_param("Q_N_x_2_recentered");
+  m_data.Q_N_y_2_recentered = pdb_params.get_double_param("Q_N_y_2_recentered");
+
   m_data.Q_S_x_2 = pdb_params.get_double_param("Q_S_x_2");
   m_data.Q_S_y_2 = pdb_params.get_double_param("Q_S_y_2");
   m_data.Q_N_x_2 = pdb_params.get_double_param("Q_N_x_2");
@@ -959,6 +979,16 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.jet_eta.clear();
 
   // Q Vec
+  m_data.Q_S_x_2_raw = 0;
+  m_data.Q_S_y_2_raw = 0;
+  m_data.Q_N_x_2_raw = 0;
+  m_data.Q_N_y_2_raw = 0;
+
+  m_data.Q_S_x_2_recentered = 0;
+  m_data.Q_S_y_2_recentered = 0;
+  m_data.Q_N_x_2_recentered = 0;
+  m_data.Q_N_y_2_recentered = 0;
+
   m_data.Q_S_x_2 = 0;
   m_data.Q_S_y_2 = 0;
   m_data.Q_N_x_2 = 0;

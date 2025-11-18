@@ -433,6 +433,14 @@ int CalibrateQVec::process_event(PHCompositeNode* topNode)
   m_CalibQVecParams.set_double_param("Psi2_S", psi2_S);
   m_CalibQVecParams.set_double_param("Psi2_N", psi2_N);
   m_CalibQVecParams.set_double_param("Psi2_NS", psi2_NS);
+  m_CalibQVecParams.set_double_param("Q_S_x_2_raw", m_Q_raw[0].x);
+  m_CalibQVecParams.set_double_param("Q_S_y_2_raw", m_Q_raw[0].y);
+  m_CalibQVecParams.set_double_param("Q_N_x_2_raw", m_Q_raw[1].x);
+  m_CalibQVecParams.set_double_param("Q_N_y_2_raw", m_Q_raw[1].y);
+  m_CalibQVecParams.set_double_param("Q_S_x_2_recentered", m_Q_recentered[0].x);
+  m_CalibQVecParams.set_double_param("Q_S_y_2_recentered", m_Q_recentered[0].y);
+  m_CalibQVecParams.set_double_param("Q_N_x_2_recentered", m_Q_recentered[1].x);
+  m_CalibQVecParams.set_double_param("Q_N_y_2_recentered", m_Q_recentered[1].y);
   m_CalibQVecParams.set_double_param("Q_S_x_2", m_Q[0].x);
   m_CalibQVecParams.set_double_param("Q_S_y_2", m_Q[0].y);
   m_CalibQVecParams.set_double_param("Q_N_x_2", m_Q[1].x);
@@ -558,9 +566,15 @@ void CalibrateQVec::correct_QVecs()
   QVec q_S = m_Q[south_idx];
   QVec q_N = m_Q[north_idx];
 
+  m_Q_raw[0] = q_S;
+  m_Q_raw[1] = q_N;
+
   // Apply Recentering
   QVec q_S_corr = {q_S.x - Q_S_x_avg, q_S.y - Q_S_y_avg};
   QVec q_N_corr = {q_N.x - Q_N_x_avg, q_N.y - Q_N_y_avg};
+
+  m_Q_recentered[0] = q_S_corr;
+  m_Q_recentered[1] = q_N_corr;
 
   const auto& X_S = m_correction_data[cent_bin][south_idx].X_matrix;
   const auto& X_N = m_correction_data[cent_bin][north_idx].X_matrix;
@@ -583,6 +597,8 @@ int CalibrateQVec::ResetEvent([[maybe_unused]] PHCompositeNode* topNode)
 {
   // Reset Q Vectors
   std::fill(m_Q.begin(), m_Q.end(), QVec{0.0, 0.0});
+  std::fill(m_Q_raw.begin(), m_Q_raw.end(), QVec{0.0, 0.0});
+  std::fill(m_Q_recentered.begin(), m_Q_recentered.end(), QVec{0.0, 0.0});
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
