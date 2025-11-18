@@ -641,13 +641,13 @@ hadd.add_argument('-o'
 
 hadd.add_argument('-n'
                     , '--hadd-max', type=int
-                    , default=51
-                    , help='Hadd Max at once. Default: 51')
+                    , default=10
+                    , help='Hadd Max at once. Default: 10')
 
 hadd.add_argument('-s'
                     , '--memory', type=float
-                    , default=0.5
-                    , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+                    , default=2.5
+                    , help='Memory (units of GB) to request per condor submission. Default: 2.5 GB.')
 
 hadd.add_argument('-l'
                     , '--condor-log-dir', type=str
@@ -717,7 +717,7 @@ def hadd_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {os.path.basename(condor_script)}
-        arguments      = $(input_dir) {hadd_max} {output_dir}/output
+        arguments      = $(input_dir) {hadd_max+1} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
