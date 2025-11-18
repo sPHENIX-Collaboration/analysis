@@ -1,0 +1,11 @@
++JobFlavour                   = "expresso"
+executable                    = CondorRunData.sh
+arguments                     = $(Run) $(nSeg) $(iSeg) $(radius_value)
+output                        = condor_data/condor_$(Run)_$(iSeg)_$(nSeg)_$(radius_value).out
+error                         = condor_data/condor_$(Run)_$(iSeg)_$(nSeg)_$(radius_value).err
+log                           = /tmp/condor_$(Run)_$(iSeg)_$(nSeg)_$(radius_value).log
+request_memory                = 4GB
+when_to_transfer_output       = ON_EXIT
+Notification                  = Never
+Notify_user                   = hj2552@columbia.edu
+queue Run, nSeg, iSeg, radius_value from ListCondorRunData.csv
