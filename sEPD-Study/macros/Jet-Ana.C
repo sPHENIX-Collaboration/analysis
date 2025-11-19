@@ -125,7 +125,8 @@ class JetAnalysis
   std::array<std::array<std::array<CorrectionData, 2>, 3>, m_bins_cent> m_correction_data;
 
   // Store harmonic orders and subdetectors for easy iteration
-  static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
+  // static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
+  static constexpr std::array<int, 1> m_harmonics = {2};
   static constexpr std::array<Subdetector, 2> m_subdetectors = {Subdetector::S, Subdetector::N};
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
@@ -151,6 +152,7 @@ class JetAnalysis
     TH3* h3SumECaloV2Centrality{nullptr};
     TH2* h2CaloESumE{nullptr};
     TH2* h2JetPtEnergy{nullptr};
+    TH3* h3JetPtEnergySumE{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi_raw{nullptr};
     std::array<TH3*, 3> hPsi_corr2{nullptr};
@@ -863,10 +865,12 @@ void JetAnalysis::init_hists()
   double eta_high = 1.152;
 
   int bins_pt = 500;
+  int bins_pt_reduced = 100;
   double pt_low = 0;
   double pt_high = 500;
 
   int bins_energy = 1000;
+  int bins_energy_reduced = 200;
   double energy_low = -500;
   double energy_high = 500;
 
@@ -900,7 +904,7 @@ void JetAnalysis::init_hists()
   m_hists3D["h3EMCal_MBD_sEPD"] = std::make_unique<TH3F>("h3EMCal_MBD_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
   m_hists3D["h3IHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3IHCal_MBD_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
   m_hists3D["h3OHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3OHCal_MBD_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
-  m_hists3D["h3EMCal_IHCal_OHCal"] = std::make_unique<TH3F>("h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high);
+  m_hists3D["h3EMCal_IHCal_OHCal"] = std::make_unique<TH3F>("h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high);
 
   if (m_do_secondary_processing)
   {
@@ -910,6 +914,8 @@ void JetAnalysis::init_hists()
     m_hists3D["h3JetEnergyCentralityCaloV2"] = std::make_unique<TH3F>("h3JetEnergyCentralityCaloV2", "Jets; Jet Energy [GeV]; Centrality [%]; v_{2}", bins_energy, energy_low, energy_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
     m_hists3D["h3SumECaloV2Centrality"] = std::make_unique<TH3F>("h3SumECaloV2Centrality", "; Sum E [GeV]; v_{2}; Centrality [%]", bins_sum_E, sum_E_low, sum_E_high, bins_v2, v2_low, v2_high, m_bins_cent, m_cent_low, m_cent_high);
     m_hists2D["h2CaloESumE"] = std::make_unique<TH2F>("h2CaloESumE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high);
+
+    m_hists3D["h3JetPtEnergySumE"] = std::make_unique<TH3F>("h3JetPtEnergySumE", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]; Sum E [GeV]", bins_pt_reduced, pt_low, pt_high, bins_energy_reduced, energy_low, energy_high, bins_sum_E, sum_E_low, sum_E_high);
   }
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
@@ -949,6 +955,7 @@ void JetAnalysis::init_hists()
     m_hists.h3JetEnergyCentralityCaloV2 = m_hists3D["h3JetEnergyCentralityCaloV2"].get();
     m_hists.h3SumECaloV2Centrality = m_hists3D["h3SumECaloV2Centrality"].get();
     m_hists.h2CaloESumE = m_hists2D["h2CaloESumE"].get();
+    m_hists.h3JetPtEnergySumE = m_hists3D["h3JetPtEnergySumE"].get();
   }
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
@@ -1270,6 +1277,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 
   double cent = m_event_data.event_centrality;
   float calo_v2 = m_event_data.calo_v2;
+  float sum_E = m_event_data.UE_sum_E;
 
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
@@ -1307,6 +1315,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       {
         m_hists.h3JetPtCentralityCaloV2->Fill(pt, cent, calo_v2);
         m_hists.h3JetEnergyCentralityCaloV2->Fill(energy, cent, calo_v2);
+        m_hists.h3JetPtEnergySumE->Fill(pt, energy, sum_E);
       }
 
       if (energy > 0)
@@ -1453,27 +1462,27 @@ void JetAnalysis::save_results() const
 
   for (const auto& [name, hist] : m_hists1D)
   {
-    std::cout << std::format("Saving: {}\n", name);
+    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
     hist->Write();
   }
   for (const auto& [name, hist] : m_hists2D)
   {
-    std::cout << std::format("Saving: {}\n", name);
+    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
     hist->Write();
   }
   for (const auto& [name, hist] : m_hists3D)
   {
-    std::cout << std::format("Saving: {}\n", name);
+    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
     hist->Write();
   }
   for (const auto& [name, hist] : m_profiles)
   {
-    std::cout << std::format("Saving: {}\n", name);
+    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
     hist->Write();
   }
   for (const auto& [name, hist] : m_profiles2D)
   {
-    std::cout << std::format("Saving: {}\n", name);
+    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
     hist->Write();
   }
 
@@ -1501,6 +1510,9 @@ void JetAnalysis::save_results() const
 
     project_and_write("h3JetEnergyCentralityCaloV2", "xy");
     project_and_write("h3JetEnergyCentralityCaloV2", "xz");
+
+    project_and_write("h3JetPtEnergySumE", "xz");
+    project_and_write("h3JetPtEnergySumE", "yz");
   }
 
   output_file->Close();

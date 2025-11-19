@@ -514,8 +514,8 @@ jetAna.add_argument('-o'
 
 jetAna.add_argument('-s'
                     , '--memory', type=float
-                    , default=0.5
-                    , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
+                    , default=2
+                    , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
 jetAna.add_argument('-l'
                     , '--condor-log-dir', type=str
