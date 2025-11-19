@@ -72,6 +72,6 @@ void Fun4All_JetVal(const char *filelisttruth = "dst_truth_jet.list",
   se->End();
 
   gSystem->Exit(0);
-  return 0;
+  //return 0;
 
 }
