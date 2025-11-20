@@ -151,8 +151,8 @@ class JetAnalysis
     TH3* h3JetEnergyCentralityCaloV2{nullptr};
     TH3* h3SumECaloV2Centrality{nullptr};
     TH2* h2CaloESumE{nullptr};
-    TH2* h2JetPtEnergy{nullptr};
     TH3* h3JetPtEnergySumE{nullptr};
+    TH3* h3JetPtEnergyCaloE{nullptr};
     TH1* hCentrality{nullptr};
     std::array<TH3*, 3> hPsi_raw{nullptr};
     std::array<TH3*, 3> hPsi_corr2{nullptr};
@@ -905,6 +905,7 @@ void JetAnalysis::init_hists()
   m_hists3D["h3IHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3IHCal_MBD_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
   m_hists3D["h3OHCal_MBD_sEPD"] = std::make_unique<TH3F>("h3OHCal_MBD_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", bins_Calo_E, Calo_E_low, Calo_E_high, bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high, bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
   m_hists3D["h3EMCal_IHCal_OHCal"] = std::make_unique<TH3F>("h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high, bins_Calo_E, Calo_E_low, Calo_E_high);
+  m_hists3D["h3JetPtEnergyCaloE"] = std::make_unique<TH3F>("h3JetPtEnergyCaloE", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]; Total Calorimeter Energy [GeV]", bins_pt_reduced, pt_low, pt_high, bins_energy_reduced, energy_low, energy_high, bins_Calo_E, Calo_E_low, Calo_E_high);
 
   if (m_do_secondary_processing)
   {
@@ -920,8 +921,6 @@ void JetAnalysis::init_hists()
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
   m_hists2D["h2Jet"] = std::make_unique<TH2F>("h2Jet", "Jets; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
-
-  m_hists2D["h2JetPtEnergy"] = std::make_unique<TH2F>("h2JetPtEnergy", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]", bins_pt, pt_low, pt_high, bins_energy, energy_low, energy_high);
 
   m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
@@ -941,7 +940,7 @@ void JetAnalysis::init_hists()
   m_hists.h2Event = m_hists2D["h2Event"].get();
   m_hists.h2Jet = m_hists2D["h2Jet"].get();
   m_hists.hCentrality = m_hists1D["hCentrality"].get();
-  m_hists.h2JetPtEnergy = m_hists2D["h2JetPtEnergy"].get();
+  m_hists.h3JetPtEnergyCaloE = m_hists3D["h3JetPtEnergyCaloE"].get();
 
   m_hists.h3EMCal_MBD_sEPD = m_hists3D["h3EMCal_MBD_sEPD"].get();
   m_hists.h3IHCal_MBD_sEPD = m_hists3D["h3IHCal_MBD_sEPD"].get();
@@ -1279,6 +1278,11 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   float calo_v2 = m_event_data.calo_v2;
   float sum_E = m_event_data.UE_sum_E;
 
+  double total_EMCal = m_event_data.event_EMCal_Energy;
+  double total_IHCal = m_event_data.event_IHCal_Energy;
+  double total_OHCal = m_event_data.event_OHCal_Energy;
+  double total_energy = total_EMCal + total_IHCal + total_OHCal;
+
   // Loop over all jets
   for (size_t idx = 0; idx < nJets; ++idx)
   {
@@ -1307,7 +1311,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     if (dead_status == 0)
     {
       m_hists.h3JetPhiEtaPtv2->Fill(phi, eta, pt);
-      m_hists.h2JetPtEnergy->Fill(pt, energy);
+      m_hists.h3JetPtEnergyCaloE->Fill(pt, energy, total_energy);
 
       jet_info.emplace_back(energy, pt, phi, eta);
 
@@ -1499,6 +1503,10 @@ void JetAnalysis::save_results() const
   project_and_write("h3JetPhiEtaPtv2", "yx");
   project_and_write("h3JetPhiEtaPtv3", "z");
   project_and_write("h3JetPhiEtaPtv3", "yx");
+
+  project_and_write("h3JetPtEnergyCaloE", "yx");
+  project_and_write("h3JetPtEnergyCaloE", "xz");
+  project_and_write("h3JetPtEnergyCaloE", "yz");
 
   if (m_do_secondary_processing)
   {
