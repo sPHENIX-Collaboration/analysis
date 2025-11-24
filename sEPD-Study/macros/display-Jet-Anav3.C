@@ -476,6 +476,24 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2SumE_CaloV2 = dynamic_cast<TH3*>(m_hists["h3SumECaloV2Centrality"].get())->Project3D("yx");
   auto* h2SumE_CaloV2_zoom = dynamic_cast<TH2*>(h2SumE_CaloV2->Clone("h2SumE_CaloV2_zoom"));
 
+  // ------------------------------------------
+  // QA for cases where |v2| >= 0.5
+  // ------------------------------------------
+  auto* h3SumE_CaloV2_v21 = dynamic_cast<TH3*>(m_hists["h3SumECaloV2Centrality"].get());
+  auto* h3SumE_CaloV2_v22 = dynamic_cast<TH3*>(m_hists["h3SumECaloV2Centrality"].get());
+
+  int nBins = h3SumE_CaloV2_v21->GetNbinsY();
+  int bin_low = h3SumE_CaloV2_v21->GetYaxis()->FindBin(-0.5);
+  int bin_high = h3SumE_CaloV2_v22->GetYaxis()->FindBin(0.5);
+
+  h3SumE_CaloV2_v21->GetYaxis()->SetRange(1, bin_low-1);
+  h3SumE_CaloV2_v22->GetYaxis()->SetRange(bin_high, nBins);
+
+  h3SumE_CaloV2_v21->Add(h3SumE_CaloV2_v22);
+
+  auto* h2SumE_Centrality_v2 = h3SumE_CaloV2_v21->Project3D("xz");
+  // ------------------------------------------
+
   auto* h2CaloE_SumE = m_hists["h2CaloESumE"].get();
   auto* h2CaloE_SumE_zoom = dynamic_cast<TH2*>(h2CaloE_SumE->Clone("h2CaloE_SumE_zoom"));
 
@@ -502,6 +520,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   double SumE_min = -2e2;
   double SumE_max = 2.5e3;
 
+  double SumE_v2_min = 0;
+  double SumE_v2_max = 100;
+
   double CaloE_min = -50;
   double CaloE_max = 2.5e3;
 
@@ -511,20 +532,23 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   double jetEnergy_min = -5e2;
   double jetEnergy_max = 5e2;
 
-  plot_calo(c1, c2, run, 1, h2CaloV2_Centrality, "CaloV2-Centrality", cent_min, cent_max, v2_min, v2_max, x_label_size);
-  plot_calo(c1, c2, run, 2, h2SumE_Centrality, "SumE-Centrality", cent_min, cent_max, SumE_min, SumE_max, x_label_size);
-  plot_calo(c1, c2, run, 3, h2SumE_CaloV2, "SumE-CaloV2", SumE_min, SumE_max, v2_min, v2_max, x_label_size);
-  plot_calo(c1, c2, run, 4, h2SumE_CaloV2_zoom, "SumE-CaloV2-zoom", -50, 100, v2_min, v2_max, x_label_size);
-  plot_calo(c1, c2, run, 5, h2CaloE_SumE, "CaloE-SumE", SumE_min, SumE_max, SumE_min, SumE_max, x_label_size);
-  plot_calo(c1, c2, run, 6, h2CaloE_SumE_zoom, "CaloE-SumE-zoom", -10, 50, SumE_min, SumE_max, x_label_size);
-  plot_calo(c1, c2, run, 7, h2SumE_JetPt, "SumE-JetPt", SumE_min, SumE_max, jetPt_min, jetPt_max, x_label_size);
-  plot_calo(c1, c2, run, 8, h2SumE_JetPt_zoom, "SumE-JetPt-zoom", -80, 100, jetPt_min, jetPt_max, x_label_size);
-  plot_calo(c1, c2, run, 9, h2SumE_JetEnergy, "SumE-JetEnergy", SumE_min, SumE_max, jetEnergy_min, jetEnergy_max, x_label_size);
-  plot_calo(c1, c2, run, 10, h2SumE_JetEnergy_zoom, "SumE-JetEnergy-zoom", -40, 100, jetEnergy_min, jetEnergy_max, x_label_size);
-  plot_calo(c1, c2, run, 11, h2CaloE_JetPt, "CaloE-JetPt", CaloE_min, CaloE_max, jetPt_min, jetPt_max, x_label_size);
-  plot_calo(c1, c2, run, 12, h2CaloE_JetPt_zoom, "CaloE-JetPt-zoom", -50, 150, jetPt_min, jetPt_max, x_label_size);
-  plot_calo(c1, c2, run, 13, h2CaloE_JetEnergy, "CaloE-JetEnergy", CaloE_min, CaloE_max, jetEnergy_min, jetEnergy_max, x_label_size);
-  plot_calo(c1, c2, run, 14, h2CaloE_JetEnergy_zoom, "CaloE-JetEnergy-zoom", -50, 150, jetEnergy_min, jetEnergy_max, x_label_size);
+  int canvas_idx = 1;
+
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloV2_Centrality, "CaloV2-Centrality", cent_min, cent_max, v2_min, v2_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_Centrality, "SumE-Centrality", cent_min, cent_max, SumE_min, SumE_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_Centrality_v2, "SumE-Centrality-high-v2", cent_min, cent_max, SumE_v2_min, SumE_v2_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_CaloV2, "SumE-CaloV2", SumE_min, SumE_max, v2_min, v2_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_CaloV2_zoom, "SumE-CaloV2-zoom", -50, 100, v2_min, v2_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE, "CaloE-SumE", SumE_min, SumE_max, SumE_min, SumE_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE_zoom, "CaloE-SumE-zoom", -10, 50, SumE_min, SumE_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt, "SumE-JetPt", SumE_min, SumE_max, jetPt_min, jetPt_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt_zoom, "SumE-JetPt-zoom", -80, 100, jetPt_min, jetPt_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetEnergy, "SumE-JetEnergy", SumE_min, SumE_max, jetEnergy_min, jetEnergy_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetEnergy_zoom, "SumE-JetEnergy-zoom", -40, 100, jetEnergy_min, jetEnergy_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetPt, "CaloE-JetPt", CaloE_min, CaloE_max, jetPt_min, jetPt_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetPt_zoom, "CaloE-JetPt-zoom", -50, 150, jetPt_min, jetPt_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetEnergy, "CaloE-JetEnergy", CaloE_min, CaloE_max, jetEnergy_min, jetEnergy_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetEnergy_zoom, "CaloE-JetEnergy-zoom", -50, 150, jetEnergy_min, jetEnergy_max, x_label_size);
 }
 
 void DisplayJetAnav3::draw_UE(const std::string& run)
