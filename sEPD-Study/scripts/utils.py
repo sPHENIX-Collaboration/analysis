@@ -551,7 +551,7 @@ def jetAna_jobs():
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that files exists
-    for f in [input_list, calib_list, condor_script]:
+    for f in [input_list, calib_list, condor_script, jetAna_bin]:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit()
