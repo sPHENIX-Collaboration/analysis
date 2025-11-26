@@ -13,6 +13,7 @@ AM_LDFLAGS = \
 pkginclude_HEADERS = \
   sEPDValidation.h \
   geometry_constants.h \
+  MedianFinder.h \
   EventSkip.h \
   CaloCheck.h \
   CalibrateQVec.h \
@@ -24,6 +25,7 @@ lib_LTLIBRARIES = \
 
 libsEPDValidation_la_SOURCES = \
   sEPDValidation.cc \
+  MedianFinder.cc \
   EventSkip.cc \
   CaloCheck.cc \
   CalibrateQVec.cc \

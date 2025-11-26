@@ -1,5 +1,6 @@
 #include "sEPDValidation.h"
 #include "JetUtils.h"
+#include "MedianFinder.h"
 
 // -- c++
 #include <format>
@@ -203,6 +204,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_EMCal_Energy", &m_data.event_EMCal_Energy);
   m_tree->Branch("event_IHCal_Energy", &m_data.event_IHCal_Energy);
   m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
+  m_tree->Branch("event_tower_median_Energy", &m_data.event_tower_median_Energy);
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
@@ -615,6 +617,8 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   auto* h2IHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2IHCal_Energy"].get());
   auto* h2OHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2OHCal_Energy"].get());
 
+  MedianFinder mf;
+
   for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
   {
     unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
@@ -626,6 +630,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     {
       float energy = towerCEMC->get_energy();
       m_data.event_EMCal_Energy += energy;
+      mf.addNum(energy);
       h2EMCal_Energy->Fill(iphi, ieta, energy);
     }
 
@@ -634,6 +639,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     {
       float energy = towerIHCal->get_energy();
       m_data.event_IHCal_Energy += energy;
+      mf.addNum(energy);
       h2IHCal_Energy->Fill(iphi, ieta, energy);
     }
 
@@ -642,6 +648,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     {
       float energy = towerOHCal->get_energy();
       m_data.event_OHCal_Energy += energy;
+      mf.addNum(energy);
       h2OHCal_Energy->Fill(iphi, ieta, energy);
     }
   }
@@ -651,6 +658,9 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   double total_EMCal = m_data.event_EMCal_Energy;
   double total_IHCal = m_data.event_IHCal_Energy;
   double total_OHCal = m_data.event_OHCal_Energy;
+
+  // Get the median tower energy
+  m_data.event_tower_median_Energy = mf.findMedian();
 
   dynamic_cast<TH3 *>(m_hists["h3EMCal_MBD_sEPD"].get())->Fill(total_EMCal, total_MBD, total_sEPD);
   dynamic_cast<TH3 *>(m_hists["h3IHCal_MBD_sEPD"].get())->Fill(total_IHCal, total_MBD, total_sEPD);
@@ -966,6 +976,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_EMCal_Energy = 0;
   m_data.event_IHCal_Energy = 0;
   m_data.event_OHCal_Energy = 0;
+  m_data.event_tower_median_Energy = -9999;
 
   // MBD
   // m_data.mbd_charge.clear();

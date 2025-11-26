@@ -339,6 +339,7 @@ class sEPDValidation : public SubsysReco
     double event_EMCal_Energy{0};
     double event_IHCal_Energy{0};
     double event_OHCal_Energy{0};
+    double event_tower_median_Energy{-9999};
     double max_jet_pt{-9999};
 
     // Q Vectors
