@@ -82,11 +82,16 @@ parser.add_argument('-b'
                     , help='Fun4All Bin. Default: bin/Fun4All_EMCal')
 
 parser.add_argument('-b1'
+                    , '--default-calib-bin', type=str
+                    , default='bin/genDefaultCalib'
+                    , help='Default Calib Bin. Default: bin/genDefaultCalib')
+
+parser.add_argument('-b2'
                     , '--fit-calib-bin', type=str
                     , default='bin/doFitAndCalibUpdate'
                     , help='Fit Calib Bin. Default: bin/doFitAndCalibUpdate')
 
-parser.add_argument('-b2'
+parser.add_argument('-b3'
                     , '--tsc-fit-bin', type=str
                     , default='bin/doTscFit'
                     , help='TSC Calib Bin. Default: bin/doTscFit')
@@ -186,6 +191,7 @@ def main():
     fit_calib_macro = Path(args.fit_calib_macro).resolve()
     tsc_fit_macro = Path(args.tsc_fit_macro).resolve()
     f4a_bin = Path(args.f4a_bin).resolve()
+    default_calib_bin = Path(args.default_calib_bin).resolve()
     fit_calib_bin = Path(args.fit_calib_bin).resolve()
     tsc_fit_bin = Path(args.tsc_fit_bin).resolve()
     condor_script = Path(args.condor_script).resolve()
@@ -197,6 +203,11 @@ def main():
 
     if sleep_interval <= 0:
         parser.error(f'ERROR: Negative sleep interval: {sleep_interval}.')
+
+    # Ensure that files exists
+    for f in [input_list, f4a_macro, fit_calib_macro, tsc_fit_macro, f4a_bin, default_calib_bin, fit_calib_bin, tsc_fit_bin, condor_script]:
+        if not f.is_file():
+            parser.error(f'File: {f} does not exist!')
 
     # Create Dirs
     project_dir.mkdir(parents=True, exist_ok=True)
@@ -225,6 +236,7 @@ def main():
     logger.info(f'Fit Calib Macro: {fit_calib_macro}')
     logger.info(f'TSC Fit Macro: {tsc_fit_macro}')
     logger.info(f'Fun4All Bin: {f4a_bin}')
+    logger.info(f'Default Calib Bin: {default_calib_bin}')
     logger.info(f'Fit Calib Bin: {fit_calib_bin}')
     logger.info(f'TSC Fit Bin: {tsc_fit_bin}')
     logger.info(f'Calib Field: {calib_field}')
@@ -234,9 +246,7 @@ def main():
         logger.info(f'Iteration: {it}')
 
         if it == 0:
-            # command = f'root -b -l -q \'{f4a_macro}(0,"{input_list}",{it})\''
-            command = f'{f4a_bin} 0 {input_list} {it}'
-            run_command_and_log(command, logger, project_dir)
+            run_command_and_log(default_calib_bin, logger, project_dir)
             continue
 
         iter_dir = project_dir / f'test-iter-{it}'
