@@ -900,7 +900,7 @@ void JetAnalysis::init_hists()
 
   unsigned int bins_tower_median_energy{300};
   double tower_median_energy_low{0};
-  double tower_median_energy_high{0.3};
+  double tower_median_energy_high{300}; // MeV
 
   double sample_low = -0.5;
   double sample_high = m_bins_sample - 0.5;
@@ -922,7 +922,7 @@ void JetAnalysis::init_hists()
     m_hists3D["h3JetPtCentralityCaloV2"] = std::make_unique<TH3F>("h3JetPtCentralityCaloV2", "Jets; Jet p_{T} [GeV]; Centrality [%]; v_{2}", bins_pt, pt_low, pt_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
     m_hists3D["h3JetEnergyCentralityCaloV2"] = std::make_unique<TH3F>("h3JetEnergyCentralityCaloV2", "Jets; Jet Energy [GeV]; Centrality [%]; v_{2}", bins_energy, energy_low, energy_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
     m_hists3D["h3SumECaloV2Centrality"] = std::make_unique<TH3F>("h3SumECaloV2Centrality", "; Sum E [GeV]; v_{2}; Centrality [%]", bins_sum_E, sum_E_low, sum_E_high, bins_v2, v2_low, v2_high, m_bins_cent, m_cent_low, m_cent_high);
-    m_hists3D["h3CaloESumETowMedE"] = std::make_unique<TH3F>("h3CaloESumETowMedE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]; Tower Median Energy [GeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high, bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high);
+    m_hists3D["h3CaloESumETowMedE"] = std::make_unique<TH3F>("h3CaloESumETowMedE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]; Median Tower Energy [MeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high, bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high);
 
     m_hists3D["h3JetPtEnergySumE"] = std::make_unique<TH3F>("h3JetPtEnergySumE", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]; Sum E [GeV]", bins_pt_reduced, pt_low, pt_high, bins_energy_reduced, energy_low, energy_high, bins_sum_E, sum_E_low, sum_E_high);
   }
@@ -1370,7 +1370,7 @@ void JetAnalysis::process_calo()
   double total_IHCal = m_event_data.event_IHCal_Energy;
   double total_OHCal = m_event_data.event_OHCal_Energy;
   double total_energy = total_EMCal + total_IHCal + total_OHCal;
-  double tower_median_energy = m_event_data.event_tower_median_Energy;
+  double tower_median_energy = m_event_data.event_tower_median_Energy * 1e3; // GeV -> MeV
 
   m_hists.h3EMCal_MBD_sEPD->Fill(total_EMCal, total_MBD, total_sEPD);
   m_hists.h3IHCal_MBD_sEPD->Fill(total_IHCal, total_MBD, total_sEPD);
