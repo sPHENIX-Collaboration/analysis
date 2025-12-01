@@ -646,8 +646,8 @@ hadd.add_argument('-n'
 
 hadd.add_argument('-s'
                     , '--memory', type=float
-                    , default=2.5
-                    , help='Memory (units of GB) to request per condor submission. Default: 2.5 GB.')
+                    , default=3
+                    , help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
 
 hadd.add_argument('-l'
                     , '--condor-log-dir', type=str
