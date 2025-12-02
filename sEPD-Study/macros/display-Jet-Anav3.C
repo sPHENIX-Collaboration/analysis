@@ -494,8 +494,13 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2SumE_Centrality_v2 = h3SumE_CaloV2_v21->Project3D("xz");
   // ------------------------------------------
 
-  auto* h2CaloE_SumE = m_hists["h2CaloESumE"].get();
+  auto* h2CaloE_SumE = m_hists["h3CaloESumETowMedE_yx"].get();
   auto* h2CaloE_SumE_zoom = dynamic_cast<TH2*>(h2CaloE_SumE->Clone("h2CaloE_SumE_zoom"));
+
+  auto* h2CaloE_TowMedE = m_hists["h3CaloESumETowMedE_xz"].get();
+
+  auto* h2SumE_TowMedE = m_hists["h3CaloESumETowMedE_yz"].get();
+  auto* h2SumE_TowMedE_zoom = dynamic_cast<TH2*>(h2SumE_TowMedE->Clone("h2SumE_TowMedE_zoom"));
 
   auto* h2SumE_JetPt = dynamic_cast<TH3*>(m_hists["h3JetPtEnergySumE"].get())->Project3D("xz");
   auto* h2SumE_JetPt_zoom = dynamic_cast<TH2*>(h2SumE_JetPt->Clone("h2SumE_JetPt_zoom"));
@@ -516,6 +521,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
 
   double v2_min = -1;
   double v2_max = 1;
+
+  double TowMedE_min = 0;
+  double TowMedE_max = 200;
 
   double SumE_min = -2e2;
   double SumE_max = 2.5e3;
@@ -541,6 +549,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_CaloV2_zoom, "SumE-CaloV2-zoom", -50, 100, v2_min, v2_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE, "CaloE-SumE", SumE_min, SumE_max, SumE_min, SumE_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE_zoom, "CaloE-SumE-zoom", -10, 50, SumE_min, SumE_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_TowMedE, "CaloE-TowMedE", TowMedE_min, TowMedE_max, CaloE_min, CaloE_max, 0.04f);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE, "SumE-TowMedE", TowMedE_min, TowMedE_max, SumE_min, SumE_max, 0.04f);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_zoom, "SumE-TowMedE-zoom", TowMedE_min, 5, SumE_min, SumE_max, 0.04f);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt, "SumE-JetPt", SumE_min, SumE_max, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt_zoom, "SumE-JetPt-zoom", -80, 100, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetEnergy, "SumE-JetEnergy", SumE_min, SumE_max, jetEnergy_min, jetEnergy_max, x_label_size);
@@ -557,7 +568,7 @@ void DisplayJetAnav3::draw_UE(const std::string& run)
   c1->SetTickx();
   c1->SetTicky();
 
-  c1->SetCanvasSize(2900, 1500);
+  c1->SetCanvasSize(2900, 2000);
 
   std::unique_ptr<TCanvas> c2 = std::make_unique<TCanvas>();
   c2->SetTickx();
@@ -572,7 +583,7 @@ void DisplayJetAnav3::draw_UE(const std::string& run)
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  c1->Divide(5, 3, 0.00025f, 0.00025f);
+  c1->Divide(5, 4, 0.00025f, 0.00025f);
 
   std::string output = std::format("{}/pdf-UE/plots-{}.pdf", m_output_dir, run);
 
