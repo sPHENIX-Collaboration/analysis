@@ -67,15 +67,18 @@ class Displayv2
   bool m_saveFig{true};
   bool m_debug{false};
 
-  const std::string m_calib_default{"/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/CEMC_calib_ADC_to_ETower_default/da/74/da74db11788df02ed879fa373c50c66c_EMCAL_ADC_to_Etower_2025_initial_v3.root"};
-  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
+  // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower_2025_initial_v3.root"};
+  const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
+  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218-raw.root"};
   const std::string m_fieldname{"CEMC_calib_ADC_to_ETower"};
 
-  const std::string m_hist_default{"output/QA/test-2025.root"};
-  const std::string m_hist_new{"output/QA/test-73839.root"};
+  // const std::string m_hist_default{"output/QA/test-2025.root"};
+  const std::string m_hist_default{"output/QA/test-73839.root"};
+  const std::string m_hist_new{"output/QA/test-78218.root"};
 
-  const std::string m_fitout_default{"output/QA/fitout-66580.root"};
-  const std::string m_fitout_new{"output/QA/fitout-73839.root"};
+  // const std::string m_fitout_default{"output/QA/fitout-66580.root"};
+  const std::string m_fitout_default{"output/QA/fitout-73839.root"};
+  const std::string m_fitout_new{"output/QA/fitout-78218.root"};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -322,6 +325,7 @@ void Displayv2::draw()
   // --------------------------------------------
 
   c1->SetTopMargin(.02f);
+  c1->SetLeftMargin(.14f);
 
   gPad->SetLogy(0);
 
@@ -339,12 +343,14 @@ void Displayv2::draw()
 
   m_hists["hSigma_default"]->GetYaxis()->SetTitle("#sigma [GeV]");
   m_hists["hSigma_default"]->GetYaxis()->SetTitleSize(0.06f);
-  m_hists["hSigma_default"]->GetYaxis()->SetTitleOffset(0.8f);
+  m_hists["hSigma_default"]->GetYaxis()->SetTitleOffset(1.f);
 
   m_hists["hSigma_default"]->GetXaxis()->SetTitle("Tower Index #eta");
 
+  m_hists["hSigma_default"]->GetYaxis()->SetRangeUser(0, 0.035f);
+
   xshift = 0.5;
-  yshift = 0;
+  yshift = 0.1;
 
   leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
   leg->SetFillStyle(0);
@@ -365,8 +371,8 @@ void Displayv2::draw()
   m_hists["hSigma_new"]->GetYaxis()->SetTitle("Ratio #sigma: New / Default");
   m_hists["hSigma_new"]->GetXaxis()->SetTitle("Tower Index #eta");
   m_hists["hSigma_new"]->GetYaxis()->SetTitleSize(0.06f);
-  m_hists["hSigma_new"]->GetYaxis()->SetTitleOffset(0.8f);
-  m_hists["hSigma_new"]->GetYaxis()->SetRangeUser(0.4,1.2);
+  m_hists["hSigma_new"]->GetYaxis()->SetTitleOffset(1.f);
+  m_hists["hSigma_new"]->GetYaxis()->SetRangeUser(0.8,1.2);
 
   auto tf1 = std::make_unique<TF1>("fa1", "1", 0, 95);
 
