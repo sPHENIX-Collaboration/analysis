@@ -38,9 +38,15 @@ class EventSkip : public SubsysReco
     m_nSkip = nSkip;
   }
 
+  void set_event_id(int event_id)
+  {
+    m_event_id = event_id;
+  }
+
  private:
   int m_event{0};
   int m_nSkip{0};
+  int m_event_id{0};
 };
 
 #endif  // EVENTSKIP_H

@@ -100,14 +100,19 @@ int EventSkip::process_event([[maybe_unused]] PHCompositeNode* topNode)
 
   int m_globalEvent = eventInfo->get_EvtSequence();
 
-  if (m_event <= m_nSkip)
+  if (m_event <= m_nSkip || m_globalEvent < m_event_id)
   {
-    if (m_event % 100 == 0 || std::fabs(m_event - m_nSkip) < 20)
+    if (m_event % 100 == 0 || (m_nSkip && std::abs(m_event - m_nSkip) < 20) || (m_event_id && std::abs(m_globalEvent - m_event_id) < 20))
     {
       std::cout << std::format("Skipping: {}, Global: {}\n", m_event, m_globalEvent);
     }
 
     return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  if (m_event_id && m_globalEvent > m_event_id)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;

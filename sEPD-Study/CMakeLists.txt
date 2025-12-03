@@ -70,6 +70,15 @@ target_link_libraries(Fun4All_sEPD PRIVATE
     ${MY_LIBS}
 )
 
+# --- Fun4All_CaloCheck ---
+add_executable(Fun4All_CaloCheck macros/Fun4All_CaloCheck.C)
+target_link_libraries(Fun4All_CaloCheck PRIVATE
+    ROOT::Core # Needs explicit Core for gSystem
+    ${ROOT_LIBS}
+    ${SPHENIX_LIBS}
+    ${MY_LIBS}
+)
+
 # --- Fun4All_Jet ---
 add_executable(Fun4All_Jet macros/Fun4All_Jet.C)
 target_link_libraries(Fun4All_Jet PRIVATE
