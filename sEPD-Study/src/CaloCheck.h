@@ -5,8 +5,17 @@
 
 #include <fun4all/SubsysReco.h>
 
+// ====================================================================
+// ROOT Includes
+// ====================================================================
+#include <TH1.h>
+#include <TH2.h>
+
 // -- c++
 #include <string>
+#include <map>
+#include <memory>
+#include <cstdint>
 
 class PHCompositeNode;
 
@@ -33,7 +42,30 @@ class CaloCheck : public SubsysReco
   /// Called at the end of all processing.
   int End(PHCompositeNode *topNode) override;
 
+  void set_event_id(int event_id)
+  {
+    m_event_id = event_id;
+  }
+
  private:
+  struct AnalysisHists
+  {
+    TH2* h2EMCalBase{nullptr};
+    TH2* h2EMCal{nullptr};
+    TH2* h2IHCal{nullptr};
+    TH2* h2OHCal{nullptr};
+    TH1* hEMCal{nullptr};
+    TH1* hIHCal{nullptr};
+    TH1* hOHCal{nullptr};
+  };
+
+  AnalysisHists m_hists;
+
+  uint64_t m_run{0};
+  int m_event_id{0};
+
+  std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
+  std::map<std::string, std::unique_ptr<TH2>> m_hists2D;
 };
 
 #endif  // CALOCHECK_H
