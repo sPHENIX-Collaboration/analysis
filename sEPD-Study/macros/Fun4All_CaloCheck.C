@@ -25,6 +25,7 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllBase.h>
+#include <fun4all/Fun4AllUtils.h>
 
 #include <phool/recoConsts.h>
 
@@ -38,14 +39,12 @@
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_CaloCheck(const std::string &fname,
-                  unsigned int runnumber,
                   int event_id = 0,
                   const std::string &dbtag = "newcdbtag")
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
   std::cout << "input: " << fname << std::endl;
-  std::cout << "Run: " << runnumber << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "########################" << std::endl;
@@ -71,6 +70,9 @@ void Fun4All_CaloCheck(const std::string &fname,
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
 
   recoConsts *rc = recoConsts::instance();
+
+  std::pair<int, int> runnumber_segment = Fun4AllUtils::GetRunSegment(fname);
+  uint64_t runnumber = static_cast<uint64_t>(runnumber_segment.first);
 
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
@@ -110,7 +112,7 @@ void Fun4All_CaloCheck(const std::string &fname,
   se->registerSubsystem(calo_check.release());
 
   std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
-  In->AddListFile(fname);
+  In->AddFile(fname);
   se->registerInputManager(In.release());
 
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
@@ -130,31 +132,29 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 5)
+  if (args.size() < 2 || args.size() > 4)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [event_id] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> [event_id] [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
-    std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  event_id: (optional) Specific Event to Analyze (default: -1)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
     return 1;  // Indicate error
   }
 
   const std::string& input_dst= args[1];
-  unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[2]));
   int event_id = 0;
   std::string dbtag = "newcdbtag";
 
+  if (args.size() >= 3)
+  {
+    event_id = std::stoi(args[2]);
+  }
   if (args.size() >= 4)
   {
-    event_id = std::stoi(args[3]);
-  }
-  if (args.size() >= 5)
-  {
-    dbtag = args[4];
+    dbtag = args[3];
   }
 
-  Fun4All_CaloCheck(input_dst, runnumber, event_id, dbtag);
+  Fun4All_CaloCheck(input_dst, event_id, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;
