@@ -11,6 +11,7 @@
 //phool 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
+#include <phool/PHNodeOperation.h>
 
 //Calo towers 
 #include <calobase/TowerInfoContainer.h>
@@ -90,7 +91,7 @@ enum JetDataTypes
 	ClusterJets = 2
 };
 
-class EnergyDistPlots
+/*class EnergyDistPlots
 {
   public:
 	  EnergyDistPlots(bool jet=false, float p0=0., float e0=0. ){
@@ -105,7 +106,7 @@ class EnergyDistPlots
 	  std::vector<std::vector<TH1F*> *> * one_d_projection=NULL; //project down to dphi xj style 
 	  bool isJet=false;
 
-};
+};*/ //this seems to be reduntant
 class HitPlots
 {
   public:
@@ -278,37 +279,48 @@ class EventShapeQA : public SubsysReco
 {
  public:
 
-  EventShapeQA(int verb = 0, const std::string &name = "EventShapeQA");
+	EventShapeQA(int verb = 0, const std::string &name = "EventShapeQA");
 
-  ~EventShapeQA() override;
+	~EventShapeQA() override;
 
-  int Init(PHCompositeNode *topNode) override;
+	int Init(PHCompositeNode *topNode) override;
 
-  int InitRun(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
+	int InitRun(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
 
-  int process_event(PHCompositeNode *topNode) override;
+	int process_event(PHCompositeNode *topNode) override;
 
-  int ResetEvent(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
+	int ResetEvent(PHCompositeNode *topNode) override {return Fun4AllReturnCodes::EVENT_OK;}
 
-  int EndRun(const int runnumber) override {return Fun4AllReturnCodes::EVENT_OK;}
+	int EndRun(const int runnumber) override {return Fun4AllReturnCodes::EVENT_OK;}
 
-  int End(PHCompositeNode *topNode) override;
+	int End(PHCompositeNode *topNode) override;
 
-  int Reset(PHCompositeNode * /*topNode*/) override {return Fun4AllReturnCodes::EVENT_OK;}
+	int Reset(PHCompositeNode * /*topNode*/) override {return Fun4AllReturnCodes::EVENT_OK;}
 
-  void Print(const std::string &what = "ALL") const override;
+	void Print(const std::string &what = "ALL") const override;
+	float PhiWrap(float phi) 
+	{
+		if(phi > PI) phi = 2*PI - phi;
+		else if (phi < - PI ) phi = - 2 *PI - phi;
+		return phi;
+	}
+	float EventShapeQA::calcR(float phi1, float phi2, float eta1, float eta2)
+	{
+		float dphi = phi1-phi2;
+		dphi = PhiWrap(dphi);
+		float deta = eta1 - eta2;
+		float R = std::sqrt(std::pow(dphi, 2) + std::pow(deta, 2));
+		return R;
+	}
 
  private:
-  int verbosity = 0;
-  //particles in reference to the proper calorimeter axis
-  EnergyDistPlots* calo_axis; 
-  //particles in reference to the jet axis
-  EnergyDistPlots* jet_axis;
-  //jets in reference to the proper calorimeter axis
-  EnergyDistPlots* calo_axis; 
-  //jets in reference to the jet axis
-  EnergyDistPlots* jet_axis;
-  
+	int verbosity = 0, n_evt = 0;
+	//particles in reference to the proper calorimeter axis
+	std::vector<std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>>* calo_jet_zero_axis=NULL; 
+	//jets in reference to the proper calorimeter axis
+	std::vector<std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>>* calo_jet_shift_axis=NULL; 
+ 	std::vector<std::pair<std::pair<CompDataTypes, JetDataTypes> ,PHCompositeNode*>> nodes {};
+
 };
 
 #endif // EVENTSHAPEQA_H
