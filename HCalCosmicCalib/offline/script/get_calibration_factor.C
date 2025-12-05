@@ -132,7 +132,9 @@ void get_calibration_factor(int min_run, int max_run) {
       // Get ADC/GeV.
       ohcal_newcalib[ieta][iphi] /= ohcal_sim_mpv[ieta][iphi];
       // Get GeV/ADC.
-      ohcal_newcalib[ieta][iphi] = 1/(float)ohcal_newcalib[ieta][iphi];
+      if (ohcal_newcalib[ieta][iphi] != 0) {
+        ohcal_newcalib[ieta][iphi] = 1/(float)ohcal_newcalib[ieta][iphi];
+      }
   
       ohcal_outputfile << ieta << " " << iphi << " " << ohcal_newcalib[ieta][iphi] << std::endl;
     }
@@ -150,7 +152,9 @@ void get_calibration_factor(int min_run, int max_run) {
       // Get ADC/GeV.
       ihcal_newcalib[ieta][iphi] /= ihcal_sim_mpv[ieta][iphi];
       // Get GeV/ADC.
-      ihcal_newcalib[ieta][iphi] = 1/(float)ihcal_newcalib[ieta][iphi];
+      if (ihcal_newcalib[ieta][iphi] != 0) {
+        ihcal_newcalib[ieta][iphi] = 1/(float)ihcal_newcalib[ieta][iphi];
+      }
   
       ihcal_outputfile << ieta << " " << iphi << " " << ihcal_newcalib[ieta][iphi] << std::endl;
     }
