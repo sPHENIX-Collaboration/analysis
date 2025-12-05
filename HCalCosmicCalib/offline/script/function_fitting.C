@@ -87,7 +87,11 @@ void function_fitting(int min_run, int max_run, std::string calo_type) {
       h_2D_meanuncertainty->SetBinContent(ieta+1, iphi+1, h_channel[ieta][iphi]->GetMeanError()/(float)h_channel[ieta][iphi]->GetMean());
       h_2D_fitchi2->SetBinContent(ieta+1, iphi+1, f_gamma->GetChisquare()/(float)f_gamma->GetNDF());
 
-      mpv_file << ieta << " " << iphi << " " << f_gamma->GetParameter(0) << std::endl;
+      if (h_channel[ieta][iphi]->GetEntries() == 0) {
+        mpv_file << ieta << " " << iphi << " " << 0 << std::endl;
+      } else {
+        mpv_file << ieta << " " << iphi << " " << f_gamma->GetParameter(0) << std::endl;
+      }
     }
   }
     
