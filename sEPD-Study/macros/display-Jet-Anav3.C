@@ -502,6 +502,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2SumE_TowMedE = m_hists["h3CaloESumETowMedE_yz"].get();
   auto* h2SumE_TowMedE_zoom = dynamic_cast<TH2*>(h2SumE_TowMedE->Clone("h2SumE_TowMedE_zoom"));
 
+  auto* h2TowMedE_CaloV2 = m_hists["h2TowMedECaloV2"].get();
+  auto* h2TowMedE_CaloV2_zoom = dynamic_cast<TH2*>(h2TowMedE_CaloV2->Clone("h2TowMedE_CaloV2_zoom"));
+
   auto* h2SumE_JetPt = dynamic_cast<TH3*>(m_hists["h3JetPtEnergySumE"].get())->Project3D("xz");
   auto* h2SumE_JetPt_zoom = dynamic_cast<TH2*>(h2SumE_JetPt->Clone("h2SumE_JetPt_zoom"));
 
@@ -552,6 +555,8 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_TowMedE, "CaloE-TowMedE", TowMedE_min, TowMedE_max, CaloE_min, CaloE_max, 0.04f);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE, "SumE-TowMedE", TowMedE_min, TowMedE_max, SumE_min, SumE_max, 0.04f);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_zoom, "SumE-TowMedE-zoom", TowMedE_min, 5, SumE_min, SumE_max, 0.04f);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2, "TowMedE-CaloV2", TowMedE_min, TowMedE_max, v2_min, v2_max, 0.04f);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2_zoom, "TowMedE-CaloV2-zoom", TowMedE_min, 5, v2_min, v2_max, 0.04f);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt, "SumE-JetPt", SumE_min, SumE_max, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt_zoom, "SumE-JetPt-zoom", -80, 100, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetEnergy, "SumE-JetEnergy", SumE_min, SumE_max, jetEnergy_min, jetEnergy_max, x_label_size);

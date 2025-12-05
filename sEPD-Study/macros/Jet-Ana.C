@@ -151,6 +151,7 @@ class JetAnalysis
     TH3* h3JetEnergyCentralityCaloV2{nullptr};
     TH3* h3SumECaloV2Centrality{nullptr};
     TH3* h3CaloESumETowMedE{nullptr};
+    TH2* h2TowMedECaloV2{nullptr};
     TH3* h3JetPtEnergySumE{nullptr};
     TH3* h3JetPtEnergyCaloE{nullptr};
     TH1* hCentrality{nullptr};
@@ -898,8 +899,8 @@ void JetAnalysis::init_hists()
   double mbd_total_charge_low{0};
   double mbd_total_charge_high{5e3};
 
-  unsigned int bins_tower_median_energy{300};
-  double tower_median_energy_low{0};
+  unsigned int bins_tower_median_energy{310};
+  double tower_median_energy_low{-10};
   double tower_median_energy_high{300}; // MeV
 
   double sample_low = -0.5;
@@ -923,6 +924,7 @@ void JetAnalysis::init_hists()
     m_hists3D["h3JetEnergyCentralityCaloV2"] = std::make_unique<TH3F>("h3JetEnergyCentralityCaloV2", "Jets; Jet Energy [GeV]; Centrality [%]; v_{2}", bins_energy, energy_low, energy_high, m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
     m_hists3D["h3SumECaloV2Centrality"] = std::make_unique<TH3F>("h3SumECaloV2Centrality", "; Sum E [GeV]; v_{2}; Centrality [%]", bins_sum_E, sum_E_low, sum_E_high, bins_v2, v2_low, v2_high, m_bins_cent, m_cent_low, m_cent_high);
     m_hists3D["h3CaloESumETowMedE"] = std::make_unique<TH3F>("h3CaloESumETowMedE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]; Median Tower Energy [MeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high, bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high);
+    m_hists2D["h2TowMedECaloV2"] = std::make_unique<TH2F>("h2TowMedECaloV2", "|z| < 10 and MB; Median Tower Energy [MeV]; v_{2}", bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high, bins_v2, v2_low, v2_high);
 
     m_hists3D["h3JetPtEnergySumE"] = std::make_unique<TH3F>("h3JetPtEnergySumE", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]; Sum E [GeV]", bins_pt_reduced, pt_low, pt_high, bins_energy_reduced, energy_low, energy_high, bins_sum_E, sum_E_low, sum_E_high);
   }
@@ -962,6 +964,7 @@ void JetAnalysis::init_hists()
     m_hists.h3JetEnergyCentralityCaloV2 = m_hists3D["h3JetEnergyCentralityCaloV2"].get();
     m_hists.h3SumECaloV2Centrality = m_hists3D["h3SumECaloV2Centrality"].get();
     m_hists.h3CaloESumETowMedE = m_hists3D["h3CaloESumETowMedE"].get();
+    m_hists.h2TowMedECaloV2 = m_hists2D["h2TowMedECaloV2"].get();
     m_hists.h3JetPtEnergySumE = m_hists3D["h3JetPtEnergySumE"].get();
   }
 
@@ -1381,6 +1384,7 @@ void JetAnalysis::process_calo()
   {
     m_hists.h3SumECaloV2Centrality->Fill(UE_sum_E, calo_v2, cent);
     m_hists.h3CaloESumETowMedE->Fill(total_energy, UE_sum_E, tower_median_energy);
+    m_hists.h2TowMedECaloV2->Fill(tower_median_energy, calo_v2);
 
     if (std::abs(calo_v2) > 0.6F && cent < 50)
     {
