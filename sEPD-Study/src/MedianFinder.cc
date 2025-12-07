@@ -55,8 +55,8 @@ double MedianFinder::findMedian()
   if (total_size % 2 != 0)
   {
     // We ensure max_heap_low is always the one with the extra element (or equal size)
-    return static_cast<double>(max_heap_low.top());
+    return max_heap_low.top();
   }
 
-  return (static_cast<double>(max_heap_low.top()) + min_heap_high.top()) / 2.0;
+  return (max_heap_low.top() + min_heap_high.top()) / 2.0;
 }
