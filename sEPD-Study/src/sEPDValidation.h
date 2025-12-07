@@ -340,6 +340,7 @@ class sEPDValidation : public SubsysReco
     double event_IHCal_Energy{0};
     double event_OHCal_Energy{0};
     double event_tower_median_Energy{-9999};
+    double event_EMCal_tower_median_Energy{-9999};
     double max_jet_pt{-9999};
 
     // Q Vectors
@@ -360,6 +361,8 @@ class sEPDValidation : public SubsysReco
 
     float UE_sum_E{9999};
     float calo_v2{9999};
+    int nStripsCEMC{9999};
+    int nHIRecoSeedsSub{0};
     std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;

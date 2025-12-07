@@ -205,6 +205,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_IHCal_Energy", &m_data.event_IHCal_Energy);
   m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
   m_tree->Branch("event_tower_median_Energy", &m_data.event_tower_median_Energy);
+  m_tree->Branch("event_EMCal_tower_median_Energy", &m_data.event_EMCal_tower_median_Energy);
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
@@ -227,6 +228,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
     m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
     m_tree->Branch("calo_v2", &m_data.calo_v2);
+    m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
+    m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
@@ -618,6 +621,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   auto* h2OHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2OHCal_Energy"].get());
 
   MedianFinder mf;
+  MedianFinder mf_EMCal;
 
   for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
   {
@@ -631,6 +635,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
       float energy = towerCEMC->get_energy();
       m_data.event_EMCal_Energy += energy;
       mf.addNum(energy);
+      mf_EMCal.addNum(energy);
       h2EMCal_Energy->Fill(iphi, ieta, energy);
     }
 
@@ -661,6 +666,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 
   // Get the median tower energy
   m_data.event_tower_median_Energy = mf.findMedian();
+  m_data.event_EMCal_tower_median_Energy = mf_EMCal.findMedian();
 
   dynamic_cast<TH3 *>(m_hists["h3EMCal_MBD_sEPD"].get())->Fill(total_EMCal, total_MBD, total_sEPD);
   dynamic_cast<TH3 *>(m_hists["h3IHCal_MBD_sEPD"].get())->Fill(total_IHCal, total_MBD, total_sEPD);
@@ -857,9 +863,13 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   float sum_E = towerBkg->get_sum_E();
   int nTowers = towerBkg->get_nTowersUsedForBkg();
   int nStrips = towerBkg->get_nStripsUsedForFlow();
+  int nStripsCEMC = towerBkg->get_nStripsCEMCUsedForFlow();
+  int nHIRecoSeedsSub = towerBkg->get_nHIRecoSeedsSub();
 
   m_data.calo_v2 = v2;
   m_data.UE_sum_E = sum_E;
+  m_data.nStripsCEMC = nStripsCEMC;
+  m_data.nHIRecoSeedsSub = nHIRecoSeedsSub;
 
   dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
   dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
@@ -977,6 +987,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_IHCal_Energy = 0;
   m_data.event_OHCal_Energy = 0;
   m_data.event_tower_median_Energy = -9999;
+  m_data.event_EMCal_tower_median_Energy = -9999;
 
   // MBD
   // m_data.mbd_charge.clear();
@@ -1008,6 +1019,8 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   // UE
   m_data.calo_v2 = 9999;
   m_data.UE_sum_E = 9999;
+  m_data.nStripsCEMC = 9999;
+  m_data.nHIRecoSeedsSub = 0;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
