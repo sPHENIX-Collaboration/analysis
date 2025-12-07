@@ -646,8 +646,8 @@ hadd.add_argument('-n'
 
 hadd.add_argument('-s'
                     , '--memory', type=float
-                    , default=3
-                    , help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
+                    , default=2
+                    , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
 hadd.add_argument('-l'
                     , '--condor-log-dir', type=str
@@ -659,13 +659,19 @@ hadd.add_argument('-f'
                     , default='scripts/genHadd.sh'
                     , help='Condor Script. Default: scripts/genHadd.sh')
 
+# Helper to chunk list into smaller lists
+def chunk_list(input_list, size):
+    """Yield successive size-sized chunks from input_list."""
+    for i in range(0, len(input_list), size):
+        yield input_list[i:i + size]
+
 def hadd_jobs():
     """
-    hadd condor jobs
+    Two-Stage Hierarchical hadd
     """
-    input_dir     = Path(args.input_dir).resolve()
+    input_dir      = Path(args.input_dir).resolve()
     output_dir     = Path(args.output_dir).resolve()
-    hadd_max       = args.hadd_max
+    files_per_job  = args.hadd_max 
     log_file       = output_dir / 'log.txt'
     condor_memory  = args.memory
     condor_script  = Path(args.condor_script).resolve()
@@ -673,6 +679,8 @@ def hadd_jobs():
 
     # Create Dirs
     output_dir.mkdir(parents=True, exist_ok=True)
+    partial_dir = output_dir / 'partial' # Intermediate files go here
+    partial_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
@@ -686,16 +694,21 @@ def hadd_jobs():
         logger.critical(f'File: {condor_script} does not exist!')
         sys.exit()
 
-    # Print Logs
+    # Print Input Args
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input Dir: {input_dir}')
     logger.info(f'Output Directory: {output_dir}')
-    logger.info(f'Hadd Max: {hadd_max}')
+    logger.info(f'Files Per Job: {files_per_job}')
     logger.info(f'Log File: {log_file}')
     logger.info(f'Condor Memory: {condor_memory} GB')
     logger.info(f'Condor Script: {condor_script}')
     logger.info(f'Condor Log Directory: {condor_log_dir}')
+
+    # Standard subdirectories
+    for subdir in ['stdout', 'error', 'output']:
+        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
+        (partial_dir / subdir).mkdir(parents=True, exist_ok=True)
 
     if condor_log_dir.is_dir():
         shutil.rmtree(condor_log_dir)
@@ -703,32 +716,147 @@ def hadd_jobs():
     # Setup Condor Log Dir
     condor_log_dir.mkdir(parents=True, exist_ok=True)
 
-    # list of subdirectories to create
-    subdirectories = ['stdout', 'error', 'output']
+    # ---------------------------------------------------------
+    # STAGE 1: SUBMIT PARTIAL MERGES
+    # ---------------------------------------------------------
+    logger.info("Starting STAGE 1: Partial Merging")
 
-    # Loop through the list and create each one
-    for subdir in subdirectories:
-        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
+    # Find all run directories
+    run_dirs = [d for d in input_dir.iterdir() if d.is_dir()]
+
+    job_counter = 0
+    stage1_jobs_list = output_dir / 'jobs_stage1.list'
+
+    logger.info(f'Run Dirs: {run_dirs}')
+
+    with open(stage1_jobs_list, mode='w', encoding='utf-8') as f_list:
+        for run_dir in run_dirs:
+            run_name = run_dir.name 
+
+            # Find all ROOT files in this run directory
+            # Tries both structures you had in your original script
+            root_files = list(run_dir.glob('*.root'))
+            if not root_files:
+                root_files = list(run_dir.glob('hist/*.root'))
+
+            if not root_files:
+                logger.warning(f"No root files found for run {run_name}, skipping.")
+                continue
+
+            # Split into chunks (e.g., 400 files -> 40 chunks of 10)
+            chunks = list(chunk_list(root_files, files_per_job))
+
+            for i, chunk in enumerate(chunks):
+                # Create a list file for this specific job
+                chunk_list_filename = output_dir / 'files' / f'{run_name}_part_{i}.list'
+                chunk_list_filename.parent.mkdir(exist_ok=True)
+
+                with open(chunk_list_filename, mode='w', encoding='utf-8') as f_chunk:
+                    for rfile in chunk:
+                        f_chunk.write(f"{rfile}\n")
+
+                # Output filename: partial-68099-0.root
+                partial_output_name = f"partial-{run_name}-{i}.root"
+
+                # Write to Condor Job List: 
+                # input_list_file, output_filename, output_destination
+                f_list.write(f"{chunk_list_filename},{partial_output_name},{partial_dir}/output\n")
+                job_counter += 1
 
     shutil.copy(condor_script, output_dir)
 
-    command = f'readlink -f {input_dir}/* > jobs.list'
-    run_command_and_log(command, logger, output_dir, False)
-
-    submit_file_content = textwrap.dedent(f"""\
-        executable     = {os.path.basename(condor_script)}
-        arguments      = $(input_dir) {hadd_max+1} {output_dir}/output
-        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
-        output         = stdout/job-$(ClusterId)-$(Process).out
-        error          = error/job-$(ClusterId)-$(Process).err
+    # Generate Submit File for Stage 1
+    submit_content_s1 = textwrap.dedent(f"""\
+        executable     = {condor_script.name}
+        arguments      = $(list_file) $(out_name) $(out_dir)
+        log            = {condor_log_dir}/stage1-$(ClusterId)-$(Process).log
+        output         = {partial_dir}/stdout/job-$(ClusterId)-$(Process).out
+        error          = {partial_dir}/error/job-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
     """)
+    
+    with open(output_dir / 'stage1.sub', mode='w', encoding='utf-8') as f:
+        f.write(submit_content_s1)
 
-    with open(output_dir / 'genHadd.sub', mode='w', encoding='utf-8') as file:
-        file.write(submit_file_content)
+    # Submit Stage 1
+    logger.info(f"Submitting {job_counter} partial merge jobs...")
+    command = f'cd {output_dir} && condor_submit stage1.sub -queue "list_file,out_name,out_dir from jobs_stage1.list"'
+    run_command_and_log(command, logger, output_dir)
 
-    command = f'cd {output_dir} && condor_submit genHadd.sub -queue "input_dir from jobs.list"'
-    logger.info(command)
+    # Monitor Stage 1 (Wait Loop)
+    while True:
+        # Simple check: count files in partial/output vs expected jobs
+        # Ideally query condor_q, but file counting is robust enough for this scale
+        finished_files = len(list((partial_dir / 'output').glob('*.root')))
+        
+        if finished_files >= job_counter:
+            logger.info(f"Stage 1 Complete. {finished_files}/{job_counter} files created.")
+            break
+            
+        logger.info(f"Waiting for Stage 1... {finished_files}/{job_counter} done.")
+        time.sleep(15) # Check every 15 seconds
+
+    # ---------------------------------------------------------
+    # STAGE 2: FINAL MERGE
+    # ---------------------------------------------------------
+    logger.info("Starting STAGE 2: Final Merging")
+    
+    stage2_jobs_list = output_dir / 'jobs_stage2.list'
+    stage2_counter = 0
+
+    with open(stage2_jobs_list, mode='w', encoding='utf-8') as f_list:
+        for run_dir in run_dirs:
+            run_name = run_dir.name
+            
+            # Find the partial files we just created for this run
+            # They match pattern: partial-RUNNAME-*.root in partial_dir/output
+            partial_files = list((partial_dir / 'output').glob(f'partial-{run_name}-*.root'))
+            
+            if not partial_files:
+                continue
+
+            # --- CONTINGENCY FOR FEW FILES ---
+            if len(partial_files) == 1:
+                # If there is only 1 partial file, we don't need a Stage 2 Condor job.
+                # Just move it to the final directory and rename it.
+                src = partial_files[0]
+                dst = output_dir / 'output' / f"{run_name}.root"
+                
+                logger.info(f"Run {run_name} has only 1 partial file. Moving directly to final.")
+                shutil.move(str(src), str(dst))
+                continue # Skip the rest of the loop for this run
+            # ---------------------------------
+                
+            # Create list file for final merge (only if > 1 partial file)
+            final_list_filename = output_dir / 'files' / f'{run_name}_final.list'
+            with open(final_list_filename, mode='w', encoding='utf-8') as f_final:
+                for pfile in partial_files:
+                    f_final.write(f"{pfile}\n")
+            
+            final_output_name = f"{run_name}.root"
+            
+            # Write to Condor Job List
+            f_list.write(f"{final_list_filename},{final_output_name},{output_dir}/output\n")
+            stage2_counter += 1
+
+    # Generate Submit File for Stage 2
+    submit_content_s2 = textwrap.dedent(f"""\
+        executable     = {condor_script.name}
+        arguments      = $(list_file) $(out_name) $(out_dir)
+        log            = {condor_log_dir}/stage2-$(ClusterId)-$(Process).log
+        output         = {output_dir}/stdout/final-$(ClusterId)-$(Process).out
+        error          = {output_dir}/error/final-$(ClusterId)-$(Process).err
+        request_memory = {condor_memory}GB
+    """)
+    
+    with open(output_dir / 'stage2.sub', mode='w', encoding='utf-8') as f:
+        f.write(submit_content_s2)
+
+    # Submit Stage 2
+    logger.info(f"Submitting {stage2_counter} final merge jobs...")
+    command = f'cd {output_dir} && condor_submit stage2.sub -queue "list_file,out_name,out_dir from jobs_stage2.list"'
+    run_command_and_log(command, logger, output_dir)
+    logger.info("All jobs submitted.")
 
 # ----------------------------
 
