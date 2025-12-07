@@ -4,7 +4,6 @@ This module automates the Fun4All Condor Procedure
 """
 
 import argparse
-import os
 import sys
 import subprocess
 import datetime
@@ -646,8 +645,8 @@ hadd.add_argument('-n'
 
 hadd.add_argument('-s'
                     , '--memory', type=float
-                    , default=2
-                    , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
+                    , default=3
+                    , help='Memory (units of GB) to request per condor submission. Default: 3 GB.')
 
 hadd.add_argument('-l'
                     , '--condor-log-dir', type=str
@@ -671,7 +670,7 @@ def hadd_jobs():
     """
     input_dir      = Path(args.input_dir).resolve()
     output_dir     = Path(args.output_dir).resolve()
-    files_per_job  = args.hadd_max 
+    files_per_job  = args.hadd_max
     log_file       = output_dir / 'log.txt'
     condor_memory  = args.memory
     condor_script  = Path(args.condor_script).resolve()
@@ -731,7 +730,7 @@ def hadd_jobs():
 
     with open(stage1_jobs_list, mode='w', encoding='utf-8') as f_list:
         for run_dir in run_dirs:
-            run_name = run_dir.name 
+            run_name = run_dir.name
 
             # Find all ROOT files in this run directory
             # Tries both structures you had in your original script
@@ -758,7 +757,7 @@ def hadd_jobs():
                 # Output filename: partial-68099-0.root
                 partial_output_name = f"partial-{run_name}-{i}.root"
 
-                # Write to Condor Job List: 
+                # Write to Condor Job List:
                 # input_list_file, output_filename, output_destination
                 f_list.write(f"{chunk_list_filename},{partial_output_name},{partial_dir}/output\n")
                 job_counter += 1
@@ -774,7 +773,7 @@ def hadd_jobs():
         error          = {partial_dir}/error/job-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
     """)
-    
+
     with open(output_dir / 'stage1.sub', mode='w', encoding='utf-8') as f:
         f.write(submit_content_s1)
 
@@ -788,11 +787,11 @@ def hadd_jobs():
         # Simple check: count files in partial/output vs expected jobs
         # Ideally query condor_q, but file counting is robust enough for this scale
         finished_files = len(list((partial_dir / 'output').glob('*.root')))
-        
+
         if finished_files >= job_counter:
             logger.info(f"Stage 1 Complete. {finished_files}/{job_counter} files created.")
             break
-            
+
         logger.info(f"Waiting for Stage 1... {finished_files}/{job_counter} done.")
         time.sleep(15) # Check every 15 seconds
 
@@ -800,18 +799,18 @@ def hadd_jobs():
     # STAGE 2: FINAL MERGE
     # ---------------------------------------------------------
     logger.info("Starting STAGE 2: Final Merging")
-    
+
     stage2_jobs_list = output_dir / 'jobs_stage2.list'
     stage2_counter = 0
 
     with open(stage2_jobs_list, mode='w', encoding='utf-8') as f_list:
         for run_dir in run_dirs:
             run_name = run_dir.name
-            
+
             # Find the partial files we just created for this run
             # They match pattern: partial-RUNNAME-*.root in partial_dir/output
             partial_files = list((partial_dir / 'output').glob(f'partial-{run_name}-*.root'))
-            
+
             if not partial_files:
                 continue
 
@@ -821,20 +820,20 @@ def hadd_jobs():
                 # Just move it to the final directory and rename it.
                 src = partial_files[0]
                 dst = output_dir / 'output' / f"{run_name}.root"
-                
+
                 logger.info(f"Run {run_name} has only 1 partial file. Moving directly to final.")
                 shutil.move(str(src), str(dst))
                 continue # Skip the rest of the loop for this run
             # ---------------------------------
-                
+
             # Create list file for final merge (only if > 1 partial file)
             final_list_filename = output_dir / 'files' / f'{run_name}_final.list'
             with open(final_list_filename, mode='w', encoding='utf-8') as f_final:
                 for pfile in partial_files:
                     f_final.write(f"{pfile}\n")
-            
+
             final_output_name = f"{run_name}.root"
-            
+
             # Write to Condor Job List
             f_list.write(f"{final_list_filename},{final_output_name},{output_dir}/output\n")
             stage2_counter += 1
@@ -848,7 +847,7 @@ def hadd_jobs():
         error          = {output_dir}/error/final-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
     """)
-    
+
     with open(output_dir / 'stage2.sub', mode='w', encoding='utf-8') as f:
         f.write(submit_content_s2)
 
