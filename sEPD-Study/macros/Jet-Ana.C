@@ -152,6 +152,9 @@ class JetAnalysis
     TH3* h3SumECaloV2Centrality{nullptr};
     TH3* h3CaloESumETowMedE{nullptr};
     TH2* h2TowMedECaloV2{nullptr};
+    TH2* h2CaloETowMedE_EMCal{nullptr};
+    TH2* h2SumETowMedE_EMCal{nullptr};
+    TH2* h2TowMedE_EMCal_CaloV2{nullptr};
     TH3* h3JetPtEnergySumE{nullptr};
     TH3* h3JetPtEnergyCaloE{nullptr};
     TH1* hCentrality{nullptr};
@@ -226,6 +229,7 @@ class JetAnalysis
     double event_IHCal_Energy{0};
     double event_OHCal_Energy{0};
     double event_tower_median_Energy{0};
+    double event_EMCal_tower_median_Energy{0};
     float calo_v2{0.0};
     float UE_sum_E{0.0};
     bool has_good_calo_v2{false};
@@ -338,7 +342,7 @@ void JetAnalysis::setup_chain()
                                           "event_MBD_Charge_South", "event_MBD_Charge_North",
                                           "event_sEPD_Charge_South", "event_sEPD_Charge_North",
                                           "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
-                                          "event_tower_median_Energy",
+                                          "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
                                           "calo_v2", "UE_sum_E",
                                           "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
                                           "sepd_channel", "sepd_charge", "sepd_phi"};
@@ -373,6 +377,7 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchAddress("event_IHCal_Energy", &m_event_data.event_IHCal_Energy);
   m_chain->SetBranchAddress("event_OHCal_Energy", &m_event_data.event_OHCal_Energy);
   m_chain->SetBranchAddress("event_tower_median_Energy", &m_event_data.event_tower_median_Energy);
+  m_chain->SetBranchAddress("event_EMCal_tower_median_Energy", &m_event_data.event_EMCal_tower_median_Energy);
   m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
   m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
   m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
@@ -903,6 +908,10 @@ void JetAnalysis::init_hists()
   double tower_median_energy_low{-10};
   double tower_median_energy_high{300}; // MeV
 
+  unsigned int bins_EMCal_tower_median_energy{1100};
+  double EMCal_tower_median_energy_low{-10};
+  double EMCal_tower_median_energy_high{1000}; // MeV
+
   double sample_low = -0.5;
   double sample_high = m_bins_sample - 0.5;
 
@@ -925,6 +934,10 @@ void JetAnalysis::init_hists()
     m_hists3D["h3SumECaloV2Centrality"] = std::make_unique<TH3F>("h3SumECaloV2Centrality", "; Sum E [GeV]; v_{2}; Centrality [%]", bins_sum_E, sum_E_low, sum_E_high, bins_v2, v2_low, v2_high, m_bins_cent, m_cent_low, m_cent_high);
     m_hists3D["h3CaloESumETowMedE"] = std::make_unique<TH3F>("h3CaloESumETowMedE", "|z| < 10 and MB; Total Calorimeter Energy [GeV]; Sum E [GeV]; Median Tower Energy [MeV]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high, bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high);
     m_hists2D["h2TowMedECaloV2"] = std::make_unique<TH2F>("h2TowMedECaloV2", "|z| < 10 and MB; Median Tower Energy [MeV]; v_{2}", bins_tower_median_energy, tower_median_energy_low, tower_median_energy_high, bins_v2, v2_low, v2_high);
+
+    m_hists2D["h2CaloETowMedE_EMCal"] = std::make_unique<TH2F>("h2CaloETowMedE_EMCal", "|z| < 10 and MB; EMCal Median Tower Energy [MeV]; Total Calorimeter Energy [GeV]", bins_EMCal_tower_median_energy, EMCal_tower_median_energy_low, EMCal_tower_median_energy_high, bins_Calo_E, Calo_E_low, Calo_E_high);
+    m_hists2D["h2SumETowMedE_EMCal"] = std::make_unique<TH2F>("h2SumETowMedE_EMCal", "|z| < 10 and MB; EMCal Median Tower Energy [MeV]; Sum E [GeV]", bins_EMCal_tower_median_energy, EMCal_tower_median_energy_low, EMCal_tower_median_energy_high, bins_sum_E, sum_E_low, sum_E_high);
+    m_hists2D["h2TowMedE_EMCal_CaloV2"] = std::make_unique<TH2F>("h2TowMedE_EMCal_CaloV2", "|z| < 10 and MB; EMCal Median Tower Energy [MeV]; v_{2}", bins_EMCal_tower_median_energy, EMCal_tower_median_energy_low, EMCal_tower_median_energy_high, bins_v2, v2_low, v2_high);
 
     m_hists3D["h3JetPtEnergySumE"] = std::make_unique<TH3F>("h3JetPtEnergySumE", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]; Sum E [GeV]", bins_pt_reduced, pt_low, pt_high, bins_energy_reduced, energy_low, energy_high, bins_sum_E, sum_E_low, sum_E_high);
   }
@@ -965,6 +978,9 @@ void JetAnalysis::init_hists()
     m_hists.h3SumECaloV2Centrality = m_hists3D["h3SumECaloV2Centrality"].get();
     m_hists.h3CaloESumETowMedE = m_hists3D["h3CaloESumETowMedE"].get();
     m_hists.h2TowMedECaloV2 = m_hists2D["h2TowMedECaloV2"].get();
+    m_hists.h2CaloETowMedE_EMCal = m_hists2D["h2CaloETowMedE_EMCal"].get();
+    m_hists.h2SumETowMedE_EMCal = m_hists2D["h2SumETowMedE_EMCal"].get();
+    m_hists.h2TowMedE_EMCal_CaloV2 = m_hists2D["h2TowMedE_EMCal_CaloV2"].get();
     m_hists.h3JetPtEnergySumE = m_hists3D["h3JetPtEnergySumE"].get();
   }
 
@@ -1374,6 +1390,7 @@ void JetAnalysis::process_calo()
   double total_OHCal = m_event_data.event_OHCal_Energy;
   double total_energy = total_EMCal + total_IHCal + total_OHCal;
   double tower_median_energy = m_event_data.event_tower_median_Energy * 1e3; // GeV -> MeV
+  double tower_EMCal_median_energy = m_event_data.event_EMCal_tower_median_Energy * 1e3; // GeV -> MeV
 
   m_hists.h3EMCal_MBD_sEPD->Fill(total_EMCal, total_MBD, total_sEPD);
   m_hists.h3IHCal_MBD_sEPD->Fill(total_IHCal, total_MBD, total_sEPD);
@@ -1385,6 +1402,10 @@ void JetAnalysis::process_calo()
     m_hists.h3SumECaloV2Centrality->Fill(UE_sum_E, calo_v2, cent);
     m_hists.h3CaloESumETowMedE->Fill(total_energy, UE_sum_E, tower_median_energy);
     m_hists.h2TowMedECaloV2->Fill(tower_median_energy, calo_v2);
+
+    m_hists.h2CaloETowMedE_EMCal->Fill(tower_EMCal_median_energy, total_energy);
+    m_hists.h2SumETowMedE_EMCal->Fill(tower_EMCal_median_energy, UE_sum_E);
+    m_hists.h2TowMedE_EMCal_CaloV2->Fill(tower_EMCal_median_energy, calo_v2);
 
     if (std::abs(calo_v2) > 0.6F && cent < 50)
     {
