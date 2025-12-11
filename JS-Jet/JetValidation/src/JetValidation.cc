@@ -441,7 +441,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
     }
 
   //grab the gl1 data
-  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
+  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "14001");
   if (!gl1PacketInfo)
     {
       std::cout << PHWHERE << "caloTreeGen::process_event: GL1Packet node is missing. Output related to this node will be empty" << std::endl;
