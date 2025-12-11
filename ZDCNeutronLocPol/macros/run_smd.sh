@@ -8,19 +8,15 @@ export USER="$(id -u -n)"
 export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
 
-source ${HOME}/.bash_login
- 
-#print the environment - needed for debugging
-#printenv
-
+source ${HOME}/.bashrc
 
 condor=true
 condorrun=0
 condorjobs=500
 fullrun=true
-fname="DST_TRIGGERED_EVENT_run2pp_new_2024p001-00042797-%04d.root"
-ofname1="store34485/42797/0/zdcneutronlocpol_42797_%04d.root"
-ofname2="store34485/42797/0/zdcneutronlocpol_42797_%04d_%04d.root"
+fname="DST_TRIGGERED_EVENT_seb20_run2pp_ana502_nocdbtag_v001-00047972-%05d.root"
+ofname1="47972/0/zdcneutronlocpol_47972_%05d.root"
+ofname2="47972/0/zdcneutronlocpol_47972_%04d_%05d.root"
 
 if [ "$condor" = false ]; then    
     #=================== Run standalone =========================#

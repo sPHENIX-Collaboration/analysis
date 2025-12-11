@@ -2,6 +2,7 @@
 
 #include <uspin/SpinDBOutput.h>
 #include <uspin/SpinDBInput.h>
+#include <uspin/SpinDBContentv1.h>
 #include "sPhenixStyle.C"
 
 float sqrtasym(float N1, float N2, float N3, float N4);
@@ -22,7 +23,8 @@ float RMAXCUT = 4; // keep below (nominal 4)
 
 //void drawAsym(const std::string infile = "fakeAsymmetry/FakeAsymmetry.root", int storenumber = 34485, int runnumber = 42797)
 //void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
-void smdprofileMaker(const std::string infile = "store34485/store34485-2.root", int storenumber = 34485, int runnumber = 42797)
+void smdprofileMaker(const std::string infile = "/sphenix/tg/tg01/coldqcd/jaein213/analysis/ZDCNeutronLocPol/macros/47972/0/zdcneutronlocpol_47972.root", int storenumber = 34782, int runnumber = 47972)
+
 {
   SetsPhenixStyle();
   TFile *f = new TFile(infile.c_str());
@@ -107,9 +109,10 @@ void smdprofileMaker(const std::string infile = "store34485/store34485-2.root", 
   //============================= Option A: Spin DB ================================//
   unsigned int qa_level = 0xffff;
   SpinDBOutput spin_out("phnxrc");
-  SpinDBContent spin_cont;
+  SpinDBContentv1 spin_cont;
   spin_out.StoreDBContent(runnumber,runnumber,qa_level);
-  spin_out.GetDBContentStore(spin_cont,runnumber);
+  SpinDBContent* spin_ptr = &spin_cont;
+  spin_out.GetDBContentStore(spin_ptr,runnumber);
   
   int crossingshift = spin_cont.GetCrossingShift();
   //crossingshift = 0;

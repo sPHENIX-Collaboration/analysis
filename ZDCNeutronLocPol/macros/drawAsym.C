@@ -2,6 +2,8 @@
 
 #include <uspin/SpinDBOutput.h>
 #include <uspin/SpinDBInput.h>
+#include <uspin/SpinDBContentv1.h>
+#include <TFile.h>
 
 float sqrtasym(float N1, float N2, float N3, float N4);
 float sqrtasymerr(float N1, float N2, float N3, float N4, float E1, float E2, float E3, float E4);
@@ -21,7 +23,7 @@ float RMAXCUT = 4; // keep below (nominal 4)
 
 //void drawAsym(const std::string infile = "fakeAsymmetry/FakeAsymmetry.root", int storenumber = 34485, int runnumber = 42797)
 //void drawAsym(const std::string infile = "store34485/42797/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
-void drawAsym(const std::string infile = "store34485/smdmerge.root", int storenumber = 34485, int runnumber = 42797)
+void drawAsym(const std::string infile = "47972/0/zdcneutronlocpol_47972_all.root", int storenumber = 34782, int runnumber = 47972)
 //void drawAsym(const std::string infile = "store34492/42836/smdmerge_old.root", int storenumber = 34492, int runnumber = 42836)
 {
 
@@ -92,9 +94,10 @@ void drawAsym(const std::string infile = "store34485/smdmerge.root", int storenu
   //============================= Option A: Spin DB ================================//
   unsigned int qa_level = 0xffff;
   SpinDBOutput spin_out("phnxrc");
-  SpinDBContent spin_cont;
+  SpinDBContentv1 spin_cont;
   spin_out.StoreDBContent(runnumber,runnumber,qa_level);
-  spin_out.GetDBContentStore(spin_cont,runnumber);
+  SpinDBContent* spin_ptr = &spin_cont;
+  spin_out.GetDBContentStore(spin_ptr,runnumber);
   
   int crossingshift = spin_cont.GetCrossingShift();
   //crossingshift = 0;
@@ -157,7 +160,7 @@ void drawAsym(const std::string infile = "store34485/smdmerge.root", int storenu
   //======================= process event ==================================//
   std::cout << nentries << std::endl;
   
-  int clockOffset = 1; //this is the offset between GL1 and ZDC events
+  int clockOffset = 0; //this is the offset between GL1 and ZDC events
 
   for (int i = 0; i < nentries - clockOffset; i++)
   {
@@ -309,6 +312,17 @@ void drawAsym(const std::string infile = "store34485/smdmerge.root", int storenu
   //DrawCanvas(runnumber,sxy_hits_up[1],sxy_hits_down[1],gSqrtAsym[2],gSqrtAsym[3]);
   DrawAsym(runnumber,gSqrtAsym[2],gSqrtAsym[3]);
 
+  std::string outname = Form("asym_run%d.root", runnumber);
+  TFile outfile(outname.c_str(), "RECREATE");
+  for (int i = 0; i < 4; ++i) { gSqrtAsym[i]->Write(); }
+  for (int i = 0; i < 2; ++i)
+  {
+    nxy_hits_up[i]->Write(); nxy_hits_down[i]->Write();
+    sxy_hits_up[i]->Write(); sxy_hits_down[i]->Write();
+    Nup[i]->Write(); Ndown[i]->Write(); Sup[i]->Write(); Sdown[i]->Write();
+  }
+  ncall->Write(); scall->Write();
+  outfile.Close();
 
 }
 
