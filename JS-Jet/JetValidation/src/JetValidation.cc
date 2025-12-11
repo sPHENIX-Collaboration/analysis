@@ -262,9 +262,11 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 
   //underlying event
   TowerBackground *background = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
-  if(!background){
-    std::cout<<"Can't get background. Exiting"<<std::endl;
-    return Fun4AllReturnCodes::EVENT_OK;
+  if(m_doUnsubJet) {
+	  if(!background){
+    	std::cout<<"Can't get background. Exiting"<<std::endl;
+   		return Fun4AllReturnCodes::EVENT_OK;
+	  }
   }
 
   //get the event centrality/impact parameter from HIJING
