@@ -1,6 +1,8 @@
 
 #include <uspin/SpinDBInput.h>
 #include <uspin/SpinDBOutput.h>
+#include <uspin/SpinDBContentv1.h>
+#include <TFile.h>
 #include "sPhenixStyle.C"
 R__LOAD_LIBRARY(libuspin.so)
 
@@ -9,7 +11,7 @@ float ZDC2CUT = 15;   // keep above (nominal 25)
 float VETOCUT = 150;  // keep below (nominal 150)
 bool ismerged = true;
 bool isflipON = true;
-void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", int storenumber = 34485, int runnumber = 42797)
+void drawBunchBunch(const std::string infile = "47972/0/zdcneutronlocpol_47972_all.root", int storenumber = 34782, int runnumber = 47972)
 {
   SetsPhenixStyle();
   TFile *f = new TFile(infile.c_str());
@@ -83,9 +85,10 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   //============================= Option A: Spin DB ================================//
   unsigned int qa_level = 0xffff;
   SpinDBOutput spin_out("phnxrc");
-  SpinDBContent spin_cont;
+  SpinDBContentv1 spin_cont;
   spin_out.StoreDBContent(runnumber, runnumber, qa_level);
-  spin_out.GetDBContentStore(spin_cont, runnumber);
+  SpinDBContent* spin_ptr = &spin_cont;
+  spin_out.GetDBContentStore(spin_ptr, runnumber);
 
   int crossingshift = spin_cont.GetCrossingShift();
   // crossingshift = 0;
@@ -135,7 +138,10 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   {
     spinpatternNo = 3;
   }  // pattern names start at '111x111_P1' so index 3  means '111x111_P4' and so on
-
+  if(storenumber == 34782)
+  {
+    spinpatternNo = 5;
+  }
   for (int i = 0; i < 120; i++)
   {
     if (preset_pattern_blue[spinpatternNo].at(i) == '+')
@@ -169,7 +175,7 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   //======================= process event ==================================//
   std::cout << nentries << std::endl;
 
-  int clockOffset = 1;  // this is the offset between GL1 and ZDC events
+  int clockOffset = 0;  // this is the offset between GL1 and ZDC events
 
 //for (int i = 0; i <1000000; i++)
   for (int i = 0; i < nentries - clockOffset; i++)
@@ -449,12 +455,12 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   TFitResultPtr fit_spindown_blue = graph_spindown_blue->Fit("pol0", "S");
   // Add legend
   TLegend leg1(.20, .70, .60, .90);
-  leg1.AddEntry((TObject *) 0, Form("SMD North / Run 42796+42797"), "");
+  leg1.AddEntry((TObject *) 0, Form("SMD North / Run %d", runnumber), "");
   leg1.AddEntry(graph_spinup_blue, Form("blue #uparrow :  %.5f #pm %.5f", fit_spinup_blue->Parameter(0), fit_spinup_blue->ParError(0)), "LP");
   leg1.AddEntry(graph_spindown_blue, Form("blue #downarrow : %.5f #pm %.5f", fit_spindown_blue->Parameter(0), fit_spindown_blue->ParError(0)), "LP");
   leg1.SetTextSize(0.03);
   leg1.Draw();
-  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
+  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV, Run %d #it{#bf{sPHENIX}} internal", runnumber));
 
   TCanvas *canvas2 = new TCanvas("canvas_blueUD", "North SMD UD", 950, 800);
   graph_spinup_blueUD->GetXaxis()->SetLimits(0, 111);
@@ -469,12 +475,12 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   TFitResultPtr fit_spinup_blueUD = graph_spinup_blueUD->Fit("pol0", "S");
   TFitResultPtr fit_spindown_blueUD = graph_spindown_blueUD->Fit("pol0", "S");
   TLegend leg2(.20, .70, .60, .90);
-  leg2.AddEntry((TObject *) 0, Form("SMD North / Run 42796+42797"), "");
+  leg2.AddEntry((TObject *) 0, Form("SMD North / Run %d", runnumber), "");
   leg2.AddEntry(graph_spinup_blueUD, Form("blue #uparrow :  %.5f #pm %.5f", fit_spinup_blueUD->Parameter(0), fit_spinup_blueUD->ParError(0)), "LP");
   leg2.AddEntry(graph_spindown_blueUD, Form("blue #downarrow : %.5f #pm %.5f", fit_spindown_blueUD->Parameter(0), fit_spindown_blueUD->ParError(0)), "LP");
   leg2.SetTextSize(0.03);
   leg2.Draw();
-  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
+  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV, Run %d #it{#bf{sPHENIX}} internal", runnumber));
 
   TCanvas *canvas3 = new TCanvas("canvas_yellow", "South SMD", 950, 800);
   graph_spinup_yellow->GetXaxis()->SetLimits(0, 111);
@@ -489,12 +495,12 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   TFitResultPtr fit_spinup_yellow = graph_spinup_yellow->Fit("pol0", "S");
   TFitResultPtr fit_spindown_yellow = graph_spindown_yellow->Fit("pol0", "S");
   TLegend leg3(.20, .70, .60, .90);
-  leg3.AddEntry((TObject *) 0, Form("SMD South / Run 42796+42797"), "");
+  leg3.AddEntry((TObject *) 0, Form("SMD South / Run %d", runnumber), "");
   leg3.AddEntry(graph_spinup_yellow, Form("yellow #uparrow :  %.5f #pm %.5f", fit_spinup_yellow->Parameter(0), fit_spinup_yellow->ParError(0)), "LP");
   leg3.AddEntry(graph_spindown_yellow, Form("yellow #downarrow : %.5f #pm %.5f", fit_spindown_yellow->Parameter(0), fit_spindown_yellow->ParError(0)), "LP");
   leg3.SetTextSize(0.03);
   leg3.Draw();
-  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
+  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV, Run %d #it{#bf{sPHENIX}} internal", runnumber));
 
   TCanvas *canvas4 = new TCanvas("canvas_yellow_UD", "South SMD", 950, 800);
   graph_spinup_yellowUD->GetXaxis()->SetLimits(0, 111);
@@ -518,12 +524,12 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   TFitResultPtr fit_spinup_yellowUD = graph_spinup_yellowUD->Fit("pol0", "S");
   TFitResultPtr fit_spindown_yellowUD = graph_spindown_yellowUD->Fit("pol0", "S");
   TLegend leg4(.20, .70, .60, .90);
-  leg4.AddEntry((TObject *) 0, Form("SMD South / Run 42796+42797"), "");
+  leg4.AddEntry((TObject *) 0, Form("SMD South / Run %d", runnumber), "");
   leg4.AddEntry(graph_spinup_yellowUD, Form("yellow #uparrow :  %.5f #pm %.5f", fit_spinup_yellowUD->Parameter(0), fit_spinup_yellowUD->ParError(0)), "LP");
   leg4.AddEntry(graph_spindown_yellowUD, Form("yellow #downarrow : %.5f #pm %.5f", fit_spindown_yellowUD->Parameter(0), fit_spindown_yellowUD->ParError(0)), "LP");
   leg4.SetTextSize(0.03);
   leg4.Draw();
-  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
+  latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV, Run %d #it{#bf{sPHENIX}} internal", runnumber));
 
   TCanvas *canvas5 = new TCanvas("canvas5", "canvas5", 950, 800);
   canvas5->cd();
@@ -534,7 +540,7 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   n_smd_L->Draw("E");
   latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
 
-  canvas5->SaveAs("north_smd1.pdf");
+  canvas5->SaveAs(Form("north_smd1_run%d.pdf", runnumber));
   TCanvas *canvas6 = new TCanvas("canvas6", "canvas6", 950, 800);
   canvas6->cd();
   canvas6->SetLogy();
@@ -543,9 +549,10 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   // n_smd_R->SetMarkerStyle(kFullCircle);
   n_smd_R->Draw("E");
   latex->DrawLatex(1 - gPad->GetRightMargin(), 1 - gPad->GetTopMargin() + 0.01, Form("#it{p+p}, 200 GeV #it{#bf{sPHENIX}} internal"));
-  canvas6->SaveAs("north_smd2.pdf");
+  canvas6->SaveAs(Form("north_smd2_run%d.pdf", runnumber));
 
-  TFile *sfile = new TFile("sfile.root", "RECREATE");
+  std::string outname = Form("bunch_run%d.root", runnumber);
+  TFile *sfile = new TFile(outname.c_str(), "RECREATE");
   TString pdfName;
   TString fileName;
   sfile->cd();
@@ -574,5 +581,9 @@ void drawBunchBunch(const std::string infile = "store34485/store34485-2.root", i
   n_smd_R->Write();
   s_smd_L->Write();
   s_smd_R->Write();
+  n_smd_U->Write();
+  n_smd_D->Write();
+  s_smd_U->Write();
+  s_smd_D->Write();
   sfile->Close();
 }
