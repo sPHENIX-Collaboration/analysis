@@ -100,7 +100,7 @@ class DisplayJetAnav3
 void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
 {
   c1->cd(1);
-  gPad->SetTopMargin(0.08f);
+  gPad->SetTopMargin(0.08F);
   gPad->SetLogy();
 
   auto* hJetPt = dynamic_cast<TH3*>(m_hists["h3JetPhiEtaPt"].get())->Project3D("z");
@@ -112,10 +112,10 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
   hJetPt->SetLineWidth(3);
   hJetPt->GetYaxis()->SetMaxDigits(3);
   hJetPt->GetYaxis()->SetTitle("Jet Yield / 1 GeV");
-  hJetPt->GetXaxis()->SetLabelSize(0.06f);
-  hJetPt->GetXaxis()->SetTitleSize(0.05f);
-  hJetPt->GetXaxis()->SetTitleOffset(1.1f);
-  hJetPt->GetYaxis()->SetTitleOffset(1.2f);
+  hJetPt->GetXaxis()->SetLabelSize(0.06F);
+  hJetPt->GetXaxis()->SetTitleSize(0.05F);
+  hJetPt->GetXaxis()->SetTitleOffset(1.1F);
+  hJetPt->GetYaxis()->SetTitleOffset(1.2F);
 
   double exponent = std::ceil(std::log10(hJetPt->GetMaximum()));
   double upper_bound = std::pow(10.0, exponent);
@@ -132,7 +132,7 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
   m_leg["jet"] = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
   auto* leg = m_leg["jet"].get();
   leg->SetFillStyle(0);
-  leg->SetTextSize(0.06f);
+  leg->SetTextSize(0.06F);
   leg->AddEntry(hJetPt, "Default", "l");
   leg->AddEntry(hJetPtv2, "Dead IB Mask", "l");
   leg->Draw("same");
@@ -140,7 +140,7 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
+    gPad->SetTopMargin(0.08F);
 
     gPad->SetLogy();
     hJetPt->Draw();
@@ -160,7 +160,7 @@ void DisplayJetAnav3::plot_jet(TCanvas* c1, TCanvas* c2, const std::string& run)
 void DisplayJetAnav3::plot_centrality(TCanvas* c1, TCanvas* c2, const std::string& run)
 {
   c1->cd(2);
-  gPad->SetTopMargin(0.08f);
+  gPad->SetTopMargin(0.08F);
 
   auto* hCentrality = m_hists["hCentrality"].get();
 
@@ -170,16 +170,16 @@ void DisplayJetAnav3::plot_centrality(TCanvas* c1, TCanvas* c2, const std::strin
   hCentrality->SetLineWidth(3);
   hCentrality->GetYaxis()->SetRangeUser(0, hCentrality->GetMaximum() * 1.1);
   hCentrality->GetYaxis()->SetMaxDigits(3);
-  hCentrality->GetXaxis()->SetLabelSize(0.06f);
-  hCentrality->GetXaxis()->SetTitleSize(0.06f);
-  hCentrality->GetYaxis()->SetLabelSize(0.06f);
-  hCentrality->GetYaxis()->SetTitleSize(0.06f);
-  hCentrality->GetXaxis()->SetTitleOffset(0.9f);
+  hCentrality->GetXaxis()->SetLabelSize(0.06F);
+  hCentrality->GetXaxis()->SetTitleSize(0.06F);
+  hCentrality->GetYaxis()->SetLabelSize(0.06F);
+  hCentrality->GetYaxis()->SetTitleSize(0.06F);
+  hCentrality->GetXaxis()->SetTitleOffset(0.9F);
 
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
+    gPad->SetTopMargin(0.08F);
 
     hCentrality->Draw();
 
@@ -196,7 +196,7 @@ void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run)
 void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run, const std::string& side, int id)
 {
   c1->cd(id);
-  gPad->SetTopMargin(0.08f);
+  gPad->SetTopMargin(0.08F);
 
   std::string proj = (side == "S") ? "x" : "y";
 
@@ -209,12 +209,12 @@ void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run,
   hPsi_raw->SetLineColor(kBlue);
   hPsi_raw->SetLineWidth(3);
   hPsi_raw->GetYaxis()->SetRangeUser(0, hPsi_raw->GetMaximum() * 1.1);
-  hPsi_raw->GetXaxis()->SetLabelSize(0.06f);
-  hPsi_raw->GetXaxis()->SetTitleSize(0.06f);
-  hPsi_raw->GetYaxis()->SetLabelSize(0.06f);
-  hPsi_raw->GetYaxis()->SetTitleSize(0.06f);
-  hPsi_raw->GetXaxis()->SetTitleOffset(0.95f);
-  hPsi_raw->GetYaxis()->SetTitleOffset(1.2f);
+  hPsi_raw->GetXaxis()->SetLabelSize(0.06F);
+  hPsi_raw->GetXaxis()->SetTitleSize(0.06F);
+  hPsi_raw->GetYaxis()->SetLabelSize(0.06F);
+  hPsi_raw->GetYaxis()->SetTitleSize(0.06F);
+  hPsi_raw->GetXaxis()->SetTitleOffset(0.95F);
+  hPsi_raw->GetYaxis()->SetTitleOffset(1.2F);
 
   hPsi_corr->Draw("same");
   hPsi_corr->SetTitle("");
@@ -228,7 +228,7 @@ void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run,
   m_leg[leg_key] = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
   auto* leg = m_leg[leg_key].get();
   leg->SetFillStyle(0);
-  leg->SetTextSize(0.06f);
+  leg->SetTextSize(0.06F);
   leg->AddEntry(hPsi_raw, "Raw", "l");
   leg->AddEntry(hPsi_corr, "Corrected", "l");
   leg->Draw("same");
@@ -236,7 +236,7 @@ void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run,
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
+    gPad->SetTopMargin(0.08F);
 
     hPsi_raw->Draw();
     hPsi_corr->Draw("same");
@@ -249,8 +249,8 @@ void DisplayJetAnav3::plot_psi(TCanvas* c1, TCanvas* c2, const std::string& run,
 void DisplayJetAnav3::plot_sEPD_NS(TCanvas* c1, TCanvas* c2, const std::string& run)
 {
   c1->cd(5);
-  gPad->SetTopMargin(0.08f);
-  gPad->SetLeftMargin(0.17f);
+  gPad->SetTopMargin(0.08F);
+  gPad->SetLeftMargin(0.17F);
 
   auto* hSP = m_hists["hSP_res_prof_2"].get();
 
@@ -261,17 +261,17 @@ void DisplayJetAnav3::plot_sEPD_NS(TCanvas* c1, TCanvas* c2, const std::string& 
   hSP->SetLineColor(kBlue);
   hSP->SetLineWidth(3);
   hSP->GetYaxis()->SetRangeUser(0, hSP->GetMaximum() * 1.1);
-  hSP->GetXaxis()->SetLabelSize(0.06f);
-  hSP->GetXaxis()->SetTitleSize(0.06f);
-  hSP->GetYaxis()->SetLabelSize(0.06f);
-  hSP->GetYaxis()->SetTitleSize(0.06f);
-  hSP->GetXaxis()->SetTitleOffset(0.9f);
+  hSP->GetXaxis()->SetLabelSize(0.06F);
+  hSP->GetXaxis()->SetTitleSize(0.06F);
+  hSP->GetYaxis()->SetLabelSize(0.06F);
+  hSP->GetYaxis()->SetTitleSize(0.06F);
+  hSP->GetXaxis()->SetTitleOffset(0.9F);
 
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
-    gPad->SetLeftMargin(0.17f);
+    gPad->SetTopMargin(0.08F);
+    gPad->SetLeftMargin(0.17F);
 
     hSP->Draw("p e X0");
     hSP->Draw("same hist l p");
@@ -283,8 +283,8 @@ void DisplayJetAnav3::plot_sEPD_NS(TCanvas* c1, TCanvas* c2, const std::string& 
 void DisplayJetAnav3::plot_sEPD_NS_Norm(TCanvas* c1, TCanvas* c2, const std::string& run)
 {
   c1->cd(6);
-  gPad->SetTopMargin(0.08f);
-  gPad->SetLeftMargin(0.18f);
+  gPad->SetTopMargin(0.08F);
+  gPad->SetLeftMargin(0.18F);
 
   auto* hSP = m_hists["hSP_evt_res_prof_2"].get();
 
@@ -295,18 +295,18 @@ void DisplayJetAnav3::plot_sEPD_NS_Norm(TCanvas* c1, TCanvas* c2, const std::str
   hSP->SetLineColor(kBlue);
   hSP->SetLineWidth(3);
   hSP->GetYaxis()->SetRangeUser(0, hSP->GetMaximum() * 1.1);
-  hSP->GetXaxis()->SetLabelSize(0.06f);
-  hSP->GetXaxis()->SetTitleSize(0.06f);
-  hSP->GetYaxis()->SetLabelSize(0.06f);
-  hSP->GetYaxis()->SetTitleSize(0.06f);
-  hSP->GetXaxis()->SetTitleOffset(0.9f);
-  hSP->GetYaxis()->SetTitleOffset(1.5f);
+  hSP->GetXaxis()->SetLabelSize(0.06F);
+  hSP->GetXaxis()->SetTitleSize(0.06F);
+  hSP->GetYaxis()->SetLabelSize(0.06F);
+  hSP->GetYaxis()->SetTitleSize(0.06F);
+  hSP->GetXaxis()->SetTitleOffset(0.9F);
+  hSP->GetYaxis()->SetTitleOffset(1.5F);
 
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
-    gPad->SetLeftMargin(0.18f);
+    gPad->SetTopMargin(0.08F);
+    gPad->SetLeftMargin(0.18F);
 
     hSP->Draw("p e X0");
     hSP->Draw("same hist l p");
@@ -332,11 +332,11 @@ void DisplayJetAnav3::draw(const std::string& run)
   gStyle->SetOptTitle(1);
   gStyle->SetTitleStyle(0);
   gStyle->SetTitleW(1);
-  gStyle->SetTitleH(0.08f);
+  gStyle->SetTitleH(0.08F);
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  c1->Divide(3, 2, 0.00025f, 0.00025f);
+  c1->Divide(3, 2, 0.00025F, 0.00025F);
 
   std::string output = std::format("{}/pdf/plots-{}.pdf", m_output_dir, run);
 
@@ -377,7 +377,10 @@ void DisplayJetAnav3::plot_calo(TCanvas* c1, TCanvas* c2, const std::string& run
     auto* h2IHCal_OHCal = dynamic_cast<TH3*>(m_hists["h3EMCal_IHCal_OHCal"].get())->Project3D("zy");
     auto* h2MBD_sEPD = dynamic_cast<TH3*>(m_hists["h3EMCal_MBD_sEPD"].get())->Project3D("zy");
 
-    float x_label_size = 0.03f;
+    auto* h2CaloE_Centrality = dynamic_cast<TH2*>(m_hists["h2CaloECentrality"].get());
+    auto* h2SumE_Centrality = dynamic_cast<TH2*>(m_hists["h2SumECentrality"].get());
+
+    float x_label_size = 0.03F;
 
     double MBD_max = 2.1e3;
     double sEPD_max = 2.5e4;
@@ -388,35 +391,46 @@ void DisplayJetAnav3::plot_calo(TCanvas* c1, TCanvas* c2, const std::string& run
     double OHCal_min = -1e2;
     double OHCal_max = 5e2;
 
-    plot_calo(c1, c2, run, 1, h2EMCal_MBD, "EMCal-MBD", EMCal_min, EMCal_max, 0, MBD_max, x_label_size);
-    plot_calo(c1, c2, run, 2, h2IHCal_MBD, "IHCal-MBD", IHCal_min, IHCal_max, 0, MBD_max, x_label_size);
-    plot_calo(c1, c2, run, 3, h2OHCal_MBD, "OHCal-MBD", OHCal_min, OHCal_max, 0, MBD_max, x_label_size);
+    double cent_min = -0.5;
+    double cent_max = 79.5;
 
-    plot_calo(c1, c2, run, 4, h2EMCal_sEPD, "EMCal-sEPD", EMCal_min, EMCal_max, 0, sEPD_max, x_label_size);
-    plot_calo(c1, c2, run, 5, h2IHCal_sEPD, "IHCal-sEPD", IHCal_min, IHCal_max, 0, sEPD_max, x_label_size);
-    plot_calo(c1, c2, run, 6, h2OHCal_sEPD, "OHCal-sEPD", OHCal_min, OHCal_max, 0, sEPD_max, x_label_size);
+    double CaloE_min = 0;
+    double CaloE_max = 2.5e3;
 
-    plot_calo(c1, c2, run, 7, h2EMCal_IHCal, "EMCal-IHCal", EMCal_min, EMCal_max, IHCal_min, IHCal_max, x_label_size);
-    plot_calo(c1, c2, run, 8, h2IHCal_OHCal, "IHCal-OHCal", IHCal_min, IHCal_max, OHCal_min, OHCal_max, x_label_size);
-    plot_calo(c1, c2, run, 9, h2MBD_sEPD, "MBD-sEPD", 0, MBD_max, 0,sEPD_max, x_label_size);
+    int canvas_idx = 1;
+    
+    plot_calo(c1, c2, run, canvas_idx++, h2EMCal_MBD, "EMCal-MBD", EMCal_min, EMCal_max, 0, MBD_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2IHCal_MBD, "IHCal-MBD", IHCal_min, IHCal_max, 0, MBD_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2OHCal_MBD, "OHCal-MBD", OHCal_min, OHCal_max, 0, MBD_max, x_label_size);
+
+    plot_calo(c1, c2, run, canvas_idx++, h2EMCal_sEPD, "EMCal-sEPD", EMCal_min, EMCal_max, 0, sEPD_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2IHCal_sEPD, "IHCal-sEPD", IHCal_min, IHCal_max, 0, sEPD_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2OHCal_sEPD, "OHCal-sEPD", OHCal_min, OHCal_max, 0, sEPD_max, x_label_size);
+
+    plot_calo(c1, c2, run, canvas_idx++, h2EMCal_IHCal, "EMCal-IHCal", EMCal_min, EMCal_max, IHCal_min, IHCal_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2IHCal_OHCal, "IHCal-OHCal", IHCal_min, IHCal_max, OHCal_min, OHCal_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2MBD_sEPD, "MBD-sEPD", 0, MBD_max, 0,sEPD_max, x_label_size);
+
+    plot_calo(c1, c2, run, canvas_idx++, h2CaloE_Centrality, "CaloE-Centrality", CaloE_min, CaloE_max, cent_min, cent_max, x_label_size);
+    plot_calo(c1, c2, run, canvas_idx++, h2SumE_Centrality, "SumE-Centrality-v2", CaloE_min, CaloE_max, cent_min, cent_max, x_label_size);
 }
 
 void DisplayJetAnav3::plot_calo(TCanvas* c1, TCanvas* c2, const std::string& run, int canvas_idx, TH1* hist, const std::string& tag, double x_min, double x_max, double y_min, double y_max, float x_label_size)
 {
   c1->cd(canvas_idx);
-  gPad->SetTopMargin(0.08f);
-  gPad->SetLeftMargin(0.18f);
-  gPad->SetRightMargin(0.13f);
+  gPad->SetTopMargin(0.08F);
+  gPad->SetLeftMargin(0.18F);
+  gPad->SetRightMargin(0.13F);
   gPad->SetLogz();
 
   hist->Draw("COLZ1");
   hist->SetTitle(std::format("Run: {}", run).c_str());
   hist->GetXaxis()->SetLabelSize(x_label_size);
-  hist->GetXaxis()->SetTitleSize(0.06f);
-  hist->GetYaxis()->SetLabelSize(0.06f);
-  hist->GetYaxis()->SetTitleSize(0.06f);
-  hist->GetXaxis()->SetTitleOffset(0.95f);
-  hist->GetYaxis()->SetTitleOffset(1.4f);
+  hist->GetXaxis()->SetTitleSize(0.06F);
+  hist->GetYaxis()->SetLabelSize(0.06F);
+  hist->GetYaxis()->SetTitleSize(0.06F);
+  hist->GetXaxis()->SetTitleOffset(0.95F);
+  hist->GetYaxis()->SetTitleOffset(1.4F);
   hist->GetYaxis()->SetMaxDigits(3);
   hist->GetXaxis()->SetRangeUser(x_min, x_max);
   hist->GetYaxis()->SetRangeUser(y_min, y_max);
@@ -424,9 +438,9 @@ void DisplayJetAnav3::plot_calo(TCanvas* c1, TCanvas* c2, const std::string& run
   if (m_saveIndividualFig)
   {
     c2->cd();
-    gPad->SetTopMargin(0.08f);
-    gPad->SetLeftMargin(0.18f);
-    gPad->SetRightMargin(0.13f);
+    gPad->SetTopMargin(0.08F);
+    gPad->SetLeftMargin(0.18F);
+    gPad->SetRightMargin(0.13F);
     gPad->SetLogz();
 
     hist->Draw("COLZ1");
@@ -441,7 +455,7 @@ void DisplayJetAnav3::draw_calo(const std::string& run)
   c1->SetTickx();
   c1->SetTicky();
 
-  c1->SetCanvasSize(1700, 1500);
+  c1->SetCanvasSize(2300, 1500);
 
   std::unique_ptr<TCanvas> c2 = std::make_unique<TCanvas>();
   c2->SetTickx();
@@ -452,11 +466,11 @@ void DisplayJetAnav3::draw_calo(const std::string& run)
   gStyle->SetOptTitle(1);
   gStyle->SetTitleStyle(0);
   gStyle->SetTitleW(1);
-  gStyle->SetTitleH(0.08f);
+  gStyle->SetTitleH(0.08F);
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  c1->Divide(3, 3, 0.00025f, 0.00025f);
+  c1->Divide(4, 3, 0.00025F, 0.00025F);
 
   std::string output = std::format("{}/pdf-calo/plots-{}.pdf", m_output_dir, run);
 
@@ -498,12 +512,19 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2CaloE_SumE_zoom = dynamic_cast<TH2*>(h2CaloE_SumE->Clone("h2CaloE_SumE_zoom"));
 
   auto* h2CaloE_TowMedE = m_hists["h3CaloESumETowMedE_xz"].get();
+  auto* h2CaloE_TowMedE_EMCal = dynamic_cast<TH2*>(m_hists["h2CaloETowMedE_EMCal"].get());
 
   auto* h2SumE_TowMedE = m_hists["h3CaloESumETowMedE_yz"].get();
   auto* h2SumE_TowMedE_zoom = dynamic_cast<TH2*>(h2SumE_TowMedE->Clone("h2SumE_TowMedE_zoom"));
 
+  auto* h2SumE_TowMedE_EMCal = dynamic_cast<TH2*>(m_hists["h2SumETowMedE_EMCal"].get());
+  auto* h2SumE_TowMedE_EMCal_zoom = dynamic_cast<TH2*>(h2SumE_TowMedE->Clone("h2SumE_TowMedE_EMCal_zoom"));
+
   auto* h2TowMedE_CaloV2 = m_hists["h2TowMedECaloV2"].get();
   auto* h2TowMedE_CaloV2_zoom = dynamic_cast<TH2*>(h2TowMedE_CaloV2->Clone("h2TowMedE_CaloV2_zoom"));
+
+  auto* h2TowMedE_EMCal_CaloV2 = m_hists["h2TowMedE_EMCal_CaloV2"].get();
+  auto* h2TowMedE_EMCal_CaloV2_zoom = dynamic_cast<TH2*>(h2TowMedE_EMCal_CaloV2->Clone("h2TowMedE_EMCal_CaloV2_zoom"));
 
   auto* h2SumE_JetPt = dynamic_cast<TH3*>(m_hists["h3JetPtEnergySumE"].get())->Project3D("xz");
   auto* h2SumE_JetPt_zoom = dynamic_cast<TH2*>(h2SumE_JetPt->Clone("h2SumE_JetPt_zoom"));
@@ -517,7 +538,11 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2CaloE_JetEnergy = dynamic_cast<TH3*>(m_hists["h3JetPtEnergyCaloE"].get())->Project3D("yz");
   auto* h2CaloE_JetEnergy_zoom = dynamic_cast<TH2*>(h2CaloE_JetEnergy->Clone("h2CaloE_JetEnergy_zoom"));
 
-  float x_label_size = 0.06f;
+  auto* h2Seeds_Centrality = dynamic_cast<TH2*>(m_hists["h2SeedsCentrality"].get());
+  auto* h2Seeds_CaloE = dynamic_cast<TH2*>(m_hists["h3SeedsCaloESumE_yx"].get());
+  auto* h2Seeds_SumE = dynamic_cast<TH2*>(m_hists["h3SeedsCaloESumE_zx"].get());
+
+  float x_label_size = 0.06F;
 
   double cent_min = -0.5;
   double cent_max = 79.5;
@@ -527,6 +552,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
 
   double TowMedE_min = 0;
   double TowMedE_max = 200;
+
+  double TowMedE_EMCal_min = -10;
+  double TowMedE_EMCal_max = 1e3;
 
   double SumE_min = -2e2;
   double SumE_max = 2.5e3;
@@ -543,6 +571,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   double jetEnergy_min = -5e2;
   double jetEnergy_max = 5e2;
 
+  double seeds_min = 0;
+  double seeds_max = 100;
+
   int canvas_idx = 1;
 
   plot_calo(c1, c2, run, canvas_idx++, h2CaloV2_Centrality, "CaloV2-Centrality", cent_min, cent_max, v2_min, v2_max, x_label_size);
@@ -552,11 +583,16 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_CaloV2_zoom, "SumE-CaloV2-zoom", -50, 100, v2_min, v2_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE, "CaloE-SumE", SumE_min, SumE_max, SumE_min, SumE_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_SumE_zoom, "CaloE-SumE-zoom", -10, 50, SumE_min, SumE_max, x_label_size);
-  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_TowMedE, "CaloE-TowMedE", TowMedE_min, TowMedE_max, CaloE_min, CaloE_max, 0.04f);
-  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE, "SumE-TowMedE", TowMedE_min, TowMedE_max, SumE_min, SumE_max, 0.04f);
-  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_zoom, "SumE-TowMedE-zoom", TowMedE_min, 5, SumE_min, SumE_max, 0.04f);
-  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2, "TowMedE-CaloV2", TowMedE_min, TowMedE_max, v2_min, v2_max, 0.04f);
-  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2_zoom, "TowMedE-CaloV2-zoom", TowMedE_min, 5, v2_min, v2_max, 0.04f);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_TowMedE, "CaloE-TowMedE", TowMedE_min, TowMedE_max, CaloE_min, CaloE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloE_TowMedE_EMCal, "CaloE-TowMedE-EMCal", TowMedE_EMCal_min, TowMedE_EMCal_max, CaloE_min, CaloE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE, "SumE-TowMedE", TowMedE_min, TowMedE_max, SumE_min, SumE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_zoom, "SumE-TowMedE-zoom", TowMedE_min, 5, SumE_min, SumE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_EMCal, "SumE-TowMedE-EMCal", TowMedE_EMCal_min, TowMedE_EMCal_max, SumE_min, SumE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2SumE_TowMedE_EMCal_zoom, "SumE-TowMedE-EMCal-zoom", TowMedE_EMCal_min, 20, SumE_min, SumE_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2, "TowMedE-CaloV2", TowMedE_min, TowMedE_max, v2_min, v2_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_CaloV2_zoom, "TowMedE-CaloV2-zoom", TowMedE_min, 5, v2_min, v2_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_EMCal_CaloV2, "TowMedE-EMCal-CaloV2", TowMedE_EMCal_min, TowMedE_EMCal_max, v2_min, v2_max, 0.04F);
+  plot_calo(c1, c2, run, canvas_idx++, h2TowMedE_EMCal_CaloV2_zoom, "TowMedE-EMCal-CaloV2-zoom", TowMedE_EMCal_min, 40, v2_min, v2_max, 0.04F);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt, "SumE-JetPt", SumE_min, SumE_max, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetPt_zoom, "SumE-JetPt-zoom", -80, 100, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2SumE_JetEnergy, "SumE-JetEnergy", SumE_min, SumE_max, jetEnergy_min, jetEnergy_max, x_label_size);
@@ -565,6 +601,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetPt_zoom, "CaloE-JetPt-zoom", -50, 150, jetPt_min, jetPt_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetEnergy, "CaloE-JetEnergy", CaloE_min, CaloE_max, jetEnergy_min, jetEnergy_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2CaloE_JetEnergy_zoom, "CaloE-JetEnergy-zoom", -50, 150, jetEnergy_min, jetEnergy_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2Seeds_Centrality, "Seeds-Centrality", seeds_min, seeds_max, cent_min, cent_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2Seeds_CaloE, "Seeds-CaloE", seeds_min, seeds_max, CaloE_min, CaloE_max, x_label_size);
+  plot_calo(c1, c2, run, canvas_idx++, h2Seeds_SumE, "Seeds-SumE", seeds_min, seeds_max, SumE_min, SumE_max, x_label_size);
 }
 
 void DisplayJetAnav3::draw_UE(const std::string& run)
@@ -573,7 +612,7 @@ void DisplayJetAnav3::draw_UE(const std::string& run)
   c1->SetTickx();
   c1->SetTicky();
 
-  c1->SetCanvasSize(2900, 2000);
+  c1->SetCanvasSize(3500, 2500);
 
   std::unique_ptr<TCanvas> c2 = std::make_unique<TCanvas>();
   c2->SetTickx();
@@ -584,11 +623,11 @@ void DisplayJetAnav3::draw_UE(const std::string& run)
   gStyle->SetOptTitle(1);
   gStyle->SetTitleStyle(0);
   gStyle->SetTitleW(1);
-  gStyle->SetTitleH(0.08f);
+  gStyle->SetTitleH(0.08F);
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  c1->Divide(5, 4, 0.00025f, 0.00025f);
+  c1->Divide(6, 5, 0.00025F, 0.00025F);
 
   std::string output = std::format("{}/pdf-UE/plots-{}.pdf", m_output_dir, run);
 
@@ -627,8 +666,7 @@ void DisplayJetAnav3::process()
   while (std::getline(input_file, line))
   {
     std::filesystem::path p(line);
-    std::string stem = p.stem().string();
-    std::string run = myUtils::split(stem, '-')[1];
+    std::string run = p.stem().string();
     std::cout << std::format("File: {}, Run: {}\n", line, run);
     m_hists = myUtils::read_hists(line);
 
