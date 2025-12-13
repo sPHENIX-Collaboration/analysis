@@ -116,8 +116,8 @@ class ZDCNeutronLocPol : public SubsysReco
   void CompSmdAdc();
   void CompSmdPos();
 
-  Gl1Packet *p_gl1;
-  CaloPacketContainer *zdc_cont;
+  Gl1Packet *p_gl1 = nullptr;
+  CaloPacket *p_zdc = nullptr;
 
 
   std::vector<float> anaWaveformFast(CaloPacket *p, const int channel);

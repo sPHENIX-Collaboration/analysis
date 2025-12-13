@@ -7,7 +7,7 @@
 #include <caloreco/CaloWaveformFitting.h>
 #include <ffarawobjects/CaloPacketContainerv1.h>
 #include <ffarawobjects/CaloPacketv1.h>
-#include <ffarawobjects/Gl1Packetv1.h>
+#include <ffarawobjects/Gl1Packetv3.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 
 #include <Event/packet.h>
@@ -49,10 +49,17 @@ int ZDCNeutronLocPol::Init(PHCompositeNode * /*topNode*/)
 {
   std::cout << "ZDCNeutronLocPol::Init(PHCompositeNode *topNode) Initializing" << std::endl;
 
+  if (!WaveformProcessingFast)
+  {
+    WaveformProcessingFast = new CaloWaveformFitting();
+  }
+
   smdHits = new TTree();
   smdHits = new TTree("smdHits", "smdHits");
   smdHits->SetDirectory(0);
   smdHits->Branch("bunchnumber", &bunchnumber, "bunchnumber/I");
+  ///// Branches for in case that we might have mis-aligned GL1 and ZDC BCO in raw data.
+  ///// Rarly happened at beginning of 24 pp runs, but just in case we store BCOs for debugging(if needed)
   // smdHits -> Branch("evtseq_gl1",  &evtseq_gl1, "evtseq_gl1/I");
   // smdHits -> Branch("evtseq_zdc",  &evtseq_zdc, "evtseq_zdc/I");
   // smdHits -> Branch("BCO_gl1",  &BCO_gl1, "BCO_gl1/l");
@@ -130,8 +137,8 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
     std::cout << "Event: " << evtcnt << std::endl;
   }
 
-  p_gl1 = findNode::getClass<Gl1Packetv1>(topNode, "GL1Packet");
-  zdc_cont = findNode::getClass<CaloPacketContainerv1>(topNode, "ZDCPackets");
+  p_gl1 = findNode::getClass<Gl1Packetv3>(topNode, 14001);
+  p_zdc = findNode::getClass<CaloPacket>(topNode, 12001);
 
   showerCutN = 0;
   showerCutS = 0;
@@ -139,17 +146,10 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
   if (p_gl1)
   {
     bunchnumber = p_gl1->getBunchNumber();
-    if (evtcnt % 1000 == 0)
-    {
-      std::cout << bunchnumber << std::endl;
-    }
-    if (zdc_cont->get_npackets() != 1)
+    if (!p_zdc)
     {
       return Fun4AllReturnCodes::EVENT_OK;
     }
-
-    CaloPacket *p_zdc = zdc_cont->getPacket(0);
-
     if (p_zdc)
     {
       int nThresholdNVer = 0;
@@ -165,62 +165,6 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
       // in this for loop we get: zdc_adc and smd_adc
       for (int c = 0; c < p_zdc->iValue(0, "CHANNELS"); c++)
       {
-        /*
-        double baseline = 0.;
-        double baseline_low = 0.;
-        double baseline_high = 0.;
-
-        for(int s = 0; s < 3; s++)
-        {
-          baseline_low += p_zdc->iValue(s, c);
-        }
-
-        baseline_low /= 3.;
-
-        for (int s = p_zdc->iValue(0, "SAMPLES")-3; s < p_zdc->iValue(0, "SAMPLES"); s++)
-        {
-          baseline_high += p_zdc->iValue(s,c);
-        }
-
-        baseline_high /=3.;
-
-        baseline = baseline_low;
-
-        if(baseline_high < baseline_low) {baseline = baseline_high;}
-
-        for (int s = 0; s < p_zdc->iValue(0, "SAMPLES"); s++)
-        {
-          h_waveformAll->Fill(s, p_zdc->iValue(s, c) - baseline);
-
-          if (c < 16) //-->[0,15]
-          {
-            h_waveformZDC->Fill(s, p_zdc->iValue(s, c) - baseline);
-          }
-
-          if ((c > 47) && (c < 64)) //-->[48,63]
-          {
-            h_waveformSMD_North->Fill(s, p_zdc->iValue(s, c) - baseline);
-          }
-
-          if ((c > 111) && (c < 128)) //-->[112,127]
-          {
-            h_waveformSMD_South->Fill(s, p_zdc->iValue(s, c) - baseline);
-          }
-
-          if ((c > 15) && (c < 18)) //-->[16,17]
-          {
-            h_waveformVeto_North->Fill(s, p_zdc->iValue(s, c) - baseline);
-          }
-
-          if ((c > 79) && (c < 82)) //-->[80,81]
-          {
-            h_waveformVeto_South->Fill(s, p_zdc->iValue(s, c) - baseline);
-          }
-
-        }
-
-        */
-
         std::vector<float> resultFast = anaWaveformFast(p_zdc, c);  // fast waveform fitting
         float signalFast = resultFast.at(0);
         float timingFast = resultFast.at(1);
@@ -412,7 +356,7 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
         /////// end South SMD //////////////
 
       }  // end channel loop
-
+      std::cout<<"Hello 3"<<std::endl;
       // shower cut (SMD noise threshold cut)
       if (nThresholdNHor > 1 && nThresholdNVer > 1)
       {
@@ -435,7 +379,10 @@ int ZDCNeutronLocPol::process_event(PHCompositeNode *topNode)
       smdHits->Fill();
     }  // end if p_zdc good
   }  // end if p_gl1 good
-
+  else
+  {
+    std::cout<<"gl1 packet not found"<<std::endl;
+  }
   evtcnt++;
 
   return Fun4AllReturnCodes::EVENT_OK;
