@@ -134,7 +134,7 @@ int main(int argc, const char* const argv[])
 
   if (args.size() < 2 || args.size() > 4)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> [event_id] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST> [event_id] [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  event_id: (optional) Specific Event to Analyze (default: -1)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
