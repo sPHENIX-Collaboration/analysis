@@ -230,6 +230,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_tree->Branch("calo_v2", &m_data.calo_v2);
     m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
     m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
+    m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
+    m_tree->Branch("nHIRecoSeedsSubIt1_positiveE", &m_data.nHIRecoSeedsSubIt1_positiveE);
   }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
@@ -852,9 +854,10 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_UE(PHCompositeNode *topNode)
 {
+  auto* towerBkg1 = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub1");
   auto* towerBkg = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
 
-  if (!towerBkg)
+  if (!towerBkg1 || !towerBkg)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -865,11 +868,15 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   int nStrips = towerBkg->get_nStripsUsedForFlow();
   int nStripsCEMC = towerBkg->get_nStripsCEMCUsedForFlow();
   int nHIRecoSeedsSub = towerBkg->get_nHIRecoSeedsSub();
+  int nHIRecoSeedsSubIt1 = towerBkg1->get_nHIRecoSeedsSubIt1();
+  int nHIRecoSeedsSubIt1_positiveE = towerBkg1->get_nHIRecoSeedsSubIt1_positiveE();
 
   m_data.calo_v2 = v2;
   m_data.UE_sum_E = sum_E;
   m_data.nStripsCEMC = nStripsCEMC;
   m_data.nHIRecoSeedsSub = nHIRecoSeedsSub;
+  m_data.nHIRecoSeedsSubIt1 = nHIRecoSeedsSubIt1;
+  m_data.nHIRecoSeedsSubIt1_positiveE = nHIRecoSeedsSubIt1_positiveE;
 
   dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
   dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
@@ -1021,6 +1028,8 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.UE_sum_E = 9999;
   m_data.nStripsCEMC = 9999;
   m_data.nHIRecoSeedsSub = 0;
+  m_data.nHIRecoSeedsSubIt1 = 0;
+  m_data.nHIRecoSeedsSubIt1_positiveE = 0;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

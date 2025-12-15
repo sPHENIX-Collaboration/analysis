@@ -167,6 +167,16 @@ class JetAnalysis
     TH3* h3SeedsCaloESumE{nullptr};
     TH2* h2SeedsCentrality{nullptr};
 
+    TH2* h2SeedsIt1CaloE{nullptr};
+    TH2* h2SeedsIt1SumE{nullptr};
+    TH2* h2SeedsIt1Centrality{nullptr};
+
+    TH2* h2SeedsIt1{nullptr};
+    TH2* h2SeedsIt1PositiveE{nullptr};
+
+    TH2* h2SeedsIt1CaloV2{nullptr};
+    TH2* h2SeedsCaloV2{nullptr};
+
     TH1* hCaloECentrality_min{nullptr};
     TH1* hCaloECentrality_max{nullptr};
 
@@ -245,6 +255,8 @@ class JetAnalysis
     float calo_v2{0.0};
     float UE_sum_E{0.0};
     int nHIRecoSeedsSub{0};
+    int nHIRecoSeedsSubIt1{0};
+    int nHIRecoSeedsSubIt1_positiveE{0};
     bool has_good_calo_v2{false};
     double max_jet_pt{0.0};
 
@@ -353,14 +365,18 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchStatus("*", false);
 
   // List of Branches of Interest
-  std::vector<std::string> branchNames = {"event_id", "event_centrality",
-                                          "event_MBD_Charge_South", "event_MBD_Charge_North",
-                                          "event_sEPD_Charge_South", "event_sEPD_Charge_North",
-                                          "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
-                                          "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
-                                          "calo_v2", "UE_sum_E", "nHIRecoSeedsSub",
-                                          "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
-                                          "sepd_channel", "sepd_charge", "sepd_phi"};
+  std::unordered_set<std::string> branchNames = {"event_id", "event_centrality",
+                                                 "event_MBD_Charge_South", "event_MBD_Charge_North",
+                                                 "event_sEPD_Charge_South", "event_sEPD_Charge_North",
+                                                 "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
+                                                 "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
+                                                 "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
+                                                 "sepd_channel", "sepd_charge", "sepd_phi"};
+
+  std::unordered_set<std::string> branchNames_secondary = {"calo_v2", "UE_sum_E", "nHIRecoSeedsSub", "nHIRecoSeedsSubIt1", "nHIRecoSeedsSubIt1_positiveE"};
+
+  // Append the secondary branch names to the initial
+  branchNames.insert(branchNames_secondary.begin(), branchNames_secondary.end());
 
   // Check Branch Status
   for(const auto& branchName : branchNames)
@@ -371,7 +387,7 @@ void JetAnalysis::setup_chain()
       // Branch exists: Enable it
       m_chain->SetBranchStatus(branchName.c_str(), true);
     }
-    else if (branchName == "calo_v2" || branchName == "UE_sum_E" || branchName == "nHIRecoSeedsSub")
+    else if (branchNames_secondary.contains(branchName))
     {
       m_do_secondary_processing = false;
     }
@@ -407,6 +423,8 @@ void JetAnalysis::setup_chain()
     m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
     m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
     m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
+    m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
+    m_chain->SetBranchAddress("nHIRecoSeedsSubIt1_positiveE", &m_event_data.nHIRecoSeedsSubIt1_positiveE);
   }
 
   std::cout << "Finished... setup_chain" << std::endl;
@@ -998,6 +1016,16 @@ void JetAnalysis::init_hists()
 
     m_hists3D["h3SeedsCaloESumE"] = std::make_unique<TH3F>("h3SeedsCaloESumE", "|z| < 10 cm and MB; Jet Seeds [Counts]; Total Calorimeter Energy [GeV]; Sum E [GeV]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_Calo_E, Calo_E_low, Calo_E_high, bins_sum_E, sum_E_low, sum_E_high);
     m_hists2D["h2SeedsCentrality"] = std::make_unique<TH2F>("h2SeedsCentrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_cent, cent_low, cent_high);
+
+    m_hists2D["h2SeedsIt1CaloE"] = std::make_unique<TH2F>("h2SeedsIt1CaloE", "|z| < 10 cm and MB; Jet Seeds [Counts]; Total Calorimeter Energy [GeV]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_Calo_E, Calo_E_low, Calo_E_high);
+    m_hists2D["h2SeedsIt1SumE"] = std::make_unique<TH2F>("h2SeedsIt1SumE", "|z| < 10 cm and MB; Jet Seeds [Counts]; Sum E [GeV]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_sum_E, sum_E_low, sum_E_high);
+    m_hists2D["h2SeedsIt1Centrality"] = std::make_unique<TH2F>("h2SeedsIt1Centrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_cent, cent_low, cent_high);
+
+    m_hists2D["h2SeedsIt1"] = std::make_unique<TH2F>("h2SeedsIt1", "|z| < 10 cm and MB; Jet Seeds It1 [Counts]; Jet Seeds [Counts]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high);
+    m_hists2D["h2SeedsIt1PositiveE"] = std::make_unique<TH2F>("h2SeedsIt1PositiveE", "|z| < 10 cm and MB; Jet Seeds It1 [Counts]; Jet Seeds It1 (E > 0) [Counts]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high);
+
+    m_hists2D["h2SeedsIt1CaloV2"] = std::make_unique<TH2F>("h2SeedsIt1CaloV2", "|z| < 10 cm and MB; Jet Seeds [Counts]; v_{2}", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_v2, v2_low, v2_high);
+    m_hists2D["h2SeedsCaloV2"] = std::make_unique<TH2F>("h2SeedsCaloV2", "|z| < 10 cm and MB; Jet Seeds [Counts]; v_{2}", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_v2, v2_low, v2_high);
   }
 
   m_hists2D["h2Event"] = std::make_unique<TH2F>("h2Event", "Events: |z| < 10 and MB; Centrality [%]; Sample", m_bins_cent, m_cent_low, m_cent_high, m_bins_sample, sample_low, sample_high);
@@ -1050,6 +1078,17 @@ void JetAnalysis::init_hists()
 
     m_hists.h3SeedsCaloESumE = m_hists3D["h3SeedsCaloESumE"].get();
     m_hists.h2SeedsCentrality = m_hists2D["h2SeedsCentrality"].get();
+
+    m_hists.h2SeedsIt1CaloE = m_hists2D["h2SeedsIt1CaloE"].get();
+    m_hists.h2SeedsIt1SumE = m_hists2D["h2SeedsIt1SumE"].get();
+
+    m_hists.h2SeedsIt1Centrality = m_hists2D["h2SeedsIt1Centrality"].get();
+
+    m_hists.h2SeedsIt1 = m_hists2D["h2SeedsIt1"].get();
+    m_hists.h2SeedsIt1PositiveE = m_hists2D["h2SeedsIt1PositiveE"].get();
+
+    m_hists.h2SeedsIt1CaloV2 = m_hists2D["h2SeedsIt1CaloV2"].get();
+    m_hists.h2SeedsCaloV2 = m_hists2D["h2SeedsCaloV2"].get();
   }
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
@@ -1497,6 +1536,8 @@ void JetAnalysis::process_calo()
     float calo_v2 = m_event_data.calo_v2;
     float UE_sum_E = m_event_data.UE_sum_E;
     int seeds = m_event_data.nHIRecoSeedsSub;
+    int seedsIt1 = m_event_data.nHIRecoSeedsSubIt1;
+    int seedsIt1_positiveE = m_event_data.nHIRecoSeedsSubIt1_positiveE;
 
     m_hists.h3SumECaloV2Centrality->Fill(UE_sum_E, calo_v2, cent);
     m_hists.h3CaloESumETowMedE->Fill(total_energy, UE_sum_E, tower_median_energy);
@@ -1511,9 +1552,19 @@ void JetAnalysis::process_calo()
     m_hists.h3SeedsCaloESumE->Fill(seeds, total_energy, UE_sum_E);
     m_hists.h2SeedsCentrality->Fill(seeds, cent);
 
+    m_hists.h2SeedsIt1CaloE->Fill(seedsIt1, total_energy);
+    m_hists.h2SeedsIt1SumE->Fill(seedsIt1, UE_sum_E);
+    m_hists.h2SeedsIt1Centrality->Fill(seedsIt1, cent);
+
+    m_hists.h2SeedsIt1->Fill(seedsIt1, seeds);
+    m_hists.h2SeedsIt1PositiveE->Fill(seedsIt1, seedsIt1_positiveE);
+
+    m_hists.h2SeedsIt1CaloV2->Fill(seedsIt1, calo_v2);
+    m_hists.h2SeedsCaloV2->Fill(seeds, calo_v2);
+
     m_event_data.has_good_calo_v2 = std::abs(calo_v2) < m_calo_v2_max && m_do_secondary_processing;
 
-    if (std::abs(calo_v2) > 0.6F && cent < 50)
+    if (std::abs(calo_v2) > 0.5F && cent < 50)
     {
       std::cout << std::format("High Calo V2! Event: {}, Centrality: {}, Calo V2: {:.6f}\n", m_event_data.event_id, cent, calo_v2);
     }
