@@ -91,22 +91,6 @@ enum JetDataTypes
 	ClusterJets = 2
 };
 
-/*class EnergyDistPlots
-{
-  public:
-	  EnergyDistPlots(bool jet=false, float p0=0., float e0=0. ){
-		  isJet=jet;
-		  phi_0=p0;
-		  eta_0=e0;
-	  }
-	  float phi_0=0;
-	  float eta_0=0;
-	  std::vector<TH2F*> * basic_eta_phi=NULL; //hit map 
-	  std::vector<TH2F*> * energy_eta_phi=NULL; //energy map
-	  std::vector<std::vector<TH1F*> *> * one_d_projection=NULL; //project down to dphi xj style 
-	  bool isJet=false;
-
-};*/ //this seems to be reduntant
 class HitPlots
 {
   public:
@@ -304,7 +288,7 @@ class EventShapeQA : public SubsysReco
 		else if (phi < - PI ) phi = - 2 *PI - phi;
 		return phi;
 	}
-	float EventShapeQA::calcR(float phi1, float phi2, float eta1, float eta2)
+	float calcR(float phi1, float phi2, float eta1, float eta2)
 	{
 		float dphi = phi1-phi2;
 		dphi = PhiWrap(dphi);
@@ -314,6 +298,11 @@ class EventShapeQA : public SubsysReco
 	}
 
  private:
+	void doPHG4Analysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>>)
+	void doPHG4JetAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>>)
+	void doHepMCAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>>)
+	void doCaloAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>>)
+	void doCaloJetAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>>)
 	int verbosity = 0, n_evt = 0;
 	//particles in reference to the proper calorimeter axis
 	std::vector<std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>>* calo_jet_zero_axis=NULL; 

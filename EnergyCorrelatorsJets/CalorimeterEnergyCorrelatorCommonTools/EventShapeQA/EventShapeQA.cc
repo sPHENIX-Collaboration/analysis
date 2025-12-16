@@ -47,6 +47,29 @@ int EventShapeQA::Init(PHCompositeNode *topNode)
 	}
  	return Fun4AllReturnCodes::EVENT_OK;
 }
+void EventShapeQA::doPHG4Analysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
+{
+	PHG4TruthInfoContianer* pn=(PHG4TruthInfoContianer*)taggedNode.second;
+
+	return;
+}
+void EventShapeQA::doPHG4JetAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
+{
+	return;
+}
+void EventShapeQA::doHepMCAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
+{
+	return;
+}
+void EventShapeQA::doCaloAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
+{
+	
+	return;
+}
+void EventShapeQA::doCaloJetAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
+{
+	return;
+}
 
 int EventShapeQA::process_event(PHCompositeNode *topNode)
 {
