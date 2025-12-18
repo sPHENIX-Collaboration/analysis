@@ -228,10 +228,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
     m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
     m_tree->Branch("calo_v2", &m_data.calo_v2);
+    m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
     m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
     m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
     m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
-    m_tree->Branch("nHIRecoSeedsSubIt1_positiveE", &m_data.nHIRecoSeedsSubIt1_positiveE);
   }
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
@@ -854,8 +854,8 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_UE(PHCompositeNode *topNode)
 {
-  auto* towerBkg1 = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub1");
-  auto* towerBkg = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
+  auto* towerBkg1 = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub1"); // First Iteration
+  auto* towerBkg = getNode<TowerBackground>(topNode, "TowerInfoBackground_Sub2"); // Second Iteration
 
   if (!towerBkg1 || !towerBkg)
   {
@@ -863,26 +863,27 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   }
 
   float v2 = towerBkg->get_v2();
+  float v2_it1 = towerBkg1->get_v2();
   float sum_E = towerBkg->get_sum_E();
   int nTowers = towerBkg->get_nTowersUsedForBkg();
   int nStrips = towerBkg->get_nStripsUsedForFlow();
   int nStripsCEMC = towerBkg->get_nStripsCEMCUsedForFlow();
   int nHIRecoSeedsSub = towerBkg->get_nHIRecoSeedsSub();
-  int nHIRecoSeedsSubIt1 = towerBkg1->get_nHIRecoSeedsSubIt1();
-  int nHIRecoSeedsSubIt1_positiveE = towerBkg1->get_nHIRecoSeedsSubIt1_positiveE();
+  int nHIRecoSeedsSubIt1 = towerBkg1->get_nHIRecoSeedsSub();
 
   m_data.calo_v2 = v2;
+  m_data.calo_v2_it1 = v2_it1;
   m_data.UE_sum_E = sum_E;
   m_data.nStripsCEMC = nStripsCEMC;
   m_data.nHIRecoSeedsSub = nHIRecoSeedsSub;
   m_data.nHIRecoSeedsSubIt1 = nHIRecoSeedsSubIt1;
-  m_data.nHIRecoSeedsSubIt1_positiveE = nHIRecoSeedsSubIt1_positiveE;
 
   dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
   dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
   dynamic_cast<TH3 *>(m_hists["h3UE_SumE"].get())->Fill(sum_E, v2, m_data.event_centrality);
 
   JetUtils::update_min_max(v2, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
+  JetUtils::update_min_max(v2_it1, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
   JetUtils::update_min_max(sum_E, m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -1025,11 +1026,11 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 
   // UE
   m_data.calo_v2 = 9999;
+  m_data.calo_v2_it1 = 9999;
   m_data.UE_sum_E = 9999;
   m_data.nStripsCEMC = 9999;
   m_data.nHIRecoSeedsSub = 0;
   m_data.nHIRecoSeedsSubIt1 = 0;
-  m_data.nHIRecoSeedsSubIt1_positiveE = 0;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

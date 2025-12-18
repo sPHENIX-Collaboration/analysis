@@ -361,10 +361,10 @@ class sEPDValidation : public SubsysReco
 
     float UE_sum_E{9999};
     float calo_v2{9999};
+    float calo_v2_it1{9999};
     int nStripsCEMC{9999};
     int nHIRecoSeedsSub{0};
     int nHIRecoSeedsSubIt1{0};
-    int nHIRecoSeedsSubIt1_positiveE{0};
     std::vector<int> sepd_channel;
     std::vector<double> sepd_charge;
     std::vector<double> sepd_phi;
