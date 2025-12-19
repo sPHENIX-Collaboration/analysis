@@ -1,4 +1,5 @@
 #include "BbcCheck.h"
+#include "OnnxInfer.h"
 
 #include <phool/phool.h>
 #include <phool/getClass.h>
@@ -10,8 +11,10 @@
 
 #include <mbd/MbdDefs.h>
 #include <mbd/MbdOut.h>
+#include <mbd/MbdOutV2.h>
 #include <mbd/MbdPmtContainer.h>
 #include <mbd/MbdPmtHit.h>
+#include <mbd/MbdPmtHitV1.h>
 #include <mbd/MbdGeom.h>
 
 #include <calobase/TowerInfoContainer.h>
@@ -47,7 +50,7 @@ BbcCheck::BbcCheck(const string &name) : SubsysReco(name),
     _savefname( "bbcstudy.root" ),
     _savefile( 0 )
 { 
-
+  onnx = new OnnxInfer("/sphenix/user/chiu/machinelearn/mbd_pileup/LightGBMLarge.onnx");
 }
 
 //___________________________________
@@ -70,14 +73,18 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   _tree2->Branch("rtrig",&f_rtrig,"rtrig/l");
   _tree2->Branch("ltrig",&f_ltrig,"ltrig/l");
   _tree2->Branch("strig",&f_strig,"strig/l");
-  _tree2->Branch("bz",&f_bz,"bz/F");
+  //_tree2->Branch("bz",&f_bz,"bz/F");
+  //_tree2->Branch("m",_mbdout);
+  MbdOutV2 *mbdoutv2 = static_cast<MbdOutV2*>(_mbdout);
+  _tree2->Branch("m","MbdOutV2",&_mbdout);
+  //_tree2->Branch("m","MbdOutV2",&mbdoutv2);
 
   TString name, title;
   for (int ipmt=0; ipmt<128; ipmt++)
   {
     name = "h_q"; name += ipmt;
     title = "bbc charge, ch "; title += ipmt;
-    h_bbcq[ipmt] = new TH1F(name,title,1200,0,60);
+    h_bbcq[ipmt] = new TH1F(name,title,1200,0,120);
 
     // TGraph to track mean of bbcq distribution
     name = "g_bbcq"; name += ipmt;
@@ -97,11 +104,11 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   {
     name = "h_bbcqtot"; name += iarm;
     title = "bbc charge, arm "; title += iarm;
-    h_bbcqtot[iarm] = new TH1F(name,title,1400,0,1400); // npe for 1 mip = 120, and up to 30 mips are possible
+    h_bbcqtot[iarm] = new TH1F(name,title,1800,0,1800); // npe for 1 mip = 120, and up to 30 mips are possible
 
     name = "h2_bbcqtot_bz"; name += iarm;
     title = "bbc charge, arm "; title += iarm; title += " vs z";
-    h2_bbcqtot_bz[iarm] = new TH2F(name,title,20,-50.,50.,1000,0.,3000.);
+    h2_bbcqtot_bz[iarm] = new TH2F(name,title,20,-50.,50.,1200,0.,3600.);
 
     //
     name = "hevt_bbct"; name += iarm;
@@ -109,10 +116,10 @@ int BbcCheck::Init(PHCompositeNode *topNode)
     hevt_bbct[iarm] = new TH1F(name,title,200,7.5,11.5);
     hevt_bbct[iarm]->SetLineColor(4);
   }
-  h_bbcqsum = new TH1F("h_bbcqsum","MBD/BBC north + south charge sum",3000,0.,3000.);
-  h2_bbcqsum = new TH2F("h2_bbcqsum","north BBCQ vs South BBCQ",1400,0.,1400.,1400,0.,1400.);
+  h_bbcqsum = new TH1F("h_bbcqsum","MBD/BBC north + south charge sum",3600,0.,3600.);
+  h2_bbcqsum = new TH2F("h2_bbcqsum","north BBCQ vs South BBCQ",1800,0.,1800.,1800,0.,1800.);
 
-  h2_bbcqsum_bz = new TH2F("h2_bbcqsum_bz","BBCQsum vs z",20,-50.,50.,1000,0.,3000.);
+  h2_bbcqsum_bz = new TH2F("h2_bbcqsum_bz","BBCQsum vs z",20,-50.,50.,1200,0.,3600.);
 
   h_zdce = new TH1F("h_zdce","ZDC Energy",820,-50,4050);
   h_zdcse = new TH1F("h_zdcse","ZDC.S Energy",500,0,250);
@@ -128,18 +135,27 @@ int BbcCheck::Init(PHCompositeNode *topNode)
   h_ihcale = new TH1F("h_ihcale","IHCAL Energy",1000,-100,900);
   h_ihcaltimecut = new TH1F("h_ihcaltimecut", "ihcaltimecut", 50, -17.5 , 32.5);
 
-  h_bz = new TH1F("h_bz","MBD z-vertex",1200,-300,300);
+  h_bz = new TH1F("h_bz","MBD z-vertex",2400,-300,300);
   h_bz->SetXTitle("z_{VTX} [cm]");
   for (int itrig=0; itrig<5; itrig++)
   {
     name = "h_bz"; name += itrig;
-    title = "MBD z-vertex, trig "; title += itrig;
-    h_bztrig[itrig] = new TH1F(name,title,1200,-300,300);
+    title = "MBD z-vertex, strig "; title += itrig;
+    h_bztrig[itrig] = new TH1F(name,title,2400,-300,300);
     h_bztrig[itrig]->SetXTitle("z_{VTX} [cm]");
+    h_bztrig[itrig]->SetLineColor(itrig+1);
+
+    name = "h_bzl"; name += itrig;
+    title = "MBD z-vertex, ltrig "; title += itrig;
+    h_bzltrig[itrig] = new TH1F(name,title,2400,-300,300);
+    h_bzltrig[itrig]->SetXTitle("z_{VTX} [cm]");
+    h_bzltrig[itrig]->SetLineColor(itrig+1);
   }
 
   h_bpmt_bad = new TH1F("h_bpmt_bad","PMT for BAD MBD z-vertex",128,0,128);
 
+  h_bt0 = new TH1F("h_bt0","MBD t0",2400,-30,30);
+  h_bt0->SetXTitle("t_0 [ns]");
   
   for (int ipmt=0; ipmt<128; ipmt++)
   {
@@ -147,8 +163,12 @@ int BbcCheck::Init(PHCompositeNode *topNode)
     title = "slew curve, ch "; title += ipmt;
     h2_slew[ipmt] = new TH2F(name,title,4000,0.,100,1100,-5,6);
   }
-  h2_tq = new TH2F("h2_tq","ch vs tq",900,-150,150,128,-0.5,128-0.5);
-  h2_tt = new TH2F("h2_tt","ch vs tt",900,-150,150,128,-0.5,128-0.5);
+  h2_tq = new TH2F("h2_tq","ch vs tq",900,-30,30,128,-0.5,128-0.5);
+  h2_tt = new TH2F("h2_tt","ch vs tt",900,-30,30,128,-0.5,128-0.5);
+  h2_tt->SetXTitle("tt [ns]");
+  h2_tt->SetYTitle("ch");
+  h2_tq->SetXTitle("tq [ns]");
+  h2_tq->SetYTitle("ch");
 
   gaussian = new TF1("gaussian","gaus",0,20);
   gaussian->FixParameter(2,0.05);   // set sigma to 50 ps
@@ -181,29 +201,41 @@ int BbcCheck::InitRun(PHCompositeNode *topNode)
 //Call user instructions for every event
 int BbcCheck::process_event(PHCompositeNode *topNode)
 {
-  // Get the raw gl1 data from event combined DST
-  _gl1raw = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
-  if(!_gl1raw && f_evt<4) cout << PHWHERE << " Gl1Packet node not found on node tree" << endl;
+  GetNodes(topNode);
 
   nprocessed++;
 
   f_evt = _evtheader->get_EvtSequence();
   if (f_evt%1000==0) cout << PHWHERE << "Event " << f_evt << "\t" << ", nprocessed = " << nprocessed << endl;
 
-  // Only use MBDNS triggered events
+  // Only use MBDNS and CLOCK triggered events
   if ( _gl1raw != nullptr )
   {
     const uint64_t MBDTRIGS = 0x7c00;  // MBDNS trigger bits
-    const uint64_t ZDCNS = 0x8;        // ZDCNS trigger bits
+    const uint64_t MBDWIDE = 0xc00;    // MBDNS wide bits (no vtx cut)
+    //const uint64_t ZDCNS = 0x8;        // ZDCNS trigger bits
+    const uint64_t ZDCNS = 0x2;        // ZDCNS trigger bits (run3auau)
+    const uint64_t CLOCK = 0x1;        // ZDCNS trigger bits (run3auau)
+
+    const uint64_t TRIGS = MBDTRIGS | ZDCNS | CLOCK;   // Triggers to keep
 
     f_cross = _gl1raw->getBunchNumber();
     f_rtrig = _gl1raw->getTriggerVector();
     f_ltrig = _gl1raw->getLiveVector();
     f_strig = _gl1raw->getScaledVector();
 
-    if ( (f_strig&MBDTRIGS) == 0 )
+    if ( (f_strig&TRIGS) == 0 )
     {
       return Fun4AllReturnCodes::ABORTEVENT;
+    }
+
+    if ( f_strig&MBDWIDE )
+    {
+      mbdwide = 1;
+    }
+    else
+    {
+      mbdwide = 0;
     }
 
     if ( nprocessed<10 )
@@ -213,7 +245,8 @@ int BbcCheck::process_event(PHCompositeNode *topNode)
       std::cout << "Raw\t" << f_rtrig << std::endl;
       std::cout << "Live\t" << f_ltrig << std::endl;
       std::cout << "Scaled\t" << f_strig << std::endl;
-      std::cout << "AND\t" << (f_strig&MBDTRIGS) << std::endl;
+      std::cout << "AND\t" << std::hex << (f_strig&MBDTRIGS) << std::dec << std::endl;
+      std::cout << "WIDE\t" << mbdwide << std::endl;
       std::cout << dec;
 
     }
@@ -237,7 +270,7 @@ int BbcCheck::process_event(PHCompositeNode *topNode)
   f_bbcte[0] = -9999.;
   f_bbcte[1] = -9999.;
   f_bz = NAN;
-  f_bbct0 = NAN;
+  f_bt0 = NAN;
   hevt_bbct[0]->Reset();
   hevt_bbct[1]->Reset();
 
@@ -275,6 +308,15 @@ void BbcCheck::GetNodes(PHCompositeNode *topNode)
   // MbdPmt Info
   _mbdpmts = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
   if(!_mbdpmts && f_evt<4) cout << PHWHERE << " MbdPmtContainer node not found on node tree" << endl;
+
+  // Get the raw gl1 data from event combined DST
+  _gl1raw = findNode::getClass<Gl1Packet>(topNode, "14001");
+  if(!_gl1raw)
+  {
+    // Try looking for raw packet
+    _gl1raw = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
+    if(!_gl1raw && f_evt<4) cout << PHWHERE << " Gl1Packet node not found on node tree" << endl;
+  }
 
 
 }
@@ -329,6 +371,7 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
   Float_t bqs = _mbdout->get_q(0);
   Float_t bqn = _mbdout->get_q(1);
   f_bz = _mbdout->get_zvtx();
+  f_bt0 = _mbdout->get_t0();
   Float_t btarm[2];
   btarm[0] = _mbdout->get_time(0);
   btarm[1] = _mbdout->get_time(1);
@@ -415,8 +458,27 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
     }
   }
 
+  IsPileup();
+
+  if ( mbdwide )
+  {
+    h_bz->Fill( f_bz );
+    h_bt0->Fill( f_bt0 );
+  }
+  for (size_t itrig=0; itrig<mbdtrigbits.size(); itrig++)
+  {
+    if ( f_strig&mbdtrigbits[itrig] )
+    {
+      h_bztrig[itrig]->Fill( f_bz );
+    }
+    if ( f_ltrig&mbdtrigbits[itrig] )
+    {
+      h_bzltrig[itrig]->Fill( f_bz );
+    }
+  }
+
   //cout << "bz " << f_bz << endl;
-  if ( fabs(f_bz)>3000. ) return;
+  if ( fabs(f_bz)>50. ) return;
   //if ( bqn<10 && bqs>150 ) return;
 
   //Float_t r = (4.4049/4.05882);
@@ -444,6 +506,14 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
     Float_t tq = _mbdpmts->get_pmt(ipmt)->get_tq();
     //Float_t phi = mbdgeom->get_phi(ipmt);   // get phi angle
 
+    /*
+    MbdPmtHitV1 *p = (MbdPmtHitV1*)_mbdpmts->get_pmt(ipmt);
+    p->identify();
+    t = p->get_time();
+    tt = p->get_tt();
+    std::cout << "t " << f_evt << "\t" << ipmt << "\t" << t << "\t" << tt << std::endl;
+    */
+
     if ( fabs(t) < 25. )
     {
       h_bbcq[ipmt]->Fill( q*r );
@@ -457,15 +527,6 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
  
   }
 
-  h_bz->Fill( f_bz );
-  for (size_t itrig=0; itrig<mbdtrigbits.size(); itrig++)
-  {
-    if ( f_ltrig&mbdtrigbits[itrig] )
-    {
-      h_bztrig[itrig]->Fill( f_bz );
-    }
-  }
-
   // Analyze other subsystems
   //process_gl1( topNode );
   //process_zdc( topNode );
@@ -474,6 +535,38 @@ void BbcCheck::CheckDST(PHCompositeNode *topNode)
   process_ohcal( topNode );
   process_ihcal( topNode );
   */
+}
+
+bool BbcCheck::IsPileup()
+{
+  std::vector<float> features;
+  for (int ipmt=0; ipmt<128; ipmt++)
+  {
+    int arm = ipmt/64;
+    Float_t q = _mbdpmts->get_pmt(ipmt)->get_q();
+    Float_t t = _mbdpmts->get_pmt(ipmt)->get_time();
+    Float_t tt = _mbdpmts->get_pmt(ipmt)->get_tt();
+    Float_t tq = _mbdpmts->get_pmt(ipmt)->get_tq();
+
+    features.push_back(q);
+    features.push_back(tt);
+
+    /*
+    if ( !isnan(tt) )
+    {
+      cout << ipmt << "\t" << q << "\t" << tt << "\t" << tq << endl;
+    }
+    */
+  }
+
+  /*
+  std::vector<float> result = onnx->Predict( features );
+  std::cout << "IsPileup: ";
+  for (float v : result) std::cout << v << "\t";
+  std::cout << std::endl;
+  */
+
+  return true;
 }
 
 int BbcCheck::Getpeaktime(TH1 * h)

@@ -7,7 +7,7 @@
 #include <map>
 #include <TFile.h>
 
-//Forward declerations
+//Forward declarations
 class PHCompositeNode;
 class EventHeader;
 class MbdOut;
@@ -22,6 +22,7 @@ class TH2;
 class TGraphErrors;
 class TF1;
 class TCanvas;
+class OnnxInfer;
 
 
 //Brief: basic TTree and histogram creation for sim evaluation
@@ -61,6 +62,9 @@ private:
   void process_ohcal( PHCompositeNode *topNode );
   void process_ihcal( PHCompositeNode *topNode );
 
+
+  bool IsPileup();
+
   //output filename
   std::string _savefname;
   TFile* _savefile;
@@ -93,7 +97,7 @@ private:
   Float_t  f_bbct[2];  // time in arm
   Float_t  f_bbcte[2]; // earliest hit time in arm
   Float_t  f_bz;       // z-vertex
-  Float_t  f_bbct0;    // start time
+  Float_t  f_bt0;      // start time
 
   TH1 *h_bbcq[128];   // q in each tube
   TGraphErrors *g_bbcq[128];   // q in each tube
@@ -115,35 +119,40 @@ private:
   TH1 *h_zdcne{nullptr};
   TH1 *h_zdctimecut;
   TH1 *h_bz;
-  TH1 *h_bztrig[5]; // 5 MBDNS triggers
+  TH1 *h_bztrig[5];   // 5 MBDNS scaled triggers
+  TH1 *h_bzltrig[5];  // 5 MBDNS live triggers
+  TH1 *h_bt0;
   TH2 *h2_tt;
   TH2 *h2_tq;
   TH2 *h2_slew[128];
   TH1 *h_cross;
 
+  int mbdwide{1};
   std::vector<uint64_t> mbdtrigbits;
 
   TCanvas *c_bbct;    // Canvas to 
   TH1 *hevt_bbct[2];  // time in each bbc, per event
-  TF1 *gaussian;
+  TF1 *gaussian{nullptr};
 
-  TH1 *h_bpmt_bad;
+  TH1 *h_bpmt_bad{nullptr};
 
   std::map<int,int> _pids;  // PIDs of tracks in the BBC
 
   //
-  TRandom3*     _rndm;
-  Float_t       _tres;    // time resolution of one channel
+  TRandom3*     _rndm{nullptr};
+  Float_t       _tres{50.};    // time resolution of one channel
+
+  OnnxInfer *onnx{ nullptr };
 
   //Get all the nodes
   void GetNodes(PHCompositeNode *);
   
   //Node pointers
-  EventHeader* _evtheader;
-  MbdOut* _mbdout;
-  MbdPmtContainer* _mbdpmts;
-  Gl1Packet* _gl1raw;
+  EventHeader*      _evtheader{nullptr};
+  MbdOut*           _mbdout{nullptr};
+  MbdPmtContainer*  _mbdpmts{nullptr};
+  Gl1Packet*        _gl1raw{nullptr};
 
 };
 
-#endif //* __BBCCHECK_H__ *//
+#endif /* __BBCCHECK_H__ */
