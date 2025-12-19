@@ -563,6 +563,7 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   auto* h2SeedsIt1_Centrality = dynamic_cast<TH2*>(m_hists["h2SeedsIt1Centrality"].get());
 
   auto* h2SeedsIt1 = dynamic_cast<TH2*>(m_hists["h2SeedsIt1"].get());
+  auto* h2CaloV2It1 = dynamic_cast<TH2*>(m_hists["h2CaloV2It1"].get());
 
   auto* h2SeedsIt1_CaloV2 = dynamic_cast<TH2*>(m_hists["h2SeedsIt1CaloV2"].get());
   auto* h2Seeds_CaloV2 = dynamic_cast<TH2*>(m_hists["h2SeedsCaloV2"].get());
@@ -650,6 +651,9 @@ void DisplayJetAnav3::plot_UE(TCanvas* c1, TCanvas* c2, const std::string& run)
   // Jet Seeds with Calo V2
   plot_calo(c1, c2, run, canvas_idx++, h2SeedsIt1_CaloV2, "SeedsIt1-CaloV2", seeds_min, seeds_it1_max, v2_min, v2_max, x_label_size);
   plot_calo(c1, c2, run, canvas_idx++, h2Seeds_CaloV2, "Seeds-CaloV2", seeds_min, seeds_max, v2_min, v2_max, x_label_size);
+
+  // Calo V2 - It1 vs It2
+  plot_calo(c1, c2, run, canvas_idx++, h2CaloV2It1, "CaloV2-It1-vs-It2", v2_min, v2_max, v2_min, v2_max, 0.04F);
 }
 
 void DisplayJetAnav3::draw_UE(const std::string& run)
