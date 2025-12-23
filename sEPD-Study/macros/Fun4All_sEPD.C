@@ -53,6 +53,7 @@ void Fun4All_sEPD(const std::string &fname,
                   const std::string &output_tree = "tree.root",
                   int nEvents = 100,
                   int nSkip = 0,
+                  int event_id = 0,
                   const std::string &dbtag = "newcdbtag",
                   bool condor_mode = false,
                   bool do_ep = false)
@@ -66,6 +67,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::cout << "output tree: " << output_tree << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "nSkip: " << nSkip << std::endl;
+  std::cout << "event_id: " << event_id << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "Do Event Plane Reco: " << do_ep << std::endl;
@@ -104,6 +106,7 @@ void Fun4All_sEPD(const std::string &fname,
   // Event Skip
   std::unique_ptr<EventSkip> evtSkip = std::make_unique<EventSkip>();
   evtSkip->set_skip(nSkip);
+  evtSkip->set_event_id(event_id);
   se->registerSubsystem(evtSkip.release());
 
   // MBD Reconstruction
@@ -218,9 +221,9 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 11)
+  if (args.size() < 3 || args.size() > 12)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [dbtag] [condor_mode] [do_ep]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag] [condor_mode] [do_ep]" << std::endl;
     std::cerr << "  input_DST: path to the input list file" << std::endl;
     std::cerr << "  runnumber: Run" << std::endl;
     std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
@@ -228,6 +231,7 @@ int main(int argc, const char* const argv[])
     std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
     std::cerr << "  nSkip: (optional) number of events to skip (default: 0)" << std::endl;
+    std::cerr << "  event_id: (optional) Specific Event to Analyze (default: 0)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
     std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     std::cerr << "  Do Event Plane: Do official Event Plane reconstruction." << std::endl;
@@ -241,6 +245,7 @@ int main(int argc, const char* const argv[])
   std::string output_tree = "tree.root";
   int nEvents = 100;
   int nSkip = 0;
+  int event_id = 0;
   std::string dbtag = "newcdbtag";
   bool condor_mode = false;
   bool do_ep = false;
@@ -267,18 +272,22 @@ int main(int argc, const char* const argv[])
   }
   if (args.size() >= 9)
   {
-    dbtag = args[8];
+    event_id = std::stoi(args[8]);
   }
   if (args.size() >= 10)
   {
-    condor_mode = std::stoi(args[9]);
+    dbtag = args[9];
   }
   if (args.size() >= 11)
   {
-    do_ep = std::stoi(args[10]);
+    condor_mode = std::stoi(args[10]);
+  }
+  if (args.size() >= 12)
+  {
+    do_ep = std::stoi(args[11]);
   }
 
-  Fun4All_sEPD(input_dst, runnumber, input_QVecCalib, output, output_tree, nEvents, nSkip, dbtag, condor_mode, do_ep);
+  Fun4All_sEPD(input_dst, runnumber, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag, condor_mode, do_ep);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

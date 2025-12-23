@@ -40,7 +40,7 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
-$f4a_bin "test.list" "$run" "$calib_file" "$run/hist/$output" "$run/tree/$output_tree" "$nEvents" 0 "$dbtag" 1 "$do_event_plane_reco"
+$f4a_bin "test.list" "$run" "$calib_file" "$run/hist/$output" "$run/tree/$output_tree" "$nEvents" 0 0 "$dbtag" 1 "$do_event_plane_reco"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
