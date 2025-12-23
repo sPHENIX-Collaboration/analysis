@@ -230,9 +230,9 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
     m_tree->Branch("calo_v2", &m_data.calo_v2);
     m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
     m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
-    m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
-    m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
   }
+  m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
+  m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
   // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
   // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
@@ -886,6 +886,12 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   JetUtils::update_min_max(v2_it1, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
   JetUtils::update_min_max(sum_E, m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
 
+  // -- LOGGING -- //
+  if (Verbosity() > 0 && (nHIRecoSeedsSub || nHIRecoSeedsSubIt1))
+  {
+    std::cout << std::format("Event: {}, cent: {}, Seeds It1: {}, Seeds: {}\n", m_data.event_id, m_data.event_centrality, nHIRecoSeedsSubIt1, nHIRecoSeedsSub);
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -947,12 +953,12 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
   if (m_calib_Q)
   {
     process_CalibQVec(topNode);
+  }
 
-    ret = process_UE(topNode);
-    if (ret)
-    {
-      return ret;
-    }
+  ret = process_UE(topNode);
+  if (ret)
+  {
+    return ret;
   }
 
   if (m_do_ep)
