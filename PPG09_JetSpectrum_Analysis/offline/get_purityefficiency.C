@@ -18,28 +18,30 @@ void get_purityefficiency_hist(TH1D *&h_purity, TH1D *&h_efficiency, string surf
   // Get purity and efficiency histograms
   h_purity = (TH1D*)h_respmatrix->ProjectionX(("h_purity"+surfix).c_str());
   h_purity->Divide(h_purity, h_measure, 1, 1, "B");
-  h_efficiency = (TH1D*)h_respmatrix->ProjectionY(("h_efficiency"+surfix).c_str());
+  h_efficiency = (TH1D*)h_truth->Clone(("h_efficiency"+surfix).c_str());
+  h_efficiency->Add(h_miss, -1);
   h_efficiency->Divide(h_efficiency, h_truth, 1, 1, "B");
   // Check purity and efficiency
   TH1D* h_purity_check = (TH1D*)h_respmatrix->ProjectionX(("h_purity"+surfix+"_check").c_str());
   h_purity_check->Add(h_fake);
-  TH1D* h_efficiency_check = (TH1D*)h_respmatrix->ProjectionY(("h_efficiency"+surfix+"_check").c_str());
-  h_efficiency_check->Add(h_miss);
+  //TH1D* h_efficiency_check = (TH1D*)h_respmatrix->ProjectionY(("h_efficiency"+surfix+"_check").c_str());
+  //h_efficiency_check->Add(h_miss);
   for (int i = 1; i <= h_purity_check->GetNbinsX(); i++) {
     float purity_check = h_purity_check->GetBinContent(i) / (double)h_measure->GetBinContent(i);
     if (purity_check != 1.0) std::cout << "Case: " << surfix << " in purity check failed at bin " << i << " with ratio = " << purity_check << " with purity content = " << h_purity_check->GetBinContent(i) << " and measurement content = " << h_measure->GetBinContent(i) << std::endl;
   }
-  for (int i = 1; i <= h_efficiency_check->GetNbinsX(); i++) {
-    float efficiency_check = h_efficiency_check->GetBinContent(i) / (double)h_truth->GetBinContent(i);
-    if (efficiency_check != 1.0) std::cout << "Case: " << surfix << " in efficiency check failed at bin " << i << " with ratio = " << efficiency_check << " with purity content = " << h_efficiency_check->GetBinContent(i) << " and measurement content = " << h_truth->GetBinContent(i) << std::endl;
-  }
+  //for (int i = 1; i <= h_efficiency_check->GetNbinsX(); i++) {
+  //  float efficiency_check = h_efficiency_check->GetBinContent(i) / (double)h_truth->GetBinContent(i);
+  //  if (efficiency_check != 1.0) std::cout << "Case: " << surfix << " in efficiency check failed at bin " << i << " with ratio = " << efficiency_check << " with purity content = " << h_efficiency_check->GetBinContent(i) << " and measurement content = " << h_truth->GetBinContent(i) << std::endl;
+  //}
   // Write histograms to output file
   f_out->cd();
   h_purity->Write();
   h_efficiency->Write();
 
   TH1D* h_purity_proj = (TH1D*)h_respmatrix->ProjectionX("h_purity_proj");
-  TH1D* h_efficiency_proj = (TH1D*)h_respmatrix->ProjectionY("h_efficiency_proj");
+  TH1D* h_efficiency_proj = (TH1D*)h_truth->Clone("h_efficiency_proj");
+  h_efficiency_proj->Add(h_miss, -1);
   std::vector<TH1F*> h_input;
   std::vector<int> color;
   std::vector<int> markerstyle;
@@ -56,12 +58,18 @@ void get_purityefficiency_hist(TH1D *&h_purity, TH1D *&h_efficiency, string surf
   text.push_back("PYTHIA8 p+p#sqrt{s} = 200 GeV");
   text.push_back(("anti-k_{t} #kern[-0.5]{#it{R}} = 0." + std::to_string(jet_radius_index)).c_str());
   text.push_back(("|#eta^{jet}| < 0." + std::to_string((int)(11-jet_radius_index))).c_str());
-  text.push_back("No z-vertex cut");
+  if (surfix.find("zvertex30") != std::string::npos) {
+    text.push_back("|z-vertex| < 30 cm");
+  } else if (surfix.find("zvertex60") != std::string::npos) {
+    text.push_back("|z-vertex| < 60 cm");
+  } else if (surfix.find("all") != std::string::npos) {
+    text.push_back("No z-vertex cut");
+  }
   legend.push_back("Reco jet spectrum");
   legend.push_back("Matched reco jet spectrum");
   draw_1D_multiple_plot_ratio(h_input, color, markerstyle,
                               false, 10, true,
-                              true, 15, 75, false,
+                              true, calibptbins[0], calibptbins[calibnpt], false,
                               false, 0, 0.5, true,
                               false, 0.75, 1.1,
                               true, "p_{T}^{reco jet} [GeV]", "Arbitrary Unit", "Purity", 1,
@@ -77,7 +85,7 @@ void get_purityefficiency_hist(TH1D *&h_purity, TH1D *&h_efficiency, string surf
   legend.push_back("Matched truth jet spectrum");
   draw_1D_multiple_plot_ratio(h_input, color, markerstyle,
                               false, 10, true,
-                              true, 15, 75, false,
+                              true, truthptbins[0], truthptbins[truthnpt-1], false,
                               false, 1e-9, 1e-1, true,
                               false, 0., 1.2,
                               true, "p_{T}^{truth jet} [GeV]", "Arbitrary Unit", "Efficiency", 1,
@@ -100,7 +108,7 @@ void get_purityefficiency_clonehist(TH1D *&h_purity, TH1D *&h_efficiency, string
 }
 
 void do_puritycorr(TH1D* h_result, TH1D* h_purity, string result_surfix, string data_surfix, TFile* f_data, TFile* f_dataout) {
-  TH1D* h_calibjet_pt = (TH1D*)f_data->Get(("h_calibjet_pt_scaled" + data_surfix).c_str());
+  TH1D* h_calibjet_pt = (TH1D*)f_data->Get(("h_calibjet_pt" + data_surfix).c_str());
   h_result = (TH1D*)h_calibjet_pt->Clone(("h_calibjet_pt_puritycorr" + result_surfix).c_str());
   h_result->Multiply(h_purity);
   f_dataout->cd();
@@ -120,24 +128,60 @@ void get_purityefficiency(int radius_index = 4) {
   TFile* f_dataout = new TFile(Form("output_data_puritycorr_r0%d.root", radius_index), "RECREATE");
 
   // Get purity and efficiency histograms
-  TH1D* h_purity_nominal, *h_efficiency_nominal; get_purityefficiency_hist(h_purity_nominal, h_efficiency_nominal, "_nominal", f_in, f_out, radius_index);
-  TH1D* h_purity_jesup, *h_efficiency_jesup; get_purityefficiency_hist(h_purity_jesup, h_efficiency_jesup, "_jesup", f_in, f_out, radius_index);
-  TH1D* h_purity_jesdown, *h_efficiency_jesdown; get_purityefficiency_hist(h_purity_jesdown, h_efficiency_jesdown, "_jesdown", f_in, f_out, radius_index);
-  TH1D* h_purity_jerup, *h_efficiency_jerup; get_purityefficiency_hist(h_purity_jerup, h_efficiency_jerup, "_jerup", f_in, f_out, radius_index);
-  TH1D* h_purity_jerdown, *h_efficiency_jerdown; get_purityefficiency_hist(h_purity_jerdown, h_efficiency_jerdown, "_jerdown", f_in, f_out, radius_index);
-  TH1D* h_purity_jettrigup, *h_efficiency_jettrigup; get_purityefficiency_clonehist(h_purity_jettrigup, h_efficiency_jettrigup, "_jettrigup", h_purity_nominal, h_efficiency_nominal, f_out);
-  TH1D* h_purity_jettrigdown, *h_efficiency_jettrigdown; get_purityefficiency_clonehist(h_purity_jettrigdown, h_efficiency_jettrigdown, "_jettrigdown", h_purity_nominal, h_efficiency_nominal, f_out);
-  TH1D* h_purity_jettimingup, *h_efficiency_jettimingup; get_purityefficiency_clonehist(h_purity_jettimingup, h_efficiency_jettimingup, "_jettimingup", h_purity_nominal, h_efficiency_nominal, f_out);
-  TH1D* h_purity_jettimingdown, *h_efficiency_jettimingdown; get_purityefficiency_clonehist(h_purity_jettimingdown, h_efficiency_jettimingdown, "_jettimingdown", h_purity_nominal, h_efficiency_nominal, f_out);
+  TH1D* h_purity_all, *h_efficiency_all; get_purityefficiency_hist(h_purity_all, h_efficiency_all, "_all", f_in, f_out, radius_index);
+  TH1D* h_purity_all_jesup, *h_efficiency_all_jesup; get_purityefficiency_hist(h_purity_all_jesup, h_efficiency_all_jesup, "_all_jesup", f_in, f_out, radius_index);
+  TH1D* h_purity_all_jesdown, *h_efficiency_all_jesdown; get_purityefficiency_hist(h_purity_all_jesdown, h_efficiency_all_jesdown, "_all_jesdown", f_in, f_out, radius_index);
+  TH1D* h_purity_all_jerup, *h_efficiency_all_jerup; get_purityefficiency_hist(h_purity_all_jerup, h_efficiency_all_jerup, "_all_jerup", f_in, f_out, radius_index);
+  TH1D* h_purity_all_jerdown, *h_efficiency_all_jerdown; get_purityefficiency_hist(h_purity_all_jerdown, h_efficiency_all_jerdown, "_all_jerdown", f_in, f_out, radius_index);
+  TH1D* h_purity_all_jetup, *h_efficiency_all_jetup; get_purityefficiency_clonehist(h_purity_all_jetup, h_efficiency_all_jetup, "_all_jetup", h_purity_all, h_efficiency_all, f_out);
+  TH1D* h_purity_all_jetdown, *h_efficiency_all_jetdown; get_purityefficiency_clonehist(h_purity_all_jetdown, h_efficiency_all_jetdown, "_all_jetdown", h_purity_all, h_efficiency_all, f_out);
+
+  TH1D* h_purity_zvertex30, *h_efficiency_zvertex30; get_purityefficiency_hist(h_purity_zvertex30, h_efficiency_zvertex30, "_zvertex30", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex30_jesup, *h_efficiency_zvertex30_jesup; get_purityefficiency_hist(h_purity_zvertex30_jesup, h_efficiency_zvertex30_jesup, "_zvertex30_jesup", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex30_jesdown, *h_efficiency_zvertex30_jesdown; get_purityefficiency_hist(h_purity_zvertex30_jesdown, h_efficiency_zvertex30_jesdown, "_zvertex30_jesdown", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex30_jerup, *h_efficiency_zvertex30_jerup; get_purityefficiency_hist(h_purity_zvertex30_jerup, h_efficiency_zvertex30_jerup, "_zvertex30_jerup", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex30_jerdown, *h_efficiency_zvertex30_jerdown; get_purityefficiency_hist(h_purity_zvertex30_jerdown, h_efficiency_zvertex30_jerdown, "_zvertex30_jerdown", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex30_jetup, *h_efficiency_zvertex30_jetup; get_purityefficiency_clonehist(h_purity_zvertex30_jetup, h_efficiency_zvertex30_jetup, "_zvertex30_jetup", h_purity_zvertex30, h_efficiency_zvertex30, f_out);
+  TH1D* h_purity_zvertex30_jetdown, *h_efficiency_zvertex30_jetdown; get_purityefficiency_clonehist(h_purity_zvertex30_jetdown, h_efficiency_zvertex30_jetdown, "_zvertex30_jetdown", h_purity_zvertex30, h_efficiency_zvertex30, f_out);
+  TH1D* h_purity_zvertex30_mbdup, *h_efficiency_zvertex30_mbdup; get_purityefficiency_clonehist(h_purity_zvertex30_mbdup, h_efficiency_zvertex30_mbdup, "_zvertex30_mbdup", h_purity_zvertex30, h_efficiency_zvertex30, f_out);
+  TH1D* h_purity_zvertex30_mbddown, *h_efficiency_zvertex30_mbddown; get_purityefficiency_clonehist(h_purity_zvertex30_mbddown, h_efficiency_zvertex30_mbddown, "_zvertex30_mbddown", h_purity_zvertex30, h_efficiency_zvertex30, f_out);
+
+  TH1D* h_purity_zvertex60, *h_efficiency_zvertex60; get_purityefficiency_hist(h_purity_zvertex60, h_efficiency_zvertex60, "_zvertex60", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex60_jesup, *h_efficiency_zvertex60_jesup; get_purityefficiency_hist(h_purity_zvertex60_jesup, h_efficiency_zvertex60_jesup, "_zvertex60_jesup", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex60_jesdown, *h_efficiency_zvertex60_jesdown; get_purityefficiency_hist(h_purity_zvertex60_jesdown, h_efficiency_zvertex60_jesdown, "_zvertex60_jesdown", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex60_jerup, *h_efficiency_zvertex60_jerup; get_purityefficiency_hist(h_purity_zvertex60_jerup, h_efficiency_zvertex60_jerup, "_zvertex60_jerup", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex60_jerdown, *h_efficiency_zvertex60_jerdown; get_purityefficiency_hist(h_purity_zvertex60_jerdown, h_efficiency_zvertex60_jerdown, "_zvertex60_jerdown", f_in, f_out, radius_index);
+  TH1D* h_purity_zvertex60_jetup, *h_efficiency_zvertex60_jetup; get_purityefficiency_clonehist(h_purity_zvertex60_jetup, h_efficiency_zvertex60_jetup, "_zvertex60_jetup", h_purity_zvertex60, h_efficiency_zvertex60, f_out);
+  TH1D* h_purity_zvertex60_jetdown, *h_efficiency_zvertex60_jetdown; get_purityefficiency_clonehist(h_purity_zvertex60_jetdown, h_efficiency_zvertex60_jetdown, "_zvertex60_jetdown", h_purity_zvertex60, h_efficiency_zvertex60, f_out);
+  TH1D* h_purity_zvertex60_mbdup, *h_efficiency_zvertex60_mbdup; get_purityefficiency_clonehist(h_purity_zvertex60_mbdup, h_efficiency_zvertex60_mbdup, "_zvertex60_mbdup", h_purity_zvertex60, h_efficiency_zvertex60, f_out);
+  TH1D* h_purity_zvertex60_mbddown, *h_efficiency_zvertex60_mbddown; get_purityefficiency_clonehist(h_purity_zvertex60_mbddown, h_efficiency_zvertex60_mbddown, "_zvertex60_mbddown", h_purity_zvertex60, h_efficiency_zvertex60, f_out);
 
   // Do purity correction
-  TH1D* h_calibjet_pt_puritycorr_nominal; do_puritycorr(h_calibjet_pt_puritycorr_nominal, h_purity_nominal, "_nominal", "_nominal", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jesup; do_puritycorr(h_calibjet_pt_puritycorr_jesup, h_purity_jesup, "_jesup", "_nominal", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jesdown; do_puritycorr(h_calibjet_pt_puritycorr_jesdown, h_purity_jesdown, "_jesdown", "_nominal", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jerup; do_puritycorr(h_calibjet_pt_puritycorr_jerup, h_purity_jerup, "_jerup", "_nominal", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jerdown; do_puritycorr(h_calibjet_pt_puritycorr_jerdown, h_purity_jerdown, "_jerdown", "_nominal", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jettrigup; do_puritycorr(h_calibjet_pt_puritycorr_jettrigup, h_purity_jettrigup, "_jettrigup", "_jettrigup", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jettrigdown; do_puritycorr(h_calibjet_pt_puritycorr_jettrigdown, h_purity_jettrigdown, "_jettrigdown", "_jettrigdown", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jettimingup; do_puritycorr(h_calibjet_pt_puritycorr_jettimingup, h_purity_jettimingup, "_jettimingup", "_jettimingup", f_data, f_dataout);
-  TH1D* h_calibjet_pt_puritycorr_jettimingdown; do_puritycorr(h_calibjet_pt_puritycorr_jettimingdown, h_purity_jettimingdown, "_jettimingdown", "_jettimingdown", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all; do_puritycorr(h_calibjet_pt_puritycorr_all, h_purity_all, "_all", "_all", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jesup; do_puritycorr(h_calibjet_pt_puritycorr_all_jesup, h_purity_all_jesup, "_all_jesup", "_all", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jesdown; do_puritycorr(h_calibjet_pt_puritycorr_all_jesdown, h_purity_all_jesdown, "_all_jesdown", "_all", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jerup; do_puritycorr(h_calibjet_pt_puritycorr_all_jerup, h_purity_all_jerup, "_all_jerup", "_all", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jerdown; do_puritycorr(h_calibjet_pt_puritycorr_all_jerdown, h_purity_all_jerdown, "_all_jerdown", "_all", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jetup; do_puritycorr(h_calibjet_pt_puritycorr_all_jetup, h_purity_all, "_all_jetup", "_all_jetup", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_all_jetdown; do_puritycorr(h_calibjet_pt_puritycorr_all_jetdown, h_purity_all, "_all_jetdown", "_all_jetdown", f_data, f_dataout);
+
+  TH1D* h_calibjet_pt_puritycorr_zvertex30; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30, h_purity_zvertex30, "_zvertex30", "_zvertex30", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jesup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jesup, h_purity_zvertex30_jesup, "_zvertex30_jesup", "_zvertex30", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jesdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jesdown, h_purity_zvertex30_jesdown, "_zvertex30_jesdown", "_zvertex30", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jerup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jerup, h_purity_zvertex30_jerup, "_zvertex30_jerup", "_zvertex30", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jerdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jerdown, h_purity_zvertex30_jerdown, "_zvertex30_jerdown", "_zvertex30", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jetup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jetup, h_purity_zvertex30, "_zvertex30_jetup", "_zvertex30_jetup", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jetdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_jetdown, h_purity_zvertex30, "_zvertex30_jetdown", "_zvertex30_jetdown", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_mbdup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_mbdup, h_purity_zvertex30_mbdup, "_zvertex30_mbdup", "_zvertex30_mbdup", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_mbddown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex30_mbddown, h_purity_zvertex30_mbddown, "_zvertex30_mbddown", "_zvertex30_mbddown", f_data, f_dataout);
+
+  TH1D* h_calibjet_pt_puritycorr_zvertex60; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60, h_purity_zvertex60, "_zvertex60", "_zvertex60", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jesup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jesup, h_purity_zvertex60_jesup, "_zvertex60_jesup", "_zvertex60", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jesdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jesdown, h_purity_zvertex60_jesdown, "_zvertex60_jesdown", "_zvertex60", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jerup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jerup, h_purity_zvertex60_jerup, "_zvertex60_jerup", "_zvertex60", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jerdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jerdown, h_purity_zvertex60_jerdown, "_zvertex60_jerdown", "_zvertex60", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jetup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jetup, h_purity_zvertex60, "_zvertex60_jetup", "_zvertex60_jetup", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jetdown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_jetdown, h_purity_zvertex60, "_zvertex60_jetdown", "_zvertex60_jetdown", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_mbdup; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_mbdup, h_purity_zvertex60_mbdup, "_zvertex60_mbdup", "_zvertex60_mbdup", f_data, f_dataout);
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_mbddown; do_puritycorr(h_calibjet_pt_puritycorr_zvertex60_mbddown, h_purity_zvertex60_mbddown, "_zvertex60_mbddown", "_zvertex60_mbddown", f_data, f_dataout);
 }
