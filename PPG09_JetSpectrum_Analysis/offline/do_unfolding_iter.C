@@ -22,6 +22,7 @@ void do_unfolding_iteration_check(TH2D* h_respmatrix, TH1D* h_spectrum, string f
     RooUnfoldBayes unfold(response, h_spectrum, i + 1);
     h_unfolded[i] = (TH1D*)unfold.Hunfold(RooUnfold::kErrors);
     h_unfolded[i]->SetName(Form("h_unfolded_iter_%d", i + 1));
+    delete response;
   }
 
   TGraph* g_var_iter = new TGraph(niter-1);
@@ -71,12 +72,12 @@ void get_unfolded_spectrum(TH2D* h_respmatrix, TH1D* h_spectrum, TH1D*& h_unfold
   h_unfolded = (TH1D*)unfold.Hunfold(RooUnfold::kErrors);
   h_unfolded->SetName(hist_name.c_str());
   h_unfolded->Divide(h_eff);
+  delete response;
 }
 
 ////////////////////////////////////////// Main Function //////////////////////////////////////////
 void do_unfolding_iter(int radius_index = 4) {
   //********** General Set up **********//
-  const float PI = TMath::Pi();
   float jet_radius = 0.1 * radius_index;
  
   //********** Files **********//
@@ -86,69 +87,155 @@ void do_unfolding_iter(int radius_index = 4) {
   TFile *f_efficiency = new TFile(Form("output_purityefficiency_r0%d.root", radius_index), "READ");
 
   // Get data spectrum
-  TH1D* h_calibjet_pt_puritycorr_nominal = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_nominal");
-  TH1D* h_calibjet_pt_puritycorr_jesup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jesup");
-  TH1D* h_calibjet_pt_puritycorr_jesdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jesdown");
-  TH1D* h_calibjet_pt_puritycorr_jerup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jerup");
-  TH1D* h_calibjet_pt_puritycorr_jerdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jerdown");
-  TH1D* h_calibjet_pt_puritycorr_jettrigup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jettrigup");
-  TH1D* h_calibjet_pt_puritycorr_jettrigdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jettrigdown");
-  TH1D* h_calibjet_pt_puritycorr_jettimingup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jettimingup");
-  TH1D* h_calibjet_pt_puritycorr_jettimingdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_jettimingdown");
+  TH1D* h_calibjet_pt_puritycorr_all = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30 = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60 = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60");
+  TH1D* h_calibjet_pt_puritycorr_all_jesup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jesup");
+  TH1D* h_calibjet_pt_puritycorr_all_jesdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jesdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jesup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jesup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jesdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jesdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jesup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jesup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jesdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jesdown");
+  TH1D* h_calibjet_pt_puritycorr_all_jerup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jerup");
+  TH1D* h_calibjet_pt_puritycorr_all_jerdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jerdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jerup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jerup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jerdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jerdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jerup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jerup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jerdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jerdown");
+  TH1D* h_calibjet_pt_puritycorr_all_jetup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jetup");
+  TH1D* h_calibjet_pt_puritycorr_all_jetdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_all_jetdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jetup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jetup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_jetdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_jetdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jetup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jetup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_jetdown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_jetdown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_mbdup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_mbdup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex30_mbddown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex30_mbddown");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_mbdup = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_mbdup");
+  TH1D* h_calibjet_pt_puritycorr_zvertex60_mbddown = (TH1D*)f_data->Get("h_calibjet_pt_puritycorr_zvertex60_mbddown");
 
   // Response matrix
-  TH2D* h_respmatrix_nominal = (TH2D*)f_in_rm->Get("h_respmatrix_nominal");
-  TH2D* h_respmatrix_jesup = (TH2D*)f_in_rm->Get("h_respmatrix_jesup");
-  TH2D* h_respmatrix_jesdown = (TH2D*)f_in_rm->Get("h_respmatrix_jesdown");
-  TH2D* h_respmatrix_jerup = (TH2D*)f_in_rm->Get("h_respmatrix_jerup");
-  TH2D* h_respmatrix_jerdown = (TH2D*)f_in_rm->Get("h_respmatrix_jerdown");
-  TH2D* h_respmatrix_jettrigup = (TH2D*)h_respmatrix_nominal->Clone("h_respmatrix_jettrigup");
-  TH2D* h_respmatrix_jettrigdown = (TH2D*)h_respmatrix_nominal->Clone("h_respmatrix_jettrigdown");
-  TH2D* h_respmatrix_jettimingup = (TH2D*)h_respmatrix_nominal->Clone("h_respmatrix_jettimingup");
-  TH2D* h_respmatrix_jettimingdown = (TH2D*)h_respmatrix_nominal->Clone("h_respmatrix_jettimingdown");
+  TH2D* h_respmatrix_all = (TH2D*)f_in_rm->Get("h_respmatrix_all");
+  TH2D* h_respmatrix_zvertex30 = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex30");
+  TH2D* h_respmatrix_zvertex60 = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex60");
+  TH2D* h_respmatrix_all_jesup = (TH2D*)f_in_rm->Get("h_respmatrix_all_jesup");
+  TH2D* h_respmatrix_all_jesdown = (TH2D*)f_in_rm->Get("h_respmatrix_all_jesdown");
+  TH2D* h_respmatrix_zvertex30_jesup = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex30_jesup");
+  TH2D* h_respmatrix_zvertex30_jesdown = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex30_jesdown");
+  TH2D* h_respmatrix_zvertex60_jesup = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex60_jesup");
+  TH2D* h_respmatrix_zvertex60_jesdown = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex60_jesdown");
+  TH2D* h_respmatrix_all_jerup = (TH2D*)f_in_rm->Get("h_respmatrix_all_jerup");
+  TH2D* h_respmatrix_all_jerdown = (TH2D*)f_in_rm->Get("h_respmatrix_all_jerdown");
+  TH2D* h_respmatrix_zvertex30_jerup = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex30_jerup");
+  TH2D* h_respmatrix_zvertex30_jerdown = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex30_jerdown");
+  TH2D* h_respmatrix_zvertex60_jerup = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex60_jerup");
+  TH2D* h_respmatrix_zvertex60_jerdown = (TH2D*)f_in_rm->Get("h_respmatrix_zvertex60_jerdown");
+  TH2D* h_respmatrix_all_jetup = (TH2D*)h_respmatrix_all->Clone("h_respmatrix_all_jetup");
+  TH2D* h_respmatrix_all_jetdown = (TH2D*)h_respmatrix_all->Clone("h_respmatrix_all_jetdown");
+  TH2D* h_respmatrix_zvertex30_jetup = (TH2D*)h_respmatrix_zvertex30->Clone("h_respmatrix_zvertex30_jetup");
+  TH2D* h_respmatrix_zvertex30_jetdown = (TH2D*)h_respmatrix_zvertex30->Clone("h_respmatrix_zvertex30_jetdown");
+  TH2D* h_respmatrix_zvertex60_jetup = (TH2D*)h_respmatrix_zvertex60->Clone("h_respmatrix_zvertex60_jetup");
+  TH2D* h_respmatrix_zvertex60_jetdown = (TH2D*)h_respmatrix_zvertex60->Clone("h_respmatrix_zvertex60_jetdown");
+  TH2D* h_respmatrix_zvertex30_mbdup = (TH2D*)h_respmatrix_zvertex30->Clone("h_respmatrix_zvertex30_mbdup");
+  TH2D* h_respmatrix_zvertex30_mbddown = (TH2D*)h_respmatrix_zvertex30->Clone("h_respmatrix_zvertex30_mbddown");
+  TH2D* h_respmatrix_zvertex60_mbdup = (TH2D*)h_respmatrix_zvertex60->Clone("h_respmatrix_zvertex60_mbdup");
+  TH2D* h_respmatrix_zvertex60_mbddown = (TH2D*)h_respmatrix_zvertex60->Clone("h_respmatrix_zvertex60_mbddown");
 
   // Get efficiency
-  TH1D* h_efficiency_nominal = (TH1D*)f_efficiency->Get("h_efficiency_nominal");
-  TH1D* h_efficiency_jesup = (TH1D*)f_efficiency->Get("h_efficiency_jesup");
-  TH1D* h_efficiency_jesdown = (TH1D*)f_efficiency->Get("h_efficiency_jesdown");
-  TH1D* h_efficiency_jerup = (TH1D*)f_efficiency->Get("h_efficiency_jerup");
-  TH1D* h_efficiency_jerdown = (TH1D*)f_efficiency->Get("h_efficiency_jerdown");
-  TH1D* h_efficiency_jettrigup = (TH1D*)f_efficiency->Get("h_efficiency_jettrigup");
-  TH1D* h_efficiency_jettrigdown = (TH1D*)f_efficiency->Get("h_efficiency_jettrigdown");
-  TH1D* h_efficiency_jettimingup = (TH1D*)f_efficiency->Get("h_efficiency_jettimingup");
-  TH1D* h_efficiency_jettimingdown = (TH1D*)f_efficiency->Get("h_efficiency_jettimingdown");
+  TH1D* h_efficiency_all = (TH1D*)f_efficiency->Get("h_efficiency_all");
+  TH1D* h_efficiency_zvertex30 = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30");
+  TH1D* h_efficiency_zvertex60 = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60");
+  TH1D* h_efficiency_all_jesup = (TH1D*)f_efficiency->Get("h_efficiency_all_jesup");
+  TH1D* h_efficiency_all_jesdown = (TH1D*)f_efficiency->Get("h_efficiency_all_jesdown");
+  TH1D* h_efficiency_zvertex30_jesup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jesup");
+  TH1D* h_efficiency_zvertex30_jesdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jesdown");
+  TH1D* h_efficiency_zvertex60_jesup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jesup");
+  TH1D* h_efficiency_zvertex60_jesdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jesdown");
+  TH1D* h_efficiency_all_jerup = (TH1D*)f_efficiency->Get("h_efficiency_all_jerup");
+  TH1D* h_efficiency_all_jerdown = (TH1D*)f_efficiency->Get("h_efficiency_all_jerdown");
+  TH1D* h_efficiency_zvertex30_jerup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jerup");
+  TH1D* h_efficiency_zvertex30_jerdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jerdown");
+  TH1D* h_efficiency_zvertex60_jerup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jerup");
+  TH1D* h_efficiency_zvertex60_jerdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jerdown");
+  TH1D* h_efficiency_all_jetup = (TH1D*)f_efficiency->Get("h_efficiency_all_jetup");
+  TH1D* h_efficiency_all_jetdown = (TH1D*)f_efficiency->Get("h_efficiency_all_jetdown");
+  TH1D* h_efficiency_zvertex30_jetup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jetup");
+  TH1D* h_efficiency_zvertex30_jetdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_jetdown");
+  TH1D* h_efficiency_zvertex60_jetup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jetup");
+  TH1D* h_efficiency_zvertex60_jetdown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_jetdown");
+  TH1D* h_efficiency_zvertex30_mbdup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_mbdup");
+  TH1D* h_efficiency_zvertex30_mbddown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex30_mbddown");
+  TH1D* h_efficiency_zvertex60_mbdup = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_mbdup");
+  TH1D* h_efficiency_zvertex60_mbddown = (TH1D*)f_efficiency->Get("h_efficiency_zvertex60_mbddown");
 
   //********** Response Matrix **********//
-  do_unfolding_iteration_check(h_respmatrix_nominal, h_calibjet_pt_puritycorr_nominal, Form("unfolding_iteration_check_nominal_r0%d", radius_index));
-  int iteration = 4;
+  do_unfolding_iteration_check(h_respmatrix_all, h_calibjet_pt_puritycorr_all, "unfolding_iteration_check_all");
+  do_unfolding_iteration_check(h_respmatrix_zvertex30, h_calibjet_pt_puritycorr_zvertex30, "unfolding_iteration_check_zvertex30");
+  do_unfolding_iteration_check(h_respmatrix_zvertex60, h_calibjet_pt_puritycorr_zvertex60, "unfolding_iteration_check_zvertex60");
 
-  TH1D* h_unfold_nominal; get_unfolded_spectrum(h_respmatrix_nominal, h_calibjet_pt_puritycorr_nominal, h_unfold_nominal, iteration, "h_unfold_nominal", h_efficiency_nominal);
-  TH1D* h_unfold_jesup; get_unfolded_spectrum(h_respmatrix_jesup, h_calibjet_pt_puritycorr_jesup, h_unfold_jesup, iteration, "h_unfold_jesup", h_efficiency_jesup);
-  TH1D* h_unfold_jesdown; get_unfolded_spectrum(h_respmatrix_jesdown, h_calibjet_pt_puritycorr_jesdown, h_unfold_jesdown, iteration, "h_unfold_jesdown", h_efficiency_jesdown);
-  TH1D* h_unfold_jerup; get_unfolded_spectrum(h_respmatrix_jerup, h_calibjet_pt_puritycorr_jerup, h_unfold_jerup, iteration, "h_unfold_jerup", h_efficiency_jerup);
-  TH1D* h_unfold_jerdown; get_unfolded_spectrum(h_respmatrix_jerdown, h_calibjet_pt_puritycorr_jerdown, h_unfold_jerdown, iteration, "h_unfold_jerdown", h_efficiency_jerdown);
-  TH1D* h_unfold_jettrigup; get_unfolded_spectrum(h_respmatrix_jettrigup, h_calibjet_pt_puritycorr_jettrigup, h_unfold_jettrigup, iteration, "h_unfold_jettrigup", h_efficiency_jettrigup);
-  TH1D* h_unfold_jettrigdown; get_unfolded_spectrum(h_respmatrix_jettrigdown, h_calibjet_pt_puritycorr_jettrigdown, h_unfold_jettrigdown, iteration, "h_unfold_jettrigdown", h_efficiency_jettrigdown);
-  TH1D* h_unfold_jettimingup; get_unfolded_spectrum(h_respmatrix_jettimingup, h_calibjet_pt_puritycorr_jettimingup, h_unfold_jettimingup, iteration, "h_unfold_jettimingup", h_efficiency_jettimingup);
-  TH1D* h_unfold_jettimingdown; get_unfolded_spectrum(h_respmatrix_jettimingdown, h_calibjet_pt_puritycorr_jettimingdown, h_unfold_jettimingdown, iteration, "h_unfold_jettimingdown", h_efficiency_jettimingdown);
-  TH1D* h_unfold_unfolditerup; get_unfolded_spectrum(h_respmatrix_nominal, h_calibjet_pt_puritycorr_nominal, h_unfold_unfolditerup, iteration+1, "h_unfold_unfolditerup", h_efficiency_nominal);
-  TH1D* h_unfold_unfolditerdown; get_unfolded_spectrum(h_respmatrix_nominal, h_calibjet_pt_puritycorr_nominal, h_unfold_unfolditerdown, iteration-1, "h_unfold_unfolditerdown", h_efficiency_nominal);
+  TH1D* h_unfold_all; get_unfolded_spectrum(h_respmatrix_all, h_calibjet_pt_puritycorr_all, h_unfold_all, 1, "h_unfold_all", h_efficiency_all);
+  TH1D* h_unfold_all_jesup; get_unfolded_spectrum(h_respmatrix_all_jesup, h_calibjet_pt_puritycorr_all_jesup, h_unfold_all_jesup, 1, "h_unfold_all_jesup", h_efficiency_all_jesup);
+  TH1D* h_unfold_all_jesdown; get_unfolded_spectrum(h_respmatrix_all_jesdown, h_calibjet_pt_puritycorr_all_jesdown, h_unfold_all_jesdown, 1, "h_unfold_all_jesdown", h_efficiency_all_jesdown);
+  TH1D* h_unfold_all_jerup; get_unfolded_spectrum(h_respmatrix_all_jerup, h_calibjet_pt_puritycorr_all_jerup, h_unfold_all_jerup, 1, "h_unfold_all_jerup", h_efficiency_all_jerup);
+  TH1D* h_unfold_all_jerdown; get_unfolded_spectrum(h_respmatrix_all_jerdown, h_calibjet_pt_puritycorr_all_jerdown, h_unfold_all_jerdown, 1, "h_unfold_all_jerdown", h_efficiency_all_jerdown);
+  TH1D* h_unfold_all_jetup; get_unfolded_spectrum(h_respmatrix_all_jetup, h_calibjet_pt_puritycorr_all_jetup, h_unfold_all_jetup, 1, "h_unfold_all_jetup", h_efficiency_all_jetup);
+  TH1D* h_unfold_all_jetdown; get_unfolded_spectrum(h_respmatrix_all_jetdown, h_calibjet_pt_puritycorr_all_jetdown, h_unfold_all_jetdown, 1, "h_unfold_all_jetdown", h_efficiency_all_jetdown);
+  TH1D* h_unfold_all_unfoldunc; get_unfolded_spectrum(h_respmatrix_all, h_calibjet_pt_puritycorr_all, h_unfold_all_unfoldunc, 2, "h_unfold_all_unfoldunc", h_efficiency_all);
+
+  TH1D* h_unfold_zvertex30; get_unfolded_spectrum(h_respmatrix_zvertex30, h_calibjet_pt_puritycorr_zvertex30, h_unfold_zvertex30, 1, "h_unfold_zvertex30", h_efficiency_zvertex30);
+  TH1D* h_unfold_zvertex30_jesup; get_unfolded_spectrum(h_respmatrix_zvertex30_jesup, h_calibjet_pt_puritycorr_zvertex30_jesup, h_unfold_zvertex30_jesup, 1, "h_unfold_zvertex30_jesup", h_efficiency_zvertex30_jesup);
+  TH1D* h_unfold_zvertex30_jesdown; get_unfolded_spectrum(h_respmatrix_zvertex30_jesdown, h_calibjet_pt_puritycorr_zvertex30_jesdown, h_unfold_zvertex30_jesdown, 1, "h_unfold_zvertex30_jesdown", h_efficiency_zvertex30_jesdown);
+  TH1D* h_unfold_zvertex30_jerup; get_unfolded_spectrum(h_respmatrix_zvertex30_jerup, h_calibjet_pt_puritycorr_zvertex30_jerup, h_unfold_zvertex30_jerup, 1, "h_unfold_zvertex30_jerup", h_efficiency_zvertex30_jerup);
+  TH1D* h_unfold_zvertex30_jerdown; get_unfolded_spectrum(h_respmatrix_zvertex30_jerdown, h_calibjet_pt_puritycorr_zvertex30_jerdown, h_unfold_zvertex30_jerdown, 1, "h_unfold_zvertex30_jerdown", h_efficiency_zvertex30_jerdown);
+  TH1D* h_unfold_zvertex30_jetup; get_unfolded_spectrum(h_respmatrix_zvertex30_jetup, h_calibjet_pt_puritycorr_zvertex30_jetup, h_unfold_zvertex30_jetup, 1, "h_unfold_zvertex30_jetup", h_efficiency_zvertex30_jetup);
+  TH1D* h_unfold_zvertex30_jetdown; get_unfolded_spectrum(h_respmatrix_zvertex30_jetdown, h_calibjet_pt_puritycorr_zvertex30_jetdown, h_unfold_zvertex30_jetdown, 1, "h_unfold_zvertex30_jetdown", h_efficiency_zvertex30_jetdown);
+  TH1D* h_unfold_zvertex30_mbdup; get_unfolded_spectrum(h_respmatrix_zvertex30_mbdup, h_calibjet_pt_puritycorr_zvertex30_mbdup, h_unfold_zvertex30_mbdup, 1, "h_unfold_zvertex30_mbdup", h_efficiency_zvertex30_mbdup);
+  TH1D* h_unfold_zvertex30_mbddown; get_unfolded_spectrum(h_respmatrix_zvertex30_mbddown, h_calibjet_pt_puritycorr_zvertex30_mbddown, h_unfold_zvertex30_mbddown, 1, "h_unfold_zvertex30_mbddown", h_efficiency_zvertex30_mbddown);
+  TH1D* h_unfold_zvertex30_unfoldunc; get_unfolded_spectrum(h_respmatrix_zvertex30, h_calibjet_pt_puritycorr_zvertex30, h_unfold_zvertex30_unfoldunc, 2, "h_unfold_zvertex30_unfoldunc", h_efficiency_zvertex30);
+
+  TH1D* h_unfold_zvertex60; get_unfolded_spectrum(h_respmatrix_zvertex60, h_calibjet_pt_puritycorr_zvertex60, h_unfold_zvertex60, 1, "h_unfold_zvertex60", h_efficiency_zvertex60);
+  TH1D* h_unfold_zvertex60_jesup; get_unfolded_spectrum(h_respmatrix_zvertex60_jesup, h_calibjet_pt_puritycorr_zvertex60_jesup, h_unfold_zvertex60_jesup, 1, "h_unfold_zvertex60_jesup", h_efficiency_zvertex60_jesup);
+  TH1D* h_unfold_zvertex60_jesdown; get_unfolded_spectrum(h_respmatrix_zvertex60_jesdown, h_calibjet_pt_puritycorr_zvertex60_jesdown, h_unfold_zvertex60_jesdown, 1, "h_unfold_zvertex60_jesdown", h_efficiency_zvertex60_jesdown);
+  TH1D* h_unfold_zvertex60_jerup; get_unfolded_spectrum(h_respmatrix_zvertex60_jerup, h_calibjet_pt_puritycorr_zvertex60_jerup, h_unfold_zvertex60_jerup, 1, "h_unfold_zvertex60_jerup", h_efficiency_zvertex60_jerup);
+  TH1D* h_unfold_zvertex60_jerdown; get_unfolded_spectrum(h_respmatrix_zvertex60_jerdown, h_calibjet_pt_puritycorr_zvertex60_jerdown, h_unfold_zvertex60_jerdown, 1, "h_unfold_zvertex60_jerdown", h_efficiency_zvertex60_jerdown);
+  TH1D* h_unfold_zvertex60_jetup; get_unfolded_spectrum(h_respmatrix_zvertex60_jetup, h_calibjet_pt_puritycorr_zvertex60_jetup, h_unfold_zvertex60_jetup, 1, "h_unfold_zvertex60_jetup", h_efficiency_zvertex60_jetup);
+  TH1D* h_unfold_zvertex60_jetdown; get_unfolded_spectrum(h_respmatrix_zvertex60_jetdown, h_calibjet_pt_puritycorr_zvertex60_jetdown, h_unfold_zvertex60_jetdown, 1, "h_unfold_zvertex60_jetdown", h_efficiency_zvertex60_jetdown);
+  TH1D* h_unfold_zvertex60_mbdup; get_unfolded_spectrum(h_respmatrix_zvertex60_mbdup, h_calibjet_pt_puritycorr_zvertex60_mbdup, h_unfold_zvertex60_mbdup, 1, "h_unfold_zvertex60_mbdup", h_efficiency_zvertex60_mbdup);
+  TH1D* h_unfold_zvertex60_mbddown; get_unfolded_spectrum(h_respmatrix_zvertex60_mbddown, h_calibjet_pt_puritycorr_zvertex60_mbddown, h_unfold_zvertex60_mbddown, 1, "h_unfold_zvertex60_mbddown", h_efficiency_zvertex60_mbddown);
+  TH1D* h_unfold_zvertex60_unfoldunc; get_unfolded_spectrum(h_respmatrix_zvertex60, h_calibjet_pt_puritycorr_zvertex60, h_unfold_zvertex60_unfoldunc, 2, "h_unfold_zvertex60_unfoldunc", h_efficiency_zvertex60);
 
   //********** Writing **********//
   std::cout << "Writing histograms..." << std::endl;
   f_out->cd();
+  h_unfold_all->Write();
+  h_unfold_all_jesup->Write();
+  h_unfold_all_jesdown->Write();
+  h_unfold_all_jerup->Write();
+  h_unfold_all_jerdown->Write();
+  h_unfold_all_jetup->Write();
+  h_unfold_all_jetdown->Write();
+  h_unfold_all_unfoldunc->Write();
 
-  h_unfold_nominal->Write();
-  h_unfold_jesup->Write();
-  h_unfold_jesdown->Write();
-  h_unfold_jerup->Write();
-  h_unfold_jerdown->Write();
-  h_unfold_jettrigup->Write();
-  h_unfold_jettrigdown->Write();
-  h_unfold_jettimingup->Write();
-  h_unfold_jettimingdown->Write();
-  h_unfold_unfolditerup->Write();
-  h_unfold_unfolditerdown->Write();
+  h_unfold_zvertex30->Write();
+  h_unfold_zvertex30_jesup->Write();
+  h_unfold_zvertex30_jesdown->Write();
+  h_unfold_zvertex30_jerup->Write();
+  h_unfold_zvertex30_jerdown->Write();
+  h_unfold_zvertex30_jetup->Write();
+  h_unfold_zvertex30_jetdown->Write();
+  h_unfold_zvertex30_mbdup->Write();
+  h_unfold_zvertex30_mbddown->Write();
+  h_unfold_zvertex30_unfoldunc->Write();
+
+  h_unfold_zvertex60->Write();
+  h_unfold_zvertex60_jesup->Write();
+  h_unfold_zvertex60_jesdown->Write();
+  h_unfold_zvertex60_jerup->Write();
+  h_unfold_zvertex60_jerdown->Write();
+  h_unfold_zvertex60_jetup->Write();
+  h_unfold_zvertex60_jetdown->Write();
+  h_unfold_zvertex60_mbdup->Write();
+  h_unfold_zvertex60_mbddown->Write();
+  h_unfold_zvertex60_unfoldunc->Write();
 
   f_out->Close();
   std::cout << "All done!" << std::endl;

@@ -5,7 +5,7 @@ mkdir -p output_data
 rm condor_data/*
 rm output_data/*
 
-segperjob=10
+segperjob=20
 radius=(0.4)
 
 export treepath="/sphenix/tg/tg01/jets/hanpuj/CaloDataAna_ppg09"

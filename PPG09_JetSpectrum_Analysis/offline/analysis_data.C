@@ -13,11 +13,9 @@
 void get_leading_subleading_jet(int& leadingjet_index, int& subleadingjet_index, std::vector<float>* jet_et);
 bool match_leading_subleading_jet(float leadingjet_phi, float subleadingjet_phi);
 void get_jet_filter(std::vector<bool>& jet_filter, std::vector<float>* jet_e, std::vector<float>* jet_pt, std::vector<float>* jet_eta, float zvertex, float jet_radius);
-int get_zvertex_index(float zvertex);
-void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, std::vector<float>* jet_pt, std::vector<float>* jet_eta, std::vector<float>* jet_phi, const std::vector<std::vector<TF1*>>& f_corr, int zvertex_index, double jet_radius);
-
+void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, std::vector<float>* jet_pt_calib, std::vector<float>* jet_eta, std::vector<float>* jet_phi, double jet_radius);
 ////////////////////////////////////////// Main Function //////////////////////////////////////////
-void analysis_data(int runnumber, int nseg, int iseg, double jet_radius) {
+void analysis_data(int runnumber, int nseg, int iseg, double jet_radius)  {
   /////////////// General Set up ///////////////
   int jet_radius_index = (int)(10 * jet_radius);
   TFile *f_out = new TFile(Form("output_data/output_r0%d_%d_%d_%d.root", jet_radius_index, runnumber, iseg, iseg+nseg),"RECREATE");
@@ -29,74 +27,21 @@ void analysis_data(int runnumber, int nseg, int iseg, double jet_radius) {
     chain.Add(Form("%s/Run%d/OutDir%d/output_data.root", baseDirJet, runnumber, i));
   }
   chain.SetBranchStatus("*", 0);
-  // Read necessary branches for analysis.
+
   float zvertex; chain.SetBranchStatus("z_vertex", 1); chain.SetBranchAddress("z_vertex", &zvertex);
-  int gl1_trigger_vector_scaled[64]; chain.SetBranchStatus("gl1_trigger_vector_scaled", 1); chain.SetBranchAddress("gl1_trigger_vector_scaled", gl1_trigger_vector_scaled);  
+  int gl1_trigger_vector_scaled[64]; chain.SetBranchStatus("gl1_trigger_vector_scaled", 1); chain.SetBranchAddress("gl1_trigger_vector_scaled", gl1_trigger_vector_scaled);
   std::vector<float>* unsubjet_e = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_e", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_e", jet_radius_index), &unsubjet_e);
   std::vector<float>* unsubjet_pt = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_pt", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_pt", jet_radius_index), &unsubjet_pt);
+  std::vector<float>* unsubjet_et = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_et", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_et", jet_radius_index), &unsubjet_et);
   std::vector<float>* unsubjet_eta = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_eta", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_eta", jet_radius_index), &unsubjet_eta);
   std::vector<float>* unsubjet_phi = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_phi", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_phi", jet_radius_index), &unsubjet_phi);
   std::vector<float>* unsubjet_time = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_time", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_time", jet_radius_index), &unsubjet_time);
-  // Read R=0.4 jet branches for event selection.
-  std::vector<float>* unsubjet04_e_reader = nullptr, *unsubjet04_pt_reader = nullptr, *unsubjet04_eta_reader = nullptr, *unsubjet04_phi_reader = nullptr, *unsubjet04_time_reader = nullptr;
-  if (jet_radius_index != 4) {
-    chain.SetBranchStatus("unsubjet04_e", 1); chain.SetBranchAddress("unsubjet04_e", &unsubjet04_e_reader);
-    chain.SetBranchStatus("unsubjet04_pt", 1); chain.SetBranchAddress("unsubjet04_pt", &unsubjet04_pt_reader);
-    chain.SetBranchStatus("unsubjet04_eta", 1); chain.SetBranchAddress("unsubjet04_eta", &unsubjet04_eta_reader);
-    chain.SetBranchStatus("unsubjet04_phi", 1); chain.SetBranchAddress("unsubjet04_phi", &unsubjet04_phi_reader);
-    chain.SetBranchStatus("unsubjet04_time", 1); chain.SetBranchAddress("unsubjet04_time", &unsubjet04_time_reader);
-  }
-  std::vector<float>* &unsubjet04_e = (jet_radius_index != 4) ? unsubjet04_e_reader : unsubjet_e;
-  std::vector<float>* &unsubjet04_pt = (jet_radius_index != 4) ? unsubjet04_pt_reader : unsubjet_pt;
-  std::vector<float>* &unsubjet04_eta = (jet_radius_index != 4) ? unsubjet04_eta_reader : unsubjet_eta;
-  std::vector<float>* &unsubjet04_phi = (jet_radius_index != 4) ? unsubjet04_phi_reader : unsubjet_phi;
-  std::vector<float>* &unsubjet04_time = (jet_radius_index != 4) ? unsubjet04_time_reader : unsubjet_time;
-
-  /////////////// JES func ///////////////
-  TFile *corrFile = new TFile("input_jescalib.root", "READ");
-  if (!corrFile || corrFile->IsZombie()) {
-    std::cout << "Error: cannot open JES_Calib_Default.root" << std::endl;
-    return;
-  }
-  std::vector<std::vector<TF1 *>> f_corr;
-  int nZvrtxBins = 5, nEtaBins = 4;
-  f_corr.resize(nZvrtxBins);
-  for (auto &row : f_corr) {
-    row.resize(nEtaBins);
-  }
-  for (int iz = 0; iz < nZvrtxBins; ++iz) {
-    if (iz <= 2 && jet_radius_index <= 4) {
-      for (int ieta = 0; ieta < nEtaBins; ++ieta) {
-        f_corr[iz][ieta] = (TF1*)corrFile->Get(Form("JES_Calib_Func_R0%d_Z%d_Eta%d", jet_radius_index, iz, ieta));
-        if (!f_corr[iz][ieta]) {
-          std::cout << "Error: cannot open f_corr for zbin " << iz << " and etabin " << ieta << std::endl;
-          return;
-        }
-      }
-    } else if (iz <= 2 && jet_radius_index > 4) {
-      for (int ieta = 0; ieta < nEtaBins; ++ieta) {
-        f_corr[iz][ieta] = (TF1*)corrFile->Get(Form("JES_Calib_Func_R0%d_Default", jet_radius_index));
-        if (!f_corr[iz][ieta]) {
-          std::cout << "Error: cannot open f_corr for radius " << jet_radius_index << ", zbin " << iz << " and etabin " << ieta << std::endl;
-          return;
-        }
-      }
-    } else if (iz > 2) {
-      f_corr[iz][0] = (TF1*)corrFile->Get(Form("JES_Calib_Func_R0%d_Z%d", jet_radius_index, iz));
-      if (!f_corr[iz][0]) {
-        std::cout << "Error: cannot open f_corr for radius " << jet_radius_index << " and zbin " << iz << std::endl;
-        return;
-      }
-    } else {
-      std::cout << "Error: invalid z-vertex bin: iz = " << iz << " with jet radius = " << jet_radius_index << std::endl;
-      return;
-    }
-  }
+  std::vector<float>* unsubjet_pt_calib = nullptr; chain.SetBranchStatus(Form("unsubjet0%d_pt_calib", jet_radius_index), 1); chain.SetBranchAddress(Form("unsubjet0%d_pt_calib", jet_radius_index), &unsubjet_pt_calib);
 
   /////////////// Jet Trigger Efficiency ///////////////
-  TFile *f_jettrigger = new TFile("input_jetefficiency.root", "READ");
+  TFile *f_jettrigger = new TFile("output_jetefficiency.root", "READ");
   if (!f_jettrigger) {
-    std::cout << "Error: cannot open input_jetefficiency.root" << std::endl;
+    std::cout << "Error: cannot open output_jetefficiency.root" << std::endl;
     return;
   }
   TF1* f_jettrigger_nominal = (TF1*)f_jettrigger->Get(Form("jettrig_0%d_pt_nominal", jet_radius_index));
@@ -107,123 +52,250 @@ void analysis_data(int runnumber, int nseg, int iseg, double jet_radius) {
     return;
   }
 
+  /////////////// MBD Trigger Efficiency ///////////////
+  TFile *f_mbdtrigger = new TFile("output_mbdefficiency.root", "READ");
+  if (!f_mbdtrigger) {
+    std::cout << "Error: cannot open output_mbdefficiency.root" << std::endl;
+    return;
+  }
+  TF1* f_mbdtrigger_nominal = (TF1*)f_mbdtrigger->Get(Form("mbdtrig0%d_nominal", jet_radius_index));
+  TF1* f_mbdtrigger_up = (TF1*)f_mbdtrigger->Get(Form("mbdtrig0%d_up", jet_radius_index));
+  TF1* f_mbdtrigger_down = (TF1*)f_mbdtrigger->Get(Form("mbdtrig0%d_down", jet_radius_index));
+  if (!f_mbdtrigger_nominal || !f_mbdtrigger_up || !f_mbdtrigger_down) {
+    std::cout << "Error: cannot open mbd trigger functions" << std::endl;
+    return;
+  }
+
   /////////////// Histograms ///////////////
-  TH1D *h_recojet_pt_record = new TH1D("h_recojet_pt_record", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_calibjet_pt_record = new TH1D("h_calibjet_pt_record", ";p_{T} [GeV]", 1000, 0, 100);
-  TH1D *h_calibjet_pt_scaled_nominal = new TH1D("h_calibjet_pt_scaled_nominal", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_scaled_jettrigup = new TH1D("h_calibjet_pt_scaled_jettrigup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_scaled_jettrigdown = new TH1D("h_calibjet_pt_scaled_jettrigdown", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_scaled_jettimingup = new TH1D("h_calibjet_pt_scaled_jettimingup", ";p_{T} [GeV]", calibnpt, calibptbins);
-  TH1D *h_calibjet_pt_scaled_jettimingdown = new TH1D("h_calibjet_pt_scaled_jettimingdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_event_all = new TH1D("h_event_all", ";Event Number", 1, 0, 1);
+  TH1D *h_event_beforecut = new TH1D("h_event_beforecut", ";Event Number", 1, 0, 1);
+  TH1D *h_event_passed = new TH1D("h_event_passed", ";Event Number", 1, 0, 1);
+
+  TH1D *h_recojet_pt_record_nocut_all = new TH1D("h_recojet_pt_record_nocut_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_all = new TH1D("h_recojet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex30 = new TH1D("h_recojet_pt_record_nocut_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex30 = new TH1D("h_recojet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_nocut_zvertex60 = new TH1D("h_recojet_pt_record_nocut_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_recojet_pt_record_zvertex60 = new TH1D("h_recojet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+
+  TH1D *h_calibjet_pt_all = new TH1D("h_calibjet_pt_all", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_all_jetup = new TH1D("h_calibjet_pt_all_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_all_jetdown = new TH1D("h_calibjet_pt_all_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_all = new TH1D("h_calibjet_pt_record_all", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_all_jetup = new TH1D("h_calibjet_pt_record_all_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_all_jetdown = new TH1D("h_calibjet_pt_record_all_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  
+  TH1D *h_calibjet_pt_zvertex30 = new TH1D("h_calibjet_pt_zvertex30", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_jetup = new TH1D("h_calibjet_pt_zvertex30_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_jetdown = new TH1D("h_calibjet_pt_zvertex30_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_mbdup = new TH1D("h_calibjet_pt_zvertex30_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex30_mbddown = new TH1D("h_calibjet_pt_zvertex30_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_zvertex30 = new TH1D("h_calibjet_pt_record_zvertex30", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_jetup = new TH1D("h_calibjet_pt_record_zvertex30_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_jetdown = new TH1D("h_calibjet_pt_record_zvertex30_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_mbdup = new TH1D("h_calibjet_pt_record_zvertex30_mbdup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex30_mbddown = new TH1D("h_calibjet_pt_record_zvertex30_mbddown", ";p_{T} [GeV]", 1000, 0, 100);  
+
+  TH1D *h_calibjet_pt_zvertex60 = new TH1D("h_calibjet_pt_zvertex60", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_jetup = new TH1D("h_calibjet_pt_zvertex60_jetup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_jetdown = new TH1D("h_calibjet_pt_zvertex60_jetdown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_mbdup = new TH1D("h_calibjet_pt_zvertex60_mbdup", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_zvertex60_mbddown = new TH1D("h_calibjet_pt_zvertex60_mbddown", ";p_{T} [GeV]", calibnpt, calibptbins);
+  TH1D *h_calibjet_pt_record_zvertex60 = new TH1D("h_calibjet_pt_record_zvertex60", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_jetup = new TH1D("h_calibjet_pt_record_zvertex60_jetup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_jetdown = new TH1D("h_calibjet_pt_record_zvertex60_jetdown", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_mbdup = new TH1D("h_calibjet_pt_record_zvertex60_mbdup", ";p_{T} [GeV]", 1000, 0, 100);
+  TH1D *h_calibjet_pt_record_zvertex60_mbddown = new TH1D("h_calibjet_pt_record_zvertex60_mbddown", ";p_{T} [GeV]", 1000, 0, 100);
 
   /////////////// Event Loop ///////////////
   std::cout << "Data analysis started." << std::endl;
   Long64_t n_events = chain.GetEntries();
   std::cout << "Total number of events: " << n_events << std::endl;
   // Event variables setup.
+  bool unsubjet_background_dijet, unsubjet_background_njet;
+  bool is_zvertex30, is_zvertex60;
+  bool is_trigger22;
   std::vector<bool> jet_filter;
   std::vector<float> calibjet_pt, calibjet_eta, calibjet_phi;
   for (Long64_t ie = 0; ie < n_events; ++ie) { // event loop start
     // Load event.
-    if (ie % 10000 == 0) {
-      std::cout << "Processing event " << ie << "..." << std::endl;
-    }
+    //if (ie % 1000 == 0) {
+    //  std::cout << "Processing event " << ie << "..." << std::endl;
+    //}
     chain.GetEntry(ie);
 
-    // Trigger check.
-    if (gl1_trigger_vector_scaled[22] != 1) continue;
+    // Get Z-vertex and trigger check.
+    is_trigger22 = (gl1_trigger_vector_scaled[22] == 1);
+    if (!is_trigger22) continue;
+    is_zvertex30 = (zvertex > -30 && zvertex < 30);
+    is_zvertex60 = (zvertex > -60 && zvertex < 60);
+    if (zvertex < -900) zvertex = 0;
+    
+    // Beam background cut. Jet level recording.
+    unsubjet_background_dijet = true;
+    unsubjet_background_njet = true;
+    int leadingunsubjet_index = -1;
+    int subleadingunsubjet_index = -1;
+    get_leading_subleading_jet(leadingunsubjet_index, subleadingunsubjet_index, unsubjet_e);
+    if (leadingunsubjet_index < 0) continue;
 
-    // Get z-vertex index and re-assign no-zvertex events.
-    int zvertex_index = get_zvertex_index(zvertex);
-    if (zvertex < -990) zvertex = 0;
-
-    // Event selection.
-    bool pass_dijet = false;
-    bool pass_timing = false;
-    bool pass_njet = false;
-    // Leading and subleading jet with energy and R = 0.4 for dijet and timing requirement. 
-    int leadingunsubjet04_index = -1;
-    int subleadingunsubjet04_index = -1;
-    get_leading_subleading_jet(leadingunsubjet04_index, subleadingunsubjet04_index, unsubjet04_e);
-    if (leadingunsubjet04_index < 0) continue;
-    // Dijet requirement.
-    if (subleadingunsubjet04_index >= 0 && unsubjet04_e->at(subleadingunsubjet04_index) / (float) unsubjet04_e->at(leadingunsubjet04_index) > 0.3) {
-      pass_dijet = match_leading_subleading_jet(unsubjet04_phi->at(leadingunsubjet04_index), unsubjet04_phi->at(subleadingunsubjet04_index));
+    // Dijet cut.
+    bool match_dijet = false;
+    if (subleadingunsubjet_index >= 0 && unsubjet_e->at(subleadingunsubjet_index) / (float) unsubjet_e->at(leadingunsubjet_index) > 0.3) {
+      match_dijet = match_leading_subleading_jet(unsubjet_phi->at(leadingunsubjet_index), unsubjet_phi->at(subleadingunsubjet_index));
+      if (fabs(unsubjet_time->at(leadingunsubjet_index)*17.6+2) > 6 || fabs(unsubjet_time->at(leadingunsubjet_index)*17.6 - unsubjet_time->at(subleadingunsubjet_index)*17.6) > 3) {
+        match_dijet = false;
+      }
     }
-    // Timing requirement.
-    if (subleadingunsubjet04_index >= 0 && fabs(unsubjet04_time->at(leadingunsubjet04_index)*17.6+2) < 6 && fabs(unsubjet04_time->at(leadingunsubjet04_index)*17.6 - unsubjet04_time->at(subleadingunsubjet04_index)*17.6) < 3) {
-      pass_timing = true;
-    }
-    // Njet requirement.
+    if (match_dijet) unsubjet_background_dijet = false;
+    // Njet cut.
     int n_jets = 0;
-    for (int ij = 0; ij < unsubjet04_e->size(); ++ij) {
-      if (unsubjet04_e->at(ij) > 5.0) {
+    for (int ij = 0; ij < unsubjet_e->size(); ++ij) {
+      if (unsubjet_e->at(ij) > 5.0) {
         n_jets++;
       }
     }
-    if (n_jets <= 9) {
-      pass_njet = true;
-    }
-    if (!pass_dijet || !pass_timing || !pass_njet) continue;
+    if (n_jets <= 9) unsubjet_background_njet = false;
 
-    // Leading jet with pT for trigger efficiency.
-    int leadingunsubjet_index = -1;
-    int subleadingunsubjet_index = -1;
-    get_leading_subleading_jet(leadingunsubjet_index, subleadingunsubjet_index, unsubjet_pt);
-    if (leadingunsubjet_index < 0) continue;
+    // Trigger efficiency
     double leadingunsubjet_pt = unsubjet_pt->at(leadingunsubjet_index);
 
-    // Get jet trigger scale factors.
     double jettrigger_nominal = f_jettrigger_nominal->Eval(leadingunsubjet_pt);
     if (jettrigger_nominal < 0.01) jettrigger_nominal = 0.01;
-    double scale_jettrig_nominal = 1.0 / jettrigger_nominal;
+    double jettrig_scale_nominal = 1.0 / jettrigger_nominal;
 
     double jettrigger_up = f_jettrigger_up->Eval(leadingunsubjet_pt);
     if (jettrigger_up < 0.01) jettrigger_up = 0.01;
-    double scale_jettrig_up = 1.0 / jettrigger_up;
-
+    double jettrig_scale_jetup = 1.0 / jettrigger_up;
+    
     double jettrigger_down = f_jettrigger_down->Eval(leadingunsubjet_pt);
     if (jettrigger_down < 0.01) jettrigger_down = 0.01;
-    double scale_jettrig_down = 1.0 / jettrigger_down;
+    double jettrig_scale_jetdown = 1.0 / jettrigger_down;
 
-    // Get jet timing scale factors.
-    double jettiming_nominal = 0.92;
-    double scale_jettiming_nominal = 1.0 / jettiming_nominal;
+    double mbdtrigger_nominal = f_mbdtrigger_nominal->Eval(leadingunsubjet_pt);
+    if (mbdtrigger_nominal < 0.01) mbdtrigger_nominal = 0.01;
+    double mbdtrig_scale_nominal = 1.0 / mbdtrigger_nominal;
 
-    double jettiming_up = 0.95;
-    double scale_jettiming_up = 1.0 / jettiming_up;
+    double mbdtrigger_up = f_mbdtrigger_up->Eval(leadingunsubjet_pt);
+    if (mbdtrigger_up < 0.01) mbdtrigger_up = 0.01;
+    double mbdtrig_scale_mbdup = 1.0 / mbdtrigger_up;
 
-    double jettiming_down = 0.89;
-    double scale_jettiming_down = 1.0 / jettiming_down;
+    double mbdtrigger_down = f_mbdtrigger_down->Eval(leadingunsubjet_pt);
+    if (mbdtrigger_down < 0.01) mbdtrigger_down = 0.01;
+    double mbdtrig_scale_mbddown = 1.0 / mbdtrigger_down;
+
+    double jettiming = 0.95;
+    double scale_jettiming = 1.0 / jettiming;
 
     // Fill histograms.
     get_jet_filter(jet_filter, unsubjet_e, unsubjet_pt, unsubjet_eta, zvertex, jet_radius);
+
     for (int ij = 0; ij < jet_filter.size(); ++ij) {
       if (jet_filter.at(ij)) continue;
-      h_recojet_pt_record->Fill(unsubjet_pt->at(ij));
+
+      if (is_trigger22) {
+        h_recojet_pt_record_nocut_all->Fill(unsubjet_pt->at(ij));
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) h_recojet_pt_record_all->Fill(unsubjet_pt->at(ij));
+        }
+
+      if (is_trigger22 && is_zvertex30) {
+        h_recojet_pt_record_nocut_zvertex30->Fill(unsubjet_pt->at(ij));
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) h_recojet_pt_record_zvertex30->Fill(unsubjet_pt->at(ij));
+      }
+
+      if (is_trigger22 && is_zvertex60) {
+        h_recojet_pt_record_nocut_zvertex60->Fill(unsubjet_pt->at(ij));
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) h_recojet_pt_record_zvertex60->Fill(unsubjet_pt->at(ij));
+      }
     }
 
-    get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, unsubjet_pt, unsubjet_eta, unsubjet_phi, f_corr, zvertex_index, jet_radius);
+    get_calibjet(calibjet_pt, calibjet_eta, calibjet_phi, jet_filter, unsubjet_pt_calib, unsubjet_eta, unsubjet_phi, jet_radius);
+
     for (int ij = 0; ij < calibjet_pt.size(); ++ij) {
-      h_calibjet_pt_record->Fill(calibjet_pt[ij]);
-      h_calibjet_pt_scaled_nominal->Fill(calibjet_pt[ij], scale_jettrig_nominal * scale_jettiming_nominal);
-      h_calibjet_pt_scaled_jettrigup->Fill(calibjet_pt[ij], scale_jettrig_up * scale_jettiming_nominal);
-      h_calibjet_pt_scaled_jettrigdown->Fill(calibjet_pt[ij], scale_jettrig_down * scale_jettiming_nominal);
-      h_calibjet_pt_scaled_jettimingup->Fill(calibjet_pt[ij], scale_jettrig_nominal * scale_jettiming_up);
-      h_calibjet_pt_scaled_jettimingdown->Fill(calibjet_pt[ij], scale_jettrig_nominal * scale_jettiming_down);
+
+      if (is_trigger22) {
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) {
+          h_calibjet_pt_all->Fill(calibjet_pt[ij], jettrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_all_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*scale_jettiming);
+          h_calibjet_pt_all_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*scale_jettiming);
+          h_calibjet_pt_record_all->Fill(calibjet_pt[ij], jettrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_all_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*scale_jettiming);
+          h_calibjet_pt_record_all_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*scale_jettiming);
+        }
+      }
+
+      if (is_trigger22 && is_zvertex30) {
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) {
+          h_calibjet_pt_zvertex30->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex30_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex30_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex30_mbdup->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_mbdup*scale_jettiming);
+          h_calibjet_pt_zvertex30_mbddown->Fill(calibjet_pt[ij], jettrig_scale_nominal* mbdtrig_scale_mbddown*scale_jettiming);
+          h_calibjet_pt_record_zvertex30->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex30_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex30_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex30_mbdup->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_mbdup*scale_jettiming);
+          h_calibjet_pt_record_zvertex30_mbddown->Fill(calibjet_pt[ij], jettrig_scale_nominal* mbdtrig_scale_mbddown*scale_jettiming);
+        }
+      }
+
+      if (is_trigger22 && is_zvertex60) {
+        if (!unsubjet_background_dijet && !unsubjet_background_njet) {
+          h_calibjet_pt_zvertex60->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex60_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex60_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_zvertex60_mbdup->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_mbdup*scale_jettiming);
+          h_calibjet_pt_zvertex60_mbddown->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_mbddown*scale_jettiming);
+          h_calibjet_pt_record_zvertex60->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex60_jetup->Fill(calibjet_pt[ij], jettrig_scale_jetup*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex60_jetdown->Fill(calibjet_pt[ij], jettrig_scale_jetdown*mbdtrig_scale_nominal*scale_jettiming);
+          h_calibjet_pt_record_zvertex60_mbdup->Fill(calibjet_pt[ij], jettrig_scale_nominal*mbdtrig_scale_mbdup*scale_jettiming);
+          h_calibjet_pt_record_zvertex60_mbddown->Fill(calibjet_pt[ij], jettrig_scale_nominal* mbdtrig_scale_mbddown*scale_jettiming);
+        }
+      }
     }
   } // event loop end
 
   // Write histograms.
   std::cout << "Writing histograms..." << std::endl;
   f_out->cd();
-  h_recojet_pt_record->Write();
-  h_calibjet_pt_record->Write();
-  h_calibjet_pt_scaled_nominal->Write();
-  h_calibjet_pt_scaled_jettrigup->Write();
-  h_calibjet_pt_scaled_jettrigdown->Write();
-  h_calibjet_pt_scaled_jettimingup->Write();
-  h_calibjet_pt_scaled_jettimingdown->Write();
+
+  h_recojet_pt_record_nocut_all->Write();
+  h_recojet_pt_record_all->Write();
+  h_recojet_pt_record_nocut_zvertex30->Write();
+  h_recojet_pt_record_zvertex30->Write();
+  h_recojet_pt_record_nocut_zvertex60->Write();
+  h_recojet_pt_record_zvertex60->Write();
+
+  h_calibjet_pt_all->Write();
+  h_calibjet_pt_all_jetup->Write();
+  h_calibjet_pt_all_jetdown->Write();
+  h_calibjet_pt_record_all->Write();
+  h_calibjet_pt_record_all_jetup->Write();
+  h_calibjet_pt_record_all_jetdown->Write();
+
+  h_calibjet_pt_zvertex30->Write();
+  h_calibjet_pt_zvertex30_jetup->Write();
+  h_calibjet_pt_zvertex30_jetdown->Write();
+  h_calibjet_pt_zvertex30_mbdup->Write();
+  h_calibjet_pt_zvertex30_mbddown->Write();
+  h_calibjet_pt_record_zvertex30->Write();
+  h_calibjet_pt_record_zvertex30_jetup->Write();
+  h_calibjet_pt_record_zvertex30_jetdown->Write();
+  h_calibjet_pt_record_zvertex30_mbdup->Write();
+  h_calibjet_pt_record_zvertex30_mbddown->Write();
+
+  h_calibjet_pt_zvertex60->Write();
+  h_calibjet_pt_zvertex60_jetup->Write();
+  h_calibjet_pt_zvertex60_jetdown->Write();
+  h_calibjet_pt_zvertex60_mbdup->Write();
+  h_calibjet_pt_zvertex60_mbddown->Write();
+  h_calibjet_pt_record_zvertex60->Write();
+  h_calibjet_pt_record_zvertex60_jetup->Write();
+  h_calibjet_pt_record_zvertex60_jetdown->Write();
+  h_calibjet_pt_record_zvertex60_mbdup->Write();
+  h_calibjet_pt_record_zvertex60_mbddown->Write();
+
   f_out->Close();
   std::cout << "All done!" << std::endl;
 }
@@ -250,6 +322,22 @@ float get_dR(float eta1, float phi1, float eta2, float phi2) {
   float deta = get_deta(eta1, eta2);
   float dphi = get_dphi(phi1, phi2);
   return sqrt(deta*deta + dphi*dphi);
+}
+
+int get_hcal_up(int iphi) {
+  if (iphi == 63) {
+    return 0;
+  } else {
+    return iphi + 1;
+  }
+}
+
+int get_hcal_bottom(int iphi) {
+  if (iphi == 0) {
+    return 63;
+  } else {
+    return iphi - 1;
+  }
 }
 
 float get_emcal_mineta_zcorrected(float zvertex) {
@@ -318,39 +406,6 @@ bool check_bad_jet_eta(float jet_eta, float zvertex, float jet_radius) {
   return jet_eta < minlimit || jet_eta > maxlimit;
 }
 
-int get_zvertex_index(float zvertex) {
-  if (zvertex >= -60.0 && zvertex < -30.0) return 1;
-  else if (zvertex >= -30.0 && zvertex < 30.0) return 0;
-  else if (zvertex >= 30.0 && zvertex < 60) return 2;
-  else if ((zvertex < -60.0 && zvertex >= -900) || zvertex >= 60.0) return 3;
-  else if (zvertex < -900) return 4;
-  return -1; // should not reach here
-}
-
-int get_eta_index(float jet_eta, int zvertex_index, double jet_radius) {
-  float eta_low = 0;
-  float eta_high = 0;
-  if (zvertex_index == 0) {// -30 < zvrtx < 30
-    eta_low = -1.2 + jet_radius;
-    eta_high = 1.2 - jet_radius;
-  } else if (zvertex_index == 1) {// -60 < zvrtx < -30
-    eta_low = -0.95 + jet_radius;
-    eta_high = 1.25 - jet_radius;
-  } else if (zvertex_index == 2) {// 30 < zvrtx < inf
-    eta_low = -1.25 + jet_radius;
-    eta_high = 0.95 - jet_radius;
-  } else if (zvertex_index == 3 || zvertex_index == 4) {
-    return 0;
-  }
-  float threshold1 = eta_low + ((eta_high - eta_low) / 4.0);
-  float threshold2 = eta_low + ((eta_high - eta_low) / 2.0);
-  float threshold3 = eta_low + (3.0 * (eta_high - eta_low) / 4.0);
-  if (jet_eta < threshold1) return 0;  // -inf to threshold1
-  if (jet_eta < threshold2) return 1;  // threshold1 to threshold2
-  if (jet_eta < threshold3) return 2;  // threshold2 to threshold3
-  return 3;  // threshold3 to inf
-}
-
 ////////////////////////////////////////// Functions //////////////////////////////////////////
 void get_leading_subleading_jet(int& leadingjet_index, int& subleadingjet_index, std::vector<float>* jet_et) {
   leadingjet_index = -1;
@@ -381,23 +436,17 @@ void get_jet_filter(std::vector<bool>& jet_filter, std::vector<float>* jet_e, st
   jet_filter.clear();
   int njet = jet_e->size();
   for (int ij = 0; ij < njet; ++ij) {
-    jet_filter.push_back(jet_e->at(ij) < 0 || check_bad_jet_eta(jet_eta->at(ij), zvertex, jet_radius) || jet_pt->at(ij) < 1);
+    jet_filter.push_back(jet_e->at(ij) < 0 || check_bad_jet_eta(jet_eta->at(ij), zvertex, jet_radius) || jet_pt->at(ij) < 1 || jet_eta->at(ij) > 1.1 - jet_radius || jet_eta->at(ij) < -1.1 + jet_radius);
   }
 }
 
-void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, std::vector<float>* jet_pt, std::vector<float>* jet_eta, std::vector<float>* jet_phi, const std::vector<std::vector<TF1*>>& f_corr, int zvertex_index, double jet_radius) {
+void get_calibjet(std::vector<float>& calibjet_pt, std::vector<float>& calibjet_eta, std::vector<float>& calibjet_phi, std::vector<bool>& jet_filter, std::vector<float>* jet_pt_calib, std::vector<float>* jet_eta, std::vector<float>* jet_phi, double jet_radius) {
   calibjet_pt.clear();
   calibjet_eta.clear();
   calibjet_phi.clear();
   for (int ij = 0; ij < jet_filter.size(); ++ij) {
     if (jet_filter.at(ij)) continue;
-    int eta_index;
-    if (zvertex_index == 0 || zvertex_index == 1 || zvertex_index == 2) {
-      eta_index = get_eta_index(jet_eta->at(ij), zvertex_index, jet_radius);
-    } else {
-      eta_index = 0;
-    }
-    double calib_pt = f_corr[zvertex_index][eta_index]->Eval(jet_pt->at(ij));
+    double calib_pt = jet_pt_calib->at(ij);
     if (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt]) continue;
     calibjet_pt.push_back(calib_pt);
     calibjet_eta.push_back(jet_eta->at(ij));
