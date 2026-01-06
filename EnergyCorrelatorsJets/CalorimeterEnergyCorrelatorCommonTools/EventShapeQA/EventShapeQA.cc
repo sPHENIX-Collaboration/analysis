@@ -33,24 +33,50 @@ int EventShapeQA::Init(PHCompositeNode *topNode)
 		bool isJet = false;
 		std::string subnodeClass=subL->getClass();
 		if(subnodeClass.find("Jet") != std::string::npos) isJet=true;
+		if(subnodeName.find("G4TruthInfo") != std::string::npos)
+			subnodeName="G4 Truth Map";
 		dummy->convertToEnum(subnodeName, isJet);
 		if(dummy.ComponentType != -1 || dummy.JetType != -1 ){
 			std::pair<CompDataType, JetDataType> dt { dummy.ComponentType, dummy.JetType};
 			HitPlots* additional = new HitPlots(subnodeName, dummy.isJet, false);
 			HitPlots* additional_shift = new HitPlots(subnodeName, dummy.isJet, true);
-			std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>> ca {dt, additional}, cas {dt, additional_shift};
+			
+			std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>> 
+				ca {dt, additional},
+			       	cas {dt, additional_shift};
+			
 			calo_jet_zero_axis->push_back(ca);
 			calo_jet_shift_axis->push_back(cas);
+			if(subnodeName.find("G4 Truth Map") != std::string::npos && isJet==false){
+				subnodeName = "G4 Primary Particle";
+				dummy->convertToEnum(subnodeName, isJet);
+				std::pair<CompDataType, JetDataType> dt { dummy.ComponentType, dummy.JetType};
+				HitPlots* additional = new HitPlots(subnodeName, dummy.isJet, false);
+				HitPlots* additional_shift = new HitPlots(subnodeName, dummy.isJet, true);
+				
+				std::pair<std::pair<CompDataTypes, JetDataTypes> , HitPlots*>> 
+					ca {dt, additional},
+					cas {dt, additional_shift};
+				calo_jet_zero_axis->push_back(ca);
+				calo_jet_shift_axis->push_back(cas);
+			}
 			std::pair<std::pair<CompDataTypes, JetDataTypes> , PHCompositeNode*>> na {dt, subL};
 			nodes.push_back(na);
 		}
+		
 	}
  	return Fun4AllReturnCodes::EVENT_OK;
 }
 void EventShapeQA::doPHG4Analysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
 {
 	PHG4TruthInfoContianer* pn=(PHG4TruthInfoContianer*)taggedNode.second;
-
+	if(pn)
+	{
+		PHG4TruthInfoContainer::ConstRange range = truthinfo->GetPrimaryParticleRange();
+		for(auto iter = range.first; iter != range.second; ++iter)
+		{
+			PHG4Particle* part = iter->second;
+			
 	return;
 }
 void EventShapeQA::doPHG4JetAnalysis(std::pair<std::pair<CompDataTypes, JetDataTypes>, PHCompositeNode*>> taggedNode)
