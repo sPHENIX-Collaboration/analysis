@@ -312,7 +312,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 	      nconst++;
 	      unsigned int channel = comp.second;
 	            
-	      if (comp.first == 15 ||  comp.first == 30)
+	      if (comp.first == 15 ||  comp.first == 30 || comp.first == 26)
 		{
 		  tower = towersIH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom){
@@ -333,7 +333,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if (comp.first == 16 || comp.first == 31)
+	      else if (comp.first == 16 || comp.first == 31 || comp.first == 27)
 		{
 		  tower = towersOH3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geomOH)
@@ -356,7 +356,7 @@ int JetValidation::process_event(PHCompositeNode *topNode)
 		  totalPy += pt * sin(tower_phi);
 		  totalPz += pt * sinh(tower_eta);
 		}
-	      else if (comp.first == 14 || comp.first == 29)
+	      else if (comp.first == 14 || comp.first == 29 || comp.first == 28)
 		{
 		  tower = towersEM3->get_tower_at_channel(channel);
 		  if(!tower || !tower_geom)
