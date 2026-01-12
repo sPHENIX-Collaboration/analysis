@@ -3,7 +3,8 @@ goalevents=${2:-'1000'}
 filenumber=${3:-'0'}
 filetag=$(printf "%06d" $filenumber)
 triggervalue=${4:-'0.'}
-outfile_name=${5:-' '}
+photontriggervalue=${5:-'0.'}
+outfile_name=${6:-' '}
 source /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/bin/sphenix_setup.sh -n ana
 export LHAPDF_DATA_PATH=$LHAPDF_DATA_PATH:/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/config_files
 export LHAPATH=$LHAPATH:/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/config_files
@@ -11,7 +12,7 @@ echo $LHAPDF_DATA_PATH
 seedn=$RANDOM
 #echo $seedn
 run_events=$goalevents
-if [[ $triggervalue -gt 0 ]]; then 
+if [[ $triggervalue -gt 0 || $photontriggervalue -gt 0 ]]; then 
 	run_events=$(( run_events * 100 )) #worst case assume a 1% good event case
 fi 
 
@@ -25,8 +26,12 @@ mv $outfile_namestem"-S"$seedn"-"$filetag"-EvtGen.log" $outfile_namestem"-"$file
 mv $outfile_namestem"-S"$seedn"-"$filetag".out" $outfile_namestem"-"$filetag".out"
 mv $outfile_namestem"-S"$seedn"-"$filetag".tex" $outfile_namestem"-"$filetag".tex"
 mv $outfile_nameseed $outfile_name
-if [[ $triggervalue -gt -1 ]]; then 
-	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/RunHerwigHepMCFilter.sh $outfile_name $triggervalue $goalevents
+if [[ $triggervalue -gt -0 ]]; then 
+	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents
+	rm $outfile_name
+fi
+if [[ $photontriggervalue -gt -0 ]]; then 
+	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents
 	rm $outfile_name
 fi
  
