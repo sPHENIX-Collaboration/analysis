@@ -276,7 +276,7 @@ int analyze(int rn, int nseg, int clt)
 	}
       float avgTot[64] = {0};
       float rB = nBunch*78.2e3; //nBunch obtained from CAD tarball provided by Kin Yip
-      float rM = (seghiraw[10]-segloraw[10])/tSeg; //tSeg from BCO difference between start and end of segment * beam clock (9.4 MHz)
+      float rM = (seghiraw[10]-segloraw[10])/tSeg*(42/25.2); //tSeg from BCO difference between start and end of segment * beam clock (9.4 MHz) multiplied by MBD efficiency (mbd cross section / pp inel xsec).
       if(rM > rB)
 	{
 	  cout << "rM > rB!! " << rB << " " << rM << " " << tSeg << endl;
