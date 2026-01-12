@@ -1,6 +1,7 @@
 #pragma once
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
 #include <hepmcjettrigger/HepMCJetTrigger.h>
+#include <hepmcjettrigger/HepMCParticleTrigger.h>
 #include "sPhenixStyle.h"
 #include "sPhenixStyle.C"
 #include <fun4all/Fun4AllInputManager.h>
@@ -26,7 +27,7 @@ R__LOAD_LIBRARY(libffamodules.so);
 R__LOAD_LIBRARY(libffarawmodules.so);
 R__LOAD_LIBRARY(libphhepmc.so);
 
-int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herwig/herwig_files/sphenix_10GeV_jetpt.hepmc", std::string trig="10", int goal_event_number=1000)
+int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herwig/herwig_files/sphenix_10GeV_jetpt.hepmc", std::string trigger_type="jet", std::string trig="10", int goal_event_number=1000)
 {
 	float threshold=0.;
 	try{
@@ -39,12 +40,17 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 	Fun4AllHepMCInputManager *in =new Fun4AllHepMCInputManager("in");
 	Fun4AllHepMCOutputManager *out=new Fun4AllHepMCOutputManager("out", outfile);
 	HepMCJetTrigger* hf=new HepMCJetTrigger(threshold, goal_event_number, true);
+	HepMCParticleTrigger* part = new HepMCParticleTrigger(threshold, goal_event_number, true);
+	if(trigger_type.find("photon") !=std::string::npos){
+		part->AddParticles(22);
+	}
 	//std::fstream f;
 	//f.open(filename);
 	se->registerInputManager(in);
 	in->fileopen(filename);
 	se->registerOutputManager(out);
-	se->registerSubsystem(hf);
+	if(trigger_type.find("jet") != std::string::npos) se->registerSubsystem(hf);
+	if(trigger_type.find("photon") != std::string::npos) se->registerSubsystem(part);
 	se->run();
 	se->End();
 	std::cout<<"Ran over " <<hf->n_evts <<" and found " <<hf->n_good <<" events" <<std::endl;
