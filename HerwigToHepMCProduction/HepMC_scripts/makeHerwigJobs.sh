@@ -114,6 +114,7 @@ handle_options(){
 			echo " -s, --submit	Make and submit condor jobs (Default false)"
 			echo " -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)"
 			echo " -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) "
+ 			echo " -p, --photoncut	Add a photon cut filter [Integer GeV] (Default None) "
 			echo " -i, --input 	Specify new input file (Default blank)"
 			echo " -f, --first	Specify a first segment number (Default 0)"
 			exit 0 
