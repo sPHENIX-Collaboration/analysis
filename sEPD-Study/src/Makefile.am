@@ -18,7 +18,8 @@ pkginclude_HEADERS = \
   CaloCheck.h \
   CalibrateQVec.h \
   JetValidation.h \
-  JetUtils.h
+  JetUtils.h \
+  sEPD_DataMC_Validation.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
@@ -30,7 +31,8 @@ libsEPDValidation_la_SOURCES = \
   CaloCheck.cc \
   CalibrateQVec.cc \
   JetValidation.cc \
-  JetUtils.cc
+  JetUtils.cc \
+  sEPD_DataMC_Validation.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \

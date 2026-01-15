@@ -88,6 +88,15 @@ target_link_libraries(Fun4All_Jet PRIVATE
     ${MY_LIBS}
 )
 
+# --- Fun4All_sEPD_DataMC ---
+add_executable(Fun4All_sEPD_DataMC macros/Fun4All_sEPD_DataMC.C)
+target_link_libraries(Fun4All_sEPD_DataMC PRIVATE
+    ROOT::Core # Needs explicit Core for gSystem
+    ${ROOT_LIBS}
+    ${SPHENIX_LIBS}
+    ${MY_LIBS}
+)
+
 # --- checkCDB ---
 add_executable(checkCDB macros/checkCDB.C)
 target_link_libraries(checkCDB PRIVATE ${STANDALONE_MACRO_LIBS})
