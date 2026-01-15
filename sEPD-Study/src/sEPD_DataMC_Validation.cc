@@ -96,6 +96,12 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
+  TowerInfoContainer *towerinfosEPD_mc = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_EPD");
+  if (!towerinfosEPD_mc)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
   TowerInfoContainer *towerinfosEPD_data_mc = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_COMBINED_SEPD");
   if (!towerinfosEPD_data_mc)
   {
@@ -103,9 +109,10 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
   }
 
   unsigned int nchannels_epd_data = towerinfosEPD_data->size();
+  unsigned int nchannels_epd_mc = towerinfosEPD_mc->size();
   unsigned int nchannels_epd_data_mc = towerinfosEPD_data_mc->size();
 
-  if(nchannels_epd_data != nchannels_epd_data_mc)
+  if(nchannels_epd_data != nchannels_epd_mc || nchannels_epd_data != nchannels_epd_data_mc)
   {
      ++m_ctr["events_sepd_channel_fail"];
      return Fun4AllReturnCodes::ABORTEVENT;
@@ -116,20 +123,26 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
   for (unsigned int channel = 0; channel < nchannels_epd_data; ++channel)
   {
     TowerInfo *tower_data = towerinfosEPD_data->get_tower_at_channel(channel);
+    TowerInfo *tower_mc = towerinfosEPD_mc->get_tower_at_channel(channel);
     TowerInfo *tower_data_mc = towerinfosEPD_data_mc->get_tower_at_channel(channel);
 
     double charge_data = tower_data->get_energy();
+    double charge_mc = tower_mc->get_energy();
     double charge_data_mc = tower_data_mc->get_energy();
 
-    double charge_mc = charge_data_mc - charge_data;
+    // if (channel < 5)
+    // {
+    //   std::cout << std::format("Channel: {}, Charge Data: {:.2f}, Charge MC: {:.2f}, Charge Data MC: {}\n", channel, charge_data, charge_mc, charge_data_mc);
+    // }
 
-    if (charge_data != 0 || charge_mc != 0)
-    {
-      std::cout << std::format("Channel: {}, Charge Data: {:.2f}, Charge MC: {:.2f}\n", channel, charge_data, charge_mc);
-    }
+    m_ctr["sepd_data_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_data);
+    m_ctr["sepd_data_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_data);
 
-    m_ctr["sepd_charge_max"] = std::max({static_cast<double>(m_ctr["sepd_charge_max"]), charge_data, charge_mc});
-    m_ctr["sepd_charge_min"] = std::min({static_cast<double>(m_ctr["sepd_charge_min"]), charge_data, charge_mc});
+    m_ctr["sepd_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_mc);
+    m_ctr["sepd_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_mc);
+
+    m_ctr["sepd_data_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_data_mc);
+    m_ctr["sepd_data_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_data_mc);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -160,6 +173,12 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
   }
 
   ret = process_centrality(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
+  ret = process_sEPD(topNode);
   if (ret)
   {
     return ret;
