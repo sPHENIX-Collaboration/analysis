@@ -135,14 +135,14 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     //   std::cout << std::format("Channel: {}, Charge Data: {:.2f}, Charge MC: {:.2f}, Charge Data MC: {}\n", channel, charge_data, charge_mc, charge_data_mc);
     // }
 
-    m_ctr["sepd_data_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_data);
-    m_ctr["sepd_data_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_data);
+    m_ctr["sepd_data_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_data_charge_max"]), charge_data);
+    m_ctr["sepd_data_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_data_charge_min"]), charge_data);
 
-    m_ctr["sepd_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_mc);
-    m_ctr["sepd_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_mc);
+    m_ctr["sepd_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_mc_charge_max"]), charge_mc);
+    m_ctr["sepd_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_mc_charge_min"]), charge_mc);
 
-    m_ctr["sepd_data_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_charge_max"]), charge_data_mc);
-    m_ctr["sepd_data_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_charge_min"]), charge_data_mc);
+    m_ctr["sepd_data_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_data_mc_charge_max"]), charge_data_mc);
+    m_ctr["sepd_data_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_data_mc__charge_min"]), charge_data_mc);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
