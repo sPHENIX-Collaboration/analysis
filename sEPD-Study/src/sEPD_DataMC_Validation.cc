@@ -44,6 +44,21 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_hists["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Min Bias; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
+  m_hists["hSEPD_Charge_Data"] = std::make_unique<TH1F>("hSEPD_Charge_Data", "Min Bias [Data]; sEPD Charge; Towers", m_bins_charge, m_charge_low, m_charge_high);
+  m_hists["hSEPD_Charge_MC"] = std::make_unique<TH1F>("hSEPD_Charge_MC", "Min Bias [MC]; sEPD Charge; Towers", m_bins_charge, m_charge_low, m_charge_high);
+
+  std::string title_data = "Min Bias [Data]; sEPD Charge; Events";
+  std::string title_mc = "Min Bias [MC]; sEPD Charge; Events";
+
+  for (int channel = 0; channel < m_sepd_channels; ++channel)
+  {
+    std::string name_data = std::format("hSEPD_data_channel_{}", channel);
+    std::string name_mc = std::format("hSEPD_mc_channel_{}", channel);
+
+    m_hists[name_data] = std::make_unique<TH1F>(name_data.c_str(), title_data.c_str(), m_bins_charge, m_charge_low, m_charge_high);
+    m_hists[name_mc] = std::make_unique<TH1F>(name_mc.c_str(), title_mc.c_str(), m_bins_charge, m_charge_low, m_charge_high);
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -118,8 +133,6 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
      return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  // std::cout << std::format("sEPD Channels: {}\n", nchannels_epd_data);
-
   for (unsigned int channel = 0; channel < nchannels_epd_data; ++channel)
   {
     TowerInfo *tower_data = towerinfosEPD_data->get_tower_at_channel(channel);
@@ -130,10 +143,14 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     double charge_mc = tower_mc->get_energy();
     double charge_data_mc = tower_data_mc->get_energy();
 
-    // if (channel < 5)
-    // {
-    //   std::cout << std::format("Channel: {}, Charge Data: {:.2f}, Charge MC: {:.2f}, Charge Data MC: {}\n", channel, charge_data, charge_mc, charge_data_mc);
-    // }
+    std::string name_data = std::format("hSEPD_data_channel_{}", channel);
+    std::string name_mc = std::format("hSEPD_mc_channel_{}", channel);
+
+    m_hists[name_data]->Fill(charge_data);
+    m_hists[name_mc]->Fill(charge_mc);
+
+    m_hists["hSEPD_Charge_Data"]->Fill(charge_data);
+    m_hists["hSEPD_Charge_MC"]->Fill(charge_mc);
 
     m_ctr["sepd_data_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_data_charge_max"]), charge_data);
     m_ctr["sepd_data_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_data_charge_min"]), charge_data);
@@ -142,7 +159,7 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     m_ctr["sepd_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_mc_charge_min"]), charge_mc);
 
     m_ctr["sepd_data_mc_charge_max"] = std::max(static_cast<double>(m_ctr["sepd_data_mc_charge_max"]), charge_data_mc);
-    m_ctr["sepd_data_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_data_mc__charge_min"]), charge_data_mc);
+    m_ctr["sepd_data_mc_charge_min"] = std::min(static_cast<double>(m_ctr["sepd_data_mc_charge_min"]), charge_data_mc);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -159,7 +176,7 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 
   int m_globalEvent = eventInfo->get_EvtSequence();
 
-  if (m_ctr["events_total"] % 20 == 0)
+  if (m_ctr["events_total"] % 1000 == 0)
   {
     std::cout << std::format("Progress: {}, Global: {}\n", m_ctr["events_total"], m_globalEvent);
   }
@@ -178,10 +195,13 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  ret = process_sEPD(topNode);
-  if (ret)
+  if(m_cent >= m_cent_min_threshold)
   {
-    return ret;
+    ret = process_sEPD(topNode);
+    if (ret)
+    {
+      return ret;
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;

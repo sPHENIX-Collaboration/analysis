@@ -34,6 +34,11 @@ class sEPD_DataMC_Validation : public SubsysReco
     m_outfile_name = file;
   }
 
+  void set_cent_min_threshold(double cent_min_threshold)
+  {
+    m_cent_min_threshold = cent_min_threshold;
+  }
+
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
@@ -41,9 +46,17 @@ class sEPD_DataMC_Validation : public SubsysReco
 
   std::string m_outfile_name{"test.root"};
 
+  static constexpr int m_sepd_channels = 744;
+
   unsigned int m_bins_cent{100};
   double m_cent_low{-0.5};
   double m_cent_high{99.5};
+
+  unsigned int m_bins_charge{2500};
+  double m_charge_low{-50};
+  double m_charge_high{200};
+
+  double m_cent_min_threshold{60};
 
   // Event Vars
   double m_cent{9999};
