@@ -469,16 +469,6 @@ jetAna.add_argument('-i'
                     , required=True
                     , help='List of TTrees to analyze.')
 
-jetAna.add_argument('-i2'
-                    , '--calib', type=str
-                    , required=True
-                    , help='Q Vector Calibrations')
-
-jetAna.add_argument('-i3'
-                    , '--QVecAna', type=str
-                    , default='DEFAULT'
-                    , help='Q Vector Filter Type. Default: DEFAULT')
-
 jetAna.add_argument('-j'
                     , '--jet-pt-min', type=float
                     , default=7
@@ -524,8 +514,6 @@ def jetAna_jobs():
     jetAna condor jobs
     """
     input_list     = Path(args.input_list).resolve()
-    calib_list     = Path(args.calib).resolve()
-    QVecAna        = args.QVecAna
     jet_pt_min     = args.jet_pt_min
     jet_eta_max    = args.jet_eta_max
     output_dir     = Path(args.output_dir).resolve()
@@ -543,7 +531,7 @@ def jetAna_jobs():
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that files exists
-    for f in [input_list, calib_list, condor_script, jetAna_bin]:
+    for f in [input_list, condor_script, jetAna_bin]:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit()
@@ -552,8 +540,6 @@ def jetAna_jobs():
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input List: {input_list}')
-    logger.info(f'Calib List: {calib_list}')
-    logger.info(f'Q Vec Ana: {QVecAna}')
     logger.info(f'Jet pT Min: {jet_pt_min} GeV')
     logger.info(f'Jet eta Max: {jet_eta_max}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
@@ -577,34 +563,14 @@ def jetAna_jobs():
     for subdir in subdirectories:
         (output_dir / subdir).mkdir(parents=True, exist_ok=True)
 
-    calib_map = {}
-    # Calib List
-    with open(calib_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            run = Path(line).parts[-3]
-            logger.info(f'Processing: {line}, run: {run}')
-            calib_map[run] = line
-
-    logger.info(calib_map)
-
-    with open(input_list, mode='r', encoding='utf-8') as file_in, \
-         open(output_dir / 'jobs.list', mode='w', encoding='utf-8') as file_out:
-
-        for line in file_in:
-            line = line.strip()
-            run = Path(line).parts[-3]
-            file_out.write(f'{line},{calib_map[run]}\n')
-
-    shutil.copy(input_list, output_dir)
-    shutil.copy(calib_list, output_dir)
+    shutil.copy(input_list, output_dir / 'jobs.list')
     shutil.copy(jetAna_macro, output_dir)
     jetAna_bin = shutil.copy(jetAna_bin, output_dir)
     shutil.copy(condor_script, output_dir)
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) $(input_calib) {QVecAna} {jet_pt_min} {jet_eta_max} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree) {jet_pt_min} {jet_eta_max} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -614,7 +580,7 @@ def jetAna_jobs():
     with open(output_dir / 'genJetAna.sub', mode='w', encoding='utf-8') as file:
         file.write(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree,input_calib from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree from jobs.list"'
     logger.info(command)
 
 # ----------------------------
