@@ -193,12 +193,12 @@ void MakeHITowerJets()
   //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  if (HIJETS::do_flow == 3)
-  {
-    EventPlaneReco *epreco = new EventPlaneReco();
-    epreco->set_sepd_epreco(true);
-    se->registerSubsystem(epreco);
-  }
+  // if (HIJETS::do_flow == 3)
+  // {
+  //   EventPlaneReco *epreco = new EventPlaneReco();
+  //   epreco->set_sepd_epreco(true);
+  //   se->registerSubsystem(epreco);
+  // }
 
   RetowerCEMC *rcemc = new RetowerCEMC();
   rcemc->Verbosity(verbosity);

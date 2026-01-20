@@ -41,6 +41,7 @@
 
 // -- Event Plane
 #include <eventplaneinfo/EventplaneinfoMap.h>
+#include <eventplaneinfo/Eventplaneinfo.h>
 
 // -- MBD
 #include <mbd/MbdGeom.h>
@@ -116,9 +117,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
 
-      {HistDef::Type::TProfile2D, "h2SEPD_North_ZS", "SEPD North Frac ZS: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_ZS", "SEPD South Frac ZS: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-
       {HistDef::Type::TProfile2D, "h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.2: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
       {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.2: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
 
@@ -155,13 +153,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH3, "h3UE_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
   };
 
-  // Official
-  if (m_do_ep)
-  {
-    histogram_definitions.emplace_back(HistDef{HistDef::Type::TH3, "h3SEPD_EventPlaneInfo_Psi_2", "sEPD #Psi (Order 2): |z| < 10 cm and MB; 2#Psi^{S}_{2}; 2#Psi^{N}_{2}; Centrality [%]", {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}});
-    histogram_definitions.emplace_back(HistDef{HistDef::Type::TH3, "h3SEPD_EventPlaneInfo_Psi_3", "sEPD #Psi (Order 3): |z| < 10 cm and MB; 3#Psi^{S}_{3}; 3#Psi^{N}_{3}; Centrality [%]", {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}});
-  }
-
   for (const auto &def : histogram_definitions)
   {
     create_histogram(def);
@@ -179,14 +170,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_hists["h2SEPD_Channel_Charge"]->Sumw2();
   m_hists["h2SEPD_Channel_Chargev2"]->Sumw2();
-
-  // Check if Calib Q Vecs are present
-  PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
-  if (pdb)
-  {
-    m_calib_Q = true;
-    std::cout << "Calibrated Q Vec Present" << std::endl;
-  }
 
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
   m_output->cd();
@@ -209,28 +192,27 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("sepd_channel", &m_data.sepd_channel);
   m_tree->Branch("sepd_charge", &m_data.sepd_charge);
   m_tree->Branch("sepd_phi", &m_data.sepd_phi);
-  if (m_calib_Q)
-  {
-    m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
-    m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
-    m_tree->Branch("Q_N_x_2_raw", &m_data.Q_N_x_2_raw);
-    m_tree->Branch("Q_N_y_2_raw", &m_data.Q_N_y_2_raw);
 
-    m_tree->Branch("Q_S_x_2_recentered", &m_data.Q_S_x_2_recentered);
-    m_tree->Branch("Q_S_y_2_recentered", &m_data.Q_S_y_2_recentered);
-    m_tree->Branch("Q_N_x_2_recentered", &m_data.Q_N_x_2_recentered);
-    m_tree->Branch("Q_N_y_2_recentered", &m_data.Q_N_y_2_recentered);
+  m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
+  m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
+  m_tree->Branch("Q_N_x_2_raw", &m_data.Q_N_x_2_raw);
+  m_tree->Branch("Q_N_y_2_raw", &m_data.Q_N_y_2_raw);
 
-    m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
-    m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
-    m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
-    m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
+  m_tree->Branch("Q_S_x_2_recentered", &m_data.Q_S_x_2_recentered);
+  m_tree->Branch("Q_S_y_2_recentered", &m_data.Q_S_y_2_recentered);
+  m_tree->Branch("Q_N_x_2_recentered", &m_data.Q_N_x_2_recentered);
+  m_tree->Branch("Q_N_y_2_recentered", &m_data.Q_N_y_2_recentered);
 
-    m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
-    m_tree->Branch("calo_v2", &m_data.calo_v2);
-    m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
-    m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
-  }
+  m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
+  m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
+  m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
+  m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
+
+  m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
+  m_tree->Branch("calo_v2", &m_data.calo_v2);
+  m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
+  m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
+
   m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
   // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
@@ -480,7 +462,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     TowerInfo *tower = towerinfosEPD->get_tower_at_channel(channel);
 
     double charge = tower->get_energy();
-    bool isZS = tower->get_isZS();
     double sepd_ch_z = epdgeom->get_z(key);
     double sepd_ch_r = epdgeom->get_r(key);
     ROOT::Math::XYZTVector vec(sepd_ch_r, 0, sepd_ch_z, 0);
@@ -492,30 +473,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     if (phi > M_PI)
     {
       phi -= 2 * M_PI;
-    }
-
-    // exclude ZS
-    if (isZS)
-    {
-      ++m_ctr["sepd_tower_zs"];
-      if (eta < 0)
-      {
-        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, -eta, 1);
-      }
-      else
-      {
-        dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_ZS"].get())->Fill(phi, eta, 1);
-      }
-      continue;
-    }
-
-    if (eta < 0)
-    {
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_ZS"].get())->Fill(phi, -eta, 0);
-    }
-    else
-    {
-      dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_ZS"].get())->Fill(phi, eta, 0);
     }
 
     JetUtils::update_min_max(charge, m_logging.m_sepd_charge_min, m_logging.m_sepd_charge_max);
@@ -683,64 +640,6 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-void sEPDValidation::process_CalibQVec(PHCompositeNode *topNode)
-{
-  PdbParameterMap *pdb = getNode<PdbParameterMap>(topNode, "CalibQVec");
-
-  PHParameters pdb_params("CalibQVec");
-  pdb_params.FillFrom(pdb);
-
-  m_data.Q_S_x_2_raw = pdb_params.get_double_param("Q_S_x_2_raw");
-  m_data.Q_S_y_2_raw = pdb_params.get_double_param("Q_S_y_2_raw");
-  m_data.Q_N_x_2_raw = pdb_params.get_double_param("Q_N_x_2_raw");
-  m_data.Q_N_y_2_raw = pdb_params.get_double_param("Q_N_y_2_raw");
-
-  m_data.Q_S_x_2_recentered = pdb_params.get_double_param("Q_S_x_2_recentered");
-  m_data.Q_S_y_2_recentered = pdb_params.get_double_param("Q_S_y_2_recentered");
-  m_data.Q_N_x_2_recentered = pdb_params.get_double_param("Q_N_x_2_recentered");
-  m_data.Q_N_y_2_recentered = pdb_params.get_double_param("Q_N_y_2_recentered");
-
-  m_data.Q_S_x_2 = pdb_params.get_double_param("Q_S_x_2");
-  m_data.Q_S_y_2 = pdb_params.get_double_param("Q_S_y_2");
-  m_data.Q_N_x_2 = pdb_params.get_double_param("Q_N_x_2");
-  m_data.Q_N_y_2 = pdb_params.get_double_param("Q_N_y_2");
-}
-
-//____________________________________________________________________________..
-int sEPDValidation::process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order)
-{
-  std::pair<double, double> epdsouthQn = epd_S->get_qvector(order);
-  std::pair<double, double> epdnorthQn = epd_N->get_qvector(order);
-
-  double Qx_south = epdsouthQn.first;
-  double Qy_south = epdsouthQn.second;
-
-  double Qx_north = epdnorthQn.first;
-  double Qy_north = epdnorthQn.second;
-
-  // Compute Q vector magnitude
-  double Q_mag_south = std::sqrt((Qx_south * Qx_south) + (Qy_south * Qy_south));
-  double Q_mag_north = std::sqrt((Qx_north * Qx_north) + (Qy_north * Qy_north));
-
-  // ensure the magnitude of both Q vectors are non-zero
-  if (Q_mag_south == 0 || Q_mag_north == 0)
-  {
-    ++m_ctr["process_EventPlane_Q_mag_zero"];
-    return Fun4AllReturnCodes::ABORTEVENT;
-  }
-
-  double psi_n_south = std::atan2(Qy_south, Qx_south);
-  double psi_n_north = std::atan2(Qy_north, Qx_north);
-
-  m_logging.m_psi_min = std::min(m_logging.m_psi_min, std::min(psi_n_south, psi_n_north));
-  m_logging.m_psi_max = std::max(m_logging.m_psi_max, std::max(psi_n_south, psi_n_north));
-
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_EventPlaneInfo_Psi_" + std::to_string(order)].get())->Fill(psi_n_south, psi_n_north, m_cent);
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
 int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 {
   // get event plane map
@@ -765,19 +664,32 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  // process order 2
-  int ret = process_EventPlane(epd_S, epd_N, 2);
-  if (ret)
-  {
-    return ret;
-  }
+  std::pair<double, double> Q_S_2_raw = epd_S->get_qvector_raw(2);
+  std::pair<double, double> Q_N_2_raw = epd_N->get_qvector_raw(2);
 
-  // process order 3
-  ret = process_EventPlane(epd_S, epd_N, 3);
-  if (ret)
-  {
-    return ret;
-  }
+  std::pair<double, double> Q_S_2_recentered = epd_S->get_qvector_recentered(2);
+  std::pair<double, double> Q_N_2_recentered = epd_N->get_qvector_recentered(2);
+
+  std::pair<double, double> Q_S_2 = epd_S->get_qvector(2);
+  std::pair<double, double> Q_N_2 = epd_N->get_qvector(2);
+
+  m_data.Q_S_x_2_raw = Q_S_2_raw.first;
+  m_data.Q_S_y_2_raw = Q_S_2_raw.second;
+
+  m_data.Q_N_x_2_raw = Q_N_2_raw.first;
+  m_data.Q_N_y_2_raw = Q_N_2_raw.second;
+
+  m_data.Q_S_x_2_recentered = Q_S_2_recentered.first;
+  m_data.Q_S_y_2_recentered = Q_S_2_recentered.second;
+
+  m_data.Q_N_x_2_recentered = Q_N_2_recentered.first;
+  m_data.Q_N_y_2_recentered = Q_N_2_recentered.second;
+
+  m_data.Q_S_x_2 = Q_S_2.first;
+  m_data.Q_S_y_2 = Q_S_2.second;
+
+  m_data.Q_N_x_2 = Q_N_2.first;
+  m_data.Q_N_y_2 = Q_N_2.second;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -950,24 +862,16 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  if (m_calib_Q)
+  ret = process_EventPlane(topNode);
+  if (ret)
   {
-    process_CalibQVec(topNode);
+    return ret;
   }
 
   ret = process_UE(topNode);
   if (ret)
   {
     return ret;
-  }
-
-  if (m_do_ep)
-  {
-    ret = process_EventPlane(topNode);
-    if (ret)
-    {
-      return ret;
-    }
   }
 
   // Fill the TTree
@@ -1059,7 +963,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "sEPD Eta: Min " << m_logging.m_sepd_eta_min << ", Max: " << m_logging.m_sepd_eta_max << std::endl;
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "sEPD" << std::endl;
-  std::cout << "Avg towers ZS: " << m_ctr["sepd_tower_zs"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "MBD" << std::endl;
@@ -1092,25 +995,17 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
-  if (m_do_ep)
-  {
-    std::cout << std::format("process Event Plane, Q vec mag zero: {}", m_ctr["process_EventPlane_Q_mag_zero"]) << std::endl;
-    std::cout << std::format("process Event Plane, ep map empty: {}", m_ctr["process_EventPlane_epmap_empty"]) << std::endl;
-    std::cout << std::format("process Event Plane, epd invalid: {}", m_ctr["process_EventPlane_epd_invalid"]) << std::endl;
-    std::cout << "process Event Plane, Psi: Min " << m_logging.m_psi_min << ", Max: " << m_logging.m_psi_max << std::endl;
-    std::cout << "process Event Plane, Q mag zero: " << m_ctr["process_EventPlane_Q_mag_zero"] << std::endl;
-    std::cout << "process Event Plane, epmap empty: " << m_ctr["process_EventPlane_epmap_empty"] << std::endl;
-    std::cout << "process Event Plane, epd invalid: " << m_ctr["process_EventPlane_epd_invalid"] << std::endl;
-  }
+
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << "Event Plane" << std::endl;
+  std::cout << std::format("process Event Plane, ep map empty: {}", m_ctr["process_EventPlane_epmap_empty"]) << std::endl;
+  std::cout << std::format("process Event Plane, epd invalid: {}", m_ctr["process_EventPlane_epd_invalid"]) << std::endl;
 
   // UE
-  if (m_calib_Q)
-  {
-    std::cout << std::format("{:#<20}\n", "");
-    std::cout << "UE" << std::endl;
-    std::cout << std::format("Calo V2: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
-    std::cout << std::format("Sum E: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
-  }
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << "UE" << std::endl;
+  std::cout << std::format("Calo V2: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
+  std::cout << std::format("Sum E: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_UE_sum_E_min, m_logging.m_UE_sum_E_max);
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Events" << std::endl;
@@ -1183,13 +1078,6 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
     project_and_write("h3UE_SumE", "yx");
     project_and_write("h3UE_SumE", "xz");
-
-    // Official
-    if (m_do_ep)
-    {
-      project_and_write("h3SEPD_EventPlaneInfo_Psi_2", "yx");
-      project_and_write("h3SEPD_EventPlaneInfo_Psi_3", "yx");
-    }
   }
   output.Close();
 

@@ -122,11 +122,6 @@ f4a.add_argument('-n'
                     , default=0
                     , help='Number of events to analyze. Default: All.')
 
-f4a.add_argument('-e'
-                    , '--do-event-plane'
-                    , action='store_true'
-                    , help='Enable Official Event Plane Reco. Default: False.')
-
 f4a.add_argument('-s'
                     , '--memory', type=float
                     , default=4
@@ -170,7 +165,6 @@ def create_f4a_jobs():
     calib_list = Path(args.calib).resolve()
     dbtag = args.dbtag
     events = args.events
-    do_ep = args.do_event_plane
     output_dir = Path(args.output_dir).resolve()
     log_file  = output_dir / 'log.txt'
     f4a_macro = Path(args.f4a_macro).resolve()
@@ -208,7 +202,6 @@ def create_f4a_jobs():
     logger.info(f'Calib List: {calib_list}')
     logger.info(f'Total DSTs: {total_files}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
-    logger.info(f'Do Event Plane Reco: {do_ep}')
     logger.info(f'DB Tag: {dbtag}')
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Log File: {log_file}')
@@ -246,7 +239,7 @@ def create_f4a_jobs():
     with open(calib_list, mode='r', encoding='utf-8') as file:
         for line in file:
             line = line.strip()
-            run = Path(line).parts[-3]
+            run = Path(line.split(',')[0]).parts[-2]
             logger.info(f'Processing: {line}, run: {run}')
             calib_map[run] = line
 
@@ -293,7 +286,7 @@ def create_f4a_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {f4a_bin} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {dbtag} {int(do_ep)} {output_dir}/output
+        arguments      = {f4a_bin} $(input_dst) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {dbtag} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -303,7 +296,7 @@ def create_f4a_jobs():
     with open(output_dir / 'genFun4All.sub', mode='w', encoding='utf-8') as file:
         file.write(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst,input_calib from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst,input_calib,input_sEPD_BadTowers from jobs.list"'
     logger.info(command)
 
 # ----------------------------

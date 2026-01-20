@@ -5,7 +5,6 @@
 #include "geometry_constants.h"
 
 // -- sPHENIX
-#include <eventplaneinfo/Eventplaneinfo.h>
 #include <fun4all/SubsysReco.h>
 
 // -- c++
@@ -54,19 +53,12 @@ class sEPDValidation : public SubsysReco
     m_condor_mode = condor_mode;
   }
 
-  void set_do_ep(const bool do_ep = true)
-  {
-    m_do_ep = do_ep;
-  }
-
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_MBD(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
   int process_Calo(PHCompositeNode *topNode);
-  void process_CalibQVec(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
-  int process_EventPlane(Eventplaneinfo *epd_S, Eventplaneinfo *epd_N, int order = 2);
   int process_centrality(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
   int process_UE(PHCompositeNode *topNode);
@@ -76,8 +68,6 @@ class sEPDValidation : public SubsysReco
   std::string m_outfile_name{"test.root"};
   std::string m_outtree_name{"tree.root"};
   bool m_condor_mode{false};
-  bool m_do_ep{true};
-  bool m_calib_Q{false};
 
   struct HistConfig
   {
@@ -292,8 +282,6 @@ class sEPDValidation : public SubsysReco
     double m_sepd_total_charge_south_max{0};
     double m_sepd_total_charge_north_min{9999};
     double m_sepd_total_charge_north_max{0};
-    double m_psi_min{9999};
-    double m_psi_max{0};
     double m_jet_pt_min{9999};
     double m_jet_pt_max{0};
     double m_jet_energy_min{9999};
