@@ -7,22 +7,21 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <phhepmc/Fun4AllHepMCInputManager.h>
-#include <fun4all/Fun4AllDstInputManager.h>
-#include <fun4allraw/Fun4AllPrdfInputManager.h>
-#include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
-#include <fun4all/Fun4AllDstOutputManager.h>
+//#include <fun4all/Fun4AllDstInputManager.h>
+//#include <fun4allraw/Fun4AllPrdfInputManager.h>
+//#include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
+//#include <fun4all/Fun4AllDstOutputManager.h>
 #include <phhepmc/Fun4AllHepMCOutputManager.h>
 #include <fun4all/SubsysReco.h>
 #include <phool/PHRandomSeed.h>
 #include <sstream>
 #include <string>
-#include <G4_Global.C>
 #include <algorithm>
 #include <fstream> 
 #include <cmath>
 
 R__LOAD_LIBRARY(libfun4all.so);
-R__LOAD_LIBRARY(libfun4allraw.so);
+//R__LOAD_LIBRARY(libfun4allraw.so);
 R__LOAD_LIBRARY(libHepMCJetTrigger.so);
 R__LOAD_LIBRARY(libffamodules.so);
 R__LOAD_LIBRARY(libffarawmodules.so);
@@ -35,6 +34,7 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 		threshold=std::stof(trig);
 	}
 	catch(std::exception& e){threshold=10.;}
+	std::cout<<"Trying this " <<std::endl;
 	Fun4AllServer* se=Fun4AllServer::instance();
 	std::string outfile=filename;
 	int segment=-1; 

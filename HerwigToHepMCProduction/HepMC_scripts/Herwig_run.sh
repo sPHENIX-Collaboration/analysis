@@ -3,16 +3,15 @@
 goalevents=${2:-'1000'}
 filenumber=${3:-'0'}
 filetag=$(printf "%06d" $filenumber)
-triggervalue=${4:-'0.'}
-photontriggervalue=${5:-'0.'}
+triggervalue=${4:-'0'}
+photontriggervalue=${5:-'0'}
 outfile_name=${6:-' '}
 config_dir=${7:-$(pwd)}
 LHADATA_path=${8:-''}
 LHAPATH_path_path=${9:-''}
-echo $LHAPATH
 source /opt/sphenix/core/bin/sphenix_setup.sh -n ana
-export LHAPDF_DATA_PATH=$hold_path
-export LHAPATH=$hold_path_path
+export LHAPDF_DATA_PATH=$LHADATA_path
+export LHAPATH=$LHAPATH_path_path
 seedn=$RANDOM
 #echo $seedn
 run_events=$goalevents
@@ -35,7 +34,7 @@ if [[ $triggervalue -gt -0 ]]; then
 	if [[ $filenumber = 0 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
-	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents $run_events $seg0
+	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
 	rm $outfile_name
 fi
 if [[ $photontriggervalue -gt -0 ]]; then 
