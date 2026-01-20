@@ -26,7 +26,7 @@ make_condor_jobs()
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/Herwig_run.sh" >> $condor_file
-		echo "${blanklines[2]}"$configfile $density $j $triggervalue $photontrigger "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype"/Herwig_"$triggertype $LHAPATH>> $condor_file
+		echo "${blanklines[2]}"$configfile $density $j $triggervalue $photontrigger "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype"/Herwig_"$triggertype $configdir $LHAPDF_DATA_PATH $LHAPATH>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file

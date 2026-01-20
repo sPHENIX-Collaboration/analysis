@@ -6,10 +6,10 @@ filetag=$(printf "%06d" $filenumber)
 triggervalue=${4:-'0.'}
 photontriggervalue=${5:-'0.'}
 outfile_name=${6:-' '}
-config_dir=${7:-'$(pwd)'}
-hold_path=$config_dir
-#${LHAPDF_DATA_PATH}
-hold_path_path=${LHAPATH}
+config_dir=${7:-$(pwd)}
+LHADATA_path=${8:-''}
+LHAPATH_path_path=${9:-''}
+echo $LHAPATH
 source /opt/sphenix/core/bin/sphenix_setup.sh -n ana
 export LHAPDF_DATA_PATH=$hold_path
 export LHAPATH=$hold_path_path
@@ -35,7 +35,7 @@ if [[ $triggervalue -gt -0 ]]; then
 	if [[ $filenumber = 0 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
-	${config_dir}/../RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents $run_events $seg0
+	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents $run_events $seg0
 	rm $outfile_name
 fi
 if [[ $photontriggervalue -gt -0 ]]; then 
@@ -43,7 +43,7 @@ if [[ $photontriggervalue -gt -0 ]]; then
 	if [[ $filenumber = 0 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
-	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0
+	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0
 	rm $outfile_name
 fi
  
