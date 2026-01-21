@@ -100,6 +100,11 @@ int EventSkip::process_event([[maybe_unused]] PHCompositeNode* topNode)
 
   int m_globalEvent = eventInfo->get_EvtSequence();
 
+  if (Verbosity())
+  {
+    std::cout << std::format("Global: {}\n", m_globalEvent);
+  }
+
   if (m_event <= m_nSkip || m_globalEvent < m_event_id)
   {
     if (m_event % 100 == 0 || (m_nSkip && std::abs(m_event - m_nSkip) < 20) || (m_event_id && std::abs(m_globalEvent - m_event_id) < 20))

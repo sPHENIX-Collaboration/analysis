@@ -106,6 +106,7 @@ void Fun4All_sEPD(const std::string &fname,
   std::unique_ptr<EventSkip> evtSkip = std::make_unique<EventSkip>();
   evtSkip->set_skip(nSkip);
   evtSkip->set_event_id(event_id);
+  evtSkip->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(evtSkip.release());
 
   // MBD Reconstruction
@@ -167,22 +168,22 @@ void Fun4All_sEPD(const std::string &fname,
 
   // Jet Reco
   // Enable::HIJETS_VERBOSITY = 10;
-  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 3;
+  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 4;
   HIJetReco();
 
-  std::unique_ptr<BeamBackgroundFilterAndQA> filter = std::make_unique<BeamBackgroundFilterAndQA>("BeamBackgroundFilterAndQA");
-  filter->Verbosity(Fun4AllBase::VERBOSITY_SOME);
-  filter->SetConfig({.debug = false,
-                     .doQA = false,
-                     .doEvtAbort = false,
-                     .filtersToApply = {"StreakSideband"},
-                     .null = {},
-                     .sideband = {}});
+  // std::unique_ptr<BeamBackgroundFilterAndQA> filter = std::make_unique<BeamBackgroundFilterAndQA>("BeamBackgroundFilterAndQA");
+  // filter->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  // filter->SetConfig({.debug = false,
+  //                    .doQA = false,
+  //                    .doEvtAbort = false,
+  //                    .filtersToApply = {"StreakSideband"},
+  //                    .null = {},
+  //                    .sideband = {}});
   // se->registerSubsystem(filter.release());
 
-  std::unique_ptr<JetBackgroundCut> jocl = std::make_unique<JetBackgroundCut>("AntiKt_Tower_r02_Sub1");
-  jocl->set_input_cemc_tower_node("TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
-  jocl->set_input_ohcal_tower_node("TOWERINFO_CALIB_HCALOUT_SUB1");
+  // std::unique_ptr<JetBackgroundCut> jocl = std::make_unique<JetBackgroundCut>("AntiKt_Tower_r02_Sub1");
+  // jocl->set_input_cemc_tower_node("TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+  // jocl->set_input_ohcal_tower_node("TOWERINFO_CALIB_HCALOUT_SUB1");
   // se->registerSubsystem(jocl.release());
 
   // sEPD QA
