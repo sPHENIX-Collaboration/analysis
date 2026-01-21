@@ -176,6 +176,7 @@ int analyze(int rn, int nseg, int clt)
   //TH1D* zhist;
   bool gothist = false;
   float nmbdc = 0;
+  float nocorN = 0;
   float nblair = 0;
   float ttseg = 0;
   int fillnum = get_fillnum(rn);
@@ -291,6 +292,7 @@ int analyze(int rn, int nseg, int clt)
 	  pSum += pow(-log(1-rM/rB),k) / factorial(k-1); //sum probability * number of collisions for rate
 	}
       //cout << endl;
+      float ncorrseg = 0;
       for(int j=0; j<64; ++j)
 	{
 	  for(int k=0; k<6; ++k)
@@ -304,21 +306,25 @@ int analyze(int rn, int nseg, int clt)
 	  if(j==10)
 	    {
 	      nmbdc += tSeg * (rB-rM) * pSum; //N_{coll} for trigger 10
+	      ncorrseg = tSeg * (rB-rM) * pSum;
+	      
 	      nblair += (seghiraw[j]-segloraw[j])*(1-log(1-rM/rB));
 	    }
 	}
       //cout << i << " " << sumgoodscaled[10] << " " << sumgoodscaled[18] << endl;
+      /*
       if(i%10 == 0)
 	{
 	  cout << "Segment " << i << " " << tSeg << " " << (rB - rM) << " " << pSum << " " << seghiraw[10] - segloraw[10] << endl;
 	}
-      //cout << "Run " << rn << " Segment " << i << " time: " << tSeg << " beam rate: " << rB << " bunches: " << nBunch <<" MBD live rate: " << rM << " Sum(n*p(n)): " << pSum << " lambda: " << -log(1-rM/rB) << endl
+      */
+      cout << "Run " << rn << " Segment " << i << " time: " << tSeg << " beam rate: " << rB << " bunches: " << nBunch <<" True collision rate (=MBD Raw * 42/25.2): " << rM << " N_{corrected}: " << ncorrseg << " N_{uncorrected}: " << (42/25.2)*(seghiraw[10]-segloraw[10]) << endl;
       //cout << i << endl;
       file->Close();
       //cout << "closed" << endl;
     }
-      
-  cout << "sumgoodraw / nmbdc " << sumgoodraw[10] << " " << nmbdc << endl;
+  nocorN = 42/25.2 * sumgoodraw[10];
+  cout << "uncorrected / corrected total collisions " << nocorN << " " << nmbdc << endl;
   
   //int totalgood = zhist->Integral();
   for(int i=0; i<64; ++i)
@@ -345,6 +351,7 @@ int analyze(int rn, int nseg, int clt)
   outt->Branch("totembdlive",totembdlive,"totembdlive[5]/D");
   outt->Branch("nevt",&nevt,"nevt/l");
   outt->Branch("nmbdc",&nmbdc,"nmbdc/F");
+  outt->Branch("nocorN",&nocorN,"nocorN/F");
   outt->Branch("nblair",&nblair,"nblair/F");
   outt->Branch("ttseg",&ttseg,"ttseg/F");
   outt->Fill();

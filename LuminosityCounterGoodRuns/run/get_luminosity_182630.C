@@ -89,6 +89,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
       long long unsigned int sumgoodraw[64];
       long long unsigned int sumgoodlive[64];
       float nmbdc;
+      float nocorN;
       float ttseg;
       float nblair;
       TTree* tree = (TTree*)file->Get("outt");
@@ -105,6 +106,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
       tree->SetBranchAddress("sumgoodraw",sumgoodraw);
       tree->SetBranchAddress("tottrigcounts",tottrigcounts);
       tree->SetBranchAddress("nmbdc",&nmbdc);
+      tree->SetBranchAddress("nocorN",&nocorN);
       tree->SetBranchAddress("ttseg",&ttseg);
       tree->SetBranchAddress("nblair",&nblair);
       tree->GetEntry(0);
@@ -140,9 +142,9 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 	}
       */
       //cout << rnstr << " " << ((double)tottrigcounts[zsel][10])*avgPS[10]/avgPS[trigger] << endl;
-      if(nmbdc/((double)sumgoodraw[10]) < 1)
+      if(nmbdc/((double)nocorN) < 1)
 	{
-	  cerr << rnstr << " " << nmbdc << " " << sumgoodraw[10] << " " << nmbdc / (double)sumgoodraw[10] << endl;
+	  cerr << rnstr << " " << nmbdc << " " << nocorN << " " << nmbdc / (double)nocorN << endl;
 	  continue;
 	}
       cout << rnstr;
@@ -155,9 +157,9 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 	  if(avgPS[trigger] > 0 && !isnan(avgPS[trigger]) && !isnan(avgPS[10]) && !isnan((tottrigcounts[zsel][10])) && !isinf(avgPS[10]) && !isinf(avgPS[trigger]) && !isinf((tottrigcounts[zsel][10])) && avgPS[10] > 0)
 	    {
 	      
-	      float clumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nmbdc/((double)sumgoodraw[10])))))/avgPS[trigger]/(mbsig*1e9);
+	      float clumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nmbdc/((double)nocorN)))))/avgPS[trigger]/(mbsig*1e9);
 	      float uclumiseg = (tottrigcounts[zsel][10])*((double)avgPS[10])/avgPS[trigger]/(mbsig*1e9);//((double)(trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10]))*avgPS[10]/avgPS[trigger]/(mbdsig*1e9;
-	      float blumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nblair/((double)sumgoodraw[10]))-1)/2)+1)/avgPS[trigger]/(mbsig*1e9);
+	      float blumiseg = (tottrigcounts[zsel][10])*avgPS[10]*((((nblair/((double)nocorN))-1)/2)+1)/avgPS[trigger]/(mbsig*1e9);
 	      uclumi[i] += uclumiseg;
 	      lumi[i] += clumiseg;
 	      cout << " " << fixed << setprecision(7) << clumiseg << " " << uclumiseg;// << " " << blumiseg ;

@@ -31,9 +31,10 @@ for i in {1..20}; do
     if [ -z "${DSTFILE}" ]; then
 	exit 0
     fi
-    FULLPATH=`psql FileCatalog -t -c "select full_file_path from files where lfn = '${DSTFILE}';"`
-    echo $FULLPATH
-    cp $FULLPATH ./$DSTFILE
+    #FULLPATH=`psql FileCatalog -t -c "select full_file_path from files where lfn = '${DSTFILE}';"`
+    #echo $FULLPATH
+    #cp $FULLPATH ./$DSTFILE
+    getinputfiles.pl $DSTFILE
     ls -larth
     mv $DSTFILE ./dsts/$2/${2}_${UPLN}.root
     root -b -q -l 'run_earlydata_2.C('${UPLN}',0,'${2}','${3}')'

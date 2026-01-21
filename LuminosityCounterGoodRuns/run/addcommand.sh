@@ -6,9 +6,9 @@ export HOME=/sphenix/u/jocl
 
 #rm anaoutput.txt
 #rm -rf srces
-#for rn in `tail -n 24 fullgoodrunlist.list | head -n 19`; do #op5mrad.list`; do #`cat fullgoodrunlist.list`; do
+#for rn in `tail -n 24 listrunnumber.txt | head -n 19`; do #op5mrad.list`; do #`cat listrunnumber.txt`; do
 line=$(( $1 + 1 ))
-rn=`head -n $line fullgoodrunlist.list | tail -n 1`
+rn=`head -n $line listrunnumber.txt | tail -n 1`
     #mkdir -p srces
 
     #for file in `ls -v /sphenix/tg/tg01/jets/${UN}/trigcount/${rn}/*`; do
@@ -20,6 +20,6 @@ nfile=`ls /sphenix/user/jocl/projects/trigcount_files/${rn}/*clt* | wc -l`
 
 root -b -q -l "analyze.C(${rn},${nfile},1)" #>> anaoutput.txt
 
-mv triggeroutput_nblair_${rn}_clt.root output/added_nblair/
+mv triggeroutput_nblair_${rn}_clt.root output/added_509/
     #rm -rf srces
 #done
