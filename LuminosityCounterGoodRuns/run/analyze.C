@@ -180,11 +180,15 @@ int analyze(int rn, int nseg, int clt)
   float nblair = 0;
   float ttseg = 0;
   int fillnum = get_fillnum(rn);
+  TFile* ingraph = TFile::Open("mbd_to_col_map.root");
+  TGraph* mbdcolmap = (TGraph*)ingraph->Get("Graph");
+  mbdcolmap->SetBit(TGraph::kIsSortedX);
   for(int i=1; i<nseg+1; ++i)
     {
       //cout << "start" << endl;
       //cout << "test1" << endl;
       TFile* file = TFile::Open(("/sphenix/user/jocl/projects/trigcount_files/"+to_string(rn)+"/triggercounter_5z_"+to_string(rn)+"_"+to_string(i)+(clt?"_clt":"")+".root").c_str());
+
       //cout << "test2" << endl;
       //cout << "gettree" << endl;
       TTree* tree = (TTree*)file->Get("_tree");
@@ -277,7 +281,8 @@ int analyze(int rn, int nseg, int clt)
 	}
       float avgTot[64] = {0};
       float rB = nBunch*78.2e3; //nBunch obtained from CAD tarball provided by Kin Yip
-      float rM = (seghiraw[10]-segloraw[10])/tSeg*(42/25.2); //tSeg from BCO difference between start and end of segment * beam clock (9.4 MHz) multiplied by MBD efficiency (mbd cross section / pp inel xsec).
+      float rM = (seghiraw[10]-segloraw[10])/tSeg; //tSeg from BCO difference between start and end of segment * beam clock (9.4 MHz).
+      rM = mbdcolmap->Eval(rM);
       if(rM > rB)
 	{
 	  cout << "rM > rB!! " << rB << " " << rM << " " << tSeg << endl;
@@ -318,12 +323,12 @@ int analyze(int rn, int nseg, int clt)
 	  cout << "Segment " << i << " " << tSeg << " " << (rB - rM) << " " << pSum << " " << seghiraw[10] - segloraw[10] << endl;
 	}
       */
-      cout << "Run " << rn << " Segment " << i << " time: " << tSeg << " beam rate: " << rB << " bunches: " << nBunch <<" True collision rate (=MBD Raw * 42/25.2): " << rM << " N_{corrected}: " << ncorrseg << " N_{uncorrected}: " << (42/25.2)*(seghiraw[10]-segloraw[10]) << endl;
+      cout << "Run " << rn << " Segment " << i << " time: " << tSeg << " beam rate: " << rB << " bunches: " << nBunch <<" True collision rate: " << rM << " N_{corrected}: " << ncorrseg << " N_{uncorrected}: " << rM*tSeg << " ???: " << (seghiraw[10]-segloraw[10])*42/25.2 << endl;
       //cout << i << endl;
+      nocorN += tSeg*rM;
       file->Close();
       //cout << "closed" << endl;
     }
-  nocorN = 42/25.2 * sumgoodraw[10];
   cout << "uncorrected / corrected total collisions " << nocorN << " " << nmbdc << endl;
   
   //int totalgood = zhist->Integral();
