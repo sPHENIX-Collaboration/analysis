@@ -7,7 +7,7 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <phhepmc/Fun4AllHepMCInputManager.h>
-//#include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllDstInputManager.h>
 //#include <fun4allraw/Fun4AllPrdfInputManager.h>
 //#include <fun4allraw/Fun4AllPrdfInputPoolManager.h>
 //#include <fun4all/Fun4AllDstOutputManager.h>
@@ -23,6 +23,7 @@
 R__LOAD_LIBRARY(libfun4all.so);
 //R__LOAD_LIBRARY(libfun4allraw.so);
 R__LOAD_LIBRARY(libHepMCJetTrigger.so);
+R__LOAD_LIBRARY(libHepMCParticleTrigger.so);
 R__LOAD_LIBRARY(libffamodules.so);
 R__LOAD_LIBRARY(libffarawmodules.so);
 R__LOAD_LIBRARY(libphhepmc.so);
@@ -51,7 +52,7 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 	HepMCJetTrigger* hf=new HepMCJetTrigger(threshold, goal_event_number, true);
 	HepMCParticleTrigger* part = new HepMCParticleTrigger(threshold, goal_event_number, true);
 	if(trigger_type.find("photon") !=std::string::npos){
-		part->AddParticles(22);
+		part->AddParticle(22);
 	}
 	se->registerInputManager(in);
 	in->fileopen(filename);
@@ -60,9 +61,19 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 	if(trigger_type.find("photon") != std::string::npos) se->registerSubsystem(part);
 	se->run();
  	se->End();
-	if(trigger_type.find("jet") != std::string::npos ) std::cout<<"Ran over " <<hf->n_evts <<" and found " <<hf->n_good <<" events" <<std::endl;
-	if(trigger_type.find("photon") != std::string::npos ) std::cout<<"Ran over " <<part->n_evts<<" and found " <<part->n_good <<" events" <<std::endl;
-	if(segment == 0 ) {
+	int n_good, n_evts;
+
+	if(trigger_type.find("jet") != std::string::npos ){
+		n_evts = hf->getNevts();
+		n_good=hf->getNgood();
+	}
+
+	if(trigger_type.find("photon") != std::string::npos ){
+		n_evts = part->getNevts();
+		n_good=part->getNgood();
+	}
+	std::cout<<"Analyzed events = " <<n_evts <<"\n Good events= " <<n_good <<std::endl;
+	if(segment < 20 ) {
 		std::fstream f;
 		f.open(xs_file);
 		float xs_value = 0.;
@@ -79,24 +90,27 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 					if(subline.find(")e")!=std::string::npos)
 					{
 						auto left_par = subline.find("(");
-						xs_val=std::stof(subline.substr(0, left_par-1));
+						xs_value=std::stof(subline.substr(0, left_par-1));
 						auto pow_e = subline.find("e");
 						xs_pow=std::stof(subline.substr(pow_e+2));
 					}
 				}
 			}
 		}
-		float xs=0.;
-		if(trigger_type.find("jets") != std::string::npos) xs = xs_value * std::pow(10, xs_pow) * ((float)hf->n_good)/((float)hf->n_evts*(float)nGen);
-		if(trigger_type.find("photon") != std::string::npos) xs = xs_value * std::pow(10, xs_pow) * ((float)part->n_good)/((float)part->n_evts*(float)nGen);
+		float xs = xs_value * std::pow(10, xs_pow) * ((float)n_good)/((float)n_evts*(float)nGen);
 		f.close();
-		std::fstream of;
-		std::string xs_of="Cross_Section_"+trigger_type+trig+".txt";
+		std::ofstream of;
+		std::string xs_of="/sphenix/user/sgross/cross_section_data/Cross_Section_"+trigger_type+trig+"_"+std::to_string(segment)+".txt";
 		of.open(xs_of.c_str());
-		if(trigger_type.find("jets") != std::string::npos) of<<"Events analyzed= " <<hf->n_evts <<", Events passing filter= " <<hf->n_good <<", Total Generated events= " <<nGen <<", XS/N= "<<xs<<std::endl;
-		if(trigger_type.find("photons") != std::string::npos) of<<"Events analyzed= " <<part->n_evts <<", Events passing filter= " <<part->n_good <<", Total Generated events= " <<nGen <<", XS/N= "<<xs <<std::endl;
+		if(!of.good()) std::cout<<"failed to open file" <<std::endl;
+		if(of.good())
+			of<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
+			<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
+		else 
+			std::cout<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
+			<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
 		of.close();
-
+		std::cout<<"Cross section / Evt = " <<xs<<std::endl;
 	}
 	
 	return 0;
