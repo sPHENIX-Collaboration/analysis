@@ -65,7 +65,7 @@ if __name__ == '__main__':
             replacetext('Fun4All_Intt_Combiner.C', 'bool stripRawHit = false', 'bool stripRawHit = true')
         
         cmdlist = ['chmod 755 intt_makelist.sh',
-                   'intt_makelist.sh {}'.format(config.runnumber), 
+                   'intt_makelist.sh beam {}'.format(config.runnumber), 
                    'root -l -b -q Fun4All_Intt_Combiner.C\({}\)'.format(config.inttdstproduction_InttUnpacker_nEvt)] 
 
         cmdstr = ' && '.join(cmdlist)

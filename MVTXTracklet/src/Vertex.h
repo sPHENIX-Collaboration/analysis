@@ -523,8 +523,8 @@ std::tuple<vector<float>, int, TH2F *, TH2F *, vector<TLine *>, vector<TLine *>,
             // calculate the distance of closest approach from the line to (0,0)
             float d = fabs(b) / sqrt(1 + m * m);
 
-            if (d > 0.3)
-                continue;
+            // if (d > 0.3)
+            //     continue;
 
             // for debugging - print out the z and rho of the clusters and the extrpolated z position
             // cout << "layer1[i]->posZ() = " << layer1[i]->posZ() << ", layer1[i]->rho() = " << layer1[i]->rho() << ", layer2[j]->posZ() = " << layer2[j]->posZ() << ", layer2[j]->rho() = " << layer2[j]->rho() << ", z = " << z << endl;

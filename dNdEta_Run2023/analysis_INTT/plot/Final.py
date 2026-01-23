@@ -4,7 +4,7 @@ import sys
 import os
 import datetime
 from array import *
-from ROOT import TH1F, TH2F, TFile, TCanvas, TPad, gPad, TLegend, TColor, gROOT, TGraphErrors, TGraphAsymmErrors, TGaxis, kHAlignLeft, kVAlignTop, kHAlignRight, kVAlignBottom
+from ROOT import TH1F, TH2F, TFile, TCanvas, TPad, gPad, TLegend, TColor, gROOT, TGraphErrors, TGraphAsymmErrors, TGaxis, kHAlignLeft, kVAlignTop, kHAlignRight, kVAlignBottom, gStyle
 import numpy
 import math
 import glob
@@ -291,8 +291,8 @@ def combine_RHIC():
     sphenix_npart, sphenix_nparterr = sphenix_centralitynpart()
     sphnx_data_auau_200gev_combined, sphnx_data_divnpart2_auau_200gev_combined = msrmnt_sphenix_data_auau_200gev('combined')
     
-    # centralitybin_combine = [[0,3], [3,6], [6,10], [10,15], [15,20], [20,25], [25,30], [30,35], [35,40], [40,45], [45,50], [50,55], [55,60], [60,65], [65,70]]
-    centralitybin_combine = [[0,3], [0,5], [3,6], [5,10], [6,10], [10,15], [15,20], [20,25], [25,30], [30,35], [35,40], [40,45], [45,50], [50,55], [55,60], [60,65], [65,70]]
+    centralitybin_combine = [[0,3], [3,6], [6,10], [10,15], [15,20], [20,25], [25,30], [30,35], [35,40], [40,45], [45,50], [50,55], [55,60], [60,65], [65,70]]
+    # centralitybin_combine = [[0,3], [0,5], [3,6], [5,10], [6,10], [10,15], [15,20], [20,25], [25,30], [30,35], [35,40], [40,45], [45,50], [50,55], [55,60], [60,65], [65,70]]
     
     gr_phenix_auau_0p2 = phenix_auau_0p2()
     phenix_dndeta, phenix_dndeta_err = [], []
@@ -416,12 +416,13 @@ def dNdeta_eta0_Summary(docombine, jsonpath, canvname, axisrange = [-1, 71, 20, 
     gframe = TH1F('gframe_' + canvname, 'gframe_' + canvname, 1, xmin, xmax)
     gframe.SetLabelOffset(999, 'X')
     gframe.SetTickLength(0, 'X')
+    # gframe.GetXaxis().SetAxisColor(0)  # <- hide the underlying axis line
     gframe.GetXaxis().SetTitle('Centrality [%]')
     gframe.GetYaxis().SetTitle('#LT#frac{dN_{ch}}{d#eta}#GT')
     gframe.GetYaxis().SetMoreLogLabels()
     gframe.GetYaxis().SetTitleOffset(2.1)
     gframe.SetAxisRange(ymin, ymax, 'Y')
-    gframe.Draw()
+    gframe.Draw("AXIS")
     # Create and draw the x-axis on top
     axis = TGaxis(xmax, ymin, xmin, ymin, xmin, xmax, 511, '-')
     axis.SetLabelOffset(-0.032)
@@ -433,6 +434,8 @@ def dNdeta_eta0_Summary(docombine, jsonpath, canvname, axisrange = [-1, 71, 20, 
     axisup = TGaxis(xmax, ymax, xmin, ymax, xmin, xmax, 511, '+')
     axisup.SetLabelOffset(1)
     axisup.Draw()
+
+    gPad.RedrawAxis()
     # Create the legend for the TGraphs
     # gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
     # gr_leg = TLegend(gPad.GetLeftMargin()+0.05, (1 - TopMargin) - 0.35, gPad.GetLeftMargin()+0.35, (1 - TopMargin) - 0.18)
@@ -506,7 +509,7 @@ def dNdeta_eta0_divnpart2_Summary(docombine, rhiccombine, plotstyle, jsonpath, c
     gframe.GetYaxis().SetTitleOffset(1.55)
     gframe.GetXaxis().SetRangeUser(axisrange[0], axisrange[1])
     gframe.SetAxisRange(axisrange[2], axisrange[3], 'Y')
-    gframe.Draw()
+    gframe.Draw("AXIS")
     # Create the legend for the TGraphs
     # gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
     # gr_leg = TLegend(gPad.GetLeftMargin(), 1 - gPad.GetTopMargin() + 0.02, gPad.GetLeftMargin() + 0.72, 0.97)
@@ -602,6 +605,9 @@ def dNdeta_eta0_divnpart2_Summary(docombine, rhiccombine, plotstyle, jsonpath, c
     gr_leg.Draw()    
     if rhiccombine:
         leg_generator.Draw()
+
+    if (rhiccombine):
+        prelimtext = 'Internal'
     
     sphnxleg = TLegend(gPad.GetLeftMargin()+0.05, (1 - TopMargin) - 0.18, gPad.GetLeftMargin()+0.1, (1 - TopMargin) - 0.06)
     sphnxleg.SetTextAlign(kHAlignLeft + kVAlignTop)
@@ -626,6 +632,153 @@ def dNdeta_eta0_divnpart2_Summary(docombine, rhiccombine, plotstyle, jsonpath, c
             c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_rhiccombine_style{}.pdf'.format(canvname, plotstyle))
 
 
+def dNdeta_eta0_divnpart2_Summary_square(docombine, rhiccombine, plotstyle, jsonpath, canvname, axisrange = [0, 400, 1.49, 4.71], canvsize = [800, 800], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext=''):
+    # plotstyle:
+    # 1 - all measurements and theories comparison
+    # 2 - only measurement comparison
+    # 3 - only sPHENIX measurement and theories
+    
+    xmin = axisrange[0]
+    xmax = axisrange[1]
+    ymin = axisrange[2]
+    ymax = axisrange[3]
+    # Create a canvas
+    c = TCanvas('c_'+canvname, 'c_'+canvname, canvsize[0], canvsize[1])
+    c.cd()
+    # Set left margin and logarithmic y-axis
+    gPad.SetTopMargin(TopMargin)
+    gPad.SetLeftMargin(LeftMargin - 0.03)
+    gPad.SetLogy(0)
+    # Create a frame for the graph
+    gframe = TH1F('gframe_' + canvname, 'gframe_' + canvname, 1, axisrange[0], axisrange[1])
+    # gframe.GetXaxis().SetTitle('#LTN_{part}#GT')
+    gframe.GetXaxis().SetTitle('N_{part}')
+    gframe.GetYaxis().SetTitle('#LT#frac{dN_{ch}}{d#eta}#GT/(#LTN_{part}#GT/2)')
+    gframe.GetYaxis().SetTitleOffset(1.55)
+    gframe.GetXaxis().SetRangeUser(axisrange[0], axisrange[1])
+    gframe.SetAxisRange(axisrange[2], axisrange[3], 'Y')
+    gframe.Draw("AXIS")
+    # Create the legend for the TGraphs
+    # gr_leg = TLegend(grlegpos[0], grlegpos[1], grlegpos[2], grlegpos[3])
+    # gr_leg = TLegend(gPad.GetLeftMargin(), 1 - gPad.GetTopMargin() + 0.02, gPad.GetLeftMargin() + 0.72, 0.97)
+    
+    grleg_x1 = 1 - gPad.GetRightMargin() - 0.43
+    grleg_y1 = gPad.GetBottomMargin() + 0.05 # default for non-RHIC combine
+    grleg_x2 = 1 - gPad.GetRightMargin() - 0.04 # default for non-RHIC combine
+    grleg_y2 = gPad.GetBottomMargin() + 0.24 # default for non-RHIC combine
+    if rhiccombine:
+        grleg_x1 = 1 - gPad.GetRightMargin() - 0.55
+        grleg_y1 = gPad.GetBottomMargin() + 0.08 
+        grleg_x2 = 1 - gPad.GetRightMargin() - 0.12
+        grleg_y2 = gPad.GetBottomMargin() + 0.24
+    else:
+        if plotstyle == 1:
+            grleg_x1 = 1 - gPad.GetRightMargin() - 0.5
+            grleg_y1 = gPad.GetBottomMargin() + 0.05
+            grleg_x2 = 1 - gPad.GetRightMargin() - 0.04
+            grleg_y2 = gPad.GetBottomMargin() + 0.24
+        elif plotstyle == 2: # only measurement comparison
+            grleg_x1 = 1 - gPad.GetRightMargin() - 0.31
+            grleg_y1 = gPad.GetBottomMargin() + 0.05 
+            grleg_x2 = 1 - gPad.GetRightMargin() - 0.1
+            grleg_y2 = gPad.GetBottomMargin() + 0.24 
+        elif plotstyle == 3: 
+            grleg_x1 = 1 - gPad.GetRightMargin() - 0.31
+            grleg_y1 = gPad.GetBottomMargin() + 0.05
+            grleg_x2 = 1 - gPad.GetRightMargin() - 0.1
+            grleg_y2 = gPad.GetBottomMargin() + 0.24
+        else:
+            print ('Error: Invalid plotstyle provided. Must be 1, 2, or 3. Using default grleg_x1.')
+            grleg_x1 = 1 - gPad.GetRightMargin() - 0.43
+            grleg_y1 = gPad.GetBottomMargin() + 0.05
+            grleg_x2 = 1 - gPad.GetRightMargin() - 0.04
+            grleg_y2 = gPad.GetBottomMargin() + 0.24
+
+    
+    gr_leg = TLegend(grleg_x1, grleg_y1, grleg_x2, grleg_y2)
+    gr_leg.SetNColumns(2) if plotstyle == 1 else gr_leg.SetNColumns(1)
+    gr_leg.SetTextSize(0.033)
+    gr_leg.SetFillStyle(0)
+    
+    leg_generator = TLegend(1 - gPad.GetRightMargin() - 0.545, 
+                            gPad.GetBottomMargin() + 0.03, 
+                            1 - gPad.GetRightMargin() - 0.02,
+                            gPad.GetBottomMargin() + 0.08)
+    leg_generator.SetNColumns(3)
+    leg_generator.SetTextSize(0.033)
+    leg_generator.SetFillStyle(0)
+        
+    print ('-----------------------------------------------')   
+    # Load measurement dictionaries
+    dict_msrmnt= msrmnt_dict()
+    # Load the json file
+    with open(jsonpath, 'r') as fp:
+        grtags = json.load(fp)
+        for tagName, par in grtags.items():     
+            if docombine:
+                if 'phobosapp' in tagName or 'cmsapp' in tagName:
+                    continue
+            else:
+                if 'combined' in tagName:
+                    continue
+                
+            if plotstyle == 2: # only measurement comparison
+                if 'rawhijing' in tagName or 'rawepos' in tagName or 'rawampt' in tagName or 'empty' in tagName:
+                    continue
+            
+            if plotstyle == 3: # only sPHENIX measurement and theories
+                print (tagName)
+                if tagName.startswith('phenix_') or tagName.startswith('brahms_') or tagName.startswith('phobos_') or 'empty' in tagName:
+                    continue
+            
+            # print (tagName)
+                
+            gr = dict_msrmnt[tagName]
+            gstyle(gr, par['markerstyle'], par['markersize'], TColor.GetColor(par['markercolor']), par['linestyle'], par['linewidth'], par['alpha'])
+            gr.Draw(par['DrawOption'][0])
+            if par['DrawOption'][1] != '':
+                gr.Draw(par['DrawOption'][1])
+                
+            # add legend if par['Legendtext'] does not contain 'redraw'
+            if not rhiccombine:
+                if ('redraw' not in tagName):
+                    gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
+            else:
+                if ('redraw' not in tagName and 'rawhijing' not in tagName and 'rawepos' not in tagName and 'rawampt' not in tagName):
+                    gr_leg.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
+                
+                if ('rawhijing' in tagName or 'rawepos' in tagName or 'rawampt' in tagName):
+                    leg_generator.AddEntry(gr, par['Legendtext'], par['Legendstyle'])
+
+    gr_leg.Draw()    
+    if rhiccombine:
+        leg_generator.Draw()
+    
+    if (rhiccombine):
+        prelimtext = 'Internal'
+
+    sphnxleg = TLegend(gPad.GetLeftMargin()+0.05, (1 - TopMargin) - 0.18, gPad.GetLeftMargin()+0.1, (1 - TopMargin) - 0.06)
+    sphnxleg.SetTextAlign(kHAlignLeft + kVAlignTop)
+    sphnxleg.SetTextSize(0.045)
+    sphnxleg.SetFillStyle(0)
+    sphnxleg.AddEntry('', '#it{#bf{sPHENIX}} ' + prelimtext, '')
+    sphnxleg.AddEntry('', 'Au+Au #sqrt{s_{NN}}=200 GeV', '')
+    sphnxleg.Draw()
+    if (docombine):
+        if not rhiccombine:
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine_style{}_square.png'.format(canvname, plotstyle))
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine_style{}_square.pdf'.format(canvname, plotstyle))
+        else:
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine_rhiccombine_style{}_square.png'.format(canvname, plotstyle))
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_combine_rhiccombine_style{}_square.pdf'.format(canvname, plotstyle))
+    else:
+        if not rhiccombine:
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_style{}_square.png'.format(canvname, plotstyle))
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_style{}_square.pdf'.format(canvname, plotstyle))
+        else:
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_rhiccombine_style{}_square.png'.format(canvname, plotstyle))
+            c.SaveAs(plotpath + 'dNdEta_eta0_divnpart2_{}_rhiccombine_style{}_square.pdf'.format(canvname, plotstyle))
+
 if __name__ == '__main__':
     parser = OptionParser(usage='usage: %prog ver [options -h]')
     parser.add_option('--combine', action='store_true', dest='combine', default=False, help='Combine two analyses')
@@ -643,6 +796,8 @@ if __name__ == '__main__':
     dNdeta_eta0_divnpart2_Summary(combine, False, 2, './measurements/RHIC_dndetadivnpart2_plotparam.json', 'RHIC')
     dNdeta_eta0_divnpart2_Summary(combine, False, 3, './measurements/RHIC_dndetadivnpart2_plotparam.json', 'RHIC')
     dNdeta_eta0_divnpart2_Summary(combine, True, 1, './measurements/RHIC_combine_dndetadivnpart2_plotparam.json', 'RHIC')
+    # dNdeta_eta0_divnpart2_Summary(docombine, rhiccombine, plotstyle, jsonpath, canvname, axisrange = [0, 400, 1.49, 4.71], canvsize = [800, 600], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext=''):
+    dNdeta_eta0_divnpart2_Summary_square(combine, False, 1, './measurements/RHIC_dndetadivnpart2_plotparam.json', 'RHIC', axisrange = [0, 400, 1.49, 4.71], canvsize = [800, 800], grlegpos = [0.35, 0.18, 0.9, 0.45], prelimtext='')
     
     combine_RHIC()
     
