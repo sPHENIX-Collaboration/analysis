@@ -14,7 +14,7 @@ void quickdraw_centralitysim()
     std::vector<std::string> filelist;
     for (int i = 0; i < 5000; i++)
     {
-        std::string fname = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Sim_AMPT_MDC2_ana472_20250310/ntuple_" + std::string(TString::Format("%05d", i).Data()) + ".root";
+        std::string fname = "/sphenix/tg/tg01/hf/hjheng/ppg02/dst/Sim_HIJING_MDC2_ana472_20250307/ntuple_" + std::string(TString::Format("%05d", i).Data()) + ".root";
         
         // Check if file exists and is valid
         TFile *f = TFile::Open(fname.c_str());
@@ -44,16 +44,20 @@ void quickdraw_centralitysim()
     auto hM_MBDcentrality_wocut = df.Histo1D({"hM_MBDcentrality_wocut", "hM_MBDcentrality_wocut", 102, -1.5, 100.5}, "MBD_centrality");
     auto hM_MBDcentrality_isMinBias = df.Filter("is_min_bias").Histo1D({"hM_MBDcentrality_isMinBias", "hM_MBDcentrality_isMinBias", 102, -1.5, 100.5}, "MBD_centrality");
     auto hM_Npart_isMinBias = df.Filter("is_min_bias").Histo1D({"hM_Npart_isMinBias", "hM_Npart_isMinBias", 401, -0.5, 400.5}, "npart");
+    auto hM_Ncoll_isMinBias = df.Filter("is_min_bias").Histo1D({"hM_Ncoll_isMinBias", "hM_Ncoll_isMinBias", 1301, -0.5, 1300.5}, "ncoll");
     std::vector<float> centralitybins = {0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
-    // histogram for npart in all centrality intervals, for is_min_bias events
+    // histogram for npart and ncoll in all centrality intervals, for is_min_bias events
     std::vector<ROOT::RDF::RResultPtr<TH1D>> hM_Npart_centralities;
+    std::vector<ROOT::RDF::RResultPtr<TH1D>> hM_Ncoll_centralities;
     for (size_t i = 0; i < centralitybins.size() - 1; i++)
     {
         auto hM = df.Filter(Form("is_min_bias && MBD_centrality >= %f && MBD_centrality < %f", centralitybins[i], centralitybins[i + 1])).Histo1D({Form("hM_Npart_centralities_%zu", i), Form("hM_Npart_centralities_%zu", i), 401, -0.5, 400.5}, "npart");
         hM_Npart_centralities.push_back(hM);
+        auto hM2 = df.Filter(Form("is_min_bias && MBD_centrality >= %f && MBD_centrality < %f", centralitybins[i], centralitybins[i + 1])).Histo1D({Form("hM_Ncoll_centralities_%zu", i), Form("hM_Ncoll_centralities_%zu", i), 1301, -0.5, 1300.5}, "ncoll");
+        hM_Ncoll_centralities.push_back(hM2);
     }
 
-    std::vector<float> meanNpart_centralities;
+    std::vector<float> meanNpart_centralities, meanNcoll_centralities;
     // Draw the histograms
     TCanvas *c = new TCanvas("canvas", "canvas", 800, 600);
     c->cd();
@@ -114,14 +118,49 @@ void quickdraw_centralitysim()
     c->SaveAs(Form("%s/Npart_centralities.pdf", plotdir.c_str()));
     c->SaveAs(Form("%s/Npart_centralities.png", plotdir.c_str()));
 
+    // Draw the histograms for Ncoll
+    c->Clear();
+    gPad->SetTopMargin(0.35);
+    gPad->Modified();
+    gPad->Update();
+    c->SetLogy();
+    hM_Ncoll_isMinBias->GetXaxis()->SetTitle("Number of binary collisions, N_{coll}");
+    hM_Ncoll_isMinBias->GetYaxis()->SetTitle("Counts");
+    hM_Ncoll_isMinBias->GetYaxis()->SetTitleOffset(ytitleoffset);
+    hM_Ncoll_isMinBias->SetLineColor(kBlack);
+    hM_Ncoll_isMinBias->SetLineWidth(2);
+    hM_Ncoll_isMinBias->Draw("hist");
+    for (size_t i = 0; i < hM_Ncoll_centralities.size(); i++)
+    {
+        hM_Ncoll_centralities[i]->SetLineWidth(2);
+        hM_Ncoll_centralities[i]->Draw("plc same");
+    }
+    hM_Ncoll_isMinBias->Draw("hist same");
+    c->RedrawAxis();
+    TLegend *leg2 = new TLegend(gPad->GetLeftMargin(), 1 - gPad->GetTopMargin() + 0.01, 1 - gPad->GetRightMargin(), 0.98);
+    leg2->SetNColumns(2);
+    leg2->SetBorderSize(0);
+    leg2->SetFillStyle(0);
+    leg2->SetTextSize(0.02);
+    for (size_t i = 0; i < hM_Ncoll_centralities.size(); i++)
+    {
+        // get the mean of Ncoll from the histogram
+        float meanNcoll = hM_Ncoll_centralities[i]->GetMean();
+        meanNcoll_centralities.push_back(meanNcoll);
+        leg2->AddEntry(hM_Ncoll_centralities[i].GetPtr(), Form("Centrality [%d-%d]%%, <N_{coll}>=%.1f", (int)centralitybins[i], (int)centralitybins[i + 1], meanNcoll), "l");
+    }
+    leg2->Draw();
+    c->SaveAs(Form("%s/Ncoll_centralities.pdf", plotdir.c_str()));
+    c->SaveAs(Form("%s/Ncoll_centralities.png", plotdir.c_str()));
+
     // print out the centrality bins and the mean Npart in each bin in Latex table format
     std::cout << "Latex code for the table:\n";
     std::cout << "---------------------------------------------------------------------------\n";
     std::cout << "\\begin{table}[ht]\n";
     std::cout << "\\centering\n";
-    std::cout << "\\begin{tabular}{c|c}\n";
+    std::cout << "\\begin{tabular}{c|c|c}\n";
     std::cout << "\\hline\n";
-    std::cout << "Centrality interval [\\%] & $\\langle$\\npart$\\rangle$ \\\\\n";
+    std::cout << "Centrality interval [\\%] & $\\langle$\\npart$\\rangle$ & $\\langle$\\ncoll$\\rangle$ \\\\\n";
     std::cout << "\\hline\n";
 
     for (size_t i = 0; i < centralitybins.size() - 1; ++i)
@@ -130,12 +169,14 @@ void quickdraw_centralitysim()
             continue;
         std::cout << std::fixed << std::setprecision(0) << centralitybins[i] << "-" << centralitybins[i + 1] << " & ";
         print_with_significant_digits(meanNpart_centralities[i]);
+        std::cout << " & ";
+        print_with_significant_digits(meanNcoll_centralities[i]);
         std::cout << " \\\\\n";
     }
 
     std::cout << "\\hline\n";
     std::cout << "\\end{tabular}\n";
-    std::cout << "\\caption{Centrality intervals and corresponding $\\langle$\\npart$\\rangle$ values.}\n";
+    std::cout << "\\caption{Centrality intervals and corresponding $\\langle$\\npart$\\rangle$ and $\\langle$\\ncoll$\\rangle$ values.}\n";
     std::cout << "\\label{tab:centinterval_npart}\n";
     std::cout << "\\end{table}\n";
     std::cout << "---------------------------------------------------------------------------\n";
@@ -155,6 +196,15 @@ void quickdraw_centralitysim()
         if (centralitybins[i] >= 70)
             continue;
         print_with_significant_digits(meanNpart_centralities[i], 6);
+        std::cout << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "Mean Ncoll: " << std::endl;
+    for (size_t i = 0; i < meanNcoll_centralities.size(); ++i)
+    {
+        if (centralitybins[i] >= 70)
+            continue;
+        print_with_significant_digits(meanNcoll_centralities[i], 6);
         std::cout << ", ";
     }
     std::cout << std::endl;

@@ -2,7 +2,7 @@
 
 bool verbose = true;
 
-bool docombine = true;
+bool docombine = false;
 std::string comb_fname = "./systematics/combined/combined.root";
 std::vector<TGraphAsymmErrors *> v_sphenix_dNdeta;
 std::string color_sphenix_combine = "#1A1423";
@@ -149,6 +149,8 @@ void SPHENIX_dNdeta()
 
 void draw_dNdetaRHIC_v3()
 {
+    gStyle->SetFrameBorderMode(0);   // put this near the start of the macro
+
     std::string plotdir = "./dNdEtaFinal";
     system(Form("mkdir -p %s", plotdir.c_str()));
 

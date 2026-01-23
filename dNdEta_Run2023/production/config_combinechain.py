@@ -15,7 +15,7 @@ inttdstproduction_runTrkrHits = True
 inttdstproduction_runTkrkClus = True
 inttdstproduction_stripRawHit = True
 
-inttntupleproduction_productionTag = '2023p011'
+inttntupleproduction_productionTag = 'ProdA_2023'
 inttntupleproduction_InttNtupleDir = 'Data_NtupleIntt_Run{}_HotDead_BCO_ADC_Survey'.format(runnumber)
 inttntupleproduction_eventPerJob = 1000
 inttntupleproduction_nJob = 551
