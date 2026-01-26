@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 namespace myUtils
 {
@@ -38,7 +39,7 @@ namespace myUtils
   std::vector<std::string> split(const std::string& s, char delimiter);
   TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const std::string& name = "fitFunc");
   std::unique_ptr<TChain> setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file);
-  std::map<std::string, std::unique_ptr<TH1>> read_hists(const std::string& file_name, const std::string& tag = "");
+  std::map<std::string, std::unique_ptr<TH1>> read_hists(const std::string& file_name, const std::string& tag = "", std::unordered_set<std::string>* names = nullptr);
 
   template <typename Func>
   concept InvocableWithString = std::invocable<Func, const std::string&>;
@@ -145,62 +146,68 @@ std::unique_ptr<TChain> myUtils::setupTChain(const std::string& input_filepath, 
  * is a std::unique_ptr<TH1> managing the histogram object.
  * Returns an empty map if the file cannot be opened.
  */
-std::map<std::string, std::unique_ptr<TH1>> myUtils::read_hists(const std::string& file_name, const std::string& tag)
+std::map<std::string, std::unique_ptr<TH1>> myUtils::read_hists(const std::string& file_name, const std::string& tag, std::unordered_set<std::string>* names)
 {
-    // This is crucial. It tells ROOT not to automatically add histograms
-    // to the gDirectory (which is usually the TFile). This ensures that
-    // when the TFile is closed, it doesn't delete the histograms,
-    // allowing our std::unique_ptr to manage their lifetime.
-    TH1::AddDirectory(kFALSE);
+  // This is crucial. It tells ROOT not to automatically add histograms
+  // to the gDirectory (which is usually the TFile). This ensures that
+  // when the TFile is closed, it doesn't delete the histograms,
+  // allowing our std::unique_ptr to manage their lifetime.
+  TH1::AddDirectory(kFALSE);
 
-    std::map<std::string, std::unique_ptr<TH1>> hists_map;
+  std::map<std::string, std::unique_ptr<TH1>> hists_map;
 
-    auto file = std::unique_ptr<TFile>(TFile::Open(file_name.c_str()));
+  auto file = std::unique_ptr<TFile>(TFile::Open(file_name.c_str()));
 
-    // Check if the file was opened successfully.
-    if (!file || file->IsZombie())
+  // Check if the file was opened successfully.
+  if (!file || file->IsZombie())
+  {
+    std::cout << std::format("Error: Could not open file '{}'\n", file_name);
+    return {};  // Return an empty map
+  }
+
+  // Get the list of keys (objects) in the file
+  TList* keyList = file->GetListOfKeys();
+  if (!keyList)
+  {
+    std::cout << std::format("Error: Could not get list of keys\n");
+    return {};  // Return an empty map
+  }
+
+  // Use a TIter to loop through the keys
+  TIter next(keyList);
+  TKey* key;
+
+  std::cout << std::format("Reading histograms from {}\n", file_name);
+
+  while ((key = static_cast<TKey*>(next())))
+  {
+    // Get the class of the object from its key
+    TClass* cl = gROOT->GetClass(key->GetClassName());
+
+    // Check if the class inherits from TH1 (base histogram class)
+    if (cl && cl->InheritsFrom("TH1"))
     {
-        std::cout << std::format("Error: Could not open file '{}'\n", file_name);
-        return {}; // Return an empty map
+      std::string name = key->GetName();
+
+      if (names && !names->contains(name))
+      {
+        continue;
+      }
+
+      std::string new_name = name + tag;
+      std::cout << std::format("... Reading Hist: {}\n", name);
+
+      // Read the object, cast it, and emplace it into the map.
+      // The std::unique_ptr takes ownership of the raw pointer.
+      hists_map.emplace(new_name, std::unique_ptr<TH1>(static_cast<TH1*>(file->Get(name.c_str())->Clone(new_name.c_str()))));
     }
+  }
 
-    // Get the list of keys (objects) in the file
-    TList* keyList = file->GetListOfKeys();
-    if (!keyList)
-    {
-        std::cout << std::format("Error: Could not get list of keys\n");
-        return {}; // Return an empty map
-    }
+  // The TFile unique_ptr goes out of scope here and closes the file,
+  // but the histograms remain in memory, managed by the unique_ptrs
+  // in the map we are about to return.
 
-    // Use a TIter to loop through the keys
-    TIter next(keyList);
-    TKey* key;
-
-    std::cout << std::format("Reading histograms from {}\n", file_name);
-
-    while ((key = static_cast<TKey*>(next())))
-    {
-        // Get the class of the object from its key
-        TClass* cl = gROOT->GetClass(key->GetClassName());
-
-        // Check if the class inherits from TH1 (base histogram class)
-        if (cl && cl->InheritsFrom("TH1"))
-        {
-            std::string name = key->GetName();
-            std::string new_name = name + tag;
-            std::cout << std::format("... Reading Hist: {}\n", name);
-
-            // Read the object, cast it, and emplace it into the map.
-            // The std::unique_ptr takes ownership of the raw pointer.
-            hists_map.emplace(new_name, std::unique_ptr<TH1>(static_cast<TH1*>(file->Get(name.c_str())->Clone(new_name.c_str()))));
-        }
-    }
-
-    // The TFile unique_ptr goes out of scope here and closes the file,
-    // but the histograms remain in memory, managed by the unique_ptrs
-    // in the map we are about to return.
-
-    return hists_map;
+  return hists_map;
 }
 
 TFitResultPtr myUtils::doGausFit(TH1* hist, Double_t start, Double_t end, const std::string& name)
