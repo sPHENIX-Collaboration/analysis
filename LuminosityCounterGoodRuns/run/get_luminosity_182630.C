@@ -48,7 +48,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
     }
   const int ntrig = 4;
   float mbsig = 25.2;
-  int upperrun = 53000;
+  int upperrun = 54000;
   int lowerrun = 47200;
   ifstream is(rnlist);
   string rnstr;
@@ -76,7 +76,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 	}
       */
       TFile* file;
-      file = TFile::Open(("output/added_nblair/triggeroutput_nblair_"+rnstr+(clt?"_clt":"")+".root").c_str(),"READ");
+      file = TFile::Open(("output/added_509/triggeroutput_nblair_"+rnstr+(clt?"_clt":"")+".root").c_str(),"READ");
       if(!file)
 	{
 	  cerr << "RN " << rnstr << " not found! Continuing." << endl;
@@ -172,6 +172,7 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
 	  //cout << lumi << " " << (trigger==22?sumgoodscaled[10]:tottrigcounts[zsel][10]) << " " << avgPS[10] << " " << avgPS[trigger] << endl;
 	}
       cout << endl;
+      file->Close();
     }
   /*
   lumi[0] /= ((mbdsig*1e9);
