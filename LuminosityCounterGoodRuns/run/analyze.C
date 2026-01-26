@@ -256,7 +256,7 @@ int analyze(int rn, int nseg, int clt)
 	  cout << "NBunch/rn: " << nBunch << " " << rn << endl;
 	}
       
-      if((rn >= 48863 && rn <= 48867) || (rn <= 51508 && rn >= 51506)) nBunch = 111;
+      if((rn >= 48863 && rn <= 48867) || (rn <= 51508 && rn >= 51506) || rn==52444) nBunch = 111;
       if(i==1)
 	{
 	  for(int j=0; j<64; ++j)
