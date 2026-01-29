@@ -20,7 +20,6 @@
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TH3.h>
 #include <TMath.h>
 #include <TProfile2D.h>
 #include <TTree.h>
@@ -187,7 +186,6 @@ class sEPDValidation : public SubsysReco
     {
       TH1,
       TH2,
-      TH3,
       TProfile,
       TProfile2D
     };

@@ -76,9 +76,6 @@ void sEPDValidation::create_histogram(const HistDef &def)
   case HistDef::Type::TH2:
     m_hists[def.name] = std::make_unique<TH2F>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high);
     break;
-  case HistDef::Type::TH3:
-    m_hists[def.name] = std::make_unique<TH3F>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high, def.z.bins, def.z.low, def.z.high);
-    break;
   case HistDef::Type::TProfile:
     m_hists[def.name] = std::make_unique<TProfile>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high);
     break;
@@ -86,6 +83,7 @@ void sEPDValidation::create_histogram(const HistDef &def)
     m_hists[def.name] = std::make_unique<TProfile2D>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high);
     break;
   }
+  m_hists[def.name]->Sumw2();
 }
 
 //____________________________________________________________________________..
@@ -104,8 +102,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH1, "hCentrality", "Centrality; Centrality [%]; Events", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
       // Charge
-      {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-
       {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
       {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
 
@@ -123,34 +119,54 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TProfile, "hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
       {HistDef::Type::TProfile, "hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
 
+      {HistDef::Type::TH2, "h2SEPD_Total_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high},
+      {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}},
+
       {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2MBD_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high},
+      {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
 
-      {HistDef::Type::TH3, "h3SEPD_Total_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-
-      {HistDef::Type::TH3, "h3SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
 
       // Calo
       {HistDef::Type::TProfile2D, "h2EMCal_Energy", "EMCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
       {HistDef::Type::TProfile2D, "h2IHCal_Energy", "IHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
       {HistDef::Type::TProfile2D, "h2OHCal_Energy", "OHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
 
-      {HistDef::Type::TH3, "h3EMCal_MBD_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
-      {HistDef::Type::TH3, "h3IHCal_MBD_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
-      {HistDef::Type::TH3, "h3OHCal_MBD_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
-      {HistDef::Type::TH3, "h3EMCal_IHCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
+      {HistDef::Type::TH2, "h2EMCal_MBD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
+      {HistDef::Type::TH2, "h2EMCal_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+
+      {HistDef::Type::TH2, "h2IHCal_MBD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
+      {HistDef::Type::TH2, "h2IHCal_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+
+      {HistDef::Type::TH2, "h2OHCal_MBD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
+      {HistDef::Type::TH2, "h2OHCal_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+
+      {HistDef::Type::TH2, "h2EMCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
+      {HistDef::Type::TH2, "h2IHCal_OHCal", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
 
       // Jets
-      {HistDef::Type::TH3, "h3Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi; Centrality [%]", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]; Centrality [%]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta; Centrality [%]", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}},
+      {HistDef::Type::TH2, "h2Jet_pT_Cent", "Jet: |z| < 10 cm and MB; Centrality [%]; p_{T} [GeV]", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}},
+
+      {HistDef::Type::TH2, "h2Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}},
+      {HistDef::Type::TH2, "h2Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high}},
+      {HistDef::Type::TH2, "h2Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}},
+
       {HistDef::Type::TProfile, "hJet_nEvent", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
 
       // UE
-      {HistDef::Type::TH3, "h3UE", "UE: |z| < 10 cm and MB; v_{2}; Towers; Strips", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}},
-      {HistDef::Type::TH3, "h3UE_Jet", "UE: |z| < 10 cm and MB; Jet p_{T}^{max} [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH3, "h3UE_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}; Centrality [%]", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+      {HistDef::Type::TH2, "h2UE_v2_Towers", "UE: |z| < 10 cm and MB; Towers; v_{2}", {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+      {HistDef::Type::TH2, "h2UE_v2_Strips", "UE: |z| < 10 cm and MB; Strips; v_{2}", {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+
+
+      {HistDef::Type::TH2, "h2UE_v2_Jet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T}^{max} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
+      {HistDef::Type::TH2, "h2UE_v2_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+
+      {HistDef::Type::TH2, "h2UE_v2_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+      {HistDef::Type::TH2, "h2UE_SumE_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; Sum E [GeV]", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}},
+
   };
 
   for (const auto &def : histogram_definitions)
@@ -167,9 +183,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   {
     m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
   }
-
-  m_hists["h2SEPD_Channel_Charge"]->Sumw2();
-  m_hists["h2SEPD_Channel_Chargev2"]->Sumw2();
 
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
   m_output->cd();
@@ -425,7 +438,7 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
   }
 
   dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3MBD_Total_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2MBD_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north);
 
   JetUtils::update_min_max(m_mbd_total_charge, m_logging.m_mbd_total_charge_min, m_logging.m_mbd_total_charge_max);
   JetUtils::update_min_max(mbd_total_charge_south, m_logging.m_mbd_charge_min, m_logging.m_mbd_charge_max);
@@ -537,8 +550,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
 
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(sepd_total_charge, m_cent);
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, sepd_total_charge, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2SEPD_Total_Charge"].get())->Fill(sepd_total_charge, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2SEPD_MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, sepd_total_charge);
 
   // ensure both total charges are nonzero
   if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
@@ -547,7 +560,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  dynamic_cast<TH3 *>(m_hists["h3SEPD_Total_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north);
 
   JetUtils::update_min_max(sepd_total_charge_south, m_logging.m_sepd_total_charge_south_min, m_logging.m_sepd_total_charge_south_max);
   JetUtils::update_min_max(sepd_total_charge_north, m_logging.m_sepd_total_charge_north_min, m_logging.m_sepd_total_charge_north_max);
@@ -629,10 +642,17 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   m_data.event_tower_median_Energy = mf.findMedian();
   m_data.event_EMCal_tower_median_Energy = mf_EMCal.findMedian();
 
-  dynamic_cast<TH3 *>(m_hists["h3EMCal_MBD_sEPD"].get())->Fill(total_EMCal, total_MBD, total_sEPD);
-  dynamic_cast<TH3 *>(m_hists["h3IHCal_MBD_sEPD"].get())->Fill(total_IHCal, total_MBD, total_sEPD);
-  dynamic_cast<TH3 *>(m_hists["h3OHCal_MBD_sEPD"].get())->Fill(total_OHCal, total_MBD, total_sEPD);
-  dynamic_cast<TH3 *>(m_hists["h3EMCal_IHCal_OHCal"].get())->Fill(total_EMCal, total_IHCal, total_OHCal);
+  dynamic_cast<TH2 *>(m_hists["h2EMCal_MBD"].get())->Fill(total_EMCal, total_MBD);
+  dynamic_cast<TH2 *>(m_hists["h2EMCal_sEPD"].get())->Fill(total_EMCal, total_sEPD);
+
+  dynamic_cast<TH2 *>(m_hists["h2IHCal_MBD"].get())->Fill(total_IHCal, total_MBD);
+  dynamic_cast<TH2 *>(m_hists["h2IHCal_sEPD"].get())->Fill(total_IHCal, total_sEPD);
+
+  dynamic_cast<TH2 *>(m_hists["h2OHCal_MBD"].get())->Fill(total_OHCal, total_MBD);
+  dynamic_cast<TH2 *>(m_hists["h2OHCal_sEPD"].get())->Fill(total_OHCal, total_sEPD);
+
+  dynamic_cast<TH2 *>(m_hists["h2EMCal_OHCal"].get())->Fill(total_EMCal, total_OHCal);
+  dynamic_cast<TH2 *>(m_hists["h2IHCal_OHCal"].get())->Fill(total_IHCal, total_OHCal);
 
   JetUtils::update_min_max(m_data.event_EMCal_Energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
   JetUtils::update_min_max(m_data.event_IHCal_Energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
@@ -737,10 +757,11 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       m_data.jet_phi.push_back(phi);
       m_data.jet_eta.push_back(eta);
 
-      dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Constituents"].get())->Fill(pt, constituents, m_cent);
-      dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Phi"].get())->Fill(pt, phi, m_cent);
-      dynamic_cast<TH3 *>(m_hists["h3Jet_pT_Energy"].get())->Fill(pt, energy, m_cent);
-      dynamic_cast<TH3 *>(m_hists["h3Jet_PhiEta"].get())->Fill(phi, eta, m_cent);
+      dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Constituents"].get())->Fill(pt, constituents);
+      dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Cent"].get())->Fill(m_cent, pt);
+      dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Phi"].get())->Fill(pt, phi);
+      dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Energy"].get())->Fill(pt, energy);
+      dynamic_cast<TH2 *>(m_hists["h2Jet_PhiEta"].get())->Fill(phi, eta);
 
       if (pt >= m_cuts.m_jet_pt_threshold)
       {
@@ -805,9 +826,14 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   m_data.nHIRecoSeedsSub = nHIRecoSeedsSub;
   m_data.nHIRecoSeedsSubIt1 = nHIRecoSeedsSubIt1;
 
-  dynamic_cast<TH3 *>(m_hists["h3UE"].get())->Fill(v2, nTowers, nStrips);
-  dynamic_cast<TH3 *>(m_hists["h3UE_Jet"].get())->Fill(m_data.max_jet_pt, v2, m_data.event_centrality);
-  dynamic_cast<TH3 *>(m_hists["h3UE_SumE"].get())->Fill(sum_E, v2, m_data.event_centrality);
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Towers"].get())->Fill(nTowers, v2);
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Strips"].get())->Fill(nStrips, v2);
+
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get())->Fill(v2, m_data.max_jet_pt);
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.event_centrality, v2);
+
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_SumE"].get())->Fill(sum_E, v2);
+  dynamic_cast<TH2 *>(m_hists["h2UE_SumE_Cent"].get())->Fill(m_data.event_centrality, sum_E);
 
   JetUtils::update_min_max(v2, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
   JetUtils::update_min_max(v2_it1, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
@@ -1050,55 +1076,22 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
   auto project_and_write = [&](const std::string &hist_name, const std::string &projection)
   {
-    auto *hist = m_hists[hist_name].get();
-    if (auto *h3 = dynamic_cast<TH3 *>(hist))
-    {
-      std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
-      h3->Project3D(projection.c_str())->Write();
-    }
-    else if (auto *h2 = dynamic_cast<TH2 *>(hist))
-    {
-      std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
-      h2->ProjectionX()->Write();
-    }
+    std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
+    auto *hist = dynamic_cast<TH2 *>(m_hists[hist_name].get());
+    hist->ProjectionX()->Write();
   };
 
   // local
   if (!m_condor_mode)
   {
-    project_and_write("h2SEPD_Charge", "x");
+    project_and_write("h2SEPD_Total_Charge", "x");
     project_and_write("h2MBD_Total_Charge", "x");
-    project_and_write("h3SEPD_Total_Charge", "yx");
-    project_and_write("h3MBD_Total_Charge", "yx");
 
     // Jets
-    project_and_write("h3Jet_pT_Constituents", "x");
-    project_and_write("h3Jet_pT_Constituents", "yx");
-    project_and_write("h3Jet_pT_Phi", "yx");
-    project_and_write("h3Jet_pT_Energy", "yx");
-    project_and_write("h3Jet_PhiEta", "yx");
-
-    // Calo
-    project_and_write("h3EMCal_MBD_sEPD", "yx");
-    project_and_write("h3EMCal_MBD_sEPD", "zx");
-    project_and_write("h3IHCal_MBD_sEPD", "yx");
-    project_and_write("h3IHCal_MBD_sEPD", "zx");
-    project_and_write("h3OHCal_MBD_sEPD", "yx");
-    project_and_write("h3OHCal_MBD_sEPD", "zx");
-    project_and_write("h3EMCal_IHCal_OHCal", "yx");
-    project_and_write("h3EMCal_IHCal_OHCal", "zx");
+    project_and_write("h2Jet_pT_Constituents", "x");
 
     // UE
-    project_and_write("h3UE", "x");
-    project_and_write("h3UE", "yx");
-    project_and_write("h3UE", "zx");
-
-    project_and_write("h3UE_Jet", "xy");
-    project_and_write("h3UE_Jet", "yz");
-    project_and_write("h3UE_Jet", "xz");
-
-    project_and_write("h3UE_SumE", "yx");
-    project_and_write("h3UE_SumE", "xz");
+    project_and_write("h2UE_v2_Jet", "x");
   }
   output.Close();
 
