@@ -207,6 +207,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
   m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
   m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
+  m_tree->Branch("Q_NS_x_2", &m_data.Q_NS_x_2);
+  m_tree->Branch("Q_NS_y_2", &m_data.Q_NS_y_2);
 
   m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
@@ -656,9 +658,10 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 
   Eventplaneinfo *epd_S = epmap->get(EventplaneinfoMap::sEPDS);
   Eventplaneinfo *epd_N = epmap->get(EventplaneinfoMap::sEPDN);
+  Eventplaneinfo *epd_NS = epmap->get(EventplaneinfoMap::sEPDNS);
 
   // ensure the ptrs are valid
-  if (!epd_S || !epd_N)
+  if (!epd_S || !epd_N || !epd_NS)
   {
     ++m_ctr["process_EventPlane_epd_invalid"];
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -672,6 +675,7 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 
   std::pair<double, double> Q_S_2 = epd_S->get_qvector(2);
   std::pair<double, double> Q_N_2 = epd_N->get_qvector(2);
+  std::pair<double, double> Q_NS_2 = epd_NS->get_qvector(2);
 
   m_data.Q_S_x_2_raw = Q_S_2_raw.first;
   m_data.Q_S_y_2_raw = Q_S_2_raw.second;
@@ -690,6 +694,9 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 
   m_data.Q_N_x_2 = Q_N_2.first;
   m_data.Q_N_y_2 = Q_N_2.second;
+
+  m_data.Q_NS_x_2 = Q_NS_2.first;
+  m_data.Q_NS_y_2 = Q_NS_2.second;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

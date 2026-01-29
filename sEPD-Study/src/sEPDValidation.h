@@ -347,6 +347,9 @@ class sEPDValidation : public SubsysReco
     double Q_N_x_2{0};
     double Q_N_y_2{0};
 
+    double Q_NS_x_2{0};
+    double Q_NS_y_2{0};
+
     float UE_sum_E{9999};
     float calo_v2{9999};
     float calo_v2_it1{9999};
