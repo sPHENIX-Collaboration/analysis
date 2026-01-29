@@ -77,7 +77,8 @@ class JetAnalysis
   enum class Subdetector
   {
     S,
-    N
+    N,
+    NS
   };
 
   enum class QComponent
@@ -160,16 +161,15 @@ class JetAnalysis
     TH1* hCaloECentrality_min{nullptr};
     TH1* hCaloECentrality_max{nullptr};
 
-    std::array<TH3*, m_harmonics.size()> hPsi_raw{nullptr};
-    std::array<TH3*, m_harmonics.size()> hPsi_recentered{nullptr};
-    std::array<TH3*, m_harmonics.size()> hPsi{nullptr};
-    std::array<TH2*, m_harmonics.size()> hPsiAvg{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_S_raw{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_N_raw{nullptr};
 
-    // Histograms for SP method
-    // [harmonic_index]
-    std::array<TH3*, m_harmonics.size()> h3SP_re{nullptr};
-    std::array<TH3*, m_harmonics.size()> h3SP_im{nullptr};
-    std::array<TH3*, m_harmonics.size()> h3SP_res{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_S_recentered{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_N_recentered{nullptr};
+
+    std::array<TH2*, m_harmonics.size()> hPsi_S{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_N{nullptr};
+    std::array<TH2*, m_harmonics.size()> hPsi_NS{nullptr};
 
     // Profiles
     std::array<TProfile2D*, m_harmonics.size()> p2SP_re{nullptr};
@@ -253,7 +253,7 @@ class JetAnalysis
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors_raw;
     std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors_recentered;
-    std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors;
+    std::array<std::array<QVec, 3>, m_harmonics.size()> q_vectors;
 
     double Q_S_x_raw;
     double Q_S_y_raw;
@@ -269,6 +269,9 @@ class JetAnalysis
     double Q_S_y;
     double Q_N_x;
     double Q_N_y;
+
+    double Q_NS_x;
+    double Q_NS_y;
   };
 
   // --- Member Variables ---
@@ -353,7 +356,8 @@ void JetAnalysis::setup_chain()
   std::unordered_set<std::string> branchNames_secondary = {"calo_v2", "calo_v2_it1", "UE_sum_E"
                                                          , "Q_S_x_2_raw", "Q_S_y_2_raw", "Q_N_x_2_raw", "Q_N_y_2_raw"
                                                          , "Q_S_x_2_recentered", "Q_S_y_2_recentered", "Q_N_x_2_recentered", "Q_N_y_2_recentered"
-                                                         , "Q_S_x_2", "Q_S_y_2", "Q_N_x_2", "Q_N_y_2"};
+                                                         , "Q_S_x_2", "Q_S_y_2", "Q_N_x_2", "Q_N_y_2"
+                                                         , "Q_NS_x_2", "Q_NS_y_2"};
 
   // Append the secondary branch names to the initial
   branchNames.insert(branchNames_secondary.begin(), branchNames_secondary.end());
@@ -422,6 +426,9 @@ void JetAnalysis::setup_chain()
     m_chain->SetBranchAddress("Q_S_y_2", &m_event_data.Q_S_y);
     m_chain->SetBranchAddress("Q_N_x_2", &m_event_data.Q_N_x);
     m_chain->SetBranchAddress("Q_N_y_2", &m_event_data.Q_N_y);
+
+    m_chain->SetBranchAddress("Q_NS_x_2", &m_event_data.Q_NS_x);
+    m_chain->SetBranchAddress("Q_NS_y_2", &m_event_data.Q_NS_y);
   }
 
   std::cout << "Finished... setup_chain" << std::endl;
@@ -622,27 +629,51 @@ void JetAnalysis::create_vn_histograms(int n)
   title = std::format("; Centrality [%]; #LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT", n);
   m_profiles[name_evt_res_prof] = std::make_unique<TProfile>(name_evt_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-  std::string psi_hist_name = std::format("h3_sEPD_Psi_{}_raw", n);
-  std::string psi_hist_title = std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n);
+  std::string psi_hist_S_title = std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{S}}_{{{0}}}; Centrality [%]", n);
+  std::string psi_hist_N_title = std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{N}}_{{{0}}}; Centrality [%]", n);
+  std::string psi_hist_NS_title = std::format("sEPD #Psi (Order {0}): |z| < 10 cm and MB; {0}#Psi^{{N,S}}_{{{0}}}; Centrality [%]", n);
 
-  m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                    psi_hist_title.c_str(),
-                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
-
-  psi_hist_name = std::format("h3_sEPD_Psi_{}_recentered", n);
-  m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                    psi_hist_title.c_str(),
-                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
-
-  psi_hist_name = std::format("h3_sEPD_Psi_{}", n);
-  m_hists3D[psi_hist_name] = std::make_unique<TH3F>(psi_hist_name.c_str(),
-                                                    psi_hist_title.c_str(),
-                                                    bins_psi, psi_low, psi_high, bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
-
-  psi_hist_name = std::format("h2_sEPD_PsiAvg_{}", n);
+  std::string psi_hist_name = std::format("h2_sEPD_Psi_S_{}_raw", n);
   m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
-                                                    std::format("sEPD #Psi Avg (Order {0}): |z| < 10 cm and MB; Average 2#Psi^{{N,S}}_{{{0}}}; Centrality [%]", n).c_str(),
-                                                    bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
+                                                    psi_hist_S_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_N_{}_raw", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_N_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_S_{}_recentered", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_S_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_N_{}_recentered", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_N_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_S_{}_flat", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_S_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_N_{}_flat", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_N_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
+
+  psi_hist_name = std::format("h2_sEPD_Psi_NS_{}_flat", n);
+  m_hists2D[psi_hist_name] = std::make_unique<TH2F>(psi_hist_name.c_str(),
+                                                    psi_hist_NS_title.c_str(),
+                                                    bins_psi, psi_low, psi_high,
+                                                    m_bins_cent, m_cent_low, m_cent_high);
 
   // South, North
   for (auto det : m_subdetectors)
@@ -877,10 +908,15 @@ void JetAnalysis::init_hists()
   {
     int n = m_harmonics[n_idx];
 
-    m_hists.hPsi_raw[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_raw", n)].get();
-    m_hists.hPsi_recentered[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}_recentered", n)].get();
-    m_hists.hPsi[n_idx] = m_hists3D[std::format("h3_sEPD_Psi_{}", n)].get();
-    m_hists.hPsiAvg[n_idx] = m_hists2D[std::format("h2_sEPD_PsiAvg_{}", n)].get();
+    m_hists.hPsi_S_raw[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_S_{}_raw", n)].get();
+    m_hists.hPsi_N_raw[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_N_{}_raw", n)].get();
+
+    m_hists.hPsi_S_recentered[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_S_{}_recentered", n)].get();
+    m_hists.hPsi_N_recentered[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_N_{}_recentered", n)].get();
+
+    m_hists.hPsi_S[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_S_{}_flat", n)].get();
+    m_hists.hPsi_N[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_N_{}_flat", n)].get();
+    m_hists.hPsi_NS[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_NS_{}_flat", n)].get();
 
     m_hists.h3SP_re[n_idx] = m_hists3D[std::format("h3SP_re_{}", n)].get();
     m_hists.h3SP_im[n_idx] = m_hists3D[std::format("h3SP_im_{}", n)].get();
@@ -1116,6 +1152,7 @@ void JetAnalysis::process_QVecs()
 
   size_t south_idx = static_cast<size_t>(Subdetector::S);
   size_t north_idx = static_cast<size_t>(Subdetector::N);
+  size_t ns_idx = static_cast<size_t>(Subdetector::NS);
 
   m_event_data.q_vectors_raw[0][0] = {m_event_data.Q_S_x_raw, m_event_data.Q_S_y_raw};
   m_event_data.q_vectors_raw[0][1] = {m_event_data.Q_N_x_raw, m_event_data.Q_N_y_raw};
@@ -1125,6 +1162,7 @@ void JetAnalysis::process_QVecs()
 
   m_event_data.q_vectors[0][0] = {m_event_data.Q_S_x, m_event_data.Q_S_y};
   m_event_data.q_vectors[0][1] = {m_event_data.Q_N_x, m_event_data.Q_N_y};
+  m_event_data.q_vectors[0][2] = {m_event_data.Q_NS_x, m_event_data.Q_NS_y};
 
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -1138,6 +1176,8 @@ void JetAnalysis::process_QVecs()
     QVec q_S = m_event_data.q_vectors[n_idx][south_idx];
     QVec q_N = m_event_data.q_vectors[n_idx][north_idx];
 
+    QVec q_NS = m_event_data.q_vectors[n_idx][ns_idx];
+
     // Compute Psi
     double psi_S_raw = std::atan2(q_S_raw.y, q_S_raw.x);
     double psi_N_raw = std::atan2(q_N_raw.y, q_N_raw.x);
@@ -1148,15 +1188,18 @@ void JetAnalysis::process_QVecs()
     double psi_S = std::atan2(q_S.y, q_S.x);
     double psi_N = std::atan2(q_N.y, q_N.x);
 
-    double psi_avg = std::atan2(q_S.y+q_N.y, q_S.x+q_N.x);
+    double psi_NS = std::atan2(q_NS.y, q_NS.x);
 
-    // std::cout << std::format("Q_S_raw: ({},{}), Q_N_raw: ({},{})\n", q_S_raw.x, q_S_raw.y, q_N_raw.x, q_N_raw.y);
+    m_hists.hPsi_S_raw[n_idx]->Fill(psi_S_raw, cent);
+    m_hists.hPsi_N_raw[n_idx]->Fill(psi_N_raw, cent);
 
-    m_hists.hPsi_raw[n_idx]->Fill(psi_S_raw, psi_N_raw, cent);
-    m_hists.hPsi_recentered[n_idx]->Fill(psi_S_recentered, psi_N_recentered, cent);
-    m_hists.hPsi[n_idx]->Fill(psi_S, psi_N, cent);
+    m_hists.hPsi_S_recentered[n_idx]->Fill(psi_S_recentered, cent);
+    m_hists.hPsi_N_recentered[n_idx]->Fill(psi_N_recentered, cent);
 
-    m_hists.hPsiAvg[n_idx]->Fill(psi_avg, cent);
+    m_hists.hPsi_S[n_idx]->Fill(psi_S, cent);
+    m_hists.hPsi_N[n_idx]->Fill(psi_N, cent);
+
+    m_hists.hPsi_NS[n_idx]->Fill(psi_NS, cent);
 
     m_hists.S_x_raw_avg[n_idx]->Fill(cent, q_S_raw.x);
     m_hists.S_y_raw_avg[n_idx]->Fill(cent, q_S_raw.y);
