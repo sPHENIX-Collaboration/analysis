@@ -35,8 +35,6 @@
 #include <sepdvalidation/CaloCheck.h>
 #include <sepdvalidation/sEPDValidation.h>
 
-#include <CDBUtils.C>
-
 #include <jetbackground/BeamBackgroundFilterAndQA.h>
 #include <jetbackground/JetBackgroundCut.h>
 
@@ -128,22 +126,15 @@ void Fun4All_sEPD(const std::string &fname,
   gvertex->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(gvertex.release());
 
-  setGlobalTag(dbtag);
-
-  uint64_t default_centrality_run = 54912;
-  std::string cdb_centrality_scale = getCalibration("CentralityScale", default_centrality_run);
-
   // Minimum Bias Classifier
   std::unique_ptr<MinimumBiasClassifier> mb = std::make_unique<MinimumBiasClassifier>();
   mb->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   mb->set_mbd_total_charge_cut(2100);
-  mb->setOverwriteScale(cdb_centrality_scale);
   se->registerSubsystem(mb.release());
 
   // Centrality
   std::unique_ptr<CentralityReco> cent = std::make_unique<CentralityReco>();
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  cent->setOverwriteScale(cdb_centrality_scale);
   se->registerSubsystem(cent.release());
 
   // Calibrate Towers
