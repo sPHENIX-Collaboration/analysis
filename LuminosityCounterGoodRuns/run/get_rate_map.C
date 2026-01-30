@@ -1,3 +1,5 @@
+#include "/sphenix/user/jocl/projects/chi2checker/src/dlUtility.h"
+
 unsigned long long int factorial(int n)
 {
   if(n < 2) return 1;
@@ -28,7 +30,7 @@ void increment_in_base(vector<unsigned int> &counter, int base)
 
 float get_prob_given_ncol(int n, float mbdprob)
 {
-  float onehitprob = sqrt(mbdprob) - mbdprob; //probability of firing only one side
+  float onehitprob = 0.175; //old: sqrt(mbdprob) - mbdprob; //probability of firing only one side
   float nohitsprob = 1 - mbdprob - 2*onehitprob; //
   vector<unsigned int> counter = {};
   float prob = 0;
@@ -57,17 +59,32 @@ float p_from_rate(float colrate, float beamrate, int n)
   float den = factorial(n);
   return num/den;
 }
+float get_true_rate(float colrate, float beamrate)
+{
+  float sum = 0;
+  for(int i=1; i<10; ++i)
+    {
+      sum += pow(-log(1-colrate/beamrate),i)/factorial(i-1);
+    }
+  sum *= (beamrate-colrate);
+  return sum;
+}
 int get_rate_map()
 {
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gStyle->SetPadTickX(1);
+  gStyle->SetPadTickY(1);
   // for a single collision...
-  float mbdprob = 25.2/42; //MBD xsec / pp inel xsec
-  const int ncount = 4;
+  float mbdprob = 0.562; //from PYTHIA or use 25.2/42; //MBD xsec / pp inel xsec
+  const int ncount = 5;
   float beamrate = 111*78.2e3;
   float p_mbd_given_ncol[ncount];
   float p_of_n[ncount];
   const int nrate = 400000;
   float mbd_rate[nrate];
   float col_rate[nrate];
+  float true_rate[nrate];
   for(int i=0; i<ncount; ++i)
     {
       p_mbd_given_ncol[i] = get_prob_given_ncol(i+1, mbdprob);
@@ -83,8 +100,41 @@ int get_rate_map()
 	}
       if(total > 0.5) cout << total << endl;
       mbd_rate[r] = total*beamrate;
+      true_rate[r] = get_true_rate(col_rate[r],beamrate);
     }
   TGraph* g = new TGraph(nrate, mbd_rate, col_rate);
+  g->SetName("mbdtogr1");
+  g->GetHistogram()->GetXaxis()->SetTitle("R_{MBD} [Hz]");
+  g->GetHistogram()->GetYaxis()->SetTitle("R_{#geq1} [Hz]");
+  TGraph* gr = new TGraph(nrate, mbd_rate, true_rate);
+  gr->SetName("mbdtotrue");
+  gr->GetHistogram()->GetXaxis()->SetTitle("R_{MBD} [Hz]");
+  gr->GetHistogram()->GetYaxis()->SetTitle("R_{true} [Hz]");
+  TH1D* temphist = new TH1D("temphist",";R_{MBD} [Hz];R_{#geq1} or R_{true} [Hz]",1,0,6000e3);
+  temphist->GetYaxis()->SetRangeUser(0,6000e3);
+  temphist->GetXaxis()->SetRangeUser(0,6000e3);
+  
+  g->SetMarkerStyle(20);
+  g->SetMarkerSize(1);
+  g->SetMarkerColor(kRed+2);
+  gr->SetMarkerStyle(20);
+  gr->SetMarkerSize(1);
+  gr->SetMarkerColor(kBlue+2);
+  TCanvas* c = new TCanvas("","",1000,1000);
+  c->SetLeftMargin(0.15);
+  c->SetBottomMargin(0.15);
+  temphist->Draw();
+  g->Draw("SAME P");
+  gr->Draw("SAME P");
+  sphenixtext();
+  TLegend* leg = new TLegend(0.5,0.2,0.8,0.3);
+  leg->SetFillStyle(0);
+  leg->SetFillColor(0);
+  leg->SetBorderSize(0);
+  leg->AddEntry(g,"R_{#geq1}","p");
+  leg->AddEntry(gr,"R_{true}","p");
+  leg->Draw();
+  c->SaveAs("ratevsrate.pdf");
   TFile* outf = new TFile("mbd_to_col_map.root","RECREATE");
   outf->cd();
   g->Write();

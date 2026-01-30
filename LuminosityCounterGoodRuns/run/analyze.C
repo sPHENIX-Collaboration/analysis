@@ -181,7 +181,7 @@ int analyze(int rn, int nseg, int clt)
   float ttseg = 0;
   int fillnum = get_fillnum(rn);
   TFile* ingraph = TFile::Open("mbd_to_col_map.root");
-  TGraph* mbdcolmap = (TGraph*)ingraph->Get("Graph");
+  TGraph* mbdcolmap = (TGraph*)ingraph->Get("mbdtogr1");
   mbdcolmap->SetBit(TGraph::kIsSortedX);
   for(int i=1; i<nseg+1; ++i)
     {
