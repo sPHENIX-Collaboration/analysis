@@ -60,15 +60,18 @@ set_config()
 	#Need to use the .run files, can ammend to use the .in files  but that adds unnecessary computational time
 	if [ "$triggertype" = "MB" ]; then 
 		configfile="${configdir}/Herwig_MB.run"
-	elif [ "$triggertype" = "Jet10" ]; then
-		configfile="${configdir}/Herwig_Jet10.run"
-		triggervalue="10"
+	elif [ "$triggertype" = "Jet15" ]; then
+		configfile="${configdir}/Herwig_Jet15.run"
+		triggervalue="15"
 	elif [ "$triggertype" = "Jet20" ]; then
 		configfile="${configdir}/Herwig_Jet20.run"
 		triggervalue="20"
 	elif [ "$triggertype" = "Jet30" ]; then 
 		configfile="${configdir}/Herwig_Jet30.run"
 		triggervalue="30"
+	elif [ "$triggertype" = "Jet40" ]; then 
+		configfile="${configdir}/Herwig_Jet40.run"
+		triggervalue="40"
 	elif [ "$triggertype" = "Jet50" ]; then 
 		configfile="${configdir}/Herwig_Jet50.run"
 		triggervalue="50"
@@ -112,7 +115,7 @@ handle_options(){
 			echo " -N, --events  	Number of events to generate (Default 1M) "
 			echo " -n, --perfile	Number of events per file (Default 1k) "
 			echo " -s, --submit	Make and submit condor jobs (Default false)"
-			echo " -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)"
+			echo " -t, --trigger	Input type (MB, Jet15, Jet20, Jet40, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)"
 			echo " -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) "
  			echo " -p, --photoncut	Add a photon cut filter [Integer GeV] (Default None) "
 			echo " -i, --input 	Specify new input file (Default blank)"
