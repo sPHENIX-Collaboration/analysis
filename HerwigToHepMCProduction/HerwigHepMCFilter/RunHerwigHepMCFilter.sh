@@ -8,6 +8,7 @@ trigger_type=${2:-'jet'}
 trigger=${3:-'10.'}
 n_events=${4:-'1000'}
 n_gen=${5:-'100000'}
-seg_filename=${6:-"none"}
+xs_filename=${6:-"none"}
 this_dir=${7:-''}
-root.exe -x -b -q   ${this_dir}RunHerwigHepMCFilter.C\(\"$input_file\",\"$trigger_type\",\"$trigger\",$n_events,$n_gen,\"$seg_filename\"\) 
+echo $this_dir
+root.exe -x -b -q   ${this_dir}RunHerwigHepMCFilter.C\(\"$input_file\",\"$trigger_type\",\"$trigger\",$n_events,$n_gen,\"$xs_filename\"\) 

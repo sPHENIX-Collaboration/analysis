@@ -15,10 +15,12 @@ export LHAPATH=$LHAPATH_path_path
 seedn=$RANDOM
 #echo $seedn
 run_events=$goalevents
+echo $goalevents
 if [[ $triggervalue -gt 0 || $photontriggervalue -gt 0 ]]; then 
-	run_events=$(( run_events * 100 )) #worst case assume a 1% good event case
+	run_events=$(( run_events * 100 )) #worst case assume a 1% good event case 
+elif [[ $triggercalue -gt 30 ]]; then 
+	run_events=$(( run_events * 1000 )) # based on know issue with 50 GeV jets
 fi 
-
 outfile_nameseed=$outfile_name"-S"$seedn"-"$filetag".hepmc"
 outfile_namestem=$outfile_name
 outfile_name=$outfile_name"-"$filetag".hepmc"
@@ -31,7 +33,7 @@ mv $outfile_namestem"-S"$seedn"-"$filetag".tex" $outfile_namestem"-"$filetag".te
 mv $outfile_nameseed $outfile_name
 if [[ $triggervalue -gt -0 ]]; then 
 	seg0="none"
-	if [[ $filenumber = 0 ]]; then 
+	if [[ $filenumber -le 20 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
 	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "jet" $triggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
@@ -39,10 +41,10 @@ if [[ $triggervalue -gt -0 ]]; then
 fi
 if [[ $photontriggervalue -gt -0 ]]; then 
 	seg0="none"
-	if [[ $filenumber = 0 ]]; then 
+	if [[ $filenumber -le 20 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
-	/sphenix/user/sgross/sphenix_analysis/HerwigToHepMCProduction/HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0
+	${configdir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
 	rm $outfile_name
 fi
  
