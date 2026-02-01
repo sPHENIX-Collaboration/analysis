@@ -36,9 +36,6 @@
 #include <calotrigger/MinimumBiasInfo.h>
 #include <centrality/CentralityInfo.h>
 
-// -- Trigger
-#include <ffarawobjects/Gl1Packet.h>
-
 // -- Event Plane
 #include <eventplaneinfo/EventplaneinfoMap.h>
 #include <eventplaneinfo/Eventplaneinfo.h>
