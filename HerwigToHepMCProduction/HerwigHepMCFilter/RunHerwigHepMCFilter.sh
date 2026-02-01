@@ -11,4 +11,7 @@ n_gen=${5:-'100000'}
 xs_filename=${6:-"none"}
 this_dir=${7:-''}
 echo $this_dir
+if [ ! -d "cross_section_data" ]; then                                              
+        mkdir -p "cross_section_data";                                              
+fi
 root.exe -x -b -q   ${this_dir}RunHerwigHepMCFilter.C\(\"$input_file\",\"$trigger_type\",\"$trigger\",$n_events,$n_gen,\"$xs_filename\"\) 

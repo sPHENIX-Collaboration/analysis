@@ -100,7 +100,7 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 		float xs = xs_value * std::pow(10, xs_pow) * ((float)n_good)/((float)n_evts*(float)nGen);
 		f.close();
 		std::ofstream of;
-		std::string xs_of="/sphenix/user/sgross/cross_section_data/Cross_Section_"+trigger_type+trig+"_"+std::to_string(segment)+".txt";
+		std::string xs_of="cross_section_data/Cross_Section_"+trigger_type+trig+"_"+std::to_string(segment)+".txt";
 		of.open(xs_of.c_str());
 		if(!of.good()) std::cout<<"failed to open file" <<std::endl;
 		if(of.good())
