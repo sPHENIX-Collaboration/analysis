@@ -1,8 +1,17 @@
 #! /bin/bash
-export MYINSTALL=/sphenix/user/sgross/install_dir
-source /cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/bin/sphenix_setup.sh -n ana
-source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
+#export MYINSTALL=$MYINSTALL
+#source /opt/sphenix/core/bin/sphenix_setup.sh -n ana
+#source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
+
 input_file=${1:-''}
-jet_trigger=${2:-'10.'}
-n_events=${3:-'1000'}
-root.exe -x -b  /sphenix/user/sgross/coresoftware/generators/Herwig/HerwigHepMCFilter/RunHerwigHepMCFilter.C\(\"$input_file\",\"$jet_trigger\",$n_events\) 
+trigger_type=${2:-'jet'}
+trigger=${3:-'10.'}
+n_events=${4:-'1000'}
+n_gen=${5:-'100000'}
+xs_filename=${6:-"none"}
+this_dir=${7:-''}
+echo $this_dir
+if [ ! -d "cross_section_data" ]; then                                              
+        mkdir -p "cross_section_data";                                              
+fi
+root.exe -x -b -q   ${this_dir}RunHerwigHepMCFilter.C\(\"$input_file\",\"$trigger_type\",\"$trigger\",$n_events,$n_gen,\"$xs_filename\"\) 
