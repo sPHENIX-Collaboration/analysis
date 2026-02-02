@@ -142,6 +142,7 @@ class JetAnalysis
     TH2* h2IHCal_OHCal{nullptr};
     TH2* h2CentralityCaloV2{nullptr};
     TH2* h2CentralityJetPt{nullptr};
+    TProfile2D* h2JetPtCentralityEvtRes{nullptr};
     TH2* h2CentralityJetEnergy{nullptr};
     TH2* h2CentralitySumE{nullptr};
     TH2* h2SumECaloV2{nullptr};
@@ -723,6 +724,10 @@ void JetAnalysis::init_hists()
   double pt_low = 0;
   double pt_high = 500;
 
+  int bins_pt2 = 93;
+  double pt2_low = 7; // GeV
+  double pt2_high = 100;
+
   int bins_cent = 80;
   double cent_low = -0.5;
   double cent_high = 79.5;
@@ -787,6 +792,12 @@ void JetAnalysis::init_hists()
   m_hists2D["h2CentralityJetEnergy"] = std::make_unique<TH2F>("h2CentralityJetEnergy", "Jets; Centrality [%]; Jet Energy [GeV]",
                                                           m_bins_cent, m_cent_low, m_cent_high,
                                                           bins_energy, energy_low, energy_high);
+
+  m_profiles2D["h2JetPtCentralityEvtRes"] = std::make_unique<TProfile2D>(
+                                           "h2JetPtCentralityEvtRes",
+                                           "Event Plane Resolution; Lead Jet p_{T} [GeV]; Centrality [%]; #LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT",
+                                           bins_pt2, pt2_low, pt2_high,
+                                           m_bins_cent, m_cent_low, m_cent_high);
 
   m_hists2D["h2MBD"] = std::make_unique<TH2F>("h2MBD", "|z| < 10 and MB; MBD South Charge; MBD North Charge", bins_mbd_charge, mbd_charge_low, mbd_charge_high, bins_mbd_charge, mbd_charge_low, mbd_charge_high);
   m_hists2D["h2sEPD"] = std::make_unique<TH2F>("h2sEPD", "|z| < 10 and MB; sEPD South Charge; sEPD North Charge", bins_sepd_charge, sepd_charge_low, sepd_charge_high, bins_sepd_charge, sepd_charge_low, sepd_charge_high);
@@ -926,6 +937,8 @@ void JetAnalysis::init_hists()
 
   m_hists.h2CentralityJetPt = m_hists2D["h2CentralityJetPt"].get();
   m_hists.h2CentralityJetEnergy = m_hists2D["h2CentralityJetEnergy"].get();
+
+  m_hists.h2JetPtCentralityEvtRes = m_profiles2D["h2JetPtCentralityEvtRes"].get();
 
   m_hists.h2CaloECentrality = m_hists2D["h2CaloECentrality"].get();
   m_hists.hCentrality = m_hists1D["hCentrality"].get();
@@ -1074,6 +1087,8 @@ void JetAnalysis::compute_SP_resolution()
   size_t south_idx = static_cast<size_t>(Subdetector::S);
   size_t north_idx = static_cast<size_t>(Subdetector::N);
 
+  double lead_pt = m_event_data.max_jet_pt;
+
   // Compute Scalar Product for each harmonic
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
@@ -1084,6 +1099,11 @@ void JetAnalysis::compute_SP_resolution()
     double norm_S = std::sqrt(sEPD_Q_S.x * sEPD_Q_S.x + sEPD_Q_S.y * sEPD_Q_S.y);
     double norm_N = std::sqrt(sEPD_Q_N.x * sEPD_Q_N.x + sEPD_Q_N.y * sEPD_Q_N.y);
     double SP_evt_res = SP_res / (norm_S * norm_N);
+
+    if (n_idx == 0)
+    {
+      m_hists.h2JetPtCentralityEvtRes->Fill(lead_pt, cent, SP_evt_res);
+    }
 
     m_hists.p1SP_res[n_idx]->Fill(cent, SP_res);
     m_hists.p1SP_evt_res[n_idx]->Fill(cent, SP_evt_res);
@@ -1105,6 +1125,7 @@ void JetAnalysis::compute_SP()
     double pt = jet_info[idx].pt;
     double energy = jet_info[idx].energy;
 
+    // Correlate jets with opposite sEPD arm
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
     size_t arm_anti = (eta > 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
 
@@ -1493,9 +1514,9 @@ void JetAnalysis::process_events()
   std::cout << std::format("Event Skipped: CaloMBD Mismatch: {}, Cent (Out of Bounds): {}\n", ctr["events_skipped_calo_mbd"],
                                                                                               ctr["events_skipped_cent"]);
 
-  std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f}, Positive Energy: {}, {:.2f}, Good Calo V2: {}, {:.2f}%\n", jets, jets_good_regions, jets_good_regions * 100. / jets
-                                                                                                                               , jets_positive_energy, jets_positive_energy * 100. / jets
-                                                                                                                               , jets_good_caloV2, jets_good_caloV2 * 100. / jets);
+  std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f}%, Positive Energy: {}, {:.2f}%, Good Calo V2: {}, {:.2f}%\n", jets, jets_good_regions, jets_good_regions * 100. / jets
+                                                                                                                           , jets_positive_energy, jets_positive_energy * 100. / jets
+                                                                                                                           , jets_good_caloV2, jets_good_caloV2 * 100. / jets);
 
   std::cout << "Finished... process_events" << std::endl;
 }
