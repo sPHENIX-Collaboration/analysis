@@ -1,7 +1,7 @@
 ########################################## Herwig to HepMC File Generator ###########################################################
 
 Author: Skaydi
-Last Update 17 April 2025 
+Last Update 13 January 2026 
 
 
 This is a stop gap solution to allow for the generation of HepMC files from a Herwig input.
@@ -27,6 +27,8 @@ This is based on anti-kt r=0.4 jets from fastjet
 
 A specific instance of running the filter that applies a trigger and a set event output per file number
 
+"Run
+
 ## HepMC_scripts
 
 This is where the main usage is. 
@@ -41,13 +43,38 @@ This is where the main usage is.
 This script runs Herwig to create HepMC files given an input configuration
 Options:
   
- -h, --help	Display this help message
- -v, --verbose	Enable verbose job creation (Default false) 
- -N, --events  	Number of events to generate (Default 1M) 
- -n, --perfile	Number of events per file (Default 1k) 
- -s, --submit	Make and submit condor jobs (Default false)
- -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)
- -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) 
- -i, --input 	Specify new input file (Default blank)
+ -h, --help		Display this help message
+ -v, --verbose		Enable verbose job creation (Default false) 
+ -N, --events  		Number of events to generate (Default 1M) 
+ -n, --perfile		Number of events per file (Default 1k) 
+ -s, --submit		Make and submit condor jobs (Default false)
+ -t, --trigger		Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)
+ -j, --jetcut		Add a Jet cut filter [Integer GeV] (Default None) 
+ -p, --photoncut	Add a photon cut filter [Integer GeV] (Default None) 
+ -i, --input 		Specify new input file (Default blank)
 
 
+
+####################################### USAGE ##########################################
+
+To use and understand this package is relatively staightforwards
+
+# -----------------STEPS----------------------
+##Step 1
+Activate local LHAPATH (needed for Nashville tune)
+	export LHAPATH=$(pwd)/HerwigToHepMCProduction/config_files:$LHAPATH
+	export LHAPDF_DATA_PATH=$(pwd)/config_files:$LHAPDF_DATA_PATH
+##Step 2
+run the script
+	cd HepMC_scripts
+	./makeHeriwgJobs.sh [options listed above]
+##Step 3 
+Interpreting the cross section
+For the cross sections, those are output in a text file
+	"Cross_Section_[TAG].txt"
+
+### A note on cross sections
+So in order to keep a fixed 1000 good events per DST for reconstruction, the filter requires that we construct far too many events
+The cross section is calculated by taking the output cross section from the Herwig generator, and scaling it 
+ 
+	XS/N = XS_HERWIG / N_Generated * 1000 / N_passing_filter 

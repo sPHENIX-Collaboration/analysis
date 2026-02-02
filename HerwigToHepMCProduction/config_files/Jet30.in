@@ -87,7 +87,7 @@ cd /Herwig/MatrixElements/
  insert SubProcess:MatrixElements[0] MEQCD2to2
 #
 # gamma+jet
-# insert SubProcess:MatrixElements[0] MEGammaJet
+ insert SubProcess:MatrixElements[0] MEGammaJet
 #
 # gamma-gamma
 # insert SubProcess:MatrixElements[0] MEGammaGamma

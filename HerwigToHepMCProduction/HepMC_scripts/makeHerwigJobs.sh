@@ -5,7 +5,8 @@ nfiles=1000
 density=10000 #events / file
 dosubmit=false
 triggertype="MB" 
-triggervalue="0."
+triggervalue="0"
+photontrigger="0"
 configfile="MB.in"
 configdir="$(pwd)/../config_files"
 condor_testfile="condor_blank.job"
@@ -25,7 +26,7 @@ make_condor_jobs()
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/Herwig_run.sh" >> $condor_file
-		echo "${blanklines[2]}"$configfile $density $j $triggervalue "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype"/Herwig_"$triggertype>> $condor_file
+		echo "${blanklines[2]}"$configfile $density $j $triggervalue $photontrigger "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype"/Herwig_"$triggertype $configdir $LHAPDF_DATA_PATH $LHAPATH>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file
@@ -68,12 +69,18 @@ set_config()
 	elif [ "$triggertype" = "Jet30" ]; then 
 		configfile="${configdir}/Herwig_Jet30.run"
 		triggervalue="30"
+	elif [ "$triggertype" = "Jet50" ]; then 
+		configfile="${configdir}/Herwig_Jet50.run"
+		triggervalue="50"
 	elif [ "$triggertype" = "PhotonJet5" ]; then 
 		configfile="${configdir}/Herwig_PhotonJet5.run"
+		photontrigger="5"
 	elif [ "$triggertype" = "PhotonJet10" ]; then 
 		configfile="${configdir}/Herwig_PhotonJet10.run"
+		photontrigger="10"
 	elif [ "$triggertype" = "PhotonJet20" ]; then 
 		configfile="${configdir}/Herwig_PhotonJet20.run"
+		photontrigger="20"
 	else
 		configfile="${configdir}/Herwig_MB.run" #use as default value
 	fi
@@ -107,6 +114,7 @@ handle_options(){
 			echo " -s, --submit	Make and submit condor jobs (Default false)"
 			echo " -t, --trigger	Input type (MB, Jet10, Jet20, Jet30, PhotonJet5, PhotonJet10, PhotonJet20) (Default MB)"
 			echo " -j, --jetcut	Add a Jet cut filter [Integer GeV] (Default None) "
+ 			echo " -p, --photoncut	Add a photon cut filter [Integer GeV] (Default None) "
 			echo " -i, --input 	Specify new input file (Default blank)"
 			echo " -f, --first	Specify a first segment number (Default 0)"
 			exit 0 
@@ -157,7 +165,17 @@ handle_options(){
 			if has_argument $@; then 
 				triggervalue=$(extract_argument $@)
 				if [ "$verbose_mode" = true ]; then
-					echo "Jet cut value: " $triggervalue
+					echo "Jet cut value: " $triggervalue " GeV"
+				fi
+			fi
+			shift
+			shift
+			;;
+		-p | --photoncut*)
+			if has_argument $@; then 
+				photontrigger=$(extract_argument $@)
+				if [ "$verbose_mode" = true ]; then 
+					echo "Photon cut value: " $photontrigger " GeV"
 				fi
 			fi
 			shift
