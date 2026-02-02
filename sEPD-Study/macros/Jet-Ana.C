@@ -231,6 +231,10 @@ class JetAnalysis
     std::array<TProfile*, m_harmonics.size()> N_xx_corr_avg{nullptr};
     std::array<TProfile*, m_harmonics.size()> N_yy_corr_avg{nullptr};
     std::array<TProfile*, m_harmonics.size()> N_xy_corr_avg{nullptr};
+
+    std::array<TProfile*, m_harmonics.size()> NS_xx_corr_avg{nullptr};
+    std::array<TProfile*, m_harmonics.size()> NS_yy_corr_avg{nullptr};
+    std::array<TProfile*, m_harmonics.size()> NS_xy_corr_avg{nullptr};
   };
 
   AnalysisHists m_hists;
@@ -717,6 +721,22 @@ void JetAnalysis::create_vn_histograms(int n)
                                                                   std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", det_name, n, comp_str).c_str(),
                                                                   m_bins_cent, m_cent_low, m_cent_high);
     }
+
+    // Combined NS
+    std::string q_avg_corr_name = std::format("h_sEPD_Q_NS_xy_2_corr_avg", det_str, n);
+    m_profiles[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(),
+                                                             std::format("sEPD {0}; Centrality [%]; <Q_{{{1},x}} Q_{{{1},y}}>", "NS", n).c_str(),
+                                                             m_bins_cent, m_cent_low, m_cent_high);
+
+    q_avg_corr_name = std::format("h_sEPD_Q_NS_xx_2_corr_avg", det_str, n);
+    m_profiles[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(),
+                                                             std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", "NS", n, "xx").c_str(),
+                                                             m_bins_cent, m_cent_low, m_cent_high);
+
+    q_avg_corr_name = std::format("h_sEPD_Q_NS_yy_2_corr_avg", det_str, n);
+    m_profiles[q_avg_corr_name] = std::make_unique<TProfile>(q_avg_corr_name.c_str(),
+                                                             std::format("sEPD {}; Centrality [%]; <Q_{{{},{}}}^{{2}}>", "NS", n, "yy").c_str(),
+                                                             m_bins_cent, m_cent_low, m_cent_high);
   }
 }
 
@@ -1050,6 +1070,10 @@ void JetAnalysis::init_hists()
     m_hists.N_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_yy_{}_corr_avg", n)].get();
     m_hists.N_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_N_xy_{}_corr_avg", n)].get();
 
+    m_hists.NS_xx_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_NS_xx_{}_corr_avg", n)].get();
+    m_hists.NS_yy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_NS_yy_{}_corr_avg", n)].get();
+    m_hists.NS_xy_corr_avg[n_idx] = m_profiles[std::format("h_sEPD_Q_NS_xy_{}_corr_avg", n)].get();
+
     for (size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
     {
       int pt = m_jet_pt_min_vec[idx_pt];
@@ -1326,6 +1350,10 @@ void JetAnalysis::process_QVecs()
     m_hists.N_xx_corr_avg[n_idx]->Fill(cent, q_N.x * q_N.x);
     m_hists.N_yy_corr_avg[n_idx]->Fill(cent, q_N.y * q_N.y);
     m_hists.N_xy_corr_avg[n_idx]->Fill(cent, q_N.x * q_N.y);
+
+    m_hists.NS_xx_corr_avg[n_idx]->Fill(cent, q_NS.x * q_NS.x);
+    m_hists.NS_yy_corr_avg[n_idx]->Fill(cent, q_NS.y * q_NS.y);
+    m_hists.NS_xy_corr_avg[n_idx]->Fill(cent, q_NS.x * q_NS.y);
   }
 }
 
