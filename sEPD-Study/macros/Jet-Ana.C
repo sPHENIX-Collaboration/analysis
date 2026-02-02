@@ -269,10 +269,6 @@ class JetAnalysis
     std::vector<double>* jet_phi{nullptr};
     std::vector<double>* jet_eta{nullptr};
 
-    std::vector<int>* sepd_channel{nullptr};
-    std::vector<double>* sepd_charge{nullptr};
-    std::vector<double>* sepd_phi{nullptr};
-
     // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors_raw;
@@ -373,8 +369,7 @@ void JetAnalysis::setup_chain()
                                                  "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
                                                  "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
                                                  "nHIRecoSeedsSub", "nHIRecoSeedsSubIt1",
-                                                 "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
-                                                 "sepd_channel", "sepd_charge", "sepd_phi"};
+                                                 "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt"};
 
   std::unordered_set<std::string> branchNames_secondary = {"calo_v2", "calo_v2_it1", "UE_sum_E"
                                                          , "Q_S_x_2_raw", "Q_S_y_2_raw", "Q_N_x_2_raw", "Q_N_y_2_raw"
@@ -422,9 +417,6 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
   m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
   m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
-  m_chain->SetBranchAddress("sepd_channel", &m_event_data.sepd_channel);
-  m_chain->SetBranchAddress("sepd_charge", &m_event_data.sepd_charge);
-  m_chain->SetBranchAddress("sepd_phi", &m_event_data.sepd_phi);
 
   m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
   m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
