@@ -1089,6 +1089,24 @@ void JetAnalysis::init_hists()
       m_hists.p1EP_re[n_idx][idx_pt] = m_profiles[std::format("hEP_re_prof_{}_{}", n, pt)].get();
     }
   }
+
+  // Enable Sumw2
+  auto enable = [](auto&... maps)
+  {
+    auto loop = [](auto& map)
+    {
+      for (auto& [key, hist] : map)
+      {
+        if (hist)
+        {
+          hist->Sumw2();
+        }
+      }
+    };
+    (loop(maps), ...);
+  };
+
+  enable(m_hists1D, m_hists2D, m_profiles, m_profiles2D);
 }
 
 void JetAnalysis::compute_SP_resolution(int sample)
