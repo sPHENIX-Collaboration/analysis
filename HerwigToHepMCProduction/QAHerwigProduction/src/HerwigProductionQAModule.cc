@@ -109,12 +109,68 @@ int HerwigProductionQAModule::process_event(PHCompositeNode *topNode)
 	if(no_gen) return Fun4AllReturnCodes::ABORT_RUN;
 	n_evt++;
 	if(verbosity >= 1 ) std::cout<<"Working on event " <<n_evt <<std::endl;
-	if(herwig) process_herwig_event(PHCompositeNode* topNode); //processes just a hepmc node
-	if(pythia) process_pythia_event(PHCompositeNode* topNode); //processes a fully reconstructed pythia sample
+	if(herwig) process_herwig_event(topNode); //processes just a hepmc node
+	if(pythia) process_pythia_event(topNode); //processes a fully reconstructed pythia sample
 	
 	return Fun4AllReturnCodes::EVENT_OK;
 }
+int process_herwig_event(PHCompositeNode* topNode){
+	//process data with a HepMC input 
+	std::vector<Jet*> identified_jets;
+	std::vector<HepMC::GenParticle*> photons;
+	std::vector<HepMC::GenParticle*> event_particles;
+	std::array<float,3> vertex;
+	PHHepmMCGenEventMap* phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+	if(!phg){ 
+		return 1; //catch empty event pmap
+	}
+	else{
+		for(PHHepMCGenEventMap::ConstIter eventIter=phg->begin(); eventIter != phg->end(); ++eventIter){
+			PHHepMCGenEvent* hepev=eventIter->second;
+			if(!hepev){
+				continue;
+			}
+			else{
+				HepMC::GenEvent ev=hepev->getEvent();
+				if(!ev) continue;
+				else{
+					auto vtx = ev->signal_process_vertex();
+					if(!vtx) continue;
+					else{ //fill in info from the generator vertex
+						auto vtx_pos = vtx->position();
+						vertex[0] = vtx_pos->x();
+						vertex[1] = vtx_pos->y();
+						vertex[2] = vtx_pos->z();
+						h_vertex_herwig_x->Fill(vertex[0]);
+						h_vertex_herwig_y->Fill(vertex[1]);
+						h_vertex_herwig_z->Fill(vertex[2]);
+						h_vertex_herwig_rz->Fill(std::sqrt(std::pow(vertex[0], 2) + std::pow(vertex[1] ,2)), vertex[3]);
+						h_vertex_herwig_thetaz->Fill(std::atan2(vertex[1], vertex[0]), vertex[2]);
+					}
+					for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter != ev->particles_end(); ++iter) 
+					{
 
+
+
+}
+int process_pythia_event(PHCompositeNode* topNode){
+	//just have to extract the HepMC input part of the DST
+	//also grab the jets
+	std::vector<Jet*> identified_jets;
+	std::vector<HepMC::GenParticle*> photons;
+	std::vector<HepMC::GenParticle*> event_particles;
+	 
+}
+
+int runAnalysisJets(std::vector<Jet*> jets, std::vector<HepMC::GenParticle*> event)
+{
+	//a
+}
+
+int runAnalysisPhotonJets(std::vector<Jet*> jets, std::vector<HepMC::GenParticle*> photons, std::vector<HepMC::GenParticle*> event)
+{
+	//a
+}
 //____________________________________________________________________________..
 int HerwigProductionQAModule::ResetEvent(PHCompositeNode *topNode)
 {
