@@ -192,9 +192,10 @@ class JetAnalysis
     // Profiles
     std::array<TProfile*, m_harmonics.size()> p1SP_res{nullptr};
     std::array<TProfile*, m_harmonics.size()> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{{{}, {}, {}}};
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_rev2{{{}, {}, {}}}; // Jet Energy > 0
-    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_rev3{{{}, {}, {}}}; // Jet Energy > 0 and Calo V2 Cut
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re{{{}, {}, {}}}; // Jet Energy > 0
+
+    std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_cov_AB{{{}, {}, {}}}; // computes <AB>
+
     std::array<std::array<TProfile*, m_jet_pt_min_vec.size()>, 3> p1SP_re_anti{{{}, {}, {}}};
 
     // Event Plane Method
@@ -287,6 +288,10 @@ class JetAnalysis
 
     double Q_NS_x;
     double Q_NS_y;
+
+    // SP Ref Flow
+    // Q^S x Q^N
+    std::array<double, m_harmonics.size()> SP_res;
   };
 
   // --- Member Variables ---
@@ -567,20 +572,10 @@ void JetAnalysis::create_vn_histograms(int n)
     std::string title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
     m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
-    // with jet energy > 0
-    name_re_prof = std::format("hSP_re_profv2_{}_{}", n, pt);
+    std::string name_cov_AB = std::format("hSP_cov_AB_{}_{}", n, pt);
 
-    title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
-    m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-
-    if(m_do_secondary_processing)
-    {
-      // With jet energy > 0 and calo v2 cut
-      name_re_prof = std::format("hSP_re_profv3_{}_{}", n, pt);
-
-      title = std::format("Scalar Product; Centrality [%]; Re(#LTq_{{{0}}} Q^{{S|N*}}_{{{0}}}#GT)", n);
-      m_profiles[name_re_prof] = std::make_unique<TProfile>(name_re_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
-    }
+    title = std::format("Scalar Product; Centrality [%]; <AB>", n);
+    m_profiles[name_cov_AB] = std::make_unique<TProfile>(name_cov_AB.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
 
     name_re_prof = std::format("hSP_re_anti_prof_{}_{}", n, pt);
 
@@ -1049,11 +1044,7 @@ void JetAnalysis::init_hists()
     {
       int pt = m_jet_pt_min_vec[idx_pt];
       m_hists.p1SP_re[n_idx][idx_pt] = m_profiles[std::format("hSP_re_prof_{}_{}", n, pt)].get();
-      m_hists.p1SP_rev2[n_idx][idx_pt] = m_profiles[std::format("hSP_re_profv2_{}_{}", n, pt)].get();
-      if (m_do_secondary_processing)
-      {
-        m_hists.p1SP_rev3[n_idx][idx_pt] = m_profiles[std::format("hSP_re_profv3_{}_{}", n, pt)].get();
-      }
+      m_hists.p1SP_cov_AB[n_idx][idx_pt] = m_profiles[std::format("hSP_cov_AB_{}_{}", n, pt)].get();
       m_hists.p1SP_re_anti[n_idx][idx_pt] = m_profiles[std::format("hSP_re_anti_prof_{}_{}", n, pt)].get();
 
       // Event Plane Method
@@ -1100,6 +1091,8 @@ void JetAnalysis::compute_SP_resolution()
     double norm_N = std::sqrt(sEPD_Q_N.x * sEPD_Q_N.x + sEPD_Q_N.y * sEPD_Q_N.y);
     double SP_evt_res = SP_res / (norm_S * norm_N);
 
+    m_event_data.SP_res[n_idx] = SP_res;
+
     if (n_idx == 0)
     {
       m_hists.h2JetPtCentralityEvtRes->Fill(lead_pt, cent, SP_evt_res);
@@ -1112,18 +1105,22 @@ void JetAnalysis::compute_SP_resolution()
 
 void JetAnalysis::compute_SP()
 {
+  // Scalar Product Resolution
+  compute_SP_resolution();
+
   std::vector<JetInfo> jet_info = process_jets();
 
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
 
-  // Loop over all jets
+  std::array<std::array<double, m_jet_pt_min_vec.size()>, m_harmonics.size()> SP_re_avg = {};
+
+  // Loop over all jets (with positive Energy and not near dead IB)
   for (size_t idx = 0; idx < nJets; ++idx)
   {
     double phi = jet_info[idx].phi;
     double eta = jet_info[idx].eta;
     double pt = jet_info[idx].pt;
-    double energy = jet_info[idx].energy;
 
     // Correlate jets with opposite sEPD arm
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1145,9 +1142,9 @@ void JetAnalysis::compute_SP()
       double EP_re = SP_re / sEPD_Q_norm;
 
       // Loop over each jet pT min
-      for (size_t idx_pt = 0; idx_pt < m_jet_pt_min_vec.size(); ++idx_pt)
+      for (size_t pt_idx = 0; pt_idx < m_jet_pt_min_vec.size(); ++pt_idx)
       {
-        int pt_min = m_jet_pt_min_vec[idx_pt];
+        int pt_min = m_jet_pt_min_vec[pt_idx];
 
         // Ensure the jet has minimum pT before proceeding
         if (pt < pt_min)
@@ -1155,23 +1152,29 @@ void JetAnalysis::compute_SP()
           break;
         }
 
-        m_hists.p1SP_re[n_idx][idx_pt]->Fill(cent, SP_re);
-        m_hists.p1SP_re_anti[n_idx][idx_pt]->Fill(cent, SP_re_anti);
+        SP_re_avg[n_idx][pt_idx] += SP_re;
+
+        m_hists.p1SP_re[n_idx][pt_idx]->Fill(cent, SP_re);
+        m_hists.p1SP_re_anti[n_idx][pt_idx]->Fill(cent, SP_re_anti);
 
         // Event Plane Method
-        m_hists.p1EP_re[n_idx][idx_pt]->Fill(cent, EP_re);
+        m_hists.p1EP_re[n_idx][pt_idx]->Fill(cent, EP_re);
+      }
+    }
+  }
 
-        // Ensure Positive Jet Energy
-        if (energy > 0)
-        {
-          m_hists.p1SP_rev2[n_idx][idx_pt]->Fill(cent, SP_re);
+  if (nJets > 0)
+  {
+    int weight = static_cast<int>(nJets);
 
-          // Calo V2 Cut
-          if (m_event_data.has_good_calo_v2)
-          {
-            m_hists.p1SP_rev3[n_idx][idx_pt]->Fill(cent, SP_re);
-          }
-        }
+    for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+    {
+      for (size_t pt_idx = 0; pt_idx < m_jet_pt_min_vec.size(); ++pt_idx)
+      {
+        double A = SP_re_avg[n_idx][pt_idx] / weight;
+        double B = m_event_data.SP_res[n_idx];
+
+        m_hists.p1SP_cov_AB[n_idx][pt_idx]->Fill(cent, A * B, weight);
       }
     }
   }
@@ -1229,8 +1232,6 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       m_hists.h2CentralityJetPt->Fill(cent, pt);
       m_hists.h2CentralityJetEnergy->Fill(cent, energy);
 
-      jet_info.emplace_back(energy, pt, phi, eta);
-
       if(m_do_secondary_processing)
       {
         m_hists.h2SumEJetPt->Fill(sum_E, pt);
@@ -1241,6 +1242,8 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       {
         m_hists.h2JetPhiPtv3->Fill(phi, pt);
         m_hists.h2JetPhiEtav3->Fill(phi, eta);
+
+        jet_info.emplace_back(energy, pt, phi, eta);
 
         if (m_event_data.has_good_calo_v2)
         {
@@ -1501,9 +1504,6 @@ void JetAnalysis::process_events()
 
     // Scalar Product Method
     compute_SP();
-
-    // Scalar Product Resolution
-    compute_SP_resolution();
   }
 
   int jets = static_cast<int>(m_hists.h2JetPhiEta->GetEntries());
