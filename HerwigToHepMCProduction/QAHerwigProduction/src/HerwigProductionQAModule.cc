@@ -79,10 +79,10 @@ HerwigProductionQAModule::HerwigProductionQAModule(const std::string data_type_l
 	if( data_type_label.find("Herwig") != std::string::npos || data_type_label.find("herwig") != std::string::npos ) 
 		herwig 	= true;
 	else if ( data_type_label.find("Pythia") != std::string::npos || data_type_label.find("pythia") != std::string::npos) 
-		pythia = true;
+		pythia 	= true;
 	else 
-		no_gen = true; //catch for an issue of having no generator, on first event immediately fail 
-	this->verbosity=verb;
+		no_gen 	= true; //catch for an issue of having no generator, on first event immediately fail 
+	this->verbosity	= verb;
 
 }
 
@@ -114,12 +114,12 @@ int HerwigProductionQAModule::process_event(PHCompositeNode *topNode)
 	
 	return Fun4AllReturnCodes::EVENT_OK;
 }
-int process_herwig_event(PHCompositeNode* topNode){
+int HerwigProductionQAModule::process_herwig_event(PHCompositeNode* topNode){
 	//process data with a HepMC input 
-	std::vector<Jet*> identified_jets;
-	std::vector<HepMC::GenParticle*> photons;
-	std::vector<HepMC::GenParticle*> event_particles;
-	std::array<float,3> vertex;
+	std::vector<std::vector<Jet*>*> identified_jets {}; //to hold r=0.2-r=0.6 jets 
+	std::vector<HepMC::GenParticle*> photons {};
+	std::vector<HepMC::GenParticle*> event_particles {};
+	std::array<float,3> vertex {};
 	PHHepmMCGenEventMap* phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
 	if(!phg){ 
 		return 1; //catch empty event pmap
@@ -149,27 +149,191 @@ int process_herwig_event(PHCompositeNode* topNode){
 					}
 					for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter != ev->particles_end(); ++iter) 
 					{
-
-
+						if(!iter) continue;
+						auto particle=(*iter);
+						if(!particle) continue;
+						if(particle->status==1 && particle->end_vertex() == false)
+						{
+							event_particles.push_back(particle);
+							if( particle->pdg_id() == 22)
+							{
+								photons.push_back(photons);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	findJets(event_particles, &identified_jets);
+	if(photons) runAnalysisPhotonJets(identified_jets, photons, event_particles);
+	else if (jets) runAnalysisJets(identified_jets, event_particles);
+	return Fun4AllReturnCodes::EVENT_OK;
 
 }
-int process_pythia_event(PHCompositeNode* topNode){
+void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_particles, std::vector<std::vector<Jet*>*>* jets)
+{
+	//just invoke fastJet over the relevant event particles and get some sembelance of truth jets at the HepMC level
+	std::vector<fastjet::PseudoJet> candidates;
+	fastjet::JetDefinition fjd2 (fastjet::antikt_alorithm, 0.2)
+	fastjet::JetDefinition fjd3 (fastjet::antikt_alorithm, 0.3);
+	fastjet::JetDefinition fjd4 (fastjet::antikt_alorithm, 0.4);
+	fastjet::JetDefinition fjd5 (fastjet::antikt_alorithm, 0.5);
+	fastjet::JetDefinition fjd6 (fastjet::antikt_alorithm, 0.6);
+	for(auto p:event_particles)
+	{
+		auto pid = p->pdg_id();
+		if (abs(pid) > 11 &&  abs(pid) < 19 ) continue;
+		auto mom = p->momentum();
+		candidates.push_back(fastjet::PseudoJet(mom.px(), mom.py(), mom.pz(), mom.E()));
+	}	
+	fastjet::ClusterSequence cs2(candidates, fjd2);
+	fastjet::ClusterSequence cs3(candidates, fjd3);
+	fastjet::ClusterSequence cs4(candidates, fjd4);
+	fastjet::ClusterSequence cs5(candidates, fjd5);
+	fastjet::ClusterSequence cs6(candidates, fjd6);
+	auto js2=cs2.inclusive_jets();
+	auto js3=cs3.inclusive_jets();
+	auto js4=cs4.inclusive_jets();
+	auto js5=cs5.inclusive_jets();
+	auto js6=cs6.inclusive_jets();
+	std::vector< std::vector<fastjet::PseudoJet>  > jets_size
+	{
+		std::make_pair(cs2, js2),
+		std::make_pair(cs3, js3),
+		std::make_pair(cs4, js4),
+		std::make_pair(cs5, js5),
+		std::make_pair(cs6, js6)
+	};
+	for(auto js:jets_size)
+	{
+		std::vector<Jet*>* jt=new std::vector<Jet*>();
+		for(auto j:js)
+		{
+			Jet* jet = new Jet();
+			jet->set_px(j.px());
+			jet->set_py(j.py());
+			jet->set_pz(j.pz());
+			jet->set_e( j.e() );
+			for(auto cmp:j.consituents())
+			{
+				jet->insert_comp(Jet::SRC::HEPMC_IMPORT, cmp.user_index());
+			}
+			jt->push_back(jet);
+		}
+		jets->push_back(jt);
+	}
+	return;
+		
+}
+
+int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 	//just have to extract the HepMC input part of the DST
 	//also grab the jets
 	std::vector<Jet*> identified_jets;
 	std::vector<HepMC::GenParticle*> photons;
 	std::vector<HepMC::GenParticle*> event_particles;
-	 
+
+	auto hepmc_gen_event= findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+	if(!hepmc_gen_event) return Fun4AllReturnCodes::EVENT_OK; 
+	else if(hepmc_gen_event)
+	{
+		for(PHHepMCGenEventMap::ConstIter evtIter=hepmc_gen_event->begin(); evtIter != hepmc_gen_event->end(); ++evtIter)
+		{
+			PHHepMCGenEvent* hepev=evtIter->second;
+			if(!hepev) continue;
+			else if(hepev){
+				HepMC::GenEvent* ev= hepev->getEvent();
+				if( !ev ) continue;
+				else if( ev )
+				{
+					for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter != ev->particles_end(); ++iter) 
+					{
+						if(!iter) continue;
+						auto particle=(*iter);
+						if(!particle) continue;
+						if(particle->status==1 && particle->end_vertex() == false)
+						{
+							event_particles.push_back(particle);
+							if( particle->pdg_id() == 22)
+							{
+								photons.push_back(photons);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	auto js2=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r02");
+	auto js3=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r03");
+	auto js4=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r04");
+	auto js5=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r05");
+	auto js6=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r06");
+	std::vector<JetContainerv1*> jts {js2, js3, js4, js5, js6};
+	for(auto js:jts)
+	{
+		if(!js) continue;
+		else if(js)
+		{
+			std::vector<Jets*> jetsize {};
+			for(auto j:*js)
+			{
+				if(!j) continue;
+				else if (j) 
+				{
+					jetsize.push_back(j);
+				}
+			}
+			jets.push_back(&jetsize);
+		}
+	}
+	if(photons) 		runAnalysisPhotonJets(identified_jets, photons);
+	else if (jets)		runAnalysisJets(identified_jets);
+	if( photons || jets ) 	runAnalysisEvent(event_particles);	
+	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int runAnalysisJets(std::vector<Jet*> jets, std::vector<HepMC::GenParticle*> event)
+int HerwigProductionQAModule::runAnalysisJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes)
 {
-	//a
+	//run analysis of jets 
+	int i=0;
+	for(auto jets:jets_of_all_sizes)
+	{
+		float lead_pt	= 0.; 
+		float lead_eta	= 0.;
+		float lead_phi 	= 0.;
+		float lead_e	= 0.;
+		int lead_comp	= 0 ;
+		for(auto jet:*jets){
+			if(jet->get_pt()  > lead_pt){
+			       	lead_pt 	= jet->get_pt();
+				lead_eta	= jet->get_eta();
+				lead_phi 	= jet->get_phi();
+				lead_E 		= jet->get_e();
+				lead_comp 	= (int)((jet->get_comp_vec()).size());
+			}
+			h_all_jets_pt->at(i)->	Fill(jet->get_pt());
+			h_all_jets_eta->at(i)->	Fill(jet->get_eta());
+			h_all_jets_phi->at(i)->	Fill(jet->get_phi());
+			h_all_jets_e->at(i)->	Fill(jet->get_e());
+			h_all_jets_n_comp->at(i)->Fill((int)((jet->get_comp_vec()).size()));
+		}
+		h_lead_jets_pt->at(i)->	Fill(lead_pt);
+		h_lead_jets_eta->at(i)->Fill(lead_eta);
+		h_lead_jets_phi->at(i)->Fill(lead_phi);
+		h_lead_jets_e->at(i)->	Fill(lead_e);
+		h_n->at(i)->Fill((int)(jets->size()));
+		h_lead_n_comp->at(i)->	Fill(lead_comp);
+		i++;
+	}
+	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int runAnalysisPhotonJets(std::vector<Jet*> jets, std::vector<HepMC::GenParticle*> photons, std::vector<HepMC::GenParticle*> event)
+int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes, std::vector<HepMC::GenParticle*> photons, std::vector<HepMC::GenParticle*> event)
 {
-	//a
+	//run the analysis of the photons + jets
+	runAnalysisJets(jets_of_all_sizes);
 }
 //____________________________________________________________________________..
 int HerwigProductionQAModule::ResetEvent(PHCompositeNode *topNode)
