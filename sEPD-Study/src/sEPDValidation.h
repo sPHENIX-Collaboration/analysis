@@ -354,12 +354,6 @@ class sEPDValidation : public SubsysReco
     int nStripsCEMC{9999};
     int nHIRecoSeedsSub{0};
     int nHIRecoSeedsSubIt1{0};
-    std::vector<int> sepd_channel;
-    std::vector<double> sepd_charge;
-    std::vector<double> sepd_phi;
-    // std::vector<double> mbd_charge;
-    // std::vector<double> mbd_phi;
-    // std::vector<double> mbd_eta;
     std::vector<double> jet_pt;
     std::vector<double> jet_energy;
     std::vector<double> jet_phi;

@@ -199,9 +199,6 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
   m_tree->Branch("event_tower_median_Energy", &m_data.event_tower_median_Energy);
   m_tree->Branch("event_EMCal_tower_median_Energy", &m_data.event_EMCal_tower_median_Energy);
-  m_tree->Branch("sepd_channel", &m_data.sepd_channel);
-  m_tree->Branch("sepd_charge", &m_data.sepd_charge);
-  m_tree->Branch("sepd_phi", &m_data.sepd_phi);
 
   m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
   m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
@@ -223,13 +220,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
   m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
-  m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
+  // m_tree->Branch("nStripsCEMC", &m_data.nStripsCEMC);
 
   m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
-  // m_tree->Branch("mbd_charge", &m_data.mbd_charge);
-  // m_tree->Branch("mbd_phi", &m_data.mbd_phi);
-  // m_tree->Branch("mbd_eta", &m_data.mbd_eta);
   m_tree->Branch("max_jet_pt", &m_data.max_jet_pt);
   m_tree->Branch("jet_pt", &m_data.jet_pt);
   m_tree->Branch("jet_energy", &m_data.jet_energy);
@@ -411,10 +405,6 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 
     double charge = mbd_pmt->get_q() * vertex_scale * centrality_scale;
 
-    // m_data.mbd_charge.push_back(charge);
-    // m_data.mbd_phi.push_back(mbd_ch_phi);
-    // m_data.mbd_eta.push_back(mbd_ch_eta);
-
     if (mbd_arm == 0)
     {
       dynamic_cast<TProfile2D *>(m_hists["h2MBD_South_Charge"].get())->Fill(mbd_ch_phi, -mbd_ch_eta, charge);
@@ -516,10 +506,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     {
       dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_BelowThresh"].get())->Fill(phi, eta, 0);
     }
-
-    m_data.sepd_channel.push_back(channel);
-    m_data.sepd_charge.push_back(charge);
-    m_data.sepd_phi.push_back(phi);
 
     JetUtils::update_min_max(sepd_ch_z, m_logging.m_sepd_z_min, m_logging.m_sepd_z_max);
     JetUtils::update_min_max(sepd_ch_r, m_logging.m_sepd_r_min, m_logging.m_sepd_r_max);
@@ -931,12 +917,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_MBD_Charge_North = 9999;
   m_data.event_sEPD_Charge_South = 9999;
   m_data.event_sEPD_Charge_North = 9999;
-  m_data.max_jet_pt = -9999;
-
-  // sEPD
-  m_data.sepd_channel.clear();
-  m_data.sepd_charge.clear();
-  m_data.sepd_phi.clear();
+  m_data.max_jet_pt = 0;
 
   // Calo
   m_data.event_EMCal_Energy = 0;
@@ -944,11 +925,6 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_OHCal_Energy = 0;
   m_data.event_tower_median_Energy = -9999;
   m_data.event_EMCal_tower_median_Energy = -9999;
-
-  // MBD
-  // m_data.mbd_charge.clear();
-  // m_data.mbd_phi.clear();
-  // m_data.mbd_eta.clear();
 
   // Jets
   m_data.jet_pt.clear();
