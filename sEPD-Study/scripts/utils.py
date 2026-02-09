@@ -968,6 +968,9 @@ def setup_data():
 
     sort_files_by_lines(dst_dir, output_dir / f'run3auau-{tag}.list')
 
+    command = f'sed -E \'s/.*-0*([1-9][0-9]*)\\.list$/\\1/\' run3auau-{tag}.list > runs.list'
+    run_command_and_log(command, logger, output_dir, False)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
