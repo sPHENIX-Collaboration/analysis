@@ -853,75 +853,39 @@ def get_line_count(file_path: str) -> int:
 
     return line_count
 
-def find_file_with_most_lines(directory: str):
-    """
-    Identifies the file with the most lines in a given directory.
+def count_total_lines(directory_path: Path) -> int:
+    """Calculates the sum of lines in all files within a directory."""
 
-    Args:
-        directory: The path to the directory as a string.
+    # Use a generator expression to sum the results of count_lines for each file
+    total = sum(count_lines(f) for f in directory_path.iterdir() if f.is_file())
 
-    Returns:
-        A tuple containing the filename and line count, or (None, 0) if no files were found.
-    """
-    # Create a Path object for the directory
-    dir_path = Path(directory)
+    return total
 
-    if not dir_path.is_dir():
-        print(f"Error: Directory '{directory}' not found.")
-        return None, 0
-
-    max_lines = 0
-    file_with_most_lines = None
-
-    # Use iterdir() to get an iterator over the directory contents
-    for path_object in dir_path.iterdir():
-        # Check if the path points to a file
-        if path_object.is_file():
-            try:
-                # Open the file using the Path object and count lines efficiently
-                with path_object.open('r', encoding='utf-8', errors='ignore') as f:
-                    line_count = sum(1 for line in f)
-
-                # Update max_lines and the filename if a new maximum is found
-                if line_count > max_lines:
-                    max_lines = line_count
-                    file_with_most_lines = path_object.name
-
-            except IOError as e:
-                print(f"Could not read file {path_object.name}: {e}")
-
-    return file_with_most_lines, max_lines
-
-def count_total_lines(directory_path: str) -> int:
-    """
-    Counts the total number of lines across all files in a given directory.
-
-    Args:
-        directory_path: The path to the directory as a string.
-
-    Returns:
-        The total number of lines, or 0 if the directory does not exist.
-    """
-    path_obj = Path(directory_path)
-
-    if not path_obj.is_dir():
-        print(f"Error: Directory '{directory_path}' not found.")
+def count_lines(file_path: Path) -> int:
+    """Counts lines by iterating through the file."""
+    try:
+        with file_path.open('rb') as f:
+            return sum(1 for _ in f)
+    except (PermissionError, OSError):
         return 0
 
-    total_lines = 0
+def sort_files_by_lines(directory_path: Path, output_file: Path) -> None:
+    file_data = []
 
-    # Iterate through all items in the directory
-    for item in path_obj.iterdir():
-        # Check if the item is a regular file
-        if item.is_file():
-            try:
-                # Open the file using the Path object and count lines efficiently
-                with item.open('r', encoding='utf-8', errors='ignore') as f:
-                    total_lines += sum(1 for line in f)
-            except IOError as e:
-                print(f"Could not read file {item.name}: {e}")
+    # 1. Create a list of (path, count) tuples using a list comprehension
+    file_data = [
+        (f.resolve(), count_lines(f))
+        for f in directory_path.iterdir() if f.is_file()
+    ]
 
-    return total_lines
+    # 2. Sort descending by line count (index 1)
+    file_data.sort(key=lambda x: x[1], reverse=True)
+
+    # 3. Join the paths into one big string separated by newlines
+    output_content = "\n".join(str(path) for path, count in file_data)
+
+    # 4. Use write_text to save everything at once
+    output_file.write_text(output_content)
 
 def setup_data():
     """
@@ -958,7 +922,7 @@ def setup_data():
     # Get list of all runnumbers
     # Type = physics
     # Duration >= 5 minutes
-    command = 'psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runtype = \'physics\' and runnumber >= 66457 and ertimestamp-brtimestamp > interval \'5 minutes\' order by runnumber;" -At > run3auau-time-min-5.list'
+    command = 'psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runtype = \'physics\' and runnumber between 66457 and 78954 and ertimestamp-brtimestamp > interval \'5 minutes\' order by runnumber;" -At > run3auau-time-min-5.list'
     run_command_and_log(command, logger, output_dir, False)
 
     new_runs = get_line_count(run3auau_time_min_5)
@@ -1002,16 +966,7 @@ def setup_data():
     logger.info(f'Runs: Before: {current_runs_dsts}, After: {new_runs_dsts}, Change: {diff_runs_frac:.2f} %')
     logger.info(f'Path: {run3auau_dsts_time_min_5}')
 
-    # Compile the List of Lists of DST_CALOFITTING
-    command = f'readlink -f run3auau-{tag}/* > run3auau-{tag}.list'
-    run_command_and_log(command, logger, output_dir, False)
-
-    biggest_run, segments = find_file_with_most_lines(dst_dir)
-    logger.info(f'Biggest Run: {biggest_run}, Segments: {segments}')
-
-    # Compile the List of Lists of DST_CALOFITTING for testing
-    command = f'readlink -f {dst_dir / biggest_run} > run3auau-{tag}-test.list'
-    run_command_and_log(command, logger, output_dir, False)
+    sort_files_by_lines(dst_dir, output_dir / f'run3auau-{tag}.list')
 
 args = parser.parse_args()
 
