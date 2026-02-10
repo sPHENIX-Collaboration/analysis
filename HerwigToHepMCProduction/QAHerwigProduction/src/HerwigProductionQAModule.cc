@@ -192,11 +192,11 @@ void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_p
 	fastjet::ClusterSequence cs4(candidates, fjd4);
 	fastjet::ClusterSequence cs5(candidates, fjd5);
 	fastjet::ClusterSequence cs6(candidates, fjd6);
-	auto js2=cs2.inclusive_jets();
-	auto js3=cs3.inclusive_jets();
-	auto js4=cs4.inclusive_jets();
-	auto js5=cs5.inclusive_jets();
-	auto js6=cs6.inclusive_jets();
+	auto js2=cs2.inclusive_jets(1.);
+	auto js3=cs3.inclusive_jets(1.);
+	auto js4=cs4.inclusive_jets(1.);
+	auto js5=cs5.inclusive_jets(1.);
+	auto js6=cs6.inclusive_jets(1.);
 	std::vector< std::vector<fastjet::PseudoJet>  > jets_size
 	{
 		std::make_pair(cs2, js2),
@@ -252,7 +252,7 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 						if(!iter) continue;
 						auto particle=(*iter);
 						if(!particle) continue;
-						if(particle->status==1 && particle->end_vertex() == false)
+						if(particle->status==1 && particle->end_vertex() == false) //picks up final state particles only 
 						{
 							event_particles.push_back(particle);
 							if( particle->pdg_id() == 22)
@@ -294,10 +294,11 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int HerwigProductionQAModule::runAnalysisJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes)
+std::vector<std::array<float, 4>> HerwigProductionQAModule::runAnalysisJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes)
 {
 	//run analysis of jets 
 	int i=0;
+	std::vector<std::array<float, 4>> lead_jet_of_all_sizes {};
 	for(auto jets:jets_of_all_sizes)
 	{
 		float lead_pt	= 0.; 
@@ -325,16 +326,153 @@ int HerwigProductionQAModule::runAnalysisJets(std::vector<std::vector<Jet*>*> je
 		h_lead_jets_e->at(i)->	Fill(lead_e);
 		h_n->at(i)->Fill((int)(jets->size()));
 		h_lead_n_comp->at(i)->	Fill(lead_comp);
+		std::array<float, 4> lead_jet {lead_pt, lead_eta, lead_phi, lead_e};
+		lead_jet_of_all_sizes.push_back(lead_jet);
 		i++;
+		h_n_jets.at(i)->Fill((int)jets->size());
+	}
+	return lead_jet_of_all_sizes;
+}
+
+int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes, std::vector<HepMC::GenParticle*> photons)
+{
+	//run the analysis of the photons + jets
+	auto lead_jet_of_all_sizes=runAnalysisJets(jets_of_all_sizes);
+	int i=0;
+	float lead_pt	= 0.;
+	float lead_eta	= 0.;
+	float lead_phi 	= 0.;
+	float lead_e	= 0.;
+
+	int n_frag 	= 0;
+	int n_direct	= 0;
+
+	for(auto ph:photons)
+	{
+		auto p=ph->momentun();
+		float pt=std::sqrt(std::pow(p.px(), 2)+ std::pow(p.py(), 2));
+		if(pt > lead_pt) 
+		{
+			lead_pt		= pt;
+			lead_eta	= p.pseudoRapidity();
+			lead_phi	= p.phi();
+			lead_E		= p.e();
+			lead_photon = ph;
+		}
+		h_all_photons_pt->	Fill(pt);
+		h_all_photons_eta->	Fill(p.psudeoRapidity());
+		h_all_photons_phi->	Fill(p.phi());
+		h_all_photons_e->	Fill(p.e());
+	
+		HepMC::GenVertex* prod = ph->production_vertex();
+		HepMC::GenEvent* paren = ph->parent_event();
+		if(*(paren->signal_process_vertex()) == *prod ){
+			//this is a direct photon 
+			n_direct++;
+			h_direct_photons_pt->	Fill(pt);
+			h_direct_photons_eta->	Fill(p.psudeoRapidity());
+			h_direct_photons_phi->	Fill(p.phi());
+			h_direct_photons_e->	Fill(p.e());
+		}
+		else
+		{
+			n_frag++;
+			h_frag_photons_pt->	Fill(pt);
+			h_frag_photons_eta->	Fill(p.psudeoRapidity());
+			h_frag_photons_phi->	Fill(p.phi());
+			h_frag_photons_e->	Fill(p.e());
+		}
+
+	}
+	h_lead_photon_pt->Fill(lead_pt);
+	h_lead_photon_eta->Fill(lead_eta);
+	h_lead_photon_phi->Fill(lead_phi);
+	h_lead_photon_e->Fill(lead_e);
+	
+	h_n_photons->Fill((int)photons.size());
+	h_n_frag->Fill(n_frag);
+	h_n_direct->Fill(n_direct);
+	//now compare correlations between lead jet and lead photon
+	for(int i=0; i < (int)lead_jet_of_all_sizes.size(); i++)
+	{
+	       auto lead_jet = lead_jet_of_all_sizes.at(i);
+	       float lead_jet_pt	= lead_jet[0];	       
+	       float lead_jet_eta	= lead_jet[1];
+	       float lead_jet_phi	= lead_jet[2];
+	       float lead_jet_e		= lead_jet[3];
+	       h_photon_jet_pt.at(i)->Fill(lead_pt, lead_jet_pt);
+	       h_photon_jet_eta.at(i)->Fill(lead_eta, lead_jet_eta);
+	       h_photon_jet_phi.at(i)->Fill(lead_phi, lead_jet_phi);
+	       h_photon_jet_e.at(i)->Fill(lead_e, lead_jet_e);
+	       float delta_phi = std::abs(lead_phi - lead_jet_phi);
+	       if(delta_phi > pi) delta_phi = 2* pi - delta_phi; 
+	       h_photon_jet_dphi.at(i)->Fill(delta_phi);
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
 }
-
-int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*>*> jets_of_all_sizes, std::vector<HepMC::GenParticle*> photons, std::vector<HepMC::GenParticle*> event)
+int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> particles)
 {
-	//run the analysis of the photons + jets
-	runAnalysisJets(jets_of_all_sizes);
+	//this is just a QA of bulk properties
+	float total_E	= 0.;
+	int n_p		= 0;
+	int n_e 	= 0;
+	int n_n 	= 0;
+	int n_pi 	= 0;
+	for(auto p:particles)
+	{
+		float particle_eta	= p->momentum().pseduoRapidity();
+		float particle_phi	= p->momentum().phi();
+		float particle_e 	= p->momentum().e();
+		float particle_px 	= p->momentum().px();
+		float particle_py	= p->momentum().pz();
+		float particle_pt	= std::sqrt(std::pow(particle_px, 2) + std::pow(particle_py, 2));
+		float particle_et	= particle_e / std::cosh(particle_eta);
+		int   particle_id	= std::abs(p->pdg_id());
+
+		total_E += particle_e;
+		h_particle_eta->Fill(particle_eta);
+		h_particle_phi->Fill(particle_phi);
+		h_particle_e->Fill(particle_e);
+		h_particle_pt->Fill(particle_pt);
+		h_particle_et->Fill(particle_et);
+	
+		h_particle_et_eta->Fill(particle_eta, particle_et);
+		h_particle_et_phi->Fill(particle_phi, particle_et);
+		h_particle_pt_phi->Fill(particle_phi, particle_pt);
+		h_particle_phi_eta->Fill(particle_phi, particle_eta);
+		h_particle_e_phi->Fill(particle_phi, particle_e);
+		if(particle_id == 11 ){
+		       	n_e++;
+			h_electron_phi_eta->Fill(particle_phi, particle_eta);
+			h_electron_pt->Fill(particle_pt);
+		}
+		else if(particle_id == 111 || particle_id == 211 )
+		{
+			n_pi++;
+			h_pion_phi_eta->Fill(particle_phi, particle_eta);
+			h_pion_pt->Fill(particle_pt);
+		}
+		else if(particle_id == 2212 )
+		{
+			n_p++;
+			h_proton_phi_eta->Fill(particle_phi, particle_eta);
+			h_proton_pt->Fill(particle_pt);
+		}
+		else if(particle_id == 2112)
+		{
+			n_n++;
+			h_neutron_phi_eta->Fill(particle_phi, particle_eta);
+			h_neutron_pt->Fill(particle_pt);
+		}
+	}
+	h_electron_n->Fill(n_e);
+	h_protron_n->Fill(n_p);
+	h_neutron_n->Fill(n_n);
+	h_pion_n->Fill(n_pi);
+	h_total_E->Fill(total_E);
+	return Fun4AllReturnCodes::EVENT_OK;	
 }
+
 //____________________________________________________________________________..
 int HerwigProductionQAModule::ResetEvent(PHCompositeNode *topNode)
 {
