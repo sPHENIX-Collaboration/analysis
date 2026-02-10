@@ -230,6 +230,8 @@ class sEPDValidation : public SubsysReco
   double m_cent{9999};
   double m_mbd_total_charge{9999};
 
+  static constexpr int PROGRESS_PRINT_INTERVAL = 1000;
+
   // Cuts
   struct EventCuts
   {

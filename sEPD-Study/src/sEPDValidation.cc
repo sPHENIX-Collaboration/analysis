@@ -844,7 +844,7 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
   m_data.event_id = m_globalEvent;
   // int m_run         = eventInfo->get_RunNumber();
 
-  if (m_event % 20 == 0)
+  if (m_event % PROGRESS_PRINT_INTERVAL == 0)
   {
     std::cout << "Progress: " << m_event << ", Global: " << m_globalEvent << std::endl;
   }

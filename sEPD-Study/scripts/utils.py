@@ -124,8 +124,8 @@ f4a.add_argument('-n'
 
 f4a.add_argument('-s'
                     , '--memory', type=float
-                    , default=4
-                    , help='Memory (units of GB) to request per condor submission. Default: 4 GB.')
+                    , default=2
+                    , help='Memory (units of GB) to request per condor submission. Default: 2 GB.')
 
 f4a.add_argument('-l'
                     , '--condor-log-dir', type=str
