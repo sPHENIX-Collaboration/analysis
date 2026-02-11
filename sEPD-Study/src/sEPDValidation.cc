@@ -524,7 +524,9 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     double& sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
 
     sepd_total_charge += charge;
-    dynamic_cast<TProfile2D *>(m_hists[std::format("h2SEPD_{}_Charge", detector)].get())->Fill(phi, -eta, charge);
+
+    double eta_abs = std::abs(eta);
+    dynamic_cast<TProfile2D *>(m_hists[std::format("h2SEPD_{}_Charge", detector)].get())->Fill(phi, eta_abs, charge);
     dynamic_cast<TProfile *>(m_hists[std::format("hSEPD_{}_Charge", detector)].get())->Fill(rbin, charge);
   }
 
