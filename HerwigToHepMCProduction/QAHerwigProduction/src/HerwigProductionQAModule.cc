@@ -94,7 +94,7 @@ HerwigProductionQAModule::~HerwigProductionQAModule()
 //____________________________________________________________________________..
 int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 {
-	if(verbosity > 1) std::cout<<"Trigger val: " <<trigger <<std::endl;
+	if(verbosity > 1) std::cout<<"Trigger val: " <<trigger_val <<std::endl;
 	if(jet)
 	{
 		for(int i=2; i<7; i++)
@@ -108,19 +108,19 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, -1.2, 1.2);
 			TH1F* h_all_jet_phi=new TH1F(Form("h_jet_r0%d_phi", i ), 
 					Form(" R=0.%d jets; #varphi_{jet}; N_{jets}", i),
-					100, 0, 2*pi);
+					100, 0, 2*M_PI);
 			TH1F* h_all_jet_e=new TH1F(Form("h_jet_r0%d_e", i ), 
 					Form(" R=0.%d jets; E_{jet}[GeV]; N_{jets}", i),
 					500, -0.5, 99.5);
 			TH1I* h_all_jet_n_comp = new TH1I(Form("h_jet_r0%d_comp", i),
-					Form(" R=0.%d jets; N_{comp}; N_{jets}" i),
+					Form(" R=0.%d jets; N_{comp}; N_{jets}", i),
 					100, 0, 100);
 			//add to the vector
 			h_all_jets_pt.push_back(h_all_jet_pt);
 			h_all_jets_eta.push_back(h_all_jet_eta);
 			h_all_jets_phi.push_back(h_all_jet_phi);
 			h_all_jets_e.push_back(h_all_jet_e);
-			h_all_jets_n_comp.push_back(h_all_jet_ncomp);
+			h_all_jets_n_comp.push_back(h_all_jet_n_comp);
 
 			//leading jets
 			TH1F* h_lead_jet_pt=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
@@ -131,19 +131,19 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, -1.2, 1.2);
 			TH1F* h_lead_jet_phi=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
 					Form(" R=0.%d jets; #varphi_{jet}^{lead}; N_{evts}", i),
-					100, 0, 2*pi);
+					100, 0, 2*M_PI);
 			TH1F* h_lead_jet_e=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
 					Form(" R=0.%d jets; E_{jet}^{lead}[GeV]; N_{evts}", i),
 					500, -0.5, 99.5);
 			TH1I* h_lead_jet_n_comp = new TH1I(Form("h_lead_jet_r0%d_comp", i),
-					Form(" R=0.%d jets; N_{comp}^{lead jet}; N_{evts}" i),
+					Form(" R=0.%d jets; N_{comp}^{lead jet}; N_{evts}", i),
 					100, 0, 100);
 			//add to the vector
 			h_lead_jets_pt.push_back(h_lead_jet_pt);
 			h_lead_jets_eta.push_back(h_lead_jet_eta);
 			h_lead_jets_phi.push_back(h_lead_jet_phi);
 			h_lead_jets_e.push_back(h_lead_jet_e);
-			h_lead_jets_n_comp.push_back(h_lead_jet_ncomp);
+			h_lead_jets_n_comp.push_back(h_lead_jet_n_comp);
 
 			TH1I* h_n_jet = new TH1I(Form("h_jet_r0%d_n", i), 
 					Form(" R=0.%d jets; N_{jet}; N_{event}", i),
@@ -162,12 +162,12 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, -1.2, 1.2);
 		h_all_photons_phi=new TH1F("h_photons_phi", 
 				"all  photons; #varphi_{photon}; N_{photons}",
-				100, 0, 2*pi);
+				100, 0, 2*M_PI);
 		h_all_photons_e=new TH1F("h_photons_e", 
 				"all  photons; E_{photon}[GeV]; N_{photons}",
 				500, -0.5, 99.5);
 		h_n_photons 	=new TH1I("h_n_photons",
-				"all  photons; N_{photons}; N_{evts}"
+				"all  photons; N_{photons}; N_{evts}",
 				100, 0, 100);
 		
 		//leading photons
@@ -179,9 +179,10 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, -1.2, 1.2);
 		h_lead_photons_phi=new TH1F("h_lead_photons_phi", 
 				"lead  photons; #varphi_{photon}^{lead}; N_{evts}",
-				100, 0, 2*pi);
+				100, 0, 2*M_PI);
 		h_lead_photons_e=new TH1F("h_lead_photons_e", 
 				"lead  photons; E_{photon}^{lead}[GeV]; N_{evts}",
+				500, -0.5, 99.5);
 		
 		//direct photons
 		h_direct_photons_pt=new TH1F("h_direct_photons_pt", 
@@ -192,12 +193,12 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, -1.2, 1.2);
 		h_direct_photons_phi=new TH1F("h_direct_photons_phi", 
 				"direct  photons; #varphi_{photon}^{direct}; N_{photon}",
-				100, 0, 2*pi);
+				100, 0, 2*M_PI);
 		h_direct_photons_e=new TH1F("h_direct_photons_E", 
 				"direct  photons; E_{photon}[GeV]; N_{photon}",
 				500, -0.5, 99.5);
 		h_n_direct 	=new TH1I("h_n_direct",
-				"direct  photons; N_{photons}; N_{photon}"
+				"direct  photons; N_{photons}; N_{photon}",
 				100, 0, 100);
 		
 		//fragmentation photons
@@ -209,19 +210,18 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, -1.2, 1.2);
 		h_frag_photons_phi=new TH1F("h_frag_photons_phi", 
 				"fragmentation photons; #varphi_{photon}^{frag}; N_{photon}",
-				100, 0, 2*pi);
+				100, 0, 2*M_PI);
 		h_frag_photons_e=new TH1F("h_frag_photons_E", 
 				"fragmentation photons; E_{photon}[GeV]; N_{photon}",
 				500, -0.5, 99.5);
-				500, -0.5, 99.5);
 		h_n_frag 	=new TH1I("h_n_frag",
-				"fragmentation  photons; N_{photons}; N_{photon}"
+				"fragmentation  photons; N_{photons}; N_{photon}",
 				100, 0, 100);
 
 	}
 	if(photon && jet)
 	{
-		for(int =2; i<7; i++)
+		for(int i=2; i<7; i++)
 		{
 			//leading jet + photon
 			TH2F* h_photon_jet_pt_a=new TH2F(Form("h_photon_jet_r0%d_pt", i ), 
@@ -232,13 +232,13 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, -1.2, 1.2, 100, -1.2, 1.2);
 			TH2F* h_photon_jet_phi_a=new TH2F(Form("h_photon_jet_r0%d_phi", i ), 
 					Form(" R=0.%d jets; #varphi_{photon}; #varphi_{jet}; N_{evts}", i),
-					100, 0, 2*pi, 100, 0, 2*pi);
-			TH2F* h_photon_jet_e_a=new TH2F(Form("h_photon_jet_r0%d_e" i ), 
+					100, 0, 2*M_PI, 100, 0, 2*M_PI);
+			TH2F* h_photon_jet_e_a=new TH2F(Form("h_photon_jet_r0%d_e", i ), 
 					Form(" R=0.%d jets; E_{photon}[GeV]; E_{jet}; N_{evts}", i),
 					500, -0.5, 99.5, 500, -0.5, 99.5);
 			TH1F* h_photon_jet_dphi_a = new TH1F(Form("h_photon_jet_r0%d_dphi", i),
-					Form(" R=0.%d jets; |#Delta #varphi|_{photon jet}; N_{evts}" i),
-					100, -0.1, pi+0.1);
+					Form(" R=0.%d jets; |#Delta #varphi|_{photon jet}; N_{evts}", i),
+					100, -0.1, M_PI+0.1);
 			//add to the vector
 			h_photon_jet_pt.push_back(h_photon_jet_pt_a);
 			h_photon_jet_eta.push_back(h_photon_jet_eta_a);
@@ -251,7 +251,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 	//event categorization 
 	//1D distributions
 	h_particle_eta	= new TH1F("h_particle_eta" , "Final State Particles; #eta; N_{particles}", 100, -1.2, 1.2);
-	h_particle_phi 	= new TH1F("h_particle_phi" , "Final State Particles; #varphi; N_{particles}", 100, 0, 2*pi);
+	h_particle_phi 	= new TH1F("h_particle_phi" , "Final State Particles; #varphi; N_{particles}", 100, 0, 2*M_PI);
 	h_particle_e	= new TH1F("h_particle_e"   , "Final State Particles; E [GeV]; N_{particles}", 1000, -0.5, 99.5);
 	h_particle_et	= new TH1F("h_particle_et"  , "Final State Particles; E_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
 	h_particle_pt	= new TH1F("h_particle_pt"  , "Final State Particles; p_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
@@ -259,59 +259,59 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 
 	//2D correlations
 	h_particle_et_eta = new TH2F("h_particle_et_eta", 
-			"Final State Particles; #eta; E_{T} [GeV]; N_{particles}"; 
+			"Final State Particles; #eta; E_{T} [GeV]; N_{particles}", 
 			100, -1.2, 1.2, 1000, -0.5, 99.5);
 	h_particle_et_phi = new TH2F("h_particle_et_phi", 
-			"Final State Particles; #varphi; E_{T} [GeV]; N_{particles}"; 
-			100, 0, 2*pi, 1000, -0.5, 99.5);
-	h_particle_pt_pta = new TH2F("h_particle_pt_pta", 
-			"Final State Particles; #pta; p_{T} [GeV]; N_{particles}"; 
+			"Final State Particles; #varphi; E_{T} [GeV]; N_{particles}", 
+			100, 0, 2*M_PI, 1000, -0.5, 99.5);
+	h_particle_pt_eta = new TH2F("h_particle_pt_pta", 
+			"Final State Particles; #pta; p_{T} [GeV]; N_{particles}", 
 			100, -1.2, 1.2, 1000, -0.5, 99.5);
 	h_particle_pt_phi = new TH2F("h_particle_pt_phi", 
-			"Final State Particles; #varphi; p_{T} [GeV]; N_{particles}"; 
-			100, 0, 2*pi, 1000, -0.5, 99.5);
+			"Final State Particles; #varphi; p_{T} [GeV]; N_{particles}", 
+			100, 0, 2*M_PI, 1000, -0.5, 99.5);
 	h_particle_e_eta = new TH2F("h_particle_e_eta", 
-			"Final State Particles; #eta; E [GeV]; N_{particles}"; 
+			"Final State Particles; #eta; E [GeV]; N_{particles}", 
 			100, -1.2, 1.2, 1000, -0.5, 99.5);
 	h_particle_e_phi = new TH2F("h_particle_e_phi", 
-			"Final State Particles; #varphi; E [GeV]; N_{particles}"; 
-			100, 0, 2*pi, 1000, -0.5, 99.5);
+			"Final State Particles; #varphi; E [GeV]; N_{particles}", 
+			100, 0, 2*M_PI, 1000, -0.5, 99.5);
 	h_particle_phi_eta = new TH2F("h_particle_phi_eta", 
-			"Final State Particles; #eta; #varphi; N_{particles}"; 
-			100, -1.2, 1.2, 100, 0, 2*pi);
+			"Final State Particles; #eta; #varphi; N_{particles}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	
 	//electrons
 	h_electron_phi_eta = new TH2F("h_electron_phi_eta", 
-			"Final State Particles; #eta; #varphi; N_{electrons}"; 
-			100, -1.2, 1.2, 100, 0, 2*pi);
+			"Final State Particles; #eta; #varphi; N_{electrons}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	h_electron_pt	= new TH1F("h_electron_pt"  , "Final State Particles; p_{T} [GeV]; N_{electrons}", 1000, -0.5, 99.5);
 	
 	//protons
 	h_proton_phi_eta = new TH2F("h_proton_phi_eta", 
-			"Final State Particles; #eta; #varphi; N_{protons}"; 
-			100, -1.2, 1.2, 100, 0, 2*pi);
+			"Final State Particles; #eta; #varphi; N_{protons}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	h_proton_pt	= new TH1F("h_proton_pt"  , "Final State Particles; p_{T} [GeV]; N_{protons}", 1000, -0.5, 99.5);
 	
 	//neutrons
 	h_neutron_phi_eta = new TH2F("h_neutron_phi_eta", 
-			"Final State Particles; #eta; #varphi; N_{neutrons}"; 
-			100, -1.2, 1.2, 100, 0, 2*pi);
+			"Final State Particles; #eta; #varphi; N_{neutrons}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	h_neutron_pt	= new TH1F("h_neutron_pt"  , "Final State Particles; p_{T} [GeV]; N_{neutrons}", 1000, -0.5, 99.5);
 	
 	//pions
 	h_pion_phi_eta 	= new TH2F("h_pion_phi_eta", 
-			"Final State Particles; #eta; #varphi; N_{pions}"; 
-			100, -1.2, 1.2, 100, 0, 2*pi);
+			"Final State Particles; #eta; #varphi; N_{pions}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	h_pion_pt	= new TH1F("h_pion_pt"  , "Final State Particles; p_{T} [GeV]; N_{pions}", 1000, -0.5, 99.5);
 		
 	//counting events 
-	h_particle_n	= net TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 1000, 0, 1000);
-	h_electron_n	= net TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 1000, 0, 1000);
-	h_proton_n	= net TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 1000, 0, 1000);
-	h_neutron_n	= net TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 1000, 0, 1000);
-	h_pion_n	= net TH1I("h_pion_n", "Final state pions; N_{pion}; N_{evts}", 1000, 0, 1000);
+	h_particle_n	= new TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 1000, 0, 1000);
+	h_electron_n	= new TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 1000, 0, 1000);
+	h_proton_n	= new TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 1000, 0, 1000);
+	h_neutron_n	= new TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 1000, 0, 1000);
+	h_pion_n	= new TH1I("h_pion_n", "Final state pions; N_{pion}; N_{evts}", 1000, 0, 1000);
 	
-	return Fun4AllRpturnCodes::EVENT_OK;
+	return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
@@ -323,7 +323,7 @@ int HerwigProductionQAModule::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int HerwigProductionQAModule::process_event(PHCompositeNode *topNode)
 {
-	if(no_gen) return Fun4AllReturnCodes::ABORT_RUN;
+	if(no_gen) return Fun4AllReturnCodes::ABORTRUN;
 	n_evt++;
 	if(verbosity >= 1 ) std::cout<<"Working on event " <<n_evt <<std::endl;
 	if(herwig) process_herwig_event(topNode); //processes just a hepmc node
@@ -336,8 +336,8 @@ int HerwigProductionQAModule::process_herwig_event(PHCompositeNode* topNode){
 	std::vector<std::vector<Jet*>*> identified_jets {}; //to hold r=0.2-r=0.6 jets 
 	std::vector<HepMC::GenParticle*> photons {};
 	std::vector<HepMC::GenParticle*> event_particles {};
-	std::array<float,3> vertex {};
-	PHHepmMCGenEventMap* phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+//	std::array<float,3> vertex {};
+	PHHepMCGenEventMap* phg=findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
 	if(!phg){ 
 		return 1; //catch empty event pmap
 	}
@@ -348,33 +348,32 @@ int HerwigProductionQAModule::process_herwig_event(PHCompositeNode* topNode){
 				continue;
 			}
 			else{
-				HepMC::GenEvent ev=hepev->getEvent();
+				HepMC::GenEvent* ev=hepev->getEvent();
 				if(!ev) continue;
 				else{
 					auto vtx = ev->signal_process_vertex();
 					if(!vtx) continue;
-					else{ //fill in info from the generator vertex
+/*					else{ //fill in info from the generator vertex
 						auto vtx_pos = vtx->position();
 						vertex[0] = vtx_pos->x();
 						vertex[1] = vtx_pos->y();
 						vertex[2] = vtx_pos->z();
-						h_vertex_herwig_x->Fill(vertex[0]);
-						h_vertex_herwig_y->Fill(vertex[1]);
-						h_vertex_herwig_z->Fill(vertex[2]);
-						h_vertex_herwig_rz->Fill(std::sqrt(std::pow(vertex[0], 2) + std::pow(vertex[1] ,2)), vertex[3]);
-						h_vertex_herwig_thetaz->Fill(std::atan2(vertex[1], vertex[0]), vertex[2]);
-					}
+						h_vertex_x->Fill(vertex[0]);
+						h_vertex_y->Fill(vertex[1]);
+						h_vertex_z->Fill(vertex[2]);
+						h_vertex_rz->Fill(std::sqrt(std::pow(vertex[0], 2) + std::pow(vertex[1] ,2)), vertex[3]);
+						h_vertex_thetaz->Fill(std::atan2(vertex[1], vertex[0]), vertex[2]);
+					}*/
 					for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter != ev->particles_end(); ++iter) 
 					{
-						if(!iter) continue;
 						auto particle=(*iter);
 						if(!particle) continue;
-						if(particle->status==1 && particle->end_vertex() == false)
+						if(particle->status()==1 && !(particle->end_vertex()) )
 						{
 							event_particles.push_back(particle);
 							if( particle->pdg_id() == 22)
 							{
-								photons.push_back(photons);
+								photons.push_back(particle);
 							}
 						}
 					}
@@ -383,8 +382,9 @@ int HerwigProductionQAModule::process_herwig_event(PHCompositeNode* topNode){
 		}
 	}
 	findJets(event_particles, &identified_jets);
-	if(photons) runAnalysisPhotonJets(identified_jets, photons, event_particles);
-	else if (jets) runAnalysisJets(identified_jets, event_particles);
+	if(photon) 		runAnalysisPhotonJets(identified_jets, photons);
+	else if (jet) 		runAnalysisJets(identified_jets);
+	if( photon || jet ) 	runAnalysisEvent(event_particles);	
 	return Fun4AllReturnCodes::EVENT_OK;
 
 }
@@ -392,17 +392,17 @@ void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_p
 {
 	//just invoke fastJet over the relevant event particles and get some sembelance of truth jets at the HepMC level
 	std::vector<fastjet::PseudoJet> candidates;
-	fastjet::JetDefinition fjd2 (fastjet::antikt_alorithm, 0.2)
-	fastjet::JetDefinition fjd3 (fastjet::antikt_alorithm, 0.3);
-	fastjet::JetDefinition fjd4 (fastjet::antikt_alorithm, 0.4);
-	fastjet::JetDefinition fjd5 (fastjet::antikt_alorithm, 0.5);
-	fastjet::JetDefinition fjd6 (fastjet::antikt_alorithm, 0.6);
+	fastjet::JetDefinition fjd2 (fastjet::antikt_algorithm, 0.2);
+	fastjet::JetDefinition fjd3 (fastjet::antikt_algorithm, 0.3);
+	fastjet::JetDefinition fjd4 (fastjet::antikt_algorithm, 0.4);
+	fastjet::JetDefinition fjd5 (fastjet::antikt_algorithm, 0.5);
+	fastjet::JetDefinition fjd6 (fastjet::antikt_algorithm, 0.6);
 	for(auto p:event_particles)
 	{
 		auto pid = p->pdg_id();
 		if (abs(pid) > 11 &&  abs(pid) < 19 ) continue;
 		auto mom = p->momentum();
-		candidates.push_back(fastjet::PseudoJet(mom.px(), mom.py(), mom.pz(), mom.E()));
+		candidates.push_back(fastjet::PseudoJet(mom.px(), mom.py(), mom.pz(), mom.e()));
 	}	
 	fastjet::ClusterSequence cs2(candidates, fjd2);
 	fastjet::ClusterSequence cs3(candidates, fjd3);
@@ -416,11 +416,11 @@ void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_p
 	auto js6=cs6.inclusive_jets(1.);
 	std::vector< std::vector<fastjet::PseudoJet>  > jets_size
 	{
-		std::make_pair(cs2, js2),
-		std::make_pair(cs3, js3),
-		std::make_pair(cs4, js4),
-		std::make_pair(cs5, js5),
-		std::make_pair(cs6, js6)
+		js2,
+		js3,
+		js4,
+		js5,
+		js6
 	};
 	for(auto js:jets_size)
 	{
@@ -432,7 +432,7 @@ void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_p
 			jet->set_py(j.py());
 			jet->set_pz(j.pz());
 			jet->set_e( j.e() );
-			for(auto cmp:j.consituents())
+			for(auto cmp:j.constituents())
 			{
 				jet->insert_comp(Jet::SRC::HEPMC_IMPORT, cmp.user_index());
 			}
@@ -447,7 +447,7 @@ void HerwigProductionQAModule::findJets(std::vector<HepMC::GenParticle*> event_p
 int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 	//just have to extract the HepMC input part of the DST
 	//also grab the jets
-	std::vector<Jet*> identified_jets;
+	std::vector<std::vector<Jet*>*>	 jets;
 	std::vector<HepMC::GenParticle*> photons;
 	std::vector<HepMC::GenParticle*> event_particles;
 
@@ -466,15 +466,14 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 				{
 					for(HepMC::GenEvent::particle_const_iterator iter=ev->particles_begin(); iter != ev->particles_end(); ++iter) 
 					{
-						if(!iter) continue;
 						auto particle=(*iter);
 						if(!particle) continue;
-						if(particle->status==1 && particle->end_vertex() == false) //picks up final state particles only 
+						if(particle->status()==1 && !particle->end_vertex()) //picks up final state particles only 
 						{
 							event_particles.push_back(particle);
 							if( particle->pdg_id() == 22)
 							{
-								photons.push_back(photons);
+								photons.push_back(particle);
 							}
 						}
 					}
@@ -493,7 +492,7 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 		if(!js) continue;
 		else if(js)
 		{
-			std::vector<Jets*> jetsize {};
+			std::vector<Jet*> jetsize {};
 			for(auto j:*js)
 			{
 				if(!j) continue;
@@ -505,9 +504,9 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 			jets.push_back(&jetsize);
 		}
 	}
-	if(photons) 		runAnalysisPhotonJets(identified_jets, photons);
-	else if (jets)		runAnalysisJets(identified_jets);
-	if( photons || jets ) 	runAnalysisEvent(event_particles);	
+	if(photon) 		runAnalysisPhotonJets(jets, photons);
+	else if (jet)		runAnalysisJets(jets);
+	if( photon || jet ) 	runAnalysisEvent(event_particles);	
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -524,25 +523,26 @@ std::vector<std::array<float, 4>> HerwigProductionQAModule::runAnalysisJets(std:
 		float lead_e	= 0.;
 		int lead_comp	= 0 ;
 		for(auto jet:*jets){
+			float phi = jet->get_phi();
+			if(phi < 0 ) phi+=2*M_PI;
 			if(jet->get_pt()  > lead_pt){
 			       	lead_pt 	= jet->get_pt();
 				lead_eta	= jet->get_eta();
-				lead_phi 	= jet->get_phi();
-				lead_E 		= jet->get_e();
+				lead_phi 	= phi;
+				lead_e		= jet->get_e();
 				lead_comp 	= (int)((jet->get_comp_vec()).size());
 			}
-			h_all_jets_pt->at(i)->	Fill(jet->get_pt());
-			h_all_jets_eta->at(i)->	Fill(jet->get_eta());
-			h_all_jets_phi->at(i)->	Fill(jet->get_phi());
-			h_all_jets_e->at(i)->	Fill(jet->get_e());
-			h_all_jets_n_comp->at(i)->Fill((int)((jet->get_comp_vec()).size()));
+			h_all_jets_pt.at(i)->	Fill(jet->get_pt());
+			h_all_jets_eta.at(i)->	Fill(jet->get_eta());
+			h_all_jets_phi.at(i)->	Fill(phi);
+			h_all_jets_e.at(i)->	Fill(jet->get_e());
+			h_all_jets_n_comp.at(i)->Fill((int)((jet->get_comp_vec()).size()));
 		}
-		h_lead_jets_pt->at(i)->	Fill(lead_pt);
-		h_lead_jets_eta->at(i)->Fill(lead_eta);
-		h_lead_jets_phi->at(i)->Fill(lead_phi);
-		h_lead_jets_e->at(i)->	Fill(lead_e);
-		h_n->at(i)->Fill((int)(jets->size()));
-		h_lead_n_comp->at(i)->	Fill(lead_comp);
+		h_lead_jets_pt.at(i)->	Fill(lead_pt);
+		h_lead_jets_eta.at(i)->	Fill(lead_eta);
+		h_lead_jets_phi.at(i)->	Fill(lead_phi);
+		h_lead_jets_e.at(i)->	Fill(lead_e);
+		h_lead_jets_n_comp.at(i)->Fill(lead_comp);
 		std::array<float, 4> lead_jet {lead_pt, lead_eta, lead_phi, lead_e};
 		lead_jet_of_all_sizes.push_back(lead_jet);
 		i++;
@@ -555,7 +555,6 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 {
 	//run the analysis of the photons + jets
 	auto lead_jet_of_all_sizes=runAnalysisJets(jets_of_all_sizes);
-	int i=0;
 	float lead_pt	= 0.;
 	float lead_eta	= 0.;
 	float lead_phi 	= 0.;
@@ -566,19 +565,20 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 
 	for(auto ph:photons)
 	{
-		auto p=ph->momentun();
+		auto p=ph->momentum();
 		float pt=std::sqrt(std::pow(p.px(), 2)+ std::pow(p.py(), 2));
+		float phi = p.phi();
+		if(phi < 0 ) phi += 2*M_PI; 
 		if(pt > lead_pt) 
 		{
 			lead_pt		= pt;
 			lead_eta	= p.pseudoRapidity();
-			lead_phi	= p.phi();
-			lead_E		= p.e();
-			lead_photon = ph;
+			lead_phi	= phi;
+			lead_e		= p.e();
 		}
 		h_all_photons_pt->	Fill(pt);
-		h_all_photons_eta->	Fill(p.psudeoRapidity());
-		h_all_photons_phi->	Fill(p.phi());
+		h_all_photons_eta->	Fill(p.pseudoRapidity());
+		h_all_photons_phi->	Fill(phi);
 		h_all_photons_e->	Fill(p.e());
 	
 		HepMC::GenVertex* prod = ph->production_vertex();
@@ -587,24 +587,24 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 			//this is a direct photon 
 			n_direct++;
 			h_direct_photons_pt->	Fill(pt);
-			h_direct_photons_eta->	Fill(p.psudeoRapidity());
-			h_direct_photons_phi->	Fill(p.phi());
+			h_direct_photons_eta->	Fill(p.pseudoRapidity());
+			h_direct_photons_phi->	Fill(phi);
 			h_direct_photons_e->	Fill(p.e());
 		}
 		else
 		{
 			n_frag++;
 			h_frag_photons_pt->	Fill(pt);
-			h_frag_photons_eta->	Fill(p.psudeoRapidity());
-			h_frag_photons_phi->	Fill(p.phi());
+			h_frag_photons_eta->	Fill(p.pseudoRapidity());
+			h_frag_photons_phi->	Fill(phi);
 			h_frag_photons_e->	Fill(p.e());
 		}
 
 	}
-	h_lead_photon_pt->Fill(lead_pt);
-	h_lead_photon_eta->Fill(lead_eta);
-	h_lead_photon_phi->Fill(lead_phi);
-	h_lead_photon_e->Fill(lead_e);
+	h_lead_photons_pt->Fill(lead_pt);
+	h_lead_photons_eta->Fill(lead_eta);
+	h_lead_photons_phi->Fill(lead_phi);
+	h_lead_photons_e->Fill(lead_e);
 	
 	h_n_photons->Fill((int)photons.size());
 	h_n_frag->Fill(n_frag);
@@ -623,7 +623,7 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 		       h_photon_jet_phi.at(i)->Fill(lead_phi, lead_jet_phi);
 		       h_photon_jet_e.at(i)->Fill(lead_e, lead_jet_e);
 		       float delta_phi = std::abs(lead_phi - lead_jet_phi);
-		       if(delta_phi > pi) delta_phi = 2* pi - delta_phi; 
+		       if(delta_phi > M_PI) delta_phi = 2* M_PI - delta_phi; 
 		       h_photon_jet_dphi.at(i)->Fill(delta_phi);
 		}
 	}
@@ -640,7 +640,7 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 	h_particle_n->Fill((int)(particles.size()));
 	for(auto p:particles)
 	{
-		float particle_eta	= p->momentum().pseduoRapidity();
+		float particle_eta	= p->momentum().pseudoRapidity();
 		float particle_phi	= p->momentum().phi();
 		float particle_e 	= p->momentum().e();
 		float particle_px 	= p->momentum().px();
@@ -648,7 +648,8 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 		float particle_pt	= std::sqrt(std::pow(particle_px, 2) + std::pow(particle_py, 2));
 		float particle_et	= particle_e / std::cosh(particle_eta);
 		int   particle_id	= std::abs(p->pdg_id());
-
+		
+		if(particle_phi < 0 ) particle_phi += 2*M_PI;
 		total_E += particle_e;
 		h_particle_eta->Fill(particle_eta);
 		h_particle_phi->Fill(particle_phi);

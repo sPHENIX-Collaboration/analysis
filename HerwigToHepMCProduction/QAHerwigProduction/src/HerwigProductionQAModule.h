@@ -16,6 +16,9 @@
 #include <fastjet/JetDefinition.hh>
 #include <fastjet/PseudoJet.hh>
 
+#include <jetbase/Jetv1.h>
+#include <jetbase/JetContainerv1.h>
+
 #include <string>
 #include <math.h>
 #include <array>
@@ -85,9 +88,11 @@ class HerwigProductionQAModule : public SubsysReco
 	bool photon = false;
 	bool herwig = false;
 	bool pythia = false;
-	bool no_gen
+	bool no_gen = false;
 	int verbosity = 0;
   	float trigger_val = 0.;
+	int n_evt = 0;
+	
 	//jet specific QA plots
   	std::vector<TH1F*> h_all_jets_pt {};
 	std::vector<TH1F*> h_all_jets_eta {};
@@ -126,7 +131,7 @@ class HerwigProductionQAModule : public SubsysReco
 	TH1I* h_n_photons;
 	TH1I* h_n_frag;
 	TH1I* h_n_direct;
-	std::vector<TH1I*> h_n_jets {};
+	
 	//Photon-Jet comparisons
 	std::vector<TH2F*> h_photon_jet_pt {};
 	std::vector<TH2F*> h_photon_jet_eta {};
