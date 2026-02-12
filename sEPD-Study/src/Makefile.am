@@ -16,6 +16,7 @@ pkginclude_HEADERS = \
   MedianFinder.h \
   EventSkip.h \
   CaloCheck.h \
+  CaloQA.h \
   CalibrateQVec.h \
   JetValidation.h \
   JetUtils.h \
@@ -29,6 +30,7 @@ libsEPDValidation_la_SOURCES = \
   MedianFinder.cc \
   EventSkip.cc \
   CaloCheck.cc \
+  CaloQA.cc \
   CalibrateQVec.cc \
   JetValidation.cc \
   JetUtils.cc \
