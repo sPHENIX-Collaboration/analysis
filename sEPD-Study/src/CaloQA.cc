@@ -110,17 +110,26 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
   int bins_hcal_phi = CaloGeometry::HCAL_PHI_BINS;
   int bins_hcal_eta = CaloGeometry::HCAL_ETA_BINS;
 
+  int bins_cent_full = 80;
   int bins_cent = 8;
   int cent_low = 0;
   int cent_high = 80;
 
-  int bins_energy = 200;
-  int energy_low = -50;
-  int energy_high = 50;
+  int bins_energy = 80;
+  int energy_low = -10;
+  int energy_high = 30;
+
+  int bins_energy_zs = 1100;
+  int energy_zs_low = -10;
+  int energy_zs_high = 1;
 
   m_hists.h2EMCal = new TProfile2D("h2EMCal", "EMCal; Tower Index #phi; Tower Index #eta",
                                     bins_emcal_phi, 0, bins_emcal_phi,
                                     bins_emcal_eta, 0, bins_emcal_eta);
+
+  m_hists.h2EMCalRetowered = new TProfile2D("h2EMCalRetowered", "EMCal; Tower Index #phi; Tower Index #eta",
+                                             bins_hcal_phi, 0, bins_hcal_phi,
+                                             bins_hcal_eta, 0, bins_hcal_eta);
 
   m_hists.h2IHCal = new TProfile2D("h2IHCal", "IHCal; Tower Index #phi; Tower Index #eta",
                                     bins_hcal_phi, 0, bins_hcal_phi,
@@ -134,6 +143,10 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                   bins_energy, energy_low, energy_high,
                                   bins_cent, cent_low, cent_high);
 
+  m_hists.h2EMCalRetoweredCent = new TH2F("h2EMCalRetoweredCent", "EMCal; Tower Energy [GeV]; Centrality [%]",
+                                  bins_energy, energy_low, energy_high,
+                                  bins_cent, cent_low, cent_high);
+
   m_hists.h2IHCalCent = new TH2F("h2IHCalCent", "IHCal; Tower Energy [GeV]; Centrality [%]",
                                   bins_energy, energy_low, energy_high,
                                   bins_cent, cent_low, cent_high);
@@ -143,31 +156,69 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                   bins_cent, cent_low, cent_high);
 
   m_hists.h2EMCalZSCent = new TH2F("h2EMCalZSCent", "EMCal; Tower Energy [GeV]; Centrality [%]",
-                                  bins_energy, energy_low, energy_high,
+                                  bins_energy_zs, energy_zs_low, energy_zs_high,
                                   bins_cent, cent_low, cent_high);
 
   m_hists.h2IHCalZSCent = new TH2F("h2IHCalZSCent", "IHCal; Tower Energy [GeV]; Centrality [%]",
-                                  bins_energy, energy_low, energy_high,
+                                  bins_energy_zs, energy_zs_low, energy_zs_high,
                                   bins_cent, cent_low, cent_high);
 
   m_hists.h2OHCalZSCent = new TH2F("h2OHCalZSCent", "OHCal; Tower Energy [GeV]; Centrality [%]",
+                                  bins_energy_zs, energy_zs_low, energy_zs_high,
+                                  bins_cent, cent_low, cent_high);
+
+  m_hists.h2EMCalNoZSCent = new TH2F("h2EMCalNoZSCent", "EMCal; Tower Energy [GeV]; Centrality [%]",
                                   bins_energy, energy_low, energy_high,
                                   bins_cent, cent_low, cent_high);
+
+  m_hists.h2IHCalNoZSCent = new TH2F("h2IHCalNoZSCent", "IHCal; Tower Energy [GeV]; Centrality [%]",
+                                  bins_energy, energy_low, energy_high,
+                                  bins_cent, cent_low, cent_high);
+
+  m_hists.h2OHCalNoZSCent = new TH2F("h2OHCalNoZSCent", "OHCal; Tower Energy [GeV]; Centrality [%]",
+                                  bins_energy, energy_low, energy_high,
+                                  bins_cent, cent_low, cent_high);
+
+  m_hists.hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", bins_cent_full, cent_low, cent_high);
+
+  int bins_zvtx = 100;
+  double zvtx_low = -50;
+  double zvtx_high = 50;
+
+  m_hists.hZVertex = new TH1F("hZVertex", "MB; Z [cm]; Events", bins_zvtx, zvtx_low, zvtx_high);
+
+  int bins_totalCaloE = 2500;
+  double totalCaloE_low = 0;
+  double totalCaloE_high = 2500;
+
+  m_hists.h2CentralityTotalCaloE = new TH2F("h2CentralityTotalCaloE", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]",
+                                             bins_totalCaloE, totalCaloE_low, totalCaloE_high,
+                                             bins_cent_full, cent_low, cent_high);
 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
   se->registerHisto(m_hists.h2EMCal);
+  se->registerHisto(m_hists.h2EMCalRetowered);
   se->registerHisto(m_hists.h2IHCal);
   se->registerHisto(m_hists.h2OHCal);
 
   se->registerHisto(m_hists.h2EMCalCent);
+  se->registerHisto(m_hists.h2EMCalRetoweredCent);
   se->registerHisto(m_hists.h2IHCalCent);
   se->registerHisto(m_hists.h2OHCalCent);
 
   se->registerHisto(m_hists.h2EMCalZSCent);
   se->registerHisto(m_hists.h2IHCalZSCent);
   se->registerHisto(m_hists.h2OHCalZSCent);
+
+  se->registerHisto(m_hists.h2EMCalNoZSCent);
+  se->registerHisto(m_hists.h2IHCalNoZSCent);
+  se->registerHisto(m_hists.h2OHCalNoZSCent);
+
+  se->registerHisto(m_hists.hCentrality);
+  se->registerHisto(m_hists.hZVertex);
+  se->registerHisto(m_hists.h2CentralityTotalCaloE);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -211,6 +262,8 @@ int CaloQA::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  m_hists.hZVertex->Fill(zvtx);
+
   // skip event if zvtx is too large
   if (std::abs(zvtx) >= m_cuts.m_zvtx_max)
   {
@@ -246,26 +299,29 @@ int CaloQA::process_centrality(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  m_hists.hCentrality->Fill(cent);
+
   m_data.centrality = cent;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int CaloQA::process_calo(PHCompositeNode *topNode)
+int CaloQA::process_calo(PHCompositeNode *topNode) const
 {
   auto* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+  auto* towersCEMCRetowered = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
   auto* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   auto* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
 
   double cent = m_data.centrality;
 
-  if (!towersCEMC || !towersIHCal || !towersOHCal)
+  if (!towersCEMC || !towersCEMCRetowered || !towersIHCal || !towersOHCal)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  if (towersIHCal->size() != towersOHCal->size())
+  if (towersIHCal->size() != towersOHCal->size() || towersCEMCRetowered->size() != towersOHCal->size())
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -292,8 +348,13 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
     {
       m_hists.h2EMCalZSCent->Fill(energy, cent);
     }
+    else
+    {
+      m_hists.h2EMCalNoZSCent->Fill(energy, cent);
+    }
   }
 
+  double totalCaloE = 0;
   // HCal
   for (unsigned int towerIndex = 0; towerIndex < towersIHCal->size(); ++towerIndex)
   {
@@ -303,10 +364,12 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
 
     auto* IHCal_tower = towersIHCal->get_tower_at_channel(towerIndex);
     auto* OHCal_tower = towersOHCal->get_tower_at_channel(towerIndex);
+    auto* EMCal_tower = towersCEMCRetowered->get_tower_at_channel(towerIndex);
 
     if (IHCal_tower->get_isGood())
     {
       double energy = IHCal_tower->get_energy();
+      totalCaloE += energy;
 
       m_hists.h2IHCal->Fill(iphi, ieta, energy);
       m_hists.h2IHCalCent->Fill(energy, cent);
@@ -315,11 +378,16 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       {
         m_hists.h2IHCalZSCent->Fill(energy, cent);
       }
+      else
+      {
+        m_hists.h2IHCalNoZSCent->Fill(energy, cent);
+      }
     }
 
     if (OHCal_tower->get_isGood())
     {
       double energy = OHCal_tower->get_energy();
+      totalCaloE += energy;
 
       m_hists.h2OHCal->Fill(iphi, ieta, energy);
       m_hists.h2OHCalCent->Fill(energy, cent);
@@ -328,8 +396,23 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       {
         m_hists.h2OHCalZSCent->Fill(energy, cent);
       }
+      else
+      {
+        m_hists.h2OHCalNoZSCent->Fill(energy, cent);
+      }
+    }
+
+    if (EMCal_tower->get_isGood())
+    {
+      double energy = EMCal_tower->get_energy();
+      totalCaloE += energy;
+
+      m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
+      m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
     }
   }
+
+  m_hists.h2CentralityTotalCaloE->Fill(totalCaloE, cent);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

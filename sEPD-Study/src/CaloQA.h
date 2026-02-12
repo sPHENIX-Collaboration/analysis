@@ -45,16 +45,26 @@ class CaloQA : public SubsysReco
   struct AnalysisHists
   {
     TProfile2D* h2EMCal{nullptr};
+    TProfile2D* h2EMCalRetowered{nullptr};
     TProfile2D* h2IHCal{nullptr};
     TProfile2D* h2OHCal{nullptr};
 
     TH2* h2EMCalCent{nullptr};
+    TH2* h2EMCalRetoweredCent{nullptr};
     TH2* h2IHCalCent{nullptr};
     TH2* h2OHCalCent{nullptr};
 
     TH2* h2EMCalZSCent{nullptr};
     TH2* h2IHCalZSCent{nullptr};
     TH2* h2OHCalZSCent{nullptr};
+
+    TH2* h2EMCalNoZSCent{nullptr};
+    TH2* h2IHCalNoZSCent{nullptr};
+    TH2* h2OHCalNoZSCent{nullptr};
+
+    TH1* hCentrality{nullptr};
+    TH2* h2CentralityTotalCaloE{nullptr};
+    TH1* hZVertex{nullptr};
   };
 
   AnalysisHists m_hists;
@@ -83,7 +93,7 @@ class CaloQA : public SubsysReco
 
   int process_event_check(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
-  int process_calo(PHCompositeNode *topNode);
+  int process_calo(PHCompositeNode *topNode) const;
 };
 
 #endif  // CALOCHECK_H

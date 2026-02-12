@@ -17,6 +17,7 @@
 #include <globalvertex/GlobalVertexReco.h>
 #include <centrality/CentralityReco.h>
 #include <calotrigger/MinimumBiasClassifier.h>
+#include <jetbackground/RetowerCEMC.h>
 
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -94,6 +95,13 @@ void Fun4All_CaloQA(const std::string &flist,
 
   // Calibrate Towers
   Process_Calo_Calib();
+
+  // Retowering EMCal
+  std::unique_ptr<RetowerCEMC> rcemc = std::make_unique<RetowerCEMC>();
+  rcemc->set_towerinfo(true);
+  rcemc->set_frac_cut(0.5);  // fraction of retower that must be masked to mask the full retower
+  rcemc->set_towerNodePrefix("TOWERINFO_CALIB");
+  se->registerSubsystem(rcemc.release());
 
   // Calo QA
   std::unique_ptr<CaloQA> calo_qa = std::make_unique<CaloQA>();
