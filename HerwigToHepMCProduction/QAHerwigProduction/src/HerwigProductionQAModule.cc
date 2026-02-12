@@ -83,7 +83,7 @@ HerwigProductionQAModule::HerwigProductionQAModule(const std::string data_type_l
 	else 
 		no_gen 	= true; //catch for an issue of having no generator, on first event immediately fail 
 	this->verbosity	= verb;
-
+	this->trigger_val = trigger;
 }
 
 //____________________________________________________________________________..
@@ -94,7 +94,224 @@ HerwigProductionQAModule::~HerwigProductionQAModule()
 //____________________________________________________________________________..
 int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 {
-	return Fun4AllReturnCodes::EVENT_OK;
+	if(verbosity > 1) std::cout<<"Trigger val: " <<trigger <<std::endl;
+	if(jet)
+	{
+		for(int i=2; i<7; i++)
+		{
+			//all jets
+			TH1F* h_all_jet_pt=new TH1F(Form("h_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; p_{T}^{jet}[GeV]; N_{jets}", i),
+					500, -0.5, 99.5);
+			TH1F* h_all_jet_eta=new TH1F(Form("h_jet_r0%d_eta", i ), 
+					Form(" R=0.%d jets; #eta_{jet}; N_{jets}", i),
+					100, -1.2, 1.2);
+			TH1F* h_all_jet_phi=new TH1F(Form("h_jet_r0%d_phi", i ), 
+					Form(" R=0.%d jets; #varphi_{jet}; N_{jets}", i),
+					100, 0, 2*pi);
+			TH1F* h_all_jet_e=new TH1F(Form("h_jet_r0%d_e", i ), 
+					Form(" R=0.%d jets; E_{jet}[GeV]; N_{jets}", i),
+					500, -0.5, 99.5);
+			TH1I* h_all_jet_n_comp = new TH1I(Form("h_jet_r0%d_comp", i),
+					Form(" R=0.%d jets; N_{comp}; N_{jets}" i),
+					100, 0, 100);
+			//add to the vector
+			h_all_jets_pt.push_back(h_all_jet_pt);
+			h_all_jets_eta.push_back(h_all_jet_eta);
+			h_all_jets_phi.push_back(h_all_jet_phi);
+			h_all_jets_e.push_back(h_all_jet_e);
+			h_all_jets_n_comp.push_back(h_all_jet_ncomp);
+
+			//leading jets
+			TH1F* h_lead_jet_pt=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; p_{T}^{lead jet}[GeV]; N_{evts}", i),
+					500, -0.5, 99.5);
+			TH1F* h_lead_jet_eta=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; #eta_{jet}^{lead}; N_{evts}", i),
+					100, -1.2, 1.2);
+			TH1F* h_lead_jet_phi=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; #varphi_{jet}^{lead}; N_{evts}", i),
+					100, 0, 2*pi);
+			TH1F* h_lead_jet_e=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; E_{jet}^{lead}[GeV]; N_{evts}", i),
+					500, -0.5, 99.5);
+			TH1I* h_lead_jet_n_comp = new TH1I(Form("h_lead_jet_r0%d_comp", i),
+					Form(" R=0.%d jets; N_{comp}^{lead jet}; N_{evts}" i),
+					100, 0, 100);
+			//add to the vector
+			h_lead_jets_pt.push_back(h_lead_jet_pt);
+			h_lead_jets_eta.push_back(h_lead_jet_eta);
+			h_lead_jets_phi.push_back(h_lead_jet_phi);
+			h_lead_jets_e.push_back(h_lead_jet_e);
+			h_lead_jets_n_comp.push_back(h_lead_jet_ncomp);
+
+			TH1I* h_n_jet = new TH1I(Form("h_jet_r0%d_n", i), 
+					Form(" R=0.%d jets; N_{jet}; N_{event}", i),
+					50, 0, 50);
+			h_n_jets.push_back(h_n_jet);
+		}
+	}
+	if(photon)
+	{
+		//all photons
+		h_all_photons_pt=new TH1F("h_photons_pt", 
+				"all  photons; p_{T}^{photon}[GeV]; N_{photons}",
+				500, -0.5, 99.5);
+		h_all_photons_eta=new TH1F("h_photons_eta", 
+				"all  photons; #eta_{photon}; N_{photons}",
+				100, -1.2, 1.2);
+		h_all_photons_phi=new TH1F("h_photons_phi", 
+				"all  photons; #varphi_{photon}; N_{photons}",
+				100, 0, 2*pi);
+		h_all_photons_e=new TH1F("h_photons_e", 
+				"all  photons; E_{photon}[GeV]; N_{photons}",
+				500, -0.5, 99.5);
+		h_n_photons 	=new TH1I("h_n_photons",
+				"all  photons; N_{photons}; N_{evts}"
+				100, 0, 100);
+		
+		//leading photons
+		h_lead_photons_pt=new TH1F("h_lead_photons_pt", 
+				"lead  photons; p_{T}^{lead photon}[GeV]; N_{evts}",
+				500, -0.5, 99.5);
+		h_lead_photons_eta=new TH1F("h_lead_photons_eta", 
+				"lead  photons; #eta_{photon}^{lead}; N_{evts}",
+				100, -1.2, 1.2);
+		h_lead_photons_phi=new TH1F("h_lead_photons_phi", 
+				"lead  photons; #varphi_{photon}^{lead}; N_{evts}",
+				100, 0, 2*pi);
+		h_lead_photons_e=new TH1F("h_lead_photons_e", 
+				"lead  photons; E_{photon}^{lead}[GeV]; N_{evts}",
+		
+		//direct photons
+		h_direct_photons_pt=new TH1F("h_direct_photons_pt", 
+				"direct  photons; p_{T}^{photon}[GeV]; N_{photon}",
+				500, -0.5, 99.5);
+		h_direct_photons_eta=new TH1F("h_direct_photons_eta", 
+				"direct  photons; #eta_{photon}^{direct}; N_{photon}",
+				100, -1.2, 1.2);
+		h_direct_photons_phi=new TH1F("h_direct_photons_phi", 
+				"direct  photons; #varphi_{photon}^{direct}; N_{photon}",
+				100, 0, 2*pi);
+		h_direct_photons_e=new TH1F("h_direct_photons_E", 
+				"direct  photons; E_{photon}[GeV]; N_{photon}",
+				500, -0.5, 99.5);
+		h_n_direct 	=new TH1I("h_n_direct",
+				"direct  photons; N_{photons}; N_{photon}"
+				100, 0, 100);
+		
+		//fragmentation photons
+		h_frag_photons_pt=new TH1F("h_frag_photons_pt", 
+				"fragmentation photons; p_{T}^{photon}[GeV]; N_{photon}",
+				500, -0.5, 99.5);
+		h_frag_photons_eta=new TH1F("h_frag_photons_eta", 
+				"fragmentation photons; #eta_{photon}^{frag}; N_{photon}",
+				100, -1.2, 1.2);
+		h_frag_photons_phi=new TH1F("h_frag_photons_phi", 
+				"fragmentation photons; #varphi_{photon}^{frag}; N_{photon}",
+				100, 0, 2*pi);
+		h_frag_photons_e=new TH1F("h_frag_photons_E", 
+				"fragmentation photons; E_{photon}[GeV]; N_{photon}",
+				500, -0.5, 99.5);
+				500, -0.5, 99.5);
+		h_n_frag 	=new TH1I("h_n_frag",
+				"fragmentation  photons; N_{photons}; N_{photon}"
+				100, 0, 100);
+
+	}
+	if(photon && jet)
+	{
+		for(int =2; i<7; i++)
+		{
+			//leading jet + photon
+			TH2F* h_photon_jet_pt_a=new TH2F(Form("h_photon_jet_r0%d_pt", i ), 
+					Form(" R=0.%d jets; p_{T}^{photon}[GeV]; p_{T}^{jet}[GeV]; N_{evts}", i),
+					500, -0.5, 99.5, 500, -0.5, 99.5);
+			TH2F* h_photon_jet_eta_a=new TH2F(Form("h_photon_jet_r0%d_eta", i ), 
+					Form(" R=0.%d jets; #eta_{photon}; #eta_{jet}; N_{evts}", i),
+					100, -1.2, 1.2, 100, -1.2, 1.2);
+			TH2F* h_photon_jet_phi_a=new TH2F(Form("h_photon_jet_r0%d_phi", i ), 
+					Form(" R=0.%d jets; #varphi_{photon}; #varphi_{jet}; N_{evts}", i),
+					100, 0, 2*pi, 100, 0, 2*pi);
+			TH2F* h_photon_jet_e_a=new TH2F(Form("h_photon_jet_r0%d_e" i ), 
+					Form(" R=0.%d jets; E_{photon}[GeV]; E_{jet}; N_{evts}", i),
+					500, -0.5, 99.5, 500, -0.5, 99.5);
+			TH1F* h_photon_jet_dphi_a = new TH1F(Form("h_photon_jet_r0%d_dphi", i),
+					Form(" R=0.%d jets; |#Delta #varphi|_{photon jet}; N_{evts}" i),
+					100, -0.1, pi+0.1);
+			//add to the vector
+			h_photon_jet_pt.push_back(h_photon_jet_pt_a);
+			h_photon_jet_eta.push_back(h_photon_jet_eta_a);
+			h_photon_jet_phi.push_back(h_photon_jet_phi_a);
+			h_photon_jet_e.push_back(h_photon_jet_e_a);
+			h_photon_jet_dphi.push_back(h_photon_jet_dphi_a);
+		}
+	}
+				
+	//event categorization 
+	//1D distributions
+	h_particle_eta	= new TH1F("h_particle_eta" , "Final State Particles; #eta; N_{particles}", 100, -1.2, 1.2);
+	h_particle_phi 	= new TH1F("h_particle_phi" , "Final State Particles; #varphi; N_{particles}", 100, 0, 2*pi);
+	h_particle_e	= new TH1F("h_particle_e"   , "Final State Particles; E [GeV]; N_{particles}", 1000, -0.5, 99.5);
+	h_particle_et	= new TH1F("h_particle_et"  , "Final State Particles; E_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
+	h_particle_pt	= new TH1F("h_particle_pt"  , "Final State Particles; p_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
+	h_total_E	= new TH1F("h_total_E"	    , "Final State Particle; #sum E [GeV]; N_{evts}", 1000, -0.5, 199.5);
+
+	//2D correlations
+	h_particle_et_eta = new TH2F("h_particle_et_eta", 
+			"Final State Particles; #eta; E_{T} [GeV]; N_{particles}"; 
+			100, -1.2, 1.2, 1000, -0.5, 99.5);
+	h_particle_et_phi = new TH2F("h_particle_et_phi", 
+			"Final State Particles; #varphi; E_{T} [GeV]; N_{particles}"; 
+			100, 0, 2*pi, 1000, -0.5, 99.5);
+	h_particle_pt_pta = new TH2F("h_particle_pt_pta", 
+			"Final State Particles; #pta; p_{T} [GeV]; N_{particles}"; 
+			100, -1.2, 1.2, 1000, -0.5, 99.5);
+	h_particle_pt_phi = new TH2F("h_particle_pt_phi", 
+			"Final State Particles; #varphi; p_{T} [GeV]; N_{particles}"; 
+			100, 0, 2*pi, 1000, -0.5, 99.5);
+	h_particle_e_eta = new TH2F("h_particle_e_eta", 
+			"Final State Particles; #eta; E [GeV]; N_{particles}"; 
+			100, -1.2, 1.2, 1000, -0.5, 99.5);
+	h_particle_e_phi = new TH2F("h_particle_e_phi", 
+			"Final State Particles; #varphi; E [GeV]; N_{particles}"; 
+			100, 0, 2*pi, 1000, -0.5, 99.5);
+	h_particle_phi_eta = new TH2F("h_particle_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{particles}"; 
+			100, -1.2, 1.2, 100, 0, 2*pi);
+	
+	//electrons
+	h_electron_phi_eta = new TH2F("h_electron_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{electrons}"; 
+			100, -1.2, 1.2, 100, 0, 2*pi);
+	h_electron_pt	= new TH1F("h_electron_pt"  , "Final State Particles; p_{T} [GeV]; N_{electrons}", 1000, -0.5, 99.5);
+	
+	//protons
+	h_proton_phi_eta = new TH2F("h_proton_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{protons}"; 
+			100, -1.2, 1.2, 100, 0, 2*pi);
+	h_proton_pt	= new TH1F("h_proton_pt"  , "Final State Particles; p_{T} [GeV]; N_{protons}", 1000, -0.5, 99.5);
+	
+	//neutrons
+	h_neutron_phi_eta = new TH2F("h_neutron_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{neutrons}"; 
+			100, -1.2, 1.2, 100, 0, 2*pi);
+	h_neutron_pt	= new TH1F("h_neutron_pt"  , "Final State Particles; p_{T} [GeV]; N_{neutrons}", 1000, -0.5, 99.5);
+	
+	//pions
+	h_pion_phi_eta 	= new TH2F("h_pion_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{pions}"; 
+			100, -1.2, 1.2, 100, 0, 2*pi);
+	h_pion_pt	= new TH1F("h_pion_pt"  , "Final State Particles; p_{T} [GeV]; N_{pions}", 1000, -0.5, 99.5);
+		
+	//counting events 
+	h_particle_n	= net TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 1000, 0, 1000);
+	h_electron_n	= net TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 1000, 0, 1000);
+	h_proton_n	= net TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 1000, 0, 1000);
+	h_neutron_n	= net TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 1000, 0, 1000);
+	h_pion_n	= net TH1I("h_pion_n", "Final state pions; N_{pion}; N_{evts}", 1000, 0, 1000);
+	
+	return Fun4AllRpturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
@@ -392,21 +609,23 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 	h_n_photons->Fill((int)photons.size());
 	h_n_frag->Fill(n_frag);
 	h_n_direct->Fill(n_direct);
+	if(jet){
 	//now compare correlations between lead jet and lead photon
-	for(int i=0; i < (int)lead_jet_of_all_sizes.size(); i++)
-	{
-	       auto lead_jet = lead_jet_of_all_sizes.at(i);
-	       float lead_jet_pt	= lead_jet[0];	       
-	       float lead_jet_eta	= lead_jet[1];
-	       float lead_jet_phi	= lead_jet[2];
-	       float lead_jet_e		= lead_jet[3];
-	       h_photon_jet_pt.at(i)->Fill(lead_pt, lead_jet_pt);
-	       h_photon_jet_eta.at(i)->Fill(lead_eta, lead_jet_eta);
-	       h_photon_jet_phi.at(i)->Fill(lead_phi, lead_jet_phi);
-	       h_photon_jet_e.at(i)->Fill(lead_e, lead_jet_e);
-	       float delta_phi = std::abs(lead_phi - lead_jet_phi);
-	       if(delta_phi > pi) delta_phi = 2* pi - delta_phi; 
-	       h_photon_jet_dphi.at(i)->Fill(delta_phi);
+		for(int i=0; i < (int)lead_jet_of_all_sizes.size(); i++)
+		{
+		       auto lead_jet = lead_jet_of_all_sizes.at(i);
+		       float lead_jet_pt	= lead_jet[0];	       
+		       float lead_jet_eta	= lead_jet[1];
+		       float lead_jet_phi	= lead_jet[2];
+		       float lead_jet_e		= lead_jet[3];
+		       h_photon_jet_pt.at(i)->Fill(lead_pt, lead_jet_pt);
+		       h_photon_jet_eta.at(i)->Fill(lead_eta, lead_jet_eta);
+		       h_photon_jet_phi.at(i)->Fill(lead_phi, lead_jet_phi);
+		       h_photon_jet_e.at(i)->Fill(lead_e, lead_jet_e);
+		       float delta_phi = std::abs(lead_phi - lead_jet_phi);
+		       if(delta_phi > pi) delta_phi = 2* pi - delta_phi; 
+		       h_photon_jet_dphi.at(i)->Fill(delta_phi);
+		}
 	}
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -418,6 +637,7 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 	int n_e 	= 0;
 	int n_n 	= 0;
 	int n_pi 	= 0;
+	h_particle_n->Fill((int)(particles.size()));
 	for(auto p:particles)
 	{
 		float particle_eta	= p->momentum().pseduoRapidity();
@@ -439,8 +659,10 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 		h_particle_et_eta->Fill(particle_eta, particle_et);
 		h_particle_et_phi->Fill(particle_phi, particle_et);
 		h_particle_pt_phi->Fill(particle_phi, particle_pt);
+		h_particle_pt_eta->Fill(particle_phi, particle_pt);
 		h_particle_phi_eta->Fill(particle_phi, particle_eta);
 		h_particle_e_phi->Fill(particle_phi, particle_e);
+		h_particle_et_eta->Fill(particle_eta, particle_e);
 		if(particle_id == 11 ){
 		       	n_e++;
 			h_electron_phi_eta->Fill(particle_phi, particle_eta);
@@ -466,7 +688,7 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 		}
 	}
 	h_electron_n->Fill(n_e);
-	h_protron_n->Fill(n_p);
+	h_proton_n->Fill(n_p);
 	h_neutron_n->Fill(n_n);
 	h_pion_n->Fill(n_pi);
 	h_total_E->Fill(total_E);
