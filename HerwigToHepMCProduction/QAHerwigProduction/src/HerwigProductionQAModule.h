@@ -15,6 +15,7 @@
 
 #include <fastjet/JetDefinition.hh>
 #include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
 
 #include <jetbase/Jetv1.h>
 #include <jetbase/JetContainerv1.h>
