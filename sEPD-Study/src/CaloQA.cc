@@ -112,8 +112,8 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
 
   int bins_cent_full = 80;
   int bins_cent = 8;
-  int cent_low = 0;
-  int cent_high = 80;
+  int cent_low = -0.5;
+  int cent_high = 79.5;
 
   int bins_energy = 80;
   int energy_low = -10;
