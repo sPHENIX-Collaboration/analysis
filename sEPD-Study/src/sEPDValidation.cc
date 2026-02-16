@@ -803,6 +803,7 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   int nStripsCEMC = towerBkg->get_nStripsCEMCUsedForFlow();
   int nHIRecoSeedsSub = towerBkg->get_nHIRecoSeedsSub();
   int nHIRecoSeedsSubIt1 = towerBkg1->get_nHIRecoSeedsSub();
+  double max_jet_pt = m_data.max_jet_pt;
 
   m_data.calo_v2 = v2;
   m_data.calo_v2_it1 = v2_it1;
@@ -814,7 +815,10 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Towers"].get())->Fill(nTowers, v2);
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Strips"].get())->Fill(nStrips, v2);
 
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get())->Fill(v2, m_data.max_jet_pt);
+  if (max_jet_pt >= m_jet_pt_min_cut)
+  {
+    dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get())->Fill(v2, max_jet_pt);
+  }
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.event_centrality, v2);
 
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_SumE"].get())->Fill(sum_E, v2);
