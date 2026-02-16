@@ -1,0 +1,11 @@
+Universe        = vanilla
+Executable      = run_wholeEventEECs.sh
+notification    = Never
+Output          = /sphenix/user/bkimelman/logs/wEECs/wEEC_run$(runnumber)_$(segment)_$(clusterId).$(process).txt
+Error           = /sphenix/user/bkimelman/logs/wEECs/wEEC_run$(runnumber)_$(segment)_$(clusterId).$(process).err
+Log             = /tmp/condor_bkimelman_$(clusterId).$(process).log
+Initialdir      = /sphenix/u/bkimelman/analysis/wholeEventEECs/macros
+Arguments       = $(runnumber) $(segment) /sphenix/tg/tg01/jets/bkimelman/wEEC/
+request_memory  = 5000MB
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue runnumber, segment from runlist_47289.txt
