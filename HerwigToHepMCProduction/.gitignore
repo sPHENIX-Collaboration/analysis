@@ -8,3 +8,8 @@
 */condor_file_dir/*
 */condor_file_dir
 */build/*
+*/*/condor_file_dir/*
+*/*/condor_file_dir
+*/*/build/*
+*/*/*_output/*
+*/*/*_output
