@@ -3,6 +3,9 @@
 #ifndef HERWIGPRODUCTIONQAMODULE_H
 #define HERWIGPRODUCTIONQAMODULE_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include <fun4all/SubsysReco.h>
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
@@ -24,9 +27,12 @@
 #include <math.h>
 #include <array>
 #include <vector>
+#include <format> 
 
 #include <TH1.h>
 #include <TH2.h>
+#include <TFile.h>
+#include <TDirectory.h>
 
 class PHCompositeNode;
 
@@ -34,7 +40,7 @@ class HerwigProductionQAModule : public SubsysReco
 {
  public:
 
-	 HerwigProductionQAModule(const std::string data_type_label="Herwig none", float trigger=0., int verb=0, const std::string &name = "HerwigProductionQAModule");
+	 HerwigProductionQAModule(const std::string data_type_label="Herwig none", const std::string outfile="none", float trigger=0., int verb=0, const std::string &name = "HerwigProductionQAModule");
 
 	 ~HerwigProductionQAModule() override;
 
@@ -90,6 +96,7 @@ class HerwigProductionQAModule : public SubsysReco
 	bool herwig = false;
 	bool pythia = false;
 	bool no_gen = false;
+	std::string output_file="";
 	int verbosity = 0;
   	float trigger_val = 0.;
 	int n_evt = 0;
