@@ -173,12 +173,16 @@ class HerwigProductionQAModule : public SubsysReco
 
 	TH2F* h_pion_phi_eta;
 	TH1F* h_pion_pt;
+	
+	TH2F* h_photon_phi_eta;
+	TH1F* h_photon_pt;
 
 	TH1I* h_particle_n;
 	TH1I* h_electron_n;
 	TH1I* h_proton_n;
 	TH1I* h_neutron_n;
 	TH1I* h_pion_n;
+	TH1I* h_photon_n;
 	TH1F* h_total_E;
 
 

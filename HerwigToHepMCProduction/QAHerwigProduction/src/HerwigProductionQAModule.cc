@@ -305,12 +305,18 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
 	h_pion_pt	= new TH1F("h_pion_pt"  , "Final State Particles; p_{T} [GeV]; N_{pions}", 1000, -0.5, 99.5);
 		
+	//photons
+	h_photon_phi_eta = new TH2F("h_photon_phi_eta", 
+			"Final State Particles; #eta; #varphi; N_{photons}", 
+			100, -1.2, 1.2, 100, 0, 2*M_PI);
+	h_photon_pt	= new TH1F("h_photon_pt"  , "Final State Particles; p_{T} [GeV]; N_{photons}", 1000, -0.5, 99.5);
 	//counting events 
 	h_particle_n	= new TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 1000, 0, 1000);
 	h_electron_n	= new TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 1000, 0, 1000);
 	h_proton_n	= new TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 1000, 0, 1000);
 	h_neutron_n	= new TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 1000, 0, 1000);
-	h_pion_n	= new TH1I("h_pion_n", "Final state pions; N_{pion}; N_{evts}", 1000, 0, 1000);
+	h_pion_n	= new TH1I("h_pion_n", "Final state #pi; N_{#pi}; N_{evts}", 1000, 0, 1000);
+	h_photon_n	= new TH1I("h_photon_n", "Final state photons; N_{#gamma}; N_{evts}", 1000, 0, 1000);
 	
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -496,19 +502,18 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 		if(!js) continue;
 		else if(js)
 		{
-			std::vector<Jet*> jetsize {};
+			std::vector<Jet*>* jetsize=new std::vector<Jet*>();
 			for(auto j:*js)
 			{
 				if(!j) continue;
 				else if (j) 
 				{
-					auto j1=*j;
-					jetsize.push_back(&j1);
-					std::cout<<j->get_pt()<<std::endl;
+					if(j->get_pt() < 1 ) continue; //apply a 1 gev min pt, just as with herwig jets
+					jetsize->push_back(j);
 				}
 			}
-			jets.push_back(&jetsize);
-			std::cout<<"There are " <<jetsize.size() <<" many jets of size R=0." <<i+2 <<std::endl;
+			jets.push_back(jetsize);
+			std::cout<<"There are " <<jetsize->size() <<" many jets of size R=0." <<i+2 <<std::endl;
 		}
 	}
 	if(photon) 		runAnalysisPhotonJets(jets, photons);
@@ -530,6 +535,7 @@ std::vector<std::array<float, 4>> HerwigProductionQAModule::runAnalysisJets(std:
 		float lead_e	= 0.;
 		int lead_comp	= 0 ;
 		for(auto jet:*jets){
+			if(std::abs(jet->get_eta()) > 1.1 - 0.1*(i+2)) continue; //restrict to acceptance of detector
 			if(!jet) continue;
 			float phi = jet->get_phi();
 			if(phi < 0 ) phi+=2*M_PI;
@@ -576,6 +582,7 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 		auto p=ph->momentum();
 		float pt=std::sqrt(std::pow(p.px(), 2)+ std::pow(p.py(), 2));
 		float phi = p.phi();
+		if(std::abs(p.pseudoRapidity()) > 1.1) continue; //kinematic region of the detector
 		if(phi < 0 ) phi += 2*M_PI; 
 		if(pt > lead_pt) 
 		{
@@ -645,6 +652,7 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 	int n_e 	= 0;
 	int n_n 	= 0;
 	int n_pi 	= 0;
+	int n_ph 	= 0;
 	h_particle_n->Fill((int)(particles.size()));
 	for(auto p:particles)
 	{
@@ -657,6 +665,8 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 		float particle_et	= particle_e / std::cosh(particle_eta);
 		int   particle_id	= std::abs(p->pdg_id());
 		
+		if(particle_pt < 0.1) continue;
+		if(std::abs(particle_eta) > 1.1) continue;
 		if(particle_phi < 0 ) particle_phi += 2*M_PI;
 		total_E += particle_e;
 		h_particle_eta->Fill(particle_eta);
@@ -695,11 +705,19 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 			h_neutron_phi_eta->Fill(particle_eta, particle_phi);
 			h_neutron_pt->Fill(particle_pt);
 		}
+		else if(particle_id == 22)
+		{
+			n_ph++;
+			h_photon_phi_eta->Fill(particle_eta, particle_phi);
+			h_photon_pt->Fill(particle_pt);
+		}
+
 	}
 	h_electron_n->Fill(n_e);
 	h_proton_n->Fill(n_p);
 	h_neutron_n->Fill(n_n);
 	h_pion_n->Fill(n_pi);
+	h_photon_n->Fill(n_p);
 	h_total_E->Fill(total_E);
 	return Fun4AllReturnCodes::EVENT_OK;	
 }
@@ -846,6 +864,10 @@ void HerwigProductionQAModule::Print(const std::string &what) const
 	h_pion_phi_eta->Write();
 	h_pion_pt->Write();
 	h_pion_n->Write();
+	
+	h_photon_phi_eta->Write();
+	h_photon_pt->Write();
+	h_photon_n->Write();
 
 	out->cd();
 	out->Write();
