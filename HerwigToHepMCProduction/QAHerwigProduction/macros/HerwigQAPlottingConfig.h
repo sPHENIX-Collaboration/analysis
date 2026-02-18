@@ -27,6 +27,8 @@ class HerwigQAPlottingConfig
 		void SetsPhenixHeaderLegend(TLegend*);
 		TH1F* GetRatioPlot(TH1F*, TH1F*);
 		void ScaleXS(std::vector<TH1F*>*, bool);
+		bool isJet(){return jet;}
+		bool isPhoton(){return photon;}
 	private:
 		bool jet=false;
 		bool photon=false;
