@@ -84,7 +84,14 @@ TH1F* HerwigQAPlottingConfig::GetRatioPlot(TH1F* signal, TH1F* refernce)
 	ratio_clone->SetTitle("Hewig / Pythia");
 	return ratio_clone;
 }
-void HerwigQAPlottingConfig::ScaleXS(std::vector<TH1F*>* histograms, bool isHerwig)
+TH1I* HerwigQAPlottingConfig::GetRatioPlot(TH1I* signal, TH1I* refernce)
+{
+	TH1I* ratio_clone = (TH1I*) signal->Clone();
+	ratio_clone->Divide(refernce);
+	ratio_clone->SetTitle("Hewig / Pythia");
+	return ratio_clone;
+}
+void HerwigQAPlottingConfig::ScaleXS(std::vector<TH1I*>* histograms, bool isHerwig)
 {
 	for(int i=0; i<(int)histograms->size(); i++)
 	{

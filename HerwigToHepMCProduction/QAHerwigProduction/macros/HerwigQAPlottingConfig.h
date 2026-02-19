@@ -21,11 +21,12 @@ class HerwigQAPlottingConfig
 		HerwigQAPlottingConfig(float herwig_xs=1., float pythia_xs=1.);
 		~HerwigQAPlottongConfig(){};
 		void ExtractType(TFile*);
-		void DumpHistos(std::string);
+		void DumpHistos(std::stringi, std::vector<TCanvas*>*);
 		std::vector<TPad*>* AddPads(TCanvas*);
 		void SetLegend(TLegend*);
 		void SetsPhenixHeaderLegend(TLegend*);
 		TH1F* GetRatioPlot(TH1F*, TH1F*);
+		TH1I* GetRatioPlot(TH1I*, TH1I*);
 		void ScaleXS(std::vector<TH1F*>*, bool);
 		bool isJet(){return jet;}
 		bool isPhoton(){return photon;}
