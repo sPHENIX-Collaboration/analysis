@@ -49,7 +49,7 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 	}
 	if(conf->isPhoton && conf->isJet)
 	{
-		PlotJetPhotonPlots(top_dirs["herwig photons"], top_dirs["pythia photons"], Canvi);
+		PlotPhotonJetPlots(top_dirs["herwig photons"], top_dirs["pythia photons"], Canvi);
 	}
 
 	TDirectory* HEvent=(TDirectory*)herwig_file->GetDirectory("Event");
@@ -63,7 +63,7 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 	storage->Close();
 	return;
 }
-void PlotJetPhotonPlots(TDirectory* herwig_photons, TDirectory* pythia_photons, std::vector<TCanvas*>* Canvi)
+void PlotPhotonJetPlots(TDirectory* herwig_photons, TDirectory* pythia_photons, std::vector<TCanvas*>* Canvi)
 {
 	TDirectory* H_pj = (TDirectory*)herwig_photons->GetDirectory("Photon-Jets");
 	std::vector<TH2F*> herwig_pt		= new std::vector<TH2F*> ();
@@ -71,16 +71,47 @@ void PlotJetPhotonPlots(TDirectory* herwig_photons, TDirectory* pythia_photons, 
 	std::vector<TH2F*> herwig_phi		= new std::vector<TH2F*> ();
 	std::vector<TH2F*> herwig_e		= new std::vector<TH2F*> ();
 	std::vector<TH1F*> herwig_dphi		= new std::vector<TH2F*> ();
-	GetJetPhotons(H_pj, herwig_pt, herwig_eta, herwig_phi, herwig_e, herwig_dphi);
+	CollectPhotonJets(H_pj, herwig_pt, herwig_eta, herwig_phi, herwig_e, herwig_dphi);
 
 	TDirectory* P_pj = (TDirectory*)pythia_photons->GetDirectory("Photon-Jets");
 	std::vector<TH2F*> pythia_pt		= new std::vector<TH2F*> ();
 	std::vector<TH2F*> pythia_eta		= new std::vector<TH2F*> ();
 	std::vector<TH2F*> pythia_phi		= new std::vector<TH2F*> ();
 	std::vector<TH2F*> pythia_e		= new std::vector<TH2F*> ();
-	std::vector<TH1F*> pythia_dphi		= new std::vector<TH2F*> ();
-	GetJetPhotons(H_pj, pythia_pt, pythia_eta, pythia_phi, pythia_e, pythia_dphi);
+	std::vector<TH1F*> pythia_dphi		= new std::vector<TH1F*> ();
+	CollectPhotonJets(P_pj, pythia_pt, pythia_eta, pythia_phi, pythia_e, pythia_dphi);
+	
+	TCanvas* J_pt=new TCanvas("photon_jet_pt");
+	TCanvas* J_h_pt=new TCanvas("herwig_photon_jet_pt");
+	TCanvas* J_p_pt=new TCanvas("pythia_photon_jet_pt");
+	PlotPhotonJetObs(hewig_pt, pythia_pt, J_pt, J_h_pt, J_p_pt); 
+	
+	TCanvas* J_eta=new TCanvas("photon_jet_eta");
+	TCanvas* J_h_eta=new TCanvas("photon_herwig_jet_eta");
+	TCanvas* J_p_eta=new TCanvas("pythia_photon_jet_eta");
+	PlotPhotonJetObs(hewig_eta, pythia_eta, J_eta, J_h_eta, J_p_eta); 
+
+	TCanvas* J_phi=new TCanvas("photon_herwig_jet_phi");
+	TCanvas* J_h_phi=new TCanvas("photon_herwig_jet_phi");
+	TCanvas* J_p_phi=new TCanvas("pythia_photon_jet_phi");
+	PlotPhotonJetObs(hewig_phi, pythia_phi, J_phi, J_h_phi, J_p_phi); 
+
+	TCanvas* J_e=new TCanvas("photon_herwig_jet_e");
+	TCanvas* J_h_e=new TCanvas("photon_herwig_jet_e");
+	TCanvas* J_p_e=new TCanvas("pythia_photon_jet_e");
+	PlotPhotonJetObs(hewig_e, pythia_e, J_e, J_h_e, J_p_e); 
+
+       	TCanvas* J_dphi=new TCanvas("photon_jet_dphi");
+	PlotJetObs(herwig_dphi, pythia_dphi, J_dphi);
+	Canvi->push_back(J_dphi);
+	return;
 }
+void PlotPhotonJetObs(std::vector<TH2F*>* herwig_obs, std::vector<TH2F*>* pythia_obs, TCanvas* herwig_Canvas, TCanvas* pythia_Canvas, TCanvas* ratio_Canvas)
+{
+	std::vector<TPad*> subdivided_herwig = conf->2DJetDivide(herwig_Canvas);
+	std::vector<TPad*> subdivided_pythia = conf->2DJetDivide(pythia_Canvas);
+	std::vector<TPad*> subdivided_ratio = conf->2DJetDivide(ratio_Canvas);
+
 void PlotJetPlots(TDirectory* herwig_jets, TDirectory* pythia_jets, std::vector<TCanvas*>*Canvi)
 {
 	//all Jets
