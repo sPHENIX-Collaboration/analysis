@@ -41,6 +41,25 @@ std::vector<TPad*>* HerwigQAPlottingConfig::AddPads(TCanvas* c1)
 	std::vector<TPad*>* Pads =new std::vector<TPad*>{p1, p2};
 	return Pads;
 }
+std::vector<TPad*>* HerwigQAPlottingConfig::2DCanvasDivide(TCanvas* c1)
+{
+	c1->cd();
+	TPad* p1=new TPad("p1", "p1", 0, 0, 0.48, 0.30);
+	TPad* p2=new TPad("p2", "p2", 0, 0.33, 0.48, 0.63);
+	TPad* p3=new TPad("p3", "p3", 0, 0.66, 0.48, 0.1);
+	TPad* p4=new TPad("p4", "p4", 0.52, 0, 1, 0.30);
+	TPad* p5=new TPad("p5", "p5", 0.52, 0.33, 1, 0.63);
+	TPad* p6=new TPad("p6", "p6", 0.52, 0.66, 1, 0.1);
+	c1->cd();
+	p1->Draw();
+	p2->Draw();
+	p3->Draw();
+	p4->Draw();
+	p5->Draw();
+	p6->Draw();
+	std::vector<TPad*>* Pads =new std::vector<TPad*>{p1, p4, p2, p5, p3, p6};
+	return Pads;
+}
 
 void HerwigQAPlottingConfig::SetLegend(TLegend* l1) 
 {
@@ -90,6 +109,22 @@ TH1I* HerwigQAPlottingConfig::GetRatioPlot(TH1I* signal, TH1I* refernce)
 	ratio_clone->Divide(refernce);
 	ratio_clone->SetTitle("Hewig / Pythia");
 	return ratio_clone;
+}
+TH2F* HerwigQAPlottingConfig::GetRatioPlot(TH2F* signal, TH2F* refernce)
+{
+	TH1F* ratio_clone = (TH1F*) signal->Clone();
+	ratio_clone->Divide(refernce);
+	return ratio_clone;
+}
+std::vector<TH2F*>* HerwigQAPlottingConfig::GetRatioPlots(std::vector<TH2F*>* signal, std::vector<TH2F*>* reference)
+{
+	std::vector<TH2F*>* ratios = new std::vector<TH2F*> ();
+	for(int i = 0; i < (int) signal->size(); i++)
+	{
+		TH2F* ratio = GetRatioPlot(signal->at(i), refernce->at(i));
+		ratios->push_back(ratio);
+	}
+	return ratios;
 }
 void HerwigQAPlottingConfig::ScaleXS(std::vector<TH1I*>* histograms, bool isHerwig)
 {

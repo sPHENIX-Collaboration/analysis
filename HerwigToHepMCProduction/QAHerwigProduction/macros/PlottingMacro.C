@@ -16,10 +16,13 @@
 #include <string>
 #include <vector>
 #include <format>
+#include <map>
+#include <array>
 
 HerwigQAPlottingConfig* conf;
 Skaydis_colors* style_points;
 TFile* storage;
+std::string tag {};
 void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigger_tag="Jet30", float herwig_xs=1., float pythia_xs=1.)
 {
 	//this does all the plotting of Pythia vrs herwig
@@ -27,10 +30,11 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 	storage=new TFile(std::format("{}_scaled_pt.root", trigger_tag), "RECREATE");
 	conf =  new HerwigQAPlottingConfig(herwig_xs, pythia_xs);
 	style_points=new Skaydis_colors();
-	gStyle->SetPalette(100, style_points->Lesbian_gradient_PT);	
+	gStyle->SetPalette(100, style_points->Bi_gradient_PT);	
 	conf->ExtractType(herwig_file);
 	std::map<std::string, TDirectory*> top_dirs;
 	std::vector<TCanvas*>* Canvi =new std::vector<TCanvas*> ();
+	tag=trigger_tag;
 	//find the relevant directories
 	if(conf->isJet()){
 		TDirectory* HJets=(TDirectory*)herwig_file->GetDirectory("Jets");
@@ -63,8 +67,13 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 	storage->Close();
 	return;
 }
+void PlotEventPlots(TDirectory* herwig_event, TDirectory* pythia_event, std::vector<TCanvas*>* Canvi)
+{
+	//Lots of 2D Plots here as well, so follow along with the PhotonJetApproach
+}
 void PlotPhotonJetPlots(TDirectory* herwig_photons, TDirectory* pythia_photons, std::vector<TCanvas*>* Canvi)
 {
+	//mainly 2D plots so I have to change the approach a bit here 
 	TDirectory* H_pj = (TDirectory*)herwig_photons->GetDirectory("Photon-Jets");
 	std::vector<TH2F*> herwig_pt		= new std::vector<TH2F*> ();
 	std::vector<TH2F*> herwig_eta		= new std::vector<TH2F*> ();
@@ -108,10 +117,36 @@ void PlotPhotonJetPlots(TDirectory* herwig_photons, TDirectory* pythia_photons, 
 }
 void PlotPhotonJetObs(std::vector<TH2F*>* herwig_obs, std::vector<TH2F*>* pythia_obs, TCanvas* herwig_Canvas, TCanvas* pythia_Canvas, TCanvas* ratio_Canvas)
 {
-	std::vector<TPad*> subdivided_herwig = conf->2DJetDivide(herwig_Canvas);
-	std::vector<TPad*> subdivided_pythia = conf->2DJetDivide(pythia_Canvas);
-	std::vector<TPad*> subdivided_ratio = conf->2DJetDivide(ratio_Canvas);
-
+	std::vector<TPad*>* subdivided_herwig = conf->2DCanvasDivide(herwig_Canvas);
+	std::vector<TPad*>* subdivided_pythia = conf->2DCanvasDivide(pythia_Canvas);
+	std::vector<TPad*>* subdivided_ratio = conf->2DCanvasDivide(ratio_Canvas);
+	std::vector<TH2F*>* ratio_plots = conf->GetRatioPlots(herwig_obs, pythia_obs);
+	PlotSingleGenPhotonJetObs(herwig_obs, herwig_Canvas, subdivided_herwig, "Herwig7.2");
+	PlotSingleGenPhotonJetObs(pythia_obs, pythia_Canvas, subdivided_pythia, "Pythia8");
+	PlotSingleGenPhotonJetObs(ratio_obs, ratio_Canvas, subdivided_ratio, "Herwig / Pythia");
+	return;
+}
+void PlotSingleGenPhotonJetObs(std::vector<TH2F*>* obs, TCanvas* c1, std::vector<TPad*>* pads, std::string label)
+{
+	c1->cd();
+	pads->at(0)->cd();
+	TLegend* l_label=new TLegend(0.1, 0.1, 1, 1);
+	conf->SetsPhenixHeaderLegend(l_label, tag);
+	l_label->AddEntry("", label.c_str(), "");
+	l_label->AddEntry("", std::format("Jet {} Versus Photon {}", obs->at(0)->GetXTitle(), obs->at(0)->GetYTitle()).c_str(), "");
+	for(int i=0, i<(int)obs->size(); i++)
+	{
+		pads->at(i+1)->cd();
+		TLegend* l_data=new TLegend(0.7, 0.9, 0.9, 1);
+		conf->SetLegend(l_data);
+		l_data->AddEntry(obs, obs->GetTitle(), "");
+		obs->Draw("colz");
+		l_data->Draw("same");
+		c1->cd();
+		pads->at(i+1)->Draw();
+	}
+	return;
+}
 void PlotJetPlots(TDirectory* herwig_jets, TDirectory* pythia_jets, std::vector<TCanvas*>*Canvi)
 {
 	//all Jets
@@ -241,7 +276,7 @@ void PlotJetObs(std::vector<TH1F*>* herwig_obs, std::vector<TH1F*>* pythia_obs, 
 	//just does the plotting of one variable at a time
 	TLegend* l_data=new TLegend(0.6, 0.3, 1, 0.5);
 	TLegend* l_header=new TLegend(0.8, 0.6, 1, 1);
-	conf->SetsPhenixHeaderLegend(l_header);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
 	l_header->AddEntry("", std::format("Jet {}", herwig_obs->at(0)->GetXTitle()).c_str(), "");
 	conf->SetLegend(l_data);
 	l_data->SetNColumns(3);
@@ -250,7 +285,7 @@ void PlotJetObs(std::vector<TH1F*>* herwig_obs, std::vector<TH1F*>* pythia_obs, 
 	ScaleXS(pythia_obs, false);
 	for(int i=0; i<(int)herwig_obs->size(); i++)
 	{
-		pads->at(0)->cd();
+		pads->at(1)->cd();
 		herwig_obs->at(i)->SetLineColor(i*15+1);
 		herwig_obs->at(i)->SetMarkerColor(i*15+1);
 		herwig_obs->at(i)->SetMarkerStyle(i+20);
@@ -265,14 +300,17 @@ void PlotJetObs(std::vector<TH1F*>* herwig_obs, std::vector<TH1F*>* pythia_obs, 
 		pythia_obs->at(i)->Draw("same e1");
 		l_data->AddEntry(herwig_obs->at(i), std::format("Herwig {}", herwig_obs->at(i)->GetTitle()).c_str());
 		l_data->AddEntry(pythia_obs->at(i), std::format("Pythia {}", pythia_obs->at(i)->GetTitle()).c_str());
-		pads->at(1)->cd();
+		pads->at(0)->cd();
 		TH1F* h_ratio = conf->GetRatioPlot(herwig_obs->at(i), pythia_obs->at(i));
 		h_ratio->SetMarkerStyle(2*i+37);
 		h_ratio->Draw("same");
 		l_data->AddEntry(h_ratio);
 	}
-	pads->at(0)->cd();
+	pads->at(1)->cd();
 	l_data->Draw();
+	obs_canv->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
 	return;
 }
 void PlotJetObs(std::vector<TH1I*>* herwig_obs, std::vector<TH1I*>* pythia_obs, TCanvas* obs_canv)
@@ -280,7 +318,7 @@ void PlotJetObs(std::vector<TH1I*>* herwig_obs, std::vector<TH1I*>* pythia_obs, 
 	//just does the plotting of one variable at a time
 	TLegend* l_data=new TLegend(0.6, 0.3, 1, 0.5);
 	TLegend* l_header=new TLegend(0.8, 0.6, 1, 1);
-	conf->SetsPhenixHeaderLegend(l_header);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
 	conf->SetLegend(l_data);
 	l_data->SetNColumns(3);
 	std::vector<TPad*>* pads=conf->AddPads(obs_canv);
@@ -288,7 +326,7 @@ void PlotJetObs(std::vector<TH1I*>* herwig_obs, std::vector<TH1I*>* pythia_obs, 
 	ScaleXS(pythia_obs, false);
 	for(int i=0; i<(int)herwig_obs->size(); i++)
 	{
-		pads->at(0)->cd();
+		pads->at(1)->cd();
 		herwig_obs->at(i)->SetLineColor((i-2)*15+1);
 		herwig_obs->at(i)->SetMarkerColor((i-2)*15+1);
 		herwig_obs->at(i)->SetMarkerStyle(i+18);
@@ -303,14 +341,17 @@ void PlotJetObs(std::vector<TH1I*>* herwig_obs, std::vector<TH1I*>* pythia_obs, 
 		pythia_obs->at(i)->Draw("same e1");
 		l_data->AddEntry(herwig_obs->at(i), std::format("Herwig {}", herwig_obs->at(i)->GetTitle()).c_str());
 		l_data->AddEntry(pythia_obs->at(i), std::format("Pythia {}", pythia_obs->at(i)->GetTitle()).c_str());
-		pads->at(1)->cd();
+		pads->at(0)->cd();
 		TH1I* h_ratio = conf->GetRatioPlot(herwig_obs->at(i), pythia_obs->at(i));
 		h_ratio->SetMarkerStyle(2*(i-2)+37);
 		h_ratio->Draw("same");
 		l_data->AddEntry(h_ratio);
 	}
-	pads->at(0)->cd();
+	pads->at(1)->cd();
 	l_data->Draw();
+	obs_canv->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
 	return;
 }
 
@@ -505,13 +546,13 @@ void PlotPhotonObs(TH1F* herwig_obs, TH1F* pythia_obs, TCanvas* obs_canv, int i)
 	//just does the plotting of one variable at a time
 	TLegend* l_data=new TLegend(0.6, 0.3, 1, 0.5);
 	TLegend* l_header=new TLegend(0.8, 0.6, 1, 1);
-	conf->SetsPhenixHeaderLegend(l_header);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
 	conf->SetLegend(l_data);
 	l_data->SetNColumns(3);
 	std::vector<TPad*>* pads=conf->AddPads(obs_canv);
 	ScaleXS(herwig_obs, true);
 	ScaleXS(pythia_obs, false);
-	pads->at(0)->cd();
+	pads->at(1)->cd();
 	herwig_obs->SetLineColor((i)*15+1);
 	herwig_obs->SetMarkerColor((i)*15+1);
 	herwig_obs->SetMarkerStyle(i+20);
@@ -526,13 +567,16 @@ void PlotPhotonObs(TH1F* herwig_obs, TH1F* pythia_obs, TCanvas* obs_canv, int i)
 	pythia_obs->Draw("same e1");
 	l_data->AddEntry(herwig_obs, std::format("Herwig {}", herwig_obs->GetTitle()).c_str());
 	l_data->AddEntry(pythia_obs, std::format("Pythia {}", pythia_obs->GetTitle()).c_str());
-	pads->at(1)->cd();
+	pads->at(0)->cd();
 	TH1F* h_ratio = conf->GetRatioPlot(herwig_obs, pythia_obs);
-	h_ratio->SetMarkerStyle(2*(i-2)+37);
+	h_ratio->SetMarkerStyle(2*(i)+37);
 	h_ratio->Draw("same");
 	l_data->AddEntry(h_ratio);
-	pads->at(0)->cd();
+	pads->at(1)->cd();
 	l_data->Draw();
+	obs_canv->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
 	return;
 }
 void PlotPhotonObs(TH1I* herwig_obs, TH1I* pythia_obs, TCanvas* obs_canv, int i)
@@ -540,35 +584,38 @@ void PlotPhotonObs(TH1I* herwig_obs, TH1I* pythia_obs, TCanvas* obs_canv, int i)
 	//just does the plotting of one variable at a time
 	TLegend* l_data=new TLegend(0.6, 0.3, 1, 0.5);
 	TLegend* l_header=new TLegend(0.8, 0.6, 1, 1);
-	conf->SetsPhenixHeaderLegend(l_header);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
 	conf->SetLegend(l_data);
 	l_data->SetNColumns(3);
 	std::vector<TPad*>* pads=conf->AddPads(obs_canv);
 	ScaleXS(herwig_obs, true);
 	ScaleXS(pythia_obs, false);
-	pads->at(0)->cd();
-	herwig_obs->SetLineColor((i-2)*15+1);
-	herwig_obs->SetMarkerColor((i-2)*15+1);
-	herwig_obs->SetMarkerStyle(i+18);
+	pads->at(1)->cd();
+	herwig_obs->SetLineColor((i)*15+1);
+	herwig_obs->SetMarkerColor((i)*15+1);
+	herwig_obs->SetMarkerStyle(i+20);
 	herwig_obs->SetMarkerSize(3);
 	if(i==5) herwig_obs->SetMarkerStyle(33);
 	else if(i==6) herwig_obs->SetMarkerStyle(34);
 	herwig_obs->Draw("same e1");
-	pythia_obs->SetLineColor((i-2)*15+1);
-	pythia_obs->SetMarkerColor((i-2)*15+1);
-	pythia_obs->SetMarkerStyle(i+22);
+	pythia_obs->SetLineColor((i)*15+1);
+	pythia_obs->SetMarkerColor((i)*15+1);
+	pythia_obs->SetMarkerStyle(i+24);
 	pythia_obs->SetMarkerSize(3);
 	pythia_obs->Draw("same e1");
 	l_data->AddEntry(herwig_obs, std::format("Herwig {}", herwig_obs->GetTitle()).c_str());
 	l_data->AddEntry(pythia_obs, std::format("Pythia {}", pythia_obs->GetTitle()).c_str());
-	pads->at(1)->cd();
+	pads->at(0)->cd();
 	TH1I* h_ratio = conf->GetRatioPlot(herwig_obs, pythia_obs);
-	h_ratio->SetMarkerStyle(2*(i-2)+37);
+	h_ratio->SetMarkerStyle(2*(i)+37);
 	h_ratio->Draw("same");
 	l_data->AddEntry(h_ratio);
-pads->at(0)->cd();
-l_data->Draw();
-return;
+	pads->at(1)->cd();
+	l_data->Draw();
+	obs_canv->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
+	return;
 }
 
 #endif

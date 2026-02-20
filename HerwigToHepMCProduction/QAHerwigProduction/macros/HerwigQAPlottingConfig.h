@@ -23,10 +23,13 @@ class HerwigQAPlottingConfig
 		void ExtractType(TFile*);
 		void DumpHistos(std::stringi, std::vector<TCanvas*>*);
 		std::vector<TPad*>* AddPads(TCanvas*);
+		std::vector<TPad*>* 2DCanvasDivide(TCanvas*);
 		void SetLegend(TLegend*);
-		void SetsPhenixHeaderLegend(TLegend*);
+		void SetsPhenixHeaderLegend(TLegend*, std::string);
 		TH1F* GetRatioPlot(TH1F*, TH1F*);
 		TH1I* GetRatioPlot(TH1I*, TH1I*);
+		TH2F* GetRatioPlot(TH2F*, TH2F*);
+		std::vector<TH2F*>* GetRatioPlots(std::vector<TH2F*>*, std::vector<TH2F*>*);
 		void ScaleXS(std::vector<TH1F*>*, bool);
 		bool isJet(){return jet;}
 		bool isPhoton(){return photon;}
@@ -37,6 +40,7 @@ class HerwigQAPlottingConfig
 		bool pythia=false;
 		float HW_XS=1.;
 		float PY_XS=1.;
+		float lookupTrigger(std::string);
 
 };
 #endif
