@@ -1,7 +1,7 @@
 #include "HerwigQAPlottingConfig.h"
 
 HerwigQAPlottingConfig::HerwigQAPlottingConfig(float herwig_xs, float pythia_xs)
-, HW_XS(herwig_xs)
+: HW_XS(herwig_xs)
 , PY_XS(pythia_xs)
 {
 	//This just sets up everything to do the little repetative tasks that go into plotting 
@@ -41,7 +41,7 @@ std::vector<TPad*>* HerwigQAPlottingConfig::AddPads(TCanvas* c1)
 	std::vector<TPad*>* Pads =new std::vector<TPad*>{p1, p2};
 	return Pads;
 }
-std::vector<TPad*>* HerwigQAPlottingConfig::2DCanvasDivide(TCanvas* c1)
+std::vector<TPad*>* HerwigQAPlottingConfig::Canvas2DDivide(TCanvas* c1)
 {
 	c1->cd();
 	TPad* p1=new TPad("p1", "p1", 0, 0, 0.48, 0.30);
@@ -77,7 +77,8 @@ void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string tri
 	l1->AddEntry("", "Herwig HepMC Production QA", "");
 	l1->AddEntry("", "Herwig7.2", "");
  	l1->AddEntry("", "Reference: fully produced Pythia8", "");
-	l1->AddEntry("", std::format("{}, k_{T}^{min} [hat{p}_{T}] = {} GeV", triggerinfo, lookupTrigger(triggerinfo)).c_str(), "");
+	l1->AddEntry("", Form("%s, k_{T}^{min} [hat{p}_{T}] = %.1g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
+	l1->SetTextSize(0.05f);
 	return;
 }
 
@@ -112,7 +113,7 @@ TH1I* HerwigQAPlottingConfig::GetRatioPlot(TH1I* signal, TH1I* refernce)
 }
 TH2F* HerwigQAPlottingConfig::GetRatioPlot(TH2F* signal, TH2F* refernce)
 {
-	TH1F* ratio_clone = (TH1F*) signal->Clone();
+	TH2F* ratio_clone = (TH2F*) signal->Clone();
 	ratio_clone->Divide(refernce);
 	return ratio_clone;
 }
@@ -121,7 +122,7 @@ std::vector<TH2F*>* HerwigQAPlottingConfig::GetRatioPlots(std::vector<TH2F*>* si
 	std::vector<TH2F*>* ratios = new std::vector<TH2F*> ();
 	for(int i = 0; i < (int) signal->size(); i++)
 	{
-		TH2F* ratio = GetRatioPlot(signal->at(i), refernce->at(i));
+		TH2F* ratio = GetRatioPlot(signal->at(i), reference->at(i));
 		ratios->push_back(ratio);
 	}
 	return ratios;
@@ -131,7 +132,29 @@ void HerwigQAPlottingConfig::ScaleXS(std::vector<TH1I*>* histograms, bool isHerw
 	for(int i=0; i<(int)histograms->size(); i++)
 	{
 		if(isHerwig) histograms->at(i)->Scale(HW_XS);
-		else historgrams->at(i)->Scale(PY_XS);
+		else histograms->at(i)->Scale(PY_XS);
+		histograms->at(i)->SetYTitle("#sigma [nb]");
 	}
+}
+void HerwigQAPlottingConfig::ScaleXS(std::vector<TH1F*>* histograms, bool isHerwig)
+{
+	for(int i=0; i<(int)histograms->size(); i++)
+	{
+		if(isHerwig) histograms->at(i)->Scale(HW_XS);
+		else histograms->at(i)->Scale(PY_XS);
+		histograms->at(i)->SetYTitle("#sigma [nb]");
+	}
+}
+void HerwigQAPlottingConfig::ScaleXS(TH1I* histograms, bool isHerwig)
+{
+	if(isHerwig) histograms->Scale(HW_XS);
+	else histograms->Scale(PY_XS);	
+	histograms->SetYTitle("#sigma [nb]");
+}
+void HerwigQAPlottingConfig::ScaleXS(TH1F* histograms, bool isHerwig)
+{
+	if(isHerwig) histograms->Scale(HW_XS);
+	else histograms->Scale(PY_XS);
+	histograms->SetYTitle("#sigma [nb]");
 }
 
