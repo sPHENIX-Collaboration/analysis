@@ -59,8 +59,11 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 	se->registerOutputManager(out);
 	if(trigger_type.find("jet") != std::string::npos) se->registerSubsystem(hf);
 	if(trigger_type.find("photon") != std::string::npos) se->registerSubsystem(part);
-	se->run();
- 	se->End();
+	if(trigger_type.find("none") == std::string::npos)
+	{
+		se->run();
+ 		se->End();
+	}
 	int n_good, n_evts;
 
 	if(trigger_type.find("jet") != std::string::npos ){
@@ -68,50 +71,53 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 		n_good=hf->getNgood();
 	}
 
-	if(trigger_type.find("photon") != std::string::npos ){
+	else if(trigger_type.find("photon") != std::string::npos ){
 		n_evts = part->getNevts();
 		n_good=part->getNgood();
 	}
+	else {
+	       n_good=goal_event_number;	
+	       n_evts=nGen;
+	}
 	std::cout<<"Analyzed events = " <<n_evts <<"\n Good events= " <<n_good <<std::endl;
-	if(segment < 20 ) {
-		std::fstream f;
-		f.open(xs_file);
-		float xs_value = 0.;
-		float xs_pow = 0.;
-		std::string line;
-		while(std::getline(f, line))
+	//get the measured cross section
+	std::fstream f;
+	f.open(xs_file);
+	float xs_value = 0.;
+	float xs_pow = 0.;
+	std::string line;
+	while(std::getline(f, line))
+	{
+		if(line.find("generated events") != std::string::npos)
 		{
-			if(line.find("generated events") != std::string::npos)
+			std::stringstream linestream (line);
+			std::string subline;
+			while(std::getline(linestream, subline, ' '))
 			{
-				std::stringstream linestream (line);
-				std::string subline;
-				while(std::getline(linestream, subline, ' '))
+				if(subline.find(")e")!=std::string::npos)
 				{
-					if(subline.find(")e")!=std::string::npos)
-					{
-						auto left_par = subline.find("(");
-						xs_value=std::stof(subline.substr(0, left_par-1));
-						auto pow_e = subline.find("e");
-						xs_pow=std::stof(subline.substr(pow_e+2));
-					}
+					auto left_par = subline.find("(");
+					xs_value=std::stof(subline.substr(0, left_par-1));
+					auto pow_e = subline.find("e");
+					xs_pow=std::stof(subline.substr(pow_e+2));
 				}
 			}
 		}
-		float xs = xs_value * std::pow(10, xs_pow) * ((float)n_good)/((float)n_evts*(float)nGen);
-		f.close();
-		std::ofstream of;
-		std::string xs_of="cross_section_data/Cross_Section_"+trigger_type+trig+"_"+std::to_string(segment)+".txt";
-		of.open(xs_of.c_str());
-		if(!of.good()) std::cout<<"failed to open file" <<std::endl;
-		if(of.good())
-			of<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
-			<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
-		else 
-			std::cout<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
-			<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
-		of.close();
-		std::cout<<"Cross section / Evt = " <<xs<<std::endl;
 	}
+	float xs = xs_value * std::pow(10, xs_pow) * ((float)n_good)/((float)n_evts*(float)nGen);
+	f.close();
+	std::ofstream of;
+	std::string xs_of="cross_section_data/Cross_Section_"+trigger_type+trig+"_"+std::to_string(segment)+".txt";
+	of.open(xs_of.c_str());
+	if(!of.good()) std::cout<<"failed to open file" <<std::endl;
+	if(of.good())
+		of<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
+		<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
+	else 
+		std::cout<<"Events analyzed= " << n_evts<<"\n Events passing filter= " <<n_good <<"\n Total Generated events= " <<nGen <<"\n XS/N= "<<xs 
+			<<"\n Read xs = " <<xs_value <<" x 10^ " <<xs_pow <<" nb " <<std::endl;
+	of.close();
+	std::cout<<"Cross section / Evt = " <<xs<<std::endl;
 	
 	return 0;
 }	

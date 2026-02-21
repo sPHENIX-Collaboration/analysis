@@ -63,9 +63,9 @@ set_config()
 	elif [ "$triggertype" = "Jet5" ]; then
 		configfile="${configdir}/Herwig_MB.run"
 		triggervalue="5"
-	elif [ "$triggertype" = "Jet15" ]; then
+	elif [ "$triggertype" = "Jet12" ]; then
 		configfile="${configdir}/Herwig_Jet15.run"
-		triggervalue="15"
+		triggervalue="12"
 	elif [ "$triggertype" = "Jet20" ]; then
 		configfile="${configdir}/Herwig_Jet20.run"
 		triggervalue="20"

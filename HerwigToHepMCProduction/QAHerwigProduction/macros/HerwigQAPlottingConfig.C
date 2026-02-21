@@ -77,7 +77,7 @@ void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string tri
 	l1->AddEntry("", "Herwig HepMC Production QA", "");
 	l1->AddEntry("", "Herwig7.2", "");
  	l1->AddEntry("", "Reference: fully produced Pythia8", "");
-	l1->AddEntry("", Form("%s, k_{T}^{min} [hat{p}_{T}] = %.1g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
+	l1->AddEntry("", Form("%s, k_{T}^{min} [#hat{p}_{T}] = %.2g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
 	l1->SetTextSize(0.05f);
 	return;
 }

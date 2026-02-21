@@ -18,6 +18,7 @@
 #include <format>
 #include <map>
 #include <array>
+#include <utility>
 
 HerwigQAPlottingConfig* conf;
 TFile* storage;
@@ -28,7 +29,20 @@ struct particle_colls
 	TH1I* n;
 	TH2F* phi_eta;
 };
-void CollectEventPlots(TDirectory* event, std::vector<TH1F*>* particle_level, std::vector<TH2F*>* particle_correlations, std::map<std::string, particle_colls*>* particle_coll)
+void MakeParticleRatios( std::map<std::string, particle_colls*>* h,  std::map<std::string, particle_colls*>* p,  std::map<std::string, particle_colls*>* r)
+{
+	for(auto m:*h) 
+	{
+		if(!m.second) continue;
+		auto pt = conf->GetRatioPlot(h->at(m.first)->pt, p->at(m.first)->pt);
+		auto n = conf->GetRatioPlot(h->at(m.first)->n, p->at(m.first)->n);
+		auto phi_eta = conf->GetRatioPlot(h->at(m.first)->phi_eta, p->at(m.first)->phi_eta);
+		particle_colls part {pt, n, phi_eta};
+		r->insert(std::pair<std::string, particle_colls*> (m.first, &part));
+	}
+	return;
+}	
+void CollectEventPlots(TDirectory* event, std::vector<TH1F*>* particle_level, std::vector<TH2F*>* particle_correlations, TH1I* particle_n, std::map<std::string, particle_colls*>* particle_coll)
 {
 	//Lots of 2D Plots here as well, so follow along with the PhotonJetApproach
 	event->cd();
@@ -40,6 +54,7 @@ void CollectEventPlots(TDirectory* event, std::vector<TH1F*>* particle_level, st
 	TH1F* particle_et	= (TH1F*) event->Get("h_particle_et");
 	TH1F* particle_pt 	= (TH1F*) event->Get("h_particle_pt");
 	TH1F* total_E 		= (TH1F*) event->Get("h_total_E");
+	particle_n 		= (TH1I*) event->Get("h_particle_n");
 	particle_level->push_back(particle_eta);
 	particle_level->push_back(particle_phi);
 	particle_level->push_back(particle_e);
@@ -65,19 +80,24 @@ void CollectEventPlots(TDirectory* event, std::vector<TH1F*>* particle_level, st
 	particle_correlations->push_back(h_particle_phi_eta);
 
 	//Individual particle type comp
-	TDirectory* particles = (TDirectory*) event->GetDirectory("Particle_Cat");
+	TDirectory* particles = (TDirectory*) event->GetDirectory("ParticleCat");
+	particles->cd();
 	std::vector<std::string> particle_names {"electron", "proton", "neutron", "pion", "photon"};
 	for(auto n:particle_names)
 	{
 		TH1F* h_p_pt 	= (TH1F*) particles->Get(std::format("h_{}_pt", n).c_str());
 		TH1I* h_p_n	= (TH1I*) particles->Get(std::format("h_{}_n", n).c_str());
 		TH2F* h_p_ph	= (TH2F*) particles->Get(std::format("h_{}_phi_eta", n).c_str());
-		particle_colls part {h_p_pt, h_p_n, h_p_ph};
-		particle_coll->insert(std::pair<std::string, particle_colls*>(n, &part));
+		if(!h_p_pt) continue;
+		particle_colls* part = new particle_colls;
+	       	part->pt	= h_p_pt;
+	        part->n 	= h_p_n;
+	        part->phi_eta	= h_p_ph;
+		particle_coll->insert(std::pair<std::string, particle_colls*>(n, part));
 	}
 	return;
 }
-void PlotEventObs(TH1F* herwig_obs, TH1F* pythia_obs, TCavnas* c1)
+void PlotEventObs(TH1F* herwig_obs, TH1F* pythia_obs, TCanvas* c1)
 {
 	//plotting the kinematic variables
 	std::string var = herwig_obs->GetXaxis()->GetTitle();
@@ -90,20 +110,20 @@ void PlotEventObs(TH1F* herwig_obs, TH1F* pythia_obs, TCavnas* c1)
 	conf->SetLegend(l_data);
 	if(var.find("[GeV]") != std::string::npos) pads->at(1)->SetLogy();
 	auto ratio = conf->GetRatioPlot(herwig_obs, pythia_obs);
-	pythia_obs->SetMarkerType(23);
-	hewrig_obs->SetMarkerType(22);
+	pythia_obs->SetMarkerStyle(23);
+	herwig_obs->SetMarkerStyle(22);
 	THStack* s=new THStack("s", "s");
 	s->Add(herwig_obs);
 	s->Add(pythia_obs);
 	s->Draw("plc pmc nostack");
-	s->GetXaxis()->SetTitle(var);
+	s->GetXaxis()->SetTitle(var.c_str());
 	s->GetYaxis()->SetTitle(herwig_obs->GetYaxis()->GetTitle());
 	l_data->AddEntry(herwig_obs);
 	l_data->AddEntry(pythia_obs);
 	l_header->Draw();
 	l_data->Draw("same");
 	pads->at(0)->cd();
-	ratio->SetMarkerType(34);
+	ratio->SetMarkerStyle(34);
 	ratio->Draw("pmc plc");
 	l_data->AddEntry(ratio, "Herwig / Pythia");
 	c1->cd();
@@ -111,7 +131,7 @@ void PlotEventObs(TH1F* herwig_obs, TH1F* pythia_obs, TCavnas* c1)
 	pads->at(1)->Draw();
 	return;
 }
-void PlotEventObs(TH2F* herwig_obs, TH2F* pythia_obs, TCavnas* c1)
+void PlotEventObs(TH2F* herwig_obs, TH2F* pythia_obs, TCanvas* c1)
 {
 	//plotting the kinematic variables
 	std::string var = herwig_obs->GetXaxis()->GetTitle();
@@ -128,7 +148,6 @@ void PlotEventObs(TH2F* herwig_obs, TH2F* pythia_obs, TCavnas* c1)
 	TLegend* l_header=new TLegend(0.1, 0.1, 1, 1);
 	conf->SetsPhenixHeaderLegend(l_header, tag);
 	l_header->AddEntry("", std::format("Event {}", var).c_str(), "");
-	conf->SetLegend(l_data);
 	if(var.find("[GeV]") != std::string::npos) pads->at(1)->SetLogy();
 	auto ratio = conf->GetRatioPlot(herwig_obs, pythia_obs);
 	pads->at(1)->cd();
@@ -136,23 +155,23 @@ void PlotEventObs(TH2F* herwig_obs, TH2F* pythia_obs, TCavnas* c1)
 	TLegend* l_data=new TLegend(0.5, 0.8, 1, 1);
 	conf->SetLegend(l_data);
 	l_data->SetTextSize(0.05f);
-	l_data->AddEntry(herwig_obs, std::format("Herwig {}" var).c_str(), "");
+	l_data->AddEntry(herwig_obs, std::format("Herwig {}", var).c_str(), "");
 	l_data->Draw();
 	pads->at(2)->cd();
 	pythia_obs->Draw("colz");
 	TLegend* l_data_p=new TLegend(0.5, 0.8, 1, 1);
 	conf->SetLegend(l_data_p);
 	l_data_p->SetTextSize(0.05f);
-	l_data_p->AddEntry(pythia_obs, std::format("Pythia {}" var).c_str(), "");
+	l_data_p->AddEntry(pythia_obs, std::format("Pythia {}", var).c_str(), "");
 	l_data_p->Draw();
 	
 	pads->at(3)->cd();
-	ratio->SetMarkerType(34);
+	ratio->SetMarkerStyle(34);
 	ratio->Draw("colz");
 	TLegend* l_data_r=new TLegend(0.5, 0.8, 1, 1);
 	conf->SetLegend(l_data_r);
 	l_data_r->SetTextSize(0.05f);
-	l_data_r->AddEntry(pythia_obs, std::format(" Herwig / Pythia {}" var).c_str(), "");
+	l_data_r->AddEntry(pythia_obs, std::format(" Herwig / Pythia {}", var).c_str(), "");
 	l_data_r->Draw();
 	c1->cd();
 	pads->at(0)->Draw();
@@ -161,18 +180,132 @@ void PlotEventObs(TH2F* herwig_obs, TH2F* pythia_obs, TCavnas* c1)
 	pads->at(3)->Draw();
 	return;
 }
-void PlotEventObs(TH1F* herwig_particle, TH1F* pythia_particle, std::map<std::string, particle_cols*>* h_pc, std::map<std::string, particle_cols*>* p_pc, TCanvas* c1)
+void PlotEventObs(TH1F* herwig_particle, TH1F* pythia_particle, std::map<std::string, particle_colls*>* h_pc, std::map<std::string, particle_colls*>* p_pc, std::map<std::string, particle_colls*>* r_pc, TCanvas* c1)
 {
 	//comparing the particle species pt
+	std::vector<TPad*>* pads=conf->AddPads(c1);
+	pads->at(1)->cd();
+	pads->at(1)->SetLogy();
+	TLegend* l_data=new TLegend(0.7, 0.4, 1, 0.58);
+	TLegend* l_header=new TLegend(0.5, 0.6, 0.7, 1);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
+	l_header->AddEntry("", "Particle Species p_{T}", "");
+	conf->SetLegend(l_data);
+	l_data->SetNColumns(3);
+	herwig_particle->SetMarkerStyle(20);
+	pythia_particle->SetMarkerStyle(24);
+	herwig_particle->Draw("pmc plc");
+	pythia_particle->Draw("pmc plc");
+	pads->at(0)->cd();
+	TH1F* ratio_particle=conf->GetRatioPlot(herwig_particle, pythia_particle);
+	ratio_particle->Draw("same pmc plc");
+	l_data->AddEntry(herwig_particle, "Herwig Final State Particles");
+	l_data->AddEntry(pythia_particle, "Herwig Final State Particles");
+	l_data->AddEntry(ratio_particle, "Herwig / Pythia Particles");
+	int i=1;
+	for(auto m: *h_pc)
+	{
+		h_pc->at(m.first)->pt->SetMarkerStyle(i+20);
+		p_pc->at(m.first)->pt->SetMarkerStyle(i+24);
+		r_pc->at(m.first)->pt->SetMarkerStyle(i+20);
+		if(i >= 4){
+			 h_pc->at(m.first)->pt->SetMarkerStyle(i+30);
+			 r_pc->at(m.first)->pt->SetMarkerStyle(i+30);
+		}
+		pads->at(1)->cd();
+		h_pc->at(m.first)->pt->Draw("same pmc plc");
+		p_pc->at(m.first)->pt->Draw("same pmc plc");
+		pads->at(0)->cd();
+		r_pc->at(m.first)->pt->Draw("same pmc plc");
+		l_data->AddEntry( h_pc->at(m.first)->pt, std::format("Herwig Final State {}", m.first).c_str());
+		l_data->AddEntry( p_pc->at(m.first)->pt, std::format("Pythia Final State {}", m.first).c_str());
+		l_data->AddEntry( h_pc->at(m.first)->pt, std::format("Herwig / Pythia {}", m.first).c_str());
+	}
+	c1->cd();
+	pads->at(1)->cd();
+	l_data->Draw();
+	l_header->Draw();
+	c1->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
+	return;	
 }
-void PlotEventObs(TH1I* herwig_particle, TH1I* pythia_particle, std::map<std::string, particle_cols*>* h_pc, std::map<std::string, particle_cols*>* p_pc, TCanvas* c1)
+void PlotEventObs(TH1I* herwig_particle, TH1I* pythia_particle, std::map<std::string, particle_colls*>* h_pc, std::map<std::string, particle_colls*>* p_pc, std::map<std::string, particle_colls*>* r_pc, TCanvas* c1)
 {
 	//comparing the particle species n 
+	std::vector<TPad*>* pads=conf->AddPads(c1);
+	pads->at(1)->cd();
+	pads->at(1)->SetLogy();
+	TLegend* l_data=new TLegend(0.7, 0.4, 1, 0.58);
+	TLegend* l_header=new TLegend(0.5, 0.6, 0.7, 1);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
+	l_header->AddEntry("", "Particle Species Count", "");
+	conf->SetLegend(l_data);
+	l_data->SetNColumns(3);
+	herwig_particle->SetMarkerStyle(20);
+	pythia_particle->SetMarkerStyle(24);
+	herwig_particle->Draw("pmc plc");
+	pythia_particle->Draw("pmc plc");
+	pads->at(0)->cd();
+	TH1I* ratio_particle=conf->GetRatioPlot(herwig_particle, pythia_particle);
+	ratio_particle->Draw("same pmc plc");
+	l_data->AddEntry(herwig_particle, "Herwig Final State Particles");
+	l_data->AddEntry(pythia_particle, "Herwig Final State Particles");
+	l_data->AddEntry(ratio_particle, "Herwig / Pythia Particles");
+	int i=1;
+	for(auto m: *h_pc)
+	{
+		h_pc->at(m.first)->n->SetMarkerStyle(i+20);
+		p_pc->at(m.first)->n->SetMarkerStyle(i+24);
+		r_pc->at(m.first)->n->SetMarkerStyle(i+20);
+		if(i >= 4){
+			 h_pc->at(m.first)->n->SetMarkerStyle(i+30);
+			 r_pc->at(m.first)->n->SetMarkerStyle(i+30);
+		}
+		pads->at(1)->cd();
+		h_pc->at(m.first)->n->Draw("same pmc plc");
+		p_pc->at(m.first)->n->Draw("same pmc plc");
+		pads->at(0)->cd();
+		r_pc->at(m.first)->n->Draw("same pmc plc");
+		l_data->AddEntry( h_pc->at(m.first)->n, std::format("Herwig Final State {}", m.first).c_str());
+		l_data->AddEntry( p_pc->at(m.first)->n, std::format("Pythia Final State {}", m.first).c_str());
+		l_data->AddEntry( h_pc->at(m.first)->n, std::format("Herwig / Pythia {}", m.first).c_str());
+	}
+	c1->cd();
+	pads->at(1)->cd();
+	l_data->Draw();
+	l_header->Draw();
+	c1->cd();
+	pads->at(0)->Draw();
+	pads->at(1)->Draw();
+	return;	
 }
-void PlotEventObs(TH2F* herwig_particle, std::map<std::string, particle_cols*>* pc, TCanvas* c1, std::string generator)
+void PlotEventObs(TH2F* particle, std::map<std::string, particle_colls*>* pc, TCanvas* c1, std::string generator)
 {
 	//comparing the particle species phi-eta hits
-	
+	std::vector<TPad*>* pads = conf->Canvas2DDivide(c1);
+	pads->at(0)->cd();
+	TLegend* l_header=new TLegend(0.5, 0.6, 1, 1);
+	conf->SetsPhenixHeaderLegend(l_header, tag);
+	l_header->SetTextSize(0.03f);
+	l_header->AddEntry("", generator.c_str(), "");
+	l_header->AddEntry("", "Final State #eta - #varphi hit distribution", "");
+	particle->Draw("colz");
+	l_header->Draw();
+	int i=1;
+	for(auto m:*pc)
+	{
+		pads->at(i)->cd();
+		TLegend* l_data=new TLegend(0.5, 0.8, 1, 0.9);
+		conf->SetLegend(l_data);
+		l_data->AddEntry("", m.first.c_str(), "");
+		m.second->phi_eta->Draw("colz");
+		l_data->Draw("same");
+		i++;
+	}
+	c1->cd();
+	for(int i=0; i<(int)pads->size(); i++) pads->at(i)->Draw();
+	return;
 }
 
 
@@ -180,12 +313,48 @@ void PlotEventPlots(TDirectory* herwig_event, TDirectory* pythia_event, std::vec
 {
 	std::vector<TH1F*>* herwig_particle_level 	= new std::vector<TH1F*> ();
 	std::vector<TH2F*>* herwig_particle_correlations= new std::vector<TH2F*> ();
-	std::map<std::string, particle_colls*>* herwig_particle_coll {};
+	TH1I* herwig_particle_n;
+	std::map<std::string, particle_colls*>* herwig_particle_coll = new std::map<std::string, particle_colls*> ();
 	std::vector<TH1F*>* pythia_particle_level 	= new std::vector<TH1F*> ();
 	std::vector<TH2F*>* pythia_particle_correlations= new std::vector<TH2F*> ();
-	std::map<std::string, particle_colls*> pythia_particle_coll {};
-	CollectEventPlots(herwig_event, herwig_particle_level, herwig_particle_correlations, &herwig_particle_coll);
-	CollectEventPlots(pythia_event, pythia_particle_level, pythia_particle_correlations, &pythia_particle_coll);
+	TH1I* pythia_particle_n;
+	std::map<std::string, particle_colls*>* pythia_particle_coll  = new std::map<std::string, particle_colls*> ();
+	CollectEventPlots(herwig_event, herwig_particle_level, herwig_particle_correlations, herwig_particle_n, herwig_particle_coll);
+	CollectEventPlots(pythia_event, pythia_particle_level, pythia_particle_correlations, pythia_particle_n, pythia_particle_coll);
+	std::map<std::string, particle_colls*>* ratio_particle_coll = new std::map<std::string, particle_colls*> ();
+	MakeParticleRatios( herwig_particle_coll, pythia_particle_coll, ratio_particle_coll);
+	for(int i=0; i<(int)herwig_particle_level->size(); i++){
+		std::string var = herwig_particle_level->at(i)->GetXaxis()->GetTitle();
+		TCanvas* c1=new TCanvas(std::format("Canv_{}", var).c_str(),std::format("Canv_{}", var).c_str()); 
+		PlotEventObs(herwig_particle_level->at(i), pythia_particle_level->at(i), c1);
+		Canvi->push_back(c1);
+		if(var.find("p_{T}") != std::string::npos){
+			TCanvas* c2 = new TCanvas("pt", "pt");
+			PlotEventObs(herwig_particle_level->at(i), pythia_particle_level->at(i), herwig_particle_coll, pythia_particle_coll, ratio_particle_coll, c2);
+			Canvi->push_back(c2);
+		}
+	}
+	for(int i=0; i<(int)herwig_particle_correlations->size(); i++){
+		std::string var = herwig_particle_correlations->at(i)->GetXaxis()->GetTitle();
+		std::string var2 = herwig_particle_correlations->at(i)->GetYaxis()->GetTitle();
+		TCanvas* c1=new TCanvas(std::format("Canv_{}", var).c_str(),std::format("Canv_{}", var).c_str()); 
+		PlotEventObs(herwig_particle_correlations->at(i), pythia_particle_correlations->at(i), c1);
+		Canvi->push_back(c1);
+		if(var.find("eta") !=std::string::npos && var.find("varphi") != std::string::npos) 
+		{
+			TCanvas* ch = new TCanvas("etph_h", "etph_h");
+			TCanvas* cp = new TCanvas("etph_p", "etph_p");
+			TCanvas* cr = new TCanvas("etph_r", "etph_r");
+			TH2F* ratio = conf->GetRatioPlot(herwig_particle_correlations->at(i), pythia_particle_correlations->at(i));
+			PlotEventObs(herwig_particle_correlations->at(i), herwig_particle_coll, ch, "Herwig7.2");
+			PlotEventObs(pythia_particle_correlations->at(i), pythia_particle_coll, cp, "Pythia8");
+			PlotEventObs(ratio, ratio_particle_coll, cr, "Herwig / Pythia");
+		}
+	}
+	TCanvas* c3 = new TCanvas("n", "n");
+	PlotEventObs(herwig_particle_n, pythia_particle_n, herwig_particle_coll, pythia_particle_coll, ratio_particle_coll, c3);
+	Canvi->push_back(c3);
+	return;
 
 }
 void PlotSingleGenPhotonJetObs(std::vector<TH2F*>* obs, TCanvas* c1, std::vector<TPad*>* pads, std::string label)
@@ -357,7 +526,7 @@ void PlotJetObs(std::vector<TH1I*>* herwig_obs, std::vector<TH1I*>* pythia_obs, 
 		herwig_obs->at(i)->SetMarkerSize(2);
 		if(i==5) herwig_obs->at(i)->SetMarkerStyle(33);
 		else if(i==6) herwig_obs->at(i)->SetMarkerStyle(34);
-		herwig->Add(herwig_obs->at(i);
+		herwig->Add(herwig_obs->at(i));
 		pythia_obs->at(i)->SetMarkerStyle(i+24);
 		pythia_obs->at(i)->SetMarkerSize(2);
 		pythia->Add(pythia_obs->at(i));
@@ -394,18 +563,14 @@ void PlotPhotonObs(TH1F* herwig_obs, TH1F* pythia_obs, TCanvas* obs_canv, int i)
 	conf->ScaleXS(herwig_obs, true);
 	conf->ScaleXS(pythia_obs, false);
 	pads->at(1)->cd();
-	herwig_obs->SetLineColor((i)*22+1);
-	herwig_obs->SetMarkerColor((i)*22+1);
 	herwig_obs->SetMarkerStyle(i+20);
 	herwig_obs->SetMarkerSize(2);
 	if(i==5) herwig_obs->SetMarkerStyle(33);
 	else if(i==6) herwig_obs->SetMarkerStyle(34);
-	herwig_obs->Draw("same e1");
-	pythia_obs->SetLineColor((i)*22+1);
-	pythia_obs->SetMarkerColor((i)*22+1);
+	herwig_obs->Draw("same e1 pmc plc");
 	pythia_obs->SetMarkerStyle(i+24);
 	pythia_obs->SetMarkerSize(2);
-	pythia_obs->Draw("same e1");
+	pythia_obs->Draw("same e1 pmc plc");
 	l_data->AddEntry(herwig_obs, std::format("Herwig {}", herwig_obs->GetTitle()).c_str());
 	l_data->AddEntry(pythia_obs, std::format("Pythia {}", pythia_obs->GetTitle()).c_str());
 	pads->at(0)->cd();
@@ -770,7 +935,7 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 	storage=new TFile(std::format("{}_scaled_pt.root", trigger_tag).c_str(), "RECREATE");
 	conf =  new HerwigQAPlottingConfig(herwig_xs, pythia_xs);
 	Skaydis_colors* style_points=new Skaydis_colors();
-	gStyle->SetPalette(100, style_points->Lesbian_gradient_PT);	
+	gStyle->SetPalette(100, style_points->Bi_gradient_PT);	
 	conf->ExtractType(herwig_file);
 	std::map<std::string, TDirectory*> top_dirs;
 	std::vector<TCanvas*>* Canvi =new std::vector<TCanvas*> ();
@@ -781,7 +946,7 @@ void DoAllThePlotting(TFile* herwig_file, TFile* pythia_file, std::string trigge
 		TDirectory* PJets=(TDirectory*)pythia_file->GetDirectory("Jets");
 		top_dirs["herwig jets"]=HJets;
 		top_dirs["pythia jets"]=PJets;
-		PlotJetPlots(HJets, PJets, Canvi);
+	//	PlotJetPlots(HJets, PJets, Canvi);
 	}
 	if(conf->isPhoton())
 	{
