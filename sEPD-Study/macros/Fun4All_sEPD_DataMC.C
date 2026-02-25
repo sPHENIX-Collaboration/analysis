@@ -1,7 +1,6 @@
 // c++ includes --
 #include <string>
 #include <iostream>
-#include <memory>
 
 // root includes --
 #include <TSystem.h>
@@ -15,6 +14,11 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllBase.h>
+#include <fun4all/Fun4AllUtils.h>
+
+#include <caloreco/CaloTowerStatus.h>
+
+#include <eventplaneinfo/EventPlaneRecov2.h>
 
 #include <phool/recoConsts.h>
 
@@ -22,16 +26,20 @@
 
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
-void Fun4All_sEPD_DataMC(const std::string &fname,
-                         unsigned int runnumber,
-                         const std::string &output = "test.root",
+void Fun4All_sEPD_DataMC(const std::string& fname_global,
+                         const std::string& fname_jets,
+                         const std::string& input_QVecCalib,
+                         const std::string& input_sEPD_BadTowers,
+                         const std::string& output = "test.root",
                          int nEvents = 100,
-                         const std::string &dbtag = "newcdbtag")
+                         const std::string& dbtag = "newcdbtag")
 {
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
-  std::cout << "input: " << fname << std::endl;
-  std::cout << "Run: " << runnumber << std::endl;
+  std::cout << "input global: " << fname_global << std::endl;
+  std::cout << "input jets: " << fname_jets << std::endl;
+  std::cout << "input QVecCalib: " << input_QVecCalib << std::endl;
+  std::cout << "input Bad Towers: " << input_sEPD_BadTowers << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
@@ -59,27 +67,50 @@ void Fun4All_sEPD_DataMC(const std::string &fname,
 
   recoConsts *rc = recoConsts::instance();
 
+  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname_global);
+  unsigned int runnumber = static_cast<unsigned int>(runseg.first);
+
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
   rc->set_uint64Flag("TIMESTAMP", runnumber);
   CDBInterface::instance()->Verbosity(Fun4AllBase::VERBOSITY_SOME);
 
-  std::unique_ptr<FlagHandler> flag = std::make_unique<FlagHandler>();
-  se->registerSubsystem(flag.release());
+  FlagHandler* flag = new FlagHandler();
+  se->registerSubsystem(flag);
+
+  // sEPD Bad Tower Status
+  CaloTowerStatus* statusSEPD = new CaloTowerStatus("SEPDSTATUS");
+  statusSEPD->set_detector_type(CaloTowerDefs::SEPD);
+  statusSEPD->set_directURL_hotMap(input_sEPD_BadTowers);
+  statusSEPD->set_inputNode("TOWERINFO_CALIB_SEPD_data");
+  se->registerSubsystem(statusSEPD);
+
+  // Event Plane
+  EventPlaneRecov2* epreco = new EventPlaneRecov2();
+  epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
+  epreco->set_inputNode("TOWERINFO_COMBINED_SEPD");
+  // epreco->set_inputNode("TOWERINFO_CALIB_SEPD_data");
+  epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  se->registerSubsystem(epreco);
 
   // sEPD QA
-  std::unique_ptr<sEPD_DataMC_Validation> sepd_validation = std::make_unique<sEPD_DataMC_Validation>();
-  sepd_validation->set_filename(output);
-  sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-  se->registerSubsystem(sepd_validation.release());
+  sEPD_DataMC_Validation* sepd_validation = new sEPD_DataMC_Validation();
+  sepd_validation->Verbosity(1);
+  se->registerSubsystem(sepd_validation);
 
-  std::unique_ptr<Fun4AllInputManager> In = std::make_unique<Fun4AllDstInputManager>("in");
-  In->AddListFile(fname);
-  se->registerInputManager(In.release());
+  Fun4AllInputManager* In_global = new Fun4AllDstInputManager("in_global");
+  In_global->AddFile(fname_global);
+  se->registerInputManager(In_global);
+
+  Fun4AllInputManager* In_jets = new Fun4AllDstInputManager("in_jets");
+  In_jets->AddFile(fname_jets);
+  se->registerInputManager(In_jets);
 
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->run(nEvents);
   se->End();
+
+  se->dumpHistos(output);
 
   CDBInterface::instance()->Print();  // print used DB files
   se->PrintTimer();
@@ -94,24 +125,28 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 6)
+  if (args.size() < 5 || args.size() > 8)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> <runnumber> [output] [nEvents] [dbtag]" << std::endl;
-    std::cerr << "  input_DST: path to the input list file" << std::endl;
-    std::cerr << "  runnumber: Run" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_QVecCalib> <input_BadTowers> [output] [nEvents] [dbtag]" << std::endl;
+    std::cerr << "  input_DST_global: path to the input global file" << std::endl;
+    std::cerr << "  input_DST_jets: path to the input jets file" << std::endl;
+    std::cerr << "  input_QVecCalib: sEPD Q Vector Calib CDB" << std::endl;
+    std::cerr << "  input_BadTowers: sEPD Bad Towers CDB" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
-    std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
+    std::cerr << "  dbtag: (optional) database tag (default: newcdbtag)" << std::endl;
     return 1;  // Indicate error
   }
 
-  const std::string& input_dst = args[1];
-  unsigned int runnumber = static_cast<unsigned int>(std::stoul(args[2]));
-  std::string output = (args.size() >= 4) ? args[3] : "test.root";
-  int nEvents = (args.size() >= 5) ? std::stoi(args[4]) : 100;
-  std::string dbtag = (args.size() >= 6) ? args[5] : "newcdbtag";
+  const std::string& input_dst_global = args[1];
+  const std::string& input_dst_jets = args[2];
+  const std::string& input_QVecCalib = args[3];
+  const std::string& input_BadTowers = args[4];
+  std::string output = (args.size() >= 6) ? args[5] : "test.root";
+  int nEvents = (args.size() >= 7) ? std::stoi(args[6]) : 100;
+  std::string dbtag = (args.size() >= 8) ? args[7] : "newcdbtag";
 
-  Fun4All_sEPD_DataMC(input_dst, runnumber, output, nEvents, dbtag);
+  Fun4All_sEPD_DataMC(input_dst_global, input_dst_jets, input_QVecCalib, input_BadTowers, output, nEvents, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

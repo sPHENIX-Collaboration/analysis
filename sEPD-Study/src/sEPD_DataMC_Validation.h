@@ -1,5 +1,3 @@
-// Tell emacs that this is a C++ source
-//  -*- C++ -*-.
 #pragma once
 
 // -- sPHENIX
@@ -8,13 +6,13 @@
 // -- c++
 #include <filesystem>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
 // -- ROOT
-#include <TFile.h>
 #include <TH1.h>
+#include <TProfile.h>
+#include <TH2.h>
 
 class PHCompositeNode;
 
@@ -29,38 +27,91 @@ class sEPD_DataMC_Validation : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
-  void set_filename(const std::string &file)
+  void set_cent_max_threshold(double cent_max_threshold)
   {
-    m_outfile_name = file;
-  }
-
-  void set_cent_min_threshold(double cent_min_threshold)
-  {
-    m_cent_min_threshold = cent_min_threshold;
+    m_cent_max_threshold = cent_max_threshold;
   }
 
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
+  int process_EventPlane(PHCompositeNode *topNode);
+  int process_jets(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
 
-  std::string m_outfile_name{"test.root"};
+  double GetPhysicsEta(double det_eta, double vtx_z);
 
   static constexpr int m_sepd_channels = 744;
 
-  unsigned int m_bins_cent{100};
+  unsigned int m_bins_cent{80};
   double m_cent_low{-0.5};
-  double m_cent_high{99.5};
+  double m_cent_high{79.5};
 
-  unsigned int m_bins_charge{2500};
-  double m_charge_low{-50};
-  double m_charge_high{200};
+  double m_cent_max_threshold{80};
 
-  double m_cent_min_threshold{60};
+  double m_jet_pt_min{10};   // GeV
+  double m_jet_eta_max{0.9}; // 1.1-R
+  double m_zvtx_max{10};     // cm
 
   // Event Vars
-  double m_cent{9999};
-
-  std::map<std::string, std::unique_ptr<TH1>> m_hists;
+  double m_cent{0};
+  double m_zvtx{0};
+  int m_globalEvent{0};
+  std::pair<double, double> m_Q_S_2;
+  std::pair<double, double> m_Q_N_2;
   std::map<std::string, int> m_ctr;
+
+  std::string m_recoJetName{"AntiKt_Truth_r02"};
+
+  // Hists
+  TH1* hZVertex{nullptr};
+  TH1* hCentrality{nullptr};
+
+  TH2* h2SEPD_totalcharge_centrality{nullptr};
+
+  TH1* hSEPD_Charge_Data{nullptr};
+  TH1* hSEPD_Charge_MC{nullptr};
+  TH1* hSEPD_Charge_DataMC{nullptr};
+
+  TH1* hSEPD_BadMasked_Charge_Data{nullptr};
+  TH1* hSEPD_BadMasked_Charge_MC{nullptr};
+  TH1* hSEPD_BadMasked_Charge_DataMC{nullptr};
+
+  TH2* h2SEPD_South_Charge_Data{nullptr};
+  TH2* h2SEPD_South_Charge_MC{nullptr};
+  TH2* h2SEPD_South_Charge_DataMC{nullptr};
+
+  TH2* h2SEPD_North_Charge_Data{nullptr};
+  TH2* h2SEPD_North_Charge_MC{nullptr};
+  TH2* h2SEPD_North_Charge_DataMC{nullptr};
+
+  TH2* h2SEPD_BadMasked_South_Charge_Data{nullptr};
+  TH2* h2SEPD_BadMasked_South_Charge_MC{nullptr};
+  TH2* h2SEPD_BadMasked_South_Charge_DataMC{nullptr};
+
+  TH2* h2SEPD_BadMasked_North_Charge_Data{nullptr};
+  TH2* h2SEPD_BadMasked_North_Charge_MC{nullptr};
+  TH2* h2SEPD_BadMasked_North_Charge_DataMC{nullptr};
+
+  TProfile* pSEPD_Charge_Data{nullptr};
+  TProfile* pSEPD_Charge_MC{nullptr};
+  TProfile* pSEPD_Charge_DataMC{nullptr};
+
+  TProfile* pSEPD_BadMasked_Charge_Data{nullptr};
+  TProfile* pSEPD_BadMasked_Charge_MC{nullptr};
+  TProfile* pSEPD_BadMasked_Charge_DataMC{nullptr};
+
+  TH1* hJetPt{nullptr};
+  TH2* h2JetPtCentrality{nullptr};
+  TH2* h2JetPhiEta{nullptr};
+  TH2* h2JetEtaDiffVtxZ{nullptr};
+  TH2* h2JetEtaSignFlip{nullptr};
+
+  TH2* h2SEPD_Psi2_S{nullptr};
+  TH2* h2SEPD_Psi2_N{nullptr};
+  TH2* h2SEPD_Psi2_NS{nullptr};
+
+  TProfile* hScalarProduct{nullptr};
+  TProfile* hScalarProduct_corr{nullptr};
+  TProfile* hRefFlow{nullptr};
 };
