@@ -1,6 +1,7 @@
 #!/bin/bash
 
 INFILE=$1
-OUTFILE=$2
+DEDXFILE=$2
+OUTFILE=$3
 
-root -l -b -q get_singletrack_abundance.C\(\"${INFILE}\",\"${OUTFILE}\"\)
+root -l -b -q get_singletrack_abundance.C\(\"${INFILE}\",\"${DEDXFILE}\",\"${OUTFILE}\"\)
