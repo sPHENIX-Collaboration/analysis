@@ -63,7 +63,6 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
    */
 
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
 
   recoConsts *rc = recoConsts::instance();
 

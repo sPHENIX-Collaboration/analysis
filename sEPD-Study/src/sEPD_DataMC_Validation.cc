@@ -339,7 +339,7 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     int rbin = TowerInfoDefs::get_epd_rbin(key);
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
 
-    if (Verbosity() > 1 && channel < 100)
+    if (Verbosity() > 2 && channel < 100)
     {
       std::cout << std::format("Channel: {}, data: {:.6f}, MC: {:.6f}, data_MC: {:.6f}, Check: {:.6f}\n",
                                channel, charge_data, charge_mc, charge_data_mc, charge_data_mc - charge_mc - charge_data);
@@ -535,7 +535,7 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 
   m_globalEvent = eventInfo->get_EvtSequence();
 
-  if (Verbosity() && m_ctr["events_total"] % 1000 == 0)
+  if ((Verbosity() && m_ctr["events_total"] % 1000 == 0) || Verbosity() > 1)
   {
     std::cout << std::format("Progress: {}, Global: {}\n", m_ctr["events_total"], m_globalEvent);
   }
