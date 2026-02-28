@@ -35,7 +35,6 @@ int RunHerwigHepMCFilter(std::string filename="/sphenix/user/sgross/sphenix_herw
 		threshold=std::stof(trig);
 	}
 	catch(std::exception& e){threshold=10.;}
-	std::cout<<"Trying this " <<std::endl;
 	Fun4AllServer* se=Fun4AllServer::instance();
 	std::string outfile=filename;
 	int segment=-1; 

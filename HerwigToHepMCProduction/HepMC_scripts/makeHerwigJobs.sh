@@ -7,7 +7,7 @@ dosubmit=false
 triggertype="MB" 
 triggervalue="0"
 photontrigger="0"
-configfile="MB.in"
+configfile="Heriwg_MB.run"
 configdir="$(pwd)/../config_files"
 condor_testfile="condor_blank.job"
 minseg=0
@@ -64,7 +64,7 @@ set_config()
 		configfile="${configdir}/Herwig_MB.run"
 		triggervalue="5"
 	elif [ "$triggertype" = "Jet12" ]; then
-		configfile="${configdir}/Herwig_Jet15.run"
+		configfile="${configdir}/Herwig_Jet12.run"
 		triggervalue="12"
 	elif [ "$triggertype" = "Jet20" ]; then
 		configfile="${configdir}/Herwig_Jet20.run"

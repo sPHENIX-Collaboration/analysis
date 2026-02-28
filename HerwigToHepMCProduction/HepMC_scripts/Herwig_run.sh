@@ -20,7 +20,7 @@ if [[ $triggervalue -gt 0 || $photontriggervalue -gt 0 ]]; then
 	run_events=$(( run_events * 100 )) #worst case assume a 1% good event case 
 fi
 if [[ $triggervalue -gt 30 ]]; then 
-	run_events=$(( run_events * 1000 )) # based on know issue with 50 GeV jets
+	run_events=$(( run_events * 10 )) # based on known issue with 50 GeV jets
 fi 
 outfile_nameseed=$outfile_name"-S"$seedn"-"$filetag".hepmc"
 outfile_namestem=$outfile_name
@@ -49,9 +49,9 @@ elif [[ $photontriggervalue -gt -0 ]]; then
 	if [[ $filenumber -le 20 ]]; then 
 		seg0=$outfile_namestem"-"$filetag".out"
 	fi
-	${configdir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
+	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "photon" $photontriggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
 	rm $outfile_name
 else 
-	${configdir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "none" $photontriggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
+	${config_dir}/../HerwigHepMCFilter/RunHerwigHepMCFilter.sh $outfile_name "none" $photontriggervalue $goalevents $run_events $seg0 ${config_dir}/../HerwigHepMCFilter/
 fi
  

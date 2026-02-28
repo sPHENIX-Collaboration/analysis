@@ -15,15 +15,21 @@ for fname in os.listdir(path):
     if fname.find(filetag) != -1:
         with open(str(path)+"/"+str(fname)) as f:
             mtpx = 1.
+            val = 0.
             for line in f:
                 if line.find("Generated") != -1:
                     mtpx = line.split("=")[1:][0]
                 if line.find("XS/N") != -1:
                     val= line.split("=")[1:][0]
+                    val= val.split("\n")[:1][0]
+                    if float(val) <= 0:
+                        continue
                     val=float(val)*float(mtpx)
                     n += 1
+                    print("Good value number : " + str(n))
                     avg_val += val
-
+            if n >= 1000:
+                break
 avg_val = avg_val /float(n)
 print("Average cross section for " +str(filetag)+" is "+str(avg_val)+" nb")
                 
