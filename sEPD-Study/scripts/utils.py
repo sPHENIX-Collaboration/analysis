@@ -1230,7 +1230,7 @@ def sort_files_by_lines(directory_path: Path, output_file: Path) -> None:
     file_data.sort(key=lambda x: x[1], reverse=True)
 
     # 3. Join the paths into one big string separated by newlines
-    output_content = "\n".join(str(path) for path, count in file_data)
+    output_content = "\n".join(str(path) for path, count in file_data) + "\n"
 
     # 4. Use write_text to save everything at once
     output_file.write_text(output_content)
