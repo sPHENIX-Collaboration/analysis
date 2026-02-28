@@ -75,9 +75,9 @@ HerwigProductionQAModule::HerwigProductionQAModule(const std::string data_type_l
 , trigger_val(trigger)	
 {
 	//A very basic module to check the kinematics of a Herwig production
-	if( data_type_label.find("Photon") != std::string::npos || data_type_label.find("photon") != std::string::npos ) 
+	if( data_type_label.find("Photon") != std::string::npos || data_type_label.find("photon") != std::string::npos || data_type_label.find("MB") != std::string::npos ) 
 		photon 	= true;
-	if( data_type_label.find("Jet") != std::string::npos || data_type_label.find("jet") != std::string::npos ) 
+	if( data_type_label.find("Jet") != std::string::npos || data_type_label.find("jet") != std::string::npos || data_type_label.find("MB") != std::string::npos ) 
 		jet 	= true;
 	if( data_type_label.find("Herwig") != std::string::npos || data_type_label.find("herwig") != std::string::npos ) 
 		herwig 	= true;
@@ -103,7 +103,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 			//all jets
 			TH1F* h_all_jet_pt=new TH1F(Form("h_jet_r0%d_pt", i ), 
 					Form(" R=0.%d jets; p_{T}^{jet}[GeV]; N_{jets}", i),
-					500, -0.5, 99.5);
+					100, -0.5, 99.5);
 			TH1F* h_all_jet_eta=new TH1F(Form("h_jet_r0%d_eta", i ), 
 					Form(" R=0.%d jets; #eta_{jet}; N_{jets}", i),
 					100, -1.2, 1.2);
@@ -112,7 +112,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, 0, 2*M_PI);
 			TH1F* h_all_jet_e=new TH1F(Form("h_jet_r0%d_e", i ), 
 					Form(" R=0.%d jets; E_{jet}[GeV]; N_{jets}", i),
-					500, -0.5, 99.5);
+					100, -0.5, 99.5);
 			TH1I* h_all_jet_n_comp = new TH1I(Form("h_jet_r0%d_comp", i),
 					Form(" R=0.%d jets; N_{comp}; N_{jets}", i),
 					100, 0, 100);
@@ -126,7 +126,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 			//leading jets
 			TH1F* h_lead_jet_pt=new TH1F(Form("h_lead_jet_r0%d_pt", i ), 
 					Form(" R=0.%d jets; p_{T}^{lead jet}[GeV]; N_{evts}", i),
-					500, -0.5, 99.5);
+					100, -0.5, 99.5);
 			TH1F* h_lead_jet_eta=new TH1F(Form("h_lead_jet_r0%d_eta", i ), 
 					Form(" R=0.%d jets; #eta_{jet}^{lead}; N_{evts}", i),
 					100, -1.2, 1.2);
@@ -135,7 +135,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, 0, 2*M_PI);
 			TH1F* h_lead_jet_e=new TH1F(Form("h_lead_jet_r0%d_e", i ), 
 					Form(" R=0.%d jets; E_{jet}^{lead}[GeV]; N_{evts}", i),
-					500, -0.5, 99.5);
+					100, -0.5, 99.5);
 			TH1I* h_lead_jet_n_comp = new TH1I(Form("h_lead_jet_r0%d_comp", i),
 					Form(" R=0.%d jets; N_{comp}^{lead jet}; N_{evts}", i),
 					100, 0, 100);
@@ -157,7 +157,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 		//all photons
 		h_all_photons_pt=new TH1F("h_photons_pt", 
 				"all  photons; p_{T}^{photon}[GeV]; N_{photons}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_all_photons_eta=new TH1F("h_photons_eta", 
 				"all  photons; #eta_{photon}; N_{photons}",
 				100, -1.2, 1.2);
@@ -166,7 +166,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, 0, 2*M_PI);
 		h_all_photons_e=new TH1F("h_photons_e", 
 				"all  photons; E_{photon}[GeV]; N_{photons}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_n_photons 	=new TH1I("h_n_photons",
 				"all  photons; N_{photons}; N_{evts}",
 				100, 0, 100);
@@ -174,7 +174,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 		//leading photons
 		h_lead_photons_pt=new TH1F("h_lead_photons_pt", 
 				"lead  photons; p_{T}^{lead photon}[GeV]; N_{evts}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_lead_photons_eta=new TH1F("h_lead_photons_eta", 
 				"lead  photons; #eta_{photon}^{lead}; N_{evts}",
 				100, -1.2, 1.2);
@@ -183,12 +183,12 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, 0, 2*M_PI);
 		h_lead_photons_e=new TH1F("h_lead_photons_e", 
 				"lead  photons; E_{photon}^{lead}[GeV]; N_{evts}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		
 		//direct photons
 		h_direct_photons_pt=new TH1F("h_direct_photons_pt", 
 				"direct  photons; p_{T}^{photon}[GeV]; N_{photon}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_direct_photons_eta=new TH1F("h_direct_photons_eta", 
 				"direct  photons; #eta_{photon}^{direct}; N_{photon}",
 				100, -1.2, 1.2);
@@ -197,7 +197,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, 0, 2*M_PI);
 		h_direct_photons_e=new TH1F("h_direct_photons_E", 
 				"direct  photons; E_{photon}[GeV]; N_{photon}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_n_direct 	=new TH1I("h_n_direct",
 				"direct  photons; N_{photons}; N_{photon}",
 				100, 0, 100);
@@ -205,7 +205,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 		//fragmentation photons
 		h_frag_photons_pt=new TH1F("h_frag_photons_pt", 
 				"fragmentation photons; p_{T}^{photon}[GeV]; N_{photon}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_frag_photons_eta=new TH1F("h_frag_photons_eta", 
 				"fragmentation photons; #eta_{photon}^{frag}; N_{photon}",
 				100, -1.2, 1.2);
@@ -214,7 +214,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 				100, 0, 2*M_PI);
 		h_frag_photons_e=new TH1F("h_frag_photons_E", 
 				"fragmentation photons; E_{photon}[GeV]; N_{photon}",
-				500, -0.5, 99.5);
+				100, -0.5, 99.5);
 		h_n_frag 	=new TH1I("h_n_frag",
 				"fragmentation  photons; N_{photons}; N_{photon}",
 				100, 0, 100);
@@ -227,7 +227,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 			//leading jet + photon
 			TH2F* h_photon_jet_pt_a=new TH2F(Form("h_photon_jet_r0%d_pt", i ), 
 					Form(" R=0.%d jets; p_{T}^{photon}[GeV]; p_{T}^{jet}[GeV]; N_{evts}", i),
-					500, -0.5, 99.5, 500, -0.5, 99.5);
+					100, -0.5, 99.5, 100, -0.5, 99.5);
 			TH2F* h_photon_jet_eta_a=new TH2F(Form("h_photon_jet_r0%d_eta", i ), 
 					Form(" R=0.%d jets; #eta_{photon}; #eta_{jet}; N_{evts}", i),
 					100, -1.2, 1.2, 100, -1.2, 1.2);
@@ -236,7 +236,7 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 					100, 0, 2*M_PI, 100, 0, 2*M_PI);
 			TH2F* h_photon_jet_e_a=new TH2F(Form("h_photon_jet_r0%d_e", i ), 
 					Form(" R=0.%d jets; E_{photon}[GeV]; E_{jet}; N_{evts}", i),
-					500, -0.5, 99.5, 500, -0.5, 99.5);
+					100, -0.5, 99.5, 100, -0.5, 99.5);
 			TH1F* h_photon_jet_dphi_a = new TH1F(Form("h_photon_jet_r0%d_dphi", i),
 					Form(" R=0.%d jets; |#Delta #varphi|_{photon jet}; N_{evts}", i),
 					100, -0.1, M_PI+0.1);
@@ -253,30 +253,30 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 	//1D distributions
 	h_particle_eta	= new TH1F("h_particle_eta" , "Final State Particles; #eta; N_{particles}", 100, -1.2, 1.2);
 	h_particle_phi 	= new TH1F("h_particle_phi" , "Final State Particles; #varphi; N_{particles}", 100, 0, 2*M_PI);
-	h_particle_e	= new TH1F("h_particle_e"   , "Final State Particles; E [GeV]; N_{particles}", 1000, -0.5, 99.5);
-	h_particle_et	= new TH1F("h_particle_et"  , "Final State Particles; E_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
-	h_particle_pt	= new TH1F("h_particle_pt"  , "Final State Particles; p_{T} [GeV]; N_{particles}", 1000, -0.5, 99.5);
-	h_total_E	= new TH1F("h_total_E"	    , "Final State Particle; #sum E [GeV]; N_{evts}", 300, -0.5, 299.5);
+	h_particle_e	= new TH1F("h_particle_e"   , "Final State Particles; E [GeV]; N_{particles}", 200, -0.5, 99.5);
+	h_particle_et	= new TH1F("h_particle_et"  , "Final State Particles; E_{T} [GeV]; N_{particles}", 200, -0.5, 99.5);
+	h_particle_pt	= new TH1F("h_particle_pt"  , "Final State Particles; p_{T} [GeV]; N_{particles}", 200, -0.5, 99.5);
+	h_total_E	= new TH1F("h_total_E"	    , "Final State Particles in |#eta| < 1.1; #sum E [GeV]; N_{evts}", 300, -0.5, 299.5);
 
 	//2D correlations
 	h_particle_et_eta = new TH2F("h_particle_et_eta", 
 			"Final State Particles; #eta; E_{T} [GeV]; N_{particles}", 
-			100, -1.2, 1.2, 1000, -0.5, 99.5);
+			200, -1.2, 1.2, 100, -0.5, 99.5);
 	h_particle_et_phi = new TH2F("h_particle_et_phi", 
 			"Final State Particles; #varphi; E_{T} [GeV]; N_{particles}", 
-			100, 0, 2*M_PI, 1000, -0.5, 99.5);
-	h_particle_pt_eta = new TH2F("h_particle_pt_pta", 
-			"Final State Particles; #pta; p_{T} [GeV]; N_{particles}", 
-			100, -1.2, 1.2, 1000, -0.5, 99.5);
+			200, 0, 2*M_PI, 100, -0.5, 99.5);
+	h_particle_pt_eta = new TH2F("h_particle_pt_eta", 
+			"Final State Particles; #eta; p_{T} [GeV]; N_{particles}", 
+			200, -1.2, 1.2, 100, -0.5, 99.5);
 	h_particle_pt_phi = new TH2F("h_particle_pt_phi", 
 			"Final State Particles; #varphi; p_{T} [GeV]; N_{particles}", 
-			100, 0, 2*M_PI, 1000, -0.5, 99.5);
+			200, 0, 2*M_PI, 100, -0.5, 99.5);
 	h_particle_e_eta = new TH2F("h_particle_e_eta", 
 			"Final State Particles; #eta; E [GeV]; N_{particles}", 
-			100, -1.2, 1.2, 1000, -0.5, 99.5);
+			200, -1.2, 1.2, 100, -0.5, 99.5);
 	h_particle_e_phi = new TH2F("h_particle_e_phi", 
 			"Final State Particles; #varphi; E [GeV]; N_{particles}", 
-			100, 0, 2*M_PI, 1000, -0.5, 99.5);
+			200, 0, 2*M_PI, 100, -0.5, 99.5);
 	h_particle_phi_eta = new TH2F("h_particle_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{particles}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
@@ -285,38 +285,38 @@ int HerwigProductionQAModule::Init(PHCompositeNode *topNode)
 	h_electron_phi_eta = new TH2F("h_electron_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{electrons}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
-	h_electron_pt	= new TH1F("h_electron_pt"  , "Final State Particles; p_{T} [GeV]; N_{electrons}", 1000, -0.5, 99.5);
+	h_electron_pt	= new TH1F("h_electron_pt"  , "Final State Particles; p_{T} [GeV]; N_{electrons}", 200, -0.5, 99.5);
 	
 	//protons
 	h_proton_phi_eta = new TH2F("h_proton_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{protons}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
-	h_proton_pt	= new TH1F("h_proton_pt"  , "Final State Particles; p_{T} [GeV]; N_{protons}", 1000, -0.5, 99.5);
+	h_proton_pt	= new TH1F("h_proton_pt"  , "Final State Particles; p_{T} [GeV]; N_{protons}", 200, -0.5, 99.5);
 	
 	//neutrons
 	h_neutron_phi_eta = new TH2F("h_neutron_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{neutrons}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
-	h_neutron_pt	= new TH1F("h_neutron_pt"  , "Final State Particles; p_{T} [GeV]; N_{neutrons}", 1000, -0.5, 99.5);
+	h_neutron_pt	= new TH1F("h_neutron_pt"  , "Final State Particles; p_{T} [GeV]; N_{neutrons}", 200, -0.5, 99.5);
 	
 	//pions
 	h_pion_phi_eta 	= new TH2F("h_pion_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{pions}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
-	h_pion_pt	= new TH1F("h_pion_pt"  , "Final State Particles; p_{T} [GeV]; N_{pions}", 1000, -0.5, 99.5);
+	h_pion_pt	= new TH1F("h_pion_pt"  , "Final State Particles; p_{T} [GeV]; N_{pions}", 200, -0.5, 99.5);
 		
 	//photons
 	h_photon_phi_eta = new TH2F("h_photon_phi_eta", 
 			"Final State Particles; #eta; #varphi; N_{photons}", 
 			100, -1.2, 1.2, 100, 0, 2*M_PI);
-	h_photon_pt	= new TH1F("h_photon_pt"  , "Final State Particles; p_{T} [GeV]; N_{photons}", 1000, -0.5, 99.5);
+	h_photon_pt	= new TH1F("h_photon_pt"  , "Final State Particles; p_{T} [GeV]; N_{photons}", 200, -0.5, 99.5);
 	//counting events 
-	h_particle_n	= new TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 1000, 0, 1000);
-	h_electron_n	= new TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 1000, 0, 1000);
-	h_proton_n	= new TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 1000, 0, 1000);
-	h_neutron_n	= new TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 1000, 0, 1000);
-	h_pion_n	= new TH1I("h_pion_n", "Final state #pi; N_{#pi}; N_{evts}", 1000, 0, 1000);
-	h_photon_n	= new TH1I("h_photon_n", "Final state photons; N_{#gamma}; N_{evts}", 1000, 0, 1000);
+	h_particle_n	= new TH1I("h_particle_n", "Final state particles; N_{particle}; N_{evts}", 200, 0, 200);
+	h_electron_n	= new TH1I("h_electron_n", "Final state electrons; N_{electron}; N_{evts}", 200, 0, 200);
+	h_proton_n	= new TH1I("h_proton_n", "Final state protons; N_{proton}; N_{evts}", 200, 0, 200);
+	h_neutron_n	= new TH1I("h_neutron_n", "Final state neutrons; N_{neutron}; N_{evts}", 200, 0, 200);
+	h_pion_n	= new TH1I("h_pion_n", "Final state #pi; N_{#pi}; N_{evts}", 200, 0, 200);
+	h_photon_n	= new TH1I("h_photon_n", "Final state photons; N_{#gamma}; N_{evts}", 200, 0, 200);
 	
 	return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -458,7 +458,6 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 	std::vector<std::vector<Jet*>*>	 jets;
 	std::vector<HepMC::GenParticle*> photons;
 	std::vector<HepMC::GenParticle*> event_particles;
-	std::cout<<__LINE__<<std::endl;
 	auto hepmc_gen_event= findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
 	if(!hepmc_gen_event) return Fun4AllReturnCodes::EVENT_OK; 
 	else if(hepmc_gen_event)
@@ -489,7 +488,6 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 			}
 		}
 	}	
-	std::cout<<__LINE__<<std::endl;
 	auto js2=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r02");
 	auto js3=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r03");
 	auto js4=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r04");
@@ -513,7 +511,6 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 				}
 			}
 			jets.push_back(jetsize);
-			std::cout<<"There are " <<jetsize->size() <<" many jets of size R=0." <<i+2 <<std::endl;
 		}
 	}
 	if(photon) 		runAnalysisPhotonJets(jets, photons);
@@ -678,10 +675,10 @@ int HerwigProductionQAModule::runAnalysisEvent(std::vector<HepMC::GenParticle*> 
 		h_particle_et_eta->Fill(particle_eta, particle_et);
 		h_particle_et_phi->Fill(particle_phi, particle_et);
 		h_particle_pt_phi->Fill(particle_phi, particle_pt);
-		h_particle_pt_eta->Fill(particle_phi, particle_pt);
+		h_particle_pt_eta->Fill(particle_eta, particle_pt);
 		h_particle_phi_eta->Fill(particle_eta, particle_phi);
 		h_particle_e_phi->Fill(particle_phi, particle_e);
-		h_particle_et_eta->Fill(particle_eta, particle_e);
+		h_particle_e_eta->Fill(particle_eta, particle_e);
 		if(particle_id == 11 ){
 		       	n_e++;
 			h_electron_phi_eta->Fill(particle_eta, particle_phi);

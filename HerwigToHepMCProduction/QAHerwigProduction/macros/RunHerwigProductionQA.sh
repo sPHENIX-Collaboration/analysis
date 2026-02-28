@@ -15,6 +15,6 @@ echo "Running Herwig check"
 #/cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/utils/bin/valgrind -s --track-origins=yes --log-file=$(pwd)/data_valgrind-out_1.txt 
 /cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/core/root-6.32.06/bin/root.exe -x -q $(pwd)/../macros/RunHerwigProductionQA.C\(${seg},\"${trigger_type}\",\"herwig\",\"$herwig_file\"\)
 echo "Running Pythia check"
-#/cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/utils/bin/valgrind -s --track-origins=yes --log-file=$(pwd)/data_valgrind-out_1.txt 
+#/cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/utils/bin/valgrind -s --track-origins=yes --log-file=$(pwd)/data_valgrind-out_1.txt
 /cvmfs/sphenix.sdcc.bnl.gov/alma9.2-gcc-14.2.0/opt/sphenix/core/root-6.32.06/bin/root.exe -x -q $(pwd)/../macros/RunHerwigProductionQA.C\(${seg},\"${trigger_type}\",\"pythia\",\"$pythia_truth\",\"$pythia_jet\"\)
 echo "All Done"

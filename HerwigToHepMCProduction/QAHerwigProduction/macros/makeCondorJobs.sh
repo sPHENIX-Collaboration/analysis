@@ -126,6 +126,8 @@ converttriggertype()
 		prodtype=36
 	elif [ "${triggertype}" = "Jet10" ]; then
 		prodtype=12
+	elif [ "${triggertype}" = "Jet12" ]; then
+		prodtype=39
 	elif [ "${triggertype}" = "Jet15" ]; then
 		prodtype=33
 	elif [ "${triggertype}" = "Jet20" ]; then
@@ -162,8 +164,12 @@ if [ "$makedatalist" = true ]; then
 	fi 
 	if [ "$verbose_mode" = true ]; then 
 		echo "Create Herwig Datalist for ${triggertype}"
-	fi 
-	ls /sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_${triggertype}/*.hepmc > ${triggertype}_data/herwig_files.list
+	fi
+	if [ "$triggertype" = "MB" ]; then 
+		 ls /sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_${triggertype}/*.hepmc > ${triggertype}_data/herwig_files.list
+	else
+		ls /sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_${triggertype}/*filtered*.hepmc > ${triggertype}_data/herwig_files.list
+	fi
 	if [ "$verbose_mode" = true ]; then 
 		echo "Create Pythia Datalist for ${triggertype}"
 	fi 

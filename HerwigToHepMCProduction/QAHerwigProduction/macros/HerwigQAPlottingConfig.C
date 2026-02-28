@@ -21,12 +21,14 @@ void HerwigQAPlottingConfig::ExtractType(TFile* input_file)
 void HerwigQAPlottingConfig::DumpHistos(std::string output_file, std::vector<TCanvas*>* Canvi)
 {
 	//take all relevant canvases passed in the vector and dump them into the output file
-	for(int i=0; i<(int) Canvi->size(); i++)
+	Canvi->at(0)->Print(std::format("{}[", output_file).c_str());
+	for(int i=0; i<(int) Canvi->size()-1; i++)
 	{
-		if(i==0) Canvi->at(i)->Print(std::format("{}(", output_file).c_str(), "pdf");
-		else if (i== ((int)Canvi->size())-1) Canvi->at(i)->Print(std::format("{})", output_file).c_str(), "pdf");
-		else Canvi->at(i)->Print( output_file.c_str(), "pdf");
+		std::cout<<"Still have " <<Canvi->size() - i <<" to print" <<std::endl;
+		Canvi->at(i)->Print( output_file.c_str());
 	}
+	Canvi->at(0)->Print(std::format("{}]", output_file).c_str());
+	
 	return;
 }
 
@@ -46,10 +48,10 @@ std::vector<TPad*>* HerwigQAPlottingConfig::Canvas2DDivide(TCanvas* c1)
 	c1->cd();
 	TPad* p1=new TPad("p1", "p1", 0, 0, 0.48, 0.30);
 	TPad* p2=new TPad("p2", "p2", 0, 0.33, 0.48, 0.63);
-	TPad* p3=new TPad("p3", "p3", 0, 0.66, 0.48, 0.1);
+	TPad* p3=new TPad("p3", "p3", 0, 0.66, 0.48, 1);
 	TPad* p4=new TPad("p4", "p4", 0.52, 0, 1, 0.30);
 	TPad* p5=new TPad("p5", "p5", 0.52, 0.33, 1, 0.63);
-	TPad* p6=new TPad("p6", "p6", 0.52, 0.66, 1, 0.1);
+	TPad* p6=new TPad("p6", "p6", 0.52, 0.66, 1, 1);
 	c1->cd();
 	p1->Draw();
 	p2->Draw();
@@ -77,7 +79,8 @@ void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string tri
 	l1->AddEntry("", "Herwig HepMC Production QA", "");
 	l1->AddEntry("", "Herwig7.2", "");
  	l1->AddEntry("", "Reference: fully produced Pythia8", "");
-	l1->AddEntry("", Form("%s, k_{T}^{min} [#hat{p}_{T}] = %.2g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
+	if (triggerinfo.find("none")== std::string::npos) 
+		l1->AddEntry("", Form("%s, k_{T}^{min} [#hat{p}_{T}] = %.3g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
 	l1->SetTextSize(0.05f);
 	return;
 }
