@@ -6,6 +6,7 @@
 #include <caloreco/RawClusterBuilderTemplate.h>
 #include <caloreco/RawClusterDeadHotMask.h>
 #include <caloreco/RawClusterPositionCorrection.h>
+#include <calostatusskimmer/CaloStatusSkimmer.h>
 
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -21,6 +22,7 @@
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libfun4allutils.so)
+R__LOAD_LIBRARY(libCaloStatusSkimmer.so)
 
 void Process_Calo_Calib()
 {
@@ -37,6 +39,16 @@ void Process_Calo_Calib()
   }
   std::cout << "Calo Calib uses runnumber " << rc->get_uint64Flag("TIMESTAMP") << std::endl;
 
+
+  ///////////////////////////////////////////////
+  // Remove incomplete events from event combiner
+  if(!isSim)
+  {
+    CaloStatusSkimmer *css = new CaloStatusSkimmer("CaloStatusSkimmer");
+    se->registerSubsystem(css);
+  }
+
+
   //////////////////////
   // Input geometry node
   std::cout << "Adding Geometry file" << std::endl;
@@ -50,10 +62,8 @@ void Process_Calo_Calib()
   std::cout << "status setters" << std::endl;
   CaloTowerStatus *statusEMC = new CaloTowerStatus("CEMCSTATUS");
   statusEMC->set_detector_type(CaloTowerDefs::CEMC);
-  statusEMC->set_time_cut(1);
   // MC Towers Status
-  if (isSim)
-  {
+  if(isSim) {
     // Uses threshold of 50% for towers be considered frequently bad.
     std::string calibName_hotMap = "CEMC_hotTowers_status";
     /* Systematic options (to be used as needed). */
@@ -70,12 +80,10 @@ void Process_Calo_Calib()
 
   CaloTowerStatus *statusHCalIn = new CaloTowerStatus("HCALINSTATUS");
   statusHCalIn->set_detector_type(CaloTowerDefs::HCALIN);
-  statusHCalIn->set_time_cut(2);
   se->registerSubsystem(statusHCalIn);
 
   CaloTowerStatus *statusHCALOUT = new CaloTowerStatus("HCALOUTSTATUS");
   statusHCALOUT->set_detector_type(CaloTowerDefs::HCALOUT);
-  statusHCALOUT->set_time_cut(2);
   se->registerSubsystem(statusHCALOUT);
 
   ////////////////////
@@ -123,15 +131,10 @@ void Process_Calo_Calib()
   std::string emc_prof = getenv("CALIBRATIONROOT");
   emc_prof += "/EmcProfile/CEMCprof_Thresh30MeV.root";
   ClusterBuilder->LoadProfile(emc_prof);
-  ClusterBuilder->set_UseTowerInfo(1);   // to use towerinfo objects rather than old RawTower
-  ClusterBuilder->set_UseAltZVertex(1);  // Use MBD Vertex for vertex-based corrections
+  ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
+  ClusterBuilder->set_UseAltZVertex(1); // Use MBD Vertex for vertex-based corrections
   // se->registerSubsystem(ClusterBuilder);
 
-  // currently NOT included!
-  // std::cout << "Applying Position Dependent Correction" << std::endl;
-  // RawClusterPositionCorrection *clusterCorrection = new RawClusterPositionCorrection("CEMC");
-  // clusterCorrection->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
-  // se->registerSubsystem(clusterCorrection);
 }
 
 #endif

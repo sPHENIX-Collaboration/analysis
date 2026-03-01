@@ -19,7 +19,7 @@
 #include <centrality/CentralityReco.h>
 #include <calotrigger/MinimumBiasClassifier.h>
 
-#include <eventplaneinfo/EventPlaneRecov2.h>
+#include <eventplaneinfo/EventPlaneReco.h>
 
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -148,7 +148,7 @@ void Fun4All_sEPD(const std::string &fname,
   se->registerSubsystem(statusSEPD.release());
 
   // Event Plane
-  std::unique_ptr<EventPlaneRecov2> epreco = std::make_unique<EventPlaneRecov2>();
+  std::unique_ptr<EventPlaneReco> epreco = std::make_unique<EventPlaneReco>();
   epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
   epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
   se->registerSubsystem(epreco.release());
