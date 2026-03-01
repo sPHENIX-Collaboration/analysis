@@ -18,7 +18,7 @@
 
 #include <caloreco/CaloTowerStatus.h>
 
-#include <eventplaneinfo/EventPlaneRecov2.h>
+#include <eventplaneinfo/EventPlaneReco.h>
 
 #include <phool/recoConsts.h>
 
@@ -81,11 +81,11 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
   CaloTowerStatus* statusSEPD = new CaloTowerStatus("SEPDSTATUS");
   statusSEPD->set_detector_type(CaloTowerDefs::SEPD);
   statusSEPD->set_directURL_hotMap(input_sEPD_BadTowers);
-  statusSEPD->set_inputNode("TOWERINFO_CALIB_SEPD_data");
+  statusSEPD->set_inputNode("TOWERINFO_COMBINED_SEPD");
   se->registerSubsystem(statusSEPD);
 
   // Event Plane
-  EventPlaneRecov2* epreco = new EventPlaneRecov2();
+  EventPlaneReco* epreco = new EventPlaneReco();
   epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
   epreco->set_inputNode("TOWERINFO_COMBINED_SEPD");
   // epreco->set_inputNode("TOWERINFO_CALIB_SEPD_data");

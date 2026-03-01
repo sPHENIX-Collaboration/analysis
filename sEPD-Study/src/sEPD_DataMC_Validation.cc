@@ -370,7 +370,7 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
 
     sepd_totalcharge += charge_data_mc;
 
-    if (!tower_data->get_isHot())
+    if (!tower_data_mc->get_isHot())
     {
       hSEPD_BadMasked_Charge_Data->Fill(charge_data);
       hSEPD_BadMasked_Charge_MC->Fill(charge_mc);
