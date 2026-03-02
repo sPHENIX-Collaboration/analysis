@@ -1,0 +1,191 @@
+// Tell emacs that this is a C++ source
+//  -*- C++ -*-.
+#ifndef HERWIGPRODUCTIONQAMODULE_H
+#define HERWIGPRODUCTIONQAMODULE_H
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+#include <fun4all/SubsysReco.h>
+#include <phool/getClass.h>
+#include <phool/PHCompositeNode.h>
+#include <phool/PHObject.h>
+
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenParticle.h>
+
+#include <fastjet/JetDefinition.hh>
+#include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
+
+#include <jetbase/Jetv1.h>
+#include <jetbase/JetContainerv1.h>
+
+#include <string>
+#include <math.h>
+#include <array>
+#include <vector>
+#include <format> 
+
+#include <TH1.h>
+#include <TH2.h>
+#include <TFile.h>
+#include <TDirectory.h>
+
+class PHCompositeNode;
+
+class HerwigProductionQAModule : public SubsysReco
+{
+ public:
+
+	 HerwigProductionQAModule(const std::string data_type_label="Herwig none", const std::string outfile="none", float trigger=0., int verb=0, const std::string &name = "HerwigProductionQAModule");
+
+	 ~HerwigProductionQAModule() override;
+
+	  /** Called during initialization.
+	     Typically this is where you can book histograms, and e.g.
+	     register them to Fun4AllServer (so they can be output to file
+	     using Fun4AllServer::dumpHistos() method).
+	  */
+	 int Init(PHCompositeNode *topNode) override;
+
+ 	  /** Called for first event when run number is known.
+	     Typically this is where you may want to fetch data from
+	     database, because you know the run number. A place
+	     to book histograms which have to know the run number.
+	  */
+	 int InitRun(PHCompositeNode *topNode) override;
+
+	 /** Called for each event.
+	     This is where you do the real work.
+	  */
+	 int process_event(PHCompositeNode *topNode) override;
+
+	 /// Clean up internals after each event.
+	 int ResetEvent(PHCompositeNode *topNode) override;
+
+	 /// Called at the end of each run.
+	 int EndRun(const int runnumber) override;
+
+	 /// Called at the end of all processing.
+	 int End(PHCompositeNode *topNode) override;
+
+	 /// Reset
+	 int Reset(PHCompositeNode * /*topNode*/) override;
+
+  	void Print(const std::string &what = "ALL") const override;
+ 	
+	//prepare herwig to hepMC data for the analysis 
+	int process_herwig_event(PHCompositeNode * );
+	//prepare pythia DST data for analysis
+	int process_pythia_event(PHCompositeNode * );
+	//run fastJet for herwig with r=0.2-0.6
+	void findJets(std::vector<HepMC::GenParticle*>, std::vector<std::vector<Jet*>*>*);
+	//returns lead jet set
+	std::vector<std::array<float, 4>> runAnalysisJets(std::vector<std::vector<Jet*>*>);
+	//technically can just do photons
+	int runAnalysisPhotonJets(std::vector<std::vector<Jet*>*>, std::vector<HepMC::GenParticle*>);
+	//bulk properties
+	int runAnalysisEvent(std::vector<HepMC::GenParticle*>);
+
+ private:
+	bool jet = false;
+	bool photon = false;
+	bool herwig = false;
+	bool pythia = false;
+	bool no_gen = false;
+	std::string output_file="";
+	int verbosity = 0;
+  	float trigger_val = 0.;
+	int n_evt = 0;
+	
+	//jet specific QA plots
+  	std::vector<TH1F*> h_all_jets_pt {};
+	std::vector<TH1F*> h_all_jets_eta {};
+	std::vector<TH1F*> h_all_jets_phi {};
+	std::vector<TH1F*> h_all_jets_e {};
+	std::vector<TH1I*> h_all_jets_n_comp {};
+	std::vector<TH1I*> h_n_jets {};
+
+	std::vector<TH1F*> h_lead_jets_pt {};
+	std::vector<TH1F*> h_lead_jets_eta {};
+	std::vector<TH1F*> h_lead_jets_phi {};
+	std::vector<TH1F*> h_lead_jets_e {};
+	std::vector<TH1I*> h_lead_jets_n_comp {};
+
+	//photon specific QA plots 
+	TH1F* h_all_photons_pt;	
+	TH1F* h_all_photons_eta;	
+	TH1F* h_all_photons_phi;	
+	TH1F* h_all_photons_e;
+
+	TH1F* h_lead_photons_pt;	
+	TH1F* h_lead_photons_eta;	
+	TH1F* h_lead_photons_phi;	
+	TH1F* h_lead_photons_e;
+		
+	TH1F* h_direct_photons_pt;	
+	TH1F* h_direct_photons_eta;	
+	TH1F* h_direct_photons_phi;	
+	TH1F* h_direct_photons_e;
+
+	TH1F* h_frag_photons_pt;	
+	TH1F* h_frag_photons_eta;	
+	TH1F* h_frag_photons_phi;	
+	TH1F* h_frag_photons_e;
+
+	TH1I* h_n_photons;
+	TH1I* h_n_frag;
+	TH1I* h_n_direct;
+	
+	//Photon-Jet comparisons
+	std::vector<TH2F*> h_photon_jet_pt {};
+	std::vector<TH2F*> h_photon_jet_eta {};
+	std::vector<TH2F*> h_photon_jet_phi {};
+	std::vector<TH2F*> h_photon_jet_e {};
+	std::vector<TH1F*> h_photon_jet_dphi {};
+
+	//Event categorization in final states
+	TH1F* h_particle_eta;
+	TH1F* h_particle_phi;
+	TH1F* h_particle_e;
+	TH1F* h_particle_pt;
+	TH1F* h_particle_et;
+
+	TH2F* h_particle_et_eta;
+	TH2F* h_particle_et_phi;
+	TH2F* h_particle_pt_eta;
+	TH2F* h_particle_pt_phi;
+	TH2F* h_particle_e_phi;
+	TH2F* h_particle_e_eta;
+	TH2F* h_particle_phi_eta;
+
+	TH2F* h_electron_phi_eta;
+	TH1F* h_electron_pt;
+		
+	TH2F* h_proton_phi_eta;
+	TH1F* h_proton_pt;
+
+	TH2F* h_neutron_phi_eta;
+	TH1F* h_neutron_pt;
+
+	TH2F* h_pion_phi_eta;
+	TH1F* h_pion_pt;
+	
+	TH2F* h_photon_phi_eta;
+	TH1F* h_photon_pt;
+
+	TH1I* h_particle_n;
+	TH1I* h_electron_n;
+	TH1I* h_proton_n;
+	TH1I* h_neutron_n;
+	TH1I* h_pion_n;
+	TH1I* h_photon_n;
+	TH1F* h_total_E;
+
+
+};
+
+#endif // HERWIGPRODUCTIONQAMODULE_H
