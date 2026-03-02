@@ -48,6 +48,7 @@ class sEPD_DataMC_Validation : public SubsysReco
   double m_cent_high{79.5};
 
   double m_cent_max_threshold{80};
+  double m_cent_max_threshold_ana{60};
 
   double m_jet_pt_min{10};   // GeV
   double m_jet_eta_max{0.9}; // 1.1-R
@@ -57,15 +58,29 @@ class sEPD_DataMC_Validation : public SubsysReco
   double m_cent{0};
   double m_zvtx{0};
   int m_globalEvent{0};
-  std::pair<double, double> m_Q_S_2;
-  std::pair<double, double> m_Q_N_2;
+  std::pair<double, double> m_Q_data_S_2;
+  std::pair<double, double> m_Q_data_N_2;
+  std::pair<double, double> m_Q_data_mc_S_2;
+  std::pair<double, double> m_Q_data_mc_N_2;
   std::map<std::string, int> m_ctr;
 
   std::string m_recoJetName{"AntiKt_Truth_r02"};
 
+  enum class EventType : std::uint8_t
+  {
+    ALL,
+    ZVTX10,
+    ZVTX10_MB,
+    ZVTX10_MB_CENT,
+    ZVTX10_MB_CENT_JET
+  };
+
+  std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "MB", "Cent", "Jet"};
+
   // Hists
   TH1* hZVertex{nullptr};
   TH1* hCentrality{nullptr};
+  TH1* hEvent{nullptr};
 
   TH2* h2SEPD_totalcharge_centrality{nullptr};
 
@@ -104,14 +119,23 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH1* hJetPt{nullptr};
   TH2* h2JetPtCentrality{nullptr};
   TH2* h2JetPhiEta{nullptr};
+  TH2* h2JetEtaVtxZ{nullptr};
+  TH2* h2JetEtaPhysVtxZ{nullptr};
   TH2* h2JetEtaDiffVtxZ{nullptr};
   TH2* h2JetEtaSignFlip{nullptr};
 
-  TH2* h2SEPD_Psi2_S{nullptr};
-  TH2* h2SEPD_Psi2_N{nullptr};
-  TH2* h2SEPD_Psi2_NS{nullptr};
+  TH2* h2SEPD_Psi2_data_S{nullptr};
+  TH2* h2SEPD_Psi2_data_N{nullptr};
+  TH2* h2SEPD_Psi2_data_NS{nullptr};
 
-  TProfile* hScalarProduct{nullptr};
-  TProfile* hScalarProduct_corr{nullptr};
-  TProfile* hRefFlow{nullptr};
+  TH2* h2SEPD_Psi2_data_mc_S{nullptr};
+  TH2* h2SEPD_Psi2_data_mc_N{nullptr};
+  TH2* h2SEPD_Psi2_data_mc_NS{nullptr};
+
+  TProfile* hScalarProduct_data{nullptr};
+  TProfile* hScalarProduct_data_corr{nullptr};
+  TProfile* hScalarProduct_data_mc{nullptr};
+  TProfile* hScalarProduct_data_mc_corr{nullptr};
+  TProfile* hRefFlow_data{nullptr};
+  TProfile* hRefFlow_data_mc{nullptr};
 };

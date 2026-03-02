@@ -50,6 +50,15 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
+  hEvent = new TH1F("hEvent", "Event Type; Type; Events", m_eventType.size(), 0, m_eventType.size());
+
+  for (unsigned int i = 0; i < m_eventType.size(); ++i)
+  {
+    hEvent->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
+  }
+
+  se->registerHisto(hEvent);
+
   hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
   se->registerHisto(hCentrality);
@@ -168,6 +177,10 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   double zvtx2_low{-10};
   double zvtx2_high{10};
 
+  unsigned int bins_jet_etav2{160};
+  double jet_etav2_low{-4};
+  double jet_etav2_high{4};
+
   hJetPt = new TH1F("hJetPt", "|z| < 10 cm and MB; p_{T} [GeV]; Counts", bins_jet_pt, jet_pt_low, jet_pt_high);
   se->registerHisto(hJetPt);
 
@@ -179,6 +192,18 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
                          bins_jet_eta, jet_eta_low, jet_eta_high);
 
   se->registerHisto(h2JetPhiEta);
+
+  h2JetEtaVtxZ = new TH2F("h2JetEtaVtxZ", "MB; z [cm]; #eta_{det}",
+                          bins_zvtx2, zvtx2_low, zvtx2_high,
+                          bins_jet_etav2, jet_etav2_low, jet_etav2_high);
+
+  se->registerHisto(h2JetEtaVtxZ);
+
+  h2JetEtaPhysVtxZ = new TH2F("h2JetEtaPhysVtxZ", "MB; z [cm]; #eta_{phys}",
+                          bins_zvtx2, zvtx2_low, zvtx2_high,
+                          bins_jet_etav2, jet_etav2_low, jet_etav2_high);
+
+  se->registerHisto(h2JetEtaPhysVtxZ);
 
   h2JetEtaDiffVtxZ = new TH2F("h2JetEtaDiffVtxZ", "MB; z [cm]; #Delta #eta = #eta_{phys}-#eta_{det}",
                               bins_zvtx2, zvtx2_low, zvtx2_high,
@@ -196,35 +221,62 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   double psi_low{-std::numbers::pi};
   double psi_high{std::numbers::pi};
 
-  h2SEPD_Psi2_S = new TH2F("h2SEPD_Psi2_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+  h2SEPD_Psi2_data_S = new TH2F("h2SEPD_Psi2_data_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                             bins_psi, psi_low, psi_high,
                             m_bins_cent, m_cent_low, m_cent_high);
 
-  h2SEPD_Psi2_N = new TH2F("h2SEPD_Psi2_N", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+  h2SEPD_Psi2_data_N = new TH2F("h2SEPD_Psi2_data_N", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                             bins_psi, psi_low, psi_high,
                             m_bins_cent, m_cent_low, m_cent_high);
 
-  h2SEPD_Psi2_NS = new TH2F("h2SEPD_Psi2_NS", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+  h2SEPD_Psi2_data_NS = new TH2F("h2SEPD_Psi2_data_NS", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                              bins_psi, psi_low, psi_high,
                              m_bins_cent, m_cent_low, m_cent_high);
 
-  se->registerHisto(h2SEPD_Psi2_S);
-  se->registerHisto(h2SEPD_Psi2_N);
-  se->registerHisto(h2SEPD_Psi2_NS);
+  h2SEPD_Psi2_data_mc_S = new TH2F("h2SEPD_Psi2_data_mc_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
 
-  hRefFlow = new TProfile("hRefFlow", "Reference Flow; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
-                           m_bins_cent, m_cent_low, m_cent_high);
+  h2SEPD_Psi2_data_mc_N = new TH2F("h2SEPD_Psi2_data_mc_N", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
 
-  hScalarProduct = new TProfile("hScalarProduct", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
-                                 m_bins_cent, m_cent_low, m_cent_high);
+  h2SEPD_Psi2_data_mc_NS = new TH2F("h2SEPD_Psi2_data_mc_NS", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                             bins_psi, psi_low, psi_high,
+                             m_bins_cent, m_cent_low, m_cent_high);
 
-  hScalarProduct_corr = new TProfile("hScalarProduct_corr", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+  se->registerHisto(h2SEPD_Psi2_data_S);
+  se->registerHisto(h2SEPD_Psi2_data_N);
+  se->registerHisto(h2SEPD_Psi2_data_NS);
+
+  se->registerHisto(h2SEPD_Psi2_data_mc_S);
+  se->registerHisto(h2SEPD_Psi2_data_mc_N);
+  se->registerHisto(h2SEPD_Psi2_data_mc_NS);
+
+  hRefFlow_data = new TProfile("hRefFlow_data", "Reference Flow; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
+                                m_bins_cent, m_cent_low, m_cent_high);
+
+  hRefFlow_data_mc = new TProfile("hRefFlow_data_mc", "Reference Flow; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
+                                m_bins_cent, m_cent_low, m_cent_high);
+
+  hScalarProduct_data = new TProfile("hScalarProduct_data", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
 
+  hScalarProduct_data_corr = new TProfile("hScalarProduct_data_corr", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                           m_bins_cent, m_cent_low, m_cent_high);
 
-  se->registerHisto(hRefFlow);
-  se->registerHisto(hScalarProduct);
-  se->registerHisto(hScalarProduct_corr);
+  hScalarProduct_data_mc = new TProfile("hScalarProduct_data_mc", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                      m_bins_cent, m_cent_low, m_cent_high);
+
+  hScalarProduct_data_mc_corr = new TProfile("hScalarProduct_data_mc_corr", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                           m_bins_cent, m_cent_low, m_cent_high);
+
+  se->registerHisto(hRefFlow_data);
+  se->registerHisto(hRefFlow_data_mc);
+  se->registerHisto(hScalarProduct_data);
+  se->registerHisto(hScalarProduct_data_corr);
+  se->registerHisto(hScalarProduct_data_mc);
+  se->registerHisto(hScalarProduct_data_mc_corr);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -251,6 +303,13 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
     m_zvtx = vtx->get_z();
   }
 
+  hEvent->Fill(static_cast<int>(EventType::ALL));
+
+  if (std::abs(m_zvtx) < m_zvtx_max)
+  {
+    hEvent->Fill(static_cast<int>(EventType::ZVTX10));
+  }
+
   // skip event if not minimum bias
   if (!mb_info->isAuAuMinimumBias())
   {
@@ -266,6 +325,8 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
     ++m_ctr["events_zvtx_fail"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -285,6 +346,11 @@ int sEPD_DataMC_Validation::process_centrality(PHCompositeNode *topNode)
   {
     ++m_ctr["events_centrality_bad"];
     return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  if (m_cent < m_cent_max_threshold_ana)
+  {
+    hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
   }
 
   hCentrality->Fill(m_cent);
@@ -406,47 +472,66 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
 int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 {
   // get event plane map
-  EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
-  if (!epmap)
+  EventplaneinfoMap *epmap_data = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap_data");
+  EventplaneinfoMap *epmap_data_mc = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap_data_mc");
+
+  if (!epmap_data || !epmap_data_mc)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
-  if (epmap->empty())
+  if (epmap_data->empty() || epmap_data_mc->empty())
   {
     ++m_ctr["events_EventPlane_epmap_empty"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  Eventplaneinfo *epd_S = epmap->get(EventplaneinfoMap::sEPDS);
-  Eventplaneinfo *epd_N = epmap->get(EventplaneinfoMap::sEPDN);
-  Eventplaneinfo *epd_NS = epmap->get(EventplaneinfoMap::sEPDNS);
+  Eventplaneinfo *epd_data_S = epmap_data->get(EventplaneinfoMap::sEPDS);
+  Eventplaneinfo *epd_data_N = epmap_data->get(EventplaneinfoMap::sEPDN);
+  Eventplaneinfo *epd_data_NS = epmap_data->get(EventplaneinfoMap::sEPDNS);
+
+  Eventplaneinfo *epd_data_mc_S = epmap_data_mc->get(EventplaneinfoMap::sEPDS);
+  Eventplaneinfo *epd_data_mc_N = epmap_data_mc->get(EventplaneinfoMap::sEPDN);
+  Eventplaneinfo *epd_data_mc_NS = epmap_data_mc->get(EventplaneinfoMap::sEPDNS);
 
   // ensure the ptrs are valid
-  if (!epd_S || !epd_N || !epd_NS)
+  if (!epd_data_S || !epd_data_N || !epd_data_NS || !epd_data_mc_S || !epd_data_mc_N || !epd_data_mc_NS)
   {
     ++m_ctr["events_EventPlane_epd_invalid"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_Q_S_2 = epd_S->get_qvector(2);
-  m_Q_N_2 = epd_N->get_qvector(2);
+  m_Q_data_S_2 = epd_data_S->get_qvector(2);
+  m_Q_data_N_2 = epd_data_N->get_qvector(2);
 
-  double ref_flow = m_Q_S_2.first * m_Q_N_2.first + m_Q_S_2.second * m_Q_N_2.second;
+  m_Q_data_mc_S_2 = epd_data_mc_S->get_qvector(2);
+  m_Q_data_mc_N_2 = epd_data_mc_N->get_qvector(2);
 
-  hRefFlow->Fill(m_cent, ref_flow);
+  double ref_flow_data = m_Q_data_S_2.first * m_Q_data_N_2.first + m_Q_data_S_2.second * m_Q_data_N_2.second;
+  double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
 
-  double _2psi2_S = 2*epd_S->get_shifted_psi(2);
-  double _2psi2_N = 2*epd_N->get_shifted_psi(2);
-  double _2psi2_NS = 2*epd_NS->get_shifted_psi(2);
+  hRefFlow_data->Fill(m_cent, ref_flow_data);
+  hRefFlow_data_mc->Fill(m_cent, ref_flow_data_mc);
 
-  h2SEPD_Psi2_S->Fill(_2psi2_S, m_cent);
-  h2SEPD_Psi2_N->Fill(_2psi2_N, m_cent);
-  h2SEPD_Psi2_NS->Fill(_2psi2_NS, m_cent);
+  double _2psi2_data_S = 2*epd_data_S->get_shifted_psi(2);
+  double _2psi2_data_N = 2*epd_data_N->get_shifted_psi(2);
+  double _2psi2_data_NS = 2*epd_data_NS->get_shifted_psi(2);
+
+  double _2psi2_data_mc_S = 2*epd_data_mc_S->get_shifted_psi(2);
+  double _2psi2_data_mc_N = 2*epd_data_mc_N->get_shifted_psi(2);
+  double _2psi2_data_mc_NS = 2*epd_data_mc_NS->get_shifted_psi(2);
+
+  h2SEPD_Psi2_data_S->Fill(_2psi2_data_S, m_cent);
+  h2SEPD_Psi2_data_N->Fill(_2psi2_data_N, m_cent);
+  h2SEPD_Psi2_data_NS->Fill(_2psi2_data_NS, m_cent);
+
+  h2SEPD_Psi2_data_mc_S->Fill(_2psi2_data_mc_S, m_cent);
+  h2SEPD_Psi2_data_mc_N->Fill(_2psi2_data_mc_N, m_cent);
+  h2SEPD_Psi2_data_mc_NS->Fill(_2psi2_data_mc_NS, m_cent);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-double sEPD_DataMC_Validation::GetPhysicsEta(double det_eta, double vtx_z)
+double sEPD_DataMC_Validation::GetPhysicsEta(const double det_eta, const double vtx_z)
 {
   // Standard reference radius for sPHENIX EMCal (~93.5 cm)
   const double R_emcal = 93.5;
@@ -477,13 +562,21 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  double Q_S_x = m_Q_S_2.first;
-  double Q_S_y = m_Q_S_2.second;
+  double Q_data_S_x = m_Q_data_S_2.first;
+  double Q_data_S_y = m_Q_data_S_2.second;
 
-  double Q_N_x = m_Q_N_2.first;
-  double Q_N_y = m_Q_N_2.second;
+  double Q_data_N_x = m_Q_data_N_2.first;
+  double Q_data_N_y = m_Q_data_N_2.second;
 
-  for (auto* jet : *jets)
+  double Q_data_mc_S_x = m_Q_data_mc_S_2.first;
+  double Q_data_mc_S_y = m_Q_data_mc_S_2.second;
+
+  double Q_data_mc_N_x = m_Q_data_mc_N_2.first;
+  double Q_data_mc_N_y = m_Q_data_mc_N_2.second;
+
+  bool hasJet = false;
+
+  for (auto *jet : *jets)
   {
     double pt = jet->get_pt();
     // double energy = jet->get_e();
@@ -492,33 +585,58 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
     double eta_phys = GetPhysicsEta(eta, m_zvtx);
     double eta_diff = eta_phys - eta;
 
-    if (pt >= m_jet_pt_min && std::abs(eta) < m_jet_eta_max)
+    if (pt >= m_jet_pt_min)
     {
-      hJetPt->Fill(pt);
-      h2JetPhiEta->Fill(phi, eta);
-      h2JetEtaDiffVtxZ->Fill(m_zvtx, eta_diff);
-      h2JetPtCentrality->Fill(pt, m_cent);
+      h2JetEtaVtxZ->Fill(m_zvtx, eta);
+      h2JetEtaPhysVtxZ->Fill(m_zvtx, eta_phys);
 
-      if (std::signbit(eta) != std::signbit(eta_phys))
+      if (std::abs(eta) < m_jet_eta_max)
       {
-        h2JetEtaSignFlip->Fill(m_zvtx, eta);
+        hasJet = true;
+
+        hJetPt->Fill(pt);
+        h2JetPhiEta->Fill(phi, eta);
+        h2JetEtaDiffVtxZ->Fill(m_zvtx, eta_diff);
+        h2JetPtCentrality->Fill(pt, m_cent);
+
+        if (std::signbit(eta) != std::signbit(eta_phys))
+        {
+          h2JetEtaSignFlip->Fill(m_zvtx, eta);
+        }
+
+        double Q_data_x = (eta > 0) ? Q_data_S_x : Q_data_N_x;
+        double Q_data_y = (eta > 0) ? Q_data_S_y : Q_data_N_y;
+
+        double Q_data_x_v2 = (eta_phys > 0) ? Q_data_S_x : Q_data_N_x;
+        double Q_data_y_v2 = (eta_phys > 0) ? Q_data_S_y : Q_data_N_y;
+
+        double Q_data_mc_x = (eta > 0) ? Q_data_mc_S_x : Q_data_mc_N_x;
+        double Q_data_mc_y = (eta > 0) ? Q_data_mc_S_y : Q_data_mc_N_y;
+
+        double Q_data_mc_x_v2 = (eta_phys > 0) ? Q_data_mc_S_x : Q_data_mc_N_x;
+        double Q_data_mc_y_v2 = (eta_phys > 0) ? Q_data_mc_S_y : Q_data_mc_N_y;
+
+        double jet_Q_x = std::cos(2 * phi);
+        double jet_Q_y = std::sin(2 * phi);
+
+        double scalar_product_data = jet_Q_x * Q_data_x + jet_Q_y * Q_data_y;
+        double scalar_product_data_corr = jet_Q_x * Q_data_x_v2 + jet_Q_y * Q_data_y_v2;
+
+        double scalar_product_data_mc = jet_Q_x * Q_data_mc_x + jet_Q_y * Q_data_mc_y;
+        double scalar_product_data_mc_corr = jet_Q_x * Q_data_mc_x_v2 + jet_Q_y * Q_data_mc_y_v2;
+
+        hScalarProduct_data->Fill(m_cent, scalar_product_data);
+        hScalarProduct_data_corr->Fill(m_cent, scalar_product_data_corr);
+
+        hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
+        hScalarProduct_data_mc_corr->Fill(m_cent, scalar_product_data_mc_corr);
       }
-
-      double Q_x = (eta > 0) ? Q_S_x : Q_N_x;
-      double Q_y = (eta > 0) ? Q_S_y : Q_N_y;
-
-      double Q_x_v2 = (eta_phys > 0) ? Q_S_x : Q_N_x;
-      double Q_y_v2 = (eta_phys > 0) ? Q_S_y : Q_N_y;
-
-      double jet_Q_x = std::cos(2 * phi);
-      double jet_Q_y = std::sin(2 * phi);
-
-      double scalar_product = jet_Q_x * Q_x + jet_Q_y * Q_y;
-      double scalar_product_corr = jet_Q_x * Q_x_v2 + jet_Q_y * Q_y_v2;
-
-      hScalarProduct->Fill(m_cent, scalar_product);
-      hScalarProduct_corr->Fill(m_cent, scalar_product_corr);
     }
+  }
+
+  if (hasJet)
+  {
+    hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT_JET));
   }
 
   return Fun4AllReturnCodes::EVENT_OK;

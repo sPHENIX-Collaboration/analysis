@@ -77,20 +77,34 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
   FlagHandler* flag = new FlagHandler();
   se->registerSubsystem(flag);
 
-  // sEPD Bad Tower Status
-  CaloTowerStatus* statusSEPD = new CaloTowerStatus("SEPDSTATUS");
-  statusSEPD->set_detector_type(CaloTowerDefs::SEPD);
-  statusSEPD->set_directURL_hotMap(input_sEPD_BadTowers);
-  statusSEPD->set_inputNode("TOWERINFO_COMBINED_SEPD");
-  se->registerSubsystem(statusSEPD);
+  // sEPD Bad Tower Status - Data
+  CaloTowerStatus* statusSEPD_data = new CaloTowerStatus("SEPDSTATUS_data");
+  statusSEPD_data->set_detector_type(CaloTowerDefs::SEPD);
+  statusSEPD_data->set_directURL_hotMap(input_sEPD_BadTowers);
+  statusSEPD_data->set_inputNode("TOWERINFO_CALIB_SEPD_data");
+  se->registerSubsystem(statusSEPD_data);
 
-  // Event Plane
-  EventPlaneReco* epreco = new EventPlaneReco();
-  epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
-  epreco->set_inputNode("TOWERINFO_COMBINED_SEPD");
-  // epreco->set_inputNode("TOWERINFO_CALIB_SEPD_data");
-  epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
-  se->registerSubsystem(epreco);
+  // sEPD Bad Tower Status - Data+MC
+  CaloTowerStatus* statusSEPD_data_mc = new CaloTowerStatus("SEPDSTATUS_data_mc");
+  statusSEPD_data_mc->set_detector_type(CaloTowerDefs::SEPD);
+  statusSEPD_data_mc->set_directURL_hotMap(input_sEPD_BadTowers);
+  statusSEPD_data_mc->set_inputNode("TOWERINFO_COMBINED_SEPD");
+  se->registerSubsystem(statusSEPD_data_mc);
+
+  // Event Plane - Data
+  EventPlaneReco* epreco_data = new EventPlaneReco("EventPlaneReco_data");
+  epreco_data->set_directURL_EventPlaneCalib(input_QVecCalib);
+  epreco_data->set_inputNode("TOWERINFO_CALIB_SEPD_data");
+  epreco_data->set_EventPlaneInfoNodeName("EventplaneinfoMap_data");
+  epreco_data->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  se->registerSubsystem(epreco_data);
+
+  // Event Plane - Data+MC
+  EventPlaneReco* epreco_data_mc = new EventPlaneReco("EventPlaneReco_data_mc");
+  epreco_data_mc->set_directURL_EventPlaneCalib(input_QVecCalib);
+  epreco_data_mc->set_inputNode("TOWERINFO_COMBINED_SEPD");
+  epreco_data_mc->set_EventPlaneInfoNodeName("EventplaneinfoMap_data_mc");
+  se->registerSubsystem(epreco_data_mc);
 
   // sEPD QA
   sEPD_DataMC_Validation* sepd_validation = new sEPD_DataMC_Validation();
