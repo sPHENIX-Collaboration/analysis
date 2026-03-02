@@ -85,7 +85,7 @@ class DisplayDataMC
 // ====================================================================
 void DisplayDataMC::read_hists()
 {
-  std::string input = "/gpfs02/sphenix/user/anarde/sEPD-Study/MC/02-23-26/test-54404.root";
+  std::string input = "/gpfs02/sphenix/user/anarde/sEPD-Study/MC/current/test-54404.root";
   m_hists = myUtils::read_hists(input);
 }
 
@@ -126,10 +126,81 @@ void DisplayDataMC::draw()
   // ---------------------------------------------------
 
   {
+    c1->SetRightMargin(.1F);
+    gPad->SetTicky(0);
+
+    auto* hEvent = m_hists["hEvent"].get();
+
+    hEvent->Draw("HIST");
+
+    hEvent->GetYaxis()->SetMaxDigits(3);
+    hEvent->GetXaxis()->SetLabelSize(0.06F);
+    hEvent->SetLineColor(kBlue);
+    hEvent->SetLineWidth(3);
+
+    double ymax = hEvent->GetMaximum()*1.1;
+    hEvent->GetYaxis()->SetRangeUser(0, ymax);
+
+    // 1. Calculate the percentage scale
+    // We want hEvent->GetBinContent(1) to equal 100%
+    double totalEvents = hEvent->GetBinContent(1);
+    double right_axis_max = (ymax / totalEvents) * 100.0;
+
+    // 2. Force a pad update to ensure coordinates are ready
+    gPad->Update();
+
+    // 3. Define and draw the TGaxis
+    // Parameters: x_start, y_start, x_end, y_end, val_min, val_max, ndiv, options
+    TGaxis* axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
+                              gPad->GetUxmax(), gPad->GetUymax(),
+                              0, right_axis_max, 510, "+L");
+
+    axis->SetTitle("Percentage (%)");
+    axis->SetLabelFont(hEvent->GetYaxis()->GetLabelFont());
+    axis->SetLabelSize(hEvent->GetYaxis()->GetLabelSize());
+    axis->SetTitleFont(hEvent->GetYaxis()->GetTitleFont());
+    axis->SetTitleSize(hEvent->GetYaxis()->GetTitleSize());
+    axis->SetTitleOffset(1.2F);  // Adjust so it doesn't overlap the numbers
+
+    axis->Draw();
+
+    // Loop through the bins to place text
+    for (int i = 1; i <= hEvent->GetNbinsX(); ++i)
+    {
+      double binContent = hEvent->GetBinContent(i);
+      double percentage = (binContent / totalEvents) * 100.0;
+
+      // Define the x position (center of the bin)
+      // and y position (just slightly above the bar)
+      double xPos = hEvent->GetBinCenter(i);
+      double yPos = binContent + (ymax * 0.02);  // 2% offset above the bar
+
+      // Create the label string (fixed to 1 decimal place)
+      TString label = TString::Format("%.1f%%", percentage);
+
+      // Create and style the text object
+      TLatex* tex = new TLatex(xPos, yPos, label);
+      tex->SetTextAlign(21);  // Center-aligned horizontally, bottom-aligned vertically
+      tex->SetTextSize(0.05F);
+      tex->SetTextFont(42);          // Standard Helvetica
+      tex->SetTextColor(kBlue + 2);  // Slightly darker blue to stand out
+      tex->Draw();
+    }
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hEvent").c_str());
+
+    c1->SetRightMargin(.02F);
+  }
+
+  // ---------------------------------------------------
+
+  {
     auto* hCentrality = m_hists["hCentrality"].get();
 
     hCentrality->Draw("HIST");
 
+    hCentrality->GetYaxis()->SetMaxDigits(3);
     hCentrality->SetLineColor(kBlue);
     hCentrality->SetLineWidth(3);
 
@@ -146,6 +217,7 @@ void DisplayDataMC::draw()
 
     hZVertex->SetLineColor(kBlue);
     hZVertex->SetLineWidth(3);
+    hZVertex->GetYaxis()->SetMaxDigits(3);
 
     int xlow = hZVertex->FindBin(-10);
     int xhigh = hZVertex->FindBin(10)-1;
@@ -431,8 +503,8 @@ void DisplayDataMC::draw()
   {
     c1->SetRightMargin(.04F);
 
-    auto* h2SEPD_Psi2_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_N"].get());
-    auto* h2SEPD_Psi2_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_S"].get());
+    auto* h2SEPD_Psi2_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_N"].get());
+    auto* h2SEPD_Psi2_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_S"].get());
 
     int cent_bin_low = 1;
     int cent_bin_high = h2SEPD_Psi2_N->GetYaxis()->FindBin(60)-1;
@@ -452,6 +524,7 @@ void DisplayDataMC::draw()
 
     hSEPD_Psi2_S->GetYaxis()->SetTitle("Events");
     hSEPD_Psi2_S->GetYaxis()->SetTitleOffset(1.1F);
+    hSEPD_Psi2_S->GetYaxis()->SetMaxDigits(3);
 
     double ymax = std::max(hSEPD_Psi2_S->GetMaximum(), hSEPD_Psi2_N->GetMaximum())*1.1;
     hSEPD_Psi2_S->GetYaxis()->SetRangeUser(0, ymax);
@@ -481,7 +554,7 @@ void DisplayDataMC::draw()
 
     hJetPt->SetLineColor(kBlue);
     hJetPt->SetLineWidth(3);
-    hJetPt->GetXaxis()->SetRangeUser(0, 40);
+    hJetPt->GetXaxis()->SetRangeUser(0, 55);
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt").c_str());
@@ -521,16 +594,27 @@ void DisplayDataMC::draw()
 
   {
     c1->SetRightMargin(.04F);
-    auto* hRefFlow_squared = dynamic_cast<TProfile*>(m_hists["hRefFlow"].get());
-    hRefFlow_squared->Rebin(10);
+    // Data+MC
+    auto* hRefFlow_squared_data_mc = dynamic_cast<TProfile*>(m_hists["hRefFlow_data_mc"].get());
+    hRefFlow_squared_data_mc->Rebin(10);
 
-    auto* hRefFlow = hRefFlow_squared->ProjectionX();
-    auto* hScalarProduct = dynamic_cast<TProfile*>(m_hists["hScalarProduct_corr"].get());
-    hScalarProduct->Rebin(10);
+    auto* hRefFlow_data_mc = hRefFlow_squared_data_mc->ProjectionX();
+    auto* hScalarProduct_data_mc = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_mc_corr"].get());
+    hScalarProduct_data_mc->Rebin(10);
 
-    auto* hJetV2 = hScalarProduct->ProjectionX();
+    auto* hJetV2_data_mc = hScalarProduct_data_mc->ProjectionX();
 
-    for(int bin = 1; bin < hRefFlow->GetNbinsX(); ++bin)
+    // Data
+    auto* hRefFlow_squared_data = dynamic_cast<TProfile*>(m_hists["hRefFlow_data"].get());
+    hRefFlow_squared_data->Rebin(10);
+
+    auto* hRefFlow_data = hRefFlow_squared_data->ProjectionX();
+    auto* hScalarProduct_data = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_corr"].get());
+    hScalarProduct_data->Rebin(10);
+
+    auto* hJetV2_data = hScalarProduct_data->ProjectionX();
+
+    auto compute_vn_plots = [&](TH1* hRefFlow, TH1* hScalarProduct, TH1* hJetV2, int bin)
     {
       double val = hRefFlow->GetBinContent(bin);
       double sp = hScalarProduct->GetBinContent(bin);
@@ -551,6 +635,12 @@ void DisplayDataMC::draw()
 
       hJetV2->SetBinContent(bin, v2);
       hJetV2->SetBinError(bin, v2_error);
+    };
+
+    for (int bin = 1; bin < hRefFlow_data_mc->GetNbinsX(); ++bin)
+    {
+      compute_vn_plots(hRefFlow_data_mc, hScalarProduct_data_mc, hJetV2_data_mc, bin);
+      compute_vn_plots(hRefFlow_data, hScalarProduct_data, hJetV2_data, bin);
     }
 
     struct PlotOptions
@@ -559,6 +649,8 @@ void DisplayDataMC::draw()
       double ymax_frac{0};
       float yoffset{1.4F};
       int max_digits{3};
+      double ymin{0};
+      double ymax{0};
     };
 
     auto plotAndSave = [&](TH1* hist, PlotOptions opts = {}, std::string_view tag = "")
@@ -588,16 +680,62 @@ void DisplayDataMC::draw()
         hist->GetYaxis()->SetRangeUser(0, ymax);
       }
 
+      if (opts.ymin < opts.ymax)
+      {
+        hist->GetYaxis()->SetRangeUser(opts.ymin, opts.ymax);
+      }
+
       hist->GetYaxis()->SetTitleOffset(opts.yoffset);
 
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
     };
 
-    plotAndSave(hRefFlow_squared, {.ymax_frac = 1.1}, "hRefFlow_Squared");
-    plotAndSave(hRefFlow, {.ytitle = "#sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .ymax_frac = 1.05}, "hRefFlow");
-    plotAndSave(hScalarProduct, {}, "hScalarProduct");
-    plotAndSave(hJetV2, {.ytitle = "Jet v_{2} = Re(#LTq_{2} Q^{S|N*}_{2}#GT) / #sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .yoffset = 1.6F, .max_digits = 0}, "hJetV2");
+    plotAndSave(hRefFlow_squared_data_mc, {.ymax_frac = 1.1}, "hRefFlow_squared_data_mc");
+    plotAndSave(hRefFlow_data_mc, {.ytitle = "#sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .ymax_frac = 1.05}, "hRefFlow_data_mc");
+    plotAndSave(hScalarProduct_data_mc, {}, "hScalarProduct_data_mc");
+    plotAndSave(hJetV2_data_mc, {.ytitle = "Jet v_{2} = Re(#LTq_{2} Q^{S|N*}_{2}#GT) / #sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .yoffset = 1.6F, .max_digits = 0}, "hJetV2_data_mc");
+    plotAndSave(hJetV2_data_mc, {.ytitle = "Jet v_{2} = Re(#LTq_{2} Q^{S|N*}_{2}#GT) / #sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .yoffset = 1.6F, .max_digits = 0, .ymin = -0.1, .ymax = .18}, "hJetV2_data_mc-zoomout");
+
+    auto plotOverlayAndSave = [&](TH1* h1, TH1* h2, PlotOptions opts = {}, std::string_view tag = "")
+    {
+      h1->Draw();
+      h2->Draw("same");
+
+      h1->SetLineColor(kBlue);
+      h1->SetLineWidth(3);
+      h1->SetMarkerStyle(kFullDotLarge);
+      h1->SetMarkerColor(kBlue);
+      h1->SetTitle("");
+
+      h2->SetLineColor(kRed);
+      h2->SetLineWidth(3);
+      h2->SetMarkerStyle(kFullDotLarge);
+      h2->SetMarkerColor(kRed);
+
+      double xshift = -0.05;
+      double yshift = 0.19;
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.05f);
+      leg->AddEntry(h1, "sEPD: Data+MC", "pe");
+      leg->AddEntry(h2, "sEPD: Data", "pe");
+      leg->Draw("same");
+
+      if (opts.max_digits)
+      {
+        h1->GetYaxis()->SetMaxDigits(opts.max_digits);
+      }
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
+    };
+
+    plotOverlayAndSave(hRefFlow_squared_data_mc, hRefFlow_squared_data, {}, "hRefFlow_squared-overlay");
+    plotOverlayAndSave(hRefFlow_data_mc, hRefFlow_data, {}, "hRefFlow-overlay");
+    plotOverlayAndSave(hScalarProduct_data_mc, hScalarProduct_data, {}, "hScalarProduct-overlay");
+    plotOverlayAndSave(hJetV2_data_mc, hJetV2_data, {}, "hJetV2-overlay");
   }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
