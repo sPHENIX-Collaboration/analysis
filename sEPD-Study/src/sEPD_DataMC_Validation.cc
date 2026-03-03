@@ -221,6 +221,24 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   double psi_low{-std::numbers::pi};
   double psi_high{std::numbers::pi};
 
+  // Raw
+  h2SEPD_Psi2_raw_data_S = new TH2F("h2SEPD_Psi2_raw_data_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
+
+  h2SEPD_Psi2_raw_data_N = new TH2F("h2SEPD_Psi2_raw_data_N", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
+
+  h2SEPD_Psi2_raw_data_mc_S = new TH2F("h2SEPD_Psi2_raw_data_mc_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
+
+  h2SEPD_Psi2_raw_data_mc_N = new TH2F("h2SEPD_Psi2_raw_data_mc_N", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
+
+  // Corrected
   h2SEPD_Psi2_data_S = new TH2F("h2SEPD_Psi2_data_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                             bins_psi, psi_low, psi_high,
                             m_bins_cent, m_cent_low, m_cent_high);
@@ -244,6 +262,12 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   h2SEPD_Psi2_data_mc_NS = new TH2F("h2SEPD_Psi2_data_mc_NS", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                              bins_psi, psi_low, psi_high,
                              m_bins_cent, m_cent_low, m_cent_high);
+
+  se->registerHisto(h2SEPD_Psi2_raw_data_S);
+  se->registerHisto(h2SEPD_Psi2_raw_data_N);
+
+  se->registerHisto(h2SEPD_Psi2_raw_data_mc_S);
+  se->registerHisto(h2SEPD_Psi2_raw_data_mc_N);
 
   se->registerHisto(h2SEPD_Psi2_data_S);
   se->registerHisto(h2SEPD_Psi2_data_N);
@@ -506,6 +530,12 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   m_Q_data_mc_S_2 = epd_data_mc_S->get_qvector(2);
   m_Q_data_mc_N_2 = epd_data_mc_N->get_qvector(2);
 
+  std::pair<double, double> Q_raw_data_S_2 = epd_data_S->get_qvector_raw(2);
+  std::pair<double, double> Q_raw_data_N_2 = epd_data_N->get_qvector_raw(2);
+
+  std::pair<double, double> Q_raw_data_mc_S_2 = epd_data_mc_S->get_qvector_raw(2);
+  std::pair<double, double> Q_raw_data_mc_N_2 = epd_data_mc_N->get_qvector_raw(2);
+
   double ref_flow_data = m_Q_data_S_2.first * m_Q_data_N_2.first + m_Q_data_S_2.second * m_Q_data_N_2.second;
   double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
 
@@ -520,6 +550,12 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   double _2psi2_data_mc_N = 2*epd_data_mc_N->get_shifted_psi(2);
   double _2psi2_data_mc_NS = 2*epd_data_mc_NS->get_shifted_psi(2);
 
+  double _2psi2_raw_data_S = 2*epd_data_S->GetPsi(Q_raw_data_S_2.first, Q_raw_data_S_2.second, 2);
+  double _2psi2_raw_data_N = 2*epd_data_N->GetPsi(Q_raw_data_N_2.first, Q_raw_data_N_2.second, 2);
+
+  double _2psi2_raw_data_mc_S = 2*epd_data_mc_S->GetPsi(Q_raw_data_mc_S_2.first, Q_raw_data_mc_S_2.second, 2);
+  double _2psi2_raw_data_mc_N = 2*epd_data_mc_N->GetPsi(Q_raw_data_mc_N_2.first, Q_raw_data_mc_N_2.second, 2);
+
   h2SEPD_Psi2_data_S->Fill(_2psi2_data_S, m_cent);
   h2SEPD_Psi2_data_N->Fill(_2psi2_data_N, m_cent);
   h2SEPD_Psi2_data_NS->Fill(_2psi2_data_NS, m_cent);
@@ -527,6 +563,12 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   h2SEPD_Psi2_data_mc_S->Fill(_2psi2_data_mc_S, m_cent);
   h2SEPD_Psi2_data_mc_N->Fill(_2psi2_data_mc_N, m_cent);
   h2SEPD_Psi2_data_mc_NS->Fill(_2psi2_data_mc_NS, m_cent);
+
+  h2SEPD_Psi2_raw_data_S->Fill(_2psi2_raw_data_S, m_cent);
+  h2SEPD_Psi2_raw_data_N->Fill(_2psi2_raw_data_N, m_cent);
+
+  h2SEPD_Psi2_raw_data_mc_S->Fill(_2psi2_raw_data_mc_S, m_cent);
+  h2SEPD_Psi2_raw_data_mc_N->Fill(_2psi2_raw_data_mc_N, m_cent);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

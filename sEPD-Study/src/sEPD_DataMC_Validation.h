@@ -124,6 +124,12 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2JetEtaDiffVtxZ{nullptr};
   TH2* h2JetEtaSignFlip{nullptr};
 
+  TH2* h2SEPD_Psi2_raw_data_S{nullptr};
+  TH2* h2SEPD_Psi2_raw_data_N{nullptr};
+
+  TH2* h2SEPD_Psi2_raw_data_mc_S{nullptr};
+  TH2* h2SEPD_Psi2_raw_data_mc_N{nullptr};
+
   TH2* h2SEPD_Psi2_data_S{nullptr};
   TH2* h2SEPD_Psi2_data_N{nullptr};
   TH2* h2SEPD_Psi2_data_NS{nullptr};
