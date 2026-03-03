@@ -69,10 +69,10 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
 
   for(int i=0; i<4; i++)
   {
-    jets[i] = findNode::getClass<JetContainer>(topNode, std::format("AntiKt_r{}",jetRStr[i]).c_str());
+    jets[i] = findNode::getClass<JetContainer>(topNode, std::format("AntiKt_r{}{}",jetRStr[i],(m_doCalib ? "_calib" : "")).c_str());
     if (!jets[i])
     {
-      std::cout << "VandyJetDSTSkimmer::Init - Error - Can't find Jet Node " << std::format("AntiKt_r{}",jetRStr[i]).c_str() << " therefore no selection can be made" << std::endl;
+      std::cout << "VandyJetDSTSkimmer::Init - Error - Can't find Jet Node " << std::format("AntiKt_r{}{}",jetRStr[i],(m_doCalib ? "_calib" : "")).c_str() << " therefore no selection can be made" << std::endl;
       return Fun4AllReturnCodes::ABORTRUN;
     }
   }
@@ -224,11 +224,31 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
     if(Verbosity()) std::cout << "no vertex found" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  if (std::abs(vtxMap->get(0)->get_z()) > m_vtx_cut)
+
+  std::vector<GlobalVertex*> vertices = vtxMap->get_gvtxs_with_type(vtxTypes);
+  if(vertices.empty() || !vertices.at(0))
+  {
+    if(Verbosity()) std::cout << "no MBD vertex found" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  m_vtx_z = vertices.at(0)->get_z();
+
+  if (std::abs(m_vtx_z) > m_vtx_cut)
   {
     if(Verbosity()) std::cout << "vertex not in range" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  if(m_doSim)
+  {
+    int truthVtxIndex = truthParticles->GetPrimaryVertexIndex();
+    if(truthParticles->GetPrimaryVtx(truthVtxIndex))
+    {
+      m_vtx_z_truth = truthParticles->GetPrimaryVtx(truthVtxIndex)->get_z();
+    }
+  }
+
 
   //timing cut
   if(!m_cutParams.get_int_param("passLeadtCut"))
@@ -288,6 +308,13 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
       }
     }
   }
+  else
+  {
+    goodTruthJet = true;
+  }
+
+  if(!m_doSim && !goodJet) nRemNoSim++;
+  if(m_doSim && !goodTruthJet && !goodJet) nRemSim++;
 
   if((!m_doSim && !goodJet) || (m_doSim && !goodTruthJet && !goodJet))
   {
@@ -299,7 +326,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   }
 
   //set event info
-  m_eventInfo->set_z_vtx(vtxMap->get(0)->get_z());
+  m_eventInfo->set_z_vtx(m_vtx_z);
   m_eventInfo->set_ZDC_rate(m_ZDC_coincidence);
 
   std::pair<float, float> dijet = isGoodDijet();
@@ -309,6 +336,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 
   if(m_doSim)
   {  
+    m_eventInfo->set_z_vtx_truth(m_vtx_z_truth);
     std::pair<float, float> dijetTruth = isGoodTruthDijet();
     m_eventInfo->set_dijetTruth_event((dijetTruth.first >= 5.0 && dijetTruth.second >= 5.0 ? true : false));
     m_eventInfo->set_leadTruth_pT(dijetTruth.first);
@@ -316,6 +344,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   }
   else
   {
+    m_eventInfo->set_z_vtx_truth(-999);
     m_eventInfo->set_dijetTruth_event(true);
     m_eventInfo->set_leadTruth_pT(-999);
     m_eventInfo->set_subleadTruth_pT(-999);
@@ -557,6 +586,11 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 int VandyJetDSTSkimmer::End(PHCompositeNode * /*topNode*/)
 {
 
+  std::cout << "Number of removed events no sim: " << nRemNoSim << std::endl;
+  std::cout << "Number of removed events sim: " << nRemSim << std::endl;
+  std::cout << "Number of removed events dT: " << nRem_dT << std::endl;
+
+
   T->Print();
 
   outfile->cd();
@@ -578,6 +612,7 @@ std::pair<float, float> VandyJetDSTSkimmer::isGoodDijet()
     {
       std::cout << "VandyJetDSTSkimmer::process_event - delta t cut failed, bad event" << std::endl;
     }
+    nRem_dT++;
     return pTs;
   }
 

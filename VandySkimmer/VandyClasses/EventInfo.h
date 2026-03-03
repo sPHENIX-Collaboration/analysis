@@ -22,6 +22,9 @@ class EventInfo {
         float get_sublead_pT() {return sublead_pT;};
         void set_sublead_pT(float pT){ sublead_pT = pT; };
 
+        double get_z_vtx_truth() {return z_vtx_truth;};
+        void set_z_vtx_truth(double vtx){ z_vtx_truth = vtx; };
+
         bool is_dijetTruth_event() { return dijetTruth_event; };
         void set_dijetTruth_event(bool dijet){ dijetTruth_event = dijet; };
 
@@ -37,6 +40,7 @@ class EventInfo {
         bool dijet_event = false;
         float lead_pT{-999};
         float sublead_pT{-999};
+        double z_vtx_truth{0.0};
         bool dijetTruth_event = true;
         float leadTruth_pT{-999};
         float subleadTruth_pT{-999};
