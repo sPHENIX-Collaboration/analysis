@@ -191,6 +191,7 @@ void DisplayDataMC::draw()
     if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hEvent").c_str());
 
     c1->SetRightMargin(.02F);
+    gPad->SetTicky(1);
   }
 
   // ---------------------------------------------------
@@ -239,9 +240,10 @@ void DisplayDataMC::draw()
 
     struct PlotOptions
     {
-      short int color = kBlue;
-      double xlow = 0;
-      double xhigh = 0;
+      short int color{kBlue};
+      double xlow{0};
+      double xhigh{0};
+      bool logy{true};
     };
 
     auto ceil_pow10 = []<std::floating_point T>(T val) -> T
@@ -259,15 +261,35 @@ void DisplayDataMC::draw()
       hist->SetLineColor(opts.color);
       hist->SetLineWidth(3);
 
+      double ymax{0};
       if (opts.xlow < opts.xhigh)
       {
+        int xbin = hist->GetXaxis()->FindBin(1);
+        ymax = hist->GetBinContent(xbin)*1.1;
         hist->GetXaxis()->SetRangeUser(opts.xlow, opts.xhigh);
       }
 
-      double ylow = 5e-1;
-      double yhigh = ceil_pow10(hist->GetMaximum());
+      if(opts.logy)
+      {
+         gPad->SetLogy();
+      }
+      else
+      {
+        gPad->SetLogy(0);
+      }
 
-      hist->GetYaxis()->SetRangeUser(ylow, yhigh);
+      if(!ymax)
+      {
+        double ylow = 5e-1;
+        double yhigh = ceil_pow10(hist->GetMaximum());
+
+        hist->GetYaxis()->SetRangeUser(ylow, yhigh);
+      }
+      else
+      {
+        hist->GetYaxis()->SetRangeUser(0, ymax);
+        hist->GetYaxis()->SetMaxDigits(3);
+      }
 
       hist->Draw("HIST");
 
@@ -281,9 +303,9 @@ void DisplayDataMC::draw()
     };
 
     plotAndSave("hSEPD_Charge_DataMC");
-    plotAndSave("hSEPD_Charge_DataMC", {.xhigh = 5}, "-zoom");
+    plotAndSave("hSEPD_Charge_DataMC", {.xhigh = 5, .logy = false}, "-zoom");
     plotAndSave("hSEPD_Charge_MC");
-    plotAndSave("hSEPD_Charge_MC", {.xhigh = 5}, "-zoom");
+    plotAndSave("hSEPD_Charge_MC", {.xhigh = 5, .logy = false}, "-zoom");
 
     gPad->SetLogy(0);
   }
@@ -503,6 +525,9 @@ void DisplayDataMC::draw()
   {
     c1->SetRightMargin(.04F);
 
+    auto* h2SEPD_Psi2_raw_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_N"].get());
+    auto* h2SEPD_Psi2_raw_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_S"].get());
+
     auto* h2SEPD_Psi2_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_N"].get());
     auto* h2SEPD_Psi2_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_S"].get());
 
@@ -510,37 +535,56 @@ void DisplayDataMC::draw()
     int cent_bin_high = h2SEPD_Psi2_N->GetYaxis()->FindBin(60)-1;
 
     // Get Centrality 0-60%
+    auto* hSEPD_Psi2_raw_N = h2SEPD_Psi2_raw_N->ProjectionX("px_raw_N", cent_bin_low, cent_bin_high);
+    auto* hSEPD_Psi2_raw_S = h2SEPD_Psi2_raw_S->ProjectionX("px_raw_S", cent_bin_low, cent_bin_high);
+
     auto* hSEPD_Psi2_N = h2SEPD_Psi2_N->ProjectionX("px_N", cent_bin_low, cent_bin_high);
     auto* hSEPD_Psi2_S = h2SEPD_Psi2_S->ProjectionX("px_S", cent_bin_low, cent_bin_high);
 
-    hSEPD_Psi2_S->Draw("HIST");
-    hSEPD_Psi2_N->Draw("HIST same");
+    struct PlotOptions
+    {
+      std::string title{};
+      double ymax{0};
+    };
 
-    hSEPD_Psi2_S->SetLineColor(kBlue);
-    hSEPD_Psi2_N->SetLineColor(kRed);
+    auto plotOverlayAndSave = [&](TH1* h1, TH1* h2, PlotOptions opts = {}, std::string_view tag = "")
+    {
+      h1->Draw("HIST");
+      h2->Draw("HIST same");
 
-    hSEPD_Psi2_S->SetLineWidth(3);
-    hSEPD_Psi2_N->SetLineWidth(3);
+      h1->SetLineColor(kBlue);
+      h1->SetLineWidth(3);
+      h1->SetTitle(opts.title.c_str());
+      h1->GetYaxis()->SetMaxDigits(3);
+      h1->GetYaxis()->SetTitle("Events");
+      h1->GetYaxis()->SetTitleOffset(1.F);
 
-    hSEPD_Psi2_S->GetYaxis()->SetTitle("Events");
-    hSEPD_Psi2_S->GetYaxis()->SetTitleOffset(1.1F);
-    hSEPD_Psi2_S->GetYaxis()->SetMaxDigits(3);
+      if (opts.ymax)
+      {
+        h1->GetYaxis()->SetRangeUser(0, opts.ymax);
+      }
 
-    double ymax = std::max(hSEPD_Psi2_S->GetMaximum(), hSEPD_Psi2_N->GetMaximum())*1.1;
-    hSEPD_Psi2_S->GetYaxis()->SetRangeUser(0, ymax);
+      h2->SetLineColor(kRed);
+      h2->SetLineWidth(3);
 
-    double xshift = 0.47;
-    double yshift = -0.1;
+      double xshift = 0.4;
+      double yshift = 0.19;
 
-    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.5 + xshift, .7 + yshift);
-    leg->SetFillStyle(0);
-    leg->SetTextSize(0.08f);
-    leg->AddEntry(hSEPD_Psi2_S, "South", "l");
-    leg->AddEntry(hSEPD_Psi2_N, "North", "l");
-    leg->Draw("same");
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.05f);
+      leg->AddEntry(h1, "Raw", "l");
+      leg->AddEntry(h2, "Corrected", "l");
+      leg->Draw("same");
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSEPD_Psi-Overlay").c_str());
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
+    };
+
+    double ymax = std::max(hSEPD_Psi2_raw_S->GetMaximum(), hSEPD_Psi2_raw_N->GetMaximum()) * 1.1;
+
+    plotOverlayAndSave(hSEPD_Psi2_raw_S, hSEPD_Psi2_S, {.title = "South", .ymax = ymax}, "hSEPD_Psi_South-overlay");
+    plotOverlayAndSave(hSEPD_Psi2_raw_N, hSEPD_Psi2_N, {.title = "North", .ymax = ymax}, "hSEPD_Psi_North-overlay");
   }
 
   // ---------------------------------------------------
