@@ -475,13 +475,13 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 					{
 						auto particle=(*iter);
 						if(!particle) continue;
-						if( abs(particle->pdg_id()) == 22)
-						{
-							photons.push_back(particle);
-						}
 						if(particle->status()==1 && !particle->end_vertex()) //picks up final state particles only 
 						{
 							event_particles.push_back(particle);
+							if( abs(particle->pdg_id()) == 22)
+							{
+								photons.push_back(particle);
+							}
 						}
 					}
 				}
@@ -514,9 +514,10 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 			jets.push_back(jetsize);
 		}
 	}
-	if(photon) 		runAnalysisPhotonJets(jets, photons);
-	else if (jet)		runAnalysisJets(jets);
+//	if(photon) 		runAnalysisPhotonJets(jets, photons);
+	/*else*/ if (jet)		runAnalysisJets(jets);
 	if( photon || jet ) 	runAnalysisEvent(event_particles);	
+	std::cout<<__LINE__<<std::endl;
 	return Fun4AllReturnCodes::EVENT_OK;
 }
 

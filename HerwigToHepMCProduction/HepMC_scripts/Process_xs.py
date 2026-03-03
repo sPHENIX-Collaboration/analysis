@@ -26,7 +26,6 @@ for fname in os.listdir(path):
                         continue
                     val=float(val)*float(mtpx)
                     n += 1
-                    print("Good value number : " + str(n))
                     avg_val += val
             if n >= 1000:
                 break
