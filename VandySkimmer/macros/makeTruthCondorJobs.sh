@@ -3,8 +3,6 @@ export USER="$(id -u -n)"
 export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}/macros/detectors/sPHENIX/
 
-source /opt/sphenix/core/bin/sphenix_setup.sh -n
-source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 runnumber=0
 outDir=""
@@ -42,10 +40,18 @@ make_condor_jobs()
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/run_VandySkimmerTruth.sh" >> $condor_file
-		echo "${blanklines[2]}"$calo $truth $jet $global $outDir >> $condor_file
+		echo "${blanklines[2]}"$calo $truth $jet $global $outDir $MYINSTALL>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file
+		echo "${blanklines[6]} $outDir" >>$condor_file
+		echo "${blanklines[7]}" >> $condor_file
+		echo "${blanklines[8]}" >> $condor_file 
+		echo "${blanklines[9]}" "   "  $USER >> $condor_file 
+		echo "${blanklines[10]}" >> $condor_file
+		echo "${blanklines[11]}" >> $condor_file
+		echo "${blanklines[12]}" >> $condor_file
+		echo "${blanklines[13]}" >> $condor_file
 	done
 }
 make_home_dir()
