@@ -269,20 +269,23 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   }
 
   bool goodTruthJet = false;
-  for(int i=3; i>=0; i--)
+  if(m_doSim)
   {
-    for(int j=0; j<(int)truthJets[i]->size(); j++)
+    for(int i=3; i>=0; i--)
     {
-      Jet *jet = truthJets[i]->get_jet(j);
-      if(jet->get_pt() > truthJetR_pTMin[i][sampleNumber])
+      for(int j=0; j<(int)truthJets[i]->size(); j++)
       {
-        goodTruthJet = true;
+        Jet *jet = truthJets[i]->get_jet(j);
+        if(jet->get_pt() > truthJetR_pTMin[i][sampleNumber])
+        {
+          goodTruthJet = true;
+          break;
+        }
+      }
+      if(goodTruthJet)
+      {
         break;
       }
-    }
-    if(goodTruthJet)
-    {
-      break;
     }
   }
 
@@ -295,26 +298,29 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  std::pair<float, float> dijet = isGoodDijet();
-  std::pair<float, float> dijetTruth = isGoodTruthDijet();
-
-
   //set event info
   m_eventInfo->set_z_vtx(vtxMap->get(0)->get_z());
   m_eventInfo->set_ZDC_rate(m_ZDC_coincidence);
+
+  std::pair<float, float> dijet = isGoodDijet();
   m_eventInfo->set_dijet_event((dijet.first >= 25.0 && dijet.second >= 8.4 ? true : false));
   m_eventInfo->set_lead_pT(dijet.first);
   m_eventInfo->set_sublead_pT(dijet.second);
+
   if(m_doSim)
-  {
+  {  
+    std::pair<float, float> dijetTruth = isGoodTruthDijet();
     m_eventInfo->set_dijetTruth_event((dijetTruth.first >= 5.0 && dijetTruth.second >= 5.0 ? true : false));
+    m_eventInfo->set_leadTruth_pT(dijetTruth.first);
+    m_eventInfo->set_subleadTruth_pT(dijetTruth.second);
   }
   else
   {
     m_eventInfo->set_dijetTruth_event(true);
+    m_eventInfo->set_leadTruth_pT(-999);
+    m_eventInfo->set_subleadTruth_pT(-999);
   }
-  m_eventInfo->set_leadTruth_pT(dijetTruth.first);
-  m_eventInfo->set_subleadTruth_pT(dijetTruth.second);
+
 
 
   //store calorimeter towers in vector<Tower> object
@@ -356,7 +362,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 
   RawClusterContainer::Map clusterMap = clusters->getClustersMap();
   for(auto entry : clusterMap)
-  {   
+  {
     RawCluster *cluster = entry.second;
     
     std::vector<int> cons;
