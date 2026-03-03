@@ -39,6 +39,7 @@
 
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4VtxPoint.h>
 
 //fastjet
 #include <fastjet/PseudoJet.hh>
@@ -91,6 +92,8 @@ class VandyJetDSTSkimmer : public SubsysReco
 
   void SetSimSample(std::string sampleName) { m_sampleName = sampleName; };
 
+  void SetDoCalib(bool flag) {m_doCalib = flag; };
+
  private:
     
     const float jetR[4]={0.2,0.3,0.4,0.5};
@@ -103,12 +106,21 @@ class VandyJetDSTSkimmer : public SubsysReco
     float m_minJetPt{0.0};
     float m_vtx_cut{60.0};
 
+    bool m_doCalib{true};
+
     bool m_doSim{false};
     std::string m_sampleName{"Jet20GeV"};
     int sampleNumber{-999};
 
     int m_runnumber{0};
     double m_ZDC_coincidence{0.0};
+
+    int nRemSim{0};
+    int nRemNoSim{0};
+    int nRem_dT{0};
+
+    float m_vtx_z{-999};
+    float m_vtx_z_truth{-999};
 
     GlobalVertexMap *vtxMap{nullptr};
     TowerInfoContainer *towerInfoContainers[4]{nullptr};
@@ -129,6 +141,8 @@ class VandyJetDSTSkimmer : public SubsysReco
 
     std::vector<Tower> m_truthParticles;
     std::vector<JetInfo> m_truthJetInfo[4];
+
+    const std::vector<GlobalVertex::VTXTYPE> vtxTypes {GlobalVertex::MBD};
 
     TFile *outfile{nullptr};
     std::string outfileName{"VandyJetDST.root"};
