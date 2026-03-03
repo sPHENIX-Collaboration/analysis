@@ -19,5 +19,5 @@ inputDir=$3
 nSkip=$4
 
 echo running: runHFreco.sh $*
-root.exe -q -b Fun4All_HF_IS25.C\(${nEvents},\"${inputDST}\",\"${inputDir}\",${nSkip}\)
+root.exe -q -b Fun4All_HF_OO.C\(${nEvents},\"${inputDST}\",\"${inputDir}\",${nSkip}\)
 echo Script done

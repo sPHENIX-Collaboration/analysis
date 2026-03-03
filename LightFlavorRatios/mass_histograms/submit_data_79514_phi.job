@@ -1,0 +1,13 @@
+Universe           = vanilla
+Executable         = plot_mass.sh
+getenv          = True
+Output          = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/data/logs/phi_$(Process).out
+Error           = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/data/logs/phi_$(Process).err
+Log             = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/data/logs/phi_$(Process).log
+Initialdir      = .
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 8GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(infile) phi /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/data/phi_$(Process).root
+Queue infile matching /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/data/KK_reco/*.root

@@ -10,53 +10,60 @@ void plot_mass(std::string infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorPro
   TFile* f = TFile::Open(infile.c_str());
   TTree* t = (TTree*)f->Get("DecayTree");
 
-  HistogramInfo hmass = BinInfo::mass_bins.at(particle);
-  HistogramInfo hpt = BinInfo::pt_bins;
-  HistogramInfo hy = BinInfo::rapidity_bins;
-  HistogramInfo hphi = BinInfo::phi_bins;
-  HistogramInfo hntrk = BinInfo::ntrack_bins;
+  HistogramInfo massbins = BinInfo::mass_bins.at(particle);
+  HistogramInfo ptbins = BinInfo::final_pt_bins;
+  HistogramInfo ybins = BinInfo::final_rapidity_bins;
+  HistogramInfo phibins = BinInfo::final_phi_bins;
+  HistogramInfo ntrkbins = BinInfo::final_ntrack_bins;
 
-  std::string draw_param = particle+"_mass>>"+hmass.name+"("+hmass.bin_string()+")";
+  TH1F* mass = makeHistogram(massbins);
+  std::vector<TH1F*> mass_vspt = makeDifferentialHistograms(massbins,ptbins);
+  std::vector<TH1F*> mass_vsy = makeDifferentialHistograms(massbins,ybins);
+  std::vector<TH1F*> mass_vsphi = makeDifferentialHistograms(massbins,phibins);
+  std::vector<TH1F*> mass_vsntrk = makeDifferentialHistograms(massbins,ntrkbins);
+
+  std::string draw_param = particle+"_mass>>"+mass->GetName();
   std::cout << "draw_param: " << draw_param << std::endl;
 
-  std::string pt_drawparam = particle+"_pT:"+particle+"_mass>>"+hmass.name+hpt.name + 
-    "("+hmass.bin_string()+","+hpt.bin_string()+")";
+  t->Draw(draw_param.c_str(),massbins.cut_string.c_str(),"goff");
+  
+  for(int i=0; i<mass_vspt.size(); i++)
+  {
+    std::string pt_draw_param = particle+"_mass>>"+mass_vspt[i]->GetName();
+    std::string pt_cut_param = massbins.cut_string+(massbins.cut_string.empty()?"":"&&")+ptbins.get_bin_selection(particle+"_pT",i);
+    t->Draw(pt_draw_param.c_str(),pt_cut_param.c_str(),"goff");
+    std::cout << "pt entries, bin " << i << " is " << mass_vspt[i]->GetEntries() << std::endl;
+  }
 
-  std::cout << "draw_param: " << pt_drawparam << std::endl;
+  for(int i=0; i<mass_vsy.size(); i++)
+  {
+    std::string y_draw_param = particle+"_mass>>"+mass_vsy[i]->GetName();
+    std::string y_cut_param = massbins.cut_string+(massbins.cut_string.empty()?"":"&&")+ybins.get_bin_selection(particle+"_y",i);
+    t->Draw(y_draw_param.c_str(),y_cut_param.c_str(),"goff");
+  }
 
-  std::string ntrk_drawparam = "nTracksOfBC:"+particle+"_mass>>"+hmass.name+hntrk.name +
-    "("+hmass.bin_string()+","+hntrk.bin_string()+")";
+  for(int i=0; i<mass_vsphi.size(); i++)
+  {
+    std::string phi_draw_param = particle+"_mass>>"+mass_vsphi[i]->GetName();
+    std::string phi_cut_param = massbins.cut_string+(massbins.cut_string.empty()?"":"&&")+phibins.get_bin_selection(particle+"_phi",i);
+    t->Draw(phi_draw_param.c_str(),phi_cut_param.c_str(),"goff");
+  }
 
-  std::string y_drawparam = particle+"_rapidity:"+particle+"_mass>>"+hmass.name+hy.name +
-    "("+hmass.bin_string()+","+hy.bin_string()+")";
-
-  std::string phi_drawparam = particle+"_phi:"+particle+"_mass>>"+hmass.name+hphi.name + 
-    "("+hmass.bin_string()+","+hphi.bin_string()+")";
-
-  t->Draw(draw_param.c_str(),hmass.cut_string.c_str(),"");
-  TH1F* mass = (TH1F*)gPad->GetPrimitive(hmass.name.c_str());
-  mass->SetTitle(hmass.title.c_str());
-
-  t->Draw(pt_drawparam.c_str(),hmass.cut_string.c_str(),"COLZ");
-  TH2F* mass_vspt = (TH2F*)gPad->GetPrimitive((hmass.name+hpt.name).c_str());
-  mass_vspt->SetTitle((hmass.title+hpt.title).c_str());
-
-  t->Draw(ntrk_drawparam.c_str(),hmass.cut_string.c_str(),"COLZ");
-  TH2F* mass_vsntrk = (TH2F*)gPad->GetPrimitive((hmass.name+hntrk.name).c_str());
-  mass_vsntrk->SetTitle((hmass.title+hntrk.title).c_str());
-
-  t->Draw(y_drawparam.c_str(),hmass.cut_string.c_str(),"COLZ");
-  TH2F* mass_vsy = (TH2F*)gPad->GetPrimitive((hmass.name+hy.name).c_str());
-  mass_vsy->SetTitle((hmass.title+hy.title).c_str());
-
-  t->Draw(phi_drawparam.c_str(),hmass.cut_string.c_str(),"COLZ");
-  TH2F* mass_vsphi = (TH2F*)gPad->GetPrimitive((hmass.name+hphi.name).c_str());
-  mass_vsphi->SetTitle((hmass.title+hphi.title).c_str());
+  for(int i=0; i<mass_vsntrk.size(); i++)
+  {
+    std::string ntrk_draw_param = particle+"_mass>>"+mass_vsntrk[i]->GetName();
+    std::string ntrk_cut_param = massbins.cut_string+(massbins.cut_string.empty()?"":"&&")+ntrkbins.get_bin_selection("nTracksOfBC",i);
+    t->Draw(ntrk_draw_param.c_str(),ntrk_cut_param.c_str(),"goff");
+  }
 
   TFile* outf = new TFile(outfile.c_str(),"RECREATE");
   mass->Write();
-  mass_vspt->Write();
-  mass_vsntrk->Write();
-  mass_vsy->Write();
-  mass_vsphi->Write();
+  //mass_vspt.Write();
+  //mass_vsntrk.Write();
+  //mass_vsy.Write();
+  //mass_vsphi.Write();
+  for(TH1F* hpt : mass_vspt) hpt->Write();
+  for(TH1F* hntrk : mass_vsntrk) hntrk->Write();
+  for(TH1F* hy : mass_vsy) hy->Write();
+  for(TH1F* hphi : mass_vsphi) hphi->Write();
 }

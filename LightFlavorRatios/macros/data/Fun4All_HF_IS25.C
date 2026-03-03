@@ -26,10 +26,12 @@
 
 #include <stdio.h>
 
-#include "HF_selections_QM25.C"
+#include "HF_selections.C"
 
 #include <trackingdiagnostics/TrackResiduals.h>
 #include <trackingdiagnostics/TrkrNtuplizer.h>
+
+//#include <dedxfitter/dEdxFitter.h>
 
 using namespace HeavyFlavorReco;
 
@@ -37,6 +39,8 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libphool.so)
 R__LOAD_LIBRARY(libcdbobjects.so)
+//R__LOAD_LIBRARY(libdedxfitter.so)
+
 //R__LOAD_LIBRARY(libhf_trigger_data_to_json.so)
 
 void Fun4All_HF_IS25(
@@ -163,6 +167,11 @@ void Fun4All_HF_IS25(
     se->registerSubsystem(eval);
   }
 
+  //dEdxFitter* fitter = new dEdxFitter("dEdxFitter");
+  //fitter->set_filename((output_dir + "/dedx_" + nice_runnumber.str() + "_" + nice_segment.str() + trailer).c_str());
+  //fitter->Verbosity(1);
+  //se->registerSubsystem(fitter);
+
   se->skip(nSkip);
   se->run(nEvents);
   
@@ -178,7 +187,6 @@ void Fun4All_HF_IS25(
   se->PrintTimer();
 
   if (runTrkrNtuplizer) end_kfparticle(NTP_output_reco_file, nTuplizer_dir);
-
   if (run_pipi_reco) end_kfparticle(pipi_output_reco_file, pipi_output_dir);
   if (run_ppi_reco) end_kfparticle(ppi_output_reco_file, ppi_output_dir);
   if (run_KK_reco) end_kfparticle(KK_output_reco_file, KK_output_dir);

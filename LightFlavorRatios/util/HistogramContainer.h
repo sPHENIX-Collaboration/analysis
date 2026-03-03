@@ -23,27 +23,14 @@ struct HistogramContainer
 
   std::string legend_name;
 
-  // a bit of home-grown reflection, for ease of plot-making
   std::map<std::string,TH1F*> spectra;
-  std::map<std::string,TH2F*> correlations;
 
   void InitMaps()
   {
-    spectra = {
-      { "pt", h_pt },
-      { "y", h_y },
-      { "phi", h_phi },
-      { "ntracks", h_ntracks }
-    };
-
-    correlations = {
-      { "pt_y", h_pt_y },
-      { "pt_phi", h_pt_phi },
-      { "pt_ntracks", h_pt_ntracks },
-      { "y_phi", h_y_phi },
-      { "y_ntracks", h_y_ntracks },
-      { "phi_ntracks", h_phi_ntracks }
-    };
+    spectra.insert(std::make_pair("pt",h_pt));
+    spectra.insert(std::make_pair("y",h_y));
+    spectra.insert(std::make_pair("phi",h_phi));
+    spectra.insert(std::make_pair("ntracks",h_ntracks));
   }
 
   HistogramContainer(std::string basename, std::string basetitle)
@@ -72,6 +59,8 @@ struct HistogramContainer
     SetStyle();
   }
 
+
+
   void Load(TFile* f, std::string basename)
   {
     std::string ptname = BinInfo::pt_bins.name;
@@ -84,12 +73,12 @@ struct HistogramContainer
     h_phi = (TH1F*)f->Get((basename+phiname).c_str());
     h_ntracks = (TH1F*)f->Get((basename+ntrkname).c_str());
 
-    h_pt_y = (TH2F*)f->Get((basename+ptname+yname).c_str());
-    h_pt_phi = (TH2F*)f->Get((basename+ptname+phiname).c_str());
-    h_pt_ntracks = (TH2F*)f->Get((basename+ptname+ntrkname).c_str());
-    h_y_phi = (TH2F*)f->Get((basename+yname+phiname).c_str());
-    h_y_ntracks = (TH2F*)f->Get((basename+yname+ntrkname).c_str());
-    h_phi_ntracks = (TH2F*)f->Get((basename+phiname+ntrkname).c_str());
+    h_pt_y = (TH2F*)f->Get((basename+ptname+"_vs"+yname).c_str());
+    h_pt_phi = (TH2F*)f->Get((basename+ptname+"_vs"+phiname).c_str());
+    h_pt_ntracks = (TH2F*)f->Get((basename+ptname+"_vs"+ntrkname).c_str());
+    h_y_phi = (TH2F*)f->Get((basename+yname+"_vs"+phiname).c_str());
+    h_y_ntracks = (TH2F*)f->Get((basename+yname+"_vs"+ntrkname).c_str());
+    h_phi_ntracks = (TH2F*)f->Get((basename+phiname+"_vs"+ntrkname).c_str());
   }
 
   void SetColor(Color_t color)

@@ -59,6 +59,13 @@ float p_from_rate(float colrate, float beamrate, int n)
   float den = factorial(n);
   return num/den;
 }
+
+float p_from_truerate(float truerate, float beamrate, int n)
+{
+  float ratio = truerate/beamrate;
+  return exp(-ratio)*pow(ratio,n)/factorial(n);
+}
+
 float get_true_rate(float colrate, float beamrate)
 {
   float sum = 0;
@@ -83,8 +90,11 @@ int get_rate_map()
   float p_of_n[ncount];
   const int nrate = 400000;
   float mbd_rate[nrate];
+  float mbd_r2[nrate];
   float col_rate[nrate];
   float true_rate[nrate];
+  float true_rate_sparse[nrate/100];
+  float mbd_rate_sparse[nrate/100];
   for(int i=0; i<ncount; ++i)
     {
       p_mbd_given_ncol[i] = get_prob_given_ncol(i+1, mbdprob);
@@ -94,13 +104,23 @@ int get_rate_map()
     {
       col_rate[r] = 10*r;
       float total = 0;
+      float total2 = 0;
+      true_rate[r] = get_true_rate(col_rate[r],beamrate);
       for(int i=0; i<ncount; ++i)
 	{
 	  total += p_mbd_given_ncol[i]*p_from_rate(col_rate[r], beamrate, i+1);
+	  total2 += p_mbd_given_ncol[i]*p_from_truerate(true_rate[r], beamrate, i+1);
 	}
       if(total > 0.5) cout << total << endl;
       mbd_rate[r] = total*beamrate;
-      true_rate[r] = get_true_rate(col_rate[r],beamrate);
+      mbd_r2[r] = total*beamrate;
+      if(r%100==0)
+	{
+	  mbd_rate_sparse[r/100]=mbd_rate[r];
+	  true_rate_sparse[r/100]=true_rate[r];
+	  cout << "total p: " << total - total2 << endl;
+	  cout << "rate diff [Hz]: "  << mbd_rate[r] - mbd_r2[r] << endl;
+	}
     }
   TGraph* g = new TGraph(nrate, mbd_rate, col_rate);
   g->SetName("mbdtogr1");
@@ -110,13 +130,14 @@ int get_rate_map()
   gr->SetName("mbdtotrue");
   gr->GetHistogram()->GetXaxis()->SetTitle("R_{MBD} [Hz]");
   gr->GetHistogram()->GetYaxis()->SetTitle("R_{true} [Hz]");
-  TH1D* temphist = new TH1D("temphist",";R_{MBD} [Hz];R_{#geq1} or R_{true} [Hz]",1,0,6000e3);
+  TGraph* sparse = new TGraph(nrate/100,mbd_rate_sparse,true_rate_sparse);
+  TH1D* temphist = new TH1D("temphist",";R_{MBD} [Hz];R_{true} [Hz]",1,0,3000e3);
   temphist->GetYaxis()->SetRangeUser(0,6000e3);
-  temphist->GetXaxis()->SetRangeUser(0,6000e3);
+  temphist->GetXaxis()->SetRangeUser(0,3000e3);
   
-  g->SetMarkerStyle(20);
-  g->SetMarkerSize(1);
-  g->SetMarkerColor(kRed+2);
+  sparse->SetMarkerStyle(20);
+  sparse->SetMarkerSize(1);
+  sparse->SetMarkerColor(kRed+2);
   gr->SetMarkerStyle(20);
   gr->SetMarkerSize(1);
   gr->SetMarkerColor(kBlue+2);
@@ -124,8 +145,8 @@ int get_rate_map()
   c->SetLeftMargin(0.15);
   c->SetBottomMargin(0.15);
   temphist->Draw();
-  g->Draw("SAME P");
-  gr->Draw("SAME P");
+  sparse->Draw("SAME P");
+  //gr->Draw("SAME P");
   sphenixtext();
   TLegend* leg = new TLegend(0.5,0.2,0.8,0.3);
   leg->SetFillStyle(0);
@@ -133,11 +154,12 @@ int get_rate_map()
   leg->SetBorderSize(0);
   leg->AddEntry(g,"R_{#geq1}","p");
   leg->AddEntry(gr,"R_{true}","p");
-  leg->Draw();
+  //leg->Draw();
   c->SaveAs("ratevsrate.pdf");
   TFile* outf = new TFile("mbd_to_col_map.root","RECREATE");
   outf->cd();
   g->Write();
+  gr->Write();
   outf->Close();
   return 0;
 }
