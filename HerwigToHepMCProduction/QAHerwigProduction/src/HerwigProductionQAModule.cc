@@ -475,13 +475,13 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 					{
 						auto particle=(*iter);
 						if(!particle) continue;
+						if( abs(particle->pdg_id()) == 22)
+						{
+							photons.push_back(particle);
+						}
 						if(particle->status()==1 && !particle->end_vertex()) //picks up final state particles only 
 						{
 							event_particles.push_back(particle);
-							if( particle->pdg_id() == 22)
-							{
-								photons.push_back(particle);
-							}
 						}
 					}
 				}
@@ -494,6 +494,7 @@ int HerwigProductionQAModule::process_pythia_event(PHCompositeNode* topNode){
 	auto js5=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r05");
 	auto js6=findNode::getClass<JetContainerv1>(topNode, "AntiKt_Truth_r06");
 	std::vector<JetContainerv1*> jts {js2, js3, js4, js5, js6};
+	if(photons.size() <= 1) return Fun4AllReturnCodes::EVENT_OK;
 	for(int i=0; i<(int)jts.size(); i++)
 	{
 		auto js=jts.at(i);
@@ -573,7 +574,7 @@ int HerwigProductionQAModule::runAnalysisPhotonJets(std::vector<std::vector<Jet*
 
 	int n_frag 	= 0;
 	int n_direct	= 0;
-
+	if(photons.size() <= 1 ) return Fun4AllReturnCodes::EVENT_OK;
 	for(auto ph:photons)
 	{
 		auto p=ph->momentum();

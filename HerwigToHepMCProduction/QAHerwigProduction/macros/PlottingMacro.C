@@ -34,14 +34,25 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 {
 	SetsPhenixStyle();
 
-	TCanvas* cAll	= new TCanvas("all_canvas", "all_Jets");
-	TCanvas* cLead	= new TCanvas("lead_canvas", "Lead_jets");
+	TCanvas* cAll		= new TCanvas("all_canvas", "all_Jets");
+	TCanvas* cLead		= new TCanvas("lead_canvas", "Lead_jets");
+	
+	TCanvas* cAllPythia	= new TCanvas("all_Pythia_canvas", "all_Pythia_Jets");
+	TCanvas* cLeadPythia	= new TCanvas("lead_Pythia_canvas", "Lead_Pythia_jets");
+	
+	TCanvas* cAllHerwig	= new TCanvas("all_Herwig_canvas", "all_Herwig_Jets");
+	TCanvas* cLeadHerwig	= new TCanvas("lead_Herwig_canvas", "Lead_Herwig_jets");
 
 	THStack* herwig_all	= new THStack("h_all", "h_all");
 	THStack* herwig_lead	= new THStack("h_lead", "h_lead");
 	THStack* pythia_all	= new THStack("p_all", "p_all");
 	THStack* pythia_lead	= new THStack("p_lead", "p_lead");
 
+	THStack* herwig_solo_all	= new THStack("h_solo_all", "h_solo_all");
+	THStack* herwig_solo_lead	= new THStack("h_solo_lead", "h_solo_lead");
+	THStack* pythia_solo_all	= new THStack("p_solo_all", "p_solo_all");
+	THStack* pythia_solo_lead	= new THStack("p_solo_lead", "p_solo_lead");
+	
 	THStack* herwig_ratio 	= new THStack("h_ratio", "h_ratio");
 	THStack* h_lead_ratio 	= new THStack("h_lead_ratio", "h_lead_ratio");
 	THStack* pythia_ratio 	= new THStack("p_ratio", "p_ratio");
@@ -49,6 +60,7 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 	
 	std::vector<TH1F*>* herwig_pt 	= new std::vector<TH1F*>();
 	std::vector<TH1F*>* herwig_l_pt	= new std::vector<TH1F*>();
+	
 	std::vector<TH1F*>* pythia_pt 	= new std::vector<TH1F*>();
 	std::vector<TH1F*>* pythia_l_pt	= new std::vector<TH1F*>();
 
@@ -66,8 +78,35 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 	co->SetLegend(l_data_all);
 	co->SetLegend(l_data_jet);
 
+	TLegend* l_pythia_head_all 	= new TLegend(0.7, 0.7, 1, 1);
+	TLegend* l_pythia_head_jet 	= new TLegend(0.7, 0.7, 1, 1);
+	TLegend* l_pythia_data_all 	= new TLegend(0.5, 0.4, 1, 0.7);
+	TLegend* l_pythia_data_jet 	= new TLegend(0.5, 0.4, 1, 0.7);
+	
+	co->SetsPhenixHeaderLegend(l_pythia_head_all, "none");
+	co->SetsPhenixHeaderLegend(l_pythia_head_jet, "none");
+	co->SetLegend(l_pythia_data_all);
+	co->SetLegend(l_pythia_data_jet);
+
+	TLegend* l_herwig_head_all 	= new TLegend(0.7, 0.7, 1, 1);
+	TLegend* l_herwig_head_jet 	= new TLegend(0.7, 0.7, 1, 1);
+	TLegend* l_herwig_data_all 	= new TLegend(0.5, 0.4, 1, 0.7);
+	TLegend* l_herwig_data_jet 	= new TLegend(0.5, 0.4, 1, 0.7);
+	
+	co->SetsPhenixHeaderLegend(l_herwig_head_all, "none");
+	co->SetsPhenixHeaderLegend(l_herwig_head_jet, "none");
+	co->SetLegend(l_herwig_data_all);
+	co->SetLegend(l_herwig_data_jet);
+
 	l_head_all->AddEntry("", "All Jets", "");
 	l_head_jet->AddEntry("", "Lead Jets", "");
+	
+	l_pythia_head_all->AddEntry("", "All Pythia Jets", "");
+	l_pythia_head_jet->AddEntry("", "Lead Pythia Jets", "");
+	
+	l_herwig_head_all->AddEntry("", "All Herwig Jets", "");
+	l_herwig_head_jet->AddEntry("", "Lead Herwig Jets", "");
+	
 	l_data_all->SetNColumns(3);
 	l_data_jet->SetNColumns(3);
 	
@@ -90,18 +129,22 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 		TH1F* p_lead 	= (TH1F*)d_pythia->Get("h_lead_jet_r04_pt");	
 
 		h_all->SetMarkerStyle(20+i);
-		if(i==5) h_all->SetMarkerStyle(33);
+		if(i==4) h_all->SetMarkerStyle(29);
+		else if(i==5) h_all->SetMarkerStyle(33);
 		else if(i==6) h_all->SetMarkerStyle(34);
 
 		h_lead->SetMarkerStyle(20+i);
-		if(i==5) h_lead->SetMarkerStyle(33);
-		else if(i==6) h_lead->SetMarkerStyle(34);
+		if(i==4) h_lead->SetMarkerStyle(29);
+		else if(i==5) h_lead->SetMarkerStyle(33);
+		else if(i==6) h_lead->SetMarkerStyle(35);
 		
 		p_all->SetMarkerStyle(i+24);
 		p_all->SetMarkerSize(2);
-		
+		if(i==6) p_all->SetMarkerStyle(30);
+
 		p_lead->SetMarkerStyle(i+24);
 		p_lead->SetMarkerSize(2);
+		if(i==6) p_lead->SetMarkerStyle(30);
 		
 		herwig_pt->push_back(h_all);
 		herwig_l_pt->push_back(h_lead);
@@ -113,17 +156,29 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 		pythia_all->Add(p_all);
 		pythia_lead->Add(p_lead);	
 		
+		herwig_solo_all->Add(h_all);
+		herwig_solo_lead->Add(h_lead);	
+		pythia_solo_all->Add(p_all);
+		pythia_solo_lead->Add(p_lead);	
+		
 		l_data_all->AddEntry(h_all, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
 		l_data_jet->AddEntry(h_lead, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
+		
+		l_herwig_data_all->AddEntry(h_all, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
+		l_herwig_data_jet->AddEntry(h_lead, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
+		
 		l_data_all->AddEntry(p_all, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
 		l_data_jet->AddEntry(p_lead, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
+		
+		l_pythia_data_all->AddEntry(p_all, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
+		l_pythia_data_jet->AddEntry(p_lead, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
 		
 		cAll->cd();
 		All_pads->at(0)->cd();
 		auto ratio_all = co->GetRatioPlot(h_all, p_all);
 		auto ratio_lead = co->GetRatioPlot(h_lead, p_lead);
-		ratio_all->SetMarkerStyle(2*i+37);
-		ratio_lead->SetMarkerStyle(2*i+37);
+		ratio_all->SetMarkerStyle(2*i+39);
+		ratio_lead->SetMarkerStyle(2*i+39);
 		ratio_all->Draw("same plc pmc");
 		l_data_all->AddEntry(ratio_all, "Herwig / Pythia", "pl");
 		cLead->cd();
@@ -132,43 +187,63 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 		l_data_jet->AddEntry(ratio_lead, "Herwig / Pythia", "pl");
 
 	}
+	cAllPythia->cd();
+	pythia_solo_all->Draw("same plc plc nostack");
+	l_pythia_data_all->Draw();
+	l_pythia_head_all->Draw();
+	
+	cAllHerwig->cd();
+	herwig_solo_all->Draw("same plc plc nostack");
+	l_herwig_data_all->Draw();
+	l_herwig_head_all->Draw();
+	
 	cAll->cd();
 	All_pads->at(1)->cd();
 	herwig_all->Draw("pmc plc nostack same");
 	pythia_all->Draw("pmc plc nostack same");
+	l_data_all->Draw();
+	l_head_all->Draw();
 	TH1F* ha = (TH1F*) herwig_all->GetHistogram();
 	ha->Draw("pmc plc same");
 	TH1F* pa = (TH1F*) pythia_all->GetHistogram();
 	pa->Draw("pmc plc same");
-	l_data_all->AddEntry(ha, "Combined Herwig", "pc");
-	l_data_all->AddEntry(pa, "Combined Pythia", "pc");
-	l_data_all->Draw();
-	l_head_all->Draw();
+	//l_data_all->AddEntry(ha, "Combined Herwig", "pc");
+	//l_data_all->AddEntry(pa, "Combined Pythia", "pc");
 	All_pads->at(0)->cd();
 	TH1F* ra = co->GetRatioPlot(ha, pa);
 	ra->SetMarkerStyle(2*((int)fs->size())+37);
-	ra->Draw("plc pmc same");
+	ra->Draw("plc pmc");
 	l_data_all->AddEntry(ra, "Herwig / Pythia ", "pl");
 	cAll->cd();
 	All_pads->at(0)->Draw();
 	All_pads->at(1)->Draw();
 	
+	cLeadPythia->cd();
+	pythia_solo_lead->Draw("same plc plc nostack");
+	l_pythia_data_jet->Draw();
+	l_pythia_head_jet->Draw();
+	
+	cLeadHerwig->cd();
+	herwig_solo_lead->Draw("same plc plc nostack");
+	l_herwig_data_jet->Draw();
+	l_herwig_head_jet->Draw();
+	
 	cLead->cd();
 	Lead_pads->at(1)->cd();
 	herwig_lead->Draw("pmc plc nostack");
 	pythia_lead->Draw("pmc plcsame nostack");
+	l_data_jet->Draw();
+	l_head_jet->Draw();
 	TH1F* hj = (TH1F*) herwig_lead->GetHistogram();
 	hj->Draw("pmc plc same");
 	TH1F* pj = (TH1F*) pythia_lead->GetHistogram();
-	pa->Draw("pmc plc same");
-	l_data_jet->AddEntry(hj, "Combined Herwig", "pc");
-	l_data_jet->AddEntry(pj, "Combined Pythia", "pc");
-	l_data_jet->Draw();
-	l_head_jet->Draw();
+	pj->Draw("pmc plc same");
+	//l_data_jet->AddEntry(hj, "Combined Herwig", "pc");
+	//l_data_jet->AddEntry(pj, "Combined Pythia", "pc");
 	Lead_pads->at(0)->cd();
 	TH1F* rj = co->GetRatioPlot(hj, pj);
 	rj->SetMarkerStyle(2*((int)fs->size())+37);
-	rj->Draw("plc pmc same");
+	rj->Draw("plc pmc");
 	l_data_jet->AddEntry(rj, "Herwig / Pythia ", "pl");
 	cLead->cd();
 	Lead_pads->at(0)->Draw();
