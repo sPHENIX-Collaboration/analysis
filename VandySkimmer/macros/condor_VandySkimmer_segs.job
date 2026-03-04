@@ -1,0 +1,11 @@
+Universe        = vanilla
+Executable      = run_VandySkimmer_segs.sh
+notification    = Never
+Output          = /sphenix/user/bkimelman/logs/VandySkimmer/VandySkimmer_run$(runnumber)_$(jobOf25)_$(clusterId).$(process).txt
+Error           = /sphenix/user/bkimelman/logs/VandySkimmer/VandySkimmer_run$(runnumber)_$(jobOf25)_$(clusterId).$(process).err
+Log             = /tmp/condor_bkimelman_$(clusterId).$(process).log
+Initialdir      = /sphenix/u/bkimelman/analysis/VandySkimmer/macros
+Arguments       = $(runnumber) $(jobOf25) /sphenix/tg/tg01/jets/bkimelman/VandyDSTs_Mar3_2026/
+request_memory  = 5000MB
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue runnumber, jobOf25 from queue_all_segs_jobOf25.list

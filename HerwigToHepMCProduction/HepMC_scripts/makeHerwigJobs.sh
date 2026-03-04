@@ -1,8 +1,8 @@
 #! /bin/bash
 verbose_mode=false
 events=1000000
-nfiles=1000
-density=10000 #events / file
+nfiles=10000
+density=1000 #events / file
 dosubmit=false
 triggertype="MB" 
 triggervalue="0"
@@ -64,7 +64,8 @@ set_config()
 		configfile="${configdir}/Herwig_MB.run"
 		triggervalue="5"
 	elif [ "$triggertype" = "Jet12" ]; then
-		configfile="${configdir}/Herwig_Jet12.run"
+		#configfile="${configdir}/Herwig_Jet12.run"
+		configfile="${configdir}/Herwig_MB.run"
 		triggervalue="12"
 	elif [ "$triggertype" = "Jet20" ]; then
 		configfile="${configdir}/Herwig_Jet20.run"
@@ -133,6 +134,10 @@ handle_options(){
 			if has_argument $@; then 
 				density=$(extract_argument $@)
 				nfiles=$(( events / density ))
+				if [ "$verbose_mode" = true ]; then
+					echo "Run " $events " events"
+					echo " This will generate " $nfiles " output hepmc files"
+				fi
 			fi
 			shift
 			shift
@@ -162,6 +167,12 @@ handle_options(){
 					echo "Trigger type: " $triggertype 
 					echo "Config file: " $configfile
 					echo "Config dir: " $configdir
+					if [ $triggervalue -ge 1 ]; then 
+						echo "Jet Trigger at ${triggervalue} GeV"
+					fi
+					if [ $photontrigger -ge 1 ]; then 
+						echo "Photon Trigger at ${photontrigger} GeV"
+					fi
 				fi
 			fi
 			shift
@@ -221,8 +232,12 @@ handle_options "$@"
 if [ ! -d "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype ]; then 
 	mkdir -p "/sphenix/tg/tg01/jets/sgross/HerwigHepMC/Herwig_"$triggertype; 
 fi 
+if [ "$verbose_mode" = true ]; then
+	echo "Generating " $events " events"
+	echo " This will generate " $nfiles " output hepmc files with ${density} events each"
+fi
 make_condor_jobs 
 if [ "$dosubmit" = true ]; then
-	submit_condor_jobs
+submit_condor_jobs
 fi
 
