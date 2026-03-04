@@ -23,7 +23,8 @@ class HerwigQAPlottingConfig
 		std::vector<TPad*>* AddPads(TCanvas*);
 		std::vector<TPad*>* Canvas2DDivide(TCanvas*);
 		void SetLegend(TLegend*);
-		void SetsPhenixHeaderLegend(TLegend*, std::string);
+		void SetsPhenixHeaderLegend(TLegend*, std::string, std::string jettype="null");
+		void SetsPhenixHeaderLegend(TLegend*, bool, std::string jettype="null");
 		TH1F* GetRatioPlot(TH1F*, TH1F*);
 		TH1I* GetRatioPlot(TH1I*, TH1I*);
 		TH2F* GetRatioPlot(TH2F*, TH2F*);
