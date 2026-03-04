@@ -1,4 +1,34 @@
-int get_luminosity_182630(string rnlist, int zsel, int clt)
+bool get_is15_mrad(int runnumber)
+{
+
+
+  TSQLServer *db = TSQLServer::Connect("pgsql://sphnxdbreplica:5432/spinDB","phnxrc","");
+  if(!db)
+    {
+      cout << "FAILED TO CONNECT TO DB!" << endl;
+      throw exception();
+    }
+  TSQLRow *row;
+  TSQLResult *res;
+  char sql[1000];
+
+
+
+  sprintf(sql, "select crossingangle, runnumber from spin where runnumber = %d;", runnumber);
+  res = db->Query(sql);
+  if(!res) return -1;
+  row = res->Next();
+  if(!row) return -1;
+
+
+
+  string xing(row->GetField(0));
+  float xingangle = stof(xing);
+  if(db) delete db;
+  return fabs(xingangle)>0.75;
+}
+
+int get_luminosity_182630(string rnlist, int zsel, int clt, int checkxing = 0)
 {
   gStyle->SetOptStat(0);
 
@@ -27,6 +57,9 @@ int get_luminosity_182630(string rnlist, int zsel, int clt)
     {
       TFile* file;
       file = TFile::Open(("output/added_509/triggeroutput_nblair_"+rnstr+(clt?"_clt":"")+".root").c_str(),"READ");
+      if(checkxing==2 && !get_is15_mrad(stoi(rnstr))) continue;
+      if(checkxing==1 && get_is15_mrad(stoi(rnstr))) continue;
+	
       if(!file)
 	{
 	  cerr << "RN " << rnstr << " not found! Continuing." << endl;

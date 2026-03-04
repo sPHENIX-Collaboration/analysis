@@ -72,7 +72,7 @@ void HerwigQAPlottingConfig::SetLegend(TLegend* l1)
 	return;
 }
 
-void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string triggerinfo) 
+void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string triggerinfo, std::string jettype/*="null"*/) 
 {
 	SetLegend(l1);
 	l1->AddEntry("", "#bf{#it{sPHENIX}} Internal", "");
@@ -81,6 +81,20 @@ void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, std::string tri
  	l1->AddEntry("", "Reference: fully produced Pythia8", "");
 	if (triggerinfo.find("none")== std::string::npos) 
 		l1->AddEntry("", Form("%s, k_{T}^{min} [#hat{p}_{T}] = %.3g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
+	l1->SetTextSize(0.05f);
+	if(jettype.find("null") != std::string::npos)  l1->AddEntry("", jettype.c_str(), "");
+	return;
+}
+void HerwigQAPlottingConfig::SetsPhenixHeaderLegend(TLegend* l1, bool isHerwig, std::string jettype/*="null"*/) 
+{
+	SetLegend(l1);
+	l1->AddEntry("", "#bf{#it{sPHENIX}} Internal", "");
+	l1->AddEntry("", "Herwig HepMC Production QA", "");
+	if(isHerwig) l1->AddEntry("", "Herwig7.2", "");
+	else l1->AddEntry("", "Fully produced Pythia8", "");
+//	if (triggerinfo.find("none")== std::string::npos) 
+//		l1->AddEntry("", Form("%s, k_{T}^{min} [#hat{p}_{T}] = %.3g GeV", triggerinfo.c_str(), lookupTrigger(triggerinfo)), "");
+	if(jettype.find("null") != std::string::npos)  l1->AddEntry("", jettype.c_str(), "");
 	l1->SetTextSize(0.05f);
 	return;
 }
