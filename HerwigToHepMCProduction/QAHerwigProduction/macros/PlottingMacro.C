@@ -330,7 +330,7 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 	for(int i = 0; i<(int) Lead.size(); i++) Lead.at(i)->Print("~/Herwig_comb_pt_QA.pdf");
 	for(int i = 0; i< 2; i++)
 	       	for(int j = 0; j < 2; j++)
-			RatioCanvi->at(i)->at(j)->Print("~/Herwig_comb_pt_QA.pdf")
+			RatioCanvi.at(i)->at(j)->Print("~/Herwig_comb_pt_QA.pdf");
 	All.at(0)->Print("~/Herwig_comb_pt_QA.pdf)");
 
 
