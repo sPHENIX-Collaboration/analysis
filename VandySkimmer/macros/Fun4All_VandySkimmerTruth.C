@@ -38,7 +38,7 @@ R__LOAD_LIBRARY(libVandySkimmer.so)
 R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
 
-void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDSTlist, const std::string g4HitsDSTlist, const std::string globalDSTlist, const std::string outDir = "/sphenix/tg/tg01/jets/bkimelman/wEEC/", const std::string nfiles="25")
+void Fun4All_VandySkimmerTruth(const std::string caloDSTlist, const std::string jetDSTlist, const std::string g4HitsDSTlist, const std::string globalDSTlist, const std::string outDir = "/sphenix/tg/tg01/jets/bkimelman/wEEC/", const std::string nfiles="25")
 {
 
   bool doSim = true;
@@ -49,9 +49,12 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
 
   int runnumber = 0;
   int seg = 0;
-  int n = std::stoi(nfiles);
+  int n=0;
+  n = std::stoi(nfiles);
+
   std::ifstream ifs(caloDSTlist);
   std::string filepath;
+  std::getline(ifs,filepath);
   std::pair<int,int> runseg = Fun4AllUtils::GetRunSegment(filepath);
   runnumber = runseg.first;
   seg = runseg.second;
@@ -71,7 +74,7 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
   Fun4AllInputManager *inGlobal = new Fun4AllDstInputManager("InputManagerGlobal");
   inCalo->AddListFile(globalDSTlist);
   se->registerInputManager(inGlobal);
-
+  
   auto rc = recoConsts::instance();
   rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
   rc->set_uint64Flag("TIMESTAMP", runnumber);
@@ -98,7 +101,7 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
   TowerJetInput* ohtji = new TowerJetInput(Jet::HCALIN_TOWERINFO,"TOWERINFO_CALIB");
   TowerJetInput* ihtji = new TowerJetInput(Jet::HCALOUT_TOWERINFO,"TOWERINFO_CALIB");
   emtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
-  zzohtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
+  ohtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
   ihtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
   towerjetreco->add_input(emtji);
   towerjetreco->add_input(ohtji);

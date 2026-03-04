@@ -46,7 +46,7 @@ make_condor_jobs()
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/run_VandySkimmerTruth.sh" >> $condor_file
-		echo "${blanklines[2]}"$calo $truth $jet $global $outDir $MYINSTALL>> $condor_file
+		echo "${blanklines[2]}"$calo $truth $jet $global $outDir $MYINSTALL $(pwd)>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file
