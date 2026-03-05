@@ -30,10 +30,206 @@ struct particle_colls
 	TH1I* n;
 	TH2F* phi_eta;
 };
+void GetSampleSpectra(
+		std::string Generator="Herwig",
+	       	std::vector<TH1F*>* r04_all = new std::vector<TH1F*> {}, 
+		std::vector<TH1F*>* r04_lead = new std::vector<TH1F*> {},
+		std::vector<TFile*>* fs	= new std::vector<TFile*> {}
+		)
+{
+	bool isHerwig = false;
+	if(Generator.find("erwig") != std::string::npos) isHerwig=true;
+	for(int i = 0; i<(int) fs->size(); i++)
+	{
+		fs->at(i)->cd();
+		TDirectory* d_gen	= (TDirectory*) fs->at(i)->GetDirectory(std::format("{}_jets", Generator).c_str());
+		
+		TH1F* h_all 	= (TH1F*)d_gen->Get("h_jet_r04_pt");	
+		TH1F* h_lead 	= (TH1F*)d_gen->Get("h_lead_jet_r04_pt");	
+		if(isHerwig){
+			h_all->SetMarkerStyle(20+i);
+			if(i==4) h_all->SetMarkerStyle(29);
+			else if(i==5) h_all->SetMarkerStyle(33);
+			else if(i==6) h_all->SetMarkerStyle(34);
+			else if (i==7) h_all->SetMarkerStyle(37);
+
+			h_lead->SetMarkerStyle(20+i);
+			if(i==4) h_lead->SetMarkerStyle(29);
+			else if(i==5) h_lead->SetMarkerStyle(33);
+			else if(i==6) h_lead->SetMarkerStyle(35);
+			else if (i==7) h_lead->SetMarkerStyle(37);
+		}
+		else{	
+			h_all->SetMarkerStyle(i+24);
+			h_all->SetMarkerSize(2);
+			if(i==6) h_all->SetMarkerStyle(30);
+			if(i==7) h_all->SetMarkerStyle(38);
+
+			h_lead->SetMarkerStyle(i+24);
+			h_lead->SetMarkerSize(2);
+			if(i==6) h_lead->SetMarkerStyle(30);
+			if(i==7) h_lead->SetMarkerStyle(38);
+		}	
+		r04_all->push_back(h_all);
+		r04_lead->push_back(h_lead);
+	}
+	return;
+}
+void SampleRatios(
+		std::vector<TH1F*>* base, std::vector<TH1F*>* ratios, TH1F* total, 
+		TCanvas* ratios_canvi, TLegend* head_leg, TLegend* data_leg, 
+		HerwigQAPlottingConfig* co, 
+		std::string Generator, std::vector<std::string> cut
+)
+{
+	std::vector<TPad*>* pads = co->AddPads(ratios_canvi);
+	for(int i = 1; i<(int)base->size(); i++)
+	{
+		if ( i > 0 ) 
+		{
+			pads->at(1)->cd();
+			TH1F* last = (TH1F*)base->at(i-1)->Clone();
+			TH1F* prev_ratio = co->GetRatioPlot(base->at(i), last);
+			data_leg->AddEntry( prev_ratio, std::format("{} {} / {}", Generator, cut.at(i), cut.at(i-1)).c_str(), "pl");
+			ratios->push_back(prev_ratio);
+			prev_ratio->Draw("pmc plc same");
+			prev_ratio->SetYTitle(" Sample / Previous Sample " );
+			prev_ratio->GetYaxis()->SetRangeUser(0, 4);
+			pads->at(0)->cd();
+		}
+			TH1F* total_ratio = co->GetRatioPlot(base->at(i), total);
+			total_ratio->SetMarkerStyle(2*i+39);
+			data_leg->AddEntry( total_ratio, std::format("{} {} / Combined Spectrum ", Generator, cut.at(i)).c_str(), "pl");
+			total_ratio->Draw("pmc plc same");
+			total_ratio->SetYTitle(" Sample / Combined " );
+			total_ratio->GetYaxis()->SetRangeUser(0, 3);
+	}
+	pads->at(1)->cd();
+	data_leg->Draw();
+	head_leg->Draw();
+	ratios_canvi->cd();
+	pads->at(1)->Draw();
+	pads->at(0)->Draw();
+	return;
+		       		
+
+}
+void PlotThePlots(
+		std::vector<TH1F*>* herwig_all, 
+	       	std::vector<TH1F*>* pythia_all,  
+		std::array<TCanvas*, 3>* AllCanvi,
+	       	std::array<TLegend*, 3>* AllHeadLeg, std::array<TLegend*, 3>* AllDataLeg,
+		HerwigQAPlottingConfig* co,
+		std::vector<std::string> cuts
+	)
+{
+	
+	std::vector<TPad*>* pall	= co->AddPads(AllCanvi->at(0));
+	for(int i = 0 ; i<(int) herwig_all->size(); i++)
+	{
+		TH1F* hCo = (TH1F*) herwig_all->at(i)->Clone();
+		TH1F* pCo = (TH1F*) pythia_all->at(i)->Clone();
+		TH1F* rCo = co->GetRatioPlot(hCo, pCo);
+		rCo -> SetMarkerStyle(2*i+39);
+		pall->at(1)->cd();
+		pall->at(1)->SetLogy();
+		hCo->Draw("same plc pmc");
+		if(i==0){
+			float max_val=hCo->GetMaximum();
+			hCo->GetYaxis()->SetRangeUser(0.001, max_val*3);
+		}
+		pCo->Draw("same plc pmc");
+		AllDataLeg->at(0)->AddEntry(hCo, std::format("Herwig {}", cuts.at(i)).c_str(), "pl");
+		AllDataLeg->at(0)->AddEntry(pCo, std::format("Pythia {}", cuts.at(i)).c_str(), "pl");
+		AllDataLeg->at(0)->AddEntry(rCo, std::format("Herwig {} / Pythia {}", cuts.at(i), cuts.at(i)).c_str(), "pl");
+		pall->at(0)->cd();
+		rCo->Draw("plc pmc same");
+		rCo->GetYaxis()->SetRangeUser(0, 2);
+		rCo->SetYTitle("Herwig / Pythia");
+		
+		AllCanvi->at(1)->cd();
+		herwig_all->at(i)->Draw("same plc pmc");
+		if(i==0)
+		{
+			float max_val=herwig_all->at(i)->GetMaximum();
+			herwig_all->at(i)->GetYaxis()->SetRangeUser(0.001, max_val*3);
+		}
+		AllDataLeg->at(1)->AddEntry(herwig_all->at(i), cuts.at(i).c_str(), "pl");
+		
+		AllCanvi->at(2)->cd();
+		pythia_all->at(i)->Draw("same plc pmc");
+		if(i==0)
+		{
+			float max_val=pythia_all->at(i)->GetMaximum();
+			pythia_all->at(i)->GetYaxis()->SetRangeUser(0.001, max_val*3);
+		}
+		AllDataLeg->at(2)->AddEntry(pythia_all->at(i), cuts.at(i).c_str(), "pl");
+	}
+	pall->at(1)->cd();
+	AllHeadLeg->at(0)->Draw();
+	AllDataLeg->at(0)->Draw();
+	AllCanvi->at(0)->cd();
+	pall->at(0)->Draw();
+	pall->at(1)->Draw();
+
+	AllCanvi->at(1)->cd();
+	AllHeadLeg->at(1)->Draw();
+	AllDataLeg->at(1)->Draw();
+	AllCanvi->at(1)->SetLogy();
+
+	AllCanvi->at(2)->cd();
+	AllHeadLeg->at(2)->Draw();
+	AllDataLeg->at(2)->Draw();
+	AllCanvi->at(2)->SetLogy();
+
+	return;
+}
+
+void PlotBothThePlots(
+		std::vector<TH1F*>* herwig_all, std::vector<TH1F*>* herwig_lead,
+	       	std::vector<TH1F*>* pythia_all, std::vector<TH1F*>* pythia_lead, 
+		std::array<TCanvas*, 3>* AllCanvi, std::array<TCanvas*, 3>* LeadCanvi,
+		HerwigQAPlottingConfig* co,
+		std::vector<std::string> cuts
+	)
+{
+	std::array<TLegend*, 3>* AllHeadLeg 	= new std::array<TLegend*, 3> {};
+       	std::array<TLegend*, 3>* AllDataLeg 	= new std::array<TLegend*, 3> {};
+	std::array<TLegend*, 3>* LeadHeadLeg 	= new std::array<TLegend*, 3> {};
+	std::array<TLegend*, 3>* LeadDataLeg	= new std::array<TLegend*, 3> {};
+	for(int i=0; i<3; i++)
+	{
+		TLegend* l_head	= new TLegend(0.6, 0.6, 0.8, 0.9); 
+		TLegend* l_data	= new TLegend(0.3, 0.5, 0.65, 0.8);
+		co->SetLegend(l_data);
+		if(i == 0) co->SetsPhenixHeaderLegend(l_head, "none", "All Jets");
+		else if(i == 1) co->SetsPhenixHeaderLegend(l_head, true, "All Jets");
+		else if(i == 2) co->SetsPhenixHeaderLegend(l_head, false, "All Jets");
+		AllHeadLeg->at(i)	= l_head;
+		AllDataLeg->at(i)	= l_data;
+	}
+
+	for(int i=0; i<3; i++)
+	{
+		TLegend* l_head	= new TLegend(0.6, 0.6, 0.8, 0.9); 
+		TLegend* l_data	= new TLegend(0.3, 0.5, 0.65, 0.8);
+		co->SetLegend(l_data);
+		if(i == 0) 	co->SetsPhenixHeaderLegend(l_head, "none", "Lead Jets");
+		else if(i == 1) co->SetsPhenixHeaderLegend(l_head, true, "Lead Jets");
+		else if(i == 2) co->SetsPhenixHeaderLegend(l_head, false, "Lead Jets");
+		LeadHeadLeg->at(i)	= l_head;
+		LeadDataLeg->at(i)	= l_data;
+	}
+	AllDataLeg->at(0)->SetNColumns(3);
+	LeadDataLeg->at(0)->SetNColumns(3);
+	PlotThePlots(herwig_all, pythia_all, AllCanvi, AllHeadLeg, AllDataLeg, co, cuts);
+	PlotThePlots(herwig_lead, pythia_lead, LeadCanvi, LeadHeadLeg, LeadDataLeg, co, cuts);
+	return;
+}
+
 void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutnames)
 {
 	SetsPhenixStyle();
-
 	TCanvas* cAll		= new TCanvas("all_canvas", "all_Jets");
 	TCanvas* cLead		= new TCanvas("lead_canvas", "Lead_jets");
 	
@@ -42,245 +238,101 @@ void PlotCombinedSpectrum(std::vector<TFile*>* fs, std::vector<std::string> cutn
 	
 	TCanvas* cAllHerwig	= new TCanvas("all_Herwig_canvas", "all_Herwig_Jets");
 	TCanvas* cLeadHerwig	= new TCanvas("lead_Herwig_canvas", "Lead_Herwig_jets");
-
-	THStack* herwig_all	= new THStack("h_all", "h_all");
-	THStack* herwig_lead	= new THStack("h_lead", "h_lead");
-	THStack* pythia_all	= new THStack("p_all", "p_all");
-	THStack* pythia_lead	= new THStack("p_lead", "p_lead");
+	
 
 	
-	THStack* herwig_ratio 	= new THStack("h_ratio", "h_ratio");
-	THStack* h_lead_ratio 	= new THStack("h_lead_ratio", "h_lead_ratio");
-	THStack* pythia_ratio 	= new THStack("p_ratio", "p_ratio");
-	THStack* p_lead_ratio 	= new THStack("p_lead_ratio", "p_lead_ratio");
+	TCanvas* cAll_ratio_Pythia	= new TCanvas("all_ratio_Pythia_canvas", "all_ratio_Pythia_Jets");
+	TCanvas* cLead_ratio_Pythia	= new TCanvas("lead_ratio_Pythia_canvas", "Lead_ratio_Pythia_jets");
+	
+	TCanvas* cAll_ratio_Herwig	= new TCanvas("all_ratio_Herwig_canvas", "all_ratio_Herwig_Jets");
+	TCanvas* cLead_ratio_Herwig	= new TCanvas("lead_ratio_Herwig_canvas", "Lead_ratio_Herwig_jets");
+	
+
+	std::array<TCanvas*, 3> All 	{cAll, cAllHerwig, cAllPythia}; 
+	std::array<TCanvas*, 3> Lead 	{cLead, cLeadHerwig, cLeadPythia};
+	
+	std::array<TCanvas*, 2> Herwig_ratios {cAll_ratio_Herwig, cLead_ratio_Herwig};
+	std::array<TCanvas*, 2> Pythia_ratios {cAll_ratio_Pythia, cLead_ratio_Pythia};
+	
+	std::array< std::array< TCanvas*, 2 >*, 2 > RatioCanvi {&Herwig_ratios, &Pythia_ratios};	
+	std::array< std::array< std::array<TLegend*, 2>*, 2 >*, 2 >* RatioLegs 
+		= new std::array< std::array< std::array< TLegend*, 2>*, 2>*, 2>{};	
 	
 	std::vector<TH1F*>* herwig_pt 	= new std::vector<TH1F*>();
 	std::vector<TH1F*>* herwig_l_pt	= new std::vector<TH1F*>();
 	
 	std::vector<TH1F*>* pythia_pt 	= new std::vector<TH1F*>();
 	std::vector<TH1F*>* pythia_l_pt	= new std::vector<TH1F*>();
-
+	
 	HerwigQAPlottingConfig* co = new HerwigQAPlottingConfig();
 	Skaydis_colors* odd_colors = new Skaydis_colors();
-	gStyle->SetPalette(100, odd_colors->Lesbian_gradient_PT);
+	gStyle->SetPalette(100, odd_colors->Enby_gradient_PT);
 
-	TLegend* l_head_all 	= new TLegend(0.7, 0.7, 1, 1);
-	TLegend* l_head_jet 	= new TLegend(0.7, 0.7, 1, 1);
-	TLegend* l_data_all 	= new TLegend(0.5, 0.4, 1, 0.7);
-	TLegend* l_data_jet 	= new TLegend(0.5, 0.4, 1, 0.7);
-	
-	co->SetsPhenixHeaderLegend(l_head_all, "none");
-	co->SetsPhenixHeaderLegend(l_head_jet, "none");
-	co->SetLegend(l_data_all);
-	co->SetLegend(l_data_jet);
 
-	TLegend* l_pythia_head_all 	= new TLegend(0.7, 0.7, 1, 1);
-	TLegend* l_pythia_head_jet 	= new TLegend(0.7, 0.7, 1, 1);
-	TLegend* l_pythia_data_all 	= new TLegend(0.5, 0.4, 1, 0.7);
-	TLegend* l_pythia_data_jet 	= new TLegend(0.5, 0.4, 1, 0.7);
+	GetSampleSpectra("Herwig", herwig_pt, herwig_l_pt, fs);
+	GetSampleSpectra("Pythia", pythia_pt, pythia_l_pt, fs);
 	
-	co->SetsPhenixHeaderLegend(l_pythia_head_all, "none");
-	co->SetsPhenixHeaderLegend(l_pythia_head_jet, "none");
-	co->SetLegend(l_pythia_data_all);
-	co->SetLegend(l_pythia_data_jet);
-
-	TLegend* l_herwig_head_all 	= new TLegend(0.7, 0.7, 0.9, 0.9);
-	TLegend* l_herwig_head_jet 	= new TLegend(0.7, 0.7, 1, 1);
-	TLegend* l_herwig_data_all 	= new TLegend(0.5, 0.4, 1, 0.7);
-	TLegend* l_herwig_data_jet 	= new TLegend(0.4, 0.7, 0.6, 0.9);
-	
-	co->SetsPhenixHeaderLegend(l_herwig_head_all, "none");
-	co->SetsPhenixHeaderLegend(l_herwig_head_jet, "none");
-	co->SetLegend(l_herwig_data_all);
-	co->SetLegend(l_herwig_data_jet);
-
-	l_head_all->AddEntry("", "All Jets", "");
-	l_head_jet->AddEntry("", "Lead Jets", "");
-	
-	l_pythia_head_all->AddEntry("", "All Pythia Jets", "");
-	l_pythia_head_jet->AddEntry("", "Lead Pythia Jets", "");
-	
-	l_herwig_head_all->AddEntry("", "All Herwig Jets", "");
-	l_herwig_head_jet->AddEntry("", "Lead Herwig Jets", "");
-	
-	l_data_all->SetNColumns(3);
-	l_data_jet->SetNColumns(3);
-	
-	std::vector<TPad*>* All_pads = co->AddPads(cAll);
-	std::vector<TPad*>* Lead_pads = co->AddPads(cLead);
-
-	All_pads->at(1)->SetLogy();
-	Lead_pads->at(1)->SetLogy();
-
-	for(int i = 0; i<(int) fs->size(); i++)
+	for(int i=0; i<2; i++)
 	{
-		fs->at(i)->cd();
-		TDirectory* d_herwig	= (TDirectory*) fs->at(i)->GetDirectory("Herwig_jets");
-		TDirectory* d_pythia	= (TDirectory*) fs->at(i)->GetDirectory("Pythia_jets");
-		
-		TH1F* h_all 	= (TH1F*)d_herwig->Get("h_jet_r04_pt");	
-		TH1F* h_lead 	= (TH1F*)d_herwig->Get("h_lead_jet_r04_pt");	
-		
-		TH1F* p_all 	= (TH1F*)d_pythia->Get("h_jet_r04_pt");	
-		TH1F* p_lead 	= (TH1F*)d_pythia->Get("h_lead_jet_r04_pt");	
-
-		h_all->SetMarkerStyle(20+i);
-		if(i==4) h_all->SetMarkerStyle(29);
-		else if(i==5) h_all->SetMarkerStyle(33);
-		else if(i==6) h_all->SetMarkerStyle(34);
-
-		h_lead->SetMarkerStyle(20+i);
-		if(i==4) h_lead->SetMarkerStyle(29);
-		else if(i==5) h_lead->SetMarkerStyle(33);
-		else if(i==6) h_lead->SetMarkerStyle(35);
-		
-		p_all->SetMarkerStyle(i+24);
-		p_all->SetMarkerSize(2);
-		if(i==6) p_all->SetMarkerStyle(30);
-
-		p_lead->SetMarkerStyle(i+24);
-		p_lead->SetMarkerSize(2);
-		if(i==6) p_lead->SetMarkerStyle(30);
-		
-		herwig_pt->push_back(h_all);
-		herwig_l_pt->push_back(h_lead);
-		pythia_pt->push_back(p_all);
-		pythia_l_pt->push_back(p_lead);
-	
-		herwig_all->Add(h_all);
-		herwig_lead->Add(h_lead);	
-		pythia_all->Add(p_all);
-		pythia_lead->Add(p_lead);	
-		
-		cAllPythia->cd();
-		pythia_all->Draw("e1 same plc pmc");
-		cLeadPythia->cd();
-		pythia_lead->Draw("e1 same plc pmc");
-		cAllHerwig->cd();
-		herwig_all->Draw("e1 same plc pmc");
-		cLeadHerwig->cd();
-		herwig_lead->Draw("e1 same plc pmc");
-
-		l_data_all->AddEntry(h_all, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
-		l_data_jet->AddEntry(h_lead, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
-		
-		l_herwig_data_all->AddEntry(h_all, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
-		l_herwig_data_jet->AddEntry(h_lead, std::format("Herwig {}", cutnames.at(i)).c_str(), "pl");
-		
-		l_data_all->AddEntry(p_all, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
-		l_data_jet->AddEntry(p_lead, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
-		
-		l_pythia_data_all->AddEntry(p_all, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
-		l_pythia_data_jet->AddEntry(p_lead, std::format("Pythia {}", cutnames.at(i)).c_str(), "pl");
-		
-		cAll->cd();
-		All_pads->at(0)->cd();
-		auto ratio_all = co->GetRatioPlot(h_all, p_all);
-		auto ratio_lead = co->GetRatioPlot(h_lead, p_lead);
-		ratio_all->SetMarkerStyle(2*i+39);
-		ratio_lead->SetMarkerStyle(2*i+39);
-		ratio_all->Draw("same plc pmc");
-		l_data_all->AddEntry(ratio_all, "Herwig / Pythia", "pl");
-		cLead->cd();
-		Lead_pads->at(0)->cd();
-		ratio_lead->Draw("same plc pmc");
-		l_data_jet->AddEntry(ratio_lead, "Herwig / Pythia", "pl");
-
+		bool isHerwig 		= false;
+		if( i==0 ) isHerwig	= true;
+		else isHerwig 		= false;
+		std::array< std::array<TLegend*, 2>*, 2 >* Legs = 
+	       		new std::array<std::array<TLegend*, 2>*, 2>{};
+		for(int j=0; j<2; j++)
+		{
+			RatioCanvi.at(i)->at(j)->cd();
+			std::string LJ = "All Jets";
+			if(j==1) LJ="Lead Jets";
+			TLegend* l_head	= new TLegend(0.7, 0.6, 0.9, 0.9);
+			TLegend* l_data = new TLegend(0.7, 0.2, 0.9, 0.6);
+		        	
+			co->SetLegend(l_data);
+			co->SetsPhenixHeaderLegend(l_head, isHerwig, LJ);
+			std::array<TLegend*, 2>* l = new std::array<TLegend*, 2> {l_head, l_data};
+			Legs->at(j)=l;
+		}
+		RatioLegs->at(i)=Legs;
 	}
 	
-	cAllPythia->cd();
-	l_pythia_data_all->Draw();
-	l_pythia_head_all->Draw();
-	
-	cAllHerwig->cd();
-	l_herwig_data_all->Draw();
-	l_herwig_head_all->Draw();
-	
-	cLeadPythia->cd();
-	l_pythia_data_jet->Draw();
-	l_pythia_head_jet->Draw();
-	
-	cLeadHerwig->cd();
-	l_herwig_data_jet->Draw();
-	l_herwig_head_jet->Draw();
-	
-	cAll->cd();
-	All_pads->at(1)->cd();
-	herwig_all->Draw("pmc plc nostack same");
-	pythia_all->Draw("pmc plc nostack same");
-	l_data_all->Draw();
-	l_head_all->Draw();
-	TH1F* ha = (TH1F*) herwig_all->GetHistogram();
-	ha->Draw("pmc plc same");
-	TH1F* pa = (TH1F*) pythia_all->GetHistogram();
-	pa->Draw("pmc plc same");
-	l_data_all->AddEntry(ha, "Combined Herwig", "pc");
-	l_data_all->AddEntry(pa, "Combined Pythia", "pc");
-	All_pads->at(0)->cd();
-	TH1F* ra = co->GetRatioPlot(ha, pa);
-	ra->SetMarkerStyle(2*((int)fs->size())+37);
-	ra->Draw("plc pmc");
-	l_data_all->AddEntry(ra, "Herwig / Pythia ", "pl");
-	cAll->cd();
-	All_pads->at(0)->Draw();
-	All_pads->at(1)->Draw();
-	
-	cLeadPythia->cd();
-	TPad* pPl=new TPad("pPl", "pPl", 0., 0., 1., 1.);
-	pPl->cd();
-	pythia_solo_lead->Draw("same plc plc nostack");
-	l_pythia_data_jet->Draw();
-	l_pythia_head_jet->Draw();
-	cLeadPythia->cd();
-	pPl->Draw();
-	
-	cLeadHerwig->cd();
-	TPad* pHl=new TPad("pHl", "pHl", 0., 0., 1., 1.);
-	pHl->cd();
-	herwig_solo_lead->Draw("same plc plc nostack");
-	l_herwig_data_jet->Draw();
-	l_herwig_head_jet->Draw();
-	cLeadHerwig->cd();
-	pHl->Draw();
-	
-	cLead->cd();
-	Lead_pads->at(1)->cd();
-	herwig_lead->Draw("pmc plc nostack");
-	pythia_lead->Draw("pmc plcsame nostack");
-	l_herwig_data_jet->Draw();
-	l_herwig_head_jet->Draw();
-	TH1F* hj = (TH1F*) herwig_lead->GetHistogram();
-	hj->Draw("pmc plc same");
-	TH1F* pj = (TH1F*) pythia_lead->GetHistogram();
-	pj->Draw("pmc plc same");
-	l_data_jet->AddEntry(hj, "Combined Herwig", "pc");
-	l_data_jet->AddEntry(pj, "Combined Pythia", "pc");
-	Lead_pads->at(0)->cd();
-	TH1F* rj = co->GetRatioPlot(hj, pj);
-	rj->SetMarkerStyle(2*((int)fs->size())+37);
-	rj->Draw("plc pmc");
-	l_data_jet->AddEntry(rj, "Herwig / Pythia ", "pl");
-	cLead->SetLogy();
-	Lead_pads->at(0)->Draw();
-	Lead_pads->at(1)->Draw();
-	
-	TCanvas* ct=new TCanvas("combined_lead", "combined_lead");
-	ct->cd();
-	auto pds = co->AddPads(ct);
-	pds->at(1)->SetLogy();
-	pds->at(1)->cd();
+	TH1F* ha1=(TH1F*)herwig_pt->at(0)->Clone();
+	TH1F* pa1=(TH1F*)pythia_pt->at(0)->Clone();
+	for(int i = 1; i<(int)herwig_pt->size(); i++) ha1->Add(herwig_pt->at(i));
+	for(int i = 1; i<(int)pythia_pt->size(); i++) pa1->Add(pythia_pt->at(i));
+
 	TH1F* hj1=(TH1F*)herwig_l_pt->at(0)->Clone();
 	TH1F* pj1=(TH1F*)pythia_l_pt->at(0)->Clone();
 	for(int i = 1; i<(int)herwig_l_pt->size(); i++) hj1->Add(herwig_l_pt->at(i));
 	for(int i = 1; i<(int)pythia_l_pt->size(); i++) pj1->Add(pythia_l_pt->at(i));
-	hj1->Draw("pmc plc");
-	pj1->Draw("same pmc plc");
-	pds->at(0)->cd();
-	auto rj1=co->GetRatioPlot(hj1, pj1);
-	rj1->Draw("plc pmc");
-	ct->cd();
-	pds->at(0)->Draw();
-	pds->at(1)->Draw();
+	std::vector<TH1F*> rHA  {};
+	std::vector<TH1F*> rHL  {};
+	std::vector<TH1F*> rPA  {};
+	std::vector<TH1F*> rPL  {};
+	SampleRatios(herwig_pt, &rHA ,ha1, 
+			RatioCanvi.at(0)->at(0), RatioLegs->at(0)->at(0)->at(0) , RatioLegs->at(0)->at(0)->at(1), 
+			co, "Herwig", cutnames);
+	SampleRatios(herwig_l_pt, &rHL ,hj1, 
+			RatioCanvi.at(0)->at(1), RatioLegs->at(0)->at(1)->at(0) , RatioLegs->at(0)->at(1)->at(1),
+		       	co, "Herwig", cutnames);
+	SampleRatios(pythia_pt, &rPA ,pa1,
+		       	RatioCanvi.at(1)->at(0), RatioLegs->at(1)->at(0)->at(0) , RatioLegs->at(1)->at(0)->at(1),
+		       	co, "Pythia", cutnames);
+	SampleRatios(pythia_l_pt, &rPL ,pj1, 
+			RatioCanvi.at(1)->at(1), RatioLegs->at(1)->at(1)->at(0) , RatioLegs->at(0)->at(0)->at(1), 
+			co, "Pythia", cutnames);
+	PlotBothThePlots(
+		herwig_pt, herwig_l_pt,
+	       	pythia_pt, pythia_l_pt, 
+		&All, &Lead,
+		co, cutnames);
+	All.at(0)->Print("~/Herwig_comb_pt_QA.pdf(");
+	for(int i = 0; i<(int) All.size();  i++) All.at(i)->Print("~/Herwig_comb_pt_QA.pdf");
+	for(int i = 0; i<(int) Lead.size(); i++) Lead.at(i)->Print("~/Herwig_comb_pt_QA.pdf");
+	for(int i = 0; i< 2; i++)
+	       	for(int j = 0; j < 2; j++)
+			RatioCanvi.at(i)->at(j)->Print("~/Herwig_comb_pt_QA.pdf");
+	All.at(0)->Print("~/Herwig_comb_pt_QA.pdf)");
+
 
 	return;
 }
