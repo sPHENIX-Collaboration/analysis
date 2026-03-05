@@ -39,8 +39,6 @@ class sEPD_DataMC_Validation : public SubsysReco
   int process_jets(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
 
-  double GetPhysicsEta(double det_eta, double vtx_z);
-
   static constexpr int m_sepd_channels = 744;
 
   unsigned int m_bins_cent{80};
@@ -121,9 +119,6 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2JetPtCentrality{nullptr};
   TH2* h2JetPhiEta{nullptr};
   TH2* h2JetEtaVtxZ{nullptr};
-  TH2* h2JetEtaPhysVtxZ{nullptr};
-  TH2* h2JetEtaDiffVtxZ{nullptr};
-  TH2* h2JetEtaSignFlip{nullptr};
 
   TH2* h2SEPD_Psi2_raw_data_S{nullptr};
   TH2* h2SEPD_Psi2_raw_data_N{nullptr};
@@ -140,9 +135,7 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2SEPD_Psi2_data_mc_NS{nullptr};
 
   TProfile* hScalarProduct_data{nullptr};
-  TProfile* hScalarProduct_data_corr{nullptr};
   TProfile* hScalarProduct_data_mc{nullptr};
-  TProfile* hScalarProduct_data_mc_corr{nullptr};
   TProfile* hRefFlow_data{nullptr};
   TProfile* hRefFlow_data_mc{nullptr};
 };

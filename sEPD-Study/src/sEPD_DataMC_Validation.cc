@@ -176,10 +176,6 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   double jet_phi_low{-std::numbers::pi};
   double jet_phi_high{std::numbers::pi};
 
-  unsigned int bins_jet_diff_eta{40};
-  double jet_diff_eta_low{-0.2};
-  double jet_diff_eta_high{0.2};
-
   unsigned int bins_zvtx2{40};
   double zvtx2_low{-10};
   double zvtx2_high{10};
@@ -205,24 +201,6 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
                           bins_jet_etav2, jet_etav2_low, jet_etav2_high);
 
   se->registerHisto(h2JetEtaVtxZ);
-
-  h2JetEtaPhysVtxZ = new TH2F("h2JetEtaPhysVtxZ", "MB; z [cm]; #eta_{phys}",
-                          bins_zvtx2, zvtx2_low, zvtx2_high,
-                          bins_jet_etav2, jet_etav2_low, jet_etav2_high);
-
-  se->registerHisto(h2JetEtaPhysVtxZ);
-
-  h2JetEtaDiffVtxZ = new TH2F("h2JetEtaDiffVtxZ", "MB; z [cm]; #Delta #eta = #eta_{phys}-#eta_{det}",
-                              bins_zvtx2, zvtx2_low, zvtx2_high,
-                              bins_jet_diff_eta, jet_diff_eta_low, jet_diff_eta_high);
-
-  se->registerHisto(h2JetEtaDiffVtxZ);
-
-  h2JetEtaSignFlip = new TH2F("h2JetEtaSignFlip", "sign(#eta_{det}) #neq sign(#eta_{phys}); z [cm]; #eta_{det}",
-                              bins_zvtx2, zvtx2_low, zvtx2_high,
-                              bins_jet_diff_eta, jet_diff_eta_low, jet_diff_eta_high);
-
-  se->registerHisto(h2JetEtaSignFlip);
 
   unsigned int bins_psi{126};
   double psi_low{-std::numbers::pi};
@@ -293,21 +271,13 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   hScalarProduct_data = new TProfile("hScalarProduct_data", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
 
-  hScalarProduct_data_corr = new TProfile("hScalarProduct_data_corr", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
-                                           m_bins_cent, m_cent_low, m_cent_high);
-
   hScalarProduct_data_mc = new TProfile("hScalarProduct_data_mc", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
-
-  hScalarProduct_data_mc_corr = new TProfile("hScalarProduct_data_mc_corr", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
-                                           m_bins_cent, m_cent_low, m_cent_high);
 
   se->registerHisto(hRefFlow_data);
   se->registerHisto(hRefFlow_data_mc);
   se->registerHisto(hScalarProduct_data);
-  se->registerHisto(hScalarProduct_data_corr);
   se->registerHisto(hScalarProduct_data_mc);
-  se->registerHisto(hScalarProduct_data_mc_corr);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -601,28 +571,6 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-double sEPD_DataMC_Validation::GetPhysicsEta(const double det_eta, const double vtx_z)
-{
-  // Standard reference radius for sPHENIX EMCal (~93.5 cm)
-  const double R_emcal = 93.5;
-
-  // 1. Get the polar angle from detector eta
-  double theta_det = 2.0 * std::atan(std::exp(-det_eta));
-
-  // 2. Calculate the physical Z-position of the hit in the calorimeter
-  // z = r / tan(theta)
-  double z_det = R_emcal / std::tan(theta_det);
-
-  // 3. Calculate the Z-position relative to the actual vertex
-  double z_phys = z_det - vtx_z;
-
-  // 4. Calculate the new physics-centric theta and eta
-  double theta_phys = std::atan2(R_emcal, z_phys);
-  double eta_phys = -std::log(std::tan(theta_phys / 2.0));
-
-  return eta_phys;
-}
-
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 {
@@ -652,13 +600,10 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
     // double energy = jet->get_e();
     double phi = jet->get_phi();
     double eta = jet->get_eta();
-    double eta_phys = GetPhysicsEta(eta, m_zvtx);
-    double eta_diff = eta_phys - eta;
 
     if (pt >= m_jet_pt_min)
     {
       h2JetEtaVtxZ->Fill(m_zvtx, eta);
-      h2JetEtaPhysVtxZ->Fill(m_zvtx, eta_phys);
 
       if (std::abs(eta) < m_jet_eta_max)
       {
@@ -666,40 +611,22 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
         hJetPt->Fill(pt);
         h2JetPhiEta->Fill(phi, eta);
-        h2JetEtaDiffVtxZ->Fill(m_zvtx, eta_diff);
         h2JetPtCentrality->Fill(pt, m_cent);
-
-        if (std::signbit(eta) != std::signbit(eta_phys))
-        {
-          h2JetEtaSignFlip->Fill(m_zvtx, eta);
-        }
 
         double Q_data_x = (eta > 0) ? Q_data_S_x : Q_data_N_x;
         double Q_data_y = (eta > 0) ? Q_data_S_y : Q_data_N_y;
 
-        double Q_data_x_v2 = (eta_phys > 0) ? Q_data_S_x : Q_data_N_x;
-        double Q_data_y_v2 = (eta_phys > 0) ? Q_data_S_y : Q_data_N_y;
-
         double Q_data_mc_x = (eta > 0) ? Q_data_mc_S_x : Q_data_mc_N_x;
         double Q_data_mc_y = (eta > 0) ? Q_data_mc_S_y : Q_data_mc_N_y;
-
-        double Q_data_mc_x_v2 = (eta_phys > 0) ? Q_data_mc_S_x : Q_data_mc_N_x;
-        double Q_data_mc_y_v2 = (eta_phys > 0) ? Q_data_mc_S_y : Q_data_mc_N_y;
 
         double jet_Q_x = std::cos(2 * phi);
         double jet_Q_y = std::sin(2 * phi);
 
         double scalar_product_data = jet_Q_x * Q_data_x + jet_Q_y * Q_data_y;
-        double scalar_product_data_corr = jet_Q_x * Q_data_x_v2 + jet_Q_y * Q_data_y_v2;
-
         double scalar_product_data_mc = jet_Q_x * Q_data_mc_x + jet_Q_y * Q_data_mc_y;
-        double scalar_product_data_mc_corr = jet_Q_x * Q_data_mc_x_v2 + jet_Q_y * Q_data_mc_y_v2;
 
         hScalarProduct_data->Fill(m_cent, scalar_product_data);
-        hScalarProduct_data_corr->Fill(m_cent, scalar_product_data_corr);
-
         hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
-        hScalarProduct_data_mc_corr->Fill(m_cent, scalar_product_data_mc_corr);
       }
     }
   }
