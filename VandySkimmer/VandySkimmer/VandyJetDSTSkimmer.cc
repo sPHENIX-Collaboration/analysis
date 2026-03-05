@@ -176,6 +176,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   m_truthParticles.clear();
   m_towerInfo_map.clear();
   m_towerInfo_map2.clear();
+  m_towerInfoTruth_map.clear();
   for(int i=0; i<4; i++)
   {
     m_jetInfo[i].clear();
@@ -375,7 +376,9 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 
       float etaCenterCorr = correct_eta(etaCenter, r);
       
-      fastjet::PseudoJet tmp_pj = get_PseudoJet(etaCenterCorr, phiCenter, tower->get_energy());
+      fastjet::PseudoJet tmp_pj;
+      if(tower->get_energy() > 0) tmp_pj = get_PseudoJet(etaCenterCorr, phiCenter, tower->get_energy());
+      else tmp_pj = get_PseudoJet(etaCenterCorr, phiCenter, 0.001);
       Tower tmpTower;
       tmpTower.set_px(tmp_pj.px());
       tmpTower.set_py(tmp_pj.py());
@@ -471,6 +474,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
         int calo = -999;
         
         Jet::SRC source = comp.first;
+        //unsigned int unique_id = comp.second;
         int tower_id = static_cast<int>(comp.second);
         if(source == Jet::SRC::CEMC_TOWERINFO)
         {
@@ -493,7 +497,10 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
         {
           continue;
         }
+
+        //std::cout << "calo: " << calo << "   calo from id: " << unique_id / 10000 << "   channel: " << unique_id - (unique_id / 10000) << std::endl;
         std::pair<int, int> lookup_key {calo, tower_id};
+        //std::pair<int, int> lookup_key {calo, static_cast<int>(unique_id - (unique_id / 10000))};
         if(m_towerInfo_map.find(lookup_key) != m_towerInfo_map.end())
         {
           cons.push_back(m_towerInfo_map[lookup_key]);
@@ -512,8 +519,6 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   //truth jets
   if(m_doSim)
   {
-    m_towerInfo_map.clear();
-
     auto range = truthParticles->GetPrimaryParticleRange();
     for(auto it=range.first; it!=range.second; ++it)
     {
@@ -529,7 +534,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
       tmpTower.set_calo(4);
 
       m_truthParticles.push_back(tmpTower);
-      m_towerInfo_map[std::make_pair(4, p->get_track_id())] = m_towerInfo.size() - 1;
+      m_towerInfoTruth_map[std::make_pair(4, p->get_track_id())] = m_towerInfo.size() - 1;
     }
 
 
@@ -560,9 +565,9 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
             continue;
           }
           std::pair<int, int> lookup_key {calo, tower_id};
-          if(m_towerInfo_map.find(lookup_key) != m_towerInfo_map.end())
+          if(m_towerInfoTruth_map.find(lookup_key) != m_towerInfoTruth_map.end())
           {
-            cons.push_back(m_towerInfo_map[lookup_key]);
+            cons.push_back(m_towerInfoTruth_map[lookup_key]);
           }
         }
         JetInfo tmpJet;
