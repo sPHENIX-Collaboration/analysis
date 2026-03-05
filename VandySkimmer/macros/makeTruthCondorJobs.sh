@@ -11,10 +11,13 @@ dosubmit=false
 triggertype="MB"
 prodtype="26"
 condor_testfile="condor_blank.job"
-verbose_mode=false 
+verbose=false 
+superverbose=false 
 allsegments=false #run over all data
 filedensity=25 #segments per job
 nfiles=100
+makedatalist=false
+forcechunk=false
 
 #Setting directories and ensuring they exist
 
@@ -25,6 +28,9 @@ make_condor_jobs()
 	fi	
 	for i in $(seq 0 ${nfiles}); do 
 		j=$(( i+1 ))
+		if [ $i -eq $nfiles ]; then 
+			break
+		fi
 		condor_file="$(pwd)/condor_file_dir/condor_"$triggertype"_seg_"$i".job"
 		condor_out_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_seg_"$i".out"
 		condor_err_file=$(pwd)"/condor_file_dir/condor_"$triggertype"_seg_"$i".err"
@@ -32,15 +38,15 @@ make_condor_jobs()
 		global=`sed "${j}q;d" ${triggertype}_data/global_density_${filedensity}.list`
 		truth=`sed "${j}q;d" ${triggertype}_data/truth_density_${filedensity}.list`
 		jet=`sed "${j}q;d" ${triggertype}_data/jet_density_${filedensity}.list`
-		calo=`sed "${j}q;d" ${triggertype}_data/calo_cluster_density_${filedensity}.list`
-
+		calo=`sed "${j}q;d" ${triggertype}_data/calo_density_${filedensity}.list`
+		
 		if [ "$vebose_mode" = true ]; then
 			echo "Producing condor job file " $condor_file
 		fi
 		IFS=$'\n' read -d '' -r -a blanklines < $condor_testfile
 		echo "${blanklines[0]}" > $condor_file 
 		echo "${blanklines[1]}"$(pwd)"/run_VandySkimmerTruth.sh" >> $condor_file
-		echo "${blanklines[2]}"$calo $truth $jet $global $outDir $MYINSTALL>> $condor_file
+		echo "${blanklines[2]}"$calo $truth $jet $global $outDir $MYINSTALL $(pwd)>> $condor_file
 		echo "${blanklines[3]}"$condor_out_file >> $condor_file
 		echo "${blanklines[4]}"$condor_err_file >> $condor_file
 		echo "${blanklines[5]}"$condor_log_file >> $condor_file
@@ -73,24 +79,24 @@ set_out_dir()
 	    if [[ "$verbose" == true ]]; then
 		    echo "Output Directory doesn't exist. Creating now"
 	    fi
-	    mkdir -p ${outdir}
+	    mkdir -p ${outDir}
 	fi
 }
 
 get_dst_list()
 {
 	base_dir=$(pwd)
-	if [ "$verbose_mode" = true ]; then 
+	if [ "$verbose" = true ]; then 
 		echo "Checking if data directory exists for ${triggertype}"
 	fi 
 	if [ ! -d ${triggertype}"_data" ]; then 
-		if [ "$verbose_mode" = true ]; then 
+		if [ "$verbose" = true ]; then 
 			echo "data directory doesn't exist for ${triggertype}, fixing now"
 		fi 
 		
 		mkdir -p ${triggertype}"_data"
 	fi 
-	if [ "$verbose_mode" = true ]; then 
+	if [ "$verbose" = true ]; then 
 		echo "Create DST for ${triggertype}"
 	fi
 	cd ${triggertype}_data
@@ -106,7 +112,7 @@ chunk_dst_list()
 {
 	base_dir=$(pwd)
 	cd ${triggertype}_data
-	if [ "$verbose_mode" = true ]; then 
+	if [ "$verbose" = true ]; then 
 		echo "Checking if lookup file and file list exist for a per job density of ${filedensity} exists"
 	fi 
 	listdir=lists_${filedensity}_per_file
@@ -114,8 +120,19 @@ chunk_dst_list()
 		mkdir -p $listdir
 	fi 
 	if [ ! -f truth_density_${filedensity}.list ]; then 
-		if [ "$verbose_mode" = true ]; then 
+		forcechunk=true
+	fi
+	if [ "$forcechunk" = true ]; then 
+		if [ "$verbose" = true ]; then 
 			echo "Creating file lists and lookup files"
+		fi
+	       	echo "HERE"	
+		if [ -f truth_density_${filedensity}.list ]; then 
+			rm truth_density_${filedensity}.list
+			rm jet_density_${filedensity}.list
+			rm calo_density_${filedensity}.list
+			rm global_density_${filedensity}.list
+			rm ${listdir}/*
 		fi 
 		touch truth_density_${filedensity}.list
 		touch jet_density_${filedensity}.list
@@ -127,11 +144,17 @@ chunk_dst_list()
 		nSegsUsed=0
 		while [ $nSegsUsed -le $Nseg ]; do 
 			nStop=$(( nSegsUsed + filedensity - 1 )) 
-			truthChunk=${listdir}/truth_seg_${nSegsUsed}_to_${nStop}.list
-			jetChunk=${listdir}/jet_seg_${nSegsUsed}_to_${nStop}.list
-			caloChunk=${listdir}/calo_seg_${nSegsUsed}_to_${nStop}.list
-			globalChunk=${listdir}/global_seg_${nSegsUsed}_to_${nStop}.list
-			
+			truthChunk=$(pwd)/${listdir}/truth_seg_${nSegsUsed}_to_${nStop}.list
+			jetChunk=$(pwd)/${listdir}/jet_seg_${nSegsUsed}_to_${nStop}.list
+			caloChunk=$(pwd)/${listdir}/calo_seg_${nSegsUsed}_to_${nStop}.list
+			globalChunk=$(pwd)/${listdir}/global_seg_${nSegsUsed}_to_${nStop}.list
+			if [ "$superverbose" = true ]; then 
+				echo "Building the following files"
+				echo " Truth data (g4Hits): " $truthChunk
+				echo " Jet data : " $jetChunk
+				echo " Calo data : " $caloChunk
+				echo " Global data: " $globalChunk
+			fi
 			touch ${truthChunk}
 			touch ${jetChunk}
 			touch ${caloChunk}
@@ -144,11 +167,10 @@ chunk_dst_list()
 			
 			for i in $(seq 0 $filedensity); do
 				line0=$(( n * filedensity ))
-				j = $(( line0 + i + 1 ))
-				if [ $j -gt $Nseg || $j -gt $nStop ]; then
+				j=$(( line0 + i + 1 ))
+				if [[ $j -gt $Nseg || $j -gt $nStop ]]; then
 					break
 				fi
-				
 				truth=`sed "${j}q;d" truth.list`
 				jet=`sed "${j}q;d" jet.list`
 				calo=`sed "${j}q;d" calo.list`
@@ -161,15 +183,19 @@ chunk_dst_list()
 				nSegsUsed=$(( nSegsUsed + 1 ))
 			done
 			nChunks=$(( nChunks + 1 ))
-			if [ $nSegsUsed -gt $Nseg ]; then
+			if [[ $nSegsUsed -gt $Nseg ]]; then
 			       break
 			fi 	       
 		done	
 	fi
+	cd ${base_dir}
 }
 submit_condor_jobs(){
 	#if submit just get all files in expected job type
 	for n in $(seq 0 ${nfiles}); do 
+		if [ $n -ge ${nfiles} ]; then
+			break
+		fi	
 		i=$(pwd)"/condor_file_dir/condor_"$triggertype"_seg_"$n".job"
 		condor_submit $i
 	done
@@ -195,8 +221,10 @@ handle_options()
 				echo " -h, --help 	Display this message"
 				echo " -v, --verbose	Enable verbose job creation (Default false) "
 				echo " -s, --submit 	Submit condor jobs (default false)"
-				echo " -g,  --get 	Makes the filelist for Herwig & Pythia before running (default false)"
-				echo " -t, --type 	Which production "
+				echo " -g,  --get 	Makes the filelist for selected sample before running (default false)"
+				echo " -c,  --chunk 	Forces the recreation of the data chunks (default off, on if -g is called"
+				echo " "
+				echo " -t, --type 	Which trigger type "
 				echo "			MB (default)"
 			       	echo "			Jets:Jet5, Jet15, Jet20, Jet30, Jet40, Jet50"
 			        echo "			PhotonJets: PhotonJet5, PhotonJet10"
@@ -211,7 +239,12 @@ handle_options()
 				exit 0 
 				;;
 			-v | --verbose)
-				verbose_mode=true
+				verbose=true
+				shift
+				;;
+			-V )
+				superverbose=true
+				verbose=true
 				shift
 				;;
 			-s | --submit)
@@ -220,6 +253,11 @@ handle_options()
 				;;
 			-g | --get)
 				makedatalist=true
+				forcechunk=true
+				shift
+				;;
+			-c | --chunk)
+				forcechunk=true
 				shift
 				;;
 			-t | --type) 
@@ -288,13 +326,13 @@ converttriggertype()
 handle_options "$@"
 make_home_dir
 set_out_dir
-if [ "$verbose_mode" = true ]; then 
+if [ "$verbose" = true ]; then 
 	echo "Running over ${nfiles} segement(s)"
 fi 
 if [ "$makedatalist" = true ]; then
 	get_dst_list
-	chunk_dst_list
 fi
+chunk_dst_list
 make_condor_jobs
 if [ "$dosubmit" = true ]; then
 	submit_condor_jobs

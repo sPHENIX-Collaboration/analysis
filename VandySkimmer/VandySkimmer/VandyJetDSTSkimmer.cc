@@ -30,12 +30,13 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
 
   if(!towerInfoContainers[0] || !towerInfoContainers[1] || !towerInfoContainers[2] || !towerInfoContainers[3])
   {
-    std::cout << "One or more TowerInfoContainers missing. Exiting" << std::endl;
+   if(!towerInfoContainers[1] && m_doSim) std::cout<<"Missing the Retower node for the simulation" <<std::endl; 
+   std::cout << "One or more TowerInfoContainers missing. Exiting" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
   geoms[0] = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_CEMC");
-  geoms[1] = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
+  geoms[1] = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN"); //this is the retowered geom of the emcal
   geoms[2] = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALIN");
   geoms[3] = findNode::getClass<RawTowerGeomContainer_Cylinderv1>(topNode, "TOWERGEOM_HCALOUT");
   if(!geoms[0] || !geoms[1] || !geoms[2] || !geoms[3])
@@ -45,7 +46,6 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
   }
 
   geoms[0]->set_calorimeter_id(RawTowerDefs::CEMC);
-  geoms[1]->set_calorimeter_id(RawTowerDefs::HCALIN);
   geoms[1]->set_calorimeter_id(RawTowerDefs::HCALIN);
   geoms[2]->set_calorimeter_id(RawTowerDefs::HCALOUT);
 
@@ -73,7 +73,7 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
     if (!jets[i])
     {
       std::cout << "VandyJetDSTSkimmer::Init - Error - Can't find Jet Node " << std::format("AntiKt_r{}{}",jetRStr[i],(m_doCalib ? "_calib" : "")).c_str() << " therefore no selection can be made" << std::endl;
-      return Fun4AllReturnCodes::ABORTRUN;
+//      return Fun4AllReturnCodes::ABORTRUN;
     }
   }
 
@@ -200,29 +200,30 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
   {
     m_cutParams.FillFrom(flagNode);
   }
-  else
+  else if(!m_doSim)
   {
     std::cout << "No flagNode for bbfqa - abort run" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
-
   bool goodTrigger = false;
-  TriggerAnalyzer *ta = new TriggerAnalyzer();
-  ta->UseEmulator(false);
-  ta->decodeTriggers(topNode);
-  goodTrigger = ta->didTriggerFire("Jet 10 GeV");
-  if(!goodTrigger)
-  {
-    if(Verbosity())
-    {
-      std::cout << "VandyJetDSTSkimmer::process_event - Jet 10 GeV trigger not found, bad event" << std::endl;
-    }
-    return Fun4AllReturnCodes::ABORTEVENT;
+  if(!m_doSim){
+  	TriggerAnalyzer *ta = new TriggerAnalyzer();
+  	ta->UseEmulator(m_doSim);
+  	ta->decodeTriggers(topNode);
+  	goodTrigger = ta->didTriggerFire("Jet 10 GeV");
+ 	 if(!goodTrigger)
+  	{
+   		 if(Verbosity())
+    		{
+     			std::cout << "VandyJetDSTSkimmer::process_event - Jet 10 GeV trigger not found, bad event" << std::endl;
+    		}
+    	return Fun4AllReturnCodes::ABORTEVENT;
+  	}
   }
-
+  else goodTrigger = true; //trigger emulator not functioning on sim
   if(vtxMap->empty())
   {
-    if(Verbosity()) std::cout << "no vertex found" << std::endl;
+    if(Verbosity())  std::cout << "no vertex found" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -237,8 +238,9 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 
   if (std::abs(m_vtx_z) > m_vtx_cut)
   {
-    if(Verbosity()) std::cout << "vertex not in range" << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+  	 if(Verbosity())
+		 std::cout << "vertex not in range \n vertex is " <<m_vtx_z<<" cm off of nominal 0"  << std::endl;
+   return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   if(m_doSim)
@@ -252,7 +254,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 
 
   //timing cut
-  if(!m_cutParams.get_int_param("passLeadtCut"))
+ if(!m_doSim && !m_cutParams.get_int_param("passLeadtCut"))
   {
     if(Verbosity())
     {
@@ -260,7 +262,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
     }
     return Fun4AllReturnCodes::ABORTEVENT;
   }
-  if(!m_cutParams.get_int_param("passMbdDtCut"))
+  if(!m_doSim && !m_cutParams.get_int_param("passMbdDtCut"))
   {
     if(Verbosity())
     {
@@ -611,7 +613,7 @@ std::pair<float, float> VandyJetDSTSkimmer::isGoodDijet()
 {
   std::pair<float, float> pTs {-999, -999};
 
-  if(!m_cutParams.get_int_param("passDeltatCut"))
+  if(!m_doSim && !m_cutParams.get_int_param("passDeltatCut"))
   {
     if(Verbosity())
     {

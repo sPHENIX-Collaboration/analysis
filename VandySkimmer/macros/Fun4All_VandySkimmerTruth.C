@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <format>
 
@@ -9,7 +10,7 @@
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/SubsysReco.h>
 #include <ffamodules/CDBInterface.h>
-#include <Calo_Calib.C>
+#include "Calo_CalibLocal.C"
 
 #include <caloreco/RawClusterBuilderTopo.h>
 
@@ -18,7 +19,6 @@
 #include <jetbackground/FastJetAlgoSub.h>
 
 #include <g4jets/TruthJetInput.h>
-
 //#include <globalvertex/GlobalVertexReco.h>
 //#include <GlobalVertex.h>                                                            
 //#include <MbdDigitization.h>
@@ -27,7 +27,7 @@
 #include <jetbackground/TimingCut.h>
 
 #include <vandyskimmer/VandyJetDSTSkimmer.h>
-//#include <jetbackground/RetowerCEMC.h>
+#include <jetbackground/RetowerCEMC.h>
 
 
 R__LOAD_LIBRARY(libfun4all.so)
@@ -37,8 +37,9 @@ R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libVandySkimmer.so)
 R__LOAD_LIBRARY(libjetbase.so)
 R__LOAD_LIBRARY(libjetbackground.so)
+R__LOAD_LIBRARY(libg4dst.so)
 
-void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDSTlist, const std::string g4HitsDSTlist, const std::string globalDSTlist, const std::string outDir = "/sphenix/tg/tg01/jets/bkimelman/wEEC/", const std::string nfiles="25")
+void Fun4All_VandySkimmerTruth(const std::string caloDSTlist, const std::string jetDSTlist, const std::string g4HitsDSTlist, const std::string globalDSTlist, const std::string outDir = "/sphenix/tg/tg01/jets/bkimelman/wEEC/", const std::string nfiles="25")
 {
 
   bool doSim = true;
@@ -49,13 +50,32 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
 
   int runnumber = 0;
   int seg = 0;
-  int n = std::stoi(nfiles);
+  int n=0;
+  n = std::stoi(nfiles);
+
   std::ifstream ifs(caloDSTlist);
   std::string filepath;
+  std::getline(ifs,filepath);
   std::pair<int,int> runseg = Fun4AllUtils::GetRunSegment(filepath);
   runnumber = runseg.first;
   seg = runseg.second;
 
+  std::string sample_name {"Jet20"};
+  std::stringstream fullfilename (caloDSTlist);
+  std::string temp1, temp2;
+  while(std::getline(fullfilename, temp1, '/'))
+  {
+	  if(temp1.find("Jet") == std::string::npos) continue;
+	  std::stringstream filetag (temp1);
+	  while(std::getline(filetag, temp2, '_'))
+	  {
+		  if(temp2.find("data") == std::string::npos){
+			  sample_name = temp2;
+			  break;
+		  }
+	  }
+	  break;
+  }
   Fun4AllInputManager *inCalo = new Fun4AllDstInputManager("InputManagerCalo");
   inCalo->AddListFile(caloDSTlist);
   se->registerInputManager(inCalo);
@@ -69,12 +89,12 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
   se->registerInputManager(inTruth);
   
   Fun4AllInputManager *inGlobal = new Fun4AllDstInputManager("InputManagerGlobal");
-  inCalo->AddListFile(globalDSTlist);
+  inGlobal->AddListFile(globalDSTlist);
   se->registerInputManager(inGlobal);
-
+  
   auto rc = recoConsts::instance();
-  rc->set_StringFlag("CDB_GLOBALTAG", "ProdA_2024");
-  rc->set_uint64Flag("TIMESTAMP", runnumber);
+  rc->set_StringFlag("CDB_GLOBALTAG", "MDC2");
+  rc->set_uint64Flag("TIMESTAMP", 28);
   CDBInterface::instance()->Verbosity(0);
   Process_Calo_Calib();
 
@@ -93,12 +113,18 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
   ClusterBuilder->set_absE(true);
   se->registerSubsystem(ClusterBuilder);
 
+  RetowerCEMC* rtcemc = new RetowerCEMC("RetowerCEMV");
+  rtcemc->Verbosity(0);
+  rtcemc->set_towerinfo(true);
+  rtcemc->set_frac_cut(0.5);
+  se->registerSubsystem(rtcemc);
+
   JetReco *towerjetreco = new JetReco("towerJetReco");
   TowerJetInput* emtji = new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER,"TOWERINFO_CALIB_RETOWER");
   TowerJetInput* ohtji = new TowerJetInput(Jet::HCALIN_TOWERINFO,"TOWERINFO_CALIB");
   TowerJetInput* ihtji = new TowerJetInput(Jet::HCALOUT_TOWERINFO,"TOWERINFO_CALIB");
   emtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
-  zzohtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
+  ohtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
   ihtji->set_GlobalVertexType(GlobalVertex::VTXTYPE::MBD);
   towerjetreco->add_input(emtji);
   towerjetreco->add_input(ohtji);
@@ -126,17 +152,18 @@ void Fun4All_VandySkimmer(const std::string caloDSTlist, const std::string jetDS
     se->registerSubsystem(truthjetreco);
   }
 
-  TimingCut* tc = new TimingCut("AntiKt_r04","TimingCutModule",false); //arguments: 1. jet node name to use, 2. name for fun4all module, 3. doAbort. The last of these tells the module whether or not to abort events that fail the cuts.
-  tc->Verbosity(0);
-  se->registerSubsystem(tc);
+//  TimingCut* tc = new TimingCut("AntiKt_r04","TimingCutModule",false); //arguments: 1. jet node name to use, 2. name for fun4all module, 3. doAbort. The last of these tells the module whether or not to abort events that fail the cuts.
+  //tc->Verbosity(0);
+ // se->registerSubsystem(tc);
 
   VandyJetDSTSkimmer *vs = new VandyJetDSTSkimmer("VandyJetDSTSkimmer");
   vs->SetRunnumber(runnumber);
-  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001-{}-{:06d}_to-{:06d}.root",outDir, runnumber,seg, seg+n).c_str());
+  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001_{}-{}-{:06d}_to-{:06d}.root", sample_name, outDir, runnumber,seg, seg+n).c_str());
   vs->SetDoSim(doSim);
+  if(doSim) vs->SetDoCalib(false);
+  if(doSim) vs->SetSimSample(sample_name);
   se->registerSubsystem(vs);
-
-  se->run(-1);
+  se->run(0);
   se->End();
   se->PrintTimer();
 
