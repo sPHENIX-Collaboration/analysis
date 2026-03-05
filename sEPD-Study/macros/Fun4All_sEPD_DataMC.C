@@ -28,6 +28,7 @@ R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD_DataMC(const std::string& fname_global,
                          const std::string& fname_jets,
+                         const std::string& fname_g4hit,
                          const std::string& input_QVecCalib,
                          const std::string& input_sEPD_BadTowers,
                          const std::string& output = "test.root",
@@ -38,6 +39,7 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
   std::cout << "Run Parameters" << std::endl;
   std::cout << "input global: " << fname_global << std::endl;
   std::cout << "input jets: " << fname_jets << std::endl;
+  std::cout << "input g4hit: " << fname_g4hit << std::endl;
   std::cout << "input QVecCalib: " << input_QVecCalib << std::endl;
   std::cout << "input Bad Towers: " << input_sEPD_BadTowers << std::endl;
   std::cout << "output: " << output << std::endl;
@@ -119,6 +121,10 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
   In_jets->AddFile(fname_jets);
   se->registerInputManager(In_jets);
 
+  Fun4AllInputManager* In_g4hit = new Fun4AllDstInputManager("in_g4hit");
+  In_g4hit->AddFile(fname_g4hit);
+  se->registerInputManager(In_g4hit);
+
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->run(nEvents);
   se->End();
@@ -138,11 +144,12 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 5 || args.size() > 8)
+  if (args.size() < 6 || args.size() > 9)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_QVecCalib> <input_BadTowers> [output] [nEvents] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_DST_g4hit> <input_QVecCalib> <input_BadTowers> [output] [nEvents] [dbtag]" << std::endl;
     std::cerr << "  input_DST_global: path to the input global file" << std::endl;
     std::cerr << "  input_DST_jets: path to the input jets file" << std::endl;
+    std::cerr << "  input_DST_g4hit: path to the input g4hit file" << std::endl;
     std::cerr << "  input_QVecCalib: sEPD Q Vector Calib CDB" << std::endl;
     std::cerr << "  input_BadTowers: sEPD Bad Towers CDB" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
@@ -151,15 +158,17 @@ int main(int argc, const char* const argv[])
     return 1;  // Indicate error
   }
 
-  const std::string& input_dst_global = args[1];
-  const std::string& input_dst_jets = args[2];
-  const std::string& input_QVecCalib = args[3];
-  const std::string& input_BadTowers = args[4];
-  std::string output = (args.size() >= 6) ? args[5] : "test.root";
-  int nEvents = (args.size() >= 7) ? std::stoi(args[6]) : 100;
-  std::string dbtag = (args.size() >= 8) ? args[7] : "newcdbtag";
+  size_t arg_ctr = 1;
+  const std::string& input_dst_global = args[arg_ctr++];
+  const std::string& input_dst_jets = args[arg_ctr++];
+  const std::string& input_dst_g4hit = args[arg_ctr++];
+  const std::string& input_QVecCalib = args[arg_ctr++];
+  const std::string& input_BadTowers = args[arg_ctr++];
+  std::string output = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "test.root";
+  int nEvents = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 100;
+  std::string dbtag = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "newcdbtag";
 
-  Fun4All_sEPD_DataMC(input_dst_global, input_dst_jets, input_QVecCalib, input_BadTowers, output, nEvents, dbtag);
+  Fun4All_sEPD_DataMC(input_dst_global, input_dst_jets, input_dst_g4hit, input_QVecCalib, input_BadTowers, output, nEvents, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

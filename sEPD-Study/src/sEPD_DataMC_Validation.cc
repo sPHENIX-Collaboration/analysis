@@ -26,6 +26,10 @@
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+// -- Vtx - Truth
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4VtxPoint.h>
+
 // -- MB
 #include <calotrigger/MinimumBiasClassifier.h>
 #include <calotrigger/MinimumBiasInfo.h>
@@ -69,6 +73,9 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   hZVertex = new TH1F("hZVertex", "Min Bias; Z [cm]; Events", bins_zvtx, zvtx_low, zvtx_high);
   se->registerHisto(hZVertex);
+
+  h2ZVertexTruthvsData = new TH2F("h2ZVertexTruthvsData", "Min Bias; Data Z [cm]; Truth Z [cm]", bins_zvtx, zvtx_low, zvtx_high, bins_zvtx, zvtx_low, zvtx_high);
+  se->registerHisto(h2ZVertexTruthvsData);
 
   unsigned int bins_sepd_totalcharge{100};
   double sepd_totalcharge_low{0};
@@ -327,6 +334,26 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
     m_zvtx = vtx->get_z();
   }
 
+  double truth_z = -9999;
+
+  PHG4TruthInfoContainer *truthInfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+
+  if (truthInfo)
+  {
+    // Get the index of the primary vertex
+    // This method identifies the vertex with the highest embedding ID (the "signal" event)
+    int vtxID = truthInfo->GetPrimaryVertexIndex();
+
+    // Retrieve the vertex point object using that ID
+    PHG4VtxPoint *vtx = truthInfo->GetVtx(vtxID);
+
+    if (vtx)
+    {
+      // Access the truth z-vertex
+      truth_z = vtx->get_z();
+    }
+  }
+
   hEvent->Fill(static_cast<int>(EventType::ALL));
 
   if (std::abs(m_zvtx) < m_zvtx_max)
@@ -342,6 +369,7 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
   }
 
   hZVertex->Fill(m_zvtx);
+  h2ZVertexTruthvsData->Fill(m_zvtx, truth_z);
 
   // skip event if zvtx is too large
   if (std::abs(m_zvtx) > m_zvtx_max)
@@ -739,6 +767,7 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
+  m_zvtx = -9999;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

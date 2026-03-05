@@ -79,6 +79,7 @@ class sEPD_DataMC_Validation : public SubsysReco
 
   // Hists
   TH1* hZVertex{nullptr};
+  TH2* h2ZVertexTruthvsData{nullptr};
   TH1* hCentrality{nullptr};
   TH1* hEvent{nullptr};
 

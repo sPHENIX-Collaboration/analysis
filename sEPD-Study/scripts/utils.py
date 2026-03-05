@@ -462,7 +462,7 @@ def create_f4a_mc_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {f4a_bin} $(input_dst_global) $(input_dst_jet) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root {events} {dbtag} {output_dir}/output
+        arguments      = {f4a_bin} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root {events} {dbtag} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -471,7 +471,7 @@ def create_f4a_mc_jobs():
 
     (output_dir / 'genFun4All.sub').write_text(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst_global,input_dst_jet,input_calib,input_sEPD_BadTowers from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst_global,input_dst_jet,input_dst_g4hit,input_calib,input_sEPD_BadTowers from jobs.list"'
     logger.info(command)
 
 # ----------------------------
