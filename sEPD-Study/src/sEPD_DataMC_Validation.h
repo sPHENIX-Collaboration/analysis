@@ -60,6 +60,7 @@ class sEPD_DataMC_Validation : public SubsysReco
   std::pair<double, double> m_Q_data_N_2;
   std::pair<double, double> m_Q_data_mc_S_2;
   std::pair<double, double> m_Q_data_mc_N_2;
+  std::pair<double, double> m_Q_data_mc_NS_2;
   std::map<std::string, int> m_ctr;
 
   std::string m_recoJetName{"AntiKt_Truth_r02"};
@@ -125,6 +126,7 @@ class sEPD_DataMC_Validation : public SubsysReco
 
   TH2* h2SEPD_Psi2_raw_data_mc_S{nullptr};
   TH2* h2SEPD_Psi2_raw_data_mc_N{nullptr};
+  TH2* h2SEPD_Psi2_raw_data_mc_NS{nullptr};
 
   TH2* h2SEPD_Psi2_data_S{nullptr};
   TH2* h2SEPD_Psi2_data_N{nullptr};
@@ -136,6 +138,7 @@ class sEPD_DataMC_Validation : public SubsysReco
 
   TProfile* hScalarProduct_data{nullptr};
   TProfile* hScalarProduct_data_mc{nullptr};
+  TProfile* hScalarProduct_data_mc_QNS{nullptr};
   TProfile* hRefFlow_data{nullptr};
   TProfile* hRefFlow_data_mc{nullptr};
 };

@@ -223,6 +223,10 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
                             bins_psi, psi_low, psi_high,
                             m_bins_cent, m_cent_low, m_cent_high);
 
+  h2SEPD_Psi2_raw_data_mc_NS = new TH2F("h2SEPD_Psi2_raw_data_mc_NS", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
+                            bins_psi, psi_low, psi_high,
+                            m_bins_cent, m_cent_low, m_cent_high);
+
   // Corrected
   h2SEPD_Psi2_data_S = new TH2F("h2SEPD_Psi2_data_S", "|z| < 10 cm and MB; 2#Psi_{2}; Centrality [%]",
                             bins_psi, psi_low, psi_high,
@@ -253,6 +257,7 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   se->registerHisto(h2SEPD_Psi2_raw_data_mc_S);
   se->registerHisto(h2SEPD_Psi2_raw_data_mc_N);
+  se->registerHisto(h2SEPD_Psi2_raw_data_mc_NS);
 
   se->registerHisto(h2SEPD_Psi2_data_S);
   se->registerHisto(h2SEPD_Psi2_data_N);
@@ -274,10 +279,14 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   hScalarProduct_data_mc = new TProfile("hScalarProduct_data_mc", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
 
+  hScalarProduct_data_mc_QNS = new TProfile("hScalarProduct_data_mc_QNS", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                      m_bins_cent, m_cent_low, m_cent_high);
+
   se->registerHisto(hRefFlow_data);
   se->registerHisto(hRefFlow_data_mc);
   se->registerHisto(hScalarProduct_data);
   se->registerHisto(hScalarProduct_data_mc);
+  se->registerHisto(hScalarProduct_data_mc_QNS);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -527,12 +536,14 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 
   m_Q_data_mc_S_2 = epd_data_mc_S->get_qvector(2);
   m_Q_data_mc_N_2 = epd_data_mc_N->get_qvector(2);
+  m_Q_data_mc_NS_2 = epd_data_mc_NS->get_qvector(2);
 
   std::pair<double, double> Q_raw_data_S_2 = epd_data_S->get_qvector_raw(2);
   std::pair<double, double> Q_raw_data_N_2 = epd_data_N->get_qvector_raw(2);
 
   std::pair<double, double> Q_raw_data_mc_S_2 = epd_data_mc_S->get_qvector_raw(2);
   std::pair<double, double> Q_raw_data_mc_N_2 = epd_data_mc_N->get_qvector_raw(2);
+  std::pair<double, double> Q_raw_data_mc_NS_2 = epd_data_mc_NS->get_qvector_raw(2);
 
   double ref_flow_data = m_Q_data_S_2.first * m_Q_data_N_2.first + m_Q_data_S_2.second * m_Q_data_N_2.second;
   double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
@@ -553,6 +564,7 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 
   double _2psi2_raw_data_mc_S = 2*epd_data_mc_S->GetPsi(Q_raw_data_mc_S_2.first, Q_raw_data_mc_S_2.second, 2);
   double _2psi2_raw_data_mc_N = 2*epd_data_mc_N->GetPsi(Q_raw_data_mc_N_2.first, Q_raw_data_mc_N_2.second, 2);
+  double _2psi2_raw_data_mc_NS = 2*epd_data_mc_N->GetPsi(Q_raw_data_mc_NS_2.first, Q_raw_data_mc_NS_2.second, 2);
 
   h2SEPD_Psi2_data_S->Fill(_2psi2_data_S, m_cent);
   h2SEPD_Psi2_data_N->Fill(_2psi2_data_N, m_cent);
@@ -567,6 +579,7 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 
   h2SEPD_Psi2_raw_data_mc_S->Fill(_2psi2_raw_data_mc_S, m_cent);
   h2SEPD_Psi2_raw_data_mc_N->Fill(_2psi2_raw_data_mc_N, m_cent);
+  h2SEPD_Psi2_raw_data_mc_NS->Fill(_2psi2_raw_data_mc_NS, m_cent);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -591,6 +604,9 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
   double Q_data_mc_N_x = m_Q_data_mc_N_2.first;
   double Q_data_mc_N_y = m_Q_data_mc_N_2.second;
+
+  double Q_data_mc_NS_x = m_Q_data_mc_NS_2.first;
+  double Q_data_mc_NS_y = m_Q_data_mc_NS_2.second;
 
   bool hasJet = false;
 
@@ -624,9 +640,11 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
         double scalar_product_data = jet_Q_x * Q_data_x + jet_Q_y * Q_data_y;
         double scalar_product_data_mc = jet_Q_x * Q_data_mc_x + jet_Q_y * Q_data_mc_y;
+        double scalar_product_data_mc_QNS = jet_Q_x * Q_data_mc_NS_x + jet_Q_y * Q_data_mc_NS_y;
 
         hScalarProduct_data->Fill(m_cent, scalar_product_data);
         hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
+        hScalarProduct_data_mc_QNS->Fill(m_cent, scalar_product_data_mc_QNS);
       }
     }
   }
