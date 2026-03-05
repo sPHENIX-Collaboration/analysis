@@ -135,6 +135,7 @@ class VandyJetDSTSkimmer : public SubsysReco
     EventInfo *m_eventInfo = new EventInfo();
     std::vector<Tower> m_towerInfo;
     std::map<std::pair<int,int>, int> m_towerInfo_map;
+    std::map<std::pair<int,int>, int> m_towerInfoTruth_map;
     std::map<std::array<int,3>, int> m_towerInfo_map2;
     std::vector<JetInfo> m_jetInfo[4];
     std::vector<JetInfo> m_topoclusters;
