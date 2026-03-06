@@ -51,6 +51,7 @@ class sEPD_DataMC_Validation : public SubsysReco
   double m_jet_pt_min{10};   // GeV
   double m_jet_eta_max{0.9}; // 1.1-R
   double m_zvtx_max{10};     // cm
+  double m_zvtx_max_v2{50};  // cm
 
   // Event Vars
   double m_cent{0};
@@ -80,6 +81,9 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH1* hZVertex{nullptr};
   TH2* h2ZVertexTruthvsData{nullptr};
   TH1* hCentrality{nullptr};
+  TH1* hCentralityZ50{nullptr};
+  TH1* hCentralityZOuter{nullptr};
+  TH2* h2ZVertexCentrality{nullptr};
   TH1* hEvent{nullptr};
 
   TH2* h2SEPD_totalcharge_centrality{nullptr};

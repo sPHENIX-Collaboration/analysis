@@ -65,7 +65,13 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
+  hCentralityZ50 = new TH1F("hCentralityZ50", "|z| < 50 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+
+  hCentralityZOuter = new TH1F("hCentralityZOuter", "10 cm < |z| < 50 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+
   se->registerHisto(hCentrality);
+  se->registerHisto(hCentralityZ50);
+  se->registerHisto(hCentralityZOuter);
 
   unsigned int bins_zvtx{200};
   double zvtx_low{-50};
@@ -76,6 +82,9 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   h2ZVertexTruthvsData = new TH2F("h2ZVertexTruthvsData", "Min Bias; Data Z [cm]; Truth Z [cm]", bins_zvtx, zvtx_low, zvtx_high, bins_zvtx, zvtx_low, zvtx_high);
   se->registerHisto(h2ZVertexTruthvsData);
+
+  h2ZVertexCentrality = new TH2F("h2ZVertexCentrality", "Min Bias; Z [cm]; Centrality [%]", bins_zvtx, zvtx_low, zvtx_high, m_bins_cent, m_cent_low, m_cent_high);
+  se->registerHisto(h2ZVertexCentrality);
 
   unsigned int bins_sepd_totalcharge{100};
   double sepd_totalcharge_low{0};
@@ -333,6 +342,14 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
     }
   }
 
+  CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
+  if (!centInfo)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
+
   hEvent->Fill(static_cast<int>(EventType::ALL));
 
   if (std::abs(m_zvtx) < m_zvtx_max)
@@ -349,6 +366,17 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 
   hZVertex->Fill(m_zvtx);
   h2ZVertexTruthvsData->Fill(m_zvtx, truth_z);
+  h2ZVertexCentrality->Fill(m_zvtx, m_cent);
+
+  if (std::abs(m_zvtx) < m_zvtx_max_v2)
+  {
+    hCentralityZ50->Fill(m_cent);
+
+    if (std::abs(m_zvtx) > m_zvtx_max)
+    {
+      hCentralityZOuter->Fill(m_cent);
+    }
+  }
 
   // skip event if zvtx is too large
   if (std::abs(m_zvtx) > m_zvtx_max)
@@ -365,14 +393,6 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_centrality(PHCompositeNode *topNode)
 {
-  CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
-  if (!centInfo)
-  {
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
-
   if (!std::isfinite(m_cent) || m_cent < 0 || m_cent >= m_cent_max_threshold)
   {
     ++m_ctr["events_centrality_bad"];
