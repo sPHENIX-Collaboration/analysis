@@ -197,16 +197,79 @@ void DisplayDataMC::draw()
   // ---------------------------------------------------
 
   {
-    auto* hCentrality = m_hists["hCentrality"].get();
+    auto plotAndSave = [&](std::string_view name = "")
+    {
+      auto* hist = m_hists[std::string(name)].get();
 
-    hCentrality->Draw("HIST");
+      hist->Draw("HIST");
 
-    hCentrality->GetYaxis()->SetMaxDigits(3);
-    hCentrality->SetLineColor(kBlue);
-    hCentrality->SetLineWidth(3);
+      hist->GetYaxis()->SetMaxDigits(3);
+      hist->SetLineColor(kBlue);
+      hist->SetLineWidth(3);
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+    };
+
+    plotAndSave("hCentrality");
+    plotAndSave("hCentralityZ50");
+    plotAndSave("hCentralityZOuter");
+  }
+
+  // ---------------------------------------------------
+
+  {
+    c1->SetRightMargin(.14F);
+    c1->SetTopMargin(.08F);
+    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"].get());
+
+    h2ZVertexCentrality->Draw("COLZ1");
 
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hCentrality").c_str());
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2ZVertexCentrality").c_str());
+
+    h2ZVertexCentrality->GetYaxis()->SetRangeUser(-0.5, 10.5);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2ZVertexCentrality-zoom").c_str());
+
+    c1->SetRightMargin(.02F);
+    c1->SetTopMargin(.11F);
+  }
+
+  // ---------------------------------------------------
+
+  {
+    struct PlotOptions
+    {
+      int bin_low{0};
+      int bin_high{0};
+      std::string title;
+    };
+
+    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"].get());
+    auto plotAndSave = [&](TH2* h2, PlotOptions opts = {}, std::string_view name = "")
+    {
+      auto* h1 = h2->ProjectionX("px", opts.bin_low, opts.bin_high);
+
+      h1->Draw("HIST");
+
+      h1->SetLineColor(kBlue);
+      h1->SetLineWidth(3);
+      h1->SetTitle(opts.title.c_str());
+      h1->GetYaxis()->SetTitle("Events");
+      h1->GetYaxis()->SetTitleOffset(1.2F);
+      h1->GetYaxis()->SetMaxDigits(3);
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+    };
+
+    plotAndSave(h2ZVertexCentrality, {.bin_low = 2, .bin_high = 2, .title = "Min Bias & Centrality: 1%"}, "h2ZVertexCentrality_1");
+    plotAndSave(h2ZVertexCentrality, {.bin_low = 3, .bin_high = 3, .title = "Min Bias & Centrality: 2%"}, "h2ZVertexCentrality_2");
+    plotAndSave(h2ZVertexCentrality, {.bin_low = 4, .bin_high = 4, .title = "Min Bias & Centrality: 3%"}, "h2ZVertexCentrality_3");
+    plotAndSave(h2ZVertexCentrality, {.bin_low = 5, .bin_high = 5, .title = "Min Bias & Centrality: 4%"}, "h2ZVertexCentrality_4");
+    plotAndSave(h2ZVertexCentrality, {.bin_low = 31, .bin_high = 31, .title = "Min Bias & Centrality: 30%"}, "h2ZVertexCentrality_30");
   }
 
   // ---------------------------------------------------
@@ -609,41 +672,13 @@ void DisplayDataMC::draw()
   // ---------------------------------------------------
 
   {
-    c1->SetRightMargin(.12F);
-    auto* h2JetEtaDiffVtxZ = dynamic_cast<TH2*>(m_hists["h2JetEtaDiffVtxZ"].get());
-
-    h2JetEtaDiffVtxZ->Draw("COLZ1");
-    h2JetEtaDiffVtxZ->SetTitle("");
-    h2JetEtaDiffVtxZ->GetYaxis()->SetTitleOffset(1.15F);
-    h2JetEtaDiffVtxZ->GetYaxis()->SetTitleSize(0.05F);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2JetEtaDiffVtxZ").c_str());
-  }
-
-  // ---------------------------------------------------
-
-  {
-    auto* h2JetEtaSignFlip = dynamic_cast<TH2*>(m_hists["h2JetEtaSignFlip"].get());
-
-    h2JetEtaSignFlip->Draw("COLZ1");
-    h2JetEtaSignFlip->GetYaxis()->SetTitleOffset(1.15F);
-    h2JetEtaSignFlip->GetYaxis()->SetTitleSize(0.05F);
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2JetEtaSignFlip").c_str());
-  }
-
-  // ---------------------------------------------------
-
-  {
     c1->SetRightMargin(.04F);
     // Data+MC
     auto* hRefFlow_squared_data_mc = dynamic_cast<TProfile*>(m_hists["hRefFlow_data_mc"].get());
     hRefFlow_squared_data_mc->Rebin(10);
 
     auto* hRefFlow_data_mc = hRefFlow_squared_data_mc->ProjectionX();
-    auto* hScalarProduct_data_mc = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_mc_corr"].get());
+    auto* hScalarProduct_data_mc = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_mc"].get());
     hScalarProduct_data_mc->Rebin(10);
 
     auto* hJetV2_data_mc = hScalarProduct_data_mc->ProjectionX();
@@ -653,7 +688,7 @@ void DisplayDataMC::draw()
     hRefFlow_squared_data->Rebin(10);
 
     auto* hRefFlow_data = hRefFlow_squared_data->ProjectionX();
-    auto* hScalarProduct_data = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_corr"].get());
+    auto* hScalarProduct_data = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data"].get());
     hScalarProduct_data->Rebin(10);
 
     auto* hJetV2_data = hScalarProduct_data->ProjectionX();
