@@ -419,7 +419,7 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int sEPD_DataMC_Validation::process_centrality(PHCompositeNode *topNode)
+int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode *topNode)
 {
   if (!std::isfinite(m_cent) || m_cent < 0 || m_cent >= m_cent_max_threshold)
   {
