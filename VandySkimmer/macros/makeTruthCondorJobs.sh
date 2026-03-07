@@ -126,7 +126,6 @@ chunk_dst_list()
 		if [ "$verbose" = true ]; then 
 			echo "Creating file lists and lookup files"
 		fi
-	       	echo "HERE"	
 		if [ -f truth_density_${filedensity}.list ]; then 
 			rm truth_density_${filedensity}.list
 			rm jet_density_${filedensity}.list
@@ -143,7 +142,7 @@ chunk_dst_list()
 		Nseg=`wc -l  < truth.list`
 		nSegsUsed=0
 		while [ $nSegsUsed -le $Nseg ]; do 
-			nStop=$(( nSegsUsed + filedensity - 1 )) 
+			nStop=$(( nSegsUsed + filedensity - 1 ))
 			truthChunk=$(pwd)/${listdir}/truth_seg_${nSegsUsed}_to_${nStop}.list
 			jetChunk=$(pwd)/${listdir}/jet_seg_${nSegsUsed}_to_${nStop}.list
 			caloChunk=$(pwd)/${listdir}/calo_seg_${nSegsUsed}_to_${nStop}.list
@@ -164,12 +163,15 @@ chunk_dst_list()
 			echo ${jetChunk} >> jet_density_${filedensity}.list
 			echo ${caloChunk} >> calo_density_${filedensity}.list
 			echo ${globalChunk} >> global_density_${filedensity}.list
-			
+			line0=$(( nChunks * filedensity ))
 			for i in $(seq 0 $filedensity); do
-				line0=$(( n * filedensity ))
 				j=$(( line0 + i + 1 ))
+				nSegsUsed=$(( nSegsUsed + 1 ))
 				if [[ $j -gt $Nseg || $j -gt $nStop ]]; then
 					break
+				fi
+				if [ "$superverbose" = true ]; then 
+					echo "Looking at line " $j
 				fi
 				truth=`sed "${j}q;d" truth.list`
 				jet=`sed "${j}q;d" jet.list`
@@ -180,7 +182,6 @@ chunk_dst_list()
 				echo ${jet} >> ${jetChunk}	
 				echo ${calo} >> ${caloChunk}	
 				echo ${global} >> ${globalChunk}	
-				nSegsUsed=$(( nSegsUsed + 1 ))
 			done
 			nChunks=$(( nChunks + 1 ))
 			if [[ $nSegsUsed -gt $Nseg ]]; then

@@ -158,7 +158,7 @@ void Fun4All_VandySkimmerTruth(const std::string caloDSTlist, const std::string 
 
   VandyJetDSTSkimmer *vs = new VandyJetDSTSkimmer("VandyJetDSTSkimmer");
   vs->SetRunnumber(runnumber);
-  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001_{}-{}-{:06d}_to-{:06d}.root", sample_name, outDir, runnumber,seg, seg+n).c_str());
+  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001_{}-{}-{:06d}_to-{:06d}.root", outDir, sample_name, runnumber,seg, seg+n).c_str());
   vs->SetDoSim(doSim);
   if(doSim) vs->SetDoCalib(false);
   if(doSim) vs->SetSimSample(sample_name);
