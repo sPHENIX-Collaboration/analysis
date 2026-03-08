@@ -27,7 +27,9 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"HCALIN Frac Bad Chi2", "HCALIN_hotTowers_fracBadChi2"},
       {"HCALIN Mean Time", "HCALIN_meanTime"},
       {"HCALOUT Frac Bad Chi2", "HCALOUT_hotTowers_fracBadChi2"},
-      {"HCALOUT Mean Time", "HCALOUT_meanTime"}
+      {"HCALOUT Mean Time", "HCALOUT_meanTime"},
+      {"sEPD Bad Tower Map", "SEPD_BadTowerMap"},
+      {"sEPD Event Plane", "SEPD_EventPlaneCalib"}
       };
 
   for (const auto& [description, name] : cdb)
