@@ -5,6 +5,7 @@ AM_CPPFLAGS = \
   -I$(OFFLINE_MAIN)/include/eigen3 \
   -I$(OFFLINE_MAIN)/include \
   -I$(OPT_SPHENIX)/include \
+  -I$(OPT_SPHENIX)/hdf5/include \
   -I`root-config --incdir`
 
 lib_LTLIBRARIES = \
@@ -15,11 +16,13 @@ AM_CXXFLAGS = -Werror
 libtpcmldatainterface_la_LDFLAGS = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -L$(OPT_SPHENIX)/lib
+  -L$(OPT_SPHENIX)/lib\
+  -L$(OPT_SPHENIX)/hdf5/lib
 
 libtpcmldatainterface_la_LIBADD = \
   -lg4dst \
   -lfun4all \
+  -lg4eval \
   -lhdf5_cpp 
 
 pkginclude_HEADERS = \

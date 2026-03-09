@@ -17,10 +17,10 @@
 // #include <phool/PHNodeIterator.h>
 
 // #include <trackbase/TrkrDefs.h>
-#include <trackbase/TrkrCluster.h>
-#include <trackbase/TrkrClusterContainer.h>
-#include <trackbase/TrkrHitSetContainer.h>
-#include <trackbase/TrkrHitSet.h>
+#include <trackbase/TrkrClusterv2.h>
+#include <trackbase/TrkrClusterContainerv1.h>
+#include <trackbase/TrkrHitSetContainerv1.h>
+#include <trackbase/TrkrHitSetv1.h>
 
 // #include <TTree.h>
 #include <TFile.h>
@@ -43,6 +43,7 @@
 #define LogWarning(exp) std::cout<<"WARNING: "  <<__FILE__<<": "<<__LINE__<<": "<< exp <<"\n"
 
 
+//______________________________________________________________________________
 AnaMvtxTestBeam2019::AnaMvtxTestBeam2019(const std::string &name,
                                          const std::string &ofName):
   SubsysReco(name),
@@ -55,11 +56,11 @@ AnaMvtxTestBeam2019::AnaMvtxTestBeam2019(const std::string &name,
   m_ievent(0),
   m_ref_align_stave(1)
 {
-
   h1d_nevents = NULL;
   h1d_hit_layer = NULL;
   h1d_clu_layer = NULL;
   h1d_clu_map = NULL;
+
   for (int il = 0; il < NLAYER; il++)
   {
     h2f_hit_map[il] = NULL;
@@ -75,7 +76,6 @@ AnaMvtxTestBeam2019::AnaMvtxTestBeam2019(const std::string &name,
 
     htrk_cut_dz[il] = NULL;
     htrk_cut_dx[il] = NULL;
-
   }
 
   htrk = NULL;
@@ -88,12 +88,13 @@ AnaMvtxTestBeam2019::AnaMvtxTestBeam2019(const std::string &name,
   htrk_cut_chi2zy = NULL;
 
   m_mvtxtracking = new MvtxStandaloneTracking();
-
 }
 
-int AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
-{
 
+//______________________________________________________________________________
+int
+AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
+{
   int chipColor[] = {kBlue, kRed, kGreen+2, kMagenta+2};
 
   //-- Initialize list containe for clusterQA
@@ -154,12 +155,10 @@ int AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
     m_lout_clusterQA->Add(h1d_clu_size[il]);
     m_lout_clusterQA->Add(h1d_clu_size_phi[il]);
     m_lout_clusterQA->Add(h1d_clu_size_z[il]);
-
-   } // il
+  } // il
 
   if ( do_tracking )
   {
-
     m_lout_tracking = new TList();
     m_lout_tracking->SetName("Tracking");
     m_lout_tracking->SetOwner(true);
@@ -197,9 +196,11 @@ int AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
       m_lout_tracking->Add(htrk_cut_dx[il]);
       m_lout_tracking->Add(htrk_cut_dz[il]);
     }
+
     htrk_chi2xy = new TH1D("htrk_chi2xy",
                            ";track chi2/ndf in x vs y",
                            500, 0, 100);
+
     htrk_chi2zy = new TH1D("htrk_chi2zy",
                            ";track chi2/ndf in z vs y",
                            500, 0, 100);
@@ -207,6 +208,7 @@ int AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
     htrk_cut_chi2xy = new TH1D("htrk_cut_chi2xy",
                                ";track chi2/ndf in x vs y",
                                500, 0, 100);
+
     htrk_cut_chi2zy = new TH1D("htrk_cut_chi2zy",
                                ";track chi2/ndf in z vs y",
                                500, 0, 100);
@@ -215,26 +217,27 @@ int AnaMvtxTestBeam2019::Init(PHCompositeNode *topNode)
     m_lout_tracking->Add(htrk_chi2zy);
     m_lout_tracking->Add(htrk_cut_chi2xy);
     m_lout_tracking->Add(htrk_cut_chi2zy);
-
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
-
 }
 
-int AnaMvtxTestBeam2019::InitRun(PHCompositeNode *topNode)
-{
 
+//______________________________________________________________________________
+int
+AnaMvtxTestBeam2019::InitRun(PHCompositeNode *topNode)
+{
   //-- set counters
   m_ievent = -1; // since we count at the beginning of the event, start at -1
 
   return Fun4AllReturnCodes::EVENT_OK;
-
 }
 
-int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
-{
 
+//______________________________________________________________________________
+int
+AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
+{
   if ( Verbosity() > VERBOSITY_MORE )
     std::cout << "AnaMvtxTestBeam2019::process_event()" << std::endl;
 
@@ -249,29 +252,21 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
   if ( retval != Fun4AllReturnCodes::EVENT_OK )
     return retval;
 
-  if ( Verbosity() > VERBOSITY_MORE )
-  {
-    std::cout << "-- evnt:" << m_ievent << std::endl;
-    std::cout << "-- Nhits:" << m_hits->size() << std::endl;
-    std::cout << "-- Nclus:" << m_clusters->size() << std::endl;
-  }
-    h1d_nevents->Fill(1);
+  h1d_nevents->Fill(1);
 
   // loop over each MvtxHitSet object (chip)
   unsigned int n_hits = 0;
-  TrkrHitSetContainer::ConstRange hitsetrange =
-    m_hits->getHitSets(TrkrDefs::TrkrId::mvtxId);
-  for (TrkrHitSetContainer::ConstIterator hitsetitr = hitsetrange.first;
+  auto hitsetrange = m_hits->getHitSets(TrkrDefs::TrkrId::mvtxId);
+  for (auto hitsetitr = hitsetrange.first;
       hitsetitr != hitsetrange.second;
       ++hitsetitr)
   {
-    TrkrHitSet *hitset = hitsetitr->second;
+    auto hitset = hitsetitr->second;
 
-    int layer = TrkrDefs::getLayer(hitset->getHitSetKey());
-    int stave = MvtxDefs::getStaveId(hitset->getHitSetKey());
-    int chip  = MvtxDefs::getChipId(hitset->getHitSetKey());
-
-    if ( Verbosity() > VERBOSITY_A_LOT )
+    auto layer = TrkrDefs::getLayer(hitset->getHitSetKey());
+    auto stave = MvtxDefs::getStaveId(hitset->getHitSetKey());
+    auto chip  = MvtxDefs::getChipId(hitset->getHitSetKey());
+    if (Verbosity() > VERBOSITY_A_LOT)
     {
       std::cout << "layer: " << layer << " stave: " \
       << stave << " chip: " << chip << std::endl;
@@ -280,28 +275,22 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
     //------
     //-- Loop over hits
     //------
-    TrkrHitSet::ConstRange hitrangei = hitset->getHits();
-    for (TrkrHitSet::ConstIterator hitr = hitrangei.first;
+    auto hitrangei = hitset->getHits();
+    for (auto hitr = hitrangei.first;
         hitr != hitrangei.second;
         ++hitr)
     {
       ++n_hits;
-      int col = MvtxDefs::getCol( hitr->first);
-      int row = MvtxDefs::getRow( hitr->first);
-      int stave_col = chip * SegmentationAlpide::NCols + col;
+      auto col = MvtxDefs::getCol( hitr->first);
+      auto row = MvtxDefs::getRow( hitr->first);
+      auto stave_col = chip * SegmentationAlpide::NCols + col;
 
-      //if (!MvtxPrototype2Geom::detectorToStave(chip, row, col, sRow, sCol)){
-      //  cout << "ERROR" << endl;
-      //  return Fun4AllReturnCodes::ABORTEVENT;
-      //}
       h1d_hit_layer->Fill(layer);
       h2f_hit_map[layer]->Fill(stave_col, row);
-
-      //cout << "col: " << col << " row: " << row << endl;
-
     }
   }
-  if ( m_clusters->size() > n_hits )
+
+  if (m_clusters->size() > n_hits)
     std::cout << __PRETTY_FUNCTION__ \
               << " : WARNING!! Nclus " << m_clusters->size() \
               << " > Nhits " << n_hits << std::endl;
@@ -309,32 +298,31 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
   //------
   //-- Loop over clusters
   //------
-  if ( Verbosity() > VERBOSITY_MORE )
-    std::cout << "-- Looping over clusters" << std::endl;
+  if (Verbosity() > VERBOSITY_MORE)
+  {
+    std::cout << "-- Looping over clusters." << std::endl;
+  }
 
-  LyrClusMap _mmap_lyr_clus;
-
-  TrkrClusterContainer::ConstRange clusrange = m_clusters->getClusters();
+  LyrClusMap m_LyrClusMap;
 
   int   n_clu_per_layer[NLAYER] = {0};
-  float mean_clu_x[NLAYER] = {0};
-  float mean_clu_z[NLAYER] = {0};
-  for (TrkrClusterContainer::ConstIterator iter_clus = clusrange.first;
-       iter_clus != clusrange.second;
+  float mean_clu_x[NLAYER] = {0.};
+  float mean_clu_z[NLAYER] = {0.};
+
+  int n_clus = 0;
+  auto clus_range = m_clusters->getClusters();
+  for (auto iter_clus = clus_range.first;
+       iter_clus != clus_range.second;
        ++iter_clus)
   {
-
-    TrkrCluster *clus = iter_clus->second;
-    // clus->identify();
-
-    TrkrDefs::cluskey ckey = clus->getClusKey();
-
-    int lyr = TrkrDefs::getLayer(ckey);
+    auto clus = iter_clus->second;
+    auto ckey = clus->getClusKey();
+    auto lyr  = TrkrDefs::getLayer(ckey);
 
     h1d_clu_layer->Fill(lyr);
 
-    if (lyr < 0 || lyr > 3)
-      continue;
+    if ((lyr < 0) || (lyr > 3)) continue;
+
     h1d_clu_size[lyr]->Fill(clus->getAdc());
     h1d_clu_size_phi[lyr]->Fill(clus->getPhiSize()/SegmentationAlpide::PitchRow);
     h1d_clu_size_z[lyr]->Fill(clus->getZSize()/SegmentationAlpide::PitchCol);
@@ -346,13 +334,14 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
     mean_clu_x[lyr] += clus->getX();
 
     // insert into map
-    _mmap_lyr_clus.insert(std::make_pair(lyr, clus));
+    m_LyrClusMap.insert(std::make_pair(lyr, clus));
+    n_clus++;
   }
 
   char clu_map = 0;
-  for ( int ilyr = 0; ilyr < NLAYER; ++ilyr )
+  for (int ilyr = 0; ilyr < NLAYER; ++ilyr)
   {
-    if ( n_clu_per_layer[ilyr] > 0 )
+    if (n_clu_per_layer[ilyr] > 0)
     {
       mean_clu_z[ilyr] /= (float)n_clu_per_layer[ilyr];
       mean_clu_x[ilyr] /= (float)n_clu_per_layer[ilyr];
@@ -364,38 +353,42 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
   }
   h1d_clu_map->Fill(clu_map);
 
-  if ( Verbosity() > VERBOSITY_MORE )
-    std::cout << "-- _mmap_lyr_clus.size():" << _mmap_lyr_clus.size() << std::endl;
+  if (Verbosity() > VERBOSITY_MORE)
+  {
+    std::cout << "-- evnt:  " << m_ievent << std::endl;
+    std::cout << "-- Nhits: " << n_hits << std::endl;
+    std::cout << "-- Nclus: " << n_clus << std::endl;
+    std::cout << "-- m_LyrClusMap.size(): " << m_LyrClusMap.size() << std::endl;
+  }
 
   //------
   //-- Simple tracking
   //------
-  if ( do_tracking )
+  if (do_tracking)
   {
-
     //------
     // Try full tracking
     //------
     MvtxStandaloneTracking::MvtxTrackList tracklist;
 
-    std::vector<int> use_layers;
+    std::vector<unsigned int> use_layers;
     use_layers.push_back(3);
     use_layers.push_back(2);
     use_layers.push_back(0);
     use_layers.push_back(1);
 
-    m_mvtxtracking->RunTracking(topNode, tracklist, use_layers);
+    m_mvtxtracking->RunTracking(m_LyrClusMap, tracklist, use_layers);
 
     htrk->Fill(tracklist.size());
 
     int ncut = 0;
-    for ( unsigned int i = 0; i < tracklist.size(); i++)
+    for (unsigned int i = 0; i < tracklist.size(); i++)
     {
       htrk_clus->Fill(tracklist.at(i).ClusterList.size());
       htrk_chi2xy->Fill(tracklist.at(i).chi2_xy);
       htrk_chi2zy->Fill(tracklist.at(i).chi2_zy);
 
-      if ( tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
+      if (tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
       {
         ++ncut;
         htrk_cut_chi2xy->Fill(tracklist.at(i).chi2_xy);
@@ -403,13 +396,12 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
         htrk_cut_clus->Fill(tracklist.at(i).ClusterList.size());
       }
 
-      for ( unsigned int j = 0; j < tracklist.at(i).ClusterList.size(); j++)
+      for (unsigned int j = 0; j < tracklist.at(i).ClusterList.size(); j++)
       {
-        TrkrDefs::cluskey ckey = tracklist.at(i).ClusterList.at(j)->getClusKey();
+        auto ckey = tracklist.at(i).ClusterList.at(j)->getClusKey();
+        auto lyr  = TrkrDefs::getLayer(ckey);
 
-        int lyr = TrkrDefs::getLayer(ckey);
-
-        if ( lyr < 0 || lyr >= 4 )
+        if ((lyr < 0) || (lyr >= 4))
         {
           std::cout << PHWHERE << " WARNING: bad layer from track cluster. lyr:" << lyr << std::endl;
           continue;
@@ -418,95 +410,96 @@ int AnaMvtxTestBeam2019::process_event(PHCompositeNode *topNode)
         htrk_dx[lyr]->Fill(tracklist.at(i).dx.at(j));
         htrk_dz[lyr]->Fill(tracklist.at(i).dz.at(j));
 
-        if ( tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
+        if (tracklist.at(i).chi2_xy < 5 && tracklist.at(i).chi2_zy < 5)
         {
           htrk_cut_dx[lyr]->Fill(tracklist.at(i).dx.at(j));
           htrk_cut_dz[lyr]->Fill(tracklist.at(i).dz.at(j));
         }
       } // j
-
-
     } // i
-
     htrk_cut->Fill(ncut);
   }
-  //-- Cleanup
-
   //-- End
   return Fun4AllReturnCodes::EVENT_OK;
-
  }
 
-int AnaMvtxTestBeam2019::End(PHCompositeNode * topNode)
+
+//______________________________________________________________________________
+int
+AnaMvtxTestBeam2019::End(PHCompositeNode *topNode)
 {
-
   //-- Open file
-  PHTFileServer::get().open( m_foutname, "RECREATE" );
+  PHTFileServer::get().open(m_foutname, "RECREATE");
 
-  PHTFileServer::get().cd( m_foutname );
+  PHTFileServer::get().cd(m_foutname);
   gDirectory->mkdir(m_lout_clusterQA->GetName())->cd();
   m_lout_clusterQA->Write();
 
-  if ( m_lout_tracking )
+  if (m_lout_tracking)
   {
-    PHTFileServer::get().cd( m_foutname );
+    PHTFileServer::get().cd(m_foutname);
     gDirectory->mkdir(m_lout_tracking->GetName())->cd();
     m_lout_tracking->Write();
   }
-  PHTFileServer::get().write( m_foutname );
+  PHTFileServer::get().write(m_foutname);
   PHTFileServer::get().close();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+
 /*
  * get all the necessary nodes from the node tree
  */
-int AnaMvtxTestBeam2019::GetNodes(PHCompositeNode * topNode)
+//______________________________________________________________________________
+int
+AnaMvtxTestBeam2019::GetNodes(PHCompositeNode *topNode)
 {
-
   // Input Hits
-  m_hits = findNode::getClass<TrkrHitSetContainer>(topNode, "TRKR_HITSET");
-  if ( !m_hits )
+  m_hits = findNode::getClass<TrkrHitSetContainerv1>(topNode, "TRKR_HITSET");
+  if (! m_hits)
   {
-    std::cout << PHWHERE << " HITSETS node was not found on node tree"
-              << std::endl;
+    std::cout << PHWHERE << " HITSETS node was not found on node tree" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   // Input Svtx Clusters
-  m_clusters = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER");
-  if ( !m_clusters )
+  m_clusters = findNode::getClass<TrkrClusterContainerv1>(topNode, "TRKR_CLUSTER");
+  if (! m_clusters)
   {
-    std::cout << PHWHERE << " TRKR_CLUSTER node not found on node tree"
-              << std::endl;
+    std::cout << PHWHERE << " TRKR_CLUSTER node not found on node tree" << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
-
 }
+
 
 /*
  * Simple helper function for calculating the slope between two points
  */
+//______________________________________________________________________________
 double
 AnaMvtxTestBeam2019::CalcSlope(double x0, double y0, double x1, double y1)
 {
   return (y1 - y0) / (x1 - x0);
 }
 
+
 /*
  * Simple helper function for calculating intercept
  */
+//______________________________________________________________________________
 double
 AnaMvtxTestBeam2019::CalcIntecept(double x0, double y0, double m)
 {
   return y0 - x0 * m;
 }
 
+
 /*
  * Simple helper function for calculating projection
  */
+//______________________________________________________________________________
 double
 AnaMvtxTestBeam2019::CalcProjection(double x, double m, double b)
 {

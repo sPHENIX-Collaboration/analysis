@@ -19,10 +19,14 @@ noinst_HEADERS = \
 libantisigma_la_SOURCES = \
   EdepNtuple.cc \
   EdepNtuple_Dict.C \
-  ShowerSize.cc \
-  ShowerSize_Dict.C \
+  HijingCountNtuple.cc \
+  HijingCountNtuple_Dict.C \
   HijingShowerSize.cc \
   HijingShowerSize_Dict.C \
+  HitCountNtuple.cc \
+  HitCountNtuple_Dict.C \
+  ShowerSize.cc \
+  ShowerSize_Dict.C \
   SigmaTimingNtuple.cc \
   SigmaTimingNtuple_Dict.C \
   TimingNtuple.cc \

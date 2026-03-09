@@ -4,7 +4,9 @@ lib_LTLIBRARIES = \
     libhftrigger.la
 
 AM_LDFLAGS = \
-  -L$(libdir) 
+  -L$(libdir) \
+  -L$(OFFLINE_MAIN)/lib \
+  `root-config --libs`
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -13,18 +15,19 @@ AM_CPPFLAGS = \
   -I$(OFFLINE_MAIN)/include/eigen3
 
 pkginclude_HEADERS = \
+  HFTriggerMVA.h \
   HFTrigger.h
 
 libhftrigger_la_SOURCES = \
+  HFTriggerMVA.cc \
   HFTrigger.cc
 
-libhftrigger_la_LDFLAGS = \
+libhftrigger_la_LIBADD = \
   -L$(libdir) \
   -L$(OFFLINE_MAIN)/lib \
-  -I$(ROOTSYS)/include \
-  -I$(OFFLINE_MAIN)/include/eigen3 \
   -lfun4all \
-  -lg4eval 
+  -lg4eval \
+  -lTMVA
 
 # Rule for generating table CINT dictionaries.
 %_Dict.cc: %.h %LinkDef.h

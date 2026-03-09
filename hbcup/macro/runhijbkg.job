@@ -1,0 +1,12 @@
+Universe       = vanilla
+Notification   = Never
+Initialdir     = $ENV(PWD)
+Executable     = $ENV(PWD)/runhijbkg.cmd
+Arguments      = $(Process)
+Log            = $ENV(PWD)/log/hijbkg_$(Process).log
+Output         = $ENV(PWD)/log/hijbkg_$(Process).out
+Error          = $ENV(PWD)/log/hijbkg_$(Process).err
+request_memory = 4096MB
+#PeriodicHold   = (NumJobStarts>=1 && JobStatus == 1)
+GetEnv         = True
+Queue 20000

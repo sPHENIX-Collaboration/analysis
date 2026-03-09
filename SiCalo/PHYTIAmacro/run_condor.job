@@ -1,0 +1,45 @@
+Universe           = vanilla
+Notification       = Never
+PeriodicHold       = (NumJobStarts>=2 && JobStatus == 1)
+request_memory     = 10GB
+#Priority           = 20
+concurrency_limits = CONCURRENCY_LIMIT_DEFAULT:1000
+job_lease_duration = 86400
+
+# If you need multiple cores you can ask for them, but the scheduling
+# may take longer the "larger" a job you ask for
+request_cpus=1
+
+# Copy all of the user's current shell environment variables 
+# at the time of job submission.
+GetEnv=True
+
+# The requirement line specifies which machines we want to
+# run this job on.  Any arbitrary classad expression can
+# be used.
+Requirements=(CPU_Speed >= 1)
+
+# Rank is an expression that states how to rank machines which 
+# have already met the requirements expression.  Essentially, 
+# rank expresses preference.  A higher numeric value equals better 
+# rank.  Condor will give the job the machine with the highest rank.
+Rank=CPU_Speed
+
+Initialdir         = /sphenix/user/jaein213/tracking/SiliconSeeding/MC/PYTHIA/macro
+
+Executable         = $(Initialdir)/run_job.sh
+
+ANA_build          = 481
+Process_ID         = 0
+output_directory   = /sphenix/user/jaein213/tracking/SiliconSeeding/MC/PYTHIA/macro/condorlog/
+
+Arguments          = "$(Process_ID) $(ANA_build)"
+
+log_filename       = ana$(ANA_build)_$(Process_ID)
+Output             = $(output_directory)/log/$(log_filename).out
+Error              = $(output_directory)/log/$(log_filename).err
+Log                = $(output_directory)/log/$(log_filename).log
+
+on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)
+queue Process_ID from id_list.txt
+#Queue 1000

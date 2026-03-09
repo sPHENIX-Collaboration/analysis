@@ -1,0 +1,8 @@
+1) The macro Fun4All_JetSpectrum.C is used to go through the data DST_JET & DST_JETCALO to generate TTree for further jet spectrum analysis.
+   It needs an input dst list. The golden run list is in https://github.com/sPHENIX-Collaboration/analysis/blob/c5ad8fada7f94e583a8e9761f897b98d1528af86/runListGeneration/Run2024pp/Full_ppGoldenRunList_Version2.list
+   And a TTree maker module is also needed to get the information of z-vertex, jet_info (energy, ET, pT, eta, phi, and energy in each calorimeter layer), and trigger info. An example module caloTreeGen is in src/ for reference.
+
+2) The macro Fun4All_JetSpectrumSim.C is used to go through the simulation data set to generate TTree for further jet specturm analysis.
+   The z-vertex, jet_info (energy, ET, pT, eta, phi, and energy in each calorimeter layer), and truth jet info (energy, ET, pT, eta, phi) is needed for simulation data set.
+
+3) After getting the TTree, the macro in offline/ will help to get the jet spectrum.

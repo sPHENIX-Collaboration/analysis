@@ -1,0 +1,10 @@
+executable = InclusiveJet.sh
+arguments = 0 $(Process) 1 runlist2.txt run22_jet20
+output = output_logs/mc_jet20_output_$(Process).out
+request_memory = 4GB
+when_to_transfer_output = ON_EXIT
+error			= output_logs/mc_jet20_error_$(Process).err
+log = /tmp/egm2153_$(Process).log
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+concurrency_limits=CONCURRENCY_LIMIT_DEFAULT:100
+queue 3334

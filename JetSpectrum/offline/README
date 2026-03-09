@@ -1,0 +1,9 @@
+1) Use analysis_data.C and analysis_sim.C to go through the data TTree and simulation TTree. A condor job can help to speed up this step. For 1k condor job, all of them should be finished in 10 mins.
+
+2) get_purityefficiency.C to get and draw the purity and efficiency of the spectrum. And apply the purity correction.
+
+3) get_reweightmatrix.C to get the reweighted response matrix.
+
+4) do_unfolding.C to do the unfolding and apply the efficiency correction. And then apply the MBD efficiency correction.
+
+5) get_finalspectrum.C to do the normalization and draw the result.

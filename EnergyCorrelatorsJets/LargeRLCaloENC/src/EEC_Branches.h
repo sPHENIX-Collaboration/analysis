@@ -5,6 +5,14 @@
 #include <string>
 #include <vector>
 //This is probably something to revisit soon, I think it would be smart to have this substructure in my TTrees
+
+
+
+
+
+
+
+
 class CaloAndRegion{
 	public:
 		CaloAndRegion(int iregion, int icalo){
@@ -59,5 +67,7 @@ class EnergyEnergyCorrelator{
 		int corr_order;	
 		std::vector<float> r_L, r_med, r_s, val;
 		std::vector<CaloAndRegion*> cr;
-		void AssignVals(){
-			
+
+		void AssignVals(){}
+}			
+

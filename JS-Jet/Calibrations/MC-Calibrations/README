@@ -1,0 +1,65 @@
+Commit: Friday, October 18th, 2024, 
+Anthony Hodges, UIUC, <ahodges4@illinois.edu>
+
+This directory contains tools for performing the sPHENIX jet energy scale calibration.
+
+Jet_Resp_Condor_histMaker.C - this code expects single files that our output from the JetValidation macro under the "JetValidation" sub directory. It can be run over one, large output file or multiple output files that will be combined via hadd at the end. As the name implies it can be run via conder for the latter.
+
+The output are TH2D histograms that have the jet response (either p_T_Reco or P_T_Reco/P_T_truth depending on the setting) as a function of the truth jet p_T. 
+
+
+Standard constructor:
+void Jet_Resp_Condor_histMaker(float jetR = 4, int applyCorr = 0, int isLin = 0, const char* fi
+n= "", int segment = 0, int trig = 0)
+
+jetR: jet radius, it'll be divided by 10 later (to get R=0.4,etc)
+applyCorr: apply correction to generated corrected histograms
+isLin: is linearity, use to generate the calibration
+fin: input file
+segment: segment number of input file
+trig: trigger threshold (0 for MB, 10 for 10GeV set, 30 for 30GeV set). 
+
+For initial estimation of the JES:
+root -l -b -q Jet_Resp_Condor_histMaker.C'(4,0,0,"'$1'",'$2','$3')'
+Where $1, is the file number
+$2 is the segment number
+$3 is the trigger number
+
+I typically ran this over the nTuples produced by the JetValidation package and it ran very quickly, and because they're 2D histograms, hadding them together is also very quick
+
+For creation of calibration histograms
+root -l -b -q Jet_Resp_Condor_histMaker.C'(4,0,1,"'$1'",'$2','$3')'
+
+All that's happened is the third argument has switched to 1, which tells the code to switch from making the JES to the linearity. You run this file over the same inputs as when calculating the JES
+
+Next one runs  Jet_Resp_respFitter.C, which takes the aggregated output from the histogram maker, breaks it down into p_T bins and then fits the response or linearity bins. This makes for you the TGraphs for the JES and numerical inversion process. 
+
+Constructor: void Jet_Resp_respFitter(const char* fin = "", int isLin = 0)
+
+fin: the aggregated histogram file from the histMaker above
+isLin: is this the linearity (p_T^Reco vs. p_T^True) or the response (p_T^Reco/p_T^Truth vs. p_T^truth). You need the former for the calibration, the latter for just making the JES.
+
+Example usage:
+
+root -l -b -q Jet_Resp_respFitter.C'("hists_R04_Corr0_isLin0_2D.root",0)'
+root -l -b -q Jet_Resp_respFitter.C'("hists_R04_Corr0_isLin1_2D.root",1)'
+
+respFitterDef.h
+
+This file just contains some shared definitions for the number of bins (in eta, pt, etc.) so you don't have to change them in two places at once. Very mindful. Very demure. 
+
+
+Creating the Calibration:
+numericInverse_2D.C
+
+This takes in the output of the response fitter and peforms the numerical inversion procedure on them. It only takes one input, either 1 or 0, to either save or not save the associated plots. 
+
+root -l -b -q numericInverse_2D.C'(1)'
+
+It differs from the original numericInverse.C in that it has the hooks in to generate the calibration in different pseudorapidity windows. Upon first calculation, there really is no difference in the calibration constants as a function of pseudorapidity, but this might change with the 0mrad crossing angle data. 
+
+drawCorr.C
+
+Draws the uncorrected and corrected JES and JER for comparison. It has a flag for using the JES to perform the calibration, but you can ignore that. Just set it to zero. 
+
+

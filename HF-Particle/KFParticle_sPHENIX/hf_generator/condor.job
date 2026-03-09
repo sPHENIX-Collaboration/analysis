@@ -1,0 +1,13 @@
+Universe           = vanilla
+initialDir         = . 
+Executable         = $(initialDir)/generateEvents.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 3600
+#condorDir          = $(initialDir)
+#Output             = $(condorDir)/condor.out
+#Error              = $(condorDir)/condor.err
+#Log                = $(condorDir)/condor.log
+Arguments          = $INT(Process,%05d) 
+Queue 150

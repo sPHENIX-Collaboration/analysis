@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# 'RunTrackMatcherComparatorOnCondor.job'
+# Derek Anderson
+# 02.01.2024
+#
+# Job file to run RunTrackMatcherConparator.C via condor.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunMatcherComparatorOnCondor.sh
+Initialdir           = ./
+request_memory       = 12GB
+transfer_input_files = RunMatcherComparator.C,MatcherComparatorOptions.h
+
+# output parameters
+Output = /sphenix/user/danderson/tracking/TrackMatchingComparison/test.out
+Error  = /sphenix/user/danderson/tracking/TrackMatchingComparison/test.err
+Log    = /sphenix/user/danderson/tracking/TrackMatchingComparison/test.log
+
+# queue jobs
+Queue
+
+# end -------------------------------------------------------------------------

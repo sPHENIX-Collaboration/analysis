@@ -1,0 +1,87 @@
+usage: CreateFileLists.pl -type <production type> <filetypes>
+parameters:
+-embed : pp embedded into MB AuAu hijing (only for pp types)
+  -embed pau : embedded into pAu (only for pp types)
+  -embed central : embedded into central AuAu
+-l     : last segment
+-n     : <number of events>
+-nopileup : without pileup
+-nobkgpileup : background without pileup (use with -embed)
+-rand  : randomize segments used
+-run   : runnumber (mandatory, no default anymore)
+-s     : starting segment (remember first segment is 0)
+
+-type  : production type
+    3 : pythia8 pp MB
+    4 : hijing (0-20fm) pileup 0-20fm
+    6 : hijing (0-4.88fm) pileup 0-20fm
+    7 : HF pythia8 Charm
+    8 : HF pythia8 Bottom
+    9 : HF pythia8 Charm D0
+    10 : HF pythia8 Bottom D0
+    11 : JS pythia8 Jet ptmin = 30GeV
+    12 : JS pythia8 Jet ptmin = 10GeV
+    13 : JS pythia8 Photon Jet
+    14 : Single Particles
+    15 : Special Productions
+    16 : HF pythia8 D0 Jets
+    17 : HF pythia8 D0 pi-k Jets ptmin = 5GeV 
+    18 : HF pythia8 D0 pi-k Jets ptmin = 12GeV
+    19 : JS pythia8 Jet ptmin = 40GeV
+    20 : hijing pAu (0-10fm) pileup 0-10fm
+    21 : JS pythia8 Jet ptmin = 20GeV
+    22 : cosmic field on
+    23 : cosmic field off
+    24 : AMPT
+    25 : EPOS
+    26 : JS pythia8 Detroit
+    27 : JS pythia8 Photonjet ptmin = 5GeV
+    28 : JS pythia8 Photonjet ptmin = 10GeV
+    29 : JS pythia8 Photonjet ptmin = 20GeV
+    30 : Herwig MB
+    31 : Herwig Jet ptmin = 10 GeV
+    32 : Herwig Jet ptmin = 30 GeV
+    33 : JS pythia8 Jet ptmin = 15GeV
+    34 : JS pythia8 Jet ptmin = 50GeV
+    35 : JS pythia8 Jet ptmin = 70GeV
+    36 : JS pythia8 Jet ptmin = 5GeV
+    37 : hijing O+O (0-15fm)
+    38 : JS pythia8 Jet ptmin = 60GeV
+
+-pileup : pileup rate selection (default = 1)
+    >5 : pileup rate in kHz
+    1 : 50kHz for Au+Au, 3MHz for p+p (default)
+    2 : 25kHz for Au+Au
+    3 : 10kHz for Au+Au
+    4 : 1MHz for pp 100us streaming
+    5 : 2MHz for pp 20us streaming
+
+-nobkgpileup : no pileup of background event (use with -embed)
+
+ Single particle mandatory options:
+-particle : G4 particle name
+-mom : (optional) p or pt
+-pmin : minimum momentum (in MeV/c)
+-pmax : maximum momentum (in MeV/c)
+
+ Special production mandatory options:
+-production : production name
+
+available file types (choose at least one, --> means: written to):
+DST_BBC_G4HIT  --> dst_bbc_g4hit.list
+DST_CALO_CLUSTER  --> dst_calo_cluster.list
+DST_CALO_G4HIT  --> dst_calo_g4hit.list
+DST_CALO_NOZERO  --> dst_calo_nozero.list
+DST_CALO_WAVEFORM  --> dst_calo_waveform.list
+DST_GLOBAL  --> dst_global.list
+DST_MBD_EPD  --> dst_mbd_epd.list
+DST_TRACKS  --> dst_tracks.list
+DST_TRACKSEEDS  --> dst_trackseeds.list
+DST_TRKR_CLUSTER  --> dst_trkr_cluster.list
+DST_TRKR_G4HIT  --> dst_trkr_g4hit.list
+DST_TRKR_HIT  --> dst_trkr_hit.list
+DST_TRUTH  --> dst_truth.list
+DST_TRUTH_G4HIT  --> dst_truth_g4hit.list
+DST_TRUTH_JET  --> dst_truth_jet.list
+DST_TRUTH_RECO  --> dst_truth_reco.list
+G4Hits  --> g4hits.list

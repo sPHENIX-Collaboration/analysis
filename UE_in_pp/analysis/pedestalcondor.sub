@@ -1,0 +1,7 @@
+executable = pedestalCondorRun.sh
+arguments = $(Process)
+output = pedestal_output/output_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= pedestal_output/error_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue 3000

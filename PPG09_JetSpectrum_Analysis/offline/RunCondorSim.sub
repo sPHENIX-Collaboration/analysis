@@ -1,0 +1,11 @@
++JobFlavour                   = "expresso"
+executable                    = CondorRunSim.sh
+arguments                     = $(runtype) $(nSeg) $(iSeg) $(radius_value)
+output                        = condor_sim/condor_$(runtype)_$(iSeg)_$(nSeg)_$(radius_value).out
+error			              = condor_sim/condor_$(runtype)_$(iSeg)_$(nSeg)_$(radius_value).err
+log                           = /tmp/condor_$(runtype)_$(iSeg)_$(nSeg)_$(radius_value).log
+request_memory                = 4GB
+when_to_transfer_output       = ON_EXIT
+Notification                  = Never
+Notify_user                   = hj2552@columbia.edu
+queue runtype, nSeg, iSeg, radius_value from ListCondorRunSim.csv

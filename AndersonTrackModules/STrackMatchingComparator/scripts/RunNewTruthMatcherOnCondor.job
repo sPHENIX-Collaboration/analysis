@@ -1,0 +1,29 @@
+# -----------------------------------------------------------------------------
+# 'RunNewTruthMatcherOnCondor.job'
+# Derek Anderson
+# 08.10.2023
+#
+# Job file to run F4A driver macro
+# to test new truth-track matcher.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable     = RunNewTruthMatcherOnCondor.sh
+Arguments      = sPhenixG4_oneMatchPerParticleAndEmbedScanOff_run0file$(process).et020n1pim.d4m1y2024.root
+PeriodicHold   = ((NumJobStarts >= 1) && (JobStatus == 1))
+Initialdir     = ./
+request_memory = 8GB
+
+# output parameters
+Output = ./log/newTruthTrackMatcherTest_$(process).out
+Error  = ./log/newTruthTrackMatcherTest_$(process).err
+Log    = ./log/newTruthTrackMatcherTest_$(process).log
+
+# queue jobs
+Queue 500
+
+# end -------------------------------------------------------------------------

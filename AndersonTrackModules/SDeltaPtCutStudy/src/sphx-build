@@ -1,0 +1,23 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 'sphx-build'
+# Derek Anderson
+# 08.09.2023
+#
+# A simple script to build an
+# sPHENIX module
+# -----------------------------------------------------------------------------
+
+if [ -z "$1" ]; then
+  ./autogen.sh --prefix=$MYINSTALL
+  make -j 4
+  make install
+elif [ "$1" == "-r" ]; then
+  make -j 4
+  make install
+elif [ "$1" == "--rebuild" ]; then
+  make -j 4
+  make install
+fi
+
+# end -------------------------------------------------------------------------

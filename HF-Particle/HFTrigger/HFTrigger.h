@@ -16,6 +16,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <iostream>
@@ -29,14 +30,11 @@ typedef Eigen::Matrix<float, 3, 1> TrackX;
 typedef Eigen::Matrix<float, 3, 1> TrackP;
 typedef Eigen::Matrix<float, 3, 1> DCA;
 
-/*
-class PHCompositeNode;
-
-class SvtxVertexMap;
-class SvtxTrackMap;
-class SvtxVertex;
 class SvtxTrack;
-*/
+class SvtxTrackMap;
+class SvtxVertexMap;
+class SvtxVertex;
+
 class HFTrigger : public SubsysReco
 {
  public:
@@ -74,6 +72,8 @@ class HFTrigger : public SubsysReco
 
   int decomposeTrack(Track track, TrackX& trackPosition, TrackP& trackMomentum);
 
+  float calcualteTrackVertex2DDCA(Track track, Vertex vertex);
+
   float calcualteTrackVertexDCA(Track track, Vertex vertex);
 
   float calcualteTrackTrackDCA(Track trackOne, Track trackTwo);
@@ -85,8 +85,6 @@ class HFTrigger : public SubsysReco
   void requireTwoTrackTrigger(bool useTrigger) { m_useTwoTrackTrigger = useTrigger; }
   void requireLowMultiplicityTrigger(bool useTrigger) { m_useLowMultiplicityTrigger = useTrigger; }
   void requireHighMultiplicityTrigger(bool useTrigger) { m_useHighMultiplicityTrigger = useTrigger; }
- 
- protected:
 
  private:
 

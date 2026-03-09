@@ -1,0 +1,11 @@
+# Define the decay of the J/psi particle
+# This sets a 100% branching ratio to e+ e− (electron-positron pair)
+# 'PHOTOS' enables QED final state radiation (e.g., soft photons from electrons)
+# 'VLL' is the decay model for a vector particle decaying leptonically
+
+Decay J/psi
+  1.000         e+       e-            PHOTOS VLL;
+Enddecay
+
+# End of decay file
+End

@@ -131,7 +131,7 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = 62;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_lumi = 62;                           // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
   const double AuAu_MB_Evt = use_AA_jet_trigger ? 218e9 : 142e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
@@ -259,6 +259,636 @@ void CrossSection2RAA(const TString infile, const bool use_AA_jet_trigger = true
   SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
 }
 
+TGraphErrors *GetZgPrediction(const TString data_config = "me_bbg")
+{
+  // Inverting the mass hierarchy of jet quenching effects with prompt bb-jet substructure, Hai Tao Li(Los Alamos Natl. Lab., Theor. Div.), Ivan Vitev(Los Alamos Natl. Lab., Theor. Div.)
+  // DOI: 10.1016/j.physletb.2019.04.052 (publication)
+  // Li, Haitao <haitaoli@lanl.gov>
+  // Here are the data for the predicted zg distributions.  For all the files the first column is zg value. The second and third columns are the higher and lower limits of the uncertainty bands.
+
+  std::vector<double> zgs;
+  std::vector<double> ymaxs;
+  std::vector<double> ymins;
+
+  std::vector<double> ys;
+  std::vector<double> eys;
+
+  if (data_config == "me_bbg")
+  {
+    zgs = {0.1,
+           0.11,
+           0.12,
+           0.13,
+           0.14,
+           0.15,
+           0.16,
+           0.17,
+           0.18,
+           0.19,
+           0.2,
+           0.21,
+           0.22,
+           0.23,
+           0.24,
+           0.25,
+           0.26,
+           0.27,
+           0.28,
+           0.29,
+           0.3,
+           0.31,
+           0.32,
+           0.33,
+           0.34,
+           0.35,
+           0.36,
+           0.37,
+           0.38,
+           0.39,
+           0.4,
+           0.41,
+           0.42,
+           0.43,
+           0.44,
+           0.45,
+           0.46,
+           0.47,
+           0.48,
+           0.49,
+           0.5};
+
+    ymaxs = {11.564966612100944,
+             10.228774883485626,
+             9.040211253937503,
+             8.00426321286891,
+             7.085316588030289,
+             6.304057794111209,
+             5.620901023346734,
+             5.020252217399414,
+             4.471418358587862,
+             4.006557331982638,
+             3.6029776961294937,
+             3.2746530582558067,
+             2.979082995195153,
+             2.717548121923332,
+             2.484039405367637,
+             2.2743520629543212,
+             2.0857993148942358,
+             1.916461379592078,
+             1.7644938665497385,
+             1.6282027691535934,
+             1.5063707131889736,
+             1.3971555437989853,
+             1.2987288248009365,
+             1.2107212053236827,
+             1.131621650833046,
+             1.0605838573254032,
+             0.9969458228908805,
+             0.941899699579719,
+             0.8934983992713553,
+             0.8508943534347049,
+             0.8130937637364388,
+             0.7797214265194943,
+             0.7506054526040817,
+             0.7255735799970017,
+             0.7043026708717507,
+             0.6866658867399881,
+             0.6724855329238311,
+             0.6615441971815835,
+             0.6538330585599965,
+             0.6493379751029307,
+             0.6477595200387519};
+    ymins = {8.872885875265245,
+             8.111748205961844,
+             7.432473620102464,
+             6.797408173274767,
+             6.186769713061456,
+             5.608088106815033,
+             5.084027720317393,
+             4.610111938188973,
+             4.187760399167046,
+             3.7940340683954212,
+             3.43117457064948,
+             3.093119987479635,
+             2.7861576826055696,
+             2.5128579366528596,
+             2.270447062142767,
+             2.055432334380884,
+             1.8652346826114092,
+             1.6966233161676936,
+             1.5473576814988068,
+             1.4149243923530526,
+             1.2976881530156943,
+             1.1933534033076159,
+             1.1006617243222991,
+             1.018247797082035,
+             0.9450088178795155,
+             0.8800255813710026,
+             0.8223509153369435,
+             0.7710124745428798,
+             0.7244026618659434,
+             0.6749851216252735,
+             0.6388960527749336,
+             0.6074597301268359,
+             0.5801575320223376,
+             0.5567239908569284,
+             0.5368940589741338,
+             0.5204904428643295,
+             0.5073303543085547,
+             0.4972605201973995,
+             0.4901298441121407,
+             0.4859016247798608,
+             0.4844717994196453};
+  }
+  else if (data_config == "bbg_zg")
+  {
+    zgs = {0.1,
+           0.11,
+           0.12,
+           0.13,
+           0.14,
+           0.15,
+           0.16,
+           0.17,
+           0.18,
+           0.19,
+           0.2,
+           0.21,
+           0.22,
+           0.23,
+           0.24,
+           0.25,
+           0.26,
+           0.27,
+           0.28,
+           0.29,
+           0.3,
+           0.31,
+           0.32,
+           0.33,
+           0.34,
+           0.35,
+           0.36,
+           0.37,
+           0.38,
+           0.39,
+           0.4,
+           0.41,
+           0.42,
+           0.43,
+           0.44,
+           0.45,
+           0.46,
+           0.47,
+           0.48,
+           0.49,
+           0.5};
+
+    ymaxs = {9.762434858721084,
+             8.47616359817982,
+             7.492676243945642,
+             6.654010010935872,
+             5.913925919575108,
+             5.27028638644749,
+             4.713862130785145,
+             4.2338140867044,
+             3.8359176524435012,
+             3.5411710604457696,
+             3.2780402997684046,
+             3.0428481843445376,
+             2.8313528228811093,
+             2.64115838360015,
+             2.4819574262280666,
+             2.338567310713753,
+             2.2090001831145045,
+             2.091727244023134,
+             1.9854179724262009,
+             1.888790011179277,
+             1.8008939425055928,
+             1.7209392536426298,
+             1.6482358047754673,
+             1.582167173395633,
+             1.5221883540849073,
+             1.467818836564728,
+             1.4186285882228657,
+             1.3742395815301207,
+             1.3343146951863025,
+             1.2985549222721922,
+             1.266698029272377,
+             1.2385132145874334,
+             1.2137978220476016,
+             1.1923789991503813,
+             1.1741068974344762,
+             1.1588532760513377,
+             1.1465131698787123,
+             1.1370016290107832,
+             1.1302536619705346,
+             1.1262226895802339,
+             1.124882446490406};
+    ymins = {7.5042886917903475,
+             6.698904277963574,
+             6.13325229167674,
+             5.642204967225616,
+             5.184676746368783,
+             4.767489013960836,
+             4.391074470600173,
+             4.0530921099573165,
+             3.747687167866155,
+             3.4368852671586723,
+             3.1391359733756863,
+             2.872328619918876,
+             2.637262134930488,
+             2.430875459603178,
+             2.24954656566354,
+             2.090040255967163,
+             1.9492781360305134,
+             1.8247013582708238,
+             1.7141703670450044,
+             1.61589253533197,
+             1.528349666705045,
+             1.4502575139246554,
+             1.3805229398832255,
+             1.318209032398018,
+             1.2625160741157493,
+             1.2127547858323617,
+             1.1683292385783044,
+             1.1287292083339666,
+             1.0935097910299434,
+             1.0622884717784657,
+             1.034734064269136,
+             1.0105633112172412,
+             0.9895286076610499,
+             0.9714187985395711,
+             0.9560602609384745,
+             0.9433012733218156,
+             0.9330225001525349,
+             0.9251255015159976,
+             0.9195356933679992,
+             0.9162028180740642,
+             0.9150954615243209};
+  }
+  else if (data_config == "bbg_zg_ratio")
+  {
+    zgs = {0.1,
+           0.11,
+           0.12,
+           0.13,
+           0.14,
+           0.15,
+           0.16,
+           0.17,
+           0.18,
+           0.19,
+           0.2,
+           0.21,
+           0.22,
+           0.23,
+           0.24,
+           0.25,
+           0.26,
+           0.27,
+           0.28,
+           0.29,
+           0.3,
+           0.31,
+           0.32,
+           0.33,
+           0.34,
+           0.35,
+           0.36,
+           0.37,
+           0.38,
+           0.39,
+           0.4,
+           0.41,
+           0.42,
+           0.43,
+           0.44,
+           0.45,
+           0.46,
+           0.47,
+           0.48,
+           0.49,
+           0.5};
+
+    ymaxs = {1.151982890151877,
+             1.1664826852504495,
+             1.172251389758727,
+             1.1741255109207875,
+             1.1714608638124098,
+             1.1681087817987694,
+             1.1632495306605235,
+             1.155513671471374,
+             1.1397719364148045,
+             1.127051000823432,
+             1.1119535300939027,
+             1.0948424254600155,
+             1.0760601346878573,
+             1.055878624941244,
+             1.0345055306535231,
+             1.0120360659743335,
+             0.9890362761525937,
+             0.9655962994186251,
+             0.9421308194393136,
+             0.9186226313722144,
+             0.895503201582456,
+             0.8725753749800488,
+             0.8501317891243333,
+             0.8282275629034408,
+             0.8069766690984213,
+             0.7865577997621885,
+             0.7669973631487963,
+             0.7481674017140337,
+             0.7304488459867333,
+             0.7015931864543251,
+             0.688687461757641,
+             0.6766716415600889,
+             0.6657247620008147,
+             0.6559757617778346,
+             0.6474142123454508,
+             0.6401392451833807,
+             0.6341568146936112,
+             0.6294320803863227,
+             0.6260810257194698,
+             0.6241574732399557,
+             0.6234333158108032};
+    ymins = {1.096464697907084,
+             1.1148057864579233,
+             1.1277713781468222,
+             1.136191604396884,
+             1.1385826379515291,
+             1.135722028529819,
+             1.1284916532508826,
+             1.1169591429988097,
+             1.103666045140106,
+             1.0854505401169579,
+             1.0654328782085087,
+             1.0442210459999413,
+             1.0223533047937827,
+             1.0001575721016631,
+             0.9777309842954044,
+             0.9550386037145693,
+             0.9325222701437524,
+             0.9101431388163338,
+             0.8882340053200084,
+             0.8667312777949217,
+             0.8459583146041589,
+             0.8256251575966925,
+             0.8059969846816892,
+             0.7869325271199851,
+             0.7684747631437073,
+             0.750777564978232,
+             0.733824152526011,
+             0.7174732270599817,
+             0.7020666530820847,
+             0.6931802179916633,
+             0.6795859695799639,
+             0.6666218950521552,
+             0.6546221226148139,
+             0.6438152297250573,
+             0.6342654764486364,
+             0.6261010548445681,
+             0.6193616959253557,
+             0.6140461556406446,
+             0.6102701796326937,
+             0.6080839713862733,
+             0.6072750596686409};
+  }
+  else
+  {
+    cout << __PRETTY_FUNCTION__ << "Invalid configuration : " << data_config << endl;
+    exit(1);
+  }
+
+  double integral = 0;
+  for (int i = 0; i < zgs.size(); ++i)
+  {
+    assert(i < ymaxs.size());
+    assert(i < ymins.size());
+
+    ys.push_back(0.5 * (ymaxs[i] + ymins[i]));
+    eys.push_back(0.5 * fabs(ymaxs[i] - ymins[i]));
+
+    integral += (zgs[1] - zgs[0]) * ys[i];
+  }
+  cout << __PRETTY_FUNCTION__ << " configuration : " << data_config << " integral = " << integral << endl;
+
+  TGraphErrors *ge = new TGraphErrors(zgs.size(), zgs.data(), ys.data(), NULL, eys.data());
+  ge->SetName(TString("zg_") + data_config);
+
+  return ge;
+}
+
+TH1 *CrossSection2zg_HistogramMaker(const TH1F *h_cross,
+                                    const double suppression,
+                                    const double deta, const double pt_max,
+                                    const double pp_quiv_int_lum, const TString data_config)
+{
+  assert(h_cross);
+  TH1 *
+      h_yield = (TH1 *)
+                    h_cross->Clone(TString(h_cross->GetName()) + Form("_copy%d", rand()));
+
+  //convert to count per bin
+  h_yield->Scale(deta * h_yield->GetXaxis()->GetBinWidth(0) * pp_quiv_int_lum * suppression);
+  //  h_ratio->Rebin(5);
+
+  double sum_yield = 0;
+  for (int i = 1; i <= h_yield->GetNbinsX(); ++i)
+  {
+    const double yield = h_yield->GetBinContent(i);
+    if (h_yield->GetXaxis()->GetBinCenter(i) < pt_max) sum_yield += yield;
+  }
+
+  TGraphErrors *ge_prediction = GetZgPrediction(data_config);
+  const double bin_width = 0.05;
+  TH1 *h_zg = new TH1F("hzg_" + data_config, "z_{g}", 0.4 / bin_width, 0.1, 0.5);
+
+  for (int i = 1; i <= h_zg->GetNbinsX(); ++i)
+  {
+    const double x_center = h_zg->GetBinCenter(i);
+
+    const double prediction = ge_prediction->Eval(x_center);
+
+    h_zg->SetBinContent(i, prediction);
+
+    const double bin_yield = bin_width * prediction * sum_yield;
+
+    h_zg->SetBinError(i, prediction / sqrt(bin_yield));
+  }
+
+  return h_zg;
+}
+
+void CrossSection2zg(const TString infile, const bool use_AA_jet_trigger = true, const double dy = .7 * 2)
+{
+  TFile *f = TFile::Open(infile + "Draw_HFJetTruth_DrawCrossSection.root");
+  assert(f);
+
+  TH1F *hall = (TH1F *) f->GetObjectChecked("hall", "TH1F");
+  assert(hall);
+  TH1F *h_b = (TH1F *) f->GetObjectChecked("h_b", "TH1F");
+  assert(h_b);
+
+  TString s_suffix(use_AA_jet_trigger ? "_AAJetTriggered" : "_3yr");
+  s_suffix += TString(Form("_deta%.2f", dy / 2));
+
+  const double pt_max = 30;  // max pT to be consistent with DOI: 10.1016/j.physletb.2019.04.052 (publication)
+
+  const double b_jet_RAA = 0.6;
+
+  const double pp_eff = 0.6;
+  const double pp_purity = 0.4;
+  const double AuAu_eff = 0.4;
+  const double AuAu_purity = 0.4;
+
+  ////////////////////////////
+  // 5-year lumi in [sPH-TRG-000]
+  ////////////////////////////
+
+  const double pp_lumi = 62;                           // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
+
+  const double AuAu_MB_Evt = use_AA_jet_trigger ? 218e9 : 142e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
+  const double pAu_MB_Evt = 600e9;                                // [sPH-TRG-000]
+
+  const double AuAu_Ncoll_C0_10 = 960.2;  // [DOI:?10.1103/PhysRevC.87.034911?]
+  const double AuAu_Ncoll_C0_20 = 770.6;  // [DOI:?10.1103/PhysRevC.91.064904?]
+  const double AuAu_Ncoll_C0_100 = 250;   // pb^-1 [sPH-TRG-000]
+  const double pAu_Ncoll_C0_100 = 4.7;    // pb^-1 [sPH-TRG-000]
+
+  const double AuAu_eq_lumi_C0_10 = AuAu_MB_Evt * 0.1 * AuAu_Ncoll_C0_10 / pp_inelastic_crosssec;  //
+  const double AuAu_eq_lumi_C0_20 = AuAu_MB_Evt * 0.2 * AuAu_Ncoll_C0_20 / pp_inelastic_crosssec;  //
+  const double AuAu_eq_lumi_C0_100 = AuAu_MB_Evt * 1 * AuAu_Ncoll_C0_100 / pp_inelastic_crosssec;  //
+
+  const double pAu_eq_lumi_C0_100 = pAu_MB_Evt * 1 * pAu_Ncoll_C0_100 / pp_inelastic_crosssec;  //
+
+  cout << "CrossSection2zg integrated luminosity assumptions in pb^-1: " << endl;
+  cout << "\t"
+       << "pp_lumi = " << pp_lumi << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_10 = " << AuAu_eq_lumi_C0_10 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_20 = " << AuAu_eq_lumi_C0_20 << endl;
+  cout << "\t"
+       << "AuAu_eq_lumi_C0_100 = " << AuAu_eq_lumi_C0_100 << endl;
+  cout << "\t"
+       << "pAu_eq_lumi_C0_100 = " << pAu_eq_lumi_C0_100 << endl;
+
+  TGraphErrors *bbg_zg_prediction = GetZgPrediction("bbg_zg");
+  TGraphErrors *me_bbg_prediction = GetZgPrediction("me_bbg");
+  TGraphErrors *bbg_zg_ratio_prediction = GetZgPrediction("bbg_zg_ratio");
+
+  TCanvas *c1 = new TCanvas("Draw_HFJetTruth_CrossSection2zg_check" + s_suffix, "Draw_HFJetTruth_CrossSection2zg_check" + s_suffix, 700, 600);
+  c1->Divide(1, 1);
+  int idx = 1;
+  TPad *p;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+  //  p->SetGridx(0);
+  //  p->SetGridy(0);
+  //  p->SetLogy();
+
+  TH1 *g_pp = CrossSection2zg_HistogramMaker(h_b, 1., dy, pt_max, pp_lumi * pp_eff * pp_purity, "bbg_zg");
+  TH1 *g_AA = CrossSection2zg_HistogramMaker(h_b, b_jet_RAA, dy, pt_max, AuAu_eq_lumi_C0_10 * AuAu_eff * AuAu_purity, "me_bbg");
+
+  g_pp->SetLineColor(kRed);
+  g_AA->SetLineColor(kBlue);
+
+  g_pp->Draw();
+  g_AA->Draw("same");
+  SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
+  //
+  //
+  c1 = new TCanvas("Draw_HFJetTruth_CrossSection2zg" + s_suffix, "Draw_HFJetTruth_CrossSection2RAA" + s_suffix, 1100, 800);
+  c1->Divide(1, 1);
+  idx = 1;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  p->DrawFrame(0.1, 0, .5, 13)
+      ->SetTitle(";Jet z_{g};1/N_{jet} dN/dz_{g}");
+
+  //  me_bbg_prediction->SetFillColor(kBlack - 4);
+  //  me_bbg_prediction->Draw("pe");
+
+  g_AA->SetLineColor(kBlack);
+  g_AA->SetMarkerColor(kBlack);
+  g_AA->SetLineWidth(4);
+  g_AA->SetMarkerStyle(kFullCircle);
+  g_AA->SetMarkerSize(3);
+
+  g_AA->Draw("pe same");
+  g_AA->Print();
+
+  g_pp->SetLineColor(kRed + 2);
+  g_pp->SetMarkerColor(kRed + 2);
+  g_pp->SetLineWidth(4);
+  g_pp->SetMarkerStyle(kFullCircle);
+  g_pp->SetMarkerSize(3);
+
+  g_pp->Draw("pe same");
+  g_pp->Print();
+
+  TLegend *leg = new TLegend(.0, .77, .85, .91);
+  leg->SetFillStyle(0);
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Projection, Year 1-3", "");
+  //  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
+  leg->AddEntry("", Form("#it{b}-jet Anti-k_{T} R=0.4, 15<p_{T}<%.0f GeV, z_{cut}>0.1, #beta=0", pt_max), "");
+  leg->Draw();
+
+  TLegend *leg2 = new TLegend(.2, .6, .85, .75);
+  leg2->AddEntry(g_pp, Form("#it{p}+#it{p}: %.0fpb^{-1} samp., %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "pe");
+  leg2->AddEntry(g_AA, Form("Au+Au: %.0fnb^{-1} rec., %.0f%% Eff., %.0f%% Pur.", AuAu_MB_Evt / 6.8252 / 1e9, AuAu_eff * 100, AuAu_purity * 100), "pe");
+  leg2->SetFillStyle(0);
+  leg2->Draw();
+
+  SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
+
+  c1 = new TCanvas("Draw_HFJetTruth_CrossSection2zg_ratio" + s_suffix, "Draw_HFJetTruth_CrossSection2zg_ratio" + s_suffix, 1100, 800);
+  c1->Divide(1, 1);
+  idx = 1;
+
+  p = (TPad *) c1->cd(idx++);
+  c1->Update();
+
+  p->DrawFrame(0.1, .55, .5, 1.5)
+      ->SetTitle(";Jet z_{g};P_{AA}(z_{g})/P_{pp}(z_{g})");
+
+  bbg_zg_ratio_prediction->SetFillColor(kBlue - 5);
+  bbg_zg_ratio_prediction->Draw("3");
+
+  TH1 *g_AA_ratio = (TH1 *) g_AA->Clone("g_AA_ratio");
+  g_AA_ratio->Divide(g_pp);
+
+  for (int i = 0; i <= g_AA_ratio->GetNbinsX(); ++i)
+  {
+    g_AA_ratio->SetBinContent(i, 1.);  // set projection to center onto 1.0
+  }
+
+  g_AA_ratio->Draw("pe same X0");
+  g_AA_ratio->Print();
+
+  leg = new TLegend(.0, .67, .85, .91);
+  leg->SetFillStyle(0);
+  leg->AddEntry("", "#it{#bf{sPHENIX}} Projection, Year 1-3", "");
+  //  leg->AddEntry("", Form("PYTHIA-8 #it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f, CTEQ6L", dy / 2), "");
+  leg->AddEntry("", Form("#it{b}-jet Anti-k_{T} R=0.4, 15<p_{T}<%.0f GeV, z_{cut}>0.1, #beta=0", pt_max), "");
+  leg->AddEntry("", Form("#it{p}+#it{p}: %.0fpb^{-1} samp., %.0f%% Eff., %.0f%% Pur.", pp_lumi, pp_eff * 100, pp_purity * 100), "");
+  leg->AddEntry("", Form("Au+Au: %.0fnb^{-1} rec., %.0f%% Eff., %.0f%% Pur.", AuAu_MB_Evt / 6.8252 / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
+  leg->Draw();
+
+  leg2 = new TLegend(.2, .2, .75, .3);
+  leg2->AddEntry(bbg_zg_ratio_prediction, Form("Li, Vitev, PLB 793 (2019)"), "f");
+  leg2->AddEntry("", Form("b#rightarrowbg, g=2.0#pm0.1 MLL"), "");
+  leg2->SetFillStyle(0);
+  leg2->Draw();
+
+  SaveCanvas(c1, infile + "_" + TString(c1->GetName()), kTRUE);
+}
+
 TGraph *CrossSection2v2Uncert(const TH1F *h_cross,
                               const double suppression,
                               const double deta,
@@ -334,7 +964,7 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   // 5-year lumi in [sPH-TRG-000]
   ////////////////////////////
 
-  const double pp_lumi = 62;                          // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
+  const double pp_lumi = 62;                           // pb^-1 [sPH-TRG-000], rounded up from 197 pb^-1
   const double pp_inelastic_crosssec = 42e-3 / 1e-12;  // 42 mb in pb [sPH-TRG-000]
 
   const double AuAu_MB_Evt = use_AA_jet_trigger ? 550e9 : 142e9;  // [sPH-TRG-000], depending on whether jet trigger applied in AA collisions
@@ -453,11 +1083,11 @@ void CrossSection2v2(const TString infile, const bool use_AA_jet_trigger = true,
   leg->SetFillStyle(0);
   leg->AddEntry("", "#it{#bf{sPHENIX}} Projection, Au+Au, Year 1-3", "");
   leg->AddEntry("", Form("#it{b}-jet, Anti-k_{T} R=0.4, |#eta|<%.2f,Res(#Psi_{2})=%.1f", dy / 2, ep_resolution), "");
-  leg->AddEntry("", Form("%.0fnb^{-1} rec. Au+Au, %.0f%% Eff., %.0f%% Pur.", AuAu_MB_Evt /6.8252/ 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
+  leg->AddEntry("", Form("%.0fnb^{-1} rec. Au+Au, %.0f%% Eff., %.0f%% Pur.", AuAu_MB_Evt / 6.8252 / 1e9, AuAu_eff * 100, AuAu_purity * 100), "");
   leg->Draw();
   //
   TLegend *leg2 = new TLegend(.19, .5, 1, .67);
-//  leg2->SetHeader(Form("#it{b}-jet v_{2} Projection, #it{R}_{AA, #it{b}-jet}=%.1f, Res(#Psi_{2})=%.1f", b_jet_RAA, ep_resolution));
+  //  leg2->SetHeader(Form("#it{b}-jet v_{2} Projection, #it{R}_{AA, #it{b}-jet}=%.1f, Res(#Psi_{2})=%.1f", b_jet_RAA, ep_resolution));
   leg2->AddEntry(g_AA_C0_10, "0-10% Au+Au", "pl");
   //    leg2->AddEntry(g_AA_C10_20, "Au+Au 10-20%C", "pl");
   //    leg2->AddEntry(g_AA_C20_40, "Au+Au 20-40%C", "pl");
@@ -1259,11 +1889,14 @@ void Draw_HFJetTruth3yr(const TString infile =
   //  CrossSection2RAA_Proposal(infile);
   //    CrossSection2RAA(infile);
   const double acceptance1 = 2. * (1.1 - .4);
-  CrossSection2RAA(infile, false, acceptance1);
+
+  CrossSection2zg(infile, false, acceptance1);
+
+  //  CrossSection2RAA(infile, false, acceptance1);
 
   //  const double acceptance2 = 2.* (0.85 - .4);
   //  CrossSection2RAA(infile, false, acceptance2);
 
-  CrossSection2v2(infile, false, .5, acceptance1);
+  //  CrossSection2v2(infile, false, .5, acceptance1);
   //  CrossSection2v2(infile, false, .4, acceptance);
 }

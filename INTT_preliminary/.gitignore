@@ -1,0 +1,12 @@
+*.root
+*.pdf
+*.png
+*~
+
+build
+data
+install
+results
+obsolete
+log
+temp

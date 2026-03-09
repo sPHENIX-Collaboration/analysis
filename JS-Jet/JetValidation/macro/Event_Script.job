@@ -1,0 +1,10 @@
+Universe	= vanilla
+Executable 	= Event_Script.sh
+notification 	= Never
+Output  	= /sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/macro/Feb20_2024_bkgdTest/logs/condor$(process).out
+Error           = /sphenix/user/jamesj3j3/analysis/JS-Jet/JetValidation/macro/Feb20_2024_bkgdTest/logs/condor$(process).err
+Log  		= /tmp/condor_jamesj3j3_$(process).log
+Arguments       = "$(Process) 0.05"
+request_memory  = 20000MB
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue 100

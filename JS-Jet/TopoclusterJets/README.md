@@ -1,0 +1,1 @@
+This package is based on the JetValidation analysis package (https://github.com/sPHENIX-Collaboration/analysis/tree/master/JS-Jet/JetValidation). These modifications/additions are a work in progress. Any suggestions/bug fixes are welcome

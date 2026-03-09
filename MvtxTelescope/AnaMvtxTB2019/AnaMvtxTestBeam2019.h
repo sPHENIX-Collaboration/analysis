@@ -22,8 +22,8 @@
 class PHCompositeNode;
 
 class TrkrHit;
-class TrkrHitSetContainer;
-class TrkrClusterContainer;
+class TrkrHitSetContainerv1;
+class TrkrClusterContainerv1;
 class TrkrCluster;
 
 class TFile;
@@ -71,8 +71,8 @@ private:
   double CalcProjection(double x, double m, double b);
 
   //-- Nodes
-  TrkrHitSetContainer  *m_hits;
-  TrkrClusterContainer *m_clusters;
+  TrkrHitSetContainerv1  *m_hits;
+  TrkrClusterContainerv1 *m_clusters;
 
   //-- Output
   TList* m_lout_clusterQA;

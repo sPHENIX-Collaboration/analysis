@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# 'RunStandaloneCorrelatorQAModulesOnCondor.job'
+# Derek Anderson
+# 03.12.2024
+#
+# Job file to run RunStadaloneCorrelatorQAModules via condor.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunStandaloneCorrelatorQAModulesOnCondor.sh
+Initialdir           = ./
+request_memory       = 8GB
+transfer_input_files = RunStandaloneCorrelatorQAModules.C,CorrelatorQAMakerOptions.h
+
+# output parameters
+Output = /sphenix/user/danderson/eec/SCorrelatorQAMaker/log/lamInMultijet_ptLam02ptJet10.out
+Error  = /sphenix/user/danderson/eec/SCorrelatorQAMaker/log/lamInMultijet_ptLam02ptJet10.err
+Log    = /sphenix/user/danderson/eec/SCorrelatorQAMaker/log/lamInMultijet_ptLam02ptJet10.log
+
+# queue jobs
+Queue
+
+# end -------------------------------------------------------------------------

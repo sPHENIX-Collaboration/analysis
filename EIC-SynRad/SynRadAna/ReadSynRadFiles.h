@@ -1,7 +1,7 @@
 // Tell emacs that this is a C++ source
 //  -*- C++ -*-.
-#ifndef G4MAIN_READEICFILES_H
-#define G4MAIN_READEICFILES_H
+#ifndef G4MAIN_ReadSynRadFiles_H
+#define G4MAIN_ReadSynRadFiles_H
 
 #include <fun4all/SubsysReco.h>
 
@@ -107,4 +107,4 @@ class ReadSynRadFiles : public SubsysReco
   bool m_reverseXZ = false;
 };
 
-#endif /* READEICFILES_H__ */
+#endif /* ReadSynRadFiles_H__ */

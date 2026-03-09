@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# 'RunTrksInJetQAOnCondor.job'
+# Derek Anderson
+# 04.13.2024
+#
+# Job file to run Fun4All_MakeTrksInJetQA.C via condor.
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = RunTrksInJetQAOnCondor.sh
+Initialdir           = ./
+request_memory       = 16GB
+transfer_input_files = Fun4All_MakeTrksInJetQA.C
+
+# output parameters
+Output = /sphenix/user/danderson/tracking/TracksInJetQA/log/test.out
+Error  = /sphenix/user/danderson/tracking/TracksInJetQA/log/test.err
+Log    = /sphenix/user/danderson/tracking/TracksInJetQA/log/test.log
+
+# queue jobs
+Queue
+
+# end -------------------------------------------------------------------------

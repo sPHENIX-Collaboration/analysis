@@ -1,0 +1,6 @@
+build/
+build/*
+condor/
+condor/*
+*/*.root
+*/*.list

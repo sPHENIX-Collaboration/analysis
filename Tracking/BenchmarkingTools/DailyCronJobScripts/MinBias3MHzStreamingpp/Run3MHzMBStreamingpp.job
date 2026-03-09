@@ -1,0 +1,23 @@
+Universe        = vanilla
+
+Notification    = Never
+Priority        = 500
+
+nEvents         = 10
+filename        = MinBias3MHz_pythia8_Charm_dailybuild
+outfile         = $(filename)_$(Process)_
+njobs           = 100
+
+Executable      = Run3MHzMBStreamingpp.sh
+Output          = logfiles/$(filename)_$(Process)_.out
+Error           = logfiles/$(filename)_$(Process)_.err
+Log             = logfiles/$(filename)_$(Process)_.log
+
+Arguments       = $(Process) $(nEvents) $(outfile) 
+
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+request_memory = 12.0GB
+accounting_group = group_sphenix.mdc2
+accounting_group_user = sphnxpro
+Requirements = (CPU_Type == "mdc2")
+Queue    $(njobs)

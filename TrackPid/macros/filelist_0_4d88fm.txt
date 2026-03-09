@@ -1,0 +1,6 @@
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03184.root
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03185.root
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03186.root
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03187.root
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03188.root
+/sphenix/sim/sim01/sphnxpro/MDC1/embed/DST_sHijing_0_488fm-0000000001-03189.root

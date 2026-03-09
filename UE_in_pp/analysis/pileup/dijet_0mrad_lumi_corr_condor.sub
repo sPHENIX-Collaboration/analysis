@@ -1,0 +1,7 @@
+executable = dijet_0mrad_lumi_corr.sh
+arguments = $(run)
+output = output_logs/output_dijet_0mrad_lumi_corr_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_dijet_0mrad_lumi_corr_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run from 0mrad_runs.txt

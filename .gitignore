@@ -1,3 +1,6 @@
+.ipynb_checkpoints
+.vscode
+
 # Compiled Object files
 *.slo
 *.lo

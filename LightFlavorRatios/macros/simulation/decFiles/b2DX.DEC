@@ -1,0 +1,126 @@
+#
+# Descriptor: b -> DX 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20240226
+#
+Alias             My_D0        D0
+Alias             My_anti-D0   anti-D0
+ChargeConj        My_anti-D0   My_D0
+
+Decay My_D0
+  0.0397         K-       pi+            PHSP;
+  0.00015        K+       pi-            PHSP;
+Enddecay
+CDecay My_anti-D0
+#
+Decay B0
+  0.0043      My_anti-D0  pi-  e+   nu_e    PHOTOS GOITY_ROBERTS;       # In principle should be in D**, but go to PDG2014 to fill inclusive 
+  0.0043      My_anti-D0  pi-   mu+  nu_mu  PHOTOS    GOITY_ROBERTS;    
+  0.0037      D_s+  My_anti-D0 pi-                   PHSP;
+  0.0037      D_s*+ My_anti-D0 pi-                   PHSP;
+  0.0022      D_s+  My_anti-D0 pi-  pi0              PHSP;
+  0.0022      D_s*+ My_anti-D0 pi-  pi0              PHSP;
+  0.001700000 D-      My_D0      K+                              PHSP; #[Reconstructed PDG2011]
+  0.003100000 D*-     My_D0      K+                              PHSP; #[Reconstructed PDG2011]
+  0.0005      My_D0  My_anti-D0  K0                    PHSP;
+  0.0005      D*0  My_anti-D0  K0                   PHSP;
+  0.0015      My_D0  anti-D*0  K0                   PHSP;
+  0.0025      D-  My_D0  K*+                        PHSP;
+  0.0025      D*- My_D0  K*+                        PHSP;
+  0.0005      My_D0  My_anti-D0  K*0                   PHSP;
+  0.0005      My_D0  anti-D*0  K*0                  PHSP;
+  0.0005      D*0  My_anti-D0  K*0                  PHSP;
+  0.000840000 My_anti-D0 pi-     pi+                             PHSP; #[Reconstructed PDG2011]
+  0.0010      My_anti-D0  pi-  pi+  pi0             PHSP;
+  0.0001      My_anti-D0  pi0  pi0  pi0             PHSP;
+  0.000052    My_anti-D0 anti-K0 PHSP;
+  0.000042000 K*0     My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.00001     K*0 My_D0 SVS;
+  0.000261000 My_anti-D0 pi0                                     PHSP; #[Reconstructed PDG2011]
+  0.000320000 rho0    My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.000202000 My_anti-D0 eta                                     PHSP; #[Reconstructed PDG2011]
+  0.000125    My_anti-D0 eta'                 PHSP;
+  0.000259000 omega   My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.000052000 My_anti-D0 K0                                      PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  0.000046000 My_anti-D0 K+      pi-                             PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  0.000006000 My_D0      K+      pi-                             PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  0.000170000 K0      My_D0      My_anti-D0 pi0                     PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  0.000011000 anti-Lambda0 Lambda0 My_D0                         PHSP;  #[New mode added] #[Reconstructed PDG2011]
+  0.000114000 My_anti-D0 p+      anti-p-                         PHSP;  #[New mode added] #[Reconstructed PDG2011]
+Enddecay
+CDecay anti-B0
+#
+Decay B+
+  0.022907 My_anti-D0 e+      nu_e          PHOTOS  HQET2 1.185 1.081;               
+  0.0020   My_anti-D0  pi0   e+   nu_e      PHOTOS  GOITY_ROBERTS;     
+  0.022907 My_anti-D0 mu+     nu_mu        PHOTOS   HQET2 1.185 1.081; 
+  0.0020   My_anti-D0  pi0   mu+   nu_mu   PHOTOS   GOITY_ROBERTS;
+  0.007000000 My_anti-D0 tau+    nu_tau                          ISGW2; #[Reconstructed PDG2011]
+  0.010000000 My_anti-D0 D_s+                                    PHSP; #[Reconstructed PDG2011]
+  0.007600000 D_s*+   My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.0018    D_s+  My_anti-D0 pi0                  PHSP;
+  0.0018    D_s*+ My_anti-D0 pi0                  PHSP;
+  0.0033    D_s+  My_anti-D0 pi+  pi-             PHSP;
+  0.0008    D_s+  My_anti-D0 pi0  pi0             PHSP;
+  0.0033    D_s*+ My_anti-D0 pi+  pi-             PHSP;
+  0.0008    D_s*+ My_anti-D0 pi0  pi0             PHSP;
+  0.0017   My_anti-D0  D+  K0                    PHSP;
+  0.0052   My_anti-D0  D*+  K0                   PHSP;
+  0.002100000 My_anti-D0 My_D0      K+                              PHSP; #[Reconstructed PDG2011]
+  0.0018   anti-D*0  My_D0  K+                   PHSP;
+  0.004700000 My_anti-D0 D*0     K+                              PHSP; #[Reconstructed PDG2011]
+  0.0025   My_anti-D0  D+  K*0                   PHSP;
+  0.0025   My_anti-D0  D*+  K*0                  PHSP;
+  0.0025   My_anti-D0  My_D0  K*+                   PHSP;
+  0.0025   anti-D*0  My_D0  K*+                  PHSP;
+  0.0025   My_anti-D0  D*0  K*+                  PHSP;
+  0.000380000 D+      My_anti-D0                                 PHSP; #[Reconstructed PDG2011]
+  0.000390000 D*+     My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.004840000 My_anti-D0 pi+                                     PHSP; #[Reconstructed PDG2011]
+  0.013400000 rho+    My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.0005   My_anti-D0  pi0  pi+                   PHSP;
+  0.004000000 a_1+    My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.000200000 My_anti-D0 rho0    pi+                             PHSP; #[Reconstructed PDG2011]
+  0.006800000 My_anti-D0 pi-     pi+     pi+                     PHSP; #[Reconstructed PDG2011]
+  0.000368000 My_anti-D0 K+                                      PHSP; #[Reconstructed PDG2011]
+  0.000530000 K*+     My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.00075 My_anti-D0 D_s0*+ PHSP;
+  0.003100000 D_s1+   My_anti-D0                                 SVS; #[Reconstructed PDG2011]
+  0.000550000 My_anti-D0 K+      anti-K0                         PHSP; #[Reconstructed PDG2011]
+  0.000750000 My_anti-D0 K+      anti-K*0                        PHSP; #[Reconstructed PDG2011]
+  0.002750000 My_anti-D0 omega   pi+                             PHSP; #[Reconstructed PDG2011]
+  0.00045 My_anti-D0 D'_s1+  PHSP;
+Enddecay
+CDecay B-
+#
+Decay B_s0
+  0.0096      D_s+        My_D0          K-                     PHSP;
+  0.0096      D_s*+       My_anti-D0     K-                     PHSP;
+  0.0048      D_s+        My_anti-D0     pi-        anti-K0     PHSP;
+  0.0024      D_s+        My_anti-D0     pi0        K-          PHSP;
+  0.0048      D_s*+       My_anti-D0     pi-        anti-K0     PHSP;
+  0.0024      D_s*+       My_anti-D0     pi0        K-          PHSP;
+  0.0050      D_s*-       My_D0          K+                     PHSP;
+  0.0020      D_s-        My_D0          K+                     PHSP;
+  0.0050      D_s*-       My_D0          K*+                    PHSP;
+  0.0025      D_s-        My_D0          K*+                    PHSP;
+  0.0007      D+          My_D0          K-                     PHSP;
+  0.0007      D*+         My_anti-D0     K-                     PHSP;
+  0.0007      D+          My_anti-D0     pi-        anti-K0     PHSP;
+  0.0007      D+          My_anti-D0     pi0        K-          PHSP;
+  0.0007      D*+         My_anti-D0     pi-        anti-K0     PHSP;
+  0.0007      D*+         My_anti-D0     pi0        K-          PHSP;
+  0.0002      My_anti-D0     anti-K0                            PHSP;
+  0.0002      anti-K*0    My_anti-D0                            SVS;
+Enddecay
+CDecay anti-B_s0
+#
+Decay Lambda_b0
+  0.00062    p+ My_D0 pi- PHSP;
+  0.000045   p+ My_D0 K- PHSP;
+Enddecay
+CDecay anti-Lambda_b0
+End

@@ -1,0 +1,10 @@
+executable = InclusiveJet.sh
+arguments = 0 $(Process) 0 data_1.5mrad_calofitting_list_files/dst_calofitting_run2pp_runlist_1.txt 1.5mrad_calofitting data_1.5mrad_calofitting_list_files/dst_calofitting_run2pp_runlist_1.txt
+output = output_logs/output_calofitting1_$(Process).out
+request_memory = 4GB
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_calotfitting1_$(Process).err
+log = /tmp/egm2153_1_$(Process).log
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+concurrency_limits=CONCURRENCY_LIMIT_DEFAULT:100
+queue 5000

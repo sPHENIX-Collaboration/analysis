@@ -43,6 +43,17 @@ class sPHElectronv1 : public sPHElectron
   virtual double get_dca3d_xy()  const {return _dca3d_xy;}
   virtual double get_dca3d_z()   const {return _dca3d_z;}
 
+  virtual int get_nmvtx()   const {return _nmvtx;}
+  virtual int get_ntpc()   const {return _ntpc;}
+
+  virtual double get_cemc_ecore()   const {return _cemc_ecore;}
+  virtual double get_cemc_chi2()    const {return _cemc_chi2;}
+  virtual double get_cemc_prob()    const {return _cemc_prob;}
+  virtual double get_cemc_dphi()    const {return _cemc_dphi;}
+  virtual double get_cemc_deta()    const {return _cemc_deta;}
+  virtual double get_hcalin_e()     const {return _hcalin_e;}
+  virtual double get_hcalin_dphi()  const {return _hcalin_dphi;}
+  virtual double get_hcalin_deta()  const {return _hcalin_deta;}
 
   virtual void set_id(unsigned int id) {_id = id;}
   virtual void set_charge(int charge)  {_charge = charge;}
@@ -63,6 +74,17 @@ class sPHElectronv1 : public sPHElectron
   virtual void set_dca3d_xy(double a)  {_dca3d_xy = a;}
   virtual void set_dca3d_z(double a)   {_dca3d_z = a;}
 
+  virtual void set_nmvtx(int i)   {_nmvtx = i;}
+  virtual void set_ntpc(int i)   {_ntpc = i;}
+
+  virtual void set_cemc_ecore(double a)   {_cemc_ecore = a;}
+  virtual void set_cemc_chi2(double a)    {_cemc_chi2 = a;}
+  virtual void set_cemc_prob(double a)    {_cemc_prob = a;}
+  virtual void set_cemc_dphi(double a)    {_cemc_dphi = a;}
+  virtual void set_cemc_deta(double a)    {_cemc_deta = a;}
+  virtual void set_hcalin_e(double a)     {_hcalin_e = a;}
+  virtual void set_hcalin_dphi(double a)  {_hcalin_dphi = a;}
+  virtual void set_hcalin_deta(double a)  {_hcalin_deta = a;}
 
  protected:
 
@@ -85,6 +107,17 @@ class sPHElectronv1 : public sPHElectron
   double _dca3d_xy;
   double _dca3d_z;
 
+  int _nmvtx;
+  int _ntpc;
+
+  double _cemc_ecore;
+  double _cemc_chi2;
+  double _cemc_prob;
+  double _cemc_dphi;
+  double _cemc_deta;
+  double _hcalin_e;
+  double _hcalin_dphi;
+  double _hcalin_deta;
 
   ClassDef(sPHElectronv1, 1)
 };

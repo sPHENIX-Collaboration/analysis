@@ -1,0 +1,5 @@
+/sphenix/lustre01/sphnxpro/commissioning/DST_ana395_2023p007/DST_CALO_run1auau_ana395_2023p007-00023726-0010.root
+/sphenix/lustre01/sphnxpro/commissioning/DST_ana395_2023p007/DST_CALO_run1auau_ana395_2023p007-00023726-0011.root
+/sphenix/lustre01/sphnxpro/commissioning/DST_ana395_2023p007/DST_CALO_run1auau_ana395_2023p007-00023726-0012.root
+/sphenix/lustre01/sphnxpro/commissioning/DST_ana395_2023p007/DST_CALO_run1auau_ana395_2023p007-00023726-0013.root
+/sphenix/lustre01/sphnxpro/commissioning/DST_ana395_2023p007/DST_CALO_run1auau_ana395_2023p007-00023726-0014.root

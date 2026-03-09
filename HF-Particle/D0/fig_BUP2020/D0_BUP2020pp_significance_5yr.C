@@ -1,7 +1,7 @@
 void D0_BUP2020pp_significance_5yr()
 {
 //=========Macro generated from canvas: D0_BUP2020pp_significance_5yr/D0_BUP2020pp_significance_5yr
-//=========  (Fri Aug 28 23:39:50 2020) by ROOT version 6.16/00
+//=========  (Wed May 12 23:46:19 2021) by ROOT version 6.22/02
    TCanvas *D0_BUP2020pp_significance_5yr = new TCanvas("D0_BUP2020pp_significance_5yr", "D0_BUP2020pp_significance_5yr",0,0,1100,800);
    gStyle->SetOptFit(1);
    gStyle->SetOptStat(0);
@@ -63,7 +63,7 @@ void D0_BUP2020pp_significance_5yr()
    hframe__5->GetZaxis()->SetTitleFont(42);
    hframe__5->Draw(" ");
    
-   Double_t Graph0_fx7[20] = {
+   Double_t Graph0_fx11[20] = {
    0.25,
    0.75,
    1.25,
@@ -84,7 +84,7 @@ void D0_BUP2020pp_significance_5yr()
    8.75,
    9.25,
    9.75};
-   Double_t Graph0_fy7[20] = {
+   Double_t Graph0_fy11[20] = {
    472.7875,
    729.6713,
    1066.501,
@@ -105,9 +105,9 @@ void D0_BUP2020pp_significance_5yr()
    60.11264,
    47.83997,
    38.34571};
-   TGraph *graph = new TGraph(20,Graph0_fx7,Graph0_fy7);
+   TGraph *graph = new TGraph(20,Graph0_fx11,Graph0_fy11);
    graph->SetName("Graph0");
-   graph->SetTitle("Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B; p_{T} [GeV/c]; S / #sqrt{S + B}");
+   graph->SetTitle("Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B");
    graph->SetLineWidth(2);
 
    Int_t ci;      // for color index setting
@@ -117,32 +117,32 @@ void D0_BUP2020pp_significance_5yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_Graph07 = new TH1F("Graph_Graph07","Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B",100,0,10.7);
-   Graph_Graph07->SetMinimum(18.29657);
-   Graph_Graph07->SetMaximum(1380.365);
-   Graph_Graph07->SetDirectory(0);
-   Graph_Graph07->SetLineWidth(2);
-   Graph_Graph07->SetMarkerStyle(20);
-   Graph_Graph07->SetMarkerSize(1.2);
-   Graph_Graph07->GetXaxis()->SetTitle(" p_{T} [GeV/c]");
-   Graph_Graph07->GetXaxis()->SetRange(1,94);
-   Graph_Graph07->GetXaxis()->SetLabelFont(42);
-   Graph_Graph07->GetXaxis()->SetLabelSize(0.05);
-   Graph_Graph07->GetXaxis()->SetTitleSize(0.05);
-   Graph_Graph07->GetXaxis()->SetTitleOffset(1.4);
-   Graph_Graph07->GetXaxis()->SetTitleFont(42);
-   Graph_Graph07->GetYaxis()->SetTitle(" S / #sqrt{S + B}");
-   Graph_Graph07->GetYaxis()->SetLabelFont(42);
-   Graph_Graph07->GetYaxis()->SetLabelSize(0.05);
-   Graph_Graph07->GetYaxis()->SetTitleSize(0.05);
-   Graph_Graph07->GetYaxis()->SetTitleOffset(1.4);
-   Graph_Graph07->GetYaxis()->SetTitleFont(42);
-   Graph_Graph07->GetZaxis()->SetLabelFont(42);
-   Graph_Graph07->GetZaxis()->SetLabelSize(0.05);
-   Graph_Graph07->GetZaxis()->SetTitleSize(0.05);
-   Graph_Graph07->GetZaxis()->SetTitleOffset(1);
-   Graph_Graph07->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_Graph07);
+   TH1F *Graph_Graph011 = new TH1F("Graph_Graph011","Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B",100,0,10.7);
+   Graph_Graph011->SetMinimum(18.29657);
+   Graph_Graph011->SetMaximum(1380.365);
+   Graph_Graph011->SetDirectory(0);
+   Graph_Graph011->SetLineWidth(2);
+   Graph_Graph011->SetMarkerStyle(20);
+   Graph_Graph011->SetMarkerSize(1.2);
+   Graph_Graph011->GetXaxis()->SetTitle(" p_{T} [GeV/c]");
+   Graph_Graph011->GetXaxis()->SetRange(1,94);
+   Graph_Graph011->GetXaxis()->SetLabelFont(42);
+   Graph_Graph011->GetXaxis()->SetLabelSize(0.05);
+   Graph_Graph011->GetXaxis()->SetTitleSize(0.05);
+   Graph_Graph011->GetXaxis()->SetTitleOffset(1.4);
+   Graph_Graph011->GetXaxis()->SetTitleFont(42);
+   Graph_Graph011->GetYaxis()->SetTitle(" S / #sqrt{S + B}");
+   Graph_Graph011->GetYaxis()->SetLabelFont(42);
+   Graph_Graph011->GetYaxis()->SetLabelSize(0.05);
+   Graph_Graph011->GetYaxis()->SetTitleSize(0.05);
+   Graph_Graph011->GetYaxis()->SetTitleOffset(1.4);
+   Graph_Graph011->GetYaxis()->SetTitleFont(42);
+   Graph_Graph011->GetZaxis()->SetLabelFont(42);
+   Graph_Graph011->GetZaxis()->SetLabelSize(0.05);
+   Graph_Graph011->GetZaxis()->SetTitleSize(0.05);
+   Graph_Graph011->GetZaxis()->SetTitleOffset(1);
+   Graph_Graph011->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_Graph011);
    
    graph->Draw("p");
    D0_BUP2020pp_significance_5yr_1->Modified();
@@ -192,7 +192,7 @@ void D0_BUP2020pp_significance_5yr()
    hframe__6->GetZaxis()->SetTitleFont(42);
    hframe__6->Draw(" ");
    
-   Double_t Graph0_fx8[10] = {
+   Double_t Graph0_fx12[10] = {
    0.5,
    1.5,
    2.5,
@@ -203,7 +203,7 @@ void D0_BUP2020pp_significance_5yr()
    7.5,
    8.5,
    9.5};
-   Double_t Graph0_fy8[10] = {
+   Double_t Graph0_fy12[10] = {
    12.4063,
    25.20637,
    52.68082,
@@ -214,9 +214,9 @@ void D0_BUP2020pp_significance_5yr()
    23.75044,
    18.11771,
    13.63578};
-   graph = new TGraph(10,Graph0_fx8,Graph0_fy8);
+   graph = new TGraph(10,Graph0_fx12,Graph0_fy12);
    graph->SetName("Graph0");
-   graph->SetTitle("Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B; p_{T} [GeV/c]; S / #sqrt{S + B}");
+   graph->SetTitle("Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B");
    graph->SetLineWidth(2);
 
    ci = TColor::GetColor("#00cc00");
@@ -224,32 +224,32 @@ void D0_BUP2020pp_significance_5yr()
    graph->SetMarkerStyle(20);
    graph->SetMarkerSize(1.2);
    
-   TH1F *Graph_Graph08 = new TH1F("Graph_Graph08","Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B",100,0,10.4);
-   Graph_Graph08->SetMinimum(4.022269);
-   Graph_Graph08->SetMaximum(72.72108);
-   Graph_Graph08->SetDirectory(0);
-   Graph_Graph08->SetLineWidth(2);
-   Graph_Graph08->SetMarkerStyle(20);
-   Graph_Graph08->SetMarkerSize(1.2);
-   Graph_Graph08->GetXaxis()->SetTitle(" p_{T} [GeV/c]");
-   Graph_Graph08->GetXaxis()->SetRange(1,97);
-   Graph_Graph08->GetXaxis()->SetLabelFont(42);
-   Graph_Graph08->GetXaxis()->SetLabelSize(0.05);
-   Graph_Graph08->GetXaxis()->SetTitleSize(0.05);
-   Graph_Graph08->GetXaxis()->SetTitleOffset(1.4);
-   Graph_Graph08->GetXaxis()->SetTitleFont(42);
-   Graph_Graph08->GetYaxis()->SetTitle(" S / #sqrt{S + B}");
-   Graph_Graph08->GetYaxis()->SetLabelFont(42);
-   Graph_Graph08->GetYaxis()->SetLabelSize(0.05);
-   Graph_Graph08->GetYaxis()->SetTitleSize(0.05);
-   Graph_Graph08->GetYaxis()->SetTitleOffset(1.4);
-   Graph_Graph08->GetYaxis()->SetTitleFont(42);
-   Graph_Graph08->GetZaxis()->SetLabelFont(42);
-   Graph_Graph08->GetZaxis()->SetLabelSize(0.05);
-   Graph_Graph08->GetZaxis()->SetTitleSize(0.05);
-   Graph_Graph08->GetZaxis()->SetTitleOffset(1);
-   Graph_Graph08->GetZaxis()->SetTitleFont(42);
-   graph->SetHistogram(Graph_Graph08);
+   TH1F *Graph_Graph012 = new TH1F("Graph_Graph012","Significance for N_Collision = 3.6204e+12 centrality_ncoll = 1.0000e+00, based on 60-80%, w/o TOF, 48B",100,0,10.4);
+   Graph_Graph012->SetMinimum(4.022269);
+   Graph_Graph012->SetMaximum(72.72108);
+   Graph_Graph012->SetDirectory(0);
+   Graph_Graph012->SetLineWidth(2);
+   Graph_Graph012->SetMarkerStyle(20);
+   Graph_Graph012->SetMarkerSize(1.2);
+   Graph_Graph012->GetXaxis()->SetTitle(" p_{T} [GeV/c]");
+   Graph_Graph012->GetXaxis()->SetRange(1,97);
+   Graph_Graph012->GetXaxis()->SetLabelFont(42);
+   Graph_Graph012->GetXaxis()->SetLabelSize(0.05);
+   Graph_Graph012->GetXaxis()->SetTitleSize(0.05);
+   Graph_Graph012->GetXaxis()->SetTitleOffset(1.4);
+   Graph_Graph012->GetXaxis()->SetTitleFont(42);
+   Graph_Graph012->GetYaxis()->SetTitle(" S / #sqrt{S + B}");
+   Graph_Graph012->GetYaxis()->SetLabelFont(42);
+   Graph_Graph012->GetYaxis()->SetLabelSize(0.05);
+   Graph_Graph012->GetYaxis()->SetTitleSize(0.05);
+   Graph_Graph012->GetYaxis()->SetTitleOffset(1.4);
+   Graph_Graph012->GetYaxis()->SetTitleFont(42);
+   Graph_Graph012->GetZaxis()->SetLabelFont(42);
+   Graph_Graph012->GetZaxis()->SetLabelSize(0.05);
+   Graph_Graph012->GetZaxis()->SetTitleSize(0.05);
+   Graph_Graph012->GetZaxis()->SetTitleOffset(1);
+   Graph_Graph012->GetZaxis()->SetTitleFont(42);
+   graph->SetHistogram(Graph_Graph012);
    
    graph->Draw("p");
    D0_BUP2020pp_significance_5yr_2->Modified();

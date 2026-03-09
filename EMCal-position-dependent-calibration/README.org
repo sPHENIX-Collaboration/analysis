@@ -1,0 +1,38 @@
+#+title: EMCal Position Dependent Calibration
+
+* Description
+This analysis allows for the recalibration of the cluster energy by specifying the recalibration constant for each position within a sector.
+
+The correction factor is applied inversly. For example, if the energy of a cluster is 3 GeV and the recalibration constant is 0.5, then the recalibrated cluster energy will be 6 GeV.
+
+** EMCal Geometry
+Sector consists of 96 blocks arranged in (4 blocks x 24 blocks). Each block consists of 4 towers arranged in (2 towers x 2 towers). The corrections are to be specified in 8x8 per tower.
+
+* Usage
+1) Create a text file that consists of (384x64) recalibration constants.
+2) Ensure that $CALIBRATIONROOT is local. This can be done as follows:
+   #+begin_src sh
+   cp -r $CALIBRATIONROOT <local path>
+   export CALIBRATIONROOT=<local path>
+   #+end_src
+   Note: ensure that you provide absolute path in specifying <local path>
+3) Use [[file:macro/Construct_Recalibs_Files.C][Construct_Recalibs_Files.C]] to generate the xml recalibration file from the text file.
+   #+begin_src sh
+   cd macro
+   mkdir -p $CALIBRATIONROOT/CEMC/PositionRecalibrationFull
+   root -b -l -q 'Construct_Recalibs_Files("<path/to/textfile>")'
+   #+end_src
+4) You will need to generate a corresponding xml file (required by ecore) by copying the generated xml file and renaming it to begin with "cemc_ecore_recalib_geoparams".
+5) Building the libraries can be done as follows:
+   #+begin_src sh
+   mkdir -p bin
+   cd bin
+   <source>/autogen.sh --prefix=$MYINSTALL
+   make -j 8
+   make -j 8 install
+   #+end_src
+   Note: you will need to have $MYINSTALL local area set.
+6) Include [[file:macro/CEmc_Spacal.C][CEmc_Spacal.C]] in your specific analysis to use the library within your simulation.
+
+* Examples
+A sample recalibration text file is provided [[file:example/LO_positiondependent_calibs_phot.txt][LO_positiondependent_calibs_phot.txt]]. Additionally, a sample simulation that uses this library is given in [[file:example/macro/Fun4All_G4_sPHENIX.C][Fun4All_G4_sPHENIX.C]].

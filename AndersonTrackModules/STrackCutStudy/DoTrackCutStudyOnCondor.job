@@ -1,0 +1,32 @@
+# -----------------------------------------------------------------------------
+# 'DoTrackCutStudyOnCondor.job'
+# Derek Anderson
+# 03.23.2023
+#
+# Job file to run DoTrackCutStudy.C via Condor.
+# It's wise to use this rather than run locally:
+# DoTrackCutStudy.C can throw an outrageous
+# amount of memory on the heap...
+# -----------------------------------------------------------------------------
+
+# generic parameters
+Universe     = vanilla
+notification = Never
+
+# executable parameters
+Executable           = DoTrackCutStudyOnCondor.sh
+Arguments            = $(nEvt) $(inFiles) $(embFiles) $(outFiles)
+PeriodicHold         = ((NumJobStarts >= 1) && (JobStatus == 1))
+Initialdir           = ./
+request_memory       = 36GB
+transfer_input_files = DisplayOn.C,G4Setup_sPHENIX.C
+
+# output parameters
+Output = /sphenix/user/danderson/tracking/TrackCutStudy/doTrackCutStudy_run6n20pim_d28m3y2023_$(process).out
+Error  = /sphenix/user/danderson/tracking/TrackCutStudy/doTrackCutStudy_run6n20pim_d28m3y2023_$(process).err
+Log    = /sphenix/user/danderson/tracking/TrackCutStudy/doTrackCutStudy_run6n20pim_d28m3y2023.log
+
+# queue jobs
+Queue
+
+# end -------------------------------------------------------------------------

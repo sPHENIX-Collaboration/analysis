@@ -1,0 +1,39 @@
+These analysis scripts are used to process cosmics run data to extract new calibration factors for the HCal detector using cosmic ray muon data.
+The raw data need to be produced first to get the HIST_COSMIC_HCALOUT and HIST_COSMIC_IHCALOUT dst files. Several runs need to be combined together to get sufficient statistics for the calibration.
+The following steps will give one calibration set for a range of runs.
+
+1. Run get_runlist.sh to get runlist.txt, or provide your own runlist.txt
+
+    bash get_runlist.sh <start_run> <end_run>
+
+    The script will query the FileCatalog database for cosmics runs between <start_run> and <end_run> that have HIST_COSMIC_HCALOUT and HIST_COSMIC_IHCALOUT
+    datasets available, and write the valid run numbers to runlist.txt.
+
+2. Run do_cosmics_calibration.sh to get cosmics run histograms outputs and new calibration factors and CDB TTrees.
+
+    bash do_cosmics_calibration.sh
+
+    The script will read runlist.txt, process the runs listed there:
+
+    1) It will hadd per-run HIST_COSMIC_HCALOUT and HIST_COSMIC_IHCALOUT dst files into
+       hist/ohcal_hist_<run>.root and hist/ihcal_hist_<run>.root files.
+
+    2) It will then hadd all per-run OHCal and IHCal histograms into a combined .root file each:
+       hist/ohcal_hist_<min_run>_<max_run>.root and hist/ihcal_hist_<min_run>_<max_run>.root files.
+
+    3) It will run function_fitting.C to extract MPV values from the combined histograms. The outputs will be saved in output/ as:
+       fitresult_ohcal_<min_run>_<max_run>.root and fitresult_ihcal_<min_run>_<max_run>.root
+       fitcheck_ohcal_<min_run>_<max_run>.root and fitcheck_ihcal_<min_run>_<max_run>.root
+       ohcal_mpv_<min_run>_<max_run>.txt and ihcal_mpv_<min_run>_<max_run>.txt
+       The fitresult files contain the MPV fitting results for each tower. The fitcheck files contain the general 2D MPV and hits histograms for visual checking.
+
+    4) It will run readhcalcalib.C to read the existing pre-calibration factors used in production from ohcal_precalib.root and ihcal_precalib.root files into txt files.
+       These .root files should be prepared in advance and placed in the offline/ directory. There are example files provided, and should be the default pre-calibration factors used.
+       But for best results, one should check the log files from production to see what pre-calibration factors were used, and prepare the ohcal_precalib.root and ihcal_precalib.root
+
+    5) It will run get_calibration_factor.C to compute new calibration factors based on the sim and data MPV results and the pre-calibration factors.
+       The new calibration factor files will be saved to output/ directory as:
+       ohcal_calibration_factors_<min_run>_<max_run>.txt and ihcal_calibration_factors_<min_run>_<max_run>.txt
+
+    6) It will run get_CDBTree.C to form CDB TTrees with the new calibration factors. The CDB TTrees will be saved to output/ directory as:
+       ohcal_CDBTTree_<min_run>_<max_run>.root and ihcal_CDBTTree_<min_run>_<max_run>.root

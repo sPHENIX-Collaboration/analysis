@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<MethodSetup Method="MLP::MLPnew">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.1 [262657]"/>
+    <Info name="ROOT Release" value="6.22/02 [398850]"/>
+    <Info name="Creator" value="cdean"/>
+    <Info name="Date" value="Tue Apr 20 16:39:06 2021"/>
+    <Info name="Host" value="Linux cvmfswrite02.sdcc.bnl.gov 3.10.0-957.12.2.el7.x86_64 #1 SMP Tue May 14 15:23:27 CDT 2019 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/gpfs/mnt/gpfs02/sphenix/user/cdean/scripts/HF_trigger_ML/TMVA/Odd/wCalo"/>
+    <Info name="Training events" value="31922"/>
+    <Info name="TrainingTime" value="6.42874050e+01"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="NCycles" modified="Yes">400</Option>
+    <Option name="HiddenLayers" modified="Yes">N+10</Option>
+    <Option name="NeuronType" modified="Yes">tanh</Option>
+    <Option name="RandomSeed" modified="No">1</Option>
+    <Option name="EstimatorType" modified="Yes">CE</Option>
+    <Option name="NeuronInputType" modified="No">sum</Option>
+    <Option name="V" modified="Yes">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="Yes">N</Option>
+    <Option name="H" modified="Yes">True</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+    <Option name="TrainingMethod" modified="Yes">BP</Option>
+    <Option name="LearningRate" modified="No">2.000000e-02</Option>
+    <Option name="DecayRate" modified="No">1.000000e-02</Option>
+    <Option name="TestRate" modified="Yes">5</Option>
+    <Option name="EpochMonitoring" modified="No">False</Option>
+    <Option name="Sampling" modified="No">1.000000e+00</Option>
+    <Option name="SamplingEpoch" modified="No">1.000000e+00</Option>
+    <Option name="SamplingImportance" modified="No">1.000000e+00</Option>
+    <Option name="SamplingTraining" modified="No">True</Option>
+    <Option name="SamplingTesting" modified="No">False</Option>
+    <Option name="ResetStep" modified="No">50</Option>
+    <Option name="Tau" modified="No">3.000000e+00</Option>
+    <Option name="BPMode" modified="No">sequential</Option>
+    <Option name="BatchSize" modified="No">-1</Option>
+    <Option name="ConvergenceImprove" modified="No">1.000000e-30</Option>
+    <Option name="ConvergenceTests" modified="No">-1</Option>
+    <Option name="UseRegulator" modified="Yes">False</Option>
+    <Option name="UpdateLimit" modified="No">10000</Option>
+    <Option name="CalculateErrors" modified="No">False</Option>
+    <Option name="WeightRange" modified="No">1.000000e+00</Option>
+  </Options>
+  <Variables NVar="4">
+    <Variable VarIndex="0" Expression="max(track_1_IP,track_2_IP)" Label="maxTrackDCA_3D" Title="track-vertex 3D DCA, max" Unit="units" Internal="maxTrackDCA_3D" Type="F" Min="3.83873377e-03" Max="4.99581957e+00"/>
+    <Variable VarIndex="1" Expression="max(abs(track_1_IP_xy),abs(track_2_IP_xy))" Label="maxTrackDCA_2D" Title="track-vertex 2D DCA, max" Unit="units" Internal="maxTrackDCA_2D" Type="F" Min="9.33057163e-05" Max="4.89962578e+00"/>
+    <Variable VarIndex="2" Expression="track_1_track_2_DCA" Label="track_1_track_2_DCA" Title="track-track 3D DCA" Unit="units" Internal="track_1_track_2_DCA" Type="F" Min="1.57269469e-07" Max="4.99997623e-02"/>
+    <Variable VarIndex="3" Expression="INTT_meanHits" Label="INTT_meanHits" Title="INTT avg. hits" Unit="units" Internal="INTT_meanHits" Type="F" Min="0.00000000e+00" Max="9.30000000e+01"/>
+  </Variables>
+  <Spectators NSpec="0"/>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="1">
+    <Transform Name="Normalize">
+      <Selection>
+        <Input NInputs="4">
+          <Input Type="Variable" Label="maxTrackDCA_3D" Expression="max(track_1_IP,track_2_IP)"/>
+          <Input Type="Variable" Label="maxTrackDCA_2D" Expression="max(abs(track_1_IP_xy),abs(track_2_IP_xy))"/>
+          <Input Type="Variable" Label="track_1_track_2_DCA" Expression="track_1_track_2_DCA"/>
+          <Input Type="Variable" Label="INTT_meanHits" Expression="INTT_meanHits"/>
+        </Input>
+        <Output NOutputs="4">
+          <Output Type="Variable" Label="maxTrackDCA_3D" Expression="max(track_1_IP,track_2_IP)"/>
+          <Output Type="Variable" Label="maxTrackDCA_2D" Expression="max(abs(track_1_IP_xy),abs(track_2_IP_xy))"/>
+          <Output Type="Variable" Label="track_1_track_2_DCA" Expression="track_1_track_2_DCA"/>
+          <Output Type="Variable" Label="INTT_meanHits" Expression="INTT_meanHits"/>
+        </Output>
+      </Selection>
+      <Class ClassIndex="0">
+        <Ranges>
+          <Range Index="0" Min="2.6288369670510292e-02" Max="4.9208393096923828e+00"/>
+          <Range Index="1" Min="7.4875322170555592e-03" Max="4.8996257781982422e+00"/>
+          <Range Index="2" Min="3.3912067010533065e-05" Max="4.9925927072763443e-02"/>
+          <Range Index="3" Min="1.0000000000000000e+00" Max="7.0000000000000000e+01"/>
+        </Ranges>
+      </Class>
+      <Class ClassIndex="1">
+        <Ranges>
+          <Range Index="0" Min="3.8387337699532509e-03" Max="4.9958195686340332e+00"/>
+          <Range Index="1" Min="9.3305716291069984e-05" Max="4.5549664497375488e+00"/>
+          <Range Index="2" Min="1.5726946855920687e-07" Max="4.9999762326478958e-02"/>
+          <Range Index="3" Min="0.0000000000000000e+00" Max="9.3000000000000000e+01"/>
+        </Ranges>
+      </Class>
+      <Class ClassIndex="2">
+        <Ranges>
+          <Range Index="0" Min="3.8387337699532509e-03" Max="4.9958195686340332e+00"/>
+          <Range Index="1" Min="9.3305716291069984e-05" Max="4.8996257781982422e+00"/>
+          <Range Index="2" Min="1.5726946855920687e-07" Max="4.9999762326478958e-02"/>
+          <Range Index="3" Min="0.0000000000000000e+00" Max="9.3000000000000000e+01"/>
+        </Ranges>
+      </Class>
+    </Transform>
+  </Transformations>
+  <MVAPdfs/>
+  <Weights>
+    <Layout NLayers="3">
+      <Layer Index="0" NNeurons="5">
+        <Neuron NSynapses="14">
+          -3.7127001774268586e-01 1.7706044423266027e+00 8.8503447627246619e+00 9.2432840900879465e-01 -1.6347008671719885e+00 -1.3832709434631416e+00 7.9024116341969275e-01 4.9017363454459986e+00 1.8716727029683966e-02 -9.4817027842711210e-01 -3.1291287830806519e-01 1.0450895764632731e+00 -1.2895028756059681e+00 -1.7704843658223681e+00 
+        </Neuron>
+        <Neuron NSynapses="14">
+          -1.6916854054032129e+00 7.1482809677935666e-01 4.6626710539397234e+00 9.5970465785579251e-01 1.4373971853544327e+00 1.3431976620768544e+00 -1.7341200645476125e+00 1.0321406690800328e-01 5.9267629012285050e-01 -1.1401813601905635e-01 1.9410580554003401e-01 6.2417789223775200e-01 1.7173250302676477e+00 -2.0932480803175646e+00 
+        </Neuron>
+        <Neuron NSynapses="14">
+          -2.3048969153705845e+00 6.6722324378691134e-02 -4.4951481188298038e-02 2.9931332436230318e-01 -3.7625487833360522e+00 -1.3262070238794924e-01 4.9268848761302442e-01 -8.7227365807602875e-02 -2.0536823401227033e-01 1.5985105410455540e+00 2.1196862466110461e-01 8.1191089426958796e-01 4.4729532098606339e-01 -7.8841382895831452e-02 
+        </Neuron>
+        <Neuron NSynapses="14">
+          1.3846242596067396e-01 1.3081767157952211e+00 2.9689415680452391e-01 -1.3792468432279195e+00 -3.0011369075091615e-01 -1.0676888679597914e-01 5.2324373532647517e-01 2.6375122394669487e-01 4.3931007115471132e+00 6.7917459384353718e-01 -3.0609964736097752e+00 6.5795988505751279e-01 -9.7290230846280412e-01 -2.2584104086333823e+00 
+        </Neuron>
+        <Neuron NSynapses="14">
+          -3.0329522856525015e+00 -2.2097287416533775e+00 1.3147941975870419e+01 8.1565960079906841e-01 -4.0040781473039511e+00 -6.7611649463653348e-02 -9.7515044023360664e-01 4.2377015345980844e+00 4.7787515505613181e+00 1.0194914122711485e+00 -2.0610776943851095e+00 -2.5410669645912263e+00 6.8782382041054205e-02 -5.9212119111933612e+00 
+        </Neuron>
+      </Layer>
+      <Layer Index="1" NNeurons="15">
+        <Neuron NSynapses="1">
+          -6.2150985570716755e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          7.3012186838503190e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          2.7200261521258611e+00 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -1.1031854918362517e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          1.2744522684781636e+00 
+        </Neuron>
+        <Neuron NSynapses="1">
+          5.6570174628830801e-02 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -6.3427021171353015e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -5.0910318550045575e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          1.4759261225833138e+00 
+        </Neuron>
+        <Neuron NSynapses="1">
+          2.3839821537841019e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          5.4206934271778950e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          2.0906083331378826e+00 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -2.1215578071855251e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -6.7819391320210543e-01 
+        </Neuron>
+        <Neuron NSynapses="1">
+          -2.9422464424780461e+00 
+        </Neuron>
+      </Layer>
+      <Layer Index="2" NNeurons="1">
+        <Neuron NSynapses="0"/>
+      </Layer>
+    </Layout>
+  </Weights>
+</MethodSetup>

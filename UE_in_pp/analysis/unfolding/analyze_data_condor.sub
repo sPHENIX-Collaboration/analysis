@@ -1,0 +1,7 @@
+executable = analysis_data.sh
+arguments = $(run)
+output = output_logs/output_data_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_data_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run from analyze_data_queue.list

@@ -1,0 +1,8 @@
+Universe           = vanilla
+Executable         = runHFreco.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(events) $(file) $(path) $(skip)
+Queue events file path skip from fileLists/file_run53877_000.list

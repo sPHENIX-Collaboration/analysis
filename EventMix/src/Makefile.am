@@ -59,6 +59,7 @@ libeventmix_la_LIBADD = \
   -lg4dst \
   -lSubsysReco \
   -lphg4hit \
+  -ltrackpid \
   -lphool 
 
 # Rule for generating table CINT dictionaries.

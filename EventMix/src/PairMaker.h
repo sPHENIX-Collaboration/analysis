@@ -4,12 +4,16 @@
 
 #include <fun4all/SubsysReco.h>
 
+#include "sPHElectronv1.h"
+
 #include <vector>
 
 class TFile;
 class TH1D;
-
+class TRandom;
 class SvtxTrack;
+class sPHElectronPairContainerv1;
+
 
 class PairMaker: public SubsysReco {
 
@@ -26,20 +30,21 @@ public:
 protected:
 
   int process_event_test(PHCompositeNode *topNode);
+  int MakeMixedPairs(std::vector<sPHElectronv1> elepos, sPHElectronPairContainerv1* eePairs, unsigned int centbin);
 
   bool isElectron(SvtxTrack*);
 
-//  TFile* OutputNtupleFile;
-//  std::string OutputFileName;
-//  TH1D* htest;
-
   std::string outnodename;
+  static const int NZ = 2;
+  static const int NCENT = 2;
+  std::vector<sPHElectronv1> _buffer[NZ][NCENT];
+  unsigned int _min_buffer_depth;
+  unsigned int _max_buffer_depth;
+  double _ZMAX;
+  double _ZMIN;
+  std::vector<double> _multbins;
 
-
-//  const int NZ = 5;
-//  const int NCENT = 1;
-//  vector<sPHElectronv1> buffer1[NZ][NCENT];
-//  vector<sPHElectronv1> buffer2[NZ][NCENT];
+  TRandom* _rng;
 
   int EventNumber;
 
