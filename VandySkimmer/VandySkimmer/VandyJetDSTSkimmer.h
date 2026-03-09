@@ -94,6 +94,7 @@ class VandyJetDSTSkimmer : public SubsysReco
 
   void SetDoCalib(bool flag) {m_doCalib = flag; };
 
+  std::string GetSimSample() { return m_sampleName;}
  private:
     
     const float jetR[4]={0.2,0.3,0.4,0.5};

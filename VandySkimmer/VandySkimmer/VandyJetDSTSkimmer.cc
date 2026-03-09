@@ -97,7 +97,7 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
       }
     }
 
-    for(int s=0; s<7; s++)
+    for(int s=0; s<8; s++)
     {
       if(m_sampleName == sampleNames[s])
       {

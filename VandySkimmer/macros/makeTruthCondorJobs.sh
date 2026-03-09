@@ -316,6 +316,8 @@ converttriggertype()
 		prodtype=19
 	elif [ "${triggertype}" = "Jet50" ]; then
 		prodtype=34
+	elif [ "${triggertype}" = "Jet60" ]; then
+		prodtype=38
 	elif [ "${triggertype}" = "PhotonJet5" ]; then
 		prodtype=27
 	elif [ "${triggertype}" = "PhotonJet10" ]; then
