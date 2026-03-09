@@ -152,16 +152,20 @@ void Fun4All_VandySkimmerTruth(const std::string caloDSTlist, const std::string 
     se->registerSubsystem(truthjetreco);
   }
 
-//  TimingCut* tc = new TimingCut("AntiKt_r04","TimingCutModule",false); //arguments: 1. jet node name to use, 2. name for fun4all module, 3. doAbort. The last of these tells the module whether or not to abort events that fail the cuts.
-  //tc->Verbosity(0);
- // se->registerSubsystem(tc);
-
+  if(!doSim)
+  {
+	TimingCut* tc = new TimingCut("AntiKt_r04","TimingCutModule",false); //arguments: 1. jet node name to use, 2. name for fun4all module, 3. doAbort. The last of these tells the module whether or not to abort events that fail the cuts.
+  	tc->Verbosity(0);
+ 	se->registerSubsystem(tc);
+  }
   VandyJetDSTSkimmer *vs = new VandyJetDSTSkimmer("VandyJetDSTSkimmer");
   vs->SetRunnumber(runnumber);
-  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001_{}-{}-{:06d}_to-{:06d}.root", sample_name, outDir, runnumber,seg, seg+n).c_str());
+  vs->SetOutfileName(std::format("{}/VandyDSTs_run2pp_ana521_2025p007_v001_{}-{}-{:06d}_to-{:06d}.root", outDir, sample_name, runnumber,seg, seg+n).c_str());
   vs->SetDoSim(doSim);
+  std::cout<<"Sample name: " <<sample_name<<std::endl;
   if(doSim) vs->SetDoCalib(false);
   if(doSim) vs->SetSimSample(sample_name);
+  std::cout<<vs->GetSimSample() <<std::endl;
   se->registerSubsystem(vs);
   se->run(0);
   se->End();

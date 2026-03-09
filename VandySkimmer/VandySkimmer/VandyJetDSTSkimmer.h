@@ -94,14 +94,15 @@ class VandyJetDSTSkimmer : public SubsysReco
 
   void SetDoCalib(bool flag) {m_doCalib = flag; };
 
+  std::string GetSimSample() { return m_sampleName;}
  private:
     
     const float jetR[4]={0.2,0.3,0.4,0.5};
     const std::string jetRStr[4]={"02","03","04","05"};
     const float jetR_pTMin[4] = {12.0, 14.0, 15.5, 17.0};
 
-    const std::string sampleNames[7] = {"Jet5","Jet12","Jet20","Jet30","Jet40","Jet50","Jet60"};
-    const float truthJetR_pTMin[4][7] = {{5, 12, 20, 30, 40, 50, 60}, {6, 13, 21, 31, 41, 51, 61}, {7, 14, 21, 32, 42, 52, 62}, {10, 19, 27, 38, 49, 58, 68}};
+    const std::string sampleNames[8] = {"MB","Jet5","Jet12","Jet20","Jet30","Jet40","Jet50","Jet60"};
+    const float truthJetR_pTMin[4][8] = {{0,5, 12, 20, 30, 40, 50, 60}, {0,6, 13, 21, 31, 41, 51, 61}, {0,7, 14, 21, 32, 42, 52, 62}, {0,10, 19, 27, 38, 49, 58, 68}};
 
     float m_minJetPt{0.0};
     float m_vtx_cut{60.0};
