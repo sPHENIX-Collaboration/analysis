@@ -81,13 +81,13 @@ std::vector<float> makeLogBins(const int nBins, const float xmin, const float xm
 
 TH1F* makeHistogram(const HistogramInfo& hinfo)
 {
-  TH1F* h = new TH1F(hinfo.name.c_str(),(hinfo.title+";"+hinfo.axis_label).c_str(),hinfo.bins.size()-1,hinfo.bins.data());
+  TH1F* h = new TH1F(hinfo.name.c_str(),(hinfo.title+";"+hinfo.axis_label+";Candidates").c_str(),hinfo.bins.size()-1,hinfo.bins.data());
   return h;
 }
 
 TH1F* makeHistogram(const std::string& basename, const std::string& basetitle, const HistogramInfo& hinfo)
 {
-  TH1F* h = new TH1F((basename+"_vs"+hinfo.name).c_str(),(basetitle+" vs. "+hinfo.title).c_str(),hinfo.bins.size()-1,hinfo.bins.data());
+  TH1F* h = new TH1F((basename+"_vs"+hinfo.name).c_str(),(basetitle+" vs. "+hinfo.title+";"+hinfo.axis_label+";Candidates").c_str(),hinfo.bins.size()-1,hinfo.bins.data());
   return h;
 }
 
@@ -114,13 +114,15 @@ std::vector<TH1F*> makeDifferentialHistograms(const HistogramInfo& hinfo_x, cons
 
 namespace BinInfo
 {
-  static const HistogramInfo final_pt_bins("pT","pT",10,0.2,3.,"pT [GeV]");
+  //static const HistogramInfo final_pt_bins("pT","pT",10,0.2,3.,"pT [GeV/c]");
+  // special bins to sync with Tony's tracking efficiency
+  static const HistogramInfo final_pt_bins("pT","pT",{0.5,0.8,1.1,1.4,1.8,2.2,3.,4.},"pT [GeV/c]");
   static const HistogramInfo final_rapidity_bins("rapidity","rapidity",15,-1.1,1.1,"rapidity");
   static const HistogramInfo final_eta_bins("pseudorapidity","#eta",15,-1.1,1.1,"#eta");
   static const HistogramInfo final_phi_bins("phi","#phi",15,-M_PI,M_PI,"#phi");
   static const HistogramInfo final_ntrack_bins("ntrk","nTracks",makeLogBins(5,1.,20),"number of tracks");
 
-  static const HistogramInfo pt_bins("pt","pT",100,0.,1.1,"pT [GeV]");
+  static const HistogramInfo pt_bins("pt","pT",100,0.,1.1,"pT [GeV/c]");
   static const HistogramInfo rapidity_bins("y","rapidity",100,-1.5,1.5,"y");
   static const HistogramInfo phi_bins("phi","#phi",100,-M_PI,M_PI,"#phi");
   static const HistogramInfo ntrack_bins("ntrk","nTracks",201,-0.5,200.5,"number of tracks");

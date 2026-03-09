@@ -1,8 +1,8 @@
 #include "TFile.h"
 #include "TH1F.h"
 
-#include <sPhenixStyle.h>
-#include <sPhenixStyle.C>
+//#include <sPhenixStyle.h>
+//#include <sPhenixStyle.C>
 
 #include "../util/DifferentialContainer.h"
 #include "../util/binning.h"
@@ -42,6 +42,12 @@ void plot_results()
   gStyle->SetImageScaling(2.);
   //SetsPhenixStyle();
 
+  bool finalize = true;
+
+  std::string outdir;
+  if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/plots";
+  else outdir = "plots";
+
   TFile* f = TFile::Open("fits.root");
 
   std::vector<HistogramInfo> variables =
@@ -70,8 +76,8 @@ void plot_results()
       std::cout << i << " " << bin << std::endl;
       Ks_fits[i][bin-1]->Draw();
     }
-    std::string Ks_filename_pdf = "plots/pdf/Ks_fits_vs"+variables[i].name+".pdf";
-    std::string Ks_filename = "plots/png/Ks_fits_vs"+variables[i].name+".png";
+    std::string Ks_filename_pdf = outdir+"/pdf/Ks_fits_vs"+variables[i].name+".pdf";
+    std::string Ks_filename = outdir+"/png/Ks_fits_vs"+variables[i].name+".png";
     c->SaveAs(Ks_filename.c_str());
     c->SaveAs(Ks_filename_pdf.c_str());
     c->Close();
@@ -90,13 +96,15 @@ void plot_results()
       c1->cd(bin);
       lambda_fits[i][bin-1]->Draw();
     }
-    std::string lambda_filename_pdf = "plots/pdf/lambda_fits_vs"+variables[i].name+".pdf";
-    std::string lambda_filename = "plots/png/lambda_fits_vs"+variables[i].name+".png";
+    std::string lambda_filename_pdf = outdir+"/pdf/lambda_fits_vs"+variables[i].name+".pdf";
+    std::string lambda_filename = outdir+"/png/lambda_fits_vs"+variables[i].name+".png";
     c1->SaveAs(lambda_filename.c_str());
     c1->SaveAs(lambda_filename_pdf.c_str());
   }
 
   TCanvas* c = new TCanvas("singleplots","single plots",800,800);
+  c->SetLeftMargin(0.15);
+  c->SetRightMargin(0.05);
   std::vector<TH1F*> single_plots =
   {
     (TH1F*)f->Get("lambdaKsratio_vspT"),
@@ -110,7 +118,7 @@ void plot_results()
     (TH1F*)f->Get("Lambda_yield_vspT"),
     (TH1F*)f->Get("Lambda_yield_vspseudorapidity"),
     (TH1F*)f->Get("Lambda_yield_vsphi"),
-    (TH1F*)f->Get("Lambda_yield_vsrapidity")
+    (TH1F*)f->Get("Lambda_yield_vsrapidity"),
   };
 
   for(TH1F* h : single_plots)
@@ -122,10 +130,17 @@ void plot_results()
     h->SetMinimum(0.);
 
     h->Draw();
-    std::string filename_pdf = "plots/pdf/"+std::string(h->GetName())+".pdf";
-    std::string filename_png = "plots/png/"+std::string(h->GetName())+".png";
+
+    TLatex latex;
+    latex.SetNDC();           // Use normalized coordinates
+    latex.SetTextSize(0.04); // Adjust size as needed
+    latex.SetTextAlign(13);   // Left-top alignment
+    latex.DrawLatex(0.68, 0.93, "#it{#bf{sPHENIX}} internal");
+    latex.DrawLatex(0.68, 0.90, "#it{p+p} #sqrt{200} GeV");
+
+    std::string filename_pdf = outdir+"/pdf/"+std::string(h->GetName())+".pdf";
+    std::string filename_png = outdir+"/png/"+std::string(h->GetName())+".png";
     c->SaveAs(filename_pdf.c_str());
     c->SaveAs(filename_png.c_str());
   }
-
 }

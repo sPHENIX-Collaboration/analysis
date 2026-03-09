@@ -148,7 +148,17 @@ void lfRatio(bool save_plot = true)
   sphenix_3run.push_back({2.30, 2.16, 2.44, 0.2959594, 0.02216775, 0, 0});
   sphenix_3run.push_back({2.58, 2.44, 2.72, 0.2461123, 0.03135817, 0, 0});
   sphenix_3run.push_back({2.86, 2.72, 3.00, 0.2900647, 0.0132378, 0, 0});
-  plot_infos.push_back(plot_info("sPHENIX, run3 pp, runs 79514-79516",green_color,22,sphenix_3run));
+  //plot_infos.push_back(plot_info("sPHENIX, run3 pp, runs 79514-79516",green_color,22,sphenix_3run));
+
+  vector<data_point> sphenix_effcorr;
+  sphenix_effcorr.push_back({0.65,0.5,0.8,0.5344604,0.001185643,0,0});
+  sphenix_effcorr.push_back({0.95,0.8,1.1,0.5638949,0.001404973,0,0});
+  sphenix_effcorr.push_back({1.25,1.1,1.4,0.5729109,0.001866033,0,0});
+  sphenix_effcorr.push_back({1.6,1.4,1.8,0.5708982,0.002445078,0,0});
+  sphenix_effcorr.push_back({2.,1.8,2.2,0.5638121,0.004267988,0,0});
+  sphenix_effcorr.push_back({2.6,2.2,3.,0.532113,0.005824996,0,0});
+  sphenix_effcorr.push_back({3.5,3.,4.,0.5047523,0.0100021,0,0});
+  plot_infos.push_back(plot_info("sPHENIX, run3 pp, runs 79514-79516",blue_color,22,sphenix_effcorr));
 
   vector<data_point> sphenix_79514;
   sphenix_79514.push_back({.34, .20, .48, 0.01089852, 0.001913207, 0, 0});
@@ -200,7 +210,7 @@ void lfRatio(bool save_plot = true)
   pt->SetFillStyle(0);
   pt->SetTextFont(42);
   TText *pt_LaTex;
-  string labelString = "#it{#bf{sPHENIX}} Internal, No efficiency correction";
+  string labelString = "#it{#bf{sPHENIX}} Internal, Preliminary efficiency correction";
   pt_LaTex = pt->AddText(labelString.c_str());
   pt->SetBorderSize(0);
   pt->Draw();
