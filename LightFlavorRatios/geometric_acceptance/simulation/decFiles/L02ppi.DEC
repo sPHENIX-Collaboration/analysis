@@ -1,0 +1,15 @@
+#
+# Descriptor: Lambda02ppi 
+#
+# TG: HF
+# Responsible: Cameron Dean
+# Email: cdean@bnl.gov
+# Date: 20241025
+#
+Decay Lambda0
+0.638719992 p+      pi-                                     PHSP; #[Reconstructed PDG2011]
+Enddecay
+Decay anti-Lambda0
+0.638719992 anti-p- pi+                                     PHSP; #[Reconstructed PDG2011]
+Enddecay
+End
