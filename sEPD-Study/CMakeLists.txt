@@ -154,6 +154,10 @@ target_link_libraries(display-Jet-Anav3 PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(display-DataMC macros/display-DataMC.C)
 target_link_libraries(display-DataMC PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- display-SEPD-QA ---
+add_executable(display-sEPD-QA macros/display-sEPD-QA.C)
+target_link_libraries(display-sEPD-QA PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- display Q vector correction ---
 add_executable(display-Q-vec macros/display-Q-vec.C)
 target_link_libraries(display-Q-vec PRIVATE ${STANDALONE_MACRO_LIBS})
