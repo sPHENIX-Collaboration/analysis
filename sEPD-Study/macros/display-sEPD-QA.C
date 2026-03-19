@@ -577,15 +577,16 @@ void DisplaySEPDQA::draw()
         }
         if(i.type == "DEAD")
         {
-          color = Colors::Blue;
+          color = Colors::White;
         }
         if(i.type == "COLD")
         {
           color = Colors::Cyan;
-        }
-        if (i.mpv == -999)
-        {
-          color = Colors::Yellow;
+
+          if (i.mpv == -999)
+          {
+            color = Colors::Yellow;
+          }
         }
 
         std::string fmt = "{:<5} Channel {:>4}, arm: {}, rbin: {:>2}, avg charge: {:>6.2f}, threshold: {:>6.2f}, z-score: {:>6.2f}, calib (mpv): {:>6.2f}";
