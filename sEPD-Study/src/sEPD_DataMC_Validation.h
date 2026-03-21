@@ -68,13 +68,19 @@ class sEPD_DataMC_Validation : public SubsysReco
   enum class EventType : std::uint8_t
   {
     ALL,
+    ZVTX50,
     ZVTX10,
     ZVTX10_MB,
     ZVTX10_MB_CENT,
     ZVTX10_MB_CENT_JET
   };
 
-  std::vector<std::string> m_eventType{"All", "|z| < 10 cm", "MB", "Cent", "Jet"};
+  std::vector<std::string> m_eventType{"All", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent", "Jet"};
+
+  // Event Selection Flags
+  bool m_pass_MB{false};
+  bool m_pass_Zvtx{false};
+  bool m_pass_Centrality{false};
 
   // Hists
   TH1* hZVertex{nullptr};
@@ -138,6 +144,8 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2SEPD_Psi2_data_mc_S{nullptr};
   TH2* h2SEPD_Psi2_data_mc_N{nullptr};
   TH2* h2SEPD_Psi2_data_mc_NS{nullptr};
+
+  TH2* h2SEPD_Psi2_data_mc_NS_all{nullptr};
 
   TProfile* hScalarProduct_data{nullptr};
   TProfile* hScalarProduct_data_mc{nullptr};

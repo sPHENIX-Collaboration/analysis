@@ -261,6 +261,14 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
                              bins_psi, psi_low, psi_high,
                              m_bins_cent, m_cent_low, m_cent_high);
 
+  unsigned int bins_cent_full = 100;
+  double cent_full_low = -0.5;
+  double cent_full_high = 99.5;
+
+  h2SEPD_Psi2_data_mc_NS_all = new TH2F("h2SEPD_Psi2_data_mc_NS_all", "; 2#Psi_{2}; Centrality [%]",
+                                        bins_psi, psi_low, psi_high,
+                                        bins_cent_full, cent_full_low, cent_full_high);
+
   se->registerHisto(h2SEPD_Psi2_raw_data_S);
   se->registerHisto(h2SEPD_Psi2_raw_data_N);
 
@@ -275,6 +283,8 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(h2SEPD_Psi2_data_mc_S);
   se->registerHisto(h2SEPD_Psi2_data_mc_N);
   se->registerHisto(h2SEPD_Psi2_data_mc_NS);
+
+  se->registerHisto(h2SEPD_Psi2_data_mc_NS_all);
 
   unsigned int bins_QQ_avg{50};
   double QQ_avg_low{0};
@@ -328,7 +338,7 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-// //____________________________________________________________________________..
+//____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 {
   MinimumBiasInfo *mb_info = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
@@ -380,17 +390,25 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 
   hEvent->Fill(static_cast<int>(EventType::ALL));
 
-  if (std::abs(m_zvtx) < m_zvtx_max)
+  if(std::abs(m_zvtx) < m_zvtx_max_v2)
   {
-    hEvent->Fill(static_cast<int>(EventType::ZVTX10));
+    hEvent->Fill(static_cast<int>(EventType::ZVTX50));
+
+    if (std::abs(m_zvtx) < m_zvtx_max)
+    {
+      hEvent->Fill(static_cast<int>(EventType::ZVTX10));
+      m_pass_Zvtx = true;
+    }
   }
 
   // skip event if not minimum bias
   if (!mb_info->isAuAuMinimumBias())
   {
     ++m_ctr["events_isAuAuMinBias_fail"];
-    return Fun4AllReturnCodes::ABORTEVENT;
+    return Fun4AllReturnCodes::EVENT_OK;
   }
+
+  m_pass_MB = true;
 
   hZVertex->Fill(m_zvtx);
   h2ZVertexTruthvsData->Fill(m_zvtx, truth_z);
@@ -410,7 +428,7 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
   if (std::abs(m_zvtx) > m_zvtx_max)
   {
     ++m_ctr["events_zvtx_fail"];
-    return Fun4AllReturnCodes::ABORTEVENT;
+    return Fun4AllReturnCodes::EVENT_OK;
   }
 
   hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB));
@@ -421,11 +439,18 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode *topNode)
 {
+  if (!m_pass_MB || !m_pass_Zvtx)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   if (!std::isfinite(m_cent) || m_cent < 0 || m_cent >= m_cent_max_threshold)
   {
     ++m_ctr["events_centrality_bad"];
-    return Fun4AllReturnCodes::ABORTEVENT;
+    return Fun4AllReturnCodes::EVENT_OK;
   }
+
+  m_pass_Centrality = true;
 
   if (m_cent < m_cent_max_threshold_ana)
   {
@@ -440,6 +465,11 @@ int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode 
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
 {
+  if (!m_pass_MB || !m_pass_Zvtx || !m_pass_Centrality)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   TowerInfoContainer *towerinfosEPD_data = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD_data");
   if (!towerinfosEPD_data)
   {
@@ -465,7 +495,7 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
   if (nchannels_epd_data != nchannels_epd_mc || nchannels_epd_data != nchannels_epd_data_mc)
   {
     ++m_ctr["events_sepd_channel_fail"];
-    return Fun4AllReturnCodes::ABORTEVENT;
+    return Fun4AllReturnCodes::EVENT_OK;
   }
 
   double sepd_totalcharge = 0;
@@ -592,6 +622,24 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   std::pair<double, double> Q_raw_data_mc_N_2 = epd_data_mc_N->get_qvector_raw(2);
   std::pair<double, double> Q_raw_data_mc_NS_2 = epd_data_mc_NS->get_qvector_raw(2);
 
+  double _2psi2_data_S = 2*epd_data_S->get_shifted_psi(2);
+  double _2psi2_data_N = 2*epd_data_N->get_shifted_psi(2);
+  double _2psi2_data_NS = 2*epd_data_NS->get_shifted_psi(2);
+
+  double _2psi2_data_mc_S = 2*epd_data_mc_S->get_shifted_psi(2);
+  double _2psi2_data_mc_N = 2*epd_data_mc_N->get_shifted_psi(2);
+  double _2psi2_data_mc_NS = 2*epd_data_mc_NS->get_shifted_psi(2);
+
+  if (std::isfinite(m_cent))
+  {
+    h2SEPD_Psi2_data_mc_NS_all->Fill(_2psi2_data_mc_NS, m_cent);
+  }
+
+  if (!m_pass_MB || !m_pass_Zvtx || !m_pass_Centrality)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   double ref_flow_data = m_Q_data_S_2.first * m_Q_data_N_2.first + m_Q_data_S_2.second * m_Q_data_N_2.second;
   double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
 
@@ -600,14 +648,6 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 
   h2RefFlow_data->Fill(ref_flow_data, m_cent);
   h2RefFlow_data_mc->Fill(ref_flow_data_mc, m_cent);
-
-  double _2psi2_data_S = 2*epd_data_S->get_shifted_psi(2);
-  double _2psi2_data_N = 2*epd_data_N->get_shifted_psi(2);
-  double _2psi2_data_NS = 2*epd_data_NS->get_shifted_psi(2);
-
-  double _2psi2_data_mc_S = 2*epd_data_mc_S->get_shifted_psi(2);
-  double _2psi2_data_mc_N = 2*epd_data_mc_N->get_shifted_psi(2);
-  double _2psi2_data_mc_NS = 2*epd_data_mc_NS->get_shifted_psi(2);
 
   double _2psi2_raw_data_S = 2*epd_data_S->GetPsi(Q_raw_data_S_2.first, Q_raw_data_S_2.second, 2);
   double _2psi2_raw_data_N = 2*epd_data_N->GetPsi(Q_raw_data_N_2.first, Q_raw_data_N_2.second, 2);
@@ -637,6 +677,11 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 {
+  if (!m_pass_MB || !m_pass_Zvtx || !m_pass_Centrality)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   JetContainer *jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
   if (!jets)
   {
@@ -703,7 +748,7 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
     }
   }
 
-  if (hasJet)
+  if (hasJet && m_cent < m_cent_max_threshold_ana)
   {
     hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT_JET));
   }
@@ -767,6 +812,10 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 int sEPD_DataMC_Validation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
   m_zvtx = -9999;
+
+  m_pass_Zvtx = false;
+  m_pass_MB = false;
+  m_pass_Centrality = false;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
