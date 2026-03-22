@@ -79,7 +79,8 @@ class DisplaySEPDQA
   void run()
   {
     read_hists();
-    draw();
+    draw_QA();
+    draw_EP_Study();
   }
 
  private:
@@ -96,10 +97,19 @@ class DisplaySEPDQA
 
   int m_nChannels{744};
 
+  std::map<std::string, std::string> m_EP_files = {
+      {"_default", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-default-hotmap/ApplyFlattening/output/hist/QVecCalib-68144.root"},
+      {"_0", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-0.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
+      {"_50", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-50.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
+      {"_10", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-10.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
+      {"_5", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-5.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"}
+  };
+
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
-  void draw();
+  void draw_QA();
+  void draw_EP_Study();
 
   template <typename... Args>
   void print_color(RGB color, std::string_view fmt, Args&&... args)
@@ -124,9 +134,295 @@ void DisplaySEPDQA::read_hists()
   std::string calib = "/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/SEPD_NMIP_CALIB/86/6d/866db5abdca24d60cc47f8856c8e97f4_sEPD_CalibConstants_CDB_Run71504_v2.root";
   m_hists = myUtils::read_hists(input);
   m_sepd_calib = std::make_unique<CDBTTree>(calib);
+
+  // Event Plane Resolution Study
+  std::unordered_set<std::string> names = {"hEP_res_2", "h2_sEPD_Psi_S_2_corr2", "h2_sEPD_Psi_N_2_corr2"};
+
+  for (const auto& [tag, file] : m_EP_files)
+  {
+    m_hists.merge(myUtils::read_hists(file, tag, &names));
+  }
 }
 
-void DisplaySEPDQA::draw()
+void DisplaySEPDQA::draw_EP_Study()
+{
+  // set sPHENIX plotting style
+  SetsPhenixStyle();
+
+  std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>("c1");
+  c1->SetTickx();
+  c1->SetTicky();
+
+  c1->SetCanvasSize(1200, 1000);
+  c1->SetLeftMargin(.1F);
+  c1->SetRightMargin(.02F);
+  c1->SetTopMargin(.11F);
+  c1->SetBottomMargin(.09F);
+
+  gStyle->SetOptTitle(1);
+  gStyle->SetTitleStyle(0);
+  gStyle->SetTitleFontSize(0.08F);
+  gStyle->SetTitleW(1);
+  gStyle->SetTitleH(0.08F);
+  gStyle->SetTitleFillColor(0);
+  gStyle->SetTitleBorderSize(0);
+
+  std::string output;
+
+  // create output directory
+  std::filesystem::create_directories(std::format("{}/images", m_output_dir));
+  std::filesystem::create_directories(std::format("{}/pdf", m_output_dir));
+  output = std::format("{}/pdf/plots-EP-Study.pdf", m_output_dir);
+
+  c1->Print((output + "[").c_str(), "pdf portrait");
+
+  // ---------------------------------------------------
+
+  std::vector<short int> my_colors = {kBlack, kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
+  std::vector<std::string> legend_names = {"Current [Tower Mask]",
+                                           "0#leq N_{mip}",
+                                           "0#leq N_{mip}#leq 50",
+                                           "0#leq N_{mip}#leq 10",
+                                           "0#leq N_{mip}#leq 5"};
+
+  std::vector<std::string> tags = {"_default", "_0", "_50", "_10", "_5"};
+
+  {
+    c1->SetLeftMargin(.12F);
+
+    size_t plot_idx = 0;
+
+    double xshift = 0.05;
+    double yshift = -0.25;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .4 + yshift, 0.5 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+
+    for (const auto& tag : tags)
+    {
+      std::cout << std::format("Processing: {}\n", tag);
+
+      std::string name = std::format("hEP_res_2{}", tag);
+      std::string EP_res_name = std::format("hEP_res_sqrt_2{}", tag);
+
+      auto* hProf = dynamic_cast<TProfile*>(m_hists[name].get());
+      hProf->Rebin(10);
+
+      auto* hist = hProf->ProjectionX(EP_res_name.c_str());
+
+      std::cout << std::format("Hist: {}\n", hist->GetName());
+
+      for(int bin = 1; bin <= hist->GetNbinsX(); ++bin)
+      {
+        double val = hist->GetBinContent(bin);
+        double error = hist->GetBinError(bin);
+
+        if(val <= 0) continue;
+
+        double val_new = std::sqrt(2*val);
+        double error_new = error / val_new;
+
+        hist->SetBinContent(bin, val_new);
+        hist->SetBinError(bin, error_new);
+      }
+
+      m_hists[EP_res_name] = std::unique_ptr<TH1>(hist);
+
+      std::string name_ratio = std::format("hEP_res_sqrt_2_ratio{}",tag);
+      auto* hist_ratio = dynamic_cast<TH1*>(hist->Clone(name_ratio.c_str()));
+
+      auto* hDefault = m_hists["hEP_res_sqrt_2_default"].get();
+
+      hist_ratio->Divide(hDefault);
+      m_hists[name_ratio] = std::unique_ptr<TH1>(hist_ratio);
+
+      if (plot_idx == 0)
+      {
+        hist->Draw("hist l p");
+        hist->Draw("same p e X0");
+        hist->SetTitle("Event Plane Resolution");
+        // hist->GetYaxis()->SetTitle("#sqrt{2#LTcos(2(#Psi^{N}_{2}-#Psi^{S}_{2}))#GT} = #sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
+        hist->GetYaxis()->SetTitle("#sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
+      }
+      else
+      {
+        hist->Draw("same hist l p");
+        hist->Draw("same p e X0");
+      }
+
+      short int color = my_colors[plot_idx];
+
+      hist->SetLineColor(color);
+      hist->SetMarkerColor(color);
+      hist->SetLineWidth(3);
+
+      leg->AddEntry(hist, legend_names[plot_idx].c_str(), "lpe");
+
+      ++plot_idx;
+    }
+
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig)
+    {
+      c1->Print(std::format("{}/images/{}.png", m_output_dir, "EP-res-overlay").c_str());
+    }
+  }
+
+  // ---------------------------------------------------
+
+  // Ratio Plots
+  {
+    c1->SetTopMargin(.02F);
+
+    double xshift = 0.37;
+    double yshift = -0.25;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .4 + yshift, 0.5 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+
+    size_t plot_idx = 0;
+
+    for (const auto& tag : tags)
+    {
+      if (plot_idx == 0)
+      {
+        ++plot_idx;
+        continue;
+      }
+
+      std::string name_ratio = std::format("hEP_res_sqrt_2_ratio{}",tag);
+      auto* hist = m_hists[name_ratio].get();
+
+      if(plot_idx == 1)
+      {
+         hist->Draw();
+         hist->GetYaxis()->SetTitle("Ratio (With Current [Tower Mask])");
+      }
+      else
+      {
+         hist->Draw("same");
+      }
+
+      short int color = my_colors[plot_idx];
+
+      hist->SetLineColor(color);
+      hist->SetMarkerColor(color);
+      hist->SetLineWidth(3);
+
+      leg->AddEntry(hist, legend_names[plot_idx].c_str(), "lpe");
+
+      ++plot_idx;
+    }
+
+    leg->Draw("same");
+
+    std::unique_ptr<TF1> f1 = std::make_unique<TF1>("f1", "1", -0.5, 79.5);
+    f1->Draw("same");
+
+    f1->SetLineColor(kBlack);
+    f1->SetLineWidth(3);
+    f1->SetLineStyle(kDashed);
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig)
+    {
+      c1->Print(std::format("{}/images/{}.png", m_output_dir, "EP-res-ratio-overlay").c_str());
+    }
+
+    c1->SetTopMargin(.11F);
+  }
+
+  // ---------------------------------------------------
+
+  // Psi2 Plots
+  {
+
+    struct PlotOptions
+    {
+      std::string title{}; // NOLINT(readability-redundant-member-init)
+      double ylow{0};
+      double yhigh{0};
+    };
+
+    auto plotAndSave = [&](std::string_view hist_name, PlotOptions opts = {}, std::string_view file_name = "")
+    {
+      size_t plot_idx = 0;
+
+      double xshift = 0.3;
+      double yshift = -0.3;
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .4 + yshift, 0.5 + xshift, .7 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.05F);
+
+      for (const auto& tag : tags)
+      {
+        std::string name = std::format("{}{}", hist_name, tag);
+
+        auto* hist = dynamic_cast<TH2*>(m_hists[name].get())->ProjectionY();
+
+        hist->Scale(1. / hist->Integral());
+
+        if (plot_idx == 0)
+        {
+          hist->Draw("HIST");
+          hist->SetTitle(opts.title.c_str());
+          hist->GetYaxis()->SetMaxDigits(3);
+          hist->GetYaxis()->SetTitle("Normalized Events");
+          hist->GetXaxis()->SetTitleOffset(1.F);
+          hist->GetYaxis()->SetTitleOffset(1.F);
+
+          if(opts.yhigh > opts.ylow)
+          {
+              hist->GetYaxis()->SetRangeUser(opts.ylow, opts.yhigh);
+          }
+          else
+          {
+              hist->GetYaxis()->SetRangeUser(0, 1e-2);
+          }
+
+        }
+        else
+        {
+          hist->Draw("same HIST");
+        }
+
+        short int color = my_colors[plot_idx];
+
+        hist->SetLineColor(color);
+        hist->SetMarkerColor(color);
+        hist->SetLineWidth(3);
+
+        leg->AddEntry(hist, legend_names[plot_idx].c_str(), "l");
+
+        ++plot_idx;
+      }
+
+      leg->Draw("same");
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig)
+      {
+        c1->Print(std::format("{}/images/{}.png", m_output_dir, file_name).c_str());
+      }
+    };
+
+    plotAndSave("h2_sEPD_Psi_S_2_corr2", {.title = "sEPD South"}, "Psi-South-overlay");
+    plotAndSave("h2_sEPD_Psi_N_2_corr2", {.title = "sEPD North"}, "Psi-North-overlay");
+
+    plotAndSave("h2_sEPD_Psi_S_2_corr2", {.title = "sEPD South", .ylow=7.2e-3, .yhigh=8.4e-3}, "Psi-South-overlay-zoom");
+    plotAndSave("h2_sEPD_Psi_N_2_corr2", {.title = "sEPD North", .ylow=7.2e-3, .yhigh=8.4e-3}, "Psi-North-overlay-zoom");
+  }
+
+  c1->Print((output + "]").c_str(), "pdf portrait");
+
+}
+
+void DisplaySEPDQA::draw_QA()
 {
   // set sPHENIX plotting style
   SetsPhenixStyle();
