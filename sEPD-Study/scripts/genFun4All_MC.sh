@@ -15,8 +15,9 @@ input_calib=${5}
 input_sEPD_BadTowers=${6}
 output=${7}
 nEvents=${8}
-dbtag=${9}
-submitDir=${10}
+jet_pt_min=${9}
+dbtag=${10}
+submitDir=${11}
 
 # Extract basenames
 file_global=$(basename "$input_global")
@@ -46,7 +47,7 @@ printenv
 
 mkdir -p "$run"
 
-$f4a_bin "$file_global" "$file_jet" "$file_g4hit" "$file_calib" "$file_bad_towers" "$run/$output" "$nEvents" "$dbtag"
+$f4a_bin "$file_global" "$file_jet" "$file_g4hit" "$file_calib" "$file_bad_towers" "$run/$output" "$nEvents" "$jet_pt_min" "$dbtag"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"

@@ -33,6 +33,7 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
                          const std::string& input_sEPD_BadTowers,
                          const std::string& output = "test.root",
                          int nEvents = 100,
+                         double jet_pt_min = 10, /*GeV*/
                          const std::string& dbtag = "newcdbtag")
 {
   std::cout << "########################" << std::endl;
@@ -44,6 +45,7 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
   std::cout << "input Bad Towers: " << input_sEPD_BadTowers << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
+  std::cout << "jet pT min [GeV]: " << jet_pt_min << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "########################" << std::endl;
 
@@ -110,6 +112,7 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
 
   // sEPD QA
   sEPD_DataMC_Validation* sepd_validation = new sEPD_DataMC_Validation();
+  sepd_validation->set_jet_pt_min(jet_pt_min);
   sepd_validation->Verbosity(1);
   se->registerSubsystem(sepd_validation);
 
@@ -144,9 +147,9 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 6 || args.size() > 9)
+  if (args.size() < 6 || args.size() > 10)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_DST_g4hit> <input_QVecCalib> <input_BadTowers> [output] [nEvents] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_DST_g4hit> <input_QVecCalib> <input_BadTowers> [output] [nEvents] [jet_pt_min] [dbtag]" << std::endl;
     std::cerr << "  input_DST_global: path to the input global file" << std::endl;
     std::cerr << "  input_DST_jets: path to the input jets file" << std::endl;
     std::cerr << "  input_DST_g4hit: path to the input g4hit file" << std::endl;
@@ -166,9 +169,10 @@ int main(int argc, const char* const argv[])
   const std::string& input_BadTowers = args[arg_ctr++];
   std::string output = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "test.root";
   int nEvents = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 100;
+  double jet_pt_min = (args.size() >= arg_ctr+1) ? std::stod(args[arg_ctr++]) : 10;
   std::string dbtag = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "newcdbtag";
 
-  Fun4All_sEPD_DataMC(input_dst_global, input_dst_jets, input_dst_g4hit, input_QVecCalib, input_BadTowers, output, nEvents, dbtag);
+  Fun4All_sEPD_DataMC(input_dst_global, input_dst_jets, input_dst_g4hit, input_QVecCalib, input_BadTowers, output, nEvents, jet_pt_min, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

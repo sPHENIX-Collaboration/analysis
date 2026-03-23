@@ -328,6 +328,11 @@ f4a_mc.add_argument('-n'
                     , default=0
                     , help='Number of events to analyze. Default: All.')
 
+f4a_mc.add_argument('-c'
+                    , '--jet-pt-min', type=float
+                    , default=10
+                    , help='Jet pT min cut. Default: 10 GeV.')
+
 f4a_mc.add_argument('-s'
                     , '--memory', type=float
                     , default=0.5
@@ -371,6 +376,7 @@ def create_f4a_mc_jobs():
     calib_list = Path(args.calib).resolve()
     dbtag = args.dbtag
     events = args.events
+    jet_pt_min = args.jet_pt_min
     output_dir = Path(args.output_dir).resolve()
     log_file  = output_dir / 'log.txt'
     f4a_macro = Path(args.f4a_macro).resolve()
@@ -404,6 +410,7 @@ def create_f4a_mc_jobs():
     logger.info(f'Input DST List: {input_list}')
     logger.info(f'Calib List: {calib_list}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
+    logger.info(f'Jet pT Min: {jet_pt_min} GeV')
     logger.info(f'DB Tag: {dbtag}')
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Log File: {log_file}')
@@ -462,7 +469,7 @@ def create_f4a_mc_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {f4a_bin} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root {events} {dbtag} {output_dir}/output
+        arguments      = {f4a_bin} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root {events} {jet_pt_min} {dbtag} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err

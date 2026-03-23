@@ -32,6 +32,11 @@ class sEPD_DataMC_Validation : public SubsysReco
     m_cent_max_threshold = cent_max_threshold;
   }
 
+  void set_jet_pt_min(double pt_min)
+  {
+    m_jet_pt_min = pt_min;
+  }
+
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
