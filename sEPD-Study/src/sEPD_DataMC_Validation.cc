@@ -286,30 +286,42 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   se->registerHisto(h2SEPD_Psi2_data_mc_NS_all);
 
-  unsigned int bins_QQ_avg{50};
-  double QQ_avg_low{0};
-  double QQ_avg_high{5e-4};
+  unsigned int bins_QQ_avg{2048};
+  double QQ_avg_low{-0.01};
+  double QQ_avg_high{0.01};
 
-  unsigned int bins_qQ_avg{500};
-  double qQ_avg_low{-1e-2};
-  double qQ_avg_high{1e-2};
+  unsigned int bins_qQ_avg{8192};
+  double qQ_avg_low{-0.15};
+  double qQ_avg_high{0.15};
 
   hRefFlow_data = new TProfile("hRefFlow_data", "Reference Flow; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
                                 m_bins_cent, m_cent_low, m_cent_high);
 
+  hRefFlow_data_min = new TH1F("hRefFlow_data_min", "Min; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
+                               m_bins_cent / 10, m_cent_low, m_cent_high);
+
+  hRefFlow_data_max = new TH1F("hRefFlow_data_max", "Max; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
+                               m_bins_cent / 10, m_cent_low, m_cent_high);
+
   hRefFlow_data_mc = new TProfile("hRefFlow_data_mc", "Reference Flow; Centrality [%]; Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)",
                                 m_bins_cent, m_cent_low, m_cent_high);
 
-  h2RefFlow_data = new TH2F("h2RefFlow_data", "Reference Flow; Re(Q^{S}_{2} Q^{N*}_{2}); Centrality [%]",
-                            bins_QQ_avg, QQ_avg_low, QQ_avg_high,
-                            m_bins_cent / 10, m_cent_low, m_cent_high);
+  h2RefFlow_data = new TH2F("h2RefFlow_data", "Reference Flow; Centrality [%]; Re(Q^{S}_{2} Q^{N*}_{2})",
+                            m_bins_cent / 10, m_cent_low, m_cent_high,
+                            bins_QQ_avg, QQ_avg_low, QQ_avg_high);
 
-  h2RefFlow_data_mc = new TH2F("h2RefFlow_data_mc", "Reference Flow; Re(Q^{S}_{2} Q^{N*}_{2}); Centrality [%]",
-                               bins_QQ_avg, QQ_avg_low, QQ_avg_high,
-                               m_bins_cent / 10, m_cent_low, m_cent_high);
+  h2RefFlow_data_mc = new TH2F("h2RefFlow_data_mc", "Reference Flow; Centrality [%]; Re(Q^{S}_{2} Q^{N*}_{2})",
+                            m_bins_cent / 10, m_cent_low, m_cent_high,
+                            bins_QQ_avg, QQ_avg_low, QQ_avg_high);
 
   hScalarProduct_data = new TProfile("hScalarProduct_data", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
+
+  hScalarProduct_data_min = new TH1F("hScalarProduct_data_min", "Min; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                      m_bins_cent / 10, m_cent_low, m_cent_high);
+
+  hScalarProduct_data_max = new TH1F("hScalarProduct_data_max", "Max; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
+                                      m_bins_cent / 10, m_cent_low, m_cent_high);
 
   hScalarProduct_data_mc = new TProfile("hScalarProduct_data_mc", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{S|N*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
@@ -317,20 +329,24 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   hScalarProduct_data_mc_anti = new TProfile("hScalarProduct_data_mc_anti", "Scalar Product; Centrality [%]; Re(#LTq_{2} Q^{N|S*}_{2}#GT)",
                                       m_bins_cent, m_cent_low, m_cent_high);
 
-  h2ScalarProduct_data = new TH2F("h2ScalarProduct_data", "Scalar Product; Re(q_{2} Q^{S|N*}_{2}); Centrality [%]",
-                                  bins_qQ_avg, qQ_avg_low, qQ_avg_high,
-                                  m_bins_cent / 10, m_cent_low, m_cent_high);
+  h2ScalarProduct_data = new TH2F("h2ScalarProduct_data", "Scalar Product; Centrality [%]; Re(q_{2} Q^{S|N*}_{2})",
+                                  m_bins_cent / 10, m_cent_low, m_cent_high,
+                                  bins_qQ_avg, qQ_avg_low, qQ_avg_high);
 
-  h2ScalarProduct_data_mc = new TH2F("h2ScalarProduct_data_mc", "Scalar Product; Re(q_{2} Q^{S|N*}_{2}); Centrality [%]",
-                                     bins_qQ_avg, qQ_avg_low, qQ_avg_high,
-                                     m_bins_cent / 10, m_cent_low, m_cent_high);
+  h2ScalarProduct_data_mc = new TH2F("h2ScalarProduct_data_mc", "Scalar Product; Centrality [%]; Re(q_{2} Q^{S|N*}_{2})",
+                                  m_bins_cent / 10, m_cent_low, m_cent_high,
+                                  bins_qQ_avg, qQ_avg_low, qQ_avg_high);
 
   se->registerHisto(hRefFlow_data);
   se->registerHisto(hRefFlow_data_mc);
+  se->registerHisto(hRefFlow_data_min);
+  se->registerHisto(hRefFlow_data_max);
   se->registerHisto(h2RefFlow_data);
   se->registerHisto(h2RefFlow_data_mc);
   se->registerHisto(hScalarProduct_data);
   se->registerHisto(hScalarProduct_data_mc);
+  se->registerHisto(hScalarProduct_data_min);
+  se->registerHisto(hScalarProduct_data_max);
   se->registerHisto(h2ScalarProduct_data);
   se->registerHisto(h2ScalarProduct_data_mc);
   se->registerHisto(hScalarProduct_data_mc_anti);
@@ -644,10 +660,21 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
 
   hRefFlow_data->Fill(m_cent, ref_flow_data);
+
+  int bin_cent = hRefFlow_data_min->FindBin(m_cent);
+  if(ref_flow_data > hRefFlow_data_max->GetBinContent(bin_cent))
+  {
+    hRefFlow_data_max->SetBinContent(bin_cent, ref_flow_data);
+  }
+  if(ref_flow_data < hRefFlow_data_min->GetBinContent(bin_cent))
+  {
+    hRefFlow_data_min->SetBinContent(bin_cent, ref_flow_data);
+  }
+
   hRefFlow_data_mc->Fill(m_cent, ref_flow_data_mc);
 
-  h2RefFlow_data->Fill(ref_flow_data, m_cent);
-  h2RefFlow_data_mc->Fill(ref_flow_data_mc, m_cent);
+  h2RefFlow_data->Fill(m_cent, ref_flow_data);
+  h2RefFlow_data_mc->Fill(m_cent, ref_flow_data_mc);
 
   double _2psi2_raw_data_S = 2*epd_data_S->GetPsi(Q_raw_data_S_2.first, Q_raw_data_S_2.second, 2);
   double _2psi2_raw_data_N = 2*epd_data_N->GetPsi(Q_raw_data_N_2.first, Q_raw_data_N_2.second, 2);
@@ -702,6 +729,8 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
   bool hasJet = false;
 
+  int bin_cent = hScalarProduct_data_min->FindBin(m_cent);
+
   for (auto *jet : *jets)
   {
     double pt = jet->get_pt();
@@ -740,8 +769,17 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
         hScalarProduct_data->Fill(m_cent, scalar_product_data);
         hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
 
-        h2ScalarProduct_data->Fill(scalar_product_data, m_cent);
-        h2ScalarProduct_data_mc->Fill(scalar_product_data_mc, m_cent);
+        if (scalar_product_data > hScalarProduct_data_max->GetBinContent(bin_cent))
+        {
+          hScalarProduct_data_max->SetBinContent(bin_cent, scalar_product_data);
+        }
+        if (scalar_product_data < hScalarProduct_data_min->GetBinContent(bin_cent))
+        {
+          hScalarProduct_data_min->SetBinContent(bin_cent, scalar_product_data);
+        }
+
+        h2ScalarProduct_data->Fill(m_cent, scalar_product_data);
+        h2ScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
 
         hScalarProduct_data_mc_anti->Fill(m_cent, scalar_product_data_mc_anti);
       }

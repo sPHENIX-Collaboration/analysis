@@ -158,6 +158,12 @@ class sEPD_DataMC_Validation : public SubsysReco
   TProfile* hRefFlow_data{nullptr};
   TProfile* hRefFlow_data_mc{nullptr};
 
+  TH1* hRefFlow_data_min{nullptr};
+  TH1* hRefFlow_data_max{nullptr};
+
+  TH1* hScalarProduct_data_min{nullptr};
+  TH1* hScalarProduct_data_max{nullptr};
+
   TH2* h2ScalarProduct_data{nullptr};
   TH2* h2ScalarProduct_data_mc{nullptr};
 
