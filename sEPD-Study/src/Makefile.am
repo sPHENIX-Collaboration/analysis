@@ -17,6 +17,7 @@ pkginclude_HEADERS = \
   EventSkip.h \
   CaloCheck.h \
   CaloQA.h \
+  CentralityQA.h \
   CalibrateQVec.h \
   JetValidation.h \
   JetUtils.h \
@@ -31,6 +32,7 @@ libsEPDValidation_la_SOURCES = \
   EventSkip.cc \
   CaloCheck.cc \
   CaloQA.cc \
+  CentralityQA.cc \
   CalibrateQVec.cc \
   JetValidation.cc \
   JetUtils.cc \
