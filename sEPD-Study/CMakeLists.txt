@@ -88,6 +88,15 @@ target_link_libraries(Fun4All_CaloQA PRIVATE
     ${MY_LIBS}
 )
 
+# --- Fun4All_CentralityQA ---
+add_executable(Fun4All_CentralityQA macros/Fun4All_CentralityQA.C)
+target_link_libraries(Fun4All_CentralityQA PRIVATE
+    ROOT::Core # Needs explicit Core for gSystem
+    ${ROOT_LIBS}
+    ${SPHENIX_LIBS}
+    ${MY_LIBS}
+)
+
 # --- Fun4All_Jet ---
 add_executable(Fun4All_Jet macros/Fun4All_Jet.C)
 target_link_libraries(Fun4All_Jet PRIVATE
