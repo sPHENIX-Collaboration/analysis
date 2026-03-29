@@ -159,6 +159,11 @@ target_link_libraries(display-Jet-Ana PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(display-Jet-Anav3 macros/display-Jet-Anav3.C)
 target_link_libraries(display-Jet-Anav3 PRIVATE ${STANDALONE_MACRO_LIBS})
 
+
+# --- display-CentralityQA ---
+add_executable(display-CentralityQA macros/display-CentralityQA.C)
+target_link_libraries(display-CentralityQA PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- display-DataMC ---
 add_executable(display-DataMC macros/display-DataMC.C)
 target_link_libraries(display-DataMC PRIVATE ${STANDALONE_MACRO_LIBS})
