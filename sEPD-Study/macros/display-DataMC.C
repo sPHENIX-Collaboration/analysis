@@ -72,7 +72,7 @@ class DisplayDataMC
 
   bool m_saveFig{false};
 
-  std::unordered_set<std::string> m_names = {};
+  std::vector<std::string> m_tags = {"_jet10","_jet20"};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -85,8 +85,16 @@ class DisplayDataMC
 // ====================================================================
 void DisplayDataMC::read_hists()
 {
-  std::string input = "/gpfs02/sphenix/user/anarde/sEPD-Study/MC/current/test-54404.root";
-  m_hists = myUtils::read_hists(input);
+
+  std::string base_path = "/gpfs02/sphenix/user/anarde/sEPD-Study/MC";
+  std::string input_jet10 = std::format("{}/jet10/54404.root", base_path);
+  std::string input_jet20 = std::format("{}/jet20/54404.root", base_path);
+
+  m_hists = myUtils::read_hists(input_jet10, m_tags[0]);
+
+  std::unordered_set<std::string> names = {"hEvent", "hJetPt", "h2ScalarProduct_data", "h2ScalarProduct_data_mc"};
+
+  m_hists.merge(myUtils::read_hists(input_jet20, m_tags[1], &names));
 }
 
 void DisplayDataMC::draw()
@@ -103,8 +111,6 @@ void DisplayDataMC::draw()
   c1->SetRightMargin(.02F);
   c1->SetTopMargin(.11F);
   c1->SetBottomMargin(.09F);
-
-  // c1->Divide(3, 3, 0.00025F, 0.00025F);
 
   gStyle->SetOptTitle(1);
   gStyle->SetTitleStyle(0);
@@ -129,66 +135,73 @@ void DisplayDataMC::draw()
     c1->SetRightMargin(.1F);
     gPad->SetTicky(0);
 
-    auto* hEvent = m_hists["hEvent"].get();
+    auto* hEvent_jet10 = m_hists["hEvent"+m_tags[0]].get();
+    auto* hEvent_jet20 = m_hists["hEvent"+m_tags[1]].get();
 
-    hEvent->Draw("HIST");
-
-    hEvent->GetYaxis()->SetMaxDigits(3);
-    hEvent->GetXaxis()->SetLabelSize(0.06F);
-    hEvent->SetLineColor(kBlue);
-    hEvent->SetLineWidth(3);
-
-    double ymax = hEvent->GetMaximum()*1.1;
-    hEvent->GetYaxis()->SetRangeUser(0, ymax);
-
-    // 1. Calculate the percentage scale
-    // We want hEvent->GetBinContent(1) to equal 100%
-    double totalEvents = hEvent->GetBinContent(1);
-    double right_axis_max = (ymax / totalEvents) * 100.0;
-
-    // 2. Force a pad update to ensure coordinates are ready
-    gPad->Update();
-
-    // 3. Define and draw the TGaxis
-    // Parameters: x_start, y_start, x_end, y_end, val_min, val_max, ndiv, options
-    TGaxis* axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
-                              gPad->GetUxmax(), gPad->GetUymax(),
-                              0, right_axis_max, 510, "+L");
-
-    axis->SetTitle("Percentage (%)");
-    axis->SetLabelFont(hEvent->GetYaxis()->GetLabelFont());
-    axis->SetLabelSize(hEvent->GetYaxis()->GetLabelSize());
-    axis->SetTitleFont(hEvent->GetYaxis()->GetTitleFont());
-    axis->SetTitleSize(hEvent->GetYaxis()->GetTitleSize());
-    axis->SetTitleOffset(1.2F);  // Adjust so it doesn't overlap the numbers
-
-    axis->Draw();
-
-    // Loop through the bins to place text
-    for (int i = 1; i <= hEvent->GetNbinsX(); ++i)
+    auto plotAndSave = [&](TH1* hist, std::string_view name = "")
     {
-      double binContent = hEvent->GetBinContent(i);
-      double percentage = (binContent / totalEvents) * 100.0;
+      hist->Draw("HIST");
 
-      // Define the x position (center of the bin)
-      // and y position (just slightly above the bar)
-      double xPos = hEvent->GetBinCenter(i);
-      double yPos = binContent + (ymax * 0.02);  // 2% offset above the bar
+      hist->GetYaxis()->SetMaxDigits(3);
+      hist->GetXaxis()->SetLabelSize(0.05F);
+      hist->SetLineColor(kBlue);
+      hist->SetLineWidth(3);
 
-      // Create the label string (fixed to 1 decimal place)
-      TString label = TString::Format("%.1f%%", percentage);
+      double ymax = hist->GetMaximum() * 1.1;
+      hist->GetYaxis()->SetRangeUser(0, ymax);
 
-      // Create and style the text object
-      TLatex* tex = new TLatex(xPos, yPos, label);
-      tex->SetTextAlign(21);  // Center-aligned horizontally, bottom-aligned vertically
-      tex->SetTextSize(0.05F);
-      tex->SetTextFont(42);          // Standard Helvetica
-      tex->SetTextColor(kBlue + 2);  // Slightly darker blue to stand out
-      tex->Draw();
-    }
+      // 1. Calculate the percentage scale
+      // We want hist->GetBinContent(1) to equal 100%
+      double totalEvents = hist->GetBinContent(1);
+      double right_axis_max = (ymax / totalEvents) * 100.0;
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hEvent").c_str());
+      // 2. Force a pad update to ensure coordinates are ready
+      gPad->Update();
+
+      // 3. Define and draw the TGaxis
+      // Parameters: x_start, y_start, x_end, y_end, val_min, val_max, ndiv, options
+      TGaxis* axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
+                                gPad->GetUxmax(), gPad->GetUymax(),
+                                0, right_axis_max, 510, "+L");
+
+      axis->SetTitle("Percentage (%)");
+      axis->SetLabelFont(hist->GetYaxis()->GetLabelFont());
+      axis->SetLabelSize(hist->GetYaxis()->GetLabelSize());
+      axis->SetTitleFont(hist->GetYaxis()->GetTitleFont());
+      axis->SetTitleSize(hist->GetYaxis()->GetTitleSize());
+      axis->SetTitleOffset(1.2F);  // Adjust so it doesn't overlap the numbers
+
+      axis->Draw();
+
+      // Loop through the bins to place text
+      for (int i = 1; i <= hist->GetNbinsX(); ++i)
+      {
+        double binContent = hist->GetBinContent(i);
+        double percentage = (binContent / totalEvents) * 100.0;
+
+        // Define the x position (center of the bin)
+        // and y position (just slightly above the bar)
+        double xPos = hist->GetBinCenter(i);
+        double yPos = binContent + (ymax * 0.02);  // 2% offset above the bar
+
+        // Create the label string (fixed to 1 decimal place)
+        TString label = TString::Format("%.1f%%", percentage);
+
+        // Create and style the text object
+        TLatex* tex = new TLatex(xPos, yPos, label);
+        tex->SetTextAlign(21);  // Center-aligned horizontally, bottom-aligned vertically
+        tex->SetTextSize(0.05F);
+        tex->SetTextFont(42);          // Standard Helvetica
+        tex->SetTextColor(kBlue + 2);  // Slightly darker blue to stand out
+        tex->Draw();
+      }
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+    };
+
+    plotAndSave(hEvent_jet10, "hEvent_jet10");
+    plotAndSave(hEvent_jet20, "hEvent_jet20");
 
     c1->SetRightMargin(.02F);
     gPad->SetTicky(1);
@@ -211,9 +224,9 @@ void DisplayDataMC::draw()
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
     };
 
-    plotAndSave("hCentrality");
-    plotAndSave("hCentralityZ50");
-    plotAndSave("hCentralityZOuter");
+    plotAndSave("hCentrality"+m_tags[0]);
+    plotAndSave("hCentralityZ50"+m_tags[0]);
+    plotAndSave("hCentralityZOuter"+m_tags[0]);
   }
 
   // ---------------------------------------------------
@@ -221,7 +234,7 @@ void DisplayDataMC::draw()
   {
     c1->SetRightMargin(.14F);
     c1->SetTopMargin(.08F);
-    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"].get());
+    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"+m_tags[0]].get());
 
     h2ZVertexCentrality->Draw("COLZ1");
 
@@ -247,7 +260,7 @@ void DisplayDataMC::draw()
       std::string title;
     };
 
-    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"].get());
+    auto* h2ZVertexCentrality = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality"+m_tags[0]].get());
     auto plotAndSave = [&](TH2* h2, PlotOptions opts = {}, std::string_view name = "")
     {
       auto* h1 = h2->ProjectionX("px", opts.bin_low, opts.bin_high);
@@ -275,7 +288,7 @@ void DisplayDataMC::draw()
   // ---------------------------------------------------
 
   {
-    auto* hZVertex = m_hists["hZVertex"].get();
+    auto* hZVertex = m_hists["hZVertex"+m_tags[0]].get();
 
     hZVertex->Draw("HIST");
 
@@ -365,10 +378,10 @@ void DisplayDataMC::draw()
       }
     };
 
-    plotAndSave("hSEPD_Charge_DataMC");
-    plotAndSave("hSEPD_Charge_DataMC", {.xhigh = 5, .logy = false}, "-zoom");
-    plotAndSave("hSEPD_Charge_MC");
-    plotAndSave("hSEPD_Charge_MC", {.xhigh = 5, .logy = false}, "-zoom");
+    plotAndSave("hSEPD_Charge_DataMC"+m_tags[0]);
+    plotAndSave("hSEPD_Charge_DataMC"+m_tags[0], {.xhigh = 5, .logy = false}, "-zoom");
+    plotAndSave("hSEPD_Charge_MC"+m_tags[0]);
+    plotAndSave("hSEPD_Charge_MC"+m_tags[0], {.xhigh = 5, .logy = false}, "-zoom");
 
     gPad->SetLogy(0);
   }
@@ -419,10 +432,10 @@ void DisplayDataMC::draw()
       if (m_saveFig) c1->Print(std::format("{}/images/{}-overlay.png", m_output_dir, name).c_str());
     };
 
-    plotAndSave("h2SEPD_South_Charge_DataMC", "sEPD South: |z| < 10 cm and MB");
-    plotAndSave("h2SEPD_BadMasked_South_Charge_DataMC", "sEPD South: |z| < 10 cm and MB");
-    plotAndSave("h2SEPD_North_Charge_DataMC", "sEPD North: |z| < 10 cm and MB");
-    plotAndSave("h2SEPD_BadMasked_North_Charge_DataMC", "sEPD North: |z| < 10 cm and MB");
+    plotAndSave("h2SEPD_South_Charge_DataMC"+m_tags[0], "sEPD South: |z| < 10 cm and MB");
+    plotAndSave("h2SEPD_BadMasked_South_Charge_DataMC"+m_tags[0], "sEPD South: |z| < 10 cm and MB");
+    plotAndSave("h2SEPD_North_Charge_DataMC"+m_tags[0], "sEPD North: |z| < 10 cm and MB");
+    plotAndSave("h2SEPD_BadMasked_North_Charge_DataMC"+m_tags[0], "sEPD North: |z| < 10 cm and MB");
 
     gPad->SetLogy(0);
   }
@@ -433,10 +446,10 @@ void DisplayDataMC::draw()
     c1->SetRightMargin(.14F);
     c1->SetTopMargin(.08F);
 
-    auto* pSEPD_Charge_DataMC = m_hists["pSEPD_Charge_DataMC"].get();
-    auto* pSEPD_BadMasked_Charge_DataMC = m_hists["pSEPD_BadMasked_Charge_DataMC"].get();
-    auto* pSEPD_Charge_MC = m_hists["pSEPD_Charge_MC"].get();
-    auto* pSEPD_BadMasked_Charge_MC = m_hists["pSEPD_BadMasked_Charge_MC"].get();
+    auto* pSEPD_Charge_DataMC = m_hists["pSEPD_Charge_DataMC"+m_tags[0]].get();
+    auto* pSEPD_BadMasked_Charge_DataMC = m_hists["pSEPD_BadMasked_Charge_DataMC"+m_tags[0]].get();
+    auto* pSEPD_Charge_MC = m_hists["pSEPD_Charge_MC"+m_tags[0]].get();
+    auto* pSEPD_BadMasked_Charge_MC = m_hists["pSEPD_BadMasked_Charge_MC"+m_tags[0]].get();
 
     unsigned int bins_charge = 50;
     unsigned int bins_r = 16;
@@ -571,14 +584,14 @@ void DisplayDataMC::draw()
   {
     gPad->SetLogz();
 
-    auto* h2SEPD_totalcharge_centrality = dynamic_cast<TH2*>(m_hists["h2SEPD_totalcharge_centrality"].get());
+    auto* h2SEPD_totalcharge_centrality = dynamic_cast<TH2*>(m_hists["h2SEPD_totalcharge_centrality"+m_tags[0]].get());
 
     h2SEPD_totalcharge_centrality->Draw("COLZ1");
 
     h2SEPD_totalcharge_centrality->GetXaxis()->SetMaxDigits(3);
 
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2SEPD_totalcharge_centrality").c_str());
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "h2SEPD_totalcharge_centrality"+m_tags[0]).c_str());
 
     gPad->SetLogz(0);
   }
@@ -588,11 +601,11 @@ void DisplayDataMC::draw()
   {
     c1->SetRightMargin(.04F);
 
-    auto* h2SEPD_Psi2_raw_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_N"].get());
-    auto* h2SEPD_Psi2_raw_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_S"].get());
+    auto* h2SEPD_Psi2_raw_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_N"+m_tags[0]].get());
+    auto* h2SEPD_Psi2_raw_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_data_mc_S"+m_tags[0]].get());
 
-    auto* h2SEPD_Psi2_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_N"].get());
-    auto* h2SEPD_Psi2_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_S"].get());
+    auto* h2SEPD_Psi2_N = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_N"+m_tags[0]].get());
+    auto* h2SEPD_Psi2_S = dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_data_mc_S"+m_tags[0]].get());
 
     int cent_bin_low = 1;
     int cent_bin_high = h2SEPD_Psi2_N->GetYaxis()->FindBin(60)-1;
@@ -655,16 +668,66 @@ void DisplayDataMC::draw()
   {
     gPad->SetLogy();
 
-    auto* hJetPt = m_hists["hJetPt"].get();
+    auto* hJetPt_jet10 = m_hists["hJetPt" + m_tags[0]].get();
+    auto* hJetPt_jet20 = m_hists["hJetPt" + m_tags[1]].get();
 
-    hJetPt->Draw("HIST");
+    hJetPt_jet10->Draw("HIST");
+    hJetPt_jet20->Draw("same HIST");
 
-    hJetPt->SetLineColor(kBlue);
-    hJetPt->SetLineWidth(3);
-    hJetPt->GetXaxis()->SetRangeUser(0, 55);
+    hJetPt_jet10->SetLineColor(kBlue);
+    hJetPt_jet10->SetLineWidth(3);
+
+    hJetPt_jet20->SetLineColor(kRed);
+    hJetPt_jet20->SetLineWidth(3);
+
+    hJetPt_jet10->GetXaxis()->SetRangeUser(0, 70);
+
+    double xshift = 0.55;
+    double yshift = 0.19;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.07f);
+    leg->AddEntry(hJetPt_jet10, "Jet10", "l");
+    leg->AddEntry(hJetPt_jet20, "Jet20", "l");
+    leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt").c_str());
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay").c_str());
+
+    double cross_section_jet10 = 3.977e6; /*pb*/
+    double cross_section_jet20 = 6.2623e4; /*pb*/
+
+    auto* hEvent_jet10 = m_hists["hEvent" + m_tags[0]].get();
+    auto* hEvent_jet20 = m_hists["hEvent" + m_tags[1]].get();
+
+    double events_jet10 = hEvent_jet10->GetBinContent(1);
+    double events_jet20 = hEvent_jet20->GetBinContent(1);
+
+    double weight_jet10 = cross_section_jet10 / events_jet10;
+    double weight_jet20 = cross_section_jet20 / events_jet20;
+
+    std::cout << std::format("weight jet10: {:.2e}, jet20: {:.2e}\n", weight_jet10, weight_jet20);
+
+    hJetPt_jet10->Scale(weight_jet10);
+    hJetPt_jet20->Scale(weight_jet20);
+
+    hJetPt_jet10->GetYaxis()->SetTitle("d#sigma/dp_{T} [pb/GeV]");
+    hJetPt_jet10->GetYaxis()->SetRangeUser(1e-3, 2e5);
+
+    std::unique_ptr<TLatex> t = std::make_unique<TLatex>();
+    t->SetNDC();          // Use Normalized Device Coordinates (0 to 1)
+    t->SetTextAlign(22);  // Center alignment (horizontal and vertical)
+    t->SetTextSize(0.04F);
+
+    double txshift = 0.22;
+    double tyshift = 0.2;
+
+    t->DrawLatex(0.5+txshift, 0.5+tyshift, std::format("Jet10 #sigma_{{pythia}}: {:.3e} pb", cross_section_jet10).c_str());
+    t->DrawLatex(0.5+txshift, 0.4+tyshift, std::format("Jet20 #sigma_{{pythia}}: {:.4e} pb", cross_section_jet20).c_str());
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay-scaled").c_str());
 
     gPad->SetLogy(0);
   }
@@ -672,125 +735,139 @@ void DisplayDataMC::draw()
   // ---------------------------------------------------
 
   {
-    c1->SetRightMargin(.04F);
-    // Data+MC
-    auto* hRefFlow_squared_data_mc = dynamic_cast<TProfile*>(m_hists["hRefFlow_data_mc"].get());
-    hRefFlow_squared_data_mc->Rebin(10);
+    gPad->SetLogz();
+    c1->SetRightMargin(.12F);
 
-    auto* hRefFlow_data_mc = hRefFlow_squared_data_mc->ProjectionX();
-    auto* hScalarProduct_data_mc = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data_mc"].get());
-    hScalarProduct_data_mc->Rebin(10);
+    auto* h2RefFlow_data = dynamic_cast<TH2*>(m_hists["h2RefFlow_data" + m_tags[0]].get());
+    auto* h2RefFlow_data_mc = dynamic_cast<TH2*>(m_hists["h2RefFlow_data_mc" + m_tags[0]].get());
 
-    auto* hJetV2_data_mc = hScalarProduct_data_mc->ProjectionX();
+    auto* h2ScalarProduct_data = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[0]].get());
+    auto* h2ScalarProduct_data_mc = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[0]].get());
 
-    // Data
-    auto* hRefFlow_squared_data = dynamic_cast<TProfile*>(m_hists["hRefFlow_data"].get());
-    hRefFlow_squared_data->Rebin(10);
-
-    auto* hRefFlow_data = hRefFlow_squared_data->ProjectionX();
-    auto* hScalarProduct_data = dynamic_cast<TProfile*>(m_hists["hScalarProduct_data"].get());
-    hScalarProduct_data->Rebin(10);
-
-    auto* hJetV2_data = hScalarProduct_data->ProjectionX();
-
-    auto compute_vn_plots = [&](TH1* hRefFlow, TH1* hScalarProduct, TH1* hJetV2, int bin)
-    {
-      double val = hRefFlow->GetBinContent(bin);
-      double sp = hScalarProduct->GetBinContent(bin);
-
-      double error = hRefFlow->GetBinError(bin);
-      double ref_flow_error_rel = error / val;
-
-      double ref_flow = std::sqrt(val);
-      double flow_error = error / (2 * ref_flow);
-      double sp_error = hScalarProduct->GetBinError(bin);
-      double sp_error_rel = sp_error / sp;
-
-      double v2 = sp / ref_flow;
-      double v2_error = std::abs(v2) * std::sqrt(sp_error_rel * sp_error_rel + ref_flow_error_rel * ref_flow_error_rel / 4.);
-
-      hRefFlow->SetBinContent(bin, ref_flow);
-      hRefFlow->SetBinError(bin, flow_error);
-
-      hJetV2->SetBinContent(bin, v2);
-      hJetV2->SetBinError(bin, v2_error);
-    };
-
-    for (int bin = 1; bin < hRefFlow_data_mc->GetNbinsX(); ++bin)
-    {
-      compute_vn_plots(hRefFlow_data_mc, hScalarProduct_data_mc, hJetV2_data_mc, bin);
-      compute_vn_plots(hRefFlow_data, hScalarProduct_data, hJetV2_data, bin);
-    }
+    auto* h2ScalarProduct_data_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[1]].get());
+    auto* h2ScalarProduct_data_mc_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[1]].get());
 
     struct PlotOptions
     {
-      std::string ytitle{};
-      double ymax_frac{0};
-      float yoffset{1.4F};
-      int max_digits{3};
-      double ymin{0};
-      double ymax{0};
+      std::string title{};
+      double ylow{0};
+      double yhigh{3.5e-4};
     };
 
-    auto plotAndSave = [&](TH1* hist, PlotOptions opts = {}, std::string_view tag = "")
+    auto plotAndSave = [&](TH2* hist, PlotOptions opts = {}, std::string_view tag = "")
     {
-      hist->Draw("pe");
-      hist->SetLineColor(kBlue);
-      hist->SetLineWidth(3);
-      hist->SetMarkerStyle(kFullDotLarge);
-      hist->SetMarkerColor(kBlue);
-      hist->SetTitle("");
+      auto* px = hist->ProfileX();
 
-      hist->GetXaxis()->SetRangeUser(0, 59.5);
+      hist->Draw("COLZ1");
 
-      if (!opts.ytitle.empty())
-      {
-        hist->GetYaxis()->SetTitle(opts.ytitle.c_str());
-      }
+      hist->SetTitle(opts.title.c_str());
 
-      if (opts.max_digits)
-      {
-        hist->GetYaxis()->SetMaxDigits(opts.max_digits);
-      }
+      hist->GetYaxis()->SetMaxDigits(3);
+      hist->GetXaxis()->SetRangeUser(-0.5, 59.5);
+      hist->GetYaxis()->SetTitleOffset(1.4F);
 
-      if (opts.ymax_frac)
-      {
-        double ymax = hist->GetMaximum() * opts.ymax_frac;
-        hist->GetYaxis()->SetRangeUser(0, ymax);
-      }
+      hist->SetMinimum(1);
 
-      if (opts.ymin < opts.ymax)
-      {
-        hist->GetYaxis()->SetRangeUser(opts.ymin, opts.ymax);
-      }
+      px->Draw("same");
 
-      hist->GetYaxis()->SetTitleOffset(opts.yoffset);
+      px->SetLineColor(kRed);
+      px->SetMarkerColor(kRed);
+      px->SetMarkerStyle(kFullDotLarge);
+      px->SetLineWidth(3);
 
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
+
+      if (opts.yhigh > opts.ylow)
+      {
+        hist->GetYaxis()->SetRangeUser(opts.ylow, opts.yhigh);
+
+        c1->Print(output.c_str(), "pdf portrait");
+        if (m_saveFig) c1->Print(std::format("{}/images/{}-zoom.png", m_output_dir, tag).c_str());
+      }
+
+      // Reset Hist Range
+      hist->GetYaxis()->SetRange(0, 0);
     };
 
-    plotAndSave(hRefFlow_squared_data_mc, {.ymax_frac = 1.1}, "hRefFlow_squared_data_mc");
-    plotAndSave(hRefFlow_data_mc, {.ytitle = "#sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .ymax_frac = 1.05}, "hRefFlow_data_mc");
-    plotAndSave(hScalarProduct_data_mc, {}, "hScalarProduct_data_mc");
-    plotAndSave(hJetV2_data_mc, {.ytitle = "Jet v_{2} = Re(#LTq_{2} Q^{S|N*}_{2}#GT) / #sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .yoffset = 1.6F, .max_digits = 0}, "hJetV2_data_mc");
-    plotAndSave(hJetV2_data_mc, {.ytitle = "Jet v_{2} = Re(#LTq_{2} Q^{S|N*}_{2}#GT) / #sqrt{Re(#LTQ^{S}_{2} Q^{N*}_{2}#GT)}", .yoffset = 1.6F, .max_digits = 0, .ymin = -0.1, .ymax = .18}, "hJetV2_data_mc-zoomout");
+    plotAndSave(h2RefFlow_data, {.title = "sEPD Data"}, "h2RefFlow_data");
+    plotAndSave(h2RefFlow_data_mc, {.title = "sEPD Data+MC"}, "h2RefFlow_data_mc");
 
-    auto plotOverlayAndSave = [&](TH1* h1, TH1* h2, PlotOptions opts = {}, std::string_view tag = "")
+    plotAndSave(h2ScalarProduct_data, {.title = "Jet10, sEPD Data", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data-jet10");
+    plotAndSave(h2ScalarProduct_data_mc, {.title = "Jet10, sEPD Data+MC", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data_mc-jet10");
+
+    plotAndSave(h2ScalarProduct_data_jet20, {.title = "Jet20, sEPD Data", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data-jet20");
+    plotAndSave(h2ScalarProduct_data_mc_jet20, {.title = "Jet20, sEPD Data+MC", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data_mc-jet20");
+
+    c1->SetRightMargin(.04F);
+  }
+
+  // ---------------------------------------------------
+
+  {
+    c1->SetLeftMargin(.14F);
+    c1->SetRightMargin(.02F);
+
+    auto* h2RefFlow_data = dynamic_cast<TH2*>(m_hists["h2RefFlow_data" + m_tags[0]].get());
+    auto* h2RefFlow_data_mc = dynamic_cast<TH2*>(m_hists["h2RefFlow_data_mc" + m_tags[0]].get());
+
+    auto* h2ScalarProduct_data = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[0]].get());
+    auto* h2ScalarProduct_data_mc = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[0]].get());
+
+    auto* h2ScalarProduct_data_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[1]].get());
+    auto* h2ScalarProduct_data_mc_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[1]].get());
+
+    auto* RefFlow_px_data = h2RefFlow_data->ProfileX();
+    auto* RefFlow_px_data_mc = h2RefFlow_data_mc->ProfileX();
+
+    auto* ScalarProduct_px_data = h2ScalarProduct_data->ProfileX();
+    auto* ScalarProduct_px_data_mc = h2ScalarProduct_data_mc->ProfileX();
+
+    auto* ScalarProduct_px_data_jet20 = h2ScalarProduct_data_jet20->ProfileX();
+    auto* ScalarProduct_px_data_mc_jet20 = h2ScalarProduct_data_mc_jet20->ProfileX();
+
+    struct PlotOptions
     {
-      h1->Draw();
-      h2->Draw("same");
+      std::string ytitle;
+      std::string title{};
+      double ylow{0};
+      double yhigh{0};
+      float yoffset{1.2F};
+    };
 
-      h1->SetLineColor(kBlue);
-      h1->SetLineWidth(3);
-      h1->SetMarkerStyle(kFullDotLarge);
-      h1->SetMarkerColor(kBlue);
-      h1->SetTitle("");
+    auto plotAndSave = [&](TH1* px_data, TH1* px_data_mc, PlotOptions opts = {}, std::string_view tag = "")
+    {
+      px_data->Draw();
+      px_data_mc->Draw("same");
 
-      h2->SetLineColor(kRed);
-      h2->SetLineWidth(3);
-      h2->SetMarkerStyle(kFullDotLarge);
-      h2->SetMarkerColor(kRed);
+      px_data->SetLineColor(kBlue);
+      px_data_mc->SetLineColor(kRed);
+
+      px_data->SetMarkerColor(kBlue);
+      px_data_mc->SetMarkerColor(kRed);
+
+      px_data->SetMarkerStyle(kFullDotLarge);
+      px_data_mc->SetMarkerStyle(kFullDotLarge);
+
+      px_data->SetLineWidth(3);
+      px_data_mc->SetLineWidth(3);
+
+      px_data->GetYaxis()->SetMaxDigits(3);
+
+      std::string ytitle = std::format("#LT{}#GT", opts.ytitle);
+
+      px_data->GetYaxis()->SetTitle(ytitle.c_str());
+      px_data->GetYaxis()->SetTitleOffset(opts.yoffset);
+
+      px_data->SetTitle(opts.title.c_str());
+
+      double ymax = px_data->GetMaximum() * 1.1;
+      px_data->GetYaxis()->SetRangeUser(0, ymax);
+
+      if (opts.yhigh > opts.ylow)
+      {
+        px_data->GetYaxis()->SetRangeUser(opts.ylow, opts.yhigh);
+      }
 
       double xshift = -0.05;
       double yshift = 0.19;
@@ -798,23 +875,279 @@ void DisplayDataMC::draw()
       std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
       leg->SetFillStyle(0);
       leg->SetTextSize(0.05f);
-      leg->AddEntry(h1, "sEPD: Data+MC", "pe");
-      leg->AddEntry(h2, "sEPD: Data", "pe");
+      leg->AddEntry(px_data, "sEPD: Data", "pe");
+      leg->AddEntry(px_data_mc, "sEPD: Data+MC", "pe");
       leg->Draw("same");
 
-      if (opts.max_digits)
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
+    };
+
+    plotAndSave(RefFlow_px_data, RefFlow_px_data_mc, {.ytitle = h2RefFlow_data->GetYaxis()->GetTitle(), .yoffset = 1.4F}, "hRefFlow-overlay");
+    plotAndSave(ScalarProduct_px_data, ScalarProduct_px_data_mc,
+                {.ytitle = h2ScalarProduct_data->GetYaxis()->GetTitle(), .title = "Jet10", .ylow = -4e-4, .yhigh = 4e-4},
+                "hScalarProduct-jet10-overlay");
+    plotAndSave(ScalarProduct_px_data_jet20, ScalarProduct_px_data_mc_jet20,
+                {.ytitle = h2ScalarProduct_data->GetYaxis()->GetTitle(), .title = "Jet20", .ylow = -4e-4, .yhigh = 4e-4},
+                "hScalarProduct-jet20-overlay");
+  }
+
+  // ---------------------------------------------------
+
+  {
+    auto* h2RefFlow_data = dynamic_cast<TH2*>(m_hists["h2RefFlow_data" + m_tags[0]].get());
+    auto* h2RefFlow_data_mc = dynamic_cast<TH2*>(m_hists["h2RefFlow_data_mc" + m_tags[0]].get());
+
+    h2RefFlow_data->SetTitle("");
+
+    auto* px_data = h2RefFlow_data->ProfileX()->ProjectionX();
+    auto* px_data_mc = h2RefFlow_data_mc->ProfileX()->ProjectionX();
+
+    m_hists["hRefFlow_data_sqrt_jet10"] = std::unique_ptr<TH1>(px_data);
+
+    for (int cent_bin = 1; cent_bin <= 6; ++cent_bin)
+    {
+      double val_data = px_data->GetBinContent(cent_bin);
+      double val_data_mc = px_data_mc->GetBinContent(cent_bin);
+
+      double error_data = px_data->GetBinError(cent_bin);
+      double error_data_mc = px_data_mc->GetBinError(cent_bin);
+
+      double ref_flow_data = std::sqrt(val_data);
+      double ref_flow_data_mc = std::sqrt(val_data_mc);
+
+      double ref_flow_error_data = error_data / (2 * ref_flow_data);
+      double ref_flow_error_data_mc = error_data_mc / (2 * ref_flow_data_mc);
+
+      px_data->SetBinContent(cent_bin, ref_flow_data);
+      px_data->SetBinError(cent_bin, ref_flow_error_data);
+
+      px_data_mc->SetBinContent(cent_bin, ref_flow_data_mc);
+      px_data_mc->SetBinError(cent_bin, ref_flow_error_data_mc);
+    }
+
+    px_data->Draw();
+    px_data_mc->Draw("same");
+
+    px_data->SetLineColor(kBlue);
+    px_data_mc->SetLineColor(kRed);
+
+    px_data->SetMarkerColor(kBlue);
+    px_data_mc->SetMarkerColor(kRed);
+
+    px_data->SetMarkerStyle(kFullDotLarge);
+    px_data_mc->SetMarkerStyle(kFullDotLarge);
+
+    px_data->SetLineWidth(3);
+    px_data_mc->SetLineWidth(3);
+
+    px_data->GetYaxis()->SetMaxDigits(3);
+
+    std::string title = std::format("#sqrt{{#LT{}#GT}}", h2RefFlow_data->GetYaxis()->GetTitle());
+    px_data->GetYaxis()->SetTitle(title.c_str());
+    px_data->GetYaxis()->SetTitleOffset(1.1F);
+
+    double ymax = px_data->GetMaximum()*1.1;
+    px_data->GetYaxis()->SetRangeUser(0, ymax);
+    
+    double xshift = 0.4;
+    double yshift = -0.1;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05f);
+    leg->AddEntry(px_data, "sEPD: Data", "pe");
+    leg->AddEntry(px_data_mc, "sEPD: Data+MC", "pe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hRefFlow-sqrt-overlay").c_str());
+  }
+
+  // ---------------------------------------------------
+
+  // Vn
+  {
+    auto* hRefFlow_data = m_hists["hRefFlow_data_sqrt_jet10"].get();
+
+    auto* h2ScalarProduct_data = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[0]].get());
+    auto* h2ScalarProduct_data_mc = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[0]].get());
+
+    auto* h2ScalarProduct_data_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[1]].get());
+    auto* h2ScalarProduct_data_mc_jet20 = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[1]].get());
+
+    auto* ScalarProduct_px_data = h2ScalarProduct_data->ProfileX()->ProjectionX();
+    auto* ScalarProduct_px_data_mc = h2ScalarProduct_data_mc->ProfileX()->ProjectionX();
+
+    auto* ScalarProduct_px_data_jet20 = h2ScalarProduct_data_jet20->ProfileX()->ProjectionX();
+    auto* ScalarProduct_px_data_mc_jet20 = h2ScalarProduct_data_mc_jet20->ProfileX()->ProjectionX();
+
+    ScalarProduct_px_data->Divide(hRefFlow_data);
+    ScalarProduct_px_data_mc->Divide(hRefFlow_data);
+
+    ScalarProduct_px_data_jet20->Divide(hRefFlow_data);
+    ScalarProduct_px_data_mc_jet20->Divide(hRefFlow_data);
+
+    struct PlotOptions
+    {
+      std::string title{};
+      double ylow{-3e-2};
+      double yhigh{3e-2};
+      float yoffset{1.4F};
+    };
+
+    auto plotAndSave = [&](TH1* px_data, TH1* px_data_mc, PlotOptions opts = {}, std::string_view tag = "")
+    {
+      px_data->Draw();
+      px_data_mc->Draw("same");
+
+      px_data->SetLineColor(kBlue);
+      px_data_mc->SetLineColor(kRed);
+
+      px_data->SetMarkerColor(kBlue);
+      px_data_mc->SetMarkerColor(kRed);
+
+      px_data->SetMarkerStyle(kFullDotLarge);
+      px_data_mc->SetMarkerStyle(kFullDotLarge);
+
+      px_data->SetLineWidth(3);
+      px_data_mc->SetLineWidth(3);
+
+      px_data->GetYaxis()->SetTitle("Jet v_{2}");
+      px_data->GetYaxis()->SetTitleOffset(opts.yoffset);
+
+      px_data->SetTitle(opts.title.c_str());
+
+      double ymax = px_data->GetMaximum() * 1.1;
+      px_data->GetYaxis()->SetRangeUser(0, ymax);
+
+      if (opts.yhigh > opts.ylow)
       {
-        h1->GetYaxis()->SetMaxDigits(opts.max_digits);
+        px_data->GetYaxis()->SetRangeUser(opts.ylow, opts.yhigh);
+      }
+
+      double xshift = -0.05;
+      double yshift = 0.19;
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.4 + xshift, .7 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.05f);
+      leg->AddEntry(px_data, "sEPD: Data", "pe");
+      leg->AddEntry(px_data_mc, "sEPD: Data+MC", "pe");
+      leg->Draw("same");
+
+      std::unique_ptr<TF1> f1 = std::make_unique<TF1>("f1", "0", px_data->GetXaxis()->GetXmin(), px_data->GetXaxis()->GetXmax());
+      f1->SetLineColor(kBlack);
+      f1->SetLineStyle(kDashed);
+      f1->SetLineWidth(3);
+      f1->Draw("same");
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
+    };
+
+    plotAndSave(ScalarProduct_px_data, ScalarProduct_px_data_mc, {.title = "Jet10"}, "jet-v2-jet10-overlay");
+
+    plotAndSave(ScalarProduct_px_data_jet20, ScalarProduct_px_data_mc_jet20, {.title = "Jet20"}, "jet-v2-jet20-overlay");
+  }
+
+  // ---------------------------------------------------
+
+  {
+    c1->Clear();
+    c1->SetCanvasSize(2400, 1400);
+    c1->Divide(3, 2);
+
+    auto* h2RefFlow_data = dynamic_cast<TH2*>(m_hists["h2RefFlow_data" + m_tags[0]].get());
+    auto* h2RefFlow_data_px = h2RefFlow_data->ProfileX();
+
+    auto* h2ScalarProduct_data = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data" + m_tags[0]].get());
+    h2ScalarProduct_data->SetTitle("");
+
+    auto* h2ScalarProduct_data_px = h2ScalarProduct_data->ProfileX();
+
+    auto* h2ScalarProduct_data_mc = dynamic_cast<TH2*>(m_hists["h2ScalarProduct_data_mc" + m_tags[0]].get());
+    h2ScalarProduct_data_mc->SetTitle("");
+
+    auto* h2ScalarProduct_data_mc_px = h2ScalarProduct_data_mc->ProfileX();
+
+    std::unique_ptr<TLatex> t = std::make_unique<TLatex>();
+    t->SetNDC();          // Use Normalized Device Coordinates (0 to 1)
+    t->SetTextAlign(22);  // Center alignment (horizontal and vertical)
+    t->SetTextSize(0.05F);
+
+    struct PlotOptions
+    {
+      double xlow{0};
+      double xhigh{0};
+      int rebin{8};
+    };
+
+    auto plotAndSave = [&](TH2* hist, TH1* px, PlotOptions opts = {}, std::string_view tag = "")
+    {
+      for (int cent_bin = 1; cent_bin <= 6; ++cent_bin)
+      {
+        c1->cd(cent_bin);
+        gPad->SetTopMargin(0.05F);
+        gPad->SetBottomMargin(0.11F);
+        gPad->SetRightMargin(0.08F);
+        gPad->SetLeftMargin(0.1F);
+
+        std::string name = std::format("hist_{}_{}", tag, cent_bin - 1);
+        auto* hist_proj = hist->ProjectionY(name.c_str(), cent_bin, cent_bin);
+        hist_proj->Rebin(opts.rebin);
+
+        // hist_proj->Draw("HIST E");
+        hist_proj->Draw();
+        hist_proj->SetLineColor(kBlue);
+        hist_proj->SetMarkerColor(kBlue);
+        hist_proj->SetMarkerStyle(kFullDotLarge);
+        hist_proj->GetXaxis()->SetMaxDigits(3);
+        hist_proj->GetYaxis()->SetMaxDigits(3);
+
+        hist_proj->GetYaxis()->SetTitle("Events");
+        hist_proj->GetYaxis()->SetTitleOffset(1.F);
+
+        if (opts.xhigh > opts.xlow)
+        {
+          hist_proj->GetXaxis()->SetRangeUser(opts.xlow, opts.xhigh);
+        }
+
+        double max = hist_proj->GetMaximum()*1.1;
+        hist_proj->GetYaxis()->SetRangeUser(0, max);
+
+        gPad->Update();  // Ensure the pad limits are calculated
+
+        // Get the y-axis limits automatically
+        double ymin = gPad->GetUymin();
+        double ymax = gPad->GetUymax();
+
+        double mean = px->GetBinContent(cent_bin);
+
+        // Create the vertical line at x = 1
+        TLine* line = new TLine(mean, ymin, mean, ymax);
+
+        line->SetLineColor(kRed);
+        line->SetLineStyle(2);  // Dashed line
+        line->SetLineWidth(2);
+
+        line->Draw();
+
+        t->DrawLatex(0.5, 0.975, std::format("Centrality: {}-{}%", (cent_bin-1)*10, cent_bin*10).c_str()); 
       }
 
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
     };
 
-    plotOverlayAndSave(hRefFlow_squared_data_mc, hRefFlow_squared_data, {}, "hRefFlow_squared-overlay");
-    plotOverlayAndSave(hRefFlow_data_mc, hRefFlow_data, {}, "hRefFlow-overlay");
-    plotOverlayAndSave(hScalarProduct_data_mc, hScalarProduct_data, {}, "hScalarProduct-overlay");
-    plotOverlayAndSave(hJetV2_data_mc, hJetV2_data, {}, "hJetV2-overlay");
+    plotAndSave(h2RefFlow_data, h2RefFlow_data_px, {}, "h2RefFlow_data-individual");
+    plotAndSave(h2RefFlow_data, h2RefFlow_data_px, {.xlow = -1e-3, .xhigh = 1e-3}, "h2RefFlow_data-individual-zoom");
+
+    plotAndSave(h2ScalarProduct_data, h2ScalarProduct_data_px, {}, "h2ScalarProduct_data-individual");
+    plotAndSave(h2ScalarProduct_data, h2ScalarProduct_data_px, {.xlow = -1e-3, .xhigh = 1e-3}, "h2ScalarProduct_data-individual-zoom");
+
+    plotAndSave(h2ScalarProduct_data_mc, h2ScalarProduct_data_mc_px, {}, "h2ScalarProduct_data_mc-individual");
+    plotAndSave(h2ScalarProduct_data_mc, h2ScalarProduct_data_mc_px, {.xlow = -1e-3, .xhigh = 1e-3}, "h2ScalarProduct_data_mc-individual-zoom");
   }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
