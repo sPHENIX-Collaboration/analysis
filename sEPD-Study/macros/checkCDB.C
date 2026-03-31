@@ -21,6 +21,7 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"MBD QFIT", "MBD_QFIT"},
       {"MBD QFIT Default", "MBD_QFIT_default"},
       {"EMCal Calib Default", "CEMC_calib_ADC_to_ETower_default"},
+      {"EMCal Calib", "CEMC_calib_ADC_to_ETower"},
       {"EMCal Bad Tower Map", "CEMC_BadTowerMap"},
       {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"},
       {"EMCal Mean Time", "CEMC_meanTime"},
