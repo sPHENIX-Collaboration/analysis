@@ -91,10 +91,7 @@ void DisplayDataMC::read_hists()
   std::string input_jet20 = std::format("{}/jet20/54404.root", base_path);
 
   m_hists = myUtils::read_hists(input_jet10, m_tags[0]);
-
-  std::unordered_set<std::string> names = {"hEvent", "hJetPt", "h2ScalarProduct_data", "h2ScalarProduct_data_mc"};
-
-  m_hists.merge(myUtils::read_hists(input_jet20, m_tags[1], &names));
+  m_hists.merge(myUtils::read_hists(input_jet20, m_tags[1]));
 }
 
 void DisplayDataMC::draw()
@@ -751,7 +748,9 @@ void DisplayDataMC::draw()
     {
       std::string title{};
       double ylow{0};
-      double yhigh{3.5e-4};
+      double yhigh{0};
+      double xlow{-0.5};
+      double xhigh{59.5};
     };
 
     auto plotAndSave = [&](TH2* hist, PlotOptions opts = {}, std::string_view tag = "")
@@ -760,10 +759,13 @@ void DisplayDataMC::draw()
 
       hist->Draw("COLZ1");
 
-      hist->SetTitle(opts.title.c_str());
+      if (!opts.title.empty())
+      {
+        hist->SetTitle(opts.title.c_str());
+      }
 
       hist->GetYaxis()->SetMaxDigits(3);
-      hist->GetXaxis()->SetRangeUser(-0.5, 59.5);
+      hist->GetXaxis()->SetRangeUser(opts.xlow, opts.xhigh);
       hist->GetYaxis()->SetTitleOffset(1.4F);
 
       hist->SetMinimum(1);
@@ -790,8 +792,35 @@ void DisplayDataMC::draw()
       hist->GetYaxis()->SetRange(0, 0);
     };
 
-    plotAndSave(h2RefFlow_data, {.title = "sEPD Data"}, "h2RefFlow_data");
-    plotAndSave(h2RefFlow_data_mc, {.title = "sEPD Data+MC"}, "h2RefFlow_data_mc");
+    plotAndSave(h2RefFlow_data, {.title = "sEPD Data", .yhigh = 3.5e-4}, "h2RefFlow_data");
+    plotAndSave(h2RefFlow_data_mc, {.title = "sEPD Data+MC", .yhigh = 3.5e-4}, "h2RefFlow_data_mc");
+
+    int pt_bins = 5;
+    int pt_low = 10;
+    int pt_width = 5;
+
+    for (int pt_bin = 0; pt_bin < pt_bins; ++pt_bin)
+    {
+      int low = pt_low + pt_width * pt_bin;
+      int high = low + pt_width;
+
+      std::string tag = (low < 20) ? "jet10" : "jet20";
+
+      std::string name_data = std::format("h2ScalarProduct_data_pt_{}_{}_{}", low, high, tag);
+      std::string name_data_mc = std::format("h2ScalarProduct_data_mc_pt_{}_{}_{}", low, high, tag);
+
+      auto* h2ScalarProduct_data_pt = dynamic_cast<TH2*>(m_hists[name_data].get());
+      auto* h2ScalarProduct_data_mc_pt = dynamic_cast<TH2*>(m_hists[name_data_mc].get());
+
+      std::string title_data = std::format("sEPD Data, p_{{T}} = {}-{} GeV", low, high);
+      std::string title_data_mc = std::format("sEPD Data+MC, p_{{T}} = {}-{} GeV", low, high);
+
+      double ylow = -1e-3;
+      double yhigh = 1e-3;
+
+      plotAndSave(h2ScalarProduct_data_pt, {.title = title_data, .ylow = ylow, .yhigh = yhigh}, name_data);
+      plotAndSave(h2ScalarProduct_data_mc_pt, {.title = title_data_mc, .ylow = ylow, .yhigh = yhigh}, name_data_mc);
+    }
 
     plotAndSave(h2ScalarProduct_data, {.title = "Jet10, sEPD Data", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data-jet10");
     plotAndSave(h2ScalarProduct_data_mc, {.title = "Jet10, sEPD Data+MC", .ylow = -4e-4, .yhigh = 3e-4}, "h2ScalarProduct_data_mc-jet10");
@@ -883,13 +912,44 @@ void DisplayDataMC::draw()
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, tag).c_str());
     };
 
-    plotAndSave(RefFlow_px_data, RefFlow_px_data_mc, {.ytitle = h2RefFlow_data->GetYaxis()->GetTitle(), .yoffset = 1.4F}, "hRefFlow-overlay");
+    std::string ref_title = h2RefFlow_data->GetYaxis()->GetTitle();
+    std::string SP_title = h2ScalarProduct_data->GetYaxis()->GetTitle();
+
+    plotAndSave(RefFlow_px_data, RefFlow_px_data_mc, {.ytitle = ref_title, .yoffset = 1.4F}, "hRefFlow-overlay");
+
     plotAndSave(ScalarProduct_px_data, ScalarProduct_px_data_mc,
-                {.ytitle = h2ScalarProduct_data->GetYaxis()->GetTitle(), .title = "Jet10", .ylow = -4e-4, .yhigh = 4e-4},
-                "hScalarProduct-jet10-overlay");
+                {.ytitle = SP_title, .title = "Jet10", .ylow = -4e-4, .yhigh = 4e-4}, "hScalarProduct-jet10-overlay");
+
     plotAndSave(ScalarProduct_px_data_jet20, ScalarProduct_px_data_mc_jet20,
-                {.ytitle = h2ScalarProduct_data->GetYaxis()->GetTitle(), .title = "Jet20", .ylow = -4e-4, .yhigh = 4e-4},
-                "hScalarProduct-jet20-overlay");
+                {.ytitle = SP_title, .title = "Jet20", .ylow = -4e-4, .yhigh = 4e-4}, "hScalarProduct-jet20-overlay");
+
+    int pt_bins = 5;
+    int pt_low = 10;
+    int pt_width = 5;
+
+    for (int pt_bin = 0; pt_bin < pt_bins; ++pt_bin)
+    {
+      int low = pt_low + pt_width * pt_bin;
+      int high = low + pt_width;
+
+      std::string tag = (low < 20) ? "jet10" : "jet20";
+
+      std::string name_data = std::format("h2ScalarProduct_data_pt_{}_{}_{}", low, high, tag);
+      std::string name_data_mc = std::format("h2ScalarProduct_data_mc_pt_{}_{}_{}", low, high, tag);
+
+      auto* hScalarProduct_data_pt = dynamic_cast<TH2*>(m_hists[name_data].get())->ProfileX();
+      auto* hScalarProduct_data_mc_pt = dynamic_cast<TH2*>(m_hists[name_data_mc].get())->ProfileX();
+
+      std::string title = std::format("p_{{T}} = {}-{} GeV", low, high);
+
+      double ylow = -1e-3;
+      double yhigh = 1e-3;
+
+      std::string name_output = std::format("hScalarProduct_pt_{}_{}-overlay", low, high);
+
+      plotAndSave(hScalarProduct_data_pt, hScalarProduct_data_mc_pt,
+                  {.ytitle = SP_title, .title = title, .ylow = ylow, .yhigh = yhigh}, name_output);
+    }
   }
 
   // ---------------------------------------------------
@@ -1049,6 +1109,33 @@ void DisplayDataMC::draw()
     plotAndSave(ScalarProduct_px_data, ScalarProduct_px_data_mc, {.title = "Jet10"}, "jet-v2-jet10-overlay");
 
     plotAndSave(ScalarProduct_px_data_jet20, ScalarProduct_px_data_mc_jet20, {.title = "Jet20"}, "jet-v2-jet20-overlay");
+
+    int pt_bins = 5;
+    int pt_low = 10;
+    int pt_width = 5;
+
+    for (int pt_bin = 0; pt_bin < pt_bins; ++pt_bin)
+    {
+      int low = pt_low + pt_width * pt_bin;
+      int high = low + pt_width;
+
+      std::string tag = (low < 20) ? "jet10" : "jet20";
+
+      std::string name_data = std::format("h2ScalarProduct_data_pt_{}_{}_{}", low, high, tag);
+      std::string name_data_mc = std::format("h2ScalarProduct_data_mc_pt_{}_{}_{}", low, high, tag);
+
+      auto* hScalarProduct_data_pt = dynamic_cast<TH2*>(m_hists[name_data].get())->ProfileX()->ProjectionX();
+      auto* hScalarProduct_data_mc_pt = dynamic_cast<TH2*>(m_hists[name_data_mc].get())->ProfileX()->ProjectionX();
+
+      hScalarProduct_data_pt->Divide(hRefFlow_data);
+      hScalarProduct_data_mc_pt->Divide(hRefFlow_data);
+
+      std::string title = std::format("p_{{T}} = {}-{} GeV", low, high);
+
+      std::string name_output = std::format("jet-v2-pt_{}_{}-overlay", low, high);
+
+      plotAndSave(hScalarProduct_data_pt, hScalarProduct_data_mc_pt, {.title = title, .yhigh = 0.07}, name_output);
+    }
   }
 
   // ---------------------------------------------------
