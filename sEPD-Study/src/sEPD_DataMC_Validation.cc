@@ -351,6 +351,36 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(h2ScalarProduct_data_mc);
   se->registerHisto(hScalarProduct_data_mc_anti);
 
+  int n_pt_bins = 8;
+  double pt_bin_width = 5.0;
+  double pt_min = 10.0;
+
+  // Initialize the vectors for the pT-binned histograms
+  h2ScalarProduct_data_ptbin.resize(n_pt_bins, nullptr);
+  h2ScalarProduct_data_mc_ptbin.resize(n_pt_bins, nullptr);
+
+  for (int i = 0; i < n_pt_bins; ++i)
+  {
+    double pt_low = pt_min + i * pt_bin_width;
+    double pt_high = pt_low + pt_bin_width;
+
+    std::string hname_data = std::format("h2ScalarProduct_data_pt_{}_{}", (int)pt_low, (int)pt_high);
+    std::string htitle_data = std::format("Scalar Product ({} < p_{{T}} < {} GeV); Centrality [%]; Re(q_{{2}} Q^{{S|N*}}_{{2}})", pt_low, pt_high);
+
+    h2ScalarProduct_data_ptbin[i] = new TH2F(hname_data.c_str(), htitle_data.c_str(),
+                                             m_bins_cent / 10, m_cent_low, m_cent_high,
+                                             bins_qQ_avg, qQ_avg_low, qQ_avg_high);
+    se->registerHisto(h2ScalarProduct_data_ptbin[i]);
+
+    std::string hname_data_mc = std::format("h2ScalarProduct_data_mc_pt_{}_{}", (int)pt_low, (int)pt_high);
+    std::string htitle_data_mc = std::format("Scalar Product Data+MC ({} < p_{{T}} < {} GeV); Centrality [%]; Re(q_{{2}} Q^{{S|N*}}_{{2}})", pt_low, pt_high);
+
+    h2ScalarProduct_data_mc_ptbin[i] = new TH2F(hname_data_mc.c_str(), htitle_data_mc.c_str(),
+                                                m_bins_cent / 10, m_cent_low, m_cent_high,
+                                                bins_qQ_avg, qQ_avg_low, qQ_avg_high);
+    se->registerHisto(h2ScalarProduct_data_mc_ptbin[i]);
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -769,6 +799,8 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
         hScalarProduct_data->Fill(m_cent, scalar_product_data);
         hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
 
+        hScalarProduct_data_mc_anti->Fill(m_cent, scalar_product_data_mc_anti);
+
         if (scalar_product_data > hScalarProduct_data_max->GetBinContent(bin_cent))
         {
           hScalarProduct_data_max->SetBinContent(bin_cent, scalar_product_data);
@@ -781,7 +813,17 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
         h2ScalarProduct_data->Fill(m_cent, scalar_product_data);
         h2ScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
 
-        hScalarProduct_data_mc_anti->Fill(m_cent, scalar_product_data_mc_anti);
+        if (pt >= 10.0 && pt < 50.0)
+        {
+          int pt_bin = static_cast<int>((pt - 10.0) / 5.0);
+
+          // Safety check to ensure the index is within the vector bounds
+          if (pt_bin >= 0 && pt_bin < 8)
+          {
+            h2ScalarProduct_data_ptbin[pt_bin]->Fill(m_cent, scalar_product_data);
+            h2ScalarProduct_data_mc_ptbin[pt_bin]->Fill(m_cent, scalar_product_data_mc);
+          }
+        }
       }
     }
   }
@@ -842,7 +884,10 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  ++m_ctr["events_good"];
+  if (m_pass_Zvtx && m_pass_MB && m_pass_Centrality)
+  {
+    ++m_ctr["events_good"];
+  }
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

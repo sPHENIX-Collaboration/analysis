@@ -167,6 +167,9 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2ScalarProduct_data{nullptr};
   TH2* h2ScalarProduct_data_mc{nullptr};
 
+  std::vector<TH2*> h2ScalarProduct_data_ptbin;
+  std::vector<TH2*> h2ScalarProduct_data_mc_ptbin;
+
   TH2* h2RefFlow_data{nullptr};
   TH2* h2RefFlow_data_mc{nullptr};
 };
