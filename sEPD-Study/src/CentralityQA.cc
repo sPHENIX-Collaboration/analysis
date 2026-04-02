@@ -17,14 +17,24 @@
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+// Trigger
+#include <calotrigger/TriggerAnalyzer.h>
+
 #include <TH1F.h>
 #include <TH2F.h>
 
+#include <algorithm>
+#include <iterator>
 #include <format>
 #include <iostream>
 
 CentralityQA::CentralityQA(const std::string &name)
-  : SubsysReco(name)
+: SubsysReco(name),
+  hZVertexTrig(m_triggernames.size()),
+  hCentralityTrig(m_triggernames.size()),
+  hCentralityZ50Trig(m_triggernames.size()),
+  hCentralityZOuterTrig(m_triggernames.size()),
+  h2ZVertexCentralityTrig(m_triggernames.size())
 {
 }
 
@@ -32,13 +42,28 @@ int CentralityQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
 
+  triggeranalyzer = new TriggerAnalyzer();
+
   // Event Counter Histogram
-  hEvent = new TH1F("hEvent", "Event Selection; Type; Events", m_eventType.size(), 0, m_eventType.size());
-  for (unsigned int i = 0; i < m_eventType.size(); ++i)
+  std::vector<std::string> eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent"};
+
+  hEvent = new TH1F("hEvent", "Event Selection; Type; Events", eventType.size(), 0, eventType.size());
+  for (unsigned int i = 0; i < eventType.size(); ++i)
   {
-    hEvent->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
+    hEvent->GetXaxis()->SetBinLabel(i + 1, eventType[i].c_str());
   }
   se->registerHisto(hEvent);
+
+  // Event Trigger Counter Histogram
+  std::vector<std::string> eventTypeTrigger{"|z| < 10 cm"};
+  std::ranges::copy(m_triggernames, std::back_inserter(eventTypeTrigger));
+
+  hEventTrigger = new TH1F("hEventTrigger", "Event Selection; Type; Events", eventTypeTrigger.size(), 0, eventTypeTrigger.size());
+  for (unsigned int i = 0; i < eventTypeTrigger.size(); ++i)
+  {
+    hEventTrigger->GetXaxis()->SetBinLabel(i + 1, eventTypeTrigger[i].c_str());
+  }
+  se->registerHisto(hEventTrigger);
 
   // Centrality Histograms
   hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
@@ -48,6 +73,28 @@ int CentralityQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(hCentrality);
   se->registerHisto(hCentralityZ50);
   se->registerHisto(hCentralityZOuter);
+
+  for (int i = 0, triggerIdx = 10; const auto &trig : m_triggernames)
+  {
+    std::string title_centrality = std::format("|z| < 10 cm and {}; Centrality [%]; Events", trig);
+    std::string title_centralityZ50 = std::format("|z| < 50 cm and {}; Centrality [%]; Events", trig);
+    std::string title_centralityZOuter = std::format("10 cm < |z| < 50 cm and {}; Centrality [%]; Events", trig);
+
+    std::string name_centrality = std::format("hCentrality_Trig{}", triggerIdx);
+    std::string name_centralityZ50 = std::format("hCentralityZ50_Trig{}", triggerIdx);
+    std::string name_centralityZOuter = std::format("hCentralityZOuter_Trig{}", triggerIdx);
+
+    hCentralityTrig[i] = new TH1F(name_centrality.c_str(), title_centrality.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+    hCentralityZ50Trig[i] = new TH1F(name_centralityZ50.c_str(), title_centralityZ50.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+    hCentralityZOuterTrig[i] = new TH1F(name_centralityZOuter.c_str(), title_centralityZOuter.c_str(), m_bins_cent, m_cent_low, m_cent_high);
+
+    se->registerHisto(hCentralityTrig[i]);
+    se->registerHisto(hCentralityZ50Trig[i]);
+    se->registerHisto(hCentralityZOuterTrig[i]);
+
+    ++i;
+    triggerIdx += 2;
+  }
 
   // Vertex Histograms
   unsigned int bins_zvtx{200};
@@ -59,6 +106,24 @@ int CentralityQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   se->registerHisto(hZVertex);
   se->registerHisto(h2ZVertexCentrality);
+
+  for (int i = 0, triggerIdx = 10; const auto &trig : m_triggernames)
+  {
+    std::string title_h1 = std::format("{}; Z [cm]; Events", trig);
+    std::string title_h2 = std::format("{}; Z [cm]; Centrality [%]", trig);
+
+    std::string name_h1 = std::format("hZVertex_Trig{}", triggerIdx);
+    std::string name_h2 = std::format("h2ZVertexCentrality_Trig{}", triggerIdx);
+
+    hZVertexTrig[i] = new TH1F(name_h1.c_str(), title_h1.c_str(), bins_zvtx, zvtx_low, zvtx_high);
+    h2ZVertexCentralityTrig[i] = new TH2F(name_h2.c_str(), title_h2.c_str(), bins_zvtx, zvtx_low, zvtx_high, m_bins_cent, m_cent_low, m_cent_high);
+
+    se->registerHisto(hZVertexTrig[i]);
+    se->registerHisto(h2ZVertexCentralityTrig[i]);
+
+    ++i;
+    triggerIdx += 2;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -130,8 +195,43 @@ int CentralityQA::process_event_check(PHCompositeNode *topNode)
     if (std::abs(m_zvtx) < m_zvtx_max)
     {
       hEvent->Fill(static_cast<int>(EventType::ZVTX10));
+      hEventTrigger->Fill(0);
       m_pass_Zvtx = true;
     }
+  }
+
+  triggeranalyzer->decodeTriggers(topNode);
+
+  if (Verbosity() > 2)
+  {
+    std::cout << std::format("Z Vtx: {:.2f} cm", m_zvtx) << std::endl;
+    triggeranalyzer->Print();
+  }
+
+  if (m_pass_Zvtx)
+  {
+    for (int i = static_cast<int>(EventType::TRIG10); const auto &trig : m_triggernames)
+    {
+      if (triggeranalyzer->didTriggerFire(trig))
+      {
+        hEventTrigger->Fill(i);
+
+        if (Verbosity() > 2)
+        {
+          std::cout << std::format("Trigger {} Fired", trig) << std::endl;
+        }
+      }
+      ++i;
+    }
+  }
+
+  for (int i = 0; const auto &trig : m_triggernames)
+  {
+    if (triggeranalyzer->didTriggerFire(trig))
+    {
+      hZVertexTrig[i]->Fill(m_zvtx);
+    }
+    ++i;
   }
 
   // Minimum Bias Filter
@@ -154,11 +254,6 @@ int CentralityQA::process_event_check(PHCompositeNode *topNode)
 
 int CentralityQA::process_centrality(PHCompositeNode *topNode)
 {
-  if (!m_pass_MB)
-  {
-    return Fun4AllReturnCodes::EVENT_OK;
-  }
-
   CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
   if (!centInfo)
   {
@@ -177,25 +272,51 @@ int CentralityQA::process_centrality(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  h2ZVertexCentrality->Fill(m_zvtx, m_cent);
-
-  if (std::abs(m_zvtx) < m_zvtx_max_v2)
+  if(m_pass_MB)
   {
-    hCentralityZ50->Fill(m_cent);
-    if (!m_pass_Zvtx)
+    h2ZVertexCentrality->Fill(m_zvtx, m_cent);
+
+    if (std::abs(m_zvtx) < m_zvtx_max_v2)
     {
-      hCentralityZOuter->Fill(m_cent);
+      hCentralityZ50->Fill(m_cent);
+
+      if (m_pass_Zvtx)
+      {
+        if (m_cent < m_cent_max_threshold_ana)
+        {
+          hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
+        }
+
+        hCentrality->Fill(m_cent);
+      }
+      else
+      {
+        hCentralityZOuter->Fill(m_cent);
+      }
     }
   }
 
-  if (m_pass_Zvtx)
+  for (int i = 0; const auto &trig : m_triggernames)
   {
-    if (m_cent < m_cent_max_threshold_ana)
+    if (triggeranalyzer->didTriggerFire(trig))
     {
-      hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
-    }
+      h2ZVertexCentralityTrig[i]->Fill(m_zvtx, m_cent);
 
-    hCentrality->Fill(m_cent);
+      if (std::abs(m_zvtx) < m_zvtx_max_v2)
+      {
+        hCentralityZ50Trig[i]->Fill(m_cent);
+
+        if (m_pass_Zvtx)
+        {
+          hCentralityTrig[i]->Fill(m_cent);
+        }
+        else
+        {
+          hCentralityZOuterTrig[i]->Fill(m_cent);
+        }
+      }
+    }
+    ++i;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;

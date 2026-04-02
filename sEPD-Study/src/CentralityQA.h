@@ -9,6 +9,7 @@
 class PHCompositeNode;
 class TH1;
 class TH2;
+class TriggerAnalyzer;
 
 class CentralityQA : public SubsysReco
 {
@@ -40,6 +41,8 @@ class CentralityQA : public SubsysReco
   int m_globalEvent{0};
   std::map<std::string, int> m_ctr;
 
+  TriggerAnalyzer* triggeranalyzer{nullptr};
+
   enum class EventType : std::uint8_t
   {
     ALL,
@@ -47,10 +50,15 @@ class CentralityQA : public SubsysReco
     ZVTX50,
     ZVTX10,
     ZVTX10_MB,
-    ZVTX10_MB_CENT
+    ZVTX10_MB_CENT,
+    TRIG10 = 1,
+    TRIG12 = 2,
+    TRIG14 = 3
   };
 
-  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent"};
+  std::vector<std::string> m_triggernames = {"MBD N&S >= 2",
+                                             "MBD N&S >= 2, vtx < 10 cm",
+                                             "MBD N&S >= 2, vtx < 150 cm"};
 
   // Event Selection Flags
   bool m_pass_MB{false};
@@ -58,9 +66,17 @@ class CentralityQA : public SubsysReco
 
   // Histograms
   TH1 *hEvent{nullptr};
+  TH1 *hEventTrigger{nullptr};
   TH1 *hZVertex{nullptr};
   TH1 *hCentrality{nullptr};
   TH1 *hCentralityZ50{nullptr};
   TH1 *hCentralityZOuter{nullptr};
   TH2 *h2ZVertexCentrality{nullptr};
+
+  // Trigger
+  std::vector<TH1*> hZVertexTrig;
+  std::vector<TH1*> hCentralityTrig;
+  std::vector<TH1*> hCentralityZ50Trig;
+  std::vector<TH1*> hCentralityZOuterTrig;
+  std::vector<TH2*> h2ZVertexCentralityTrig;
 };

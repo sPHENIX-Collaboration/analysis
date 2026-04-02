@@ -24,6 +24,7 @@
 #include <globalvertex/GlobalVertexReco.h>
 #include <centrality/CentralityReco.h>
 #include <calotrigger/MinimumBiasClassifier.h>
+#include <calotrigger/TriggerRunInfoReco.h>
 
 #include <sepdvalidation/CentralityQA.h>
 
@@ -77,7 +78,7 @@ void Fun4All_CentralityQA(const std::string& flist,
   se->registerSubsystem(gvertexreco);
 
   // custom centrality calib
-  std::string cent_calib_dir = "/direct/sphenix+u/anarde/Documents/sPHENIX/analysis-sEPD-Study/sEPD-Study/files/centrality";
+  std::string cent_calib_dir = "/direct/sphenix+u/anarde/Documents/sPHENIX/analysis-sEPD-Study/sEPD-Study/files/centrality/04-01-26";
   std::string cent_divs = std::format("{}/cdb_centrality_68144.root", cent_calib_dir);
   std::string cent_scale = std::format("{}/cdb_centrality_scale_68144.root", cent_calib_dir);
   std::string cent_vtx = std::format("{}/cdb_centrality_vertex_scale_68144.root", cent_calib_dir);
@@ -94,6 +95,11 @@ void Fun4All_CentralityQA(const std::string& flist,
   cent->setOverwriteScale(cent_scale);
   cent->setOverwriteVtx(cent_vtx);
   se->registerSubsystem(cent);
+
+  // Trigger Info Reco
+  TriggerRunInfoReco* trig = new TriggerRunInfoReco();
+  trig->Verbosity(1);
+  se->registerSubsystem(trig);
 
   // Centrality QA
   CentralityQA* centrality_QA = new CentralityQA();
