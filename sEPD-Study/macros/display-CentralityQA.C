@@ -71,6 +71,8 @@ class DisplayCentralityQA
 
   std::unordered_set<std::string> m_names = {};
 
+  std::vector<int> m_triggerBits = {10, 12, 14};
+
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
@@ -219,7 +221,7 @@ void DisplayCentralityQA::draw()
       hist_default->SetLineWidth(3);
       hist_new->SetLineWidth(2);
 
-      double ymax = std::max(hist_default->GetMaximum(), hist_new->GetMaximum())*1.1;
+      double ymax = std::max(hist_default->GetMaximum(), hist_new->GetMaximum())*1.2;
 
       hist_default->GetYaxis()->SetRangeUser(0, ymax);
 
@@ -261,16 +263,37 @@ void DisplayCentralityQA::draw()
     plotAndSave(hCentralityZ50_default, hCentralityZ50_new, "hCentralityZ50-Overlay");
     plotAndSave(hCentralityZOuter_default, hCentralityZOuter_new, "hCentralityZOuter-Overlay");
 
+    for (const auto& trig : m_triggerBits)
+    {
+      hZVtx_default = m_hists[std::format("hZVertex_Trig{}_default", trig)].get();
+      hZVtx_new = m_hists[std::format("hZVertex_Trig{}_new", trig)].get();
+
+      hCentrality_default = m_hists[std::format("hCentrality_Trig{}_default", trig)].get();
+      hCentrality_new = m_hists[std::format("hCentrality_Trig{}_new", trig)].get();
+
+      hCentralityZ50_default = m_hists[std::format("hCentralityZ50_Trig{}_default", trig)].get();
+      hCentralityZ50_new = m_hists[std::format("hCentralityZ50_Trig{}_new", trig)].get();
+
+      hCentralityZOuter_default = m_hists[std::format("hCentralityZOuter_Trig{}_default", trig)].get();
+      hCentralityZOuter_new = m_hists[std::format("hCentralityZOuter_Trig{}_new", trig)].get();
+
+      plotAndSave(hZVtx_default, hZVtx_new, std::format("hZVertex-Trig{}-Overlay", trig));
+      plotAndSave(hCentrality_default, hCentrality_new, std::format("hCentrality-Trig{}-Overlay", trig));
+      plotAndSave(hCentralityZ50_default, hCentralityZ50_new, std::format("hCentralityZ50-Trig{}-Overlay", trig));
+      plotAndSave(hCentralityZOuter_default, hCentralityZOuter_new, std::format("hCentralityZOuter-Trig{}-Overlay", trig));
+    }
+
     auto* h2ZVertexCentrality_default = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality_default"].get());
     auto* h2ZVertexCentrality_new = dynamic_cast<TH2*>(m_hists["h2ZVertexCentrality_new"].get());
 
-    auto plotAndSaveCent = [&](TH2* hist2D_default, TH2* hist2D_new, int cent)
+    auto plotAndSaveCent = [&](TH2* hist2D_default, TH2* hist2D_new, int cent, const std::string& type = "MB")
     {
       std::string name_default = std::format("default_{}", cent);
       std::string name_new = std::format("new_{}", cent);
 
-      std::string name = std::format("hZVertexCentrality-{}-Overlay", cent);
-      std::string title = std::format("Centrality {}% and MB", cent);
+      std::string name = std::format("hZVertexCentrality-{}-{}-Overlay", type, cent);
+      std::string base_title = hist2D_default->GetTitle();
+      std::string title = std::format("Centrality {}% and {}", cent, base_title);
 
       auto* hist_default = hist2D_default->ProjectionX(name_default.c_str(), cent + 1, cent + 1);
       auto* hist_new = hist2D_new->ProjectionX(name_new.c_str(), cent + 1, cent + 1);
@@ -286,6 +309,19 @@ void DisplayCentralityQA::draw()
     plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 2);
     plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 3);
     plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 4);
+
+    for (const auto& trig : m_triggerBits)
+    {
+      h2ZVertexCentrality_default = dynamic_cast<TH2*>(m_hists[std::format("h2ZVertexCentrality_Trig{}_default", trig)].get());
+      h2ZVertexCentrality_new = dynamic_cast<TH2*>(m_hists[std::format("h2ZVertexCentrality_Trig{}_new", trig)].get());
+
+      std::string type = std::format("Trig{}",trig);
+
+      plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 1, type);
+      plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 2, type);
+      plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 3, type);
+      plotAndSaveCent(h2ZVertexCentrality_default, h2ZVertexCentrality_new, 4, type);
+    }
   }
 
   // ---------------------------------------------------
@@ -301,8 +337,6 @@ void DisplayCentralityQA::draw()
       hist->Draw("COLZ1");
       hist->GetZaxis()->SetMaxDigits(3);
 
-      hist->SetMaximum(7e3);
-
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
 
@@ -317,6 +351,18 @@ void DisplayCentralityQA::draw()
 
     plotAndSave(h2ZVertexCentrality_default, "h2ZVertexCentrality_default");
     plotAndSave(h2ZVertexCentrality_new, "h2ZVertexCentrality_new");
+
+    for (const auto& trig : m_triggerBits)
+    {
+      std::string default_name = std::format("h2ZVertexCentrality_Trig{}_default", trig);
+      std::string new_name = std::format("h2ZVertexCentrality_Trig{}_new", trig);
+
+      h2ZVertexCentrality_default = dynamic_cast<TH2*>(m_hists[default_name].get());
+      h2ZVertexCentrality_new = dynamic_cast<TH2*>(m_hists[new_name].get());
+
+      plotAndSave(h2ZVertexCentrality_default, default_name);
+      plotAndSave(h2ZVertexCentrality_new, new_name);
+    }
 
     c1->SetLeftMargin(.12F);
     c1->SetRightMargin(.02F);
