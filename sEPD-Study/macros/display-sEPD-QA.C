@@ -97,12 +97,16 @@ class DisplaySEPDQA
 
   int m_nChannels{744};
 
+  // std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/all-rings";
+  std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/without-ring-0";
+  std::string m_EP_base_output_suffix = "ApplyFlattening/output/hist/QVecCalib-68144.root";
+
   std::map<std::string, std::string> m_EP_files = {
-      {"_default", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-default-hotmap/ApplyFlattening/output/hist/QVecCalib-68144.root"},
-      {"_0", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-0.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
-      {"_50", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-50.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
-      {"_10", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-10.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"},
-      {"_5", "/gpfs/mnt/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/stage-QVecCalib-5.0-0.0/ApplyFlattening/output/hist/QVecCalib-68144.root"}
+      // {"_default", std::format("{}/stage-QVecCalib-default-hotmap/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
+      {"_0", std::format("{}/stage-QVecCalib-0.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
+      {"_50", std::format("{}/stage-QVecCalib-50.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
+      {"_10", std::format("{}/stage-QVecCalib-10.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
+      {"_5", std::format("{}/stage-QVecCalib-5.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)}
   };
 
   // --- Private Helper Methods ---
@@ -178,14 +182,21 @@ void DisplaySEPDQA::draw_EP_Study()
 
   // ---------------------------------------------------
 
-  std::vector<short int> my_colors = {kBlack, kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
-  std::vector<std::string> legend_names = {"Current [Tower Mask]",
-                                           "0#leq N_{mip}",
-                                           "0#leq N_{mip}#leq 50",
-                                           "0#leq N_{mip}#leq 10",
-                                           "0#leq N_{mip}#leq 5"};
+  // std::vector<short int> my_colors = {kBlack, kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
+  std::vector<short int> my_colors = {kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
+  // std::vector<std::string> legend_names = {"Current [Tower Mask]",
+  //                                          "0.5#leq N_{mip}",
+  //                                          "0.5#leq N_{mip}#leq 50",
+  //                                          "0.5#leq N_{mip}#leq 10",
+  //                                          "0.5#leq N_{mip}#leq 5"};
 
-  std::vector<std::string> tags = {"_default", "_0", "_50", "_10", "_5"};
+  std::vector<std::string> legend_names = {"0.5#leq N_{mip}",
+                                           "0.5#leq N_{mip}#leq 50",
+                                           "0.5#leq N_{mip}#leq 10",
+                                           "0.5#leq N_{mip}#leq 5"};
+
+  // std::vector<std::string> tags = {"_default", "_0", "_50", "_10", "_5"};
+  std::vector<std::string> tags = {"_0", "_50", "_10", "_5"};
 
   {
     c1->SetLeftMargin(.12F);
@@ -232,7 +243,8 @@ void DisplaySEPDQA::draw_EP_Study()
       std::string name_ratio = std::format("hEP_res_sqrt_2_ratio{}",tag);
       auto* hist_ratio = dynamic_cast<TH1*>(hist->Clone(name_ratio.c_str()));
 
-      auto* hDefault = m_hists["hEP_res_sqrt_2_default"].get();
+      // auto* hDefault = m_hists["hEP_res_sqrt_2_default"].get();
+      auto* hDefault = m_hists["hEP_res_sqrt_2_0"].get();
 
       hist_ratio->Divide(hDefault);
       m_hists[name_ratio] = std::unique_ptr<TH1>(hist_ratio);
@@ -244,6 +256,7 @@ void DisplaySEPDQA::draw_EP_Study()
         hist->SetTitle("Event Plane Resolution");
         // hist->GetYaxis()->SetTitle("#sqrt{2#LTcos(2(#Psi^{N}_{2}-#Psi^{S}_{2}))#GT} = #sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
         hist->GetYaxis()->SetTitle("#sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
+        hist->GetYaxis()->SetRangeUser(0, 0.6);
       }
       else
       {
@@ -300,7 +313,8 @@ void DisplaySEPDQA::draw_EP_Study()
       if(plot_idx == 1)
       {
          hist->Draw();
-         hist->GetYaxis()->SetTitle("Ratio (With Current [Tower Mask])");
+         // hist->GetYaxis()->SetTitle("Ratio (With Current [Tower Mask])");
+         hist->GetYaxis()->SetTitle("Ratio (With 0.5#leq N_{mip})");
       }
       else
       {
