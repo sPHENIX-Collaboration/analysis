@@ -23,6 +23,8 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"EMCal Calib Default", "CEMC_calib_ADC_to_ETower_default"},
       {"EMCal Calib", "CEMC_calib_ADC_to_ETower"},
       {"EMCal Bad Tower Map", "CEMC_BadTowerMap"},
+      {"HCALIN Bad Tower Map", "HCALIN_BadTowerMap"},
+      {"HCALOUT Bad Tower Map", "HCALOUT_BadTowerMap"},
       {"EMCal Frac Bad Chi2", "CEMC_hotTowers_fracBadChi2"},
       {"EMCal Mean Time", "CEMC_meanTime"},
       {"HCALIN Frac Bad Chi2", "HCALIN_hotTowers_fracBadChi2"},
