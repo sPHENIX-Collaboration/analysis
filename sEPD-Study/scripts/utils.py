@@ -1201,9 +1201,6 @@ def hadd_jobs():
         (output_dir / subdir).mkdir(parents=True, exist_ok=True)
         (partial_dir / subdir).mkdir(parents=True, exist_ok=True)
 
-    if condor_log_dir.is_dir():
-        shutil.rmtree(condor_log_dir)
-
     # Setup Condor Log Dir
     condor_log_dir.mkdir(parents=True, exist_ok=True)
 
