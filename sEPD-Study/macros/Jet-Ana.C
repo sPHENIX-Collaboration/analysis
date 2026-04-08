@@ -99,9 +99,9 @@ class JetAnalysis
     double eta{0};
   };
 
-  static constexpr size_t m_bins_cent = 80;
+  static constexpr size_t m_bins_cent = 61;
   static constexpr double m_cent_low = -0.5;
-  static constexpr double m_cent_high = 79.5;
+  static constexpr double m_cent_high = 60.5;
 
   // Store harmonic orders and subdetectors for easy iteration
   // static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
@@ -308,11 +308,12 @@ class JetAnalysis
   enum class EventType : std::uint8_t
   {
     ZVTX10_MB,
-    ZVTX10_MB_CALOCENT,
-    ZVTX10_MB_CALOCENT_QVEC
+    CENT,
+    CALOCENT,
+    QVEC
   };
 
-  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Calo-Cent", "Good QVec"};
+  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Cent", "Good Calo-Cent", "Good QVec"};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -710,10 +711,6 @@ void JetAnalysis::init_hists()
   double pt2_low = 7; // GeV
   double pt2_high = 100;
 
-  int bins_cent = 80;
-  double cent_low = -0.5;
-  double cent_high = 79.5;
-
   int bins_energy = 1000;
   double energy_low = -500;
   double energy_high = 500;
@@ -884,8 +881,8 @@ void JetAnalysis::init_hists()
   // -----------
   // Jet Seeds
 
-  m_hists2D["h2SeedsIt1Centrality"] = std::make_unique<TH2F>("h2SeedsIt1Centrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_cent, cent_low, cent_high);
-  m_hists2D["h2SeedsCentrality"] = std::make_unique<TH2F>("h2SeedsCentrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_cent, cent_low, cent_high);
+  m_hists2D["h2SeedsIt1Centrality"] = std::make_unique<TH2F>("h2SeedsIt1Centrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, m_bins_cent, m_cent_low, m_cent_high);
+  m_hists2D["h2SeedsCentrality"] = std::make_unique<TH2F>("h2SeedsCentrality", "|z| < 10 cm and MB; Jet Seeds [Counts]; Centrality [%]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, m_bins_cent, m_cent_low, m_cent_high);
 
   m_hists2D["h2SeedsIt1CaloE"] = std::make_unique<TH2F>("h2SeedsIt1CaloE", "|z| < 10 cm and MB; Jet Seeds [Counts]; Total Calorimeter Energy [GeV]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_Calo_E, Calo_E_low, Calo_E_high);
   m_hists2D["h2SeedsCaloE"] = std::make_unique<TH2F>("h2SeedsCaloE", "|z| < 10 cm and MB; Jet Seeds [Counts]; Total Calorimeter Energy [GeV]", bins_nHIRecoSeeds, nHIRecoSeeds_low, nHIRecoSeeds_high, bins_Calo_E, Calo_E_low, Calo_E_high);
@@ -896,9 +893,9 @@ void JetAnalysis::init_hists()
 
   m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "Centrality: |z| < 10 cm and MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
-  m_hists2D["h2CaloECentrality_default"] = std::make_unique<TH2F>("h2CaloECentrality_default", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_cent, cent_low, cent_high);
+  m_hists2D["h2CaloECentrality_default"] = std::make_unique<TH2F>("h2CaloECentrality_default", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]", bins_Calo_E, Calo_E_low, Calo_E_high, m_bins_cent, m_cent_low, m_cent_high);
 
-  m_hists2D["h2CaloECentrality"] = std::make_unique<TH2F>("h2CaloECentrality", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]", bins_Calo_E, Calo_E_low, Calo_E_high, bins_cent, cent_low, cent_high);
+  m_hists2D["h2CaloECentrality"] = std::make_unique<TH2F>("h2CaloECentrality", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]", bins_Calo_E, Calo_E_low, Calo_E_high, m_bins_cent, m_cent_low, m_cent_high);
 
   for (auto n : m_harmonics)
   {
@@ -1441,17 +1438,17 @@ void JetAnalysis::process_events()
     }
 
     double cent = m_event_data.event_centrality;
-    int cent_bin = m_hists.hCentrality->FindBin(cent);
 
     m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
 
-    // Skip events in underflow or overflow bins.
-    if (cent_bin <= 0 || cent_bin > static_cast<int>(m_bins_cent))
+    // Skip events outside centrality range
+    if (cent <= 0 || cent > m_cent_high)
     {
-      std::cout << std::format("Warning: Weird Centrality: {}, Skipping Event\n", cent);
       ++ctr["events_skipped_cent"];
       continue;
     }
+
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
 
     // Ensure good correlation between Calo and MBD
     bool isGood = check_CaloMBD();
@@ -1461,7 +1458,7 @@ void JetAnalysis::process_events()
       continue;
     }
 
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CALOCENT));
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CALOCENT));
 
     // Ensure non-zero Q vectors for both North and South sEPD
     isGood = check_QVec();
@@ -1471,7 +1468,7 @@ void JetAnalysis::process_events()
       continue;
     }
 
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CALOCENT_QVEC));
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::QVEC));
 
     // Q Vectors QA
     process_QVecs();
