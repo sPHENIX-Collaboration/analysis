@@ -17,14 +17,14 @@ submitDir=${5}
 run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)') # Remove leading zeros using sed
 input_file=$(basename "$input")
 
-if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]
+if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
-    cd $_CONDOR_SCRATCH_DIR
+    cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
     cp -v "$input" .
     ls -lah
 else
-    echo "condor scratch NOT set"
-    exit -1
+    echo "condor scratch NOT set" >&2
+    exit 1
 fi
 
 # print the environment - needed for debugging
