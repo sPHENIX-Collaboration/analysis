@@ -1183,16 +1183,15 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       m_hists.h2JetPhiPtv2->Fill(phi, pt);
       m_hists.h2JetPhiEtav2->Fill(phi, eta);
       m_hists.h2JetPtEnergy->Fill(pt, energy);
-      m_hists.h2CaloEJetPt->Fill(total_energy, pt);
-
-      m_hists.h2CentralityJetPt->Fill(cent, pt);
       m_hists.h2CentralityJetEnergy->Fill(cent, energy);
-
-      m_hists.h2SumEJetPt->Fill(sum_E, pt);
-      m_hists.h2CaloV2JetPt->Fill(calo_v2, pt);
 
       if (energy > 0)
       {
+        m_hists.h2CaloEJetPt->Fill(total_energy, pt);
+        m_hists.h2CentralityJetPt->Fill(cent, pt);
+        m_hists.h2SumEJetPt->Fill(sum_E, pt);
+        m_hists.h2CaloV2JetPt->Fill(calo_v2, pt);
+
         m_hists.h2JetPhiPtv3->Fill(phi, pt);
         m_hists.h2JetPhiEtav3->Fill(phi, eta);
 
