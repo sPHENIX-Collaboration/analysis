@@ -110,7 +110,7 @@ class JetAnalysis
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
   // Min Jet pT [GeV]
-  static constexpr std::array<int, 8> m_jet_pt_vec = {7, 10, 12, 14, 16, 18, 20, 100};
+  static constexpr std::array<int, 5> m_jet_pt_vec = {7, 10, 15, 20, 100};
 
   struct AnalysisHists
   {
@@ -308,10 +308,11 @@ class JetAnalysis
   enum class EventType : std::uint8_t
   {
     ZVTX10_MB,
-    ZVTX10_MB_CALOCENT
+    ZVTX10_MB_CALOCENT,
+    ZVTX10_MB_CALOCENT_QVEC
   };
 
-  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Calo-Cent"};
+  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Calo-Cent", "Good QVec"};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -336,6 +337,7 @@ class JetAnalysis
   std::vector<JetInfo> process_jets() const;
   void process_QVecs();
   bool check_CaloMBD() const;
+  bool check_QVec() const;
   void process_calo();
   void process_events();
 
@@ -1322,6 +1324,16 @@ bool JetAnalysis::check_CaloMBD() const
   return total_energy > CaloE_min && total_energy < CaloE_max;
 }
 
+bool JetAnalysis::check_QVec() const
+{
+    double Q_S_x = m_event_data.Q_S_x;
+    double Q_S_y = m_event_data.Q_S_y;
+    double Q_N_x = m_event_data.Q_N_x;
+    double Q_N_y = m_event_data.Q_N_y;
+
+    return !((Q_S_x == 0 && Q_S_y == 0) || (Q_N_x == 0 && Q_N_y == 0));
+}
+
 void JetAnalysis::process_calo()
 {
   double cent = m_event_data.event_centrality;
@@ -1451,6 +1463,16 @@ void JetAnalysis::process_events()
 
     m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CALOCENT));
 
+    // Ensure non-zero Q vectors for both North and South sEPD
+    isGood = check_QVec();
+    if (!isGood)
+    {
+      ++ctr["events_skipped_bad_QVec"];
+      continue;
+    }
+
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CALOCENT_QVEC));
+
     // Q Vectors QA
     process_QVecs();
 
@@ -1468,8 +1490,17 @@ void JetAnalysis::process_events()
   int jets_positive_energy = static_cast<int>(m_hists.h2JetPhiEtav3->GetEntries());
   int jets_good_caloV2 = static_cast<int>(m_hists.h2JetPhiEtav4->GetEntries());
 
-  std::cout << std::format("Event Skipped: CaloMBD Mismatch: {}, Cent (Out of Bounds): {}\n", ctr["events_skipped_calo_mbd"],
-                                                                                              ctr["events_skipped_cent"]);
+
+  std::cout << std::format("{:#<20}\n", "");
+  std::cout << "Events Skipped" << std::endl;
+  for (const auto& [name, events] : ctr)
+  {
+    if (name.starts_with("events_skipped"))
+    {
+      std::cout << std::format("{}: {}\n", name, events);
+    }
+  }
+  std::cout << std::format("{:#<20}\n", "");
 
   std::cout << std::format("Jets: {}, Post Masking: {}, {:.2f}%, Positive Energy: {}, {:.2f}%, Good Calo V2: {}, {:.2f}%\n", jets, jets_good_regions, jets_good_regions * 100. / jets
                                                                                                                            , jets_positive_energy, jets_positive_energy * 100. / jets
