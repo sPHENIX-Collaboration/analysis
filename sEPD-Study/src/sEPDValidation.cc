@@ -336,7 +336,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
+  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::MB));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -362,10 +362,7 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
 
   m_hists["hCentrality"]->Fill(m_cent);
 
-  if (m_cent < m_cuts.m_cent_max_v2)
-  {
-    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CENT));
-  }
+  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::CENT));
 
   JetUtils::update_min_max(m_cent, m_logging.m_cent_min, m_logging.m_cent_max);
 
@@ -589,7 +586,10 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
   {
     ++m_ctr["process_sEPD_total_charge_zero"];
-    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+  else
+  {
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::SEPD));
   }
 
   dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north);
@@ -719,6 +719,8 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
+  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::EP));
+
   std::pair<double, double> Q_S_2_raw = epd_S->get_qvector_raw(2);
   std::pair<double, double> Q_N_2_raw = epd_N->get_qvector_raw(2);
 
@@ -728,6 +730,15 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
   std::pair<double, double> Q_S_2 = epd_S->get_qvector(2);
   std::pair<double, double> Q_N_2 = epd_N->get_qvector(2);
   std::pair<double, double> Q_NS_2 = epd_NS->get_qvector(2);
+
+  // Ensure both Q Vectors North and South are valid and non-zero
+  if((Q_S_2.first == 0 && Q_S_2.second == 0) || (Q_N_2.first == 0 && Q_N_2.second == 0))
+  {
+    ++m_ctr["process_EventPlane_QVec_invalid"];
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::QVEC));
 
   double _2psi2_raw_S = 2*epd_S->GetPsi(Q_S_2_raw.first, Q_S_2_raw.second, 2);
   double _2psi2_raw_N = 2*epd_N->GetPsi(Q_N_2_raw.first, Q_N_2_raw.second, 2);
@@ -810,29 +821,30 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       m_data.jet_phi.push_back(phi);
       m_data.jet_eta.push_back(eta);
 
-      h2Jet_pT_Constituents->Fill(pt, constituents);
-      h2Jet_pT_Cent->Fill(m_cent, pt);
-      h2Jet_pT_Phi->Fill(pt, phi);
-      h2Jet_pT_Energy->Fill(pt, energy);
-      h2Jet_PhiEta->Fill(phi, eta);
-
-      if (pt >= m_cuts.m_jet_pt_threshold)
+      // Ensure positive jet energy
+      if (energy > 0)
       {
-        hasHighPt = true;
-      }
+        h2Jet_pT_Constituents->Fill(pt, constituents);
+        h2Jet_pT_Cent->Fill(m_cent, pt);
+        h2Jet_pT_Phi->Fill(pt, phi);
+        h2Jet_pT_Energy->Fill(pt, energy);
+        h2Jet_PhiEta->Fill(phi, eta);
 
-      m_data.max_jet_pt = std::max(m_data.max_jet_pt, pt);
-      hasJet = true;
-      ++n_jets;
+        if (pt >= m_cuts.m_jet_pt_threshold)
+        {
+          hasHighPt = true;
+        }
+
+        m_data.max_jet_pt = std::max(m_data.max_jet_pt, pt);
+        hasJet = true;
+        ++n_jets;
+      }
     }
   }
 
   if (hasJet)
   {
-    if (m_cent < m_cuts.m_cent_max_v2)
-    {
-      m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB_CENT_JET));
-    }
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::JET));
 
     dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
     h2Jet_LeadpT_Cent->Fill(m_cent, m_data.max_jet_pt);
@@ -867,6 +879,8 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
     ++m_ctr["event_is_flow_failure"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
+
+  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::UE));
 
   float v2 = towerBkg->get_v2();
   float v2_it1 = towerBkg1->get_v2();
@@ -940,12 +954,6 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
-  ret = process_jets(topNode);
-  if (ret)
-  {
-    return ret;
-  }
-
   ret = process_MBD(topNode);
   if (ret)
   {
@@ -971,6 +979,12 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
   }
 
   ret = process_UE(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
+  ret = process_jets(topNode);
   if (ret)
   {
     return ret;
@@ -1060,7 +1074,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "sEPD" << std::endl;
-  std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::ZVTX10_MB) + 1) << std::endl;
+  std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::MB) + 1) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
 
   std::cout << std::format("{:#<20}\n", "");

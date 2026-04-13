@@ -77,10 +77,10 @@ class sEPDValidation : public SubsysReco
     double m_zvtx_low{-50};
     double m_zvtx_high{50};
 
-    unsigned int m_bins_cent{80};
-    unsigned int m_bins_cent_reduced{8};
+    unsigned int m_bins_cent{60};
+    unsigned int m_bins_cent_reduced{6};
     double m_cent_low{-0.5};
-    double m_cent_high{79.5};
+    double m_cent_high{59.5};
 
     unsigned int m_bins_sepd_channels{744};
 
@@ -145,8 +145,8 @@ class sEPDValidation : public SubsysReco
     double m_jet_energy_high{500};
 
     unsigned int m_bins_jet_eta{24};
-    double m_jet_eta_low{-1};
-    double m_jet_eta_high{1};
+    double m_jet_eta_low{-1.152};
+    double m_jet_eta_high{1.152};
 
     unsigned int m_bins_jet_phi{64};
     double m_jet_phi_low{-std::numbers::pi};
@@ -215,9 +215,13 @@ class sEPDValidation : public SubsysReco
     ZVTX,
     ZVTX50,
     ZVTX10,
-    ZVTX10_MB,
-    ZVTX10_MB_CENT,
-    ZVTX10_MB_CENT_JET
+    MB,
+    CENT,
+    SEPD,
+    EP,
+    QVEC,
+    UE,
+    JET
   };
 
   enum class MinBiasType : std::uint8_t
@@ -228,7 +232,7 @@ class sEPDValidation : public SubsysReco
     MBD_HIGH
   };
 
-  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent", "Has Jet"};
+  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent", "SEPD", "EP", "QVEC", "UE", "Has Jet"};
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
 
   // Event Vars
@@ -244,8 +248,7 @@ class sEPDValidation : public SubsysReco
     double m_zvtx_max{10};
     double m_zvtx_max_v2{50};
     double m_sepd_charge_threshold{0.5};
-    double m_cent_max{80};
-    double m_cent_max_v2{60};
+    double m_cent_max{60};
     double m_jet_pt_threshold{100}; // [GeV]
   };
 
