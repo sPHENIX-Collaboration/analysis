@@ -805,6 +805,12 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     double phi = jet->get_phi();
     double eta = jet->get_eta();
 
+    // map [-pi,pi] -> [0,2pi]
+    if (phi < 0)
+    {
+      phi += 2.0 * std::numbers::pi;
+    }
+
     Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
     int constituents = comp_vec.size();
 

@@ -149,8 +149,8 @@ class sEPDValidation : public SubsysReco
     double m_jet_eta_high{1.152};
 
     unsigned int m_bins_jet_phi{64};
-    double m_jet_phi_low{-std::numbers::pi};
-    double m_jet_phi_high{std::numbers::pi};
+    double m_jet_phi_low{0};
+    double m_jet_phi_high{2*std::numbers::pi};
 
     unsigned int m_bins_jet_constituents{100};
     double m_jet_constituents_low{0};
