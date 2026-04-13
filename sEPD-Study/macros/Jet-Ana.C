@@ -43,8 +43,9 @@ class JetAnalysis
 {
  public:
   // The constructor takes the configuration
-  JetAnalysis(std::string input_file, unsigned int runnumber, long long events, std::string output_dir)
+  JetAnalysis(std::string input_file, std::string input_F4A_QA, unsigned int runnumber, long long events, std::string output_dir)
     : m_input_file(std::move(input_file))
+    , m_input_F4A_QA_file(std::move(input_F4A_QA))
     , m_runnumber(runnumber)
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
@@ -54,6 +55,7 @@ class JetAnalysis
   void run()
   {
     setup_chain();
+    process_weights();
     process_dead_channels();
     load_calo_centrality_cuts();
     init_hists();
@@ -99,9 +101,9 @@ class JetAnalysis
     double eta{0};
   };
 
-  static constexpr size_t m_bins_cent = 61;
+  static constexpr size_t m_bins_cent = 60;
   static constexpr double m_cent_low = -0.5;
-  static constexpr double m_cent_high = 60.5;
+  static constexpr double m_cent_high = 59.5;
 
   // Store harmonic orders and subdetectors for easy iteration
   // static constexpr std::array<int, 3> m_harmonics = {2, 3, 4};
@@ -122,10 +124,12 @@ class JetAnalysis
     TH2* h2JetPhiPt{nullptr};
     TH2* h2JetPhiEta{nullptr};
 
-    TH2* h2JetPhiPtv2{nullptr};
+    TH2* h2Weights{nullptr};
+
+    TH2* h2JetPhiPtv2{nullptr};  // Positive Jet Energy
     TH2* h2JetPhiEtav2{nullptr};
 
-    TH2* h2JetPhiPtv3{nullptr}; // Positive Jet Energy
+    TH2* h2JetPhiPtv3{nullptr}; // Dead IB Mask
     TH2* h2JetPhiEtav3{nullptr};
 
     TH2* h2JetPhiPtv4{nullptr}; // Positive Jet Energy and Calo V2 Cut
@@ -193,7 +197,8 @@ class JetAnalysis
     std::array<TH2*, m_harmonics.size()> hPsi_NS{nullptr};
 
     std::array<TH2*, m_harmonics.size()> h2RefFlow{nullptr};
-    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProduct{{{}, {}, {}}}; // Jet Energy > 0
+    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProduct{{{}, {}, {}}}; // Jet Energy > 0, Use Weighting
+    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProductv1{{{}, {}, {}}}; // Jet Energy > 0
 
     // Profiles
     std::array<TProfile*, m_harmonics.size()> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
@@ -293,6 +298,7 @@ class JetAnalysis
 
   // Configuration stored as members
   std::string m_input_file;
+  std::string m_input_F4A_QA_file;
   unsigned int m_runnumber;
   long long m_events_to_process;
   std::string m_output_dir;
@@ -328,6 +334,7 @@ class JetAnalysis
   void read_Q_calib();
   void load_calo_centrality_cuts();
 
+  void process_weights();
   void process_dead_channels();
 
   void create_vn_histograms(int n);
@@ -451,8 +458,58 @@ void JetAnalysis::load_calo_centrality_cuts()
     throw std::runtime_error(std::format("Could not open file '{}'", filename));
   }
 
-  m_hists.hCaloECentrality_min = dynamic_cast<TH1*>(file->Get(hLow_name.c_str()));
-  m_hists.hCaloECentrality_max = dynamic_cast<TH1*>(file->Get(hHigh_name.c_str()));
+  m_hists.hCaloECentrality_min = file->Get<TH1>(hLow_name.c_str());
+  m_hists.hCaloECentrality_max = file->Get<TH1>(hHigh_name.c_str());
+}
+
+void JetAnalysis::process_weights()
+{
+  auto file = std::unique_ptr<TFile>(TFile::Open(m_input_F4A_QA_file.c_str()));
+
+  // Check if the file was opened successfully.
+  if (!file || file->IsZombie())
+  {
+    throw std::runtime_error(std::format("Could not open file '{}'", m_input_F4A_QA_file));
+  }
+
+  auto* h2JetPhiEta = dynamic_cast<TH2*>(file->Get<TH2>("h2Jet_PhiEta")->Clone("h2JetPhiEta_f4a"));
+  m_hists2D["h2JetPhiEta_f4a"] = std::unique_ptr<TH2>(h2JetPhiEta);
+
+  m_hists.h2Weights = dynamic_cast<TH2*>(h2JetPhiEta->Clone("h2Weights"));
+  m_hists2D["h2Weights"] = std::unique_ptr<TH2>(m_hists.h2Weights);
+  auto* h2Weights = m_hists2D["h2Weights"].get();
+
+  m_hists2D["h2Weights_closure"] = std::unique_ptr<TH2>(dynamic_cast<TH2*>(m_hists.h2Weights->Clone("h2Weights_closure")));
+  auto* h2Weights_closure = m_hists2D["h2Weights_closure"].get();
+
+  int bins_phi = h2Weights->GetNbinsX();
+  int bins_eta = h2Weights->GetNbinsY();
+
+  for (int ieta = 1; ieta <= bins_eta; ++ieta)
+  {
+    double avg = 0;
+    int valid_bins = 0;
+
+    for (int iphi = 1; iphi <= bins_phi; ++iphi)
+    {
+      double val = h2JetPhiEta->GetBinContent(iphi, ieta);
+      if (val > 0)
+      {
+        avg += val;
+        ++valid_bins;
+      }
+    }
+
+    avg = (valid_bins) ? avg / valid_bins : 0;
+
+    for (int iphi = 1; iphi <= bins_phi; ++iphi)
+    {
+      double val = h2JetPhiEta->GetBinContent(iphi, ieta);
+      double weight = (val) ? avg / val : 0;
+      h2Weights->SetBinContent(iphi, ieta, weight);
+      h2Weights_closure->SetBinContent(iphi, ieta, val * weight);
+    }
+  }
 }
 
 void JetAnalysis::process_dead_channels()
@@ -564,11 +621,14 @@ void JetAnalysis::create_vn_histograms(int n)
     int pt_high = m_jet_pt_vec[pt_idx + 1];
 
     std::string name = std::format("h2ScalarProduct_{}_pt_{}_{}", n, pt_low, pt_high);
+    std::string namev1 = std::format("h2ScalarProductv1_{}_pt_{}_{}", n, pt_low, pt_high);
 
     std::string title = std::format("{0} GeV #leq Jet p_{{T}} < {1} GeV; Centrality [%]; Re(q_{{{2}}} Q^{{S|N*}}_{{{2}}})", pt_low, pt_high, n);
     m_hists2D[name] = std::make_unique<TH2F>(name.c_str(), title.c_str(),
                                              m_bins_cent / 10, m_cent_low, m_cent_high,
                                              bins_qQ, qQ_low, qQ_high);
+
+    m_hists2D[namev1] = std::unique_ptr<TH2>(dynamic_cast<TH2*>(m_hists2D[name]->Clone(namev1.c_str())));
   }
 
   unsigned int bins_QQ_avg{2048};
@@ -1039,6 +1099,8 @@ void JetAnalysis::init_hists()
       int jet_pt_high = m_jet_pt_vec[idx_pt+1];
 
       m_hists.h2ScalarProduct[n_idx][idx_pt] = m_hists2D[std::format("h2ScalarProduct_{}_pt_{}_{}", n, jet_pt_low, jet_pt_high)].get();
+
+      m_hists.h2ScalarProductv1[n_idx][idx_pt] = m_hists2D[std::format("h2ScalarProductv1_{}_pt_{}_{}", n, jet_pt_low, jet_pt_high)].get();
     }
   }
 
@@ -1101,12 +1163,17 @@ void JetAnalysis::compute_SP()
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
 
-  // Loop over all jets (with positive Energy and not near dead IB)
+  // Loop over all jets with positive Energy
   for (size_t idx = 0; idx < nJets; ++idx)
   {
     double phi = jet_info[idx].phi;
     double eta = jet_info[idx].eta;
     double pt = jet_info[idx].pt;
+
+    int bin_phi = m_hists.h2Weights->GetXaxis()->FindBin(phi);
+    int bin_eta = m_hists.h2Weights->GetYaxis()->FindBin(eta);
+
+    double weight = m_hists.h2Weights->GetBinContent(bin_phi, bin_eta);
 
     // Correlate jets with opposite sEPD arm
     size_t arm = (eta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1128,7 +1195,8 @@ void JetAnalysis::compute_SP()
 
         if (pt >= pt_low && pt < pt_high)
         {
-          m_hists.h2ScalarProduct[n_idx][pt_idx]->Fill(cent, scalar_product);
+          m_hists.h2ScalarProduct[n_idx][pt_idx]->Fill(cent, scalar_product, weight);
+          m_hists.h2ScalarProductv1[n_idx][pt_idx]->Fill(cent, scalar_product);
           break;
         }
       }
@@ -1177,25 +1245,27 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 
     m_hists.h2JetPhiPt->Fill(phi, pt);
     m_hists.h2JetPhiEta->Fill(phi, eta);
+    m_hists.h2JetPtEnergy->Fill(pt, energy);
+    m_hists.h2CentralityJetEnergy->Fill(cent, energy);
 
-    if (dead_status == 0)
+    if (energy > 0)
     {
+      m_hists.h2CaloEJetPt->Fill(total_energy, pt);
+      m_hists.h2CentralityJetPt->Fill(cent, pt);
+      m_hists.h2SumEJetPt->Fill(sum_E, pt);
+      m_hists.h2CaloV2JetPt->Fill(calo_v2, pt);
+
       m_hists.h2JetPhiPtv2->Fill(phi, pt);
       m_hists.h2JetPhiEtav2->Fill(phi, eta);
-      m_hists.h2JetPtEnergy->Fill(pt, energy);
-      m_hists.h2CentralityJetEnergy->Fill(cent, energy);
 
-      if (energy > 0)
+      jet_info.emplace_back(energy, pt, phi, eta);
+
+      if (dead_status == 0)
       {
-        m_hists.h2CaloEJetPt->Fill(total_energy, pt);
-        m_hists.h2CentralityJetPt->Fill(cent, pt);
-        m_hists.h2SumEJetPt->Fill(sum_E, pt);
-        m_hists.h2CaloV2JetPt->Fill(calo_v2, pt);
-
         m_hists.h2JetPhiPtv3->Fill(phi, pt);
         m_hists.h2JetPhiEtav3->Fill(phi, eta);
 
-        jet_info.emplace_back(energy, pt, phi, eta);
+        // jet_info.emplace_back(energy, pt, phi, eta);
 
         if (m_event_data.has_good_calo_v2)
         {
@@ -1203,11 +1273,11 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
           m_hists.h2JetPhiEtav4->Fill(phi, eta);
         }
       }
-      else
-      {
-        std::cout << std::format("Negative Energy Jet! Event: {}, Calo V2: {:.6f}, Jet Energy: {:.2f}, Jet Pt: {:.2f}\n",
-                                 m_event_data.event_id, calo_v2, energy, pt);
-      }
+    }
+    else
+    {
+      std::cout << std::format("Negative Energy Jet! Event: {}, Calo V2: {:.6f}, Jet Energy: {:.2f}, Jet Pt: {:.2f}\n",
+                               m_event_data.event_id, calo_v2, energy, pt);
     }
   }
 
@@ -1482,8 +1552,8 @@ void JetAnalysis::process_events()
   }
 
   int jets = static_cast<int>(m_hists.h2JetPhiEta->GetEntries());
-  int jets_good_regions = static_cast<int>(m_hists.h2JetPhiEtav2->GetEntries());
-  int jets_positive_energy = static_cast<int>(m_hists.h2JetPhiEtav3->GetEntries());
+  int jets_positive_energy = static_cast<int>(m_hists.h2JetPhiEtav2->GetEntries());
+  int jets_good_regions = static_cast<int>(m_hists.h2JetPhiEtav3->GetEntries());
   int jets_good_caloV2 = static_cast<int>(m_hists.h2JetPhiEtav4->GetEntries());
 
 
@@ -1549,22 +1619,25 @@ int main(int argc, const char* const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 3 || argc > 7)
+  if (argc < 4 || argc > 8)
   {
-    std::cout << "Usage: " << argv[0] << " input_file <runnumber> [events] [jet_pt_min] [jet_eta_max] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file input_f4a_qa <runnumber> [events] [jet_pt_min] [jet_eta_max] [output_directory]" << std::endl;
     return 1;
   }
 
-  const std::string input_file = argv[1];
-  unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[2]));
-  long long events = (argc >= 4) ? std::atoll(argv[3]) : 0;
-  double jet_pt_min = (argc >= 5) ? std::stod(argv[4]) : 7;
-  double jet_eta_max = (argc >= 6) ? std::stod(argv[5]) : 0.9;
-  std::string output_dir = (argc >= 7) ? argv[6] : ".";
+  int ctr = 1;
+  const std::string input_file = argv[ctr++];
+  const std::string input_f4a_qa_file = argv[ctr++];
+  unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[ctr++]));
+  long long events = (argc >= ctr+1) ? std::atoll(argv[ctr++]) : 0;
+  double jet_pt_min = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 7;
+  double jet_eta_max = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 0.9;
+  std::string output_dir = (argc >= ctr+1) ? argv[ctr++] : ".";
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
   std::cout << std::format("Input: {}\n", input_file);
+  std::cout << std::format("Input F4A QA: {}\n", input_f4a_qa_file);
   std::cout << std::format("Run Number: {}\n", runnumber);
   std::cout << std::format("Events: {}\n", events);
   std::cout << std::format("Jet pT min: {} [GeV]\n", jet_pt_min);
@@ -1573,7 +1646,7 @@ int main(int argc, const char* const argv[])
 
   try
   {
-    JetAnalysis analysis(input_file, runnumber, events, output_dir);
+    JetAnalysis analysis(input_file, input_f4a_qa_file, runnumber, events, output_dir);
     analysis.set_jet_pt_min(jet_pt_min);
     analysis.set_jet_eta_max(jet_eta_max);
     analysis.run();

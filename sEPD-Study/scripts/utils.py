@@ -1002,6 +1002,11 @@ jetAna.add_argument('-i'
                     , required=True
                     , help='List of TTrees to analyze.')
 
+jetAna.add_argument('-i2'
+                    , '--f4a-qa-list', type=str
+                    , required=True
+                    , help='List of F4A QA.')
+
 jetAna.add_argument('-j'
                     , '--jet-pt-min', type=float
                     , default=7
@@ -1047,6 +1052,7 @@ def jetAna_jobs():
     jetAna condor jobs
     """
     input_list     = Path(args.input_list).resolve()
+    f4a_qa_list     = Path(args.f4a_qa_list).resolve()
     jet_pt_min     = args.jet_pt_min
     jet_eta_max    = args.jet_eta_max
     output_dir     = Path(args.output_dir).resolve()
@@ -1073,6 +1079,7 @@ def jetAna_jobs():
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input List: {input_list}')
+    logger.info(f'Input F4A QA List: {f4a_qa_list}')
     logger.info(f'Jet pT Min: {jet_pt_min} GeV')
     logger.info(f'Jet eta Max: {jet_eta_max}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
@@ -1096,14 +1103,29 @@ def jetAna_jobs():
     for subdir in subdirectories:
         (output_dir / subdir).mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(input_list, output_dir / 'jobs.list')
     shutil.copy(jetAna_macro, output_dir)
     jetAna_bin = shutil.copy(jetAna_bin, output_dir)
     shutil.copy(condor_script, output_dir)
 
+    run_paths = [Path(l.strip()) for l in open(f4a_qa_list)]
+    run_map = {p.stem: str(p) for p in run_paths}
+
+    # Setup jobs list
+    with open(input_list, "r") as f_in, open(output_dir / 'jobs.list', "w") as f_out:
+        for line in f_in:
+            tree_path = Path(line.strip())
+
+            # tree_path: /path/68099/tree/tree-xxx.root
+            # .parent is /path/68099/tree/
+            # .parent.parent.name is "68099"
+            run_id = tree_path.parent.parent.name
+
+            if run_id in run_map:
+                f_out.write(f"{tree_path},{run_map[run_id]}\n")
+
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) {jet_pt_min} {jet_eta_max} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -1113,7 +1135,7 @@ def jetAna_jobs():
     with open(output_dir / 'genJetAna.sub', mode='w', encoding='utf-8') as file:
         file.write(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree,input_f4a_qa from jobs.list"'
     logger.info(command)
 
 # ----------------------------
