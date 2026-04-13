@@ -133,12 +133,12 @@ void Fun4All_sEPD(const std::string &fname,
   // Event Plane
   EventPlaneReco* epreco = new EventPlaneReco();
   epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
-  epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
+  // epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
   se->registerSubsystem(epreco);
 
   // Jet Reco
   // Enable::HIJETS_VERBOSITY = 10;
-  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 4;
+  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 3;
   HIJetReco();
 
   // sEPD QA
