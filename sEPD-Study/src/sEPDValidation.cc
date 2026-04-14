@@ -164,7 +164,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
       {HistDef::Type::TH2, "h2UE_v2_Towers", "UE: |z| < 10 cm and MB; Towers; v_{2}", {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
       {HistDef::Type::TH2, "h2UE_v2_Strips", "UE: |z| < 10 cm and MB; Strips; v_{2}", {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
 
-      {HistDef::Type::TH2, "h2UE_v2_Jet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T}^{max} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
+      {HistDef::Type::TH2, "h2UE_v2_LeadJet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T}^{max} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
+      {HistDef::Type::TH2, "h2UE_v2_Jet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
       {HistDef::Type::TH2, "h2UE_v2_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
 
       {HistDef::Type::TH2, "h2UE_v2_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
@@ -797,6 +798,9 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   auto* h2Jet_pT_Phi = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Phi"].get());
   auto* h2Jet_pT_Energy = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Energy"].get());
   auto* h2Jet_PhiEta = dynamic_cast<TH2 *>(m_hists["h2Jet_PhiEta"].get());
+  auto* h2UE_v2_Jet = dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get());
+
+  double v2 = m_data.calo_v2;
 
   for (auto* jet : *jets)
   {
@@ -836,6 +840,8 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
         h2Jet_pT_Energy->Fill(pt, energy);
         h2Jet_PhiEta->Fill(phi, eta);
 
+        h2UE_v2_Jet->Fill(v2, pt);
+
         if (pt >= m_cuts.m_jet_pt_threshold)
         {
           hasHighPt = true;
@@ -854,6 +860,8 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
 
     dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
     h2Jet_LeadpT_Cent->Fill(m_cent, m_data.max_jet_pt);
+
+    dynamic_cast<TH2 *>(m_hists["h2UE_v2_LeadJet"].get())->Fill(m_data.calo_v2, m_data.max_jet_pt);
 
     JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
 
@@ -896,7 +904,6 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   int nStripsCEMC = towerBkg->get_nStripsCEMCUsedForFlow();
   int nHIRecoSeedsSub = towerBkg->get_nHIRecoSeedsSub();
   int nHIRecoSeedsSubIt1 = towerBkg1->get_nHIRecoSeedsSub();
-  double max_jet_pt = m_data.max_jet_pt;
 
   m_data.calo_v2 = v2;
   m_data.calo_v2_it1 = v2_it1;
@@ -908,10 +915,6 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Towers"].get())->Fill(nTowers, v2);
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Strips"].get())->Fill(nStrips, v2);
 
-  if (max_jet_pt >= m_jet_pt_min_cut)
-  {
-    dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get())->Fill(v2, max_jet_pt);
-  }
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.event_centrality, v2);
 
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_SumE"].get())->Fill(sum_E, v2);
