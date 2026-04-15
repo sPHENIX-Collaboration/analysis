@@ -152,9 +152,9 @@ class sEPDValidation : public SubsysReco
     double m_jet_phi_low{0};
     double m_jet_phi_high{2*std::numbers::pi};
 
-    unsigned int m_bins_jet_constituents{100};
+    unsigned int m_bins_jet_constituents{200};
     double m_jet_constituents_low{0};
-    double m_jet_constituents_high{100};
+    double m_jet_constituents_high{200};
 
     unsigned int m_bins_jet_nEvent{20};
     double m_jet_nEvent_low{0};
@@ -378,7 +378,7 @@ class sEPDValidation : public SubsysReco
   std::unique_ptr<TFile> m_output;
   TTree *m_tree{nullptr};
 
-  std::string m_recoJetName{"AntiKt_Tower_r02_Sub1"};
+  std::string m_recoJetName{"AntiKt_Tower_r03_Sub1"};
   double m_jet_pt_min_cut{7};     // GeV
-  double m_jet_eta_max_cut{0.9};  // 1.1-R
+  double m_jet_eta_max_cut{0.8};  // 1.1-R
 };
