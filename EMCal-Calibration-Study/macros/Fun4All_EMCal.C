@@ -85,9 +85,9 @@ void Fun4All_EMCal(int nevents = 1e2,
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
   rc->set_uint64Flag("TIMESTAMP", static_cast<unsigned int>(runnumber));  //
 
-  std::unique_ptr<Fun4AllInputManager> in = std::make_unique<Fun4AllDstInputManager>("DST_TOWERS");
+  Fun4AllInputManager* in = new Fun4AllDstInputManager("DST_TOWERS");
   in->AddListFile(fname);
-  se->registerInputManager(in.release());
+  se->registerInputManager(in);
 
   std::string filename = first_file.substr(first_file.find_last_of("/\\") + 1);
   std::string OutFile = std::format("OUTHIST_iter{}_{}", iter, filename);
@@ -102,39 +102,39 @@ void Fun4All_EMCal(int nevents = 1e2,
   /////////////////////
   // mbd/vertex
   // MBD/BBC Reconstruction
-  std::unique_ptr<MbdReco> mbdreco = std::make_unique<MbdReco>();
-  se->registerSubsystem(mbdreco.release());
+  MbdReco* mbdreco = new MbdReco();
+  se->registerSubsystem(mbdreco);
 
   // Official vertex storage
-  std::unique_ptr<GlobalVertexReco> gvertex = std::make_unique<GlobalVertexReco>();
-  se->registerSubsystem(gvertex.release());
+  GlobalVertexReco* gvertex = new GlobalVertexReco();
+  se->registerSubsystem(gvertex);
 
   /////////////////////
   // Geometry
   std::cout << "Adding Geometry file" << std::endl;
-  std::unique_ptr<Fun4AllInputManager> intrue2 = std::make_unique<Fun4AllRunNodeInputManager>("DST_GEO");
+  Fun4AllInputManager* intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
   std::string geoLocation = CDBInterface::instance()->getUrl("calo_geo");
   intrue2->AddFile(geoLocation);
-  se->registerInputManager(intrue2.release());
+  se->registerInputManager(intrue2);
 
   ////////////////////
   // Calibrate towers
-  std::unique_ptr<CaloTowerStatus> statusEMC = std::make_unique<CaloTowerStatus>("CEMCSTATUS");
+  CaloTowerStatus* statusEMC = new CaloTowerStatus("CEMCSTATUS");
   statusEMC->set_detector_type(CaloTowerDefs::CEMC);
   // statusEMC->set_doAbortNoHotMap();
   statusEMC->set_directURL_hotMap("/sphenix/u/bseidlitz/work/forChris/caloStatusCDB_y2/moreMaps/EMCalHotMap_new_2024p006-48837cdb.root");
-  se->registerSubsystem(statusEMC.release());
+  se->registerSubsystem(statusEMC);
 
-  std::unique_ptr<CaloTowerCalib> calibEMC = std::make_unique<CaloTowerCalib>("CEMCCALIB");
+  CaloTowerCalib* calibEMC = new CaloTowerCalib("CEMCCALIB");
   calibEMC->set_detector_type(CaloTowerDefs::CEMC);
   calibEMC->set_directURL(calib_fname);
   calibEMC->setFieldName(fieldname);
-  se->registerSubsystem(calibEMC.release());
+  se->registerSubsystem(calibEMC);
 
   //////////////////
   // Clusters
   std::cout << "Building clusters" << std::endl;
-  std::unique_ptr<RawClusterBuilderTemplate> ClusterBuilder = std::make_unique<RawClusterBuilderTemplate>("EmcRawClusterBuilderTemplate");
+  RawClusterBuilderTemplate* ClusterBuilder = new RawClusterBuilderTemplate("EmcRawClusterBuilderTemplate");
   ClusterBuilder->Detector("CEMC");
   ClusterBuilder->set_threshold_energy(0.07f);  // for when using basic calibration
   std::string emc_prof = getenv("CALIBRATIONROOT");
@@ -143,22 +143,22 @@ void Fun4All_EMCal(int nevents = 1e2,
   ClusterBuilder->set_UseTowerInfo(1);  // to use towerinfo objects rather than old RawTower
   ClusterBuilder->setOutputClusterNodeName("CLUSTERINFO_CEMC");
   ClusterBuilder->set_UseAltZVertex(1);
-  se->registerSubsystem(ClusterBuilder.release());
+  se->registerSubsystem(ClusterBuilder);
 
   ///////////////////
   // analysis modules
   if (iter == 1 || iter == 2 || iter == 3)
   {
-    std::unique_ptr<LiteCaloEval> eval7e = std::make_unique<LiteCaloEval>("CEMCEVALUATOR2", "CEMC", OutFile);
+    LiteCaloEval* eval7e = new LiteCaloEval("CEMCEVALUATOR2", "CEMC", OutFile);
     eval7e->CaloType(LiteCaloEval::CEMC);
     eval7e->set_reqMinBias(false);
     eval7e->setInputTowerNodeName("TOWERINFO_CALIB_CEMC");
-    se->registerSubsystem(eval7e.release());
+    se->registerSubsystem(eval7e);
   }
 
   if (iter > 3)
   {
-    std::unique_ptr<pi0EtaByEta> ca = std::make_unique<pi0EtaByEta>("calomodulename", OutFile);
+    pi0EtaByEta* ca = new pi0EtaByEta("calomodulename", OutFile);
     ca->set_timing_cut_width(16);  // does nothing currently
     ca->apply_vertex_cut(true);    // default
     ca->set_vertex_cut(20.);
@@ -170,7 +170,7 @@ void Fun4All_EMCal(int nevents = 1e2,
     ca->set_GlobalVertexType(GlobalVertex::MBD);
     ca->set_requireVertex(true);
     ca->set_calib_fieldname(m_fieldname);
-    se->registerSubsystem(ca.release());
+    se->registerSubsystem(ca);
   }
 
   se->run(nevents);

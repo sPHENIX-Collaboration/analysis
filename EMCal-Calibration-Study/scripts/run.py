@@ -53,8 +53,8 @@ parser.add_argument('-p'
 
 parser.add_argument('-s2'
                     , '--sleep-interval', type=int
-                    , default=60
-                    , help='Sleep Interval. Default: 60 seconds.')
+                    , default=30
+                    , help='Sleep Interval. Default: 30 seconds.')
 
 parser.add_argument('-f'
                     , '--f4a-macro', type=str
@@ -75,11 +75,6 @@ parser.add_argument('-f3'
                     , '--condor-script', type=str
                     , default='scripts/genCalib.sh'
                     , help='Condor Script. Default: scripts/genCalib.sh')
-
-parser.add_argument('-b'
-                    , '--f4a-bin', type=str
-                    , default='bin/Fun4All_EMCal'
-                    , help='Fun4All Bin. Default: bin/Fun4All_EMCal')
 
 parser.add_argument('-b1'
                     , '--default-calib-bin', type=str
@@ -190,7 +185,6 @@ def main():
     f4a_macro = Path(args.f4a_macro).resolve()
     fit_calib_macro = Path(args.fit_calib_macro).resolve()
     tsc_fit_macro = Path(args.tsc_fit_macro).resolve()
-    f4a_bin = Path(args.f4a_bin).resolve()
     default_calib_bin = Path(args.default_calib_bin).resolve()
     fit_calib_bin = Path(args.fit_calib_bin).resolve()
     tsc_fit_bin = Path(args.tsc_fit_bin).resolve()
@@ -205,7 +199,7 @@ def main():
         parser.error(f'ERROR: Negative sleep interval: {sleep_interval}.')
 
     # Ensure that files exists
-    for f in [input_list, f4a_macro, fit_calib_macro, tsc_fit_macro, f4a_bin, default_calib_bin, fit_calib_bin, tsc_fit_bin, condor_script]:
+    for f in [input_list, f4a_macro, fit_calib_macro, tsc_fit_macro, default_calib_bin, fit_calib_bin, tsc_fit_bin, condor_script]:
         if not f.is_file():
             parser.error(f'File: {f} does not exist!')
 
@@ -235,7 +229,6 @@ def main():
     logger.info(f'Fun4All Macro: {f4a_macro}')
     logger.info(f'Fit Calib Macro: {fit_calib_macro}')
     logger.info(f'TSC Fit Macro: {tsc_fit_macro}')
-    logger.info(f'Fun4All Bin: {f4a_bin}')
     logger.info(f'Default Calib Bin: {default_calib_bin}')
     logger.info(f'Fit Calib Bin: {fit_calib_bin}')
     logger.info(f'TSC Fit Bin: {tsc_fit_bin}')
@@ -269,7 +262,7 @@ def main():
             shutil.copy(prev_iter_dir / 'local_calib_copy.root', iter_dir)
 
         shutil.copy(condor_script, iter_dir)
-        shutil.copy(f4a_macro, iter_dir)
+        f4a_macro = shutil.copy(f4a_macro, iter_dir)
         shutil.copy(input_list, iter_dir)
 
         if it <= 3:
@@ -278,7 +271,7 @@ def main():
             shutil.copy(fit_calib_macro, iter_dir)
 
         submit_file_content = textwrap.dedent(f"""\
-            arguments      = {f4a_bin} 0 $(input_dst) {it} {iter_dir}/local_calib_copy.root {calib_field} {iter_dir}/output
+            arguments      = {f4a_macro} 0 $(input_dst) {it} {iter_dir}/local_calib_copy.root {calib_field} {iter_dir}/output
             executable     = {os.path.basename(condor_script)}
             log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
             output         = stdout/job-$(ClusterId)-$(Process).out

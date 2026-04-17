@@ -17,8 +17,11 @@ void doFitAndCalibUpdate(const std::string &hist_fname = "base/combine_out/out2.
 {
   std::string m_fieldname = fieldname;
 
-  std::unique_ptr<pi0EtaByEta> caFit = std::make_unique<pi0EtaByEta>("calomodulename", "bla.root");
-  caFit->set_massTargetHistFile("/sphenix/user/egm2153/calib_study/emcal_calib_year1/hijing_run14_fb_wupdatedsmear/hijing_run14_uncorr_cls_mass_towerThreshold070MeV.root");  // HIJING RUN14 w/ updated smearing pi0 mass w/ 70MeV cluster tower threshold
+  std::unique_ptr<pi0EtaByEta> caFit = std::make_unique<pi0EtaByEta>();
+  // Blair's new MC Target Mass
+  caFit->set_massTargetHistFile("/direct/sphenix+u/anarde/Documents/sPHENIX/analysis-EMCal-Calibration/EMCal-Calibration-Study/files/target-mass-MC/massTarget.root");
+
+  // caFit->set_massTargetHistFile("/sphenix/user/egm2153/calib_study/emcal_calib_year1/hijing_run14_fb_wupdatedsmear/hijing_run14_uncorr_cls_mass_towerThreshold070MeV.root");  // HIJING RUN14 w/ updated smearing pi0 mass w/ 70MeV cluster tower threshold
   // caFit->set_massTargetHistFile("/sphenix/user/egm2153/calib_study/emcal_calib_year1/hijing_run14_fixed_build/hijing_run14_uncorr_cls_mass_towerThreshold070MeV.root"); // HIJING RUN14 pi0 mass w/ 70MeV cluster tower threshold
   // caFit->set_massTargetHistFile("/sphenix/u/bseidlitz/work/macros/calibrations/calo/emcal_calib_year1/run10_uncorr_cls_mass.root");// HIJING pi0 mass  w/ 30MeV
   // caFit->set_massTargetHistFile("/sphenix/u/bseidlitz/work/macros/calibrations/calo/emcal_calib_year1/run10_uncorr_cls_mass_towerThreshold0p06.root");// HIJING pi0 mass

@@ -54,6 +54,7 @@ class GenDefaultCalib
   std::map<std::string, int> m_ctr;
 
   std::string m_fieldname = "CEMC_calib_ADC_to_ETower";
+  // float m_calib_default = 0.0012f; // [GeV/ADC], run2pp
   float m_calib_default = 0.003f; // [GeV/ADC]
 
   // --- Private Helper Methods ---
