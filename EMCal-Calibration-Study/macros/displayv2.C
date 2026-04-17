@@ -69,19 +69,23 @@ class Displayv2
 
   // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower_2025_initial_v3.root"};
   // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-54912-raw.root"};
-  const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
-  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218-raw.root"};
+  // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
+  // const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218-raw.root"};
+  const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_2025p003_v005-66580.root"};
+  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-68144.root"};
   const std::string m_fieldname{"CEMC_calib_ADC_to_ETower"};
 
-  // const std::string m_hist_default{"output/QA/test-2025.root"};
+  const std::string m_hist_default{"output/QA/test-2025.root"};
   // const std::string m_hist_default{"output/QA/test-54912.root"};
-  const std::string m_hist_default{"output/QA/test-73839.root"};
-  const std::string m_hist_new{"output/QA/test-78218.root"};
+  // const std::string m_hist_default{"output/QA/test-73839.root"};
+  // const std::string m_hist_new{"output/QA/test-78218.root"};
+  const std::string m_hist_new{"output/QA/test-68144.root"};
 
-  // const std::string m_fitout_default{"output/QA/fitout-66580.root"};
+  const std::string m_fitout_default{"output/QA/fitout-66580.root"};
   // const std::string m_fitout_default{"output/QA/fitout-54912.root"};
-  const std::string m_fitout_default{"output/QA/fitout-73839.root"};
-  const std::string m_fitout_new{"output/QA/fitout-78218.root"};
+  // const std::string m_fitout_default{"output/QA/fitout-73839.root"};
+  // const std::string m_fitout_new{"output/QA/fitout-78218.root"};
+  const std::string m_fitout_new{"output/QA/fitout-68144.root"};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -322,6 +326,8 @@ void Displayv2::draw()
 
   m_hists["hCalib_ratio"]->GetYaxis()->SetTitleSize(0.06f);
   m_hists["hCalib_ratio"]->GetYaxis()->SetTitleOffset(0.8f);
+  double ymax = m_hists["hCalib_ratio"]->GetMaximum()*2;
+  m_hists["hCalib_ratio"]->GetYaxis()->SetRangeUser(5e-1, ymax);
 
   c1->Print(output.c_str(), "pdf portrait");
   c1->Print(std::format("{}/images/{}.png", m_output_dir, "hCalib-ratio").c_str());
@@ -407,7 +413,7 @@ void Displayv2::draw()
   m_hists["hPeak_default"]->GetYaxis()->SetTitle("m_{#gamma#gamma} [GeV]");
   m_hists["hPeak_default"]->GetYaxis()->SetTitleSize(0.06f);
   m_hists["hPeak_default"]->GetYaxis()->SetTitleOffset(1.f);
-  m_hists["hPeak_default"]->GetYaxis()->SetRangeUser(0.144, 0.156);
+  m_hists["hPeak_default"]->GetYaxis()->SetRangeUser(0.13, 0.156);
 
   m_hists["hPeak_default"]->GetXaxis()->SetTitle("Tower Index #eta");
 
@@ -417,8 +423,8 @@ void Displayv2::draw()
   leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .85 + yshift);
   leg->SetFillStyle(0);
   leg->SetTextSize(0.06f);
-  leg->AddEntry(m_hists["hPeak_default"].get(), "Default", "l");
-  leg->AddEntry(m_hists["hPeak_new"].get(), "New", "l");
+  leg->AddEntry(m_hists["hPeak_default"].get(), "Default", "pe");
+  leg->AddEntry(m_hists["hPeak_new"].get(), "New", "pe");
   leg->Draw("same");
 
   c1->Print(output.c_str(), "pdf portrait");
