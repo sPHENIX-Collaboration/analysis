@@ -185,7 +185,7 @@ void Fun4All_EMCal(int nevents = 1e2,
 void createLocalEMCalCalibFile(const std::string &fname, int runNumber)
 {
   std::string default_time_independent_calib = (runNumber >= RunnumberRange::RUN3AUAU_FIRST) ? "CEMC_calib_ADC_to_ETower_default" : "cemc_pi0_twrSlope_v1_default";
-  std::string m_calibName = "getdefault";
+  std::string m_calibName = "CEMC_calib_ADC_to_ETower";
 
   std::string calibdir = CDBInterface::instance()->getUrl(m_calibName);
   std::string filePath;
