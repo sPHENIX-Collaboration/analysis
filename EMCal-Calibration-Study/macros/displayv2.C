@@ -71,21 +71,31 @@ class Displayv2
   // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-54912-raw.root"};
   // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839-raw.root"};
   // const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218-raw.root"};
-  const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_2025p003_v005-66580.root"};
-  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-68144.root"};
+  // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_2025p003_v005-66580.root"};
+  // const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839.root"};
+  const std::string m_calib_default{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218.root"};
+  // const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-68144.root"};
+  // const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-73839v2.root"};
+  const std::string m_calib_new{"output/calib/EMCAL_ADC_to_Etower-new_newcdbtag_v008-78218v2.root"};
   const std::string m_fieldname{"CEMC_calib_ADC_to_ETower"};
 
-  const std::string m_hist_default{"output/QA/test-2025.root"};
+  // const std::string m_hist_default{"output/QA/test-2025.root"};
   // const std::string m_hist_default{"output/QA/test-54912.root"};
   // const std::string m_hist_default{"output/QA/test-73839.root"};
+  const std::string m_hist_default{"output/QA/test-78218.root"};
   // const std::string m_hist_new{"output/QA/test-78218.root"};
-  const std::string m_hist_new{"output/QA/test-68144.root"};
+  // const std::string m_hist_new{"output/QA/test-68144.root"};
+  // const std::string m_hist_new{"output/QA/test-73839v2.root"};
+  const std::string m_hist_new{"output/QA/test-78218v2.root"};
 
-  const std::string m_fitout_default{"output/QA/fitout-66580.root"};
+  // const std::string m_fitout_default{"output/QA/fitout-66580.root"};
   // const std::string m_fitout_default{"output/QA/fitout-54912.root"};
   // const std::string m_fitout_default{"output/QA/fitout-73839.root"};
+  const std::string m_fitout_default{"output/QA/fitout-78218.root"};
   // const std::string m_fitout_new{"output/QA/fitout-78218.root"};
-  const std::string m_fitout_new{"output/QA/fitout-68144.root"};
+  // const std::string m_fitout_new{"output/QA/fitout-68144.root"};
+  // const std::string m_fitout_new{"output/QA/fitout-73839v2.root"};
+  const std::string m_fitout_new{"output/QA/fitout-78218v2.root"};
 
   // --- Private Helper Methods ---
   void read_hists();
@@ -179,7 +189,7 @@ void Displayv2::read_calib()
   m_hists["hCalib_corr"] = std::make_unique<TH2F>("hCalib_corr", title.c_str(), 100, 0, 10, 100, 0, 10);
 
   title = "EMCal Calibration Ratio [New/Default]; New / Default; Counts";
-  m_hists["hCalib_ratio"] = std::make_unique<TH1F>("hCalib_ratio", title.c_str(), 50, 0, 2.5);
+  m_hists["hCalib_ratio"] = std::make_unique<TH1F>("hCalib_ratio", title.c_str(), 50, 0, 2);
 
   title = "EMCal Calibration; Calibration [MeV/ADC]; Counts";
   m_hists["hCalib_default"] = std::make_unique<TH1F>("hCalib_default", title.c_str(), 100, 0, 10);
@@ -268,6 +278,7 @@ void Displayv2::draw()
       m_hists["h2DummyIB"]->Draw("TEXT MIN0 same");
 
       hist->SetMaximum(5);
+      hist->SetMinimum(1);
 
       c1->Print(output.c_str(), "pdf portrait");
       c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
