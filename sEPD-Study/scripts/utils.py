@@ -1374,8 +1374,8 @@ data = subparser.add_parser('data', help='Update file lists.')
 
 data.add_argument('-t'
                     , '--tag', type=str
-                    , default='new_newcdbtag_v008'
-                    , help='Tag. Default: new_newcdbtag_v008')
+                    , default='pro001_pcdb001_v001'
+                    , help='Tag. Default: pro001_pcdb001_v001')
 
 data.add_argument('-o'
                     , '--output-dir', type=str
@@ -1439,6 +1439,42 @@ def sort_files_by_lines(directory_path: Path, output_file: Path) -> None:
     # 4. Use write_text to save everything at once
     output_file.write_text(output_content)
 
+def combine_file_lists(src_dir: Path, dst_dir: Path, logger):
+    # # 1. Initialize Path objects
+    # src_dir = Path(src_path)
+    # dst_dir = Path(dst_path)
+
+    # Create destination directory if it doesn't exist
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # 2. Find all 'calofitting' files
+    for calo_path in src_dir.glob("dst_calofitting-*.list"):
+
+        # Extract the run number (e.g., '00068144')
+        # calo_path.stem gives the filename without extension
+        run_num = calo_path.stem.split('-')[-1]
+
+        # Construct the matching ZDC file path
+        zdc_path = src_dir / f"dst_zdc_raw-{run_num}.list"
+
+        # 3. Process the files if the pair exists
+        if zdc_path.exists():
+            output_path = dst_dir / f"dst_calofitting_zdc-{run_num}.list"
+
+            # Open all three files using context managers
+            with calo_path.open('r') as f_calo, \
+                 zdc_path.open('r') as f_zdc, \
+                 output_path.open('w') as f_out:
+
+                # zip() stops as soon as the shortest file ends.
+                # Use itertools.zip_longest if you need to keep lines from longer files.
+                for line_a, line_b in zip(f_calo, f_zdc):
+                    # .strip() removes existing newlines to avoid extra spacing
+                    combined_line = f"{line_a.strip()},{line_b.strip()}\n"
+                    f_out.write(combined_line)
+        else:
+            logger.warning(f"Warning: No ZDC file found for run {run_num}")
+
 def setup_data():
     """
     Setup input data lists
@@ -1483,24 +1519,31 @@ def setup_data():
     logger.info(f'Runs: Before: {current_runs}, After: {new_runs}, Change: {diff_runs_frac:.2f} %')
     logger.info(f'Path: {run3auau_time_min_5}')
 
-    # Generate list of DST_CALOFITTING from the above run list
+    # Generate list of DST_CALOFITTING and DST_ZDC_RAW from the above run list
     dst_dir = output_dir / f'run3auau-{tag}'
+    dst_dir_merged = output_dir / f'run3auau-merged-{tag}'
 
-    if dst_dir.is_dir():
+    current_segments = 0
+    if dst_dir_merged.is_dir():
         try:
-            current_segments = count_total_lines(dst_dir)
+            current_segments = count_total_lines(dst_dir_merged)
+            shutil.rmtree(dst_dir_merged)
             shutil.rmtree(dst_dir)
-            logger.info(f"Directory '{dst_dir}' successfully deleted.")
+            logger.info(f"Directory '{dst_dir_merged}' successfully deleted.")
         except OSError as e:
-            logger.critical(f"Error: {dst_dir} : {e.strerror}")
+            logger.critical(f"Error: {dst_dir_merged} : {e.strerror}")
             sys.exit()
 
     dst_dir.mkdir(parents=True, exist_ok=True)
+    dst_dir_merged.mkdir(parents=True, exist_ok=True)
 
-    command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING'
+    command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING DST_ZDC_RAW'
     run_command_and_log(command, logger, dst_dir)
 
-    new_segments = count_total_lines(dst_dir)
+    # Merge the separate DST_CALOFITTING and DST_ZDC_RAW into one file per run
+    combine_file_lists(dst_dir, dst_dir_merged, logger)
+
+    new_segments = count_total_lines(dst_dir_merged)
     diff_segments_frac = (new_segments-current_segments)*100/current_segments if current_segments != 0 else 0
     logger.info(f'Total Segments: Before: {current_segments}, After: {new_segments}, Change: {diff_segments_frac:.2f} %')
 
@@ -1509,7 +1552,7 @@ def setup_data():
 
     current_runs_dsts = get_line_count(run3auau_dsts_time_min_5)
 
-    command = f'ls run3auau-{tag} | cut -d- -f2 | cut -d. -f1 | awk \'{{x=$0+0;print x}}\' | sort | uniq > run3auau-{tag}-time-min-5.list'
+    command = f'ls run3auau-merged-{tag} | cut -d- -f2 | cut -d. -f1 | awk \'{{x=$0+0;print x}}\' | sort | uniq > run3auau-{tag}-time-min-5.list'
     run_command_and_log(command, logger, output_dir, False)
 
     new_runs_dsts = get_line_count(run3auau_dsts_time_min_5)
@@ -1518,7 +1561,7 @@ def setup_data():
     logger.info(f'Runs: Before: {current_runs_dsts}, After: {new_runs_dsts}, Change: {diff_runs_frac:.2f} %')
     logger.info(f'Path: {run3auau_dsts_time_min_5}')
 
-    sort_files_by_lines(dst_dir, output_dir / f'run3auau-{tag}.list')
+    sort_files_by_lines(dst_dir_merged, output_dir / f'run3auau-{tag}.list')
 
     command = f'sed -E \'s/.*-0*([1-9][0-9]*)\\.list$/\\1/\' run3auau-{tag}.list > runs.list'
     run_command_and_log(command, logger, output_dir, False)
