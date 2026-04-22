@@ -1014,8 +1014,8 @@ jetAna.add_argument('-j'
 
 jetAna.add_argument('-j2'
                     , '--jet-eta-max', type=float
-                    , default=0.9
-                    , help='Maximum Jet eta. Default: 0.9')
+                    , default=0.8
+                    , help='Maximum Jet eta. Default: 0.8')
 
 jetAna.add_argument('-f'
                     , '--jetAna-macro', type=str

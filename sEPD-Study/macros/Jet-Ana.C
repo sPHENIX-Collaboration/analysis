@@ -306,7 +306,7 @@ class JetAnalysis
 
   // Jet Cuts
   double m_jet_pt_min{7}; /*GeV*/
-  double m_jet_eta_max{0.9};
+  double m_jet_eta_max{0.8};
 
   // Calo V2 Cuts
   float m_calo_v2_max{0.48F};
@@ -1631,7 +1631,7 @@ int main(int argc, const char* const argv[])
   unsigned int runnumber = static_cast<unsigned int>(std::atoi(argv[ctr++]));
   long long events = (argc >= ctr+1) ? std::atoll(argv[ctr++]) : 0;
   double jet_pt_min = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 7;
-  double jet_eta_max = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 0.9;
+  double jet_eta_max = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 0.8;
   std::string output_dir = (argc >= ctr+1) ? argv[ctr++] : ".";
 
   std::cout << std::format("{:#<20}\n", "");
