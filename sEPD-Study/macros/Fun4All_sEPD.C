@@ -43,7 +43,8 @@
 
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
-void Fun4All_sEPD(const std::string &fname,
+void Fun4All_sEPD(const std::string &flist_dst_calofit,
+                  const std::string &flist_dst_zdc,
                   const std::string &input_QVecCalib="none",
                   const std::string &output = "test.root",
                   const std::string &output_tree = "tree.root",
@@ -56,7 +57,7 @@ void Fun4All_sEPD(const std::string &fname,
 
   // Extract runnumber from first file within list
   std::ifstream infile_stream;
-  infile_stream.open(fname, std::ios_base::in);
+  infile_stream.open(flist_dst_calofit, std::ios_base::in);
   std::string filepath;
   getline(infile_stream, filepath);
   std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
@@ -65,7 +66,8 @@ void Fun4All_sEPD(const std::string &fname,
 
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
-  std::cout << "input: " << fname << std::endl;
+  std::cout << "input calofit: " << flist_dst_calofit << std::endl;
+  std::cout << "input zdc: " << flist_dst_zdc << std::endl;
   std::cout << "Run: " << runnumber << std::endl;
   std::cout << "QVec Calib: " << input_QVecCalib << std::endl;
   std::cout << "output: " << output << std::endl;
@@ -97,6 +99,9 @@ void Fun4All_sEPD(const std::string &fname,
   evtSkip->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(evtSkip);
 
+  // Calibrate Towers
+  Process_Calo_Calib();
+
   // MBD Reconstruction
   MbdReco* mbdreco = new MbdReco();
   se->registerSubsystem(mbdreco);
@@ -127,9 +132,6 @@ void Fun4All_sEPD(const std::string &fname,
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent);
 
-  // Calibrate Towers
-  Process_Calo_Calib();
-
   // Event Plane
   EventPlaneReco* epreco = new EventPlaneReco();
   epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
@@ -150,9 +152,13 @@ void Fun4All_sEPD(const std::string &fname,
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(sepd_validation);
 
-  Fun4AllInputManager* In = new Fun4AllDstInputManager("in");
-  In->AddListFile(fname);
+  Fun4AllInputManager* In = new Fun4AllDstInputManager("calofitting");
+  In->AddListFile(flist_dst_calofit);
   se->registerInputManager(In);
+
+  Fun4AllInputManager* In2 = new Fun4AllDstInputManager("zdc");
+  In2->AddListFile(flist_dst_zdc);
+  se->registerInputManager(In2);
 
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->run(nEvents+nSkip);
@@ -171,10 +177,11 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 2 || args.size() > 10)
+  if (args.size() < 3 || args.size() > 11)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_list> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag] [condor_mode]" << std::endl;
-    std::cerr << "  input_DST: path to the input list file" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST> <input_ZDC> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag] [condor_mode]" << std::endl;
+    std::cerr << "  input_DST: path to the input calo fitting list" << std::endl;
+    std::cerr << "  input_ZDC: path to the input ZDC list" << std::endl;
     std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
@@ -188,6 +195,7 @@ int main(int argc, const char* const argv[])
   }
 
   const std::string& input_dst= args[1];
+  const std::string& input_zdc= args[2];
   std::string input_QVecCalib = "none";
   std::string output = "test.root";
   std::string output_tree = "tree.root";
@@ -197,7 +205,7 @@ int main(int argc, const char* const argv[])
   std::string dbtag = "newcdbtag";
   bool condor_mode = false;
 
-  unsigned int ctr = 2;
+  unsigned int ctr = 3;
 
   if (args.size() >= ctr+1)
   {
@@ -232,7 +240,7 @@ int main(int argc, const char* const argv[])
     condor_mode = std::stoi(args[ctr++]);
   }
 
-  Fun4All_sEPD(input_dst, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag, condor_mode);
+  Fun4All_sEPD(input_dst, input_zdc, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag, condor_mode);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

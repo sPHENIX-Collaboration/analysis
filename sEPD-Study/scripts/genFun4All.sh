@@ -25,10 +25,12 @@ calib_file=$(basename "$input_calib")
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
-    getinputfiles.pl --filelist $input
+    cut -d ',' -f 1 "$input" > dst_calofit.list
+    cut -d ',' -f 2 "$input" > dst_zdc.list
+    getinputfiles.pl --verbose --filelist dst_calofit.list
+    getinputfiles.pl --verbose --filelist dst_zdc.list
     test -e "$input_calib" && cp -v "$input_calib" .
     ls -lah
-    ls DST*.root > test.list
 else
     echo "condor scratch NOT set" >&2
     exit 1
@@ -39,7 +41,7 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
-root -b -l -q "$f4a_macro(\"test.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\", 1)"
+root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\", 1)"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
