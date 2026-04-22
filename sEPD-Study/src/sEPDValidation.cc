@@ -670,10 +670,17 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   double total_EMCal = m_data.event_EMCal_Energy;
   double total_IHCal = m_data.event_IHCal_Energy;
   double total_OHCal = m_data.event_OHCal_Energy;
+  double total_energy = total_EMCal + total_IHCal + total_OHCal;
 
   // Get the median tower energy
-  m_data.event_tower_median_Energy = mf.findMedian();
-  m_data.event_EMCal_tower_median_Energy = mf_EMCal.findMedian();
+  if (total_energy)
+  {
+    m_data.event_tower_median_Energy = mf.findMedian();
+  }
+  if (total_EMCal)
+  {
+    m_data.event_EMCal_tower_median_Energy = mf_EMCal.findMedian();
+  }
 
   dynamic_cast<TH2 *>(m_hists["h2EMCal_MBD"].get())->Fill(total_EMCal, total_MBD);
   dynamic_cast<TH2 *>(m_hists["h2EMCal_sEPD"].get())->Fill(total_EMCal, total_sEPD);
