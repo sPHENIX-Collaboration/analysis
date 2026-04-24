@@ -61,6 +61,9 @@ namespace HIJETS
   // do_flow = 3 --psi2 derived from sEPD
   int do_flow = 0;
 
+  ///! sets event plane node name
+  std::string eventplane_node = "EventplaneinfoMap";
+
   ///! do constituent subtraction
   bool do_CS = false;
 
@@ -234,6 +237,7 @@ void MakeHITowerJets()
   // dtb->set_towerinfo(true);
   dtb->Verbosity(verbosity);
   dtb->set_towerNodePrefix(HIJETS::tower_prefix);
+  dtb->set_EventPlaneInfoNodeName(HIJETS::eventplane_node);
   se->registerSubsystem(dtb);
 
   CopyAndSubtractJets *casj = new CopyAndSubtractJets();
@@ -251,6 +255,7 @@ void MakeHITowerJets()
   dtb2->Verbosity(verbosity);
   // dtb2->set_towerinfo(true);
   dtb2->set_towerNodePrefix(HIJETS::tower_prefix);
+  dtb2->set_EventPlaneInfoNodeName(HIJETS::eventplane_node);
   se->registerSubsystem(dtb2);
 
   SubtractTowers *st = new SubtractTowers();
