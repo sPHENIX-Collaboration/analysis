@@ -278,7 +278,7 @@ void MakeHITowerJets()
   towerjetreco->add_input(incemc);
   towerjetreco->add_input(inihcal);
   towerjetreco->add_input(inohcal);
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Tower_r02_Sub1");
+  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Tower_r02_Sub1");
   towerjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Tower_r03_Sub1");
   // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Tower_r04_Sub1");
   // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Tower_r05_Sub1");
