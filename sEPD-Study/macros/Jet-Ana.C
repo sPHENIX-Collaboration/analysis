@@ -127,8 +127,11 @@ class JetAnalysis
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
   // Min Jet pT [GeV]
-  static constexpr std::array<int, 5> m_jet_pt_vec = {7, 10, 15, 20, 100};
+  static constexpr std::array<int, 8> m_jet_pt_vec = {7, 10, 15, 20, 25, 35, 45, 100};
 
+  //centrality bins
+  static constexpr std::array<int, 7> m_cent_bins = {0, 10, 20, 30, 40, 50, 60};
+  
   struct AnalysisHists
   {
     TH1* hEvent{nullptr};
@@ -248,6 +251,17 @@ class JetAnalysis
     std::array<TProfile*, m_harmonics.size()> NS_xx_corr_avg{nullptr};
     std::array<TProfile*, m_harmonics.size()> NS_yy_corr_avg{nullptr};
     std::array<TProfile*, m_harmonics.size()> NS_xy_corr_avg{nullptr};
+
+    //histograms in centrality bins
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptptresp{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_dphiptresp{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptrecopttrue{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_SPrecoSPtrue{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_bigresp{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_reco{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_match{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_true{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_miss{nullptr};
   };
 
   AnalysisHists m_hists;
@@ -269,7 +283,7 @@ class JetAnalysis
     double event_OHCal_Energy{0};
     double event_tower_median_Energy{0};
     double event_EMCal_tower_median_Energy{0};
-    double calo_v2{0.0};
+    float calo_v2{0.0};
     float calo_v2_it1{0.0};
     float UE_sum_E{0.0};
     int nHIRecoSeedsSub{0};
@@ -313,6 +327,7 @@ class JetAnalysis
 
     double Q_NS_x;
     double Q_NS_y;
+    double psi2;
   };
 
   // --- Member Variables ---
@@ -369,6 +384,7 @@ class JetAnalysis
   void compute_SP_resolution();
   void compute_SP();
   std::vector<JetInfo> process_jets() const;
+  void fill_response() const;
   void process_QVecs();
   bool check_CaloMBD() const;
   bool check_QVec() const;
@@ -437,7 +453,11 @@ void JetAnalysis::setup_chain()
 				"qsx_data_mc",
 				"qsy_data_mc",
 				"qnx_data_mc",
-				"qny_data_mc"};
+				"qny_data_mc",
+				"sepdpsi2_data_mc",
+                                "emcal_energy",
+                                "ihcal_energy",
+                                "ohcal_energy"};
 
   
   // Check Branch Status
@@ -504,6 +524,9 @@ void JetAnalysis::setup_chain()
     {
       m_chain->SetBranchAddress("event", &m_event_data.event_id);
       m_chain->SetBranchAddress("centrality", &m_event_data.event_centrality);
+      m_chain->SetBranchAddress("emcal_energy", &m_event_data.event_EMCal_Energy);
+      m_chain->SetBranchAddress("ihcal_energy", &m_event_data.event_IHCal_Energy);
+      m_chain->SetBranchAddress("ohcal_energy", &m_event_data.event_OHCal_Energy);
       if(m_radius == 2)
 	{
 	  m_chain->SetBranchAddress("max_pt_r02", &m_event_data.max_jet_pt);
@@ -537,7 +560,7 @@ void JetAnalysis::setup_chain()
       m_chain->SetBranchAddress("qsy_data_mc", &m_event_data.Q_S_y);
       m_chain->SetBranchAddress("qnx_data_mc", &m_event_data.Q_N_x);
       m_chain->SetBranchAddress("qny_data_mc", &m_event_data.Q_N_y);
-
+      m_chain->SetBranchAddress("sepdpsi2_data_mc", &m_event_data.psi2);
     }
   std::cout << "Finished... setup_chain" << std::endl;
 }
@@ -571,7 +594,7 @@ void JetAnalysis::process_weights()
     throw std::runtime_error(std::format("Could not open file '{}'", m_input_F4A_QA_file));
   }
 
-  auto* h2JetPhiEta = dynamic_cast<TH2*>(file->Get<TH2>("h2JetPhiEta")->Clone("h2JetPhiEta_f4a"));
+  auto* h2JetPhiEta = dynamic_cast<TH2*>(file->Get<TH2>("h2Jet_PhiEta")->Clone("h2JetPhiEta_f4a"));
   m_hists2D["h2JetPhiEta_f4a"] = std::unique_ptr<TH2>(h2JetPhiEta);
 
   m_hists.h2Weights = dynamic_cast<TH2*>(h2JetPhiEta->Clone("h2Weights"));
@@ -869,7 +892,7 @@ void JetAnalysis::init_hists()
   int bins_pt2 = 93;
   double pt2_low = 7; // GeV
   double pt2_high = 100;
-
+  
   int bins_energy = 1000;
   double energy_low = -500;
   double energy_high = 500;
@@ -914,6 +937,18 @@ void JetAnalysis::init_hists()
   double EMCal_tower_median_energy_low{-10};
   double EMCal_tower_median_energy_high{1000}; // MeV
 
+  unsigned int bins_resp{60};
+  double resp_low{0};
+  double resp_high{1.2};
+
+  unsigned int bins_SPnum{100};
+  double SPnum_low{-1};
+  double SPnum_high{1};
+
+  unsigned int bins_bigresp = bins_SPnum*m_jet_pt_vec.size();
+  double bigresp_low{0};
+  double bigresp_high{static_cast<double>(bins_bigresp)};
+  
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
   m_hists1D["hEvent"] = std::make_unique<TH1F>("hEvent", "Event Type; Type; Events", bins_event, 0, bins_event);
@@ -1203,6 +1238,76 @@ void JetAnalysis::init_hists()
     }
   }
 
+  //hists binned in centrality + response matrices
+  for (unsigned int icent = 0; icent < m_cent_bins.size()-1; ++icent)
+  {
+    std::string hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{true}; Response", m_cent_bins[icent],m_cent_bins[icent+1]);
+    std::string hist_name = Form("h2_ptptresp_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_pt2, pt2_low, pt2_high,
+						  bins_resp, resp_low, resp_high);
+    m_hists.h2_ptptresp[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; |#Psi_{2} - #phi|; Response", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_dphiptresp_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_phi, phi_low, phi_high,
+                                                  bins_resp, resp_low, resp_high);
+    m_hists.h2_dphiptresp[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco}; p_{T}^{true}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_ptrecopttrue_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_pt, pt_low, pt_high,
+						  bins_pt, pt_low, pt_high);
+    m_hists.h2_ptrecopttrue[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; q_{2}^{jet,reco}Q_{2}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_SPrecoSPtrue_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_SPnum, SPnum_low, SPnum_high,
+						  bins_SPnum, SPnum_low, SPnum_high);
+    m_hists.h2_SPrecoSPtrue[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco} X q_{2}^{jet,reco}Q_{2}; p_{T}^{true} X q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_bigresp_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_bigresp, bigresp_low, bigresp_high,
+						  bins_bigresp, bigresp_low, bigresp_high);
+    m_hists.h2_bigresp[icent] = m_hists2D[hist_name.c_str()].get();
+
+
+    //use big pt bins
+    std::vector<double> pt_edges(m_jet_pt_vec.begin(), m_jet_pt_vec.end());
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco}; q_{2}^{jet,reco}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_ptSP_reco_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  bins_SPnum, SPnum_low, SPnum_high);
+    m_hists.h2_ptSP_reco[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{match}; q_{2}^{jet,match}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_ptSP_match_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  bins_SPnum, SPnum_low, SPnum_high);
+    m_hists.h2_ptSP_match[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{true}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_ptSP_true_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  bins_SPnum, SPnum_low, SPnum_high);
+    m_hists.h2_ptSP_true[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{true}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_ptSP_miss_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  bins_SPnum, SPnum_low, SPnum_high);
+    m_hists.h2_ptSP_miss[icent] = m_hists2D[hist_name.c_str()].get();
+  }
+  
   // Enable Sumw2
   auto enable = [](auto&... maps)
   {
@@ -1300,6 +1405,17 @@ void JetAnalysis::compute_SP()
           break;
         }
       }
+      // Loop over each cent bin
+      for (size_t cent_idx = 0; cent_idx < m_cent_bins.size()-1; ++cent_idx)
+      {
+        int cent_low = m_cent_bins[cent_idx];
+        int cent_high = m_cent_bins[cent_idx+1];
+	if (cent >= cent_low && cent < cent_high)
+        {
+	  m_hists.h2_ptSP_reco[cent_idx]->Fill(pt,scalar_product,weight*eventweight);
+	  break;
+        }
+      }
     }
   }
 }
@@ -1383,6 +1499,116 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   }
 
   return jet_info;
+}
+
+void JetAnalysis::fill_response() const
+{
+  size_t nJets = m_event_data.truthjet_phi->size();
+  size_t nRecoJets = m_event_data.jet_phi->size();
+  double eventweight = get_event_weight();
+  double cent = m_event_data.event_centrality;
+  size_t centbin;
+  for (size_t cent_idx = 0; cent_idx < m_cent_bins.size()-1; ++cent_idx)
+  {
+    int cent_low = m_cent_bins[cent_idx];
+    int cent_high = m_cent_bins[cent_idx+1];
+    if (cent >= cent_low && cent < cent_high)
+    {
+      centbin = cent_idx;
+      break;
+    }
+  }
+  
+  //loop over truth jets
+  for (size_t it = 0; it < nJets; ++it)
+  {
+    double tpt = m_event_data.truthjet_pt->at(it);
+    double tphi = m_event_data.truthjet_phi->at(it);
+    double teta = m_event_data.truthjet_eta->at(it);
+
+    //compute truth SP
+    // Correlate jets with opposite sEPD arm
+    size_t arm = (teta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
+
+    //im only using v2 at the moment but compute them all for fun
+    double truthSP;
+    for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+    {
+      int n = m_harmonics[n_idx];
+      QVec jet_Q = {std::cos(n * tphi), std::sin(n * tphi)};
+      QVec sEPD_Q = m_event_data.q_vectors[n_idx][arm];
+
+      double scalar_product = jet_Q.x * sEPD_Q.x + jet_Q.y * sEPD_Q.y;
+      if(n == 2) truthSP = scalar_product;
+    }
+    m_hists.h2_ptSP_true[centbin]->Fill(tpt,truthSP,eventweight);
+
+    //also get truth angle wrt psi2
+    double dphi = tphi-m_event_data.psi2;
+    while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
+    while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
+
+    double matchEta, matchPhi, matchPt, dR;
+    double dRMax = 100;    
+
+    for (size_t ir = 0; ir < nRecoJets; ++ir)
+    {
+      double energy = m_event_data.jet_energy->at(ir);
+      double pt = m_event_data.jet_pt->at(ir);
+      double phi = m_event_data.jet_phi->at(ir);
+      double eta = m_event_data.jet_eta->at(ir);
+      
+      if (pt < m_jet_pt_min || std::abs(eta) >= m_jet_eta_max || energy < 0)
+      {
+	continue;
+      }
+      double dEta = teta - eta;
+      double dPhi = tphi - phi;
+      while(dPhi > std::numbers::pi) dPhi -= 2*std::numbers::pi;
+      while(dPhi < -std::numbers::pi) dPhi += 2*std::numbers::pi;
+      dR = TMath::Sqrt(dEta*dEta + dPhi*dPhi);
+      if(dR < dRMax){
+	matchEta = eta;
+	matchPhi = phi;
+	matchPt = pt;
+	dRMax = dR;
+      }
+
+    }
+    if(dRMax > 0.75*m_radius/10)
+    {
+      m_hists.h2_ptSP_miss[centbin]->Fill(tpt,truthSP,eventweight);
+      continue;
+    }
+
+    //get matched SP
+    arm = (matchEta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
+    double recoSP;
+    for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
+    {
+      int n = m_harmonics[n_idx];
+      QVec jet_Q = {std::cos(n * matchPhi), std::sin(n * matchPhi)};
+      QVec sEPD_Q = m_event_data.q_vectors[n_idx][arm];
+
+      double scalar_product = jet_Q.x * sEPD_Q.x + jet_Q.y * sEPD_Q.y;
+      if(n == 2) recoSP = scalar_product;
+    }
+    
+    //fill response histograms
+    m_hists.h2_ptptresp[centbin]->Fill(tpt,matchPt/tpt,eventweight);
+    m_hists.h2_dphiptresp[centbin]->Fill(dphi,matchPt/tpt);
+    m_hists.h2_ptrecopttrue[centbin]->Fill(matchPt,tpt,eventweight);
+    m_hists.h2_SPrecoSPtrue[centbin]->Fill(recoSP,truthSP,eventweight);
+    m_hists.h2_ptSP_match[centbin]->Fill(matchPt,recoSP,eventweight);
+
+    int SPbintrue = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(truthSP);
+    int	SPbin = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(recoSP);
+    int	ptbintrue = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(tpt);
+    int ptbin = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(matchPt);
+    int pt_N = m_hists.h2_ptSP_match[centbin]->GetNbinsX();
+    m_hists.h2_bigresp[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
+  }
+  return;
 }
 
 void JetAnalysis::process_QVecs()
@@ -1656,7 +1882,7 @@ void JetAnalysis::process_events()
 
     // Ensure good correlation between Calo and MBD
     bool isGood = check_CaloMBD();
-    if (m_isData && !isGood)
+    if (!isGood)
     {
       ++ctr["events_skipped_calo_mbd"];
       continue;
@@ -1694,6 +1920,9 @@ void JetAnalysis::process_events()
 
     // Scalar Product Method
     compute_SP();
+
+    //fill response matrix
+    if(!m_isData) fill_response();
   }
 
   int jets = static_cast<int>(m_hists.h2JetPhiEta->GetEntries());
