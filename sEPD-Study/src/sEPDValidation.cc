@@ -744,10 +744,11 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
   if((Q_S_2.first == 0 && Q_S_2.second == 0) || (Q_N_2.first == 0 && Q_N_2.second == 0))
   {
     ++m_ctr["process_EventPlane_QVec_invalid"];
-    return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::QVEC));
+  else
+  {
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::QVEC));
+  }
 
   double _2psi2_raw_S = 2*epd_S->GetPsi(Q_S_2_raw.first, Q_S_2_raw.second, 2);
   double _2psi2_raw_N = 2*epd_N->GetPsi(Q_N_2_raw.first, Q_N_2_raw.second, 2);
@@ -1132,6 +1133,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
   std::cout << std::format("process event, is_flow_failure: {} (not aborted)", m_ctr["event_is_flow_failure"]) << std::endl;
+  std::cout << std::format("process event, bad Q Vec (Q_S = 0 or Q_N = 0): {} (not aborted)", m_ctr["process_EventPlane_QVec_invalid"]) << std::endl;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Event Plane" << std::endl;
