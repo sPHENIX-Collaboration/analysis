@@ -236,8 +236,6 @@ class sEPDValidation : public SubsysReco
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
 
   // Event Vars
-  double m_zvtx{9999};
-  double m_cent{9999};
   double m_mbd_total_charge{9999};
 
   int m_progress_print{1000};
@@ -328,38 +326,37 @@ class sEPDValidation : public SubsysReco
 
   struct EventData
   {
-    int event_id{0};
-    double event_zvertex{9999};
-    double event_centrality{9999};
+    int event{0};
+    double zvtx{9999};
+    double centrality{9999};
     double event_MBD_Charge_South{9999};
     double event_MBD_Charge_North{9999};
     double event_sEPD_Charge_South{9999};
     double event_sEPD_Charge_North{9999};
-    double event_EMCal_Energy{0};
-    double event_IHCal_Energy{0};
-    double event_OHCal_Energy{0};
+    double emcal_energy{0};
+    double ihcal_energy{0};
+    double ohcal_energy{0};
     double event_tower_median_Energy{-9999};
     double event_EMCal_tower_median_Energy{-9999};
-    double max_jet_pt{-9999};
 
     // Q Vectors
-    double Q_S_x_2_raw{0};
-    double Q_S_y_2_raw{0};
-    double Q_N_x_2_raw{0};
-    double Q_N_y_2_raw{0};
+    double qsx_raw{0};
+    double qsy_raw{0};
+    double qnx_raw{0};
+    double qny_raw{0};
 
-    double Q_S_x_2_recentered{0};
-    double Q_S_y_2_recentered{0};
-    double Q_N_x_2_recentered{0};
-    double Q_N_y_2_recentered{0};
+    double qsx_recentered{0};
+    double qsy_recentered{0};
+    double qnx_recentered{0};
+    double qny_recentered{0};
 
-    double Q_S_x_2{0};
-    double Q_S_y_2{0};
-    double Q_N_x_2{0};
-    double Q_N_y_2{0};
+    double qsx{0};
+    double qsy{0};
+    double qnx{0};
+    double qny{0};
 
-    double Q_NS_x_2{0};
-    double Q_NS_y_2{0};
+    double qnsx{0};
+    double qnsy{0};
 
     float UE_sum_E{9999};
     float calo_v2{9999};
@@ -367,10 +364,14 @@ class sEPDValidation : public SubsysReco
     int nStripsCEMC{9999};
     int nHIRecoSeedsSub{0};
     int nHIRecoSeedsSubIt1{0};
-    std::vector<double> jet_pt;
-    std::vector<double> jet_energy;
-    std::vector<double> jet_phi;
-    std::vector<double> jet_eta;
+
+    // jets
+    std::vector<double> pt_r03;
+    std::vector<double> e_r03;
+    std::vector<double> phi_r03;
+    std::vector<double> eta_r03;
+
+    double max_pt_r03{0};
   };
 
   EventData m_data;

@@ -200,35 +200,35 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   // TTree
   m_tree = new TTree("T", "T");
   m_tree->SetDirectory(m_output.get());
-  m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
-  m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
-  m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("event", &m_data.event);
+  m_tree->Branch("zvtx", &m_data.zvtx);
+  m_tree->Branch("centrality", &m_data.centrality);
   m_tree->Branch("event_MBD_Charge_South", &m_data.event_MBD_Charge_South);
   m_tree->Branch("event_MBD_Charge_North", &m_data.event_MBD_Charge_North);
   m_tree->Branch("event_sEPD_Charge_South", &m_data.event_sEPD_Charge_South);
   m_tree->Branch("event_sEPD_Charge_North", &m_data.event_sEPD_Charge_North);
-  m_tree->Branch("event_EMCal_Energy", &m_data.event_EMCal_Energy);
-  m_tree->Branch("event_IHCal_Energy", &m_data.event_IHCal_Energy);
-  m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
+  m_tree->Branch("emcal_energy", &m_data.emcal_energy);
+  m_tree->Branch("ihcal_energy", &m_data.ihcal_energy);
+  m_tree->Branch("ohcal_energy", &m_data.ohcal_energy);
   m_tree->Branch("event_tower_median_Energy", &m_data.event_tower_median_Energy);
   m_tree->Branch("event_EMCal_tower_median_Energy", &m_data.event_EMCal_tower_median_Energy);
 
-  m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
-  m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
-  m_tree->Branch("Q_N_x_2_raw", &m_data.Q_N_x_2_raw);
-  m_tree->Branch("Q_N_y_2_raw", &m_data.Q_N_y_2_raw);
+  m_tree->Branch("qsx_raw", &m_data.qsx_raw);
+  m_tree->Branch("qsy_raw", &m_data.qsy_raw);
+  m_tree->Branch("qnx_raw", &m_data.qnx_raw);
+  m_tree->Branch("qny_raw", &m_data.qny_raw);
 
-  m_tree->Branch("Q_S_x_2_recentered", &m_data.Q_S_x_2_recentered);
-  m_tree->Branch("Q_S_y_2_recentered", &m_data.Q_S_y_2_recentered);
-  m_tree->Branch("Q_N_x_2_recentered", &m_data.Q_N_x_2_recentered);
-  m_tree->Branch("Q_N_y_2_recentered", &m_data.Q_N_y_2_recentered);
+  m_tree->Branch("qsx_recentered", &m_data.qsx_recentered);
+  m_tree->Branch("qsy_recentered", &m_data.qsy_recentered);
+  m_tree->Branch("qnx_recentered", &m_data.qnx_recentered);
+  m_tree->Branch("qny_recentered", &m_data.qny_recentered);
 
-  m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
-  m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
-  m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
-  m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
-  m_tree->Branch("Q_NS_x_2", &m_data.Q_NS_x_2);
-  m_tree->Branch("Q_NS_y_2", &m_data.Q_NS_y_2);
+  m_tree->Branch("qsx", &m_data.qsx);
+  m_tree->Branch("qsy", &m_data.qsy);
+  m_tree->Branch("qnx", &m_data.qnx);
+  m_tree->Branch("qny", &m_data.qny);
+  m_tree->Branch("qnsx", &m_data.qnsx);
+  m_tree->Branch("qnsy", &m_data.qnsy);
 
   m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
@@ -237,11 +237,11 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
-  m_tree->Branch("max_jet_pt", &m_data.max_jet_pt);
-  m_tree->Branch("jet_pt", &m_data.jet_pt);
-  m_tree->Branch("jet_energy", &m_data.jet_energy);
-  m_tree->Branch("jet_phi", &m_data.jet_phi);
-  m_tree->Branch("jet_eta", &m_data.jet_eta);
+  m_tree->Branch("max_pt_r03", &m_data.max_pt_r03);
+  m_tree->Branch("pt_r03", &m_data.pt_r03);
+  m_tree->Branch("e_r03", &m_data.e_r03);
+  m_tree->Branch("phi_r03", &m_data.phi_r03);
+  m_tree->Branch("eta_r03", &m_data.eta_r03);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -252,7 +252,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ALL));
 
   // zvertex
-  m_zvtx = -9999;
+  double zvtx = -9999;
   GlobalVertexMap *vertexmap = getNode<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
   if (!vertexmap)
@@ -263,18 +263,18 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   if (!vertexmap->empty())
   {
     GlobalVertex *vtx = vertexmap->begin()->second;
-    m_zvtx = vtx->get_z();
-    m_data.event_zvertex = m_zvtx;
+    m_data.zvtx = vtx->get_z();
+    zvtx = m_data.zvtx;
 
     m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX));
   }
 
-  m_hists["hVtxZ"]->Fill(m_zvtx);
+  m_hists["hVtxZ"]->Fill(zvtx);
 
-  if (std::abs(m_zvtx) < m_cuts.m_zvtx_max_v2)
+  if (std::abs(zvtx) < m_cuts.m_zvtx_max_v2)
   {
     m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
-    if (std::abs(m_zvtx) < m_cuts.m_zvtx_max)
+    if (std::abs(zvtx) < m_cuts.m_zvtx_max)
     {
       m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
     }
@@ -301,7 +301,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
 
-  if (std::abs(m_zvtx) < m_cuts.m_zvtx_max)
+  if (std::abs(zvtx) < m_cuts.m_zvtx_max)
   {
     if (minbias_bkg_high)
     {
@@ -328,10 +328,10 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hVtxZ_MB"]->Fill(m_zvtx);
+  m_hists["hVtxZ_MB"]->Fill(zvtx);
 
   // skip event if zvtx is too large
-  if (std::abs(m_zvtx) >= m_cuts.m_zvtx_max)
+  if (std::abs(zvtx) >= m_cuts.m_zvtx_max)
   {
     ++m_ctr["process_eventCheck_zvtx_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -351,21 +351,21 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
-  m_data.event_centrality = m_cent;
+  m_data.centrality = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
+  double cent = m_data.centrality;
 
   // skip event if centrality is too peripheral
-  if (!std::isfinite(m_cent) || m_cent >= m_cuts.m_cent_max)
+  if (!std::isfinite(cent) || cent >= m_cuts.m_cent_max)
   {
     ++m_ctr["process_eventCheck_centrality_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hCentrality"]->Fill(m_cent);
+  m_hists["hCentrality"]->Fill(cent);
 
   m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::CENT));
 
-  JetUtils::update_min_max(m_cent, m_logging.m_cent_min, m_logging.m_cent_max);
+  JetUtils::update_min_max(cent, m_logging.m_cent_min, m_logging.m_cent_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -449,7 +449,7 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     JetUtils::update_min_max(charge, m_logging.m_mbd_ch_charge_min, m_logging.m_mbd_ch_charge_max);
   }
 
-  dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_data.centrality);
   dynamic_cast<TH2 *>(m_hists["h2MBD_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north);
 
   JetUtils::update_min_max(m_mbd_total_charge, m_logging.m_mbd_total_charge_min, m_logging.m_mbd_total_charge_max);
@@ -580,7 +580,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
 
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_Total_Charge"].get())->Fill(sepd_total_charge, m_cent);
+  dynamic_cast<TH2 *>(m_hists["h2SEPD_Total_Charge"].get())->Fill(sepd_total_charge, m_data.centrality);
   dynamic_cast<TH2 *>(m_hists["h2SEPD_MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, sepd_total_charge);
 
   // ensure both total charges are nonzero
@@ -619,7 +619,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 
   if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
   {
-    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event_id);
+    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event);
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -640,7 +640,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerCEMC->get_isGood())
     {
       float energy = towerCEMC->get_energy();
-      m_data.event_EMCal_Energy += energy;
+      m_data.emcal_energy += energy;
       mf.addNum(energy);
       mf_EMCal.addNum(energy);
       h2EMCal_Energy->Fill(iphi, ieta, energy);
@@ -650,7 +650,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerIHCal->get_isGood())
     {
       float energy = towerIHCal->get_energy();
-      m_data.event_IHCal_Energy += energy;
+      m_data.ihcal_energy += energy;
       mf.addNum(energy);
       h2IHCal_Energy->Fill(iphi, ieta, energy);
     }
@@ -659,7 +659,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerOHCal->get_isGood())
     {
       float energy = towerOHCal->get_energy();
-      m_data.event_OHCal_Energy += energy;
+      m_data.ohcal_energy += energy;
       mf.addNum(energy);
       h2OHCal_Energy->Fill(iphi, ieta, energy);
     }
@@ -667,9 +667,9 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 
   double total_MBD = m_data.event_MBD_Charge_South + m_data.event_MBD_Charge_North;
   double total_sEPD = m_data.event_sEPD_Charge_South + m_data.event_sEPD_Charge_North;
-  double total_EMCal = m_data.event_EMCal_Energy;
-  double total_IHCal = m_data.event_IHCal_Energy;
-  double total_OHCal = m_data.event_OHCal_Energy;
+  double total_EMCal = m_data.emcal_energy;
+  double total_IHCal = m_data.ihcal_energy;
+  double total_OHCal = m_data.ohcal_energy;
   double total_energy = total_EMCal + total_IHCal + total_OHCal;
 
   // Get the median tower energy
@@ -694,9 +694,9 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
   dynamic_cast<TH2 *>(m_hists["h2EMCal_OHCal"].get())->Fill(total_EMCal, total_OHCal);
   dynamic_cast<TH2 *>(m_hists["h2IHCal_OHCal"].get())->Fill(total_IHCal, total_OHCal);
 
-  JetUtils::update_min_max(m_data.event_EMCal_Energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
-  JetUtils::update_min_max(m_data.event_IHCal_Energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
-  JetUtils::update_min_max(m_data.event_OHCal_Energy, m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
+  JetUtils::update_min_max(m_data.emcal_energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
+  JetUtils::update_min_max(m_data.ihcal_energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
+  JetUtils::update_min_max(m_data.ohcal_energy, m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -755,33 +755,35 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
   double _2psi2_N = 2*epd_N->GetPsi(Q_N_2.first, Q_N_2.second, 2);
   double _2psi2_NS = 2*epd_NS->GetPsi(Q_NS_2.first, Q_NS_2.second, 2);
 
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_S"].get())->Fill(m_cent, _2psi2_raw_S);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_N"].get())->Fill(m_cent, _2psi2_raw_N);
+  double cent = m_data.centrality;
 
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_S"].get())->Fill(m_cent, _2psi2_S);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_N"].get())->Fill(m_cent, _2psi2_N);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_NS"].get())->Fill(m_cent, _2psi2_NS);
+  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_S"].get())->Fill(cent, _2psi2_raw_S);
+  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_N"].get())->Fill(cent, _2psi2_raw_N);
 
-  m_data.Q_S_x_2_raw = Q_S_2_raw.first;
-  m_data.Q_S_y_2_raw = Q_S_2_raw.second;
+  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_S"].get())->Fill(cent, _2psi2_S);
+  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_N"].get())->Fill(cent, _2psi2_N);
+  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_NS"].get())->Fill(cent, _2psi2_NS);
 
-  m_data.Q_N_x_2_raw = Q_N_2_raw.first;
-  m_data.Q_N_y_2_raw = Q_N_2_raw.second;
+  m_data.qsx_raw = Q_S_2_raw.first;
+  m_data.qsy_raw = Q_S_2_raw.second;
 
-  m_data.Q_S_x_2_recentered = Q_S_2_recentered.first;
-  m_data.Q_S_y_2_recentered = Q_S_2_recentered.second;
+  m_data.qnx_raw = Q_N_2_raw.first;
+  m_data.qny_raw = Q_N_2_raw.second;
 
-  m_data.Q_N_x_2_recentered = Q_N_2_recentered.first;
-  m_data.Q_N_y_2_recentered = Q_N_2_recentered.second;
+  m_data.qsx_recentered = Q_S_2_recentered.first;
+  m_data.qsy_recentered = Q_S_2_recentered.second;
 
-  m_data.Q_S_x_2 = Q_S_2.first;
-  m_data.Q_S_y_2 = Q_S_2.second;
+  m_data.qnx_recentered = Q_N_2_recentered.first;
+  m_data.qny_recentered = Q_N_2_recentered.second;
 
-  m_data.Q_N_x_2 = Q_N_2.first;
-  m_data.Q_N_y_2 = Q_N_2.second;
+  m_data.qsx = Q_S_2.first;
+  m_data.qsy = Q_S_2.second;
 
-  m_data.Q_NS_x_2 = Q_NS_2.first;
-  m_data.Q_NS_y_2 = Q_NS_2.second;
+  m_data.qnx = Q_N_2.first;
+  m_data.qny = Q_N_2.second;
+
+  m_data.qnsx = Q_NS_2.first;
+  m_data.qnsy = Q_NS_2.second;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -808,6 +810,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   auto* h2UE_v2_Jet = dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get());
 
   double v2 = m_data.calo_v2;
+  double cent = m_data.centrality;
 
   for (auto* jet : *jets)
   {
@@ -833,16 +836,16 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       JetUtils::update_min_max(eta, m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
       JetUtils::update_min_max(constituents, m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
 
-      m_data.jet_pt.push_back(pt);
-      m_data.jet_energy.push_back(energy);
-      m_data.jet_phi.push_back(phi);
-      m_data.jet_eta.push_back(eta);
+      m_data.pt_r03.push_back(pt);
+      m_data.e_r03.push_back(energy);
+      m_data.phi_r03.push_back(phi);
+      m_data.eta_r03.push_back(eta);
 
       // Ensure positive jet energy
       if (energy > 0)
       {
         h2Jet_pT_Constituents->Fill(pt, constituents);
-        h2Jet_pT_Cent->Fill(m_cent, pt);
+        h2Jet_pT_Cent->Fill(cent, pt);
         h2Jet_pT_Phi->Fill(pt, phi);
         h2Jet_pT_Energy->Fill(pt, energy);
         h2Jet_PhiEta->Fill(phi, eta);
@@ -854,7 +857,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
           hasHighPt = true;
         }
 
-        m_data.max_jet_pt = std::max(m_data.max_jet_pt, pt);
+        m_data.max_pt_r03 = std::max(m_data.max_pt_r03, pt);
         hasJet = true;
         ++n_jets;
       }
@@ -865,17 +868,17 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   {
     m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::JET));
 
-    dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
-    h2Jet_LeadpT_Cent->Fill(m_cent, m_data.max_jet_pt);
+    dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(cent, n_jets);
+    h2Jet_LeadpT_Cent->Fill(cent, m_data.max_pt_r03);
 
-    dynamic_cast<TH2 *>(m_hists["h2UE_v2_LeadJet"].get())->Fill(m_data.calo_v2, m_data.max_jet_pt);
+    dynamic_cast<TH2 *>(m_hists["h2UE_v2_LeadJet"].get())->Fill(m_data.calo_v2, m_data.max_pt_r03);
 
     JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
 
     // Very large jet pT >= 100 GeV
     if (hasHighPt)
     {
-      std::cout << std::format("High pT Jet. Event: {}, pT: {}\n", m_data.event_id, m_data.max_jet_pt);
+      std::cout << std::format("High pT Jet. Event: {}, pT: {}\n", m_data.event, m_data.max_pt_r03);
     }
   }
 
@@ -922,10 +925,10 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Towers"].get())->Fill(nTowers, v2);
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_Strips"].get())->Fill(nStrips, v2);
 
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.event_centrality, v2);
+  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.centrality, v2);
 
   dynamic_cast<TH2 *>(m_hists["h2UE_v2_SumE"].get())->Fill(sum_E, v2);
-  dynamic_cast<TH2 *>(m_hists["h2UE_SumE_Cent"].get())->Fill(m_data.event_centrality, sum_E);
+  dynamic_cast<TH2 *>(m_hists["h2UE_SumE_Cent"].get())->Fill(m_data.centrality, sum_E);
 
   JetUtils::update_min_max(v2, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
   JetUtils::update_min_max(v2_it1, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
@@ -934,7 +937,7 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   // -- LOGGING -- //
   if (Verbosity() > 0 && (nHIRecoSeedsSub || nHIRecoSeedsSubIt1))
   {
-    std::cout << std::format("Event: {}, cent: {}, Seeds It1: {}, Seeds: {}\n", m_data.event_id, m_data.event_centrality, nHIRecoSeedsSubIt1, nHIRecoSeedsSub);
+    std::cout << std::format("Event: {}, cent: {}, Seeds It1: {}, Seeds: {}\n", m_data.event, m_data.centrality, nHIRecoSeedsSubIt1, nHIRecoSeedsSub);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -949,12 +952,11 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  int m_globalEvent = eventInfo->get_EvtSequence();
-  m_data.event_id = m_globalEvent;
+  m_data.event = eventInfo->get_EvtSequence();
 
   if (m_event % m_progress_print == 0)
   {
-    std::cout << "Progress: " << m_event << ", Global: " << m_globalEvent << std::endl;
+    std::cout << "Progress: " << m_event << ", Global: " << m_data.event << std::endl;
   }
   ++m_event;
 
@@ -1018,47 +1020,47 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   ++m_ctr["event_reset"];
 
   // Event
-  m_data.event_id = -1;
-  m_data.event_zvertex = 9999;
-  m_data.event_centrality = 9999;
+  m_data.event = 0;
+  m_data.zvtx = 9999;
+  m_data.centrality = 9999;
   m_data.event_MBD_Charge_South = 9999;
   m_data.event_MBD_Charge_North = 9999;
   m_data.event_sEPD_Charge_South = 9999;
   m_data.event_sEPD_Charge_North = 9999;
 
   // Calo
-  m_data.event_EMCal_Energy = 0;
-  m_data.event_IHCal_Energy = 0;
-  m_data.event_OHCal_Energy = 0;
+  m_data.emcal_energy = 0;
+  m_data.ihcal_energy = 0;
+  m_data.ohcal_energy = 0;
   m_data.event_tower_median_Energy = -9999;
   m_data.event_EMCal_tower_median_Energy = -9999;
 
   // Jets
-  m_data.max_jet_pt = 0;
+  m_data.max_pt_r03 = 0;
 
-  m_data.jet_pt.clear();
-  m_data.jet_energy.clear();
-  m_data.jet_phi.clear();
-  m_data.jet_eta.clear();
+  m_data.pt_r03.clear();
+  m_data.e_r03.clear();
+  m_data.phi_r03.clear();
+  m_data.eta_r03.clear();
 
   // Q Vec
-  m_data.Q_S_x_2_raw = 0;
-  m_data.Q_S_y_2_raw = 0;
-  m_data.Q_N_x_2_raw = 0;
-  m_data.Q_N_y_2_raw = 0;
+  m_data.qsx_raw = 0;
+  m_data.qsy_raw = 0;
+  m_data.qnx_raw = 0;
+  m_data.qny_raw = 0;
 
-  m_data.Q_S_x_2_recentered = 0;
-  m_data.Q_S_y_2_recentered = 0;
-  m_data.Q_N_x_2_recentered = 0;
-  m_data.Q_N_y_2_recentered = 0;
+  m_data.qsx_recentered = 0;
+  m_data.qsy_recentered = 0;
+  m_data.qnx_recentered = 0;
+  m_data.qny_recentered = 0;
 
-  m_data.Q_S_x_2 = 0;
-  m_data.Q_S_y_2 = 0;
-  m_data.Q_N_x_2 = 0;
-  m_data.Q_N_y_2 = 0;
+  m_data.qsx = 0;
+  m_data.qsy = 0;
+  m_data.qnx = 0;
+  m_data.qny = 0;
 
-  m_data.Q_NS_x_2 = 0;
-  m_data.Q_NS_y_2 = 0;
+  m_data.qnsx = 0;
+  m_data.qnsy = 0;
 
   // UE
   m_data.UE_sum_E = 9999;
