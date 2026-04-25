@@ -49,6 +49,7 @@ void Process_Calo_Calib()
   if (!isSim)
   {
     CaloStatusSkimmer *css = new CaloStatusSkimmer("CaloStatusSkimmer");
+    se->Verbosity(1);
     se->registerSubsystem(css);
   }
 
