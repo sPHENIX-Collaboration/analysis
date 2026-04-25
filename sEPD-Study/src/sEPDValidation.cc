@@ -238,7 +238,15 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
+
+  m_tree->Branch("max_pt_r02", &m_data.max_pt_r02);
   m_tree->Branch("max_pt_r03", &m_data.max_pt_r03);
+
+  m_tree->Branch("pt_r02", &m_data.pt_r02);
+  m_tree->Branch("e_r02", &m_data.e_r02);
+  m_tree->Branch("phi_r02", &m_data.phi_r02);
+  m_tree->Branch("eta_r02", &m_data.eta_r02);
+
   m_tree->Branch("pt_r03", &m_data.pt_r03);
   m_tree->Branch("e_r03", &m_data.e_r03);
   m_tree->Branch("phi_r03", &m_data.phi_r03);
@@ -793,8 +801,10 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_jets(PHCompositeNode *topNode)
 {
-  JetContainer *jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
-  if (!jets)
+  JetContainer *jets_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r02);
+  JetContainer *jets_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r03);
+
+  if (!jets_r02 || !jets_r03)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -814,7 +824,8 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   double v2 = m_data.calo_v2;
   double cent = m_data.centrality;
 
-  for (auto* jet : *jets)
+  // R = 0.3
+  for (auto* jet : *jets_r03)
   {
     double pt = jet->get_pt();
     double energy = jet->get_e();
@@ -830,7 +841,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
     int constituents = comp_vec.size();
 
-    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut)
+    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r03)
     {
       JetUtils::update_min_max(pt, m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
       JetUtils::update_min_max(energy, m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
@@ -862,6 +873,34 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
         m_data.max_pt_r03 = std::max(m_data.max_pt_r03, pt);
         hasJet = true;
         ++n_jets;
+      }
+    }
+  }
+
+  // R = 0.2
+  for (auto* jet : *jets_r02)
+  {
+    double pt = jet->get_pt();
+    double energy = jet->get_e();
+    double phi = jet->get_phi();
+    double eta = jet->get_eta();
+
+    // map [-pi,pi] -> [0,2pi]
+    if (phi < 0)
+    {
+      phi += 2.0 * std::numbers::pi;
+    }
+
+    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r02)
+    {
+      m_data.pt_r02.push_back(pt);
+      m_data.e_r02.push_back(energy);
+      m_data.phi_r02.push_back(phi);
+      m_data.eta_r02.push_back(eta);
+
+      if (energy > 0)
+      {
+        m_data.max_pt_r02 = std::max(m_data.max_pt_r02, pt);
       }
     }
   }
@@ -1039,7 +1078,13 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.event_EMCal_tower_median_Energy = -9999;
 
   // Jets
+  m_data.max_pt_r02 = 0;
   m_data.max_pt_r03 = 0;
+
+  m_data.pt_r02.clear();
+  m_data.e_r02.clear();
+  m_data.phi_r02.clear();
+  m_data.eta_r02.clear();
 
   m_data.pt_r03.clear();
   m_data.e_r03.clear();

@@ -367,11 +367,17 @@ class sEPDValidation : public SubsysReco
     int nHIRecoSeedsSubIt1{0};
 
     // jets
+    std::vector<double> pt_r02;
+    std::vector<double> e_r02;
+    std::vector<double> phi_r02;
+    std::vector<double> eta_r02;
+
     std::vector<double> pt_r03;
     std::vector<double> e_r03;
     std::vector<double> phi_r03;
     std::vector<double> eta_r03;
 
+    double max_pt_r02{0};
     double max_pt_r03{0};
   };
 
@@ -380,7 +386,9 @@ class sEPDValidation : public SubsysReco
   std::unique_ptr<TFile> m_output;
   TTree *m_tree{nullptr};
 
-  std::string m_recoJetName{"AntiKt_Tower_r03_Sub1"};
+  std::string m_recoJetName_r02{"AntiKt_Tower_r02_Sub1"};
+  std::string m_recoJetName_r03{"AntiKt_Tower_r03_Sub1"};
   double m_jet_pt_min_cut{7};     // GeV
-  double m_jet_eta_max_cut{0.8};  // 1.1-R
+  double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
+  double m_jet_eta_max_cut_r03{0.8};  // 1.1-R
 };
