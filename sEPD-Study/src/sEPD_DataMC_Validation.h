@@ -51,6 +51,7 @@ class sEPD_DataMC_Validation : public SubsysReco
   int process_EventPlane(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
+  int process_calo(PHCompositeNode *topNode);
 
   void setup_tree();
   void fill_jets(JetContainer* jets, double max_eta, int &nJets, double &max_pt, std::vector<double> &pt_vec, std::vector<double> &e_vec, std::vector<double> &phi_vec, std::vector<double> &eta_vec) const;
@@ -65,8 +66,13 @@ class sEPD_DataMC_Validation : public SubsysReco
     int event{0};
     double zvtx{9999};
     double centrality{9999};
-    double calo_v2{-9999};
+    float calo_v2{-9999};
     bool is_flow_failure{false};
+
+    // Calo
+    double emcal_energy{0};
+    double ihcal_energy{0};
+    double ohcal_energy{0};
 
     // Q Vector Info
     double qsx_data{0};

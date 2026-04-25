@@ -72,6 +72,11 @@ void sEPD_DataMC_Validation::setup_tree()
   m_tree->Branch("calo_v2", &m_data.calo_v2);
   m_tree->Branch("is_flow_failure", &m_data.is_flow_failure);
 
+  // Calo
+  m_tree->Branch("emcal_energy", &m_data.emcal_energy);
+  m_tree->Branch("ihcal_energy", &m_data.ihcal_energy);
+  m_tree->Branch("ohcal_energy", &m_data.ohcal_energy);
+
   // Q Vector Info
   // South Data
   m_tree->Branch("qsx_data", &m_data.qsx_data);
@@ -260,12 +265,12 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   double jet_pt_high{100};
 
   unsigned int bins_jet_eta{24};
-  double jet_eta_low{-1};
-  double jet_eta_high{1};
+  double jet_eta_low{-1.152};
+  double jet_eta_high{1.152};
 
   unsigned int bins_jet_phi{64};
-  double jet_phi_low{-std::numbers::pi};
-  double jet_phi_high{std::numbers::pi};
+  double jet_phi_low{0};
+  double jet_phi_high{2*std::numbers::pi};
 
   unsigned int bins_zvtx2{40};
   double zvtx2_low{-10};
@@ -281,7 +286,7 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   h2JetPtCentrality = new TH2F("h2JetPtCentrality", "|z| < 10 cm and MB; p_{T} [GeV]; Centrality [%]", bins_jet_pt, jet_pt_low, jet_pt_high, m_bins_cent/10, m_cent_low, m_cent_high);
   se->registerHisto(h2JetPtCentrality);
 
-  h2JetPhiEta = new TH2F("h2JetPhiEta", "|z| < 10 cm and MB; #phi; #eta",
+  h2JetPhiEta = new TH2F("h2Jet_PhiEta", "|z| < 10 cm and MB; #phi; #eta",
                          bins_jet_phi, jet_phi_low, jet_phi_high,
                          bins_jet_eta, jet_eta_low, jet_eta_high);
 
@@ -585,6 +590,55 @@ int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode 
 
   hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
   hCentrality->Fill(m_data.centrality);
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
+int sEPD_DataMC_Validation::process_calo(PHCompositeNode *topNode)
+{
+  auto* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  auto* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+  auto* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+
+  if (!towersCEMC || !towersIHCal || !towersOHCal)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  size_t nTowersCEMC = towersCEMC->size();
+  size_t nTowersIHCal = towersIHCal->size();
+  size_t nTowersOHCal = towersOHCal->size();
+
+  if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
+  {
+    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event);
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
+  {
+    auto* towerCEMC = towersCEMC->get_tower_at_channel(towerIndex);
+    if(towerCEMC->get_isGood())
+    {
+      float energy = towerCEMC->get_energy();
+      m_data.emcal_energy += energy;
+    }
+
+    auto* towerIHCal = towersIHCal->get_tower_at_channel(towerIndex);
+    if(towerIHCal->get_isGood())
+    {
+      float energy = towerIHCal->get_energy();
+      m_data.ihcal_energy += energy;
+    }
+
+    auto* towerOHCal = towersOHCal->get_tower_at_channel(towerIndex);
+    if(towerOHCal->get_isGood())
+    {
+      float energy = towerOHCal->get_energy();
+      m_data.ohcal_energy += energy;
+    }
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -898,11 +952,17 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
   for (auto *jet : *jets_truth_r02)
   {
     double pt = jet->get_pt();
-    // double energy = jet->get_e();
+    double energy = jet->get_e();
     double phi = jet->get_phi();
     double eta = jet->get_eta();
 
-    if (pt >= m_jet_pt_min)
+    // map [-pi,pi] -> [0,2pi]
+    if (phi < 0)
+    {
+      phi += 2.0 * std::numbers::pi;
+    }
+
+    if (pt >= m_jet_pt_min && energy > 0)
     {
       h2JetEtaVtxZ->Fill(m_data.zvtx, eta);
 
@@ -1000,6 +1060,12 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  ret = process_calo(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
   ret = process_sEPD(topNode);
   if (ret)
   {
@@ -1036,6 +1102,10 @@ int sEPD_DataMC_Validation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode
   m_data.centrality = -9999;
   m_data.calo_v2 = -9999;
   m_data.is_flow_failure = false;
+
+  m_data.emcal_energy = 0;
+  m_data.ihcal_energy = 0;
+  m_data.ohcal_energy = 0;
 
   m_data.qsx_data = 0;
   m_data.qsy_data = 0;
