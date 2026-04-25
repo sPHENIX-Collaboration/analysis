@@ -42,10 +42,92 @@
 // -- jet
 #include <jetbase/JetContainer.h>
 
+// -- jetbackground
+#include <jetbackground/TowerBackground.h>
+
+#include <TFile.h>
+#include <TTree.h>
+
 //____________________________________________________________________________..
 sEPD_DataMC_Validation::sEPD_DataMC_Validation(const std::string &name)
   : SubsysReco(name)
 {
+}
+
+//____________________________________________________________________________..
+
+void sEPD_DataMC_Validation::setup_tree()
+{
+  m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
+  m_output->cd();
+
+  // TTree
+  m_tree = new TTree("T", "T");
+  m_tree->SetDirectory(m_output.get());
+
+  // Event Info
+  m_tree->Branch("event", &m_data.event);
+  m_tree->Branch("zvtx", &m_data.zvtx);
+  m_tree->Branch("centrality", &m_data.centrality);
+  m_tree->Branch("calo_v2", &m_data.calo_v2);
+  m_tree->Branch("is_flow_failure", &m_data.is_flow_failure);
+
+  // Q Vector Info
+  // South Data
+  m_tree->Branch("qsx_data", &m_data.qsx_data);
+  m_tree->Branch("qsy_data", &m_data.qsy_data);
+  // North Data
+  m_tree->Branch("qnx_data", &m_data.qnx_data);
+  m_tree->Branch("qny_data", &m_data.qny_data);
+
+  // South Data+MC
+  m_tree->Branch("qsx_data_mc", &m_data.qsx_data_mc);
+  m_tree->Branch("qsy_data_mc", &m_data.qsy_data_mc);
+
+  // North Data+MC
+  m_tree->Branch("qnx_data_mc", &m_data.qnx_data_mc);
+  m_tree->Branch("qny_data_mc", &m_data.qny_data_mc);
+
+  // Combined North South
+  m_tree->Branch("sepdpsi2_data", &m_data.sepdpsi2_data);
+  m_tree->Branch("sepdpsi2_data_mc", &m_data.sepdpsi2_data_mc);
+
+  // Jet
+  // Reco (Data+MC)
+  m_tree->Branch("pt_r02", &m_data.pt_r02);
+  m_tree->Branch("e_r02", &m_data.e_r02);
+  m_tree->Branch("phi_r02", &m_data.phi_r02);
+  m_tree->Branch("eta_r02", &m_data.eta_r02);
+
+  m_tree->Branch("max_pt_r02", &m_data.max_pt_r02);
+
+  m_tree->Branch("pt_r03", &m_data.pt_r03);
+  m_tree->Branch("e_r03", &m_data.e_r03);
+  m_tree->Branch("phi_r03", &m_data.phi_r03);
+  m_tree->Branch("eta_r03", &m_data.eta_r03);
+
+  m_tree->Branch("max_pt_r03", &m_data.max_pt_r03);
+
+  m_tree->Branch("nJets_r02", &m_data.nJets_r02);
+  m_tree->Branch("nJets_truth_r02", &m_data.nJets_truth_r02);
+
+  m_tree->Branch("nJets_r03", &m_data.nJets_r03);
+  m_tree->Branch("nJets_truth_r03", &m_data.nJets_truth_r03);
+
+  // Truth (MC)
+  m_tree->Branch("truthPt_r02", &m_data.truthPt_r02);
+  m_tree->Branch("truthE_r02", &m_data.truthE_r02);
+  m_tree->Branch("truthPhi_r02", &m_data.truthPhi_r02);
+  m_tree->Branch("truthEta_r02", &m_data.truthEta_r02);
+
+  m_tree->Branch("max_truthPt_r02", &m_data.max_truthPt_r02);
+
+  m_tree->Branch("truthPt_r03", &m_data.truthPt_r03);
+  m_tree->Branch("truthE_r03", &m_data.truthE_r03);
+  m_tree->Branch("truthPhi_r03", &m_data.truthPhi_r03);
+  m_tree->Branch("truthEta_r03", &m_data.truthEta_r03);
+
+  m_tree->Branch("max_truthPt_r03", &m_data.max_truthPt_r03);
 }
 
 //____________________________________________________________________________..
@@ -381,6 +463,9 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
     se->registerHisto(h2ScalarProduct_data_mc_ptbin[i]);
   }
 
+  // setup TTree
+  setup_tree();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -403,7 +488,7 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
   if (!vertexmap->empty())
   {
     GlobalVertex *vtx = vertexmap->begin()->second;
-    m_zvtx = vtx->get_z();
+    m_data.zvtx = vtx->get_z();
   }
 
   double truth_z = -9999;
@@ -432,15 +517,15 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
+  m_data.centrality = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
 
   hEvent->Fill(static_cast<int>(EventType::ALL));
 
-  if(std::abs(m_zvtx) < m_zvtx_max_v2)
+  if(std::abs(m_data.zvtx) < m_zvtx_max_v2)
   {
     hEvent->Fill(static_cast<int>(EventType::ZVTX50));
 
-    if (std::abs(m_zvtx) < m_zvtx_max)
+    if (std::abs(m_data.zvtx) < m_zvtx_max)
     {
       hEvent->Fill(static_cast<int>(EventType::ZVTX10));
       m_pass_Zvtx = true;
@@ -456,22 +541,22 @@ int sEPD_DataMC_Validation::process_event_check(PHCompositeNode *topNode)
 
   m_pass_MB = true;
 
-  hZVertex->Fill(m_zvtx);
-  h2ZVertexTruthvsData->Fill(m_zvtx, truth_z);
-  h2ZVertexCentrality->Fill(m_zvtx, m_cent);
+  hZVertex->Fill(m_data.zvtx);
+  h2ZVertexTruthvsData->Fill(m_data.zvtx, truth_z);
+  h2ZVertexCentrality->Fill(m_data.zvtx, m_data.centrality);
 
-  if (std::abs(m_zvtx) < m_zvtx_max_v2)
+  if (std::abs(m_data.zvtx) < m_zvtx_max_v2)
   {
-    hCentralityZ50->Fill(m_cent);
+    hCentralityZ50->Fill(m_data.centrality);
 
-    if (std::abs(m_zvtx) > m_zvtx_max)
+    if (std::abs(m_data.zvtx) > m_zvtx_max)
     {
-      hCentralityZOuter->Fill(m_cent);
+      hCentralityZOuter->Fill(m_data.centrality);
     }
   }
 
   // skip event if zvtx is too large
-  if (std::abs(m_zvtx) > m_zvtx_max)
+  if (std::abs(m_data.zvtx) > m_zvtx_max)
   {
     ++m_ctr["events_zvtx_fail"];
     return Fun4AllReturnCodes::EVENT_OK;
@@ -490,7 +575,7 @@ int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode 
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
-  if (!std::isfinite(m_cent) || m_cent < 0 || m_cent >= m_cent_max_threshold)
+  if (!std::isfinite(m_data.centrality) || m_data.centrality < 0 || m_data.centrality >= m_cent_max_threshold)
   {
     ++m_ctr["events_centrality_bad"];
     return Fun4AllReturnCodes::EVENT_OK;
@@ -498,12 +583,8 @@ int sEPD_DataMC_Validation::process_centrality([[maybe_unused]] PHCompositeNode 
 
   m_pass_Centrality = true;
 
-  if (m_cent < m_cent_max_threshold_ana)
-  {
-    hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
-  }
-
-  hCentrality->Fill(m_cent);
+  hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT));
+  hCentrality->Fill(m_data.centrality);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -618,7 +699,7 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     }
   }
 
-  h2SEPD_totalcharge_centrality->Fill(sepd_totalcharge, m_cent);
+  h2SEPD_totalcharge_centrality->Fill(sepd_totalcharge, m_data.centrality);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -658,8 +739,20 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   m_Q_data_S_2 = epd_data_S->get_qvector(2);
   m_Q_data_N_2 = epd_data_N->get_qvector(2);
 
+  m_data.qsx_data = m_Q_data_S_2.first;
+  m_data.qsy_data = m_Q_data_S_2.second;
+
+  m_data.qnx_data = m_Q_data_N_2.first;
+  m_data.qny_data = m_Q_data_N_2.second;
+
   m_Q_data_mc_S_2 = epd_data_mc_S->get_qvector(2);
   m_Q_data_mc_N_2 = epd_data_mc_N->get_qvector(2);
+
+  m_data.qsx_data_mc = m_Q_data_mc_S_2.first;
+  m_data.qsy_data_mc = m_Q_data_mc_S_2.second;
+
+  m_data.qnx_data_mc = m_Q_data_mc_N_2.first;
+  m_data.qny_data_mc = m_Q_data_mc_N_2.second;
 
   std::pair<double, double> Q_raw_data_S_2 = epd_data_S->get_qvector_raw(2);
   std::pair<double, double> Q_raw_data_N_2 = epd_data_N->get_qvector_raw(2);
@@ -676,9 +769,12 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   double _2psi2_data_mc_N = 2*epd_data_mc_N->get_shifted_psi(2);
   double _2psi2_data_mc_NS = 2*epd_data_mc_NS->get_shifted_psi(2);
 
-  if (std::isfinite(m_cent))
+  m_data.sepdpsi2_data = _2psi2_data_NS;
+  m_data.sepdpsi2_data_mc = _2psi2_data_mc_NS;
+
+  if (std::isfinite(m_data.centrality))
   {
-    h2SEPD_Psi2_data_mc_NS_all->Fill(_2psi2_data_mc_NS, m_cent);
+    h2SEPD_Psi2_data_mc_NS_all->Fill(_2psi2_data_mc_NS, m_data.centrality);
   }
 
   if (!m_pass_MB || !m_pass_Zvtx || !m_pass_Centrality)
@@ -689,9 +785,9 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   double ref_flow_data = m_Q_data_S_2.first * m_Q_data_N_2.first + m_Q_data_S_2.second * m_Q_data_N_2.second;
   double ref_flow_data_mc = m_Q_data_mc_S_2.first * m_Q_data_mc_N_2.first + m_Q_data_mc_S_2.second * m_Q_data_mc_N_2.second;
 
-  hRefFlow_data->Fill(m_cent, ref_flow_data);
+  hRefFlow_data->Fill(m_data.centrality, ref_flow_data);
 
-  int bin_cent = hRefFlow_data_min->FindBin(m_cent);
+  int bin_cent = hRefFlow_data_min->FindBin(m_data.centrality);
   if(ref_flow_data > hRefFlow_data_max->GetBinContent(bin_cent))
   {
     hRefFlow_data_max->SetBinContent(bin_cent, ref_flow_data);
@@ -701,10 +797,10 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
     hRefFlow_data_min->SetBinContent(bin_cent, ref_flow_data);
   }
 
-  hRefFlow_data_mc->Fill(m_cent, ref_flow_data_mc);
+  hRefFlow_data_mc->Fill(m_data.centrality, ref_flow_data_mc);
 
-  h2RefFlow_data->Fill(m_cent, ref_flow_data);
-  h2RefFlow_data_mc->Fill(m_cent, ref_flow_data_mc);
+  h2RefFlow_data->Fill(m_data.centrality, ref_flow_data);
+  h2RefFlow_data_mc->Fill(m_data.centrality, ref_flow_data_mc);
 
   double _2psi2_raw_data_S = 2*epd_data_S->GetPsi(Q_raw_data_S_2.first, Q_raw_data_S_2.second, 2);
   double _2psi2_raw_data_N = 2*epd_data_N->GetPsi(Q_raw_data_N_2.first, Q_raw_data_N_2.second, 2);
@@ -713,22 +809,44 @@ int sEPD_DataMC_Validation::process_EventPlane(PHCompositeNode *topNode)
   double _2psi2_raw_data_mc_N = 2*epd_data_mc_N->GetPsi(Q_raw_data_mc_N_2.first, Q_raw_data_mc_N_2.second, 2);
   double _2psi2_raw_data_mc_NS = 2*epd_data_mc_N->GetPsi(Q_raw_data_mc_NS_2.first, Q_raw_data_mc_NS_2.second, 2);
 
-  h2SEPD_Psi2_data_S->Fill(_2psi2_data_S, m_cent);
-  h2SEPD_Psi2_data_N->Fill(_2psi2_data_N, m_cent);
-  h2SEPD_Psi2_data_NS->Fill(_2psi2_data_NS, m_cent);
+  h2SEPD_Psi2_data_S->Fill(_2psi2_data_S, m_data.centrality);
+  h2SEPD_Psi2_data_N->Fill(_2psi2_data_N, m_data.centrality);
+  h2SEPD_Psi2_data_NS->Fill(_2psi2_data_NS, m_data.centrality);
 
-  h2SEPD_Psi2_data_mc_S->Fill(_2psi2_data_mc_S, m_cent);
-  h2SEPD_Psi2_data_mc_N->Fill(_2psi2_data_mc_N, m_cent);
-  h2SEPD_Psi2_data_mc_NS->Fill(_2psi2_data_mc_NS, m_cent);
+  h2SEPD_Psi2_data_mc_S->Fill(_2psi2_data_mc_S, m_data.centrality);
+  h2SEPD_Psi2_data_mc_N->Fill(_2psi2_data_mc_N, m_data.centrality);
+  h2SEPD_Psi2_data_mc_NS->Fill(_2psi2_data_mc_NS, m_data.centrality);
 
-  h2SEPD_Psi2_raw_data_S->Fill(_2psi2_raw_data_S, m_cent);
-  h2SEPD_Psi2_raw_data_N->Fill(_2psi2_raw_data_N, m_cent);
+  h2SEPD_Psi2_raw_data_S->Fill(_2psi2_raw_data_S, m_data.centrality);
+  h2SEPD_Psi2_raw_data_N->Fill(_2psi2_raw_data_N, m_data.centrality);
 
-  h2SEPD_Psi2_raw_data_mc_S->Fill(_2psi2_raw_data_mc_S, m_cent);
-  h2SEPD_Psi2_raw_data_mc_N->Fill(_2psi2_raw_data_mc_N, m_cent);
-  h2SEPD_Psi2_raw_data_mc_NS->Fill(_2psi2_raw_data_mc_NS, m_cent);
+  h2SEPD_Psi2_raw_data_mc_S->Fill(_2psi2_raw_data_mc_S, m_data.centrality);
+  h2SEPD_Psi2_raw_data_mc_N->Fill(_2psi2_raw_data_mc_N, m_data.centrality);
+  h2SEPD_Psi2_raw_data_mc_NS->Fill(_2psi2_raw_data_mc_NS, m_data.centrality);
 
   return Fun4AllReturnCodes::EVENT_OK;
+}
+
+void sEPD_DataMC_Validation::fill_jets(JetContainer* jets, double max_eta, int &nJets, double &max_pt, std::vector<double> &pt_vec, std::vector<double> &e_vec, std::vector<double> &phi_vec, std::vector<double> &eta_vec) const
+{
+  for (auto *jet : *jets)
+  {
+    double pt = jet->get_pt();
+    double e = jet->get_e();
+    double phi = jet->get_phi();
+    double eta = jet->get_eta();
+
+    if (pt >= m_jet_pt_min && std::abs(eta) < max_eta)
+    {
+      pt_vec.push_back(pt);
+      e_vec.push_back(e);
+      phi_vec.push_back(phi);
+      eta_vec.push_back(eta);
+
+      max_pt = std::max(max_pt, pt);
+      ++nJets;
+    }
+  }
 }
 
 //____________________________________________________________________________..
@@ -739,11 +857,27 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
-  JetContainer *jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
-  if (!jets)
+  JetContainer* jets_truth_r02 = findNode::getClass<JetContainer>(topNode, m_jet_truth_r02);
+  JetContainer* jets_reco_r02 = findNode::getClass<JetContainer>(topNode, m_jet_reco_r02);
+
+  JetContainer* jets_truth_r03 = findNode::getClass<JetContainer>(topNode, m_jet_truth_r03);
+  JetContainer* jets_reco_r03 = findNode::getClass<JetContainer>(topNode, m_jet_reco_r03);
+
+  if (!jets_truth_r02 || !jets_reco_r02 || !jets_truth_r03 || !jets_reco_r03)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
+
+  fill_jets(jets_truth_r02, m_jet_eta_max_r02, m_data.nJets_truth_r02, m_data.max_truthPt_r02, m_data.truthPt_r02, m_data.truthE_r02, m_data.truthPhi_r02, m_data.truthEta_r02);
+  fill_jets(jets_reco_r02, m_jet_eta_max_r02, m_data.nJets_r02, m_data.max_pt_r02, m_data.pt_r02, m_data.e_r02, m_data.phi_r02, m_data.eta_r02);
+  fill_jets(jets_truth_r03, m_jet_eta_max_r03, m_data.nJets_truth_r03, m_data.max_truthPt_r03, m_data.truthPt_r03, m_data.truthE_r03, m_data.truthPhi_r03, m_data.truthEta_r03);
+  fill_jets(jets_reco_r03, m_jet_eta_max_r03, m_data.nJets_r03, m_data.max_pt_r03, m_data.pt_r03, m_data.e_r03, m_data.phi_r03, m_data.eta_r03);
+
+  auto* towerBkg1 = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub1");
+  auto* towerBkg = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2"); // Second Iteration
+
+  m_data.is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
+  m_data.calo_v2 = towerBkg->get_v2();
 
   double Q_data_S_x = m_Q_data_S_2.first;
   double Q_data_S_y = m_Q_data_S_2.second;
@@ -759,9 +893,9 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
   bool hasJet = false;
 
-  int bin_cent = hScalarProduct_data_min->FindBin(m_cent);
+  int bin_cent = hScalarProduct_data_min->FindBin(m_data.centrality);
 
-  for (auto *jet : *jets)
+  for (auto *jet : *jets_truth_r02)
   {
     double pt = jet->get_pt();
     // double energy = jet->get_e();
@@ -770,15 +904,15 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
     if (pt >= m_jet_pt_min)
     {
-      h2JetEtaVtxZ->Fill(m_zvtx, eta);
+      h2JetEtaVtxZ->Fill(m_data.zvtx, eta);
 
-      if (std::abs(eta) < m_jet_eta_max)
+      if (std::abs(eta) < m_jet_eta_max_r02)
       {
         hasJet = true;
 
         hJetPt->Fill(pt);
         h2JetPhiEta->Fill(phi, eta);
-        h2JetPtCentrality->Fill(pt, m_cent);
+        h2JetPtCentrality->Fill(pt, m_data.centrality);
 
         double Q_data_x = (eta > 0) ? Q_data_S_x : Q_data_N_x;
         double Q_data_y = (eta > 0) ? Q_data_S_y : Q_data_N_y;
@@ -796,10 +930,10 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
         double scalar_product_data_mc = jet_Q_x * Q_data_mc_x + jet_Q_y * Q_data_mc_y;
         double scalar_product_data_mc_anti = jet_Q_x * Q_data_mc_anti_x + jet_Q_y * Q_data_mc_anti_y;
 
-        hScalarProduct_data->Fill(m_cent, scalar_product_data);
-        hScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
+        hScalarProduct_data->Fill(m_data.centrality, scalar_product_data);
+        hScalarProduct_data_mc->Fill(m_data.centrality, scalar_product_data_mc);
 
-        hScalarProduct_data_mc_anti->Fill(m_cent, scalar_product_data_mc_anti);
+        hScalarProduct_data_mc_anti->Fill(m_data.centrality, scalar_product_data_mc_anti);
 
         if (scalar_product_data > hScalarProduct_data_max->GetBinContent(bin_cent))
         {
@@ -810,8 +944,8 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
           hScalarProduct_data_min->SetBinContent(bin_cent, scalar_product_data);
         }
 
-        h2ScalarProduct_data->Fill(m_cent, scalar_product_data);
-        h2ScalarProduct_data_mc->Fill(m_cent, scalar_product_data_mc);
+        h2ScalarProduct_data->Fill(m_data.centrality, scalar_product_data);
+        h2ScalarProduct_data_mc->Fill(m_data.centrality, scalar_product_data_mc);
 
         if (pt >= 10.0 && pt < 50.0)
         {
@@ -820,15 +954,15 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
           // Safety check to ensure the index is within the vector bounds
           if (pt_bin >= 0 && pt_bin < 8)
           {
-            h2ScalarProduct_data_ptbin[pt_bin]->Fill(m_cent, scalar_product_data);
-            h2ScalarProduct_data_mc_ptbin[pt_bin]->Fill(m_cent, scalar_product_data_mc);
+            h2ScalarProduct_data_ptbin[pt_bin]->Fill(m_data.centrality, scalar_product_data);
+            h2ScalarProduct_data_mc_ptbin[pt_bin]->Fill(m_data.centrality, scalar_product_data_mc);
           }
         }
       }
     }
   }
 
-  if (hasJet && m_cent < m_cent_max_threshold_ana)
+  if (hasJet)
   {
     hEvent->Fill(static_cast<int>(EventType::ZVTX10_MB_CENT_JET));
   }
@@ -845,11 +979,11 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  m_globalEvent = eventInfo->get_EvtSequence();
+  m_data.event = eventInfo->get_EvtSequence();
 
   if ((Verbosity() && m_ctr["events_total"] % 1000 == 0) || Verbosity() > 1)
   {
-    std::cout << std::format("Progress: {}, Global: {}\n", m_ctr["events_total"], m_globalEvent);
+    std::cout << std::format("Progress: {}, Global: {}\n", m_ctr["events_total"], m_data.event);
   }
   ++m_ctr["events_total"];
 
@@ -886,6 +1020,9 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 
   if (m_pass_Zvtx && m_pass_MB && m_pass_Centrality)
   {
+    // Fill the TTree
+    m_tree->Fill();
+
     ++m_ctr["events_good"];
   }
   return Fun4AllReturnCodes::EVENT_OK;
@@ -894,7 +1031,56 @@ int sEPD_DataMC_Validation::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPD_DataMC_Validation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
-  m_zvtx = -9999;
+  m_data.event = 0;
+  m_data.zvtx = -9999;
+  m_data.centrality = -9999;
+  m_data.calo_v2 = -9999;
+  m_data.is_flow_failure = false;
+
+  m_data.qsx_data = 0;
+  m_data.qsy_data = 0;
+  m_data.qnx_data = 0;
+  m_data.qny_data = 0;
+
+  m_data.qsx_data_mc = 0;
+  m_data.qsy_data_mc = 0;
+  m_data.qnx_data_mc = 0;
+  m_data.qny_data_mc = 0;
+
+  m_data.sepdpsi2_data = -9999;
+  m_data.sepdpsi2_data_mc = -9999;
+
+  m_data.max_pt_r02 = 0;
+  m_data.max_pt_r03 = 0;
+
+  m_data.max_truthPt_r02 = 0;
+  m_data.max_truthPt_r03 = 0;
+
+  m_data.nJets_r02 = 0;
+  m_data.nJets_truth_r02 = 0;
+
+  m_data.nJets_r03 = 0;
+  m_data.nJets_truth_r03 = 0;
+
+  m_data.pt_r02.clear();
+  m_data.e_r02.clear();
+  m_data.phi_r02.clear();
+  m_data.eta_r02.clear();
+
+  m_data.truthPt_r02.clear();
+  m_data.truthE_r02.clear();
+  m_data.truthPhi_r02.clear();
+  m_data.truthEta_r02.clear();
+
+  m_data.pt_r03.clear();
+  m_data.e_r03.clear();
+  m_data.phi_r03.clear();
+  m_data.eta_r03.clear();
+
+  m_data.truthPt_r03.clear();
+  m_data.truthE_r03.clear();
+  m_data.truthPhi_r03.clear();
+  m_data.truthEta_r03.clear();
 
   m_pass_Zvtx = false;
   m_pass_MB = false;
@@ -916,6 +1102,11 @@ int sEPD_DataMC_Validation::End([[maybe_unused]] PHCompositeNode *topNode)
   }
 
   std::cout << std::format("{:#<20}\n", "");
+
+  // TTree
+  m_output->cd();
+  m_tree->Write();
+  m_output->Close();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

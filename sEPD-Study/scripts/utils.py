@@ -369,10 +369,16 @@ f4a_mc.add_argument('-f4'
                     , default='files/common-errors.txt'
                     , help='Common Errors. Default: files/common-errors.txt')
 
-f4a_mc.add_argument('-b'
-                    , '--f4a-bin', type=str
-                    , default='bin/Fun4All_sEPD_DataMC'
-                    , help='Fun4All Bin. Default: bin/Fun4All_sEPD_DataMC')
+f4a_mc.add_argument('-f5'
+                    , '--calo-calib-macro', type=str
+                    , default='macros/Calo_Calib.C'
+                    , help='Calo_Calib Macro. Default: macros/Calo_Calib.C')
+
+f4a_mc.add_argument('-f6'
+                    , '--HIJetReco-macro', type=str
+                    , default='macros/HIJetReco.C'
+                    , help='HIJetReco Macro. Default: macros/HIJetReco.C')
+
 
 def create_f4a_mc_jobs():
     """
@@ -386,7 +392,8 @@ def create_f4a_mc_jobs():
     output_dir = Path(args.output_dir).resolve()
     log_file  = output_dir / 'log.txt'
     f4a_macro = Path(args.f4a_macro).resolve()
-    f4a_bin = Path(args.f4a_bin).resolve()
+    calo_calib_macro = Path(args.calo_calib_macro).resolve()
+    HIJetReco_macro = Path(args.HIJetReco_macro).resolve()
     src_dir = Path(args.src_dir).resolve()
     condor_memory = args.memory
     condor_script = Path(args.condor_script).resolve()
@@ -400,7 +407,7 @@ def create_f4a_mc_jobs():
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that files exists
-    for f in [input_list, calib_list, condor_script, f4a_bin, f4a_macro, common_errors]:
+    for f in [input_list, calib_list, condor_script, f4a_macro, calo_calib_macro, HIJetReco_macro, common_errors]:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit()
@@ -421,7 +428,8 @@ def create_f4a_mc_jobs():
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Log File: {log_file}')
     logger.info(f'Fun4All Macro: {f4a_macro}')
-    logger.info(f'Fun4All Bin: {f4a_bin}')
+    logger.info(f'Calo Calib Macro: {calo_calib_macro}')
+    logger.info(f'HIJetReco Macro: {HIJetReco_macro}')
     logger.info(f'Source Directory: {src_dir}')
     logger.info(f'Condor Memory: {condor_memory} GB')
     logger.info(f'Condor Script: {condor_script}')
@@ -436,8 +444,9 @@ def create_f4a_mc_jobs():
     # Copy necessary files to the output directory
     input_list = shutil.copy(input_list, output_dir)
     shutil.copy(calib_list, output_dir)
-    shutil.copy(f4a_macro, output_dir)
-    f4a_bin = shutil.copy(f4a_bin, output_dir)
+    f4a_macro = shutil.copy(f4a_macro, output_dir)
+    shutil.copy(calo_calib_macro, output_dir)
+    shutil.copy(HIJetReco_macro, output_dir)
     shutil.copy(common_errors, output_dir)
     shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
 
@@ -475,7 +484,7 @@ def create_f4a_mc_jobs():
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {f4a_bin} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_calib) $(input_sEPD_BadTowers) test-$(ClusterId)-$(Process).root {events} {jet_pt_min} {dbtag} {output_dir}/output
+        arguments      = {f4a_macro} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_dst_calo) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {events} {jet_pt_min} {dbtag} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -484,7 +493,7 @@ def create_f4a_mc_jobs():
 
     (output_dir / 'genFun4All.sub').write_text(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst_global,input_dst_jet,input_dst_g4hit,input_calib,input_sEPD_BadTowers from jobs.list"'
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst_global,input_dst_jet,input_dst_g4hit,input_dst_calo,input_calib from jobs.list"'
     logger.info(command)
 
 # ----------------------------

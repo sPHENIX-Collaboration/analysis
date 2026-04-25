@@ -15,6 +15,9 @@
 #include <TH2.h>
 
 class PHCompositeNode;
+class TFile;
+class TTree;
+class JetContainer;
 
 class sEPD_DataMC_Validation : public SubsysReco
 {
@@ -37,6 +40,11 @@ class sEPD_DataMC_Validation : public SubsysReco
     m_jet_pt_min = pt_min;
   }
 
+  void set_tree_filename(const std::string &file)
+  {
+    m_outtree_name = file;
+  }
+
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_sEPD(PHCompositeNode *topNode);
@@ -44,31 +52,97 @@ class sEPD_DataMC_Validation : public SubsysReco
   int process_jets(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
 
+  void setup_tree();
+  void fill_jets(JetContainer* jets, double max_eta, int &nJets, double &max_pt, std::vector<double> &pt_vec, std::vector<double> &e_vec, std::vector<double> &phi_vec, std::vector<double> &eta_vec) const;
+
+  std::string m_outtree_name{"tree.root"};
+
+  std::unique_ptr<TFile> m_output;
+  TTree* m_tree{nullptr};
+
+  struct EventData
+  {
+    int event{0};
+    double zvtx{9999};
+    double centrality{9999};
+    double calo_v2{-9999};
+    bool is_flow_failure{false};
+
+    // Q Vector Info
+    double qsx_data{0};
+    double qsy_data{0};
+    double qnx_data{0};
+    double qny_data{0};
+
+    double qsx_data_mc{0};
+    double qsy_data_mc{0};
+    double qnx_data_mc{0};
+    double qny_data_mc{0};
+
+    double sepdpsi2_data{-9999};
+    double sepdpsi2_data_mc{-9999};
+
+    double max_pt_r02{0};
+    double max_pt_r03{0};
+
+    double max_truthPt_r02{0};
+    double max_truthPt_r03{0};
+
+    int nJets_r02{0};
+    int nJets_truth_r02{0};
+
+    int nJets_r03{0};
+    int nJets_truth_r03{0};
+
+    std::vector<double> pt_r02;
+    std::vector<double> e_r02;
+    std::vector<double> phi_r02;
+    std::vector<double> eta_r02;
+
+    std::vector<double> truthPt_r02;
+    std::vector<double> truthE_r02;
+    std::vector<double> truthPhi_r02;
+    std::vector<double> truthEta_r02;
+
+    std::vector<double> pt_r03;
+    std::vector<double> e_r03;
+    std::vector<double> phi_r03;
+    std::vector<double> eta_r03;
+
+    std::vector<double> truthPt_r03;
+    std::vector<double> truthE_r03;
+    std::vector<double> truthPhi_r03;
+    std::vector<double> truthEta_r03;
+  };
+
+  EventData m_data;
+
   static constexpr int m_sepd_channels = 744;
 
   unsigned int m_bins_cent{80};
   double m_cent_low{-0.5};
   double m_cent_high{79.5};
 
-  double m_cent_max_threshold{80};
-  double m_cent_max_threshold_ana{60};
+  double m_cent_max_threshold{60};
 
   double m_jet_pt_min{10};   // GeV
-  double m_jet_eta_max{0.9}; // 1.1-R
+  double m_jet_eta_max_r02{0.9}; // 1.1-R
+  double m_jet_eta_max_r03{0.8}; // 1.1-R
   double m_zvtx_max{10};     // cm
   double m_zvtx_max_v2{50};  // cm
 
   // Event Vars
-  double m_cent{0};
-  double m_zvtx{0};
-  int m_globalEvent{0};
   std::pair<double, double> m_Q_data_S_2;
   std::pair<double, double> m_Q_data_N_2;
   std::pair<double, double> m_Q_data_mc_S_2;
   std::pair<double, double> m_Q_data_mc_N_2;
   std::map<std::string, int> m_ctr;
 
-  std::string m_recoJetName{"AntiKt_Truth_r02"};
+  std::string m_jet_truth_r02{"AntiKt_Truth_r02"};
+  std::string m_jet_truth_r03{"AntiKt_Truth_r03"};
+
+  std::string m_jet_reco_r02{"AntiKt_Tower_r02_Sub1"};
+  std::string m_jet_reco_r03{"AntiKt_Tower_r03_Sub1"};
 
   enum class EventType : std::uint8_t
   {
