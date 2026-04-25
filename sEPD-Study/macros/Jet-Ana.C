@@ -258,6 +258,8 @@ class JetAnalysis
     std::array<TH2*, m_cent_bins.size()-1> h2_ptrecopttrue{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_SPrecoSPtrue{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_bigresp{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_bigrespA{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h2_bigrespB{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_reco{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_match{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_ptSP_true{nullptr};
@@ -1276,6 +1278,21 @@ void JetAnalysis::init_hists()
 						  bins_bigresp, bigresp_low, bigresp_high);
     m_hists.h2_bigresp[icent] = m_hists2D[hist_name.c_str()].get();
 
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco} X q_{2}^{jet,reco}Q_{2}; p_{T}^{true} X q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_bigrespA_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_bigresp, bigresp_low, bigresp_high,
+						  bins_bigresp, bigresp_low, bigresp_high);
+    m_hists.h2_bigrespA[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco} X q_{2}^{jet,reco}Q_{2}; p_{T}^{true} X q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h2_bigrespB_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+                                                  bins_bigresp, bigresp_low, bigresp_high,
+						  bins_bigresp, bigresp_low, bigresp_high);
+    m_hists.h2_bigrespB[icent] = m_hists2D[hist_name.c_str()].get();
+
+    
 
     //use big pt bins
     std::vector<double> pt_edges(m_jet_pt_vec.begin(), m_jet_pt_vec.end());
@@ -1607,6 +1624,8 @@ void JetAnalysis::fill_response() const
     int ptbin = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(matchPt);
     int pt_N = m_hists.h2_ptSP_match[centbin]->GetNbinsX();
     m_hists.h2_bigresp[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
+    if(m_event_data.event_id % 2 == 0) m_hists.h2_bigrespA[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
+    else m_hists.h2_bigrespB[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
   }
   return;
 }
