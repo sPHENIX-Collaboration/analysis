@@ -68,130 +68,173 @@ sEPDValidation::sEPDValidation(const std::string &name)
 {
 }
 
-// Helper function to create histograms
-void sEPDValidation::create_histogram(const HistDef &def)
-{
-  switch (def.type)
-  {
-  case HistDef::Type::TH1:
-    m_hists[def.name] = std::make_unique<TH1F>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high);
-    break;
-  case HistDef::Type::TH2:
-    m_hists[def.name] = std::make_unique<TH2F>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high);
-    break;
-  case HistDef::Type::TProfile:
-    m_hists[def.name] = std::make_unique<TProfile>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high);
-    break;
-  case HistDef::Type::TProfile2D:
-    m_hists[def.name] = std::make_unique<TProfile2D>(def.name.c_str(), def.title.c_str(), def.x.bins, def.x.low, def.x.high, def.y.bins, def.y.low, def.y.high);
-    break;
-  }
-  m_hists[def.name]->Sumw2();
-}
-
 //____________________________________________________________________________..
 int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
-  // Centralized configuration list
-  std::vector<HistDef> histogram_definitions = {
-      // Event
-      {HistDef::Type::TH1, "hEvent", "Event Type; Type; Events", {static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size())}},
-      {HistDef::Type::TH1, "hEventMinBias", "Event Type; Type; Events", {static_cast<unsigned int>(m_MinBias_Type.size()), 0, static_cast<double>(m_MinBias_Type.size())}},
-      {HistDef::Type::TH1, "hVtxZ", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
-      {HistDef::Type::TH1, "hVtxZ_MB", "Z Vertex; z [cm]; Events", {m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high}},
-      {HistDef::Type::TH1, "hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+  hEvent = new TH1F("hEvent", "Event Type; Type; Events", static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size()));
+  se->registerHisto(hEvent);
 
-      // Charge
-      {HistDef::Type::TProfile2D, "h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high}, {m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high}},
+  hEventMinBias = new TH1F("hEventMinBias", "Event Type; Type; Events", static_cast<unsigned int>(m_MinBias_Type.size()), 0, static_cast<double>(m_MinBias_Type.size()));
+  se->registerHisto(hEventMinBias);
 
-      {HistDef::Type::TH2, "h2SEPD_Channel_Charge", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_charge, m_hist_config.m_sepd_channel_charge_low, m_hist_config.m_sepd_channel_charge_high}},
-      {HistDef::Type::TH2, "h2SEPD_Channel_Chargev2", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}, {m_hist_config.m_bins_sepd_channel_chargev2, m_hist_config.m_sepd_channel_chargev2_low, m_hist_config.m_sepd_channel_chargev2_high}},
+  hVtxZ = new TH1F("hVtxZ", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
+  se->registerHisto(hVtxZ);
 
-      {HistDef::Type::TProfile, "hSEPD_Charge", "sEPD Channel Avg Charge: |z| < 10 cm and MB; Channel; Avg Charge", {m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels)}},
+  hVtxZ_MB = new TH1F("hVtxZ_MB", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
+  se->registerHisto(hVtxZ_MB);
 
-      {HistDef::Type::TProfile2D, "h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+  hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
+  se->registerHisto(hCentrality);
 
-      {HistDef::Type::TProfile2D, "h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.5: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
-      {HistDef::Type::TProfile2D, "h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.5: |z| < 10 cm and MB; #phi; -#eta", {m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high}, {m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high}},
+  h2MBD_North_Charge = new TProfile2D("h2MBD_North_Charge", "MBD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high, m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high);
+  se->registerHisto(h2MBD_North_Charge);
 
-      {HistDef::Type::TProfile, "hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
-      {HistDef::Type::TProfile, "hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", {m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high}},
+  h2MBD_South_Charge = new TProfile2D("h2MBD_South_Charge", "MBD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", m_hist_config.m_bins_mbd_phi, m_hist_config.m_mbd_phi_low, m_hist_config.m_mbd_phi_high, m_hist_config.m_bins_mbd_eta, m_hist_config.m_mbd_eta_low, m_hist_config.m_mbd_eta_high);
+  se->registerHisto(h2MBD_South_Charge);
 
-      {HistDef::Type::TH2, "h2SEPD_Total_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH2, "h2SEPD_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North", {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high},
-      {m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high}},
+  h2SEPD_Channel_Charge = new TH2F("h2SEPD_Channel_Charge", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels), m_hist_config.m_bins_sepd_channel_charge, m_hist_config.m_sepd_channel_charge_low, m_hist_config.m_sepd_channel_charge_high);
+  se->registerHisto(h2SEPD_Channel_Charge);
 
-      {HistDef::Type::TH2, "h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", {m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high}, {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
-      {HistDef::Type::TH2, "h2MBD_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high},
-      {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
+  h2SEPD_Channel_Chargev2 = new TH2F("h2SEPD_Channel_Chargev2", "sEPD Channel Charge: |z| < 10 cm and MB; Channel; Charge", m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels), m_hist_config.m_bins_sepd_channel_chargev2, m_hist_config.m_sepd_channel_chargev2_low, m_hist_config.m_sepd_channel_chargev2_high);
+  se->registerHisto(h2SEPD_Channel_Chargev2);
 
-      {HistDef::Type::TH2, "h2SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge", {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+  hSEPD_Charge = new TProfile("hSEPD_Charge", "sEPD Channel Avg Charge: |z| < 10 cm and MB; Channel; Avg Charge", m_hist_config.m_bins_sepd_channels, 0, static_cast<double>(m_hist_config.m_bins_sepd_channels));
+  se->registerHisto(hSEPD_Charge);
 
-      // Calo
-      {HistDef::Type::TProfile2D, "h2EMCal_Energy", "EMCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
-      {HistDef::Type::TProfile2D, "h2IHCal_Energy", "IHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
-      {HistDef::Type::TProfile2D, "h2OHCal_Energy", "OHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", {CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5}, {CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5}},
+  h2SEPD_North_Charge = new TProfile2D("h2SEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; #phi; #eta", m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high, m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high);
+  se->registerHisto(h2SEPD_North_Charge);
 
-      {HistDef::Type::TH2, "h2EMCal_MBD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
-      {HistDef::Type::TH2, "h2EMCal_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+  h2SEPD_South_Charge = new TProfile2D("h2SEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; #phi; -#eta", m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high, m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high);
+  se->registerHisto(h2SEPD_South_Charge);
 
-      {HistDef::Type::TH2, "h2IHCal_MBD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
-      {HistDef::Type::TH2, "h2IHCal_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+  h2SEPD_North_BelowThresh = new TProfile2D("h2SEPD_North_BelowThresh", "SEPD North Frac Charge < 0.5: |z| < 10 cm and MB; #phi; #eta", m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high, m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high);
+  se->registerHisto(h2SEPD_North_BelowThresh);
 
-      {HistDef::Type::TH2, "h2OHCal_MBD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high}},
-      {HistDef::Type::TH2, "h2OHCal_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; sEPD Total Charge", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high}},
+  h2SEPD_South_BelowThresh = new TProfile2D("h2SEPD_South_BelowThresh", "SEPD South Frac Charge < 0.5: |z| < 10 cm and MB; #phi; -#eta", m_hist_config.m_bins_sepd_phi, m_hist_config.m_sepd_phi_low, m_hist_config.m_sepd_phi_high, m_hist_config.m_bins_sepd_eta, m_hist_config.m_sepd_eta_low, m_hist_config.m_sepd_eta_high);
+  se->registerHisto(h2SEPD_South_BelowThresh);
 
-      {HistDef::Type::TH2, "h2EMCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
-      {HistDef::Type::TH2, "h2IHCal_OHCal", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}, {m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high}},
+  hSEPD_North_Charge = new TProfile("hSEPD_North_Charge", "SEPD North Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high);
+  se->registerHisto(hSEPD_North_Charge);
 
-      // Jets
-      {HistDef::Type::TH2, "h2Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high}},
-      {HistDef::Type::TH2, "h2Jet_pT_Cent", "Jet: |z| < 10 cm and MB; Centrality [%]; p_{T} [GeV]", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}},
-      {HistDef::Type::TH2, "h2Jet_LeadpT_Cent", "Jet: |z| < 10 cm and MB; Centrality [%]; Lead p_{T} [GeV]", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}},
+  hSEPD_South_Charge = new TProfile("hSEPD_South_Charge", "SEPD South Avg Charge: |z| < 10 cm and MB; r_{bin}; Avg Charge", m_hist_config.m_bins_sepd_rbin, m_hist_config.m_sepd_rbin_low, m_hist_config.m_sepd_rbin_high);
+  se->registerHisto(hSEPD_South_Charge);
 
-      {HistDef::Type::TH2, "h2Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi", {m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high}, {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}},
-      {HistDef::Type::TH2, "h2Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]", {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}, {m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high}},
-      {HistDef::Type::TH2, "h2Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", {m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high}, {m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high}},
+  h2SEPD_Total_Charge = new TH2F("h2SEPD_Total_Charge", "sEPD Charge: |z| < 10 cm and MB; sEPD Total Charge; Centrality [%]", m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
+  se->registerHisto(h2SEPD_Total_Charge);
 
-      {HistDef::Type::TProfile, "hJet_nEvent", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", {m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high}},
+  h2SEPD_Charge = new TH2F("h2SEPD_Charge", "sEPD Total Charge: |z| < 10 cm and MB; South; North", m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high, m_hist_config.m_bins_sepd_charge, m_hist_config.m_sepd_charge_low, m_hist_config.m_sepd_charge_high);
+  se->registerHisto(h2SEPD_Charge);
 
-      // UE
-      {HistDef::Type::TH2, "h2UE_v2_Towers", "UE: |z| < 10 cm and MB; Towers; v_{2}", {m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
-      {HistDef::Type::TH2, "h2UE_v2_Strips", "UE: |z| < 10 cm and MB; Strips; v_{2}", {m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE)}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+  h2MBD_Total_Charge = new TH2F("h2MBD_Total_Charge", "MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; Centrality [%]", m_hist_config.m_bins_mbd_total_charge, m_hist_config.m_mbd_total_charge_low, m_hist_config.m_mbd_total_charge_high, m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
+  se->registerHisto(h2MBD_Total_Charge);
 
-      {HistDef::Type::TH2, "h2UE_v2_LeadJet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T}^{max} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
-      {HistDef::Type::TH2, "h2UE_v2_Jet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T} [GeV]", {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}, {m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high}},
-      {HistDef::Type::TH2, "h2UE_v2_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
+  h2MBD_Charge = new TH2F("h2MBD_Charge", "MBD Total Charge: |z| < 10 cm and MB; South; North", m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high, m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high);
+  se->registerHisto(h2MBD_Charge);
 
-      {HistDef::Type::TH2, "h2UE_v2_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}", {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}, {m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high}},
-      {HistDef::Type::TH2, "h2UE_SumE_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; Sum E [GeV]", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high}},
+  h2SEPD_MBD_Total_Charge = new TH2F("h2SEPD_MBD_Total_Charge", "sEPD vs MBD Total Charge: |z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge", m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high, m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high);
+  se->registerHisto(h2SEPD_MBD_Total_Charge);
 
-      // Event Plane
-      {HistDef::Type::TH2, "h2SEPD_Psi2_raw_S", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}},
-      {HistDef::Type::TH2, "h2SEPD_Psi2_raw_N", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}},
-      {HistDef::Type::TH2, "h2SEPD_Psi2_S", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}},
-      {HistDef::Type::TH2, "h2SEPD_Psi2_N", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}},
-      {HistDef::Type::TH2, "h2SEPD_Psi2_NS", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", {m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high}, {m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high}},
-  };
+  h2EMCal_Energy = new TProfile2D("h2EMCal_Energy", "EMCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5, CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5);
+  se->registerHisto(h2EMCal_Energy);
 
-  for (const auto &def : histogram_definitions)
-  {
-    create_histogram(def);
-  }
+  h2IHCal_Energy = new TProfile2D("h2IHCal_Energy", "IHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5, CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5);
+  se->registerHisto(h2IHCal_Energy);
+
+  h2OHCal_Energy = new TProfile2D("h2OHCal_Energy", "OHCal: |z| < 10 cm and MB; Tower Index #phi; Tower Index #eta", CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5, CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5);
+  se->registerHisto(h2OHCal_Energy);
+
+  h2EMCal_MBD = new TH2F("h2EMCal_MBD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; MBD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high);
+  se->registerHisto(h2EMCal_MBD);
+
+  h2EMCal_sEPD = new TH2F("h2EMCal_sEPD", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; sEPD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high);
+  se->registerHisto(h2EMCal_sEPD);
+
+  h2IHCal_MBD = new TH2F("h2IHCal_MBD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high);
+  se->registerHisto(h2IHCal_MBD);
+
+  h2IHCal_sEPD = new TH2F("h2IHCal_sEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; sEPD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high);
+  se->registerHisto(h2IHCal_sEPD);
+
+  h2OHCal_MBD = new TH2F("h2OHCal_MBD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_mbd_charge, m_hist_config.m_mbd_charge_low, m_hist_config.m_mbd_charge_high);
+  se->registerHisto(h2OHCal_MBD);
+
+  h2OHCal_sEPD = new TH2F("h2OHCal_sEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; sEPD Total Charge", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_sepd_total_charge, m_hist_config.m_sepd_total_charge_low, m_hist_config.m_sepd_total_charge_high);
+  se->registerHisto(h2OHCal_sEPD);
+
+  h2EMCal_OHCal = new TH2F("h2EMCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; OHCal Total Energy [GeV];", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high);
+  se->registerHisto(h2EMCal_OHCal);
+
+  h2IHCal_OHCal = new TH2F("h2IHCal_OHCal", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; OHCal Total Energy [GeV];", m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high, m_hist_config.m_bins_Calo_E, m_hist_config.m_Calo_E_low, m_hist_config.m_Calo_E_high);
+  se->registerHisto(h2IHCal_OHCal);
+
+  h2Jet_pT_Constituents = new TH2F("h2Jet_pT_Constituents", "Jet: |z| < 10 cm and MB; p_{T} [GeV]; Constituents", m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high, m_hist_config.m_bins_jet_constituents, m_hist_config.m_jet_constituents_low, m_hist_config.m_jet_constituents_high);
+  se->registerHisto(h2Jet_pT_Constituents);
+
+  h2Jet_pT_Cent = new TH2F("h2Jet_pT_Cent", "Jet: |z| < 10 cm and MB; Centrality [%]; p_{T} [GeV]", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high);
+  se->registerHisto(h2Jet_pT_Cent);
+
+  h2Jet_LeadpT_Cent = new TH2F("h2Jet_LeadpT_Cent", "Jet: |z| < 10 cm and MB; Centrality [%]; Lead p_{T} [GeV]", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high);
+  se->registerHisto(h2Jet_LeadpT_Cent);
+
+  h2Jet_pT_Phi = new TH2F("h2Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi", m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high, m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high);
+  se->registerHisto(h2Jet_pT_Phi);
+
+  h2Jet_pT_Energy = new TH2F("h2Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]", m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high, m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high);
+  se->registerHisto(h2Jet_pT_Energy);
+
+  h2Jet_PhiEta = new TH2F("h2Jet_PhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high, m_hist_config.m_bins_jet_eta, m_hist_config.m_jet_eta_low, m_hist_config.m_jet_eta_high);
+  se->registerHisto(h2Jet_PhiEta);
+
+  hJet_nEvent = new TProfile("hJet_nEvent", "Jet: |z| < 10 cm and MB; Centrality [%]; Average Jet [Counts]", m_hist_config.m_bins_cent_reduced, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
+  se->registerHisto(hJet_nEvent);
+
+  h2UE_v2_Towers = new TH2F("h2UE_v2_Towers", "UE: |z| < 10 cm and MB; Towers; v_{2}", m_hist_config.m_bins_nTowerUE, 0, static_cast<double>(m_hist_config.m_bins_nTowerUE), m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high);
+  se->registerHisto(h2UE_v2_Towers);
+
+  h2UE_v2_Strips = new TH2F("h2UE_v2_Strips", "UE: |z| < 10 cm and MB; Strips; v_{2}", m_hist_config.m_bins_nStripsUE, 0, static_cast<double>(m_hist_config.m_bins_nStripsUE), m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high);
+  se->registerHisto(h2UE_v2_Strips);
+
+  h2UE_v2_LeadJet = new TH2F("h2UE_v2_LeadJet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T}^{max} [GeV]", m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high, m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high);
+  se->registerHisto(h2UE_v2_LeadJet);
+
+  h2UE_v2_Jet = new TH2F("h2UE_v2_Jet", "UE: |z| < 10 cm and MB; v_{2}; Jet p_{T} [GeV]", m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high, m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high);
+  se->registerHisto(h2UE_v2_Jet);
+
+  h2UE_v2_Cent = new TH2F("h2UE_v2_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; v_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high);
+  se->registerHisto(h2UE_v2_Cent);
+
+  h2UE_v2_SumE = new TH2F("h2UE_v2_SumE", "UE: |z| < 10 cm and MB; Sum E [GeV]; v_{2}", m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high, m_hist_config.m_bins_v2, m_hist_config.m_v2_low, m_hist_config.m_v2_high);
+  se->registerHisto(h2UE_v2_SumE);
+
+  h2UE_SumE_Cent = new TH2F("h2UE_SumE_Cent", "UE: |z| < 10 cm and MB; Centrality [%]; Sum E [GeV]", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_sum_E, m_hist_config.m_sum_E_low, m_hist_config.m_sum_E_high);
+  se->registerHisto(h2UE_SumE_Cent);
+
+  h2SEPD_Psi2_raw_S = new TH2F("h2SEPD_Psi2_raw_S", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high);
+  se->registerHisto(h2SEPD_Psi2_raw_S);
+
+  h2SEPD_Psi2_raw_N = new TH2F("h2SEPD_Psi2_raw_N", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high);
+  se->registerHisto(h2SEPD_Psi2_raw_N);
+
+  h2SEPD_Psi2_S = new TH2F("h2SEPD_Psi2_S", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high);
+  se->registerHisto(h2SEPD_Psi2_S);
+
+  h2SEPD_Psi2_N = new TH2F("h2SEPD_Psi2_N", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high);
+  se->registerHisto(h2SEPD_Psi2_N);
+
+  h2SEPD_Psi2_NS = new TH2F("h2SEPD_Psi2_NS", "|z| < 10 cm and MB; Centrality [%]; 2#Psi_{2}", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high, m_hist_config.m_bins_psi, m_hist_config.m_psi_low, m_hist_config.m_psi_high);
+  se->registerHisto(h2SEPD_Psi2_NS);
 
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
-    m_hists["hEvent"]->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
+    hEvent->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
   }
 
   for (unsigned int i = 0; i < m_MinBias_Type.size(); ++i)
   {
-    m_hists["hEventMinBias"]->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
+    hEventMinBias->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
   }
 
   m_output = std::make_unique<TFile>(m_outtree_name.c_str(), "recreate");
@@ -200,36 +243,37 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   // TTree
   m_tree = new TTree("T", "T");
   m_tree->SetDirectory(m_output.get());
-  m_tree->Branch("event_id", &m_data.event_id, "event_id/I");
-  m_tree->Branch("event_zvertex", &m_data.event_zvertex, "event_zvertex/D");
-  m_tree->Branch("event_centrality", &m_data.event_centrality, "event_centrality/D");
+  m_tree->Branch("event", &m_data.event);
+  m_tree->Branch("zvtx", &m_data.zvtx);
+  m_tree->Branch("centrality", &m_data.centrality);
   m_tree->Branch("event_MBD_Charge_South", &m_data.event_MBD_Charge_South);
   m_tree->Branch("event_MBD_Charge_North", &m_data.event_MBD_Charge_North);
   m_tree->Branch("event_sEPD_Charge_South", &m_data.event_sEPD_Charge_South);
   m_tree->Branch("event_sEPD_Charge_North", &m_data.event_sEPD_Charge_North);
-  m_tree->Branch("event_EMCal_Energy", &m_data.event_EMCal_Energy);
-  m_tree->Branch("event_IHCal_Energy", &m_data.event_IHCal_Energy);
-  m_tree->Branch("event_OHCal_Energy", &m_data.event_OHCal_Energy);
+  m_tree->Branch("emcal_energy", &m_data.emcal_energy);
+  m_tree->Branch("ihcal_energy", &m_data.ihcal_energy);
+  m_tree->Branch("ohcal_energy", &m_data.ohcal_energy);
   m_tree->Branch("event_tower_median_Energy", &m_data.event_tower_median_Energy);
   m_tree->Branch("event_EMCal_tower_median_Energy", &m_data.event_EMCal_tower_median_Energy);
 
-  m_tree->Branch("Q_S_x_2_raw", &m_data.Q_S_x_2_raw);
-  m_tree->Branch("Q_S_y_2_raw", &m_data.Q_S_y_2_raw);
-  m_tree->Branch("Q_N_x_2_raw", &m_data.Q_N_x_2_raw);
-  m_tree->Branch("Q_N_y_2_raw", &m_data.Q_N_y_2_raw);
+  m_tree->Branch("qsx_raw", &m_data.qsx_raw);
+  m_tree->Branch("qsy_raw", &m_data.qsy_raw);
+  m_tree->Branch("qnx_raw", &m_data.qnx_raw);
+  m_tree->Branch("qny_raw", &m_data.qny_raw);
 
-  m_tree->Branch("Q_S_x_2_recentered", &m_data.Q_S_x_2_recentered);
-  m_tree->Branch("Q_S_y_2_recentered", &m_data.Q_S_y_2_recentered);
-  m_tree->Branch("Q_N_x_2_recentered", &m_data.Q_N_x_2_recentered);
-  m_tree->Branch("Q_N_y_2_recentered", &m_data.Q_N_y_2_recentered);
+  m_tree->Branch("qsx_recentered", &m_data.qsx_recentered);
+  m_tree->Branch("qsy_recentered", &m_data.qsy_recentered);
+  m_tree->Branch("qnx_recentered", &m_data.qnx_recentered);
+  m_tree->Branch("qny_recentered", &m_data.qny_recentered);
 
-  m_tree->Branch("Q_S_x_2", &m_data.Q_S_x_2);
-  m_tree->Branch("Q_S_y_2", &m_data.Q_S_y_2);
-  m_tree->Branch("Q_N_x_2", &m_data.Q_N_x_2);
-  m_tree->Branch("Q_N_y_2", &m_data.Q_N_y_2);
-  m_tree->Branch("Q_NS_x_2", &m_data.Q_NS_x_2);
-  m_tree->Branch("Q_NS_y_2", &m_data.Q_NS_y_2);
+  m_tree->Branch("qsx", &m_data.qsx);
+  m_tree->Branch("qsy", &m_data.qsy);
+  m_tree->Branch("qnx", &m_data.qnx);
+  m_tree->Branch("qny", &m_data.qny);
+  m_tree->Branch("qnsx", &m_data.qnsx);
+  m_tree->Branch("qnsy", &m_data.qnsy);
 
+  m_tree->Branch("is_flow_failure", &m_data.is_flow_failure);
   m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
   m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
@@ -237,11 +281,19 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_tree->Branch("nHIRecoSeedsSub", &m_data.nHIRecoSeedsSub);
   m_tree->Branch("nHIRecoSeedsSubIt1", &m_data.nHIRecoSeedsSubIt1);
-  m_tree->Branch("max_jet_pt", &m_data.max_jet_pt);
-  m_tree->Branch("jet_pt", &m_data.jet_pt);
-  m_tree->Branch("jet_energy", &m_data.jet_energy);
-  m_tree->Branch("jet_phi", &m_data.jet_phi);
-  m_tree->Branch("jet_eta", &m_data.jet_eta);
+
+  m_tree->Branch("max_pt_r02", &m_data.max_pt_r02);
+  m_tree->Branch("max_pt_r03", &m_data.max_pt_r03);
+
+  m_tree->Branch("pt_r02", &m_data.pt_r02);
+  m_tree->Branch("e_r02", &m_data.e_r02);
+  m_tree->Branch("phi_r02", &m_data.phi_r02);
+  m_tree->Branch("eta_r02", &m_data.eta_r02);
+
+  m_tree->Branch("pt_r03", &m_data.pt_r03);
+  m_tree->Branch("e_r03", &m_data.e_r03);
+  m_tree->Branch("phi_r03", &m_data.phi_r03);
+  m_tree->Branch("eta_r03", &m_data.eta_r03);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -249,10 +301,10 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 {
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ALL));
+  hEvent->Fill(static_cast<std::uint8_t>(EventType::ALL));
 
   // zvertex
-  m_zvtx = -9999;
+  double zvtx = -9999;
   GlobalVertexMap *vertexmap = getNode<GlobalVertexMap>(topNode, "GlobalVertexMap");
 
   if (!vertexmap)
@@ -263,20 +315,20 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   if (!vertexmap->empty())
   {
     GlobalVertex *vtx = vertexmap->begin()->second;
-    m_zvtx = vtx->get_z();
-    m_data.event_zvertex = m_zvtx;
+    m_data.zvtx = vtx->get_z();
+    zvtx = m_data.zvtx;
 
-    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX));
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX));
   }
 
-  m_hists["hVtxZ"]->Fill(m_zvtx);
+  hVtxZ->Fill(zvtx);
 
-  if (std::abs(m_zvtx) < m_cuts.m_zvtx_max_v2)
+  if (std::abs(zvtx) < m_cuts.m_zvtx_max_v2)
   {
-    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
-    if (std::abs(m_zvtx) < m_cuts.m_zvtx_max)
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
+    if (std::abs(zvtx) < m_cuts.m_zvtx_max)
     {
-      m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
+      hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
     }
   }
 
@@ -301,23 +353,23 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
 
-  if (std::abs(m_zvtx) < m_cuts.m_zvtx_max)
+  if (std::abs(zvtx) < m_cuts.m_zvtx_max)
   {
     if (minbias_bkg_high)
     {
-      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::BKG_HIGH));
+      hEventMinBias->Fill(static_cast<std::uint8_t>(MinBiasType::BKG_HIGH));
     }
     if (minbias_side_hit_low)
     {
-      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::SIDE_HIT_LOW));
+      hEventMinBias->Fill(static_cast<std::uint8_t>(MinBiasType::SIDE_HIT_LOW));
     }
     if (minbias_zdc_low)
     {
-      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::ZDC_LOW));
+      hEventMinBias->Fill(static_cast<std::uint8_t>(MinBiasType::ZDC_LOW));
     }
     if (minbias_mbd_high)
     {
-      m_hists["hEventMinBias"]->Fill(static_cast<std::uint8_t>(MinBiasType::MBD_HIGH));
+      hEventMinBias->Fill(static_cast<std::uint8_t>(MinBiasType::MBD_HIGH));
     }
   }
 
@@ -328,16 +380,16 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hVtxZ_MB"]->Fill(m_zvtx);
+  hVtxZ_MB->Fill(zvtx);
 
   // skip event if zvtx is too large
-  if (std::abs(m_zvtx) >= m_cuts.m_zvtx_max)
+  if (std::abs(zvtx) >= m_cuts.m_zvtx_max)
   {
     ++m_ctr["process_eventCheck_zvtx_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::MB));
+  hEvent->Fill(static_cast<std::uint8_t>(EventType::MB));
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -351,21 +403,21 @@ int sEPDValidation::process_centrality(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  m_cent = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
-  m_data.event_centrality = m_cent;
+  m_data.centrality = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
+  double cent = m_data.centrality;
 
   // skip event if centrality is too peripheral
-  if (!std::isfinite(m_cent) || m_cent >= m_cuts.m_cent_max)
+  if (!std::isfinite(cent) || cent >= m_cuts.m_cent_max)
   {
     ++m_ctr["process_eventCheck_centrality_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hCentrality"]->Fill(m_cent);
+  hCentrality->Fill(cent);
 
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::CENT));
+  hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
 
-  JetUtils::update_min_max(m_cent, m_logging.m_cent_min, m_logging.m_cent_max);
+  JetUtils::update_min_max(cent, m_logging.m_cent_min, m_logging.m_cent_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -408,9 +460,6 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
 
   int mbd_channels = mbd_container->get_npmt();
 
-  auto* h2MBD_South_Charge = dynamic_cast<TProfile2D *>(m_hists["h2MBD_South_Charge"].get());
-  auto* h2MBD_North_Charge = dynamic_cast<TProfile2D *>(m_hists["h2MBD_North_Charge"].get());
-
   for (int i = 0; i < mbd_channels; ++i)
   {
     MbdPmtHit *mbd_pmt = mbd_container->get_pmt(i);
@@ -449,8 +498,8 @@ int sEPDValidation::process_MBD(PHCompositeNode *topNode)
     JetUtils::update_min_max(charge, m_logging.m_mbd_ch_charge_min, m_logging.m_mbd_ch_charge_max);
   }
 
-  dynamic_cast<TH2 *>(m_hists["h2MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, m_cent);
-  dynamic_cast<TH2 *>(m_hists["h2MBD_Charge"].get())->Fill(mbd_total_charge_south, mbd_total_charge_north);
+  h2MBD_Total_Charge->Fill(m_mbd_total_charge, m_data.centrality);
+  h2MBD_Charge->Fill(mbd_total_charge_south, mbd_total_charge_north);
 
   JetUtils::update_min_max(m_mbd_total_charge, m_logging.m_mbd_total_charge_min, m_logging.m_mbd_total_charge_max);
   JetUtils::update_min_max(mbd_total_charge_south, m_logging.m_mbd_charge_min, m_logging.m_mbd_charge_max);
@@ -481,20 +530,6 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   double sepd_total_charge_south = 0;
   double sepd_total_charge_north = 0;
-
-  auto* h2SEPD_Channel_Charge = dynamic_cast<TH2*>(m_hists["h2SEPD_Channel_Charge"].get());
-  auto* h2SEPD_Channel_Chargev2 = dynamic_cast<TH2*>(m_hists["h2SEPD_Channel_Chargev2"].get());
-
-  auto* h2SEPD_South_BelowThresh = dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_BelowThresh"].get());
-  auto* h2SEPD_North_BelowThresh = dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_BelowThresh"].get());
-
-  auto* h2SEPD_South_Charge = dynamic_cast<TProfile2D *>(m_hists["h2SEPD_South_Charge"].get());
-  auto* h2SEPD_North_Charge = dynamic_cast<TProfile2D *>(m_hists["h2SEPD_North_Charge"].get());
-
-  auto* hSEPD_South_Charge = dynamic_cast<TProfile *>(m_hists["hSEPD_South_Charge"].get());
-  auto* hSEPD_North_Charge = dynamic_cast<TProfile *>(m_hists["hSEPD_North_Charge"].get());
-
-  auto* hSEPD_Charge = dynamic_cast<TProfile *>(m_hists["hSEPD_Charge"].get());
 
   for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
   {
@@ -527,21 +562,21 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     unsigned int arm = TowerInfoDefs::get_epd_arm(key);
 
     TProfile2D* h2SEPD_BelowThresh = nullptr;
-    TProfile2D* h2SEPD_Charge = nullptr;
+    TProfile2D* h2SEPD_det_Charge = nullptr;
     TProfile* hSEPD_det_Charge = nullptr;
 
     // South
     if (arm == 0)
     {
       h2SEPD_BelowThresh = h2SEPD_South_BelowThresh;
-      h2SEPD_Charge = h2SEPD_South_Charge;
+      h2SEPD_det_Charge = h2SEPD_South_Charge;
       hSEPD_det_Charge = hSEPD_South_Charge;
     }
     // North
     if (arm == 1)
     {
       h2SEPD_BelowThresh = h2SEPD_North_BelowThresh;
-      h2SEPD_Charge = h2SEPD_North_Charge;
+      h2SEPD_det_Charge = h2SEPD_North_Charge;
       hSEPD_det_Charge = hSEPD_North_Charge;
     }
 
@@ -571,7 +606,7 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
     double& sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
     sepd_total_charge += charge;
 
-    h2SEPD_Charge->Fill(phi, eta_abs, charge);
+    h2SEPD_det_Charge->Fill(phi, eta_abs, charge);
     hSEPD_det_Charge->Fill(rbin, charge);
   }
 
@@ -580,8 +615,8 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
 
   double sepd_total_charge = sepd_total_charge_south + sepd_total_charge_north;
 
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_Total_Charge"].get())->Fill(sepd_total_charge, m_cent);
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_MBD_Total_Charge"].get())->Fill(m_mbd_total_charge, sepd_total_charge);
+  h2SEPD_Total_Charge->Fill(sepd_total_charge, m_data.centrality);
+  h2SEPD_MBD_Total_Charge->Fill(m_mbd_total_charge, sepd_total_charge);
 
   // ensure both total charges are nonzero
   if (sepd_total_charge_south == 0 || sepd_total_charge_north == 0)
@@ -590,10 +625,10 @@ int sEPDValidation::process_sEPD(PHCompositeNode *topNode)
   }
   else
   {
-    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::SEPD));
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::SEPD));
   }
 
-  dynamic_cast<TH2 *>(m_hists["h2SEPD_Charge"].get())->Fill(sepd_total_charge_south, sepd_total_charge_north);
+  h2SEPD_Charge->Fill(sepd_total_charge_south, sepd_total_charge_north);
 
   JetUtils::update_min_max(sepd_total_charge_south, m_logging.m_sepd_total_charge_south_min, m_logging.m_sepd_total_charge_south_max);
   JetUtils::update_min_max(sepd_total_charge_north, m_logging.m_sepd_total_charge_north_min, m_logging.m_sepd_total_charge_north_max);
@@ -619,13 +654,9 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 
   if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
   {
-    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event_id);
+    std::cout << std::format("Calo Contains Missing Towers!, Event: {}\n", m_data.event);
     return Fun4AllReturnCodes::ABORTRUN;
   }
-
-  auto* h2EMCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2EMCal_Energy"].get());
-  auto* h2IHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2IHCal_Energy"].get());
-  auto* h2OHCal_Energy = dynamic_cast<TProfile2D *>(m_hists["h2OHCal_Energy"].get());
 
   MedianFinder mf;
   MedianFinder mf_EMCal;
@@ -640,7 +671,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerCEMC->get_isGood())
     {
       float energy = towerCEMC->get_energy();
-      m_data.event_EMCal_Energy += energy;
+      m_data.emcal_energy += energy;
       mf.addNum(energy);
       mf_EMCal.addNum(energy);
       h2EMCal_Energy->Fill(iphi, ieta, energy);
@@ -650,7 +681,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerIHCal->get_isGood())
     {
       float energy = towerIHCal->get_energy();
-      m_data.event_IHCal_Energy += energy;
+      m_data.ihcal_energy += energy;
       mf.addNum(energy);
       h2IHCal_Energy->Fill(iphi, ieta, energy);
     }
@@ -659,7 +690,7 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     if(towerOHCal->get_isGood())
     {
       float energy = towerOHCal->get_energy();
-      m_data.event_OHCal_Energy += energy;
+      m_data.ohcal_energy += energy;
       mf.addNum(energy);
       h2OHCal_Energy->Fill(iphi, ieta, energy);
     }
@@ -667,9 +698,9 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
 
   double total_MBD = m_data.event_MBD_Charge_South + m_data.event_MBD_Charge_North;
   double total_sEPD = m_data.event_sEPD_Charge_South + m_data.event_sEPD_Charge_North;
-  double total_EMCal = m_data.event_EMCal_Energy;
-  double total_IHCal = m_data.event_IHCal_Energy;
-  double total_OHCal = m_data.event_OHCal_Energy;
+  double total_EMCal = m_data.emcal_energy;
+  double total_IHCal = m_data.ihcal_energy;
+  double total_OHCal = m_data.ohcal_energy;
   double total_energy = total_EMCal + total_IHCal + total_OHCal;
 
   // Get the median tower energy
@@ -682,21 +713,21 @@ int sEPDValidation::process_Calo(PHCompositeNode *topNode)
     m_data.event_EMCal_tower_median_Energy = mf_EMCal.findMedian();
   }
 
-  dynamic_cast<TH2 *>(m_hists["h2EMCal_MBD"].get())->Fill(total_EMCal, total_MBD);
-  dynamic_cast<TH2 *>(m_hists["h2EMCal_sEPD"].get())->Fill(total_EMCal, total_sEPD);
+  h2EMCal_MBD->Fill(total_EMCal, total_MBD);
+  h2EMCal_sEPD->Fill(total_EMCal, total_sEPD);
 
-  dynamic_cast<TH2 *>(m_hists["h2IHCal_MBD"].get())->Fill(total_IHCal, total_MBD);
-  dynamic_cast<TH2 *>(m_hists["h2IHCal_sEPD"].get())->Fill(total_IHCal, total_sEPD);
+  h2IHCal_MBD->Fill(total_IHCal, total_MBD);
+  h2IHCal_sEPD->Fill(total_IHCal, total_sEPD);
 
-  dynamic_cast<TH2 *>(m_hists["h2OHCal_MBD"].get())->Fill(total_OHCal, total_MBD);
-  dynamic_cast<TH2 *>(m_hists["h2OHCal_sEPD"].get())->Fill(total_OHCal, total_sEPD);
+  h2OHCal_MBD->Fill(total_OHCal, total_MBD);
+  h2OHCal_sEPD->Fill(total_OHCal, total_sEPD);
 
-  dynamic_cast<TH2 *>(m_hists["h2EMCal_OHCal"].get())->Fill(total_EMCal, total_OHCal);
-  dynamic_cast<TH2 *>(m_hists["h2IHCal_OHCal"].get())->Fill(total_IHCal, total_OHCal);
+  h2EMCal_OHCal->Fill(total_EMCal, total_OHCal);
+  h2IHCal_OHCal->Fill(total_IHCal, total_OHCal);
 
-  JetUtils::update_min_max(m_data.event_EMCal_Energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
-  JetUtils::update_min_max(m_data.event_IHCal_Energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
-  JetUtils::update_min_max(m_data.event_OHCal_Energy, m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
+  JetUtils::update_min_max(m_data.emcal_energy, m_logging.m_EMCal_Energy_min, m_logging.m_EMCal_Energy_max);
+  JetUtils::update_min_max(m_data.ihcal_energy, m_logging.m_IHCal_Energy_min, m_logging.m_IHCal_Energy_max);
+  JetUtils::update_min_max(m_data.ohcal_energy, m_logging.m_OHCal_Energy_min, m_logging.m_OHCal_Energy_max);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -727,7 +758,7 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::EP));
+  hEvent->Fill(static_cast<std::uint8_t>(EventType::EP));
 
   std::pair<double, double> Q_S_2_raw = epd_S->get_qvector_raw(2);
   std::pair<double, double> Q_N_2_raw = epd_N->get_qvector_raw(2);
@@ -743,10 +774,11 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
   if((Q_S_2.first == 0 && Q_S_2.second == 0) || (Q_N_2.first == 0 && Q_N_2.second == 0))
   {
     ++m_ctr["process_EventPlane_QVec_invalid"];
-    return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::QVEC));
+  else
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::QVEC));
+  }
 
   double _2psi2_raw_S = 2*epd_S->GetPsi(Q_S_2_raw.first, Q_S_2_raw.second, 2);
   double _2psi2_raw_N = 2*epd_N->GetPsi(Q_N_2_raw.first, Q_N_2_raw.second, 2);
@@ -755,33 +787,35 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
   double _2psi2_N = 2*epd_N->GetPsi(Q_N_2.first, Q_N_2.second, 2);
   double _2psi2_NS = 2*epd_NS->GetPsi(Q_NS_2.first, Q_NS_2.second, 2);
 
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_S"].get())->Fill(m_cent, _2psi2_raw_S);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_raw_N"].get())->Fill(m_cent, _2psi2_raw_N);
+  double cent = m_data.centrality;
 
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_S"].get())->Fill(m_cent, _2psi2_S);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_N"].get())->Fill(m_cent, _2psi2_N);
-  dynamic_cast<TH2*>(m_hists["h2SEPD_Psi2_NS"].get())->Fill(m_cent, _2psi2_NS);
+  h2SEPD_Psi2_raw_S->Fill(cent, _2psi2_raw_S);
+  h2SEPD_Psi2_raw_N->Fill(cent, _2psi2_raw_N);
 
-  m_data.Q_S_x_2_raw = Q_S_2_raw.first;
-  m_data.Q_S_y_2_raw = Q_S_2_raw.second;
+  h2SEPD_Psi2_S->Fill(cent, _2psi2_S);
+  h2SEPD_Psi2_N->Fill(cent, _2psi2_N);
+  h2SEPD_Psi2_NS->Fill(cent, _2psi2_NS);
 
-  m_data.Q_N_x_2_raw = Q_N_2_raw.first;
-  m_data.Q_N_y_2_raw = Q_N_2_raw.second;
+  m_data.qsx_raw = Q_S_2_raw.first;
+  m_data.qsy_raw = Q_S_2_raw.second;
 
-  m_data.Q_S_x_2_recentered = Q_S_2_recentered.first;
-  m_data.Q_S_y_2_recentered = Q_S_2_recentered.second;
+  m_data.qnx_raw = Q_N_2_raw.first;
+  m_data.qny_raw = Q_N_2_raw.second;
 
-  m_data.Q_N_x_2_recentered = Q_N_2_recentered.first;
-  m_data.Q_N_y_2_recentered = Q_N_2_recentered.second;
+  m_data.qsx_recentered = Q_S_2_recentered.first;
+  m_data.qsy_recentered = Q_S_2_recentered.second;
 
-  m_data.Q_S_x_2 = Q_S_2.first;
-  m_data.Q_S_y_2 = Q_S_2.second;
+  m_data.qnx_recentered = Q_N_2_recentered.first;
+  m_data.qny_recentered = Q_N_2_recentered.second;
 
-  m_data.Q_N_x_2 = Q_N_2.first;
-  m_data.Q_N_y_2 = Q_N_2.second;
+  m_data.qsx = Q_S_2.first;
+  m_data.qsy = Q_S_2.second;
 
-  m_data.Q_NS_x_2 = Q_NS_2.first;
-  m_data.Q_NS_y_2 = Q_NS_2.second;
+  m_data.qnx = Q_N_2.first;
+  m_data.qny = Q_N_2.second;
+
+  m_data.qnsx = Q_NS_2.first;
+  m_data.qnsy = Q_NS_2.second;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -789,8 +823,10 @@ int sEPDValidation::process_EventPlane(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int sEPDValidation::process_jets(PHCompositeNode *topNode)
 {
-  JetContainer *jets = findNode::getClass<JetContainer>(topNode, m_recoJetName);
-  if (!jets)
+  JetContainer *jets_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r02);
+  JetContainer *jets_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r03);
+
+  if (!jets_r02 || !jets_r03)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -799,17 +835,11 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   bool hasJet = false;
   bool hasHighPt = false;
 
-  auto* h2Jet_pT_Constituents = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Constituents"].get());
-  auto* h2Jet_pT_Cent = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Cent"].get());
-  auto* h2Jet_LeadpT_Cent = dynamic_cast<TH2 *>(m_hists["h2Jet_LeadpT_Cent"].get());
-  auto* h2Jet_pT_Phi = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Phi"].get());
-  auto* h2Jet_pT_Energy = dynamic_cast<TH2 *>(m_hists["h2Jet_pT_Energy"].get());
-  auto* h2Jet_PhiEta = dynamic_cast<TH2 *>(m_hists["h2Jet_PhiEta"].get());
-  auto* h2UE_v2_Jet = dynamic_cast<TH2 *>(m_hists["h2UE_v2_Jet"].get());
-
   double v2 = m_data.calo_v2;
+  double cent = m_data.centrality;
 
-  for (auto* jet : *jets)
+  // R = 0.3
+  for (auto* jet : *jets_r03)
   {
     double pt = jet->get_pt();
     double energy = jet->get_e();
@@ -825,7 +855,7 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
     int constituents = comp_vec.size();
 
-    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut)
+    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r03)
     {
       JetUtils::update_min_max(pt, m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
       JetUtils::update_min_max(energy, m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
@@ -833,16 +863,16 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       JetUtils::update_min_max(eta, m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
       JetUtils::update_min_max(constituents, m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
 
-      m_data.jet_pt.push_back(pt);
-      m_data.jet_energy.push_back(energy);
-      m_data.jet_phi.push_back(phi);
-      m_data.jet_eta.push_back(eta);
+      m_data.pt_r03.push_back(pt);
+      m_data.e_r03.push_back(energy);
+      m_data.phi_r03.push_back(phi);
+      m_data.eta_r03.push_back(eta);
 
       // Ensure positive jet energy
       if (energy > 0)
       {
         h2Jet_pT_Constituents->Fill(pt, constituents);
-        h2Jet_pT_Cent->Fill(m_cent, pt);
+        h2Jet_pT_Cent->Fill(cent, pt);
         h2Jet_pT_Phi->Fill(pt, phi);
         h2Jet_pT_Energy->Fill(pt, energy);
         h2Jet_PhiEta->Fill(phi, eta);
@@ -854,28 +884,56 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
           hasHighPt = true;
         }
 
-        m_data.max_jet_pt = std::max(m_data.max_jet_pt, pt);
+        m_data.max_pt_r03 = std::max(m_data.max_pt_r03, pt);
         hasJet = true;
         ++n_jets;
       }
     }
   }
 
+  // R = 0.2
+  for (auto* jet : *jets_r02)
+  {
+    double pt = jet->get_pt();
+    double energy = jet->get_e();
+    double phi = jet->get_phi();
+    double eta = jet->get_eta();
+
+    // map [-pi,pi] -> [0,2pi]
+    if (phi < 0)
+    {
+      phi += 2.0 * std::numbers::pi;
+    }
+
+    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r02)
+    {
+      m_data.pt_r02.push_back(pt);
+      m_data.e_r02.push_back(energy);
+      m_data.phi_r02.push_back(phi);
+      m_data.eta_r02.push_back(eta);
+
+      if (energy > 0)
+      {
+        m_data.max_pt_r02 = std::max(m_data.max_pt_r02, pt);
+      }
+    }
+  }
+
   if (hasJet)
   {
-    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::JET));
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::JET));
 
-    dynamic_cast<TProfile *>(m_hists["hJet_nEvent"].get())->Fill(m_cent, n_jets);
-    h2Jet_LeadpT_Cent->Fill(m_cent, m_data.max_jet_pt);
+    hJet_nEvent->Fill(cent, n_jets);
+    h2Jet_LeadpT_Cent->Fill(cent, m_data.max_pt_r03);
 
-    dynamic_cast<TH2 *>(m_hists["h2UE_v2_LeadJet"].get())->Fill(m_data.calo_v2, m_data.max_jet_pt);
+    h2UE_v2_LeadJet->Fill(m_data.calo_v2, m_data.max_pt_r03);
 
     JetUtils::update_min_max(n_jets, m_logging.m_jet_nEvent_min, m_logging.m_jet_nEvent_max);
 
     // Very large jet pT >= 100 GeV
     if (hasHighPt)
     {
-      std::cout << std::format("High pT Jet. Event: {}, pT: {}\n", m_data.event_id, m_data.max_jet_pt);
+      std::cout << std::format("High pT Jet. Event: {}, pT: {}\n", m_data.event, m_data.max_pt_r03);
     }
   }
 
@@ -893,15 +951,16 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  bool is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
+  m_data.is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
 
-  if (is_flow_failure)
+  if (m_data.is_flow_failure)
   {
     ++m_ctr["event_is_flow_failure"];
-    return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::UE));
+  else
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::UE));
+  }
 
   float v2 = towerBkg->get_v2();
   float v2_it1 = towerBkg1->get_v2();
@@ -919,13 +978,13 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   m_data.nHIRecoSeedsSub = nHIRecoSeedsSub;
   m_data.nHIRecoSeedsSubIt1 = nHIRecoSeedsSubIt1;
 
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Towers"].get())->Fill(nTowers, v2);
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Strips"].get())->Fill(nStrips, v2);
+  h2UE_v2_Towers->Fill(nTowers, v2);
+  h2UE_v2_Strips->Fill(nStrips, v2);
 
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_Cent"].get())->Fill(m_data.event_centrality, v2);
+  h2UE_v2_Cent->Fill(m_data.centrality, v2);
 
-  dynamic_cast<TH2 *>(m_hists["h2UE_v2_SumE"].get())->Fill(sum_E, v2);
-  dynamic_cast<TH2 *>(m_hists["h2UE_SumE_Cent"].get())->Fill(m_data.event_centrality, sum_E);
+  h2UE_v2_SumE->Fill(sum_E, v2);
+  h2UE_SumE_Cent->Fill(m_data.centrality, sum_E);
 
   JetUtils::update_min_max(v2, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
   JetUtils::update_min_max(v2_it1, m_logging.m_UE_calo_v2_min, m_logging.m_UE_calo_v2_max);
@@ -934,7 +993,7 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
   // -- LOGGING -- //
   if (Verbosity() > 0 && (nHIRecoSeedsSub || nHIRecoSeedsSubIt1))
   {
-    std::cout << std::format("Event: {}, cent: {}, Seeds It1: {}, Seeds: {}\n", m_data.event_id, m_data.event_centrality, nHIRecoSeedsSubIt1, nHIRecoSeedsSub);
+    std::cout << std::format("Event: {}, cent: {}, Seeds It1: {}, Seeds: {}\n", m_data.event, m_data.centrality, nHIRecoSeedsSubIt1, nHIRecoSeedsSub);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -949,12 +1008,11 @@ int sEPDValidation::process_event(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  int m_globalEvent = eventInfo->get_EvtSequence();
-  m_data.event_id = m_globalEvent;
+  m_data.event = eventInfo->get_EvtSequence();
 
   if (m_event % m_progress_print == 0)
   {
-    std::cout << "Progress: " << m_event << ", Global: " << m_globalEvent << std::endl;
+    std::cout << "Progress: " << m_event << ", Global: " << m_data.event << std::endl;
   }
   ++m_event;
 
@@ -1018,49 +1076,56 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   ++m_ctr["event_reset"];
 
   // Event
-  m_data.event_id = -1;
-  m_data.event_zvertex = 9999;
-  m_data.event_centrality = 9999;
+  m_data.event = 0;
+  m_data.zvtx = 9999;
+  m_data.centrality = 9999;
   m_data.event_MBD_Charge_South = 9999;
   m_data.event_MBD_Charge_North = 9999;
   m_data.event_sEPD_Charge_South = 9999;
   m_data.event_sEPD_Charge_North = 9999;
 
   // Calo
-  m_data.event_EMCal_Energy = 0;
-  m_data.event_IHCal_Energy = 0;
-  m_data.event_OHCal_Energy = 0;
+  m_data.emcal_energy = 0;
+  m_data.ihcal_energy = 0;
+  m_data.ohcal_energy = 0;
   m_data.event_tower_median_Energy = -9999;
   m_data.event_EMCal_tower_median_Energy = -9999;
 
   // Jets
-  m_data.max_jet_pt = 0;
+  m_data.max_pt_r02 = 0;
+  m_data.max_pt_r03 = 0;
 
-  m_data.jet_pt.clear();
-  m_data.jet_energy.clear();
-  m_data.jet_phi.clear();
-  m_data.jet_eta.clear();
+  m_data.pt_r02.clear();
+  m_data.e_r02.clear();
+  m_data.phi_r02.clear();
+  m_data.eta_r02.clear();
+
+  m_data.pt_r03.clear();
+  m_data.e_r03.clear();
+  m_data.phi_r03.clear();
+  m_data.eta_r03.clear();
 
   // Q Vec
-  m_data.Q_S_x_2_raw = 0;
-  m_data.Q_S_y_2_raw = 0;
-  m_data.Q_N_x_2_raw = 0;
-  m_data.Q_N_y_2_raw = 0;
+  m_data.qsx_raw = 0;
+  m_data.qsy_raw = 0;
+  m_data.qnx_raw = 0;
+  m_data.qny_raw = 0;
 
-  m_data.Q_S_x_2_recentered = 0;
-  m_data.Q_S_y_2_recentered = 0;
-  m_data.Q_N_x_2_recentered = 0;
-  m_data.Q_N_y_2_recentered = 0;
+  m_data.qsx_recentered = 0;
+  m_data.qsy_recentered = 0;
+  m_data.qnx_recentered = 0;
+  m_data.qny_recentered = 0;
 
-  m_data.Q_S_x_2 = 0;
-  m_data.Q_S_y_2 = 0;
-  m_data.Q_N_x_2 = 0;
-  m_data.Q_N_y_2 = 0;
+  m_data.qsx = 0;
+  m_data.qsy = 0;
+  m_data.qnx = 0;
+  m_data.qny = 0;
 
-  m_data.Q_NS_x_2 = 0;
-  m_data.Q_NS_y_2 = 0;
+  m_data.qnsx = 0;
+  m_data.qnsy = 0;
 
   // UE
+  m_data.is_flow_failure = false;
   m_data.UE_sum_E = 9999;
   m_data.calo_v2 = 9999;
   m_data.calo_v2_it1 = 9999;
@@ -1090,7 +1155,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "sEPD" << std::endl;
-  std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / m_hists["hEvent"]->GetBinContent(static_cast<std::uint8_t>(EventType::MB) + 1) << std::endl;
+  std::cout << "Avg towers with charge below threshold: " << m_ctr["sepd_tower_charge_below_threshold"] / hEvent->GetBinContent(static_cast<std::uint8_t>(EventType::MB) + 1) << std::endl;
   std::cout << "process sEPD, total charge zero: " << m_ctr["process_sEPD_total_charge_zero"] << std::endl;
 
   std::cout << std::format("{:#<20}\n", "");
@@ -1126,7 +1191,8 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
-  std::cout << std::format("process event, is_flow_failure: {}", m_ctr["event_is_flow_failure"]) << std::endl;
+  std::cout << std::format("process event, is_flow_failure: {} (not aborted)", m_ctr["event_is_flow_failure"]) << std::endl;
+  std::cout << std::format("process event, bad Q Vec (Q_S = 0 or Q_N = 0): {} (not aborted)", m_ctr["process_EventPlane_QVec_invalid"]) << std::endl;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Event Plane" << std::endl;
@@ -1143,42 +1209,9 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << "Events" << std::endl;
   for (unsigned int i = 0; i < m_eventType.size(); ++i)
   {
-    std::cout << m_eventType[i] << ": " << m_hists["hEvent"]->GetBinContent(i + 1) << std::endl;
+    std::cout << m_eventType[i] << ": " << hEvent->GetBinContent(i + 1) << std::endl;
   }
   std::cout << std::format("{:#<20}\n", "");
-
-  TFile output(m_outfile_name.c_str(), "recreate");
-  output.cd();
-
-  for (const auto &[name, hist] : m_hists)
-  {
-    if (!name.ends_with("calib"))
-    {
-      std::cout << std::format("Saving: {}\n", name);
-      hist->Write();
-    }
-  }
-
-  auto project_and_write = [&](const std::string &hist_name, const std::string &projection)
-  {
-    std::cout << std::format("Saving: {}, Projection: {}\n", hist_name, projection);
-    auto *hist = dynamic_cast<TH2 *>(m_hists[hist_name].get());
-    hist->ProjectionX()->Write();
-  };
-
-  // local
-  if (!m_condor_mode)
-  {
-    project_and_write("h2SEPD_Total_Charge", "x");
-    project_and_write("h2MBD_Total_Charge", "x");
-
-    // Jets
-    project_and_write("h2Jet_pT_Constituents", "x");
-
-    // UE
-    project_and_write("h2UE_v2_Jet", "x");
-  }
-  output.Close();
 
   // TTree
   m_output->cd();

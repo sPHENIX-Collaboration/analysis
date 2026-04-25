@@ -51,8 +51,7 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
                   int nEvents = 100,
                   int nSkip = 0,
                   int event_id = 0,
-                  const std::string &dbtag = "newcdbtag",
-                  bool condor_mode = false)
+                  const std::string &dbtag = "newcdbtag")
 {
 
   // Extract runnumber from first file within list
@@ -76,7 +75,6 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
   std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
-  std::cout << "Condor Mode: " << condor_mode << std::endl;
   std::cout << "########################" << std::endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -145,9 +143,7 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
 
   // sEPD QA
   sEPDValidation* sepd_validation = new sEPDValidation();
-  sepd_validation->set_filename(output);
   sepd_validation->set_tree_filename(output_tree);
-  sepd_validation->set_condor_mode(condor_mode);
   sepd_validation->set_print_interval(1000);
   sepd_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(sepd_validation);
@@ -164,6 +160,8 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
   se->run(nEvents+nSkip);
   se->End();
 
+  se->dumpHistos(output);
+
   CDBInterface::instance()->Print();  // print used DB files
   se->PrintTimer();
   delete se;
@@ -177,9 +175,9 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 3 || args.size() > 11)
+  if (args.size() < 3 || args.size() > 10)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST> <input_ZDC> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag] [condor_mode]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST> <input_ZDC> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input calo fitting list" << std::endl;
     std::cerr << "  input_ZDC: path to the input ZDC list" << std::endl;
     std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
@@ -189,7 +187,6 @@ int main(int argc, const char* const argv[])
     std::cerr << "  nSkip: (optional) number of events to skip (default: 0)" << std::endl;
     std::cerr << "  event_id: (optional) Specific Event to Analyze (default: 0)" << std::endl;
     std::cerr << "  dbtag: (optional) database tag (default: prodA_2024)" << std::endl;
-    std::cerr << "  Condor Mode: set condor mode for efficient output file." << std::endl;
     std::cerr << "  Do Event Plane: Do official Event Plane reconstruction." << std::endl;
     return 1;  // Indicate error
   }
@@ -203,7 +200,6 @@ int main(int argc, const char* const argv[])
   int nSkip = 0;
   int event_id = 0;
   std::string dbtag = "newcdbtag";
-  bool condor_mode = false;
 
   unsigned int ctr = 3;
 
@@ -235,12 +231,8 @@ int main(int argc, const char* const argv[])
   {
     dbtag = args[ctr++];
   }
-  if (args.size() >= ctr+1)
-  {
-    condor_mode = std::stoi(args[ctr++]);
-  }
 
-  Fun4All_sEPD(input_dst, input_zdc, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag, condor_mode);
+  Fun4All_sEPD(input_dst, input_zdc, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag);
 
   std::cout << "======================================" << std::endl;
   std::cout << "done" << std::endl;

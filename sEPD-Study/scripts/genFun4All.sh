@@ -41,7 +41,7 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
-root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\", 1)"
+root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\")"
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
