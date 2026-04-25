@@ -358,6 +358,7 @@ class sEPDValidation : public SubsysReco
     double qnsx{0};
     double qnsy{0};
 
+    bool is_flow_failure{false};
     float UE_sum_E{9999};
     float calo_v2{9999};
     float calo_v2_it1{9999};

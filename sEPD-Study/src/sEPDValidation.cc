@@ -230,6 +230,7 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("qnsx", &m_data.qnsx);
   m_tree->Branch("qnsy", &m_data.qnsy);
 
+  m_tree->Branch("is_flow_failure", &m_data.is_flow_failure);
   m_tree->Branch("UE_sum_E", &m_data.UE_sum_E);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
   m_tree->Branch("calo_v2_it1", &m_data.calo_v2_it1);
@@ -896,15 +897,16 @@ int sEPDValidation::process_UE(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  bool is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
+  m_data.is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
 
-  if (is_flow_failure)
+  if (m_data.is_flow_failure)
   {
     ++m_ctr["event_is_flow_failure"];
-    return Fun4AllReturnCodes::ABORTEVENT;
   }
-
-  m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::UE));
+  else
+  {
+    m_hists["hEvent"]->Fill(static_cast<std::uint8_t>(EventType::UE));
+  }
 
   float v2 = towerBkg->get_v2();
   float v2_it1 = towerBkg1->get_v2();
@@ -1063,6 +1065,7 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.qnsy = 0;
 
   // UE
+  m_data.is_flow_failure = false;
   m_data.UE_sum_E = 9999;
   m_data.calo_v2 = 9999;
   m_data.calo_v2_it1 = 9999;
@@ -1128,7 +1131,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
-  std::cout << std::format("process event, is_flow_failure: {}", m_ctr["event_is_flow_failure"]) << std::endl;
+  std::cout << std::format("process event, is_flow_failure: {} (not aborted)", m_ctr["event_is_flow_failure"]) << std::endl;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Event Plane" << std::endl;
