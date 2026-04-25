@@ -73,6 +73,21 @@ class JetAnalysis
     m_jet_eta_max = jet_eta_max;
   }
 
+  void set_is_data(bool isData)
+  {
+    m_isData = isData;
+  }
+
+  void set_sim_sample(int sim_sample)
+  {
+    m_simsample = sim_sample;
+  }
+
+  void set_radius(int radius)
+  {
+    m_radius = radius;
+  }
+
  private:
   enum class Subdetector
   {
@@ -254,7 +269,7 @@ class JetAnalysis
     double event_OHCal_Energy{0};
     double event_tower_median_Energy{0};
     double event_EMCal_tower_median_Energy{0};
-    float calo_v2{0.0};
+    double calo_v2{0.0};
     float calo_v2_it1{0.0};
     float UE_sum_E{0.0};
     int nHIRecoSeedsSub{0};
@@ -267,6 +282,14 @@ class JetAnalysis
     std::vector<double>* jet_phi{nullptr};
     std::vector<double>* jet_eta{nullptr};
 
+    //truth jet info, only used for sim
+    double max_truthjet_pt{0.0};
+    std::vector<double>* truthjet_energy{nullptr};
+    std::vector<double>* truthjet_pt{nullptr};
+    std::vector<double>* truthjet_phi{nullptr};
+    std::vector<double>* truthjet_eta{nullptr};
+    
+    
     // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors_raw;
@@ -303,7 +326,10 @@ class JetAnalysis
   long long m_events_to_process;
   std::string m_output_dir;
   std::string m_dbtag{"newcdbtag"};
-
+  bool m_isData{false};
+  int m_simsample{20};
+  int m_radius{3};
+  
   // Jet Cuts
   double m_jet_pt_min{7}; /*GeV*/
   double m_jet_eta_max{0.8};
@@ -346,6 +372,8 @@ class JetAnalysis
   void process_QVecs();
   bool check_CaloMBD() const;
   bool check_QVec() const;
+  bool check_MaxPt() const;
+  double get_event_weight() const;
   void process_calo();
   void process_events();
 
@@ -370,7 +398,8 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchStatus("*", false);
 
   // List of Branches of Interest
-  std::unordered_set<std::string> branchNames = {"event_id", "event_centrality",
+  std::unordered_set<std::string> branchNames;
+  if(m_isData) branchNames = {"event_id", "event_centrality",
                                                  "event_MBD_Charge_South", "event_MBD_Charge_North",
                                                  "event_sEPD_Charge_South", "event_sEPD_Charge_North",
                                                  "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
@@ -382,7 +411,35 @@ void JetAnalysis::setup_chain()
                                                  "Q_S_x_2_recentered", "Q_S_y_2_recentered", "Q_N_x_2_recentered", "Q_N_y_2_recentered",
                                                  "Q_S_x_2", "Q_S_y_2", "Q_N_x_2", "Q_N_y_2",
                                                  "Q_NS_x_2", "Q_NS_y_2"};
+  else branchNames = {       "event",
+				"centrality",
+				"max_pt_r02",
+				"pt_r02",
+				"e_r02",
+				"phi_r02",
+				"eta_r02",
+				"max_truthPt_r02",
+                                "truthPt_r02",
+                                "truthE_r02",
+                                "truthPhi_r02",
+                                "truthEta_r02",
+				"max_pt_r03",
+                                "pt_r03",
+                                "e_r03",
+                                "phi_r03",
+                                "eta_r03",
+                                "max_truthPt_r03",
+                                "truthPt_r03",
+                                "truthE_r03",
+                                "truthPhi_r03",
+                                "truthEta_r03",
+				"calo_v2",
+				"qsx_data_mc",
+				"qsy_data_mc",
+				"qnx_data_mc",
+				"qny_data_mc"};
 
+  
   // Check Branch Status
   for(const auto& branchName : branchNames)
   {
@@ -399,48 +456,89 @@ void JetAnalysis::setup_chain()
   }
 
   // Set branches to variables
-  m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
-  m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
-  m_chain->SetBranchAddress("event_MBD_Charge_South", &m_event_data.event_MBD_Charge_South);
-  m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
-  m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
-  m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
-  m_chain->SetBranchAddress("event_EMCal_Energy", &m_event_data.event_EMCal_Energy);
-  m_chain->SetBranchAddress("event_IHCal_Energy", &m_event_data.event_IHCal_Energy);
-  m_chain->SetBranchAddress("event_OHCal_Energy", &m_event_data.event_OHCal_Energy);
-  m_chain->SetBranchAddress("event_tower_median_Energy", &m_event_data.event_tower_median_Energy);
-  m_chain->SetBranchAddress("event_EMCal_tower_median_Energy", &m_event_data.event_EMCal_tower_median_Energy);
-  m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
-  m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
-  m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
-  m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
-  m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
+  if(m_isData)
+    {
+      m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
+      m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
+      m_chain->SetBranchAddress("event_MBD_Charge_South", &m_event_data.event_MBD_Charge_South);
+      m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
+      m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
+      m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
+      m_chain->SetBranchAddress("event_EMCal_Energy", &m_event_data.event_EMCal_Energy);
+      m_chain->SetBranchAddress("event_IHCal_Energy", &m_event_data.event_IHCal_Energy);
+      m_chain->SetBranchAddress("event_OHCal_Energy", &m_event_data.event_OHCal_Energy);
+      m_chain->SetBranchAddress("event_tower_median_Energy", &m_event_data.event_tower_median_Energy);
+      m_chain->SetBranchAddress("event_EMCal_tower_median_Energy", &m_event_data.event_EMCal_tower_median_Energy);
+      m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
+      m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
+      m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
+      m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
+      m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
+      
+      m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
+      m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
+      
+      m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+      m_chain->SetBranchAddress("calo_v2_it1", &m_event_data.calo_v2_it1);
+      m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
+      
+      m_chain->SetBranchAddress("Q_S_x_2_raw", &m_event_data.Q_S_x_raw);
+      m_chain->SetBranchAddress("Q_S_y_2_raw", &m_event_data.Q_S_y_raw);
+      m_chain->SetBranchAddress("Q_N_x_2_raw", &m_event_data.Q_N_x_raw);
+      m_chain->SetBranchAddress("Q_N_y_2_raw", &m_event_data.Q_N_y_raw);
+      
+      m_chain->SetBranchAddress("Q_S_x_2_recentered", &m_event_data.Q_S_x_recentered);
+      m_chain->SetBranchAddress("Q_S_y_2_recentered", &m_event_data.Q_S_y_recentered);
+      m_chain->SetBranchAddress("Q_N_x_2_recentered", &m_event_data.Q_N_x_recentered);
+      m_chain->SetBranchAddress("Q_N_y_2_recentered", &m_event_data.Q_N_y_recentered);
+      
+      m_chain->SetBranchAddress("Q_S_x_2", &m_event_data.Q_S_x);
+      m_chain->SetBranchAddress("Q_S_y_2", &m_event_data.Q_S_y);
+      m_chain->SetBranchAddress("Q_N_x_2", &m_event_data.Q_N_x);
+      m_chain->SetBranchAddress("Q_N_y_2", &m_event_data.Q_N_y);
+      
+      m_chain->SetBranchAddress("Q_NS_x_2", &m_event_data.Q_NS_x);
+      m_chain->SetBranchAddress("Q_NS_y_2", &m_event_data.Q_NS_y);
+    }
+  else
+    {
+      m_chain->SetBranchAddress("event", &m_event_data.event_id);
+      m_chain->SetBranchAddress("centrality", &m_event_data.event_centrality);
+      if(m_radius == 2)
+	{
+	  m_chain->SetBranchAddress("max_pt_r02", &m_event_data.max_jet_pt);
+	  m_chain->SetBranchAddress("pt_r02", &m_event_data.jet_pt);
+	  m_chain->SetBranchAddress("e_r02", &m_event_data.jet_energy);
+	  m_chain->SetBranchAddress("phi_r02", &m_event_data.jet_phi);
+	  m_chain->SetBranchAddress("eta_r02", &m_event_data.jet_eta);
+	  m_chain->SetBranchAddress("max_truthPt_r02", &m_event_data.max_truthjet_pt);
+	  m_chain->SetBranchAddress("truthPt_r02", &m_event_data.truthjet_pt);
+	  m_chain->SetBranchAddress("truthE_r02", &m_event_data.truthjet_energy);
+	  m_chain->SetBranchAddress("truthPhi_r02", &m_event_data.truthjet_phi);
+	  m_chain->SetBranchAddress("truthEta_r02", &m_event_data.truthjet_eta);
+	}
+      else if(m_radius == 3)
+	{
+	  m_chain->SetBranchAddress("max_pt_r03", &m_event_data.max_jet_pt);
+          m_chain->SetBranchAddress("pt_r03", &m_event_data.jet_pt);
+          m_chain->SetBranchAddress("e_r03", &m_event_data.jet_energy);
+          m_chain->SetBranchAddress("phi_r03", &m_event_data.jet_phi);
+          m_chain->SetBranchAddress("eta_r03", &m_event_data.jet_eta);
+          m_chain->SetBranchAddress("max_truthPt_r03", &m_event_data.max_truthjet_pt);
+          m_chain->SetBranchAddress("truthPt_r03", &m_event_data.truthjet_pt);
+          m_chain->SetBranchAddress("truthE_r03", &m_event_data.truthjet_energy);
+          m_chain->SetBranchAddress("truthPhi_r03", &m_event_data.truthjet_phi);
+          m_chain->SetBranchAddress("truthEta_r03", &m_event_data.truthjet_eta);
 
-  m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
-  m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
+	}
+      m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+      
+      m_chain->SetBranchAddress("qsx_data_mc", &m_event_data.Q_S_x);
+      m_chain->SetBranchAddress("qsy_data_mc", &m_event_data.Q_S_y);
+      m_chain->SetBranchAddress("qnx_data_mc", &m_event_data.Q_N_x);
+      m_chain->SetBranchAddress("qny_data_mc", &m_event_data.Q_N_y);
 
-  m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
-  m_chain->SetBranchAddress("calo_v2_it1", &m_event_data.calo_v2_it1);
-  m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
-
-  m_chain->SetBranchAddress("Q_S_x_2_raw", &m_event_data.Q_S_x_raw);
-  m_chain->SetBranchAddress("Q_S_y_2_raw", &m_event_data.Q_S_y_raw);
-  m_chain->SetBranchAddress("Q_N_x_2_raw", &m_event_data.Q_N_x_raw);
-  m_chain->SetBranchAddress("Q_N_y_2_raw", &m_event_data.Q_N_y_raw);
-
-  m_chain->SetBranchAddress("Q_S_x_2_recentered", &m_event_data.Q_S_x_recentered);
-  m_chain->SetBranchAddress("Q_S_y_2_recentered", &m_event_data.Q_S_y_recentered);
-  m_chain->SetBranchAddress("Q_N_x_2_recentered", &m_event_data.Q_N_x_recentered);
-  m_chain->SetBranchAddress("Q_N_y_2_recentered", &m_event_data.Q_N_y_recentered);
-
-  m_chain->SetBranchAddress("Q_S_x_2", &m_event_data.Q_S_x);
-  m_chain->SetBranchAddress("Q_S_y_2", &m_event_data.Q_S_y);
-  m_chain->SetBranchAddress("Q_N_x_2", &m_event_data.Q_N_x);
-  m_chain->SetBranchAddress("Q_N_y_2", &m_event_data.Q_N_y);
-
-  m_chain->SetBranchAddress("Q_NS_x_2", &m_event_data.Q_NS_x);
-  m_chain->SetBranchAddress("Q_NS_y_2", &m_event_data.Q_NS_y);
-
+    }
   std::cout << "Finished... setup_chain" << std::endl;
 }
 
@@ -464,6 +562,7 @@ void JetAnalysis::load_calo_centrality_cuts()
 
 void JetAnalysis::process_weights()
 {
+  std::cout<<"Processing weights"<<std::endl;
   auto file = std::unique_ptr<TFile>(TFile::Open(m_input_F4A_QA_file.c_str()));
 
   // Check if the file was opened successfully.
@@ -472,7 +571,7 @@ void JetAnalysis::process_weights()
     throw std::runtime_error(std::format("Could not open file '{}'", m_input_F4A_QA_file));
   }
 
-  auto* h2JetPhiEta = dynamic_cast<TH2*>(file->Get<TH2>("h2Jet_PhiEta")->Clone("h2JetPhiEta_f4a"));
+  auto* h2JetPhiEta = dynamic_cast<TH2*>(file->Get<TH2>("h2JetPhiEta")->Clone("h2JetPhiEta_f4a"));
   m_hists2D["h2JetPhiEta_f4a"] = std::unique_ptr<TH2>(h2JetPhiEta);
 
   m_hists.h2Weights = dynamic_cast<TH2*>(h2JetPhiEta->Clone("h2Weights"));
@@ -1162,7 +1261,8 @@ void JetAnalysis::compute_SP()
 
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
-
+  double eventweight = get_event_weight();
+  
   // Loop over all jets with positive Energy
   for (size_t idx = 0; idx < nJets; ++idx)
   {
@@ -1195,8 +1295,8 @@ void JetAnalysis::compute_SP()
 
         if (pt >= pt_low && pt < pt_high)
         {
-          m_hists.h2ScalarProduct[n_idx][pt_idx]->Fill(cent, scalar_product, weight);
-          m_hists.h2ScalarProductv1[n_idx][pt_idx]->Fill(cent, scalar_product);
+          m_hists.h2ScalarProduct[n_idx][pt_idx]->Fill(cent, scalar_product, weight*eventweight);
+          m_hists.h2ScalarProductv1[n_idx][pt_idx]->Fill(cent, scalar_product,eventweight);
           break;
         }
       }
@@ -1207,7 +1307,8 @@ void JetAnalysis::compute_SP()
 std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 {
   size_t nJets = m_event_data.jet_phi->size();
-
+  double eventweight = get_event_weight();
+ 
   std::vector<JetInfo> jet_info;
   jet_info.reserve(nJets);
 
@@ -1243,34 +1344,34 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     int bin_eta = m_hists.h2Dummy->GetYaxis()->FindBin(eta);
     int dead_status = static_cast<int>(m_hists.h2EMCalBadTowersDeadv2->GetBinContent(bin_phi, bin_eta));
 
-    m_hists.h2JetPhiPt->Fill(phi, pt);
-    m_hists.h2JetPhiEta->Fill(phi, eta);
-    m_hists.h2JetPtEnergy->Fill(pt, energy);
-    m_hists.h2CentralityJetEnergy->Fill(cent, energy);
+    m_hists.h2JetPhiPt->Fill(phi, pt, eventweight);
+    m_hists.h2JetPhiEta->Fill(phi, eta, eventweight);
+    m_hists.h2JetPtEnergy->Fill(pt, energy, eventweight);
+    m_hists.h2CentralityJetEnergy->Fill(cent, energy, eventweight);
 
     if (energy > 0)
     {
-      m_hists.h2CaloEJetPt->Fill(total_energy, pt);
-      m_hists.h2CentralityJetPt->Fill(cent, pt);
-      m_hists.h2SumEJetPt->Fill(sum_E, pt);
-      m_hists.h2CaloV2JetPt->Fill(calo_v2, pt);
+      m_hists.h2CaloEJetPt->Fill(total_energy, pt, eventweight);
+      m_hists.h2CentralityJetPt->Fill(cent, pt, eventweight);
+      m_hists.h2SumEJetPt->Fill(sum_E, pt, eventweight);
+      m_hists.h2CaloV2JetPt->Fill(calo_v2, pt, eventweight);
 
-      m_hists.h2JetPhiPtv2->Fill(phi, pt);
-      m_hists.h2JetPhiEtav2->Fill(phi, eta);
+      m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
+      m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
 
       jet_info.emplace_back(energy, pt, phi, eta);
 
       if (dead_status == 0)
       {
-        m_hists.h2JetPhiPtv3->Fill(phi, pt);
-        m_hists.h2JetPhiEtav3->Fill(phi, eta);
+        m_hists.h2JetPhiPtv3->Fill(phi, pt, eventweight);
+        m_hists.h2JetPhiEtav3->Fill(phi, eta, eventweight);
 
         // jet_info.emplace_back(energy, pt, phi, eta);
 
         if (m_event_data.has_good_calo_v2)
         {
-          m_hists.h2JetPhiPtv4->Fill(phi, pt);
-          m_hists.h2JetPhiEtav4->Fill(phi, eta);
+          m_hists.h2JetPhiPtv4->Fill(phi, pt, eventweight);
+          m_hists.h2JetPhiEtav4->Fill(phi, eta, eventweight);
         }
       }
     }
@@ -1400,6 +1501,40 @@ bool JetAnalysis::check_QVec() const
     return !((Q_S_x == 0 && Q_S_y == 0) || (Q_N_x == 0 && Q_N_y == 0));
 }
 
+bool JetAnalysis::check_MaxPt() const
+{
+  bool is_inRange = true;
+  int maxpt;
+  int minpt;
+  if(m_simsample == 10)
+  {
+    minpt = 10;
+    if(m_radius == 2) maxpt = 20;
+    else if(m_radius == 3) maxpt = 21;
+    else throw std::runtime_error(std::format("No cuts available for R=0.{}", m_radius));
+  }
+  else if(m_simsample == 20)
+  {
+    maxpt = 100;
+    if(m_radius == 2) minpt = 20;
+    else if(m_radius == 3) minpt = 21;
+    else throw std::runtime_error(std::format("No cuts available for R=0.{}", m_radius));
+  }
+  else throw std::runtime_error(std::format("No cuts available for sample {}", m_simsample));
+  if(m_event_data.max_truthjet_pt > maxpt || m_event_data.max_truthjet_pt < minpt) is_inRange = false;
+  return is_inRange;
+}
+
+double JetAnalysis::get_event_weight() const
+{
+  double weight;
+  if(m_isData) weight = 1;
+  else if(m_simsample == 10) weight = 3.997e+06/8402719;
+  else if(m_simsample == 20) weight = 6.2623e+04/8383716;
+  else throw std::runtime_error(std::format("No weights available for sample {}", m_simsample));
+  return weight;
+}
+
 void JetAnalysis::process_calo()
 {
   double cent = m_event_data.event_centrality;
@@ -1521,7 +1656,7 @@ void JetAnalysis::process_events()
 
     // Ensure good correlation between Calo and MBD
     bool isGood = check_CaloMBD();
-    if (!isGood)
+    if (m_isData && !isGood)
     {
       ++ctr["events_skipped_calo_mbd"];
       continue;
@@ -1539,6 +1674,16 @@ void JetAnalysis::process_events()
 
     m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::QVEC));
 
+    if(!m_isData)
+    {
+      isGood = check_MaxPt();
+      if(!isGood)
+      {
+	++ctr["events_skipped_simPtRange"];
+	continue;
+      }
+    }
+    
     // Q Vectors QA
     process_QVecs();
 
@@ -1619,9 +1764,9 @@ int main(int argc, const char* const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 4 || argc > 8)
+  if (argc < 4 || argc > 11)
   {
-    std::cout << "Usage: " << argv[0] << " input_file input_f4a_qa <runnumber> [events] [jet_pt_min] [jet_eta_max] [output_directory]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file input_f4a_qa <runnumber> [events] [jet_pt_min] [jet_eta_max] [output_directory] [jet_radius] [isData] [sim_sample]" << std::endl;
     return 1;
   }
 
@@ -1633,6 +1778,9 @@ int main(int argc, const char* const argv[])
   double jet_pt_min = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 7;
   double jet_eta_max = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 0.8;
   std::string output_dir = (argc >= ctr+1) ? argv[ctr++] : ".";
+  int radius = (argc >= ctr+1) ? static_cast<int>(std::atoll(argv[ctr++])) : 3;
+  bool isData = (argc >= ctr+1) ? std::atoll(argv[ctr++]) : true;
+  int sim_sample = (argc >= ctr+1) ? static_cast<int>(std::atoll(argv[ctr++])) : 10;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
@@ -1642,13 +1790,18 @@ int main(int argc, const char* const argv[])
   std::cout << std::format("Events: {}\n", events);
   std::cout << std::format("Jet pT min: {} [GeV]\n", jet_pt_min);
   std::cout << std::format("Jet eta max: {}\n", jet_eta_max);
+  std::cout << std::format("Is data: {}\n", isData);
+  if(!isData) std::cout << std::format("Sim sample: {} GeV \n", sim_sample);
   std::cout << std::format("{:#<20}\n", "");
-
+ 
   try
   {
     JetAnalysis analysis(input_file, input_f4a_qa_file, runnumber, events, output_dir);
     analysis.set_jet_pt_min(jet_pt_min);
     analysis.set_jet_eta_max(jet_eta_max);
+    analysis.set_is_data(isData);
+    analysis.set_sim_sample(sim_sample);
+    analysis.set_radius(radius);
     analysis.run();
   }
   catch (const std::exception& e)
