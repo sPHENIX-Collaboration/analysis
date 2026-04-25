@@ -35,19 +35,9 @@ class sEPDValidation : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
-  void set_filename(std::string_view file)
-  {
-    m_outfile_name = file;
-  }
-
   void set_tree_filename(std::string_view file)
   {
     m_outtree_name = file;
-  }
-
-  void set_condor_mode(const bool condor_mode = true)
-  {
-    m_condor_mode = condor_mode;
   }
 
   void set_print_interval(int events)
@@ -67,9 +57,7 @@ class sEPDValidation : public SubsysReco
 
   int m_event{0};
 
-  std::string m_outfile_name{"test.root"};
   std::string m_outtree_name{"tree.root"};
-  bool m_condor_mode{false};
 
   struct HistConfig
   {
@@ -181,33 +169,6 @@ class sEPDValidation : public SubsysReco
   };
 
   HistConfig m_hist_config;
-
-  // A struct to hold all histogram configuration data
-  struct HistDef
-  {
-    enum class Type
-    {
-      TH1,
-      TH2,
-      TProfile,
-      TProfile2D
-    };
-    Type type;
-    std::string name;
-    std::string title;
-
-    // Axis definitions (use for X, Y, Z as needed)
-    struct Axis
-    {
-      unsigned int bins;
-      double low;
-      double high;
-    };
-    Axis x, y, z;
-  };
-
-  // Helper function to create histograms
-  void create_histogram(const HistDef &def);
 
   enum class EventType : std::uint8_t
   {
@@ -321,7 +282,6 @@ class sEPDValidation : public SubsysReco
 
   LoggingInfo m_logging;
 
-  std::map<std::string, std::unique_ptr<TH1>> m_hists;
   std::map<std::string, int> m_ctr;
 
   struct EventData
@@ -382,6 +342,78 @@ class sEPDValidation : public SubsysReco
   };
 
   EventData m_data;
+
+  TH1* hEvent{nullptr};
+  TH1* hEventMinBias{nullptr};
+  TH1* hVtxZ{nullptr};
+  TH1* hVtxZ_MB{nullptr};
+  TH1* hCentrality{nullptr};
+
+  TProfile2D* h2MBD_North_Charge{nullptr};
+  TProfile2D* h2MBD_South_Charge{nullptr};
+
+  TH2* h2SEPD_Channel_Charge{nullptr};
+  TH2* h2SEPD_Channel_Chargev2{nullptr};
+
+  TProfile* hSEPD_Charge{nullptr};
+
+  TProfile2D* h2SEPD_North_Charge{nullptr};
+  TProfile2D* h2SEPD_South_Charge{nullptr};
+
+  TProfile2D* h2SEPD_North_BelowThresh{nullptr};
+  TProfile2D* h2SEPD_South_BelowThresh{nullptr};
+
+  TProfile* hSEPD_North_Charge{nullptr};
+  TProfile* hSEPD_South_Charge{nullptr};
+
+  TH2* h2SEPD_Total_Charge{nullptr};
+  TH2* h2SEPD_Charge{nullptr};
+
+  TH2* h2MBD_Total_Charge{nullptr};
+  TH2* h2MBD_Charge{nullptr};
+
+  TH2* h2SEPD_MBD_Total_Charge{nullptr};
+
+  TProfile2D* h2EMCal_Energy{nullptr};
+  TProfile2D* h2IHCal_Energy{nullptr};
+  TProfile2D* h2OHCal_Energy{nullptr};
+
+  TH2* h2EMCal_MBD{nullptr};
+  TH2* h2EMCal_sEPD{nullptr};
+
+  TH2* h2IHCal_MBD{nullptr};
+  TH2* h2IHCal_sEPD{nullptr};
+
+  TH2* h2OHCal_MBD{nullptr};
+  TH2* h2OHCal_sEPD{nullptr};
+
+  TH2* h2EMCal_OHCal{nullptr};
+  TH2* h2IHCal_OHCal{nullptr};
+
+  TH2* h2Jet_pT_Constituents{nullptr};
+  TH2* h2Jet_pT_Cent{nullptr};
+  TH2* h2Jet_LeadpT_Cent{nullptr};
+  TH2* h2Jet_pT_Phi{nullptr};
+  TH2* h2Jet_pT_Energy{nullptr};
+  TH2* h2Jet_PhiEta{nullptr};
+
+  TProfile* hJet_nEvent{nullptr};
+
+  TH2* h2UE_v2_Towers{nullptr};
+  TH2* h2UE_v2_Strips{nullptr};
+  TH2* h2UE_v2_LeadJet{nullptr};
+  TH2* h2UE_v2_Jet{nullptr};
+  TH2* h2UE_v2_Cent{nullptr};
+  TH2* h2UE_v2_SumE{nullptr};
+  TH2* h2UE_SumE_Cent{nullptr};
+
+  TH2* h2SEPD_Psi2_raw_S{nullptr};
+  TH2* h2SEPD_Psi2_raw_N{nullptr};
+
+  TH2* h2SEPD_Psi2_S{nullptr};
+  TH2* h2SEPD_Psi2_N{nullptr};
+
+  TH2* h2SEPD_Psi2_NS{nullptr};
 
   std::unique_ptr<TFile> m_output;
   TTree *m_tree{nullptr};
