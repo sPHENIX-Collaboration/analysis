@@ -5,6 +5,8 @@
 #include <iostream>
 #include <algorithm>
 #include <numbers>
+#include <numeric>
+#include <span>
 
 // -- event
 #include <ffaobjects/EventHeader.h>
@@ -71,6 +73,9 @@ void sEPD_DataMC_Validation::setup_tree()
   m_tree->Branch("centrality", &m_data.centrality);
   m_tree->Branch("calo_v2", &m_data.calo_v2);
   m_tree->Branch("is_flow_failure", &m_data.is_flow_failure);
+  m_tree->Branch("ue_emcal_avg", &m_data.ue_emcal_avg);
+  m_tree->Branch("ue_ihcal_avg", &m_data.ue_ihcal_avg);
+  m_tree->Branch("ue_ohcal_avg", &m_data.ue_ohcal_avg);
 
   // Calo
   m_tree->Branch("emcal_energy", &m_data.emcal_energy);
@@ -904,6 +909,47 @@ void sEPD_DataMC_Validation::fill_jets(JetContainer* jets, double max_eta, int &
 }
 
 //____________________________________________________________________________..
+std::vector<float> sEPD_DataMC_Validation::computeUEAverages(TowerBackground *towerBkg)
+{
+  const int DET_LAYERS = 3;
+  std::vector<float> results;
+  results.reserve(DET_LAYERS);
+
+  for (int i = 0; i < DET_LAYERS; ++i)
+  {
+    // Accessing via reference is critical for efficiency
+    const std::vector<float> &UE_det = towerBkg->get_UE(i);
+
+    if (UE_det.empty())
+    {
+      if (Verbosity() > 2) std::cout << "Layer " << i << " is empty.\n";
+      results.push_back(0.0f);
+      continue;
+    }
+
+    // std::reduce for SIMD-friendly summation
+    float sum = std::reduce(UE_det.begin(), UE_det.end(), 0.0f);
+    float avg = sum / static_cast<float>(UE_det.size());
+    results.push_back(avg);
+
+    if (Verbosity() > 2)
+    {
+      std::cout << "--- Layer " << i << " ---\n";
+      std::cout << "Values: ";
+      for (float val : UE_det)
+      {
+        std::cout << val << " ";
+      }
+      std::cout << "\nTotal Sum: " << sum
+                << " | Count: " << UE_det.size()
+                << " | Average: " << avg << "\n\n";
+    }
+  }
+
+  return results;
+}
+
+//____________________________________________________________________________..
 int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 {
   if (!m_pass_MB || !m_pass_Zvtx || !m_pass_Centrality)
@@ -932,6 +978,11 @@ int sEPD_DataMC_Validation::process_jets(PHCompositeNode *topNode)
 
   m_data.is_flow_failure = towerBkg1->get_flow_failure_flag() || towerBkg->get_flow_failure_flag();
   m_data.calo_v2 = towerBkg->get_v2();
+
+  std::vector<float> ue_avg = computeUEAverages(towerBkg);
+  m_data.ue_emcal_avg = ue_avg[0];
+  m_data.ue_ihcal_avg = ue_avg[1];
+  m_data.ue_ohcal_avg = ue_avg[2];
 
   double Q_data_S_x = m_Q_data_S_2.first;
   double Q_data_S_y = m_Q_data_S_2.second;
@@ -1102,6 +1153,10 @@ int sEPD_DataMC_Validation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode
   m_data.centrality = -9999;
   m_data.calo_v2 = -9999;
   m_data.is_flow_failure = false;
+
+  m_data.ue_emcal_avg = 0;
+  m_data.ue_ihcal_avg = 0;
+  m_data.ue_ohcal_avg = 0;
 
   m_data.emcal_energy = 0;
   m_data.ihcal_energy = 0;
