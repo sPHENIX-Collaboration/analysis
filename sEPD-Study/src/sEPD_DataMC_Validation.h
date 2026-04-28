@@ -18,6 +18,7 @@ class PHCompositeNode;
 class TFile;
 class TTree;
 class JetContainer;
+class TowerBackground;
 
 class sEPD_DataMC_Validation : public SubsysReco
 {
@@ -56,6 +57,8 @@ class sEPD_DataMC_Validation : public SubsysReco
   void setup_tree();
   void fill_jets(JetContainer* jets, double max_eta, int &nJets, double &max_pt, std::vector<double> &pt_vec, std::vector<double> &e_vec, std::vector<double> &phi_vec, std::vector<double> &eta_vec) const;
 
+  std::vector<float> computeUEAverages(TowerBackground *towerBkg);
+
   std::string m_outtree_name{"tree.root"};
 
   std::unique_ptr<TFile> m_output;
@@ -68,6 +71,10 @@ class sEPD_DataMC_Validation : public SubsysReco
     double centrality{9999};
     float calo_v2{-9999};
     bool is_flow_failure{false};
+
+    float ue_emcal_avg{0};
+    float ue_ihcal_avg{0};
+    float ue_ohcal_avg{0};
 
     // Calo
     double emcal_energy{0};
