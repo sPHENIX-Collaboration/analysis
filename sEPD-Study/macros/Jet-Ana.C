@@ -256,6 +256,10 @@ class JetAnalysis
     std::array<TH2*, m_cent_bins.size()-1> h2_ptptresp{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_dphiptresp{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_ptrecopttrue{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h_dphipttrue{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h_dphiptreco{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h_dphipttruematch{nullptr};
+    std::array<TH2*, m_cent_bins.size()-1> h_dphiptrecomatch{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_SPrecoSPtrue{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_bigresp{nullptr};
     std::array<TH2*, m_cent_bins.size()-1> h2_bigrespA{nullptr};
@@ -287,6 +291,7 @@ class JetAnalysis
     double event_EMCal_tower_median_Energy{0};
     float calo_v2{0.0};
     float calo_v2_it1{0.0};
+    bool is_flow_failure{false};
     float UE_sum_E{0.0};
     int nHIRecoSeedsSub{0};
     int nHIRecoSeedsSubIt1{0};
@@ -452,6 +457,7 @@ void JetAnalysis::setup_chain()
                                 "truthPhi_r03",
                                 "truthEta_r03",
 				"calo_v2",
+				"is_flow_failure",
 				"qsx_data_mc",
 				"qsy_data_mc",
 				"qnx_data_mc",
@@ -503,6 +509,7 @@ void JetAnalysis::setup_chain()
       m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
       m_chain->SetBranchAddress("calo_v2_it1", &m_event_data.calo_v2_it1);
       m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
+
       
       m_chain->SetBranchAddress("Q_S_x_2_raw", &m_event_data.Q_S_x_raw);
       m_chain->SetBranchAddress("Q_S_y_2_raw", &m_event_data.Q_S_y_raw);
@@ -557,6 +564,7 @@ void JetAnalysis::setup_chain()
 
 	}
       m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+      m_chain->SetBranchAddress("is_flow_failure", &m_event_data.is_flow_failure);
       
       m_chain->SetBranchAddress("qsx_data_mc", &m_event_data.Q_S_x);
       m_chain->SetBranchAddress("qsy_data_mc", &m_event_data.Q_S_y);
@@ -1263,7 +1271,37 @@ void JetAnalysis::init_hists()
                                                   bins_pt, pt_low, pt_high,
 						  bins_pt, pt_low, pt_high);
     m_hists.h2_ptrecopttrue[icent] = m_hists2D[hist_name.c_str()].get();
+    
 
+    hist_title = Form("|z| < 10 cm and %i - %i %%;|#Psi_{2} - #phi|; p_{T}^{true}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h_dphipttrue_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  bins_phi, phi_low, phi_high,
+						  bins_pt, pt_low, pt_high);
+    m_hists.h_dphipttrue[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%;|#Psi_{2} - #phi|; p_{T}^{reco}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h_dphiptreco_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  bins_phi, phi_low, phi_high,
+						  bins_pt, pt_low, pt_high);
+    m_hists.h_dphiptreco[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%;|#Psi_{2} - #phi|; p_{T}^{true}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h_dphipttruematch_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  bins_phi, phi_low, phi_high,
+						  bins_pt, pt_low, pt_high);
+    m_hists.h_dphipttruematch[icent] = m_hists2D[hist_name.c_str()].get();
+
+    hist_title = Form("|z| < 10 cm and %i - %i %%;|#Psi_{2} - #phi|; p_{T}^{reco}", m_cent_bins[icent],m_cent_bins[icent+1]);
+    hist_name = Form("h_dphiptrecomatch_cent%i", icent);
+    m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
+						  bins_phi, phi_low, phi_high,
+						  bins_pt, pt_low, pt_high);
+    m_hists.h_dphiptrecomatch[icent] = m_hists2D[hist_name.c_str()].get();
+
+    
     hist_title = Form("|z| < 10 cm and %i - %i %%; q_{2}^{jet,reco}Q_{2}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_SPrecoSPtrue_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
@@ -1446,6 +1484,17 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   jet_info.reserve(nJets);
 
   double cent = m_event_data.event_centrality;
+  size_t centbin;
+  for (size_t cent_idx = 0; cent_idx < m_cent_bins.size()-1; ++cent_idx)
+  {
+    int cent_low = m_cent_bins[cent_idx];
+    int cent_high = m_cent_bins[cent_idx+1];
+    if (cent >= cent_low && cent < cent_high)
+    {
+      centbin = cent_idx;
+      break;
+    }
+  }
   float calo_v2 = m_event_data.calo_v2;
   float sum_E = m_event_data.UE_sum_E;
 
@@ -1462,6 +1511,10 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
 
+    double dphi = phi-m_event_data.psi2;
+    while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
+    while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
+    
     if (pt < m_jet_pt_min || std::abs(eta) >= m_jet_eta_max)
     {
       continue;
@@ -1491,7 +1544,8 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 
       m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
       m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
-
+      m_hists.h_dphiptreco[centbin]->Fill(fabs(dphi),pt,eventweight);
+      
       jet_info.emplace_back(energy, pt, phi, eta);
 
       if (dead_status == 0)
@@ -1543,6 +1597,11 @@ void JetAnalysis::fill_response() const
     double tphi = m_event_data.truthjet_phi->at(it);
     double teta = m_event_data.truthjet_eta->at(it);
 
+    double dphi = tphi-m_event_data.psi2;
+    while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
+    while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
+
+    
     //compute truth SP
     // Correlate jets with opposite sEPD arm
     size_t arm = (teta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1559,11 +1618,8 @@ void JetAnalysis::fill_response() const
       if(n == 2) truthSP = scalar_product;
     }
     m_hists.h2_ptSP_true[centbin]->Fill(tpt,truthSP,eventweight);
-
-    //also get truth angle wrt psi2
-    double dphi = tphi-m_event_data.psi2;
-    while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
-    while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
+    m_hists.h_dphipttrue[centbin]->Fill(std::abs(dphi),tpt,eventweight);
+    
 
     double matchEta, matchPhi, matchPt, dR;
     double dRMax = 100;    
@@ -1580,10 +1636,10 @@ void JetAnalysis::fill_response() const
 	continue;
       }
       double dEta = teta - eta;
-      double dPhi = tphi - phi;
-      while(dPhi > std::numbers::pi) dPhi -= 2*std::numbers::pi;
-      while(dPhi < -std::numbers::pi) dPhi += 2*std::numbers::pi;
-      dR = TMath::Sqrt(dEta*dEta + dPhi*dPhi);
+      double diff = tphi - phi;
+      while(diff > std::numbers::pi) diff -= 2*std::numbers::pi;
+      while(diff < -std::numbers::pi) diff += 2*std::numbers::pi;
+      dR = TMath::Sqrt(dEta*dEta + diff*diff);
       if(dR < dRMax){
 	matchEta = eta;
 	matchPhi = phi;
@@ -1610,14 +1666,20 @@ void JetAnalysis::fill_response() const
       double scalar_product = jet_Q.x * sEPD_Q.x + jet_Q.y * sEPD_Q.y;
       if(n == 2) recoSP = scalar_product;
     }
+
+    double dphimatch = matchPhi-m_event_data.psi2;
+    while (dphimatch < -std::numbers::pi/2 ) dphimatch += std::numbers::pi;
+    while (dphimatch >  std::numbers::pi/2 ) dphimatch -= std::numbers::pi;
     
     //fill response histograms
     m_hists.h2_ptptresp[centbin]->Fill(tpt,matchPt/tpt,eventweight);
-    m_hists.h2_dphiptresp[centbin]->Fill(dphi,matchPt/tpt);
+    m_hists.h2_dphiptresp[centbin]->Fill(std::abs(dphi),matchPt/tpt);
     m_hists.h2_ptrecopttrue[centbin]->Fill(matchPt,tpt,eventweight);
     m_hists.h2_SPrecoSPtrue[centbin]->Fill(recoSP,truthSP,eventweight);
     m_hists.h2_ptSP_match[centbin]->Fill(matchPt,recoSP,eventweight);
-
+    m_hists.h_dphiptrecomatch[centbin]->Fill(std::abs(dphimatch),matchPt,eventweight);
+    m_hists.h_dphipttruematch[centbin]->Fill(std::abs(dphi),tpt,eventweight);
+    
     int SPbintrue = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(truthSP);
     int	SPbin = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(recoSP);
     int	ptbintrue = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(tpt);
@@ -1926,6 +1988,17 @@ void JetAnalysis::process_events()
       {
 	++ctr["events_skipped_simPtRange"];
 	continue;
+      }
+    }
+
+    //check if flow failed
+    if(!m_isData)
+    {
+      isGood = !m_event_data.is_flow_failure;
+      if(!isGood)
+      {
+        ++ctr["events_skipped_flowfailure"];
+        continue;
       }
     }
     
