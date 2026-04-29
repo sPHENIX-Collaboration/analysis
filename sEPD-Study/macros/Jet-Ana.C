@@ -400,6 +400,8 @@ class JetAnalysis
   void process_calo();
   void process_events();
 
+  void set_psi2();
+
   void save_results() const;
 };
 
@@ -1519,8 +1521,8 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 
       m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
       m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
-      m_hists.h_dphiptreco[centbin]->Fill(fabs(dphi),pt,eventweight);
-      
+      m_hists.h_dphiptreco[centbin]->Fill(std::abs(dphi),pt,eventweight);
+
       jet_info.emplace_back(energy, pt, phi, eta);
 
       if (dead_status == 0)
@@ -1901,6 +1903,14 @@ void JetAnalysis::process_calo()
   }
 }
 
+// compute and set psi2 for data
+void JetAnalysis::set_psi2()
+{
+  double Qx = m_event_data.Q_NS_x;
+  double Qy = m_event_data.Q_NS_y;
+  m_event_data.psi2 = std::atan2(Qy, Qx);
+}
+
 void JetAnalysis::process_events()
 {
   std::cout << "Processing... process_events" << std::endl;
@@ -1972,6 +1982,12 @@ void JetAnalysis::process_events()
     {
       ++ctr["events_skipped_flowfailure"];
       continue;
+    }
+
+    // Compute psi2 for Data
+    if (m_isData)
+    {
+      set_psi2();
     }
 
     // Q Vectors QA
