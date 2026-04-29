@@ -1967,14 +1967,11 @@ void JetAnalysis::process_events()
     }
 
     //check if flow failed
-    if(!m_isData)
+    isGood = !m_event_data.is_flow_failure;
+    if (!isGood)
     {
-      isGood = !m_event_data.is_flow_failure;
-      if(!isGood)
-      {
-        ++ctr["events_skipped_flowfailure"];
-        continue;
-      }
+      ++ctr["events_skipped_flowfailure"];
+      continue;
     }
 
     // Q Vectors QA
