@@ -131,7 +131,7 @@ class JetAnalysis
 
   //centrality bins
   static constexpr std::array<int, 7> m_cent_bins = {0, 10, 20, 30, 40, 50, 60};
-  
+
   struct AnalysisHists
   {
     TH1* hEvent{nullptr};
@@ -309,8 +309,8 @@ class JetAnalysis
     std::vector<double>* truthjet_pt{nullptr};
     std::vector<double>* truthjet_phi{nullptr};
     std::vector<double>* truthjet_eta{nullptr};
-    
-    
+
+
     // Array for harmonics [2, 3, 4] -> indices [0, 1, 2]
     // Array for subdetectors [S, N] -> indices [0, 1]
     std::array<std::array<QVec, 2>, m_harmonics.size()> q_vectors_raw;
@@ -351,7 +351,7 @@ class JetAnalysis
   bool m_isData{false};
   int m_simsample{20};
   int m_radius{3};
-  
+
   // Jet Cuts
   double m_jet_pt_min{7}; /*GeV*/
   double m_jet_eta_max{0.8};
@@ -421,53 +421,31 @@ void JetAnalysis::setup_chain()
   m_chain->SetBranchStatus("*", false);
 
   // List of Branches of Interest
-  std::unordered_set<std::string> branchNames;
-  if(m_isData) branchNames = {"event_id", "event_centrality",
-                                                 "event_MBD_Charge_South", "event_MBD_Charge_North",
-                                                 "event_sEPD_Charge_South", "event_sEPD_Charge_North",
-                                                 "event_EMCal_Energy", "event_IHCal_Energy", "event_OHCal_Energy",
-                                                 "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
-                                                 "nHIRecoSeedsSub", "nHIRecoSeedsSubIt1",
-                                                 "jet_phi", "jet_eta", "jet_pt", "jet_energy", "max_jet_pt",
-                                                 "calo_v2", "calo_v2_it1", "UE_sum_E",
-                                                 "Q_S_x_2_raw", "Q_S_y_2_raw", "Q_N_x_2_raw", "Q_N_y_2_raw",
-                                                 "Q_S_x_2_recentered", "Q_S_y_2_recentered", "Q_N_x_2_recentered", "Q_N_y_2_recentered",
-                                                 "Q_S_x_2", "Q_S_y_2", "Q_N_x_2", "Q_N_y_2",
-                                                 "Q_NS_x_2", "Q_NS_y_2"};
-  else branchNames = {       "event",
-				"centrality",
-				"max_pt_r02",
-				"pt_r02",
-				"e_r02",
-				"phi_r02",
-				"eta_r02",
-				"max_truthPt_r02",
-                                "truthPt_r02",
-                                "truthE_r02",
-                                "truthPhi_r02",
-                                "truthEta_r02",
-				"max_pt_r03",
-                                "pt_r03",
-                                "e_r03",
-                                "phi_r03",
-                                "eta_r03",
-                                "max_truthPt_r03",
-                                "truthPt_r03",
-                                "truthE_r03",
-                                "truthPhi_r03",
-                                "truthEta_r03",
-				"calo_v2",
-				"is_flow_failure",
-				"qsx_data_mc",
-				"qsy_data_mc",
-				"qnx_data_mc",
-				"qny_data_mc",
-				"sepdpsi2_data_mc",
-                                "emcal_energy",
-                                "ihcal_energy",
-                                "ohcal_energy"};
+  // Common branches between data and sim
+  std::unordered_set<std::string> branchNames = {"event", "centrality",
+                                                 "emcal_energy", "ihcal_energy", "ohcal_energy",
+                                                 "pt_r02", "e_r02", "phi_r02", "eta_r02", "max_pt_r02",
+                                                 "pt_r03", "e_r03", "phi_r03", "eta_r03", "max_pt_r03",
+                                                 "calo_v2", "is_flow_failure"};
+  if (m_isData)
+  {
+    branchNames.insert({"event_MBD_Charge_South", "event_MBD_Charge_North",
+                        "event_sEPD_Charge_South", "event_sEPD_Charge_North",
+                        "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
+                        "nHIRecoSeedsSub", "nHIRecoSeedsSubIt1",
+                        "calo_v2_it1", "UE_sum_E",
+                        "qsx_raw", "qsy_raw", "qnx_raw", "qny_raw",
+                        "qsx_recentered", "qsy_recentered", "qnx_recentered", "qny_recentered",
+                        "qsx", "qsy", "qnx", "qny", "qnsx", "qnsy"});
+  }
+  else
+  {
+    branchNames.insert({"max_truthPt_r02", "truthPt_r02", "truthE_r02", "truthPhi_r02", "truthEta_r02",
+                        "max_truthPt_r03", "truthPt_r03", "truthE_r03", "truthPhi_r03", "truthEta_r03",
+                        "qsx_data_mc", "qsy_data_mc", "qnx_data_mc", "qny_data_mc",
+                        "sepdpsi2_data_mc"});
+  }
 
-  
   // Check Branch Status
   for(const auto& branchName : branchNames)
   {
@@ -484,94 +462,91 @@ void JetAnalysis::setup_chain()
   }
 
   // Set branches to variables
-  if(m_isData)
-    {
-      m_chain->SetBranchAddress("event_id", &m_event_data.event_id);
-      m_chain->SetBranchAddress("event_centrality", &m_event_data.event_centrality);
-      m_chain->SetBranchAddress("event_MBD_Charge_South", &m_event_data.event_MBD_Charge_South);
-      m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
-      m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
-      m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
-      m_chain->SetBranchAddress("event_EMCal_Energy", &m_event_data.event_EMCal_Energy);
-      m_chain->SetBranchAddress("event_IHCal_Energy", &m_event_data.event_IHCal_Energy);
-      m_chain->SetBranchAddress("event_OHCal_Energy", &m_event_data.event_OHCal_Energy);
-      m_chain->SetBranchAddress("event_tower_median_Energy", &m_event_data.event_tower_median_Energy);
-      m_chain->SetBranchAddress("event_EMCal_tower_median_Energy", &m_event_data.event_EMCal_tower_median_Energy);
-      m_chain->SetBranchAddress("max_jet_pt", &m_event_data.max_jet_pt);
-      m_chain->SetBranchAddress("jet_pt", &m_event_data.jet_pt);
-      m_chain->SetBranchAddress("jet_energy", &m_event_data.jet_energy);
-      m_chain->SetBranchAddress("jet_phi", &m_event_data.jet_phi);
-      m_chain->SetBranchAddress("jet_eta", &m_event_data.jet_eta);
-      
-      m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
-      m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
-      
-      m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
-      m_chain->SetBranchAddress("calo_v2_it1", &m_event_data.calo_v2_it1);
-      m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
+  // Common branches between data and sim
+  m_chain->SetBranchAddress("event", &m_event_data.event_id);
+  m_chain->SetBranchAddress("centrality", &m_event_data.event_centrality);
 
-      
-      m_chain->SetBranchAddress("Q_S_x_2_raw", &m_event_data.Q_S_x_raw);
-      m_chain->SetBranchAddress("Q_S_y_2_raw", &m_event_data.Q_S_y_raw);
-      m_chain->SetBranchAddress("Q_N_x_2_raw", &m_event_data.Q_N_x_raw);
-      m_chain->SetBranchAddress("Q_N_y_2_raw", &m_event_data.Q_N_y_raw);
-      
-      m_chain->SetBranchAddress("Q_S_x_2_recentered", &m_event_data.Q_S_x_recentered);
-      m_chain->SetBranchAddress("Q_S_y_2_recentered", &m_event_data.Q_S_y_recentered);
-      m_chain->SetBranchAddress("Q_N_x_2_recentered", &m_event_data.Q_N_x_recentered);
-      m_chain->SetBranchAddress("Q_N_y_2_recentered", &m_event_data.Q_N_y_recentered);
-      
-      m_chain->SetBranchAddress("Q_S_x_2", &m_event_data.Q_S_x);
-      m_chain->SetBranchAddress("Q_S_y_2", &m_event_data.Q_S_y);
-      m_chain->SetBranchAddress("Q_N_x_2", &m_event_data.Q_N_x);
-      m_chain->SetBranchAddress("Q_N_y_2", &m_event_data.Q_N_y);
-      
-      m_chain->SetBranchAddress("Q_NS_x_2", &m_event_data.Q_NS_x);
-      m_chain->SetBranchAddress("Q_NS_y_2", &m_event_data.Q_NS_y);
-    }
+  m_chain->SetBranchAddress("emcal_energy", &m_event_data.event_EMCal_Energy);
+  m_chain->SetBranchAddress("ihcal_energy", &m_event_data.event_IHCal_Energy);
+  m_chain->SetBranchAddress("ohcal_energy", &m_event_data.event_OHCal_Energy);
+
+  m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
+  m_chain->SetBranchAddress("is_flow_failure", &m_event_data.is_flow_failure);
+
+  if (m_radius == 2)
+  {
+    m_chain->SetBranchAddress("pt_r02", &m_event_data.jet_pt);
+    m_chain->SetBranchAddress("e_r02", &m_event_data.jet_energy);
+    m_chain->SetBranchAddress("phi_r02", &m_event_data.jet_phi);
+    m_chain->SetBranchAddress("eta_r02", &m_event_data.jet_eta);
+    m_chain->SetBranchAddress("max_pt_r02", &m_event_data.max_jet_pt);
+  }
+  if (m_radius == 3)
+  {
+    m_chain->SetBranchAddress("pt_r03", &m_event_data.jet_pt);
+    m_chain->SetBranchAddress("e_r03", &m_event_data.jet_energy);
+    m_chain->SetBranchAddress("phi_r03", &m_event_data.jet_phi);
+    m_chain->SetBranchAddress("eta_r03", &m_event_data.jet_eta);
+    m_chain->SetBranchAddress("max_pt_r03", &m_event_data.max_jet_pt);
+  }
+
+  if (m_isData)
+  {
+    m_chain->SetBranchAddress("event_MBD_Charge_South", &m_event_data.event_MBD_Charge_South);
+    m_chain->SetBranchAddress("event_MBD_Charge_North", &m_event_data.event_MBD_Charge_North);
+    m_chain->SetBranchAddress("event_sEPD_Charge_South", &m_event_data.event_sEPD_Charge_South);
+    m_chain->SetBranchAddress("event_sEPD_Charge_North", &m_event_data.event_sEPD_Charge_North);
+    m_chain->SetBranchAddress("event_tower_median_Energy", &m_event_data.event_tower_median_Energy);
+    m_chain->SetBranchAddress("event_EMCal_tower_median_Energy", &m_event_data.event_EMCal_tower_median_Energy);
+
+    m_chain->SetBranchAddress("nHIRecoSeedsSub", &m_event_data.nHIRecoSeedsSub);
+    m_chain->SetBranchAddress("nHIRecoSeedsSubIt1", &m_event_data.nHIRecoSeedsSubIt1);
+
+    m_chain->SetBranchAddress("calo_v2_it1", &m_event_data.calo_v2_it1);
+    m_chain->SetBranchAddress("UE_sum_E", &m_event_data.UE_sum_E);
+
+    m_chain->SetBranchAddress("qsx_raw", &m_event_data.Q_S_x_raw);
+    m_chain->SetBranchAddress("qsy_raw", &m_event_data.Q_S_y_raw);
+    m_chain->SetBranchAddress("qnx_raw", &m_event_data.Q_N_x_raw);
+    m_chain->SetBranchAddress("qny_raw", &m_event_data.Q_N_y_raw);
+
+    m_chain->SetBranchAddress("qsx_recentered", &m_event_data.Q_S_x_recentered);
+    m_chain->SetBranchAddress("qsy_recentered", &m_event_data.Q_S_y_recentered);
+    m_chain->SetBranchAddress("qnx_recentered", &m_event_data.Q_N_x_recentered);
+    m_chain->SetBranchAddress("qny_recentered", &m_event_data.Q_N_y_recentered);
+
+    m_chain->SetBranchAddress("qsx", &m_event_data.Q_S_x);
+    m_chain->SetBranchAddress("qsy", &m_event_data.Q_S_y);
+    m_chain->SetBranchAddress("qnx", &m_event_data.Q_N_x);
+    m_chain->SetBranchAddress("qny", &m_event_data.Q_N_y);
+
+    m_chain->SetBranchAddress("qnsx", &m_event_data.Q_NS_x);
+    m_chain->SetBranchAddress("qnsy", &m_event_data.Q_NS_y);
+  }
   else
+  {
+    if (m_radius == 2)
     {
-      m_chain->SetBranchAddress("event", &m_event_data.event_id);
-      m_chain->SetBranchAddress("centrality", &m_event_data.event_centrality);
-      m_chain->SetBranchAddress("emcal_energy", &m_event_data.event_EMCal_Energy);
-      m_chain->SetBranchAddress("ihcal_energy", &m_event_data.event_IHCal_Energy);
-      m_chain->SetBranchAddress("ohcal_energy", &m_event_data.event_OHCal_Energy);
-      if(m_radius == 2)
-	{
-	  m_chain->SetBranchAddress("max_pt_r02", &m_event_data.max_jet_pt);
-	  m_chain->SetBranchAddress("pt_r02", &m_event_data.jet_pt);
-	  m_chain->SetBranchAddress("e_r02", &m_event_data.jet_energy);
-	  m_chain->SetBranchAddress("phi_r02", &m_event_data.jet_phi);
-	  m_chain->SetBranchAddress("eta_r02", &m_event_data.jet_eta);
-	  m_chain->SetBranchAddress("max_truthPt_r02", &m_event_data.max_truthjet_pt);
-	  m_chain->SetBranchAddress("truthPt_r02", &m_event_data.truthjet_pt);
-	  m_chain->SetBranchAddress("truthE_r02", &m_event_data.truthjet_energy);
-	  m_chain->SetBranchAddress("truthPhi_r02", &m_event_data.truthjet_phi);
-	  m_chain->SetBranchAddress("truthEta_r02", &m_event_data.truthjet_eta);
-	}
-      else if(m_radius == 3)
-	{
-	  m_chain->SetBranchAddress("max_pt_r03", &m_event_data.max_jet_pt);
-          m_chain->SetBranchAddress("pt_r03", &m_event_data.jet_pt);
-          m_chain->SetBranchAddress("e_r03", &m_event_data.jet_energy);
-          m_chain->SetBranchAddress("phi_r03", &m_event_data.jet_phi);
-          m_chain->SetBranchAddress("eta_r03", &m_event_data.jet_eta);
-          m_chain->SetBranchAddress("max_truthPt_r03", &m_event_data.max_truthjet_pt);
-          m_chain->SetBranchAddress("truthPt_r03", &m_event_data.truthjet_pt);
-          m_chain->SetBranchAddress("truthE_r03", &m_event_data.truthjet_energy);
-          m_chain->SetBranchAddress("truthPhi_r03", &m_event_data.truthjet_phi);
-          m_chain->SetBranchAddress("truthEta_r03", &m_event_data.truthjet_eta);
-
-	}
-      m_chain->SetBranchAddress("calo_v2", &m_event_data.calo_v2);
-      m_chain->SetBranchAddress("is_flow_failure", &m_event_data.is_flow_failure);
-      
-      m_chain->SetBranchAddress("qsx_data_mc", &m_event_data.Q_S_x);
-      m_chain->SetBranchAddress("qsy_data_mc", &m_event_data.Q_S_y);
-      m_chain->SetBranchAddress("qnx_data_mc", &m_event_data.Q_N_x);
-      m_chain->SetBranchAddress("qny_data_mc", &m_event_data.Q_N_y);
-      m_chain->SetBranchAddress("sepdpsi2_data_mc", &m_event_data.psi2);
+      m_chain->SetBranchAddress("max_truthPt_r02", &m_event_data.max_truthjet_pt);
+      m_chain->SetBranchAddress("truthPt_r02", &m_event_data.truthjet_pt);
+      m_chain->SetBranchAddress("truthE_r02", &m_event_data.truthjet_energy);
+      m_chain->SetBranchAddress("truthPhi_r02", &m_event_data.truthjet_phi);
+      m_chain->SetBranchAddress("truthEta_r02", &m_event_data.truthjet_eta);
     }
+    else if (m_radius == 3)
+    {
+      m_chain->SetBranchAddress("max_truthPt_r03", &m_event_data.max_truthjet_pt);
+      m_chain->SetBranchAddress("truthPt_r03", &m_event_data.truthjet_pt);
+      m_chain->SetBranchAddress("truthE_r03", &m_event_data.truthjet_energy);
+      m_chain->SetBranchAddress("truthPhi_r03", &m_event_data.truthjet_phi);
+      m_chain->SetBranchAddress("truthEta_r03", &m_event_data.truthjet_eta);
+    }
+    m_chain->SetBranchAddress("qsx_data_mc", &m_event_data.Q_S_x);
+    m_chain->SetBranchAddress("qsy_data_mc", &m_event_data.Q_S_y);
+    m_chain->SetBranchAddress("qnx_data_mc", &m_event_data.Q_N_x);
+    m_chain->SetBranchAddress("qny_data_mc", &m_event_data.Q_N_y);
+    m_chain->SetBranchAddress("sepdpsi2_data_mc", &m_event_data.psi2);
+  }
   std::cout << "Finished... setup_chain" << std::endl;
 }
 
@@ -902,7 +877,7 @@ void JetAnalysis::init_hists()
   int bins_pt2 = 93;
   double pt2_low = 7; // GeV
   double pt2_high = 100;
-  
+
   int bins_energy = 1000;
   double energy_low = -500;
   double energy_high = 500;
@@ -958,7 +933,7 @@ void JetAnalysis::init_hists()
   unsigned int bins_bigresp = bins_SPnum*m_jet_pt_vec.size();
   double bigresp_low{0};
   double bigresp_high{static_cast<double>(bins_bigresp)};
-  
+
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
   m_hists1D["hEvent"] = std::make_unique<TH1F>("hEvent", "Event Type; Type; Events", bins_event, 0, bins_event);
@@ -1271,7 +1246,7 @@ void JetAnalysis::init_hists()
                                                   bins_pt, pt_low, pt_high,
 						  bins_pt, pt_low, pt_high);
     m_hists.h2_ptrecopttrue[icent] = m_hists2D[hist_name.c_str()].get();
-    
+
 
     hist_title = Form("|z| < 10 cm and %i - %i %%;|#Psi_{2} - #phi|; p_{T}^{true}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h_dphipttrue_cent%i", icent);
@@ -1301,7 +1276,7 @@ void JetAnalysis::init_hists()
 						  bins_pt, pt_low, pt_high);
     m_hists.h_dphiptrecomatch[icent] = m_hists2D[hist_name.c_str()].get();
 
-    
+
     hist_title = Form("|z| < 10 cm and %i - %i %%; q_{2}^{jet,reco}Q_{2}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_SPrecoSPtrue_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
@@ -1330,7 +1305,7 @@ void JetAnalysis::init_hists()
 						  bins_bigresp, bigresp_low, bigresp_high);
     m_hists.h2_bigrespB[icent] = m_hists2D[hist_name.c_str()].get();
 
-    
+
 
     //use big pt bins
     std::vector<double> pt_edges(m_jet_pt_vec.begin(), m_jet_pt_vec.end());
@@ -1362,7 +1337,7 @@ void JetAnalysis::init_hists()
 						  bins_SPnum, SPnum_low, SPnum_high);
     m_hists.h2_ptSP_miss[icent] = m_hists2D[hist_name.c_str()].get();
   }
-  
+
   // Enable Sumw2
   auto enable = [](auto&... maps)
   {
@@ -1422,7 +1397,7 @@ void JetAnalysis::compute_SP()
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
   double eventweight = get_event_weight();
-  
+
   // Loop over all jets with positive Energy
   for (size_t idx = 0; idx < nJets; ++idx)
   {
@@ -1479,7 +1454,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 {
   size_t nJets = m_event_data.jet_phi->size();
   double eventweight = get_event_weight();
- 
+
   std::vector<JetInfo> jet_info;
   jet_info.reserve(nJets);
 
@@ -1514,7 +1489,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     double dphi = phi-m_event_data.psi2;
     while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
     while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
-    
+
     if (pt < m_jet_pt_min || std::abs(eta) >= m_jet_eta_max)
     {
       continue;
@@ -1589,7 +1564,7 @@ void JetAnalysis::fill_response() const
       break;
     }
   }
-  
+
   //loop over truth jets
   for (size_t it = 0; it < nJets; ++it)
   {
@@ -1601,7 +1576,7 @@ void JetAnalysis::fill_response() const
     while (dphi < -std::numbers::pi/2 ) dphi += std::numbers::pi;
     while (dphi >  std::numbers::pi/2 ) dphi -= std::numbers::pi;
 
-    
+
     //compute truth SP
     // Correlate jets with opposite sEPD arm
     size_t arm = (teta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
@@ -1619,10 +1594,10 @@ void JetAnalysis::fill_response() const
     }
     m_hists.h2_ptSP_true[centbin]->Fill(tpt,truthSP,eventweight);
     m_hists.h_dphipttrue[centbin]->Fill(std::abs(dphi),tpt,eventweight);
-    
+
 
     double matchEta, matchPhi, matchPt, dR;
-    double dRMax = 100;    
+    double dRMax = 100;
 
     for (size_t ir = 0; ir < nRecoJets; ++ir)
     {
@@ -1630,7 +1605,7 @@ void JetAnalysis::fill_response() const
       double pt = m_event_data.jet_pt->at(ir);
       double phi = m_event_data.jet_phi->at(ir);
       double eta = m_event_data.jet_eta->at(ir);
-      
+
       if (pt < m_jet_pt_min || std::abs(eta) >= m_jet_eta_max || energy < 0)
       {
 	continue;
@@ -1670,7 +1645,7 @@ void JetAnalysis::fill_response() const
     double dphimatch = matchPhi-m_event_data.psi2;
     while (dphimatch < -std::numbers::pi/2 ) dphimatch += std::numbers::pi;
     while (dphimatch >  std::numbers::pi/2 ) dphimatch -= std::numbers::pi;
-    
+
     //fill response histograms
     m_hists.h2_ptptresp[centbin]->Fill(tpt,matchPt/tpt,eventweight);
     m_hists.h2_dphiptresp[centbin]->Fill(std::abs(dphi),matchPt/tpt);
@@ -1679,7 +1654,7 @@ void JetAnalysis::fill_response() const
     m_hists.h2_ptSP_match[centbin]->Fill(matchPt,recoSP,eventweight);
     m_hists.h_dphiptrecomatch[centbin]->Fill(std::abs(dphimatch),matchPt,eventweight);
     m_hists.h_dphipttruematch[centbin]->Fill(std::abs(dphi),tpt,eventweight);
-    
+
     int SPbintrue = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(truthSP);
     int	SPbin = m_hists.h2_ptSP_match[centbin]->GetYaxis()->FindBin(recoSP);
     int	ptbintrue = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(tpt);
@@ -2001,7 +1976,7 @@ void JetAnalysis::process_events()
         continue;
       }
     }
-    
+
     // Q Vectors QA
     process_QVecs();
 
@@ -2114,7 +2089,7 @@ int main(int argc, const char* const argv[])
   std::cout << std::format("Is data: {}\n", isData);
   if(!isData) std::cout << std::format("Sim sample: {} GeV \n", sim_sample);
   std::cout << std::format("{:#<20}\n", "");
- 
+
   try
   {
     JetAnalysis analysis(input_file, input_f4a_qa_file, runnumber, events, output_dir);
