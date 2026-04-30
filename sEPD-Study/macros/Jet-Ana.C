@@ -2047,26 +2047,23 @@ void JetAnalysis::save_results() const
 
   auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
 
-  for (const auto& [name, hist] : m_hists1D)
+  auto save_all = [](auto&... collections)
   {
-    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
-    hist->Write();
-  }
-  for (const auto& [name, hist] : m_hists2D)
-  {
-    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
-    hist->Write();
-  }
-  for (const auto& [name, hist] : m_profiles)
-  {
-    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
-    hist->Write();
-  }
-  for (const auto& [name, hist] : m_profiles2D)
-  {
-    std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
-    hist->Write();
-  }
+    auto save = [](const auto& container)
+    {
+      for (const auto& [name, hist] : container)
+      {
+        if (hist->GetEntries() != 0)
+        {
+          std::cout << std::format("Saving: {}, Estimated Size: {} Bytes\n", name, hist->Sizeof());
+          hist->Write();
+        }
+      }
+    };
+    (save(collections), ...);  // Fold expression
+  };
+
+  save_all(m_hists1D, m_hists2D, m_profiles, m_profiles2D);
 
   output_file->Close();
 
