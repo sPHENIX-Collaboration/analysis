@@ -614,7 +614,7 @@ void JetAnalysis::process_weights()
     for (int iphi = 1; iphi <= bins_phi; ++iphi)
     {
       double val = h2JetPhiEta->GetBinContent(iphi, ieta);
-      double weight = (val) ? avg / val : 0;
+      double weight = (val) ? avg / val : 1;
       h2Weights->SetBinContent(iphi, ieta, weight);
       h2Weights_closure->SetBinContent(iphi, ieta, val * weight);
     }
