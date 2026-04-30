@@ -2104,6 +2104,8 @@ int main(int argc, const char* const argv[])
   std::cout << std::format("Events: {}\n", events);
   std::cout << std::format("Jet pT min: {} [GeV]\n", jet_pt_min);
   std::cout << std::format("Jet eta max: {}\n", jet_eta_max);
+  std::cout << std::format("Output Dir: {}\n", output_dir);
+  std::cout << std::format("Jet Radius Type: {}\n", radius);
   std::cout << std::format("Is data: {}\n", isData);
   if(!isData) std::cout << std::format("Sim sample: {} GeV \n", sim_sample);
   std::cout << std::format("{:#<20}\n", "");
