@@ -888,9 +888,9 @@ void JetAnalysis::init_hists()
   double v2_low{-1};
   double v2_high{1};
 
-  unsigned int bins_nHIRecoSeeds{100};
+  unsigned int bins_nHIRecoSeeds{50};
   double nHIRecoSeeds_low{0};
-  double nHIRecoSeeds_high{100};
+  double nHIRecoSeeds_high{50};
 
   unsigned int bins_sum_E{540};
   double sum_E_low{-2e2};
@@ -900,17 +900,25 @@ void JetAnalysis::init_hists()
   double Calo_E_low{-2e2};
   double Calo_E_high{2.5e3};
 
-  unsigned int bins_sepd_total_charge{200};
+  unsigned int bins_ihcal_E{80};
+  double ihcal_E_low{-1e2};
+  double ihcal_E_high{3e2};
+
+  unsigned int bins_ohcal_E{240};
+  double ohcal_E_low{-2e2};
+  double ohcal_E_high{1e3};
+
+  unsigned int bins_sepd_total_charge{150};
   double sepd_total_charge_low{0};
-  double sepd_total_charge_high{4e4};
+  double sepd_total_charge_high{3e4};
 
   unsigned int bins_sepd_charge{100};
   double sepd_charge_low{0};
   double sepd_charge_high{2e4};
 
-  unsigned int bins_mbd_total_charge{200};
+  unsigned int bins_mbd_total_charge{120};
   double mbd_total_charge_low{0};
-  double mbd_total_charge_high{5e3};
+  double mbd_total_charge_high{3e3};
 
   unsigned int bins_mbd_charge{100};
   double mbd_charge_low{0};
@@ -975,19 +983,19 @@ void JetAnalysis::init_hists()
                                                     bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
 
   m_hists2D["h2IHCal_MBD"] = std::make_unique<TH2F>("h2IHCal_MBD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; MBD Total Charge",
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high,
+                                                    bins_ihcal_E, ihcal_E_low, ihcal_E_high,
                                                     bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high);
 
   m_hists2D["h2IHCal_SEPD"] = std::make_unique<TH2F>("h2IHCal_SEPD", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; sEPD Total Charge",
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high,
+                                                    bins_ihcal_E, ihcal_E_low, ihcal_E_high,
                                                     bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
 
   m_hists2D["h2OHCal_MBD"] = std::make_unique<TH2F>("h2OHCal_MBD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; MBD Total Charge",
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high,
+                                                    bins_ohcal_E, ohcal_E_low, ohcal_E_high,
                                                     bins_mbd_total_charge, mbd_total_charge_low, mbd_total_charge_high);
 
   m_hists2D["h2OHCal_SEPD"] = std::make_unique<TH2F>("h2OHCal_SEPD", "|z| < 10 cm and MB; OHCal Total Energy [GeV]; sEPD Total Charge",
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high,
+                                                    bins_ohcal_E, ohcal_E_low, ohcal_E_high,
                                                     bins_sepd_total_charge, sepd_total_charge_low, sepd_total_charge_high);
 
   m_hists2D["h2MBD_SEPD"] = std::make_unique<TH2F>("h2MBD_SEPD", "|z| < 10 cm and MB; MBD Total Charge; sEPD Total Charge",
@@ -996,11 +1004,11 @@ void JetAnalysis::init_hists()
 
   m_hists2D["h2EMCal_OHCal"] = std::make_unique<TH2F>("h2EMCal_OHCal", "|z| < 10 cm and MB; EMCal Total Energy [GeV]; OHCal Total Energy [GeV]",
                                                     bins_Calo_E, Calo_E_low, Calo_E_high,
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high);
+                                                    bins_ohcal_E, ohcal_E_low, ohcal_E_high);
 
   m_hists2D["h2IHCal_OHCal"] = std::make_unique<TH2F>("h2IHCal_OHCal", "|z| < 10 cm and MB; IHCal Total Energy [GeV]; OHCal Total Energy [GeV]",
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high,
-                                                    bins_Calo_E, Calo_E_low, Calo_E_high);
+                                                    bins_ihcal_E, ihcal_E_low, ihcal_E_high,
+                                                    bins_ohcal_E, ohcal_E_low, ohcal_E_high);
 
   m_hists2D["h2JetPtEnergy"] = std::make_unique<TH2F>("h2JetPtEnergy", "Jets; Jet p_{T} [GeV]; Jet Energy [GeV]",
                                                       bins_pt, pt_low, pt_high,
