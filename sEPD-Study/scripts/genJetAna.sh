@@ -2,17 +2,16 @@
 export USER="$(id -u -n)"
 export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
-export MYINSTALL="$HOME/Documents/sPHENIX/install"
 
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
-source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 jetAna_bin=${1}
 input=${2}
 input_f4a_qa=${3}
 jet_pt_min=${4}
 jet_eta_max=${5}
-submitDir=${6}
+jet_radius_type=${6}
+submitDir=${7}
 
 # extract runnumber from file name
 run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)') # Remove leading zeros using sed
@@ -35,7 +34,7 @@ printenv
 
 mkdir -p "$run"
 
-$jetAna_bin "$input_file" "$input_f4a_qa_file" "$run" 0 "$jet_pt_min" "$jet_eta_max" "$run"
+$jetAna_bin "$input_file" "$input_f4a_qa_file" "$run" 0 "$jet_pt_min" "$jet_eta_max" "$run" "$jet_radius_type" 1
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"

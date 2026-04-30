@@ -1016,9 +1016,9 @@ jetAna.add_argument('-j'
                     , help='Minimum Jet pT. Default: 7 [GeV]')
 
 jetAna.add_argument('-j2'
-                    , '--jet-eta-max', type=float
-                    , default=0.8
-                    , help='Maximum Jet eta. Default: 0.8')
+                    , '--jet-radius-type', type=float
+                    , default=3
+                    , help='Jet Radius Type. Default: 3 (i.e. R = 0.3)')
 
 jetAna.add_argument('-f'
                     , '--jetAna-macro', type=str
@@ -1054,17 +1054,17 @@ def jetAna_jobs():
     """
     jetAna condor jobs
     """
-    input_list     = Path(args.input_list).resolve()
+    input_list      = Path(args.input_list).resolve()
     f4a_qa_list     = Path(args.f4a_qa_list).resolve()
-    jet_pt_min     = args.jet_pt_min
-    jet_eta_max    = args.jet_eta_max
-    output_dir     = Path(args.output_dir).resolve()
-    jetAna_macro   = Path(args.jetAna_macro).resolve()
-    jetAna_bin     = Path(args.jetAna_bin).resolve()
-    log_file       = output_dir / 'log.txt'
-    condor_memory  = args.memory
-    condor_script  = Path(args.condor_script).resolve()
-    condor_log_dir = Path(args.condor_log_dir).resolve()
+    jet_pt_min      = args.jet_pt_min
+    jet_radius_type = args.jet_radius_type
+    output_dir      = Path(args.output_dir).resolve()
+    jetAna_macro    = Path(args.jetAna_macro).resolve()
+    jetAna_bin      = Path(args.jetAna_bin).resolve()
+    log_file        = output_dir / 'log.txt'
+    condor_memory   = args.memory
+    condor_script   = Path(args.condor_script).resolve()
+    condor_log_dir  = Path(args.condor_log_dir).resolve()
 
     # Create Dirs
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1072,8 +1072,17 @@ def jetAna_jobs():
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
 
+    R_values = {2: 0.2, 3: 0.3}
+    R_value = R_values.get(jet_radius_type)
+
+    if R_value is not None:
+        jet_eta_max = 1.1 - R_value
+    else:
+        logger.critical(f'Invalid jet_radius_type: {jet_radius_type}')
+        sys.exit()
+
     # Ensure that files exists
-    for f in [input_list, condor_script, jetAna_bin]:
+    for f in [input_list, f4a_qa_list, condor_script, jetAna_bin]:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit()
@@ -1085,6 +1094,7 @@ def jetAna_jobs():
     logger.info(f'Input F4A QA List: {f4a_qa_list}')
     logger.info(f'Jet pT Min: {jet_pt_min} GeV')
     logger.info(f'Jet eta Max: {jet_eta_max}')
+    logger.info(f'Jet Radius Type: {jet_radius_type}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
     logger.info(f'Jet Ana Bin: {jetAna_bin}')
     logger.info(f'Output Directory: {output_dir}')
@@ -1110,36 +1120,50 @@ def jetAna_jobs():
     jetAna_bin = shutil.copy(jetAna_bin, output_dir)
     shutil.copy(condor_script, output_dir)
 
-    run_paths = [Path(l.strip()) for l in open(f4a_qa_list)]
+    run_paths = [Path(l.strip()) for l in f4a_qa_list.read_text(encoding='utf-8').splitlines()]
     run_map = {p.stem: str(p) for p in run_paths}
 
-    # Setup jobs list
-    with open(input_list, "r") as f_in, open(output_dir / 'jobs.list', "w") as f_out:
-        for line in f_in:
-            tree_path = Path(line.strip())
+    all_job_entries = []
+    input_lines = input_list.read_text(encoding='utf-8').splitlines()
 
-            # tree_path: /path/68099/tree/tree-xxx.root
-            # .parent is /path/68099/tree/
-            # .parent.parent.name is "68099"
-            run_id = tree_path.parent.parent.name
+    for line in input_lines:
+        tree_path = Path(line.strip())
+        # /path/68099/tree/tree-xxx.root -> parent.parent.name is "68099"
+        run_id = tree_path.parent.parent.name
 
-            if run_id in run_map:
-                f_out.write(f"{tree_path},{run_map[run_id]}\n")
+        if run_id in run_map:
+            all_job_entries.append(f"{tree_path},{run_map[run_id]}")
+
+    logger.info(f"Total jobs filtered: {len(all_job_entries)}")
 
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
     """)
 
-    with open(output_dir / 'genJetAna.sub', mode='w', encoding='utf-8') as file:
-        file.write(submit_file_content)
+    (output_dir / 'genJetAna.sub').write_text(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree,input_f4a_qa from jobs.list"'
-    logger.info(command)
+    CONDOR_SUBMISSION_LIMIT = 20000
+
+    # 2. Use chunk_list to submit in batches of 20,000
+    # chunk_list is already defined at line 673 of your utils.py
+    for i, batch in enumerate(chunk_list(all_job_entries, CONDOR_SUBMISSION_LIMIT)):
+        batch_file = output_dir / f'jobs_part_{i}.list'
+
+        # Using pathlib to write the batch file
+        batch_file.write_text("\n".join(batch) + "\n", encoding='utf-8')
+
+        # 3. Submit each batch as its own Condor cluster
+        # We reuse the same genJetAna.sub file for all batches
+        command = f'condor_submit genJetAna.sub -queue "input_tree,input_f4a_qa from {batch_file.name}"'
+        logger.info(f"Submitting Batch {i} ({len(batch)} jobs): cd {output_dir} && {command}")
+
+        # run_command_and_log handles the execution and logging
+        # run_command_and_log(command, logger, output_dir)
 
 # ----------------------------
 
