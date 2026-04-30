@@ -243,12 +243,11 @@ def create_f4a_jobs():
 
     calib_map = {}
     # Calib List
-    with open(calib_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            run = Path(line.split(',')[0]).parts[-2]
-            logger.info(f'Processing: {line}, run: {run}')
-            calib_map[run] = line
+    for line in calib_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        run = Path(line.split(',')[0]).parts[-2]
+        logger.info(f'Processing: {line}, run: {run}')
+        calib_map[run] = line
 
     jobs_file = output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
@@ -256,17 +255,17 @@ def create_f4a_jobs():
     jobs_temp_file = output_dir / 'jobs-temp.list'
     jobs_temp_file.unlink(missing_ok=True)
 
-    with open(input_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            logger.info(f'Processing: {line}')
-            file_stem = Path(line).stem
 
-            command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
-            run_command_and_log(command, logger, files_dir, False)
+    for line in input_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        logger.info(f'Processing: {line}')
+        file_stem = Path(line).stem
 
-            command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
-            run_command_and_log(command, logger, output_dir, False)
+        command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        run_command_and_log(command, logger, files_dir, False)
+
+        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
+        run_command_and_log(command, logger, output_dir, False)
 
     with open(jobs_temp_file, mode='r', encoding='utf-8') as file_in, \
          open(jobs_file, mode='w', encoding='utf-8') as file_out:
@@ -452,12 +451,11 @@ def create_f4a_mc_jobs():
 
     calib_map = {}
     # Calib List
-    with open(calib_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            run = Path(line.split(',')[0]).parts[-2]
-            logger.info(f'Processing: {line}, run: {run}')
-            calib_map[run] = line
+    for line in calib_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        run = Path(line.split(',')[0]).parts[-2]
+        logger.info(f'Processing: {line}, run: {run}')
+        calib_map[run] = line
 
     jobs_file = output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
@@ -632,17 +630,16 @@ def create_calo_qa_jobs():
     jobs_file = output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
 
-    with open(input_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            logger.info(f'Processing: {line}')
-            file_stem = Path(line).stem
+    for line in input_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        logger.info(f'Processing: {line}')
+        file_stem = Path(line).stem
 
-            command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
-            run_command_and_log(command, logger, files_dir, False)
+        command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        run_command_and_log(command, logger, files_dir, False)
 
-            command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
-            run_command_and_log(command, logger, output_dir, False)
+        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
+        run_command_and_log(command, logger, output_dir, False)
 
     # list of subdirectories to create
     subdirectories = ['stdout', 'error', 'output']
@@ -663,8 +660,7 @@ def create_calo_qa_jobs():
         request_memory = {condor_memory}GB
     """)
 
-    with open(output_dir / 'genFun4All.sub', mode='w', encoding='utf-8') as file:
-        file.write(submit_file_content)
+    (output_dir / 'genFun4All.sub').write_text(submit_file_content)
 
     command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
     logger.info(command)
@@ -805,17 +801,16 @@ def create_centrality_qa_jobs():
     jobs_file = output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
 
-    with open(input_list, mode='r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            logger.info(f'Processing: {line}')
-            file_stem = Path(line).stem
+    for line in input_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        logger.info(f'Processing: {line}')
+        file_stem = Path(line).stem
 
-            command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
-            run_command_and_log(command, logger, files_dir, False)
+        command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        run_command_and_log(command, logger, files_dir, False)
 
-            command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
-            run_command_and_log(command, logger, output_dir, False)
+        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
+        run_command_and_log(command, logger, output_dir, False)
 
     # list of subdirectories to create
     subdirectories = ['stdout', 'error', 'output']
@@ -983,8 +978,7 @@ def QVecCalib_jobs():
             request_memory = {condor_memory}GB
         """)
 
-        with open(calib_dir / 'genQVecCalib.sub', mode='w', encoding='utf-8') as file:
-            file.write(submit_file_content)
+        (calib_dir / 'genQVecCalib.sub').write_text(submit_file_content)
 
         command = f'condor_submit genQVecCalib.sub -queue "input_tree from {input_list}"'
         run_command_and_log(command, logger, calib_dir, False)
@@ -1294,8 +1288,7 @@ def hadd_jobs():
         request_memory = {condor_memory}GB
     """)
 
-    with open(output_dir / 'stage1.sub', mode='w', encoding='utf-8') as f:
-        f.write(submit_content_s1)
+    (output_dir / 'stage1.sub').write_text(submit_content_s1)
 
     # Submit Stage 1
     logger.info(f"Submitting {job_counter} partial merge jobs...")
@@ -1368,8 +1361,7 @@ def hadd_jobs():
         request_memory = {condor_memory}GB
     """)
 
-    with open(output_dir / 'stage2.sub', mode='w', encoding='utf-8') as f:
-        f.write(submit_content_s2)
+    (output_dir / 'stage2.sub').write_text(submit_content_s2)
 
     # Submit Stage 2
     logger.info(f"Submitting {stage2_counter} final merge jobs...")
@@ -1391,28 +1383,21 @@ data.add_argument('-o'
                     , default='files/run3auau'
                     , help='Output Directory. Default: files/run3auau')
 
-def get_line_count(file_path: str) -> int:
+def get_line_count(file_path: Path) -> int:
     """
     Checks if a file exists at the given path and, if so, returns the number of lines.
 
     Args:
-        file_path: A string representing the path to the file.
+        file_path: A path to the file.
 
     Returns:
         The number of lines in the file if it exists.
         Returns 0 if the file does not exist.
     """
-    path = Path(file_path)
-
-    if not path.is_file():
-        print(f"Error: File '{file_path}' not found.")
+    if not file_path.is_file():
         return 0
 
-    # Efficiently count lines using a generator expression
-    with open(path, 'r', encoding='utf-8') as f:
-        line_count = sum(1 for line in f)
-
-    return line_count
+    return len(file_path.read_text(encoding='utf-8').splitlines())
 
 def count_total_lines(directory_path: Path) -> int:
     """Calculates the sum of lines in all files within a directory."""
