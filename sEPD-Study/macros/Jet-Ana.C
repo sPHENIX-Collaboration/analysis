@@ -133,6 +133,10 @@ class JetAnalysis
   struct AnalysisHists
   {
     TH1* hEvent{nullptr};
+    TH1* hFlowFail{nullptr};
+    TH1* hCentralityCaloFail{nullptr};
+    TH1* hQVecFail{nullptr};
+    TH1* hCaloV2Fail{nullptr};
 
     TH2* h2Dummy{nullptr};
 
@@ -356,10 +360,12 @@ class JetAnalysis
     ZVTX10_MB,
     CENT,
     CALOCENT,
-    QVEC
+    QVEC,
+    FLOW_OK,
+    GOOD_CALOV2
   };
 
-  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Cent", "Good Calo-Cent", "Good QVec"};
+  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Cent", "Good Calo-Cent", "Good QVec", "Flow Ok", "Good Calo v2"};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -847,6 +853,11 @@ void JetAnalysis::init_hists()
 
   m_hists1D["hEvent"] = std::make_unique<TH1F>("hEvent", "Event Type; Type; Events", bins_event, 0, bins_event);
 
+  m_hists1D["hFlowFail"] = std::make_unique<TH1F>("hFlowFail", "Flow Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+  m_hists1D["hCentralityCaloFail"] = std::make_unique<TH1F>("hCentralityCaloFail", "Centrality Calo Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+  m_hists1D["hQVecFail"] = std::make_unique<TH1F>("hQVecFail", "Q Vec Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+  m_hists1D["hCaloV2Fail"] = std::make_unique<TH1F>("hCaloV2Fail", "Calo v2 Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+
   m_hists2D["h2JetPhiPt"] = std::make_unique<TH2F>("h2JetPhiPt", "Jet: |z| < 10 cm and MB; #phi; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_pt, pt_low, pt_high);
   m_hists2D["h2JetPhiEta"] = std::make_unique<TH2F>("h2JetPhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
 
@@ -994,6 +1005,10 @@ void JetAnalysis::init_hists()
 
   m_hists.hEvent = m_hists1D["hEvent"].get();
 
+  m_hists.hFlowFail = m_hists1D["hFlowFail"].get();
+  m_hists.hCentralityCaloFail = m_hists1D["hCentralityCaloFail"].get();
+  m_hists.hQVecFail = m_hists1D["hQVecFail"].get();
+  m_hists.hCaloV2Fail = m_hists1D["hCaloV2Fail"].get();
 
   m_hists.h2JetPhiPt = m_hists2D["h2JetPhiPt"].get();
   m_hists.h2JetPhiEta = m_hists2D["h2JetPhiEta"].get();
@@ -1820,6 +1835,7 @@ void JetAnalysis::process_events()
     }
 
     double cent = m_event_data.event_centrality;
+    m_hists.hCentrality->Fill(cent);
 
     m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
 
@@ -1836,6 +1852,7 @@ void JetAnalysis::process_events()
     bool isGood = check_CaloMBD();
     if (!isGood)
     {
+      m_hists.hCentralityCaloFail->Fill(cent);
       ++ctr["events_skipped_calo_mbd"];
       continue;
     }
@@ -1846,6 +1863,7 @@ void JetAnalysis::process_events()
     isGood = check_QVec();
     if (!isGood)
     {
+      m_hists.hQVecFail->Fill(cent);
       ++ctr["events_skipped_bad_QVec"];
       continue;
     }
@@ -1866,9 +1884,12 @@ void JetAnalysis::process_events()
     isGood = !m_event_data.is_flow_failure;
     if (!isGood)
     {
+      m_hists.hFlowFail->Fill(cent);
       ++ctr["events_skipped_flowfailure"];
       continue;
     }
+
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_OK));
 
     // Compute psi2 for Data
     if (m_isData)
@@ -1878,8 +1899,6 @@ void JetAnalysis::process_events()
 
     // Q Vectors QA
     process_QVecs();
-
-    m_hists.hCentrality->Fill(cent);
 
     // Calo QA
     process_calo();
@@ -1891,9 +1910,12 @@ void JetAnalysis::process_events()
     isGood = m_event_data.has_good_calo_v2;
     if (!isGood)
     {
+      m_hists.hCaloV2Fail->Fill(cent);
       ++ctr["events_skipped_bad_calo_v2"];
       continue;
     }
+
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::GOOD_CALOV2));
 
     //fill response matrix
     if(!m_isData) fill_response();
