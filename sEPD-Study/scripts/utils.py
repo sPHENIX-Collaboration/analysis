@@ -1020,6 +1020,11 @@ jetAna.add_argument('-j2'
                     , default=3
                     , help='Jet Radius Type. Default: 3 (i.e. R = 0.3)')
 
+jetAna.add_argument('-p'
+                    , '--files-per-job', type=int
+                    , default=100
+                    , help='Number of trees per job list. Default: 100')
+
 jetAna.add_argument('-f'
                     , '--jetAna-macro', type=str
                     , default='macros/Jet-Ana.C'
@@ -1058,6 +1063,7 @@ def jetAna_jobs():
     f4a_qa_list     = Path(args.f4a_qa_list).resolve()
     jet_pt_min      = args.jet_pt_min
     jet_radius_type = args.jet_radius_type
+    files_per_job   = args.files_per_job
     output_dir      = Path(args.output_dir).resolve()
     jetAna_macro    = Path(args.jetAna_macro).resolve()
     jetAna_bin      = Path(args.jetAna_bin).resolve()
@@ -1095,6 +1101,7 @@ def jetAna_jobs():
     logger.info(f'Jet pT Min: {jet_pt_min} GeV')
     logger.info(f'Jet eta Max: {jet_eta_max}')
     logger.info(f'Jet Radius Type: {jet_radius_type}')
+    logger.info(f'Files Per Job: {files_per_job}')
     logger.info(f'Jet Ana Macro: {jetAna_macro}')
     logger.info(f'Jet Ana Bin: {jetAna_bin}')
     logger.info(f'Output Directory: {output_dir}')
@@ -1110,7 +1117,7 @@ def jetAna_jobs():
     condor_log_dir.mkdir(parents=True, exist_ok=True)
 
     # list of subdirectories to create
-    subdirectories = ['stdout', 'error', 'output']
+    subdirectories = ['stdout', 'error', 'output', 'files']
 
     # Loop through the list and create each one
     for subdir in subdirectories:
@@ -1123,22 +1130,44 @@ def jetAna_jobs():
     run_paths = [Path(l.strip()) for l in f4a_qa_list.read_text(encoding='utf-8').splitlines()]
     run_map = {p.stem: str(p) for p in run_paths}
 
-    all_job_entries = []
+    # Group trees by run_id to ensure no lists mix different runs
+    run_trees = {}
     input_lines = input_list.read_text(encoding='utf-8').splitlines()
 
     for line in input_lines:
         tree_path = Path(line.strip())
-        # /path/68099/tree/tree-xxx.root -> parent.parent.name is "68099"
         run_id = tree_path.parent.parent.name
 
-        if run_id in run_map:
-            all_job_entries.append(f"{tree_path},{run_map[run_id]}")
+        if run_id not in run_trees:
+            run_trees[run_id] = []
 
-    logger.info(f"Total jobs filtered: {len(all_job_entries)}")
+        run_trees[run_id].append(str(tree_path))
 
+    jobs_list_file = output_dir / 'jobs.list'
+    total_jobs = 0
+
+    with open(jobs_list_file, mode='w', encoding='utf-8') as f_jobs:
+        for run_id, trees in run_trees.items():
+            if run_id not in run_map:
+                logger.warning(f"Run {run_id} found in input trees but not in QA list. Skipping.")
+                continue
+
+            qa_file = run_map[run_id]
+
+            # Use chunk_list to split trees
+            for i, chunk in enumerate(chunk_list(trees, files_per_job)):
+                chunk_file = output_dir / 'files' / f'{run_id}_part_{i}.list'
+                chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
+
+                f_jobs.write(f"{chunk_file},{qa_file}\n")
+                total_jobs += 1
+
+    logger.info(f"Total jobs prepared: {total_jobs}")
+
+    # Write the condor submit file
     submit_file_content = textwrap.dedent(f"""\
         executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {output_dir}/output
+        arguments      = {jetAna_bin} $(input_tree_list) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {output_dir}/output
         log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
@@ -1147,23 +1176,10 @@ def jetAna_jobs():
 
     (output_dir / 'genJetAna.sub').write_text(submit_file_content)
 
-    CONDOR_SUBMISSION_LIMIT = 20000
-
-    # 2. Use chunk_list to submit in batches of 20,000
-    # chunk_list is already defined at line 673 of your utils.py
-    for i, batch in enumerate(chunk_list(all_job_entries, CONDOR_SUBMISSION_LIMIT)):
-        batch_file = output_dir / f'jobs_part_{i}.list'
-
-        # Using pathlib to write the batch file
-        batch_file.write_text("\n".join(batch) + "\n", encoding='utf-8')
-
-        # 3. Submit each batch as its own Condor cluster
-        # We reuse the same genJetAna.sub file for all batches
-        command = f'condor_submit genJetAna.sub -queue "input_tree,input_f4a_qa from {batch_file.name}"'
-        logger.info(f"Submitting Batch {i} ({len(batch)} jobs): cd {output_dir} && {command}")
-
-        # run_command_and_log handles the execution and logging
-        # run_command_and_log(command, logger, output_dir)
+    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree_list,input_f4a_qa from jobs.list"'
+    logger.info(command)
+    # Uncomment the line below if you want the python script to run the submit command directly
+    # run_command_and_log(command, logger, output_dir, False)
 
 # ----------------------------
 

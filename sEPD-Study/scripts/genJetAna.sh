@@ -14,14 +14,20 @@ jet_radius_type=${6}
 submitDir=${7}
 
 # extract runnumber from file name
-run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)') # Remove leading zeros using sed
+run=$(head -n 1 "$input" | grep -oP 'output/\K\d+(?=/tree)')
 input_file=$(basename "$input")
 input_f4a_qa_file=$(basename "$input_f4a_qa")
 
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
-    cp -v "$input" .
+    mkdir input
+
+    echo "Copying files from list..."
+    cat "$input" | xargs -I {} -P 4 cp -v {} input/
+
+    realpath input/* > "$input_file"
+
     cp -v "$input_f4a_qa" .
     ls -lah
 else
@@ -34,7 +40,7 @@ printenv
 
 mkdir -p "$run"
 
-$jetAna_bin "$input_file" "$input_f4a_qa_file" "$run" 0 "$jet_pt_min" "$jet_eta_max" "$run" "$jet_radius_type" 1
+$jetAna_bin "$input_file" "$input_f4a_qa_file" 0 "$jet_pt_min" "$jet_eta_max" "$run" "$jet_radius_type" 1
 
 echo "All Done and Transferring Files Back"
 cp -rv "$run" "$submitDir"
