@@ -1835,7 +1835,7 @@ void JetAnalysis::process_events()
     // Load Event Data from TChain
     m_chain->GetEntry(event);
 
-    if (event % 5000 == 0)
+    if (event % 100000 == 0)
     {
       std::cout << std::format("Processing {}/{}: {:.2f} %", event, n_entries, static_cast<double>(event) * 100. / static_cast<double>(n_entries)) << std::endl;
     }
