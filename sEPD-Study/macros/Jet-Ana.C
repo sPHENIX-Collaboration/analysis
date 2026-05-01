@@ -86,6 +86,11 @@ class JetAnalysis
     m_radius = radius;
   }
 
+  void set_verbosity(int verbosity)
+  {
+    m_verbosity = verbosity;
+  }
+
  private:
   enum class Subdetector
   {
@@ -347,6 +352,7 @@ class JetAnalysis
   bool m_isData{false};
   int m_simsample{20};
   int m_radius{3};
+  int m_verbosity{0};
 
   // Jet Cuts
   double m_jet_pt_min{7}; /*GeV*/
@@ -1440,7 +1446,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
         jet_info.emplace_back(energy, pt, phi, eta);
       }
     }
-    else
+    else if(m_verbosity)
     {
       std::cout << std::format("Negative Energy Jet! Event: {}, Calo V2: {:.6f}, Jet Energy: {:.2f}, Jet Pt: {:.2f}\n",
                                m_event_data.event_id, calo_v2, energy, pt);
@@ -1985,9 +1991,9 @@ int main(int argc, const char* const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 3 || argc > 10)
+  if (argc < 3 || argc > 11)
   {
-    std::cout << "Usage: " << argv[0] << " input_file input_f4a_qa [events] [jet_pt_min] [jet_eta_max] [output_directory] [jet_radius] [isData] [sim_sample]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file input_f4a_qa [events] [jet_pt_min] [jet_eta_max] [output_directory] [jet_radius] [isData] [sim_sample] [verbosity]" << std::endl;
     return 1;
   }
 
@@ -2001,6 +2007,7 @@ int main(int argc, const char* const argv[])
   int radius = (argc >= ctr+1) ? static_cast<int>(std::atoll(argv[ctr++])) : 3;
   bool isData = (argc >= ctr+1) ? std::atoll(argv[ctr++]) : true;
   int sim_sample = (argc >= ctr+1) ? static_cast<int>(std::atoll(argv[ctr++])) : 10;
+  int verbosity = (argc >= ctr+1) ? std::atoi(argv[ctr++]) : 0;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
@@ -2013,6 +2020,7 @@ int main(int argc, const char* const argv[])
   std::cout << std::format("Jet Radius Type: {}\n", radius);
   std::cout << std::format("Is data: {}\n", isData);
   if(!isData) std::cout << std::format("Sim sample: {} GeV \n", sim_sample);
+  std::cout << std::format("Verbosity: {}\n", verbosity);
   std::cout << std::format("{:#<20}\n", "");
 
   try
@@ -2023,6 +2031,7 @@ int main(int argc, const char* const argv[])
     analysis.set_is_data(isData);
     analysis.set_sim_sample(sim_sample);
     analysis.set_radius(radius);
+    analysis.set_verbosity(verbosity);
     analysis.run();
   }
   catch (const std::exception& e)
