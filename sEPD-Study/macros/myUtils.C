@@ -38,7 +38,7 @@ namespace myUtils
   std::pair<Int_t, Int_t> getSectorIB(Int_t towerIndex);
   std::vector<std::string> split(const std::string& s, char delimiter);
   TFitResultPtr doGausFit(TH1* hist, Double_t start, Double_t end, const std::string& name = "fitFunc");
-  std::unique_ptr<TChain> setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file);
+  std::unique_ptr<TChain> setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file, bool verbose = true);
   std::map<std::string, std::unique_ptr<TH1>> read_hists(const std::string& file_name, const std::string& tag = "", std::unordered_set<std::string>* names = nullptr);
 
   template <typename Func>
@@ -76,65 +76,97 @@ bool myUtils::filter_sEPD(int rbin, QVecAna ana)
 {
   return (ana == QVecAna::DEFAULT) ||
          (ana == QVecAna::HALF && rbin <= 7) ||
-         (ana == QVecAna::HALF1 && rbin <= 7 && rbin >= 1) || 
+         (ana == QVecAna::HALF1 && rbin <= 7 && rbin >= 1) ||
          (ana == QVecAna::HALF2 && rbin >= 8);
 }
 
+
 // Function to encapsulate the TChain setup with error checking
-std::unique_ptr<TChain> myUtils::setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file)
+std::unique_ptr<TChain> myUtils::setupTChain(const std::string& input_filepath, const std::string& tree_name_in_file, bool verbose)
 {
-  // 1. Pre-check: Does the file exist at all? (C++17 filesystem or traditional fstream)
-  if (!std::filesystem::exists(input_filepath))
-  {  // Using fs::exists
-    std::cout << "Error: Input file does not exist: " << input_filepath << std::endl;
-    return nullptr;  // Return a null unique_ptr indicating failure
-  }
+  std::filesystem::path p(input_filepath);
+  std::string ext = p.extension().string();
 
-  // 2. Open the file to check for the TTree directly
-  // Use TFile::Open and unique_ptr for robust file handling (RAII)
-  std::unique_ptr<TFile> file_checker(TFile::Open(input_filepath.c_str(), "READ"));
+  auto chain = std::make_unique<TChain>(tree_name_in_file.c_str());
 
-  if (!file_checker || file_checker->IsZombie())
+  // Handle Single ROOT File
+  if (ext == ".root")
   {
-    std::cout << "Error: Could not open file " << input_filepath << " to check for TTree." << std::endl;
-    return nullptr;
+    if (!std::filesystem::exists(p))
+    {
+      std::cout << "Error: ROOT file does not exist: " << input_filepath << std::endl;
+      return nullptr;
+    }
+
+    // Perform the robust check
+    std::unique_ptr<TFile> f(TFile::Open(input_filepath.c_str(), "READ"));
+    if (!f || f->IsZombie() || !f->Get(tree_name_in_file.c_str()))
+    {
+      std::cout << "Error: File " << input_filepath << " is invalid or missing TTree." << std::endl;
+      return nullptr;
+    }
+    chain->Add(input_filepath.c_str());
   }
 
-  // Check if the TTree exists in the file
-  // Get() returns a TObject*, which can be cast to TTree*.
-  // If the object doesn't exist or isn't a TTree, Get() returns nullptr.
-  TTree* tree_obj = dynamic_cast<TTree*>(file_checker->Get(tree_name_in_file.c_str()));
-  if (!tree_obj)
+  // Handle List File (.list or .txt)
+  else if (ext == ".list" || ext == ".txt")
   {
-    std::cout << "Error: TTree '" << tree_name_in_file << "' not found in file " << input_filepath << std::endl;
-    return nullptr;
-  }
-  // File will be automatically closed by file_checker's unique_ptr destructor
+    std::cout << "Reading file list: " << input_filepath << std::endl;
 
-  // 3. If everything checks out, create and configure the TChain
-  std::unique_ptr<TChain> chain = std::make_unique<TChain>(tree_name_in_file.c_str());
-  if (!chain)
-  {  // Check if make_unique failed (e.g. out of memory)
-    std::cout << "Error: Could not create TChain object." << std::endl;
-    return nullptr;
+    bool first_file = true;
+
+    // Leverage existing readCSV utility
+    // We pass 'false' to skipHeader because lists usually don't have them
+    bool success = readCSV(p, [&](const std::string& line) {
+      if (line.empty()) return;
+
+      if (verbose)
+      {
+        std::cout << std::format("  ... Adding: {}\n", line);
+      }
+
+      // Optional: Perform robust check ONLY on the first file to ensure
+      // the tree name is correct without killing performance.
+      if (first_file)
+      {
+        std::unique_ptr<TFile> f(TFile::Open(line.c_str(), "READ"));
+        if (f && !f->IsZombie() && f->Get(tree_name_in_file.c_str()))
+        {
+          chain->Add(line.c_str());
+        }
+        else
+        {
+          std::cout << "Warning: First file in list " << line << " failed check." << std::endl;
+        }
+        first_file = false;
+      }
+      else
+      {
+        chain->Add(line.c_str()); // TChain::Add is lazy and efficient
+      }
+    }, false);
+
+    if (!success)
+    {
+      return nullptr;
+    }
   }
 
-  chain->Add(input_filepath.c_str());
-
-  // 4. Verify TChain's state (optional but good final check)
-  // GetEntries() will be -1 if no valid trees were added.
-  if (chain->GetEntries() == 0)
-  {
-    std::cout << "Warning: TChain has 0 entries after adding file. This might indicate a problem." << std::endl;
-    // Depending on your logic, you might return nullptr here too.
-  }
   else
   {
-    std::cout << "Successfully set up TChain for tree '" << tree_name_in_file
-              << "' from file '" << input_filepath << "'. Entries: " << chain->GetEntries() << std::endl;
+    std::cout << "Error: Unsupported file extension: " << ext << std::endl;
+    return nullptr;
   }
 
-  return chain;  // Return the successfully created and configured TChain
+  if (chain->GetNtrees() == 0)
+  {
+    std::cout << "Error: No valid trees added to TChain." << std::endl;
+    return nullptr;
+  }
+
+  std::cout << "Successfully set up TChain with " << chain->GetListOfFiles()->GetEntries() << " files." << std::endl;
+
+  return chain;
 }
 
 /**
