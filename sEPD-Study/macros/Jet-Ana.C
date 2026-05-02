@@ -631,8 +631,8 @@ void JetAnalysis::create_vn_histograms(int n)
   double psi_high = std::numbers::pi;
 
   unsigned int bins_qQ{8192};
-  double qQ_low{-0.15};
-  double qQ_high{0.15};
+  double qQ_low{-0.4};
+  double qQ_high{0.4};
 
   // TH2 for Scalar Product
   for (size_t pt_idx = 0; pt_idx < m_jet_pt_vec.size()-1; ++pt_idx)
@@ -651,9 +651,9 @@ void JetAnalysis::create_vn_histograms(int n)
     m_hists2D[namev1] = std::unique_ptr<TH2>(dynamic_cast<TH2*>(m_hists2D[name]->Clone(namev1.c_str())));
   }
 
-  unsigned int bins_QQ_avg{2048};
-  double QQ_avg_low{-0.01};
-  double QQ_avg_high{0.01};
+  unsigned int bins_QQ_avg{8192};
+  double QQ_avg_low{-0.1};
+  double QQ_avg_high{0.1};
 
   std::string name_ref = std::format("h2RefFlow_{}", n);
   std::string title_ref = std::format("; Centrality [%]; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}})", n);
