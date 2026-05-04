@@ -199,17 +199,9 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   hSEPD_Charge_MC = new TH1F("hSEPD_Charge_MC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high);
   hSEPD_Charge_DataMC = new TH1F("hSEPD_Charge_DataMC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high);
 
-  hSEPD_BadMasked_Charge_Data = new TH1F("hSEPD_BadMasked_Charge_Data", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high);
-  hSEPD_BadMasked_Charge_MC = new TH1F("hSEPD_BadMasked_Charge_MC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high);
-  hSEPD_BadMasked_Charge_DataMC = new TH1F("hSEPD_BadMasked_Charge_DataMC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high);
-
   se->registerHisto(hSEPD_Charge_Data);
   se->registerHisto(hSEPD_Charge_MC);
   se->registerHisto(hSEPD_Charge_DataMC);
-
-  se->registerHisto(hSEPD_BadMasked_Charge_Data);
-  se->registerHisto(hSEPD_BadMasked_Charge_MC);
-  se->registerHisto(hSEPD_BadMasked_Charge_DataMC);
 
   unsigned int bins_r{16};
 
@@ -223,14 +215,6 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   h2SEPD_North_Charge_MC = new TH2F("h2SEPD_North_Charge_MC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
   h2SEPD_North_Charge_DataMC = new TH2F("h2SEPD_North_Charge_DataMC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
 
-  h2SEPD_BadMasked_South_Charge_Data = new TH2F("h2SEPD_BadMasked_South_Charge_Data", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-  h2SEPD_BadMasked_South_Charge_MC = new TH2F("h2SEPD_BadMasked_South_Charge_MC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-  h2SEPD_BadMasked_South_Charge_DataMC = new TH2F("h2SEPD_BadMasked_South_Charge_DataMC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-
-  h2SEPD_BadMasked_North_Charge_Data = new TH2F("h2SEPD_BadMasked_North_Charge_Data", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-  h2SEPD_BadMasked_North_Charge_MC = new TH2F("h2SEPD_BadMasked_North_Charge_MC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-  h2SEPD_BadMasked_North_Charge_DataMC = new TH2F("h2SEPD_BadMasked_North_Charge_DataMC", sEPD_Charge_title.c_str(), bins_charge, charge_low, charge_high, bins_r, 0, bins_r);
-
   se->registerHisto(h2SEPD_South_Charge_Data);
   se->registerHisto(h2SEPD_South_Charge_MC);
   se->registerHisto(h2SEPD_South_Charge_DataMC);
@@ -239,31 +223,15 @@ int sEPD_DataMC_Validation::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(h2SEPD_North_Charge_MC);
   se->registerHisto(h2SEPD_North_Charge_DataMC);
 
-  se->registerHisto(h2SEPD_BadMasked_South_Charge_Data);
-  se->registerHisto(h2SEPD_BadMasked_South_Charge_MC);
-  se->registerHisto(h2SEPD_BadMasked_South_Charge_DataMC);
-
-  se->registerHisto(h2SEPD_BadMasked_North_Charge_Data);
-  se->registerHisto(h2SEPD_BadMasked_North_Charge_MC);
-  se->registerHisto(h2SEPD_BadMasked_North_Charge_DataMC);
-
   sEPD_Charge_title = "|z| < 10 cm and MB; Channel; Charge";
 
   pSEPD_Charge_Data = new TProfile("pSEPD_Charge_Data", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
   pSEPD_Charge_MC = new TProfile("pSEPD_Charge_MC", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
   pSEPD_Charge_DataMC = new TProfile("pSEPD_Charge_DataMC", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
 
-  pSEPD_BadMasked_Charge_Data = new TProfile("pSEPD_BadMasked_Charge_Data", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
-  pSEPD_BadMasked_Charge_MC = new TProfile("pSEPD_BadMasked_Charge_MC", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
-  pSEPD_BadMasked_Charge_DataMC = new TProfile("pSEPD_BadMasked_Charge_DataMC", sEPD_Charge_title.c_str(), m_sepd_channels, 0, m_sepd_channels);
-
   se->registerHisto(pSEPD_Charge_Data);
   se->registerHisto(pSEPD_Charge_MC);
   se->registerHisto(pSEPD_Charge_DataMC);
-
-  se->registerHisto(pSEPD_BadMasked_Charge_Data);
-  se->registerHisto(pSEPD_BadMasked_Charge_MC);
-  se->registerHisto(pSEPD_BadMasked_Charge_DataMC);
 
   unsigned int bins_jet_pt{100};
   double jet_pt_low{0};
@@ -730,32 +698,6 @@ int sEPD_DataMC_Validation::process_sEPD(PHCompositeNode *topNode)
     pSEPD_Charge_DataMC->Fill(channel, charge_data_mc);
 
     sepd_totalcharge += charge_data_mc;
-
-    if (!tower_data_mc->get_isHot())
-    {
-      hSEPD_BadMasked_Charge_Data->Fill(charge_data);
-      hSEPD_BadMasked_Charge_MC->Fill(charge_mc);
-      hSEPD_BadMasked_Charge_DataMC->Fill(charge_data_mc);
-
-      // South
-      if (arm == 0)
-      {
-        h2SEPD_BadMasked_South_Charge_Data->Fill(charge_data, rbin);
-        h2SEPD_BadMasked_South_Charge_MC->Fill(charge_mc, rbin);
-        h2SEPD_BadMasked_South_Charge_DataMC->Fill(charge_data_mc, rbin);
-      }
-      // North
-      else
-      {
-        h2SEPD_BadMasked_North_Charge_Data->Fill(charge_data, rbin);
-        h2SEPD_BadMasked_North_Charge_MC->Fill(charge_mc, rbin);
-        h2SEPD_BadMasked_North_Charge_DataMC->Fill(charge_data_mc, rbin);
-      }
-
-      pSEPD_BadMasked_Charge_Data->Fill(channel, charge_data);
-      pSEPD_BadMasked_Charge_MC->Fill(channel, charge_mc);
-      pSEPD_BadMasked_Charge_DataMC->Fill(channel, charge_data_mc);
-    }
   }
 
   h2SEPD_totalcharge_centrality->Fill(sepd_totalcharge, m_data.centrality);

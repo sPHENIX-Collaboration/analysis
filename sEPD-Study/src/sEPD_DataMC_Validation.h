@@ -189,10 +189,6 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH1* hSEPD_Charge_MC{nullptr};
   TH1* hSEPD_Charge_DataMC{nullptr};
 
-  TH1* hSEPD_BadMasked_Charge_Data{nullptr};
-  TH1* hSEPD_BadMasked_Charge_MC{nullptr};
-  TH1* hSEPD_BadMasked_Charge_DataMC{nullptr};
-
   TH2* h2SEPD_South_Charge_Data{nullptr};
   TH2* h2SEPD_South_Charge_MC{nullptr};
   TH2* h2SEPD_South_Charge_DataMC{nullptr};
@@ -201,21 +197,9 @@ class sEPD_DataMC_Validation : public SubsysReco
   TH2* h2SEPD_North_Charge_MC{nullptr};
   TH2* h2SEPD_North_Charge_DataMC{nullptr};
 
-  TH2* h2SEPD_BadMasked_South_Charge_Data{nullptr};
-  TH2* h2SEPD_BadMasked_South_Charge_MC{nullptr};
-  TH2* h2SEPD_BadMasked_South_Charge_DataMC{nullptr};
-
-  TH2* h2SEPD_BadMasked_North_Charge_Data{nullptr};
-  TH2* h2SEPD_BadMasked_North_Charge_MC{nullptr};
-  TH2* h2SEPD_BadMasked_North_Charge_DataMC{nullptr};
-
   TProfile* pSEPD_Charge_Data{nullptr};
   TProfile* pSEPD_Charge_MC{nullptr};
   TProfile* pSEPD_Charge_DataMC{nullptr};
-
-  TProfile* pSEPD_BadMasked_Charge_Data{nullptr};
-  TProfile* pSEPD_BadMasked_Charge_MC{nullptr};
-  TProfile* pSEPD_BadMasked_Charge_DataMC{nullptr};
 
   TH1* hJetPt{nullptr};
   TH2* h2JetPtCentrality{nullptr};
