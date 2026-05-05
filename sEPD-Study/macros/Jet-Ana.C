@@ -130,7 +130,7 @@ class JetAnalysis
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
   // Min Jet pT [GeV]
-  static constexpr std::array<int, 8> m_jet_pt_vec = {7, 10, 15, 20, 25, 35, 45, 100};
+  static constexpr std::array<int, 6> m_jet_pt_vec = {15, 20, 25, 35, 45, 100};
 
   //centrality bins
   static constexpr std::array<int, 7> m_cent_bins = {0, 10, 20, 30, 40, 50, 60};
@@ -847,13 +847,13 @@ void JetAnalysis::init_hists()
   double resp_low{0};
   double resp_high{1.2};
 
-  unsigned int bins_SPnum{100};
-  double SPnum_low{-1};
-  double SPnum_high{1};
+  unsigned int bins_SPnum{128};
+  double SPnum_low{-0.5};
+  double SPnum_high{0.5};
 
-  unsigned int bins_bigresp = bins_SPnum*m_jet_pt_vec.size();
-  double bigresp_low{0};
-  double bigresp_high{static_cast<double>(bins_bigresp)};
+  unsigned int bins_bigresp = bins_SPnum*(m_jet_pt_vec.size()-1);
+  double bigresp_low{0.5};
+  double bigresp_high{static_cast<double>(bins_bigresp)+0.5};
 
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
@@ -1232,28 +1232,28 @@ void JetAnalysis::init_hists()
     hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{reco}; q_{2}^{jet,reco}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_ptSP_reco_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
-						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  static_cast<int>(pt_edges.size()-1), pt_edges.data(),
 						  bins_SPnum, SPnum_low, SPnum_high);
     m_hists.h2_ptSP_reco[icent] = m_hists2D[hist_name.c_str()].get();
 
     hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{match}; q_{2}^{jet,match}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_ptSP_match_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
-						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  static_cast<int>(pt_edges.size()-1), pt_edges.data(),
 						  bins_SPnum, SPnum_low, SPnum_high);
     m_hists.h2_ptSP_match[icent] = m_hists2D[hist_name.c_str()].get();
 
     hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{true}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_ptSP_true_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
-						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  static_cast<int>(pt_edges.size()-1), pt_edges.data(),
 						  bins_SPnum, SPnum_low, SPnum_high);
     m_hists.h2_ptSP_true[icent] = m_hists2D[hist_name.c_str()].get();
 
     hist_title = Form("|z| < 10 cm and %i - %i %%; p_{T}^{true}; q_{2}^{jet,true}Q_{2}", m_cent_bins[icent],m_cent_bins[icent+1]);
     hist_name = Form("h2_ptSP_miss_cent%i", icent);
     m_hists2D[hist_name] = std::make_unique<TH2F>(hist_name.c_str(),hist_title.c_str(),
-						  static_cast<int>(pt_edges.size())-1, pt_edges.data(),
+						  static_cast<int>(pt_edges.size()-1), pt_edges.data(),
 						  bins_SPnum, SPnum_low, SPnum_high);
     m_hists.h2_ptSP_miss[icent] = m_hists2D[hist_name.c_str()].get();
   }
@@ -1557,7 +1557,7 @@ void JetAnalysis::fill_response() const
 
     //fill response histograms
     m_hists.h2_ptptresp[centbin]->Fill(tpt,matchPt/tpt,eventweight);
-    m_hists.h2_dphiptresp[centbin]->Fill(std::abs(dphi),matchPt/tpt);
+    m_hists.h2_dphiptresp[centbin]->Fill(std::abs(dphi),matchPt/tpt,eventweight);
     m_hists.h2_ptrecopttrue[centbin]->Fill(matchPt,tpt,eventweight);
     m_hists.h2_SPrecoSPtrue[centbin]->Fill(recoSP,truthSP,eventweight);
     m_hists.h2_ptSP_match[centbin]->Fill(matchPt,recoSP,eventweight);
@@ -1569,9 +1569,18 @@ void JetAnalysis::fill_response() const
     int	ptbintrue = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(tpt);
     int ptbin = m_hists.h2_ptSP_match[centbin]->GetXaxis()->FindBin(matchPt);
     int pt_N = m_hists.h2_ptSP_match[centbin]->GetNbinsX();
-    m_hists.h2_bigresp[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
-    if(m_event_data.event_id % 2 == 0) m_hists.h2_bigrespA[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
-    else m_hists.h2_bigrespB[centbin]->Fill(SPbintrue*pt_N+ptbintrue,SPbin*pt_N+ptbin);
+    if(ptbin == 0 || ptbin == pt_N+1)//reco jet not in bounds
+      {
+	m_hists.h2_ptSP_miss[centbin]->Fill(tpt,truthSP,eventweight);
+	continue;
+      }
+    if(ptbintrue == 0 || ptbintrue == pt_N+1)//truth jet not in bounds
+      {
+	continue;
+      }
+    m_hists.h2_bigresp[centbin]->Fill((SPbin-1)*pt_N+(ptbin-1)+1,(SPbintrue-1)*pt_N+(ptbintrue-1)+1,eventweight);
+    if(m_event_data.event_id % 2 == 0) m_hists.h2_bigrespA[centbin]->Fill((SPbin-1)*pt_N+(ptbin-1)+1,(SPbintrue-1)*pt_N+(ptbintrue-1)+1,eventweight);
+    else m_hists.h2_bigrespB[centbin]->Fill((SPbin-1)*pt_N+(ptbin-1)+1,(SPbintrue-1)*pt_N+(ptbintrue-1)+1,eventweight);
   }
   return;
 }
@@ -1720,8 +1729,9 @@ double JetAnalysis::get_event_weight() const
 {
   double weight;
   if(m_isData) weight = 1;
-  else if(m_simsample == 10) weight = 3.997e+06/8402719;
-  else if(m_simsample == 20) weight = 6.2623e+04/8383716;
+  //else if(m_simsample == 10) weight = 3.997e+06/8402719;//old version
+  //else if(m_simsample == 20) weight = 6.2623e+04/8383716;//old version
+  else if(m_simsample == 20) weight = 6.2623e+04/9991946;
   else throw std::runtime_error(std::format("No weights available for sample {}", m_simsample));
   return weight;
 }
