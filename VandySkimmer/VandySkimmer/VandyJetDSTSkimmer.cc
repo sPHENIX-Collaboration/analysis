@@ -179,18 +179,45 @@ void VandyJetDSTSkimmer::getTruthTowers()
 {
 	//tower the truth particles into IHCAL tower sizes
 	int nTowers = m_towerInfoContainiers[2]->size();
-	std::vector<std::pair<float, float>> etabinedges {};
-	std::vector<std::pair<float, float>> phibinedges {};
+	std::map<int, std::pair<float, float>> etabinedges {};
+	std::map<int, std::pair<float, float>> phibinedges {};
+	std::map<int, float> etacenters {};
+	std::map<int, float> phicenters {};
+	float r = 0;
 	for(int i=0; i<nTowers; i++)
 	{
 		auto key = towerInfoContainers[2]->encode_key(i);
 		auto tower = towerInfoContainers[2]->get_tower_at_channel(i);
 		int etaBin = towerInfoContainers[2]->getTowerEtaBin(key);
 		int phiBin = towerInfoContainers[2]->getTowerPhiBin(key);
-		float etaCenter = geoms[2]->get_etacenter(etaBin);
-		float phiCenter = geoms[2]->get_phicenter(phiBin);
-		float r = geoms[2]->get_radius();
-		
+		if(etabinedges.find(etaBin) == etabinedges.end()){
+		       	std::pair<float, float> etaEdges = geoms[2]->get_etaedges(etaBin);
+			float etaCenter = geoms[2]->get_etacenter(etaBin);
+			etabinedges[etaBin] = etaEdges;
+			etacenters[etaBin]= etaCenter;
+		}
+		if(phibinedges.find(phiBin) == phibinedges.end()){
+			std::pair<float, float> phiEdges = geoms[2]->get_phiedges(phiBin);
+			float phiCenter = geoms[2]->getphicenter(phiBin)
+			phibinedges[phiBin] = phiEdges;
+			phicenters[phiBin] = phiCetner;
+		}
+		if(i==0) r = geoms[2]->get_radius();
+	}
+	for(auto p:m_truthParticles)
+	{
+		float phi = std::atan2(p->py(), p->px());
+		float eta = std::asinh(p->pz() / p=>e());
+		int phibin = -1;
+		int etabin = -1;
+		for(auto pb:phibinedges)
+		{
+			if(phi < pb.second.second && phi > pb.second.first){
+			       	phibin = pb.first;
+				break;
+			}
+		}
+
 		m_truthtowers-
 //____________________________________________________________________________..
 int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
