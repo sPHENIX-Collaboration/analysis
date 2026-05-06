@@ -204,10 +204,11 @@ void VandyJetDSTSkimmer::getTruthTowers()
 		}
 		if(i==0) r = geoms[2]->get_radius();
 	}
+	std::map<std::pair<int, int>, Tower*> tt {};
 	for(auto p:m_truthParticles)
 	{
 		float phi = std::atan2(p->py(), p->px());
-		float eta = std::asinh(p->pz() / p=>e());
+		float eta = std::asinh(p->pz() / p->e());
 		int phibin = -1;
 		int etabin = -1;
 		for(auto pb:phibinedges)
@@ -217,8 +218,29 @@ void VandyJetDSTSkimmer::getTruthTowers()
 				break;
 			}
 		}
-
-		m_truthtowers-
+		for(auto eb:etabinedges)
+		{
+			if(eta < eb.second.second && eta > eb.second.first){
+				etabin = eb.first;
+				break;
+			}
+		}
+		std::pair<int, int> bins {phibin, etabin}; 
+		if(tt.find(bins) == tt.end()) tt[bins] = p;
+		else{
+			tt[bins]->set_e(tt[bins]->e() + p->e());
+			tt[bins]->set_px(tt[bins]->px() + p->px());
+			tt[bins]->set_px(tt[bins]->py() + p->py());
+			tt[bins]->set_px(tt[bins]->pz() + p->pz());
+		}	
+	}
+	for(auto t:tt) m_truthtowers->push_back(t.second);
+	return;
+}
+void VandyJetDSTSkimmer::maketruthtowerJets()
+{
+	//use the truth towers to build jets
+}
 //____________________________________________________________________________..
 int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
 {
