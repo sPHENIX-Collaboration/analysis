@@ -100,8 +100,9 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
 
   recoConsts *rc = recoConsts::instance();
 
-  // std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname_global); // does not work as the file naming is not correct
-  int runnumber = GetRun(fname_global);
+  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(fname_global);
+  // int runnumber = GetRun(fname_global); // Fallback option
+  int runnumber = runseg.first;
 
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
