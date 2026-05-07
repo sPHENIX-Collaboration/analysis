@@ -25,7 +25,13 @@ file_global=$(basename "$input_global")
 file_jet=$(basename "$input_jet")
 file_g4hit=$(basename "$input_g4hit")
 file_calo=$(basename "$input_calo")
-file_calib=$(basename "$input_calib")
+
+# Check if input_calib is a path or a keyword
+if [[ "$input_calib" == "default" ]]; then
+    file_calib="default"
+else
+    file_calib=$(basename "$input_calib")
+fi
 
 # extract runnumber from file name
 IFS='-' read -r p1 p2 p3 p4 p5 <<< "$file_global"

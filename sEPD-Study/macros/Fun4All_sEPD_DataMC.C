@@ -58,7 +58,7 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
                          const std::string& fname_jets,
                          const std::string& fname_g4hit,
                          const std::string& fname_calo,
-                         const std::string& input_QVecCalib,
+                         const std::string& input_QVecCalib = "default",
                          const std::string& output = "test.root",
                          const std::string& output_tree = "tree.root",
                          int nEvents = 100,
@@ -116,7 +116,10 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
 
   // Event Plane - Data
   EventPlaneReco* epreco_data = new EventPlaneReco("EventPlaneReco_data");
-  epreco_data->set_directURL_EventPlaneCalib(input_QVecCalib);
+  if (input_QVecCalib != "default")
+  {
+    epreco_data->set_directURL_EventPlaneCalib(input_QVecCalib);
+  }
   epreco_data->set_inputNode("TOWERINFO_CALIB_SEPD_data");
   epreco_data->set_EventPlaneInfoNodeName("EventplaneinfoMap_data");
   // epreco_data->Verbosity(Fun4AllBase::VERBOSITY_SOME);
@@ -124,7 +127,10 @@ void Fun4All_sEPD_DataMC(const std::string& fname_global,
 
   // Event Plane - Data+MC
   EventPlaneReco* epreco_data_mc = new EventPlaneReco("EventPlaneReco_data_mc");
-  epreco_data_mc->set_directURL_EventPlaneCalib(input_QVecCalib);
+  if (input_QVecCalib != "default")
+  {
+    epreco_data_mc->set_directURL_EventPlaneCalib(input_QVecCalib);
+  }
   epreco_data_mc->set_inputNode("TOWERINFO_COMBINED_SEPD");
   epreco_data_mc->set_EventPlaneInfoNodeName("EventplaneinfoMap_data_mc");
   se->registerSubsystem(epreco_data_mc);
@@ -177,14 +183,14 @@ int main(int argc, const char* const argv[])
 {
   const std::vector<std::string> args(argv, argv + argc);
 
-  if (args.size() < 6 || args.size() > 11)
+  if (args.size() < 5 || args.size() > 11)
   {
-    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_DST_g4hit> <input_DST_calo> <input_QVecCalib> [output] [output_tree] [nEvents] [jet_pt_min] [dbtag]" << std::endl;
+    std::cerr << "usage: " << args[0] << " <input_DST_global> <input_DST_jets> <input_DST_g4hit> <input_DST_calo> [input_QVecCalib] [output] [output_tree] [nEvents] [jet_pt_min] [dbtag]" << std::endl;
     std::cerr << "  input_DST_global: path to the input global file" << std::endl;
     std::cerr << "  input_DST_jets: path to the input jets file" << std::endl;
     std::cerr << "  input_DST_g4hit: path to the input g4hit file" << std::endl;
     std::cerr << "  input_DST_calo: path to the input calo file" << std::endl;
-    std::cerr << "  input_QVecCalib: sEPD Q Vector Calib CDB" << std::endl;
+    std::cerr << "  input_QVecCalib: sEPD Q Vector Calib CDB (default: (i.e. fetch from CDB))" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  output tree: (optional) path to the output tree (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
@@ -197,7 +203,7 @@ int main(int argc, const char* const argv[])
   const std::string& input_dst_jets = args[arg_ctr++];
   const std::string& input_dst_g4hit = args[arg_ctr++];
   const std::string& input_dst_calo = args[arg_ctr++];
-  const std::string& input_QVecCalib = args[arg_ctr++];
+  const std::string& input_QVecCalib = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "default";
   std::string output = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "test.root";
   std::string output_tree = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "tree.root";
   int nEvents = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 100;
