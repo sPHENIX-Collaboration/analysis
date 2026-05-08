@@ -61,8 +61,10 @@ namespace HIJETS
   // do_flow = 3 --psi2 derived from sEPD
   int do_flow = 0;
 
-  ///! sets event plane node name
-  std::string eventplane_node = "EventplaneinfoMap";
+  ///! Configures event plane reco
+  std::string eventplane_node_input = "TOWERINFO_CALIB_SEPD";
+  std::string eventplane_node_output = "EventplaneinfoMap";
+  std::string eventplane_custom_calib = "default";
 
   ///! do constituent subtraction
   bool do_CS = false;
@@ -196,12 +198,17 @@ void MakeHITowerJets()
   //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  // if (HIJETS::do_flow == 3)
-  // {
-  //   EventPlaneReco *epreco = new EventPlaneReco();
-  //   epreco->set_sepd_epreco(true);
-  //   se->registerSubsystem(epreco);
-  // }
+  if (HIJETS::do_flow == 3)
+  {
+    EventPlaneReco *epreco = new EventPlaneReco();
+    if (HIJETS::eventplane_custom_calib != "default")
+    {
+      epreco->set_directURL_EventPlaneCalib(HIJETS::eventplane_custom_calib);
+    }
+    epreco->set_inputNode(HIJETS::eventplane_node_input);
+    epreco->set_EventPlaneInfoNodeName(HIJETS::eventplane_node_output);
+    se->registerSubsystem(epreco);
+  }
 
   RetowerCEMC *rcemc = new RetowerCEMC();
   rcemc->Verbosity(verbosity);
@@ -237,7 +244,7 @@ void MakeHITowerJets()
   // dtb->set_towerinfo(true);
   dtb->Verbosity(verbosity);
   dtb->set_towerNodePrefix(HIJETS::tower_prefix);
-  dtb->set_EventPlaneInfoNodeName(HIJETS::eventplane_node);
+  dtb->set_EventPlaneInfoNodeName(HIJETS::eventplane_node_output);
   se->registerSubsystem(dtb);
 
   CopyAndSubtractJets *casj = new CopyAndSubtractJets();
@@ -255,7 +262,7 @@ void MakeHITowerJets()
   dtb2->Verbosity(verbosity);
   // dtb2->set_towerinfo(true);
   dtb2->set_towerNodePrefix(HIJETS::tower_prefix);
-  dtb2->set_EventPlaneInfoNodeName(HIJETS::eventplane_node);
+  dtb2->set_EventPlaneInfoNodeName(HIJETS::eventplane_node_output);
   se->registerSubsystem(dtb2);
 
   SubtractTowers *st = new SubtractTowers();
