@@ -808,7 +808,7 @@ def create_calo_qa_jobs():
     shutil.copy(common_errors, output_dir)
     shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
 
-    CONDOR_SUBMISSION_LIMIT = 20000
+    CONDOR_SUBMISSION_LIMIT = 100000
 
     files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
     logger.info(f'Files Per Job: {files_per_job}')
@@ -979,7 +979,7 @@ def create_centrality_qa_jobs():
     shutil.copy(common_errors, output_dir)
     shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
 
-    CONDOR_SUBMISSION_LIMIT = 20000
+    CONDOR_SUBMISSION_LIMIT = 100000
 
     files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
     logger.info(f'Files Per Job: {files_per_job}')
