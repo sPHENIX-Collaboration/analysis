@@ -429,7 +429,7 @@ def create_f4a_jobs():
         command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
         run_command_and_log(command, logger, files_dir, False)
 
-        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
+        command = f'realpath {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
         run_command_and_log(command, logger, output_dir, False)
 
     with open(jobs_temp_file, mode='r', encoding='utf-8') as file_in, \
@@ -827,7 +827,7 @@ def create_calo_qa_jobs():
         command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
         run_command_and_log(command, logger, files_dir, False)
 
-        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
+        command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, logger, output_dir, False)
 
     # list of subdirectories to create
@@ -998,7 +998,7 @@ def create_centrality_qa_jobs():
         command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
         run_command_and_log(command, logger, files_dir, False)
 
-        command = f'readlink -f {files_dir}/{file_stem}* >> {jobs_file.name}'
+        command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, logger, output_dir, False)
 
     # list of subdirectories to create
