@@ -240,6 +240,41 @@ void VandyJetDSTSkimmer::getTruthTowers()
 void VandyJetDSTSkimmer::maketruthtowerJets()
 {
 	//use the truth towers to build jets
+	std::vector<fastjet::PsuedoJet> jet02 {}; 
+	fastjet::JetDefinition fj02 (fastjet::antikt_algorithm, 0.2);
+	std::vector<fastjet::PsuedoJet> jet03 {}; 
+	fastjet::JetDefinition fj03 (fastjet::antikt_algorithm, 0.3);
+	std::vector<fastjet::PsuedoJet> jet04 {}; 
+	fastjet::JetDefinition fj04 (fastjet::antikt_algorithm, 0.4);
+	std::vector<fastjet::PsuedoJet> jet05 {}; 
+	fastjet::JetDefinition fj05 (fastjet::antikt_algorithm, 0.5);
+	std::vector<fastjet::PsuedoJet> jet06 {}; 
+	fastjet::JetDefinition fj06 (fastjet::antikt_algorithm, 0.6);
+
+	std::vector<std::vector<fastJet::PseudoJet>> jets {jet02, jet03, jet04, jet05, jet06};
+	std::vector<fastJet::JetDefintion> jetdefs {fj02, fj03, fj04, fj05, fj06};
+
+	std::vector<fastjet::PsuedoJet> truthinput {};
+	for(auto p:m_truthtowers) truthinput.push_back(fastjet::PseudoJet(p->px(), p->py(), p->pz(), p->e()));
+	for(int i=0; i<(int)jets.size(); i++)
+	{
+		fastjet::CluserSequence cs(truthinput, jetdefs[i]);
+		jets[i]=cs.inclusivejets();
+	}
+	for(int i=0; i<(int)m_truthtowerJetInfo->size(); i++)
+	{
+		std::vector<JetInfo> jts {};
+		for(auto p:jets[i])
+		{
+			JetInfo jt {};
+			jt.set_px(p->get_px());
+			jt.set_py(p->get_py());
+			jt.set_pz(p->get_pz());
+			jt.set_e(p->get_e());
+		}
+	}
+	return;
+
 }
 //____________________________________________________________________________..
 int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
