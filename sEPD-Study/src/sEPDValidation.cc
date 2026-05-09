@@ -182,6 +182,9 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   h2Jet_pT_Phi = new TH2F("h2Jet_pT_Phi", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; #phi", m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high, m_hist_config.m_bins_jet_phi, m_hist_config.m_jet_phi_low, m_hist_config.m_jet_phi_high);
   se->registerHisto(h2Jet_pT_Phi);
 
+  h2Jet_pT_Calib = new TH2F("h2Jet_pT_Calib", "Jets: |z| < 10 cm and MB; p_{T} Raw [GeV]; p_{T} Calib [GeV]", m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high, m_hist_config.m_bins_jet_pt, m_hist_config.m_jet_pt_low, m_hist_config.m_jet_pt_high);
+  se->registerHisto(h2Jet_pT_Calib);
+
   h2Jet_pT_Energy = new TH2F("h2Jet_pT_Energy", "Jets: |z| < 10 cm and MB; p_{T} [GeV]; Energy [GeV]", m_hist_config.m_bins_jet_ptv2, m_hist_config.m_jet_ptv2_low, m_hist_config.m_jet_ptv2_high, m_hist_config.m_bins_jet_energy, m_hist_config.m_jet_energy_low, m_hist_config.m_jet_energy_high);
   se->registerHisto(h2Jet_pT_Energy);
 
@@ -286,11 +289,13 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("max_pt_r03", &m_data.max_pt_r03);
 
   m_tree->Branch("pt_r02", &m_data.pt_r02);
+  m_tree->Branch("pt_calib_r02", &m_data.pt_calib_r02);
   m_tree->Branch("e_r02", &m_data.e_r02);
   m_tree->Branch("phi_r02", &m_data.phi_r02);
   m_tree->Branch("eta_r02", &m_data.eta_r02);
 
   m_tree->Branch("pt_r03", &m_data.pt_r03);
+  m_tree->Branch("pt_calib_r03", &m_data.pt_calib_r03);
   m_tree->Branch("e_r03", &m_data.e_r03);
   m_tree->Branch("phi_r03", &m_data.phi_r03);
   m_tree->Branch("eta_r03", &m_data.eta_r03);
@@ -826,7 +831,10 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   JetContainer *jets_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r02);
   JetContainer *jets_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_r03);
 
-  if (!jets_r02 || !jets_r03)
+  JetContainer *jets_r02_calib = findNode::getClass<JetContainer>(topNode, m_recoJetName_calib_r02);
+  JetContainer *jets_r03_calib = findNode::getClass<JetContainer>(topNode, m_recoJetName_calib_r03);
+
+  if (!jets_r02 || !jets_r03 || !jets_r02_calib || !jets_r03_calib)
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
@@ -839,9 +847,13 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   double cent = m_data.centrality;
 
   // R = 0.3
-  for (auto* jet : *jets_r03)
+  for (unsigned int i = 0; i < jets_r03->size(); ++i)
   {
+    auto *jet = jets_r03->get_jet(i);
+    auto *calib_jet = jets_r03_calib->get_jet(i);
+
     double pt = jet->get_pt();
+    double pt_calib = calib_jet->get_pt();
     double energy = jet->get_e();
     double phi = jet->get_phi();
     double eta = jet->get_eta();
@@ -855,15 +867,16 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
     Jet::TYPE_comp_vec comp_vec = jet->get_comp_vec();
     int constituents = comp_vec.size();
 
-    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r03)
+    if (pt_calib >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r03)
     {
-      JetUtils::update_min_max(pt, m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
+      JetUtils::update_min_max(pt_calib, m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
       JetUtils::update_min_max(energy, m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
       JetUtils::update_min_max(phi, m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
       JetUtils::update_min_max(eta, m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);
       JetUtils::update_min_max(constituents, m_logging.m_jet_constituents_min, m_logging.m_jet_constituents_max);
 
       m_data.pt_r03.push_back(pt);
+      m_data.pt_calib_r03.push_back(pt_calib);
       m_data.e_r03.push_back(energy);
       m_data.phi_r03.push_back(phi);
       m_data.eta_r03.push_back(eta);
@@ -871,20 +884,21 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       // Ensure positive jet energy
       if (energy > 0)
       {
-        h2Jet_pT_Constituents->Fill(pt, constituents);
-        h2Jet_pT_Cent->Fill(cent, pt);
-        h2Jet_pT_Phi->Fill(pt, phi);
-        h2Jet_pT_Energy->Fill(pt, energy);
+        h2Jet_pT_Constituents->Fill(pt_calib, constituents);
+        h2Jet_pT_Cent->Fill(cent, pt_calib);
+        h2Jet_pT_Phi->Fill(pt_calib, phi);
+        h2Jet_pT_Calib->Fill(pt, pt_calib);
+        h2Jet_pT_Energy->Fill(pt_calib, energy);
         h2Jet_PhiEta->Fill(phi, eta);
 
-        h2UE_v2_Jet->Fill(v2, pt);
+        h2UE_v2_Jet->Fill(v2, pt_calib);
 
-        if (pt >= m_cuts.m_jet_pt_threshold)
+        if (pt_calib >= m_cuts.m_jet_pt_threshold)
         {
           hasHighPt = true;
         }
 
-        m_data.max_pt_r03 = std::max(m_data.max_pt_r03, pt);
+        m_data.max_pt_r03 = std::max(m_data.max_pt_r03, pt_calib);
         hasJet = true;
         ++n_jets;
       }
@@ -892,9 +906,13 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
   }
 
   // R = 0.2
-  for (auto* jet : *jets_r02)
+  for (unsigned int i = 0; i < jets_r02->size(); ++i)
   {
+    auto *jet = jets_r02->get_jet(i);
+    auto *calib_jet = jets_r02_calib->get_jet(i);
+
     double pt = jet->get_pt();
+    double pt_calib = calib_jet->get_pt();
     double energy = jet->get_e();
     double phi = jet->get_phi();
     double eta = jet->get_eta();
@@ -905,16 +923,17 @@ int sEPDValidation::process_jets(PHCompositeNode *topNode)
       phi += 2.0 * std::numbers::pi;
     }
 
-    if (pt >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r02)
+    if (pt_calib >= m_jet_pt_min_cut && std::abs(eta) < m_jet_eta_max_cut_r02)
     {
       m_data.pt_r02.push_back(pt);
+      m_data.pt_calib_r02.push_back(pt_calib);
       m_data.e_r02.push_back(energy);
       m_data.phi_r02.push_back(phi);
       m_data.eta_r02.push_back(eta);
 
       if (energy > 0)
       {
-        m_data.max_pt_r02 = std::max(m_data.max_pt_r02, pt);
+        m_data.max_pt_r02 = std::max(m_data.max_pt_r02, pt_calib);
       }
     }
   }
@@ -1096,11 +1115,13 @@ int sEPDValidation::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.max_pt_r03 = 0;
 
   m_data.pt_r02.clear();
+  m_data.pt_calib_r02.clear();
   m_data.e_r02.clear();
   m_data.phi_r02.clear();
   m_data.eta_r02.clear();
 
   m_data.pt_r03.clear();
+  m_data.pt_calib_r03.clear();
   m_data.e_r03.clear();
   m_data.phi_r03.clear();
   m_data.eta_r03.clear();
@@ -1178,7 +1199,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Jets" << std::endl;
-  std::cout << std::format("Jet pT: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
+  std::cout << std::format("Jet pT Calib: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_pt_min, m_logging.m_jet_pt_max);
   std::cout << std::format("Jet energy: Min {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_energy_min, m_logging.m_jet_energy_max);
   std::cout << std::format("Jet phi: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_phi_min, m_logging.m_jet_phi_max);
   std::cout << std::format("Jet eta: Min: {:0.2f}, Max: {:0.2f}\n", m_logging.m_jet_eta_min, m_logging.m_jet_eta_max);

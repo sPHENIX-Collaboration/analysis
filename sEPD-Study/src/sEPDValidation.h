@@ -328,11 +328,13 @@ class sEPDValidation : public SubsysReco
 
     // jets
     std::vector<double> pt_r02;
+    std::vector<double> pt_calib_r02;
     std::vector<double> e_r02;
     std::vector<double> phi_r02;
     std::vector<double> eta_r02;
 
     std::vector<double> pt_r03;
+    std::vector<double> pt_calib_r03;
     std::vector<double> e_r03;
     std::vector<double> phi_r03;
     std::vector<double> eta_r03;
@@ -394,6 +396,7 @@ class sEPDValidation : public SubsysReco
   TH2* h2Jet_pT_Cent{nullptr};
   TH2* h2Jet_LeadpT_Cent{nullptr};
   TH2* h2Jet_pT_Phi{nullptr};
+  TH2* h2Jet_pT_Calib{nullptr};
   TH2* h2Jet_pT_Energy{nullptr};
   TH2* h2Jet_PhiEta{nullptr};
 
@@ -421,6 +424,10 @@ class sEPDValidation : public SubsysReco
   std::string m_recoJetName_r02{"AntiKt_Tower_r02_Sub1"};
   std::string m_recoJetName_r03{"AntiKt_Tower_r03_Sub1"};
   double m_jet_pt_min_cut{7};     // GeV
+
+  std::string m_recoJetName_calib_r02{"AntiKt_Tower_r02_Sub1_calib"};
+  std::string m_recoJetName_calib_r03{"AntiKt_Tower_r03_Sub1_calib"};
+
   double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
   double m_jet_eta_max_cut_r03{0.8};  // 1.1-R
 };

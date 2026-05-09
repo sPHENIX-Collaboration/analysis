@@ -37,6 +37,7 @@
 
 #include <jetbackground/BeamBackgroundFilterAndQA.h>
 #include <jetbackground/JetBackgroundCut.h>
+#include <jetbase/JetCalib.h>
 
 #include "Calo_Calib.C"
 #include "HIJetReco.C"
@@ -140,6 +141,28 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
   // Enable::HIJETS_VERBOSITY = 10;
   HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 3;
   HIJetReco();
+
+  // Jet Calib R = 0.2
+  JetCalib* jetCalib02 = new JetCalib("JetCalib02");
+  jetCalib02->set_InputNode("AntiKt_Tower_r02_Sub1");
+  jetCalib02->set_OutputNode("AntiKt_Tower_r02_Sub1_calib");
+  jetCalib02->set_JetRadius(0.2);
+  jetCalib02->set_ZvrtxNode("GlobalVertexMap");
+  jetCalib02->set_ApplyZvrtxDependentCalib(true);
+  jetCalib02->set_ApplyEtaDependentCalib(true);
+  // jetCalib02->Verbosity(1);
+  se->registerSubsystem(jetCalib02);
+
+  // Jet Calib R = 0.3
+  JetCalib* jetCalib03 = new JetCalib("JetCalib03");
+  jetCalib03->set_InputNode("AntiKt_Tower_r03_Sub1");
+  jetCalib03->set_OutputNode("AntiKt_Tower_r03_Sub1_calib");
+  jetCalib03->set_JetRadius(0.3);
+  jetCalib03->set_ZvrtxNode("GlobalVertexMap");
+  jetCalib03->set_ApplyZvrtxDependentCalib(true);
+  jetCalib03->set_ApplyEtaDependentCalib(true);
+  // jetCalib03->Verbosity(1);
+  se->registerSubsystem(jetCalib03);
 
   // sEPD QA
   sEPDValidation* sepd_validation = new sEPDValidation();
