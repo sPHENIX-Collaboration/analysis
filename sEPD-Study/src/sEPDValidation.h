@@ -423,11 +423,11 @@ class sEPDValidation : public SubsysReco
 
   std::string m_recoJetName_r02{"AntiKt_Tower_r02_Sub1"};
   std::string m_recoJetName_r03{"AntiKt_Tower_r03_Sub1"};
-  double m_jet_pt_min_cut{7};     // GeV
 
   std::string m_recoJetName_calib_r02{"AntiKt_Tower_r02_Sub1_calib"};
   std::string m_recoJetName_calib_r03{"AntiKt_Tower_r03_Sub1_calib"};
 
+  double m_jet_pt_min_cut{10};     // GeV
   double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
   double m_jet_eta_max_cut_r03{0.8};  // 1.1-R
 };
