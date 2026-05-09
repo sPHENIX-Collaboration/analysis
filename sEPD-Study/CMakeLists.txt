@@ -147,6 +147,10 @@ target_link_libraries(Jet-Ana PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- displayQA ---
+add_executable(displayQA macros/display-QA.C)
+target_link_libraries(displayQA PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- displayv2 ---
 add_executable(displayv2 macros/displayv2.C)
 target_link_libraries(displayv2 PRIVATE ${STANDALONE_MACRO_LIBS})
