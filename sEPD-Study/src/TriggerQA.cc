@@ -57,7 +57,14 @@ int TriggerQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(hZVertex_Trig12);
   se->registerHisto(hZVertex_Trig14);
 
-  hLuminosity = new TH1F("hLuminosity", "; |z| < 10 cm; Luminosity [nb^{-1}]", 1, 0, 1);
+  // Lumi Labels
+  std::vector<std::string> lumiType{"|z| < 10 cm & MBD Trig", "|z| < 10 cm"};
+
+  hLuminosity = new TH1F("hLuminosity", "; Type; Luminosity [nb^{-1}]", lumiType.size(), 0, lumiType.size());
+  for (unsigned int i = 0; i < lumiType.size(); ++i)
+  {
+    hLuminosity->GetXaxis()->SetBinLabel(i + 1, lumiType[i].c_str());
+  }
   se->registerHisto(hLuminosity);
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -168,7 +175,8 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("Trigger: {}, Prescale: {}\n", m_trig_14, prescale_14);
 
   // default
-  double lumi = 0.0;
+  double lumi_trig = 0.0;
+  double lumi_vtx = 0.0;
 
   if (raw12 > 0 && raw14 > 0)
   {
@@ -178,16 +186,19 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
 
     if (prescale_12 > 0)
     {
-      lumi = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12) + 1) / sigma_narrow * 1e-9;
+      lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12) + 1) / sigma_narrow * 1e-9;
     }
     // Fallback: If Trig 12 is disabled (<=0), salvage using the un-throttled Trig 14
     else if (prescale_14 > 0)
     {
-      lumi = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG14) + 1) / sigma_narrow * 1e-9;
+      lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG14) + 1) / sigma_narrow * 1e-9;
     }
+
+    lumi_vtx = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10) + 1) / sigma_narrow * 1e-9;
   }
 
-  hLuminosity->SetBinContent(1, lumi);
+  hLuminosity->SetBinContent(1, lumi_trig);
+  hLuminosity->SetBinContent(2, lumi_vtx);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
