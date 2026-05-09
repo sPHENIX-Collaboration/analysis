@@ -20,7 +20,13 @@ submitDir=${8}
 file=$(basename "$input")
 IFS='-' read -r p1 p2 p3 <<< "$file"
 run=$(echo "$p2" | sed 's/^0*//') # Remove leading zeros using sed
-calib_file=$(basename "$input_calib")
+
+# Check if input_calib is a path or a keyword
+if [[ "$input_calib" == "default" ]]; then
+    calib_file="default"
+else
+    calib_file=$(basename "$input_calib")
+fi
 
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then

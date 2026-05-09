@@ -269,8 +269,8 @@ f4a.add_argument('-i'
 
 f4a.add_argument('-i2'
                     , '--calib', type=str
-                    , required=True
-                    , help='Q Vector Calibrations.')
+                    , default=None
+                    , help='Q Vector Calibrations. (Optional)')
 
 f4a.add_argument('-i3'
                     , '--dbtag', type=str
@@ -333,7 +333,7 @@ def create_f4a_jobs():
     Create Fun4All Jobs
     """
     input_list = Path(args.input_list).resolve()
-    calib_list = Path(args.calib).resolve()
+    calib_list = Path(args.calib).resolve() if args.calib else None
     dbtag = args.dbtag
     events = args.events
     output_dir = Path(args.output_dir).resolve()
@@ -354,7 +354,11 @@ def create_f4a_jobs():
     logger = setup_logging(log_file, logging.DEBUG)
 
     # Ensure that files exists
-    for f in [input_list, calib_list, condor_script, f4a_macro, calo_calib_macro, HIJetReco_macro, common_errors]:
+    files_to_check = [input_list, condor_script, f4a_macro, calo_calib_macro, HIJetReco_macro, common_errors]
+    if calib_list:
+        files_to_check.append(calib_list)
+
+    for f in files_to_check:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit()
@@ -371,7 +375,7 @@ def create_f4a_jobs():
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
     logger.info(f'Input DST List: {input_list}')
-    logger.info(f'Calib List: {calib_list}')
+    logger.info(f'Calib List: {calib_list if calib_list else "Not Provided (Using default)"}')
     logger.info(f'Total DSTs: {total_files}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
     logger.info(f'DB Tag: {dbtag}')
@@ -391,7 +395,6 @@ def create_f4a_jobs():
 
     # Copy necessary files to the output directory
     shutil.copy(input_list, output_dir)
-    shutil.copy(calib_list, output_dir)
     f4a_macro = shutil.copy(f4a_macro, output_dir)
     shutil.copy(calo_calib_macro, output_dir)
     shutil.copy(HIJetReco_macro, output_dir)
@@ -399,6 +402,8 @@ def create_f4a_jobs():
     shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
 
     CONDOR_SUBMISSION_LIMIT = 20000
+    if calib_list:
+        shutil.copy(calib_list, output_dir)
 
     files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
     logger.info(f'Files Per Job: {files_per_job}')
@@ -407,12 +412,15 @@ def create_f4a_jobs():
     files_dir.mkdir(parents=True, exist_ok=True)
 
     calib_map = {}
-    # Calib List
-    for line in calib_list.read_text(encoding='utf-8').splitlines():
-        line = line.strip()
-        run = Path(line.split(',')[0]).parts[-2]
-        logger.info(f'Processing: {line}, run: {run}')
-        calib_map[run] = line
+    if calib_list:
+        # Only populate the map if the file was provided
+        for line in calib_list.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            run = Path(line.split(',')[0]).parts[-2]
+            logger.info(f'Processing Calib: {line}, run: {run}')
+            calib_map[run] = line
 
     jobs_file = output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
@@ -440,7 +448,7 @@ def create_f4a_jobs():
             if run in calib_map:
                 file_out.write(f'{line},{calib_map[run]}\n')
             else:
-                file_out.write(f'{line},none\n')
+                file_out.write(f'{line},default\n')
 
     # Remove temp file
     jobs_temp_file.unlink(missing_ok=True)

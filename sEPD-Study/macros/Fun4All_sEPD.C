@@ -19,8 +19,6 @@
 #include <centrality/CentralityReco.h>
 #include <calotrigger/MinimumBiasClassifier.h>
 
-#include <eventplaneinfo/EventPlaneReco.h>
-
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
 
@@ -35,8 +33,6 @@
 #include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/sEPDValidation.h>
 
-#include <jetbackground/BeamBackgroundFilterAndQA.h>
-#include <jetbackground/JetBackgroundCut.h>
 #include <jetbase/JetCalib.h>
 
 #include "Calo_Calib.C"
@@ -46,7 +42,7 @@ R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &flist_dst_calofit,
                   const std::string &flist_dst_zdc,
-                  const std::string &input_QVecCalib="none",
+                  const std::string &input_QVecCalib="default",
                   const std::string &output = "test.root",
                   const std::string &output_tree = "tree.root",
                   int nEvents = 100,
@@ -131,15 +127,10 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent);
 
-  // Event Plane
-  EventPlaneReco* epreco = new EventPlaneReco();
-  epreco->set_directURL_EventPlaneCalib(input_QVecCalib);
-  // epreco->Verbosity(Fun4AllBase::VERBOSITY_SOME);
-  se->registerSubsystem(epreco);
-
   // Jet Reco
   // Enable::HIJETS_VERBOSITY = 10;
-  HIJETS::do_flow = (input_QVecCalib == "none") ? 0 : 3;
+  HIJETS::eventplane_custom_calib = input_QVecCalib;
+  HIJETS::do_flow = 3;
   HIJetReco();
 
   // Jet Calib R = 0.2
@@ -203,7 +194,7 @@ int main(int argc, const char* const argv[])
     std::cerr << "usage: " << args[0] << " <input_DST> <input_ZDC> [input_QVecCalib] [output] [output_tree] [nEvents] [nSkip] [event_id] [dbtag]" << std::endl;
     std::cerr << "  input_DST: path to the input calo fitting list" << std::endl;
     std::cerr << "  input_ZDC: path to the input ZDC list" << std::endl;
-    std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: 'none')" << std::endl;
+    std::cerr << "  input_QVecCalib: (optional) path to the QVec Calib file (default: (i.e. fetch from CDB))" << std::endl;
     std::cerr << "  output: (optional) path to the output file (default: 'test.root')" << std::endl;
     std::cerr << "  output: (optional) path to the output tree file (default: 'tree.root')" << std::endl;
     std::cerr << "  nEvents: (optional) number of events to process (default: 100)" << std::endl;
@@ -214,46 +205,16 @@ int main(int argc, const char* const argv[])
     return 1;  // Indicate error
   }
 
-  const std::string& input_dst= args[1];
-  const std::string& input_zdc= args[2];
-  std::string input_QVecCalib = "none";
-  std::string output = "test.root";
-  std::string output_tree = "tree.root";
-  int nEvents = 100;
-  int nSkip = 0;
-  int event_id = 0;
-  std::string dbtag = "newcdbtag";
-
-  unsigned int ctr = 3;
-
-  if (args.size() >= ctr+1)
-  {
-    input_QVecCalib = args[ctr++];
-  }
-  if (args.size() >= ctr+1)
-  {
-    output = args[ctr++];
-  }
-  if (args.size() >= ctr+1)
-  {
-    output_tree = args[ctr++];
-  }
-  if (args.size() >= ctr+1)
-  {
-    nEvents = std::stoi(args[ctr++]);
-  }
-  if (args.size() >= ctr+1)
-  {
-    nSkip = std::stoi(args[ctr++]);
-  }
-  if (args.size() >= ctr+1)
-  {
-    event_id = std::stoi(args[ctr++]);
-  }
-  if (args.size() >= ctr+1)
-  {
-    dbtag = args[ctr++];
-  }
+  size_t arg_ctr = 1;
+  const std::string& input_dst = args[arg_ctr++];
+  const std::string& input_zdc = args[arg_ctr++];
+  const std::string& input_QVecCalib = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "default";
+  std::string output = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "test.root";
+  std::string output_tree = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "tree.root";
+  int nEvents = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 100;
+  int nSkip = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 0;
+  int event_id = (args.size() >= arg_ctr+1) ? std::stoi(args[arg_ctr++]) : 0;
+  std::string dbtag = (args.size() >= arg_ctr+1) ? args[arg_ctr++] : "newcdbtag";
 
   Fun4All_sEPD(input_dst, input_zdc, input_QVecCalib, output, output_tree, nEvents, nSkip, event_id, dbtag);
 
