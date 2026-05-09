@@ -143,16 +143,17 @@ class JetAnalysis
     TH1* hQVecFail{nullptr};
     TH1* hCaloV2Fail{nullptr};
 
-    TH2* h2Dummy{nullptr};
+    TH2* h2Weights{nullptr};
 
+    TH1* hJetPt{nullptr};
     TH2* h2JetPhiPt{nullptr};
     TH2* h2JetPhiEta{nullptr};
 
-    TH2* h2Weights{nullptr};
-
+    TH1* hJetPtv2{nullptr};
     TH2* h2JetPhiPtv2{nullptr};  // Positive Jet Energy
     TH2* h2JetPhiEtav2{nullptr};
 
+    TH1* hJetPtv3{nullptr};
     TH2* h2JetPhiPtv3{nullptr}; // Calo V2 Cut
     TH2* h2JetPhiEtav3{nullptr};
 
@@ -303,6 +304,7 @@ class JetAnalysis
 
     std::vector<double>* jet_energy{nullptr};
     std::vector<double>* jet_pt{nullptr};
+    std::vector<double>* jet_pt_calib{nullptr};
     std::vector<double>* jet_phi{nullptr};
     std::vector<double>* jet_eta{nullptr};
 
@@ -355,7 +357,7 @@ class JetAnalysis
   int m_verbosity{0};
 
   // Jet Cuts
-  double m_jet_pt_min{7}; /*GeV*/
+  double m_jet_pt_min{10}; /*GeV*/
   double m_jet_eta_max{0.8};
 
   // Calo V2 Cuts
@@ -439,6 +441,7 @@ void JetAnalysis::setup_chain()
                         "event_tower_median_Energy", "event_EMCal_tower_median_Energy",
                         "nHIRecoSeedsSub", "nHIRecoSeedsSubIt1",
                         "calo_v2_it1", "UE_sum_E",
+                        "pt_calib_r02", "pt_calib_r03",
                         "qsx_raw", "qsy_raw", "qnx_raw", "qny_raw",
                         "qsx_recentered", "qsy_recentered", "qnx_recentered", "qny_recentered",
                         "qsx", "qsy", "qnx", "qny", "qnsx", "qnsy"});
@@ -527,6 +530,15 @@ void JetAnalysis::setup_chain()
 
     m_chain->SetBranchAddress("qnsx", &m_event_data.Q_NS_x);
     m_chain->SetBranchAddress("qnsy", &m_event_data.Q_NS_y);
+
+    if (m_radius == 2)
+    {
+      m_chain->SetBranchAddress("pt_calib_r02", &m_event_data.jet_pt_calib);
+    }
+    else if (m_radius == 3)
+    {
+      m_chain->SetBranchAddress("pt_calib_r03", &m_event_data.jet_pt_calib);
+    }
   }
   else
   {
@@ -864,6 +876,10 @@ void JetAnalysis::init_hists()
   m_hists1D["hQVecFail"] = std::make_unique<TH1F>("hQVecFail", "Q Vec Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
   m_hists1D["hCaloV2Fail"] = std::make_unique<TH1F>("hCaloV2Fail", "Calo v2 Failure; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
+  m_hists1D["hJetPt"] = std::make_unique<TH1F>("hJetPt", "; p_{T} [GeV]; Jets / 1 GeV", bins_pt, pt_low, pt_high);
+  m_hists1D["hJetPtv2"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv2")));
+  m_hists1D["hJetPtv3"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv3")));
+
   m_hists2D["h2JetPhiPt"] = std::make_unique<TH2F>("h2JetPhiPt", "Jet: |z| < 10 cm and MB; #phi; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_pt, pt_low, pt_high);
   m_hists2D["h2JetPhiEta"] = std::make_unique<TH2F>("h2JetPhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
 
@@ -1015,6 +1031,10 @@ void JetAnalysis::init_hists()
   m_hists.hCentralityCaloFail = m_hists1D["hCentralityCaloFail"].get();
   m_hists.hQVecFail = m_hists1D["hQVecFail"].get();
   m_hists.hCaloV2Fail = m_hists1D["hCaloV2Fail"].get();
+
+  m_hists.hJetPt = m_hists1D["hJetPt"].get();
+  m_hists.hJetPtv2 = m_hists1D["hJetPtv2"].get();
+  m_hists.hJetPtv3 = m_hists1D["hJetPtv3"].get();
 
   m_hists.h2JetPhiPt = m_hists2D["h2JetPhiPt"].get();
   m_hists.h2JetPhiEta = m_hists2D["h2JetPhiEta"].get();
@@ -1402,7 +1422,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   for (size_t idx = 0; idx < nJets; ++idx)
   {
     double energy = m_event_data.jet_energy->at(idx);
-    double pt = m_event_data.jet_pt->at(idx);
+    double pt = (m_isData) ? m_event_data.jet_pt_calib->at(idx) : m_event_data.jet_pt->at(idx);
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
 
@@ -1421,6 +1441,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       phi += 2.0 * std::numbers::pi;
     }
 
+    m_hists.hJetPt->Fill(pt, eventweight);
     m_hists.h2JetPhiPt->Fill(phi, pt, eventweight);
     m_hists.h2JetPhiEta->Fill(phi, eta, eventweight);
     m_hists.h2JetPtEnergy->Fill(pt, energy, eventweight);
@@ -1430,6 +1451,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     {
       m_hists.h2CaloV2JetPt->Fill(calo_v2, pt, eventweight);
 
+      m_hists.hJetPtv2->Fill(pt, eventweight);
       m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
       m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
 
@@ -1439,6 +1461,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
         m_hists.h2CentralityJetPt->Fill(cent, pt, eventweight);
         m_hists.h2SumEJetPt->Fill(sum_E, pt, eventweight);
 
+        m_hists.hJetPtv3->Fill(pt, eventweight);
         m_hists.h2JetPhiPtv3->Fill(phi, pt, eventweight);
         m_hists.h2JetPhiEtav3->Fill(phi, eta, eventweight);
         m_hists.h_dphiptreco[centbin]->Fill(std::abs(dphi),pt,eventweight);
@@ -2011,7 +2034,7 @@ int main(int argc, const char* const argv[])
   const std::string input_file = argv[ctr++];
   const std::string input_f4a_qa_file = argv[ctr++];
   long long events = (argc >= ctr+1) ? std::atoll(argv[ctr++]) : 0;
-  double jet_pt_min = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 7;
+  double jet_pt_min = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 10;
   double jet_eta_max = (argc >= ctr+1) ? std::stod(argv[ctr++]) : 0.8;
   std::string output_dir = (argc >= ctr+1) ? argv[ctr++] : ".";
   int radius = (argc >= ctr+1) ? static_cast<int>(std::atoll(argv[ctr++])) : 3;
