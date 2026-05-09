@@ -287,6 +287,11 @@ f4a.add_argument('-n'
                     , default=0
                     , help='Number of events to analyze. Default: All.')
 
+f4a.add_argument('-n2'
+                    , '--dst-per-job', type=int
+                    , default=4
+                    , help='Number of DSTs to analyze per job. Default: 4.')
+
 f4a.add_argument('-s'
                     , '--memory', type=float
                     , default=3
@@ -336,6 +341,7 @@ def create_f4a_jobs():
     calib_list = Path(args.calib).resolve() if args.calib else None
     dbtag = args.dbtag
     events = args.events
+    dst_per_job = args.dst_per_job
     output_dir = Path(args.output_dir).resolve()
     log_file  = output_dir / 'log.txt'
     f4a_macro = Path(args.f4a_macro).resolve()
@@ -377,6 +383,7 @@ def create_f4a_jobs():
     logger.info(f'Input DST List: {input_list}')
     logger.info(f'Calib List: {calib_list if calib_list else "Not Provided (Using default)"}')
     logger.info(f'Total DSTs: {total_files}')
+    logger.info(f'DST Per Job: {dst_per_job}')
     logger.info(f'Events to process per job: {events if events != 0 else "All"}')
     logger.info(f'DB Tag: {dbtag}')
     logger.info(f'Output Directory: {output_dir}')
@@ -401,12 +408,10 @@ def create_f4a_jobs():
     shutil.copy(common_errors, output_dir)
     shutil.copytree(src_dir, output_dir / 'src', dirs_exist_ok=True)
 
-    CONDOR_SUBMISSION_LIMIT = 20000
     if calib_list:
         shutil.copy(calib_list, output_dir)
 
-    files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
-    logger.info(f'Files Per Job: {files_per_job}')
+    CONDOR_SUBMISSION_LIMIT = 15000
 
     files_dir = output_dir / 'files'
     files_dir.mkdir(parents=True, exist_ok=True)
@@ -428,13 +433,12 @@ def create_f4a_jobs():
     jobs_temp_file = output_dir / 'jobs-temp.list'
     jobs_temp_file.unlink(missing_ok=True)
 
-
     for line in input_list.read_text(encoding='utf-8').splitlines():
         line = line.strip()
         logger.info(f'Processing: {line}')
         file_stem = Path(line).stem
 
-        command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        command = f'split --lines {dst_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
         run_command_and_log(command, logger, files_dir, False)
 
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_temp_file.name}'
@@ -452,6 +456,10 @@ def create_f4a_jobs():
 
     # Remove temp file
     jobs_temp_file.unlink(missing_ok=True)
+
+    # Make separate submission for each node
+    command = f'split --lines {CONDOR_SUBMISSION_LIMIT} jobs.list -d -a 1 jobs- --additional-suffix=.list'
+    run_command_and_log(command, logger, output_dir, False)
 
     # list of subdirectories to create
     subdirectories = ['stdout', 'error', 'output']
