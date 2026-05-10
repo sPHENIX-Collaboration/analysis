@@ -1217,8 +1217,8 @@ jetAna.add_argument('-i2'
 
 jetAna.add_argument('-j'
                     , '--jet-pt-min', type=float
-                    , default=7
-                    , help='Minimum Jet pT. Default: 7 [GeV]')
+                    , default=10
+                    , help='Minimum Jet pT. Default: 10 [GeV]')
 
 jetAna.add_argument('-j2'
                     , '--jet-radius-type', type=float

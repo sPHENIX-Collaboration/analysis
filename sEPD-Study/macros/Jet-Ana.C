@@ -146,14 +146,17 @@ class JetAnalysis
     TH2* h2Weights{nullptr};
 
     TH1* hJetPt{nullptr};
+    TH1* hJetPt_raw{nullptr};
     TH2* h2JetPhiPt{nullptr};
     TH2* h2JetPhiEta{nullptr};
 
     TH1* hJetPtv2{nullptr};
+    TH1* hJetPtv2_raw{nullptr};
     TH2* h2JetPhiPtv2{nullptr};  // Positive Jet Energy
     TH2* h2JetPhiEtav2{nullptr};
 
     TH1* hJetPtv3{nullptr};
+    TH1* hJetPtv3_raw{nullptr};
     TH2* h2JetPhiPtv3{nullptr}; // Calo V2 Cut
     TH2* h2JetPhiEtav3{nullptr};
 
@@ -880,6 +883,10 @@ void JetAnalysis::init_hists()
   m_hists1D["hJetPtv2"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv2")));
   m_hists1D["hJetPtv3"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv3")));
 
+  m_hists1D["hJetPt_raw"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPt_raw")));
+  m_hists1D["hJetPtv2_raw"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv2_raw")));
+  m_hists1D["hJetPtv3_raw"] = std::unique_ptr<TH1>(static_cast<TH1*>(m_hists1D["hJetPt"]->Clone("hJetPtv3_raw")));
+
   m_hists2D["h2JetPhiPt"] = std::make_unique<TH2F>("h2JetPhiPt", "Jet: |z| < 10 cm and MB; #phi; p_{T} [GeV]", bins_phi, phi_low, phi_high, bins_pt, pt_low, pt_high);
   m_hists2D["h2JetPhiEta"] = std::make_unique<TH2F>("h2JetPhiEta", "Jet: |z| < 10 cm and MB; #phi; #eta", bins_phi, phi_low, phi_high, bins_eta, eta_low, eta_high);
 
@@ -1031,6 +1038,10 @@ void JetAnalysis::init_hists()
   m_hists.hCentralityCaloFail = m_hists1D["hCentralityCaloFail"].get();
   m_hists.hQVecFail = m_hists1D["hQVecFail"].get();
   m_hists.hCaloV2Fail = m_hists1D["hCaloV2Fail"].get();
+
+  m_hists.hJetPt_raw = m_hists1D["hJetPt_raw"].get();
+  m_hists.hJetPtv2_raw = m_hists1D["hJetPtv2_raw"].get();
+  m_hists.hJetPtv3_raw = m_hists1D["hJetPtv3_raw"].get();
 
   m_hists.hJetPt = m_hists1D["hJetPt"].get();
   m_hists.hJetPtv2 = m_hists1D["hJetPtv2"].get();
@@ -1423,6 +1434,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   {
     double energy = m_event_data.jet_energy->at(idx);
     double pt = (m_isData) ? m_event_data.jet_pt_calib->at(idx) : m_event_data.jet_pt->at(idx);
+    double pt_raw = m_event_data.jet_pt->at(idx);
     double phi = m_event_data.jet_phi->at(idx);
     double eta = m_event_data.jet_eta->at(idx);
 
@@ -1442,6 +1454,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
     }
 
     m_hists.hJetPt->Fill(pt, eventweight);
+    m_hists.hJetPt_raw->Fill(pt_raw, eventweight);
     m_hists.h2JetPhiPt->Fill(phi, pt, eventweight);
     m_hists.h2JetPhiEta->Fill(phi, eta, eventweight);
     m_hists.h2JetPtEnergy->Fill(pt, energy, eventweight);
@@ -1452,6 +1465,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       m_hists.h2CaloV2JetPt->Fill(calo_v2, pt, eventweight);
 
       m_hists.hJetPtv2->Fill(pt, eventweight);
+      m_hists.hJetPtv2_raw->Fill(pt_raw, eventweight);
       m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
       m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
 
@@ -1462,6 +1476,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
         m_hists.h2SumEJetPt->Fill(sum_E, pt, eventweight);
 
         m_hists.hJetPtv3->Fill(pt, eventweight);
+        m_hists.hJetPtv3_raw->Fill(pt_raw, eventweight);
         m_hists.h2JetPhiPtv3->Fill(phi, pt, eventweight);
         m_hists.h2JetPhiEtav3->Fill(phi, eta, eventweight);
         m_hists.h_dphiptreco[centbin]->Fill(std::abs(dphi),pt,eventweight);
