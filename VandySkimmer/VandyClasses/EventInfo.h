@@ -73,25 +73,25 @@ class EventInfo {
         float 	z_vtx_truth{0.0};
         float 	ZDC_rate{0.0};
          
-	bool 	dijet_event[4] = {false, false, false, false};
-        bool 	dijetTruth_event[4] = {false, false, false, false};
+	bool 	dijet_event[5] = {false, false, false, false, false};
+        bool 	dijetTruth_event[5] = {false, false, false, false, false};
 	
         float   leadJetTime = -999;
         float   subJetTime = -999;
         float   MBDTime = -999;
-	float 	dijetDeltatTruth[4] {-999, -999, -999, -999};
+	float 	dijetDeltatTruth[5] {-999, -999, -999, -999, -999};
 	bool	leadJetTimePass = false;
 	bool	leadJetMBDDeltatPass = false;
 	bool	dijetDeltatPass = false;
-	bool 	dijetDeltatTruthPass[4] {false, false, false, false};
+	bool 	dijetDeltatTruthPass[5] {false, false, false, false, false};
 
-	float 	dijetDeltaPhi[4] {-999, -999, -999, -999};
-	float 	dijetDeltaPhiTruth[4] {-999, -999, -999, -999};
+	float 	dijetDeltaPhi[5] {-999, -999, -999, -999};
+	float 	dijetDeltaPhiTruth[5] {-999, -999, -999, -999, -999};
 
         float 	cross_section{0.0};
        
-       	float 	lead_pT[4] = {-999, -999, -999, -999};
-        float 	sublead_pT[4] = {-999, -999, -999, -999};
-        float 	leadTruth_pT[4] = {-999, -999, -999, -999};
-        float 	subleadTruth_pT[4] = {-999, -999, -999, -999};
+       	float 	lead_pT[5] = {-999, -999, -999, -999, -999};
+        float 	sublead_pT[5] = {-999, -999, -999, -999, -999};
+        float 	leadTruth_pT[5] = {-999, -999, -999, -999, -999};
+        float 	subleadTruth_pT[5] = {-999, -999, -999, -999, -999};
 };
