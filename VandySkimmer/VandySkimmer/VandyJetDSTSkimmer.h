@@ -50,6 +50,7 @@
 #include <HepMC/GenEvent.h>
 //fastjet
 #include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
@@ -176,7 +177,8 @@ class VandyJetDSTSkimmer : public SubsysReco
     void getJetParentParton(Jet*, JetInfo*, PHCompositeNode*);
     std::vector<HepMC::GenParticle*> getFinalStateAncestors(HepMC::GenParticle*, HepMC::GenEvent*);
     HepMC::GenParticle* findCommonAncestor(std::vector< std::vector< HepMC::GenParticle*>>);
-    
+    void getTruthTowers();
+    void maketruthtowerJets();
     PHParameters m_cutParams{"TimingCutParams"}; //variable name is arbitrary
 
     int num{-1};

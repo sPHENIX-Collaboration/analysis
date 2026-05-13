@@ -177,38 +177,37 @@ int VandyJetDSTSkimmer::InitRun(PHCompositeNode *topNode)
 }
 void VandyJetDSTSkimmer::getTruthTowers()
 {
-	//tower the truth particles into IHCAL tower sizes
-	int nTowers = m_towerInfoContainiers[2]->size();
+	//tower the truth particles into IHCAL tower->sizes
+	int nTowers = towerInfoContainers[2]->size();
 	std::map<int, std::pair<float, float>> etabinedges {};
 	std::map<int, std::pair<float, float>> phibinedges {};
 	std::map<int, float> etacenters {};
 	std::map<int, float> phicenters {};
-	float r = 0;
+//	float r = 0;
 	for(int i=0; i<nTowers; i++)
 	{
 		auto key = towerInfoContainers[2]->encode_key(i);
-		auto tower = towerInfoContainers[2]->get_tower_at_channel(i);
 		int etaBin = towerInfoContainers[2]->getTowerEtaBin(key);
 		int phiBin = towerInfoContainers[2]->getTowerPhiBin(key);
 		if(etabinedges.find(etaBin) == etabinedges.end()){
-		       	std::pair<float, float> etaEdges = geoms[2]->get_etaedges(etaBin);
+		       	std::pair<float, float> etaEdges = geoms[2]->get_etabounds(etaBin);
 			float etaCenter = geoms[2]->get_etacenter(etaBin);
 			etabinedges[etaBin] = etaEdges;
 			etacenters[etaBin]= etaCenter;
 		}
 		if(phibinedges.find(phiBin) == phibinedges.end()){
-			std::pair<float, float> phiEdges = geoms[2]->get_phiedges(phiBin);
-			float phiCenter = geoms[2]->getphicenter(phiBin)
+			std::pair<float, float> phiEdges = geoms[2]->get_phibounds(phiBin);
+			float phiCenter = geoms[2]->get_phicenter(phiBin);
 			phibinedges[phiBin] = phiEdges;
-			phicenters[phiBin] = phiCetner;
+			phicenters[phiBin] = phiCenter;
 		}
-		if(i==0) r = geoms[2]->get_radius();
+	//	if(i==0) r = geoms[2]->get_radius();
 	}
-	std::map<std::pair<int, int>, Tower*> tt {};
+	std::map<std::pair<int, int>, Tower> tt {};
 	for(auto p:m_truthParticles)
 	{
-		float phi = std::atan2(p->py(), p->px());
-		float eta = std::asinh(p->pz() / p->e());
+		float phi = std::atan2(p.py(), p.px());
+		float eta = std::asinh(p.pz() / p.e());
 		int phibin = -1;
 		int etabin = -1;
 		for(auto pb:phibinedges)
@@ -228,50 +227,74 @@ void VandyJetDSTSkimmer::getTruthTowers()
 		std::pair<int, int> bins {phibin, etabin}; 
 		if(tt.find(bins) == tt.end()) tt[bins] = p;
 		else{
-			tt[bins]->set_e(tt[bins]->e() + p->e());
-			tt[bins]->set_px(tt[bins]->px() + p->px());
-			tt[bins]->set_px(tt[bins]->py() + p->py());
-			tt[bins]->set_px(tt[bins]->pz() + p->pz());
+			tt[bins].set_e(tt[bins].e() + p.e());
+			tt[bins].set_px(tt[bins].px() + p.px());
+			tt[bins].set_px(tt[bins].py() + p.py());
+			tt[bins].set_px(tt[bins].pz() + p.pz());
 		}	
 	}
-	for(auto t:tt) m_truthtowers->push_back(t.second);
+	for(auto t:tt) m_truthtowers.push_back(t.second);
 	return;
 }
 void VandyJetDSTSkimmer::maketruthtowerJets()
 {
 	//use the truth towers to build jets
-	std::vector<fastjet::PsuedoJet> jet02 {}; 
+	std::vector<fastjet::PseudoJet> jet02 {}; 
 	fastjet::JetDefinition fj02 (fastjet::antikt_algorithm, 0.2);
-	std::vector<fastjet::PsuedoJet> jet03 {}; 
+	std::vector<fastjet::PseudoJet> jet03 {}; 
 	fastjet::JetDefinition fj03 (fastjet::antikt_algorithm, 0.3);
-	std::vector<fastjet::PsuedoJet> jet04 {}; 
+	std::vector<fastjet::PseudoJet> jet04 {}; 
 	fastjet::JetDefinition fj04 (fastjet::antikt_algorithm, 0.4);
-	std::vector<fastjet::PsuedoJet> jet05 {}; 
+	std::vector<fastjet::PseudoJet> jet05 {}; 
 	fastjet::JetDefinition fj05 (fastjet::antikt_algorithm, 0.5);
-	std::vector<fastjet::PsuedoJet> jet06 {}; 
+	std::vector<fastjet::PseudoJet> jet06 {}; 
 	fastjet::JetDefinition fj06 (fastjet::antikt_algorithm, 0.6);
 
-	std::vector<std::vector<fastJet::PseudoJet>> jets {jet02, jet03, jet04, jet05, jet06};
-	std::vector<fastJet::JetDefintion> jetdefs {fj02, fj03, fj04, fj05, fj06};
+	std::vector<std::vector<fastjet::PseudoJet>> twjets {jet02, jet03, jet04, jet05, jet06};
+	std::vector<fastjet::JetDefinition> jetdefs {fj02, fj03, fj04, fj05, fj06};
+//	std::cout<<__LINE__<<std::endl;
 
-	std::vector<fastjet::PsuedoJet> truthinput {};
-	for(auto p:m_truthtowers) truthinput.push_back(fastjet::PseudoJet(p->px(), p->py(), p->pz(), p->e()));
-	for(int i=0; i<(int)jets.size(); i++)
+	std::vector<fastjet::PseudoJet> truthinput {};
+	for(auto p:m_truthtowers) truthinput.push_back(fastjet::PseudoJet(p.px(), p.py(), p.pz(), p.e()));
+//	std::cout<<__LINE__<<std::endl;
+	for(int i=0; i<(int)twjets.size(); i++)
 	{
-		fastjet::CluserSequence cs(truthinput, jetdefs[i]);
-		jets[i]=cs.inclusivejets();
+		fastjet::ClusterSequence cls(truthinput, jetdefs[i]);
+		twjets[i]=cls.inclusive_jets();
 	}
-	for(int i=0; i<(int)m_truthtowerJetInfo->size(); i++)
+	//std::cout<<m_truthtowerJetInfo->size() <<std::endl;
+	for(int i=0; i<5/*(int)m_truthtowerJetInfo->size()*/; i++)
 	{
 		std::vector<JetInfo> jts {};
-		for(auto p:jets[i])
+//		std::cout<<__LINE__<<std::endl;
+		for(auto p:twjets.at(i))
 		{
 			JetInfo jt {};
-			jt.set_px(p->get_px());
-			jt.set_py(p->get_py());
-			jt.set_pz(p->get_pz());
-			jt.set_e(p->get_e());
-		}
+			jt.set_px(p.px());
+			jt.set_py(p.py());
+			jt.set_pz(p.pz());
+			jt.set_e(p.e());
+			jt.set_pt(p.perp());
+			std::vector<int> constits {};
+			/*try{
+				std::vector<fastjet::PseudoJet> c =p.constituents();
+				std::cout<<__LINE__<<std::endl;
+				for(auto j:c)//p.constituents())
+				{
+					std::cout<<"Component user index: " <<j.user_index()<<std::endl;
+					constits.push_back(j.user_index());
+		       		}
+				std::cout<<__LINE__<<std::endl;
+      				jt.set_constituents(constits);
+			}
+			catch(std::exception& e) {};*/
+//			float hcaloFrac=; figuring this out is a night mare, do I just set it at the tower level by appromating in the same way as with the truth?
+//			std::cout<<__LINE__<<std::endl;
+			jt.set_hCaloFrac(-999);
+			jts.push_back(jt);
+		}	
+//		std::cout<<std::format("In R=0.{} Jets we find {} tower jets", i+2, jts.size()) <<std::endl;
+		m_truthtowerJetInfo[i]=jts;
 	}
 	return;
 
@@ -395,7 +418,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
       m_truthParticles.push_back(tmpTower);
       m_towerInfoTruth_map[std::make_pair(4, p->get_track_id())] = m_truthParticles.size() - 1;
     }
-
+ 	getTruthTowers();
     for(int r=0; r<5; r++)
     {
       for(auto jet : *truthJets[r])
@@ -441,6 +464,7 @@ int VandyJetDSTSkimmer::process_event(PHCompositeNode *topNode)
         m_truthJetInfo[r].push_back(tmpJet);
      }
     }
+    maketruthtowerJets();
   }//end of all truth stuff
   else
   {
