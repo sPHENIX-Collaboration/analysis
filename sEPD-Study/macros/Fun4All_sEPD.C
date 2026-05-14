@@ -38,6 +38,7 @@
 #include "Calo_Calib.C"
 #include "HIJetReco.C"
 
+R__LOAD_LIBRARY(libg4detectors_io.so)
 R__LOAD_LIBRARY(libsEPDValidation.so)
 
 void Fun4All_sEPD(const std::string &flist_dst_calofit,
