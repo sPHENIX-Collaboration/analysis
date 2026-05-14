@@ -1628,6 +1628,11 @@ data.add_argument('-o'
                     , default='files/run3auau'
                     , help='Output Directory. Default: files/run3auau')
 
+data.add_argument('-s'
+                    , '--merge-script', type=str
+                    , default='scripts/merge_lists.sh'
+                    , help='Merge Lists Script. Default: scripts/merge_lists.sh')
+
 def get_line_count(file_path: Path) -> int:
     """
     Checks if a file exists at the given path and, if so, returns the number of lines.
@@ -1678,48 +1683,13 @@ def sort_files_by_lines(directory_path: Path, output_file: Path) -> None:
     # 4. Use write_text to save everything at once
     output_file.write_text(output_content)
 
-def combine_file_lists(src_dir: Path, dst_dir: Path, logger):
-    # # 1. Initialize Path objects
-    # src_dir = Path(src_path)
-    # dst_dir = Path(dst_path)
-
-    # Create destination directory if it doesn't exist
-    dst_dir.mkdir(parents=True, exist_ok=True)
-
-    # 2. Find all 'calofitting' files
-    for calo_path in src_dir.glob("dst_calofitting-*.list"):
-
-        # Extract the run number (e.g., '00068144')
-        # calo_path.stem gives the filename without extension
-        run_num = calo_path.stem.split('-')[-1]
-
-        # Construct the matching ZDC file path
-        zdc_path = src_dir / f"dst_zdc_raw-{run_num}.list"
-
-        # 3. Process the files if the pair exists
-        if zdc_path.exists():
-            output_path = dst_dir / f"dst_calofitting_zdc-{run_num}.list"
-
-            # Open all three files using context managers
-            with calo_path.open('r') as f_calo, \
-                 zdc_path.open('r') as f_zdc, \
-                 output_path.open('w') as f_out:
-
-                # zip() stops as soon as the shortest file ends.
-                # Use itertools.zip_longest if you need to keep lines from longer files.
-                for line_a, line_b in zip(f_calo, f_zdc):
-                    # .strip() removes existing newlines to avoid extra spacing
-                    combined_line = f"{line_a.strip()},{line_b.strip()}\n"
-                    f_out.write(combined_line)
-        else:
-            logger.warning(f"Warning: No ZDC file found for run {run_num}")
-
 def setup_data():
     """
     Setup input data lists
     """
     tag        = args.tag
     output_dir = Path(args.output_dir).resolve()
+    merge_script = Path(args.merge_script).resolve()
     log_file = output_dir / 'log.txt'
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1734,6 +1704,10 @@ def setup_data():
 
     # Initialize the logger
     logger = setup_logging(log_file, logging.DEBUG)
+
+    if not merge_script.is_file():
+        logger.critical(f'File: {merge_script} does not exist!')
+        sys.exit()
 
     # Print Logs
     logger.info('#'*40)
@@ -1780,7 +1754,8 @@ def setup_data():
     run_command_and_log(command, logger, dst_dir)
 
     # Merge the separate DST_CALOFITTING and DST_ZDC_RAW into one file per run
-    combine_file_lists(dst_dir, dst_dir_merged, logger)
+    command = f'{merge_script} {dst_dir} {dst_dir_merged}'
+    run_command_and_log(command, logger, output_dir)
 
     new_segments = count_total_lines(dst_dir_merged)
     diff_segments_frac = (new_segments-current_segments)*100/current_segments if current_segments != 0 else 0
