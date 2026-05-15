@@ -260,6 +260,189 @@ def create_trigger_qa_jobs():
 
 # ----------------------------
 
+f4a_zdc = subparser.add_parser('f4a_zdc', help='Create condor submission directory.')
+
+f4a_zdc.add_argument('-i'
+                    , '--input-list', type=str
+                    , required=True
+                    , help='Input DST List.')
+
+f4a_zdc.add_argument('-i2'
+                    , '--dbtag', type=str
+                    , default='newcdbtag'
+                    , help='CDB Tag. Default: newcdbtag')
+
+f4a_zdc.add_argument('-o'
+                    , '--output-dir', type=str
+                    , default='scratch/test'
+                    , help='Project Directory. Default: scratch/test')
+
+f4a_zdc.add_argument('-n'
+                    , '--events', type=int
+                    , default=0
+                    , help='Number of events to analyze. Default: All.')
+
+f4a_zdc.add_argument('-n2'
+                    , '--dst-per-job', type=int
+                    , default=4
+                    , help='Number of DSTs to analyze per job. Default: 4.')
+
+f4a_zdc.add_argument('-n3'
+                    , '--log-interval', type=int
+                    , default=1000
+                    , help='Logging Event Frequency. Default: 1000.')
+
+f4a_zdc.add_argument('-s'
+                    , '--memory', type=float
+                    , default=1
+                    , help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+
+f4a_zdc.add_argument('-l'
+                    , '--condor-log-dir', type=str
+                    , default='/tmp/anarde/dump'
+                    , help='Condor Log Directory. Default: /tmp/anarde/dump')
+
+f4a_zdc.add_argument('-f'
+                    , '--f4a-macro', type=str
+                    , default='macros/Fun4All_ZDC.C'
+                    , help='Fun4All Macro. Default: macros/Fun4All_ZDC.C')
+
+f4a_zdc.add_argument('-f2'
+                    , '--condor-script', type=str
+                    , default='scripts/genFun4AllZDC.sh'
+                    , help='Condor Script. Default: scripts/genFun4AllZDC.sh')
+
+f4a_zdc.add_argument('-f3'
+                    , '--common-errors', type=str
+                    , default='files/common-errors.txt'
+                    , help='Common Errors. Default: files/common-errors.txt')
+
+def create_f4a_zdc_jobs():
+    """
+    Create Fun4All Jobs
+    """
+    input_list = Path(args.input_list).resolve()
+    dbtag = args.dbtag
+    events = args.events
+    dst_per_job = args.dst_per_job
+    log_interval = args.log_interval
+    output_dir = Path(args.output_dir).resolve()
+    log_file  = output_dir / 'log.txt'
+    f4a_macro = Path(args.f4a_macro).resolve()
+    condor_memory = args.memory
+    condor_script = Path(args.condor_script).resolve()
+    condor_log_dir = Path(args.condor_log_dir).resolve()
+    common_errors = Path(args.common_errors).resolve()
+
+    # Create Dirs
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize the logger
+    logger = setup_logging(log_file, logging.DEBUG)
+
+    # Ensure that files exists
+    files_to_check = [input_list, condor_script, f4a_macro, common_errors]
+
+    for f in files_to_check:
+        if not f.is_file():
+            logger.critical(f'File: {f} does not exist!')
+            sys.exit()
+
+    # Compute the total number of DSTs in the list files
+    total_files = int(subprocess.run(['bash','-c',f'cat {input_list} | xargs -I {{}} sh -c \'test -f "{{}}" && wc -l "{{}}"\' | awk \'{{sum += $1}} END {{print sum}}\''], capture_output=True, encoding='utf-8', check=False).stdout.strip())
+
+    # Print Logs
+    logger.info('#'*40)
+    logger.info(f'LOGGING: {datetime.datetime.now()}')
+    logger.info(f'Input DST List: {input_list}')
+    logger.info(f'Total DSTs: {total_files}')
+    logger.info(f'DST Per Job: {dst_per_job}')
+    logger.info(f'Events to process per job: {events if events != 0 else "All"}')
+    logger.info(f'Logging Interval: {log_interval} Events')
+    logger.info(f'DB Tag: {dbtag}')
+    logger.info(f'Output Directory: {output_dir}')
+    logger.info(f'Log File: {log_file}')
+    logger.info(f'Fun4All Macro: {f4a_macro}')
+    logger.info(f'Condor Memory: {condor_memory} GB')
+    logger.info(f'Condor Script: {condor_script}')
+    logger.info(f'Condor Log Directory: {condor_log_dir}')
+    logger.info(f'Common Errors File: {common_errors}')
+
+    shutil.rmtree(condor_log_dir, ignore_errors=True)
+
+    # Setup Condor Log Dir
+    condor_log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy necessary files to the output directory
+    shutil.copy(input_list, output_dir)
+    f4a_macro = shutil.copy(f4a_macro, output_dir)
+    shutil.copy(common_errors, output_dir)
+    shutil.copy(condor_script, output_dir)
+
+    files_dir = output_dir / 'files'
+    files_dir.mkdir(parents=True, exist_ok=True)
+
+    jobs_file = output_dir / 'jobs.list'
+    jobs_file.unlink(missing_ok=True)
+
+    # 1. Collect all DST lines from all files in the master input list
+    all_dst_lines = []
+    for list_path_str in input_list.read_text(encoding='utf-8').splitlines():
+        list_path_str = list_path_str.strip()
+        if not list_path_str:
+            continue
+
+        sub_list = Path(list_path_str)
+        if sub_list.is_file():
+            # Extend our master list with the lines from this sub-file
+            all_dst_lines.extend(sub_list.read_text(encoding='utf-8').splitlines())
+        else:
+            logger.warning(f"Sub-list file not found: {sub_list}")
+
+    # 2. Chunk the aggregated lines and write the new files
+    total_jobs = 0
+    with open(jobs_file, mode='w', encoding='utf-8') as f_jobs:
+        # Use your existing chunk_list helper on the big master list
+        for i, chunk in enumerate(chunk_list(all_dst_lines, dst_per_job)):
+            chunk_file = files_dir / f'chunk-{i:05d}.list'
+            chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
+
+            # Write the absolute path to the jobs.list file
+            f_jobs.write(f"{chunk_file.resolve()}\n")
+            total_jobs += 1
+
+    logger.info(f"Total jobs prepared: {total_jobs}")
+
+    CONDOR_SUBMISSION_LIMIT = 15000
+
+    # Make separate submission for each node
+    command = f'split --lines {CONDOR_SUBMISSION_LIMIT} jobs.list -d -a 1 jobs- --additional-suffix=.list'
+    run_command_and_log(command, logger, output_dir, False)
+
+    # list of subdirectories to create
+    subdirectories = ['stdout', 'error', 'output']
+
+    # Loop through the list and create each one
+    for subdir in subdirectories:
+        shutil.rmtree(output_dir / subdir, ignore_errors=True)
+        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
+
+    submit_file_content = textwrap.dedent(f"""\
+        executable     = {condor_script.name}
+        arguments      = {f4a_macro} $(input_dst) {events} {dbtag} {log_interval} {output_dir}/output
+        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
+        output         = stdout/job-$(ClusterId)-$(Process).out
+        error          = error/job-$(ClusterId)-$(Process).err
+        request_memory = {condor_memory}GB
+    """)
+
+    (output_dir / 'genFun4All.sub').write_text(submit_file_content)
+
+    command = f'cd {output_dir} && condor_submit genFun4All.sub -queue "input_dst from jobs.list"'
+    logger.info(command)
+
+# ----------------------------
+
 f4a = subparser.add_parser('f4a', help='Create condor submission directory.')
 
 f4a.add_argument('-i'
@@ -1783,6 +1966,9 @@ def setup_data():
 args = parser.parse_args()
 
 if __name__ == "__main__":
+    if args.command == 'f4a_zdc':
+        create_f4a_zdc_jobs()
+
     if args.command == 'f4a':
         create_f4a_jobs()
 
