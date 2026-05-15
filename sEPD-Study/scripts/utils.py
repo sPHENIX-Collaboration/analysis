@@ -1801,6 +1801,17 @@ def hadd_jobs():
 
 data = subparser.add_parser('data', help='Update file lists.')
 
+
+data.add_argument('-i'
+                    , '--zdc-calib-dir', type=str
+                    , default=None
+                    , help='ZDC Calib DST Dir. Default: None (optional)')
+
+data.add_argument('-i2'
+                    , '--zdc-calib-prefix', type=str
+                    , default='dst_zdc_calib'
+                    , help='ZDC Calib DST List Prefix. Default: dst_zdc_calib')
+
 data.add_argument('-t'
                     , '--tag', type=str
                     , default='pro001_pcdb001_v001'
@@ -1870,6 +1881,8 @@ def setup_data():
     """
     Setup input data lists
     """
+    zdc_calib_dir = Path(args.zdc_calib_dir).resolve() if args.zdc_calib_dir else None
+    zdc_calib_prefix = args.zdc_calib_prefix
     tag        = args.tag
     output_dir = Path(args.output_dir).resolve()
     merge_script = Path(args.merge_script).resolve()
@@ -1892,9 +1905,16 @@ def setup_data():
         logger.critical(f'File: {merge_script} does not exist!')
         sys.exit()
 
+    if zdc_calib_dir and not zdc_calib_dir.is_dir():
+        logger.critical(f'Dir: {zdc_calib_dir} does not exist!')
+        sys.exit()
+
     # Print Logs
     logger.info('#'*40)
     logger.info(f'LOGGING: {datetime.datetime.now()}')
+    if zdc_calib_dir:
+        logger.info(f'ZDC Calib Dir: {zdc_calib_dir}')
+        logger.info(f'ZDC Calib Prefix: {zdc_calib_prefix}')
     logger.info(f'tag: {tag}')
     logger.info(f'Output Directory: {output_dir}')
     logger.info(f'Log File: {log_file}')
@@ -1937,8 +1957,15 @@ def setup_data():
     run_command_and_log(command, logger, dst_dir)
 
     # Merge the separate DST_CALOFITTING and DST_ZDC_RAW into one file per run
-    command = f'{merge_script} {dst_dir} {dst_dir_merged}'
+    command = f'{merge_script} {dst_dir} {dst_dir} {dst_dir_merged}'
     run_command_and_log(command, logger, output_dir)
+
+    if zdc_calib_dir:
+        # Merge the separate DST_CALOFITTING and DST_ZDC_CALIB into one file per run
+        dst_dir_zdc_calib_merged = output_dir / f'run3auau-merged-zdc-calib-{tag}'
+        dst_dir_zdc_calib_merged.mkdir(parents=True, exist_ok=True)
+        command = f'{merge_script} {dst_dir} {zdc_calib_dir} {dst_dir_zdc_calib_merged} {zdc_calib_prefix}'
+        run_command_and_log(command, logger, output_dir)
 
     new_segments = count_total_lines(dst_dir_merged)
     diff_segments_frac = (new_segments-current_segments)*100/current_segments if current_segments != 0 else 0
