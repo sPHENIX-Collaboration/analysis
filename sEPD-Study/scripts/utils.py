@@ -294,8 +294,8 @@ f4a_zdc.add_argument('-n3'
 
 f4a_zdc.add_argument('-s'
                     , '--memory', type=float
-                    , default=1
-                    , help='Memory (units of GB) to request per condor submission. Default: 1 GB.')
+                    , default=0.5
+                    , help='Memory (units of GB) to request per condor submission. Default: 0.5 GB.')
 
 f4a_zdc.add_argument('-l'
                     , '--condor-log-dir', type=str
