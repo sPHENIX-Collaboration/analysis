@@ -49,5 +49,14 @@ Momentum is reconstructed from track bending in magnetic field.
 
 ---
 
+## Output (SiliconCaloTrack)
+- track info (pT, φ, z, charge)
+- cluster info (x, y, z, energy)
+- dphi, dz
+- pt_calo
+
+---
+
 ## Summary
-Both matching and momentum reconstruction are based on Δφ.
+Momentum is reconstructed from the bending angle using two silicon points and one EMCal point.
+
