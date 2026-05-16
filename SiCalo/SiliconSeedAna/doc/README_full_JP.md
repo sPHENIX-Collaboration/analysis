@@ -285,4 +285,3 @@ p_T = 0.21 \cdot |\Delta \phi|^{-0.986}
 - pt_calo
 
 - 加えて、　SvtxTrackのpx, pyも更新する
-- 
