@@ -264,12 +264,16 @@ pT = 0.21 × |Δφ|^-0.986
 
 ---
 
-# ✅ Usage Notes
+# ■ Output (SiliconCaloTrack)
 
-This documentation:
+- Track information (pT, φ, z, charge)
+- Cluster information (x, y, z, energy)
+- dphi, dz
+- pt_calo
 
-- Matches the actual implementation
-- Includes physics interpretation
-- Suitable for both beginners and developers
+---
 
-👉 Can be directly used as a GitHub documentation file
+# ■ Summary
+
+The algorithm reconstructs pT from the bending angle using two silicon clusters and one EMCal cluster.
+
