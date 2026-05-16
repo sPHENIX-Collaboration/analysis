@@ -276,12 +276,13 @@ p_T = 0.21 \cdot |\Delta \phi|^{-0.986}
 
 ---
 
-# ✅ 利用について
 
-このREADMEは：
+## ■出力（SiliconCaloTrack）
 
-- 初学者が読んでも理解できる
-- コードと完全一致
-- 解析・開発両方に対応
+- トラック情報（pT, φ, z, charge）
+- クラスタ情報（x, y, z, energy）
+- dphi, dz
+- pt_calo
 
-👉 GitHub公式ドキュメントとしてそのまま使用可能
+- 加えて、　SvtxTrackのpx, pyも更新する
+- 
