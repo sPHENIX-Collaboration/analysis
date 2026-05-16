@@ -58,5 +58,12 @@ pT = 0.21 × |Δφ|^-0.986
 
 ---
 
+■出力（SiliconCaloTrack）
+- track情報（pT, φ, z, charge）
+- cluster情報（x, y, z, energy）
+- dphi, dz
+- pt_calo
+
+---
 ## まとめ
-Δφ に基づいてマッチングおよび運動量再構成を行う。
+シリコン2点＋EMCal1点から曲がりを測り、pTを再構成する。 その結果をSiliconCaloTrackに保存し、SvtxTrackのpx, pyを更新する
