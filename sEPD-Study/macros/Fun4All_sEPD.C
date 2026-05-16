@@ -14,7 +14,6 @@
 #include <mbd/MbdReco.h>
 #include <mbd/MbdEvent.h>
 #include <epd/EpdReco.h>
-#include <zdcinfo/ZdcReco.h>
 #include <globalvertex/GlobalVertexReco.h>
 #include <centrality/CentralityReco.h>
 #include <calotrigger/MinimumBiasClassifier.h>
@@ -105,12 +104,6 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit,
   // sEPD Reconstruction--Calib Info
   EpdReco* epdreco = new EpdReco();
   se->registerSubsystem(epdreco);
-
-  // ZDC Reconstruction--Calib Info
-  ZdcReco* zdcreco = new ZdcReco();
-  zdcreco->set_zdc1_cut(0.0);
-  zdcreco->set_zdc2_cut(0.0);
-  se->registerSubsystem(zdcreco);
 
   // Official vertex storage
   GlobalVertexReco* gvertex = new GlobalVertexReco();
