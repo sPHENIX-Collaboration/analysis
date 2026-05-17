@@ -43,18 +43,22 @@ class TriggerQA : public SubsysReco
     ALL,
     ZVTX,
     ZVTX10,
+    TRIG10,
     TRIG12,
     TRIG14,
+    ZVTX10_TRIG10,
     ZVTX10_TRIG12,
     ZVTX10_TRIG14
   };
 
+  const std::string m_trig_10 = "MBD N&S >= 2";
   const std::string m_trig_12 = "MBD N&S >= 2, vtx < 10 cm";
   const std::string m_trig_14 = "MBD N&S >= 2, vtx < 150 cm";
 
   // Histogram
   TH1 *hEvent{nullptr};
   TH1 *hZVertex{nullptr};
+  TH1 *hZVertex_Trig10{nullptr};
   TH1 *hZVertex_Trig12{nullptr};
   TH1 *hZVertex_Trig14{nullptr};
   TH1 *hLuminosity{nullptr};
