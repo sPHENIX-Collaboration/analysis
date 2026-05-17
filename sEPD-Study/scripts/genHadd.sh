@@ -2,10 +2,8 @@
 export USER="$(id -u -n)"
 export LOGNAME=${USER}
 export HOME=/sphenix/u/${LOGNAME}
-export MYINSTALL="$HOME/Documents/sPHENIX/install"
 
 source /opt/sphenix/core/bin/sphenix_setup.sh -n new
-source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
 # Arguments:
 # $1: input_list_file (Text file containing full paths to .root files)
@@ -16,11 +14,12 @@ input_list_file=${1}
 output_filename=${2}
 output_dir=${3}
 
-if [[ ! -z "$_CONDOR_SCRATCH_DIR" && -d $_CONDOR_SCRATCH_DIR ]]; then
-    cd $_CONDOR_SCRATCH_DIR
+if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
+then
+    cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
 else
-    echo "condor scratch NOT set"
-    exit -1
+    echo "condor scratch NOT set" >&2
+    exit 1
 fi
 
 # 1. Read the list file and copy those specific files to scratch
