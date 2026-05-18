@@ -1091,7 +1091,7 @@ void DisplayQA::draw()
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/04-25-26-run3auau/test.list";
+  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/05-17-26/test-all.list";
 
   std::vector<std::string> hist_types = {"event", "centrality", "ZVertex", "calo"};
   // std::vector<std::string> hist_types = {};
