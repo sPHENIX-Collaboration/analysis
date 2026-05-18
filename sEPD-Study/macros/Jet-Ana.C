@@ -222,6 +222,7 @@ class JetAnalysis
     std::array<TH2*, m_harmonics.size()> hPsi_NS{nullptr};
 
     std::array<TH2*, m_harmonics.size()> h2RefFlow{nullptr};
+    std::array<TH2*, m_harmonics.size()> h2EvtRes{nullptr};
     std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProduct{{{}, {}, {}}}; // Jet Energy > 0, Use Weighting
     std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProductv1{{{}, {}, {}}}; // Jet Energy > 0
 
@@ -677,6 +678,17 @@ void JetAnalysis::create_vn_histograms(int n)
                                                m_bins_cent / 10, m_cent_low, m_cent_high,
                                                bins_QQ_avg, QQ_avg_low, QQ_avg_high);
 
+  unsigned int bins_evt_res{8192};
+  double evt_res_low{-1.1};
+  double evt_res_high{1.1};
+
+  std::string name_evt_res = std::format("h2EvtRes_{}", n);
+  std::string title_evt_res = std::format("; Centrality [%]; Re(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)", n);
+
+  m_hists2D[name_evt_res] = std::make_unique<TH2F>(name_evt_res.c_str(), title_evt_res.c_str(),
+                                                   m_bins_cent / 10, m_cent_low, m_cent_high,
+                                                   bins_evt_res, evt_res_low, evt_res_high);
+
   std::string name_evt_res_prof = std::format("hSP_evt_res_prof_{}", n);
   std::string title = std::format("; Centrality [%]; #LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT", n);
   m_profiles[name_evt_res_prof] = std::make_unique<TProfile>(name_evt_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
@@ -1130,6 +1142,7 @@ void JetAnalysis::init_hists()
     m_hists.hPsi_NS[n_idx] = m_hists2D[std::format("h2_sEPD_Psi_NS_{}_flat", n)].get();
 
     m_hists.h2RefFlow[n_idx] = m_hists2D[std::format("h2RefFlow_{}", n)].get();
+    m_hists.h2EvtRes[n_idx] = m_hists2D[std::format("h2EvtRes_{}", n)].get();
 
     m_hists.p1SP_evt_res[n_idx] = m_profiles[std::format("hSP_evt_res_prof_{}", n)].get();
 
@@ -1334,6 +1347,7 @@ void JetAnalysis::compute_SP_resolution()
     }
 
     m_hists.h2RefFlow[n_idx]->Fill(cent, SP_res);
+    m_hists.h2EvtRes[n_idx]->Fill(cent, SP_evt_res);
     m_hists.p1SP_evt_res[n_idx]->Fill(cent, SP_evt_res);
   }
 }
