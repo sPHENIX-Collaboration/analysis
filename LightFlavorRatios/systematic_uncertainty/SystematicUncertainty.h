@@ -68,6 +68,7 @@ class SystematicUncertainty
     else return 0.;
   }
 
+  // TODO: verify this is actually correct
   double fullyCorrelatedUncertainty()
   {
     double sum = 0.;
@@ -76,11 +77,25 @@ class SystematicUncertainty
     {
       for(int j=0;j<bins.size();j++)
       {
-        sum += covariance(i,j);
+        if(i!=j) sum += covariance(i,j);
       }
     }
 
-    return sum/pow(bins.size(),2);
+    return sum/(pow(bins.size(),2)-bins.size());
+  }
+
+  // TODO: implement
+  double uncorrelatedUncertaintyInBin(double xlow, double xup)
+  {
+    std::cout << "WARNING: uncorrelatedUncertaintyInBin not yet implemented" << std::endl;
+    return 0.;
+  }
+
+  // TODO: implement
+  double twoBinCovariance(double xlow, double xup, double xlow2, double xup2)
+  {
+    std::cout << "WARNING: twoBinCovariance not yet implemented" << std::endl;
+    return 0.;
   }
 
   protected:
