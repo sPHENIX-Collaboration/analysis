@@ -18,6 +18,11 @@
 #include <trackbase_historic/ActsTransformations.h>
 #include <trackbase_historic/SvtxTrackState_v1.h>
 
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
+#include <g4eval/SvtxTrackEval.h>  // for SvtxTrackEval
+
 
 #include <TH2.h>
 #include <TProfile.h>
@@ -25,6 +30,8 @@
 
 #include <TFile.h>
 #include <TTree.h>
+
+#include <algorithm>
 
 // Add member variables for TTree and track data
 
@@ -37,16 +44,21 @@ SiliconSeedsAna::SiliconSeedsAna(const std::string &name)
 #define LOG(msg) std::cout << "[SiliconSeedsAna] " << msg << std::endl;
 
 void SiliconSeedsAna::clearTrackVectors() {
-  track_id.clear(); track_x.clear(); track_y.clear(); track_z.clear();
+  track_id.clear(); 
   track_px.clear(); track_py.clear(); track_pz.clear();
-  track_eta.clear(); track_phi.clear(); track_pt.clear();
-  track_chi2ndf.clear(); track_charge.clear(); track_crossing.clear();
+  track_x.clear(); track_y.clear(); track_z.clear();
+  track_pt.clear(); track_phi.clear(); track_eta.clear(); 
+  track_chi2ndf.clear(); 
+  track_dxy.clear(); track_dz.clear(); 
+  track_crossing.clear();
+  track_charge.clear(); 
   track_nmaps.clear(); track_nintt.clear(); track_innerintt.clear(); track_outerintt.clear();
   track_x_emc.clear(); track_y_emc.clear(); track_z_emc.clear();
   track_x_oemc.clear(); track_y_oemc.clear(); track_z_oemc.clear();
   track_rv_x_emc.clear(); track_rv_y_emc.clear(); track_rv_z_emc.clear();
   track_px_emc.clear(); track_py_emc.clear(); track_pz_emc.clear();
   track_eta_emc.clear(); track_phi_emc.clear(); track_pt_emc.clear();
+  track_id_truth.clear(); 
 
   // Clear matched calo vectors
   sicalo_pt.clear();
@@ -149,6 +161,8 @@ void SiliconSeedsAna::initTrackTreeBranches() {
   trackTree->Branch("phi0", &track_phi);
   trackTree->Branch("pt0", &track_pt);
   trackTree->Branch("chi2ndf", &track_chi2ndf);
+  trackTree->Branch("dxy", &track_dxy);
+  trackTree->Branch("dz",  &track_dz);
   trackTree->Branch("charge", &track_charge);
   trackTree->Branch("nmaps", &track_nmaps);
   trackTree->Branch("nintt", &track_nintt);
@@ -170,6 +184,7 @@ void SiliconSeedsAna::initTrackTreeBranches() {
   trackTree->Branch("x_rv_proj_emc", &track_rv_x_emc);
   trackTree->Branch("y_rv_proj_emc", &track_rv_y_emc);
   trackTree->Branch("z_rv_proj_emc", &track_rv_z_emc);
+  trackTree->Branch("track_id_truth", &track_id_truth);
   // Add matched EMCal cluster branches
   trackTree->Branch("sicalo_pt",         &sicalo_pt);
   trackTree->Branch("sicalo_phi",        &sicalo_phi);
@@ -203,8 +218,19 @@ void SiliconSeedsAna::initCaloTreeBranches() {
 }
 
 //____________________________________________________________________________..
-int SiliconSeedsAna::InitRun(PHCompositeNode * /*unused*/)
+int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
 {
+
+  // init Unique pointer
+  if (isMC && _doEval && !_svtxEvalStack)
+  {
+    _svtxEvalStack.reset(new SvtxEvalStack(topNode));
+    _svtxEvalStack->set_strict(false);
+    _svtxEvalStack->set_verbosity(Verbosity());
+  }
+  
+
+
   m_outfile = new TFile(m_outputfilename.c_str(), "RECREATE");
   
   createHistos();
@@ -247,21 +273,33 @@ int SiliconSeedsAna::InitRun(PHCompositeNode * /*unused*/)
   evtTree->Branch("xvtx",    &evt_xvtx,  "xvtx/F");
   evtTree->Branch("yvtx",    &evt_yvtx,  "yvtx/F");
   evtTree->Branch("zvtx",    &evt_zvtx,  "zvtx/F");
+  evtTree->Branch("xgvtx",   &evt_xgvtx,  "xgvtx/F");
+  evtTree->Branch("ygvtx",   &evt_ygvtx,  "ygvtx/F");
+  evtTree->Branch("zgvtx",   &evt_zgvtx,  "zgvtx/F");
+  evtTree->Branch("gvtx_type", &evt_gvtx_type);
+  evtTree->Branch("gvtx_x",    &evt_gvtx_x);
+  evtTree->Branch("gvtx_y",    &evt_gvtx_y);
+  evtTree->Branch("gvtx_z",    &evt_gvtx_z);
 
 
   // Truth tree and branches
   if(isMC){
     truthTree = new TTree("truthTree", "Truth Particle Data");
-    truthTree->Branch("truth_pid",   &truth_pid);
-    truthTree->Branch("truth_id",    &truth_id); // for primary/secondary
-    truthTree->Branch("truth_px",    &truth_px);
-    truthTree->Branch("truth_py",    &truth_py);
-    truthTree->Branch("truth_pz",    &truth_pz);
-    truthTree->Branch("truth_e",     &truth_e);
-    truthTree->Branch("truth_pt",    &truth_pt);
-    truthTree->Branch("truth_eta",   &truth_eta);
-    truthTree->Branch("truth_phi",   &truth_phi);
-    truthTree->Branch("truth_vtxid", &truth_vtxid);
+    truthTree->Branch("truth_pid",        &truth_pid);
+    truthTree->Branch("truth_id",         &truth_id); // for primary/secondary
+    truthTree->Branch("truth_px",         &truth_px);
+    truthTree->Branch("truth_py",         &truth_py);
+    truthTree->Branch("truth_pz",         &truth_pz);
+    truthTree->Branch("truth_x",          &truth_x);
+    truthTree->Branch("truth_y",          &truth_y);
+    truthTree->Branch("truth_z",          &truth_z);
+    truthTree->Branch("truth_e",          &truth_e);
+    truthTree->Branch("truth_pt",         &truth_pt);
+    truthTree->Branch("truth_eta",        &truth_eta);
+    truthTree->Branch("truth_phi",        &truth_phi);
+    truthTree->Branch("truth_primary_id", &truth_primary_id);
+    truthTree->Branch("truth_parent_id",  &truth_parent_id);
+    truthTree->Branch("truth_vtxid",      &truth_vtxid);
     truthTree->Branch("truth_vtx_x", &truth_vtx_x);
     truthTree->Branch("truth_vtx_y", &truth_vtx_y);
     truthTree->Branch("truth_vtx_z", &truth_vtx_z);
@@ -278,10 +316,10 @@ int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
   if(isMC)
     fillTruthTree(topNode);
 
+  processVertexMap(topNode);
   processCaloClusters(topNode);
   processTrackMap(topNode);
   processSiCluster(topNode);
-  processVertexMap(topNode);
 
   //////////////
   {
@@ -392,8 +430,10 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     return;
   }
   truth_pid.clear(); truth_id.clear();
-  truth_px.clear(); truth_py.clear(); truth_pz.clear(); truth_e.clear();
-  truth_pt.clear(); truth_eta.clear(); truth_phi.clear();
+  truth_px.clear(); truth_py.clear(); truth_pz.clear();
+  truth_x.clear(); truth_y.clear(); truth_z.clear();
+  truth_pt.clear(); truth_eta.clear(); truth_phi.clear(); truth_e.clear();
+  truth_primary_id.clear(); truth_parent_id.clear();
   truth_vtxid.clear();
   truth_vtx_x.clear(); truth_vtx_y.clear(); truth_vtx_z.clear();
 
@@ -408,6 +448,7 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     std::cout<<" primVtxid: "<<viter->first<<", "<<Vtx->get_x()<<" "<<Vtx->get_y()<<" "<<Vtx->get_z()<<std::endl;
   }
 
+
   //const auto prange = m_truth_info->GetPrimaryParticleRange();
   const auto prange = m_truth_info->GetParticleRange();
   for (auto iter = prange.first; iter != prange.second; ++iter)
@@ -420,6 +461,7 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     auto primVtx = m_truth_info->GetVtx(vtxid);
     float vx = primVtx->get_x();
     float vy = primVtx->get_y();
+    float vz = primVtx->get_z();
     float vtx_r = sqrt(vx*vx+vy*vy);
     if(vtx_r>5) continue;
 
@@ -444,15 +486,20 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     TLorentzVector p(ptcl->get_px(), ptcl->get_py(), ptcl->get_pz(), ptcl->get_e());
 
     truth_pid.push_back(ptcl->get_pid());
-    truth_id.push_back(ptcl->get_track_id());
-    truth_px.push_back(ptcl->get_px());
-    truth_py.push_back(ptcl->get_py());
-    truth_pz.push_back(ptcl->get_pz());
-    truth_e.push_back(ptcl->get_e());
-    truth_pt.push_back(p.Pt());
+    truth_id .push_back(ptcl->get_track_id());
+    truth_px .push_back(ptcl->get_px());
+    truth_py .push_back(ptcl->get_py());
+    truth_pz .push_back(ptcl->get_pz());
+    truth_x  .push_back(vx);
+    truth_y  .push_back(vy);
+    truth_z  .push_back(vz);
+    truth_e  .push_back(ptcl->get_e());
+    truth_pt .push_back(p.Pt());
     truth_eta.push_back(p.Eta());
     truth_phi.push_back(p.Phi());
     truth_vtxid.push_back(vtxid);
+    truth_primary_id.push_back(ptcl->get_primary_id());
+    truth_parent_id .push_back(ptcl->get_parent_id());
 
     //std::cout<<"pid :"<<ptcl->get_pid()<<", "<<ptcl->get_name()<<", "<<ptcl->get_primary_id()<<", "<<ptcl->get_parent_id()<<", "<<ptcl->get_track_id()<<std::endl;
   }
@@ -490,6 +537,18 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     std::cout << PHWHERE << "Missing vertexmap, can't continue" << std::endl;
     return;
   }
+
+
+
+
+  SvtxTrackEval *trackeval = nullptr;
+  if(isMC&&_doEval){
+    _svtxEvalStack->next_event(topNode);
+
+    trackeval = _svtxEvalStack->get_track_eval();
+    if(trackeval==nullptr) std::cout<<"No TrackEval"<<std::endl;
+  }
+
 
   if((evt%1000)==0) std::cout << "start track map  EVENT " << evt << " is OK" << std::endl;
 
@@ -531,6 +590,14 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     float t_px      = track->get_px();
     float t_py      = track->get_py();
     float t_pz      = track->get_pz();
+    float t_dca2d   = track->get_dca2d();
+    float t_dca3d_xy= track->get_dca3d_xy();
+    float t_dca3d_z = track->get_dca3d_z();
+
+    float t_dxy    = sqrt(pow(evt_xgvtx-t_x, 2) + pow(evt_ygvtx-t_y, 2));
+    float t_dz     = evt_zgvtx-t_z;
+
+
     int t_crossing  = trkcrossing;
     if(t_crossing==0) evt_nsiseed0++;
 
@@ -600,11 +667,16 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     track_py.push_back(t_py);
     track_pz.push_back(t_pz);
     track_chi2ndf.push_back(t_chi2ndf);
+    track_dxy.push_back(t_dxy);
+    track_dz.push_back(t_dz);
+
     track_charge.push_back(t_charge);
     track_crossing.push_back(t_crossing);
-    if (false)
+    //if (false)
       std::cout << "track_x : " << t_x << ", track_y: " << t_y << ", track_z: " << t_z 
-                << ", track_eta: " << t_eta << ", track_phi: " << t_phi << ", track_pt: " << t_pt << std::endl;
+                << ", track_eta: " << t_eta << ", track_phi: " << t_phi << ", track_pt: " << t_pt
+                << ", dca2d: " << t_dca2d << ", dca2d_xy: " << t_dca3d_xy << ", dca3d_z: " << t_dca3d_z 
+                << ", dxy,dz=" << t_dxy << " " << t_dz << std::endl;
 
     SvtxTrackState *emcalState    = track->get_state(_caloRadiusEMCal);
     SvtxTrackState *emcalOutState = track->get_state(_caloRadiusEMCal+_caloThicknessEMCal);
@@ -614,6 +686,39 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     SvtxTrackState *rvsEmcalState = projectToEMCal(topNode, trkcp);
 
     fillEMCalState(emcalState, emcalOutState, rvsEmcalState);
+
+    // trackeval for MC
+    int g4part_id = std::numeric_limits<int>::max(); 
+    if(isMC&&_doEval)
+    {
+      bool printMC=true; //false;
+      if(trackeval!=nullptr)
+      {
+        auto *g4particle_match = trackeval->max_truth_particle_by_nclusters(track);
+        if(printMC) std::cout<<"--- trackeval ---"<<std::endl;
+        if (g4particle_match)
+        {
+          if(printMC) std::cout<<" g4 particle found"<<std::endl;
+          SvtxTrack *matched_track = trackeval->best_track_from(g4particle_match);
+          if (matched_track)
+          {
+            if(printMC) std::cout<<"   matched track found"<<std::endl;
+            if (matched_track->get_id() == track->get_id())
+            {
+              if(printMC) {
+                std::cout<<"     Eval matched track id confirmed"<<std::endl;
+                g4particle_match->identify();
+              }
+              g4part_id = g4particle_match->get_track_id();
+            }
+          }
+        }
+      }
+      std::cout<<" Eval matched g4part id "<<
+      ((g4part_id == std::numeric_limits<int>::max()) ? "not found" : "confirmed")
+       <<std::endl;
+    }
+    track_id_truth.push_back(g4part_id);
 
     /////////////////////////
     // --- matched cluster
@@ -1047,6 +1152,100 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 
 void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
 {
+  bool debug=true;
+
+////////////////
+  GlobalVertexMap* globalvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!globalvtxmap)
+  {
+    std::cout << PHWHERE << " Fatal Error - GlobalVertexMap node is missing"<< std::endl;
+    // return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  evt_gvtx_type.clear();
+  evt_gvtx_x.clear(); evt_gvtx_y.clear(); evt_gvtx_z.clear();
+  if (globalvtxmap && !globalvtxmap->empty())
+  {
+    std::cout<<"GlobalVertex Size : "<<globalvtxmap->size()<<std::endl;
+    //globalvtxmap->identify();
+    for(const auto& [key, globalvtx] : *globalvtxmap)
+    {
+      if(debug) std::cout<<"vertex : "<<key<<std::endl;
+
+      if(globalvtx==nullptr)
+      {
+        std::cout<<" No globalVertex object"<<std::endl;
+        continue;
+      }
+      if(debug) std::cout<<" "<<globalvtx->size_vtxs()<<std::endl;
+
+//      globalvtx->identify(std::cout);
+
+      auto typeStartIter = globalvtx->begin_vertexes();
+      auto typeEndIter   = globalvtx->end_vertexes();
+      for (auto iter = typeStartIter; iter != typeEndIter; ++iter)
+      {
+        int idx=0;
+        const auto& [type, vertexVec] = *iter;
+
+        if(debug) std::cout<<"   type, = "<<type<<", size = "<<vertexVec.size()<<std::endl;
+        for (const auto* vtx : vertexVec)
+        {
+          if(debug) std::cout<<"     idx : "<<idx;
+          if (!vtx)
+          {
+            if(debug) std::cout<<", no vertex object"<<std::endl;
+            continue;
+          }
+          if(debug)
+            std::cout <<", xyz "<<vtx->get_x()
+                      <<" "<<vtx->get_y()
+                      <<" "<<vtx->get_z()<<std::endl;
+
+          evt_gvtx_type.push_back(type);
+          evt_gvtx_x.push_back(vtx->get_x());
+          evt_gvtx_y.push_back(vtx->get_y());
+          evt_gvtx_z.push_back(vtx->get_z());
+
+          if(debug)
+            std::cout<<"  --- gvtx : "<<type<<" "<<vtx->get_x()<<" "<<vtx->get_y()<<" "<<vtx->get_z()<<std::endl;
+          
+          idx++;
+        }
+      }
+    }
+  }
+
+  // check truth vertex and add it if not in the vectror
+  {
+    if(truth_vtx_x.size()>0){ //  
+      auto vect_itr = std::find(evt_gvtx_type.begin(), evt_gvtx_type.end(), (int)GlobalVertex::TRUTH);
+      if(vect_itr==evt_gvtx_type.end()){ // if not found
+        evt_gvtx_type.push_back(GlobalVertex::TRUTH);
+        evt_gvtx_x.push_back(truth_vtx_x[0]);
+        evt_gvtx_y.push_back(truth_vtx_y[0]);
+        evt_gvtx_z.push_back(truth_vtx_z[0]);
+      }
+    }
+  }
+  
+  // set a global vertex which has largest type value
+  int gv_type_max=-1;
+  evt_xgvtx = evt_ygvtx = evt_zgvtx = -9999;
+  for(size_t idx=0; idx<evt_gvtx_type.size(); ++idx){
+    if(gv_type_max<evt_gvtx_type[idx]){
+      gv_type_max = evt_gvtx_type[idx];
+      evt_xgvtx   = evt_gvtx_x[idx];
+      evt_ygvtx   = evt_gvtx_y[idx];
+      evt_zgvtx   = evt_gvtx_z[idx];
+    }
+  }
+
+
+  if(debug)
+    std::cout<<"gvtx : "<<gv_type_max<<" "<<evt_xgvtx<<" "<<evt_ygvtx<<" "<<evt_zgvtx<<std::endl;
+////////////////
+
   auto vertexmap = findNode::getClass<SvtxVertexMap>(topNode, m_vertexMapName);
   if (!vertexmap)
   {
@@ -1057,6 +1256,7 @@ void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
 
   if((evt%1000)==0) std::cout << "start VTX map  EVENT " << evt << " is OK" << std::endl;
 
+  evt_xvtx = evt_yvtx = evt_zvtx = -9999.;
   for (const auto &[key, vertex] : *vertexmap)
   {
     if (!vertex)
@@ -1084,6 +1284,8 @@ void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
     evt_xvtx = vx;
     evt_yvtx = vy;
     evt_zvtx = vz;
+
+    std::cout<<"SvtxVertex : "<<vx<<" "<<vy<<" "<<vz<<std::endl;
   }
 }
 

@@ -16,6 +16,7 @@ pkginclude_HEADERS = \
   SiliconCaloTrackMap.h \
   SiliconCaloTrackMap_v1.h \
   SiliconCaloMatching.h \
+  ChargeRecalc.h  \
   SiliconSeedsAna.h 
 
 lib_LTLIBRARIES = \
@@ -38,6 +39,7 @@ libsiliconseedsana_la_SOURCES = \
   SiliconCaloTrackMap.cc \
   SiliconCaloTrackMap_v1.cc \
   SiliconCaloMatching.cc \
+  ChargeRecalc.cc \
   SiliconSeedsAna.cc 
 
 
@@ -48,6 +50,7 @@ libsiliconseedsana_la_LIBADD = \
   -lg4tpc \
   -lg4intt \
   -lg4mvtx \
+  -lg4eval \
   -lmicromegas_io \
   -lmvtx_io \
   -lintt_io \
@@ -80,4 +83,4 @@ testexternals.cc:
 	echo "}" >> $@
 
 clean-local:
-	rm -f $(BUILT_SOURCES)
+	rm -f *Dict* $(BUILT_SOURCES) *.pcm

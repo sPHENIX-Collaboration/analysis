@@ -42,9 +42,13 @@
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
+#include <g4eval/SvtxEvalStack.h>
+
+
 #include <TLorentzVector.h>
 #include <string>
 #include <vector>
+#include <memory>
 
 class SvtxTrack;
 class PHCompositeNode;
@@ -86,7 +90,7 @@ public:
 
 
   
-  void setMC(bool input) { isMC = input; }
+  void setMC(bool input, bool doEval=true) { isMC = input; _doEval = doEval;}
   void setVtxSkip(bool input) { b_skipvtx = input; }
   void setCaloSkip(bool input) { b_skipcalo = input; }
 
@@ -126,20 +130,23 @@ protected:
   // std::string m_ohcal_node_name = "TOWERINFO_CALIB_HCALOUT";
   // std::string m_ihcalClus_node_name = "CLUSTER_HCALIN";
   // std::string m_ohcalClus_node_name = "CLUSTER_HCALOUT";
-  SvtxTrackMap *trackmap    = nullptr;
-  SvtxTrack    *track       = nullptr;
-  TrackSeed    *si_seed     = nullptr;
-  TrkrCluster  *trkrCluster = nullptr;
+  SvtxTrackMap  *trackmap      = nullptr;
+  SvtxTrack     *track         = nullptr;
+  TrackSeed     *si_seed       = nullptr;
+  TrkrCluster   *trkrCluster   = nullptr;
+  std::unique_ptr<SvtxEvalStack> _svtxEvalStack;
  
   // Truth info tree and vectors
   TFile *m_outfile = nullptr;
 
   TTree *truthTree = nullptr;
   std::vector<int>   truth_pid, truth_id;
-  std::vector<float> truth_px, truth_py, truth_pz, truth_e;
-  std::vector<float> truth_pt, truth_eta, truth_phi;
+  std::vector<float> truth_px, truth_py, truth_pz;
+  std::vector<float> truth_x, truth_y, truth_z;
+  std::vector<float> truth_pt, truth_eta, truth_phi, truth_e;
   std::vector<int>   truth_vtxid;
-  std::vector<float> truth_vtx_x, truth_vtx_y, truth_vtx_z; // indix vtxid, not trackid
+  std::vector<int>   truth_primary_id, truth_parent_id;
+  std::vector<float> truth_vtx_x, truth_vtx_y, truth_vtx_z; // index is  vtxid, not trackid. vector size is Nvertex in this event(usually 1)
 
   TTree *trackTree = nullptr;
   int evt = 0;
@@ -148,12 +155,14 @@ protected:
   std::vector<float> track_x, track_y, track_z;
   std::vector<float> track_pt,track_eta,track_phi;
   std::vector<float> track_chi2ndf;
+  std::vector<float> track_dxy, track_dz; // xyz - vertex
   std::vector<short int> track_crossing;
   std::vector<int> track_charge;
   std::vector<int> track_nmaps;
   std::vector<int> track_nintt;
   std::vector<int> track_innerintt;
   std::vector<int> track_outerintt;
+  std::vector<int> track_id_truth; // G4Particle ID (truth ID) for MC
 
   // track projection to EMC
   std::vector<float> track_px_emc, track_py_emc, track_pz_emc;
@@ -218,10 +227,16 @@ protected:
   int       evt_nemc02;
   int       evt_nsiseed;
   int       evt_nsiseed0;
-  float     evt_xvtx;
-  float     evt_yvtx;
-  float     evt_zvtx;
-
+  float     evt_xvtx; // svtxvertex
+  float     evt_yvtx; // svtxvertex
+  float     evt_zvtx; // svtxvertex
+  float     evt_xgvtx; // evtTree variable
+  float     evt_ygvtx; // evtTree variable
+  float     evt_zgvtx; // evtTree variable
+  std::vector<int>   evt_gvtx_type;// all vertex in globalvertex
+  std::vector<float> evt_gvtx_x;   // all vertex in globalvertex
+  std::vector<float> evt_gvtx_y;   // all vertex in globalvertex
+  std::vector<float> evt_gvtx_z;   // all vertex in globalvertex
 
 
 
@@ -229,7 +244,9 @@ protected:
   float _caloRadiusEMCal    = 93.5;
   float _caloThicknessEMCal = 20.4997;
 
-  bool isMC = false;
+  bool isMC    = false;
+  bool _doEval = false;
+
   bool b_skipvtx = false;
   bool b_skipcalo = false;
   TH1 *h_ntrack1d = nullptr;
