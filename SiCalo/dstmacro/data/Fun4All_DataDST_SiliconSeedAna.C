@@ -2,13 +2,12 @@
 #define MACRO_FUN4ALLG4SPHENIX_C
 
 #include <GlobalVariables.C>
-#include <G4_Input.C> // global variable "Input"
+#include <G4_Input.C>         // global variable "Input"
 #include <G4_TrkrVariables.C> // global variable "Input"
-#include <G4_ActsGeom.C> // global variable "ACTSGEOM"
+#include <G4_ActsGeom.C>      // global variable "ACTSGEOM"
+// #include <Calo_Calib.C>
 
 #include <Trkr_Reco.C>
-
-
 
 #include <ffamodules/FlagHandler.h>
 #include <ffamodules/HeadReco.h>
@@ -23,13 +22,15 @@
 
 #include <phool/recoConsts.h>
 
-
 #include <sys/stat.h>
-#include <limits.h>     // PATH_MAX
+#include <limits.h> // PATH_MAX
 #include <unistd.h>
 
-
 #include <siliconseedsana/SiliconSeedsAna.h>
+#include "Calo_Calib.C"
+#include "Charge_Recalc.C"
+//#include </sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/macro/makedata/Calo_Calib.C>
+//#include </sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/macro/makedata/Charge_Recalc.C>
 
 #pragma GCC diagnostic push
 
@@ -47,53 +48,46 @@ R__LOAD_LIBRARY(libfun4allraw.so)
 //--R__LOAD_LIBRARY(libintt.so)
 //--R__LOAD_LIBRARY(libtpc.so)
 //--R__LOAD_LIBRARY(libmicromegas.so)
-//R__LOAD_LIBRARY(libTrackingDiagnostics.so)
-//R__LOAD_LIBRARY(libtrackingqa.so)
-//R__LOAD_LIBRARY(libtpcqa.so)
-//R__LOAD_LIBRARY(libtrack_to_calo.so)
+// R__LOAD_LIBRARY(libTrackingDiagnostics.so)
+// R__LOAD_LIBRARY(libtrackingqa.so)
+// R__LOAD_LIBRARY(libtpcqa.so)
+// R__LOAD_LIBRARY(libtrack_to_calo.so)
 //--R__LOAD_LIBRARY(libtrack_reco.so)
 //--R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libcalotrigger.so)
-//R__LOAD_LIBRARY(libcentrality.so)
+// R__LOAD_LIBRARY(libcentrality.so)
 R__LOAD_LIBRARY(libmbd.so)
 R__LOAD_LIBRARY(libepd.so)
 R__LOAD_LIBRARY(libzdcinfo.so)
 
 R__LOAD_LIBRARY(libsiliconseedsana.so)
 
-
 bool useTopologicalCluster = false;
 
 int Fun4All_DataDST_SiliconSeedAna(
-    const int nEvents = 2000
-  , const string inlst_dst_clus = "run53879_clus_0.list"
-//  , const string inlst_dst_strk = "run53879_strk_0.list"
-  , const string inlst_dst_strk = "run53879_seed_0.list"
-  , const string inlst_dst_calo = "run53879_calo_0.list"
-  , const string out_root = "test_ana.root"
-  , const int startnumber = 0
-)
+    const int nEvents = 1000, const string inlst_dst_clus = "list/test/run53879_clus_0.list"
+    //  , const string inlst_dst_strk = "run53879_strk_0.list"
+    ,
+    const string inlst_dst_strk = "list/test/run53879_seed_0.list", const string inlst_dst_calo = "list/test/run53879_calo_0.list", const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root", const int startnumber = 0)
 {
 
-  std::cout << "inlst_dst_clus : "<<inlst_dst_clus<<endl;
-  std::cout << "inlst_dst_trk  : "<<inlst_dst_strk<<endl;
-  std::cout << "inlst_dst_calo : "<<inlst_dst_calo<<endl;
-  //std::cout << "std::cout << "Input DST: " << in_dst      <<std::endl;
-  //std::cout << "out  ROOT: " << out_root    <<std::endl;
-  std::cout << "Nevent   : " << nEvents     <<std::endl;
-  std::cout << "#start   : " << startnumber <<std::endl;
+  std::cout << "inlst_dst_clus : " << inlst_dst_clus << endl;
+  std::cout << "inlst_dst_trk  : " << inlst_dst_strk << endl;
+  std::cout << "inlst_dst_calo : " << inlst_dst_calo << endl;
+  // std::cout << "std::cout << "Input DST: " << in_dst      <<std::endl;
+  // std::cout << "out  ROOT: " << out_root    <<std::endl;
+  std::cout << "Nevent   : " << nEvents << std::endl;
+  std::cout << "#start   : " << startnumber << std::endl;
 
-  //gSystem->ListLibraries();
+  // gSystem->ListLibraries();
 
   G4TRACKING::SC_CALIBMODE = false;
   Enable::MVTX_APPLYMISALIGNMENT = true;
   ACTSGEOM::mvtx_applymisalignment = Enable::MVTX_APPLYMISALIGNMENT;
   TRACKING::pp_mode = true;
 
-
   Fun4AllServer *se = Fun4AllServer::instance();
-  //se->Verbosity(10);
-
+  // se->Verbosity(10);
 
   recoConsts *rc = recoConsts::instance();
   Input::VERBOSITY = 0;
@@ -101,7 +95,7 @@ int Fun4All_DataDST_SiliconSeedAna(
   int runnum = 53879;
   // Tracking setup
   Enable::CDB = true;
-  //rc->set_StringFlag("CDB_GLOBALTAG", "Prod_2024A");
+  // rc->set_StringFlag("CDB_GLOBALTAG", "Prod_2024A");
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
   rc->set_uint64Flag("TIMESTAMP", runnum);
 
@@ -110,33 +104,31 @@ int Fun4All_DataDST_SiliconSeedAna(
   ingeo->AddFile(geofile);
   se->registerInputManager(ingeo);
 
-
   // this assume Geometory data is in the DST
   ACTSGEOM::ActsGeomInit();
-
 
   //--input
   Fun4AllInputManager *in_calo = new Fun4AllDstInputManager("DSTCalo");
   in_calo->AddListFile(inlst_dst_calo.c_str());
-  //in->Verbosity(2);
+  // in->Verbosity(2);
   se->registerInputManager(in_calo);
 
   Fun4AllInputManager *in_clus = new Fun4AllDstInputManager("DSTTrkrClus");
   in_clus->AddListFile(inlst_dst_clus.c_str());
-  //in->Verbosity(2);
+  // in->Verbosity(2);
   se->registerInputManager(in_clus);
 
   Fun4AllInputManager *in_strk = new Fun4AllDstInputManager("DSTTrkrTrack");
   in_strk->AddListFile(inlst_dst_strk.c_str());
-  //in->Verbosity(2);
+  // in->Verbosity(2);
   se->registerInputManager(in_strk);
 
-
+  Process_Calo_Calib_Mahirochan();
   auto converter = new TrackSeedTrackMapConverter;
-  //SiliconTrackSeedContainer or TpcTrackSeedContainer
+  // SiliconTrackSeedContainer or TpcTrackSeedContainer
   converter->setTrackSeedName("SiliconTrackSeedContainer");
   converter->setFieldMap(G4MAGNET::magfield_tracking);
-  //converter->Verbosity(10);
+  // converter->Verbosity(10);
   se->registerSubsystem(converter);
 
   PHSimpleVertexFinder *finder = new PHSimpleVertexFinder;
@@ -149,17 +141,22 @@ int Fun4All_DataDST_SiliconSeedAna(
   finder->setOutlierPairCut(0.1);
   se->registerSubsystem(finder);
 
+  // --- charge recalculation (before projection) ---
+  auto chrecalc = new ChargeRecalc("ChargeRecalc");
+  chrecalc->setVerbosity(0);
+  se->registerSubsystem(chrecalc);
 
   auto projection = new PHActsTrackProjection("CaloProjection");
+  // float emcal_radius = 104.5; // set by my self due to emcal geometry was cahnged
+  // projection->setLayerRadius(SvtxTrack::CEMC, emcal_radius);
   se->registerSubsystem(projection);
-  
-  
 
   auto siana = new SiliconSeedsAna("SiliconSeedsAna");
-  //siana->setMC(true);
+  // siana->setMC(true);
   siana->setVtxSkip(true);
   siana->setEMCalClusterContainerName("CLUSTERINFO_CEMC");
   siana->setTopoCluster(useTopologicalCluster);
+  // siana->setEMcalRadius(emcal_radius); // set new emcal radius for silicon track production to emcal
   siana->setOutputFileName(out_root.c_str());
 
   siana->setStartEventNumber(startnumber);
@@ -167,7 +164,6 @@ int Fun4All_DataDST_SiliconSeedAna(
   se->registerSubsystem(siana);
 
   se->run(nEvents);
-
 
   //-----
   // Exit
