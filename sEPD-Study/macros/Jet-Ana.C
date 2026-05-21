@@ -223,8 +223,8 @@ class JetAnalysis
 
     std::array<TH2*, m_harmonics.size()> h2RefFlow{nullptr};
     std::array<TH2*, m_harmonics.size()> h2EvtRes{nullptr};
-    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProduct{{{}, {}, {}}}; // Jet Energy > 0, Use Weighting
-    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, 3> h2ScalarProductv1{{{}, {}, {}}}; // Jet Energy > 0
+    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, m_harmonics.size()> h2ScalarProduct{}; // Jet Energy > 0, Use Weighting
+    std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, m_harmonics.size()> h2ScalarProductv1{}; // Jet Energy > 0
 
     // Profiles
     std::array<TProfile*, m_harmonics.size()> p1SP_evt_res{nullptr};  // Event Plane Resolution Squared
@@ -1405,10 +1405,10 @@ void JetAnalysis::compute_SP()
       {
         int cent_low = m_cent_bins[cent_idx];
         int cent_high = m_cent_bins[cent_idx+1];
-	if (cent >= cent_low && cent < cent_high)
+        if (cent >= cent_low && cent < cent_high)
         {
-	  m_hists.h2_ptSP_reco[cent_idx]->Fill(pt,scalar_product,weight*eventweight);
-	  break;
+          m_hists.h2_ptSP_reco[cent_idx]->Fill(pt, scalar_product, weight * eventweight);
+          break;
         }
       }
     }
@@ -1756,12 +1756,12 @@ bool JetAnalysis::check_CaloMBD() const
 
 bool JetAnalysis::check_QVec() const
 {
-    double Q_S_x = m_event_data.Q_S_x;
-    double Q_S_y = m_event_data.Q_S_y;
-    double Q_N_x = m_event_data.Q_N_x;
-    double Q_N_y = m_event_data.Q_N_y;
+  double Q_S_x = m_event_data.Q_S_x;
+  double Q_S_y = m_event_data.Q_S_y;
+  double Q_N_x = m_event_data.Q_N_x;
+  double Q_N_y = m_event_data.Q_N_y;
 
-    return !((Q_S_x == 0 && Q_S_y == 0) || (Q_N_x == 0 && Q_N_y == 0));
+  return !((Q_S_x == 0 && Q_S_y == 0) || (Q_N_x == 0 && Q_N_y == 0));
 }
 
 bool JetAnalysis::check_MaxPt() const
