@@ -1783,9 +1783,16 @@ bool JetAnalysis::check_CaloMBD() const
   double CaloE_min = m_hists.hCaloECentrality_min->GetBinContent(bin);
   double CaloE_max = m_hists.hCaloECentrality_max->GetBinContent(bin);
 
+  bool pass = total_energy > CaloE_min && total_energy < CaloE_max;
+
   m_hists.h2CaloECentrality_default->Fill(total_energy, cent);
 
-  return total_energy > CaloE_min && total_energy < CaloE_max;
+  if (pass)
+  {
+    m_hists.h2CaloECentrality->Fill(total_energy, cent);
+  }
+
+  return pass;
 }
 
 bool JetAnalysis::check_QVec() const
@@ -1874,8 +1881,6 @@ void JetAnalysis::process_calo()
 
   m_hists.h2EMCal_OHCal->Fill(total_EMCal, total_OHCal);
   m_hists.h2IHCal_OHCal->Fill(total_IHCal, total_OHCal);
-
-  m_hists.h2CaloECentrality->Fill(total_energy, cent);
 
   m_hists.h2TowMedECaloE->Fill(tower_median_energy, total_energy);
 
