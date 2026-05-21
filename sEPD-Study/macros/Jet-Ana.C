@@ -1424,7 +1424,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   jet_info.reserve(nJets);
 
   double cent = m_event_data.event_centrality;
-  size_t centbin;
+  size_t centbin = static_cast<size_t>(-1); // Represents "not found"
   for (size_t cent_idx = 0; cent_idx < m_cent_bins.size()-1; ++cent_idx)
   {
     int cent_low = m_cent_bins[cent_idx];
@@ -1435,6 +1435,12 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       break;
     }
   }
+
+  if (centbin == static_cast<size_t>(-1))
+  {
+    return jet_info;  // Skip if no valid bin is found
+  }
+
   float calo_v2 = m_event_data.calo_v2;
   float sum_E = m_event_data.UE_sum_E;
 
@@ -1514,7 +1520,7 @@ void JetAnalysis::fill_response() const
   size_t nRecoJets = m_event_data.jet_phi->size();
   double eventweight = get_event_weight();
   double cent = m_event_data.event_centrality;
-  size_t centbin;
+  size_t centbin = static_cast<size_t>(-1); // Represents "not found"
   for (size_t cent_idx = 0; cent_idx < m_cent_bins.size()-1; ++cent_idx)
   {
     int cent_low = m_cent_bins[cent_idx];
@@ -1524,6 +1530,11 @@ void JetAnalysis::fill_response() const
       centbin = cent_idx;
       break;
     }
+  }
+
+  if (centbin == static_cast<size_t>(-1))
+  {
+    return;  // Skip if no valid bin is found
   }
 
   //loop over truth jets
@@ -1543,7 +1554,7 @@ void JetAnalysis::fill_response() const
     size_t arm = (teta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
 
     //im only using v2 at the moment but compute them all for fun
-    double truthSP;
+    double truthSP = 0.0;
     for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
     {
       int n = m_harmonics[n_idx];
@@ -1557,7 +1568,7 @@ void JetAnalysis::fill_response() const
     m_hists.h_dphipttrue[centbin]->Fill(std::abs(dphi),tpt,eventweight);
 
 
-    double matchEta, matchPhi, matchPt, dR;
+    double matchEta = 0, matchPhi = 0, matchPt = 0, dR = 0;
     double dRMax = 100;
 
     for (size_t ir = 0; ir < nRecoJets; ++ir)
@@ -1592,7 +1603,7 @@ void JetAnalysis::fill_response() const
 
     //get matched SP
     arm = (matchEta < 0) ? static_cast<size_t>(Subdetector::N) : static_cast<size_t>(Subdetector::S);
-    double recoSP;
+    double recoSP = 0.0;
     for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
     {
       int n = m_harmonics[n_idx];
