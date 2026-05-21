@@ -303,8 +303,16 @@ class JetAnalysis
     float UE_sum_E{0.0};
     int nHIRecoSeedsSub{0};
     int nHIRecoSeedsSubIt1{0};
-    bool has_good_calo_v2{false};
     double max_jet_pt{0.0};
+
+    // Event Checks
+    bool pass_cent{false};
+    bool pass_calo_mbd{false};
+    bool pass_QVec{false};
+    bool pass_flow{false};
+    bool pass_calov2{false};
+    bool pass_MaxPt{false};
+    bool pass_all{false};
 
     std::vector<double>* jet_energy{nullptr};
     std::vector<double>* jet_pt{nullptr};
@@ -367,6 +375,8 @@ class JetAnalysis
   // Calo V2 Cuts
   float m_calo_v2_max{0.48F};
 
+  std::map<std::string, int> m_ctr;
+
   enum class EventType : std::uint8_t
   {
     ZVTX10_MB,
@@ -407,6 +417,7 @@ class JetAnalysis
   bool check_MaxPt() const;
   double get_event_weight() const;
   void process_calo();
+  void process_event_check();
   void process_events();
 
   void set_psi2();
@@ -1323,6 +1334,11 @@ void JetAnalysis::init_hists()
 
 void JetAnalysis::compute_SP_resolution()
 {
+  if (!(m_event_data.pass_cent && m_event_data.pass_QVec))
+  {
+    return;
+  }
+
   double cent = m_event_data.event_centrality;
 
   size_t south_idx = static_cast<size_t>(Subdetector::S);
@@ -1354,10 +1370,12 @@ void JetAnalysis::compute_SP_resolution()
 
 void JetAnalysis::compute_SP()
 {
-  // Scalar Product Resolution
-  compute_SP_resolution();
-
   std::vector<JetInfo> jet_info = process_jets();
+
+  if (!m_event_data.pass_all)
+  {
+    return;
+  }
 
   size_t nJets = jet_info.size();
   double cent = m_event_data.event_centrality;
@@ -1421,6 +1439,12 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
   double eventweight = get_event_weight();
 
   std::vector<JetInfo> jet_info;
+
+  if (!(m_event_data.pass_cent && m_event_data.pass_calo_mbd && m_event_data.pass_flow))
+  {
+    return jet_info;
+  }
+
   jet_info.reserve(nJets);
 
   double cent = m_event_data.event_centrality;
@@ -1489,7 +1513,7 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
       m_hists.h2JetPhiPtv2->Fill(phi, pt, eventweight);
       m_hists.h2JetPhiEtav2->Fill(phi, eta, eventweight);
 
-      if (m_event_data.has_good_calo_v2)
+      if (m_event_data.pass_calov2)
       {
         m_hists.h2CaloEJetPt->Fill(total_energy, pt, eventweight);
         m_hists.h2CentralityJetPt->Fill(cent, pt, eventweight);
@@ -1516,6 +1540,11 @@ std::vector<JetAnalysis::JetInfo> JetAnalysis::process_jets() const
 
 void JetAnalysis::fill_response() const
 {
+  if (!m_event_data.pass_all)
+  {
+    return;
+  }
+
   size_t nJets = m_event_data.truthjet_phi->size();
   size_t nRecoJets = m_event_data.jet_phi->size();
   double eventweight = get_event_weight();
@@ -1650,6 +1679,11 @@ void JetAnalysis::fill_response() const
 
 void JetAnalysis::process_QVecs()
 {
+  if (!(m_event_data.pass_cent && m_event_data.pass_QVec))
+  {
+    return;
+  }
+
   double cent = m_event_data.event_centrality;
 
   size_t south_idx = static_cast<size_t>(Subdetector::S);
@@ -1801,6 +1835,11 @@ double JetAnalysis::get_event_weight() const
 
 void JetAnalysis::process_calo()
 {
+  if (!m_event_data.pass_cent)
+  {
+    return;
+  }
+
   double cent = m_event_data.event_centrality;
 
   double mbd_south = m_event_data.event_MBD_Charge_South;
@@ -1818,9 +1857,6 @@ void JetAnalysis::process_calo()
   double total_energy = total_EMCal + total_IHCal + total_OHCal;
   double tower_median_energy = m_event_data.event_tower_median_Energy * 1e3; // GeV -> MeV
   double tower_EMCal_median_energy = m_event_data.event_EMCal_tower_median_Energy * 1e3; // GeV -> MeV
-
-  int seeds = m_event_data.nHIRecoSeedsSub;
-  int seedsIt1 = m_event_data.nHIRecoSeedsSubIt1;
 
   m_hists.h2MBD->Fill(mbd_south, mbd_north);
   m_hists.h2sEPD->Fill(sepd_south, sepd_north);
@@ -1841,6 +1877,17 @@ void JetAnalysis::process_calo()
 
   m_hists.h2CaloECentrality->Fill(total_energy, cent);
 
+  m_hists.h2TowMedECaloE->Fill(tower_median_energy, total_energy);
+
+  // ensure flow failure does not occur
+  if (!m_event_data.pass_flow)
+  {
+    return;
+  }
+
+  int seeds = m_event_data.nHIRecoSeedsSub;
+  int seedsIt1 = m_event_data.nHIRecoSeedsSubIt1;
+
   m_hists.h2SeedsIt1CaloE->Fill(seedsIt1, total_energy);
   m_hists.h2SeedsCaloE->Fill(seeds, total_energy);
 
@@ -1857,7 +1904,6 @@ void JetAnalysis::process_calo()
   m_hists.h2SumECaloV2->Fill(UE_sum_E, calo_v2);
 
   m_hists.h2CaloESumE->Fill(total_energy, UE_sum_E);
-  m_hists.h2TowMedECaloE->Fill(tower_median_energy, total_energy);
   m_hists.h2TowMedESumE->Fill(tower_median_energy, UE_sum_E);
 
   m_hists.h2TowMedECaloV2->Fill(tower_median_energy, calo_v2);
@@ -1875,9 +1921,7 @@ void JetAnalysis::process_calo()
   m_hists.h2SeedsIt1CaloV2->Fill(seedsIt1, calo_v2_it1);
   m_hists.h2SeedsCaloV2->Fill(seeds, calo_v2);
 
-  m_event_data.has_good_calo_v2 = std::abs(calo_v2) < m_calo_v2_max;
-
-  if (std::abs(calo_v2) > 0.5F && cent < 50)
+  if (!m_event_data.pass_calov2 && cent < 50)
   {
     std::cout << std::format("High Calo V2! Event: {}, Centrality: {}, Calo V2: {:.6f}\n", m_event_data.event_id, cent, calo_v2);
   }
@@ -1891,6 +1935,79 @@ void JetAnalysis::set_psi2()
   m_event_data.psi2 = std::atan2(Qy, Qx);
 }
 
+void JetAnalysis::process_event_check()
+{
+  auto& ed = m_event_data;
+
+  double cent = ed.event_centrality;
+
+  ed.pass_cent     = (cent >= 0 && cent < m_cent_high);
+  ed.pass_calo_mbd = check_CaloMBD();
+  ed.pass_QVec     = check_QVec();
+  ed.pass_flow     = !m_event_data.is_flow_failure;
+  ed.pass_calov2   = std::abs(ed.calo_v2) < m_calo_v2_max;
+  ed.pass_MaxPt    = m_isData || !check_MaxPt();
+
+  ed.pass_all = ed.pass_cent && ed.pass_calo_mbd && ed.pass_flow && ed.pass_QVec && ed.pass_calov2 && ed.pass_MaxPt;
+
+  m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
+
+  if (ed.pass_cent)
+  {
+    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
+    if (ed.pass_calo_mbd)
+    {
+      m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CALOCENT));
+      if (ed.pass_QVec)
+      {
+        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::QVEC));
+        if (ed.pass_flow)
+        {
+          m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_OK));
+          if (ed.pass_calov2)
+          {
+            m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::GOOD_CALOV2));
+          }
+        }
+      }
+    }
+  }
+
+  if(!ed.pass_cent)
+  {
+    ++m_ctr["events_bad_cent"];
+  }
+
+  if (!ed.pass_calo_mbd)
+  {
+    m_hists.hCentralityCaloFail->Fill(cent);
+    ++m_ctr["events_bad_calo_mbd"];
+  }
+
+  if (!ed.pass_QVec)
+  {
+    m_hists.hQVecFail->Fill(cent);
+    ++m_ctr["events_bad_QVec"];
+  }
+
+  if (!ed.pass_MaxPt)
+  {
+	++m_ctr["events_bad_simPtRange"];
+  }
+
+  if (!ed.pass_flow)
+  {
+    m_hists.hFlowFail->Fill(cent);
+    ++m_ctr["events_bad_flowfailure"];
+  }
+
+  if (!ed.pass_calov2)
+  {
+    m_hists.hCaloV2Fail->Fill(cent);
+    ++m_ctr["events_bad_calov2"];
+  }
+}
+
 void JetAnalysis::process_events()
 {
   std::cout << "Processing... process_events" << std::endl;
@@ -1899,8 +2016,6 @@ void JetAnalysis::process_events()
   {
     n_entries = std::min(m_events_to_process, n_entries);
   }
-
-  std::map<std::string, int> ctr;
 
   // Event Loop
   for (long long event = 0; event < n_entries; ++event)
@@ -1916,59 +2031,8 @@ void JetAnalysis::process_events()
     double cent = m_event_data.event_centrality;
     m_hists.hCentrality->Fill(cent);
 
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
-
-    // Skip events outside centrality range
-    if (cent <= 0 || cent > m_cent_high)
-    {
-      ++ctr["events_skipped_cent"];
-      continue;
-    }
-
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
-
-    // Ensure good correlation between Calo and MBD
-    bool isGood = check_CaloMBD();
-    if (!isGood)
-    {
-      m_hists.hCentralityCaloFail->Fill(cent);
-      ++ctr["events_skipped_calo_mbd"];
-      continue;
-    }
-
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CALOCENT));
-
-    // Ensure non-zero Q vectors for both North and South sEPD
-    isGood = check_QVec();
-    if (!isGood)
-    {
-      m_hists.hQVecFail->Fill(cent);
-      ++ctr["events_skipped_bad_QVec"];
-      continue;
-    }
-
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::QVEC));
-
-    if(!m_isData)
-    {
-      isGood = check_MaxPt();
-      if(!isGood)
-      {
-	++ctr["events_skipped_simPtRange"];
-	continue;
-      }
-    }
-
-    //check if flow failed
-    isGood = !m_event_data.is_flow_failure;
-    if (!isGood)
-    {
-      m_hists.hFlowFail->Fill(cent);
-      ++ctr["events_skipped_flowfailure"];
-      continue;
-    }
-
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_OK));
+    // Event Selections
+    process_event_check();
 
     // Compute psi2 for Data
     if (m_isData)
@@ -1982,22 +2046,17 @@ void JetAnalysis::process_events()
     // Calo QA
     process_calo();
 
+    // Scalar Product Resolution
+    compute_SP_resolution();
+
     // Scalar Product Method
     compute_SP();
 
-    // Ensure good calo v2
-    isGood = m_event_data.has_good_calo_v2;
-    if (!isGood)
-    {
-      m_hists.hCaloV2Fail->Fill(cent);
-      ++ctr["events_skipped_bad_calo_v2"];
-      continue;
-    }
-
-    m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::GOOD_CALOV2));
-
     //fill response matrix
-    if(!m_isData) fill_response();
+    if (!m_isData)
+    {
+      fill_response();
+    }
   }
 
   int jets = static_cast<int>(m_hists.h2JetPhiEta->GetEntries());
@@ -2006,10 +2065,10 @@ void JetAnalysis::process_events()
 
 
   std::cout << std::format("{:#<20}\n", "");
-  std::cout << "Events Skipped" << std::endl;
-  for (const auto& [name, events] : ctr)
+  std::cout << "Events Bad" << std::endl;
+  for (const auto& [name, events] : m_ctr)
   {
-    if (name.starts_with("events_skipped"))
+    if (name.starts_with("events_bad"))
     {
       std::cout << std::format("{}: {}\n", name, events);
     }
