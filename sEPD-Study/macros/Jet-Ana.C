@@ -223,6 +223,7 @@ class JetAnalysis
 
     std::array<TH2*, m_harmonics.size()> h2RefFlow{nullptr};
     std::array<TH2*, m_harmonics.size()> h2EvtRes{nullptr};
+    std::array<TH2*, m_harmonics.size()> h2EvtRes_raw{nullptr};
     std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, m_harmonics.size()> h2ScalarProduct{}; // Jet Energy > 0, Use Weighting
     std::array<std::array<TH2*, m_jet_pt_vec.size()-1>, m_harmonics.size()> h2ScalarProductv1{}; // Jet Energy > 0
 
@@ -700,6 +701,9 @@ void JetAnalysis::create_vn_histograms(int n)
                                                    m_bins_cent / 10, m_cent_low, m_cent_high,
                                                    bins_evt_res, evt_res_low, evt_res_high);
 
+  std::string name_evt_res_raw = std::format("h2EvtRes_raw_{}", n);
+  m_hists2D[name_evt_res_raw] = std::unique_ptr<TH2>(dynamic_cast<TH2*>(m_hists2D[name_evt_res]->Clone(name_evt_res_raw.c_str())));
+
   std::string name_evt_res_prof = std::format("hSP_evt_res_prof_{}", n);
   std::string title = std::format("; Centrality [%]; #LTRe(Q^{{S}}_{{{0}}} Q^{{N*}}_{{{0}}}) / (|Q^{{S}}_{{{0}}}||Q^{{N}}_{{{0}}}|)#GT", n);
   m_profiles[name_evt_res_prof] = std::make_unique<TProfile>(name_evt_res_prof.c_str(), title.c_str(), m_bins_cent, m_cent_low, m_cent_high);
@@ -1154,6 +1158,7 @@ void JetAnalysis::init_hists()
 
     m_hists.h2RefFlow[n_idx] = m_hists2D[std::format("h2RefFlow_{}", n)].get();
     m_hists.h2EvtRes[n_idx] = m_hists2D[std::format("h2EvtRes_{}", n)].get();
+    m_hists.h2EvtRes_raw[n_idx] = m_hists2D[std::format("h2EvtRes_raw_{}", n)].get();
 
     m_hists.p1SP_evt_res[n_idx] = m_profiles[std::format("hSP_evt_res_prof_{}", n)].get();
 
@@ -1346,25 +1351,52 @@ void JetAnalysis::compute_SP_resolution()
 
   double lead_pt = m_event_data.max_jet_pt;
 
+  struct SP_Result
+  {
+    double res;
+    double evt_res;
+    bool is_valid;
+  };
+
+  auto calculate_sp = [south_idx, north_idx](const auto& q_vectors) -> SP_Result
+  {
+    const QVec& sEPD_Q_S = q_vectors[south_idx];
+    const QVec& sEPD_Q_N = q_vectors[north_idx];
+
+    double norm_S = std::sqrt(sEPD_Q_S.x * sEPD_Q_S.x + sEPD_Q_S.y * sEPD_Q_S.y);
+    double norm_N = std::sqrt(sEPD_Q_N.x * sEPD_Q_N.x + sEPD_Q_N.y * sEPD_Q_N.y);
+    double denom = norm_S * norm_N;
+
+    if (denom <= 0.0)
+    {
+      return {0.0, 0.0, false};
+    }
+
+    double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
+    double SP_evt_res = SP_res / denom;
+
+    return {SP_res, SP_evt_res, true};
+  };
+
   // Compute Scalar Product for each harmonic
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
-    QVec sEPD_Q_S = m_event_data.q_vectors[n_idx][south_idx];
-    QVec sEPD_Q_N = m_event_data.q_vectors[n_idx][north_idx];
-
-    double SP_res = sEPD_Q_S.x * sEPD_Q_N.x + sEPD_Q_S.y * sEPD_Q_N.y;
-    double norm_S = std::sqrt(sEPD_Q_S.x * sEPD_Q_S.x + sEPD_Q_S.y * sEPD_Q_S.y);
-    double norm_N = std::sqrt(sEPD_Q_N.x * sEPD_Q_N.x + sEPD_Q_N.y * sEPD_Q_N.y);
-    double SP_evt_res = SP_res / (norm_S * norm_N);
-
-    if (n_idx == 0)
+    if (auto [SP_res, SP_evt_res, valid] = calculate_sp(m_event_data.q_vectors[n_idx]); valid)
     {
-      m_hists.h2JetPtCentralityEvtRes->Fill(lead_pt, cent, SP_evt_res);
+      if (n_idx == 0)
+      {
+        m_hists.h2JetPtCentralityEvtRes->Fill(lead_pt, cent, SP_evt_res);
+      }
+
+      m_hists.h2RefFlow[n_idx]->Fill(cent, SP_res);
+      m_hists.h2EvtRes[n_idx]->Fill(cent, SP_evt_res);
+      m_hists.p1SP_evt_res[n_idx]->Fill(cent, SP_evt_res);
     }
 
-    m_hists.h2RefFlow[n_idx]->Fill(cent, SP_res);
-    m_hists.h2EvtRes[n_idx]->Fill(cent, SP_evt_res);
-    m_hists.p1SP_evt_res[n_idx]->Fill(cent, SP_evt_res);
+    if (auto [SP_res_raw, SP_evt_res_raw, valid_raw] = calculate_sp(m_event_data.q_vectors_raw[n_idx]); valid_raw)
+    {
+      m_hists.h2EvtRes_raw[n_idx]->Fill(cent, SP_evt_res_raw);
+    }
   }
 }
 
