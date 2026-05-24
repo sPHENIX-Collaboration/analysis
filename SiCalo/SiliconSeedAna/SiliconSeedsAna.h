@@ -218,7 +218,9 @@ protected:
   TTree *evtTree = nullptr;
   //int trk_evt = 0;
   //int calo_evt = 0;
+  int       evt_evtseq;
   long long evt_bco;
+  uint64_t  evt_scaledtrig;
   int       evt_crossing;
   int       evt_nintt;
   int       evt_nintt50;

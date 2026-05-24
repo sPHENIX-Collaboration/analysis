@@ -38,7 +38,7 @@ public:
   int EndRun(const int runnumber) override;
   int End(PHCompositeNode *topNode) override;
 
-  void setMC(const bool input) { isMC = input; }
+  void setMC(const bool input) { _isMC = input; }
 
   void setTrackMapName( const std::string &name) { _trackMapName  = name; }
   void setVertexMapName(const std::string &name) { _vertexMapName = name; }
@@ -47,6 +47,9 @@ public:
 
   void setEmcalRadius(float radius) { _caloRadiusEMCal = radius; }
   void setEmcalLowEcut(float ecut)  { _emcal_low_cut = ecut; }
+  void setTrackLowpTcut(float ptcut){ _track_lowpt_cut = ptcut; }
+
+  void setUpdate_pTinSvtxTrack(const bool flag=true) { _update_pTinSvtxTrack = flag; }
 
 /*
   void setTopoCluster(bool topo)
@@ -66,10 +69,12 @@ protected:
   std::string _emcalClusName        = "CLUSTER_CEMC";
 
   double _emcal_low_cut      = 0.18;
+  double _track_lowpt_cut    = 0.20;
   float  _caloRadiusEMCal    = 93.5;
   float  _caloThicknessEMCal = 20.4997;
 
-  bool isMC = false;
+  bool _isMC = false;
+  bool _update_pTinSvtxTrack = false; 
 
 private:
   bool  getNodes(PHCompositeNode *topNode);
