@@ -42,6 +42,10 @@ public:
         : SubsysReco(name) {}
     void setVerbosity(int v) { m_verb = v; }
 
+    void setClusterContainerName(const std::string &name) { 
+      m_clusterContainerName = name;
+    }
+
     int process_event(PHCompositeNode *topNode) override
     {
         auto clustermap = findNode::getClass<TrkrClusterContainer>(topNode, m_clusterContainerName);
@@ -64,11 +68,8 @@ public:
             return Fun4AllReturnCodes::EVENT_OK;
         }
 
-        // if (m_verb > 0)
-        // {
-        //     float vx = NAN, vy = NAN, vz = NAN;
-        //     int vc = 999;
-
+        if (m_verb > 0)
+        {
              if (vertexmap && !vertexmap->empty())
              {
                std::cout<<"Ntrk: "<<trackmap->size()<<", Nvtx: "<<vertexmap->size()<<"  "<<std::endl;
@@ -85,21 +86,8 @@ public:
                   }
                   ivtx++;
                }
-        //         SvtxVertex *vtx = vertexmap->begin()->second;
-        //         if (vtx)
-        //         {
-        //             vx = vtx->get_x();
-        //             vy = vtx->get_y();
-        //             vz = vtx->get_z();
-        //             vc = vtx->get_beam_crossing();
-        //         }
              }
-
-        //     std::cout << "[ChargeRecalc] vtx(first): x=" << vx
-        //               << " y=" << vy << " z=" << vz
-        //               << " crossing=" << vc
-        //               << std::endl;
-        // }
+        }
 
         int n_changed = 0;
         int n_skipped = 0;
@@ -112,8 +100,8 @@ public:
                 continue;
             n_total++;
 
-            int vertexid = track->get_vertex_id();
-            std::cout<<"vertexID : "<<vertexid<<std::endl;
+//--            int vertexid = track->get_vertex_id();
+//--            std::cout<<"vertexID : "<<vertexid<<std::endl;
 
             TrackSeed *si_seed = track->get_silicon_seed();
             if (!si_seed)
@@ -179,13 +167,13 @@ public:
                 if (!trkrCluster)
                     continue;
 
-                int  layer =  TrkrDefs::getLayer(cluster_key);
                 auto global = geometry->getGlobalPosition(cluster_key, trkrCluster);
 
                 vClus.push_back(global);
 
-                float clus_r = sqrt(global[0]*global[0] + global[1]*global[1]);
-                std::cout<<"clus : "<<layer<<" "<<global[0]<<" "<<global[1]<<" "<<clus_r<<std::endl;
+                //--int  layer =  TrkrDefs::getLayer(cluster_key);
+                //--float clus_r = sqrt(global[0]*global[0] + global[1]*global[1]);
+                //--std::cout<<"clus : "<<layer<<" "<<global[0]<<" "<<global[1]<<" "<<clus_r<<std::endl;
 
                 // original algorithm
                 //--const float dx = global[0] - xvtx;
