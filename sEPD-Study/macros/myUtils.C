@@ -13,6 +13,7 @@
 #include <TFitResultPtr.h>
 #include <TH1.h>
 #include <TKey.h>
+#include <TLatex.h>
 #include <TROOT.h>
 
 // ====================================================================
@@ -70,7 +71,20 @@ namespace myUtils
   Int_t m_nib = 384;
   Int_t m_nib_per_sector = 6;
   Int_t m_ntowIBSide = 8;
+
+  std::unique_ptr<TLatex> draw_text(double x, double y, const std::string& text, float size);
 }  // namespace myUtils
+
+std::unique_ptr<TLatex> myUtils::draw_text(double x, double y, const std::string& text, float size)
+{
+  auto tex = std::make_unique<TLatex>(x, y, text.c_str());
+  tex->SetNDC();
+  tex->SetTextAlign(12);
+  tex->SetTextSize(size);
+  tex->Draw();
+
+  return tex;  // Transfers ownership to the calling function
+}
 
 bool myUtils::filter_sEPD(int rbin, QVecAna ana)
 {

@@ -134,7 +134,7 @@ class DisplaySEPDQA
 // ====================================================================
 void DisplaySEPDQA::read_hists()
 {
-  std::string input = "/gpfs02/sphenix/user/anarde/sEPD-Study/run3auau/merged/output/68144.root";
+  std::string input = "/sphenix/user/anarde/sEPD-Study/f4a/05-08-26-run3auau/merged/output/68144.root";
   std::string calib = "/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/SEPD_NMIP_CALIB/86/6d/866db5abdca24d60cc47f8856c8e97f4_sEPD_CalibConstants_CDB_Run71504_v2.root";
   m_hists = myUtils::read_hists(input);
   m_sepd_calib = std::make_unique<CDBTTree>(calib);
@@ -567,19 +567,29 @@ void DisplaySEPDQA::draw_QA()
   // ---------------------------------------------------
 
   {
+    c1->SetTopMargin(.05F);
+
     auto plotAndSave = [&](std::string_view name = "", const std::string& title = "")
     {
       auto* hist = m_hists[std::string(name)].get();
 
       hist->Draw("HIST");
 
-      if (!title.empty())
-      {
-        hist->SetTitle(title.c_str());
-      }
+      hist->SetTitle(title.c_str());
 
       hist->SetLineColor(kBlue);
       hist->SetLineWidth(3);
+
+      hist->GetYaxis()->SetTitleOffset(1.2F);
+
+      hist->GetYaxis()->SetTitleSize(0.04F);
+      hist->GetXaxis()->SetTitleSize(0.04F);
+      hist->GetYaxis()->SetLabelSize(0.04F);
+      hist->GetXaxis()->SetLabelSize(0.04F);
+
+      std::vector<std::unique_ptr<TLatex>> labels;
+      labels.push_back(myUtils::draw_text(0.5, 0.8, "Run 68144", 0.06F));
+      labels.push_back(myUtils::draw_text(0.5, 0.7, "|z| < 10 cm and MB", 0.06F));
 
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig)
@@ -589,7 +599,48 @@ void DisplaySEPDQA::draw_QA()
     };
 
     plotAndSave("hCentrality");
-    plotAndSave("hVtxZ_MB", "Min Bias");
+  }
+
+  {
+    auto* hVtxZ = m_hists["hVtxZ"].get();
+    auto* hVtxZ_MB = m_hists["hVtxZ_MB"].get();
+
+    hVtxZ->Draw("HIST");
+    hVtxZ_MB->Draw("HIST same");
+
+    hVtxZ->SetTitle("");
+
+    hVtxZ->SetLineColor(kBlue);
+    hVtxZ_MB->SetLineColor(kRed);
+
+    hVtxZ->SetLineWidth(3);
+    hVtxZ_MB->SetLineWidth(3);
+
+    hVtxZ->GetYaxis()->SetTitleOffset(1.F);
+
+    hVtxZ->GetYaxis()->SetTitleSize(0.04F);
+    hVtxZ->GetXaxis()->SetTitleSize(0.04F);
+    hVtxZ->GetYaxis()->SetLabelSize(0.04F);
+    hVtxZ->GetXaxis()->SetLabelSize(0.04F);
+
+    double xshift = 0.43;
+    double yshift = 0.23;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .55 + yshift, 0.5 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+    leg->AddEntry(hVtxZ, "All", "l");
+    leg->AddEntry(hVtxZ_MB, "Minimum Bias", "l");
+    leg->Draw("same");
+
+    std::vector<std::unique_ptr<TLatex>> labels;
+    labels.push_back(myUtils::draw_text(0.15, 0.88, "Run 68144", 0.06F));
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig)
+    {
+      c1->Print(std::format("{}/images/{}.png", m_output_dir, "hZVtx-Overlay").c_str());
+    }
   }
 
   // ---------------------------------------------------
@@ -597,12 +648,26 @@ void DisplaySEPDQA::draw_QA()
   {
     gPad->SetLogz();
     c1->SetRightMargin(.12F);
+    c1->SetLeftMargin(.08F);
 
     auto* h2SEPD_Charge = dynamic_cast<TH2*>(m_hists["h2SEPD_Charge"].get());
 
     h2SEPD_Charge->Draw("COLZ1");
+    h2SEPD_Charge->SetTitle("");
     h2SEPD_Charge->GetXaxis()->SetMaxDigits(3);
     h2SEPD_Charge->GetYaxis()->SetMaxDigits(3);
+
+    h2SEPD_Charge->GetYaxis()->SetTitle("sEPD Total Charge North");
+    h2SEPD_Charge->GetXaxis()->SetTitle("sEPD Total Charge South");
+
+    h2SEPD_Charge->GetYaxis()->SetTitleOffset(0.9F);
+    h2SEPD_Charge->GetXaxis()->SetTitleOffset(1.F);
+
+    h2SEPD_Charge->GetYaxis()->SetLabelSize(0.04F);
+    h2SEPD_Charge->GetXaxis()->SetLabelSize(0.04F);
+
+    h2SEPD_Charge->GetYaxis()->SetTitleSize(0.04F);
+    h2SEPD_Charge->GetXaxis()->SetTitleSize(0.04F);
 
     double high = 12e3;
     h2SEPD_Charge->GetXaxis()->SetRangeUser(0, high);
@@ -620,7 +685,12 @@ void DisplaySEPDQA::draw_QA()
     f1->Draw("same");
 
     f1->SetLineColor(kRed);
+    f1->SetLineStyle(kDashed);
     f1->SetLineWidth(3);
+
+    std::vector<std::unique_ptr<TLatex>> labels;
+    labels.push_back(myUtils::draw_text(0.15, 0.9, "Run 68144", 0.06F));
+    labels.push_back(myUtils::draw_text(0.15, 0.84, "|z| < 10 cm and MB", 0.06F));
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig)
@@ -629,13 +699,12 @@ void DisplaySEPDQA::draw_QA()
     }
 
     gPad->SetLogz(0);
-    c1->SetRightMargin(.02F);
   }
 
   // ---------------------------------------------------
 
   {
-    c1->SetTopMargin(.08F);
+    c1->SetTopMargin(.03F);
     c1->SetBottomMargin(.12F);
     c1->SetLeftMargin(.1F);
     c1->SetRightMargin(.04F);
@@ -644,7 +713,7 @@ void DisplaySEPDQA::draw_QA()
     double calib_low = -1e3;
     double calib_high = 400;
 
-    std::unique_ptr<TH1> hCalib = std::make_unique<TH1F>("hCalib", "sEPD Calib; MPV [ADC]; Towers", bins_calib, calib_low, calib_high);
+    std::unique_ptr<TH1> hCalib = std::make_unique<TH1F>("hCalib", "; MPV [ADC]; Channels", bins_calib, calib_low, calib_high);
 
     for (int channel = 0; channel < m_nChannels; ++channel)
     {
@@ -663,8 +732,17 @@ void DisplaySEPDQA::draw_QA()
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig)
     {
-      c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSEPD_Calib").c_str());
+      c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSEPD_Calib-full").c_str());
     }
+
+    hCalib->GetXaxis()->SetRangeUser(0,400);
+
+    std::vector<std::unique_ptr<TLatex>> labels;
+    labels.push_back(myUtils::draw_text(0.6, 0.88, "Run 71504", 0.06F));
+
+    c1->Print(output.c_str(), "pdf portrait");
+
+    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hSEPD_Calib").c_str());
 
     c1->SetTopMargin(.11F);
     c1->SetBottomMargin(.09F);
