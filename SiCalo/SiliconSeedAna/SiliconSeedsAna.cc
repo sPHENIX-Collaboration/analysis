@@ -23,6 +23,10 @@
 
 #include <g4eval/SvtxTrackEval.h>  // for SvtxTrackEval
 
+#include <siliconseedsana/SiliconCaloTrack.h>
+#include <siliconseedsana/SiliconCaloTrackMap.h>
+
+
 
 #include <TH2.h>
 #include <TProfile.h>
@@ -261,7 +265,9 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
   evtTree = new TTree("evtTree", "Event Data");
   evtTree->Branch("evt",     &evt,       "evt/I");
   evtTree->Branch("caloevt", &calo_evt,  "caloevt/I");
+  evtTree->Branch("evtseq",  &evt_evtseq,"evtseq/I");
   evtTree->Branch("bco",     &evt_bco,   "bco/l");
+  evtTree->Branch("scaledtrig", &evt_scaledtrig,   "bco/l");
   evtTree->Branch("crossing",&evt_crossing, "crossing/I");
   evtTree->Branch("nintt",   &evt_nintt, "nintt/I");
   evtTree->Branch("nintt50", &evt_nintt50,"nintt50/I");
@@ -326,93 +332,33 @@ int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
     // reset in processTrackMap : evt_nsiseed=evt_nsiseed0=0;
     // reset in processSiCluster :  evt_nintt = evt_nintt50 = evt_nmaps = 0;
     evt_bco = 0;
-    evt_crossing = std::numeric_limits<int>::signaling_NaN();
+    evt_crossing   = std::numeric_limits<int>::signaling_NaN();
+    evt_scaledtrig = std::numeric_limits<int>::signaling_NaN();
+    evt_evtseq     = std::numeric_limits<int>::signaling_NaN();
 
     auto gl1        = findNode::getClass<Gl1Packet>(  topNode, "GL1Packet");
     auto evthdr     = findNode::getClass<EventHeader>(topNode, "EventHeader");
     //auto clustermap = findNode::getClass<TrkrClusterContainer>(topNode, m_clusterContainerName);
 
     if(gl1){
-      uint64_t bunch_gl1= gl1->getBunchNumber();
-      std::cout<<"BCO : "<<bunch_gl1<<", ";
-      evt_bco =  bunch_gl1;
+      evt_bco        = gl1->getBCO();
+      evt_crossing   = gl1->getBunchNumber();
+      evt_scaledtrig = gl1->getScaledVector();
 
     }
     else { std::cout<<"No GL1Packet"<<std::endl; }
-    if(evthdr){
-      uint64_t bunch_evt= evthdr->get_BunchCrossing();
-      std::cout<<"Evt Header : "<<bunch_evt;
-      //  evt_bco = 
 
+    if(evthdr){
+      evt_evtseq = evthdr->get_EvtSequence();
     }
     else { std::cout<<"No EventHeader"<<std::endl; }
-    std::cout<<std::endl;
 
-    std::cout<<"nintt "<<evt_nintt<<" "<<evt_nintt50<<std::endl;
-    std::cout<<"nmvtx "<<evt_nmaps<<std::endl;
-/*
-    if(clustermap){
-      int nclus_intt[2]={0,0};
-      int nclus_intt50[2]={0,0};
-      for (auto layer = 0; layer < 4; layer++)
-      {
-        int inout = (layer/2);
-        for (const auto &hitsetkey : clustermap->getHitSetKeys(TrkrDefs::TrkrId::inttId, layer + 3))
-        {
-          auto range = clustermap->getClusters(hitsetkey);
+    std::cout<<"BCO : 0x"<<std::hex<<evt_bco<<std::dec
+             <<", crossing : "<<evt_crossing
+             <<", EvtSeq : "<<evt_evtseq<<std::endl;
 
-          int intt_time = InttDefs::getTimeBucketId(hitsetkey);
-          //--int intt_ldr  = InttDefs::getLadderPhiId(hitsetkey);
-          for (auto clusIter = range.first; clusIter != range.second; ++clusIter)
-          {
-            //const auto ckey = citer->first;
-            //int time = InttDef::getTimeBucket(ckey);
-            if(intt_time==0){
-              nclus_intt[inout]++;
-            }
-            if(0<=intt_time&&intt_time<50){
-              nclus_intt50[inout]++;
-            }
-          }
-  //      std::cout<<"nintt time : "<<layer<<" "<<intt_ldr<<" : "<<intt_time<<" "<<nclus_intt[inout]<<std::endl;
-        }
-      }
-      evt_nintt   = (nclus_intt[0] + nclus_intt[1]);
-      evt_nintt50 = (nclus_intt50[0] + nclus_intt50[1]);
-      std::cout<<"nintt "<<evt_nintt<<" "<<evt_nintt50<<std::endl;
-
-      //std::set<TrkrDefs::TrkrId> detectors;
-      //detectors.insert(TrkrDefs::TrkrId::mvtxId);
-      int nclusmvtx[3] = {0,0,0};
-      //float ntpval_mvtx[20];
-      //for (const auto &det : detectors)
-      //{
-        for (const auto &layer : {0, 1, 2})
-        {
-          for (const auto &hitsetkey : clustermap->getHitSetKeys(TrkrDefs::TrkrId::mvtxId, layer))
-          {
-            auto range = clustermap->getClusters(hitsetkey);
-
-            int strbid   = MvtxDefs::getStrobeId(hitsetkey);
-           //-- int mvtx_ldr  = MvtxDefs::getStaveId(hitsetkey);
-            //int nmvtx = range.second - range.first;;
-            if(strbid==0){
-              for (auto citer = range.first; citer != range.second; ++citer)
-              {
-                nclusmvtx[layer]++;
-              }
-            }
-   //         std::cout<<"mvtx: "<<layer<<" "<<mvtx_ldr<<" : "<<strbid<<std::endl;
-           
-          }
-
-          evt_nmaps+= nclusmvtx[layer];
-          //std::cout<<"nmvtx "<<layer<<" "<<nclusmvtx[layer]<<" "<<evt_nmaps<<std::endl;
-        }
-        std::cout<<"nmvtx "<<evt_nmaps<<std::endl;
-      //}
-    }
-*/
+    //--std::cout<<"nintt "<<evt_nintt<<" "<<evt_nintt50<<std::endl;
+    //--std::cout<<"nmvtx "<<evt_nmaps<<std::endl;
 
     evtTree->Fill();
   }
@@ -513,8 +459,8 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
   auto clustermap = findNode::getClass<TrkrClusterContainer>(topNode, m_clusterContainerName);
   auto geometry   = findNode::getClass<ActsGeometry>(topNode, m_actsgeometryName);
   auto vertexmap  = findNode::getClass<SvtxVertexMap>(topNode, m_vertexMapName);
-  auto sicalotrackmap = findNode::getClass<SiliconCaloTrackMap>(topNode, "SiliconCaloTrack");
   auto emcalClusmap = findNode::getClass<RawClusterContainer>(topNode, m_emcalClusName);
+  auto sicalotrackmap = findNode::getClass<SiliconCaloTrackMap>(topNode, "SiliconCaloTrack");
 
   trackmap = findNode::getClass<SvtxTrackMap>(topNode, m_trackMapName);
   if (!trackmap)
@@ -537,6 +483,10 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     std::cout << PHWHERE << "Missing vertexmap, can't continue" << std::endl;
     return;
   }
+  if (!sicalotrackmap)
+  {
+    std::cout << PHWHERE << "Missing sicalotrackkmap" << std::endl;
+  }
 
 
 
@@ -551,6 +501,20 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
 
 
   if((evt%1000)==0) std::cout << "start track map  EVENT " << evt << " is OK" << std::endl;
+
+  //-----------------------------
+  // making reverse pointer from siliconCaloTrack to SvtxTrack
+  // this should be replaced by iterator-method in SiliconCaloTrackMap
+  std::map<int, int> sicaloTrackMap;
+  if(sicalotrackmap){
+    for (auto &itr_sicalo : *sicalotrackmap)
+    {
+      int idx = itr_sicalo.first;
+      SiliconCaloTrack* sicalotrack = itr_sicalo.second;
+      sicaloTrackMap.insert(std::make_pair(sicalotrack->get_id(), idx));
+    }
+  }
+
 
   evt_nsiseed=trackmap->size();
   h_ntrack1d->Fill(trackmap->size());
@@ -672,7 +636,7 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
 
     track_charge.push_back(t_charge);
     track_crossing.push_back(t_crossing);
-    //if (false)
+    if (false)
       std::cout << "track_x : " << t_x << ", track_y: " << t_y << ", track_z: " << t_z 
                 << ", track_eta: " << t_eta << ", track_phi: " << t_phi << ", track_pt: " << t_pt
                 << ", dca2d: " << t_dca2d << ", dca2d_xy: " << t_dca3d_xy << ", dca3d_z: " << t_dca3d_z 
@@ -728,25 +692,28 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     if(sicalotrackmap && emcalClusmap)
     {
 
-      SiliconCaloTrack* sicalo = sicalotrackmap->get(track->get_id());
-      if(sicalo){
-        sic_pt   = sicalo->get_pt();
-        sic_phi  = sicalo->get_phi();
-        sic_eta  = sicalo->get_eta();
-        sic_dphi = sicalo->get_cal_dphi();
-        sic_dz   = sicalo->get_cal_dz();
+      auto sicalo_itr = sicaloTrackMap.find(track->get_id());
+      if(sicalo_itr!=sicaloTrackMap.end()) {
+        SiliconCaloTrack* sicalo = sicalotrackmap->get(sicalo_itr->second);
+        if(sicalo){
+          sic_pt   = sicalo->get_pt();
+          sic_phi  = sicalo->get_phi();
+          sic_eta  = sicalo->get_eta();
+          sic_dphi = sicalo->get_cal_dphi();
+          sic_dz   = sicalo->get_cal_dz();
 
-        int calo_id = sicalo->get_calo_id();
-        RawCluster *calo = emcalClusmap->getCluster(calo_id);
-        if(calo){
-          getCaloPosition(calo, sic_calo_x, sic_calo_y, sic_calo_z);
-          sic_calo_r    = calo->get_r();
-          sic_calo_phi  = calo->get_phi();
-          sic_calo_e    = calo->get_energy();
-          sic_calo_chi2 = calo->get_chi2();
-          sic_calo_prob = calo->get_prob();
-          std::cout<<"calo_chi2 : "<<sic_calo_chi2<<" "<<sic_calo_prob<<std::endl;
-        } 
+          int calo_id = sicalo->get_calo_id();
+          RawCluster *calo = emcalClusmap->getCluster(calo_id);
+          if(calo){
+            getCaloPosition(calo, sic_calo_x, sic_calo_y, sic_calo_z);
+            sic_calo_r    = calo->get_r();
+            sic_calo_phi  = calo->get_phi();
+            sic_calo_e    = calo->get_energy();
+            sic_calo_chi2 = calo->get_chi2();
+            sic_calo_prob = calo->get_prob();
+            //--std::cout<<"calo_chi2 : "<<sic_calo_chi2<<" "<<sic_calo_prob<<std::endl;
+          } 
+        }
       }
     }
 
@@ -932,7 +899,7 @@ SvtxTrackState* SiliconSeedsAna::projectToEMCal(
   //const auto eta = 2.5;
   //const auto theta = 2. * atan(exp(-eta));
   //const auto halfZ = caloRadius / tan(theta) * Acts::UnitConstants::cm;
-  std::cout<<"radius: "<<caloRadius<<" "<<halfZ<<std::endl;
+  //--std::cout<<"radius: "<<caloRadius<<" "<<halfZ<<std::endl;
   //double halfZ      = 150.; // cm
 
   auto transform = Acts::Transform3::Identity();
@@ -1152,7 +1119,7 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 
 void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
 {
-  bool debug=true;
+  bool debug=false;
 
 ////////////////
   GlobalVertexMap* globalvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -1492,6 +1459,7 @@ void SiliconSeedsAna::createTree()
 
 void SiliconSeedsAna::getCaloPosition(RawCluster *calo, float &x, float &y, float &z)
 {
+  bool debug = false;
   if(calo==nullptr) {
     x = y = z = std::numeric_limits<float>::quiet_NaN();
     return;
@@ -1503,7 +1471,7 @@ void SiliconSeedsAna::getCaloPosition(RawCluster *calo, float &x, float &y, floa
   float r   = calo->get_r();
   float phi = calo->get_phi();
   float rr = sqrt(x*x + y*y);
-  std::cout<<"emc_x, y: "<<x<<" "<<y<<std::endl;
+  if(debug) std::cout<<"emc_x, y: "<<x<<" "<<y<<std::endl;
   if(fabs(rr - r)>1) 
   {
     //std::cout<<"no emc_x, y: "<<x<<" "<<y<<" "<<rr

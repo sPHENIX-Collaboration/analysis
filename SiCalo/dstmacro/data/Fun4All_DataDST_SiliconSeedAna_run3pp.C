@@ -66,14 +66,14 @@ R__LOAD_LIBRARY(libsiliconseedsana.so)
 
 bool useTopologicalCluster = false;
 
-int Fun4All_DataDST_SiliconSeedAna(
-    const int nEvents = 1000, const string inlst_dst_clus = "list/test/run53879_clus_0.list"
-    //  , const string inlst_dst_strk = "run53879_strk_0.list"
-    ,
-    const string inlst_dst_strk = "list/test/run53879_seed_0.list", const string inlst_dst_calo = "list/test/run53879_calo_0.list", const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root", const int startnumber = 0)
+int Fun4All_DataDST_SiliconSeedAna_run3pp(
+    const int nEvents = 1000
+    , const string inlst_dst_strk = "list/test/run53879_seed_0.list"
+    , const string inlst_dst_calo = "list/test/run53879_calo_0.list"
+    , const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root"
+    , const int startnumber = 0)
 {
 
-  std::cout << "inlst_dst_clus : " << inlst_dst_clus << endl;
   std::cout << "inlst_dst_trk  : " << inlst_dst_strk << endl;
   std::cout << "inlst_dst_calo : " << inlst_dst_calo << endl;
   // std::cout << "std::cout << "Input DST: " << in_dst      <<std::endl;
@@ -115,10 +115,10 @@ int Fun4All_DataDST_SiliconSeedAna(
   // in->Verbosity(2);
   se->registerInputManager(in_calo);
 
-  Fun4AllInputManager *in_clus = new Fun4AllDstInputManager("DSTTrkrClus");
-  in_clus->AddListFile(inlst_dst_clus.c_str());
-  // in->Verbosity(2);
-  se->registerInputManager(in_clus);
+  //--Fun4AllInputManager *in_clus = new Fun4AllDstInputManager("DSTTrkrClus");
+  //--in_clus->AddListFile(inlst_dst_clus.c_str());
+  //--// in->Verbosity(2);
+  //--se->registerInputManager(in_clus);
 
   Fun4AllInputManager *in_strk = new Fun4AllDstInputManager("DSTTrkrTrack");
   in_strk->AddListFile(inlst_dst_strk.c_str());
@@ -141,12 +141,14 @@ int Fun4All_DataDST_SiliconSeedAna(
   auto converter = new TrackSeedTrackMapConverter;
   // SiliconTrackSeedContainer or TpcTrackSeedContainer
   converter->setTrackSeedName("SiliconTrackSeedContainer");
+  converter->setClusterMapName("TRKR_CLUSTER_SEED");
   converter->setFieldMap(G4MAGNET::magfield_tracking);
   // converter->Verbosity(10);
   se->registerSubsystem(converter);
 
   PHSimpleVertexFinder *finder = new PHSimpleVertexFinder;
   finder->Verbosity(0);
+  finder->setTrkrClusterContainerName("TRKR_CLUSTER_SEED");
   finder->setDcaCut(0.1);
   finder->setTrackPtCut(0.);
   finder->setBeamLineCut(1);
@@ -160,6 +162,7 @@ int Fun4All_DataDST_SiliconSeedAna(
   // --- charge recalculation (before projection) ---
   auto chrecalc = new ChargeRecalc("ChargeRecalc");
   chrecalc->setVerbosity(0);
+  chrecalc->setClusterContainerName("TRKR_CLUSTER_SEED");
   se->registerSubsystem(chrecalc);
 
   // track projection CALO
@@ -172,13 +175,17 @@ int Fun4All_DataDST_SiliconSeedAna(
 
   // Si-Calo Matching
   SiliconCaloMatching* sicalomatch = new SiliconCaloMatching();
+  //sicalomatch->Verbosity(1);
+  sicalomatch->setClusterContainerName("TRKR_CLUSTER_SEED");
   sicalomatch->setEMCalClusterContainerName("CLUSTERINFO_CEMC");
   sicalomatch->setEmcalLowEcut(0.2);
+  sicalomatch->setTrackLowpTcut(0.2);
   se->registerSubsystem(sicalomatch);
 
   auto siana = new SiliconSeedsAna("SiliconSeedsAna");
   // siana->setMC(true);
   siana->setVtxSkip(true);
+  siana->setClusterContainerName("TRKR_CLUSTER_SEED");
   siana->setEMCalClusterContainerName("CLUSTERINFO_CEMC");
   siana->setTopoCluster(useTopologicalCluster);
   // siana->setEMcalRadius(emcal_radius); // set new emcal radius for silicon track production to emcal

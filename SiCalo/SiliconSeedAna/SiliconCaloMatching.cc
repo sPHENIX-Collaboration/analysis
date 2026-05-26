@@ -18,6 +18,7 @@
 //calo include
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterContainer.h>
+#include <calobase/RawTowerGeomContainer.h>
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
@@ -69,20 +70,24 @@ int SiliconCaloMatching::InitRun(PHCompositeNode * topNode)
       DetNode = new PHCompositeNode("SICALO");
       dstNode->addNode(DetNode);
     }
-
+    
     _sicalomap = new SiliconCaloTrackMap_v1;
     PHIODataNode<PHObject>* SiliconCaloTrackMapNode =
       new PHIODataNode<PHObject>(_sicalomap, "SiliconCaloTrack", "PHObject");
     DetNode->addNode(SiliconCaloTrackMapNode);
   }
 
+  // for logging
+  std::cout<<"SiliconCaloMatching track low pT cut = " << _track_lowpt_cut <<std::endl;
+  std::cout<<"SiliconCaloMatching emcal lowE cut   = " << _emcal_low_cut   <<std::endl;
+  
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 {
-  if(false)
+  if(Verbosity()>0)
     std::cout<<"SiliconCaloMatching::process_event(PHCompositeNode* topNode)"<<std::endl;
   
   if(!getNodes(topNode)) 
@@ -110,6 +115,7 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
   }
 
 ///////////////////////////////////////////////
+  int ntrk_crossing = 0, ntrk_noemc=0;
   for (auto &iter : *_trackmap)
   {
     auto track = iter.second;
@@ -117,13 +123,16 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
       continue;
 
     int trkcrossing = track->get_crossing();
-    if (trkcrossing != 0 && !isMC)
+    if (trkcrossing != 0 && !_isMC)
       continue;
 
     //--int   t_id      = track->get_id();
+    float t_pt      = track->get_pt();
+    if (t_pt < _track_lowpt_cut )
+      continue;
+
     float t_eta     = track->get_eta();
     float t_phi     = track->get_phi();
-    float t_pt      = track->get_pt();
     //--int   t_charge  = track->get_charge();
     //--float t_chi2ndf = track->get_quality();
     float t_x       = track->get_x();
@@ -138,7 +147,7 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 //    int t_nmaps = 0, t_nintt = 0, t_inner = 0, t_outer = 0;
 
 
-    if (false)
+    if (Verbosity()>2)
       std::cout << "track_x : " << t_x << ", track_y: " << t_y << ", track_z: " << t_z 
                 << ", track_eta: " << t_eta << ", track_phi: " << t_phi << ", track_pt: " << t_pt << std::endl;
 
@@ -148,9 +157,11 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 
     
     if(!emcalState){
-      std::cout<<"No TrackState (EMC projection object)"<<std::endl;
+      std::cout<<"No TrackState (EMC projection object), pT = "<<t_pt<<std::endl;
       continue;
     }
+
+    ntrk_crossing++; // good track (crossing & state_ok)
 
     // track projection to EMC surface
     TVector3 projPos(emcalState->get_x(), emcalState->get_y(), emcalState->get_z());
@@ -205,7 +216,8 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 
     //
     if(best_idx==-1) {
-      std::cout<<"associated cluseter not found"<<std::endl;
+      if(Verbosity()>0) std::cout<<"associated cluster not found, pt="<<t_pt<<std::endl;
+      ntrk_noemc++;
       continue;
     }
 
@@ -220,9 +232,12 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 
 
     // Fill updated value to SvtxTrack and SiliconCaloTrack object
-    //track->set_px( pt_calo*cos(track->get_phi()) );
-    //track->set_py( pt_calo*sin(track->get_phi()) );
-    //
+    if(_update_pTinSvtxTrack){
+      track->set_px( pt_calo*cos(track->get_phi()) );
+      track->set_py( pt_calo*sin(track->get_phi()) );
+    }
+
+    
     auto sicalo = std::make_unique<SiliconCaloTrack_v1>();
 
     sicalo->set_id(track->get_id());
@@ -237,6 +252,39 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
     _sicalomap->insertWithKey(sicalo.release(), track->get_id());
 
   } // track loop
+
+  if(Verbosity()>0) {
+    std::cout<<"SiliconCaloMatching : Ntrack : "<<_trackmap->size()<<" "<<ntrk_crossing<<", bad= "<<ntrk_noemc<<std::endl;
+    std::cout<<"SiliconCaloMatching : NEMC   : "<<_emcClusmap->size() << std::endl;
+    
+    if(ntrk_noemc>0){
+      for (unsigned int i = 0; i < _emcClusmap->size(); i++)
+      { 
+        auto *emc = _emcClusmap->getCluster(i);
+        if (!emc) {
+          std::cout<<"   no emc object"<<std::endl;
+          continue;
+        }
+        if (emc->get_energy() < _emcal_low_cut) {
+          std::cout<<"   small emc E "<< emc->get_energy()<<std::endl;
+          continue;
+        }
+
+        //TVector3 emcPos(emc->get_x(), emc->get_y(), emc->get_z());
+
+        float z_emc   = emc->get_z();
+        float phi_emc = emc->get_phi();
+        float r_emc   = emc->get_r();
+        float x_emc   = r_emc * cos(phi_emc);
+        float y_emc   = r_emc * sin(phi_emc);
+        
+        std::cout<<"     emc xyz = "<<x_emc<<" "<<y_emc<<" "<<z_emc<<", "<<phi_emc<<" "<<r_emc<<std::endl;
+      }
+    }
+  }
+
+  if(ntrk_noemc>0)
+    std::cout<<"SiliconCaloMatching : No EMC track : "<<ntrk_noemc<<std::endl;
 
   //--std::cout << "EVENT " << evt << " is OK" << std::endl;
 
@@ -276,7 +324,7 @@ float SiliconCaloMatching::calculatePt(SvtxTrack* track, RawCluster* emc)
   std::vector<TrkrDefs::cluskey>::reverse_iterator ritr = vClusKey.rbegin();
   TrkrDefs::cluskey ckey_outer = *ritr; ritr++;
   TrkrDefs::cluskey ckey_inner = *ritr;
-  if(false)
+  if(Verbosity()>2)
     std::cout<<"c layer "<<(int)TrkrDefs::getLayer(ckey_inner)<<" "<<(int)TrkrDefs::getLayer(ckey_outer)<<std::endl;
 
   TrkrCluster* oClus = _clustermap->findCluster(ckey_outer);
@@ -309,7 +357,7 @@ float SiliconCaloMatching::calculatePt(SvtxTrack* track, RawCluster* emc)
   // cout
   float pt = track->get_pt();
 
-  if(false)
+  if(Verbosity()>2)
     std::cout<<"phi : "<<pt_calo<<" "<<phi_intt<<" "<<phi_calo<<" "<<dphi<<", "<<charge<<", "<<pt<<" "<<emc_x<<" "<<emc_y<<" "<<emc_z<<std::endl;
 
   return pt_calo;
@@ -363,6 +411,26 @@ bool SiliconCaloMatching::getNodes(PHCompositeNode* topNode)
   {
     std::cout << PHWHERE << "Missing EMC clustermap, can't continue" << std::endl;
     return false;
+  }
+
+  //for debug
+  bool debug=false;
+  if(debug){
+    // get tower geometry container
+    const auto towerGeomContainer = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+    
+    if( !towerGeomContainer )
+    {
+      std::cout << PHWHERE << "-"
+            << " Calo tower geometry container for CEMC" 
+            << " not found on node tree. Track projections to calos won't be filled."
+            << std::endl;
+      return false;
+    }
+    
+    // get calorimeter inner radius and store
+    double caloRadius = towerGeomContainer->get_radius();
+    std::cout<<" CEMC radius : "<<caloRadius<<std::endl;
   }
 
   return true;
