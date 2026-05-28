@@ -80,6 +80,7 @@ public:
   void setClusterContainerName(const std::string &name) { m_clusterContainerName = name; }
   void setEMCalClusterContainerName(const std::string &name) { m_emcalClusName = name; }
   void setEMcalRadius(float radius) { _caloRadiusEMCal = radius; }
+  void setEmcalLowEcut(float ecut)  { m_emcal_low_cut = ecut; }
   void setTopoCluster(bool topo)
   {
     if (topo)

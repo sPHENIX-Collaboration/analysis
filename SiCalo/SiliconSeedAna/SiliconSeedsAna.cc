@@ -969,6 +969,8 @@ SvtxTrackState* SiliconSeedsAna::projectToEMCal(
 
 void SiliconSeedsAna::processSiCluster(PHCompositeNode* topNode)
 {
+  bool debug = false;
+
   evt_nintt = evt_nintt50 = evt_nmaps = 0;
 
   auto geometry   = findNode::getClass<ActsGeometry>(topNode, m_actsgeometryName);
@@ -1033,6 +1035,7 @@ void SiliconSeedsAna::processSiCluster(PHCompositeNode* topNode)
         if(0<=timebkt&&timebkt<50)  nhits50[layer]++;
       }
     }
+    if(debug) std::cout<<"layer : "<<layer<<"     nhits : "<<nhits[layer]<<std::endl;
   }
   SiClusAllTree->Fill();
 
