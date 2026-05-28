@@ -22,7 +22,8 @@ pkginclude_HEADERS = \
   CalibrateQVec.h \
   JetValidation.h \
   JetUtils.h \
-  sEPD_DataMC_Validation.h
+  sEPD_DataMC_Validation.h \
+  sEPD_MC_Validation.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
@@ -38,7 +39,8 @@ libsEPDValidation_la_SOURCES = \
   CalibrateQVec.cc \
   JetValidation.cc \
   JetUtils.cc \
-  sEPD_DataMC_Validation.cc
+  sEPD_DataMC_Validation.cc \
+  sEPD_MC_Validation.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \
