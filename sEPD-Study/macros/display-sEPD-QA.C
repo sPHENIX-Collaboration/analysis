@@ -818,7 +818,7 @@ void DisplaySEPDQA::draw_QA()
       hist->GetYaxis()->SetTitleOffset(opts.yoffset);
       hist->GetZaxis()->SetTitleOffset(opts.zoffset);
 
-      auto* px = hist->ProfileX("px", 2, -1, "s");
+      auto* px = hist->ProfileX("px", 3, -1, "s");
 
       px->SetMarkerColor(kRed);
       px->SetLineColor(kRed);
@@ -889,8 +889,8 @@ void DisplaySEPDQA::draw_QA()
         std::cout << "\n";
       }
 
-      auto* px_south = h2SEPD_South_AvgCharge->ProfileX("px_south", 2, -1, "s");
-      auto* px_north = h2SEPD_North_AvgCharge->ProfileX("px_north", 2, -1, "s");
+      auto* px_south = h2SEPD_South_AvgCharge->ProfileX("px_south", 3, -1, "s");
+      auto* px_north = h2SEPD_North_AvgCharge->ProfileX("px_north", 3, -1, "s");
 
       struct ChannelIssue
       {
