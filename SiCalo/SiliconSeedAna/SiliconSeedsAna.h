@@ -109,6 +109,38 @@ protected:
   void processCaloClusters(PHCompositeNode *topNode);
   void processVertexMap(PHCompositeNode *topNode);
 
+    // ----- JY start - HCal information on NanoDST -----
+    void processHCalinfo(PHCompositeNode *topNode);
+
+    TTree *TopoClusTree = nullptr;
+
+    std::vector<float> topo_clus_e;
+    std::vector<float> topo_clus_x;
+    std::vector<float> topo_clus_y;
+    std::vector<float> topo_clus_z;
+    std::vector<float> topo_clus_r;
+    std::vector<float> topo_clus_eta;
+    std::vector<float> topo_clus_phi;
+
+    std::vector<float> topo_clus_chi2;
+    std::vector<float> topo_clus_prob;
+
+    std::vector<float> topo_clus_emcal_e;
+    std::vector<float> topo_clus_ihcal_e;
+    std::vector<float> topo_clus_ohcal_e;
+
+    std::vector<std::vector<int>>   topo_tower_caloid;
+    std::vector<std::vector<int>>   topo_tower_ieta;
+    std::vector<std::vector<int>>   topo_tower_iphi;
+    std::vector<std::vector<float>> topo_tower_e;
+    std::vector<std::vector<float>> topo_tower_x;
+    std::vector<std::vector<float>> topo_tower_y;
+    std::vector<std::vector<float>> topo_tower_z;
+    std::vector<std::vector<float>> topo_tower_eta;
+    std::vector<std::vector<float>> topo_tower_phi;
+    std::vector<std::vector<float>> topo_tower_time;
+    // ----- JY end - HCal information on NanoDST -----
+
   // Utility functions for track vector management and EMCal state
   void clearTrackVectors();
   void fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState);
@@ -215,6 +247,18 @@ protected:
   std::vector<float> calo_energy;
   std::vector<float> calo_chi2;
   std::vector<float> calo_prob;
+
+    std::vector<std::vector<int>>   calo_tower_ieta;
+    std::vector<std::vector<int>>   calo_tower_iphi;
+    std::vector<std::vector<float>> calo_tower_e;
+    std::vector<std::vector<float>> calo_tower_x;
+    std::vector<std::vector<float>> calo_tower_y;
+    std::vector<std::vector<float>> calo_tower_z;
+    std::vector<std::vector<float>> calo_tower_r;
+    std::vector<std::vector<float>> calo_tower_eta;
+    std::vector<std::vector<float>> calo_tower_phi;
+    std::vector<std::vector<float>> calo_tower_time;
+
 
   TTree *evtTree = nullptr;
   //int trk_evt = 0;

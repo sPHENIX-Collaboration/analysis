@@ -90,9 +90,23 @@ void SiliconSeedsAna::clearCaloVectors() {
   calo_energy.clear();
   calo_chi2.clear();
   calo_prob.clear();
+
+    calo_tower_ieta.clear();
+    calo_tower_iphi.clear();
+    calo_tower_e.clear();
+    calo_tower_x.clear();
+    calo_tower_y.clear();
+    calo_tower_z.clear();
+    calo_tower_r.clear();
+    calo_tower_eta.clear();
+    calo_tower_phi.clear();
+    calo_tower_time.clear();
 }
 
 void SiliconSeedsAna::fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState) {
+  if(!state) { std::cout<<"No EMCState front"<<std::endl;}
+  if(!ostate) { std::cout<<"No EMCState back"<<std::endl;}
+
   track_x_emc.push_back(  state ?  state->get_x()  : NAN);
   track_y_emc.push_back(  state ?  state->get_y()  : NAN);
   track_z_emc.push_back(  state ?  state->get_z()  : NAN);
@@ -218,6 +232,18 @@ void SiliconSeedsAna::initCaloTreeBranches() {
   caloTree->Branch("energy", &calo_energy);
   caloTree->Branch("chi2",  &calo_chi2);
   caloTree->Branch("prob",   &calo_prob);
+
+    caloTree->Branch("Calo_tower_ieta", &calo_tower_ieta);
+    caloTree->Branch("Calo_tower_iphi", &calo_tower_iphi);
+    caloTree->Branch("Calo_tower_e",    &calo_tower_e);
+    caloTree->Branch("Calo_tower_x",    &calo_tower_x);
+    caloTree->Branch("Calo_tower_y",    &calo_tower_y);
+    caloTree->Branch("Calo_tower_z",    &calo_tower_z);
+    caloTree->Branch("Calo_tower_r",    &calo_tower_r);
+    caloTree->Branch("Calo_tower_eta",  &calo_tower_eta);
+    caloTree->Branch("Calo_tower_phi",  &calo_tower_phi);
+    caloTree->Branch("Calo_tower_time", &calo_tower_time);
+
   caloTree->SetBasketSize("*",50000);
 }
 
@@ -312,6 +338,38 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
     truthTree->SetBasketSize("*",50000); // Set a larger basket size for better performance
   }
 
+    TopoClusTree = new TTree("TopoClusTree", "Topo cluster and associated tower info");
+
+    TopoClusTree->Branch("evt", &evt, "evt/I");
+
+    TopoClusTree->Branch("clus_e",   &topo_clus_e);
+    TopoClusTree->Branch("clus_x",   &topo_clus_x);
+    TopoClusTree->Branch("clus_y",   &topo_clus_y);
+    TopoClusTree->Branch("clus_z",   &topo_clus_z);
+    TopoClusTree->Branch("clus_r",   &topo_clus_r);
+    TopoClusTree->Branch("clus_eta", &topo_clus_eta);
+    TopoClusTree->Branch("clus_phi", &topo_clus_phi);
+
+    TopoClusTree->Branch("clus_chi2", &topo_clus_chi2);
+    TopoClusTree->Branch("clus_prob", &topo_clus_prob);
+
+    TopoClusTree->Branch("clus_emcal_e", &topo_clus_emcal_e);
+    TopoClusTree->Branch("clus_ihcal_e", &topo_clus_ihcal_e);
+    TopoClusTree->Branch("clus_ohcal_e", &topo_clus_ohcal_e);
+
+    TopoClusTree->Branch("tower_caloid", &topo_tower_caloid);
+    TopoClusTree->Branch("tower_ieta",   &topo_tower_ieta);
+    TopoClusTree->Branch("tower_iphi",   &topo_tower_iphi);
+    TopoClusTree->Branch("tower_e",      &topo_tower_e);
+    TopoClusTree->Branch("tower_x",      &topo_tower_x);
+    TopoClusTree->Branch("tower_y",      &topo_tower_y);
+    TopoClusTree->Branch("tower_z",      &topo_tower_z);
+    TopoClusTree->Branch("tower_eta",    &topo_tower_eta);
+    TopoClusTree->Branch("tower_phi",    &topo_tower_phi);
+    TopoClusTree->Branch("tower_time",   &topo_tower_time);
+
+    TopoClusTree->SetBasketSize("*", 50000);
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -326,6 +384,9 @@ int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
   processCaloClusters(topNode);
   processTrackMap(topNode);
   processSiCluster(topNode);
+
+    processHCalinfo(topNode);
+
 
   //////////////
   {
@@ -411,19 +472,19 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     float vtx_r = sqrt(vx*vx+vy*vy);
     if(vtx_r>5) continue;
 
-    int trackid = ptcl->get_track_id();
-    int pid     = ptcl->get_pid();
-    if(!(
-          abs(pid)==11 // e-
-       || abs(pid)==13 // mu-
-       || abs(pid)==211 // pi+
-       || abs(pid)==321 // K+
-       || abs(pid)==2212 // p
-       )
-       &&trackid<=0
-    ){
-      continue;
-    }
+    //--int trackid = ptcl->get_track_id();
+    //--int pid     = ptcl->get_pid();
+    //--if(!(
+    //--      abs(pid)==11 // e-
+    //--   || abs(pid)==13 // mu-
+    //--   || abs(pid)==211 // pi+
+    //--   || abs(pid)==321 // K+
+    //--   || abs(pid)==2212 // p
+    //--   )
+    //--   &&trackid<=0
+    //--){
+    //--  continue;
+    //--}
 
 
 
@@ -1048,10 +1109,34 @@ void SiliconSeedsAna::processSiCluster(PHCompositeNode* topNode)
 void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 {
   auto EMCalClusmap = findNode::getClass<RawClusterContainer>(topNode, m_emcalClusName);
+
+    auto geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+    auto towEM  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+
   clearCaloVectors();
+
   if((calo_evt%1000)==0) std::cout << "start calo map  EVENT " << calo_evt << " is OK" << std::endl;
 
   evt_nemc = evt_nemc02=0;
+
+    float vx = 0.0;
+    float vy = 0.0;
+    float vz = 0.0;
+
+    if (!b_skipvtx)
+    {
+        auto vertexmap = findNode::getClass<SvtxVertexMap>(topNode, m_vertexMapName);
+        if (vertexmap && !vertexmap->empty())
+        {
+            SvtxVertex* vtx = vertexmap->begin()->second;
+            if (vtx)
+            {
+                vx = vtx->get_x();
+                vy = vtx->get_y();
+                vz = vtx->get_z();
+            }
+        }
+    }
 
   if (!b_skipcalo && EMCalClusmap)
   {
@@ -1071,26 +1156,11 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
       calo_z.push_back(clus->get_z());
       calo_r.push_back(clus->get_r());
       calo_phi.push_back(clus->get_phi());
+
       float eta = -1.0;
       float cx = clus->get_x();
       float cy = clus->get_y();
       float cz = clus->get_z();
-      float vx = 0.0, vy = 0.0, vz = 0.0;
-
-      if (!b_skipvtx)
-      {
-        auto vertexmap = findNode::getClass<SvtxVertexMap>(topNode, m_vertexMapName);
-        if (vertexmap && !vertexmap->empty())
-        {
-          SvtxVertex *vtx = vertexmap->begin()->second;
-          if (vtx)
-          {
-            vx = vtx->get_x();
-            vy = vtx->get_y();
-            vz = vtx->get_z();
-          }
-        }
-      }
       float dx = cx - vx;
       float dy = cy - vy;
       float dz = cz - vz;
@@ -1099,12 +1169,99 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
       eta = -std::log(std::tan(theta / 2.0));
       calo_eta.push_back(eta);
 
-      float energy =clus->get_energy();
+      const float energy =clus->get_energy();
       calo_energy.push_back(energy);
       calo_chi2.push_back(clus->get_chi2());
       calo_prob.push_back(clus->get_prob());
 
       if(energy>0.2) evt_nemc02++;
+
+            std::vector<int>   v_ieta;
+            std::vector<int>   v_iphi;
+            std::vector<float> v_e;
+            std::vector<float> v_x;
+            std::vector<float> v_y;
+            std::vector<float> v_z;
+            std::vector<float> v_r;
+            std::vector<float> v_eta;
+            std::vector<float> v_phi;
+            std::vector<float> v_time;
+
+            auto tower_range = clus->get_towers();
+
+            for (auto tower_it = tower_range.first;
+                 tower_it != tower_range.second;
+                 ++tower_it)
+            {
+                RawTowerDefs::keytype tower_key = tower_it->first;
+                const float tower_e_in_cluster = tower_it->second;
+
+                const int ieta = RawTowerDefs::decode_index1(tower_key);
+                const int iphi = RawTowerDefs::decode_index2(tower_key);
+
+                float tower_x = NAN;
+                float tower_y = NAN;
+                float tower_z = NAN;
+                float tower_r = NAN;
+                float tower_eta = NAN;
+                float tower_phi = NAN;
+                float tower_time = NAN;
+                if (geomEM)
+                {
+                    RawTowerGeom* tower_geom = geomEM->get_tower_geometry(tower_key);
+                    if (tower_geom)
+                    {
+                        tower_x = tower_geom->get_center_x();
+                        tower_y = tower_geom->get_center_y();
+                        tower_z = tower_geom->get_center_z();
+                        tower_r = std::sqrt(tower_x * tower_x + tower_y * tower_y);
+                        tower_eta = tower_geom->get_eta();
+                        tower_phi = tower_geom->get_phi();
+                    }
+                }
+
+                if (towEM)
+                {
+                    for (unsigned int ch = 0; ch < towEM->size(); ++ch)
+                    {
+                        unsigned int tkey = towEM->encode_key(ch);
+
+                        if (static_cast<int>(towEM->getTowerEtaBin(tkey)) == ieta &&
+                            static_cast<int>(towEM->getTowerPhiBin(tkey)) == iphi)
+                        {
+                            TowerInfo* tinfo = towEM->get_tower_at_channel(ch);
+                            if (tinfo)
+                            {
+                                tower_time = tinfo->get_time();
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                v_ieta.push_back(ieta);
+                v_iphi.push_back(iphi);
+                v_e.push_back(tower_e_in_cluster);
+                v_x.push_back(tower_x);
+                v_y.push_back(tower_y);
+                v_z.push_back(tower_z);
+                v_r.push_back(tower_r);
+                v_eta.push_back(tower_eta);
+                v_phi.push_back(tower_phi);
+                v_time.push_back(tower_time);
+            }
+
+            calo_tower_ieta.push_back(v_ieta);
+            calo_tower_iphi.push_back(v_iphi);
+            calo_tower_e.push_back(v_e);
+            calo_tower_x.push_back(v_x);
+            calo_tower_y.push_back(v_y);
+            calo_tower_z.push_back(v_z);
+            calo_tower_r.push_back(v_r);
+            calo_tower_eta.push_back(v_eta);
+            calo_tower_phi.push_back(v_phi);
+            calo_tower_time.push_back(v_time);
+
       //--std::cout << "EMCal x : " << calo_x.back() << ", EMCal y :  " << calo_y.back() << ", EMCal z : " << calo_z.back()
       //--          << ", EMCal r : " << calo_r.back() << ", EMCal phi :  " << calo_phi.back() 
       //--          << ", EMCal eta : " << calo_eta.back() << ", EMcal E : " << calo_energy.back() << std::endl;
@@ -1259,6 +1416,211 @@ void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
   }
 }
 
+void SiliconSeedsAna::processHCalinfo(PHCompositeNode* topNode)
+{
+    topo_clus_e.clear();
+    topo_clus_x.clear();
+    topo_clus_y.clear();
+    topo_clus_z.clear();
+    topo_clus_r.clear();
+    topo_clus_eta.clear();
+    topo_clus_phi.clear();
+
+    topo_clus_chi2.clear();
+    topo_clus_prob.clear();
+
+    topo_clus_emcal_e.clear();
+    topo_clus_ihcal_e.clear();
+    topo_clus_ohcal_e.clear();
+
+    topo_tower_caloid.clear();
+    topo_tower_ieta.clear();
+    topo_tower_iphi.clear();
+    topo_tower_e.clear();
+    topo_tower_x.clear();
+    topo_tower_y.clear();
+    topo_tower_z.clear();
+    topo_tower_eta.clear();
+    topo_tower_phi.clear();
+    topo_tower_time.clear();
+
+    auto clusters = findNode::getClass<RawClusterContainer>(topNode, "TOPOCLUSTER_ALLCALO");
+    //auto clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_CEMC");
+    if (!clusters)
+    {
+      if (TopoClusTree) TopoClusTree->Fill();
+      return;
+    }
+
+    auto geomEM = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
+    auto geomIH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
+    auto geomOH = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
+
+    auto towEM = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
+    auto towIH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
+    auto towOH = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+
+    for (auto it = clusters->getClusters().first; it != clusters->getClusters().second; ++it)
+    {
+        RawCluster* clus = it->second;
+        if (!clus) continue;
+    
+
+        // std::cout <<"============================JY=============================="<<std::endl;
+        // std::cout << "top cluster energy: " << (clus ? clus->get_energy() : -1)
+        //           << std::endl;
+        // std::cout <<"==========================JY================================"<<std::endl;
+
+        const float clus_e   = clus->get_energy();
+        if (clus_e < 0.18) continue; // energy cut for topo clusters, can be adjusted
+
+        const float clus_x   = clus->get_x();
+        const float clus_y   = clus->get_y();
+        const float clus_z   = clus->get_z();
+        const float clus_r   = clus->get_r();
+        const float clus_phi = clus->get_phi();
+        const float clus_eta = -std::log(std::tan(std::atan2(clus_r, clus_z) / 2.0));
+
+        float e_emcal = 0.0;
+        float e_ihcal = 0.0;
+        float e_ohcal = 0.0;
+
+        std::vector<int>   v_caloid;
+        std::vector<int>   v_ieta;
+        std::vector<int>   v_iphi;
+        std::vector<float> v_e;
+        std::vector<float> v_x;
+        std::vector<float> v_y;
+        std::vector<float> v_z;
+        std::vector<float> v_eta;
+        std::vector<float> v_phi;
+        std::vector<float> v_time;
+
+        auto tower_range = clus->get_towers();
+
+        for (auto tower_it = tower_range.first; tower_it != tower_range.second; ++tower_it)
+        {
+            RawTowerDefs::keytype tower_key = tower_it->first;
+            float tower_e_in_cluster = tower_it->second;
+       
+            auto caloid = RawTowerDefs::decode_caloid(tower_key);
+            int ieta = RawTowerDefs::decode_index1(tower_key);
+            int iphi = RawTowerDefs::decode_index2(tower_key);
+       
+            // std::cout <<"============================JY=============================="<<std::endl;
+            // std::cout << "Processing tower - CaloID: " << caloid << ", iEta: " << ieta << ", iPhi: " << iphi << ", Energy in cluster: " << tower_e_in_cluster << std::endl;
+       
+            RawTowerGeomContainer* geom = nullptr;
+            TowerInfoContainer* towerinfos = nullptr;
+          
+            if (caloid == RawTowerDefs::CEMC)
+            {
+                geom = geomEM;
+                towerinfos = towEM;
+                e_emcal += tower_e_in_cluster;
+            }
+            else if (caloid == RawTowerDefs::HCALIN)
+            {
+                geom = geomIH;
+                towerinfos = towIH;
+                e_ihcal += tower_e_in_cluster;
+            }
+            else if (caloid == RawTowerDefs::HCALOUT)
+            {
+                geom = geomOH;
+                towerinfos = towOH;
+                e_ohcal += tower_e_in_cluster;
+            }
+            else
+            {
+                continue;
+            }
+
+            float tower_x = NAN;
+            float tower_y = NAN;
+            float tower_z = NAN;
+            float tower_eta = NAN;
+            float tower_phi = NAN;
+            float tower_time = NAN;
+
+            if (geom)
+            {
+                RawTowerGeom* tower_geom = geom->get_tower_geometry(tower_key);
+                if (tower_geom)
+                {
+                    tower_x = tower_geom->get_center_x();
+                    tower_y = tower_geom->get_center_y();
+                    tower_z = tower_geom->get_center_z();
+                    tower_eta = tower_geom->get_eta();
+                    tower_phi = tower_geom->get_phi();
+                    
+                    // std::cout << "Tower geometry - CaloID: " << caloid << ", iEta: " << ieta << ", iPhi: " << iphi << ", x: " << tower_x << ", y: " << tower_y << ", z: " << tower_z
+		    //           << ", eta: " << tower_eta << ", phi: " << tower_phi << std::endl;
+		    // std::cout <<"==========================JY================================"<<std::endl;
+		}
+	    }
+
+            if (towerinfos)
+            {
+                for (unsigned int ch = 0; ch < towerinfos->size(); ++ch)
+                {
+                    unsigned int tkey = towerinfos->encode_key(ch);
+                    if (static_cast<int>(towerinfos->getTowerEtaBin(tkey)) == ieta &&
+                        static_cast<int>(towerinfos->getTowerPhiBin(tkey)) == iphi)
+                    {
+                        TowerInfo* tinfo = towerinfos->get_tower_at_channel(ch);
+                        if (tinfo) tower_time = tinfo->get_time();
+                        break;
+                    }
+                }
+            }
+
+            v_caloid.push_back(static_cast<int>(caloid));
+            v_ieta.push_back(ieta);
+            v_iphi.push_back(iphi);
+            v_e.push_back(tower_e_in_cluster);
+            v_x.push_back(tower_x);
+            v_y.push_back(tower_y);
+            v_z.push_back(tower_z);
+            v_eta.push_back(tower_eta);
+            v_phi.push_back(tower_phi);
+            v_time.push_back(tower_time);
+        }
+
+	// if (e_emcal/(e_ihcal+e_ohcal+0.00001) < 0.75)
+	// continue;
+
+	topo_clus_e.push_back(clus_e);
+	topo_clus_x.push_back(clus_x);
+	topo_clus_y.push_back(clus_y);
+	topo_clus_z.push_back(clus_z);
+	topo_clus_r.push_back(clus_r);
+	topo_clus_eta.push_back(clus_eta);
+	topo_clus_phi.push_back(clus_phi);
+
+	topo_clus_chi2.push_back(clus->get_chi2());
+	topo_clus_prob.push_back(clus->get_prob());
+
+	topo_clus_emcal_e.push_back(e_emcal);
+	topo_clus_ihcal_e.push_back(e_ihcal);
+	topo_clus_ohcal_e.push_back(e_ohcal);
+        
+        topo_tower_caloid.push_back(v_caloid);
+        topo_tower_ieta.push_back(v_ieta);
+        topo_tower_iphi.push_back(v_iphi);
+        topo_tower_e.push_back(v_e);
+        topo_tower_x.push_back(v_x);
+        topo_tower_y.push_back(v_y);
+        topo_tower_z.push_back(v_z);
+        topo_tower_eta.push_back(v_eta);
+        topo_tower_phi.push_back(v_phi);
+        topo_tower_time.push_back(v_time);
+    }
+
+    if (TopoClusTree) TopoClusTree->Fill();
+}
+                    
+
 //____________________________________________________________________________..
 int SiliconSeedsAna::EndRun(const int /*runnumber*/)
 {
@@ -1326,6 +1688,12 @@ int SiliconSeedsAna::EndRun(const int /*runnumber*/)
   {
     truthTree->Write();
   }
+
+  if (TopoClusTree)
+  {
+      TopoClusTree->Write();
+  }
+
   // Close the file
   m_outfile->Close();
 
