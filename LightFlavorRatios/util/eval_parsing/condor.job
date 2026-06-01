@@ -1,0 +1,14 @@
+Universe           = vanilla
+initialDir         = . 
+Executable         = $(initialDir)/runParser.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 3600
+#logHeader          = $(initialDir)/log/condor_$INT(Process,%05d)
+#Output             = $(logHeader).out
+#Error              = $(logHeader).err
+#Log                = $(logHeader).log
+tempArg            = $(ProcId) * 500
+Arguments          = $INT(tempArg)
+Queue 20
