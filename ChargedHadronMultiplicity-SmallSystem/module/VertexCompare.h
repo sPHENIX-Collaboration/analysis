@@ -24,9 +24,12 @@ class PHCompositeNode;
 
 class TrkrClusterContainer;
 class TrkrClusterHitAssoc;
+class TrkrClusterCrossingAssoc;
 class ActsGeometry;
 class TrackSeedContainer;
 class SvtxVertexMap;
+class SvtxTrackMap;
+class SvtxPHG4ParticleMap;
 class Gl1Packet;
 
 class CentralityInfo;
@@ -44,6 +47,13 @@ class SvtxClusterEval;
 class SvtxHitEval;
 
 using namespace ROOT::Math;
+
+namespace VertexCompareVerbosity
+{
+    inline int fillSilconSeed = 0;
+    inline int fillCluster = 0;
+    inline int fillTruthParticle = 0;
+}
 
 class VertexCompare : public SubsysReco
 {
@@ -90,6 +100,9 @@ class VertexCompare : public SubsysReco
     // set the flag for simulation
     void IsSimulation() { isSimulation = true; };
 
+    // a setter for simulation for truth matching
+    void doTruthMatching() { doTruthMatching_ = true; };
+
   private:
     void FillSiliconSeedTree();
     void FillClusterTree();
@@ -98,6 +111,7 @@ class VertexCompare : public SubsysReco
 
     // flag for simulation
     bool isSimulation = false;
+    bool doTruthMatching_ = false;
 
     TFile *outFile = nullptr;
     TTree *outTree = nullptr;
@@ -107,14 +121,19 @@ class VertexCompare : public SubsysReco
     std::string clusterHitAssocName = "TRKR_CLUSTERHITASSOC";
     std::string geometryNodeName = "ActsGeometry";
     std::string svtxvertexmapName = "SvtxVertexMap";
+    std::string svtxTrackMapName = "SvtxTrackMap";
     std::string seedContainerName = "SiliconTrackSeedContainer";
+    std::string svtxPHG4ParticleMapName = "SvtxPHG4ParticleMap";
     std::string gl1NodeName = "GL1RAWHIT";
     std::string mbdOutNodeName = "MbdOut";
 
     TrkrClusterContainer *clustermap = nullptr;
     TrkrClusterHitAssoc *clusterhitassoc = nullptr;
+    TrkrClusterCrossingAssoc *clustercrossingassoc = nullptr;
     ActsGeometry *geometry = nullptr;
     TrackSeedContainer *silseedmap = nullptr;
+    SvtxTrackMap *svtxTrackMap = nullptr;
+    SvtxPHG4ParticleMap *svtxPHG4ParticleMap = nullptr;
     Gl1Packet *gl1PacketInfo = nullptr;
     MbdOut *m_mbdout = nullptr;
     MinimumBiasInfo *minimumbiasinfo = nullptr;
@@ -138,6 +157,7 @@ class VertexCompare : public SubsysReco
     // float trackerVertexChisq{std::numeric_limits<float>::quiet_NaN()};
     // int trackerVertexNdof{std::numeric_limits<int>::quiet_NaN()};
     int nSvtxVertices{std::numeric_limits<int>::quiet_NaN()};
+    int nSvtxVertices_validCrossing{std::numeric_limits<int>::quiet_NaN()};
     std::vector<int> trackerVertexId = std::vector<int>();
     std::vector<float> trackerVertexX = std::vector<float>();
     std::vector<float> trackerVertexY = std::vector<float>();
@@ -171,6 +191,7 @@ class VertexCompare : public SubsysReco
     std::vector<float> TruthVertexX = std::vector<float>();
     std::vector<float> TruthVertexY = std::vector<float>();
     std::vector<float> TruthVertexZ = std::vector<float>();
+    std::vector<float> TruthVertexT = std::vector<float>();
 
     // silicon seed information
     int nTotalSilSeeds = 0;
@@ -216,6 +237,20 @@ class VertexCompare : public SubsysReco
     std::vector<std::vector<int>> silseed_cluster_gcluster_adc = std::vector<std::vector<int>>();
     std::vector<std::vector<float>> silseed_cluster_gcluster_phiSize = std::vector<std::vector<float>>();
     std::vector<std::vector<float>> silseed_cluster_gcluster_zSize = std::vector<std::vector<float>>();
+    bool hasSvtxPHG4ParticleMap = false;
+    bool svtxPHG4ParticleMapProcessed = false;
+    std::vector<int> silseed_f4a_nMatched = std::vector<int>();
+    std::vector<std::vector<int>> silseed_f4a_truthTrackID = std::vector<std::vector<int>>();
+    std::vector<std::vector<float>> silseed_f4a_truthWeight = std::vector<std::vector<float>>();
+    std::vector<int> silseed_f4a_bestTrackID = std::vector<int>();
+    std::vector<float> silseed_f4a_bestWeight = std::vector<float>();
+    std::vector<int> silseed_f4a_bestG4P_PID = std::vector<int>();
+    std::vector<float> silseed_f4a_bestG4P_E = std::vector<float>();
+    std::vector<float> silseed_f4a_bestG4P_pT = std::vector<float>();
+    std::vector<float> silseed_f4a_bestG4P_eta = std::vector<float>();
+    std::vector<float> silseed_f4a_bestG4P_phi = std::vector<float>();
+    std::vector<std::vector<int>> silseed_f4a_bestG4P_ancestor_trackID = std::vector<std::vector<int>>();
+    std::vector<std::vector<int>> silseed_f4a_bestG4P_ancestor_PID = std::vector<std::vector<int>>();
 
     // (intt) cluster information
     std::vector<uint64_t> clusterKey = std::vector<uint64_t>();
@@ -234,6 +269,7 @@ class VertexCompare : public SubsysReco
     std::vector<int> cluster_zSize = std::vector<int>();
     std::vector<int> cluster_adc = std::vector<int>();
     std::vector<int> cluster_timeBucketID = std::vector<int>();
+    std::vector<int> cluster_crossing = std::vector<int>();
     std::vector<float> cluster_LocalX = std::vector<float>();
     std::vector<float> cluster_LocalY = std::vector<float>();
     // truth matching for (INTT) clusters by max_truth_particle_by_energy()

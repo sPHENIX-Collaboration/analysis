@@ -71,9 +71,11 @@
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainer.h>
+#include <trackbase/TrkrClusterCrossingAssoc.h>
 #include <trackbase/TrkrClusterHitAssoc.h>
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
+#include <trackbase_historic/SvtxPHG4ParticleMap.h>
 #include <trackbase_historic/TrackAnalysisUtils.h>
 #include <trackbase_historic/TrackSeed.h>
 #include <trackbase_historic/TrackSeedContainer.h>
@@ -135,15 +137,36 @@ VertexCompare::VertexCompare(const std::string &name)
 }
 
 //____________________________________________________________________________..
-VertexCompare::~VertexCompare() { std::cout << "VertexCompare::~VertexCompare() Calling dtor" << std::endl; }
+VertexCompare::~VertexCompare()
+{
+    delete svtx_evalstack;
+    svtx_evalstack = nullptr;
+    clustereval = nullptr;
+    hiteval = nullptr;
+    truth_eval = nullptr;
+
+    if (outFile)
+    {
+        if (outFile->IsOpen())
+        {
+            outFile->Close();
+        }
+        delete outFile;
+        outFile = nullptr;
+        outTree = nullptr;
+    }
+
+    std::cout << "VertexCompare::~VertexCompare() Calling dtor" << std::endl;
+}
 
 //____________________________________________________________________________..
 int VertexCompare::Init(PHCompositeNode *topNode)
 {
     outFile = new TFile(outFileName.c_str(), "RECREATE");
     outTree = new TTree("VTX", "VTX");
-    // outTree->OptimizeBaskets();
-    // outTree->SetAutoSave(-5e6);
+    outTree->SetAutoFlush(-10 * 1024 * 1024);
+    outTree->SetAutoSave(-100 * 1024 * 1024);
+    outTree->SetMaxVirtualSize(64 * 1024 * 1024);
 
     outTree->Branch("counter", &counter, "counter/I");
     outTree->Branch("is_min_bias", &is_min_bias);
@@ -158,6 +181,7 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     outTree->Branch("mbdVertexCrossing", &mbdVertexCrossing);
     outTree->Branch("MBD_charge_sum", &MBD_charge_sum);
     outTree->Branch("nSvtxVertices", &nSvtxVertices);
+    outTree->Branch("nSvtxVertices_validCrossing", &nSvtxVertices_validCrossing);
     outTree->Branch("trackerVertexId", &trackerVertexId);
     outTree->Branch("trackerVertexX", &trackerVertexX);
     outTree->Branch("trackerVertexY", &trackerVertexY);
@@ -217,6 +241,7 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     outTree->Branch("cluster_zSize", &cluster_zSize);
     outTree->Branch("cluster_adc", &cluster_adc);
     outTree->Branch("cluster_timeBucketID", &cluster_timeBucketID);
+    outTree->Branch("cluster_crossing", &cluster_crossing);
     outTree->Branch("cluster_ladderZId", &cluster_ladderZId);     // for intt ladder z id
     outTree->Branch("cluster_ladderPhiId", &cluster_ladderPhiId); // for intt ladder phi id
     outTree->Branch("cluster_LocalX", &cluster_LocalX);
@@ -255,6 +280,7 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("TruthVertexX", &TruthVertexX);
         outTree->Branch("TruthVertexY", &TruthVertexY);
         outTree->Branch("TruthVertexZ", &TruthVertexZ);
+        outTree->Branch("TruthVertexT", &TruthVertexT);
 
         outTree->Branch("silseed_ngmvtx", &silseed_ngmvtx);
         outTree->Branch("silseed_ngintt", &silseed_ngintt);
@@ -270,6 +296,20 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("silseed_cluster_gcluster_adc", &silseed_cluster_gcluster_adc);
         outTree->Branch("silseed_cluster_gcluster_phiSize", &silseed_cluster_gcluster_phiSize);
         outTree->Branch("silseed_cluster_gcluster_zSize", &silseed_cluster_gcluster_zSize);
+        outTree->Branch("hasSvtxPHG4ParticleMap", &hasSvtxPHG4ParticleMap);
+        outTree->Branch("svtxPHG4ParticleMapProcessed", &svtxPHG4ParticleMapProcessed);
+        outTree->Branch("silseed_f4a_nMatched", &silseed_f4a_nMatched);
+        outTree->Branch("silseed_f4a_truthTrackID", &silseed_f4a_truthTrackID);
+        outTree->Branch("silseed_f4a_truthWeight", &silseed_f4a_truthWeight);
+        outTree->Branch("silseed_f4a_bestTrackID", &silseed_f4a_bestTrackID);
+        outTree->Branch("silseed_f4a_bestWeight", &silseed_f4a_bestWeight);
+        outTree->Branch("silseed_f4a_bestG4P_PID", &silseed_f4a_bestG4P_PID);
+        outTree->Branch("silseed_f4a_bestG4P_E", &silseed_f4a_bestG4P_E);
+        outTree->Branch("silseed_f4a_bestG4P_pT", &silseed_f4a_bestG4P_pT);
+        outTree->Branch("silseed_f4a_bestG4P_eta", &silseed_f4a_bestG4P_eta);
+        outTree->Branch("silseed_f4a_bestG4P_phi", &silseed_f4a_bestG4P_phi);
+        outTree->Branch("silseed_f4a_bestG4P_ancestor_trackID", &silseed_f4a_bestG4P_ancestor_trackID);
+        outTree->Branch("silseed_f4a_bestG4P_ancestor_PID", &silseed_f4a_bestG4P_ancestor_PID);
 
         outTree->Branch("mvtx_seedcluster_matchedG4P_trackID", &mvtx_seedcluster_matchedG4P_trackID);
         outTree->Branch("mvtx_seedcluster_matchedG4P_PID", &mvtx_seedcluster_matchedG4P_PID);
@@ -398,31 +438,58 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
 
     clustermap = findNode::getClass<TrkrClusterContainer>(dstNode, clusterContainerName);
     clusterhitassoc = findNode::getClass<TrkrClusterHitAssoc>(dstNode, clusterHitAssocName);
+    clustercrossingassoc = findNode::getClass<TrkrClusterCrossingAssoc>(dstNode, "TRKR_CLUSTERCROSSINGASSOC");
     geometry = findNode::getClass<ActsGeometry>(topNode, geometryNodeName);
     silseedmap = findNode::getClass<TrackSeedContainer>(topNode, seedContainerName);
+    svtxTrackMap = findNode::getClass<SvtxTrackMap>(topNode, svtxTrackMapName);
     gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, gl1NodeName);
     m_mbdout = findNode::getClass<MbdOut>(topNode, mbdOutNodeName);
     minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
     m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
 
+    if (!m_dst_mbdvertexmap)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find MbdVertexMap node " << "MbdVertexMap" << std::endl;
+        // return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    if (!m_dst_vertexmap)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find SvtxVertexMap node " << "SvtxVertexMap" << std::endl;
+        // return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    if (!globalvertexmap)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find GlobalVertexMap node " << "GlobalVertexMap" << std::endl;
+        // return Fun4AllReturnCodes::ABORTEVENT;
+    }
     if (!clustermap)
     {
-        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR] - can't find cluster map node " << clusterContainerName << std::endl;
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find cluster map node " << clusterContainerName << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
     }
     if (!clusterhitassoc)
     {
-        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR] - can't find cluster hit association node " << clusterHitAssocName << std::endl;
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find cluster hit association node " << clusterHitAssocName << std::endl;
+        // return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    if (!clustercrossingassoc)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find cluster crossing association node TRKR_CLUSTERCROSSINGASSOC" << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
     }
     if (!geometry)
     {
-        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR] - can't find ActsGeometry node " << geometryNodeName << std::endl;
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find ActsGeometry node " << geometryNodeName << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
     }
     if (!silseedmap)
     {
-        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR] - can't find silicon seed map node " << seedContainerName << std::endl;
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find silicon seed map node " << seedContainerName << std::endl;
+        // return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    if (!svtxTrackMap)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find SvtxTrackMap node " << svtxTrackMapName << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
     }
     if (!gl1PacketInfo)
@@ -545,12 +612,12 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
                 }
 
                 // print out for debugging
-                std::cout << "Tracker vertex ID " << m_dst_vertex->get_id() << " with crossing " << m_dst_vertex->get_beam_crossing() << " m_dst_vertex->size_tracks() = " << m_dst_vertex->size_tracks() << " trackIDs.size() = " << trackIDs.size() << ": [";
-                for (const auto &trackID : trackIDs)
-                {
-                    std::cout << trackID << " ";
-                }
-                std::cout << "]" << std::endl;
+                // std::cout << "Tracker vertex ID " << m_dst_vertex->get_id() << " with crossing " << m_dst_vertex->get_beam_crossing() << " m_dst_vertex->size_tracks() = " << m_dst_vertex->size_tracks() << " trackIDs.size() = " << trackIDs.size() << ": [";
+                // for (const auto &trackID : trackIDs)
+                // {
+                //     std::cout << trackID << " ";
+                // }
+                // std::cout << "]" << std::endl;
 
                 trackerVertexTrackIDs.push_back(trackIDs);
 
@@ -570,6 +637,10 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
             }
         }
     }
+
+    nSvtxVertices = trackerVertexId.size();
+    // count vertices with valid crossing from trackerVertexCrossing (not SHORT_MAX)
+    nSvtxVertices_validCrossing = std::count_if(trackerVertexCrossing.begin(), trackerVertexCrossing.end(), [](short crossing) { return crossing != std::numeric_limits<short>::max(); });
 
     // loop over all vertices in MbdVertexMap and fill all vertices to ntuple
     // n_MBDVertex = m_dst_mbdvertexmap->size();
@@ -597,16 +668,27 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     // simulation setup
     if (isSimulation)
     {
+        svtxPHG4ParticleMap = findNode::getClass<SvtxPHG4ParticleMap>(topNode, svtxPHG4ParticleMapName);
+        if (!svtxPHG4ParticleMap)
+        {
+            std::cout << "[WARNING/ERROR] VertexCompare::process_event - [ERROR/WARNING] - can't find SvtxPHG4ParticleMap node " << svtxPHG4ParticleMapName << std::endl;
+        }
+        hasSvtxPHG4ParticleMap = (svtxPHG4ParticleMap != nullptr);
+        svtxPHG4ParticleMapProcessed = (svtxPHG4ParticleMap != nullptr && svtxPHG4ParticleMap->processed());
+        // svtxPHG4ParticleMap->identify();
+
         m_truth_info = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
         if (!m_truth_info)
         {
-            std::cout << "[WARNING/ERROR] VertexCompare::process_event - [ERROR] - can't find G4TruthInfoContainer node " << "G4TruthInfo" << std::endl;
+            std::cout << "[WARNING/ERROR] VertexCompare::process_event - [ERROR/WARNING] - can't find G4TruthInfoContainer node " << "G4TruthInfo" << std::endl;
             // return Fun4AllReturnCodes::ABORTEVENT;
         }
 
         if (!svtx_evalstack)
         {
             svtx_evalstack = new SvtxEvalStack(topNode);
+            svtx_evalstack->set_strict(false);
+            svtx_evalstack->do_caching(false);
             clustereval = svtx_evalstack->get_cluster_eval();
             hiteval = svtx_evalstack->get_hit_eval();
             truth_eval = svtx_evalstack->get_truth_eval();
@@ -616,7 +698,9 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     }
 
     FillSiliconSeedTree();
+
     FillClusterTree();
+
     if (isSimulation)
     {
         FillTruthParticleTree();
@@ -644,6 +728,27 @@ void VertexCompare::FillSiliconSeedTree()
 
     std::vector<int> ancestor_trackIDs;
     std::vector<int> ancestor_PIDs;
+
+    std::map<unsigned int, unsigned int> svtxTrackIdBySiliconSeed; // silicon seed ID -> SvtxTrack ID
+    if (svtxTrackMap && doTruthMatching_)
+    {
+        for (auto trackIter = svtxTrackMap->begin(); trackIter != svtxTrackMap->end(); ++trackIter)
+        {
+            SvtxTrack *track = trackIter->second;
+            if (!track || !track->get_silicon_seed())
+            {
+                continue;
+            }
+
+            const auto silicon_seed_id = silseedmap->find(track->get_silicon_seed());
+
+            // print out the svtx track properties and its associated silicon seed properties for debugging --> they are the same, verified
+            // std::cout << "SvtxTrack ID: " << track->get_id() << ", associated silicon seed ID: " << silicon_seed_id << ", pt: " << track->get_pt() << ", eta: " << track->get_eta() << ", phi: " << track->get_phi() << std::endl;
+            // std::cout << "Associated silicon seed properties, seed ID: " << silicon_seed_id << ", pt: " << track->get_silicon_seed()->get_pt() << ", eta: " << track->get_silicon_seed()->get_eta() << ", phi: " << track->get_silicon_seed()->get_phi() << std::endl;
+
+            svtxTrackIdBySiliconSeed.emplace(static_cast<unsigned int>(silicon_seed_id), track->get_id());
+        }
+    }
 
     // helper function to find the vertex index based on the seed crossing and index
     // look up trackerVertexCrossing and trackerVertexTrackIDs, the seed crossing should match the trackerVertexCrossing
@@ -754,8 +859,8 @@ void VertexCompare::FillSiliconSeedTree()
             else
             {
                 // set to some minimum value to indicate they are not associated with any vertex
-                silseed_eta_vtx.push_back(-1*std::numeric_limits<float>::max());
-                silseed_phi_vtx.push_back(-1*std::numeric_limits<float>::max());
+                silseed_eta_vtx.push_back(-1 * std::numeric_limits<float>::max());
+                silseed_phi_vtx.push_back(-1 * std::numeric_limits<float>::max());
             }
         }
         silseed_charge.push_back((seed->get_qOverR() > 0) ? 1 : -1);
@@ -851,6 +956,7 @@ void VertexCompare::FillSiliconSeedTree()
                 mvtx_seedcluster_strobeID.push_back(MvtxDefs::getStrobeId(cluskey));
                 mvtx_seedcluster_matchedcrossing.push_back(seed->get_crossing());
                 // get hitrow and hitcol from cluster hit assoc
+                if (clusterhitassoc)
                 {
                     Clean(hit_x);
                     Clean(hit_y);
@@ -889,6 +995,14 @@ void VertexCompare::FillSiliconSeedTree()
                     mvtx_seedcluster_hitZ.push_back(hit_z);
                     mvtx_seedcluster_hitrow.push_back(hit_rows);
                     mvtx_seedcluster_hitcol.push_back(hit_cols);
+                }
+                else
+                {
+                    mvtx_seedcluster_hitX.push_back(std::vector<float>());
+                    mvtx_seedcluster_hitY.push_back(std::vector<float>());
+                    mvtx_seedcluster_hitZ.push_back(std::vector<float>());
+                    mvtx_seedcluster_hitrow.push_back(std::vector<int>());
+                    mvtx_seedcluster_hitcol.push_back(std::vector<int>());
                 }
 
                 // if simulation, get matched G4 particle info
@@ -931,7 +1045,6 @@ void VertexCompare::FillSiliconSeedTree()
                         mvtx_seedcluster_matchedG4P_ancestor_trackID.push_back(std::vector<int>());
                         mvtx_seedcluster_matchedG4P_ancestor_PID.push_back(std::vector<int>());
                     }
-
                 }
             }
             else
@@ -941,6 +1054,7 @@ void VertexCompare::FillSiliconSeedTree()
                 silseed_cluster_timeBucketID[silseed_cluster_timeBucketID.size() - 1].push_back(std::numeric_limits<int>::max());
             }
 
+            // Fill branch for simulation
             if (isSimulation)
             {
                 std::pair<TrkrDefs::cluskey, std::shared_ptr<TrkrCluster>> truthclus = clustereval->max_truth_cluster_by_energy(cluskey);
@@ -990,8 +1104,8 @@ void VertexCompare::FillSiliconSeedTree()
                     silseed_cluster_gcluster_phiSize.back().push_back(-1 * std::numeric_limits<float>::max());
                     silseed_cluster_gcluster_zSize.back().push_back(-1 * std::numeric_limits<float>::max());
                 }
-            }
-        }
+            } //
+        } // end loop over clusters associated with the seed
         silseed_nMvtx.push_back(nMvtx);
         silseed_nIntt.push_back(nIntt);
         if (isSimulation)
@@ -999,28 +1113,125 @@ void VertexCompare::FillSiliconSeedTree()
             silseed_ngmvtx.push_back(ngMvtx);
             silseed_ngintt.push_back(ngIntt);
         }
-    }
-    nTotalSilSeeds = silseed_id.size();
 
-    std::cout << "Total silicon seeds in this event: " << nTotalSilSeeds << " with valid crossing: " << nSilSeedsValidCrossing << std::endl;
-
-    
-    // now print out the crossing seed id map for debugging
-    std::cout << "Crossing to seed ID mapping:" << std::endl;
-    for (const auto &[crossing, seed_id_vertex_id_pairs] : crossing_SeedIdVertexId_map)
-    {
-        std::cout << "  Crossing " << crossing << ": Seed IDs [";
-        for (size_t i = 0; i < seed_id_vertex_id_pairs.size(); ++i)
+        // get F4A truth matching information if it is simulation
+        if (isSimulation && doTruthMatching_)
         {
-            std::cout << "(" << seed_id_vertex_id_pairs[i].first << ", " << seed_id_vertex_id_pairs[i].second << ")";
-            if (i != seed_id_vertex_id_pairs.size() - 1)
+            std::vector<int> truth_track_ids;
+            std::vector<float> truth_weights;
+            std::vector<int> best_ancestor_track_ids;
+            std::vector<int> best_ancestor_pids;
+
+            int best_track_id = std::numeric_limits<int>::max();
+            float best_weight = -1 * std::numeric_limits<float>::max();
+            int best_pid = std::numeric_limits<int>::max();
+            float best_e = -1 * std::numeric_limits<float>::max();
+            float best_pt = -1 * std::numeric_limits<float>::max();
+            float best_eta = -1 * std::numeric_limits<float>::max();
+            float best_phi = -1 * std::numeric_limits<float>::max();
+
+            const auto svtx_track_id_iter = svtxTrackIdBySiliconSeed.find(static_cast<unsigned int>(seed_id));
+            if (svtx_track_id_iter != svtxTrackIdBySiliconSeed.end() && svtxPHG4ParticleMap)
             {
-                std::cout << ", ";
+                const unsigned int svtx_track_id = svtx_track_id_iter->second;
+                // std::cout << "Seed ID " << seed_id << " is associated with SvtxTrack ID " << svtx_track_id << std::endl;
+                const auto &truth_set = svtxPHG4ParticleMap->get(svtx_track_id);
+
+                for (auto weight_iter = truth_set.rbegin(); weight_iter != truth_set.rend(); ++weight_iter)
+                {
+                    const float weight = weight_iter->first;
+                    const auto &truth_ids = weight_iter->second;
+                    for (auto truth_id_iter = truth_ids.rbegin(); truth_id_iter != truth_ids.rend(); ++truth_id_iter)
+                    {
+                        truth_track_ids.push_back(*truth_id_iter);
+                        truth_weights.push_back(weight);
+                    }
+                }
+
+                if (!truth_track_ids.empty())
+                {
+                    best_weight = truth_weights.front();
+                    best_track_id = truth_track_ids.front();
+
+                    PHG4Particle *best_particle = (m_truth_info) ? m_truth_info->GetParticle(best_track_id) : nullptr;
+                    if (best_particle)
+                    {
+                        best_pid = best_particle->get_pid();
+                        best_e = best_particle->get_e();
+
+                        ROOT::Math::PxPyPzEVector best_p4(best_particle->get_px(), best_particle->get_py(), best_particle->get_pz(), best_particle->get_e());
+                        best_pt = best_p4.Pt();
+                        best_eta = best_p4.Eta();
+                        best_phi = best_p4.Phi();
+
+                        PHG4Particle *ancestor = m_truth_info->GetParticle(best_particle->get_parent_id());
+                        while (ancestor != nullptr)
+                        {
+                            best_ancestor_track_ids.push_back(ancestor->get_track_id());
+                            best_ancestor_pids.push_back(ancestor->get_pid());
+                            ancestor = m_truth_info->GetParticle(ancestor->get_parent_id());
+                        }
+                    }
+                }
+                // else
+                // {
+                //     std::cout << "VertexCompare::FillSiliconSeedTree - [WARNING] - no truth track matched for seed ID " << seed_id << std::endl;
+                // }
+            }
+
+            silseed_f4a_nMatched.push_back(static_cast<int>(truth_track_ids.size()));
+            silseed_f4a_truthTrackID.push_back(truth_track_ids);
+            silseed_f4a_truthWeight.push_back(truth_weights);
+            silseed_f4a_bestTrackID.push_back(best_track_id);
+            silseed_f4a_bestWeight.push_back(best_weight);
+            silseed_f4a_bestG4P_PID.push_back(best_pid);
+            silseed_f4a_bestG4P_E.push_back(best_e);
+            silseed_f4a_bestG4P_pT.push_back(best_pt);
+            silseed_f4a_bestG4P_eta.push_back(best_eta);
+            silseed_f4a_bestG4P_phi.push_back(best_phi);
+            silseed_f4a_bestG4P_ancestor_trackID.push_back(best_ancestor_track_ids);
+            silseed_f4a_bestG4P_ancestor_PID.push_back(best_ancestor_pids);
+        }
+
+    } // end loop over seeds
+    nTotalSilSeeds = silseed_id.size();
+    if (isSimulation && doTruthMatching_)
+    {
+        int nSilSeedsValidCrossing_noTruthMatch = 0;
+        for (size_t i = 0; i < silseed_id.size(); ++i)
+        {
+            if (silseed_crossing[i] != SHRT_MAX && silseed_f4a_nMatched[i] < 1)
+            {
+                ++nSilSeedsValidCrossing_noTruthMatch;
             }
         }
-        std::cout << "]" << std::endl;
+
+        std::cout << "Total silicon seeds in this event: " << nTotalSilSeeds << " with valid crossing: " << nSilSeedsValidCrossing << " and valid crossing but no truth match: " << nSilSeedsValidCrossing_noTruthMatch << std::endl;
     }
-    
+    else if (isSimulation)
+    {
+        std::cout << "Total silicon seeds in this event: " << nTotalSilSeeds << " with valid crossing: " << nSilSeedsValidCrossing << std::endl;
+    }
+    else
+    {
+        std::cout << "Total silicon seeds in this event: " << nTotalSilSeeds << " with valid crossing: " << nSilSeedsValidCrossing << std::endl;
+    }
+
+    // now print out the crossing seed id map for debugging
+    // std::cout << "Crossing to seed ID mapping:" << std::endl;
+    // for (const auto &[crossing, seed_id_vertex_id_pairs] : crossing_SeedIdVertexId_map)
+    // {
+    //     std::cout << "  Crossing " << crossing << ": Seed IDs [";
+    //     for (size_t i = 0; i < seed_id_vertex_id_pairs.size(); ++i)
+    //     {
+    //         std::cout << "(" << seed_id_vertex_id_pairs[i].first << ", " << seed_id_vertex_id_pairs[i].second << ")";
+    //         if (i != seed_id_vertex_id_pairs.size() - 1)
+    //         {
+    //             std::cout << ", ";
+    //         }
+    //     }
+    //     std::cout << "]" << std::endl;
+    // }
 }
 
 //____________________________________________________________________________..
@@ -1068,6 +1279,19 @@ void VertexCompare::FillClusterTree()
                     cluster_ladderZId.push_back(InttDefs::getLadderZId(key));
                     cluster_ladderPhiId.push_back(InttDefs::getLadderPhiId(key));
                     cluster_timeBucketID.push_back(InttDefs::getTimeBucketId(key));
+                    {
+                        int crossing = -std::numeric_limits<int>::max();
+                        if (clustercrossingassoc)
+                        {
+                            auto crossing_range = clustercrossingassoc->getCrossings(key);
+                            if (crossing_range.first != crossing_range.second)
+                            {
+                                crossing = crossing_range.first->second;
+                            }
+                        }
+                        cluster_crossing.push_back(crossing);
+                    }
+                    // std::cout << "INTT cluster key: " << key << ", timeBucketID: " << InttDefs::getTimeBucketId(key) << ", crossing: " << cluster_crossing.back() << std::endl;
                     cluster_LocalX.push_back(cluster->getLocalX());
                     cluster_LocalY.push_back(cluster->getLocalY());
                     break;
@@ -1101,10 +1325,10 @@ void VertexCompare::FillClusterTree()
                     {
                         cluster_matchedG4P_trackID.push_back(std::numeric_limits<int>::max());
                         cluster_matchedG4P_PID.push_back(std::numeric_limits<int>::max());
-                        cluster_matchedG4P_E.push_back(-1*std::numeric_limits<float>::max());
-                        cluster_matchedG4P_pT.push_back(-1*std::numeric_limits<float>::max());
-                        cluster_matchedG4P_eta.push_back(-1*std::numeric_limits<float>::max());
-                        cluster_matchedG4P_phi.push_back(-1*std::numeric_limits<float>::max());
+                        cluster_matchedG4P_E.push_back(-1 * std::numeric_limits<float>::max());
+                        cluster_matchedG4P_pT.push_back(-1 * std::numeric_limits<float>::max());
+                        cluster_matchedG4P_eta.push_back(-1 * std::numeric_limits<float>::max());
+                        cluster_matchedG4P_phi.push_back(-1 * std::numeric_limits<float>::max());
                     }
                 }
             }
@@ -1138,6 +1362,7 @@ void VertexCompare::FillTruthParticleTree()
             TruthVertexX.push_back(point->get_x());
             TruthVertexY.push_back(point->get_y());
             TruthVertexZ.push_back(point->get_z());
+            TruthVertexT.push_back(point->get_t());
         }
     }
 
@@ -1350,7 +1575,10 @@ void VertexCompare::FillTruthParticleTree()
     Clean(ancestor_PIDs);
 
     const auto sPHENIXprimary_particle_range = m_truth_info->GetSPHENIXPrimaryParticleRange();
-    std::cout << "Number of sPHENIX primary particles: " << std::distance(sPHENIXprimary_particle_range.first, sPHENIXprimary_particle_range.second) << std::endl;
+    if (VertexCompareVerbosity::fillTruthParticle > 5)
+    {
+        std::cout << "Number of sPHENIX primary particles: " << std::distance(sPHENIXprimary_particle_range.first, sPHENIXprimary_particle_range.second) << std::endl;
+    }
     for (auto iter = sPHENIXprimary_particle_range.first; iter != sPHENIXprimary_particle_range.second; ++iter)
     {
         PHG4Particle *ptcl = iter->second;
@@ -1372,13 +1600,16 @@ void VertexCompare::FillTruthParticleTree()
                                      sPHENIXPrimary_recocluster_globalX, sPHENIXPrimary_recocluster_globalY, sPHENIXPrimary_recocluster_globalZ, sPHENIXPrimary_recocluster_r, sPHENIXPrimary_recocluster_phi, sPHENIXPrimary_recocluster_eta, sPHENIXPrimary_recocluster_phisize, sPHENIXPrimary_recocluster_zsize, sPHENIXPrimary_recocluster_adc);
 
         // print out the truth particle info and how many truth and reco clusters are matched for debugging
-        std::cout << "sPHENIX Primary Particle - trackID: " << real_ptcl->get_track_id() << ", PID: " << real_ptcl->get_pid() << ", pT: " << sPHENIXPrimary_pT.back() << ", eta: " << sPHENIXPrimary_eta.back() << ", phi: " << sPHENIXPrimary_phi.back() << ", E: " << sPHENIXPrimary_E.back() << std::endl;
-        std::cout << "  Matched truth clusters: " << sPHENIXPrimary_truthcluster_X.back().size() << std::endl;
-        std::cout << "  Matched reco clusters: " << sPHENIXPrimary_recocluster_globalX.back().size() << std::endl;
-        // flag a particle if it has more reco clusters than truth clusters
-        if (sPHENIXPrimary_recocluster_globalX.back().size() > sPHENIXPrimary_truthcluster_X.back().size())
+        if (VertexCompareVerbosity::fillTruthParticle > 5)
         {
-            std::cout << "  *** Particle has more reco clusters than truth clusters ***" << std::endl;
+            std::cout << "sPHENIX Primary Particle - trackID: " << real_ptcl->get_track_id() << ", PID: " << real_ptcl->get_pid() << ", pT: " << sPHENIXPrimary_pT.back() << ", eta: " << sPHENIXPrimary_eta.back() << ", phi: " << sPHENIXPrimary_phi.back() << ", E: " << sPHENIXPrimary_E.back() << std::endl;
+            std::cout << "  Matched truth clusters: " << sPHENIXPrimary_truthcluster_X.back().size() << std::endl;
+            std::cout << "  Matched reco clusters: " << sPHENIXPrimary_recocluster_globalX.back().size() << std::endl;
+            // flag a particle if it has more reco clusters than truth clusters
+            if (sPHENIXPrimary_recocluster_globalX.back().size() > sPHENIXPrimary_truthcluster_X.back().size())
+            {
+                std::cout << "  *** Particle has more reco clusters than truth clusters ***" << std::endl;
+            }
         }
     }
     // again clean it before reusing for all PHG4 particles
@@ -1423,11 +1654,14 @@ void VertexCompare::Cleanup()
     N_sPHENIXPrimary = 0;
     N_AllPHG4Ptcl = 0;
     nTruthVertex = 0;
+    hasSvtxPHG4ParticleMap = false;
+    svtxPHG4ParticleMapProcessed = false;
 
     Clean(firedTriggers);
     Clean(TruthVertexX);
     Clean(TruthVertexY);
     Clean(TruthVertexZ);
+    Clean(TruthVertexT);
 
     Clean(mbdVertex);
     Clean(mbdVertexId);
@@ -1483,6 +1717,18 @@ void VertexCompare::Cleanup()
     Clean(silseed_cluster_gcluster_adc);
     Clean(silseed_cluster_gcluster_phiSize);
     Clean(silseed_cluster_gcluster_zSize);
+    Clean(silseed_f4a_nMatched);
+    Clean(silseed_f4a_truthTrackID);
+    Clean(silseed_f4a_truthWeight);
+    Clean(silseed_f4a_bestTrackID);
+    Clean(silseed_f4a_bestWeight);
+    Clean(silseed_f4a_bestG4P_PID);
+    Clean(silseed_f4a_bestG4P_E);
+    Clean(silseed_f4a_bestG4P_pT);
+    Clean(silseed_f4a_bestG4P_eta);
+    Clean(silseed_f4a_bestG4P_phi);
+    Clean(silseed_f4a_bestG4P_ancestor_trackID);
+    Clean(silseed_f4a_bestG4P_ancestor_PID);
 
     Clean(clusterKey);
     Clean(cluster_layer);
@@ -1498,6 +1744,7 @@ void VertexCompare::Cleanup()
     Clean(cluster_zSize);
     Clean(cluster_adc);
     Clean(cluster_timeBucketID);
+    Clean(cluster_crossing);
     Clean(cluster_ladderZId);
     Clean(cluster_ladderPhiId);
     Clean(cluster_LocalX);
@@ -1640,9 +1887,21 @@ int VertexCompare::EndRun(const int runnumber) { return Fun4AllReturnCodes::EVEN
 //____________________________________________________________________________..
 int VertexCompare::End(PHCompositeNode *topNode)
 {
-    outFile->Write("", TObject::kOverwrite);
-    outFile->Close();
-    delete outFile;
+    if (outFile)
+    {
+        outFile->cd();
+        outTree->Write("", TObject::kOverwrite);
+        outFile->Close();
+        delete outFile;
+        outFile = nullptr;
+        outTree = nullptr;
+    }
+
+    delete svtx_evalstack;
+    svtx_evalstack = nullptr;
+    clustereval = nullptr;
+    hiteval = nullptr;
+    truth_eval = nullptr;
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
