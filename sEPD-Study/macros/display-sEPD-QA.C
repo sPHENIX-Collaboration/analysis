@@ -98,13 +98,16 @@ class DisplaySEPDQA
   int m_nChannels{744};
 
   // std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/all-rings";
-  std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/without-ring-0";
+  // std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/without-ring-0";
+  std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test";
+
   std::string m_EP_base_output_suffix = "ApplyFlattening/output/hist/QVecCalib-68144.root";
 
   std::map<std::string, std::string> m_EP_files = {
       // {"_default", std::format("{}/stage-QVecCalib-default-hotmap/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_0", std::format("{}/stage-QVecCalib-0.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_50", std::format("{}/stage-QVecCalib-50.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
+      {"_25", std::format("{}/stage-QVecCalib-25.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_10", std::format("{}/stage-QVecCalib-10.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_5", std::format("{}/stage-QVecCalib-5.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)}
   };
@@ -182,23 +185,18 @@ void DisplaySEPDQA::draw_EP_Study()
 
   // ---------------------------------------------------
 
-  // std::vector<short int> my_colors = {kBlack, kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
-  std::vector<short int> my_colors = {kRed + 1, kAzure + 1, kGreen + 2, kMagenta + 1};
-  // std::vector<std::string> legend_names = {"Current [Tower Mask]",
-  //                                          "0.5#leq N_{mip}",
-  //                                          "0.5#leq N_{mip}#leq 50",
-  //                                          "0.5#leq N_{mip}#leq 10",
-  //                                          "0.5#leq N_{mip}#leq 5"};
+  std::vector<short int> my_colors = {kRed + 1, kAzure + 1, kOrange + 7, kGreen + 2, kMagenta + 1};
 
   std::vector<std::string> legend_names = {"0.5#leq N_{mip}",
-                                           "0.5#leq N_{mip}#leq 50",
-                                           "0.5#leq N_{mip}#leq 10",
-                                           "0.5#leq N_{mip}#leq 5"};
+                                           "0.5#leq N_{mip}#leq50",
+                                           "0.5#leq N_{mip}#leq25",
+                                           "0.5#leq N_{mip}#leq10",
+                                           "0.5#leq N_{mip}#leq5"};
 
-  // std::vector<std::string> tags = {"_default", "_0", "_50", "_10", "_5"};
-  std::vector<std::string> tags = {"_0", "_50", "_10", "_5"};
+  std::vector<std::string> tags = {"_0", "_50", "_25", "_10", "_5"};
 
   {
+    c1->SetTopMargin(.02F);
     c1->SetLeftMargin(.12F);
 
     size_t plot_idx = 0;
@@ -253,10 +251,17 @@ void DisplaySEPDQA::draw_EP_Study()
       {
         hist->Draw("hist l p");
         hist->Draw("same p e X0");
-        hist->SetTitle("Event Plane Resolution");
-        // hist->GetYaxis()->SetTitle("#sqrt{2#LTcos(2(#Psi^{N}_{2}-#Psi^{S}_{2}))#GT} = #sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
-        hist->GetYaxis()->SetTitle("#sqrt{2#LTRe(Q^{S}_{2} Q^{N*}_{2}) / (|Q^{S}_{2}||Q^{N}_{2}|)#GT}");
+        hist->SetTitle("; Centrality [%]; sEPD #Psi_{2} Resolution");
+        hist->GetYaxis()->SetTitleSize(0.06F);
+        hist->GetXaxis()->SetTitleSize(0.05F);
+
+        hist->GetYaxis()->SetTitleOffset(0.9F);
+        hist->GetXaxis()->SetTitleOffset(0.8F);
+
+        hist->GetYaxis()->SetLabelSize(0.04F);
+        hist->GetXaxis()->SetLabelSize(0.04F);
         hist->GetYaxis()->SetRangeUser(0, 0.6);
+        hist->GetXaxis()->SetRangeUser(0, 59.5);
       }
       else
       {
@@ -286,12 +291,56 @@ void DisplaySEPDQA::draw_EP_Study()
 
   // ---------------------------------------------------
 
+  {
+    auto* hEP_thresh_50 = m_hists["hEP_res_sqrt_2_50"].get();
+
+    hEP_thresh_50->Draw("hist l p");
+    hEP_thresh_50->Draw("same p e X0");
+
+    hEP_thresh_50->SetTitle("; Centrality [%]; sEPD #Psi_{2} Resolution");
+
+    hEP_thresh_50->GetYaxis()->SetRangeUser(0, 0.6);
+    hEP_thresh_50->GetXaxis()->SetRangeUser(0, 59.5);
+
+    hEP_thresh_50->GetYaxis()->SetTitleSize(0.06F);
+    hEP_thresh_50->GetXaxis()->SetTitleSize(0.05F);
+
+    hEP_thresh_50->GetYaxis()->SetTitleOffset(0.9F);
+    hEP_thresh_50->GetXaxis()->SetTitleOffset(0.8F);
+
+    hEP_thresh_50->GetYaxis()->SetLabelSize(0.04F);
+    hEP_thresh_50->GetXaxis()->SetLabelSize(0.04F);
+
+    hEP_thresh_50->SetLineColor(kAzure+1);
+    hEP_thresh_50->SetMarkerColor(kAzure+1);
+    hEP_thresh_50->SetLineWidth(3);
+
+    double xshift = 0.05;
+    double yshift = -0.25;
+
+    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .6 + yshift, 0.5 + xshift, .7 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+
+    leg->AddEntry(hEP_thresh_50, "0.5#leq N_{mip}#leq50", "lpe");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig)
+    {
+      c1->Print(std::format("{}/images/{}.png", m_output_dir, "EP-res-thresh-50").c_str());
+    }
+  }
+
+  // ---------------------------------------------------
+
   // Ratio Plots
   {
     c1->SetTopMargin(.02F);
+    c1->SetLeftMargin(.14F);
 
-    double xshift = 0.37;
-    double yshift = -0.25;
+    double xshift = -0.05;
+    double yshift = 0.28;
 
     std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .4 + yshift, 0.5 + xshift, .7 + yshift);
     leg->SetFillStyle(0);
@@ -313,8 +362,16 @@ void DisplaySEPDQA::draw_EP_Study()
       if(plot_idx == 1)
       {
          hist->Draw();
-         // hist->GetYaxis()->SetTitle("Ratio (With Current [Tower Mask])");
          hist->GetYaxis()->SetTitle("Ratio (With 0.5#leq N_{mip})");
+         hist->GetXaxis()->SetRangeUser(0, 59.5);
+         hist->GetYaxis()->SetRangeUser(0.9, 1.15);
+         hist->GetYaxis()->SetLabelSize(0.05F);
+         hist->GetXaxis()->SetLabelSize(0.05F);
+         hist->GetYaxis()->SetTitleSize(0.05F);
+         hist->GetXaxis()->SetTitleSize(0.05F);
+
+         hist->GetYaxis()->SetTitleOffset(1.3F);
+         hist->GetXaxis()->SetTitleOffset(0.83F);
       }
       else
       {
