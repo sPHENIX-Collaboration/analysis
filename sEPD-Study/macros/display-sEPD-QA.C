@@ -21,6 +21,7 @@
 #include <TH2.h>
 #include <TKey.h>
 #include <TLegend.h>
+#include <TLegendEntry.h>
 #include <TLine.h>
 #include <TLatex.h>
 #include <TPaletteAxis.h>
@@ -487,6 +488,312 @@ void DisplaySEPDQA::draw_EP_Study()
 
     plotAndSave("h2_sEPD_Psi_S_2_corr2", {.title = "sEPD South", .ylow=7.2e-3, .yhigh=8.4e-3}, "Psi-South-overlay-zoom");
     plotAndSave("h2_sEPD_Psi_N_2_corr2", {.title = "sEPD North", .ylow=7.2e-3, .yhigh=8.4e-3}, "Psi-North-overlay-zoom");
+  }
+
+  {
+    c1->SetLeftMargin(0.11F);
+    c1->SetRightMargin(.03F);
+    c1->SetTopMargin(0.06F);
+    c1->SetBottomMargin(0.1F);
+
+    // -------------------------------------------
+    // Event Plane Resolution
+    // -------------------------------------------
+
+    // -------------------------------------------
+    //  Presentation by Rosi at WWND2022
+    //  https://indico.cern.ch/event/1039540/contributions/4737615/attachments/2401701/4107451/RReedWWND2022v1.pdf
+    //  Data points from Slide 24
+    //  Exact Data Points from Rosi
+    // -------------------------------------------
+
+    // sPHENIX MC
+    // std::vector<double> evt_res_sPHENIX_MC = {0.34, 0.5, 0.57, 0.55, 0.5, 0.42};
+    // std::vector<double> evt_res_sPHENIX_MC = {0.3358, 0.5031, 0.5671, 0.5540, 0.4991, 0.4171, 0.3161, 0.2143, 0.1501, 0.1236};
+    std::vector<double> evt_res_sPHENIX_MC = {0.3358, 0.5031, 0.5671, 0.5540, 0.4991, 0.4171};
+
+    // STAR EPD
+    // Centrality binning uneven thus requiring x,y points
+    std::vector<std::pair<double, double>> evt_res_star = {
+        std::make_pair(2.5, 0.293188),
+        std::make_pair(7.5, 0.449476),
+        std::make_pair(15, 0.522967),
+        std::make_pair(25, 0.558795),
+        std::make_pair(35, 0.53074),
+        std::make_pair(45, 0.438996),
+        std::make_pair(55, 0.332305)
+        // std::make_pair(65, 0.205977),
+        // std::make_pair(75, 0.0571169)
+    };
+
+    std::vector<std::pair<double, double>> evt_res_star_error = {
+        std::make_pair(2.5, 0.0174575),
+        std::make_pair(7.5, 0.0132602),
+        std::make_pair(15, 0.00724971),
+        std::make_pair(25, 0.00650445),
+        std::make_pair(35, 0.0068557),
+        std::make_pair(45, 0.0089328),
+        std::make_pair(55, 0.0128119)
+        // std::make_pair(65, 0.0221074),
+        // std::make_pair(75, 0.0574402)
+    };
+
+    // sEPD Run 2 Au+Au
+    // Centrality binning uneven thus requiring x,y points
+    std::vector<std::pair<double, double>> evt_res_sepd_run2 = {
+        std::make_pair(2.5, 0.1930),
+        std::make_pair(7.5, 0.2989),
+        std::make_pair(15, 0.4485),
+        std::make_pair(25, 0.5347),
+        std::make_pair(35, 0.5267),
+        std::make_pair(45, 0.4444),
+        std::make_pair(55, 0.3227)
+        // std::make_pair(65, 0.2132),
+    };
+
+
+    std::unique_ptr<TGraphErrors> graph_evt_res_star = std::make_unique<TGraphErrors>(evt_res_star.size());
+    graph_evt_res_star->SetTitle("; Centrality [%]; sEPD #Psi_{2} Resolution");
+
+    std::unique_ptr<TGraphErrors> graph_evt_res_sepd_run2 = std::make_unique<TGraphErrors>(evt_res_sepd_run2.size());
+
+    for (size_t point = 0; point < evt_res_star.size(); ++point)
+    {
+      double x = evt_res_star[point].first;
+      double y = evt_res_star[point].second;
+      double yerr = evt_res_star_error[point].second;
+      graph_evt_res_star->SetPoint(static_cast<int>(point), x, y);
+      graph_evt_res_star->SetPointError(static_cast<int>(point), 0, yerr);
+
+      // -----------------------------------
+
+      double x_sepd = evt_res_sepd_run2[point].first;
+      double y_sepd = evt_res_sepd_run2[point].second;
+      graph_evt_res_sepd_run2->SetPoint(static_cast<int>(point), x_sepd, y_sepd);
+    }
+
+    int bins_cent{6};
+    double cent_low{0};
+    double cent_high{60};
+
+    std::string hist_name = "evt_res_sPHENIX_MC";
+    std::string title = "; Centrality [%]; sEPD #Psi_{2} Resolution";
+    m_hists[hist_name] = std::make_unique<TH1F>(hist_name.c_str(), title.c_str(), bins_cent, cent_low, cent_high);
+    auto* hSP_res_sPHENIX_MC = m_hists[hist_name].get();
+
+    for (int bin_cent = 1; bin_cent <= bins_cent; ++bin_cent)
+    {
+      hSP_res_sPHENIX_MC->SetBinContent(bin_cent, evt_res_sPHENIX_MC[static_cast<size_t>(bin_cent - 1)]);
+      // std::cout << std::format("sPHENIX Bin: {}, x: {:.2f}\n", bin_cent, hSP_res_sPHENIX_MC->GetBinCenter(bin_cent));
+    }
+
+    auto* hSP_evt_res_50_temp = m_hists["hEP_res_sqrt_2_50"].get();
+    auto* hSP_evt_res_10_temp = m_hists["hEP_res_sqrt_2_10"].get();
+
+    // Create new hists to match the bin centers of STAR and other comparisons
+    auto hSP_evt_res_50 = std::make_unique<TH1F>("hSP_evt_res_50", title.c_str(), bins_cent, cent_low, cent_high);
+    auto hSP_evt_res_10 = std::make_unique<TH1F>("hSP_evt_res_10", title.c_str(), bins_cent, cent_low, cent_high);
+
+    auto hSP_evt_res_combined = std::make_unique<TH1F>("hSP_evt_res_combined", title.c_str(), bins_cent, cent_low, cent_high);
+
+    for (int bin = 1; bin <= hSP_evt_res_combined->GetNbinsX(); ++bin)
+    {
+      double val = 0;
+      double err = 0;
+
+      double val_50 = hSP_evt_res_50_temp->GetBinContent(bin);
+      double val_10 = hSP_evt_res_10_temp->GetBinContent(bin);
+
+      double err_50 = hSP_evt_res_50_temp->GetBinError(bin);
+      double err_10 = hSP_evt_res_10_temp->GetBinError(bin);
+
+      if (bin <= 3)
+      {
+        val = hSP_evt_res_50_temp->GetBinContent(bin);
+        err = hSP_evt_res_50_temp->GetBinError(bin);
+      }
+      else
+      {
+        val = hSP_evt_res_10_temp->GetBinContent(bin);
+        err = hSP_evt_res_10_temp->GetBinError(bin);
+      }
+
+      hSP_evt_res_combined->SetBinContent(bin, val);
+      hSP_evt_res_combined->SetBinError(bin, err);
+
+      hSP_evt_res_10->SetBinContent(bin, val_10);
+      hSP_evt_res_10->SetBinError(bin, err_10);
+
+      hSP_evt_res_50->SetBinContent(bin, val_50);
+      hSP_evt_res_50->SetBinError(bin, err_50);
+    }
+
+    hSP_evt_res_50->SetMarkerColor(kBlue);
+    hSP_evt_res_50->SetLineColor(kBlue);
+    hSP_evt_res_50->SetMarkerStyle(kFullDotLarge);
+    hSP_evt_res_50->SetLineStyle(kDashed);
+    hSP_evt_res_50->SetMarkerSize(2);
+    hSP_evt_res_50->SetLineWidth(3);
+
+    hSP_evt_res_10->SetMarkerColor(kCyan+1);
+    hSP_evt_res_10->SetMarkerStyle(kFullDotLarge);
+    hSP_evt_res_10->SetMarkerSize(2);
+    hSP_evt_res_10->SetLineColor(kCyan+1);
+    hSP_evt_res_10->SetLineWidth(3);
+    hSP_evt_res_10->SetLineStyle(kDashed);
+
+    hSP_evt_res_combined->SetMarkerColor(kBlue);
+    hSP_evt_res_combined->SetMarkerStyle(kFullDotLarge);
+    hSP_evt_res_combined->SetMarkerSize(2);
+    hSP_evt_res_combined->SetLineColor(kBlue);
+    hSP_evt_res_combined->SetLineWidth(3);
+    hSP_evt_res_combined->SetLineStyle(kDashed);
+    hSP_evt_res_combined->GetYaxis()->SetRangeUser(0, 0.6);
+    hSP_evt_res_combined->GetYaxis()->SetTitleOffset(1.F);
+    hSP_evt_res_combined->GetXaxis()->SetTitleOffset(0.92F);
+
+    // 1. Configure the original graph for markers and SOLID error bars
+    graph_evt_res_star->SetMarkerColor(kRed);
+    graph_evt_res_star->SetLineColor(kRed);
+    graph_evt_res_star->SetMarkerStyle(kFullStar);
+    graph_evt_res_star->SetMarkerSize(4);
+    graph_evt_res_star->SetLineWidth(3);
+    graph_evt_res_star->SetLineStyle(kSolid);  // Keep error bars solid
+
+    graph_evt_res_star->GetYaxis()->SetRangeUser(0, 0.6);
+    graph_evt_res_star->GetYaxis()->SetTitleOffset(1.F);
+    graph_evt_res_star->GetXaxis()->SetTitleOffset(0.92F);
+
+    // sEPD Run 2 Au+Au (Ejiro)
+    graph_evt_res_sepd_run2->SetMarkerColor(kViolet+2);
+    graph_evt_res_sepd_run2->SetLineColor(kViolet+2);
+    graph_evt_res_sepd_run2->SetMarkerStyle(kFullDiamond);
+    graph_evt_res_sepd_run2->SetMarkerSize(3);
+    graph_evt_res_sepd_run2->SetLineWidth(3);
+
+    // 2. Clone the graph to handle the dashed connecting line
+    TGraphErrors* graph_line = dynamic_cast<TGraphErrors*>(graph_evt_res_star->Clone("graph_line"));
+    graph_line->SetLineStyle(kDashed);
+
+    TGraphErrors* graph_line_sepd_run2 = dynamic_cast<TGraphErrors*>(graph_evt_res_sepd_run2->Clone("graph_line"));
+    graph_line_sepd_run2->SetLineStyle(kDashed);
+
+    hSP_res_sPHENIX_MC->SetMarkerColor(kGreen+3);
+    hSP_res_sPHENIX_MC->SetLineColor(kGreen+3);
+    hSP_res_sPHENIX_MC->SetMarkerStyle(kFullSquare);
+    hSP_res_sPHENIX_MC->SetLineWidth(3);
+    hSP_res_sPHENIX_MC->SetLineStyle(kDashed);
+    hSP_res_sPHENIX_MC->SetMarkerSize(2);
+
+    double xshift = -0.04;
+    double yshift = -0.55;
+
+    auto leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .95 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+    auto* legEntry_sPHENIX_50 = leg->AddEntry(hSP_evt_res_50.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq50)", "lp");
+    auto* legEntry_sPHENIX_10 = leg->AddEntry(hSP_evt_res_10.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq10)", "lp");
+    auto* legEntry_sPHENIX_Run2 = leg->AddEntry(graph_line_sepd_run2, "sEPD: Run 2 Au+Au (By Ejiro)", "lp");
+    auto* legEntry_sPHENIX_MC = leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
+    auto* legEntry_STAR = leg->AddEntry(graph_line, "STAR EPD", "lp");
+
+    // Draw ONLY the points and error bars (using option "p")
+    graph_evt_res_star->Draw("ap");
+    // Draw ONLY the connecting line (using option "l")
+    graph_line->Draw("same l");
+
+    graph_evt_res_sepd_run2->Draw("same p");
+    graph_line_sepd_run2->Draw("same l");
+
+    hSP_evt_res_50->Draw("same hist l p");
+    hSP_evt_res_50->Draw("same p e X0");
+
+    hSP_evt_res_10->Draw("same p e X0");
+    hSP_evt_res_10->Draw("same hist l p");
+
+    hSP_res_sPHENIX_MC->Draw("same l p");
+
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v1.png", m_output_dir).c_str());
+
+    // sEPD Data Only
+
+    leg->GetListOfPrimitives()->Remove(legEntry_sPHENIX_10);
+    leg->GetListOfPrimitives()->Remove(legEntry_sPHENIX_MC);
+    leg->GetListOfPrimitives()->Remove(legEntry_STAR);
+    leg->GetListOfPrimitives()->Remove(legEntry_sPHENIX_Run2);
+
+    xshift = -0.08;
+    yshift = -0.5;
+
+    leg->SetX1NDC(0.2 + xshift);
+    leg->SetY1NDC(0.65 + yshift);
+    leg->SetX2NDC(0.54 + xshift);
+    leg->SetY2NDC(0.95 + yshift);
+
+    // Update the canvas
+    c1->Modified();
+    c1->Update();
+
+    legEntry_sPHENIX_50->SetLabel("sEPD: Run 68144");
+
+    hSP_evt_res_combined->Draw("hist l p");
+    hSP_evt_res_combined->Draw("same p e X0");
+
+    leg->Draw("same");
+
+    c1->Modified();
+    c1->Update();
+
+    std::vector<std::unique_ptr<TLatex>> labels;
+    labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
+    labels.push_back(myUtils::draw_text(0.75, 0.97, "mm/dd/yyyy", 0.05F));
+
+    yshift = -0.2;
+
+    labels.push_back(myUtils::draw_text(0.3, 0.8+yshift, "sEPD Dynamic Clamping", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.73+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v2.png", m_output_dir).c_str());
+
+    // sEPD Data vs STAR
+
+    graph_evt_res_star->Draw("p");
+    graph_line->Draw("same l");
+
+    hSP_evt_res_combined->Draw("same a hist l p");
+    hSP_evt_res_combined->Draw("same p e X0");
+
+    legEntry_STAR = leg->AddEntry(graph_line, "STAR EPD", "lp");
+    leg->Draw("same");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v3.png", m_output_dir).c_str());
+
+    // sEPD Data vs STAR vs sEPD MC
+
+    hSP_res_sPHENIX_MC->Draw("same l p");
+
+    leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v4.png", m_output_dir).c_str());
+
+    // sEPD Data vs MC
+
+    while (c1->GetListOfPrimitives()->Remove(graph_evt_res_star.get()))
+    while (c1->GetListOfPrimitives()->Remove(graph_line))
+    leg->GetListOfPrimitives()->Remove(legEntry_STAR);
+
+    c1->Modified();
+    c1->Update();
+
+    c1->Print(output.c_str(), "pdf portrait");
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v5.png", m_output_dir).c_str());
   }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
@@ -1296,8 +1603,8 @@ void DisplaySEPDQA::draw_QA()
         {.channel_bad = 53, .channel_ref = 52, .xhigh = 120},
         {.channel_bad = 590, .channel_ref = 591, .xhigh = 120, .color_bad = kBlue},
         {.channel_bad = 469, .channel_ref = 468},
-        {.channel_bad = 471, .channel_ref = 470, .xhigh = 140}, 
-        {.channel_bad = 473, .channel_ref = 472, .xhigh = 100}, 
+        {.channel_bad = 471, .channel_ref = 470, .xhigh = 140},
+        {.channel_bad = 473, .channel_ref = 472, .xhigh = 100},
         {.channel_bad = 487, .channel_ref = 486, .xhigh = 120}
     };
 
