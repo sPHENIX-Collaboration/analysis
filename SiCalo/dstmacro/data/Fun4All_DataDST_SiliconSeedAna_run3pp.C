@@ -18,6 +18,7 @@
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
+#include <fun4all/Fun4AllUtils.h>
 
 #include <siliconseedsana/SiliconCaloMatching.h>
 #include <siliconseedsana/SiliconSeedsAna.h>
@@ -25,6 +26,7 @@
 
 #include <calotrigger/TriggerRunInfoReco.h>
 #include <mbd/MbdReco.h>
+#include <caloreco/RawClusterBuilderTopo.h>
 
 #include <phool/recoConsts.h>
 
@@ -82,10 +84,26 @@ int Fun4All_DataDST_SiliconSeedAna_run3pp(
   std::cout << "#start   : " << startnumber << std::endl;
 
   // gSystem->ListLibraries();
+    
+
+  std::ifstream fin(inlst_dst_strk.c_str());
+  std::string filename;
+  fin>>filename;
+  std::cout<<"Filename : "<<filename<<std::endl;
+  fin.close();
+
+  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filename);
+  int runnumber = runseg.first;
+  int segment = runseg.second;
+    
+    
+    
 
   G4TRACKING::SC_CALIBMODE = false;
-  Enable::MVTX_APPLYMISALIGNMENT = true;
-  ACTSGEOM::mvtx_applymisalignment = Enable::MVTX_APPLYMISALIGNMENT;
+  
+  //Enable::MVTX_APPLYMISALIGNMENT = true;
+  //ACTSGEOM::mvtx_applymisalignment = Enable::MVTX_APPLYMISALIGNMENT;
+  //
   TRACKING::pp_mode = true;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -94,12 +112,12 @@ int Fun4All_DataDST_SiliconSeedAna_run3pp(
   recoConsts *rc = recoConsts::instance();
   Input::VERBOSITY = 0;
 
-  int runnum = 53879;
+  //int runnum = 79516;
+  std::cout<<"Run : "<<runnumber<<std::endl;
   // Tracking setup
   Enable::CDB = true;
-  // rc->set_StringFlag("CDB_GLOBALTAG", "Prod_2024A");
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
-  rc->set_uint64Flag("TIMESTAMP", runnum);
+  rc->set_uint64Flag("TIMESTAMP", runnumber);
 
   std::string geofile = CDBInterface::instance()->getUrl("Tracking_Geometry");
   Fun4AllRunNodeInputManager *ingeo = new Fun4AllRunNodeInputManager("GeoIn");
@@ -137,6 +155,30 @@ int Fun4All_DataDST_SiliconSeedAna_run3pp(
 
   //Process_Calo_Calib_Mahirochan();
   Process_Calo_Calib();
+
+  //////////////////////////////
+  //TopoClusterReco(); // too slow
+  //topo clusters for EMCal and HCal (layer 0 - iHCal, layer 1 - oHCal, layer 2 - EMCal)
+  RawClusterBuilderTopo* ClusterBuilder2 = new RawClusterBuilderTopo("SiHCalRawClusterBuilderTopo");
+  //ClusterBuilder2->Verbosity(11);
+  ClusterBuilder2->set_nodename("TOPOCLUSTER_ALLCALO");
+  ClusterBuilder2->set_enable_HCal(true);
+  ClusterBuilder2->set_enable_EMCal(true);
+  //ClusterBuilder2->set_noise(0.0025, 0.006, 0.03);
+  //ClusterBuilder2->set_noise(0.01, 0.03, 0.03);
+  ClusterBuilder2->set_noise(0.002, 0.01, 0.03); //From Emma (1 sigma)
+  //ClusterBuilder2->set_noise(0.004, 0.02, 0.06); //From Emma (2 sigma)
+  // ClusterBuilder2->set_noise(0.006, 0.03, 0.09); //From Emma (3 sigma)
+  ClusterBuilder2->set_significance(4.0, 2.0, 1.0); // seed threshold, grow threshold, perimeter threshold in unit of noise sigma
+  ClusterBuilder2->allow_corner_neighbor(true);
+  ClusterBuilder2->set_do_split(true);
+  ClusterBuilder2->set_minE_local_max(1.0, 2.0, 0.5);
+  ClusterBuilder2->set_R_shower(0.025);
+  //ClusterBuilder2->set_use_only_good_towers(false);
+  se->registerSubsystem(ClusterBuilder2);
+
+  //////////////////////////////
+
 
   auto converter = new TrackSeedTrackMapConverter;
   // SiliconTrackSeedContainer or TpcTrackSeedContainer

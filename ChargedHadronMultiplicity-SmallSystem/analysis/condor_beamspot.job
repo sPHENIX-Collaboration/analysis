@@ -1,0 +1,14 @@
+Universe           = vanilla
+initialDir         = /sphenix/user/hjheng/sPHENIXRepo/analysis/ChargedHadronMultiplicity-SmallSystem/analysis
+Executable         = ./runBeamspot.sh
+PeriodicHold       =  (NumJobStarts>=1 && JobStatus == 1 && !(ON_EVICT_CHECK_RequestMemory_REQUIREMENTS))
+request_memory = 1500MB
+retry_request_memory_increase = RequestMemory + 2000
+retry_request_memory_max = 8000MB
+Priority           = 20
+job_lease_duration = 3600
+Output             = $(Initialdir)/condorLog/beamspot_$(Process).out
+Error              = $(Initialdir)/condorLog/beamspot_$(Process).err
+Log                = /tmp/condor-beamspot-hjheng_$(Process).log
+Arguments          = "$(runNumber)"
+Queue nEvents, runNumber, runSpecies, runOption, outputDir, process from /sphenix/user/hjheng/sPHENIXRepo/analysis/ChargedHadronMultiplicity-SmallSystem/data/condorArg_firstSegments.list

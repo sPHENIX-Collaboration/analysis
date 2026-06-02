@@ -6,6 +6,8 @@
 #include <G4_TrkrVariables.C> // global variable "Input"
 #include <G4_ActsGeom.C>      // global variable "ACTSGEOM"
 #include <G4_Global.C>
+#include <G4_TopoClusterReco.C>
+#include <Trkr_RecoInit.C>
 #include <Trkr_Reco.C>
 
 #include <ffamodules/FlagHandler.h>
@@ -18,6 +20,7 @@
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
+#include <fun4all/Fun4AllUtils.h>
 
 #include <siliconseedsana/SiliconCaloMatching.h>
 #include <siliconseedsana/SiliconSeedsAna.h>
@@ -25,8 +28,10 @@
 
 #include <calotrigger/TriggerRunInfoReco.h>
 #include <mbd/MbdReco.h>
+#include <caloreco/RawClusterBuilderTopo.h>
 
 #include <phool/recoConsts.h>
+
 
 #include <sys/stat.h>
 #include <limits.h> // PATH_MAX
@@ -70,7 +75,7 @@ int Fun4All_DataDST_SiliconSeedAna(
     const int nEvents = 1000, const string inlst_dst_clus = "list/test/run53879_clus_0.list"
     //  , const string inlst_dst_strk = "run53879_strk_0.list"
     ,
-    const string inlst_dst_strk = "list/test/run53879_seed_0.list", const string inlst_dst_calo = "list/test/run53879_calo_0.list", const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root", const int startnumber = 0)
+    const string inlst_dst_strk = "list/test/run53879_seed_0.list", const string inlst_dst_calo = "list/test/run53879_calo_0.list", const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root", const int startnumber = 0, bool withtopo=false)
 {
 
   std::cout << "inlst_dst_clus : " << inlst_dst_clus << endl;
@@ -82,6 +87,17 @@ int Fun4All_DataDST_SiliconSeedAna(
   std::cout << "#start   : " << startnumber << std::endl;
 
   // gSystem->ListLibraries();
+  
+  std::ifstream fin(inlst_dst_strk.c_str());
+  std::string filename;
+  fin>>filename;
+  std::cout<<"Filename : "<<filename<<std::endl;
+  fin.close();
+
+  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filename);
+  int runnumber = runseg.first;
+  int segment = runseg.second;
+  
 
   G4TRACKING::SC_CALIBMODE = false;
   Enable::MVTX_APPLYMISALIGNMENT = true;
@@ -94,20 +110,20 @@ int Fun4All_DataDST_SiliconSeedAna(
   recoConsts *rc = recoConsts::instance();
   Input::VERBOSITY = 0;
 
-  int runnum = 53879;
+  //int runnum = 53879;
   // Tracking setup
   Enable::CDB = true;
-  // rc->set_StringFlag("CDB_GLOBALTAG", "Prod_2024A");
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
-  rc->set_uint64Flag("TIMESTAMP", runnum);
+  rc->set_uint64Flag("TIMESTAMP", runnumber);
 
-  std::string geofile = CDBInterface::instance()->getUrl("Tracking_Geometry");
-  Fun4AllRunNodeInputManager *ingeo = new Fun4AllRunNodeInputManager("GeoIn");
-  ingeo->AddFile(geofile);
-  se->registerInputManager(ingeo);
+  //--std::string geofile = CDBInterface::instance()->getUrl("Tracking_Geometry");
+  //--Fun4AllRunNodeInputManager *ingeo = new Fun4AllRunNodeInputManager("GeoIn");
+  //--ingeo->AddFile(geofile);
+  //--se->registerInputManager(ingeo);
 
-  // this assume Geometory data is in the DST
-  ACTSGEOM::ActsGeomInit();
+  //--// this assume Geometory data is in the DST
+  //--ACTSGEOM::ActsGeomInit();
+  TrackingInit();
 
   //--input
   Fun4AllInputManager *in_calo = new Fun4AllDstInputManager("DSTCalo");
@@ -138,6 +154,31 @@ int Fun4All_DataDST_SiliconSeedAna(
   //Process_Calo_Calib_Mahirochan();
   Process_Calo_Calib();
 
+//////////////////////////////
+  if(withtopo){
+    //TopoClusterReco(); // too slow
+    //topo clusters for EMCal and HCal (layer 0 - iHCal, layer 1 - oHCal, layer 2 - EMCal)
+    RawClusterBuilderTopo* ClusterBuilder2 = new RawClusterBuilderTopo("SiHCalRawClusterBuilderTopo");
+    //ClusterBuilder2->Verbosity(11);
+    ClusterBuilder2->set_nodename("TOPOCLUSTER_ALLCALO");
+    ClusterBuilder2->set_enable_HCal(true);
+    ClusterBuilder2->set_enable_EMCal(true);
+    //ClusterBuilder2->set_noise(0.0025, 0.006, 0.03);
+    //ClusterBuilder2->set_noise(0.01, 0.03, 0.03);
+    ClusterBuilder2->set_noise(0.002, 0.01, 0.03); //From Emma (1 sigma)
+    //ClusterBuilder2->set_noise(0.004, 0.02, 0.06); //From Emma (2 sigma)
+    // ClusterBuilder2->set_noise(0.006, 0.03, 0.09); //From Emma (3 sigma)
+    ClusterBuilder2->set_significance(4.0, 2.0, 1.0); // seed threshold, grow threshold, perimeter threshold in unit of noise sigma
+    ClusterBuilder2->allow_corner_neighbor(true);
+    ClusterBuilder2->set_do_split(true);
+    ClusterBuilder2->set_minE_local_max(1.0, 2.0, 0.5);
+    ClusterBuilder2->set_R_shower(0.025);
+    //ClusterBuilder2->set_use_only_good_towers(false);
+    se->registerSubsystem(ClusterBuilder2);
+  }
+    
+//////////////////////////////
+
   auto converter = new TrackSeedTrackMapConverter;
   // SiliconTrackSeedContainer or TpcTrackSeedContainer
   converter->setTrackSeedName("SiliconTrackSeedContainer");
@@ -164,7 +205,7 @@ int Fun4All_DataDST_SiliconSeedAna(
 
   // track projection CALO
   auto projection = new PHActsTrackProjection("CaloProjection");
-  // float emcal_radius = 104.5; // set by my self due to emcal geometry was cahnged
+  // float emcal_radius = 102.9; // poeple use 103cm as projection circle
   // projection->setLayerRadius(SvtxTrack::CEMC, emcal_radius);
   se->registerSubsystem(projection);
 

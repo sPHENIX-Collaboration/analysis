@@ -6,9 +6,15 @@ using namespace std;
 bool saveFinalPlots = true;
 bool printMarkdownTables = true;
 bool printLatexTables = true;
+bool printArrays = true;
 
 //Custom binning scheme for LF analysis
-float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.4, 1.8, 2.2, 3, 4};
+float lower_bin_bounds[] = {0.5, 0.8, 1.1, 1.4, 1.8, 2.2, 3, 4};
+//float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 2.2, 3, 4};
+//Tonys
+//float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.5, 2, 3, 4};
+//Thomas
+//float lower_bin_bounds[] = {0.75, 1.07, 1.25, 1.49, 2};
 const unsigned int n_variable_bins = sizeof(lower_bin_bounds)/sizeof(lower_bin_bounds[0]) - 1; 
 
 template <typename T>
@@ -51,27 +57,25 @@ TH1F makeHisto(int nBins, float* min, string type, string xAxisTitle, string uni
 //What branches to read into the analysis
 struct variableMap
 {
-  float floats[11];
-  int ints[2];
+  float floats[12];
+  float ints[2];
 
   //any and variant are a pain here with TBranch 
   map<string, float> float_vars{
-    {"true_mother_mass", floats[0]},
-    {"true_mother_p", floats[1]},
-    {"true_mother_pT", floats[2]},
-    {"true_mother_eta", floats[3]},
-    {"true_mother_phi", floats[4]},
-    {"true_primary_vertex_z", floats[5]},
-    {"true_secondary_vertex_z", floats[6]},
-    {"reco_track_1_pT", floats[7]},
-    {"reco_track_2_pT", floats[8]},
-    {"true_track_1_pT", floats[9]},
-    {"true_track_2_pT", floats[10]},
+    {"mother_true_mass", floats[0]},
+    {"mother_true_pT", floats[1]},
+    {"mother_true_eta", floats[3]},
+    {"mother_true_phi", floats[4]},
+    {"mother_true_vz", floats[5]},
+    {"track_1_reco_pT", floats[7]},
+    {"track_2_reco_pT", floats[8]},
+    {"mother_reco_mass", floats[9]},
+    {"mother_true_rap", floats[10]},
   };
     
-  map<string, int> int_vars{
-    {"reco_track_1_silicon_seeds", ints[0]},
-    {"reco_track_2_silicon_seeds", ints[1]},
+  map<string, float> int_vars{
+    {"track_1_reco_nmaps", ints[0]},
+    {"track_2_reco_nmaps", ints[1]},
   };
 };
 
@@ -153,17 +157,18 @@ void savePlots(T myPlot, string plotName, bool logY = false, float yMin = 0, flo
   string extensions[] = {".C", ".pdf", ".png", ".root"};
   for (auto extension : extensions)
   {
-    string output = plotPath + "/" + plotName + extension;
+    string output = plotPath + plotName + extension;
     c1->SaveAs(output.c_str());
   }
 }
 
 void processData(string type = "Kshort2pipi")
 {
-  string fileName = type == "Kshort2pipi" ? "files/outputHFTrackEff_Kshort2pipi_20260423_noDecVolLim_fromTony.root"
-                                          : "files/outputHFTrackEff_Lambda2ppi_20260423_noDecVolLim_fromTony.root";
+  string dir = "/sphenix/tg/tg01/hf/cdean/LF_analysis/evaluatorFiles/evaluator_skimmed_files/";
+  string fileName = type == "Kshort2pipi" ? dir + "prompt_Kshort.root"
+                                          : dir + "prompt_Lambda0.root";
   TFile *file = new TFile(fileName.c_str());
-  TTree* data = (TTree*)file->Get("HFTrackEfficiency");
+  TTree* data = (TTree*)file->Get("TruthInfo");
 
   variableMap inputMap;
   for (auto &[branch, var] : inputMap.float_vars) data->SetBranchAddress(branch.c_str(), &var);
@@ -196,47 +201,48 @@ void processData(string type = "Kshort2pipi")
 
     data->GetEntry(l);
 
-    if (min(inputMap.float_vars["true_track_1_pT"], inputMap.float_vars["true_track_2_pT"]) < 0.25) continue;
-
-    int sign = inputMap.float_vars["true_secondary_vertex_z"] > inputMap.float_vars["true_primary_vertex_z"] ? 1 : -1;
-    float pz = sqrt(pow(inputMap.float_vars["true_mother_p"], 2) - pow(inputMap.float_vars["true_mother_pT"], 2));
-    float E = sqrt(pow(inputMap.float_vars["true_mother_p"], 2) + pow(inputMap.float_vars["true_mother_mass"], 2));
-    float rapidity = sign*0.5*log((E + pz)/(E - pz));
+    float rapidity = inputMap.float_vars["mother_true_rap"];
 
     if (abs(rapidity) > 1.) continue;
+    if (abs(inputMap.float_vars["mother_true_vz"]) > 10) continue;
+    //if (min(inputMap.float_vars["track_1_true_pT"], inputMap.float_vars["track_2_true_pT"]) < 0.25) continue;
  
     if (type == "Kshort2pipi")
     {
-      pT.K_S0_all.Fill(inputMap.float_vars["true_mother_pT"]);
-      eta.K_S0_all.Fill(inputMap.float_vars["true_mother_eta"]);
+      pT.K_S0_all.Fill(inputMap.float_vars["mother_true_pT"]);
+      eta.K_S0_all.Fill(inputMap.float_vars["mother_true_eta"]);
       rap.K_S0_all.Fill(rapidity);
-      phi.K_S0_all.Fill(inputMap.float_vars["true_mother_phi"]);
+      phi.K_S0_all.Fill(inputMap.float_vars["mother_true_phi"]);
     }
     else
     {
-      pT.Lambda0_all.Fill(inputMap.float_vars["true_mother_pT"]);
-      eta.Lambda0_all.Fill(inputMap.float_vars["true_mother_eta"]);
+      pT.Lambda0_all.Fill(inputMap.float_vars["mother_true_pT"]);
+      eta.Lambda0_all.Fill(inputMap.float_vars["mother_true_eta"]);
       rap.Lambda0_all.Fill(rapidity);
-      phi.Lambda0_all.Fill(inputMap.float_vars["true_mother_phi"]);
+      phi.Lambda0_all.Fill(inputMap.float_vars["mother_true_phi"]);
     }
 
-    bool accepted = min(inputMap.int_vars["reco_track_1_silicon_seeds"], inputMap.int_vars["reco_track_2_silicon_seeds"]) > 0 ? true : false;
+    //if (min(inputMap.float_vars["track_1_reco_pT"], inputMap.float_vars["track_2_reco_pT"]) < 0.25) continue;
+    //if (type == "Kshort2pipi" && (0.47 > inputMap.float_vars["mother_reco_mass"] || inputMap.float_vars["mother_reco_mass"] > 0.52)) continue;
+    //if (type == "Lambda02ppi" && (1.108 > inputMap.float_vars["mother_reco_mass"] || inputMap.float_vars["mother_reco_mass"] > 1.12)) continue;
+
+    bool accepted = min(inputMap.int_vars["track_1_reco_nmaps"], inputMap.int_vars["track_2_reco_nmaps"]) > 0 ? true : false;
 
     if (accepted)
     {
       if (type == "Kshort2pipi")
       {
-        pT.K_S0_inGeo.Fill(inputMap.float_vars["true_mother_pT"]);
-        eta.K_S0_inGeo.Fill(inputMap.float_vars["true_mother_eta"]);
+        pT.K_S0_inGeo.Fill(inputMap.float_vars["mother_true_pT"]);
+        eta.K_S0_inGeo.Fill(inputMap.float_vars["mother_true_eta"]);
         rap.K_S0_inGeo.Fill(rapidity);
-        phi.K_S0_inGeo.Fill(inputMap.float_vars["true_mother_phi"]);
+        phi.K_S0_inGeo.Fill(inputMap.float_vars["mother_true_phi"]);
       }
       else
       {
-        pT.Lambda0_inGeo.Fill(inputMap.float_vars["true_mother_pT"]);
-        eta.Lambda0_inGeo.Fill(inputMap.float_vars["true_mother_eta"]);
+        pT.Lambda0_inGeo.Fill(inputMap.float_vars["mother_true_pT"]);
+        eta.Lambda0_inGeo.Fill(inputMap.float_vars["mother_true_eta"]);
         rap.Lambda0_inGeo.Fill(rapidity);
-        phi.Lambda0_inGeo.Fill(inputMap.float_vars["true_mother_phi"]);
+        phi.Lambda0_inGeo.Fill(inputMap.float_vars["mother_true_phi"]);
       }
     }
 
@@ -272,18 +278,18 @@ void makeRatios(histos &histoSet, string trailer)
   histoSet.K_S0_inGeo.Divide(&histoSet.K_S0_all);
 
   histoSet.ratio = histoSet.Lambda0_inGeo;
-  histoSet.ratio.Divide(&histoSet.K_S0_inGeo);
-
   histoSet.inv_ratio = histoSet.K_S0_inGeo;
+
+  histoSet.ratio.Divide(&histoSet.K_S0_inGeo);
   histoSet.inv_ratio.Divide(&histoSet.Lambda0_inGeo);
 
   if (saveFinalPlots)
   {
-    savePlots(histoSet.K_S0_inGeo, K_S0_saveName.c_str(), false, 0, 0.070);
-    savePlots(histoSet.Lambda0_inGeo, Lambda0_saveName.c_str(), false, 0, 0.040);
+    savePlots(histoSet.K_S0_inGeo, K_S0_saveName.c_str(), false, 0, 0.2);
+    savePlots(histoSet.Lambda0_inGeo, Lambda0_saveName.c_str(), false, 0, 0.2);
 
     savePlots(histoSet.ratio, ratio_saveName.c_str(), false, 0, 1);
-    savePlots(histoSet.inv_ratio, inv_ratio_saveName.c_str(), false, 0, 3);
+    savePlots(histoSet.inv_ratio, inv_ratio_saveName.c_str(), false, 0, 4);
   }
 }
 
@@ -326,6 +332,39 @@ void makeTable(string var, histos theseHistos, string type = "Markdown")
   if (type != "Markdown") cout << "\\bottomrule[1pt]" << endl << "\\end{tabular}" << endl;
 }
 
+void makeArray(string type, histos theseHistos)
+{
+  cout << "Printing arrays for type " << type << endl;
+  int nBins = theseHistos.variable_bins ? n_variable_bins : theseHistos.nBins;
+  float xVal[nBins], xErr[nBins], yVal[nBins], yErr[nBins];
+
+  for (int i = 0; i <= nBins; ++i)
+  {
+    xVal[i] = theseHistos.inv_ratio.GetXaxis()->GetBinCenter(i+1);
+    xErr[i] = xVal[i] - theseHistos.inv_ratio.GetXaxis()->GetBinLowEdge(i+1);
+    yVal[i] = theseHistos.inv_ratio.GetBinContent(i+1);
+    yErr[i] = theseHistos.inv_ratio.GetBinError(i+1);
+  }
+
+  cout << "  float x[] = {";
+  for (auto &val : xVal) cout << to_string_with_precision(val, 3) << ", ";
+  cout << "};" << endl;
+
+  cout << "  float ex[] = {";
+  for (auto &val : xErr) cout << to_string_with_precision(val, 3) << ", ";
+  cout << "};" << endl;
+
+  cout << "  float y[] = {";
+  for (auto &val : yVal) cout << to_string_with_precision(val, 3) << ", ";
+  cout << "};" << endl;
+
+  cout << "  float ey[] = {";
+  for (auto &val : yErr) cout << to_string_with_precision(val, 3) << ", ";
+  cout << "};" << endl;
+
+  cout << "const int n = sizeof(x)/sizeof(x[0]);" << endl;
+}
+
 void calcGeomAccept()
 {
   cout << "Processing K-short data" << endl;
@@ -352,5 +391,10 @@ void calcGeomAccept()
     makeTable("$\\eta$", eta, "LaTex");
     makeTable("$y$", rap, "LaTex");
     makeTable("$\\phi$", phi, "LaTex");
+  }
+
+  if (printArrays)
+  {
+    makeArray("pT", pT);
   }
 }
