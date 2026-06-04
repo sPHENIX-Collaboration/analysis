@@ -46,7 +46,7 @@ void plot_results()
 
   std::string outdir;
   if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/plots";
-  else outdir = "plots_150MeV";
+  else outdir = "plots";
 
   TFile* f = TFile::Open("fits.root");
 
