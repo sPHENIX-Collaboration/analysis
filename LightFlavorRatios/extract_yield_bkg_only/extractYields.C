@@ -3,10 +3,21 @@ const unsigned int n_variable_bins = sizeof(lower_bin_bounds)/sizeof(lower_bin_b
 
 string plotPath = "plots/";
 
+struct fit_ranges
+{
+  float min;
+  float ignore_min;
+  float ignore_max;
+  float max;
+};
+
+fit_ranges Kshort_ranges{0.4, 0.47, 0.535, 0.6};
+fit_ranges Lambda_ranges{1.09, 1.108, 1.125, 1.1425};
+
 float Kshort_xVals[n_variable_bins], Kshort_xErrs[n_variable_bins], Kshort_yVals[n_variable_bins], Kshort_yErrs[n_variable_bins];
 float Lambda_xVals[n_variable_bins], Lambda_xErrs[n_variable_bins], Lambda_yVals[n_variable_bins], Lambda_yErrs[n_variable_bins];
 
-TF1* fitFunc;
+TF1 *fitFunc, *fitFunc_fullBkg;
 
 template <typename T>
 string to_string_with_precision(const T a_value, const int n = 0)
@@ -56,20 +67,27 @@ TH1F makeHisto(int nBins, float min, float max, string type, string xAxisTitle, 
 
 Double_t fitfunc_Kshort(Double_t *x, Double_t *par)
 {
-    if (x[0] > 0.47 && x[0] < 0.535) {
-      TF1::RejectPoint();
-      return 0;
-   }
-   return par[0] + par[1]*x[0];
+  if (x[0] > Kshort_ranges.ignore_min && x[0] < Kshort_ranges.ignore_max) 
+  {
+    TF1::RejectPoint();
+    return 0;
+  }
+  return par[0] + par[1]*x[0];
 }
 
 Double_t fitfunc_Lambda(Double_t *x, Double_t *par)
 {
-    if (x[0] > 1.108 && x[0] < 1.125) {
-      TF1::RejectPoint();
-      return 0;
-   }
-   return par[0] + par[1]*x[0];
+  if (x[0] > Lambda_ranges.ignore_min && x[0] < Lambda_ranges.ignore_max)
+  {
+    TF1::RejectPoint();
+    return 0;
+  }
+  return par[0] + par[1]*x[0];
+}
+
+Double_t fitfunc_noGap(Double_t *x, Double_t *par)
+{
+  return par[0] + par[1]*x[0];
 }
 
 template <typename T>
@@ -86,6 +104,7 @@ void savePlots(T myPlot, string plotName, float xMin, float xMax, float yield = 
   myPlot.Sumw2();
   myPlot.Draw("PE1");
   fitFunc->Draw("SAME");
+  fitFunc_fullBkg->Draw("SAME");
 
   TPaveText *pt;
   pt = new TPaveText(0.15,0.74,0.95,0.89, "NDC");
@@ -127,8 +146,8 @@ void processData(string type = "Kshort2pipi")
 
   string mass_string = processingKshort ? "m_{#pi#pi}" : "m_{p#pi}";
 
-  float mass_min = processingKshort ? 0.4 : 1.09;
-  float mass_max = processingKshort ? 0.6 : 1.1425;
+  float mass_min = processingKshort ? Kshort_ranges.min : Lambda_ranges.min;
+  float mass_max = processingKshort ? Kshort_ranges.max : Lambda_ranges.max;
 
   for (int i = 0; i < n_variable_bins; ++i)
   {
@@ -148,7 +167,12 @@ void processData(string type = "Kshort2pipi")
     fitFunc->SetLineColor(kRed);
     TFitResultPtr r = binnedMass.Fit(fitFunc, "RS");
 
-    float bkg_area = fitFunc->Integral(mass_min, mass_max);
+    //Need to account for the region over the signal
+    fitFunc_fullBkg = new TF1("fit", fitfunc_noGap, mass_min, mass_max, 2);
+    fitFunc_fullBkg->SetLineColor(kBlue);
+    for (int j = 0; j < fitFunc_fullBkg->GetNpar(); ++j) fitFunc_fullBkg->SetParameter(j, fitFunc->GetParameter(j));
+
+    float bkg_area = fitFunc_fullBkg->Integral(mass_min, mass_max);
     float bkg_areaErr = fitFunc->IntegralError(mass_min, mass_max, r->GetParams(), r->GetCovarianceMatrix().GetMatrixArray());
 
     float binWidth = binnedMass.GetBinWidth(1);
@@ -158,8 +182,12 @@ void processData(string type = "Kshort2pipi")
     signal_yield = (float) binnedMass.GetEntries() - bkg_yield;
     signal_error = signal_yield*(bkg_yieldErr/bkg_yield);
 
+    float bkg_area_low  = processingKshort ? fitFunc->Integral(mass_min, Kshort_ranges.ignore_min) / binWidth : fitFunc->Integral(mass_min, Lambda_ranges.ignore_min) / binWidth;
+    float bkg_area_gap  = processingKshort ? fitFunc_fullBkg->Integral(Kshort_ranges.ignore_min, Kshort_ranges.ignore_max) / binWidth : fitFunc_fullBkg->Integral(Lambda_ranges.ignore_min, Lambda_ranges.ignore_max) / binWidth;
+    float bkg_area_high = processingKshort ? fitFunc->Integral(Kshort_ranges.ignore_max, mass_max) / binWidth : fitFunc->Integral(Lambda_ranges.ignore_max, mass_max) / binWidth;
+
     cout << "Number of entries in histogram = " << (float) binnedMass.GetEntries() << endl;
-    cout << "Background yield from integral = " << bkg_yield << " +/- " << bkg_yieldErr << endl;
+    cout << "Background yield from total integral = " << bkg_yield << " +/- " << bkg_yieldErr << endl;
     cout << "Signal yield = " << signal_yield << " +/- " << signal_error << endl;
 
     savePlots(binnedMass, title.c_str(), min, max, signal_yield, signal_error);
