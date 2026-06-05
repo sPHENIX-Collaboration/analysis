@@ -1,7 +1,7 @@
 float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 2.2, 3, 4};
 const unsigned int n_variable_bins = sizeof(lower_bin_bounds)/sizeof(lower_bin_bounds[0]) - 1; 
 
-string plotPath = "plots/";
+string plotPath = "plots_with_track_PT_cut/";
 
 struct fit_ranges
 {
@@ -82,12 +82,17 @@ Double_t fitfunc_Lambda(Double_t *x, Double_t *par)
     TF1::RejectPoint();
     return 0;
   }
-  return par[0] + par[1]*x[0];
+  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
 }
 
 Double_t fitfunc_noGap(Double_t *x, Double_t *par)
 {
   return par[0] + par[1]*x[0];
+}
+
+Double_t fitfunc_Lambda_noGap(Double_t *x, Double_t *par)
+{
+  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
 }
 
 template <typename T>
@@ -135,9 +140,9 @@ void processData(string type = "Kshort2pipi")
 
   float xVals[n_variable_bins], xErrs[n_variable_bins], yVals[n_variable_bins], yErrs[n_variable_bins];
 
-  string dir = "/sphenix/user/cdean/scripts/fitters/files/";
-  string fileName = processingKshort ? dir + "KShort6RunCombined_weighted.root"
-                                     : dir + "Lambda6RunCombined_weighted.root";
+  string dir = "/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/";
+  string fileName = processingKshort ? dir + "6RunsCombinedKShortSVLoose.root"
+                                     : dir + "6RunsCombinedLambdaSVLoose.root";
 
   TFile *file = new TFile(fileName.c_str());
   TTree* data = (TTree*)file->Get("DecayTree");
@@ -159,16 +164,17 @@ void processData(string type = "Kshort2pipi")
     string title = type + "_pT_range_" + to_string_with_precision(min,1) + "_to_" + to_string_with_precision(max,1);
     TH1F binnedMass = makeHisto(50, mass_min, mass_max, title.c_str(), mass_string.c_str(), "GeV", 3);
     string fillString = massBranch + " >> " + title;
-    string cutString = to_string_with_precision(min,1) + " <= " + pTBranch + " && " + pTBranch + " < " + to_string_with_precision(max,1);
+    string cutString = to_string_with_precision(min,1) + " <= " + pTBranch + " && " + pTBranch + " < " + to_string_with_precision(max,1) + " && min(track_1_pT, track_2_pT) >= 0.2";
     data->Draw(fillString.c_str(), cutString.c_str());
 
     if (processingKshort) fitFunc = new TF1("fit", fitfunc_Kshort, mass_min, mass_max, 2);
-    else fitFunc = new TF1("fit", fitfunc_Lambda, mass_min, mass_max, 2);
+    else fitFunc = new TF1("fit", fitfunc_Lambda, mass_min, mass_max, 3);
     fitFunc->SetLineColor(kRed);
     TFitResultPtr r = binnedMass.Fit(fitFunc, "RS");
 
     //Need to account for the region over the signal
-    fitFunc_fullBkg = new TF1("fit", fitfunc_noGap, mass_min, mass_max, 2);
+    if (processingKshort) fitFunc_fullBkg = new TF1("fit", fitfunc_noGap, mass_min, mass_max, 2);
+    else fitFunc_fullBkg = new TF1("fit", fitfunc_Lambda_noGap, mass_min, mass_max, 3);
     fitFunc_fullBkg->SetLineColor(kBlue);
     for (int j = 0; j < fitFunc_fullBkg->GetNpar(); ++j) fitFunc_fullBkg->SetParameter(j, fitFunc->GetParameter(j));
 
@@ -181,10 +187,6 @@ void processData(string type = "Kshort2pipi")
 
     signal_yield = (float) binnedMass.GetEntries() - bkg_yield;
     signal_error = signal_yield*(bkg_yieldErr/bkg_yield);
-
-    float bkg_area_low  = processingKshort ? fitFunc->Integral(mass_min, Kshort_ranges.ignore_min) / binWidth : fitFunc->Integral(mass_min, Lambda_ranges.ignore_min) / binWidth;
-    float bkg_area_gap  = processingKshort ? fitFunc_fullBkg->Integral(Kshort_ranges.ignore_min, Kshort_ranges.ignore_max) / binWidth : fitFunc_fullBkg->Integral(Lambda_ranges.ignore_min, Lambda_ranges.ignore_max) / binWidth;
-    float bkg_area_high = processingKshort ? fitFunc->Integral(Kshort_ranges.ignore_max, mass_max) / binWidth : fitFunc->Integral(Lambda_ranges.ignore_max, mass_max) / binWidth;
 
     cout << "Number of entries in histogram = " << (float) binnedMass.GetEntries() << endl;
     cout << "Background yield from total integral = " << bkg_yield << " +/- " << bkg_yieldErr << endl;
@@ -244,12 +246,14 @@ void extractYields()
     yVals[i] = rawRatio;
     yErrs[i] = rawError;
 
-    cout << "pT bin mean: " << xVals[i] << ", raw ratio = " << yVals[i] << " +/- " << yErrs[i] << endl;
+    cout << "pT bin mean: " << xVals[i] << ", Lambda yield = " << Lambda_yVals[i] << ", Kshort yield = " << Kshort_yVals[i] << ", raw ratio = " << yVals[i] << " +/- " << yErrs[i] << endl;
   }
 
   TGraphErrors *gr = new TGraphErrors(n_variable_bins,xVals,yVals,xErrs,yErrs);
   gr->GetXaxis()->SetTitle("p_{T[GeV]}");
   gr->GetYaxis()->SetTitle("#Lambda^{0}/2K^{0}_{S} Raw Ratio");
+  gr->GetXaxis()->SetRangeUser(0.5, 4);
+  gr->GetYaxis()->SetRangeUser(0, 0.415);
   gr->SetMarkerSize(2);
   gr->Draw("A*");
 
