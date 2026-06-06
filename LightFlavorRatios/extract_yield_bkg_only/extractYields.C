@@ -1,7 +1,10 @@
-float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 2.2, 3, 4};
+float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 2.1, 2.4, 2.7, 3, 4};
 const unsigned int n_variable_bins = sizeof(lower_bin_bounds)/sizeof(lower_bin_bounds[0]) - 1; 
 
 string plotPath = "plots_with_track_PT_cut/";
+
+const unsigned int Kshort_polynomial_order = 3;
+const unsigned int Lambda_polynomial_order = 3;
 
 struct fit_ranges
 {
@@ -12,7 +15,7 @@ struct fit_ranges
 };
 
 fit_ranges Kshort_ranges{0.4, 0.47, 0.535, 0.6};
-fit_ranges Lambda_ranges{1.09, 1.108, 1.125, 1.1425};
+fit_ranges Lambda_ranges{1.09, 1.105, 1.125, 1.1425};
 
 float Kshort_xVals[n_variable_bins], Kshort_xErrs[n_variable_bins], Kshort_yVals[n_variable_bins], Kshort_yErrs[n_variable_bins];
 float Lambda_xVals[n_variable_bins], Lambda_xErrs[n_variable_bins], Lambda_yVals[n_variable_bins], Lambda_yErrs[n_variable_bins];
@@ -72,7 +75,11 @@ Double_t fitfunc_Kshort(Double_t *x, Double_t *par)
     TF1::RejectPoint();
     return 0;
   }
-  return par[0] + par[1]*x[0];
+
+  double value = 0;
+  for (unsigned int i = 0; i <= Kshort_polynomial_order; ++i) value += par[i]*pow(x[0], i);
+
+  return value;
 }
 
 Double_t fitfunc_Lambda(Double_t *x, Double_t *par)
@@ -82,17 +89,27 @@ Double_t fitfunc_Lambda(Double_t *x, Double_t *par)
     TF1::RejectPoint();
     return 0;
   }
-  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
+
+  double value = 0;
+  for (unsigned int i = 0; i <= Lambda_polynomial_order; ++i) value += par[i]*pow(x[0], i);
+
+  return value;
 }
 
 Double_t fitfunc_noGap(Double_t *x, Double_t *par)
 {
-  return par[0] + par[1]*x[0];
+  double value = 0;
+  for (unsigned int i = 0; i <= Kshort_polynomial_order; ++i) value += par[i]*pow(x[0], i);
+
+  return value;
 }
 
 Double_t fitfunc_Lambda_noGap(Double_t *x, Double_t *par)
 {
-  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
+  double value = 0;
+  for (unsigned int i = 0; i <= Lambda_polynomial_order; ++i) value += par[i]*pow(x[0], i);
+
+  return value;
 }
 
 template <typename T>
@@ -167,14 +184,14 @@ void processData(string type = "Kshort2pipi")
     string cutString = to_string_with_precision(min,1) + " <= " + pTBranch + " && " + pTBranch + " < " + to_string_with_precision(max,1) + " && min(track_1_pT, track_2_pT) >= 0.2";
     data->Draw(fillString.c_str(), cutString.c_str());
 
-    if (processingKshort) fitFunc = new TF1("fit", fitfunc_Kshort, mass_min, mass_max, 2);
-    else fitFunc = new TF1("fit", fitfunc_Lambda, mass_min, mass_max, 3);
+    if (processingKshort) fitFunc = new TF1("fit", fitfunc_Kshort, mass_min, mass_max, Kshort_polynomial_order);
+    else fitFunc = new TF1("fit", fitfunc_Lambda, mass_min, mass_max, Lambda_polynomial_order);
     fitFunc->SetLineColor(kRed);
     TFitResultPtr r = binnedMass.Fit(fitFunc, "RS");
 
     //Need to account for the region over the signal
-    if (processingKshort) fitFunc_fullBkg = new TF1("fit", fitfunc_noGap, mass_min, mass_max, 2);
-    else fitFunc_fullBkg = new TF1("fit", fitfunc_Lambda_noGap, mass_min, mass_max, 3);
+    if (processingKshort) fitFunc_fullBkg = new TF1("fit", fitfunc_noGap, mass_min, mass_max, Kshort_polynomial_order);
+    else fitFunc_fullBkg = new TF1("fit", fitfunc_Lambda_noGap, mass_min, mass_max, Lambda_polynomial_order);
     fitFunc_fullBkg->SetLineColor(kBlue);
     for (int j = 0; j < fitFunc_fullBkg->GetNpar(); ++j) fitFunc_fullBkg->SetParameter(j, fitFunc->GetParameter(j));
 
