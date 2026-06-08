@@ -1,9 +1,11 @@
 ### Remember to change directory names to your designated place
 
-Example outputs 
-<iframe src="./RDataframeToRoofit_K_S0_mass.pdf" width="100%" height="500px"></iframe>
+Example output of the fit result to the Kshort candidate distribution
 
-<iframe src="./RDataframeToRoofit_Lambda0_mass.pdf" width="100%" height="500px"></iframe>
+![kshort](./RDataframeToRoofit_K_S0_mass.png)
 
+Example output of the fit result to the Lambda candidate distribution
+
+![lambda](./RDataframeToRoofit_Lambda0_mass.png)
 
 Updated: 2026.06.08 by Hao-Ren Jheng
