@@ -1,0 +1,1 @@
+Remember to change directory names to your designated place
