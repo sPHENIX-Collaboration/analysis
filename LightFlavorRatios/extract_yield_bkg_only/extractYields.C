@@ -159,7 +159,7 @@ void processData(string type = "Kshort2pipi")
 
   float xVals[n_variable_bins], xErrs[n_variable_bins], yVals[n_variable_bins], yErrs[n_variable_bins];
 
-  string dir = "/sphenix/user/cdean/scripts/combiners/files/";
+  string dir = "/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/";
   string fileName = processingKshort ? dir + "output_Kshort_run3pp_looseCuts_20260608.root"
                                      : dir + "output_Lambda0_run3pp_looseCuts_20260608.root";
 
