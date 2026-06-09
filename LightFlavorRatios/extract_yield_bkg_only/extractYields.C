@@ -1,10 +1,10 @@
 float lower_bin_bounds[] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.8, 2.1, 2.4, 2.7, 3, 4};
 const unsigned int n_variable_bins = sizeof(lower_bin_bounds)/sizeof(lower_bin_bounds[0]) - 1; 
 
-string plotPath = "plots_with_track_PT_cut/";
+string plotPath = "plots_looser_cuts/";
 
-const unsigned int Kshort_polynomial_order = 3;
-const unsigned int Lambda_polynomial_order = 3;
+const unsigned int Kshort_polynomial_order = 5;
+const unsigned int Lambda_polynomial_order = 8;
 
 struct fit_ranges
 {
@@ -14,8 +14,8 @@ struct fit_ranges
   float max;
 };
 
-fit_ranges Kshort_ranges{0.4, 0.47, 0.535, 0.6};
-fit_ranges Lambda_ranges{1.09, 1.105, 1.125, 1.1425};
+fit_ranges Kshort_ranges{0.35, 0.47, 0.535, 0.65};
+fit_ranges Lambda_ranges{1.09, 1.105, 1.125, 1.15};
 
 float Kshort_xVals[n_variable_bins], Kshort_xErrs[n_variable_bins], Kshort_yVals[n_variable_bins], Kshort_yErrs[n_variable_bins];
 float Lambda_xVals[n_variable_bins], Lambda_xErrs[n_variable_bins], Lambda_yVals[n_variable_bins], Lambda_yErrs[n_variable_bins];
@@ -113,7 +113,7 @@ Double_t fitfunc_Lambda_noGap(Double_t *x, Double_t *par)
 }
 
 template <typename T>
-void savePlots(T myPlot, string plotName, float xMin, float xMax, float yield = 0, float error = 0)
+void savePlots(T myPlot, string plotName, float xMin, float xMax, float yield = 0, float error = 0, float bkg = 0, float bkgErr = 0, float total = 0)
 {
   TGaxis::SetMaxDigits(3);
   string makeDirectory = "mkdir -p " + plotPath;
@@ -122,7 +122,7 @@ void savePlots(T myPlot, string plotName, float xMin, float xMax, float yield = 
   TCanvas *c1  = new TCanvas("myCanvas", "myCanvas",800,800);
 
   myPlot.GetXaxis()->SetNdivisions(505);
-  myPlot.GetYaxis()->SetRangeUser(0, myPlot.GetMaximum()*1.4);
+  myPlot.GetYaxis()->SetRangeUser(0, myPlot.GetMaximum()*1.6);
   myPlot.Sumw2();
   myPlot.Draw("PE1");
   fitFunc->Draw("SAME");
@@ -135,10 +135,12 @@ void savePlots(T myPlot, string plotName, float xMin, float xMax, float yield = 
   pt->SetTextFont(42);
   TText *pt_LaTex;
   pt->AddText("#it{#bf{sPHENIX}} Internal, #sqrt{s} = 200 GeV, pp");
-  string range = to_string_with_precision(xMin, 1) + " #leq p_{T} [GeV] < " + to_string_with_precision(xMax, 1);
-  string result = "Yield = " + to_string_with_precision(yield, 0) + " #pm " + to_string_with_precision(error, 0);
+  string range = to_string_with_precision(xMin, 1) + " #leq p_{T} [GeV] < " + to_string_with_precision(xMax, 1) + ", N. Cand. = " + to_string_with_precision(total, 0);
+  string result = "Signal yield = " + to_string_with_precision(yield, 0) + " #pm " + to_string_with_precision(error, 0);
+  string result_bkg = "Background yield = " + to_string_with_precision(bkg, 0) + " #pm " + to_string_with_precision(bkgErr, 0);
   pt->AddText(range.c_str());
   pt->AddText(result.c_str());
+  pt->AddText(result_bkg.c_str());
   pt->SetBorderSize(0);
   pt->Draw();
   gPad->Modified();
@@ -157,14 +159,15 @@ void processData(string type = "Kshort2pipi")
 
   float xVals[n_variable_bins], xErrs[n_variable_bins], yVals[n_variable_bins], yErrs[n_variable_bins];
 
-  string dir = "/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/";
-  string fileName = processingKshort ? dir + "6RunsCombinedKShortSVLoose.root"
-                                     : dir + "6RunsCombinedLambdaSVLoose.root";
+  string dir = "/sphenix/user/cdean/scripts/combiners/files/";
+  string fileName = processingKshort ? dir + "output_Kshort_run3pp_looseCuts_20260608.root"
+                                     : dir + "output_Lambda0_run3pp_looseCuts_20260608.root";
 
   TFile *file = new TFile(fileName.c_str());
   TTree* data = (TTree*)file->Get("DecayTree");
   string massBranch = processingKshort ? "K_S0_mass" : "Lambda0_mass";
   string pTBranch = processingKshort ? "K_S0_pT" : "Lambda0_pT";
+  string yBranch = processingKshort ? "K_S0_rapidity" : "Lambda0_rapidity";
 
   string mass_string = processingKshort ? "m_{#pi#pi}" : "m_{p#pi}";
 
@@ -181,7 +184,9 @@ void processData(string type = "Kshort2pipi")
     string title = type + "_pT_range_" + to_string_with_precision(min,1) + "_to_" + to_string_with_precision(max,1);
     TH1F binnedMass = makeHisto(50, mass_min, mass_max, title.c_str(), mass_string.c_str(), "GeV", 3);
     string fillString = massBranch + " >> " + title;
-    string cutString = to_string_with_precision(min,1) + " <= " + pTBranch + " && " + pTBranch + " < " + to_string_with_precision(max,1) + " && min(track_1_pT, track_2_pT) >= 0.2";
+    string cutString = to_string_with_precision(min,1) + " <= " + pTBranch + " && " + pTBranch + " < " + to_string_with_precision(max,1)
+                     + " && " + to_string(mass_min) + " <= " + massBranch + " && " + massBranch + " <= " + to_string(mass_max)
+                     + " && min(track_1_pT, track_2_pT) >= 0.2 && abs(" + yBranch + ") <= 0.5";
     data->Draw(fillString.c_str(), cutString.c_str());
 
     if (processingKshort) fitFunc = new TF1("fit", fitfunc_Kshort, mass_min, mass_max, Kshort_polynomial_order);
@@ -205,11 +210,12 @@ void processData(string type = "Kshort2pipi")
     signal_yield = (float) binnedMass.GetEntries() - bkg_yield;
     signal_error = signal_yield*(bkg_yieldErr/bkg_yield);
 
-    cout << "Number of entries in histogram = " << (float) binnedMass.GetEntries() << endl;
+    float nEntries = (float) binnedMass.GetEntries();
+    cout << "Number of entries in histogram = " << nEntries << endl;
     cout << "Background yield from total integral = " << bkg_yield << " +/- " << bkg_yieldErr << endl;
     cout << "Signal yield = " << signal_yield << " +/- " << signal_error << endl;
 
-    savePlots(binnedMass, title.c_str(), min, max, signal_yield, signal_error);
+    savePlots(binnedMass, title.c_str(), min, max, signal_yield, signal_error, bkg_yield, bkg_yieldErr, nEntries);
 
     if (processingKshort)
     {
@@ -263,11 +269,14 @@ void extractYields()
     yVals[i] = rawRatio;
     yErrs[i] = rawError;
 
-    cout << "pT bin mean: " << xVals[i] << ", Lambda yield = " << Lambda_yVals[i] << ", Kshort yield = " << Kshort_yVals[i] << ", raw ratio = " << yVals[i] << " +/- " << yErrs[i] << endl;
+    cout << "pT bin mean: " << xVals[i] 
+     << ", Lambda yield = " << to_string_with_precision(Lambda_yVals[i], 0) << " +/- " << to_string_with_precision(Lambda_yErrs[i], 0)
+     << ", Kshort yield = " << to_string_with_precision(Kshort_yVals[i], 0) << " +/- " << to_string_with_precision(Kshort_yErrs[i], 0) 
+        << ", raw ratio = " << yVals[i] << " +/- " << yErrs[i] << endl;
   }
 
   TGraphErrors *gr = new TGraphErrors(n_variable_bins,xVals,yVals,xErrs,yErrs);
-  gr->GetXaxis()->SetTitle("p_{T[GeV]}");
+  gr->GetXaxis()->SetTitle("p_{T} [GeV]");
   gr->GetYaxis()->SetTitle("#Lambda^{0}/2K^{0}_{S} Raw Ratio");
   gr->GetXaxis()->SetRangeUser(0.5, 4);
   gr->GetYaxis()->SetRangeUser(0, 0.415);
