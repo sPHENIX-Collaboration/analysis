@@ -379,7 +379,8 @@ void CutEfficiency()
 */
 void CutEfficiency()
 {
-  string sim_inFile_Xi = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/outputKFParticle_Lambda_reco.root";
+  //string sim_inFile_Xi = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/outputKFParticle_Lambda_reco.root";
+  string sim_inFile_Xi = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Lambda2ppi_reco_Usman_patch.root";
   TFile* sim_file_Xi = new TFile(sim_inFile_Xi.c_str());
   TTree* sim_tree_Xi = (TTree*)sim_file_Xi->Get("DecayTree");
 
@@ -411,124 +412,285 @@ void CutEfficiency()
   const int nBins_rap = ybininfo.bins.size()-1;
   std::vector<float> rapbins = ybininfo.bins;
 
+  double Lambda_PV_sigma_xy = .003553;
+  double Lambda_track_1_sigma_xy = .002853;
+  double Lambda_track_2_sigma_xy = .002841;
+  double Lambda_track_1_sigma = .003507;
+  double Lambda_track_2_sigma = .003192;
+  double Lambda_PV_sigma = pow(9.756e-8,1./3.);
+  double Lambda_SV_sigma = pow(2.663e-6,1./3.);
+
+  double KS0_PV_sigma_xy = .003477; // sqrt(C_00 + C_11 - 2*C_01) from primary_vertex_Covariance
+  double KS0_track_1_sigma_xy = .002584; // sqrt(C_00 + C_11 - 2*C_01) from track_1_Covariance
+  double KS0_track_2_sigma_xy = .002585; // above but for track_2_Covariance
+  double KS0_track_1_sigma = .002985; // track_1_IPErr
+  double KS0_track_2_sigma = .002959; // track_2_IPErr
+  double KS0_PV_sigma = pow(9.087e-8,1./3.); // (mother vertex volume)^1/3
+  double KS0_SV_sigma = pow(7.531e-6,1./3.); // (primary vertex volume)^1/3
+
   std::string truthCut = "((abs(track_1_true_ID) == 211 && abs(track_2_true_ID) == 2212) || (abs(track_1_true_ID) == 2212 && abs(track_2_true_ID) == 211)) && Sum$(abs(track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(track_2_true_track_history_PDG_ID) == 3122) > 0 && abs(Lambda0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10";
 
   std::string truthDataCut = "((abs(track_1_true_ID) == 211 && abs(track_2_true_ID) == 2212) || (abs(track_1_true_ID) == 2212 && abs(track_2_true_ID) == 211)) && Sum$(abs(track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(track_2_true_track_history_PDG_ID) == 3122) > 0 && abs(Lambda0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && abs(track_1_IP_xy) >= 0.05 && abs(track_2_IP_xy) >= 0.05 && Lambda0_DIRA >= 0.99 && abs(Lambda0_mass - 1.115) <= 0.1 && Lambda0_decayLength>=0.05 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
+
+  std::string truthDataCut_min = "((abs(track_1_true_ID) == 211 && abs(track_2_true_ID) == 2212) || (abs(track_1_true_ID) == 2212 && abs(track_2_true_ID) == 211)) && Sum$(abs(track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(track_2_true_track_history_PDG_ID) == 3122) > 0 && abs(Lambda0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && (abs(track_1_IP_xy) - " + std::to_string(Lambda_PV_sigma_xy) + " - " + std::to_string(Lambda_track_1_sigma_xy) + ") >= 0.05 && (abs(track_2_IP_xy) - " + std::to_string(Lambda_PV_sigma_xy) + " - " + std::to_string(Lambda_track_2_sigma_xy) + ") >= 0.05 && (track_1_track_2_DCA + " + std::to_string(Lambda_track_1_sigma) + " + " + std::to_string(Lambda_track_2_sigma) + ") <= 0.5 && (track_1_track_2_DCA_xy + " + std::to_string(Lambda_track_1_sigma_xy) + " + " + std::to_string(Lambda_track_2_sigma_xy) + ") <= 1.0 && cos(acos(Lambda0_DIRA) + atan(" + std::to_string(Lambda_PV_sigma) + "/Lambda0_decayLength) + atan(" + std::to_string(Lambda_SV_sigma) + "/Lambda0_decayLength)) >= 0.99 && abs(Lambda0_mass - 1.115) <= 0.1 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
+  
+  std::string truthDataCut_max = " ((abs(track_1_true_ID) == 211 && abs(track_2_true_ID) == 2212) || (abs(track_1_true_ID) == 2212 && abs(track_2_true_ID) == 211)) && Sum$(abs(track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(track_2_true_track_history_PDG_ID) == 3122) > 0 && abs(Lambda0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && (abs(track_1_IP_xy) + " + std::to_string(Lambda_PV_sigma_xy) + " + " + std::to_string(Lambda_track_1_sigma_xy) + ") >= 0.05 && (abs(track_2_IP_xy) + " + std::to_string(Lambda_PV_sigma_xy) + " + " + std::to_string(Lambda_track_2_sigma_xy) + ") >= 0.05 && (track_1_track_2_DCA - " + std::to_string(Lambda_track_1_sigma) + " - " + std::to_string(Lambda_track_2_sigma) + ") <= 0.5 && (track_1_track_2_DCA_xy - " + std::to_string(Lambda_track_1_sigma_xy) + " - " + std::to_string(Lambda_track_2_sigma_xy) + ") <= 1.0 && cos(acos(Lambda0_DIRA) - atan(" + std::to_string(Lambda_PV_sigma) + "/Lambda0_decayLength) - atan(" + std::to_string(Lambda_SV_sigma) + "/Lambda0_decayLength)) >= 0.99 && abs(Lambda0_mass - 1.115) <= 0.1 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
 
   //std::string truthCut = "abs(Lambda0_track_1_true_ID) == 211 && Sum$(abs(Lambda0_track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(Lambda0_track_1_true_track_history_PDG_ID) == 3312) > 0 && abs(Lambda0_track_2_true_ID) == 2212 && Sum$(abs(Lambda0_track_2_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(Lambda0_track_2_true_track_history_PDG_ID) == 3312) > 0 && abs(track_3_true_ID) == 211 && Sum$(abs(track_3_true_track_history_PDG_ID) == 3312) > 0 && Sum$(abs(track_3_true_track_history_PDG_ID) == 3122) == 0 && abs(Ximinus_rapidity) <= 1.0 && Lambda0_track_1_MVTX_nHits > 0 && Lambda0_track_2_MVTX_nHits > 0 && track_3_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && Lambda0_track_1_charge == track_3_charge";
   //std::string truthDataCut = "abs(Lambda0_track_1_true_ID) == 211 && Sum$(abs(Lambda0_track_1_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(Lambda0_track_1_true_track_history_PDG_ID) == 3312) > 0 && abs(Lambda0_track_2_true_ID) == 2212 && Sum$(abs(Lambda0_track_2_true_track_history_PDG_ID) == 3122) > 0 && Sum$(abs(Lambda0_track_2_true_track_history_PDG_ID) == 3312) > 0 && abs(track_3_true_ID) == 211 && Sum$(abs(track_3_true_track_history_PDG_ID) == 3312) > 0 && Sum$(abs(track_3_true_track_history_PDG_ID) == 3122) == 0 && Lambda0_track_1_MVTX_nHits > 0 && Lambda0_track_2_MVTX_nHits > 0 && track_3_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && Lambda0_track_1_charge == track_3_charge && Lambda0_track_1_INTT_nHits > 0 && Lambda0_track_2_INTT_nHits > 0 && track_3_INTT_nHits > 0 && Lambda0_track_1_TPC_nHits > 19 && Lambda0_track_2_TPC_nHits > 19 && track_3_TPC_nHits > 19 && abs(Lambda0_mass - 1.1157) <= 0.01 && Ximinus_decayLength_xy >= 0.15 && Lambda0_decayLength_xy >= 0.01 && (Lambda0_track_1_chi2/Lambda0_track_1_nDoF) <= 400 && (Lambda0_track_2_chi2/Lambda0_track_2_nDoF) <= 400 && (track_3_chi2/track_3_nDoF) <= 400 && track_1_track_2_DCA <= 0.5 && track_1_track_3_DCA <= 0.5 && track_2_track_3_DCA <= 0.5 && Ximinus_chi2/Ximinus_nDoF <= 50 && Lambda0_chi2/Lambda0_nDoF <= 50 && abs(Ximinus_rapidity) <= 1.0 && Lambda0_track_1_pT >= 0.2 && Lambda0_track_2_pT >= 0.2 && track_3_pT >= 0.2";
 
   TH1F* h_pT_truth = new TH1F("h_pT_truth",";#Lambda p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
   TH1F* h_pT_truthCuts = new TH1F("h_pT_truthCuts",";#Lambda p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
+  TH1F* h_pT_truthCuts_min = new TH1F("h_pT_truthCuts_min","#Lambda p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
+  TH1F* h_pT_truthCuts_max = new TH1F("h_pT_truthCuts_max","#Lambda p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
   
   TH1F* h_eta_truth = new TH1F("h_eta_truth",";#Lambda #eta;Cut Efficiency",nBins_eta,etabins.data());
   TH1F* h_eta_truthCuts = new TH1F("h_eta_truthCuts",";#Lambda #eta;Cut Efficiency",nBins_eta,etabins.data());
+  TH1F* h_eta_truthCuts_min = new TH1F("h_eta_truthCuts_min",";#Lambda #eta;Cut Efficiency",nBins_eta,etabins.data());
+  TH1F* h_eta_truthCuts_max = new TH1F("h_eta_truthCuts_max",";#Lambda #eta;Cut Efficiency",nBins_eta,etabins.data());
   
   TH1F* h_phi_truth = new TH1F("h_phi_truth",";#Lambda #phi;Cut Efficiency",nBins_phi,phibins.data());
   TH1F* h_phi_truthCuts = new TH1F("h_phi_truthCuts",";#Lambda #phi;Cut Efficiency",nBins_phi,phibins.data());
+  TH1F* h_phi_truthCuts_min = new TH1F("h_phi_truthCuts_min",";#Lambda #phi;Cut Efficiency",nBins_phi,phibins.data());
+  TH1F* h_phi_truthCuts_max = new TH1F("h_phi_truthCuts_max",";#Lambda #phi;Cut Efficiency",nBins_phi,phibins.data());
   
   TH1F* h_y_truth = new TH1F("h_y_truth",";#Lambda y;Cut Efficiency",nBins_rap,rapbins.data());
   TH1F* h_y_truthCuts = new TH1F("h_y_truthCuts",";#Lambda y;Cut Efficiency",nBins_rap,rapbins.data());
+  TH1F* h_y_truthCuts_min = new TH1F("h_y_truthCuts_min",";#Lambda y;Cut Efficiency",nBins_rap,rapbins.data());
+  TH1F* h_y_truthCuts_max = new TH1F("h_y_truthCuts_max",";#Lambda y;Cut Efficiency",nBins_rap,rapbins.data());
    
   h_pT_truth->Sumw2();
   h_pT_truthCuts->Sumw2();
+  h_pT_truthCuts_min->Sumw2();
+  h_pT_truthCuts_max->Sumw2();
   h_eta_truth->Sumw2();
   h_eta_truthCuts->Sumw2();
+  h_eta_truthCuts_min->Sumw2();
+  h_eta_truthCuts_max->Sumw2();
   h_phi_truth->Sumw2();
   h_phi_truthCuts->Sumw2();
+  h_phi_truthCuts_min->Sumw2();
+  h_phi_truthCuts_max->Sumw2();
   h_y_truth->Sumw2();
   h_y_truthCuts->Sumw2();
+  h_y_truthCuts_min->Sumw2();
+  h_y_truthCuts_max->Sumw2();
 
   sim_tree_Xi->Draw("Lambda0_pT>>+h_pT_truth",truthCut.c_str());
   sim_tree_Xi->Draw("Lambda0_pT>>+h_pT_truthCuts",truthDataCut.c_str());
+  sim_tree_Xi->Draw("Lambda0_pT>>+h_pT_truthCuts_min",truthDataCut_min.c_str());
+  sim_tree_Xi->Draw("Lambda0_pT>>+h_pT_truthCuts_max",truthDataCut_max.c_str());
   sim_tree_Xi->Draw("Lambda0_pseudorapidity>>+h_eta_truth",truthCut.c_str());
   sim_tree_Xi->Draw("Lambda0_pseudorapidity>>+h_eta_truthCuts",truthDataCut.c_str());
+  sim_tree_Xi->Draw("Lambda0_pseudorapidity>>+h_eta_truthCuts_min",truthDataCut_min.c_str());
+  sim_tree_Xi->Draw("Lambda0_pseudorapidity>>+h_eta_truthCuts_max",truthDataCut_max.c_str());
   sim_tree_Xi->Draw("Lambda0_phi>>+h_phi_truth",truthCut.c_str());
   sim_tree_Xi->Draw("Lambda0_phi>>+h_phi_truthCuts",truthDataCut.c_str());
+  sim_tree_Xi->Draw("Lambda0_phi>>+h_phi_truthCuts_min",truthDataCut_min.c_str());
+  sim_tree_Xi->Draw("Lambda0_phi>>+h_phi_truthCuts_max",truthDataCut_max.c_str());
   sim_tree_Xi->Draw("Lambda0_rapidity>>+h_y_truth",truthCut.c_str());
   sim_tree_Xi->Draw("Lambda0_rapidity>>+h_y_truthCuts",truthDataCut.c_str());
+  sim_tree_Xi->Draw("Lambda0_rapidity>>+h_y_truthCuts_min",truthDataCut_min.c_str());
+  sim_tree_Xi->Draw("Lambda0_rapidity>>+h_y_truthCuts_max",truthDataCut_max.c_str());
 
-  string sim_inFile_KS0 = "/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort_reco.root";
+  //string sim_inFile_KS0 = "/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort_reco.root";
+  string sim_inFile_KS0 = "/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort2pipi_reco_Usman_patch.root";
   TFile* sim_file_KS0 = new TFile(sim_inFile_KS0.c_str());
   TTree* sim_tree_KS0 = (TTree*)sim_file_KS0->Get("DecayTree");
 
   std::string truthCut_KS0 = "abs(track_1_true_ID) == 211 && Sum$(abs(track_1_true_track_history_PDG_ID) == 310) > 0 && abs(track_2_true_ID) == 211 && Sum$(abs(track_2_true_track_history_PDG_ID) == 310) > 0 && abs(K_S0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10";
   std::string truthDataCut_KS0 = "abs(track_1_true_ID) == 211 && Sum$(abs(track_1_true_track_history_PDG_ID) == 310) > 0 && abs(track_2_true_ID) == 211 && Sum$(abs(track_2_true_track_history_PDG_ID) == 310) > 0 && abs(K_S0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && abs(track_1_IP_xy) >= 0.05 && abs(track_2_IP_xy) >= 0.05 && K_S0_DIRA >= 0.99 && abs(K_S0_mass - 0.5) <= 0.1 && K_S0_decayLength >= 0.05 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
+  std::string truthDataCut_KS0_min = "abs(track_1_true_ID) == 211 && Sum$(abs(track_1_true_track_history_PDG_ID) == 310) > 0 && abs(track_2_true_ID) == 211 && Sum$(abs(track_2_true_track_history_PDG_ID) == 310) > 0 && abs(K_S0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && (abs(track_1_IP_xy) - " + std::to_string(KS0_PV_sigma_xy) + " - " + std::to_string(KS0_track_1_sigma_xy) + ") >= 0.05 && (abs(track_2_IP_xy) - " + std::to_string(KS0_PV_sigma_xy) + " - " + std::to_string(KS0_track_2_sigma_xy) + ") >= 0.05 && (track_1_track_2_DCA + " + std::to_string(KS0_track_1_sigma) + " + " + std::to_string(KS0_track_2_sigma) + ") <= 0.5 && (track_1_track_2_DCA_xy + " + std::to_string(KS0_track_1_sigma_xy) + " + " + std::to_string(KS0_track_2_sigma_xy) + ") <= 1.0 && cos(acos(K_S0_DIRA) + atan(" + std::to_string(KS0_PV_sigma) + "/K_S0_decayLength) + atan(" + std::to_string(KS0_SV_sigma) + "/K_S0_decayLength)) >= 0.99 && abs(K_S0_mass - 0.5) <= 0.1 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
+  std::string truthDataCut_KS0_max = "abs(track_1_true_ID) == 211 && Sum$(abs(track_1_true_track_history_PDG_ID) == 310) > 0 && abs(track_2_true_ID) == 211 && Sum$(abs(track_2_true_track_history_PDG_ID) == 310) > 0 && abs(K_S0_rapidity) <= 1.0 && track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300 && (abs(track_1_IP_xy) + " + std::to_string(KS0_PV_sigma_xy) + " + " + std::to_string(KS0_track_1_sigma_xy) + ") >= 0.05 && (abs(track_2_IP_xy) + " + std::to_string(KS0_PV_sigma_xy) + " + " + std::to_string(KS0_track_2_sigma_xy) + ") >= 0.05 && (track_1_track_2_DCA - " + std::to_string(KS0_track_1_sigma) + " - " + std::to_string(KS0_track_2_sigma) + ") <= 0.5 && (track_1_track_2_DCA_xy - " + std::to_string(KS0_track_1_sigma_xy) + " - " + std::to_string(KS0_track_2_sigma_xy) + ") <= 1.0 && cos(acos(K_S0_DIRA) - atan(" + std::to_string(KS0_PV_sigma) + "/K_S0_decayLength) - atan(" + std::to_string(KS0_SV_sigma) + "/K_S0_decayLength)) >= 0.99 && abs(K_S0_mass - 0.5) <= 0.1 && track_1_pT >= 0.2 && track_2_pT >= 0.2";
 
   TH1F* h_pT_truth_KS0 = new TH1F("h_pT_truth_KS0",";K_{S}^{0} p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
   TH1F* h_pT_truthCuts_KS0 = new TH1F("h_pT_truthCuts_KS0",";K_{S}^{0} p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
+  TH1F* h_pT_truthCuts_KS0_min = new TH1F("h_pT_truthCuts_KS0_min",";K_{S}^{0} p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
+  TH1F* h_pT_truthCuts_KS0_max = new TH1F("h_pT_truthCuts_KS0_max",";K_{S}^{0} p_{T} [GeV/c];Cut Efficiency",nBins_pT,pTbins.data());
   
   TH1F* h_eta_truth_KS0 = new TH1F("h_eta_truth_KS0",";K_{S}^{0} #eta;Cut Efficiency",nBins_eta,etabins.data());
   TH1F* h_eta_truthCuts_KS0 = new TH1F("h_eta_truthCuts_KS0",";K_{S}^{0} #eta;Cut Efficiency",nBins_eta,etabins.data());
+  TH1F* h_eta_truthCuts_KS0_min = new TH1F("h_eta_truthCuts_KS0_min",";K_{S}^{0} #eta;Cut Efficiency",nBins_eta,etabins.data());
+  TH1F* h_eta_truthCuts_KS0_max = new TH1F("h_eta_truthCuts_KS0_max",";K_{S}^{0} #eta;Cut Efficiency",nBins_eta,etabins.data());
   
   TH1F* h_phi_truth_KS0 = new TH1F("h_phi_truth_KS0",";K_{S}^{0} #phi;Cut Efficiency",nBins_phi,phibins.data());
   TH1F* h_phi_truthCuts_KS0 = new TH1F("h_phi_truthCuts_KS0",";K_{S}^{0} #phi;Cut Efficiency",nBins_phi,phibins.data());
+  TH1F* h_phi_truthCuts_KS0_min = new TH1F("h_phi_truthCuts_KS0_min",";K_{S}^{0} #phi;Cut Efficiency",nBins_phi,phibins.data());
+  TH1F* h_phi_truthCuts_KS0_max = new TH1F("h_phi_truthCuts_KS0_max",";K_{S}^{0} #phi;Cut Efficiency",nBins_phi,phibins.data());
   
   TH1F* h_y_truth_KS0 = new TH1F("h_y_truth_KS0",";K_{S}^{0} y;Cut Efficiency",nBins_rap,rapbins.data());
   TH1F* h_y_truthCuts_KS0 = new TH1F("h_y_truthCuts_KS0",";K_{S}^{0} y;Cut Efficiency",nBins_rap,rapbins.data());
+  TH1F* h_y_truthCuts_KS0_min = new TH1F("h_y_truthCuts_KS0_min",";K_{S}^{0} y;Cut Efficiency",nBins_rap,rapbins.data());
+  TH1F* h_y_truthCuts_KS0_max = new TH1F("h_y_truthCuts_KS0_max",";K_{S}^{0} y;Cut Efficiency",nBins_rap,rapbins.data());
    
   h_pT_truth_KS0->Sumw2();
   h_pT_truthCuts_KS0->Sumw2();
+  h_pT_truthCuts_KS0_min->Sumw2();
+  h_pT_truthCuts_KS0_max->Sumw2();
   h_eta_truth_KS0->Sumw2();
   h_eta_truthCuts_KS0->Sumw2();
+  h_eta_truthCuts_KS0_min->Sumw2();
+  h_eta_truthCuts_KS0_max->Sumw2();
   h_phi_truth_KS0->Sumw2();
   h_phi_truthCuts_KS0->Sumw2();
+  h_phi_truthCuts_KS0_min->Sumw2();
+  h_phi_truthCuts_KS0_max->Sumw2();
   h_y_truth_KS0->Sumw2();
   h_y_truthCuts_KS0->Sumw2();
+  h_y_truthCuts_KS0_min->Sumw2();
+  h_y_truthCuts_KS0_max->Sumw2();
 
   sim_tree_KS0->Draw("K_S0_pT>>+h_pT_truth_KS0",truthCut_KS0.c_str());
   sim_tree_KS0->Draw("K_S0_pT>>+h_pT_truthCuts_KS0",truthDataCut_KS0.c_str());
+  sim_tree_KS0->Draw("K_S0_pT>>+h_pT_truthCuts_KS0_min",truthDataCut_KS0_min.c_str());
+  sim_tree_KS0->Draw("K_S0_pT>>+h_pT_truthCuts_KS0_max",truthDataCut_KS0_max.c_str());
   sim_tree_KS0->Draw("K_S0_pseudorapidity>>+h_eta_truth_KS0",truthCut_KS0.c_str());
   sim_tree_KS0->Draw("K_S0_pseudorapidity>>+h_eta_truthCuts_KS0",truthDataCut_KS0.c_str());
+  sim_tree_KS0->Draw("K_S0_pseudorapidity>>+h_eta_truthCuts_KS0_min",truthDataCut_KS0_min.c_str());
+  sim_tree_KS0->Draw("K_S0_pseudorapidity>>+h_eta_truthCuts_KS0_max",truthDataCut_KS0_max.c_str());
   sim_tree_KS0->Draw("K_S0_phi>>+h_phi_truth_KS0",truthCut_KS0.c_str());
   sim_tree_KS0->Draw("K_S0_phi>>+h_phi_truthCuts_KS0",truthDataCut_KS0.c_str());
+  sim_tree_KS0->Draw("K_S0_phi>>+h_phi_truthCuts_KS0_min",truthDataCut_KS0_min.c_str());
+  sim_tree_KS0->Draw("K_S0_phi>>+h_phi_truthCuts_KS0_max",truthDataCut_KS0_max.c_str());
   sim_tree_KS0->Draw("K_S0_rapidity>>+h_y_truth_KS0",truthCut_KS0.c_str());
   sim_tree_KS0->Draw("K_S0_rapidity>>+h_y_truthCuts_KS0",truthDataCut_KS0.c_str());
+  sim_tree_KS0->Draw("K_S0_rapidity>>+h_y_truthCuts_KS0_min",truthDataCut_KS0_min.c_str());
+  sim_tree_KS0->Draw("K_S0_rapidity>>+h_y_truthCuts_KS0_max",truthDataCut_KS0_max.c_str());
 
   TH1F* hEff_pT = (TH1F*)h_pT_truth->Clone();
   TH1F* hEff_eta = (TH1F*)h_eta_truth->Clone();
   TH1F* hEff_phi = (TH1F*)h_phi_truth->Clone();
   TH1F* hEff_y = (TH1F*)h_y_truth->Clone();
 
+  TH1F* hEff_pT_min = (TH1F*)h_pT_truth->Clone();
+  TH1F* hEff_eta_min = (TH1F*)h_eta_truth->Clone();
+  TH1F* hEff_phi_min = (TH1F*)h_phi_truth->Clone();
+  TH1F* hEff_y_min = (TH1F*)h_y_truth->Clone();
+
+  TH1F* hEff_pT_max = (TH1F*)h_pT_truth->Clone();
+  TH1F* hEff_eta_max = (TH1F*)h_eta_truth->Clone();
+  TH1F* hEff_phi_max = (TH1F*)h_phi_truth->Clone();
+  TH1F* hEff_y_max = (TH1F*)h_y_truth->Clone();
+
   TH1F* hEff_pT_KS0 = (TH1F*)h_pT_truth_KS0->Clone();
   TH1F* hEff_eta_KS0 = (TH1F*)h_eta_truth_KS0->Clone();
   TH1F* hEff_phi_KS0 = (TH1F*)h_phi_truth_KS0->Clone();
   TH1F* hEff_y_KS0 = (TH1F*)h_y_truth_KS0->Clone();
+
+  TH1F* hEff_pT_KS0_min = (TH1F*)h_pT_truth_KS0->Clone();
+  TH1F* hEff_eta_KS0_min = (TH1F*)h_eta_truth_KS0->Clone();
+  TH1F* hEff_phi_KS0_min = (TH1F*)h_phi_truth_KS0->Clone();
+  TH1F* hEff_y_KS0_min = (TH1F*)h_y_truth_KS0->Clone();
+
+  TH1F* hEff_pT_KS0_max = (TH1F*)h_pT_truth_KS0->Clone();
+  TH1F* hEff_eta_KS0_max = (TH1F*)h_eta_truth_KS0->Clone();
+  TH1F* hEff_phi_KS0_max = (TH1F*)h_phi_truth_KS0->Clone();
+  TH1F* hEff_y_KS0_max = (TH1F*)h_y_truth_KS0->Clone();
 
   hEff_pT->SetName("eff_pT");
   hEff_eta->SetName("eff_eta");
   hEff_phi->SetName("eff_phi");
   hEff_y->SetName("eff_y");
 
+  hEff_pT_min->SetName("eff_pT_min");
+  hEff_eta_min->SetName("eff_eta_min");
+  hEff_phi_min->SetName("eff_phi_min");
+  hEff_y_min->SetName("eff_y_min");
+
+  hEff_pT_max->SetName("eff_pT_max");
+  hEff_eta_max->SetName("eff_eta_max");
+  hEff_phi_max->SetName("eff_phi_max");
+  hEff_y_max->SetName("eff_y_max");
+
   hEff_pT_KS0->SetName("eff_pT_KS0");
   hEff_eta_KS0->SetName("eff_eta_KS0");
   hEff_phi_KS0->SetName("eff_phi_KS0");
   hEff_y_KS0->SetName("eff_y_KS0");
+
+  hEff_pT_KS0_min->SetName("eff_pT_KS0_min");
+  hEff_eta_KS0_min->SetName("eff_eta_KS0_min");
+  hEff_phi_KS0_min->SetName("eff_phi_KS0_min");
+  hEff_y_KS0_min->SetName("eff_y_KS0_min");
+
+  hEff_pT_KS0_max->SetName("eff_pT_KS0_max");
+  hEff_eta_KS0_max->SetName("eff_eta_KS0_max");
+  hEff_phi_KS0_max->SetName("eff_phi_KS0_max");
+  hEff_y_KS0_max->SetName("eff_y_KS0_max");
 
   hEff_pT->Divide(h_pT_truthCuts,h_pT_truth);
   hEff_eta->Divide(h_eta_truthCuts,h_eta_truth);
   hEff_phi->Divide(h_phi_truthCuts,h_phi_truth);
   hEff_y->Divide(h_y_truthCuts,h_y_truth);
 
+  hEff_pT_min->Divide(h_pT_truthCuts_min,h_pT_truth);
+  hEff_eta_min->Divide(h_eta_truthCuts_min,h_eta_truth);
+  hEff_phi_min->Divide(h_phi_truthCuts_min,h_phi_truth);
+  hEff_y_min->Divide(h_y_truthCuts_min,h_y_truth);
+
+  hEff_pT_max->Divide(h_pT_truthCuts,h_pT_truth);
+  hEff_eta_max->Divide(h_eta_truthCuts,h_eta_truth);
+  hEff_phi_max->Divide(h_phi_truthCuts,h_phi_truth);
+  hEff_y_max->Divide(h_y_truthCuts,h_y_truth);
+
   hEff_pT_KS0->Divide(h_pT_truthCuts_KS0,h_pT_truth_KS0);
   hEff_eta_KS0->Divide(h_eta_truthCuts_KS0,h_eta_truth_KS0);
   hEff_phi_KS0->Divide(h_phi_truthCuts_KS0,h_phi_truth_KS0);
   hEff_y_KS0->Divide(h_y_truthCuts_KS0,h_y_truth_KS0);
+
+  hEff_pT_KS0_min->Divide(h_pT_truthCuts_KS0_min,h_pT_truth_KS0);
+  hEff_eta_KS0_min->Divide(h_eta_truthCuts_KS0_min,h_eta_truth_KS0);
+  hEff_phi_KS0_min->Divide(h_phi_truthCuts_KS0_min,h_phi_truth_KS0);
+  hEff_y_KS0_min->Divide(h_y_truthCuts_KS0_min,h_y_truth_KS0);
+
+  hEff_pT_KS0_max->Divide(h_pT_truthCuts_KS0_max,h_pT_truth_KS0);
+  hEff_eta_KS0_max->Divide(h_eta_truthCuts_KS0_max,h_eta_truth_KS0);
+  hEff_phi_KS0_max->Divide(h_phi_truthCuts_KS0_max,h_phi_truth_KS0);
+  hEff_y_KS0_max->Divide(h_y_truthCuts_KS0_max,h_y_truth_KS0);
 
   TH1F* hEffRatio_pT = (TH1F*)hEff_pT->Clone();
   TH1F* hEffRatio_eta = (TH1F*)hEff_eta->Clone();
   TH1F* hEffRatio_phi = (TH1F*)hEff_phi->Clone();
   TH1F* hEffRatio_y = (TH1F*)hEff_y->Clone();
 
+  TH1F* hEffRatio_pT_min = (TH1F*)hEff_pT_min->Clone();
+  TH1F* hEffRatio_eta_min = (TH1F*)hEff_eta_min->Clone();
+  TH1F* hEffRatio_phi_min = (TH1F*)hEff_phi_min->Clone();
+  TH1F* hEffRatio_y_min = (TH1F*)hEff_y_min->Clone();
+
+  TH1F* hEffRatio_pT_max = (TH1F*)hEff_pT_max->Clone();
+  TH1F* hEffRatio_eta_max = (TH1F*)hEff_eta_max->Clone();
+  TH1F* hEffRatio_phi_max = (TH1F*)hEff_phi_max->Clone();
+  TH1F* hEffRatio_y_max = (TH1F*)hEff_y_max->Clone();
+
   hEffRatio_pT->SetName("hEffRatio_pT");
   hEffRatio_eta->SetName("hEffRatio_eta");
   hEffRatio_phi->SetName("hEffRatio_phi");
   hEffRatio_y->SetName("hEffRatio_y");
 
+  hEffRatio_pT_min->SetName("hEffRatio_pT_min");
+  hEffRatio_eta_min->SetName("hEffRatio_eta_min");
+  hEffRatio_phi_min->SetName("hEffRatio_phi_min");
+  hEffRatio_y_min->SetName("hEffRatio_y_min");
+
+  hEffRatio_pT_max->SetName("hEffRatio_pT_max");
+  hEffRatio_eta_max->SetName("hEffRatio_eta_max");
+  hEffRatio_phi_max->SetName("hEffRatio_phi_max");
+  hEffRatio_y_max->SetName("hEffRatio_y_max");
+
   hEffRatio_pT->Divide(hEff_pT,hEff_pT_KS0);
   hEffRatio_eta->Divide(hEff_eta,hEff_eta_KS0);
   hEffRatio_phi->Divide(hEff_phi,hEff_phi_KS0);
   hEffRatio_y->Divide(hEff_y,hEff_y_KS0);
+
+  hEffRatio_pT_min->Divide(hEff_pT_min,hEff_pT_KS0_min);
+  hEffRatio_eta_min->Divide(hEff_eta_min,hEff_eta_KS0_min);
+  hEffRatio_phi_min->Divide(hEff_phi_min,hEff_phi_KS0_min);
+  hEffRatio_y_min->Divide(hEff_y_min,hEff_y_KS0_min);
+
+  hEffRatio_pT_max->Divide(hEff_pT_max,hEff_pT_KS0_max);
+  hEffRatio_eta_max->Divide(hEff_eta_max,hEff_eta_KS0_max);
+  hEffRatio_phi_max->Divide(hEff_phi_max,hEff_phi_KS0_max);
+  hEffRatio_y_max->Divide(hEff_y_max,hEff_y_KS0_max);
 
   TFile* fout = new TFile("LamdbaKsCutEfficiency_200MeV_hists.root","RECREATE");
 
@@ -547,6 +709,70 @@ void CutEfficiency()
   hEffRatio_phi->Write();
   hEffRatio_y->Write();
 
+  hEff_pT_min->Write();
+  hEff_eta_min->Write();
+  hEff_phi_min->Write();
+  hEff_y_min->Write();
+
+  hEff_pT_KS0_min->Write();
+  hEff_eta_KS0_min->Write();
+  hEff_phi_KS0_min->Write();
+  hEff_y_KS0_min->Write();
+
+  hEffRatio_pT_min->Write();
+  hEffRatio_eta_min->Write();
+  hEffRatio_phi_min->Write();
+  hEffRatio_y_min->Write();
+
+  hEff_pT_max->Write();
+  hEff_eta_max->Write();
+  hEff_phi_max->Write();
+  hEff_y_max->Write();
+
+  hEff_pT_KS0_max->Write();
+  hEff_eta_KS0_max->Write();
+  hEff_phi_KS0_max->Write();
+  hEff_y_KS0_max->Write();
+
+  hEffRatio_pT_max->Write();
+  hEffRatio_eta_max->Write();
+  hEffRatio_phi_max->Write();
+  hEffRatio_y_max->Write();
+
+  TH1F* syserr_pT = new TH1F("cuteff_syserr_pT","systematic error from cut efficiency",nBins_pT,pTbins.data());
+  TH1F* syserr_eta = new TH1F("cuteff_syserr_eta","systematic error from cut efficiency",nBins_eta,etabins.data());
+  TH1F* syserr_phi = new TH1F("cuteff_syserr_phi","systematic error from cut efficiency",nBins_phi,phibins.data());
+  TH1F* syserr_y = new TH1F("cuteff_syserr_y","systematic error from cut efficiency",nBins_rap,rapbins.data());
+
+  for(int i=1;i<=syserr_pT->GetNbinsX();i++)
+  {
+    std::pair<double,double> extremes = std::minmax({hEffRatio_pT_min->GetBinContent(i),hEffRatio_pT->GetBinContent(i),hEffRatio_pT_max->GetBinContent(i)});
+    syserr_pT->SetBinContent(i,0.5*fabs(extremes.second-extremes.first));
+  }
+
+  for(int i=1;i<=syserr_eta->GetNbinsX();i++)
+  {
+    std::pair<double,double> extremes = std::minmax({hEffRatio_eta_min->GetBinContent(i),hEffRatio_eta->GetBinContent(i),hEffRatio_eta_max->GetBinContent(i)});
+    syserr_eta->SetBinContent(i,0.5*fabs(extremes.second-extremes.first));
+  }
+
+  for(int i=1;i<=syserr_phi->GetNbinsX();i++)
+  {
+    std::pair<double,double> extremes = std::minmax({hEffRatio_phi_min->GetBinContent(i),hEffRatio_phi->GetBinContent(i),hEffRatio_phi_max->GetBinContent(i)});
+    syserr_phi->SetBinContent(i,0.5*fabs(extremes.second-extremes.first));
+  }
+
+  for(int i=1;i<=syserr_y->GetNbinsX();i++)
+  {
+    std::pair<double,double> extremes = std::minmax({hEffRatio_y_min->GetBinContent(i),hEffRatio_y->GetBinContent(i),hEffRatio_y_max->GetBinContent(i)});
+    syserr_y->SetBinContent(i,0.5*fabs(extremes.second-extremes.first));
+  }
+
+  syserr_pT->Write();
+  syserr_eta->Write();
+  syserr_phi->Write();
+  syserr_y->Write();
+
   fout->Close();
 
   // -------------------------------------------------------------------------
@@ -562,8 +788,32 @@ void CutEfficiency()
   TEfficiency* eff_phi_KS0 = new TEfficiency(*h_phi_truthCuts_KS0, *h_phi_truth_KS0);
   TEfficiency* eff_y_KS0   = new TEfficiency(*h_y_truthCuts_KS0,   *h_y_truth_KS0);
 
+  TEfficiency* eff_pT_Xi_min  = new TEfficiency(*h_pT_truthCuts_min,  *h_pT_truth);
+  TEfficiency* eff_eta_Xi_min = new TEfficiency(*h_eta_truthCuts_min, *h_eta_truth);
+  TEfficiency* eff_phi_Xi_min = new TEfficiency(*h_phi_truthCuts_min, *h_phi_truth);
+  TEfficiency* eff_y_Xi_min   = new TEfficiency(*h_y_truthCuts_min,   *h_y_truth);
+
+  TEfficiency* eff_pT_KS0_min  = new TEfficiency(*h_pT_truthCuts_KS0_min,  *h_pT_truth_KS0);
+  TEfficiency* eff_eta_KS0_min = new TEfficiency(*h_eta_truthCuts_KS0_min, *h_eta_truth_KS0);
+  TEfficiency* eff_phi_KS0_min = new TEfficiency(*h_phi_truthCuts_KS0_min, *h_phi_truth_KS0);
+  TEfficiency* eff_y_KS0_min   = new TEfficiency(*h_y_truthCuts_KS0_min,   *h_y_truth_KS0);
+
+  TEfficiency* eff_pT_Xi_max  = new TEfficiency(*h_pT_truthCuts_max,  *h_pT_truth);
+  TEfficiency* eff_eta_Xi_max = new TEfficiency(*h_eta_truthCuts_max, *h_eta_truth);
+  TEfficiency* eff_phi_Xi_max = new TEfficiency(*h_phi_truthCuts_max, *h_phi_truth);
+  TEfficiency* eff_y_Xi_max   = new TEfficiency(*h_y_truthCuts_max,   *h_y_truth);
+
+  TEfficiency* eff_pT_KS0_max  = new TEfficiency(*h_pT_truthCuts_KS0_max,  *h_pT_truth_KS0);
+  TEfficiency* eff_eta_KS0_max = new TEfficiency(*h_eta_truthCuts_KS0_max, *h_eta_truth_KS0);
+  TEfficiency* eff_phi_KS0_max = new TEfficiency(*h_phi_truthCuts_KS0_max, *h_phi_truth_KS0);
+  TEfficiency* eff_y_KS0_max   = new TEfficiency(*h_y_truthCuts_KS0_max,   *h_y_truth_KS0);
+
   for (auto* e : {eff_pT_Xi, eff_eta_Xi, eff_phi_Xi, eff_y_Xi,
-		  eff_pT_KS0, eff_eta_KS0, eff_phi_KS0, eff_y_KS0})
+		  eff_pT_KS0, eff_eta_KS0, eff_phi_KS0, eff_y_KS0,
+                  eff_pT_Xi_min, eff_eta_Xi_min, eff_phi_Xi_min, eff_y_Xi_min,
+                  eff_pT_KS0_min, eff_eta_KS0_min, eff_phi_KS0_min, eff_y_KS0_min,
+                  eff_pT_Xi_max, eff_eta_Xi_max, eff_phi_Xi_max, eff_y_Xi_max,
+                  eff_pT_KS0_max, eff_eta_KS0_max, eff_phi_KS0_max, eff_y_KS0_max})
       e->SetStatisticOption(TEfficiency::kFCP);
 
   auto makeEffGraph = [](TEfficiency* eff) -> TGraphAsymmErrors*
