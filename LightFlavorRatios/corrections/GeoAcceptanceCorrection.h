@@ -3,6 +3,13 @@
 
 #include "CorrectionHistogram1D.h"
 
+#include <TFile.h>
+#include <TH1F.h>
+#include <TCanvas.h>
+
+#include <string>
+#include <memory>
+
 struct GeoAcceptanceCorrection : CorrectionHistogram1D
 {
   std::shared_ptr<TFile> f;
