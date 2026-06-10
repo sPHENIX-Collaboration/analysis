@@ -1,0 +1,27 @@
+# Data & generated outputs
+data/
+*.root
+*.pdf
+*.png
+qa_pages_*/
+
+# Python tooling (regeneratable)
+.venv-uproot/
+__pycache__/
+*.pyc
+
+# Autotools / libtool build products (in-source or build/)
+build/
+.deps/
+.libs/
+*.lo
+*.so.*
+config.log
+config.status
+libtool
+Makefile
+testexternals
+
+# macro/: ship only the generator driver
+/macro/*
+!/macro/Fun4All_sEPDWaveform.C
