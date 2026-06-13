@@ -23,6 +23,7 @@ set(SPHENIX_INSTALL "$ENV{OFFLINE_MAIN}")
 set(MY_INSTALL "$ENV{MYINSTALL}")
 
 include_directories(
+    "macros"
     "${MY_INSTALL}/include"
     SYSTEM ${ROOT_INCLUDE_DIRS}
     SYSTEM "${SPHENIX_INSTALL}/include"
@@ -179,6 +180,12 @@ target_link_libraries(display-sEPD-QA PRIVATE ${STANDALONE_MACRO_LIBS})
 # --- display Q vector correction ---
 add_executable(display-Q-vec macros/display-Q-vec.C)
 target_link_libraries(display-Q-vec PRIVATE ${STANDALONE_MACRO_LIBS})
+
+# ---------------------------------
+# sEPD Performance
+add_executable(display-sEPD-Psi macros/sEPD-Performance/display-sEPD-Psi.C)
+target_link_libraries(display-sEPD-Psi PRIVATE ${STANDALONE_MACRO_LIBS})
+# ---------------------------------
 
 # ====================================================================
 # Optional: Add a Cppcheck Target
