@@ -109,6 +109,25 @@ void displaySEPDPsi::read_hists()
    {
     m_hists.merge(myUtils::read_hists(file, std::format("_{}", tag), &names));
    }
+
+   // Data 68144
+   std::filesystem::path data = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-04-21-run3auau/QVecCalib/QVecCalib-68144.root";
+
+   std::unordered_set<std::string> names_q = {"h_sEPD_Q_S_x_2_avg","h_sEPD_Q_S_y_2_avg",
+                                              "h_sEPD_Q_S_xx_2_avg","h_sEPD_Q_S_yy_2_avg","h_sEPD_Q_S_xy_2_avg",
+
+                                              "h_sEPD_Q_S_x_2_corr2_avg","h_sEPD_Q_S_y_2_corr2_avg",
+                                              "h_sEPD_Q_S_xx_2_corr_avg","h_sEPD_Q_S_yy_2_corr_avg","h_sEPD_Q_S_xy_2_corr_avg",
+
+                                              "h_sEPD_Q_N_x_2_avg","h_sEPD_Q_N_y_2_avg",
+                                              "h_sEPD_Q_N_xx_2_avg","h_sEPD_Q_N_yy_2_avg","h_sEPD_Q_N_xy_2_avg",
+
+                                              "h_sEPD_Q_N_x_2_corr2_avg","h_sEPD_Q_N_y_2_corr2_avg",
+                                              "h_sEPD_Q_N_xx_2_corr_avg","h_sEPD_Q_N_yy_2_corr_avg","h_sEPD_Q_N_xy_2_corr_avg"};
+
+    m_hists.merge(myUtils::read_hists(data, "_data", &names_q));
+    m_hists.merge(myUtils::read_hists(mc_A_flat, "_A", &names_q));
+    m_hists.merge(myUtils::read_hists(mc_B_flat, "_B", &names_q));
 }
 
 void displaySEPDPsi::draw()
@@ -229,6 +248,146 @@ void displaySEPDPsi::draw()
 
     plotAndSave({{hPsi_S_raw_A, hPsi_S_flat_A, hPsi_S_raw_B, hPsi_S_flat_B}}, "Psi-S");
     plotAndSave({{hPsi_N_raw_A, hPsi_N_flat_A, hPsi_N_raw_B, hPsi_N_flat_B}}, "Psi-N", {.det = "N"});
+  }
+
+  // ----------------------------------------------------
+
+  {
+    c1->SetTopMargin(.08F);
+    c1->SetLeftMargin(.1F);
+
+    struct PlotOptions
+    {
+     double xlow{0};
+     double xhigh{60};
+
+     double ylow{-40e-3};
+     double yhigh{20e-3};
+
+     std::string ytitle{};
+    };
+
+    auto plotAndSave = [&](std::vector<TH1*>& hists, const std::string name, PlotOptions opts = {})
+    {
+
+      std::cout << std::format("Hists: {}\n", hists.size());
+
+      bool first = true;
+
+      std::vector<short int> my_colors = {kRed + 1, kBlack, kAzure + 1};
+      std::vector<short int> mk_style = {kFullDotLarge, kFullDotLarge, kFullDotLarge, kOpenCircle, kOpenCircle, kOpenCircle};
+      std::vector<short int> mk_size = {2, 2, 2};
+
+      for (size_t i = 0; auto& hist : hists)
+      {
+        if (first)
+        {
+          hist->Draw();
+          hist->GetXaxis()->SetRangeUser(opts.xlow, opts.xhigh);
+          hist->GetYaxis()->SetRangeUser(opts.ylow, opts.yhigh);
+          hist->GetYaxis()->SetMaxDigits(3);
+
+          if (!opts.ytitle.empty())
+          {
+            hist->GetYaxis()->SetTitle(opts.ytitle.c_str());
+          }
+
+          hist->GetYaxis()->SetTitleSize(0.04F);
+          hist->GetYaxis()->SetLabelSize(0.04F);
+          hist->GetXaxis()->SetTitleSize(0.04F);
+          hist->GetXaxis()->SetLabelSize(0.04F);
+
+          hist->GetYaxis()->SetTitleOffset(1.2F);
+          hist->GetXaxis()->SetTitleOffset(1.F);
+
+          first = false;
+        }
+        else
+        {
+          hist->Draw("same");
+        }
+
+        hist->SetMarkerStyle(mk_style[i]);
+        hist->SetMarkerSize(mk_size[i%mk_size.size()]);
+        hist->SetMarkerColor(my_colors[i%my_colors.size()]);
+        hist->SetLineColor(my_colors[i%my_colors.size()]);
+        ++i;
+      }
+
+      double xshift = -0.1;
+      double yshift = -0.3;
+
+      std::vector<std::string> labels = {"Raw: Data", "Raw: MC Default", "Raw: MC Dead Map",
+                                         "Flat: Data", "Flat: MC Default", "Flat: MC Dead Map"};
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .4 + yshift, 0.4 + xshift, .6 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.04F);
+
+      for (size_t i = 0; auto& hist : hists)
+      {
+        leg->AddEntry(hist, labels[i++].c_str(), "pe");
+      }
+      leg->Draw("same");
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+    };
+
+    // 1. Loop over the linear means (Sx, Sy, Nx, Ny)
+    std::vector<std::pair<std::string, std::string>> linear_vars = {{"S_x", "Sx"}, {"S_y", "Sy"}, {"N_x", "Nx"}, {"N_y", "Ny"}};
+
+    for (const auto& [var, name] : linear_vars)
+    {
+     std::vector<std::string> tags = {
+         "avg_data", "avg_A", "avg_B",
+         "corr2_avg_data", "corr2_avg_A", "corr2_avg_B"};
+
+     std::vector<TH1*> hists;
+     for (const auto& tag : tags)
+     {
+       // Dynamically build keys like "h_sEPD_Q_S_x_2_avg_data"
+       std::string key = std::format("h_sEPD_Q_{}_2_{}", var, tag);
+       hists.push_back(dynamic_cast<TProfile*>(m_hists[key].get()));
+     }
+
+     plotAndSave(hists, name);
+    }
+
+    // ----------------------------------------------------
+
+    // 2. Loop over the 2D relationships (Sxx/Syy, Sxy, Nxx/Nyy, Nxy)
+    std::vector<std::string> detectors = {"S", "N"};
+
+    for (const auto& det : detectors)
+    {
+      std::vector<TH1*> hists_xx;
+      std::vector<TH1*> hists_xy;
+
+      // Note: covariances use "corr_avg", not "corr2_avg"
+      std::vector<std::string> tags = {
+        "avg_data", "avg_A", "avg_B",
+        "corr_avg_data", "corr_avg_A", "corr_avg_B"
+      };
+
+      for (const auto& tag : tags)
+      {
+        std::string key_xx = std::format("h_sEPD_Q_{}_xx_2_{}", det, tag);
+        std::string key_yy = std::format("h_sEPD_Q_{}_yy_2_{}", det, tag);
+        std::string key_xy = std::format("h_sEPD_Q_{}_xy_2_{}", det, tag);
+
+        auto* h_xx = dynamic_cast<TProfile*>(m_hists[key_xx].get())->ProjectionX();
+        auto* h_yy = dynamic_cast<TProfile*>(m_hists[key_yy].get())->ProjectionX();
+
+        h_xx->Divide(h_yy);
+        hists_xx.push_back(h_xx);
+
+        hists_xy.push_back(dynamic_cast<TProfile*>(m_hists[key_xy].get()));
+      }
+
+      plotAndSave(hists_xx, std::format("{}xx", det), {.ylow = 0.6, .yhigh = 1.1, .ytitle = "<Q_{2,x}^{2}> / <Q_{2,y}^{2}>"});
+      plotAndSave(hists_xy, std::format("{}xy", det), {.ylow = -2e-4, .yhigh = 1e-4, .ytitle = "<Q_{2,x} Q_{2,y}>"});
+    }
   }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
