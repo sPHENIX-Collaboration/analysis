@@ -175,8 +175,8 @@ void displaySEPDPsi::draw()
       h_flat_A->SetLineWidth(6);
       h_flat_B->SetLineWidth(6);
 
-      h_raw_A->SetLineColor(kRed+1);
-      h_raw_B->SetLineColor(kAzure+1);
+      h_raw_A->SetLineColor(kBlack);
+      h_raw_B->SetLineColor(kRed+1);
 
       h_flat_A->SetLineColor(kGreen+2);
       h_flat_B->SetLineColor(kOrange+7);
