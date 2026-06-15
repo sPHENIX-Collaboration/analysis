@@ -98,14 +98,11 @@ class DisplaySEPDQA
 
   int m_nChannels{744};
 
-  // std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/all-rings";
-  // std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-03-16-run3auau-test/without-ring-0";
   std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test";
 
   std::string m_EP_base_output_suffix = "ApplyFlattening/output/hist/QVecCalib-68144.root";
 
   std::map<std::string, std::string> m_EP_files = {
-      // {"_default", std::format("{}/stage-QVecCalib-default-hotmap/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_0", std::format("{}/stage-QVecCalib-0.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_50", std::format("{}/stage-QVecCalib-50.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
       {"_25", std::format("{}/stage-QVecCalib-25.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
