@@ -98,18 +98,6 @@ class DisplaySEPDQA
 
   int m_nChannels{744};
 
-  std::string m_EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test";
-
-  std::string m_EP_base_output_suffix = "ApplyFlattening/output/hist/QVecCalib-68144.root";
-
-  std::map<std::string, std::string> m_EP_files = {
-      {"_0", std::format("{}/stage-QVecCalib-0.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
-      {"_50", std::format("{}/stage-QVecCalib-50.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
-      {"_25", std::format("{}/stage-QVecCalib-25.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
-      {"_10", std::format("{}/stage-QVecCalib-10.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)},
-      {"_5", std::format("{}/stage-QVecCalib-5.0-0.5/{}", m_EP_base_output_dir, m_EP_base_output_suffix)}
-  };
-
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
@@ -141,9 +129,21 @@ void DisplaySEPDQA::read_hists()
   m_sepd_calib = std::make_unique<CDBTTree>(calib);
 
   // Event Plane Resolution Study
+  std::string EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test";
+
+  std::string EP_base_output_suffix = "ApplyFlattening/output/hist/QVecCalib-68144.root";
+
+  std::map<std::string, std::string> EP_files = {
+      {"_0", std::format("{}/stage-QVecCalib-0.0-0.5/{}", EP_base_output_dir, EP_base_output_suffix)},
+      {"_50", std::format("{}/stage-QVecCalib-50.0-0.5/{}", EP_base_output_dir, EP_base_output_suffix)},
+      {"_25", std::format("{}/stage-QVecCalib-25.0-0.5/{}", EP_base_output_dir, EP_base_output_suffix)},
+      {"_10", std::format("{}/stage-QVecCalib-10.0-0.5/{}", EP_base_output_dir, EP_base_output_suffix)},
+      {"_5", std::format("{}/stage-QVecCalib-5.0-0.5/{}", EP_base_output_dir, EP_base_output_suffix)}
+  };
+
   std::unordered_set<std::string> names = {"hEP_res_2", "h2_sEPD_Psi_S_2_corr2", "h2_sEPD_Psi_N_2_corr2"};
 
-  for (const auto& [tag, file] : m_EP_files)
+  for (const auto& [tag, file] : EP_files)
   {
     m_hists.merge(myUtils::read_hists(file, tag, &names));
   }
