@@ -82,6 +82,7 @@ class DisplaySEPDQA
     read_hists();
     draw_QA();
     draw_EP_Study();
+    draw_psi();
   }
 
  private:
@@ -101,6 +102,7 @@ class DisplaySEPDQA
   // --- Private Helper Methods ---
   void read_hists();
   void init_hists();
+  void draw_psi();
   void draw_QA();
   void draw_EP_Study();
 
@@ -125,8 +127,16 @@ void DisplaySEPDQA::read_hists()
 {
   std::string input = "/sphenix/user/anarde/sEPD-Study/f4a/05-08-26-run3auau/merged/output/68144.root";
   std::string calib = "/cvmfs/sphenix.sdcc.bnl.gov/calibrations/sphnxpro/cdb/SEPD_NMIP_CALIB/86/6d/866db5abdca24d60cc47f8856c8e97f4_sEPD_CalibConstants_CDB_Run71504_v2.root";
+  std::string input_jetAna = "/gpfs02/sphenix/user/anarde/sEPD-Study/jetAna/05-22-26-jetAna/merged/output/68144.root";
+
   m_hists = myUtils::read_hists(input);
   m_sepd_calib = std::make_unique<CDBTTree>(calib);
+
+  std::unordered_set<std::string> names_jetAna = {"h2_sEPD_Psi_S_2_raw", "h2_sEPD_Psi_N_2_raw",
+                                                 "h2_sEPD_Psi_S_2_recentered", "h2_sEPD_Psi_N_2_recentered",
+                                                 "h2_sEPD_Psi_S_2_flat", "h2_sEPD_Psi_N_2_flat"};
+
+  m_hists.merge(myUtils::read_hists(input_jetAna, "_68144", &names_jetAna));
 
   // Event Plane Resolution Study
   std::string EP_base_output_dir = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test";
@@ -795,6 +805,135 @@ void DisplaySEPDQA::draw_EP_Study()
 
   c1->Print((output + "]").c_str(), "pdf portrait");
 
+}
+
+void DisplaySEPDQA::draw_psi()
+{
+  // set sPHENIX plotting style
+  SetsPhenixStyle();
+
+  std::unique_ptr<TCanvas> c1 = std::make_unique<TCanvas>("c1");
+  c1->SetTickx();
+  c1->SetTicky();
+
+  c1->Divide(2, 1, 0.00025F, 0.00025F);
+  c1->SetCanvasSize(2500, 1200);
+
+  gStyle->SetOptTitle(1);
+  gStyle->SetTitleStyle(0);
+  gStyle->SetTitleFontSize(0.08F);
+  gStyle->SetTitleW(1);
+  gStyle->SetTitleH(0.08F);
+  gStyle->SetTitleFillColor(0);
+  gStyle->SetTitleBorderSize(0);
+
+  std::string output;
+
+  // create output directory
+  std::filesystem::create_directories(std::format("{}/images", m_output_dir));
+  std::filesystem::create_directories(std::format("{}/pdf", m_output_dir));
+  output = std::format("{}/pdf/plots-Psi.pdf", m_output_dir);
+
+  c1->Print((output + "[").c_str(), "pdf portrait");
+
+  auto* hPsiS_raw = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_S_2_raw_68144"].get())->ProjectionX();
+  auto* hPsiN_raw = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_N_2_raw_68144"].get())->ProjectionX();
+
+  auto* hPsiS_recentered = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_S_2_recentered_68144"].get())->ProjectionX();
+  auto* hPsiN_recentered = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_N_2_recentered_68144"].get())->ProjectionX();
+
+  auto* hPsiS_flat = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_S_2_flat_68144"].get())->ProjectionX();
+  auto* hPsiN_flat = dynamic_cast<TH2*>(m_hists["h2_sEPD_Psi_N_2_flat_68144"].get())->ProjectionX();
+
+  struct PlotOptions
+  {
+    double ymax{0};
+    float margin_bottom{0.12F};
+    float margin_left{0.12F};
+    float margin_right{0.01F};
+    bool show_ylabels{true};
+    bool show_legend{true};
+    bool show_labels{true};
+    std::string det{};
+    short int line_width{6};
+  };
+
+  std::vector<std::unique_ptr<TLegend>> legends;
+  std::vector<std::unique_ptr<TLatex>> labels;
+
+  auto plot = [&](TH1* hist_raw, TH1* hist_recentered, TH1* hist_flat, int idx, PlotOptions opts = {})
+  {
+    c1->cd(idx);
+    gPad->SetBottomMargin(opts.margin_bottom);
+    gPad->SetLeftMargin(opts.margin_left);
+    gPad->SetRightMargin(opts.margin_right);
+
+    hist_raw->Draw("HIST");
+    hist_recentered->Draw("HIST same");
+    hist_flat->Draw("HIST same");
+
+    hist_raw->SetLineColor(kRed);
+    hist_raw->SetLineWidth(opts.line_width);
+
+    hist_recentered->SetLineColor(kBlue);
+    hist_recentered->SetLineWidth(opts.line_width);
+
+    hist_flat->SetLineColor(kGreen + 3);
+    hist_flat->SetLineWidth(opts.line_width);
+
+    double ymax = hist_raw->GetMaximum() * 1.1;
+    opts.ymax = (opts.ymax) ? opts.ymax : ymax;
+    hist_raw->GetYaxis()->SetRangeUser(0, opts.ymax);
+
+    hist_raw->SetTitle("");
+    hist_raw->GetYaxis()->SetTitle("Events");
+    hist_raw->GetYaxis()->SetTitleOffset(1.2F);
+    hist_raw->GetXaxis()->SetTitleSize(0.05F);
+    hist_raw->GetXaxis()->SetLabelSize(0.05F);
+
+    if (!opts.show_ylabels)
+    {
+      hist_raw->GetYaxis()->SetLabelSize(0.F);
+    }
+
+    double xshift = 0.45;
+    double yshift = -0.02;
+
+    if (opts.show_legend)
+    {
+      auto leg = std::make_unique<TLegend>(0.2 + xshift, .75 + yshift, 0.54 + xshift, .95 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.05F);
+      leg->AddEntry(hist_raw, "Raw", "l");
+      leg->AddEntry(hist_recentered, "Recentered", "l");
+      leg->AddEntry(hist_flat, "Flat", "l");
+      leg->Draw("same");
+
+      legends.push_back(std::move(leg));
+    }
+
+    labels.push_back(myUtils::draw_text(0.25, 0.88, opts.det, 0.08F));
+
+    if (opts.show_labels)
+    {
+      labels.push_back(myUtils::draw_text(0.53, 0.8, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.045F));
+      labels.push_back(myUtils::draw_text(0.53, 0.7, "Centrality: 0-60%", 0.06F));
+    }
+  };
+
+  int ctr = 1;
+
+  double ymax = std::max(hPsiS_raw->GetMaximum(), hPsiN_raw->GetMaximum()) * 1.1;
+
+  plot(hPsiS_raw, hPsiS_recentered, hPsiS_flat, ctr++, {.ymax = ymax, .margin_right = 0.F, .show_legend = false, .det = "sEPD South"});
+  plot(hPsiN_raw, hPsiN_recentered, hPsiN_flat, ctr, {.ymax = ymax, .margin_left = 0.F, .show_ylabels = false, .show_labels = false, .det = "sEPD North"});
+
+  labels.push_back(myUtils::draw_text(0.75, 0.97, "6/12/2026", 0.05F));
+
+  c1->Print(output.c_str(), "pdf portrait");
+  if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hPsi-overlay").c_str());
+
+  c1->Print((output + "]").c_str(), "pdf portrait");
 }
 
 void DisplaySEPDQA::draw_QA()
