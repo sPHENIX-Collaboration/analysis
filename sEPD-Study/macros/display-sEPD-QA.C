@@ -849,7 +849,7 @@ void DisplaySEPDQA::draw_psi()
   {
     double ymax{0};
     float margin_bottom{0.12F};
-    float margin_left{0.12F};
+    float margin_left{0.14F};
     float margin_right{0.01F};
     bool show_ylabels{true};
     bool show_legend{true};
@@ -885,9 +885,11 @@ void DisplaySEPDQA::draw_psi()
     opts.ymax = (opts.ymax) ? opts.ymax : ymax;
     hist_raw->GetYaxis()->SetRangeUser(0, opts.ymax);
 
+    hist_raw->GetXaxis()->SetTitle(std::format("{} 2#Psi_{{2}}", opts.det).c_str());
+
     hist_raw->SetTitle("");
     hist_raw->GetYaxis()->SetTitle("Events");
-    hist_raw->GetYaxis()->SetTitleOffset(1.2F);
+    hist_raw->GetYaxis()->SetTitleOffset(1.4F);
     hist_raw->GetXaxis()->SetTitleSize(0.05F);
     hist_raw->GetXaxis()->SetLabelSize(0.05F);
 
@@ -912,12 +914,11 @@ void DisplaySEPDQA::draw_psi()
       legends.push_back(std::move(leg));
     }
 
-    labels.push_back(myUtils::draw_text(0.25, 0.88, opts.det, 0.08F));
-
     if (opts.show_labels)
     {
-      labels.push_back(myUtils::draw_text(0.53, 0.8, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.045F));
-      labels.push_back(myUtils::draw_text(0.53, 0.7, "Centrality: 0-60%", 0.06F));
+      labels.push_back(myUtils::draw_text(0.18, 0.9, "#bf{#it{sPHENIX}} Performance", 0.05F));
+      labels.push_back(myUtils::draw_text(0.5, 0.8, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
+      labels.push_back(myUtils::draw_text(0.5, 0.7, "Centrality: 0-60%", 0.05F));
     }
   };
 
