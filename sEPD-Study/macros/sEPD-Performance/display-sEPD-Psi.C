@@ -111,7 +111,7 @@ void displaySEPDPsi::read_hists()
    }
 
    // Data 68144
-   std::filesystem::path data = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-04-21-run3auau/QVecCalib/QVecCalib-68144.root";
+   std::filesystem::path data = "/gpfs02/sphenix/user/anarde/sEPD-Calib/2026-06-01-run3auau-test/stage-QVecCalib-50.0-0.5/ApplyFlattening/output/hist/QVecCalib-68144.root";
 
    std::unordered_set<std::string> names_q = {"h_sEPD_Q_S_x_2_avg","h_sEPD_Q_S_y_2_avg",
                                               "h_sEPD_Q_S_xx_2_avg","h_sEPD_Q_S_yy_2_avg","h_sEPD_Q_S_xy_2_avg",
