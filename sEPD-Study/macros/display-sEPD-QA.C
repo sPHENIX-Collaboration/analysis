@@ -668,6 +668,7 @@ void DisplaySEPDQA::draw_EP_Study()
     graph_evt_res_star->SetLineStyle(kSolid);  // Keep error bars solid
 
     graph_evt_res_star->GetYaxis()->SetRangeUser(0, 0.6);
+    graph_evt_res_star->GetXaxis()->SetLimits(0, 60);
     graph_evt_res_star->GetYaxis()->SetTitleOffset(1.F);
     graph_evt_res_star->GetXaxis()->SetTitleOffset(0.92F);
 
@@ -698,16 +699,20 @@ void DisplaySEPDQA::draw_EP_Study()
     auto leg = std::make_unique<TLegend>(0.2 + xshift, .65 + yshift, 0.54 + xshift, .95 + yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05F);
+    auto* legEntry_sPHENIX_MC = leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
     auto* legEntry_sPHENIX_50 = leg->AddEntry(hSP_evt_res_50.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq50)", "lp");
     auto* legEntry_sPHENIX_10 = leg->AddEntry(hSP_evt_res_10.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq10)", "lp");
     auto* legEntry_sPHENIX_Run2 = leg->AddEntry(graph_line_sepd_run2, "sEPD: Run 2 Au+Au (By Ejiro)", "lp");
-    auto* legEntry_sPHENIX_MC = leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
     auto* legEntry_STAR = leg->AddEntry(graph_line, "STAR EPD", "lp");
 
     // Draw ONLY the points and error bars (using option "p")
     graph_evt_res_star->Draw("ap");
     // Draw ONLY the connecting line (using option "l")
     graph_line->Draw("same l");
+
+    hSP_res_sPHENIX_MC->Draw("same l p");
+
+    leg->Draw("same");
 
     graph_evt_res_sepd_run2->Draw("same p");
     graph_line_sepd_run2->Draw("same l");
@@ -717,10 +722,6 @@ void DisplaySEPDQA::draw_EP_Study()
 
     hSP_evt_res_10->Draw("same p e X0");
     hSP_evt_res_10->Draw("same hist l p");
-
-    hSP_res_sPHENIX_MC->Draw("same l p");
-
-    leg->Draw("same");
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v1.png", m_output_dir).c_str());
@@ -756,51 +757,48 @@ void DisplaySEPDQA::draw_EP_Study()
 
     std::vector<std::unique_ptr<TLatex>> labels;
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
-    labels.push_back(myUtils::draw_text(0.75, 0.97, "mm/dd/yyyy", 0.05F));
+    labels.push_back(myUtils::draw_text(0.75, 0.97, "6/12/2026", 0.05F));
 
-    yshift = -0.2;
+    yshift = -0.15;
 
-    labels.push_back(myUtils::draw_text(0.3, 0.8+yshift, "sEPD Dynamic Clamping", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.73+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
+    labels.push_back(myUtils::draw_text(0.54, 0.89, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v2.png", m_output_dir).c_str());
 
-    // sEPD Data vs STAR
-
-    graph_evt_res_star->Draw("p");
-    graph_line->Draw("same l");
-
-    hSP_evt_res_combined->Draw("same a hist l p");
-    hSP_evt_res_combined->Draw("same p e X0");
-
-    legEntry_STAR = leg->AddEntry(graph_line, "STAR EPD", "lp");
-    leg->Draw("same");
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v3.png", m_output_dir).c_str());
-
-    // sEPD Data vs STAR vs sEPD MC
-
-    hSP_res_sPHENIX_MC->Draw("same l p");
-
-    leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
-
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v4.png", m_output_dir).c_str());
-
-    // sEPD Data vs MC
-
-    while (c1->GetListOfPrimitives()->Remove(graph_evt_res_star.get()))
-    while (c1->GetListOfPrimitives()->Remove(graph_line))
-    leg->GetListOfPrimitives()->Remove(legEntry_STAR);
+    leg->GetListOfPrimitives()->Remove(legEntry_sPHENIX_50);
+    c1->GetListOfPrimitives()->Remove(hSP_evt_res_combined.get());
 
     c1->Modified();
     c1->Update();
 
+    // sEPD Data vs STAR
+    graph_evt_res_star->Draw("ap");
+    graph_line->Draw("same l");
+
+    hSP_evt_res_combined->Draw("same a hist p");
+    hSP_evt_res_combined->Draw("same p e X0");
+
+    labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
+    labels.push_back(myUtils::draw_text(0.75, 0.97, "6/12/2026", 0.05F));
+    labels.push_back(myUtils::draw_text(0.54, 0.89, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
+
+    xshift = -0.08;
+    yshift = -0.5;
+
+    leg = std::make_unique<TLegend>(0.2 + xshift, .8 + yshift, 0.54 + xshift, .95 + yshift);
+    leg->SetFillStyle(0);
+    leg->SetTextSize(0.05F);
+    leg->AddEntry(hSP_evt_res_combined.get(), "sEPD: Run 68144", "p");
+    leg->AddEntry(graph_line, "STAR EPD (Private Communication)", "lp");
+    leg->Draw("same");
+
     c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v5.png", m_output_dir).c_str());
+    if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v3.png", m_output_dir).c_str());
   }
 
   c1->Print((output + "]").c_str(), "pdf portrait");
