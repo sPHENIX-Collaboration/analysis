@@ -639,12 +639,12 @@ void DisplaySEPDQA::draw_EP_Study()
     hSP_evt_res_50->SetLineColor(kBlue);
     hSP_evt_res_50->SetMarkerStyle(kFullDotLarge);
     hSP_evt_res_50->SetLineStyle(kDashed);
-    hSP_evt_res_50->SetMarkerSize(2);
+    hSP_evt_res_50->SetMarkerSize(3);
     hSP_evt_res_50->SetLineWidth(3);
 
     hSP_evt_res_10->SetMarkerColor(kCyan+1);
     hSP_evt_res_10->SetMarkerStyle(kFullDotLarge);
-    hSP_evt_res_10->SetMarkerSize(2);
+    hSP_evt_res_10->SetMarkerSize(3);
     hSP_evt_res_10->SetLineColor(kCyan+1);
     hSP_evt_res_10->SetLineWidth(3);
     hSP_evt_res_10->SetLineStyle(kDashed);
@@ -700,7 +700,7 @@ void DisplaySEPDQA::draw_EP_Study()
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05F);
     auto* legEntry_sPHENIX_MC = leg->AddEntry(hSP_res_sPHENIX_MC, "Legacy sEPD MC (Optimized Truncation)", "lp");
-    auto* legEntry_sPHENIX_50 = leg->AddEntry(hSP_evt_res_50.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq50)", "lp");
+    auto* legEntry_sPHENIX_50 = leg->AddEntry(hSP_evt_res_50.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq50)", "p");
     auto* legEntry_sPHENIX_10 = leg->AddEntry(hSP_evt_res_10.get(), "sEPD: Run 3 Au+Au (0.5#leqN_{mip}#leq10)", "lp");
     auto* legEntry_sPHENIX_Run2 = leg->AddEntry(graph_line_sepd_run2, "sEPD: Run 2 Au+Au (By Ejiro)", "lp");
     auto* legEntry_STAR = leg->AddEntry(graph_line, "STAR EPD", "lp");
@@ -747,8 +747,7 @@ void DisplaySEPDQA::draw_EP_Study()
 
     legEntry_sPHENIX_50->SetLabel("sEPD: Run 68144");
 
-    hSP_evt_res_combined->Draw("hist l p");
-    hSP_evt_res_combined->Draw("same p e X0");
+    hSP_evt_res_combined->Draw("p e X0");
 
     leg->Draw("same");
 
