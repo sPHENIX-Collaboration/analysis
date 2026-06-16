@@ -733,11 +733,11 @@ void DisplaySEPDQA::draw_EP_Study()
     leg->GetListOfPrimitives()->Remove(legEntry_STAR);
     leg->GetListOfPrimitives()->Remove(legEntry_sPHENIX_Run2);
 
-    xshift = -0.08;
-    yshift = -0.5;
+    xshift = 0.01;
+    yshift = -0.61;
 
     leg->SetX1NDC(0.2 + xshift);
-    leg->SetY1NDC(0.65 + yshift);
+    leg->SetY1NDC(0.8 + yshift);
     leg->SetX2NDC(0.54 + xshift);
     leg->SetY2NDC(0.95 + yshift);
 
@@ -760,11 +760,11 @@ void DisplaySEPDQA::draw_EP_Study()
     labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
     labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
 
-    yshift = -0.15;
+    yshift = -0.33;
 
-    labels.push_back(myUtils::draw_text(0.3, 0.7, "#bf{#it{sPHENIX}} Performance", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.85+yshift, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.75 + yshift, "0-30%: 0.5#kern[0.7]{#leq}#kern[0.2]{N_{mip}}#kern[0.6]{#leq}#kern[0.3]{50}", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.67 + yshift, "30-60%: 0.5#kern[0.7]{#leq}#kern[0.2]{N_{mip}}#kern[0.6]{#leq}#kern[0.2]{10}", 0.05F));
 
     c1->Print(output.c_str(), "pdf portrait");
     if (m_saveFig) c1->Print(std::format("{}/images/Event-Plane-Resolution-Overlay-v2.png", m_output_dir).c_str());
@@ -785,12 +785,12 @@ void DisplaySEPDQA::draw_EP_Study()
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
     labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
     labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.7, "#bf{#it{sPHENIX}} Performance", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
-    labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.85+yshift, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.75 + yshift, "0-30%: 0.5#kern[0.7]{#leq}#kern[0.2]{N_{mip}}#kern[0.6]{#leq}#kern[0.3]{50}", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.67 + yshift, "30-60%: 0.5#kern[0.7]{#leq}#kern[0.2]{N_{mip}}#kern[0.6]{#leq}#kern[0.2]{10}", 0.05F));
 
-    xshift = -0.08;
-    yshift = -0.5;
+    xshift = 0.01;
+    yshift = -0.65;
 
     leg = std::make_unique<TLegend>(0.2 + xshift, .8 + yshift, 0.54 + xshift, .95 + yshift);
     leg->SetFillStyle(0);
