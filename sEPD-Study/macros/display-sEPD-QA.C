@@ -756,7 +756,7 @@ void DisplaySEPDQA::draw_EP_Study()
 
     std::vector<std::unique_ptr<TLatex>> labels;
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
-    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
+    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run 25", 0.05F));
     labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
 
     yshift = -0.33;
@@ -780,7 +780,7 @@ void DisplaySEPDQA::draw_EP_Study()
     hSP_evt_res_combined->Draw("same p e X0");
 
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
-    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
+    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run 25", 0.05F));
     labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.85+yshift, "#bf{#it{sPHENIX}} Performance", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.75 + yshift, "0-30%: 0.5#kern[0.7]{#leq}#kern[0.2]{N_{mip}}#kern[0.6]{#leq}#kern[0.3]{50}", 0.05F));
@@ -914,7 +914,7 @@ void DisplaySEPDQA::draw_psi()
     if (opts.show_labels)
     {
       labels.push_back(myUtils::draw_text(0.18, 0.9, "#bf{#it{sPHENIX}} Performance", 0.05F));
-      labels.push_back(myUtils::draw_text(0.7, 0.9, "Run25", 0.05F));
+      labels.push_back(myUtils::draw_text(0.7, 0.9, "Run 25", 0.05F));
       labels.push_back(myUtils::draw_text(0.5, 0.8, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
       labels.push_back(myUtils::draw_text(0.5, 0.7, "Centrality: 0-60%", 0.05F));
     }
