@@ -757,11 +757,12 @@ void DisplaySEPDQA::draw_EP_Study()
 
     std::vector<std::unique_ptr<TLatex>> labels;
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
-    labels.push_back(myUtils::draw_text(0.75, 0.97, "6/12/2026", 0.05F));
+    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
+    labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
 
     yshift = -0.15;
 
-    labels.push_back(myUtils::draw_text(0.54, 0.89, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.7, "#bf{#it{sPHENIX}} Performance", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
 
@@ -782,8 +783,9 @@ void DisplaySEPDQA::draw_EP_Study()
     hSP_evt_res_combined->Draw("same p e X0");
 
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
-    labels.push_back(myUtils::draw_text(0.75, 0.97, "6/12/2026", 0.05F));
-    labels.push_back(myUtils::draw_text(0.54, 0.89, "#bf{#it{sPHENIX}} Performance", 0.05F));
+    labels.push_back(myUtils::draw_text(0.62, 0.97, "Run25", 0.05F));
+    labels.push_back(myUtils::draw_text(0.8, 0.97, "6/12/2026", 0.05F));
+    labels.push_back(myUtils::draw_text(0.3, 0.7, "#bf{#it{sPHENIX}} Performance", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.75+yshift, "0-30%: 0.5#leqN_{mip}#leq50", 0.05F));
     labels.push_back(myUtils::draw_text(0.3, 0.67+yshift, "30-60%: 0.5#leqN_{mip}#leq10", 0.05F));
 
@@ -915,6 +917,7 @@ void DisplaySEPDQA::draw_psi()
     if (opts.show_labels)
     {
       labels.push_back(myUtils::draw_text(0.18, 0.9, "#bf{#it{sPHENIX}} Performance", 0.05F));
+      labels.push_back(myUtils::draw_text(0.7, 0.9, "Run25", 0.05F));
       labels.push_back(myUtils::draw_text(0.5, 0.8, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
       labels.push_back(myUtils::draw_text(0.5, 0.7, "Centrality: 0-60%", 0.05F));
     }
