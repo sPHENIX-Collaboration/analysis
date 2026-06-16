@@ -651,7 +651,7 @@ void DisplaySEPDQA::draw_EP_Study()
 
     hSP_evt_res_combined->SetMarkerColor(kBlue);
     hSP_evt_res_combined->SetMarkerStyle(kFullDotLarge);
-    hSP_evt_res_combined->SetMarkerSize(2);
+    hSP_evt_res_combined->SetMarkerSize(3);
     hSP_evt_res_combined->SetLineColor(kBlue);
     hSP_evt_res_combined->SetLineWidth(3);
     hSP_evt_res_combined->SetLineStyle(kDashed);
@@ -778,7 +778,6 @@ void DisplaySEPDQA::draw_EP_Study()
     // sEPD Data vs STAR
     graph_evt_res_star->Draw("ap");
 
-    hSP_evt_res_combined->Draw("same a hist l p");
     hSP_evt_res_combined->Draw("same p e X0");
 
     labels.push_back(myUtils::draw_text(0.13, 0.97, "Au+Au #sqrt{s_{NN}} = 200 GeV", 0.05F));
@@ -794,7 +793,7 @@ void DisplaySEPDQA::draw_EP_Study()
     leg = std::make_unique<TLegend>(0.2 + xshift, .8 + yshift, 0.54 + xshift, .95 + yshift);
     leg->SetFillStyle(0);
     leg->SetTextSize(0.05F);
-    leg->AddEntry(hSP_evt_res_combined.get(), "sEPD: Run 68144", "lp");
+    leg->AddEntry(hSP_evt_res_combined.get(), "sEPD: Run 68144", "p");
     leg->AddEntry(graph_evt_res_star.get(), "STAR EPD (Private Communication)", "p");
     leg->Draw("same");
 
