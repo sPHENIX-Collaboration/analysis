@@ -9,15 +9,19 @@
 #include <TBox.h>
 
 void EventSelection(int& ievent);
-void EventDisplay(void);
-bool Is_Hot_EMC(int);
+void EventDisplay(int iframe);
+//bool Is_Hot_EMC(int);
 
 // display frame;
 static int iframe=-1; //0: All view 1: Si View
 static TH1F *frame1 = nullptr;
 static TH1F *frame2 = nullptr;
+static TH1F *frame3 = nullptr;
+static TH1F *frame4 = nullptr;
 static TCanvas *c1=nullptr;
 static TCanvas *c2=nullptr;
+static TCanvas *c3=nullptr;
+static TCanvas *c4=nullptr;
 
 static TArc *Circle2 = nullptr;
 static TArc *Circle4 = nullptr;
@@ -39,12 +43,13 @@ TArrow *ZvtxMarker = nullptr;
 const int nMaxTrk=300;
 TArrow *seedtrk[nMaxTrk];
 TArrow *seedtrkRZ[nMaxTrk];
+
 static int ntrks = 0;
 static int ntrksRZ = 0;
 
 // buffer for EMC-INTT tracklet orbit
-vector<TArc*> vEmcINTTorbitL;   //Local Orbit
-vector<TArc*> vEmcINTTorbitG;   //Global Orbit
+vector<TArc*> vEmcINTTorbit;   //Circular Orbit in R-phi
+vector<TArrow*> vEmcINTT_RZ;   //RZ view of the track
 
 // constants
 const float pt0min=0.3; // GeV/c. minimum pT0 for tracks

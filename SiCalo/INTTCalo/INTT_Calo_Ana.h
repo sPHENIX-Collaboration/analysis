@@ -30,6 +30,17 @@ vector<float> *emc_phi=nullptr;
 vector<float> *emc_eta=nullptr;
 vector<float> *emc_r=nullptr;
 vector<float> *emc_z  =nullptr;
+vector<vector<int>>   *emc_tower_ieta = nullptr;
+vector<vector<int>>   *emc_tower_iphi = nullptr;
+vector<vector<float>> *emc_tower_e = nullptr;
+vector<vector<float>> *emc_tower_x = nullptr;
+vector<vector<float>> *emc_tower_y = nullptr;
+vector<vector<float>> *emc_tower_z = nullptr;
+vector<vector<float>> *emc_tower_r = nullptr;
+vector<vector<float>> *emc_tower_eta = nullptr;
+vector<vector<float>> *emc_tower_phi = nullptr;
+vector<vector<float>> *emc_tower_time = nullptr;
+
 
 // data in topoTree
 vector<float> *top_e  =nullptr;
@@ -65,6 +76,7 @@ vector<float> *vx0=nullptr;
 vector<float> *vy0=nullptr;
 vector<float> *vz0=nullptr;
 
+int i_event;   // current event that is analyzed/displayed
 // functions
 
 void INTT_Calo_Ana(void);

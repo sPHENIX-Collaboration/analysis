@@ -1,21 +1,26 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cmath>
 
 #include <TFile.h>
 #include <TTree.h>
 #include <TStyle.h>
+#include <TH1F.h>
+#include <TH2F.h>
 
 #include "INTT_Calo_Ana.h"
 #include "LoadData.h"
 #include "AnalyzeEvent.h"
 #include "EventDisplay.h"
 #include "INTT_Calo_trkReco.h"
+#include "INTT_Calo_trkUser.h"
 
 #include "LoadData.cpp"
 #include "AnalyzeEvent.cpp"
 #include "EventDisplay.cpp"
 #include "INTT_Calo_trkReco.cpp"
+#include "INTT_Calo_trkUser.cpp"
 
 
 void INTT_Calo_Ana(void) {
@@ -23,16 +28,15 @@ void INTT_Calo_Ana(void) {
   cout <<"Welcome to INTT_Calo_Ana"<<endl;
   cout <<"This is analysis program of INTT_Calo nDST with event display!"<<endl;
 
-  int ievent = 0;
   const int MaxLoop = 100;
-
 
   // open data file and load the data
   //input data file
   //  idatafile = "run2pp/53876/ana_53876_00001.root";
   //  idatafile = "../../2605/ana_53879_1kevt_4evtdisplay.root";
   //  idatafile = "53876_100evt/ana_53876_00000.root";
-  idatafile = "53876_100evt/merge53876.root";
+  //  idatafile = "53876_100evt/merge53876.root";
+  idatafile = "run2pp_new/ana_53876_00000.root";
 
   LoadData(idatafile);
   NmaxEvent = evtTree->GetEntries();
@@ -63,13 +67,10 @@ void INTT_Calo_Ana(void) {
 
     AnalyzeInit();
     for(int i=istart;i<istart+nevent;i++) {
-      GetEvent(i);
+      i_event = i;
+      GetEvent(i_event);
       AnalyzeEvent();
-      /*
-      if(vEmcINTT.size()>0) {
-	cout <<"ievent="<<i<<" # of triplet="<<vEmcINTT.size()<<endl<<endl;
-      }
-      */
+
       if(i%1000 == 0) cout << i << endl;
     }//for
     AnalyzeEnd();
@@ -77,11 +78,12 @@ void INTT_Calo_Ana(void) {
     gStyle->SetCanvasPreferGL();
     AnalyzeInit();
     for(int i=0;i<MaxLoop;i++) {
-      EventSelection( ievent);
-      if(ievent<0) break;
-      GetEvent(ievent);
+      EventSelection( i_event);
+      if(i_event<0) break;
+      GetEvent(i_event);
       AnalyzeEvent();  // do additional analysis
-      EventDisplay();
+      EventDisplay(0);
+      EventDisplay(1);
     }//for
   }//if
 }

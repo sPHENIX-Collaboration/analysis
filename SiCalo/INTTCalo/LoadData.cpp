@@ -1,4 +1,3 @@
-#include "INTT_Calo_Ana.h"
 #include "LoadData.h"
 
 void LoadData(string filename) {
@@ -25,6 +24,17 @@ void LoadData(string filename) {
   caloTree->SetBranchAddress("eta",&emc_eta);
   caloTree->SetBranchAddress("r",&emc_r);
   caloTree->SetBranchAddress("z",&emc_z);
+  caloTree->SetBranchAddress("Calo_tower_ieta",&emc_tower_ieta);
+  caloTree->SetBranchAddress("Calo_tower_iphi",&emc_tower_iphi);
+  caloTree->SetBranchAddress("Calo_tower_e",&emc_tower_e);
+  caloTree->SetBranchAddress("Calo_tower_x",&emc_tower_x);
+  caloTree->SetBranchAddress("Calo_tower_y",&emc_tower_y);
+  caloTree->SetBranchAddress("Calo_tower_z",&emc_tower_z);
+  caloTree->SetBranchAddress("Calo_tower_r",  &emc_tower_r);
+  caloTree->SetBranchAddress("Calo_tower_phi",&emc_tower_eta);
+  caloTree->SetBranchAddress("Calo_tower_eta",&emc_tower_phi);
+  caloTree->SetBranchAddress("Calo_tower_time",&emc_tower_time);
+  
   /*
   caloTree->SetBranchAddress("Calo_Clus_energy",&energy);
   caloTree->SetBranchAddress("Calo_Clus_phi",&emc_phi);
