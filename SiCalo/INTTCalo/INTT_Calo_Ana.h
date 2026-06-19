@@ -63,10 +63,11 @@ vector<float> *si_z=nullptr;
 
 // data in SiClustAllTree
 vector<int> *a_layer=nullptr;
-vector<int> *a_trkid=nullptr;
+//vector<int> *a_trkid=nullptr;
 vector<float> *a_si_x=nullptr;
 vector<float> *a_si_y=nullptr;
 vector<float> *a_si_z=nullptr;
+vector<float> *a_si_t=nullptr;
 
 // data in trackTree
 vector<float> *eta0=nullptr;

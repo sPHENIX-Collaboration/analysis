@@ -261,6 +261,7 @@ void LoadTrackerData(void) {
       float xhit = a_si_x->at(is)-xBC;
       float yhit = a_si_y->at(is)-yBC;
       float zhit = a_si_z->at(is);
+      float thit = a_si_t->at(is);
       float phi_hit = atan2(yhit,xhit);
       float rhit = sqrt(xhit*xhit+yhit*yhit);
       
@@ -268,22 +269,27 @@ void LoadTrackerData(void) {
 	vMvtx0r.push_back(rhit);
 	vMvtx0phi.push_back(phi_hit);
 	vMvtx0z.push_back(zhit);
+	vMvtx0t.push_back(thit);
       } else if(layer == 1) {
 	vMvtx1r.push_back(rhit);
 	vMvtx1phi.push_back(phi_hit);
 	vMvtx1z.push_back(zhit);
+	vMvtx1t.push_back(thit);
       } else if(layer == 2) {
 	vMvtx2r.push_back(rhit);
 	vMvtx2phi.push_back(phi_hit);
 	vMvtx2z.push_back(zhit);
+	vMvtx2t.push_back(thit);
       } else if(layer == 3|| layer==4) {
 	vINTT0r.push_back(rhit);
 	vINTT0phi.push_back(phi_hit);
 	vINTT0z.push_back(zhit);
+	vINTT0t.push_back(thit);
       } else {
 	vINTT1r.push_back(rhit);
 	vINTT1phi.push_back(phi_hit);
 	vINTT1z.push_back(zhit);
+	vINTT1t.push_back(thit);
       }
     }//for(is)
   }//if(nSiAll)
@@ -390,9 +396,9 @@ void Connect_Topo_and_Emc(void) {
 
 void FindInttPair(void) {
   const float dPhiMax = 0.05;  // dPhi cut to form Pair
-  const float R_min = 80;     // minimum circle radius of INTTpair tracklet (cm)
-                               // R_min=100 cm corresponds to pT>0.34 GeV/c
-  const float dZvtx_max = 10.0;
+  const float R_min = 60;     // minimum circle radius of INTTpair tracklet (cm)
+                               // R_min=60 cm corresponds to pT>0.25 GeV/c
+  const float dZvtx_max = 15.0;
 
   
   int nINTT1=vINTT1phi.size();
@@ -565,7 +571,7 @@ void FindCaloIntt(void) {
   // find Topo Clusters that match the INTT pair tracklet
   //
   // analysis constants
-  const float rIntt_min = 150.; //cm. 200cm corresponds to pT>0.63 GeV/c
+  const float rIntt_min = 200.; //cm. 100cm corresponds to pT>0.84 GeV/c
   const float dRoffset = -1.0;
   const float dRcut = 13.0;
   const float dRcut_narrow = 10.0;
@@ -686,7 +692,7 @@ void FindCaloIntt(void) {
 		    // Calclualte the radius etc of the circle passing through
 		    // Topo-INTT1-(0,0)
 		    //
-		    CalcCircle(xe,ye,x1,y1,0.0,0.0, rsEmc, xsc, ysc);
+		    CalcCircle(xe,ye,x1,y1,0,0, rsEmc, xsc, ysc);
 		    float ptTrk   = 0.0042*rsEmc;
 		    float p_Trk   = ptTrk*le/R_e;		
 		    float pzTrk   = ptTrk*(ze-ZvtxTrk)/R_e;
@@ -1061,6 +1067,9 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   const float InttMvtx_dz_cut = 1.0;
 
   static vector<int> vMvtxHit;
+  static vector<float> vMvtx_dr;
+  static vector<float> vMvtx_dz0;
+  static vector<float> vMvtx_dz1;
 
   vector<float> *pvMvtx_r;
   vector<float> *pvMvtx_phi;
@@ -1071,6 +1080,10 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   TH1F *hMvtx_dr2;
 
   vMvtxHit.clear();
+  vMvtx_dr.clear();
+  vMvtx_dz0.clear();
+  vMvtx_dz1.clear();
+
   if(layer == 2) {
     pvMvtx_r   = &vMvtx2r;
     pvMvtx_phi = &vMvtx2phi;
@@ -1122,6 +1135,9 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
 	 abs(z1-zproj1) < InttMvtx_dz_cut ) {
 	// A Mvtx hit is found in the window. store it.
 	vMvtxHit.push_back(i);
+	vMvtx_dr.push_back(rmvtx-rIntt);
+	vMvtx_dz0.push_back(z0-zproj0);
+	vMvtx_dz1.push_back(z1-zproj1);
       }
     }//if(abs(rmvtx...)
     // This part is to see the S/N of the associated hit
@@ -1136,11 +1152,24 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   // If there are more than one hits are found, chose
   // the best one.
   if(vMvtxHit.size()==0) return -99;
-  else return SelectBestMvtxHit(vMvtxHit);
+  else return SelectBestMvtxHit(vMvtxHit, vMvtx_dr, vMvtx_dz0, vMvtx_dz1);
 }      
 
-int SelectBestMvtxHit(vector<int> &vMvtxhit) {
-  return vMvtxhit.at(0);
+int SelectBestMvtxHit(vector<int> &vMvtxhit, vector<float> &vMvtx_dr,
+		      vector<float> &vMvtx_dz0, vector<float> &vMvtx_dz1) {
+  int nhit = vMvtxhit.size();
+  int ihit=0;
+  float drmin=100;
+  int i_min;
+  while(ihit<nhit) {
+    float dr = abs(vMvtx_dr.at(ihit));
+    if(dr < drmin) {
+      drmin = dr;
+      i_min = ihit;
+    }
+    ihit++;
+  }
+  return vMvtxhit.at(i_min);
 }
 void FindCaloInttMvtx(void) {
 }

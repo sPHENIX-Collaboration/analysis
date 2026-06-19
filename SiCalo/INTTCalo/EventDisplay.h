@@ -57,7 +57,7 @@ const float EMScale=0.14;  //EMC hit scaling factor
 
 // RZ slice angle
 static float phiSlice = 3.141592/2;
-const float DphiSlice = 0.3;
+const float DphiSlice = 0.5;
 static float Rmax = 12.0;
 static TArc *dphiArc = nullptr;
 

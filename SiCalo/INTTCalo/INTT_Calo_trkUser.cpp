@@ -12,6 +12,12 @@ void INTT_Calo_trkUser_Init(void) {
   hUSR_ntower = new TH1F("hUSR_ntower","# of towers in EMC cluster",
 			 41.,-0.5,40.5);
   hUSR_tower_e = new TH1F("hUSR_tower_e","tower energy",100,0.0,5.0);
+
+  hUSR_Intt_t = new TH1F("hUSR_Intt_t","Intt hit timing",11,-5.5,5.5);
+  hUSR_Mvtx0_t = new TH1F("hUSR_Mvtx0_t","Mvtx0 hit timing",11,-5.5,5.5);
+  hUSR_Mvtx1_t = new TH1F("hUSR_Mvtx1_t","Mvtx1 hit timing",11,-5.5,5.5);
+  hUSR_Mvtx2_t = new TH1F("hUSR_Mvtx2_t","Mvtx2 hit timing",11,-5.5,5.5);
+  
 }
 
 void INTT_Calo_trkUser_End(void) {
@@ -21,6 +27,11 @@ void INTT_Calo_trkUser_End(void) {
   hUSR_nEmc->Write();
   hUSR_ntower->Write();
   hUSR_tower_e->Write();
+
+  hUSR_Intt_t->Write();
+  hUSR_Mvtx0_t->Write();
+  hUSR_Mvtx1_t->Write();
+  hUSR_Mvtx2_t->Write();
 }
 
 void INTT_Calo_trkUser(void) {
@@ -56,8 +67,20 @@ void INTT_Calo_trkUser(void) {
       float total_e = CIMtrack.total_e;
       float phi0 = CIMtrack.phi0e;
       float z0 = CIMtrack.z0e;
+      int Intt0_t = vINTT0t.at(CIMtrack.iINTT0);
+      int Intt1_t = vINTT1t.at(CIMtrack.iINTT1);
       hUSR_Intt_pt->Fill(pt_intt);
       hUSR_EmcIntt_pt->Fill(pt_emc_intt);
+      hUSR_Intt_t->Fill(Intt0_t);
+      hUSR_Intt_t->Fill(Intt1_t);
+
+      int iMvtx0 = CIMtrack.iMvtx0;
+      int iMvtx1 = CIMtrack.iMvtx1;
+      int iMvtx2 = CIMtrack.iMvtx2;
+
+      if( iMvtx0 >= 0) hUSR_Mvtx0_t->Fill(vMvtx0t.at(iMvtx0));
+      if( iMvtx1 >= 0) hUSR_Mvtx1_t->Fill(vMvtx1t.at(iMvtx1));
+      if( iMvtx2 >= 0) hUSR_Mvtx2_t->Fill(vMvtx2t.at(iMvtx2));
     }// for(i)
   }//if(ntrk)
 }

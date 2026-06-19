@@ -13,4 +13,8 @@ TH1F *hUSR_nEmc;
 TH1F *hUSR_ntower;
 TH1F *hUSR_tower_e;
 
+TH1F *hUSR_Intt_t;
+TH1F *hUSR_Mvtx0_t;
+TH1F *hUSR_Mvtx1_t;
+TH1F *hUSR_Mvtx2_t;
 #endif

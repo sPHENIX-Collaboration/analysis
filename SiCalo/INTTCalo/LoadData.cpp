@@ -64,10 +64,11 @@ void LoadData(string filename) {
 
   //data in SiClusAllTree
   SiClusAllTree->SetBranchAddress("Siclus_layer",&a_layer);
-  SiClusAllTree->SetBranchAddress("Siclus_trackid",&a_trkid);
+  //  SiClusAllTree->SetBranchAddress("Siclus_trackid",&a_trkid);
   SiClusAllTree->SetBranchAddress("Siclus_x",&a_si_x);
   SiClusAllTree->SetBranchAddress("Siclus_y",&a_si_y);
   SiClusAllTree->SetBranchAddress("Siclus_z",&a_si_z);
+  SiClusAllTree->SetBranchAddress("Siclus_t",&a_si_t);
   
   //data in trackTree
   trackTree->SetBranchAddress("eta0",&eta0);
