@@ -2,7 +2,10 @@
 #include "INTT_Calo_trkReco.h"
 #include "INTT_Calo_trkUser.h"
 
+TFile *hfile;
+
 void AnalyzeInit(void) {
+  hfile = new TFile("INTT_Calo_Ana.root","RECREATE");
   INTT_Calo_trkReco_Init();
 
   // *** user code are below 
@@ -10,7 +13,6 @@ void AnalyzeInit(void) {
 }
 
 void AnalyzeEnd(void) {
-  TFile *hfile = new TFile("INTT_Calo_Ana.root","RECREATE");
 
   INTT_Calo_trkReco_End();
 

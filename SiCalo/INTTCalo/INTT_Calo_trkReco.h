@@ -36,6 +36,7 @@ int SelectBestMvtxHit(vector<int> &vMvtxhit, vector<float> &vMvtx_dr,
 		      vector<float> &vMvtx_dz0, vector<float> &vMvtx_dz1);
 
 void FindCaloInttMvtx(void);
+int SelectBestTopHit(vector<int>& vTop_near_trk);
 
 // structs, vectors, variables, and constants for EMC-INTT-Mvtx tracking
 //
@@ -44,7 +45,7 @@ float xBC=0;     //x of Beam Center
 float yBC=0;     //y of Beam Center
 float gzvtx;     //Global zvtx;
 
-const float Top_E_min = 0.5; //Minimun Calo energy [GeV].
+const float Top_E_min = 0.2; //Minimun Calo energy [GeV].
 
 struct InttPair {
   int iINTT0;  //index of vINTT0r, vINTT0phi, vINTT0z
@@ -65,7 +66,9 @@ struct CaloInttMvtx {
   int iMvtx0;     //index in vMvtx0r, vMvtx0phi, vMvtx0z (best)
   int iMvtx1;     //index in vMvtx1r, vMvtx1phi, vMvtx1z (best)
   int iMvtx2;     //index in vMvtx2r, vMvtx2phi, vMvtx2z (best)
-  
+
+  int sign;       // charge sign
+
   float r_intt;   // The radius of the circle of (INTT1,INTT0,BC)
   float xc_intt;  // The center of the circle of (INTT1,INTT0,BC)
   float yc_intt;  //
