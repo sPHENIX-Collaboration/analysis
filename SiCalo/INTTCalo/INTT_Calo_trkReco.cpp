@@ -145,7 +145,7 @@ void INTT_Calo_trkReco(void) {
   LoadTrackerData();
 
   Connect_Topo_and_Emc();
-
+  
   FindInttPair();
   if(imode == 2) PrintInttPair();
   
@@ -180,9 +180,14 @@ float rz2eta(float r,float z) {
 //
 void LoadTrackerData(void) {
   // Set Beam center
+  // For run53876
   xBC=-0.018;
   yBC=0.126;
-  
+  // For simulaiton data
+  /*
+  xBC = 0.0;
+  yBC = 0.0;
+  */
   // clear vectors of the hits
   vEmc_r.clear();
   vEmc_phi.clear();
@@ -261,6 +266,7 @@ void LoadTrackerData(void) {
       float xhit = a_si_x->at(is)-xBC;
       float yhit = a_si_y->at(is)-yBC;
       float zhit = a_si_z->at(is);
+      float thit = a_si_t->at(is);
       float phi_hit = atan2(yhit,xhit);
       float rhit = sqrt(xhit*xhit+yhit*yhit);
       
@@ -268,22 +274,27 @@ void LoadTrackerData(void) {
 	vMvtx0r.push_back(rhit);
 	vMvtx0phi.push_back(phi_hit);
 	vMvtx0z.push_back(zhit);
+	vMvtx0t.push_back(thit);
       } else if(layer == 1) {
 	vMvtx1r.push_back(rhit);
 	vMvtx1phi.push_back(phi_hit);
 	vMvtx1z.push_back(zhit);
+	vMvtx1t.push_back(thit);
       } else if(layer == 2) {
 	vMvtx2r.push_back(rhit);
 	vMvtx2phi.push_back(phi_hit);
 	vMvtx2z.push_back(zhit);
+	vMvtx2t.push_back(thit);
       } else if(layer == 3|| layer==4) {
 	vINTT0r.push_back(rhit);
 	vINTT0phi.push_back(phi_hit);
 	vINTT0z.push_back(zhit);
+	vINTT0t.push_back(thit);
       } else {
 	vINTT1r.push_back(rhit);
 	vINTT1phi.push_back(phi_hit);
 	vINTT1z.push_back(zhit);
+	vINTT1t.push_back(thit);
       }
     }//for(is)
   }//if(nSiAll)
@@ -310,7 +321,25 @@ void Connect_Topo_and_Emc(void) {
 
   int nTop = vTop_r.size();
   int nEmc = vEmc_r.size();
-
+  /*
+  if(imode==2) {
+    cout << "nTop = "<<nTop<<endl;
+    for(int it=0;it<nTop;it++) {
+      cout << it <<": e="<<vTop_e.at(it);
+      cout <<" emc_e="<<vTop_emc_e.at(it);
+      cout <<" r= "<<vTop_r.at(it);
+      cout << " phi= "<<vTop_phi.at(it);
+      cout << " eta= "<<vTop_eta.at(it)<<endl; 
+    }
+    cout << "nEmc = "<<nEmc<<endl;
+    for(int ie=0;ie<nEmc;ie++) {
+      cout << ie <<": E="<<vEmc_e.at(ie);
+      cout <<" r= "<<vEmc_r.at(ie);
+      cout << " phi= "<<vEmc_phi.at(ie);
+      cout << " eta= "<<vEmc_eta.at(ie)<<endl; 
+    }    
+  }
+  */
   if(nTop>0) {
     for(int it=0;it<nTop;it++) {
       float Top_e = vTop_e.at(it);
@@ -330,6 +359,7 @@ void Connect_Topo_and_Emc(void) {
 	float sdr_min = 1000;
 
 	if(nEmc>0) {
+	  //	  if(imode==2) cout << "search for a Emc cluster for this Topo"<<endl;
 	  for(int ie=0;ie<nEmc;ie++) {
 	    float Emc_e = vEmc_e.at(ie);
 
@@ -344,7 +374,9 @@ void Connect_Topo_and_Emc(void) {
 	    
 	    // find emc cluster that is closest to this Topo cluster
 	    if(abs(Top_phi-Emc_phi)<0.15 && abs(Top_eta-Emc_eta)<0.15&& Top_emc_e>0.18) {
+	      if(imode == 2) cout << "dphi, deta, emc_e OK"<<endl;
 	      if(Top_r < R_emc_front) {
+		//		if(imode == 2) cout << " r<93.5" <<endl;
 		hTopEmc_dphi_1->Fill(TopEmc_dphi);
 		hTopEmc_deta_1->Fill(TopEmc_deta);
 		
@@ -356,6 +388,7 @@ void Connect_Topo_and_Emc(void) {
 		  sdr_min = sdr;
 		}
 	      } else if(Top_r < R_ohcal_front) {
+		//		if(imode == 2) cout << " 93.5 < r < 218" <<endl;
 		hTopEmc_dphi_2->Fill(TopEmc_dphi);
 		hTopEmc_deta_2->Fill(TopEmc_deta);
 		
@@ -374,7 +407,8 @@ void Connect_Topo_and_Emc(void) {
 	      }//if(Top_r)	
 	    }//for(ie)
 	    // store closest Emc cluster info
-	    if(iemc_match>0) {
+	    if(iemc_match>=0) {
+	      //if(imode==2) cout <<" Emc hit found: it="<<it<<" iemc= "<<iemc_match<<endl;
 	      vTop_emc_r.at(it)  = vEmc_r.at(iemc_match);
 	      vTop_emc_phi.at(it)= vEmc_phi.at(iemc_match);
 	      vTop_emc_eta.at(it)= vEmc_eta.at(iemc_match);
@@ -390,9 +424,9 @@ void Connect_Topo_and_Emc(void) {
 
 void FindInttPair(void) {
   const float dPhiMax = 0.05;  // dPhi cut to form Pair
-  const float R_min = 80;     // minimum circle radius of INTTpair tracklet (cm)
-                               // R_min=100 cm corresponds to pT>0.34 GeV/c
-  const float dZvtx_max = 10.0;
+  const float R_min = 60;     // minimum circle radius of INTTpair tracklet (cm)
+                               // R_min=60 cm corresponds to pT>0.25 GeV/c
+  const float dZvtx_max = 20.0;
 
   
   int nINTT1=vINTT1phi.size();
@@ -565,9 +599,9 @@ void FindCaloIntt(void) {
   // find Topo Clusters that match the INTT pair tracklet
   //
   // analysis constants
-  const float rIntt_min = 150.; //cm. 200cm corresponds to pT>0.63 GeV/c
+  const float rIntt_min = 200.; //cm. 100cm corresponds to pT>0.84 GeV/c
   const float dRoffset = -1.0;
-  const float dRcut = 13.0;
+  const float dRcut = 18.0;
   const float dRcut_narrow = 10.0;
   const float dZvtxCut   = 1.2;
   const float dZvtx_narrow = 1.0;
@@ -680,13 +714,10 @@ void FindCaloIntt(void) {
 		    float rsEmc;
 		    float xsc;
 		    float ysc;
-		    // Calculate the radius etc of the circule passing through
-		    // Topo-INTT1-INTT0 
-		    // CalcCircle(xe,ye,x1,y1,x0,y0, rsEmc, xsc, ysc);
 		    // Calclualte the radius etc of the circle passing through
-		    // Topo-INTT1-(0,0)
+		    // (0,0)-INTT0-Topo
 		    //
-		    CalcCircle(xe,ye,x1,y1,0.0,0.0, rsEmc, xsc, ysc);
+		    CalcCircle(0,0,x0,y0,xe,ye, rsEmc, xsc, ysc);
 		    float ptTrk   = 0.0042*rsEmc;
 		    float p_Trk   = ptTrk*le/R_e;		
 		    float pzTrk   = ptTrk*(ze-ZvtxTrk)/R_e;
@@ -765,7 +796,7 @@ void FindCaloIntt(void) {
 	  }//for(i)
 	  // cluster with largest emcal_e is selected. Store the data
 	  //
-	  float sign=1.0;
+	  int sign=1;
 	  if(phi1>phi0) sign = -1;
 
 	  // create a CaloInttMvtx track and fill its "Calo-INTT" part
@@ -781,6 +812,7 @@ void FindCaloIntt(void) {
 	  a_CaloInttMvtx.iMvtx0 = -99;
 	  a_CaloInttMvtx.iMvtx1 = -99;
 	  a_CaloInttMvtx.iMvtx2 = -99;
+	  a_CaloInttMvtx.sign   = sign;
 	  a_CaloInttMvtx.r_intt  = pair.r;  //=rIntt
 	  a_CaloInttMvtx.xc_intt = pair.xc; //=xc
 	  a_CaloInttMvtx.yc_intt = pair.yc; //=yc
@@ -846,12 +878,14 @@ void FindInttMvtx(void) {
       float z0   = vINTT0z.at(i0);
       float z1   = vINTT1z.at(i1);
       float zvtx = pair.zvtx;
-
+      int sign = 1;
+      if(phi1>phi0) sign = -1;
+      
       int iMvtx0 = FindMvtxHit(0,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
       int iMvtx1 = FindMvtxHit(1,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
       int iMvtx2 = FindMvtxHit(2,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
 
-      if(iMvtx0 >=0 && iMvtx1 >=0 && iMvtx2 >=0) {
+      if(iMvtx0 >=0 || iMvtx1 >=0 || iMvtx2 >=0) {
 	// at least one layer has associated hit.
 	// Case 1: if there is a Calo-INTT track in vCaloInttMvtx that is based on
 	//         the same InttPair, add the Mvtx hits to the track
@@ -915,6 +949,7 @@ void FindInttMvtx(void) {
 	float rs2;
 	float phis2;
 	float zs2;
+	float dzdr;
 	if(iMvtx0>=0) {//Mvtx0 is the inner-most hit
 	  if(iMvtx1<0 && iMvtx2 <0) {//Mvtx0 is the only hit
 	    rs2=0;
@@ -936,6 +971,7 @@ void FindInttMvtx(void) {
 	  phis2=vMvtx2phi.at(iMvtx2);
 	  zs2=vMvtx2z.at(iMvtx2);
 	}
+
 	if(rs2==0) {//there is only one Mvtx hit
 	  xs2=0;
 	  ys2=0;
@@ -943,31 +979,35 @@ void FindInttMvtx(void) {
 	  float zintt = 0.5*(z0+z1);
 	  float rmvtx = rs1;
 	  float zmvtx = zs1;
-	  float dzdr = (zintt-zmvtx)/(rintt-rmvtx);
+	  dzdr = (zintt-zmvtx)/(rintt-rmvtx);
 	  zvtx_intt_mvtx = zmvtx - dzdr*rmvtx;
 	} else {
+	  // there are at least two Mvtx hit.
+	  // Outermost hit is (rs1,phis1,zs1)
+	  // Innermost hit is (rs2,phis2,zs2)
 	  xs2=rs2*cos(phis2);
 	  ys2=rs2*sin(phis2);
 	  float r_out = rs1;
 	  float r_in  = rs2;
 	  float z_out = zs1;
 	  float z_in  = zs2;
-	  float dzdr  = (z_out - z_in)/(r_out - r_in);
+	  dzdr  = (z_out - z_in)/(r_out - r_in);
 	  zvtx_intt_mvtx = z_in - dzdr*r_in;
 	}
 
 	// Draw a circle passing through (xs0,ys0)-(xs1,ys1)-(xs2,ys2)
 	// and get its radius (r_intt_mvtx) and the center (xs2,ys2) 
-	CalcCircle(xs0,ys0,xs1,ys1,xs2,ys2,
+	//	CalcCircle(xs0,ys0,xs1,ys1,xs2,ys2,
+	CalcCircle(xs2,ys2,xs1,ys1,xs0,ys0,
 		   r_intt_mvtx, xc_intt_mvtx, yc_intt_mvtx);
 	//
-	z_intt_mvtx = zs2;
+	z_intt_mvtx = zs2-dzdr*rs2;
 	x0m= xs2;
 	y0m= ys2;
 	z0m= zs2;
 	pt0m= 0.0042*r_intt_mvtx;
 	phi0m=phis2;
-	pz0m=0;
+	pz0m= dzdr*pt0m;
 	// search vCaloInttMvtx for the same InttPair as this track
 	int itrk=0;
 	int ntrk = vCaloInttMvtx.size();
@@ -1061,6 +1101,9 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   const float InttMvtx_dz_cut = 1.0;
 
   static vector<int> vMvtxHit;
+  static vector<float> vMvtx_dr;
+  static vector<float> vMvtx_dz0;
+  static vector<float> vMvtx_dz1;
 
   vector<float> *pvMvtx_r;
   vector<float> *pvMvtx_phi;
@@ -1071,6 +1114,10 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   TH1F *hMvtx_dr2;
 
   vMvtxHit.clear();
+  vMvtx_dr.clear();
+  vMvtx_dz0.clear();
+  vMvtx_dz1.clear();
+
   if(layer == 2) {
     pvMvtx_r   = &vMvtx2r;
     pvMvtx_phi = &vMvtx2phi;
@@ -1122,6 +1169,9 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
 	 abs(z1-zproj1) < InttMvtx_dz_cut ) {
 	// A Mvtx hit is found in the window. store it.
 	vMvtxHit.push_back(i);
+	vMvtx_dr.push_back(rmvtx-rIntt);
+	vMvtx_dz0.push_back(z0-zproj0);
+	vMvtx_dz1.push_back(z1-zproj1);
       }
     }//if(abs(rmvtx...)
     // This part is to see the S/N of the associated hit
@@ -1136,11 +1186,148 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
   // If there are more than one hits are found, chose
   // the best one.
   if(vMvtxHit.size()==0) return -99;
-  else return SelectBestMvtxHit(vMvtxHit);
+  else return SelectBestMvtxHit(vMvtxHit, vMvtx_dr, vMvtx_dz0, vMvtx_dz1);
 }      
 
-int SelectBestMvtxHit(vector<int> &vMvtxhit) {
-  return vMvtxhit.at(0);
+int SelectBestMvtxHit(vector<int> &vMvtxhit, vector<float> &vMvtx_dr,
+		      vector<float> &vMvtx_dz0, vector<float> &vMvtx_dz1) {
+  int nhit = vMvtxhit.size();
+  int ihit=0;
+  float drmin=100;
+  int i_min;
+  while(ihit<nhit) {
+    float dr = abs(vMvtx_dr.at(ihit));
+    if(dr < drmin) {
+      drmin = dr;
+      i_min = ihit;
+    }
+    ihit++;
+  }
+  return vMvtxhit.at(i_min);
 }
+
+int SelectBestTopHit(vector<int> &vTop_near_trk) {
+  return vTop_near_trk.at(0);
+}
+
 void FindCaloInttMvtx(void) {
+  // For Intt-Mvtx tracklet, find an Emc hit
+  //  if(imode==2) cout << "FindCaloInttMvtx()"<<endl;
+  int ntrk = vCaloInttMvtx.size();
+  if(ntrk > 0) {
+    for(int itrk=0;itrk<ntrk;itrk++) {
+      CaloInttMvtx *pCIMtrack = &(vCaloInttMvtx.at(itrk));
+      float pt_emc_intt  = pCIMtrack->pt0e;
+      float pt_intt_mvtx = pCIMtrack->pt0m;
+      float emc_e = pCIMtrack->emc_e;
+      float emcal_e = pCIMtrack->emcal_e;
+      float total_e = pCIMtrack->total_e;
+      float phi0 = pCIMtrack->phi0e;
+      float z0   = pCIMtrack->z0e;
+      int Intt0_t = vINTT0t.at(pCIMtrack->iINTT0);
+      int Intt1_t = vINTT1t.at(pCIMtrack->iINTT1);
+
+      int iMvtx0 = pCIMtrack->iMvtx0;
+      int iMvtx1 = pCIMtrack->iMvtx1;
+      int iMvtx2 = pCIMtrack->iMvtx2;
+
+      int nMvtxHits = 0;
+      if( iMvtx2 >=0) nMvtxHits++;
+      if( iMvtx1 >=0) nMvtxHits++;
+      if( iMvtx0 >=0) nMvtxHits++;
+      
+      if(nMvtxHits>=2) {
+	// at least two Mvt layers has a hit for this track
+	// thus an Intt-Mvtx track is formed and its track parameters
+	// at the origin (x0m,y0m,z0m,pt0m,phi0m,pz0m) are well defined
+	//
+	int ntop = vTop_r.size();
+	vector<int> vTop_near_trk;
+	if(ntop>0) {
+	  for(int itop=0;itop<ntop;itop++) {
+	    if(vTop_emc_emc_e.at(itop) > 0) {// Emc Hit in the topocluster
+	      float emc_r   = vTop_emc_r.at(itop);
+	      float emc_phi = vTop_emc_phi.at(itop);
+	      float zemc = vTop_emc_z.at(itop);
+	      float xemc = emc_r*cos(emc_phi);
+	      float yemc = emc_r*sin(emc_phi);
+	      float x0m = pCIMtrack->x0m;
+	      float y0m = pCIMtrack->y0m;
+	      float z0m = pCIMtrack->z0m;
+	      float pt0m = pCIMtrack->pt0m;
+	      float phi0m = pCIMtrack->phi0m;
+	      float pz0m  = pCIMtrack->pz0m;
+	      float rc = pCIMtrack->r_intt_mvtx;
+	      float xc = pCIMtrack->xc_intt_mvtx;
+	      float yc = pCIMtrack->yc_intt_mvtx;
+	      float rcEmc = sqrt((xemc-xc)*(xemc-xc)+(yemc-yc)*(yemc-yc));
+	      float dzdr = pz0m/pt0m;
+	      float zproj = z0m + dzdr*emc_r;
+	      if(abs(rcEmc-rc)<20 && abs(zemc-zproj)<8) {
+		//Emc hit that matches to the track is found.
+		vTop_near_trk.push_back(itop);
+	      }
+	    }//if(vTop_emc_emc_e)
+	  }//for(itop)
+	}//if(ntop>0)
+
+	//	if(imode==2) cout << "top found:"<<vTop_near_trk.size()<<endl;
+	if(vTop_near_trk.size()>0) {
+	  int itop_best = SelectBestTopHit(vTop_near_trk);
+	  float emc_r   = vTop_emc_r.at(itop_best);
+	  float emc_phi = vTop_emc_phi.at(itop_best);
+	  float xemc = emc_r*cos(emc_phi);
+	  float yemc = emc_r*sin(emc_phi);
+
+	  float r_emc_intt;
+	  float xc_emc_intt;
+	  float yc_emc_intt;
+	  int iINTT0 = pCIMtrack->iINTT0;
+	  float r_intt0   =  vINTT0r.at(iINTT0);
+	  float phi_intt0 =  vINTT0phi.at(iINTT0);
+	  float x_intt0 = r_intt0*cos(phi_intt0);
+	  float y_intt0 = r_intt0*sin(phi_intt0);
+	  // Draw a circle passing through (xemc,yemc)-INTT0-(0,0)
+	  //CalcCircle(xemc,yemc,x_intt0,y_intt0,0.0,0.0,
+	  CalcCircle(0.0,0.0,x_intt0,y_intt0,xemc,yemc,
+		     r_emc_intt,xc_emc_intt,yc_emc_intt);
+	  //	  if(imode==2) cout << "r_emc_intt = "<<r_emc_intt<<endl;
+
+	  // This track is connected to Intt-Mvtx track. So the starting point
+	  // is the same
+	  float x0e  = pCIMtrack->x0m;
+	  float y0e  = pCIMtrack->y0m;
+	  float z0e  = pCIMtrack->z0m;
+	  float phi0e= pCIMtrack->phi0m;
+	  
+	  // pT is determined by EmcIntt part of the track
+	  float pt0m = pCIMtrack->pt0m;
+	  float pz0m = pCIMtrack->pz0m;
+	  float pt0e = 0.0042*r_emc_intt;
+	  float pz0e = pt0e*(pz0m/pt0m);
+
+	  pCIMtrack->iTop = itop_best;
+	  pCIMtrack->r_emc_intt = r_emc_intt;
+	  pCIMtrack->xc_emc_intt = xc_emc_intt;
+	  pCIMtrack->yc_emc_intt = yc_emc_intt;
+	  pCIMtrack->zvtx_emc_intt = pCIMtrack->zvtx_intt_mvtx;
+	  pCIMtrack->xemc = xemc;
+	  pCIMtrack->yemc = yemc;
+	  pCIMtrack->zemc = vTop_emc_z.at(itop_best);
+	  pCIMtrack->total_e = vTop_e.at(itop_best);
+	  pCIMtrack->emcal_e = vTop_emc_e.at(itop_best);
+	  pCIMtrack->ihcal_e = vTop_ihc_e.at(itop_best);
+	  pCIMtrack->ohcal_e = vTop_ohc_e.at(itop_best);
+	  pCIMtrack->emc_e = vTop_emc_emc_e.at(itop_best);
+	  pCIMtrack->BDT_e = 0;
+	  pCIMtrack->x0e = x0e;
+	  pCIMtrack->y0e = y0e;
+	  pCIMtrack->z0e = z0e;
+	  pCIMtrack->pt0e = pt0e;
+	  pCIMtrack->phi0e = phi0e;
+	  pCIMtrack->pz0e = pz0e;	  
+	}
+      }//if(nMvtxHits>=2)
+    }//for(itrk)
+  }//if(ntrk>0)
 }

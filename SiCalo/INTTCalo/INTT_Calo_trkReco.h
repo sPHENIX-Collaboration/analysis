@@ -32,9 +32,11 @@ void FindCaloIntt(void);
 void FindInttMvtx(void);
 int FindMvtxHit(int layer, float rIntt, float xc, float yc,
 		float zvtx, float r0, float r1, float z0, float z1);
-int SelectBestMvtxHit(vector<int> &vMvtxhit);
+int SelectBestMvtxHit(vector<int> &vMvtxhit, vector<float> &vMvtx_dr,
+		      vector<float> &vMvtx_dz0, vector<float> &vMvtx_dz1);
 
 void FindCaloInttMvtx(void);
+int SelectBestTopHit(vector<int>& vTop_near_trk);
 
 // structs, vectors, variables, and constants for EMC-INTT-Mvtx tracking
 //
@@ -43,7 +45,7 @@ float xBC=0;     //x of Beam Center
 float yBC=0;     //y of Beam Center
 float gzvtx;     //Global zvtx;
 
-const float Top_E_min = 0.7; //Minimun Calo energy [GeV].
+const float Top_E_min = 0.2; //Minimun Calo energy [GeV].
 
 struct InttPair {
   int iINTT0;  //index of vINTT0r, vINTT0phi, vINTT0z
@@ -64,7 +66,9 @@ struct CaloInttMvtx {
   int iMvtx0;     //index in vMvtx0r, vMvtx0phi, vMvtx0z (best)
   int iMvtx1;     //index in vMvtx1r, vMvtx1phi, vMvtx1z (best)
   int iMvtx2;     //index in vMvtx2r, vMvtx2phi, vMvtx2z (best)
-  
+
+  int sign;       // charge sign
+
   float r_intt;   // The radius of the circle of (INTT1,INTT0,BC)
   float xc_intt;  // The center of the circle of (INTT1,INTT0,BC)
   float yc_intt;  //
@@ -147,23 +151,28 @@ vector<float> vTop_emc_emc_e;
 vector<float> vINTT0r;
 vector<float> vINTT0phi;
 vector<float> vINTT0z;
+vector<float> vINTT0t;
 
 vector<float> vINTT1r;
 vector<float> vINTT1phi;
 vector<float> vINTT1z;
+vector<float> vINTT1t;
 
 // Mvtx0, Mvtx1, Mvtx2 clusters
 vector<float> vMvtx0r;
 vector<float> vMvtx0phi;
 vector<float> vMvtx0z;
+vector<float> vMvtx0t;
 
 vector<float> vMvtx1r;
 vector<float> vMvtx1phi;
 vector<float> vMvtx1z;
+vector<float> vMvtx1t;
 
 vector<float> vMvtx2r;
 vector<float> vMvtx2phi;
 vector<float> vMvtx2z;
+vector<float> vMvtx2t;
 
 //
 // Histograms to monitor/diagonize the program

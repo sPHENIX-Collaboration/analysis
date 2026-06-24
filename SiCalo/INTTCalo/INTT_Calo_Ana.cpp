@@ -8,6 +8,7 @@
 #include <TStyle.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TNtuple.h>
 
 #include "INTT_Calo_Ana.h"
 #include "LoadData.h"
@@ -36,7 +37,14 @@ void INTT_Calo_Ana(void) {
   //  idatafile = "../../2605/ana_53879_1kevt_4evtdisplay.root";
   //  idatafile = "53876_100evt/ana_53876_00000.root";
   //  idatafile = "53876_100evt/merge53876.root";
-  idatafile = "run2pp_new/ana_53876_00000.root";
+  //
+  // current data. 10 files are merged
+  //  idatafile = "run2pp_new/ana_53876_0000m.root";
+  // simulaiton data
+  // electron
+  idatafile = "ana_electron/single_e_1M.root";
+  // pi minus
+  //idatafile = "ana_pionn/single_pionn_1M.root";
 
   LoadData(idatafile);
   NmaxEvent = evtTree->GetEntries();
