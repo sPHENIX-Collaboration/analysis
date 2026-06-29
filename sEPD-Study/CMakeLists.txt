@@ -120,6 +120,10 @@ target_link_libraries(Fun4All_sEPD_DataMC PRIVATE
 add_executable(checkCDB macros/checkCDB.C)
 target_link_libraries(checkCDB PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- checkCDBList ---
+add_executable(checkCDBList macros/checkCDBList.C)
+target_link_libraries(checkCDBList PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- checkTree ---
 add_executable(checkTree macros/checkTree.C)
 target_link_libraries(checkTree PRIVATE ${STANDALONE_MACRO_LIBS})
