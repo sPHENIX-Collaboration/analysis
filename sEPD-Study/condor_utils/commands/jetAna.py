@@ -96,9 +96,9 @@ def jetAna_jobs(args):
 
             for i, chunk in enumerate(chunk_list(trees, files_per_job)):
                 chunk_file = output_dir / 'files' / f'{run_id}_part_{i}.list'
-                chunk_file.write_text("\\n".join(chunk) + "\\n", encoding='utf-8')
+                chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
 
-                f_jobs.write(f"{chunk_file},{qa_file}\\n")
+                f_jobs.write(f"{chunk_file},{qa_file}\n")
                 total_jobs += 1
 
     logger.info(f"Total jobs prepared: {total_jobs}")

@@ -73,10 +73,10 @@ def hadd_jobs(args):
 
                 with open(chunk_list_filename, mode='w', encoding='utf-8') as f_chunk:
                     for rfile in chunk:
-                        f_chunk.write(f"{rfile}\\n")
+                        f_chunk.write(f"{rfile}\n")
 
                 partial_output_name = f"partial-{run_name}-{i}.root"
-                f_list.write(f"{chunk_list_filename},{partial_output_name},{partial_dir}/output\\n")
+                f_list.write(f"{chunk_list_filename},{partial_output_name},{partial_dir}/output\n")
                 job_counter += 1
 
     shutil.copy(condor_script, output_dir)
@@ -128,10 +128,10 @@ def hadd_jobs(args):
             final_list_filename = output_dir / 'files' / f'{run_name}_final.list'
             with open(final_list_filename, mode='w', encoding='utf-8') as f_final:
                 for pfile in partial_files:
-                    f_final.write(f"{pfile}\\n")
+                    f_final.write(f"{pfile}\n")
 
             final_output_name = f"{run_name}.root"
-            f_list.write(f"{final_list_filename},{final_output_name},{output_dir}/output\\n")
+            f_list.write(f"{final_list_filename},{final_output_name},{output_dir}/output\n")
             stage2_counter += 1
 
     submit_content_s2 = textwrap.dedent(f"""\

@@ -67,9 +67,9 @@ def create_f4a_jobs(args):
             line = Path(line.strip()).resolve()
             run = line.stem.split('-')[1].lstrip('0')
             if run in calib_map:
-                file_out.write(f'{line},{calib_map[run]}\\n')
+                file_out.write(f'{line},{calib_map[run]}\n')
             else:
-                file_out.write(f'{line},default\\n')
+                file_out.write(f'{line},default\n')
                 
     jobs_temp_file.unlink(missing_ok=True)
     
@@ -112,8 +112,8 @@ def create_f4a_zdc_jobs(args):
     with open(jobs_file, mode='w', encoding='utf-8') as f_jobs:
         for i, chunk in enumerate(chunk_list(all_dst_lines, args.dst_per_job)):
             chunk_file = files_dir / f'chunk-{i:05d}.list'
-            chunk_file.write_text("\\n".join(chunk) + "\\n", encoding='utf-8')
-            f_jobs.write(f"{chunk_file.resolve()}\\n")
+            chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
+            f_jobs.write(f"{chunk_file.resolve()}\n")
             total_jobs += 1
             
     manager.logger.info(f"Total jobs prepared: {total_jobs}")
@@ -209,18 +209,18 @@ def create_f4a_data_mc_jobs(args):
                 continue
                 
             if not calib_map:
-                file_out.write(f'{line},default\\n')
+                file_out.write(f'{line},default\n')
             else:
                 line_path = Path(line).resolve()
                 try:
                     run = line_path.stem.split('-')[3].lstrip('0')
                     if run in calib_map:
-                        file_out.write(f'{line},{calib_map[run]}\\n')
+                        file_out.write(f'{line},{calib_map[run]}\n')
                     else:
-                        file_out.write(f'{line},default\\n')
+                        file_out.write(f'{line},default\n')
                 except IndexError:
                     manager.logger.warning(f"Could not parse run number from {line}. Using default.")
-                    file_out.write(f'{line},default\\n')
+                    file_out.write(f'{line},default\n')
 
     arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_dst_calo) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.jet_pt_min} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
