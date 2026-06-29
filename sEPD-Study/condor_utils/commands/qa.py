@@ -2,6 +2,7 @@ import math
 from pathlib import Path
 from condor_utils.core.manager import CondorJobManager
 from condor_utils.core.helpers import run_command_and_log
+from condor_utils.cli import get_common_parser
 
 def create_trigger_qa_jobs(args):
     manager = CondorJobManager(args, job_name="Trigger QA")
@@ -111,9 +112,9 @@ def create_centrality_qa_jobs(args):
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
-def setup_qa_subparsers(subparsers, common_parser):
+def setup_qa_subparsers(subparsers):
     # trigger_qa
-    trigger_qa = subparsers.add_parser('trigger_qa', parents=[common_parser], help='Create condor submission directory.')
+    trigger_qa = subparsers.add_parser('trigger_qa', parents=[get_common_parser()], help='Create condor submission directory.')
     trigger_qa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_TriggerQA.C', help='Fun4All Macro.')
     trigger_qa.set_defaults(
         dst_per_job=2,
@@ -123,7 +124,7 @@ def setup_qa_subparsers(subparsers, common_parser):
     )
     
     # calo_qa
-    calo_qa = subparsers.add_parser('calo_qa', parents=[common_parser], help='Create condor submission directory.')
+    calo_qa = subparsers.add_parser('calo_qa', parents=[get_common_parser()], help='Create condor submission directory.')
     calo_qa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_CaloQA.C', help='Fun4All Macro.')
     calo_qa.add_argument('-b', '--f4a-bin', type=str, default='bin/Fun4All_CaloQA', help='Fun4All Bin.')
     calo_qa.set_defaults(
@@ -133,7 +134,7 @@ def setup_qa_subparsers(subparsers, common_parser):
     )
     
     # centrality_qa
-    centrality_qa = subparsers.add_parser('centrality_qa', parents=[common_parser], help='Create condor submission directory.')
+    centrality_qa = subparsers.add_parser('centrality_qa', parents=[get_common_parser()], help='Create condor submission directory.')
     centrality_qa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_CentralityQA.C', help='Fun4All Macro.')
     centrality_qa.add_argument('-b', '--f4a-bin', type=str, default='bin/Fun4All_CentralityQA', help='Fun4All Bin.')
     centrality_qa.set_defaults(

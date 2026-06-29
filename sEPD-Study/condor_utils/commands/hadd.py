@@ -150,7 +150,7 @@ def hadd_jobs(args):
     run_command_and_log(command, logger, output_dir)
     logger.info("All jobs submitted.")
 
-def setup_hadd_subparsers(subparsers, common_parser):
+def setup_hadd_subparsers(subparsers):
     hadd_parser = subparsers.add_parser('hadd', help='hadd condor jobs.')
     hadd_parser.add_argument('-i', '--input-dir', type=str, required=True, help='Directory of runs to combine output.')
     hadd_parser.add_argument('-o', '--output-dir', type=str, default='scratch/test', help='Output Directory. Default: scratch/test')

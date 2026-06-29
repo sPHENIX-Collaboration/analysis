@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from condor_utils.core.manager import CondorJobManager
 from condor_utils.core.helpers import run_command_and_log, get_line_count, chunk_list
+from condor_utils.cli import get_common_parser
 
 def create_f4a_jobs(args):
     manager = CondorJobManager(args, job_name="F4A")
@@ -226,24 +227,24 @@ def create_f4a_data_mc_jobs(args):
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst_global,input_dst_jet,input_dst_g4hit,input_dst_calo,input_calib from jobs.list")
 
-def setup_f4a_subparsers(subparsers, common_parser):
-    f4a = subparsers.add_parser('f4a', parents=[common_parser], help='Create condor submission directory.')
+def setup_f4a_subparsers(subparsers):
+    f4a = subparsers.add_parser('f4a', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
     f4a.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD.C', help='Fun4All Macro.')
     f4a.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
     f4a.set_defaults(memory=1.5, condor_script='scripts/genFun4All.sh', func=create_f4a_jobs)
 
-    f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[common_parser], help='Create condor submission directory.')
+    f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a_zdc.add_argument('-n3', '--log-interval', type=int, default=1000, help='Logging Event Frequency. Default: 1000.')
     f4a_zdc.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_ZDC.C', help='Fun4All Macro.')
     f4a_zdc.set_defaults(memory=0.5, condor_script='scripts/genFun4AllZDC.sh', func=create_f4a_zdc_jobs)
 
-    f4a_mc = subparsers.add_parser('f4a_mc', parents=[common_parser], help='Create condor submission directory.')
+    f4a_mc = subparsers.add_parser('f4a_mc', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a_mc.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD_MC.C', help='Fun4All Macro.')
     f4a_mc.set_defaults(dbtag='MDC2', dst_per_job=500, memory=0.5, condor_script='scripts/genFun4All_MC.sh', func=create_f4a_mc_jobs)
 
-    f4a_data_mc = subparsers.add_parser('f4a_data_mc', parents=[common_parser], help='Create condor submission directory.')
+    f4a_data_mc = subparsers.add_parser('f4a_data_mc', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a_data_mc.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
     f4a_data_mc.add_argument('-c', '--jet-pt-min', type=float, default=10, help='Jet pT min cut. Default: 10 GeV.')
     f4a_data_mc.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD_DataMC.C', help='Fun4All Macro.')

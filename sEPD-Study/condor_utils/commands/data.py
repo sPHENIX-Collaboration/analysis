@@ -107,7 +107,7 @@ def setup_data(args):
     run_command_and_log(command, logger, output_dir, False)
 
 
-def setup_data_subparsers(subparsers, common_parser):
+def setup_data_subparsers(subparsers):
     data_parser = subparsers.add_parser('data', help='Update file lists.')
     data_parser.add_argument('-i', '--zdc-calib-dir', type=str, default=None, help='ZDC Calib DST Dir. Default: None (optional)')
     data_parser.add_argument('-i2', '--zdc-calib-prefix', type=str, default='dst_zdc_calib', help='ZDC Calib DST List Prefix.')

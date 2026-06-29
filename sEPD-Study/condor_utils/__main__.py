@@ -10,13 +10,11 @@ def main():
     parser = argparse.ArgumentParser(description="Fun4All Condor Procedure Automator")
     subparsers = parser.add_subparsers(dest='command', required=True)
     
-    common_parser = get_common_parser()
-    
-    setup_qa_subparsers(subparsers, common_parser)
-    setup_f4a_subparsers(subparsers, common_parser)
-    setup_jetAna_subparsers(subparsers, common_parser)
-    setup_hadd_subparsers(subparsers, common_parser)
-    setup_data_subparsers(subparsers, common_parser)
+    setup_qa_subparsers(subparsers)
+    setup_f4a_subparsers(subparsers)
+    setup_jetAna_subparsers(subparsers)
+    setup_hadd_subparsers(subparsers)
+    setup_data_subparsers(subparsers)
     
     args = parser.parse_args()
     args.func(args)

@@ -7,6 +7,8 @@ import logging
 
 from condor_utils.core.logging import setup_logging
 from condor_utils.core.helpers import run_command_and_log, chunk_list
+from condor_utils.core.manager import CondorJobManager
+from condor_utils.cli import get_common_parser
 
 def jetAna_jobs(args):
     input_list      = Path(args.input_list).resolve()
@@ -118,7 +120,7 @@ def jetAna_jobs(args):
     logger.info(command)
 
 
-def setup_jetAna_subparsers(subparsers, common_parser):
+def setup_jetAna_subparsers(subparsers):
     jetAna = subparsers.add_parser('jetAna', help='jetAna condor jobs.')
     jetAna.add_argument('-i', '--input-list', type=str, required=True, help='List of TTrees to analyze.')
     jetAna.add_argument('-i2', '--f4a-qa-list', type=str, required=True, help='List of F4A QA.')
