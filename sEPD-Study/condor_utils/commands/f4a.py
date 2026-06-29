@@ -236,7 +236,7 @@ def setup_f4a_subparsers(subparsers):
     f4a.set_defaults(memory=1.5, condor_script='scripts/genFun4All.sh', func=create_f4a_jobs)
 
     f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[get_common_parser()], help='Create condor submission directory.')
-    f4a_zdc.add_argument('-n3', '--log-interval', type=int, default=1000, help='Logging Event Frequency. Default: 1000.')
+    f4a_zdc.add_argument('-n3', '--log-interval', type=int, default=10000, help='Logging Event Frequency. Default: 10000.')
     f4a_zdc.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_ZDC.C', help='Fun4All Macro.')
     f4a_zdc.set_defaults(memory=0.5, condor_script='scripts/genFun4AllZDC.sh', func=create_f4a_zdc_jobs)
 
