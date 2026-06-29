@@ -6,6 +6,8 @@ DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00004.root,/direct/sphenix
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00005.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00005.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00006.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00006.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00007.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00007.root
+DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00008.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00008.root
+DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00009.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00009.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00010.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00010.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00011.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00011.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00012.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00012.root
@@ -15,6 +17,7 @@ DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00015.root,/direct/sphenix
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00016.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00016.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00017.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00017.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00018.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00018.root
+DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00019.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00019.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00020.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00020.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00021.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00021.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00022.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00022.root
@@ -266,6 +269,8 @@ DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00301.root,/direct/sphenix
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00302.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00302.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00303.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00303.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00304.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00304.root
+DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00305.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00305.root
+DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00306.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00306.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00307.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00307.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00308.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00308.root
 DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00072180-00309.root,/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/72180/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00072180-00309.root
