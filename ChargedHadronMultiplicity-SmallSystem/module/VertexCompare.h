@@ -30,6 +30,7 @@ class TrackSeedContainer;
 class SvtxVertexMap;
 class SvtxTrackMap;
 class SvtxPHG4ParticleMap;
+class PHG4TpcGeomContainer;
 class Gl1Packet;
 
 class CentralityInfo;
@@ -102,9 +103,15 @@ class VertexCompare : public SubsysReco
 
     // a setter for simulation for truth matching
     void doTruthMatching() { doTruthMatching_ = true; };
+    void doTrackOutput() { writeTrackBranches_ = true; };
+    void doTpcSeedOutput() { writeTpcSeedBranches_ = true; };
+    void doTruthOnlyOutput() { truthOnlyOutput_ = true; IsSimulation(); };
+    void SaveClustersOnTrack(bool saveClustersOnTrack) { _saveClustersOnTrack = saveClustersOnTrack; };
 
   private:
+    void FillTrackTree();
     void FillSiliconSeedTree();
+    void FillTpcSeedTree();
     void FillClusterTree();
     void FillTruthParticleTree();
     void Cleanup();
@@ -112,6 +119,10 @@ class VertexCompare : public SubsysReco
     // flag for simulation
     bool isSimulation = false;
     bool doTruthMatching_ = false;
+    bool writeTrackBranches_ = false;
+    bool writeTpcSeedBranches_ = false;
+    bool truthOnlyOutput_ = false;
+    bool _saveClustersOnTrack = false;
 
     TFile *outFile = nullptr;
     TTree *outTree = nullptr;
@@ -123,6 +134,7 @@ class VertexCompare : public SubsysReco
     std::string svtxvertexmapName = "SvtxVertexMap";
     std::string svtxTrackMapName = "SvtxTrackMap";
     std::string seedContainerName = "SiliconTrackSeedContainer";
+    std::string tpcSeedContainerName = "TpcTrackSeedContainer";
     std::string svtxPHG4ParticleMapName = "SvtxPHG4ParticleMap";
     std::string gl1NodeName = "GL1RAWHIT";
     std::string mbdOutNodeName = "MbdOut";
@@ -131,7 +143,9 @@ class VertexCompare : public SubsysReco
     TrkrClusterHitAssoc *clusterhitassoc = nullptr;
     TrkrClusterCrossingAssoc *clustercrossingassoc = nullptr;
     ActsGeometry *geometry = nullptr;
+    PHG4TpcGeomContainer *tpcgeom = nullptr;
     TrackSeedContainer *silseedmap = nullptr;
+    TrackSeedContainer *tpcseedmap = nullptr;
     SvtxTrackMap *svtxTrackMap = nullptr;
     SvtxPHG4ParticleMap *svtxPHG4ParticleMap = nullptr;
     Gl1Packet *gl1PacketInfo = nullptr;
@@ -188,10 +202,83 @@ class VertexCompare : public SubsysReco
     // truth vertex information
     int nTruthVertex = 0; // total number of primary truth vertices
     // coordinates for primary truth vertices with isEmbededVtx == 0 (dNdEtaINTT-style trigger vertex selection)
+    std::vector<int> TruthVertex_isEmbeded = std::vector<int>();
     std::vector<float> TruthVertexX = std::vector<float>();
     std::vector<float> TruthVertexY = std::vector<float>();
     std::vector<float> TruthVertexZ = std::vector<float>();
     std::vector<float> TruthVertexT = std::vector<float>();
+    std::vector<int> TruthVertex_crossing = std::vector<int>();
+
+    // full reconstructed track information
+    int nRecoTracks = 0;
+    std::vector<float> track_deltapt = std::vector<float>();
+    std::vector<float> track_deltaeta = std::vector<float>();
+    std::vector<float> track_deltaphi = std::vector<float>();
+    std::vector<int> track_nhits = std::vector<int>();
+    std::vector<int> track_nmaps = std::vector<int>();
+    std::vector<int> track_nintt = std::vector<int>();
+    std::vector<int> track_ntpc = std::vector<int>();
+    std::vector<int> track_nmms = std::vector<int>();
+    std::vector<int> track_ntpc1 = std::vector<int>();
+    std::vector<int> track_ntpc11 = std::vector<int>();
+    std::vector<int> track_ntpc2 = std::vector<int>();
+    std::vector<int> track_ntpc3 = std::vector<int>();
+    std::vector<float> track_pidedx = std::vector<float>();
+    std::vector<float> track_kdedx = std::vector<float>();
+    std::vector<float> track_prdedx = std::vector<float>();
+    std::vector<float> track_vx = std::vector<float>();
+    std::vector<float> track_vy = std::vector<float>();
+    std::vector<float> track_vz = std::vector<float>();
+    std::vector<float> track_dca2d = std::vector<float>();
+    std::vector<float> track_dca2dsigma = std::vector<float>();
+    std::vector<float> track_dca3dxy = std::vector<float>();
+    std::vector<float> track_dca3dxysigma = std::vector<float>();
+    std::vector<float> track_dca3dz = std::vector<float>();
+    std::vector<float> track_dca3dzsigma = std::vector<float>();
+    std::vector<float> track_hlxpt = std::vector<float>();
+    std::vector<float> track_hlxeta = std::vector<float>();
+    std::vector<float> track_hlxphi = std::vector<float>();
+    std::vector<float> track_hlxX0 = std::vector<float>();
+    std::vector<float> track_hlxY0 = std::vector<float>();
+    std::vector<float> track_hlxZ0 = std::vector<float>();
+    std::vector<int> track_hlxcharge = std::vector<int>();
+    std::vector<unsigned int> track_id = std::vector<unsigned int>();
+    std::vector<float> track_x = std::vector<float>();
+    std::vector<float> track_y = std::vector<float>();
+    std::vector<float> track_z = std::vector<float>();
+    std::vector<float> track_px = std::vector<float>();
+    std::vector<float> track_py = std::vector<float>();
+    std::vector<float> track_pz = std::vector<float>();
+    std::vector<float> track_pt = std::vector<float>();
+    std::vector<float> track_eta = std::vector<float>();
+    std::vector<float> track_phi = std::vector<float>();
+    std::vector<float> track_dedx = std::vector<float>();
+    std::vector<int> track_charge = std::vector<int>();
+    std::vector<int> track_crossing = std::vector<int>();
+    std::vector<int> track_vertex_id = std::vector<int>();
+    std::vector<float> track_chisq = std::vector<float>();
+    std::vector<int> track_ndf = std::vector<int>();
+    std::vector<float> track_quality = std::vector<float>();
+    std::vector<int> track_silseed_id = std::vector<int>();
+    std::vector<float> track_silseed_x = std::vector<float>();
+    std::vector<float> track_silseed_y = std::vector<float>();
+    std::vector<float> track_silseed_z = std::vector<float>();
+    std::vector<float> track_silseed_pt = std::vector<float>();
+    std::vector<float> track_silseed_eta = std::vector<float>();
+    std::vector<float> track_silseed_phi = std::vector<float>();
+    std::vector<int> track_silseed_crossing = std::vector<int>();
+    std::vector<int> track_silseed_charge = std::vector<int>();
+    std::vector<int> track_silseed_nMvtx = std::vector<int>();
+    std::vector<int> track_silseed_nIntt = std::vector<int>();
+    std::vector<std::vector<uint64_t>> track_silseed_clusterKeys = std::vector<std::vector<uint64_t>>();
+    // branches for clusters on track
+    std::vector<std::vector<unsigned int>> track_cluster_layer = std::vector<std::vector<unsigned int>>();
+    std::vector<std::vector<float>> track_cluster_globalX = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> track_cluster_globalY = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> track_cluster_globalZ = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> track_cluster_phi = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> track_cluster_eta = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> track_cluster_r = std::vector<std::vector<float>>();
 
     // silicon seed information
     int nTotalSilSeeds = 0;
@@ -251,6 +338,30 @@ class VertexCompare : public SubsysReco
     std::vector<float> silseed_f4a_bestG4P_phi = std::vector<float>();
     std::vector<std::vector<int>> silseed_f4a_bestG4P_ancestor_trackID = std::vector<std::vector<int>>();
     std::vector<std::vector<int>> silseed_f4a_bestG4P_ancestor_PID = std::vector<std::vector<int>>();
+
+    // tpc seed information
+    int nTotalTpcSeeds = 0;
+    std::vector<unsigned int> tpcseed_id = std::vector<unsigned int>();
+    std::vector<float> tpcseed_x = std::vector<float>();
+    std::vector<float> tpcseed_y = std::vector<float>();
+    std::vector<float> tpcseed_z = std::vector<float>();
+    std::vector<float> tpcseed_pt = std::vector<float>();
+    std::vector<float> tpcseed_eta = std::vector<float>();
+    std::vector<float> tpcseed_phi = std::vector<float>();
+    std::vector<int> tpcseed_crossing = std::vector<int>();
+    std::vector<int> tpcseed_crossing_estimate = std::vector<int>();
+    std::vector<int> tpcseed_charge = std::vector<int>();
+    std::vector<int> tpcseed_nTpc = std::vector<int>();
+    std::vector<int> tpcseed_nMms = std::vector<int>();
+    std::vector<float> tpcseed_dedx = std::vector<float>();
+    std::vector<std::vector<uint64_t>> tpcseed_clusterKeys = std::vector<std::vector<uint64_t>>();
+    std::vector<std::vector<unsigned int>> tpcseed_cluster_layer = std::vector<std::vector<unsigned int>>();
+    std::vector<std::vector<float>> tpcseed_cluster_globalX = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> tpcseed_cluster_globalY = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> tpcseed_cluster_globalZ = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> tpcseed_cluster_phi = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> tpcseed_cluster_eta = std::vector<std::vector<float>>();
+    std::vector<std::vector<float>> tpcseed_cluster_r = std::vector<std::vector<float>>();
 
     // (intt) cluster information
     std::vector<uint64_t> clusterKey = std::vector<uint64_t>();
@@ -322,6 +433,12 @@ class VertexCompare : public SubsysReco
     std::vector<float> PrimaryPHG4Ptcl_E = std::vector<float>();
     std::vector<int> PrimaryPHG4Ptcl_PID = std::vector<int>();
     std::vector<int> PrimaryPHG4Ptcl_trackID = std::vector<int>();
+    // the original collision ancestor of this truth particle
+    std::vector<int> PrimaryPHG4Ptcl_originTrackID = std::vector<int>();
+    std::vector<int> PrimaryPHG4Ptcl_originVtxID = std::vector<int>();
+    std::vector<float> PrimaryPHG4Ptcl_originVtxT = std::vector<float>();
+    std::vector<int> PrimaryPHG4Ptcl_originCrossing = std::vector<int>();
+    std::vector<int> PrimaryPHG4Ptcl_originIsEmbeded = std::vector<int>();
     std::vector<TString> PrimaryPHG4Ptcl_ParticleClass = std::vector<TString>();
     std::vector<bool> PrimaryPHG4Ptcl_isStable = std::vector<bool>();
     std::vector<double> PrimaryPHG4Ptcl_charge = std::vector<double>();
@@ -335,6 +452,11 @@ class VertexCompare : public SubsysReco
     std::vector<float> sPHENIXPrimary_E = std::vector<float>();
     std::vector<int> sPHENIXPrimary_PID = std::vector<int>();
     std::vector<int> sPHENIXPrimary_trackID = std::vector<int>();
+    std::vector<int> sPHENIXPrimary_originTrackID = std::vector<int>();
+    std::vector<int> sPHENIXPrimary_originVtxID = std::vector<int>();
+    std::vector<float> sPHENIXPrimary_originVtxT = std::vector<float>();
+    std::vector<int> sPHENIXPrimary_originCrossing = std::vector<int>();
+    std::vector<int> sPHENIXPrimary_originIsEmbeded = std::vector<int>();
     std::vector<TString> sPHENIXPrimary_ParticleClass = std::vector<TString>();
     std::vector<bool> sPHENIXPrimary_isStable = std::vector<bool>();
     std::vector<double> sPHENIXPrimary_charge = std::vector<double>();
@@ -368,6 +490,11 @@ class VertexCompare : public SubsysReco
     std::vector<float> AllPHG4Ptcl_E = std::vector<float>();
     std::vector<int> AllPHG4Ptcl_PID = std::vector<int>();
     std::vector<int> AllPHG4Ptcl_trackID = std::vector<int>();
+    std::vector<int> AllPHG4Ptcl_originTrackID = std::vector<int>();
+    std::vector<int> AllPHG4Ptcl_originVtxID = std::vector<int>();
+    std::vector<float> AllPHG4Ptcl_originVtxT = std::vector<float>();
+    std::vector<int> AllPHG4Ptcl_originCrossing = std::vector<int>();
+    std::vector<int> AllPHG4Ptcl_originIsEmbeded = std::vector<int>();
     std::vector<std::vector<int>> AllPHG4Ptcl_ancestor_trackID = std::vector<std::vector<int>>();
     std::vector<std::vector<int>> AllPHG4Ptcl_ancestor_PID = std::vector<std::vector<int>>();
     std::vector<std::vector<float>> AllPHG4Ptcl_truthcluster_X = std::vector<std::vector<float>>();

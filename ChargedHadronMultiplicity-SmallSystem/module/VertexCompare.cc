@@ -67,6 +67,7 @@
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
+#include <phool/sphenix_constants.h>
 
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/TrkrCluster.h>
@@ -80,6 +81,9 @@
 #include <trackbase_historic/TrackSeed.h>
 #include <trackbase_historic/TrackSeedContainer.h>
 #include <trackbase_historic/TrackSeedHelper.h>
+
+#include <g4detectors/PHG4TpcGeom.h>
+#include <g4detectors/PHG4TpcGeomContainer.h>
 
 #include <mvtx/SegmentationAlpide.h>
 #include <mvtx/MvtxPixelDefs.h>
@@ -117,6 +121,8 @@
 #include <g4main/PHG4VtxPoint.h>
 
 #include <algorithm>
+#include <climits>
+#include <cmath>
 #include <map>
 
 #include <TDatabasePDG.h>
@@ -196,6 +202,78 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     outTree->Branch("hasMBD", &hasMBD, "hasMBD/O");
     outTree->Branch("hasTRK", &hasTRK, "hasTRK/O");
 
+    if (writeTrackBranches_)
+    {
+        outTree->Branch("nRecoTracks", &nRecoTracks);
+        outTree->Branch("track_deltapt", &track_deltapt);
+        outTree->Branch("track_deltaeta", &track_deltaeta);
+        outTree->Branch("track_deltaphi", &track_deltaphi);
+        outTree->Branch("track_nhits", &track_nhits);
+        outTree->Branch("track_nmaps", &track_nmaps);
+        outTree->Branch("track_nintt", &track_nintt);
+        outTree->Branch("track_ntpc", &track_ntpc);
+        outTree->Branch("track_nmms", &track_nmms);
+        outTree->Branch("track_ntpc1", &track_ntpc1);
+        outTree->Branch("track_ntpc11", &track_ntpc11);
+        outTree->Branch("track_ntpc2", &track_ntpc2);
+        outTree->Branch("track_ntpc3", &track_ntpc3);
+        outTree->Branch("track_pidedx", &track_pidedx);
+        outTree->Branch("track_kdedx", &track_kdedx);
+        outTree->Branch("track_prdedx", &track_prdedx);
+        outTree->Branch("track_vx", &track_vx);
+        outTree->Branch("track_vy", &track_vy);
+        outTree->Branch("track_vz", &track_vz);
+        outTree->Branch("track_dca2d", &track_dca2d);
+        outTree->Branch("track_dca2dsigma", &track_dca2dsigma);
+        outTree->Branch("track_dca3dxy", &track_dca3dxy);
+        outTree->Branch("track_dca3dxysigma", &track_dca3dxysigma);
+        outTree->Branch("track_dca3dz", &track_dca3dz);
+        outTree->Branch("track_dca3dzsigma", &track_dca3dzsigma);
+        outTree->Branch("track_hlxpt", &track_hlxpt);
+        outTree->Branch("track_hlxeta", &track_hlxeta);
+        outTree->Branch("track_hlxphi", &track_hlxphi);
+        outTree->Branch("track_hlxX0", &track_hlxX0);
+        outTree->Branch("track_hlxY0", &track_hlxY0);
+        outTree->Branch("track_hlxZ0", &track_hlxZ0);
+        outTree->Branch("track_hlxcharge", &track_hlxcharge);
+        outTree->Branch("track_id", &track_id);
+        outTree->Branch("track_x", &track_x);
+        outTree->Branch("track_y", &track_y);
+        outTree->Branch("track_z", &track_z);
+        outTree->Branch("track_px", &track_px);
+        outTree->Branch("track_py", &track_py);
+        outTree->Branch("track_pz", &track_pz);
+        outTree->Branch("track_pt", &track_pt);
+        outTree->Branch("track_eta", &track_eta);
+        outTree->Branch("track_phi", &track_phi);
+        outTree->Branch("track_dedx", &track_dedx);
+        outTree->Branch("track_charge", &track_charge);
+        outTree->Branch("track_crossing", &track_crossing);
+        outTree->Branch("track_vertex_id", &track_vertex_id);
+        outTree->Branch("track_chisq", &track_chisq);
+        outTree->Branch("track_ndf", &track_ndf);
+        outTree->Branch("track_quality", &track_quality);
+        outTree->Branch("track_silseed_id", &track_silseed_id);
+        outTree->Branch("track_silseed_x", &track_silseed_x);
+        outTree->Branch("track_silseed_y", &track_silseed_y);
+        outTree->Branch("track_silseed_z", &track_silseed_z);
+        outTree->Branch("track_silseed_pt", &track_silseed_pt);
+        outTree->Branch("track_silseed_eta", &track_silseed_eta);
+        outTree->Branch("track_silseed_phi", &track_silseed_phi);
+        outTree->Branch("track_silseed_crossing", &track_silseed_crossing);
+        outTree->Branch("track_silseed_charge", &track_silseed_charge);
+        outTree->Branch("track_silseed_nMvtx", &track_silseed_nMvtx);
+        outTree->Branch("track_silseed_nIntt", &track_silseed_nIntt);
+        outTree->Branch("track_silseed_clusterKeys", &track_silseed_clusterKeys);
+        outTree->Branch("track_cluster_layer", &track_cluster_layer);
+        outTree->Branch("track_cluster_globalX", &track_cluster_globalX);
+        outTree->Branch("track_cluster_globalY", &track_cluster_globalY);
+        outTree->Branch("track_cluster_globalZ", &track_cluster_globalZ);
+        outTree->Branch("track_cluster_phi", &track_cluster_phi);
+        outTree->Branch("track_cluster_eta", &track_cluster_eta);
+        outTree->Branch("track_cluster_r", &track_cluster_r);
+    }
+
     // silicon seed information
     outTree->Branch("nTotalSilSeeds", &nTotalSilSeeds);
     outTree->Branch("nSilSeedsValidCrossing", &nSilSeedsValidCrossing);
@@ -225,6 +303,32 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     outTree->Branch("silseed_cluster_zSize", &silseed_cluster_zSize);
     outTree->Branch("silseed_cluster_strobeID", &silseed_cluster_strobeID);
     outTree->Branch("silseed_cluster_timeBucketID", &silseed_cluster_timeBucketID); // only for INTT
+
+    if (writeTpcSeedBranches_)
+    {
+        outTree->Branch("nTotalTpcSeeds", &nTotalTpcSeeds);
+        outTree->Branch("tpcseed_id", &tpcseed_id);
+        outTree->Branch("tpcseed_x", &tpcseed_x);
+        outTree->Branch("tpcseed_y", &tpcseed_y);
+        outTree->Branch("tpcseed_z", &tpcseed_z);
+        outTree->Branch("tpcseed_pt", &tpcseed_pt);
+        outTree->Branch("tpcseed_eta", &tpcseed_eta);
+        outTree->Branch("tpcseed_phi", &tpcseed_phi);
+        outTree->Branch("tpcseed_crossing", &tpcseed_crossing);
+        outTree->Branch("tpcseed_crossing_estimate", &tpcseed_crossing_estimate);
+        outTree->Branch("tpcseed_charge", &tpcseed_charge);
+        outTree->Branch("tpcseed_nTpc", &tpcseed_nTpc);
+        outTree->Branch("tpcseed_nMms", &tpcseed_nMms);
+        outTree->Branch("tpcseed_dedx", &tpcseed_dedx);
+        outTree->Branch("tpcseed_clusterKeys", &tpcseed_clusterKeys);
+        outTree->Branch("tpcseed_cluster_layer", &tpcseed_cluster_layer);
+        outTree->Branch("tpcseed_cluster_globalX", &tpcseed_cluster_globalX);
+        outTree->Branch("tpcseed_cluster_globalY", &tpcseed_cluster_globalY);
+        outTree->Branch("tpcseed_cluster_globalZ", &tpcseed_cluster_globalZ);
+        outTree->Branch("tpcseed_cluster_phi", &tpcseed_cluster_phi);
+        outTree->Branch("tpcseed_cluster_eta", &tpcseed_cluster_eta);
+        outTree->Branch("tpcseed_cluster_r", &tpcseed_cluster_r);
+    }
 
     // (intt) cluster information
     outTree->Branch("clusterKey", &clusterKey);
@@ -277,10 +381,12 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     if (isSimulation)
     {
         outTree->Branch("nTruthVertex", &nTruthVertex);
+        outTree->Branch("TruthVertex_isEmbeded", &TruthVertex_isEmbeded);
         outTree->Branch("TruthVertexX", &TruthVertexX);
         outTree->Branch("TruthVertexY", &TruthVertexY);
         outTree->Branch("TruthVertexZ", &TruthVertexZ);
         outTree->Branch("TruthVertexT", &TruthVertexT);
+        outTree->Branch("TruthVertex_crossing", &TruthVertex_crossing);
 
         outTree->Branch("silseed_ngmvtx", &silseed_ngmvtx);
         outTree->Branch("silseed_ngintt", &silseed_ngintt);
@@ -330,6 +436,11 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("PrimaryPHG4Ptcl_E", &PrimaryPHG4Ptcl_E);
         outTree->Branch("PrimaryPHG4Ptcl_PID", &PrimaryPHG4Ptcl_PID);
         outTree->Branch("PrimaryPHG4Ptcl_trackID", &PrimaryPHG4Ptcl_trackID);
+        outTree->Branch("PrimaryPHG4Ptcl_originTrackID", &PrimaryPHG4Ptcl_originTrackID);
+        outTree->Branch("PrimaryPHG4Ptcl_originVtxID", &PrimaryPHG4Ptcl_originVtxID);
+        outTree->Branch("PrimaryPHG4Ptcl_originVtxT", &PrimaryPHG4Ptcl_originVtxT);
+        outTree->Branch("PrimaryPHG4Ptcl_originCrossing", &PrimaryPHG4Ptcl_originCrossing);
+        outTree->Branch("PrimaryPHG4Ptcl_originIsEmbeded", &PrimaryPHG4Ptcl_originIsEmbeded);
         outTree->Branch("PrimaryPHG4Ptcl_ParticleClass", &PrimaryPHG4Ptcl_ParticleClass);
         outTree->Branch("PrimaryPHG4Ptcl_isStable", &PrimaryPHG4Ptcl_isStable);
         outTree->Branch("PrimaryPHG4Ptcl_charge", &PrimaryPHG4Ptcl_charge);
@@ -362,6 +473,11 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("sPHENIXPrimary_E", &sPHENIXPrimary_E);
         outTree->Branch("sPHENIXPrimary_PID", &sPHENIXPrimary_PID);
         outTree->Branch("sPHENIXPrimary_trackID", &sPHENIXPrimary_trackID);
+        outTree->Branch("sPHENIXPrimary_originTrackID", &sPHENIXPrimary_originTrackID);
+        outTree->Branch("sPHENIXPrimary_originVtxID", &sPHENIXPrimary_originVtxID);
+        outTree->Branch("sPHENIXPrimary_originVtxT", &sPHENIXPrimary_originVtxT);
+        outTree->Branch("sPHENIXPrimary_originCrossing", &sPHENIXPrimary_originCrossing);
+        outTree->Branch("sPHENIXPrimary_originIsEmbeded", &sPHENIXPrimary_originIsEmbeded);
         outTree->Branch("sPHENIXPrimary_ParticleClass", &sPHENIXPrimary_ParticleClass);
         outTree->Branch("sPHENIXPrimary_isStable", &sPHENIXPrimary_isStable);
         outTree->Branch("sPHENIXPrimary_charge", &sPHENIXPrimary_charge);
@@ -394,6 +510,11 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("AllPHG4Ptcl_E", &AllPHG4Ptcl_E);
         outTree->Branch("AllPHG4Ptcl_PID", &AllPHG4Ptcl_PID);
         outTree->Branch("AllPHG4Ptcl_trackID", &AllPHG4Ptcl_trackID);
+        outTree->Branch("AllPHG4Ptcl_originTrackID", &AllPHG4Ptcl_originTrackID);
+        outTree->Branch("AllPHG4Ptcl_originVtxID", &AllPHG4Ptcl_originVtxID);
+        outTree->Branch("AllPHG4Ptcl_originVtxT", &AllPHG4Ptcl_originVtxT);
+        outTree->Branch("AllPHG4Ptcl_originCrossing", &AllPHG4Ptcl_originCrossing);
+        outTree->Branch("AllPHG4Ptcl_originIsEmbeded", &AllPHG4Ptcl_originIsEmbeded);
         outTree->Branch("AllPHG4Ptcl_ancestor_trackID", &AllPHG4Ptcl_ancestor_trackID);
         outTree->Branch("AllPHG4Ptcl_ancestor_PID", &AllPHG4Ptcl_ancestor_PID);
         outTree->Branch("AllPHG4Ptcl_truthcluster_X", &AllPHG4Ptcl_truthcluster_X);
@@ -428,6 +549,22 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
 {
     std::cout << "VertexCompare::process_event - Processing event " << counter << std::endl;
 
+    if (truthOnlyOutput_)
+    {
+        m_truth_info = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+        if (!m_truth_info)
+        {
+            std::cout << "VertexCompare::process_event - [ERROR/WARNING] - can't find G4TruthInfoContainer node G4TruthInfo" << std::endl;
+            return Fun4AllReturnCodes::EVENT_OK;
+        }
+
+        FillTruthParticleTree();
+        outTree->Fill();
+        ++counter;
+        Cleanup();
+        return Fun4AllReturnCodes::EVENT_OK;
+    }
+
     PHNodeIterator dstiter(topNode);
     PHCompositeNode *dstNode = dynamic_cast<PHCompositeNode *>(dstiter.findFirst("PHCompositeNode", "DST"));
 
@@ -440,7 +577,9 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     clusterhitassoc = findNode::getClass<TrkrClusterHitAssoc>(dstNode, clusterHitAssocName);
     clustercrossingassoc = findNode::getClass<TrkrClusterCrossingAssoc>(dstNode, "TRKR_CLUSTERCROSSINGASSOC");
     geometry = findNode::getClass<ActsGeometry>(topNode, geometryNodeName);
+    tpcgeom = findNode::getClass<PHG4TpcGeomContainer>(topNode, "TPCGEOMCONTAINER");
     silseedmap = findNode::getClass<TrackSeedContainer>(topNode, seedContainerName);
+    tpcseedmap = findNode::getClass<TrackSeedContainer>(topNode, tpcSeedContainerName);
     svtxTrackMap = findNode::getClass<SvtxTrackMap>(topNode, svtxTrackMapName);
     gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, gl1NodeName);
     m_mbdout = findNode::getClass<MbdOut>(topNode, mbdOutNodeName);
@@ -482,10 +621,18 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
         std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find ActsGeometry node " << geometryNodeName << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
     }
+    if (writeTrackBranches_ && !tpcgeom)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [WARNING] - cannot find TPC geometry node TPCGEOMCONTAINER for track dEdx" << std::endl;
+    }
     if (!silseedmap)
     {
         std::cout << "SiliconSeedAnalyzer::process_event - [ERROR/WARNING] - can't find silicon seed map node " << seedContainerName << std::endl;
         // return Fun4AllReturnCodes::ABORTEVENT;
+    }
+    if (writeTpcSeedBranches_ && !tpcseedmap)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [WARNING] - can't find TPC seed map node " << tpcSeedContainerName << "; will use TPC seeds from SvtxTrackMap" << std::endl;
     }
     if (!svtxTrackMap)
     {
@@ -688,7 +835,7 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
         {
             svtx_evalstack = new SvtxEvalStack(topNode);
             svtx_evalstack->set_strict(false);
-            svtx_evalstack->do_caching(false);
+            // svtx_evalstack->do_caching(false);
             clustereval = svtx_evalstack->get_cluster_eval();
             hiteval = svtx_evalstack->get_hit_eval();
             truth_eval = svtx_evalstack->get_truth_eval();
@@ -698,6 +845,14 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     }
 
     FillSiliconSeedTree();
+    if (writeTpcSeedBranches_)
+    {
+        FillTpcSeedTree();
+    }
+    if (writeTrackBranches_)
+    {
+        FillTrackTree();
+    }
 
     FillClusterTree();
 
@@ -716,6 +871,358 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
+void VertexCompare::FillTrackTree()
+{
+    const int kMissingInt = std::numeric_limits<int>::max();
+    const float kMissingFloat = std::numeric_limits<float>::quiet_NaN();
+
+    if (!svtxTrackMap)
+    {
+        return;
+    }
+
+    float layerThicknesses[4] = {0.0, 0.0, 0.0, 0.0};
+    bool canCalculateDedx = false;
+    if (clustermap && geometry && tpcgeom)
+    {
+        auto *inner1 = tpcgeom->GetLayerCellGeom(7);
+        auto *inner2 = tpcgeom->GetLayerCellGeom(8);
+        auto *middle = tpcgeom->GetLayerCellGeom(27);
+        auto *outer = tpcgeom->GetLayerCellGeom(50);
+        if (inner1 && inner2 && middle && outer)
+        {
+            layerThicknesses[0] = inner1->get_thickness();
+            layerThicknesses[1] = inner2->get_thickness();
+            layerThicknesses[2] = middle->get_thickness();
+            layerThicknesses[3] = outer->get_thickness();
+            canCalculateDedx = true;
+        }
+    }
+
+    const auto count_seed_hits = [](const TrackSeed *seed, int &nhits, int &nmaps, int &nintt, int &ntpc, int &nmms, int &ntpc1, int &ntpc11, int &ntpc2, int &ntpc3)
+    {
+        if (!seed)
+        {
+            return;
+        }
+
+        nhits += seed->size_cluster_keys();
+        for (auto iter = seed->begin_cluster_keys(); iter != seed->end_cluster_keys(); ++iter)
+        {
+            const auto clusterKey = *iter;
+            const unsigned int layer = TrkrDefs::getLayer(clusterKey);
+            switch (TrkrDefs::getTrkrId(clusterKey))
+            {
+            case TrkrDefs::TrkrId::mvtxId:
+                ++nmaps;
+                break;
+            case TrkrDefs::TrkrId::inttId:
+                ++nintt;
+                break;
+            case TrkrDefs::TrkrId::tpcId:
+                ++ntpc;
+                if ((layer - 7U) < 8U)
+                {
+                    ++ntpc11;
+                }
+                if ((layer - 7U) < 16U)
+                {
+                    ++ntpc1;
+                }
+                else if ((layer - 7U) < 32U)
+                {
+                    ++ntpc2;
+                }
+                else if ((layer - 7U) < 48U)
+                {
+                    ++ntpc3;
+                }
+                break;
+            case TrkrDefs::TrkrId::micromegasId:
+                ++nmms;
+                break;
+            default:
+                break;
+            }
+        }
+    };
+
+    const auto fill_seed_clusters = [this](const TrackSeed *seed,
+                                           std::vector<unsigned int> &layers,
+                                           std::vector<float> &globalX,
+                                           std::vector<float> &globalY,
+                                           std::vector<float> &globalZ,
+                                           std::vector<float> &phis,
+                                           std::vector<float> &etas,
+                                           std::vector<float> &radii)
+    {
+        if (!seed || !clustermap || !geometry)
+        {
+            return;
+        }
+
+        for (auto iter = seed->begin_cluster_keys(); iter != seed->end_cluster_keys(); ++iter)
+        {
+            const auto clusterKey = *iter;
+            auto *cluster = clustermap->findCluster(clusterKey);
+            if (!cluster)
+            {
+                continue;
+            }
+
+            const auto globalpos = geometry->getGlobalPosition(clusterKey, cluster);
+            layers.push_back(TrkrDefs::getLayer(clusterKey));
+            globalX.push_back(globalpos.x());
+            globalY.push_back(globalpos.y());
+            globalZ.push_back(globalpos.z());
+            phis.push_back(std::atan2(globalpos.y(), globalpos.x()));
+            TVector3 posvec(globalpos.x(), globalpos.y(), globalpos.z());
+            etas.push_back(posvec.Eta());
+            radii.push_back((globalpos.y() > 0) ? std::sqrt(globalpos.x() * globalpos.x() + globalpos.y() * globalpos.y()) : -std::sqrt(globalpos.x() * globalpos.x() + globalpos.y() * globalpos.y()));
+        }
+    };
+
+    for (auto trackIter = svtxTrackMap->begin(); trackIter != svtxTrackMap->end(); ++trackIter)
+    {
+        SvtxTrack *track = trackIter->second;
+        if (!track)
+        {
+            continue;
+        }
+
+        TrackSeed *tpc_seed = track->get_tpc_seed();
+        TrackSeed *silicon_seed = track->get_silicon_seed();
+
+        int nhits = 0;
+        int nmaps = 0;
+        int nintt = 0;
+        int ntpc = 0;
+        int nmms = 0;
+        int ntpc1 = 0;
+        int ntpc11 = 0;
+        int ntpc2 = 0;
+        int ntpc3 = 0;
+        count_seed_hits(tpc_seed, nhits, nmaps, nintt, ntpc, nmms, ntpc1, ntpc11, ntpc2, ntpc3);
+        count_seed_hits(silicon_seed, nhits, nmaps, nintt, ntpc, nmms, ntpc1, ntpc11, ntpc2, ntpc3);
+
+        std::vector<unsigned int> cluster_layers;
+        std::vector<float> cluster_globalX;
+        std::vector<float> cluster_globalY;
+        std::vector<float> cluster_globalZ;
+        std::vector<float> cluster_phi;
+        std::vector<float> cluster_eta;
+        std::vector<float> cluster_r;
+        fill_seed_clusters(tpc_seed, cluster_layers, cluster_globalX, cluster_globalY, cluster_globalZ, cluster_phi, cluster_eta, cluster_r);
+        fill_seed_clusters(silicon_seed, cluster_layers, cluster_globalX, cluster_globalY, cluster_globalZ, cluster_phi, cluster_eta, cluster_r);
+
+        const float px = track->get_px();
+        const float py = track->get_py();
+        const float pz = track->get_pz();
+        const TVector3 momentum(px, py, pz);
+        const float pt = momentum.Pt();
+        const float eta = momentum.Eta();
+        const float phi = momentum.Phi();
+
+        const float cvxx = track->get_error(3, 3);
+        const float cvxy = track->get_error(3, 4);
+        const float cvxz = track->get_error(3, 5);
+        const float cvyy = track->get_error(4, 4);
+        const float cvyz = track->get_error(4, 5);
+        const float cvzz = track->get_error(5, 5);
+
+        const double pt2 = static_cast<double>(px) * px + static_cast<double>(py) * py;
+        const double p2 = pt2 + static_cast<double>(pz) * pz;
+
+        float deltapt = kMissingFloat;
+        if (pt2 > 0.)
+        {
+            const double arg = (static_cast<double>(cvxx) * px * px + 2. * static_cast<double>(cvxy) * px * py + static_cast<double>(cvyy) * py * py) / pt2;
+            if (std::isfinite(arg) && arg >= 0.)
+            {
+                deltapt = std::sqrt(arg);
+            }
+        }
+
+        float deltaeta = kMissingFloat;
+        if (pt2 > 0. && p2 > 0.)
+        {
+            const double numerator =
+                static_cast<double>(cvzz) * pt2 * pt2 +
+                static_cast<double>(pz) *
+                    (-2. * (static_cast<double>(cvxz) * px + static_cast<double>(cvyz) * py) * pt2 +
+                     static_cast<double>(cvxx) * px * px * pz +
+                     static_cast<double>(cvyy) * py * py * pz +
+                     2. * static_cast<double>(cvxy) * px * py * pz);
+            const double arg = numerator / (pt2 * pt2 * p2);
+            if (std::isfinite(arg) && arg >= 0.)
+            {
+                deltaeta = std::sqrt(arg);
+            }
+        }
+
+        float deltaphi = kMissingFloat;
+        if (pt2 > 0.)
+        {
+            const double arg =
+                (static_cast<double>(cvyy) * px * px - 2. * static_cast<double>(cvxy) * px * py + static_cast<double>(cvxx) * py * py) /
+                (pt2 * pt2);
+            if (std::isfinite(arg) && arg >= 0.)
+            {
+                deltaphi = std::sqrt(arg);
+            }
+        }
+
+        const int vertexID = track->get_vertex_id();
+        float vx = kMissingFloat;
+        float vy = kMissingFloat;
+        float vz = kMissingFloat;
+        auto vertexIter = std::find(trackerVertexId.begin(), trackerVertexId.end(), vertexID);
+        if (vertexIter != trackerVertexId.end())
+        {
+            const auto vertexIndex = std::distance(trackerVertexId.begin(), vertexIter);
+            vx = trackerVertexX[vertexIndex];
+            vy = trackerVertexY[vertexIndex];
+            vz = trackerVertexZ[vertexIndex];
+        }
+
+        float dedx = kMissingFloat;
+        if (canCalculateDedx && tpc_seed)
+        {
+            dedx = TrackAnalysisUtils::calc_dedx(tpc_seed, clustermap, geometry, layerThicknesses);
+        }
+
+        float hlxpt = kMissingFloat;
+        float hlxeta = kMissingFloat;
+        float hlxphi = kMissingFloat;
+        float hlxX0 = kMissingFloat;
+        float hlxY0 = kMissingFloat;
+        float hlxZ0 = kMissingFloat;
+        int hlxcharge = 0;
+        if (tpc_seed)
+        {
+            hlxpt = tpc_seed->get_pt();
+            hlxeta = tpc_seed->get_eta();
+            hlxphi = tpc_seed->get_phi();
+            hlxX0 = tpc_seed->get_X0();
+            hlxY0 = tpc_seed->get_Y0();
+            hlxZ0 = tpc_seed->get_Z0();
+            if (std::isfinite(tpc_seed->get_qOverR()) && tpc_seed->get_qOverR() != 0.)
+            {
+                hlxcharge = (tpc_seed->get_qOverR() > 0.) ? 1 : -1;
+            }
+        }
+
+        track_deltapt.push_back(deltapt);
+        track_deltaeta.push_back(deltaeta);
+        track_deltaphi.push_back(deltaphi);
+        track_nhits.push_back(nhits);
+        track_nmaps.push_back(nmaps);
+        track_nintt.push_back(nintt);
+        track_ntpc.push_back(ntpc);
+        track_nmms.push_back(nmms);
+        track_ntpc1.push_back(ntpc1);
+        track_ntpc11.push_back(ntpc11);
+        track_ntpc2.push_back(ntpc2);
+        track_ntpc3.push_back(ntpc3);
+        track_pidedx.push_back(kMissingFloat);
+        track_kdedx.push_back(kMissingFloat);
+        track_prdedx.push_back(kMissingFloat);
+        track_vx.push_back(vx);
+        track_vy.push_back(vy);
+        track_vz.push_back(vz);
+        track_dca2d.push_back(track->get_dca2d());
+        track_dca2dsigma.push_back(track->get_dca2d_error());
+        track_dca3dxy.push_back(track->get_dca3d_xy());
+        track_dca3dxysigma.push_back(track->get_dca3d_xy_error());
+        track_dca3dz.push_back(track->get_dca3d_z());
+        track_dca3dzsigma.push_back(track->get_dca3d_z_error());
+        track_hlxpt.push_back(hlxpt);
+        track_hlxeta.push_back(hlxeta);
+        track_hlxphi.push_back(hlxphi);
+        track_hlxX0.push_back(hlxX0);
+        track_hlxY0.push_back(hlxY0);
+        track_hlxZ0.push_back(hlxZ0);
+        track_hlxcharge.push_back(hlxcharge);
+
+        track_id.push_back(track->get_id());
+        track_x.push_back(track->get_x());
+        track_y.push_back(track->get_y());
+        track_z.push_back(track->get_z());
+        track_px.push_back(px);
+        track_py.push_back(py);
+        track_pz.push_back(pz);
+        track_pt.push_back(pt);
+        track_eta.push_back(eta);
+        track_phi.push_back(phi);
+        track_dedx.push_back(dedx);
+        track_charge.push_back(track->get_charge());
+        track_crossing.push_back(track->get_crossing());
+        track_vertex_id.push_back((track->get_vertex_id() == std::numeric_limits<unsigned int>::max()) ? kMissingInt : static_cast<int>(track->get_vertex_id()));
+        track_chisq.push_back(track->get_chisq());
+        track_ndf.push_back(static_cast<int>(track->get_ndf()));
+        track_quality.push_back(track->get_quality());
+        track_cluster_layer.push_back(cluster_layers);
+        track_cluster_globalX.push_back(cluster_globalX);
+        track_cluster_globalY.push_back(cluster_globalY);
+        track_cluster_globalZ.push_back(cluster_globalZ);
+        track_cluster_phi.push_back(cluster_phi);
+        track_cluster_eta.push_back(cluster_eta);
+        track_cluster_r.push_back(cluster_r);
+
+        if (!silicon_seed)
+        {
+            track_silseed_id.push_back(kMissingInt);
+            track_silseed_x.push_back(kMissingFloat);
+            track_silseed_y.push_back(kMissingFloat);
+            track_silseed_z.push_back(kMissingFloat);
+            track_silseed_pt.push_back(kMissingFloat);
+            track_silseed_eta.push_back(kMissingFloat);
+            track_silseed_phi.push_back(kMissingFloat);
+            track_silseed_crossing.push_back(kMissingInt);
+            track_silseed_charge.push_back(kMissingInt);
+            track_silseed_nMvtx.push_back(0);
+            track_silseed_nIntt.push_back(0);
+            track_silseed_clusterKeys.push_back(std::vector<uint64_t>());
+            continue;
+        }
+
+        const auto seed_pos = TrackSeedHelper::get_xyz(silicon_seed);
+        const std::vector<uint64_t> seed_cluskeys(silicon_seed->begin_cluster_keys(), silicon_seed->end_cluster_keys());
+
+        int nMvtx = 0;
+        int nIntt = 0;
+        for (const auto cluskey : seed_cluskeys)
+        {
+            if (TrkrDefs::getTrkrId(cluskey) == TrkrDefs::mvtxId)
+            {
+                ++nMvtx;
+            }
+            else if (TrkrDefs::getTrkrId(cluskey) == TrkrDefs::inttId)
+            {
+                ++nIntt;
+            }
+        }
+
+        track_silseed_id.push_back(silseedmap ? static_cast<int>(silseedmap->find(silicon_seed)) : kMissingInt);
+        track_silseed_x.push_back(seed_pos.x());
+        track_silseed_y.push_back(seed_pos.y());
+        track_silseed_z.push_back(seed_pos.z());
+        track_silseed_pt.push_back(silicon_seed->get_pt());
+        track_silseed_eta.push_back(silicon_seed->get_eta());
+        track_silseed_phi.push_back(silicon_seed->get_phi());
+        track_silseed_crossing.push_back(silicon_seed->get_crossing());
+        track_silseed_charge.push_back((silicon_seed->get_qOverR() > 0) ? 1 : -1);
+        track_silseed_nMvtx.push_back(nMvtx);
+        track_silseed_nIntt.push_back(nIntt);
+        track_silseed_clusterKeys.push_back(seed_cluskeys);
+    }
+
+    nRecoTracks = track_id.size();
+    nTracks = nRecoTracks;
+
+    std::cout << "Total number of tracks in this event(trigger frame): " << nRecoTracks << std::endl;
+}
+
 void VertexCompare::FillSiliconSeedTree()
 {
     constexpr int kUnassociatedVertexId = -std::numeric_limits<int>::max();
@@ -1235,6 +1742,123 @@ void VertexCompare::FillSiliconSeedTree()
 }
 
 //____________________________________________________________________________..
+void VertexCompare::FillTpcSeedTree()
+{
+    const float kMissingFloat = std::numeric_limits<float>::quiet_NaN();
+
+    std::vector<std::pair<TrackSeed *, unsigned int>> seeds;
+
+    if (tpcseedmap)
+    {
+        for (auto iter = tpcseedmap->begin(); iter != tpcseedmap->end(); ++iter)
+        {
+            auto *seed = *iter;
+            if (seed)
+            {
+                seeds.emplace_back(seed, static_cast<unsigned int>(tpcseedmap->find(seed)));
+            }
+        }
+    }
+    else if (svtxTrackMap)
+    {
+        std::vector<TrackSeed *> seen_seeds;
+        for (auto trackIter = svtxTrackMap->begin(); trackIter != svtxTrackMap->end(); ++trackIter)
+        {
+            SvtxTrack *track = trackIter->second;
+            TrackSeed *seed = track ? track->get_tpc_seed() : nullptr;
+            if (!seed || std::find(seen_seeds.begin(), seen_seeds.end(), seed) != seen_seeds.end())
+            {
+                continue;
+            }
+
+            seen_seeds.push_back(seed);
+            seeds.emplace_back(seed, static_cast<unsigned int>(seeds.size()));
+        }
+    }
+
+    float layerThicknesses[4] = {0.0, 0.0, 0.0, 0.0};
+    bool canCalculateDedx = false;
+    if (clustermap && geometry && tpcgeom)
+    {
+        auto *inner1 = tpcgeom->GetLayerCellGeom(7);
+        auto *inner2 = tpcgeom->GetLayerCellGeom(8);
+        auto *middle = tpcgeom->GetLayerCellGeom(27);
+        auto *outer = tpcgeom->GetLayerCellGeom(50);
+        if (inner1 && inner2 && middle && outer)
+        {
+            layerThicknesses[0] = inner1->get_thickness();
+            layerThicknesses[1] = inner2->get_thickness();
+            layerThicknesses[2] = middle->get_thickness();
+            layerThicknesses[3] = outer->get_thickness();
+            canCalculateDedx = true;
+        }
+    }
+
+    for (const auto &[seed, seed_id] : seeds)
+    {
+        tpcseed_id.push_back(seed_id);
+
+        const auto seed_pos = TrackSeedHelper::get_xyz(seed);
+        tpcseed_x.push_back(seed_pos.x());
+        tpcseed_y.push_back(seed_pos.y());
+        tpcseed_z.push_back(seed_pos.z());
+        tpcseed_pt.push_back(seed->get_pt());
+        tpcseed_eta.push_back(seed->get_eta());
+        tpcseed_phi.push_back(seed->get_phi());
+        tpcseed_crossing.push_back(seed->get_crossing());
+        tpcseed_crossing_estimate.push_back(seed->get_crossing_estimate());
+        tpcseed_charge.push_back((seed->get_qOverR() > 0) ? 1 : -1);
+        tpcseed_dedx.push_back(canCalculateDedx ? TrackAnalysisUtils::calc_dedx(seed, clustermap, geometry, layerThicknesses) : kMissingFloat);
+
+        std::vector<uint64_t> seed_cluskeys(seed->begin_cluster_keys(), seed->end_cluster_keys());
+        tpcseed_clusterKeys.push_back(seed_cluskeys);
+        tpcseed_cluster_layer.push_back(std::vector<unsigned int>());
+        tpcseed_cluster_globalX.push_back(std::vector<float>());
+        tpcseed_cluster_globalY.push_back(std::vector<float>());
+        tpcseed_cluster_globalZ.push_back(std::vector<float>());
+        tpcseed_cluster_phi.push_back(std::vector<float>());
+        tpcseed_cluster_eta.push_back(std::vector<float>());
+        tpcseed_cluster_r.push_back(std::vector<float>());
+
+        int nTpc = 0;
+        int nMms = 0;
+        for (const auto cluskey : seed_cluskeys)
+        {
+            if (TrkrDefs::getTrkrId(cluskey) == TrkrDefs::tpcId)
+            {
+                ++nTpc;
+            }
+            else if (TrkrDefs::getTrkrId(cluskey) == TrkrDefs::micromegasId)
+            {
+                ++nMms;
+            }
+
+            auto *cluster = clustermap ? clustermap->findCluster(cluskey) : nullptr;
+            if (!cluster || !geometry)
+            {
+                continue;
+            }
+
+            const auto globalpos = geometry->getGlobalPosition(cluskey, cluster);
+            tpcseed_cluster_layer.back().push_back(TrkrDefs::getLayer(cluskey));
+            tpcseed_cluster_globalX.back().push_back(globalpos.x());
+            tpcseed_cluster_globalY.back().push_back(globalpos.y());
+            tpcseed_cluster_globalZ.back().push_back(globalpos.z());
+            tpcseed_cluster_phi.back().push_back(std::atan2(globalpos.y(), globalpos.x()));
+            TVector3 posvec(globalpos.x(), globalpos.y(), globalpos.z());
+            tpcseed_cluster_eta.back().push_back(posvec.Eta());
+            tpcseed_cluster_r.back().push_back((globalpos.y() > 0) ? std::sqrt(globalpos.x() * globalpos.x() + globalpos.y() * globalpos.y()) : -std::sqrt(globalpos.x() * globalpos.x() + globalpos.y() * globalpos.y()));
+        }
+
+        tpcseed_nTpc.push_back(nTpc);
+        tpcseed_nMms.push_back(nMms);
+    }
+
+    nTotalTpcSeeds = tpcseed_id.size();
+    std::cout << "Total TPC seeds in this event: " << nTotalTpcSeeds << std::endl;
+}
+
+//____________________________________________________________________________..
 void VertexCompare::FillClusterTree()
 {
     for (const auto &det : {TrkrDefs::TrkrId::inttId})
@@ -1357,12 +1981,14 @@ void VertexCompare::FillTruthParticleTree()
         }
 
         ++nTruthVertex;
-        if (m_truth_info->isEmbededVtx(point_id) == 0)
+        // if (m_truth_info->isEmbededVtx(point_id) == 0)
         {
+            TruthVertex_isEmbeded.push_back(m_truth_info->isEmbededVtx(point_id));
             TruthVertexX.push_back(point->get_x());
             TruthVertexY.push_back(point->get_y());
             TruthVertexZ.push_back(point->get_z());
             TruthVertexT.push_back(point->get_t());
+            TruthVertex_crossing.push_back(std::isfinite(point->get_t()) ? static_cast<int>(std::round(point->get_t() / sphenix_constants::time_between_crossings)) : std::numeric_limits<int>::max());
         }
     }
 
@@ -1386,6 +2012,42 @@ void VertexCompare::FillTruthParticleTree()
         out_E.push_back(ptcl->get_e());
         out_PID.push_back(ptcl->get_pid());
         out_trackID.push_back(ptcl->get_track_id());
+    };
+
+    auto fill_origin_info = [this](PHG4Particle *ptcl, std::vector<int> &out_originTrackID, std::vector<int> &out_originVtxID, std::vector<float> &out_originVtxT, std::vector<int> &out_originCrossing, std::vector<int> &out_originIsEmbeded)
+    {
+        const int kMissingInt = std::numeric_limits<int>::max();
+        const float kMissingFloat = std::numeric_limits<float>::quiet_NaN();
+
+        PHG4Particle *origin = ptcl;
+        PHG4Particle *parent = origin ? m_truth_info->GetParticle(origin->get_parent_id()) : nullptr;
+        while (parent)
+        {
+            origin = parent;
+            parent = m_truth_info->GetParticle(origin->get_parent_id());
+        }
+
+        if (!origin)
+        {
+            out_originTrackID.push_back(kMissingInt);
+            out_originVtxID.push_back(kMissingInt);
+            out_originVtxT.push_back(kMissingFloat);
+            out_originCrossing.push_back(kMissingInt);
+            out_originIsEmbeded.push_back(kMissingInt);
+            return;
+        }
+
+        const int origin_track_id = origin->get_track_id();
+        const int origin_vtx_id = origin->get_vtx_id();
+        PHG4VtxPoint *origin_vtx = m_truth_info->GetVtx(origin_vtx_id);
+        const float origin_vtx_t = origin_vtx ? origin_vtx->get_t() : kMissingFloat;
+        const int origin_crossing = std::isfinite(origin_vtx_t) ? static_cast<int>(std::round(origin_vtx_t / sphenix_constants::time_between_crossings)) : kMissingInt;
+
+        out_originTrackID.push_back(origin_track_id);
+        out_originVtxID.push_back(origin_vtx_id);
+        out_originVtxT.push_back(origin_vtx_t);
+        out_originCrossing.push_back(origin_crossing);
+        out_originIsEmbeded.push_back(m_truth_info->isEmbeded(origin_track_id));
     };
 
     auto fill_primary_particle_info = [](PHG4Particle *ptcl, std::vector<TString> &out_particleClass, std::vector<bool> &out_isStable, std::vector<double> &out_charge, std::vector<bool> &out_isChargedHadron)
@@ -1456,6 +2118,7 @@ void VertexCompare::FillTruthParticleTree()
         if (truth_eval && clustereval)
         {
             const auto truth_clusters = truth_eval->all_truth_clusters(ptcl);
+
             for (const auto &[ckey, gclus] : truth_clusters)
             {
                 if (!gclus)
@@ -1463,8 +2126,8 @@ void VertexCompare::FillTruthParticleTree()
                     continue;
                 }
 
-                // only get cluster in MVTX and INTT for now and skip TPC
-                if (TrkrDefs::getTrkrId(ckey) != TrkrDefs::mvtxId && TrkrDefs::getTrkrId(ckey) != TrkrDefs::inttId)
+                // keep tracker truth clusters that have analysis branches below
+                if (TrkrDefs::getTrkrId(ckey) != TrkrDefs::mvtxId && TrkrDefs::getTrkrId(ckey) != TrkrDefs::inttId && TrkrDefs::getTrkrId(ckey) != TrkrDefs::tpcId && TrkrDefs::getTrkrId(ckey) != TrkrDefs::micromegasId)
                 {
                     continue;
                 }
@@ -1563,6 +2226,7 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_trackIDs);
         Clean(ancestor_PIDs);
         fill_particle_kinematics(ptcl, PrimaryPHG4Ptcl_pT, PrimaryPHG4Ptcl_eta, PrimaryPHG4Ptcl_phi, PrimaryPHG4Ptcl_E, PrimaryPHG4Ptcl_PID, PrimaryPHG4Ptcl_trackID);
+        fill_origin_info(ptcl, PrimaryPHG4Ptcl_originTrackID, PrimaryPHG4Ptcl_originVtxID, PrimaryPHG4Ptcl_originVtxT, PrimaryPHG4Ptcl_originCrossing, PrimaryPHG4Ptcl_originIsEmbeded);
         fill_primary_particle_info(ptcl, PrimaryPHG4Ptcl_ParticleClass, PrimaryPHG4Ptcl_isStable, PrimaryPHG4Ptcl_charge, PrimaryPHG4Ptcl_isChargedHadron);
         fill_ancestor_info(ptcl, ancestor_trackIDs, ancestor_PIDs);
         PrimaryPHG4Ptcl_ancestor_trackID.push_back(ancestor_trackIDs);
@@ -1592,6 +2256,7 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_trackIDs);
         Clean(ancestor_PIDs);
         fill_particle_kinematics(real_ptcl, sPHENIXPrimary_pT, sPHENIXPrimary_eta, sPHENIXPrimary_phi, sPHENIXPrimary_E, sPHENIXPrimary_PID, sPHENIXPrimary_trackID);
+        fill_origin_info(real_ptcl, sPHENIXPrimary_originTrackID, sPHENIXPrimary_originVtxID, sPHENIXPrimary_originVtxT, sPHENIXPrimary_originCrossing, sPHENIXPrimary_originIsEmbeded);
         fill_primary_particle_info(real_ptcl, sPHENIXPrimary_ParticleClass, sPHENIXPrimary_isStable, sPHENIXPrimary_charge, sPHENIXPrimary_isChargedHadron);
         fill_ancestor_info(real_ptcl, ancestor_trackIDs, ancestor_PIDs);
         sPHENIXPrimary_ancestor_trackID.push_back(ancestor_trackIDs);
@@ -1629,6 +2294,7 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_trackIDs);
         Clean(ancestor_PIDs);
         fill_particle_kinematics(ptcl, AllPHG4Ptcl_pT, AllPHG4Ptcl_eta, AllPHG4Ptcl_phi, AllPHG4Ptcl_E, AllPHG4Ptcl_PID, AllPHG4Ptcl_trackID);
+        fill_origin_info(ptcl, AllPHG4Ptcl_originTrackID, AllPHG4Ptcl_originVtxID, AllPHG4Ptcl_originVtxT, AllPHG4Ptcl_originCrossing, AllPHG4Ptcl_originIsEmbeded);
         fill_ancestor_info(ptcl, ancestor_trackIDs, ancestor_PIDs);
         AllPHG4Ptcl_ancestor_trackID.push_back(ancestor_trackIDs);
         AllPHG4Ptcl_ancestor_PID.push_back(ancestor_PIDs);
@@ -1656,12 +2322,82 @@ void VertexCompare::Cleanup()
     nTruthVertex = 0;
     hasSvtxPHG4ParticleMap = false;
     svtxPHG4ParticleMapProcessed = false;
+    nRecoTracks = 0;
+    Clean(track_deltapt);
+    Clean(track_deltaeta);
+    Clean(track_deltaphi);
+    Clean(track_nhits);
+    Clean(track_nmaps);
+    Clean(track_nintt);
+    Clean(track_ntpc);
+    Clean(track_nmms);
+    Clean(track_ntpc1);
+    Clean(track_ntpc11);
+    Clean(track_ntpc2);
+    Clean(track_ntpc3);
+    Clean(track_pidedx);
+    Clean(track_kdedx);
+    Clean(track_prdedx);
+    Clean(track_vx);
+    Clean(track_vy);
+    Clean(track_vz);
+    Clean(track_dca2d);
+    Clean(track_dca2dsigma);
+    Clean(track_dca3dxy);
+    Clean(track_dca3dxysigma);
+    Clean(track_dca3dz);
+    Clean(track_dca3dzsigma);
+    Clean(track_hlxpt);
+    Clean(track_hlxeta);
+    Clean(track_hlxphi);
+    Clean(track_hlxX0);
+    Clean(track_hlxY0);
+    Clean(track_hlxZ0);
+    Clean(track_hlxcharge);
+    Clean(track_id);
+    Clean(track_x);
+    Clean(track_y);
+    Clean(track_z);
+    Clean(track_px);
+    Clean(track_py);
+    Clean(track_pz);
+    Clean(track_pt);
+    Clean(track_eta);
+    Clean(track_phi);
+    Clean(track_dedx);
+    Clean(track_charge);
+    Clean(track_crossing);
+    Clean(track_vertex_id);
+    Clean(track_chisq);
+    Clean(track_ndf);
+    Clean(track_quality);
+    Clean(track_silseed_id);
+    Clean(track_silseed_x);
+    Clean(track_silseed_y);
+    Clean(track_silseed_z);
+    Clean(track_silseed_pt);
+    Clean(track_silseed_eta);
+    Clean(track_silseed_phi);
+    Clean(track_silseed_crossing);
+    Clean(track_silseed_charge);
+    Clean(track_silseed_nMvtx);
+    Clean(track_silseed_nIntt);
+    Clean(track_silseed_clusterKeys);
+    Clean(track_cluster_layer);
+    Clean(track_cluster_globalX);
+    Clean(track_cluster_globalY);
+    Clean(track_cluster_globalZ);
+    Clean(track_cluster_phi);
+    Clean(track_cluster_eta);
+    Clean(track_cluster_r);
 
     Clean(firedTriggers);
+    Clean(TruthVertex_isEmbeded);
     Clean(TruthVertexX);
     Clean(TruthVertexY);
     Clean(TruthVertexZ);
     Clean(TruthVertexT);
+    Clean(TruthVertex_crossing);
 
     Clean(mbdVertex);
     Clean(mbdVertexId);
@@ -1730,6 +2466,29 @@ void VertexCompare::Cleanup()
     Clean(silseed_f4a_bestG4P_ancestor_trackID);
     Clean(silseed_f4a_bestG4P_ancestor_PID);
 
+    nTotalTpcSeeds = 0;
+    Clean(tpcseed_id);
+    Clean(tpcseed_x);
+    Clean(tpcseed_y);
+    Clean(tpcseed_z);
+    Clean(tpcseed_pt);
+    Clean(tpcseed_eta);
+    Clean(tpcseed_phi);
+    Clean(tpcseed_crossing);
+    Clean(tpcseed_crossing_estimate);
+    Clean(tpcseed_charge);
+    Clean(tpcseed_nTpc);
+    Clean(tpcseed_nMms);
+    Clean(tpcseed_dedx);
+    Clean(tpcseed_clusterKeys);
+    Clean(tpcseed_cluster_layer);
+    Clean(tpcseed_cluster_globalX);
+    Clean(tpcseed_cluster_globalY);
+    Clean(tpcseed_cluster_globalZ);
+    Clean(tpcseed_cluster_phi);
+    Clean(tpcseed_cluster_eta);
+    Clean(tpcseed_cluster_r);
+
     Clean(clusterKey);
     Clean(cluster_layer);
     Clean(cluster_chip);
@@ -1791,6 +2550,11 @@ void VertexCompare::Cleanup()
     Clean(PrimaryPHG4Ptcl_E);
     Clean(PrimaryPHG4Ptcl_PID);
     Clean(PrimaryPHG4Ptcl_trackID);
+    Clean(PrimaryPHG4Ptcl_originTrackID);
+    Clean(PrimaryPHG4Ptcl_originVtxID);
+    Clean(PrimaryPHG4Ptcl_originVtxT);
+    Clean(PrimaryPHG4Ptcl_originCrossing);
+    Clean(PrimaryPHG4Ptcl_originIsEmbeded);
     Clean(PrimaryPHG4Ptcl_ParticleClass);
     Clean(PrimaryPHG4Ptcl_isStable);
     Clean(PrimaryPHG4Ptcl_charge);
@@ -1823,6 +2587,11 @@ void VertexCompare::Cleanup()
     Clean(sPHENIXPrimary_E);
     Clean(sPHENIXPrimary_PID);
     Clean(sPHENIXPrimary_trackID);
+    Clean(sPHENIXPrimary_originTrackID);
+    Clean(sPHENIXPrimary_originVtxID);
+    Clean(sPHENIXPrimary_originVtxT);
+    Clean(sPHENIXPrimary_originCrossing);
+    Clean(sPHENIXPrimary_originIsEmbeded);
     Clean(sPHENIXPrimary_ParticleClass);
     Clean(sPHENIXPrimary_isStable);
     Clean(sPHENIXPrimary_charge);
@@ -1855,6 +2624,11 @@ void VertexCompare::Cleanup()
     Clean(AllPHG4Ptcl_E);
     Clean(AllPHG4Ptcl_PID);
     Clean(AllPHG4Ptcl_trackID);
+    Clean(AllPHG4Ptcl_originTrackID);
+    Clean(AllPHG4Ptcl_originVtxID);
+    Clean(AllPHG4Ptcl_originVtxT);
+    Clean(AllPHG4Ptcl_originCrossing);
+    Clean(AllPHG4Ptcl_originIsEmbeded);
     Clean(AllPHG4Ptcl_ancestor_trackID);
     Clean(AllPHG4Ptcl_ancestor_PID);
     Clean(AllPHG4Ptcl_truthcluster_X);
