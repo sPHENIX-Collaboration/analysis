@@ -35,5 +35,23 @@ TH1F *hUSR_Mee;
 TH1F *hUSR_pe;
 TH1F *hUSR_Ep;
 
+TH1F *hUSR_truth_pt;
+TH1F *hUSR_pt0m_tr_pt;
+TH1F *hUSR_pt0m_tr_pt1;
+TH1F *hUSR_pt0m_tr_pt2;
+TH1F *hUSR_pt0m_tr_pt3;
+TH1F *hUSR_pt0m_tr_pt4;
+TH1F *hUSR_pt0m_tr_pt5;
+TH1F *hUSR_pt0m_tr_pt6;
+
+TH1F *hUSR_pt0e_tr_pt;
+TH1F *hUSR_pt0e_tr_pt1;
+TH1F *hUSR_pt0e_tr_pt2;
+TH1F *hUSR_pt0e_tr_pt3;
+TH1F *hUSR_pt0e_tr_pt4;
+TH1F *hUSR_pt0e_tr_pt5;
+TH1F *hUSR_pt0e_tr_pt6;
+
 TNtuple *nt_trk;
+TNtuple *nt_sim_trk;
 #endif

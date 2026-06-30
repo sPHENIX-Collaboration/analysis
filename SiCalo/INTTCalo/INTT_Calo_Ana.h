@@ -4,7 +4,8 @@
 #include <string>
 
 string idatafile; // input data file (INTT-Calo nDST)
-int NmaxEvent;      // # of events in the data file
+int NmaxEvent;    // # of events in the data file
+string rootfile;  // output ROOT file
 
 // imode==1 : run AnalyzeEvent()
 // imode==2 : Event Display
@@ -17,6 +18,7 @@ TTree *topoTree;  //topoClusters (EMC+iHCal+oHCal)
 TTree *SiClusTree;
 TTree *SiClusAllTree;
 TTree *trackTree;
+TTree *truthTree; // Simulation only. Truth info
 
 // data in evtTree
 Int_t evt;
@@ -76,6 +78,28 @@ vector<float> *pt0=nullptr;
 vector<float> *vx0=nullptr;
 vector<float> *vy0=nullptr;
 vector<float> *vz0=nullptr;
+
+// SIM truth info
+vector<int> *truth_pid = nullptr;
+vector<int> *truth_id  = nullptr;
+vector<float> *truth_px = nullptr;
+vector<float> *truth_py = nullptr;
+vector<float> *truth_pz = nullptr;
+vector<float> *truth_x = nullptr;
+vector<float> *truth_y = nullptr;
+vector<float> *truth_z = nullptr;
+vector<float> *truth_e = nullptr;
+vector<float> *truth_pt = nullptr;
+vector<float> *truth_eta = nullptr;
+vector<float> *truth_phi = nullptr;
+vector<float> *truth_primary_id = nullptr;
+vector<float> *truth_parent_id = nullptr;
+vector<float> *truth_vtxid = nullptr;
+vector<float> *truth_vtx_x = nullptr;
+vector<float> *truth_vtx_y = nullptr;
+vector<float> *truth_vtx_z = nullptr;
+
+
 
 int i_event;   // current event that is analyzed/displayed
 // functions

@@ -5,7 +5,8 @@
 TFile *hfile;
 
 void AnalyzeInit(void) {
-  hfile = new TFile("INTT_Calo_Ana.root","RECREATE");
+  //  hfile = new TFile("INTT_Calo_Ana.root","RECREATE");
+  hfile = new TFile(rootfile.c_str(),"RECREATE");
   INTT_Calo_trkReco_Init();
 
   // *** user code are below 

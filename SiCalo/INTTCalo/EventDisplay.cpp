@@ -274,7 +274,6 @@ void EventDisplay(int iframe){
   vEmcINTT_RZ.clear();
   // create Circle orbit of CaloInttMvtx tracks
   int ntrk = vCaloInttMvtx.size();
-  cout <<" # of tracks = "<<ntrk<<endl;
 
   if(ntrk>0) { 
     for(int itrk=0;itrk<ntrk;itrk++) {
