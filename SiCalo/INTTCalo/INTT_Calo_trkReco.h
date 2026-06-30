@@ -30,12 +30,53 @@ void PrintInttPair(void);
 void FindCaloIntt(void);
 
 void FindInttMvtx(void);
+
 int FindMvtxHit(int layer, float rIntt, float xc, float yc,
-		float zvtx, float r0, float r1, float z0, float z1);
+		float zvtx, float r0, float r1, float z0, float z1,
+		vector<int> &vMvtxHit);
+
+void FormInttMvtxTrk(float r0, float phi0, float z0,float r1, float phi1,float z1,
+		     int iMvtx0,int iMvtx1,int iMvtx2,
+		     float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		     float& zvtx_intt_mvtx,
+		     float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m);
+
+void FormInttMvtxTrk(float r0, float phi0, float z0,float r1, float phi1,float z1,
+		     vector<int> &vMvtx0Hit, vector<int> &vMvtx1Hit,vector<int> &vMvtx2Hit,
+		     int &iMvtx0, int &iMvtx1, int &iMvtx2,
+		     float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		     float& zvtx_intt_mvtx,
+		     float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m);
+
+void FormInttMvtxTrk1(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtxHit,
+		      vector<float> &vMvtx_r, vector<float> &vMvtx_phi, vector<float> &vMvtx_z,
+		      int &iMvtxHit,
+		      float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m);
+
+void FormInttMvtxTrk2(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtxHit_I, vector<int> &vMvtxHit_O,
+		      vector<float> &vMvtxI_r, vector<float> &vMvtxI_phi, vector<float> &vMvtxI_z,
+		      vector<float> &vMvtxO_r, vector<float> &vMvtxO_phi, vector<float> &vMvtxO_z,
+		      int &iMvtx_I, int &iMvtx_O,
+		      float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m);
+
+void FormInttMvtxTrk3(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtx0Hit, vector<int> &vMvtx1Hit,vector<int> &vMvtx2Hit,
+		      int &iMvtx0, int &iMvtx1, int &iMvtx2,
+		      float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m);
+
 int SelectBestMvtxHit(vector<int> &vMvtxhit, vector<float> &vMvtx_dr,
 		      vector<float> &vMvtx_dz0, vector<float> &vMvtx_dz1);
 
 void FindCaloInttMvtx(void);
+
 int SelectBestTopHit(vector<int>& vTop_near_trk);
 
 // structs, vectors, variables, and constants for EMC-INTT-Mvtx tracking
@@ -45,6 +86,7 @@ float xBC=0;     //x of Beam Center
 float yBC=0;     //y of Beam Center
 float gzvtx;     //Global zvtx;
 
+const float R_Emc = 103.5;
 const float Top_E_min = 0.2; //Minimun Calo energy [GeV].
 
 struct InttPair {
@@ -84,7 +126,6 @@ struct CaloInttMvtx {
   float r_intt_mvtx;
   float xc_intt_mvtx;
   float yc_intt_mvtx;
-  float z_intt_mvtx;
   float zvtx_intt_mvtx;
 
   // Emc cluser center

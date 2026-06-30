@@ -46,10 +46,11 @@ void INTT_Calo_Ana(void) {
   // pi minus
   //idatafile = "ana_pionn/single_pionn_1M.root";
 
+  cout << "Enter datafile to analyze" <<endl;
+  cin >> idatafile;
+
   LoadData(idatafile);
-  NmaxEvent = evtTree->GetEntries();
-  
-  cout <<"Data file:"<<idatafile.c_str()<<endl;
+  NmaxEvent = evtTree->GetEntries();  
   cout <<"# of events in the file:"<<NmaxEvent<<endl;
   
   cout << "Select Mode: " <<endl;
@@ -72,6 +73,9 @@ void INTT_Calo_Ana(void) {
       nevent = NmaxEvent - istart;
     }
     cout << "analyze "<< nevent << " events" <<endl;
+
+    cout << "Enter name of the output ROOT file"<<endl;
+    cin >> rootfile;
 
     AnalyzeInit();
     for(int i=istart;i<istart+nevent;i++) {

@@ -1,5 +1,13 @@
 #include "INTT_Calo_trkReco.h"
 
+// variables for tracking
+//
+// Variable used in FindInttMvtx()
+// They holds Mvtx hit candidates associated with an Intt pair.
+static vector<int>   vMvtx0Hit;
+static vector<int>   vMvtx1Hit;
+static vector<int>   vMvtx2Hit;
+
 void INTT_Calo_trkReco_Init(void) {
   hzgvtx = new TH1F("hzgvtx","global Zvtx",100,-50,50);
   hINTTdphi = new TH1F("hINTTdphi","INTT1phi - INTT0phi",100,-0.1,0.1);
@@ -179,15 +187,6 @@ float rz2eta(float r,float z) {
 // Major functions in INTT_Calo_trkReco()
 //
 void LoadTrackerData(void) {
-  // Set Beam center
-  // For run53876
-  xBC=-0.018;
-  yBC=0.126;
-  // For simulaiton data
-  /*
-  xBC = 0.0;
-  yBC = 0.0;
-  */
   // clear vectors of the hits
   vEmc_r.clear();
   vEmc_phi.clear();
@@ -238,7 +237,8 @@ void LoadTrackerData(void) {
   if(nEmc>0) {
     for(int iemc=0;iemc<nEmc;iemc++) {
       if(!Is_Hot_Emc(iemc)) {
-	vEmc_r.push_back(emc_r->at(iemc));
+	//	vEmc_r.push_back(emc_r->at(iemc));
+	vEmc_r.push_back(R_Emc);
 	vEmc_phi.push_back(emc_phi->at(iemc));
 	vEmc_eta.push_back(emc_eta->at(iemc));
 	vEmc_z.push_back(emc_z->at(iemc));
@@ -374,7 +374,6 @@ void Connect_Topo_and_Emc(void) {
 	    
 	    // find emc cluster that is closest to this Topo cluster
 	    if(abs(Top_phi-Emc_phi)<0.15 && abs(Top_eta-Emc_eta)<0.15&& Top_emc_e>0.18) {
-	      if(imode == 2) cout << "dphi, deta, emc_e OK"<<endl;
 	      if(Top_r < R_emc_front) {
 		//		if(imode == 2) cout << " r<93.5" <<endl;
 		hTopEmc_dphi_1->Fill(TopEmc_dphi);
@@ -562,7 +561,7 @@ void CalcCircle2(float x1,float y1,float x0, float y0,
 void CalcCircle(double xs0, double ys0, double xs1, double ys1,double xs2, double ys2,
 		float &rs, float &xsc, float &ysc) {
   //
-  // calclate the radius of the Calo-INTT1-INTT0-(0,0) circle
+  // calclate the radius of the p0-p1-p2 circle. It is assumed that r0<r1<r2
   //
   
   double r12 = sqrt((xs2-xs1)*(xs2-xs1)+(ys2-ys1)*(ys2-ys1));
@@ -662,7 +661,7 @@ void FindCaloIntt(void) {
 	      float ihcal_e = vTop_ihc_e.at(it);
 	      float ohcal_e = vTop_ohc_e.at(it);
 	      float R_t = vTop_r.at(it);
-	      float R_e = vTop_emc_r.at(it);
+     	      float R_e = vTop_emc_r.at(it);
 	      float phi_t = vTop_phi.at(it);
 	      float phi_e = vTop_emc_phi.at(it);
 	      float Z_t   = vTop_z.at(it);
@@ -717,7 +716,7 @@ void FindCaloIntt(void) {
 		    // Calclualte the radius etc of the circle passing through
 		    // (0,0)-INTT0-Topo
 		    //
-		    CalcCircle(0,0,x0,y0,xe,ye, rsEmc, xsc, ysc);
+		    CalcCircle(x0,y0,x1,y1,xe,ye, rsEmc, xsc, ysc);
 		    float ptTrk   = 0.0042*rsEmc;
 		    float p_Trk   = ptTrk*le/R_e;		
 		    float pzTrk   = ptTrk*(ze-ZvtxTrk)/R_e;
@@ -825,7 +824,6 @@ void FindCaloIntt(void) {
 	  a_CaloInttMvtx.r_intt_mvtx    = -99;
 	  a_CaloInttMvtx.xc_intt_mvtx   = -99;
 	  a_CaloInttMvtx.yc_intt_mvtx   = -99;
-	  a_CaloInttMvtx.z_intt_mvtx    = -99;
 	  a_CaloInttMvtx.zvtx_intt_mvtx = -99;
 	  a_CaloInttMvtx.xemc = xemc;
 	  a_CaloInttMvtx.yemc = yemc;
@@ -858,11 +856,500 @@ void FindCaloIntt(void) {
   //  if(ntrk_found>0) cout << i_event << ": ntrk_found = "<<ntrk_found<<endl;
 }
 
+void FormInttMvtxTrk(float r0, float phi0, float z0,float r1, float phi1,float z1,
+		 int iMvtx0,int iMvtx1,int iMvtx2,
+		 float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		 float& zvtx_intt_mvtx,
+		 float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m) {
+  float xs0;  //INTT0 (x,y)
+  float ys0;
+  float xs1;  //The outermost Mvtx hit
+  float ys1;
+  float xs2;  //The innermost Mvtx hit or the origin
+  float ys2;
+  float xsc;
+  float ysc;
+
+  if(imode == 2) {
+    cout << "FormInttMvtxTrk (old)"<<endl;
+    cout << "iMvtx0 = "<<iMvtx0<<" iMvtx1 = "<<iMvtx1<<" iMvtx2 = "<<iMvtx2<<endl;
+  }
+  // Create a INTT0-Mvtx track
+  //
+  // (xs0,ys0) is (x,y) of INTT0
+  //
+  xs0 = r0*cos(phi0);
+  ys0 = r0*sin(phi0);
+  
+  float rs0 = sqrt(xs0*xs0+ys0*ys0);
+  // (xs1,ys1) -- The outer-most Mvts hit.
+  // Note that actual hit is indicated by non-negative index.
+  // From outside (Mvtx2) to inside (Mvtx0), look for a hit.
+  float rs1;
+  float phis1;
+  float zs1;
+  
+  if(iMvtx2>=0) { // Mvtx2 has a hit.
+    rs1   = vMvtx2r.at(iMvtx2);
+    phis1 = vMvtx2phi.at(iMvtx2);
+    zs1   = vMvtx2z.at(iMvtx2);
+  } else if(iMvtx1>=0) {
+    rs1   = vMvtx1r.at(iMvtx1);
+    phis1 = vMvtx1phi.at(iMvtx1);
+    zs1   = vMvtx1z.at(iMvtx1);	  
+  } else {
+    rs1   = vMvtx0r.at(iMvtx0);
+    phis1 = vMvtx0phi.at(iMvtx0);
+    zs1   = vMvtx0z.at(iMvtx0);
+  }
+  xs1 = rs1*cos(phis1);
+  ys1 = rs1*sin(phis1);
+  
+  // (xs2,ys2) -- The inner-most Mvtx hit or (0,0) if only one Mvtx hit
+  float rs2;
+  float phis2;
+  float zs2;
+  float dzdr;
+  if(iMvtx0>=0) {//Mvtx0 is the inner-most hit
+    if(iMvtx1<0 && iMvtx2 <0) {//Mvtx0 is the only hit
+      rs2=0;
+    } else {
+      rs2=vMvtx0r.at(iMvtx0);
+    }
+    phis2=vMvtx0phi.at(iMvtx0);
+    zs2=vMvtx0z.at(iMvtx0);
+  } else if(iMvtx1>=0) {// Mvtx1 is the inner-most hit
+    if(iMvtx2<0) {
+      rs2=0;
+    } else {
+      rs2=vMvtx1r.at(iMvtx1);
+    }
+    phis2=vMvtx1phi.at(iMvtx1);
+    zs2=vMvtx1z.at(iMvtx1);
+  } else {//this means that Mvtx2 is the only hit
+    rs2=0;
+    phis2=vMvtx2phi.at(iMvtx2);
+    zs2=vMvtx2z.at(iMvtx2);
+  }
+
+  if(rs2==0) {//there is only one Mvtx hit
+    xs2=0;
+    ys2=0;
+    float rintt = 0.5*(r0+r1);
+    float zintt = 0.5*(z0+z1);
+    float rmvtx = rs1;
+    float zmvtx = zs1;
+    dzdr = (zintt-zmvtx)/(rintt-rmvtx);
+    zvtx_intt_mvtx = zmvtx - dzdr*rmvtx;
+  } else {
+    // there are at least two Mvtx hit.
+    // Outermost hit is (rs1,phis1,zs1)
+    // Innermost hit is (rs2,phis2,zs2)
+    xs2=rs2*cos(phis2);
+    ys2=rs2*sin(phis2);
+    float r_out = rs1;
+    float r_in  = rs2;
+    float z_out = zs1;
+    float z_in  = zs2;
+    dzdr  = (z_out - z_in)/(r_out - r_in);
+    zvtx_intt_mvtx = z_in - dzdr*r_in;
+  }
+
+  // Draw a circle passing through (xs0,ys0)-(xs1,ys1)-(xs2,ys2)
+  // and get its radius (r_intt_mvtx) and the center (xs2,ys2) 
+  //	CalcCircle(xs0,ys0,xs1,ys1,xs2,ys2,
+  CalcCircle(xs2,ys2,xs1,ys1,xs0,ys0,
+	     r_intt_mvtx, xc_intt_mvtx, yc_intt_mvtx);
+  //
+  x0m= xs2;
+  y0m= ys2;
+  z0m= zs2;
+  pt0m= 0.0042*r_intt_mvtx;
+  phi0m=phis2;
+  pz0m= dzdr*pt0m;
+}
+
+void FormInttMvtxTrk(float r0, float phi0, float z0,float r1, float phi1,float z1,
+		     vector<int> &vMvtx0Hit, vector<int> &vMvtx1Hit,vector<int> &vMvtx2Hit,
+		     int &iMvtx0, int & iMvtx1, int &iMvtx2,
+		     float &r_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		     float& zvtx_intt_mvtx,
+		     float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m) {
+  int nMvtx0 = vMvtx0Hit.size();
+  int nMvtx1 = vMvtx1Hit.size();
+  int nMvtx2 = vMvtx2Hit.size();
+
+  float x0 = r0*cos(phi0);
+  float y0 = r0*sin(phi0);
+  float x1 = r1*cos(phi1);
+  float y1 = r1*sin(phi1);
+
+  if(imode == 2) {
+    cout << "nMvtx0="<<nMvtx0<<" nMvtx1= "<<nMvtx1<<" nMvtx2="<<nMvtx2<<endl;
+  }
+  // Case 1: one Mvtx layer has associated hits
+  if(nMvtx0>1 && nMvtx1 ==0 && nMvtx2 == 0) {
+    FormInttMvtxTrk1(x0,y0,z0,x1,y1,z1,vMvtx0Hit,
+		     vMvtx0r,vMvtx0phi,vMvtx0z,
+		     iMvtx0,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+
+  if(nMvtx0==0 && nMvtx1 > 0 && nMvtx2 == 0) {
+    FormInttMvtxTrk1(x0,y0,z0,x1,y1,z1,vMvtx1Hit,
+		     vMvtx1r,vMvtx1phi,vMvtx1z,
+		     iMvtx1,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+  
+  if(nMvtx0 == 0 && nMvtx1 ==0 && nMvtx2 > 0) {
+    FormInttMvtxTrk1(x0,y0,z0,x1,y1,z1,vMvtx2Hit,
+		     vMvtx2r,vMvtx2phi,vMvtx2z,
+		     iMvtx2,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+
+  // Case 2: two Mvtx layers have associated hits
+  if(nMvtx0>1 && nMvtx1 >0 && nMvtx2 == 0) {
+    FormInttMvtxTrk2(x0,y0,z0,x1,y1,z1,vMvtx0Hit,vMvtx1Hit,
+		     vMvtx0r,vMvtx0phi,vMvtx0z,
+		     vMvtx1r,vMvtx1phi,vMvtx1z,
+		     iMvtx0, iMvtx1,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+
+  if(nMvtx0>1 && nMvtx1 ==0 && nMvtx2 > 0) {
+    FormInttMvtxTrk2(x0,y0,z0,x1,y1,z1,vMvtx0Hit,vMvtx2Hit,
+		     vMvtx0r,vMvtx0phi,vMvtx0z,
+		     vMvtx2r,vMvtx2phi,vMvtx2z,
+		     iMvtx0, iMvtx2,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+
+  if(nMvtx0 == 0 && nMvtx1 >0 && nMvtx2 > 0) {
+    FormInttMvtxTrk2(x0,y0,z0,x1,y1,z1,vMvtx1Hit,vMvtx2Hit,
+		     vMvtx1r,vMvtx1phi,vMvtx1z,
+		     vMvtx2r,vMvtx2phi,vMvtx2z,
+		     iMvtx1, iMvtx2,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }
+
+  // Case 3: all three Mvtx layers have associated hits
+  if(nMvtx0 > 0 && nMvtx1 >0 && nMvtx2 > 0) {
+    FormInttMvtxTrk3(x0,y0,z0,x1,y1,z1,vMvtx0Hit,vMvtx1Hit,vMvtx2Hit,
+		     iMvtx0,iMvtx1,iMvtx2,
+		     r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+		     zvtx_intt_mvtx,
+		     x0m, y0m, z0m, pt0m, phi0m, pz0m);
+  }    
+}
+
+void FormInttMvtxTrk1(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtxHit,
+		      vector<float> &vMvtx_r, vector<float> &vMvtx_phi, vector<float> &vMvtx_z,
+		      int &iMvtxHit,
+		      float &rc_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m) {
+  //There is only one Mvtx layer that has associated hits.
+  //Form a track of (INTT1-INTT0-Mvtx-BC) and select the best hit in Mvtx.
+  int nMvtx = vMvtxHit.size();
+  float dr2_min = 100000;
+  int   im_min = -1;
+  float rc_min = 100000;
+  float xc_min = 100000;
+  float yc_min = 100000;
+
+  if(imode == 2) {
+    cout << "FormTrk1"<<endl;
+    cout << "nMvtx="<<nMvtx<<endl;
+  }
+
+  for(int im=0;im<nMvtx;im++) {
+    float r_m  = vMvtx_r.at(vMvtxHit.at(im));
+    float phi_m= vMvtx_phi.at(vMvtxHit.at(im));
+    float xm= r_m*cos(phi_m);
+    float ym= r_m*sin(phi_m);
+    float zm= vMvtx_z.at(vMvtxHit.at(im));
+    float r1;
+    float xc1;
+    float yc1;
+    float r2;
+    float xc2;
+    float yc2;
+  
+  // Mvtx-INTT0-INTT1 Circle
+    CalcCircle(xm,ym,x0,y0,x1,y1, r1,xc1,yc1);
+  
+  // BC(0,0)-Mvtx-INTT0 Circle
+    CalcCircle( 0, 0,xm,ym,x0,y0, r2,xc2,yc2);
+
+    float xc = 0.5*(xc1+xc2);
+    float yc = 0.5*(yc1+yc2);
+
+    float rc1= sqrt(xc*xc+yc*yc);
+    float rc2= sqrt((xm-xc)*(xm-xc) + (ym-yc)*(ym-yc));
+    float rc3= sqrt((x0-xc)*(x0-xc) + (y0-yc)*(y0-yc));
+    float rc4= sqrt((x1-xc)*(x1-xc) + (y1-yc)*(y1-yc));
+    float rc = 0.25*(rc1+rc2+rc3+rc4);
+    float dr2 = (rc1-rc)*(rc1-rc)+(rc2-rc)*(rc2-rc)+(rc3-rc)*(rc3-rc)+(rc4-rc)*(rc4-rc);
+
+    if(dr2<dr2_min) {
+      dr2_min = dr2;
+      im_min = im;
+      rc_min = rc;
+      xc_min = xc;
+      yc_min = yc;
+    }
+  }//for(iMvtx)
+  iMvtxHit = vMvtxHit.at(im_min);
+  rc_intt_mvtx = rc_min;
+  xc_intt_mvtx = xc_min;
+  yc_intt_mvtx = yc_min;
+  float rm  = vMvtx_r.at(iMvtxHit);
+  float phim= vMvtx_phi.at(iMvtxHit);
+  float r0 = sqrt(x0*x0+y0*y0);
+  float phi0 = atan2(y0,x0);
+
+  x0m= rm*cos(phim);
+  y0m= rm*sin(phim);
+  z0m= vMvtx_z.at(iMvtxHit);
+  float dzdr = (z0-z0m)/(r0-rm);  
+  zvtx_intt_mvtx= z0-dzdr*rm;  
+  pt0m=0.0042*rc_intt_mvtx;
+  phi0m=phim + (phi0-phim)*rm/(r0-rm);
+  pz0m=dzdr*pt0m;
+}
+
+void FormInttMvtxTrk2(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtxHit_I, vector<int> &vMvtxHit_O,
+		      vector<float> &vMvtxI_r, vector<float> &vMvtxI_phi, vector<float> &vMvtxI_z,
+		      vector<float> &vMvtxO_r, vector<float> &vMvtxO_phi, vector<float> &vMvtxO_z,
+		      int &iMvtx_I, int &iMvtx_O,
+		      float &rc_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m) {
+  // There are two Mvtx layers that have associated hits.
+  // They are Mvtx_O (outer layer) and  Mvtx_I (inner layer)
+  // Form a track of (INTT1-INTT0-Mvtx_O-Mvtx_I)
+
+  int nMvtxO = vMvtxHit_O.size();
+  int nMvtxI = vMvtxHit_I.size();
+  float dr2_min = 100000;
+  int iO_min = -1;
+  int iI_min = -1;
+  float rc_min = 100000;
+  float xc_min = 100000;
+  float yc_min = 100000;
+
+  if(imode == 2) {
+    cout << "Trk2" << endl;
+    cout << "nMvtxO="<<nMvtxO<<" nMvtxI="<<nMvtxI<<endl;
+  }
+  for(int iO=0;iO<nMvtxO;iO++) {
+    float rO_m   = vMvtxO_r.at(vMvtxHit_O.at(iO));
+    float phiO_m = vMvtxO_phi.at(vMvtxHit_O.at(iO));
+    float xOm = rO_m*cos(phiO_m);
+    float yOm = rO_m*sin(phiO_m);
+    float zOm = vMvtxO_z.at(vMvtxHit_O.at(iO));
+    
+    for(int iI=0;iI<nMvtxI;iI++) {
+      float rI_m   = vMvtxI_r.at(vMvtxHit_I.at(iI));
+      float phiI_m = vMvtxI_phi.at(vMvtxHit_I.at(iI));
+      float xIm = rI_m*cos(phiI_m);
+      float yIm = rI_m*sin(phiI_m);
+      float zIm = vMvtxI_z.at(vMvtxHit_I.at(iI));
+      
+      float r1;
+      float xc1;
+      float yc1;
+      float r2;
+      float xc2;
+      float yc2;
+      
+  // MvtxO-INTT0-INTT1 Circle
+      CalcCircle(xOm,yOm,x0,y0,x1,y1, r1,xc1,yc1);
+  
+  // MvtxI-MvtxO-INTT1 Circle
+      CalcCircle(xIm,yIm,xOm,yOm,x1,y1, r2,xc2,yc2);
+
+      float xc = 0.5*(xc1+xc2);
+      float yc = 0.5*(yc1+yc2);
+
+      float rc1= sqrt((xIm-xc)*(xIm-xc) + (yIm-yc)*(yIm-yc));
+      float rc2= sqrt((xOm-xc)*(xOm-xc) + (yOm-yc)*(yOm-yc));
+      float rc3= sqrt((x0-xc)*(x0-xc)   + (y0-yc)*(y0-yc));
+      float rc4= sqrt((x1-xc)*(x1-xc)   + (y1-yc)*(y1-yc));
+      float rc = 0.25*(rc1+rc2+rc3+rc4);
+      float dr2 = (rc1-rc)*(rc1-rc)+(rc2-rc)*(rc2-rc)+(rc3-rc)*(rc3-rc)+(rc4-rc)*(rc4-rc);
+      
+      if(dr2<dr2_min) {
+	dr2_min = dr2;
+	iO_min = iO;
+	iI_min = iI;
+	rc_min = rc;
+	xc_min = xc;
+	yc_min = yc;
+      }
+    }//for(iMvtxI)
+  }//for(iMvtxO)
+  iMvtx_O = vMvtxHit_O.at(iO_min);
+  iMvtx_I = vMvtxHit_I.at(iI_min);
+  rc_intt_mvtx = rc_min;
+  xc_intt_mvtx = xc_min;
+  yc_intt_mvtx = yc_min;
+  
+  float rIm  = vMvtxI_r.at(iMvtx_I);
+  float phiIm= vMvtxI_phi.at(iMvtx_I);
+  float zIm  = vMvtxI_z.at(iMvtx_I);
+
+  float rOm  = vMvtxO_r.at(iMvtx_O);
+  float phiOm= vMvtxO_phi.at(iMvtx_O);
+  float zOm  = vMvtxO_z.at(iMvtx_O);
+
+  float dzdr = (zOm-zIm)/(rOm-rIm);
+  
+  x0m= rIm*cos(phiIm);
+  y0m= rIm*sin(phiIm);
+  z0m= zIm;
+  
+  zvtx_intt_mvtx= zIm-dzdr*rIm;  
+
+  pt0m=0.0042*rc_intt_mvtx;
+  phi0m=phiIm + (phiOm - phiIm)*rIm/(rOm-rIm);
+  pz0m=dzdr*pt0m;
+
+}
+
+void FormInttMvtxTrk3(float x0, float y0, float z0,float x1, float y1,float z1,
+		      vector<int> &vMvtx0Hit, vector<int> &vMvtx1Hit,vector<int> &vMvtx2Hit,
+		      int &iMvtx0, int &iMvtx1, int &iMvtx2,
+		      float &rc_intt_mvtx, float &xc_intt_mvtx, float &yc_intt_mvtx,
+		      float& zvtx_intt_mvtx,
+		      float &x0m, float &y0m, float &z0m, float &pt0m,float& phi0m, float &pz0m) {
+  // All three Mvtx layers have associated hits.
+  // Form a track of (INTT0-Mvtx2-Mvtx1-Mvtx0)
+  
+  int nMvtx0 = vMvtx0Hit.size();
+  int nMvtx1 = vMvtx1Hit.size();
+  int nMvtx2 = vMvtx2Hit.size();
+  float dr2_min = 100000;
+  int iMvtx0_min = -1;
+  int iMvtx1_min = -1;
+  int iMvtx2_min = -1;
+  float rc_min = 100000;
+  float xc_min = 100000;
+  float yc_min = 100000;
+  
+  if(imode == 2) {
+    cout << "Trk3" << endl;
+    cout << "nMvtx0="<<nMvtx0<<" nMvtx1="<<nMvtx1<<" nMvtx2="<<nMvtx2<<endl;
+  }
+  for(int im0=0;im0<nMvtx0;im0++) {
+    float r0_m   = vMvtx0r.at(vMvtx0Hit.at(im0));
+    float phi0_m = vMvtx0phi.at(vMvtx0Hit.at(im0));
+    float x0_m = r0_m*cos(phi0_m);
+    float y0_m = r0_m*sin(phi0_m);
+    float z0_m = vMvtx0z.at(vMvtx0Hit.at(im0));
+    
+    for(int im1=0;im1<nMvtx1;im1++) {
+      float r1_m   = vMvtx1r.at(vMvtx1Hit.at(im1));
+      float phi1_m = vMvtx1phi.at(vMvtx1Hit.at(im1));
+      float x1_m = r1_m*cos(phi1_m);
+      float y1_m = r1_m*sin(phi1_m);
+      float z1_m = vMvtx1z.at(vMvtx1Hit.at(im1));
+      
+      for(int im2=0;im2<nMvtx2;im2++) {
+	float r2_m   = vMvtx2r.at(vMvtx2Hit.at(im2));
+	float phi2_m = vMvtx2phi.at(vMvtx2Hit.at(im2));
+	float x2_m = r2_m*cos(phi2_m);
+	float y2_m = r2_m*sin(phi2_m);
+	float z2_m = vMvtx2z.at(vMvtx2Hit.at(im2));
+      
+	float r1;
+	float xc1;
+	float yc1;
+	float r2;
+	float xc2;
+	float yc2;
+	float r3;
+	float xc3;
+	float yc3;
+	
+	// Mvtx0-Mvtx2-INTT1 Circle
+	CalcCircle(x0_m,y0_m,x2_m,y2_m,x1,y1, r1,xc1,yc1);
+  
+	// Mvtx0-Mvtx1-INTT1 Circle
+	CalcCircle(x0_m,y0_m,x1_m,y1_m,x1,y1, r2,xc2,yc2);
+
+	float xc = (xc1+xc2)/2.0;
+	float yc = (yc1+yc2)/2.0;
+	
+	float rc1= sqrt((x0_m-xc)*(x0_m-xc) + (y0_m-yc)*(y0_m-yc));
+	float rc2= sqrt((x1_m-xc)*(x1_m-xc) + (y1_m-yc)*(y1_m-yc));
+	float rc3= sqrt((x2_m-xc)*(x2_m-xc) + (y2_m-yc)*(y2_m-yc));
+	float rc4= sqrt((x1-xc)*(x1-xc)     + (y1-yc)*(y1-yc));
+	float rc = (rc1+rc2+rc3+rc4)/4.0;
+	float dr2 = (rc1-rc)*(rc1-rc)+(rc2-rc)*(rc2-rc)+(rc3-rc)*(rc3-rc)+(rc4-rc)*(rc4-rc);
+	
+	if(dr2<dr2_min) {
+	  dr2_min = dr2;
+	  iMvtx0_min = vMvtx0Hit.at(im0);
+	  iMvtx1_min = vMvtx1Hit.at(im1);
+	  iMvtx2_min = vMvtx2Hit.at(im2);
+	  rc_min = rc;
+	  xc_min = xc;
+	  yc_min = yc;
+	}
+      }//for(im2)
+    }//for(im1)
+  }//for(im0)
+  iMvtx0 = iMvtx0_min;
+  iMvtx1 = iMvtx1_min;
+  iMvtx2 = iMvtx2_min;
+  rc_intt_mvtx = rc_min;
+  xc_intt_mvtx = xc_min;
+  yc_intt_mvtx = yc_min;
+  float rIm  = vMvtx0r.at(iMvtx0);
+  float phiIm= vMvtx0phi.at(iMvtx0);
+  float zIm  = vMvtx0z.at(iMvtx0);
+
+  float rOm  = vMvtx1r.at(iMvtx1);
+  float phiOm= vMvtx1phi.at(iMvtx1);
+  float zOm  = vMvtx1z.at(iMvtx1);
+
+  float dzdr = (zOm-zIm)/(rOm-rIm);
+  
+  x0m= rIm*cos(phiIm);
+  y0m= rIm*sin(phiIm);
+  z0m= zIm;
+  
+  zvtx_intt_mvtx= zIm-dzdr*rIm;  
+
+  pt0m=0.0042*rc_intt_mvtx;
+  phi0m=phiIm + (phiOm - phiIm)*rIm/(rOm-rIm);
+  pz0m=dzdr*pt0m;
+}
 
 void FindInttMvtx(void) {
   // find Mvtx clusters that match the INTT-pair tracklet
   //
   int nPair = vInttPair.size();
+  if(imode == 2) {
+    cout << "nPair = "<<nPair<<endl;
+  }
   if(nPair > 0) {
     for(int ip=0;ip<nPair;ip++) {
       InttPair pair = vInttPair.at(ip);
@@ -881,9 +1368,9 @@ void FindInttMvtx(void) {
       int sign = 1;
       if(phi1>phi0) sign = -1;
       
-      int iMvtx0 = FindMvtxHit(0,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
-      int iMvtx1 = FindMvtxHit(1,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
-      int iMvtx2 = FindMvtxHit(2,rIntt,xc,yc,zvtx,r0,r1,z0,z1);
+      int iMvtx0 = FindMvtxHit(0,rIntt,xc,yc,zvtx,r0,r1,z0,z1,vMvtx0Hit);
+      int iMvtx1 = FindMvtxHit(1,rIntt,xc,yc,zvtx,r0,r1,z0,z1,vMvtx1Hit);
+      int iMvtx2 = FindMvtxHit(2,rIntt,xc,yc,zvtx,r0,r1,z0,z1,vMvtx2Hit);
 
       if(iMvtx0 >=0 || iMvtx1 >=0 || iMvtx2 >=0) {
 	// at least one layer has associated hit.
@@ -896,7 +1383,6 @@ void FindInttMvtx(void) {
 	float r_intt_mvtx;
 	float xc_intt_mvtx;
 	float yc_intt_mvtx;
-	float z_intt_mvtx;
 	float zvtx_intt_mvtx;
 	float x0m;
 	float y0m;
@@ -904,111 +1390,26 @@ void FindInttMvtx(void) {
 	float pt0m;
 	float phi0m;
 	float pz0m;
-
-	float xs0;  //INTT0 (x,y)
-	float ys0;
-	float xs1;  //The outermost Mvtx hit
-	float ys1;
-	float xs2;  //The innermost Mvtx hit or the origin
-	float ys2;
-	float xsc;
-	float ysc;
 	
-	// Create a INTT0-Mvtx track
+	/*
+	FormInttMvtxTrk(r0,phi0,z0,r1,phi1,z1,iMvtx0,iMvtx1,iMvtx2,
+			r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+			zvtx_intt_mvtx,
+			x0m, y0m, z0m, pt0m, phi0m, pz0m);
+	*/
+	FormInttMvtxTrk(r0,phi0,z0,r1,phi1,z1,vMvtx0Hit,vMvtx1Hit,vMvtx2Hit,
+			iMvtx0,iMvtx1,iMvtx2,
+			r_intt_mvtx,xc_intt_mvtx,yc_intt_mvtx,
+			zvtx_intt_mvtx,
+			x0m, y0m, z0m, pt0m, phi0m, pz0m);
+
+	// Now an INTT-Mvtx track is formed
+	// There are two cases:
+	// CASE 1: The same track is already formed as an Emc-Intt track
+	// CASE 2: This is new Intt-Mvtx track
 	//
-	// (xs0,ys0) is (x,y) of INTT0
-	//
-	xs0 = r0*cos(phi0);
-	ys0 = r0*sin(phi0);
-
-	float rs0 = sqrt(xs0*xs0+ys0*ys0);
-	// (xs1,ys1) -- The outer-most Mvts hit.
-	// Note that actual hit is indicated by non-negative index.
-	// From outside (Mvtx2) to inside (Mvtx0), look for a hit.
-	float rs1;
-	float phis1;
-	float zs1;
-	
-	if(iMvtx2>=0) { // Mvtx2 has a hit.
-	  rs1   = vMvtx2r.at(iMvtx2);
-	  phis1 = vMvtx2phi.at(iMvtx2);
-	  zs1   = vMvtx2z.at(iMvtx2);
-	} else if(iMvtx1>=0) {
-	  rs1   = vMvtx1r.at(iMvtx1);
-	  phis1 = vMvtx1phi.at(iMvtx1);
-	  zs1   = vMvtx1z.at(iMvtx1);	  
-	} else {
-	  rs1   = vMvtx0r.at(iMvtx0);
-	  phis1 = vMvtx0phi.at(iMvtx0);
-	  zs1   = vMvtx0z.at(iMvtx0);
-	}
-	xs1 = rs1*cos(phis1);
-	ys1 = rs1*sin(phis1);
-
-	// (xs2,ys2) -- The inner-most Mvtx hit or (0,0) if only one Mvtx hit
-	float rs2;
-	float phis2;
-	float zs2;
-	float dzdr;
-	if(iMvtx0>=0) {//Mvtx0 is the inner-most hit
-	  if(iMvtx1<0 && iMvtx2 <0) {//Mvtx0 is the only hit
-	    rs2=0;
-	  } else {
-	    rs2=vMvtx0r.at(iMvtx0);
-	  }
-	  phis2=vMvtx0phi.at(iMvtx0);
-	  zs2=vMvtx0z.at(iMvtx0);
-	} else if(iMvtx1>=0) {// Mvtx1 is the inner-most hit
-	  if(iMvtx2<0) {
-	    rs2=0;
-	  } else {
-	    rs2=vMvtx1r.at(iMvtx1);
-	  }
-	  phis2=vMvtx1phi.at(iMvtx1);
-	  zs2=vMvtx1z.at(iMvtx1);
-	} else {//this means that Mvtx2 is the only hit
-	  rs2=0;
-	  phis2=vMvtx2phi.at(iMvtx2);
-	  zs2=vMvtx2z.at(iMvtx2);
-	}
-
-	if(rs2==0) {//there is only one Mvtx hit
-	  xs2=0;
-	  ys2=0;
-	  float rintt = 0.5*(r0+r1);
-	  float zintt = 0.5*(z0+z1);
-	  float rmvtx = rs1;
-	  float zmvtx = zs1;
-	  dzdr = (zintt-zmvtx)/(rintt-rmvtx);
-	  zvtx_intt_mvtx = zmvtx - dzdr*rmvtx;
-	} else {
-	  // there are at least two Mvtx hit.
-	  // Outermost hit is (rs1,phis1,zs1)
-	  // Innermost hit is (rs2,phis2,zs2)
-	  xs2=rs2*cos(phis2);
-	  ys2=rs2*sin(phis2);
-	  float r_out = rs1;
-	  float r_in  = rs2;
-	  float z_out = zs1;
-	  float z_in  = zs2;
-	  dzdr  = (z_out - z_in)/(r_out - r_in);
-	  zvtx_intt_mvtx = z_in - dzdr*r_in;
-	}
-
-	// Draw a circle passing through (xs0,ys0)-(xs1,ys1)-(xs2,ys2)
-	// and get its radius (r_intt_mvtx) and the center (xs2,ys2) 
-	//	CalcCircle(xs0,ys0,xs1,ys1,xs2,ys2,
-	CalcCircle(xs2,ys2,xs1,ys1,xs0,ys0,
-		   r_intt_mvtx, xc_intt_mvtx, yc_intt_mvtx);
-	//
-	z_intt_mvtx = zs2-dzdr*rs2;
-	x0m= xs2;
-	y0m= ys2;
-	z0m= zs2;
-	pt0m= 0.0042*r_intt_mvtx;
-	phi0m=phis2;
-	pz0m= dzdr*pt0m;
 	// search vCaloInttMvtx for the same InttPair as this track
+	// If found, it is CASE 1. Otherwise CASE2.
 	int itrk=0;
 	int ntrk = vCaloInttMvtx.size();
 	while(itrk<ntrk) {
@@ -1019,21 +1420,18 @@ void FindInttMvtx(void) {
 	  itrk++;
 	}
 
-
 	if(itrk < ntrk) {
-	  /*
-	  cout <<"i_event:"<<i_event;
-	  cout <<" add Mvtx hits to an existing EMC-INTT track"<<endl;
-	  cout <<"r_emc_intt = "<<(vCaloInttMvtx.at(itrk)).r_emc_intt<<endl;
-	  */
-	  //the same InttPair is found. Add Mvtx info to itrk;
+	  // This means it is CASE 1.
+	  // Add the Intt-Mvtx part of the existing EmcIntt track
+	  if(imode==2) {
+	    cout << "CASE 1: add to existing track" <<endl;
+	  }
 	  (vCaloInttMvtx.at(itrk)).iMvtx0 = iMvtx0;
 	  (vCaloInttMvtx.at(itrk)).iMvtx1 = iMvtx1;
 	  (vCaloInttMvtx.at(itrk)).iMvtx2 = iMvtx2;
 	  (vCaloInttMvtx.at(itrk)).r_intt_mvtx = r_intt_mvtx;
 	  (vCaloInttMvtx.at(itrk)).xc_intt_mvtx = xc_intt_mvtx;
 	  (vCaloInttMvtx.at(itrk)).yc_intt_mvtx = yc_intt_mvtx;
-	  (vCaloInttMvtx.at(itrk)).z_intt_mvtx  = z_intt_mvtx;
 	  (vCaloInttMvtx.at(itrk)).zvtx_intt_mvtx  = zvtx_intt_mvtx;
 	  (vCaloInttMvtx.at(itrk)).x0m  = x0m;
 	  (vCaloInttMvtx.at(itrk)).y0m  = y0m;
@@ -1042,8 +1440,11 @@ void FindInttMvtx(void) {
 	  (vCaloInttMvtx.at(itrk)).phi0m = phi0m;
 	  (vCaloInttMvtx.at(itrk)).pz0m  = pz0m;
 	} else {
-	  //the same InttPair is not found. Add a new CIMtrack.
-	  //	  cout << " new Intt-Mvtx track"<<endl;
+	  //the same InttPair is not found, i.e., CASE 2.
+	  // Add a new CIMtrack.
+	  if(imode==2) {
+	    cout << "CASE 2: create a new track" <<endl;
+	  }
 	  CaloInttMvtx a_CaloInttMvtx;
 	  a_CaloInttMvtx.iTop = -99;
 	  a_CaloInttMvtx.iINTT0 = i0;
@@ -1051,6 +1452,7 @@ void FindInttMvtx(void) {
 	  a_CaloInttMvtx.iMvtx0 = iMvtx0;
 	  a_CaloInttMvtx.iMvtx1 = iMvtx1;
 	  a_CaloInttMvtx.iMvtx2 = iMvtx2;
+	  a_CaloInttMvtx.sign   = sign;
 	  a_CaloInttMvtx.r_intt =  pair.r;
 	  a_CaloInttMvtx.xc_intt = pair.xc;
 	  a_CaloInttMvtx.yc_intt = pair.yc;
@@ -1063,7 +1465,6 @@ void FindInttMvtx(void) {
 	  a_CaloInttMvtx.r_intt_mvtx    = r_intt_mvtx;
 	  a_CaloInttMvtx.xc_intt_mvtx   = xc_intt_mvtx;
 	  a_CaloInttMvtx.yc_intt_mvtx   = yc_intt_mvtx;
-	  a_CaloInttMvtx.z_intt_mvtx    = z_intt_mvtx;
 	  a_CaloInttMvtx.zvtx_intt_mvtx = zvtx_intt_mvtx;
 	  a_CaloInttMvtx.xemc = -99;
 	  a_CaloInttMvtx.yemc = -99;
@@ -1095,12 +1496,12 @@ void FindInttMvtx(void) {
 }
 
 int FindMvtxHit(int layer, float rIntt, float xc, float yc,
-		 float zvtx, float r0, float r1, float z0, float z1){
+		float zvtx, float r0, float r1, float z0, float z1,
+		vector<int>   &vMvtxHit) {
   // constants for the analysis
   const float InttMvtx_dr_cut = 0.03;
   const float InttMvtx_dz_cut = 1.0;
 
-  static vector<int> vMvtxHit;
   static vector<float> vMvtx_dr;
   static vector<float> vMvtx_dz0;
   static vector<float> vMvtx_dz1;

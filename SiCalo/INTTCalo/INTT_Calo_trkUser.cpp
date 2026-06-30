@@ -29,8 +29,27 @@ void INTT_Calo_trkUser_Init(void) {
   hUSR_Mee = new TH1F("hUSR_Mee","Mee",1000,0.0,4.0);
   hUSR_pe = new TH1F("hUSR_pe","pe(tagged by Mee<0.04)",100,0.,5.);
   hUSR_Ep = new TH1F("hUSR_Ep","E/p for conversion e+/e-",100,0.,2.0);
+
+  hUSR_truth_pt = new TH1F("hUSR_truth_pt","pt (truth)",100,0.,5.0);
+
+  hUSR_pt0m_tr_pt = new TH1F("hUSR_pt0m_tr_pt","pt_mvtx/pt_truth",100,0.0,2.0);
+  hUSR_pt0m_tr_pt1 = new TH1F("hUSR_pt0m_tr_pt1","pt_mvtx/pt_truth (0.3<pt<0.5GeV/c)",100,0.0,2.0);
+  hUSR_pt0m_tr_pt2 = new TH1F("hUSR_pt0m_tr_pt2","pt_mvtx/pt_truth (0.5<pt<0.7GeV/c)",100,0.0,2.0);
+  hUSR_pt0m_tr_pt3 = new TH1F("hUSR_pt0m_tr_pt3","pt_mvtx/pt_truth (0.7<pt<1.0GeV/c)",100,0.0,2.0);
+  hUSR_pt0m_tr_pt4 = new TH1F("hUSR_pt0m_tr_pt4","pt_mvtx/pt_truth (1.0<pt<1.5GeV/c)",100,0.0,2.0);
+  hUSR_pt0m_tr_pt5 = new TH1F("hUSR_pt0m_tr_pt5","pt_mvtx/pt_truth (1.5<pt<2.0GeV/c)",100,0.0,2.0);
+  hUSR_pt0m_tr_pt6 = new TH1F("hUSR_pt0m_tr_pt6","pt_mvtx/pt_truth (2.0<pt<3.0GeV/c)",100,0.0,2.0);
+
+  hUSR_pt0e_tr_pt = new TH1F("hUSR_pt0e_tr_pt","pt_emc/pt_truth",100,0.0,2.0);
+  hUSR_pt0e_tr_pt1 = new TH1F("hUSR_pt0e_tr_pt1","pt_emc/pt_truth (0.3<pt<0.5GeV/c)",100,0.0,2.0);
+  hUSR_pt0e_tr_pt2 = new TH1F("hUSR_pt0e_tr_pt2","pt_emc/pt_truth (0.5<pt<0.7GeV/c)",100,0.0,2.0);
+  hUSR_pt0e_tr_pt3 = new TH1F("hUSR_pt0e_tr_pt3","pt_emc/pt_truth (0.7<pt<1.0GeV/c)",100,0.0,2.0);
+  hUSR_pt0e_tr_pt4 = new TH1F("hUSR_pt0e_tr_pt4","pt_emc/pt_truth (1.0<pt<1.5GeV/c)",100,0.0,2.0);
+  hUSR_pt0e_tr_pt5 = new TH1F("hUSR_pt0e_tr_pt5","pt_emc/pt_truth (1.5<pt<2.0GeV/c)",100,0.0,2.0);
+  hUSR_pt0e_tr_pt6 = new TH1F("hUSR_pt0e_tr_pt6","pt_emc/pt_truth (2.0<pt<3.0GeV/c)",100,0.0,2.0);
   
   nt_trk = new TNtuple("nt_trk","INTT track Ntuple","p_emc:p_mvtx:tot_e:emc_e:sign:ntrk:pt_mvtx");
+  nt_sim_trk = new TNtuple("nt_sim_trk","Sim and Reco Ntuple","tr_pt:tr_phi0:tr_eta0:pt0e:phi_e:pt0m");
 }
 
 void INTT_Calo_trkUser_End(void) {
@@ -61,12 +80,32 @@ void INTT_Calo_trkUser_End(void) {
   hUSR_Mee->Write();
   hUSR_pe->Write();
   hUSR_Ep->Write();
+
+  hUSR_truth_pt->Write();
+
+  hUSR_pt0m_tr_pt->Write();
+  hUSR_pt0m_tr_pt1->Write();
+  hUSR_pt0m_tr_pt2->Write();
+  hUSR_pt0m_tr_pt3->Write();
+  hUSR_pt0m_tr_pt4->Write();
+  hUSR_pt0m_tr_pt5->Write();
+  hUSR_pt0m_tr_pt6->Write();
+
+  hUSR_pt0e_tr_pt->Write();
+  hUSR_pt0e_tr_pt1->Write();
+  hUSR_pt0e_tr_pt2->Write();
+  hUSR_pt0e_tr_pt3->Write();
+  hUSR_pt0e_tr_pt4->Write();
+  hUSR_pt0e_tr_pt5->Write();
+  hUSR_pt0e_tr_pt6->Write();
   
   nt_trk->Write();
+  nt_sim_trk->Write();
 }
 
 void INTT_Calo_trkUser(void) {
   int ntrk = vCaloInttMvtx.size();
+  if(imode == 2) { cout << "ntrk="<<ntrk<<endl;}
   hUSR_ntrk->Fill(ntrk);
 
   int nEmc = emc_r->size();
@@ -100,6 +139,14 @@ void INTT_Calo_trkUser(void) {
     cout << " ntrk="<<ntrk<<endl;
     */
 
+    vpxp.clear();
+    vpyp.clear();
+    vpzp.clear();
+    
+    vpxm.clear();
+    vpym.clear();
+    vpzm.clear();
+    
     for(int i=0;i<ntrk;i++) {
       CaloInttMvtx CIMtrack = vCaloInttMvtx.at(i);
       float pt_emc_intt  = CIMtrack.pt0e;
@@ -125,7 +172,11 @@ void INTT_Calo_trkUser(void) {
       if( iMvtx2 >=0) nMvtxHits++;
       if( iMvtx1 >=0) nMvtxHits++;
       if( iMvtx0 >=0) nMvtxHits++;
-      
+
+      if(imode == 2) {
+	cout << i << ": INTT0="<<CIMtrack.iINTT0<<" INTT1="<<CIMtrack.iINTT1;
+	cout <<" Mvtx0="<<iMvtx0<<" Mvtx1="<<iMvtx1<<" iMvtx2= "<<iMvtx2<<endl;
+      }
       if( nMvtxHits > 0) {
 	hUSR_Intt_pt2->Fill(pt_intt_mvtx);
 	if(pt_emc_intt>0) {
@@ -236,7 +287,7 @@ void INTT_Calo_trkUser(void) {
 	  float Mee = sqrt(Eee*Eee - pxee*pxee - pyee*pyee - pzee*pzee);
 	  hUSR_Mee->Fill(Mee);
 
-	  if(0.035< Mee && Mee < 0.055) {
+	  if( Mee < 0.04) {
 	    if(vEp.at(ip)>0) {
 	      hUSR_pe->Fill(pp);
 	      hUSR_Ep->Fill(vEp.at(ip)/pp);
@@ -250,4 +301,57 @@ void INTT_Calo_trkUser(void) {
       }//for(ip)
     }
   }//if(ntrk)
+
+  // Simulation 
+  if(truthTree != nullptr) {
+    int n_tr_trk = truth_pid->size();  //# of truth tracks
+    //    cout <<"n_tr_trk="<<n_tr_trk<<endl;
+    if(n_tr_trk>0) {
+      for(int itr = 0; itr<n_tr_trk; itr++) {
+	float tr_px=truth_px->at(itr);
+	float tr_py=truth_py->at(itr);
+	float tr_pz=truth_pz->at(itr);
+	float tr_pt=sqrt(tr_px*tr_px + tr_py*tr_py);
+	float tr_phi0 = atan2(tr_py,tr_px);
+	float tr_eta0 = rz2eta(tr_pt,tr_pz);
+	hUSR_truth_pt->Fill(tr_pt);
+
+	if( n_tr_trk==1 && ntrk==1) {
+	  if(itr==0) {
+	    CaloInttMvtx CIMtrack = vCaloInttMvtx.at(0);
+	    float pt0m = CIMtrack.pt0m;
+	    float pt0e = CIMtrack.pt0e;
+	    float xemc = CIMtrack.xemc;
+	    float yemc = CIMtrack.yemc;
+	    float phi_e = atan2(yemc,xemc);
+	    
+	    nt_sim_trk->Fill(tr_pt,tr_phi0,tr_eta0,pt0e,phi_e,pt0m);
+	    if(tr_pt > 0.3) {
+	      hUSR_pt0m_tr_pt->Fill(pt0m/tr_pt);
+	      hUSR_pt0e_tr_pt->Fill(pt0e/tr_pt);
+	      if(tr_pt <0.5) {
+		hUSR_pt0m_tr_pt1->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt1->Fill(pt0e/tr_pt);
+	      } else if(tr_pt<0.7) {
+		hUSR_pt0m_tr_pt2->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt2->Fill(pt0e/tr_pt);
+	      } else if(tr_pt<1.0) {
+		hUSR_pt0m_tr_pt3->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt3->Fill(pt0e/tr_pt);
+	      } else if(tr_pt<1.5) {
+		hUSR_pt0m_tr_pt4->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt4->Fill(pt0e/tr_pt);
+	      } else if(tr_pt<2.0) {
+		hUSR_pt0m_tr_pt5->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt5->Fill(pt0e/tr_pt);
+	      } else if(tr_pt<3.0) {
+		hUSR_pt0m_tr_pt6->Fill(pt0m/tr_pt);
+		hUSR_pt0e_tr_pt6->Fill(pt0e/tr_pt);
+	      }
+	    }
+	  }//if(itr)
+	}//if(n_tr_trk,ntrk)
+      }//for(itr)
+    }//if(n_tr_trk)
+  }//if(truthTree)
 }
