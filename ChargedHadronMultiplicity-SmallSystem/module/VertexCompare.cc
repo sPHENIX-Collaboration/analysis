@@ -1988,7 +1988,7 @@ void VertexCompare::FillTruthParticleTree()
             TruthVertexY.push_back(point->get_y());
             TruthVertexZ.push_back(point->get_z());
             TruthVertexT.push_back(point->get_t());
-            TruthVertex_crossing.push_back(std::isfinite(point->get_t()) ? static_cast<int>(std::round(point->get_t() / sphenix_constants::time_between_crossings)) : std::numeric_limits<int>::max());
+            TruthVertex_crossing.push_back(std::isfinite(point->get_t()) ? static_cast<int>(std::floor(point->get_t() / sphenix_constants::time_between_crossings)) : std::numeric_limits<int>::max());
         }
     }
 
@@ -2041,7 +2041,7 @@ void VertexCompare::FillTruthParticleTree()
         const int origin_vtx_id = origin->get_vtx_id();
         PHG4VtxPoint *origin_vtx = m_truth_info->GetVtx(origin_vtx_id);
         const float origin_vtx_t = origin_vtx ? origin_vtx->get_t() : kMissingFloat;
-        const int origin_crossing = std::isfinite(origin_vtx_t) ? static_cast<int>(std::round(origin_vtx_t / sphenix_constants::time_between_crossings)) : kMissingInt;
+        const int origin_crossing = std::isfinite(origin_vtx_t) ? static_cast<int>(std::floor(origin_vtx_t / sphenix_constants::time_between_crossings)) : kMissingInt;
 
         out_originTrackID.push_back(origin_track_id);
         out_originVtxID.push_back(origin_vtx_id);
