@@ -73,16 +73,17 @@ def setup_data(args):
     dst_dir.mkdir(parents=True, exist_ok=True)
     dst_dir_merged.mkdir(parents=True, exist_ok=True)
 
-    command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING DST_ZDC_RAW'
+    command = f'CreateDstList.pl --tag {tag} --list ../run3auau-time-min-5.list DST_CALOFITTING DST_ZDC_RAW DST_SEPD_RAW'
     run_command_and_log(command, logger, dst_dir)
 
-    command = f'{merge_script} {dst_dir} {dst_dir} {dst_dir_merged}'
+    command = f'{merge_script} {dst_dir} {dst_dir} {dst_dir} {dst_dir_merged}'
     run_command_and_log(command, logger, output_dir)
 
     if zdc_calib_dir:
         dst_dir_zdc_calib_merged = output_dir / f'run3auau-merged-zdc-calib-{tag}'
+        shutil.rmtree(dst_dir_zdc_calib_merged)
         dst_dir_zdc_calib_merged.mkdir(parents=True, exist_ok=True)
-        command = f'{merge_script} {dst_dir} {zdc_calib_dir} {dst_dir_zdc_calib_merged} {zdc_calib_prefix}'
+        command = f'{merge_script} {dst_dir} {zdc_calib_dir} {dst_dir} {dst_dir_zdc_calib_merged} {zdc_calib_prefix}'
         run_command_and_log(command, logger, output_dir)
 
     new_segments = count_total_lines(dst_dir_merged)
