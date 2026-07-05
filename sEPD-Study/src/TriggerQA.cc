@@ -82,7 +82,7 @@ int TriggerQA::process_event(PHCompositeNode *topNode)
 
   int globalEvent = eventInfo->get_EvtSequence();
 
-  if ((Verbosity() && m_total_events % 1000 == 0) || Verbosity() > 1)
+  if ((Verbosity() && m_total_events % m_progress_print == 0) || Verbosity() > 1)
   {
     std::cout << std::format("Progress: {}, Global: {}", m_total_events, globalEvent) << std::endl;
   }

@@ -29,12 +29,19 @@ class TriggerQA : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
+  void set_print_interval(int events)
+  {
+    m_progress_print = events;
+  }
+
  private:
   // Configuration
   double m_zvtx_max{10}; // cm
 
   // Event Variables
   int m_total_events{0};
+
+  int m_progress_print{10000};
 
   std::unique_ptr<TriggerAnalyzer> m_triggerAnalyzer;
 
