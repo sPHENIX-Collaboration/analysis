@@ -31,9 +31,13 @@ fi
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
+
     cut -d ',' -f 1 "$input" > dst_calofit.list
     cut -d ',' -f 2 "$input" > dst_zdc.list
+    cut -d ',' -f 3 "$input" > dst_sepd.list
+
     getinputfiles.pl --verbose --filelist dst_calofit.list
+    getinputfiles.pl --verbose --filelist dst_sepd.list
 
     # Create/clear a temporary file for the basenames
     > dst_zdc_local.list
@@ -64,9 +68,29 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
-root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\")"
+root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"dst_sepd.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $nEvents, 0, 0, \"$dbtag\")"
 
 echo "All Done and Transferring Files Back"
-cp -rv "$run" "$submitDir"
+
+# Define maximum retries and a counter
+max_retries=3
+count=0
+success=0
+
+while [ $count -lt $max_retries ]; do
+    if cp -rv "$run" "$submitDir"; then
+        success=1
+        break
+    else
+        count=$((count + 1))
+        echo "cp failed (likely GPFS lag). Retrying ($count/$max_retries) in 2 seconds..."
+        sleep 2
+    fi
+done
+
+if [ $success -eq 0 ]; then
+    echo "Error: cp failed permanently after $max_retries attempts."
+    exit 1
+fi
 
 echo "Finished"
