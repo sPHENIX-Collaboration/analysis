@@ -30,7 +30,7 @@
 R__LOAD_LIBRARY(libsEPDValidation.so)
 R__LOAD_LIBRARY(libCaloStatusSkimmer.so)
 
-void Fun4All_TriggerQA(const std::string& flist,
+void Fun4All_TriggerQA(const std::string& flist = "DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00068144-00000.root",
                        const std::string& output = "test.root",
                        int nEvents = 100,
                        const std::string& dbtag = "newcdbtag")
@@ -47,13 +47,31 @@ void Fun4All_TriggerQA(const std::string& flist,
 
   recoConsts *rc = recoConsts::instance();
 
-  std::ifstream infile_stream;
-  infile_stream.open(flist, std::ios_base::in);
-  std::string filepath;
-  getline(infile_stream, filepath);
-  std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
-  long unsigned int runnumber = static_cast<long unsigned int>(runseg.first);
-  infile_stream.close();
+
+  // Extract runnumber from first file within list
+  int runnumber;
+  bool isFileList = true;
+  // single file
+  if (flist.ends_with(".root"))
+  {
+    std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(flist);
+    runnumber = runseg.first;
+    isFileList = false;
+  }
+  // list of files
+  else
+  {
+    std::ifstream infile_stream(flist);
+    if (!infile_stream) {
+      std::cout << "Error: Could not open file list " << flist << std::endl;
+      return;
+    }
+    std::string filepath;
+    getline(infile_stream, filepath);
+    std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
+    runnumber = runseg.first;
+    infile_stream.close();
+  }
 
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
@@ -64,7 +82,6 @@ void Fun4All_TriggerQA(const std::string& flist,
   se->registerSubsystem(flag);
 
   CaloStatusSkimmer* css = new CaloStatusSkimmer("CaloStatusSkimmer");
-  se->Verbosity(1);
   se->registerSubsystem(css);
 
   // MBD Reconstruction
@@ -86,7 +103,14 @@ void Fun4All_TriggerQA(const std::string& flist,
   se->registerSubsystem(trigger_QA);
 
   Fun4AllInputManager* In = new Fun4AllDstInputManager("in");
-  In->AddListFile(flist);
+  if (isFileList)
+  {
+    In->AddListFile(flist);
+  }
+  else
+  {
+    In->AddFile(flist);
+  }
   se->registerInputManager(In);
 
   se->Verbosity(Fun4AllBase::VERBOSITY_QUIET);

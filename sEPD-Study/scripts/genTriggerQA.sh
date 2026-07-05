@@ -38,6 +38,26 @@ mkdir -p "$run"
 root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"$run/$output\", $nEvents, \"$dbtag\")"
 
 echo "All Done and Transferring Files Back"
-cp -rv "$run" "$submitDir"
+
+# Define maximum retries and a counter
+max_retries=3
+count=0
+success=0
+
+while [ $count -lt $max_retries ]; do
+    if cp -rv "$run" "$submitDir"; then
+        success=1
+        break
+    else
+        count=$((count + 1))
+        echo "cp failed (likely GPFS lag). Retrying ($count/$max_retries) in 2 seconds..."
+        sleep 2
+    fi
+done
+
+if [ $success -eq 0 ]; then
+    echo "Error: cp failed permanently after $max_retries attempts."
+    exit 1
+fi
 
 echo "Finished"
