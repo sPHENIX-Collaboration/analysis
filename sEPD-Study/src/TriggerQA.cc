@@ -188,6 +188,11 @@ int TriggerQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 
 int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
 {
+  if (m_total_events == 0)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   uint64_t raw10 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_10);
   uint64_t raw12 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_12);
   uint64_t raw14 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_14);
