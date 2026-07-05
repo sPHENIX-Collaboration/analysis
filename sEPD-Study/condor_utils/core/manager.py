@@ -1,3 +1,4 @@
+import re
 import sys
 import shutil
 import datetime
@@ -14,17 +15,17 @@ class CondorJobManager:
         self.job_name = job_name
         self.output_dir = Path(args.output_dir).resolve()
         self.log_file = self.output_dir / 'log.txt'
-        
+
         # Create output dir early so we can log
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger = setup_logging(self.log_file, logging.DEBUG)
-        
+
         # Commonly resolved paths
         self.input_list = Path(args.input_list).resolve() if hasattr(args, 'input_list') and args.input_list else None
         self.condor_script = Path(args.condor_script).resolve() if hasattr(args, 'condor_script') and args.condor_script else None
         self.condor_log_dir = Path(args.condor_log_dir).resolve() if hasattr(args, 'condor_log_dir') and args.condor_log_dir else None
         self.common_errors = Path(args.common_errors).resolve() if hasattr(args, 'common_errors') and args.common_errors else None
-        
+
         self.files_to_check = []
         self.dirs_to_check = []
         if self.input_list:
@@ -37,7 +38,7 @@ class CondorJobManager:
     def add_file_to_check(self, path):
         if path:
             self.files_to_check.append(Path(path).resolve())
-            
+
     def add_dir_to_check(self, path):
         if path:
             self.dirs_to_check.append(Path(path).resolve())
@@ -76,22 +77,22 @@ class CondorJobManager:
             self.logger.info(f'Condor Log Directory: {self.condor_log_dir}')
         if self.common_errors:
             self.logger.info(f'Common Errors File: {self.common_errors}')
-        
+
         if extra_logs:
             for k, v in extra_logs.items():
                 self.logger.info(f'{k}: {v}')
-                
+
         return total_files
 
     def prepare_directories(self):
         if self.condor_log_dir:
             shutil.rmtree(self.condor_log_dir, ignore_errors=True)
             self.condor_log_dir.mkdir(parents=True, exist_ok=True)
-            
+
         for subdir in ['stdout', 'error', 'output']:
             shutil.rmtree(self.output_dir / subdir, ignore_errors=True)
             (self.output_dir / subdir).mkdir(parents=True, exist_ok=True)
-            
+
         files_dir = self.output_dir / 'files'
         files_dir.mkdir(parents=True, exist_ok=True)
         return files_dir
@@ -103,12 +104,12 @@ class CondorJobManager:
             shutil.copy(self.condor_script, self.output_dir)
         if self.common_errors:
             shutil.copy(self.common_errors, self.output_dir)
-        
+
         if extra_files:
             for f in extra_files:
                 if f:
                     shutil.copy(Path(f).resolve(), self.output_dir)
-                
+
         if extra_dirs:
             for d in extra_dirs:
                 if d:
@@ -118,9 +119,9 @@ class CondorJobManager:
     def write_submit_file(self, arguments, executable=None, memory=None):
         exec_file = executable or (self.condor_script.name if self.condor_script else "script.sh")
         mem = memory or getattr(self.args, 'memory', 1)
-        
+
         log_dir = self.condor_log_dir or (self.output_dir / 'logs')
-        
+
         submit_content = textwrap.dedent(f"""\
             executable     = {exec_file}
             arguments      = {arguments}
@@ -133,6 +134,22 @@ class CondorJobManager:
         sub_file.write_text(submit_content)
         return sub_file
 
-    def finalize_submission(self, queue_arg="input_dst from jobs.list", sub_file_name="genFun4All.sub"):
-        command = f'cd {self.output_dir} && condor_submit {sub_file_name} -queue "{queue_arg}"'
-        self.logger.info(command)
+    def finalize_submission(self, queue_arg="input_dst from jobs.list", sub_file_name="genFun4All.sub", limit=15000):
+        match = re.search(r" from ([\w\.-]+)", queue_arg)
+        list_file = match.group(1) if match else "jobs.list"
+
+        # Split the job list file to respect the Condor submission limit
+        split_prefix = "jobs-"
+        command = f'split --lines {limit} {list_file} -d -a 1 {split_prefix} --additional-suffix=.list'
+        run_command_and_log(command, self.logger, self.output_dir, False)
+
+        # Find the resulting split files
+        split_files = sorted(self.output_dir.glob(f"{split_prefix}*.list"))
+        if not split_files:
+            # Fallback if split didn't generate anything (e.g. if the list file was empty)
+            split_files = [self.output_dir / list_file]
+
+        for sf in split_files:
+            current_queue_arg = queue_arg.replace(list_file, sf.name)
+            command = f'cd {self.output_dir} && condor_submit {sub_file_name} -queue "{current_queue_arg}"'
+            self.logger.info(command)
