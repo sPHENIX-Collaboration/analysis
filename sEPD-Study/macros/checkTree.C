@@ -55,7 +55,7 @@ class CheckTree
 
 void CheckTree::process()
 {
-   std::ofstream output_file(m_output); 
+   std::ofstream output_file(m_output);
    std::ifstream input_file(m_input_file_list);
 
   if (!output_file.is_open())
@@ -138,7 +138,7 @@ int main(int argc, const char* const argv[])
   }
 
   const std::string input_file_list = argv[1];
-  const std::string output = (argc >= 3) ? argv[2] : "tree-check-log.txt"; 
+  const std::string output = (argc >= 3) ? argv[2] : "tree-check-log.txt";
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");

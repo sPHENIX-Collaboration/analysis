@@ -1009,7 +1009,7 @@ void DisplayDataMC::draw()
 
     double ymax = px_data->GetMaximum()*1.1;
     px_data->GetYaxis()->SetRangeUser(0, ymax);
-    
+
     double xshift = 0.4;
     double yshift = -0.1;
 
@@ -1220,7 +1220,7 @@ void DisplayDataMC::draw()
 
         line->Draw();
 
-        t->DrawLatex(0.5, 0.975, std::format("Centrality: {}-{}%", (cent_bin-1)*10, cent_bin*10).c_str()); 
+        t->DrawLatex(0.5, 0.975, std::format("Centrality: {}-{}%", (cent_bin-1)*10, cent_bin*10).c_str());
       }
 
       c1->Print(output.c_str(), "pdf portrait");

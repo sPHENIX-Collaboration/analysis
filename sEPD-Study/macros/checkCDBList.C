@@ -44,7 +44,7 @@ void checkCDBList(const std::vector<unsigned int>& runnumbers, const std::filesy
 
   // Map to store lists of successful runs for each calibration
   std::map<std::string, std::vector<unsigned int>> valid_runs;
-  
+
   // Map to store boolean calibration status for each run and calib type
   std::map<unsigned int, std::map<std::string, bool>> run_calib_status;
 
@@ -70,7 +70,7 @@ void checkCDBList(const std::vector<unsigned int>& runnumbers, const std::filesy
     for (const auto& [description, name] : cdb)
     {
       std::string path = getCalibration(name, runnumber);
-      
+
       // If it doesn't start with the exception, the calibration exists
       bool has_calib = !path.starts_with("DataBaseException");
       run_calib_status[runnumber][name] = has_calib;
@@ -173,9 +173,9 @@ void checkCDBList(const std::vector<unsigned int>& runnumbers, const std::filesy
   {
     size_t count = valid_runs[name].size();
     double percentage = (static_cast<double>(count) / static_cast<double>(total_runs)) * 100.0;
-    
+
     // {:<35} pads the description with spaces to align the columns cleanly
-    std::cout << std::format("{:<35} : {:>4} / {} ({:>5.1f}%)\n", 
+    std::cout << std::format("{:<35} : {:>4} / {} ({:>5.1f}%)\n",
                              description, count, total_runs, percentage);
   }
 }
@@ -197,7 +197,7 @@ int main(int argc, const char* const argv[])
   // Read run numbers from the provided file
   std::vector<unsigned int> runnumbers;
   std::ifstream infile(args[1]);
-  
+
   if (!infile.is_open())
   {
     std::cout << "Error: Could not open file " << args[1] << std::endl;

@@ -30,7 +30,7 @@ while read -r file; do
 done < "$input_list_file"
 
 # 2. Run hadd
-# We use *.root because we just copied them here. 
+# We use *.root because we just copied them here.
 # WARNING: Ensure the input_list_file doesn't contain the name of the output_filename!
 echo "Running hadd..."
 hadd -f -k "$output_filename" *.root

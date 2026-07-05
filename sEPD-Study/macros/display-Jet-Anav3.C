@@ -398,7 +398,7 @@ void DisplayJetAnav3::plot_calo(TCanvas* c1, TCanvas* c2, const std::string& run
     double CaloE_max = 2.5e3;
 
     int canvas_idx = 1;
-    
+
     plot_calo(c1, c2, run, canvas_idx++, h2EMCal_MBD, "EMCal-MBD", EMCal_min, EMCal_max, 0, MBD_max, x_label_size);
     plot_calo(c1, c2, run, canvas_idx++, h2IHCal_MBD, "IHCal-MBD", IHCal_min, IHCal_max, 0, MBD_max, x_label_size);
     plot_calo(c1, c2, run, canvas_idx++, h2OHCal_MBD, "OHCal-MBD", OHCal_min, OHCal_max, 0, MBD_max, x_label_size);

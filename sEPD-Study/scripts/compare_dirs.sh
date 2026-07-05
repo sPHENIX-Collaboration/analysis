@@ -27,14 +27,14 @@ echo "-----------------------------------------------"
 for file1 in "$dir1"/*; do
     # Ensure it's a regular file (skips subdirectories)
     [ -f "$file1" ] || continue
-    
+
     # Extract just the filename using fast string manipulation (no slow basename fork)
     filename="${file1##*/}"
     file2="$dir2/$filename"
 
     # 4. Check if a file with the exact same name exists in directory 2
     if [ -f "$file2" ]; then
-        # 'cmp -s' returns 0 if identical, 1 if different. 
+        # 'cmp -s' returns 0 if identical, 1 if different.
         # The '!' negates it so it runs if they differ.
         if ! cmp -s "$file1" "$file2"; then
             echo "$filename"

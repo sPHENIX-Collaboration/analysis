@@ -1260,7 +1260,7 @@ void DisplaySEPDQA::draw_QA()
 
     std::string h2_title = "sEPD South; r_{bin}; Average Charge; Channels";
     std::unique_ptr<TH2> h2SEPD_South_AvgCharge = std::make_unique<TH2F>("h2SEPD_South_AvgCharge", h2_title.c_str(), nRbins, 0, nRbins, bins_charge, charge_data_low, charge_data_high);
-    
+
     h2_title = "sEPD North; r_{bin}; Average Charge; Channels";
     std::unique_ptr<TH2> h2SEPD_North_AvgCharge = std::make_unique<TH2F>("h2SEPD_North_AvgCharge", h2_title.c_str(), nRbins, 0, nRbins, bins_charge, charge_data_low, charge_data_high);
 
@@ -1539,7 +1539,7 @@ void DisplaySEPDQA::draw_QA()
           c_r->cd(0);
         }
 
-        t->DrawLatex(0.5, 0.975, canvas_title.c_str()); 
+        t->DrawLatex(0.5, 0.975, canvas_title.c_str());
 
         for (size_t ch = 0; ch < channels.size(); ++ch)
         {
