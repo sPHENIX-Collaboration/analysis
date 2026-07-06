@@ -37,6 +37,11 @@ mkdir -p "$run"
 
 root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"$run/$output\", $nEvents, \"$dbtag\")"
 
+if [ $? -ne 0 ]; then
+    echo "Error: ROOT macro crashed! Aborting transfer." >&2
+    exit 1
+fi
+
 echo "All Done and Transferring Files Back"
 
 # Define maximum retries and a counter
