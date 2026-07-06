@@ -112,6 +112,7 @@ def jetAna_jobs(args):
         output         = stdout/job-$(ClusterId)-$(Process).out
         error          = error/job-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
+        max_retries    = {args.max_retries}
     """)
 
     (output_dir / 'genJetAna.sub').write_text(submit_file_content)
@@ -131,6 +132,7 @@ def setup_jetAna_subparsers(subparsers):
     jetAna.add_argument('-f2', '--jetAna-bin', type=str, default='bin/Jet-Ana', help='Jet-Ana Bin. Default: bin/Jet-Ana')
     jetAna.add_argument('-o', '--output-dir', type=str, default='scratch/test', help='Output Directory. Default: scratch/test')
     jetAna.add_argument('-s', '--memory', type=float, default=0.5, help='Memory (units of GB). Default: 0.5 GB.')
+    jetAna.add_argument('-m', '--max-retries', type=int, default=3, help='Max Condor job retries on failure. Default: 3.')
     jetAna.add_argument('-l', '--condor-log-dir', type=str, default='/tmp/anarde/dump', help='Condor Log Directory.')
     jetAna.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAna.sh', help='Condor Script.')
     jetAna.set_defaults(func=jetAna_jobs)

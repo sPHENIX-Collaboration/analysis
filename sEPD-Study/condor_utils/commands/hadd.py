@@ -88,6 +88,7 @@ def hadd_jobs(args):
         output         = {partial_dir}/stdout/job-$(ClusterId)-$(Process).out
         error          = {partial_dir}/error/job-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
+        max_retries    = {args.max_retries}
     """)
 
     (output_dir / 'stage1.sub').write_text(submit_content_s1)
@@ -141,6 +142,7 @@ def hadd_jobs(args):
         output         = {output_dir}/stdout/final-$(ClusterId)-$(Process).out
         error          = {output_dir}/error/final-$(ClusterId)-$(Process).err
         request_memory = {condor_memory}GB
+        max_retries    = {args.max_retries}
     """)
 
     (output_dir / 'stage2.sub').write_text(submit_content_s2)
@@ -156,6 +158,7 @@ def setup_hadd_subparsers(subparsers):
     hadd_parser.add_argument('-o', '--output-dir', type=str, default='scratch/test', help='Output Directory. Default: scratch/test')
     hadd_parser.add_argument('-n', '--hadd-max', type=int, default=10, help='Hadd Max at once. Default: 10')
     hadd_parser.add_argument('-s', '--memory', type=float, default=1.0, help='Memory (units of GB). Default: 1.0 GB.')
+    hadd_parser.add_argument('-m', '--max-retries', type=int, default=3, help='Max Condor job retries on failure. Default: 3.')
     hadd_parser.add_argument('-l', '--condor-log-dir', type=str, default='/tmp/anarde/dump', help='Condor Log Directory.')
     hadd_parser.add_argument('-f', '--condor-script', type=str, default='scripts/genHadd.sh', help='Condor Script.')
     hadd_parser.set_defaults(func=hadd_jobs)

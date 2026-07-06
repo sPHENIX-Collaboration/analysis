@@ -145,6 +145,7 @@ class CondorJobManager:
             output         = stdout/job-$(ClusterId)-$(Process).out
             error          = error/job-$(ClusterId)-$(Process).err
             request_memory = {mem}GB
+            max_retries    = {getattr(self.args, 'max_retries', 3)}
         """)
         sub_file = self.output_dir / 'genFun4All.sub'
         sub_file.write_text(submit_content)
