@@ -9,13 +9,13 @@ from condor_utils.commands.data import setup_data_subparsers
 def main():
     parser = argparse.ArgumentParser(description="Fun4All Condor Procedure Automator")
     subparsers = parser.add_subparsers(dest='command', required=True)
-    
+
     setup_qa_subparsers(subparsers)
     setup_f4a_subparsers(subparsers)
     setup_jetAna_subparsers(subparsers)
     setup_hadd_subparsers(subparsers)
     setup_data_subparsers(subparsers)
-    
+
     args = parser.parse_args()
     args.func(args)
 

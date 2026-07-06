@@ -20,6 +20,8 @@ class CondorJobManager:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.logger = setup_logging(self.log_file, logging.DEBUG)
 
+        self.job_output_dir = Path(args.job_output_dir).resolve() if hasattr(args, 'job_output_dir') and args.job_output_dir else None
+
         # Commonly resolved paths
         self.input_list = Path(args.input_list).resolve() if hasattr(args, 'input_list') and args.input_list else None
         self.condor_script = Path(args.condor_script).resolve() if hasattr(args, 'condor_script') and args.condor_script else None
@@ -68,6 +70,8 @@ class CondorJobManager:
         if hasattr(self.args, 'dbtag'):
             self.logger.info(f'DB Tag: {self.args.dbtag}')
         self.logger.info(f'Output Directory: {self.output_dir}')
+        if self.job_output_dir:
+            self.logger.info(f'Job Output Directory: {self.job_output_dir}')
         self.logger.info(f'Log File: {self.log_file}')
         if hasattr(self.args, 'memory'):
             self.logger.info(f'Condor Memory: {self.args.memory} GB')
@@ -89,9 +93,21 @@ class CondorJobManager:
             shutil.rmtree(self.condor_log_dir, ignore_errors=True)
             self.condor_log_dir.mkdir(parents=True, exist_ok=True)
 
-        for subdir in ['stdout', 'error', 'output']:
+        for subdir in ['stdout', 'error']:
             shutil.rmtree(self.output_dir / subdir, ignore_errors=True)
             (self.output_dir / subdir).mkdir(parents=True, exist_ok=True)
+
+        output_symlink = self.output_dir / 'output'
+        if self.job_output_dir:
+            self.job_output_dir.mkdir(parents=True, exist_ok=True)
+            if output_symlink.is_symlink() or output_symlink.is_file():
+                output_symlink.unlink()
+            elif output_symlink.is_dir():
+                shutil.rmtree(output_symlink)
+            output_symlink.symlink_to(self.job_output_dir, target_is_directory=True)
+        else:
+            shutil.rmtree(output_symlink, ignore_errors=True)
+            output_symlink.mkdir(parents=True, exist_ok=True)
 
         files_dir = self.output_dir / 'files'
         files_dir.mkdir(parents=True, exist_ok=True)
