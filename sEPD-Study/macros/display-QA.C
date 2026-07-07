@@ -58,10 +58,10 @@ class DisplayQA
     : m_output_dir(std::move(output_dir))
     , m_saveFig(saveFig)
   {
-    m_pearson_thresholds["EMCal_MBD"] = 0.96;
+    m_pearson_thresholds["EMCal_MBD"] = 0.95;
     m_pearson_thresholds["EMCal_sEPD"] = 0.98;
     m_pearson_thresholds["IHCal_sEPD"] = 0.98;
-    m_pearson_thresholds["OHCal_sEPD"] = 0.98;
+    m_pearson_thresholds["OHCal_sEPD"] = 0.97;
     m_pearson_thresholds["EMCal_OHCal"] = 0.98;
     m_pearson_thresholds["IHCal_OHCal"] = 0.98;
     m_pearson_thresholds["sEPD_MBD"] = 0.97;
@@ -118,7 +118,7 @@ class DisplayQA
   const double m_default_pearson = 0.95;
   const double m_mb_frac_threshold = 0.35;
   const double m_zvtx_threshold = 10.0;
-  const int m_bad_tower_emcal_threshold = 30;
+  const int m_bad_tower_emcal_threshold = 15;
   const int m_bad_tower_ohcal_threshold = 10;
 
   // Helper to get specific or default threshold
@@ -1061,7 +1061,7 @@ void DisplayQA::print_summary_report() const
   std::cout << std::format("{:^55}\n", "PRIMARY REASONS FOR FAILURE");
   std::cout << std::format("{:<40} : {:>10}\n", "Failed Z-Vertex (|Avg Z| > 10 cm)", failed_z);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed Calorimeter (Pearson Threshold)", failed_calo);
-  std::cout << std::format("{:<40} : {:>10}\n", "Failed EMCal Bad Towers (> 30)", failed_bad_emcal_towers);
+  std::cout << std::format("{:<40} : {:>10}\n", "Failed EMCal Bad Towers (> 15)", failed_bad_emcal_towers);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed OHCal Bad Towers (> 10)", failed_bad_ohcal_towers);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed MB Fraction (< 35%)", failed_mb);
   std::cout << std::string(55, '=') << "\n\n";
@@ -1091,7 +1091,7 @@ void DisplayQA::draw()
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/05-17-26/test-all.list";
+  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/07-05-26/test.list";
 
   std::vector<std::string> hist_types = {"event", "centrality", "ZVertex", "calo"};
   // std::vector<std::string> hist_types = {};
@@ -1110,7 +1110,7 @@ void DisplayQA::draw()
   {
     std::string line;
 
-    int test_ctr = 2000;
+    int test_ctr = 3000;
     int run_ctr = 0;
 
     while (std::getline(file, line) && run_ctr < test_ctr)
