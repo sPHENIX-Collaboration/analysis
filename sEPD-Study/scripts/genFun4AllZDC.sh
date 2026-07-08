@@ -25,7 +25,7 @@ then
     # print the environment - needed for debugging
     printenv
 
-    echo "Fetching all DST files at once..."
+    echo "Fetching all DST files at once from: $input_list"
     # Transfer all files in the list upfront
     cut -d ',' -f 2 "$input_list" > dst_zdc.list
     getinputfiles.pl --verbose --filelist dst_zdc.list

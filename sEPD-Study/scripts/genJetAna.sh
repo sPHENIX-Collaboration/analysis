@@ -23,7 +23,7 @@ then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
     mkdir input
 
-    echo "Copying files from list..."
+    echo "Copying files from list: $input"
     cat "$input" | xargs -I {} -P 4 cp -v {} input/
 
     realpath input/* > "$input_file"

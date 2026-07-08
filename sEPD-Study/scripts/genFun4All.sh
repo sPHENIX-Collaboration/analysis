@@ -32,6 +32,8 @@ if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
 
+    echo "Reading inputs from: $input"
+
     cut -d ',' -f 1 "$input" > dst_calofit.list
     cut -d ',' -f 2 "$input" > dst_zdc.list
     cut -d ',' -f 3 "$input" > dst_sepd.list
