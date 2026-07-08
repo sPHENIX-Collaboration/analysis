@@ -130,7 +130,7 @@ class JetAnalysis
   static constexpr std::array<QComponent, 2> m_components = {QComponent::X, QComponent::Y};
 
   // Min Jet pT [GeV]
-  static constexpr std::array<int, 6> m_jet_pt_vec = {15, 20, 25, 35, 45, 100};
+  static constexpr std::array<int, 9> m_jet_pt_vec = {15, 20, 25, 30, 35, 40, 45, 50, 100};
 
   //centrality bins
   static constexpr std::array<int, 7> m_cent_bins = {0, 10, 20, 30, 40, 50, 60};
@@ -314,6 +314,7 @@ class JetAnalysis
     bool pass_calov2{false};
     bool pass_MaxPt{false};
     bool pass_all{false};
+    bool pass_all_no_maxpt{false};
 
     std::vector<double>* jet_energy{nullptr};
     std::vector<double>* jet_pt{nullptr};
@@ -1339,7 +1340,7 @@ void JetAnalysis::init_hists()
 
 void JetAnalysis::compute_SP_resolution()
 {
-  if (!(m_event_data.pass_cent && m_event_data.pass_QVec))
+  if (!m_event_data.pass_all_no_maxpt)
   {
     return;
   }
@@ -1985,7 +1986,8 @@ void JetAnalysis::process_event_check()
   ed.pass_calov2   = std::abs(ed.calo_v2) < m_calo_v2_max;
   ed.pass_MaxPt    = m_isData || !check_MaxPt();
 
-  ed.pass_all = ed.pass_cent && ed.pass_calo_mbd && ed.pass_flow && ed.pass_QVec && ed.pass_calov2 && ed.pass_MaxPt;
+  ed.pass_all_no_maxpt = ed.pass_cent && ed.pass_calo_mbd && ed.pass_flow && ed.pass_QVec && ed.pass_calov2;
+  ed.pass_all = ed.pass_all_no_maxpt && ed.pass_MaxPt;
 
   m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10_MB));
 
