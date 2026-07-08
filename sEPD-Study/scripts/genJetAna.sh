@@ -14,7 +14,7 @@ jet_radius_type=${6}
 submitDir=${7}
 
 # extract runnumber from file name
-run=$(head -n 1 "$input" | grep -oP 'output/\K\d+(?=/tree)')
+run=$(head -n 1 "$input" | grep -oP '(?<=/)\d+(?=/tree/)')
 input_file=$(basename "$input")
 input_f4a_qa_file=$(basename "$input_f4a_qa")
 

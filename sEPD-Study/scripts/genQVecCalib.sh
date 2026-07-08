@@ -15,7 +15,7 @@ CalibType=${6}
 submitDir=${7}
 
 # extract runnumber from file name
-run=$(echo "$input" | grep -oP 'output/\K\d+(?=/tree)')
+run=$(echo "$input" | grep -oP '(?<=/)\d+(?=/tree/)')
 input_file=$(basename "$input")
 QAhist_file=$(basename "$QAhist")
 QVecCalibHist_file=$(basename "$QVecCalibHist")
