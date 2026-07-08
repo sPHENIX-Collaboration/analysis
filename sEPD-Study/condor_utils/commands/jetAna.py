@@ -23,6 +23,7 @@ def jetAna_jobs(args):
     condor_memory   = args.memory
     condor_script   = Path(args.condor_script).resolve()
     condor_log_dir  = Path(args.condor_log_dir).resolve()
+    common_errors   = Path(args.common_errors).resolve()
 
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = setup_logging(log_file, logging.DEBUG)
@@ -36,7 +37,7 @@ def jetAna_jobs(args):
         logger.critical(f'Invalid jet_radius_type: {jet_radius_type}')
         sys.exit(1)
 
-    for f in [input_list, f4a_qa_list, condor_script, jetAna_bin]:
+    for f in [input_list, f4a_qa_list, condor_script, jetAna_bin, common_errors]:
         if not f.is_file():
             logger.critical(f'File: {f} does not exist!')
             sys.exit(1)
@@ -56,6 +57,7 @@ def jetAna_jobs(args):
     logger.info(f'Condor Memory: {condor_memory} GB')
     logger.info(f'Condor Script: {condor_script}')
     logger.info(f'Condor Log Directory: {condor_log_dir}')
+    logger.info(f'Common Errors File: {common_errors}')
 
     if condor_log_dir.is_dir():
         shutil.rmtree(condor_log_dir)
@@ -69,6 +71,7 @@ def jetAna_jobs(args):
     shutil.copy(jetAna_macro, output_dir)
     jetAna_bin = shutil.copy(jetAna_bin, output_dir)
     shutil.copy(condor_script, output_dir)
+    shutil.copy(common_errors, output_dir)
 
     run_paths = [Path(l.strip()) for l in f4a_qa_list.read_text(encoding='utf-8').splitlines()]
     run_map = {p.stem: str(p) for p in run_paths}
@@ -135,4 +138,5 @@ def setup_jetAna_subparsers(subparsers):
     jetAna.add_argument('-m', '--max-retries', type=int, default=3, help='Max Condor job retries on failure. Default: 3.')
     jetAna.add_argument('-l', '--condor-log-dir', type=str, default='/tmp/anarde/dump', help='Condor Log Directory.')
     jetAna.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAna.sh', help='Condor Script.')
+    jetAna.add_argument('-f4', '--common-errors', type=str, default='files/common-errors.txt', help='Common Errors.')
     jetAna.set_defaults(func=jetAna_jobs)
