@@ -905,7 +905,7 @@ void DisplayJetAna::draw()
   std::vector<HistConfig> histInfo = {{40, 0, 4e-4},
                                       {40, -8e-5, 8e-5},
                                       {40, -8e-5, 8e-5}
-                                     }; 
+                                     };
   for (size_t n_idx = 0; n_idx < m_harmonics.size(); ++n_idx)
   {
     int n = m_harmonics[n_idx];
