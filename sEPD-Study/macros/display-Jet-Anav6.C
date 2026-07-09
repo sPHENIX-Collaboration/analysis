@@ -88,6 +88,7 @@ void DisplayJetAnav6::read_hists()
   std::string base_path_f4a = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a";
 
   std::string input = std::format("{}/07-08-26-r03/test.root", base_path_jetAna);
+  std::string input_r02 = std::format("{}/07-08-26-r02/test.root", base_path_jetAna);
   std::string input_f4a = std::format("{}/07-05-26/test.root", base_path_f4a);
   std::string input_68144 = std::format("{}/07-07-26/merged/output/68144.root", base_path_jetAna);
 
@@ -95,9 +96,9 @@ void DisplayJetAnav6::read_hists()
                                            "h2CaloV2JetPt", "h2CentralityJetPt",
                                            "hJetPt", "hJetPtv2", "hJetPtv3",
                                            "hJetPt_raw", "hJetPtv2_raw", "hJetPtv3_raw",
-                                           "h2ScalarProduct_2_pt_15_20", "h2ScalarProduct_2_pt_20_25", "h2ScalarProduct_2_pt_25_30",
-                                           "h2ScalarProduct_2_pt_30_35", "h2ScalarProduct_2_pt_35_40", "h2ScalarProduct_2_pt_40_45",
-                                           "h2ScalarProduct_2_pt_45_50", "h2RefFlow_2",
+                                           "h2ScalarProductv1_2_pt_15_20", "h2ScalarProductv1_2_pt_20_25", "h2ScalarProductv1_2_pt_25_30",
+                                           "h2ScalarProductv1_2_pt_30_35", "h2ScalarProductv1_2_pt_35_40", "h2ScalarProductv1_2_pt_40_45",
+                                           "h2ScalarProductv1_2_pt_45_50", "h2RefFlow_2",
                                            "h2CaloV2JetPt", "h2CentralityJetPt",
                                            "h2EvtRes_2",
                                            "h2_sEPD_Psi_S_2_raw", "h2_sEPD_Psi_N_2_raw",
@@ -111,7 +112,8 @@ void DisplayJetAnav6::read_hists()
                                                  "h2_sEPD_Psi_S_2_recentered", "h2_sEPD_Psi_N_2_recentered",
                                                  "h2_sEPD_Psi_S_2_flat", "h2_sEPD_Psi_N_2_flat"};
 
-  m_hists = myUtils::read_hists(input, "", &names);
+  m_hists = myUtils::read_hists(input, "_r03", &names);
+  m_hists.merge(myUtils::read_hists(input_r02, "_r02", &names));
 
   m_hists.merge(myUtils::read_hists(input_f4a, "_f4a", &names_f4a));
 
@@ -187,6 +189,7 @@ void DisplayJetAnav6::draw()
     double ylow{0};
     double yhigh{0};
     double zlow{0};
+    double zhigh{0};
     int ydigits{0};
     bool add_tprof{false};
   };
@@ -230,6 +233,11 @@ void DisplayJetAnav6::draw()
     else
     {
       hist->SetMinimum(1);
+    }
+
+    if (opts.zhigh)
+    {
+      hist->SetMaximum(opts.zhigh);
     }
 
     c1->Print(output.c_str(), "pdf portrait");
@@ -426,11 +434,11 @@ void DisplayJetAnav6::draw()
     gPad->SetLogz();
     margins_TH2();
 
-    auto* h2CaloECentrality_default = dynamic_cast<TH2*>(m_hists["h2CaloECentrality_default"].get());
-    auto* h2CaloECentrality = dynamic_cast<TH2*>(m_hists["h2CaloECentrality"].get());
-    auto* h2CentralityCaloV2 = dynamic_cast<TH2*>(m_hists["h2CentralityCaloV2"].get());
-    auto* h2CaloV2JetPt = dynamic_cast<TH2*>(m_hists["h2CaloV2JetPt"].get());
-    auto* h2CentralityJetPt = dynamic_cast<TH2*>(m_hists["h2CentralityJetPt"].get());
+    auto* h2CaloECentrality_default = dynamic_cast<TH2*>(m_hists["h2CaloECentrality_default_r03"].get());
+    auto* h2CaloECentrality = dynamic_cast<TH2*>(m_hists["h2CaloECentrality_r03"].get());
+    auto* h2CentralityCaloV2 = dynamic_cast<TH2*>(m_hists["h2CentralityCaloV2_r03"].get());
+    auto* h2CaloV2JetPt = dynamic_cast<TH2*>(m_hists["h2CaloV2JetPt_r03"].get());
+    auto* h2CentralityJetPt = dynamic_cast<TH2*>(m_hists["h2CentralityJetPt_r03"].get());
 
     double all_evts = h2CaloECentrality_default->Integral();
     double filtered_evts = h2CaloECentrality->Integral();
@@ -480,94 +488,118 @@ void DisplayJetAnav6::draw()
     c1->SetTopMargin(.03F);
     gPad->SetLogy();
 
-    auto* hJetPt = m_hists["hJetPt"].get();
-    auto* hJetPtv2 = m_hists["hJetPtv2"].get();
-    auto* hJetPtv3 = m_hists["hJetPtv3"].get();
-
-    auto* hJetPt_raw = m_hists["hJetPt_raw"].get();
-    auto* hJetPtv2_raw = m_hists["hJetPtv2_raw"].get();
-    auto* hJetPtv3_raw = m_hists["hJetPtv3_raw"].get();
-
-    hJetPt->Draw("HIST");
-    hJetPtv2->Draw("same HIST");
-    hJetPtv3->Draw("same HIST");
-
-    hJetPt_raw->Draw("same HIST");
-    hJetPtv2_raw->Draw("same HIST");
-    hJetPtv3_raw->Draw("same HIST");
-
-    hJetPt->SetLineColor(kRed);
-    hJetPtv2->SetLineColor(kBlue);
-    hJetPtv3->SetLineColor(kGreen+3);
-
-    hJetPt_raw->SetLineColor(kRed);
-    hJetPtv2_raw->SetLineColor(kBlue);
-    hJetPtv3_raw->SetLineColor(kGreen+3);
-
-    hJetPt->SetLineWidth(3);
-    hJetPtv2->SetLineWidth(3);
-    hJetPtv3->SetLineWidth(3);
-
-    hJetPt_raw->SetLineWidth(3);
-    hJetPtv2_raw->SetLineWidth(3);
-    hJetPtv3_raw->SetLineWidth(3);
-
-    hJetPt_raw->SetLineStyle(kDashed);
-    hJetPtv2_raw->SetLineStyle(kDashed);
-    hJetPtv3_raw->SetLineStyle(kDashed);
-
-    hJetPt->SetTitle("");
-
-    hJetPt->GetYaxis()->SetTitle("Jets / 1 GeV");
-    hJetPt->GetYaxis()->SetTitleOffset(1.1F);
-    hJetPt->GetXaxis()->SetTitleOffset(1.1F);
-
-    double ymax = hJetPt->GetMaximum()*2;
-    double ymin = 5e-1;
-    hJetPt->GetYaxis()->SetRangeUser(ymin, ymax);
-
-    double xshift = 0.2;
-    double yshift = 0.25;
-
-    std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .5 + yshift, 0.4 + xshift, .7 + yshift);
-    leg->SetFillStyle(0);
-    leg->SetTextSize(0.04F);
-    leg->AddEntry(hJetPt, "All", "l");
-    leg->AddEntry(hJetPtv2, "Energy > 0 GeV", "l");
-    leg->AddEntry(hJetPtv3, "|calo v_{2}| < 0.48", "l");
-    leg->Draw("same");
-
-    std::vector<std::unique_ptr<TLatex>> labels;
-    double lx = 0.7;
-    double ly = 0.9;
-
-    std::vector<std::string> lines = {
-        "Events Selections",
-        "- |z| < 10 cm",
-        "- MB",
-        "- Centrality: 0-60%",
-        "- Good Calo-Cent",
-        "- No Flow Failure"
+    struct PlotOptions
+    {
     };
 
-    float line_spacing = 0.06F;
-    for (size_t i = 0; i < lines.size(); ++i)
+    auto plotAndSave = [&](const std::vector<TH1*>& hists, const std::string& name, PlotOptions opts = {})
     {
-      labels.push_back(myUtils::draw_text(lx, ly - (static_cast<float>(i) * line_spacing), lines[i], 0.04F));
-    }
+      auto* hJetPt = hists[0];
+      auto* hJetPtv2 = hists[1];
+      auto* hJetPtv3 = hists[2];
 
-    double jets_20GeV_above = hJetPtv3->Integral(hJetPtv3->FindBin(20), -1);
-    double jets_40GeV_above = hJetPtv3->Integral(hJetPtv3->FindBin(40), -1);
+      auto* hJetPt_raw = hists[3];
+      auto* hJetPtv2_raw = hists[4];
+      auto* hJetPtv3_raw = hists[5];
 
-    std::cout << std::format("Jet pT >= 20 GeV: {}, Jet pT >= 40 GeV: {}\n", jets_20GeV_above, jets_40GeV_above);
+      hJetPt->Draw("HIST");
+      hJetPtv2->Draw("same HIST");
+      hJetPtv3->Draw("same HIST");
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay").c_str());
+      hJetPt_raw->Draw("same HIST");
+      hJetPtv2_raw->Draw("same HIST");
+      hJetPtv3_raw->Draw("same HIST");
 
-    hJetPt->GetXaxis()->SetRangeUser(0, 100);
+      hJetPt->SetLineColor(kRed);
+      hJetPtv2->SetLineColor(kBlue);
+      hJetPtv3->SetLineColor(kGreen + 3);
 
-    c1->Print(output.c_str(), "pdf portrait");
-    if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, "hJetPt-overlay-zoom").c_str());
+      hJetPt_raw->SetLineColor(kRed);
+      hJetPtv2_raw->SetLineColor(kBlue);
+      hJetPtv3_raw->SetLineColor(kGreen + 3);
+
+      hJetPt->SetLineWidth(3);
+      hJetPtv2->SetLineWidth(3);
+      hJetPtv3->SetLineWidth(3);
+
+      hJetPt_raw->SetLineWidth(3);
+      hJetPtv2_raw->SetLineWidth(3);
+      hJetPtv3_raw->SetLineWidth(3);
+
+      hJetPt_raw->SetLineStyle(kDashed);
+      hJetPtv2_raw->SetLineStyle(kDashed);
+      hJetPtv3_raw->SetLineStyle(kDashed);
+
+      hJetPt->SetTitle("");
+
+      hJetPt->GetYaxis()->SetTitle("Jets / 1 GeV");
+      hJetPt->GetYaxis()->SetTitleOffset(1.1F);
+      hJetPt->GetXaxis()->SetTitleOffset(1.1F);
+
+      double ymax = hJetPt->GetMaximum() * 2;
+      double ymin = 5e-1;
+      hJetPt->GetYaxis()->SetRangeUser(ymin, ymax);
+
+      double xshift = 0.2;
+      double yshift = 0.25;
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.2 + xshift, .5 + yshift, 0.4 + xshift, .7 + yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.04F);
+      leg->AddEntry(hJetPt, "All", "l");
+      leg->AddEntry(hJetPtv2, "Energy > 0 GeV", "l");
+      leg->AddEntry(hJetPtv3, "|calo v_{2}| < 0.48", "l");
+      leg->Draw("same");
+
+      std::vector<std::unique_ptr<TLatex>> labels;
+      double lx = 0.7;
+      double ly = 0.9;
+
+      std::vector<std::string> lines = {"Events Selections",
+                                        "- |z| < 10 cm",
+                                        "- MB",
+                                        "- Centrality: 0-60%",
+                                        "- Good Calo-Cent",
+                                        "- No Flow Failure"};
+
+      float line_spacing = 0.06F;
+      for (size_t i = 0; i < lines.size(); ++i)
+      {
+        labels.push_back(myUtils::draw_text(lx, ly - (static_cast<float>(i) * line_spacing), lines[i], 0.04F));
+      }
+
+      double jets_20GeV_above = hJetPtv3->Integral(hJetPtv3->FindBin(20), -1);
+      double jets_40GeV_above = hJetPtv3->Integral(hJetPtv3->FindBin(40), -1);
+
+      std::cout << std::format("Jet pT >= 20 GeV: {}, Jet pT >= 40 GeV: {}\n", jets_20GeV_above, jets_40GeV_above);
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
+
+      hJetPt->GetXaxis()->SetRangeUser(0, 100);
+
+      c1->Print(output.c_str(), "pdf portrait");
+      if (m_saveFig) c1->Print(std::format("{}/images/{}-zoom.png", m_output_dir, name).c_str());
+    };
+
+    auto* hJetPt_r02 = m_hists["hJetPt_r02"].get();
+    auto* hJetPtv2_r02 = m_hists["hJetPtv2_r02"].get();
+    auto* hJetPtv3_r02 = m_hists["hJetPtv3_r02"].get();
+
+    auto* hJetPt_raw_r02 = m_hists["hJetPt_raw_r02"].get();
+    auto* hJetPtv2_raw_r02 = m_hists["hJetPtv2_raw_r02"].get();
+    auto* hJetPtv3_raw_r02 = m_hists["hJetPtv3_raw_r02"].get();
+
+    auto* hJetPt_r03 = m_hists["hJetPt_r03"].get();
+    auto* hJetPtv2_r03 = m_hists["hJetPtv2_r03"].get();
+    auto* hJetPtv3_r03 = m_hists["hJetPtv3_r03"].get();
+
+    auto* hJetPt_raw_r03 = m_hists["hJetPt_raw_r03"].get();
+    auto* hJetPtv2_raw_r03 = m_hists["hJetPtv2_raw_r03"].get();
+    auto* hJetPtv3_raw_r03 = m_hists["hJetPtv3_raw_r03"].get();
+
+    plotAndSave({hJetPt_r02, hJetPtv2_r02, hJetPtv3_r02, hJetPt_raw_r02, hJetPtv2_raw_r02, hJetPtv3_raw_r02}, "hJetPt-overlay-r02");
+    plotAndSave({hJetPt_r03, hJetPtv2_r03, hJetPtv3_r03, hJetPt_raw_r03, hJetPtv2_raw_r03, hJetPtv3_raw_r03}, "hJetPt-overlay-r03");
 
     gPad->SetLogy(0);
   }
@@ -578,7 +610,7 @@ void DisplayJetAnav6::draw()
     margins_TH1();
     c1->SetTopMargin(.06F);
 
-    auto* h2RefFlow = dynamic_cast<TH2*>(m_hists["h2RefFlow_2"].get());
+    auto* h2RefFlow = dynamic_cast<TH2*>(m_hists["h2RefFlow_2_r03"].get());
 
     auto* hRefFlow = h2RefFlow->ProfileX()->ProjectionX();
 
@@ -627,19 +659,26 @@ void DisplayJetAnav6::draw()
     c1->SetTopMargin(0.09F);
     c1->SetLeftMargin(1.4F);
 
-    auto* h2RefFlow = dynamic_cast<TH2*>(m_hists["h2RefFlow_2"].get());
+    auto* h2RefFlow = dynamic_cast<TH2*>(m_hists["h2RefFlow_2_r03"].get());
 
     plotAndSaveTH2(h2RefFlow, "h2RefFlow", {.yoffset = 1.4F, .ydigits = 3, .add_tprof = true});
     plotAndSaveTH2(h2RefFlow, "h2RefFlow-zoom", {.yoffset = 1.3F, .yhigh = 4e-4, .ydigits = 3, .add_tprof = true});
 
     for (const auto& type : {"15_20", "20_25", "25_30", "30_35", "35_40", "40_45", "45_50"})
     {
-      std::string name = std::format("h2ScalarProduct_2_pt_{}", type);
-      std::string name_zoom = std::format("h2ScalarProduct_2_pt_{}-zoom", type);
+      std::string name = std::format("h2ScalarProductv1_2_pt_{}_r02", type);
+      std::string name_zoom = std::format("h2ScalarProductv1_2_pt_{}_r02-zoom", type);
       auto* h2 = dynamic_cast<TH2*>(m_hists[name].get());
 
-      plotAndSaveTH2(h2, name, {.yoffset = 1.3F, .ydigits = 3, .add_tprof = true});
-      plotAndSaveTH2(h2, name_zoom, {.yoffset = 1.3F, .yhigh = 8e-3, .ydigits = 3, .add_tprof = true});
+      plotAndSaveTH2(h2, name, {.yoffset = 1.3F, .zhigh = 1e4, .ydigits = 3, .add_tprof = true});
+      plotAndSaveTH2(h2, name_zoom, {.yoffset = 1.3F, .yhigh = 8e-3, .zhigh = 1e4, .ydigits = 3, .add_tprof = true});
+
+      name = std::format("h2ScalarProductv1_2_pt_{}_r03", type);
+      name_zoom = std::format("h2ScalarProductv1_2_pt_{}_r03-zoom", type);
+      h2 = dynamic_cast<TH2*>(m_hists[name].get());
+
+      plotAndSaveTH2(h2, name, {.yoffset = 1.3F, .zhigh = 1e4, .ydigits = 3, .add_tprof = true});
+      plotAndSaveTH2(h2, name_zoom, {.yoffset = 1.3F, .yhigh = 8e-3, .zhigh = 1e4, .ydigits = 3, .add_tprof = true});
     }
   }
 
@@ -656,18 +695,28 @@ void DisplayJetAnav6::draw()
       float yoffset{1.F};
     };
 
-    auto plotAndSave = [&](TH1* hist, const std::string& name, PlotOptions opts = {})
+    auto plotAndSave = [&](TH1* hist_r03, TH1* hist_r02, const std::string& name, PlotOptions opts = {})
     {
-      hist->Draw();
+      hist_r03->Draw();
+      hist_r02->Draw("same");
 
-      hist->SetLineColor(kBlue);
-      hist->SetMarkerColor(kBlue);
-      hist->SetMarkerStyle(kFullDotLarge);
-      hist->SetLineWidth(3);
+      hist_r03->SetLineColor(kBlue);
+      hist_r03->SetMarkerColor(kBlue);
+      hist_r03->SetMarkerStyle(kFullDotLarge);
+      hist_r03->SetMarkerSize(2);
+      hist_r03->SetLineWidth(3);
 
-      hist->GetYaxis()->SetMaxDigits(3);
-      hist->GetYaxis()->SetTitle(opts.ytitle.c_str());
-      hist->GetYaxis()->SetTitleOffset(opts.yoffset);
+      hist_r02->SetLineColor(kRed);
+      hist_r02->SetMarkerColor(kRed);
+      hist_r02->SetMarkerStyle(kOpenSquare);
+      hist_r02->SetMarkerSize(2);
+      hist_r02->SetLineWidth(3);
+
+      hist_r03->GetYaxis()->SetMaxDigits(3);
+      hist_r03->GetYaxis()->SetTitle(opts.ytitle.c_str());
+      hist_r03->GetYaxis()->SetTitleOffset(opts.yoffset);
+      hist_r03->GetXaxis()->SetTitleOffset(1.2F);
+      hist_r03->GetXaxis()->SetLabelSize(0.05F);
 
       gPad->Update();  // Forces ROOT to generate the title object
 
@@ -682,13 +731,24 @@ void DisplayJetAnav6::draw()
 
       if (opts.yhigh)
       {
-        hist->GetYaxis()->SetRangeUser(0, opts.yhigh);
+        hist_r03->GetYaxis()->SetRangeUser(0, opts.yhigh);
       }
       else
       {
-        double ymax = hist->GetMaximum() * 1.1;
-        hist->GetYaxis()->SetRangeUser(0, ymax);
+        double ymax = std::max(hist_r03->GetMaximum(), hist_r02->GetMaximum()) * 1.1;
+        double ymin = std::min(0.0, std::min(hist_r03->GetMinimum(), hist_r02->GetMinimum()));
+        hist_r03->GetYaxis()->SetRangeUser(ymin, ymax);
       }
+
+      double xshift = -0.5;
+      double yshift = 0;
+
+      std::unique_ptr<TLegend> leg = std::make_unique<TLegend>(0.65+xshift, 0.7+yshift, 0.85+xshift, 0.85+yshift);
+      leg->SetFillStyle(0);
+      leg->SetTextSize(0.08F);
+      leg->AddEntry(hist_r02, "R = 0.2", "pl");
+      leg->AddEntry(hist_r03, "R = 0.3", "pl");
+      leg->Draw("same");
 
       c1->Print(output.c_str(), "pdf portrait");
       if (m_saveFig) c1->Print(std::format("{}/images/{}.png", m_output_dir, name).c_str());
@@ -699,24 +759,33 @@ void DisplayJetAnav6::draw()
 
     for (const auto& type : {"15_20", "20_25", "25_30", "30_35", "35_40", "40_45", "45_50"})
     {
-      std::string name = std::format("h2ScalarProduct_2_pt_{}", type);
-      auto* h2 = dynamic_cast<TH2*>(m_hists[name].get());
-      h2->GetYaxis()->SetRange(0,0);
+      std::string name_r03 = std::format("h2ScalarProductv1_2_pt_{}_r03", type);
+      auto* h2_r03 = dynamic_cast<TH2*>(m_hists[name_r03].get());
+      h2_r03->GetYaxis()->SetRange(0,0);
 
-      std::string ytitle = h2->GetYaxis()->GetTitle();
+      std::string ytitle = h2_r03->GetYaxis()->GetTitle();
 
-      auto* hist = h2->ProfileX();
+      auto* hist_r03 = h2_r03->ProfileX();
+      std::string name_v2_r03 = std::format("hJetV2_pt_{}_r03", type);
+      auto* hist_v2_r03 = hist_r03->ProjectionX(name_v2_r03.c_str());
+      hist_v2_r03->Divide(hRefFlow);
 
-      std::string name_v2 = std::format("hJetV2_pt_{}", type);
-      auto* hist_v2 = hist->ProjectionX(name_v2.c_str());
+      std::string name_r02 = std::format("h2ScalarProductv1_2_pt_{}_r02", type);
+      auto* h2_r02 = dynamic_cast<TH2*>(m_hists[name_r02].get());
+      h2_r02->GetYaxis()->SetRange(0,0);
 
-      hist_v2->Divide(hRefFlow);
+      std::string pfx_name_r02 = std::format("{}_pfx_r02", name_r02);
+      auto* hist_r02 = h2_r02->ProfileX(pfx_name_r02.c_str());
+      std::string name_v2_r02 = std::format("hJetV2_pt_{}_r02", type);
+      auto* hist_v2_r02 = hist_r02->ProjectionX(name_v2_r02.c_str());
+      hist_v2_r02->Divide(hRefFlow);
 
       ytitle = "#LT" + ytitle + "#GT";
-      name = std::format("hScalarProduct-pt-{}", type);
+      std::string name_out = std::format("hScalarProduct-pt-{}-overlay", type);
+      std::string name_v2_out = std::format("hJetV2_pt_{}-overlay", type);
 
-      plotAndSave(hist, name, {.ytitle = ytitle});
-      plotAndSave(hist_v2, name_v2, {.ytitle = "Jet v_{2}", .yhigh = 0.5, .yoffset = 1.2F});
+      plotAndSave(hist_r03, hist_r02, name_out, {.ytitle = ytitle});
+      plotAndSave(hist_v2_r03, hist_v2_r02, name_v2_out, {.ytitle = "Jet v_{2}", .yhigh = 0.5, .yoffset = 1.2F});
     }
   }
 
