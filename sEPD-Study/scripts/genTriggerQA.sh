@@ -22,6 +22,8 @@ run=$(echo "$p2" | sed 's/^0*//') # Remove leading zeros using sed
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
+    echo "Reading inputs from: $input"
+
     cut -d ',' -f 1 "$input" > dst_calofit.list
     getinputfiles.pl --verbose --filelist dst_calofit.list
     ls -lah

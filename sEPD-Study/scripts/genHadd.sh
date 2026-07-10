@@ -17,6 +17,7 @@ output_dir=${3}
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
 then
     cd "$_CONDOR_SCRATCH_DIR" || { echo "Failed to cd to $_CONDOR_SCRATCH_DIR" >&2; exit 1; }
+    echo "Reading inputs from: $input_list_file"
 else
     echo "condor scratch NOT set" >&2
     exit 1
