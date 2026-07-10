@@ -60,7 +60,7 @@ int TriggerQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   se->registerHisto(hZVertex_Trig14);
 
   // Lumi Labels
-  std::vector<std::string> lumiType{"|z| < 10 cm & MBD Trig", "|z| < 10 cm"};
+  std::vector<std::string> lumiType{"|z| < 10 cm & MBD Trig", "|z| < 10 cm", "|z| < 10 cm & Trig 12", "|z| < 10 cm & Trig 14", "|z| < 10 cm & Trig 10"};
 
   hLuminosity = new TH1F("hLuminosity", "; Type; Luminosity [nb^{-1}]", lumiType.size(), 0, lumiType.size());
   for (unsigned int i = 0; i < lumiType.size(); ++i)
@@ -193,10 +193,6 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
-  uint64_t raw10 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_10);
-  uint64_t raw12 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_12);
-  uint64_t raw14 = m_triggerAnalyzer->getTriggerRawScalers(m_trig_14);
-
   int prescale_10 = m_triggerAnalyzer->getTriggerPrescale(m_trig_10);
   int prescale_12 = m_triggerAnalyzer->getTriggerPrescale(m_trig_12);
   int prescale_14 = m_triggerAnalyzer->getTriggerPrescale(m_trig_14);
@@ -208,42 +204,39 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
   // default
   double lumi_trig = 0.0;
   double lumi_vtx = 0.0;
+  double lumi_trig12 = 0.0;
+  double lumi_trig14 = 0.0;
+  double lumi_trig10 = 0.0;
 
-  // Protect against division by zero. We absolutely need raw12 for the numerator.
-  if (raw12 > 0)
+  double sigma_mbd = 6.324;
+
+  // Calculate and select the best available trigger luminosity.
+  // By using an if-else chain, only the chosen trigger gets a non-zero value,
+  // ensuring that the sum of the individual contributions equals the total lumi_trig.
+  if (prescale_12 > 0)
   {
-    // Use raw14 as the wide baseline, but fall back to raw10 if raw14 is completely dead at the hardware level
-    double raw_wide = (raw14 > 0) ? static_cast<double>(raw14) : static_cast<double>(raw10);
-
-    if (raw_wide > 0)
-    {
-      double zfraction = static_cast<double>(raw12) / raw_wide;
-      double sigma_mbd = 6.324;
-      double sigma_narrow = sigma_mbd * zfraction;
-
-      // 1st Choice: Standard Narrow Trigger
-      if (prescale_12 > 0)
-      {
-        lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12) + 1) / sigma_narrow * 1e-9;
-      }
-      // 2nd Choice: Salvage with Wide Trigger
-      else if (prescale_14 > 0)
-      {
-        lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG14) + 1) / sigma_narrow * 1e-9;
-      }
-      // 3rd Choice: Salvage with Inclusive MB Trigger
-      else if (prescale_10 > 0)
-      {
-        lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG10) + 1) / sigma_narrow * 1e-9;
-      }
-
-      // VTX-only calculation (ignores trigger prescale statuses)
-      lumi_vtx = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10) + 1) / sigma_narrow * 1e-9;
-    }
+    lumi_trig12 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12) + 1) / sigma_mbd * 1e-9;
+    lumi_trig = lumi_trig12;
   }
+  else if (prescale_14 > 0)
+  {
+    lumi_trig14 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG14) + 1) / sigma_mbd * 1e-9;
+    lumi_trig = lumi_trig14;
+  }
+  else if (prescale_10 > 0)
+  {
+    lumi_trig10 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG10) + 1) / sigma_mbd * 1e-9;
+    lumi_trig = lumi_trig10;
+  }
+
+  // VTX-only calculation (ignores trigger prescale statuses)
+  lumi_vtx = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10) + 1) / sigma_mbd * 1e-9;
 
   hLuminosity->SetBinContent(1, lumi_trig);
   hLuminosity->SetBinContent(2, lumi_vtx);
+  hLuminosity->SetBinContent(3, lumi_trig12);
+  hLuminosity->SetBinContent(4, lumi_trig14);
+  hLuminosity->SetBinContent(5, lumi_trig10);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
