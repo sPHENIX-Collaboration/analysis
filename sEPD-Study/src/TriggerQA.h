@@ -58,9 +58,9 @@ class TriggerQA : public SubsysReco
     ZVTX10_TRIG14
   };
 
-  const std::string m_trig_10 = "MBD N&S >= 2";
-  const std::string m_trig_12 = "MBD N&S >= 2, vtx < 10 cm";
-  const std::string m_trig_14 = "MBD N&S >= 2, vtx < 150 cm";
+  const int m_trig_10 = 10;
+  const int m_trig_12 = 12;
+  const int m_trig_14 = 14;
 
   // Histogram
   TH1 *hEvent{nullptr};
