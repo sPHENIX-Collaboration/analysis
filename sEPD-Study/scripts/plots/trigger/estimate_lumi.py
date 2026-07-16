@@ -295,7 +295,7 @@ def main():
         try:
             with csv_path.open('w', newline='') as csvfile:
                 fieldnames = ['Run', 'Trig12_Active', 'Trig14_Active', 'Method', 'Lumi_ub_inv', 'Time', 'EndTime']
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
                 writer.writeheader()
                 for row in results:
                     writer.writerow(row)

@@ -183,7 +183,7 @@ def main():
     try:
         with csv_path.open('w', newline='') as csvfile:
             fieldnames = ['Run', 'Method', 'Lumi']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
             writer.writeheader()
             for row in sorted_results:
                 writer.writerow(row)
