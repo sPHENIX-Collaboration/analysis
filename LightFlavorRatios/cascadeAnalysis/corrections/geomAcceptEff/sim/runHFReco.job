@@ -1,0 +1,15 @@
+Universe        = vanilla
+Notification    = Never
+Priority        = 20
+Initialdir      = ./
+Executable      = $(Initialdir)/run_HFReco.sh
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory  = 10GB
+IDX             = $(Process)+0
+condorDir       = $(initialDir)/condorLog
+Output          = $(condorDir)/condor_cascade_geoAcc_$INT(IDX,%05d).out
+Error           = $(condorDir)/condor_cascade_geoAcc_$INT(IDX,%05d).err
+Log             = /tmp/condor_cascade_geoAcc_$INT(IDX,%05d).log
+#Arguments       = 100 Xi2Lambdapi_$INT(IDX,%05d).root ./Xi2Lambdapi_ $INT(IDX,%05d)
+Arguments       = $INT(IDX,%05d) cascade
+Queue 2000

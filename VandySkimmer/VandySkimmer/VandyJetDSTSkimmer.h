@@ -50,6 +50,7 @@
 #include <HepMC/GenEvent.h>
 //fastjet
 #include <fastjet/PseudoJet.hh>
+#include <fastjet/ClusterSequence.hh>
 
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
@@ -104,14 +105,14 @@ class VandyJetDSTSkimmer : public SubsysReco
   std::string GetSimSample() { return m_sampleName;}
  private:
     
-    const float jetR[4]={0.2,0.3,0.4,0.5};
-    const std::string jetRStr[4]={"02","03","04","05"};
-    const float jetR_pTMin[4] = {12.0, 14.0, 15.5, 17.0};
+    const float jetR[5]={0.2,0.3,0.4,0.5, 0.6};
+    const std::string jetRStr[5]={"02","03","04","05", "06"};
+    const float jetR_pTMin[5] = {12.0, 14.0, 15.5, 17.0, 22.0};
     const std::string sampleNames[8] = {"MB","Jet5","Jet12","Jet20","Jet30","Jet40","Jet50","Jet60"};
     const std::string HerwigsampleNames[8] = {"HerwigMB","HerwigJet5","HerwigJet12","HerwigJet20","HerwigJet30","HerwigJet40","HerwigJet50","HerwigJet60"};
-    const float truthJetR_pTMin[4][9] = {{0, 5, 12, 20, 30, 40, 50, 60, 100}, {0, 6, 13, 21, 31, 41, 51, 61, 100}, {0, 7, 14, 21, 32, 42, 52, 62, 100}, {0, 10, 19, 27, 38, 49, 58, 68, 100}};
+    const float truthJetR_pTMin[5][9] = {{0, 5, 12, 20, 30, 40, 50, 60, 100}, {0, 6, 13, 21, 31, 41, 51, 61, 100}, {0, 7, 14, 21, 32, 42, 52, 62, 100}, {0, 10, 19, 27, 38, 49, 58, 68, 100}, {0, 12, 22, 29, 41, 53, 63, 72, 100}};
     const float cs[8] = {4.1970e+10, 1.3878e+08, 1.4903e+06, 6.2623e+04, 2.5298e+03, 1.3553e+02, 7.3113, 3.3261e-01};
-    const float Herwigcs[8] = {3.1909e+10, 1.8437e+08, 6.7108e+05, 5.2613e+04, 2.0694e+03, 1.0510e+02, 5.2089, 3.3261e-01};
+    const float Herwigcs[8] = {3.1909e+10, 1.8437e+08, 1.1326e+06, 5.2613e+04, 2.0694e+03, 1.0510e+02, 5.2089, 3.3261e-01};
 
 
     float m_minJetPt{5.0};
@@ -134,12 +135,12 @@ class VandyJetDSTSkimmer : public SubsysReco
     GlobalVertexMap *vtxMap{nullptr};
     TowerInfoContainer *towerInfoContainers[4]{nullptr};
     RawTowerGeomContainer_Cylinderv1 *geoms[4]{nullptr};
-    JetContainer *jets[4]{nullptr};
-    JetContainer *jetsUncalib[4]{nullptr};
+    JetContainer *jets[5]{nullptr};
+    JetContainer *jetsUncalib[5]{nullptr};
     RawClusterContainer *clusters{nullptr};
 
     PHG4TruthInfoContainer *truthParticles;
-    JetContainer *truthJets[4]{nullptr};
+    JetContainer *truthJets[5]{nullptr};
 
 
     EventInfo *m_eventInfo = new EventInfo();
@@ -147,12 +148,15 @@ class VandyJetDSTSkimmer : public SubsysReco
     std::map<std::pair<int,int>, int> m_towerInfo_map;
     std::map<std::pair<int,int>, int> m_towerInfoTruth_map;
     std::map<std::array<int,3>, int> m_towerInfo_map2;
-    std::vector<JetInfo> m_jetInfo[4];
+    std::vector<JetInfo> m_jetInfo[5];
     std::vector<JetInfo> m_topoclusters;
 
     std::vector<Tower> m_truthParticles;
-    std::vector<JetInfo> m_truthJetInfo[4];
+    std::vector<JetInfo> m_truthJetInfo[5];
 
+    std::vector<Tower> m_truthtowers;
+    std::vector<JetInfo> m_truthtowerJetInfo[5];
+    
     const std::vector<GlobalVertex::VTXTYPE> vtxTypes {GlobalVertex::MBD};
 
     TFile *outfile{nullptr};
@@ -173,6 +177,8 @@ class VandyJetDSTSkimmer : public SubsysReco
     void getJetParentParton(Jet*, JetInfo*, PHCompositeNode*);
     std::vector<HepMC::GenParticle*> getFinalStateAncestors(HepMC::GenParticle*, HepMC::GenEvent*);
     HepMC::GenParticle* findCommonAncestor(std::vector< std::vector< HepMC::GenParticle*>>);
+    void getTruthTowers();
+    void maketruthtowerJets();
     PHParameters m_cutParams{"TimingCutParams"}; //variable name is arbitrary
 
     int num{-1};

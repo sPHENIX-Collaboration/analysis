@@ -1,6 +1,11 @@
 #ifndef CORRECTIONHISTOGRAM1D_H
 #define CORRECTIONHISTOGRAM1D_H
 
+#include <TH1.h>
+
+#include <string>
+#include <iostream>
+
 struct CorrectionHistogram1D
 {
   TH1* h_corr;
