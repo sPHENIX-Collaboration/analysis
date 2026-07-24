@@ -16,6 +16,7 @@
 #include <vector>
 #include <numbers>
 
+class TriggerAnalyzer;
 class PHCompositeNode;
 class TFile;
 class TTree;
@@ -176,6 +177,7 @@ class sEPDValidation : public SubsysReco
     ZVTX,
     ZVTX50,
     ZVTX10,
+    MB_TRIG,
     MB,
     CENT,
     SEPD,
@@ -193,19 +195,24 @@ class sEPDValidation : public SubsysReco
     MBD_HIGH
   };
 
-  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB", "Cent", "SEPD", "EP", "QVEC", "UE", "Has Jet"};
+  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB Trig", "MB", "Cent", "SEPD", "EP", "QVEC", "UE", "Has Jet"};
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
 
   // Event Vars
   double m_mbd_total_charge{9999};
+
+  std::unique_ptr<TriggerAnalyzer> m_triggerAnalyzer;
+
+  const int m_trig_12 = 12; // MBD N&S >= 2, vtx < 10 cm
+  const int m_trig_14 = 14; // MBD N&S >= 2, vtx < 150 cm
 
   int m_progress_print{1000};
 
   // Cuts
   struct EventCuts
   {
-    double m_zvtx_max{10};
-    double m_zvtx_max_v2{50};
+    double m_zvtx_max{10}; // cm
+    double m_zvtx_max_v2{50}; // cm
     double m_sepd_charge_threshold{0.5};
     double m_cent_max{60};
     double m_jet_pt_threshold{100}; // [GeV]

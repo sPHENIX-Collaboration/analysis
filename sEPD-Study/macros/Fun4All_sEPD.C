@@ -31,6 +31,8 @@
 
 #include <phool/recoConsts.h>
 
+#include <calotrigger/TriggerRunInfoReco.h>
+
 #include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/sEPDValidation.h>
 
@@ -140,6 +142,11 @@ void Fun4All_sEPD(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3au
   GlobalVertexReco* gvertex = new GlobalVertexReco();
   gvertex->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(gvertex);
+
+  // Trigger Info Reco
+  TriggerRunInfoReco* trig = new TriggerRunInfoReco();
+  trig->Verbosity(1);
+  se->registerSubsystem(trig);
 
   // Minimum Bias Classifier
   MinimumBiasClassifier* mb = new MinimumBiasClassifier();

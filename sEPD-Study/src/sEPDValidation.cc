@@ -53,6 +53,9 @@
 // -- jetbackground
 #include <jetbackground/TowerBackground.h>
 
+// Trigger
+#include <calotrigger/TriggerAnalyzer.h>
+
 #include <Math/Vector4D.h>
 
 // -- ROOT
@@ -73,6 +76,8 @@ int sEPDValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
+
+  m_triggerAnalyzer = std::make_unique<TriggerAnalyzer>();
 
   hEvent = new TH1F("hEvent", "Event Type; Type; Events", static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size()));
   se->registerHisto(hEvent);
@@ -328,15 +333,31 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
 
   hVtxZ->Fill(zvtx);
 
+  bool pass_zvtx10 = std::abs(zvtx) < m_cuts.m_zvtx_max;
+
   if (std::abs(zvtx) < m_cuts.m_zvtx_max_v2)
   {
     hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
-    if (std::abs(zvtx) < m_cuts.m_zvtx_max)
+    if (pass_zvtx10)
     {
       hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
     }
   }
 
+  // MBD Trigger
+  m_triggerAnalyzer->decodeTriggers(topNode);
+
+  bool didTrig14Fire = m_triggerAnalyzer->didTriggerFire(m_trig_14);
+  bool didTrig12Fire = m_triggerAnalyzer->didTriggerFire(m_trig_12);
+
+  bool mbd_trigger_fire = didTrig12Fire || didTrig14Fire;
+
+  if (pass_zvtx10 && mbd_trigger_fire)
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::MB_TRIG));
+  }
+
+  // Minimum Bias Classifier
   MinimumBiasInfo *m_mb_info = getNode<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
   if (!m_mb_info)
   {
@@ -358,7 +379,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
 
-  if (std::abs(zvtx) < m_cuts.m_zvtx_max)
+  if (pass_zvtx10 && mbd_trigger_fire)
   {
     if (minbias_bkg_high)
     {
@@ -378,6 +399,13 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
     }
   }
 
+  // skip event if not fire MBD Trigger
+  if (!mbd_trigger_fire)
+  {
+    ++m_ctr["process_eventCheck_mbd_trigger_fail"];
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   // skip event if not minimum bias
   if (!m_mb_info->isAuAuMinimumBias())
   {
@@ -388,7 +416,7 @@ int sEPDValidation::process_event_check(PHCompositeNode *topNode)
   hVtxZ_MB->Fill(zvtx);
 
   // skip event if zvtx is too large
-  if (std::abs(zvtx) >= m_cuts.m_zvtx_max)
+  if (!pass_zvtx10)
   {
     ++m_ctr["process_eventCheck_zvtx_large"];
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -1209,6 +1237,7 @@ int sEPDValidation::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Abort Events Types" << std::endl;
   std::cout << std::format("process event, Reset Event Calls : {}", m_ctr["event_reset"]) << std::endl;
+  std::cout << std::format("process event, MBD Trigger Fail: {}", m_ctr["process_eventCheck_mbd_trigger_fail"]) << std::endl;
   std::cout << std::format("process event, isAuAuMinBias Fail: {}", m_ctr["process_eventCheck_isAuAuMinBias_fail"]) << std::endl;
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
