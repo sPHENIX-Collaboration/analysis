@@ -62,7 +62,7 @@ class CondorJobManager:
         self.logger.info(f'Job Name: {self.job_name}')
         if self.input_list:
             self.logger.info(f'Input DST List: {self.input_list}')
-        self.logger.info(f'Total DSTs: {total_files}')
+        self.logger.info(f'Total Runs: {total_files}')
         if hasattr(self.args, 'dst_per_job'):
             self.logger.info(f'DST Per Job: {self.args.dst_per_job}')
         if hasattr(self.args, 'events'):

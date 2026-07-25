@@ -47,7 +47,7 @@ def setup_data(args):
     run3auau_time_min_5 = output_dir / 'run3auau-time-min-5.list'
     current_runs = get_line_count(run3auau_time_min_5)
 
-    command = """psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runtype = 'physics' and runnumber between 66457 and 78954 and ertimestamp-brtimestamp > interval '5 minutes' order by runnumber;" -At > run3auau-time-min-5.list"""
+    command = """psql -h sphnxdaqdbreplica daq -c "select runnumber from run where runtype = 'physics' and runnumber between 66457 and 78954 and ertimestamp-brtimestamp >= interval '5 minutes' order by runnumber;" -At > run3auau-time-min-5.list"""
     run_command_and_log(command, logger, output_dir, False)
 
     new_runs = get_line_count(run3auau_time_min_5)
