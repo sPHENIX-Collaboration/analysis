@@ -56,18 +56,17 @@ def plot_towers(run_numbers, towers_count, output_dir, name, ylabel="Number of B
     hep.style.use("ATLAS")
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(run_numbers, towers_count, marker='o', markersize=4, linestyle='none', color='black')
 
     runs = np.array(run_numbers)
     towers = np.array(towers_count)
 
     group_defs = [
-        (runs <= 69137, 'blue', r'$\leq$ 69137'),
-        ((runs >= 69272) & (runs <= 69433), 'cyan', '69272-69433'),
-        ((runs >= 69539) & (runs < 73500), 'magenta', '69539-73500'),
-        ((runs >= 73500) & (runs <= 78217), 'red', '73500-78217'),
+        (runs < 73500, 'blue', r'$\leq$ 73500'),
+        ((runs >= 73500) & (runs <= 78217), 'orange', '73500-78217'),
         (runs >= 78218, 'green', r'$\geq$ 78218'),
     ]
+
+    is_outlier = np.zeros(len(runs), dtype=bool)
 
     total_runs = len(run_numbers)
     text_info = f"Runs = {total_runs}"
@@ -82,7 +81,7 @@ def plot_towers(run_numbers, towers_count, output_dir, name, ylabel="Number of B
             avg = np.mean(group_towers)
             xmin, xmax = np.min(group_runs), np.max(group_runs)
 
-            ax.hlines(avg, xmin, xmax, colors=color, linestyles='--', linewidth=1.5)
+            ax.hlines(avg, xmin, xmax, colors=color, linestyles='--', linewidth=1.5, zorder=4)
             avg_handles.append(Line2D([0], [0], color=color, linestyle='--', linewidth=1.5,
                                       label=rf'Avg ({label_str}) = {avg:.0f}'))
 
@@ -92,18 +91,32 @@ def plot_towers(run_numbers, towers_count, output_dir, name, ylabel="Number of B
                     thresh = avg + sigma_threshold * std
                     sig_str = f"{sigma_threshold:g}"
                     n_crossed = np.count_nonzero(group_towers > thresh)
-                    ax.hlines(thresh, xmin, xmax, colors=color, linestyles=':', linewidth=1.2)
+                    is_outlier[mask & (towers > thresh)] = True
+                    ax.hlines(thresh, xmin, xmax, colors=color, linestyles=':', linewidth=1.2, zorder=4)
                     sigma_handles.append(Line2D([0], [0], color=color, linestyle=':', linewidth=1.2,
                                                 label=rf'+{sig_str}$\sigma$ = {thresh:.0f} (Runs={n_crossed})'))
+
+    ax.plot(runs[~is_outlier], towers[~is_outlier], marker='o', markersize=4, linestyle='none', color='black', zorder=2)
+    if np.any(is_outlier):
+        ax.plot(runs[is_outlier], towers[is_outlier], marker='o', markersize=4, linestyle='none', color='red', zorder=5)
 
     if legend_loc == 'lower left':
         leg1 = ax.legend(handles=avg_handles, loc=legend_loc, bbox_to_anchor=(0.0, -0.03), frameon=False, fontsize=legend_fontsize)
     else:
         leg1 = ax.legend(handles=avg_handles, loc=legend_loc, frameon=False, fontsize=legend_fontsize)
+    ax.add_artist(leg1)
 
     if sigma_threshold is not None and sigma_handles:
-        ax.add_artist(leg1)
-        ax.legend(handles=sigma_handles, loc='lower left', bbox_to_anchor=(0.3, -0.03), frameon=False, fontsize=legend_fontsize)
+        leg2 = ax.legend(handles=sigma_handles, loc='lower left', bbox_to_anchor=(0.37, -0.03), frameon=False, fontsize=legend_fontsize)
+        ax.add_artist(leg2)
+
+    if sigma_threshold is not None and np.any(is_outlier):
+        sig_str = f"{sigma_threshold:g}"
+        outlier_handle = Line2D([0], [0], marker='o', color='white', markerfacecolor='red',
+                                markeredgecolor='red', markersize=6, linestyle='none',
+                                label=rf'Outliers ($>+{sig_str}\sigma$)')
+        leg3 = ax.legend(handles=[outlier_handle], loc='upper right', frameon=False, fontsize=legend_fontsize)
+        ax.add_artist(leg3)
 
     ax.set_xlabel("Run Number", labelpad=18)
     ax.set_ylabel(ylabel)
@@ -139,7 +152,7 @@ def main():
     parser.add_argument("-f", "--file", type=Path, help="Path to a text file containing ROOT file paths (one per line).")
     parser.add_argument("-o", "--output-dir", type=Path, default=Path("."), help="Directory to save the plots (default: current directory).")
     parser.add_argument("-n", "--name", "--plot-name", dest="name", type=str, default="bad_towers_per_run", help="Base filename for output plots.")
-    parser.add_argument("-s", "--sigma-threshold", type=float, default=1.0, help="N-sigma threshold above average for identifying outlier runs (default: 1.0).")
+    parser.add_argument("-s", "--sigma-threshold", type=float, default=3, help="N-sigma threshold above average for identifying outlier runs (default: 3).")
     parser.add_argument("--cache-file", type=Path, default=None, help="Path to cache file for processed ROOT file data.")
     parser.add_argument("--no-cache", action="store_true", help="Disable caching and force re-processing of all ROOT files.")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
@@ -265,9 +278,7 @@ def main():
     hot_arr = np.array(hot_towers_list)
 
     groups_for_outliers = [
-        ("<= 69137", runs_arr <= 69137),
-        ("69272-69433", (runs_arr >= 69272) & (runs_arr <= 69433)),
-        ("69539-73500", (runs_arr >= 69539) & (runs_arr < 73500)),
+        ("<= 73500", runs_arr < 73500),
         ("73500-78217", (runs_arr >= 73500) & (runs_arr <= 78217)),
         (">= 78218", runs_arr >= 78218),
     ]
@@ -315,8 +326,8 @@ def main():
     # Plot Bad Towers with Sigma threshold lines
     plot_towers(
         run_numbers, bad_towers_list, args.output_dir, args.name,
-        ylabel="Number of Bad Towers", suffix="", ylim_bottom=500,
-        legend_fontsize=12, sigma_threshold=args.sigma_threshold
+        ylabel="Number of Bad Towers", suffix="", ylim_bottom=550,
+        legend_fontsize=16, sigma_threshold=args.sigma_threshold
     )
 
     # Plot Dead Towers (value == 1)
@@ -330,7 +341,7 @@ def main():
     hot_name = "hot_towers_per_run" if args.name == "bad_towers_per_run" else f"{args.name}_hot"
     plot_towers(
         run_numbers, hot_towers_list, args.output_dir, hot_name,
-        ylabel="Number of Hot Towers", suffix="", ylim_bottom=None, legend_loc='upper right', legend_fontsize=14
+        ylabel="Number of Hot Towers", suffix="", ylim_bottom=None, legend_loc='upper center', legend_fontsize=14
     )
 
 if __name__ == "__main__":
