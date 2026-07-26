@@ -85,6 +85,88 @@ def process_entry(entry):
         return (tree_id, fully_skimmed, mb_0, run_segments, events_skimmed, events_all)
     return (tree_id, False, False, [], 0, 0)
 
+def filter_input_list_dir(filter_dir: Path, bad_segments: list, custom_removed_dir_name: str = None, dry_run: bool = False):
+    """
+    Removes lines matching bad run-segments from input .list files in filter_dir,
+    saves the removed lines into a new folder, and deletes any empty .list files.
+    If dry_run is True, performs all checks without altering files on disk.
+    """
+    filter_dir = filter_dir.resolve()
+    if not filter_dir.is_dir():
+        print(f"Error: Specified filter directory '{filter_dir}' is not a directory.")
+        return
+
+    dir_name = filter_dir.name
+    if custom_removed_dir_name:
+        new_dir_name = custom_removed_dir_name
+    elif "-pro" in dir_name:
+        idx = dir_name.find("-pro")
+        new_dir_name = dir_name[:idx] + "-fully-skimmed" + dir_name[idx:]
+    else:
+        new_dir_name = dir_name + "-fully-skimmed"
+
+    removed_dir = filter_dir.parent / new_dir_name
+    if not dry_run:
+        removed_dir.mkdir(parents=True, exist_ok=True)
+
+    bad_set = set(bad_segments)
+
+    total_files_processed = 0
+    total_files_modified = 0
+    total_files_removed = 0
+    total_lines_removed = 0
+
+    list_files = sorted(list(filter_dir.glob("*.list")))
+    if not list_files:
+        list_files = sorted([f for f in filter_dir.iterdir() if f.is_file()])
+
+    for list_file in list_files:
+        total_files_processed += 1
+        kept_lines = []
+        removed_lines = []
+
+        with list_file.open('r', errors='ignore') as f:
+            for line in f:
+                raw_line = line.rstrip('\r\n')
+                if not raw_line.strip():
+                    continue
+                matches = re.findall(r'(\d{8}-\d{5})', raw_line)
+                if any(m in bad_set for m in matches):
+                    removed_lines.append(raw_line)
+                else:
+                    kept_lines.append(raw_line)
+
+        if removed_lines:
+            total_lines_removed += len(removed_lines)
+            if not dry_run:
+                removed_file = removed_dir / list_file.name
+                with removed_file.open('w') as f:
+                    for l in removed_lines:
+                        f.write(f"{l}\n")
+
+            if not kept_lines:
+                if not dry_run:
+                    list_file.unlink()
+                total_files_removed += 1
+            else:
+                if not dry_run:
+                    with list_file.open('w') as f:
+                        for l in kept_lines:
+                            f.write(f"{l}\n")
+                total_files_modified += 1
+
+    print("-" * 50)
+    dry_prefix = "[DRY RUN] " if dry_run else ""
+    print(f"{dry_prefix}Filter Input Directory Summary ({filter_dir}):")
+    print(f"  Target removed lines folder: {removed_dir}")
+    print(f"  Total list files processed: {total_files_processed}")
+    print(f"  Files to modify (partially cleaned): {total_files_modified}")
+    print(f"  Files to completely remove (all lines bad): {total_files_removed}")
+    print(f"  Total bad run-segment lines extracted/removed: {total_lines_removed}")
+    if dry_run:
+        print("  * Note: Dry run mode active. No files were created, modified, or deleted on disk.")
+    print("-" * 50)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Parse job log files for status != 'ok' entries from a tree-check file."
@@ -99,6 +181,23 @@ def main():
         type=Path,
         default=Path.cwd(),
         help="Directory to write output list files (default: current working directory)"
+    )
+    parser.add_argument(
+        "-f", "--filter-input-dir",
+        type=Path,
+        default=None,
+        help="Optional path to input list directory to filter out bad run-segments"
+    )
+    parser.add_argument(
+        "--removed-dir-name",
+        type=str,
+        default=None,
+        help="Optional custom folder name for extracted bad lines (default: inserts '-fully-skimmed')"
+    )
+    parser.add_argument(
+        "-n", "--dry-run",
+        action="store_true",
+        help="Perform a dry run when filtering input list directory without modifying any files on disk"
     )
 
     args = parser.parse_args()
@@ -200,6 +299,10 @@ def main():
             for r in all_bad_runs:
                 f.write(f"{r}\n")
         print(f"Wrote all bad run-segments to: {all_file}")
+
+    # Optional feature: Filter input list directory
+    if args.filter_input_dir:
+        filter_input_list_dir(args.filter_input_dir, all_bad_runs, args.removed_dir_name, dry_run=args.dry_run)
 
 if __name__ == '__main__':
     main()
