@@ -88,7 +88,7 @@ class DisplayQA
       "h2EMCal_MBD", "h2IHCal_MBD", "h2OHCal_MBD",
       "h2EMCal_sEPD", "h2IHCal_sEPD", "h2OHCal_sEPD",
       "h2EMCal_OHCal", "h2IHCal_OHCal", "h2SEPD_MBD_Total_Charge",
-      "h2EMCal_Energy", "h2OHCal_Energy"
+      "h2OHCal_Energy"
   };
 
   struct RunInfo
@@ -107,7 +107,6 @@ class DisplayQA
     double IHCal_OHCal;
     double sEPD_MBD;
 
-    int EMCal_BadTowers;
     int OHCal_BadTowers;
   };
 
@@ -118,7 +117,6 @@ class DisplayQA
   const double m_default_pearson = 0.95;
   const double m_mb_frac_threshold = 0.35;
   const double m_zvtx_threshold = 10.0;
-  const int m_bad_tower_emcal_threshold = 15;
   const int m_bad_tower_ohcal_threshold = 10;
 
   // Helper to get specific or default threshold
@@ -210,7 +208,6 @@ void DisplayQA::init_hists()
 
     int bins_towers = 1537;
 
-    m_hists["EMCal_BadTowers"] = std::make_unique<TH1F>("EMCal_BadTowers", "; EMCal Retowered Bad Towers; Runs", bins_towers, 0, bins_towers);
     m_hists["OHCal_BadTowers"] = std::make_unique<TH1F>("OHCal_BadTowers", "; OHCal Bad Towers; Runs", bins_towers, 0, bins_towers);
 }
 
@@ -239,22 +236,15 @@ void DisplayQA::read_hists(const std::filesystem::path& input)
 
 void DisplayQA::calc_bad_towers(const std::string& run)
 {
-  auto* hist_emcal = dynamic_cast<TH2*>(m_hists.at("h2EMCal_Energy").get());
   auto* hist_ohcal = dynamic_cast<TH2*>(m_hists.at("h2OHCal_Energy").get());
 
-  int badTowers_emcal = 0;
   int badTowers_ohcal = 0;
 
-  for (int i = 1; i < hist_emcal->GetNbinsX(); ++i)
+  for (int i = 1; i < hist_ohcal->GetNbinsX(); ++i)
   {
-    for (int j = 1; j < hist_emcal->GetNbinsY(); ++j)
+    for (int j = 1; j < hist_ohcal->GetNbinsY(); ++j)
     {
-       double val_emcal = hist_emcal->GetBinContent(i, j);
        double val_ohcal = hist_ohcal->GetBinContent(i, j);
-       if (val_emcal == 0)
-       {
-         ++badTowers_emcal;
-       }
        if (val_ohcal == 0)
        {
          ++badTowers_ohcal;
@@ -262,10 +252,8 @@ void DisplayQA::calc_bad_towers(const std::string& run)
     }
   }
 
-  m_hists.at("EMCal_BadTowers")->Fill(badTowers_emcal);
   m_hists.at("OHCal_BadTowers")->Fill(badTowers_ohcal);
 
-  m_runInfo[run].EMCal_BadTowers = badTowers_emcal;
   m_runInfo[run].OHCal_BadTowers = badTowers_ohcal;
 }
 
@@ -694,67 +682,42 @@ void DisplayQA::plot_summary_calo(TCanvas& c1) const
 
 void DisplayQA::plot_summary_bad_towers(TCanvas& c1) const
 {
-  c1.Divide(2,1, 0.00025F, 0.00025F);
-  c1.SetCanvasSize(2500, 1000);
+  c1.SetCanvasSize(1200, 1000);
+  c1.SetLeftMargin(.1F);
+  c1.SetRightMargin(.05F);
+  c1.SetTopMargin(.03F);
+  c1.SetBottomMargin(.14F);
 
-  struct PlotOptions
-  {
-    double xlow{0.5};
-    double xhigh{1537};
-    int badTowerThreshold{0};
-  };
+  auto* hist = m_hists.at("OHCal_BadTowers").get();
 
-  auto plot = [&](TH1* hist, int idx, PlotOptions opts = {})
-  {
-    c1.cd(idx);
-    gPad->SetTopMargin(0.05F);
-    gPad->SetLeftMargin(0.1F);
-    gPad->SetRightMargin(0.05F);
+  double ymin = 5e-1;
+  double ymax = hist->GetMaximum() * 2;
 
-    // 1. Calculate Y limits first
-    double ymin = 5e-1;
-    double ymax = hist->GetMaximum() * 2;
+  gPad->SetLogy();
+  gPad->SetLogx();
 
-    // 2. Set Log scales before drawing the frame
-    gPad->SetLogy();
-    gPad->SetLogx();
+  TH1* frame = gPad->DrawFrame(0.5, ymin, 1537, ymax);
 
-    // 3. Draw a Frame to define the exact visual axis range
-    TH1* frame = gPad->DrawFrame(opts.xlow, ymin, opts.xhigh, ymax);
+  frame->GetXaxis()->SetTitle(hist->GetXaxis()->GetTitle());
+  frame->GetYaxis()->SetTitle(hist->GetYaxis()->GetTitle());
+  frame->GetXaxis()->SetTitleOffset(1.3F);
+  frame->GetYaxis()->SetTitleOffset(1.F);
+  frame->GetXaxis()->SetTitleSize(0.05F);
+  frame->GetXaxis()->SetLabelSize(0.05F);
+  frame->GetYaxis()->SetMaxDigits(3);
+  frame->GetXaxis()->SetMoreLogLabels();
 
-    // 4. Style the frame (since the frame now "owns" the axes)
-    frame->GetXaxis()->SetTitle(hist->GetXaxis()->GetTitle());
-    frame->GetYaxis()->SetTitle(hist->GetYaxis()->GetTitle());
-    frame->GetXaxis()->SetTitleOffset(1.4F);
-    frame->GetYaxis()->SetTitleOffset(1.F);
-    frame->GetXaxis()->SetTitleSize(0.05F);
-    frame->GetXaxis()->SetLabelSize(0.05F);
-    frame->GetYaxis()->SetMaxDigits(3);
+  hist->SetLineColor(kBlue);
+  hist->SetLineWidth(3);
+  hist->Draw("HIST SAME");
 
-    // This adds extra labels (like 0.5, 2, 5) to make the log scale clearer
-    frame->GetXaxis()->SetMoreLogLabels();
+  gPad->Update();
 
-    // 5. Draw your histogram on top of the frame
-    hist->SetLineColor(kBlue);
-    hist->SetLineWidth(3);
-    hist->Draw("HIST SAME");
-
-    gPad->Update();
-
-    // 6. Draw the threshold line
-    auto line = std::make_unique<TLine>(opts.badTowerThreshold, ymin, opts.badTowerThreshold, ymax);
-    line->SetLineColor(kRed);
-    line->SetLineStyle(kDashed);
-    line->SetLineWidth(3);
-    line->DrawClone("same");
-  };
-
-  auto* hist_emcal = m_hists.at("EMCal_BadTowers").get();
-  auto* hist_ohcal = m_hists.at("OHCal_BadTowers").get();
-
-  int idx = 1;
-  plot(hist_emcal, idx++, {.badTowerThreshold = m_bad_tower_emcal_threshold});
-  plot(hist_ohcal, idx++, {.badTowerThreshold = m_bad_tower_ohcal_threshold});
+  auto line = std::make_unique<TLine>(m_bad_tower_ohcal_threshold, ymin, m_bad_tower_ohcal_threshold, ymax);
+  line->SetLineColor(kRed);
+  line->SetLineStyle(kDashed);
+  line->SetLineWidth(3);
+  line->DrawClone("same");
 
   std::string figure = "summary";
   std::string hist_name = "Calo-BadTowers";
@@ -769,6 +732,7 @@ void DisplayQA::plot_summary_bad_towers(TCanvas& c1) const
   if (m_saveFig) c1.Print(output_img.c_str());
 
   gPad->SetLogx(0);
+  gPad->SetLogy(0);
 
   // Clear the pad so ROOT releases the pointers before the smart pointers destroy them
   c1.Clear();
@@ -959,7 +923,7 @@ void DisplayQA::write_CSV() const
   }
 
   qa_file << "Run,Avg_Z,ZVtx_Status,MB_frac,MB_frac_Status,"
-             "EMCal_BadTowers,EMCal_BadTowers_Status,OHCal_BadTowers,OHCal_BadTowers_Status,"
+             "OHCal_BadTowers,OHCal_BadTowers_Status,"
              "EMCal_MBD,IHCal_MBD,OHCal_MBD,"
              "EMCal_sEPD,IHCal_sEPD,OHCal_sEPD,"
              "EMCal_OHCal,IHCal_OHCal,sEPD_MBD,Calo_Status,Overall_Status" << std::endl;
@@ -984,17 +948,15 @@ void DisplayQA::write_CSV() const
 
     std::string mb_frac_stat = (info.mb_frac >= m_mb_frac_threshold) ? "GOOD" : "BAD";
 
-    std::string badTower_emcal_stat = (info.EMCal_BadTowers < m_bad_tower_emcal_threshold) ? "GOOD" : "BAD";
     std::string badTower_ohcal_stat = (info.OHCal_BadTowers < m_bad_tower_ohcal_threshold) ? "GOOD" : "BAD";
 
-    std::string overall_stat = (badTower_emcal_stat == "GOOD" && badTower_ohcal_stat == "GOOD" && zvtx_stat == "GOOD" &&
+    std::string overall_stat = (badTower_ohcal_stat == "GOOD" && zvtx_stat == "GOOD" &&
                                 calo_stat == "GOOD" && mb_frac_stat == "GOOD") ? "GOOD" : "BAD";
 
     // 3. Write formatted row
-    qa_file << std::format("{},{:.3f},{},{:.3f},{},{},{},{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{},{}\n",
+    qa_file << std::format("{},{:.3f},{},{:.3f},{},{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f},{},{}\n",
                            run,
                            info.avg_z, zvtx_stat, info.mb_frac, mb_frac_stat,
-                           info.EMCal_BadTowers, badTower_emcal_stat,
                            info.OHCal_BadTowers, badTower_ohcal_stat,
                            info.EMCal_MBD, info.IHCal_MBD, info.OHCal_MBD,
                            info.EMCal_sEPD, info.IHCal_sEPD, info.OHCal_sEPD,
@@ -1014,7 +976,6 @@ void DisplayQA::print_summary_report() const
   int failed_z = 0;
   int failed_calo = 0;
   int failed_mb = 0;
-  int failed_bad_emcal_towers = 0;
   int failed_bad_ohcal_towers = 0;
 
   for (const auto& [run, info] : m_runInfo)
@@ -1032,10 +993,9 @@ void DisplayQA::print_summary_report() const
                     info.IHCal_OHCal > get_threshold("IHCal_OHCal") &&
                     info.sEPD_MBD   > get_threshold("sEPD_MBD"));
 
-    bool badTowers_emcal_ok = (info.EMCal_BadTowers < m_bad_tower_emcal_threshold);
     bool badTowers_ohcal_ok = (info.OHCal_BadTowers < m_bad_tower_ohcal_threshold);
 
-    if (z_ok && calo_ok && mb_ok && badTowers_emcal_ok && badTowers_ohcal_ok)
+    if (z_ok && calo_ok && mb_ok && badTowers_ohcal_ok)
     {
        good_runs++;
     }
@@ -1045,7 +1005,6 @@ void DisplayQA::print_summary_report() const
        if (!z_ok)    failed_z++;
        if (!calo_ok) failed_calo++;
        if (!mb_ok)   failed_mb++;
-       if (!badTowers_emcal_ok) failed_bad_emcal_towers++;
        if (!badTowers_ohcal_ok) failed_bad_ohcal_towers++;
     }
   }
@@ -1061,7 +1020,6 @@ void DisplayQA::print_summary_report() const
   std::cout << std::format("{:^55}\n", "PRIMARY REASONS FOR FAILURE");
   std::cout << std::format("{:<40} : {:>10}\n", "Failed Z-Vertex (|Avg Z| > 10 cm)", failed_z);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed Calorimeter (Pearson Threshold)", failed_calo);
-  std::cout << std::format("{:<40} : {:>10}\n", "Failed EMCal Bad Towers (> 15)", failed_bad_emcal_towers);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed OHCal Bad Towers (> 10)", failed_bad_ohcal_towers);
   std::cout << std::format("{:<40} : {:>10}\n", "Failed MB Fraction (< 35%)", failed_mb);
   std::cout << std::string(55, '=') << "\n\n";
@@ -1091,7 +1049,7 @@ void DisplayQA::draw()
   gStyle->SetTitleFillColor(0);
   gStyle->SetTitleBorderSize(0);
 
-  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/07-05-26/test.list";
+  std::filesystem::path input_list = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a/07-24-26/test.list";
 
   std::vector<std::string> hist_types = {"event", "centrality", "ZVertex", "calo"};
   // std::vector<std::string> hist_types = {};
