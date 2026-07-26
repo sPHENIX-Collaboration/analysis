@@ -138,6 +138,7 @@ def main():
     fully_skimmed_runs = []
     mb_0_runs = []
     mb_0_not_skimmed_runs = []
+    all_bad_runs = []
     other_failures_count = 0
     total_events_skimmed = 0
     total_events_mb_fail = 0
@@ -156,6 +157,7 @@ def main():
             total_events_mb_fail += events_all
 
         segments_to_add = run_segments if run_segments else [f"UNKNOWN_RUNSEG_{tree_id}"]
+        all_bad_runs.extend(segments_to_add)
 
         if fully_skimmed:
             fully_skimmed_runs.extend(segments_to_add)
@@ -172,6 +174,7 @@ def main():
     print(f"Total fully skimmed jobs: {len([r for r in results if r[1]])} (Total run-segments: {len(fully_skimmed_runs)})")
     print(f"Total MB: 0 failures (all jobs): {len([r for r in results if r[2]])} (Total run-segments: {len(mb_0_runs)})")
     print(f"Total MB: 0 failures (NOT fully skimmed jobs): {len([r for r in results if r[2] and not r[1]])} (Total run-segments: {len(mb_0_not_skimmed_runs)})")
+    print(f"Total bad jobs (all status != 'ok'): {len(results)} (Total run-segments: {len(all_bad_runs)})")
     print(f"Total failures due to other reasons: {other_failures_count}")
     print(f"Total events skimmed (fully skimmed jobs): {total_events_skimmed}")
     print(f"Total events skipped due to MB failure (non-skimmed MB: 0 jobs, sum of 'All:'): {total_events_mb_fail}")
@@ -190,6 +193,13 @@ def main():
             for r in mb_0_not_skimmed_runs:
                 f.write(f"{r}\n")
         print(f"Wrote MB: 0 (not fully skimmed) run-segments to: {mb_file}")
+
+    if all_bad_runs:
+        all_file = output_dir / "all_bad_runsegments.list"
+        with all_file.open("w") as f:
+            for r in all_bad_runs:
+                f.write(f"{r}\n")
+        print(f"Wrote all bad run-segments to: {all_file}")
 
 if __name__ == '__main__':
     main()
