@@ -6,18 +6,20 @@ from pathlib import Path
 
 def check_log_file(log_path: Path, input_dir: Path):
     """
-    Checks the log file for fully skimmed status, MB: 0 failure, and extracts all run-segments.
-    Returns (is_fully_skimmed, is_mb_0, run_segments)
+    Checks the log file for fully skimmed status, MB: 0 failure, total events skimmed,
+    total events in 'All: X' field for MB failures, and extracts all run-segments.
+    Returns (is_fully_skimmed, is_mb_0, run_segments, events_skimmed, events_all)
     """
     is_fully_skimmed = False
     is_mb_0 = False
     run_segments = []
 
     if not log_path.exists():
-        return False, False, []
+        return False, False, [], 0, 0
 
     events_processed = -1
-    events_skimmed = -2
+    events_skimmed = 0
+    events_all = 0
     list_file_path = None
 
     # Read the log file line by line
@@ -31,6 +33,10 @@ def check_log_file(log_path: Path, input_dir: Path):
                 m = re.search(r'Total events skimmed:\s*(\d+)', line)
                 if m:
                     events_skimmed = int(m.group(1))
+            elif line.startswith("All:"):
+                m = re.search(r'All:\s*(\d+)', line)
+                if m:
+                    events_all = int(m.group(1))
             elif "MB: 0" in line:
                 is_mb_0 = True
 
@@ -65,7 +71,7 @@ def check_log_file(log_path: Path, input_dir: Path):
                     if seg not in run_segments:
                         run_segments.append(seg)
 
-    return is_fully_skimmed, is_mb_0, run_segments
+    return is_fully_skimmed, is_mb_0, run_segments, events_skimmed, events_all
 
 def process_entry(entry):
     tree_id, input_dir = entry
@@ -75,9 +81,9 @@ def process_entry(entry):
         job_id = parts[1]
         subjob_id = parts[2]
         log_path = input_dir / "stdout" / f"job-{job_id}-{subjob_id}.out"
-        fully_skimmed, mb_0, run_segments = check_log_file(log_path, input_dir)
-        return (tree_id, fully_skimmed, mb_0, run_segments)
-    return (tree_id, False, False, [])
+        fully_skimmed, mb_0, run_segments, events_skimmed, events_all = check_log_file(log_path, input_dir)
+        return (tree_id, fully_skimmed, mb_0, run_segments, events_skimmed, events_all)
+    return (tree_id, False, False, [], 0, 0)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -133,6 +139,8 @@ def main():
     mb_0_runs = []
     mb_0_not_skimmed_runs = []
     other_failures_count = 0
+    total_events_skimmed = 0
+    total_events_mb_fail = 0
 
     # Use multiprocessing for efficiency
     pool_size = min(multiprocessing.cpu_count(), 16)
@@ -140,7 +148,12 @@ def main():
         results = pool.map(process_entry, entries_to_check)
 
     for res in results:
-        tree_id, fully_skimmed, mb_0, run_segments = res
+        tree_id, fully_skimmed, mb_0, run_segments, events_skimmed, events_all = res
+
+        if fully_skimmed:
+            total_events_skimmed += events_skimmed
+        elif mb_0:
+            total_events_mb_fail += events_all
 
         segments_to_add = run_segments if run_segments else [f"UNKNOWN_RUNSEG_{tree_id}"]
 
@@ -160,6 +173,8 @@ def main():
     print(f"Total MB: 0 failures (all jobs): {len([r for r in results if r[2]])} (Total run-segments: {len(mb_0_runs)})")
     print(f"Total MB: 0 failures (NOT fully skimmed jobs): {len([r for r in results if r[2] and not r[1]])} (Total run-segments: {len(mb_0_not_skimmed_runs)})")
     print(f"Total failures due to other reasons: {other_failures_count}")
+    print(f"Total events skimmed (fully skimmed jobs): {total_events_skimmed}")
+    print(f"Total events skipped due to MB failure (non-skimmed MB: 0 jobs, sum of 'All:'): {total_events_mb_fail}")
     print("-" * 50)
 
     if fully_skimmed_runs:
