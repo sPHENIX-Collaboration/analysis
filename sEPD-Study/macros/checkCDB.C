@@ -31,6 +31,7 @@ void checkCDB(unsigned int runnumber, const std::string& dbtag = "newcdbtag")
       {"HCALIN Mean Time", "HCALIN_meanTime"},
       {"HCALOUT Frac Bad Chi2", "HCALOUT_hotTowers_fracBadChi2"},
       {"HCALOUT Mean Time", "HCALOUT_meanTime"},
+      {"sEPD Template", "SEPD_TEMPLATE"},
       {"sEPD Calib", "SEPD_NMIP_CALIB"},
       {"sEPD Bad Tower Map", "SEPD_BadTowerMap"},
       {"sEPD Event Plane", "SEPD_EventPlaneCalib"}
