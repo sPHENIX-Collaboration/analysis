@@ -66,6 +66,12 @@ def hadd_jobs(args):
                 logger.warning(f"No root files found for run {run_name}, skipping.")
                 continue
 
+            if len(root_files) == 1:
+                dst = output_dir / 'output' / f"{run_name}.root"
+                logger.info(f"Run {run_name} has only 1 root file. Copying directly to final output.")
+                shutil.copy(str(root_files[0]), str(dst))
+                continue
+
             chunks = list(chunk_list(root_files, files_per_job))
             for i, chunk in enumerate(chunks):
                 chunk_list_filename = output_dir / 'files' / f'{run_name}_part_{i}.list'
@@ -93,18 +99,21 @@ def hadd_jobs(args):
 
     (output_dir / 'stage1.sub').write_text(submit_content_s1)
 
-    logger.info(f"Submitting {job_counter} partial merge jobs...")
-    command = f'cd {output_dir} && condor_submit stage1.sub -queue "list_file,out_name,out_dir from jobs_stage1.list"'
-    run_command_and_log(command, logger, output_dir)
+    if job_counter > 0:
+        logger.info(f"Submitting {job_counter} partial merge jobs...")
+        command = f'cd {output_dir} && condor_submit stage1.sub -queue "list_file,out_name,out_dir from jobs_stage1.list"'
+        run_command_and_log(command, logger, output_dir)
 
-    while True:
-        finished_files = len(list((partial_dir / 'output').glob('*.root')))
-        if finished_files >= job_counter:
-            logger.info(f"Stage 1 Complete. {finished_files}/{job_counter} files created.")
-            break
+        while True:
+            finished_files = len(list((partial_dir / 'output').glob('*.root')))
+            if finished_files >= job_counter:
+                logger.info(f"Stage 1 Complete. {finished_files}/{job_counter} files created.")
+                break
 
-        logger.info(f"Waiting for Stage 1... {finished_files}/{job_counter} done.")
-        time.sleep(15)
+            logger.info(f"Waiting for Stage 1... {finished_files}/{job_counter} done.")
+            time.sleep(15)
+    else:
+        logger.info("No partial merge jobs to submit for Stage 1.")
 
     logger.info("Starting STAGE 2: Final Merging")
 
@@ -147,10 +156,13 @@ def hadd_jobs(args):
 
     (output_dir / 'stage2.sub').write_text(submit_content_s2)
 
-    logger.info(f"Submitting {stage2_counter} final merge jobs...")
-    command = f'cd {output_dir} && condor_submit stage2.sub -queue "list_file,out_name,out_dir from jobs_stage2.list"'
-    run_command_and_log(command, logger, output_dir)
-    logger.info("All jobs submitted.")
+    if stage2_counter > 0:
+        logger.info(f"Submitting {stage2_counter} final merge jobs...")
+        command = f'cd {output_dir} && condor_submit stage2.sub -queue "list_file,out_name,out_dir from jobs_stage2.list"'
+        run_command_and_log(command, logger, output_dir)
+        logger.info("All jobs submitted.")
+    else:
+        logger.info("No final merge jobs to submit for Stage 2.")
 
 def setup_hadd_subparsers(subparsers):
     hadd_parser = subparsers.add_parser('hadd', help='hadd condor jobs.')
