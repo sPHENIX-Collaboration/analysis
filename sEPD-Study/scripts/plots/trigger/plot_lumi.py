@@ -89,7 +89,8 @@ def main():
         if err:
             print(err)
         elif run_num is not None:
-            results_data.append({'Run': run_num, 'Lumi': lumi, 'Method': method})
+            lumi_ub_inv = round(lumi * 1000, 4)
+            results_data.append({'Run': run_num, 'Lumi': lumi, 'Lumi_ub_inv': lumi_ub_inv, 'Method': method})
             if y_axis_title == "Luminosity" and title_str:
                 y_axis_title = title_str
 
@@ -182,11 +183,15 @@ def main():
     csv_path = args.output_dir / f"{args.name}.csv"
     try:
         with csv_path.open('w', newline='') as csvfile:
-            fieldnames = ['Run', 'Method', 'Lumi']
+            fieldnames = ['Run', 'Method', 'Lumi_ub_inv']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
             writer.writeheader()
             for row in sorted_results:
-                writer.writerow(row)
+                writer.writerow({
+                    'Run': row['Run'],
+                    'Method': row['Method'],
+                    'Lumi_ub_inv': row['Lumi_ub_inv']
+                })
         print(f"Saved detailed run summary to {csv_path}")
     except Exception as e:
         print(f"Error saving to CSV: {e}")
