@@ -117,7 +117,7 @@ def setup_qa_subparsers(subparsers):
     trigger_qa = subparsers.add_parser('trigger_qa', parents=[get_common_parser()], help='Create condor submission directory.')
     trigger_qa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_TriggerQA.C', help='Fun4All Macro.')
     trigger_qa.set_defaults(
-        dst_per_job=2,
+        dst_per_job=4,
         memory=1.0,
         condor_script='scripts/genTriggerQA.sh',
         func=create_trigger_qa_jobs
