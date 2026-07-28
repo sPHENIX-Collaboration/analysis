@@ -50,22 +50,20 @@ class TriggerQA : public SubsysReco
     ALL,
     ZVTX,
     ZVTX10,
-    TRIG10,
     TRIG12,
     TRIG14,
-    ZVTX10_TRIG10,
+    ZVTX10_TRIG12_OR_TRIG14,
     ZVTX10_TRIG12,
     ZVTX10_TRIG14
   };
 
-  const int m_trig_10 = 10;
   const int m_trig_12 = 12;
   const int m_trig_14 = 14;
 
   // Histogram
   TH1 *hEvent{nullptr};
   TH1 *hZVertex{nullptr};
-  TH1 *hZVertex_Trig10{nullptr};
+  TH1 *hZVertex_Trig12_or_Trig14{nullptr};
   TH1 *hZVertex_Trig12{nullptr};
   TH1 *hZVertex_Trig14{nullptr};
   TH1 *hLuminosity{nullptr};

@@ -35,7 +35,7 @@ int TriggerQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_triggerAnalyzer = std::make_unique<TriggerAnalyzer>();
 
   // Event Counter Histogram
-  std::vector<std::string> eventType{"All", "Has Z", "|z| < 10 cm", "Trig 10", "Trig 12", "Trig 14", "|z| < 10 cm & Trig 10", "|z| < 10 cm & Trig 12", "|z| < 10 cm & Trig 14"};
+  std::vector<std::string> eventType{"All", "Has Z", "|z| < 10 cm", "Trig 12", "Trig 14", "|z| < 10 cm & (Trig 12 | Trig 14)", "|z| < 10 cm & Trig 12", "|z| < 10 cm & Trig 14"};
 
   hEvent = new TH1F("hEvent", "; Type; Events", eventType.size(), 0, eventType.size());
   for (unsigned int i = 0; i < eventType.size(); ++i)
@@ -50,17 +50,17 @@ int TriggerQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   double zvtx_high{50};
 
   hZVertex = new TH1F("hZVertex", "; Z [cm]; Events", bins_zvtx, zvtx_low, zvtx_high);
-  hZVertex_Trig10 = dynamic_cast<TH1*>(hZVertex->Clone("hZVertex_Trig10"));
+  hZVertex_Trig12_or_Trig14 = dynamic_cast<TH1*>(hZVertex->Clone("hZVertex_Trig12_or_Trig14"));
   hZVertex_Trig12 = dynamic_cast<TH1*>(hZVertex->Clone("hZVertex_Trig12"));
   hZVertex_Trig14 = dynamic_cast<TH1*>(hZVertex->Clone("hZVertex_Trig14"));
 
   se->registerHisto(hZVertex);
-  se->registerHisto(hZVertex_Trig10);
+  se->registerHisto(hZVertex_Trig12_or_Trig14);
   se->registerHisto(hZVertex_Trig12);
   se->registerHisto(hZVertex_Trig14);
 
   // Lumi Labels
-  std::vector<std::string> lumiType{"|z| < 10 cm & MBD Trig", "|z| < 10 cm", "|z| < 10 cm & Trig 12", "|z| < 10 cm & Trig 14", "|z| < 10 cm & Trig 10"};
+  std::vector<std::string> lumiType{"|z| < 10 cm & MBD Trig", "|z| < 10 cm", "|z| < 10 cm & Trig 12", "|z| < 10 cm & Trig 14"};
 
   hLuminosity = new TH1F("hLuminosity", "; Type; Luminosity [nb^{-1}]", lumiType.size(), 0, lumiType.size());
   for (unsigned int i = 0; i < lumiType.size(); ++i)
@@ -92,14 +92,8 @@ int TriggerQA::process_event(PHCompositeNode *topNode)
 
   m_triggerAnalyzer->decodeTriggers(topNode);
 
-  bool didTrig10Fire = m_triggerAnalyzer->didTriggerFire(m_trig_10);
   bool didTrig12Fire = m_triggerAnalyzer->didTriggerFire(m_trig_12);
   bool didTrig14Fire = m_triggerAnalyzer->didTriggerFire(m_trig_14);
-
-  if (didTrig10Fire)
-  {
-    hEvent->Fill(static_cast<int>(EventType::TRIG10));
-  }
 
   if (didTrig12Fire)
   {
@@ -126,9 +120,9 @@ int TriggerQA::process_event(PHCompositeNode *topNode)
 
   hZVertex->Fill(zvtx);
 
-  if (didTrig10Fire)
+  if (didTrig12Fire || didTrig14Fire)
   {
-    hZVertex_Trig10->Fill(zvtx);
+    hZVertex_Trig12_or_Trig14->Fill(zvtx);
   }
 
   if (didTrig12Fire)
@@ -147,13 +141,13 @@ int TriggerQA::process_event(PHCompositeNode *topNode)
   {
     hEvent->Fill(static_cast<int>(EventType::ZVTX10));
 
-    if (didTrig10Fire)
+    if (didTrig12Fire || didTrig14Fire)
     {
-      hEvent->Fill(static_cast<int>(EventType::ZVTX10_TRIG10));
+      hEvent->Fill(static_cast<int>(EventType::ZVTX10_TRIG12_OR_TRIG14));
 
       if (Verbosity() > 1)
       {
-        std::cout << std::format("Trigger {} Fired and |z| < 10 cm", m_trig_10) << std::endl;
+        std::cout << std::format("Trigger {} or {} Fired and |z| < 10 cm", m_trig_12, m_trig_14) << std::endl;
       }
     }
 
@@ -193,11 +187,9 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
-  int prescale_10 = m_triggerAnalyzer->getTriggerPrescale(m_trig_10);
   int prescale_12 = m_triggerAnalyzer->getTriggerPrescale(m_trig_12);
   int prescale_14 = m_triggerAnalyzer->getTriggerPrescale(m_trig_14);
 
-  std::cout << std::format("Trigger: {}, Prescale: {}\n", m_trig_10, prescale_10);
   std::cout << std::format("Trigger: {}, Prescale: {}\n", m_trig_12, prescale_12);
   std::cout << std::format("Trigger: {}, Prescale: {}\n", m_trig_14, prescale_14);
 
@@ -206,27 +198,22 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
   double lumi_vtx = 0.0;
   double lumi_trig12 = 0.0;
   double lumi_trig14 = 0.0;
-  double lumi_trig10 = 0.0;
 
   double sigma_mbd = 6.324;
 
-  // Calculate and select the best available trigger luminosity.
-  // By using an if-else chain, only the chosen trigger gets a non-zero value,
-  // ensuring that the sum of the individual contributions equals the total lumi_trig.
+  if (prescale_12 > 0 || prescale_14 > 0)
+  {
+    lumi_trig = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12_OR_TRIG14) + 1) / sigma_mbd * 1e-9;
+  }
+
   if (prescale_12 > 0)
   {
     lumi_trig12 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG12) + 1) / sigma_mbd * 1e-9;
-    lumi_trig = lumi_trig12;
   }
-  else if (prescale_14 > 0)
+
+  if (prescale_14 > 0)
   {
     lumi_trig14 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG14) + 1) / sigma_mbd * 1e-9;
-    lumi_trig = lumi_trig14;
-  }
-  else if (prescale_10 > 0)
-  {
-    lumi_trig10 = hEvent->GetBinContent(static_cast<int>(EventType::ZVTX10_TRIG10) + 1) / sigma_mbd * 1e-9;
-    lumi_trig = lumi_trig10;
   }
 
   // VTX-only calculation (ignores trigger prescale statuses)
@@ -236,7 +223,6 @@ int TriggerQA::End([[maybe_unused]] PHCompositeNode *topNode)
   hLuminosity->SetBinContent(2, lumi_vtx);
   hLuminosity->SetBinContent(3, lumi_trig12);
   hLuminosity->SetBinContent(4, lumi_trig14);
-  hLuminosity->SetBinContent(5, lumi_trig10);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
