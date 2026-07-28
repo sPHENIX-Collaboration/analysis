@@ -17,7 +17,7 @@ import functools
 import pickle
 import sys
 
-def process_file(path, pt_cut=30.0, neg_pt_cut=0.0):
+def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_plot=None, lumi_dict=None, r_jet=0.2):
     path = Path(path)
     if not path.exists():
         return None, None, None, None, None, f"File not found: {path}"
@@ -35,8 +35,12 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0):
         with uproot.open(path) as file:
             if "hJetPt" not in file:
                 return None, None, None, None, None, f"hJetPt not found in {path}"
-            if "hEvent" not in file:
-                return None, None, None, None, None, f"hEvent not found in {path}"
+            hist_event = file["hEvent"]
+            values_event = hist_event.values()
+            if len(values_event) == 0 or values_event[0] <= 0:
+                return None, None, None, None, None, f"Invalid event count in {path}"
+
+            n_events = values_event[0]
 
             hist_jet = file["hJetPt"]
             values_jet, edges_jet = hist_jet.to_numpy()
@@ -59,12 +63,73 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0):
                 mask_v3 = edges_jet_v3[:-1] >= pt_cut
                 v3_jets_counts = np.sum(values_jet_v3[mask_v3])
 
-            hist_event = file["hEvent"]
-            values_event = hist_event.values()
-            if len(values_event) == 0 or values_event[0] <= 0:
-                return None, None, None, None, None, f"Invalid event count in {path}"
+                if runs_to_plot is not None and run_number in runs_to_plot and plot_run_dir is not None:
+                    try:
+                        errors_jet_v3 = hist_jet_v3.errors()
+                        hep.style.use("ATLAS")
+                        fig, ax = plt.subplots(figsize=(8, 6))
+                        centers = (edges_jet_v3[:-1] + edges_jet_v3[1:]) / 2
+                        mask_nonzero = values_jet_v3 > 0
 
-            n_events = values_event[0]
+                        # Plot with markers and vertical error bars
+                        ax.errorbar(centers[mask_nonzero], values_jet_v3[mask_nonzero],
+                                    yerr=errors_jet_v3[mask_nonzero], fmt='o', color='black',
+                                    markersize=4, linestyle='none')
+
+                        ax.set_yscale('log')
+                        ax.set_xlabel(r"$p_{T}$ (GeV)")
+                        ax.set_ylabel("Counts")
+                        ax.set_xlim(left=0)
+
+                        lumi_val = lumi_dict.get(run_number) if lumi_dict else None
+                        if lumi_val is not None and lumi_val > 0:
+                            lumi_str = rf"{lumi_val:.2e} $\mu\mathrm{{b}}^{{-1}}$"
+                        else:
+                            lumi_str = "N/A"
+
+                        # Run info labels (top right)
+                        text_info = (
+                            f"Run: {run_number}\n"
+                            f"Events ($|z| < 10$ cm & MB): {n_events:.2e}\n"
+                            f"Luminosity ($|z| < 10$ cm & MB): {lumi_str}\n"
+                            f"Threshold ($\\geq$ {pt_cut:g} GeV): {v3_jets_counts:g}"
+                        )
+                        ax.text(0.95, 0.95, text_info, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+
+                        # Event selection labels (right, below run info)
+                        # Text above top right plot border
+                        ax.text(1.0, 1.01, rf"$R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+                        # Event selection labels (right, below run info)
+                        selection_text = (
+                            r"Event Selection:" + "\n"
+                            r"$|z| < 10$ cm & MB" + "\n"
+                            r"Centrality: 0-60%" + "\n"
+                            r"Good Calo-Cent" + "\n"
+                            r"No Flow Failure"
+                        )
+                        ax.text(0.95, 0.66, selection_text, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+
+                        # Jet selection labels (right, below event selection)
+                        jet_selection_text = (
+                            r"Jet Selection:" + "\n"
+                            r"Energy > 0" + "\n"
+                            r"$p_{T} > 10$ GeV" + "\n"
+                            r"$|\eta| < 1.1 - R$"
+                        )
+                        ax.text(0.65, 0.66, jet_selection_text, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+
+                        # Vertical line
+                        ax.axvline(pt_cut, color='red', linestyle='--')
+
+                        fig.tight_layout()
+                        plt.subplots_adjust(left=0.12, bottom=0.13, top=0.95)
+
+                        plot_path = plot_run_dir / f"run_{run_number}_hJetPtv3.png"
+                        fig.savefig(plot_path, dpi=300)
+                        plt.close(fig)
+                    except Exception as e:
+                        print(f"Failed to plot run {run_number}: {e}")
 
             return run_number, counts_above_cut, n_events, neg_jets_counts, v3_jets_counts, None
     except Exception as e:
@@ -171,6 +236,8 @@ def main():
     parser.add_argument("--cache-file", type=Path, default=None, help="Path to cache file for processed ROOT file data (default: <output_dir>/.jet_qa_cache_pt<pt>_negpt<neg_pt>.pkl).")
     parser.add_argument("--no-cache", action="store_true", help="Disable caching and force re-processing of all ROOT files.")
     parser.add_argument("--lumi-csv", type=Path, default=Path("files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv"), help="Path to luminosity CSV file (default: files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv).")
+    parser.add_argument("--plot-runs", type=Path, default=None, help="Path to a text file containing run numbers to plot individually (one per line).")
+    parser.add_argument("-r", "--r-jet", "--r", dest="r_jet", type=float, default=0.2, help="Jet resolution parameter R (default: 0.2).")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -219,6 +286,24 @@ def main():
     v3_normalized_counts = []
     v3_lumi_normalized_counts = []
 
+    runs_to_plot = set()
+    if args.plot_runs and args.plot_runs.exists():
+        try:
+            with args.plot_runs.open('r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.isdigit():
+                        runs_to_plot.add(int(line))
+            print(f"Loaded {len(runs_to_plot)} run numbers to plot from {args.plot_runs}")
+        except Exception as e:
+            print(f"Error reading plot runs file {args.plot_runs}: {e}")
+            sys.exit(1)
+
+    plot_run_dir = None
+    if runs_to_plot:
+        plot_run_dir = args.output_dir / "run_qa_plots"
+        plot_run_dir.mkdir(parents=True, exist_ok=True)
+
     print(f"Found {len(file_list)} input files.")
 
     cache = {}
@@ -243,7 +328,17 @@ def main():
         resolved_str = str(path.resolve())
         mtime = path.stat().st_mtime if path.exists() else 0
 
-        if not args.no_cache and resolved_str in cache:
+        force_process = False
+        if runs_to_plot:
+            try:
+                run_num_guess = int(path.name.split('.')[0])
+            except ValueError:
+                match = re.search(r'\d+', path.name)
+                run_num_guess = int(match.group()) if match else None
+            if run_num_guess in runs_to_plot:
+                force_process = True
+
+        if not args.no_cache and resolved_str in cache and not force_process:
             entry = cache[resolved_str]
             if (entry.get("mtime") == mtime and
                 entry.get("pt_cut") == args.pt_cut and
@@ -255,7 +350,7 @@ def main():
 
     if files_to_process:
         print(f"Processing {len(files_to_process)} files ({len(results)} loaded from cache)...")
-        process_func = functools.partial(process_file, pt_cut=args.pt_cut, neg_pt_cut=args.neg_pt_cut)
+        process_func = functools.partial(process_file, pt_cut=args.pt_cut, neg_pt_cut=args.neg_pt_cut, plot_run_dir=plot_run_dir, runs_to_plot=runs_to_plot, lumi_dict=lumi_dict, r_jet=args.r_jet)
         max_workers = min(os.cpu_count() or 4, 32)
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             new_results = list(tqdm.tqdm(executor.map(process_func, files_to_process), total=len(files_to_process)))
