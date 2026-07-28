@@ -33,19 +33,11 @@ def process_file(path):
                 except Exception:
                     pass
 
-                method = "Unknown"
-                vals = hist.values()
-                if len(vals) >= 4:
-                    if vals[2] > 0:
-                        method = "Trig 12"
-                    elif vals[3] > 0:
-                        method = "Trig 14"
-
-                return run_number, lumi, method, title_str, None
+                return run_number, lumi, title_str, None
             else:
-                return None, None, None, None, f"hLuminosity not found in {path}"
+                return None, None, None, f"hLuminosity not found in {path}"
     except Exception as e:
-        return None, None, None, None, f"Error processing {path}: {e}"
+        return None, None, None, f"Error processing {path}: {e}"
 
 def main():
     parser = argparse.ArgumentParser(description="Plot luminosity per run from a list of ROOT files.")
@@ -85,12 +77,12 @@ def main():
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         results = list(tqdm.tqdm(executor.map(process_file, file_list), total=len(file_list)))
 
-    for run_num, lumi, method, title_str, err in results:
+    for run_num, lumi, title_str, err in results:
         if err:
             print(err)
         elif run_num is not None:
             lumi_ub_inv = round(lumi * 1000, 4)
-            results_data.append({'Run': run_num, 'Lumi': lumi, 'Lumi_ub_inv': lumi_ub_inv, 'Method': method})
+            results_data.append({'Run': run_num, 'Lumi': lumi, 'Lumi_ub_inv': lumi_ub_inv})
             if y_axis_title == "Luminosity" and title_str:
                 y_axis_title = title_str
 
@@ -101,29 +93,18 @@ def main():
     # Sort by run number to ensure the plot is ordered
     sorted_results = sorted(results_data, key=lambda x: x['Run'])
 
-    runs_trig12, lumis_trig12 = [], []
-    runs_trig14, lumis_trig14 = [], []
-    runs_unknown, lumis_unknown = [], []
+    all_runs = []
     all_lumis = []
     original_lumis = []
 
     for r in sorted_results:
+        all_runs.append(r['Run'])
         original_lumi = r['Lumi']
         original_lumis.append(original_lumi)
 
         # Scale luminosities to inverse microbarns (x 10^3) for the plot
         plot_lumi = original_lumi * 1000
         all_lumis.append(plot_lumi)
-
-        if r['Method'] == "Trig 12":
-            runs_trig12.append(r['Run'])
-            lumis_trig12.append(plot_lumi)
-        elif r['Method'] == "Trig 14":
-            runs_trig14.append(r['Run'])
-            lumis_trig14.append(plot_lumi)
-        else:
-            runs_unknown.append(r['Run'])
-            lumis_unknown.append(plot_lumi)
 
     # Update y-axis title to reflect inverse microbarns and ensure valid LaTeX math mode
     if "nb" in y_axis_title:
@@ -142,19 +123,8 @@ def main():
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    sum_trig12_orig = sum(lumis_trig12) / 1000
-    sum_trig14_orig = sum(lumis_trig14) / 1000
-    sum_unknown_orig = sum(lumis_unknown) / 1000
-
-    if runs_trig12:
-        label_12 = rf"|z| < 10 cm & Trig 12 ({len(runs_trig12)} runs, {sum_trig12_orig:.2f} $\text{{nb}}^{{-1}}$)"
-        ax.plot(runs_trig12, lumis_trig12, marker='s', markersize=4, linestyle='none', color='tab:orange', label=label_12)
-    if runs_trig14:
-        label_14 = rf"|z| < 10 cm & Trig 14 ({len(runs_trig14)} runs, {sum_trig14_orig:.2f} $\text{{nb}}^{{-1}}$)"
-        ax.plot(runs_trig14, lumis_trig14, marker='o', markersize=4, linestyle='none', color='tab:blue', label=label_14)
-    if runs_unknown:
-        label_unknown = rf"Unknown ({len(runs_unknown)} runs, {sum_unknown_orig:.2f} $\text{{nb}}^{{-1}}$)"
-        ax.plot(runs_unknown, lumis_unknown, marker='^', markersize=4, linestyle='none', color='tab:gray', label=label_unknown)
+    label_data = rf"|z| < 10 cm & MBD Trig"
+    ax.plot(all_runs, all_lumis, marker='o', markersize=4, linestyle='none', color='black', label=label_data)
 
     # Add a light dashed line for the average luminosity
     avg_plot_lumi = sum(all_lumis) / len(all_lumis) if all_lumis else 0
@@ -183,13 +153,12 @@ def main():
     csv_path = args.output_dir / f"{args.name}.csv"
     try:
         with csv_path.open('w', newline='') as csvfile:
-            fieldnames = ['Run', 'Method', 'Lumi_ub_inv']
+            fieldnames = ['Run', 'Lumi_ub_inv']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
             writer.writeheader()
             for row in sorted_results:
                 writer.writerow({
                     'Run': row['Run'],
-                    'Method': row['Method'],
                     'Lumi_ub_inv': row['Lumi_ub_inv']
                 })
         print(f"Saved detailed run summary to {csv_path}")
@@ -203,19 +172,6 @@ def main():
     print(f"Saved plots as {pdf_path} and {png_path}")
 
     print("-" * 88)
-    n_trig14 = len(runs_trig14)
-    n_trig12 = len(runs_trig12)
-    n_unknown = len(runs_unknown)
-
-    pct_trig14 = (sum_trig14_orig / total_lumi * 100) if total_lumi > 0 else 0.0
-    pct_trig12 = (sum_trig12_orig / total_lumi * 100) if total_lumi > 0 else 0.0
-    pct_unknown = (sum_unknown_orig / total_lumi * 100) if total_lumi > 0 else 0.0
-
-    print("Trigger Usage Summary:")
-    print(f"  - Scaled Trig 12: {n_trig12} run(s) | Lumi: {sum_trig12_orig:.6f} nb^-1 ({pct_trig12:.2f}%)")
-    print(f"  - Scaled Trig 14: {n_trig14} run(s) | Lumi: {sum_trig14_orig:.6f} nb^-1 ({pct_trig14:.2f}%)")
-    if n_unknown > 0:
-        print(f"  - Unknown Trigger:           {n_unknown} run(s) | Lumi: {sum_unknown_orig:.6f} nb^-1 ({pct_unknown:.2f}%)")
     print(f"Total Integrated Luminosity (|z| < 10 cm) for {total_runs} runs: {total_lumi:.6f} nb^-1")
 
 if __name__ == "__main__":
