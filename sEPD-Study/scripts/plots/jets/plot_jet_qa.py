@@ -70,7 +70,7 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0):
     except Exception as e:
         return None, None, None, None, None, f"Error processing {path}: {e}"
 
-def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV) / Event", suffix="", extra_text=None):
+def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV) / Event", suffix="", extra_text=None, ylim_top=None):
     hep.style.use("ATLAS")
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -79,12 +79,15 @@ def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, yla
     # Add a light dashed line for the average counts
     avg_counts = sum(normalized_counts) / len(normalized_counts)
     ax.axhline(avg_counts, color='gray', linestyle='--', alpha=0.5, label='Average')
-    ax.legend(loc='upper right', frameon=False)
+    ax.legend(loc='upper center', frameon=False)
 
     ax.set_xlabel("Run Number", labelpad=18)
     ax.set_ylabel(ylabel)
     ax.set_title("Jets")
-    ax.set_ylim(bottom=0)
+    if ylim_top is not None:
+        ax.set_ylim(bottom=0, top=ylim_top)
+    else:
+        ax.set_ylim(bottom=0)
 
     # Calculate and display the number of runs and event selections
     total_runs = len(run_numbers)
@@ -167,6 +170,7 @@ def main():
     parser.add_argument("-np", "--neg-pt-cut", type=float, default=0.0, help="pT threshold in GeV for negative energy jet counts (default: 0.0).")
     parser.add_argument("--cache-file", type=Path, default=None, help="Path to cache file for processed ROOT file data (default: <output_dir>/.jet_qa_cache_pt<pt>_negpt<neg_pt>.pkl).")
     parser.add_argument("--no-cache", action="store_true", help="Disable caching and force re-processing of all ROOT files.")
+    parser.add_argument("--lumi-csv", type=Path, default=Path("files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv"), help="Path to luminosity CSV file (default: files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv).")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -190,14 +194,30 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    lumi_dict = {}
+    if args.lumi_csv and args.lumi_csv.exists():
+        try:
+            lumi_df = pd.read_csv(args.lumi_csv)
+            if 'Run' in lumi_df.columns and 'Lumi_ub_inv' in lumi_df.columns:
+                lumi_dict = dict(zip(lumi_df['Run'], lumi_df['Lumi_ub_inv']))
+            else:
+                print(f"Warning: Columns 'Run' and/or 'Lumi_ub_inv' not found in {args.lumi_csv}")
+        except Exception as e:
+            print(f"Error reading lumi CSV {args.lumi_csv}: {e}")
+    else:
+        print(f"Warning: Lumi CSV not found at {args.lumi_csv}")
+
     run_numbers = []
     normalized_counts = []
+    lumi_normalized_counts = []
     events_list = []
     raw_counts = []
     neg_raw_counts = []
     neg_normalized_counts = []
+    neg_lumi_normalized_counts = []
     v3_raw_counts = []
     v3_normalized_counts = []
+    v3_lumi_normalized_counts = []
 
     print(f"Found {len(file_list)} input files.")
 
@@ -261,45 +281,65 @@ def main():
     else:
         print(f"All {len(results)} files loaded from cache.")
 
+    skipped_no_lumi = []
+
     for run_num, counts, n_events, neg_jets, v3_jets, err in results:
         if err:
             print(err)
         elif run_num is not None:
+            if run_num not in lumi_dict or lumi_dict[run_num] <= 0:
+                skipped_no_lumi.append(run_num)
+                continue
+
+            lumi = lumi_dict[run_num]
+
             norm = counts / n_events
+            lumi_norm = counts / lumi
+
             run_numbers.append(run_num)
             normalized_counts.append(norm)
+            lumi_normalized_counts.append(lumi_norm)
             events_list.append(n_events)
             raw_counts.append(counts)
             if neg_jets is not None:
                 neg_raw_counts.append(neg_jets)
                 neg_normalized_counts.append(neg_jets / n_events)
+                neg_lumi_normalized_counts.append(neg_jets / lumi)
             else:
                 neg_raw_counts.append(0)
                 neg_normalized_counts.append(0)
+                neg_lumi_normalized_counts.append(0)
             if v3_jets is not None:
                 v3_raw_counts.append(v3_jets)
                 v3_normalized_counts.append(v3_jets / n_events)
+                v3_lumi_normalized_counts.append(v3_jets / lumi)
             else:
                 v3_raw_counts.append(0)
                 v3_normalized_counts.append(0)
+                v3_lumi_normalized_counts.append(0)
+
+    if skipped_no_lumi:
+        print(f"\nSkipped {len(skipped_no_lumi)} runs because they had no valid luminosity in the CSV:")
+        print(", ".join(map(str, skipped_no_lumi)))
+        print("")
 
     if not run_numbers:
         print("No valid data found to plot.")
         return
 
     # Sort by run number to ensure the plot is ordered
-    sorted_pairs = sorted(zip(run_numbers, normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, v3_raw_counts, v3_normalized_counts))
-    run_numbers, normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, v3_raw_counts, v3_normalized_counts = zip(*sorted_pairs)
+    sorted_pairs = sorted(zip(run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts))
+    run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts = zip(*sorted_pairs)
 
     # Save all processed runs to CSV sorted by V3RawCounts descending
     counts_data = [
         {
-            'Run': r, 'Events': ev, 'RawCounts': raw, 'NormalizedCounts': c,
-            'NegRawCounts': neg_raw, 'NegNormalizedCounts': neg_norm,
-            'V3RawCounts': v3_raw, 'V3NormalizedCounts': v3_norm
+            'Run': r, 'Events': ev, 'RawCounts': raw, 'NormalizedCounts': c, 'LumiNormalizedCounts': lumi_c,
+            'NegRawCounts': neg_raw, 'NegNormalizedCounts': neg_norm, 'NegLumiNormalizedCounts': neg_lumi_norm,
+            'V3RawCounts': v3_raw, 'V3NormalizedCounts': v3_norm, 'V3LumiNormalizedCounts': v3_lumi_norm
         }
-        for r, c, ev, raw, neg_raw, neg_norm, v3_raw, v3_norm in zip(
-            run_numbers, normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, v3_raw_counts, v3_normalized_counts
+        for r, c, lumi_c, ev, raw, neg_raw, neg_norm, neg_lumi_norm, v3_raw, v3_norm, v3_lumi_norm in zip(
+            run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts
         )
     ]
 
@@ -317,19 +357,44 @@ def main():
     pt_str = f"{args.pt_cut:g}"
     plot_normalized_counts(
         run_numbers, normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event"
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix="-norm-events"
+    )
+    plot_normalized_counts(
+        run_numbers, lumi_normalized_counts, args.output_dir, args.name,
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi"
     )
     plot_raw_counts(
         run_numbers, raw_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)"
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix="-raw"
     )
 
     v3_extra_text = ["Jet Energy > 0 GeV", r"$|\mathrm{calo}\ v_{2}| < 0.48$"]
     plot_normalized_counts(
         run_numbers, v3_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix="-v3-filters",
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix="-norm-events-v3-filters",
         extra_text=v3_extra_text
     )
+    plot_normalized_counts(
+        run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-v3-filters",
+        extra_text=v3_extra_text
+    )
+
+    v3_lumi_arr = np.array(v3_lumi_normalized_counts)
+    ylim_top_zoomed = None
+    if len(v3_lumi_arr) > 0:
+        q1, q3 = np.percentile(v3_lumi_arr, [25, 75])
+        iqr = q3 - q1
+        upper_bound = q3 + 2.5 * iqr
+        if upper_bound > 0:
+            ylim_top_zoomed = upper_bound * 1.2
+
+    plot_normalized_counts(
+        run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
+        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-v3-filters-zoomed",
+        extra_text=v3_extra_text, ylim_top=ylim_top_zoomed
+    )
+
     plot_raw_counts(
         run_numbers, v3_raw_counts, args.output_dir, args.name,
         ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix="-v3-filters-raw",
@@ -339,7 +404,11 @@ def main():
     neg_pt_str = f"{args.neg_pt_cut:g}"
     plot_normalized_counts(
         run_numbers, neg_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / Event", suffix="-neg"
+        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / Event", suffix="-norm-events-neg"
+    )
+    plot_normalized_counts(
+        run_numbers, neg_lumi_normalized_counts, args.output_dir, args.name,
+        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-neg"
     )
     plot_raw_counts(
         run_numbers, neg_raw_counts, args.output_dir, args.name,
