@@ -125,7 +125,8 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_p
                         fig.tight_layout()
                         plt.subplots_adjust(left=0.12, bottom=0.13, top=0.95)
 
-                        plot_path = plot_run_dir / f"run_{run_number}_hJetPtv3.png"
+                        r_tag = f"{int(round(r_jet * 10)):02d}"
+                        plot_path = plot_run_dir / f"run_{run_number}_r{r_tag}_hJetPtv3.png"
                         fig.savefig(plot_path, dpi=300)
                         plt.close(fig)
                     except Exception as e:
@@ -473,21 +474,6 @@ def main():
         run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
         ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-v3-filters",
         extra_text=v3_extra_text
-    )
-
-    v3_lumi_arr = np.array(v3_lumi_normalized_counts)
-    ylim_top_zoomed = None
-    if len(v3_lumi_arr) > 0:
-        q1, q3 = np.percentile(v3_lumi_arr, [25, 75])
-        iqr = q3 - q1
-        upper_bound = q3 + 2.5 * iqr
-        if upper_bound > 0:
-            ylim_top_zoomed = upper_bound * 1.2
-
-    plot_normalized_counts(
-        run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-v3-filters-zoomed",
-        extra_text=v3_extra_text, ylim_top=ylim_top_zoomed
     )
 
     plot_raw_counts(
