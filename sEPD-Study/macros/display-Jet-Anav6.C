@@ -87,10 +87,10 @@ void DisplayJetAnav6::read_hists()
   std::string base_path_jetAna = "/gpfs02/sphenix/user/anarde/sEPD-Study/jetAna";
   std::string base_path_f4a = "/gpfs02/sphenix/user/anarde/sEPD-Study/f4a";
 
-  std::string input = std::format("{}/07-08-26-r03/test.root", base_path_jetAna);
-  std::string input_r02 = std::format("{}/07-08-26-r02/test.root", base_path_jetAna);
-  std::string input_f4a = std::format("{}/07-05-26/test.root", base_path_f4a);
-  std::string input_68144 = std::format("{}/07-07-26/merged/output/68144.root", base_path_jetAna);
+  std::string input = std::format("{}/07-27-26-r03/test.root", base_path_jetAna);
+  std::string input_r02 = std::format("{}/07-27-26-r02/test.root", base_path_jetAna);
+  std::string input_f4a = std::format("{}/07-24-26/test.root", base_path_f4a);
+  std::string input_68144 = std::format("{}/07-27-26-r03/merged/output/68144.root", base_path_jetAna);
 
   std::unordered_set<std::string> names = {"hCentrality", "h2CaloECentrality_default", "h2CaloECentrality", "h2CentralityCaloV2",
                                            "h2CaloV2JetPt", "h2CentralityJetPt",
