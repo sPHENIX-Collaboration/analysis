@@ -75,14 +75,6 @@ class JetAnalysisv2
   }
 
  private:
-  struct JetInfo
-  {
-    double energy{0};
-    double pt{0};
-    double phi{0};
-    double eta{0};
-  };
-
   static constexpr size_t m_bins_cent = 100;
   static constexpr double m_cent_low = -0.5;
   static constexpr double m_cent_high = 99.5;
