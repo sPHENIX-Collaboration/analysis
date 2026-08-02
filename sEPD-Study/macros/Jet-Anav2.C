@@ -126,9 +126,7 @@ class JetAnalysisv2
     double max_jet_pt{0.0};
 
     // Event Checks
-    bool pass_cent{false};
     bool pass_calo_mbd{false};
-    bool pass_all{false};
 
     std::vector<double>* jet_energy{nullptr};
     std::vector<double>* jet_pt{nullptr};
@@ -400,6 +398,11 @@ void JetAnalysisv2::init_hists()
 
 void JetAnalysisv2::process_jets() const
 {
+  if (!m_event_data.pass_calo_mbd)
+  {
+    return;
+  }
+
   double cent = m_event_data.event_centrality;
 
   double total_EMCal = m_event_data.event_EMCal_Energy;
