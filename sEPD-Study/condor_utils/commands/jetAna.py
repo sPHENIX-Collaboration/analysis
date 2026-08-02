@@ -1,127 +1,136 @@
 import sys
-import shutil
-import datetime
-import textwrap
 from pathlib import Path
-import logging
 
-from condor_utils.core.logging import setup_logging
-from condor_utils.core.helpers import run_command_and_log, chunk_list
+from condor_utils.core.helpers import chunk_list
 from condor_utils.core.manager import CondorJobManager
 from condor_utils.cli import get_common_parser
 
 def jetAna_jobs(args):
-    input_list      = Path(args.input_list).resolve()
-    f4a_qa_list     = Path(args.f4a_qa_list).resolve()
+    manager = CondorJobManager(args, job_name="jetAna")
+    manager.add_file_to_check(args.f4a_qa_list)
+    manager.add_file_to_check(args.jetAna_macro)
+    manager.add_file_to_check(args.jetAna_bin)
+
+    manager.validate_paths()
+
     jet_pt_min      = args.jet_pt_min
     jet_radius_type = args.jet_radius_type
     files_per_job   = args.files_per_job
-    output_dir      = Path(args.output_dir).resolve()
-    jetAna_macro    = Path(args.jetAna_macro).resolve()
-    jetAna_bin      = Path(args.jetAna_bin).resolve()
-    log_file        = output_dir / 'log.txt'
-    condor_memory   = args.memory
-    condor_script   = Path(args.condor_script).resolve()
-    condor_log_dir  = Path(args.condor_log_dir).resolve()
-    common_errors   = Path(args.common_errors).resolve()
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    logger = setup_logging(log_file, logging.DEBUG)
 
     R_values = {2: 0.2, 3: 0.3}
     R_value = R_values.get(jet_radius_type)
-
     if R_value is not None:
         jet_eta_max = 1.1 - R_value
     else:
-        logger.critical(f'Invalid jet_radius_type: {jet_radius_type}')
+        manager.logger.critical(f'Invalid jet_radius_type: {jet_radius_type}')
         sys.exit(1)
 
-    for f in [input_list, f4a_qa_list, condor_script, jetAna_bin, common_errors]:
-        if not f.is_file():
-            logger.critical(f'File: {f} does not exist!')
-            sys.exit(1)
+    manager.log_initialization({
+        'Input F4A QA List': Path(args.f4a_qa_list).resolve(),
+        'Jet pT Min': f"{jet_pt_min} GeV",
+        'Jet eta Max': jet_eta_max,
+        'Jet Radius Type': jet_radius_type,
+        'Files Per Job': files_per_job,
+        'Jet Ana Macro': Path(args.jetAna_macro).resolve(),
+        'Jet Ana Bin': Path(args.jetAna_bin).resolve(),
+    })
 
-    logger.info('#'*40)
-    logger.info(f'LOGGING: {datetime.datetime.now()}')
-    logger.info(f'Input List: {input_list}')
-    logger.info(f'Input F4A QA List: {f4a_qa_list}')
-    logger.info(f'Jet pT Min: {jet_pt_min} GeV')
-    logger.info(f'Jet eta Max: {jet_eta_max}')
-    logger.info(f'Jet Radius Type: {jet_radius_type}')
-    logger.info(f'Files Per Job: {files_per_job}')
-    logger.info(f'Jet Ana Macro: {jetAna_macro}')
-    logger.info(f'Jet Ana Bin: {jetAna_bin}')
-    logger.info(f'Output Directory: {output_dir}')
-    logger.info(f'Log File: {log_file}')
-    logger.info(f'Condor Memory: {condor_memory} GB')
-    logger.info(f'Condor Script: {condor_script}')
-    logger.info(f'Condor Log Directory: {condor_log_dir}')
-    logger.info(f'Common Errors File: {common_errors}')
+    files_dir = manager.prepare_directories()
 
-    if condor_log_dir.is_dir():
-        shutil.rmtree(condor_log_dir)
+    manager.copy_dependencies(extra_files=[args.jetAna_macro, args.jetAna_bin])
 
-    condor_log_dir.mkdir(parents=True, exist_ok=True)
-
-    subdirectories = ['stdout', 'error', 'output', 'files']
-    for subdir in subdirectories:
-        (output_dir / subdir).mkdir(parents=True, exist_ok=True)
-
-    shutil.copy(jetAna_macro, output_dir)
-    jetAna_bin = shutil.copy(jetAna_bin, output_dir)
-    shutil.copy(condor_script, output_dir)
-    shutil.copy(common_errors, output_dir)
-
-    run_paths = [Path(l.strip()) for l in f4a_qa_list.read_text(encoding='utf-8').splitlines()]
+    run_paths = [Path(l.strip()) for l in Path(args.f4a_qa_list).resolve().read_text(encoding='utf-8').splitlines()]
     run_map = {p.stem: str(p) for p in run_paths}
 
     run_trees = {}
-    input_lines = input_list.read_text(encoding='utf-8').splitlines()
+    input_lines = manager.input_list.read_text(encoding='utf-8').splitlines()
 
     for line in input_lines:
         tree_path = Path(line.strip())
         run_id = tree_path.parent.parent.name
-
         if run_id not in run_trees:
             run_trees[run_id] = []
-
         run_trees[run_id].append(str(tree_path))
 
-    jobs_list_file = output_dir / 'jobs.list'
+    jobs_list_file = manager.output_dir / 'jobs.list'
+    jobs_list_file.unlink(missing_ok=True)
     total_jobs = 0
 
     with open(jobs_list_file, mode='w', encoding='utf-8') as f_jobs:
         for run_id, trees in run_trees.items():
             if run_id not in run_map:
-                logger.warning(f"Run {run_id} found in input trees but not in QA list. Skipping.")
+                manager.logger.warning(f"Run {run_id} found in input trees but not in QA list. Skipping.")
                 continue
 
             qa_file = run_map[run_id]
 
             for i, chunk in enumerate(chunk_list(trees, files_per_job)):
-                chunk_file = output_dir / 'files' / f'{run_id}_part_{i}.list'
+                chunk_file = files_dir / f'{run_id}_part_{i}.list'
                 chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
 
                 f_jobs.write(f"{chunk_file},{qa_file}\n")
                 total_jobs += 1
 
-    logger.info(f"Total jobs prepared: {total_jobs}")
+    manager.logger.info(f"Total jobs prepared: {total_jobs}")
 
-    submit_file_content = textwrap.dedent(f"""\
-        executable     = {condor_script.name}
-        arguments      = {jetAna_bin} $(input_tree_list) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {output_dir}/output
-        log            = {condor_log_dir}/job-$(ClusterId)-$(Process).log
-        output         = stdout/job-$(ClusterId)-$(Process).out
-        error          = error/job-$(ClusterId)-$(Process).err
-        request_memory = {condor_memory}GB
-        max_retries    = {args.max_retries}
-    """)
+    arguments = f"{Path(args.jetAna_bin).resolve()} $(input_tree_list) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {manager.output_dir}/output"
+    sub_file_name = f"{manager.condor_script.stem}.sub"
+    manager.write_submit_file(arguments=arguments, sub_file_name=sub_file_name)
+    manager.finalize_submission(queue_arg="input_tree_list,input_f4a_qa from jobs.list", sub_file_name=sub_file_name)
 
-    (output_dir / 'genJetAna.sub').write_text(submit_file_content)
 
-    command = f'cd {output_dir} && condor_submit genJetAna.sub -queue "input_tree_list,input_f4a_qa from jobs.list"'
-    logger.info(command)
+def jetAnav2_jobs(args):
+    manager = CondorJobManager(args, job_name="jetAnav2")
+    manager.add_file_to_check(args.jetAna_macro)
+    manager.add_file_to_check(args.jetAna_bin)
+
+    manager.validate_paths()
+
+    jet_pt_min      = args.jet_pt_min
+    jet_eta_max     = args.jet_eta_max
+    files_per_job   = args.files_per_job
+
+    manager.log_initialization({
+        'Jet pT Min': f"{jet_pt_min} GeV",
+        'Jet eta Max': jet_eta_max,
+        'Files Per Job': files_per_job,
+        'Jet Ana Macro': Path(args.jetAna_macro).resolve(),
+        'Jet Ana Bin': Path(args.jetAna_bin).resolve(),
+    })
+
+    files_dir = manager.prepare_directories()
+
+    manager.copy_dependencies(extra_files=[args.jetAna_macro, args.jetAna_bin])
+
+    run_trees = {}
+    input_lines = manager.input_list.read_text(encoding='utf-8').splitlines()
+
+    for line in input_lines:
+        tree_path = Path(line.strip())
+        run_id = tree_path.parent.parent.name
+        if run_id not in run_trees:
+            run_trees[run_id] = []
+        run_trees[run_id].append(str(tree_path))
+
+    jobs_list_file = manager.output_dir / 'jobs.list'
+    jobs_list_file.unlink(missing_ok=True)
+    total_jobs = 0
+
+    with open(jobs_list_file, mode='w', encoding='utf-8') as f_jobs:
+        for run_id, trees in run_trees.items():
+            for i, chunk in enumerate(chunk_list(trees, files_per_job)):
+                chunk_file = files_dir / f'{run_id}_part_{i}.list'
+                chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
+
+                f_jobs.write(f"{chunk_file}\n")
+                total_jobs += 1
+
+    manager.logger.info(f"Total jobs prepared: {total_jobs}")
+
+    arguments = f"{Path(args.jetAna_bin).resolve()} $(input_tree_list) {jet_pt_min} {jet_eta_max} {manager.output_dir}/output"
+    sub_file_name = f"{manager.condor_script.stem}.sub"
+    manager.write_submit_file(arguments=arguments, sub_file_name=sub_file_name)
+    manager.finalize_submission(queue_arg="input_tree_list from jobs.list", sub_file_name=sub_file_name)
 
 
 def setup_jetAna_subparsers(subparsers):
@@ -140,3 +149,18 @@ def setup_jetAna_subparsers(subparsers):
     jetAna.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAna.sh', help='Condor Script.')
     jetAna.add_argument('-f4', '--common-errors', type=str, default='files/common-errors.txt', help='Common Errors.')
     jetAna.set_defaults(func=jetAna_jobs)
+
+    jetAnav2 = subparsers.add_parser('jetAnav2', help='jetAnav2 condor jobs.')
+    jetAnav2.add_argument('-i', '--input-list', type=str, required=True, help='List of TTrees to analyze.')
+    jetAnav2.add_argument('-j', '--jet-pt-min', type=float, default=10, help='Minimum Jet pT. Default: 10 [GeV]')
+    jetAnav2.add_argument('-e', '--jet-eta-max', type=float, default=0.9, help='Maximum Jet eta. Default: 0.9')
+    jetAnav2.add_argument('-p', '--files-per-job', type=int, default=100, help='Number of trees per job list. Default: 100')
+    jetAnav2.add_argument('-f', '--jetAna-macro', type=str, default='macros/Jet-Anav2.C', help='Jet-Ana Macro. Default: macros/Jet-Anav2.C')
+    jetAnav2.add_argument('-f2', '--jetAna-bin', type=str, default='bin/Jet-Anav2', help='Jet-Ana Bin. Default: bin/Jet-Anav2')
+    jetAnav2.add_argument('-o', '--output-dir', type=str, default='scratch/test', help='Output Directory. Default: scratch/test')
+    jetAnav2.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB). Default: 1 GB.')
+    jetAnav2.add_argument('-m', '--max-retries', type=int, default=3, help='Max Condor job retries on failure. Default: 3.')
+    jetAnav2.add_argument('-l', '--condor-log-dir', type=str, default='/tmp/anarde/dump', help='Condor Log Directory.')
+    jetAnav2.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAnav2.sh', help='Condor Script.')
+    jetAnav2.add_argument('-f4', '--common-errors', type=str, default='files/common-errors.txt', help='Common Errors.')
+    jetAnav2.set_defaults(func=jetAnav2_jobs)
