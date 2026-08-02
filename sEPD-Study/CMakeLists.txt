@@ -148,6 +148,10 @@ target_link_libraries(Q-vec-corrv2 PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(Jet-Ana macros/Jet-Ana.C)
 target_link_libraries(Jet-Ana PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- Jet Ana v2 ---
+add_executable(Jet-Anav2 macros/Jet-Anav2.C)
+target_link_libraries(Jet-Anav2 PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- display ---
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
