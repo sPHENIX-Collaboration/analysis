@@ -400,7 +400,6 @@ class JetAnalysis
   // --- Private Helper Methods ---
   void setup_chain();
 
-  void load_correction_data(TFile* file);
   void read_Q_calib();
   void load_calo_centrality_cuts();
 
