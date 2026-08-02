@@ -349,6 +349,7 @@ int JetValidationv2::process_jets(PHCompositeNode *topNode)
       if (energy > 0)
       {
         m_data.max_pt_r02 = std::max(m_data.max_pt_r02, pt_calib);
+        hasJet = true;
       }
     }
   }
