@@ -132,7 +132,7 @@ class CondorJobManager:
                     src = Path(d).resolve()
                     shutil.copytree(src, self.output_dir / src.name, dirs_exist_ok=True)
 
-    def write_submit_file(self, arguments, executable=None, memory=None, sub_file_name="genFun4All.sub"):
+    def write_submit_file(self, arguments, executable=None, memory=None, sub_file_name="genFun4All.sub", stdout_dir="stdout", error_dir="error", log_prefix="job"):
         exec_file = executable or (self.condor_script.name if self.condor_script else "script.sh")
         mem = memory or getattr(self.args, 'memory', 1)
 
@@ -141,9 +141,9 @@ class CondorJobManager:
         submit_content = textwrap.dedent(f"""\
             executable     = {exec_file}
             arguments      = {arguments}
-            log            = {log_dir}/job-$(ClusterId)-$(Process).log
-            output         = stdout/job-$(ClusterId)-$(Process).out
-            error          = error/job-$(ClusterId)-$(Process).err
+            log            = {log_dir}/{log_prefix}-$(ClusterId)-$(Process).log
+            output         = {stdout_dir}/job-$(ClusterId)-$(Process).out
+            error          = {error_dir}/job-$(ClusterId)-$(Process).err
             request_memory = {mem}GB
             max_retries    = {getattr(self.args, 'max_retries', 3)}
         """)
