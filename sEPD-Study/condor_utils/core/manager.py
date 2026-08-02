@@ -154,17 +154,23 @@ class CondorJobManager:
     def finalize_submission(self, queue_arg="input_dst from jobs.list", sub_file_name="genFun4All.sub", limit=15000):
         match = re.search(r" from ([\w\.-]+)", queue_arg)
         list_file = match.group(1) if match else "jobs.list"
+        list_path = self.output_dir / list_file
 
-        # Split the job list file to respect the Condor submission limit
-        split_prefix = "jobs-"
-        command = f'split --lines {limit} {list_file} -d -a 1 {split_prefix} --additional-suffix=.list'
-        run_command_and_log(command, self.logger, self.output_dir, False)
+        total_lines = get_line_count(list_path)
 
-        # Find the resulting split files
-        split_files = sorted(self.output_dir.glob(f"{split_prefix}*.list"))
-        if not split_files:
-            # Fallback if split didn't generate anything (e.g. if the list file was empty)
-            split_files = [self.output_dir / list_file]
+        if total_lines > limit:
+            # Split the job list file to respect the Condor submission limit
+            split_prefix = "jobs-"
+            command = f'split --lines {limit} {list_file} -d -a 1 {split_prefix} --additional-suffix=.list'
+            run_command_and_log(command, self.logger, self.output_dir, False)
+
+            # Find the resulting split files
+            split_files = sorted(self.output_dir.glob(f"{split_prefix}*.list"))
+            if not split_files:
+                # Fallback if split didn't generate anything (e.g. if the list file was empty)
+                split_files = [list_path]
+        else:
+            split_files = [list_path]
 
         for sf in split_files:
             current_queue_arg = queue_arg.replace(list_file, sf.name)
