@@ -218,6 +218,43 @@ def create_f4a_data_mc_jobs(args):
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst_global,input_dst_jet,input_dst_g4hit,input_dst_calo,input_calib from jobs.list")
 
+def create_f4a_nobkgsub_jobs(args):
+    manager = CondorJobManager(args, job_name="F4A NoBkgSub")
+    manager.add_file_to_check(args.f4a_macro)
+    manager.add_file_to_check(args.calo_calib_macro)
+    manager.add_file_to_check(args.NoBkgdSubJetReco_macro)
+    manager.add_dir_to_check(args.src_dir)
+    manager.validate_paths()
+
+    manager.log_initialization({
+        'Fun4All Macro': Path(args.f4a_macro).resolve(),
+        'Calo Calib Macro': Path(args.calo_calib_macro).resolve(),
+        'NoBkgdSubJetReco Macro': Path(args.NoBkgdSubJetReco_macro).resolve(),
+        'Source Directory': Path(args.src_dir).resolve()
+    })
+
+    files_dir = manager.prepare_directories()
+    extra_files = [args.f4a_macro, args.calo_calib_macro, args.NoBkgdSubJetReco_macro]
+    manager.copy_dependencies(extra_files=extra_files, extra_dirs=[args.src_dir])
+
+    jobs_file = manager.output_dir / 'jobs.list'
+    jobs_file.unlink(missing_ok=True)
+
+    for line in manager.input_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        manager.logger.info(f'Processing: {line}')
+        file_stem = Path(line).stem
+
+        command = f'split --lines {args.dst_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        run_command_and_log(command, manager.logger, files_dir, False)
+
+        command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
+        run_command_and_log(command, manager.logger, manager.output_dir, False)
+
+    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    manager.write_submit_file(arguments=arguments)
+    manager.finalize_submission(queue_arg="input_dst from jobs.list")
+
 def setup_f4a_subparsers(subparsers):
     f4a = subparsers.add_parser('f4a', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
@@ -242,3 +279,9 @@ def setup_f4a_subparsers(subparsers):
     f4a_data_mc.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a_data_mc.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
     f4a_data_mc.set_defaults(memory=0.5, condor_script='scripts/genFun4All_DataMC.sh', func=create_f4a_data_mc_jobs)
+
+    f4a_nobkgsub = subparsers.add_parser('f4a_nobkgsub', parents=[get_common_parser()], help='Create condor submission directory for NoBkgSub.')
+    f4a_nobkgsub.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_NoBkgSub.C', help='Fun4All Macro.')
+    f4a_nobkgsub.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
+    f4a_nobkgsub.add_argument('-f6', '--NoBkgdSubJetReco-macro', type=str, default='macros/NoBkgdSubJetReco.C', help='NoBkgdSubJetReco Macro.')
+    f4a_nobkgsub.set_defaults(memory=1.5, condor_script='scripts/genFun4All_NoBkgSub.sh', func=create_f4a_nobkgsub_jobs)
