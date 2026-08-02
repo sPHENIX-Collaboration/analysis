@@ -76,7 +76,7 @@ def hadd_jobs(args):
 
     if job_counter > 0:
         manager.logger.info(f"Submitting {job_counter} partial merge jobs...")
-        manager.finalize_submission(queue_arg="list_file,out_name,out_dir from jobs_stage1.list", sub_file_name="stage1.sub")
+        manager.finalize_submission(queue_arg="list_file,out_name,out_dir from jobs_stage1.list", sub_file_name="stage1.sub", execute=True)
 
         while True:
             finished_files = len(list((partial_dir / 'output').glob('*.root')))
@@ -122,7 +122,7 @@ def hadd_jobs(args):
 
     if stage2_counter > 0:
         manager.logger.info(f"Submitting {stage2_counter} final merge jobs...")
-        manager.finalize_submission(queue_arg="list_file,out_name,out_dir from jobs_stage2.list", sub_file_name="stage2.sub")
+        manager.finalize_submission(queue_arg="list_file,out_name,out_dir from jobs_stage2.list", sub_file_name="stage2.sub", execute=True)
         manager.logger.info("All jobs submitted.")
     else:
         manager.logger.info("No final merge jobs to submit for Stage 2.")

@@ -151,7 +151,7 @@ class CondorJobManager:
         sub_file.write_text(submit_content)
         return sub_file
 
-    def finalize_submission(self, queue_arg="input_dst from jobs.list", sub_file_name="genFun4All.sub", limit=15000):
+    def finalize_submission(self, queue_arg="input_dst from jobs.list", sub_file_name="genFun4All.sub", limit=15000, execute=False):
         match = re.search(r" from ([\w\.-]+)", queue_arg)
         list_file = match.group(1) if match else "jobs.list"
         list_path = self.output_dir / list_file
@@ -175,4 +175,7 @@ class CondorJobManager:
         for sf in split_files:
             current_queue_arg = queue_arg.replace(list_file, sf.name)
             command = f'cd {self.output_dir} && condor_submit {sub_file_name} -queue "{current_queue_arg}"'
-            self.logger.info(command)
+            if execute:
+                run_command_and_log(command, self.logger, self.output_dir)
+            else:
+                self.logger.info(command)
