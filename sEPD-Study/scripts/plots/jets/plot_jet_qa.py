@@ -18,7 +18,7 @@ import pickle
 import sys
 import psycopg2
 
-def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_plot=None, lumi_dict=None, r_jet=0.2):
+def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_plot=None, lumi_dict=None, duration_dict=None, r_jet=0.2):
     path = Path(path)
     if not path.exists():
         return None, None, None, None, None, f"File not found: {path}"
@@ -88,9 +88,15 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_p
                         else:
                             lumi_str = "N/A"
 
+                        dur_val = duration_dict.get(run_number) if duration_dict else None
+                        if dur_val is not None and dur_val > 0:
+                            dur_str = f"{dur_val:.1f} min"
+                        else:
+                            dur_str = "N/A"
+
                         # Run info labels (top right)
                         text_info = (
-                            f"Run: {run_number}\n"
+                            f"Run: {run_number}, Duration: {dur_str}\n"
                             f"Events ($|z| < 10$ cm & MB): {n_events:.2e}\n"
                             f"Luminosity ($|z| < 10$ cm & MB): {lumi_str}\n"
                             f"Threshold ($\\geq$ {pt_cut:g} GeV): {v3_jets_counts:g}"
@@ -403,7 +409,7 @@ def main():
 
     if files_to_process:
         print(f"Processing {len(files_to_process)} files ({len(results)} loaded from cache)...")
-        process_func = functools.partial(process_file, pt_cut=args.pt_cut, neg_pt_cut=args.neg_pt_cut, plot_run_dir=plot_run_dir, runs_to_plot=runs_to_plot, lumi_dict=lumi_dict, r_jet=args.r_jet)
+        process_func = functools.partial(process_file, pt_cut=args.pt_cut, neg_pt_cut=args.neg_pt_cut, plot_run_dir=plot_run_dir, runs_to_plot=runs_to_plot, lumi_dict=lumi_dict, duration_dict=duration_dict, r_jet=args.r_jet)
         max_workers = min(os.cpu_count() or 4, 32)
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             new_results = list(tqdm.tqdm(executor.map(process_func, files_to_process), total=len(files_to_process)))
