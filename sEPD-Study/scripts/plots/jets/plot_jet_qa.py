@@ -16,6 +16,7 @@ import pandas as pd
 import functools
 import pickle
 import sys
+import psycopg2
 
 def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_plot=None, lumi_dict=None, r_jet=0.2):
     path = Path(path)
@@ -136,11 +137,17 @@ def process_file(path, pt_cut=30.0, neg_pt_cut=0.0, plot_run_dir=None, runs_to_p
     except Exception as e:
         return None, None, None, None, None, f"Error processing {path}: {e}"
 
-def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV) / Event", suffix="", extra_text=None, ylim_top=None):
+def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV) / Event", suffix="", extra_text=None, ylim_top=None, z_values=None, z_label=None, save_pdf=False):
     hep.style.use("ATLAS")
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(run_numbers, normalized_counts, marker='o', markersize=4, linestyle='none', color='black', label='Data')
+    if z_values is not None and len(z_values) == len(run_numbers):
+        sc = ax.scatter(run_numbers, normalized_counts, c=z_values, cmap='viridis', s=16, label='Data', zorder=3)
+        cbar = fig.colorbar(sc, ax=ax, pad=0.02)
+        if z_label:
+            cbar.set_label(z_label)
+    else:
+        ax.plot(run_numbers, normalized_counts, marker='o', markersize=4, linestyle='none', color='black', label='Data')
 
     # Add a light dashed line for the average counts
     avg_counts = sum(normalized_counts) / len(normalized_counts)
@@ -172,23 +179,34 @@ def plot_normalized_counts(run_numbers, normalized_counts, output_dir, name, yla
     plt.tight_layout()
     plt.subplots_adjust(top=0.94, bottom=0.14)
 
-    pdf_dir = output_dir / "pdf"
     image_dir = output_dir / "images"
-    pdf_dir.mkdir(parents=True, exist_ok=True)
     image_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_path = pdf_dir / f"{name}{suffix}.pdf"
     png_path = image_dir / f"{name}{suffix}.png"
-    plt.savefig(pdf_path)
     plt.savefig(png_path, dpi=300)
-    plt.close(fig)
-    print(f"Saved normalized plots as {pdf_path} and {png_path}")
 
-def plot_raw_counts(run_numbers, raw_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV)", suffix="-raw", extra_text=None):
+    if save_pdf:
+        pdf_dir = output_dir / "pdf"
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        pdf_path = pdf_dir / f"{name}{suffix}.pdf"
+        plt.savefig(pdf_path)
+        print(f"Saved normalized plots as {pdf_path} and {png_path}")
+    else:
+        print(f"Saved normalized plot as {png_path}")
+
+    plt.close(fig)
+
+def plot_raw_counts(run_numbers, raw_counts, output_dir, name, ylabel=r"Raw Counts ($p_{T} > 30$ GeV)", suffix="-raw", extra_text=None, z_values=None, z_label=None, save_pdf=False):
     hep.style.use("ATLAS")
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(run_numbers, raw_counts, marker='o', markersize=4, linestyle='none', color='black', label='Data')
+    if z_values is not None and len(z_values) == len(run_numbers):
+        sc = ax.scatter(run_numbers, raw_counts, c=z_values, cmap='viridis', s=16, label='Data', zorder=3)
+        cbar = fig.colorbar(sc, ax=ax, pad=0.02)
+        if z_label:
+            cbar.set_label(z_label)
+    else:
+        ax.plot(run_numbers, raw_counts, marker='o', markersize=4, linestyle='none', color='black', label='Data')
 
     avg_raw_counts = sum(raw_counts) / len(raw_counts)
     ax.axhline(avg_raw_counts, color='gray', linestyle='--', alpha=0.5, label='Average')
@@ -215,17 +233,22 @@ def plot_raw_counts(run_numbers, raw_counts, output_dir, name, ylabel=r"Raw Coun
     plt.tight_layout()
     plt.subplots_adjust(top=0.94, bottom=0.14)
 
-    pdf_dir = output_dir / "pdf"
     image_dir = output_dir / "images"
-    pdf_dir.mkdir(parents=True, exist_ok=True)
     image_dir.mkdir(parents=True, exist_ok=True)
 
-    raw_pdf_path = pdf_dir / f"{name}{suffix}.pdf"
-    raw_png_path = image_dir / f"{name}{suffix}.png"
-    plt.savefig(raw_pdf_path)
-    plt.savefig(raw_png_path, dpi=300)
+    png_path = image_dir / f"{name}{suffix}.png"
+    plt.savefig(png_path, dpi=300)
+
+    if save_pdf:
+        pdf_dir = output_dir / "pdf"
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        pdf_path = pdf_dir / f"{name}{suffix}.pdf"
+        plt.savefig(pdf_path)
+        print(f"Saved raw plots as {pdf_path} and {png_path}")
+    else:
+        print(f"Saved raw plot as {png_path}")
+
     plt.close(fig)
-    print(f"Saved raw plots as {raw_pdf_path} and {raw_png_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Plot integrated jet counts above pT cut per run from a list of ROOT files.")
@@ -239,6 +262,7 @@ def main():
     parser.add_argument("--lumi-csv", type=Path, default=Path("files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv"), help="Path to luminosity CSV file (default: files/lumi/run3auau-lumi-pro001_pcdb001_v001.csv).")
     parser.add_argument("--plot-runs", type=Path, default=None, help="Path to a text file containing run numbers to plot individually (one per line).")
     parser.add_argument("-r", "--r-jet", "--r", dest="r_jet", type=float, default=0.2, help="Jet resolution parameter R (default: 0.2).")
+    parser.add_argument("--save-pdf", "--pdf", dest="save_pdf", action="store_true", help="Enable saving output plots in PDF format in addition to PNG.")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -276,6 +300,8 @@ def main():
         print(f"Warning: Lumi CSV not found at {args.lumi_csv}")
 
     run_numbers = []
+    lumi_list = []
+    duration_list = []
     normalized_counts = []
     lumi_normalized_counts = []
     events_list = []
@@ -306,6 +332,32 @@ def main():
         plot_run_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Found {len(file_list)} input files.")
+
+    duration_dict = {}
+    try:
+        conn = psycopg2.connect(host="sphnxdaqdbreplica", dbname="daq")
+        cur = conn.cursor()
+
+        run_nums_for_query = []
+        for path in file_list:
+            try:
+                run_num_guess = int(path.name.split('.')[0])
+            except ValueError:
+                match = re.search(r'\d+', path.name)
+                run_num_guess = int(match.group()) if match else None
+            if run_num_guess is not None:
+                run_nums_for_query.append(run_num_guess)
+
+        if run_nums_for_query:
+            query = "SELECT runnumber, EXTRACT(EPOCH FROM (ertimestamp - brtimestamp)) / 60.0 FROM run WHERE runnumber = ANY(%s);"
+            cur.execute(query, (run_nums_for_query,))
+            for r, d in cur.fetchall():
+                if d is not None:
+                    duration_dict[r] = float(d)
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not fetch run durations from database: {e}")
 
     cache = {}
     pt_tag = f"{args.pt_cut:g}".replace('.', 'p')
@@ -393,6 +445,8 @@ def main():
             lumi_norm = counts / lumi
 
             run_numbers.append(run_num)
+            lumi_list.append(lumi)
+            duration_list.append(duration_dict.get(run_num, 0.0))
             normalized_counts.append(norm)
             lumi_normalized_counts.append(lumi_norm)
             events_list.append(n_events)
@@ -424,18 +478,18 @@ def main():
         return
 
     # Sort by run number to ensure the plot is ordered
-    sorted_pairs = sorted(zip(run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts))
-    run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts = zip(*sorted_pairs)
+    sorted_pairs = sorted(zip(run_numbers, lumi_list, duration_list, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts))
+    run_numbers, lumi_list, duration_list, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts = zip(*sorted_pairs)
 
     # Save all processed runs to CSV sorted by V3RawCounts descending
     counts_data = [
         {
-            'Run': r, 'Events': ev, 'RawCounts': raw, 'NormalizedCounts': c, 'LumiNormalizedCounts': lumi_c,
+            'Run': r, 'Duration': round(dur, 1), 'Events': ev, 'RawCounts': raw, 'NormalizedCounts': c, 'LumiNormalizedCounts': lumi_c,
             'NegRawCounts': neg_raw, 'NegNormalizedCounts': neg_norm, 'NegLumiNormalizedCounts': neg_lumi_norm,
             'V3RawCounts': v3_raw, 'V3NormalizedCounts': v3_norm, 'V3LumiNormalizedCounts': v3_lumi_norm
         }
-        for r, c, lumi_c, ev, raw, neg_raw, neg_norm, neg_lumi_norm, v3_raw, v3_norm, v3_lumi_norm in zip(
-            run_numbers, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts
+        for r, dur, c, lumi_c, ev, raw, neg_raw, neg_norm, neg_lumi_norm, v3_raw, v3_norm, v3_lumi_norm in zip(
+            run_numbers, duration_list, normalized_counts, lumi_normalized_counts, events_list, raw_counts, neg_raw_counts, neg_normalized_counts, neg_lumi_normalized_counts, v3_raw_counts, v3_normalized_counts, v3_lumi_normalized_counts
         )
     ]
 
@@ -451,50 +505,64 @@ def main():
         print("No valid runs found to write to CSV.")
 
     pt_str = f"{args.pt_cut:g}"
-    plot_normalized_counts(
-        run_numbers, normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix="-norm-events"
-    )
-    plot_normalized_counts(
-        run_numbers, lumi_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi"
-    )
-    plot_raw_counts(
-        run_numbers, raw_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix="-raw"
-    )
-
-    v3_extra_text = ["Jet Energy > 0 GeV", r"$|\mathrm{calo}\ v_{2}| < 0.48$"]
-    plot_normalized_counts(
-        run_numbers, v3_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix="-norm-events-v3-filters",
-        extra_text=v3_extra_text
-    )
-    plot_normalized_counts(
-        run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-v3-filters",
-        extra_text=v3_extra_text
-    )
-
-    plot_raw_counts(
-        run_numbers, v3_raw_counts, args.output_dir, args.name,
-        ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix="-v3-filters-raw",
-        extra_text=v3_extra_text
-    )
-
     neg_pt_str = f"{args.neg_pt_cut:g}"
-    plot_normalized_counts(
-        run_numbers, neg_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / Event", suffix="-norm-events-neg"
-    )
-    plot_normalized_counts(
-        run_numbers, neg_lumi_normalized_counts, args.output_dir, args.name,
-        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix="-norm-lumi-neg"
-    )
-    plot_raw_counts(
-        run_numbers, neg_raw_counts, args.output_dir, args.name,
-        ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV)", suffix="-neg-raw"
-    )
+    v3_extra_text = ["Jet Energy > 0 GeV", r"$|\mathrm{calo}\ v_{2}| < 0.48$"]
+
+    configs = [
+        {"z_vals": lumi_list, "z_lab": r"Luminosity ($\mu\mathrm{b}^{-1}$)", "suffix_append": ""},
+        {"z_vals": duration_list, "z_lab": "Run Duration (min)", "suffix_append": "-duration"}
+    ]
+
+    for cfg in configs:
+        z = cfg["z_vals"]
+        zl = cfg["z_lab"]
+        sa = cfg["suffix_append"]
+
+        # We only want to plot if we have valid z-values (e.g. at least one non-zero duration if we're on the duration loop)
+        if sa == "-duration" and not any(z):
+            continue
+
+        plot_normalized_counts(
+            run_numbers, normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix=f"-norm-events{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_normalized_counts(
+            run_numbers, lumi_normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix=f"-norm-lumi{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_raw_counts(
+            run_numbers, raw_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix=f"-raw{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+
+        plot_normalized_counts(
+            run_numbers, v3_normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / Event", suffix=f"-norm-events-v3-filters{sa}",
+            extra_text=v3_extra_text, z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_normalized_counts(
+            run_numbers, v3_lumi_normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix=f"-norm-lumi-v3-filters{sa}",
+            extra_text=v3_extra_text, z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_raw_counts(
+            run_numbers, v3_raw_counts, args.output_dir, args.name,
+            ylabel=rf"Raw Counts ($p_{{T}} > {pt_str}$ GeV)", suffix=f"-v3-filters-raw{sa}",
+            extra_text=v3_extra_text, z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+
+        plot_normalized_counts(
+            run_numbers, neg_normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / Event", suffix=f"-norm-events-neg{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_normalized_counts(
+            run_numbers, neg_lumi_normalized_counts, args.output_dir, args.name,
+            ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV) / $\mu\mathrm{{b}}^{{-1}}$", suffix=f"-norm-lumi-neg{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+        plot_raw_counts(
+            run_numbers, neg_raw_counts, args.output_dir, args.name,
+            ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV)", suffix=f"-neg-raw{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
 
 if __name__ == "__main__":
     main()
