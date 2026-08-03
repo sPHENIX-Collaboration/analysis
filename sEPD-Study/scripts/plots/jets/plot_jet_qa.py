@@ -256,6 +256,45 @@ def plot_raw_counts(run_numbers, raw_counts, output_dir, name, ylabel=r"Raw Coun
 
     plt.close(fig)
 
+def plot_scatter_xy(x_vals, y_vals, output_dir, name, xlabel, ylabel, suffix="", save_pdf=False):
+    hep.style.use("ATLAS")
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.scatter(x_vals, y_vals, color='black', s=16, label='Data')
+
+    ax.set_xlabel(xlabel, labelpad=-1)
+    ax.set_ylabel(ylabel)
+    ax.set_title("Runs")
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+
+    total_runs = len(x_vals)
+    text_info = (
+        f"Runs = {total_runs}\n"
+        r"$|z| < 10$ cm & MB"
+    )
+    ax.text(0.05, 0.95, text_info, transform=ax.transAxes, ha='left', va='top', fontsize=18)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.94, bottom=0.1)
+
+    image_dir = output_dir / "images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    png_path = image_dir / f"{name}{suffix}.png"
+    plt.savefig(png_path, dpi=300)
+
+    if save_pdf:
+        pdf_dir = output_dir / "pdf"
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        pdf_path = pdf_dir / f"{name}{suffix}.pdf"
+        plt.savefig(pdf_path)
+        print(f"Saved scatter plot as {pdf_path} and {png_path}")
+    else:
+        print(f"Saved scatter plot as {png_path}")
+
+    plt.close(fig)
+
 def main():
     parser = argparse.ArgumentParser(description="Plot integrated jet counts above pT cut per run from a list of ROOT files.")
     parser.add_argument("-f", "--file", type=Path, help="Path to a text file containing ROOT file paths (one per line).")
@@ -568,6 +607,24 @@ def main():
         plot_raw_counts(
             run_numbers, neg_raw_counts, args.output_dir, args.name,
             ylabel=rf"Negative Energy Jets ($p_{{T}} > {neg_pt_str}$ GeV)", suffix=f"-neg-raw{sa}", z_values=z, z_label=zl, save_pdf=args.save_pdf
+        )
+
+    # Scatter plots vs Luminosity
+    plot_scatter_xy(
+        lumi_list, events_list, args.output_dir, args.name,
+        xlabel=r"Luminosity ($\mu\mathrm{b}^{-1}$)",
+        ylabel=r"Events ($|z| < 10$ cm & MB)",
+        suffix="-events-vs-lumi",
+        save_pdf=args.save_pdf
+    )
+
+    if any(duration_list):
+        plot_scatter_xy(
+            lumi_list, duration_list, args.output_dir, args.name,
+            xlabel=r"Luminosity ($\mu\mathrm{b}^{-1}$)",
+            ylabel="Run Duration (min)",
+            suffix="-duration-vs-lumi",
+            save_pdf=args.save_pdf
         )
 
 if __name__ == "__main__":
