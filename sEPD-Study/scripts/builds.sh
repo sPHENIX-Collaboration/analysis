@@ -49,9 +49,9 @@ fi
 
 BUILD_DIR="$BUILD_BASE/$PROJ_NAME"
 
-# Ensure BUILD_DIR is resolved relative to ROOT_DIR if relative
+# Ensure BUILD_DIR is resolved relative to execution directory if relative
 if [[ "$BUILD_DIR" != /* ]]; then
-    BUILD_DIR="$ROOT_DIR/$BUILD_DIR"
+    BUILD_DIR="$(pwd)/$BUILD_DIR"
 fi
 
 # --- Logic Branching ---
