@@ -43,7 +43,6 @@ class JetValidationv2 : public SubsysReco
 
  private:
   int process_event_check(PHCompositeNode *topNode);
-  int process_MBD(PHCompositeNode *topNode);
   int process_Calo(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
@@ -87,9 +86,6 @@ class JetValidationv2 : public SubsysReco
 
   std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB Trig", "MB", "Cent", "Has Jet"};
   std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
-
-  // Event Vars
-  double m_mbd_total_charge{9999};
 
   std::unique_ptr<TriggerAnalyzer> m_triggerAnalyzer;
 
