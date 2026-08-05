@@ -192,7 +192,7 @@ Checks: '
     readability-misplaced-array-index,
     readability-named-parameter,
     readability-non-const-parameter,
-    readability-operators-representation,
+   -readability-operators-representation,
     readability-qualified-auto,
     readability-redundant-access-specifiers,
     readability-redundant-casting,

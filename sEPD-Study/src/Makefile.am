@@ -22,6 +22,7 @@ pkginclude_HEADERS = \
   CalibrateQVec.h \
   JetValidation.h \
   JetValidationv2.h \
+  JetValidationv3.h \
   JetUtils.h \
   sEPD_DataMC_Validation.h \
   sEPD_MC_Validation.h
@@ -40,6 +41,7 @@ libsEPDValidation_la_SOURCES = \
   CalibrateQVec.cc \
   JetValidation.cc \
   JetValidationv2.cc \
+  JetValidationv3.cc \
   JetUtils.cc \
   sEPD_DataMC_Validation.cc \
   sEPD_MC_Validation.cc
