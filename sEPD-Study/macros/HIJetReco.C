@@ -10,11 +10,13 @@
 #include <jetbackground/CopyAndSubtractJets.h>
 #include <jetbackground/DetermineEventRho.h>
 #include <jetbackground/DetermineTowerBackground.h>
+#include <jetbackground/DetermineTowerBackgroundv1.h>
 #include <jetbackground/DetermineTowerRho.h>
 #include <jetbackground/FastJetAlgoSub.h>
 #include <jetbackground/RetowerCEMC.h>
 #include <jetbackground/SubtractTowers.h>
 #include <jetbackground/SubtractTowersCS.h>
+#include <jetbackground/SubtractTowersRho.h>
 #include <jetbackground/TowerRho.h>
 
 #include <jetbase/FastJetOptions.h>
@@ -88,6 +90,9 @@ namespace HIJETS
   ///! resolution parameter will be overwritten
   ///! to R = 0.2, 0.3, 0.4, and 0.5
   FastJetOptions fj_opts({Jet::ANTIKT, JET_R, 0.4F, VERBOSITY, static_cast<float>(Enable::HIJETS_VERBOSITY)});
+
+  ///! kt fastjet options for seed jets
+  FastJetOptions kt_fj_opts({Jet::KT, JET_R, 0.4F, VERBOSITY, static_cast<float>(Enable::HIJETS_VERBOSITY)});
 
   ///! sets jet node name
   std::string jet_node = "ANTIKT";
@@ -288,12 +293,165 @@ void MakeHITowerJets()
   towerjetreco->add_input(inohcal);
   towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Tower_r02_Sub1");
   towerjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Tower_r03_Sub1");
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Tower_r04_Sub1");
-  // towerjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Tower_r05_Sub1");
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
+
+  return;
+}
+
+// ----------------------------------------------------------------------------
+//! Make jets out of subtracted towers with mult-embedded background subtraction
+// ----------------------------------------------------------------------------
+void MakeHITowerJetsMultSub()
+{
+  unsigned int verbosity = static_cast<unsigned int>(std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY));
+
+  //---------------
+  // Fun4All server
+  //---------------
+  Fun4AllServer *se = Fun4AllServer::instance();
+
+  EventPlaneReco *epreco = new EventPlaneReco();
+  if (HIJETS::eventplane_custom_calib != "default")
+  {
+    epreco->set_directURL_EventPlaneCalib(HIJETS::eventplane_custom_calib);
+  }
+  epreco->set_inputNode(HIJETS::eventplane_node_input);
+  epreco->set_EventPlaneInfoNodeName(HIJETS::eventplane_node_output);
+  se->registerSubsystem(epreco);
+
+  auto GetTowerInput = [](const Jet::SRC src, const std::string & prefix = "TOWERINFO_CALIB") {
+    auto * input = new TowerJetInput(src, prefix);
+    if (HIJETS::do_vertex_type) input->set_GlobalVertexType(HIJETS::vertex_type);
+    return input;
+  };
+
+  RetowerCEMC *rcemc = new RetowerCEMC();
+  rcemc->set_towerinfo(true);
+  rcemc->set_frac_cut(1.0);
+  rcemc->set_do_rescale(false);
+  rcemc->set_towerNodePrefix(HIJETS::tower_prefix);
+  rcemc->Verbosity(verbosity);
+  se->registerSubsystem(rcemc);
+
+  std::string seed_jet_name = Form("Kt_TowerInfo_HIRecoSeedsRaw_r0%d", static_cast<int>(HIJETS::kt_fj_opts.jet_R * 10));
+
+  JetReco *towerjetreco = new JetReco("TowerJetReco_Seed");
+  for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
+  {
+    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
+  }
+  towerjetreco->add_algo(new FastJetAlgoSub(HIJETS::kt_fj_opts), seed_jet_name);
+  towerjetreco->set_algo_node("KT");
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(verbosity);
+  se->registerSubsystem(towerjetreco);
+
+  towerjetreco = new JetReco("TowerJetReco_Raw");
+  for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
+  {
+    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
+  }
+  for (const auto & R : {0.2, 0.3})
+  {
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+  }
+  towerjetreco->set_algo_node(HIJETS::jet_node);
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(verbosity);
+  se->registerSubsystem(towerjetreco);
+
+  DetermineTowerRho *dt_rho = new DetermineTowerRho("DetermineTowerRho_CEMC_MultEmb");
+  dt_rho->add_method(TowerRho::Method::MULT, "TowerRho_MULT_CEMC");
+  dt_rho->add_tower_input(GetTowerInput(Jet::CEMC_TOWERINFO_RETOWER, HIJETS::tower_prefix));
+  dt_rho->Verbosity(verbosity);
+  se->registerSubsystem(dt_rho);
+
+  dt_rho = new DetermineTowerRho("DetermineTowerRho_HCALIN_MultEmb");
+  dt_rho->add_method(TowerRho::Method::MULT, "TowerRho_MULT_HCALIN");
+  dt_rho->add_tower_input(GetTowerInput(Jet::HCALIN_TOWERINFO, HIJETS::tower_prefix));
+  dt_rho->Verbosity(verbosity);
+  se->registerSubsystem(dt_rho);
+
+  dt_rho = new DetermineTowerRho("DetermineTowerRho_HCALOUT_MultEmb");
+  dt_rho->add_method(TowerRho::Method::MULT, "TowerRho_MULT_HCALOUT");
+  dt_rho->add_tower_input(GetTowerInput(Jet::HCALOUT_TOWERINFO, HIJETS::tower_prefix));
+  dt_rho->Verbosity(verbosity);
+  se->registerSubsystem(dt_rho);
+
+  SubtractTowersRho *sub_rho = new SubtractTowersRho("SubtractTowersRho_CEMC_MultEmb");
+  sub_rho->set_rhoNode("TowerRho_MULT_CEMC");
+  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_CEMC_RETOWER");
+  sub_rho->set_subSuffix("MULTSUB");
+  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
+  sub_rho->Verbosity(verbosity);
+  se->registerSubsystem(sub_rho);
+
+  sub_rho = new SubtractTowersRho("SubtractTowersRho_HCALIN_MultEmb");
+  sub_rho->set_rhoNode("TowerRho_MULT_HCALIN");
+  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_HCALIN");
+  sub_rho->set_subSuffix("MULTSUB");
+  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
+  sub_rho->Verbosity(verbosity);
+  se->registerSubsystem(sub_rho);
+
+  sub_rho = new SubtractTowersRho("SubtractTowersRho_HCALOUT_MultEmb");
+  sub_rho->set_rhoNode("TowerRho_MULT_HCALOUT");
+  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_HCALOUT");
+  sub_rho->set_subSuffix("MULTSUB");
+  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
+  sub_rho->Verbosity(verbosity);
+  se->registerSubsystem(sub_rho);
+
+  DetermineTowerBackgroundv1 *dtb = new DetermineTowerBackgroundv1("DetermineTowerBackgroundv1_Emb");
+  dtb->SetBackgroundOutputName("TowerInfoBackground_Sub2");
+  dtb->SetFlowMode(DetermineTowerBackgroundv1::FlowMode::EBE);
+  dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::sEPD);
+  dtb->SetSeedJetName(seed_jet_name);
+  dtb->SetCEMC_RhoNode("TowerRho_MULT_CEMC");
+  dtb->SetIHCAL_RhoNode("TowerRho_MULT_HCALIN");
+  dtb->SetOHCAL_RhoNode("TowerRho_MULT_HCALOUT");
+  dtb->SetNOmitSeeds(2);
+  dtb->Verbosity(verbosity);
+  dtb->UseReweighting(true);
+  se->registerSubsystem(dtb);
+
+  SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");
+  st->set_towerNodePrefix(HIJETS::tower_prefix);
+  st->SetFlowModulation(true);
+  st->Verbosity(verbosity);
+  st->set_towerinfo(true);
+  se->registerSubsystem(st);
+
+  towerjetreco = new JetReco("TowerJetReco_Emb_Sub1");
+  for (const auto & src : { Jet::CEMC_TOWERINFO_SUB1, Jet::HCALIN_TOWERINFO_SUB1, Jet::HCALOUT_TOWERINFO_SUB1 })
+  {
+    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
+  }
+  for (const auto & R : {0.2, 0.3})
+  {
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_Sub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+  }
+  towerjetreco->set_algo_node(HIJETS::jet_node);
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(verbosity);
+  se->registerSubsystem(towerjetreco);
+
+  // towerjetreco = new JetReco("TowerJetReco_Rho");
+  // for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
+  // {
+  //   towerjetreco->add_input(GetTowerInput(src, "MULTSUB_" + HIJETS::tower_prefix));
+  // }
+  // for (const auto & R : { 0.3 })
+  // {
+  //   towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_Rho", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+  // }
+  // towerjetreco->set_algo_node(HIJETS::jet_node);
+  // towerjetreco->set_input_node("TOWER");
+  // towerjetreco->Verbosity(verbosity);
+  // se->registerSubsystem(towerjetreco);
 
   return;
 }
