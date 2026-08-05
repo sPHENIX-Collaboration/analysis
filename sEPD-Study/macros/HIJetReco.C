@@ -49,6 +49,7 @@ namespace Enable
   bool HIJETS_TRUTH = false;  ///< make truth jets
   bool HIJETS_TOWER = true;   ///< make tower jets
   bool HIJETS_TOWER_MULTSUB = false; ///< make multi-sub tower jets
+  bool HIJETS_TOWER_NOBKG = false;   ///< make unsubtracted (raw) tower jets
   bool HIJETS_TRACK = false;  ///< make track jets
   bool HIJETS_PFLOW = false;  ///< make particle flow jets
 }  // namespace Enable
@@ -342,20 +343,6 @@ void MakeHITowerJetsMultSub()
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
 
-  towerjetreco = new JetReco("TowerJetReco_Raw");
-  for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
-  {
-    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
-  }
-  for (const auto & R : {0.2, 0.3})
-  {
-    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
-  }
-  towerjetreco->set_algo_node(HIJETS::jet_node);
-  towerjetreco->set_input_node("TOWER");
-  towerjetreco->Verbosity(verbosity);
-  se->registerSubsystem(towerjetreco);
-
   DetermineTowerRho *dt_rho = new DetermineTowerRho("DetermineTowerRho_CEMC_MultEmb");
   dt_rho->add_method(TowerRho::Method::MULT, "TowerRho_MULT_CEMC");
   dt_rho->add_tower_input(GetTowerInput(Jet::CEMC_TOWERINFO_RETOWER, HIJETS::tower_prefix));
@@ -451,6 +438,37 @@ void MakeHITowerJetsMultSub()
 }
 
 // ----------------------------------------------------------------------------
+//! Make unsubtracted (raw) tower jets
+// ----------------------------------------------------------------------------
+void MakeHITowerJetsNoBkg()
+{
+  unsigned int verbosity = static_cast<unsigned int>(std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY));
+  Fun4AllServer *se = Fun4AllServer::instance();
+
+  auto GetTowerInput = [](const Jet::SRC src, const std::string & prefix = "TOWERINFO_CALIB") {
+    auto * input = new TowerJetInput(src, prefix);
+    if (HIJETS::do_vertex_type) input->set_GlobalVertexType(HIJETS::vertex_type);
+    return input;
+  };
+
+  JetReco *towerjetreco = new JetReco("TowerJetReco_Raw");
+  for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
+  {
+    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
+  }
+  for (const auto & R : {0.2, 0.3, 0.4, 0.5})
+  {
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+  }
+  towerjetreco->set_algo_node(HIJETS::jet_node);
+  towerjetreco->set_input_node("TOWER");
+  towerjetreco->Verbosity(verbosity);
+  se->registerSubsystem(towerjetreco);
+
+  return;
+}
+
+// ----------------------------------------------------------------------------
 //! Make jets out of tracks with background subtraction
 // ----------------------------------------------------------------------------
 void MakeHITrackJets()
@@ -532,7 +550,7 @@ void HIJetReco()
   }
 
   // run approriate jet reconstruction routines
-  if (Enable::HIJETS_TOWER || Enable::HIJETS_TOWER_MULTSUB)
+  if (Enable::HIJETS_TOWER || Enable::HIJETS_TOWER_MULTSUB || Enable::HIJETS_TOWER_NOBKG)
   {
     HIJetRecoCommon();
   }
@@ -544,6 +562,10 @@ void HIJetReco()
   if (Enable::HIJETS_TOWER_MULTSUB)
   {
     MakeHITowerJetsMultSub();
+  }
+  if (Enable::HIJETS_TOWER_NOBKG)
+  {
+    MakeHITowerJetsNoBkg();
   }
   if (Enable::HIJETS_TRACK)
   {
