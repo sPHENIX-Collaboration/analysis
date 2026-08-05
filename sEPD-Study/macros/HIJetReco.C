@@ -48,6 +48,7 @@ namespace Enable
   bool HIJETS_MC = false;     ///< is simulation
   bool HIJETS_TRUTH = false;  ///< make truth jets
   bool HIJETS_TOWER = true;   ///< make tower jets
+  bool HIJETS_TOWER_MULTSUB = false; ///< make multi-sub tower jets
   bool HIJETS_TRACK = false;  ///< make track jets
   bool HIJETS_PFLOW = false;  ///< make particle flow jets
 }  // namespace Enable
@@ -192,18 +193,14 @@ void MakeHITruthJets()
 }
 
 // ----------------------------------------------------------------------------
-//! Make jets out of subtracted towers
+//! Common setup for tower jet reconstruction
 // ----------------------------------------------------------------------------
-void MakeHITowerJets()
+void HIJetRecoCommon()
 {
   unsigned int verbosity = static_cast<unsigned int>(std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY));
-
-  //---------------
-  // Fun4All server
-  //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  if (HIJETS::do_flow == 3)
+  if (Enable::HIJETS_TOWER_MULTSUB || HIJETS::do_flow == 3)
   {
     EventPlaneReco *epreco = new EventPlaneReco();
     if (HIJETS::eventplane_custom_calib != "default")
@@ -222,6 +219,19 @@ void MakeHITowerJets()
   rcemc->set_do_rescale(false); // scale the retowered towers up to account for dead area?
   rcemc->set_towerNodePrefix(HIJETS::tower_prefix);
   se->registerSubsystem(rcemc);
+}
+
+// ----------------------------------------------------------------------------
+//! Make jets out of subtracted towers
+// ----------------------------------------------------------------------------
+void MakeHITowerJets()
+{
+  unsigned int verbosity = static_cast<unsigned int>(std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY));
+
+  //---------------
+  // Fun4All server
+  //---------------
+  Fun4AllServer *se = Fun4AllServer::instance();
 
   JetReco *towerjetreco = new JetReco();
   TowerJetInput *incemc = new TowerJetInput(Jet::CEMC_TOWERINFO_RETOWER, HIJETS::tower_prefix);
@@ -313,28 +323,11 @@ void MakeHITowerJetsMultSub()
   //---------------
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  EventPlaneReco *epreco = new EventPlaneReco();
-  if (HIJETS::eventplane_custom_calib != "default")
-  {
-    epreco->set_directURL_EventPlaneCalib(HIJETS::eventplane_custom_calib);
-  }
-  epreco->set_inputNode(HIJETS::eventplane_node_input);
-  epreco->set_EventPlaneInfoNodeName(HIJETS::eventplane_node_output);
-  se->registerSubsystem(epreco);
-
   auto GetTowerInput = [](const Jet::SRC src, const std::string & prefix = "TOWERINFO_CALIB") {
     auto * input = new TowerJetInput(src, prefix);
     if (HIJETS::do_vertex_type) input->set_GlobalVertexType(HIJETS::vertex_type);
     return input;
   };
-
-  RetowerCEMC *rcemc = new RetowerCEMC();
-  rcemc->set_towerinfo(true);
-  rcemc->set_frac_cut(1.0);
-  rcemc->set_do_rescale(false);
-  rcemc->set_towerNodePrefix(HIJETS::tower_prefix);
-  rcemc->Verbosity(verbosity);
-  se->registerSubsystem(rcemc);
 
   std::string seed_jet_name = Form("Kt_TowerInfo_HIRecoSeedsRaw_r0%d", static_cast<int>(HIJETS::kt_fj_opts.jet_R * 10));
 
@@ -406,7 +399,7 @@ void MakeHITowerJetsMultSub()
   se->registerSubsystem(sub_rho);
 
   DetermineTowerBackgroundv1 *dtb = new DetermineTowerBackgroundv1("DetermineTowerBackgroundv1_Emb");
-  dtb->SetBackgroundOutputName("TowerInfoBackground_Sub2");
+  dtb->SetBackgroundOutputName("TowerInfoBackground_MultSub2");
   dtb->SetFlowMode(DetermineTowerBackgroundv1::FlowMode::EBE);
   dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::sEPD);
   dtb->SetSeedJetName(seed_jet_name);
@@ -419,7 +412,8 @@ void MakeHITowerJetsMultSub()
   se->registerSubsystem(dtb);
 
   SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");
-  st->set_towerNodePrefix(HIJETS::tower_prefix);
+  st->set_towerNodePrefix("MULTSUB_" + HIJETS::tower_prefix);
+  st->SetBackgroundNodeName("TowerInfoBackground_MultSub2");
   st->SetFlowModulation(true);
   st->Verbosity(verbosity);
   st->set_towerinfo(true);
@@ -428,11 +422,11 @@ void MakeHITowerJetsMultSub()
   towerjetreco = new JetReco("TowerJetReco_Emb_Sub1");
   for (const auto & src : { Jet::CEMC_TOWERINFO_SUB1, Jet::HCALIN_TOWERINFO_SUB1, Jet::HCALOUT_TOWERINFO_SUB1 })
   {
-    towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
+    towerjetreco->add_input(GetTowerInput(src, "MULTSUB_" + HIJETS::tower_prefix));
   }
   for (const auto & R : {0.2, 0.3})
   {
-    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_Sub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
   }
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
@@ -538,9 +532,18 @@ void HIJetReco()
   }
 
   // run approriate jet reconstruction routines
+  if (Enable::HIJETS_TOWER || Enable::HIJETS_TOWER_MULTSUB)
+  {
+    HIJetRecoCommon();
+  }
+
   if (Enable::HIJETS_TOWER)
   {
     MakeHITowerJets();
+  }
+  if (Enable::HIJETS_TOWER_MULTSUB)
+  {
+    MakeHITowerJetsMultSub();
   }
   if (Enable::HIJETS_TRACK)
   {
