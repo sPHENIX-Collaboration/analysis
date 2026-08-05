@@ -413,7 +413,7 @@ void MakeHITowerJetsMultSub()
   }
   for (const auto & R : {0.2, 0.3})
   {
-    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Tower_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
   }
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
