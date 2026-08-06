@@ -356,7 +356,7 @@ void MakeHITowerJetsMultSub()
     towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
   }
   towerjetreco->add_algo(new FastJetAlgoSub(HIJETS::kt_fj_opts), seed_jet_name);
-  towerjetreco->set_algo_node("KT");
+  towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
