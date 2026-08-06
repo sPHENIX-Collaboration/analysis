@@ -23,6 +23,7 @@
 #include <jetbase/JetReco.h>
 #include <jetbase/TowerJetInput.h>
 #include <jetbase/TrackJetInput.h>
+#include <jetbase/JetCalib.h>
 
 #include <particleflowreco/ParticleFlowJetInput.h>
 
@@ -50,6 +51,7 @@ namespace Enable
   bool HIJETS_TOWER = true;   ///< make tower jets
   bool HIJETS_TOWER_MULTSUB = false; ///< make multi-sub tower jets
   bool HIJETS_TOWER_NOBKG = false;   ///< make unsubtracted (raw) tower jets
+  bool HIJETS_TOWER_CALIB = true;    ///< apply jet calibration
   bool HIJETS_TRACK = false;  ///< make track jets
   bool HIJETS_PFLOW = false;  ///< make particle flow jets
 }  // namespace Enable
@@ -309,6 +311,22 @@ void MakeHITowerJets()
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
 
+  if (Enable::HIJETS_TOWER_CALIB)
+  {
+    for (const auto & R : {0.2, 0.3})
+    {
+      int r_int = static_cast<int>(R * 10);
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r0%d_Sub1", r_int));
+      jetCalib->set_InputNode(Form("%s_Tower_r0%d_Sub1", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_Tower_r0%d_Sub1_calib", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_JetRadius(R);
+      jetCalib->set_ZvrtxNode("GlobalVertexMap");
+      jetCalib->set_ApplyZvrtxDependentCalib(true);
+      jetCalib->set_ApplyEtaDependentCalib(true);
+      se->registerSubsystem(jetCalib);
+    }
+  }
+
   return;
 }
 
@@ -434,6 +452,22 @@ void MakeHITowerJetsMultSub()
   // towerjetreco->Verbosity(verbosity);
   // se->registerSubsystem(towerjetreco);
 
+  if (Enable::HIJETS_TOWER_CALIB)
+  {
+    for (const auto & R : {0.2, 0.3})
+    {
+      int r_int = static_cast<int>(R * 10);
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r0%d_MultSub1", r_int));
+      jetCalib->set_InputNode(Form("%s_Tower_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_Tower_r0%d_MultSub1_calib", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_JetRadius(R);
+      jetCalib->set_ZvrtxNode("GlobalVertexMap");
+      jetCalib->set_ApplyZvrtxDependentCalib(true);
+      jetCalib->set_ApplyEtaDependentCalib(true);
+      se->registerSubsystem(jetCalib);
+    }
+  }
+
   return;
 }
 
@@ -456,7 +490,7 @@ void MakeHITowerJetsNoBkg()
   {
     towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
   }
-  for (const auto & R : {0.2, 0.3, 0.4, 0.5})
+  for (const auto & R : {0.2, 0.3})
   {
     towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
   }
@@ -464,6 +498,22 @@ void MakeHITowerJetsNoBkg()
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
+
+  if (Enable::HIJETS_TOWER_CALIB)
+  {
+    for (const auto & R : {0.2, 0.3})
+    {
+      int r_int = static_cast<int>(R * 10);
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_TowerInfo_r0%d", r_int));
+      jetCalib->set_InputNode(Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_TowerInfo_r0%d_calib", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_JetRadius(R);
+      jetCalib->set_ZvrtxNode("GlobalVertexMap");
+      jetCalib->set_ApplyZvrtxDependentCalib(true);
+      jetCalib->set_ApplyEtaDependentCalib(true);
+      se->registerSubsystem(jetCalib);
+    }
+  }
 
   return;
 }
