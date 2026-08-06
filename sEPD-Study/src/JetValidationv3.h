@@ -46,6 +46,7 @@ class JetValidationv3 : public SubsysReco
   int process_Calo(PHCompositeNode *topNode);
   int process_centrality(PHCompositeNode *topNode);
   int process_UE(PHCompositeNode *topNode);
+  int process_EventPlane(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
 
   std::string m_outtree_name{"tree.root"};
@@ -131,9 +132,18 @@ class JetValidationv3 : public SubsysReco
     double ihcal_energy{0};
     double ohcal_energy{0};
 
+    // sEPD
+    double psi2_raw_S{0};
+    double psi2_raw_N{0};
+    double psi2_raw_NS{0};
+
+    double psi2_S{0};
+    double psi2_N{0};
+    double psi2_NS{0};
+
+    // UE
     // key: iter -> UE Iterative Method
     //      mult -> UE Multiplicity Method (New)
-
     float calo_v2_iter{0};
     float calo_v2_mult{0};
 

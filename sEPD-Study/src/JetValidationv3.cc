@@ -105,6 +105,14 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("ihcal_energy", &m_data.ihcal_energy);
   m_tree->Branch("ohcal_energy", &m_data.ohcal_energy);
 
+  m_tree->Branch("psi2_raw_S", &m_data.psi2_raw_S);
+  m_tree->Branch("psi2_raw_N", &m_data.psi2_raw_N);
+  m_tree->Branch("psi2_raw_NS", &m_data.psi2_raw_NS);
+
+  m_tree->Branch("psi2_S", &m_data.psi2_S);
+  m_tree->Branch("psi2_N", &m_data.psi2_N);
+  m_tree->Branch("psi2_NS", &m_data.psi2_NS);
+
   m_tree->Branch("seeds_iter", &m_data.seeds_iter);
   m_tree->Branch("seeds_mult", &m_data.seeds_mult);
 
@@ -155,6 +163,7 @@ int JetValidationv3::process_event_check(PHCompositeNode *topNode)
   EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
   if (!eventInfo)
   {
+    std::cout << "Aborting Run: EventHeader null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -166,6 +175,7 @@ int JetValidationv3::process_event_check(PHCompositeNode *topNode)
 
   if (!vertexmap)
   {
+    std::cout << "Aborting Run: GlobalVertexMap null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -211,6 +221,7 @@ int JetValidationv3::process_event_check(PHCompositeNode *topNode)
   MinimumBiasInfo *m_mb_info = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
   if (!m_mb_info)
   {
+    std::cout << "Aborting Run: MinimumBiasInfo null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -218,6 +229,7 @@ int JetValidationv3::process_event_check(PHCompositeNode *topNode)
   PdbParameterMap *pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb)
   {
+    std::cout << "Aborting Run: PdbParameterMap null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -283,6 +295,7 @@ int JetValidationv3::process_centrality(PHCompositeNode *topNode)
   CentralityInfo *centInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
   if (!centInfo)
   {
+    std::cout << "Aborting Run: CentralityInfo null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -312,6 +325,7 @@ int JetValidationv3::process_Calo(PHCompositeNode *topNode)
 
   if (!towersCEMC || !towersIHCal || !towersOHCal)
   {
+    std::cout << "Aborting Run: Calo Towers null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -360,6 +374,7 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 
   if (!towerBkg_iter || !towerBkg_mult)
   {
+    std::cout << "Aborting Run: Background Info null" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
@@ -371,6 +386,55 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 
   m_data.seeds_iter = towerBkg_iter->get_nHIRecoSeedsSub();
   m_data.seeds_mult = towerBkg_mult->get_nHIRecoSeedsSub();
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+//____________________________________________________________________________..
+int JetValidationv3::process_EventPlane(PHCompositeNode *topNode)
+{
+  // get event plane map
+  EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
+  if (!epmap || epmap->empty())
+  {
+    std::cout << "Aborting Run: Event Plane Map null or empty" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  Eventplaneinfo *epd_S = epmap->get(EventplaneinfoMap::sEPDS);
+  Eventplaneinfo *epd_N = epmap->get(EventplaneinfoMap::sEPDN);
+  Eventplaneinfo *epd_NS = epmap->get(EventplaneinfoMap::sEPDNS);
+
+  // ensure the ptrs are valid
+  if (!epd_S || !epd_N || !epd_NS)
+  {
+    std::cout << "Aborting Run: Event Plane map pointers invalid" << std::endl;
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  std::pair<double, double> Q_S_2_raw = epd_S->get_qvector_raw(2);
+  std::pair<double, double> Q_N_2_raw = epd_N->get_qvector_raw(2);
+  std::pair<double, double> Q_NS_2_raw = epd_NS->get_qvector_raw(2);
+
+  std::pair<double, double> Q_S_2 = epd_S->get_qvector(2);
+  std::pair<double, double> Q_N_2 = epd_N->get_qvector(2);
+  std::pair<double, double> Q_NS_2 = epd_NS->get_qvector(2);
+
+  double _2psi2_raw_S = 2*epd_S->GetPsi(Q_S_2_raw.first, Q_S_2_raw.second, 2);
+  double _2psi2_raw_N = 2*epd_N->GetPsi(Q_N_2_raw.first, Q_N_2_raw.second, 2);
+  double _2psi2_raw_NS = 2*epd_NS->GetPsi(Q_NS_2_raw.first, Q_NS_2_raw.second, 2);
+
+  double _2psi2_S = 2*epd_S->GetPsi(Q_S_2.first, Q_S_2.second, 2);
+  double _2psi2_N = 2*epd_N->GetPsi(Q_N_2.first, Q_N_2.second, 2);
+  double _2psi2_NS = 2*epd_NS->GetPsi(Q_NS_2.first, Q_NS_2.second, 2);
+
+  m_data.psi2_raw_S = _2psi2_raw_S;
+  m_data.psi2_raw_N = _2psi2_raw_N;
+  m_data.psi2_raw_NS = _2psi2_raw_NS;
+
+  m_data.psi2_S = _2psi2_S;
+  m_data.psi2_N = _2psi2_N;
+  m_data.psi2_NS = _2psi2_NS;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -395,6 +459,7 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
   {
     if (!jets)
     {
+      std::cout << "Aborting Run: Jets Info null" << std::endl;
       return Fun4AllReturnCodes::ABORTRUN;
     }
   }
@@ -481,6 +546,12 @@ int JetValidationv3::process_event(PHCompositeNode *topNode)
     return ret;
   }
 
+  ret = process_EventPlane(topNode);
+  if (ret)
+  {
+    return ret;
+  }
+
   ret = process_jets(topNode);
   if (ret)
   {
@@ -517,6 +588,15 @@ int JetValidationv3::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 
   m_data.is_flow_failure_iter = false;
   m_data.is_flow_failure_mult = false;
+
+  // sEPD
+  m_data.psi2_raw_S = 0;
+  m_data.psi2_raw_N = 0;
+  m_data.psi2_raw_NS = 0;
+
+  m_data.psi2_S = 0;
+  m_data.psi2_N = 0;
+  m_data.psi2_NS = 0;
 
   // Jets
   m_data.iter_r02.clear();
