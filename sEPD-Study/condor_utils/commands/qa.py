@@ -32,7 +32,7 @@ def create_trigger_qa_jobs(args):
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
@@ -70,7 +70,7 @@ def create_calo_qa_jobs(args):
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{Path(args.f4a_bin).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_bin).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
@@ -108,7 +108,7 @@ def create_centrality_qa_jobs(args):
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{Path(args.f4a_bin).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_bin).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 

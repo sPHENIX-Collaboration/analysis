@@ -72,7 +72,7 @@ def create_f4a_jobs(args):
 
     jobs_temp_file.unlink(missing_ok=True)
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst,input_calib from jobs.list")
 
@@ -114,7 +114,7 @@ def create_f4a_zdc_jobs(args):
 
     manager.logger.info(f"Total jobs prepared: {total_jobs}")
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) {args.events} {args.dbtag} {args.log_interval} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) {args.events} {args.dbtag} {args.log_interval} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
@@ -146,7 +146,7 @@ def create_f4a_mc_jobs(args):
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
@@ -214,7 +214,7 @@ def create_f4a_data_mc_jobs(args):
                     manager.logger.warning(f"Could not parse run number from {line}. Using default.")
                     file_out.write(f'{line},default\n')
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_dst_calo) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.jet_pt_min} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst_global) $(input_dst_jet) $(input_dst_g4hit) $(input_dst_calo) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.jet_pt_min} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst_global,input_dst_jet,input_dst_g4hit,input_dst_calo,input_calib from jobs.list")
 
@@ -251,7 +251,7 @@ def create_f4a_nobkgsub_jobs(args):
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{Path(args.f4a_macro).resolve()} $(input_dst) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 

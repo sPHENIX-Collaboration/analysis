@@ -73,7 +73,7 @@ def jetAna_jobs(args):
 
     manager.logger.info(f"Total jobs prepared: {total_jobs}")
 
-    arguments = f"{Path(args.jetAna_bin).resolve()} $(input_tree_list) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) $(input_f4a_qa) {jet_pt_min} {jet_eta_max} {jet_radius_type} {manager.output_dir}/output"
     sub_file_name = f"{manager.condor_script.stem}.sub"
     manager.write_submit_file(arguments=arguments, sub_file_name=sub_file_name)
     manager.finalize_submission(queue_arg="input_tree_list,input_f4a_qa from jobs.list", sub_file_name=sub_file_name)
@@ -127,7 +127,7 @@ def jetAnav2_jobs(args):
 
     manager.logger.info(f"Total jobs prepared: {total_jobs}")
 
-    arguments = f"{Path(args.jetAna_bin).resolve()} $(input_tree_list) {jet_pt_min} {jet_eta_max} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {jet_eta_max} {manager.output_dir}/output"
     sub_file_name = f"{manager.condor_script.stem}.sub"
     manager.write_submit_file(arguments=arguments, sub_file_name=sub_file_name)
     manager.finalize_submission(queue_arg="input_tree_list from jobs.list", sub_file_name=sub_file_name)
