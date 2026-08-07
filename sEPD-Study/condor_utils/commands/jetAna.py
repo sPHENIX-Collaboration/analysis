@@ -133,6 +133,58 @@ def jetAnav2_jobs(args):
     manager.finalize_submission(queue_arg="input_tree_list from jobs.list", sub_file_name=sub_file_name)
 
 
+def jetAnav3_jobs(args):
+    manager = CondorJobManager(args, job_name="jetAnav3")
+    manager.add_file_to_check(args.jetAna_macro)
+    manager.add_file_to_check(args.jetAna_bin)
+
+    manager.validate_paths()
+
+    jet_pt_min      = args.jet_pt_min
+    files_per_job   = args.files_per_job
+
+    manager.log_initialization({
+        'Jet pT Min': f"{jet_pt_min} GeV",
+        'Files Per Job': files_per_job,
+        'Jet Ana Macro': Path(args.jetAna_macro).resolve(),
+        'Jet Ana Bin': Path(args.jetAna_bin).resolve(),
+    })
+
+    files_dir = manager.prepare_directories()
+
+    manager.copy_dependencies(extra_files=[args.jetAna_macro, args.jetAna_bin])
+
+    run_trees = {}
+    input_lines = manager.input_list.read_text(encoding='utf-8').splitlines()
+
+    for line in input_lines:
+        tree_path = Path(line.strip())
+        run_id = tree_path.parent.parent.name
+        if run_id not in run_trees:
+            run_trees[run_id] = []
+        run_trees[run_id].append(str(tree_path))
+
+    jobs_list_file = manager.output_dir / 'jobs.list'
+    jobs_list_file.unlink(missing_ok=True)
+    total_jobs = 0
+
+    with open(jobs_list_file, mode='w', encoding='utf-8') as f_jobs:
+        for run_id, trees in run_trees.items():
+            for i, chunk in enumerate(chunk_list(trees, files_per_job)):
+                chunk_file = files_dir / f'{run_id}_part_{i}.list'
+                chunk_file.write_text("\n".join(chunk) + "\n", encoding='utf-8')
+
+                f_jobs.write(f"{chunk_file}\n")
+                total_jobs += 1
+
+    manager.logger.info(f"Total jobs prepared: {total_jobs}")
+
+    arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output"
+    sub_file_name = f"{manager.condor_script.stem}.sub"
+    manager.write_submit_file(arguments=arguments, sub_file_name=sub_file_name)
+    manager.finalize_submission(queue_arg="input_tree_list from jobs.list", sub_file_name=sub_file_name)
+
+
 def setup_jetAna_subparsers(subparsers):
     jetAna = subparsers.add_parser('jetAna', help='jetAna condor jobs.')
     jetAna.add_argument('-i', '--input-list', type=str, required=True, help='List of TTrees to analyze.')
@@ -164,3 +216,17 @@ def setup_jetAna_subparsers(subparsers):
     jetAnav2.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAnav2.sh', help='Condor Script.')
     jetAnav2.add_argument('-f4', '--common-errors', type=str, default='files/common-errors.txt', help='Common Errors.')
     jetAnav2.set_defaults(func=jetAnav2_jobs)
+
+    jetAnav3 = subparsers.add_parser('jetAnav3', help='jetAnav3 condor jobs.')
+    jetAnav3.add_argument('-i', '--input-list', type=str, required=True, help='List of TTrees to analyze.')
+    jetAnav3.add_argument('-j', '--jet-pt-min', type=float, default=10, help='Minimum Jet pT. Default: 10 [GeV]')
+    jetAnav3.add_argument('-p', '--files-per-job', type=int, default=100, help='Number of trees per job list. Default: 100')
+    jetAnav3.add_argument('-f', '--jetAna-macro', type=str, default='macros/Jet-Anav3.C', help='Jet-Ana Macro. Default: macros/Jet-Anav3.C')
+    jetAnav3.add_argument('-f2', '--jetAna-bin', type=str, default='bin/Jet-Anav3', help='Jet-Ana Bin. Default: bin/Jet-Anav3')
+    jetAnav3.add_argument('-o', '--output-dir', type=str, default='scratch/test', help='Output Directory. Default: scratch/test')
+    jetAnav3.add_argument('-s', '--memory', type=float, default=1, help='Memory (units of GB). Default: 1 GB.')
+    jetAnav3.add_argument('-m', '--max-retries', type=int, default=3, help='Max Condor job retries on failure. Default: 3.')
+    jetAnav3.add_argument('-l', '--condor-log-dir', type=str, default='/tmp/anarde/dump', help='Condor Log Directory.')
+    jetAnav3.add_argument('-f3', '--condor-script', type=str, default='scripts/genJetAnav3.sh', help='Condor Script.')
+    jetAnav3.add_argument('-f4', '--common-errors', type=str, default='files/common-errors.txt', help='Common Errors.')
+    jetAnav3.set_defaults(func=jetAnav3_jobs)
