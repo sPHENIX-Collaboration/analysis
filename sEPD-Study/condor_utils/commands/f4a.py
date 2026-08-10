@@ -6,6 +6,9 @@ from condor_utils.core.helpers import run_command_and_log, get_line_count, chunk
 from condor_utils.cli import get_common_parser
 
 def create_f4a_jobs(args):
+    if "Fun4All_BkgSub" in args.f4a_macro:
+        args.condor_script = 'scripts/genFun4All_BkgSub.sh'
+
     manager = CondorJobManager(args, job_name="F4A")
     manager.add_file_to_check(args.f4a_macro)
     manager.add_file_to_check(args.calo_calib_macro)
@@ -72,7 +75,8 @@ def create_f4a_jobs(args):
 
     jobs_temp_file.unlink(missing_ok=True)
 
-    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    do_flow_arg = f"{args.do_flow} " if "Fun4All_BkgSub" in args.f4a_macro else ""
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {do_flow_arg}{manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst,input_calib from jobs.list")
 
@@ -261,6 +265,7 @@ def setup_f4a_subparsers(subparsers):
     f4a.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD.C', help='Fun4All Macro.')
     f4a.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
+    f4a.add_argument('--do-flow', type=int, default=3, help='Flow modulation configuration for JetReco/QA (default=3)')
     f4a.set_defaults(memory=1.5, condor_script='scripts/genFun4All.sh', func=create_f4a_jobs)
 
     f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[get_common_parser()], help='Create condor submission directory.')
