@@ -41,6 +41,11 @@ class JetValidationv3 : public SubsysReco
     m_outtree_name = file;
   }
 
+  void set_do_flow(bool b)
+  {
+    m_do_flow = b;
+  }
+
  private:
   int process_event_check(PHCompositeNode *topNode);
   int process_Calo(PHCompositeNode *topNode);
@@ -50,6 +55,7 @@ class JetValidationv3 : public SubsysReco
   int process_jets(PHCompositeNode *topNode);
 
   std::string m_outtree_name{"tree.root"};
+  bool m_do_flow{true};
 
   struct HistConfig
   {

@@ -393,6 +393,11 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::process_EventPlane(PHCompositeNode *topNode)
 {
+  if (!m_do_flow)
+  {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+
   // get event plane map
   EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
   if (!epmap || epmap->empty())
