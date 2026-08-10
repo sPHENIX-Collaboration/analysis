@@ -418,7 +418,7 @@ void MakeHITowerJetsMultSub()
 
   SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");
   st->set_towerNodePrefix("MULTSUB_" + HIJETS::tower_prefix);
-  st->SetBackgroundNodeName("TowerInfoBackground_MultSub2");
+  st->set_inputTowerBackgroundNode("TowerInfoBackground_MultSub2");
   st->SetFlowModulation(true);
   st->Verbosity(verbosity);
   st->set_towerinfo(true);
