@@ -203,7 +203,7 @@ void HIJetRecoCommon()
   unsigned int verbosity = static_cast<unsigned int>(std::max(Enable::VERBOSITY, Enable::HIJETS_VERBOSITY));
   Fun4AllServer *se = Fun4AllServer::instance();
 
-  if (Enable::HIJETS_TOWER_MULTSUB || HIJETS::do_flow == 3)
+  if (HIJETS::do_flow == 3)
   {
     EventPlaneReco *epreco = new EventPlaneReco();
     if (HIJETS::eventplane_custom_calib != "default")
@@ -405,8 +405,18 @@ void MakeHITowerJetsMultSub()
 
   DetermineTowerBackgroundv1 *dtb = new DetermineTowerBackgroundv1("DetermineTowerBackgroundv1_Emb");
   dtb->SetBackgroundOutputName("TowerInfoBackground_MultSub2");
-  dtb->SetFlowMode(DetermineTowerBackgroundv1::FlowMode::EBE);
-  dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::sEPD);
+  if (HIJETS::do_flow == 0)
+  {
+    dtb->SetFlowMode(DetermineTowerBackgroundv1::FlowMode::NoFlow);
+    dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::NoPsi2);
+  }
+  else
+  {
+    dtb->SetFlowMode(DetermineTowerBackgroundv1::FlowMode::EBE);
+    if (HIJETS::do_flow == 1) dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::Calo);
+    else if (HIJETS::do_flow == 2) dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::Truth);
+    else if (HIJETS::do_flow == 3) dtb->SetPsi2Mode(DetermineTowerBackgroundv1::Psi2Mode::sEPD);
+  }
   dtb->SetSeedJetName(seed_jet_name);
   dtb->SetCEMC_RhoNode("TowerRho_MULT_CEMC");
   dtb->SetIHCAL_RhoNode("TowerRho_MULT_HCALIN");
@@ -419,7 +429,7 @@ void MakeHITowerJetsMultSub()
   SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");
   st->set_towerNodePrefix("MULTSUB_" + HIJETS::tower_prefix);
   st->set_inputTowerBackgroundNode("TowerInfoBackground_MultSub2");
-  st->SetFlowModulation(true);
+  st->SetFlowModulation(HIJETS::do_flow);
   st->Verbosity(verbosity);
   st->set_towerinfo(true);
   se->registerSubsystem(st);
