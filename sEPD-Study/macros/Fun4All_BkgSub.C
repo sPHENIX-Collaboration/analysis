@@ -48,6 +48,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     const std::string &input_QVecCalib="default",
                     const std::string &output = "test.root",
                     const std::string &output_tree = "tree.root",
+                    int do_flow = 3,
                     int nEvents = 100,
                     int nSkip = 0,
                     int event_id = 0,
@@ -88,6 +89,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "QVec Calib: " << input_QVecCalib << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "output tree: " << output_tree << std::endl;
+  std::cout << "do_flow: " << do_flow << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
@@ -161,13 +163,14 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   // Jet Reco
   // Enable::HIJETS_VERBOSITY = 10;
   HIJETS::eventplane_custom_calib = input_QVecCalib;
-  HIJETS::do_flow = 3;
+  HIJETS::do_flow = do_flow;
   Enable::HIJETS_TOWER_MULTSUB = true;
   HIJetReco();
 
   // sEPD QA
   JetValidationv3* jet_validation = new JetValidationv3();
   jet_validation->set_tree_filename(output_tree);
+  jet_validation->set_do_flow(do_flow);
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation);
 
