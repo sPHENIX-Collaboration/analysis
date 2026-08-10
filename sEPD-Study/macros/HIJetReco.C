@@ -255,7 +255,7 @@ void MakeHITowerJets()
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
 
-  DetermineTowerBackground *dtb = new DetermineTowerBackground();
+  DetermineTowerBackground *dtb = new DetermineTowerBackground("DetermineTowerBackground_Sub1");
   dtb->SetBackgroundOutputName("TowerInfoBackground_Sub1");
   dtb->SetFlow(HIJETS::do_flow);
   dtb->SetSeedType(0);
@@ -273,7 +273,7 @@ void MakeHITowerJets()
   casj->set_towerNodePrefix(HIJETS::tower_prefix);
   se->registerSubsystem(casj);
 
-  DetermineTowerBackground *dtb2 = new DetermineTowerBackground();
+  DetermineTowerBackground *dtb2 = new DetermineTowerBackground("DetermineTowerBackground_Sub2");
   dtb2->SetBackgroundOutputName("TowerInfoBackground_Sub2");
   dtb2->SetFlow(HIJETS::do_flow);
   dtb2->SetSeedType(1);
