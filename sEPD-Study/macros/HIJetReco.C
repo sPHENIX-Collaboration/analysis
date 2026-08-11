@@ -319,9 +319,9 @@ void MakeHITowerJets()
       jetCalib->set_InputNode(Form("%s_Tower_r0%d_Sub1", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_OutputNode(Form("%s_Tower_r0%d_Sub1_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
-      jetCalib->set_ZvrtxNode("GlobalVertexMap");
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
+      jetCalib->set_UseEMfracCalib(false);
       se->registerSubsystem(jetCalib);
     }
   }
@@ -433,9 +433,9 @@ void MakeHITowerJetsMultSub()
       jetCalib->set_InputNode(Form("%s_Tower_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_OutputNode(Form("%s_Tower_r0%d_MultSub1_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
-      jetCalib->set_ZvrtxNode("GlobalVertexMap");
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
+      jetCalib->set_UseEMfracCalib(false);
       se->registerSubsystem(jetCalib);
     }
   }
@@ -480,9 +480,9 @@ void MakeHITowerJetsNoBkg()
       jetCalib->set_InputNode(Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_OutputNode(Form("%s_TowerInfo_r0%d_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
-      jetCalib->set_ZvrtxNode("GlobalVertexMap");
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
+      jetCalib->set_UseEMfracCalib(false);
       se->registerSubsystem(jetCalib);
     }
   }
