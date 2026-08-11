@@ -127,17 +127,20 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   CaloTowerDefs::BuilderType buildertype = CaloTowerDefs::kPRDFTowerv4;
 
   // sEPD Reconstruction--Calib Info: Packets -> TOWERS_SEPD
-  CaloTowerBuilder *caEPD = new CaloTowerBuilder("SEPDBUILDER");
-  caEPD->set_detector_type(CaloTowerDefs::SEPD);
-  caEPD->set_builder_type(buildertype);
-  caEPD->set_processing_type(CaloWaveformProcessing::TEMPLATE);
-  caEPD->set_nsamples(12);
-  caEPD->set_offlineflag();
-  se->registerSubsystem(caEPD);
+  if (do_flow == 3)
+  {
+    CaloTowerBuilder *caEPD = new CaloTowerBuilder("SEPDBUILDER");
+    caEPD->set_detector_type(CaloTowerDefs::SEPD);
+    caEPD->set_builder_type(buildertype);
+    caEPD->set_processing_type(CaloWaveformProcessing::TEMPLATE);
+    caEPD->set_nsamples(12);
+    caEPD->set_offlineflag();
+    se->registerSubsystem(caEPD);
 
-  // sEPD Reconstruction--Calib Info
-  EpdReco* epdreco = new EpdReco();
-  se->registerSubsystem(epdreco);
+    // sEPD Reconstruction--Calib Info
+    EpdReco* epdreco = new EpdReco();
+    se->registerSubsystem(epdreco);
+  }
 
   // Official vertex storage
   GlobalVertexReco* gvertex = new GlobalVertexReco();
