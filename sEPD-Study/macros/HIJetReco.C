@@ -16,7 +16,6 @@
 #include <jetbackground/RetowerCEMC.h>
 #include <jetbackground/SubtractTowers.h>
 #include <jetbackground/SubtractTowersCS.h>
-#include <jetbackground/SubtractTowersRho.h>
 #include <jetbackground/TowerRho.h>
 
 #include <jetbase/FastJetOptions.h>
@@ -379,30 +378,6 @@ void MakeHITowerJetsMultSub()
   dt_rho->Verbosity(verbosity);
   se->registerSubsystem(dt_rho);
 
-  SubtractTowersRho *sub_rho = new SubtractTowersRho("SubtractTowersRho_CEMC_MultEmb");
-  sub_rho->set_rhoNode("TowerRho_MULT_CEMC");
-  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_CEMC_RETOWER");
-  sub_rho->set_subSuffix("MULTSUB");
-  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
-  sub_rho->Verbosity(verbosity);
-  se->registerSubsystem(sub_rho);
-
-  sub_rho = new SubtractTowersRho("SubtractTowersRho_HCALIN_MultEmb");
-  sub_rho->set_rhoNode("TowerRho_MULT_HCALIN");
-  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_HCALIN");
-  sub_rho->set_subSuffix("MULTSUB");
-  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
-  sub_rho->Verbosity(verbosity);
-  se->registerSubsystem(sub_rho);
-
-  sub_rho = new SubtractTowersRho("SubtractTowersRho_HCALOUT_MultEmb");
-  sub_rho->set_rhoNode("TowerRho_MULT_HCALOUT");
-  sub_rho->add_targetTowerNode(HIJETS::tower_prefix + "_HCALOUT");
-  sub_rho->set_subSuffix("MULTSUB");
-  if (HIJETS::do_vertex_type) sub_rho->set_globalVertexType(HIJETS::vertex_type);
-  sub_rho->Verbosity(verbosity);
-  se->registerSubsystem(sub_rho);
-
   DetermineTowerBackgroundv1 *dtb = new DetermineTowerBackgroundv1("DetermineTowerBackgroundv1_Emb");
   dtb->SetBackgroundOutputName("TowerInfoBackground_MultSub2");
   if (HIJETS::do_flow == 0)
@@ -427,8 +402,9 @@ void MakeHITowerJetsMultSub()
   se->registerSubsystem(dtb);
 
   SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");
-  st->set_towerNodePrefix("MULTSUB_" + HIJETS::tower_prefix);
   st->set_inputTowerBackgroundNode("TowerInfoBackground_MultSub2");
+  st->set_inputNodePrefix(HIJETS::tower_prefix);
+  st->set_outputNodePrefix("MULTSUB_" + HIJETS::tower_prefix);
   st->SetFlowModulation(HIJETS::do_flow);
   st->Verbosity(verbosity);
   st->set_towerinfo(true);
@@ -447,20 +423,6 @@ void MakeHITowerJetsMultSub()
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
   se->registerSubsystem(towerjetreco);
-
-  // towerjetreco = new JetReco("TowerJetReco_Rho");
-  // for (const auto & src : { Jet::CEMC_TOWERINFO_RETOWER, Jet::HCALIN_TOWERINFO, Jet::HCALOUT_TOWERINFO })
-  // {
-  //   towerjetreco->add_input(GetTowerInput(src, "MULTSUB_" + HIJETS::tower_prefix));
-  // }
-  // for (const auto & R : { 0.3 })
-  // {
-  //   towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d_Rho", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
-  // }
-  // towerjetreco->set_algo_node(HIJETS::jet_node);
-  // towerjetreco->set_input_node("TOWER");
-  // towerjetreco->Verbosity(verbosity);
-  // se->registerSubsystem(towerjetreco);
 
   if (Enable::HIJETS_TOWER_CALIB)
   {
