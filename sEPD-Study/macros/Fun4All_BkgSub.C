@@ -168,6 +168,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   HIJETS::eventplane_custom_calib = input_QVecCalib;
   HIJETS::do_flow = do_flow;
   Enable::HIJETS_TOWER_MULTSUB = true;
+  Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
 
   // sEPD QA

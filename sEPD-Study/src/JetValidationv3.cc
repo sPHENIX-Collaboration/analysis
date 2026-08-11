@@ -127,6 +127,8 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_tree->Branch("max_pt_mult_r02", &m_data.mult_r02.max_pt);
   m_tree->Branch("max_pt_mult_r03", &m_data.mult_r03.max_pt);
+  m_tree->Branch("max_pt_unsub_r02", &m_data.unsub_r02.max_pt);
+  m_tree->Branch("max_pt_unsub_r03", &m_data.unsub_r03.max_pt);
 
   m_tree->Branch("pt_iter_r02", &m_data.iter_r02.pt);
   m_tree->Branch("pt_calib_iter_r02", &m_data.iter_r02.pt_calib);
@@ -151,6 +153,18 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
   m_tree->Branch("e_mult_r03", &m_data.mult_r03.e);
   m_tree->Branch("phi_mult_r03", &m_data.mult_r03.phi);
   m_tree->Branch("eta_mult_r03", &m_data.mult_r03.eta);
+
+  m_tree->Branch("pt_unsub_r02", &m_data.unsub_r02.pt);
+  m_tree->Branch("pt_calib_unsub_r02", &m_data.unsub_r02.pt_calib);
+  m_tree->Branch("e_unsub_r02", &m_data.unsub_r02.e);
+  m_tree->Branch("phi_unsub_r02", &m_data.unsub_r02.phi);
+  m_tree->Branch("eta_unsub_r02", &m_data.unsub_r02.eta);
+
+  m_tree->Branch("pt_unsub_r03", &m_data.unsub_r03.pt);
+  m_tree->Branch("pt_calib_unsub_r03", &m_data.unsub_r03.pt_calib);
+  m_tree->Branch("e_unsub_r03", &m_data.unsub_r03.e);
+  m_tree->Branch("phi_unsub_r03", &m_data.unsub_r03.phi);
+  m_tree->Branch("eta_unsub_r03", &m_data.unsub_r03.eta);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -459,8 +473,15 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
   JetContainer *jets_mult_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_r03);
   JetContainer *jets_mult_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_calib_r03);
 
+  JetContainer *jets_unsub_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r02);
+  JetContainer *jets_unsub_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r02);
+
+  JetContainer *jets_unsub_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r03);
+  JetContainer *jets_unsub_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r03);
+
   for(auto* jets : {jets_iter_r02, jets_iter_r03, jets_iter_calib_r02, jets_iter_calib_r03,
-                    jets_mult_r02, jets_mult_r03, jets_mult_calib_r02, jets_mult_calib_r03})
+                    jets_mult_r02, jets_mult_r03, jets_mult_calib_r02, jets_mult_calib_r03,
+                    jets_unsub_r02, jets_unsub_r03, jets_unsub_calib_r02, jets_unsub_calib_r03})
   {
     if (!jets)
     {
@@ -520,6 +541,12 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
 
   // R = 0.3 Multiplicity
   fill_jets(jets_mult_r03, jets_mult_calib_r03, m_data.mult_r03, m_jet_eta_max_cut_r03);
+
+  // R = 0.2 Unsubtracted
+  fill_jets(jets_unsub_r02, jets_unsub_calib_r02, m_data.unsub_r02, m_jet_eta_max_cut_r02);
+
+  // R = 0.3 Unsubtracted
+  fill_jets(jets_unsub_r03, jets_unsub_calib_r03, m_data.unsub_r03, m_jet_eta_max_cut_r03);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -608,6 +635,8 @@ int JetValidationv3::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.iter_r03.clear();
   m_data.mult_r02.clear();
   m_data.mult_r03.clear();
+  m_data.unsub_r02.clear();
+  m_data.unsub_r03.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

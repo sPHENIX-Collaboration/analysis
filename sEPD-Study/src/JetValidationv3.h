@@ -164,6 +164,8 @@ class JetValidationv3 : public SubsysReco
     JetData iter_r03;
     JetData mult_r02;
     JetData mult_r03;
+    JetData unsub_r02;
+    JetData unsub_r03;
   };
 
   EventData m_data;
@@ -186,6 +188,11 @@ class JetValidationv3 : public SubsysReco
   std::string m_recoJetName_mult_r03{"AntiKt_Tower_r03_MultSub1"};
   std::string m_recoJetName_iter_calib_r03{"AntiKt_Tower_r03_Sub1_calib"};
   std::string m_recoJetName_mult_calib_r03{"AntiKt_Tower_r03_MultSub1_calib"};
+
+  std::string m_recoJetName_unsub_r02{"AntiKt_TowerInfo_r02"};
+  std::string m_recoJetName_unsub_calib_r02{"AntiKt_TowerInfo_r02_calib"};
+  std::string m_recoJetName_unsub_r03{"AntiKt_TowerInfo_r03"};
+  std::string m_recoJetName_unsub_calib_r03{"AntiKt_TowerInfo_r03_calib"};
 
   double m_jet_pt_min_cut{10};     // GeV
   double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
