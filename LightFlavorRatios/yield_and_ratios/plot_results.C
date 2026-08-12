@@ -36,7 +36,7 @@ std::vector<std::vector<RooPlot*>> get_all_fits_all_variables(TFile* f, std::str
   return all_fits;
 }
 
-void plot_results()
+void plot_results(std::string infile = "fits.root", std::string dirname = "plots")
 {
   gStyle->SetOptStat(0);
   gStyle->SetImageScaling(2.);
@@ -45,10 +45,10 @@ void plot_results()
   bool finalize = false;
 
   std::string outdir;
-  if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/plots";
-  else outdir = "plots";
+  if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/"+dirname;
+  else outdir = dirname;
 
-  TFile* f = TFile::Open("fits.root");
+  TFile* f = TFile::Open(infile.c_str());
 
   std::vector<HistogramInfo> variables =
   {

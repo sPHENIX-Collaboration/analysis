@@ -13,13 +13,19 @@
 #include "LambdaModel.h"
 #include "KshortModel.h"
 
-void Lambda_Kshort_ratio()
+void Lambda_Kshort_ratio_MC()
 {
+  TFile* lambda_file = TFile::Open("../mass_histograms/merged_lambda_MC_neg.root");
+  TFile* Ks_file = TFile::Open("../mass_histograms/merged_Kshort_MC_neg.root");
+
+  //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/ppi_reco/merged_lambda.root");
+  //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/pipi_reco/merged_kshort.root");
+
   //TFile* lambda_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Lambda2ppi_reco_Usman_patch.root");
   //TFile* Ks_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort2pipi_reco_Usman_patch.root");
 
-  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Kshort_run3pp_looseCuts_20260608.root");
-  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Lambda0_run3pp_looseCuts_20260608.root");
+  //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Kshort_run3pp_looseCuts_20260608.root");
+  //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Lambda0_run3pp_looseCuts_20260608.root");
 
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedKShortSVLoose.root");
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedLambdaSVLoose.root");
@@ -30,8 +36,11 @@ void Lambda_Kshort_ratio()
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Kshort_3runs.root");
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Lambda_3runs.root");
 
-  TTree* Ks_tree = (TTree*)Ks_file->Get("DecayTree");
-  TTree* lambda_tree = (TTree*)lambda_file->Get("DecayTree");
+  //TTree* Ks_tree = (TTree*)Ks_file->Get("DecayTree");
+  //TTree* lambda_tree = (TTree*)lambda_file->Get("DecayTree");
+
+  TH1F* integrated_lambda_mass = (TH1F*)lambda_file->Get("Lambda_mass");
+  TH1F* integrated_kshort_mass = (TH1F*)Ks_file->Get("Kshort_mass");
 
   std::vector<HistogramInfo> diff_variables =
   {
@@ -41,6 +50,17 @@ void Lambda_Kshort_ratio()
     BinInfo::final_phi_bins,
   };
 
+  std::map<std::string,HistogramInfo> massbins_map = BinInfo::mass_bins_MC_neg;
+
+  std::vector<DifferentialContainer> diff_lambda_data;
+  std::vector<DifferentialContainer> diff_ks_data;
+
+  for(HistogramInfo& hinfo : diff_variables)
+  {
+    diff_lambda_data.push_back(DifferentialContainer(lambda_file,"Lambda0",massbins_map,hinfo));
+    diff_ks_data.push_back(DifferentialContainer(Ks_file,"K_S0",massbins_map,hinfo));
+  }
+/*
   RooArgList Ks_args;
   RooArgList lambda_args;
 
@@ -73,12 +93,10 @@ void Lambda_Kshort_ratio()
     Ks_args.add(Ks_diffvars[i]);
     lambda_args.add(lambda_diffvars[i]);
   }
-
-  std::map<std::string,HistogramInfo> massbins_map = BinInfo::mass_bins;
-
+*/
   HistogramInfo Ks_massbins = massbins_map.at("K_S0");
   HistogramInfo Lambda_massbins = massbins_map.at("Lambda0");
-
+/*
   for(const std::string& cutvar : Ks_massbins.get_cutvars(Ks_tree))
   {
     if(isIntBranch(Ks_tree->GetBranch(cutvar.c_str())))
@@ -126,7 +144,7 @@ void Lambda_Kshort_ratio()
   }
 
   std::string Ks_cuts = Ks_massbins.cut_string;
-  std::string Lambda_cuts = massbins_map.at("Lambda0").cut_string;
+  std::string Lambda_cuts = Lambda_massbins.cut_string;
 
   Ks_args.Print();
   lambda_args.Print();
@@ -201,6 +219,7 @@ void Lambda_Kshort_ratio()
 
   std::cout << "Ks_cuts " << Ks_cuts << std::endl;
   std::cout << "Lamdba_cuts " << Lambda_cuts << std::endl;
+*/
 
   KshortModel kshort_model;
   LambdaModel lambda_model;
@@ -209,7 +228,7 @@ void Lambda_Kshort_ratio()
   std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> corrections(diff_variables.size());
   // pT
   corrections[0].push_back(std::make_shared<LambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_all"));
-  corrections[0].push_back(std::make_shared<EfficiencyCorrection>());
+  corrections[0].push_back(std::make_shared<TrivialEfficiencyCorrection>(""));
 //  corrections[0].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/u/cdean/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots/Lambda0_to_KS0_geometric_acceptance_ratio_pT.root","Lambda0_inGeo_pT"));
   corrections[0].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_pT.root","Lambda0_inGeo_pT"));
   corrections[0].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_pT"));
@@ -235,11 +254,11 @@ void Lambda_Kshort_ratio()
   corrections[3].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_phi.root","Lambda0_inGeo_#phi"));
   corrections[3].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_phi"));
 
-  TFile* fout = new TFile("fits.root","RECREATE");
+  TFile* fout = new TFile("fits_MC.root","RECREATE");
 
   ResonanceRatio analyzer(lambda_model,kshort_model,massbins_map,
                           fout,"lambdaKsratio","(#Lambda^{0}+#bar{#Lambda^{0}})/2K_{S}^{0} ratio",1./2.,false,
                           diff_variables,corrections);
 
-  analyzer.calculate_ratios_unbinned(lambda_ds_withcuts,Ks_ds_withcuts);
+  analyzer.calculate_ratios_binned(integrated_lambda_mass,diff_lambda_data,integrated_kshort_mass,diff_ks_data);
 }
