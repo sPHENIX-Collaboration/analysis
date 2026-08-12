@@ -108,6 +108,9 @@ class JetAnalysisv3
     JetHistSet iter_r03;
     JetHistSet mult_r03;
 
+    JetHistSet unsub_r02;
+    JetHistSet unsub_r03;
+
     TH2 *h2CaloV2_mult_iter{nullptr};
     TH2 *h2CaloV2_mult_Centrality{nullptr};
     TH2 *h2CaloV2_iter_Centrality{nullptr};
@@ -174,6 +177,8 @@ class JetAnalysisv3
     JetData iter_r03;
     JetData mult_r02;
     JetData mult_r03;
+    JetData unsub_r02;
+    JetData unsub_r03;
 
     // Event Checks
     bool pass_calo_cent{false};
@@ -260,7 +265,10 @@ void JetAnalysisv3::setup_chain()
                                                  "pt_iter_r02", "pt_calib_iter_r02", "e_iter_r02", "phi_iter_r02", "eta_iter_r02",
                                                  "pt_mult_r02", "pt_calib_mult_r02", "e_mult_r02", "phi_mult_r02", "eta_mult_r02",
                                                  "pt_iter_r03", "pt_calib_iter_r03", "e_iter_r03", "phi_iter_r03", "eta_iter_r03",
-                                                 "pt_mult_r03", "pt_calib_mult_r03", "e_mult_r03", "phi_mult_r03", "eta_mult_r03"};
+                                                 "pt_mult_r03", "pt_calib_mult_r03", "e_mult_r03", "phi_mult_r03", "eta_mult_r03",
+                                                 "max_pt_unsub_r02", "max_pt_unsub_r03",
+                                                 "pt_unsub_r02", "pt_calib_unsub_r02", "e_unsub_r02", "phi_unsub_r02", "eta_unsub_r02",
+                                                 "pt_unsub_r03", "pt_calib_unsub_r03", "e_unsub_r03", "phi_unsub_r03", "eta_unsub_r03"};
 
   // Check Branch Status
   for (const auto &branchName : branchNames)
@@ -308,6 +316,9 @@ void JetAnalysisv3::setup_chain()
   m_chain->SetBranchAddress("max_pt_mult_r02", &m_event_data.mult_r02.max_pt);
   m_chain->SetBranchAddress("max_pt_mult_r03", &m_event_data.mult_r03.max_pt);
 
+  m_chain->SetBranchAddress("max_pt_unsub_r02", &m_event_data.unsub_r02.max_pt);
+  m_chain->SetBranchAddress("max_pt_unsub_r03", &m_event_data.unsub_r03.max_pt);
+
   m_chain->SetBranchAddress("pt_iter_r02", &m_event_data.iter_r02.pt);
   m_chain->SetBranchAddress("pt_calib_iter_r02", &m_event_data.iter_r02.pt_calib);
   m_chain->SetBranchAddress("e_iter_r02", &m_event_data.iter_r02.e);
@@ -331,6 +342,18 @@ void JetAnalysisv3::setup_chain()
   m_chain->SetBranchAddress("e_mult_r03", &m_event_data.mult_r03.e);
   m_chain->SetBranchAddress("phi_mult_r03", &m_event_data.mult_r03.phi);
   m_chain->SetBranchAddress("eta_mult_r03", &m_event_data.mult_r03.eta);
+
+  m_chain->SetBranchAddress("pt_unsub_r02", &m_event_data.unsub_r02.pt);
+  m_chain->SetBranchAddress("pt_calib_unsub_r02", &m_event_data.unsub_r02.pt_calib);
+  m_chain->SetBranchAddress("e_unsub_r02", &m_event_data.unsub_r02.e);
+  m_chain->SetBranchAddress("phi_unsub_r02", &m_event_data.unsub_r02.phi);
+  m_chain->SetBranchAddress("eta_unsub_r02", &m_event_data.unsub_r02.eta);
+
+  m_chain->SetBranchAddress("pt_unsub_r03", &m_event_data.unsub_r03.pt);
+  m_chain->SetBranchAddress("pt_calib_unsub_r03", &m_event_data.unsub_r03.pt_calib);
+  m_chain->SetBranchAddress("e_unsub_r03", &m_event_data.unsub_r03.e);
+  m_chain->SetBranchAddress("phi_unsub_r03", &m_event_data.unsub_r03.phi);
+  m_chain->SetBranchAddress("eta_unsub_r03", &m_event_data.unsub_r03.eta);
 
   std::cout << "Finished... setup_chain" << std::endl;
 }
@@ -400,7 +423,7 @@ void JetAnalysisv3::init_hists()
 
   for (const std::string r : {"r02", "r03"})
   {
-    for (const std::string ue : {"iter", "mult"})
+    for (const std::string ue : {"iter", "mult", "unsub"})
     {
       std::string base = std::format("hJetPt_{}_{}", r, ue);
       m_hists1D[base] = std::make_unique<TH1F>(base.c_str(), "; p_{T} [GeV]; Jets / 1 GeV", bins_pt, pt_low, pt_high);
@@ -469,6 +492,8 @@ void JetAnalysisv3::init_hists()
   bind_jet_set(m_hists.mult_r02, "r02", "mult");
   bind_jet_set(m_hists.iter_r03, "r03", "iter");
   bind_jet_set(m_hists.mult_r03, "r03", "mult");
+  bind_jet_set(m_hists.unsub_r02, "r02", "unsub");
+  bind_jet_set(m_hists.unsub_r03, "r03", "unsub");
 
   m_hists.h2CaloV2_mult_iter = m_hists2D["h2CaloV2_mult_iter"].get();
   m_hists.h2CaloV2_mult_Centrality = m_hists2D["h2CaloV2_mult_Centrality"].get();
@@ -567,6 +592,10 @@ void JetAnalysisv3::process_jets()
   {
     fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03);
   }
+
+  // Process unsubtracted jets
+  fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02);
+  fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03);
 }
 
 bool JetAnalysisv3::check_CaloMBD() const
@@ -747,6 +776,8 @@ void JetAnalysisv3::print_event_info(long long event_idx) const
   print_jet_collection("r02_mult", m_event_data.mult_r02);
   print_jet_collection("r03_iter", m_event_data.iter_r03);
   print_jet_collection("r03_mult", m_event_data.mult_r03);
+  print_jet_collection("r02_unsub", m_event_data.unsub_r02);
+  print_jet_collection("r03_unsub", m_event_data.unsub_r03);
   std::cout << std::format("{:=^70}\n", "");
 }
 
