@@ -4,18 +4,20 @@ Repository for determination of ratios of resonances, originally constructed for
 
 ## Usage
 
-For running on data, just run the following macros:
+For running on data, just run one of the following macros:
 
 - `yield_and_ratios/Lambda_Ks_ratio.C` is the default (Lambda + anti-Lambda)/2Ks analysis.
 - `yield_and_ratios/Lambda_Ks_ratio_pos.C` is a Lambda/Ks analysis.
 - `yield_and_ratios/Lambda_Ks_ratio_neg.C` is an anti-Lambda/Ks analysis.
 - `yield_and_ratios/Lambda_Ks_ratio_NN.C` is the (Lambda + anti-Lambda)/2Ks analysis using a track sample corrected by the momentum-scale NN correction before KFParticle.
 
-For running on MC, first run `mass_histograms/merge_MC.sh` to generate the mass histograms from the already-produced MC mass histogram sample (which is too large to be processed in an unbinned fashion like the data sample). To re-run the mass histogram generation from the KFParticle MC ntuples, `condor_submit submit_MC.job`. Once you have the `mass_histograms/lambda_MC_merged.root` and corresponding counterparts, the following macros are runnable:
+For running on MC, use one of the following macros:
 
 - `yield_and_ratios/Lambda_Ks_ratio_MC.C` is the default (Lambda + anti-Lambda)/2Ks analysis.
 - `yield_and_ratios/Lambda_Ks_ratio_pos.C` is a Lambda/Ks analysis.
 - `yield_and_ratios/Lambda_Ks_ratio_neg.C` is an anti-Lambda/Ks analysis.
+
+The MC macros import mass histograms that have been pre-generated and merged from a much larger dataset. To regenerate these mass histograms, `condor_submit` the job file `mass_histograms/submit_MC.job`, and run `mass_histograms/merge_MC.sh` to merge into the appropriate input file locations.
 
 ## General Workflow Concepts
 
