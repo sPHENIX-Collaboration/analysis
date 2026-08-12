@@ -274,6 +274,7 @@ void MakeHITowerJets()
 
   DetermineTowerBackground *dtb2 = new DetermineTowerBackground("DetermineTowerBackground_Sub2");
   dtb2->SetBackgroundOutputName("TowerInfoBackground_Sub2");
+  dtb2->set_jetnode(HIJETS::algo_prefix + "_TowerInfo_HIRecoSeedsSub_r02");
   dtb2->SetFlow(HIJETS::do_flow);
   dtb2->SetSeedType(1);
   dtb2->SetSeedJetPt(7);
