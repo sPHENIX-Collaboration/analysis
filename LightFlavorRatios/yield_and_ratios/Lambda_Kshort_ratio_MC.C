@@ -15,8 +15,8 @@
 
 void Lambda_Kshort_ratio_MC()
 {
-  TFile* lambda_file = TFile::Open("../mass_histograms/merged_lambda_MC.root");
-  TFile* Ks_file = TFile::Open("../mass_histograms/merged_Kshort_MC.root");
+  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/merged_lambda_MC.root");
+  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/merged_Kshort_MC.root");
 
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/ppi_reco/merged_lambda.root");
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/pipi_reco/merged_kshort.root");
