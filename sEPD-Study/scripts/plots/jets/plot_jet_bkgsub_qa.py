@@ -302,21 +302,24 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
         with uproot.open(path) as file:
             hist_pairs = [
                 # r02 plots
-                ("hJetPt_r02_iter", "hJetPt_r02_mult", f"run_{run_number}_bkgsub_qa.png", False, False, 0.2),
-                ("hJetPtv2_r02_iter", "hJetPtv2_r02_mult", f"run_{run_number}_v2_bkgsub_qa.png", True, False, 0.2),
-                ("hJetPtv3_r02_iter", "hJetPtv3_r02_mult", f"run_{run_number}_v3_bkgsub_qa.png", True, True, 0.2),
+                ("hJetPt_r02_iter", "hJetPt_r02_mult", "hJetPt_r02_unsub", f"run_{run_number}_bkgsub_qa.png", False, False, 0.2),
+                ("hJetPtv2_r02_iter", "hJetPtv2_r02_mult", "hJetPtv2_r02_unsub", f"run_{run_number}_v2_bkgsub_qa.png", True, False, 0.2),
+                ("hJetPtv3_r02_iter", "hJetPtv3_r02_mult", "hJetPtv3_r02_unsub", f"run_{run_number}_v3_bkgsub_qa.png", True, True, 0.2),
                 # r03 plots
-                ("hJetPt_r03_iter", "hJetPt_r03_mult", f"run_{run_number}_r03_bkgsub_qa.png", False, False, 0.3),
-                ("hJetPtv2_r03_iter", "hJetPtv2_r03_mult", f"run_{run_number}_r03_v2_bkgsub_qa.png", True, False, 0.3),
-                ("hJetPtv3_r03_iter", "hJetPtv3_r03_mult", f"run_{run_number}_r03_v3_bkgsub_qa.png", True, True, 0.3),
+                ("hJetPt_r03_iter", "hJetPt_r03_mult", "hJetPt_r03_unsub", f"run_{run_number}_r03_bkgsub_qa.png", False, False, 0.3),
+                ("hJetPtv2_r03_iter", "hJetPtv2_r03_mult", "hJetPtv2_r03_unsub", f"run_{run_number}_r03_v2_bkgsub_qa.png", True, False, 0.3),
+                ("hJetPtv3_r03_iter", "hJetPtv3_r03_mult", "hJetPtv3_r03_unsub", f"run_{run_number}_r03_v3_bkgsub_qa.png", True, True, 0.3),
             ]
 
-            for hist_iter_name, hist_mult_name, out_filename, extra_energy_cut, is_v3, r_jet in hist_pairs:
+            for hist_iter_name, hist_mult_name, hist_unsub_name, out_filename, extra_energy_cut, is_v3, r_jet in hist_pairs:
                 if hist_iter_name not in file:
                     print(f"Warning: {hist_iter_name} not found in {path}")
                     continue
                 if hist_mult_name not in file:
                     print(f"Warning: {hist_mult_name} not found in {path}")
+                    continue
+                if hist_unsub_name not in file:
+                    print(f"Warning: {hist_unsub_name} not found in {path}")
                     continue
 
                 hist_iter = file[hist_iter_name]
@@ -327,14 +330,20 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                 values_mult, edges_mult = hist_mult.to_numpy()
                 errors_mult = hist_mult.errors()
 
+                hist_unsub = file[hist_unsub_name]
+                values_unsub, edges_unsub = hist_unsub.to_numpy()
+                errors_unsub = hist_unsub.errors()
+
                 # Using edges from the iter histogram for centers
                 centers_x = (edges_iter[:-1] + edges_iter[1:]) / 2.0
 
                 if run_output_dir is not None:
                     hists = [
                         (values_iter, "Iterative Bkg Sub", "blue"),
-                        (values_mult, "Multiplicity Bkg Sub", "crimson")
+                        (values_mult, "Multiplicity Bkg Sub", "crimson"),
+                        (values_unsub, "Unsubtracted", "green"),
                     ]
+
                     output_path = run_output_dir / out_filename
                     make_combined_plot(edges_iter, hists, run_number, output_path, xmax=xmax, ymax=ymax, extra_energy_cut=extra_energy_cut, is_v3=is_v3, r_jet=r_jet)
 
@@ -348,8 +357,10 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                 "h2CaloV2_mult_iter",
                 "h2JetPtv2_r02_iter",
                 "h2JetPtv2_r02_mult",
+                "h2JetPtv2_r02_unsub",
                 "h2JetPtv2_r03_iter",
                 "h2JetPtv2_r03_mult",
+                "h2JetPtv2_r03_unsub",
             ]
 
             h2_start_zero = {
@@ -366,8 +377,10 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
             h2_zoom_names = {
                 "h2JetPtv2_r02_iter",
                 "h2JetPtv2_r02_mult",
+                "h2JetPtv2_r02_unsub",
                 "h2JetPtv2_r03_iter",
                 "h2JetPtv2_r03_mult",
+                "h2JetPtv2_r03_unsub",
             }
 
             calo_cut_label = None
