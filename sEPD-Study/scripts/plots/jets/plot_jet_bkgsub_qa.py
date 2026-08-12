@@ -19,33 +19,40 @@ from matplotlib.ticker import LogLocator, ScalarFormatter
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=1e8, extra_energy_cut=False, is_v3=False, r_jet=0.2):
+def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=1e8, extra_energy_cut=False, is_v3=False, r_jet=0.2, is_eta=False, pt_min_label=None):
     hep.style.use("ATLAS")
     fig, ax = plt.subplots(figsize=(8, 6))
 
     for values, label, color in hists:
         hep.histplot((values, edges_x), ax=ax, histtype='step', color=color, linewidth=2, label=label)
 
-    max_x_val = 0
-    for values, _, _ in hists:
-        nonzero_indices = np.where(values > 0)[0]
-        if len(nonzero_indices) > 0:
-            max_bin_edge = edges_x[nonzero_indices[-1] + 1]
-            if max_bin_edge > max_x_val:
-                max_x_val = max_bin_edge
-
-    ax.set_yscale('log')
-    ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
-    ax.set_xlabel(r"$p_{T}$ (GeV)")
-    ax.set_ylabel("Counts")
-    if ymax is not None:
-        ax.set_ylim(top=ymax)
-    if xmax is not None:
-        ax.set_xlim(left=0, right=xmax)
-    elif max_x_val > 0:
-        ax.set_xlim(left=0, right=max_x_val)
+    if is_eta:
+        ax.set_xlabel(r"$\eta$", labelpad=-5)
+        ax.set_ylabel(r"$\frac{1}{N_{\mathrm{jet}}} \frac{\mathrm{d}N}{\mathrm{d}\eta}$", labelpad=5)
+        eta_limit = round(1.1 - r_jet, 1)
+        ax.set_xlim(-eta_limit, eta_limit)
+        ax.set_ylim(bottom=0)
     else:
-        ax.set_xlim(left=0)
+        max_x_val = 0
+        for values, _, _ in hists:
+            nonzero_indices = np.where(values > 0)[0]
+            if len(nonzero_indices) > 0:
+                max_bin_edge = edges_x[nonzero_indices[-1] + 1]
+                if max_bin_edge > max_x_val:
+                    max_x_val = max_bin_edge
+
+        ax.set_yscale('log')
+        ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        ax.set_xlabel(r"$p_{T}$ (GeV)")
+        ax.set_ylabel("Counts")
+        if ymax is not None:
+            ax.set_ylim(top=ymax)
+        if xmax is not None:
+            ax.set_xlim(left=0, right=xmax)
+        elif max_x_val > 0:
+            ax.set_xlim(left=0, right=max_x_val)
+        else:
+            ax.set_xlim(left=0)
 
     # Top right border label
     ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
@@ -61,23 +68,27 @@ def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=
 
     ax.text(0.95, 0.95, text_info, transform=ax.transAxes, ha='right', va='top', fontsize=15)
 
+    jet_sel_lines = [r"Jets:"]
+    if pt_min_label:
+        jet_sel_lines.append(rf"$p_{{T}} \geq {pt_min_label}$ GeV")
     if extra_energy_cut:
-        jet_selection_text = (
-            r"Jets:" + "\n"
-            r"Energy > 0" + "\n"
-            r"$|\eta| < 1.1 - R$"
-        )
-    else:
-        jet_selection_text = (
-            r"Jets:" + "\n"
-            r"$|\eta| < 1.1 - R$"
-        )
-    ax.text(0.95, 0.5, jet_selection_text, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+        jet_sel_lines.append(r"Energy > 0")
+    jet_sel_lines.append(r"$|\eta| < 1.1 - R$")
 
-    ax.legend(loc='upper right', bbox_to_anchor=(0.99, 0.7), frameon=False, fontsize=15)
+    jet_selection_text = "\n".join(jet_sel_lines)
+
+    if is_eta:
+        ax.text(0.5, 0.95, jet_selection_text, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+        ax.legend(loc='lower left', frameon=False, fontsize=15)
+    else:
+        ax.text(0.95, 0.5, jet_selection_text, transform=ax.transAxes, ha='right', va='top', fontsize=15)
+        ax.legend(loc='upper right', bbox_to_anchor=(0.99, 0.7), frameon=False, fontsize=15)
 
     fig.tight_layout()
-    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.95)
+    if is_eta:
+        plt.subplots_adjust(left=0.12, bottom=0.1, top=0.95)
+    else:
+        plt.subplots_adjust(left=0.12, bottom=0.13, top=0.95)
 
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
@@ -89,8 +100,8 @@ def clean_root_latex(text):
     # Replace ROOT TLatex # with \ for LaTeX math
     text = text.replace("#", "\\")
     if "$" not in text:
-        # Wrap terms containing subscripts/superscripts (like v_{2}, v_2, p_{T}) in math mode $...$
-        text = re.sub(r'([a-zA-Z0-9\\_*|()]+(?:_{[^}\s]+}|^{[^}\s]+}|_[a-zA-Z0-9]+|\^[a-zA-Z0-9]+)+)', r'$\1$', text)
+        # Wrap LaTeX command terms (like \eta, \Psi) or terms containing subscripts/superscripts in math mode $...$
+        text = re.sub(r'(\\[a-zA-Z]+(?:_{[^}\s]+}|^{[^}\s]+}|_[a-zA-Z0-9]+|\^[a-zA-Z0-9]+)*|[a-zA-Z0-9\\_*|()]+(?:_{[^}\s]+}|^{[^}\s]+}|_[a-zA-Z0-9]+|\^[a-zA-Z0-9]+)+)', r'$\1$', text)
     return text
 
 def get_hist_axis_titles(hist2d, hist_name=""):
@@ -347,6 +358,88 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                     output_path = run_output_dir / out_filename
                     make_combined_plot(edges_iter, hists, run_number, output_path, xmax=xmax, ymax=ymax, extra_energy_cut=extra_energy_cut, is_v3=is_v3, r_jet=r_jet)
 
+            eta_hist_pairs = [
+                (10.0, "pt10", 10),
+                (20.0, "pt20", 20),
+            ]
+
+            eta_configs = [
+                # r02 plots
+                ("h2JetEta_r02_iter", "h2JetEta_r02_mult", "h2JetEta_r02_unsub", False, False, 0.2, ""),
+                ("h2JetEtav2_r02_iter", "h2JetEtav2_r02_mult", "h2JetEtav2_r02_unsub", True, False, 0.2, "_v2"),
+                ("h2JetEtav3_r02_iter", "h2JetEtav3_r02_mult", "h2JetEtav3_r02_unsub", True, True, 0.2, "_v3"),
+                # r03 plots
+                ("h2JetEta_r03_iter", "h2JetEta_r03_mult", "h2JetEta_r03_unsub", False, False, 0.3, "_r03"),
+                ("h2JetEtav2_r03_iter", "h2JetEtav2_r03_mult", "h2JetEtav2_r03_unsub", True, False, 0.3, "_r03_v2"),
+                ("h2JetEtav3_r03_iter", "h2JetEtav3_r03_mult", "h2JetEtav3_r03_unsub", True, True, 0.3, "_r03_v3"),
+            ]
+
+            for min_pt_val, pt_suffix, pt_label in eta_hist_pairs:
+                for h2_iter_name, h2_mult_name, h2_unsub_name, extra_energy_cut, is_v3, r_jet, label_prefix in eta_configs:
+                    if h2_iter_name not in file or h2_mult_name not in file or h2_unsub_name not in file:
+                        continue
+
+                    h2_iter = file[h2_iter_name]
+                    h2_mult = file[h2_mult_name]
+                    h2_unsub = file[h2_unsub_name]
+
+                    val_iter, xedges_iter, yedges = h2_iter.to_numpy()
+                    val_mult, _, _ = h2_mult.to_numpy()
+                    val_unsub, _, _ = h2_unsub.to_numpy()
+
+                    idx_pt = np.searchsorted(xedges_iter[:-1], min_pt_val, side='left')
+                    if idx_pt >= len(xedges_iter) - 1:
+                        idx_pt = 0
+
+                    proj_iter = np.sum(val_iter[idx_pt:, :], axis=0)
+                    proj_mult = np.sum(val_mult[idx_pt:, :], axis=0)
+                    proj_unsub = np.sum(val_unsub[idx_pt:, :], axis=0)
+
+                    deta = yedges[1] - yedges[0]
+                    sum_iter = np.sum(proj_iter)
+                    sum_mult = np.sum(proj_mult)
+                    sum_unsub = np.sum(proj_unsub)
+
+                    norm_iter = proj_iter / (sum_iter * deta) if sum_iter > 0 else proj_iter
+                    norm_mult = proj_mult / (sum_mult * deta) if sum_mult > 0 else proj_mult
+                    norm_unsub = proj_unsub / (sum_unsub * deta) if sum_unsub > 0 else proj_unsub
+
+                    hists_eta = [
+                        (norm_iter, "Iterative Bkg Sub", "blue"),
+                        (norm_mult, "Multiplicity Bkg Sub", "crimson"),
+                        (norm_unsub, "Unsubtracted", "green"),
+                    ]
+
+                    if r_jet == 0.2:
+                        if label_prefix == "":
+                            out_filename = f"run_{run_number}_eta_{pt_suffix}_bkgsub_qa.png"
+                        elif label_prefix == "_v2":
+                            out_filename = f"run_{run_number}_eta_{pt_suffix}_v2_bkgsub_qa.png"
+                        elif label_prefix == "_v3":
+                            out_filename = f"run_{run_number}_eta_{pt_suffix}_v3_bkgsub_qa.png"
+                    else:
+                        if label_prefix == "_r03":
+                            out_filename = f"run_{run_number}_r03_eta_{pt_suffix}_bkgsub_qa.png"
+                        elif label_prefix == "_r03_v2":
+                            out_filename = f"run_{run_number}_r03_eta_{pt_suffix}_v2_bkgsub_qa.png"
+                        elif label_prefix == "_r03_v3":
+                            out_filename = f"run_{run_number}_r03_eta_{pt_suffix}_v3_bkgsub_qa.png"
+
+                    if run_output_dir is not None:
+                        output_path = run_output_dir / out_filename
+                        make_combined_plot(
+                            yedges,
+                            hists_eta,
+                            run_number,
+                            output_path,
+                            ymax=ymax,
+                            extra_energy_cut=extra_energy_cut,
+                            is_v3=is_v3,
+                            r_jet=r_jet,
+                            is_eta=True,
+                            pt_min_label=pt_label,
+                        )
+
             h2_names = [
                 "h2CaloECentrality_default",
                 "h2CaloECentrality",
@@ -361,6 +454,24 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                 "h2JetPtv2_r03_iter",
                 "h2JetPtv2_r03_mult",
                 "h2JetPtv2_r03_unsub",
+                "h2JetEta_r02_iter",
+                "h2JetEta_r02_mult",
+                "h2JetEta_r02_unsub",
+                "h2JetEta_r03_iter",
+                "h2JetEta_r03_mult",
+                "h2JetEta_r03_unsub",
+                "h2JetEtav2_r02_iter",
+                "h2JetEtav2_r02_mult",
+                "h2JetEtav2_r02_unsub",
+                "h2JetEtav2_r03_iter",
+                "h2JetEtav2_r03_mult",
+                "h2JetEtav2_r03_unsub",
+                "h2JetEtav3_r02_iter",
+                "h2JetEtav3_r02_mult",
+                "h2JetEtav3_r02_unsub",
+                "h2JetEtav3_r03_iter",
+                "h2JetEtav3_r03_mult",
+                "h2JetEtav3_r03_unsub",
             ]
 
             h2_start_zero = {
@@ -404,8 +515,18 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                     output_path = run_output_dir / f"run_{run_number}_{h2_name}.png"
                     xlim_left = 0.0 if h2_name in h2_start_zero else None
                     ylim_bottom = 0.0 if h2_name in h2_start_zero_y else None
+                    ylim_top = None
+
+                    if any(key in h2_name for key in ["h2JetEta", "h2JetEtav2", "h2JetEtav3"]):
+                        if "_r03_" in h2_name:
+                            ylim_bottom = -0.8
+                            ylim_top = 0.8
+                        else:
+                            ylim_bottom = -0.9
+                            ylim_top = 0.9
+
                     extra_label = calo_cut_label if h2_name == "h2CaloECentrality" else None
-                    make_2d_plot(hist2d, run_number, output_path, hist_name=h2_name, xlim_left=xlim_left, ylim_bottom=ylim_bottom, extra_label=extra_label)
+                    make_2d_plot(hist2d, run_number, output_path, hist_name=h2_name, xlim_left=xlim_left, ylim_bottom=ylim_bottom, ylim_top=ylim_top, extra_label=extra_label)
 
                     if h2_name in h2_zoom_names:
                         zoom_output_path = run_output_dir / f"run_{run_number}_{h2_name}_zoom.png"
