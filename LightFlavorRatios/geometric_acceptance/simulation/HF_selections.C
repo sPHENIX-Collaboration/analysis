@@ -27,7 +27,7 @@ namespace HeavyFlavorReco
   bool run_ee_reco = false; // set to true if needed
   bool run_cascade_reco = false; // set to true if needed
 
-  std::string output_dir = "./"; //Top dir of where the output nTuples will be written
+  std::string output_dir = "/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/"; //Top dir of where the output nTuples will be written
   std::string kfp_header = "outputKFParticle_";
   std::string processing_folder = "inReconstruction/";
   std::string trailer = ".root";
@@ -75,7 +75,7 @@ namespace HeavyFlavorReco
   //Used
   float lf_cuts_setMinDIRA{-1.1};
   float lf_cuts_setDecayLengthRange_min{-1.};
-  float lf_cuts_setMinimumTrackIP_XY{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_XY{-1.};
   float lf_cuts_setMinMVTXhits{0};
   float lf_cuts_setMinINTThits{0};
   float lf_cuts_setMinTPChits{0};
@@ -83,7 +83,7 @@ namespace HeavyFlavorReco
   float lf_cuts_setMaximumDaughterDCA{10};
 
   //Unused
-  float lf_cuts_setMotherIPchi2{FLT_MAX};
+  float lf_cuts_setMotherPV_DCA_StdDev{FLT_MAX};
   float lf_cuts_setFlightDistancechi2{-1.};
   float lf_cuts_setMinDIRA_XY{-1.1};
   float lf_cuts_setDecayLengthRange_max{FLT_MAX};
@@ -97,9 +97,9 @@ namespace HeavyFlavorReco
   float lf_cuts_setMinDecayLengthSignificance{-1e5};
   float lf_cuts_setMinDecayLengthSignificance_XY{-1e5};
   float lf_cuts_setMinimumTrackPT{0.0};
-  float lf_cuts_setMinimumTrackIPchi2{-1.};
-  float lf_cuts_setMinimumTrackIPchi2_XY{-1.};
-  float lf_cuts_setMinimumTrackIP{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev_XY{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA{-1.};
   float lf_cuts_setMaximumTrackchi2nDOF{3000.};
   float lf_cuts_setMaximumDaughterDCA_XY{10};
   float lf_cuts_setMotherPT{0};
@@ -108,7 +108,7 @@ namespace HeavyFlavorReco
   //Used
   float lf_cuts_setMinDIRA{0.99};
   float lf_cuts_setDecayLengthRange_min{0.05};
-  float lf_cuts_setMinimumTrackIP_XY{0.05};
+  float lf_cuts_setMinimumTrackPV_DCA_XY{0.05};
   float lf_cuts_setMinMVTXhits{1};
   float lf_cuts_setMinINTThits{1};
   float lf_cuts_setMinTPChits{20};
@@ -116,7 +116,7 @@ namespace HeavyFlavorReco
   float lf_cuts_setMaximumDaughterDCA{0.5};
 
   //Unused
-  float lf_cuts_setMotherIPchi2{FLT_MAX};
+  float lf_cuts_setMotherPV_DCA_StdDev{FLT_MAX};
   float lf_cuts_setFlightDistancechi2{-1.};
   float lf_cuts_setMinDIRA_XY{-1.1};
   float lf_cuts_setDecayLengthRange_max{FLT_MAX};
@@ -130,9 +130,9 @@ namespace HeavyFlavorReco
   float lf_cuts_setMinDecayLengthSignificance{-1e5};
   float lf_cuts_setMinDecayLengthSignificance_XY{-1e5};
   float lf_cuts_setMinimumTrackPT{0.0};
-  float lf_cuts_setMinimumTrackIPchi2{-1.};
-  float lf_cuts_setMinimumTrackIPchi2_XY{-1.};
-  float lf_cuts_setMinimumTrackIP{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev_XY{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA{-1.};
   float lf_cuts_setMaximumTrackchi2nDOF{300.};
   float lf_cuts_setMaximumDaughterDCA_XY{1};
   float lf_cuts_setMotherPT{0};
@@ -178,7 +178,7 @@ void reconstruct_pipi_mass()
 
   kfparticle->setDecayDescriptor(pipi_decay_descriptor);
 
-  kfparticle->setTrackMapNodeName("HFSelected_SvtxTrackMap");
+  kfparticle->setTrackMapNodeName("SvtxTrackMap");
   kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -201,7 +201,7 @@ void reconstruct_pipi_mass()
 
   //PV to SV cuts
   kfparticle->constrainToPrimaryVertex();
-  kfparticle->setMotherIPchi2(lf_cuts_setMotherIPchi2);
+  kfparticle->setMotherPV_DCA_StdDev(lf_cuts_setMotherPV_DCA_StdDev);
   kfparticle->setFlightDistancechi2(lf_cuts_setFlightDistancechi2);
   kfparticle->setMinDIRA(lf_cuts_setMinDIRA);
   kfparticle->setMinDIRA_XY(lf_cuts_setMinDIRA_XY);
@@ -215,10 +215,10 @@ void reconstruct_pipi_mass()
 
   //Track parameters
   kfparticle->setMinimumTrackPT(lf_cuts_setMinimumTrackPT);
-  kfparticle->setMinimumTrackIPchi2(lf_cuts_setMinimumTrackIPchi2);
-  kfparticle->setMinimumTrackIPchi2_XY(lf_cuts_setMinimumTrackIPchi2_XY);
-  kfparticle->setMinimumTrackIP(lf_cuts_setMinimumTrackIP);
-  kfparticle->setMinimumTrackIP_XY(lf_cuts_setMinimumTrackIP_XY);
+  kfparticle->setMinimumTrackPV_DCA_StdDev(lf_cuts_setMinimumTrackPV_DCA_StdDev);
+  kfparticle->setMinimumTrackPV_DCA_StdDev_XY(lf_cuts_setMinimumTrackPV_DCA_StdDev_XY);
+  kfparticle->setMinimumTrackPV_DCA(lf_cuts_setMinimumTrackPV_DCA);
+  kfparticle->setMinimumTrackPV_DCA_XY(lf_cuts_setMinimumTrackPV_DCA_XY);
   kfparticle->setMaximumTrackchi2nDOF(lf_cuts_setMaximumTrackchi2nDOF);
   kfparticle->setMinMVTXhits(lf_cuts_setMinMVTXhits);
   kfparticle->setMinINTThits(lf_cuts_setMinINTThits);
@@ -249,7 +249,7 @@ void reconstruct_ppi_mass()
   if (run_ppi_reco) kfparticle->setDecayDescriptor(ppi_decay_descriptor);
   else kfparticle->setDecayDescriptor(anti_ppi_decay_descriptor);
 
-  kfparticle->setTrackMapNodeName("HFSelected_SvtxTrackMap");
+  kfparticle->setTrackMapNodeName("SvtxTrackMap");
   kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -272,7 +272,7 @@ void reconstruct_ppi_mass()
 
   //PV to SV cuts
   kfparticle->constrainToPrimaryVertex();
-  kfparticle->setMotherIPchi2(lf_cuts_setMotherIPchi2);
+  kfparticle->setMotherPV_DCA_StdDev(lf_cuts_setMotherPV_DCA_StdDev);
   kfparticle->setFlightDistancechi2(lf_cuts_setFlightDistancechi2);
   kfparticle->setMinDIRA(lf_cuts_setMinDIRA);
   kfparticle->setMinDIRA_XY(lf_cuts_setMinDIRA_XY);
@@ -286,10 +286,10 @@ void reconstruct_ppi_mass()
 
   //Track parameters
   kfparticle->setMinimumTrackPT(lf_cuts_setMinimumTrackPT);
-  kfparticle->setMinimumTrackIPchi2(lf_cuts_setMinimumTrackIPchi2);
-  kfparticle->setMinimumTrackIPchi2_XY(lf_cuts_setMinimumTrackIPchi2_XY);
-  kfparticle->setMinimumTrackIP(lf_cuts_setMinimumTrackIP);
-  kfparticle->setMinimumTrackIP_XY(lf_cuts_setMinimumTrackIP_XY);
+  kfparticle->setMinimumTrackPV_DCA_StdDev(lf_cuts_setMinimumTrackPV_DCA_StdDev);
+  kfparticle->setMinimumTrackPV_DCA_StdDev_XY(lf_cuts_setMinimumTrackPV_DCA_StdDev_XY);
+  kfparticle->setMinimumTrackPV_DCA(lf_cuts_setMinimumTrackPV_DCA);
+  kfparticle->setMinimumTrackPV_DCA_XY(lf_cuts_setMinimumTrackPV_DCA_XY);
   kfparticle->setMaximumTrackchi2nDOF(lf_cuts_setMaximumTrackchi2nDOF);
   kfparticle->setMinMVTXhits(lf_cuts_setMinMVTXhits);
   kfparticle->setMinINTThits(lf_cuts_setMinINTThits);
@@ -339,7 +339,7 @@ void reconstruct_Lambdapi_mass()
   //kfparticle->constrainToPrimaryVertex(true);
   kfparticle->constrainToPrimaryVertex(false);
   kfparticle->useFakePrimaryVertex(true);
-  kfparticle->setMotherIPchi2(100);
+  kfparticle->setMotherPV_DCA_StdDev(100);
   kfparticle->setFlightDistancechi2(-1.);
   kfparticle->setMinDIRA(-1.1);
   kfparticle->setDecayLengthRange(-1*FLT_MAX, FLT_MAX);
@@ -351,10 +351,10 @@ void reconstruct_Lambdapi_mass()
   kfparticle->setMinTPChits(0); // 20
   kfparticle->setMinMVTXhits(0); // 1
   kfparticle->setMinINTThits(0); // 1
-  kfparticle->setMinimumTrackIP_XY(-100.);
-  kfparticle->setMinimumTrackIPchi2_XY(-1000.);
-  kfparticle->setMinimumTrackIP(-100.);
-  kfparticle->setMinimumTrackIPchi2(-1000.);
+  kfparticle->setMinimumTrackPV_DCA_XY(-100.);
+  kfparticle->setMinimumTrackPV_DCA_StdDev_XY(-1000.);
+  kfparticle->setMinimumTrackPV_DCA(-100.);
+  kfparticle->setMinimumTrackPV_DCA_StdDev(-1000.);
 
   //Vertex parameters
   kfparticle->setMaximumVertexchi2nDOF(FLT_MAX);
@@ -380,13 +380,13 @@ void reconstruct_Lambdapi_mass()
   std::vector<float> intermediate_min_pt = {0.0};
   kfparticle->setIntermediateMinPT(intermediate_min_pt);
 
-  std::vector<std::pair<float, float>> intermediate_IP_range;
-  intermediate_IP_range.push_back(make_pair(-1., FLT_MAX));
-  kfparticle->setIntermediateIPRange(intermediate_IP_range);
+  std::vector<std::pair<float, float>> intermediate_PV_DCA_range;
+  intermediate_PV_DCA_range.push_back(make_pair(-1., FLT_MAX));
+  kfparticle->setIntermediatePV_DCARange(intermediate_PV_DCA_range);
 
-  std::vector<std::pair<float, float>> intermediate_IPchi2_range;
-  intermediate_IPchi2_range.push_back(make_pair(-1., FLT_MAX));
-  kfparticle->setIntermediateIPchi2Range(intermediate_IPchi2_range);
+  std::vector<std::pair<float, float>> intermediate_PV_DCA_StdDev_range;
+  intermediate_PV_DCA_StdDev_range.push_back(make_pair(-1., FLT_MAX));
+  kfparticle->setIntermediatePV_DCA_StdDevRange(intermediate_PV_DCA_StdDev_range);
 
   std::vector<float> intermediate_min_FDchi2 = {-1.};
   kfparticle->setIntermediateMinFDchi2(intermediate_min_FDchi2);
@@ -394,13 +394,13 @@ void reconstruct_Lambdapi_mass()
   std::vector<float> intermediate_max_vertex_vol = {1.1};
   kfparticle->setIntermediateMaxVertexVolume(intermediate_max_vertex_vol);
 
-  std::vector<std::pair<float, float>> intermediate_IPxy_range;
-  intermediate_IPxy_range.push_back(make_pair(-1., FLT_MAX));
-  kfparticle->setIntermediateIPRange_XY(intermediate_IPxy_range);
+  std::vector<std::pair<float, float>> intermediate_PV_DCAxy_range;
+  intermediate_PV_DCAxy_range.push_back(make_pair(-1., FLT_MAX));
+  kfparticle->setIntermediatePV_DCARange_XY(intermediate_PV_DCAxy_range);
 
-  std::vector<std::pair<float, float>> intermediate_IPchi2xy_range;
-  intermediate_IPchi2xy_range.push_back(make_pair(-1., FLT_MAX));
-  kfparticle->setIntermediateIPchi2Range_XY(intermediate_IPchi2xy_range);
+  std::vector<std::pair<float, float>> intermediate_PV_DCA_StdDevxy_range;
+  intermediate_PV_DCA_StdDevxy_range.push_back(make_pair(-1., FLT_MAX));
+  kfparticle->setIntermediatePV_DCA_StdDevRange_XY(intermediate_PV_DCA_StdDevxy_range);
 
   kfparticle->setOutputName(cascade_output_reco_file);
 

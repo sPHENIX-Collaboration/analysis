@@ -13,13 +13,16 @@
 #include "LambdaModel.h"
 #include "KshortModel.h"
 
-void Lambda_Kshort_ratio()
+void Lambda_Kshort_ratio_NN()
 {
   //TFile* lambda_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Lambda2ppi_reco_Usman_patch.root");
   //TFile* Ks_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort2pipi_reco_Usman_patch.root");
 
-  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Kshort_run3pp_looseCuts_20260608.root");
-  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Lambda0_run3pp_looseCuts_20260608.root");
+  TFile* Ks_file = TFile::Open("/sphenix/user/aopatton/MomentumScaleStudies/scalePlusKFP/output/pipiSegNewMap_79528.root");
+  TFile* lambda_file = TFile::Open("/sphenix/user/aopatton/MomentumScaleStudies/scalePlusKFP/output/ppiSegNewMap_79528.root");
+
+  //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Kshort_run3pp_looseCuts_20260608.root");
+  //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Lambda0_run3pp_looseCuts_20260608.root");
 
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedKShortSVLoose.root");
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedLambdaSVLoose.root");
@@ -235,7 +238,7 @@ void Lambda_Kshort_ratio()
   corrections[3].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_phi.root","Lambda0_inGeo_#phi"));
   corrections[3].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_phi"));
 
-  TFile* fout = new TFile("fits.root","RECREATE");
+  TFile* fout = new TFile("fits_NN.root","RECREATE");
 
   ResonanceRatio analyzer(lambda_model,kshort_model,massbins_map,
                           fout,"lambdaKsratio","(#Lambda^{0}+#bar{#Lambda^{0}})/2K_{S}^{0} ratio",1./2.,false,

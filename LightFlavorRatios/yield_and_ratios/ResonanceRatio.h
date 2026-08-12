@@ -19,10 +19,10 @@
 class ResonanceRatio
 {
   public:
-  ResonanceRatio(ParticleModel& numerator_model, ParticleModel& denominator_model,
+  ResonanceRatio(ParticleModel& numerator_model, ParticleModel& denominator_model, std::map<std::string,HistogramInfo>& mass_bins,
                  TFile* outf, std::string rationame, std::string ratiotitle, float scalefactor, bool blind,
                  std::vector<HistogramInfo> variables, std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> corrections)
-  : _numerator_model(numerator_model), _denominator_model(denominator_model),
+  : _numerator_model(numerator_model), _denominator_model(denominator_model), _mass_bins(mass_bins),
     outfile(outf), _rationame(rationame), _ratiotitle(ratiotitle), _scalefactor(scalefactor), _blind(blind),
     _variables(variables), _corrections(corrections)
   {
@@ -58,7 +58,7 @@ class ResonanceRatio
   void get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleModel model);
   void get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, ParticleModel model);
   void get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, RooAbsData* data, ParticleModel& model);
-  void get_diff_yield_binned(TH1F* h_yield, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model);
+  void get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model);
   std::string get_corrected_title(std::string current_title, std::string correction_title);
   void calculate_ratios();
   void save_results();
@@ -66,6 +66,7 @@ class ResonanceRatio
   // fit models
   ParticleModel _numerator_model;
   ParticleModel _denominator_model;
+  std::map<std::string,HistogramInfo> _mass_bins;
   // differential variables and corresponding slates of corrections to apply
   std::vector<HistogramInfo> _variables;
   std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> _corrections;
@@ -78,8 +79,8 @@ class ResonanceRatio
 
 void ResonanceRatio::setup_yield_histograms()
 {
-  HistogramInfo numerator_massbins = BinInfo::mass_bins.at(_numerator_model.name);
-  HistogramInfo denominator_massbins = BinInfo::mass_bins.at(_denominator_model.name);
+  HistogramInfo numerator_massbins = _mass_bins.at(_numerator_model.name);
+  HistogramInfo denominator_massbins = _mass_bins.at(_denominator_model.name);
 
   for(HistogramInfo& hinfo : _variables)
   {
@@ -240,13 +241,13 @@ void ResonanceRatio::get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, Histogr
   }
 }
 
-void ResonanceRatio::get_diff_yield_binned(TH1F* h_yield, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model)
+void ResonanceRatio::get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model)
 {
   for(int i=1; i<=h_yield->GetNbinsX(); i++)
   {
     std::cout << "bin " << i << " of " << h_yield->GetNbinsX() << std::endl;
     RooDataHist dh("binned_massfit","binned_massfit",*(model.mass),RooFit::Import(*(data.hists[i])));
-    get_yield(h_yield,i,&dh,model);
+    get_yield_constfit(h_yield,h_err,i,&dh,model);
   }
 }
 
@@ -459,14 +460,18 @@ void ResonanceRatio::calculate_ratios_binned(TH1F* integrated_numerator_data, st
   RooDataHist integrated_numerator_dh("integrated_numerator_dh","integrated_numerator_dh",RooArgList(*(_numerator_model.mass)),RooFit::Import(*integrated_numerator_data));
   RooDataHist integrated_denominator_dh("integrated_denominator_dh","integrated_denominator_dh",RooArgList(*(_denominator_model.mass)),RooFit::Import(*integrated_denominator_data));
 
-  get_yield(numerator_integrated_yield,-1,&integrated_numerator_dh,_numerator_model);
-  get_yield(denominator_integrated_yield,-1,&integrated_denominator_dh,_denominator_model);
+  get_yield_constfit(numerator_integrated_yield,numerator_integrated_fit_syserr,-1,&integrated_numerator_dh,_numerator_model);
+  get_yield_constfit(denominator_integrated_yield,denominator_integrated_fit_syserr,-1,&integrated_denominator_dh,_denominator_model);
 
   for(int i=0; i<_variables.size(); i++)
   {
-    get_diff_yield_binned(numerator_diff_yields[i],_variables[i],diff_numerator_data[i],_numerator_model);
-    get_diff_yield_binned(denominator_diff_yields[i],_variables[i],diff_denominator_data[i],_denominator_model);
+    get_diff_yield_binned(numerator_diff_yields[i],numerator_fit_syserr[i],_variables[i],diff_numerator_data[i],_numerator_model);
+    get_diff_yield_binned(denominator_diff_yields[i],denominator_fit_syserr[i],_variables[i],diff_denominator_data[i],_denominator_model);
   }
+
+  calculate_ratios();
+
+  save_results();
 }
 
 #endif

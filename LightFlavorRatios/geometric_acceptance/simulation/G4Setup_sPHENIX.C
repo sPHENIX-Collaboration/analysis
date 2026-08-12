@@ -66,10 +66,7 @@ void G4Init()
   if (Enable::BEAMLINE)
   {
     BeamLineInit();
-    if (Enable::ZDC)
-    {
-      ZDCInit();
-    }
+    if (Enable::ZDC) ZDCInit();
   }
   if (Enable::USER) UserInit();
   if (Enable::BLACKHOLE) BlackHoleInit();
@@ -138,10 +135,7 @@ int G4Setup()
   {
     BeamLineDefineMagnets(g4Reco);
     BeamLineDefineBeamPipe(g4Reco);
-    if (Enable::ZDC)
-    {
-      ZDCSetup(g4Reco);
-    }
+    if (Enable::ZDC) ZDCSetup(g4Reco);
   }
   if (Enable::USER) UserDetector(g4Reco);
 
@@ -160,7 +154,7 @@ int G4Setup()
   return 0;
 }
 
-void ShowerCompress(int verbosity = 0)
+void ShowerCompress(int /*verbosity*/ = 0)
 {
   Fun4AllServer *se = Fun4AllServer::instance();
 
