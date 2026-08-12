@@ -100,6 +100,9 @@ class JetAnalysisv3
       TH1 *hJetPtv3_raw{nullptr};
 
       TH2 *h2JetPtv2{nullptr};
+      TH2 *h2JetEta{nullptr};
+      TH2 *h2JetEtav2{nullptr};
+      TH2 *h2JetEtav3{nullptr};
     };
 
     JetHistSet iter_r02;
@@ -402,6 +405,10 @@ void JetAnalysisv3::init_hists()
   double v2_low{-1};
   double v2_high{1};
 
+  int bins_eta = 88;
+  double eta_low = -1.1;
+  double eta_high = 1.1;
+
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
   auto clone_hist = [](auto &&map, std::string_view src, std::string_view dest)
@@ -421,6 +428,10 @@ void JetAnalysisv3::init_hists()
   m_hists1D["hCaloV2Fail_iter"] = std::make_unique<TH1F>("hCaloV2Fail_iter", "; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
   clone_hist(m_hists1D, "hCaloV2Fail_iter", "hCaloV2Fail_mult");
 
+  int bins_pt_eta2D = 70;
+  double pt_eta2D_low = 10;
+  double pt_eta2D_high = 80;
+
   for (const std::string r : {"r02", "r03"})
   {
     for (const std::string ue : {"iter", "mult", "unsub"})
@@ -439,6 +450,11 @@ void JetAnalysisv3::init_hists()
 
       std::string h2name = std::format("h2JetPtv2_{}_{}", r, ue);
       m_hists2D[h2name] = std::make_unique<TH2F>(h2name.c_str(), "; Calo v_{2}; Jet p_{T} [GeV]", bins_v2, v2_low, v2_high, bins_pt, pt_low, pt_high);
+
+      std::string h2eta_name = std::format("h2JetEta_{}_{}", r, ue);
+      m_hists2D[h2eta_name] = std::make_unique<TH2F>(h2eta_name.c_str(), "; p_{T} [GeV]; #eta", bins_pt_eta2D, pt_eta2D_low, pt_eta2D_high, bins_eta, eta_low, eta_high);
+      clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav2_{}_{}", r, ue));
+      clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav3_{}_{}", r, ue));
     }
   }
 
@@ -486,6 +502,9 @@ void JetAnalysisv3::init_hists()
     set.hJetPtv3 = m_hists1D[std::format("hJetPtv3_{}_{}", r, ue)].get();
     set.hJetPtv3_raw = m_hists1D[std::format("hJetPtv3_raw_{}_{}", r, ue)].get();
     set.h2JetPtv2 = m_hists2D[std::format("h2JetPtv2_{}_{}", r, ue)].get();
+    set.h2JetEta = m_hists2D[std::format("h2JetEta_{}_{}", r, ue)].get();
+    set.h2JetEtav2 = m_hists2D[std::format("h2JetEtav2_{}_{}", r, ue)].get();
+    set.h2JetEtav3 = m_hists2D[std::format("h2JetEtav3_{}_{}", r, ue)].get();
   };
 
   bind_jet_set(m_hists.iter_r02, "r02", "iter");
@@ -557,17 +576,20 @@ void JetAnalysisv3::process_jets()
 
       h.hJetPt->Fill(pt);
       h.hJetPt_raw->Fill(pt_raw);
+      h.h2JetEta->Fill(pt, eta);
 
       if (energy > 0)
       {
         h.hJetPtv2->Fill(pt);
         h.hJetPtv2_raw->Fill(pt_raw);
         h.h2JetPtv2->Fill(calo_v2, pt);
+        h.h2JetEtav2->Fill(pt, eta);
 
         if (std::abs(calo_v2) < m_calo_v2_max)
         {
           h.hJetPtv3->Fill(pt);
           h.hJetPtv3_raw->Fill(pt_raw);
+          h.h2JetEtav3->Fill(pt, eta);
         }
       }
     }
