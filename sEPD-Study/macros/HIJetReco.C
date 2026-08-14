@@ -71,6 +71,9 @@ namespace HIJETS
   std::string eventplane_node_output = "EventplaneinfoMap";
   std::string eventplane_custom_calib = "default";
 
+  ///! sets direct path to eta-shape calibration file (optional)
+  std::string eta_calib_direct_path = "";
+
   ///! do constituent subtraction
   bool do_CS = false;
 
@@ -400,6 +403,10 @@ void MakeHITowerJetsMultSub()
   dtb->SetNOmitSeeds(2);
   dtb->Verbosity(verbosity);
   dtb->UseReweighting(true);
+  if (!HIJETS::eta_calib_direct_path.empty())
+  {
+    dtb->SetEtaCalib_DirectPath(HIJETS::eta_calib_direct_path);
+  }
   se->registerSubsystem(dtb);
 
   SubtractTowers *st = new SubtractTowers("SubtractTowers_Emb");

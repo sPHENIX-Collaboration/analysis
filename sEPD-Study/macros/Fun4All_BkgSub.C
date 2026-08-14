@@ -52,7 +52,8 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     int nEvents = 100,
                     int nSkip = 0,
                     int event_id = 0,
-                    const std::string &dbtag = "newcdbtag")
+                    const std::string &dbtag = "newcdbtag",
+                    const std::string &eta_calib_direct_path = "")
 {
 
   // Extract runnumber from first file within list
@@ -94,6 +95,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
+  std::cout << "eta_calib_direct_path: " << eta_calib_direct_path << std::endl;
   std::cout << "########################" << std::endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -167,6 +169,10 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   // Enable::HIJETS_VERBOSITY = 10;
   HIJETS::eventplane_custom_calib = input_QVecCalib;
   HIJETS::do_flow = do_flow;
+  if (eta_calib_direct_path != "none" && !eta_calib_direct_path.empty())
+  {
+    HIJETS::eta_calib_direct_path = eta_calib_direct_path;
+  }
   Enable::HIJETS_TOWER_MULTSUB = true;
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();

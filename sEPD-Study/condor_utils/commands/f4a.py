@@ -19,10 +19,15 @@ def create_f4a_jobs(args):
     if calib_list:
         manager.add_file_to_check(calib_list)
 
+    eta_calib = Path(args.eta_calib_path).resolve() if getattr(args, 'eta_calib_path', None) else None
+    if eta_calib:
+        manager.add_file_to_check(eta_calib)
+
     manager.validate_paths()
 
     manager.log_initialization({
         'Calib List': calib_list if calib_list else "Not Provided (Using default)",
+        'Eta Calib': eta_calib if eta_calib else "Not Provided (Using default/empty)",
         'Fun4All Macro': Path(args.f4a_macro).resolve(),
         'Calo Calib Macro': Path(args.calo_calib_macro).resolve(),
         'HIJetReco Macro': Path(args.HIJetReco_macro).resolve(),
@@ -34,6 +39,8 @@ def create_f4a_jobs(args):
     extra_files = [args.f4a_macro, args.calo_calib_macro, args.HIJetReco_macro]
     if calib_list:
         extra_files.append(calib_list)
+    if eta_calib:
+        extra_files.append(eta_calib)
 
     manager.copy_dependencies(extra_files=extra_files, extra_dirs=[args.src_dir])
 
@@ -75,8 +82,13 @@ def create_f4a_jobs(args):
 
     jobs_temp_file.unlink(missing_ok=True)
 
-    do_flow_arg = f"{args.do_flow} " if "Fun4All_BkgSub" in args.f4a_macro else ""
-    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {do_flow_arg}{manager.output_dir}/output"
+    if "Fun4All_BkgSub" in args.f4a_macro:
+        eta_calib_val = (manager.output_dir / eta_calib.name) if eta_calib else "none"
+        bkgsub_args = f"{args.do_flow} {eta_calib_val} "
+    else:
+        bkgsub_args = ""
+
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) $(input_calib) test-$(ClusterId)-$(Process).root tree-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {bkgsub_args}{manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst,input_calib from jobs.list")
 
@@ -294,6 +306,7 @@ def create_f4a_noise_jobs(args):
 def setup_f4a_subparsers(subparsers):
     f4a = subparsers.add_parser('f4a', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
+    f4a.add_argument('-i3_calib', '--eta-calib-path', '--eta-calib-direct-path', dest='eta_calib_path', type=str, default=None, help='Direct path to eta-shape calibration file. (Optional)')
     f4a.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD.C', help='Fun4All Macro.')
     f4a.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
