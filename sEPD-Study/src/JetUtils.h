@@ -3,12 +3,14 @@
 #include <phool/getClass.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 class JetUtils
 {
  public:
   static bool check_bad_jet_eta(double jet_eta, double zvtx, double jet_radius);
+  static std::pair<double, double> get_valid_eta_range(double zvtx, double jet_radius);
 
   static bool failsLoEmFracETCut(double emFrac, double ET);
   static bool failsHiEmFracETCut(double emFrac, double ET);

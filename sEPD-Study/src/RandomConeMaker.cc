@@ -14,7 +14,6 @@ RandomConeMaker::RandomConeMaker(double radius, uint32_t seed)
   : m_radius(radius)
   , m_radius_sq(radius * radius)
   , m_generator(seed)
-  , m_eta_dist(-1.1 + radius, 1.1 - radius)
   , m_phi_dist(0.0, 2.0 * std::numbers::pi)
 {
 }
@@ -99,7 +98,25 @@ RandomCone RandomConeMaker::generate(
 {
   RandomCone cone;
   cone.radius = m_radius;
-  cone.eta = cone_eta.has_value() ? cone_eta.value() : m_eta_dist(m_generator);
+
+  if (cone_eta.has_value())
+  {
+    cone.eta = cone_eta.value();
+  }
+  else
+  {
+    auto [min_eta, max_eta] = JetUtils::get_valid_eta_range(z_vrtx, m_radius);
+    if (min_eta < max_eta)
+    {
+      std::uniform_real_distribution<double> eta_dist(min_eta, max_eta);
+      cone.eta = eta_dist(m_generator);
+    }
+    else
+    {
+      cone.eta = 0.5 * (min_eta + max_eta);
+    }
+  }
+
   cone.phi = cone_phi.has_value() ? cone_phi.value() : m_phi_dist(m_generator);
   cone.pt = 0.0;
   cone.energy = 0.0;
@@ -118,8 +135,6 @@ void RandomConeMaker::setRadius(double radius)
 {
   m_radius = radius;
   m_radius_sq = radius * radius;
-  // Reconfigure the eta boundaries based on the new radius
-  m_eta_dist = std::uniform_real_distribution<double>(-1.1 + radius, 1.1 - radius);
 }
 
 void RandomConeMaker::process_calorimeter(

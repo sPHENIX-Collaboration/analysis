@@ -12,7 +12,7 @@ bool JetUtils::failsHiEmFracETCut(const double emFrac, const double ET)
   return emFrac > 0.9 && ET > (-50*emFrac+70);
 }
 
-bool JetUtils::check_bad_jet_eta(const double jet_eta, const double zvtx, const double jet_radius)
+std::pair<double, double> JetUtils::get_valid_eta_range(const double zvtx, const double jet_radius)
 {
   double emcal_mineta = get_emcal_mineta_zcorrected(zvtx);
   double emcal_maxeta = get_emcal_maxeta_zcorrected(zvtx);
@@ -28,6 +28,12 @@ bool JetUtils::check_bad_jet_eta(const double jet_eta, const double zvtx, const 
   maxlimit = std::min(ohcal_maxeta, maxlimit);
   minlimit += jet_radius;
   maxlimit -= jet_radius;
+  return {minlimit, maxlimit};
+}
+
+bool JetUtils::check_bad_jet_eta(const double jet_eta, const double zvtx, const double jet_radius)
+{
+  auto [minlimit, maxlimit] = get_valid_eta_range(zvtx, jet_radius);
   return jet_eta < minlimit || jet_eta > maxlimit;
 }
 

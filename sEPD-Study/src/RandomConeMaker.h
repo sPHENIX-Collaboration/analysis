@@ -64,9 +64,6 @@ private:
   double m_r_hcalin = JetUtils::radius_IH;
   double m_r_hcalout = JetUtils::radius_OH;
 
-  // Distribution for eta: [-1.1 + R, 1.1 - R]
-  std::uniform_real_distribution<double> m_eta_dist;
-
   // Distribution for phi: [0, 2pi)
   std::uniform_real_distribution<double> m_phi_dist;
 
