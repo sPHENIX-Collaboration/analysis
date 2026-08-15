@@ -24,7 +24,8 @@ struct RandomCone {
 
 class RandomConeMaker {
 public:
-  // Initialize with a cone radius and an optional seed for reproducibility
+  // Initialize with a cone radius and an optional seed for reproducibility.
+  // If seed == 0 (the default), PHRandomSeed::GetSeed() is automatically used.
   explicit RandomConeMaker(double radius, uint32_t seed = 0);
 
   // Call this ONCE during your SubSysReco::InitRun to cache tower geometries
@@ -42,6 +43,7 @@ public:
 
   void setSeed(uint32_t seed);
   void setRadius(double radius);
+  bool isInitialized() const { return m_initialized; }
 
 private:
   static constexpr size_t N_HCAL_TOWERS = CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS;
@@ -55,6 +57,7 @@ private:
 
   using TowerGeomArray = std::array<TowerGeomInfo, N_HCAL_TOWERS>;
 
+  bool m_initialized = false;
   double m_radius;
   double m_radius_sq;
   std::mt19937 m_generator;

@@ -1,6 +1,9 @@
 #include "RandomConeMaker.h"
 
+#include <phool/PHRandomSeed.h>
+
 #include <numbers>
+#include <stdexcept>
 
 namespace
 {
@@ -13,7 +16,7 @@ namespace
 RandomConeMaker::RandomConeMaker(double radius, uint32_t seed)
   : m_radius(radius)
   , m_radius_sq(radius * radius)
-  , m_generator(seed)
+  , m_generator(seed == 0 ? PHRandomSeed::GetSeed() : seed)
   , m_phi_dist(0.0, 2.0 * std::numbers::pi)
 {
 }
@@ -86,6 +89,8 @@ void RandomConeMaker::init(RawTowerGeomContainer *geom_cemc,
       }
     }
   }
+
+  m_initialized = true;
 }
 
 RandomCone RandomConeMaker::generate(
@@ -96,6 +101,11 @@ RandomCone RandomConeMaker::generate(
     std::optional<double> cone_eta,
     std::optional<double> cone_phi)
 {
+  if (!m_initialized)
+  {
+    throw std::runtime_error("RandomConeMaker::generate: init() must be called before generate()!");
+  }
+
   RandomCone cone;
   cone.radius = m_radius;
 
@@ -129,7 +139,10 @@ RandomCone RandomConeMaker::generate(
   return cone;
 }
 
-void RandomConeMaker::setSeed(uint32_t seed) { m_generator.seed(seed); }
+void RandomConeMaker::setSeed(uint32_t seed)
+{
+  m_generator.seed(seed == 0 ? PHRandomSeed::GetSeed() : seed);
+}
 
 void RandomConeMaker::setRadius(double radius)
 {
