@@ -12,14 +12,20 @@ bool JetUtils::failsHiEmFracETCut(const double emFrac, const double ET)
   return emFrac > 0.9 && ET > (-50*emFrac+70);
 }
 
-std::pair<double, double> JetUtils::get_valid_eta_range(const double zvtx, const double jet_radius)
+std::pair<double, double> JetUtils::get_valid_eta_range(
+    const double zvtx,
+    const double jet_radius,
+    const double r_em,
+    const double r_ih,
+    const double r_oh)
 {
-  double emcal_mineta = get_emcal_mineta_zcorrected(zvtx);
-  double emcal_maxeta = get_emcal_maxeta_zcorrected(zvtx);
-  double ihcal_mineta = get_ihcal_mineta_zcorrected(zvtx);
-  double ihcal_maxeta = get_ihcal_maxeta_zcorrected(zvtx);
-  double ohcal_mineta = get_ohcal_mineta_zcorrected(zvtx);
-  double ohcal_maxeta = get_ohcal_maxeta_zcorrected(zvtx);
+  double emcal_mineta = std::asinh((minz_EM - zvtx) / r_em);
+  double emcal_maxeta = std::asinh((maxz_EM - zvtx) / r_em);
+  double ihcal_mineta = std::asinh((minz_IH - zvtx) / r_ih);
+  double ihcal_maxeta = std::asinh((maxz_IH - zvtx) / r_ih);
+  double ohcal_mineta = std::asinh((minz_OH - zvtx) / r_oh);
+  double ohcal_maxeta = std::asinh((maxz_OH - zvtx) / r_oh);
+
   double minlimit = emcal_mineta;
   minlimit = std::max(ihcal_mineta, minlimit);
   minlimit = std::max(ohcal_mineta, minlimit);
@@ -35,48 +41,6 @@ bool JetUtils::check_bad_jet_eta(const double jet_eta, const double zvtx, const 
 {
   auto [minlimit, maxlimit] = get_valid_eta_range(zvtx, jet_radius);
   return jet_eta < minlimit || jet_eta > maxlimit;
-}
-
-double JetUtils::get_ohcal_mineta_zcorrected(const double zvtx)
-{
-  double z = minz_OH - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_OH);
-  return eta_zcorrected;
-}
-
-double JetUtils::get_ohcal_maxeta_zcorrected(const double zvtx)
-{
-  double z = maxz_OH - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_OH);
-  return eta_zcorrected;
-}
-
-double JetUtils::get_ihcal_mineta_zcorrected(const double zvtx)
-{
-  double z = minz_IH - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_IH);
-  return eta_zcorrected;
-}
-
-double JetUtils::get_ihcal_maxeta_zcorrected(const double zvtx)
-{
-  double z = maxz_IH - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_IH);
-  return eta_zcorrected;
-}
-
-double JetUtils::get_emcal_mineta_zcorrected(const double zvtx)
-{
-  double z = minz_EM - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_EM);
-  return eta_zcorrected;
-}
-
-double JetUtils::get_emcal_maxeta_zcorrected(const double zvtx)
-{
-  double z = maxz_EM - zvtx;
-  double eta_zcorrected = std::asinh(z / radius_EM);
-  return eta_zcorrected;
 }
 
 std::vector<std::string> JetUtils::split(const std::string &s, const char delimiter) {

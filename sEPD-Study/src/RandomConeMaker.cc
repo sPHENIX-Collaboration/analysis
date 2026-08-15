@@ -115,7 +115,7 @@ RandomCone RandomConeMaker::generate(
   }
   else
   {
-    auto [min_eta, max_eta] = JetUtils::get_valid_eta_range(z_vrtx, m_radius);
+    auto [min_eta, max_eta] = JetUtils::get_valid_eta_range(z_vrtx, m_radius, m_r_cemc, m_r_hcalin, m_r_hcalout);
     if (min_eta < max_eta)
     {
       std::uniform_real_distribution<double> eta_dist(min_eta, max_eta);

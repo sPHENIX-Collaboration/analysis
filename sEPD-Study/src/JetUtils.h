@@ -10,7 +10,12 @@ class JetUtils
 {
  public:
   static bool check_bad_jet_eta(double jet_eta, double zvtx, double jet_radius);
-  static std::pair<double, double> get_valid_eta_range(double zvtx, double jet_radius);
+  static std::pair<double, double> get_valid_eta_range(
+      double zvtx,
+      double jet_radius,
+      double r_em = radius_EM,
+      double r_ih = radius_IH,
+      double r_oh = radius_OH);
 
   static bool failsLoEmFracETCut(double emFrac, double ET);
   static bool failsHiEmFracETCut(double emFrac, double ET);
@@ -38,14 +43,6 @@ class JetUtils
   constexpr static double maxeta_OH = 1.1;
   constexpr static double minz_OH = -301.683;
   constexpr static double maxz_OH = 301.683;
-
- private:
-  static double get_emcal_mineta_zcorrected(double zvtx);
-  static double get_emcal_maxeta_zcorrected(double zvtx);
-  static double get_ihcal_mineta_zcorrected(double zvtx);
-  static double get_ihcal_maxeta_zcorrected(double zvtx);
-  static double get_ohcal_mineta_zcorrected(double zvtx);
-  static double get_ohcal_maxeta_zcorrected(double zvtx);
 };
 
 // Add the templated helper function here, outside the class
