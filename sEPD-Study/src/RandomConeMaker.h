@@ -7,11 +7,12 @@
 #include <calobase/TowerInfoContainer.h>
 
 #include "JetUtils.h"
+#include "geometry_constants.h"
 
+#include <array>
 #include <cmath>
 #include <optional>
 #include <random>
-#include <unordered_map>
 
 struct RandomCone {
   double eta = 0.0;
@@ -43,12 +44,19 @@ public:
   void setRadius(double radius);
 
 private:
+  static constexpr size_t N_HCAL_TOWERS = CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS;
+
   struct TowerGeomInfo {
     double eta = 0.0;
     double phi = 0.0;
+    double z0 = 0.0;
+    bool is_valid = false;
   };
 
+  using TowerGeomArray = std::array<TowerGeomInfo, N_HCAL_TOWERS>;
+
   double m_radius;
+  double m_radius_sq;
   std::mt19937 m_generator;
 
   // Detector radii (in cm) from JetUtils
@@ -62,14 +70,15 @@ private:
   // Distribution for phi: [0, 2pi)
   std::uniform_real_distribution<double> m_phi_dist;
 
-  // Cache the geometries by custom integer key ((ieta << 16) | iphi)
-  std::unordered_map<unsigned int, TowerGeomInfo> m_geom_hcalin;
-  std::unordered_map<unsigned int, TowerGeomInfo> m_geom_hcalout;
+  // Cache the geometries in flat contiguous arrays (indexed by (ieta * HCAL_PHI_BINS + iphi))
+  TowerGeomArray m_geom_cemc{};
+  TowerGeomArray m_geom_hcalin{};
+  TowerGeomArray m_geom_hcalout{};
 
   // Helper method to process a single calorimeter's towers
   void process_calorimeter(
       TowerInfoContainer *towers,
-      const std::unordered_map<unsigned int, TowerGeomInfo> &geom_map,
+      const TowerGeomArray &geom_map,
       double detector_radius,
       double cone_eta,
       double cone_phi,
