@@ -26,7 +26,8 @@ pkginclude_HEADERS = \
   JetUtils.h \
   sEPD_DataMC_Validation.h \
   sEPD_MC_Validation.h \
-  NoiseValidation.h
+  NoiseValidation.h \
+  RandomConeMaker.h
 
 lib_LTLIBRARIES = \
   libsEPDValidation.la
@@ -46,7 +47,8 @@ libsEPDValidation_la_SOURCES = \
   JetUtils.cc \
   sEPD_DataMC_Validation.cc \
   sEPD_MC_Validation.cc \
-  NoiseValidation.cc
+  NoiseValidation.cc \
+  RandomConeMaker.cc
 
 libsEPDValidation_la_LIBADD = \
   -lphool \
