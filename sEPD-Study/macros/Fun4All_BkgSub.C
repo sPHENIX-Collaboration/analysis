@@ -23,6 +23,7 @@
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
 
+#include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
@@ -34,13 +35,17 @@
 #include <calotrigger/TriggerRunInfoReco.h>
 
 #include <sepdvalidation/EventSkip.h>
+#include <sepdvalidation/EventQA.h>
 #include <sepdvalidation/JetValidationv3.h>
+
+#include <treefiller/TreeFiller.h>
 
 #include "Calo_Calib.C"
 #include "HIJetReco.C"
 
 R__LOAD_LIBRARY(libg4detectors_io.so)
 R__LOAD_LIBRARY(libsEPDValidation.so)
+R__LOAD_LIBRARY(libTreeFiller.so)
 
 void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00068144-00000.root",
                     const std::string &flist_dst_zdc = "/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/68144/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00068144-00000.root",
@@ -165,6 +170,11 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent);
 
+  // Event QA
+  EventQA* event_qa = new EventQA();
+  event_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->registerSubsystem(event_qa);
+
   // Jet Reco
   // Enable::HIJETS_VERBOSITY = 10;
   HIJETS::eventplane_custom_calib = input_QVecCalib;
@@ -177,12 +187,17 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
 
-  // sEPD QA
+  // Jet Validation
   JetValidationv3* jet_validation = new JetValidationv3();
-  jet_validation->set_tree_filename(output_tree);
   jet_validation->set_do_flow(do_flow);
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation);
+
+  // Tree Filler
+  TreeFiller* tree_filler = TreeFiller::instance();
+  tree_filler->setOutfileName(output_tree);
+  tree_filler->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->registerSubsystem(tree_filler);
 
   const std::vector<std::pair<std::string, std::string>> input_files = {
       {"calofitting", flist_dst_calofit},

@@ -36,78 +36,18 @@ class JetValidationv3 : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
-  void set_tree_filename(std::string_view file)
-  {
-    m_outtree_name = file;
-  }
-
   void set_do_flow(bool b)
   {
     m_do_flow = b;
   }
 
  private:
-  int process_event_check(PHCompositeNode *topNode);
   int process_Calo(PHCompositeNode *topNode);
-  int process_centrality(PHCompositeNode *topNode);
   int process_UE(PHCompositeNode *topNode);
   int process_EventPlane(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
 
-  std::string m_outtree_name{"tree.root"};
   bool m_do_flow{true};
-
-  struct HistConfig
-  {
-    unsigned int m_bins_zvtx{200};
-    double m_zvtx_low{-50};
-    double m_zvtx_high{50};
-
-    unsigned int m_bins_cent{100};
-    double m_cent_low{-0.5};
-    double m_cent_high{99.5};
-  };
-
-  HistConfig m_hist_config;
-
-  enum class EventType : std::uint8_t
-  {
-    ALL,
-    ZVTX,
-    ZVTX50,
-    ZVTX10,
-    MB_TRIG,
-    MB,
-    CENT
-  };
-
-  enum class MinBiasType : std::uint8_t
-  {
-    BKG_HIGH,
-    SIDE_HIT_LOW,
-    ZDC_LOW,
-    MBD_HIGH
-  };
-
-  std::vector<std::string> m_eventType{"All", "Has Z", "|z| < 50 cm", "|z| < 10 cm", "MB Trig", "MB", "Cent"};
-  std::vector<std::string> m_MinBias_Type{"MBD Background", "Hits < 2", "ZDC < 60 GeV", "MBD > 2100"};
-
-  std::unique_ptr<TriggerAnalyzer> m_triggerAnalyzer;
-
-  const int m_trig_12 = 12; // MBD N&S >= 2, vtx < 10 cm
-  const int m_trig_14 = 14; // MBD N&S >= 2, vtx < 150 cm
-
-  // Cuts
-  struct EventCuts
-  {
-    double m_zvtx_max{10}; // cm
-    double m_zvtx_max_v2{50}; // cm
-    double m_cent_max{60};
-  };
-
-  EventCuts m_cuts;
-
-  std::map<std::string, int> m_ctr;
 
   struct JetData
   {
@@ -131,9 +71,6 @@ class JetValidationv3 : public SubsysReco
 
   struct EventData
   {
-    int event{0};
-    double zvtx{9999};
-    double centrality{9999};
     double emcal_energy{0};
     double ihcal_energy{0};
     double ohcal_energy{0};
@@ -170,13 +107,6 @@ class JetValidationv3 : public SubsysReco
 
   EventData m_data;
 
-  TH1* hEvent{nullptr};
-  TH1* hEventMinBias{nullptr};
-  TH1* hVtxZ{nullptr};
-  TH1* hVtxZ_MB{nullptr};
-  TH1* hCentrality{nullptr};
-
-  std::unique_ptr<TFile> m_output;
   TTree *m_tree{nullptr};
 
   std::string m_recoJetName_iter_r02{"AntiKt_Tower_r02_Sub1"};
