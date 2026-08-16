@@ -23,6 +23,7 @@ pkginclude_HEADERS = \
   JetValidation.h \
   JetValidationv2.h \
   JetValidationv3.h \
+  EventQA.h \
   JetUtils.h \
   sEPD_DataMC_Validation.h \
   sEPD_MC_Validation.h \
@@ -44,6 +45,7 @@ libsEPDValidation_la_SOURCES = \
   JetValidation.cc \
   JetValidationv2.cc \
   JetValidationv3.cc \
+  EventQA.cc \
   JetUtils.cc \
   sEPD_DataMC_Validation.cc \
   sEPD_MC_Validation.cc \
@@ -63,7 +65,8 @@ libsEPDValidation_la_LIBADD = \
   -lepd_io \
   -ljetbase_io \
   -ljetbackground_io \
-  -lphparameter_io
+  -lphparameter_io \
+  -lTreeFiller
 
 BUILT_SOURCES = testexternals.cc
 
