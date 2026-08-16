@@ -36,10 +36,12 @@ class JetValidationv3 : public SubsysReco
   void set_do_unsub(bool b = true) { m_do_unsub = b; }
   void set_do_iter(bool b = true) { m_do_iter = b; }
   void set_do_mult(bool b = true) { m_do_mult = b; }
+  void set_jet_pt_min(double pt_min) { m_jet_pt_min_cut = pt_min; }
 
   bool get_do_unsub() const { return m_do_unsub; }
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
+  double get_jet_pt_min() const { return m_jet_pt_min_cut; }
 
  private:
   int process_UE(PHCompositeNode *topNode);
@@ -106,8 +108,6 @@ class JetValidationv3 : public SubsysReco
   std::string m_recoJetName_unsub_calib_r03{"AntiKt_TowerInfo_r03_calib"};
 
   double m_jet_pt_min_cut{10};     // GeV
-  double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
-  double m_jet_eta_max_cut_r03{0.8};  // 1.1-R
 
   bool m_do_unsub{true};
   bool m_do_iter{true};

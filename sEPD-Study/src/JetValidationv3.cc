@@ -23,6 +23,12 @@
 
 #include <treefiller/TreeFiller.h>
 
+#include "JetUtils.h"
+
+// -- vertex
+#include <globalvertex/GlobalVertex.h>
+#include <globalvertex/GlobalVertexMap.h>
+
 // -- ROOT
 #include <TH1.h>
 #include <TH2.h>
@@ -118,7 +124,7 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 {
   if (m_do_iter)
   {
-    TowerBackground* towerBkg_iter = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2"); 
+    TowerBackground* towerBkg_iter = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
     if (!towerBkg_iter)
     {
       std::cout << "Aborting Run: Iter Background Info null" << std::endl;
@@ -132,7 +138,7 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 
   if (m_do_mult)
   {
-    TowerBackground* towerBkg_mult = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_MultSub2"); 
+    TowerBackground* towerBkg_mult = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_MultSub2");
     if (!towerBkg_mult)
     {
       std::cout << "Aborting Run: Mult Background Info null" << std::endl;
@@ -150,7 +156,22 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::process_jets(PHCompositeNode *topNode)
 {
-  auto fill_jets = [&](JetContainer* jets, JetContainer* jets_calib, JetData& jd, double eta_max_cut) 
+  double zvtx = 0.0;
+  GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
+  if (!vertexmap)
+  {
+    std::cout << "JetValidationv3: GlobalVertexMap null" << std::endl;
+  }
+  else if (!vertexmap->empty())
+  {
+    GlobalVertex *vtx = vertexmap->begin()->second;
+    if (vtx)
+    {
+      zvtx = vtx->get_z();
+    }
+  }
+
+  auto fill_jets = [&](JetContainer* jets, JetContainer* jets_calib, JetData& jd, double jet_radius)
   {
     for (unsigned int i = 0; i < std::min(jets->size(), jets_calib->size()); ++i)
     {
@@ -174,7 +195,7 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
         phi += 2.0 * std::numbers::pi;
       }
 
-      if (pt_calib >= m_jet_pt_min_cut && std::abs(eta) < eta_max_cut)
+      if (pt_calib >= m_jet_pt_min_cut && !JetUtils::check_bad_jet_eta(eta, zvtx, jet_radius))
       {
         jd.pt.push_back(pt);
         jd.pt_calib.push_back(pt_calib);
@@ -207,10 +228,10 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
     }
 
     // R = 0.2 Iterative
-    fill_jets(jets_iter_r02, jets_iter_calib_r02, m_data.iter_r02, m_jet_eta_max_cut_r02);
+    fill_jets(jets_iter_r02, jets_iter_calib_r02, m_data.iter_r02, 0.2);
 
     // R = 0.3 Iterative
-    fill_jets(jets_iter_r03, jets_iter_calib_r03, m_data.iter_r03, m_jet_eta_max_cut_r03);
+    fill_jets(jets_iter_r03, jets_iter_calib_r03, m_data.iter_r03, 0.3);
   }
 
   if (m_do_mult)
@@ -230,10 +251,10 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
     }
 
     // R = 0.2 Multiplicity
-    fill_jets(jets_mult_r02, jets_mult_calib_r02, m_data.mult_r02, m_jet_eta_max_cut_r02);
+    fill_jets(jets_mult_r02, jets_mult_calib_r02, m_data.mult_r02, 0.2);
 
     // R = 0.3 Multiplicity
-    fill_jets(jets_mult_r03, jets_mult_calib_r03, m_data.mult_r03, m_jet_eta_max_cut_r03);
+    fill_jets(jets_mult_r03, jets_mult_calib_r03, m_data.mult_r03, 0.3);
   }
 
   if (m_do_unsub)
@@ -253,10 +274,10 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
     }
 
     // R = 0.2 Unsubtracted
-    fill_jets(jets_unsub_r02, jets_unsub_calib_r02, m_data.unsub_r02, m_jet_eta_max_cut_r02);
+    fill_jets(jets_unsub_r02, jets_unsub_calib_r02, m_data.unsub_r02, 0.2);
 
     // R = 0.3 Unsubtracted
-    fill_jets(jets_unsub_r03, jets_unsub_calib_r03, m_data.unsub_r03, m_jet_eta_max_cut_r03);
+    fill_jets(jets_unsub_r03, jets_unsub_calib_r03, m_data.unsub_r03, 0.3);
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
