@@ -15,11 +15,6 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
-// -- Calo
-#include <calobase/TowerInfo.h>
-#include <calobase/TowerInfoContainer.h>
-#include <calobase/TowerInfoDefs.h>
-
 // -- jet
 #include <jetbase/JetContainer.h>
 
@@ -46,119 +41,65 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Print("NODETREE");
 
-  m_tree = TreeFiller::getTree();
-  if (!m_tree)
+  TTree* tree = TreeFiller::getTree();
+  if (!tree)
   {
     std::cout << "JetValidationv3: Failed to get/create TTree" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  m_tree->Branch("emcal_energy", &m_data.emcal_energy);
-  m_tree->Branch("ihcal_energy", &m_data.ihcal_energy);
-  m_tree->Branch("ohcal_energy", &m_data.ohcal_energy);
+  tree->Branch("seeds_iter", &m_data.seeds_iter);
+  tree->Branch("seeds_mult", &m_data.seeds_mult);
 
-  m_tree->Branch("seeds_iter", &m_data.seeds_iter);
-  m_tree->Branch("seeds_mult", &m_data.seeds_mult);
+  tree->Branch("calo_v2_iter", &m_data.calo_v2_iter);
+  tree->Branch("calo_v2_mult", &m_data.calo_v2_mult);
 
-  m_tree->Branch("calo_v2_iter", &m_data.calo_v2_iter);
-  m_tree->Branch("calo_v2_mult", &m_data.calo_v2_mult);
+  tree->Branch("is_flow_failure_iter", &m_data.is_flow_failure_iter);
+  tree->Branch("is_flow_failure_mult", &m_data.is_flow_failure_mult);
 
-  m_tree->Branch("is_flow_failure_iter", &m_data.is_flow_failure_iter);
-  m_tree->Branch("is_flow_failure_mult", &m_data.is_flow_failure_mult);
+  tree->Branch("max_pt_iter_r02", &m_data.iter_r02.max_pt);
+  tree->Branch("max_pt_iter_r03", &m_data.iter_r03.max_pt);
 
-  m_tree->Branch("max_pt_iter_r02", &m_data.iter_r02.max_pt);
-  m_tree->Branch("max_pt_iter_r03", &m_data.iter_r03.max_pt);
+  tree->Branch("max_pt_mult_r02", &m_data.mult_r02.max_pt);
+  tree->Branch("max_pt_mult_r03", &m_data.mult_r03.max_pt);
+  tree->Branch("max_pt_unsub_r02", &m_data.unsub_r02.max_pt);
+  tree->Branch("max_pt_unsub_r03", &m_data.unsub_r03.max_pt);
 
-  m_tree->Branch("max_pt_mult_r02", &m_data.mult_r02.max_pt);
-  m_tree->Branch("max_pt_mult_r03", &m_data.mult_r03.max_pt);
-  m_tree->Branch("max_pt_unsub_r02", &m_data.unsub_r02.max_pt);
-  m_tree->Branch("max_pt_unsub_r03", &m_data.unsub_r03.max_pt);
+  tree->Branch("pt_iter_r02", &m_data.iter_r02.pt);
+  tree->Branch("pt_calib_iter_r02", &m_data.iter_r02.pt_calib);
+  tree->Branch("e_iter_r02", &m_data.iter_r02.e);
+  tree->Branch("phi_iter_r02", &m_data.iter_r02.phi);
+  tree->Branch("eta_iter_r02", &m_data.iter_r02.eta);
 
-  m_tree->Branch("pt_iter_r02", &m_data.iter_r02.pt);
-  m_tree->Branch("pt_calib_iter_r02", &m_data.iter_r02.pt_calib);
-  m_tree->Branch("e_iter_r02", &m_data.iter_r02.e);
-  m_tree->Branch("phi_iter_r02", &m_data.iter_r02.phi);
-  m_tree->Branch("eta_iter_r02", &m_data.iter_r02.eta);
+  tree->Branch("pt_mult_r02", &m_data.mult_r02.pt);
+  tree->Branch("pt_calib_mult_r02", &m_data.mult_r02.pt_calib);
+  tree->Branch("e_mult_r02", &m_data.mult_r02.e);
+  tree->Branch("phi_mult_r02", &m_data.mult_r02.phi);
+  tree->Branch("eta_mult_r02", &m_data.mult_r02.eta);
 
-  m_tree->Branch("pt_mult_r02", &m_data.mult_r02.pt);
-  m_tree->Branch("pt_calib_mult_r02", &m_data.mult_r02.pt_calib);
-  m_tree->Branch("e_mult_r02", &m_data.mult_r02.e);
-  m_tree->Branch("phi_mult_r02", &m_data.mult_r02.phi);
-  m_tree->Branch("eta_mult_r02", &m_data.mult_r02.eta);
+  tree->Branch("pt_iter_r03", &m_data.iter_r03.pt);
+  tree->Branch("pt_calib_iter_r03", &m_data.iter_r03.pt_calib);
+  tree->Branch("e_iter_r03", &m_data.iter_r03.e);
+  tree->Branch("phi_iter_r03", &m_data.iter_r03.phi);
+  tree->Branch("eta_iter_r03", &m_data.iter_r03.eta);
 
-  m_tree->Branch("pt_iter_r03", &m_data.iter_r03.pt);
-  m_tree->Branch("pt_calib_iter_r03", &m_data.iter_r03.pt_calib);
-  m_tree->Branch("e_iter_r03", &m_data.iter_r03.e);
-  m_tree->Branch("phi_iter_r03", &m_data.iter_r03.phi);
-  m_tree->Branch("eta_iter_r03", &m_data.iter_r03.eta);
+  tree->Branch("pt_mult_r03", &m_data.mult_r03.pt);
+  tree->Branch("pt_calib_mult_r03", &m_data.mult_r03.pt_calib);
+  tree->Branch("e_mult_r03", &m_data.mult_r03.e);
+  tree->Branch("phi_mult_r03", &m_data.mult_r03.phi);
+  tree->Branch("eta_mult_r03", &m_data.mult_r03.eta);
 
-  m_tree->Branch("pt_mult_r03", &m_data.mult_r03.pt);
-  m_tree->Branch("pt_calib_mult_r03", &m_data.mult_r03.pt_calib);
-  m_tree->Branch("e_mult_r03", &m_data.mult_r03.e);
-  m_tree->Branch("phi_mult_r03", &m_data.mult_r03.phi);
-  m_tree->Branch("eta_mult_r03", &m_data.mult_r03.eta);
+  tree->Branch("pt_unsub_r02", &m_data.unsub_r02.pt);
+  tree->Branch("pt_calib_unsub_r02", &m_data.unsub_r02.pt_calib);
+  tree->Branch("e_unsub_r02", &m_data.unsub_r02.e);
+  tree->Branch("phi_unsub_r02", &m_data.unsub_r02.phi);
+  tree->Branch("eta_unsub_r02", &m_data.unsub_r02.eta);
 
-  m_tree->Branch("pt_unsub_r02", &m_data.unsub_r02.pt);
-  m_tree->Branch("pt_calib_unsub_r02", &m_data.unsub_r02.pt_calib);
-  m_tree->Branch("e_unsub_r02", &m_data.unsub_r02.e);
-  m_tree->Branch("phi_unsub_r02", &m_data.unsub_r02.phi);
-  m_tree->Branch("eta_unsub_r02", &m_data.unsub_r02.eta);
-
-  m_tree->Branch("pt_unsub_r03", &m_data.unsub_r03.pt);
-  m_tree->Branch("pt_calib_unsub_r03", &m_data.unsub_r03.pt_calib);
-  m_tree->Branch("e_unsub_r03", &m_data.unsub_r03.e);
-  m_tree->Branch("phi_unsub_r03", &m_data.unsub_r03.phi);
-  m_tree->Branch("eta_unsub_r03", &m_data.unsub_r03.eta);
-
-  return Fun4AllReturnCodes::EVENT_OK;
-}
-
-//____________________________________________________________________________..
-int JetValidationv3::process_Calo(PHCompositeNode *topNode)
-{
-  auto* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
-  auto* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
-  auto* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
-
-  if (!towersCEMC || !towersIHCal || !towersOHCal)
-  {
-    std::cout << "Aborting Run: Calo Towers null" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  size_t nTowersCEMC = towersCEMC->size();
-  size_t nTowersIHCal = towersIHCal->size();
-  size_t nTowersOHCal = towersOHCal->size();
-
-  if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
-  {
-    std::cout << "Calo Contains Missing Towers!" << std::endl;
-    return Fun4AllReturnCodes::ABORTRUN;
-  }
-
-  for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
-  {
-    auto* towerCEMC = towersCEMC->get_tower_at_channel(towerIndex);
-    if(towerCEMC && towerCEMC->get_isGood())
-    {
-      float energy = towerCEMC->get_energy();
-      m_data.emcal_energy += energy;
-    }
-
-    auto* towerIHCal = towersIHCal->get_tower_at_channel(towerIndex);
-    if(towerIHCal && towerIHCal->get_isGood())
-    {
-      float energy = towerIHCal->get_energy();
-      m_data.ihcal_energy += energy;
-    }
-
-    auto* towerOHCal = towersOHCal->get_tower_at_channel(towerIndex);
-    if(towerOHCal && towerOHCal->get_isGood())
-    {
-      float energy = towerOHCal->get_energy();
-      m_data.ohcal_energy += energy;
-    }
-  }
+  tree->Branch("pt_unsub_r03", &m_data.unsub_r03.pt);
+  tree->Branch("pt_calib_unsub_r03", &m_data.unsub_r03.pt_calib);
+  tree->Branch("e_unsub_r03", &m_data.unsub_r03.e);
+  tree->Branch("phi_unsub_r03", &m_data.unsub_r03.phi);
+  tree->Branch("eta_unsub_r03", &m_data.unsub_r03.eta);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -283,13 +224,7 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::process_event(PHCompositeNode *topNode)
 {
-  int ret = process_Calo(topNode);
-  if (ret)
-  {
-    return ret;
-  }
-
-  ret = process_UE(topNode);
+  int ret = process_UE(topNode);
   if (ret)
   {
     return ret;
@@ -309,11 +244,6 @@ int JetValidationv3::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
-  // Calo
-  m_data.emcal_energy = 0;
-  m_data.ihcal_energy = 0;
-  m_data.ohcal_energy = 0;
-
   // UE
   m_data.seeds_iter = 0;
   m_data.seeds_mult = 0;

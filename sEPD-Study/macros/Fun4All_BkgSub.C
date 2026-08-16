@@ -37,6 +37,7 @@
 #include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/EventQA.h>
 #include <sepdvalidation/EventPlaneQA.h>
+#include <sepdvalidation/CaloQA.h>
 #include <sepdvalidation/JetValidationv3.h>
 
 #include <treefiller/TreeFiller.h>
@@ -187,6 +188,12 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   Enable::HIJETS_TOWER_MULTSUB = true;
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
+
+  // Calo QA
+  CaloQA* calo_qa = new CaloQA();
+  calo_qa->set_do_hist(false);
+  calo_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->registerSubsystem(calo_qa);
 
   if(do_flow)
   {

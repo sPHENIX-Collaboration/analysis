@@ -21,25 +21,23 @@ class CaloQA : public SubsysReco
  public:
   explicit CaloQA(const std::string &name = "CaloQA");
 
-  /** Called during initialization.
-      Typically this is where you can book histograms, and e.g.
-      register them to Fun4AllServer (so they can be output to file
-      using Fun4AllServer::dumpHistos() method).
-   */
   int Init(PHCompositeNode *topNode) override;
 
-  /** Called for each event.
-      This is where you do the real work.
-   */
   int process_event(PHCompositeNode *topNode) override;
 
-  /// Clean up internals after each event.
   int ResetEvent(PHCompositeNode *topNode) override;
 
-  /// Called at the end of all processing.
   int End(PHCompositeNode *topNode) override;
 
+  void set_do_hist(bool do_hists)
+  {
+    m_do_hists = do_hists;
+  }
+
  private:
+
+  int process_centrality(PHCompositeNode *topNode);
+  int process_calo(PHCompositeNode *topNode);
 
   // Hists
   struct AnalysisHists
@@ -62,38 +60,23 @@ class CaloQA : public SubsysReco
     TH2* h2IHCalNoZSCent{nullptr};
     TH2* h2OHCalNoZSCent{nullptr};
 
-    TH1* hCentrality{nullptr};
     TH2* h2CentralityTotalCaloE{nullptr};
-    TH1* hZVertex{nullptr};
   };
 
   AnalysisHists m_hists;
 
-  // Cuts
-  struct Cuts
-  {
-    double m_zvtx_max{10}; /*cm*/
-    double m_cent_max{80};
-  };
-
-  Cuts m_cuts;
-
-  // Event Info
   struct EventData
   {
-    int event_id{0};
-    double centrality{9999};
+    double emcal_energy{0};
+    double ihcal_energy{0};
+    double ohcal_energy{0};
+
+    double centrality{0};
   };
 
   EventData m_data;
 
-  int m_event{0};
-
-  static constexpr int PROGRESS_PRINT_INTERVAL = 20;
-
-  int process_event_check(PHCompositeNode *topNode);
-  int process_centrality(PHCompositeNode *topNode);
-  int process_calo(PHCompositeNode *topNode) const;
+  bool m_do_hists{true};
 };
 
 #endif  // CALOCHECK_H

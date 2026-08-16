@@ -2,8 +2,6 @@
 //  -*- C++ -*-.
 #pragma once
 
-#include "geometry_constants.h"
-
 // -- sPHENIX
 #include <fun4all/SubsysReco.h>
 
@@ -16,7 +14,6 @@
 #include <vector>
 #include <numbers>
 
-class TriggerAnalyzer;
 class PHCompositeNode;
 class TFile;
 class TTree;
@@ -37,7 +34,6 @@ class JetValidationv3 : public SubsysReco
   int End(PHCompositeNode *topNode) override;
 
  private:
-  int process_Calo(PHCompositeNode *topNode);
   int process_UE(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
 
@@ -63,10 +59,6 @@ class JetValidationv3 : public SubsysReco
 
   struct EventData
   {
-    double emcal_energy{0};
-    double ihcal_energy{0};
-    double ohcal_energy{0};
-
     // UE
     // key: iter -> UE Iterative Method
     //      mult -> UE Multiplicity Method (New)
@@ -89,8 +81,6 @@ class JetValidationv3 : public SubsysReco
   };
 
   EventData m_data;
-
-  TTree *m_tree{nullptr};
 
   std::string m_recoJetName_iter_r02{"AntiKt_Tower_r02_Sub1"};
   std::string m_recoJetName_mult_r02{"AntiKt_Tower_r02_MultSub1"};
