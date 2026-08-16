@@ -50,12 +50,11 @@ int RandomConeValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
 
 int RandomConeValidation::InitRun(PHCompositeNode *topNode)
 {
-  RawTowerGeomContainer* geom_cemc = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_CEMC");
   RawTowerGeomContainer* geom_hcalin = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALIN");
   RawTowerGeomContainer* geom_hcalout = findNode::getClass<RawTowerGeomContainer>(topNode, "TOWERGEOM_HCALOUT");
 
-  m_maker_r02.init(geom_cemc, geom_hcalin, geom_hcalout);
-  m_maker_r03.init(geom_cemc, geom_hcalin, geom_hcalout);
+  m_maker_r02.init(geom_hcalin, geom_hcalout);
+  m_maker_r03.init(geom_hcalin, geom_hcalout);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

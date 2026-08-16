@@ -28,8 +28,7 @@ public:
   // If seed == 0 (the default), PHRandomSeed::GetSeed() is automatically used.
   explicit RandomConeMaker(double radius, uint32_t seed = 0);
 
-  // Call this ONCE during your SubSysReco::InitRun to cache tower geometries
-  void init(RawTowerGeomContainer* geom_cemc, RawTowerGeomContainer* geom_hcalin, RawTowerGeomContainer* geom_hcalout);
+  void init(RawTowerGeomContainer* geom_hcalin, RawTowerGeomContainer* geom_hcalout);
 
   // Call this per-event to get a random cone (or supply manual cone_eta/cone_phi)
   // z_vrtx allows for correcting the tower kinematics for the event vertex

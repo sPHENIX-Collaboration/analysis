@@ -4,6 +4,7 @@
 
 #include <numbers>
 #include <stdexcept>
+#include <format>
 
 namespace
 {
@@ -21,26 +22,18 @@ RandomConeMaker::RandomConeMaker(double radius, uint32_t seed)
 {
 }
 
-void RandomConeMaker::init(RawTowerGeomContainer *geom_cemc,
-                           RawTowerGeomContainer *geom_hcalin,
+void RandomConeMaker::init(RawTowerGeomContainer *geom_hcalin,
                            RawTowerGeomContainer *geom_hcalout)
 {
   m_geom_cemc.fill(TowerGeomInfo{});
   m_geom_hcalin.fill(TowerGeomInfo{});
   m_geom_hcalout.fill(TowerGeomInfo{});
 
-  if (geom_cemc)
-  {
-    m_r_cemc = geom_cemc->get_radius();
-  }
-  if (geom_hcalin)
-  {
-    m_r_hcalin = geom_hcalin->get_radius();
-  }
-  if (geom_hcalout)
-  {
-    m_r_hcalout = geom_hcalout->get_radius();
-  }
+  // Detector radii are using the effective values from JetUtils (initialized in the header)
+  // We do NOT overwrite them with geom->get_radius() because get_radius() returns the inner
+  // face of the calorimeter, whereas we want the effective tower center radius for z-vertex corrections.
+
+  std::cout << std::format("Using the following radius: EMCal: {}, IHCal: {}, OHCal: {}", m_r_cemc, m_r_hcalin, m_r_hcalout) << std::endl;
 
   // Cache HCALIN grid and Retowered CEMC grid (both share HCALIN eta/phi bin geometry)
   if (geom_hcalin)
