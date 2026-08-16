@@ -36,6 +36,7 @@
 
 #include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/EventQA.h>
+#include <sepdvalidation/EventPlaneQA.h>
 #include <sepdvalidation/JetValidationv3.h>
 
 #include <treefiller/TreeFiller.h>
@@ -187,9 +188,16 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
 
+  if(do_flow)
+  {
+    // EventPlane QA
+    EventPlaneQA* eventplane_qa = new EventPlaneQA();
+    eventplane_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+    se->registerSubsystem(eventplane_qa);
+  }
+
   // Jet Validation
   JetValidationv3* jet_validation = new JetValidationv3();
-  jet_validation->set_do_flow(do_flow);
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation);
 

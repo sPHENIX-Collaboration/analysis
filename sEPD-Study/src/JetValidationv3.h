@@ -36,18 +36,10 @@ class JetValidationv3 : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
-  void set_do_flow(bool b)
-  {
-    m_do_flow = b;
-  }
-
  private:
   int process_Calo(PHCompositeNode *topNode);
   int process_UE(PHCompositeNode *topNode);
-  int process_EventPlane(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
-
-  bool m_do_flow{true};
 
   struct JetData
   {
@@ -74,15 +66,6 @@ class JetValidationv3 : public SubsysReco
     double emcal_energy{0};
     double ihcal_energy{0};
     double ohcal_energy{0};
-
-    // sEPD
-    double psi2_raw_S{0};
-    double psi2_raw_N{0};
-    double psi2_raw_NS{0};
-
-    double psi2_S{0};
-    double psi2_N{0};
-    double psi2_NS{0};
 
     // UE
     // key: iter -> UE Iterative Method
