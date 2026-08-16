@@ -161,17 +161,15 @@ void Fun4All_DiffuseLaserSimulations()
   Tpc_LaserEventIdentifying();
 
   // Cluster diffuse laser hits into LASER_CLUSTER.
-  // TPC_LaserClustering();
   LaserClusterizer *laserClusterizer = new LaserClusterizer;
   laserClusterizer->Verbosity(1);
   laserClusterizer->set_max_time_samples(TRACKING::reco_tpc_maxtime_sample);
   laserClusterizer->set_adc_threshold(0);
   laserClusterizer->set_do_sequential(G4TPC::LaserClusteringSequential);
   laserClusterizer->set_do_fitting(G4TPC::laserClusterFitting);
-  // laserClusterizer->set_is_simulation(true);
   se->registerSubsystem(laserClusterizer);
 
-  TString out_DST = Form("DST_LASER_CLUSTER_SIMULATIONS.root");
+  TString out_DST = "DST_LASER_CLUSTER_SIMULATIONS.root";
   std::string theOutDST = out_DST.Data();
 
   Fun4AllOutputManager *out = new Fun4AllDstOutputManager("out",theOutDST);
