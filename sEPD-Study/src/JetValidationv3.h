@@ -33,6 +33,14 @@ class JetValidationv3 : public SubsysReco
   int ResetEvent(PHCompositeNode *topNode) override;
   int End(PHCompositeNode *topNode) override;
 
+  void set_do_unsub(bool b = true) { m_do_unsub = b; }
+  void set_do_iter(bool b = true) { m_do_iter = b; }
+  void set_do_mult(bool b = true) { m_do_mult = b; }
+
+  bool get_do_unsub() const { return m_do_unsub; }
+  bool get_do_iter() const { return m_do_iter; }
+  bool get_do_mult() const { return m_do_mult; }
+
  private:
   int process_UE(PHCompositeNode *topNode);
   int process_jets(PHCompositeNode *topNode);
@@ -100,4 +108,8 @@ class JetValidationv3 : public SubsysReco
   double m_jet_pt_min_cut{10};     // GeV
   double m_jet_eta_max_cut_r02{0.9};  // 1.1-R
   double m_jet_eta_max_cut_r03{0.8};  // 1.1-R
+
+  bool m_do_unsub{true};
+  bool m_do_iter{true};
+  bool m_do_mult{true};
 };
