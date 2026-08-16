@@ -64,14 +64,16 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
                          const std::string &eta_calib_direct_path = "")
 {
 
-  // Extract runnumber from first file within list
+  // Extract runnumber and segment from first file within list
   int runnumber;
+  int segment;
   bool isFileList = true;
   // single file
   if (flist_dst_calofit.ends_with(".root"))
   {
     std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(flist_dst_calofit);
     runnumber = runseg.first;
+    segment = runseg.second;
     isFileList = false;
   }
   // list of files
@@ -86,8 +88,11 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
     getline(infile_stream, filepath);
     std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
     runnumber = runseg.first;
+    segment = runseg.second;
     infile_stream.close();
   }
+
+  uint32_t master_seed = static_cast<uint32_t>((runnumber * 1000003ULL) + segment);
 
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
@@ -95,6 +100,8 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   std::cout << "input zdc: " << flist_dst_zdc << std::endl;
   std::cout << "input sepd: " << flist_dst_sepd << std::endl;
   std::cout << "Run: " << runnumber << std::endl;
+  std::cout << "Segment: " << segment << std::endl;
+  std::cout << "Master Seed: " << master_seed << std::endl;
   std::cout << "QVec Calib: " << input_QVecCalib << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "output tree: " << output_tree << std::endl;
@@ -115,6 +122,7 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   // conditions DB flags and timestamp
   rc->set_StringFlag("CDB_GLOBALTAG", dbtag);
   rc->set_uint64Flag("TIMESTAMP", runnumber);
+  rc->set_IntFlag("RANDOMSEED", master_seed);
   CDBInterface::instance()->Verbosity(Fun4AllBase::VERBOSITY_SOME);
 
   FlagHandler* flag = new FlagHandler();
