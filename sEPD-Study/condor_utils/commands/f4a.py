@@ -6,7 +6,7 @@ from condor_utils.core.helpers import run_command_and_log, get_line_count, chunk
 from condor_utils.cli import get_common_parser
 
 def create_f4a_jobs(args):
-    if "Fun4All_BkgSub" in args.f4a_macro:
+    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
         args.condor_script = 'scripts/genFun4All_BkgSub.sh'
 
     manager = CondorJobManager(args, job_name="F4A")
@@ -82,7 +82,7 @@ def create_f4a_jobs(args):
 
     jobs_temp_file.unlink(missing_ok=True)
 
-    if "Fun4All_BkgSub" in args.f4a_macro:
+    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
         eta_calib_val = (manager.output_dir / eta_calib.name) if eta_calib else "none"
         bkgsub_args = f"{args.do_flow} {eta_calib_val} "
     else:
