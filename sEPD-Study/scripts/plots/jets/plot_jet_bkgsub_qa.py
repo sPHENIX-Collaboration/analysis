@@ -19,7 +19,7 @@ from matplotlib.ticker import LogLocator, ScalarFormatter
 from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=1e8, extra_energy_cut=False, is_v3=False, r_jet=0.2, is_eta=False, pt_min_label=None):
+def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=1e8, extra_energy_cut=False, is_v3=False, r_jet=0.2, is_eta=False, pt_min_label=None, flow_fail=False):
     hep.style.use("ATLAS")
     fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -55,13 +55,17 @@ def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=
             ax.set_xlim(left=0)
 
     # Top right border label
-    ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    if r_jet is not None:
+        ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    else:
+        ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
 
+    flow_text = "Flow Failure" if flow_fail else "No Flow Failure"
     text_info = (
         r"$|z| < 10$ cm & MB" "\n"
         f"Good Calo-Cent" "\n"
         f"Centrality: 0-60%" "\n"
-        f"No Flow Failure"
+        f"{flow_text}"
     )
     if is_v3:
         text_info += "\n" r"$|\text{calo } v_{2}| < 0.48$"
@@ -357,6 +361,36 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
 
                     output_path = run_output_dir / out_filename
                     make_combined_plot(edges_iter, hists, run_number, output_path, xmax=xmax, ymax=ymax, extra_energy_cut=extra_energy_cut, is_v3=is_v3, r_jet=r_jet)
+
+            hist_ff_r02_name = "hJetPtFlowFail_r02_iter"
+            hist_ff_r03_name = "hJetPtFlowFail_r03_iter"
+
+            if hist_ff_r02_name in file and hist_ff_r03_name in file:
+                hist_ff_r02 = file[hist_ff_r02_name]
+                values_ff_r02, edges_ff_r02 = hist_ff_r02.to_numpy()
+
+                hist_ff_r03 = file[hist_ff_r03_name]
+                values_ff_r03, edges_ff_r03 = hist_ff_r03.to_numpy()
+
+                if run_output_dir is not None:
+                    hists_ff = [
+                        (values_ff_r02, r"Iterative Bkg Sub ($R = 0.2$)", "blue"),
+                        (values_ff_r03, r"Iterative Bkg Sub ($R = 0.3$)", "crimson"),
+                    ]
+
+                    output_path = run_output_dir / f"run_{run_number}_flowfail_iter_qa.png"
+                    make_combined_plot(
+                        edges_ff_r02,
+                        hists_ff,
+                        run_number,
+                        output_path,
+                        xmax=xmax,
+                        ymax=1e4,
+                        extra_energy_cut=True,
+                        is_v3=False,
+                        r_jet=None,
+                        flow_fail=True,
+                    )
 
             eta_hist_pairs = [
                 (10.0, "pt10", 10),
