@@ -99,6 +99,10 @@ class JetAnalysisv3
       TH1 *hJetPtv3{nullptr};
       TH1 *hJetPtv3_raw{nullptr};
 
+      // Positive Energy + Flow Failure
+      TH1 *hJetPtFlowFail{nullptr};
+      TH1 *hJetPtFlowFail_raw{nullptr};
+
       TH2 *h2JetPtv2{nullptr};
       TH2 *h2JetEta{nullptr};
       TH2 *h2JetEtav2{nullptr};
@@ -448,6 +452,14 @@ void JetAnalysisv3::init_hists()
         }
       }
 
+      if (ue != "unsub")
+      {
+        for (const std::string calib : {"", "_raw"})
+        {
+          clone_hist(m_hists1D, base, std::format("hJetPtFlowFail{}_{}_{}", calib, r, ue));
+        }
+      }
+
       std::string h2name = std::format("h2JetPtv2_{}_{}", r, ue);
       m_hists2D[h2name] = std::make_unique<TH2F>(h2name.c_str(), "; Calo v_{2}; Jet p_{T} [GeV]", bins_v2, v2_low, v2_high, bins_pt, pt_low, pt_high);
 
@@ -501,6 +513,11 @@ void JetAnalysisv3::init_hists()
     set.hJetPtv2_raw = m_hists1D[std::format("hJetPtv2_raw_{}_{}", r, ue)].get();
     set.hJetPtv3 = m_hists1D[std::format("hJetPtv3_{}_{}", r, ue)].get();
     set.hJetPtv3_raw = m_hists1D[std::format("hJetPtv3_raw_{}_{}", r, ue)].get();
+    if (ue != "unsub")
+    {
+      set.hJetPtFlowFail = m_hists1D[std::format("hJetPtFlowFail_{}_{}", r, ue)].get();
+      set.hJetPtFlowFail_raw = m_hists1D[std::format("hJetPtFlowFail_raw_{}_{}", r, ue)].get();
+    }
     set.h2JetPtv2 = m_hists2D[std::format("h2JetPtv2_{}_{}", r, ue)].get();
     set.h2JetEta = m_hists2D[std::format("h2JetEta_{}_{}", r, ue)].get();
     set.h2JetEtav2 = m_hists2D[std::format("h2JetEtav2_{}_{}", r, ue)].get();
@@ -595,14 +612,49 @@ void JetAnalysisv3::process_jets()
     }
   };
 
+  auto fill_jet_flow_fail_hists = [this](const JetData &jet_data, const AnalysisHists::JetHistSet &h, double eta_max)
+  {
+    if (!jet_data.pt || !jet_data.pt_calib || !jet_data.e || !jet_data.eta)
+    {
+      return;
+    }
+    for (size_t idx = 0; idx < jet_data.pt->size(); ++idx)
+    {
+      double energy = jet_data.e->at(idx);
+      double pt = jet_data.pt_calib->at(idx);
+      double pt_raw = jet_data.pt->at(idx);
+      double eta = jet_data.eta->at(idx);
+
+      if (pt < m_jet_pt_min || std::abs(eta) >= eta_max)
+      {
+        continue;
+      }
+
+      if (energy > 0)
+      {
+        h.hJetPtFlowFail->Fill(pt);
+        h.hJetPtFlowFail_raw->Fill(pt_raw);
+      }
+    }
+  };
+
   // Process r02 branches for iter and mult (eta_max = 0.9)
   if (!m_event_data.is_flow_failure_iter)
   {
     fill_jet_hists(m_event_data.iter_r02, m_event_data.calo_v2_iter, m_hists.iter_r02, m_jet_eta_max_r02);
   }
+  else
+  {
+    fill_jet_flow_fail_hists(m_event_data.iter_r02, m_hists.iter_r02, m_jet_eta_max_r02);
+  }
+
   if (!m_event_data.is_flow_failure_mult)
   {
     fill_jet_hists(m_event_data.mult_r02, m_event_data.calo_v2_mult, m_hists.mult_r02, m_jet_eta_max_r02);
+  }
+  else
+  {
+    fill_jet_flow_fail_hists(m_event_data.mult_r02, m_hists.mult_r02, m_jet_eta_max_r02);
   }
 
   // Process r03 branches for iter and mult (eta_max = 0.8)
@@ -610,9 +662,18 @@ void JetAnalysisv3::process_jets()
   {
     fill_jet_hists(m_event_data.iter_r03, m_event_data.calo_v2_iter, m_hists.iter_r03, m_jet_eta_max_r03);
   }
+  else
+  {
+    fill_jet_flow_fail_hists(m_event_data.iter_r03, m_hists.iter_r03, m_jet_eta_max_r03);
+  }
+
   if (!m_event_data.is_flow_failure_mult)
   {
     fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03);
+  }
+  else
+  {
+    fill_jet_flow_fail_hists(m_event_data.mult_r03, m_hists.mult_r03, m_jet_eta_max_r03);
   }
 
   // Process unsubtracted jets
