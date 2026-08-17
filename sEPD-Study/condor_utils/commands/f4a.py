@@ -303,6 +303,36 @@ def create_f4a_noise_jobs(args):
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
+def create_f4a_calofittingqa_jobs(args):
+    manager = CondorJobManager(args, job_name="F4A CaloFittingQA")
+    manager.add_file_to_check(args.f4a_macro)
+    manager.validate_paths()
+
+    manager.log_initialization({
+        'Fun4All Macro': Path(args.f4a_macro).resolve()
+    })
+
+    files_dir = manager.prepare_directories()
+    manager.copy_dependencies(extra_files=[args.f4a_macro])
+
+    jobs_file = manager.output_dir / 'jobs.list'
+    jobs_file.unlink(missing_ok=True)
+
+    for line in manager.input_list.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        manager.logger.info(f'Processing: {line}')
+        file_stem = Path(line).stem
+
+        command = f'split --lines {args.dst_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        run_command_and_log(command, manager.logger, files_dir, False)
+
+        command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
+        run_command_and_log(command, manager.logger, manager.output_dir, False)
+
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    manager.write_submit_file(arguments=arguments)
+    manager.finalize_submission(queue_arg="input_dst from jobs.list")
+
 def setup_f4a_subparsers(subparsers):
     f4a = subparsers.add_parser('f4a', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
@@ -339,3 +369,7 @@ def setup_f4a_subparsers(subparsers):
     f4a_noise = subparsers.add_parser('f4a_noise', parents=[get_common_parser()], help='Create condor submission directory for Noise.')
     f4a_noise.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_Noise.C', help='Fun4All Macro.')
     f4a_noise.set_defaults(memory=1.5, condor_script='scripts/genFun4All_Noise.sh', func=create_f4a_noise_jobs)
+
+    f4a_calofittingqa = subparsers.add_parser('f4a_calofittingqa', parents=[get_common_parser()], help='Create condor submission directory for CaloFittingQA.')
+    f4a_calofittingqa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD_CaloFittingQA.C', help='Fun4All Macro.')
+    f4a_calofittingqa.set_defaults(memory=1.5, condor_script='scripts/genFun4All_CaloFittingQA.sh', func=create_f4a_calofittingqa_jobs)
