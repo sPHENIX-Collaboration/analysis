@@ -90,6 +90,9 @@ def run_jet_jobs(args, version):
     elif version == "jetAnav2":
         arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {jet_eta_max} {manager.output_dir}/output"
         queue_arg = "input_tree_list from jobs.list"
+    elif version == "jetAnav3":
+        arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output {args.do_iter} {args.do_mult} {args.do_unsub} {args.do_rcone}"
+        queue_arg = "input_tree_list from jobs.list"
     else:
         arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output"
         queue_arg = "input_tree_list from jobs.list"
@@ -134,4 +137,8 @@ def setup_jetAna_subparsers(subparsers):
 
     jetAnav3 = subparsers.add_parser('jetAnav3', help='jetAnav3 condor jobs.')
     add_common_args(jetAnav3, "Anav3")
+    jetAnav3.add_argument('--do-iter', type=int, default=1, help='Do iter. Default: 1')
+    jetAnav3.add_argument('--do-mult', type=int, default=1, help='Do mult. Default: 1')
+    jetAnav3.add_argument('--do-unsub', type=int, default=1, help='Do unsub. Default: 1')
+    jetAnav3.add_argument('--do-rcone', type=int, default=1, help='Do rcone. Default: 1')
     jetAnav3.set_defaults(func=jetAnav3_jobs)
