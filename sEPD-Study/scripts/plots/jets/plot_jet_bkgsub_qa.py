@@ -14,6 +14,7 @@ import numpy as np
 import re
 import functools
 import sys
+import traceback
 
 from matplotlib.ticker import LogLocator, ScalarFormatter
 from matplotlib.colors import LogNorm
@@ -255,6 +256,132 @@ def make_psi_overlay_plot(edges_x, proj_raw, proj_flat, run_number, output_path,
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
+def make_generic_overlay(edges_x, hists, run_number, output_path, xlabel, ylabel, xmax=None, ymax=None, logy=False, extra_labels=None, legend_loc='best', xlim=None, r_jet=None):
+    hep.style.use("ATLAS")
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    for values, label, color, ls in hists:
+        hep.histplot((values, edges_x), ax=ax, histtype='step', color=color, linewidth=2, linestyle=ls, label=label)
+
+    if logy:
+        ax.set_yscale('log')
+        ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        if ymax is not None:
+            ax.set_ylim(bottom=0.5, top=ymax)
+        else:
+            ax.set_ylim(bottom=0.5)
+    else:
+        if ymax is not None:
+            ax.set_ylim(bottom=0, top=ymax)
+        else:
+            ax.set_ylim(bottom=0)
+
+        max_val = 0
+        for values, _, _, _ in hists:
+            m = np.max(values)
+            if m > max_val: max_val = m
+        if max_val >= 1000:
+            formatter_y = ScalarFormatter(useMathText=True)
+            formatter_y.set_powerlimits((3, 3))
+            ax.yaxis.set_major_formatter(formatter_y)
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    elif xmax == 'auto':
+        max_x_val = 0
+        for values, _, _, _ in hists:
+            nonzero_indices = np.where(values > 0)[0]
+            if len(nonzero_indices) > 0:
+                max_bin_edge = edges_x[nonzero_indices[-1] + 1]
+                if max_bin_edge > max_x_val:
+                    max_x_val = max_bin_edge
+        if max_x_val > 0:
+            ax.set_xlim(left=0, right=max_x_val)
+        else:
+            ax.set_xlim(left=0)
+    elif xmax is not None:
+        ax.set_xlim(right=xmax)
+
+    if r_jet is not None:
+        ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    else:
+        ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    if extra_labels:
+        ax.text(0.95, 0.95, "\n".join(extra_labels), transform=ax.transAxes, ha='right', va='top', fontsize=15)
+
+    if hists:
+        ax.legend(loc=legend_loc, frameon=False, fontsize=15)
+
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
+def make_profile_overlay(edges_x, profiles, run_number, output_path, xlabel, ylabel, xmax=None, ymin=None, ymax=None, extra_labels=None, legend_loc='best', xlim=None, r_jet=None, add_hline_zero=False):
+    hep.style.use("ATLAS")
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    centers_x = (edges_x[:-1] + edges_x[1:]) / 2.0
+
+    for values, errors, label, color in profiles:
+        mask = ~np.isnan(values) & ~np.isnan(errors) & ((values != 0) | (errors > 0))
+        if np.any(mask):
+            ax.errorbar(centers_x[mask], values[mask], yerr=errors[mask], fmt='o', color=color, label=label, markersize=4, capsize=2)
+
+    if add_hline_zero:
+        ax.axhline(0, color='black', linestyle='--', linewidth=1.5, alpha=0.7)
+
+    if ymin is not None:
+        ax.set_ylim(bottom=ymin, top=ymax)
+    elif ymax is not None:
+        ax.set_ylim(bottom=0, top=ymax)
+    else:
+        ax.set_ylim(bottom=0)
+
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    elif xmax == 'auto':
+        max_x_val = 0
+        for values, errors, _, _ in profiles:
+            nonzero_indices = np.where(~np.isnan(values) & (values > 0))[0]
+            if len(nonzero_indices) > 0:
+                max_bin_edge = edges_x[nonzero_indices[-1] + 1]
+                if max_bin_edge > max_x_val:
+                    max_x_val = max_bin_edge
+        if max_x_val > 0:
+            ax.set_xlim(left=0, right=max_x_val)
+        else:
+            ax.set_xlim(left=0)
+    elif xmax is not None:
+        ax.set_xlim(right=xmax)
+
+    if r_jet is not None:
+        ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    else:
+        ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    if extra_labels:
+        ax.text(0.95, 0.95, "\n".join(extra_labels), transform=ax.transAxes, ha='right', va='top', fontsize=15)
+
+    if profiles:
+        ax.legend(loc=legend_loc, frameon=False, fontsize=18)
+
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
 def make_1d_plot(hist1d, run_number, output_path, hist_name="", extra_labels=None, logy=True):
     hep.style.use("ATLAS")
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -483,6 +610,184 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                             pt_min_label=pt_label,
                         )
 
+            if do_rcone and run_output_dir is not None:
+                rcone_1d_pairs = [
+                    ("hRConeEta_r02", "hRConeEta_r03", f"run_{run_number}_rcone_eta_qa.png", r"Random Cone $\eta$", "Counts", (-1.1, 1.1)),
+                    ("hRConeEtaNorm_r02", "hRConeEtaNorm_r03", f"run_{run_number}_rcone_eta_norm_qa.png", r"Random Cone $\eta_{norm}$", "Counts", (0, 1)),
+                    ("hRConePhi_r02", "hRConePhi_r03", f"run_{run_number}_rcone_phi_qa.png", r"Random Cone $\phi$", "Counts", (0, 2 * np.pi)),
+                ]
+
+                for name_r02, name_r03, out_filename, xlabel, ylabel, xlim in rcone_1d_pairs:
+                    hists = []
+                    edges = None
+                    if name_r02 in file:
+                        val_r02, edges_r02 = file[name_r02].to_numpy()
+                        hists.append((val_r02, "R = 0.2", "blue", "-"))
+                        edges = edges_r02
+                    if name_r03 in file:
+                        val_r03, edges_r03 = file[name_r03].to_numpy()
+                        hists.append((val_r03, "R = 0.3", "crimson", "-"))
+                        if edges is None: edges = edges_r03
+
+                    if hists and edges is not None:
+                        output_path = run_output_dir / out_filename
+                        make_generic_overlay(edges, hists, run_number, output_path, xlabel, ylabel, legend_loc='best', xlim=xlim)
+
+                # RCone Energy
+                for r_val, color_unsub, color_iter in [("r02", "green", "blue"), ("r03", "green", "blue")]:
+                    hists = []
+                    edges = None
+                    name_unsub = f"hRConeEnergy_unsub_{r_val}"
+                    name_iter = f"hRConeEnergy_iter_{r_val}"
+
+                    if do_unsub and name_unsub in file:
+                        val_u, edg_u = file[name_unsub].to_numpy()
+                        hists.append((val_u, f"Unsubtracted (R = {r_val.replace('r0', '0.')})", color_unsub, "-"))
+                        edges = edg_u
+                    if do_iter and name_iter in file:
+                        val_i, edg_i = file[name_iter].to_numpy()
+                        hists.append((val_i, f"Iterative Sub (R = {r_val.replace('r0', '0.')})", color_iter, "-"))
+                        if edges is None: edges = edg_i
+
+                    if hists and edges is not None:
+                        output_path = run_output_dir / f"run_{run_number}_rcone_energy_{r_val}_qa.png"
+                        r_jet_val = float(r_val.replace("r0", "0."))
+                        make_generic_overlay(edges, hists, run_number, output_path, r"Random Cone Energy (GeV)", "Counts", logy=True, legend_loc='upper right', r_jet=r_jet_val)
+
+                # RCone Pt v2 vs Jet Pt v2
+                rcone_ptv2_ratio_unsub = []
+                rcone_ptv2_ratio_iter = []
+                ratio_edges = None
+
+                for r_val in ["r02", "r03"]:
+                    hists = []
+                    edges = None
+
+                    if do_unsub:
+                        name_jet = f"hJetPtv2_raw_{r_val}_unsub"
+                        name_rcone = f"hRConePtv2_unsub_{r_val}"
+                        if name_jet in file and name_rcone in file:
+                            val_jet, edg_j = file[name_jet].to_numpy()
+                            val_rc, edg_r = file[name_rcone].to_numpy()
+                            hists.append((val_jet, "Jet $p_{T}$ Unsubtracted", "blue", "-"))
+                            hists.append((val_rc, "RCone $p_{T}$ Unsubtracted", "blue", "--"))
+                            if edges is None: edges = edg_j
+
+                            # Ratio calculation (only valid when both jet and rcone have counts > 0)
+                            valid = (val_jet > 0) & (val_rc > 0)
+                            ratio_unsub = np.full_like(val_rc, np.nan, dtype=float)
+                            ratio_err_unsub = np.full_like(val_rc, np.nan, dtype=float)
+                            err_jet = file[name_jet].errors()
+                            err_rc = file[name_rcone].errors()
+
+                            ratio_unsub[valid] = val_rc[valid] / val_jet[valid]
+                            ratio_err_unsub[valid] = np.sqrt( (err_rc[valid] / val_jet[valid])**2 + (val_rc[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
+
+                            rcone_ptv2_ratio_unsub.append((ratio_unsub, ratio_err_unsub, f"R = {r_val.replace('r0', '0.')} Unsubtracted", "blue" if r_val=="r02" else "crimson"))
+                            if ratio_edges is None: ratio_edges = edg_j
+
+                    if do_iter:
+                        name_jet = f"hJetPtv2_raw_{r_val}_iter"
+                        name_rcone = f"hRConePtv2_iter_{r_val}"
+                        if name_jet in file and name_rcone in file:
+                            val_jet, edg_j = file[name_jet].to_numpy()
+                            val_rc, edg_r = file[name_rcone].to_numpy()
+                            hists.append((val_jet, "Jet $p_{T}$ Iterative Sub", "red", "-"))
+                            hists.append((val_rc, "RCone $p_{T}$ Iterative Sub", "red", "--"))
+                            if edges is None: edges = edg_j
+
+                            # Ratio calculation (only valid when both jet and rcone have counts > 0)
+                            valid = (val_jet > 0) & (val_rc > 0)
+                            ratio_iter = np.full_like(val_rc, np.nan, dtype=float)
+                            ratio_err_iter = np.full_like(val_rc, np.nan, dtype=float)
+                            err_jet = file[name_jet].errors()
+                            err_rc = file[name_rcone].errors()
+
+                            ratio_iter[valid] = val_rc[valid] / val_jet[valid]
+                            ratio_err_iter[valid] = np.sqrt( (err_rc[valid] / val_jet[valid])**2 + (val_rc[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
+
+                            rcone_ptv2_ratio_iter.append((ratio_iter, ratio_err_iter, f"R = {r_val.replace('r0', '0.')} Iterative Sub", "blue" if r_val=="r02" else "crimson"))
+                            if ratio_edges is None: ratio_edges = edg_j
+
+                    if hists and edges is not None:
+                        output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_qa.png"
+                        r_jet_val = float(r_val.replace("r0", "0."))
+                        make_generic_overlay(edges, hists, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax='auto', legend_loc='upper right', r_jet=r_jet_val)
+
+                # Ratio plots
+                if ratio_edges is not None:
+                    if rcone_ptv2_ratio_unsub:
+                        output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_unsub_qa.png"
+                        valid_unsub = [np.nanmax(vals + errs) for vals, errs, _, _ in rcone_ptv2_ratio_unsub if np.any(~np.isnan(vals))]
+                        max_y = max(valid_unsub) if valid_unsub else 0
+                        ymax_val = 1.0 if max_y > 1.0 else None
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_unsub, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
+
+                        zoom_output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_unsub_zoom_qa.png"
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_unsub, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=0.06, legend_loc='best')
+                    if rcone_ptv2_ratio_iter:
+                        output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_iter_qa.png"
+                        valid_iter = [np.nanmax(vals + errs) for vals, errs, _, _ in rcone_ptv2_ratio_iter if np.any(~np.isnan(vals))]
+                        max_y = max(valid_iter) if valid_iter else 0
+                        ymax_val = 1.0 if max_y > 1.0 else None
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_iter, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
+
+                        zoom_output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_iter_zoom_qa.png"
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_iter, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=0.06, legend_loc='best')
+
+                # Profiles
+                for r_val, color_unsub, color_iter in [("r02", "green", "blue"), ("r03", "green", "blue")]:
+                    profiles = []
+                    edges = None
+                    name_unsub = f"pRConeEtaPt_unsub_{r_val}"
+                    name_iter = f"pRConeEtaPt_iter_{r_val}"
+
+                    if do_unsub and name_unsub in file:
+                        prof_u = file[name_unsub]
+                        val_u = np.copy(prof_u.values())
+                        edg_u = prof_u.axis().edges()
+                        err_u = np.copy(prof_u.errors())
+                        if hasattr(prof_u, "counts"):
+                            try:
+                                cnt_u = prof_u.counts(flow=False)
+                            except TypeError:
+                                cnt_u = prof_u.counts()
+                                if len(cnt_u) == len(val_u) + 2:
+                                    cnt_u = cnt_u[1:-1]
+                            val_u[cnt_u == 0] = np.nan
+                            err_u[cnt_u == 0] = np.nan
+                        else:
+                            empty = (val_u == 0) & (err_u == 0)
+                            val_u[empty] = np.nan
+                            err_u[empty] = np.nan
+                        profiles.append((val_u, err_u, f"Unsubtracted (R = {r_val.replace('r0', '0.')})", color_unsub))
+                        edges = edg_u
+                    if do_iter and name_iter in file:
+                        prof_i = file[name_iter]
+                        val_i = np.copy(prof_i.values())
+                        edg_i = prof_i.axis().edges()
+                        err_i = np.copy(prof_i.errors())
+                        if hasattr(prof_i, "counts"):
+                            try:
+                                cnt_i = prof_i.counts(flow=False)
+                            except TypeError:
+                                cnt_i = prof_i.counts()
+                                if len(cnt_i) == len(val_i) + 2:
+                                    cnt_i = cnt_i[1:-1]
+                            val_i[cnt_i == 0] = np.nan
+                            err_i[cnt_i == 0] = np.nan
+                        else:
+                            empty = (val_i == 0) & (err_i == 0)
+                            val_i[empty] = np.nan
+                            err_i[empty] = np.nan
+                        profiles.append((val_i, err_i, f"Iterative Sub (R = {r_val.replace('r0', '0.')})", color_iter))
+                        if edges is None: edges = edg_i
+
+                    if profiles and edges is not None:
+                        output_path = run_output_dir / f"run_{run_number}_rcone_eta_pt_profile_{r_val}_qa.png"
+                        r_jet_val = float(r_val.replace("r0", "0."))
+                        make_profile_overlay(edges, profiles, run_number, output_path, r"Random Cone $\eta$", r"Average $p_{T}$ (GeV)", legend_loc='best', xlim=(-1.1, 1.1), ymin=-1, add_hline_zero=True, r_jet=r_jet_val)
+
             h2_names = [
                 "h2CaloECentrality_default",
                 "h2CaloECentrality",
@@ -544,6 +849,9 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                 if "_unsub" in name and not do_unsub: continue
                 filtered_h2_names.append(name)
 
+            if do_rcone:
+                filtered_h2_names.extend(["h2RConeEtaZvtx_r02", "h2RConeEtaZvtx_r03"])
+
             calo_cut_label = None
             if "h2CaloECentrality_default" in file and "h2CaloECentrality" in file:
                 val_default, _, _ = file["h2CaloECentrality_default"].to_numpy()
@@ -574,6 +882,9 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                         else:
                             ylim_bottom = -0.9
                             ylim_top = 0.9
+                    elif "h2RConeEtaZvtx" in h2_name:
+                        ylim_bottom = -1.1
+                        ylim_top = 1.1
 
                     extra_label = calo_cut_label if h2_name == "h2CaloECentrality" else None
                     make_2d_plot(hist2d, run_number, output_path, hist_name=h2_name, xlim_left=xlim_left, ylim_bottom=ylim_bottom, ylim_top=ylim_top, extra_label=extra_label)
@@ -651,6 +962,7 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
 
             return None
     except Exception as e:
+        traceback.print_exc()
         return f"Error processing {path}: {e}"
 
 def main():
