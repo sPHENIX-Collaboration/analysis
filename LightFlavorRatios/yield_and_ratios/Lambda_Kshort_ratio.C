@@ -15,8 +15,14 @@
 
 void Lambda_Kshort_ratio()
 {
-  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedKShortSVLoose.root");
-  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedLambdaSVLoose.root");
+  //TFile* lambda_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Lambda2ppi_reco_Usman_patch.root");
+  //TFile* Ks_file = TFile::Open("/gpfs/mnt/gpfs02/sphenix/user/cdean/software/analysis/LightFlavorRatios/geometric_acceptance/simulation/outputKFParticle_Kshort2pipi_reco_Usman_patch.root");
+
+  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Kshort_run3pp_looseCuts_20260608.root");
+  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/cdean/LF_analysis/data_nTuples/output_Lambda0_run3pp_looseCuts_20260608.root");
+
+  //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedKShortSVLoose.root");
+  //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/aopatton/SVLooseJun4/6RunsCombinedLambdaSVLoose.root");
 
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/KShort6RunCombined.root");
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Lambda6RunCombined.root");
@@ -50,6 +56,9 @@ void Lambda_Kshort_ratio()
   std::vector<RooRealVar> Ks_cutvars;
   std::vector<RooRealVar> lambda_cutvars;
 
+  std::vector<RooRealVar> Ks_cutvars_int;
+  std::vector<RooRealVar> lambda_cutvars_int;
+
   for(HistogramInfo& hinfo : diff_variables)
   {
     std::string Ks_branchname = "K_S0_"+hinfo.name;
@@ -65,17 +74,35 @@ void Lambda_Kshort_ratio()
     lambda_args.add(lambda_diffvars[i]);
   }
 
-  HistogramInfo Ks_massbins = BinInfo::mass_bins.at("K_S0");
-  HistogramInfo Lambda_massbins = BinInfo::mass_bins.at("Lambda0");
+  std::map<std::string,HistogramInfo> massbins_map = BinInfo::mass_bins;
 
-  for(const std::string& cutvar : Ks_massbins.cut_vars)
+  HistogramInfo Ks_massbins = massbins_map.at("K_S0");
+  HistogramInfo Lambda_massbins = massbins_map.at("Lambda0");
+
+  for(const std::string& cutvar : Ks_massbins.get_cutvars(Ks_tree))
   {
-    Ks_cutvars.push_back(make_var(cutvar,cutvar,Ks_tree));
+    if(isIntBranch(Ks_tree->GetBranch(cutvar.c_str())))
+    {
+      std::cout << "branch " << cutvar << " is of integral type" << std::endl;
+      Ks_cutvars_int.push_back(make_var(cutvar,cutvar,Ks_tree));
+    }
+    else
+    {
+      Ks_cutvars.push_back(make_var(cutvar,cutvar,Ks_tree));
+    }
   }
 
-  for(const std::string& cutvar : Lambda_massbins.cut_vars)
+  for(const std::string& cutvar : Lambda_massbins.get_cutvars(lambda_tree))
   {
-    lambda_cutvars.push_back(make_var(cutvar,cutvar,lambda_tree));
+    if(isIntBranch(lambda_tree->GetBranch(cutvar.c_str())))
+    {
+      std::cout << "branch " << cutvar << " is of integral type" << std::endl;
+      lambda_cutvars_int.push_back(make_var(cutvar,cutvar,lambda_tree));
+    }
+    else
+    {
+      lambda_cutvars.push_back(make_var(cutvar,cutvar,lambda_tree));
+    }
   }
 
   for(int i=0; i<Ks_cutvars.size(); i++)
@@ -83,20 +110,30 @@ void Lambda_Kshort_ratio()
     Ks_args.add(Ks_cutvars[i]);
   }
 
+  for(int i=0; i<Ks_cutvars_int.size(); i++)
+  {
+    Ks_args.add(Ks_cutvars_int[i]);
+  }
+
   for(int i=0; i<lambda_cutvars.size(); i++)
   {
     lambda_args.add(lambda_cutvars[i]);
   }
 
+  for(int i=0; i<lambda_cutvars_int.size(); i++)
+  {
+    lambda_args.add(lambda_cutvars_int[i]);
+  }
+
   std::string Ks_cuts = Ks_massbins.cut_string;
-  std::string Lambda_cuts = BinInfo::mass_bins.at("Lambda0").cut_string;
+  std::string Lambda_cuts = massbins_map.at("Lambda0").cut_string;
 
   Ks_args.Print();
   lambda_args.Print();
 
   RooDataSet* Ks_ds = new RooDataSet("K_S0","K_S0",Ks_args,RooFit::Import(*Ks_tree));
   RooDataSet* lambda_ds = new RooDataSet("Lambda0","Lambda0",lambda_args,RooFit::Import(*lambda_tree));
-/*
+
   V0DuplicateReader ks_reader(Ks_tree, V0DuplicateReader::ParticleType::K0s);
   V0DuplicateReader lambda_reader(lambda_tree, V0DuplicateReader::ParticleType::Lambda);
 
@@ -123,6 +160,11 @@ void Lambda_Kshort_ratio()
       Ks_cutvars[icut].setVal(ks_reader.get<float>(Ks_cutvars[icut].GetName()));
     }
 
+    for(size_t icut_int = 0; icut_int < Ks_cutvars_int.size(); icut_int++)
+    {
+      Ks_cutvars_int[icut_int].setVal(ks_reader.get<int>(Ks_cutvars_int[icut_int].GetName()));
+    }
+
     Ks_ds->add(Ks_args);
   }
 
@@ -146,9 +188,14 @@ void Lambda_Kshort_ratio()
       lambda_cutvars[icut].setVal(lambda_reader.get<float>(lambda_cutvars[icut].GetName()));
     }
 
+    for(size_t icut_int = 0; icut_int < lambda_cutvars_int.size(); icut_int++)
+    {
+      lambda_cutvars_int[icut_int].setVal(lambda_reader.get<int>(lambda_cutvars_int[icut_int].GetName()));
+    }
+
     lambda_ds->add(lambda_args);
   }
-*/
+
   RooDataSet* Ks_ds_withcuts = (RooDataSet*)Ks_ds->reduce(Ks_args,Ks_cuts.c_str());
   RooDataSet* lambda_ds_withcuts = (RooDataSet*)lambda_ds->reduce(lambda_args,Lambda_cuts.c_str());
 
@@ -190,8 +237,8 @@ void Lambda_Kshort_ratio()
 
   TFile* fout = new TFile("fits.root","RECREATE");
 
-  ResonanceRatio analyzer(lambda_model,kshort_model,
-                          fout,"lambdaKsratio","#Lambda/2K_{S}^{0} ratio (daughter pT > 200 MeV)",1./2.,false,
+  ResonanceRatio analyzer(lambda_model,kshort_model,massbins_map,
+                          fout,"lambdaKsratio","(#Lambda^{0}+#bar{#Lambda^{0}})/2K_{S}^{0} ratio",1./2.,false,
                           diff_variables,corrections);
 
   analyzer.calculate_ratios_unbinned(lambda_ds_withcuts,Ks_ds_withcuts);

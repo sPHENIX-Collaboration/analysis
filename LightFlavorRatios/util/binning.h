@@ -50,14 +50,12 @@ struct HistogramInfo
   std::string title;
   std::string axis_label;
   std::vector<float> bins;
-  std::vector<std::string> cut_vars;
   std::string cut_string;
 
   HistogramInfo(const std::string& hname, const std::string& htitle, const std::vector<float>& hbins,
                 const std::string& haxislabel = "", const std::string& hcutstring = "")
   : name(hname), title(htitle), bins(hbins), axis_label(haxislabel), cut_string(hcutstring)
   {
-    cut_vars = cutvars_from_cutstring(cut_string);
   }
 
   // constructor for uniform binning
@@ -65,8 +63,6 @@ struct HistogramInfo
                 const std::string& haxislabel = "", const std::string& hcutstring = "")
   : name(hname), title(htitle), axis_label(haxislabel), cut_string(hcutstring)
   {
-    cut_vars = cutvars_from_cutstring(cut_string);
-
     const float interval = (xmax-xmin)/nBins;
     for(int i=0; i<=nBins; i++)
     {
@@ -93,7 +89,45 @@ struct HistogramInfo
       return "";
     }
   }
+
+  std::vector<std::string> get_cutvars(TTree* t)
+  {
+    std::vector<std::string> cut_vars;
+
+    TObjArray* branches = t->GetListOfBranches();
+    size_t nbranches = t->GetNbranches();
+    for(size_t i=0;i<nbranches;i++)
+    {
+      std::string branchname = branches->At(i)->GetName();
+      if(cut_string.find(branchname) != std::string::npos)
+      {
+        cut_vars.push_back(branchname);
+      }
+    }
+
+    return cut_vars;
+  }
 };
+
+bool isIntBranch(TBranch* b)
+{
+  TClass* c;
+  EDataType type;
+  b->GetExpectedType(c,type);
+  std::vector<EDataType> integral_datatypes = {
+    kInt_t,
+    kUInt_t,
+    kChar_t,
+    kUChar_t,
+    kShort_t,
+    kUShort_t,
+    kLong_t,
+    kULong_t,
+    kLong64_t,
+    kULong64_t
+  };
+  return std::find(integral_datatypes.begin(),integral_datatypes.end(),type)!=integral_datatypes.end();
+}
 
 int findBin(float val, std::vector<float> bins)
 {
@@ -158,8 +192,20 @@ std::vector<TH1F*> makeDifferentialHistograms(const HistogramInfo& hinfo_x, cons
   return h_out;
 }
 
+
 namespace BinInfo
 {
+  // applied to all daughter tracks
+  static const std::string general_daughter_track_cuts = "track_1_bunch_crossing > 0 && track_1_bunch_crossing < 360 && "
+                                                         "track_2_bunch_crossing > 0 && track_2_bunch_crossing < 360 && "
+                                                         "track_1_pT>0.2 && track_2_pT>0.2";
+  // replaces KFParticle selection cuts for MC sample
+  static const std::string MC_daughter_selection_cuts = "track_1_MVTX_nHits > 0 && track_2_MVTX_nHits > 0 && abs(primary_vertex_z) < 10 && track_1_INTT_nHits > 0 && track_2_INTT_nHits > 0 && track_1_TPC_nHits > 19 && track_2_TPC_nHits > 19 && (track_1_chi2/track_1_nDoF) <= 300 && (track_2_chi2/track_2_nDoF) <= 300";
+
+  static const std::string MC_Ks_cuts = "abs(track_1_PV_DCA_xy) >= 0.01 && abs(track_2_PV_DCA_xy) >= 0.01 && K_S0_DIRA >= 0.98 && track_1_track_2_DCA_xy <= 1.25 && track_1_track_2_DCA <= 0.75";
+
+  static const std::string MC_lambda_cuts = "abs(track_1_PV_DCA_xy) >= 0.01 && abs(track_2_PV_DCA_xy) >= 0.01 && Lambda0_DIRA >= 0.98 && track_1_track_2_DCA_xy < 1.25 && track_1_track_2_DCA < 0.75";
+                                                 
   //static const HistogramInfo final_pt_bins("pT","pT",10,0.2,3.,"pT [GeV/c]");
   // special bins to sync with Tony's tracking efficiency
   static const HistogramInfo final_pt_bins("pT","pT",{0.5,0.6,0.7,0.8,0.9,1.,1.1,1.2,1.3,1.4,1.5,1.8,2.1,2.4,2.7,3.,3.99999},"pT [GeV/c]");
@@ -175,14 +221,58 @@ namespace BinInfo
   static const HistogramInfo ntrack_bins("ntrk","nTracks",201,-0.5,200.5,"number of tracks");
 
   static const std::map<std::string,HistogramInfo> mass_bins = {
-    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.1,1.,"mass [GeV/c^{2}]",
-                           "track_1_pT>0.2 && track_2_pT>0.2")},
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts)},
     {"phi", HistogramInfo("phi_mass","#phi mass",100,0.95,1.1,"mass [GeV/c^{2}]",
                           "track_1_MVTX_nStates>=2 && track_2_MVTX_nStates>=2 &&"
-                          "track_1_IP_xy<=0.05 && track_2_IP_xy<=0.05 && "
+                          "track_1_PV_DCA_xy<=0.05 && track_2_PV_DCA_xy<=0.05 && "
                           "phi_decayLength<=0.05")},
-    {"Lambda0",HistogramInfo("lambda_mass","#Lambda mass",100,0.1,1.5,"mass [GeV/c^{2}]",
-                             "track_1_pT>0.2 && track_2_pT>0.2")}
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                             general_daughter_track_cuts)}
   };
+
+  static const std::map<std::string,HistogramInfo> mass_bins_pos = {
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts)},
+    {"phi", HistogramInfo("phi_mass","#phi mass",100,0.95,1.1,"mass [GeV/c^{2}]",
+                          "track_1_MVTX_nStates>=2 && track_2_MVTX_nStates>=2 &&"
+                          "track_1_PV_DCA_xy<=0.05 && track_2_PV_DCA_xy<=0.05 && "
+                          "phi_decayLength<=0.05")},
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                             "track_1_charge==-1 && track_2_charge==1 && "+general_daughter_track_cuts)}
+  };
+
+  static const std::map<std::string,HistogramInfo> mass_bins_neg = {
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts)},
+    {"phi", HistogramInfo("phi_mass","#phi mass",100,0.95,1.1,"mass [GeV/c^{2}]",
+                          "track_1_MVTX_nStates>=2 && track_2_MVTX_nStates>=2 &&"
+                          "track_1_PV_DCA_xy<=0.05 && track_2_PV_DCA_xy<=0.05 && "
+                          "phi_decayLength<=0.05")},
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                             "track_1_charge==1 && track_2_charge==-1 && "+general_daughter_track_cuts)}
+  };
+
+  static const std::map<std::string,HistogramInfo> mass_bins_MC = {
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_Ks_cuts)},
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_lambda_cuts)}
+  };
+
+  static const std::map<std::string,HistogramInfo> mass_bins_MC_pos = {
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_Ks_cuts)},
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                           "track_1_charge==-1 && track_2_charge==1 && " + general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_lambda_cuts)}
+  };
+
+  static const std::map<std::string,HistogramInfo> mass_bins_MC_neg = {
+    {"K_S0", HistogramInfo("Kshort_mass","K^{0}_{S} mass",100,0.4,0.6,"mass [GeV/c^{2}]",
+                           general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_Ks_cuts)},
+    {"Lambda0",HistogramInfo("Lambda_mass","#Lambda mass",100,1.08,1.15,"mass [GeV/c^{2}]",
+                           "track_1_charge==1 && track_2_charge==-1 && " + general_daughter_track_cuts + " && " + MC_daughter_selection_cuts + " && " + MC_lambda_cuts)}
+  };
+
 } // namespace BinInfo
 #endif // BINNING_H
