@@ -294,7 +294,7 @@ def make_1d_plot(hist1d, run_number, output_path, hist_name="", extra_labels=Non
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
-def process_file(path, output_dir=None, xmax=None, ymax=1e8):
+def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mult=True, do_unsub=True, do_rcone=True):
     path = Path(path)
     if not path.exists():
         return f"File not found: {path}"
@@ -327,70 +327,65 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
             ]
 
             for hist_iter_name, hist_mult_name, hist_unsub_name, out_filename, extra_energy_cut, is_v3, r_jet in hist_pairs:
-                if hist_iter_name not in file:
-                    print(f"Warning: {hist_iter_name} not found in {path}")
+                hists = []
+                edges_iter = None
+
+                if do_iter and hist_iter_name in file:
+                    hist_iter = file[hist_iter_name]
+                    values_iter, edges_iter = hist_iter.to_numpy()
+                    hists.append((values_iter, "Iterative Bkg Sub", "blue"))
+
+                if do_mult and hist_mult_name in file:
+                    hist_mult = file[hist_mult_name]
+                    values_mult, edges_mult = hist_mult.to_numpy()
+                    if edges_iter is None:
+                        edges_iter = edges_mult
+                    hists.append((values_mult, "Multiplicity Bkg Sub", "crimson"))
+
+                if do_unsub and hist_unsub_name in file:
+                    hist_unsub = file[hist_unsub_name]
+                    values_unsub, edges_unsub = hist_unsub.to_numpy()
+                    if edges_iter is None:
+                        edges_iter = edges_unsub
+                    hists.append((values_unsub, "Unsubtracted", "green"))
+
+                if not hists or edges_iter is None:
                     continue
-                if hist_mult_name not in file:
-                    print(f"Warning: {hist_mult_name} not found in {path}")
-                    continue
-                if hist_unsub_name not in file:
-                    print(f"Warning: {hist_unsub_name} not found in {path}")
-                    continue
-
-                hist_iter = file[hist_iter_name]
-                values_iter, edges_iter = hist_iter.to_numpy()
-                errors_iter = hist_iter.errors()
-
-                hist_mult = file[hist_mult_name]
-                values_mult, edges_mult = hist_mult.to_numpy()
-                errors_mult = hist_mult.errors()
-
-                hist_unsub = file[hist_unsub_name]
-                values_unsub, edges_unsub = hist_unsub.to_numpy()
-                errors_unsub = hist_unsub.errors()
-
-                # Using edges from the iter histogram for centers
-                centers_x = (edges_iter[:-1] + edges_iter[1:]) / 2.0
 
                 if run_output_dir is not None:
-                    hists = [
-                        (values_iter, "Iterative Bkg Sub", "blue"),
-                        (values_mult, "Multiplicity Bkg Sub", "crimson"),
-                        (values_unsub, "Unsubtracted", "green"),
-                    ]
-
                     output_path = run_output_dir / out_filename
                     make_combined_plot(edges_iter, hists, run_number, output_path, xmax=xmax, ymax=ymax, extra_energy_cut=extra_energy_cut, is_v3=is_v3, r_jet=r_jet)
 
-            hist_ff_r02_name = "hJetPtFlowFail_r02_iter"
-            hist_ff_r03_name = "hJetPtFlowFail_r03_iter"
+            if do_iter:
+                hist_ff_r02_name = "hJetPtFlowFail_r02_iter"
+                hist_ff_r03_name = "hJetPtFlowFail_r03_iter"
 
-            if hist_ff_r02_name in file and hist_ff_r03_name in file:
-                hist_ff_r02 = file[hist_ff_r02_name]
-                values_ff_r02, edges_ff_r02 = hist_ff_r02.to_numpy()
+                if hist_ff_r02_name in file and hist_ff_r03_name in file:
+                    hist_ff_r02 = file[hist_ff_r02_name]
+                    values_ff_r02, edges_ff_r02 = hist_ff_r02.to_numpy()
 
-                hist_ff_r03 = file[hist_ff_r03_name]
-                values_ff_r03, edges_ff_r03 = hist_ff_r03.to_numpy()
+                    hist_ff_r03 = file[hist_ff_r03_name]
+                    values_ff_r03, edges_ff_r03 = hist_ff_r03.to_numpy()
 
-                if run_output_dir is not None:
-                    hists_ff = [
-                        (values_ff_r02, r"Iterative Bkg Sub ($R = 0.2$)", "blue"),
-                        (values_ff_r03, r"Iterative Bkg Sub ($R = 0.3$)", "crimson"),
-                    ]
+                    if run_output_dir is not None:
+                        hists_ff = [
+                            (values_ff_r02, r"Iterative Bkg Sub ($R = 0.2$)", "blue"),
+                            (values_ff_r03, r"Iterative Bkg Sub ($R = 0.3$)", "crimson"),
+                        ]
 
-                    output_path = run_output_dir / f"run_{run_number}_flowfail_iter_qa.png"
-                    make_combined_plot(
-                        edges_ff_r02,
-                        hists_ff,
-                        run_number,
-                        output_path,
-                        xmax=xmax,
-                        ymax=1e4,
-                        extra_energy_cut=True,
-                        is_v3=False,
-                        r_jet=None,
-                        flow_fail=True,
-                    )
+                        output_path = run_output_dir / f"run_{run_number}_flowfail_iter_qa.png"
+                        make_combined_plot(
+                            edges_ff_r02,
+                            hists_ff,
+                            run_number,
+                            output_path,
+                            xmax=xmax,
+                            ymax=1e4,
+                            extra_energy_cut=True,
+                            is_v3=False,
+                            r_jet=None,
+                            flow_fail=True,
+                        )
 
             eta_hist_pairs = [
                 (10.0, "pt10", 10),
@@ -410,39 +405,53 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
 
             for min_pt_val, pt_suffix, pt_label in eta_hist_pairs:
                 for h2_iter_name, h2_mult_name, h2_unsub_name, extra_energy_cut, is_v3, r_jet, label_prefix in eta_configs:
-                    if h2_iter_name not in file or h2_mult_name not in file or h2_unsub_name not in file:
+                    hists_eta = []
+                    yedges = None
+
+                    if do_iter and h2_iter_name in file:
+                        h2_iter = file[h2_iter_name]
+                        val_iter, xedges_iter, yedges_i = h2_iter.to_numpy()
+                        if yedges is None:
+                            yedges = yedges_i
+                        idx_pt = np.searchsorted(xedges_iter[:-1], min_pt_val, side='left')
+                        if idx_pt >= len(xedges_iter) - 1:
+                            idx_pt = 0
+                        proj_iter = np.sum(val_iter[idx_pt:, :], axis=0)
+                        sum_iter = np.sum(proj_iter)
+                        deta = yedges[1] - yedges[0]
+                        norm_iter = proj_iter / (sum_iter * deta) if sum_iter > 0 else proj_iter
+                        hists_eta.append((norm_iter, "Iterative Bkg Sub", "blue"))
+
+                    if do_mult and h2_mult_name in file:
+                        h2_mult = file[h2_mult_name]
+                        val_mult, xedges_mult, yedges_m = h2_mult.to_numpy()
+                        if yedges is None:
+                            yedges = yedges_m
+                        idx_pt = np.searchsorted(xedges_mult[:-1], min_pt_val, side='left')
+                        if idx_pt >= len(xedges_mult) - 1:
+                            idx_pt = 0
+                        proj_mult = np.sum(val_mult[idx_pt:, :], axis=0)
+                        sum_mult = np.sum(proj_mult)
+                        deta = yedges[1] - yedges[0]
+                        norm_mult = proj_mult / (sum_mult * deta) if sum_mult > 0 else proj_mult
+                        hists_eta.append((norm_mult, "Multiplicity Bkg Sub", "crimson"))
+
+                    if do_unsub and h2_unsub_name in file:
+                        h2_unsub = file[h2_unsub_name]
+                        val_unsub, xedges_unsub, yedges_u = h2_unsub.to_numpy()
+                        if yedges is None:
+                            yedges = yedges_u
+                        idx_pt = np.searchsorted(xedges_unsub[:-1], min_pt_val, side='left')
+                        if idx_pt >= len(xedges_unsub) - 1:
+                            idx_pt = 0
+                        proj_unsub = np.sum(val_unsub[idx_pt:, :], axis=0)
+                        sum_unsub = np.sum(proj_unsub)
+                        deta = yedges[1] - yedges[0]
+                        norm_unsub = proj_unsub / (sum_unsub * deta) if sum_unsub > 0 else proj_unsub
+                        hists_eta.append((norm_unsub, "Unsubtracted", "green"))
+
+                    if not hists_eta or yedges is None:
                         continue
-
-                    h2_iter = file[h2_iter_name]
-                    h2_mult = file[h2_mult_name]
-                    h2_unsub = file[h2_unsub_name]
-
-                    val_iter, xedges_iter, yedges = h2_iter.to_numpy()
-                    val_mult, _, _ = h2_mult.to_numpy()
-                    val_unsub, _, _ = h2_unsub.to_numpy()
-
-                    idx_pt = np.searchsorted(xedges_iter[:-1], min_pt_val, side='left')
-                    if idx_pt >= len(xedges_iter) - 1:
-                        idx_pt = 0
-
-                    proj_iter = np.sum(val_iter[idx_pt:, :], axis=0)
-                    proj_mult = np.sum(val_mult[idx_pt:, :], axis=0)
-                    proj_unsub = np.sum(val_unsub[idx_pt:, :], axis=0)
-
-                    deta = yedges[1] - yedges[0]
-                    sum_iter = np.sum(proj_iter)
-                    sum_mult = np.sum(proj_mult)
-                    sum_unsub = np.sum(proj_unsub)
-
-                    norm_iter = proj_iter / (sum_iter * deta) if sum_iter > 0 else proj_iter
-                    norm_mult = proj_mult / (sum_mult * deta) if sum_mult > 0 else proj_mult
-                    norm_unsub = proj_unsub / (sum_unsub * deta) if sum_unsub > 0 else proj_unsub
-
-                    hists_eta = [
-                        (norm_iter, "Iterative Bkg Sub", "blue"),
-                        (norm_mult, "Multiplicity Bkg Sub", "crimson"),
-                        (norm_unsub, "Unsubtracted", "green"),
-                    ]
 
                     if r_jet == 0.2:
                         if label_prefix == "":
@@ -528,6 +537,13 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                 "h2JetPtv2_r03_unsub",
             }
 
+            filtered_h2_names = []
+            for name in h2_names:
+                if "_iter" in name and not do_iter: continue
+                if "_mult" in name and not do_mult: continue
+                if "_unsub" in name and not do_unsub: continue
+                filtered_h2_names.append(name)
+
             calo_cut_label = None
             if "h2CaloECentrality_default" in file and "h2CaloECentrality" in file:
                 val_default, _, _ = file["h2CaloECentrality_default"].to_numpy()
@@ -539,7 +555,7 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                     pct_cut = (events_cut / sum_default) * 100.0
                     calo_cut_label = f"Events Cut: {pct_cut:.2f}%"
 
-            for h2_name in h2_names:
+            for h2_name in filtered_h2_names:
                 if h2_name not in file:
                     print(f"Warning: {h2_name} not found in {path}")
                     continue
@@ -607,7 +623,13 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8):
                 ("hCaloV2Fail_mult", [r"$|z| < 10$ cm & MB", "Good Calo-Cent"], False),
             ]
 
-            for h1_name, extra_labels, logy in h1_configs:
+            filtered_h1_configs = []
+            for cfg in h1_configs:
+                if "_iter" in cfg[0] and not do_iter: continue
+                if "_mult" in cfg[0] and not do_mult: continue
+                filtered_h1_configs.append(cfg)
+
+            for h1_name, extra_labels, logy in filtered_h1_configs:
                 if h1_name not in file:
                     print(f"Warning: {h1_name} not found in {path}")
                     continue
@@ -635,6 +657,10 @@ def main():
     parser = argparse.ArgumentParser(description="Plot Jet Pt QA for iter and mult bkg subtraction per run.")
     parser.add_argument("-f", "--file", type=Path, help="Path to a text file containing ROOT file paths (one per line).")
     parser.add_argument("-o", "--output-dir", type=Path, default=Path("."), help="Directory to save the plots (default: current directory).")
+    parser.add_argument("--do-iter", type=int, default=1, help="Process iter bkg sub (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-mult", type=int, default=1, help="Process mult bkg sub (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-unsub", type=int, default=1, help="Process unsubtracted (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-rcone", type=int, default=1, help="Process random cones (1=True, 0=False). Default: 1")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -663,7 +689,7 @@ def main():
     print(f"Found {len(file_list)} input files. Starting processing...")
 
     files_to_process = [Path(p) for p in file_list]
-    process_func = functools.partial(process_file, output_dir=args.output_dir)
+    process_func = functools.partial(process_file, output_dir=args.output_dir, do_iter=bool(args.do_iter), do_mult=bool(args.do_mult), do_unsub=bool(args.do_unsub), do_rcone=bool(args.do_rcone))
     max_workers = min(os.cpu_count() or 4, 32)
 
     errors = []
