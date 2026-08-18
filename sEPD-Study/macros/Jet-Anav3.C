@@ -60,9 +60,19 @@ class JetAnalysisv3
     save_results();
   }
 
+  void set_do_unsub(bool b = true) { m_do_unsub = b; }
+  void set_do_iter(bool b = true) { m_do_iter = b; }
+  void set_do_mult(bool b = true) { m_do_mult = b; }
+
+  bool get_do_unsub() const { return m_do_unsub; }
+  bool get_do_iter() const { return m_do_iter; }
+  bool get_do_mult() const { return m_do_mult; }
+
   void set_jet_pt_min(double jet_pt_min) { m_jet_pt_min = jet_pt_min; }
+  double get_jet_pt_min() const { return m_jet_pt_min; }
 
   void set_verbosity(int verbosity) { m_verbosity = verbosity; }
+  int get_verbosity() const { return m_verbosity; }
 
  private:
   static constexpr size_t m_bins_cent = 60;
@@ -201,6 +211,11 @@ class JetAnalysisv3
   std::string m_output_dir;
   int m_verbosity{0};
 
+  // Flags
+  bool m_do_unsub{true};
+  bool m_do_iter{true};
+  bool m_do_mult{true};
+
   // Jet Cuts
   double m_jet_pt_min{10}; /*GeV*/
   double m_jet_eta_max_r02{0.9};
@@ -263,19 +278,36 @@ void JetAnalysisv3::setup_chain()
   std::unordered_set<std::string> branchNames = {"event", "centrality",
                                                  "emcal_energy", "ihcal_energy", "ohcal_energy",
                                                  "psi2_raw_S", "psi2_raw_N", "psi2_raw_NS",
-                                                 "psi2_S", "psi2_N", "psi2_NS",
-                                                 "calo_v2_iter", "calo_v2_mult",
-                                                 "seeds_iter", "seeds_mult",
-                                                 "is_flow_failure_iter", "is_flow_failure_mult",
-                                                 "max_pt_iter_r02", "max_pt_mult_r02",
-                                                 "max_pt_iter_r03", "max_pt_mult_r03",
-                                                 "pt_iter_r02", "pt_calib_iter_r02", "e_iter_r02", "phi_iter_r02", "eta_iter_r02",
-                                                 "pt_mult_r02", "pt_calib_mult_r02", "e_mult_r02", "phi_mult_r02", "eta_mult_r02",
-                                                 "pt_iter_r03", "pt_calib_iter_r03", "e_iter_r03", "phi_iter_r03", "eta_iter_r03",
-                                                 "pt_mult_r03", "pt_calib_mult_r03", "e_mult_r03", "phi_mult_r03", "eta_mult_r03",
-                                                 "max_pt_unsub_r02", "max_pt_unsub_r03",
-                                                 "pt_unsub_r02", "pt_calib_unsub_r02", "e_unsub_r02", "phi_unsub_r02", "eta_unsub_r02",
-                                                 "pt_unsub_r03", "pt_calib_unsub_r03", "e_unsub_r03", "phi_unsub_r03", "eta_unsub_r03"};
+                                                 "psi2_S", "psi2_N", "psi2_NS"};
+
+  if (m_do_iter)
+  {
+    branchNames.insert({
+        "calo_v2_iter", "seeds_iter", "is_flow_failure_iter",
+        "max_pt_iter_r02", "max_pt_iter_r03",
+        "pt_iter_r02", "pt_calib_iter_r02", "e_iter_r02", "phi_iter_r02", "eta_iter_r02",
+        "pt_iter_r03", "pt_calib_iter_r03", "e_iter_r03", "phi_iter_r03", "eta_iter_r03"
+    });
+  }
+
+  if (m_do_mult)
+  {
+    branchNames.insert({
+        "calo_v2_mult", "seeds_mult", "is_flow_failure_mult",
+        "max_pt_mult_r02", "max_pt_mult_r03",
+        "pt_mult_r02", "pt_calib_mult_r02", "e_mult_r02", "phi_mult_r02", "eta_mult_r02",
+        "pt_mult_r03", "pt_calib_mult_r03", "e_mult_r03", "phi_mult_r03", "eta_mult_r03"
+    });
+  }
+
+  if (m_do_unsub)
+  {
+    branchNames.insert({
+        "max_pt_unsub_r02", "max_pt_unsub_r03",
+        "pt_unsub_r02", "pt_calib_unsub_r02", "e_unsub_r02", "phi_unsub_r02", "eta_unsub_r02",
+        "pt_unsub_r03", "pt_calib_unsub_r03", "e_unsub_r03", "phi_unsub_r03", "eta_unsub_r03"
+    });
+  }
 
   // Check Branch Status
   for (const auto &branchName : branchNames)
@@ -308,59 +340,67 @@ void JetAnalysisv3::setup_chain()
   m_chain->SetBranchAddress("psi2_N", &m_event_data.psi2_N);
   m_chain->SetBranchAddress("psi2_NS", &m_event_data.psi2_NS);
 
-  m_chain->SetBranchAddress("seeds_iter", &m_event_data.seeds_iter);
-  m_chain->SetBranchAddress("seeds_mult", &m_event_data.seeds_mult);
+  if (m_do_iter)
+  {
+    m_chain->SetBranchAddress("seeds_iter", &m_event_data.seeds_iter);
+    m_chain->SetBranchAddress("calo_v2_iter", &m_event_data.calo_v2_iter);
+    m_chain->SetBranchAddress("is_flow_failure_iter", &m_event_data.is_flow_failure_iter);
 
-  m_chain->SetBranchAddress("calo_v2_iter", &m_event_data.calo_v2_iter);
-  m_chain->SetBranchAddress("calo_v2_mult", &m_event_data.calo_v2_mult);
+    m_chain->SetBranchAddress("max_pt_iter_r02", &m_event_data.iter_r02.max_pt);
+    m_chain->SetBranchAddress("max_pt_iter_r03", &m_event_data.iter_r03.max_pt);
 
-  m_chain->SetBranchAddress("is_flow_failure_iter", &m_event_data.is_flow_failure_iter);
-  m_chain->SetBranchAddress("is_flow_failure_mult", &m_event_data.is_flow_failure_mult);
+    m_chain->SetBranchAddress("pt_iter_r02", &m_event_data.iter_r02.pt);
+    m_chain->SetBranchAddress("pt_calib_iter_r02", &m_event_data.iter_r02.pt_calib);
+    m_chain->SetBranchAddress("e_iter_r02", &m_event_data.iter_r02.e);
+    m_chain->SetBranchAddress("phi_iter_r02", &m_event_data.iter_r02.phi);
+    m_chain->SetBranchAddress("eta_iter_r02", &m_event_data.iter_r02.eta);
 
-  m_chain->SetBranchAddress("max_pt_iter_r02", &m_event_data.iter_r02.max_pt);
-  m_chain->SetBranchAddress("max_pt_iter_r03", &m_event_data.iter_r03.max_pt);
+    m_chain->SetBranchAddress("pt_iter_r03", &m_event_data.iter_r03.pt);
+    m_chain->SetBranchAddress("pt_calib_iter_r03", &m_event_data.iter_r03.pt_calib);
+    m_chain->SetBranchAddress("e_iter_r03", &m_event_data.iter_r03.e);
+    m_chain->SetBranchAddress("phi_iter_r03", &m_event_data.iter_r03.phi);
+    m_chain->SetBranchAddress("eta_iter_r03", &m_event_data.iter_r03.eta);
+  }
 
-  m_chain->SetBranchAddress("max_pt_mult_r02", &m_event_data.mult_r02.max_pt);
-  m_chain->SetBranchAddress("max_pt_mult_r03", &m_event_data.mult_r03.max_pt);
+  if (m_do_mult)
+  {
+    m_chain->SetBranchAddress("seeds_mult", &m_event_data.seeds_mult);
+    m_chain->SetBranchAddress("calo_v2_mult", &m_event_data.calo_v2_mult);
+    m_chain->SetBranchAddress("is_flow_failure_mult", &m_event_data.is_flow_failure_mult);
 
-  m_chain->SetBranchAddress("max_pt_unsub_r02", &m_event_data.unsub_r02.max_pt);
-  m_chain->SetBranchAddress("max_pt_unsub_r03", &m_event_data.unsub_r03.max_pt);
+    m_chain->SetBranchAddress("max_pt_mult_r02", &m_event_data.mult_r02.max_pt);
+    m_chain->SetBranchAddress("max_pt_mult_r03", &m_event_data.mult_r03.max_pt);
 
-  m_chain->SetBranchAddress("pt_iter_r02", &m_event_data.iter_r02.pt);
-  m_chain->SetBranchAddress("pt_calib_iter_r02", &m_event_data.iter_r02.pt_calib);
-  m_chain->SetBranchAddress("e_iter_r02", &m_event_data.iter_r02.e);
-  m_chain->SetBranchAddress("phi_iter_r02", &m_event_data.iter_r02.phi);
-  m_chain->SetBranchAddress("eta_iter_r02", &m_event_data.iter_r02.eta);
+    m_chain->SetBranchAddress("pt_mult_r02", &m_event_data.mult_r02.pt);
+    m_chain->SetBranchAddress("pt_calib_mult_r02", &m_event_data.mult_r02.pt_calib);
+    m_chain->SetBranchAddress("e_mult_r02", &m_event_data.mult_r02.e);
+    m_chain->SetBranchAddress("phi_mult_r02", &m_event_data.mult_r02.phi);
+    m_chain->SetBranchAddress("eta_mult_r02", &m_event_data.mult_r02.eta);
 
-  m_chain->SetBranchAddress("pt_mult_r02", &m_event_data.mult_r02.pt);
-  m_chain->SetBranchAddress("pt_calib_mult_r02", &m_event_data.mult_r02.pt_calib);
-  m_chain->SetBranchAddress("e_mult_r02", &m_event_data.mult_r02.e);
-  m_chain->SetBranchAddress("phi_mult_r02", &m_event_data.mult_r02.phi);
-  m_chain->SetBranchAddress("eta_mult_r02", &m_event_data.mult_r02.eta);
+    m_chain->SetBranchAddress("pt_mult_r03", &m_event_data.mult_r03.pt);
+    m_chain->SetBranchAddress("pt_calib_mult_r03", &m_event_data.mult_r03.pt_calib);
+    m_chain->SetBranchAddress("e_mult_r03", &m_event_data.mult_r03.e);
+    m_chain->SetBranchAddress("phi_mult_r03", &m_event_data.mult_r03.phi);
+    m_chain->SetBranchAddress("eta_mult_r03", &m_event_data.mult_r03.eta);
+  }
 
-  m_chain->SetBranchAddress("pt_iter_r03", &m_event_data.iter_r03.pt);
-  m_chain->SetBranchAddress("pt_calib_iter_r03", &m_event_data.iter_r03.pt_calib);
-  m_chain->SetBranchAddress("e_iter_r03", &m_event_data.iter_r03.e);
-  m_chain->SetBranchAddress("phi_iter_r03", &m_event_data.iter_r03.phi);
-  m_chain->SetBranchAddress("eta_iter_r03", &m_event_data.iter_r03.eta);
+  if (m_do_unsub)
+  {
+    m_chain->SetBranchAddress("max_pt_unsub_r02", &m_event_data.unsub_r02.max_pt);
+    m_chain->SetBranchAddress("max_pt_unsub_r03", &m_event_data.unsub_r03.max_pt);
 
-  m_chain->SetBranchAddress("pt_mult_r03", &m_event_data.mult_r03.pt);
-  m_chain->SetBranchAddress("pt_calib_mult_r03", &m_event_data.mult_r03.pt_calib);
-  m_chain->SetBranchAddress("e_mult_r03", &m_event_data.mult_r03.e);
-  m_chain->SetBranchAddress("phi_mult_r03", &m_event_data.mult_r03.phi);
-  m_chain->SetBranchAddress("eta_mult_r03", &m_event_data.mult_r03.eta);
+    m_chain->SetBranchAddress("pt_unsub_r02", &m_event_data.unsub_r02.pt);
+    m_chain->SetBranchAddress("pt_calib_unsub_r02", &m_event_data.unsub_r02.pt_calib);
+    m_chain->SetBranchAddress("e_unsub_r02", &m_event_data.unsub_r02.e);
+    m_chain->SetBranchAddress("phi_unsub_r02", &m_event_data.unsub_r02.phi);
+    m_chain->SetBranchAddress("eta_unsub_r02", &m_event_data.unsub_r02.eta);
 
-  m_chain->SetBranchAddress("pt_unsub_r02", &m_event_data.unsub_r02.pt);
-  m_chain->SetBranchAddress("pt_calib_unsub_r02", &m_event_data.unsub_r02.pt_calib);
-  m_chain->SetBranchAddress("e_unsub_r02", &m_event_data.unsub_r02.e);
-  m_chain->SetBranchAddress("phi_unsub_r02", &m_event_data.unsub_r02.phi);
-  m_chain->SetBranchAddress("eta_unsub_r02", &m_event_data.unsub_r02.eta);
-
-  m_chain->SetBranchAddress("pt_unsub_r03", &m_event_data.unsub_r03.pt);
-  m_chain->SetBranchAddress("pt_calib_unsub_r03", &m_event_data.unsub_r03.pt_calib);
-  m_chain->SetBranchAddress("e_unsub_r03", &m_event_data.unsub_r03.e);
-  m_chain->SetBranchAddress("phi_unsub_r03", &m_event_data.unsub_r03.phi);
-  m_chain->SetBranchAddress("eta_unsub_r03", &m_event_data.unsub_r03.eta);
+    m_chain->SetBranchAddress("pt_unsub_r03", &m_event_data.unsub_r03.pt);
+    m_chain->SetBranchAddress("pt_calib_unsub_r03", &m_event_data.unsub_r03.pt_calib);
+    m_chain->SetBranchAddress("e_unsub_r03", &m_event_data.unsub_r03.e);
+    m_chain->SetBranchAddress("phi_unsub_r03", &m_event_data.unsub_r03.phi);
+    m_chain->SetBranchAddress("eta_unsub_r03", &m_event_data.unsub_r03.eta);
+  }
 
   std::cout << "Finished... setup_chain" << std::endl;
 }
@@ -429,24 +469,35 @@ void JetAnalysisv3::init_hists()
 
   m_hists1D["hCentrality"] = std::make_unique<TH1F>("hCentrality", "|z| < 10 cm & MB; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
 
-  m_hists1D["hCaloV2Fail_iter"] = std::make_unique<TH1F>("hCaloV2Fail_iter", "; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
-  clone_hist(m_hists1D, "hCaloV2Fail_iter", "hCaloV2Fail_mult");
+  if (m_do_iter)
+  {
+    m_hists1D["hCaloV2Fail_iter"] = std::make_unique<TH1F>("hCaloV2Fail_iter", "; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+  }
+  if (m_do_mult)
+  {
+    m_hists1D["hCaloV2Fail_mult"] = std::make_unique<TH1F>("hCaloV2Fail_mult", "; Centrality [%]; Events", m_bins_cent, m_cent_low, m_cent_high);
+  }
 
   int bins_pt_eta2D = 70;
   double pt_eta2D_low = 10;
   double pt_eta2D_high = 80;
 
-  for (const std::string r : {"r02", "r03"})
+  std::vector<std::string> ue_list;
+  if (m_do_iter) ue_list.push_back("iter");
+  if (m_do_mult) ue_list.push_back("mult");
+  if (m_do_unsub) ue_list.push_back("unsub");
+
+  for (const char *r : {"r02", "r03"})
   {
-    for (const std::string ue : {"iter", "mult", "unsub"})
+    for (const std::string &ue : ue_list)
     {
       std::string base = std::format("hJetPt_{}_{}", r, ue);
       m_hists1D[base] = std::make_unique<TH1F>(base.c_str(), "; p_{T} [GeV]; Jets / 1 GeV", bins_pt, pt_low, pt_high);
       clone_hist(m_hists1D, base, std::format("hJetPt_raw_{}_{}", r, ue));
 
-      for (const std::string v : {"v2", "v3"})
+      for (const char *v : {"v2", "v3"})
       {
-        for (const std::string calib : {"", "_raw"})
+        for (const char *calib : {"", "_raw"})
         {
           clone_hist(m_hists1D, base, std::format("hJetPt{}{}_{}_{}", v, calib, r, ue));
         }
@@ -454,7 +505,7 @@ void JetAnalysisv3::init_hists()
 
       if (ue != "unsub")
       {
-        for (const std::string calib : {"", "_raw"})
+        for (const char *calib : {"", "_raw"})
         {
           clone_hist(m_hists1D, base, std::format("hJetPtFlowFail{}_{}_{}", calib, r, ue));
         }
@@ -473,13 +524,23 @@ void JetAnalysisv3::init_hists()
   m_hists2D["h2CaloECentrality_default"] = std::make_unique<TH2F>("h2CaloECentrality_default", "|z| < 10 cm and MB; Total Calorimeter Energy [GeV]; Centrality [%]", bins_Calo_E, Calo_E_low, Calo_E_high, m_bins_cent, m_cent_low, m_cent_high);
   clone_hist(m_hists2D, "h2CaloECentrality_default", "h2CaloECentrality");
 
-  m_hists2D["h2CaloV2_mult_iter"] = std::make_unique<TH2F>("h2CaloV2_mult_iter", "; Calo v_{2} Iterative; Calo v_{2} Multiplicity", bins_v2, v2_low, v2_high, bins_v2, v2_low, v2_high);
-  m_hists2D["h2CaloV2_iter_Centrality"] = std::make_unique<TH2F>("h2CaloV2_iter_Centrality", "; Centrality [%]; Calo v_{2}", m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
-  clone_hist(m_hists2D, "h2CaloV2_iter_Centrality", "h2CaloV2_mult_Centrality");
+  if (m_do_iter && m_do_mult)
+  {
+    m_hists2D["h2CaloV2_mult_iter"] = std::make_unique<TH2F>("h2CaloV2_mult_iter", "; Calo v_{2} Iterative; Calo v_{2} Multiplicity", bins_v2, v2_low, v2_high, bins_v2, v2_low, v2_high);
+    m_hists2D["h2Seeds_iter_mult"] = std::make_unique<TH2F>("h2Seeds_iter_mult", "Seeds; Multiplicity; Iterative", bins_seeds_mult, seeds_mult_low, seeds_mult_high, bins_seeds_iter, seeds_iter_low, seeds_iter_high);
+  }
 
-  m_hists2D["h2Seeds_iter_mult"] = std::make_unique<TH2F>("h2Seeds_iter_mult", "Seeds; Multiplicity; Iterative", bins_seeds_mult, seeds_mult_low, seeds_mult_high, bins_seeds_iter, seeds_iter_low, seeds_iter_high);
-  m_hists2D["h2Seeds_iter"] = std::make_unique<TH2F>("h2Seeds_iter", "Iterative Seeds; Centrality [%]; Seeds Iterative", m_bins_cent, m_cent_low, m_cent_high, bins_seeds_iter, seeds_iter_low, seeds_iter_high);
-  m_hists2D["h2Seeds_mult"] = std::make_unique<TH2F>("h2Seeds_mult", "Multiplicity Seeds; Centrality [%]; Seeds Multiplicity", m_bins_cent, m_cent_low, m_cent_high, bins_seeds_mult, seeds_mult_low, seeds_mult_high);
+  if (m_do_iter)
+  {
+    m_hists2D["h2CaloV2_iter_Centrality"] = std::make_unique<TH2F>("h2CaloV2_iter_Centrality", "; Centrality [%]; Calo v_{2}", m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+    m_hists2D["h2Seeds_iter"] = std::make_unique<TH2F>("h2Seeds_iter", "Iterative Seeds; Centrality [%]; Seeds Iterative", m_bins_cent, m_cent_low, m_cent_high, bins_seeds_iter, seeds_iter_low, seeds_iter_high);
+  }
+
+  if (m_do_mult)
+  {
+    m_hists2D["h2CaloV2_mult_Centrality"] = std::make_unique<TH2F>("h2CaloV2_mult_Centrality", "; Centrality [%]; Calo v_{2}", m_bins_cent, m_cent_low, m_cent_high, bins_v2, v2_low, v2_high);
+    m_hists2D["h2Seeds_mult"] = std::make_unique<TH2F>("h2Seeds_mult", "Multiplicity Seeds; Centrality [%]; Seeds Multiplicity", m_bins_cent, m_cent_low, m_cent_high, bins_seeds_mult, seeds_mult_low, seeds_mult_high);
+  }
 
   m_hists2D["h2Psi2_S_raw"] = std::make_unique<TH2F>("h2Psi2_S_raw", "; 2 #Psi_{2}; Centrality [%]", bins_psi, psi_low, psi_high, m_bins_cent, m_cent_low, m_cent_high);
 
@@ -502,8 +563,25 @@ void JetAnalysisv3::init_hists()
   m_hists.h2CaloECentrality_default = m_hists2D["h2CaloECentrality_default"].get();
   m_hists.h2CaloECentrality = m_hists2D["h2CaloECentrality"].get();
 
-  m_hists.hCaloV2Fail_iter = m_hists1D["hCaloV2Fail_iter"].get();
-  m_hists.hCaloV2Fail_mult = m_hists1D["hCaloV2Fail_mult"].get();
+  if (m_do_iter)
+  {
+    m_hists.hCaloV2Fail_iter = m_hists1D["hCaloV2Fail_iter"].get();
+    m_hists.h2CaloV2_iter_Centrality = m_hists2D["h2CaloV2_iter_Centrality"].get();
+    m_hists.h2Seeds_iter = m_hists2D["h2Seeds_iter"].get();
+  }
+
+  if (m_do_mult)
+  {
+    m_hists.hCaloV2Fail_mult = m_hists1D["hCaloV2Fail_mult"].get();
+    m_hists.h2CaloV2_mult_Centrality = m_hists2D["h2CaloV2_mult_Centrality"].get();
+    m_hists.h2Seeds_mult = m_hists2D["h2Seeds_mult"].get();
+  }
+
+  if (m_do_iter && m_do_mult)
+  {
+    m_hists.h2CaloV2_mult_iter = m_hists2D["h2CaloV2_mult_iter"].get();
+    m_hists.h2Seeds_iter_mult = m_hists2D["h2Seeds_iter_mult"].get();
+  }
 
   auto bind_jet_set = [&](AnalysisHists::JetHistSet &set, std::string_view r, std::string_view ue)
   {
@@ -524,20 +602,21 @@ void JetAnalysisv3::init_hists()
     set.h2JetEtav3 = m_hists2D[std::format("h2JetEtav3_{}_{}", r, ue)].get();
   };
 
-  bind_jet_set(m_hists.iter_r02, "r02", "iter");
-  bind_jet_set(m_hists.mult_r02, "r02", "mult");
-  bind_jet_set(m_hists.iter_r03, "r03", "iter");
-  bind_jet_set(m_hists.mult_r03, "r03", "mult");
-  bind_jet_set(m_hists.unsub_r02, "r02", "unsub");
-  bind_jet_set(m_hists.unsub_r03, "r03", "unsub");
-
-  m_hists.h2CaloV2_mult_iter = m_hists2D["h2CaloV2_mult_iter"].get();
-  m_hists.h2CaloV2_mult_Centrality = m_hists2D["h2CaloV2_mult_Centrality"].get();
-  m_hists.h2CaloV2_iter_Centrality = m_hists2D["h2CaloV2_iter_Centrality"].get();
-
-  m_hists.h2Seeds_iter_mult = m_hists2D["h2Seeds_iter_mult"].get();
-  m_hists.h2Seeds_iter = m_hists2D["h2Seeds_iter"].get();
-  m_hists.h2Seeds_mult = m_hists2D["h2Seeds_mult"].get();
+  if (m_do_iter)
+  {
+    bind_jet_set(m_hists.iter_r02, "r02", "iter");
+    bind_jet_set(m_hists.iter_r03, "r03", "iter");
+  }
+  if (m_do_mult)
+  {
+    bind_jet_set(m_hists.mult_r02, "r02", "mult");
+    bind_jet_set(m_hists.mult_r03, "r03", "mult");
+  }
+  if (m_do_unsub)
+  {
+    bind_jet_set(m_hists.unsub_r02, "r02", "unsub");
+    bind_jet_set(m_hists.unsub_r03, "r03", "unsub");
+  }
 
   m_hists.h2Psi2_S_raw = m_hists2D["h2Psi2_S_raw"].get();
   m_hists.h2Psi2_N_raw = m_hists2D["h2Psi2_N_raw"].get();
@@ -638,47 +717,58 @@ void JetAnalysisv3::process_jets()
     }
   };
 
-  // Process r02 branches for iter and mult (eta_max = 0.9)
-  if (!m_event_data.is_flow_failure_iter)
+  if (m_do_iter)
   {
-    fill_jet_hists(m_event_data.iter_r02, m_event_data.calo_v2_iter, m_hists.iter_r02, m_jet_eta_max_r02);
-  }
-  else
-  {
-    fill_jet_flow_fail_hists(m_event_data.iter_r02, m_hists.iter_r02, m_jet_eta_max_r02);
+    // Process r02 branches for iter (eta_max = 0.9)
+    if (!m_event_data.is_flow_failure_iter)
+    {
+      fill_jet_hists(m_event_data.iter_r02, m_event_data.calo_v2_iter, m_hists.iter_r02, m_jet_eta_max_r02);
+    }
+    else
+    {
+      fill_jet_flow_fail_hists(m_event_data.iter_r02, m_hists.iter_r02, m_jet_eta_max_r02);
+    }
+
+    // Process r03 branches for iter (eta_max = 0.8)
+    if (!m_event_data.is_flow_failure_iter)
+    {
+      fill_jet_hists(m_event_data.iter_r03, m_event_data.calo_v2_iter, m_hists.iter_r03, m_jet_eta_max_r03);
+    }
+    else
+    {
+      fill_jet_flow_fail_hists(m_event_data.iter_r03, m_hists.iter_r03, m_jet_eta_max_r03);
+    }
   }
 
-  if (!m_event_data.is_flow_failure_mult)
+  if (m_do_mult)
   {
-    fill_jet_hists(m_event_data.mult_r02, m_event_data.calo_v2_mult, m_hists.mult_r02, m_jet_eta_max_r02);
-  }
-  else
-  {
-    fill_jet_flow_fail_hists(m_event_data.mult_r02, m_hists.mult_r02, m_jet_eta_max_r02);
+    // Process r02 branches for mult (eta_max = 0.9)
+    if (!m_event_data.is_flow_failure_mult)
+    {
+      fill_jet_hists(m_event_data.mult_r02, m_event_data.calo_v2_mult, m_hists.mult_r02, m_jet_eta_max_r02);
+    }
+    else
+    {
+      fill_jet_flow_fail_hists(m_event_data.mult_r02, m_hists.mult_r02, m_jet_eta_max_r02);
+    }
+
+    // Process r03 branches for mult (eta_max = 0.8)
+    if (!m_event_data.is_flow_failure_mult)
+    {
+      fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03);
+    }
+    else
+    {
+      fill_jet_flow_fail_hists(m_event_data.mult_r03, m_hists.mult_r03, m_jet_eta_max_r03);
+    }
   }
 
-  // Process r03 branches for iter and mult (eta_max = 0.8)
-  if (!m_event_data.is_flow_failure_iter)
+  if (m_do_unsub)
   {
-    fill_jet_hists(m_event_data.iter_r03, m_event_data.calo_v2_iter, m_hists.iter_r03, m_jet_eta_max_r03);
+    // Process unsubtracted jets
+    fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02);
+    fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03);
   }
-  else
-  {
-    fill_jet_flow_fail_hists(m_event_data.iter_r03, m_hists.iter_r03, m_jet_eta_max_r03);
-  }
-
-  if (!m_event_data.is_flow_failure_mult)
-  {
-    fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03);
-  }
-  else
-  {
-    fill_jet_flow_fail_hists(m_event_data.mult_r03, m_hists.mult_r03, m_jet_eta_max_r03);
-  }
-
-  // Process unsubtracted jets
-  fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02);
-  fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03);
 }
 
 bool JetAnalysisv3::check_CaloMBD() const
@@ -721,36 +811,43 @@ void JetAnalysisv3::process_event_check()
   {
     m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::CALOCENT));
 
-    if (ed.is_flow_failure_iter)
+    if (m_do_iter)
     {
-      m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_ITER));
-      m_hists.hCaloV2Fail_iter->Fill(cent);
-      ++m_ctr["events_flow_failure_iter"];
+      if (ed.is_flow_failure_iter)
+      {
+        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_ITER));
+        m_hists.hCaloV2Fail_iter->Fill(cent);
+        ++m_ctr["events_flow_failure_iter"];
+      }
+      else
+      {
+        m_hists.h2CaloV2_iter_Centrality->Fill(cent, ed.calo_v2_iter);
+        m_hists.h2Seeds_iter->Fill(cent, ed.seeds_iter);
+      }
     }
 
-    if (ed.is_flow_failure_mult)
+    if (m_do_mult)
     {
-      m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_MULT));
-      m_hists.hCaloV2Fail_mult->Fill(cent);
-      ++m_ctr["events_flow_failure_mult"];
+      if (ed.is_flow_failure_mult)
+      {
+        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_MULT));
+        m_hists.hCaloV2Fail_mult->Fill(cent);
+        ++m_ctr["events_flow_failure_mult"];
+      }
+      else
+      {
+        m_hists.h2CaloV2_mult_Centrality->Fill(cent, ed.calo_v2_mult);
+        m_hists.h2Seeds_mult->Fill(cent, ed.seeds_mult);
+      }
     }
 
-    if (!ed.is_flow_failure_iter && !ed.is_flow_failure_mult)
+    if (m_do_iter && m_do_mult)
     {
-      m_hists.h2CaloV2_mult_iter->Fill(ed.calo_v2_iter, ed.calo_v2_mult);
-      m_hists.h2Seeds_iter_mult->Fill(ed.seeds_mult, ed.seeds_iter);
-    }
-
-    if (!ed.is_flow_failure_mult)
-    {
-      m_hists.h2CaloV2_mult_Centrality->Fill(cent, ed.calo_v2_mult);
-      m_hists.h2Seeds_mult->Fill(cent, ed.seeds_mult);
-    }
-
-    if (!ed.is_flow_failure_iter)
-    {
-      m_hists.h2CaloV2_iter_Centrality->Fill(cent, ed.calo_v2_iter);
-      m_hists.h2Seeds_iter->Fill(cent, ed.seeds_iter);
+      if (!ed.is_flow_failure_iter && !ed.is_flow_failure_mult)
+      {
+        m_hists.h2CaloV2_mult_iter->Fill(ed.calo_v2_iter, ed.calo_v2_mult);
+        m_hists.h2Seeds_iter_mult->Fill(ed.seeds_mult, ed.seeds_iter);
+      }
     }
 
     m_hists.h2Psi2_S_raw->Fill(ed.psi2_raw_S, cent);
@@ -824,10 +921,18 @@ void JetAnalysisv3::print_event_info(long long event_idx) const
   std::cout << std::format(" Calo Energy [GeV] - EMCal: {:.2f}, IHCal: {:.2f}, OHCal: {:.2f} (Pass Cut: {})\n",
                            m_event_data.emcal_energy, m_event_data.ihcal_energy, m_event_data.ohcal_energy,
                            m_event_data.pass_calo_cent ? "Yes" : "No");
-  std::cout << std::format(" Calo v2 - Iter: {:.4f} (Fail: {}), Mult: {:.4f} (Fail: {})\n",
-                           m_event_data.calo_v2_iter, m_event_data.is_flow_failure_iter ? "Yes" : "No",
-                           m_event_data.calo_v2_mult, m_event_data.is_flow_failure_mult ? "Yes" : "No");
-  std::cout << std::format(" Seeds - Iter: {}, Mult: {}\n", m_event_data.seeds_iter, m_event_data.seeds_mult);
+  if (m_do_iter)
+  {
+    std::cout << std::format(" Calo v2 Iter: {:.4f} (Fail: {}), Seeds Iter: {}\n",
+                             m_event_data.calo_v2_iter, m_event_data.is_flow_failure_iter ? "Yes" : "No",
+                             m_event_data.seeds_iter);
+  }
+  if (m_do_mult)
+  {
+    std::cout << std::format(" Calo v2 Mult: {:.4f} (Fail: {}), Seeds Mult: {}\n",
+                             m_event_data.calo_v2_mult, m_event_data.is_flow_failure_mult ? "Yes" : "No",
+                             m_event_data.seeds_mult);
+  }
   std::cout << std::format(" Psi2 Raw  - S: {:.4f}, N: {:.4f}, NS: {:.4f}\n", m_event_data.psi2_raw_S, m_event_data.psi2_raw_N, m_event_data.psi2_raw_NS);
   std::cout << std::format(" Psi2 Corr - S: {:.4f}, N: {:.4f}, NS: {:.4f}\n", m_event_data.psi2_S, m_event_data.psi2_N, m_event_data.psi2_NS);
 
@@ -855,12 +960,21 @@ void JetAnalysisv3::print_event_info(long long event_idx) const
   };
 
   std::cout << " -- Jet Collections --\n";
-  print_jet_collection("r02_iter", m_event_data.iter_r02);
-  print_jet_collection("r02_mult", m_event_data.mult_r02);
-  print_jet_collection("r03_iter", m_event_data.iter_r03);
-  print_jet_collection("r03_mult", m_event_data.mult_r03);
-  print_jet_collection("r02_unsub", m_event_data.unsub_r02);
-  print_jet_collection("r03_unsub", m_event_data.unsub_r03);
+  if (m_do_iter)
+  {
+    print_jet_collection("r02_iter", m_event_data.iter_r02);
+    print_jet_collection("r03_iter", m_event_data.iter_r03);
+  }
+  if (m_do_mult)
+  {
+    print_jet_collection("r02_mult", m_event_data.mult_r02);
+    print_jet_collection("r03_mult", m_event_data.mult_r03);
+  }
+  if (m_do_unsub)
+  {
+    print_jet_collection("r02_unsub", m_event_data.unsub_r02);
+    print_jet_collection("r03_unsub", m_event_data.unsub_r03);
+  }
   std::cout << std::format("{:=^70}\n", "");
 }
 
@@ -908,9 +1022,9 @@ int main(int argc, const char *const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 2 || argc > 6)
+  if (argc < 2 || argc > 9)
   {
-    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity] [do_iter] [do_mult] [do_unsub]" << std::endl;
     return 1;
   }
 
@@ -920,6 +1034,9 @@ int main(int argc, const char *const argv[])
   double jet_pt_min = (argc >= ctr + 1) ? std::stod(argv[ctr++]) : 10;
   std::string output_dir = (argc >= ctr + 1) ? argv[ctr++] : ".";
   int verbosity = (argc >= ctr + 1) ? std::atoi(argv[ctr++]) : 0;
+  bool do_iter = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
+  bool do_mult = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
+  bool do_unsub = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
@@ -928,6 +1045,9 @@ int main(int argc, const char *const argv[])
   std::cout << std::format("Jet pT min: {} [GeV]\n", jet_pt_min);
   std::cout << std::format("Output Dir: {}\n", output_dir);
   std::cout << std::format("Verbosity: {}\n", verbosity);
+  std::cout << std::format("Do Iter: {}\n", do_iter);
+  std::cout << std::format("Do Mult: {}\n", do_mult);
+  std::cout << std::format("Do Unsub: {}\n", do_unsub);
   std::cout << std::format("{:#<20}\n", "");
 
   try
@@ -935,6 +1055,9 @@ int main(int argc, const char *const argv[])
     JetAnalysisv3 analysis(input_file, events, output_dir);
     analysis.set_jet_pt_min(jet_pt_min);
     analysis.set_verbosity(verbosity);
+    analysis.set_do_iter(do_iter);
+    analysis.set_do_mult(do_mult);
+    analysis.set_do_unsub(do_unsub);
     analysis.run();
   }
   catch (const std::exception &e)
