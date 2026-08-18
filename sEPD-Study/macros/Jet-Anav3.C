@@ -227,11 +227,11 @@ class JetAnalysisv3
   {
     ZVTX10_MB,
     CALOCENT,
-    FLOW_FAILURE_ITER,
-    FLOW_FAILURE_MULT
+    FLOW_PASS_ITER,
+    FLOW_PASS_MULT
   };
 
-  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Calo-Cent", "Flow Fail Iter", "Flow Fail Mult"};
+  std::vector<std::string> m_eventType{"|z| < 10 cm and MB", "Good Calo-Cent", "Flow Pass Iter", "Flow Pass Mult"};
 
   // Hists
   std::map<std::string, std::unique_ptr<TH1>> m_hists1D;
@@ -815,12 +815,12 @@ void JetAnalysisv3::process_event_check()
     {
       if (ed.is_flow_failure_iter)
       {
-        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_ITER));
         m_hists.hCaloV2Fail_iter->Fill(cent);
         ++m_ctr["events_flow_failure_iter"];
       }
       else
       {
+        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_PASS_ITER));
         m_hists.h2CaloV2_iter_Centrality->Fill(cent, ed.calo_v2_iter);
         m_hists.h2Seeds_iter->Fill(cent, ed.seeds_iter);
       }
@@ -830,12 +830,12 @@ void JetAnalysisv3::process_event_check()
     {
       if (ed.is_flow_failure_mult)
       {
-        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_FAILURE_MULT));
         m_hists.hCaloV2Fail_mult->Fill(cent);
         ++m_ctr["events_flow_failure_mult"];
       }
       else
       {
+        m_hists.hEvent->Fill(static_cast<std::uint8_t>(EventType::FLOW_PASS_MULT));
         m_hists.h2CaloV2_mult_Centrality->Fill(cent, ed.calo_v2_mult);
         m_hists.h2Seeds_mult->Fill(cent, ed.seeds_mult);
       }
