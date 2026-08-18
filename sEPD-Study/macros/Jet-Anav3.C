@@ -9,6 +9,8 @@
 #include <cdbobjects/CDBTTree.h>
 #include <CDBUtils.C>
 
+#include <sepdvalidation/JetUtils.h>
+
 // ====================================================================
 // Standard C++ Includes
 // ====================================================================
@@ -63,10 +65,12 @@ class JetAnalysisv3
   void set_do_unsub(bool b = true) { m_do_unsub = b; }
   void set_do_iter(bool b = true) { m_do_iter = b; }
   void set_do_mult(bool b = true) { m_do_mult = b; }
+  void set_do_rcone(bool b = true) { m_do_rcone = b; }
 
   bool get_do_unsub() const { return m_do_unsub; }
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
+  bool get_do_rcone() const { return m_do_rcone; }
 
   void set_jet_pt_min(double jet_pt_min) { m_jet_pt_min = jet_pt_min; }
   double get_jet_pt_min() const { return m_jet_pt_min; }
@@ -128,6 +132,23 @@ class JetAnalysisv3
     JetHistSet unsub_r02;
     JetHistSet unsub_r03;
 
+    struct RConeHistSet
+    {
+      TH1 *hEta{nullptr};
+      TH1 *hEtaNorm{nullptr};
+      TH2 *h2EtaZvtx{nullptr};
+      TH1 *hPhi{nullptr};
+      TH1 *hEnergy{nullptr};
+      TH1 *hPt{nullptr};
+      TH1 *hPtv2{nullptr};
+      TProfile *pEtaPt{nullptr};
+    };
+
+    RConeHistSet rcone_r02;
+    RConeHistSet rcone_r03;
+    RConeHistSet rcone_iter_r02;
+    RConeHistSet rcone_iter_r03;
+
     TH2 *h2CaloV2_mult_iter{nullptr};
     TH2 *h2CaloV2_mult_Centrality{nullptr};
     TH2 *h2CaloV2_iter_Centrality{nullptr};
@@ -147,6 +168,16 @@ class JetAnalysisv3
 
   AnalysisHists m_hists;
 
+  struct RConeData
+  {
+    double eta{0};
+    double phi{0};
+    double pt{0};
+    double energy{0};
+    double pt_sub1{0};
+    double energy_sub1{0};
+  };
+
   struct JetData
   {
     std::vector<double> *pt{nullptr};        // NOLINT(misc-non-private-member-variables-in-classes)
@@ -163,7 +194,7 @@ class JetAnalysisv3
 
    private:
     int event{0};
-    [[maybe_unused]] double zvtx{0.0};
+    double zvtx{0.0};
     double centrality{0.0};
     double emcal_energy{0};
     double ihcal_energy{0};
@@ -197,6 +228,9 @@ class JetAnalysisv3
     JetData unsub_r02;
     JetData unsub_r03;
 
+    RConeData rcone_r02;
+    RConeData rcone_r03;
+
     // Event Checks
     bool pass_calo_cent{false};
   };
@@ -215,6 +249,7 @@ class JetAnalysisv3
   bool m_do_unsub{true};
   bool m_do_iter{true};
   bool m_do_mult{true};
+  bool m_do_rcone{true};
 
   // Jet Cuts
   double m_jet_pt_min{10}; /*GeV*/
@@ -247,6 +282,7 @@ class JetAnalysisv3
   void init_hists();
 
   void process_jets();
+  void process_rcones();
   bool check_CaloMBD() const;
   void process_event_check();
   void process_events();
@@ -275,7 +311,7 @@ void JetAnalysisv3::setup_chain()
 
   // List of Branches of Interest
   // Common branches between data and sim
-  std::unordered_set<std::string> branchNames = {"event", "centrality",
+  std::unordered_set<std::string> branchNames = {"event", "centrality", "zvtx",
                                                  "emcal_energy", "ihcal_energy", "ohcal_energy",
                                                  "psi2_raw_S", "psi2_raw_N", "psi2_raw_NS",
                                                  "psi2_S", "psi2_N", "psi2_NS"};
@@ -309,6 +345,14 @@ void JetAnalysisv3::setup_chain()
     });
   }
 
+  if (m_do_rcone)
+  {
+    branchNames.insert({
+        "rcone_r02_eta", "rcone_r02_phi", "rcone_r02_pt", "rcone_r02_energy", "rcone_r02_sub1_pt", "rcone_r02_sub1_energy",
+        "rcone_r03_eta", "rcone_r03_phi", "rcone_r03_pt", "rcone_r03_energy", "rcone_r03_sub1_pt", "rcone_r03_sub1_energy"
+    });
+  }
+
   // Check Branch Status
   for (const auto &branchName : branchNames)
   {
@@ -327,6 +371,7 @@ void JetAnalysisv3::setup_chain()
 
   // Set branches to variables
   m_chain->SetBranchAddress("event", &m_event_data.event);
+  m_chain->SetBranchAddress("zvtx", &m_event_data.zvtx);
   m_chain->SetBranchAddress("centrality", &m_event_data.centrality);
   m_chain->SetBranchAddress("emcal_energy", &m_event_data.emcal_energy);
   m_chain->SetBranchAddress("ihcal_energy", &m_event_data.ihcal_energy);
@@ -402,6 +447,23 @@ void JetAnalysisv3::setup_chain()
     m_chain->SetBranchAddress("eta_unsub_r03", &m_event_data.unsub_r03.eta);
   }
 
+  if (m_do_rcone)
+  {
+    m_chain->SetBranchAddress("rcone_r02_eta", &m_event_data.rcone_r02.eta);
+    m_chain->SetBranchAddress("rcone_r02_phi", &m_event_data.rcone_r02.phi);
+    m_chain->SetBranchAddress("rcone_r02_pt", &m_event_data.rcone_r02.pt);
+    m_chain->SetBranchAddress("rcone_r02_energy", &m_event_data.rcone_r02.energy);
+    m_chain->SetBranchAddress("rcone_r02_sub1_pt", &m_event_data.rcone_r02.pt_sub1);
+    m_chain->SetBranchAddress("rcone_r02_sub1_energy", &m_event_data.rcone_r02.energy_sub1);
+
+    m_chain->SetBranchAddress("rcone_r03_eta", &m_event_data.rcone_r03.eta);
+    m_chain->SetBranchAddress("rcone_r03_phi", &m_event_data.rcone_r03.phi);
+    m_chain->SetBranchAddress("rcone_r03_pt", &m_event_data.rcone_r03.pt);
+    m_chain->SetBranchAddress("rcone_r03_energy", &m_event_data.rcone_r03.energy);
+    m_chain->SetBranchAddress("rcone_r03_sub1_pt", &m_event_data.rcone_r03.pt_sub1);
+    m_chain->SetBranchAddress("rcone_r03_sub1_energy", &m_event_data.rcone_r03.energy_sub1);
+  }
+
   std::cout << "Finished... setup_chain" << std::endl;
 }
 
@@ -452,6 +514,22 @@ void JetAnalysisv3::init_hists()
   int bins_eta = 88;
   double eta_low = -1.1;
   double eta_high = 1.1;
+
+  int bins_eta_norm = 100;
+  double eta_norm_low = 0.0;
+  double eta_norm_high = 1.0;
+
+  int bins_zvtx = 100;
+  double zvtx_low = -10.0;
+  double zvtx_high = 10.0;
+
+  int bins_phi = 64;
+  double phi_low = 0;
+  double phi_high = 2 * std::numbers::pi;
+
+  int bins_rcone_e = 200;
+  double rcone_e_low = -100;
+  double rcone_e_high = 100;
 
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
@@ -518,6 +596,44 @@ void JetAnalysisv3::init_hists()
       m_hists2D[h2eta_name] = std::make_unique<TH2F>(h2eta_name.c_str(), "; p_{T} [GeV]; #eta", bins_pt_eta2D, pt_eta2D_low, pt_eta2D_high, bins_eta, eta_low, eta_high);
       clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav2_{}_{}", r, ue));
       clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav3_{}_{}", r, ue));
+    }
+  }
+
+  if (m_do_rcone)
+  {
+    for (const char *r : {"r02", "r03"})
+    {
+      std::string base_eta = std::format("hRConeEta_{}", r);
+      m_hists1D[base_eta] = std::make_unique<TH1F>(base_eta.c_str(), "; #eta; Cones", bins_eta, eta_low, eta_high);
+
+      std::string base_etanorm = std::format("hRConeEtaNorm_{}", r);
+      m_hists1D[base_etanorm] = std::make_unique<TH1F>(base_etanorm.c_str(), "; Normalized #eta; Cones", bins_eta_norm, eta_norm_low, eta_norm_high);
+
+      std::string base_h2etazvtx = std::format("h2RConeEtaZvtx_{}", r);
+      m_hists2D[base_h2etazvtx] = std::make_unique<TH2F>(base_h2etazvtx.c_str(), "; z_{vtx} [cm]; #eta", bins_zvtx, zvtx_low, zvtx_high, bins_eta, eta_low, eta_high);
+
+      std::string base_phi = std::format("hRConePhi_{}", r);
+      m_hists1D[base_phi] = std::make_unique<TH1F>(base_phi.c_str(), "; #phi; Cones", bins_phi, phi_low, phi_high);
+
+      std::string base_e = std::format("hRConeEnergy_unsub_{}", r);
+      m_hists1D[base_e] = std::make_unique<TH1F>(base_e.c_str(), "; E [GeV]; Cones / 1 GeV", bins_rcone_e, rcone_e_low, rcone_e_high);
+
+      std::string base_pt = std::format("hRConePt_unsub_{}", r);
+      m_hists1D[base_pt] = std::make_unique<TH1F>(base_pt.c_str(), "; p_{T} [GeV]; Cones / 1 GeV", bins_pt, pt_low, pt_high);
+      clone_hist(m_hists1D, base_pt, std::format("hRConePtv2_unsub_{}", r));
+
+      std::string base_e_iter = std::format("hRConeEnergy_iter_{}", r);
+      m_hists1D[base_e_iter] = std::make_unique<TH1F>(base_e_iter.c_str(), "; E [GeV]; Cones / 1 GeV", bins_rcone_e, rcone_e_low, rcone_e_high);
+
+      std::string base_pt_iter = std::format("hRConePt_iter_{}", r);
+      m_hists1D[base_pt_iter] = std::make_unique<TH1F>(base_pt_iter.c_str(), "; p_{T} [GeV]; Cones / 1 GeV", bins_pt, pt_low, pt_high);
+      clone_hist(m_hists1D, base_pt_iter, std::format("hRConePtv2_iter_{}", r));
+
+      std::string base_pe_unsub = std::format("pRConeEtaPt_unsub_{}", r);
+      m_profiles[base_pe_unsub] = std::make_unique<TProfile>(base_pe_unsub.c_str(), "; #eta; Average p_{T} [GeV]", bins_eta, eta_low, eta_high);
+
+      std::string base_pe_iter = std::format("pRConeEtaPt_iter_{}", r);
+      m_profiles[base_pe_iter] = std::make_unique<TProfile>(base_pe_iter.c_str(), "; #eta; Average p_{T} [GeV]", bins_eta, eta_low, eta_high);
     }
   }
 
@@ -616,6 +732,29 @@ void JetAnalysisv3::init_hists()
   {
     bind_jet_set(m_hists.unsub_r02, "r02", "unsub");
     bind_jet_set(m_hists.unsub_r03, "r03", "unsub");
+  }
+
+  if (m_do_rcone)
+  {
+    auto bind_rcone_set = [&](AnalysisHists::RConeHistSet &set, std::string_view r, std::string_view ue)
+    {
+      if (ue == "unsub")
+      {
+        set.hEta = m_hists1D[std::format("hRConeEta_{}", r)].get();
+        set.hEtaNorm = m_hists1D[std::format("hRConeEtaNorm_{}", r)].get();
+        set.h2EtaZvtx = m_hists2D[std::format("h2RConeEtaZvtx_{}", r)].get();
+        set.hPhi = m_hists1D[std::format("hRConePhi_{}", r)].get();
+      }
+      set.hEnergy = m_hists1D[std::format("hRConeEnergy_{}_{}", ue, r)].get();
+      set.hPt = m_hists1D[std::format("hRConePt_{}_{}", ue, r)].get();
+      set.hPtv2 = m_hists1D[std::format("hRConePtv2_{}_{}", ue, r)].get();
+      set.pEtaPt = m_profiles[std::format("pRConeEtaPt_{}_{}", ue, r)].get();
+    };
+
+    bind_rcone_set(m_hists.rcone_r02, "r02", "unsub");
+    bind_rcone_set(m_hists.rcone_r03, "r03", "unsub");
+    bind_rcone_set(m_hists.rcone_iter_r02, "r02", "iter");
+    bind_rcone_set(m_hists.rcone_iter_r03, "r03", "iter");
   }
 
   m_hists.h2Psi2_S_raw = m_hists2D["h2Psi2_S_raw"].get();
@@ -771,6 +910,51 @@ void JetAnalysisv3::process_jets()
   }
 }
 
+void JetAnalysisv3::process_rcones()
+{
+  if (!m_event_data.pass_calo_cent)
+  {
+    return;
+  }
+
+  if (m_do_rcone)
+  {
+    auto fill_rcone = [&](const RConeData &rc, const AnalysisHists::RConeHistSet &h, bool use_sub1, double r_val)
+    {
+      double eta = rc.eta;
+      double phi = rc.phi;
+      double pt = use_sub1 ? rc.pt_sub1 : rc.pt;
+      double energy = use_sub1 ? rc.energy_sub1 : rc.energy;
+
+      if (h.hEta) h.hEta->Fill(eta);
+      if (h.hEtaNorm)
+      {
+        auto [eta_min, eta_max] = JetUtils::get_valid_eta_range(m_event_data.zvtx, r_val);
+        if (eta_max > eta_min)
+        {
+          double eta_norm = (eta - eta_min) / (eta_max - eta_min);
+          h.hEtaNorm->Fill(eta_norm);
+        }
+      }
+      if (h.h2EtaZvtx) h.h2EtaZvtx->Fill(m_event_data.zvtx, eta);
+      if (h.hPhi) h.hPhi->Fill(phi);
+      if (h.hEnergy) h.hEnergy->Fill(energy);
+      if (h.hPt) h.hPt->Fill(pt);
+      if (h.hPtv2 && energy > 0) h.hPtv2->Fill(pt);
+      if (h.pEtaPt) h.pEtaPt->Fill(eta, pt);
+    };
+
+    fill_rcone(m_event_data.rcone_r02, m_hists.rcone_r02, false, 0.2);
+    fill_rcone(m_event_data.rcone_r03, m_hists.rcone_r03, false, 0.3);
+
+    if (!m_event_data.is_flow_failure_iter)
+    {
+      fill_rcone(m_event_data.rcone_r02, m_hists.rcone_iter_r02, true, 0.2);
+      fill_rcone(m_event_data.rcone_r03, m_hists.rcone_iter_r03, true, 0.3);
+    }
+  }
+}
+
 bool JetAnalysisv3::check_CaloMBD() const
 {
   double total_EMCal = m_event_data.emcal_energy;
@@ -893,6 +1077,7 @@ void JetAnalysisv3::process_events()
 
     // Jets
     process_jets();
+    process_rcones();
 
     if (m_verbosity > 0)
     {
@@ -1022,9 +1207,9 @@ int main(int argc, const char *const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 2 || argc > 9)
+  if (argc < 2 || argc > 10)
   {
-    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity] [do_iter] [do_mult] [do_unsub]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity] [do_iter] [do_mult] [do_unsub] [do_rcone]" << std::endl;
     return 1;
   }
 
@@ -1037,6 +1222,7 @@ int main(int argc, const char *const argv[])
   bool do_iter = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
   bool do_mult = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
   bool do_unsub = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
+  bool do_rcone = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
@@ -1048,6 +1234,7 @@ int main(int argc, const char *const argv[])
   std::cout << std::format("Do Iter: {}\n", do_iter);
   std::cout << std::format("Do Mult: {}\n", do_mult);
   std::cout << std::format("Do Unsub: {}\n", do_unsub);
+  std::cout << std::format("Do RCone: {}\n", do_rcone);
   std::cout << std::format("{:#<20}\n", "");
 
   try
@@ -1058,6 +1245,7 @@ int main(int argc, const char *const argv[])
     analysis.set_do_iter(do_iter);
     analysis.set_do_mult(do_mult);
     analysis.set_do_unsub(do_unsub);
+    analysis.set_do_rcone(do_rcone);
     analysis.run();
   }
   catch (const std::exception &e)

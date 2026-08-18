@@ -55,6 +55,7 @@ set(STANDALONE_MACRO_LIBS
     ROOT::Gpad      # For TCanvas, TPad,
     ROOT::Tree      # For TTree
     ${SPHENIX_LIBS}
+    ${MY_LIBS}
 )
 
 # ====================================================================
