@@ -11,6 +11,11 @@
 #include <eventplaneinfo/EventplaneinfoMap.h>
 #include <eventplaneinfo/Eventplaneinfo.h>
 
+// -- Calo
+#include <calobase/TowerInfo.h>
+#include <calobase/TowerInfoContainer.h>
+#include <calobase/TowerInfoDefs.h>
+
 #include <TTree.h>
 
 #include <treefiller/TreeFiller.h>
@@ -42,6 +47,29 @@ int EventPlaneQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 
 //____________________________________________________________________________..
 int EventPlaneQA::process_event(PHCompositeNode *topNode)
+{
+  int ret = Fun4AllReturnCodes::EVENT_OK;
+
+  if (m_do_ep)
+  {
+    ret = process_event_plane(topNode);
+  }
+
+  if (ret != Fun4AllReturnCodes::EVENT_OK)
+  {
+    return ret;
+  }
+
+  if (m_do_sepd)
+  {
+    ret = process_sepd(topNode);
+  }
+
+  return ret;
+}
+
+//____________________________________________________________________________..
+int EventPlaneQA::process_event_plane(PHCompositeNode *topNode)
 {
   // get event plane map
   EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
@@ -89,9 +117,49 @@ int EventPlaneQA::process_event(PHCompositeNode *topNode)
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+//____________________________________________________________________________..
+int EventPlaneQA::process_sepd(PHCompositeNode *topNode)
+{
+  TowerInfoContainer *towerinfosEPD = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
+  if (!towerinfosEPD)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  // sepd
+  unsigned int nchannels_epd = towerinfosEPD->size();
+
+  double sepd_total_charge_south = 0;
+  double sepd_total_charge_north = 0;
+
+  for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
+  {
+    unsigned int key = TowerInfoDefs::encode_epd(channel);
+
+    TowerInfo *tower = towerinfosEPD->get_tower_at_channel(channel);
+
+    double charge = tower->get_energy();
+
+    unsigned int arm = TowerInfoDefs::get_epd_arm(key);
+
+    // skip charge below minimum threshold
+    if (charge < m_sepd_channel_threshold)
+    {
+      continue;
+    }
+
+    double &sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
+    sepd_total_charge += charge;
+  }
+
+  m_data.sepd_charge_south = sepd_total_charge_south;
+  m_data.sepd_charge_north = sepd_total_charge_north;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
 int EventPlaneQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
-  // sEPD
+  // sEPD - Event Plane
   m_data.psi2_raw_S = 0;
   m_data.psi2_raw_N = 0;
   m_data.psi2_raw_NS = 0;
@@ -99,6 +167,10 @@ int EventPlaneQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.psi2_S = 0;
   m_data.psi2_N = 0;
   m_data.psi2_NS = 0;
+
+  // sEPD - QA
+  m_data.sepd_charge_south = 0;
+  m_data.sepd_charge_north = 0;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
