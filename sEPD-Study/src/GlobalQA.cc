@@ -1,4 +1,4 @@
-#include "EventPlaneQA.h"
+#include "GlobalQA.h"
 
 // -- Fun4All
 #include <ffaobjects/EventHeader.h>
@@ -16,6 +16,10 @@
 #include <calobase/TowerInfoContainer.h>
 #include <calobase/TowerInfoDefs.h>
 
+// -- MBD / MinBias
+#include <pdbcalbase/PdbParameterMap.h>
+#include <phparameter/PHParameters.h>
+
 #include <TTree.h>
 
 #include <treefiller/TreeFiller.h>
@@ -23,30 +27,48 @@
 #include <format>
 #include <iostream>
 
-EventPlaneQA::EventPlaneQA(const std::string &name)
+GlobalQA::GlobalQA(const std::string &name)
   : SubsysReco(name)
 {
 }
 
-int EventPlaneQA::Init([[maybe_unused]] PHCompositeNode *topNode)
+int GlobalQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
   TTree *tree = TreeFiller::getTree();
   if (tree)
   {
-    tree->Branch("psi2_raw_S", &m_data.psi2_raw_S);
-    tree->Branch("psi2_raw_N", &m_data.psi2_raw_N);
-    tree->Branch("psi2_raw_NS", &m_data.psi2_raw_NS);
+    // sEPD - Event Plane
+    if (m_do_ep)
+    {
+      tree->Branch("psi2_raw_S", &m_data.psi2_raw_S);
+      tree->Branch("psi2_raw_N", &m_data.psi2_raw_N);
+      tree->Branch("psi2_raw_NS", &m_data.psi2_raw_NS);
 
-    tree->Branch("psi2_S", &m_data.psi2_S);
-    tree->Branch("psi2_N", &m_data.psi2_N);
-    tree->Branch("psi2_NS", &m_data.psi2_NS);
+      tree->Branch("psi2_S", &m_data.psi2_S);
+      tree->Branch("psi2_N", &m_data.psi2_N);
+      tree->Branch("psi2_NS", &m_data.psi2_NS);
+    }
+
+    if (m_do_sepd)
+    {
+      // sEPD - QA
+      tree->Branch("sepd_charge_south", &m_data.sepd_charge_south);
+      tree->Branch("sepd_charge_north", &m_data.sepd_charge_north);
+    }
+
+    if (m_do_mbd)
+    {
+      // MBD - QA
+      tree->Branch("mbd_charge_south", &m_data.mbd_charge_south);
+      tree->Branch("mbd_charge_north", &m_data.mbd_charge_north);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
-int EventPlaneQA::process_event(PHCompositeNode *topNode)
+int GlobalQA::process_event(PHCompositeNode *topNode)
 {
   int ret = Fun4AllReturnCodes::EVENT_OK;
 
@@ -65,11 +87,21 @@ int EventPlaneQA::process_event(PHCompositeNode *topNode)
     ret = process_sepd(topNode);
   }
 
+  if (ret != Fun4AllReturnCodes::EVENT_OK)
+  {
+    return ret;
+  }
+
+  if (m_do_mbd)
+  {
+    ret = process_mbd(topNode);
+  }
+
   return ret;
 }
 
 //____________________________________________________________________________..
-int EventPlaneQA::process_event_plane(PHCompositeNode *topNode)
+int GlobalQA::process_event_plane(PHCompositeNode *topNode)
 {
   // get event plane map
   EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
@@ -118,7 +150,7 @@ int EventPlaneQA::process_event_plane(PHCompositeNode *topNode)
 }
 
 //____________________________________________________________________________..
-int EventPlaneQA::process_sepd(PHCompositeNode *topNode)
+int GlobalQA::process_sepd(PHCompositeNode *topNode)
 {
   TowerInfoContainer *towerinfosEPD = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
   if (!towerinfosEPD)
@@ -157,7 +189,29 @@ int EventPlaneQA::process_sepd(PHCompositeNode *topNode)
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
-int EventPlaneQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
+
+//____________________________________________________________________________..
+int GlobalQA::process_mbd(PHCompositeNode *topNode)
+{
+  PdbParameterMap *pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
+  if (!pdb)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  PHParameters pdb_params("MinBiasParams");
+  pdb_params.FillFrom(pdb);
+
+  double mbd_total_charge_south = pdb_params.get_double_param("minbias_mbd_total_charge_south");
+  double mbd_total_charge_north = pdb_params.get_double_param("minbias_mbd_total_charge_north");
+
+  m_data.mbd_charge_south = mbd_total_charge_south;
+  m_data.mbd_charge_north = mbd_total_charge_north;
+
+  return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int GlobalQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
   // sEPD - Event Plane
   m_data.psi2_raw_S = 0;
@@ -172,12 +226,16 @@ int EventPlaneQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   m_data.sepd_charge_south = 0;
   m_data.sepd_charge_north = 0;
 
+  // MBD - QA
+  m_data.mbd_charge_south = 0;
+  m_data.mbd_charge_north = 0;
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int EventPlaneQA::End([[maybe_unused]] PHCompositeNode *topNode)
+int GlobalQA::End([[maybe_unused]] PHCompositeNode *topNode)
 {
-  std::cout << "EventPlaneQA::End" << std::endl;
+  std::cout << "GlobalQA::End" << std::endl;
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

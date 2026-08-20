@@ -36,7 +36,7 @@
 
 #include <sepdvalidation/EventSkip.h>
 #include <sepdvalidation/EventQA.h>
-#include <sepdvalidation/EventPlaneQA.h>
+#include <sepdvalidation/GlobalQA.h>
 #include <sepdvalidation/CaloQA.h>
 #include <sepdvalidation/JetValidationv3.h>
 #include <sepdvalidation/RandomConeValidation.h>
@@ -205,10 +205,13 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
 
   if(do_flow)
   {
-    // EventPlane QA
-    EventPlaneQA* eventplane_qa = new EventPlaneQA();
-    eventplane_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-    se->registerSubsystem(eventplane_qa);
+    // Global QA
+    GlobalQA* global_qa = new GlobalQA();
+    global_qa->set_do_ep(true);
+    global_qa->set_do_sepd(false);
+    global_qa->set_do_mbd(false);
+    global_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+    se->registerSubsystem(global_qa);
   }
 
   // Jet Validation

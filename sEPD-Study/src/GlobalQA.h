@@ -12,10 +12,10 @@
 
 class PHCompositeNode;
 
-class EventPlaneQA : public SubsysReco
+class GlobalQA : public SubsysReco
 {
  public:
-  explicit EventPlaneQA(const std::string &name = "EventPlaneQA");
+  explicit GlobalQA(const std::string &name = "GlobalQA");
 
   int Init(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
@@ -24,12 +24,15 @@ class EventPlaneQA : public SubsysReco
 
   void set_do_ep(bool b = true) { m_do_ep = b; }
   void set_do_sepd(bool b = true) { m_do_sepd = b; }
+  void set_do_mbd(bool b = true) { m_do_mbd = b; }
+
   void set_sepd_threshold(double threshold) { m_sepd_channel_threshold = threshold; }
 
  private:
 
   int process_event_plane(PHCompositeNode *topNode);
   int process_sepd(PHCompositeNode *topNode);
+  int process_mbd(PHCompositeNode *topNode);
 
   struct EventData
   {
@@ -45,6 +48,10 @@ class EventPlaneQA : public SubsysReco
     // sEPD - QA
     double sepd_charge_south{0};
     double sepd_charge_north{0};
+
+    // MBD - QA
+    double mbd_charge_south{0};
+    double mbd_charge_north{0};
   };
 
   EventData m_data;
@@ -53,4 +60,5 @@ class EventPlaneQA : public SubsysReco
 
   bool m_do_ep{true};
   bool m_do_sepd{true};
+  bool m_do_mbd{true};
 };
