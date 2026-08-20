@@ -305,7 +305,7 @@ def make_generic_overlay(edges_x, hists, run_number, output_path, xlabel, ylabel
         else:
             ax.set_xlim(left=0)
     elif xmax is not None:
-        ax.set_xlim(right=xmax)
+        ax.set_xlim(left=0, right=xmax)
 
     if r_jet is not None:
         ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
@@ -364,7 +364,7 @@ def make_profile_overlay(edges_x, profiles, run_number, output_path, xlabel, yla
         else:
             ax.set_xlim(left=0)
     elif xmax is not None:
-        ax.set_xlim(right=xmax)
+        ax.set_xlim(left=0, right=xmax)
 
     if r_jet is not None:
         ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_jet:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
@@ -421,7 +421,7 @@ def make_1d_plot(hist1d, run_number, output_path, hist_name="", extra_labels=Non
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
-def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mult=True, do_unsub=True, do_rcone=True):
+def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mult=True, do_unsub=True, do_rcone=True, rcone_pt_max=80):
     path = Path(path)
     if not path.exists():
         return f"File not found: {path}"
@@ -660,8 +660,10 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                 ratio_edges = None
 
                 for r_val in ["r02", "r03"]:
-                    hists = []
-                    edges = None
+                    r_val_float = float(r_val.replace("r0", "0."))
+                    area_total = 2.2 * 2.0 * np.pi
+                    area_cone = np.pi * (r_val_float ** 2)
+                    scale_factor = int(np.floor(area_total / area_cone))
 
                     if do_unsub:
                         name_jet = f"hJetPtv2_raw_{r_val}_unsub"
@@ -669,22 +671,45 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                         if name_jet in file and name_rcone in file:
                             val_jet, edg_j = file[name_jet].to_numpy()
                             val_rc, edg_r = file[name_rcone].to_numpy()
-                            hists.append((val_jet, "Jet $p_{T}$ Unsubtracted", "blue", "-"))
-                            hists.append((val_rc, "RCone $p_{T}$ Unsubtracted", "blue", "--"))
-                            if edges is None: edges = edg_j
+                            hists_unsub = [
+                                (val_jet, "Jet $p_{T}$ Unsubtracted", "red", "-"),
+                                (val_rc, "RCone $p_{T}$ Unsubtracted", "blue", "--"),
+                                (val_rc * scale_factor, f"Scaled RCone $p_{{T}}$ Unsubtracted ($\\times {scale_factor}$)", "forestgreen", "--"),
+                            ]
 
                             # Ratio calculation (only valid when both jet and rcone have counts > 0)
-                            valid = (val_jet > 0) & (val_rc > 0)
+                            val_rc_scaled = val_rc * scale_factor
+                            err_jet = file[name_jet].errors()
+                            err_rc_scaled = file[name_rcone].errors() * scale_factor
+
+                            valid = (val_jet > 0) & (val_rc_scaled > 0)
                             ratio_unsub = np.full_like(val_rc, np.nan, dtype=float)
                             ratio_err_unsub = np.full_like(val_rc, np.nan, dtype=float)
-                            err_jet = file[name_jet].errors()
-                            err_rc = file[name_rcone].errors()
 
-                            ratio_unsub[valid] = val_rc[valid] / val_jet[valid]
-                            ratio_err_unsub[valid] = np.sqrt( (err_rc[valid] / val_jet[valid])**2 + (val_rc[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
+                            ratio_unsub[valid] = val_rc_scaled[valid] / val_jet[valid]
+                            ratio_err_unsub[valid] = np.sqrt( (err_rc_scaled[valid] / val_jet[valid])**2 + (val_rc_scaled[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
 
                             rcone_ptv2_ratio_unsub.append((ratio_unsub, ratio_err_unsub, f"R = {r_val.replace('r0', '0.')} Unsubtracted", "blue" if r_val=="r02" else "crimson"))
                             if ratio_edges is None: ratio_edges = edg_j
+
+                            # Plot unsub overlay
+                            output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_unsub_qa.png"
+                            r_jet_val = float(r_val.replace("r0", "0."))
+
+                            max_x_val = 0
+                            for values, _, _, _ in hists_unsub:
+                                nonzero_indices = np.where(values > 0)[0]
+                                if len(nonzero_indices) > 0:
+                                    max_bin_edge = edg_j[nonzero_indices[-1] + 1]
+                                    if max_bin_edge > max_x_val:
+                                        max_x_val = max_bin_edge
+
+                            if max_x_val > rcone_pt_max:
+                                make_generic_overlay(edg_j, hists_unsub, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax='auto', legend_loc='upper right', r_jet=r_jet_val)
+                                zoom_output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_unsub_zoom_qa.png"
+                                make_generic_overlay(edg_j, hists_unsub, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax=rcone_pt_max, legend_loc='upper right', r_jet=r_jet_val)
+                            else:
+                                make_generic_overlay(edg_j, hists_unsub, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax=rcone_pt_max, legend_loc='upper right', r_jet=r_jet_val)
 
                     if do_iter:
                         name_jet = f"hJetPtv2_raw_{r_val}_iter"
@@ -692,27 +717,45 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                         if name_jet in file and name_rcone in file:
                             val_jet, edg_j = file[name_jet].to_numpy()
                             val_rc, edg_r = file[name_rcone].to_numpy()
-                            hists.append((val_jet, "Jet $p_{T}$ Iterative Sub", "red", "-"))
-                            hists.append((val_rc, "RCone $p_{T}$ Iterative Sub", "red", "--"))
-                            if edges is None: edges = edg_j
+                            hists_iter = [
+                                (val_jet, "Jet $p_{T}$ Iterative Sub", "red", "-"),
+                                (val_rc, "RCone $p_{T}$ Iterative Sub", "blue", "--"),
+                                (val_rc * scale_factor, f"Scaled RCone $p_{{T}}$ Iterative Sub ($\\times {scale_factor}$)", "forestgreen", "--"),
+                            ]
 
                             # Ratio calculation (only valid when both jet and rcone have counts > 0)
-                            valid = (val_jet > 0) & (val_rc > 0)
+                            val_rc_scaled = val_rc * scale_factor
+                            err_jet = file[name_jet].errors()
+                            err_rc_scaled = file[name_rcone].errors() * scale_factor
+
+                            valid = (val_jet > 0) & (val_rc_scaled > 0)
                             ratio_iter = np.full_like(val_rc, np.nan, dtype=float)
                             ratio_err_iter = np.full_like(val_rc, np.nan, dtype=float)
-                            err_jet = file[name_jet].errors()
-                            err_rc = file[name_rcone].errors()
 
-                            ratio_iter[valid] = val_rc[valid] / val_jet[valid]
-                            ratio_err_iter[valid] = np.sqrt( (err_rc[valid] / val_jet[valid])**2 + (val_rc[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
+                            ratio_iter[valid] = val_rc_scaled[valid] / val_jet[valid]
+                            ratio_err_iter[valid] = np.sqrt( (err_rc_scaled[valid] / val_jet[valid])**2 + (val_rc_scaled[valid] * err_jet[valid] / (val_jet[valid]**2))**2 )
 
                             rcone_ptv2_ratio_iter.append((ratio_iter, ratio_err_iter, f"R = {r_val.replace('r0', '0.')} Iterative Sub", "blue" if r_val=="r02" else "crimson"))
                             if ratio_edges is None: ratio_edges = edg_j
 
-                    if hists and edges is not None:
-                        output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_qa.png"
-                        r_jet_val = float(r_val.replace("r0", "0."))
-                        make_generic_overlay(edges, hists, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax='auto', legend_loc='upper right', r_jet=r_jet_val)
+                            # Plot iter overlay
+                            output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_iter_qa.png"
+                            r_jet_val = float(r_val.replace("r0", "0."))
+
+                            max_x_val = 0
+                            for values, _, _, _ in hists_iter:
+                                nonzero_indices = np.where(values > 0)[0]
+                                if len(nonzero_indices) > 0:
+                                    max_bin_edge = edg_j[nonzero_indices[-1] + 1]
+                                    if max_bin_edge > max_x_val:
+                                        max_x_val = max_bin_edge
+
+                            if max_x_val > rcone_pt_max:
+                                make_generic_overlay(edg_j, hists_iter, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax='auto', legend_loc='upper right', r_jet=r_jet_val)
+                                zoom_output_path = run_output_dir / f"run_{run_number}_rcone_vs_jet_ptv2_raw_{r_val}_iter_zoom_qa.png"
+                                make_generic_overlay(edg_j, hists_iter, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax=rcone_pt_max, legend_loc='upper right', r_jet=r_jet_val)
+                            else:
+                                make_generic_overlay(edg_j, hists_iter, run_number, output_path, r"Raw $p_{T}$ (GeV)", "Counts", logy=True, xmax=rcone_pt_max, legend_loc='upper right', r_jet=r_jet_val)
 
                 # Ratio plots
                 if ratio_edges is not None:
@@ -720,20 +763,15 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                         output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_unsub_qa.png"
                         valid_unsub = [np.nanmax(vals + errs) for vals, errs, _, _ in rcone_ptv2_ratio_unsub if np.any(~np.isnan(vals))]
                         max_y = max(valid_unsub) if valid_unsub else 0
-                        ymax_val = 1.0 if max_y > 1.0 else None
-                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_unsub, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
+                        ymax_val = 2.0 if max_y > 2.0 else None
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_unsub, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone (Scaled) / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
 
-                        zoom_output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_unsub_zoom_qa.png"
-                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_unsub, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=0.06, legend_loc='best')
                     if rcone_ptv2_ratio_iter:
                         output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_iter_qa.png"
                         valid_iter = [np.nanmax(vals + errs) for vals, errs, _, _ in rcone_ptv2_ratio_iter if np.any(~np.isnan(vals))]
                         max_y = max(valid_iter) if valid_iter else 0
-                        ymax_val = 1.0 if max_y > 1.0 else None
-                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_iter, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
-
-                        zoom_output_path = run_output_dir / f"run_{run_number}_rcone_pt_ratio_iter_zoom_qa.png"
-                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_iter, run_number, zoom_output_path, r"Raw $p_{T}$ (GeV)", "RCone / Jet", xmax='auto', ymax=0.06, legend_loc='best')
+                        ymax_val = 2.0 if max_y > 2.0 else None
+                        make_profile_overlay(ratio_edges, rcone_ptv2_ratio_iter, run_number, output_path, r"Raw $p_{T}$ (GeV)", "RCone (Scaled) / Jet", xmax='auto', ymax=ymax_val, legend_loc='best')
 
                 # Profiles
                 for r_val, color_unsub, color_iter in [("r02", "green", "blue"), ("r03", "green", "blue")]:
@@ -973,6 +1011,7 @@ def main():
     parser.add_argument("--do-mult", type=int, default=1, help="Process mult bkg sub (1=True, 0=False). Default: 1")
     parser.add_argument("--do-unsub", type=int, default=1, help="Process unsubtracted (1=True, 0=False). Default: 1")
     parser.add_argument("--do-rcone", type=int, default=1, help="Process random cones (1=True, 0=False). Default: 1")
+    parser.add_argument("--rcone-pt-max", type=float, default=80, help="Maximum x-axis range for random cone pT plots (and zoom threshold). Default: 80")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -1001,7 +1040,15 @@ def main():
     print(f"Found {len(file_list)} input files. Starting processing...")
 
     files_to_process = [Path(p) for p in file_list]
-    process_func = functools.partial(process_file, output_dir=args.output_dir, do_iter=bool(args.do_iter), do_mult=bool(args.do_mult), do_unsub=bool(args.do_unsub), do_rcone=bool(args.do_rcone))
+    process_func = functools.partial(
+        process_file,
+        output_dir=args.output_dir,
+        do_iter=bool(args.do_iter),
+        do_mult=bool(args.do_mult),
+        do_unsub=bool(args.do_unsub),
+        do_rcone=bool(args.do_rcone),
+        rcone_pt_max=args.rcone_pt_max,
+    )
     max_workers = min(os.cpu_count() or 4, 32)
 
     errors = []
