@@ -25,6 +25,7 @@ class EventQA : public SubsysReco
   int End(PHCompositeNode *topNode) override;
 
   void set_do_abort(bool b) { m_doAbort = b; }
+  void set_cent_max(double cent_max) { m_cuts.m_cent_max = cent_max; }
 
  private:
   int process_event_check(PHCompositeNode *topNode);
