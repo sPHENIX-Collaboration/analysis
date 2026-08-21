@@ -157,6 +157,10 @@ target_link_libraries(Jet-Anav2 PRIVATE ${STANDALONE_MACRO_LIBS})
 add_executable(Jet-Anav3 macros/Jet-Anav3.C)
 target_link_libraries(Jet-Anav3 PRIVATE ${STANDALONE_MACRO_LIBS})
 
+# --- sEPD QA ---
+add_executable(sEPD-QA macros/sEPD-QA.C)
+target_link_libraries(sEPD-QA PRIVATE ${STANDALONE_MACRO_LIBS})
+
 # --- display ---
 add_executable(display macros/display.C)
 target_link_libraries(display PRIVATE ${STANDALONE_MACRO_LIBS})
