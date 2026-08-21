@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -I$(OFFLINE_MAIN)/include \
+  -isystem$(OFFLINE_MAIN)/include \
   -isystem$(ROOTSYS)/include
 
 AM_LDFLAGS = \
@@ -11,38 +11,18 @@ AM_LDFLAGS = \
   -L$(OFFLINE_MAIN)/lib64
 
 pkginclude_HEADERS = \
-  VertexCompare.h
+  SiliconSeedGeoAcceptance.h
 
 lib_LTLIBRARIES = \
-  libVertexCompare.la
+  libSiliconSeedGeoAcceptance.la
 
-libVertexCompare_la_SOURCES = \
-  VertexCompare.cc
+libSiliconSeedGeoAcceptance_la_SOURCES = \
+  SiliconSeedGeoAcceptance.cc
 
-libVertexCompare_la_LIBADD = \
+libSiliconSeedGeoAcceptance_la_LIBADD = \
   -lphool \
   -lSubsysReco \
-  -lglobalvertex \
-  -lffarawobjects \
-  -lphool \
-  -lfun4all \
-  -lg4eval \
-  -lg4eval_io \
-  -lphg4hit \
-  -lmbd_io \
-  -lg4detectors_io \
-  -lmvtx \
-  -lmvtx_io \
-  -lintt \
-  -lintt_io \
-  -lmicromegas_io \
-  -lSubsysReco \
-  -ltpc_io \
-  -ltrack_io \
-  -ltrackeralign \
-  -ltrackbase_historic_io \
-  -lcalotrigger \ 
-  -lcentrality
+  -ltrack_io
 
 BUILT_SOURCES = testexternals.cc
 
@@ -50,7 +30,7 @@ noinst_PROGRAMS = \
   testexternals
 
 testexternals_SOURCES = testexternals.cc
-testexternals_LDADD   = libVertexCompare.la
+testexternals_LDADD   = libSiliconSeedGeoAcceptance.la
 
 testexternals.cc:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@

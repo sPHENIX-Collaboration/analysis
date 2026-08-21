@@ -150,6 +150,7 @@ class VertexCompare : public SubsysReco
     SvtxPHG4ParticleMap *svtxPHG4ParticleMap = nullptr;
     Gl1Packet *gl1PacketInfo = nullptr;
     MbdOut *m_mbdout = nullptr;
+    MbdPmtContainer *m_mbdpmtcontainer = nullptr;
     MinimumBiasInfo *minimumbiasinfo = nullptr;
     CentralityInfo *m_CentInfo = nullptr;
 
@@ -165,6 +166,12 @@ class VertexCompare : public SubsysReco
     std::vector<int> mbdVertexId = std::vector<int>();
     std::vector<short int> mbdVertexCrossing = std::vector<short int>();
     float MBD_charge_sum{std::numeric_limits<float>::quiet_NaN()};
+    short int mbd_north_npmt = 0;
+    short int mbd_south_npmt = 0;
+    float mbd_south_charge_sum = 0;
+    float mbd_north_charge_sum = 0;
+    int mbd_nhitsoverths_south = 0;
+    int mbd_nhitsoverths_north = 0;
     // float trackerVertexX{std::numeric_limits<float>::quiet_NaN()};
     // float trackerVertexY{std::numeric_limits<float>::quiet_NaN()};
     // float trackerVertexZ{std::numeric_limits<float>::quiet_NaN()};
@@ -198,6 +205,14 @@ class VertexCompare : public SubsysReco
     uint64_t bcotr = std::numeric_limits<uint64_t>::quiet_NaN();
     // centrality
     float centrality_mbd_;
+    int ncoll_ = 0;
+    int npart_ = 0;
+
+    // HepMC generator collision information
+    int N_HepMCGenEvent = 0;
+    std::vector<int> HepMCGenEvent_processID = std::vector<int>();
+    std::vector<int> HepMCGenEvent_embeddingID = std::vector<int>();
+    std::vector<int> HepMCGenEvent_crossing = std::vector<int>();
 
     // truth vertex information
     int nTruthVertex = 0; // total number of primary truth vertices
@@ -439,6 +454,8 @@ class VertexCompare : public SubsysReco
     std::vector<float> PrimaryPHG4Ptcl_originVtxT = std::vector<float>();
     std::vector<int> PrimaryPHG4Ptcl_originCrossing = std::vector<int>();
     std::vector<int> PrimaryPHG4Ptcl_originIsEmbeded = std::vector<int>();
+    std::vector<bool> PrimaryPHG4Ptcl_truthevalIsPrimary = std::vector<bool>();
+    std::vector<int> PrimaryPHG4Ptcl_embedID = std::vector<int>();
     std::vector<TString> PrimaryPHG4Ptcl_ParticleClass = std::vector<TString>();
     std::vector<bool> PrimaryPHG4Ptcl_isStable = std::vector<bool>();
     std::vector<double> PrimaryPHG4Ptcl_charge = std::vector<double>();
@@ -457,6 +474,8 @@ class VertexCompare : public SubsysReco
     std::vector<float> sPHENIXPrimary_originVtxT = std::vector<float>();
     std::vector<int> sPHENIXPrimary_originCrossing = std::vector<int>();
     std::vector<int> sPHENIXPrimary_originIsEmbeded = std::vector<int>();
+    std::vector<bool> sPHENIXPrimary_truthevalIsPrimary = std::vector<bool>();
+    std::vector<int> sPHENIXPrimary_embedID = std::vector<int>();
     std::vector<TString> sPHENIXPrimary_ParticleClass = std::vector<TString>();
     std::vector<bool> sPHENIXPrimary_isStable = std::vector<bool>();
     std::vector<double> sPHENIXPrimary_charge = std::vector<double>();
@@ -495,6 +514,8 @@ class VertexCompare : public SubsysReco
     std::vector<float> AllPHG4Ptcl_originVtxT = std::vector<float>();
     std::vector<int> AllPHG4Ptcl_originCrossing = std::vector<int>();
     std::vector<int> AllPHG4Ptcl_originIsEmbeded = std::vector<int>();
+    std::vector<bool> AllPHG4Ptcl_truthevalIsPrimary = std::vector<bool>();
+    std::vector<int> AllPHG4Ptcl_embedID = std::vector<int>();
     std::vector<std::vector<int>> AllPHG4Ptcl_ancestor_trackID = std::vector<std::vector<int>>();
     std::vector<std::vector<int>> AllPHG4Ptcl_ancestor_PID = std::vector<std::vector<int>>();
     std::vector<std::vector<float>> AllPHG4Ptcl_truthcluster_X = std::vector<std::vector<float>>();

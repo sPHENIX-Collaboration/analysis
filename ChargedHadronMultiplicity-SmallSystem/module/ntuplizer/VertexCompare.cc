@@ -69,6 +69,9 @@
 #include <phool/getClass.h>
 #include <phool/sphenix_constants.h>
 
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+
 #include <trackbase/ActsGeometry.h>
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterContainer.h>
@@ -94,6 +97,7 @@
 
 #include <ffarawobjects/Gl1Packet.h>
 #include <ffarawobjects/Gl1RawHit.h>
+#include <ffaobjects/EventHeader.h>
 
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
@@ -103,6 +107,7 @@
 #include <globalvertex/SvtxVertexMap.h>
 
 #include <mbd/MbdOut.h>
+#include <mbd/MbdDefs.h>
 #include <mbd/MbdPmtContainer.h>
 #include <mbd/MbdPmtHit.h>
 
@@ -120,6 +125,8 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4VtxPoint.h>
 
+#include <HepMC/GenEvent.h>
+
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -130,6 +137,11 @@
 
 namespace
 {
+constexpr int kMbdSouthArm = 0;
+constexpr int kMbdNorthArm = 1;
+constexpr int kMbdPmtsPerArm = MbdDefs::MBD_N_PMT / MbdDefs::MBD_N_ARMS;
+constexpr float kMbdPmtChargeThreshold = 0.25F;
+
 template <class Container> void Clean(Container &c) { Container().swap(c); }
 } // namespace
 
@@ -186,6 +198,12 @@ int VertexCompare::Init(PHCompositeNode *topNode)
     outTree->Branch("mbdVertexId", &mbdVertexId);
     outTree->Branch("mbdVertexCrossing", &mbdVertexCrossing);
     outTree->Branch("MBD_charge_sum", &MBD_charge_sum);
+    outTree->Branch("mbd_north_npmt", &mbd_north_npmt);
+    outTree->Branch("mbd_south_npmt", &mbd_south_npmt);
+    outTree->Branch("mbd_south_charge_sum", &mbd_south_charge_sum);
+    outTree->Branch("mbd_north_charge_sum", &mbd_north_charge_sum);
+    outTree->Branch("mbd_nhitsoverths_south", &mbd_nhitsoverths_south);
+    outTree->Branch("mbd_nhitsoverths_north", &mbd_nhitsoverths_north);
     outTree->Branch("nSvtxVertices", &nSvtxVertices);
     outTree->Branch("nSvtxVertices_validCrossing", &nSvtxVertices_validCrossing);
     outTree->Branch("trackerVertexId", &trackerVertexId);
@@ -380,6 +398,12 @@ int VertexCompare::Init(PHCompositeNode *topNode)
 
     if (isSimulation)
     {
+        outTree->Branch("ncoll", &ncoll_);
+        outTree->Branch("npart", &npart_);
+        outTree->Branch("N_HepMCGenEvent", &N_HepMCGenEvent);
+        outTree->Branch("HepMCGenEvent_processID", &HepMCGenEvent_processID);
+        outTree->Branch("HepMCGenEvent_embeddingID", &HepMCGenEvent_embeddingID);
+        outTree->Branch("HepMCGenEvent_crossing", &HepMCGenEvent_crossing);
         outTree->Branch("nTruthVertex", &nTruthVertex);
         outTree->Branch("TruthVertex_isEmbeded", &TruthVertex_isEmbeded);
         outTree->Branch("TruthVertexX", &TruthVertexX);
@@ -441,6 +465,8 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("PrimaryPHG4Ptcl_originVtxT", &PrimaryPHG4Ptcl_originVtxT);
         outTree->Branch("PrimaryPHG4Ptcl_originCrossing", &PrimaryPHG4Ptcl_originCrossing);
         outTree->Branch("PrimaryPHG4Ptcl_originIsEmbeded", &PrimaryPHG4Ptcl_originIsEmbeded);
+        outTree->Branch("PrimaryPHG4Ptcl_truthevalIsPrimary", &PrimaryPHG4Ptcl_truthevalIsPrimary);
+        outTree->Branch("PrimaryPHG4Ptcl_embedID", &PrimaryPHG4Ptcl_embedID);
         outTree->Branch("PrimaryPHG4Ptcl_ParticleClass", &PrimaryPHG4Ptcl_ParticleClass);
         outTree->Branch("PrimaryPHG4Ptcl_isStable", &PrimaryPHG4Ptcl_isStable);
         outTree->Branch("PrimaryPHG4Ptcl_charge", &PrimaryPHG4Ptcl_charge);
@@ -478,6 +504,8 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("sPHENIXPrimary_originVtxT", &sPHENIXPrimary_originVtxT);
         outTree->Branch("sPHENIXPrimary_originCrossing", &sPHENIXPrimary_originCrossing);
         outTree->Branch("sPHENIXPrimary_originIsEmbeded", &sPHENIXPrimary_originIsEmbeded);
+        outTree->Branch("sPHENIXPrimary_truthevalIsPrimary", &sPHENIXPrimary_truthevalIsPrimary);
+        outTree->Branch("sPHENIXPrimary_embedID", &sPHENIXPrimary_embedID);
         outTree->Branch("sPHENIXPrimary_ParticleClass", &sPHENIXPrimary_ParticleClass);
         outTree->Branch("sPHENIXPrimary_isStable", &sPHENIXPrimary_isStable);
         outTree->Branch("sPHENIXPrimary_charge", &sPHENIXPrimary_charge);
@@ -515,6 +543,8 @@ int VertexCompare::Init(PHCompositeNode *topNode)
         outTree->Branch("AllPHG4Ptcl_originVtxT", &AllPHG4Ptcl_originVtxT);
         outTree->Branch("AllPHG4Ptcl_originCrossing", &AllPHG4Ptcl_originCrossing);
         outTree->Branch("AllPHG4Ptcl_originIsEmbeded", &AllPHG4Ptcl_originIsEmbeded);
+        outTree->Branch("AllPHG4Ptcl_truthevalIsPrimary", &AllPHG4Ptcl_truthevalIsPrimary);
+        outTree->Branch("AllPHG4Ptcl_embedID", &AllPHG4Ptcl_embedID);
         outTree->Branch("AllPHG4Ptcl_ancestor_trackID", &AllPHG4Ptcl_ancestor_trackID);
         outTree->Branch("AllPHG4Ptcl_ancestor_PID", &AllPHG4Ptcl_ancestor_PID);
         outTree->Branch("AllPHG4Ptcl_truthcluster_X", &AllPHG4Ptcl_truthcluster_X);
@@ -548,6 +578,42 @@ int VertexCompare::InitRun(PHCompositeNode *topNode) { return Fun4AllReturnCodes
 int VertexCompare::process_event(PHCompositeNode *topNode)
 {
     std::cout << "VertexCompare::process_event - Processing event " << counter << std::endl;
+
+    if (isSimulation)
+    {
+        auto eventheader = findNode::getClass<EventHeader>(topNode, "EventHeader");
+        if (!eventheader)
+        {
+            std::cout << "VertexCompare::process_event - [WARNING] - cannot find EventHeader node EventHeader" << std::endl;
+        }
+        else
+        {
+            ncoll_ = eventheader->get_ncoll();
+            npart_ = eventheader->get_npart();
+        }
+
+        auto geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+        if (!geneventmap)
+        {
+            std::cout << "VertexCompare::process_event - [WARNING] - cannot find PHHepMCGenEventMap node PHHepMCGenEventMap" << std::endl;
+        }
+        else
+        {
+            for (PHHepMCGenEventMap::ConstIter iter = geneventmap->begin(); iter != geneventmap->end(); ++iter)
+            {
+                PHHepMCGenEvent *genevent = iter->second;
+                if (!genevent || !genevent->getEvent())
+                {
+                    continue;
+                }
+
+                HepMCGenEvent_processID.push_back(genevent->getEvent()->signal_process_id());
+                HepMCGenEvent_embeddingID.push_back(genevent->get_embedding_id());
+                HepMCGenEvent_crossing.push_back(static_cast<int>(std::lround(genevent->get_collision_vertex().t() / sphenix_constants::time_between_crossings)));
+            }
+            N_HepMCGenEvent = static_cast<int>(HepMCGenEvent_processID.size());
+        }
+    }
 
     if (truthOnlyOutput_)
     {
@@ -583,6 +649,7 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     svtxTrackMap = findNode::getClass<SvtxTrackMap>(topNode, svtxTrackMapName);
     gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, gl1NodeName);
     m_mbdout = findNode::getClass<MbdOut>(topNode, mbdOutNodeName);
+    m_mbdpmtcontainer = findNode::getClass<MbdPmtContainer>(topNode, "MbdPmtContainer");
     minimumbiasinfo = findNode::getClass<MinimumBiasInfo>(topNode, "MinimumBiasInfo");
     m_CentInfo = findNode::getClass<CentralityInfo>(topNode, "CentralityInfo");
 
@@ -668,7 +735,36 @@ int VertexCompare::process_event(PHCompositeNode *topNode)
     }
     else
     {
-        MBD_charge_sum = m_mbdout->get_q(0) + m_mbdout->get_q(1);
+        mbd_south_npmt = m_mbdout->get_npmt(kMbdSouthArm);
+        mbd_north_npmt = m_mbdout->get_npmt(kMbdNorthArm);
+        mbd_south_charge_sum = m_mbdout->get_q(kMbdSouthArm);
+        mbd_north_charge_sum = m_mbdout->get_q(kMbdNorthArm);
+        MBD_charge_sum = mbd_south_charge_sum + mbd_north_charge_sum;
+    }
+
+    if (!m_mbdpmtcontainer)
+    {
+        std::cout << "SiliconSeedAnalyzer::process_event - [WARNING] - cannot find MbdPmtContainer node MbdPmtContainer" << std::endl;
+    }
+    else
+    {
+        for (int ipmt = 0; ipmt < MbdDefs::MBD_N_PMT; ++ipmt)
+        {
+            const float charge = m_mbdpmtcontainer->get_pmt(ipmt)->get_q();
+            if (charge <= kMbdPmtChargeThreshold)
+            {
+                continue;
+            }
+
+            if (ipmt < kMbdPmtsPerArm)
+            {
+                ++mbd_nhitsoverths_south;
+            }
+            else
+            {
+                ++mbd_nhitsoverths_north;
+            }
+        }
     }
 
     is_min_bias = (minimumbiasinfo) ? minimumbiasinfo->isAuAuMinimumBias() : false;
@@ -1988,7 +2084,7 @@ void VertexCompare::FillTruthParticleTree()
             TruthVertexY.push_back(point->get_y());
             TruthVertexZ.push_back(point->get_z());
             TruthVertexT.push_back(point->get_t());
-            TruthVertex_crossing.push_back(std::isfinite(point->get_t()) ? static_cast<int>(std::floor(point->get_t() / sphenix_constants::time_between_crossings)) : std::numeric_limits<int>::max());
+            TruthVertex_crossing.push_back(std::isfinite(point->get_t()) ? static_cast<int>(std::round(point->get_t() / sphenix_constants::time_between_crossings)) : std::numeric_limits<int>::max());
         }
     }
 
@@ -2041,7 +2137,7 @@ void VertexCompare::FillTruthParticleTree()
         const int origin_vtx_id = origin->get_vtx_id();
         PHG4VtxPoint *origin_vtx = m_truth_info->GetVtx(origin_vtx_id);
         const float origin_vtx_t = origin_vtx ? origin_vtx->get_t() : kMissingFloat;
-        const int origin_crossing = std::isfinite(origin_vtx_t) ? static_cast<int>(std::floor(origin_vtx_t / sphenix_constants::time_between_crossings)) : kMissingInt;
+        const int origin_crossing = std::isfinite(origin_vtx_t) ? static_cast<int>(std::round(origin_vtx_t / sphenix_constants::time_between_crossings)) : kMissingInt;
 
         out_originTrackID.push_back(origin_track_id);
         out_originVtxID.push_back(origin_vtx_id);
@@ -2227,6 +2323,8 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_PIDs);
         fill_particle_kinematics(ptcl, PrimaryPHG4Ptcl_pT, PrimaryPHG4Ptcl_eta, PrimaryPHG4Ptcl_phi, PrimaryPHG4Ptcl_E, PrimaryPHG4Ptcl_PID, PrimaryPHG4Ptcl_trackID);
         fill_origin_info(ptcl, PrimaryPHG4Ptcl_originTrackID, PrimaryPHG4Ptcl_originVtxID, PrimaryPHG4Ptcl_originVtxT, PrimaryPHG4Ptcl_originCrossing, PrimaryPHG4Ptcl_originIsEmbeded);
+        PrimaryPHG4Ptcl_truthevalIsPrimary.push_back(truth_eval->is_primary(ptcl));
+        PrimaryPHG4Ptcl_embedID.push_back(truth_eval->get_embed(ptcl));
         fill_primary_particle_info(ptcl, PrimaryPHG4Ptcl_ParticleClass, PrimaryPHG4Ptcl_isStable, PrimaryPHG4Ptcl_charge, PrimaryPHG4Ptcl_isChargedHadron);
         fill_ancestor_info(ptcl, ancestor_trackIDs, ancestor_PIDs);
         PrimaryPHG4Ptcl_ancestor_trackID.push_back(ancestor_trackIDs);
@@ -2257,6 +2355,8 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_PIDs);
         fill_particle_kinematics(real_ptcl, sPHENIXPrimary_pT, sPHENIXPrimary_eta, sPHENIXPrimary_phi, sPHENIXPrimary_E, sPHENIXPrimary_PID, sPHENIXPrimary_trackID);
         fill_origin_info(real_ptcl, sPHENIXPrimary_originTrackID, sPHENIXPrimary_originVtxID, sPHENIXPrimary_originVtxT, sPHENIXPrimary_originCrossing, sPHENIXPrimary_originIsEmbeded);
+        sPHENIXPrimary_truthevalIsPrimary.push_back(truth_eval->is_primary(real_ptcl));
+        sPHENIXPrimary_embedID.push_back(truth_eval->get_embed(real_ptcl));
         fill_primary_particle_info(real_ptcl, sPHENIXPrimary_ParticleClass, sPHENIXPrimary_isStable, sPHENIXPrimary_charge, sPHENIXPrimary_isChargedHadron);
         fill_ancestor_info(real_ptcl, ancestor_trackIDs, ancestor_PIDs);
         sPHENIXPrimary_ancestor_trackID.push_back(ancestor_trackIDs);
@@ -2295,6 +2395,8 @@ void VertexCompare::FillTruthParticleTree()
         Clean(ancestor_PIDs);
         fill_particle_kinematics(ptcl, AllPHG4Ptcl_pT, AllPHG4Ptcl_eta, AllPHG4Ptcl_phi, AllPHG4Ptcl_E, AllPHG4Ptcl_PID, AllPHG4Ptcl_trackID);
         fill_origin_info(ptcl, AllPHG4Ptcl_originTrackID, AllPHG4Ptcl_originVtxID, AllPHG4Ptcl_originVtxT, AllPHG4Ptcl_originCrossing, AllPHG4Ptcl_originIsEmbeded);
+        AllPHG4Ptcl_truthevalIsPrimary.push_back(truth_eval->is_primary(ptcl));
+        AllPHG4Ptcl_embedID.push_back(truth_eval->get_embed(ptcl));
         fill_ancestor_info(ptcl, ancestor_trackIDs, ancestor_PIDs);
         AllPHG4Ptcl_ancestor_trackID.push_back(ancestor_trackIDs);
         AllPHG4Ptcl_ancestor_PID.push_back(ancestor_PIDs);
@@ -2313,9 +2415,21 @@ void VertexCompare::FillTruthParticleTree()
 //____________________________________________________________________________..
 void VertexCompare::Cleanup()
 {
+    ncoll_ = 0;
+    npart_ = 0;
+    N_HepMCGenEvent = 0;
+    Clean(HepMCGenEvent_processID);
+    Clean(HepMCGenEvent_embeddingID);
+    Clean(HepMCGenEvent_crossing);
     nTotalSilSeeds = 0;
     nSilSeedsValidCrossing = 0;
     MBD_charge_sum = 0;
+    mbd_north_npmt = 0;
+    mbd_south_npmt = 0;
+    mbd_south_charge_sum = 0;
+    mbd_north_charge_sum = 0;
+    mbd_nhitsoverths_south = 0;
+    mbd_nhitsoverths_north = 0;
     N_PrimaryPHG4Ptcl = 0;
     N_sPHENIXPrimary = 0;
     N_AllPHG4Ptcl = 0;
@@ -2555,6 +2669,8 @@ void VertexCompare::Cleanup()
     Clean(PrimaryPHG4Ptcl_originVtxT);
     Clean(PrimaryPHG4Ptcl_originCrossing);
     Clean(PrimaryPHG4Ptcl_originIsEmbeded);
+    Clean(PrimaryPHG4Ptcl_truthevalIsPrimary);
+    Clean(PrimaryPHG4Ptcl_embedID);
     Clean(PrimaryPHG4Ptcl_ParticleClass);
     Clean(PrimaryPHG4Ptcl_isStable);
     Clean(PrimaryPHG4Ptcl_charge);
@@ -2592,6 +2708,8 @@ void VertexCompare::Cleanup()
     Clean(sPHENIXPrimary_originVtxT);
     Clean(sPHENIXPrimary_originCrossing);
     Clean(sPHENIXPrimary_originIsEmbeded);
+    Clean(sPHENIXPrimary_truthevalIsPrimary);
+    Clean(sPHENIXPrimary_embedID);
     Clean(sPHENIXPrimary_ParticleClass);
     Clean(sPHENIXPrimary_isStable);
     Clean(sPHENIXPrimary_charge);
@@ -2629,6 +2747,8 @@ void VertexCompare::Cleanup()
     Clean(AllPHG4Ptcl_originVtxT);
     Clean(AllPHG4Ptcl_originCrossing);
     Clean(AllPHG4Ptcl_originIsEmbeded);
+    Clean(AllPHG4Ptcl_truthevalIsPrimary);
+    Clean(AllPHG4Ptcl_embedID);
     Clean(AllPHG4Ptcl_ancestor_trackID);
     Clean(AllPHG4Ptcl_ancestor_PID);
     Clean(AllPHG4Ptcl_truthcluster_X);
