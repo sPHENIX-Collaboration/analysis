@@ -25,6 +25,7 @@ class EventQA : public SubsysReco
   int End(PHCompositeNode *topNode) override;
 
   void set_do_abort(bool b) { m_doAbort = b; }
+  void set_do_hist(bool b = true) { m_do_hist = b; }
   void set_cent_max(double cent_max) { m_cuts.m_cent_max = cent_max; }
 
  private:
@@ -32,6 +33,7 @@ class EventQA : public SubsysReco
   int process_centrality(PHCompositeNode *topNode);
 
   bool m_doAbort{true};
+  bool m_do_hist{true};
 
   struct HistConfig
   {

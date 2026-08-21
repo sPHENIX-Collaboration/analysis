@@ -37,29 +37,32 @@ int EventQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 
   m_triggerAnalyzer = std::make_unique<TriggerAnalyzer>();
 
-  hEvent = new TH1F("hEvent", "Event Type; Type; Events", static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size()));
-  se->registerHisto(hEvent);
-
-  hEventMinBias = new TH1F("hEventMinBias", "Event Type; Type; Events", static_cast<unsigned int>(m_MinBias_Type.size()), 0, static_cast<double>(m_MinBias_Type.size()));
-  se->registerHisto(hEventMinBias);
-
-  hVtxZ = new TH1F("hVtxZ", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
-  se->registerHisto(hVtxZ);
-
-  hVtxZ_MB = new TH1F("hVtxZ_MB", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
-  se->registerHisto(hVtxZ_MB);
-
-  hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
-  se->registerHisto(hCentrality);
-
-  for (unsigned int i = 0; i < m_eventType.size(); ++i)
+  if (m_do_hist)
   {
-    hEvent->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
-  }
+    hEvent = new TH1F("hEvent", "Event Type; Type; Events", static_cast<unsigned int>(m_eventType.size()), 0, static_cast<double>(m_eventType.size()));
+    se->registerHisto(hEvent);
 
-  for (unsigned int i = 0; i < m_MinBias_Type.size(); ++i)
-  {
-    hEventMinBias->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
+    hEventMinBias = new TH1F("hEventMinBias", "Event Type; Type; Events", static_cast<unsigned int>(m_MinBias_Type.size()), 0, static_cast<double>(m_MinBias_Type.size()));
+    se->registerHisto(hEventMinBias);
+
+    hVtxZ = new TH1F("hVtxZ", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
+    se->registerHisto(hVtxZ);
+
+    hVtxZ_MB = new TH1F("hVtxZ_MB", "Z Vertex; z [cm]; Events", m_hist_config.m_bins_zvtx, m_hist_config.m_zvtx_low, m_hist_config.m_zvtx_high);
+    se->registerHisto(hVtxZ_MB);
+
+    hCentrality = new TH1F("hCentrality", "|z| < 10 cm and MB; Centrality [%]; Events", m_hist_config.m_bins_cent, m_hist_config.m_cent_low, m_hist_config.m_cent_high);
+    se->registerHisto(hCentrality);
+
+    for (unsigned int i = 0; i < m_eventType.size(); ++i)
+    {
+      hEvent->GetXaxis()->SetBinLabel(i + 1, m_eventType[i].c_str());
+    }
+
+    for (unsigned int i = 0; i < m_MinBias_Type.size(); ++i)
+    {
+      hEventMinBias->GetXaxis()->SetBinLabel(i + 1, m_MinBias_Type[i].c_str());
+    }
   }
 
   TTree *tree = TreeFiller::getTree();
@@ -75,7 +78,10 @@ int EventQA::Init([[maybe_unused]] PHCompositeNode *topNode)
 
 int EventQA::process_event_check(PHCompositeNode *topNode)
 {
-  hEvent->Fill(static_cast<std::uint8_t>(EventType::ALL));
+  if (m_do_hist)
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::ALL));
+  }
 
   EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
   if (!eventInfo)
@@ -104,20 +110,29 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
       m_data.zvtx = vtx->get_z();
       zvtx = m_data.zvtx;
 
-      hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX));
+      if (m_do_hist)
+      {
+        hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX));
+      }
     }
   }
 
-  hVtxZ->Fill(zvtx);
+  if (m_do_hist)
+  {
+    hVtxZ->Fill(zvtx);
+  }
 
   bool pass_zvtx10 = std::abs(zvtx) < m_cuts.m_zvtx_max;
 
   if (std::abs(zvtx) < m_cuts.m_zvtx_max_v2)
   {
-    hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
-    if (pass_zvtx10)
+    if (m_do_hist)
     {
-      hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
+      hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX50));
+      if (pass_zvtx10)
+      {
+        hEvent->Fill(static_cast<std::uint8_t>(EventType::ZVTX10));
+      }
     }
   }
 
@@ -131,7 +146,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
 
   if (pass_zvtx10 && mbd_trigger_fire)
   {
-    hEvent->Fill(static_cast<std::uint8_t>(EventType::MB_TRIG));
+    if (m_do_hist)
+    {
+      hEvent->Fill(static_cast<std::uint8_t>(EventType::MB_TRIG));
+    }
   }
 
   // Minimum Bias Classifier
@@ -158,7 +176,7 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
 
-  if (pass_zvtx10 && mbd_trigger_fire)
+  if (m_do_hist && pass_zvtx10 && mbd_trigger_fire)
   {
     if (minbias_bkg_high)
     {
@@ -192,7 +210,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
 
-  hVtxZ_MB->Fill(zvtx);
+  if (m_do_hist)
+  {
+    hVtxZ_MB->Fill(zvtx);
+  }
 
   // skip event if zvtx is too large
   if (!pass_zvtx10)
@@ -201,7 +222,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
 
-  hEvent->Fill(static_cast<std::uint8_t>(EventType::MB));
+  if (m_do_hist)
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::MB));
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -218,7 +242,10 @@ int EventQA::process_centrality(PHCompositeNode *topNode)
   m_data.centrality = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
   double cent = m_data.centrality;
 
-  hCentrality->Fill(cent);
+  if (m_do_hist)
+  {
+    hCentrality->Fill(cent);
+  }
 
   // skip event if centrality is too peripheral
   if (!std::isfinite(cent) || cent >= m_cuts.m_cent_max)
@@ -227,7 +254,10 @@ int EventQA::process_centrality(PHCompositeNode *topNode)
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
 
-  hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
+  if (m_do_hist)
+  {
+    hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -276,13 +306,16 @@ int EventQA::End([[maybe_unused]] PHCompositeNode *topNode)
   std::cout << std::format("process event, |z| >= {} cm: {}", m_cuts.m_zvtx_max, m_ctr["process_eventCheck_zvtx_large"]) << std::endl;
   std::cout << std::format("process event, Centrality >= {}%: {}", m_cuts.m_cent_max, m_ctr["process_eventCheck_centrality_large"]) << std::endl;
 
-  std::cout << std::format("{:#<20}\n", "");
-  std::cout << "Events" << std::endl;
-  for (unsigned int i = 0; i < m_eventType.size(); ++i)
+  if (m_do_hist && hEvent)
   {
-    std::cout << m_eventType[i] << ": " << hEvent->GetBinContent(i + 1) << std::endl;
+    std::cout << std::format("{:#<20}\n", "");
+    std::cout << "Events" << std::endl;
+    for (unsigned int i = 0; i < m_eventType.size(); ++i)
+    {
+      std::cout << m_eventType[i] << ": " << hEvent->GetBinContent(i + 1) << std::endl;
+    }
+    std::cout << std::format("{:#<20}\n", "");
   }
-  std::cout << std::format("{:#<20}\n", "");
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
