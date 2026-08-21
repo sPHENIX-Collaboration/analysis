@@ -134,7 +134,38 @@ def parse_run_number(path):
     return None
 
 
-def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", ylabel="", sphenix_label=SPHENIX_LABEL, date_str=None, save_pdf=False):
+def get_best_label_corner(values, xedges, yedges, x_min, x_max, y_min, y_max):
+    x_centers = (xedges[:-1] + xedges[1:]) / 2.0
+    y_centers = (yedges[:-1] + yedges[1:]) / 2.0
+    xc, yc = np.meshgrid(x_centers, y_centers, indexing='ij')
+
+    in_view = (xc >= x_min) & (xc <= x_max) & (yc >= y_min) & (yc <= y_max)
+    if not np.any(in_view):
+        return 0.95, 0.95, 'right', 'top'
+
+    x_mid = (x_min + x_max) / 2.0
+    y_mid = (y_min + y_max) / 2.0
+
+    corners = [
+        (0.95, 0.95, 'right', 'top', in_view & (xc >= x_mid) & (yc >= y_mid)),
+        (0.05, 0.95, 'left', 'top', in_view & (xc < x_mid) & (yc >= y_mid)),
+        (0.95, 0.08, 'right', 'bottom', in_view & (xc >= x_mid) & (yc < y_mid)),
+        (0.05, 0.08, 'left', 'bottom', in_view & (xc < x_mid) & (yc < y_mid)),
+    ]
+
+    best_score = float('inf')
+    best_corner = corners[0][:4]
+
+    for x_pos, y_pos, ha, va, mask in corners:
+        score = np.sum(values[mask])
+        if score < best_score:
+            best_score = score
+            best_corner = (x_pos, y_pos, ha, va)
+
+    return best_corner
+
+
+def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", ylabel="", hist_name="", sphenix_label=SPHENIX_LABEL, date_str=None, save_pdf=False):
     if date_str is None:
         date_str = datetime.now().strftime("%m/%d/%Y")
 
@@ -151,25 +182,37 @@ def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", yla
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
     cbar = fig.colorbar(mesh, cax=cax)
-    cbar.set_label("Counts")
+    cbar.set_label("Events")
 
     if xlabel:
         ax.set_xlabel(xlabel, loc='center')
     if ylabel:
         ax.set_ylabel(ylabel, loc='center', labelpad=10)
 
-    ax.set_xlim(xedges[0], xedges[-1])
-    ax.set_ylim(yedges[0], yedges[-1])
+    # Set x-limits based on histogram type
+    if hist_name == "h2sEPD_MBD":
+        ax.set_xlim(left=0, right=2100)
+    elif hist_name == "h2sEPD_CaloE":
+        ax.set_xlim(left=xedges[0], right=2100)
+    elif hist_name == "h2sEPD_Centrality":
+        ax.set_xlim(left=0, right=100)
+    else:
+        ax.set_xlim(left=xedges[0], right=xedges[-1])
 
-    if np.max(np.abs(xedges)) >= 1000:
+    # sEPD total charge max is 20000 on y-axis
+    ax.set_ylim(bottom=0, top=20000)
+
+    cur_xlim = ax.get_xlim()
+    if np.max(np.abs(cur_xlim)) >= 1000:
         formatter_x = ScalarFormatter(useMathText=True)
         formatter_x.set_powerlimits((3, 3))
         ax.xaxis.set_major_formatter(formatter_x)
 
-    has_y_offset = np.max(np.abs(yedges)) >= 1000
+    cur_ylim = ax.get_ylim()
+    has_y_offset = np.max(np.abs(cur_ylim)) >= 500
     if has_y_offset:
         formatter_y = ScalarFormatter(useMathText=True)
-        formatter_y.set_powerlimits((3, 3))
+        formatter_y.set_powerlimits((0, 2))
         ax.yaxis.set_major_formatter(formatter_y)
 
     # Top border labels: sPHENIX on left (shifted to avoid overlap with y-axis x10^3 multiplier), Run & Date on right
@@ -178,6 +221,10 @@ def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", yla
 
     right_text = f"Run: {run_number}, {date_str}" if run_number is not None else date_str
     ax.text(1.0, 1.01, right_text, transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    # Auto-place event selection label in the corner with the least data overlap
+    lbl_x, lbl_y, lbl_ha, lbl_va = get_best_label_corner(values, xedges, yedges, cur_xlim[0], cur_xlim[1], cur_ylim[0], cur_ylim[1])
+    ax.text(lbl_x, lbl_y, r"$|z| < 10$ cm & MB", transform=ax.transAxes, ha=lbl_ha, va=lbl_va, fontsize=18)
 
     fig.tight_layout()
     plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
@@ -211,16 +258,8 @@ def make_centrality_slices_plot(values, xedges, yedges, run_number, output_path,
     max_y_top = max(np.max(projections[i]) for i in range(3)) if len(projections) >= 3 else 1
     max_y_bottom = max(np.max(projections[i]) for i in range(3, 6)) if len(projections) >= 6 else 1
 
-    # Auto-adjust x-max based on the highest non-zero bin edge across all 6 histograms
-    max_x_val = 0
-    for proj in projections:
-        nonzero_indices = np.where(proj > 0)[0]
-        if len(nonzero_indices) > 0:
-            max_bin_edge = yedges[nonzero_indices[-1] + 1]
-            if max_bin_edge > max_x_val:
-                max_x_val = max_bin_edge
-
-    xmax = min(max_x_val * 1.05, yedges[-1]) if max_x_val > 0 else yedges[-1]
+    # sEPD total charge max is 20000
+    xmax = 20000
 
     for r in range(2):
         for c in range(3):
@@ -231,7 +270,7 @@ def make_centrality_slices_plot(values, xedges, yedges, run_number, output_path,
 
             hep.histplot((proj_1d, yedges), ax=ax, histtype='step', color='navy', linewidth=2)
 
-            ax.set_xlim(left=yedges[0], right=xmax)
+            ax.set_xlim(left=0, right=xmax)
             if r == 0:
                 ax.set_ylim(bottom=0, top=max_y_top * 1.2 if max_y_top > 0 else 1)
             else:
@@ -245,23 +284,23 @@ def make_centrality_slices_plot(values, xedges, yedges, run_number, output_path,
 
             # Y-axis scalar formatter on leftmost column
             max_y_r = max_y_top if r == 0 else max_y_bottom
-            if c == 0 and max_y_r >= 1000:
+            if c == 0 and max_y_r >= 500:
                 formatter_y = ScalarFormatter(useMathText=True)
-                formatter_y.set_powerlimits((3, 3))
+                formatter_y.set_powerlimits((0, 2))
                 ax.yaxis.set_major_formatter(formatter_y)
 
-            # Centrality range label on top-right of each subplot
-            cent_label = f"Centrality: {cent_min}–{cent_max}%"
+            # Centrality range and event selection label on top-right of each subplot
+            cent_label = f"Centrality: {cent_min}–{cent_max}%\n" + r"$|z| < 10$ cm & MB"
             ax.text(0.92, 0.90, cent_label, transform=ax.transAxes, ha='right', va='top', fontsize=18)
 
             # Axis labels for outer edges (centered)
             if r == 1:
                 ax.set_xlabel(xlabel if xlabel else "sEPD Total Charge", loc='center', fontsize=18)
             if c == 0:
-                ax.set_ylabel("Counts", loc='center', fontsize=18)
+                ax.set_ylabel("Events", loc='center', fontsize=18)
 
     # Top border labels on 2x3 figure: sPHENIX on left (shifted if top row has y-axis multiplier), Run & Date on right
-    has_top_y_offset = max_y_top >= 1000
+    has_top_y_offset = max_y_top >= 500
     sphenix_slices_x = 0.14 if has_top_y_offset else 0.0
     axes[0, 0].text(sphenix_slices_x, 1.02, get_sphenix_label(sphenix_label), transform=axes[0, 0].transAxes, ha='left', va='bottom', fontsize=16)
     right_text = f"Run: {run_number}, {date_str}" if run_number is not None else date_str
@@ -299,10 +338,10 @@ def make_1d_plot(values, bin_edges, run_number, output_path, xlabel="", ylabel="
         formatter_x.set_powerlimits((3, 3))
         ax.xaxis.set_major_formatter(formatter_x)
 
-    has_y_offset = max_y >= 1000
+    has_y_offset = max_y >= 500
     if has_y_offset:
         formatter_y = ScalarFormatter(useMathText=True)
-        formatter_y.set_powerlimits((3, 3))
+        formatter_y.set_powerlimits((0, 2))
         ax.yaxis.set_major_formatter(formatter_y)
 
     sphenix_x = 0.14 if has_y_offset else 0.0
@@ -310,6 +349,59 @@ def make_1d_plot(values, bin_edges, run_number, output_path, xlabel="", ylabel="
 
     right_text = f"Run: {run_number}, {date_str}" if run_number is not None else date_str
     ax.text(1.0, 1.01, right_text, transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    # Event selection label
+    ax.text(0.95, 0.95, r"$|z| < 10$ cm & MB", transform=ax.transAxes, ha='right', va='top', fontsize=18)
+
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=300)
+    if save_pdf:
+        fig.savefig(output_path.with_suffix('.pdf'))
+    plt.close(fig)
+
+
+def make_1d_slice_plot(values, yedges, cent_min, cent_max, run_number, output_path, xlabel="sEPD Total Charge", sphenix_label=SPHENIX_LABEL, date_str=None, save_pdf=False):
+    if date_str is None:
+        date_str = datetime.now().strftime("%m/%d/%Y")
+
+    hep.style.use("ATLAS")
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    hep.histplot((values, yedges), ax=ax, histtype='step', color='navy', linewidth=2)
+
+    # Fix x-axis range for sEPD total charge at 20000
+    xmax = 20000
+    ax.set_xlim(left=0, right=xmax)
+    max_y = np.max(values) if len(values) > 0 else 0
+    ax.set_ylim(bottom=0, top=max_y * 1.15 if max_y > 0 else 1)
+
+    if xlabel:
+        ax.set_xlabel(xlabel, loc='center')
+    ax.set_ylabel("Events", loc='center', labelpad=10)
+
+    if xmax >= 1000:
+        formatter_x = ScalarFormatter(useMathText=True)
+        formatter_x.set_powerlimits((3, 3))
+        ax.xaxis.set_major_formatter(formatter_x)
+
+    has_y_offset = max_y >= 500
+    if has_y_offset:
+        formatter_y = ScalarFormatter(useMathText=True)
+        formatter_y.set_powerlimits((0, 2))
+        ax.yaxis.set_major_formatter(formatter_y)
+
+    sphenix_x = 0.14 if has_y_offset else 0.0
+    ax.text(sphenix_x, 1.01, get_sphenix_label(sphenix_label), transform=ax.transAxes, ha='left', va='bottom', fontsize=16)
+
+    right_text = f"Run: {run_number}, {date_str}" if run_number is not None else date_str
+    ax.text(1.0, 1.01, right_text, transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    # Centrality range and event selection label
+    cent_label = f"Centrality: {cent_min}–{cent_max}%\n" + r"$|z| < 10$ cm & MB"
+    ax.text(0.95, 0.95, cent_label, transform=ax.transAxes, ha='right', va='top', fontsize=18)
 
     fig.tight_layout()
     plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
@@ -341,11 +433,22 @@ def process_file(path, output_dir, runs_to_plot=None, sphenix_label=SPHENIX_LABE
 
                     prefix = f"run_{run_number}_" if run_number is not None else f"{path.stem}_"
                     out_path = output_dir / f"{prefix}{name}.png"
-                    make_2d_plot(values, xedges, yedges, run_number, out_path, xlabel=xlabel, ylabel=ylabel, sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf)
+                    make_2d_plot(values, xedges, yedges, run_number, out_path, xlabel=xlabel, ylabel=ylabel, hist_name=name, sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf)
 
                     if name == "h2sEPD_Centrality":
                         slices_out_path = output_dir / f"{prefix}{name}_slices.png"
                         make_centrality_slices_plot(values, xedges, yedges, run_number, slices_out_path, xlabel=ylabel, sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf)
+
+                        # Individual 1D slice plots with optimized data ranges
+                        bin_centers_x = (xedges[:-1] + xedges[1:]) / 2.0
+                        for cent_min, cent_max in CENTRALITY_INTERVALS:
+                            mask = (bin_centers_x >= cent_min) & (bin_centers_x < cent_max)
+                            if np.any(mask):
+                                proj_1d = np.sum(values[mask, :], axis=0)
+                            else:
+                                proj_1d = np.zeros(len(yedges) - 1)
+                            slice_out_path = output_dir / f"{prefix}{name}_slice_{cent_min}_{cent_max}.png"
+                            make_1d_slice_plot(proj_1d, yedges, cent_min, cent_max, run_number, slice_out_path, xlabel=ylabel if ylabel else "sEPD Total Charge", sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf)
 
                         cent_1d_out_path = output_dir / f"{prefix}{name}_1D.png"
                         proj_cent = np.sum(values, axis=1)
