@@ -150,6 +150,45 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
     tree->Branch("emcal_energy", &m_data.emcal_energy);
     tree->Branch("ihcal_energy", &m_data.ihcal_energy);
     tree->Branch("ohcal_energy", &m_data.ohcal_energy);
+
+    if (m_do_detailed)
+    {
+      tree->Branch("emcal_base_tower_index", &m_data.emcal_base_tower_index);
+      tree->Branch("emcal_base_tower_energy", &m_data.emcal_base_tower_energy);
+
+      tree->Branch("emcal_retower_tower_index", &m_data.emcal_retower_tower_index);
+      tree->Branch("emcal_retower_tower_energy", &m_data.emcal_retower_tower_energy);
+
+      tree->Branch("ihcal_tower_index", &m_data.ihcal_tower_index);
+      tree->Branch("ihcal_tower_energy", &m_data.ihcal_tower_energy);
+
+      tree->Branch("ohcal_tower_index", &m_data.ohcal_tower_index);
+      tree->Branch("ohcal_tower_energy", &m_data.ohcal_tower_energy);
+
+      if (m_do_iter)
+      {
+        tree->Branch("iter_emcal_tower_index", &m_data.iter_emcal_tower_index);
+        tree->Branch("iter_emcal_tower_energy", &m_data.iter_emcal_tower_energy);
+
+        tree->Branch("iter_ihcal_tower_index", &m_data.iter_ihcal_tower_index);
+        tree->Branch("iter_ihcal_tower_energy", &m_data.iter_ihcal_tower_energy);
+
+        tree->Branch("iter_ohcal_tower_index", &m_data.iter_ohcal_tower_index);
+        tree->Branch("iter_ohcal_tower_energy", &m_data.iter_ohcal_tower_energy);
+      }
+
+      if (m_do_mult)
+      {
+        tree->Branch("mult_emcal_tower_index", &m_data.mult_emcal_tower_index);
+        tree->Branch("mult_emcal_tower_energy", &m_data.mult_emcal_tower_energy);
+
+        tree->Branch("mult_ihcal_tower_index", &m_data.mult_ihcal_tower_index);
+        tree->Branch("mult_ihcal_tower_energy", &m_data.mult_ihcal_tower_energy);
+
+        tree->Branch("mult_ohcal_tower_index", &m_data.mult_ohcal_tower_index);
+        tree->Branch("mult_ohcal_tower_energy", &m_data.mult_ohcal_tower_energy);
+      }
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -195,34 +234,43 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  if (m_do_hists)
+  if (m_do_hists || m_do_detailed)
   {
-    // EMCal
+    // Base EMCal
     for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
     {
-      unsigned int key = TowerInfoDefs::encode_emcal(towerIndex);
-      unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-      unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-
       auto* tower = towersCEMC->get_tower_at_channel(towerIndex);
 
-      if (!tower->get_isGood())
+      if (!tower || !tower->get_isGood())
       {
         continue;
       }
 
       double energy = tower->get_energy();
 
-      m_hists.h2EMCal->Fill(iphi, ieta, energy);
-      m_hists.h2EMCalCent->Fill(energy, cent);
-
-      if (tower->get_isZS())
+      if (m_do_detailed)
       {
-        m_hists.h2EMCalZSCent->Fill(energy, cent);
+        m_data.emcal_base_tower_index.push_back(static_cast<int>(towerIndex));
+        m_data.emcal_base_tower_energy.push_back(energy);
       }
-      else
+
+      if (m_do_hists)
       {
-        m_hists.h2EMCalNoZSCent->Fill(energy, cent);
+        unsigned int key = TowerInfoDefs::encode_emcal(towerIndex);
+        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
+        m_hists.h2EMCal->Fill(iphi, ieta, energy);
+        m_hists.h2EMCalCent->Fill(energy, cent);
+
+        if (tower->get_isZS())
+        {
+          m_hists.h2EMCalZSCent->Fill(energy, cent);
+        }
+        else
+        {
+          m_hists.h2EMCalNoZSCent->Fill(energy, cent);
+        }
       }
     }
   }
@@ -230,10 +278,6 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
   double totalCaloE = 0;
   for (unsigned int towerIndex = 0; towerIndex < towersCEMCRetowered->size(); ++towerIndex)
   {
-    unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
-    unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-    unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-
     auto* towerCEMC = towersCEMCRetowered->get_tower_at_channel(towerIndex);
     if(towerCEMC && towerCEMC->get_isGood())
     {
@@ -241,8 +285,18 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       m_data.emcal_energy += energy;
       totalCaloE += energy;
 
+      if (m_do_detailed)
+      {
+        m_data.emcal_retower_tower_index.push_back(static_cast<int>(towerIndex));
+        m_data.emcal_retower_tower_energy.push_back(energy);
+      }
+
       if (m_do_hists)
       {
+        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
+        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
         m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
         m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
       }
@@ -255,8 +309,18 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       m_data.ihcal_energy += energy;
       totalCaloE += energy;
 
+      if (m_do_detailed)
+      {
+        m_data.ihcal_tower_index.push_back(static_cast<int>(towerIndex));
+        m_data.ihcal_tower_energy.push_back(energy);
+      }
+
       if (m_do_hists)
       {
+        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
+        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
         m_hists.h2IHCal->Fill(iphi, ieta, energy);
         m_hists.h2IHCalCent->Fill(energy, cent);
 
@@ -278,8 +342,18 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       m_data.ohcal_energy += energy;
       totalCaloE += energy;
 
+      if (m_do_detailed)
+      {
+        m_data.ohcal_tower_index.push_back(static_cast<int>(towerIndex));
+        m_data.ohcal_tower_energy.push_back(energy);
+      }
+
       if (m_do_hists)
       {
+        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
+        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+
         m_hists.h2OHCal->Fill(iphi, ieta, energy);
         m_hists.h2OHCalCent->Fill(energy, cent);
 
@@ -298,6 +372,77 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
   if (m_do_hists)
   {
     m_hists.h2CentralityTotalCaloE->Fill(totalCaloE, cent);
+  }
+
+  if (m_do_detailed)
+  {
+    if (m_do_iter)
+    {
+      auto* towersCEMC_sub1  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+      auto* towersIHCal_sub1 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN_SUB1");
+      auto* towersOHCal_sub1 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
+
+      if (towersCEMC_sub1 && towersIHCal_sub1 && towersOHCal_sub1)
+      {
+        for (unsigned int towerIndex = 0; towerIndex < towersCEMC_sub1->size(); ++towerIndex)
+        {
+          auto* towerCEMC = towersCEMC_sub1->get_tower_at_channel(towerIndex);
+          if (towerCEMC && towerCEMC->get_isGood())
+          {
+            m_data.iter_emcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.iter_emcal_tower_energy.push_back(towerCEMC->get_energy());
+          }
+
+          auto* towerIHCal = towersIHCal_sub1->get_tower_at_channel(towerIndex);
+          if (towerIHCal && towerIHCal->get_isGood())
+          {
+            m_data.iter_ihcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.iter_ihcal_tower_energy.push_back(towerIHCal->get_energy());
+          }
+
+          auto* towerOHCal = towersOHCal_sub1->get_tower_at_channel(towerIndex);
+          if (towerOHCal && towerOHCal->get_isGood())
+          {
+            m_data.iter_ohcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.iter_ohcal_tower_energy.push_back(towerOHCal->get_energy());
+          }
+        }
+      }
+    }
+
+    if (m_do_mult)
+    {
+      auto* towersCEMC_mult  = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
+      auto* towersIHCal_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_HCALIN_SUB1");
+      auto* towersOHCal_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_HCALOUT_SUB1");
+
+      if (towersCEMC_mult && towersIHCal_mult && towersOHCal_mult)
+      {
+        for (unsigned int towerIndex = 0; towerIndex < towersCEMC_mult->size(); ++towerIndex)
+        {
+          auto* towerCEMC = towersCEMC_mult->get_tower_at_channel(towerIndex);
+          if (towerCEMC && towerCEMC->get_isGood())
+          {
+            m_data.mult_emcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.mult_emcal_tower_energy.push_back(towerCEMC->get_energy());
+          }
+
+          auto* towerIHCal = towersIHCal_mult->get_tower_at_channel(towerIndex);
+          if (towerIHCal && towerIHCal->get_isGood())
+          {
+            m_data.mult_ihcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.mult_ihcal_tower_energy.push_back(towerIHCal->get_energy());
+          }
+
+          auto* towerOHCal = towersOHCal_mult->get_tower_at_channel(towerIndex);
+          if (towerOHCal && towerOHCal->get_isGood())
+          {
+            m_data.mult_ohcal_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.mult_ohcal_tower_energy.push_back(towerOHCal->get_energy());
+          }
+        }
+      }
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -324,14 +469,7 @@ int CaloQA::process_event([[maybe_unused]] PHCompositeNode* topNode)
 //____________________________________________________________________________..
 int CaloQA::ResetEvent([[maybe_unused]] PHCompositeNode* topNode)
 {
-  // Calo
-  m_data.emcal_energy = 0;
-  m_data.ihcal_energy = 0;
-  m_data.ohcal_energy = 0;
-
-  // Centrality
-  m_data.centrality = 0;
-
+  m_data.clear();
   return Fun4AllReturnCodes::EVENT_OK;
 }
 

@@ -13,6 +13,7 @@
 // -- c++
 #include <string>
 #include <cstdint>
+#include <vector>
 
 class PHCompositeNode;
 
@@ -33,6 +34,14 @@ class CaloQA : public SubsysReco
   {
     m_do_hists = do_hists;
   }
+
+  void set_do_detailed(bool b = true) { m_do_detailed = b; }
+  void set_do_iter(bool b = true) { m_do_iter = b; }
+  void set_do_mult(bool b = true) { m_do_mult = b; }
+
+  bool get_do_detailed() const { return m_do_detailed; }
+  bool get_do_iter() const { return m_do_iter; }
+  bool get_do_mult() const { return m_do_mult; }
 
  private:
 
@@ -67,16 +76,83 @@ class CaloQA : public SubsysReco
 
   struct EventData
   {
-    double emcal_energy{0};
-    double ihcal_energy{0};
-    double ohcal_energy{0};
+    double emcal_energy{0};  // NOLINT(misc-non-private-member-variables-in-classes)
+    double ihcal_energy{0};  // NOLINT(misc-non-private-member-variables-in-classes)
+    double ohcal_energy{0};  // NOLINT(misc-non-private-member-variables-in-classes)
 
-    double centrality{0};
+    double centrality{0};    // NOLINT(misc-non-private-member-variables-in-classes)
+
+    // Detailed Unsubtracted
+    std::vector<int> emcal_base_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> emcal_base_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> emcal_retower_tower_index;     // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> emcal_retower_tower_energy;// NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> ihcal_tower_index;             // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> ihcal_tower_energy;        // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> ohcal_tower_index;             // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> ohcal_tower_energy;        // NOLINT(misc-non-private-member-variables-in-classes)
+
+    // Detailed Iterative Subtracted
+    std::vector<int> iter_emcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> iter_emcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> iter_ihcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> iter_ihcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> iter_ohcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> iter_ohcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    // Detailed Multiplicity Subtracted
+    std::vector<int> mult_emcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> mult_emcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> mult_ihcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> mult_ihcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<int> mult_ohcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<double> mult_ohcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+
+    void clear()
+    {
+      emcal_energy = 0;
+      ihcal_energy = 0;
+      ohcal_energy = 0;
+      centrality = 0;
+
+      emcal_base_tower_index.clear();
+      emcal_base_tower_energy.clear();
+      emcal_retower_tower_index.clear();
+      emcal_retower_tower_energy.clear();
+      ihcal_tower_index.clear();
+      ihcal_tower_energy.clear();
+      ohcal_tower_index.clear();
+      ohcal_tower_energy.clear();
+
+      iter_emcal_tower_index.clear();
+      iter_emcal_tower_energy.clear();
+      iter_ihcal_tower_index.clear();
+      iter_ihcal_tower_energy.clear();
+      iter_ohcal_tower_index.clear();
+      iter_ohcal_tower_energy.clear();
+
+      mult_emcal_tower_index.clear();
+      mult_emcal_tower_energy.clear();
+      mult_ihcal_tower_index.clear();
+      mult_ihcal_tower_energy.clear();
+      mult_ohcal_tower_index.clear();
+      mult_ohcal_tower_energy.clear();
+    }
   };
 
   EventData m_data;
 
   bool m_do_hists{true};
+  bool m_do_detailed{false};
+  bool m_do_iter{false};
+  bool m_do_mult{false};
 };
 
 #endif  // CALOCHECK_H
