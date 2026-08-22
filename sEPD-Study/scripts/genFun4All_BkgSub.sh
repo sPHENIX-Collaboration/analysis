@@ -16,7 +16,8 @@ nEvents=${6}
 dbtag=${7}
 do_flow=${8}
 eta_calib_path=${9}
-submitDir=${10}
+event_list_path=${10}
+submitDir=${11}
 
 # extract runnumber from file name
 file=$(basename "$input")
@@ -35,6 +36,13 @@ if [[ -z "$eta_calib_path" || "$eta_calib_path" == "none" || "$eta_calib_path" =
     eta_calib_file=""
 else
     eta_calib_file=$(basename "$eta_calib_path")
+fi
+
+# Check if event_list_path is a path or a keyword / empty
+if [[ -z "$event_list_path" || "$event_list_path" == "none" || "$event_list_path" == "default" ]]; then
+    event_list_file=""
+else
+    event_list_file=$(basename "$event_list_path")
 fi
 
 if [[ -n "$_CONDOR_SCRATCH_DIR" && -d "$_CONDOR_SCRATCH_DIR" ]]
@@ -71,6 +79,9 @@ then
     if [[ -n "$eta_calib_path" && "$eta_calib_path" != "none" && "$eta_calib_path" != "default" ]]; then
         test -e "$eta_calib_path" && cp -v "$eta_calib_path" .
     fi
+    if [[ -n "$event_list_path" && "$event_list_path" != "none" && "$event_list_path" != "default" ]]; then
+        test -e "$event_list_path" && cp -v "$event_list_path" .
+    fi
     ls -lah
 else
     echo "condor scratch NOT set" >&2
@@ -82,7 +93,7 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
-root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"dst_sepd.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $do_flow, $nEvents, 0, 0, \"$dbtag\", \"$eta_calib_file\")"
+root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"dst_sepd.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $do_flow, $nEvents, 0, 0, \"$dbtag\", \"$eta_calib_file\", \"$event_list_file\")"
 
 if [ $? -ne 0 ]; then
     echo "Error: ROOT macro crashed! Aborting transfer." >&2

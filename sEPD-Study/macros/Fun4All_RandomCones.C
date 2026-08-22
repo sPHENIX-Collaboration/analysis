@@ -61,7 +61,8 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
                          int nSkip = 0,
                          int event_id = 0,
                          const std::string &dbtag = "newcdbtag",
-                         const std::string &eta_calib_direct_path = "")
+                         const std::string &eta_calib_direct_path = "",
+                         const std::string &event_list = "")
 {
 
   // Extract runnumber and segment from first file within list
@@ -106,6 +107,7 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
+  std::cout << "event_list: " << event_list << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "eta_calib_direct_path: " << eta_calib_direct_path << std::endl;
   std::cout << "########################" << std::endl;
@@ -127,7 +129,14 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   // Event Skip
   EventSkip* evtSkip = new EventSkip();
   evtSkip->set_skip(nSkip);
-  evtSkip->set_event_id(event_id);
+  if (!event_list.empty())
+  {
+    evtSkip->set_event_ids(event_list);
+  }
+  else if (event_id != 0)
+  {
+    evtSkip->set_event_id(event_id);
+  }
   evtSkip->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(evtSkip);
 
@@ -193,9 +202,17 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
 
+  bool do_detailed = !event_list.empty();
+
   // Calo QA
   CaloQA* calo_qa = new CaloQA();
   calo_qa->set_do_hist(false);
+  if (do_detailed)
+  {
+    calo_qa->set_do_detailed(true);
+    calo_qa->set_do_iter(true);
+    calo_qa->set_do_mult(false);
+  }
   calo_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(calo_qa);
 
@@ -213,11 +230,19 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   // Jet Validation
   JetValidationv3* jet_validation = new JetValidationv3();
   jet_validation->set_do_mult(false);
+  if (do_detailed)
+  {
+    jet_validation->set_do_detailed(true);
+  }
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation);
 
-  // Jet Validation
+  // Random Cone Validation
   RandomConeValidation* random_cone_validation = new RandomConeValidation();
+  if (do_detailed)
+  {
+    random_cone_validation->set_do_detailed(true);
+  }
   random_cone_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(random_cone_validation);
 

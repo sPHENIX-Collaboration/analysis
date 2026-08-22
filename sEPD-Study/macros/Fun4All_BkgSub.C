@@ -60,7 +60,8 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     int nSkip = 0,
                     int event_id = 0,
                     const std::string &dbtag = "newcdbtag",
-                    const std::string &eta_calib_direct_path = "")
+                    const std::string &eta_calib_direct_path = "",
+                    const std::string &event_list = "")
 {
 
   // Extract runnumber from first file within list
@@ -101,6 +102,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "nSkip: " << nSkip << std::endl;
   std::cout << "event_id: " << event_id << std::endl;
+  std::cout << "event_list: " << event_list << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "eta_calib_direct_path: " << eta_calib_direct_path << std::endl;
   std::cout << "########################" << std::endl;
@@ -122,7 +124,14 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   // Event Skip
   EventSkip* evtSkip = new EventSkip();
   evtSkip->set_skip(nSkip);
-  evtSkip->set_event_id(event_id);
+  if (!event_list.empty())
+  {
+    evtSkip->set_event_ids(event_list);
+  }
+  else if (event_id != 0)
+  {
+    evtSkip->set_event_id(event_id);
+  }
   evtSkip->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(evtSkip);
 

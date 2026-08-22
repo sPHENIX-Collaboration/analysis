@@ -23,11 +23,16 @@ def create_f4a_jobs(args):
     if eta_calib:
         manager.add_file_to_check(eta_calib)
 
+    event_list = Path(args.event_list).resolve() if getattr(args, 'event_list', None) else None
+    if event_list:
+        manager.add_file_to_check(event_list)
+
     manager.validate_paths()
 
     manager.log_initialization({
         'Calib List': calib_list if calib_list else "Not Provided (Using default)",
         'Eta Calib': eta_calib if eta_calib else "Not Provided (Using default/empty)",
+        'Event List': event_list if event_list else "Not Provided (Using all events)",
         'Fun4All Macro': Path(args.f4a_macro).resolve(),
         'Calo Calib Macro': Path(args.calo_calib_macro).resolve(),
         'HIJetReco Macro': Path(args.HIJetReco_macro).resolve(),
@@ -41,6 +46,8 @@ def create_f4a_jobs(args):
         extra_files.append(calib_list)
     if eta_calib:
         extra_files.append(eta_calib)
+    if event_list:
+        extra_files.append(event_list)
 
     manager.copy_dependencies(extra_files=extra_files, extra_dirs=[args.src_dir])
 
@@ -84,7 +91,8 @@ def create_f4a_jobs(args):
 
     if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
         eta_calib_val = (manager.output_dir / eta_calib.name) if eta_calib else "none"
-        bkgsub_args = f"{args.do_flow} {eta_calib_val} "
+        event_list_val = (manager.output_dir / event_list.name) if event_list else "none"
+        bkgsub_args = f"{args.do_flow} {eta_calib_val} {event_list_val} "
     else:
         bkgsub_args = ""
 
@@ -371,6 +379,7 @@ def setup_f4a_subparsers(subparsers):
     f4a = subparsers.add_parser('f4a', parents=[get_common_parser()], help='Create condor submission directory.')
     f4a.add_argument('-i2_calib', '--calib', type=str, default=None, help='Q Vector Calibrations. (Optional)')
     f4a.add_argument('-i3_calib', '--eta-calib-path', '--eta-calib-direct-path', dest='eta_calib_path', type=str, default=None, help='Direct path to eta-shape calibration file. (Optional)')
+    f4a.add_argument('-el', '--event-list', dest='event_list', type=str, default=None, help='Direct path to event list file. (Optional)')
     f4a.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_sEPD.C', help='Fun4All Macro.')
     f4a.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
