@@ -6,7 +6,11 @@
 #include <fun4all/SubsysReco.h>
 
 // -- c++
+#include <algorithm>
+#include <initializer_list>
+#include <set>
 #include <string>
+#include <vector>
 
 class PHCompositeNode;
 
@@ -40,13 +44,52 @@ class EventSkip : public SubsysReco
 
   void set_event_id(int event_id)
   {
-    m_event_id = event_id;
+    m_event_ids.clear();
+    m_event_ids.insert(event_id);
+    m_max_event_id = event_id;
   }
+
+  void add_event_id(int event_id)
+  {
+    m_event_ids.insert(event_id);
+    m_max_event_id = std::max(m_max_event_id, event_id);
+  }
+
+  void set_event_ids(const std::vector<int>& event_ids)
+  {
+    m_event_ids.clear();
+    for (int id : event_ids)
+    {
+      m_event_ids.insert(id);
+    }
+    if (!m_event_ids.empty())
+    {
+      m_max_event_id = *m_event_ids.rbegin();
+    }
+  }
+
+  void set_event_ids(std::initializer_list<int> event_ids)
+  {
+    m_event_ids.clear();
+    for (int id : event_ids)
+    {
+      m_event_ids.insert(id);
+    }
+    if (!m_event_ids.empty())
+    {
+      m_max_event_id = *m_event_ids.rbegin();
+    }
+  }
+
+  void set_event_ids(const std::string& filename);
+  void read_event_list(const std::string& filename) { set_event_ids(filename); }
 
  private:
   int m_event{0};
   int m_nSkip{0};
-  int m_event_id{0};
+  int m_max_event_id{0};
+  std::set<int> m_event_ids;
+  std::set<int> m_processed_events;
 };
 
 #endif  // EVENTSKIP_H
