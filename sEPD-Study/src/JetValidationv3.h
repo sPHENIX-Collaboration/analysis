@@ -2,10 +2,14 @@
 //  -*- C++ -*-.
 #pragma once
 
+#include "JetUtils.h"
+#include "geometry_constants.h"
+
 // -- sPHENIX
 #include <fun4all/SubsysReco.h>
 
 // -- c++
+#include <array>
 #include <cstdint>  // Required for std::uint8_t, std::uint16_t, etc.
 #include <map>
 #include <memory>
@@ -28,6 +32,7 @@ class JetValidationv3 : public SubsysReco
   explicit JetValidationv3(const std::string &name = "JetValidationv3");
 
   int Init(PHCompositeNode *topNode) override;
+  int InitRun(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
   // Clean up internals after each event.
   int ResetEvent(PHCompositeNode *topNode) override;
@@ -36,11 +41,13 @@ class JetValidationv3 : public SubsysReco
   void set_do_unsub(bool b = true) { m_do_unsub = b; }
   void set_do_iter(bool b = true) { m_do_iter = b; }
   void set_do_mult(bool b = true) { m_do_mult = b; }
+  void set_do_detailed(bool b = true) { m_do_detailed = b; }
   void set_jet_pt_min(double pt_min) { m_jet_pt_min_cut = pt_min; }
 
   bool get_do_unsub() const { return m_do_unsub; }
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
+  bool get_do_detailed() const { return m_do_detailed; }
   double get_jet_pt_min() const { return m_jet_pt_min_cut; }
 
  private:
@@ -56,6 +63,19 @@ class JetValidationv3 : public SubsysReco
     std::vector<double> eta;       // NOLINT(misc-non-private-member-variables-in-classes)
     double max_pt{0};              // NOLINT(misc-non-private-member-variables-in-classes)
 
+    // Detailed tower constituent info (nested vectors: 1 vector per jet in the event)
+    std::vector<std::vector<int>> emcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> emcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> emcal_tower_pt;       // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<std::vector<int>> ihcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> ihcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> ihcal_tower_pt;       // NOLINT(misc-non-private-member-variables-in-classes)
+
+    std::vector<std::vector<int>> ohcal_tower_index;        // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> ohcal_tower_energy;   // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::vector<double>> ohcal_tower_pt;       // NOLINT(misc-non-private-member-variables-in-classes)
+
     void clear()
     {
       pt.clear();
@@ -64,6 +84,18 @@ class JetValidationv3 : public SubsysReco
       phi.clear();
       eta.clear();
       max_pt = 0;
+
+      emcal_tower_index.clear();
+      emcal_tower_energy.clear();
+      emcal_tower_pt.clear();
+
+      ihcal_tower_index.clear();
+      ihcal_tower_energy.clear();
+      ihcal_tower_pt.clear();
+
+      ohcal_tower_index.clear();
+      ohcal_tower_energy.clear();
+      ohcal_tower_pt.clear();
     }
   };
 
@@ -112,4 +144,25 @@ class JetValidationv3 : public SubsysReco
   bool m_do_unsub{true};
   bool m_do_iter{true};
   bool m_do_mult{true};
+  bool m_do_detailed{false};
+
+  static constexpr size_t N_HCAL_TOWERS = CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS;
+
+  struct TowerGeomInfo
+  {
+    double eta = 0.0;
+    double phi = 0.0;
+    double z0 = 0.0;
+    bool is_valid = false;
+  };
+
+  using TowerGeomArray = std::array<TowerGeomInfo, N_HCAL_TOWERS>;
+
+  double m_r_cemc = JetUtils::radius_EM;
+  double m_r_hcalin = JetUtils::radius_IH;
+  double m_r_hcalout = JetUtils::radius_OH;
+
+  TowerGeomArray m_geom_cemc{};
+  TowerGeomArray m_geom_hcalin{};
+  TowerGeomArray m_geom_hcalout{};
 };
