@@ -91,6 +91,7 @@ RandomCone RandomConeMaker::generate(
     TowerInfoContainer *hcalin,
     TowerInfoContainer *hcalout,
     double z_vrtx,
+    bool save_tower_info,
     std::optional<double> cone_eta,
     std::optional<double> cone_phi)
 {
@@ -125,9 +126,18 @@ RandomCone RandomConeMaker::generate(
   cone.energy = 0.0;
 
   // Process all three calorimeters
-  process_calorimeter(cemc_retower, m_geom_cemc, m_r_cemc, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy);
-  process_calorimeter(hcalin, m_geom_hcalin, m_r_hcalin, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy);
-  process_calorimeter(hcalout, m_geom_hcalout, m_r_hcalout, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy);
+  process_calorimeter(cemc_retower, m_geom_cemc, m_r_cemc, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy,
+                      save_tower_info ? &cone.emcal_tower_index : nullptr,
+                      save_tower_info ? &cone.emcal_tower_energy : nullptr,
+                      save_tower_info ? &cone.emcal_tower_pt : nullptr);
+  process_calorimeter(hcalin, m_geom_hcalin, m_r_hcalin, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy,
+                      save_tower_info ? &cone.ihcal_tower_index : nullptr,
+                      save_tower_info ? &cone.ihcal_tower_energy : nullptr,
+                      save_tower_info ? &cone.ihcal_tower_pt : nullptr);
+  process_calorimeter(hcalout, m_geom_hcalout, m_r_hcalout, cone.eta, cone.phi, z_vrtx, cone.pt, cone.energy,
+                      save_tower_info ? &cone.ohcal_tower_index : nullptr,
+                      save_tower_info ? &cone.ohcal_tower_energy : nullptr,
+                      save_tower_info ? &cone.ohcal_tower_pt : nullptr);
 
   return cone;
 }
@@ -151,7 +161,10 @@ void RandomConeMaker::process_calorimeter(
     double cone_phi,
     double z_vrtx,
     double &total_pt,
-    double &total_energy) const
+    double &total_energy,
+    std::vector<int> *tower_indices,
+    std::vector<double> *tower_energies,
+    std::vector<double> *tower_pts) const
 {
   if (!towers)
   {
@@ -214,6 +227,19 @@ void RandomConeMaker::process_calorimeter(
 
       total_energy += energy;
       total_pt += pt;
+
+      if (tower_indices)
+      {
+        tower_indices->push_back(static_cast<int>(channel));
+      }
+      if (tower_energies)
+      {
+        tower_energies->push_back(energy);
+      }
+      if (tower_pts)
+      {
+        tower_pts->push_back(pt);
+      }
     }
   }
 }

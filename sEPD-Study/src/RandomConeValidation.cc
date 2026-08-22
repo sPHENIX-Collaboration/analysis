@@ -45,6 +45,55 @@ int RandomConeValidation::Init([[maybe_unused]] PHCompositeNode *topNode)
   tree->Branch("rcone_r03_sub1_pt", &m_data.r03.pt_sub1);
   tree->Branch("rcone_r03_sub1_energy", &m_data.r03.energy_sub1);
 
+  if (m_do_detailed)
+  {
+    // R = 0.2 unsubtracted
+    tree->Branch("rcone_r02_emcal_tower_index", &m_data.r02.emcal_tower_index);
+    tree->Branch("rcone_r02_emcal_tower_energy", &m_data.r02.emcal_tower_energy);
+    tree->Branch("rcone_r02_emcal_tower_pt", &m_data.r02.emcal_tower_pt);
+
+    tree->Branch("rcone_r02_ihcal_tower_index", &m_data.r02.ihcal_tower_index);
+    tree->Branch("rcone_r02_ihcal_tower_energy", &m_data.r02.ihcal_tower_energy);
+    tree->Branch("rcone_r02_ihcal_tower_pt", &m_data.r02.ihcal_tower_pt);
+
+    tree->Branch("rcone_r02_ohcal_tower_index", &m_data.r02.ohcal_tower_index);
+    tree->Branch("rcone_r02_ohcal_tower_energy", &m_data.r02.ohcal_tower_energy);
+    tree->Branch("rcone_r02_ohcal_tower_pt", &m_data.r02.ohcal_tower_pt);
+
+    // R = 0.2 subtracted (sub1)
+    tree->Branch("rcone_r02_sub1_emcal_tower_energy", &m_data.r02.emcal_sub1_tower_energy);
+    tree->Branch("rcone_r02_sub1_emcal_tower_pt", &m_data.r02.emcal_sub1_tower_pt);
+
+    tree->Branch("rcone_r02_sub1_ihcal_tower_energy", &m_data.r02.ihcal_sub1_tower_energy);
+    tree->Branch("rcone_r02_sub1_ihcal_tower_pt", &m_data.r02.ihcal_sub1_tower_pt);
+
+    tree->Branch("rcone_r02_sub1_ohcal_tower_energy", &m_data.r02.ohcal_sub1_tower_energy);
+    tree->Branch("rcone_r02_sub1_ohcal_tower_pt", &m_data.r02.ohcal_sub1_tower_pt);
+
+    // R = 0.3 unsubtracted
+    tree->Branch("rcone_r03_emcal_tower_index", &m_data.r03.emcal_tower_index);
+    tree->Branch("rcone_r03_emcal_tower_energy", &m_data.r03.emcal_tower_energy);
+    tree->Branch("rcone_r03_emcal_tower_pt", &m_data.r03.emcal_tower_pt);
+
+    tree->Branch("rcone_r03_ihcal_tower_index", &m_data.r03.ihcal_tower_index);
+    tree->Branch("rcone_r03_ihcal_tower_energy", &m_data.r03.ihcal_tower_energy);
+    tree->Branch("rcone_r03_ihcal_tower_pt", &m_data.r03.ihcal_tower_pt);
+
+    tree->Branch("rcone_r03_ohcal_tower_index", &m_data.r03.ohcal_tower_index);
+    tree->Branch("rcone_r03_ohcal_tower_energy", &m_data.r03.ohcal_tower_energy);
+    tree->Branch("rcone_r03_ohcal_tower_pt", &m_data.r03.ohcal_tower_pt);
+
+    // R = 0.3 subtracted (sub1)
+    tree->Branch("rcone_r03_sub1_emcal_tower_energy", &m_data.r03.emcal_sub1_tower_energy);
+    tree->Branch("rcone_r03_sub1_emcal_tower_pt", &m_data.r03.emcal_sub1_tower_pt);
+
+    tree->Branch("rcone_r03_sub1_ihcal_tower_energy", &m_data.r03.ihcal_sub1_tower_energy);
+    tree->Branch("rcone_r03_sub1_ihcal_tower_pt", &m_data.r03.ihcal_sub1_tower_pt);
+
+    tree->Branch("rcone_r03_sub1_ohcal_tower_energy", &m_data.r03.ohcal_sub1_tower_energy);
+    tree->Branch("rcone_r03_sub1_ohcal_tower_pt", &m_data.r03.ohcal_sub1_tower_pt);
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -85,26 +134,76 @@ int RandomConeValidation::process_event(PHCompositeNode *topNode)
   }
 
   // Unsubtracted cones (randomly chosen eta, phi)
-  RandomCone cone_r02 = m_maker_r02.generate(cemc_retower, hcalin, hcalout, zvtx);
+  RandomCone cone_r02 = m_maker_r02.generate(cemc_retower, hcalin, hcalout, zvtx, m_do_detailed);
   m_data.r02.eta = cone_r02.eta;
   m_data.r02.phi = cone_r02.phi;
   m_data.r02.pt = cone_r02.pt;
   m_data.r02.energy = cone_r02.energy;
+  if (m_do_detailed)
+  {
+    m_data.r02.emcal_tower_index = std::move(cone_r02.emcal_tower_index);
+    m_data.r02.emcal_tower_energy = std::move(cone_r02.emcal_tower_energy);
+    m_data.r02.emcal_tower_pt = std::move(cone_r02.emcal_tower_pt);
 
-  RandomCone cone_r03 = m_maker_r03.generate(cemc_retower, hcalin, hcalout, zvtx);
+    m_data.r02.ihcal_tower_index = std::move(cone_r02.ihcal_tower_index);
+    m_data.r02.ihcal_tower_energy = std::move(cone_r02.ihcal_tower_energy);
+    m_data.r02.ihcal_tower_pt = std::move(cone_r02.ihcal_tower_pt);
+
+    m_data.r02.ohcal_tower_index = std::move(cone_r02.ohcal_tower_index);
+    m_data.r02.ohcal_tower_energy = std::move(cone_r02.ohcal_tower_energy);
+    m_data.r02.ohcal_tower_pt = std::move(cone_r02.ohcal_tower_pt);
+  }
+
+  RandomCone cone_r03 = m_maker_r03.generate(cemc_retower, hcalin, hcalout, zvtx, m_do_detailed);
   m_data.r03.eta = cone_r03.eta;
   m_data.r03.phi = cone_r03.phi;
   m_data.r03.pt = cone_r03.pt;
   m_data.r03.energy = cone_r03.energy;
+  if (m_do_detailed)
+  {
+    m_data.r03.emcal_tower_index = std::move(cone_r03.emcal_tower_index);
+    m_data.r03.emcal_tower_energy = std::move(cone_r03.emcal_tower_energy);
+    m_data.r03.emcal_tower_pt = std::move(cone_r03.emcal_tower_pt);
+
+    m_data.r03.ihcal_tower_index = std::move(cone_r03.ihcal_tower_index);
+    m_data.r03.ihcal_tower_energy = std::move(cone_r03.ihcal_tower_energy);
+    m_data.r03.ihcal_tower_pt = std::move(cone_r03.ihcal_tower_pt);
+
+    m_data.r03.ohcal_tower_index = std::move(cone_r03.ohcal_tower_index);
+    m_data.r03.ohcal_tower_energy = std::move(cone_r03.ohcal_tower_energy);
+    m_data.r03.ohcal_tower_pt = std::move(cone_r03.ohcal_tower_pt);
+  }
 
   // Subtracted cones (sharing the same eta, phi as unsubtracted)
-  RandomCone cone_r02_sub1 = m_maker_r02.generate(cemc_retower_sub1, hcalin_sub1, hcalout_sub1, zvtx, cone_r02.eta, cone_r02.phi);
+  RandomCone cone_r02_sub1 = m_maker_r02.generate(cemc_retower_sub1, hcalin_sub1, hcalout_sub1, zvtx, m_do_detailed, cone_r02.eta, cone_r02.phi);
   m_data.r02.pt_sub1 = cone_r02_sub1.pt;
   m_data.r02.energy_sub1 = cone_r02_sub1.energy;
+  if (m_do_detailed)
+  {
+    m_data.r02.emcal_sub1_tower_energy = std::move(cone_r02_sub1.emcal_tower_energy);
+    m_data.r02.emcal_sub1_tower_pt = std::move(cone_r02_sub1.emcal_tower_pt);
 
-  RandomCone cone_r03_sub1 = m_maker_r03.generate(cemc_retower_sub1, hcalin_sub1, hcalout_sub1, zvtx, cone_r03.eta, cone_r03.phi);
+    m_data.r02.ihcal_sub1_tower_energy = std::move(cone_r02_sub1.ihcal_tower_energy);
+    m_data.r02.ihcal_sub1_tower_pt = std::move(cone_r02_sub1.ihcal_tower_pt);
+
+    m_data.r02.ohcal_sub1_tower_energy = std::move(cone_r02_sub1.ohcal_tower_energy);
+    m_data.r02.ohcal_sub1_tower_pt = std::move(cone_r02_sub1.ohcal_tower_pt);
+  }
+
+  RandomCone cone_r03_sub1 = m_maker_r03.generate(cemc_retower_sub1, hcalin_sub1, hcalout_sub1, zvtx, m_do_detailed, cone_r03.eta, cone_r03.phi);
   m_data.r03.pt_sub1 = cone_r03_sub1.pt;
   m_data.r03.energy_sub1 = cone_r03_sub1.energy;
+  if (m_do_detailed)
+  {
+    m_data.r03.emcal_sub1_tower_energy = std::move(cone_r03_sub1.emcal_tower_energy);
+    m_data.r03.emcal_sub1_tower_pt = std::move(cone_r03_sub1.emcal_tower_pt);
+
+    m_data.r03.ihcal_sub1_tower_energy = std::move(cone_r03_sub1.ihcal_tower_energy);
+    m_data.r03.ihcal_sub1_tower_pt = std::move(cone_r03_sub1.ihcal_tower_pt);
+
+    m_data.r03.ohcal_sub1_tower_energy = std::move(cone_r03_sub1.ohcal_tower_energy);
+    m_data.r03.ohcal_sub1_tower_pt = std::move(cone_r03_sub1.ohcal_tower_pt);
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }

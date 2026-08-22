@@ -13,6 +13,7 @@
 #include <cmath>
 #include <optional>
 #include <random>
+#include <vector>
 
 struct RandomCone {
   double eta = 0.0;
@@ -20,6 +21,19 @@ struct RandomCone {
   double pt = 0.0;
   double energy = 0.0;
   double radius = 0.0;
+
+  // Tower level details per calorimeter
+  std::vector<int> emcal_tower_index;
+  std::vector<double> emcal_tower_energy;
+  std::vector<double> emcal_tower_pt;
+
+  std::vector<int> ihcal_tower_index;
+  std::vector<double> ihcal_tower_energy;
+  std::vector<double> ihcal_tower_pt;
+
+  std::vector<int> ohcal_tower_index;
+  std::vector<double> ohcal_tower_energy;
+  std::vector<double> ohcal_tower_pt;
 };
 
 class RandomConeMaker {
@@ -37,6 +51,7 @@ public:
       TowerInfoContainer *hcalin,
       TowerInfoContainer *hcalout,
       double z_vrtx = 0.0,
+      bool save_tower_info = false,
       std::optional<double> cone_eta = std::nullopt,
       std::optional<double> cone_phi = std::nullopt);
 
@@ -83,5 +98,8 @@ private:
       double cone_phi,
       double z_vrtx,
       double &total_pt,
-      double &total_energy) const;
+      double &total_energy,
+      std::vector<int> *tower_indices = nullptr,
+      std::vector<double> *tower_energies = nullptr,
+      std::vector<double> *tower_pts = nullptr) const;
 };
