@@ -39,8 +39,7 @@ struct RandomCone {
 class RandomConeMaker {
 public:
   // Initialize with a cone radius and an optional seed for reproducibility.
-  // If seed == 0 (the default), PHRandomSeed::GetSeed() is automatically used.
-  explicit RandomConeMaker(double radius, uint32_t seed = 0);
+  explicit RandomConeMaker(double radius, uint32_t seed = 1);
 
   void init(RawTowerGeomContainer* geom_hcalin, RawTowerGeomContainer* geom_hcalout);
 

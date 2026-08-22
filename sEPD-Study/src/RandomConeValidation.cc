@@ -6,6 +6,8 @@
 #include <phool/PHCompositeNode.h>
 #include <phool/getClass.h>
 
+#include <ffaobjects/EventHeader.h>
+
 #include <calobase/RawTowerGeomContainer.h>
 #include <calobase/TowerInfoContainer.h>
 
@@ -14,6 +16,23 @@
 
 #include <treefiller/TreeFiller.h>
 #include <TTree.h>
+
+namespace
+{
+  // 64-bit golden ratio and SplitMix64 diffusion constants for uniform hash distribution
+  constexpr uint64_t GOLDEN_RATIO_HASH_64 = 0x9e3779b97f4a7c15ULL;
+  constexpr uint64_t SPLITMIX64_MIX_CONST = 0xbf58476d1ce4e5b9ULL;
+
+  uint32_t compute_event_seed(int runnumber, int event_id, uint32_t seed_offset)
+  {
+    uint64_t h = static_cast<uint64_t>(runnumber) * GOLDEN_RATIO_HASH_64;
+    h ^= static_cast<uint64_t>(event_id) * SPLITMIX64_MIX_CONST;
+    h ^= (h >> 30U);
+    h *= SPLITMIX64_MIX_CONST;
+    h ^= (h >> 27U);
+    return static_cast<uint32_t>(h) + seed_offset;
+  }
+}  // namespace
 
 RandomConeValidation::RandomConeValidation(const std::string &name)
   : SubsysReco(name)
@@ -110,6 +129,15 @@ int RandomConeValidation::InitRun(PHCompositeNode *topNode)
 
 int RandomConeValidation::process_event(PHCompositeNode *topNode)
 {
+  auto* eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int runnumber = eventInfo ? eventInfo->get_RunNumber() : 0;
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : 0;
+
+  uint32_t event_seed = compute_event_seed(runnumber, event_id, m_seed_offset);
+
+  m_maker_r02.setSeed(event_seed);
+  m_maker_r03.setSeed(event_seed + 1);
+
   TowerInfoContainer* cemc_retower = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
   TowerInfoContainer* hcalin = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   TowerInfoContainer* hcalout = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");

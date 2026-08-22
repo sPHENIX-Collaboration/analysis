@@ -1,7 +1,5 @@
 #include "RandomConeMaker.h"
 
-#include <phool/PHRandomSeed.h>
-
 #include <numbers>
 #include <stdexcept>
 #include <format>
@@ -17,7 +15,7 @@ namespace
 RandomConeMaker::RandomConeMaker(double radius, uint32_t seed)
   : m_radius(radius)
   , m_radius_sq(radius * radius)
-  , m_generator(seed == 0 ? PHRandomSeed::GetSeed() : seed)
+  , m_generator(seed)
   , m_phi_dist(0.0, 2.0 * std::numbers::pi)
 {
 }
@@ -144,7 +142,7 @@ RandomCone RandomConeMaker::generate(
 
 void RandomConeMaker::setSeed(uint32_t seed)
 {
-  m_generator.seed(seed == 0 ? PHRandomSeed::GetSeed() : seed);
+  m_generator.seed(seed);
 }
 
 void RandomConeMaker::setRadius(double radius)

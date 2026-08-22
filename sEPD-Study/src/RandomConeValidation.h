@@ -23,6 +23,9 @@ class RandomConeValidation : public SubsysReco
   void set_do_detailed(bool b = true) { m_do_detailed = b; }
   bool get_do_detailed() const { return m_do_detailed; }
 
+  void set_seed_offset(uint32_t offset = 0) { m_seed_offset = offset; }
+  uint32_t get_seed_offset() const { return m_seed_offset; }
+
  private:
   struct ConeData
   {
@@ -100,4 +103,5 @@ class RandomConeValidation : public SubsysReco
   RandomConeMaker m_maker_r03;
 
   bool m_do_detailed{false};
+  uint32_t m_seed_offset{0};
 };
