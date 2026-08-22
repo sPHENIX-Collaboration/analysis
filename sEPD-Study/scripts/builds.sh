@@ -65,11 +65,24 @@ else
     echo "    Build:  $BUILD_DIR"
     
     # 1. Clean and Create Build Dir
-    rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR" || exit
+    rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR" || exit 1
     
     # 2. Configure (autogen)
-    cd "$BUILD_DIR" && "$SRC_DIR"/autogen.sh --prefix="$MYINSTALL" || exit
+    cd "$BUILD_DIR" && "$SRC_DIR"/autogen.sh --prefix="$MYINSTALL" || exit 1
     
     # 3. Build and Install
-    cd "$ROOT_DIR" && make install -j8 --directory "$BUILD_DIR"
+    if command -v bear >/dev/null 2>&1; then
+        echo ">>> Generating compilation database with bear..."
+        bear -- make -j8 || exit 1
+        make install -j8 || exit 1
+
+        # 4. Link compile_commands.json to source directory
+        if [ -f "$BUILD_DIR/compile_commands.json" ]; then
+            echo ">>> Linking compile_commands.json to $SRC_DIR..."
+            ln -sfn "$BUILD_DIR/compile_commands.json" "$SRC_DIR/compile_commands.json"
+        fi
+    else
+        echo ">>> 'bear' not found, running standard build..."
+        make install -j8 || exit 1
+    fi
 fi
