@@ -50,8 +50,11 @@ class CaloAnalysis
 
   void set_do_iter(bool b = true) { m_do_iter = b; }
   void set_do_mult(bool b = true) { m_do_mult = b; }
+  void set_do_rcone(bool b = true) { m_do_rcone = b; }
+
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
+  bool get_do_rcone() const { return m_do_rcone; }
 
   void set_verbosity(int verbosity) { m_verbosity = verbosity; }
   int get_verbosity() const { return m_verbosity; }
@@ -99,6 +102,36 @@ class CaloAnalysis
 
     std::vector<int> *mult_ohcal_tower_index{nullptr};
     std::vector<double> *mult_ohcal_tower_energy{nullptr};
+
+    // Subtracted Random Cone detailed towers
+    // R = 0.2
+    std::vector<int> *rcone_r02_emcal_tower_index{nullptr};
+    std::vector<double> *rcone_r02_sub1_emcal_tower_energy{nullptr};
+
+    std::vector<int> *rcone_r02_ihcal_tower_index{nullptr};
+    std::vector<double> *rcone_r02_sub1_ihcal_tower_energy{nullptr};
+
+    std::vector<int> *rcone_r02_ohcal_tower_index{nullptr};
+    std::vector<double> *rcone_r02_sub1_ohcal_tower_energy{nullptr};
+
+    // R = 0.3
+    std::vector<int> *rcone_r03_emcal_tower_index{nullptr};
+    std::vector<double> *rcone_r03_sub1_emcal_tower_energy{nullptr};
+
+    std::vector<int> *rcone_r03_ihcal_tower_index{nullptr};
+    std::vector<double> *rcone_r03_sub1_ihcal_tower_energy{nullptr};
+
+    std::vector<int> *rcone_r03_ohcal_tower_index{nullptr};
+    std::vector<double> *rcone_r03_sub1_ohcal_tower_energy{nullptr};
+  };
+
+  struct TowerDataGroup
+  {
+    std::string tag;
+    std::string title_desc;
+    const std::vector<int> *indices{nullptr};
+    const std::vector<double> *energies{nullptr};
+    bool is_base_emcal{false};
   };
 
   // --- Member Variables ---
@@ -112,11 +145,13 @@ class CaloAnalysis
 
   bool m_do_iter{true};
   bool m_do_mult{false};
+  bool m_do_rcone{true};
 
   std::map<std::string, std::unique_ptr<TH2>> m_hists2D;
 
   // --- Private Helper Methods ---
   void setup_chain();
+  void make_and_fill_hist(const TowerDataGroup &group, int run, int event);
   void process_events();
   void save_results() const;
 };
@@ -163,6 +198,18 @@ void CaloAnalysis::setup_chain()
         "mult_emcal_tower_index", "mult_emcal_tower_energy",
         "mult_ihcal_tower_index", "mult_ihcal_tower_energy",
         "mult_ohcal_tower_index", "mult_ohcal_tower_energy"
+    });
+  }
+
+  if (m_do_rcone)
+  {
+    branchNames.insert({
+        "rcone_r02_emcal_tower_index", "rcone_r02_sub1_emcal_tower_energy",
+        "rcone_r02_ihcal_tower_index", "rcone_r02_sub1_ihcal_tower_energy",
+        "rcone_r02_ohcal_tower_index", "rcone_r02_sub1_ohcal_tower_energy",
+        "rcone_r03_emcal_tower_index", "rcone_r03_sub1_emcal_tower_energy",
+        "rcone_r03_ihcal_tower_index", "rcone_r03_sub1_ihcal_tower_energy",
+        "rcone_r03_ohcal_tower_index", "rcone_r03_sub1_ohcal_tower_energy"
     });
   }
 
@@ -226,7 +273,56 @@ void CaloAnalysis::setup_chain()
     m_chain->SetBranchAddress("mult_ohcal_tower_energy", &m_event_data.mult_ohcal_tower_energy);
   }
 
+  if (m_do_rcone)
+  {
+    m_chain->SetBranchAddress("rcone_r02_emcal_tower_index", &m_event_data.rcone_r02_emcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r02_sub1_emcal_tower_energy", &m_event_data.rcone_r02_sub1_emcal_tower_energy);
+    m_chain->SetBranchAddress("rcone_r02_ihcal_tower_index", &m_event_data.rcone_r02_ihcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r02_sub1_ihcal_tower_energy", &m_event_data.rcone_r02_sub1_ihcal_tower_energy);
+    m_chain->SetBranchAddress("rcone_r02_ohcal_tower_index", &m_event_data.rcone_r02_ohcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r02_sub1_ohcal_tower_energy", &m_event_data.rcone_r02_sub1_ohcal_tower_energy);
+
+    m_chain->SetBranchAddress("rcone_r03_emcal_tower_index", &m_event_data.rcone_r03_emcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r03_sub1_emcal_tower_energy", &m_event_data.rcone_r03_sub1_emcal_tower_energy);
+    m_chain->SetBranchAddress("rcone_r03_ihcal_tower_index", &m_event_data.rcone_r03_ihcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r03_sub1_ihcal_tower_energy", &m_event_data.rcone_r03_sub1_ihcal_tower_energy);
+    m_chain->SetBranchAddress("rcone_r03_ohcal_tower_index", &m_event_data.rcone_r03_ohcal_tower_index);
+    m_chain->SetBranchAddress("rcone_r03_sub1_ohcal_tower_energy", &m_event_data.rcone_r03_sub1_ohcal_tower_energy);
+  }
+
   std::cout << "Finished... setup_chain" << std::endl;
+}
+
+void CaloAnalysis::make_and_fill_hist(const TowerDataGroup &group, int run, int event)
+{
+  if (!group.indices || !group.energies)
+  {
+    return;
+  }
+
+  int n_eta = group.is_base_emcal ? CaloGeometry::CEMC_ETA_BINS : CaloGeometry::HCAL_ETA_BINS;
+  int n_phi = group.is_base_emcal ? CaloGeometry::CEMC_PHI_BINS : CaloGeometry::HCAL_PHI_BINS;
+
+  std::string name = std::format("h2_{}_energy_run{}_event{}", group.tag, run, event);
+  std::string title = std::format("{} (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]",
+                                  group.title_desc, run, event);
+
+  auto h2 = std::make_unique<TH2F>(
+      name.c_str(), title.c_str(),
+      n_eta, -0.5, n_eta - 0.5,
+      n_phi, -0.5, n_phi - 0.5);
+
+  for (size_t i = 0; i < group.indices->size() && i < group.energies->size(); ++i)
+  {
+    unsigned int raw_idx = static_cast<unsigned int>((*group.indices)[i]);
+    unsigned int key = group.is_base_emcal ? TowerInfoDefs::encode_emcal(raw_idx)
+                                           : TowerInfoDefs::encode_hcal(raw_idx);
+    unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+    unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+    h2->SetBinContent(static_cast<int>(ieta + 1), static_cast<int>(iphi + 1), (*group.energies)[i]);
+  }
+
+  m_hists2D[name] = std::move(h2);
 }
 
 void CaloAnalysis::process_events()
@@ -237,36 +333,6 @@ void CaloAnalysis::process_events()
                                      : total_entries;
 
   std::cout << std::format("Processing {} / {} entries\n", entries_to_process, total_entries);
-
-  auto fill_emcal_base_hist = [](TH2 *h2, const std::vector<int> *indices, const std::vector<double> *energies)
-  {
-    if (!h2 || !indices || !energies)
-    {
-      return;
-    }
-    for (size_t i = 0; i < indices->size() && i < energies->size(); ++i)
-    {
-      unsigned int key = TowerInfoDefs::encode_emcal(static_cast<unsigned int>((*indices)[i]));
-      unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-      unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-      h2->SetBinContent(static_cast<int>(ieta + 1), static_cast<int>(iphi + 1), (*energies)[i]);
-    }
-  };
-
-  auto fill_hcal_hist = [](TH2 *h2, const std::vector<int> *indices, const std::vector<double> *energies)
-  {
-    if (!h2 || !indices || !energies)
-    {
-      return;
-    }
-    for (size_t i = 0; i < indices->size() && i < energies->size(); ++i)
-    {
-      unsigned int key = TowerInfoDefs::encode_hcal(static_cast<unsigned int>((*indices)[i]));
-      unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-      unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-      h2->SetBinContent(static_cast<int>(ieta + 1), static_cast<int>(iphi + 1), (*energies)[i]);
-    }
-  };
 
   for (long long entry = 0; entry < entries_to_process; ++entry)
   {
@@ -281,106 +347,43 @@ void CaloAnalysis::process_events()
     int run = m_event_data.run;
     int event = m_event_data.event;
 
-    // 1. EMCal Base (96 eta x 256 phi)
-    std::string name_emcal_base = std::format("h2_emcal_base_energy_run{}_event{}", run, event);
-    std::string title_emcal_base = std::format("EMCal Base Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-    auto h2_emcal_base = std::make_unique<TH2F>(
-        name_emcal_base.c_str(), title_emcal_base.c_str(),
-        CaloGeometry::CEMC_ETA_BINS, -0.5, CaloGeometry::CEMC_ETA_BINS - 0.5,
-        CaloGeometry::CEMC_PHI_BINS, -0.5, CaloGeometry::CEMC_PHI_BINS - 0.5);
-    fill_emcal_base_hist(h2_emcal_base.get(), m_event_data.emcal_base_tower_index, m_event_data.emcal_base_tower_energy);
-    m_hists2D[name_emcal_base] = std::move(h2_emcal_base);
+    std::vector<TowerDataGroup> active_groups = {
+        {"emcal_base", "EMCal Base Energy", m_event_data.emcal_base_tower_index, m_event_data.emcal_base_tower_energy, true},
+        {"emcal_retower", "EMCal Retower Energy", m_event_data.emcal_retower_tower_index, m_event_data.emcal_retower_tower_energy, false},
+        {"ihcal", "IHCal Energy", m_event_data.ihcal_tower_index, m_event_data.ihcal_tower_energy, false},
+        {"ohcal", "OHCal Energy", m_event_data.ohcal_tower_index, m_event_data.ohcal_tower_energy, false},
+    };
 
-    // 2. EMCal Retower (24 eta x 64 phi)
-    std::string name_emcal_retower = std::format("h2_emcal_retower_energy_run{}_event{}", run, event);
-    std::string title_emcal_retower = std::format("EMCal Retower Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-    auto h2_emcal_retower = std::make_unique<TH2F>(
-        name_emcal_retower.c_str(), title_emcal_retower.c_str(),
-        CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-        CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-    fill_hcal_hist(h2_emcal_retower.get(), m_event_data.emcal_retower_tower_index, m_event_data.emcal_retower_tower_energy);
-    m_hists2D[name_emcal_retower] = std::move(h2_emcal_retower);
-
-    // 3. IHCal (24 eta x 64 phi)
-    std::string name_ihcal = std::format("h2_ihcal_energy_run{}_event{}", run, event);
-    std::string title_ihcal = std::format("IHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-    auto h2_ihcal = std::make_unique<TH2F>(
-        name_ihcal.c_str(), title_ihcal.c_str(),
-        CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-        CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-    fill_hcal_hist(h2_ihcal.get(), m_event_data.ihcal_tower_index, m_event_data.ihcal_tower_energy);
-    m_hists2D[name_ihcal] = std::move(h2_ihcal);
-
-    // 4. OHCal (24 eta x 64 phi)
-    std::string name_ohcal = std::format("h2_ohcal_energy_run{}_event{}", run, event);
-    std::string title_ohcal = std::format("OHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-    auto h2_ohcal = std::make_unique<TH2F>(
-        name_ohcal.c_str(), title_ohcal.c_str(),
-        CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-        CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-    fill_hcal_hist(h2_ohcal.get(), m_event_data.ohcal_tower_index, m_event_data.ohcal_tower_energy);
-    m_hists2D[name_ohcal] = std::move(h2_ohcal);
-
-    // 5. Iterative Subtracted Towers
     if (m_do_iter)
     {
-      std::string name_iter_emcal = std::format("h2_iter_emcal_energy_run{}_event{}", run, event);
-      std::string title_iter_emcal = std::format("Iter Sub1 EMCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_iter_emcal = std::make_unique<TH2F>(
-          name_iter_emcal.c_str(), title_iter_emcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_iter_emcal.get(), m_event_data.iter_emcal_tower_index, m_event_data.iter_emcal_tower_energy);
-      m_hists2D[name_iter_emcal] = std::move(h2_iter_emcal);
-
-      std::string name_iter_ihcal = std::format("h2_iter_ihcal_energy_run{}_event{}", run, event);
-      std::string title_iter_ihcal = std::format("Iter Sub1 IHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_iter_ihcal = std::make_unique<TH2F>(
-          name_iter_ihcal.c_str(), title_iter_ihcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_iter_ihcal.get(), m_event_data.iter_ihcal_tower_index, m_event_data.iter_ihcal_tower_energy);
-      m_hists2D[name_iter_ihcal] = std::move(h2_iter_ihcal);
-
-      std::string name_iter_ohcal = std::format("h2_iter_ohcal_energy_run{}_event{}", run, event);
-      std::string title_iter_ohcal = std::format("Iter Sub1 OHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_iter_ohcal = std::make_unique<TH2F>(
-          name_iter_ohcal.c_str(), title_iter_ohcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_iter_ohcal.get(), m_event_data.iter_ohcal_tower_index, m_event_data.iter_ohcal_tower_energy);
-      m_hists2D[name_iter_ohcal] = std::move(h2_iter_ohcal);
+      active_groups.push_back({"iter_emcal", "Iter Sub1 EMCal Energy", m_event_data.iter_emcal_tower_index, m_event_data.iter_emcal_tower_energy, false});
+      active_groups.push_back({"iter_ihcal", "Iter Sub1 IHCal Energy", m_event_data.iter_ihcal_tower_index, m_event_data.iter_ihcal_tower_energy, false});
+      active_groups.push_back({"iter_ohcal", "Iter Sub1 OHCal Energy", m_event_data.iter_ohcal_tower_index, m_event_data.iter_ohcal_tower_energy, false});
     }
 
-    // 6. Multiplicity Subtracted Towers
     if (m_do_mult)
     {
-      std::string name_mult_emcal = std::format("h2_mult_emcal_energy_run{}_event{}", run, event);
-      std::string title_mult_emcal = std::format("Mult Sub1 EMCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_mult_emcal = std::make_unique<TH2F>(
-          name_mult_emcal.c_str(), title_mult_emcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_mult_emcal.get(), m_event_data.mult_emcal_tower_index, m_event_data.mult_emcal_tower_energy);
-      m_hists2D[name_mult_emcal] = std::move(h2_mult_emcal);
+      active_groups.push_back({"mult_emcal", "Mult Sub1 EMCal Energy", m_event_data.mult_emcal_tower_index, m_event_data.mult_emcal_tower_energy, false});
+      active_groups.push_back({"mult_ihcal", "Mult Sub1 IHCal Energy", m_event_data.mult_ihcal_tower_index, m_event_data.mult_ihcal_tower_energy, false});
+      active_groups.push_back({"mult_ohcal", "Mult Sub1 OHCal Energy", m_event_data.mult_ohcal_tower_index, m_event_data.mult_ohcal_tower_energy, false});
+    }
 
-      std::string name_mult_ihcal = std::format("h2_mult_ihcal_energy_run{}_event{}", run, event);
-      std::string title_mult_ihcal = std::format("Mult Sub1 IHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_mult_ihcal = std::make_unique<TH2F>(
-          name_mult_ihcal.c_str(), title_mult_ihcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_mult_ihcal.get(), m_event_data.mult_ihcal_tower_index, m_event_data.mult_ihcal_tower_energy);
-      m_hists2D[name_mult_ihcal] = std::move(h2_mult_ihcal);
+    if (m_do_rcone)
+    {
+      // R = 0.2 subtracted random cone
+      active_groups.push_back({"rcone_sub1_emcal_r02", "RCone R=0.2 Sub1 EMCal Energy", m_event_data.rcone_r02_emcal_tower_index, m_event_data.rcone_r02_sub1_emcal_tower_energy, false});
+      active_groups.push_back({"rcone_sub1_ihcal_r02", "RCone R=0.2 Sub1 IHCal Energy", m_event_data.rcone_r02_ihcal_tower_index, m_event_data.rcone_r02_sub1_ihcal_tower_energy, false});
+      active_groups.push_back({"rcone_sub1_ohcal_r02", "RCone R=0.2 Sub1 OHCal Energy", m_event_data.rcone_r02_ohcal_tower_index, m_event_data.rcone_r02_sub1_ohcal_tower_energy, false});
 
-      std::string name_mult_ohcal = std::format("h2_mult_ohcal_energy_run{}_event{}", run, event);
-      std::string title_mult_ohcal = std::format("Mult Sub1 OHCal Energy (Run {}, Event {}); Tower #eta bin; Tower #phi bin; Energy [GeV]", run, event);
-      auto h2_mult_ohcal = std::make_unique<TH2F>(
-          name_mult_ohcal.c_str(), title_mult_ohcal.c_str(),
-          CaloGeometry::HCAL_ETA_BINS, -0.5, CaloGeometry::HCAL_ETA_BINS - 0.5,
-          CaloGeometry::HCAL_PHI_BINS, -0.5, CaloGeometry::HCAL_PHI_BINS - 0.5);
-      fill_hcal_hist(h2_mult_ohcal.get(), m_event_data.mult_ohcal_tower_index, m_event_data.mult_ohcal_tower_energy);
-      m_hists2D[name_mult_ohcal] = std::move(h2_mult_ohcal);
+      // R = 0.3 subtracted random cone
+      active_groups.push_back({"rcone_sub1_emcal_r03", "RCone R=0.3 Sub1 EMCal Energy", m_event_data.rcone_r03_emcal_tower_index, m_event_data.rcone_r03_sub1_emcal_tower_energy, false});
+      active_groups.push_back({"rcone_sub1_ihcal_r03", "RCone R=0.3 Sub1 IHCal Energy", m_event_data.rcone_r03_ihcal_tower_index, m_event_data.rcone_r03_sub1_ihcal_tower_energy, false});
+      active_groups.push_back({"rcone_sub1_ohcal_r03", "RCone R=0.3 Sub1 OHCal Energy", m_event_data.rcone_r03_ohcal_tower_index, m_event_data.rcone_r03_sub1_ohcal_tower_energy, false});
+    }
+
+    for (const auto &group : active_groups)
+    {
+      make_and_fill_hist(group, run, event);
     }
   }
 }
@@ -422,9 +425,9 @@ int main(int argc, const char *const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 2 || argc > 7)
+  if (argc < 2 || argc > 8)
   {
-    std::cout << "Usage: " << argv[0] << " input_file [events] [output_directory] [verbosity] [do_iter] [do_mult]\n";
+    std::cout << "Usage: " << argv[0] << " input_file [events] [output_directory] [verbosity] [do_iter] [do_mult] [do_rcone]\n";
     return 1;
   }
 
@@ -435,6 +438,7 @@ int main(int argc, const char *const argv[])
   int verbosity = (argc >= ctr + 1) ? std::atoi(argv[ctr++]) : 0;
   bool do_iter = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
   bool do_mult = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : false;
+  bool do_rcone = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << "Calo-Ana Parameters\n";
@@ -444,6 +448,7 @@ int main(int argc, const char *const argv[])
   std::cout << std::format("Verbosity: {}\n", verbosity);
   std::cout << std::format("Do Iter: {}\n", do_iter);
   std::cout << std::format("Do Mult: {}\n", do_mult);
+  std::cout << std::format("Do RCone: {}\n", do_rcone);
   std::cout << std::format("{:#<20}\n", "");
 
   try
@@ -452,6 +457,7 @@ int main(int argc, const char *const argv[])
     analysis.set_verbosity(verbosity);
     analysis.set_do_iter(do_iter);
     analysis.set_do_mult(do_mult);
+    analysis.set_do_rcone(do_rcone);
     analysis.run();
   }
   catch (const std::exception &e)
