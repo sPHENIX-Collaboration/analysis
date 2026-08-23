@@ -186,8 +186,14 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent);
 
+  bool do_detailed = !event_list.empty() || event_id != 0;
+
   // Event QA
   EventQA* event_qa = new EventQA();
+  if (do_detailed)
+  {
+    event_qa->set_do_hist(false);
+  }
   event_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(event_qa);
 
@@ -201,8 +207,6 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   }
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
-
-  bool do_detailed = !event_list.empty();
 
   // Calo QA
   CaloQA* calo_qa = new CaloQA();
@@ -274,7 +278,14 @@ void Fun4All_RandomCones(const std::string &flist_dst_calofit = "DST_CALOFITTING
   se->run(nEvents+nSkip);
   se->End();
 
-  se->dumpHistos(output);
+  if (do_detailed)
+  {
+    se->dumpHistos(output_tree);
+  }
+  else
+  {
+    se->dumpHistos(output);
+  }
 
   CDBInterface::instance()->Print();  // print used DB files
   se->PrintTimer();
