@@ -68,6 +68,7 @@ int EventQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   TTree *tree = TreeFiller::getTree();
   if (tree)
   {
+    tree->Branch("run", &m_data.run);
     tree->Branch("event", &m_data.event);
     tree->Branch("zvtx", &m_data.zvtx);
     tree->Branch("centrality", &m_data.centrality);
@@ -90,6 +91,7 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
+  m_data.run = eventInfo->get_RunNumber();
   m_data.event = eventInfo->get_EvtSequence();
 
   // zvertex
@@ -284,6 +286,7 @@ int EventQA::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
   ++m_ctr["event_reset"];
 
   // Event
+  m_data.run = 0;
   m_data.event = 0;
   m_data.zvtx = 9999;
   m_data.centrality = 9999;

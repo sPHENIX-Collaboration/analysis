@@ -89,6 +89,7 @@ class EventQA : public SubsysReco
 
   struct EventData
   {
+    int run{0};
     int event{0};
     double zvtx{9999};
     double centrality{9999};
