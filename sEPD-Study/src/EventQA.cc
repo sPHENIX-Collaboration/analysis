@@ -178,6 +178,23 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   bool minbias_zdc_low = pdb_params.get_int_param("minbias_zdc_energy_min_fail");
   bool minbias_mbd_high = pdb_params.get_int_param("minbias_mbd_total_energy_max_fail");
 
+  if (Verbosity() > 0)
+  {
+    std::cout << "EventQA::process_event_check - [Event " << m_data.event << "] Run: " << m_data.run
+              << " | zvtx: " << zvtx << " cm"
+              << " | MBD Trig: " << mbd_trigger_fire << " (trig12=" << didTrig12Fire << ", trig14=" << didTrig14Fire << ")"
+              << " | isAuAuMB: " << m_mb_info->isAuAuMinimumBias()
+              << std::endl;
+  }
+  if (Verbosity() > 1)
+  {
+    std::cout << "    MinBias fails -> bkg_high: " << minbias_bkg_high
+              << " | side_hit_low: " << minbias_side_hit_low
+              << " | zdc_low: " << minbias_zdc_low
+              << " | mbd_high: " << minbias_mbd_high
+              << std::endl;
+  }
+
   if (m_do_hist && pass_zvtx10 && mbd_trigger_fire)
   {
     if (minbias_bkg_high)
@@ -201,6 +218,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   // skip event if not fire MBD Trigger
   if (!mbd_trigger_fire)
   {
+    if (Verbosity() > 0)
+    {
+      std::cout << "EventQA::process_event_check - [Event " << m_data.event << "] REJECTED: MBD trigger did not fire" << std::endl;
+    }
     ++m_ctr["process_eventCheck_mbd_trigger_fail"];
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
@@ -208,6 +229,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   // skip event if not minimum bias
   if (!m_mb_info->isAuAuMinimumBias())
   {
+    if (Verbosity() > 0)
+    {
+      std::cout << "EventQA::process_event_check - [Event " << m_data.event << "] REJECTED: isAuAuMinimumBias failed" << std::endl;
+    }
     ++m_ctr["process_eventCheck_isAuAuMinBias_fail"];
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
@@ -220,6 +245,10 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   // skip event if zvtx is too large
   if (!pass_zvtx10)
   {
+    if (Verbosity() > 0)
+    {
+      std::cout << "EventQA::process_event_check - [Event " << m_data.event << "] REJECTED: |zvtx| = " << std::abs(zvtx) << " cm >= " << m_cuts.m_zvtx_max << " cm" << std::endl;
+    }
     ++m_ctr["process_eventCheck_zvtx_large"];
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
@@ -227,6 +256,11 @@ int EventQA::process_event_check(PHCompositeNode *topNode)
   if (m_do_hist)
   {
     hEvent->Fill(static_cast<std::uint8_t>(EventType::MB));
+  }
+
+  if (Verbosity() > 0)
+  {
+    std::cout << "EventQA::process_event_check - [Event " << m_data.event << "] PASSED event selection" << std::endl;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -244,6 +278,11 @@ int EventQA::process_centrality(PHCompositeNode *topNode)
   m_data.centrality = centInfo->get_centile(CentralityInfo::PROP::mbd_NS) * 100;
   double cent = m_data.centrality;
 
+  if (Verbosity() > 0)
+  {
+    std::cout << "EventQA::process_centrality - [Event " << m_data.event << "] Centrality: " << cent << "% (cut < " << m_cuts.m_cent_max << "%)" << std::endl;
+  }
+
   if (m_do_hist)
   {
     hCentrality->Fill(cent);
@@ -252,6 +291,10 @@ int EventQA::process_centrality(PHCompositeNode *topNode)
   // skip event if centrality is too peripheral
   if (!std::isfinite(cent) || cent >= m_cuts.m_cent_max)
   {
+    if (Verbosity() > 0)
+    {
+      std::cout << "EventQA::process_centrality - [Event " << m_data.event << "] REJECTED: Centrality = " << cent << "% >= " << m_cuts.m_cent_max << "% (or non-finite)" << std::endl;
+    }
     ++m_ctr["process_eventCheck_centrality_large"];
     return (m_doAbort) ? Fun4AllReturnCodes::ABORTEVENT : Fun4AllReturnCodes::EVENT_OK;
   }
@@ -259,6 +302,11 @@ int EventQA::process_centrality(PHCompositeNode *topNode)
   if (m_do_hist)
   {
     hEvent->Fill(static_cast<std::uint8_t>(EventType::CENT));
+  }
+
+  if (Verbosity() > 0)
+  {
+    std::cout << "EventQA::process_centrality - [Event " << m_data.event << "] PASSED centrality cut" << std::endl;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
