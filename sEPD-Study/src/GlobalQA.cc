@@ -103,6 +103,9 @@ int GlobalQA::process_event(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int GlobalQA::process_event_plane(PHCompositeNode *topNode)
 {
+  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
+
   // get event plane map
   EventplaneinfoMap *epmap = findNode::getClass<EventplaneinfoMap>(topNode, "EventplaneinfoMap");
   if (!epmap || epmap->empty())
@@ -146,12 +149,32 @@ int GlobalQA::process_event_plane(PHCompositeNode *topNode)
   m_data.psi2_N = _2psi2_N;
   m_data.psi2_NS = _2psi2_NS;
 
+  if (Verbosity() > 0)
+  {
+    std::cout << "GlobalQA::process_event_plane - [Event " << event_id << "] "
+              << "psi2_raw (S/N/NS): " << m_data.psi2_raw_S << " / " << m_data.psi2_raw_N << " / " << m_data.psi2_raw_NS
+              << " | psi2 (S/N/NS): " << m_data.psi2_S << " / " << m_data.psi2_N << " / " << m_data.psi2_NS
+              << std::endl;
+  }
+  if (Verbosity() > 1)
+  {
+    std::cout << "    Q2_raw: S=(" << Q_S_2_raw.first << ", " << Q_S_2_raw.second << ")"
+              << " N=(" << Q_N_2_raw.first << ", " << Q_N_2_raw.second << ")"
+              << " NS=(" << Q_NS_2_raw.first << ", " << Q_NS_2_raw.second << ")" << std::endl
+              << "    Q2_calib: S=(" << Q_S_2.first << ", " << Q_S_2.second << ")"
+              << " N=(" << Q_N_2.first << ", " << Q_N_2.second << ")"
+              << " NS=(" << Q_NS_2.first << ", " << Q_NS_2.second << ")" << std::endl;
+  }
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int GlobalQA::process_sepd(PHCompositeNode *topNode)
 {
+  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
+
   TowerInfoContainer *towerinfosEPD = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_SEPD");
   if (!towerinfosEPD)
   {
@@ -163,12 +186,18 @@ int GlobalQA::process_sepd(PHCompositeNode *topNode)
 
   double sepd_total_charge_south = 0;
   double sepd_total_charge_north = 0;
+  unsigned int nhits_south = 0;
+  unsigned int nhits_north = 0;
 
   for (unsigned int channel = 0; channel < nchannels_epd; ++channel)
   {
     unsigned int key = TowerInfoDefs::encode_epd(channel);
 
     TowerInfo *tower = towerinfosEPD->get_tower_at_channel(channel);
+    if (!tower)
+    {
+      continue;
+    }
 
     double charge = tower->get_energy();
 
@@ -180,12 +209,30 @@ int GlobalQA::process_sepd(PHCompositeNode *topNode)
       continue;
     }
 
-    double &sepd_total_charge = (arm == 0) ? sepd_total_charge_south : sepd_total_charge_north;
-    sepd_total_charge += charge;
+    if (arm == 0)
+    {
+      sepd_total_charge_south += charge;
+      ++nhits_south;
+    }
+    else
+    {
+      sepd_total_charge_north += charge;
+      ++nhits_north;
+    }
   }
 
   m_data.sepd_charge_south = sepd_total_charge_south;
   m_data.sepd_charge_north = sepd_total_charge_north;
+
+  if (Verbosity() > 0)
+  {
+    std::cout << "GlobalQA::process_sepd - [Event " << event_id << "] "
+              << "Charge S: " << m_data.sepd_charge_south << " (hits: " << nhits_south << ")"
+              << " | Charge N: " << m_data.sepd_charge_north << " (hits: " << nhits_north << ")"
+              << " | Total: " << (m_data.sepd_charge_south + m_data.sepd_charge_north)
+              << " (threshold: " << m_sepd_channel_threshold << ")"
+              << std::endl;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -193,6 +240,9 @@ int GlobalQA::process_sepd(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int GlobalQA::process_mbd(PHCompositeNode *topNode)
 {
+  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
+
   PdbParameterMap *pdb = findNode::getClass<PdbParameterMap>(topNode, "MinBiasParams");
   if (!pdb)
   {
@@ -207,6 +257,15 @@ int GlobalQA::process_mbd(PHCompositeNode *topNode)
 
   m_data.mbd_charge_south = mbd_total_charge_south;
   m_data.mbd_charge_north = mbd_total_charge_north;
+
+  if (Verbosity() > 0)
+  {
+    std::cout << "GlobalQA::process_mbd - [Event " << event_id << "] "
+              << "Charge S: " << m_data.mbd_charge_south
+              << " | Charge N: " << m_data.mbd_charge_north
+              << " | Total: " << (m_data.mbd_charge_south + m_data.mbd_charge_north)
+              << std::endl;
+  }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
