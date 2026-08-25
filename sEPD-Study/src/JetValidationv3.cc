@@ -636,9 +636,9 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
     TowerInfoContainer* ohcal_mult = nullptr;
     if (m_do_detailed)
     {
-      cemc_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_CEMC_RETOWER_SUB1");
-      ihcal_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_HCALIN_SUB1");
-      ohcal_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_HCALOUT_SUB1");
+      cemc_mult = findNode::getClass<TowerInfoContainer>(topNode, m_towerNode_mult_cemc);
+      ihcal_mult = findNode::getClass<TowerInfoContainer>(topNode, m_towerNode_mult_ihcal);
+      ohcal_mult = findNode::getClass<TowerInfoContainer>(topNode, m_towerNode_mult_ohcal);
     }
 
     if (m_do_r02)

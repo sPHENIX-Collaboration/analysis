@@ -46,6 +46,10 @@ class JetValidationv3 : public SubsysReco
   void set_do_r03(bool b = true) { m_do_r03 = b; }
   void set_jet_pt_min(double pt_min) { m_jet_pt_min_cut = pt_min; }
 
+  void set_mult_r02_node_names(const std::string& raw, const std::string& calib) { m_recoJetName_mult_r02 = raw; m_recoJetName_mult_calib_r02 = calib; }
+  void set_mult_r03_node_names(const std::string& raw, const std::string& calib) { m_recoJetName_mult_r03 = raw; m_recoJetName_mult_calib_r03 = calib; }
+  void set_mult_tower_node_names(const std::string& cemc, const std::string& ihcal, const std::string& ohcal) { m_towerNode_mult_cemc = cemc; m_towerNode_mult_ihcal = ihcal; m_towerNode_mult_ohcal = ohcal; }
+
   void set_jet_radii(const std::vector<float>& radii);
   void set_jet_radii(const std::vector<double>& radii);
   void set_jet_radii(std::initializer_list<double> radii);
@@ -142,6 +146,10 @@ class JetValidationv3 : public SubsysReco
   std::string m_recoJetName_mult_r03{"AntiKt_Tower_r03_MultSub1"};
   std::string m_recoJetName_iter_calib_r03{"AntiKt_Tower_r03_Sub1_calib"};
   std::string m_recoJetName_mult_calib_r03{"AntiKt_Tower_r03_MultSub1_calib"};
+
+  std::string m_towerNode_mult_cemc{"MULTSUB_TOWERINFO_CALIB_CEMC_RETOWER_SUB1"};
+  std::string m_towerNode_mult_ihcal{"MULTSUB_TOWERINFO_CALIB_HCALIN_SUB1"};
+  std::string m_towerNode_mult_ohcal{"MULTSUB_TOWERINFO_CALIB_HCALOUT_SUB1"};
 
   std::string m_recoJetName_unsub_r02{"AntiKt_TowerInfo_r02"};
   std::string m_recoJetName_unsub_calib_r02{"AntiKt_TowerInfo_r02_calib"};
