@@ -42,13 +42,22 @@ class JetValidationv3 : public SubsysReco
   void set_do_iter(bool b = true) { m_do_iter = b; }
   void set_do_mult(bool b = true) { m_do_mult = b; }
   void set_do_detailed(bool b = true) { m_do_detailed = b; }
+  void set_do_r02(bool b = true) { m_do_r02 = b; }
+  void set_do_r03(bool b = true) { m_do_r03 = b; }
   void set_jet_pt_min(double pt_min) { m_jet_pt_min_cut = pt_min; }
+
+  void set_jet_radii(const std::vector<float>& radii);
+  void set_jet_radii(const std::vector<double>& radii);
+  void set_jet_radii(std::initializer_list<double> radii);
 
   bool get_do_unsub() const { return m_do_unsub; }
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
   bool get_do_detailed() const { return m_do_detailed; }
+  bool get_do_r02() const { return m_do_r02; }
+  bool get_do_r03() const { return m_do_r03; }
   double get_jet_pt_min() const { return m_jet_pt_min_cut; }
+  std::vector<float> get_jet_radii() const;
 
  private:
   int process_UE(PHCompositeNode *topNode);
@@ -145,6 +154,8 @@ class JetValidationv3 : public SubsysReco
   bool m_do_iter{true};
   bool m_do_mult{true};
   bool m_do_detailed{false};
+  bool m_do_r02{true};
+  bool m_do_r03{true};
 
   static constexpr size_t N_HCAL_TOWERS = CaloGeometry::HCAL_ETA_BINS * CaloGeometry::HCAL_PHI_BINS;
 

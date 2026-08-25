@@ -49,6 +49,47 @@ JetValidationv3::JetValidationv3(const std::string &name)
 {
 }
 
+void JetValidationv3::set_jet_radii(const std::vector<float>& radii)
+{
+  m_do_r02 = false;
+  m_do_r03 = false;
+  for (float r : radii)
+  {
+    if (std::abs(r - 0.2f) < 1e-3f) m_do_r02 = true;
+    if (std::abs(r - 0.3f) < 1e-3f) m_do_r03 = true;
+  }
+}
+
+void JetValidationv3::set_jet_radii(const std::vector<double>& radii)
+{
+  m_do_r02 = false;
+  m_do_r03 = false;
+  for (double r : radii)
+  {
+    if (std::abs(r - 0.2) < 1e-3) m_do_r02 = true;
+    if (std::abs(r - 0.3) < 1e-3) m_do_r03 = true;
+  }
+}
+
+void JetValidationv3::set_jet_radii(std::initializer_list<double> radii)
+{
+  set_jet_radii(std::vector<double>(radii));
+}
+
+std::vector<float> JetValidationv3::get_jet_radii() const
+{
+  std::vector<float> r;
+  if (m_do_r02)
+  {
+    r.push_back(0.2F);
+  }
+  if (m_do_r03)
+  {
+    r.push_back(0.3F);
+  }
+  return r;
+}
+
 //____________________________________________________________________________..
 int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
@@ -68,46 +109,54 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
     tree->Branch("calo_v2_iter", &m_data.calo_v2_iter);
     tree->Branch("is_flow_failure_iter", &m_data.is_flow_failure_iter);
 
-    tree->Branch("max_pt_iter_r02", &m_data.iter_r02.max_pt);
-    tree->Branch("max_pt_iter_r03", &m_data.iter_r03.max_pt);
-
-    tree->Branch("pt_iter_r02", &m_data.iter_r02.pt);
-    tree->Branch("pt_calib_iter_r02", &m_data.iter_r02.pt_calib);
-    tree->Branch("e_iter_r02", &m_data.iter_r02.e);
-    tree->Branch("phi_iter_r02", &m_data.iter_r02.phi);
-    tree->Branch("eta_iter_r02", &m_data.iter_r02.eta);
-
-    tree->Branch("pt_iter_r03", &m_data.iter_r03.pt);
-    tree->Branch("pt_calib_iter_r03", &m_data.iter_r03.pt_calib);
-    tree->Branch("e_iter_r03", &m_data.iter_r03.e);
-    tree->Branch("phi_iter_r03", &m_data.iter_r03.phi);
-    tree->Branch("eta_iter_r03", &m_data.iter_r03.eta);
-
-    if (m_do_detailed)
+    if (m_do_r02)
     {
-      tree->Branch("emcal_tower_index_iter_r02", &m_data.iter_r02.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_iter_r02", &m_data.iter_r02.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_iter_r02", &m_data.iter_r02.emcal_tower_pt);
+      tree->Branch("max_pt_iter_r02", &m_data.iter_r02.max_pt);
+      tree->Branch("pt_iter_r02", &m_data.iter_r02.pt);
+      tree->Branch("pt_calib_iter_r02", &m_data.iter_r02.pt_calib);
+      tree->Branch("e_iter_r02", &m_data.iter_r02.e);
+      tree->Branch("phi_iter_r02", &m_data.iter_r02.phi);
+      tree->Branch("eta_iter_r02", &m_data.iter_r02.eta);
 
-      tree->Branch("ihcal_tower_index_iter_r02", &m_data.iter_r02.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_iter_r02", &m_data.iter_r02.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_iter_r02", &m_data.iter_r02.ihcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_iter_r02", &m_data.iter_r02.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_iter_r02", &m_data.iter_r02.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_iter_r02", &m_data.iter_r02.emcal_tower_pt);
 
-      tree->Branch("ohcal_tower_index_iter_r02", &m_data.iter_r02.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_iter_r02", &m_data.iter_r02.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_iter_r02", &m_data.iter_r02.ohcal_tower_pt);
+        tree->Branch("ihcal_tower_index_iter_r02", &m_data.iter_r02.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_iter_r02", &m_data.iter_r02.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_iter_r02", &m_data.iter_r02.ihcal_tower_pt);
 
-      tree->Branch("emcal_tower_index_iter_r03", &m_data.iter_r03.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_iter_r03", &m_data.iter_r03.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_iter_r03", &m_data.iter_r03.emcal_tower_pt);
+        tree->Branch("ohcal_tower_index_iter_r02", &m_data.iter_r02.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_iter_r02", &m_data.iter_r02.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_iter_r02", &m_data.iter_r02.ohcal_tower_pt);
+      }
+    }
 
-      tree->Branch("ihcal_tower_index_iter_r03", &m_data.iter_r03.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_iter_r03", &m_data.iter_r03.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_iter_r03", &m_data.iter_r03.ihcal_tower_pt);
+    if (m_do_r03)
+    {
+      tree->Branch("max_pt_iter_r03", &m_data.iter_r03.max_pt);
+      tree->Branch("pt_iter_r03", &m_data.iter_r03.pt);
+      tree->Branch("pt_calib_iter_r03", &m_data.iter_r03.pt_calib);
+      tree->Branch("e_iter_r03", &m_data.iter_r03.e);
+      tree->Branch("phi_iter_r03", &m_data.iter_r03.phi);
+      tree->Branch("eta_iter_r03", &m_data.iter_r03.eta);
 
-      tree->Branch("ohcal_tower_index_iter_r03", &m_data.iter_r03.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_iter_r03", &m_data.iter_r03.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_iter_r03", &m_data.iter_r03.ohcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_iter_r03", &m_data.iter_r03.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_iter_r03", &m_data.iter_r03.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_iter_r03", &m_data.iter_r03.emcal_tower_pt);
+
+        tree->Branch("ihcal_tower_index_iter_r03", &m_data.iter_r03.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_iter_r03", &m_data.iter_r03.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_iter_r03", &m_data.iter_r03.ihcal_tower_pt);
+
+        tree->Branch("ohcal_tower_index_iter_r03", &m_data.iter_r03.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_iter_r03", &m_data.iter_r03.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_iter_r03", &m_data.iter_r03.ohcal_tower_pt);
+      }
     }
   }
 
@@ -117,91 +166,107 @@ int JetValidationv3::Init([[maybe_unused]] PHCompositeNode *topNode)
     tree->Branch("calo_v2_mult", &m_data.calo_v2_mult);
     tree->Branch("is_flow_failure_mult", &m_data.is_flow_failure_mult);
 
-    tree->Branch("max_pt_mult_r02", &m_data.mult_r02.max_pt);
-    tree->Branch("max_pt_mult_r03", &m_data.mult_r03.max_pt);
-
-    tree->Branch("pt_mult_r02", &m_data.mult_r02.pt);
-    tree->Branch("pt_calib_mult_r02", &m_data.mult_r02.pt_calib);
-    tree->Branch("e_mult_r02", &m_data.mult_r02.e);
-    tree->Branch("phi_mult_r02", &m_data.mult_r02.phi);
-    tree->Branch("eta_mult_r02", &m_data.mult_r02.eta);
-
-    tree->Branch("pt_mult_r03", &m_data.mult_r03.pt);
-    tree->Branch("pt_calib_mult_r03", &m_data.mult_r03.pt_calib);
-    tree->Branch("e_mult_r03", &m_data.mult_r03.e);
-    tree->Branch("phi_mult_r03", &m_data.mult_r03.phi);
-    tree->Branch("eta_mult_r03", &m_data.mult_r03.eta);
-
-    if (m_do_detailed)
+    if (m_do_r02)
     {
-      tree->Branch("emcal_tower_index_mult_r02", &m_data.mult_r02.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_mult_r02", &m_data.mult_r02.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_mult_r02", &m_data.mult_r02.emcal_tower_pt);
+      tree->Branch("max_pt_mult_r02", &m_data.mult_r02.max_pt);
+      tree->Branch("pt_mult_r02", &m_data.mult_r02.pt);
+      tree->Branch("pt_calib_mult_r02", &m_data.mult_r02.pt_calib);
+      tree->Branch("e_mult_r02", &m_data.mult_r02.e);
+      tree->Branch("phi_mult_r02", &m_data.mult_r02.phi);
+      tree->Branch("eta_mult_r02", &m_data.mult_r02.eta);
 
-      tree->Branch("ihcal_tower_index_mult_r02", &m_data.mult_r02.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_mult_r02", &m_data.mult_r02.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_mult_r02", &m_data.mult_r02.ihcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_mult_r02", &m_data.mult_r02.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_mult_r02", &m_data.mult_r02.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_mult_r02", &m_data.mult_r02.emcal_tower_pt);
 
-      tree->Branch("ohcal_tower_index_mult_r02", &m_data.mult_r02.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_mult_r02", &m_data.mult_r02.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_mult_r02", &m_data.mult_r02.ohcal_tower_pt);
+        tree->Branch("ihcal_tower_index_mult_r02", &m_data.mult_r02.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_mult_r02", &m_data.mult_r02.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_mult_r02", &m_data.mult_r02.ihcal_tower_pt);
 
-      tree->Branch("emcal_tower_index_mult_r03", &m_data.mult_r03.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_mult_r03", &m_data.mult_r03.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_mult_r03", &m_data.mult_r03.emcal_tower_pt);
+        tree->Branch("ohcal_tower_index_mult_r02", &m_data.mult_r02.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_mult_r02", &m_data.mult_r02.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_mult_r02", &m_data.mult_r02.ohcal_tower_pt);
+      }
+    }
 
-      tree->Branch("ihcal_tower_index_mult_r03", &m_data.mult_r03.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_mult_r03", &m_data.mult_r03.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_mult_r03", &m_data.mult_r03.ihcal_tower_pt);
+    if (m_do_r03)
+    {
+      tree->Branch("max_pt_mult_r03", &m_data.mult_r03.max_pt);
+      tree->Branch("pt_mult_r03", &m_data.mult_r03.pt);
+      tree->Branch("pt_calib_mult_r03", &m_data.mult_r03.pt_calib);
+      tree->Branch("e_mult_r03", &m_data.mult_r03.e);
+      tree->Branch("phi_mult_r03", &m_data.mult_r03.phi);
+      tree->Branch("eta_mult_r03", &m_data.mult_r03.eta);
 
-      tree->Branch("ohcal_tower_index_mult_r03", &m_data.mult_r03.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_mult_r03", &m_data.mult_r03.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_mult_r03", &m_data.mult_r03.ohcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_mult_r03", &m_data.mult_r03.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_mult_r03", &m_data.mult_r03.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_mult_r03", &m_data.mult_r03.emcal_tower_pt);
+
+        tree->Branch("ihcal_tower_index_mult_r03", &m_data.mult_r03.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_mult_r03", &m_data.mult_r03.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_mult_r03", &m_data.mult_r03.ihcal_tower_pt);
+
+        tree->Branch("ohcal_tower_index_mult_r03", &m_data.mult_r03.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_mult_r03", &m_data.mult_r03.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_mult_r03", &m_data.mult_r03.ohcal_tower_pt);
+      }
     }
   }
 
   if (m_do_unsub)
   {
-    tree->Branch("max_pt_unsub_r02", &m_data.unsub_r02.max_pt);
-    tree->Branch("max_pt_unsub_r03", &m_data.unsub_r03.max_pt);
-
-    tree->Branch("pt_unsub_r02", &m_data.unsub_r02.pt);
-    tree->Branch("pt_calib_unsub_r02", &m_data.unsub_r02.pt_calib);
-    tree->Branch("e_unsub_r02", &m_data.unsub_r02.e);
-    tree->Branch("phi_unsub_r02", &m_data.unsub_r02.phi);
-    tree->Branch("eta_unsub_r02", &m_data.unsub_r02.eta);
-
-    tree->Branch("pt_unsub_r03", &m_data.unsub_r03.pt);
-    tree->Branch("pt_calib_unsub_r03", &m_data.unsub_r03.pt_calib);
-    tree->Branch("e_unsub_r03", &m_data.unsub_r03.e);
-    tree->Branch("phi_unsub_r03", &m_data.unsub_r03.phi);
-    tree->Branch("eta_unsub_r03", &m_data.unsub_r03.eta);
-
-    if (m_do_detailed)
+    if (m_do_r02)
     {
-      tree->Branch("emcal_tower_index_unsub_r02", &m_data.unsub_r02.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_unsub_r02", &m_data.unsub_r02.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_unsub_r02", &m_data.unsub_r02.emcal_tower_pt);
+      tree->Branch("max_pt_unsub_r02", &m_data.unsub_r02.max_pt);
+      tree->Branch("pt_unsub_r02", &m_data.unsub_r02.pt);
+      tree->Branch("pt_calib_unsub_r02", &m_data.unsub_r02.pt_calib);
+      tree->Branch("e_unsub_r02", &m_data.unsub_r02.e);
+      tree->Branch("phi_unsub_r02", &m_data.unsub_r02.phi);
+      tree->Branch("eta_unsub_r02", &m_data.unsub_r02.eta);
 
-      tree->Branch("ihcal_tower_index_unsub_r02", &m_data.unsub_r02.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_unsub_r02", &m_data.unsub_r02.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_unsub_r02", &m_data.unsub_r02.ihcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_unsub_r02", &m_data.unsub_r02.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_unsub_r02", &m_data.unsub_r02.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_unsub_r02", &m_data.unsub_r02.emcal_tower_pt);
 
-      tree->Branch("ohcal_tower_index_unsub_r02", &m_data.unsub_r02.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_unsub_r02", &m_data.unsub_r02.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_unsub_r02", &m_data.unsub_r02.ohcal_tower_pt);
+        tree->Branch("ihcal_tower_index_unsub_r02", &m_data.unsub_r02.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_unsub_r02", &m_data.unsub_r02.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_unsub_r02", &m_data.unsub_r02.ihcal_tower_pt);
 
-      tree->Branch("emcal_tower_index_unsub_r03", &m_data.unsub_r03.emcal_tower_index);
-      tree->Branch("emcal_tower_energy_unsub_r03", &m_data.unsub_r03.emcal_tower_energy);
-      tree->Branch("emcal_tower_pt_unsub_r03", &m_data.unsub_r03.emcal_tower_pt);
+        tree->Branch("ohcal_tower_index_unsub_r02", &m_data.unsub_r02.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_unsub_r02", &m_data.unsub_r02.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_unsub_r02", &m_data.unsub_r02.ohcal_tower_pt);
+      }
+    }
 
-      tree->Branch("ihcal_tower_index_unsub_r03", &m_data.unsub_r03.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy_unsub_r03", &m_data.unsub_r03.ihcal_tower_energy);
-      tree->Branch("ihcal_tower_pt_unsub_r03", &m_data.unsub_r03.ihcal_tower_pt);
+    if (m_do_r03)
+    {
+      tree->Branch("max_pt_unsub_r03", &m_data.unsub_r03.max_pt);
+      tree->Branch("pt_unsub_r03", &m_data.unsub_r03.pt);
+      tree->Branch("pt_calib_unsub_r03", &m_data.unsub_r03.pt_calib);
+      tree->Branch("e_unsub_r03", &m_data.unsub_r03.e);
+      tree->Branch("phi_unsub_r03", &m_data.unsub_r03.phi);
+      tree->Branch("eta_unsub_r03", &m_data.unsub_r03.eta);
 
-      tree->Branch("ohcal_tower_index_unsub_r03", &m_data.unsub_r03.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy_unsub_r03", &m_data.unsub_r03.ohcal_tower_energy);
-      tree->Branch("ohcal_tower_pt_unsub_r03", &m_data.unsub_r03.ohcal_tower_pt);
+      if (m_do_detailed)
+      {
+        tree->Branch("emcal_tower_index_unsub_r03", &m_data.unsub_r03.emcal_tower_index);
+        tree->Branch("emcal_tower_energy_unsub_r03", &m_data.unsub_r03.emcal_tower_energy);
+        tree->Branch("emcal_tower_pt_unsub_r03", &m_data.unsub_r03.emcal_tower_pt);
+
+        tree->Branch("ihcal_tower_index_unsub_r03", &m_data.unsub_r03.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy_unsub_r03", &m_data.unsub_r03.ihcal_tower_energy);
+        tree->Branch("ihcal_tower_pt_unsub_r03", &m_data.unsub_r03.ihcal_tower_pt);
+
+        tree->Branch("ohcal_tower_index_unsub_r03", &m_data.unsub_r03.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy_unsub_r03", &m_data.unsub_r03.ohcal_tower_energy);
+        tree->Branch("ohcal_tower_pt_unsub_r03", &m_data.unsub_r03.ohcal_tower_pt);
+      }
     }
   }
 
@@ -267,6 +332,9 @@ int JetValidationv3::InitRun(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::process_UE(PHCompositeNode *topNode)
 {
+  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
+
   if (m_do_iter)
   {
     TowerBackground* towerBkg_iter = findNode::getClass<TowerBackground>(topNode, "TowerInfoBackground_Sub2");
@@ -279,6 +347,13 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
     m_data.is_flow_failure_iter = towerBkg_iter->get_flow_failure_flag();
     m_data.calo_v2_iter = towerBkg_iter->get_v2();
     m_data.seeds_iter = towerBkg_iter->get_nHIRecoSeedsSub();
+
+    if (Verbosity() > 0)
+    {
+      std::cout << "JetValidationv3::process_UE - [Event " << event_id << "] [Iter] seeds: " << m_data.seeds_iter
+                << " | v2: " << m_data.calo_v2_iter
+                << " | flow_fail: " << m_data.is_flow_failure_iter << std::endl;
+    }
   }
 
   if (m_do_mult)
@@ -293,6 +368,13 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
     m_data.is_flow_failure_mult = towerBkg_mult->get_flow_failure_flag();
     m_data.calo_v2_mult = towerBkg_mult->get_v2();
     m_data.seeds_mult = towerBkg_mult->get_nHIRecoSeedsSub();
+
+    if (Verbosity() > 0)
+    {
+      std::cout << "JetValidationv3::process_UE - [Event " << event_id << "] [Mult] seeds: " << m_data.seeds_mult
+                << " | v2: " << m_data.calo_v2_mult
+                << " | flow_fail: " << m_data.is_flow_failure_mult << std::endl;
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -301,6 +383,9 @@ int JetValidationv3::process_UE(PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int JetValidationv3::process_jets(PHCompositeNode *topNode)
 {
+  EventHeader *eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
+
   double zvtx = 0.0;
   GlobalVertexMap *vertexmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
   if (!vertexmap)
@@ -317,8 +402,15 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
   }
 
   auto fill_jets = [&](JetContainer* jets, JetContainer* jets_calib, JetData& jd, double jet_radius,
-                       TowerInfoContainer* cemc_towers, TowerInfoContainer* ihcal_towers, TowerInfoContainer* ohcal_towers)
+                       TowerInfoContainer* cemc_towers, TowerInfoContainer* ihcal_towers, TowerInfoContainer* ohcal_towers,
+                       const std::string& jet_label = "")
   {
+    if (Verbosity() > 1)
+    {
+      std::cout << "JetValidationv3::process_jets - [Event " << event_id << "] [" << jet_label << "] (R=" << jet_radius
+                << ") Container sizes: raw=" << jets->size() << ", calib=" << jets_calib->size() << std::endl;
+    }
+
     for (unsigned int i = 0; i < std::min(jets->size(), jets_calib->size()); ++i)
     {
       auto *jet = jets->get_jet(i);
@@ -352,6 +444,17 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
         if (energy > 0)
         {
           jd.max_pt = std::max(jd.max_pt, pt_calib);
+        }
+
+        if (Verbosity() > 0)
+        {
+          std::cout << "JetValidationv3::process_jets - [Event " << event_id << "] [" << jet_label << "] Jet #" << i
+                    << " | pT: " << pt << " -> pT_calib: " << pt_calib << " GeV"
+                    << " | E: " << energy << " GeV"
+                    << " | eta: " << eta
+                    << " | phi: " << phi
+                    << " | zvtx: " << zvtx << " cm"
+                    << std::endl;
         }
 
         if (m_do_detailed)
@@ -458,6 +561,14 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
             }
           }
 
+          if (Verbosity() > 1)
+          {
+            std::cout << "    Constituents -> EMCAL: " << emcal_idx.size()
+                      << " towers | IHCAL: " << ihcal_idx.size()
+                      << " towers | OHCAL: " << ohcal_idx.size()
+                      << " towers" << std::endl;
+          }
+
           jd.emcal_tower_index.push_back(std::move(emcal_idx));
           jd.emcal_tower_energy.push_back(std::move(emcal_e));
           jd.emcal_tower_pt.push_back(std::move(emcal_pt));
@@ -472,24 +583,17 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
         }
       }
     }
+
+    if (Verbosity() > 0 && !jd.pt.empty())
+    {
+      std::cout << "JetValidationv3::process_jets - [Event " << event_id << "] [" << jet_label << "] Total accepted jets: "
+                << jd.pt.size() << " / " << std::min(jets->size(), jets_calib->size())
+                << " (max pT_calib = " << jd.max_pt << " GeV/c)" << std::endl;
+    }
   };
 
   if (m_do_iter)
   {
-    JetContainer *jets_iter_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_r02);
-    JetContainer *jets_iter_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_calib_r02);
-    JetContainer *jets_iter_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_r03);
-    JetContainer *jets_iter_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_calib_r03);
-
-    for (auto* jets : {jets_iter_r02, jets_iter_calib_r02, jets_iter_r03, jets_iter_calib_r03})
-    {
-      if (!jets)
-      {
-        std::cout << "Aborting Run: Iter Jets Info null" << std::endl;
-        return Fun4AllReturnCodes::ABORTRUN;
-      }
-    }
-
     TowerInfoContainer* cemc_sub1 = nullptr;
     TowerInfoContainer* ihcal_sub1 = nullptr;
     TowerInfoContainer* ohcal_sub1 = nullptr;
@@ -500,29 +604,33 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
       ohcal_sub1 = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT_SUB1");
     }
 
-    // R = 0.2 Iterative
-    fill_jets(jets_iter_r02, jets_iter_calib_r02, m_data.iter_r02, 0.2, cemc_sub1, ihcal_sub1, ohcal_sub1);
+    if (m_do_r02)
+    {
+      JetContainer *jets_iter_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_r02);
+      JetContainer *jets_iter_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_calib_r02);
+      if (!jets_iter_r02 || !jets_iter_calib_r02)
+      {
+        std::cout << "Aborting Run: Iter R=0.2 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_iter_r02, jets_iter_calib_r02, m_data.iter_r02, 0.2, cemc_sub1, ihcal_sub1, ohcal_sub1, "Iter R=0.2");
+    }
 
-    // R = 0.3 Iterative
-    fill_jets(jets_iter_r03, jets_iter_calib_r03, m_data.iter_r03, 0.3, cemc_sub1, ihcal_sub1, ohcal_sub1);
+    if (m_do_r03)
+    {
+      JetContainer *jets_iter_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_r03);
+      JetContainer *jets_iter_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_iter_calib_r03);
+      if (!jets_iter_r03 || !jets_iter_calib_r03)
+      {
+        std::cout << "Aborting Run: Iter R=0.3 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_iter_r03, jets_iter_calib_r03, m_data.iter_r03, 0.3, cemc_sub1, ihcal_sub1, ohcal_sub1, "Iter R=0.3");
+    }
   }
 
   if (m_do_mult)
   {
-    JetContainer *jets_mult_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_r02);
-    JetContainer *jets_mult_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_calib_r02);
-    JetContainer *jets_mult_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_r03);
-    JetContainer *jets_mult_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_calib_r03);
-
-    for (auto* jets : {jets_mult_r02, jets_mult_calib_r02, jets_mult_r03, jets_mult_calib_r03})
-    {
-      if (!jets)
-      {
-        std::cout << "Aborting Run: Mult Jets Info null" << std::endl;
-        return Fun4AllReturnCodes::ABORTRUN;
-      }
-    }
-
     TowerInfoContainer* cemc_mult = nullptr;
     TowerInfoContainer* ihcal_mult = nullptr;
     TowerInfoContainer* ohcal_mult = nullptr;
@@ -533,29 +641,33 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
       ohcal_mult = findNode::getClass<TowerInfoContainer>(topNode, "MULTSUB_TOWERINFO_CALIB_HCALOUT_SUB1");
     }
 
-    // R = 0.2 Multiplicity
-    fill_jets(jets_mult_r02, jets_mult_calib_r02, m_data.mult_r02, 0.2, cemc_mult, ihcal_mult, ohcal_mult);
+    if (m_do_r02)
+    {
+      JetContainer *jets_mult_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_r02);
+      JetContainer *jets_mult_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_calib_r02);
+      if (!jets_mult_r02 || !jets_mult_calib_r02)
+      {
+        std::cout << "Aborting Run: Mult R=0.2 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_mult_r02, jets_mult_calib_r02, m_data.mult_r02, 0.2, cemc_mult, ihcal_mult, ohcal_mult, "Mult R=0.2");
+    }
 
-    // R = 0.3 Multiplicity
-    fill_jets(jets_mult_r03, jets_mult_calib_r03, m_data.mult_r03, 0.3, cemc_mult, ihcal_mult, ohcal_mult);
+    if (m_do_r03)
+    {
+      JetContainer *jets_mult_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_r03);
+      JetContainer *jets_mult_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_mult_calib_r03);
+      if (!jets_mult_r03 || !jets_mult_calib_r03)
+      {
+        std::cout << "Aborting Run: Mult R=0.3 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_mult_r03, jets_mult_calib_r03, m_data.mult_r03, 0.3, cemc_mult, ihcal_mult, ohcal_mult, "Mult R=0.3");
+    }
   }
 
   if (m_do_unsub)
   {
-    JetContainer *jets_unsub_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r02);
-    JetContainer *jets_unsub_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r02);
-    JetContainer *jets_unsub_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r03);
-    JetContainer *jets_unsub_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r03);
-
-    for (auto* jets : {jets_unsub_r02, jets_unsub_calib_r02, jets_unsub_r03, jets_unsub_calib_r03})
-    {
-      if (!jets)
-      {
-        std::cout << "Aborting Run: Unsub Jets Info null" << std::endl;
-        return Fun4AllReturnCodes::ABORTRUN;
-      }
-    }
-
     TowerInfoContainer* cemc_unsub = nullptr;
     TowerInfoContainer* ihcal_unsub = nullptr;
     TowerInfoContainer* ohcal_unsub = nullptr;
@@ -566,11 +678,29 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
       ohcal_unsub = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
     }
 
-    // R = 0.2 Unsubtracted
-    fill_jets(jets_unsub_r02, jets_unsub_calib_r02, m_data.unsub_r02, 0.2, cemc_unsub, ihcal_unsub, ohcal_unsub);
+    if (m_do_r02)
+    {
+      JetContainer *jets_unsub_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r02);
+      JetContainer *jets_unsub_calib_r02 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r02);
+      if (!jets_unsub_r02 || !jets_unsub_calib_r02)
+      {
+        std::cout << "Aborting Run: Unsub R=0.2 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_unsub_r02, jets_unsub_calib_r02, m_data.unsub_r02, 0.2, cemc_unsub, ihcal_unsub, ohcal_unsub, "Unsub R=0.2");
+    }
 
-    // R = 0.3 Unsubtracted
-    fill_jets(jets_unsub_r03, jets_unsub_calib_r03, m_data.unsub_r03, 0.3, cemc_unsub, ihcal_unsub, ohcal_unsub);
+    if (m_do_r03)
+    {
+      JetContainer *jets_unsub_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_r03);
+      JetContainer *jets_unsub_calib_r03 = findNode::getClass<JetContainer>(topNode, m_recoJetName_unsub_calib_r03);
+      if (!jets_unsub_r03 || !jets_unsub_calib_r03)
+      {
+        std::cout << "Aborting Run: Unsub R=0.3 Jets Info null" << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      fill_jets(jets_unsub_r03, jets_unsub_calib_r03, m_data.unsub_r03, 0.3, cemc_unsub, ihcal_unsub, ohcal_unsub, "Unsub R=0.3");
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -611,8 +741,14 @@ int JetValidationv3::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
     m_data.seeds_iter = 0;
     m_data.calo_v2_iter = 9999;
     m_data.is_flow_failure_iter = false;
-    m_data.iter_r02.clear();
-    m_data.iter_r03.clear();
+    if (m_do_r02)
+    {
+      m_data.iter_r02.clear();
+    }
+    if (m_do_r03)
+    {
+      m_data.iter_r03.clear();
+    }
   }
 
   if (m_do_mult)
@@ -620,14 +756,26 @@ int JetValidationv3::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
     m_data.seeds_mult = 0;
     m_data.calo_v2_mult = 9999;
     m_data.is_flow_failure_mult = false;
-    m_data.mult_r02.clear();
-    m_data.mult_r03.clear();
+    if (m_do_r02)
+    {
+      m_data.mult_r02.clear();
+    }
+    if (m_do_r03)
+    {
+      m_data.mult_r03.clear();
+    }
   }
 
   if (m_do_unsub)
   {
-    m_data.unsub_r02.clear();
-    m_data.unsub_r03.clear();
+    if (m_do_r02)
+    {
+      m_data.unsub_r02.clear();
+    }
+    if (m_do_r03)
+    {
+      m_data.unsub_r03.clear();
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
