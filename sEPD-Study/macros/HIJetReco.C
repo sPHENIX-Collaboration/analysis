@@ -31,6 +31,10 @@
 
 #include <fun4all/Fun4AllServer.h>
 
+#include <cmath>
+#include <string>
+#include <vector>
+
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libglobalvertex.so)
 R__LOAD_LIBRARY(libjetbackground.so)
@@ -94,7 +98,7 @@ namespace HIJETS
 
   ///! Base fastjet options to use. Note that the
   ///! resolution parameter will be overwritten
-  ///! to R = 0.2, 0.3, 0.4, and 0.5
+  ///! to the values in jet_radii
   FastJetOptions fj_opts({Jet::ANTIKT, JET_R, 0.4F, VERBOSITY, static_cast<float>(Enable::HIJETS_VERBOSITY)});
 
   ///! kt fastjet options for seed jets
@@ -113,6 +117,9 @@ namespace HIJETS
   ///! 2 = pythia particles from the HIJING+Pythia samples (use for pythia jets in HIJING+Pythia samples)
   ///! negative values are typically background particles (HIJING particles)
   int embedding_flag = 1;
+
+  ///! Configurable jet resolution parameters (radii) to reconstruct
+  std::vector<float> jet_radii = {0.2, 0.3};
 
   ///! enumerates reconstructed resolution
   ///! parameters
@@ -163,10 +170,11 @@ void MakeHITruthJets()
     // book jet reconstruction on chargedparticles
     JetReco *chargedtruthjetreco = new JetReco();
     chargedtruthjetreco->add_input(ctji);
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_ChargedTruth_r02");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_ChargedTruth_r03");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_ChargedTruth_r04");
-    chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_ChargedTruth_r05");
+    for (const float R : HIJETS::jet_radii)
+    {
+      int r_int = static_cast<int>(std::round(R * 10));
+      chargedtruthjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_ChargedTruth_r%02d", HIJETS::algo_prefix.c_str(), r_int));
+    }
     chargedtruthjetreco->set_algo_node(HIJETS::jet_node);
     chargedtruthjetreco->set_input_node("TRUTH");
     chargedtruthjetreco->Verbosity(verbosity);
@@ -183,10 +191,11 @@ void MakeHITruthJets()
     // book jet reconstruction on all particles
     JetReco *truthjetreco = new JetReco();
     truthjetreco->add_input(tji);
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Truth_r02");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Truth_r03");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Truth_r04");
-    truthjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Truth_r05");
+    for (const float R : HIJETS::jet_radii)
+    {
+      int r_int = static_cast<int>(std::round(R * 10));
+      truthjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Truth_r%02d", HIJETS::algo_prefix.c_str(), r_int));
+    }
     truthjetreco->set_algo_node(HIJETS::jet_node);
     truthjetreco->set_input_node("TRUTH");
     truthjetreco->Verbosity(verbosity);
@@ -307,8 +316,11 @@ void MakeHITowerJets()
   towerjetreco->add_input(incemc);
   towerjetreco->add_input(inihcal);
   towerjetreco->add_input(inohcal);
-  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Tower_r02_Sub1");
-  towerjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Tower_r03_Sub1");
+  for (const float R : HIJETS::jet_radii)
+  {
+    int r_int = static_cast<int>(std::round(R * 10));
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Tower_r%02d_Sub1", HIJETS::algo_prefix.c_str(), r_int));
+  }
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
   towerjetreco->Verbosity(verbosity);
@@ -316,12 +328,12 @@ void MakeHITowerJets()
 
   if (Enable::HIJETS_TOWER_CALIB)
   {
-    for (const auto & R : {0.2, 0.3})
+    for (const float R : HIJETS::jet_radii)
     {
-      int r_int = static_cast<int>(R * 10);
-      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r0%d_Sub1", r_int));
-      jetCalib->set_InputNode(Form("%s_Tower_r0%d_Sub1", HIJETS::algo_prefix.c_str(), r_int));
-      jetCalib->set_OutputNode(Form("%s_Tower_r0%d_Sub1_calib", HIJETS::algo_prefix.c_str(), r_int));
+      int r_int = static_cast<int>(std::round(R * 10));
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r%02d_Sub1", r_int));
+      jetCalib->set_InputNode(Form("%s_Tower_r%02d_Sub1", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_Tower_r%02d_Sub1_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
@@ -423,9 +435,10 @@ void MakeHITowerJetsMultSub()
   {
     towerjetreco->add_input(GetTowerInput(src, "MULTSUB_" + HIJETS::tower_prefix));
   }
-  for (const auto & R : {0.2, 0.3})
+  for (const float R : HIJETS::jet_radii)
   {
-    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Tower_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+    int r_int = static_cast<int>(std::round(R * 10));
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Tower_r%02d_MultSub1", HIJETS::algo_prefix.c_str(), r_int));
   }
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
@@ -434,12 +447,12 @@ void MakeHITowerJetsMultSub()
 
   if (Enable::HIJETS_TOWER_CALIB)
   {
-    for (const auto & R : {0.2, 0.3})
+    for (const float R : HIJETS::jet_radii)
     {
-      int r_int = static_cast<int>(R * 10);
-      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r0%d_MultSub1", r_int));
-      jetCalib->set_InputNode(Form("%s_Tower_r0%d_MultSub1", HIJETS::algo_prefix.c_str(), r_int));
-      jetCalib->set_OutputNode(Form("%s_Tower_r0%d_MultSub1_calib", HIJETS::algo_prefix.c_str(), r_int));
+      int r_int = static_cast<int>(std::round(R * 10));
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_Tower_r%02d_MultSub1", r_int));
+      jetCalib->set_InputNode(Form("%s_Tower_r%02d_MultSub1", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_Tower_r%02d_MultSub1_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
@@ -470,9 +483,10 @@ void MakeHITowerJetsNoBkg()
   {
     towerjetreco->add_input(GetTowerInput(src, HIJETS::tower_prefix));
   }
-  for (const auto & R : {0.2, 0.3})
+  for (const float R : HIJETS::jet_radii)
   {
-    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), static_cast<int>(R * 10)));
+    int r_int = static_cast<int>(std::round(R * 10));
+    towerjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_TowerInfo_r%02d", HIJETS::algo_prefix.c_str(), r_int));
   }
   towerjetreco->set_algo_node(HIJETS::jet_node);
   towerjetreco->set_input_node("TOWER");
@@ -481,12 +495,12 @@ void MakeHITowerJetsNoBkg()
 
   if (Enable::HIJETS_TOWER_CALIB)
   {
-    for (const auto & R : {0.2, 0.3})
+    for (const float R : HIJETS::jet_radii)
     {
-      int r_int = static_cast<int>(R * 10);
-      JetCalib* jetCalib = new JetCalib(Form("JetCalib_TowerInfo_r0%d", r_int));
-      jetCalib->set_InputNode(Form("%s_TowerInfo_r0%d", HIJETS::algo_prefix.c_str(), r_int));
-      jetCalib->set_OutputNode(Form("%s_TowerInfo_r0%d_calib", HIJETS::algo_prefix.c_str(), r_int));
+      int r_int = static_cast<int>(std::round(R * 10));
+      JetCalib* jetCalib = new JetCalib(Form("JetCalib_TowerInfo_r%02d", r_int));
+      jetCalib->set_InputNode(Form("%s_TowerInfo_r%02d", HIJETS::algo_prefix.c_str(), r_int));
+      jetCalib->set_OutputNode(Form("%s_TowerInfo_r%02d_calib", HIJETS::algo_prefix.c_str(), r_int));
       jetCalib->set_JetRadius(R);
       jetCalib->set_ApplyZvrtxDependentCalib(true);
       jetCalib->set_ApplyEtaDependentCalib(true);
@@ -520,10 +534,11 @@ void MakeHITrackJets()
   // book jet reconstruction routines on tracks
   JetReco *trackjetreco = new JetReco();
   trackjetreco->add_input(new TrackJetInput(Jet::SRC::TRACK));
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_Track_r02");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_Track_r03");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_Track_r04");
-  trackjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_Track_r05");
+  for (const float R : HIJETS::jet_radii)
+  {
+    int r_int = static_cast<int>(std::round(R * 10));
+    trackjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_Track_r%02d", HIJETS::algo_prefix.c_str(), r_int));
+  }
   trackjetreco->set_algo_node(HIJETS::jet_node);
   trackjetreco->set_input_node("TRACK");
   trackjetreco->Verbosity(verbosity);
@@ -555,10 +570,11 @@ void MakeHIPFlowJets()
   // book jet reconstruction routines on pflow elements
   JetReco *pflowjetreco = new JetReco();
   pflowjetreco->add_input(new ParticleFlowJetInput());
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.2F), HIJETS::algo_prefix + "_ParticleFlow_r02");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.3F), HIJETS::algo_prefix + "_ParticleFlow_r03");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.4F), HIJETS::algo_prefix + "_ParticleFlow_r04");
-  pflowjetreco->add_algo(HIJETS::GetFJAlgo(0.5F), HIJETS::algo_prefix + "_ParticleFlow_r05");
+  for (const float R : HIJETS::jet_radii)
+  {
+    int r_int = static_cast<int>(std::round(R * 10));
+    pflowjetreco->add_algo(HIJETS::GetFJAlgo(R), Form("%s_ParticleFlow_r%02d", HIJETS::algo_prefix.c_str(), r_int));
+  }
   pflowjetreco->set_algo_node(HIJETS::jet_node);
   pflowjetreco->set_input_node("ELEMENT");
   pflowjetreco->Verbosity(verbosity);
