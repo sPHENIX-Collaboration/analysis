@@ -433,7 +433,37 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
         phi += 2.0 * std::numbers::pi;
       }
 
-      if (pt_calib >= m_jet_pt_min_cut && !JetUtils::check_bad_jet_eta(eta, zvtx, jet_radius))
+      bool pass_pt = (pt_calib >= m_jet_pt_min_cut);
+      bool pass_eta = !JetUtils::check_bad_jet_eta(eta, zvtx, jet_radius);
+      bool pass_cuts = pass_pt && pass_eta;
+
+      if (Verbosity() > 2)
+      {
+        std::string status_str = "PASS";
+        if (!pass_pt && !pass_eta)
+        {
+          status_str = "FAIL(pT+eta)";
+        }
+        else if (!pass_pt)
+        {
+          status_str = "FAIL(pT)";
+        }
+        else if (!pass_eta)
+        {
+          status_str = "FAIL(eta)";
+        }
+
+        std::cout << "JetValidationv3::process_jets - [Event " << event_id << "] [" << jet_label << "] Jet #" << i
+                  << " | pT: " << pt << " -> pT_calib: " << pt_calib << " GeV"
+                  << " | E: " << energy << " GeV"
+                  << " | eta: " << eta
+                  << " | phi: " << phi
+                  << " | zvtx: " << zvtx << " cm"
+                  << " | " << status_str
+                  << std::endl;
+      }
+
+      if (pass_cuts)
       {
         jd.pt.push_back(pt);
         jd.pt_calib.push_back(pt_calib);
@@ -446,7 +476,7 @@ int JetValidationv3::process_jets(PHCompositeNode *topNode)
           jd.max_pt = std::max(jd.max_pt, pt_calib);
         }
 
-        if (Verbosity() > 0)
+        if (Verbosity() > 0 && Verbosity() <= 2)
         {
           std::cout << "JetValidationv3::process_jets - [Event " << event_id << "] [" << jet_label << "] Jet #" << i
                     << " | pT: " << pt << " -> pT_calib: " << pt_calib << " GeV"
