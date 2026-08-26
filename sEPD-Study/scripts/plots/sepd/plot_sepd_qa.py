@@ -6,6 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mplhep as hep
 import os
@@ -25,7 +26,10 @@ SPHENIX_LABEL = "Internal"  # Change to "Performance", "Preliminary", etc. as ne
 HIST_NAMES = [
     "h2sEPD_Centrality",
     "h2sEPD_MBD",
-    "h2sEPD_CaloE"
+    "h2sEPD_CaloE",
+    "h2CaloE_MBD",
+    "h2sEPD_CaloE_cut",
+    "h2CaloE_MBD_cut",
 ]
 
 CENTRALITY_INTERVALS = [
@@ -165,7 +169,7 @@ def get_best_label_corner(values, xedges, yedges, x_min, x_max, y_min, y_max):
     return best_corner
 
 
-def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", ylabel="", hist_name="", sphenix_label=SPHENIX_LABEL, date_str=None, save_pdf=False):
+def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", ylabel="", hist_name="", sphenix_label=SPHENIX_LABEL, date_str=None, save_pdf=False, draw_cut_line=False):
     if date_str is None:
         date_str = datetime.now().strftime("%m/%d/%Y")
 
@@ -190,25 +194,39 @@ def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", yla
         ax.set_ylabel(ylabel, loc='center', labelpad=10)
 
     # Set x-limits based on histogram type
-    if hist_name == "h2sEPD_MBD":
+    if hist_name in ["h2sEPD_MBD", "h2CaloE_MBD", "h2CaloE_MBD_cut"]:
         ax.set_xlim(left=0, right=2100)
-    elif hist_name == "h2sEPD_CaloE":
+    elif hist_name in ["h2sEPD_CaloE", "h2sEPD_CaloE_cut"]:
         ax.set_xlim(left=xedges[0], right=2100)
     elif hist_name == "h2sEPD_Centrality":
         ax.set_xlim(left=0, right=100)
     else:
         ax.set_xlim(left=xedges[0], right=xedges[-1])
 
-    # sEPD total charge max is 20000 on y-axis
-    ax.set_ylim(bottom=0, top=20000)
+    # Set y-limits based on histogram type
+    if hist_name in ["h2CaloE_MBD", "h2CaloE_MBD_cut"]:
+        ax.set_ylim(bottom=yedges[0], top=2100)
+    else:
+        # sEPD total charge max is 20000 on y-axis
+        ax.set_ylim(bottom=0, top=20000)
 
     cur_xlim = ax.get_xlim()
+    cur_ylim = ax.get_ylim()
+
+    if draw_cut_line:
+        x_max_cut = (cur_ylim[1] - 1000.0) * (7.0 / 76.0)
+        x_line = np.linspace(cur_xlim[0], min(cur_xlim[1], x_max_cut), 500)
+        y_line = (76.0 / 7.0) * x_line + 1000.0
+        ax.plot(x_line, y_line, color='red', linewidth=2)
+        ax.fill_between(x_line, y_line, cur_ylim[1], color='red', alpha=0.15)
+        patch = Patch(facecolor=(1, 0, 0, 0.15), edgecolor='red', linewidth=2, label=r"sEPD > 10.9 x MBD + 10$^3$")
+        ax.legend(handles=[patch], loc='lower right', frameon=False, fontsize=16, title=r"$|z| < 10$ cm & MB", title_fontsize=18, alignment='right')
+
     if np.max(np.abs(cur_xlim)) >= 1000:
         formatter_x = ScalarFormatter(useMathText=True)
         formatter_x.set_powerlimits((3, 3))
         ax.xaxis.set_major_formatter(formatter_x)
 
-    cur_ylim = ax.get_ylim()
     has_y_offset = np.max(np.abs(cur_ylim)) >= 500
     if has_y_offset:
         formatter_y = ScalarFormatter(useMathText=True)
@@ -222,9 +240,14 @@ def make_2d_plot(values, xedges, yedges, run_number, output_path, xlabel="", yla
     right_text = f"Run: {run_number}, {date_str}" if run_number is not None else date_str
     ax.text(1.0, 1.01, right_text, transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
 
-    # Auto-place event selection label in the corner with the least data overlap
-    lbl_x, lbl_y, lbl_ha, lbl_va = get_best_label_corner(values, xedges, yedges, cur_xlim[0], cur_xlim[1], cur_ylim[0], cur_ylim[1])
-    ax.text(lbl_x, lbl_y, r"$|z| < 10$ cm & MB", transform=ax.transAxes, ha=lbl_ha, va=lbl_va, fontsize=18)
+    # Auto-place event selection label in the corner with the least data overlap (for non-cutline plots)
+    if not draw_cut_line:
+        lbl_x, lbl_y, lbl_ha, lbl_va = get_best_label_corner(values, xedges, yedges, cur_xlim[0], cur_xlim[1], cur_ylim[0], cur_ylim[1])
+        if "_cut" in hist_name:
+            label_text = r"$|z| < 10$ cm & MB" + "\n" + r"sEPD > 10.9 x MBD + 10$^3$"
+        else:
+            label_text = r"$|z| < 10$ cm & MB"
+        ax.text(lbl_x, lbl_y, label_text, transform=ax.transAxes, ha=lbl_ha, va=lbl_va, fontsize=18)
 
     fig.tight_layout()
     plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
@@ -434,6 +457,10 @@ def process_file(path, output_dir, runs_to_plot=None, sphenix_label=SPHENIX_LABE
                     prefix = f"run_{run_number}_" if run_number is not None else f"{path.stem}_"
                     out_path = output_dir / f"{prefix}{name}.png"
                     make_2d_plot(values, xedges, yedges, run_number, out_path, xlabel=xlabel, ylabel=ylabel, hist_name=name, sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf)
+
+                    if name == "h2sEPD_MBD":
+                        cut_out_path = output_dir / f"{prefix}{name}_cut.png"
+                        make_2d_plot(values, xedges, yedges, run_number, cut_out_path, xlabel=xlabel, ylabel=ylabel, hist_name=name, sphenix_label=sphenix_label, date_str=date_str, save_pdf=save_pdf, draw_cut_line=True)
 
                     if name == "h2sEPD_Centrality":
                         slices_out_path = output_dir / f"{prefix}{name}_slices.png"
