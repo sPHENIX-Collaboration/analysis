@@ -75,6 +75,9 @@ class JetAnalysisv3
   void set_jet_pt_min(double jet_pt_min) { m_jet_pt_min = jet_pt_min; }
   double get_jet_pt_min() const { return m_jet_pt_min; }
 
+  void set_lead_jet_pt_threshold(double threshold) { m_lead_jet_pt_threshold = threshold; }
+  double get_lead_jet_pt_threshold() const { return m_lead_jet_pt_threshold; }
+
   void set_verbosity(int verbosity) { m_verbosity = verbosity; }
   int get_verbosity() const { return m_verbosity; }
 
@@ -244,6 +247,15 @@ class JetAnalysisv3
     bool pass_calo_cent{false};
   };
 
+  struct HighPtEvent
+  {
+    std::string filename;
+    int event_id{0};
+    double leading_pt{0.0};
+    double radius{0.0};
+    std::string subtraction_type;
+  };
+
   // --- Member Variables ---
   EventData m_event_data;
   std::unique_ptr<TChain> m_chain;
@@ -262,9 +274,11 @@ class JetAnalysisv3
 
   // Jet Cuts
   double m_jet_pt_min{10}; /*GeV*/
+  double m_lead_jet_pt_threshold{100.0}; /*GeV*/
   double m_jet_eta_max_r02{0.9};
   double m_jet_eta_max_r03{0.8};
 
+  std::vector<HighPtEvent> m_high_pt_events;
   std::map<std::string, int> m_ctr;
 
   enum class EventType : std::uint8_t
@@ -941,6 +955,35 @@ void JetAnalysisv3::process_jets()
     }
   };
 
+  auto check_high_pt = [&](const JetData &jd, double eta_max, double radius, const std::string &sub_type)
+  {
+    double max_pt = 0.0;
+    if (jd.pt && jd.pt_calib && jd.eta)
+    {
+      for (size_t idx = 0; idx < jd.pt->size(); ++idx)
+      {
+        double pt = jd.pt_calib->at(idx);
+        double eta = jd.eta->at(idx);
+
+        if (std::abs(eta) < eta_max)
+        {
+          max_pt = std::max(max_pt, pt);
+        }
+      }
+    }
+
+    if (max_pt == 0.0 && jd.max_pt > 0.0)
+    {
+      max_pt = jd.max_pt;
+    }
+
+    if (max_pt >= m_lead_jet_pt_threshold)
+    {
+      std::string current_file = (m_chain && m_chain->GetFile()) ? m_chain->GetFile()->GetName() : m_input_file;
+      m_high_pt_events.push_back({current_file, m_event_data.event, max_pt, radius, sub_type});
+    }
+  };
+
   if (m_do_iter)
   {
     // Process r02 branches for iter (eta_max = 0.9)
@@ -952,6 +995,7 @@ void JetAnalysisv3::process_jets()
     {
       fill_jet_flow_fail_hists(m_event_data.iter_r02, m_hists.iter_r02, m_jet_eta_max_r02);
     }
+    check_high_pt(m_event_data.iter_r02, m_jet_eta_max_r02, 0.2, "iter");
 
     // Process r03 branches for iter (eta_max = 0.8)
     if (!m_event_data.is_flow_failure_iter)
@@ -962,6 +1006,7 @@ void JetAnalysisv3::process_jets()
     {
       fill_jet_flow_fail_hists(m_event_data.iter_r03, m_hists.iter_r03, m_jet_eta_max_r03);
     }
+    check_high_pt(m_event_data.iter_r03, m_jet_eta_max_r03, 0.3, "iter");
   }
 
   if (m_do_mult)
@@ -975,6 +1020,7 @@ void JetAnalysisv3::process_jets()
     {
       fill_jet_flow_fail_hists(m_event_data.mult_r02, m_hists.mult_r02, m_jet_eta_max_r02);
     }
+    check_high_pt(m_event_data.mult_r02, m_jet_eta_max_r02, 0.2, "mult");
 
     // Process r03 branches for mult (eta_max = 0.8)
     if (!m_event_data.is_flow_failure_mult)
@@ -985,13 +1031,17 @@ void JetAnalysisv3::process_jets()
     {
       fill_jet_flow_fail_hists(m_event_data.mult_r03, m_hists.mult_r03, m_jet_eta_max_r03);
     }
+    check_high_pt(m_event_data.mult_r03, m_jet_eta_max_r03, 0.3, "mult");
   }
 
   if (m_do_unsub)
   {
     // Process unsubtracted jets
     fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02);
+    check_high_pt(m_event_data.unsub_r02, m_jet_eta_max_r02, 0.2, "unsub");
+
     fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03);
+    check_high_pt(m_event_data.unsub_r03, m_jet_eta_max_r03, 0.3, "unsub");
   }
 }
 
@@ -1278,6 +1328,29 @@ void JetAnalysisv3::save_results() const
   output_file->Close();
 
   std::cout << std::format("Results saved to: {}", output_filename) << std::endl;
+
+  if (!m_high_pt_events.empty())
+  {
+    std::string csv_filename = std::format("{}/Jet-Ana_{}.csv", m_output_dir, output_stem);
+    std::ofstream csv_file(csv_filename);
+    if (!csv_file.is_open())
+    {
+      std::cout << std::format("Error: Could not open CSV file '{}' for writing!\n", csv_filename);
+    }
+    else
+    {
+      csv_file << "filename,event_id,leading_pT,Radius,Subtraction_Type\n";
+      for (const auto &entry : m_high_pt_events)
+      {
+        csv_file << std::format("{},{},{:.4f},{:.1f},{}\n",
+                                entry.filename, entry.event_id,
+                                entry.leading_pt, entry.radius,
+                                entry.subtraction_type);
+      }
+      csv_file.close();
+      std::cout << std::format("High pT events ({}) saved to: {}\n", m_high_pt_events.size(), csv_filename);
+    }
+  }
 }
 
 // ====================================================================
@@ -1288,9 +1361,9 @@ int main(int argc, const char *const argv[])
   gROOT->SetBatch(true);
   TH1::AddDirectory(false);
 
-  if (argc < 2 || argc > 10)
+  if (argc < 2 || argc > 11)
   {
-    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity] [do_iter] [do_mult] [do_unsub] [do_rcone]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " input_file [events] [jet_pt_min] [output_directory] [verbosity] [do_iter] [do_mult] [do_unsub] [do_rcone] [lead_jet_pt_threshold]" << std::endl;
     return 1;
   }
 
@@ -1304,6 +1377,7 @@ int main(int argc, const char *const argv[])
   bool do_mult = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
   bool do_unsub = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
   bool do_rcone = (argc >= ctr + 1) ? (std::atoi(argv[ctr++]) != 0) : true;
+  double lead_jet_pt_threshold = (argc >= ctr + 1) ? std::stod(argv[ctr++]) : 100.0;
 
   std::cout << std::format("{:#<20}\n", "");
   std::cout << std::format("Run Params\n");
@@ -1316,6 +1390,7 @@ int main(int argc, const char *const argv[])
   std::cout << std::format("Do Mult: {}\n", do_mult);
   std::cout << std::format("Do Unsub: {}\n", do_unsub);
   std::cout << std::format("Do RCone: {}\n", do_rcone);
+  std::cout << std::format("Lead Jet pT Threshold: {} [GeV]\n", lead_jet_pt_threshold);
   std::cout << std::format("{:#<20}\n", "");
 
   try
@@ -1327,6 +1402,7 @@ int main(int argc, const char *const argv[])
     analysis.set_do_mult(do_mult);
     analysis.set_do_unsub(do_unsub);
     analysis.set_do_rcone(do_rcone);
+    analysis.set_lead_jet_pt_threshold(lead_jet_pt_threshold);
     analysis.run();
   }
   catch (const std::exception &e)

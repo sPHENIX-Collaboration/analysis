@@ -39,6 +39,12 @@ def run_jet_jobs(args, version):
     elif version == "jetAnav2":
         jet_eta_max = args.jet_eta_max
         init_log['Jet eta Max'] = jet_eta_max
+    elif version == "jetAnav3":
+        init_log['Do Iter'] = args.do_iter
+        init_log['Do Mult'] = args.do_mult
+        init_log['Do Unsub'] = args.do_unsub
+        init_log['Do RCone'] = args.do_rcone
+        init_log['Lead Jet pT Threshold'] = f"{args.lead_jet_pt_threshold} GeV"
 
     manager.log_initialization(init_log)
 
@@ -91,7 +97,7 @@ def run_jet_jobs(args, version):
         arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {jet_eta_max} {manager.output_dir}/output"
         queue_arg = "input_tree_list from jobs.list"
     elif version == "jetAnav3":
-        arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output {args.do_iter} {args.do_mult} {args.do_unsub} {args.do_rcone}"
+        arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output {args.do_iter} {args.do_mult} {args.do_unsub} {args.do_rcone} {args.lead_jet_pt_threshold}"
         queue_arg = "input_tree_list from jobs.list"
     else:
         arguments = f"{manager.output_dir / Path(args.jetAna_bin).name} $(input_tree_list) {jet_pt_min} {manager.output_dir}/output"
@@ -141,4 +147,5 @@ def setup_jetAna_subparsers(subparsers):
     jetAnav3.add_argument('--do-mult', type=int, default=1, help='Do mult. Default: 1')
     jetAnav3.add_argument('--do-unsub', type=int, default=1, help='Do unsub. Default: 1')
     jetAnav3.add_argument('--do-rcone', type=int, default=1, help='Do rcone. Default: 1')
+    jetAnav3.add_argument('--lead-jet-pt-threshold', type=float, default=100.0, help='Leading Jet pT Threshold for CSV saving. Default: 100 [GeV]')
     jetAnav3.set_defaults(func=jetAnav3_jobs)

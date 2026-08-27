@@ -13,6 +13,7 @@ do_iter=${5:-1}
 do_mult=${6:-1}
 do_unsub=${7:-1}
 do_rcone=${8:-1}
+lead_jet_pt_threshold=${9:-100}
 
 # extract runnumber from file name
 run=$(head -n 1 "$input" | grep -oP '(?<=/)\d+(?=/tree/)')
@@ -39,7 +40,7 @@ printenv
 
 mkdir -p "$run"
 
-$jetAna_bin "$input_file" 0 "$jet_pt_min" "$run" 0 "$do_iter" "$do_mult" "$do_unsub" "$do_rcone"
+$jetAna_bin "$input_file" 0 "$jet_pt_min" "$run" 0 "$do_iter" "$do_mult" "$do_unsub" "$do_rcone" "$lead_jet_pt_threshold"
 
 echo "All Done and Transferring Files Back"
 
