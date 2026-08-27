@@ -1,0 +1,13 @@
+Universe           = vanilla
+Executable         = run_pythia_lifetime.sh
+getenv          = True
+Output          = /sphenix/user/mjpeters/analysis/LightFlavorRatios/swimming_correction/logs/pythia_lifetime_$(Process).out
+Error           = /sphenix/user/mjpeters/analysis/LightFlavorRatios/swimming_correction/logs/pythia_lifetime_$(Process).err
+Log             = /sphenix/user/mjpeters/analysis/LightFlavorRatios/swimming_correction/logs/pythia_lifetime_$(Process).log
+Initialdir      = .
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 2GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(Process)
+Queue 100

@@ -36,7 +36,7 @@ std::vector<std::vector<RooPlot*>> get_all_fits_all_variables(TFile* f, std::str
   return all_fits;
 }
 
-void plot_results()
+void plot_results(std::string infile = "fits.root", std::string dirname = "plots")
 {
   gStyle->SetOptStat(0);
   gStyle->SetImageScaling(2.);
@@ -45,10 +45,10 @@ void plot_results()
   bool finalize = false;
 
   std::string outdir;
-  if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/plots";
-  else outdir = "plots";
+  if(finalize) outdir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/"+dirname;
+  else outdir = dirname;
 
-  TFile* f = TFile::Open("fits.root");
+  TFile* f = TFile::Open(infile.c_str());
 
   std::vector<HistogramInfo> variables =
   {
@@ -112,7 +112,7 @@ void plot_results()
     (TH1F*)f->Get("lambdaKsratio_vspseudorapidity"),
     (TH1F*)f->Get("lambdaKsratio_vsphi"),
     (TH1F*)f->Get("lambdaKsratio_vsrapidity"),
-/*
+
     (TH1F*)f->Get("K_S0_yield_vspT"),
     (TH1F*)f->Get("K_S0_yield_vspseudorapidity"),
     (TH1F*)f->Get("K_S0_yield_vsphi"),
@@ -121,7 +121,7 @@ void plot_results()
     (TH1F*)f->Get("Lambda0_yield_vspseudorapidity"),
     (TH1F*)f->Get("Lambda0_yield_vsphi"),
     (TH1F*)f->Get("Lambda0_yield_vsrapidity"),
-*/
+
   };
 
   std::vector<std::pair<std::string,std::string>> doubleplot_names = 
@@ -145,7 +145,8 @@ void plot_results()
     //{"_acc_eff","Geo. acceptance + efficiency"},
     //{"_feeddown_acc","Geo. acceptance + #Lambda feed-down"},
     {"_lambdafeeddowncorrected_effcorrected","Efficiency + #Lambda feed-down"},
-    {"_lambdafeeddowncorrected_effcorrected_geoacceptancecorrected","Geo. acceptance + efficiency + #Lambda feed-down"}
+    {"_lambdafeeddowncorrected_effcorrected_geoacceptancecorrected","Geo. acceptance + efficiency + #Lambda feed-down"},
+    {"_lambdafeeddowncorrected_effcorrected_geoacceptancecorrected_cutefficiencycorrected","Geo. acceptance + efficiency +#Lambda feed-down + cut selection efficiency"}
   };
 
   std::vector<std::vector<std::pair<TH1F*,std::string>>> multiplots;
@@ -234,6 +235,7 @@ void plot_results()
   std::vector<Color_t> colors = {
     kBlack,
     kRed,
+    kOrange,
     kBlue,
     kGreen+2
   };

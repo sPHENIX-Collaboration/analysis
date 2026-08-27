@@ -1,0 +1,12 @@
+Universe           = vanilla
+Initialdir         = /sphenix/user/hjheng/sPHENIXRepo/HF-analysis/Kshort-reco/Kshort-scale-width
+Executable         = $(Initialdir)/run_condor.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 4GB
+Priority           = 20
+job_lease_duration = 3600
+Output             = $(Initialdir)/condorlog/condor_$(Process).out
+Error              = $(Initialdir)/condorlog/condor_$(Process).err
+Log                = /tmp/condorLog_hjheng_$(Process).log
+Arguments          = $(cutstring)
+Queue cutstring from queue_lambda.list

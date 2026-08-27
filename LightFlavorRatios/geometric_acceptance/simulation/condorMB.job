@@ -1,0 +1,13 @@
+Universe           = vanilla
+initialDir         = . 
+Executable         = $(initialDir)/generateEventsMB.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 8GB
+Priority           = 20
+job_lease_duration = 3600
+logHeader          = $(initialDir)/log/condor_$INT(Process,%06d)
+Output             = $(logHeader).out
+Error              = $(logHeader).err
+Log                = $(logHeader).log
+Arguments          = $INT(Process,%06d) 
+Queue 10000

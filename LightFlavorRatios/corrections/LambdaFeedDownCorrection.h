@@ -3,6 +3,12 @@
 
 #include "CorrectionHistogram1D.h"
 
+#include <TFile.h>
+
+#include <iostream>
+#include <string>
+#include <memory>
+
 struct LambdaFeedDownCorrection : CorrectionHistogram1D
 {
   std::shared_ptr<TFile> f;

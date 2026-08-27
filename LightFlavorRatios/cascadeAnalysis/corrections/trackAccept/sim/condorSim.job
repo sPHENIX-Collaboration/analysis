@@ -1,0 +1,14 @@
+Universe           = vanilla
+initialDir         = . 
+Executable         = $(initialDir)/runSim.sh
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 10GB
+Priority           = 20
+job_lease_duration = 3600
+IDX                = $(Process)+0
+logHeader          = $(initialDir)/condor_$INT(Process,%05d)
+Output             = $(logHeader).out
+#Error              = $(logHeader).err
+#Log                = $(logHeader).log
+Arguments          = $INT(IDX,%01d)
+Queue 2000

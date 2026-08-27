@@ -1,53 +1,74 @@
 # Light-Flavor Ratio Analysis
 
-Repository for determination of ratios of light-flavor resonances, originally constructed for PPG 16 (Lambda/2Kshort ratio).
-
-## Input
-
-The current codebase uses two KFParticle output files, one for Kshort candidates and one for Lambda candidates.
-The locations of these files are, for now, `/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Kshort_3runs.root` and 
-`/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Lambda_3runs.root`.
+Repository for determination of ratios of resonances, originally constructed for PPG 16 (Lambda/2Kshort ratio), but is extensible to a general particle-to-particle yield ratio.
 
 ## Usage
 
-### Running standard analysis
+For running on data, just run one of the following macros:
 
-In `yield_and_ratios`:
+- `yield_and_ratios/Lambda_Ks_ratio.C` is the default (Lambda + anti-Lambda)/2Ks analysis.
+- `yield_and_ratios/Lambda_Ks_ratio_pos.C` is a Lambda/Ks analysis.
+- `yield_and_ratios/Lambda_Ks_ratio_neg.C` is an anti-Lambda/Ks analysis.
+- `yield_and_ratios/Lambda_Ks_ratio_NN.C` is the (Lambda + anti-Lambda)/2Ks analysis using a track sample corrected by the momentum-scale NN correction before KFParticle.
 
-`root -l calculate_ratios_withRooFit.C`
+For running on MC, use one of the following macros:
 
-This runs on the aforementioned input files and generates the file `fits.root` containing the mass peak fits, yield histograms, and ratio histograms.
+- `yield_and_ratios/Lambda_Ks_ratio_MC.C` is the default (Lambda + anti-Lambda)/2Ks analysis.
+- `yield_and_ratios/Lambda_Ks_ratio_pos.C` is a Lambda/Ks analysis.
+- `yield_and_ratios/Lambda_Ks_ratio_neg.C` is an anti-Lambda/Ks analysis.
 
-To generate plots:
+The MC macros import mass histograms that have been pre-generated and merged from a much larger dataset. To regenerate these mass histograms, `condor_submit` the job file `mass_histograms/submit_MC.job`, and run `mass_histograms/merge_MC.sh` to merge into the appropriate input file locations.
 
-In `yield_and_ratios`:
+## General Workflow Concepts
 
-`root -l -b plot_results.C`
+The core object that does the "actual analysis" part (extraction of yield, calculation of ratio, application of corrections) is `yield_and_ratios/ResonanceRatio.h`. The objects used for differential and integrated yield extraction are instances of RooAbsData, therefore it can accept both binned and unbinned inputs. There are two different general ways of setting this object up, corresponding to unbinned and binned inputs respectively:
 
-This function extracts the histograms from `fits.root`. 
-Inside this macros there is a variable `finalize`. 
-If set to `true`, it saves the plots to `/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/plots`.
-If set to `false`, it saves the plots to `plots/` in your local directory.
-(Recommended best practice, if you modify the plotting macro, is to turn `finalize` to `false` until you're certain you like the results.)
+- Start with a KFParticle TTree, which is converted into a RooDataSet; division into bins in the set of differential variables is accomplished by `RooDataSet::reduce` according to the binning schemes and cut strings contained in `util/binning.h`. This works best for small datasets and is computationally intractable on large datasets.
+- Start with a set of mass histograms, assembled according to the binning scheme contained in `util/binning.h`. These are internally converted to sets of RooDataHists.
 
+## Differential Variables
 
-PDF versions of the plots are saved to the `pdf/` subfolder, and PNG versions are saved to `png/`.
+Currently, the analysis is done in bins of four differential variables:
 
-### Changing binning scheme
+- pT
+- eta
+- phi
+- rapidity
 
-Modify the file `util/binning.h`. The static structures at the bottom of this file are the bins used in the analysis. 
-Options for linear, logarithmic, and custom binning are provided.
+The binning schemes for these variables are stored in `util/binning.h`, as objects of type `HistogramInfo`. Adding an additional differential variable is straightforward: create a corresponding `HistogramInfo` object in the `BinInfo` namespace, and add that `HistogramInfo` object to the vector of variables provided to the `ResonanceRatio` constructor in your macro. The list of differential variables, and their binning scheme, is consistently taken from `util/binning.h` across the entire analysis framework.
 
-### Adding or modifying corrections
+## Mass Bins and Cut Selections
 
-The `corrections/` folder holds the structures and settings through which various corrections are applied. 
-Currently, this only contains the relative tracking efficiency correction, which uses Tony's 7-bin histogram, only applied to pT differential results.
+In addition to specifying the binning scheme, `util/binning.h` also contains the cut-strings for each of the particles of interest, as well as the binning schemes of the mass plots (if working with binned data). There are a variety of mass binning schemes provided:
 
-## Caveats/To-Dos
+- `mass_bins`, the default for use on data;
+- `mass_bins_pos`, the data binning scheme but restricted to Lambda and cutting out anti-Lambda (Kshort is unaltered);
+- `mass_bins_neg`, like `mass_bins_pos` but selecting for anti-Lambda;
+- `mass_bins_MC`, the default for use on a loose MC sample (contains the cuts that would have been applied in KFParticle);
+- `mass_bins_MC_pos`, like `mass_bins_MC` but selecting for Lambda and cutting out anti-Lambda;
+- `mass_bins_MC_neg`, like `mass_bins_MC_pos` but selecting for anti-Lambda.
 
-- Macros repository is almost certainly outdated and needs to be synchronized with latest light-flavor production
-- Unbinned fit will not work for larger datasets, needs to be supplanted by a binned-fit option.
-- The plots of the individual mass peaks may have very bad-looking jumps if the background function becomes negative. 
-As far as I can tell, this is because RooFit doesn't like when that happens.
-Working on finding a fix -- for now, just fiddle with the background function a bit until this doesn't happen.
-- Background model tends to misbehave at the edges of the mass window.
+The latter three are used for MC closure tests, for which the KFParticle cuts are intentionally set much looser to allow for the calculation of corrections.
+
+## Yield Extraction
+
+Currently, the analysis uses a simple and robust yield extraction procedure based on sideband subtraction rather than fitting of the signal and background distributions. This process is implemented in `ResonanceRatio::get_yield_constfit`. If yield extraction via fits is desired, this is implemented in `ResonanceRatio::get_yield`. Fitting is accomplished via RooFit's unbinned negative-log-likelihood minimization, and the input functions for these fits are accepted as inputs to the `ResonanceRatio` constructor, as objects that inherit from the `ParticleModel` base class. The 
+
+## Corrections
+
+All correction types in `corrections/` inherit from the `CorrectionHistogram1D` base class; the file from which they are retrieved, and the way in which they are applied, are specified in their corresponding correction type header. The `ResonanceRatio` object accepts a list of `CorrectionHistogram1D` objects as an input, and applies them to the yield ratio results accordingly. The various macros specified above show examples of the creation and application of these corrections.
+
+Generation of the currently-used corrections is accomplished in the following locations:
+
+- Geometric acceptance corrections are generated from `geoaccaptance_correction/`;
+- Cut efficiency corrections are generated from `swimming_correction/CutEfficiency.C`;
+- Relative tracking efficiency corrections are generated outside of this repository;
+- Lambda feed-down corrections are generated in `cascade_feeddown/`.
+
+## Systematic Uncertainties
+
+Systematic uncertainties are currently generated by procedures that are not all centralized in this repository; regardless, the application of these systematic uncertainties to the current plots is implemented in `yield_and_ratios/plot_results_systematics.C`.
+
+## Truth Reference
+
+The generation of a truth reference, for use in the MC closure test, is handled in `truth_ratio/`. Truth references are generated for all three kinds of ratio ((Lambda+anti-Lambda)/2Ks, Lambda/Ks, and anti-Lambda/Ks).

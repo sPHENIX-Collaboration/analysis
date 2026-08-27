@@ -1,0 +1,18 @@
+Universe           = vanilla
+Executable         = run.sh
+getenv             = True
+Initialdir         = /sphenix/user/hjheng/sPHENIXRepo/analysis/LightFlavorRatios/lfratio_pythia
+Output             = $(Initialdir)/condorLog/lfratio_pythia_$(Process).out
+Error              = $(Initialdir)/condorLog/lfratio_pythia_$(Process).err
+Log                = $(Initialdir)/condorLog/lfratio_pythia_$(Process).log
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1 && !(ON_EVICT_CHECK_RequestMemory_REQUIREMENTS))
+request_memory     = 2000MB
+retry_request_memory_increase = RequestMemory + 2000
+retry_request_memory_max = 10000MB
+Priority           = 20
+job_lease_duration = 3600
+hepmcDir          = /sphenix/tg/tg01/hf/hjheng/HF-analysis/simulation/Pythia_ppMinBias
+inputHepMCFile    = $(hepmcDir)/pythia_ppMinBias_$(Process).hepmc
+outputROOTFile     = $(hepmcDir)/lfratio/lfratio_hist_$(Process).root
+Arguments          = $(inputHepMCFile) $(outputROOTFile)
+Queue 5000

@@ -17,12 +17,20 @@ R__LOAD_LIBRARY(libKFParticle.so)
 using namespace std;
 KFParticle_Tools kfpTupleTools;
 
-bool verbose = false;
+constexpr bool verbose = false;
 
 //Cut values we want to probe
-float min_DIRA = 0.99;
-float min_IP_xy = 0.05;
-float min_decayLength = 0.05; //Is this a bias or a cut...
+constexpr float min_DIRA = 0.99;
+constexpr float min_IP_xy = 0.05;
+constexpr float min_decayLength = 0.05; //Is this a bias or a cut...
+
+//Other cuts, to enforce on data that may not have this enforced
+constexpr int min_MVTX_nHits = 1;
+constexpr int min_INTT_nHits = 1;
+constexpr int min_TPC_nHits = 20;
+constexpr float max_pv_quality = 20.;
+constexpr float max_track_1_track_2_DCA = 0.5;
+
 vector<float> v_tpVal_TAU;
 vector<float> v_tpVal_ACCEPT;
 vector<float> v_tpVal_FD;
@@ -34,9 +42,27 @@ void reset()
   v_tpVal_FD.clear();
 }
 
+void printAll(KFParticle& kfp)
+{
+  kfpTupleTools.identify(kfp);
+  cout << "parameters: ";
+  for(int i=0;i<8;i++) cout << kfp.GetParameter(i) << ", ";
+  cout << endl;
+  cout << "covariance matrix: ";
+  for(int i=0;i<36;i++) cout << kfp.GetCovariance(i) << ", ";
+  cout << endl;
+  cout << "mass: ";
+  float m,dm;
+  kfp.GetMass(m,dm);
+  cout << m << " +- " << dm << endl;
+  cout << endl;
+}
+
 KFParticle makeParticle(float pos[3], float mom[3], float cov[21], char charge, float mass, float chi2, float ndof)
 {
   KFParticle kfp_particle;
+
+  kfp_particle.SetConstructMethod(2);
 
   float f_trackParameters[6] = {pos[0], pos[1], pos[2], mom[0], mom[1], mom[2]};
 
@@ -66,10 +92,22 @@ bool calculateValues(KFParticle mother, KFParticle track_1, KFParticle track_2, 
 {
   //Note, this is still missing a check as to whether the track would've hit an MVTX sensor or not
 
+  if(verbose)
+  {
+    cout << "orig PV:" << endl;
+    printAll(PV);
+  }
+
   KFParticle moved_PV = PV;
   moved_PV.X() = new_pv[0];
   moved_PV.Y() = new_pv[1];
   moved_PV.Z() = new_pv[2];
+
+  if(verbose)
+  {
+    cout << "new PV:" << endl;
+    printAll(moved_PV);
+  }
 
   float track_1_IP_XY = track_1.GetDistanceFromVertexXY(moved_PV);
   float track_2_IP_XY = track_2.GetDistanceFromVertexXY(moved_PV);
@@ -91,20 +129,23 @@ bool calculateValues(KFParticle mother, KFParticle track_1, KFParticle track_2, 
     cout << "New DIRA is " << DIRA << endl;
     cout << "New track 1 IP XY is " << track_1_IP_XY << endl;
     cout << "New track 2 IP XY is " << track_2_IP_XY << endl;
-    cout << "New decay length is " << decayLength << endl;
-    cout << "New decay time is " << decayTime << endl;
+    cout << "New decay length is " << decayLength << " +- " << decayLengthErr << endl;
+    cout << "New decay time is " << decayTime << " +- " << decayTimeErr << endl;
   }
 
   //Could probably do some push back into a vector then use std::all_of to check if they're all true
 
   bool acceptDIRA = DIRA >= min_DIRA ? true : false;
+  if(verbose && !acceptDIRA) std::cout << "failed DIRA cut" << std::endl;
   bool acceptIPXY = min(abs(track_1_IP_XY), abs(track_2_IP_XY)) >= min_IP_xy ? true : false;
+  if(verbose && !acceptIPXY) std::cout << "failed IPxy cut" << std::endl;
   bool acceptDecayLength = decayLength >= min_decayLength ? true : false;
+  if(verbose && !acceptDecayLength) std::cout << "failed decay length cut" << std::endl;
 
   return acceptDIRA && acceptIPXY && acceptDecayLength;
 }
 
-std::array<float,3> movePV(KFParticle PV, KFParticle mother, float displace_dist)
+std::array<float,3> movePV_alongMotherP(KFParticle PV, KFParticle mother, float displace_dist)
 {
   float mother_p = sqrt(pow(mother.GetPx(),2)+pow(mother.GetPy(),2)+pow(mother.GetPz(),2));
   std::array<float,3> mother_p_unit = {mother.GetPx()/mother_p, mother.GetPy()/mother_p, mother.GetPz()/mother_p};
@@ -116,14 +157,26 @@ std::array<float,3> movePV(KFParticle PV, KFParticle mother, float displace_dist
   return new_pv;
 }
 
+std::array<float,3> movePV_alongPVSVLine(KFParticle PV, KFParticle mother, float displace_dist)
+{
+  float pv_sv_dist = sqrt(pow(mother.GetX()-PV.GetX(),2)+pow(mother.GetY()-PV.GetY(),2)+pow(mother.GetZ()-PV.GetZ(),2));
+  std::array<float,3> pv_sv_unit = { (mother.GetX()-PV.GetX())/pv_sv_dist, (mother.GetY()-PV.GetY())/pv_sv_dist, (mother.GetZ()-PV.GetZ())/pv_sv_dist };
+
+  std::array<float,3> new_pv;
+  std::array<float,3> original_pv = {PV.GetX(), PV.GetY(), PV.GetZ()};
+  for (int k = 0; k < 3; ++k) new_pv[k] = original_pv[k] + pv_sv_unit[k]*displace_dist;
+
+  return new_pv;
+}
+
 // Moves vertex from (PV position + displace_low) to (PV position + displace_high) in increments of displace_step
 // Returns range of displacement values between which there are turning points
 std::vector<std::pair<float,float>> swimPV(KFParticle mother, std::vector<KFParticle> tracks, KFParticle PV,
-                                           float displace_low, float displace_high, float displace_step)
+                                           float displace_close, float displace_far, float displace_step)
 {
   std::vector<std::pair<float,float>> tp_PV_pos;
 
-  int nSteps = ceil((displace_high-displace_low)/displace_step);
+  int nSteps = ceil((displace_close-displace_far)/displace_step);
 
   bool lastWasAccepted = false;
 
@@ -131,12 +184,19 @@ std::vector<std::pair<float,float>> swimPV(KFParticle mother, std::vector<KFPart
   {
     if(verbose) cout << "\nSwimming step " << i << endl;
 
-    float displace_dist = displace_low + i*displace_step;
+    float displace_dist = displace_close - i*displace_step;
 
-    std::array<float,3> new_pv = movePV(PV,mother,displace_dist);
+    std::array<float,3> new_pv_motherP = movePV_alongMotherP(PV,mother,displace_dist);
+    std::array<float,3> new_pv_svline = movePV_alongPVSVLine(PV,mother,displace_dist);
 
-    if(verbose) cout << "PV is now at (" << new_pv[0] << ", " << new_pv[1] << ", " << new_pv[2] << ")" << endl;
-    bool didWeAccept = calculateValues(mother, tracks[0], tracks[1], PV, new_pv);
+    if(verbose)
+    {
+      cout << "PV moved along mother p vector is now at (" << new_pv_motherP[0] << ", " << new_pv_motherP[1] << ", " << new_pv_motherP[2] << ")" << endl;
+      cout << "PV moved along PV->SV vector is now at (" << new_pv_svline[0] << ", " << new_pv_svline[1] << ", " << new_pv_svline[2] << ")" << endl;
+      cout << "distance between two swum locations: " << sqrt(pow(new_pv_motherP[0]-new_pv_svline[0],2)+pow(new_pv_motherP[1]-new_pv_svline[1],2)+pow(new_pv_motherP[2]-new_pv_svline[2],2)) << endl;
+    }
+      
+    bool didWeAccept = calculateValues(mother, tracks[0], tracks[1], PV, new_pv_motherP);
     string result = didWeAccept ? "We would accept the candidate at this PV" : "We would reject the candidate at this PV";
     if(i>0)
     {
@@ -146,9 +206,9 @@ std::vector<std::pair<float,float>> swimPV(KFParticle mother, std::vector<KFPart
         {
           cout << "Turning point found:" << std::endl;
           cout << "step " << i-1 << " -> " << i << std::endl;
-          cout << "displacement distance " << displace_low + (i-1)*displace_step << " -> " << displace_dist << endl;
+          cout << "displacement distance " << displace_close - (i-1)*displace_step << " -> " << displace_dist << endl;
         }
-        tp_PV_pos.push_back(std::make_pair(displace_low+(i-1)*displace_step,displace_dist));
+        tp_PV_pos.push_back(std::make_pair(displace_close-(i-1)*displace_step,displace_dist));
       }
     }
     lastWasAccepted = didWeAccept;
@@ -196,13 +256,21 @@ int swimLF(int nCandidates, std::string fileName, std::string motherName)
 
   float track_1_pos[3], track_1_mom[3], track_1_cov[21], track_1_chi2;
   unsigned int track_1_ndof;
+  unsigned int track_1_MVTX_nHits;
+  unsigned int track_1_INTT_nHits;
+  unsigned int track_1_TPC_nHits;
   char track_1_charge;
   float track_1_mass;
 
   float track_2_pos[3], track_2_mom[3], track_2_cov[21], track_2_chi2;
   unsigned int track_2_ndof;
+  unsigned int track_2_MVTX_nHits;
+  unsigned int track_2_INTT_nHits;
+  unsigned int track_2_TPC_nHits;
   char track_2_charge;
   float track_2_mass;
+
+  float track_1_track_2_DCA;
 
   float pv_pos[3], pv_cov[6], pv_chi2;
   unsigned int pv_ndof;
@@ -230,16 +298,24 @@ int swimLF(int nCandidates, std::string fileName, std::string motherName)
   outTree->SetBranchAddress("track_1_mass", &track_1_mass);
   outTree->SetBranchAddress("track_1_chi2", &track_1_chi2);
   outTree->SetBranchAddress("track_1_nDoF", &track_1_ndof);
+  outTree->SetBranchAddress("track_1_MVTX_nHits", &track_1_MVTX_nHits);
+  outTree->SetBranchAddress("track_1_INTT_nHits", &track_1_INTT_nHits);
+  outTree->SetBranchAddress("track_1_TPC_nHits", &track_1_TPC_nHits);
 
   outTree->SetBranchAddress("track_2_Covariance", &track_2_cov);
   outTree->SetBranchAddress("track_2_charge", &track_2_charge);
   outTree->SetBranchAddress("track_2_mass", &track_2_mass);
   outTree->SetBranchAddress("track_2_chi2", &track_2_chi2);
   outTree->SetBranchAddress("track_2_nDoF", &track_2_ndof);
+  outTree->SetBranchAddress("track_2_MVTX_nHits", &track_2_MVTX_nHits);
+  outTree->SetBranchAddress("track_2_INTT_nHits", &track_2_INTT_nHits);
+  outTree->SetBranchAddress("track_2_TPC_nHits", &track_2_TPC_nHits);
 
   outTree->SetBranchAddress("primary_vertex_Covariance", &pv_cov);
   outTree->SetBranchAddress("primary_vertex_chi2", &pv_chi2);
   outTree->SetBranchAddress("primary_vertex_nDoF", &pv_ndof);
+
+  outTree->SetBranchAddress("track_1_track_2_DCA", &track_1_track_2_DCA);
 
   //This is just for checking values
   float original_DIRA; outTree->SetBranchAddress(TString(motherName) + "_DIRA", &original_DIRA);
@@ -260,61 +336,139 @@ int swimLF(int nCandidates, std::string fileName, std::string motherName)
     if(i % 1000 == 0) cout << "Candidate " << i << endl;
     outTree->GetEntry(i);
 
+    // enforce existing cuts
+    if(original_DIRA<min_DIRA || 
+       fabs(original_track_1_IP_xy)<min_IP_xy || fabs(original_track_2_IP_xy)<min_IP_xy || 
+       original_decayLength<min_decayLength ||
+       track_1_MVTX_nHits<min_MVTX_nHits || track_2_MVTX_nHits<min_MVTX_nHits ||
+       track_1_INTT_nHits<min_INTT_nHits || track_2_INTT_nHits<min_INTT_nHits ||
+       track_1_TPC_nHits<min_TPC_nHits || track_2_TPC_nHits<min_TPC_nHits ||
+       pv_chi2/pv_ndof>max_pv_quality ||
+       track_1_track_2_DCA>max_track_1_track_2_DCA) continue;
+
     KFParticle mother = makeParticle(mother_pos, mother_mom, mother_cov, mother_charge, mother_mass, mother_chi2, mother_ndof);
     KFParticle PV = makeVertex(pv_pos, pv_cov, pv_chi2, pv_ndof);
     std::vector<KFParticle> tracks;
     tracks.push_back(makeParticle(track_1_pos, track_1_mom, track_1_cov, track_1_charge, track_1_mass, track_1_chi2, track_1_ndof));
     tracks.push_back(makeParticle(track_2_pos, track_2_mom, track_2_cov, track_2_charge, track_2_mass, track_2_chi2, track_2_ndof));
 
-    mother.SetProductionVertex(PV);
-    mother.TransportToDecayVertex();
+    KFParticle original_mother = mother;
+    if(verbose)
+    {
+      cout << "init mother" << endl;
+      printAll(original_mother);
+    }
 
+    original_mother.SetProductionVertex(PV);
+    if(verbose)
+    {
+      cout << "after SetProductionVertex" << endl;
+      printAll(original_mother);
+    }
+    original_mother.TransportToDecayVertex();
+    if(verbose)
+    {
+      cout << "after TransportToDecayVertex" << endl;
+      printAll(original_mother);
+    }
+
+    float original_ctau, original_ctau_err;
+    original_mother.GetLifeTime(original_ctau,original_ctau_err);
+    // malformed covariance matrix sets ctau to 0 and sets ctau error to 1e20
+    // we don't want to use those candidates
+    if(verbose)
+    {
+      cout << "ctau " << original_ctau << " err " << original_ctau_err << endl;
+    }
+/*
+    bool nan_detected = false;
+
+    for(int ip=0; ip<3; ip++)
+    {
+      if(std::isnan(mother_pos[ip]) || std::isnan(mother_mom[ip]) || std::isnan(track_1_pos[ip]) || std::isnan(track_2_pos[ip]) ||
+         std::isnan(track_1_mom[ip]) || std::isnan(track_2_mom[ip]) || std::isnan(pv_pos[ip]))
+      {
+        nan_detected = true;
+      }
+    }
+
+    for(int ic=0;ic<21; ic++)
+    {
+      if(std::isnan(mother_cov[ic]) || std::isnan(track_1_cov[ic]) || std::isnan(track_2_cov[ic]))
+      {
+        nan_detected = true;
+      }
+    }
+
+    for(int iv=0;iv<6;iv++)
+    {
+      if(std::isnan(pv_cov[iv])) nan_detected = true;
+    }
+
+    if(std::isnan(mother_charge) || std::isnan(mother_mass) || std::isnan(mother_chi2) || std::isnan(mother_ndof) ||
+       std::isnan(track_1_charge) || std::isnan(track_1_mass) || std::isnan(track_1_chi2) || std::isnan(track_1_ndof) ||
+       std::isnan(track_2_charge) || std::isnan(track_2_mass) || std::isnan(track_2_chi2) || std::isnan(track_2_ndof) ||
+       std::isnan(pv_chi2) || std::isnan(pv_ndof))
+    {
+      nan_detected = true;
+    }
+
+    if(nan_detected)
+    {
+      cout << "NaN detected, continuing" << std::endl;
+      continue;
+    }
+*/
     if(verbose)
     {
 
-      cout << "PV information" << endl; kfpTupleTools.identify(PV);
-      cout << "Mother information" << endl; kfpTupleTools.identify(mother);
-      cout << "Track 1 information" << endl; kfpTupleTools.identify(tracks[0]);
-      cout << "Track 2 information" << endl; kfpTupleTools.identify(tracks[1]);
+      cout << "PV information" << endl; printAll(PV);
+      cout << "Mother information" << endl; printAll(mother);
+      cout << "Track 1 information" << endl; printAll(tracks[0]);
+      cout << "Track 2 information" << endl; printAll(tracks[1]);
 
       cout << "Beginning coarse swimming" << endl;
     }
 
     float original_decaylengthXY, original_decaylengthXYerr;
+    float original_decaylength3D, original_decaylength3Derr;
     float original_pt, original_pterr;
-    mother.GetDecayLengthXY(original_decaylengthXY,original_decaylengthXYerr);
+    int retval_dxy = original_mother.GetDecayLengthXY(original_decaylengthXY,original_decaylengthXYerr);
+    int retval_d3d = original_mother.GetDecayLength(original_decaylength3D,original_decaylength3Derr);
 
     float mother_pt, mother_pterr;
-    mother.GetPt(mother_pt,mother_pterr);
+    original_mother.GetPt(mother_pt,mother_pterr);
+    //std::cout << "mother pt: " << mother_pt << " +- " << mother_pterr << std::endl;
 
     // swim so that 2D decay length goes down to zero and up to 10cm
     // we swim along the mother momentum vector, so the distance is affected by pz
     // ds^2 = dR^2 + dz^2
     // dz/dR = pz/pt, so ds^2 = dR^2(1+pz^2/pt^2)
     if(verbose) std::cout << "original decaylengthXY: " << original_decaylengthXY << std::endl;
-    float coarse_swimdistance_min = -(10.-original_decaylengthXY)*sqrt(1.+pow(mother.GetPz()/mother.GetPt(),2.));
-    float coarse_swimdistance_max = original_decaylengthXY*sqrt(1.+pow(mother.GetPz()/mother.GetPt(),2.));
+    float coarse_swimdistance_far = -(50.-original_decaylengthXY)*sqrt(1.+pow(mother.GetPz()/mother_pt,2.));
+    float coarse_swimdistance_close = original_decaylength3D + 2.*original_decaylength3Derr;
     if(verbose)
     {
-      std::cout << "min_displacement: " << coarse_swimdistance_min << std::endl;
-      std::cout << "max_displacement: " << coarse_swimdistance_max << std::endl;
+      std::cout << "close_displacement: " << coarse_swimdistance_close << std::endl;
+      std::cout << "far_displacement: " << coarse_swimdistance_far << std::endl;
     }
 
-    std::vector<std::pair<float,float>> turning_points = swimPV(mother,tracks,PV,coarse_swimdistance_min,coarse_swimdistance_max,large_step_size);
+    std::vector<std::pair<float,float>> turning_points = swimPV(mother,tracks,PV,coarse_swimdistance_close,coarse_swimdistance_far,large_step_size);
     if(verbose) cout << "Beginning fine swimming" << endl;
-    std::vector<float> turningpoint_displacement;
+    std::vector<float> turning_points_final;
     for(std::pair<float,float> tp : turning_points)
     {
       std::vector<std::pair<float,float>> fine_turning_points = swimPV(mother,tracks,PV,tp.first,tp.second,small_step_size);
       for(std::pair<float,float> fine_tp : fine_turning_points)
       {
-        turningpoint_displacement.push_back((fine_tp.first+fine_tp.second)/2.);
+        turning_points_final.push_back(fine_tp.first);
+        turning_points_final.push_back(fine_tp.second);
       }
     }
-
-    for(float disp : turningpoint_displacement)
+    if(verbose) cout << "found " << turning_points_final.size() << " turning points" << std::endl;
+    for(float disp : turning_points_final)
     {
-      std::array<float,3> new_pv = movePV(PV,mother,disp);
+      std::array<float,3> new_pv = movePV_alongMotherP(PV,mother,disp);
       KFParticle moved_PV = PV;
       moved_PV.X() = new_pv[0];
       moved_PV.Y() = new_pv[1];
@@ -330,15 +484,19 @@ int swimLF(int nCandidates, std::string fileName, std::string motherName)
       float track_2_IP_XY = tracks[1].GetDistanceFromVertexXY(moved_PV);
       const float speed = 2.99792458e-2;
       decayTime /= speed;
-      if(verbose) std::cout << "turning point decay time " << decayTime << " decay length " << decayLength << std::endl;
 
       bool acceptDIRA = DIRA >= min_DIRA;
       bool acceptIPXY = min(abs(track_1_IP_XY), abs(track_2_IP_XY)) >= min_IP_xy;
       bool acceptDecayLength = decayLength >= min_decayLength;
 
-      v_tpVal_TAU.push_back(decayTime);
+      if(verbose) std::cout << "turning point decay time " << decayTime << " decay length " << decayLength << " accept " << ((acceptDIRA && acceptIPXY && acceptDecayLength)? 1:0) << std::endl;
+
+      float signDIRA = DIRA > 0. ? 1 : -1;
+
+      v_tpVal_TAU.push_back(decayTime*signDIRA);
       v_tpVal_ACCEPT.push_back((acceptDIRA && acceptIPXY && acceptDecayLength)? 1:0);
-      v_tpVal_FD.push_back(decayLength);
+      v_tpVal_FD.push_back(decayLength*signDIRA);
+     
     }
 
     turningPoints_TAU->Fill();

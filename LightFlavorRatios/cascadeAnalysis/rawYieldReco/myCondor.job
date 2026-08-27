@@ -1,0 +1,15 @@
+Universe           = vanilla
+Notification       = Never
+PeriodicHold       = (NumJobStarts>=1 && JobStatus == 1)
+Initialdir         = .
+Executable         = $(Initialdir)/macro/runHFreco.sh
+request_memory     = 10GB
+Priority           = 20
+job_lease_duration = 3600
+OutDir             = $(Initialdir)/root/
+JobBatchName       = KFPReco
+#Output             = $(Initialdir)/log/job-Data-$(Cluster)-$(Process).out
+#Error              = $(Initialdir)/log/job-Data-$(Cluster)-$(Process).err
+#Log                = $(Initialdir)/log/job-Data-$(Cluster)-$(Process).log
+Arguments          = 0 $(file) $(OutDir) 0
+Queue file from fileLists/masterList_run79600.list
