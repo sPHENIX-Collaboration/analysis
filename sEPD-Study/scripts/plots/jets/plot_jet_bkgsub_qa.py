@@ -35,25 +35,37 @@ def make_combined_plot(edges_x, hists, run_number, output_path, xmax=None, ymax=
         ax.set_ylim(bottom=0)
     else:
         max_x_val = 0
+        has_positive = False
         for values, _, _ in hists:
             nonzero_indices = np.where(values > 0)[0]
             if len(nonzero_indices) > 0:
+                has_positive = True
                 max_bin_edge = edges_x[nonzero_indices[-1] + 1]
                 if max_bin_edge > max_x_val:
                     max_x_val = max_bin_edge
 
-        ax.set_yscale('log')
-        ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        if has_positive:
+            ax.set_yscale('log')
+            ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+            if ymax is not None:
+                ax.set_ylim(bottom=0.5, top=ymax)
+            else:
+                ax.set_ylim(bottom=0.5)
+        else:
+            if ymax is not None:
+                ax.set_ylim(bottom=0, top=ymax)
+            else:
+                ax.set_ylim(bottom=0, top=10)
+
         ax.set_xlabel(r"$p_{T}$ (GeV)")
         ax.set_ylabel("Counts")
-        if ymax is not None:
-            ax.set_ylim(top=ymax)
+
         if xmax is not None:
             ax.set_xlim(left=0, right=xmax)
         elif max_x_val > 0:
             ax.set_xlim(left=0, right=max_x_val)
         else:
-            ax.set_xlim(left=0)
+            ax.set_xlim(left=0, right=80)
 
     # Top right border label
     if r_jet is not None:
@@ -176,7 +188,7 @@ def get_hist_axis_titles(hist2d, hist_name=""):
 
     return xlabel, ylabel
 
-def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, ylim_bottom=None, ylim_top=None, extra_label=None):
+def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, xlim_right=None, ylim_bottom=None, ylim_top=None, extra_label=None):
     hep.style.use("ATLAS")
     fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -184,12 +196,13 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
 
     xlabel, ylabel = get_hist_axis_titles(hist2d, hist_name)
 
-    values_masked = np.ma.masked_where(values <= 0, values)
-
-    if np.all(values <= 0):
+    max_val = np.max(values) if values.size > 0 else 0
+    if max_val <= 0:
         mesh = ax.pcolormesh(xedges, yedges, values.T, cmap='viridis', rasterized=True)
     else:
-        mesh = ax.pcolormesh(xedges, yedges, values_masked.T, norm=LogNorm(), cmap='viridis', rasterized=True)
+        values_masked = np.ma.masked_where(values <= 0, values)
+        norm = LogNorm(vmin=1, vmax=max(max_val, 10))
+        mesh = ax.pcolormesh(xedges, yedges, values_masked.T, norm=norm, cmap='viridis', rasterized=True)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -201,8 +214,8 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
     if ylabel:
         ax.set_ylabel(ylabel, labelpad=2)
 
-    if xlim_left is not None:
-        ax.set_xlim(left=xlim_left)
+    if xlim_left is not None or xlim_right is not None:
+        ax.set_xlim(left=xlim_left, right=xlim_right)
     if ylim_bottom is not None or ylim_top is not None:
         ax.set_ylim(bottom=ylim_bottom, top=ylim_top)
 
@@ -216,13 +229,89 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
         formatter_y.set_powerlimits((3, 3))
         ax.yaxis.set_major_formatter(formatter_y)
 
-    ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    r_match = re.search(r'r0(\d)', hist_name)
+    if r_match:
+        r_val = float(f"0.{r_match.group(1)}")
+        ax.text(1.0, 1.01, rf"Run: {run_number}, $R = {r_val:g}$", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    else:
+        ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
 
     if extra_label:
         ax.text(0.95, 0.95, extra_label, transform=ax.transAxes, ha='right', va='top', fontsize=15, color='white', bbox=dict(boxstyle='round,pad=0.2', facecolor='black', alpha=0.4, edgecolor='none'))
 
     fig.tight_layout()
     plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
+def make_njets_cent_2x3_plot(cent_hists, run_number, output_path, r_jet=0.2, method_label="Iterative Bkg Sub", extra_energy_cut=False):
+    hep.style.use("ATLAS")
+    fig, axes = plt.subplots(2, 3, figsize=(22, 12))
+    axes_flat = axes.flatten()
+
+    global_max = 0
+    max_x_val = 0
+    max_y_val = 0
+
+    hists_data = []
+    for cent_label, hist2d in cent_hists:
+        values, xedges, yedges = hist2d.to_numpy()
+        xlabel, ylabel = get_hist_axis_titles(hist2d)
+        if not xlabel:
+            xlabel = r"Leading Jet $p_{T}$ (GeV)"
+        if not ylabel:
+            ylabel = r"$N_{\mathrm{jets}}$"
+
+        if values.size > 0:
+            m = np.max(values)
+            if m > global_max:
+                global_max = m
+            nonzero_idx = np.where(values > 0)
+            if len(nonzero_idx[0]) > 0:
+                max_x_val = max(max_x_val, xedges[nonzero_idx[0].max() + 1])
+                max_y_val = max(max_y_val, yedges[nonzero_idx[1].max() + 1])
+
+        hists_data.append((cent_label, values, xedges, yedges, xlabel, ylabel))
+
+    norm = LogNorm(vmin=1, vmax=max(global_max, 10)) if global_max > 0 else None
+
+    xlim_right = min(max(max_x_val * 1.15, 60), 500) if max_x_val > 0 else 100
+    ylim_top = min(max(max_y_val * 1.2, 10), 100) if max_y_val > 0 else 30
+
+    for i, (cent_label, values, xedges, yedges, xlabel, ylabel) in enumerate(hists_data):
+        ax = axes_flat[i]
+        values_masked = np.ma.masked_where(values <= 0, values)
+
+        if norm is not None:
+            mesh = ax.pcolormesh(xedges, yedges, values_masked.T, norm=norm, cmap='viridis', rasterized=True)
+        else:
+            mesh = ax.pcolormesh(xedges, yedges, values.T, cmap='viridis', rasterized=True)
+
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        cbar = fig.colorbar(mesh, cax=cax)
+        cbar.set_label("Counts", fontsize=14)
+
+        ax.set_xlim(left=0, right=xlim_right)
+        ax.set_ylim(bottom=0, top=ylim_top)
+
+        ax.set_xlabel(xlabel, fontsize=14)
+        ax.set_ylabel(ylabel, labelpad=2, fontsize=14)
+        ax.set_title(f"Centrality: {cent_label}", fontsize=16)
+
+        if i == 0:
+            info_lines = [rf"Run: {run_number}", rf"$R = {r_jet:g}$", f"{method_label}"]
+            if extra_energy_cut:
+                info_lines.append(r"Energy > 0")
+            info_text = "\n".join(info_lines)
+            ax.text(0.95, 0.95, info_text, transform=ax.transAxes, ha='right', va='top', fontsize=13,
+                    color='white', bbox=dict(boxstyle='round,pad=0.3', facecolor='black', alpha=0.5, edgecolor='none'))
+
+    for j in range(len(hists_data), 6):
+        axes_flat[j].set_visible(False)
+
+    fig.tight_layout()
+    plt.subplots_adjust(top=0.94, bottom=0.08, left=0.06, right=0.96, hspace=0.28, wspace=0.25)
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
@@ -263,7 +352,9 @@ def make_generic_overlay(edges_x, hists, run_number, output_path, xlabel, ylabel
     for values, label, color, ls in hists:
         hep.histplot((values, edges_x), ax=ax, histtype='step', color=color, linewidth=2, linestyle=ls, label=label)
 
-    if logy:
+    has_positive = any(np.any(values > 0) for values, _, _, _ in hists)
+
+    if logy and has_positive:
         ax.set_yscale('log')
         ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
         if ymax is not None:
@@ -394,10 +485,13 @@ def make_1d_plot(hist1d, run_number, output_path, hist_name="", extra_labels=Non
     if not ylabel:
         ylabel = "Counts"
 
-    if logy:
+    has_positive = np.any(values > 0)
+
+    if logy and has_positive:
         hep.histplot((values, edges), ax=ax, histtype='step', color='blue', linewidth=3)
         ax.set_yscale('log')
         ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        ax.set_ylim(bottom=0.5)
     else:
         hep.histplot((values, edges), ax=ax, histtype='step', color='blue', linewidth=3)
         ax.set_ylim(bottom=0)
@@ -858,17 +952,53 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                 "h2JetEtav3_r03_iter",
                 "h2JetEtav3_r03_mult",
                 "h2JetEtav3_r03_unsub",
+                "h2Njets_LeadJetPt_r02_iter",
+                "h2Njets_LeadJetPt_r02_mult",
+                "h2Njets_LeadJetPt_r02_unsub",
+                "h2Njets_LeadJetPt_r03_iter",
+                "h2Njets_LeadJetPt_r03_mult",
+                "h2Njets_LeadJetPt_r03_unsub",
+                "h2Njets_LeadJetPtv2_r02_iter",
+                "h2Njets_LeadJetPtv2_r02_mult",
+                "h2Njets_LeadJetPtv2_r02_unsub",
+                "h2Njets_LeadJetPtv2_r03_iter",
+                "h2Njets_LeadJetPtv2_r03_mult",
+                "h2Njets_LeadJetPtv2_r03_unsub",
             ]
 
             h2_start_zero = {
                 "h2CaloV2_iter_Centrality",
                 "h2CaloV2_mult_Centrality",
                 "h2Seeds_iter",
+                "h2Njets_LeadJetPt_r02_iter",
+                "h2Njets_LeadJetPt_r02_mult",
+                "h2Njets_LeadJetPt_r02_unsub",
+                "h2Njets_LeadJetPt_r03_iter",
+                "h2Njets_LeadJetPt_r03_mult",
+                "h2Njets_LeadJetPt_r03_unsub",
+                "h2Njets_LeadJetPtv2_r02_iter",
+                "h2Njets_LeadJetPtv2_r02_mult",
+                "h2Njets_LeadJetPtv2_r02_unsub",
+                "h2Njets_LeadJetPtv2_r03_iter",
+                "h2Njets_LeadJetPtv2_r03_mult",
+                "h2Njets_LeadJetPtv2_r03_unsub",
             }
 
             h2_start_zero_y = {
                 "h2CaloECentrality_default",
                 "h2CaloECentrality",
+                "h2Njets_LeadJetPt_r02_iter",
+                "h2Njets_LeadJetPt_r02_mult",
+                "h2Njets_LeadJetPt_r02_unsub",
+                "h2Njets_LeadJetPt_r03_iter",
+                "h2Njets_LeadJetPt_r03_mult",
+                "h2Njets_LeadJetPt_r03_unsub",
+                "h2Njets_LeadJetPtv2_r02_iter",
+                "h2Njets_LeadJetPtv2_r02_mult",
+                "h2Njets_LeadJetPtv2_r02_unsub",
+                "h2Njets_LeadJetPtv2_r03_iter",
+                "h2Njets_LeadJetPtv2_r03_mult",
+                "h2Njets_LeadJetPtv2_r03_unsub",
             }
 
             h2_zoom_names = {
@@ -910,6 +1040,7 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                 if run_output_dir is not None:
                     output_path = run_output_dir / f"run_{run_number}_{h2_name}.png"
                     xlim_left = 0.0 if h2_name in h2_start_zero else None
+                    xlim_right = None
                     ylim_bottom = 0.0 if h2_name in h2_start_zero_y else None
                     ylim_top = None
 
@@ -923,13 +1054,62 @@ def process_file(path, output_dir=None, xmax=None, ymax=1e8, do_iter=True, do_mu
                     elif "h2RConeEtaZvtx" in h2_name:
                         ylim_bottom = -1.1
                         ylim_top = 1.1
+                    elif "h2Njets_LeadJetPt" in h2_name:
+                        val_arr, edg_x, edg_y = hist2d.to_numpy()
+                        nz_x, nz_y = np.where(val_arr > 0)
+                        if len(nz_x) > 0:
+                            max_x = edg_x[nz_x.max() + 1]
+                            max_y = edg_y[nz_y.max() + 1]
+                            xlim_right = min(max(max_x * 1.15, 60), 500)
+                            ylim_top = min(max(max_y * 1.2, 10), 100)
 
                     extra_label = calo_cut_label if h2_name == "h2CaloECentrality" else None
-                    make_2d_plot(hist2d, run_number, output_path, hist_name=h2_name, xlim_left=xlim_left, ylim_bottom=ylim_bottom, ylim_top=ylim_top, extra_label=extra_label)
+                    make_2d_plot(hist2d, run_number, output_path, hist_name=h2_name, xlim_left=xlim_left, xlim_right=xlim_right, ylim_bottom=ylim_bottom, ylim_top=ylim_top, extra_label=extra_label)
 
                     if h2_name in h2_zoom_names:
                         zoom_output_path = run_output_dir / f"run_{run_number}_{h2_name}_zoom.png"
                         make_2d_plot(hist2d, run_number, zoom_output_path, hist_name=f"{h2_name} (Zoomed)", xlim_left=xlim_left, ylim_bottom=10, ylim_top=40)
+
+            # 2x3 Centrality Grid Plots for Njets vs Leading Jet pT
+            cent_bin_labels = ["0-10%", "10-20%", "20-30%", "30-40%", "40-50%", "50-60%"]
+            cent_suffixes = ["0_10", "10_20", "20_30", "30_40", "40_50", "50_60"]
+
+            cent_grid_configs = [
+                ("h2Njets_LeadJetPt", "r02", 0.2, "iter", "Iterative Bkg Sub", False, f"run_{run_number}_h2Njets_LeadJetPt_r02_iter_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r02", 0.2, "iter", "Iterative Bkg Sub", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r02_iter_cent_qa.png"),
+                ("h2Njets_LeadJetPt", "r02", 0.2, "mult", "Multiplicity Bkg Sub", False, f"run_{run_number}_h2Njets_LeadJetPt_r02_mult_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r02", 0.2, "mult", "Multiplicity Bkg Sub", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r02_mult_cent_qa.png"),
+                ("h2Njets_LeadJetPt", "r02", 0.2, "unsub", "Unsubtracted", False, f"run_{run_number}_h2Njets_LeadJetPt_r02_unsub_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r02", 0.2, "unsub", "Unsubtracted", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r02_unsub_cent_qa.png"),
+                ("h2Njets_LeadJetPt", "r03", 0.3, "iter", "Iterative Bkg Sub", False, f"run_{run_number}_h2Njets_LeadJetPt_r03_iter_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r03", 0.3, "iter", "Iterative Bkg Sub", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r03_iter_cent_qa.png"),
+                ("h2Njets_LeadJetPt", "r03", 0.3, "mult", "Multiplicity Bkg Sub", False, f"run_{run_number}_h2Njets_LeadJetPt_r03_mult_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r03", 0.3, "mult", "Multiplicity Bkg Sub", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r03_mult_cent_qa.png"),
+                ("h2Njets_LeadJetPt", "r03", 0.3, "unsub", "Unsubtracted", False, f"run_{run_number}_h2Njets_LeadJetPt_r03_unsub_cent_qa.png"),
+                ("h2Njets_LeadJetPtv2", "r03", 0.3, "unsub", "Unsubtracted", True, f"run_{run_number}_h2Njets_LeadJetPtv2_r03_unsub_cent_qa.png"),
+            ]
+
+            for base_prefix, r_val_str, r_float, ue_key, method_label, extra_energy_cut, out_filename in cent_grid_configs:
+                if ue_key == "iter" and not do_iter: continue
+                if ue_key == "mult" and not do_mult: continue
+                if ue_key == "unsub" and not do_unsub: continue
+
+                cent_hists = []
+                for label, sfx in zip(cent_bin_labels, cent_suffixes):
+                    hname = f"{base_prefix}_{r_val_str}_{ue_key}_cent_{sfx}"
+                    if hname in file:
+                        cent_hists.append((label, file[hname]))
+
+                if cent_hists and run_output_dir is not None:
+                    output_path = run_output_dir / out_filename
+                    make_njets_cent_2x3_plot(
+                        cent_hists,
+                        run_number,
+                        output_path,
+                        r_jet=r_float,
+                        method_label=method_label,
+                        extra_energy_cut=extra_energy_cut,
+                    )
 
             psi_pairs = [
                 ("h2Psi2_S_raw", "h2Psi2_S", f"run_{run_number}_psi2_S.png"),
