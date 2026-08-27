@@ -14,6 +14,7 @@
 // ====================================================================
 // Standard C++ Includes
 // ====================================================================
+#include <array>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -45,8 +46,7 @@ class JetAnalysisv3
 {
  public:
   // The constructor takes the configuration
-  JetAnalysisv3(std::string input_file, long long events,
-                std::string output_dir)
+  JetAnalysisv3(std::string input_file, long long events, std::string output_dir)
     : m_input_file(std::move(input_file))
     , m_events_to_process(events)
     , m_output_dir(std::move(output_dir))
@@ -82,6 +82,9 @@ class JetAnalysisv3
   static constexpr size_t m_bins_cent = 60;
   static constexpr double m_cent_low = -0.5;
   static constexpr double m_cent_high = 59.5;
+
+  static constexpr std::array<double, 7> m_cent_bins = {0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0};
+  static constexpr size_t m_num_cent_bins = m_cent_bins.size() - 1;
 
   float m_calo_v2_max{0.48F};
 
@@ -121,6 +124,12 @@ class JetAnalysisv3
       TH2 *h2JetEta{nullptr};
       TH2 *h2JetEtav2{nullptr};
       TH2 *h2JetEtav3{nullptr};
+
+      // Njets vs Leading Jet pT
+      TH2 *h2Njets_LeadJetPt{nullptr};
+      TH2 *h2Njets_LeadJetPtv2{nullptr};
+      std::array<TH2 *, m_num_cent_bins> h2Njets_LeadJetPt_cent{};
+      std::array<TH2 *, m_num_cent_bins> h2Njets_LeadJetPtv2_cent{};
     };
 
     JetHistSet iter_r02;
@@ -302,8 +311,7 @@ void JetAnalysisv3::setup_chain()
 
   if (m_chain == nullptr)
   {
-    throw std::runtime_error(
-        std::format("Error in TChain Setup from file: {}", m_input_file));
+    throw std::runtime_error(std::format("Error in TChain Setup from file: {}", m_input_file));
   }
 
   // Setup branches
@@ -364,8 +372,7 @@ void JetAnalysisv3::setup_chain()
     }
     else
     {
-      throw std::runtime_error(std::format(
-          "Could not find Branch '{}' in file '{}'", branchName, m_input_file));
+      throw std::runtime_error(std::format("Could not find Branch '{}' in file '{}'", branchName, m_input_file));
     }
   }
 
@@ -531,12 +538,16 @@ void JetAnalysisv3::init_hists()
   double rcone_e_low = -100;
   double rcone_e_high = 100;
 
+  int bins_njets = 100;
+  double njets_low = 0;
+  double njets_high = 100;
+
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
   auto clone_hist = [](auto &&map, std::string_view src, std::string_view dest)
   {
-    using PtrType = typename std::decay_t<decltype(map)>::mapped_type; // e.g., std::unique_ptr<TH1>
-    using ElementType = typename PtrType::element_type;  // e.g., TH1
+    using PtrType = typename std::decay_t<decltype(map)>::mapped_type;  // e.g., std::unique_ptr<TH1>
+    using ElementType = typename PtrType::element_type;                 // e.g., TH1
 
     map[std::string(dest)] = PtrType(static_cast<ElementType *>(map[std::string(src)]->Clone(dest.data())));
   };
@@ -596,6 +607,25 @@ void JetAnalysisv3::init_hists()
       m_hists2D[h2eta_name] = std::make_unique<TH2F>(h2eta_name.c_str(), "; p_{T} [GeV]; #eta", bins_pt_eta2D, pt_eta2D_low, pt_eta2D_high, bins_eta, eta_low, eta_high);
       clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav2_{}_{}", r, ue));
       clone_hist(m_hists2D, h2eta_name, std::format("h2JetEtav3_{}_{}", r, ue));
+
+      std::string h2njets_name = std::format("h2Njets_LeadJetPt_{}_{}", r, ue);
+      m_hists2D[h2njets_name] = std::make_unique<TH2F>(h2njets_name.c_str(), "; Leading Jet p_{T} [GeV]; N_{jets}", bins_pt, pt_low, pt_high, bins_njets, njets_low, njets_high);
+
+      std::string h2njets_v2_name = std::format("h2Njets_LeadJetPtv2_{}_{}", r, ue);
+      clone_hist(m_hists2D, h2njets_name, h2njets_v2_name);
+
+      for (size_t icent = 0; icent < m_num_cent_bins; ++icent)
+      {
+        int cent_low = static_cast<int>(m_cent_bins[icent]);
+        int cent_high = static_cast<int>(m_cent_bins[icent + 1]);
+
+        std::string h2njets_cent_name = std::format("h2Njets_LeadJetPt_{}_{}_cent_{}_{}", r, ue, cent_low, cent_high);
+        std::string cent_title = std::format("{} - {}%; Leading Jet p_{{T}} [GeV]; N_{{jets}}", cent_low, cent_high);
+        m_hists2D[h2njets_cent_name] = std::make_unique<TH2F>(h2njets_cent_name.c_str(), cent_title.c_str(), bins_pt, pt_low, pt_high, bins_njets, njets_low, njets_high);
+
+        std::string h2njets_v2_cent_name = std::format("h2Njets_LeadJetPtv2_{}_{}_cent_{}_{}", r, ue, cent_low, cent_high);
+        clone_hist(m_hists2D, h2njets_cent_name, h2njets_v2_cent_name);
+      }
     }
   }
 
@@ -716,6 +746,16 @@ void JetAnalysisv3::init_hists()
     set.h2JetEta = m_hists2D[std::format("h2JetEta_{}_{}", r, ue)].get();
     set.h2JetEtav2 = m_hists2D[std::format("h2JetEtav2_{}_{}", r, ue)].get();
     set.h2JetEtav3 = m_hists2D[std::format("h2JetEtav3_{}_{}", r, ue)].get();
+
+    set.h2Njets_LeadJetPt = m_hists2D[std::format("h2Njets_LeadJetPt_{}_{}", r, ue)].get();
+    set.h2Njets_LeadJetPtv2 = m_hists2D[std::format("h2Njets_LeadJetPtv2_{}_{}", r, ue)].get();
+    for (size_t icent = 0; icent < m_num_cent_bins; ++icent)
+    {
+      int cent_low = static_cast<int>(m_cent_bins[icent]);
+      int cent_high = static_cast<int>(m_cent_bins[icent + 1]);
+      set.h2Njets_LeadJetPt_cent[icent] = m_hists2D[std::format("h2Njets_LeadJetPt_{}_{}_cent_{}_{}", r, ue, cent_low, cent_high)].get();
+      set.h2Njets_LeadJetPtv2_cent[icent] = m_hists2D[std::format("h2Njets_LeadJetPtv2_{}_{}_cent_{}_{}", r, ue, cent_low, cent_high)].get();
+    }
   };
 
   if (m_do_iter)
@@ -797,6 +837,11 @@ void JetAnalysisv3::process_jets()
     {
       return;
     }
+
+    int njets = 0;
+    int njets_v2 = 0;
+    double max_pt_v2 = 0.0;
+
     for (size_t idx = 0; idx < jet_data.pt->size(); ++idx)
     {
       double energy = jet_data.e->at(idx);
@@ -809,12 +854,17 @@ void JetAnalysisv3::process_jets()
         continue;
       }
 
+      ++njets;
+
       h.hJetPt->Fill(pt);
       h.hJetPt_raw->Fill(pt_raw);
       h.h2JetEta->Fill(pt, eta);
 
       if (energy > 0)
       {
+        ++njets_v2;
+        max_pt_v2 = std::max(max_pt_v2, pt);
+
         h.hJetPtv2->Fill(pt);
         h.hJetPtv2_raw->Fill(pt_raw);
         h.h2JetPtv2->Fill(calo_v2, pt);
@@ -826,6 +876,41 @@ void JetAnalysisv3::process_jets()
           h.hJetPtv3_raw->Fill(pt_raw);
           h.h2JetEtav3->Fill(pt, eta);
         }
+      }
+    }
+
+    if (jet_data.max_pt > 0)
+    {
+      if (h.h2Njets_LeadJetPt)
+      {
+        h.h2Njets_LeadJetPt->Fill(jet_data.max_pt, static_cast<double>(njets));
+      }
+    }
+
+    if (max_pt_v2 > 0)
+    {
+      if (h.h2Njets_LeadJetPtv2)
+      {
+        h.h2Njets_LeadJetPtv2->Fill(max_pt_v2, static_cast<double>(njets_v2));
+      }
+    }
+
+    double cent = m_event_data.centrality;
+    for (size_t icent = 0; icent < m_num_cent_bins; ++icent)
+    {
+      double cent_low = m_cent_bins[icent];
+      double cent_high = m_cent_bins[icent + 1];
+      if (cent >= cent_low && (cent < cent_high || (icent == m_num_cent_bins - 1 && cent <= cent_high)))
+      {
+        if (jet_data.max_pt > 0 && h.h2Njets_LeadJetPt_cent[icent])
+        {
+          h.h2Njets_LeadJetPt_cent[icent]->Fill(jet_data.max_pt, static_cast<double>(njets));
+        }
+        if (max_pt_v2 > 0 && h.h2Njets_LeadJetPtv2_cent[icent])
+        {
+          h.h2Njets_LeadJetPtv2_cent[icent]->Fill(max_pt_v2, static_cast<double>(njets_v2));
+        }
+        break;
       }
     }
   };
@@ -1138,8 +1223,7 @@ void JetAnalysisv3::print_event_info(long long event_idx) const
         double e = jd.e ? jd.e->at(i) : 0.0;
         double eta = jd.eta ? jd.eta->at(i) : 0.0;
         double phi = jd.phi ? jd.phi->at(i) : 0.0;
-        std::cout << std::format("    {:>4} | {:>10.2f} | {:>10.2f} | {:>10.2f} | {:>10.3f} | {:>10.3f}\n",
-                                 i, pt_raw, pt_cal, e, eta, phi);
+        std::cout << std::format("    {:>4} | {:>10.2f} | {:>10.2f} | {:>10.2f} | {:>10.3f} | {:>10.3f}\n", i, pt_raw, pt_cal, e, eta, phi);
       }
     }
   };
@@ -1169,11 +1253,9 @@ void JetAnalysisv3::save_results() const
 
   std::filesystem::path input_path(m_input_file);
   std::string output_stem = input_path.stem().string();
-  std::string output_filename =
-      std::format("{}/Jet-Ana_{}.root", m_output_dir, output_stem);
+  std::string output_filename = std::format("{}/Jet-Ana_{}.root", m_output_dir, output_stem);
 
-  auto output_file =
-      std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
+  auto output_file = std::make_unique<TFile>(output_filename.c_str(), "RECREATE");
 
   auto save_all = [](auto &...collections)
   {
@@ -1195,8 +1277,7 @@ void JetAnalysisv3::save_results() const
 
   output_file->Close();
 
-  std::cout << std::format("Results saved to: {}", output_filename)
-            << std::endl;
+  std::cout << std::format("Results saved to: {}", output_filename) << std::endl;
 }
 
 // ====================================================================
@@ -1250,8 +1331,7 @@ int main(int argc, const char *const argv[])
   }
   catch (const std::exception &e)
   {
-    std::cout << std::format("An exception occurred: {}", e.what())
-              << std::endl;
+    std::cout << std::format("An exception occurred: {}", e.what()) << std::endl;
     return 1;
   }
 
