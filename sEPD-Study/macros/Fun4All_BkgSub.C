@@ -39,6 +39,7 @@
 #include <sepdvalidation/GlobalQA.h>
 #include <sepdvalidation/CaloQA.h>
 #include <sepdvalidation/JetValidationv3.h>
+#include <sepdvalidation/RandomConeValidation.h>
 
 #include <treefiller/TreeFiller.h>
 
@@ -61,7 +62,9 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     int event_id = 0,
                     const std::string &dbtag = "newcdbtag",
                     const std::string &eta_calib_direct_path = "",
-                    const std::string &event_list = "")
+                    const std::string &event_list = "",
+                    bool do_rcone = false,
+                    bool do_mult = true)
 {
 
   // Extract runnumber from first file within list
@@ -105,6 +108,8 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "event_list: " << event_list << std::endl;
   std::cout << "dbtag: " << dbtag << std::endl;
   std::cout << "eta_calib_direct_path: " << eta_calib_direct_path << std::endl;
+  std::cout << "do_rcone: " << do_rcone << std::endl;
+  std::cout << "do_mult: " << do_mult << std::endl;
   std::cout << "########################" << std::endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -181,8 +186,14 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   cent->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(cent);
 
+  bool do_detailed = !event_list.empty() || event_id != 0;
+
   // Event QA
   EventQA* event_qa = new EventQA();
+  if (do_detailed)
+  {
+    event_qa->set_do_hist(false);
+  }
   event_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(event_qa);
 
@@ -194,13 +205,19 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   {
     HIJETS::eta_calib_direct_path = eta_calib_direct_path;
   }
-  Enable::HIJETS_TOWER_MULTSUB = true;
+  Enable::HIJETS_TOWER_MULTSUB = do_mult;
   Enable::HIJETS_TOWER_NOBKG = true;
   HIJetReco();
 
   // Calo QA
   CaloQA* calo_qa = new CaloQA();
   calo_qa->set_do_hist(false);
+  if (do_detailed)
+  {
+    calo_qa->set_do_detailed(true);
+    calo_qa->set_do_iter(true);
+    calo_qa->set_do_mult(do_mult);
+  }
   calo_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(calo_qa);
 
@@ -217,8 +234,25 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
 
   // Jet Validation
   JetValidationv3* jet_validation = new JetValidationv3();
+  jet_validation->set_do_mult(do_mult);
+  if (do_detailed)
+  {
+    jet_validation->set_do_detailed(true);
+  }
   jet_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(jet_validation);
+
+  // Random Cone Validation
+  if (do_rcone)
+  {
+    RandomConeValidation* random_cone_validation = new RandomConeValidation();
+    if (do_detailed)
+    {
+      random_cone_validation->set_do_detailed(true);
+    }
+    random_cone_validation->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+    se->registerSubsystem(random_cone_validation);
+  }
 
   // Tree Filler
   TreeFiller* tree_filler = TreeFiller::instance();
@@ -248,7 +282,14 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   se->run(nEvents+nSkip);
   se->End();
 
-  se->dumpHistos(output);
+  if (do_detailed)
+  {
+    se->dumpHistos(output_tree);
+  }
+  else
+  {
+    se->dumpHistos(output);
+  }
 
   CDBInterface::instance()->Print();  // print used DB files
   se->PrintTimer();

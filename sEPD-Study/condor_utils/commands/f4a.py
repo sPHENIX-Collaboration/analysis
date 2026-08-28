@@ -15,6 +15,10 @@ def create_f4a_jobs(args):
     manager.add_file_to_check(args.HIJetReco_macro)
     manager.add_dir_to_check(args.src_dir)
 
+    bkgsub_macro = str(Path(args.f4a_macro).parent / 'Fun4All_BkgSub.C') if "Fun4All_RandomCones" in args.f4a_macro else None
+    if bkgsub_macro:
+        manager.add_file_to_check(bkgsub_macro)
+
     calib_list = Path(args.calib).resolve() if args.calib else None
     if calib_list:
         manager.add_file_to_check(calib_list)
@@ -29,7 +33,7 @@ def create_f4a_jobs(args):
 
     manager.validate_paths()
 
-    manager.log_initialization({
+    init_log = {
         'Calib List': calib_list if calib_list else "Not Provided (Using default)",
         'Eta Calib': eta_calib if eta_calib else "Not Provided (Using default/empty)",
         'Event List': event_list if event_list else "Not Provided (Using all events)",
@@ -37,11 +41,18 @@ def create_f4a_jobs(args):
         'Calo Calib Macro': Path(args.calo_calib_macro).resolve(),
         'HIJetReco Macro': Path(args.HIJetReco_macro).resolve(),
         'Source Directory': Path(args.src_dir).resolve()
-    })
+    }
+    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
+        init_log['Do RCone'] = bool(getattr(args, 'do_rcone', False))
+        init_log['Do Mult'] = bool(getattr(args, 'do_mult', 1))
+
+    manager.log_initialization(init_log)
 
     files_dir = manager.prepare_directories()
 
     extra_files = [args.f4a_macro, args.calo_calib_macro, args.HIJetReco_macro]
+    if bkgsub_macro:
+        extra_files.append(bkgsub_macro)
     if calib_list:
         extra_files.append(calib_list)
     if eta_calib:
@@ -92,7 +103,9 @@ def create_f4a_jobs(args):
     if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
         eta_calib_val = (manager.output_dir / eta_calib.name) if eta_calib else "none"
         event_list_val = (manager.output_dir / event_list.name) if event_list else "none"
-        bkgsub_args = f"{args.do_flow} {eta_calib_val} {event_list_val} "
+        do_rcone_val = 1 if getattr(args, 'do_rcone', False) else 0
+        do_mult_val = getattr(args, 'do_mult', 1)
+        bkgsub_args = f"{args.do_flow} {eta_calib_val} {event_list_val} {do_rcone_val} {do_mult_val} "
     else:
         bkgsub_args = ""
 
@@ -384,6 +397,8 @@ def setup_f4a_subparsers(subparsers):
     f4a.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     f4a.add_argument('-f6', '--HIJetReco-macro', type=str, default='macros/HIJetReco.C', help='HIJetReco Macro.')
     f4a.add_argument('--do-flow', type=int, default=3, help='Flow modulation configuration for JetReco/QA (default=3)')
+    f4a.add_argument('--do-rcone', action='store_true', default=False, help='Enable random cone validation.')
+    f4a.add_argument('--do-mult', type=int, default=1, choices=[0, 1], help='Enable multiple subtraction (default=1).')
     f4a.set_defaults(memory=1.5, condor_script='scripts/genFun4All.sh', func=create_f4a_jobs)
 
     f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[get_common_parser()], help='Create condor submission directory.')
