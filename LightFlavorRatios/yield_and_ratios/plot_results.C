@@ -7,7 +7,26 @@
 #include "../util/DifferentialContainer.h"
 #include "../util/binning.h"
 
-std::vector<RooPlot*> get_all_bins(TFile* f, const std::string& particle, const HistogramInfo& var)
+std::vector<TH1F*> get_all_bins_TH1F(TFile* f, const std::string& particle, const HistogramInfo& var)
+{
+  //DifferentialContainer dc(f,particle,var);
+  //return dc.hists;
+
+  std::vector<TH1F*> plot_dist;
+
+  int nbins = var.bins.size()-1;
+  for(int i=1; i<=nbins; i++)
+  {
+    std::string name = particle+"_yield_vs"+var.name+std::to_string(i)+"__"+particle+"_mass";
+    std::cout << name << std::endl;
+    TH1F* dist = (TH1F*)f->Get(name.c_str());
+    plot_dist.push_back(dist);
+  }
+  std::cout << "final size: " << plot_dist.size() << std::endl;
+  return plot_dist;
+}
+
+std::vector<RooPlot*> get_all_bins_RooPlot(TFile* f, const std::string& particle, const HistogramInfo& var)
 {
   //DifferentialContainer dc(f,particle,var);
   //return dc.hists;
@@ -26,20 +45,32 @@ std::vector<RooPlot*> get_all_bins(TFile* f, const std::string& particle, const 
   return plot_dist;
 }
 
-std::vector<std::vector<RooPlot*>> get_all_fits_all_variables(TFile* f, std::string particle, std::vector<HistogramInfo> hinfos)
+std::vector<std::vector<TH1F*>> get_all_fits_all_variables_TH1F(TFile* f, std::string particle, std::vector<HistogramInfo> hinfos)
+{
+  std::vector<std::vector<TH1F*>> all_fits;
+  for(HistogramInfo& hinfo : hinfos)
+  {
+    all_fits.push_back(get_all_bins_TH1F(f,particle,hinfo));
+  }
+  return all_fits;
+}
+
+std::vector<std::vector<RooPlot*>> get_all_fits_all_variables_RooPlot(TFile* f, std::string particle, std::vector<HistogramInfo> hinfos)
 {
   std::vector<std::vector<RooPlot*>> all_fits;
   for(HistogramInfo& hinfo : hinfos)
   {
-    all_fits.push_back(get_all_bins(f,particle,hinfo));
+    all_fits.push_back(get_all_bins_RooPlot(f,particle,hinfo));
   }
   return all_fits;
 }
 
 void plot_results(std::string infile = "fits.root", std::string dirname = "plots")
 {
+  gROOT->SetBatch();
+
   gStyle->SetOptStat(0);
-  gStyle->SetImageScaling(2.);
+  //gStyle->SetImageScaling(2.);
   //SetsPhenixStyle();
 
   bool finalize = false;
@@ -58,8 +89,8 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
     BinInfo::final_phi_bins
   };
 
-  std::vector<std::vector<RooPlot*>> Ks_fits = get_all_fits_all_variables(f,"K_S0",variables);
-  std::vector<std::vector<RooPlot*>> lambda_fits = get_all_fits_all_variables(f,"Lambda0",variables);
+  std::vector<std::vector<RooPlot*>> Ks_fits = get_all_fits_all_variables_RooPlot(f,"K_S0",variables);
+  std::vector<std::vector<RooPlot*>> lambda_fits = get_all_fits_all_variables_RooPlot(f,"Lambda0",variables);
 
   for(int i=0; i<variables.size(); i++)
   {
@@ -69,12 +100,13 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
     int npix_x = 3600;
     int npix_y = 1800;
     TCanvas* c = new TCanvas("c","c",npix_x,npix_y);
-    c->Divide(nbins/3+1,3);
+    c->Divide(nbins/3,3);
     for(int bin=1; bin<=nbins; bin++)
     {
       c->cd(bin);
+      c->SetLogy();
       std::cout << i << " " << bin << std::endl;
-      Ks_fits[i][bin-1]->Draw();
+      Ks_fits[i][bin-1]->Draw("goff");
     }
     std::string Ks_filename_pdf = outdir+"/pdf/Ks_fits_vs"+variables[i].name+".pdf";
     std::string Ks_filename = outdir+"/png/Ks_fits_vs"+variables[i].name+".png";
@@ -83,7 +115,7 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
     c->Close();
 
     TCanvas* c1 = new TCanvas("c1","c1",npix_x,npix_y);
-    c1->Divide(nbins/3+1,3);
+    c1->Divide(nbins/3,3);
 
 
     //for(int bin=1; bin<=nbins; bin++)
@@ -95,7 +127,8 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
     for(int bin=1; bin<=nbins; bin++)
     {
       c1->cd(bin);
-      lambda_fits[i][bin-1]->Draw();
+      c1->SetLogy();
+      lambda_fits[i][bin-1]->Draw("goff");
     }
     std::string lambda_filename_pdf = outdir+"/pdf/lambda_fits_vs"+variables[i].name+".pdf";
     std::string lambda_filename = outdir+"/png/lambda_fits_vs"+variables[i].name+".png";
@@ -178,7 +211,7 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
     h->SetMarkerSize(0.7);
     h->SetMinimum(0.);
 
-    h->Draw();
+    h->Draw("goff");
 
     TLatex latex;
     latex.SetNDC();           // Use normalized coordinates
@@ -262,8 +295,8 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
       h->SetLineColor(colors[j]);
       h->SetMarkerColor(colors[j]);
 
-      if(j==0) h->Draw();
-      else h->Draw("SAME");
+      if(j==0) h->Draw("goff");
+      else h->Draw("SAME goff");
     }
 
     TLatex latex;

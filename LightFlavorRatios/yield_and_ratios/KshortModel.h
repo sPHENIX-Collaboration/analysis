@@ -5,11 +5,15 @@
 
 struct KshortModel : ParticleModel
 {
-  KshortModel()
+  KshortModel(const HistogramInfo& massbins)
   {
     name = "K_S0";
+    pdgid = 310;
+    daughter_pdgids = {211, -211};
 
-    setup_default_mass_nsignal_nbackground("K_S0","K_{S}^{0}",0.4,0.6);
+    //build_turnon_lookup_tables("K_S0",0.2,211,-211);
+
+    setup_default_mass_nsignal_nbackground("K_S0","K_{S}^{0}",massbins.bins.front(),massbins.bins.back());
 
     add_signal_parameter("ks_mean","mean",0.496,0.48,0.51);
     add_signal_parameter("ks_mean2","mean2",0.497,0.48,0.51);
@@ -25,15 +29,15 @@ struct KshortModel : ParticleModel
     n_gaus2 = std::make_shared<RooRealVar>("ks_ngaus2","gaus 2",0.,1e12);
     n_gaus3 = std::make_shared<RooRealVar>("ks_ngaus3","gaus 3",0.,1e12);
 
-    //signal_function = std::make_shared<RooGaussian>("ks_signal","signal",*mass,signal_parameters[0],signal_parameters[2]);
-    signal_function = std::make_shared<RooAddPdf>("ks_signal","double gaussian signal",RooArgList(*signal_gaus1,*signal_gaus2),RooArgList(*n_gaus1,*n_gaus2));
+    signal_function = std::make_shared<RooGaussian>("ks_signal","signal",*mass,signal_parameters[0],signal_parameters[3]);
+    //signal_function = std::make_shared<RooAddPdf>("ks_signal","double gaussian signal",RooArgList(*signal_gaus1,*signal_gaus2),RooArgList(*n_gaus1,*n_gaus2));
 
     background_parameters.emplace_back("ks_q1","q1",0.,0.,1.);
     background_parameters.emplace_back("ks_q2","q2",0.,0.,1.);
     background_parameters.emplace_back("ks_q3","q3",0.,0.,1.);
     background_parameters.emplace_back("ks_q4","q4",0.,0.,1.);
-    background_parameters.emplace_back("ks_q5","q5",0.,0.,1.);
-    background_parameters.emplace_back("ks_q6","q6",0.,0.,1.);
+    //background_parameters.emplace_back("ks_q5","q5",0.,0.,1.);
+    //background_parameters.emplace_back("ks_q6","q6",0.,0.,1.);
 
     background_function = std::make_shared<RooBernstein>("ks_bkg","background",*mass,RooArgList(background_parameters.begin(),background_parameters.end()));
 
@@ -42,8 +46,8 @@ struct KshortModel : ParticleModel
 
     //background_function = std::make_shared<RooExponential>("ks_bkg","background",*mass,background_parameters[0]);
 
-    left_sideband = {0.4,0.46};
-    right_sideband = {0.54,0.6};
+    left_sideband = {0.43,0.46};
+    right_sideband = {0.54,0.58};
 
   }
 

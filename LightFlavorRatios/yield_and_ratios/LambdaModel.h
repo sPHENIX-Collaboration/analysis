@@ -2,17 +2,23 @@
 #define LAMBDAMODEL_H
 
 #include "ParticleModel.h"
+#include "kinematicThreshold.h"
 
 #include <RooAddPdf.h>
 #include <RooCrystalBall.h>
 
 struct LambdaModel : ParticleModel
 {
-  LambdaModel()
+  LambdaModel(const HistogramInfo& massbins)
   {
     name = "Lambda0";
+    pdgid = 3122;
+    daughter_pdgids = {-211,2212};
 
-    setup_default_mass_nsignal_nbackground("Lambda0","#Lambda^{0}",1.08,1.15);
+    use_threshold = true;
+    //build_turnon_lookup_tables("Lambda0",0.2,-211,2212);
+
+    setup_default_mass_nsignal_nbackground("Lambda0","#Lambda^{0}",massbins.bins.front(),massbins.bins.back());
 
     add_signal_parameter("lambda_mean","mean",1.1145,1.105,1.125);
     add_signal_parameter("lambda_mean2","mean2",1.115,1.105,1.125);
@@ -28,8 +34,8 @@ struct LambdaModel : ParticleModel
     n_gaus2 = std::make_shared<RooRealVar>("lambda_ngaus2","gaus 2",0.,1.);
     n_gaus3 = std::make_shared<RooRealVar>("lambda_ngaus3","gaus 3",0.,1.);
 
-    //signal_function = std::make_shared<RooGaussian>("ks_signal","signal",*mass,signal_parameters[0],signal_parameters[2]);
-    signal_function = std::make_shared<RooAddPdf>("lambda_signal","double gaussian signal",RooArgList(*signal_gaus1,*signal_gaus2,*signal_gaus3),RooArgList(*n_gaus1,*n_gaus2,*n_gaus3));
+    signal_function = std::make_shared<RooGaussian>("ks_signal","signal",*mass,signal_parameters[0],signal_parameters[3]);
+    //signal_function = std::make_shared<RooAddPdf>("lambda_signal","double gaussian signal",RooArgList(*signal_gaus1,*signal_gaus2),RooArgList(*n_gaus1));
 
 /*
     add_signal_parameter("lambda_mean","mean",1.113,1.1,1.14);
@@ -55,8 +61,8 @@ struct LambdaModel : ParticleModel
     background_parameters.emplace_back("q2","q2",0.5,0.,1.);
     background_parameters.emplace_back("q3","q3",0.5,0.,1.);
     background_parameters.emplace_back("q4","q4",0.5,0.,1.);
-    background_parameters.emplace_back("q5","q5",0.5,0.,1.);
-    background_parameters.emplace_back("q6","q6",0.5,0.,1.);
+    //background_parameters.emplace_back("q5","q5",0.5,0.,1.);
+    //background_parameters.emplace_back("q6","q6",0.5,0.,1.);
 
    background_function = std::make_shared<RooBernstein>("lambda_bkg","background",*mass,RooArgList(background_parameters.begin(),background_parameters.end()));
 /*
@@ -77,8 +83,8 @@ struct LambdaModel : ParticleModel
     background_function = std::make_shared<RooExponential>("lambda_background","background",*mass,background_parameters[0]);
 */
 
-    left_sideband = {1.09,1.104};
-    right_sideband = {1.124,1.15};
+    left_sideband = {1.1,1.104};
+    right_sideband = {1.124,1.135};
 
   }
 
