@@ -251,6 +251,9 @@ class JetAnalysisv3
   {
     std::string filename;
     int event_id{0};
+    int njets{0};
+    double centrality{0.0};
+    double zvtx{0.0};
     double leading_pt{0.0};
     double radius{0.0};
     std::string subtraction_type;
@@ -845,10 +848,15 @@ void JetAnalysisv3::process_jets()
     return;
   }
 
-  auto fill_jet_hists = [this](const JetData &jet_data, float calo_v2, const AnalysisHists::JetHistSet &h, double eta_max)
+  auto fill_jet_hists = [this](const JetData &jet_data, float calo_v2, const AnalysisHists::JetHistSet &h, double eta_max, double radius, const std::string &sub_type)
   {
     if (!jet_data.pt || !jet_data.pt_calib || !jet_data.e || !jet_data.eta)
     {
+      if (jet_data.max_pt >= m_lead_jet_pt_threshold)
+      {
+        std::string current_file = std::filesystem::path((m_chain && m_chain->GetFile()) ? m_chain->GetFile()->GetName() : m_input_file).filename().string();
+        m_high_pt_events.push_back({current_file, m_event_data.event, 1, m_event_data.centrality, m_event_data.zvtx, jet_data.max_pt, radius, sub_type});
+      }
       return;
     }
 
@@ -891,6 +899,12 @@ void JetAnalysisv3::process_jets()
           h.h2JetEtav3->Fill(pt, eta);
         }
       }
+    }
+
+    if (jet_data.max_pt >= m_lead_jet_pt_threshold)
+    {
+      std::string current_file = std::filesystem::path((m_chain && m_chain->GetFile()) ? m_chain->GetFile()->GetName() : m_input_file).filename().string();
+      m_high_pt_events.push_back({current_file, m_event_data.event, njets, m_event_data.centrality, m_event_data.zvtx, jet_data.max_pt, radius, sub_type});
     }
 
     if (jet_data.max_pt > 0)
@@ -955,58 +969,27 @@ void JetAnalysisv3::process_jets()
     }
   };
 
-  auto check_high_pt = [&](const JetData &jd, double eta_max, double radius, const std::string &sub_type)
-  {
-    double max_pt = 0.0;
-    if (jd.pt && jd.pt_calib && jd.eta)
-    {
-      for (size_t idx = 0; idx < jd.pt->size(); ++idx)
-      {
-        double pt = jd.pt_calib->at(idx);
-        double eta = jd.eta->at(idx);
-
-        if (std::abs(eta) < eta_max)
-        {
-          max_pt = std::max(max_pt, pt);
-        }
-      }
-    }
-
-    if (max_pt == 0.0 && jd.max_pt > 0.0)
-    {
-      max_pt = jd.max_pt;
-    }
-
-    if (max_pt >= m_lead_jet_pt_threshold)
-    {
-      std::string current_file = (m_chain && m_chain->GetFile()) ? m_chain->GetFile()->GetName() : m_input_file;
-      m_high_pt_events.push_back({current_file, m_event_data.event, max_pt, radius, sub_type});
-    }
-  };
-
   if (m_do_iter)
   {
     // Process r02 branches for iter (eta_max = 0.9)
     if (!m_event_data.is_flow_failure_iter)
     {
-      fill_jet_hists(m_event_data.iter_r02, m_event_data.calo_v2_iter, m_hists.iter_r02, m_jet_eta_max_r02);
+      fill_jet_hists(m_event_data.iter_r02, m_event_data.calo_v2_iter, m_hists.iter_r02, m_jet_eta_max_r02, 0.2, "iter");
     }
     else
     {
       fill_jet_flow_fail_hists(m_event_data.iter_r02, m_hists.iter_r02, m_jet_eta_max_r02);
     }
-    check_high_pt(m_event_data.iter_r02, m_jet_eta_max_r02, 0.2, "iter");
 
     // Process r03 branches for iter (eta_max = 0.8)
     if (!m_event_data.is_flow_failure_iter)
     {
-      fill_jet_hists(m_event_data.iter_r03, m_event_data.calo_v2_iter, m_hists.iter_r03, m_jet_eta_max_r03);
+      fill_jet_hists(m_event_data.iter_r03, m_event_data.calo_v2_iter, m_hists.iter_r03, m_jet_eta_max_r03, 0.3, "iter");
     }
     else
     {
       fill_jet_flow_fail_hists(m_event_data.iter_r03, m_hists.iter_r03, m_jet_eta_max_r03);
     }
-    check_high_pt(m_event_data.iter_r03, m_jet_eta_max_r03, 0.3, "iter");
   }
 
   if (m_do_mult)
@@ -1014,34 +997,29 @@ void JetAnalysisv3::process_jets()
     // Process r02 branches for mult (eta_max = 0.9)
     if (!m_event_data.is_flow_failure_mult)
     {
-      fill_jet_hists(m_event_data.mult_r02, m_event_data.calo_v2_mult, m_hists.mult_r02, m_jet_eta_max_r02);
+      fill_jet_hists(m_event_data.mult_r02, m_event_data.calo_v2_mult, m_hists.mult_r02, m_jet_eta_max_r02, 0.2, "mult");
     }
     else
     {
       fill_jet_flow_fail_hists(m_event_data.mult_r02, m_hists.mult_r02, m_jet_eta_max_r02);
     }
-    check_high_pt(m_event_data.mult_r02, m_jet_eta_max_r02, 0.2, "mult");
 
     // Process r03 branches for mult (eta_max = 0.8)
     if (!m_event_data.is_flow_failure_mult)
     {
-      fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03);
+      fill_jet_hists(m_event_data.mult_r03, m_event_data.calo_v2_mult, m_hists.mult_r03, m_jet_eta_max_r03, 0.3, "mult");
     }
     else
     {
       fill_jet_flow_fail_hists(m_event_data.mult_r03, m_hists.mult_r03, m_jet_eta_max_r03);
     }
-    check_high_pt(m_event_data.mult_r03, m_jet_eta_max_r03, 0.3, "mult");
   }
 
   if (m_do_unsub)
   {
     // Process unsubtracted jets
-    fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02);
-    check_high_pt(m_event_data.unsub_r02, m_jet_eta_max_r02, 0.2, "unsub");
-
-    fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03);
-    check_high_pt(m_event_data.unsub_r03, m_jet_eta_max_r03, 0.3, "unsub");
+    fill_jet_hists(m_event_data.unsub_r02, 0, m_hists.unsub_r02, m_jet_eta_max_r02, 0.2, "unsub");
+    fill_jet_hists(m_event_data.unsub_r03, 0, m_hists.unsub_r03, m_jet_eta_max_r03, 0.3, "unsub");
   }
 }
 
@@ -1339,11 +1317,12 @@ void JetAnalysisv3::save_results() const
     }
     else
     {
-      csv_file << "filename,event_id,leading_pT,Radius,Subtraction_Type\n";
+      csv_file << "filename,event_id,njets,centrality,zvtx,leading_pT,Radius,Subtraction_Type\n";
       for (const auto &entry : m_high_pt_events)
       {
-        csv_file << std::format("{},{},{:.4f},{:.1f},{}\n",
+        csv_file << std::format("{},{},{},{:.2f},{:.4f},{:.4f},{:.1f},{}\n",
                                 entry.filename, entry.event_id,
+                                entry.njets, entry.centrality, entry.zvtx,
                                 entry.leading_pt, entry.radius,
                                 entry.subtraction_type);
       }
