@@ -19,6 +19,31 @@ For running on MC, use one of the following macros:
 
 The MC macros import mass histograms that have been pre-generated and merged from a much larger dataset. To regenerate these mass histograms, `condor_submit` the job file `mass_histograms/submit_MC.job`, and run `mass_histograms/merge_MC.sh` to merge into the appropriate input file locations.
 
+### Closure Test
+
+The MC closure test is performed on the simulation samples residing in `/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/`. Due to the large number of $\Lambda$ and $K_{S}^{0}$ in the simulation sample, the closure test uses the binned workflow. To replicate the results, do the following:
+
+- Generate mass histograms using `mass_histograms/plot_mass.C`, via Condor job `mass_histograms/submit_MC.job`. [Note: this is already done most of the time.]
+- Merge the mass histograms using `mass_histograms/merge_MC.sh`. [Note: this is also usually already done.]
+- Analyze the mass histograms and plot results using `yield_and_ratios/run_all_MC.sh`, creating the output files `yield_and_ratios/fits_MC.root`, `fits_MC_pos.root`, and `fits_MC_neg.root` for each of the parity-inclusive and parity-separated analyses; this also creates plots in the folders `yield_and_ratios/plots_MC`, `plots_MC_pos`, and `plots_MC_neg` (N.B. currently you may have to ensure those folders exist before you run this step).
+- Generate a truth reference using `truth_ratio/calculate_truth_ratio.C`, via Condor job `truth_ratio/submit_truth_ratio_all.job`.
+- Merge the truth histograms using `truth_ratio/merge_output.sh`.
+- Compare the MC reco and truth by running `truth_ratio/run_truth_comparison.sh`, which will create plots in the folder `truth_ratio/plots`.
+
+The main analysis macros are `yield_and_ratios/Lambda_Kshort_ratio_MC.C`, `yield_and_ratios/Lambda_Kshort_ratio_MC_pos.C`, and `yield_and_ratios/Lambda_Kshort_ratio_MC_neg.C`, which correspond to the $(\Lambda+\overline{\Lambda})/2K_{S}^{0}$, $\Lambda/K_{S}^{0}$, and $\overline{\Lambda}/K_{S}^{0}$ analyses respectively. They already point to the most updated versions of the corrections; if you'd like to recalculate the corrections yourself, perform the following steps:
+
+For the geometric acceptance correction:
+
+- Calculate the geometric acceptance for each file using `geometric_acceptance/analysis/evaluator_geoAccept.C`, via Condor job `geometric_acceptance/analysis/submit_eval_geomAccept.job`.
+- Merge the geometric acceptance files and calculate the correction using `geometric_acceptance/analysis/merge_geomAccept_hists.sh`.
+
+For the cut efficiency correction:
+
+- Calculate the cut efficiency for each file using `swimming_correction/CutEfficiency_mjp.C`, via Condor job `swimming_correction/submit_cuteff_mjp.job`.
+- Merge the cut efficiency files and calculate the correction using `swimming_correction/merge_cutefficiency_mjp.sh`.
+
+For the closure test, the lambda feed-down is quite small due to the nature of the sample, and the tracking efficiency correction is only applied to data in any case, so neither of those corrections are applied.
+
 ## General Workflow Concepts
 
 The core object that does the "actual analysis" part (extraction of yield, calculation of ratio, application of corrections) is `yield_and_ratios/ResonanceRatio.h`. The objects used for differential and integrated yield extraction are instances of RooAbsData, therefore it can accept both binned and unbinned inputs. There are two different general ways of setting this object up, corresponding to unbinned and binned inputs respectively:
