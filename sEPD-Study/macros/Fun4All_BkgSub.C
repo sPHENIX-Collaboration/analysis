@@ -25,6 +25,7 @@
 
 #include <fun4all/Fun4AllHistoManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 #include <fun4all/Fun4AllBase.h>
@@ -51,9 +52,9 @@ R__LOAD_LIBRARY(libsEPDValidation.so)
 R__LOAD_LIBRARY(libTreeFiller.so)
 
 void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00068144-00000.root",
-                    const std::string &flist_dst_zdc = "/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/68144/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00068144-00000.root",
-                    const std::string &flist_dst_sepd = "DST_SEPD_RAW_run3auau_pro001_pcdb001_v001-00068144-00000.root",
-                    const std::string &input_QVecCalib="default",
+                    const std::string &flist_dst_zdc = "",
+                    const std::string &flist_dst_sepd = "",
+                    const std::string &input_QVecCalib = "default",
                     const std::string &output = "test.root",
                     const std::string &output_tree = "tree.root",
                     int do_flow = 3,
@@ -64,17 +65,21 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     const std::string &eta_calib_direct_path = "",
                     const std::string &event_list = "",
                     bool do_rcone = false,
-                    bool do_mult = true)
+                    bool do_mult = true,
+                    const std::string &output_dst = "")
 {
+  bool is_single_dst = flist_dst_zdc.empty() || flist_dst_zdc == "none";
 
-  // Extract runnumber from first file within list
-  int runnumber;
+  // Extract runnumber and segment from first file within list
+  int runnumber = 0;
+  int segment = 0;
   bool isFileList = true;
   // single file
   if (flist_dst_calofit.ends_with(".root"))
   {
     std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(flist_dst_calofit);
     runnumber = runseg.first;
+    segment = runseg.second;
     isFileList = false;
   }
   // list of files
@@ -89,18 +94,27 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
     getline(infile_stream, filepath);
     std::pair<int, int> runseg = Fun4AllUtils::GetRunSegment(filepath);
     runnumber = runseg.first;
+    segment = runseg.second;
     infile_stream.close();
   }
 
   std::cout << "########################" << std::endl;
   std::cout << "Run Parameters" << std::endl;
-  std::cout << "input calofit: " << flist_dst_calofit << std::endl;
-  std::cout << "input zdc: " << flist_dst_zdc << std::endl;
-  std::cout << "input sepd: " << flist_dst_sepd << std::endl;
+  if (is_single_dst)
+  {
+    std::cout << "input single DST: " << flist_dst_calofit << std::endl;
+  }
+  else
+  {
+    std::cout << "input calofit: " << flist_dst_calofit << std::endl;
+    std::cout << "input zdc: " << flist_dst_zdc << std::endl;
+    std::cout << "input sepd: " << flist_dst_sepd << std::endl;
+  }
   std::cout << "Run: " << runnumber << std::endl;
   std::cout << "QVec Calib: " << input_QVecCalib << std::endl;
   std::cout << "output: " << output << std::endl;
   std::cout << "output tree: " << output_tree << std::endl;
+  std::cout << "output dst: " << output_dst << std::endl;
   std::cout << "do_flow: " << do_flow << std::endl;
   std::cout << "nEvents: " << nEvents << std::endl;
   std::cout << "nSkip: " << nSkip << std::endl;
@@ -260,23 +274,67 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   tree_filler->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(tree_filler);
 
-  const std::vector<std::pair<std::string, std::string>> input_files = {
-      {"calofitting", flist_dst_calofit},
-      {"zdc", flist_dst_zdc},
-      {"sepd", flist_dst_sepd}};
-
-  for (const auto& [name, filepath] : input_files)
+  // Output DST for detailed events (event_id or event_list)
+  if (do_detailed && output_dst != "none")
   {
-    Fun4AllInputManager* in = new Fun4AllDstInputManager(name);
+    std::string dst_name = output_dst;
+    if (dst_name.empty())
+    {
+      dst_name = std::format("dst-{:08d}-{:05d}.root", runnumber, segment);
+    }
+
+    Fun4AllDstOutputManager *dst_out = new Fun4AllDstOutputManager("DSTOUT", dst_name);
+    dst_out->SplitLevel(99);
+    dst_out->AddNode("Sync");
+    dst_out->AddNode("EventHeader");
+    dst_out->AddNode("14001");
+    dst_out->AddNode("MbdRawContainer");
+    dst_out->AddNode("TOWERS_CEMC");
+    dst_out->AddNode("TOWERS_HCALIN");
+    dst_out->AddNode("TOWERS_HCALOUT");
+    dst_out->AddNode("Zdcinfo");
+    dst_out->AddNode("9001");
+    dst_out->AddNode("9002");
+    dst_out->AddNode("9003");
+    dst_out->AddNode("9004");
+    dst_out->AddNode("9005");
+    dst_out->AddNode("9006");
+    se->registerOutputManager(dst_out);
+  }
+
+  if (is_single_dst)
+  {
+    Fun4AllInputManager* in = new Fun4AllDstInputManager("DSTin");
     if (isFileList)
     {
-      in->AddListFile(filepath);
+      in->AddListFile(flist_dst_calofit);
     }
     else
     {
-      in->AddFile(filepath);
+      in->AddFile(flist_dst_calofit);
     }
     se->registerInputManager(in);
+  }
+  else
+  {
+    const std::vector<std::pair<std::string, std::string>> input_files = {
+        {"calofitting", flist_dst_calofit},
+        {"zdc", flist_dst_zdc},
+        {"sepd", flist_dst_sepd}};
+
+    for (const auto& [name, filepath] : input_files)
+    {
+      Fun4AllInputManager* in = new Fun4AllDstInputManager(name);
+      if (isFileList)
+      {
+        in->AddListFile(filepath);
+      }
+      else
+      {
+        in->AddFile(filepath);
+      }
+      se->registerInputManager(in);
+    }
   }
 
   se->run(nEvents+nSkip);
@@ -297,4 +355,27 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "All done!" << std::endl;
   gSystem->Exit(0);
   std::quick_exit(0);
+}
+
+// ----------------------------------------------------------------------------
+// Overloaded Wrapper for Single DST Input
+// ----------------------------------------------------------------------------
+void Fun4All_BkgSub(const std::string &input_dst,
+                    const std::string &input_QVecCalib,
+                    const std::string &output,
+                    const std::string &output_tree,
+                    int do_flow,
+                    int nEvents,
+                    int nSkip,
+                    int event_id,
+                    const std::string &dbtag,
+                    const std::string &eta_calib_direct_path,
+                    const std::string &event_list,
+                    bool do_rcone,
+                    bool do_mult,
+                    const std::string &output_dst)
+{
+  Fun4All_BkgSub(input_dst, /*flist_dst_zdc=*/"", /*flist_dst_sepd=*/"",
+                 input_QVecCalib, output, output_tree, do_flow, nEvents, nSkip, event_id,
+                 dbtag, eta_calib_direct_path, event_list, do_rcone, do_mult, output_dst);
 }
