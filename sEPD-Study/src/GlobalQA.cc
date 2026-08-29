@@ -38,16 +38,13 @@ int GlobalQA::Init([[maybe_unused]] PHCompositeNode *topNode)
   if (tree)
   {
     // sEPD - Event Plane
-    if (m_do_ep)
-    {
-      tree->Branch("psi2_raw_S", &m_data.psi2_raw_S);
-      tree->Branch("psi2_raw_N", &m_data.psi2_raw_N);
-      tree->Branch("psi2_raw_NS", &m_data.psi2_raw_NS);
+    tree->Branch("psi2_raw_S", &m_data.psi2_raw_S);
+    tree->Branch("psi2_raw_N", &m_data.psi2_raw_N);
+    tree->Branch("psi2_raw_NS", &m_data.psi2_raw_NS);
 
-      tree->Branch("psi2_S", &m_data.psi2_S);
-      tree->Branch("psi2_N", &m_data.psi2_N);
-      tree->Branch("psi2_NS", &m_data.psi2_NS);
-    }
+    tree->Branch("psi2_S", &m_data.psi2_S);
+    tree->Branch("psi2_N", &m_data.psi2_N);
+    tree->Branch("psi2_NS", &m_data.psi2_NS);
 
     if (m_do_sepd)
     {

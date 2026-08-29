@@ -235,16 +235,13 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   calo_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
   se->registerSubsystem(calo_qa);
 
-  if(do_flow)
-  {
-    // Global QA
-    GlobalQA* global_qa = new GlobalQA();
-    global_qa->set_do_ep(true);
-    global_qa->set_do_sepd(false);
-    global_qa->set_do_mbd(false);
-    global_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
-    se->registerSubsystem(global_qa);
-  }
+  // Global QA
+  GlobalQA* global_qa = new GlobalQA();
+  global_qa->set_do_ep(do_flow);
+  global_qa->set_do_sepd(false);
+  global_qa->set_do_mbd(false);
+  global_qa->Verbosity(Fun4AllBase::VERBOSITY_QUIET);
+  se->registerSubsystem(global_qa);
 
   // Jet Validation
   JetValidationv3* jet_validation = new JetValidationv3();
