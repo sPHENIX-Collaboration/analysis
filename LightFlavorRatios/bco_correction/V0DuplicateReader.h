@@ -165,8 +165,8 @@ class V0DuplicateReader
   {
     m_tree->SetBranchAddress("runNumber", &m_runNumber);
     m_tree->SetBranchAddress("eventNumber", &m_eventNumber);
-    m_tree->SetBranchAddress("BCO", &m_bco);
-    m_tree->SetBranchAddress("event_bco", &m_eventBCO);
+    m_tree->SetBranchAddress("Collision_BCO", &m_bco);
+    m_tree->SetBranchAddress("GL1_BCO", &m_eventBCO);
   }
 
   void setupParticleBranches()

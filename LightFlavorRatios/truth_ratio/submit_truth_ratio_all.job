@@ -1,0 +1,12 @@
+Universe           = vanilla
+Executable         = run_truth_ratio_all.sh
+Output          = /sphenix/user/mjpeters/analysis/LightFlavorRatios/truth_ratio/logs/truth_ratio_$(Process).out
+Error           = /sphenix/user/mjpeters/analysis/LightFlavorRatios/truth_ratio/logs/truth_ratio_$(Process).err
+Log             = /tmp/log_mjpeters/truth_ratio_$(Process).log
+Initialdir      = .
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 2GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(Process)
+Queue 10000
