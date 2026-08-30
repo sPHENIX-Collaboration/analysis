@@ -61,9 +61,12 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                      bins_emcal_phi, 0, bins_emcal_phi,
                                      bins_emcal_eta, 0, bins_emcal_eta);
 
-    m_hists.h2EMCalRetowered = new TProfile2D("h2EMCalRetowered", "EMCal; Tower Index #phi; Tower Index #eta",
-                                              bins_hcal_phi, 0, bins_hcal_phi,
-                                              bins_hcal_eta, 0, bins_hcal_eta);
+    if (m_do_retower)
+    {
+      m_hists.h2EMCalRetowered = new TProfile2D("h2EMCalRetowered", "EMCal; Tower Index #phi; Tower Index #eta",
+                                                bins_hcal_phi, 0, bins_hcal_phi,
+                                                bins_hcal_eta, 0, bins_hcal_eta);
+    }
 
     m_hists.h2IHCal = new TProfile2D("h2IHCal", "IHCal; Tower Index #phi; Tower Index #eta",
                                      bins_hcal_phi, 0, bins_hcal_phi,
@@ -77,9 +80,12 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                    bins_energy, energy_low, energy_high,
                                    bins_cent, cent_low, cent_high);
 
-    m_hists.h2EMCalRetoweredCent = new TH2F("h2EMCalRetoweredCent", "EMCal; Tower Energy [GeV]; Centrality [%]",
-                                            bins_energy, energy_low, energy_high,
-                                            bins_cent, cent_low, cent_high);
+    if (m_do_retower)
+    {
+      m_hists.h2EMCalRetoweredCent = new TH2F("h2EMCalRetoweredCent", "EMCal; Tower Energy [GeV]; Centrality [%]",
+                                              bins_energy, energy_low, energy_high,
+                                              bins_cent, cent_low, cent_high);
+    }
 
     m_hists.h2IHCalCent = new TH2F("h2IHCalCent", "IHCal; Tower Energy [GeV]; Centrality [%]",
                                    bins_energy, energy_low, energy_high,
@@ -124,12 +130,18 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
     Fun4AllServer* se = Fun4AllServer::instance();
 
     se->registerHisto(m_hists.h2EMCal);
-    se->registerHisto(m_hists.h2EMCalRetowered);
+    if (m_do_retower)
+    {
+      se->registerHisto(m_hists.h2EMCalRetowered);
+    }
     se->registerHisto(m_hists.h2IHCal);
     se->registerHisto(m_hists.h2OHCal);
 
     se->registerHisto(m_hists.h2EMCalCent);
-    se->registerHisto(m_hists.h2EMCalRetoweredCent);
+    if (m_do_retower)
+    {
+      se->registerHisto(m_hists.h2EMCalRetoweredCent);
+    }
     se->registerHisto(m_hists.h2IHCalCent);
     se->registerHisto(m_hists.h2OHCalCent);
 
@@ -156,8 +168,11 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
       tree->Branch("emcal_base_tower_index", &m_data.emcal_base_tower_index);
       tree->Branch("emcal_base_tower_energy", &m_data.emcal_base_tower_energy);
 
-      tree->Branch("emcal_retower_tower_index", &m_data.emcal_retower_tower_index);
-      tree->Branch("emcal_retower_tower_energy", &m_data.emcal_retower_tower_energy);
+      if (m_do_retower)
+      {
+        tree->Branch("emcal_retower_tower_index", &m_data.emcal_retower_tower_index);
+        tree->Branch("emcal_retower_tower_energy", &m_data.emcal_retower_tower_energy);
+      }
 
       tree->Branch("ihcal_tower_index", &m_data.ihcal_tower_index);
       tree->Branch("ihcal_tower_energy", &m_data.ihcal_tower_energy);
@@ -213,22 +228,22 @@ int CaloQA::process_centrality(PHCompositeNode *topNode)
 int CaloQA::process_calo(PHCompositeNode *topNode)
 {
   auto* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
-  auto* towersCEMCRetowered = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER");
+  auto* towersCEMCRetowered = m_do_retower ? findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER") : nullptr;
   auto* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   auto* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
 
   double cent = m_data.centrality;
 
-  if (!towersCEMC || !towersCEMCRetowered || !towersIHCal || !towersOHCal)
+  if (!towersCEMC || !towersIHCal || !towersOHCal || (m_do_retower && !towersCEMCRetowered))
   {
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  size_t nTowersCEMC = towersCEMCRetowered->size();
+  size_t nTowersCEMC = (m_do_retower && towersCEMCRetowered) ? towersCEMCRetowered->size() : 0;
   size_t nTowersIHCal = towersIHCal->size();
   size_t nTowersOHCal = towersOHCal->size();
 
-  if(nTowersCEMC != nTowersIHCal || nTowersCEMC != nTowersOHCal)
+  if(nTowersIHCal != nTowersOHCal || (m_do_retower && nTowersCEMC != nTowersIHCal))
   {
     std::cout << "Calo Contains Missing Towers!" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
@@ -276,7 +291,7 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
   }
 
   double totalCaloE = 0;
-  for (unsigned int towerIndex = 0; towerIndex < towersCEMCRetowered->size(); ++towerIndex)
+  for (unsigned int towerIndex = 0; towerIndex < towersIHCal->size(); ++towerIndex)
   {
     unsigned int iphi = 0;
     unsigned int ieta = 0;
@@ -287,23 +302,26 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
     }
 
-    auto* towerCEMC = towersCEMCRetowered->get_tower_at_channel(towerIndex);
-    if(towerCEMC && towerCEMC->get_isGood())
+    if (m_do_retower && towersCEMCRetowered)
     {
-      float energy = towerCEMC->get_energy();
-      m_data.emcal_energy += energy;
-      totalCaloE += energy;
-
-      if (m_do_detailed)
+      auto* towerCEMC = towersCEMCRetowered->get_tower_at_channel(towerIndex);
+      if(towerCEMC && towerCEMC->get_isGood())
       {
-        m_data.emcal_retower_tower_index.push_back(static_cast<int>(towerIndex));
-        m_data.emcal_retower_tower_energy.push_back(energy);
-      }
+        float energy = towerCEMC->get_energy();
+        m_data.emcal_energy += energy;
+        totalCaloE += energy;
 
-      if (m_do_hists)
-      {
-        m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
-        m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
+        if (m_do_detailed)
+        {
+          m_data.emcal_retower_tower_index.push_back(static_cast<int>(towerIndex));
+          m_data.emcal_retower_tower_energy.push_back(energy);
+        }
+
+        if (m_do_hists)
+        {
+          m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
+          m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
+        }
       }
     }
 
