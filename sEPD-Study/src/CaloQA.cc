@@ -278,6 +278,15 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
   double totalCaloE = 0;
   for (unsigned int towerIndex = 0; towerIndex < towersCEMCRetowered->size(); ++towerIndex)
   {
+    unsigned int iphi = 0;
+    unsigned int ieta = 0;
+    if (m_do_hists)
+    {
+      unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
+      iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
+      ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
+    }
+
     auto* towerCEMC = towersCEMCRetowered->get_tower_at_channel(towerIndex);
     if(towerCEMC && towerCEMC->get_isGood())
     {
@@ -293,10 +302,6 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
 
       if (m_do_hists)
       {
-        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
-        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-
         m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
         m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
       }
@@ -317,10 +322,6 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
 
       if (m_do_hists)
       {
-        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
-        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-
         m_hists.h2IHCal->Fill(iphi, ieta, energy);
         m_hists.h2IHCalCent->Fill(energy, cent);
 
@@ -350,10 +351,6 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
 
       if (m_do_hists)
       {
-        unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
-        unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
-        unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
-
         m_hists.h2OHCal->Fill(iphi, ieta, energy);
         m_hists.h2OHCalCent->Fill(energy, cent);
 
