@@ -26,7 +26,10 @@ class EventQA : public SubsysReco
 
   void set_do_abort(bool b) { m_doAbort = b; }
   void set_do_hist(bool b = true) { m_do_hist = b; }
+  void set_do_tree(bool b = true) { m_do_tree = b; }
   void set_cent_max(double cent_max) { m_cuts.m_cent_max = cent_max; }
+
+  bool get_do_tree() const { return m_do_tree; }
 
  private:
   int process_event_check(PHCompositeNode *topNode);
@@ -34,6 +37,7 @@ class EventQA : public SubsysReco
 
   bool m_doAbort{true};
   bool m_do_hist{true};
+  bool m_do_tree{true};
 
   struct HistConfig
   {

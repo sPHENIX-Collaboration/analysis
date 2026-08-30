@@ -40,12 +40,14 @@ class CaloQA : public SubsysReco
   void set_do_mult(bool b = true) { m_do_mult = b; }
   void set_do_retower(bool b = true) { m_do_retower = b; }
   void set_do_cemc_retower(bool b = true) { m_do_retower = b; }
+  void set_do_tree(bool b = true) { m_do_tree = b; }
 
   bool get_do_detailed() const { return m_do_detailed; }
   bool get_do_iter() const { return m_do_iter; }
   bool get_do_mult() const { return m_do_mult; }
   bool get_do_retower() const { return m_do_retower; }
   bool get_do_cemc_retower() const { return m_do_retower; }
+  bool get_do_tree() const { return m_do_tree; }
 
  private:
 
@@ -158,6 +160,7 @@ class CaloQA : public SubsysReco
   bool m_do_iter{false};
   bool m_do_mult{false};
   bool m_do_retower{true};
+  bool m_do_tree{true};
 };
 
 #endif  // CALOCHECK_H

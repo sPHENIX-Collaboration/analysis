@@ -65,13 +65,16 @@ int EventQA::Init([[maybe_unused]] PHCompositeNode *topNode)
     }
   }
 
-  TTree *tree = TreeFiller::getTree();
-  if (tree)
+  if (m_do_tree)
   {
-    tree->Branch("run", &m_data.run);
-    tree->Branch("event", &m_data.event);
-    tree->Branch("zvtx", &m_data.zvtx);
-    tree->Branch("centrality", &m_data.centrality);
+    TTree *tree = TreeFiller::getTree();
+    if (tree)
+    {
+      tree->Branch("run", &m_data.run);
+      tree->Branch("event", &m_data.event);
+      tree->Branch("zvtx", &m_data.zvtx);
+      tree->Branch("centrality", &m_data.centrality);
+    }
   }
 
   return Fun4AllReturnCodes::EVENT_OK;

@@ -156,52 +156,55 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
     se->registerHisto(m_hists.h2CentralityTotalCaloE);
   }
 
-  TTree* tree = TreeFiller::getTree();
-  if (tree)
+  if (m_do_tree)
   {
-    tree->Branch("emcal_energy", &m_data.emcal_energy);
-    tree->Branch("ihcal_energy", &m_data.ihcal_energy);
-    tree->Branch("ohcal_energy", &m_data.ohcal_energy);
-
-    if (m_do_detailed)
+    TTree* tree = TreeFiller::getTree();
+    if (tree)
     {
-      tree->Branch("emcal_base_tower_index", &m_data.emcal_base_tower_index);
-      tree->Branch("emcal_base_tower_energy", &m_data.emcal_base_tower_energy);
+      tree->Branch("emcal_energy", &m_data.emcal_energy);
+      tree->Branch("ihcal_energy", &m_data.ihcal_energy);
+      tree->Branch("ohcal_energy", &m_data.ohcal_energy);
 
-      if (m_do_retower)
+      if (m_do_detailed)
       {
-        tree->Branch("emcal_retower_tower_index", &m_data.emcal_retower_tower_index);
-        tree->Branch("emcal_retower_tower_energy", &m_data.emcal_retower_tower_energy);
-      }
+        tree->Branch("emcal_base_tower_index", &m_data.emcal_base_tower_index);
+        tree->Branch("emcal_base_tower_energy", &m_data.emcal_base_tower_energy);
 
-      tree->Branch("ihcal_tower_index", &m_data.ihcal_tower_index);
-      tree->Branch("ihcal_tower_energy", &m_data.ihcal_tower_energy);
+        if (m_do_retower)
+        {
+          tree->Branch("emcal_retower_tower_index", &m_data.emcal_retower_tower_index);
+          tree->Branch("emcal_retower_tower_energy", &m_data.emcal_retower_tower_energy);
+        }
 
-      tree->Branch("ohcal_tower_index", &m_data.ohcal_tower_index);
-      tree->Branch("ohcal_tower_energy", &m_data.ohcal_tower_energy);
+        tree->Branch("ihcal_tower_index", &m_data.ihcal_tower_index);
+        tree->Branch("ihcal_tower_energy", &m_data.ihcal_tower_energy);
 
-      if (m_do_iter)
-      {
-        tree->Branch("iter_emcal_tower_index", &m_data.iter_emcal_tower_index);
-        tree->Branch("iter_emcal_tower_energy", &m_data.iter_emcal_tower_energy);
+        tree->Branch("ohcal_tower_index", &m_data.ohcal_tower_index);
+        tree->Branch("ohcal_tower_energy", &m_data.ohcal_tower_energy);
 
-        tree->Branch("iter_ihcal_tower_index", &m_data.iter_ihcal_tower_index);
-        tree->Branch("iter_ihcal_tower_energy", &m_data.iter_ihcal_tower_energy);
+        if (m_do_iter)
+        {
+          tree->Branch("iter_emcal_tower_index", &m_data.iter_emcal_tower_index);
+          tree->Branch("iter_emcal_tower_energy", &m_data.iter_emcal_tower_energy);
 
-        tree->Branch("iter_ohcal_tower_index", &m_data.iter_ohcal_tower_index);
-        tree->Branch("iter_ohcal_tower_energy", &m_data.iter_ohcal_tower_energy);
-      }
+          tree->Branch("iter_ihcal_tower_index", &m_data.iter_ihcal_tower_index);
+          tree->Branch("iter_ihcal_tower_energy", &m_data.iter_ihcal_tower_energy);
 
-      if (m_do_mult)
-      {
-        tree->Branch("mult_emcal_tower_index", &m_data.mult_emcal_tower_index);
-        tree->Branch("mult_emcal_tower_energy", &m_data.mult_emcal_tower_energy);
+          tree->Branch("iter_ohcal_tower_index", &m_data.iter_ohcal_tower_index);
+          tree->Branch("iter_ohcal_tower_energy", &m_data.iter_ohcal_tower_energy);
+        }
 
-        tree->Branch("mult_ihcal_tower_index", &m_data.mult_ihcal_tower_index);
-        tree->Branch("mult_ihcal_tower_energy", &m_data.mult_ihcal_tower_energy);
+        if (m_do_mult)
+        {
+          tree->Branch("mult_emcal_tower_index", &m_data.mult_emcal_tower_index);
+          tree->Branch("mult_emcal_tower_energy", &m_data.mult_emcal_tower_energy);
 
-        tree->Branch("mult_ohcal_tower_index", &m_data.mult_ohcal_tower_index);
-        tree->Branch("mult_ohcal_tower_energy", &m_data.mult_ohcal_tower_energy);
+          tree->Branch("mult_ihcal_tower_index", &m_data.mult_ihcal_tower_index);
+          tree->Branch("mult_ihcal_tower_energy", &m_data.mult_ihcal_tower_energy);
+
+          tree->Branch("mult_ohcal_tower_index", &m_data.mult_ohcal_tower_index);
+          tree->Branch("mult_ohcal_tower_energy", &m_data.mult_ohcal_tower_energy);
+        }
       }
     }
   }
