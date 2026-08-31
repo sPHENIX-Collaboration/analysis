@@ -139,6 +139,15 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                          bins_adc, adc_low, adc_high,
                                          bins_chi2, chi2_low, chi2_high);
 
+    int bins_emcal_towers = bins_emcal_phi * bins_emcal_eta;
+    int bins_energy_wide = 350;
+    double energy_wide_low = -150;
+    double energy_wide_high = 200;
+
+    m_hists.h2EMCalEnergyTowerIndex = new TH2F("h2EMCalEnergyTowerIndex", "EMCal; Tower Index; Tower Energy [GeV]",
+                                               bins_emcal_towers, 0, bins_emcal_towers,
+                                               bins_energy_wide, energy_wide_low, energy_wide_high);
+
     Fun4AllServer* se = Fun4AllServer::instance();
 
     se->registerHisto(m_hists.h2EMCal);
@@ -167,6 +176,7 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
 
     se->registerHisto(m_hists.h2CentralityTotalCaloE);
     se->registerHisto(m_hists.h2EMCalChi2Energy);
+    se->registerHisto(m_hists.h2EMCalEnergyTowerIndex);
   }
 
   if (m_do_tree)
@@ -303,6 +313,7 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       {
         m_hists.h2EMCal->Fill(iphi, ieta, energy);
         m_hists.h2EMCalCent->Fill(energy, cent);
+        m_hists.h2EMCalEnergyTowerIndex->Fill(towerIndex, energy);
 
         if (tower->get_isZS())
         {
