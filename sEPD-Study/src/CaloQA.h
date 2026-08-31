@@ -76,6 +76,8 @@ class CaloQA : public SubsysReco
     TH2* h2OHCalNoZSCent{nullptr};
 
     TH2* h2CentralityTotalCaloE{nullptr};
+
+    TH2* h2EMCalChi2Energy{nullptr};
   };
 
   AnalysisHists m_hists;
