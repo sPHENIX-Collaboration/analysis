@@ -180,7 +180,8 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
 
         patch = Patch(facecolor=(1, 0, 0, 0.3), edgecolor='red', linewidth=1.5, linestyle='--',
                       label=r"$\chi^{2} > \min(\max(10^{4}, 0.01 \cdot \mathrm{ADC}^{2}), 10^{8})$")
-        ax.legend(handles=[patch], loc='upper right', frameon=True, facecolor='white', edgecolor='none', framealpha=0.8, fontsize=12)
+        legend_loc = 'upper left' if (logx and logy) else 'upper right'
+        ax.legend(handles=[patch], loc=legend_loc, frameon=True, facecolor='white', edgecolor='none', framealpha=0.8, fontsize=12)
 
         if not logx:
             info_text = (
@@ -211,7 +212,7 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
-def process_file(path, output_dir=None, logx=False, logy=False):
+def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=True, do_logx=False):
     path = Path(path)
     if not path.exists():
         return f"File not found: {path}"
@@ -236,6 +237,16 @@ def process_file(path, output_dir=None, logx=False, logy=False):
                 "h2EMCalChi2Energy",
             ]
 
+            plot_modes = []
+            if do_nolog:
+                plot_modes.append(("", False, False))
+            if do_logy:
+                plot_modes.append(("_logy", False, True))
+            if do_logxy:
+                plot_modes.append(("_logxy", True, True))
+            if do_logx:
+                plot_modes.append(("_logx", True, False))
+
             for h2_name in h2_names:
                 if h2_name not in file:
                     print(f"Warning: {h2_name} not found in {path}")
@@ -244,27 +255,21 @@ def process_file(path, output_dir=None, logx=False, logy=False):
                 hist2d = file[h2_name]
 
                 if run_output_dir is not None:
-                    suffix = ""
-                    if logx and logy:
-                        suffix = "_logxy"
-                    elif logx:
-                        suffix = "_logx"
-                    elif logy:
-                        suffix = "_logy"
-                    out_filename = f"run_{run_number}_{h2_name}{suffix}.png"
-                    output_path = run_output_dir / out_filename
-                    xlim_left = 1.0 if logx else 0
-                    ylim_bottom = 1.0 if logy else 0
-                    make_2d_plot(
-                        hist2d,
-                        run_number,
-                        output_path,
-                        hist_name=h2_name,
-                        xlim_left=xlim_left,
-                        ylim_bottom=ylim_bottom,
-                        logx=logx,
-                        logy=logy
-                    )
+                    for suffix, lx, ly in plot_modes:
+                        out_filename = f"run_{run_number}_{h2_name}{suffix}.png"
+                        output_path = run_output_dir / out_filename
+                        xlim_left = 1.0 if lx else 0
+                        ylim_bottom = 1.0 if ly else 0
+                        make_2d_plot(
+                            hist2d,
+                            run_number,
+                            output_path,
+                            hist_name=h2_name,
+                            xlim_left=xlim_left,
+                            ylim_bottom=ylim_bottom,
+                            logx=lx,
+                            logy=ly
+                        )
 
             return None
     except Exception as e:
@@ -275,8 +280,10 @@ def main():
     parser = argparse.ArgumentParser(description="Plot Calorimeter QA for sPHENIX.")
     parser.add_argument("-f", "--file", type=Path, help="Path to a text file containing ROOT file paths (one per line).")
     parser.add_argument("-o", "--output-dir", type=Path, default=Path("."), help="Directory to save the plots (default: current directory).")
-    parser.add_argument("--log-x", "--logx", dest="log_x", action="store_true", help="Plot x-axis on a log scale.")
-    parser.add_argument("--log-y", "--logy", dest="log_y", action="store_true", help="Plot y-axis on a log scale.")
+    parser.add_argument("--do-nolog", type=int, default=1, help="Generate linear/no-log scale plots (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-logy", type=int, default=1, help="Generate log-y scale plots (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-logxy", type=int, default=1, help="Generate log-xy scale plots (1=True, 0=False). Default: 1")
+    parser.add_argument("--do-logx", type=int, default=0, help="Generate log-x scale plots (1=True, 0=False). Default: 0")
     parser.add_argument("files", nargs="*", type=Path, help="List of ROOT file paths")
     args = parser.parse_args()
 
@@ -308,8 +315,10 @@ def main():
     process_func = functools.partial(
         process_file,
         output_dir=args.output_dir,
-        logx=args.log_x,
-        logy=args.log_y,
+        do_nolog=bool(args.do_nolog),
+        do_logy=bool(args.do_logy),
+        do_logxy=bool(args.do_logxy),
+        do_logx=bool(args.do_logx),
     )
     max_workers = min(os.cpu_count() or 4, 32)
 
