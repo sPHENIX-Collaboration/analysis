@@ -117,8 +117,12 @@ def clean_root_latex(text):
     # Replace ROOT TLatex # with \ for LaTeX math
     text = text.replace("#", "\\")
     if "$" not in text:
-        # Wrap LaTeX command terms (like \eta, \Psi) or terms containing subscripts/superscripts in math mode $...$
-        text = re.sub(r'(\\[a-zA-Z]+(?:_{[^}\s]+}|^{[^}\s]+}|_[a-zA-Z0-9]+|\^[a-zA-Z0-9]+)*|[a-zA-Z0-9\\_*|()]+(?:_{[^}\s]+}|^{[^}\s]+}|_[a-zA-Z0-9]+|\^[a-zA-Z0-9]+)+)', r'$\1$', text)
+        # Wrap LaTeX command terms (like \chi, \eta, \Psi) or terms containing subscripts/superscripts in math mode $...$
+        text = re.sub(
+            r'(\\[a-zA-Z]+(?:\^\{[^}\s]+\}|_\{[^}\s]+\}|\^[a-zA-Z0-9]+|_[a-zA-Z0-9]+)*|[a-zA-Z0-9\\_*|()]*(?:\^\{[^}\s]+\}|_\{[^}\s]+\}|\^[a-zA-Z0-9]+|_[a-zA-Z0-9]+)+|\\[a-zA-Z]+)',
+            r'$\1$',
+            text
+        )
     return text
 
 def get_hist_axis_titles(hist2d, hist_name=""):
