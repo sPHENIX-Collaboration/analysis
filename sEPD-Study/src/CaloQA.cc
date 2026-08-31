@@ -22,6 +22,7 @@
 #include <TTree.h>
 
 // c++
+#include <cmath>
 #include <format>
 
 //____________________________________________________________________________..
@@ -290,7 +291,12 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
         auto* towerRaw = towersCEMCRaw->get_tower_at_channel(towerIndex);
         if (towerRaw && !towerRaw->get_isHot())
         {
-          m_hists.h2EMCalChi2Energy->Fill(towerRaw->get_energy(), towerRaw->get_chi2());
+          float rawEnergy = towerRaw->get_energy();
+          float rawChi2 = towerRaw->get_chi2();
+          if (std::isfinite(rawEnergy) && std::isfinite(rawChi2))
+          {
+            m_hists.h2EMCalChi2Energy->Fill(rawEnergy, rawChi2);
+          }
         }
       }
 
@@ -302,6 +308,10 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       }
 
       double energy = tower->get_energy();
+      if (!std::isfinite(energy))
+      {
+        continue;
+      }
 
       if (m_do_detailed)
       {
@@ -345,19 +355,22 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       if(towerCEMC && towerCEMC->get_isGood())
       {
         float energy = towerCEMC->get_energy();
-        m_data.emcal_energy += energy;
-        totalCaloE += energy;
-
-        if (m_do_detailed)
+        if (std::isfinite(energy))
         {
-          m_data.emcal_retower_tower_index.push_back(static_cast<int>(towerIndex));
-          m_data.emcal_retower_tower_energy.push_back(energy);
-        }
+          m_data.emcal_energy += energy;
+          totalCaloE += energy;
 
-        if (m_do_hists)
-        {
-          m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
-          m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
+          if (m_do_detailed)
+          {
+            m_data.emcal_retower_tower_index.push_back(static_cast<int>(towerIndex));
+            m_data.emcal_retower_tower_energy.push_back(energy);
+          }
+
+          if (m_do_hists)
+          {
+            m_hists.h2EMCalRetowered->Fill(iphi, ieta, energy);
+            m_hists.h2EMCalRetoweredCent->Fill(energy, cent);
+          }
         }
       }
     }
@@ -366,27 +379,30 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
     if(towerIHCal && towerIHCal->get_isGood())
     {
       float energy = towerIHCal->get_energy();
-      m_data.ihcal_energy += energy;
-      totalCaloE += energy;
-
-      if (m_do_detailed)
+      if (std::isfinite(energy))
       {
-        m_data.ihcal_tower_index.push_back(static_cast<int>(towerIndex));
-        m_data.ihcal_tower_energy.push_back(energy);
-      }
+        m_data.ihcal_energy += energy;
+        totalCaloE += energy;
 
-      if (m_do_hists)
-      {
-        m_hists.h2IHCal->Fill(iphi, ieta, energy);
-        m_hists.h2IHCalCent->Fill(energy, cent);
-
-        if (towerIHCal->get_isZS())
+        if (m_do_detailed)
         {
-          m_hists.h2IHCalZSCent->Fill(energy, cent);
+          m_data.ihcal_tower_index.push_back(static_cast<int>(towerIndex));
+          m_data.ihcal_tower_energy.push_back(energy);
         }
-        else
+
+        if (m_do_hists)
         {
-          m_hists.h2IHCalNoZSCent->Fill(energy, cent);
+          m_hists.h2IHCal->Fill(iphi, ieta, energy);
+          m_hists.h2IHCalCent->Fill(energy, cent);
+
+          if (towerIHCal->get_isZS())
+          {
+            m_hists.h2IHCalZSCent->Fill(energy, cent);
+          }
+          else
+          {
+            m_hists.h2IHCalNoZSCent->Fill(energy, cent);
+          }
         }
       }
     }
@@ -395,33 +411,36 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
     if(towerOHCal && towerOHCal->get_isGood())
     {
       float energy = towerOHCal->get_energy();
-      m_data.ohcal_energy += energy;
-      totalCaloE += energy;
-
-      if (m_do_detailed)
+      if (std::isfinite(energy))
       {
-        m_data.ohcal_tower_index.push_back(static_cast<int>(towerIndex));
-        m_data.ohcal_tower_energy.push_back(energy);
-      }
+        m_data.ohcal_energy += energy;
+        totalCaloE += energy;
 
-      if (m_do_hists)
-      {
-        m_hists.h2OHCal->Fill(iphi, ieta, energy);
-        m_hists.h2OHCalCent->Fill(energy, cent);
-
-        if (towerOHCal->get_isZS())
+        if (m_do_detailed)
         {
-          m_hists.h2OHCalZSCent->Fill(energy, cent);
+          m_data.ohcal_tower_index.push_back(static_cast<int>(towerIndex));
+          m_data.ohcal_tower_energy.push_back(energy);
         }
-        else
+
+        if (m_do_hists)
         {
-          m_hists.h2OHCalNoZSCent->Fill(energy, cent);
+          m_hists.h2OHCal->Fill(iphi, ieta, energy);
+          m_hists.h2OHCalCent->Fill(energy, cent);
+
+          if (towerOHCal->get_isZS())
+          {
+            m_hists.h2OHCalZSCent->Fill(energy, cent);
+          }
+          else
+          {
+            m_hists.h2OHCalNoZSCent->Fill(energy, cent);
+          }
         }
       }
     }
   }
 
-  if (m_do_hists)
+  if (m_do_hists && std::isfinite(totalCaloE) && std::isfinite(cent))
   {
     m_hists.h2CentralityTotalCaloE->Fill(totalCaloE, cent);
   }
