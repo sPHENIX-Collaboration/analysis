@@ -39,22 +39,18 @@ def create_trigger_qa_jobs(args):
 def create_calo_qa_jobs(args):
     manager = CondorJobManager(args, job_name="Calo QA")
     manager.add_file_to_check(args.f4a_macro)
-    manager.add_file_to_check(args.f4a_bin)
+    manager.add_file_to_check(args.calo_calib_macro)
     manager.add_dir_to_check(args.src_dir)
     manager.validate_paths()
 
-    total_files = manager.log_initialization({
+    manager.log_initialization({
         'Fun4All Macro': Path(args.f4a_macro).resolve(),
-        'Fun4All Bin': Path(args.f4a_bin).resolve(),
+        'Calo Calib Macro': Path(args.calo_calib_macro).resolve(),
         'Source Directory': Path(args.src_dir).resolve()
     })
 
     files_dir = manager.prepare_directories()
-    manager.copy_dependencies(extra_files=[args.f4a_macro, args.f4a_bin], extra_dirs=[args.src_dir])
-
-    CONDOR_SUBMISSION_LIMIT = 100000
-    files_per_job = math.ceil(total_files / CONDOR_SUBMISSION_LIMIT)
-    manager.logger.info(f'Files Per Job: {files_per_job}')
+    manager.copy_dependencies(extra_files=[args.f4a_macro, args.calo_calib_macro], extra_dirs=[args.src_dir])
 
     jobs_file = manager.output_dir / 'jobs.list'
     jobs_file.unlink(missing_ok=True)
@@ -64,13 +60,13 @@ def create_calo_qa_jobs(args):
         manager.logger.info(f'Processing: {line}')
         file_stem = Path(line).stem
 
-        command = f'split --lines {files_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
+        command = f'split --lines {args.dst_per_job} {line} -d -a 3 {file_stem}- --additional-suffix=.list'
         run_command_and_log(command, manager.logger, files_dir, False)
 
         command = f'realpath {files_dir}/{file_stem}* >> {jobs_file.name}'
         run_command_and_log(command, manager.logger, manager.output_dir, False)
 
-    arguments = f"{manager.output_dir / Path(args.f4a_bin).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
+    arguments = f"{manager.output_dir / Path(args.f4a_macro).name} $(input_dst) test-$(ClusterId)-$(Process).root {args.events} {args.dbtag} {manager.output_dir}/output"
     manager.write_submit_file(arguments=arguments)
     manager.finalize_submission(queue_arg="input_dst from jobs.list")
 
@@ -182,9 +178,10 @@ def setup_qa_subparsers(subparsers):
     # calo_qa
     calo_qa = subparsers.add_parser('calo_qa', parents=[get_common_parser()], help='Create condor submission directory.')
     calo_qa.add_argument('-f', '--f4a-macro', type=str, default='macros/Fun4All_CaloQA.C', help='Fun4All Macro.')
-    calo_qa.add_argument('-b', '--f4a-bin', type=str, default='bin/Fun4All_CaloQA', help='Fun4All Bin.')
+    calo_qa.add_argument('-f5', '--calo-calib-macro', type=str, default='macros/Calo_Calib.C', help='Calo_Calib Macro.')
     calo_qa.set_defaults(
-        memory=2.0,
+        dst_per_job=1,
+        memory=1.5,
         condor_script='scripts/genFun4All_CaloQA.sh',
         func=create_calo_qa_jobs
     )
