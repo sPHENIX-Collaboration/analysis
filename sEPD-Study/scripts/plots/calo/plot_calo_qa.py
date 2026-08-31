@@ -109,19 +109,41 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
 
     values, xedges, yedges = hist2d.to_numpy()
 
+    # For the linear (no log) plot of h2EMCalChi2Energy, use customized variable y-binning
+    # so higher points have wider bin widths and are clearly visible.
+    plot_yedges = yedges
+    plot_values = values
+    if not logx and not logy and hist_name == "h2EMCalChi2Energy":
+        new_yedges = np.unique(np.concatenate([
+            np.arange(0, 10000, 100),
+            np.arange(10000, 30000, 500),
+            np.arange(30000, 60000, 1500),
+            np.arange(60000, 100000 + 4000, 4000)
+        ]))
+        y_centers = (yedges[:-1] + yedges[1:]) / 2.0
+        bin_idx = np.digitize(y_centers, new_yedges) - 1
+        n_new_y = len(new_yedges) - 1
+        rebinned_values = np.zeros((values.shape[0], n_new_y), dtype=values.dtype)
+        for k in range(n_new_y):
+            mask = (bin_idx == k)
+            if np.any(mask):
+                rebinned_values[:, k] = np.sum(values[:, mask], axis=1)
+        plot_yedges = new_yedges
+        plot_values = rebinned_values
+
     xlabel, ylabel = get_hist_axis_titles(hist2d, hist_name)
     if not xlabel and hist_name == "h2EMCalChi2Energy":
         xlabel = r"Tower Energy [ADC]"
     if not ylabel and hist_name == "h2EMCalChi2Energy":
         ylabel = r"$\chi^{2}$"
 
-    max_val = np.max(values) if values.size > 0 else 0
+    max_val = np.max(plot_values) if plot_values.size > 0 else 0
     if max_val <= 0:
-        mesh = ax.pcolormesh(xedges, yedges, values.T, cmap='viridis', rasterized=True)
+        mesh = ax.pcolormesh(xedges, plot_yedges, plot_values.T, cmap='viridis', rasterized=True, zorder=1)
     else:
-        values_masked = np.ma.masked_where(values <= 0, values)
+        values_masked = np.ma.masked_where(plot_values <= 0, plot_values)
         norm = LogNorm(vmin=1, vmax=max(max_val, 10))
-        mesh = ax.pcolormesh(xedges, yedges, values_masked.T, norm=norm, cmap='viridis', rasterized=True)
+        mesh = ax.pcolormesh(xedges, plot_yedges, values_masked.T, norm=norm, cmap='viridis', rasterized=True, zorder=1)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -180,8 +202,10 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
 
         patch = Patch(facecolor=(1, 0, 0, 0.3), edgecolor='red', linewidth=1.5, linestyle='--',
                       label=r"$\chi^{2} > \min(\max(10^{4}, 0.01 \cdot \mathrm{ADC}^{2}), 10^{8})$")
-        legend_loc = 'upper left' if (logx and logy) else 'upper right'
-        ax.legend(handles=[patch], loc=legend_loc, frameon=True, facecolor='white', edgecolor='none', framealpha=0.8, fontsize=12)
+        if logx and logy:
+            ax.legend(handles=[patch], loc='upper left', frameon=True, facecolor='white', edgecolor='none', framealpha=0.8, fontsize=12)
+        else:
+            ax.legend(handles=[patch], loc='lower right', bbox_to_anchor=(1.03, -0.02), frameon=True, facecolor='none', edgecolor='none', fontsize=12)
 
         if not logx:
             info_text = (
@@ -189,7 +213,7 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
                 f"Bad $\\chi^{{2}}$ Towers: {bad_towers:.2e}\n"
                 f"Bad $\\chi^{{2}}$ Percentage: {pct:.2f}%"
             )
-            ax.text(0.96, 0.78, info_text, transform=ax.transAxes, ha='right', va='top', fontsize=13,
+            ax.text(0.98, 0.08, info_text, transform=ax.transAxes, ha='right', va='bottom', fontsize=13,
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='none'))
 
     if not logx and np.max(xedges) >= 1000:
