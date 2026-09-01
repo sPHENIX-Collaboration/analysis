@@ -34,14 +34,11 @@
 
 #include "HF_selections.C"
 
-#include <geometricacceptance/GeometricAcceptance.h>
-
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libdecayfinder.so)
 R__LOAD_LIBRARY(libhftrackefficiency.so)
 R__LOAD_LIBRARY(libsimqa_modules.so)
-R__LOAD_LIBRARY(libGeometricAcceptance.so)
 
 int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lambdaKshort")
 {
@@ -68,8 +65,6 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   makeDirectory = "mkdir -p " + outDir + "evaluator";
   system(makeDirectory.c_str());
   makeDirectory = "mkdir -p " + outDir + "DST";
-  system(makeDirectory.c_str());
-  makeDirectory = "mkdir -p " + outDir + "geometricAcceptance";
   system(makeDirectory.c_str());
 
   //F4A setup
@@ -379,22 +374,6 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   out->StripNode("SvtxAlignmentStateMap");
   //out->SaveRunNode(0);
   se->registerOutputManager(out);
-
-  GeometricAcceptance* geoaccept_lambda = new GeometricAcceptance("GeometricAcceptance_Lambda");
-  geoaccept_lambda->setOutputFilename(outDir+"geometricAcceptance/Lambda0_geo_acceptance_"+processID+".root");
-  geoaccept_lambda->setMotherName("Lambda0");
-  geoaccept_lambda->setMotherPDGID(3122);
-  geoaccept_lambda->setDaughterPDGIDs({-211,2212});
-  geoaccept_lambda->includeConjugate();
-  se->registerSubsystem(geoaccept_lambda);
-
-  GeometricAcceptance* geoaccept_kshort = new GeometricAcceptance("GeometricAcceptance_Kshort");
-  geoaccept_kshort->setOutputFilename(outDir+"geometricAcceptance/K_S0_geo_acceptance_"+processID+".root");
-  geoaccept_kshort->setMotherName("K_S0");
-  geoaccept_kshort->setMotherPDGID(310);
-  geoaccept_kshort->setDaughterPDGIDs({211,-211});
-  geoaccept_kshort->includeConjugate(false);
-  se->registerSubsystem(geoaccept_kshort);
 
   se->run(nEvents);
 
