@@ -236,6 +236,47 @@ def make_2d_plot(hist2d, run_number, output_path, hist_name="", xlim_left=None, 
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
+def make_1d_proj_plot(hist2d, run_number, output_path, hist_name="", logy=True, rebin_x=20):
+    hep.style.use("ATLAS")
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    values, xedges, yedges = hist2d.to_numpy()
+    proj_x = np.sum(values, axis=1)
+
+    if rebin_x > 1 and len(proj_x) >= rebin_x:
+        if len(proj_x) % rebin_x == 0:
+            proj_x = proj_x.reshape(-1, rebin_x).sum(axis=1)
+            xedges = xedges[::rebin_x]
+        else:
+            n_bins = (len(proj_x) // rebin_x) * rebin_x
+            proj_x = proj_x[:n_bins].reshape(-1, rebin_x).sum(axis=1)
+            xedges = xedges[:n_bins + 1:rebin_x]
+
+    xlabel, _ = get_hist_axis_titles(hist2d, hist_name)
+    if not xlabel:
+        xlabel = r"Tower Energy [GeV]"
+
+    hep.histplot((proj_x, xedges), ax=ax, histtype='step', color='navy', linewidth=2)
+
+    if xlabel:
+        ax.set_xlabel(xlabel, loc='center')
+    ax.set_ylabel("Counts", loc='center')
+
+    if logy:
+        ax.set_yscale('log')
+        ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        max_val = np.max(proj_x) if proj_x.size > 0 else 1
+        ax.set_ylim(bottom=0.5, top=max(max_val * 5, 10))
+
+    ax.set_xlim(left=np.min(xedges), right=np.max(xedges))
+
+    ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
 def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=True, do_logx=False):
     path = Path(path)
     if not path.exists():
@@ -257,6 +298,7 @@ def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=Tr
             run_output_dir.mkdir(parents=True, exist_ok=True)
 
         with uproot.open(path) as file:
+            # 1. 2D QA Histograms
             h2_names = [
                 "h2EMCalChi2Energy",
             ]
@@ -294,6 +336,29 @@ def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=Tr
                             logx=lx,
                             logy=ly
                         )
+
+            # 2. 1D X-Projection QA Histograms
+            h1_proj_names = [
+                "h2EMCalZSCent",
+            ]
+
+            for h2_name in h1_proj_names:
+                if h2_name not in file:
+                    print(f"Warning: {h2_name} not found in {path}")
+                    continue
+
+                hist2d = file[h2_name]
+
+                if run_output_dir is not None:
+                    out_filename = f"run_{run_number}_{h2_name}.png"
+                    output_path = run_output_dir / out_filename
+                    make_1d_proj_plot(
+                        hist2d,
+                        run_number,
+                        output_path,
+                        hist_name=h2_name,
+                        logy=True
+                    )
 
             return None
     except Exception as e:
