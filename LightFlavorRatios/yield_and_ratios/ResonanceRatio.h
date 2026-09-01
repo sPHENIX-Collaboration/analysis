@@ -281,7 +281,7 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
   sideband_parameters.emplace_back("q1","q1",0.5,0.,1.);
   sideband_parameters.emplace_back("q2","q2",0.5,0.,1.);
   sideband_parameters.emplace_back("q3","q4",0.5,0.,1.);
-  sideband_parameters.emplace_back("q4","q4",0.5,0.,1.);
+  //sideband_parameters.emplace_back("q4","q4",0.5,0.,1.);
 
   std::string sidebandname = "sideband"+std::string(h_yield->GetName())+std::to_string(i);
 
@@ -293,8 +293,8 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
   double signal_window_width = model.right_sideband.first-model.left_sideband.second;
 
   RooRealVar mean("mean","mean",pdg_mass,(pdg_mass-0.5*signal_window_width),(pdg_mass+0.5*signal_window_width));
-  RooRealVar width1("width1","width1",0.2*signal_window_width,0.01*signal_window_width,2.*signal_window_width);
-  RooRealVar width2("width2","width2",0.2*signal_window_width,0.01*signal_window_width,2.*signal_window_width);
+  RooRealVar width1("width1","width1",0.2*signal_window_width,0.01*signal_window_width,1.*signal_window_width);
+  RooRealVar width2("width2","width2",0.2*signal_window_width,0.01*signal_window_width,1.*signal_window_width);
 
   std::string tag = std::string(h_yield->GetName())+std::to_string(i);
   std::string signalname = "signal"+std::string(h_yield->GetName())+std::to_string(i);
@@ -310,7 +310,7 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
   background_parameters.emplace_back("k1","k1",0.5,0.,1.);
   background_parameters.emplace_back("k2","k2",0.5,0.,1.);
   background_parameters.emplace_back("k3","k3",0.5,0.,1.);
-  background_parameters.emplace_back("k4","k4",0.5,0.,1.);
+  //background_parameters.emplace_back("k4","k4",0.5,0.,1.);
 
   for(int j=0;j<background_parameters.size();j++)
   {

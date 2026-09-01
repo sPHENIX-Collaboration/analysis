@@ -1,8 +1,9 @@
 #ifndef BINNING_H
 #define BINNING_H
 
-#include "TH1F.h"
-#include "TH2F.h"
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TTree.h>
 
 #include <map>
 #include <regex>
@@ -22,8 +23,8 @@ std::vector<std::string> cutvars_from_cutstring(std::string cutstring)
     bool is_numeric;
     try
     {
-      size_t nparsed;
-      double val = std::stod(statement,&nparsed);
+      size_t nparsed = 0;
+      std::stod(statement,&nparsed);
       is_numeric = (nparsed == statement.size());
     }
     catch(const std::invalid_argument&)
@@ -54,7 +55,7 @@ struct HistogramInfo
 
   HistogramInfo(const std::string& hname, const std::string& htitle, const std::vector<double>& hbins,
                 const std::string& haxislabel = "", const std::string& hcutstring = "")
-  : name(hname), title(htitle), bins(hbins), axis_label(haxislabel), cut_string(hcutstring)
+  : name(hname), title(htitle), axis_label(haxislabel), bins(hbins), cut_string(hcutstring)
   {
   }
 
@@ -70,7 +71,7 @@ struct HistogramInfo
     }
   }
 
-  std::string get_bin_selection(std::string var, int bin) const
+  std::string get_bin_selection(std::string var, size_t bin) const
   {
     if(bin==0) // underflow
     {
@@ -132,7 +133,7 @@ bool isIntBranch(TBranch* b)
 int findBin(float val, std::vector<double> bins)
 {
   int thisbin = -1;
-  for(int i=0; i<bins.size(); i++)
+  for(size_t i=0; i<bins.size(); i++)
   {
     if(val<bins[i])
     {
@@ -182,7 +183,7 @@ TH2F* make2DHistogram(const std::string& basename, const std::string& basetitle,
 std::vector<TH1F*> makeDifferentialHistograms(const HistogramInfo& hinfo_x, const HistogramInfo& hinfo_y)
 {
   std::vector<TH1F*> h_out;
-  for(int i=0; i<=hinfo_y.bins.size(); i++)
+  for(size_t i=0; i<=hinfo_y.bins.size(); i++)
   {
     const std::string name = hinfo_x.name + "_vs" + hinfo_y.name + "_" + std::to_string(i);
     const std::string title = hinfo_x.title + " vs. " + hinfo_y.title + 
@@ -203,7 +204,7 @@ namespace BinInfo
   std::string fiducial_cuts(const std::string& particle_name,const std::vector<HistogramInfo> variables)
   {
     std::string cut;
-    for(int i=0;i<variables.size();i++)
+    for(size_t i=0;i<variables.size();i++)
     {
       cut += particle_name+"_"+variables[i].name+">="+std::to_string(variables[i].bins.front())
              +" && "+particle_name+"_"+variables[i].name+"<="+std::to_string(variables[i].bins.back());
