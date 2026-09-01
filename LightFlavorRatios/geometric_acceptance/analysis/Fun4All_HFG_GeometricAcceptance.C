@@ -88,13 +88,34 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   FlagHandler *flag = new FlagHandler();
   se->registerSubsystem(flag);
 
-  ResonanceGeometricAcceptance* geoaccept_lambda = new ResonanceGeometricAcceptance("GeometricAcceptance_Lambda");
+  int geo_accept_verbosity = 1;
+
+  ResonanceGeometricAcceptance* geoaccept_lambda = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaInclusive");
   geoaccept_lambda->setOutputFilename(outDir+"geometricAcceptance/Lambda0_geo_acceptance_"+processID+".root");
   geoaccept_lambda->setMotherName("Lambda0");
   geoaccept_lambda->setMotherPDGID(3122);
   geoaccept_lambda->setDaughterPDGIDs({-211,2212});
   geoaccept_lambda->includeConjugate();
+  geoaccept_lambda->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_lambda);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_pos = new ResonanceGeometricAcceptance("GeometricAcceptance_Lambda");
+  geoaccept_lambda_pos->setOutputFilename(outDir+"geometricAcceptance/Lambda0_geo_acceptance_pos_"+processID+".root");
+  geoaccept_lambda_pos->setMotherName("Lambda0");
+  geoaccept_lambda_pos->setMotherPDGID(3122);
+  geoaccept_lambda_pos->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda_pos->includeConjugate(false);
+  geoaccept_lambda_pos->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_pos);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_neg = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaBar");
+  geoaccept_lambda_neg->setOutputFilename(outDir+"geometricAcceptance/Lambda0_geo_acceptance_neg_"+processID+".root");
+  geoaccept_lambda_neg->setMotherName("Lambda0");
+  geoaccept_lambda_neg->setMotherPDGID(-3122);
+  geoaccept_lambda_neg->setDaughterPDGIDs({211,-2212});
+  geoaccept_lambda_neg->includeConjugate(false);
+  geoaccept_lambda_neg->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_neg);
 
   ResonanceGeometricAcceptance* geoaccept_kshort = new ResonanceGeometricAcceptance("GeometricAcceptance_Kshort");
   geoaccept_kshort->setOutputFilename(outDir+"geometricAcceptance/K_S0_geo_acceptance_"+processID+".root");
@@ -102,6 +123,7 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   geoaccept_kshort->setMotherPDGID(310);
   geoaccept_kshort->setDaughterPDGIDs({211,-211});
   geoaccept_kshort->includeConjugate(false);
+  geoaccept_kshort->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_kshort);
 
 /*
