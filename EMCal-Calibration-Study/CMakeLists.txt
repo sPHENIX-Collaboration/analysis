@@ -94,3 +94,8 @@ target_link_libraries(doFitAndCalibUpdate PRIVATE ${STANDALONE_MACRO_LIBS})
 # --- quickHotMapGen ---
 add_executable(quickHotMapGen macros/quickHotMapGen.C)
 target_link_libraries(quickHotMapGen PRIVATE ${STANDALONE_MACRO_LIBS})
+
+# --- updateChannelCalib ---
+add_executable(updateChannelCalib macros/updateChannelCalib.C)
+target_link_libraries(updateChannelCalib PRIVATE ${STANDALONE_MACRO_LIBS})
+
