@@ -297,7 +297,7 @@ def make_1d_yproj_plot(hist2d, run_number, output_path, hist_name="", tower_inde
 
     _, ylabel = get_hist_axis_titles(hist2d, hist_name)
     if not ylabel:
-        ylabel = r"Tower Energy [GeV]"
+        ylabel = r"Raw Tower Energy [ADC]" if "Raw" in hist_name else r"Tower Energy [GeV]"
 
     hep.histplot((proj_y, yedges), ax=ax, histtype='step', color='navy', linewidth=2)
 
@@ -404,34 +404,38 @@ def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=Tr
                         logy=True
                     )
 
-            # 3. 1D Y-Projection QA Histograms for h2EMCalEnergyTowerIndex
-            h2_energy_index_name = "h2EMCalEnergyTowerIndex"
-            if h2_energy_index_name in file:
-                hist2d = file[h2_energy_index_name]
-                if run_output_dir is not None:
-                    # Full y-projection (all good towers)
-                    out_filename_all = f"run_{run_number}_{h2_energy_index_name}.png"
-                    output_path_all = run_output_dir / out_filename_all
-                    make_1d_yproj_plot(
-                        hist2d,
-                        run_number,
-                        output_path_all,
-                        hist_name=h2_energy_index_name,
-                        tower_index=None,
-                        logy=True,
-                    )
+            # 3. 1D Y-Projection QA Histograms for Tower Energy vs Index
+            h2_energy_index_names = [
+                "h2EMCalEnergyTowerIndex",
+                "h2EMCalRawEnergyTowerIndex",
+            ]
+            for h2_energy_name in h2_energy_index_names:
+                if h2_energy_name in file:
+                    hist2d = file[h2_energy_name]
+                    if run_output_dir is not None:
+                        # Full y-projection (all towers)
+                        out_filename_all = f"run_{run_number}_{h2_energy_name}.png"
+                        output_path_all = run_output_dir / out_filename_all
+                        make_1d_yproj_plot(
+                            hist2d,
+                            run_number,
+                            output_path_all,
+                            hist_name=h2_energy_name,
+                            tower_index=None,
+                            logy=True,
+                        )
 
-                    # Y-projection for specific tower index 2654
-                    out_filename_2654 = f"run_{run_number}_{h2_energy_index_name}_tower2654.png"
-                    output_path_2654 = run_output_dir / out_filename_2654
-                    make_1d_yproj_plot(
-                        hist2d,
-                        run_number,
-                        output_path_2654,
-                        hist_name=h2_energy_index_name,
-                        tower_index=2654,
-                        logy=True,
-                    )
+                        # Y-projection for specific tower index 2654
+                        out_filename_2654 = f"run_{run_number}_{h2_energy_name}_tower2654.png"
+                        output_path_2654 = run_output_dir / out_filename_2654
+                        make_1d_yproj_plot(
+                            hist2d,
+                            run_number,
+                            output_path_2654,
+                            hist_name=h2_energy_name,
+                            tower_index=2654,
+                            logy=True,
+                        )
 
             return None
     except Exception as e:
