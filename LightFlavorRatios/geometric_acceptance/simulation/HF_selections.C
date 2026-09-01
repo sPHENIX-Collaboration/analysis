@@ -17,7 +17,7 @@ R__LOAD_LIBRARY(libkfparticleqa.so)
 
 namespace HeavyFlavorReco
 {
-  int VERBOSITY_HF = 20;
+  int VERBOSITY_HF = 0;
 
   bool run_pipi_reco = false;
   bool run_ppi_reco = false; // set to true if needed

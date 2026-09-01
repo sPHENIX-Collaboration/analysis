@@ -56,9 +56,9 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   std::string infile_truth = infile_base_truth+processID+".root";
 
   //std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/" + channel + "_20260422_DetroitMB_CR_2_mode_pTref_1p4/";
-  std::string outDir = "./";
+  //std::string outDir = "./";
 
-  //std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/";
+  std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/";
 
   string makeDirectory = "mkdir -p " + outDir + "hfEff";
   system(makeDirectory.c_str());
