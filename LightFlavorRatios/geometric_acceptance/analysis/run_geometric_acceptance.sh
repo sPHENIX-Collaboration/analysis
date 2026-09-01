@@ -13,7 +13,7 @@ export ROOT_INCLUDE_PATH=$MYINSTALL/include:$ROOT_INCLUDE_PATH
 
 #source /opt/sphenix/core/bin/setup_local.sh $MYINSTALL
 
-root -l -q -b Fun4All_HFG_MB.C\(\"$1\",\"lambdaKshort\"\)
+root -l -q -b Fun4All_HFG_GeometricAcceptance.C\(\"$1\"\)
 
 #root.exe -q -b Fun4All_HFG.C\(\"$1\",\"cascade\"\)
 #root.exe -q -b Fun4All_HFG.C\(\"$1\"\)

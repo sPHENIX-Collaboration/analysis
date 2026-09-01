@@ -381,8 +381,8 @@ void plot_truth_comparison()
     TH1F* ratio_data_corr_neg = (TH1F*)fdata_neg->Get(reco_corrected_name.c_str());
 */
 
-    double lambda_BR = 0.638719992;
-    double Ks_BR = 0.691086452;
+    double lambda_BR = 0.641;
+    double Ks_BR = 0.692;
 
     for(TH1F* h : {ratio_reco_inc, ratio_reco_pos, ratio_reco_neg, ratio_reco_corr_inc, ratio_reco_corr_pos, ratio_reco_corr_neg})
 //                   ratio_data_inc, ratio_data_pos, ratio_data_neg, ratio_data_corr_inc, ratio_data_corr_pos, ratio_data_corr_neg})

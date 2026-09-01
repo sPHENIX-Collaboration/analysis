@@ -17,7 +17,7 @@ R__LOAD_LIBRARY(libkfparticleqa.so)
 
 namespace HeavyFlavorReco
 {
-  int VERBOSITY_HF = 0;
+  int VERBOSITY_HF = 20;
 
   bool run_pipi_reco = false;
   bool run_ppi_reco = false; // set to true if needed
@@ -73,9 +73,9 @@ namespace HeavyFlavorReco
   bool extraolate_tracks_to_secondary_vertex = false; // Set to false to ensure the pT map is accurate for asymmetry study
 
   //Used
-  float lf_cuts_setMinDIRA{-1.1};
-  float lf_cuts_setDecayLengthRange_min{-100000.};
-  float lf_cuts_setMinimumTrackPV_DCA_XY{-100000.};
+  float lf_cuts_setMinDIRA{-FLT_MAX}; // -1.1
+  float lf_cuts_setDecayLengthRange_min{-FLT_MAX}; // -100000.
+  float lf_cuts_setMinimumTrackPV_DCA_XY{-FLT_MAX}; // -100000.
   float lf_cuts_setMinMVTXhits{0};
   float lf_cuts_setMinINTThits{0};
   float lf_cuts_setMinTPChits{0};
@@ -84,22 +84,22 @@ namespace HeavyFlavorReco
 
   //Unused
   float lf_cuts_setMotherPV_DCA_StdDev{FLT_MAX};
-  float lf_cuts_setFlightDistancechi2{-1000000.};
-  float lf_cuts_setMinDIRA_XY{-1.1};
+  float lf_cuts_setFlightDistancechi2{-FLT_MAX}; // -100000.
+  float lf_cuts_setMinDIRA_XY{-FLT_MAX}; // -1.1
   float lf_cuts_setDecayLengthRange_max{FLT_MAX};
-  float lf_cuts_setDecayLengthRange_XY_min{-100000.};
+  float lf_cuts_setDecayLengthRange_XY_min{-FLT_MAX}; // -100000.
   float lf_cuts_setDecayLengthRange_XY_max{FLT_MAX};
-  float lf_cuts_setDecayTimeRange_XY_min{-100000.};
+  float lf_cuts_setDecayTimeRange_XY_min{-FLT_MAX}; // -100000.
   float lf_cuts_setDecayTimeRange_XY_max{FLT_MAX};
-  float lf_cuts_setDecayTimeRange_min{-100000.};
+  float lf_cuts_setDecayTimeRange_min{-FLT_MAX};
   float lf_cuts_setDecayTimeRange_max{FLT_MAX};
-  float lf_cuts_setMinDecayTimeSignificance{-1e5};
-  float lf_cuts_setMinDecayLengthSignificance{-1e5};
-  float lf_cuts_setMinDecayLengthSignificance_XY{-1e5};
+  float lf_cuts_setMinDecayTimeSignificance{-FLT_MAX}; // -1e5
+  float lf_cuts_setMinDecayLengthSignificance{-FLT_MAX}; // -1e5
+  float lf_cuts_setMinDecayLengthSignificance_XY{-FLT_MAX}; // -1e5
   float lf_cuts_setMinimumTrackPT{0.0};
-  float lf_cuts_setMinimumTrackPV_DCA_StdDev{-1.};
-  float lf_cuts_setMinimumTrackPV_DCA_StdDev_XY{-1.};
-  float lf_cuts_setMinimumTrackPV_DCA{-1.};
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev{-FLT_MAX}; // -1e5
+  float lf_cuts_setMinimumTrackPV_DCA_StdDev_XY{-FLT_MAX}; // -1e5
+  float lf_cuts_setMinimumTrackPV_DCA{-FLT_MAX}; // -1e5
   float lf_cuts_setMaximumTrackchi2nDOF{FLT_MAX}; // 3000.
   float lf_cuts_setMaximumDaughterDCA_XY{FLT_MAX}; // 10.
   float lf_cuts_setMotherPT{0};
@@ -231,8 +231,8 @@ void reconstruct_pipi_mass()
 
   //Parent parameters
   kfparticle->setMotherPT(lf_cuts_setMotherPT);
-  kfparticle->setMinimumMass(0.40);
-  kfparticle->setMaximumMass(0.60);
+  kfparticle->setMinimumMass(0.);
+  kfparticle->setMaximumMass(FLT_MAX);
   kfparticle->setMaximumMotherVertexVolume(lf_cuts_setMaximumMotherVertexVolume);
   kfparticle->setOutputName(pipi_output_reco_file);
 
@@ -302,8 +302,8 @@ void reconstruct_ppi_mass()
 
   //Parent parameters
   kfparticle->setMotherPT(lf_cuts_setMotherPT);
-  kfparticle->setMinimumMass(1.08);
-  kfparticle->setMaximumMass(1.15);
+  kfparticle->setMinimumMass(0.);
+  kfparticle->setMaximumMass(FLT_MAX);
   kfparticle->setMaximumMotherVertexVolume(lf_cuts_setMaximumMotherVertexVolume);
   kfparticle->setOutputName(ppi_output_reco_file);
 

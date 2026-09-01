@@ -34,11 +34,14 @@
 
 #include "HF_selections.C"
 
+#include <geometricacceptance/GeometricAcceptance.h>
+
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libdecayfinder.so)
 R__LOAD_LIBRARY(libhftrackefficiency.so)
 R__LOAD_LIBRARY(libsimqa_modules.so)
+R__LOAD_LIBRARY(libGeometricAcceptance.so)
 
 int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lambdaKshort")
 {
@@ -56,13 +59,17 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   std::string infile_truth = infile_base_truth+processID+".root";
 
   //std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/" + channel + "_20260422_DetroitMB_CR_2_mode_pTref_1p4/";
-  //std::string outDir = "./";
+  std::string outDir = "./";
 
-  std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/";
+  //std::string outDir = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/";
 
   string makeDirectory = "mkdir -p " + outDir + "hfEff";
   system(makeDirectory.c_str());
   makeDirectory = "mkdir -p " + outDir + "evaluator";
+  system(makeDirectory.c_str());
+  makeDirectory = "mkdir -p " + outDir + "DST";
+  system(makeDirectory.c_str());
+  makeDirectory = "mkdir -p " + outDir + "geometricAcceptance";
   system(makeDirectory.c_str());
 
   //F4A setup
@@ -215,9 +222,9 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
 
   if(Input::SIMPLE)
   {
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(310,10);
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(3122,5);
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(-3122,5);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(310,20);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(3122,10);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(-3122,10);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_reuse_existing_vertex(true);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.,1.);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI,M_PI);
@@ -340,11 +347,8 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   if (run_ppi_reco || run_anti_ppi_reco) reconstruct_ppi_mass();
   //if (run_anti_ppi_reco) reconstruct_ppi_mass();
   if (run_cascade_reco) reconstruct_Lambdapi_mass();
-/*
-  //Output file handling
-  makeDirectory = "mkdir -p " + outDir + "DST";
-  system(makeDirectory.c_str());
 
+  //Output file handling
   string FullOutFile = outDir + "/DST/" + channel + "_DST_" + processID + ".root";
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", FullOutFile);
   out->StripNode("G4HIT_PIPE");
@@ -361,7 +365,7 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   out->StripNode("TRKR_HITTRUTHASSOC");
   //out->StripNode("TRKR_CLUSTER");
   //out->StripNode("TRKR_CLUSTERHITASSOC");
-  out->StripNode("TRKR_CLUSTERCROSSINGASSOC");
+  //out->StripNode("TRKR_CLUSTERCROSSINGASSOC");
   out->StripNode("TRAINING_HITSET");
   out->StripNode("TRKR_TRUTHTRACKCONTAINER");
   out->StripNode("TRKR_TRUTHCLUSTERCONTAINER");
@@ -375,7 +379,23 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   out->StripNode("SvtxAlignmentStateMap");
   //out->SaveRunNode(0);
   se->registerOutputManager(out);
-*/
+
+  GeometricAcceptance* geoaccept_lambda = new GeometricAcceptance("GeometricAcceptance_Lambda");
+  geoaccept_lambda->setOutputFilename(outDir+"geometricAcceptance/Lambda0_geo_acceptance_"+processID+".root");
+  geoaccept_lambda->setMotherName("Lambda0");
+  geoaccept_lambda->setMotherPDGID(3122);
+  geoaccept_lambda->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda->includeConjugate();
+  se->registerSubsystem(geoaccept_lambda);
+
+  GeometricAcceptance* geoaccept_kshort = new GeometricAcceptance("GeometricAcceptance_Kshort");
+  geoaccept_kshort->setOutputFilename(outDir+"geometricAcceptance/K_S0_geo_acceptance_"+processID+".root");
+  geoaccept_kshort->setMotherName("K_S0");
+  geoaccept_kshort->setMotherPDGID(310);
+  geoaccept_kshort->setDaughterPDGIDs({211,-211});
+  geoaccept_kshort->includeConjugate(false);
+  se->registerSubsystem(geoaccept_kshort);
+
   se->run(nEvents);
 
   se->End();
