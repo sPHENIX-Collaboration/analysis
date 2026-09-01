@@ -34,7 +34,8 @@ The main analysis macros are `yield_and_ratios/Lambda_Kshort_ratio_MC.C`, `yield
 
 For the geometric acceptance correction:
 
-- Calculate the geometric acceptance for each file using `geometric_acceptance/analysis/evaluator_geoAccept.C`, via Condor job `geometric_acceptance/analysis/submit_eval_geomAccept.job`.
+- Build and install the `ResonanceGeometricAcceptance` analysis module in `geometric_acceptance/ResonanceGeometricAcceptance`.
+- Calculate the geometric acceptance for each file using `geometric_acceptance/analysis/Fun4All_HFG_GeometricAcceptance.C`, via Condor job `geometric_acceptance/analysis/submit_geometric_acceptance.job`.
 - Merge the geometric acceptance files and calculate the correction using `geometric_acceptance/analysis/merge_geomAccept_hists.sh`.
 
 For the cut efficiency correction:
