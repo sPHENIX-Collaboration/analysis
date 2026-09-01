@@ -277,6 +277,50 @@ def make_1d_proj_plot(hist2d, run_number, output_path, hist_name="", logy=True, 
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
+def make_1d_yproj_plot(hist2d, run_number, output_path, hist_name="", tower_index=None, logy=True):
+    hep.style.use("ATLAS")
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    values, xedges, yedges = hist2d.to_numpy()
+
+    if tower_index is not None:
+        if 0 <= tower_index < values.shape[0]:
+            proj_y = values[tower_index, :]
+        else:
+            print(f"Warning: Tower index {tower_index} out of bounds (0, {values.shape[0]})")
+            plt.close(fig)
+            return
+        label_text = f"Tower Index: {tower_index}"
+    else:
+        proj_y = np.sum(values, axis=0)
+        label_text = "All Good Towers"
+
+    _, ylabel = get_hist_axis_titles(hist2d, hist_name)
+    if not ylabel:
+        ylabel = r"Tower Energy [GeV]"
+
+    hep.histplot((proj_y, yedges), ax=ax, histtype='step', color='navy', linewidth=2)
+
+    ax.set_xlabel(ylabel, loc='center')
+    ax.set_ylabel("Counts", loc='center')
+
+    if logy:
+        ax.set_yscale('log')
+        ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=20))
+        max_val = np.max(proj_y) if proj_y.size > 0 else 1
+        ax.set_ylim(bottom=0.5, top=max(max_val * 5, 10))
+
+    ax.set_xlim(left=np.min(yedges), right=np.max(yedges))
+
+    ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
+    if label_text:
+        ax.text(0.05, 0.95, label_text, transform=ax.transAxes, ha='left', va='top', fontsize=15)
+
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
 def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=True, do_logx=False):
     path = Path(path)
     if not path.exists():
@@ -358,6 +402,35 @@ def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=Tr
                         output_path,
                         hist_name=h2_name,
                         logy=True
+                    )
+
+            # 3. 1D Y-Projection QA Histograms for h2EMCalEnergyTowerIndex
+            h2_energy_index_name = "h2EMCalEnergyTowerIndex"
+            if h2_energy_index_name in file:
+                hist2d = file[h2_energy_index_name]
+                if run_output_dir is not None:
+                    # Full y-projection (all good towers)
+                    out_filename_all = f"run_{run_number}_{h2_energy_index_name}.png"
+                    output_path_all = run_output_dir / out_filename_all
+                    make_1d_yproj_plot(
+                        hist2d,
+                        run_number,
+                        output_path_all,
+                        hist_name=h2_energy_index_name,
+                        tower_index=None,
+                        logy=True,
+                    )
+
+                    # Y-projection for specific tower index 2654
+                    out_filename_2654 = f"run_{run_number}_{h2_energy_index_name}_tower2654.png"
+                    output_path_2654 = run_output_dir / out_filename_2654
+                    make_1d_yproj_plot(
+                        hist2d,
+                        run_number,
+                        output_path_2654,
+                        hist_name=h2_energy_index_name,
+                        tower_index=2654,
+                        logy=True,
                     )
 
             return None
