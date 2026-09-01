@@ -79,6 +79,7 @@ class CaloQA : public SubsysReco
 
     TH2* h2EMCalChi2Energy{nullptr};
     TH2* h2EMCalEnergyTowerIndex{nullptr};
+    TH2* h2EMCalRawEnergyTowerIndex{nullptr};
   };
 
   AnalysisHists m_hists;

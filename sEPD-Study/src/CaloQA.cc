@@ -149,6 +149,14 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                                bins_emcal_towers, 0, bins_emcal_towers,
                                                bins_energy_wide, energy_wide_low, energy_wide_high);
 
+    int bins_adc_raw = 220;
+    double adc_raw_low = -9000;
+    double adc_raw_high = 13000;
+
+    m_hists.h2EMCalRawEnergyTowerIndex = new TH2F("h2EMCalRawEnergyTowerIndex", "EMCal; Tower Index; Raw Tower Energy [ADC]",
+                                                  bins_emcal_towers, 0, bins_emcal_towers,
+                                                  bins_adc_raw, adc_raw_low, adc_raw_high);
+
     Fun4AllServer* se = Fun4AllServer::instance();
 
     se->registerHisto(m_hists.h2EMCal);
@@ -178,6 +186,7 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
     se->registerHisto(m_hists.h2CentralityTotalCaloE);
     se->registerHisto(m_hists.h2EMCalChi2Energy);
     se->registerHisto(m_hists.h2EMCalEnergyTowerIndex);
+    se->registerHisto(m_hists.h2EMCalRawEnergyTowerIndex);
   }
 
   if (m_do_tree)
@@ -296,6 +305,10 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
           if (std::isfinite(rawEnergy) && std::isfinite(rawChi2))
           {
             m_hists.h2EMCalChi2Energy->Fill(rawEnergy, rawChi2);
+          }
+          if (towerRaw->get_isGood() && std::isfinite(rawEnergy))
+          {
+            m_hists.h2EMCalRawEnergyTowerIndex->Fill(towerIndex, rawEnergy);
           }
         }
       }
