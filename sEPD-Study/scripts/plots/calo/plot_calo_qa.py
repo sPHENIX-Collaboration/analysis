@@ -272,6 +272,10 @@ def make_1d_proj_plot(hist2d, run_number, output_path, hist_name="", logy=True, 
 
     ax.text(1.0, 1.01, rf"Run: {run_number}", transform=ax.transAxes, ha='right', va='bottom', fontsize=15)
 
+    det = "OHCal" if "OHCal" in hist_name else ("EMCal" if "EMCal" in hist_name else "")
+    if det:
+        ax.text(0.05, 0.95, f"{det} ZS Towers", transform=ax.transAxes, ha='left', va='top', fontsize=15)
+
     fig.tight_layout()
     plt.subplots_adjust(left=0.12, bottom=0.13, top=0.93)
     fig.savefig(output_path, dpi=300)
@@ -384,6 +388,7 @@ def process_file(path, output_dir=None, do_nolog=True, do_logy=True, do_logxy=Tr
             # 2. 1D X-Projection QA Histograms
             h1_proj_names = [
                 "h2EMCalZSCent",
+                "h2OHCalZSCent",
             ]
 
             for h2_name in h1_proj_names:
