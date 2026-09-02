@@ -54,6 +54,8 @@ R__LOAD_LIBRARY(libTreeFiller.so)
 void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3auau_pro001_pcdb001_v001-00068144-00000.root",
                     const std::string &flist_dst_zdc = "",
                     const std::string &flist_dst_sepd = "",
+                    // const std::string &flist_dst_zdc = "/direct/sphenix+tg+tg01/jets/anarde/run3auau/ZDC/68144/DST_ZDC_CALIB_run3auau_pro001_pcdb001_v001-00068144-00000.root",
+                    // const std::string &flist_dst_sepd = "DST_SEPD_RAW_run3auau_pro001_pcdb001_v001-00068144-00000.root",
                     const std::string &input_QVecCalib = "default",
                     const std::string &output = "test.root",
                     const std::string &output_tree = "tree.root",
@@ -65,7 +67,7 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     const std::string &eta_calib_direct_path = "",
                     const std::string &event_list = "",
                     bool do_rcone = false,
-                    bool do_mult = true,
+                    bool do_mult = false,
                     const std::string &output_dst = "")
 {
   bool is_single_dst = flist_dst_zdc.empty() || flist_dst_zdc == "none";
