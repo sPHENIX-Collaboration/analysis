@@ -21,7 +21,7 @@ check_updates() {
 
   # Check if there are unapplied commits on target_branch affecting the given path
   local commits
-  commits=$(git -C "$repo_path" log --oneline --cherry-pick --right-only "${base_branch}..${target_branch}" -- "$path_filter")
+  commits=$(git -C "$repo_path" log --oneline --cherry-pick --right-only "${base_branch}...${target_branch}" -- "$path_filter")
 
   if [ -z "$commits" ]; then
     echo -e "${GREEN}Up to date. No new commits found.${RESET}"
@@ -33,7 +33,7 @@ check_updates() {
       --stat \
       --cherry-pick \
       --right-only \
-      "${base_branch}..${target_branch}" \
+      "${base_branch}...${target_branch}" \
       -- "$path_filter"
   fi
 }
