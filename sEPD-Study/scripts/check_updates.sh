@@ -41,6 +41,7 @@ check_updates() {
 # --- Repository Definitions ---
 MINBIAS_DIR="$HOME/sPHENIX/coresoftware-MinBias"
 JETBG_DIR="$HOME/sPHENIX/coresoftware-jetbackground"
+CALOTOWERCALIB_DIR="$HOME/sPHENIX/coresoftware-CaloTowerCalib"
 
 # 1. MinBias: trigger package against master
 check_updates "$MINBIAS_DIR" "MinBias" "master" ":/offline/packages/trigger"
@@ -50,6 +51,9 @@ check_updates "$JETBG_DIR" "jetbackground" "master" ":/offline/packages/jetbackg
 
 # 3. Jetbackground: jetbackground package against ppg14
 check_updates "$JETBG_DIR" "jetbackground" "ppg14" ":/offline/packages/jetbackground"
+
+# 4. CaloTowerCalib: CaloReco package against master
+check_updates "$CALOTOWERCALIB_DIR" "CaloTowerCalib" "master" ":/offline/packages/CaloReco"
 
 echo -e "\n${BOLD}Done.${RESET}"
 
