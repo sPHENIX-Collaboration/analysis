@@ -41,6 +41,8 @@ def create_f4a_jobs(args):
     if "Fun4All_BkgSub" in args.f4a_macro:
         init_log['Do RCone'] = bool(getattr(args, 'do_rcone', False))
         init_log['Do Mult'] = bool(getattr(args, 'do_mult', 1))
+        init_log['Do Neg Energy Threshold'] = bool(getattr(args, 'do_neg_energy_threshold', 1))
+        init_log['Neg Energy Threshold'] = float(getattr(args, 'neg_energy_threshold', -2.0))
 
     manager.log_initialization(init_log)
 
@@ -99,7 +101,9 @@ def create_f4a_jobs(args):
         event_list_val = (manager.output_dir / event_list.name) if event_list else "none"
         do_rcone_val = 1 if getattr(args, 'do_rcone', False) else 0
         do_mult_val = getattr(args, 'do_mult', 1)
-        bkgsub_args = f"{args.do_flow} {eta_calib_val} {event_list_val} {do_rcone_val} {do_mult_val} "
+        do_neg_energy_threshold_val = getattr(args, 'do_neg_energy_threshold', 1)
+        neg_energy_threshold_val = getattr(args, 'neg_energy_threshold', -2.0)
+        bkgsub_args = f"{args.do_flow} {eta_calib_val} {event_list_val} {do_rcone_val} {do_mult_val} {do_neg_energy_threshold_val} {neg_energy_threshold_val} "
     else:
         bkgsub_args = ""
 
@@ -393,6 +397,8 @@ def setup_f4a_subparsers(subparsers):
     f4a.add_argument('--do-flow', type=int, default=3, help='Flow modulation configuration for JetReco/QA (default=3)')
     f4a.add_argument('--do-rcone', action='store_true', default=False, help='Enable random cone validation.')
     f4a.add_argument('--do-mult', type=int, default=1, choices=[0, 1], help='Enable multiple subtraction (default=1).')
+    f4a.add_argument('--do-neg-energy-threshold', type=int, default=1, choices=[0, 1], help='Enable negative energy threshold rejection (default=1).')
+    f4a.add_argument('--neg-energy-threshold', type=float, default=-2.0, help='Negative energy threshold cut in GeV (default=-2.0).')
     f4a.set_defaults(memory=1.5, condor_script='scripts/genFun4All.sh', func=create_f4a_jobs)
 
     f4a_zdc = subparsers.add_parser('f4a_zdc', parents=[get_common_parser()], help='Create condor submission directory.')

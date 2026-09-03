@@ -28,6 +28,14 @@ R__LOAD_LIBRARY(libffamodules.so)
 R__LOAD_LIBRARY(libfun4allutils.so)
 R__LOAD_LIBRARY(libCaloStatusSkimmer.so)
 
+namespace CaloCalib
+{
+  bool do_neg_energy_threshold = true;
+  float neg_energy_threshold = -2.0F;
+}  // namespace CaloCalib
+
+namespace CALOCALIB = CaloCalib;
+
 void Process_Calo_Calib()
 {
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -114,16 +122,22 @@ void Process_Calo_Calib()
   std::cout << "Calibrating EMCal" << std::endl;
   CaloTowerCalib *calibEMC = new CaloTowerCalib("CEMCCALIB");
   calibEMC->set_detector_type(CaloTowerDefs::CEMC);
+  calibEMC->set_doNegEnergyThreshold(CaloCalib::do_neg_energy_threshold);
+  calibEMC->set_negEnergyThreshold(CaloCalib::neg_energy_threshold);
   se->registerSubsystem(calibEMC);
 
   std::cout << "Calibrating OHcal" << std::endl;
   CaloTowerCalib *calibOHCal = new CaloTowerCalib("HCALOUT");
   calibOHCal->set_detector_type(CaloTowerDefs::HCALOUT);
+  calibOHCal->set_doNegEnergyThreshold(CaloCalib::do_neg_energy_threshold);
+  calibOHCal->set_negEnergyThreshold(CaloCalib::neg_energy_threshold);
   se->registerSubsystem(calibOHCal);
 
   std::cout << "Calibrating IHcal" << std::endl;
   CaloTowerCalib *calibIHCal = new CaloTowerCalib("HCALIN");
   calibIHCal->set_detector_type(CaloTowerDefs::HCALIN);
+  calibIHCal->set_doNegEnergyThreshold(CaloCalib::do_neg_energy_threshold);
+  calibIHCal->set_negEnergyThreshold(CaloCalib::neg_energy_threshold);
   se->registerSubsystem(calibIHCal);
 
   ////////////////

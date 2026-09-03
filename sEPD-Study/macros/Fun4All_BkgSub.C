@@ -68,7 +68,9 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
                     const std::string &event_list = "",
                     bool do_rcone = false,
                     bool do_mult = false,
-                    const std::string &output_dst = "")
+                    const std::string &output_dst = "",
+                    bool do_neg_energy_threshold = true,
+                    float neg_energy_threshold = -2.0F)
 {
   bool is_single_dst = flist_dst_zdc.empty() || flist_dst_zdc == "none";
 
@@ -126,6 +128,8 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   std::cout << "eta_calib_direct_path: " << eta_calib_direct_path << std::endl;
   std::cout << "do_rcone: " << do_rcone << std::endl;
   std::cout << "do_mult: " << do_mult << std::endl;
+  std::cout << "do_neg_energy_threshold: " << do_neg_energy_threshold << std::endl;
+  std::cout << "neg_energy_threshold: " << neg_energy_threshold << std::endl;
   std::cout << "########################" << std::endl;
 
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -157,6 +161,8 @@ void Fun4All_BkgSub(const std::string &flist_dst_calofit = "DST_CALOFITTING_run3
   se->registerSubsystem(evtSkip);
 
   // Calibrate Towers
+  CaloCalib::do_neg_energy_threshold = do_neg_energy_threshold;
+  CaloCalib::neg_energy_threshold = neg_energy_threshold;
   Process_Calo_Calib();
 
   // MBD Reconstruction
@@ -372,9 +378,12 @@ void Fun4All_BkgSub(const std::string &input_dst,
                     const std::string &event_list,
                     bool do_rcone,
                     bool do_mult,
-                    const std::string &output_dst)
+                    const std::string &output_dst,
+                    bool do_neg_energy_threshold = true,
+                    float neg_energy_threshold = -2.0F)
 {
   Fun4All_BkgSub(input_dst, /*flist_dst_zdc=*/"", /*flist_dst_sepd=*/"",
                  input_QVecCalib, output, output_tree, do_flow, nEvents, nSkip, event_id,
-                 dbtag, eta_calib_direct_path, event_list, do_rcone, do_mult, output_dst);
+                 dbtag, eta_calib_direct_path, event_list, do_rcone, do_mult, output_dst,
+                 do_neg_energy_threshold, neg_energy_threshold);
 }
