@@ -1,6 +1,7 @@
 #include "../../util/binning.h"
 
-void get_geoAcceptance(std::string infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/geometricAcceptanceCorrection/merged_inclusive_parity.root",
+void get_geoAcceptance(std::string numerator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/geometricAcceptance/merged_inclusive_parity.root",
+                       std::string denominator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/geometricAcceptance/merged_kshort.root",
                        std::string outfile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/geometricAcceptanceCorrection/corrections/geo_acceptance_inclusive.root",
                        std::string numerator_name = "Lambda0", std::string numerator_title = "(#Lambda+#bar{#Lambda})",
                        std::string denominator_name = "K_S0", std::string denominator_title = "K_{S}^{0}")
@@ -13,7 +14,8 @@ void get_geoAcceptance(std::string infile = "/sphenix/tg/tg01/hf/mjpeters/LightF
     BinInfo::final_rapidity_bins
   };
 
-  TFile* f = TFile::Open(infile.c_str());
+  TFile* f_numerator = TFile::Open(numerator_infile.c_str());
+  TFile* f_denominator = TFile::Open(denominator_infile.c_str());
   TFile* fout = new TFile(outfile.c_str(),"RECREATE");
 
   for(HistogramInfo& h : variables)
@@ -28,10 +30,10 @@ void get_geoAcceptance(std::string infile = "/sphenix/tg/tg01/hf/mjpeters/LightF
     TH1F* acceptance_correction = makeHistogram(ratio_name.c_str(),ratio_title.c_str(),h);
     TH1F* inverse_acceptance_correction = makeHistogram(inverse_ratio_name.c_str(),inverse_ratio_title.c_str(),h);
 
-    TH1F* numerator_all = (TH1F*)f->Get(("hn_vs"+h.name).c_str());
-    TH1F* numerator_reco = (TH1F*)f->Get(("hn_wd_vs"+h.name).c_str());
-    TH1F* denominator_all = (TH1F*)f->Get(("hd_vs"+h.name).c_str());
-    TH1F* denominator_reco = (TH1F*)f->Get(("hd_wd_vs"+h.name).c_str());
+    TH1F* numerator_all = (TH1F*)f_numerator->Get((numerator_name+"_all_candidates_vs"+h.name).c_str());
+    TH1F* numerator_reco = (TH1F*)f_numerator->Get((numerator_name+"_passing_candidates_vs"+h.name).c_str());
+    TH1F* denominator_all = (TH1F*)f_denominator->Get((denominator_name+"_all_candidates_vs"+h.name).c_str());
+    TH1F* denominator_reco = (TH1F*)f_denominator->Get((denominator_name+"_passing_candidates_vs"+h.name).c_str());
 
     numerator_all->Sumw2();
     numerator_reco->Sumw2();

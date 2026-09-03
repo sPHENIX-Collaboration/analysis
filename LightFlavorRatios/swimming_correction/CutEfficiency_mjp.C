@@ -55,24 +55,17 @@ std::string correct_truth_daughters_cut(std::vector<int> daughters, bool include
 std::string correct_truth_parent_cut(int pdgid, int n_daughters, bool include_opposite)
 {
   std::vector<std::string> daughter_cuts;
+  std::vector<std::string> opposite_daughter_cuts;
 
   for(int i=1;i<=n_daughters;i++)
   {
-    std::string cut = "Sum$(";
-    if(include_opposite)
-    {
-      cut += "abs(";
-    }
-    cut += "track_"+std::to_string(i)+"_true_track_history_PDG_ID";
-    if(include_opposite)
-    {
-      cut += ")";
-    }
-    cut += " == "+std::to_string(pdgid)+") > 0";
+    std::string cut = "Sum$(track_"+std::to_string(i)+"_true_track_history_PDG_ID == "+std::to_string(pdgid)+") > 0";
+    std::string opposite_cut = "Sum$(track_"+std::to_string(i)+"_true_track_history_PDG_ID == "+std::to_string(-1*pdgid)+") > 0";
     daughter_cuts.push_back(cut);
+    opposite_daughter_cuts.push_back(opposite_cut);
   }
 
-  std::string total_cut = "";
+  std::string total_cut = "(";
   for(int i=0;i<daughter_cuts.size();i++)
   {
     total_cut += daughter_cuts[i];
@@ -80,6 +73,20 @@ std::string correct_truth_parent_cut(int pdgid, int n_daughters, bool include_op
     {
       total_cut += " && ";
     }
+  }
+  total_cut += ")";
+  if(include_opposite)
+  {
+    total_cut += " || (";
+    for(int i=0;i<daughter_cuts.size();i++)
+    {
+      total_cut += opposite_daughter_cuts[i];
+      if(i<daughter_cuts.size()-1)
+      {
+        total_cut += " && ";
+      }
+    }
+    total_cut += ")";
   }
   return total_cut;
 }
@@ -89,7 +96,7 @@ std::string correct_daughter_PDGID_assignment_cut(int n_daughters)
   std::vector<std::string> daughter_cuts;
   for(int i=1;i<=n_daughters;i++)
   {
-    std::string cut = "track_"+std::to_string(i)+"_PDG_ID == track_"+std::to_string(i)+"_true_ID";
+    std::string cut = "abs(track_"+std::to_string(i)+"_PDG_ID) == abs(track_"+std::to_string(i)+"_true_ID)";
     daughter_cuts.push_back(cut);
   }
 
@@ -129,38 +136,16 @@ std::pair<int,int> posthadronization_history_info(std::vector<int>* pdgid_histor
   return {n_entries,primary_parent};
 }
 
-/*
-std::string primary_truth_parent_cut(const int pdgid, const int n_daughters, const bool include_opposite)
-{
-  std::string cut;
-  for(int i=1;i<=n_daughters;i++)
-  {
-    cut += "track_"+std::to_string(i)+"_true_track_history_PDGID[0] == "+std:to_string(pdgid)+" && ";
-    cut += "[&](std::vector<int>
-    if(include_opposite)
-    {
-      cut += " || has_primary_parent("+std::to_string(-1*pdgid)+",track_"+std::to_string(i)+"_true_track_history_PDGID)";
-    }
-    cut += ")";
-    if(i<n_daughters)
-    {
-      cut += " && ";
-    }
-  }
-  return cut;
-}
-*/
-
 std::string full_truth_cut(const std::string& name, const int pdgid, const std::vector<int> daughters, const bool include_opposite)
 {
   std::string correct_truth_daughters = correct_truth_daughters_cut(daughters,include_opposite);
   std::string correct_truth_parent = correct_truth_parent_cut(pdgid,daughters.size(),include_opposite);
-  //std::string primary_truth_parent = primary_truth_parent_cut(pdgid,daughters.size(),include_opposite);
+  std::string same_truth_parent = "fabs(track_1_true_track_history_pz[0] - track_2_true_track_history_pz[0])<1e-6";
   std::string rapidity_cut = "fabs("+name+"_rapidity)<1.";
   std::string geoaccept_cut = "track_1_MVTX_nHits>0 && track_2_MVTX_nHits>0 && fabs(primary_vertex_z)<10.";
   std::string correct_daughter_pdgid = correct_daughter_PDGID_assignment_cut(daughters.size());
 
-  return "("+correct_truth_daughters+") && ("+correct_truth_parent+") && ("+geoaccept_cut+") && ("+correct_daughter_pdgid+") && ("+rapidity_cut+") && ("+BinInfo::fiducial_cuts(name,{BinInfo::final_pt_bins,BinInfo::final_eta_bins,BinInfo::final_phi_bins,BinInfo::final_rapidity_bins})+")";
+  return "("+correct_truth_daughters+") && ("+correct_truth_parent+") && ("+same_truth_parent+") && ("+geoaccept_cut+") && ("+correct_daughter_pdgid+") && ("+rapidity_cut+") && ("+BinInfo::fiducial_cuts(name,{BinInfo::final_pt_bins,BinInfo::final_eta_bins,BinInfo::final_phi_bins,BinInfo::final_rapidity_bins})+")";
 }
 
 std::string full_reco_cut(const std::string& name, const int pdgid, const std::pair<float,float>& mass_window, const std::vector<int> daughters, const bool include_opposite, const std::map<std::string,HistogramInfo>& massbins_map)
@@ -191,7 +176,9 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
 
   t->SetBranchAddress((name+"_mass").c_str(),&mass);
 
-  t->SetEntryList(elist);
+  int npassing = 0;
+
+  //t->SetEntryList(elist);
   for(size_t e=0;e<elist->GetN();e++)
   {
     //std::cout << elist->GetEntry(e) << std::endl;
@@ -212,27 +199,35 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
       if(primary_Kshort || primary_K0)
       {
         h->Fill(var_branch);
+        npassing++;
+      }
+      else
+      {
+        std::cout << "non-passing entry: " << elist->GetEntry(e) << std::endl;
       }
     }
     else
     {
       bool all_daughters_primary_parents = std::all_of(daughter_pdgid_histories.begin(),daughter_pdgid_histories.end(),
-             [&](std::vector<int>* history){return (history->at(0)==pdgid && posthadronization_history_info(history).first==1);});
+             [&](std::vector<int>* history){return (abs(history->at(0))==abs(pdgid) && posthadronization_history_info(history).first==1);});
       if(all_daughters_primary_parents)
       {
         h->Fill(var_branch);
+        npassing++;
       }
     }
   }
+  std::cout << "npassing: " << npassing << std::endl;
 }
 
 void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int numerator_pdgid = 3122, const std::vector<int> numerator_daughters = {-211,2212},
-                       const std::string& numerator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/ppi_reco/outputKFParticle_ppi_reco_009501.root", const bool numerator_include_opposite = true,
+                       //const std::string& numerator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/ppi_reco/outputKFParticle_ppi_reco_001995.root", const bool numerator_include_opposite = true,
+                       const std::string& numerator_infile = "/sphenix/user/mjpeters/analysis/LightFlavorRatios/geometric_acceptance/simulation/ppi_reco/outputKFParticle_ppi_reco_000000.root", const bool numerator_include_opposite = true,
                        const std::string& denominator_name = "K_S0", const int denominator_pdgid = 310, const std::vector<int> denominator_daughters = {211, -211},
-                       const std::string& denominator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/pipi_reco/outputKFParticle_pipi_reco_009501.root", const bool denominator_include_opposite = false,
+                       //const std::string& denominator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/pipi_reco/outputKFParticle_pipi_reco_001995.root", const bool denominator_include_opposite = false,
+                       const std::string& denominator_infile = "/sphenix/user/mjpeters/analysis/LightFlavorRatios/geometric_acceptance/simulation/pipi_reco/outputKFParticle_pipi_reco_000000.root", const bool denominator_include_opposite = false,
                        const std::string& outfile = "test.root", const std::map<std::string,HistogramInfo>& massbins_map = BinInfo::mass_bins_MC)
 {
-
   bool verbose = true;
 
   TFile* f_numerator = TFile::Open(numerator_infile.c_str());
@@ -240,6 +235,8 @@ void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int 
 
   TTree* t_numerator = (TTree*)f_numerator->Get("DecayTree");
   TTree* t_denominator = (TTree*)f_denominator->Get("DecayTree");
+
+  std::cout << "total entries: " << t_numerator->GetEntries() << " " << t_denominator->GetEntries() << std::endl;
 
   std::vector<HistogramInfo> variables =
   {

@@ -64,6 +64,8 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   system(makeDirectory.c_str());
   makeDirectory = "mkdir -p " + outDir + "evaluator";
   system(makeDirectory.c_str());
+  makeDirectory = "mkdir -p " + outDir + "DST";
+  system(makeDirectory.c_str());
 
   //F4A setup
   Fun4AllServer *se = Fun4AllServer::instance();
@@ -215,9 +217,9 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
 
   if(Input::SIMPLE)
   {
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(310,10);
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(3122,5);
-    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(-3122,5);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(310,20);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(3122,10);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(-3122,10);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_reuse_existing_vertex(true);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1.,1.);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI,M_PI);
@@ -340,11 +342,8 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   if (run_ppi_reco || run_anti_ppi_reco) reconstruct_ppi_mass();
   //if (run_anti_ppi_reco) reconstruct_ppi_mass();
   if (run_cascade_reco) reconstruct_Lambdapi_mass();
-/*
-  //Output file handling
-  makeDirectory = "mkdir -p " + outDir + "DST";
-  system(makeDirectory.c_str());
 
+  //Output file handling
   string FullOutFile = outDir + "/DST/" + channel + "_DST_" + processID + ".root";
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", FullOutFile);
   out->StripNode("G4HIT_PIPE");
@@ -361,7 +360,7 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   out->StripNode("TRKR_HITTRUTHASSOC");
   //out->StripNode("TRKR_CLUSTER");
   //out->StripNode("TRKR_CLUSTERHITASSOC");
-  out->StripNode("TRKR_CLUSTERCROSSINGASSOC");
+  //out->StripNode("TRKR_CLUSTERCROSSINGASSOC");
   out->StripNode("TRAINING_HITSET");
   out->StripNode("TRKR_TRUTHTRACKCONTAINER");
   out->StripNode("TRKR_TRUTHCLUSTERCONTAINER");
@@ -375,7 +374,7 @@ int Fun4All_HFG_MB(std::string processID = "000000", std::string channel = "lamb
   out->StripNode("SvtxAlignmentStateMap");
   //out->SaveRunNode(0);
   se->registerOutputManager(out);
-*/
+
   se->run(nEvents);
 
   se->End();
