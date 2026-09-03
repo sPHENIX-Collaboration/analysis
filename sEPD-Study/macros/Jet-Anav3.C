@@ -556,8 +556,8 @@ void JetAnalysisv3::init_hists()
   double rcone_e_high = 100;
 
   int bins_njets = 100;
-  double njets_low = 0;
-  double njets_high = 100;
+  double njets_low = -0.5;
+  double njets_high = 99.5;
 
   unsigned int bins_event = static_cast<unsigned int>(m_eventType.size());
 
