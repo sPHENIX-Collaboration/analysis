@@ -6,7 +6,7 @@ from condor_utils.core.helpers import run_command_and_log, get_line_count, chunk
 from condor_utils.cli import get_common_parser
 
 def create_f4a_jobs(args):
-    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
+    if "Fun4All_BkgSub" in args.f4a_macro:
         args.condor_script = 'scripts/genFun4All_BkgSub.sh'
 
     manager = CondorJobManager(args, job_name="F4A")
@@ -14,10 +14,6 @@ def create_f4a_jobs(args):
     manager.add_file_to_check(args.calo_calib_macro)
     manager.add_file_to_check(args.HIJetReco_macro)
     manager.add_dir_to_check(args.src_dir)
-
-    bkgsub_macro = str(Path(args.f4a_macro).parent / 'Fun4All_BkgSub.C') if "Fun4All_RandomCones" in args.f4a_macro else None
-    if bkgsub_macro:
-        manager.add_file_to_check(bkgsub_macro)
 
     calib_list = Path(args.calib).resolve() if args.calib else None
     if calib_list:
@@ -42,7 +38,7 @@ def create_f4a_jobs(args):
         'HIJetReco Macro': Path(args.HIJetReco_macro).resolve(),
         'Source Directory': Path(args.src_dir).resolve()
     }
-    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
+    if "Fun4All_BkgSub" in args.f4a_macro:
         init_log['Do RCone'] = bool(getattr(args, 'do_rcone', False))
         init_log['Do Mult'] = bool(getattr(args, 'do_mult', 1))
 
@@ -51,8 +47,6 @@ def create_f4a_jobs(args):
     files_dir = manager.prepare_directories()
 
     extra_files = [args.f4a_macro, args.calo_calib_macro, args.HIJetReco_macro]
-    if bkgsub_macro:
-        extra_files.append(bkgsub_macro)
     if calib_list:
         extra_files.append(calib_list)
     if eta_calib:
@@ -100,7 +94,7 @@ def create_f4a_jobs(args):
 
     jobs_temp_file.unlink(missing_ok=True)
 
-    if "Fun4All_BkgSub" in args.f4a_macro or "Fun4All_RandomCones" in args.f4a_macro:
+    if "Fun4All_BkgSub" in args.f4a_macro:
         eta_calib_val = (manager.output_dir / eta_calib.name) if eta_calib else "none"
         event_list_val = (manager.output_dir / event_list.name) if event_list else "none"
         do_rcone_val = 1 if getattr(args, 'do_rcone', False) else 0
