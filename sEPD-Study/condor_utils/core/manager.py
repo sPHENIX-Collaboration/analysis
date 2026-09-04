@@ -146,6 +146,8 @@ class CondorJobManager:
             error          = {error_dir}/job-$(ClusterId)-$(Process).err
             request_memory = {mem}GB
             max_retries    = {getattr(self.args, 'max_retries', 3)}
+            stream_output  = True
+            stream_error   = True
         """)
         sub_file = self.output_dir / sub_file_name
         sub_file.write_text(submit_content)

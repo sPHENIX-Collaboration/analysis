@@ -59,8 +59,18 @@ then
     cut -d ',' -f 2 "$input" > dst_zdc.list
     cut -d ',' -f 3 "$input" > dst_sepd.list
 
-    getinputfiles.pl --verbose --filelist dst_calofit.list
-    getinputfiles.pl --verbose --filelist dst_sepd.list
+    getinputfiles.pl --verbose --filelist dst_calofit.list || {
+        echo "Error: getinputfiles.pl failed for dst_calofit.list at $(date) on $(hostname)" >&2
+        mkdir -p "$submitDir/failures"
+        echo "getinputfiles failure (dst_calofit) for $file on $(hostname) at $(date)" >> "$submitDir/failures/failure-log.txt"
+        exit 1
+    }
+    getinputfiles.pl --verbose --filelist dst_sepd.list || {
+        echo "Error: getinputfiles.pl failed for dst_sepd.list at $(date) on $(hostname)" >&2
+        mkdir -p "$submitDir/failures"
+        echo "getinputfiles failure (dst_sepd) for $file on $(hostname) at $(date)" >> "$submitDir/failures/failure-log.txt"
+        exit 1
+    }
 
     # Create/clear a temporary file for the basenames
     > dst_zdc_local.list
@@ -97,17 +107,21 @@ printenv
 
 mkdir -p "$run/hist" "$run/tree"
 
+echo "Starting ROOT macro at $(date) on $(hostname)"
 root -b -l -q "$f4a_macro(\"dst_calofit.list\", \"dst_zdc.list\", \"dst_sepd.list\", \"$calib_file\", \"$run/hist/$output\", \"$run/tree/$output_tree\", $do_flow, $nEvents, 0, 0, \"$dbtag\", \"$eta_calib_file\", \"$event_list_file\", $do_rcone, $do_mult, \"\", $do_neg_energy_threshold, $neg_energy_threshold)"
 
-if [ $? -ne 0 ]; then
-    echo "Error: ROOT macro crashed! Aborting transfer." >&2
-    exit 1
+root_exit=$?
+if [ $root_exit -ne 0 ]; then
+    echo "Error: ROOT macro failed with exit code $root_exit at $(date) on $(hostname)! Aborting transfer." >&2
+    mkdir -p "$submitDir/failures"
+    echo "ROOT failure (exit code $root_exit) for $file on $(hostname) at $(date)" >> "$submitDir/failures/failure-log.txt"
+    exit $root_exit
 fi
 
-echo "All Done and Transferring Files Back"
+echo "All Done and Transferring Files Back at $(date)"
 
 # Define maximum retries and a counter
-max_retries=3
+max_retries=5
 count=0
 success=0
 
@@ -117,14 +131,16 @@ while [ $count -lt $max_retries ]; do
         break
     else
         count=$((count + 1))
-        echo "cp failed (likely GPFS lag). Retrying ($count/$max_retries) in 2 seconds..."
-        sleep 2
+        echo "cp failed (likely GPFS lag). Retrying ($count/$max_retries) in 15 seconds..." >&2
+        sleep 15
     fi
 done
 
 if [ $success -eq 0 ]; then
-    echo "Error: cp failed permanently after $max_retries attempts."
+    echo "Error: cp failed permanently after $max_retries attempts at $(date)." >&2
+    mkdir -p "$submitDir/failures"
+    echo "CP transfer failure for $file on $(hostname) at $(date)" >> "$submitDir/failures/failure-log.txt"
     exit 1
 fi
 
-echo "Finished"
+echo "Finished successfully at $(date)"
