@@ -340,8 +340,8 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
 
       if (Verbosity() > 0 && !tower->get_isZS() && energy < 0.0)
       {
-        std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
-                                 event_id, "EMCal", towerIndex, ieta, iphi, energy, tower->get_isZS());
+        std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | Time: {:>10.6f} | ZS status: {}\n",
+                                 event_id, "EMCal", towerIndex, ieta, iphi, energy, tower->get_time(), tower->get_isZS());
       }
 
       if (m_do_detailed)
@@ -414,8 +414,8 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       {
         if (Verbosity() > 0 && !towerIHCal->get_isZS() && energy < 0.0F)
         {
-          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
-                                   event_id, "IHCal", towerIndex, ieta, iphi, energy, towerIHCal->get_isZS());
+          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | Time: {:>10.6f} | ZS status: {}\n",
+                                   event_id, "IHCal", towerIndex, ieta, iphi, energy, towerIHCal->get_time(), towerIHCal->get_isZS());
         }
 
         m_data.ihcal_energy += energy;
@@ -452,8 +452,8 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       {
         if (Verbosity() > 0 && !towerOHCal->get_isZS() && energy < 0.0F)
         {
-          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
-                                   event_id, "OHCal", towerIndex, ieta, iphi, energy, towerOHCal->get_isZS());
+          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | Time: {:>10.6f} | ZS status: {}\n",
+                                   event_id, "OHCal", towerIndex, ieta, iphi, energy, towerOHCal->get_time(), towerOHCal->get_isZS());
         }
 
         m_data.ohcal_energy += energy;
