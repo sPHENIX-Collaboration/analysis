@@ -5,6 +5,9 @@
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/Fun4AllServer.h>
 
+// -- Event
+#include <ffaobjects/EventHeader.h>
+
 // -- Centrality
 #include <centrality/CentralityInfo.h>
 
@@ -128,18 +131,6 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                               bins_totalCaloE, totalCaloE_low, totalCaloE_high,
                                               bins_cent_full, cent_low, cent_high);
 
-    int bins_adc = 170;
-    double adc_low = 0;
-    double adc_high = 17000;
-
-    int bins_chi2 = 1000;
-    double chi2_low = 0;
-    double chi2_high = 100000;
-
-    m_hists.h2EMCalChi2Energy = new TH2F("h2EMCalChi2Energy", "EMCal; Tower Energy [ADC]; #chi^{2}",
-                                         bins_adc, adc_low, adc_high,
-                                         bins_chi2, chi2_low, chi2_high);
-
     int bins_emcal_towers = bins_emcal_phi * bins_emcal_eta;
     int bins_energy_wide = 350;
     double energy_wide_low = -150;
@@ -149,13 +140,28 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
                                                bins_emcal_towers, 0, bins_emcal_towers,
                                                bins_energy_wide, energy_wide_low, energy_wide_high);
 
-    int bins_adc_raw = 220;
-    double adc_raw_low = -9000;
-    double adc_raw_high = 13000;
+    if (m_do_raw)
+    {
+      int bins_adc = 170;
+      double adc_low = 0;
+      double adc_high = 17000;
 
-    m_hists.h2EMCalRawEnergyTowerIndex = new TH2F("h2EMCalRawEnergyTowerIndex", "EMCal; Tower Index; Raw Tower Energy [ADC]",
-                                                  bins_emcal_towers, 0, bins_emcal_towers,
-                                                  bins_adc_raw, adc_raw_low, adc_raw_high);
+      int bins_chi2 = 1000;
+      double chi2_low = 0;
+      double chi2_high = 100000;
+
+      m_hists.h2EMCalChi2Energy = new TH2F("h2EMCalChi2Energy", "EMCal; Tower Energy [ADC]; #chi^{2}",
+                                           bins_adc, adc_low, adc_high,
+                                           bins_chi2, chi2_low, chi2_high);
+
+      int bins_adc_raw = 220;
+      double adc_raw_low = -9000;
+      double adc_raw_high = 13000;
+
+      m_hists.h2EMCalRawEnergyTowerIndex = new TH2F("h2EMCalRawEnergyTowerIndex", "EMCal; Tower Index; Raw Tower Energy [ADC]",
+                                                    bins_emcal_towers, 0, bins_emcal_towers,
+                                                    bins_adc_raw, adc_raw_low, adc_raw_high);
+    }
 
     Fun4AllServer* se = Fun4AllServer::instance();
 
@@ -184,9 +190,12 @@ int CaloQA::Init([[maybe_unused]] PHCompositeNode* topNode)
     se->registerHisto(m_hists.h2OHCalNoZSCent);
 
     se->registerHisto(m_hists.h2CentralityTotalCaloE);
-    se->registerHisto(m_hists.h2EMCalChi2Energy);
     se->registerHisto(m_hists.h2EMCalEnergyTowerIndex);
-    se->registerHisto(m_hists.h2EMCalRawEnergyTowerIndex);
+    if (m_do_raw)
+    {
+      se->registerHisto(m_hists.h2EMCalChi2Energy);
+      se->registerHisto(m_hists.h2EMCalRawEnergyTowerIndex);
+    }
   }
 
   if (m_do_tree)
@@ -264,10 +273,13 @@ int CaloQA::process_centrality(PHCompositeNode *topNode)
 int CaloQA::process_calo(PHCompositeNode *topNode)
 {
   auto* towersCEMC  = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC");
-  auto* towersCEMCRaw = findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_CEMC");
+  auto* towersCEMCRaw = m_do_raw ? findNode::getClass<TowerInfoContainer>(topNode, "TOWERS_CEMC") : nullptr;
   auto* towersCEMCRetowered = m_do_retower ? findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_CEMC_RETOWER") : nullptr;
   auto* towersIHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALIN");
   auto* towersOHCal = findNode::getClass<TowerInfoContainer>(topNode, "TOWERINFO_CALIB_HCALOUT");
+
+  auto* eventInfo = findNode::getClass<EventHeader>(topNode, "EventHeader");
+  int event_id = eventInfo ? eventInfo->get_EvtSequence() : -1;
 
   double cent = m_data.centrality;
 
@@ -286,7 +298,7 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
     return Fun4AllReturnCodes::ABORTRUN;
   }
 
-  if (m_do_hists || m_do_detailed)
+  if (m_do_hists || m_do_detailed || m_do_raw || Verbosity() > 0)
   {
     // Base EMCal
     for (unsigned int towerIndex = 0; towerIndex < towersCEMC->size(); ++towerIndex)
@@ -295,7 +307,7 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       unsigned int iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
       unsigned int ieta = TowerInfoDefs::getCaloTowerEtaBin(key);
 
-      if (m_do_hists && towersCEMCRaw)
+      if (m_do_raw && m_do_hists && towersCEMCRaw)
       {
         auto* towerRaw = towersCEMCRaw->get_tower_at_channel(towerIndex);
         if (towerRaw && !towerRaw->get_isHot())
@@ -324,6 +336,12 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       if (!std::isfinite(energy))
       {
         continue;
+      }
+
+      if (Verbosity() > 0 && !tower->get_isZS() && energy < 0.0)
+      {
+        std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
+                                 event_id, "EMCal", towerIndex, ieta, iphi, energy, tower->get_isZS());
       }
 
       if (m_do_detailed)
@@ -355,7 +373,7 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
   {
     unsigned int iphi = 0;
     unsigned int ieta = 0;
-    if (m_do_hists)
+    if (m_do_hists || Verbosity() > 0)
     {
       unsigned int key = TowerInfoDefs::encode_hcal(towerIndex);
       iphi = TowerInfoDefs::getCaloTowerPhiBin(key);
@@ -394,6 +412,12 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       float energy = towerIHCal->get_energy();
       if (std::isfinite(energy))
       {
+        if (Verbosity() > 0 && !towerIHCal->get_isZS() && energy < 0.0F)
+        {
+          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
+                                   event_id, "IHCal", towerIndex, ieta, iphi, energy, towerIHCal->get_isZS());
+        }
+
         m_data.ihcal_energy += energy;
         totalCaloE += energy;
 
@@ -426,6 +450,12 @@ int CaloQA::process_calo(PHCompositeNode *topNode)
       float energy = towerOHCal->get_energy();
       if (std::isfinite(energy))
       {
+        if (Verbosity() > 0 && !towerOHCal->get_isZS() && energy < 0.0F)
+        {
+          std::cout << std::format("Event: {:>8} | {:<5} Tower: {:>5} | eta: {:>2}, phi: {:>2} | Energy: {:>10.6f} GeV | ZS status: {}\n",
+                                   event_id, "OHCal", towerIndex, ieta, iphi, energy, towerOHCal->get_isZS());
+        }
+
         m_data.ohcal_energy += energy;
         totalCaloE += energy;
 
