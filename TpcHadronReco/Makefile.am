@@ -1,13 +1,17 @@
 AUTOMAKE_OPTIONS = foreign
 
+TPC_POLY_INSTALL = /sphenix/u/mitrankov/install_PR_3D
+
 AM_CPPFLAGS = \
   -I$(includedir) \
-  -isystem$(OFFLINE_MAIN)/include \
+	-I$(TPC_POLY_INSTALL)/include \
+	-isystem$(OFFLINE_MAIN)/include \
   -isystem$(ROOTSYS)/include
 
 AM_LDFLAGS = \
   -L$(libdir) \
-  -L$(OFFLINE_MAIN)/lib \
+  -L$(TPC_POLY_INSTALL)/lib \
+	-L$(OFFLINE_MAIN)/lib \
   -L$(OFFLINE_MAIN)/lib64
 
 # Keep a stable lower-case install path for analysis macros:
@@ -50,15 +54,6 @@ libTpcHadronReco_la_LIBADD = \
   -ltrackeralign \
   -ltrackbase_historic_io \
   -ltpctrackreco
-
-BUILT_SOURCES = testexternals.cc
-noinst_PROGRAMS = testexternals
-testexternals_SOURCES = testexternals.cc
-testexternals_LDADD = libTpcHadronReco.la
-
-testexternals.cc:
-	echo "// generated build/link test" > $@
-	echo "int main() { return 0; }" >> $@
 
 clean-local:
 	rm -f $(BUILT_SOURCES)

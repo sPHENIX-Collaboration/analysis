@@ -73,7 +73,7 @@ int Fun4All_TpcV0CandidateTree(
   rc->set_StringFlag("CDB_GLOBALTAG", "newcdbtag");
   rc->set_uint64Flag("TIMESTAMP", 1);
   
-  auto *v0 = new TpcV0CandidateTree("TpcV0CandidateTree", output_file);
+  auto *v0 = new tpchadronreco::TpcV0CandidateTree("TpcV0CandidateTree", output_file);
   v0->Verbosity(env_int("V0_MODULE_VERBOSITY", 0));
 
   v0->use_pattern_cluster_tracks(env_bool("V0_USE_PATTERN_TRACKS", true));
@@ -296,7 +296,7 @@ int Fun4All_TpcV0CandidateTree(
 
   // Sigma(1385)^+/- -> Lambda pi^+/- (and anti-Sigma).
   v0->set_sigma1385_selection(
-      env_bool("V0_ENABLE_SIGMA1385", false),
+      env_bool("V0_ENABLE_SIGMA1385", true),
       env_int("V0_SIGMA1385_MIN_TPC_CLUSTERS", 20),
       env_double("V0_SIGMA1385_BACHELOR_PT_MIN", 0.20),
       env_double("V0_SIGMA1385_MASS_MIN", 1.25),
@@ -306,7 +306,7 @@ int Fun4All_TpcV0CandidateTree(
 
   // Xi^- -> Lambda pi^- and anti-Xi^+ -> anti-Lambda pi^+.
   v0->set_xi_selection(
-      env_bool("V0_ENABLE_XI", false),
+      env_bool("V0_ENABLE_XI", true),
       env_int("V0_XI_MIN_TPC_CLUSTERS", 20),
       env_double("V0_XI_BACHELOR_PT_MIN", 0.20),
       env_double("V0_XI_MASS_MIN", 1.25),
@@ -320,7 +320,7 @@ int Fun4All_TpcV0CandidateTree(
 
   // Omega^- -> Lambda K^- and anti-Omega^+ -> anti-Lambda K^+.
   v0->set_omega_selection(
-      env_bool("V0_ENABLE_OMEGA", false),
+      env_bool("V0_ENABLE_OMEGA", true),
       env_int("V0_OMEGA_MIN_TPC_CLUSTERS", 20),
       env_double("V0_OMEGA_BACHELOR_PT_MIN", 0.20),
       env_double("V0_OMEGA_MASS_MIN", 1.60),
