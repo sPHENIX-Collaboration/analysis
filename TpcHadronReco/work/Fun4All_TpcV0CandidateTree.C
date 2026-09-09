@@ -59,9 +59,9 @@ int Fun4All_TpcV0CandidateTree(
     const std::string &output_file = "TpcV0Candidates.root",
     const int nEvents = 0,
     const int skipEvents = 0,
-    const bool apply_spatial_correction = true,
-    const std::string &spatial_correction_file = "/sphenix/user/mitrankov/novel/coresoftware_TrackingDiagnostics/work/input/v0_spatial_map_transverse_only.root",
-    const bool apply_spatial_correction_z = true,
+    const bool apply_spatial_correction = false,
+    const std::string &spatial_correction_file = "/sphenix/user/mitrankov/novel/coresoftware_TrackingDiagnostics/work/input/v0_ml_transverse_distortion_map.root",
+    const bool apply_spatial_correction_z = false,
     const double spatial_correction_scale = 1.0)
 {
 
@@ -193,7 +193,7 @@ int Fun4All_TpcV0CandidateTree(
       env_double("V0_KALMAN_ROBUST_CHI2_SOFT", 16.0),
       env_double("V0_KALMAN_ROBUST_CHI2_HARD", 100.0));
   const int kalman_iterations = env_int("V0_KALMAN_ITERATIONS", 1);
-  v0->set_kalman_fit_iterations(kalman_iterations);
+  //v0->set_kalman_fit_iterations(kalman_iterations);
 
   // Deterministic, helix-like propagation. Do not use process noise to absorb
   // TPC module misalignment; the regional sigmas and robust update handle it.
@@ -225,7 +225,7 @@ int Fun4All_TpcV0CandidateTree(
 
   // Fast common track-only preselection. Pair-level rough line PCA cuts stay
   // disabled so prompt pairs always reach the primary-PCA reconstruction.
-  v0->set_pre_track_pt_min(env_double("V0_PRE_TRACK_PT_MIN", 0.20));
+  v0->set_pre_track_pt_min(env_double("V0_PRE_TRACK_PT_MIN", 0.00));
   v0->set_pre_track_dca_xy_min(env_double("V0_PRE_TRACK_DCA_XY_MIN", -1.0));
   v0->set_pre_track_dca_z_min(env_double("V0_PRE_TRACK_DCA_Z_MIN", -1.0));
   v0->set_pre_track_dca_xy_max(env_double("V0_PRE_TRACK_DCA_XY_MAX", -1.0));
@@ -240,7 +240,7 @@ int Fun4All_TpcV0CandidateTree(
   v0->set_kshort_selection(
       env_bool("V0_ENABLE_KSHORT", true),
       env_int("V0_KSHORT_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_KSHORT_TRACK_PT_MIN", 0.20),
+      env_double("V0_KSHORT_TRACK_PT_MIN", 0.00),
       env_double("V0_KSHORT_MASS_MIN", 0.40),
       env_double("V0_KSHORT_MASS_MAX", 0.60),
       env_double("V0_KSHORT_PCA_Z_MAX", 20.0),
@@ -258,7 +258,7 @@ int Fun4All_TpcV0CandidateTree(
   v0->set_lambda_selection(
       env_bool("V0_ENABLE_LAMBDA", true),
       env_int("V0_LAMBDA_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_LAMBDA_TRACK_PT_MIN", 0.20),
+      env_double("V0_LAMBDA_TRACK_PT_MIN", 0.00),
       env_double("V0_LAMBDA_MASS_MIN", 1.08),
       env_double("V0_LAMBDA_MASS_MAX", 1.16),
       env_double("V0_LAMBDA_PCA_Z_MAX", 20.0),
@@ -271,7 +271,7 @@ int Fun4All_TpcV0CandidateTree(
   v0->set_antilambda_selection(
       env_bool("V0_ENABLE_ANTILAMBDA", true),
       env_int("V0_ANTILAMBDA_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_ANTILAMBDA_TRACK_PT_MIN", 0.20),
+      env_double("V0_ANTILAMBDA_TRACK_PT_MIN", 0.00),
       env_double("V0_ANTILAMBDA_MASS_MIN", 1.08),
       env_double("V0_ANTILAMBDA_MASS_MAX", 1.16),
       env_double("V0_ANTILAMBDA_PCA_Z_MAX", 20.0),
@@ -285,7 +285,7 @@ int Fun4All_TpcV0CandidateTree(
   // vertex pointing requirement here: cascade Lambdas originate at Xi/Omega.
   v0->set_hyperon_lambda_seed_selection(
       env_int("V0_HYPERON_LAMBDA_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_HYPERON_LAMBDA_TRACK_PT_MIN", 0.20),
+      env_double("V0_HYPERON_LAMBDA_TRACK_PT_MIN", 0.00),
       env_double("V0_HYPERON_LAMBDA_MASS_MIN", 1.08),
       env_double("V0_HYPERON_LAMBDA_MASS_MAX", 1.16),
       env_double("V0_HYPERON_LAMBDA_PCA_Z_MAX", 20.0),
@@ -297,18 +297,18 @@ int Fun4All_TpcV0CandidateTree(
   // Sigma(1385)^+/- -> Lambda pi^+/- (and anti-Sigma).
   v0->set_sigma1385_selection(
       env_bool("V0_ENABLE_SIGMA1385", true),
-      env_int("V0_SIGMA1385_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_SIGMA1385_BACHELOR_PT_MIN", 0.20),
+      env_int("V0_SIGMA1385_MIN_TPC_CLUSTERS", 30),
+      env_double("V0_SIGMA1385_BACHELOR_PT_MIN", 0.00),
       env_double("V0_SIGMA1385_MASS_MIN", 1.25),
       env_double("V0_SIGMA1385_MASS_MAX", 1.55),
-      env_double("V0_SIGMA1385_BACHELOR_DCA_XY_MAX", 3.0),
-      env_double("V0_SIGMA1385_BACHELOR_DCA_Z_MAX", -1.0));
+      env_double("V0_SIGMA1385_BACHELOR_DCA_XY_MAX", 0.5),
+      env_double("V0_SIGMA1385_BACHELOR_DCA_Z_MAX", 0.2));
 
   // Xi^- -> Lambda pi^- and anti-Xi^+ -> anti-Lambda pi^+.
   v0->set_xi_selection(
       env_bool("V0_ENABLE_XI", true),
       env_int("V0_XI_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_XI_BACHELOR_PT_MIN", 0.20),
+      env_double("V0_XI_BACHELOR_PT_MIN", 0.00),
       env_double("V0_XI_MASS_MIN", 1.25),
       env_double("V0_XI_MASS_MAX", 1.40),
       env_double("V0_XI_PAIR_DCA_MAX", 2.0),
@@ -322,7 +322,7 @@ int Fun4All_TpcV0CandidateTree(
   v0->set_omega_selection(
       env_bool("V0_ENABLE_OMEGA", true),
       env_int("V0_OMEGA_MIN_TPC_CLUSTERS", 20),
-      env_double("V0_OMEGA_BACHELOR_PT_MIN", 0.20),
+      env_double("V0_OMEGA_BACHELOR_PT_MIN", 0.00),
       env_double("V0_OMEGA_MASS_MIN", 1.60),
       env_double("V0_OMEGA_MASS_MAX", 1.75),
       env_double("V0_OMEGA_PAIR_DCA_MAX", 2.0),
@@ -430,8 +430,8 @@ int Fun4All_TpcV0CandidateTree(
   
   // Full daughter cluster payload remains K0S-only. TrackTree is independent
   // and can be enabled for residual/DCA QA with V0_WRITE_TRACK_TREE=1.
-  v0->set_write_track_tree(env_bool("V0_WRITE_TRACK_TREE", false));
-  //v0->set_write_track_tree(true);
+  v0->set_write_track_tree(env_bool("V0_WRITE_TRACK_TREE", true));
+  v0->set_write_track_tree(true);
   v0->set_write_cluster_residual_tree(env_bool("V0_WRITE_CLUSTER_RESIDUAL_TREE", false));
   v0->set_write_kalman_innovation_diagnostics(env_bool("V0_WRITE_KALMAN_DIAGNOSTICS", true));
   v0->set_write_kshort_daughter_details(env_bool("V0_WRITE_KSHORT_DETAILS", true));
