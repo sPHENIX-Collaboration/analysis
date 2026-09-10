@@ -149,15 +149,20 @@ int ResonanceGeometricAcceptance::InitRun([[maybe_unused]] PHCompositeNode *topN
 
   outfile = new TFile(m_outfile_name.c_str(),"RECREATE");
 
-  all_candidates_vspt = makeHistogram(m_mother_name+"_all_candidates","All "+m_mother_name+" candidates in fiducial region with selected decay",pt_bins);
-  all_candidates_vseta = makeHistogram(m_mother_name+"_all_candidates","All "+m_mother_name+" candidates in fiducial region with selected decay",eta_bins);
-  all_candidates_vsphi = makeHistogram(m_mother_name+"_all_candidates","All "+m_mother_name+" candidates in fiducial region with selected decay",phi_bins);
-  all_candidates_vsrapidity = makeHistogram(m_mother_name+"_all_candidates","All "+m_mother_name+" candidates in fiducial region with selected decay",rapidity_bins);
+  std::string all_basename = m_mother_name+"_all_candidates";
+  std::string all_basetitle = "All "+m_mother_name+" candidates in fiducial region with selected decay";
+  std::string passing_basename = m_mother_name+"_passing_candidates";
+  std::string passing_basetitle = m_mother_name+" candidates passing geometric acceptance cuts";
 
-  passing_candidates_vspt = makeHistogram(m_mother_name+"_passing_candidates",m_mother_name+" candidates passing geometric acceptance cuts",pt_bins);
-  passing_candidates_vseta = makeHistogram(m_mother_name+"_passing_candidates",m_mother_name+" candidates passing geometric acceptance cuts",eta_bins);
-  passing_candidates_vsphi = makeHistogram(m_mother_name+"_passing_candidates",m_mother_name+" candidates passing geometric acceptance cuts",phi_bins);
-  passing_candidates_vsrapidity = makeHistogram(m_mother_name+"_passing_candidates",m_mother_name+" candidates passing geometric acceptance cuts",rapidity_bins);
+  all_candidates_vspt = makeHistogram(all_basename,all_basetitle,pt_bins);
+  all_candidates_vseta = makeHistogram(all_basename,all_basetitle,eta_bins);
+  all_candidates_vsphi = makeHistogram(all_basename,all_basetitle,phi_bins);
+  all_candidates_vsrapidity = makeHistogram(all_basename,all_basetitle,rapidity_bins);
+
+  passing_candidates_vspt = makeHistogram(passing_basename,passing_basetitle,pt_bins);
+  passing_candidates_vseta = makeHistogram(passing_basename,passing_basetitle,eta_bins);
+  passing_candidates_vsphi = makeHistogram(passing_basename,passing_basetitle,phi_bins);
+  passing_candidates_vsrapidity = makeHistogram(passing_basename,passing_basetitle,rapidity_bins);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -386,6 +391,9 @@ int ResonanceGeometricAcceptance::process_event([[maybe_unused]] PHCompositeNode
           kfp_reco_mother.GetPhi(reco_mother_phi,reco_mother_phierr);
           float reco_mother_rapidity = kfp_reco_mother.GetRapidity();
 
+          bool daughter_pt_above_min = std::all_of(combination.begin(),combination.end(),
+            [&](SvtxTrack* track){ return track->get_pt() >= m_daughter_min_pT; });
+
           bool within_zvertex_limits = (kfpv.GetZ()>=zvertex_limits.first && kfpv.GetZ()<=zvertex_limits.second);
 
           bool within_pt_limits = (reco_mother_pt>=pt_limits.first && reco_mother_pt<=pt_limits.second);
@@ -393,7 +401,7 @@ int ResonanceGeometricAcceptance::process_event([[maybe_unused]] PHCompositeNode
           bool within_phi_limits = (reco_mother_phi>=phi_limits.first && reco_mother_phi<=phi_limits.second);
           bool within_rapidity_limits = (reco_mother_rapidity>=rapidity_limits.first && reco_mother_rapidity<=rapidity_limits.second);
 
-          if(within_zvertex_limits && within_pt_limits && within_eta_limits && within_phi_limits && within_rapidity_limits)
+          if(daughter_pt_above_min && within_zvertex_limits && within_pt_limits && within_eta_limits && within_phi_limits && within_rapidity_limits)
           {
             if(Verbosity()>1)
             {
@@ -401,10 +409,13 @@ int ResonanceGeometricAcceptance::process_event([[maybe_unused]] PHCompositeNode
               for(KFParticle& kfpd : kfp_reco_daughters) identify(kfpd);
             }
 
-            passing_candidates_vspt->Fill(reco_mother_pt);
-            passing_candidates_vseta->Fill(reco_mother_eta);
-            passing_candidates_vsphi->Fill(reco_mother_phi);
-            passing_candidates_vsrapidity->Fill(reco_mother_rapidity);
+            // if there are multiple reco combinations for a single truth candidate, scale their contribution down by the number of combinations
+            float fill_weight = 1./reco_combinations.size();
+
+            passing_candidates_vspt->Fill(reco_mother_pt,fill_weight);
+            passing_candidates_vseta->Fill(reco_mother_eta,fill_weight);
+            passing_candidates_vsphi->Fill(reco_mother_phi,fill_weight);
+            passing_candidates_vsrapidity->Fill(reco_mother_rapidity,fill_weight);
           }
         }
       }
@@ -421,6 +432,20 @@ int ResonanceGeometricAcceptance::process_event([[maybe_unused]] PHCompositeNode
   passing_daughter_map.clear();
 
   return Fun4AllReturnCodes::EVENT_OK;
+}
+
+int ResonanceGeometricAcceptance::get_nmaps(TrackSeed* si_seed) const
+{
+  int nmaps = 0;
+  for(auto c_it = si_seed->begin_cluster_keys(); c_it != si_seed->end_cluster_keys(); ++c_it)
+  {
+    TrkrDefs::cluskey ckey = *c_it;
+    if(TrkrDefs::getTrkrId(ckey) == TrkrDefs::TrkrId::mvtxId)
+    {
+      nmaps++;
+    }
+  }
+  return nmaps;
 }
 
 std::vector<std::vector<SvtxTrack*>> ResonanceGeometricAcceptance::get_all_reco_combinations(const std::vector<PHG4Particle*>& daughters) const
@@ -655,11 +680,11 @@ std::set<SvtxTrack*> ResonanceGeometricAcceptance::get_reco_matches_with_silicon
   for(SvtxTrack* reco_match : reco_matches)
   {
     TrackSeed* si_seed = reco_match->get_silicon_seed();
-    if(si_seed && si_seed->size_cluster_keys()>0)
+    if(si_seed && get_nmaps(si_seed)>0)
     {
       if(Verbosity()>5)
       {
-        std::cout << "matched reco track with ID " << reco_match->get_id() << " has " << si_seed->size_cluster_keys() << " silicon hits" << std::endl;
+        std::cout << "matched reco track with ID " << reco_match->get_id() << " has " << si_seed->size_cluster_keys() << " silicon hits, with " << get_nmaps(si_seed) << "MVTX hits" << std::endl;
       }
       reco_matches_with_silicon_hits.insert(reco_match);
     }

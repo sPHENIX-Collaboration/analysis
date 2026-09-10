@@ -96,6 +96,7 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   geoaccept_lambda->setMotherPDGID(3122);
   geoaccept_lambda->setDaughterPDGIDs({-211,2212});
   geoaccept_lambda->includeConjugate();
+  geoaccept_lambda->setDaughterMinPt(0.2);
   geoaccept_lambda->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_lambda);
 
@@ -105,6 +106,7 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   geoaccept_lambda_pos->setMotherPDGID(3122);
   geoaccept_lambda_pos->setDaughterPDGIDs({-211,2212});
   geoaccept_lambda_pos->includeConjugate(false);
+  geoaccept_lambda_pos->setDaughterMinPt(0.2);
   geoaccept_lambda_pos->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_lambda_pos);
 
@@ -114,6 +116,7 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   geoaccept_lambda_neg->setMotherPDGID(-3122);
   geoaccept_lambda_neg->setDaughterPDGIDs({211,-2212});
   geoaccept_lambda_neg->includeConjugate(false);
+  geoaccept_lambda_neg->setDaughterMinPt(0.2);
   geoaccept_lambda_neg->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_lambda_neg);
 
@@ -122,9 +125,102 @@ int Fun4All_HFG_GeometricAcceptance(std::string processID = "000000")
   geoaccept_kshort->setMotherName("K_S0");
   geoaccept_kshort->setMotherPDGID(310);
   geoaccept_kshort->setDaughterPDGIDs({211,-211});
+  geoaccept_kshort->setDaughterMinPt(0.2);
   geoaccept_kshort->includeConjugate(false);
   geoaccept_kshort->Verbosity(geo_accept_verbosity);
   se->registerSubsystem(geoaccept_kshort);
+
+  /////////////////////////////
+  // systematics calculation //
+  ////////////////////////////
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_minthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaInclusive_minthreshold");
+  geoaccept_lambda_minthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_minthreshold/Lambda0_geo_acceptance_minthreshold_"+processID+".root");
+  geoaccept_lambda_minthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_minthreshold->setMotherPDGID(3122);
+  geoaccept_lambda_minthreshold->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda_minthreshold->includeConjugate();
+  geoaccept_lambda_minthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_minthreshold->setTruthWeightThreshold(10);
+  geoaccept_lambda_minthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_minthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_maxthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaInclusive_maxthreshold");
+  geoaccept_lambda_maxthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_maxthreshold/Lambda0_geo_acceptance_maxthreshold_"+processID+".root");
+  geoaccept_lambda_maxthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_maxthreshold->setMotherPDGID(3122);
+  geoaccept_lambda_maxthreshold->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda_maxthreshold->includeConjugate();
+  geoaccept_lambda_maxthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_maxthreshold->setTruthWeightThreshold(40);
+  geoaccept_lambda_maxthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_maxthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_pos_minthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_Lambda_minthreshold");
+  geoaccept_lambda_pos_minthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_minthreshold/Lambda0_geo_acceptance_pos_minthreshold_"+processID+".root");
+  geoaccept_lambda_pos_minthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_pos_minthreshold->setMotherPDGID(3122);
+  geoaccept_lambda_pos_minthreshold->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda_pos_minthreshold->includeConjugate(false);
+  geoaccept_lambda_pos_minthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_pos_minthreshold->setTruthWeightThreshold(10);
+  geoaccept_lambda_pos_minthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_pos_minthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_pos_maxthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_Lambda_maxthreshold");
+  geoaccept_lambda_pos_maxthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_maxthreshold/Lambda0_geo_acceptance_pos_maxthreshold_"+processID+".root");
+  geoaccept_lambda_pos_maxthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_pos_maxthreshold->setMotherPDGID(3122);
+  geoaccept_lambda_pos_maxthreshold->setDaughterPDGIDs({-211,2212});
+  geoaccept_lambda_pos_maxthreshold->includeConjugate(false);
+  geoaccept_lambda_pos_maxthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_pos_maxthreshold->setTruthWeightThreshold(40);
+  geoaccept_lambda_pos_maxthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_pos_maxthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_neg_minthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaBar_minthreshold");
+  geoaccept_lambda_neg_minthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_minthreshold/Lambda0_geo_acceptance_neg_minthreshold_"+processID+".root");
+  geoaccept_lambda_neg_minthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_neg_minthreshold->setMotherPDGID(-3122);
+  geoaccept_lambda_neg_minthreshold->setDaughterPDGIDs({211,-2212});
+  geoaccept_lambda_neg_minthreshold->includeConjugate(false);
+  geoaccept_lambda_neg_minthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_neg_minthreshold->setTruthWeightThreshold(10);
+  geoaccept_lambda_neg_minthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_neg_minthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_lambda_neg_maxthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_LambdaBar_maxthreshold");
+  geoaccept_lambda_neg_maxthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_maxthreshold/Lambda0_geo_acceptance_neg_maxthreshold_"+processID+".root");
+  geoaccept_lambda_neg_maxthreshold->setMotherName("Lambda0");
+  geoaccept_lambda_neg_maxthreshold->setMotherPDGID(-3122);
+  geoaccept_lambda_neg_maxthreshold->setDaughterPDGIDs({211,-2212});
+  geoaccept_lambda_neg_maxthreshold->includeConjugate(false);
+  geoaccept_lambda_neg_maxthreshold->setDaughterMinPt(0.2);
+  geoaccept_lambda_neg_maxthreshold->setTruthWeightThreshold(40);
+  geoaccept_lambda_neg_maxthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_lambda_neg_maxthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_kshort_minthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_Kshort_minthreshold");
+  geoaccept_kshort_minthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_minthreshold/K_S0_geo_acceptance_"+processID+".root");
+  geoaccept_kshort_minthreshold->setMotherName("K_S0");
+  geoaccept_kshort_minthreshold->setMotherPDGID(310);
+  geoaccept_kshort_minthreshold->setDaughterPDGIDs({211,-211});
+  geoaccept_kshort_minthreshold->setDaughterMinPt(0.2);
+  geoaccept_kshort_minthreshold->includeConjugate(false);
+  geoaccept_kshort_minthreshold->setTruthWeightThreshold(10);
+  geoaccept_kshort_minthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_kshort_minthreshold);
+
+  ResonanceGeometricAcceptance* geoaccept_kshort_maxthreshold = new ResonanceGeometricAcceptance("GeometricAcceptance_Kshort_maxthreshold");
+  geoaccept_kshort_maxthreshold->setOutputFilename(outDir+"geometricAcceptance/systematics_maxthreshold/K_S0_geo_acceptance_"+processID+".root");
+  geoaccept_kshort_maxthreshold->setMotherName("K_S0");
+  geoaccept_kshort_maxthreshold->setMotherPDGID(310);
+  geoaccept_kshort_maxthreshold->setDaughterPDGIDs({211,-211});
+  geoaccept_kshort_maxthreshold->setDaughterMinPt(0.2);
+  geoaccept_kshort_maxthreshold->includeConjugate(false);
+  geoaccept_kshort_maxthreshold->setTruthWeightThreshold(40);
+  geoaccept_kshort_maxthreshold->Verbosity(geo_accept_verbosity);
+  se->registerSubsystem(geoaccept_kshort_maxthreshold);
 
 /*
   GeoAcceptanceNoG4* geoacc = new GeoAcceptanceNoG4();
