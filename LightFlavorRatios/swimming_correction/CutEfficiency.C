@@ -1,4 +1,5 @@
-#include "../util/binning.h"
+#include "../util/HistogramTools.h"
+#include "../config/binning.h"
 
 std::string getDate()
 {

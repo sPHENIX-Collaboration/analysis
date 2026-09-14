@@ -1,17 +1,15 @@
-#include "../bco_correction/V0DuplicateReader_mod.h"
-
-#include "../util/RooFit_import_TTree.h"
-
 #include "../corrections/EfficiencyCorrection.h"
 #include "../corrections/LambdaFeedDownCorrection.h"
 #include "../corrections/GeoAcceptanceCorrection.h"
 #include "../corrections/TrivialEfficiencyCorrection.h"
 #include "../corrections/CutEfficiencyCorrection.h"
 
+#include "../config/cuts.h"
+#include "../config/binning.h"
+#include "../util/HistogramTools.h"
+#include "../util/RooFit_import_TTree.h"
+
 #include "ResonanceRatio.h"
-//#include "calculate_ratios.C"
-#include "LambdaModel.h"
-#include "KshortModel.h"
 
 void Lambda_Kshort_ratio()
 {
@@ -43,22 +41,19 @@ void Lambda_Kshort_ratio()
     BinInfo::final_rapidity_bins,
     BinInfo::final_phi_bins,
   };
-
   RooArgList Ks_args;
   RooArgList lambda_args;
 
-  std::map<std::string,HistogramInfo> massbins_map = BinInfo::mass_bins;
+  HistogramInfo Ks_massbins = BinInfo::K_S0_data_mass_bins;
+  HistogramInfo Lambda_massbins = BinInfo::Lambda0_data_mass_bins;
 
-  HistogramInfo Ks_massbins = massbins_map.at("K_S0");
-  HistogramInfo Lambda_massbins = massbins_map.at("Lambda0");
+  CutSettings Ks_cuts = StandardCuts::data_K_S0_cuts;
+  CutSettings Lambda_cuts = StandardCuts::data_Lambda0_cuts;
 
-  KshortModel kshort_model(Ks_massbins);
-  LambdaModel lambda_model(Lambda_massbins);
-
-  double Ks_min_mass = Ks_massbins.bins[0];
+  double Ks_min_mass = Ks_massbins.bins.front();
   double Ks_max_mass = Ks_massbins.bins.back();
 
-  double Lambda_min_mass = Lambda_massbins.bins[0];
+  double Lambda_min_mass = Lambda_massbins.bins.front();
   double Lambda_max_mass = Lambda_massbins.bins.back();
 
   std::cout << "ks_mass_range " << Ks_min_mass << " " << Ks_max_mass << std::endl;
@@ -79,6 +74,9 @@ void Lambda_Kshort_ratio()
   std::vector<RooRealVar> Ks_cutvars_int;
   std::vector<RooRealVar> lambda_cutvars_int;
 
+  std::string Ks_cutstring = generate_selection_cutstring(Ks_cuts,diff_variables);
+  std::string Lambda_cutstring = generate_selection_cutstring(Lambda_cuts,diff_variables);
+
   for(HistogramInfo& hinfo : diff_variables)
   {
     std::string Ks_branchname = "K_S0_"+hinfo.name;
@@ -94,7 +92,7 @@ void Lambda_Kshort_ratio()
     lambda_args.add(lambda_diffvars[i]);
   }
 
-  for(const std::string& cutvar : Ks_massbins.get_cutvars(Ks_tree))
+  for(const std::string& cutvar : get_cutvars(Ks_tree,Ks_cutstring))
   {
     if(isIntBranch(Ks_tree->GetBranch(cutvar.c_str())))
     {
@@ -107,7 +105,7 @@ void Lambda_Kshort_ratio()
     }
   }
 
-  for(const std::string& cutvar : Lambda_massbins.get_cutvars(lambda_tree))
+  for(const std::string& cutvar : get_cutvars(lambda_tree,Lambda_cutstring))
   {
     if(isIntBranch(lambda_tree->GetBranch(cutvar.c_str())))
     {
@@ -140,82 +138,17 @@ void Lambda_Kshort_ratio()
     lambda_args.add(lambda_cutvars_int[i]);
   }
 
-  std::string Ks_cuts = Ks_massbins.cut_string;
-  std::string Lambda_cuts = Lambda_massbins.cut_string;
-
   Ks_args.Print();
   lambda_args.Print();
 
   RooDataSet* Ks_ds = new RooDataSet("K_S0","K_S0",Ks_args,RooFit::Import(*Ks_tree));
   RooDataSet* lambda_ds = new RooDataSet("Lambda0","Lambda0",lambda_args,RooFit::Import(*lambda_tree));
-/*
-  V0DuplicateReader ks_reader(Ks_tree, V0DuplicateReader::ParticleType::K0s);
-  V0DuplicateReader lambda_reader(lambda_tree, V0DuplicateReader::ParticleType::Lambda);
 
-  ks_reader.enableDeltaBCOCut(0, 350);
-  lambda_reader.enableDeltaBCOCut(0, 350);
+  RooDataSet* Ks_ds_withcuts = (RooDataSet*)Ks_ds->reduce(Ks_args,Ks_cutstring.c_str());
+  RooDataSet* lambda_ds_withcuts = (RooDataSet*)lambda_ds->reduce(lambda_args,Lambda_cutstring.c_str());
 
-  for (Long64_t i = 0; i < ks_reader.entries(); ++i)
-  {
-    if(i % 10000 == 0) std::cout << "processing BCO for Kshorts entry " << i << " / " << ks_reader.entries() << std::endl;
-    ks_reader.loadEntry(i);
-
-    if (!ks_reader.passesDeltaBCOCut()) continue;
-    if (!ks_reader.isCurrentEntryUnique()) continue;
-
-    m_ks.setVal(ks_reader.get<float>("K_S0_mass"));
-
-    for(size_t idiff = 0; idiff < diff_variables.size(); idiff++)
-    {
-      Ks_diffvars[idiff].setVal(ks_reader.get<float>(Ks_diffvars[idiff].GetName()));
-    }
-
-    for(size_t icut = 0; icut < Ks_cutvars.size(); icut++)
-    {
-      Ks_cutvars[icut].setVal(ks_reader.get<float>(Ks_cutvars[icut].GetName()));
-    }
-
-    for(size_t icut_int = 0; icut_int < Ks_cutvars_int.size(); icut_int++)
-    {
-      Ks_cutvars_int[icut_int].setVal(ks_reader.get<int>(Ks_cutvars_int[icut_int].GetName()));
-    }
-
-    Ks_ds->add(Ks_args);
-  }
-
-  for (Long64_t i = 0; i < lambda_reader.entries(); ++i)
-  {
-    if(i % 10000 == 0) std::cout << "processing BCO for lambda entry " << i << " / " << lambda_reader.entries() << std::endl;
-    lambda_reader.loadEntry(i);
-
-    if (!lambda_reader.passesDeltaBCOCut()) continue;
-    if (!lambda_reader.isCurrentEntryUnique()) continue;
-
-    m_lambda.setVal(lambda_reader.get<float>("Lambda0_mass"));
-
-    for(size_t idiff = 0; idiff < diff_variables.size(); idiff++)
-    {
-      lambda_diffvars[idiff].setVal(lambda_reader.get<float>(lambda_diffvars[idiff].GetName()));
-    }
-
-    for(size_t icut = 0; icut < lambda_cutvars.size(); icut++)
-    {
-      lambda_cutvars[icut].setVal(lambda_reader.get<float>(lambda_cutvars[icut].GetName()));
-    }
-
-    for(size_t icut_int = 0; icut_int < lambda_cutvars_int.size(); icut_int++)
-    {
-      lambda_cutvars_int[icut_int].setVal(lambda_reader.get<int>(lambda_cutvars_int[icut_int].GetName()));
-    }
-
-    lambda_ds->add(lambda_args);
-  }
-*/
-  RooDataSet* Ks_ds_withcuts = (RooDataSet*)Ks_ds->reduce(Ks_args,Ks_cuts.c_str());
-  RooDataSet* lambda_ds_withcuts = (RooDataSet*)lambda_ds->reduce(lambda_args,Lambda_cuts.c_str());
-
-  std::cout << "Ks_cuts " << Ks_cuts << std::endl;
-  std::cout << "Lamdba_cuts " << Lambda_cuts << std::endl;
+  std::cout << "Ks_cuts " << Ks_cutstring << std::endl;
+  std::cout << "Lamdba_cuts " << Lambda_cutstring << std::endl;
 
   std::string fd_filename = "/sphenix/tg/tg01/hf/hjheng/HF-analysis/simulation/Pythia_ppMinBias/cascade_feeddown/Cascade_feeddown_fraction.root";
   std::string geoacc_filename = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/geometricAcceptanceCorrection/corrections/geo_acceptance_inclusive.root";
@@ -261,7 +194,9 @@ void Lambda_Kshort_ratio()
 
   TFile* fout = new TFile("fits.root","RECREATE");
 
-  ResonanceRatio analyzer(lambda_model,kshort_model,massbins_map,
+  ResonanceRatio analyzer(3122,"Lambda0","(#Lambda^{0}+#bar{#Lambda^{0}})",
+                          310,"K_S0","K_{S}^{0}",
+                          Lambda_massbins,Ks_massbins,Lambda_cuts,Ks_cuts,
                           fout,"lambdaKsratio","(#Lambda^{0}+#bar{#Lambda^{0}})/2K_{S}^{0} ratio",1./2.,false,
                           diff_variables,corrections);
 

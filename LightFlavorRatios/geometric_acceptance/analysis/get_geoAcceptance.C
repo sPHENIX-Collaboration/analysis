@@ -20,6 +20,7 @@ void get_geoAcceptance(std::string numerator_infile = "/sphenix/tg/tg01/hf/mjpet
 
   for(HistogramInfo& h : variables)
   {
+
     TH1F* numerator_acceptance = makeHistogram((numerator_name+"_acceptance").c_str(),(numerator_title+" geometric acceptance").c_str(),h);
     TH1F* denominator_acceptance = makeHistogram((denominator_name+"_acceptance").c_str(),(denominator_title+" geometric acceptance").c_str(),h);
 
@@ -45,9 +46,11 @@ void get_geoAcceptance(std::string numerator_infile = "/sphenix/tg/tg01/hf/mjpet
     denominator_all->Write();
     denominator_reco->Write();
 
-    numerator_acceptance->Divide(numerator_reco,numerator_all);
-    denominator_acceptance->Divide(denominator_reco,denominator_all);
+    // Acceptances get binomial errors [subsets of same random process]
+    numerator_acceptance->Divide(numerator_reco,numerator_all,1.,1.,"B");
+    denominator_acceptance->Divide(denominator_reco,denominator_all,1.,1.,"B");
 
+    // Ratios of acceptances get normal errors [two uncorrelated processes]
     acceptance_correction->Divide(numerator_acceptance,denominator_acceptance);
     inverse_acceptance_correction->Divide(denominator_acceptance,numerator_acceptance);
 

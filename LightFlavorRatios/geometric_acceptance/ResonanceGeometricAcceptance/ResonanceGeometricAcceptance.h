@@ -5,7 +5,8 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "../../util/binning.h"
+#include "../../config/binning.h"
+#include "../../util/HistogramTools.h"
 
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/PHG4ParticleSvtxMap.h>
@@ -108,6 +109,11 @@ class ResonanceGeometricAcceptance : public SubsysReco
     m_truth_weight_threshold = threshold;
   }
 
+  void setDaughterMinPt(const float minpt)
+  {
+    m_daughter_min_pT = minpt;
+  }
+
   void SetVertexZLimits(const std::pair<float,float> limits)
   {
     zvertex_limits = limits;
@@ -167,6 +173,7 @@ class ResonanceGeometricAcceptance : public SubsysReco
   bool check_crossings_match(const std::vector<SvtxTrack*>& reco_daughters) const;
   void identify(KFParticle kfp) const;
   int get_mother_PDGID(const std::vector<PHG4Particle*>& daughters) const;
+  int get_nmaps(TrackSeed* si_seed) const;
   //bool truth_track_is_best_match_to_reco_track(const PHG4Particle* particle) const;
 
   HistogramInfo pt_bins = BinInfo::final_pt_bins;
@@ -197,6 +204,8 @@ class ResonanceGeometricAcceptance : public SubsysReco
   std::vector<int> m_daughter_pdgids;
   bool m_include_conjugate = false;
   int m_truth_weight_threshold = 20;
+
+  float m_daughter_min_pT = 0.;
 
   std::string m_mother_name = "Particle";
   std::string m_trackmap_name = "SvtxTrackMap";

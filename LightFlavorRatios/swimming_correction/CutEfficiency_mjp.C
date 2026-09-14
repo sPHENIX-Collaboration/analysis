@@ -1,6 +1,7 @@
-#include "../util/binning.h"
-#include "../yield_and_ratios/LambdaModel.h"
-#include "../yield_and_ratios/KshortModel.h"
+#include "../util/HistogramTools.h"
+#include "../config/binning.h"
+#include "../config/cuts.h"
+#include "PVSVUncertainty.h"
 
 TH1F* n_truth_mass = new TH1F("n_truth_mass","num. truth mass",1000,1.05,1.25);
 TH1F* n_reco_mass = new TH1F("n_reco_mass","num. reco mass",1000,1.05,1.25);
@@ -142,39 +143,50 @@ std::string full_truth_cut(const std::string& name, const int pdgid, const std::
   std::string correct_truth_parent = correct_truth_parent_cut(pdgid,daughters.size(),include_opposite);
   std::string same_truth_parent = "fabs(track_1_true_track_history_pz[0] - track_2_true_track_history_pz[0])<1e-6";
   std::string rapidity_cut = "fabs("+name+"_rapidity)<1.";
-  std::string geoaccept_cut = "track_1_MVTX_nHits>0 && track_2_MVTX_nHits>0 && fabs(primary_vertex_z)<10.";
+  std::string geoaccept_cut = "track_1_pT>0.2 && track_2_pT>0.2 && track_1_MVTX_nHits>0 && track_2_MVTX_nHits>0 && fabs(primary_vertex_z)<10.";
   std::string correct_daughter_pdgid = correct_daughter_PDGID_assignment_cut(daughters.size());
 
-  return "("+correct_truth_daughters+") && ("+correct_truth_parent+") && ("+same_truth_parent+") && ("+geoaccept_cut+") && ("+correct_daughter_pdgid+") && ("+rapidity_cut+") && ("+BinInfo::fiducial_cuts(name,{BinInfo::final_pt_bins,BinInfo::final_eta_bins,BinInfo::final_phi_bins,BinInfo::final_rapidity_bins})+")";
+  return "("+correct_truth_daughters+") && ("+correct_truth_parent+") && ("+same_truth_parent+") && ("+geoaccept_cut+") && ("+correct_daughter_pdgid+") && ("+rapidity_cut+") && ("+generate_fiducial_cuts(name,{BinInfo::final_pt_bins,BinInfo::final_eta_bins,BinInfo::final_phi_bins,BinInfo::final_rapidity_bins})+")";
 }
 
-std::string full_reco_cut(const std::string& name, const int pdgid, const std::pair<float,float>& mass_window, const std::vector<int> daughters, const bool include_opposite, const std::map<std::string,HistogramInfo>& massbins_map)
+std::string full_reco_cut(const std::string& name, const int pdgid, const std::vector<int> daughters, const bool include_opposite, const CutSettings& cuts, const std::vector<HistogramInfo>& variables, const HistogramInfo& massbins)
 {
   std::string truth_cut = full_truth_cut(name,pdgid,daughters,include_opposite);
-  const HistogramInfo massbins = massbins_map.at(name);
-  std::string reco_cuts = massbins.cut_string;
+  std::string reco_cuts = generate_selection_cutstring(cuts,variables);
   // for sideband-subtraction yield extraction, must also include the restriction of the yield to the signal window
-  // std::string mass_window_cuts = name+"_mass>"+std::to_string(mass_window.first)+" && "+name+"_mass<"+std::to_string(mass_window.second);
+  std::string mass_window_cuts = name+"_mass>"+std::to_string(massbins.bins.front())+" && "+name+"_mass<"+std::to_string(massbins.bins.back());
   std::string correct_daughter_pdgid = correct_daughter_PDGID_assignment_cut(daughters.size());
-  return truth_cut+" && "+reco_cuts+" && "+correct_daughter_pdgid;
+  return truth_cut+" && "+reco_cuts+" && "+correct_daughter_pdgid+" && "+mass_window_cuts;
 }
 
-void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::string& name, TEntryList* elist, const int pdgid, const int n_daughters)
+void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::string& name, TEntryList* elist, const int pdgid, const int n_daughters, TH1F* h_mass, PVSVUncertainty& pvsv, bool fill_aux_histograms = false)
 {
   t->ResetBranchAddresses();
   t->SetBranchStatus("*",true);
   std::vector<std::vector<int>*> daughter_pdgid_histories;
+  std::vector<float> daughter_PV_DCA_err;
+  std::vector<std::array<float,21>> daughter_covariance;
   daughter_pdgid_histories.resize(n_daughters);
+  daughter_PV_DCA_err.resize(n_daughters);
+  daughter_covariance.resize(n_daughters);
   float var_branch;
   float mass;
+  float mother_vertex_volume;
+  float primary_vertex_volume;
+  float primary_vertex_covariance[6];
+
   for(int i=0;i<n_daughters;i++)
   {
     daughter_pdgid_histories[i] = nullptr;
     t->SetBranchAddress(("track_"+std::to_string(i+1)+"_true_track_history_PDG_ID").c_str(),&daughter_pdgid_histories[i]);
+    t->SetBranchAddress(("track_"+std::to_string(i+1)+"_PV_DCA_Err").c_str(),&daughter_PV_DCA_err[i]);
+    t->SetBranchAddress(("track_"+std::to_string(i+1)+"_Covariance").c_str(),daughter_covariance[i].data());
   }
   t->SetBranchAddress((name+"_"+var.name).c_str(),&var_branch);
-
   t->SetBranchAddress((name+"_mass").c_str(),&mass);
+  t->SetBranchAddress((name+"_vertex_volume").c_str(),&mother_vertex_volume);
+  t->SetBranchAddress("primary_vertex_volume",&primary_vertex_volume);
+  t->SetBranchAddress("primary_vertex_Covariance",primary_vertex_covariance);
 
   int npassing = 0;
 
@@ -184,11 +196,6 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
     //std::cout << elist->GetEntry(e) << std::endl;
     t->GetEntry(elist->GetEntry(e));
     
-    // fill reco mass histograms after truth cuts and after reco cuts
-    if(std::string(h->GetName())=="Lambda0_truth_vspT") n_truth_mass->Fill(mass);
-    if(std::string(h->GetName())=="Lambda0_reco_vspT") n_reco_mass->Fill(mass);
-    if(std::string(h->GetName())=="K_S0_truth_vspT") d_truth_mass->Fill(mass);
-    if(std::string(h->GetName())=="K_S0_reco_vspT") d_reco_mass->Fill(mass);
     // special case for Kshorts
     if(pdgid==310)
     {
@@ -199,6 +206,17 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
       if(primary_Kshort || primary_K0)
       {
         h->Fill(var_branch);
+        if(fill_aux_histograms)
+        {
+          h_mass->Fill(mass);
+          pvsv.PV_sigma->Fill(pow(primary_vertex_volume,1./3.));
+          pvsv.PV_sigma_xy->Fill(sqrt(primary_vertex_covariance[0]+primary_vertex_covariance[2]-2.*primary_vertex_covariance[1]));
+          pvsv.SV_sigma->Fill(pow(mother_vertex_volume,1./3.));
+          pvsv.track_1_PV_DCA_sigma->Fill(daughter_PV_DCA_err[0]);
+          pvsv.track_2_PV_DCA_sigma->Fill(daughter_PV_DCA_err[1]);
+          pvsv.track_1_PV_DCA_xy_sigma->Fill(sqrt(daughter_covariance[0][0]+daughter_covariance[0][2]-2.*daughter_covariance[0][1]));
+          pvsv.track_2_PV_DCA_xy_sigma->Fill(sqrt(daughter_covariance[1][0]+daughter_covariance[1][2]-2.*daughter_covariance[1][1]));
+        }
         npassing++;
       }
       else
@@ -213,6 +231,17 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
       if(all_daughters_primary_parents)
       {
         h->Fill(var_branch);
+        if(fill_aux_histograms)
+        {
+          h_mass->Fill(mass);
+          pvsv.PV_sigma->Fill(pow(primary_vertex_volume,1./3.));
+          pvsv.PV_sigma_xy->Fill(sqrt(primary_vertex_covariance[0]+primary_vertex_covariance[2]-2.*primary_vertex_covariance[1]));
+          pvsv.SV_sigma->Fill(pow(mother_vertex_volume,1./3.));
+          pvsv.track_1_PV_DCA_sigma->Fill(daughter_PV_DCA_err[0]);
+          pvsv.track_2_PV_DCA_sigma->Fill(daughter_PV_DCA_err[1]);
+          pvsv.track_1_PV_DCA_xy_sigma->Fill(sqrt(daughter_covariance[0][0]+daughter_covariance[0][2]-2.*daughter_covariance[0][1]));
+          pvsv.track_2_PV_DCA_xy_sigma->Fill(sqrt(daughter_covariance[1][0]+daughter_covariance[1][2]-2.*daughter_covariance[1][1]));
+        }
         npassing++;
       }
     }
@@ -220,13 +249,21 @@ void post_draw_process(TTree* t, TH1F* h, const HistogramInfo& var, const std::s
   std::cout << "npassing: " << npassing << std::endl;
 }
 
-void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int numerator_pdgid = 3122, const std::vector<int> numerator_daughters = {-211,2212},
-                       //const std::string& numerator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/ppi_reco/outputKFParticle_ppi_reco_001995.root", const bool numerator_include_opposite = true,
-                       const std::string& numerator_infile = "/sphenix/user/mjpeters/analysis/LightFlavorRatios/geometric_acceptance/simulation/ppi_reco/outputKFParticle_ppi_reco_000000.root", const bool numerator_include_opposite = true,
-                       const std::string& denominator_name = "K_S0", const int denominator_pdgid = 310, const std::vector<int> denominator_daughters = {211, -211},
-                       //const std::string& denominator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/pipi_reco/outputKFParticle_pipi_reco_001995.root", const bool denominator_include_opposite = false,
-                       const std::string& denominator_infile = "/sphenix/user/mjpeters/analysis/LightFlavorRatios/geometric_acceptance/simulation/pipi_reco/outputKFParticle_pipi_reco_000000.root", const bool denominator_include_opposite = false,
-                       const std::string& outfile = "test.root", const std::map<std::string,HistogramInfo>& massbins_map = BinInfo::mass_bins_MC)
+void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0",
+                       const int numerator_pdgid = 3122,
+                       const std::vector<int> numerator_daughters = {-211,2212},
+                       const std::string& numerator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/ppi_reco/outputKFParticle_ppi_reco_000001.root",
+                       const bool numerator_include_opposite = true,
+                       const CutSettings& numerator_cuts = StandardCuts::MC_Lambda0_cuts, 
+                       const HistogramInfo& numerator_massbins = BinInfo::Lambda0_MC_mass_bins,
+                       const std::string& denominator_name = "K_S0",
+                       const int denominator_pdgid = 310,
+                       const std::vector<int> denominator_daughters = {211, -211},
+                       const std::string& denominator_infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/closureTestSample/pipi_reco/outputKFParticle_pipi_reco_000001.root",
+                       const bool denominator_include_opposite = false,
+                       const CutSettings& denominator_cuts = StandardCuts::MC_K_S0_cuts, 
+                       const HistogramInfo& denominator_massbins = BinInfo::K_S0_MC_mass_bins,
+                       const std::string& outfile = "test.root")
 {
   bool verbose = true;
 
@@ -277,14 +314,11 @@ void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int 
 */
   }
 
-  LambdaModel lambdamodel(massbins_map.at("Lambda0"));
-  KshortModel kshortmodel(massbins_map.at("K_S0"));
-
   std::string numerator_truth_cut = full_truth_cut(numerator_name,numerator_pdgid,numerator_daughters,numerator_include_opposite);
-  std::string numerator_reco_cut = full_reco_cut(numerator_name,numerator_pdgid,{lambdamodel.left_sideband.second,lambdamodel.right_sideband.first},numerator_daughters,numerator_include_opposite,massbins_map);
+  std::string numerator_reco_cut = full_reco_cut(numerator_name,numerator_pdgid,numerator_daughters,numerator_include_opposite,numerator_cuts,variables,numerator_massbins);
 
   std::string denominator_truth_cut = full_truth_cut(denominator_name,denominator_pdgid,denominator_daughters,denominator_include_opposite);
-  std::string denominator_reco_cut = full_reco_cut(denominator_name,denominator_pdgid,{kshortmodel.left_sideband.second,kshortmodel.right_sideband.first},denominator_daughters,denominator_include_opposite,massbins_map);
+  std::string denominator_reco_cut = full_reco_cut(denominator_name,denominator_pdgid,denominator_daughters,denominator_include_opposite,denominator_cuts,variables,denominator_massbins);
 
   if(verbose)
   {
@@ -318,8 +352,20 @@ void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int 
 
   std::cout << "pre-primary selection: " << numerator_truth_elist->GetN() << " " << numerator_reco_elist->GetN() << " " << denominator_truth_elist->GetN() << " " << denominator_reco_elist->GetN() << std::endl;
 
-  for(HistogramInfo& var : variables)
+  TH1F* n_truth_mass = new TH1F("n_truth_mass","numerator truth candidate mass",numerator_massbins.bins.size()-1,numerator_massbins.bins.data());
+  TH1F* n_reco_mass = new TH1F("n_reco_mass","numerator reco candidate mass",numerator_massbins.bins.size()-1,numerator_massbins.bins.data());
+  TH1F* d_truth_mass = new TH1F("d_truth_mass","denominator truth candidate mass",denominator_massbins.bins.size()-1,denominator_massbins.bins.data());
+  TH1F* d_reco_mass = new TH1F("d_reco_mass","denominator reco candidate mass",denominator_massbins.bins.size()-1,denominator_massbins.bins.data());
+
+  PVSVUncertainty n_truth_pvsv(numerator_name+"_truth",numerator_name+" truth",300,0.,0.05);
+  PVSVUncertainty n_reco_pvsv(numerator_name+"_reco",numerator_name+" reco",300,0.,0.05);
+  PVSVUncertainty d_truth_pvsv(denominator_name+"_truth",denominator_name+" truth",300,0.,0.05);
+  PVSVUncertainty d_reco_pvsv(denominator_name+"_reco",denominator_name+" reco",300,0.,0.05);
+
+  for(int ivar=0; ivar<variables.size(); ivar++)
   {
+    HistogramInfo& var = variables[ivar];
+
     TH1F* numerator_truth_h = makeHistogram((numerator_name+"_truth").c_str(),(numerator_name+" truth candidates").c_str(),var);
     TH1F* numerator_reco_h = makeHistogram((numerator_name+"_reco").c_str(),(numerator_name+" reco candidates").c_str(),var);
     TH1F* denominator_truth_h = makeHistogram((denominator_name+"_truth").c_str(),(denominator_name+" truth candidates").c_str(),var);
@@ -330,10 +376,13 @@ void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int 
     denominator_truth_h->Sumw2();
     denominator_reco_h->Sumw2();
 
-    post_draw_process(t_numerator,numerator_truth_h,var,numerator_name,numerator_truth_elist,numerator_pdgid,numerator_daughters.size());
-    post_draw_process(t_numerator,numerator_reco_h,var,numerator_name,numerator_reco_elist,numerator_pdgid,numerator_daughters.size());
-    post_draw_process(t_denominator,denominator_truth_h,var,denominator_name,denominator_truth_elist,denominator_pdgid,denominator_daughters.size());
-    post_draw_process(t_denominator,denominator_reco_h,var,denominator_name,denominator_reco_elist,denominator_pdgid,denominator_daughters.size());
+    // only fill auxiliary histograms once
+    bool fill_aux_h = (ivar == 0);
+
+    post_draw_process(t_numerator,numerator_truth_h,var,numerator_name,numerator_truth_elist,numerator_pdgid,numerator_daughters.size(),n_truth_mass,n_truth_pvsv,fill_aux_h);
+    post_draw_process(t_numerator,numerator_reco_h,var,numerator_name,numerator_reco_elist,numerator_pdgid,numerator_daughters.size(),n_reco_mass,n_reco_pvsv,fill_aux_h);
+    post_draw_process(t_denominator,denominator_truth_h,var,denominator_name,denominator_truth_elist,denominator_pdgid,denominator_daughters.size(),d_truth_mass,d_truth_pvsv,fill_aux_h);
+    post_draw_process(t_denominator,denominator_reco_h,var,denominator_name,denominator_reco_elist,denominator_pdgid,denominator_daughters.size(),d_reco_mass,d_reco_pvsv,fill_aux_h);
 
     if(verbose)
     {
@@ -352,4 +401,9 @@ void CutEfficiency_mjp(const std::string& numerator_name = "Lambda0", const int 
   n_reco_mass->Write();
   d_truth_mass->Write();
   d_reco_mass->Write();
+
+  n_truth_pvsv.Write();
+  n_reco_pvsv.Write();
+  d_truth_pvsv.Write();
+  d_reco_pvsv.Write();
 }

@@ -1,7 +1,7 @@
 #ifndef KINEMATIC_THRESHOLD_H
 #define KINEMATIC_THRESHOLD_H
 
-#include "../util/binning.h"
+#include "../util/HistogramTools.h"
 
 // For near-threshold decays in bins of mother pT, both signal and background are modified by the daughter pT cutoff in reconstruction.
 // Some fraction of decays at a given mass produce one or both daughter tracks with pT too small to be reconstructed.
@@ -59,7 +59,7 @@ Double_t kinematic_threshold_turnon(Double_t* v, Double_t* par)
   // this function is not that well behaved with the standard adaptive singular integrator (sharp transitions from 1 to 0)
   // but is pretty ideal for a MC integrator [TODO]
 
-  ROOT::Math::IntegratorMultiDimOptions::SetDefaultIntegrator("VEGAS");
+  //ROOT::Math::IntegratorMultiDimOptions::SetDefaultIntegrator("VEGAS");
 
   TF2* daughter1_comp = new TF2("daughter1_comp",&pt_above_cutoff,-M_PI/2.,M_PI/2.,0.,2*M_PI,5);
   daughter1_comp->SetParameters(mass,mother_pt,daughter1_pcm,daughter1_Ecm,daughter_pt_cutoff);
@@ -87,13 +87,12 @@ TF1* threshold_turnon_TF1(std::pair<double,double> mass_range, double mother_pt,
 
 // These functions turned out to be quite slow, so here are lookup tables from which we can draw the relevant info
 
-void build_turnon_lookup_tables(std::string mother_name, int daughter1_pdgid, int daughter2_pdgid)
+void build_turnon_lookup_tables(std::string mother_name, const HistogramInfo& massbins, int daughter1_pdgid, int daughter2_pdgid)
 {
   const double ptcut_min = 0.;
   const double ptcut_max = 0.5;
   const int nbins_ptcut = 100;
 
-  HistogramInfo massbins = BinInfo::mass_bins.at(mother_name);
   const int nbins_mass = 100;
   const double mass_min = 0.9*massbins.bins[0];
   const double mass_max = 1.1*massbins.bins.back();
@@ -119,11 +118,13 @@ void build_turnon_lookup_tables(std::string mother_name, int daughter1_pdgid, in
       double mass = threshold->GetXaxis()->GetBinCenter(j);
       for(int k=1;k<=threshold->GetNbinsY();k++)
       {
-        std::cout << "sub-bin (" << j << ", " << k << ")" << std::endl;
         double ptcut = threshold->GetYaxis()->GetBinCenter(k);
+        std::cout << "mother pT: " << mother_pT << std::endl;
+        std::cout << "daughter pT cut: " << ptcut << std::endl;
         Double_t v[1] = {mass};
         Double_t par[4] = {mother_pT,ptcut,daughter1_mass,daughter2_mass};
         threshold->SetBinContent(j,k,kinematic_threshold_turnon(v,par));
+        std::cout << "sub-bin (" << j << ", " << k << "), frac = " << threshold->GetBinContent(j,k) << std::endl;
       }
     }
     threshold->Write();
@@ -136,7 +137,7 @@ class LinearSidebandThresholdFast
   public:
   LinearSidebandThresholdFast(std::string mother_name, float daughter_pt_cut, int mother_pt_bin, std::pair<float,float> lsb, std::pair<float,float> rsb)
   {
-    std::string filename = "threshold_turnon_tables_"+mother_name+"_daughterpT_"+std::to_string(daughter_pt_cut)+".root";
+    std::string filename = "threshold_turnon_tables_"+mother_name+".root";
     tablefile = TFile::Open(filename.c_str());
     h_threshold = (TH1F*)tablefile->Get(("threshold_bin"+std::to_string(mother_pt_bin)).c_str());
     h_threshold->SetDirectory(nullptr);

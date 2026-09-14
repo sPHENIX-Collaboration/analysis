@@ -38,9 +38,9 @@ for i in {0..9}; do
         rm ${OUTFILE_BASE}_neg_${SEGMENT}.root
 
 	# (lambda + lambdabar)/2Kshort
-	root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",${LAMBDA_PDGID},${LAMBDA_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",true,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,\"${OUTFILE_BASE}_${SEGMENT}.root\",BinInfo::mass_bins_MC\)
+	root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",${LAMBDA_PDGID},${LAMBDA_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",true,StandardCuts::MC_Lambda0_cuts,BinInfo::Lambda0_MC_mass_bins,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,StandardCuts::MC_K_S0_cuts,BinInfo::K_S0_MC_mass_bins,\"${OUTFILE_BASE}_${SEGMENT}.root\"\)
 	# lambda/Kshort
-        root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",${LAMBDA_PDGID},${LAMBDA_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",false,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,\"${OUTFILE_BASE}_pos_${SEGMENT}.root\",BinInfo::mass_bins_MC_pos\)
+        root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",${LAMBDA_PDGID},${LAMBDA_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",false,StandardCuts::MC_Lambda0_pos_cuts,BinInfo::Lambda0_MC_mass_bins,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,StandardCuts::MC_K_S0_cuts,BinInfo::K_S0_MC_mass_bins,\"${OUTFILE_BASE}_pos_${SEGMENT}.root\"\)
 	# lambdabar/kshort
-        root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",-${LAMBDA_PDGID},${LAMBDABAR_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",false,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,\"${OUTFILE_BASE}_neg_${SEGMENT}.root\",BinInfo::mass_bins_MC_neg\)
+        root -l -q -b CutEfficiency_mjp.C\(\"Lambda0\",-${LAMBDA_PDGID},${LAMBDABAR_DAUGHTERS},\"${LAMBDA_INFILE_BASE}_${SEGMENT}.root\",false,StandardCuts::MC_Lambda0_neg_cuts,BinInfo::Lambda0_MC_mass_bins,\"K_S0\",${KSHORT_PDGID},${KSHORT_DAUGHTERS},\"${KSHORT_INFILE_BASE}_${SEGMENT}.root\",false,StandardCuts::MC_K_S0_cuts,BinInfo::K_S0_MC_mass_bins,\"${OUTFILE_BASE}_neg_${SEGMENT}.root\"\)
 done

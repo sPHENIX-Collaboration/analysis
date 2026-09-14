@@ -5,7 +5,8 @@
 //#include <sPhenixStyle.C>
 
 #include "../util/DifferentialContainer.h"
-#include "../util/binning.h"
+#include "../util/HistogramTools.h"
+#include "../config/binning.h"
 
 std::vector<TH1F*> get_all_bins_TH1F(TFile* f, const std::string& particle, const HistogramInfo& var)
 {
@@ -92,31 +93,46 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
   std::vector<std::vector<RooPlot*>> Ks_fits = get_all_fits_all_variables_RooPlot(f,"K_S0",variables);
   std::vector<std::vector<RooPlot*>> lambda_fits = get_all_fits_all_variables_RooPlot(f,"Lambda0",variables);
 
+  //std::vector<std::vector<TH1F*>> Ks_fits = get_all_fits_all_variables_TH1F(f,"K_S0",variables);
+  //std::vector<std::vector<TH1F*>> lambda_fits = get_all_fits_all_variables_TH1F(f,"Lambda0",variables);
+
   for(int i=0; i<variables.size(); i++)
   {
     // generate square figures
     int nbins = variables[i].bins.size()-1;
     std::cout << "nbins " << nbins << std::endl;
-    int npix_x = 3600;
-    int npix_y = 1800;
-    TCanvas* c = new TCanvas("c","c",npix_x,npix_y);
-    c->Divide(nbins/3,3);
+    int npix_x = 1500;
+    int npix_y = 750;
+    TCanvas* c_lin_ks = new TCanvas("c_lin_ks","c",npix_x,npix_y);
+    TCanvas* c_log_ks = new TCanvas("c_log_ks","c",npix_x,npix_y);
+    int n_columns = nbins/3;
+    if(nbins % 3 == 1 || nbins % 3 == 2) n_columns++;
+    c_lin_ks->Divide(n_columns,3);
+    c_log_ks->Divide(n_columns,3);
     for(int bin=1; bin<=nbins; bin++)
     {
-      c->cd(bin);
-      c->SetLogy();
-      std::cout << i << " " << bin << std::endl;
+      c_lin_ks->cd(bin);
+      Ks_fits[i][bin-1]->Draw("goff");
+      c_log_ks->cd(bin);
+      gPad->SetLogy();
       Ks_fits[i][bin-1]->Draw("goff");
     }
     std::string Ks_filename_pdf = outdir+"/pdf/Ks_fits_vs"+variables[i].name+".pdf";
     std::string Ks_filename = outdir+"/png/Ks_fits_vs"+variables[i].name+".png";
-    c->SaveAs(Ks_filename.c_str());
-    c->SaveAs(Ks_filename_pdf.c_str());
-    c->Close();
+    std::string Ks_filename_log_pdf = outdir+"/pdf/Ks_fits_logscale_vs"+variables[i].name+".pdf";
+    std::string Ks_filename_log = outdir+"/png/Ks_fits_logscale_vs"+variables[i].name+".png";
+    c_lin_ks->SaveAs(Ks_filename.c_str());
+    c_lin_ks->SaveAs(Ks_filename_pdf.c_str());
+    c_log_ks->SaveAs(Ks_filename_log.c_str());
+    c_log_ks->SaveAs(Ks_filename_log_pdf.c_str());
 
-    TCanvas* c1 = new TCanvas("c1","c1",npix_x,npix_y);
-    c1->Divide(nbins/3,3);
+    c_lin_ks->Close();
+    c_log_ks->Close();
 
+    TCanvas* c_lin_lambda = new TCanvas("c_lin_lambda","c1",npix_x,npix_y);
+    TCanvas* c_log_lambda = new TCanvas("c_log_lambda","c1",npix_x,npix_y);
+    c_lin_lambda->Divide(n_columns,3);
+    c_log_lambda->Divide(n_columns,3);
 
     //for(int bin=1; bin<=nbins; bin++)
     //{
@@ -126,14 +142,90 @@ void plot_results(std::string infile = "fits.root", std::string dirname = "plots
 
     for(int bin=1; bin<=nbins; bin++)
     {
-      c1->cd(bin);
-      c1->SetLogy();
+      c_lin_lambda->cd(bin);
+      lambda_fits[i][bin-1]->Draw("goff");
+      c_log_lambda->cd(bin);
+      gPad->SetLogy();
       lambda_fits[i][bin-1]->Draw("goff");
     }
     std::string lambda_filename_pdf = outdir+"/pdf/lambda_fits_vs"+variables[i].name+".pdf";
     std::string lambda_filename = outdir+"/png/lambda_fits_vs"+variables[i].name+".png";
-    c1->SaveAs(lambda_filename.c_str());
-    c1->SaveAs(lambda_filename_pdf.c_str());
+    std::string lambda_filename_log_pdf = outdir+"/pdf/lambda_fits_logscale_vs"+variables[i].name+".pdf";
+    std::string lambda_filename_log = outdir+"/png/lambda_fits_logscale_vs"+variables[i].name+".png";
+    c_lin_lambda->SaveAs(lambda_filename.c_str());
+    c_lin_lambda->SaveAs(lambda_filename_pdf.c_str());
+    c_log_lambda->SaveAs(lambda_filename_log.c_str());
+    c_log_lambda->SaveAs(lambda_filename_log_pdf.c_str());
+
+    c_lin_lambda->Close();
+    c_log_lambda->Close();
+
+    TCanvas* c_pull_ks = new TCanvas("c_pull_ks","c_pull_ks",npix_x,npix_y);
+    TCanvas* c_pull_lambda = new TCanvas("c_pull_lambda","c_pull_lambda",npix_x,npix_y);
+    TCanvas* c_hpull_ks = new TCanvas("c_hpull_ks","c_hpull_ks",npix_x,npix_y);
+    TCanvas* c_hpull_lambda = new TCanvas("c_hpull_lambda","c_hpull_lambda",npix_x,npix_y);
+    c_pull_ks->Divide(nbins/3,3);
+    c_pull_lambda->Divide(nbins/3,3);
+    c_hpull_ks->Divide(nbins/3,3);
+    c_hpull_lambda->Divide(nbins/3,3);
+
+    gStyle->SetOptFit(1111);
+
+    for(int bin=1; bin<=nbins; bin++)
+    {
+      c_pull_ks->cd(bin);
+      RooHist* pull_ks = Ks_fits[i][bin-1]->pullHist("h_binned_massfit",Ks_fits[i][bin-1]->getObject(0)->GetName(),true);
+      RooPlot* pull_frame_ks = Ks_fits[i][bin-1]->emptyClone(("pull_ks_"+std::to_string(bin)+"_vs"+variables[i].name).c_str());
+      pull_frame_ks->addPlotable(pull_ks,"P");
+      pull_frame_ks->Draw("goff");
+
+      c_hpull_ks->cd(bin);
+      TH1F* hpull_ks = new TH1F("hpull_ks",("Pull distribution for K_{S}^{0} "+variables[i].name+" bin "+std::to_string(bin)).c_str(),pull_ks->GetN()/4,1.1*pull_ks->GetMinimum(),1.1*pull_ks->GetMaximum());
+      for(int ip=1;ip<=pull_ks->GetN();ip++)
+      {
+        hpull_ks->Fill(pull_ks->GetPointY(ip));
+      }
+      TF1* ks_gaus = new TF1("ks_gaus","gaus");
+      hpull_ks->Fit(ks_gaus);
+      hpull_ks->Draw();
+
+      c_pull_lambda->cd(bin);
+      RooHist* pull_lambda = lambda_fits[i][bin-1]->pullHist("h_binned_massfit",lambda_fits[i][bin-1]->getObject(0)->GetName(),true);
+      RooPlot* pull_frame_lambda = lambda_fits[i][bin-1]->emptyClone(("pull_lambda_"+std::to_string(bin)+"_vs"+variables[i].name).c_str());
+      pull_frame_lambda->addPlotable(pull_lambda,"P");
+      pull_frame_lambda->Draw("goff");
+
+      c_hpull_lambda->cd(bin);
+      TH1F* hpull_lambda = new TH1F("hpull_lambda",("Pull distribution for #Lambda "+variables[i].name+" bin "+std::to_string(bin)).c_str(),pull_lambda->GetN()/4,1.1*pull_lambda->GetMinimum(),1.1*pull_lambda->GetMaximum());
+      for(int ip=1;ip<=pull_lambda->GetN();ip++)
+      {
+        hpull_lambda->Fill(pull_lambda->GetPointY(ip));
+      }
+      TF1* lambda_gaus = new TF1("ks_gaus","gaus");
+      hpull_lambda->Fit(lambda_gaus);
+      hpull_lambda->Draw();
+    }
+    std::string Ks_pull_filename_pdf = outdir+"/pdf/Ks_pull_vs"+variables[i].name+".pdf";
+    std::string Ks_pull_filename = outdir+"/png/Ks_pull_vs"+variables[i].name+".png";
+    std::string lambda_pull_filename_pdf = outdir+"/pdf/lambda_pull_vs"+variables[i].name+".pdf";
+    std::string lambda_pull_filename = outdir+"/png/lambda_pull_vs"+variables[i].name+".png";
+    std::string Ks_hpull_filename_pdf = outdir+"/pdf/Ks_hpull_vs"+variables[i].name+".pdf";
+    std::string Ks_hpull_filename = outdir+"/png/Ks_hpull_vs"+variables[i].name+".png";
+    std::string lambda_hpull_filename_pdf = outdir+"/pdf/lambda_hpull_vs"+variables[i].name+".pdf";
+    std::string lambda_hpull_filename = outdir+"/png/lambda_hpull_vs"+variables[i].name+".png";
+    c_pull_ks->SaveAs(Ks_pull_filename.c_str());
+    c_pull_ks->SaveAs(Ks_pull_filename_pdf.c_str());
+    c_pull_lambda->SaveAs(lambda_pull_filename.c_str());
+    c_pull_lambda->SaveAs(lambda_pull_filename_pdf.c_str());
+    c_hpull_ks->SaveAs(Ks_hpull_filename.c_str());
+    c_hpull_ks->SaveAs(Ks_hpull_filename_pdf.c_str());
+    c_hpull_lambda->SaveAs(lambda_hpull_filename.c_str());
+    c_hpull_lambda->SaveAs(lambda_hpull_filename_pdf.c_str());
+
+    c_pull_ks->Close();
+    c_pull_lambda->Close();
+    c_hpull_ks->Close();
+    c_hpull_lambda->Close();
   }
 
   TCanvas* c = new TCanvas("singleplots","single plots",800,800);
