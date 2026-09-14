@@ -5,17 +5,15 @@
 #include "../corrections/TrivialEfficiencyCorrection.h"
 #include "../corrections/CutEfficiencyCorrection.h"
 
+#include "ResonanceRatio.h"
+
 #include "../config/cuts.h"
 #include "../config/binning.h"
 
-#include "../util/HistogramTools.h"
-
-#include "ResonanceRatio.h"
-
-void Lambda_Kshort_ratio_MC_pos()
+void Lambda_Kshort_ratio_NN_pos_binned()
 {
-  TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/merged_lambda_MC_pos.root");
-  TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/merged_Kshort_MC.root");
+  TFile* lambda_file = TFile::Open("/sphenix/user/mjpeters/analysis/LightFlavorRatios/mass_histograms/Lambda_NN_data_pos.root");
+  TFile* Ks_file = TFile::Open("/sphenix/user/mjpeters/analysis/LightFlavorRatios/mass_histograms/Kshort_NN_data.root");
 
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/ppi_reco/merged_lambda.root");
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/lambdaKshortMB/lambdaKshort_20260422_DetroitMB_CR_2_mode_pTref_1p4/pipi_reco/merged_kshort.root");
@@ -35,6 +33,9 @@ void Lambda_Kshort_ratio_MC_pos()
   //TFile* Ks_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Kshort_3runs.root");
   //TFile* lambda_file = TFile::Open("/sphenix/tg/tg01/hf/mjpeters/LightFlavorResults/Lambda_3runs.root");
 
+  //TTree* Ks_tree = (TTree*)Ks_file->Get("DecayTree");
+  //TTree* lambda_tree = (TTree*)lambda_file->Get("DecayTree");
+
   TH1F* integrated_lambda_mass = (TH1F*)lambda_file->Get("Lambda0_mass");
   TH1F* integrated_kshort_mass = (TH1F*)Ks_file->Get("K_S0_mass");
 
@@ -46,8 +47,11 @@ void Lambda_Kshort_ratio_MC_pos()
     BinInfo::final_phi_bins,
   };
 
-  HistogramInfo Ks_massbins = BinInfo::K_S0_MC_mass_bins;
-  HistogramInfo Lambda_massbins = BinInfo::Lambda0_MC_mass_bins;
+  HistogramInfo Ks_massbins = BinInfo::K_S0_data_mass_bins;
+  HistogramInfo Lambda_massbins = BinInfo::Lambda0_data_mass_bins;
+
+  CutSettings Ks_cuts = StandardCuts::data_K_S0_cuts;
+  CutSettings Lambda_cuts = StandardCuts::data_Lambda0_pos_cuts;
 
   std::vector<DifferentialContainer> diff_lambda_data;
   std::vector<DifferentialContainer> diff_ks_data;
@@ -57,54 +61,44 @@ void Lambda_Kshort_ratio_MC_pos()
     diff_lambda_data.push_back(DifferentialContainer(lambda_file,"Lambda0",Lambda_massbins,hinfo));
     diff_ks_data.push_back(DifferentialContainer(Ks_file,"K_S0",Ks_massbins,hinfo));
   }
-
-  CutSettings Ks_cuts = StandardCuts::MC_K_S0_cuts;
-  CutSettings Lambda_cuts = StandardCuts::MC_Lambda0_pos_cuts;
+  
+  std::string Ks_cutstring = generate_selection_cutstring(Ks_cuts,diff_variables);
+  std::string Lambda_cutstring = generate_selection_cutstring(Lambda_cuts,diff_variables);
 
   std::string fd_filename = "/sphenix/tg/tg01/hf/hjheng/HF-analysis/simulation/Pythia_ppMinBias/cascade_feeddown/Cascade_feeddown_fraction.root";
   std::string geoacc_filename = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/geometricAcceptanceCorrection/corrections/geo_acceptance_lambdaonly.root";
   std::string cuteff_filename = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/cutEfficiencyCorrection/cut_efficiency_correction_pos.root";
+
   std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> corrections(diff_variables.size());
   // pT
-  corrections[0].push_back(std::make_shared<TrivialLambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_all"));
-  corrections[0].push_back(std::make_shared<TrivialEfficiencyCorrection>(""));
-//  corrections[0].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/u/cdean/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots/Lambda0_to_KS0_geometric_acceptance_ratio_pT.root","Lambda0_inGeo_pT"));
-//  corrections[0].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_pT.root","Lambda0_inGeo_pT"));
-//  corrections[0].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_pT"));
+  corrections[0].push_back(std::make_shared<LambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_all"));
+  corrections[0].push_back(std::make_shared<EfficiencyCorrection>());
   corrections[0].push_back(std::make_shared<GeoAcceptanceCorrection>(geoacc_filename,"Lambda0_over_K_S0_geo_acceptance_correction_vspT"));
   corrections[0].push_back(std::make_shared<CutEfficiencyCorrection>(cuteff_filename,"Lambda0_over_K_S0_cuteff_correction_vspT"));
+
+
   // eta
-  corrections[1].push_back(std::make_shared<TrivialLambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_eta_all"));
-  corrections[1].push_back(std::make_shared<TrivialEfficiencyCorrection>(""));
-//  corrections[1].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/u/cdean/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots/Lambda0_to_KS0_geometric_acceptance_ratio_eta.root","Lambda0_inGeo_#eta"));
-//  corrections[1].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_eta.root","Lambda0_inGeo_#eta"));
-//  corrections[1].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_eta"));
+  corrections[1].push_back(std::make_shared<LambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_eta_all"));
+  corrections[1].push_back(std::make_shared<TrivialEfficiencyCorrection>("a2"));
   corrections[1].push_back(std::make_shared<GeoAcceptanceCorrection>(geoacc_filename,"Lambda0_over_K_S0_geo_acceptance_correction_vspseudorapidity"));
   corrections[1].push_back(std::make_shared<CutEfficiencyCorrection>(cuteff_filename,"Lambda0_over_K_S0_cuteff_correction_vspseudorapidity"));
 
-
   // rapidity
-  corrections[2].push_back(std::make_shared<TrivialLambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_rapidity_all"));
-  corrections[2].push_back(std::make_shared<TrivialEfficiencyCorrection>(""));
-//  corrections[2].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/u/cdean/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots/Lambda0_to_KS0_geometric_acceptance_ratio_rap.root","Lambda0_inGeo_y"));
-//  corrections[2].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_rap.root","Lambda0_inGeo_y"));
-//  corrections[2].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_y"));
+  corrections[2].push_back(std::make_shared<LambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_rapidity_all"));
+  corrections[2].push_back(std::make_shared<TrivialEfficiencyCorrection>("a3"));
   corrections[2].push_back(std::make_shared<GeoAcceptanceCorrection>(geoacc_filename,"Lambda0_over_K_S0_geo_acceptance_correction_vsrapidity"));
   corrections[2].push_back(std::make_shared<CutEfficiencyCorrection>(cuteff_filename,"Lambda0_over_K_S0_cuteff_correction_vsrapidity"));
 
-
   // phi
-  corrections[3].push_back(std::make_shared<TrivialLambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_phi_all"));
-  corrections[3].push_back(std::make_shared<TrivialEfficiencyCorrection>(""));
-//  corrections[3].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/u/cdean/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots/Lambda0_to_KS0_geometric_acceptance_ratio_phi.root","Lambda0_inGeo_#phi"));
-//  corrections[3].push_back(std::make_shared<GeoAcceptanceCorrection>("/sphenix/tg/tg01/hf/gregoryottino/lightFlavorPpg16/analysis/LightFlavorRatios/geometric_acceptance/analysis/plots_systemtics/Lambda0_to_KS0_geometric_acceptance_ratio_phi.root","Lambda0_inGeo_#phi"));
-//  corrections[3].push_back(std::make_shared<CutEfficiencyCorrection>("../swimming_correction/LamdbaKsCutEfficiency_200MeV_hists.root","hEffRatio_phi"));
+  corrections[3].push_back(std::make_shared<LambdaFeedDownCorrection>(fd_filename,"h_feeddown_frac_xi_phi_all"));
+  corrections[3].push_back(std::make_shared<TrivialEfficiencyCorrection>("a4"));
   corrections[3].push_back(std::make_shared<GeoAcceptanceCorrection>(geoacc_filename,"Lambda0_over_K_S0_geo_acceptance_correction_vsphi"));
   corrections[3].push_back(std::make_shared<CutEfficiencyCorrection>(cuteff_filename,"Lambda0_over_K_S0_cuteff_correction_vsphi"));
 
-  TFile* fout = new TFile("fits_MC_pos.root","RECREATE");
 
-  ResonanceRatio analyzer(3122,"Lambda0","#Lambda",
+  TFile* fout = new TFile("fits_NN_pos.root","RECREATE");
+
+  ResonanceRatio analyzer(3122,"Lambda0","#Lambda^{0}",
                           310,"K_S0","K_{S}^{0}",
                           Lambda_massbins,Ks_massbins,Lambda_cuts,Ks_cuts,
                           fout,"lambdaKsratio","#Lambda^{0}/K_{S}^{0} ratio",1.,false,

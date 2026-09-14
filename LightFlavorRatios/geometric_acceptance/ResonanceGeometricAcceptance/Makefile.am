@@ -12,7 +12,8 @@ AM_LDFLAGS = \
 
 pkginclude_HEADERS = \
   ResonanceGeometricAcceptance.h \
-  ../../util/binning.h
+  ../../util/HistogramTools.h \
+  ../../config/binning.h
 
 lib_LTLIBRARIES = \
   libResonanceGeometricAcceptance.la

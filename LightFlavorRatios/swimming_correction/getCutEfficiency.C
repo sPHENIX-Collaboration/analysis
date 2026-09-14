@@ -1,4 +1,5 @@
-#include "../util/binning.h"
+#include "../util/HistogramTools.h"
+#include "../config/binning.h"
 
 void getCutEfficiency(const std::string& infile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/cutEfficiencyCorrection/merged_cutefficiency.root", const std::string& outfile = "/sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/cutEfficiencyCorrection/cut_efficiency_correction.root",const std::string& numerator_name = "Lambda0", const std::string& denominator_name = "K_S0")
 {

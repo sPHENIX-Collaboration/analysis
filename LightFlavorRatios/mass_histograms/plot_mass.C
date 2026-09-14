@@ -1,17 +1,18 @@
 #include "TTree.h"
 #include "TFile.h"
 
-#include "../util/binning.h"
+#include "../config/cuts.h"
+#include "../config/binning.h"
+#include "../util/HistogramTools.h"
 
-void plot_mass(const std::string infile = "Kshort_3runs.root",
-               const std::string particle = "K_S0",
-               const std::string outfile = "test_out.root",
-               const std::map<std::string,HistogramInfo>& massbins_map = BinInfo::mass_bins_MC)
+void plot_mass(const std::string& infile = "Kshort_3runs.root",
+               const std::string& outfile = "test_out.root",
+               const CutSettings& cuts = StandardCuts::data_K_S0_cuts,
+               const HistogramInfo& massbins = BinInfo::K_S0_data_mass_bins)
 {
   TFile* f = TFile::Open(infile.c_str());
   TTree* t = (TTree*)f->Get("DecayTree");
 
-  HistogramInfo massbins = massbins_map.at(particle);
   std::vector<HistogramInfo> differential_vars =
   {
     BinInfo::final_pt_bins,
@@ -28,10 +29,12 @@ void plot_mass(const std::string infile = "Kshort_3runs.root",
     differential_h.push_back(makeDifferentialHistograms(massbins,hinfo));
   }
 
-  std::string draw_param = particle+"_mass>>"+mass->GetName();
+  std::string draw_param = cuts.mother_name+"_mass>>"+mass->GetName();
   std::cout << "draw_param: " << draw_param << std::endl;
 
-  t->Draw(draw_param.c_str(),massbins.cut_string.c_str(),"goff");
+  std::string cutstring = generate_selection_cutstring(cuts,differential_vars);
+
+  t->Draw(draw_param.c_str(),cutstring.c_str(),"goff");
   
   for(int ivar=0; ivar<differential_h.size(); ivar++)
   {
@@ -40,8 +43,10 @@ void plot_mass(const std::string infile = "Kshort_3runs.root",
       HistogramInfo& hinfo = differential_vars[ivar];
       TH1F* h = differential_h[ivar][ibin];
       std::cout << "plotting " << hinfo.title << " bin " << ibin << std::endl;
-      std::string draw_param = particle+"_mass>>"+h->GetName();
-      std::string cut_param =  massbins.cut_string+(massbins.cut_string.empty()?"":"&&")+hinfo.get_bin_selection(particle+"_"+hinfo.name,ibin);
+      std::string draw_param = cuts.mother_name+"_mass>>"+h->GetName();
+      std::string cut_param =  hinfo.get_bin_selection(cuts.mother_name+"_"+hinfo.name,ibin);
+      if(!cutstring.empty()) cut_param += " && "+cutstring;
+      std::cout << "cut string: " << cut_param << std::endl;
       t->Draw(draw_param.c_str(),cut_param.c_str(),"goff");
     }
   }

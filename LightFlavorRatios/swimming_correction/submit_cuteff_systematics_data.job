@@ -1,0 +1,12 @@
+Universe           = vanilla
+Executable         = run_cutefficiency_systematics_data.sh
+Output          = /sphenix/user/mjpeters/analysis/LightFlavorRatios/swimming_correction/logs/cutefficiency_systematics_data_$(Process).out
+Error           = /sphenix/user/mjpeters/analysis/LightFlavorRatios/swimming_correction/logs/cutefficiency_systematics_data_$(Process).err
+Log             = /tmp/log_mjpeters/cutefficiency_systematics_data_$(Process).log
+Initialdir      = .
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 2GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $(Process)
+Queue 1000

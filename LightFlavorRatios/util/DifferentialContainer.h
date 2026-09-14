@@ -1,26 +1,27 @@
 #ifndef DIFFERENTIALCONTAINER_H
 #define DIFFERENTIALCONTAINER_H
 
-#include "binning.h"
+#include "HistogramTools.h"
 
 struct DifferentialContainer
 {
-  std::string particle;
+  std::string particle_name;
   std::vector<TH1F*> hists;
-  HistogramInfo var_info;
+  HistogramInfo diff_variable;
+  HistogramInfo massbins;
 
-  DifferentialContainer(const std::string& hparticle, std::map<std::string,HistogramInfo>& massbins_map, const HistogramInfo& hinfo)
-  : particle(hparticle), var_info(hinfo)
+  DifferentialContainer(const std::string& particle, const HistogramInfo& hmassbins, const HistogramInfo& diff_var)
+  : particle_name(particle), massbins(hmassbins), diff_variable(diff_var)
   {
-    hists = makeDifferentialHistograms(massbins_map.at(particle),hinfo);
+    hists = makeDifferentialHistograms(massbins,diff_var);
   }
 
-  DifferentialContainer(TFile* f, const std::string& hparticle, std::map<std::string,HistogramInfo>& massbins_map, const HistogramInfo& hinfo)
-  : particle(hparticle), var_info(hinfo)
+  DifferentialContainer(TFile* f, const std::string& particle, const HistogramInfo& hmassbins, const HistogramInfo& diff_var)
+  : particle_name(particle), massbins(hmassbins), diff_variable(diff_var)
   {
-    for(int i=0; i<hinfo.bins.size()+2; i++)
+    for(int i=0; i<diff_variable.bins.size()+2; i++)
     {
-      std::string name = massbins_map.at(particle).name + "_vs" + hinfo.name + "_" + std::to_string(i);
+      std::string name = massbins.name + "_vs" + diff_variable.name + "_" + std::to_string(i);
       std::cout << "importing " << name << std::endl;
       TH1F* h = (TH1F*)f->Get(name.c_str());
       hists.push_back(h);
@@ -36,4 +37,4 @@ struct DifferentialContainer
   }
 };
 
-#endif
+#endif // DIFFERENTIALCONTAINER_H
