@@ -5,7 +5,8 @@
 
 #include <fun4all/SubsysReco.h>
 
-#include "../../util/binning.h"
+#include "../../config/binning.h"
+#include "../../util/HistogramTools.h"
 
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/PHG4ParticleSvtxMap.h>

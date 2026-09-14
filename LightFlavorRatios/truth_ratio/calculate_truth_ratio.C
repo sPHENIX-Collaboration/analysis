@@ -73,7 +73,8 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
 
   size_t current_event = 0;
   size_t current_event_start_entry = 0;
-  std::map<int,std::pair<ROOT::Math::PtEtaPhiMVector,std::set<int>>> current_daughter_map; 
+  std::map<int,std::pair<ROOT::Math::PtEtaPhiMVector,std::set<int>>> current_daughter_map;
+  std::map<int,std::pair<ROOT::Math::PtEtaPhiMVector,std::set<int>>> all_daughter_map;
   // key: parent ID, value: (mother Lorentz vector, set of daughter flavors)
 
   for(size_t i=0; i<t->GetEntries(); i++)
@@ -83,7 +84,7 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
 
     if(event != current_event)
     {
-      if(event % 100 == 0) std::cout << "event " << current_event << std::endl;
+      if(event % 100 == 0) std::cout << "event " << event << std::endl;
       // gather all reconstructible daughters for each mother
       for(size_t j=current_event_start_entry; j<i; j++)
       {
@@ -95,6 +96,10 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
         //std::cout << "flavor = " << flavor << std::endl;
         //std::cout << "trackID = " << rtrackID << std::endl;
         //std::cout << "map count = " << current_daughter_map.count(parentID) << std::endl;
+        if(all_daughter_map.count(parentID)>0)
+        {
+          all_daughter_map[parentID].second.insert(flavor);
+        }
         if(!std::isnan(rtrackID) && current_daughter_map.count(parentID)>0)
         {
           current_daughter_map[parentID].second.insert(flavor);
@@ -102,6 +107,24 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
       }
       //std::cout << "----------------------------------------------" << std::endl;
       // check list of mothers for correct set of daughter flavors
+
+      for(auto [motherID, sv_info] : all_daughter_map)
+      {
+        ROOT::Math::PtEtaPhiMVector mother_lorentzvector = sv_info.first;
+        std::set<int> daughter_flavors = sv_info.second;
+        bool has_all_daughters = std::all_of(required_daughter_flavors.begin(),required_daughter_flavors.end(),[&](int flavor){ return daughter_flavors.contains(flavor); });
+        bool has_all_opposite_daughters = std::all_of(required_daughter_flavors.begin(),required_daughter_flavors.end(),[&](int flavor){ return daughter_flavors.contains(-1*flavor); });
+        //if(has_all_daughters) std::cout << "has all daughters" << std::endl;
+        //if(has_all_opposite_daughters) std::cout << "has all opposite daughters" << std::endl;
+        if(has_all_daughters || (parity_inclusive && has_all_opposite_daughters))
+        {
+          vh[0].h_pt->Fill(mother_lorentzvector.Pt());
+          vh[0].h_eta->Fill(mother_lorentzvector.Eta());
+          vh[0].h_phi->Fill(mother_lorentzvector.Phi());
+          vh[0].h_y->Fill(mother_lorentzvector.Rapidity());
+        }
+      }
+
       for(auto [motherID, sv_info] : current_daughter_map)
       {
         ROOT::Math::PtEtaPhiMVector mother_lorentzvector = sv_info.first;
@@ -124,6 +147,7 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
         }
       }
       // clean up
+      all_daughter_map.clear();
       current_daughter_map.clear();
       current_event = event;
       current_event_start_entry = i;
@@ -155,10 +179,13 @@ std::vector<Hists> process_tree(TTree* t, std::string basename, std::string base
       // add to mother histograms and create new daughter map entry
       if(gpt>=0.6 && gpt<=4. && fabs(geta)<=0.8 && fabs(rapidity)<=0.8 && fabs(gvz)<=10.)
       {
-        vh[0].h_pt->Fill(gpt);
-        vh[0].h_eta->Fill(geta);
-        vh[0].h_phi->Fill(gphi);
-        vh[0].h_y->Fill(rapidity);
+        std::cout << "event " << event << ": adding candidate " << trackID << " with gpt = " << gpt << ", geta = " << geta << ", gphi = " << gphi << ", rapidity = " << rapidity << std::endl;
+
+        //vh[0].h_pt->Fill(gpt);
+        //vh[0].h_eta->Fill(geta);
+        //vh[0].h_phi->Fill(gphi);
+        //vh[0].h_y->Fill(rapidity);
+        all_daughter_map.insert({trackID,std::make_pair(mother_lorentzvector,std::set<int>())});
         current_daughter_map.insert({trackID,std::make_pair(mother_lorentzvector,std::set<int>())});
       }
     }
@@ -198,6 +225,9 @@ void calculate_truth_ratio(int numerator_flavor, std::vector<int> numerator_daug
   hists_r.divide(vhists_n[0],vhists_d[0],scale_factor);
   eff_n.divide(vhists_n[1],vhists_n[0],scale_factor);
   eff_d.divide(vhists_d[1],vhists_d[0],scale_factor);
+
+  std::cout << "number of " << numerator_particlename << " entries: " << vhists_n[0].h_pt->GetEntries() << std::endl;
+  std::cout << "number of " << denominator_particlename << " entries: " << vhists_d[0].h_pt->GetEntries() << std::endl;
 
   hists_r.h_pt->Divide(vhists_n[0].h_pt,vhists_d[0].h_pt,scale_factor);
   hists_r.h_eta->Divide(vhists_n[0].h_eta,vhists_d[0].h_eta,scale_factor);

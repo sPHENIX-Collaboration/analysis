@@ -11,21 +11,30 @@
 #include <phool/PHRandomSeed.h>
 #include <gsl/gsl_rng.h>
 
-#include "../util/binning.h"
+#include "../config/binning.h"
+#include "../config/cuts.h"
+#include "../util/HistogramTools.h"
 #include "../util/DifferentialContainer.h"
 #include "../corrections/CorrectionHistogram1D.h"
-#include "ParticleModel.h"
 #include "linearSidebandFit.h"
+
+#include "SidebandFitter.h"
 
 class ResonanceRatio
 {
   public:
-  ResonanceRatio(ParticleModel& numerator_model, ParticleModel& denominator_model, std::map<std::string,HistogramInfo>& mass_bins,
+  ResonanceRatio(int numerator_pdgid, std::string numerator_name, std::string numerator_title,
+                 int denominator_pdgid, std::string denominator_name, std::string denominator_title,
+                 const HistogramInfo& numerator_massbins, const HistogramInfo& denominator_massbins,
+                 const CutSettings& numerator_cuts, const CutSettings& denominator_cuts,
                  TFile* outf, std::string rationame, std::string ratiotitle, float scalefactor, bool blind,
                  std::vector<HistogramInfo> variables, std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> corrections)
-  : _numerator_model(numerator_model), _denominator_model(denominator_model), _mass_bins(mass_bins),
-    outfile(outf), _rationame(rationame), _ratiotitle(ratiotitle), _scalefactor(scalefactor), _blind(blind),
-    _variables(variables), _corrections(corrections)
+  : _numerator_pdgid(numerator_pdgid), _numerator_name(numerator_name), _numerator_title(numerator_title),
+    _denominator_pdgid(denominator_pdgid), _denominator_name(denominator_name), _denominator_title(denominator_title),
+    _numerator_massbins(numerator_massbins),_denominator_massbins(denominator_massbins),
+    _numerator_cuts(numerator_cuts),_denominator_cuts(denominator_cuts),
+    outfile(outf), _rationame(rationame), _ratiotitle(ratiotitle), _scalefactor(scalefactor), 
+    _blind(blind), _variables(variables), _corrections(corrections)
   {
     setup_yield_histograms();
   }
@@ -56,19 +65,27 @@ class ResonanceRatio
   protected:
   // workflow functions
   void setup_yield_histograms();
-  void get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleModel model);
-  void get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, ParticleModel model);
-  void get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* ds, ParticleModel model, bool use_threshold_background);
-  void get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, RooAbsData* data, ParticleModel& model);
-  void get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model);
+  void get_yield(TH1F* h_yield, int i, RooAbsData* ds, RooRealVar* mass, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins);
+  void get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, RooRealVar* mass, const CutSettings& cuts, const HistogramInfo& massbins);
+  void get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* ds, RooRealVar* mass, const CutSettings& cuts, const HistogramInfo& massbins, bool use_threshold_background);
+  void get_yield_fitterclass(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, RooRealVar* mass, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins);
+  void get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, const HistogramInfo& diff_variable, RooAbsData* data, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins);
+  void get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, const HistogramInfo& diff_variable, DifferentialContainer& data, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins);
   std::string get_corrected_title(std::string current_title, std::string correction_title);
   void calculate_ratios();
   void save_results();
 
   // fit models
-  ParticleModel _numerator_model;
-  ParticleModel _denominator_model;
-  std::map<std::string,HistogramInfo> _mass_bins;
+  int _numerator_pdgid;
+  int _denominator_pdgid;
+  std::string _numerator_name;
+  std::string _denominator_name;
+  std::string _numerator_title;
+  std::string _denominator_title;
+  CutSettings _numerator_cuts;
+  CutSettings _denominator_cuts;
+  HistogramInfo _numerator_massbins;
+  HistogramInfo _denominator_massbins;
   // differential variables and corresponding slates of corrections to apply
   std::vector<HistogramInfo> _variables;
   std::vector<std::vector<std::shared_ptr<CorrectionHistogram1D>>> _corrections;
@@ -81,44 +98,41 @@ class ResonanceRatio
 
 void ResonanceRatio::setup_yield_histograms()
 {
-  HistogramInfo numerator_massbins = _mass_bins.at(_numerator_model.name);
-  HistogramInfo denominator_massbins = _mass_bins.at(_denominator_model.name);
-
   for(HistogramInfo& hinfo : _variables)
   {
-    numerator_diff_yields.push_back(makeHistogram(_numerator_model.name+"_yield",_numerator_model.name+" yield",hinfo));
-    denominator_diff_yields.push_back(makeHistogram(_denominator_model.name+"_yield",_denominator_model.name+" yield",hinfo));
-    numerator_fit_syserr.push_back(makeHistogram(_numerator_model.name+"_fit_syserr",_numerator_model.name+" systematic error from mass fit",hinfo));
-    denominator_fit_syserr.push_back(makeHistogram(_denominator_model.name+"_fit_syserr",_denominator_model.name+" systematic error from mass fit",hinfo));
+    numerator_diff_yields.push_back(makeHistogram(_numerator_name+"_yield",_numerator_title+" yield",hinfo));
+    denominator_diff_yields.push_back(makeHistogram(_denominator_name+"_yield",_denominator_title+" yield",hinfo));
+    numerator_fit_syserr.push_back(makeHistogram(_numerator_name+"_fit_syserr",_numerator_title+" systematic error from mass fit",hinfo));
+    denominator_fit_syserr.push_back(makeHistogram(_denominator_name+"_fit_syserr",_denominator_title+" systematic error from mass fit",hinfo));
     ratio_fit_syserr.push_back(makeHistogram("ratio_fit_syserr","systematic error from mass fit procedure",hinfo));
   }
 
-  numerator_integrated_yield = new TH1F(("all_"+_numerator_model.name+"_yield").c_str(),("All "+_numerator_model.name+" yield").c_str(),1,0.,1.);
-  denominator_integrated_yield = new TH1F(("all_"+_denominator_model.name+"_yield").c_str(),("All "+_denominator_model.name+" yield").c_str(),1,0.,1.);
+  numerator_integrated_yield = new TH1F(("all_"+_numerator_name+"_yield").c_str(),("All "+_numerator_title+" yield").c_str(),1,0.,1.);
+  denominator_integrated_yield = new TH1F(("all_"+_denominator_name+"_yield").c_str(),("All "+_denominator_title+" yield").c_str(),1,0.,1.);
 
-  numerator_integrated_fit_syserr = new TH1F(("all_"+_numerator_model.name+"_fit_syserr").c_str(),("All "+_numerator_model.name+" fit systematic error").c_str(),1,0.,1.);
-  denominator_integrated_fit_syserr = new TH1F(("all_"+_denominator_model.name+"_fit_syserr").c_str(),("All "+_denominator_model.name+" fit systematic error").c_str(),1,0.,1.);
+  numerator_integrated_fit_syserr = new TH1F(("all_"+_numerator_name+"_fit_syserr").c_str(),("All "+_numerator_title+" fit systematic error").c_str(),1,0.,1.);
+  denominator_integrated_fit_syserr = new TH1F(("all_"+_denominator_name+"_fit_syserr").c_str(),("All "+_denominator_title+" fit systematic error").c_str(),1,0.,1.);
 
-  numerator_integrated_yield->SetTitle((numerator_massbins.title+";"+numerator_massbins.axis_label+";Candidates").c_str());
-  denominator_integrated_yield->SetTitle((denominator_massbins.title+";"+denominator_massbins.axis_label+";Candidates").c_str());
+  numerator_integrated_yield->SetTitle((_numerator_massbins.title+";"+_numerator_massbins.axis_label+";Candidates").c_str());
+  denominator_integrated_yield->SetTitle((_denominator_massbins.title+";"+_denominator_massbins.axis_label+";Candidates").c_str());
 }
 
-void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, ParticleModel model)
+void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, RooRealVar* mass, const CutSettings& cuts, const HistogramInfo& massbins)
 {
-  TH1* ds_h = ds->createHistogram((std::string(h_yield->GetName())+"_"+std::to_string(i)+"_h").c_str(),*model.mass);
+  TH1* ds_h = ds->createHistogram((std::string(h_yield->GetName())+"_"+std::to_string(i)+"_h").c_str(),*mass);
   ds_h->Write();
 
   RooRealVar const_leftsideband("const_leftsideband","left sideband level",ds->sumEntries(),0.,1e12);
   RooRealVar const_rightsideband("const_rightsideband","right sideband level",ds->sumEntries(),0.,1e12);
 
-  model.mass->setRange("full",model.mass->getMin(),model.mass->getMax());
-  model.mass->setRange("left_sideband",model.left_sideband.first,model.left_sideband.second);
-  model.mass->setRange("right_sideband",model.right_sideband.first,model.right_sideband.second);
+  mass->setRange("full",mass->getMin(),mass->getMax());
+  mass->setRange("left_sideband",cuts.left_sideband.first,cuts.left_sideband.second);
+  mass->setRange("right_sideband",cuts.right_sideband.first,cuts.right_sideband.second);
 
   RooConstVar dummy_parameter("dummy_par","dummy parameter",1.);
 
-  RooPolynomial uniform_left("uniform_left","uniform left",*(model.mass),RooArgList(dummy_parameter));
-  RooPolynomial uniform_right("uniform_right","uniform right",*(model.mass),RooArgList(dummy_parameter));
+  RooPolynomial uniform_left("uniform_left","uniform left",*mass,RooArgList(dummy_parameter));
+  RooPolynomial uniform_right("uniform_right","uniform right",*mass,RooArgList(dummy_parameter));
 
   RooExtendPdf leftside_model("leftside_model","leftside model",uniform_left,const_leftsideband,"left_sideband");
   RooExtendPdf rightside_model("rightside_model","rightside model",uniform_right,const_rightsideband,"right_sideband");
@@ -126,9 +140,9 @@ void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAb
   leftside_model.fitTo(*ds,RooFit::Range("left_sideband"));
   rightside_model.fitTo(*ds,RooFit::Range("right_sideband"));
 
-  double signal_region_width = model.right_sideband.first - model.left_sideband.second;
-  double left_sideband_width = model.left_sideband.second-model.left_sideband.first;
-  double right_sideband_width = model.right_sideband.second-model.right_sideband.first;
+  double signal_region_width = cuts.right_sideband.first - cuts.left_sideband.second;
+  double left_sideband_width = cuts.left_sideband.second - cuts.left_sideband.first;
+  double right_sideband_width = cuts.right_sideband.second - cuts.right_sideband.first;
 
   double yield = ds->sumEntries() - (const_leftsideband.getVal() + const_rightsideband.getVal())/2.;
   double yield_err = sqrt(ds->sumEntriesW2() + (pow(const_leftsideband.getError(),2.) + pow(const_rightsideband.getError(),2.))/2.);
@@ -142,9 +156,9 @@ void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAb
   //std::cout << "bkg yield from right sideband: " << const_rightsideband.getVal()*mass_window_width << " +- " << const_rightsideband.getError()*mass_window_width << std::endl;
   std::cout << "signal yield: " << yield << " +- " << yield_err << std::endl;
 
-  std::string signalregion_cut = model.name + "_mass > " + std::to_string(model.left_sideband.second) + " && " + model.name + "_mass < " + std::to_string(model.right_sideband.first);
-  std::string leftsideband_cut = model.name + "_mass > " + std::to_string(model.left_sideband.first) + " && " + model.name + "_mass < " + std::to_string(model.left_sideband.second);
-  std::string rightsideband_cut = model.name + "_mass > " + std::to_string(model.right_sideband.first) + " && " + model.name + "_mass < " + std::to_string(model.right_sideband.second);
+  std::string signalregion_cut = cuts.mother_name + "_mass > " + std::to_string(cuts.left_sideband.second) + " && " + cuts.mother_name + "_mass < " + std::to_string(cuts.right_sideband.first);
+  std::string leftsideband_cut = cuts.mother_name + "_mass > " + std::to_string(cuts.left_sideband.first) + " && " + cuts.mother_name + "_mass < " + std::to_string(cuts.left_sideband.second);
+  std::string rightsideband_cut = cuts.mother_name + "_mass > " + std::to_string(cuts.right_sideband.first) + " && " + cuts.mother_name + "_mass < " + std::to_string(cuts.right_sideband.second);
 
   // N = T - (LS/WL + RS/WR)/2.*WS
   // sigma_N^2 = sigma_T^2 + (WS/(2*WL))^2 sigma_LS^2 + (WS/(2*WR))^2 sigma_RS^2
@@ -179,7 +193,7 @@ void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAb
   if(i>=0) title = std::string(h_yield->GetTitle())+" bin "+std::to_string(i);
   else title = std::string(h_yield->GetTitle());
 
-  RooPlot* plot = model.mass->frame(RooFit::Title(title.c_str()));
+  RooPlot* plot = mass->frame(RooFit::Title(title.c_str()));
   plot->SetName(name.c_str());
   ds->plotOn(plot);
   leftside_model.plotOn(plot,RooFit::DrawOption("L"),RooFit::Range("left_sideband"));
@@ -187,7 +201,7 @@ void ResonanceRatio::get_yield_constfit(TH1F* h_yield, TH1F* h_err, int i, RooAb
   plot->Write();
 }
 
-void ResonanceRatio::get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* ds, ParticleModel model, bool use_threshold_background=false)
+void ResonanceRatio::get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* ds, RooRealVar* mass, const CutSettings& cuts, const HistogramInfo& massbins, bool use_threshold_background=false)
 {
 /*
   model.mass->setRange("reco_window",model.left_sideband.first,model.right_sideband.second);
@@ -210,17 +224,18 @@ void ResonanceRatio::get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* 
 
   std::cout << "bkg from roofit: " << bkg_val << " +- " << bkg_err << std::endl;
 */
-  TH1* ds_h = ds->createHistogram((std::string(h_yield->GetName())+std::to_string(i)).c_str(),*model.mass);
+
+  TH1* ds_h = ds->createHistogram((std::string(h_yield->GetName())+std::to_string(i)).c_str(),*mass);
   double binwidth = ds_h->GetBinWidth(1);
   double min_mass = ds_h->GetXaxis()->GetXmin();
   double max_mass = ds_h->GetXaxis()->GetXmax();
   TF1* sideband_fit;
   TFitResultPtr fitres;
   TF1* full_background;
-  if(use_threshold_background && model.use_threshold)
+  if(use_threshold_background)
   {
     double daughter_pt_cutoff = 0.2;
-    LinearSidebandThresholdFast background_fit(model.name,daughter_pt_cutoff,i,model.left_sideband,model.right_sideband);
+    LinearSidebandThresholdFast background_fit(cuts.mother_name,cuts.track_1_min_pT,i,cuts.left_sideband,cuts.right_sideband);
     sideband_fit = new TF1("sideband_threshold",background_fit,min_mass,max_mass,3);
     sideband_fit->FixParameter(2,0.25);
     fitres = ds_h->Fit(sideband_fit,"RLES");
@@ -229,7 +244,7 @@ void ResonanceRatio::get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* 
   }
   else
   {
-    sideband_fit = linear_sideband_TF1(min_mass,max_mass,model.left_sideband,model.right_sideband);
+    sideband_fit = linear_sideband_TF1(min_mass,max_mass,cuts.left_sideband,cuts.right_sideband);
     fitres = ds_h->Fit(sideband_fit,"RLMS");
     full_background = linear_background(sideband_fit);
   }
@@ -268,64 +283,180 @@ void ResonanceRatio::get_yield_linearsideband(TH1F* h_yield, int i, RooAbsData* 
   ds_h->Write();
 }
 
-void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleModel model)
+void ResonanceRatio::get_yield_fitterclass(TH1F* h_yield, TH1F* h_err, int i, RooAbsData* ds, RooRealVar* mass, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins)
 {
-  model.mass->setRange("signal",model.left_sideband.second,model.right_sideband.first);
-  model.mass->setRange("left_sideband",model.left_sideband.first,model.left_sideband.second);
-  model.mass->setRange("right_sideband",model.right_sideband.first,model.right_sideband.second);
+  std::string nametag = std::string(h_yield->GetName())+std::to_string(i);
+  SidebandFitter fitter(nametag,pdgid,cuts.left_sideband,cuts.right_sideband,massbins.bins.size()-1);
 
-  model.n_signal->setVal(ds->sumEntries());
-  model.n_background->setVal(.01*model.n_signal->getVal());
+  fitter.fit_all_orders_toN(ds,mass,cuts.max_background_order);
+
+  double nsignal = fitter.get_best_nsignal();
+  double nsignal_err = fitter.get_best_nsignal_err();
+  double nbkg = fitter.get_best_nbkg();
+  double nbkg_err = fitter.get_best_nbkg_err();
+  double yield = nsignal;
+  double yield_err = nsignal_err;
+
+  double syserr = fitter.get_yield_syserr();
+
+  std::cout << "nsignal val " << nsignal << std::endl;
+  std::cout << "nsignal err " << nsignal_err << std::endl;
+  std::cout << "nbkg " << nbkg << std::endl;
+  std::cout << "nbkg err " << nbkg_err << std::endl;
+  std::cout << "sum entries " << ds->sumEntries() << std::endl;
+  std::cout << "yield " << yield << std::endl;
+  std::cout << "yield extraction sys. err: " << syserr*100. << "%" << std::endl;
+
+  h_yield->SetBinContent(i,yield);
+  h_yield->SetBinError(i,yield_err);
+
+  h_err->SetBinContent(i,syserr);
+
+  std::string name;
+  if(i>=0) name = std::string(h_yield->GetName())+"_"+std::to_string(i);
+  else name = std::string(h_yield->GetName())+"_";
+  std::string title;
+  if(i>=0) title = std::string(h_yield->GetTitle())+" bin "+std::to_string(i);
+  else title = std::string(h_yield->GetTitle());
+
+  RooPlot* plot = fitter.plot_best_fit(ds,mass);
+  plot->SetName(name.c_str());
+  plot->SetTitle(title.c_str());
+  plot->Write();
+}
+
+void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, RooRealVar* mass, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins)
+{
+  mass->setRange("signal",cuts.left_sideband.second,cuts.right_sideband.first);
+  mass->setRange("left_sideband",cuts.left_sideband.first,cuts.left_sideband.second);
+  mass->setRange("right_sideband",cuts.right_sideband.first,cuts.right_sideband.second);
+
+  double pdg_mass = TDatabasePDG::Instance()->GetParticle(pdgid)->Mass();
+
+  TH1* ds_h = ds->createHistogram((std::string(h_yield->GetName())+std::to_string(i)).c_str(),*mass);
 
   std::vector<RooRealVar> sideband_parameters;
-  sideband_parameters.emplace_back("q1","q1",0.5,0.,1.);
-  sideband_parameters.emplace_back("q2","q2",0.5,0.,1.);
-  sideband_parameters.emplace_back("q3","q4",0.5,0.,1.);
-  //sideband_parameters.emplace_back("q4","q4",0.5,0.,1.);
+  sideband_parameters.emplace_back("q1","q1",0.,-10.,10.);
+  sideband_parameters.emplace_back("q2","q2",0.,-10.,10.);
+  sideband_parameters.emplace_back("q3","q4",0.,-10.,10.);
+  sideband_parameters.emplace_back("q4","q4",0.,-10.,10.);
+  //sideband_parameters.emplace_back("q5","q5",0.,-10.,10.);
+  //sideband_parameters.emplace_back("q6","q6",0.,-1.,1.);
+  //sideband_parameters.emplace_back("q7","q7",0.,-1.,1.);
+  //sideband_parameters.emplace_back("q8","q8",0.,-1.,1.);
+  //sideband_parameters.emplace_back("q9","q9",0.,0.,1.);
+  //sideband_parameters.emplace_back("q10","q10",0.5,0.,1.);
+  //sideband_parameters.emplace_back("q11","q11",0.5,0.,1.);
+  //sideband_parameters.emplace_back("q12","q12",0.5,0.,1.);
 
+/*
+  std::vector<RooRealVar> sideband_parameters;
+  sideband_parameters.push_back(*model.mass);
+  sideband_parameters.emplace_back("sb_logistic_height","logistic_height",0.,-1e6,1e6);
+  sideband_parameters.emplace_back("sb_logistic_midpoint","logistic_midpoint",pdg_mass,pdg_mass/2.,pdg_mass*2.);
+  sideband_parameters.emplace_back("sb_logistic_width","logistic_width",0.01,1e-4,1e6);
+  sideband_parameters.emplace_back("sb_linear_slope","linear_slope",0.,-1e3,1e3);
+*/
   std::string sidebandname = "sideband"+std::string(h_yield->GetName())+std::to_string(i);
 
-  RooBernstein sideband(sidebandname.c_str(),sidebandname.c_str(),*model.mass,RooArgList(sideband_parameters.begin(),sideband_parameters.end()));
-  sideband.fitTo(*ds,RooFit::Range("left_sideband,right_sideband"),RooFit::Offset(true));
+  //RooGenericPdf sideband(sidebandname.c_str(),sidebandname.c_str(),"x[1]/(1+exp(-x[3]*(x[0]-x[2])))+1.+x[0]*x[4]",RooArgList(sideband_parameters.begin(),sideband_parameters.end()));
 
-  double pdg_mass = TDatabasePDG::Instance()->GetParticle(model.pdgid)->Mass();
+  RooChebychev sideband(sidebandname.c_str(),sidebandname.c_str(),*mass,RooArgList(sideband_parameters.begin(),sideband_parameters.end()));
+  sideband.fitTo(*ds,RooFit::Range("left_sideband,right_sideband"),RooFit::Minimizer("Minuit2","minimize"),RooFit::Offset(true),RooFit::Strategy(2));
 
-  double signal_window_width = model.right_sideband.first-model.left_sideband.second;
+  double signal_window_width = cuts.right_sideband.first - cuts.left_sideband.second;
 
   RooRealVar mean("mean","mean",pdg_mass,(pdg_mass-0.5*signal_window_width),(pdg_mass+0.5*signal_window_width));
   RooRealVar width1("width1","width1",0.2*signal_window_width,0.01*signal_window_width,1.*signal_window_width);
   RooRealVar width2("width2","width2",0.2*signal_window_width,0.01*signal_window_width,1.*signal_window_width);
+  RooRealVar width3("width3","width3",0.2*signal_window_width,0.01*signal_window_width,1.*signal_window_width);
 
   std::string tag = std::string(h_yield->GetName())+std::to_string(i);
   std::string signalname = "signal"+std::string(h_yield->GetName())+std::to_string(i);
 
-  RooGaussian gaus1(("gaus1"+tag).c_str(),"gaus1",*model.mass,mean,width1);
-  RooGaussian gaus2(("gaus2"+tag).c_str(),"gaus2",*model.mass,mean,width2);
+  RooGaussian gaus1(("gaus1"+tag).c_str(),"gaus1",*mass,mean,width1);
+  RooGaussian gaus2(("gaus2"+tag).c_str(),"gaus2",*mass,mean,width2);
+  RooGaussian gaus3(("gaus3"+tag).c_str(),"gaus3",*mass,mean,width3);
 
   RooRealVar gaus2_frac(("gaus2_frac"+tag).c_str(),"gaus2_frac",0.01,0.,1.);
+  RooRealVar gaus3_frac(("gaus3_frac"+tag).c_str(),"gaus3_frac",0.01,0.,1.);
 
   RooAddPdf signal(signalname.c_str(),signalname.c_str(),RooArgList(gaus1,gaus2),RooArgList(gaus2_frac));
 
   std::vector<RooRealVar> background_parameters;
-  background_parameters.emplace_back("k1","k1",0.5,0.,1.);
-  background_parameters.emplace_back("k2","k2",0.5,0.,1.);
-  background_parameters.emplace_back("k3","k3",0.5,0.,1.);
-  //background_parameters.emplace_back("k4","k4",0.5,0.,1.);
+/*
+  // adjust RooBernstein coefficients in a way that keeps the normalization intact
+  double mass_window_width = model.right_sideband.second - model.left_sideband.first;
+  int highest_j_before_signal_region = floor((model.left_sideband.second-model.left_sideband.first)/mass_window_width*sideband_parameters.size());
+  int lowest_j_after_signal_region = ceil((model.right_sideband.first-model.left_sideband.second)/mass_window_width*sideband_parameters.size());
+  std::cout << "signal region starts after j = " << highest_j_before_signal_region << " and ends before j = " << lowest_j_after_signal_region << std::endl;
+
+  double old_normalization = 0.;
+  double new_normalization = 0.;
+*/
+  for(int j=0;j<sideband_parameters.size();j++)
+  {
+    std::string name = "k"+std::to_string(j+1);
+    double val = sideband_parameters[j].getVal();
+    //old_normalization += val;
+    //if(j>highest_j_before_signal_region && j<lowest_j_after_signal_region)
+    //{
+    //  val = 1./2. * (sideband_parameters[highest_j_before_signal_region].getVal() + sideband_parameters[lowest_j_after_signal_region].getVal());
+    //}
+    //new_normalization += val;
+    background_parameters.emplace_back(name.c_str(),name.c_str(),val,(val-0.1),(val+0.1));
+    background_parameters[j].setError(sideband_parameters[j].getError());
+    background_parameters[j].setConstant();
+  }
+/*
+  for(int j=0;j<sideband_parameters.size();j++)
+  {
+    double new_val = background_parameters[j].getVal()*(old_normalization/new_normalization);
+    background_parameters[j].setVal(new_val);
+  }
+
+  std::cout << "new parameters: " << std::endl;
+  for(int j=0;j<background_parameters.size();j++)
+  {
+    std::cout << background_parameters[j].GetName() << " = " << background_parameters[j].getVal() << std::endl;
+  }
+*/
+/*
+  background_parameters.emplace_back("k1","k1",0,-1.,1.);
+  background_parameters.emplace_back("k2","k2",0.,-1.,1.);
+  background_parameters.emplace_back("k3","k3",0.,-1.,1.);
+  background_parameters.emplace_back("k4","k4",0.,-1.,1.);
+  background_parameters.emplace_back("k5","k5",0.,-1.,1.);
+  background_parameters.emplace_back("k6","k6",0.,-1.,1.);
+  background_parameters.emplace_back("k7","k7",0.,-1.,1.);
+  background_parameters.emplace_back("k8","k8",0.,-1.,1.);
+*/
+/*
+  std::vector<RooRealVar> background_parameters;
+  background_parameters.push_back(*model.mass);
+  background_parameters.emplace_back("logistic_height","logistic_height",0.,-1e6,1e6);
+  background_parameters.emplace_back("logistic_midpoint","logistic_midpoint",pdg_mass,pdg_mass/2.,pdg_mass*2.);
+  background_parameters.emplace_back("logistic_width","logistic_width",0.01,1e-4,1e6);
+  background_parameters.emplace_back("linear_slope","linear_slope",0.,-1e3,1e3);
 
   for(int j=0;j<background_parameters.size();j++)
   {
     background_parameters[j].setVal(sideband_parameters[j].getVal());
+    background_parameters[j].setError(sideband_parameters[j].getError());
     background_parameters[j].setConstant();
   }
-
+*/
   std::string backgroundname = "background"+std::string(h_yield->GetName())+std::to_string(i);
-  RooBernstein background(backgroundname.c_str(),backgroundname.c_str(),*model.mass,RooArgList(background_parameters.begin(),background_parameters.end()));
 
-  RooRealVar n_signal(("nsignal_"+tag).c_str(),"nsignal",0.9*ds->sumEntries(),0.,1e12);
-  RooRealVar n_bkg(("nbkg_"+tag).c_str(),"nbkg",0.1*ds->sumEntries(),0.,1e12);
+  //RooGenericPdf background(backgroundname.c_str(),backgroundname.c_str(),"x[1]/(1+exp(-x[3]*(x[0]-x[2])))+1.+x[0]*x[4]",RooArgList(background_parameters.begin(),background_parameters.end()));
+
+  RooChebychev background(backgroundname.c_str(),backgroundname.c_str(),*mass,RooArgList(background_parameters.begin(),background_parameters.end()));
+
+  RooRealVar n_signal(("nsignal_"+tag).c_str(),"nsignal",0.9*ds->sumEntries(),0.,ds->sumEntries());
+  RooRealVar n_bkg(("nbkg_"+tag).c_str(),"nbkg",0.1*ds->sumEntries(),0.,ds->sumEntries());
 
   RooAddPdf full_fit(("full_fit"+tag).c_str(),"full_fit",RooArgList(signal,background),RooArgList(n_signal,n_bkg));
-  full_fit.fitTo(*ds,RooFit::Offset(true),RooFit::Extended(true));
+  RooFitResult* full_result = full_fit.fitTo(*ds,RooFit::Minimizer("Minuit2","minimize"),RooFit::InitialHesse(true),RooFit::Strategy(2),RooFit::Offset(true),RooFit::Minos(true),RooFit::Save(true));
 /*
   // first, fit background to sidebands
   model.background_function->fitTo(*ds,RooFit::Range("left_sideband,right_sideband"),RooFit::Offset(true));
@@ -350,13 +481,12 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
 */
 
   double nsignal = n_signal.getVal();
-  double nsignal_err = n_signal.getError();
+  double nsignal_err = n_signal.getPropagatedError(*full_result,*mass);
   double nbkg = n_bkg.getVal();
-  double nbkg_err = n_bkg.getError();
-  double yield = ds->sumEntries() - nbkg;
-  double yield_err = sqrt(ds->sumEntries() + pow(nbkg_err,2));
-  
-
+  double nbkg_err = n_bkg.getPropagatedError(*full_result,*mass);
+  double yield = n_signal.getVal();
+  double yield_err = n_signal.getPropagatedError(*full_result,*mass);
+ 
   std::cout << "nsignal val " << nsignal << std::endl;
   std::cout << "nsignal err " << nsignal_err << std::endl;
   std::cout << "nbkg " << nbkg << std::endl;
@@ -374,7 +504,7 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
   if(i>=0) title = std::string(h_yield->GetTitle())+" bin "+std::to_string(i);
   else title = std::string(h_yield->GetTitle());
 
-  RooPlot* plot = model.mass->frame(RooFit::Title(title.c_str()));
+  RooPlot* plot = mass->frame(RooFit::Title(title.c_str()));
   plot->SetName(name.c_str());
   ds->plotOn(plot);
   full_fit.plotOn(plot,RooFit::Components(background.GetName()),RooFit::DrawOption("FL"),RooFit::LineStyle(kDashed),RooFit::FillColor(kGray),RooFit::MoveToBack());
@@ -382,35 +512,37 @@ void ResonanceRatio::get_yield(TH1F* h_yield, int i, RooAbsData* ds, ParticleMod
   plot->Write();
 }
 
-void ResonanceRatio::get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, RooAbsData* data, ParticleModel& model)
+void ResonanceRatio::get_diff_yield_unbinned(TH1F* h_yield, TH1F* h_err, const HistogramInfo& diff_variable, RooAbsData* data, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins)
 {
   for(int i=1; i<=h_yield->GetNbinsX(); i++)
   {
     std::cout << "==================================================================================" << std::endl;
-    std::cout << model.name << " " << hinfo.name << " bin " << i << " of " << h_yield->GetNbinsX() << std::endl;
+    std::cout << cuts.mother_name << " " << diff_variable.name << " bin " << i << " of " << h_yield->GetNbinsX() << std::endl;
 
-    std::string selection = hinfo.get_bin_selection(std::string(data->GetName())+"_"+hinfo.name,i);
+    std::string selection = diff_variable.get_bin_selection(std::string(data->GetName())+"_"+diff_variable.name,i);
     std::cout << "selection: " << selection << std::endl;
 
-    RooDataSet* ds_selected = (RooDataSet*)data->reduce({*(model.mass)},selection.c_str());
+    RooRealVar mass(("diffvar_mass"+diff_variable.name+"_"+std::to_string(i)).c_str(),"mass",massbins.bins.front(),massbins.bins.back());
+    RooDataSet* ds_selected = (RooDataSet*)data->reduce(RooArgList(mass),selection.c_str());
 
-    bool use_threshold_background = (hinfo.name == "pT");
+    bool use_threshold_background = false;//(hinfo.name == "pT");
 
     //get_yield_linearsideband(h_yield,i,ds_selected,model,use_threshold_background);
-    get_yield(h_yield,i,ds_selected,model);
+    get_yield_fitterclass(h_yield,h_err,i,ds_selected,&mass,pdgid,cuts,massbins);
   }
 }
 
-void ResonanceRatio::get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, HistogramInfo& hinfo, DifferentialContainer& data, ParticleModel& model)
+void ResonanceRatio::get_diff_yield_binned(TH1F* h_yield, TH1F* h_err, const HistogramInfo& diff_variable, DifferentialContainer& data, int pdgid, const CutSettings& cuts, const HistogramInfo& massbins)
 {
   for(int i=1; i<=h_yield->GetNbinsX(); i++)
   {
     std::cout << "==================================================================================" << std::endl;
-    std::cout << model.name << " " << hinfo.name << " bin " << i << " of " << h_yield->GetNbinsX() << std::endl;
-    RooDataHist dh("binned_massfit","binned_massfit",*(model.mass),RooFit::Import(*(data.hists[i])));
-    bool use_threshold_background = (hinfo.name == "pT");
+    std::cout << cuts.mother_name << " " << diff_variable.name << " bin " << i << " of " << h_yield->GetNbinsX() << std::endl;
+    RooRealVar mass(("diffvar_mass"+diff_variable.name+"_"+std::to_string(i)).c_str(),"mass",massbins.bins.front(),massbins.bins.back());
+    RooDataHist dh("binned_massfit","binned_massfit",mass,RooFit::Import(*(data.hists[i])));
+    bool use_threshold_background = false;//(hinfo.name == "pT");
     //get_yield_linearsideband(h_yield,i,&dh,model,use_threshold_background);
-    get_yield(h_yield,i,&dh,model);
+    get_yield_fitterclass(h_yield,h_err,i,&dh,&mass,pdgid,cuts,massbins);
   }
 }
 
@@ -601,17 +733,21 @@ void ResonanceRatio::calculate_ratios_unbinned(RooAbsData* numerator_data, RooAb
 {
   //get_yield_linearsideband(numerator_integrated_yield,-1,numerator_data,_numerator_model);
   //get_yield_linearsideband(denominator_integrated_yield,-1,denominator_data,_denominator_model);
-  get_yield(numerator_integrated_yield,-1,numerator_data,_numerator_model);
-  get_yield(denominator_integrated_yield,-1,denominator_data,_denominator_model);
+
+  RooRealVar numerator_integrated_mass("numerator_integrated_mass","numerator integrated mass",_numerator_massbins.bins.front(),_numerator_massbins.bins.back());
+  RooRealVar denominator_integrated_mass("denominator_integrated_mass","denominator integrated mass",_denominator_massbins.bins.front(),_denominator_massbins.bins.back());
+  
+  get_yield_fitterclass(numerator_integrated_yield,numerator_integrated_fit_syserr,-1,numerator_data,&numerator_integrated_mass,_numerator_pdgid,_numerator_cuts,_numerator_massbins);
+  get_yield_fitterclass(denominator_integrated_yield,denominator_integrated_fit_syserr,-1,denominator_data,&denominator_integrated_mass,_denominator_pdgid,_denominator_cuts,_denominator_massbins);
 
   // extract differential yields
 
   for(size_t i=0; i<_variables.size(); i++)
   {
     std::cout << "======= Differential " << numerator_diff_yields[i]->GetName() << " =======" << std::endl;
-    get_diff_yield_unbinned(numerator_diff_yields[i],numerator_fit_syserr[i],_variables[i],numerator_data,_numerator_model);
+    get_diff_yield_unbinned(numerator_diff_yields[i],numerator_fit_syserr[i],_variables[i],numerator_data,_numerator_pdgid,_numerator_cuts,_numerator_massbins);
     std::cout << "======= Differential " << denominator_diff_yields[i]->GetName() << " =======" << std::endl;
-    get_diff_yield_unbinned(denominator_diff_yields[i],denominator_fit_syserr[i],_variables[i],denominator_data,_denominator_model);
+    get_diff_yield_unbinned(denominator_diff_yields[i],denominator_fit_syserr[i],_variables[i],denominator_data,_denominator_pdgid,_denominator_cuts,_denominator_massbins);
   }
 
   calculate_ratios();
@@ -622,16 +758,19 @@ void ResonanceRatio::calculate_ratios_unbinned(RooAbsData* numerator_data, RooAb
 void ResonanceRatio::calculate_ratios_binned(TH1F* integrated_numerator_data, std::vector<DifferentialContainer>& diff_numerator_data, 
                                              TH1F* integrated_denominator_data, std::vector<DifferentialContainer>& diff_denominator_data)
 {
-  RooDataHist integrated_numerator_dh("integrated_numerator_dh","integrated_numerator_dh",RooArgList(*(_numerator_model.mass)),RooFit::Import(*integrated_numerator_data));
-  RooDataHist integrated_denominator_dh("integrated_denominator_dh","integrated_denominator_dh",RooArgList(*(_denominator_model.mass)),RooFit::Import(*integrated_denominator_data));
+  RooRealVar numerator_mass("numerator_mass","numerator_mass",_numerator_massbins.bins.front(),_numerator_massbins.bins.back());
+  RooRealVar denominator_mass("denominator_mass","denominator_mass",_denominator_massbins.bins.front(),_denominator_massbins.bins.back());
 
-  get_yield(numerator_integrated_yield,-1,&integrated_numerator_dh,_numerator_model);
-  get_yield(denominator_integrated_yield,-1,&integrated_denominator_dh,_denominator_model);
+  RooDataHist integrated_numerator_dh("integrated_numerator_dh","integrated_numerator_dh",RooArgList(numerator_mass),RooFit::Import(*integrated_numerator_data));
+  RooDataHist integrated_denominator_dh("integrated_denominator_dh","integrated_denominator_dh",RooArgList(denominator_mass),RooFit::Import(*integrated_denominator_data));
+
+  get_yield_fitterclass(numerator_integrated_yield,numerator_integrated_fit_syserr,-1,&integrated_numerator_dh,&numerator_mass,_numerator_pdgid,_numerator_cuts,_numerator_massbins);
+  get_yield_fitterclass(denominator_integrated_yield,denominator_integrated_fit_syserr,-1,&integrated_denominator_dh,&denominator_mass,_denominator_pdgid,_denominator_cuts,_denominator_massbins);
 
   for(int i=0; i<_variables.size(); i++)
   {
-    get_diff_yield_binned(numerator_diff_yields[i],numerator_fit_syserr[i],_variables[i],diff_numerator_data[i],_numerator_model);
-    get_diff_yield_binned(denominator_diff_yields[i],denominator_fit_syserr[i],_variables[i],diff_denominator_data[i],_denominator_model);
+    get_diff_yield_binned(numerator_diff_yields[i],numerator_fit_syserr[i],_variables[i],diff_numerator_data[i],_numerator_pdgid,_numerator_cuts,_numerator_massbins);
+    get_diff_yield_binned(denominator_diff_yields[i],denominator_fit_syserr[i],_variables[i],diff_denominator_data[i],_denominator_pdgid,_denominator_cuts,_denominator_massbins);
   }
 
   calculate_ratios();
