@@ -44,8 +44,4 @@ void run_SpinDBQA()
     // qa->WriteRootFile();
 
 
-    // ======== Write new QA level (WARNING: EXPERT ONLY!)========== //
-    int newqalevel = 0; 
-    qa->WriteNewQALevel(newqalevel);
-
 }
