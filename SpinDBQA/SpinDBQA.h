@@ -42,9 +42,6 @@ public:
     void WriteMarkdown();
     void WriteRootFile();
 
-    void WriteNewQALevel(int newqalevel = -999);
-    //void WriteSpinDBData();
-    //void PrintSpinDBData();
 
 private:
     SpinDBContent *spin_cont;
@@ -58,10 +55,6 @@ private:
 
     void PrepareHtml();
     std::string HtmlContent();
-
-    void PrepareUpdatedCrossingShifts();
-    void PrepareUpdatedBeamPolarizations();
-    void PrepareUpdatedSpinPatterns();
 
     std::vector<int> runlistvect;
     std::map<std::string, std::vector<int>> map_spindbqa_markdown;
