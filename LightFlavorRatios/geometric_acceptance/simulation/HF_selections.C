@@ -70,7 +70,7 @@ namespace HeavyFlavorReco
   float pid_frac = 0.4;
   float cemc_proj_radius = 102.9; //Virgile recommendation according to DetailedCalorimeterGeometry
   bool constrain_lambda_mass = true;
-  bool extraolate_tracks_to_secondary_vertex = false; // Set to false to ensure the pT map is accurate for asymmetry study
+  bool extrapolate_tracks_to_secondary_vertex = false; // Set to false to ensure the pT map is accurate for asymmetry study
 
   //Used
   float lf_cuts_setMinDIRA{-FLT_MAX}; // -1.1
@@ -179,7 +179,7 @@ void reconstruct_pipi_mass()
   kfparticle->setDecayDescriptor(pipi_decay_descriptor);
 
   kfparticle->setTrackMapNodeName("SvtxTrackMap");
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
   kfparticle->saveOutput(save_kfpntuple);
 
   kfparticle->doTruthMatching(truthMatch);
@@ -250,7 +250,7 @@ void reconstruct_ppi_mass()
   else kfparticle->setDecayDescriptor(anti_ppi_decay_descriptor);
 
   kfparticle->setTrackMapNodeName("SvtxTrackMap");
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
   kfparticle->saveOutput(save_kfpntuple);
 
   kfparticle->doTruthMatching(truthMatch);
