@@ -107,7 +107,7 @@ void reconstruct_pipi_mass()
 
   kfparticle->setDecayDescriptor(pipi_decay_descriptor);
 
-  //kfparticle->extraolateTracksToSV(false); //To ensure the pT map is accurate
+  //kfparticle->extrapolateTracksToSV(false); //To ensure the pT map is accurate
 
   kfparticle->saveOutput(save_kfpntuple);
 
