@@ -4,15 +4,27 @@
 single pass over each event it writes out:
 
 - a **track tree**, with per-track kinematics, quality flags, dE/dx
-  (multiple estimators), and optional calorimeter-tower-around-track energy
+  (multiple estimators), and optional calorimeter-tower-energy-around-track
   grids, and
 - a **V0/decay tree**, built from `KFParticle` K-short / Lambda / anti-Lambda
   candidates, with full daughter-track linkage back to the track tree.
 
-It replaces several earlier single-purpose analysis modules (dE/dx
-harvesting, decay-vertex reconstruction, etc.) with one module reading
-directly off the `KFParticle` containers and track maps already built by the
-standard sPHENIX tracking/KFParticle reconstruction chain.
+The tree written by Collect is intended to support both spectra and correlations
+analyses. Both whole-acceptance CFs, e.g. R2(dy,dphi) and Femtoscopic CFs, e.g. C(Q),
+can be build for arbitrary pair species and charges based on these trees. This
+is possible because the trees contain ulong tracking hit masks and the i cluster
+keys for every track. These variables support sensitive identification and 
+removal of split tracks, which do great damage to C(Q) and R2 near (dy,dphi)~(0,0).
+
+Track written to the tree must be associated with a primary vertex in a single
+crossing, either directly by the vertexer or by hand (loop through tracks and
+call those with fabs(dca_xy) and _z both <=1.5cm. Tracks that are the daughters 
+of found V0s are always saved.
+
+V0s are reconstructed by KFP already quite cleanly, as KFP V0 cuts are applied
+in the F4A macro itself. The mass windows intentionally allow sufficient space to
+perform side-band corrections to the CFs to remove the backgrounds seen in the V0
+Minv plots. 
 
 ## How to Build
 
