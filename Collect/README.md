@@ -10,21 +10,39 @@ single pass over each event it writes out:
   candidates, with full daughter-track linkage back to the track tree.
 
 The tree written by Collect is intended to support both spectra and correlations
-analyses. Both whole-acceptance CFs, e.g. R2(dy,dphi) and Femtoscopic CFs, e.g. C(Q),
-can be build for arbitrary pair species and charges based on these trees. This
-is possible because the trees contain ulong tracking hit masks and the i cluster
-keys for every track. These variables support sensitive identification and 
-removal of split tracks, which do great damage to C(Q) and R2 near (dy,dphi)~(0,0).
+analyses. Both whole-acceptance correlation functions, e.g. R2(dy,dphi), and
+femtoscopic correlation functions, e.g. C(Q), can be built for arbitrary pair
+species and charges from these trees. This is possible because the trees carry
+per-track tracking-hit bitmasks and cluster keys, which support sensitive
+identification and removal of split tracks — a single real particle mistakenly
+reconstructed as two separate tracks, which does real damage to C(Q) and R2
+near (dy,dphi)~(0,0).
 
-Track written to the tree must be associated with a primary vertex in a single
-crossing, either directly by the vertexer or by hand (loop through tracks and
-call those with fabs(dca_xy) and _z both <=1.5cm. Tracks that are the daughters 
-of found V0s are always saved.
+Tracks written to the tree must be associated with a primary vertex in a single
+crossing, either directly by the vertex finder or by hand: for every track,
+Collect computes its 3D DCA to each candidate vertex and requires |dca_xy| and
+|dca_z| both <= 1.5 cm. Tracks that are daughters of a found V0 are always
+saved, regardless of this cut.
 
-V0s are reconstructed by KFP already quite cleanly, as KFP V0 cuts are applied
-in the F4A macro itself. The mass windows intentionally allow sufficient space to
-perform side-band corrections to the CFs to remove the backgrounds seen in the V0
-Minv plots. 
+V0s are reconstructed by KFParticle already quite cleanly, since KFP's own V0
+cuts are applied in the F4A macro itself. The mass windows intentionally leave
+enough room on either side of the peak to perform sideband subtraction and
+remove the backgrounds visible in the V0 invariant-mass plots.
+
+A few extra things Collect does to keep the trees clean:
+
+- **Duplicate-V0 cleanup**: if two reconstructed V0s in the same crossing
+  share a daughter track, only the better-fit one (lower chi2/ndf) is kept.
+- **One-vertex-per-crossing**: when several reconstructed vertices land in
+  the same beam crossing (real pileup, or a split-vertex artifact), Collect
+  keeps only the "hottest" one — the vertex with the most tracks genuinely
+  consistent with it by DCA — so tracks and V0s are never double-counted
+  across near-duplicate vertices.
+- **Split-track bookkeeping**: persisted per-track hit masks and cluster
+  keys let downstream analysis recompute a STAR-style Splitting Level for
+  any pair, sibling or mixed-event, to identify and remove split-track
+  pairs. An inline version of this cut exists in Collect itself but is
+  currently disabled pending validation on real data.
 
 ## How to Build
 
@@ -36,8 +54,8 @@ environment.
 # Inside an sPHENIX environment (OFFLINE_MAIN and MYINSTALL set, e.g. via
 # `source setup.sh <build>` from sPHENIX's cvmfs area or your own build):
 
-git clone https://github.com/wjllope/Collect.git
-cd Collect
+git clone https://github.com/sPHENIX-Collaboration/analysis.git
+cd analysis/Collect
 
 sh autogen.sh
 mkdir build && cd build
