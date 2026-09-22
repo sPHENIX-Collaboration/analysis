@@ -1,0 +1,24 @@
+# autotools-generated (recreated by autogen.sh / configure)
+autom4te.cache/
+aclocal.m4
+configure
+Makefile.in
+Makefile
+compile
+config.guess
+config.sub
+depcomp
+install-sh
+ltmain.sh
+missing
+testexternals.cc
+
+# out-of-tree build directory (see do_build.sh)
+build/
+
+# libtool artifacts
+*.la
+*.lo
+*.o
+.libs/
+.deps/
