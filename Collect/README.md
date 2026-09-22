@@ -1,6 +1,6 @@
 # Collect
 
-`Collect` is a Fun4All `SubsysReco` module for sPHENIX Run-3 pp analyses. In a
+`Collect` is a Fun4All `SubsysReco` module for sPHENIX analyses. In a
 single pass over each event it writes out:
 
 - a **track tree**, with per-track kinematics, quality flags, dE/dx
@@ -40,9 +40,9 @@ A few extra things Collect does to keep the trees clean:
   across near-duplicate vertices.
 - **Split-track bookkeeping**: persisted per-track hit masks and cluster
   keys let downstream analysis recompute a STAR-style Splitting Level for
-  any pair, sibling or mixed-event, to identify and remove split-track
-  pairs. An inline version of this cut exists in Collect itself but is
-  currently disabled pending validation on real data.
+  any pair, sibling or mixed-event, to identify a split track — a single
+  real particle mistakenly reconstructed twice — and remove the extra stub
+  from the event.
 
 ## How to Build
 
