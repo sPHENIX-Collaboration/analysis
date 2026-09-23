@@ -1,0 +1,11 @@
+Universe	= vanilla
+Executable	= run_singletrackan.sh
+notification	= Never
+Output		= /sphenix/user/dloomis/logs/singletrackan_run$(runnumber)_$(clusterId).$(process).txt
+Error		= /sphenix/user/dloomis/logs/singletrackan_run$(runnumber)_$(clusterId).$(process).err
+Log		= /tmp/condor_dloomis_$(clusterId).$(process).log
+Initialdir	= /sphenix/user/dloomis/SpinAnalysis/SingleTrackAN/macros
+Arguments	= $(runnumber) $(segment) Aug12_singletracks
+request_memory	= 4000MB
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue runnumber, segment from queue_79507_segs.list
