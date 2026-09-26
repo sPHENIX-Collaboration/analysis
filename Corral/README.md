@@ -231,7 +231,8 @@ lists/<dataset>/                    job lists (made by lists/make_lists.bash)
 root/<dataset>/corral_m.root        single full-statistics job (the Finalize reference)
 root/<dataset>/corral_m_Finalize.root
 root/<dataset>/chunks/              one file per job list
-root/<dataset>/DATASET.md           what the dataset is: trees, events, runs, job IDs
+root/DATASET_<dataset>.md           what the dataset is: trees, events, runs, job IDs (kept outside
+                                    root/<dataset>/, so it survives when a superseded dataset is deleted)
 pdf/<dataset>/, log/<dataset>/      the same structure
 root/Development/, pdf/Development/, log/Development/   study and test outputs
 ```
