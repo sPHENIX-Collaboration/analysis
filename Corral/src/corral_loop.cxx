@@ -104,8 +104,8 @@ void corral::Loop(){
 
 	//---- RunIndex (runindex.root, hRunIndex, kRunIndex, hri_* QA hists) is disabled --
 	//---- it's a QA-only convenience for plotting vs. a chronological run/segment
-	//---- index and isn't needed to process events or fill CFs. See corral_class.h's
-	//---- hRunIndex member and the hri_* histogram block below (also disabled).
+	//---- index and isn't needed to process events or fill CFs. The hRunIndex member is
+	//---- gone (2026-09-26); the hri_* histogram block below is also disabled.
 	//int NRUNSSEEN = 0;
 	//cout<<"Reading ~/corral/runindex.root..."<<endl;
 	//	fri->cd();
@@ -271,8 +271,11 @@ void corral::Loop(){
 	cout<<"Opening root output file "<<RootFileName.Data()<<endl;
 	TFile *fout			= new TFile(RootFileName.Data(),"RECREATE");
 	//
-	TH2D *hRunSeg	= new TH2D("hRunSeg" ,"Nevt vs (Run,Segment)",4500,49700.5,54200.5,10000,-0.5,9999.5);
-	TH2D *htrigRun	= new TH2D("htrigRun","Trigger vs RunNumber" ,4500,49700.5,54200.5,64,-0.5,63.5);
+	//---- run axis for all per-run QA: Run-3 pp (RUNAXIS_*, corral_class.h; was 49700-54200, so every
+	//---- Run-3 run landed in overflow and these pages were empty). The Nevt-vs-(run,segment) map
+	//---- (hRunSeg) and its JUSTFILLRUNSEG first-pass mode are gone: they only fed the RunIndex
+	//---- machinery (disabled, see top of Loop), and condor already says which segments ran.
+	TH2D *htrigRun	= new TH2D("htrigRun","Trigger vs RunNumber" ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,64,-0.5,63.5);
 	//
 	TH1D *htrig0	= new TH1D("htrig0","htrig IDs raw",64,-0.5,63.5);
 	TH1D *heta0		= new TH1D("heta0","heta raw",240,-1.5,1.5);
@@ -654,22 +657,22 @@ void corral::Loop(){
 	htrig	->SetFillColor(3);		htrig	->SetLineColor(1);
 
 	//---- by (*run), filled over events
- 	TProfile* hrirun_ntrk	= new TProfile("hrirun_ntrk"   ,"hrirun_ntrk"   ,4500,49700.5,54200.5, -0.5,399.5);
- 	TProfile* hrirun_vtxx	= new TProfile("hrirun_vtxx"   ,"hrirun_vtxx"   ,4500,49700.5,54200.5,     -5,5  );
- 	TProfile* hrirun_vtxy	= new TProfile("hrirun_vtxy"   ,"hrirun_vtxy"   ,4500,49700.5,54200.5,     -5,5  );
- 	TProfile* hrirun_vtxz	= new TProfile("hrirun_vtxz"   ,"hrirun_vtxz"   ,4500,49700.5,54200.5,    -20,20 );
- 	TProfile* hrirun_negfr	= new TProfile("hrirun_negfr"  ,"hrirun_negfr"  ,4500,49700.5,54200.5,      0,1  );
- 	TH1D*     hrirun_nev	= new     TH1D("hrirun_nev"    ,"hrirun_nev"    ,4500,49700.5,54200.5);
- 	TH1D*     hrirun_nevmb	= new     TH1D("hrirun_nevmb"  ,"hrirun_nevmb"  ,4500,49700.5,54200.5);
- 	TH1D*     hrirun_nevjet	= new     TH1D("hrirun_nevjet" ,"hrirun_nevjet" ,4500,49700.5,54200.5);
- 	TH1D*     hrirun_nevpho	= new     TH1D("hrirun_nevpho" ,"hrirun_nevpho" ,4500,49700.5,54200.5);
+ 	TProfile* hrirun_ntrk	= new TProfile("hrirun_ntrk"   ,"hrirun_ntrk"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI, -0.5,399.5);
+ 	TProfile* hrirun_vtxx	= new TProfile("hrirun_vtxx"   ,"hrirun_vtxx"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,     -5,5  );
+ 	TProfile* hrirun_vtxy	= new TProfile("hrirun_vtxy"   ,"hrirun_vtxy"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,     -5,5  );
+ 	TProfile* hrirun_vtxz	= new TProfile("hrirun_vtxz"   ,"hrirun_vtxz"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,    -20,20 );
+ 	TProfile* hrirun_negfr	= new TProfile("hrirun_negfr"  ,"hrirun_negfr"  ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,      0,1  );
+ 	TH1D*     hrirun_nev	= new     TH1D("hrirun_nev"    ,"hrirun_nev"    ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI);
+ 	TH1D*     hrirun_nevmb	= new     TH1D("hrirun_nevmb"  ,"hrirun_nevmb"  ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI);
+ 	TH1D*     hrirun_nevjet	= new     TH1D("hrirun_nevjet" ,"hrirun_nevjet" ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI);
+ 	TH1D*     hrirun_nevpho	= new     TH1D("hrirun_nevpho" ,"hrirun_nevpho" ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI);
 	//---- by (*run)(index), filled over tracks
- 	TProfile* hrirun_eta	= new TProfile("hrirun_eta"    ,"hrirun_eta"    ,4500,49700.5,54200.5,   -1.5,1.5);
- 	TProfile* hrirun_phi	= new TProfile("hrirun_phi"    ,"hrirun_phi"    ,4500,49700.5,54200.5, -M_PI,M_PI);
- 	TProfile* hrirun_pt		= new TProfile("hrirun_pt"     ,"hrirun_pt"     ,4500,49700.5,54200.5,    0.,100.);
- 	TProfile* hrirun_ntpc	= new TProfile("hrirun_ntpc"   ,"hrirun_ntpc"   ,4500,49700.5,54200.5,     0.,50.);
- 	TProfile* hrirun_dedx	= new TProfile("hrirun_dedx"   ,"hrirun_dedx"   ,4500,49700.5,54200.5,   0.,2000.);
- 	TProfile* hrirun_ndedx	= new TProfile("hrirun_ndedx"  ,"hrirun_ndedx"  ,4500,49700.5,54200.5,     0.,50.);
+ 	TProfile* hrirun_eta	= new TProfile("hrirun_eta"    ,"hrirun_eta"    ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,   -1.5,1.5);
+ 	TProfile* hrirun_phi	= new TProfile("hrirun_phi"    ,"hrirun_phi"    ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI, -M_PI,M_PI);
+ 	TProfile* hrirun_pt		= new TProfile("hrirun_pt"     ,"hrirun_pt"     ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,    0.,100.);
+ 	TProfile* hrirun_ntpc	= new TProfile("hrirun_ntpc"   ,"hrirun_ntpc"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,     0.,50.);
+ 	TProfile* hrirun_dedx	= new TProfile("hrirun_dedx"   ,"hrirun_dedx"   ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,   0.,2000.);
+ 	TProfile* hrirun_ndedx	= new TProfile("hrirun_ndedx"  ,"hrirun_ndedx"  ,RUNAXIS_NBIN,RUNAXIS_LO,RUNAXIS_HI,     0.,50.);
   
 	//---- by runindex, filled over events
 //	const int MAXRUNSSEEN	= 200;
@@ -718,6 +721,7 @@ void corral::Loop(){
 	//---- loop through the tree...
 	//
 	int	run_highest	= 0;
+	int	run_lowest	= 999999;
 	//
 	Long64_t nentries;
 	if (ntodo!=0){ nentries = ntodo;        } 
@@ -726,6 +730,7 @@ void corral::Loop(){
 	cout<<"corral::Loop -- Event Loop over "<<nentries<<" events starting..."<<endl;	
 	//
 	if (doXTFClean) BuildXTFLosers(nentries);	// sec 18.22
+	if (doTFDup)    BuildTFDupRows(nentries);	// overlapping-TF collision copies
 	//
 	int runprev			= -1;
 	int segmentprev		= -1;
@@ -741,9 +746,10 @@ void corral::Loop(){
 	for (Long64_t jentry=0; jentry<nentries && fReader.Next(); jentry++) {
 		if (jentry%100000==0) cout<<"processing "<<jentry<<endl;
 		//
+		//---- a collision already seen in an overlapping earlier TF: not a new event (see doTFDup)
+		if (doTFDup && jentry<(Long64_t)tfDupRows.size() && tfDupRows[jentry]) continue;
+		//
 		//---- new event processing...
-		hRunSeg->Fill((*run),(*segment),1.0);
-		if (JUSTFILLRUNSEG) continue;			// bail if only filling hRunSeg...
 		//---- sec 18.21: opt-in TF-deduplication -- keep only the FIRST row seen for each (run,evt)
 		//---- (evt IS the trigger frame's own EvtSequence, constant across every row from that TF,
 		//---- SDCC-claude sec 18.20), skip every subsequent row from the same TF entirely, before
@@ -794,6 +800,7 @@ void corral::Loop(){
 		//runprev	= (*run);	segmentprev	= (*segment);	kRunIndexprev = kRunIndex;
 		//if (kRunIndex<0){ cout<<"No RunIndex Found for Run="<<(*run)<<endl; exit(0); }
 		if ((*run)>run_highest) run_highest = (*run);
+		if ((*run)<run_lowest)  run_lowest  = (*run);
 		//		
 		bool triggerIDs[64]	= {0};
 		int  itrig			=  0 ;
@@ -1800,25 +1807,24 @@ void corral::Loop(){
 	//
 	TH1::AddDirectory(kTRUE);		// needed for clones in following calculations
 	//
-	cout<<"Highest run number seen = "<<run_highest<<endl;
+	cout<<"Run numbers seen = "<<run_lowest<<" - "<<run_highest<<endl;
 	cout<<"V0 zero-sentinel fixes (README_v0etaSpike.md): eta "<<nv0fixEta<<"  phi "<<nv0fixPhi<<"  mass "<<nv0fixMass<<"  ctau "<<nv0fixCtau<<endl;
-	hRunSeg			->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	htrigRun		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_ntrk		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_vtxx		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_vtxy		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_vtxz		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_negfr	->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_nev		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_nevmb	->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_nevjet	->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_nevpho	->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_eta		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_phi		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_pt		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_ntpc		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_dedx		->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
-	hrirun_ndedx	->GetXaxis()->SetRangeUser(49700.5,run_highest+10.5);
+	htrigRun		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_ntrk		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_vtxx		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_vtxy		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_vtxz		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_negfr	->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_nev		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_nevmb	->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_nevjet	->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_nevpho	->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_eta		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_phi		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_pt		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_ntpc		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_dedx		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
+	hrirun_ndedx	->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
 	//
 	hrirun_nevmb	->Divide(hrirun_nev);
 	hrirun_nevjet	->Divide(hrirun_nev);
@@ -2652,6 +2658,7 @@ void corral::Loop(){
 	cout<<"sec 18.22 -- doXTFClean="<<doXTFClean<<" strict="<<doXTFStrict<<" neither="<<nXTF_neither<<" duplicate pairs="<<nXTF_pairs<<" byINTT="<<nXTF_byINTT
 		<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_TF="<<ONLY_FIRST_TF<<" rows skipped as same-TF duplicates="<<nSkippedSameTF<<endl;
+	cout<<"doTFDup="<<doTFDup<<" -- rows skipped as overlapping-TF collision copies="<<nTFDup_rows<<endl;
 	cout<<"sec 18.21 -- ONLY_CROSSING0="<<ONLY_CROSSING0<<" rows skipped with crossing!=0="<<nSkippedXingNot0<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_XINGPOS="<<ONLY_FIRST_XINGPOS<<" rows skipped (crossing<=0 or not first crossing>0 in TF)="<<nSkippedXingPos<<endl;
 	if (!NOCORRELATIONS){
@@ -2827,6 +2834,62 @@ void corral::BuildXTFLosers(Long64_t nentries){
 	delete ch;
 	cout<<"BuildXTFLosers -- duplicate pairs="<<nXTF_pairs<<" (decided by INTT="<<nXTF_byINTT
 		<<", by quality="<<nXTF_byQuality<<", neither="<<nXTF_neither<<(doXTFStrict?" [both dropped]":" [better quality kept]")<<") losers="<<nXTF_losers<<" in "<<xtfLosers.size()<<" rows"<<endl;
+}
+
+//------------------------------------------------------------
+// Overlapping-TF collision copies (doTFDup). Separate chain over the same files, same order as
+// fChain (chain entry == jentry in Loop), like BuildXTFLosers. When two triggers are closer in
+// time than a TF's readout window (~540 crossings), both TFs reconstruct the collisions in the
+// overlap: same vertex, crossing shifted by exactly the GL1 BCO difference of the two TFs
+// (checked on ana573 79515 seg 0: 5 of 5 shared vertices of evt 45/46 shifted by dBCO=62).
+// So bco+crossing is the absolute crossing, and (run, bco+crossing) identifies the bunch crossing.
+// Smoke test (79515 seg 99-100): 11.9% of rows are copies, dEvt 1 (94%) and 2 (6%) - so the
+// adjacent-TF mixing exclusion (|devt|==1) alone would miss some; 98.6% of copies agree in vtxz
+// to <1 mm, 0.7% differ by >1 cm (in-bunch pileup: each TF kept a different one of the crossing's
+// vertices - Collect keeps one vertex per crossing - but the rows hold the same crossing's tracks).
+// First row with a key is kept (the earlier TF in chain order - neither copy is systematically
+// better, ntr more/fewer/equal 30/31/38 on that test), later rows with the key go in tfDupRows.
+// Rows with bco==~0 (TF without GL1RAWHIT) are never skipped. No bco branch -> nothing to do.
+void corral::BuildTFDupRows(Long64_t nentries){
+	TChain *ch	= new TChain(fChain->GetName());
+	TIter next(fChain->GetListOfFiles());
+	while (TObject *el = next()) ch->Add(el->GetTitle());
+	ch->LoadTree(0);
+	if (!ch->GetBranch("bco")){
+		cout<<"BuildTFDupRows -- no bco branch in these trees: overlapping-TF duplicate removal not possible"<<endl;
+		delete ch;
+		return;
+	}
+	TTreeReader r(ch);
+	TTreeReaderValue<Int_t>		r_run(r,"run"), r_evt(r,"evt"), r_xing(r,"crossing");
+	TTreeReaderValue<ULong64_t>	r_bco(r,"bco");
+	TTreeReaderValue<Double_t>	r_vtxz(r,"vtxz");
+	//---- Copies are only ever a few TFs apart (dEvt<=3 seen), so only keys from the last TFDUP_WINDOW
+	//---- TFs of the current run are kept - memory stays small even for the full-statistics job
+	//---- (all chunks, ~1e9 rows). Rows arrive in TF order within a run (chunks are contiguous).
+	const int TFDUP_WINDOW = 20;
+	struct Kept { int evt; double vz; };
+	std::unordered_map<Long64_t,Kept> seen;			// absolute crossing -> first row, current run only
+	std::deque<std::pair<int,Long64_t>> order;		// (evt, key) in insertion order, for pruning
+	int currun = -1;
+	tfDupRows.assign(nentries, false);
+	cout<<"BuildTFDupRows -- pre-pass over "<<nentries<<" rows..."<<endl;
+	for (Long64_t je=0; je<nentries && r.Next(); je++){
+		if ((*r_run)!=currun){ seen.clear(); order.clear(); currun = (*r_run); }
+		while (!order.empty() && order.front().first < (*r_evt) - TFDUP_WINDOW){ seen.erase(order.front().second); order.pop_front(); }
+		if ((*r_bco)==~0ULL) continue;
+		Long64_t key = (Long64_t)(*r_bco) + (*r_xing);
+		auto it = seen.find(key);
+		if (it==seen.end()){ seen[key] = Kept{(*r_evt),(*r_vtxz)}; order.emplace_back((*r_evt),key); continue; }
+		tfDupRows[je] = true;
+		++nTFDup_rows;
+		++nTFDup_byDevt[(*r_evt) - it->second.evt];
+		TFDup_maxAbsDvz = std::max(TFDup_maxAbsDvz, fabs((*r_vtxz) - it->second.vz));
+	}
+	delete ch;
+	cout<<"BuildTFDupRows -- rows skipped="<<nTFDup_rows<<" of "<<nentries<<", max |dvtxz| between copies="<<TFDup_maxAbsDvz<<" cm; by evt(copy)-evt(kept):";
+	for (auto &p : nTFDup_byDevt) cout<<" "<<p.first<<":"<<p.second;
+	cout<<endl;
 }
 
 bool corral::AcceptTrack(int it){

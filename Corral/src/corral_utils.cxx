@@ -85,10 +85,11 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doMixNoAdjTF(true)	// sec 18.23/18.25: ON by default -- "noXTF" or "mixAdjTF" turns it off
   , doXTFStrict(true)		// sec 18.22/18.25: ON by default -- "noXTF" off; plain "XTFclean" selects non-strict
   , nXTF_pairs(0), nXTF_byINTT(0), nXTF_byQuality(0), nXTF_neither(0), nXTF_losers(0)
+  , doTFDup(true)			// 2026-09-26: ON by default -- "noTFdup" turns it off (no-op without a bco branch)
+  , nTFDup_rows(0), TFDup_maxAbsDvz(0)
   , ONLY_FIRST_XINGPOS(false)	// sec 18.21 follow-up 2, OFF by default -- "XingPos" turns it on
   , ONLY_FIRST_TF(false)		// sec 18.21, OFF by default -- "onlyfirsttf" in RunString turns it on
   , NTPCCUT(18)				// LL=8 (inclusive), 18 is open but better
-  , hRunIndex(0)
   , nentriesfile(0)
   , fChain(BuildInputChain(tree))
   , fReader(fChain)
@@ -282,6 +283,12 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	cout<<"reader::reader -- doMixNoAdjTF (sec 18.23) "<<(doMixNoAdjTF?(doXTFClean?"enabled -- skip |devt|==1":"enabled -- XTFclean OFF, so skip |devt|<=1 (same-TF too)"):"DISABLED")<<endl;
 	cout<<"reader::reader -- doXTFClean (sec 18.22) "<<(doXTFClean?"enabled":"DISABLED")
 		<<(doXTFStrict?" -- STRICT (neither-case: drop both copies)":"")<<endl;
+	//---- overlapping-TF collision copies (needs the Collect "bco" branch). "noTFdup" checked clean
+	//---- against every other token (none contains "tfdup").
+	if (RunString.Contains("noTFdup",TString::kIgnoreCase)){
+		doTFDup	= false;
+	}
+	cout<<"reader::reader -- doTFDup (overlapping-TF copies, key run+bco+crossing) "<<(doTFDup?"enabled":"DISABLED")<<endl;
 	//---- sec 18.21 follow-up 2: keep only the first crossing>0 row per TF (pure streaming, <=1/TF).
 	//---- "XingPos" checked clean against every token above (incl. Xing0).
 	if (RunString.Contains("XingPos",TString::kIgnoreCase)){

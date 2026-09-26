@@ -14,14 +14,20 @@
 #include <TH2D.h>
 #include <TError.h>
 #include <unordered_map>
+#include <deque>
 
 using std::vector;
 using std::cout;
 using std::endl;
 
-static const bool JUSTFILLRUNSEG	= false;	// make true in first pass through new data...
 static const bool USESEEDTRACKS		= false;	// get eta,phi,pt from tpc seed not svtxtrack...
 static const bool NOCORRELATIONS	= false;	// skip the correlations classes for speed...
+// per-run QA histogram axis, one bin per run: Run-3 pp only, just outside the first and last run
+// of the Run-3 pp golden tracking list (79340-81667, 306 runs, lists/Golden_run3pp_tracking_list_
+// 20260917.txt). Was 49700-54200 (Run 2), where every Run-3 run landed in overflow.
+static const int    RUNAXIS_NBIN	= 2400;
+static const double RUNAXIS_LO		= 79300.5;
+static const double RUNAXIS_HI		= 81700.5;
 // KILLSPLITTRACKS (same-Si-seed proxy pre-pass) retired 2026-09-19 -- see README_SplitTracks.md
 // sec 9/10. Replaced by the split-track removal pre-pass (doSplitRemoval/valSLCut/valSiKeyCut
 // below, corral_loop.cxx, finalized sec 17.6) plus a diagnostic-only SL/SKF monitor that fills
@@ -48,6 +54,7 @@ public :
 	virtual bool 	AcceptEvent();
 	virtual bool 	AcceptTrack(int it);
 	virtual void	BuildXTFLosers(Long64_t nentries);	// sec 18.22, see doXTFClean
+	virtual void	BuildTFDupRows(Long64_t nentries);	// see doTFDup
 	//
 	virtual int		GetSpecies(int ipid){
 		int ival	= -1;
@@ -134,6 +141,19 @@ public :
 							// doXTFClean off it also skips same-TF event pairs (|devt|<=1), since those are
 							// only safe to mix after the same-TF cleaner.
 	std::unordered_map<Long64_t,std::vector<int>> xtfLosers;	// chain entry -> track indices to drop
+	bool	doTFDup;	// 2026-09-26: ON by default ("noTFdup" turns it off). Collision duplicated across
+						// OVERLAPPING trigger frames: when two triggers are closer in time than a TF's
+						// readout window, the collisions in the overlap are reconstructed in both TFs
+						// (same vertex, crossing shifted by exactly the TFs' GL1 BCO difference). Such
+						// copies are whole-EVENT duplicates in different (run,evt) rows, invisible to the
+						// siclukey-based XTF cleaner (keys are only comparable within one TF). Needs the
+						// Collect "bco" branch (ana573 on): key = (run, bco+crossing) = absolute crossing;
+						// the first row with a key is kept, later rows with the same key are skipped
+						// entirely (sibling AND mixing). Without a bco branch this does nothing.
+	std::vector<bool> tfDupRows;			// [chain entry] -> skip (see doTFDup); 1 bit/row, fine at 1e9 rows
+	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
+	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
+	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
 	long	nXTF_pairs, nXTF_byINTT, nXTF_byQuality, nXTF_neither, nXTF_losers;
 	bool	ONLY_FIRST_XINGPOS;	// sec 18.21 follow-up 2: opt-in, OFF by default ("XingPos" turns it on).
 							// Keeps only the FIRST row with crossing>0 in each (run,evt) TF, skips every
@@ -154,7 +174,6 @@ public :
 	int		NTPCCUT;
 	bool	KILLETA0SPIKE;
 	//
-	TH2D *hRunIndex;
 	//
 	Long64_t	nentriesfile;
 	//

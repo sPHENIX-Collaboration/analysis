@@ -84,6 +84,15 @@ the sibling and mixed pairs. The defaults (no run-string needed) are the validat
   neighbouring TFs, where cluster keys cannot be compared. Whole mixed event pairs from adjacent TFs of
   the same run are therefore skipped (about 9% of mixed event pairs). The mixed normalization is kept per
   zvtx bin, so the exclusion does not bias it.
+- **Collisions copied into overlapping trigger frames.** When two triggers are closer in time than a
+  TF's readout window, both TFs reconstruct the collisions in the overlap: the same vertex appears in two
+  events of different TFs, with the crossing shifted by exactly the difference of the two TFs' GL1 BCO.
+  The cluster keys cannot be compared across TFs, so the cleaner above cannot see these. With the
+  Collect `bco` branch, `bco + crossing` is the absolute crossing, and (run, `bco + crossing`) identifies
+  the bunch crossing: the first event with a given value is kept, and later copies are skipped entirely
+  (sibling and mixed). In ana573 about 12% of events are such copies, most in the next TF but some two
+  TFs later (which the adjacent-TF mixing exclusion does not reach). Trees without `bco` (ana532 and
+  older) are processed exactly as before; the log says the removal was not possible.
 - **Crossing correction.** When two real tracks cross in the TPC, one can lose hits to the other and
   fail the hit requirement: a pair inefficiency that a single-track efficiency cannot see. Pairs are
   pt-ordered when filled, so that every instance of this loss falls on the same ("dirty") side of dphi
@@ -167,6 +176,7 @@ unless marked [case]. `NN` is two digits, read as 0.NN.
 | `XTFcleanStrict` | cleaner on, strict (default) |
 | `mixAdjTF` | allow mixing with adjacent TFs |
 | `mixNoAdjTF` | no mixing with adjacent TFs (default; with `noXTF` also none within the same TF) |
+| `noTFdup` | keep collisions copied into overlapping TFs (default: skip the later copies; needs the Collect `bco` branch, no effect without it) |
 | **event selections (diagnostics; they cost statistics)** | |
 | `onlyfirsttf` | keep only the first event of each TF |
 | `Xing0` | keep only crossing-0 (triggered) events |

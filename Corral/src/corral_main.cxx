@@ -166,6 +166,8 @@ void DisplayHelp(){
 	cout<<"    XTFcleanStrict cleaner ON, strict (default): 'neither' case drops both copies"<<endl;
 	cout<<"    mixAdjTF      turn OFF the adjacent-TF (|devt|==1) mixed-event-pair exclusion"<<endl;
 	cout<<"    mixNoAdjTF    adjacent-TF exclusion ON (default; with noXTF it widens to |devt|<=1)"<<endl;
+	cout<<"    noTFdup       keep collisions copied into overlapping TFs (default: skip later copies,"<<endl;
+	cout<<"                  key run+bco+crossing; needs the Collect bco branch, else no effect)"<<endl;
 	cout<<"  trigger-frame (TF) event selections (diagnostics, sec 18.21; all OFF by default, cost statistics)"<<endl;
 	cout<<"    onlyfirsttf   keep only the first event of each TF (the lowest, often negative, crossing)"<<endl;
 	cout<<"    Xing0         keep only crossing==0 events (triggered collisions)"<<endl;
