@@ -82,6 +82,12 @@ class Collect : public SubsysReco
 	void setSegment(int seg){
 						fSegment = seg;
 					}
+	// Take "segment" per event from the filename the named input manager is
+	// currently reading (overrides setSegment) - for jobs reading several
+	// segments. Empty (default) = keep the fixed setSegment() value.
+	void setSegmentFromInputManager(const std::string &name){
+						fSegmentInputManager = name;
+					}
 	void setKillSplitTracks(bool value){
 						fKillSplitTracks	= value;
 						if ( fKillSplitTracks){ std::cout<<"Collect::fKillSplitTracks is TRUE "<<std::endl; } else
@@ -200,6 +206,7 @@ class Collect : public SubsysReco
  	TTree*	outTree;
  	int		fRunNum;
  	int		fSegment;
+ 	std::string	fSegmentInputManager;	// see setSegmentFromInputManager()
  	int		fEvtSeq;
  	int		fEvtSeqFirst;
  	int		ievtSeen;
@@ -235,6 +242,8 @@ class Collect : public SubsysReco
 										// transported and still sit at the decay vertex where they were fit.
 	//
 	std::vector<bool> fTtriggerVector;
+	ULong64_t	fTbco;					// GL1 BCO of this trigger frame (absolute beam clock) - lets outread_stream tell whether two
+										// rows' trigger frames could overlap in time; ~0ULL if no GL1RAWHIT (README_SplitTracks.md sec.12a.6)
  	double  fTTotE_em;
  	double  fTTotE_ih;
  	double  fTTotE_oh;

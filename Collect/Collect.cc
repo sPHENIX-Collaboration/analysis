@@ -7,6 +7,9 @@
 #include <limits>
 #include <map>
 #include <fun4all/Fun4AllReturnCodes.h>
+#include <fun4all/Fun4AllInputManager.h>
+#include <fun4all/Fun4AllServer.h>
+#include <fun4all/Fun4AllUtils.h>
 #include <phool/phool.h>
 #include <phool/getClass.h>
 #include <phool/PHCompositeNode.h>
@@ -108,6 +111,13 @@ double EdgeOHeta[25] = {-1.1,-1.00833,-0.916667,-0.825,-0.733333,-0.641667,-0.55
 
 #define FIXFLOAT(x) std::fixed<<std::setprecision(3)<<(x)
 
+// Optional "bco" branch (README_SplitTracks.md sec.12a.6): GL1 BCO of the
+// trigger frame (one per row, 8 bytes). ON: bco + crossing is the absolute
+// crossing, the key Corral uses to remove collisions that appear in two
+// overlapping TFs (README_ana573.md). (The silocx/silocy branches added with
+// it on 2026-09-23 were removed 2026-09-26 - never used by Corral.)
+static constexpr bool ADD_BCO     = true;
+
 //  enum CAL_LAYER
 //   {
 //     PRES = 0,
@@ -172,6 +182,7 @@ Collect::Collect(const std::string &name):SubsysReco(name){
 	fKillSplitTracks	= false;	// off until validated on real data - see README_SplitTracks.md
 	ievtSeen		= -1;			// incremented at TOP of process_event!
 	fTtriggerVector.clear();		//
+	fTbco		= ~0ULL;
 	fNTracks	= 0;
 	fTnv0		= 0;
 	sumNfoundKS	= 0;
@@ -295,6 +306,7 @@ int Collect::Init(PHCompositeNode *topNode){
 	outTree->Branch("vtxy"    ,&fTvtxy      ,"vtxy/D");
 	outTree->Branch("vtxz"    ,&fTvtxz      ,"vtxz/D");
 //?	outTree->Branch("vtxzGlob",&fTvtxzGlob  ,"vtxzGlob/D");
+	if (ADD_BCO) outTree->Branch("bco"     ,&fTbco       ,"bco/l");	// GL1 BCO of this trigger frame; ~0ULL if no GL1RAWHIT (README_SplitTracks.md sec.12a.6)
 	outTree->Branch("crossing",&fTcrossing  ,"crossing/I");
 	outTree->Branch("etotem"  ,&fTTotE_em   ,"etotem/D");
 	outTree->Branch("etotih"  ,&fTTotE_ih   ,"etotih/D");
@@ -392,7 +404,7 @@ int Collect::Init(PHCompositeNode *topNode){
 	//	to get to IHCal:	pT >~ 0.25
 	//	to get to OHCal:	pT >~ 0.36
 	//
-	PTLL	= 0.2;	// LL -- same track-quality floor regardless of fAddTowersToTrackTree, so track/v0 content doesn't depend on it
+	PTLL	= 0.1;	// LL -- same track-quality floor regardless of fAddTowersToTrackTree, so track/v0 content doesn't depend on it (0.2 until 2026-09-26: dE/dx vs ptot of kept v0 daughters showed tracking fine below 0.2)
 	cout<<"Collect::Init -- pT lower limit: PTLL= "<<PTLL<<endl;
 	//
 	//
@@ -624,6 +636,7 @@ int Collect::process_event(PHCompositeNode *topNode){
 	//
  	auto trackmap 		= findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
 	auto clustermap 	= findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER");
+	if (!clustermap) clustermap = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER_SEED");	// ana573 seed/track DSTs - same fallback as KFParticle_Tools.cc
 //?	auto globvertexmap	= findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 	auto svtxvertexmap	= findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
 	auto tpcGeom		= findNode::getClass<PHG4TpcGeomContainer>(topNode, "TPCGEOMCONTAINER");
@@ -653,6 +666,16 @@ int Collect::process_event(PHCompositeNode *topNode){
 		fEvtSeq	= evtHeader->get_EvtSequence();
 		//if (DEBUG) cout<<fRunNum<<" "<<fEvtSeq<<endl;
 	}
+	//---- per-event segment from the file the named input manager is reading right now
+	//     (a job may read several segments of one run - see setSegmentFromInputManager())
+	if (!fSegmentInputManager.empty()){
+		Fun4AllInputManager *im = Fun4AllServer::instance()->getInputManager(fSegmentInputManager);
+		if (im && !im->FileName().empty()){
+			fSegment = Fun4AllUtils::GetRunSegment(im->FileName()).second;
+		} else {
+			fSegment = -1;	// flag rather than silently keep the previous segment
+		}
+	}
 	if (fEvtSeqFirst<0){
 		fEvtSeqFirst	= fEvtSeq;
 		cout<<"Collect::process_event -- fEvtSeqFirst= "<<fEvtSeqFirst<<"\t ievtSeen= "<<ievtSeen<<endl;	
@@ -666,7 +689,9 @@ int Collect::process_event(PHCompositeNode *topNode){
  	if (!gl1){
 		if (DEBUG) std::cout<<"Collect::process_event -- no GL1RAWHIT..."<<std::endl;
 		fTtriggerVector.clear();	// flag rather than silently keep the previous event's trigger vector
+		fTbco = ~0ULL;
 	} else {
+		fTbco = gl1->getBCO();
 		//uint64_t evtseq     = gl1->getEvtSequence();
 		uint64_t triggervec = gl1->getScaledVector();
  		fTtriggerVector.clear();
