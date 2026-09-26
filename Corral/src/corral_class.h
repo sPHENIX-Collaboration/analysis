@@ -62,6 +62,7 @@ public :
 	int 	ntodo;
 	TString	RunString;
 	TString	OutputName;		// -o: output base name (root/<name>.root, pdf/<name>.pdf); empty -> corral_<class>[_<RunString>]
+	TString	Dataset;		// -d: dataset for Finalize (lists|root/<dataset>/); empty -> FINALIZE_SET (finalize_hists.h)
 	bool	doCrossing;
 	bool	doQCut;
 	bool	FinePhiBinning;

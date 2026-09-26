@@ -136,6 +136,7 @@ mkdir -p work/root work/pdf && cd work
 | `-h` | help: all options and run-string tokens, with the current defaults |
 | `-n N` | process N events (tree entries; one entry = one crossing with a vertex); 0 = all |
 | `-l file` | read the Collect files listed in `file`, one path per line |
+| `-d dataset` | dataset for Finalize (default: `FINALIZE_SET` in `src/finalize_hists.h`) |
 | `-o name` | output base name: `root/name.root`, `pdf/name.pdf` (not scanned for run-string tokens) |
 | `-s string` | run string: appended to the output name (`corral_m_<string>`) and scanned for the tokens below |
 
@@ -184,35 +185,59 @@ turns off the crossing correction.
 
 ### A full production
 
+Everything belonging to one dataset (for example `ana532`) uses the dataset name as its folder, see
+"Data layout" below.
+
 1. **Make job lists** from a Collect production directory, about N events per list:
    ```sh
-   Corral/lists/make_lists.bash /path/to/collect_dir 1000000
+   Corral/lists/make_lists.bash /path/to/collect_dir 1000000 <dataset>
    ```
-   This writes `lists/<name of collect_dir>/` with `list_NN.txt`, `manifest.txt`, `lists_summary.txt`
-   and `segment_entries.txt`. Each list holds contiguous segments of one run, so the chunks follow the
-   data-taking time order.
-2. **Run one job per list** as a SLURM array (the partition and time limit in the script are set for the
+   This writes `lists/<dataset>/` with `list_NN.txt`, `list_all.txt` (all lists together), `manifest.txt`,
+   `lists_summary.txt` and `segment_entries.txt`. Each list holds contiguous segments of one run, so the
+   chunks follow the data-taking time order. `<dataset>` defaults to the name of the Collect directory.
+2. **Run one job per list** as a SLURM array (the partition and time limit in the scripts are set for the
    WSU grid; adjust them for your site):
    ```sh
-   Corral/run_m_array.bash <set> [array-range]
+   Corral/run_m_array.bash <dataset> [array-range]
    ```
    The binary is snapshotted first, so every task runs the same code. Outputs go to
-   `root/<set>/corral_m_NN.root`, `pdf/<set>/corral_m_NN.pdf` and `log/<set>/corral_m_NN.log`.
-3. **Run a single full-statistics job** as the reference for Finalize (`run_m.bash`, all events in one
-   job), and place it where `FINALIZE_REF` in `src/finalize_hists.h` points (relative to the project
-   directory).
-4. **Finalize**: set `FINALIZE_SET` (the list set) in `src/finalize_hists.h`, rebuild, and run
+   `root/<dataset>/chunks/corral_m_NN.root`, and the same under `pdf/` and `log/`.
+3. **Run the single full-statistics job**, which reads `list_all.txt` and is the reference Finalize
+   compares against:
    ```sh
-   /path/to/Corral/corral_m -s Finalize
+   Corral/run_m.bash <dataset>
    ```
-   in a work directory with `root/` and `pdf/`. It writes `root/corral_m_Finalize.root` and
-   `pdf/corral_m_Finalize.pdf`.
+   Output: `root/<dataset>/corral_m.root`, `pdf/<dataset>/corral_m.pdf`, `log/<dataset>/corral_m.log`.
+4. **Finalize**, in a work directory with `root/` and `pdf/`:
+   ```sh
+   /path/to/Corral/corral_m -d <dataset> -s Finalize
+   ```
+   It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral_m.root`, and writes
+   `root/corral_m_Finalize.root` and `pdf/corral_m_Finalize.pdf` in the work directory; copy them to
+   `root/<dataset>/` and `pdf/<dataset>/`.
 
 ### Where things are looked for
 
 The project directory (holding `lists/` and `root/` for Finalize) defaults to the source directory
 `corral_m` was built from. Set `CORRAL_DIR` to use another one. The run scripts find their own
 directory, or use `CORRAL_DIR` if it is set, and pass it on to the SLURM jobs.
+
+## Data layout
+
+Outputs are kept per dataset, so that productions never mix:
+
+```
+lists/<dataset>/                    job lists (made by lists/make_lists.bash)
+root/<dataset>/corral_m.root        single full-statistics job (the Finalize reference)
+root/<dataset>/corral_m_Finalize.root
+root/<dataset>/chunks/              one file per job list
+root/<dataset>/DATASET.md           what the dataset is: trees, events, runs, job IDs
+pdf/<dataset>/, log/<dataset>/      the same structure
+root/Development/, pdf/Development/, log/Development/   study and test outputs
+```
+
+The input trees at WSU are in `/rs/rs_grp_rhi/sPHENIX/<dataset>/`. None of these output folders are in
+the repository.
 
 ## Code layout
 

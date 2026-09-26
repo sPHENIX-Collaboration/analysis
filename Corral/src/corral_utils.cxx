@@ -17,10 +17,10 @@ TChain* corral::BuildInputChain(TTree *tree){
 	}
 	//
 	//---- no job list (-l): the whole production in one job (useful for testing). The file glob is
-	//---- $CORRAL_TREES if set, else the WSU default below.
+	//---- $CORRAL_TREES if set, else the WSU copy of ana532 below.
 	//----   e.g. export CORRAL_TREES='/path/to/production/outputCollect_*.root'  (quote the glob)
 	const char* env	= getenv("CORRAL_TREES");
-	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/run_ecuts_cf/outputCollect_*.root");
+	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/ana532/outputCollect_*.root");
 	TChain *chain	= new TChain("outTree","Collect tree chain");
 	int nf			= chain->Add(GLOB.Data());
 	cout<<"corral -- input trees "<<GLOB<<((env && *env)?"  ($CORRAL_TREES)":"  (default; set CORRAL_TREES to change)")<<": "<<nf<<" files"<<endl;
@@ -297,8 +297,9 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//nentriesfile	= 376229665;		// 2nd pass, all 8522 jobs successful
 	//nentriesfile	= 512609163;		// 3rd pass, 8898 jobs successful -- old dataset, not this one
 	//nentriesfile	= 30171889;			// run_ecuts_cf pre-recut (4k TF/segment), superseded 2026-09-21
-	if (tree==0)	// default full-directory glob only; a chain given via -l (job lists) is counted below
-	nentriesfile	= 50498542;			// run_ecuts_cf re-cut (5k TF/segment, sec 12/13), all 1554 files,
+	const char* envTrees	= getenv("CORRAL_TREES");
+	if (tree==0 && !(envTrees && *envTrees))	// default ana532 glob only; -l lists and $CORRAL_TREES are counted below
+	nentriesfile	= 50498542;			// ana532 (was run_ecuts_cf) re-cut (5k TF/segment, sec 12/13), all 1554 files,
 										// confirmed via live GetEntries() 2026-09-21, hardcoded to skip the
 										// slow rescan on reruns. If more files ever land, delete this line
 										// (falls back to the GetEntries() scan below) and re-confirm.

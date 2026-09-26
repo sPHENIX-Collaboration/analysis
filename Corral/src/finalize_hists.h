@@ -14,9 +14,9 @@ inline TString CorralDir(){
 //
 // Finalize configuration (README_Finalize.md). Edit this file to choose what Finalize processes.
 //
-// FINALIZE_SET : chunk production to combine = lists/<set>/ (manifest.txt gives nlists) and
-//                root/<set>/corral_m_NN.root (made by run_m_array.bash)
-// FINALIZE_REF : single-job full-stats reference to compare against (relative to CorralDir())
+// FINALIZE_SET : default dataset to combine = lists/<set>/ (manifest.txt gives nlists) and
+//                root/<set>/chunks/corral_m_NN.root (made by run_m_array.bash); -d <dataset> overrides
+// FINALIZE_REF : single-job full-stats reference to compare against, root/<dataset>/FINALIZE_REF
 // CorralDir()  : project directory holding lists/ and root/ = $CORRAL_DIR if set, else the source
 //                tree the binary was built from (CORRAL_DIR_DEFAULT, set by CMakeLists.txt)
 // FinalizeHists: histogram BASE names; Finalize appends _<ipaty> for every pairtype, so
@@ -30,8 +30,8 @@ inline TString CorralDir(){
 //                  hMempty_1                  # used Zvtx slices with empty rho2(M)
 //                  hR2dy, hR2dphi, hR2yydy, hR2dq, hCQ, hQsib, hQmix, hMinv_S, hMinv_M, hMinv
 //
-static const char*	FINALIZE_SET	= "run_ecuts_cf";
-static const char*	FINALIZE_REF	= "root/corral_m_CrossingCorrected.root";
+static const char*	FINALIZE_SET	= "ana532";		// default dataset; -d <dataset> overrides
+static const char*	FINALIZE_REF	= "corral_m.root";	// in root/<dataset>/
 static const double	FINALIZE_FIELD	= 1.4;		// must match `double field` in corral_loop.cxx (crossing dirty side)
 //
 // Zvtx-average validity (README_Finalize step 3, option A): the threshold N_min is now PER PAIRTYPE,

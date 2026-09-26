@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
  	TString runstr	= TString("");
 	TString outname	= TString("");		// -o
 	TString listname	= TString("");		// -l
+	TString dataset	= TString("");		// -d
 	//
 //	if (argc==1){
 //		DisplayHelp();
@@ -77,6 +78,9 @@ int main(int argc, char **argv) {
 					case 'l':		// job list: one Collect file path per line (lists/<production>/list_NN.txt)
 						listname	= TString(argv[++i]);
 						break;
+					case 'd':		// dataset (Finalize): lists/<dataset>/, root/<dataset>/chunks/, root/<dataset>/corral_m.root
+						dataset		= TString(argv[++i]);
+						break;
 					case 'o':		// output base name: root/<name>.root, pdf/<name>.pdf (not scanned for RunString tokens)
 						outname		= TString(argv[++i]);
 						break;
@@ -116,6 +120,7 @@ int main(int argc, char **argv) {
 	}
 	cout<<"Instantiating corral..."<<endl;
 	corral *read	= new corral(tree, ntd, runstr, outname);
+	read->Dataset	= dataset;
 	if (runstr=="Finalize")	read->Finalize();	// README_Finalize.md (temporary switch): combine chunk outputs
 	else					read->Loop();
 
@@ -132,9 +137,11 @@ void DisplayHelp(){
 	cout<<"   -h, --help    display this help"<<endl;
 	cout<<"   -n [ntodo]    do [ntodo] events (= tree entries: one crossing with a vertex), 0 for all"<<endl;
 	cout<<"   -l [listfile] read the Collect files listed in [listfile] (one path per line) instead of the whole"<<endl;
-	cout<<"                 directory, e.g. lists/run_ecuts_cf/list_07.txt (see lists/make_lists.bash)"<<endl;
-	cout<<"                 Without -l, all files matching $CORRAL_TREES are read (default: the WSU production"<<endl;
-	cout<<"                 /rs/rs_grp_rhi/sPHENIX/run_ecuts_cf/outputCollect_*.root)"<<endl;
+	cout<<"                 directory, e.g. lists/ana532/list_07.txt (see lists/make_lists.bash)"<<endl;
+	cout<<"                 Without -l, all files matching $CORRAL_TREES are read (default: the WSU copy of ana532,"<<endl;
+	cout<<"                 /rs/rs_grp_rhi/sPHENIX/ana532/outputCollect_*.root)"<<endl;
+	cout<<"   -d [dataset]  dataset for Finalize: reads lists/[dataset]/, root/[dataset]/chunks/corral_m_NN.root and"<<endl;
+	cout<<"                 the reference root/[dataset]/corral_m.root (default: FINALIZE_SET in src/finalize_hists.h)"<<endl;
 	cout<<"   -o [name]     output base name: root/[name].root, pdf/[name].pdf (NOT scanned for fragments)"<<endl;
 	cout<<"   -s [string]   run string: appended to the output filenames (root/corral_m_<string>.root,"<<endl;
 	cout<<"                 pdf/...pdf; none -> corral_m.root) AND scanned for the fragments below"<<endl;

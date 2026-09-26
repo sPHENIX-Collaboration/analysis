@@ -86,7 +86,7 @@ namespace {
 void corral::Finalize(){
 	//
 	TString PROJ	= CorralDir();
-	TString SET		= TString(FINALIZE_SET);
+	TString SET		= (Dataset!="") ? Dataset : TString(FINALIZE_SET);	// -d <dataset>
 	const int NVALIDMIN	= 10;		// step 3 pick (a): fewer valid subgroups -> error 0
 	//---- Zvtx-average validity threshold N_min per pairtype = PairTypes_Info[ipaty][2] (PairTypes.h);
 	//---- the environment variable FINALIZE_NEXPMIN overrides it for ALL pairtypes (scans)
@@ -108,12 +108,12 @@ void corral::Finalize(){
 	//---- open all chunk files (all must exist) and the reference
 	std::vector<TFile*> fch;
 	for (int ic=0;ic<nlists;ic++){
-		TString fn	= PROJ+"root/"+SET+Form("/corral_m_%02d.root",ic);
+		TString fn	= PROJ+"root/"+SET+Form("/chunks/corral_m_%02d.root",ic);
 		TFile *f	= TFile::Open(fn.Data());
 		if (!f || f->IsZombie()){ cout<<"corral::Finalize -- cannot open "<<fn<<", exit"<<endl; exit(1); }
 		fch.push_back(f);
 	}
-	TString REF	= PROJ+FINALIZE_REF;
+	TString REF	= PROJ+"root/"+SET+"/"+FINALIZE_REF;
 	TFile *fref	= TFile::Open(REF.Data());
 	if (!fref || fref->IsZombie()){ cout<<"corral::Finalize -- cannot open reference "<<REF<<", exit"<<endl; exit(1); }
 	//

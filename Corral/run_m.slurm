@@ -4,9 +4,10 @@
 
 #	called by slurm by run_m.bash
 
-NEV=$1
-# RUNSTRING=$2
+SET=$1
+NEV=$2
 echo "hostname  = "$HOSTNAME
+echo "dataset   = "$SET
 echo "nev       = "$NEV
 
 # CORRAL_DIR is exported by run_m.bash (sbatch runs a spooled copy of this script)
@@ -55,21 +56,10 @@ echo "rsdn      = "$rsdn
 
 #--------------------------------------
 echo Starting..........................
-# 2026-09-22 (README_SplitTracks.md sec 14.4): NO RunString at all, by explicit
-# design decision (user's own framing: "running code with no runstring should
-# be our present best effort"). Both split-track scans (flat SKF, sec
-# 13.8.14-13.8.19; MVTX-led SKF, sec 14.1) are done, and the validated result
-# (SL<0.60, MVTX-led SKF>=0.20, i.e. SiSplitScore -- fluct_common.h/sec 13.9)
-# is now the actual code default (corral_utils.cxx), same as the full
-# 15-pairtype table (PairTypes.h). This script previously passed an explicit
-# RunString token on the "never trust a silent code default" principle -- that
-# principle now points the other way: the code default itself is the single
-# source of truth for "present best effort," and a hardcoded token here would
-# be the thing that goes stale next time the recommendation is revisited.
-# Output lands as root/corral_m.root, pdf/corral_m.pdf (no RunString suffix).
-time ./corral_m -n $NEV
-cp -v ./root/*.root $PROJDIR/root/
-cp -v ./pdf/*.pdf $PROJDIR/pdf/
+# No RunString: the code defaults are the validated best effort.
+time ./corral_m -n $NEV -l $PROJDIR/lists/$SET/list_all.txt
+cp -v ./root/corral_m.root $PROJDIR/root/$SET/
+cp -v ./pdf/corral_m.pdf   $PROJDIR/pdf/$SET/
 #--------------------------------------
 
 cd $JOBSCR
