@@ -1,0 +1,26 @@
+# corral lives in a working directory that also holds its (large) outputs, archives and development
+# notes. This file is an ALLOW-LIST: ignore everything, then un-ignore what belongs in the repository.
+# To add a new file to the repo, add a "!" line for it here.
+/*
+
+# code + build
+!/.gitignore
+!/README.md
+!/CMakeLists.txt
+!/src/
+/src/*
+!/src/*.h
+!/src/*.cxx
+
+# job submission
+!/run_m.bash
+!/run_m.slurm
+!/run_m_array.bash
+!/run_m_array.slurm
+
+# job-list making (the lists themselves are site-specific and stay out)
+!/lists/
+/lists/*
+!/lists/make_lists.bash
+!/lists/make_lists.py
+!/lists/count_entries.C
