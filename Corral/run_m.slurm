@@ -6,9 +6,12 @@
 
 SET=$1
 NEV=$2
+OUT=${3:-$1}		# output set: the dataset, or <dataset>_<variant> (run_m.bash CORRAL_VARIANT=)
+CRS=$4			# run string of the variant (empty = the code defaults)
 echo "hostname  = "$HOSTNAME
 echo "dataset   = "$SET
 echo "nev       = "$NEV
+echo "output    = "$OUT"   run string '"$CRS"'"
 
 # CORRAL_DIR is exported by run_m.bash (sbatch runs a spooled copy of this script)
 export PROJDIR=${CORRAL_DIR:?"CORRAL_DIR not set -- submit with run_m.bash"}/
@@ -45,7 +48,7 @@ pwd
 mkdir corral_${JOBNUM}
 cd corral_${JOBNUM}
 pwd
-cp -v $PROJDIR/corral_m .
+cp -v $PROJDIR/log/$OUT/corral.snapshot ./corral		# the binary run_m.bash snapshotted
 mkdir root
 mkdir pdf
 ls -lasF
@@ -56,10 +59,10 @@ echo "rsdn      = "$rsdn
 
 #--------------------------------------
 echo Starting..........................
-# No RunString: the code defaults are the validated best effort.
-time ./corral_m -n $NEV -l $PROJDIR/lists/$SET/list_all.txt
-cp -v ./root/corral_m.root $PROJDIR/root/$SET/
-cp -v ./pdf/corral_m.pdf   $PROJDIR/pdf/$SET/
+# No run string: the code defaults are the validated best effort; a variant adds its own (-s), output name stays corral
+time ./corral -n $NEV -l $PROJDIR/lists/$SET/list_all.txt -o corral ${CRS:+-s $CRS}
+cp -v ./root/corral.root $PROJDIR/root/$OUT/
+cp -v ./pdf/corral.pdf   $PROJDIR/pdf/$OUT/
 #--------------------------------------
 
 cd $JOBSCR

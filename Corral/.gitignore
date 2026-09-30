@@ -24,3 +24,12 @@
 !/lists/make_lists.bash
 !/lists/make_lists.py
 !/lists/count_entries.C
+
+# data the code reads at run time (README_PID.md)
+!/dedxGates_KFP.root
+
+# the ana573 split-track pictures (README.md; the scripts that make them stay out)
+!/ana573/
+/ana573/*
+!/ana573/SplitTrackTypes_ana573.pdf
+!/ana573/SplitTrackLogic_ana573.pdf

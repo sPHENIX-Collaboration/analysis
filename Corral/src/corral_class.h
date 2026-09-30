@@ -52,7 +52,10 @@ public :
 	virtual void     Finalize();		// README_Finalize.md: combine chunk outputs (RunString "Finalize")
 	//
 	virtual bool 	AcceptEvent();
-	virtual bool 	AcceptTrack(int it);
+	virtual bool 	AcceptTrack(int it);				// AcceptTrackBase and, if doSiPhiMask, not InSiPhiMask
+	virtual bool 	AcceptTrackBase(int it);			// pt, ntpc, dca limits
+	virtual bool 	InSiPhiMask(int it);
+	virtual bool 	InCMMask(int it);						// README_SplitTracks573 sec 38: w = (eta + CMMASK_K vtxz) sign(-vtxz) in [valCMMaskLo, valCMMaskHi)					// vertex phi inside a PHIMASK window (README_PID.md sec 10.3)
 	virtual void	BuildXTFLosers(Long64_t nentries);	// sec 18.22, see doXTFClean
 	virtual void	BuildTFDupRows(Long64_t nentries);	// see doTFDup
 	//
@@ -71,6 +74,11 @@ public :
 	TString	OutputName;		// -o: output base name (root/<name>.root, pdf/<name>.pdf); empty -> corral_<class>[_<RunString>]
 	TString	Dataset;		// -d: dataset for Finalize (lists|root/<dataset>/); empty -> FINALIZE_SET (finalize_hists.h)
 	bool	doCrossing;
+	bool	doOldPID;		// README_PID.md: "oldpid" -> legacy PID (pi = dedx70s<400, no p or K); default is the KFP dE/dx gates
+	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
+	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.07,0.10); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
+	double	valCMMaskLo, valCMMaskHi;
+	int		nSiPhiMask;		// README_PID.md sec 10.4: windows used, NSIPHIMASK_MAIN (default) or NSIPHIMASK ("siphimaskall")
 	bool	doQCut;
 	bool	FinePhiBinning;
 	double	valQCut;
@@ -88,6 +96,46 @@ public :
 							// mechanism). New philosophy as of sec 17.6/17.9: once a cut is finalized it
 							// defaults ON (doSplitRemoval below = !DISABLE_LScuts), and the RunString
 							// provides only the OFF switch -- no separate "enable" token needed.
+	//---- README_SplitTracks573 sec 18 (token trim, 2026-09-27): LS pregate and path 3. CONSTANTS (no token):
+	//---- deta semi-axis 0.040 (sec 8.3/15.3), path 3 at >= 2 matched MVTX layers with no abs(1/pt1-1/pt2)
+	//---- floor (sec 8.2/15.3), dphi0 at R = 0.06 m. The pregate is the flat ellipse CENTRED ON THE SPLIT
+	//---- PEAK (sec 12): (deta/a)^2 + ((abs(dphi) - dphi0)/w)^2 < 1, dphi0 = the azimuth difference the two
+	//---- fragments build up by R; its half-width w (valDPsW, default 2.0 deg) is the only token ("dpsNN").
+	int		valFullMVTX;		// path 3: >= this many MVTX layers with the same cluster on both tracks (2)
+	double	valFullMVTXdinv;	// path 3: abs(1/pt1-1/pt2) floor (0)
+	double	valPregateDEta;		// pregate deta semi-axis (0.040)
+	double	valDPsW, valDPsR;	// pregate dphi half-width (deg, "dpsNN") and the radius of dphi0 (m)
+	double	DPsCentre(double ptA, double ptB) const {	// dphi0 (rad): abs(asin(aR/ptA) - asin(aR/ptB)), a = 0.3*1.4/2
+		const double aR	= 0.3*1.4/2.0*valDPsR;
+		double xA = std::min(1.0,aR/ptA), xB = std::min(1.0,aR/ptB);
+		return fabs(asin(xA)-asin(xB));
+	}
+	//---- README_SplitTracks573 sec 33 (2026-09-29): the split stripe's dphi spread grows with dphi0 (rms ~ 0.22 + 0.13*dphi0
+	//---- deg), so the half-width is max(valDPsW, 3 rms): valDPsW (2 deg) up to dphi0 ~ 3.4 deg, 3.1 deg at dphi0 = 6.2
+	static constexpr double PREGATE_S0 = 0.22, PREGATE_S1 = 0.13, PREGATE_NSIG = 3.0;
+	double	DPsWidth(double c) const {			// c = dphi0 (rad) -> half-width (rad)
+		double cdeg	= c*180.0/M_PI;
+		return std::max(valDPsW, PREGATE_NSIG*(PREGATE_S0 + PREGATE_S1*cdeg))*M_PI/180.0;
+	}
+	bool	InLSPregate(double deta, double dphi, double ptA, double ptB) const {	// dphi in rad
+		double c	= DPsCentre(ptA,ptB);
+		double w	= DPsWidth(c);
+		double u	= (fabs(dphi)-c)/w;
+		return (deta/valPregateDEta)*(deta/valPregateDEta) + u*u < 1.0;
+	}
+	//---- two-track-resolution LS pair cut (sec 11/13): abs(dy) < valTSepDy && min over R = 0.30-0.78 m of
+	//---- abs(dphi*) < valTSepDphi, sibling and mixed alike. "tsepmYYPP" sets both, "notsep" turns it off.
+	double	valTSepDy, valTSepDphi;
+	//---- near-vertex two-track pair cut (README_SplitTracks573 sec 29): reject abs(dphi*(R = 3 cm)) < valISepDphi (deg) at
+	//---- abs(dy) < 1.0, LS and ULS, sibling and mixed alike. Default 2.0 deg; "isepPPP" (deg x 10, 0.3-4.0) / "noisep" (off).
+	double	valISepDphi;
+	//---- event |zvtx| max (cm), README_SplitTracks573 sec 30: "vzNN" (6-16), default 16 (under discussion: R2 per Zvtx
+	//---- slice is flat only at abs(zvtx) < ~6-8 cm)
+	double	valVzMax;
+	//---- Finalize: the abs(zvtx) range for physics (cm), README_SplitTracks573 sec 30 (user, 2026-09-28): the chunks keep
+	//---- every Zvtx slice (abs(zvtx) < 16); Finalize averages only the slices inside abs(zvtx) < valFinZMax (whole 2 cm
+	//---- slices). Default 8; "fzNN" in the Finalize run string (Finalize_fzNN, 2-16) overrides it.
+	double	valFinZMax;
 	bool	DISABLE_RG;	// sec 17.17: "noRG" in RunString -> true, and ONLY the RadialGap path (path 2)
 						// is skipped -- path 1 (SL/SKF "duplicate" flagging) stays live. Finer-grained
 						// than DISABLE_LScuts (which turns off both paths together): lets a run isolate
@@ -96,6 +144,10 @@ public :
 							// values finalized sec 17.6, RadialGap path added sec 17.14) -- the production
 							// split-track mitigation. Driven by !DISABLE_LScuts (sec 17.9); uses
 							// valSLCut/valSiKeyCut/valRadialGapCut as its threshold values.
+	bool	doLooperVeto;	// README_SplitTracks573 sec 35: looper veto (OS back-to-back halves of one curling track), ON; "nolooper" off
+	static constexpr double LOOPER_PMAX = 0.20;	// sec 35: both |p| below (GeV/c)
+	double	valLooperRSum;	// sec 35: relative 3-momentum sum below (default 0.08; "looperNN" = 0.NN, 0.02-0.10)
+	int		valZvtxNB;		// sec 38: zvtx slices over +-16 cm for the mixing and the Zvtx average (default 16 = 2 cm; sec 38: 1-cm slices tested, no change)
 	bool	doULSTest;	// ULS opposite-charge SiSplitScore removal (README sec 15) -- ON by default since
 						// 2026-09-22 ("noulstest" turns it off); "ulstestNN" sets the threshold. sec 18.10:
 						// converted from a CalcRm::PairInfo sibling-only PAIR veto to a TRACK-level removal
@@ -172,6 +224,7 @@ public :
 							// caught). Costs ~85% of statistics (~1/6-7 rows survive per TF) -- diagnostic
 							// only, never a production default.
 	int		NTPCCUT;
+	double	PTMINCUT;	// track pT floor, "ptminNN" = 0.NN GeV/c (default 0.1 = ana573 Collect floor; ana532 trees start at 0.2)
 	bool	KILLETA0SPIKE;
 	//
 	//

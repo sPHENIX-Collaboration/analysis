@@ -64,25 +64,89 @@
 // 					{ kParticleIDPionPlus,     kParticleIDPionPlus    ,2 },		// 2  pi+ pi+
 // 					{ kParticleIDPionMinus,    kParticleIDPionMinus   ,2 }		// 3  pi- pi-
 // 				};
-static const int NPairTypes		= 16;
+#ifdef CORRAL_PIONS_ONLY
+// ---- corral_pi (CMake target, README_SplitTracks573 sec 16): the 4 pion pair types only, for fast
+// ---- split-track / two-track studies. Same indices 0-3 as the full table. Never used for production.
+static const int NPairTypes		= 4;
+static const int PairTypes_Info[NPairTypes][3]= {
+					{ kParticleIDPionPlus,     kParticleIDPionMinus   ,10 },		// 0  pi+ pi-
+					{ kParticleIDPionMinus,    kParticleIDPionPlus    ,10 },		// 1  pi- pi+  (sign-flip cross-check)
+					{ kParticleIDPionPlus,     kParticleIDPionPlus    ,10 },		// 2  pi+ pi+
+					{ kParticleIDPionMinus,    kParticleIDPionMinus   ,10 }		// 3  pi- pi-
+				};
+static const double PairTypes_YBins[NPairTypes][3]= {	// as rows 0-3 of the full table below
+					{ 40, 40, 0.05 }, { 40, 40, 0.05 }, { 40, 40, 0.05 }, { 40, 40, 0.05 } };
+#else
+// ---- 2026-09-28 (README_PID.md): 28 pair types, rearranged by the user: pions 0-3 (unchanged -- code writing
+// ---- pion-only histograms assumes ipaty<=3), then K+K-, p-pbar, p-p, pbar-pbar, p-pi, p-V0, pi-V0, V0-V0.
+// ---- pi-V0 now has the pion FIRST (was V0 first): dphi = phi(pi)-phi(V0), the opposite sign of pre-2026-09-28 outputs.
+// ---- N_min: pion-containing 10; the sparser K-K, p-p, p-V0, V0-V0 types 1 for now.
+static const int NPairTypes		= 28;
 static const int PairTypes_Info[NPairTypes][3]= {
 					{ kParticleIDPionPlus,     kParticleIDPionMinus   ,10 },		// 0  pi+ pi-
 					{ kParticleIDPionMinus,    kParticleIDPionPlus    ,10 },		// 1  pi- pi+  (sign-flip cross-check)
 					{ kParticleIDPionPlus,     kParticleIDPionPlus    ,10 },		// 2  pi+ pi+
 					{ kParticleIDPionMinus,    kParticleIDPionMinus   ,10 },		// 3  pi- pi-
-					{ kParticleIDKshort,       kParticleIDKshort      , 1 },		// 4
-					{ kParticleIDLambda,       kParticleIDLambda      , 1 },		// 5
-					{ kParticleIDAntiLambda,   kParticleIDAntiLambda  , 1 },		// 6
-					{ kParticleIDKshort,       kParticleIDLambda      , 1 },		// 7
-					{ kParticleIDKshort,       kParticleIDAntiLambda  , 1 },		// 8
-					{ kParticleIDLambda,       kParticleIDAntiLambda  , 1 },		// 9
-					{ kParticleIDKshort,       kParticleIDPionPlus    ,10 },		// 10
-					{ kParticleIDKshort,       kParticleIDPionMinus   ,10 },		// 11
-					{ kParticleIDLambda,       kParticleIDPionPlus    ,10 },		// 12
-					{ kParticleIDLambda,       kParticleIDPionMinus   ,10 },		// 13
-					{ kParticleIDAntiLambda,   kParticleIDPionPlus    ,10 },		// 14
-					{ kParticleIDAntiLambda,   kParticleIDPionMinus   ,10 }		// 15
+					{ kParticleIDKaonPlus,     kParticleIDKaonMinus   , 1 },		// 4  K+ K-      (phi)
+					{ kParticleIDProton,       kParticleIDAntiProton  , 1 },		// 5  p pbar
+					{ kParticleIDProton,       kParticleIDProton      , 1 },		// 6  p p
+					{ kParticleIDAntiProton,   kParticleIDAntiProton  , 1 },		// 7  pbar pbar
+					{ kParticleIDProton,       kParticleIDPionMinus   ,10 },		// 8  p pi-      (Lambda, Delta0)
+					{ kParticleIDAntiProton,   kParticleIDPionPlus    ,10 },		// 9  pbar pi+
+					{ kParticleIDProton,       kParticleIDPionPlus    ,10 },		// 10 p pi+      (Delta++)
+					{ kParticleIDAntiProton,   kParticleIDPionMinus   ,10 },		// 11 pbar pi-
+					{ kParticleIDProton,       kParticleIDLambda      , 1 },		// 12 p Lambda
+					{ kParticleIDProton,       kParticleIDAntiLambda  , 1 },		// 13 p Lbar
+					{ kParticleIDAntiProton,   kParticleIDLambda      , 1 },		// 14 pbar Lambda
+					{ kParticleIDAntiProton,   kParticleIDAntiLambda  , 1 },		// 15 pbar Lbar
+					{ kParticleIDPionPlus,     kParticleIDKshort      ,10 },		// 16 pi+ K0s    (K*+)
+					{ kParticleIDPionMinus,    kParticleIDKshort      ,10 },		// 17 pi- K0s    (K*-)
+					{ kParticleIDPionPlus,     kParticleIDLambda      ,10 },		// 18 pi+ Lambda (Sigma*+)
+					{ kParticleIDPionMinus,    kParticleIDLambda      ,10 },		// 19 pi- Lambda (Sigma*-, Xi-)
+					{ kParticleIDPionPlus,     kParticleIDAntiLambda  ,10 },		// 20 pi+ Lbar
+					{ kParticleIDPionMinus,    kParticleIDAntiLambda  ,10 },		// 21 pi- Lbar
+					{ kParticleIDKshort,       kParticleIDKshort      , 1 },		// 22 K0s K0s
+					{ kParticleIDLambda,       kParticleIDLambda      , 1 },		// 23 Lambda Lambda
+					{ kParticleIDAntiLambda,   kParticleIDAntiLambda  , 1 },		// 24 Lbar Lbar
+					{ kParticleIDKshort,       kParticleIDLambda      , 1 },		// 25 K0s Lambda
+					{ kParticleIDKshort,       kParticleIDAntiLambda  , 1 },		// 26 K0s Lbar
+					{ kParticleIDLambda,       kParticleIDAntiLambda  , 1 }			// 27 Lambda Lbar
 				};
+// ---- 2026-09-30 (user): binning per pair type = as many bins as the data support (canary: empty rho2(M) bins in
+// ---- Finalize). {NY1, NY2, DYBW}: y bins across the window of species 1 and 2 (abs(y) < Species_yu, fluct_common.h; the
+// ---- widths need not match) and the dy bin width of the (dy,dphi) map, the physics CF (odd bin count, dy = 0 at a bin
+// ---- centre). Starting values from the ana573_v5 canary at the old binning (0.069 charged, 0.275 with a V0).
+static const double PairTypes_YBins[NPairTypes][3]= {
+					{ 40, 40, 0.05  },	// 0  pi+ pi-		y 0.05
+					{ 40, 40, 0.05  },	// 1  pi- pi+
+					{ 40, 40, 0.05  },	// 2  pi+ pi+
+					{ 40, 40, 0.05  },	// 3  pi- pi-
+					{ 20, 20, 0.065 },	// 4  K+ K-			y 0.065
+					{ 20, 20, 0.06  },	// 5  p pbar		y 0.06
+					{ 20, 20, 0.06  },	// 6  p p
+					{ 20, 20, 0.06  },	// 7  pbar pbar
+					{ 20, 40, 0.06  },	// 8  p pi-			y 0.06 / 0.05
+					{ 20, 40, 0.06  },	// 9  pbar pi+
+					{ 20, 40, 0.06  },	// 10 p pi+
+					{ 20, 40, 0.06  },	// 11 pbar pi-
+					{  6,  4, 0.25  },	// 12 p Lambda		y 0.2 / 0.35
+					{  6,  4, 0.25  },	// 13 p Lbar
+					{  6,  4, 0.25  },	// 14 pbar Lambda
+					{  6,  4, 0.25  },	// 15 pbar Lbar
+					{ 20, 14, 0.1   },	// 16 pi+ K0s		y 0.1 / 0.1
+					{ 20, 14, 0.1   },	// 17 pi- K0s
+					{ 20, 14, 0.1   },	// 18 pi+ Lambda
+					{ 20, 14, 0.1   },	// 19 pi- Lambda
+					{ 20, 14, 0.1   },	// 20 pi+ Lbar
+					{ 20, 14, 0.1   },	// 21 pi- Lbar
+					{  4,  4, 0.35  },	// 22 K0s K0s		y 0.35
+					{  4,  4, 0.35  },	// 23 Lambda Lambda
+					{  4,  4, 0.35  },	// 24 Lbar Lbar
+					{  4,  4, 0.35  },	// 25 K0s Lambda
+					{  4,  4, 0.35  },	// 26 K0s Lbar
+					{  4,  4, 0.35  }	// 27 Lambda Lbar
+				};
+#endif
 // ---- previous 4-pairtype diagnostic table (sec 16 / 18.18), kept for reference:
 // ---- 2026-09-22 (README sec 16): cut to 3 pion pairtypes for the post-num/denom-fix LS and ULS
 // ---- re-scans. MUST be reverted to 15 (uncomment below) before any production run.

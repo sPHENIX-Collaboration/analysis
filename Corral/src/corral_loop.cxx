@@ -1,4 +1,5 @@
 
+#include <TEllipse.h>
 #include "corral_class.h"
 #include <algorithm>
 #include <TF1.h>
@@ -12,6 +13,8 @@
 #include <TLatex.h>
 #include <TLine.h>
 #include <TLegend.h>
+#include <TBox.h>
+#include <TPaveText.h>
 #include <TLegendEntry.h>
 #include <TCanvas.h>
 #include <TProfile.h>
@@ -21,6 +24,7 @@
 #include "CalcRm.h"
 //#include "CalcR3mid.h"
 #include "PairTypes.h"
+#include "finalize_hists.h"	// CorralDir(): where dedxGates_KFP.root lives
 
 double fDEDXexpected(double *x, double *par) {	// bichsel function...
 	double amass	= par[1];
@@ -38,8 +42,9 @@ double CQResonanceQ(double M, double m1, double m2){
 	return (a>0.) ? sqrt(a)/M : -1.;
 }
 void DrawCQSignposts(int ipid1, int ipid2, double ymin, double ymax, double xmax){
-	const double mpi = 0.13957, mK0 = 0.497611, mL = 1.115683;		// PDG
+	const double mpi = 0.13957, mK0 = 0.497611, mL = 1.115683, mp = 0.938272, mK = 0.493677;		// PDG
 	const int PIP = kParticleIDPionPlus, PIM = kParticleIDPionMinus;
+	const int PP = kParticleIDProton, PM = kParticleIDAntiProton, KP = kParticleIDKaonPlus, KM = kParticleIDKaonMinus;
 	const int KS = kParticleIDKshort, LA = kParticleIDLambda, AL = kParticleIDAntiLambda;
 	struct Post { int a, b; double M, m1, m2; const char* lab; };
 	const Post posts[]	= {
@@ -54,6 +59,13 @@ void DrawCQSignposts(int ipid1, int ipid2, double ymin, double ymax, double xmax
 		{ AL,  PIM, 1.38280,  mL,  mpi, "#bar{#Sigma*}^{-}"},
 		{ AL,  PIP, 1.3872,   mL,  mpi, "#bar{#Sigma*}^{+}"},
 		{ AL,  PIP, 1.32171,  mL,  mpi, "#bar{#Xi}^{+}"    },
+		{ PP,  PIM, 1.115683, mp,  mpi, "#Lambda"          },		// Lambdas not reconstructed as V0s (README_PID.md)
+		{ PP,  PIM, 1.232,    mp,  mpi, "#Delta^{0}"       },
+		{ PP,  PIP, 1.232,    mp,  mpi, "#Delta^{++}"      },
+		{ PM,  PIP, 1.115683, mp,  mpi, "#bar{#Lambda}"    },
+		{ PM,  PIP, 1.232,    mp,  mpi, "#bar{#Delta}^{0}" },
+		{ PM,  PIM, 1.232,    mp,  mpi, "#bar{#Delta}^{--}"},
+		{ KP,  KM,  1.019461, mK,  mK,  "#phi"             },
 	};
 	int iy	= 0;
 	for (const Post &p : posts){
@@ -120,7 +132,8 @@ void corral::Loop(){
 	//fri->Close();
 	const int NCOUNTERS		= 10;
 	int counters[NCOUNTERS]	= {0};
-	long nv0fixEta=0,nv0fixPhi=0,nv0fixMass=0,nv0fixCtau=0;	// README_v0etaSpike.md: V0s whose eta/phi/mass/ctau branch was a 0 sentinel, recomputed
+	long nv0fixEta=0,nv0fixPhi=0,nv0fixMass=0,nv0fixCtau=0;
+	long nv0Paired[3]={0,0,0}, nv0All[3]={0,0,0}, nPeakDauNotIndv0=0;	// README_PID.md sec 12: V0s in the pairs, daughters indv0 missed	// README_v0etaSpike.md: V0s whose eta/phi/mass/ctau branch was a 0 sentinel, recomputed
 	//
 	//---- set up dedx curves...
 	const int NPART				=  4;
@@ -135,6 +148,56 @@ void corral::Loop(){
 		fdedxexp[ip]	->SetLineColor(1);
 	}	
 	//
+	//---- README_PID.md (2026-09-28): KFP dE/dx gates (dedxGates_KFP.root, README_dedxGates.md), g_<sp>_lo/_hi
+	//---- vs |p| (GeV/c). Applied to dedxKFP (what KFP itself cuts on), not dedx70s. Undefined outside
+	//---- 0.1<|p|<5 GeV/c -> unidentified there. Order pi, then p, then K: a track takes the first gate it is in.
+	const int NGATE				= 4;					// 0 pi, 1 K, 2 p, 3 d (d: QA overlay only)
+	const char* gateSp[NGATE]	= {"pi","K","p","d"};
+	TGraph *gGateLo[NGATE]		= {0}, *gGateHi[NGATE] = {0};
+	const double GATE_PMIN		= 0.1, GATE_PMAX = 5.0;
+	if (!doOldPID){
+		TString gname	= CorralDir() + "dedxGates_KFP.root";
+		TDirectory *dsave	= gDirectory;
+		TFile *fgate	= TFile::Open(gname.Data(),"READ");
+		if (!fgate || fgate->IsZombie()){ cout<<"corral::Loop -- cannot open dE/dx gates "<<gname<<" (\"oldpid\" runs without them), exit"<<endl; exit(1); }
+		for (int ig=0;ig<NGATE;ig++){
+			TGraph *lo	= (TGraph*)fgate->Get(Form("g_%s_lo",gateSp[ig]));
+			TGraph *hi	= (TGraph*)fgate->Get(Form("g_%s_hi",gateSp[ig]));
+			if (!lo || !hi){ cout<<"corral::Loop -- "<<gname<<" has no g_"<<gateSp[ig]<<"_lo/_hi, exit"<<endl; exit(1); }
+			gGateLo[ig]	= (TGraph*)lo->Clone(Form("gGateLo_%s",gateSp[ig]));
+			gGateHi[ig]	= (TGraph*)hi->Clone(Form("gGateHi_%s",gateSp[ig]));
+		}
+		fgate->Close(); delete fgate;
+		dsave->cd();
+		cout<<"corral::Loop -- PID: KFP dE/dx gates from "<<gname<<" (pi, then p, then K, on dedxKFP, "<<GATE_PMIN<<"<p<"<<GATE_PMAX<<")"<<endl;
+	} else {
+		cout<<"corral::Loop -- PID: legacy (oldpid) -- pi = dedx70s<400 at any momentum, no p or K"<<endl;
+	}
+	auto inGate	= [&](int ig, double p, double dedx){
+		return dedx>=gGateLo[ig]->Eval(p) && dedx<=gGateHi[ig]->Eval(p);
+	};
+	//---- README_PID.md sec 11: is V0 iv0 in its mass peak? (v0mass can be an exact-0 sentinel: rebuild it from E, p)
+	auto v0InPeak	= [&](int iv0){
+		double m	= v0mass[iv0];
+		if (m==0.0){ double m2 = v0ene[iv0]*v0ene[iv0] - v0ptot[iv0]*v0ptot[iv0]; m = (m2>0.) ? sqrt(m2) : 0.; }
+		int k	= (v0pid[iv0]==310) ? 0 : (v0pid[iv0]==3122) ? 1 : (v0pid[iv0]==-3122) ? 2 : -1;
+		if (k<0) return true;
+		return fabs(m-V0PEAK_MU[k]) < V0PEAK_NSIG*V0PEAK_SIG[k];
+	};
+	//---- PID of track it: 0 pi, 1 K, 2 p, 3 unidentified (README_PID.md sec 1)
+	auto pidOf	= [&](int it){
+		int k	= 3;
+		if (doOldPID){
+			if (dedx70s[it]<400.) k = 0;
+		} else if (ptot[it]>GATE_PMIN && ptot[it]<GATE_PMAX && dedxKFP[it]>0.){
+			double pp	= ptot[it];											// each species only below its ptot cap (fluct_common.h)
+			if		(pp<Species_pmax_pid[0] && inGate(0,pp,dedxKFP[it])) k = 0;		// pions first,
+			else if	(pp<Species_pmax_pid[2] && inGate(2,pp,dedxKFP[it])) k = 2;		// then protons,
+			else if	(pp<Species_pmax_pid[1] && inGate(1,pp,dedxKFP[it])) k = 1;		// then kaons
+		}
+		return k;
+	};
+	//
 	//---- class definitions...
 	double field			= 1.4;	
 	bool WeightDensities	= false;				//!!!!!! should be settable!!!!
@@ -148,9 +211,9 @@ void corral::Loop(){
 	double		eff_1[MAX_CALCR_N];
 	double		eff_2[MAX_CALCR_N];
 	//
-	TString ClassStr;
-			ClassStr = TString("m");
-	if (NOCORRELATIONS) ClassStr = TString("x");
+	//---- output base name (2026-09-27): "corral" (was "corral_m", a holdover from the removed convolution
+	//---- class); "corral_x" in the NOCORRELATIONS build. Older output files keep their corral_m names.
+	TString ClassStr	= NOCORRELATIONS ? TString("corral_x") : TString("corral");
 	//
 	int 	thisNMIX	=   10;		//50
 	double	thisPTNB	=    1;
@@ -174,6 +237,21 @@ void corral::Loop(){
 	if (FinePhiBinning){  thisYNB = 5; thisPHINB = 48; }
 	double  thisYL		= -1.1;	
 	double  thisYU		= +1.1;
+	//---- 2026-09-30 (user): acceptance = the eta fiducial abs(eta) < 1.1 (the detector edge) and, per species, the rapidity
+	//---- window abs(y) < Species_yu (fluct_common.h: pi 1.0, K 0.65, p 0.6, K0s/Lambda/Lbar 0.7). Binning per pair type
+	//---- (PairTypes_YBins, PairTypes.h): y bins across each window (the two widths need not match) and the dy bin width.
+	double pairEtaEdge[NPairTypes], pairYL1[NPairTypes], pairYU1[NPairTypes], pairYL2[NPairTypes], pairYU2[NPairTypes], pairDYBW[NPairTypes];
+	int pairYNB1[NPairTypes], pairYNB2[NPairTypes];
+	for (int ip=0;ip<NPairTypes;ip++){
+		pairEtaEdge[ip]	= thisYU;
+		pairYU1[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][0])]; pairYL1[ip] = -pairYU1[ip]; pairYNB1[ip] = (int)PairTypes_YBins[ip][0];
+		pairYU2[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][1])]; pairYL2[ip] = -pairYU2[ip]; pairYNB2[ip] = (int)PairTypes_YBins[ip][1];
+		pairDYBW[ip]	= PairTypes_YBins[ip][2];
+		cout<<"corral::Loop -- pair type "<<ip<<" "<<ParticleIDNames[PairTypes_Info[ip][0]]<<" "<<ParticleIDNames[PairTypes_Info[ip][1]]
+			<<": abs(eta) < "<<pairEtaEdge[ip]<<", abs(y1) < "<<pairYU1[ip]<<" ("<<pairYNB1[ip]<<" bins of "<<2.*pairYU1[ip]/pairYNB1[ip]
+			<<"), abs(y2) < "<<pairYU2[ip]<<" ("<<pairYNB2[ip]<<" bins of "<<2.*pairYU2[ip]/pairYNB2[ip]<<"), dy bin width "<<pairDYBW[ip]<<endl;
+	}
+	if (!doOldPID) cout<<"corral::Loop -- PID ptot caps: pi "<<Species_pmax_pid[0]<<", p "<<Species_pmax_pid[2]<<", K "<<Species_pmax_pid[1]<<" GeV/c"<<endl;
 	double  thisPTL		=  0.1;
 	double  thisPTU		= 20.1;
 	double	thisPTBWMEV	= 2000;		// MeV!		(20 GeV/2 GeV -> 10 PT bins),  
@@ -224,23 +302,26 @@ void corral::Loop(){
 			R[ipaty]	->SetFlipDy(    false);		// README_Crossing sec 8 (2026-09-25): pt-ordering flips dphi ONLY; the correction symmetrizes in dphi only
 			R[ipaty]	->SetDoBaseline(false);		// enable additive shift of R2 using factorial cumulants
 			R[ipaty]	->SetDoQcut(doQCut);		// enable Q cut
+			R[ipaty]	->SetTrackSep(valTSepDy,valTSepDphi,true);
+			R[ipaty]	->SetInttSep(valISepDphi);		// README_SplitTracks573 sec 29 (off if <= 0)	// min over R (the R = 0.5 m variant is dropped)	// README_SplitTracks573 sec 11 (off if valTSepDy<=0)
 			R[ipaty]	->SetQcut( valQCut);		// set Q cut (a lower limit)
 			//R[ipaty]	->SetDoMinvCut( doMcut);	// Minv cut only (mixing num & denom, convolution num only)
 			//R[ipaty]	->SetDoMinvLLCut(false);	// Minv LL cut only (mixing num & denom, convolution num only)
 			R[ipaty]	->SetPid1(ipid1);			//
 			R[ipaty]	->SetPid2(ipid2);			//
-			R[ipaty]	->SetYNB1(thisYNB);
-			R[ipaty]	->SetYL1( thisYL );
-			R[ipaty]	->SetYU1( thisYU );
-			R[ipaty]	->SetYNB2(thisYNB);
-			R[ipaty]	->SetYL2( thisYL );
-			R[ipaty]	->SetYU2( thisYU );
+			R[ipaty]	->SetYNB1(pairYNB1[ipaty]);		// 2026-09-30: per-species y windows, bins per pair type
+			R[ipaty]	->SetYL1( pairYL1[ipaty] );
+			R[ipaty]	->SetYU1( pairYU1[ipaty] );
+			R[ipaty]	->SetYNB2(pairYNB2[ipaty]);
+			R[ipaty]	->SetYL2( pairYL2[ipaty] );
+			R[ipaty]	->SetYU2( pairYU2[ipaty] );
+			R[ipaty]	->SetDYBW(pairDYBW[ipaty]);		// 2026-09-30: dy width per pair type
 			R[ipaty]	->SetPHINB(thisPHINB);
 			R[ipaty]	->SetPTL1( thisPTL  );
 			R[ipaty]	->SetPTU1( thisPTU  );
 			R[ipaty]	->SetPTL2( thisPTL  );
 			R[ipaty]	->SetPTU2( thisPTU  );
-			R[ipaty]	->SetZVTXNB( 16);
+			R[ipaty]	->SetZVTXNB(valZvtxNB);	// 16 (sec 38)
 			R[ipaty]	->SetZVTXL( -16);
 			R[ipaty]	->SetZVTXU( +16);
 			//
@@ -257,9 +338,9 @@ void corral::Loop(){
 	if (OutputName!="") OutputFileBase	= OutputName;	// -o (job lists): exactly this name
 	else
 	if (RunString.Length()){
-		OutputFileBase	= TString(Form("corral_%s_%s",ClassStr.Data(),RunString.Data()));
+		OutputFileBase	= TString(Form("%s_%s",ClassStr.Data(),RunString.Data()));
 	} else {
-		OutputFileBase	= TString(Form("corral_%s"   ,ClassStr.Data()));
+		OutputFileBase	= ClassStr;
 	}
 	TString RootFileName	= TString("./root/") + OutputFileBase.Data() + ".root";
 	TString OutputFileNameO	= TString("./pdf/")  + OutputFileBase.Data() + ".ps(";
@@ -338,6 +419,153 @@ void corral::Loop(){
 	//---- new-mechanism-specific plots (sec 10): filled for every same-charge, kinematically-close
 	//---- candidate pair every event, regardless of doSplitRemoval, so the threshold scan (sec 10.9
 	//---- step 3) always has something to look at even before a cut value is chosen.
+	//---- README_SplitTracks573 sec 6 (2026-09-27): DIAGNOSTIC ONLY, no cut reads these. Same-charge
+	//---- pion pairs near (0,0), split by charge (0: ++, 1: --) and pair pT class (0: min pt < 0.2,
+	//---- 1: min pt >= 0.2). "surv" = both tracks survive every pre-pass removal (XTF, LS, ULS).
+	//---- central = |deta|<0.034 && |dphi|<10deg (the hR2_1 central bin), side = |deta|<0.034 && 10<=|dphi|<20deg.
+	//---- outcome, pairs in central with SKF >= valSiKeyCut: 0 removed (one track flagged), 1 surv, outside
+	//---- the pregate ellipse, 2 surv, in ellipse, SL and RG both fail, 3 surv, in ellipse, flagged but tied
+	//---- (no loser), 4 surv, in ellipse, other (e.g. doSplitRemoval off).
+	TH1D *hD573_SKF_surv_cen[2][2], *hD573_SKF_surv_side[2][2], *hD573_outcome[2][2], *hD573_SL_survInEll[2][2];
+	TH2D *hD573_pos_survHi[2][2], *hD573_pos_allHi[2][2], *hD573_dphiPtinv_allHi[2], *hD573_dphiDinvpt_allHi[2], *hD573_dphiDinvpt_survHi[2];
+	//---- README_SplitTracks573 sec 10: LS pregate visualization (one PDF page, LS pions only, both charges).
+	//---- dphi(deg) vs deta in bins of abs(1/pt1-1/pt2): all LS pion pairs / SKF>=cut pairs / pairs whose two
+	//---- tracks both survive every pre-pass removal.
+	static const int NGATEVIS	= 6;
+	static const double GATEVIS_EDGE[NGATEVIS+1]	= {0.,1.,2.,3.,4.,6.,10.};
+	TH2D *hGateVis_all[NGATEVIS], *hGateVis_hi[NGATEVIS], *hGateVis_surv[NGATEVIS];
+	//---- the same SKF>=cut / kept pairs in the dps gate's own frame: abs(dphi) - dphi0 (each pair's own
+	//---- dphi0 = DPsCentre, R = valDPsR), where the dps gate is ONE fixed ellipse centred at 0 (user, sec 10)
+	TH2D *hGateVis_hiRes[NGATEVIS], *hGateVis_survRes[NGATEVIS];
+	TH1D *hGateVis_dinvHi[NGATEVIS];
+	//---- user 2026-09-28: the same populations in FINE slices of each pair's own dphi0 (= DPsCentre, the gate's
+	//---- centre), plotted as abs(dphi) vs deta: inside a slice every pair's gate is the drawn ellipse to within
+	//---- half the slice width, so the red curve is the cut Corral applies (three extra PDF pages after the gate page).
+	static const int NGATEFINE	= 16;
+	static const double GATEFINE_W	= 0.4;		// slice width in dphi0 (deg): slices 0-0.4, ..., 6.0-6.4 (dphi0 < ~6.3 at pt > 0.1)
+	TH2D *hGateFine_hi[NGATEFINE], *hGateFine_hiSurv[NGATEFINE], *hGateFine_surv[NGATEFINE];
+	//---- user 2026-09-28: gate page row 1 (all LS pairs, signed dphi, index order) in the same fine dphi0 slices
+	TH2D *hGateFine_all[NGATEFINE];
+	for (int k=0;k<NGATEFINE;k++){
+		const char* rng	= Form("%.1f#leq#Delta#phi_{0}<%.1f#circ",k*GATEFINE_W,(k+1)*GATEFINE_W);
+		hGateFine_all[k]	= new TH2D(Form("hGateFine_all_%d",k),Form("all, %s;#Delta#eta;#Delta#phi (deg)",rng),64,-0.08,0.08,192,-12.,12.);
+		hGateFine_hi[k]		= new TH2D(Form("hGateFine_hi_%d",k),Form("SKF#geqcut, %s;#Delta#eta;|#Delta#phi| (deg)",rng),64,-0.08,0.08,96,0.,12.);
+		hGateFine_hiSurv[k]	= new TH2D(Form("hGateFine_hiSurv_%d",k),Form("SKF#geqcut, both kept, %s;#Delta#eta;|#Delta#phi| (deg)",rng),64,-0.08,0.08,96,0.,12.);
+		hGateFine_surv[k]	= new TH2D(Form("hGateFine_surv_%d",k),Form("all kept, %s;#Delta#eta;|#Delta#phi| (deg)",rng),64,-0.08,0.08,96,0.,12.);
+	}
+	//---- README_SplitTracks573 sec 25: cosmic-ray test of the pi+pi- away-side spike at dy ~ 0 (diagnostic only, no cut reads
+	//---- these). Accepted, surviving pions; pairs with abs(dy) < 0.1 in three windows: [0] opposite charge, abs(dphi) >= 170 deg
+	//---- (the spike); [1] opposite charge, 150 <= abs(dphi) < 160 (control); [2] same charge, abs(dphi) >= 170 (control).
+	//---- A cosmic muon through the TPC, reconstructed as two tracks out of the vertex: opposite charges, pt1 ~ pt2,
+	//---- a near-vertical axis (phi ~ +-90 deg), eta ~ 0, mirrored DCAs, few other tracks.
+	//---- README_SplitTracks573 sec 38: the central-membrane (CM) hole in R2(y1,y2) (diagnostic only, no cut reads these).
+	//---- Surviving accepted charged tracks, abs(vtxz) < 8 cm. w = (eta + CM_K vtxz) * (vtxz<0 ? +1 : -1): the hole centre at
+	//---- w ~ 0 in every slice (hetazvtx: minimum at eta ~ -0.018 vtxz), the sharp edge at w < 0, the slow recovery at w > 0.
+	//---- Pairs with both tracks in the band (CM_BLO < w < CM_BHI, [0]) or both in the control (CM_CLO < abs(w) < CM_CHI, [1]);
+	//---- second index 0 = opposite charge, 1 = same charge. A particle crossing the CM rebuilt as two TPC pieces: dphi ~ deta ~ 0,
+	//---- short ntpc each, inner / outer TPC layers, shared silicon.
+	static const double CM_K = 0.018, CM_BLO = -0.03, CM_BHI = 0.05, CM_CLO = 0.20, CM_CHI = 0.35;
+	TH1D *hCM_w		= new TH1D("hCM_w","CM study: surviving tracks, abs(vtxz)<8;w = (#eta + 0.018 z_{vtx}) sign(-z_{vtx});tracks",200,-0.5,0.5);
+	TH2D *hCM_w_ntpc	= new TH2D("hCM_w_ntpc","CM study: ntpc vs w;w;ntpc",100,-0.5,0.5,50,0.,50.);
+	TH2D *hCM_w_xing	= new TH2D("hCM_w_xing","CM study: w vs the event's crossing;w;crossing",100,-0.5,0.5,24,-100.,500.);
+	TH2D *hCM_nbnc	= new TH2D("hCM_nbnc","CM study: per event, tracks in the band vs in the control;n_{control};n_{band}",40,0.,40.,10,0.,10.);	// event-by-event hole depth
+	TH2D *hCM_w_tpcfl[2];		// first vs last TPC layer (0-47) of tracks in the band [0] / control [1]
+	TH2D *hCM_dphideta[2][2], *hCM_ntpc12[2][2], *hCM_nsi12[2][2], *hCM_pt12[2][2];
+	TH1D *hCM_ntpcsum[2][2], *hCM_skf[2][2], *hCM_dw[2][2];
+	{
+		const char* cn[2]	= {"band","control"};
+		const char* qn[2]	= {"OS","SS"};
+		for (int c=0;c<2;c++){
+			hCM_w_tpcfl[c]	= new TH2D(Form("hCM_w_tpcfl_%d",c),Form("CM study, %s tracks;first TPC layer;last TPC layer",cn[c]),48,0.,48.,48,0.,48.);
+			for (int q=0;q<2;q++){
+				hCM_dphideta[c][q]	= new TH2D(Form("hCM_dphideta_%d_%d",c,q),Form("CM study, %s %s pairs;#Delta#eta;#Delta#phi (deg)",cn[c],qn[q]),80,-0.2,0.2,120,-30.,30.);
+				hCM_ntpc12[c][q]	= new TH2D(Form("hCM_ntpc12_%d_%d",c,q),Form("CM study, %s %s pairs;ntpc_{1};ntpc_{2}",cn[c],qn[q]),50,0.,50.,50,0.,50.);
+				hCM_nsi12[c][q]		= new TH2D(Form("hCM_nsi12_%d_%d",c,q),Form("CM study, %s %s pairs;n_{Si,1};n_{Si,2}",cn[c],qn[q]),8,0.,8.,8,0.,8.);
+				hCM_pt12[c][q]		= new TH2D(Form("hCM_pt12_%d_%d",c,q),Form("CM study, %s %s pairs;p_{T,1};p_{T,2}",cn[c],qn[q]),40,0.,2.,40,0.,2.);
+				hCM_ntpcsum[c][q]	= new TH1D(Form("hCM_ntpcsum_%d_%d",c,q),Form("CM study, %s %s pairs;ntpc_{1}+ntpc_{2};pairs",cn[c],qn[q]),100,0.,100.);
+				hCM_skf[c][q]		= new TH1D(Form("hCM_skf_%d_%d",c,q),Form("CM study, %s %s pairs;SiSplitScore;pairs",cn[c],qn[q]),50,0.,1.0001);
+				hCM_dw[c][q]		= new TH1D(Form("hCM_dw_%d_%d",c,q),Form("CM study, %s %s pairs;w_{1}-w_{2};pairs",cn[c],qn[q]),80,-0.2,0.2);
+			}
+		}
+	}
+	static const int NCOS	= 3;
+	TH1D *hCos_psum[NCOS], *hCos_minv[NCOS], *hCos_axisBB[NCOS], *hCos_minvBB[NCOS];
+	TH1D *hCos_axis[NCOS], *hCos_ptAsym[NCOS], *hCos_eta[NCOS], *hCos_npi[NCOS], *hCos_vtxntr[NCOS], *hCos_pt[NCOS], *hCos_etotoh[NCOS];
+	TH2D *hCos_dcaxy[NCOS], *hCos_dcaz[NCOS];
+	{ const char* wn[NCOS]	= {"ULS, |d#phi|#geq170#circ","ULS, 150#leq|d#phi|<160#circ","LS, |d#phi|#geq170#circ"};
+	  for (int w=0;w<NCOS;w++){
+		hCos_axis[w]	= new TH1D(Form("hCos_axis_%d",w),Form("%s, |dy|<0.1;#phi of the pair axis, folded to [0,180) (deg)",wn[w]),36,0.,180.);
+		hCos_ptAsym[w]	= new TH1D(Form("hCos_ptAsym_%d",w),Form("%s, |dy|<0.1;(p_{T1}-p_{T2})/(p_{T1}+p_{T2})",wn[w]),50,-1.,1.);
+		hCos_eta[w]		= new TH1D(Form("hCos_eta_%d",w),Form("%s, |dy|<0.1;#eta_{1}",wn[w]),44,-1.1,1.1);
+		hCos_npi[w]		= new TH1D(Form("hCos_npi_%d",w),Form("%s, |dy|<0.1;accepted pions in the event",wn[w]),40,-0.5,39.5);
+		hCos_vtxntr[w]	= new TH1D(Form("hCos_vtxntr_%d",w),Form("%s, |dy|<0.1;vtxntr",wn[w]),60,-0.5,59.5);
+		hCos_pt[w]		= new TH1D(Form("hCos_pt_%d",w),Form("%s, |dy|<0.1;mean p_{T} of the pair",wn[w]),40,0.,4.);
+		hCos_etotoh[w]	= new TH1D(Form("hCos_etotoh_%d",w),Form("%s, |dy|<0.1;etotoh",wn[w]),50,0.,25.);
+		hCos_dcaxy[w]	= new TH2D(Form("hCos_dcaxy_%d",w),Form("%s, |dy|<0.1;dcaxy_{1};dcaxy_{2}",wn[w]),60,-0.3,0.3,60,-0.3,0.3);
+		hCos_dcaz[w]	= new TH2D(Form("hCos_dcaz_%d",w),Form("%s, |dy|<0.1;dcaz_{1};dcaz_{2}",wn[w]),60,-0.3,0.3,60,-0.3,0.3);
+		//---- sec 25.1 (2026-09-29): p1 = -p2 pairs (cosmic halves or decays at rest): relative 3-momentum sum, Minv (pion
+		//---- masses), and axis / Minv of the clean subset (relative sum < 0.05)
+		hCos_psum[w]	= new TH1D(Form("hCos_psum_%d",w),Form("%s, |dy|<0.1;|#vec{p}_{1}+#vec{p}_{2}| / (|p_{1}|+|p_{2}|)",wn[w]),50,0.,0.5);
+		hCos_minv[w]	= new TH1D(Form("hCos_minv_%d",w),Form("%s, |dy|<0.1;M_{inv}(#pi#pi) (GeV)",wn[w]),80,0.,4.);
+		hCos_axisBB[w]	= new TH1D(Form("hCos_axisBB_%d",w),Form("%s, |dy|<0.1, rel. p sum < 0.05;#phi of the pair axis, folded to [0,180) (deg)",wn[w]),36,0.,180.);
+		hCos_minvBB[w]	= new TH1D(Form("hCos_minvBB_%d",w),Form("%s, |dy|<0.1, rel. p sum < 0.05;M_{inv}(#pi#pi) (GeV)",wn[w]),80,0.,4.);
+	  } }
+	//---- README_SplitTracks573 sec 28: TPC sector-gap "spokes". Accepted charged tracks (the sec 6 list, before the
+	//---- pre-pass removals), [charge 0:+ 1:-][0: vertex phi | 1: phi at R = 0.55 m, phi + q*asin(aR/pt), the sign the
+	//---- data pick (sec 28)] vs pt. At the vertex a gap fixed in the detector is a curve phi_gap + q*asin(aR/pt) (a spoke bent
+	//---- oppositely for the two charges); at R it is a vertical line.
+	TH2D *hSpoke[2][2];
+	for (int q=0;q<2;q++) for (int f=0;f<2;f++)
+		hSpoke[q][f]	= new TH2D(Form("hSpoke_%d_%d",q,f),Form("%s, %s;%s (deg);p_{T} (GeV/c)",q?"negative":"positive",f?"#phi at R = 0.55 m":"vertex #phi",f?"#phi(R=0.55 m)":"#phi"),180,-180.,180.,28,0.1,1.5);
+	//---- README_SplitTracks573 sec 15: residual and charge-asymmetry diagnostics (no cut reads these).
+	//---- Silicon match code per pair: x = MVTX (denM*4 + numM: layers either / both-matching track has,
+	//---- 0-15), y = INTT (denI*5 + numI, 0-24). For SKF>=cut LS pion pairs in the central bin:
+	//---- removed / surviving in gate / at 0.04 <= abs(deta) < 0.05 (the tail seen on the gate page).
+	TH2D *hD573_match[3];
+	const char* matchName[3]	= {"removed","survInGate","detaTail"};
+	for (int k=0;k<3;k++) hD573_match[k] = new TH2D(Form("hD573_match_%s",matchName[k]),Form("LS pairs, SKF#geqcut, %s;MVTX 4#timesden+num;INTT 5#timesden+num",matchName[k]),16,-0.5,15.5,25,-0.5,24.5);
+	//---- sec 19: losers per removal path and charge (accepted pions only), vs pt. Path: 0 LS duplicate (SL),
+	//---- 1 LS complementary (RadialGap), 2 LS MVTX match (path 3), 3 ULS veto, 4 XTF cleaner, 5 looper veto (sec 35).
+	TH1D *hLoserPath_pt[6][2];
+	{ const char* pn[6]={"dup","comp","mvtx","uls","xtf","loop"};
+	  for (int k=0;k<6;k++) for (int c=0;c<2;c++) hLoserPath_pt[k][c] = new TH1D(Form("hLoserPath_pt_%s_%s",pn[k],c==0?"pos":"neg"),Form("losers, path %s, %s;p_{T}",pn[k],c==0?"#pi+":"#pi-"),40,0,2); }
+	//---- per-charge accepted pions and LS-path losers vs pt, eta, phi, ntpc ([0] pi+, [1] pi-)
+	TH1D *hAsym_all_pt[2], *hAsym_los_pt[2], *hAsym_all_eta[2], *hAsym_los_eta[2], *hAsym_all_phi[2], *hAsym_los_phi[2], *hAsym_all_ntpc[2], *hAsym_los_ntpc[2];
+	for (int c=0;c<2;c++){
+		const char* cn	= c==0 ? "pos" : "neg";
+		hAsym_all_pt[c]		= new TH1D(Form("hAsym_all_pt_%s",cn),Form("accepted pions %s;p_{T}",cn),40,0,2);
+		hAsym_los_pt[c]		= new TH1D(Form("hAsym_los_pt_%s",cn),Form("LS-path losers %s;p_{T}",cn),40,0,2);
+		hAsym_all_eta[c]	= new TH1D(Form("hAsym_all_eta_%s",cn),Form("accepted pions %s;#eta",cn),22,-1.1,1.1);
+		hAsym_los_eta[c]	= new TH1D(Form("hAsym_los_eta_%s",cn),Form("LS-path losers %s;#eta",cn),22,-1.1,1.1);
+		hAsym_all_phi[c]	= new TH1D(Form("hAsym_all_phi_%s",cn),Form("accepted pions %s;#phi",cn),72,-M_PI,M_PI);
+		hAsym_los_phi[c]	= new TH1D(Form("hAsym_los_phi_%s",cn),Form("LS-path losers %s;#phi",cn),72,-M_PI,M_PI);
+		hAsym_all_ntpc[c]	= new TH1D(Form("hAsym_all_ntpc_%s",cn),Form("accepted pions %s;ntpc",cn),49,-0.5,48.5);
+		hAsym_los_ntpc[c]	= new TH1D(Form("hAsym_los_ntpc_%s",cn),Form("LS-path losers %s;ntpc",cn),49,-0.5,48.5);
+	}	// abs(1/pt1-1/pt2) of the SKF>=cut pairs per column: its mean places the row-1 ellipses
+	for (int ib=0;ib<NGATEVIS;ib++){
+		const char* rng	= Form("%.0f<|1/p_{T1}-1/p_{T2}|<%.0f",GATEVIS_EDGE[ib],GATEVIS_EDGE[ib+1]);
+		hGateVis_all[ib]	= new TH2D(Form("hGateVis_all_%d",ib),Form("LS #pi pairs, all, %s;#Delta#eta;#Delta#phi (deg)",rng),50,-0.05,0.05,96,-12,12);
+		hGateVis_hi[ib]		= new TH2D(Form("hGateVis_hi_%d",ib),Form("LS #pi pairs, SiSplitScore#geqcut, %s;#Delta#eta;#Delta#phi (deg)",rng),50,-0.05,0.05,96,-12,12);
+		hGateVis_surv[ib]	= new TH2D(Form("hGateVis_surv_%d",ib),Form("LS #pi pairs, both tracks kept, %s;#Delta#eta;#Delta#phi (deg)",rng),50,-0.05,0.05,96,-12,12);
+		hGateVis_dinvHi[ib]	= new TH1D(Form("hGateVis_dinvHi_%d",ib),Form("SiSplitScore#geqcut, %s;|1/p_{T1}-1/p_{T2}|",rng),100,GATEVIS_EDGE[ib],GATEVIS_EDGE[ib+1]);
+		hGateVis_hiRes[ib]	= new TH2D(Form("hGateVis_hiRes_%d",ib),Form("SiSplitScore#geqcut, %s;#Delta#eta;|#Delta#phi|-#Delta#phi_{0} (deg)",rng),50,-0.05,0.05,128,-8,8);
+		hGateVis_survRes[ib]	= new TH2D(Form("hGateVis_survRes_%d",ib),Form("both tracks kept, %s;#Delta#eta;|#Delta#phi|-#Delta#phi_{0} (deg)",rng),50,-0.05,0.05,128,-8,8);
+	}
+	for (int ic=0;ic<2;ic++){
+		const char* cn = ic==0 ? "pp" : "mm";
+		for (int ipc=0;ipc<2;ipc++){
+			const char* pn = ipc==0 ? "lopt" : "hipt";
+			hD573_SKF_surv_cen[ic][ipc]	= new TH1D(Form("hD573_SKF_surv_cen_%s_%s",cn,pn),Form("surviving %s pairs, central, %s -- SiSplitScore",cn,pn),44,-1.05,1.05);
+			hD573_SKF_surv_side[ic][ipc]	= new TH1D(Form("hD573_SKF_surv_side_%s_%s",cn,pn),Form("surviving %s pairs, dphi sideband, %s -- SiSplitScore",cn,pn),44,-1.05,1.05);
+			hD573_outcome[ic][ipc]		= new TH1D(Form("hD573_outcome_%s_%s",cn,pn),Form("%s pairs, central, SKF>=cut, %s -- 0 removed 1 outEll 2 SL+RGfail 3 tie 4 other",cn,pn),5,-0.5,4.5);
+			hD573_SL_survInEll[ic][ipc]	= new TH1D(Form("hD573_SL_survInEll_%s_%s",cn,pn),Form("surviving %s pairs in ellipse, SKF>=cut, %s -- SL",cn,pn),120,-1.1,1.1);
+			hD573_pos_survHi[ic][ipc]	= new TH2D(Form("hD573_pos_survHi_%s_%s",cn,pn),Form("surviving %s pairs, SKF>=cut, %s -- dphi(deg) vs deta",cn,pn),50,-0.05,0.05,80,-20,20);
+			hD573_pos_allHi[ic][ipc]	= new TH2D(Form("hD573_pos_allHi_%s_%s",cn,pn),Form("all %s pairs, SKF>=cut, %s -- dphi(deg) vs deta",cn,pn),50,-0.05,0.05,80,-20,20);
+		}
+		hD573_dphiDinvpt_allHi[ic]	= new TH2D(Form("hD573_dphiDinvpt_allHi_%s",cn),Form("all %s pairs, |deta|<0.05, SKF>=cut -- |dphi|(deg) vs |1/pt1-1/pt2|",cn),120,0,12,120,0,30);
+		hD573_dphiDinvpt_survHi[ic]	= new TH2D(Form("hD573_dphiDinvpt_survHi_%s",cn),Form("surviving %s pairs, |deta|<0.05, SKF>=cut -- |dphi|(deg) vs |1/pt1-1/pt2|",cn),120,0,12,120,0,30);
+		hD573_dphiPtinv_allHi[ic]	= new TH2D(Form("hD573_dphiPtinv_allHi_%s",cn),Form("all %s pairs, |deta|<0.05, SKF>=cut -- dphi(deg) vs 2/(pt1+pt2)",cn),50,0,10,80,-20,20);
+	}
 	TH1D *hSL_cand			= new TH1D("hSL_cand","split-candidate pairs -- Splitting Level (STAR sec 2.4.1)",120,-1.1,1.1);
 	TH2D *hntpc_ij_cand	= new TH2D("hntpc_ij_cand","split-candidate pairs -- ntpc[i] vs ntpc[j] (sec 9.6)",49,-0.5,48.5,49,-0.5,48.5);
 	//---- SiKeyFrac (sec 12a.4/13.8) monitor, same convention as hSL_cand above
@@ -547,6 +775,10 @@ void corral::Loop(){
 	long nSplitFlagged_evts	= 0;
 	long nFlagged_duplicate	= 0;	// sec 17.14: per-path breakdown -- path 1 (SL<cut, live since 17.6)
 	long nFlagged_complementary	= 0;	// path 2 (RadialGap>=cut, new sec 17.14)
+	long nFlagged_fullmvtx		= 0;	// path 3 (full MVTX match, README_SplitTracks573 sec 8)
+	long nFlagged_Looper		= 0;	// README_SplitTracks573 sec 35: looper veto, tracks flagged
+	TH1D *hLooper_p		= new TH1D("hLooper_p","looper veto: |p| of the removed track;|p| (GeV/c);tracks",40,0.,0.4);
+	TH1D *hLooper_rs	= new TH1D("hLooper_rs","looper veto: OS pairs, |p|<LOOPER_PMAX, #Delta#phi#geq170#circ;|#vec{p}_{1}+#vec{p}_{2}|/(|p_{1}|+|p_{2}|);pairs",50,0.,0.25);
 	long nFlagged_ULS			= 0;	// sec 18.10: opposite-charge SiSplitScore path -- now TRACK-level
 									// removal (folded into nSplitFlagged_thisevt), not just a sibling-only
 									// pair veto -- fixes the mixed-side contamination sec 18's own work found
@@ -584,6 +816,74 @@ void corral::Loop(){
 	//
 	TH2D *hdedxp		= new TH2D("hdedxp"  ,"dedx vs p"      ,400,0,4.,1000,0.,10000.);
 	TH2D *hdedxpz		= new TH2D("hdedxpz" ,"dedx vs p, zoom",200,0,2.,200,0., 2000.);
+	//---- README_PID.md: dedxKFP (the value the gates are defined on), and its match to our dedx70s
+	TH2D *hdedxKFPp		= new TH2D("hdedxKFPp"   ,"dedxKFP vs p, all tracks;p (GeV/c);dedxKFP",200,0,2.,200,0.,4000.);
+	TH2D *hdedxKFPp_id[4];									// 0 pi, 1 K, 2 p, 3 unidentified
+	const char* idName[4]	= {"#pi","K","p","unidentified"};
+	for (int k=0;k<4;k++) hdedxKFPp_id[k] = new TH2D(Form("hdedxKFPp_id%d",k),Form("dedxKFP vs p, PID = %s;p (GeV/c);dedxKFP",idName[k]),200,0,2.,200,0.,4000.);
+	TProfile *hdedxratio_p	= new TProfile("hdedxratio_p","dedxKFP/dedx70s vs p;p (GeV/c);<dedxKFP/dedx70s>",100,0.,2.,0.,5.);
+	TH2D *hdedxratio2_p		= new TH2D("hdedxratio2_p","dedxKFP/dedx70s vs p;p (GeV/c);dedxKFP/dedx70s",100,0.,2.,200,0.5,1.5);
+	TH2D *hdedxKFPp_tagged[2][3];							// V0 daughters, as hdedxp_tagged but on dedxKFP
+	for (int iv=0;iv<3;iv++) for (int ic=0;ic<2;ic++)
+		hdedxKFPp_tagged[ic][iv]	= new TH2D(Form("hdedxKFPp_tagged_%d_%d",ic,iv),Form("dedxKFP vs p, %s#rightarrow%s;p (GeV/c);dedxKFP",strv0[iv],strch[ic]),200,0.,2.,200,0.,4000.);
+	//---- gate efficiency on V0 daughters: [0] Lambda->p & Lbar->pbar (true protons), [1] all K0s->pi (true pions);
+	//---- y bin = PID given (0 pi, 1 K, 2 p, 3 none)
+	TH2D *hPIDtagged[2];
+	hPIDtagged[0]	= new TH2D("hPIDtagged_p" ,"V0-daughter protons: PID given vs p;p (GeV/c);PID (0 #pi,1 K,2 p,3 none)",40,0.,2.,4,-0.5,3.5);
+	hPIDtagged[1]	= new TH2D("hPIDtagged_pi","K^{0}_{S}-daughter pions: PID given vs p;p (GeV/c);PID (0 #pi,1 K,2 p,3 none)",40,0.,2.,4,-0.5,3.5);
+	TH1D *hPIDcount	= new TH1D("hPIDcount","accepted tracks by PID;;tracks",8,-0.5,7.5);
+	const char* pidLab[8]	= {"#pi+","#pi-","K+","K-","p","#bar{p}","none +","none -"};
+	for (int k=0;k<8;k++) hPIDcount->GetXaxis()->SetBinLabel(k+1,pidLab[k]);
+	TH1D *hpt_id[3][2];										// pt of identified pi/K/p, pos/neg
+	//---- README_PID.md sec 8: the p-pi ULS ridge just below dphi=0 (dphi = phi(-)-phi(+), the class's ULS convention).
+	//---- Sibling p-pi pairs (identified, as they enter the pair types), abs(dy)<0.7: [box][cc], box 0 = ridge
+	//---- (-10<=dphi<0 deg), 1 = its mirror (0<=dphi<10, the clean side); cc 0 = p pi-, 1 = pbar pi+.
+	TH1D *hRidge_dphi[2], *hRidge_Mppi[2][2], *hRidge_Mee[2][2], *hRidge_open[2][2], *hRidge_prat[2][2], *hRidge_skf[2][2];
+	TH1D *hRidge_dcap[2][2], *hRidge_dcapi[2][2], *hRidge_ptp[2][2];
+	{
+		const char* bx[2]	= {"ridge","mirror"};
+		const char* cc[2]	= {"p#pi^{-}","#bar{p}#pi^{+}"};
+		for (int c=0;c<2;c++){
+			hRidge_dphi[c]	= new TH1D(Form("hRidge_dphi_%d",c),Form("%s sibling, abs(dy)<0.7;#phi(-)-#phi(+) (deg);pairs",cc[c]),160,-20.,20.);
+			for (int b=0;b<2;b++){
+				hRidge_Mppi[b][c]	= new TH1D(Form("hRidge_Mppi_%d_%d",b,c),Form("%s %s: M_{inv} as p#pi;M_{p#pi} (GeV)",cc[c],bx[b]),100,1.07,1.27);
+				hRidge_Mee[b][c]	= new TH1D(Form("hRidge_Mee_%d_%d",b,c),Form("%s %s: M_{inv} as e^{+}e^{-};M_{ee} (GeV)",cc[c],bx[b]),100,0.,0.2);
+				hRidge_open[b][c]	= new TH1D(Form("hRidge_open_%d_%d",b,c),Form("%s %s: 3D opening angle;#theta_{open} (deg)",cc[c],bx[b]),90,0.,45.);
+				hRidge_prat[b][c]	= new TH1D(Form("hRidge_prat_%d_%d",b,c),Form("%s %s: p(#pi)/p(p);ratio",cc[c],bx[b]),50,0.,2.5);
+				hRidge_skf[b][c]	= new TH1D(Form("hRidge_skf_%d_%d",b,c),Form("%s %s: SiSplitScore;SKF",cc[c],bx[b]),22,-0.05,1.05);
+				hRidge_dcap[b][c]	= new TH1D(Form("hRidge_dcap_%d_%d",b,c),Form("%s %s: 3D DCA of the (anti)proton;DCA (cm)",cc[c],bx[b]),100,0.,2.);
+				hRidge_dcapi[b][c]	= new TH1D(Form("hRidge_dcapi_%d_%d",b,c),Form("%s %s: 3D DCA of the pion;DCA (cm)",cc[c],bx[b]),100,0.,2.);
+				hRidge_ptp[b][c]	= new TH1D(Form("hRidge_ptp_%d_%d",b,c),Form("%s %s: p_{T} of the (anti)proton;p_{T} (GeV/c)",cc[c],bx[b]),50,0.,1.25);
+			}
+		}
+	}
+	TH2D *hypt_id[3];										// y vs pt of identified pi/K/p inside the charged eta fiducial:
+	for (int k=0;k<3;k++) hypt_id[k] = new TH2D(Form("hypt_id%d",k),Form("y vs p_{T}, PID = %s, abs(#eta) fiducial;y;p_{T} (GeV/c)",idName[k]),88,-1.1,1.1,100,0.,2.);	// with the Species_yu windows drawn
+	for (int k=0;k<3;k++) for (int ic=0;ic<2;ic++) hpt_id[k][ic] = new TH1D(Form("hpt_id%d_%d",k,ic),Form("p_{T}, PID = %s, %s;p_{T} (GeV/c)",idName[k],strch[ic]),200,0.,2.);
+	TH2D *hdcaxy_id[3][2], *hdcaz_id[3][2];				// README_PID.md sec 10: DCA vs pt of identified pi/K/p, pos/neg (spallation protons)
+	for (int k=0;k<3;k++) for (int ic=0;ic<2;ic++){
+		hdcaxy_id[k][ic]	= new TH2D(Form("hdcaxy_id%d_%d",k,ic),Form("dcaxy vs p_{T}, PID = %s, %s;p_{T} (GeV/c);dcaxy (cm)",idName[k],strch[ic]),40,0.,2.,300,-1.5,1.5);
+		hdcaz_id[k][ic]		= new TH2D(Form("hdcaz_id%d_%d" ,k,ic),Form("dcaz vs p_{T}, PID = %s, %s;p_{T} (GeV/c);dcaz (cm)"  ,idName[k],strch[ic]),40,0.,2.,300,-1.5,1.5);
+	}
+	TH2D *hadca_phi[2][2][2];								// README_PID.md sec 10.2: the phi ~ 105 deg strip. [xy|z][charge][vertex phi | phi at
+	for (int d=0;d<2;d++) for (int q=0;q<2;q++) for (int f=0;f<2;f++)	// R = 0.55 m as hSpoke] vs abs(dca), accepted charged tracks
+		hadca_phi[d][q][f]	= new TH2D(Form("hadca_phi_%d_%d_%d",d,q,f),Form("abs(%s), %s;%s (deg);abs(%s) (cm)",d?"dcaz":"dcaxy",q?"negative":"positive",f?"#phi(R=0.55 m)":"vertex #phi",d?"dcaz":"dcaxy"),360,-180.,180.,75,0.,1.5);
+	//---- README_PID.md sec 10.3: the vertex-phi mask page. Tracks passing AcceptTrackBase, before the mask: [q] vertex phi
+	//---- vs abs(dcaxy) and vs abs(dcaz), and PID (0-3) x charge x [0 outside | 1 inside a mask window]
+	TH2D *hmask_dcaxy[2], *hmask_dcaz[2];
+	for (int q=0;q<2;q++){
+		hmask_dcaxy[q]	= new TH2D(Form("hmask_dcaxy_%d",q),Form("before the #phi mask, %s;vertex #phi (deg);abs(dcaxy) (cm)",q?"negative":"positive"),360,-180.,180.,75,0.,1.5);
+		hmask_dcaz[q]	= new TH2D(Form("hmask_dcaz_%d",q) ,Form("before the #phi mask, %s;vertex #phi (deg);abs(dcaz) (cm)" ,q?"negative":"positive"),360,-180.,180.,75,0.,1.5);
+	}
+	TH2D *hmask_pid	= new TH2D("hmask_pid","tracks before the #phi mask;PID x charge;0 outside, 1 inside a window",8,-0.5,7.5,2,-0.5,1.5);
+	TH2D *hphieta_id[3][2];									// README_PID.md sec 10: (eta,phi) of identified pi/K/p, pos/neg
+	for (int k=0;k<3;k++) for (int ic=0;ic<2;ic++)
+		hphieta_id[k][ic]	= new TH2D(Form("hphieta_id%d_%d",k,ic),Form("(#eta,#phi), PID = %s, %s;#eta;#phi",idName[k],strch[ic]),30,-1.5,1.5,36,-M_PI,M_PI);
+	//---- same, vs (eta,phi): [0] mean dcaxy, [1] mean abs(dcaxy), [2] mean dcaz, [3] mean abs(dcaz) (alignment/distortions by region)
+	TProfile2D *pdca_etaphi_id[3][2][4];
+	const char* dcaVar[4]	= {"dcaxy","|dcaxy|","dcaz","|dcaz|"};
+	for (int k=0;k<3;k++) for (int ic=0;ic<2;ic++) for (int iv=0;iv<4;iv++)
+		pdca_etaphi_id[k][ic][iv]	= new TProfile2D(Form("pdca_etaphi_id%d_%d_%d",k,ic,iv),Form("<%s> vs (#eta,#phi), PID = %s, %s;#eta;#phi;<%s> (cm)",dcaVar[iv],idName[k],strch[ic],dcaVar[iv]),30,-1.5,1.5,36,-M_PI,M_PI);
 	TH1D *hhighestpt	= new TH1D("hhighestpt","hhighestpt",400,0.0,20.0);
 	//
 	TH1D *hxing			= new TH1D("hxing","crossing, all events",600,-100.5,499.5);
@@ -890,6 +1190,20 @@ void corral::Loop(){
 		//	//cout<<"\t\t that was event "<<jentry<<" ----------- "<<endl;
 		//} 
 		//
+		//---- README_PID.md sec 12: the daughters of every in-peak V0, from the V0's own track indices (indv0 holds
+		//---- one V0 per track, so a track shared by an in-peak and an off-peak candidate could escape through it)
+		std::vector<int> peakV0Of((*ntr),-1);
+		for (int iv0=0;iv0<(*nv0);iv0++){
+			if (!v0InPeak(iv0)) continue;
+			const int itd[2]	= {v0indtr1[iv0], v0indtr2[iv0]};
+			for (int kd=0;kd<2;kd++){
+				if (itd[kd]<0 || itd[kd]>=(*ntr) || peakV0Of[itd[kd]]>=0) continue;
+				peakV0Of[itd[kd]]	= iv0;
+				if (!(indv0[itd[kd]]>=0 && v0InPeak(indv0[itd[kd]]))) ++nPeakDauNotIndv0;
+			}
+		}
+		auto isPeakDaughter	= [&](int it){ return peakV0Of[it]>=0; };
+		//
 		//---- split-track removal pre-pass (README_SplitTracks.md sec 13.8.4/13.8.6/13.8.8): computes
 		//---- the real STAR-style SL (layermask, sec 9.1/9.2) AND SiKeyFrac (siclukey hit-identity,
 		//---- sec 12a.4) for every same-charge candidate pair inside the actual (dy,dphi) spike --
@@ -918,11 +1232,14 @@ void corral::Loop(){
 		//---- cannot reach (sec 13.8.4's tradeoff writeup). The old, separate CalcRm::PairInfo
 		//---- SL+SiSeedMatch cut (sec 10.4) this pre-pass replaced is gone entirely (sec 17.9).
 		std::vector<int> nSplitFlagged_thisevt;
+		std::vector<int> lsLosers_thisevt;	// README_SplitTracks573 sec 15: LS-path losers only (charge-asymmetry diagnostic)
+		std::vector<std::pair<int,int>> loserPath_thisevt;	// sec 19: (track, removal path) -- 0 LS duplicate (SL),
+								// 1 LS complementary (RadialGap), 2 LS path 3 (MVTX match), 3 ULS veto, 4 XTF cleaner
 		//---- sec 18.22: cross-crossing duplicates found by BuildXTFLosers() -- same track-level
 		//---- removal as the LS/ULS paths below (they skip anything already in this list).
 		if (doXTFClean){
 			auto itx = xtfLosers.find(jentry);
-			if (itx!=xtfLosers.end()) nSplitFlagged_thisevt = itx->second;
+			if (itx!=xtfLosers.end()){ nSplitFlagged_thisevt = itx->second; for (int t : itx->second) loserPath_thisevt.push_back({t,4}); }
 		}
 		{
 			//---- fixed, measured, deliberately-margined box (sec 13.8.13), NOT the old ad-hoc
@@ -957,10 +1274,10 @@ void corral::Loop(){
 			static const double ULSSIDEBAND_HI	= 0.5;
 			std::vector<int> pionidx;
 			for (int jt=0;jt<(*ntr);jt++){
-				if (indv0[jt]>=0) continue;
+				if (isPeakDaughter(jt)) continue;		// README_PID.md sec 11/12: only peak V0s claim daughters
 				if (!AcceptTrack(jt)) continue;
-				if (dedx70s[jt]>=400.) continue;
-				if (chg[jt]==0) continue;
+				if (doOldPID && dedx70s[jt]>=400.) continue;	// README_PID.md sec 8: with the dE/dx PID, every accepted
+				if (chg[jt]==0) continue;						// charged track is a candidate (protons split too); was pions only
 				pionidx.push_back(jt);
 			}
 			for (size_t ii=0;ii<pionidx.size();ii++){
@@ -975,7 +1292,11 @@ void corral::Loop(){
 					if (dphi> M_PI) dphi -= 2*M_PI;
 					if (dphi<-M_PI) dphi += 2*M_PI;
 					bool sameCharge	= (chg[i]*chg[j] > 0);
-					bool inBox		= ( (deta/PREGATE_DETA)*(deta/PREGATE_DETA) + (dphi/PREGATE_DPHI)*(dphi/PREGATE_DPHI) < 1.0 );	// elliptical pregate, sec 16.9
+					//---- elliptical pregate, sec 16.9; the dphi semi-axis is PREGATE_DPHI unless the
+					//---- (the pregate itself: corral_class.h InLSPregate, README_SplitTracks573 sec 12/18).
+					//---- (deta semi-axis: valPregateDEta = PREGATE_DETA 0.022 unless "pgdetaNNN"; "dpsNN" centres
+					//---- the ellipse on the split peak, README_SplitTracks573 sec 12 -- all in InLSPregate)
+					bool inBox		= InLSPregate(deta,dphi,pt[i],pt[j]);
 					double dr		= sqrt(deta*deta+dphi*dphi);
 					bool inSideband	= (!inBox && dr>=ULSSIDEBAND_LO && dr<ULSSIDEBAND_HI);
 					//---- sec 18.24: ULS TRACK-level veto, NO angular gate. Was inside the LS pregate
@@ -998,6 +1319,31 @@ void corral::Loop(){
 								++nFlagged_ULS;
 								if (std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),loserv)==nSplitFlagged_thisevt.end()){
 									nSplitFlagged_thisevt.push_back(loserv);
+									loserPath_thisevt.push_back({loserv,3});
+								}
+							}
+						}
+					}
+					//---- README_SplitTracks573 sec 35: LOOPER veto. A track with pt < ~0.17 GeV/c curls back inside the TPC; the
+					//---- returning half is reconstructed as a second, opposite-charge track exactly back to back with the same
+					//---- |p| (sec 33.4). OS pairs with both |p| < LOOPER_PMAX and |p1+p2|/(|p1|+|p2|) < valLooperRSum: one track,
+					//---- remove the worse one (fewer ntpc loses; tie: larger abs(dca) sum). No angular gate beyond the sum.
+					//---- "nolooper" turns it off.
+					if (!sameCharge && doLooperVeto){
+						double px1=pt[i]*cos(phi[i]), py1=pt[i]*sin(phi[i]), pz1=pt[i]*sinh(eta[i]);
+						double px2=pt[j]*cos(phi[j]), py2=pt[j]*sin(phi[j]), pz2=pt[j]*sinh(eta[j]);
+						double p1=sqrt(px1*px1+py1*py1+pz1*pz1), p2=sqrt(px2*px2+py2*py2+pz2*pz2);
+						if (p1<LOOPER_PMAX && p2<LOOPER_PMAX && fabs(dphi)>=170.0*M_PI/180.0){
+							double rs	= sqrt(pow(px1+px2,2)+pow(py1+py2,2)+pow(pz1+pz2,2))/(p1+p2);
+							hLooper_rs->Fill(rs);
+							if (rs<valLooperRSum){
+								int loserv	= (ntpc[i]!=ntpc[j]) ? ((ntpc[i]<ntpc[j]) ? i : j)
+											: ((fabs(dcaxy[i])+fabs(dcaz[i]) > fabs(dcaxy[j])+fabs(dcaz[j])) ? i : j);
+								++nFlagged_Looper;
+								hLooper_p->Fill(loserv==i ? p1 : p2);
+								if (std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),loserv)==nSplitFlagged_thisevt.end()){
+									nSplitFlagged_thisevt.push_back(loserv);
+									loserPath_thisevt.push_back({loserv,5});
 								}
 							}
 						}
@@ -1256,8 +1602,17 @@ void corral::Loop(){
 					//---- construction -- RG was only computed/checked because SL already failed path 1).
 					bool flagDuplicate	= (SL < valSLCut);					// path 1 -- live since sec 17.6
 					bool flagComplementary	= (!flagDuplicate && !DISABLE_RG && RG>=0.0 && RG>=valRadialGapCut);	// path 2 -- sec 17.14/17.17
-					if (!flagDuplicate && !flagComplementary) continue;		// not flagged by either path
-					if (flagDuplicate) ++nFlagged_duplicate; else ++nFlagged_complementary;
+					//---- path 3 (README_SplitTracks573 sec 8, opt-in): exact MVTX match on >= valFullMVTX common
+					//---- layers, and abs(1/pt1-1/pt2) >= valFullMVTXdinv, whatever SL/RG say.
+					//---- sec 15: ">= valFullMVTX MATCHED MVTX layers" (was: all layers matched and >= N of them;
+					//---- identical for N = 3). Two shared MVTX clusters plus the common vertex already fix the
+					//---- trajectory, so N = 2 is still one particle unless abs(1/pt1-1/pt2) is tiny.
+					int nMatchMVTX	= (int)std::lround(mvtxFrac*mvtxDen);
+					bool flagFullMVTX	= (!flagDuplicate && !flagComplementary && valFullMVTX>0
+										&& mvtxDen>0 && nMatchMVTX>=valFullMVTX
+										&& fabs(1.0/pt[i]-1.0/pt[j])>=valFullMVTXdinv);
+					if (!flagDuplicate && !flagComplementary && !flagFullMVTX) continue;	// not flagged by any path
+					if (flagDuplicate) ++nFlagged_duplicate; else if (flagComplementary) ++nFlagged_complementary; else ++nFlagged_fullmvtx;
 					int loser = -1;
 					if (ntpc[i]!=ntpc[j]){
 						loser	= (ntpc[i]<ntpc[j]) ? i : j;
@@ -1267,6 +1622,8 @@ void corral::Loop(){
 					if (loser>=0
 					 && std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),loser)==nSplitFlagged_thisevt.end()){
 						nSplitFlagged_thisevt.push_back(loser);	// don't double-count if flagged by >1 partner
+						lsLosers_thisevt.push_back(loser);
+						loserPath_thisevt.push_back({loser, flagDuplicate ? 0 : (flagComplementary ? 1 : 2)});
 					}
 				}
 			}
@@ -1293,6 +1650,191 @@ void corral::Loop(){
 					}
 				}
 			}
+			//---- README_SplitTracks573 sec 6: diagnostic only (see the booking). Runs after all
+			//---- pre-pass flagging, so "surv" is final. Same pregate and cuts as the LS path above.
+			{
+				static const double D_DETA	= 0.022, D_DPHI = 4.1*M_PI/180.0;	// = PREGATE_DETA/DPHI
+				auto flagged = [&](int t){ return std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),t)!=nSplitFlagged_thisevt.end(); };
+				std::vector<int> ls;
+				for (int jt=0;jt<(*ntr);jt++){
+					if (isPeakDaughter(jt) || !AcceptTrack(jt) || (doOldPID && dedx70s[jt]>=400.) || chg[jt]==0) continue;	// README_PID.md sec 8
+					ls.push_back(jt);
+				}
+				for (int jt : ls){	// sec 28: sector-gap spokes (booking above)
+					const double aR	= 0.3*1.4/2.0*0.55;
+					int q		= chg[jt]>0 ? 0 : 1;
+					double pd	= phi[jt]*180.0/M_PI;
+					hSpoke[q][0]->Fill(pd,pt[jt]);
+					if (aR/pt[jt]<1.0){
+						double pr	= pd + (chg[jt]>0 ? 1.0 : -1.0)*asin(aR/pt[jt])*180.0/M_PI;	// sign from the data (sec 28): the gaps straighten
+						while (pr>= 180.) pr -= 360.;
+						while (pr< -180.) pr += 360.;
+						hSpoke[q][1]->Fill(pr,pt[jt]);
+					}
+				}
+				{	// sec 25: cosmic test (booking above)
+					const double mpi	= 0.13957;
+					auto rap = [&](int t){ double pz=pt[t]*sinh(eta[t]), p2=pt[t]*pt[t]+pz*pz, E=sqrt(p2+mpi*mpi); return 0.5*log((E+pz)/(E-pz)); };
+					std::vector<int> kp;
+					for (int t : ls) if (!flagged(t)) kp.push_back(t);
+					for (size_t ii=0;ii<kp.size();ii++) for (size_t jj=ii+1;jj<kp.size();jj++){
+						int i=kp[ii], j=kp[jj];
+						if (fabs(rap(i)-rap(j))>=0.1) continue;
+						double adp	= fabs(phi[i]-phi[j]); if (adp>M_PI) adp = 2*M_PI-adp;
+						adp *= 180.0/M_PI;
+						bool os		= chg[i]*chg[j]<0;
+						int w	= -1;
+						if (os && adp>=170.) w = 0; else if (os && adp>=150. && adp<160.) w = 1; else if (!os && adp>=170.) w = 2;
+						if (w<0) continue;
+						double ax	= phi[i]*180.0/M_PI; ax = fmod(ax+360.,180.);
+						hCos_axis[w]	->Fill(ax);
+						hCos_ptAsym[w]	->Fill((pt[i]-pt[j])/(pt[i]+pt[j]));
+						hCos_eta[w]		->Fill(eta[i]);
+						hCos_npi[w]		->Fill(kp.size());
+						hCos_vtxntr[w]	->Fill(*vtxntr);
+						hCos_pt[w]		->Fill(0.5*(pt[i]+pt[j]));
+						hCos_etotoh[w]	->Fill(*etotoh);
+						hCos_dcaxy[w]	->Fill(dcaxy[i],dcaxy[j]);
+						hCos_dcaz[w]	->Fill(dcaz[i],dcaz[j]);
+						{	// sec 25.1
+							double px1=pt[i]*cos(phi[i]), py1=pt[i]*sin(phi[i]), pz1=pt[i]*sinh(eta[i]);
+							double px2=pt[j]*cos(phi[j]), py2=pt[j]*sin(phi[j]), pz2=pt[j]*sinh(eta[j]);
+							double p1=sqrt(px1*px1+py1*py1+pz1*pz1), p2=sqrt(px2*px2+py2*py2+pz2*pz2);
+							double rs	= sqrt(pow(px1+px2,2)+pow(py1+py2,2)+pow(pz1+pz2,2))/(p1+p2);
+							double E	= sqrt(p1*p1+mpi*mpi)+sqrt(p2*p2+mpi*mpi);
+							double m2	= E*E - (pow(px1+px2,2)+pow(py1+py2,2)+pow(pz1+pz2,2));
+							double mi	= m2>0. ? sqrt(m2) : 0.;
+							hCos_psum[w]->Fill(rs);
+							hCos_minv[w]->Fill(mi);
+							if (rs<0.05){ hCos_axisBB[w]->Fill(ax); hCos_minvBB[w]->Fill(mi); }
+						}
+					}
+				}
+				if (fabs(*vtxz)<8.){	// sec 38: CM study (booking above)
+					double sg	= (*vtxz<0.) ? 1. : -1.;
+					auto wof	= [&](int t){ return (eta[t] + CM_K*(*vtxz))*sg; };
+					auto tpcfl	= [&](int t, int& f, int& l){ f=-1; l=-1; for (int b=7;b<55;b++) if ((layermask[t]>>b)&1ULL){ if (f<0) f=b-7; l=b-7; } };
+					auto nsi	= [&](int t){ int n=0; for (int b=0;b<7;b++) if ((layermask[t]>>b)&1ULL) ++n; return n; };
+					std::vector<int> kc; std::vector<int> cc;
+					for (int t : ls){
+						if (flagged(t)) continue;
+						double w	= wof(t);
+						hCM_w->Fill(w); hCM_w_ntpc->Fill(w,ntpc[t]); hCM_w_xing->Fill(w,*crossing);
+						int c	= (w>CM_BLO && w<CM_BHI) ? 0 : (fabs(w)>CM_CLO && fabs(w)<CM_CHI) ? 1 : -1;
+						if (c<0) continue;
+						int f,l; tpcfl(t,f,l); hCM_w_tpcfl[c]->Fill(f,l);
+						(c==0 ? kc : cc).push_back(t);
+					}
+					hCM_nbnc->Fill(cc.size(),kc.size());
+					for (int c=0;c<2;c++){
+						std::vector<int>& v	= (c==0) ? kc : cc;
+						for (size_t ii=0;ii<v.size();ii++) for (size_t jj=ii+1;jj<v.size();jj++){
+							int i=v[ii], j=v[jj];
+							if (c==1 && wof(i)*wof(j)<0.) continue;	// control: same side of the hole
+							int q	= (chg[i]*chg[j]<0) ? 0 : 1;
+							double dphi	= phi[i]-phi[j]; if (dphi> M_PI) dphi -= 2*M_PI; if (dphi<-M_PI) dphi += 2*M_PI;
+							hCM_dphideta[c][q]->Fill(eta[i]-eta[j],dphi*180.0/M_PI);
+							hCM_ntpc12[c][q]->Fill(ntpc[i],ntpc[j]);
+							hCM_nsi12[c][q]->Fill(nsi(i),nsi(j));
+							hCM_pt12[c][q]->Fill(pt[i],pt[j]);
+							hCM_ntpcsum[c][q]->Fill(ntpc[i]+ntpc[j]);
+							hCM_skf[c][q]->Fill(SiSplitScore(&siclukey[i*7],&siclukey[j*7],layermask[i],layermask[j]));
+							hCM_dw[c][q]->Fill(wof(i)-wof(j));
+						}
+					}
+				}
+				for (auto& lp : loserPath_thisevt){	// sec 19: per-path losers among accepted pions
+					if (std::find(ls.begin(),ls.end(),lp.first)==ls.end()) continue;
+					hLoserPath_pt[lp.second][chg[lp.first]>0?0:1]->Fill(pt[lp.first]);
+				}
+				for (int jt : ls){	// sec 15: charge asymmetry
+					int c	= chg[jt]>0 ? 0 : 1;
+					bool los	= std::find(lsLosers_thisevt.begin(),lsLosers_thisevt.end(),jt)!=lsLosers_thisevt.end();
+					hAsym_all_pt[c]->Fill(pt[jt]); hAsym_all_eta[c]->Fill(eta[jt]); hAsym_all_phi[c]->Fill(phi[jt]); hAsym_all_ntpc[c]->Fill(ntpc[jt]);
+					if (los){ hAsym_los_pt[c]->Fill(pt[jt]); hAsym_los_eta[c]->Fill(eta[jt]); hAsym_los_phi[c]->Fill(phi[jt]); hAsym_los_ntpc[c]->Fill(ntpc[jt]); }
+				}
+				for (size_t ii=0;ii<ls.size();ii++){
+					for (size_t jj=ii+1;jj<ls.size();jj++){
+						int i=ls[ii], j=ls[jj];
+						if (chg[i]*chg[j]<=0) continue;
+						double deta	= eta[i]-eta[j];
+						double dphi	= phi[i]-phi[j];
+						if (dphi> M_PI) dphi -= 2*M_PI;
+						if (dphi<-M_PI) dphi += 2*M_PI;
+						double dphideg	= dphi*180.0/M_PI;
+						if (fabs(deta)>=0.08 || fabs(dphideg)>=30.) continue;
+						int ic	= chg[i]>0 ? 0 : 1;
+						int ipc	= std::min(pt[i],pt[j])<0.2 ? 0 : 1;
+						bool surv	= !flagged(i) && !flagged(j);
+						double SKF	= SiSplitScore(&siclukey[i*7],&siclukey[j*7],layermask[i],layermask[j]);
+						bool hi		= (SKF>=valSiKeyCut);
+						{	// fine dphi0 slices (booking above); abs(deta) out to 0.08
+							int k	= (int)(DPsCentre(pt[i],pt[j])*180.0/M_PI/GATEFINE_W);
+							if (k>=0 && k<NGATEFINE){
+								hGateFine_all[k]->Fill(deta,dphideg);
+								if (hi)         hGateFine_hi[k]    ->Fill(deta,fabs(dphideg));
+								if (hi && surv) hGateFine_hiSurv[k]->Fill(deta,fabs(dphideg));
+								if (surv)       hGateFine_surv[k]  ->Fill(deta,fabs(dphideg));
+							}
+						}
+						if (fabs(deta)>=0.05) continue;
+						{
+							double dinv	= fabs(1.0/pt[i]-1.0/pt[j]);
+							int ib		= -1;
+							for (int k=0;k<NGATEVIS;k++) if (dinv>=GATEVIS_EDGE[k] && dinv<GATEVIS_EDGE[k+1]) ib = k;
+							if (ib>=0){
+								hGateVis_all[ib]->Fill(deta,dphideg);
+								if (hi)   hGateVis_hi[ib]  ->Fill(deta,dphideg);
+								if (surv) hGateVis_surv[ib]->Fill(deta,dphideg);
+								double res	= fabs(dphideg) - DPsCentre(pt[i],pt[j])*180.0/M_PI;
+								if (hi)   hGateVis_hiRes[ib]  ->Fill(deta,res);
+								if (hi)   hGateVis_dinvHi[ib] ->Fill(dinv);
+								if (surv) hGateVis_survRes[ib]->Fill(deta,res);
+							}
+						}
+						bool cen	= (fabs(deta)<0.034 && fabs(dphideg)<10.);
+						if (hi){	// sec 15: silicon match code
+							ULong64_t mA=layermask[i], mB=layermask[j]; int nM=0,dM=0,nI=0,dI=0;
+							for (int L=0;L<7;L++){ bool h=((mA>>L)&1ULL)||((mB>>L)&1ULL); bool mt=(siclukey[i*7+L]==siclukey[j*7+L] && siclukey[i*7+L]!=kSiKeySentinel);
+								if (L<3){ if(h)++dM; if(mt)++nM; } else { if(h)++dI; if(mt)++nI; } }
+							double xm=dM*4+nM, yi=dI*5+nI;
+							bool inG	= InLSPregate(deta,dphi,pt[i],pt[j]);
+							if (cen && !surv)        hD573_match[0]->Fill(xm,yi);
+							if (cen && surv && inG)  hD573_match[1]->Fill(xm,yi);
+							if (fabs(deta)>=0.04)    hD573_match[2]->Fill(xm,yi);
+						}
+						bool side	= (fabs(deta)<0.034 && fabs(dphideg)>=10.);
+						if (hi){
+							hD573_pos_allHi[ic][ipc]	->Fill(deta,dphideg);
+							hD573_dphiPtinv_allHi[ic]	->Fill(2.0/(pt[i]+pt[j]),dphideg*chg[i]);
+							if (surv) hD573_pos_survHi[ic][ipc]->Fill(deta,dphideg);
+							hD573_dphiDinvpt_allHi[ic]	->Fill(fabs(1.0/pt[i]-1.0/pt[j]),fabs(dphideg));
+							if (surv) hD573_dphiDinvpt_survHi[ic]->Fill(fabs(1.0/pt[i]-1.0/pt[j]),fabs(dphideg));
+						}
+						if (surv && cen)  hD573_SKF_surv_cen[ic][ipc] ->Fill(SKF);
+						if (surv && side) hD573_SKF_surv_side[ic][ipc]->Fill(SKF);
+						if (!(cen && hi)) continue;
+						int oc;
+						bool inEll	= InLSPregate(deta,dphi,pt[i],pt[j]);	// same gate as the LS path
+						if (!surv)			oc = 0;
+						else if (!inEll)	oc = 1;
+						else {
+							double SL	= ComputeSplitSL(layermask[i],layermask[j]);
+							double RG	= ComputeRadialGap(layermask[i],layermask[j]);
+							double mF,iF; int mD,iD;
+							SiKeyFracSplit(&siclukey[i*7],&siclukey[j*7],layermask[i],layermask[j],mF,mD,iF,iD);
+							bool fl		= (SL<valSLCut) || (!DISABLE_RG && RG>=0.0 && RG>=valRadialGapCut)
+										|| (valFullMVTX>0 && mD>0 && std::lround(mF*mD)>=valFullMVTX && fabs(1.0/pt[i]-1.0/pt[j])>=valFullMVTXdinv);
+							hD573_SL_survInEll[ic][ipc]->Fill(SL);
+							if (!doSplitRemoval)	oc = 4;
+							else if (!fl)			oc = 2;
+							else if (ntpc[i]==ntpc[j] && quality[i]==quality[j]) oc = 3;
+							else					oc = 4;
+						}
+						hD573_outcome[ic][ipc]->Fill(oc);
+					}
+				}
+			}
 			if (nSplitFlagged_thisevt.size()>0) ++nSplitFlagged_evts;
 			nSplitFlagged_total	+= (long)nSplitFlagged_thisevt.size();
 		}
@@ -1304,6 +1846,8 @@ void corral::Loop(){
 			calcr_n_1[ipaty] = 0;
 			calcr_n_2[ipaty] = 0;
 		}
+		std::vector<int> ridgePID((*ntr),-1);		// README_PID.md sec 8: PID (0 pi,1 K,2 p) of tracks entering the pair types
+		std::vector<double> ridgeY((*ntr),0.);
 		for (int it=0;it<(*ntr);it++){
 			//
 			hntpc0		->Fill(ntpc[it]);
@@ -1326,6 +1870,14 @@ void corral::Loop(){
 			//
 			//------------------------------
 			//
+			//---- README_PID.md sec 10.3: the phi-mask page (before the mask)
+			if (AcceptTrackBase(it) && chg[it]!=0){
+				int q	= chg[it]>0 ? 0 : 1;
+				double pd	= phi[it]*180.0/M_PI;
+				hmask_dcaxy[q]->Fill(pd,fabs(dcaxy[it]));
+				hmask_dcaz[q] ->Fill(pd,fabs(dcaz[it]));
+				hmask_pid->Fill(2*pidOf(it)+q, InSiPhiMask(it) ? 1 : 0);
+			}
 			//---- track quality cuts...
 			bool keeptrk	= AcceptTrack(it);
 			if (!keeptrk) continue;
@@ -1355,14 +1907,14 @@ void corral::Loop(){
 			int thisParticleID	= -1;
 			int thisSpecies		= -1;
 			int thisindV0		= -1;
-			if (chg[it]>0 && dedx70s[it]<400. ){ 			// Pi+
-				thisParticleID	= kParticleIDPionPlus;
-				thisSpecies		= 0;
-			} else if (chg[it]<0 && dedx70s[it]<400. ){ 	// Pi-
-				thisParticleID = kParticleIDPionMinus;
-				thisSpecies		= 0;
+			int thisPIDk		= pidOf(it);	// README_PID.md: 0 pi, 1 K, 2 p, 3 unidentified
+			if (thisPIDk<3 && chg[it]!=0){
+				const int pidPos[3]	= {kParticleIDPionPlus ,kParticleIDKaonPlus ,kParticleIDProton    };
+				const int pidNeg[3]	= {kParticleIDPionMinus,kParticleIDKaonMinus,kParticleIDAntiProton};
+				thisParticleID	= (chg[it]>0) ? pidPos[thisPIDk] : pidNeg[thisPIDk];
+				thisSpecies		= GetSpecies(thisParticleID);
 			}
-			thisindV0			= indv0[it];
+			thisindV0			= peakV0Of[it];		// README_PID.md sec 11/12: peak V0s only (tagged QA)
 			//
 			//------------------------------
 			//
@@ -1424,6 +1976,14 @@ void corral::Loop(){
 			habsdcaxy_phieta->Fill(eta[it],phi[it],fabs(dcaxy[it]));
 			habsdcaz_phieta	->Fill(eta[it],phi[it], fabs(dcaz[it]));
 			hdedx_phieta	->Fill(eta[it],phi[it],   dedx70s[it] );
+			if (chg[it]!=0){	// README_PID.md sec 10.2
+				const double aR	= 0.3*1.4/2.0*0.55;
+				int q		= chg[it]>0 ? 0 : 1;
+				double pd	= phi[it]*180.0/M_PI, pr = -999.;
+				if (aR/pt[it]<1.0){ pr = pd + (chg[it]>0 ? 1.0 : -1.0)*asin(aR/pt[it])*180.0/M_PI; while (pr>=180.) pr -= 360.; while (pr<-180.) pr += 360.; }
+				const double ad[2]	= {fabs(dcaxy[it]),fabs(dcaz[it])};
+				for (int d=0;d<2;d++){ hadca_phi[d][q][0]->Fill(pd,ad[d]); if (pr>-900.) hadca_phi[d][q][1]->Fill(pr,ad[d]); }
+			}
 			//
 			int kch=0; if(chg[it]<0){ kch=1; }
 			if (thisindV0>=0){				// is this track a v0 daughter?
@@ -1435,6 +1995,10 @@ void corral::Loop(){
 				double fillpt	= pt[it]; if (fillpt>4.99){ fillpt = 4.99; }
 								  hpt_tagged[kch][kv0]	->Fill(fillpt);
 				               hdedxp_tagged[kch][kv0]	->Fill(ptot[it],dedx70s[it]);
+				            hdedxKFPp_tagged[kch][kv0]	->Fill(ptot[it],dedxKFP[it]);
+				//---- README_PID.md: the proton is the + daughter of a Lambda, the - daughter of a Lbar
+				if ((kv0==1 && kch==0) || (kv0==2 && kch==1))	hPIDtagged[0]->Fill(ptot[it],thisPIDk);
+				if  (kv0==0)									hPIDtagged[1]->Fill(ptot[it],thisPIDk);
 			}
 			//
 			if (nmvtx[it]>0) heta_mvt	->Fill(eta[it]);
@@ -1444,6 +2008,14 @@ void corral::Loop(){
 			hptphi		->Fill(phi[it],pt[it]);
 			hdedxp		->Fill(ptot[it],dedx70s[it]);
 			hdedxpz		->Fill(ptot[it],dedx70s[it]);
+			hdedxKFPp	->Fill(ptot[it],dedxKFP[it]);
+			hdedxKFPp_id[thisPIDk]	->Fill(ptot[it],dedxKFP[it]);
+			if (dedx70s[it]>0.){ hdedxratio_p->Fill(ptot[it],dedxKFP[it]/dedx70s[it]); hdedxratio2_p->Fill(ptot[it],dedxKFP[it]/dedx70s[it]); }
+			hPIDcount	->Fill(2*thisPIDk + kch);
+			if (thisPIDk<3){ hpt_id[thisPIDk][kch]->Fill(pt[it]); hdcaxy_id[thisPIDk][kch]->Fill(pt[it],dcaxy[it]); hdcaz_id[thisPIDk][kch]->Fill(pt[it],dcaz[it]);
+				const double dv[4]	= {dcaxy[it],fabs(dcaxy[it]),dcaz[it],fabs(dcaz[it])};
+				for (int iv=0;iv<4;iv++) pdca_etaphi_id[thisPIDk][kch][iv]->Fill(eta[it],phi[it],dv[iv]);
+				hphieta_id[thisPIDk][kch]->Fill(eta[it],phi[it]); }
 			hdcaxy		->Fill(dcaxy[it]);
 			hdcaz		->Fill(dcaz[it]);
 			hdcaxyz		->Fill(dcaz[it],dcaxy[it]);
@@ -1472,6 +2044,12 @@ void corral::Loop(){
 				thisphi	= seedphi[it];
 				thispt	=  seedpt[it];
 			}
+			//---- README_PID.md: CalcRm wants RAPIDITY (it builds pz = mt*sinh(y)). eta -> y with the PID mass;
+			//---- the acceptance cut below stays on eta (the detector edge), and abs(y) <= abs(eta) always.
+			double thismt	= sqrt(thispt*thispt + Species_mass[thisSpecies]*Species_mass[thisSpecies]);
+			double thisy	= asinh(thispt*sinh(thiseta)/thismt);
+			if (thisPIDk<3 && thiseta>=thisYL && thiseta<thisYU) hypt_id[thisPIDk]->Fill(thisy,thispt);
+			if (!isPeakDaughter(it) && thiseta>=-1.1 && thiseta<1.1){ ridgePID[it] = thisPIDk; ridgeY[it] = thisy; }
 			//---- add this track to all PairType indices that this species is included in...
 			if (!NOCORRELATIONS){
 				for (int ipaty=0;ipaty<NPairTypes;ipaty++){
@@ -1479,8 +2057,7 @@ void corral::Loop(){
 					//---- protect against keeping a track for correlations that is a daughter of a V0 IN THIS SPECIFIC PAIR
 					//		keep track if not known as a V0 daughter
 					//		COULD keep track if a known daughter of V0, but that V0 is NOT part of this pair
-					int kIndexToV0	= indv0[it];
-					if ( kIndexToV0 >= 0 ){
+					if (isPeakDaughter(it)){		// README_PID.md sec 11/12: only peak V0s claim daughters
 						continue;
 					}
 					//
@@ -1490,8 +2067,8 @@ void corral::Loop(){
 					if (accept1){
 						if (thispt < Species_ptmin[thisSpecies]) accept1	= false;
 						if (thispt >=Species_ptmax[thisSpecies]) accept1	= false;
-						if (thiseta< thisYL ) accept1	= false;
-						if (thiseta>=thisYU ) accept1	= false;
+						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept1	= false;	// detector edge
+						if (thisy  <  pairYL1[ipaty]   || thisy  >= pairYU1[ipaty]   ) accept1	= false;	// class window (README_PID.md)
 					}
 					//---- check if this track is particle 2 for this pair type
 					bool accept2	= false;
@@ -1499,8 +2076,8 @@ void corral::Loop(){
 					if (accept2){
 						if (thispt < Species_ptmin[thisSpecies]) accept2	= false;
 						if (thispt >=Species_ptmax[thisSpecies]) accept2	= false;
-						if (thiseta< thisYL ) accept2	= false;
-						if (thiseta>=thisYU ) accept2	= false;
+						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept2	= false;	// detector edge
+						if (thisy  <  pairYL2[ipaty]   || thisy  >= pairYU2[ipaty]   ) accept2	= false;	// class window (README_PID.md)
 					}
 					if (accept1){		// this track is "Particle 1" in this PairType...
 						int kk = calcr_n_1[ipaty];
@@ -1508,7 +2085,7 @@ void corral::Loop(){
 							cout<<"reader::Loop -- PVEC1 FULL .. max="<<MAX_CALCR_N<<"\t ipaty="<<ipaty<<endl; 
 							exit(0);
 						}
-						Pvec_1[ipaty][kk][0]	= thiseta;
+						Pvec_1[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
 						Pvec_1[ipaty][kk][1]	= thisphi;
 						Pvec_1[ipaty][kk][2]	= thispt;
 						++calcr_n_1[ipaty];
@@ -1519,7 +2096,7 @@ void corral::Loop(){
 							cout<<"reader::Loop -- PVEC2 FULL .. max="<<MAX_CALCR_N<<"\t ipaty="<<ipaty<<endl;
 							exit(0);
 						}
-						Pvec_2[ipaty][kk][0]	= thiseta;
+						Pvec_2[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
 						Pvec_2[ipaty][kk][1]	= thisphi;
 						Pvec_2[ipaty][kk][2]	= thispt;
 						++calcr_n_2[ipaty];
@@ -1528,6 +2105,41 @@ void corral::Loop(){
 			}	// end nocorrelations
 			//
 		}	// end track loop
+		//---- README_PID.md sec 8: p-pi ULS ridge diagnostic (booking above)
+		for (int ip=0;ip<(*ntr);ip++){
+			if (ridgePID[ip]!=2) continue;
+			for (int jp=0;jp<(*ntr);jp++){
+				if (ridgePID[jp]!=0 || chg[ip]*chg[jp]>=0) continue;
+				int c		= (chg[ip]>0) ? 0 : 1;
+				if (fabs(ridgeY[ip]-ridgeY[jp])>=0.7) continue;
+				int ineg	= (chg[ip]<0) ? ip : jp, ipos = (chg[ip]<0) ? jp : ip;
+				double dphiD	= phi[ineg]-phi[ipos];
+				while (dphiD> M_PI) dphiD -= 2*M_PI;
+				while (dphiD<-M_PI) dphiD += 2*M_PI;
+				dphiD	*= 180./M_PI;
+				hRidge_dphi[c]->Fill(dphiD);
+				int b	= (dphiD>=-10. && dphiD<0.) ? 0 : ((dphiD>=0. && dphiD<10.) ? 1 : -1);
+				if (b<0) continue;
+				double px1=pt[ip]*cos(phi[ip]), py1=pt[ip]*sin(phi[ip]), pz1=pt[ip]*sinh(eta[ip]);
+				double px2=pt[jp]*cos(phi[jp]), py2=pt[jp]*sin(phi[jp]), pz2=pt[jp]*sinh(eta[jp]);
+				double p1=sqrt(px1*px1+py1*py1+pz1*pz1), p2=sqrt(px2*px2+py2*py2+pz2*pz2);
+				auto minv	= [&](double m1, double m2){
+					double e1=sqrt(p1*p1+m1*m1), e2=sqrt(p2*p2+m2*m2);
+					double m2t=(e1+e2)*(e1+e2)-(px1+px2)*(px1+px2)-(py1+py2)*(py1+py2)-(pz1+pz2)*(pz1+pz2);
+					return m2t>0. ? sqrt(m2t) : 0.;
+				};
+				const double me	= 0.000511;
+				hRidge_Mppi[b][c]	->Fill(minv(Species_mass[2],Species_mass[0]));
+				hRidge_Mee[b][c]	->Fill(minv(me,me));
+				double cosop	= (px1*px2+py1*py2+pz1*pz2)/(p1*p2);
+				hRidge_open[b][c]	->Fill(acos(std::max(-1.,std::min(1.,cosop)))*180./M_PI);
+				hRidge_prat[b][c]	->Fill(p2/p1);
+				hRidge_skf[b][c]	->Fill(SiSplitScore(&siclukey[ip*7],&siclukey[jp*7],layermask[ip],layermask[jp]));
+				hRidge_dcap[b][c]	->Fill(sqrt(dcaxy[ip]*dcaxy[ip]+dcaz[ip]*dcaz[ip]));
+				hRidge_dcapi[b][c]	->Fill(sqrt(dcaxy[jp]*dcaxy[jp]+dcaz[jp]*dcaz[jp]));
+				hRidge_ptp[b][c]	->Fill(pt[ip]);
+			}
+		}
 		//
 		//---- collect uncharged particles for class from V0 tree
 		bool SHOWV0	= false;
@@ -1559,6 +2171,8 @@ void corral::Loop(){
 				thismass	= (m2>0.) ? sqrt(m2) : 0.;
 				++nv0fixMass;
 			}
+			//---- README_PID.md: rapidity for CalcRm, from the V0 4-vector (px,py,pz,ene are always good)
+			double thisy	= 0.5*log((v0ene[iv0]+v0pz[iv0])/(v0ene[iv0]-v0pz[iv0]));
 			double thisctau	= v0ctau[iv0];
 			if (v0ctau[iv0]==0.0){	thisctau	= v0decaylen[iv0]*thismass/v0ptot[iv0];	++nv0fixCtau;	}	// ctau = L*m/p
 			double worseDCA	= WorseDaughterPVDCA(dcaxy,dcaz,v0indtr1[iv0],v0indtr2[iv0]);
@@ -1612,7 +2226,12 @@ void corral::Loop(){
 			}
 			//
 			//---- add this V0 to all PairType indices that this species is included in...
-			if (!NOCORRELATIONS){
+			//---- README_PID.md sec 12: only V0s in their mass peak enter the pairs (their daughters are out of the
+			//---- track lists); an off-peak candidate would be paired with its own daughter
+			const int kv	= (v0pid[iv0]==310) ? 0 : (v0pid[iv0]==3122) ? 1 : (v0pid[iv0]==-3122) ? 2 : -1;
+			const bool v0pair	= v0InPeak(iv0);
+			if (kv>=0){ ++nv0All[kv]; if (v0pair) ++nv0Paired[kv]; }
+			if (!NOCORRELATIONS && v0pair){
 				for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
 					//---- check if this track is particle 1 for this pair type
 					bool accept1	= false;
@@ -1620,8 +2239,8 @@ void corral::Loop(){
 					if (accept1){
 						if (thispt < Species_ptmin[thisSpecies]) accept1	= false;
 						if (thispt >=Species_ptmax[thisSpecies]) accept1	= false;
-						if (thiseta< thisYL ) accept1	= false;
-						if (thiseta>=thisYU ) accept1	= false;
+						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept1	= false;	// detector edge
+						if (thisy  <  pairYL1[ipaty]   || thisy  >= pairYU1[ipaty]   ) accept1	= false;	// class window (README_PID.md)
 					}
 					//---- check if this track is particle 2 for this pair type
 					bool accept2	= false;
@@ -1629,8 +2248,8 @@ void corral::Loop(){
 					if (accept2){
 						if (thispt < Species_ptmin[thisSpecies]) accept2	= false;
 						if (thispt >=Species_ptmax[thisSpecies]) accept2	= false;
-						if (thiseta< thisYL ) accept2	= false;
-						if (thiseta>=thisYU ) accept2	= false;
+						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept2	= false;	// detector edge
+						if (thisy  <  pairYL2[ipaty]   || thisy  >= pairYU2[ipaty]   ) accept2	= false;	// class window (README_PID.md)
 					}
 					if (accept1){		// this track is "Particle 1" in this PairType...
 						int kk = calcr_n_1[ipaty];
@@ -1639,7 +2258,7 @@ void corral::Loop(){
 							exit(0);
 						}
 						//cout<<"Incrementing 1... ipaty="<<ipaty<<"  k="<<kk<<"  n1="<<calcr_n_1[ipaty]<<" \t "<<ety<<endl;
-						Pvec_1[ipaty][kk][0]	= thiseta;
+						Pvec_1[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
 						Pvec_1[ipaty][kk][1]	= thisphi;
 						Pvec_1[ipaty][kk][2]	= thispt;
 						++calcr_n_1[ipaty];
@@ -1651,7 +2270,7 @@ void corral::Loop(){
 							exit(0);
 						}
 						//cout<<"Incrementing 2... ipaty="<<ipaty<<"  k="<<kk<<"  n2="<<calcr_n_2[ipaty]<<endl;
-						Pvec_2[ipaty][kk][0]	= thiseta;
+						Pvec_2[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
 						Pvec_2[ipaty][kk][1]	= thisphi;
 						Pvec_2[ipaty][kk][2]	= thispt;
 						++calcr_n_2[ipaty];
@@ -1792,6 +2411,7 @@ void corral::Loop(){
 	// 			}
 				//
 					R[ipaty]	->SetCurrentRunEvt((*run),(*evt));	// sec 18.20/18.23: (run,evt) uniquely IDs the
+					R[ipaty]	->SetCurrentNch(ntrkept);			// README_SplitTracks573 sec 34
 																	// trigger frame -- used by the mixNoAdjTF
 																	// neighboring-TF event-pair exclusion
 				R[ipaty]	->Increment((*vtxz),field,
@@ -1808,6 +2428,9 @@ void corral::Loop(){
 	TH1::AddDirectory(kTRUE);		// needed for clones in following calculations
 	//
 	cout<<"Run numbers seen = "<<run_lowest<<" - "<<run_highest<<endl;
+	cout<<"V0s in the pair types (README_PID.md sec 12, in their mass peak): K0s "<<nv0Paired[0]<<" of "<<nv0All[0]
+		<<", Lambda "<<nv0Paired[1]<<" of "<<nv0All[1]<<", Lbar "<<nv0Paired[2]<<" of "<<nv0All[2]
+		<<"; in-peak daughters that indv0 did not flag: "<<nPeakDauNotIndv0<<endl;
 	cout<<"V0 zero-sentinel fixes (README_v0etaSpike.md): eta "<<nv0fixEta<<"  phi "<<nv0fixPhi<<"  mass "<<nv0fixMass<<"  ctau "<<nv0fixCtau<<endl;
 	htrigRun		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
 	hrirun_ntrk		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
@@ -1976,6 +2599,12 @@ void corral::Loop(){
 			hMempty[ipaty]	= (TH2D*)R[ipaty]->GethMempty();
 			hMempty[ipaty]	->SetName(Form("hMempty_1_%d",ipaty));
 			hMempty[ipaty]	->SetTitle(Form("%s%s, # Zvtx slices with empty #rho_{2}(M) vs. (dy,d#phi);dy;d#phi",part1name.Data(),part2name.Data()));
+			for (int sm=0;sm<2;sm++) for (int is=0;is<2;is++) for (int ir=0;ir<4;ir++){	// README_SplitTracks573 sec 11
+				TH2D* ht	= R[ipaty]->GethTTR(sm,is,ir);
+				ht->SetName(Form("hTTR_%s_s%d_r%d_%d",sm?"M":"S",is,ir,ipaty));
+				ht->SetTitle(Form("%s%s, %s pairs, sign %s, %s;dy;#Delta#phi* (deg)",part1name.Data(),part2name.Data(),sm?"mixed":"sibling",is?"-":"+",
+					ir==0?"R=0.30 m":ir==1?"R=0.50 m":ir==2?"R=0.70 m":"min over R=0.30-0.78 m"));
+			}
 			hzoomM[ipaty]	= (TH2D*)R[ipaty]->GethZoomM();
 			hzoomM[ipaty]	->SetName(Form("hzoomM_%d",ipaty));
 			hzoomM[ipaty]	->SetTitle(Form("%s%s, mixed pairs, zoom;#Delta#eta;#Delta#phi (deg)",part1name.Data(),part2name.Data()));
@@ -2087,8 +2716,529 @@ void corral::Loop(){
 	text[itext]->DrawLatex(0.88,0.45,Form("pairs: duplicate=%ld complementary=%ld (sec 17.14)",nFlagged_duplicate,nFlagged_complementary));
 	++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.07);
 	text[itext]->DrawLatex(0.88,0.36,Form("ULS (opp-charge) tracks flagged=%ld (sec 18.10, track-level as of now)",nFlagged_ULS));
+	++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.07);
+	text[itext]->DrawLatex(0.88,0.27,Form("looper veto %s: tracks flagged=%ld (sec 35)",doLooperVeto?"ON":"OFF",nFlagged_Looper));
 	ccan[ican]->cd(); ccan[ican]->Update();
 	ccan[ican]->Print(OutputFileNameO.Data());
+
+	//---- README_SplitTracks573 sec 10: LS pregate before/after, in bins of abs(1/pt1-1/pt2). Rows: all LS
+	//---- pion pairs, SiSplitScore>=cut pairs (the split candidates), pairs with both tracks kept. Red: the
+	//---- gate at the bin's two edges (the current gate; with the fixed default both are the same ellipse);
+	//---- grey dashed: the old fixed ellipse (0.022 x 4.1 deg).
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+	ccan[ican]->cd();
+	TPad* gvTop	= new TPad("gvTop","",0.,0.95,1.,1.);	// strip for the gate definition
+	TPad* gvMain	= new TPad("gvMain","",0.,0.,1.,0.95);
+	gvTop->Draw(); gvMain->Draw();
+	gvMain->Divide(NGATEVIS,3,0.0001,0.0001);
+	{
+		//---- row 1: all LS pairs in plain dphi (index order, so the split lobes are mirrored), old
+		//---- ellipse for reference. Rows 2-3: SKF>=cut and kept pairs in the dps frame (abs(dphi) - dphi0),
+		//---- where the dps gate is one ellipse centred at 0. A gate centred at dphi=0 (fixed / dpg) is
+		//---- drawn in the same frame at the bin's central abs(1/pt1-1/pt2): the curve
+		//---- abs(dphi) = W sqrt(1-(deta/a)^2), shifted by -dphi0 (it reaches down to abs(dphi)=0, i.e. -dphi0).
+		TH2D** rows[3]	= { hGateVis_all, hGateVis_hiRes, hGateVis_survRes };
+		for (int ir=0;ir<3;ir++) for (int ib=0;ib<NGATEVIS;ib++){
+			gvMain->cd(1+ir*NGATEVIS+ib);
+			gPad->SetLogz(1); gPad->SetRightMargin(0.13); gPad->SetTopMargin(0.08);
+			rows[ir][ib]->SetMinimum(0.5);
+			if (ir==0 && hGateVis_dinvHi[ib]->GetEntries()>0)
+				rows[ir][ib]->SetTitle(Form("%s, mean %.2f",rows[ir][ib]->GetTitle(),hGateVis_dinvHi[ib]->GetMean()));
+			rows[ir][ib]->Draw("colz");
+			if (ir==0){
+				//---- the pregate in plain dphi, at the MEAN abs(1/pt1-1/pt2) of this column's split candidates
+				//---- (each pair's own gate differs slightly; rows 2-3 show it exactly, per pair)
+				double dm	= hGateVis_dinvHi[ib]->GetEntries()>0 ? hGateVis_dinvHi[ib]->GetMean() : 0.5*(GATEVIS_EDGE[ib]+GATEVIS_EDGE[ib+1]);
+				double pA	= 1.0/(1.0+dm);
+				{
+					//---- user 2026-09-27: centre each ellipse on the MEASURED peak (mean abs(dphi) of this column's
+					//---- SKF>=cut pairs) and draw it at the envelope of the column's per-pair gates: half-height
+					//---- w + half the spread of dphi0 across the column (dphi0 at the two bin edges).
+					double pk	= 0.;
+					{ TH2D* hh = hGateVis_hi[ib]; double sw=0, sy=0;
+					  for (int ix=1;ix<=hh->GetNbinsX();ix++) for (int iy=1;iy<=hh->GetNbinsY();iy++){ double v=hh->GetBinContent(ix,iy); sw+=v; sy+=v*fabs(hh->GetYaxis()->GetBinCenter(iy)); }
+					  pk = sw>0 ? sy/sw : DPsCentre(pA,1.0)*180.0/M_PI; }
+					double cLo	= DPsCentre(1.0/(1.0+GATEVIS_EDGE[ib]),1.0)*180.0/M_PI;
+					double cHi	= DPsCentre(1.0/(1.0+GATEVIS_EDGE[ib+1]),1.0)*180.0/M_PI;
+					double hw	= DPsWidth(cHi*M_PI/180.0)*180.0/M_PI + 0.5*(cHi-cLo);	// sec 33: width grows with dphi0
+					for (int sg=-1;sg<=1;sg+=2){
+						TEllipse* el	= new TEllipse(0.,sg*pk,valPregateDEta,hw);
+						el->SetFillStyle(0); el->SetLineColor(2); el->SetLineWidth(2); el->Draw();
+					}
+				}
+				TEllipse* el0	= new TEllipse(0.,0.,0.022,4.1);
+				el0->SetFillStyle(0); el0->SetLineColor(kGray+2); el0->SetLineWidth(2); el0->SetLineStyle(2); el0->Draw();
+				continue;
+			}
+			TLine* l0	= new TLine(-0.05,0.,0.05,0.); l0->SetLineColor(kGray+2); l0->SetLineStyle(3); l0->Draw();
+			double dmid	= 0.5*(GATEVIS_EDGE[ib]+GATEVIS_EDGE[ib+1]);
+			double ptA	= 1.0/(1.0+dmid);						// abs(1/ptA - 1/1) = dmid
+			double c	= DPsCentre(ptA,1.0)*180.0/M_PI;
+			{
+				TEllipse* el	= new TEllipse(0.,0.,valPregateDEta,DPsWidth(c*M_PI/180.0)*180.0/M_PI);
+				el->SetFillStyle(0); el->SetLineColor(2); el->SetLineWidth(2); el->Draw();
+			}
+			// the old fixed ellipse in this frame (grey dashed), at the same central abs(1/pt1-1/pt2)
+			TGraph* g0	= new TGraph();
+			for (int k=0;k<=100;k++){ double x=-0.022+0.044*k/100.; double u=std::max(0.0,1.0-(x/0.022)*(x/0.022)); g0->SetPoint(g0->GetN(),x,4.1*sqrt(u)-c); }
+			g0->SetPoint(g0->GetN(),0.022,-c); g0->SetPoint(g0->GetN(),-0.022,-c);
+			g0->SetLineColor(kGray+2); g0->SetLineWidth(2); g0->SetLineStyle(2); g0->Draw("L");
+		}
+		gvTop->cd();
+		++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.40); text[itext]->SetTextAlign(22);
+		TString sgate	= Form("#pm max(%.1f, %.0f(%.2f+%.2f#Delta#phi_{0})) around #Delta#phi_{0}(R=%.0f cm)",valDPsW,PREGATE_NSIG,PREGATE_S0,PREGATE_S1,100*valDPsR);
+		text[itext]->DrawLatex(0.5,0.5,Form("LS #pi pregate: #Delta#phi %s deg, #Delta#eta_{max}=%.3f.  Row 1: all pairs, gate at column mean.  Rows 2-3: SKF#geq%.2f / kept, per pair in |#Delta#phi|-#Delta#phi_{0}.  Grey: old",sgate.Data(),valPregateDEta,valSiKeyCut));
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
+	//---- user 2026-09-28: the pregate in fine slices of dphi0 (booking: hGateFine_*), three pages: SKF>=cut pairs,
+	//---- SKF>=cut pairs whose tracks both survive, all kept pairs. y = abs(dphi), the variable the gate cuts on,
+	//---- so the gate of a pair with centre dphi0 is exactly (deta/a)^2 + ((abs(dphi)-dphi0)/w)^2 < 1, cut off at
+	//---- abs(dphi) = 0 where dphi0 < w. Solid red: the gate at the slice centre; thin dashed: at the slice edges
+	//---- (every pair's own gate lies between them). Grey dashed: the old fixed ellipse (0.022 x 4.1 deg).
+	{
+		auto gateCurve	= [&](double a, double c, double w, int col, int lw, int ls){
+			TGraph* g	= new TGraph();
+			for (int k=0;k<=200;k++){ double t=M_PI*k/100.; double x=a*cos(t), y=c+w*sin(t); g->SetPoint(g->GetN(),x,std::max(0.0,y)); }
+			g->SetLineColor(col); g->SetLineWidth(lw); g->SetLineStyle(ls); g->Draw("L");
+		};
+		//---- page 0 = the gate page's row 1 (all LS pairs, signed dphi) in fine slices: the gate is the two
+		//---- ellipses at +-dphi0 (it cuts abs(dphi)), each pair's own gate between the dashed slice-edge curves
+		{
+			auto gateEll	= [&](double a, double c, double w, int col, int lw, int ls){
+				TGraph* g	= new TGraph();
+				for (int k=0;k<=200;k++){ double t=2*M_PI*k/200.; g->SetPoint(g->GetN(),a*cos(t),c+w*sin(t)); }
+				g->SetLineColor(col); g->SetLineWidth(lw); g->SetLineStyle(ls); g->Draw("L");
+			};
+			++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+			ccan[ican]->cd();
+			TPad* gaTop		= new TPad("gaTop","",0.,0.95,1.,1.);
+			TPad* gaMain	= new TPad("gaMain","",0.,0.,1.,0.95);
+			gaTop->Draw(); gaMain->Draw();
+			gaMain->Divide(4,4,0.0001,0.0001);
+			for (int k=0;k<NGATEFINE;k++){
+				gaMain->cd(1+k);
+				gPad->SetLogz(1); gPad->SetRightMargin(0.13); gPad->SetTopMargin(0.09);
+				TH2D* h	= hGateFine_all[k];
+				h->SetMinimum(0.5); h->SetStats(0);
+				h->SetTitle(Form("%s, N=%.0f",h->GetTitle(),h->GetEntries()));
+				h->Draw("colz");
+				double c0	= k*GATEFINE_W, c1 = (k+1)*GATEFINE_W;
+				for (int sg=-1;sg<=1;sg+=2){
+					gateEll(valPregateDEta,sg*c0,DPsWidth(c0*M_PI/180.0)*180.0/M_PI,2,1,2);
+					gateEll(valPregateDEta,sg*c1,DPsWidth(c1*M_PI/180.0)*180.0/M_PI,2,1,2);
+					gateEll(valPregateDEta,sg*0.5*(c0+c1),DPsWidth(0.5*(c0+c1)*M_PI/180.0)*180.0/M_PI,2,2,1);
+				}
+				gateEll(0.022,0.,4.1,kGray+2,2,2);
+			}
+			gaTop->cd();
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.36); text[itext]->SetTextAlign(22);
+			text[itext]->DrawLatex(0.5,0.5,Form("LS #pi pregate, %.1f#circ slices of #Delta#phi_{0}(R=%.0f cm): all LS pairs, signed #Delta#phi.  Red: (#Delta#eta/%.3f)^{2}+((|#Delta#phi|-#Delta#phi_{0})/w)^{2}<1, w = max(%.1f#circ, 3#sigma(#Delta#phi_{0})) at #pm#Delta#phi_{0}, slice centre / edges.  Grey: old",GATEFINE_W,100*valDPsR,valPregateDEta,valDPsW));
+			ccan[ican]->cd(); ccan[ican]->Update();
+			ccan[ican]->Print(OutputFileName.Data());
+		}
+		TH2D** pages[3]		= { hGateFine_hi, hGateFine_hiSurv, hGateFine_surv };
+		const char* pname[3]	= { "SiSplitScore #geq cut (split candidates)", "SiSplitScore #geq cut, both tracks kept (missed)", "all kept pairs" };
+		for (int ip=0;ip<3;ip++){
+			++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+			ccan[ican]->cd();
+			TPad* gfTop		= new TPad(Form("gfTop%d",ip),"",0.,0.95,1.,1.);
+			TPad* gfMain	= new TPad(Form("gfMain%d",ip),"",0.,0.,1.,0.95);
+			gfTop->Draw(); gfMain->Draw();
+			gfMain->Divide(4,4,0.0001,0.0001);
+			for (int k=0;k<NGATEFINE;k++){
+				gfMain->cd(1+k);
+				gPad->SetLogz(1); gPad->SetRightMargin(0.13); gPad->SetTopMargin(0.09);
+				TH2D* h	= pages[ip][k];
+				h->SetMinimum(0.5); h->SetStats(0);
+				h->SetTitle(Form("%s, N=%.0f",h->GetTitle(),h->GetEntries()));
+				h->Draw("colz");
+				double c0	= k*GATEFINE_W, c1 = (k+1)*GATEFINE_W;
+				gateCurve(valPregateDEta,c0,DPsWidth(c0*M_PI/180.0)*180.0/M_PI,2,1,2);
+				gateCurve(valPregateDEta,c1,DPsWidth(c1*M_PI/180.0)*180.0/M_PI,2,1,2);
+				gateCurve(valPregateDEta,0.5*(c0+c1),DPsWidth(0.5*(c0+c1)*M_PI/180.0)*180.0/M_PI,2,2,1);
+				gateCurve(0.022,0.,4.1,kGray+2,2,2);
+			}
+			gfTop->cd();
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.36); text[itext]->SetTextAlign(22);
+			text[itext]->DrawLatex(0.5,0.5,Form("LS #pi pregate, %.1f#circ slices of #Delta#phi_{0}(R=%.0f cm): %s.  Red: (#Delta#eta/%.3f)^{2}+((|#Delta#phi|-#Delta#phi_{0})/w)^{2}<1, w = max(%.1f#circ, 3#sigma(#Delta#phi_{0})), slice centre / edges.  Grey: old",GATEFINE_W,100*valDPsR,pname[ip],valPregateDEta,valDPsW));
+			ccan[ican]->cd(); ccan[ican]->Update();
+			ccan[ican]->Print(OutputFileName.Data());
+		}
+	}
+
+	//---- README_SplitTracks573 sec 25: cosmic test page (hCos_*): signal window (black), ULS control (blue), LS control (red),
+	//---- 1-D panels normalized to the signal window's entries
+	{
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+		ccan[ican]->cd(); ccan[ican]->Divide(4,3,0.0001,0.0001);
+		TH1D** one[7]	= { hCos_axis, hCos_ptAsym, hCos_eta, hCos_npi, hCos_vtxntr, hCos_pt, hCos_etotoh };
+		const int col[NCOS]	= { 1, 4, 2 };
+		for (int k=0;k<7;k++){
+			ccan[ican]->cd(1+k);
+			double n0	= one[k][0]->Integral();
+			TH1D* hd[NCOS];	// drawn copies: the stored histograms stay raw counts
+			for (int w=0;w<NCOS;w++){
+				hd[w]	= (TH1D*)one[k][w]->Clone(Form("%s_draw",one[k][w]->GetName())); hd[w]->SetDirectory(0);
+				if (w>0 && hd[w]->Integral()>0 && n0>0) hd[w]->Scale(n0/hd[w]->Integral());
+				hd[w]->SetLineColor(col[w]); hd[w]->SetMarkerColor(col[w]); hd[w]->SetStats(0);
+			}
+			double mx=0; for (int w=0;w<NCOS;w++) mx=std::max(mx,hd[w]->GetMaximum()); hd[0]->SetMaximum(1.15*mx);
+			for (int w=0;w<NCOS;w++) hd[w]->Draw(w==0 ? "hist" : "hist same");
+		}
+		for (int w=0;w<NCOS;w++){ ccan[ican]->cd(8+w); gPad->SetLogz(1); hCos_dcaxy[w]->SetStats(0); hCos_dcaxy[w]->Draw("colz"); }
+		ccan[ican]->cd(11); gPad->SetLogz(1); hCos_dcaz[0]->SetStats(0); hCos_dcaz[0]->Draw("colz");
+		ccan[ican]->cd(12); gPad->SetLogz(1); hCos_dcaz[1]->SetStats(0); hCos_dcaz[1]->Draw("colz");
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+	//---- sec 25.1: p1 = -p2 pairs. Top: overlays as above (black w0 = OS >= 170 deg, blue w1 = OS 150-160, red w2 = LS >= 170;
+	//---- w1, w2 scaled to w0's entries). Bottom: w0/w1 (raw counts, / the overall w0/w1). Cosmic halves: rel. p sum ~ 0,
+	//---- broad Minv at 2|p| (> 2 GeV for most muons), axis peaked at 90 deg (vertical). A decay at rest: a fixed Minv.
+	{
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,800);
+		ccan[ican]->cd(); ccan[ican]->Divide(4,2,0.0001,0.0001);
+		TH1D** one[4]	= { hCos_psum, hCos_minv, hCos_axisBB, hCos_minvBB };
+		const int col[NCOS]	= { 1, 4, 2 };
+		const char* wl[NCOS]	= { "OS, |#Delta#phi|#geq170#circ", "OS, 150-160#circ (control)", "LS, #geq170#circ (control)" };
+		double r01	= (hCos_axis[1]->Integral()>0) ? hCos_axis[0]->Integral()/hCos_axis[1]->Integral() : 1.;
+		for (int k=0;k<4;k++){
+			ccan[ican]->cd(1+k);
+			double n0	= one[k][0]->Integral();
+			TH1D* hd[NCOS];
+			for (int w=0;w<NCOS;w++){
+				hd[w]	= (TH1D*)one[k][w]->Clone(Form("%s_draw",one[k][w]->GetName())); hd[w]->SetDirectory(0);
+				if (w>0 && hd[w]->Integral()>0 && n0>0) hd[w]->Scale(n0/hd[w]->Integral());
+				hd[w]->SetLineColor(col[w]); hd[w]->SetStats(0);
+			}
+			double mx=0; for (int w=0;w<NCOS;w++) mx=std::max(mx,hd[w]->GetMaximum()); hd[0]->SetMaximum(1.15*mx); hd[0]->SetMinimum(0.);
+			for (int w=0;w<NCOS;w++) hd[w]->Draw(w==0 ? "hist" : "hist same");
+			if (k==0){ TLegend *lg = new TLegend(0.35,0.62,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.042);
+				for (int w=0;w<NCOS;w++) lg->AddEntry(hd[w],wl[w],"l"); lg->Draw(); }
+			ccan[ican]->cd(5+k);
+			TH1D *r	= (TH1D*)one[k][0]->Clone(Form("%s_r01",one[k][0]->GetName())); r->SetDirectory(0);
+			r->Divide(one[k][1]); if (r01>0) r->Scale(1./r01);
+			r->SetTitle(Form("w0/w1 / overall (%.3f);%s;ratio",r01,one[k][0]->GetXaxis()->GetTitle()));
+			r->SetStats(0); r->SetMarkerStyle(20); r->SetMarkerSize(0.5); r->SetMinimum(0.5); r->SetMaximum(2.0);
+			r->Draw("E1");
+			TLine *l1	= new TLine(r->GetXaxis()->GetXmin(),1.,r->GetXaxis()->GetXmax(),1.); l1->SetLineColor(kGray); l1->Draw();
+			r->Draw("E1 same");
+		}
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+
+	//---- README_SplitTracks573 sec 34: the +-15 deg ULS notch MONITOR (a ULS sibling-pair deficit at 10-20 deg vertex dphi,
+	//---- not made by any Corral cleaner, sec 32-33). Pions, abs(dy) < 1, S/M each / its 25 <= abs(dphi) < 50 deg level.
+	//---- Top: ULS (0+1) and LS (2+3) S/M vs dphi, the notch band shaded; ULS S and M separately. Bottom: the notch band
+	//---- (10-20 deg / 25-50 deg) vs pair <pt> and vs accepted N_ch, ULS (red) and LS (black); ULS S/M vs dphi in N_ch groups.
+	if (!NOCORRELATIONS){
+		gStyle->SetOptTitle(1);
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1600,800);
+		ccan[ican]->cd(); ccan[ican]->Divide(4,2,0.0001,0.0001);
+		auto sum2	= [&](TH2D* (CalcRm::*get)(int), int sm, int a, int b, const char* nm){
+			TH2D *h	= (TH2D*)(R[a]->*get)(sm)->Clone(nm); h->SetDirectory(0); h->Add((R[b]->*get)(sm)); return h; };
+		//---- S/M vs dphi (2 deg) of the y rows [y0,y1] of S and M, / its 25-50 deg level
+		auto shapeDphi	= [&](TH2D *S, TH2D *M, int y0, int y1, const char* nm){
+			TH1D *s1 = S->ProjectionX(Form("%s_s",nm),y0,y1), *m1 = M->ProjectionX(Form("%s_m",nm),y0,y1); s1->Rebin(2); m1->Rebin(2);
+			double sr=0,mr=0; for (int i=1;i<=s1->GetNbinsX();i++){ double x=fabs(s1->GetBinCenter(i)); if (x>=25&&x<50){ sr+=s1->GetBinContent(i); mr+=m1->GetBinContent(i); } }
+			TH1D *r	= (TH1D*)s1->Clone(nm); r->Reset(); r->SetDirectory(0);
+			for (int i=1;i<=s1->GetNbinsX();i++){ double sv=s1->GetBinContent(i), mv=m1->GetBinContent(i); if (sv>0&&mv>0&&sr>0&&mr>0){ double v=(sv/mv)/(sr/mr); r->SetBinContent(i,v); r->SetBinError(i,v*sqrt(1/sv+1/sr)); } }
+			delete s1; delete m1; r->SetStats(0); return r; };
+		//---- the notch band ratio vs the y axis of (S,M)
+		auto bandY	= [&](TH2D *S, TH2D *M, const char* nm){
+			TH1D *h	= S->ProjectionY(nm); h->Reset(); h->SetDirectory(0);
+			for (int iy=1;iy<=S->GetNbinsY();iy++){ double sb=0,mb=0,sr=0,mr=0;
+				for (int ix=1;ix<=S->GetNbinsX();ix++){ double x=fabs(S->GetXaxis()->GetBinCenter(ix)), sv=S->GetBinContent(ix,iy), mv=M->GetBinContent(ix,iy);
+					if (x>=10&&x<20){ sb+=sv; mb+=mv; } if (x>=25&&x<50){ sr+=sv; mr+=mv; } }
+				if (sb>0&&mb>0&&sr>0&&mr>0){ double v=(sb/mb)/(sr/mr); h->SetBinContent(iy,v); h->SetBinError(iy,v*sqrt(1/sb+1/sr)); } }
+			h->SetStats(0); return h; };
+		auto one	= [&](TH1D *h, int col, const char* opt){ h->SetLineColor(col); h->SetMarkerColor(col); h->SetMarkerStyle(20); h->SetMarkerSize(0.5); h->Draw(opt); };
+		auto band	= [&](double y0, double y1){ for (int sg=-1;sg<=1;sg+=2){ TBox *b = new TBox(sg>0?10.:-20.,y0,sg>0?20.:-10.,y1); b->SetFillColorAlpha(kGray,0.35); b->SetLineWidth(0); b->Draw(); } };
+		auto unity	= [&](double x0, double x1){ TLine *l = new TLine(x0,1.,x1,1.); l->SetLineColor(kGray+1); l->Draw(); };
+		TH2D *uS = sum2(&CalcRm::GethGapPt,0,0,1,"nm_uS"), *uM = sum2(&CalcRm::GethGapPt,1,0,1,"nm_uM");
+		TH2D *lS = sum2(&CalcRm::GethGapPt,0,2,3,"nm_lS"), *lM = sum2(&CalcRm::GethGapPt,1,2,3,"nm_lM");
+		TH2D *uSn = sum2(&CalcRm::GethGapNch,0,0,1,"nm_uSn"), *uMn = sum2(&CalcRm::GethGapNch,1,0,1,"nm_uMn");
+		TH2D *lSn = sum2(&CalcRm::GethGapNch,0,2,3,"nm_lSn"), *lMn = sum2(&CalcRm::GethGapNch,1,2,3,"nm_lMn");
+		int npt	= uS->GetNbinsY(), nnc = uSn->GetNbinsY();
+		//---- pad 1: ULS and LS shapes
+		ccan[ican]->cd(1);
+		TH1D *ru = shapeDphi(uS,uM,1,npt,"nm_ru"), *rl = shapeDphi(lS,lM,1,npt,"nm_rl");
+		double notchU	= 0, notchL = 0;
+		{ TH1D *bu = bandY(uS,uM,"nm_bu_all"); TH1D *bl = bandY(lS,lM,"nm_bl_all");
+		  // all pt: from the summed rows
+		  TH2D *uS1 = (TH2D*)uS->RebinY(npt,"nm_uS1"), *uM1 = (TH2D*)uM->RebinY(npt,"nm_uM1"), *lS1 = (TH2D*)lS->RebinY(npt,"nm_lS1"), *lM1 = (TH2D*)lM->RebinY(npt,"nm_lM1");
+		  notchU = bandY(uS1,uM1,"nm_nu")->GetBinContent(1); notchL = bandY(lS1,lM1,"nm_nl")->GetBinContent(1); delete bu; delete bl; }
+		ru->SetTitle(Form("#pi#pi S/M / (25-50#circ), |dy|<1: notch band 10-20#circ = %.3f (ULS), %.3f (LS);#Delta#phi_{vtx} (deg);ratio",notchU,notchL));
+		ru->SetMinimum(0.9); ru->SetMaximum(1.1); ru->Draw("E1"); band(0.9,1.1); unity(-60,60);
+		one(ru,kRed,"E1 same"); one(rl,kBlack,"E1 same");
+		{ TLegend *lg = new TLegend(0.14,0.14,0.60,0.30); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+		  lg->AddEntry(ru,"ULS (#pi^{+}#pi^{-}, #pi^{-}#pi^{+})","lp"); lg->AddEntry(rl,"LS (#pi^{+}#pi^{+}, #pi^{-}#pi^{-})","lp"); lg->AddEntry((TObject*)0,"gray: the notch band","");
+		  lg->Draw(); }
+		//---- pad 2: ULS S and M separately (each / its 25-50 deg mean): which one has the notch
+		ccan[ican]->cd(2);
+		{ TH1D *s1 = uS->ProjectionX("nm_s1"), *m1 = uM->ProjectionX("nm_m1"); s1->Rebin(2); m1->Rebin(2); s1->SetDirectory(0); m1->SetDirectory(0);
+		  double sr=0,mr=0; int nr=0; for (int i=1;i<=s1->GetNbinsX();i++){ double x=fabs(s1->GetBinCenter(i)); if (x>=25&&x<50){ sr+=s1->GetBinContent(i); mr+=m1->GetBinContent(i); ++nr; } }
+		  if (sr>0&&mr>0){ s1->Scale(nr/sr); m1->Scale(nr/mr); }
+		  s1->SetStats(0); s1->SetTitle("ULS #pi#pi: sibling S (red) and mixed M (blue), each / its 25-50#circ mean;#Delta#phi_{vtx} (deg);/ 25-50#circ mean");
+		  s1->SetMinimum(0.4); s1->SetMaximum(1.2); s1->Draw("E1"); band(0.4,1.2); unity(-60,60); one(s1,kRed,"hist same"); one(m1,kBlue,"hist same"); }
+		//---- pad 3: ULS S/M in N_ch groups
+		ccan[ican]->cd(3);
+		{ const int grp[4][2]	= {{1,3},{4,6},{7,8},{9,nnc}}; const int gc[4] = {kBlue,kGreen+2,kOrange+7,kRed};
+		  TLegend *lg = new TLegend(0.14,0.14,0.60,0.34); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+		  for (int g=0;g<4;g++){ TH1D *r = shapeDphi(uSn,uMn,grp[g][0],grp[g][1],Form("nm_rn%d",g));
+			if (g==0){ r->SetTitle("ULS #pi#pi S/M / (25-50#circ) in N_{ch} groups;#Delta#phi_{vtx} (deg);ratio"); r->SetMinimum(0.85); r->SetMaximum(1.15); r->Draw("E1"); band(0.85,1.15); unity(-60,60); }
+			one(r,gc[g],"E1 same");
+			lg->AddEntry(r,Form("N_{ch} %.0f-%.0f",uSn->GetYaxis()->GetBinLowEdge(grp[g][0])+0.5,uSn->GetYaxis()->GetBinUpEdge(grp[g][1])-0.5),"lp"); }
+		  lg->Draw(); }
+		//---- pads 4 and 7 (sec 34.2): S/M vs the pair's meeting radius R_m (where the tracks meet in phi), / the overall S/M, in the notch band (pad 4)
+		//---- and at every dphi (pad 7); gray = the INTT-TPC gap (0.1-0.3 m), where pairs that meet there are lost
+		{
+			TH2D *xS[2], *xM[2];
+			for (int k=0;k<2;k++){ xS[k] = sum2(&CalcRm::GethGapRm,0,k?2:0,k?3:1,Form("nm_xS%d",k)); xM[k] = sum2(&CalcRm::GethGapRm,1,k?2:0,k?3:1,Form("nm_xM%d",k)); }
+			for (int pad=0;pad<2;pad++){
+				ccan[ican]->cd(pad==0?4:7);
+				TH1D *h[2];
+				for (int k=0;k<2;k++){
+					TH2D *S = xS[k], *M = xM[k];
+					double sT = S->Integral(), mT = M->Integral();
+					int a1 = S->GetXaxis()->FindBin(-19.99), a2 = S->GetXaxis()->FindBin(-10.01), b1 = S->GetXaxis()->FindBin(10.01), b2 = S->GetXaxis()->FindBin(19.99);
+					h[k]	= S->ProjectionY(Form("nm_rx%d%d",pad,k)); h[k]->Reset(); h[k]->SetDirectory(0);
+					for (int iy=1;iy<S->GetNbinsY();iy++){	// the last bin = no crossing, left out
+						double sv = pad==0 ? S->Integral(a1,a2,iy,iy)+S->Integral(b1,b2,iy,iy) : S->Integral(1,S->GetNbinsX(),iy,iy);
+						double mv = pad==0 ? M->Integral(a1,a2,iy,iy)+M->Integral(b1,b2,iy,iy) : M->Integral(1,M->GetNbinsX(),iy,iy);
+						if (sv<200 || mv<=0 || sT<=0 || mT<=0) continue;
+						double v = (sv/mv)/(sT/mT); h[k]->SetBinContent(iy,v); h[k]->SetBinError(iy,v/sqrt(sv));
+					}
+					h[k]->SetStats(0);
+				}
+				h[0]->SetTitle(Form("S/M vs meeting radius R_{m} (tracks meet in #phi), %s: ULS (red), LS (black);R_{m} (m);S/M / overall",pad==0?"10-20#circ (notch band)":"all #Delta#phi"));
+				h[0]->GetXaxis()->SetRangeUser(0.,1.0); h[0]->SetMinimum(0.85); h[0]->SetMaximum(pad==0?1.25:1.10);
+				one(h[0],kRed,"E1");
+				TBox *gap = new TBox(0.10,0.85,0.30,pad==0?1.25:1.10); gap->SetFillColorAlpha(kGray,0.35); gap->SetLineWidth(0); gap->Draw();
+				unity(0.,1.0); one(h[0],kRed,"E1 same"); one(h[1],kBlack,"E1 same");
+				if (pad==0){ TLegend *lg = new TLegend(0.40,0.70,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+					lg->AddEntry(h[0],"ULS","lp"); lg->AddEntry(h[1],"LS","lp"); lg->AddEntry((TObject*)0,"gray: INTT-TPC gap, 0.1-0.3 m",""); lg->Draw(); }
+			}
+		}
+		//---- pads 5-6: the notch band vs <pt> and vs N_ch, ULS red, LS black
+		for (int k=0;k<2;k++){
+			ccan[ican]->cd(5+k);
+			TH1D *bu = k ? bandY(uSn,uMn,"nm_bun") : bandY(uS,uM,"nm_bup");
+			TH1D *bl = k ? bandY(lSn,lMn,"nm_bln") : bandY(lS,lM,"nm_blp");
+			bu->SetTitle(Form("notch band (10-20#circ / 25-50#circ) vs %s: ULS (red), LS (black);%s;ratio",k?"N_{ch}":"pair #LTp_{T}#GT",k?"N_{ch} accepted":"#LTp_{T}#GT (GeV/c)"));
+			bu->SetMinimum(0.85); bu->SetMaximum(1.10); bu->Draw("E1"); unity(bu->GetXaxis()->GetXmin(),bu->GetXaxis()->GetXmax());
+			one(bu,kRed,"E1 same"); one(bl,kBlack,"E1 same");
+		}
+		//---- pad 8: text
+		ccan[ican]->cd(8);
+		TPaveText *pt	= new TPaveText(0.03,0.03,0.97,0.97,"NDC"); pt->SetFillColor(0); pt->SetBorderSize(1); pt->SetTextAlign(12); pt->SetTextSize(0.032);
+		pt->AddText("The #pm15#circ ULS notch: WATCH (README_SplitTracks573 sec 32-34)");
+		pt->AddText(Form("  notch band / 25-50#circ, all pairs: ULS %.3f, LS %.3f",notchU,notchL));
+		pt->AddText("  a deficit of ULS SIBLING pairs (pad 2); LS has none");
+		pt->AddText("  not made by any Corral cleaner: ULS veto, crossing,");
+		pt->AddText("    V0 daughters, LS split removal, XTF, TFdup");
+		pt->AddText("  flat in pair #LT#phi#GT (no stave/ladder period) and #LTy#GT");
+		pt->AddText("  also in the raw Collect trees and in ana532 (sec 28)");
+		pt->AddText("  CAUSE (sec 34.2): pairs whose tracks meet in #phi at R 0.1-0.3 m");
+		pt->AddText("    (INTT-TPC gap: silicon-TPC seed matching) are lost (pad 4)");
+		pt->Draw();
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+
+	//---- README_SplitTracks573 sec 28: the TPC sector gaps. Page 1: the single-track "spokes" (hSpoke, each pt row
+	//---- divided by its mean): bent at the vertex, straight at R = 0.55 m. Page 2: the pair-level smoking gun (hGap,
+	//---- CalcRm): sibling and mixed pairs vs (dphi, s), s = the pair's bending-offset difference at R; the gaps line
+	//---- up on the diagonals dphi - s = 0, +-30, ... in both. R2(dphi) summed over s (= the standard projection)
+	//---- vs R2 formed in each s bin and averaged with weights w_s = sum over dphi of M_s (no dphi dependence).
+	{
+		auto rowNorm	= [&](TH2D* h, const char* nm){
+			TH2D* c	= (TH2D*)h->Clone(nm); c->SetDirectory(0);
+			for (int iy=1;iy<=c->GetNbinsY();iy++){
+				double sw=0; int n=0;
+				for (int ix=1;ix<=c->GetNbinsX();ix++){ sw+=c->GetBinContent(ix,iy); ++n; }
+				double m	= n>0 ? sw/n : 0.;
+				for (int ix=1;ix<=c->GetNbinsX();ix++) c->SetBinContent(ix,iy, m>0 ? c->GetBinContent(ix,iy)/m : 0.);
+			}
+			c->SetStats(0); c->SetMinimum(0.); c->SetMaximum(1.6);
+			return c;
+		};
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+		ccan[ican]->cd();
+		TPad* spTop		= new TPad("spTop","",0.,0.95,1.,1.);
+		TPad* spMain	= new TPad("spMain","",0.,0.,1.,0.95);
+		spTop->Draw(); spMain->Draw();
+		spMain->Divide(3,2,0.0001,0.0001);
+		for (int q=0;q<2;q++){
+			for (int f=0;f<2;f++){
+				spMain->cd(1+3*q+f); gPad->SetRightMargin(0.13);
+				rowNorm(hSpoke[q][f],Form("hSpoke_draw_%d_%d",q,f))->Draw("colz");
+			}
+			spMain->cd(3+3*q);
+			int b0	= hSpoke[q][0]->GetYaxis()->FindBin(0.301), b1 = hSpoke[q][0]->GetYaxis()->FindBin(0.599);
+			TH1D* pv	= hSpoke[q][0]->ProjectionX(Form("hSpokeV_%d",q),b0,b1); pv->SetDirectory(0);
+			TH1D* pr	= hSpoke[q][1]->ProjectionX(Form("hSpokeR_%d",q),b0,b1); pr->SetDirectory(0);
+			for (TH1D* h : {pv,pr}){ double m=h->Integral()/h->GetNbinsX(); if (m>0) h->Scale(1.0/m); h->SetStats(0); }
+			pv->SetTitle(Form("%s, 0.3<p_{T}<0.6 GeV/c: vertex #phi (black), #phi at R=0.55 m (red);#phi (deg);relative yield",q?"negative":"positive"));
+			pv->SetLineColor(1); pr->SetLineColor(2); pv->SetMinimum(0.); pv->SetMaximum(1.6);
+			pv->Draw("hist"); pr->Draw("hist same");
+		}
+		spTop->cd();
+		++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.36); text[itext]->SetTextAlign(22);
+		text[itext]->DrawLatex(0.5,0.5,"TPC sector gaps (accepted charged tracks, each p_{T} row / its mean): at the vertex a gap is a spoke #phi_{gap}+q asin(aR/p_{T}), bent oppositely for + and -; at R=0.55 m it is a vertical line");
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+	if (!NOCORRELATIONS){
+		//---- page 2: rows pi+pi+ and pi+pi- (0.4 <= abs(dy) < 1.0): S, M, R2_s maps and the 1-D comparison; row 3:
+		//---- the 1-D comparison for pi-pi-, pi-pi+ (far) and pi+pi+, pi+pi- (abs(dy) < 0.4). M is normalized so that
+		//---- the s-summed R2 over abs(dphi) < 60 deg equals the mean of the standard R2(dy,dphi) map in the same window.
+		struct GapOut { TH2D *S,*M,*R; TH1D *plain,*corr; };
+		auto gapBuild	= [&](int ip, int w)->GapOut{
+			GapOut g;
+			g.S	= (TH2D*)R[ip]->GethGap(0,w)->Clone(Form("hGapS_draw_%d_%d",ip,w)); g.S->SetDirectory(0); g.S->RebinX(3);
+			g.M	= (TH2D*)R[ip]->GethGap(1,w)->Clone(Form("hGapM_draw_%d_%d",ip,w)); g.M->SetDirectory(0); g.M->RebinX(3);
+			double r2ref=0; int nref=0;
+			TH2D* hm	= hR2[1][ip];
+			for (int ix=1;ix<=hm->GetNbinsX();ix++) for (int iy=1;iy<=hm->GetNbinsY();iy++){
+				double ady=fabs(hm->GetXaxis()->GetBinCenter(ix)), dp=hm->GetYaxis()->GetBinCenter(iy);
+				bool in	= (w==0) ? (ady>=0.4 && ady<1.0) : (ady<0.4);
+				if (in && fabs(dp)<60.){ r2ref+=hm->GetBinContent(ix,iy); ++nref; }
+			}
+			r2ref	= nref>0 ? r2ref/nref : 0.;
+			double sS=g.S->Integral(), sM=g.M->Integral();
+			double kM	= (sM>0) ? sS/((1.0+r2ref)*sM) : 1.;
+			g.M->Scale(kM);
+			int nx=g.S->GetNbinsX(), ny=g.S->GetNbinsY();
+			g.R	= (TH2D*)g.S->Clone(Form("hGapR_draw_%d_%d",ip,w)); g.R->Reset(); g.R->SetDirectory(0);
+			g.plain	= g.S->ProjectionX(Form("hGapP_%d_%d",ip,w)); g.plain->Reset(); g.plain->SetDirectory(0);
+			g.corr	= (TH1D*)g.plain->Clone(Form("hGapC_%d_%d",ip,w)); g.corr->SetDirectory(0);
+			std::vector<double> ws(ny+1,0.);
+			for (int iy=1;iy<=ny;iy++) for (int ix=1;ix<=nx;ix++) ws[iy]+=g.M->GetBinContent(ix,iy);
+			for (int ix=1;ix<=nx;ix++){
+				double ss=0, mm=0, cn=0, ce2=0, cw=0;
+				for (int iy=1;iy<=ny;iy++){
+					double sv=g.S->GetBinContent(ix,iy), mv=g.M->GetBinContent(ix,iy);
+					ss+=sv; mm+=mv;
+					if (mv<=0.) continue;
+					if (mv/kM>=10.) g.R->SetBinContent(ix,iy,sv/mv-1.);	// map only: cells with >= 10 raw mixed pairs
+					cn	+= ws[iy]*sv/mv; ce2 += ws[iy]*ws[iy]*sv/(mv*mv); cw += ws[iy];
+				}
+				if (mm>0){ g.plain->SetBinContent(ix,ss/mm-1.); g.plain->SetBinError(ix,sqrt(ss)/mm); }
+				if (cw>0){ g.corr->SetBinContent(ix,cn/cw-1.); g.corr->SetBinError(ix,sqrt(ce2)/cw); }
+			}
+			return g;
+		};
+		auto gapGrid	= [&](double lo, double hi){
+			for (int k=-2;k<=2;k++){ double x=15.*(2*k+1); if (x<=-60.||x>=60.) continue;
+				TLine* l=new TLine(x,lo,x,hi); l->SetLineColor(kGray+1); l->SetLineStyle(2); l->Draw(); }
+			for (int k=-1;k<=1;k++){ TLine* l=new TLine(30.*k,lo,30.*k,hi); l->SetLineColor(kGray+1); l->SetLineStyle(3); l->Draw(); }
+		};
+		auto gap1D	= [&](GapOut& g, const char* title){
+			g.plain->SetTitle(Form("%s;#Delta#phi (deg);R_{2}",title)); g.plain->SetStats(0);
+			g.plain->SetLineColor(1); g.plain->SetMarkerColor(1); g.plain->SetMarkerStyle(20); g.plain->SetMarkerSize(0.6);
+			g.corr->SetLineColor(2); g.corr->SetMarkerColor(2); g.corr->SetMarkerStyle(24); g.corr->SetMarkerSize(0.6);
+			double lo=std::min(g.plain->GetMinimum(),g.corr->GetMinimum()), hi=std::max(g.plain->GetMaximum(),g.corr->GetMaximum());
+			double pad	= 0.15*(hi-lo); g.plain->SetMinimum(lo-pad); g.plain->SetMaximum(hi+pad);
+			g.plain->Draw("E1"); g.corr->Draw("E1 same"); gapGrid(lo-pad,hi+pad);
+			TLegend* lg	= new TLegend(0.14,0.78,0.70,0.90); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.045);
+			lg->AddEntry(g.plain,"summed over s (standard)","lp"); lg->AddEntry(g.corr,"R_{2} per s bin, then averaged","lp"); lg->Draw();
+		};
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+		ccan[ican]->cd();
+		TPad* gpTop		= new TPad("gpTop","",0.,0.95,1.,1.);
+		TPad* gpMain	= new TPad("gpMain","",0.,0.,1.,0.95);
+		gpTop->Draw(); gpMain->Draw();
+		gpMain->Divide(4,3,0.0001,0.0001);
+		const int iprow[2]	= { 2, 0 };
+		const char* pn[4]	= { "#pi^{+}#pi^{-}", "#pi^{-}#pi^{+}", "#pi^{+}#pi^{+}", "#pi^{-}#pi^{-}" };
+		for (int r=0;r<2;r++){
+			int ip	= iprow[r];
+			if (ip>=NPairTypes) continue;
+			GapOut g	= gapBuild(ip,0);
+			gpMain->cd(1+4*r); gPad->SetRightMargin(0.13); g.S->SetStats(0); g.S->SetTitle(Form("%s sibling, 0.4#leq|dy|<1;#Delta#phi (deg);s (deg)",pn[ip])); g.S->Draw("colz");
+			gpMain->cd(2+4*r); gPad->SetRightMargin(0.13); g.M->SetStats(0); g.M->SetTitle(Form("%s mixed, 0.4#leq|dy|<1;#Delta#phi (deg);s (deg)",pn[ip])); g.M->Draw("colz");
+			gpMain->cd(3+4*r); gPad->SetRightMargin(0.13); g.R->SetStats(0); g.R->SetTitle(Form("%s R_{2} per (#Delta#phi,s) bin;#Delta#phi (deg);s (deg)",pn[ip]));
+			{ double m=g.plain->GetBinContent(g.plain->GetMaximumBin()); g.R->SetMinimum(-0.3); g.R->SetMaximum(std::max(0.5,2.*m)); }
+			g.R->Draw("colz");
+			for (int k=-3;k<=3;k++){ TLine* l=new TLine(-60.,-60.+30.*k,60.,60.+30.*k); l->SetLineColor(kGray+2); l->SetLineStyle(3); l->Draw(); }
+			gpMain->cd(4+4*r); gap1D(g,Form("%s, 0.4#leq|dy|<1",pn[ip]));
+		}
+		const int ip3[4]	= { 3, 1, 2, 0 };
+		const int w3[4]		= { 0, 0, 1, 1 };
+		for (int c=0;c<4;c++){
+			if (ip3[c]>=NPairTypes) continue;
+			GapOut g	= gapBuild(ip3[c],w3[c]);
+			gpMain->cd(9+c); gap1D(g,Form("%s, %s",pn[ip3[c]],w3[c]?"|dy|<0.4":"0.4#leq|dy|<1"));
+		}
+		gpTop->cd();
+		++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.36); text[itext]->SetTextAlign(22);
+		text[itext]->DrawLatex(0.5,0.5,"Sector gaps in pairs: s = q_{1}asin(aR/p_{T1}) - q_{2}asin(aR/p_{T2}) at R=0.55 m, so #Delta#phi - s = pair separation at the TPC; gaps align on #Delta#phi - s = 0, #pm30#circ (dotted). Grey dashed: #pm15, #pm45#circ");
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+	//---- README_SplitTracks573 sec 29: the near-vertex two-track loss and the isep cut drawn on it. hISep (CalcRm) holds
+	//---- every charged pair before the cut (after tsep): sibling / mixed vs (dphi*(R = 3 cm), abs(dy)). Left: S/M, each
+	//---- abs(dy) row divided by its own value at 4 < abs(dphi*) < 10 deg, with the cut box (red; dashed at the
+	//---- default 1 deg when isep is off). Right: the same ratio in abs(dy) windows, cut edges marked. LS = ++ and --
+	//---- summed, ULS = +- and -+ summed.
+	if (!NOCORRELATIONS && NPairTypes>=4){
+		const double wcut	= (R[0]->GetISepDphi()>0.) ? R[0]->GetISepDphi() : 1.0;
+		const bool on		= (R[0]->GetISepDphi()>0.);
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1400,900);
+		ccan[ican]->cd();
+		TPad* isTop		= new TPad("isTop","",0.,0.95,1.,1.);
+		TPad* isMain	= new TPad("isMain","",0.,0.,1.,0.95);
+		isTop->Draw(); isMain->Draw();
+		isMain->Divide(2,2,0.0001,0.0001);
+		const int ipa[2][2]	= { {2,3}, {0,1} };
+		const char* cname[2]	= { "LS (#pi^{+}#pi^{+} + #pi^{-}#pi^{-})", "ULS (#pi^{+}#pi^{-} + #pi^{-}#pi^{+})" };
+		for (int c=0;c<2;c++){
+			TH2D* S	= (TH2D*)R[ipa[c][0]]->GethISep(0)->Clone(Form("hISepS_draw_%d",c)); S->SetDirectory(0); S->Add(R[ipa[c][1]]->GethISep(0));
+			TH2D* M	= (TH2D*)R[ipa[c][0]]->GethISep(1)->Clone(Form("hISepM_draw_%d",c)); M->SetDirectory(0); M->Add(R[ipa[c][1]]->GethISep(1));
+			TH2D* Q	= (TH2D*)S->Clone(Form("hISepQ_draw_%d",c)); Q->Reset(); Q->SetDirectory(0);
+			for (int iy=1;iy<=S->GetNbinsY();iy++){
+				double rs=0, rm=0;
+				for (int ix=1;ix<=S->GetNbinsX();ix++){ double a=fabs(S->GetXaxis()->GetBinCenter(ix)); if (a>4.&&a<10.){ rs+=S->GetBinContent(ix,iy); rm+=M->GetBinContent(ix,iy); } }
+				if (rs<=0.||rm<=0.) continue;
+				for (int ix=1;ix<=S->GetNbinsX();ix++){ double m=M->GetBinContent(ix,iy); if (m>0.) Q->SetBinContent(ix,iy,(S->GetBinContent(ix,iy)/m)/(rs/rm)); }
+			}
+			isMain->cd(1+2*c); gPad->SetRightMargin(0.13);
+			Q->SetStats(0); Q->SetMinimum(0.7); Q->SetMaximum(1.1);
+			Q->SetTitle(Form("%s: sibling/mixed, each |dy| row / its 4<|#Delta#phi*|<10#circ value;#Delta#phi*(R=3 cm) (deg);|dy|",cname[c]));
+			Q->Draw("colz");
+			TBox* bx	= new TBox(-wcut,0.,wcut,CalcRm::ISEP_DYMAX); bx->SetFillStyle(0); bx->SetLineColor(2); bx->SetLineWidth(2); bx->SetLineStyle(on?1:2); bx->Draw();
+			isMain->cd(2+2*c);
+			const double dw[5]	= { 0., 0.2, 0.4, 0.8, 1.5 };
+			const int dcol[4]	= { 1, 4, 8, kGray+1 };
+			TLegend* lg	= new TLegend(0.14,0.14,0.50,0.36); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+			for (int k=0;k<4;k++){
+				int b0	= S->GetYaxis()->FindBin(dw[k]+1e-4), b1 = S->GetYaxis()->FindBin(dw[k+1]-1e-4);
+				TH1D* s	= S->ProjectionX(Form("hISepSp_%d_%d",c,k),b0,b1); s->SetDirectory(0);
+				TH1D* m	= M->ProjectionX(Form("hISepMp_%d_%d",c,k),b0,b1); m->SetDirectory(0);
+				double rs=0, rm=0;
+				for (int ix=1;ix<=s->GetNbinsX();ix++){ double a=fabs(s->GetBinCenter(ix)); if (a>4.&&a<10.){ rs+=s->GetBinContent(ix); rm+=m->GetBinContent(ix); } }
+				TH1D* r	= (TH1D*)s->Clone(Form("hISepR_%d_%d",c,k)); r->SetDirectory(0); r->Reset();
+				for (int ix=1;ix<=s->GetNbinsX();ix++){ double sv=s->GetBinContent(ix), mv=m->GetBinContent(ix);
+					if (sv>0.&&mv>0.&&rs>0.&&rm>0.){ double v=(sv/mv)/(rs/rm); r->SetBinContent(ix,v); r->SetBinError(ix,v*sqrt(1./sv+1./rs)); } }
+				r->SetStats(0); r->SetLineColor(dcol[k]); r->SetMarkerColor(dcol[k]); r->SetMarkerStyle(20); r->SetMarkerSize(0.5);
+				r->SetMinimum(0.75); r->SetMaximum(1.15);
+				r->SetTitle(Form("%s: sibling/mixed in |dy| windows (1 = no loss);#Delta#phi*(R=3 cm) (deg);S/M, relative",cname[c]));
+				r->Draw(k==0 ? "E1" : "E1 same");
+				lg->AddEntry(r,Form("%.1f#leq|dy|<%.1f",dw[k],dw[k+1]),"lp");
+			}
+			lg->Draw();
+			for (int sg=-1;sg<=1;sg+=2){ TLine* l=new TLine(sg*wcut,0.75,sg*wcut,1.15); l->SetLineColor(2); l->SetLineWidth(2); l->SetLineStyle(on?1:2); l->Draw(); }
+			TLine* l1=new TLine(-10.,1.,10.,1.); l1->SetLineColor(kGray+2); l1->SetLineStyle(3); l1->Draw();
+		}
+		isTop->cd();
+		++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.36); text[itext]->SetTextAlign(22);
+		text[itext]->DrawLatex(0.5,0.5,Form("Near-vertex two-track loss (sibling tracks at the same #phi near the vertex, out to |dy|~0.8; all pairs, before the cut).  Red: isep cut |#Delta#phi*(3 cm)|<%.1f#circ, |dy|<%.1f: %s",wcut,CalcRm::ISEP_DYMAX,on?"ON":"OFF (dashed = proposed)"));
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
 
 	//---- event QA
 	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
@@ -2161,6 +3311,259 @@ void corral::Loop(){
 	for (int ip=0;ip<NPART;ip++){ fdedxexp[ip]->Draw("same"); }
 	ccan[ican]->cd(2); gPad->SetLogz(1); hdedxpz	->Draw("colz");
 	for (int ip=0;ip<NPART;ip++){ fdedxexp[ip]->Draw("same"); }
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
+	//---- README_PID.md: dE/dx PID QA. Top: dedxKFP vs p with the KFP gates (pi blue, K green, p red, d gray; dashed
+	//---- = lo/hi), dedxKFP/dedx70s, tagged-proton PID. Bottom: dedxKFP of what became pi, K, p; y vs pt of p.
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+	ccan[ican]->cd(); ccan[ican]->Divide(4,2,0.0001,0.0001);
+	{
+		const int gcol[NGATE]	= {kBlue,kGreen+2,kRed,kGray+2};
+		auto drawGates	= [&](){
+			if (doOldPID) return;
+			for (int ig=0;ig<NGATE;ig++) for (TGraph *g : {gGateLo[ig],gGateHi[ig]}){
+				g->SetLineColor(gcol[ig]); g->SetLineStyle(2); g->SetLineWidth(1); g->Draw("L same");
+			}
+		};
+		ccan[ican]->cd(1); gPad->SetLogz(1); hdedxKFPp->Draw("colz"); drawGates();
+		ccan[ican]->cd(2); gPad->SetLogz(1); hdedxratio2_p->Draw("colz"); hdedxratio_p->SetLineColor(kRed); hdedxratio_p->Draw("same");
+		ccan[ican]->cd(3); gPad->SetLogz(1); hdedxKFPp_tagged[0][1]->Draw("colz"); drawGates();	// Lambda -> p (true protons)
+		ccan[ican]->cd(4);
+		{	//---- fraction of V0-daughter protons (red) and K0s-daughter pions (blue) given the p PID, vs p
+			TH1D *hn	= hPIDtagged[0]->ProjectionX("hPIDtagged_p_all",1,4);
+			TH1D *hf	= hPIDtagged[0]->ProjectionX("hPIDtagged_p_asp",3,3);
+			hf->Divide(hf,hn,1,1,"B"); hf->SetLineColor(kRed); hf->SetMarkerColor(kRed); hf->SetMarkerStyle(20); hf->SetMarkerSize(0.6);
+			hf->SetTitle("fraction given PID p: V0 protons (red), K^{0}_{S} pions (blue);p (GeV/c);fraction"); hf->SetMinimum(0.); hf->SetMaximum(1.05); hf->Draw("e");
+			TH1D *hnp	= hPIDtagged[1]->ProjectionX("hPIDtagged_pi_all",1,4);
+			TH1D *hfp	= hPIDtagged[1]->ProjectionX("hPIDtagged_pi_asp",3,3);
+			hfp->Divide(hfp,hnp,1,1,"B"); hfp->SetLineColor(kBlue); hfp->SetMarkerColor(kBlue); hfp->SetMarkerStyle(24); hfp->SetMarkerSize(0.6); hfp->Draw("e same");
+		}
+		for (int k=0;k<3;k++){ ccan[ican]->cd(5+k); gPad->SetLogz(1); hdedxKFPp_id[k]->Draw("colz"); drawGates(); }
+		ccan[ican]->cd(8); gPad->SetLogz(1); hypt_id[2]->Draw("colz");
+		for (double yy : {-Species_yu[2], Species_yu[2]}){ TLine *l = new TLine(yy,0.,yy,2.); l->SetLineColor(kRed); l->SetLineWidth(2); l->Draw(); }
+		{ TLatex *t = new TLatex(0.,1.85,Form("|y| < %.2f (Species_yu)",Species_yu[2])); t->SetTextAlign(21); t->SetTextSize(0.05); t->SetTextColor(kRed); t->Draw(); }
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
+	//---- README_PID.md sec 10.3: the vertex-phi mask, and every track cut in force (so none is forgotten). Before the mask =
+	//---- AcceptTrackBase (black), after = the accepted tracks (red); gray boxes = the mask windows.
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+	ccan[ican]->cd(); ccan[ican]->Divide(3,2,0.0001,0.0001);
+	{
+		TH2D *bxy	= (TH2D*)hmask_dcaxy[0]->Clone("pm_bxy");	bxy->Add(hmask_dcaxy[1]);
+		TH2D *bz	= (TH2D*)hmask_dcaz[0] ->Clone("pm_bz");	bz ->Add(hmask_dcaz[1]);
+		TH2D *axy	= (TH2D*)hadca_phi[0][0][0]->Clone("pm_axy");	axy->Add(hadca_phi[0][1][0]);
+		TH2D *az	= (TH2D*)hadca_phi[1][0][0]->Clone("pm_az");	az ->Add(hadca_phi[1][1][0]);
+		auto meanX	= [&](TH2D *h, const char* nm){
+			TH1D *m	= h->ProjectionX(nm); m->Reset();
+			for (int ix=1;ix<=h->GetNbinsX();ix++){ double n=0,sy=0,sy2=0;
+				for (int iy=1;iy<=h->GetNbinsY()+1;iy++){ double w=h->GetBinContent(ix,iy), y=h->GetYaxis()->GetBinCenter(iy); n+=w; sy+=w*y; sy2+=w*y*y; }
+				if (n>1){ double mu=sy/n; m->SetBinContent(ix,mu); m->SetBinError(ix,sqrt(std::max(0.,sy2/n-mu*mu)/n)); } }
+			return m;
+		};
+		auto boxes	= [&](double y0, double y1){
+			if (!doSiPhiMask) return;
+			for (int k=0;k<nSiPhiMask;k++){ TBox *b = new TBox(SIPHIMASK_LO[k],y0,SIPHIMASK_HI[k],y1); b->SetFillColorAlpha(kGray,0.35); b->SetLineWidth(0); b->Draw(); }
+		};
+		auto pair2	= [&](TH1D *hb, TH1D *ha, const char* ttl){
+			hb->SetTitle(ttl); hb->SetLineColor(kBlack); ha->SetLineColor(kRed); hb->SetMinimum(0.); hb->SetMaximum(1.15*std::max(hb->GetMaximum(),ha->GetMaximum()));
+			hb->Draw("hist"); boxes(0.,hb->GetMaximum()); hb->Draw("hist same"); ha->Draw("hist same");
+		};
+		ccan[ican]->cd(1);
+		pair2(bxy->ProjectionX("pm_nb"),axy->ProjectionX("pm_na"),Form("tracks vs vertex #phi: before SiPhiMask (black), accepted (red, also after split removal)%s;vertex #phi (deg);tracks",doSiPhiMask?"":" (mask OFF)"));
+		ccan[ican]->cd(2);
+		pair2(meanX(bxy,"pm_mxyb"),meanX(axy,"pm_mxya"),"<|dcaxy|> vs vertex #phi, before (black) / after (red);vertex #phi (deg);<|dcaxy|> (cm)");
+		ccan[ican]->cd(3);
+		pair2(meanX(bz,"pm_mzb"),meanX(az,"pm_mza"),"<|dcaz|> vs vertex #phi, before (black) / after (red);vertex #phi (deg);<|dcaz|> (cm)");
+		ccan[ican]->cd(4); gPad->SetLogz(1);
+		bxy->SetTitle("|dcaxy| vs vertex #phi, before the mask;vertex #phi (deg);|dcaxy| (cm)"); bxy->GetYaxis()->SetRangeUser(0.,1.0); bxy->Draw("colz");
+		if (doSiPhiMask) for (int k=0;k<nSiPhiMask;k++) for (double x : {SIPHIMASK_LO[k],SIPHIMASK_HI[k]}){ TLine *l = new TLine(x,0.,x,1.0); l->SetLineColor(kRed); l->SetLineWidth(2); l->SetLineStyle(2); l->Draw(); }
+		ccan[ican]->cd(5);
+		TH1D *hall	= hmask_pid->ProjectionX("pm_pall",1,2);
+		TH1D *hin	= hmask_pid->ProjectionX("pm_pin",2,2);
+		hin->Divide(hin,hall,1,1,"B");
+		const char* pl[8]	= {"#pi+","#pi-","K+","K-","p","#bar{p}","none +","none -"};
+		for (int k=0;k<8;k++) hin->GetXaxis()->SetBinLabel(k+1,pl[k]);
+		hin->SetTitle("fraction of tracks inside the mask windows, by PID;;fraction"); hin->SetMinimum(0.); hin->SetMaximum(1.3*std::max(0.01,hin->GetMaximum()));
+		hin->SetMarkerStyle(20); hin->Draw("E1");
+		ccan[ican]->cd(6);
+		TPaveText *pt	= new TPaveText(0.03,0.03,0.97,0.97,"NDC"); pt->SetFillColor(0); pt->SetBorderSize(1); pt->SetTextAlign(12); pt->SetTextSize(0.034);
+		pt->AddText("Track cuts in force (AcceptTrack, PID, pair building)");
+		pt->AddText(Form("  %.2f < p_{T} < 20.1 GeV/c,  ntpc #geq %d", PTMINCUT, NTPCCUT));
+		pt->AddText("  |dcaxy| < 1.5 cm,  |dcaz| < 1.5 cm");
+		if (doSiPhiMask){ TString w; for (int k=0;k<nSiPhiMask;k++) w += Form(" [%.0f,%.0f)",SIPHIMASK_LO[k],SIPHIMASK_HI[k]); pt->AddText(Form("  SiPhiMask ON, vertex #phi (deg):%s",w.Data())); }
+		else pt->AddText("  SiPhiMask OFF (nosiphimask)");
+		if (doCMMask) pt->AddText(Form("  CM mask ON: w = (#eta+%.3f z_{c}) sign(-z_{c}) in [%.2f,%.2f), z_{c} = zvtx-slice centre",CMMASK_K,valCMMaskLo,valCMMaskHi));
+		else pt->AddText("  CM mask OFF (nocmmask)");
+		if (doOldPID) pt->AddText("  PID: legacy (oldpid), #pi = dedx70s < 400");
+		else pt->AddText(Form("  PID: KFP gates (dedxKFP), #pi>p>K; p_{max} %.1f/%.1f/%.1f", Species_pmax_pid[0], Species_pmax_pid[2], Species_pmax_pid[1]));
+		pt->AddText(Form("  pairs: p_{T} min #pi %.2f, K %.2f, p/#bar{p} %.2f GeV/c", Species_ptmin[0], Species_ptmin[1], Species_ptmin[2]));
+		pt->AddText("  V0 daughters in no pair type"); pt->AddText(Form("  split-track removal %s", doSplitRemoval ? "ON" : "OFF"));
+		pt->AddText(Form("  looper veto %s (OS, |p|<%.2f, p-sum<%.2f): %ld tracks", doLooperVeto ? "ON" : "OFF", LOOPER_PMAX, valLooperRSum, nFlagged_Looper));
+		double nin	= hmask_pid->Integral(1,8,2,2), nall = hmask_pid->Integral(1,8,1,2);
+		pt->AddText(Form("  tracks inside the windows: %.2f%%%s", nall>0 ? 100.*nin/nall : 0., doSiPhiMask ? " (removed)" : " (kept)"));
+		pt->Draw();
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
+	//---- README_PID.md sec 10: DCA of the identified species (accepted tracks), as ana573/DCAid_ana573.C. Pages 1-2 (dcaxy,
+	//---- dcaz), per pt slice: shapes of p, pbar, pi+, pi- (unit area, log y); p/pbar vs dca; fraction kept by abs(dca) < X.
+	for (int iv=0;iv<2;iv++){
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,900);
+		ccan[ican]->cd(); ccan[ican]->Divide(4,3,0.0001,0.0001);
+		const int NS=4; const double pl[NS+1]={0.1,0.25,0.4,0.7,1.0};
+		const char* var	= iv ? "dcaz" : "dcaxy";
+		const int kk[4]={2,2,0,0}, cc[4]={0,1,0,1}, col[4]={kRed,kBlue,kGray+2,kGreen+2};
+		const char* lab[4]={"p","#bar{p}","#pi^{+}","#pi^{-}"};
+		for (int is=0;is<NS;is++){
+			TH1D *h[4];
+			for (int j=0;j<4;j++){
+				TH2D *m	= iv ? hdcaz_id[kk[j]][cc[j]] : hdcaxy_id[kk[j]][cc[j]];
+				int b0=m->GetXaxis()->FindBin(pl[is]+1e-6), b1=m->GetXaxis()->FindBin(pl[is+1]-1e-6);
+				h[j]	= m->ProjectionY(Form("dcaid_%d_%d_%d",iv,is,j),b0,b1); h[j]->Rebin(2);
+				h[j]->SetLineColor(col[j]); h[j]->SetMarkerColor(col[j]);
+			}
+			ccan[ican]->cd(1+is); gPad->SetLogy(1);
+			for (int j=0;j<4;j++){
+				TH1D *sh	= (TH1D*)h[j]->Clone(Form("dcaids_%d_%d_%d",iv,is,j)); if (sh->Integral()>0) sh->Scale(1./sh->Integral());
+				sh->SetTitle(Form("%s, %.2f<p_{T}<%.2f GeV/c;%s (cm);unit area",var,pl[is],pl[is+1],var)); sh->SetMinimum(1e-6);
+				sh->Draw(j?"hist same":"hist");
+			}
+			if (is==0){ TLegend *lg = new TLegend(0.62,0.62,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0);
+				for (int j=0;j<4;j++) lg->AddEntry(h[j],lab[j],"l"); lg->Draw(); }
+			ccan[ican]->cd(1+NS+is);
+			TH1D *r		= (TH1D*)h[0]->Clone(Form("dcaidr_%d_%d",iv,is)); TH1D *rb = (TH1D*)h[1]->Clone(Form("dcaidrb_%d_%d",iv,is));
+			r->Rebin(3); rb->Rebin(3); r->Divide(rb); r->SetLineColor(1); r->SetMarkerColor(1); r->SetMarkerStyle(20); r->SetMarkerSize(0.5);
+			r->SetTitle(Form("p / #bar{p}, %.2f<p_{T}<%.2f;%s (cm);p/#bar{p}",pl[is],pl[is+1],var)); r->SetMinimum(0); r->SetMaximum(20.);
+			r->Draw("E1");
+			ccan[ican]->cd(1+2*NS+is);
+			for (int j=0;j<4;j++){
+				TH1D *k	= new TH1D(Form("dcaidk_%d_%d_%d",iv,is,j),Form("kept by |%s|<X, %.2f<p_{T}<%.2f;X (cm);fraction kept",var,pl[is],pl[is+1]),75,0,1.5);
+				double tot	= h[j]->Integral();
+				for (int ib=1;ib<=75 && tot>0;ib++){ double X=k->GetBinCenter(ib); k->SetBinContent(ib,h[j]->Integral(h[j]->FindBin(-X),h[j]->FindBin(X-1e-6))/tot); }
+				k->SetLineColor(col[j]); k->SetMinimum(0.5); k->SetMaximum(1.1);
+				if (j==0){ k->Draw("E1"); TLine *l1 = new TLine(0.,1.,1.5,1.); l1->SetLineColor(kGray); l1->Draw(); }
+				k->Draw("hist same");
+			}
+		}
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+	}
+	//---- page 3: (eta,phi) maps. Rows pi+, pi- (mean dcaxy, abs(dcaxy), dcaz, abs(dcaz)); row 3 abs(dcaxy), abs(dcaz) of p, pbar
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,900);
+	ccan[ican]->cd(); ccan[ican]->Divide(4,3,0.0001,0.0001);
+	{
+		const int rk[12]={0,0,0,0, 0,0,0,0, 2,2,2,2}, rc[12]={0,0,0,0, 1,1,1,1, 0,1,0,1}, rv[12]={0,1,2,3, 0,1,2,3, 1,1,3,3};
+		for (int i=0;i<12;i++){
+			ccan[ican]->cd(i+1); gPad->SetRightMargin(0.16);
+			TProfile2D *m	= pdca_etaphi_id[rk[i]][rc[i]][rv[i]];
+			TH2D *h	= m->ProjectionXY(Form("dcaidmap_%d",i)); h->SetTitle(m->GetTitle());
+			for (int ix=1;ix<=h->GetNbinsX();ix++) for (int iy=1;iy<=h->GetNbinsY();iy++) if (m->GetBinEntries(m->GetBin(ix,iy))<(rk[i]==2?20:200)) h->SetBinContent(ix,iy,-99);
+			h->GetXaxis()->SetRangeUser(-1.2,1.2);
+			if (rv[i]==0||rv[i]==2){ h->SetMinimum(-0.1); h->SetMaximum(0.1); } else { h->SetMinimum(0.); h->SetMaximum(rv[i]==1?0.3:0.4); }
+			h->Draw("colz");
+		}
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+	//---- page 3b (README_PID.md sec 10.6): 1D profiles of the pion (eta,phi) maps, + (red) and - (blue). Row 1 vs eta: signed
+	//---- dcaxy, signed dcaz, abs(dcaz). Row 2 vs vertex phi: signed dcaxy, signed dcaz; and abs(dcaz) vs abs(dcaxy) per 1-deg
+	//---- phi bin (hadca_phi, accepted tracks; do they go bad at the same places?)
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+	ccan[ican]->cd(); ccan[ican]->Divide(3,2,0.0001,0.0001);
+	{
+		const int vv[5]	= {0,2,3,0,2};
+		const char* vn[4]	= {"dcaxy","|dcaxy|","dcaz","|dcaz|"};
+		for (int ip=0;ip<5;ip++){
+			ccan[ican]->cd(1+ip);
+			TProfile *pr[2];
+			for (int q=0;q<2;q++){
+				TProfile2D *m	= pdca_etaphi_id[0][q][vv[ip]];
+				pr[q]	= (ip<3) ? m->ProfileX(Form("dcaprof_%d_%d",ip,q)) : m->ProfileY(Form("dcaprof_%d_%d",ip,q));
+				pr[q]->SetLineColor(q?kBlue:kRed); pr[q]->SetMarkerColor(q?kBlue:kRed); pr[q]->SetMarkerStyle(20); pr[q]->SetMarkerSize(0.5);
+			}
+			double lo=1e9,hi=-1e9;
+			for (int q=0;q<2;q++) for (int i=1;i<=pr[q]->GetNbinsX();i++){ if (pr[q]->GetBinEntries(i)<100) continue; lo=std::min(lo,pr[q]->GetBinContent(i)); hi=std::max(hi,pr[q]->GetBinContent(i)); }
+			double pd	= 0.2*(hi-lo); if (vv[ip]==3){ lo = 0.; } else { lo -= pd; }
+			pr[0]->SetMinimum(lo); pr[0]->SetMaximum(hi+pd);
+			pr[0]->SetTitle(Form("#pi: <%s> vs %s, + (red), - (blue);%s;<%s> (cm)",vn[vv[ip]],ip<3?"#eta":"vertex #phi",ip<3?"#eta":"vertex #phi (rad)",vn[vv[ip]]));
+			if (ip<3) pr[0]->GetXaxis()->SetRangeUser(-1.2,1.2);
+			pr[0]->Draw("E1");
+			if (vv[ip]!=3){ TLine *l = new TLine(pr[0]->GetXaxis()->GetBinLowEdge(pr[0]->GetXaxis()->GetFirst()),0.,pr[0]->GetXaxis()->GetBinUpEdge(pr[0]->GetXaxis()->GetLast()),0.); l->SetLineColor(kGray); l->Draw(); }
+			pr[0]->Draw("E1 same"); pr[1]->Draw("E1 same");
+		}
+		ccan[ican]->cd(6);
+		TH2D *x	= (TH2D*)hadca_phi[0][0][0]->Clone("dcacorr_x"); x->Add(hadca_phi[0][1][0]);
+		TH2D *z	= (TH2D*)hadca_phi[1][0][0]->Clone("dcacorr_z"); z->Add(hadca_phi[1][1][0]);
+		TProfile *px	= x->ProfileX("dcacorr_px"), *pz = z->ProfileX("dcacorr_pz");
+		TGraph *g	= new TGraph();
+		for (int i=1;i<=px->GetNbinsX();i++) if (px->GetBinEntries(i)>100) g->SetPoint(g->GetN(),px->GetBinContent(i),pz->GetBinContent(i));
+		g->SetTitle(Form("per 1#circ vertex-#phi bin, accepted tracks: r = %.2f;<|dcaxy|> (cm);<|dcaz|> (cm)",g->GetCorrelationFactor()));
+		g->SetMarkerStyle(20); g->SetMarkerSize(0.4); g->Draw("AP");
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+	//---- page 4 (README_PID.md sec 10.2, as ana573/DCAstrip_ana573.C): accepted tracks, 1 deg in phi, + (red) and - (blue).
+	//---- Rows: vertex phi, phi at R = 0.55 m. Columns: mean abs(dcaxy), fraction abs(dcaxy) > 0.3 cm, mean abs(dcaz).
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,900);
+	ccan[ican]->cd(); ccan[ican]->Divide(3,2,0.0001,0.0001);
+	{
+		auto meanOf	= [&](TH2D *h, const char* nm){ TH1D *m = h->ProjectionX(nm); m->Reset();
+			for (int ix=1;ix<=h->GetNbinsX();ix++){ double n=0,sy=0,sy2=0;
+				for (int iy=1;iy<=h->GetNbinsY()+1;iy++){ double w=h->GetBinContent(ix,iy), y=h->GetYaxis()->GetBinCenter(iy); n+=w; sy+=w*y; sy2+=w*y*y; }
+				if (n>1){ double mu=sy/n; m->SetBinContent(ix,mu); m->SetBinError(ix,sqrt(std::max(0.,sy2/n-mu*mu)/n)); } }
+			return m; };
+		auto fracAbove	= [&](TH2D *h, double x, const char* nm){ TH1D *m = h->ProjectionX(nm); m->Reset();
+			int b	= h->GetYaxis()->FindBin(x+1e-6);
+			for (int ix=1;ix<=h->GetNbinsX();ix++){ double n=h->Integral(ix,ix,1,h->GetNbinsY()+1), a=h->Integral(ix,ix,b,h->GetNbinsY()+1);
+				if (n>0){ double f=a/n; m->SetBinContent(ix,f); m->SetBinError(ix,sqrt(f*(1-f)/n)); } }
+			return m; };
+		const char* fl[2]	= {"vertex #phi","#phi at R = 0.55 m"};
+		const char* yt[3]	= {"<|dcaxy|> (cm)","fraction |dcaxy| > 0.3 cm","<|dcaz|> (cm)"};
+		for (int f=0;f<2;f++){
+			TH1D *h[3][2];
+			for (int q=0;q<2;q++){
+				h[0][q]	= meanOf(hadca_phi[0][q][f],Form("strip_mxy_%d_%d",f,q));
+				h[1][q]	= fracAbove(hadca_phi[0][q][f],0.3,Form("strip_fxy_%d_%d",f,q));
+				h[2][q]	= meanOf(hadca_phi[1][q][f],Form("strip_mz_%d_%d",f,q));
+			}
+			for (int r=0;r<3;r++){
+				ccan[ican]->cd(1+r+3*f);
+				for (int q=0;q<2;q++){
+					h[r][q]->SetLineColor(q?kBlue:kRed);
+					h[r][q]->SetTitle(Form("%s vs %s, accepted: + (red), - (blue);%s (deg);%s",yt[r],fl[f],fl[f],yt[r]));
+					h[r][q]->SetMinimum(0); h[r][q]->SetMaximum(1.2*std::max(h[r][0]->GetMaximum(),h[r][1]->GetMaximum()));
+					h[r][q]->Draw(q?"hist same":"hist");
+				}
+			}
+		}
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
+	//---- README_PID.md sec 8: p-pi ULS ridge diagnostic. Pad 1: dphi, p pi- (black) and pbar pi+ (magenta).
+	//---- Others: p pi- + pbar pi+ summed, ridge box (red) vs its clean mirror (blue), mirror scaled to the ridge's pairs.
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+	ccan[ican]->cd(); ccan[ican]->Divide(4,2,0.0001,0.0001);
+	{
+		ccan[ican]->cd(1); hRidge_dphi[0]->SetLineColor(kBlack); hRidge_dphi[0]->Draw("hist");
+		hRidge_dphi[1]->SetLineColor(kMagenta+1); hRidge_dphi[1]->Draw("hist same");
+		TH1D **hs[7]	= {hRidge_Mppi[0],hRidge_Mee[0],hRidge_open[0],hRidge_prat[0],hRidge_skf[0],hRidge_dcap[0],hRidge_dcapi[0]};
+		TH1D **hm[7]	= {hRidge_Mppi[1],hRidge_Mee[1],hRidge_open[1],hRidge_prat[1],hRidge_skf[1],hRidge_dcap[1],hRidge_dcapi[1]};
+		for (int k=0;k<7;k++){
+			ccan[ican]->cd(2+k); if (k>=4) gPad->SetLogy(1);
+			TH1D *r	= (TH1D*)hs[k][0]->Clone(Form("%s_sum",hs[k][0]->GetName())); r->Add(hs[k][1]);
+			TH1D *m	= (TH1D*)hm[k][0]->Clone(Form("%s_sum",hm[k][0]->GetName())); m->Add(hm[k][1]);
+			r->SetTitle(TString(r->GetTitle()).ReplaceAll("p#pi^{-} ridge","ridge (red) vs mirror (blue)"));
+			if (m->Integral()>0.) m->Scale(r->Integral()/m->Integral());
+			r->SetLineColor(kRed); m->SetLineColor(kBlue);
+			r->SetMaximum(1.15*std::max(r->GetMaximum(),m->GetMaximum()));
+			r->Draw("hist"); m->Draw("hist same");
+		}
+	}
 	ccan[ican]->cd(); ccan[ican]->Update();
 	ccan[ican]->Print(OutputFileName.Data());
 
@@ -2242,7 +3645,7 @@ void corral::Loop(){
 
 
 	//---- README_CQ: pion C(Q) summary page, 1x2: pi+pi- (black), pi+pi+ (red), pi-pi- (blue) C(Q),
-	//---- 5 MeV bins, raw levels (per-event norm, i.e. the 1+R2 baseline). Left 0-1.2 GeV with the
+	//---- 5 MeV bins, raw levels (per-event norm, i.e. the 1+R2 baseline). Left 0-2.0 GeV with the
 	//---- pi+pi- decay signposts (the K0s line validates dq itself), right 0-0.3 GeV.
 	if (!NOCORRELATIONS){
 		int ipcq[3]		= {-1,-1,-1};		// pi+pi-, pi+pi+, pi-pi-
@@ -2259,7 +3662,7 @@ void corral::Loop(){
 			const char*	plab[3]		= {"#pi^{+}#pi^{-}","#pi^{+}#pi^{+}","#pi^{-}#pi^{-}"};
 			for (int ipad=0;ipad<2;ipad++){
 				ccan[ican]->cd(ipad+1);
-				double xmax	= (ipad==0) ? 1.2 : 0.3;
+				double xmax	= (ipad==0) ? 2.0 : 0.3;
 				TH1D *hp[3];
 				double ymn=1e30, ymx=-1e30;
 				for (int k=0;k<3;k++){
@@ -2357,7 +3760,7 @@ void corral::Loop(){
 			ccan[ican]->Print(OutputFileName.Data());
 			//
 			//---- femtoscopic C(Q) page, 2x2
-			//---- (README_CQ): C(Q) 0-1.2 GeV with decay signposts | C(Q) in STAR's 4 kT bins |
+			//---- (README_CQ): C(Q) 0-2.0 GeV with decay signposts | C(Q) in STAR's 4 kT bins |
 			//---- C(Q) 0-0.3 GeV zoom | Minv near threshold. Drawn from clones, the written hists keep full range.
 			++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
 			ccan[ican]->cd(); ccan[ican]->Divide(2,2,0.0001,0.0001);
@@ -2375,7 +3778,7 @@ void corral::Loop(){
 				if (ymx>ymn){ hf->SetMinimum(ymn-0.05*(ymx-ymn)); hf->SetMaximum(ymx+0.25*(ymx-ymn)); }
 				hf->Draw();
 				gPad->Update();
-				DrawCQSignposts(ipid1,ipid2,gPad->GetUymin(),gPad->GetUymax(),1.2);
+				DrawCQSignposts(ipid1,ipid2,gPad->GetUymin(),gPad->GetUymax(),2.0);
 			}
 			ccan[ican]->cd(2);
 			{
@@ -2653,8 +4056,8 @@ void corral::Loop(){
 	}
 	//
 	cout<<"split-track pre-pass -- tracks flagged="<<nSplitFlagged_total<<" events w/ a flag="<<nSplitFlagged_evts
-		<<" pairs: duplicate="<<nFlagged_duplicate<<" complementary="<<nFlagged_complementary<<" (sec 17.14)"
-		<<" ULS(opp-charge)="<<nFlagged_ULS<<" (sec 18.10, track-level)"<<endl;
+		<<" pairs: duplicate="<<nFlagged_duplicate<<" complementary="<<nFlagged_complementary<<" (sec 17.14) fullmvtx="<<nFlagged_fullmvtx
+		<<" ULS(opp-charge)="<<nFlagged_ULS<<" (sec 18.10, track-level)"<<" looper="<<nFlagged_Looper<<" (sec 35)"<<endl;
 	cout<<"sec 18.22 -- doXTFClean="<<doXTFClean<<" strict="<<doXTFStrict<<" neither="<<nXTF_neither<<" duplicate pairs="<<nXTF_pairs<<" byINTT="<<nXTF_byINTT
 		<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_TF="<<ONLY_FIRST_TF<<" rows skipped as same-TF duplicates="<<nSkippedSameTF<<endl;
@@ -2749,6 +4152,17 @@ void corral::Loop(){
 				hdz->Write();
 			}
 			hzoomM[ipaty]			->Write();
+			if (ipaty<=3) for (int sm=0;sm<2;sm++) for (int is=0;is<2;is++) for (int ir=0;ir<4;ir++) R[ipaty]->GethTTR(sm,is,ir)->Write();
+			if (ipaty<=3) for (int sm=0;sm<2;sm++){ TH2D* h=R[ipaty]->GethISep(sm); h->SetName(Form("hISep_%s_%d",sm?"M":"S",ipaty)); h->Write(); }	// sec 29
+			if (ipaty<=3) for (int sm=0;sm<2;sm++){ TH2D* h=R[ipaty]->GethGapDy(sm); h->SetName(Form("hGapDy_%s_%d",sm?"M":"S",ipaty)); h->Write(); }	// sec 28
+			if (ipaty<=3) for (int sm=0;sm<2;sm++){	// sec 32
+				TH2D* h=R[ipaty]->GethGapPhi(sm);  h->SetName(Form("hGapPhi_%s_%d" ,sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapYbar(sm);       h->SetName(Form("hGapYbar_%s_%d",sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapPt(sm);         h->SetName(Form("hGapPt_%s_%d"  ,sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapNch(sm);        h->SetName(Form("hGapNch_%s_%d" ,sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapRm(sm);         h->SetName(Form("hGapRm_%s_%d"  ,sm?"M":"S",ipaty)); h->Write(); }
+			if (ipaty<=3) for (int sm=0;sm<2;sm++) for (int w=0;w<2;w++){ TH2D* h=R[ipaty]->GethGap(sm,w); h->SetName(Form("hGap_%s_%s_%d",sm?"M":"S",w?"near":"far",ipaty)); h->Write(); }	// sec 28
+			if (ipaty<=3) for (int sm=0;sm<2;sm++) for (int sd=0;sd<2;sd++){ TH2D* h=R[ipaty]->GethTTRside(sm,sd); h->SetName(Form("hTTRside_%s_%s_%d",sm?"M":"S",sd?"dirty":"clean",ipaty)); h->Write(); }
 			hMinvFS[ipaty]			->Write();
 			hMinvFM[ipaty]			->Write();
 			//
@@ -2767,7 +4181,7 @@ bool corral::AcceptEvent(){
 	if (      (*vtxx)  >  0.5 ) return false;
 	if (      (*vtxy)  < -0.5 ) return false;
 	if (      (*vtxy)  >  0.5 ) return false;
-	if ( fabs((*vtxz)) > 16.  ) return false;
+	if ( fabs((*vtxz)) > valVzMax ) return false;	// default 16 cm ("vzNN" overrides), README_SplitTracks573 sec 30
 	return true;
 }
 //---------------------------------------------------------------------------
@@ -2893,8 +4307,29 @@ void corral::BuildTFDupRows(Long64_t nentries){
 }
 
 bool corral::AcceptTrack(int it){
+	if (!AcceptTrackBase(it)) return false;
+	if (doSiPhiMask && InSiPhiMask(it)) return false;
+	if (doCMMask && InCMMask(it)) return false;
+	return true;
+}
+bool corral::InCMMask(int it){
+	//---- sec 38: the mask is FIXED within a zvtx slice (it uses the slice centre, not the event's zvtx): every event of
+	//---- a slice then has the same acceptance, which cancels in S/M. A mask that follows each event's zvtx moves its sharp
+	//---- edge by 0.036 in eta across a 2-cm slice, and S (one zvtx) and M (two) see different edges (CMscan, 1st round).
+	const double zl = -16., zu = 16.;
+	double zc	= *vtxz;
+	if (zc>zl && zc<zu){ double bw = (zu-zl)/valZvtxNB; zc = zl + (floor((zc-zl)/bw)+0.5)*bw; }
+	double w	= (eta[it] + CMMASK_K*zc) * (zc<0. ? 1. : -1.);
+	return (w>=valCMMaskLo && w<valCMMaskHi);
+}
+bool corral::InSiPhiMask(int it){
+	double pd	= phi[it]*180.0/M_PI;
+	for (int k=0;k<nSiPhiMask;k++) if (pd>=SIPHIMASK_LO[k] && pd<SIPHIMASK_HI[k]) return true;
+	return false;
+}
+bool corral::AcceptTrackBase(int it){
 	//if ( !primary[it]              ) return false;
-	if (  pt[it]         <     0.1 ) return false;
+	if (  pt[it]         < PTMINCUT ) return false;
 	if (  pt[it]         >    20.1 ) return false;
 	if (  ntpc[it]       < NTPCCUT ) return false;
 	if ( fabs(dcaxy[it]) >     1.5 ) return false;

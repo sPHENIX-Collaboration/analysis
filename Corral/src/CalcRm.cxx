@@ -14,6 +14,12 @@ CalcRm::CalcRm(){
 	fDoCrossing			= false;	// set externally
 	fDirtySide			= 0;		// set in Book()
 	fField				= 0.;		// set externally (SetField) and in Increment()
+	fTSepDy				= 0.;		// README_SplitTracks573 sec 11: pair cut OFF
+	fTSepDphi			= 0.;
+	fTSepMin			= false;
+	fISepDphi			= 0.;		// README_SplitTracks573 sec 29: OFF
+	for (int a=0;a<2;a++) for (int b=0;b<3;b++) nPairCut[a][b] = 0;
+	fPairSM				= 0;
 	fDoBaseline			= false;	// set externally
 	fDoMinvCut			= false;	// set externally (option does not presently exist for convolution)
 	fDoMinvCutb			= false;	// set internally (2nd parent mass for ULS Kaons)
@@ -22,6 +28,7 @@ CalcRm::CalcRm(){
 	fExcludeAdjTF		= 0;		// sec 18.23, OFF by default
 	for (int iz=0;iz<NZVTXMAX;iz++){ nComb_used[iz]=0; nComb_possible[iz]=0; }
 	fCurrentRun			= 0;		// sec 18.20, set externally each event via SetCurrentRunEvt()
+	fCurrentNch			= 0;		// sec 34, set externally each event via SetCurrentNch()
 	fCurrentEvt			= 0;
 	nMixedPairs_total		= 0;
 	nMixedPairs_sameTF		= 0;
@@ -121,18 +128,16 @@ CalcRm::~CalcRm(){
 void CalcRm::UpdateBinningPars(){
 	YBW1	= (YU1-YL1)/YNB1;
 	YBW2	= (YU2-YL2)/YNB2;
-	if (10000.*fabs(YBW1-YBW2)>1.0){
-		cout<<"CalcRm::UpdateBinningPars .. Binning issue: YBW1!=YBW2 "
-			<<YBW1<<" "<<YBW2<<" \t "
-			<<YL1<<" "<<YU1<<" "<<YNB1<<" "<<YL2<<" "<<YU2<<" "<<YNB2
-			<<endl;
-		exit(0);
-	}
 	YBW		= YBW1;
-	DYBW	= YBW1;
-	DYL		= YL1-YU2+DYBW/2.;
-	DYU		= YU1-YL2-DYBW/2.;
-	DYNB	= (DYU-DYL)/DYBW;
+	//---- 2026-09-30 (user): the y widths of the two species need not match, and the dy width of the (dy,dphi) maps (the
+	//---- physics CF) is set per pair type (PairTypes_YBins). Odd bin count, dy = 0 at a bin centre, covering
+	//---- abs(dy) < (m+0.5) DYBW <= YU1-YL2 (the outermost half bin is dropped, as before).
+	DYBW	= (fDYBWset>0.) ? fDYBWset : YBW1;
+	double dyMax	= 0.5*((YU1-YL2)+(YU2-YL1));
+	int m	= (int)floor(dyMax/DYBW - 0.5 + 1.e-6);
+	DYNB	= 2*m+1;
+	DYU		= (m+0.5)*DYBW;
+	DYL		= -DYU;
 	//cout<<"CalcRm::UpdateBinningPars .. "
 	//	<<YL1<<" "<<YU1<<" "<<YNB1<<" bw="<<YBW1<<" \t"
 	//	<<YL2<<" "<<YU2<<" "<<YNB2<<" bw="<<YBW2<<" \t"
@@ -406,9 +411,10 @@ void CalcRm::Book(){
 		hMinv[izv]		= new TH1D( Form("hMinv%d"  ,izv), Form("hMinv%d"  ,izv), 2500,xl,xl+5. );	// 2 MeV Bin Width
 		//
 		//---- README_CQ step 2: 0-1.2 GeV (was 0-0.3; the pp-sized femtoscopic bump reaches ~0.4 GeV), 1 MeV bins
-		hQsib[izv]		= new TH1D( Form("hQsib%d",izv), Form("hQsib%d",izv), 1200,0.,1.2 );
-		hQmix[izv]		= new TH1D( Form("hQmix%d",izv), Form("hQmix%d",izv), 1200,0.,1.2 );
-		hCQ[izv]		= new TH1D( Form("hCQ%d"  ,izv), Form("hCQ%d"  ,izv), 1200,0.,1.2 );
+		//---- 2026-09-28: 0-2.0 GeV, same 1 MeV bins (room for the p-pi, p-Lambda, K+K- pair types)
+		hQsib[izv]		= new TH1D( Form("hQsib%d",izv), Form("hQsib%d",izv), 2000,0.,2.0 );
+		hQmix[izv]		= new TH1D( Form("hQmix%d",izv), Form("hQmix%d",izv), 2000,0.,2.0 );
+		hCQ[izv]		= new TH1D( Form("hCQ%d"  ,izv), Form("hCQ%d"  ,izv), 2000,0.,2.0 );
 		hQsib[izv]		->Sumw2();
 		hQmix[izv]		->Sumw2();
 		//---- README_CQ step 3: (Qinv, kT), 2 MeV in Q, STAR's kT bins (arXiv:1004.0925); kT outside
@@ -416,9 +422,9 @@ void CalcRm::Book(){
 		{
 			const int	nkt			= 4;
 			double		ktbins[nkt+1]	= {0.15,0.25,0.35,0.45,0.60};
-			hQsibKT[izv]	= new TH2D( Form("hQsibKT%d",izv), Form("hQsibKT%d",izv), 600,0.,1.2, nkt,ktbins );
-			hQmixKT[izv]	= new TH2D( Form("hQmixKT%d",izv), Form("hQmixKT%d",izv), 600,0.,1.2, nkt,ktbins );
-			hCQKT[izv]		= new TH2D( Form("hCQKT%d"  ,izv), Form("hCQKT%d"  ,izv), 600,0.,1.2, nkt,ktbins );
+			hQsibKT[izv]	= new TH2D( Form("hQsibKT%d",izv), Form("hQsibKT%d",izv), 1000,0.,2.0, nkt,ktbins );
+			hQmixKT[izv]	= new TH2D( Form("hQmixKT%d",izv), Form("hQmixKT%d",izv), 1000,0.,2.0, nkt,ktbins );
+			hCQKT[izv]		= new TH2D( Form("hCQKT%d"  ,izv), Form("hCQKT%d"  ,izv), 1000,0.,2.0, nkt,ktbins );
 			hQsibKT[izv]	->Sumw2();
 			hQmixKT[izv]	->Sumw2();
 		}
@@ -433,6 +439,27 @@ void CalcRm::Book(){
 	//---- bin widths, i.e. upper limits). Raw counts, summed over Zvtx, filled after PairInfo.
 	hzoom_S	= new TH2D("hzoom_S","hzoom_S;#Delta#eta;#Delta#phi (deg)",101,-0.0505,0.0505,121,-6.05,6.05);
 	hzoom_M	= new TH2D("hzoom_M","hzoom_M;#Delta#eta;#Delta#phi (deg)",101,-0.0505,0.0505,121,-6.05,6.05);
+	//---- README_SplitTracks573 sec 11: two-track-resolution study (see CalcRm.h)
+	for (int sm=0;sm<2;sm++) for (int is=0;is<2;is++) for (int ir=0;ir<4;ir++){
+		hTTR[sm][is][ir]	= new TH2D(Form("hTTR_%d_%d_%d",sm,is,ir),Form("hTTR_%d_%d_%d;dy;#Delta#phi* (deg)",sm,is,ir),40,-0.2,0.2,160,-8,8);
+	}
+	for (int sm=0;sm<2;sm++) for (int sd=0;sd<2;sd++)
+		hTTRside[sm][sd]	= new TH2D(Form("hTTRside_%d_%d",sm,sd),Form("hTTRside_%d_%d;dy;#Delta#phi*_{min} (deg)",sm,sd),40,-0.2,0.2,160,-8,8);
+	for (int sm=0;sm<2;sm++) for (int w=0;w<2;w++)	// README_SplitTracks573 sec 28
+		hGap[sm][w]	= new TH2D(Form("hGap_%d_%d",sm,w),Form("hGap_%d_%d;#Delta#phi (deg);s (deg)",sm,w),120,-60.,60.,90,-90.,90.);
+	for (int sm=0;sm<2;sm++)	// README_SplitTracks573 sec 29
+		hISep[sm]	= new TH2D(Form("hISep_%d",sm),Form("hISep_%d;#Delta#phi*(R=%.0f cm) (deg);|dy|",sm,100*ISEP_R),40,-10.,10.,15,0.,1.5);
+	for (int sm=0;sm<2;sm++)
+		hGapDy[sm]	= new TH2D(Form("hGapDy_%d",sm),Form("hGapDy_%d;#Delta#phi (deg);|dy|",sm),120,-60.,60.,20,0.,2.);
+	for (int sm=0;sm<2;sm++){	// README_SplitTracks573 sec 32
+		hGapPhi[sm]		= new TH2D(Form("hGapPhi_%d",sm),Form("hGapPhi_%d;#Delta#phi (deg);#LT#phi#GT (deg)",sm),120,-60.,60.,72,-180.,180.);
+		hGapYbar[sm]	= new TH2D(Form("hGapYbar_%d",sm),Form("hGapYbar_%d;#Delta#phi (deg);#LTy#GT",sm),120,-60.,60.,22,-1.1,1.1);
+		const double ptE[9]		= {0.1,0.2,0.3,0.4,0.5,0.65,0.8,1.1,2.0};
+		const double nchE[12]	= {1.5,3.5,5.5,7.5,9.5,12.5,15.5,19.5,24.5,29.5,39.5,79.5};
+		hGapPt[sm]	= new TH2D(Form("hGapPt_%d",sm),Form("hGapPt_%d;#Delta#phi (deg);#LTp_{T}#GT (GeV/c)",sm),120,-60.,60.,8,ptE);
+		hGapRm[sm]	= new TH2D(Form("hGapRm_%d",sm),Form("hGapRm_%d;#Delta#phi (deg);R_{m} (meeting radius, m)",sm),120,-60.,60.,29,0.,1.45);
+		hGapNch[sm]	= new TH2D(Form("hGapNch_%d",sm),Form("hGapNch_%d;#Delta#phi (deg);N_{ch} accepted",sm),120,-60.,60.,11,nchE);
+	}
 	//---- fine invariant mass near threshold, drawn next to C(Q): 500 x 1 MeV from m1+m2-5 MeV
 	{
 		double xth	= fMass1 + fMass2;
@@ -474,6 +501,7 @@ void CalcRm::Increment(double zv, double field,
 		mix_zvtx[evtid][izv]	 = zv;
 		mix_run[evtid][izv]		 = fCurrentRun;			// sec 18.20
 		mix_evt[evtid][izv]		 = fCurrentEvt;
+		mix_nch[evtid][izv]		 = fCurrentNch;			// sec 34
  		if (evtid==NMIX-1){
  			fillHists			 = true;
  		}
@@ -615,6 +643,7 @@ void CalcRm::Increment(double zv, double field,
 					//
 					//----- via pairinfo..
 					double y1,y2,dy,dphi,dpt,dq,Qinv,Minv,Minvr,kT; bool NearSide;
+					fPairSM	= 0;	// sec 29: sibling (for hISep)
 					bool keep = PairInfo(i,iev,j,iev,izv,
 										 y1,y2,dy,dphi,dpt,dq,Qinv,Minv,NearSide,kT);
 					if (!keep) continue;
@@ -622,6 +651,8 @@ void CalcRm::Increment(double zv, double field,
 					hrho2_S[0][izv]	->Fill(y1,y2  ,weight);
 					hrho2_S[1][izv]	->Fill(dy,dphi,weight);
 					hzoom_S			->Fill(dy,dphi,weight);	// sec 16.8
+					FillTTR(0,i,iev,j,iev,izv,weight);			// README_SplitTracks573 sec 11
+					FillGap(0,i,iev,j,iev,izv,weight);			// README_SplitTracks573 sec 28
 					hrho2_S[2][izv]	->Fill(y1-y2,dq,weight);	// README_Crossing decision 11: (dy,dq) gets the UNflipped dy (dy above is pt-ordered, for (dy,dphi) only)
 					hMinv_S[izv]	->Fill(Minv   ,weight);
 					hMinvF_S		->Fill(Minv   ,weight);
@@ -714,6 +745,7 @@ void CalcRm::Increment(double zv, double field,
 					//-------------------------------------------------
 					//
 					double y1,y2,dy,dphi,dpt,dq,Qinv,Minv,kT; bool NearSide;
+					fPairSM	= 1;	// sec 29: mixed (for hISep)
 					bool keep = PairInfo(i,iev,j,jev,izv,
 										 y1,y2,dy,dphi,dpt,dq,Qinv,Minv,NearSide,kT);
 					if (!keep) continue;
@@ -721,6 +753,8 @@ void CalcRm::Increment(double zv, double field,
 					hrho2_M[0][izv]		->Fill(y1,y2  ,weight);
 					hrho2_M[1][izv]		->Fill(dy,dphi,weight);
 					hzoom_M				->Fill(dy,dphi,weight);	// sec 16.8
+					FillTTR(1,i,iev,j,jev,izv,weight);				// README_SplitTracks573 sec 11
+					FillGap(1,i,iev,j,jev,izv,weight);				// README_SplitTracks573 sec 28
 					//---- sec 18.20: same-TF / neighboring-TF mixed-pair counters (cheap per-production
 					//---- monitor of the trigger-frame structure; see README sec 18.20-18.23)
 					{
@@ -764,6 +798,82 @@ void CalcRm::Increment(double zv, double field,
 }
 
 //------------------------------------------------------------
+//------------------------------------------------------------
+// README_SplitTracks573 sec 11: dphi*(R) = phi1 - phi2 - s*q*[asin(a R/pt1) - asin(a R/pt2)], a = 0.3*B/2
+// (B in T, R in m, pt in GeV/c): the two tracks' azimuthal separation at transverse radius R. Both sign
+// hypotheses s = +-1 are filled (the q*B sign convention is chosen from the data). Unordered (index order),
+// so the maps are symmetric in dphi*. Radii a track cannot reach (a R/pt > 1) are skipped.
+void CalcRm::FillTTR(int sm, int i, int iev, int j, int jev, int izv, double weight){
+	if (fChg1==0. || fChg2==0.) return;
+	double y1	= mix_part1[0][i][iev][izv], phi1 = mix_part1[1][i][iev][izv], pt1 = mix_part1[2][i][iev][izv];
+	double y2	= mix_part2[0][j][jev][izv], phi2 = mix_part2[1][j][jev][izv], pt2 = mix_part2[2][j][jev][izv];
+	double dy	= y1-y2;
+	if (fabs(dy)>=0.2) return;
+	double dphi0	= phi1-phi2;
+	while (dphi0>= 180.) dphi0 -= 360.;
+	while (dphi0< -180.) dphi0 += 360.;
+	if (fabs(dphi0)>=40.) return;
+	double a	= 0.3*fabs(fField)/2.0;
+	static const double RFIX[3]	= {0.30,0.50,0.70};
+	for (int is=0;is<2;is++){
+		double s	= (is==0) ? 1.0 : -1.0;
+		auto dps	= [&](double R, bool& ok){
+			double x1 = a*R/pt1, x2 = a*R/pt2;
+			ok	= (x1<1.0 && x2<1.0);
+			if (!ok) return 0.0;
+			return dphi0 - s*(fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI;
+		};
+		for (int ir=0;ir<3;ir++){ bool ok; double d = dps(RFIX[ir],ok); if (ok) hTTR[sm][is][ir]->Fill(dy,d,weight); }
+		double best=1e9; bool any=false;
+		for (double R=0.30; R<=0.781; R+=0.02){ bool ok; double d = dps(R,ok); if (!ok) break; any=true; if (fabs(d)<fabs(best)) best=d; }
+		if (any) hTTR[sm][is][3]->Fill(dy,best,weight);
+		if (any && is==0){	// sec 20: the side the pt-ordering (PairInfo) puts this pair on
+			double dpt	= pt1-pt2, od = dphi0;
+			if (fLikeSign){ if ((fChg1>0 && dpt<0.0) || (fChg1<0 && dpt>0.0)) od = -od; }
+			else if (fChg1>0 && fChg2<0) od = -od;
+			hTTRside[sm][od<0 ? 1 : 0]->Fill(dy,best,weight);
+		}
+	}
+}
+
+//------------------------------------------------------------
+// README_SplitTracks573 sec 28: sector-gap diagnostic. The TPC sector gaps are fixed in detector phi, so a track
+// meets them at vertex phi = phi_gap + q*asin(aR/pt): two tracks see the gaps "aligned" when dphi - s is a multiple
+// of the sector pitch (30 deg), s = q1*asin(aR/pt1) - q2*asin(aR/pt2). Within one s bin sibling and mixed pairs
+// see the same alignment, so the gap acceptance cancels in S/M bin by bin in s.
+void CalcRm::FillGap(int sm, int i, int iev, int j, int jev, int izv, double weight){
+	if (fChg1==0. || fChg2==0.) return;
+	double y1	= mix_part1[0][i][iev][izv], phi1 = mix_part1[1][i][iev][izv], pt1 = mix_part1[2][i][iev][izv];
+	double y2	= mix_part2[0][j][jev][izv], phi2 = mix_part2[1][j][jev][izv], pt2 = mix_part2[2][j][jev][izv];
+	double ady	= fabs(y1-y2);
+	double dphi	= phi1-phi2;
+	while (dphi>= 180.) dphi -= 360.;
+	while (dphi< -180.) dphi += 360.;
+	if (fabs(dphi)>=60.) return;
+	hGapDy[sm]->Fill(dphi,ady,weight);
+	if (ady>=1.0) return;
+	double phib	= phi2 + 0.5*dphi;						// circular mean of the two vertex phis
+	while (phib>= 180.) phib -= 360.;
+	while (phib< -180.) phib += 360.;
+	hGapPhi[sm]->Fill(dphi,phib,weight);
+	hGapYbar[sm]->Fill(dphi,0.5*(y1+y2),weight);
+	hGapPt[sm]->Fill(dphi,0.5*(pt1+pt2),weight);					// sec 34
+	hGapNch[sm]->Fill(dphi,mix_nch[iev][izv],weight);
+	{	//---- sec 34.1: the meeting radius R_m, where the two tracks meet in phi (swap order), phi_i(R) = phi_i + q_i asin(aR/pt_i)
+		//---- (the sign the data pick, sec 28), small-angle: dphi + aR (q1/pt1 - q2/pt2) = 0. Never meet (R < 0) -> 1.4 m.
+		const double aa	= 0.3*fabs(fField)/2.0;
+		double k	= aa*(fChg1/pt1 - fChg2/pt2);
+		double rx	= (k!=0.) ? -(dphi*M_PI/180.0)/k : -1.;
+		if (rx<0. || rx>1.4) rx = 1.4;
+		hGapRm[sm]->Fill(dphi,rx,weight);
+	}
+	const double a	= 0.3*fabs(fField)/2.0, R = 0.55;
+	double x1 = a*R/pt1, x2 = a*R/pt2;
+	if (x1>=1.0 || x2>=1.0) return;
+	double s	= (fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI;
+	hGap[sm][ady<0.4 ? 1 : 0]->Fill(dphi,s,weight);
+}
+
 bool CalcRm::PairInfo(int i, int iev, int j, int jev, int izv,
 					  double& y1,double& y2,double& dy,double& dphi,
 					  double& dpt,double& dq,double& Qinv,double& Minv,bool& NearSide,double& kT){
@@ -783,6 +893,41 @@ bool CalcRm::PairInfo(int i, int iev, int j, int jev, int izv,
 	dy		= y1 - y2;
 	dpt		= pt1 - pt2;
 	dphi	= phi1 - phi2;				// deg!!
+	//---- README_SplitTracks573 sec 11: two-track-resolution cut (opt-in, "tsepYYPP"), before any flip,
+	//---- identical for sibling and mixed pairs. dphi* at R = 0.5 m, sign "+" (chosen from the data, sec 11).
+	if (fChg1!=0. && fChg2!=0.) ++nPairCut[fPairSM][0];	// README_SplitTracks573 Final state: pairs reaching the pair cuts
+	if (fTSepDy>0. && fLikeSign && fChg1!=0. && fChg2!=0. && fabs(dy)<fTSepDy){
+		const double a0	= 0.3*fabs(fField)/2.0;
+		auto dstar	= [&](double R, bool& ok){
+			double x1 = a0*R/pt1, x2 = a0*R/pt2;
+			ok = (x1<1.0 && x2<1.0);
+			if (!ok) return 999.;
+			double d	= dphi - (fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI;
+			while (d>= 180.) d -= 360.;
+			while (d< -180.) d += 360.;
+			return fabs(d);
+		};
+		double dmin	= 999.;
+		if (fTSepMin){
+			for (double R=0.30; R<=0.781; R+=0.02){ bool ok; double d = dstar(R,ok); if (!ok) break; dmin = std::min(dmin,d); }
+		} else { bool ok; dmin = dstar(0.5,ok); }
+		if (dmin<fTSepDphi){ ++nPairCut[fPairSM][1]; return false; }
+	}
+	//---- README_SplitTracks573 sec 29: near-vertex two-track cut (opt-in, "isepPPP"). Sibling tracks at nearly the same
+	//---- phi near the vertex are lost up to abs(dy) ~ 0.8 (sec 28.1/29: the net loss is deepest at R ~ 2-3 cm), so reject
+	//---- abs(dphi*(R = ISEP_R)) < fISepDphi at abs(dy) < ISEP_DYMAX, LS and ULS, identical for sibling and mixed.
+	//---- hISep records every charged pair BEFORE the cut (the cut is drawn on it in the PDF).
+	if (fChg1!=0. && fChg2!=0.){
+		const double a0	= 0.3*fabs(fField)/2.0;
+		double x1 = a0*ISEP_R/pt1, x2 = a0*ISEP_R/pt2;
+		if (x1<1.0 && x2<1.0){
+			double d	= dphi - (fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI;
+			while (d>= 180.) d -= 360.;
+			while (d< -180.) d += 360.;
+			hISep[fPairSM]->Fill(d,fabs(dy));
+			if (fISepDphi>0. && fabs(dy)<ISEP_DYMAX && fabs(d)<fISepDphi){ ++nPairCut[fPairSM][2]; return false; }
+		}
+	}
 	if (fDoCrossing){
 		//---- 2026-09-25 (README_Crossing sec 8, user): dphi sign convention chosen so the crossing
 		//---- damage lands just BELOW dphi=0 (dirty side dphi<0 at field>0, as in STAR); 0..180 is clean.
@@ -819,6 +964,8 @@ bool CalcRm::PairInfo(int i, int iev, int j, int jev, int izv,
 	if (fDoDQ || fDoMinvCut){
 		double px1 		= pt1*cos(phi1/raddeg);		// class phi angles are in degrees
 		double py1 		= pt1*sin(phi1/raddeg);		// class phi angles are in degrees
+		//---- y1,y2 are RAPIDITIES (README_PID.md, 2026-09-28: corral::Loop converts eta -> y with the PID mass;
+		//---- before that it passed eta here, which overstated pz by mt/pt)
 		double mt1		= sqrt(pt1*pt1 + fMass1*fMass1);
 		double pz1		= mt1*sinh(y1);
 		double pE1		= mt1*cosh(y1);
@@ -1229,19 +1376,27 @@ void CalcRm::Calculate(){
 		//delete[] hR2dye; //hR2dye[izv]=0;
 		//delete[] hR2dyN; //hR2dyN[izv]=0;
 		//
-		//---- Project R2(y1,y2) onto R2yy(dy)...
+		//---- Project R2(y1,y2) onto R2yy(dy) (a cross-check). Equal y widths = the dy width: the cell centre is a dy bin
+		//---- centre; otherwise each cell is spread over the dy bins it overlaps (DyOverlap, fluct_common.h).
+		bool sameW	= (fabs(YBW1-YBW2)<1.e-6 && fabs(YBW1-DYBW)<1.e-6);
+		std::vector<std::pair<int,double>> ov;
 		for (int ibx=1;ibx<=hR2[0][izv]->GetXaxis()->GetNbins();ibx++){			// x-bin is y1
 			for (int iby=1;iby<=hR2[0][izv]->GetYaxis()->GetNbins();iby++){		// y-bin is y2
-				double y1,y2,dy,ay,val,vale;
+				double y1,y2,dy,val,vale;
 				y1		= hR2[0][izv]->GetXaxis()->GetBinCenter(ibx);
 				y2		= hR2[0][izv]->GetYaxis()->GetBinCenter(iby);
 				dy		= y1 - y2;
 				val		= hR2[0][izv]->GetBinContent(ibx,iby);
 				vale	= hR2[0][izv]->GetBinError(ibx,iby);
 				if (hrho2_M[0][izv]->GetBinContent(ibx,iby)>0.){	// valid bin (README_Crossing sec 8); R2=-1 is valid
-					hR2yydy[izv]	->Fill(dy, val);
-					hR2yydye[izv]	->Fill(dy, vale*vale);
-					hR2yydyN[izv]	->Fill(dy, 1.0);
+					if (sameW){ ov.clear(); ov.push_back({hR2yydy[izv]->GetXaxis()->FindFixBin(dy),1.0}); }
+					else DyOverlap(y1,YBW1,y2,YBW2,DYNB,DYL,DYBW,ov);
+					for (auto &o : ov){
+						double x	= hR2yydy[izv]->GetXaxis()->GetBinCenter(o.first);
+						hR2yydy[izv]	->Fill(x, o.second*val);
+						hR2yydye[izv]	->Fill(x, o.second*vale*vale);
+						hR2yydyN[izv]	->Fill(x, o.second);
+					}
 				}
 			}	// iby
 		}	// ibx
@@ -1438,6 +1593,9 @@ void CalcRm::Calculate(){
 	}
 	delete hzvtxprob; hzvtxprob = 0;
 	//
+	if (fChg1!=0. && fChg2!=0. && nPairCut[0][0]>0 && nPairCut[1][0]>0)	// README_SplitTracks573 Final state: pair-cut fractions
+		cout<<Form("CalcRm::Calculate -- pair cuts (pid %d,%d): tsep removed %.3f%% S / %.3f%% M, isep %.3f%% S / %.3f%% M of %ld S / %ld M charged pairs",
+			fPid1,fPid2,100.*nPairCut[0][1]/nPairCut[0][0],100.*nPairCut[1][1]/nPairCut[1][0],100.*nPairCut[0][2]/nPairCut[0][0],100.*nPairCut[1][2]/nPairCut[1][0],nPairCut[0][0],nPairCut[1][0])<<endl;
 	if (fDoCrossing && fDirtySide==0){
 		cout<<"CalcRm::Calculate -- crossing correction (pid "<<fPid1<<","<<fPid2<<", dirty side 0): not pt-ordered, not corrected (C maps = uncorrected)"<<endl;
 	} else if (fDoCrossing){	// README_Crossing step 7: log check that the corrected maps are dphi-symmetric

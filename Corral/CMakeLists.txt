@@ -13,7 +13,7 @@ endif()
 find_package(ROOT REQUIRED)
 include(${ROOT_USE_FILE})
 
-# corral_m runs corral_loop.cxx over the outTree with CalcRm (event mixing).
+# corral runs corral_loop.cxx over the outTree with CalcRm (event mixing).
 # (An earlier convolution version, CalcRc, was removed 2026-09-26: convolution
 # cannot work on datasets that need pair cuts.)
 set(COMMON_SOURCES
@@ -36,13 +36,20 @@ set(CORRAL_ROOT_LIBS
 )
 
 # The binary lands at the repo root (not a build/ subdir) so the run scripts'
-# `./corral_m` keeps working unchanged.
+# `./corral` works from the repo root (the binary was called corral_m until 2026-09-27).
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
-add_executable(corral_m ${COMMON_SOURCES} src/CalcRm.cxx)
-target_include_directories(corral_m PRIVATE src)
-target_link_libraries(corral_m PRIVATE ${CORRAL_ROOT_LIBS})
+add_executable(corral ${COMMON_SOURCES} src/CalcRm.cxx)
+target_include_directories(corral PRIVATE src)
+target_link_libraries(corral PRIVATE ${CORRAL_ROOT_LIBS})
 
 # Default project directory (lists/<set>/, root/<set>/ read by Finalize) = this source tree;
 # the environment variable CORRAL_DIR overrides it at run time (finalize_hists.h, CorralDir()).
-target_compile_definitions(corral_m PRIVATE CORRAL_DIR_DEFAULT="${CMAKE_SOURCE_DIR}/")
+target_compile_definitions(corral PRIVATE CORRAL_DIR_DEFAULT="${CMAKE_SOURCE_DIR}/")
+
+# corral_pi: the same code with only the 4 pion pair types (src/PairTypes.h, CORRAL_PIONS_ONLY), for
+# fast split-track / two-track development runs (README_SplitTracks573 sec 16). Not for production.
+add_executable(corral_pi ${COMMON_SOURCES} src/CalcRm.cxx)
+target_include_directories(corral_pi PRIVATE src)
+target_link_libraries(corral_pi PRIVATE ${CORRAL_ROOT_LIBS})
+target_compile_definitions(corral_pi PRIVATE CORRAL_DIR_DEFAULT="${CMAKE_SOURCE_DIR}/" CORRAL_PIONS_ONLY)

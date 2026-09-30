@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Make corral_m job lists from a segment_entries.txt (written by count_entries.C):
+# Make corral job lists from a segment_entries.txt (written by count_entries.C):
 #   one list = contiguous segments of ONE run, in segment order, ~TARGET events.
 #   Per run: nlists = max(1, round(run_events/TARGET)); cut the run into nlists contiguous groups
 #   of nearly equal event counts. Lists are numbered 0..N-1 across runs (run order, then segment

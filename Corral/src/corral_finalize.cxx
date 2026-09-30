@@ -1,4 +1,5 @@
 #include "corral_class.h"
+#include <TSystem.h>
 #include "fluct_common.h"
 #include "PairTypes.h"
 #include "finalize_hists.h"
@@ -36,7 +37,7 @@
 //     chunk); others are skipped; N_valid < NVALIDMIN -> error 0 (no reliable error, empty-bin rule).
 //     The central value stays the full-stats combination.
 //   Anything else in the list: plain sum over chunks (step 1).
-// Every listed histogram is compared with the single-job reference FINALIZE_REF and written to
+// Every listed histogram is compared with the single-job reference (root/<set>/<CorralFilePrefix(set)>.root) and written to
 // root/<base>.root; one pdf page per name (4x4 pairtypes), plus subgroup-error pages for the CF names.
 //
 void DrawCQSignposts(int ipid1, int ipid2, double ymin, double ymax, double xmax);	// corral_loop.cxx
@@ -92,6 +93,11 @@ void corral::Finalize(){
 	//---- the environment variable FINALIZE_NEXPMIN overrides it for ALL pairtypes (scans)
 	const bool nexpOverride	= (getenv("FINALIZE_NEXPMIN")!=0);
 	const double nexpGlobal	= nexpOverride ? atof(getenv("FINALIZE_NEXPMIN")) : -1.;
+	//---- README_SplitTracks573 sec 38: acceptance-edge rule. A bin-zvtx whose rho2(M) is below MFRAC x the largest rho2(M) of
+	//---- that bin over the zvtx slices (full statistics) is a partial-acceptance edge (the central-membrane mask, the y reach
+	//---- of the outer slices); it is left out of the Zvtx average like N_exp < N_min. FINALIZE_MFRAC overrides (0 = off).
+	const double mFrac	= getenv("FINALIZE_MFRAC") ? atof(getenv("FINALIZE_MFRAC")) : 0.3;
+	cout<<"corral::Finalize -- Zvtx-average validity: rho2(M) >= "<<mFrac<<" x the bin's largest rho2(M) over the slices (acceptance edges; FINALIZE_MFRAC)"<<endl;
 	if (nexpOverride) cout<<"corral::Finalize -- Zvtx-average validity: N_exp = nevt*rho2(M) >= "<<nexpGlobal<<" for ALL pairtypes (FINALIZE_NEXPMIN override)"<<endl;
 	else              cout<<"corral::Finalize -- Zvtx-average validity: N_exp = nevt*rho2(M) >= N_min per pairtype (PairTypes.h 3rd field)"<<endl;
 	//
@@ -108,15 +114,28 @@ void corral::Finalize(){
 	//---- open all chunk files (all must exist) and the reference
 	std::vector<TFile*> fch;
 	for (int ic=0;ic<nlists;ic++){
-		TString fn	= PROJ+"root/"+SET+Form("/chunks/corral_m_%02d.root",ic);
+		TString fn	= PROJ+"root/"+SET+Form("/chunks/%s_%02d.root",CorralFilePrefix(SET.Data()),ic);	// per-dataset convention
 		TFile *f	= TFile::Open(fn.Data());
 		if (!f || f->IsZombie()){ cout<<"corral::Finalize -- cannot open "<<fn<<", exit"<<endl; exit(1); }
 		fch.push_back(f);
 	}
-	TString REF	= PROJ+"root/"+SET+"/"+FINALIZE_REF;
+	TString REF	= PROJ+"root/"+SET+"/"+CorralFilePrefix(SET.Data())+".root";	// per-dataset convention
+	cout<<"corral::Finalize -- reference "<<REF<<endl;
 	TFile *fref	= TFile::Open(REF.Data());
-	if (!fref || fref->IsZombie()){ cout<<"corral::Finalize -- cannot open reference "<<REF<<", exit"<<endl; exit(1); }
+	if (!fref || fref->IsZombie()){	// the whole-dataset job may still be running: physics pages only, no reference pages
+		cout<<"corral::Finalize -- WARNING: no reference "<<REF<<", the pages vs the reference are skipped"<<endl;
+		fref	= nullptr;
+	}
 	//
+	//---- crossing correction: follow the chunks. A "nocross" job leaves its C maps empty (CalcRm), and Finalize then
+	//---- leaves the C maps uncorrected too (copies of the plain ones), so a nocross set stays uncorrected end to end.
+	bool chunkCross	= true;
+	{
+		TH1 *hp	= (TH1*)fch[0]->Get("hrho2_1_0");
+		TH1 *hc	= (TH1*)fch[0]->Get("hrho2C_1_0");
+		if (hp && hp->Integral()>0 && (!hc || hc->Integral()==0)) chunkCross = false;
+		cout<<"corral::Finalize -- crossing correction "<<(chunkCross?"ON":"OFF (the chunks ran nocross: C maps = plain maps)")<<endl;
+	}
 	bool anyCF	= false;
 	for (int ih=0;ih<NFINALIZEHISTS;ih++){ int kd,ir; if (ParseCF(TString(FinalizeHists[ih]),kd,ir)) anyCF = true; }
 	//
@@ -236,6 +255,20 @@ void corral::Finalize(){
 				nevc[ic]	+= nc[ic][z];
 			}
 			zentc[ic]	= hz->GetEntries();
+			//---- README_SplitTracks573 sec 30: the physics Zvtx range. A slice outside abs(zvtx) < valFinZMax gets no events
+			//---- and no weight, so every step below (the CF chain, masks, C(Q)) leaves it out; its maps stay in the chunks.
+			for (int z=0;z<NZ;z++){
+				double lo = hz->GetXaxis()->GetBinLowEdge(z+1), hi = hz->GetXaxis()->GetBinUpEdge(z+1);
+				if (lo < -valFinZMax-1e-6 || hi > valFinZMax+1e-6){
+					zentc[ic]	-= zc[ic][z];
+					nevc[ic]	-= nc[ic][z];
+					nc[ic][z] = 0.; dc[ic][z] = 0.; zc[ic][z] = 0.;
+				}
+			}
+			if (ic==0 && ipaty==0){
+				int nin=0; for (int z=0;z<NZ;z++) if (zc[0][z]>0.) ++nin;
+				cout<<"corral::Finalize -- physics Zvtx range abs(zvtx) < "<<valFinZMax<<" cm: "<<nin<<" of "<<NZ<<" slices (chunk 0)"<<endl;
+			}
 			delete hn; delete hd; delete hz;
 		}
 		double nevtAll	= 0.;	// events of this pairtype, all chunks (sum of hnevtz)
@@ -343,6 +376,16 @@ void corral::Finalize(){
 			TH2D *tmpl	= (TH2D*)fch[0]->Get(Form("hrho2_%d_z%02d_%d",ir2,0,ipaty));	// binning template
 			if (!tmpl){ cout<<"corral::Finalize -- hrho2_"<<ir2<<"_z00_"<<ipaty<<" missing in chunk 0, exit"<<endl; exit(1); }
 			tmpl	= (TH2D*)tmpl->Clone(Form("tmpl_%d_%d",ir2,ipaty)); tmpl->SetDirectory(0); tmpl->Reset();
+			//---- sec 38: the bin's largest full-stats rho2(M) over the zvtx slices used (reference of the acceptance-edge rule)
+			TH2D *mRef	= (TH2D*)tmpl->Clone(Form("mRef_%d_%d",ir2,ipaty)); mRef->SetDirectory(0);
+			for (int z=0;z<NZ;z++){
+				double nd = 0.; for (int ic=0;ic<nlists;ic++) if (cM[ic][z]) nd += nc[ic][z]*dc[ic][z];
+				if (nd<=0.) continue;
+				TH2D *mz	= (TH2D*)tmpl->Clone("mz_tmp"); mz->SetDirectory(0);
+				for (int ic=0;ic<nlists;ic++) if (cM[ic][z]) mz->Add(cM[ic][z], nc[ic][z]*dc[ic][z]/nd);
+				for (int ib=0;ib<mz->GetNcells();ib++) if (mz->GetBinContent(ib)>mRef->GetBinContent(ib)) mRef->SetBinContent(ib,mz->GetBinContent(ib));
+				delete mz;
+			}
 			//
 			//---- the CF chain on a set of chunks (all = full stats, step 2; one = a subgroup, step 3)
 			//----   own mode (fx==0): zvtx weights, zvtx-bin use and validity masks from these chunks;
@@ -366,6 +409,7 @@ void corral::Finalize(){
 				if (fx) for (int z=0;z<NZ;z++){ wz[z] = fx->wz[z]; okz[z] = fx->okz[z]; }
 				std::vector<TH2D*> S(NZ,0), M(NZ,0), C2(NZ,0), R2(NZ,0), SC(NZ,0), C2C(NZ,0), R2C(NZ,0), MK(NZ,0), VZ(NZ,0), BADU(NZ,0), BADC(NZ,0);
 				long nBelow=0, nBelowS=0;		// bin-zvtx with rho2(M)>0 but N_exp<nmin (own mode)
+				long nEdge=0, nEdgeS=0;			// sec 38: bin-zvtx left out as acceptance edges (rho2(M) < mFrac x mRef; own mode, nmin>0)
 				for (int z=0;z<NZ;z++){
 					S[z]	= (TH2D*)tmpl->Clone(Form("S%d_%d_%d%s",ir2,z,ipaty,tag.Data())); S[z]->SetDirectory(0);
 					M[z]	= (TH2D*)tmpl->Clone(Form("M%d_%d_%d%s",ir2,z,ipaty,tag.Data())); M[z]->SetDirectory(0);
@@ -383,6 +427,10 @@ void corral::Finalize(){
 						for (int ib=0;ib<VZ[z]->GetNcells();ib++){
 							double m	= M[z]->GetBinContent(ib);
 							if (!okn[z] || m<=0.) continue;
+							if (nmin>0. && mFrac>0. && m<mFrac*mRef->GetBinContent(ib)){
+								if (!VZ[z]->IsBinUnderflow(ib) && !VZ[z]->IsBinOverflow(ib)){ ++nEdge; if (S[z]->GetBinContent(ib)>0.) ++nEdgeS; }
+								continue;
+							}
 							if (N[z]*m>=nmin) VZ[z]->SetBinContent(ib,1.);
 							else if (!VZ[z]->IsBinUnderflow(ib) && !VZ[z]->IsBinOverflow(ib)){ ++nBelow; if (S[z]->GetBinContent(ib)>0.) ++nBelowS; }
 						}
@@ -430,7 +478,7 @@ void corral::Finalize(){
 						TH2D** dst[3]	= {&SC[z], &C2C[z], &R2C[z]};
 						for (int k=0;k<3;k++){
 							*dst[k]	= (TH2D*)src[k]->Clone(Form("%s_C",src[k]->GetName())); (*dst[k])->SetDirectory(0);
-							if (okz[z]) CrossingCorrect(*dst[k],ds,VZ[z]);
+							if (okz[z] && chunkCross) CrossingCorrect(*dst[k],ds,VZ[z]);
 						}
 						if (fx){
 							MK[z]	= (TH2D*)fx->mk[z]->Clone(Form("MK_%d_%d%s",z,ipaty,tag.Data())); MK[z]->SetDirectory(0);
@@ -439,11 +487,11 @@ void corral::Finalize(){
 							BADC[z]	= (TH2D*)BADU[z]->Clone(Form("BADC_%d_%d%s",z,ipaty,tag.Data())); BADC[z]->SetDirectory(0);
 							TH2D *ones	= (TH2D*)tmpl->Clone("ones_tmp"); ones->SetDirectory(0);
 							for (int ib=0;ib<ones->GetNcells();ib++) ones->SetBinContent(ib,1.);
-							if (okz[z]) CrossingCorrect(BADC[z],ds,ones);
+							if (okz[z] && chunkCross) CrossingCorrect(BADC[z],ds,ones);
 							delete ones;
 						} else {
 							MK[z]	= (TH2D*)VZ[z]->Clone(Form("MK_%d_%d%s",z,ipaty,tag.Data())); MK[z]->SetDirectory(0);
-							if (okz[z]) CrossingCorrect(MK[z],ds,MK[z]);
+							if (okz[z] && chunkCross) CrossingCorrect(MK[z],ds,MK[z]);
 						}
 					}
 				}
@@ -462,6 +510,8 @@ void corral::Finalize(){
 					}
 					cout<<Form("corral::Finalize -- pairtype %2d ir2=%d: %d bins have rho2(M)=0 in >=1 used zvtx bin (%ld bin-zvtx, %ld of them with rho2(S)>0); %ld more bin-zvtx below N_exp>=%g (%ld with rho2(S)>0) left out",
 						ipaty,ir2,nbinAny,nMz,nSMz,nBelow,nmin,nBelowS)<<endl;
+					cout<<Form("corral::Finalize -- pairtype %2d ir2=%d: %ld bin-zvtx left out as acceptance edges (rho2(M) < %.2f x the bin's largest over the slices; %ld with rho2(S)>0)",
+						ipaty,ir2,nEdge,mFrac,nEdgeS)<<endl;
 				}
 				//---- Zvtx averages (masks: VZ uncorrected, MK corrected)
 				auto zavg	= [&](std::vector<TH2D*>& v, std::vector<TH2D*>& mk, double sentinel, const char* nm){
@@ -510,7 +560,8 @@ void corral::Finalize(){
 			for (int ic=0;ic<nlists;ic++){
 				CFSet own	= chain(std::vector<int>(1,ic), false, TString(Form("_own%02d",ic)), 0., 0, false);
 				for (int k=0;k<NK;k++){
-					TString nm	= Form("%s_%d",Form(KINDNAME[k],ir2),ipaty);
+					int kc		= (!chunkCross && k>=4) ? ((k==4) ? 0 : k-3) : k;	// nocross chunks (rho2C,C2C,R2C -> rho2,C2,R2): C must equal the chunk's plain map
+					TString nm	= Form("%s_%d",Form(KINDNAME[kc],ir2),ipaty);
 					TH2D *hc	= (TH2D*)fch[ic]->Get(nm.Data());
 					if (!hc){ ++chk1miss[k]; continue; }
 					for (int ib=0;ib<hc->GetNcells();ib++){
@@ -625,14 +676,52 @@ void corral::Finalize(){
 						hout->SetBinError(ob, sqrt(std::max(0.,var))/sqrt((double)nlists));
 					}
 				};
+				//---- README_SplitTracks573 sec 26.1: R2(dy) from (y1,y2) as sum S / sum M - 1 along each dy diagonal (an
+				//---- equal-weight mean of R2 cells is pulled up by the acceptance-edge cells); same validity/fill-in as project()
+				//---- 2026-09-30: outbins(ix,iy,v) gives the output bins of a cell with their weights (a cell of unequal y widths
+				//---- is spread over the dy bins it overlaps; DyOverlap, fluct_common.h)
+				auto projectRatio	= [&](auto outbins, TH1D* hout){
+					int nb		= hout->GetNbinsX();
+					std::vector<double> sf(nb+2,0.), mf(nb+2,0.);
+					std::vector<std::vector<double>> sc(nlists,std::vector<double>(nb+2,0.)), mc(nlists,std::vector<double>(nb+2,0.));
+					std::vector<std::pair<int,double>> ov;
+					for (int ix=1;ix<=nx;ix++) for (int iy=1;iy<=ny;iy++){
+						if (full.V->GetBinContent(ix,iy)<=0.) continue;
+						outbins(ix,iy,ov);
+						double fs	= full.h[0]->GetBinContent(ix,iy), fm = full.h[1]->GetBinContent(ix,iy);
+						for (int ic=0;ic<nlists;ic++){ ++fillT[ipaty]; if (sub[ic].V->GetBinContent(ix,iy)<=0.) ++fillN[ipaty]; }
+						for (auto &o : ov){
+							int ob	= o.first; double w = o.second;
+							if (ob<1 || ob>nb) continue;
+							sf[ob] += w*fs; mf[ob] += w*fm;
+							for (int ic=0;ic<nlists;ic++){
+								bool u	= (sub[ic].V->GetBinContent(ix,iy)>0.);
+								sc[ic][ob]	+= w*(u ? sub[ic].h[0]->GetBinContent(ix,iy) : fs);
+								mc[ic][ob]	+= w*(u ? sub[ic].h[1]->GetBinContent(ix,iy) : fm);
+							}
+						}
+					}
+					for (int ob=1;ob<=nb;ob++){
+						if (mf[ob]<=0.) continue;
+						double s=0,s2=0; int n=0;
+						for (int ic=0;ic<nlists;ic++){ if (mc[ic][ob]<=0.) continue; double x = sc[ic][ob]/mc[ic][ob]-1.; s += x; s2 += x*x; ++n; }
+						hout->SetBinContent(ob, sf[ob]/mf[ob]-1.);
+						if (n>1) hout->SetBinError(ob, sqrt(std::max(0.,(s2-s*s/n)/(n-1.)))/sqrt((double)n));
+					}
+				};
 				if (ir2==0){
 					TH1D *tyy	= (TH1D*)fch[0]->Get(Form("hR2yydy_%d",ipaty));
 					if (!tyy){ cout<<"corral::Finalize -- hR2yydy_"<<ipaty<<" missing in chunk 0, exit"<<endl; exit(1); }
 					P.R2yy	= (TH1D*)tyy->Clone(Form("hFin_R2yydy_%d",ipaty)); P.R2yy->SetDirectory(0); P.R2yy->Reset(); delete tyy;
-					P.R2yy->SetTitle(Form("%s%s, R_{2}(dy) from R_{2}(y_{1},y_{2}) (#pm subgroup err);dy;R_{2}",
+					P.R2yy->SetTitle(Form("%s%s, R_{2}(dy) from (y_{1},y_{2}), #SigmaS/#SigmaM (#pm subgroup err);dy;R_{2}",
 						ParticleIDNames[PairTypes_Info[ipaty][0]],ParticleIDNames[PairTypes_Info[ipaty][1]]));
 					TAxis *ayy	= P.R2yy->GetXaxis();
-					project(3,false,[&](int ix,int iy){ return ayy->FindFixBin(ax->GetBinCenter(ix)-ay->GetBinCenter(iy)); },P.R2yy);
+					double w1 = ax->GetBinWidth(1), w2 = ay->GetBinWidth(1), wd = ayy->GetBinWidth(1);
+					bool sameW	= (fabs(w1-w2)<1.e-6 && fabs(w1-wd)<1.e-6);
+					projectRatio([&](int ix,int iy,std::vector<std::pair<int,double>>& ov){
+						if (sameW){ ov.assign(1,{ayy->FindFixBin(ax->GetBinCenter(ix)-ay->GetBinCenter(iy)),1.0}); return; }
+						DyOverlap(ax->GetBinCenter(ix),w1,ay->GetBinCenter(iy),w2,ayy->GetNbins(),ayy->GetXmin(),wd,ov);
+					},P.R2yy);
 					extraW.push_back(P.R2yy);
 				}
 				if (ir2==1){
@@ -840,13 +929,13 @@ void corral::Finalize(){
 			full.Delete();
 			for (int ic=0;ic<nlists;ic++) sub[ic].Delete();		// README_Finalize step 1b will use sub[] here
 			for (int ic=0;ic<nlists;ic++) for (int z=0;z<NZ;z++){ delete cS[ic][z]; delete cM[ic][z]; }
-			delete tmpl;
+			delete tmpl; delete mRef;
 		}
 		cout<<"corral::Finalize -- pairtype "<<ipaty<<" done (dirty side "<<ds<<")"<<endl;
 	}
 	//
 	//---- compare with the reference, write, draw
-	TString OutputFileBase	= (OutputName!="") ? OutputName : TString(Form("corral_m_%s",RunString.Data()));
+	TString OutputFileBase	= (OutputName!="") ? OutputName : TString(Form("corral_%s",RunString.Data()));
 	TString RootFileName	= TString("./root/") + OutputFileBase + ".root";
 	TString PdfFileName		= TString("./pdf/")  + OutputFileBase + ".pdf";
 	TFile *fout	= new TFile(RootFileName.Data(),"RECREATE");
@@ -944,7 +1033,7 @@ void corral::Finalize(){
 				cph->cd(12); if (e){ gPad->SetRightMargin(0.14); e->Draw("colz"); }
 			}
 			cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
-			//---------------- page 2: C(Q) (2x2, as corral_m): C(Q) 0-1.2 GeV (5 MeV) with signposts | C(Q) in the
+			//---------------- page 2: C(Q) (2x2, as corral_m): C(Q) 0-2.0 GeV (5 MeV) with signposts | C(Q) in the
 			//---------------- 4 kT bins (10 MeV) | C(Q) 0-0.3 GeV (1 MeV) | Minv near threshold, sibling vs mixed
 			if (P.CQ && P.CQ5 && P.CQKT10){
 				cph->Clear(); cph->Divide(2,2,0.0001,0.0001);
@@ -958,8 +1047,8 @@ void corral::Finalize(){
 				};
 				cph->cd(1);
 				{ TH1D *h = (TH1D*)P.CQ5->Clone(Form("CQ5page_%d",ipaty)); h->SetDirectory(0);
-				  yrange(h,0.0201,1.2,0.25); h->Draw(); gPad->Update();
-				  DrawCQSignposts(pid1,pid2,gPad->GetUymin(),gPad->GetUymax(),1.2); }
+				  yrange(h,0.0201,2.0,0.25); h->Draw(); gPad->Update();
+				  DrawCQSignposts(pid1,pid2,gPad->GetUymin(),gPad->GetUymax(),2.0); }
 				cph->cd(2);
 				{
 					const int kcol[4]	= {kBlue,kGreen+2,kOrange+1,kRed};
@@ -1215,7 +1304,7 @@ void corral::Finalize(){
 		cfin->cd();
 	}
 	//==== DIAGNOSTIC PAGES from here on
-	for (int ih=0;ih<NFINALIZEHISTS;ih++){
+	for (int ih=0;ih<(fref?NFINALIZEHISTS:0);ih++){
 		TString base	= TString(FinalizeHists[ih]);
 		int kd=-1,ir;
 		bool isCF	= ParseCF(base,kd,ir);

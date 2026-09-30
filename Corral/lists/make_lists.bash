@@ -1,10 +1,10 @@
 #!/bin/bash
-# Chunk a Collect production into corral_m job lists (run this first when a new production lands).
+# Chunk a Collect production into corral job lists (run this first when a new production lands).
 #   Usage: lists/make_lists.bash <collect_dir> <nevt_per_list> [dataset]
 #   e.g.   lists/make_lists.bash /rs/rs_grp_rhi/sPHENIX/ana532 1000000 ana532
 # Output: lists/<dataset>/  list_NN.txt, list_all.txt (all lists, in list order: the single full-statistics
 #         job), lists_summary.txt, manifest.txt, segment_entries.txt.  <dataset> defaults to the basename
-#         of <collect_dir>; it is the name used everywhere (root|pdf|log/<dataset>/, corral_m -d <dataset>).
+#         of <collect_dir>; it is the name used everywhere (root|pdf|log/<dataset>/, corral -d <dataset>).
 # Each list holds contiguous segments of one run, ~nevt_per_list events. Refuses to overwrite an
 # existing list set (move or rename the old folder first).
 if [ $# -lt 2 ] || [ $# -gt 3 ]; then

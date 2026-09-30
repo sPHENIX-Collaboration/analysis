@@ -38,10 +38,13 @@ class CalcRm{
 		virtual void	SetDoBaseline(bool b);		
 		virtual bool	GetDoBaseline();		
 		virtual void	SetDoQcut(bool b);		
+		virtual void	SetInttSep(double dphistar){ fISepDphi=dphistar; }	// README_SplitTracks573 sec 29
+		virtual void	SetTrackSep(double dy, double dphistar, bool useMin=false){ fTSepDy=dy; fTSepDphi=dphistar; fTSepMin=useMin; }	// README_SplitTracks573 sec 11
 		virtual bool	GetDoQcut();		
 		virtual void	SetQcut(double v);		
 		virtual double	GetQcut();		
 		virtual void	SetCurrentRunEvt(int r, int e){ fCurrentRun=r; fCurrentEvt=e; }	// sec 18.20
+		virtual void	SetCurrentNch(int n){ fCurrentNch=n; }		// README_SplitTracks573 sec 34: accepted charged tracks
 		virtual void	SetExcludeAdjTF(int m){ fExcludeAdjTF=m; }	// sec 18.23: 0 off, 1 skip |devt|==1, 2 skip |devt|<=1
 		virtual int		GetExcludeAdjTF(){ return fExcludeAdjTF; }
 		virtual long	GetNCombUsed(int izv){ return nComb_used[izv]; }
@@ -73,6 +76,7 @@ class CalcRm{
 		virtual void	SetYL2(double y);
 		virtual double	GetYL2();
 		virtual void	SetYU2(double y);
+		virtual void	SetDYBW(double w);		// 2026-09-30: dy bin width of the (dy,dphi) maps, per pair type (0 = the y bin width)
 		virtual double	GetYU2();
 		virtual void	SetPHINB(int i);
 		virtual int		GetPHINB();
@@ -203,6 +207,17 @@ class CalcRm{
 		//---- femtoscopic Qinv numerator (sibling), denominator (mixed), and C(Q)=sib/mix ratio
 		virtual TH2D*	GethZoomS(){ return hzoom_S; }	// README sec 16.8 spike-extent zoom, sibling
 		virtual TH2D*	GethZoomM(){ return hzoom_M; }	// README sec 16.8 spike-extent zoom, mixed
+		virtual TH2D*	GethTTR(int sm, int is, int ir){ return hTTR[sm][is][ir]; }	// README_SplitTracks573 sec 11
+		virtual TH2D*	GethTTRside(int sm, int sd){ return hTTRside[sm][sd]; }	// README_SplitTracks573 sec 20
+		virtual void	FillTTR(int sm, int i, int iev, int j, int jev, int izv, double weight);
+		virtual TH2D*	GethGap(int sm, int w){ return hGap[sm][w]; }	// README_SplitTracks573 sec 28
+		virtual TH2D*	GethGapDy(int sm){ return hGapDy[sm]; }	// README_SplitTracks573 sec 28
+		virtual TH2D*	GethGapPhi(int sm){ return hGapPhi[sm]; }	// README_SplitTracks573 sec 32 (the +-15 deg notch)
+		virtual TH2D*	GethGapYbar(int sm){ return hGapYbar[sm]; }
+		virtual TH2D*	GethGapPt(int sm){ return hGapPt[sm]; }		// sec 34: the notch vs pair mean pt
+		virtual TH2D*	GethGapNch(int sm){ return hGapNch[sm]; }		// sec 34: the notch vs accepted charged tracks
+		virtual TH2D*	GethGapRm(int sm){ return hGapRm[sm]; }		// sec 34.1: the notch vs the pair's meeting radius (where the two tracks meet in phi)
+		virtual void	FillGap(int sm, int i, int iev, int j, int jev, int izv, double weight);
 		virtual TH1D*	GethMinvFineS(){ return hMinvF_S; }	// fine Minv near threshold, sibling (all Zvtx, raw)
 		virtual TH1D*	GethMinvFineM(){ return hMinvF_M; }	// same, mixed
 		virtual long	GetNMixedPairs_total()      { return nMixedPairs_total; }
@@ -245,6 +260,20 @@ class CalcRm{
 		bool   fDoCrossing;
 		bool   fDoBaseline;
 		bool   fDoQcut;
+		double fTSepDy, fTSepDphi;
+		double fISepDphi;		// sec 29: near-vertex two-track cut, abs(dphi*(ISEP_R)) < fISepDphi (deg) at abs(dy) < ISEP_DYMAX; OFF if <= 0
+		int    fPairSM;			// sec 29: 0 while PairInfo sees a sibling pair, 1 a mixed pair (hISep)
+	public:
+		//---- sec 29 constants: the radius (from the radius scan, the net loss is deepest at 2-3 cm) and the dy gate
+		//---- (the loss is gone by abs(dy) ~ 0.8)
+		static constexpr double ISEP_R		= 0.03;		// m
+		static constexpr double ISEP_DYMAX	= 1.0;
+		virtual TH2D*	GethISep(int sm){ return hISep[sm]; }
+		virtual double	GetISepDphi(){ return fISepDphi; }
+	private:
+		bool   fTSepMin;		// true: use min over R = 0.30-0.78 m of abs(dphi*) instead of R = 0.5 m ("tsepmYYPP")	// README_SplitTracks573 sec 11: two-track-resolution pair cut, OFF if fTSepDy<=0.
+									// A charged like-sign pair (sibling AND mixed, in PairInfo) is rejected if
+									// abs(y1-y2)<fTSepDy && abs(dphi*(0.5 m))<fTSepDphi (deg), dphi* with the sign "+" of FillTTR.
 		bool   fDoDQ;		// set internally
 		double fQcut;
 		int    fExcludeAdjTF;	// sec 18.23: skip mixed EVENT pairs (iev,jev) from neighboring trigger frames
@@ -256,6 +285,7 @@ class CalcRm{
 		double fDenomZ[NZVTXMAX];			// README_Finalize: rho2(M) normalization per zvtx bin (denomfactor_izv); 0 = bin not computed
 		long   nComb_possible[NZVTXMAX];	// sec 18.23: mixed event pairs offered, per zvtx bin
 		int    fCurrentRun;		// sec 18.20: this event's (run,evt), set once per event via
+		int    fCurrentNch;		// sec 34: this event's accepted charged tracks (SetCurrentNch, before Increment)
 		int    fCurrentEvt;		// SetCurrentRunEvt() right before Increment() -- (run,evt) uniquely
 									// identifies the originating trigger frame (SDCC-claude confirmed
 									// `evt` IS the TF's own EvtSequence, constant across every row from
@@ -283,6 +313,7 @@ class CalcRm{
 		double DYL;
 		double DYU;
 		double DYBW;
+		double fDYBWset = 0.;
 		int    PHINB;
 		double PHIL;
 		double PHIU;
@@ -322,6 +353,7 @@ class CalcRm{
 		double			mix_field[NMIXMAX][NZVTXMAX];
 		double			mix_zvtx[NMIXMAX][NZVTXMAX];
 		int				mix_run[NMIXMAX][NZVTXMAX];	// sec 18.20: per-buffer-slot (run,evt) -- per
+		int				mix_nch[NMIXMAX][NZVTXMAX];	// sec 34: accepted charged tracks of the buffered event
 		int				mix_evt[NMIXMAX][NZVTXMAX];	// SDCC-claude, `evt` IS the trigger-frame's own
 														// EvtSequence, constant across every row from
 														// that TF -- (run,evt) uniquely IDs the TF, no
@@ -398,6 +430,23 @@ class CalcRm{
 		//
 		TH2D*	hzoom_S;			// README sec 16.8: fine (deta,dphi) zoom around (0,0), same-event pairs, raw counts, all Zvtx
 		TH2D*	hzoom_M;			// same, mixed pairs (smooth reference for the spike-extent measurement)
+		//---- README_SplitTracks573 sec 11: two-track-resolution study, DIAGNOSTIC ONLY (no pair is cut).
+		//---- dy vs dphi*(R) for [0 sibling | 1 mixed][sign hypothesis 0: +q*B, 1: -q*B]
+		//---- [R = 0.30 | 0.50 | 0.70 m | the R in 0.30-0.78 m of smallest abs(dphi*)]. Charged-charged pairs only.
+		TH2D*	hTTR[2][2][4];
+		//---- sec 28 (sector-gap diagnostic): [0 sibling | 1 mixed][0: 0.4 <= abs(dy) < 1.0 | 1: abs(dy) < 0.4], x = vertex
+		//---- dphi = phi1 - phi2 (index order, deg), y = s = q1*asin(aR/pt1) - q2*asin(aR/pt2) at R = 0.55 m (deg; the
+		//---- sec 11 "+" sign), so dphi - s = dphi*(R), the pair's separation at the TPC. Raw counts, all Zvtx.
+		TH2D*	hGap[2][2];
+		TH2D*	hISep[2];
+		long	nPairCut[2][3];		// Final state: [S|M][0 charged pairs reaching the pair cuts, 1 removed by tsep, 2 by isep]			// sec 29: [sibling|mixed] dphi*(ISEP_R) vs abs(dy), every charged pair before the isep cut
+		TH2D*	hGapPhi[2];			// sec 32: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs pair mean phi (5 deg), abs(dy) < 1
+		TH2D*	hGapYbar[2];
+		TH2D*	hGapPt[2];			// sec 34: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs pair mean pt, abs(dy) < 1
+		TH2D*	hGapRm[2];			// sec 34.1: [sibling|mixed] vertex dphi vs meeting radius R_m (m; 1.4 = the tracks never meet)
+		TH2D*	hGapNch[2];			// sec 34: [sibling|mixed] vertex dphi vs accepted charged tracks (event of particle 1)		// sec 32: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs ybar (0.1), abs(dy) < 1
+		TH2D*	hGapDy[2];			// sec 28: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs abs(dy) (0-2), raw counts, all Zvtx
+		TH2D*	hTTRside[2][2];		// sec 20: [sibling|mixed][pt-ordered dphi side: 0 clean (dphi>0), 1 dirty (dphi<0)], sign +, min over R
 		TH1D*	hMinvF_S;		// Minv, 500 x 1 MeV from m1+m2-5MeV, sibling pairs, raw counts summed over Zvtx (C(Q) page)
 		TH1D*	hMinvF_M;		// same, mixed pairs
 		long	nMixedPairs_total;
@@ -473,6 +522,7 @@ inline double CalcRm::GetYU1(){ return YU1; }
 inline void   CalcRm::SetYNB2(int i){ YNB2=i;   return; }
 inline void   CalcRm::SetYL2(double y){ YL2=y;  return; }
 inline void   CalcRm::SetYU2(double y){ YU2=y;  return; }
+inline void   CalcRm::SetDYBW(double w){ fDYBWset=w; return; }
 inline int    CalcRm::GetYNB2(){ return YNB2; }
 inline double CalcRm::GetYL2(){ return YL2; }
 inline double CalcRm::GetYU2(){ return YU2; }

@@ -15,7 +15,8 @@ inline TString CorralDir(){
 // Finalize configuration (README_Finalize.md). Edit this file to choose what Finalize processes.
 //
 // FINALIZE_SET : default dataset to combine = lists/<set>/ (manifest.txt gives nlists) and
-//                root/<set>/chunks/corral_m_NN.root (made by run_m_array.bash); -d <dataset> overrides
+//                root/<set>/chunks/<prefix>_NN.root (made by run_m_array.bash; <prefix> = CorralFilePrefix(set):
+//                corral_m for ana532, corral from ana573 on); -d <dataset> overrides
 // FINALIZE_REF : single-job full-stats reference to compare against, root/<dataset>/FINALIZE_REF
 // CorralDir()  : project directory holding lists/ and root/ = $CORRAL_DIR if set, else the source
 //                tree the binary was built from (CORRAL_DIR_DEFAULT, set by CMakeLists.txt)
@@ -31,7 +32,15 @@ inline TString CorralDir(){
 //                  hR2dy, hR2dphi, hR2yydy, hR2dq, hCQ, hQsib, hQmix, hMinv_S, hMinv_M, hMinv
 //
 static const char*	FINALIZE_SET	= "ana532";		// default dataset; -d <dataset> overrides
-static const char*	FINALIZE_REF	= "corral_m.root";	// in root/<dataset>/
+//---- File-name convention per dataset (user 2026-09-27: the dataset decides, not a file-exists guess).
+//---- ana532 was made when the binary was corral_m: root/ana532/corral_m.root, chunks/corral_m_NN.root.
+//---- Every later dataset (ana573 on): root/<set>/corral.root, chunks/corral_NN.root. Add a dataset to
+//---- the legacy list only if it was produced with the old names.
+inline const char* CorralFilePrefix(const char* set){
+	static const char* LEGACY[]	= { "ana532" };
+	for (const char* l : LEGACY) if (TString(set)==l) return "corral_m";
+	return "corral";
+}
 static const double	FINALIZE_FIELD	= 1.4;		// must match `double field` in corral_loop.cxx (crossing dirty side)
 //
 // Zvtx-average validity (README_Finalize step 3, option A): the threshold N_min is now PER PAIRTYPE,

@@ -2,6 +2,9 @@
 //---- fluct_common.h		(PairTypes Definition REMOVED!)
 //---- main definitions used by many codes and macros...
 //
+#include <vector>
+#include <utility>
+#include <cmath>
 	//---- TPC-only bits of `layermask` (README_SplitTracks.md sec 9.1/9.2): bits 0-2 are MVTX,
 	//---- 3-6 are INTT, 7-54 are TPC. The STAR SL formula (sec 9.2/6) must run on the TPC portion
 	//---- only -- masking out the silicon bits, which every genuine split pair shares by
@@ -159,9 +162,43 @@
 	static const char *SpeciesNames[NSpecies]   	   = {"#pi", "K", "p", "n", "d",	//,  "t","^{3}He","#alpha"};
 															"K^{0}_{S}","#Lambda_{0}","#bar{#Lambda}_{0}" }; 						
 	//
-	static const double Species_ptmin[NSpecies]           = {  0.1, 0.1, 0.1,  0.1,  0.1,   0.1, 0.1, 0.1 };	//,  1.2,     1.2,      1.6};
+	//---- README_PID.md sec 11: V0 mass peaks (ana573, fit gaus+pol2 to hKSmass/hLAmass/hALmass, PID573_v4_mask2). A track is
+	//---- treated as a V0 daughter (kept out of the pair types) only if its V0 is within +-V0PEAK_NSIG sigma of the peak.
+	static const double		V0PEAK_MU[3]		= { 0.4884, 1.1143, 1.1134 };	// K0s, Lambda, Lbar (GeV)
+	static const double		V0PEAK_SIG[3]		= { 0.0076, 0.0035, 0.0028 };
+	static const double		V0PEAK_NSIG			= 3.0;
+	//---- README_PID.md sec 10.3: ana573 vertex-phi windows (deg) of large abs(dca), fixed at the silicon radius; for THIS data only
+	//---- the first NSIPHIMASK_MAIN are the two big ones (default); "siphimaskall" adds the six small ones (sec 10.4: track dips
+	//---- at 0.5-0.8 of the local level, most with a DCA spike)
+	//---- README_SplitTracks573 sec 38: the TPC central-membrane hole: centre at eta = -CMMASK_K vtxz (hetazvtx, ana573)
+	static const double		CMMASK_K				= 0.018;
+	static const int		NSIPHIMASK_MAIN			= 2;
+	static const int		NSIPHIMASK				= 8;
+	static const double		SIPHIMASK_LO[NSIPHIMASK]	= { 70., 94., -23., -6., 26., 43., 55., 157.};
+	static const double		SIPHIMASK_HI[NSIPHIMASK]	= { 83.,115., -18., -2., 31., 47., 57., 161.};
+	static const double Species_ptmin[NSpecies]           = {  0.1, 0.1, 0.4,  0.1,  0.1,   0.1, 0.1, 0.1 };	// p, pbar: 0.4 (README_PID sec 10.1, spallation; STAR PTLL)	//,  1.2,     1.2,      1.6};
 	static const double Species_ptmax[NSpecies]           = { 20.1, 20.1,20.1,20.1, 20.1,  20.1,20.1,20.1 };	//,  4.0,     4.0,      4.0};	
 // 	static const double Species_pmax_dedx[NSpecies]       = {  0.7, 0.7, 1.0,  1.5,  8.0,     8.0,      8.0};	
+	//---- README_PID.md (2026-09-28): ptot cap (GeV/c) for the dE/dx PID (pi 5 = the gates' own limit). It also sets
+	//---- each species' y window in CalcRm: y at this p at the eta edge = the whole y reach (V0 entries unused).
+	static const double Species_pmax_pid[NSpecies]        = {  5.0, 0.6, 1.0,  5.0,  5.0,   5.0, 5.0, 5.0 };
+	//---- 2026-09-30 (user): the rapidity window of each species, abs(y) < Species_yu (YL = -YU). A pair type uses the window of each
+	//---- of its two species; the y bin counts (and the dy bin width) are per pair type in PairTypes.h.
+	static const double Species_yu[NSpecies]              = {  1.0, 0.65, 0.6, 0.6,  0.6,   0.7, 0.7, 0.7 };
+	//---- R2yy(dy) from the (y1,y2) map (a cross-check only; physics is (dy,dphi)): the fraction of a (y1,y2) cell of widths w1, w2
+	//---- centred at c1, c2 that falls in each bin of a dy axis (nb bins from lo, width bw), by sub-sampling the cell. With equal
+	//---- widths and bw = w1 the cell centre lands on a dy bin centre: the caller uses that bin alone.
+	inline void DyOverlap(double c1, double w1, double c2, double w2, int nb, double lo, double bw, std::vector<std::pair<int,double>>& out){
+		out.clear();
+		const int NS = 20;
+		std::vector<double> f(nb+2,0.);
+		for (int i=0;i<NS;i++) for (int j=0;j<NS;j++){
+			double dy	= (c1 + w1*((i+0.5)/NS-0.5)) - (c2 + w2*((j+0.5)/NS-0.5));
+			int b		= (int)floor((dy-lo)/bw) + 1;
+			if (b>=1 && b<=nb) f[b] += 1./(NS*NS);
+		}
+		for (int b=1;b<=nb;b++) if (f[b]>0.) out.push_back({b,f[b]});
+	}
 // 	static const double Species_pmax_tof[NSpecies]        = {  1.7, 1.7, 2.9,  4.0,  8.0,     8.0,      8.0};	
 // 	static const double Species_pmax_dedx_FXT[NSpecies]   = {  1.3, 0.6, 2.9,  2.5,  3.4,     8.0,      8.0};	
 // 	static const double Species_pmax_tof_FXT[NSpecies]    = {  1.8, 1.8, 4.0,  5.0,  6.0,     8.0,      8.0};	
