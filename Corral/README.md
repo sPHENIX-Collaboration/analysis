@@ -81,11 +81,16 @@ correlated copies, or a small pair inefficiency, makes order-one features in the
 the pairs land. Most of the work in Corral is about finding and removing these, with the same rules in
 the sibling and mixed pairs. The defaults (no run-string needed) are the validated best effort; for
 ana573 they were re-derived on 2026-09-27/29 (README_SplitTracks573.md, whose "Final state" section gives
-what each step removes; the two ana573/SplitTrack*_ana573.pdf charts draw them):
+what each step removes). Two charts in the repository draw them, and each item below points to its page:
+`ana573/SplitTrackTypes_ana573.pdf`, pictures (page 1: like-sign split tracks and whole-event copies, panels
+1-3; page 2: opposite-sign pairs, panels 4-6; page 3: the central-membrane hole, panels 7-9), and
+`ana573/SplitTrackLogic_ana573.pdf`, the decisions in processing order (page 1, stages 0-2: events and
+tracks; page 2, stage 3: pairs and the maps, and what is watched):
 
 - **Vertex-phi mask (SiPhiMask), ana573.** Two vertex-phi windows, [70,83) and [94,115) deg, where the
   tracks are few and their DCA is large (a feature fixed at the silicon radius, for this data only), are
   left out: 4.4% of the tracks. `nosiphimask` turns it off; `siphimaskall` adds six small windows.
+  Charts: SplitTrackLogic page 1, stage 1.
 
 - **Central-membrane mask (CM mask), ana573.** Tracks that cross z = 0 inside the TPC (eta ~ asinh(-zvtx/R),
   R = 0.30-0.78 m) are often lost, and how often changes from event to event; same-event pairs in that hole
@@ -93,6 +98,7 @@ what each step removes; the two ana573/SplitTrack*_ana573.pdf charts draw them):
   w = (eta + 0.018 z_c) sign(-z_c) in [-0.07,0.10) are left out, z_c = the centre of the event's 2 cm zvtx
   slice (a mask that follows each event's own zvtx does not cancel in S/M): 2.8% of the tracks.
   `nocmmask` turns it off; `cmmaskAABB` sets the window [-0.AA,0.BB) (README_SplitTracks573.md sec 38).
+  Charts: SplitTrackTypes page 3, panels 7-9; SplitTrackLogic page 1, stage 1.
 
 - **Like-sign split-track removal.** A single real particle is sometimes reconstructed as two tracks
   that share the same silicon (MVTX/INTT) seed. Before any pairs are formed, every like-sign pair of
@@ -167,6 +173,16 @@ what each step removes; the two ana573/SplitTrack*_ana573.pdf charts draw them):
   from the (dy, dphi) map and from the (y1, y2) map; Finalize compares every histogram with a
   single-job full-statistics reference and reports the pulls; and the logs count every removed track,
   vetoed pair and skipped mixed pair.
+  Charts: SplitTrackTypes page 1, panels 1-2; SplitTrackLogic page 1, stage 2, same charge (paths 1-3).
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 2, opposite charge.
+  Charts: SplitTrackTypes page 2, panel 5; SplitTrackLogic page 1, stage 2, opposite charge.
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 0 (b).
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 2, stage 3.
+  Charts: SplitTrackTypes page 1, panel 3; SplitTrackLogic page 1, stage 0 (a).
+  Charts: SplitTrackLogic page 2, stage 3.
+  Charts: SplitTrackLogic page 2, stage 3.
+  Charts: SplitTrackTypes page 2, panel 6; SplitTrackLogic page 2, WATCH.
+  Charts: SplitTrackLogic page 2, stage 3 (the maps).
 
 ## Building
 
