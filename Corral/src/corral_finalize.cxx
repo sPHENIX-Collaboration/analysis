@@ -177,6 +177,7 @@ void corral::Finalize(){
 	struct Phys {
 		TH1D	*R2yy;							// R2(dy) from R2(y1,y2)
 		TH1D	*pU[2], *pC[2], *nU[2], *nC[2];	// [0] R2(dy), [1] R2(dphi): whole range / narrow window, uncorrected / corrected
+		TH1D	*qU[2], *qC[2];					// [0] C2(dy), [1] C2(dphi): sums over the valid bins, uncorrected / corrected
 		TH2D	*dC2;							// C2C - C2 (full stats; bins valid in both)
 		TH1D	*dC2dy, *dC2dphi;				// its sums over dphi / over dy
 		double	I, eI, Sfull, frac, efrac;		// integral of dC2 (pairs per event), sum rho2(S), I/S; subgroup errors
@@ -186,7 +187,7 @@ void corral::Finalize(){
 		TH1D	*CQ, *CQ5;						// C(Q) at 1 MeV (written) and 5 MeV (display), ratio of zvtx sums
 		TH2D	*CQKT, *CQKT10;					// C(Q,kT) at 2 MeV and 10 MeV (display)
 		TH1D	*MinvS, *MinvM;					// hMinvFS/FM plain sums (counts)
-		Phys(){ R2yy=0; for (int k=0;k<2;k++){ pU[k]=pC[k]=nU[k]=nC[k]=0; } dC2=0; dC2dy=dC2dphi=0; I=eI=Sfull=frac=efrac=0; hy1=hy2=0; fillin=0; CQ=CQ5=0; CQKT=CQKT10=0; MinvS=MinvM=0; }
+		Phys(){ R2yy=0; for (int k=0;k<2;k++){ pU[k]=pC[k]=nU[k]=nC[k]=qU[k]=qC[k]=0; } dC2=0; dC2dy=dC2dphi=0; I=eI=Sfull=frac=efrac=0; hy1=hy2=0; fillin=0; CQ=CQ5=0; CQKT=CQKT10=0; MinvS=MinvM=0; }
 	};
 	std::vector<Phys> ph(NPairTypes);
 	std::vector<long> fillN(NPairTypes,0), fillT(NPairTypes,0);
@@ -649,8 +650,9 @@ void corral::Finalize(){
 				TAxis *ax	= tmpl->GetXaxis(), *ay = tmpl->GetYaxis();
 				int nx		= ax->GetNbins(), ny = ay->GetNbins();
 				//---- mean over the full-stats-valid bins mapped to each output bin; the same inside every chunk
-				//---- (a chunk bin that is not usable takes the full-stats value); error = s/sqrt(N_chunks)
-				auto project	= [&](int kind, bool corr, auto outbin, TH1D* hout){
+				//---- (a chunk bin that is not usable takes the full-stats value); error = s/sqrt(N_chunks).
+				//---- mean=false: the sum over those bins instead (C2 projections, pairs per event)
+				auto project	= [&](int kind, bool corr, auto outbin, TH1D* hout, bool mean=true){
 					TH2D *vfull	= corr ? full.VC : full.V;
 					int nb		= hout->GetNbinsX();
 					std::vector<double> vf(nb+2,0.), nf(nb+2,0.);
@@ -662,6 +664,7 @@ void corral::Finalize(){
 						double f	= full.h[kind]->GetBinContent(ix,iy);
 						vf[ob] += f; nf[ob] += 1.;
 						for (int ic=0;ic<nlists;ic++){
+							if (!mean){ vc[ic][ob] += sub[ic].h[kind]->GetBinContent(ix,iy); continue; }	// C2: linear, every chunk counts
 							bool u	= ((corr ? sub[ic].VC : sub[ic].V)->GetBinContent(ix,iy)>0.);
 							vc[ic][ob]	+= u ? sub[ic].h[kind]->GetBinContent(ix,iy) : f;
 							++fillT[ipaty]; if (!u) ++fillN[ipaty];
@@ -670,9 +673,10 @@ void corral::Finalize(){
 					for (int ob=1;ob<=nb;ob++){
 						if (nf[ob]<=0.) continue;
 						double s=0,s2=0;
-						for (int ic=0;ic<nlists;ic++){ double x = vc[ic][ob]/nf[ob]; s += x; s2 += x*x; }
+						double nrm	= mean ? nf[ob] : 1.;
+						for (int ic=0;ic<nlists;ic++){ double x = vc[ic][ob]/nrm; s += x; s2 += x*x; }
 						double var	= (s2-s*s/nlists)/(nlists-1.);
-						hout->SetBinContent(ob, vf[ob]/nf[ob]);
+						hout->SetBinContent(ob, vf[ob]/nrm);
 						hout->SetBinError(ob, sqrt(std::max(0.,var))/sqrt((double)nlists));
 					}
 				};
@@ -740,9 +744,15 @@ void corral::Finalize(){
 						P.pC[k]	= new TH1D(Form("hFin_R2%s_C_%d", k==0?"dy":"dphi",ipaty),Form("%s, R_{2}(%s) from R_{2}(dy,d#phi);%s;R_{2}",pn.Data(),axn.Data(),xt),nb,lo_,hi_);
 						P.nU[k]	= new TH1D(Form("hFin_R2%s_nU_%d",k==0?"dy":"dphi",ipaty),Form("%s, R_{2}(%s) from R_{2}(dy,d#phi), %s;%s;R_{2}",pn.Data(),axn.Data(),cut.Data(),xt),nb,lo_,hi_);
 						P.nC[k]	= new TH1D(Form("hFin_R2%s_nC_%d",k==0?"dy":"dphi",ipaty),Form("%s, R_{2}(%s) from R_{2}(dy,d#phi), %s;%s;R_{2}",pn.Data(),axn.Data(),cut.Data(),xt),nb,lo_,hi_);
-						TH1D *hh[4]	= {P.pU[k],P.pC[k],P.nU[k],P.nC[k]};
-						for (int j=0;j<4;j++){ hh[j]->SetDirectory(0); extraW.push_back(hh[j]); }
+						P.qU[k]	= new TH1D(Form("hFin_C2%s_U_%d", k==0?"dy":"dphi",ipaty),Form("%s, C_{2}(%s) = #Sigma_{%s} C_{2}(dy,d#phi) (#pm subgroup err);%s;pairs per event",pn.Data(),axn.Data(),k==0?"d#phi":"dy",xt),nb,lo_,hi_);
+						P.qC[k]	= new TH1D(Form("hFin_C2%s_C_%d", k==0?"dy":"dphi",ipaty),Form("%s, C_{2C}(%s) = #Sigma_{%s} C_{2C}(dy,d#phi), crossing-corrected (#pm subgroup err);%s;pairs per event",pn.Data(),axn.Data(),k==0?"d#phi":"dy",xt),nb,lo_,hi_);
+						TH1D *hh[6]	= {P.pU[k],P.pC[k],P.nU[k],P.nC[k],P.qU[k],P.qC[k]};
+						for (int j=0;j<6;j++){ hh[j]->SetDirectory(0); extraW.push_back(hh[j]); }
 					}
+					project(2,false,[&](int ix,int iy){ return ix; },P.qU[0],false);
+					project(5,true ,[&](int ix,int iy){ return ix; },P.qC[0],false);
+					project(2,false,[&](int ix,int iy){ return iy; },P.qU[1],false);
+					project(5,true ,[&](int ix,int iy){ return iy; },P.qC[1],false);
 					project(3,false,[&](int ix,int iy){ return ix; },P.pU[0]);
 					project(6,true ,[&](int ix,int iy){ return ix; },P.pC[0]);
 					project(3,false,[&](int ix,int iy){ return iy; },P.pU[1]);
@@ -1344,7 +1354,6 @@ void corral::Finalize(){
 				double mp	= np?sp/np:0., rp = np?sqrt(std::max(0.,sp2/np-mp*mp)):0.;
 				cout<<Form("corral::Finalize -- %-17s %s  rel diff mean %+.2e rms %.2e max %.2e (%d bins)   pull vs ref err: mean %+.3f rms %.3f (%d bins)",
 					name.Data(), isCF?"[CF] ":"[sum]", mrel,rrel,dmax,nb, mp,rp,np)<<endl;
-				fout->cd(); hf->Write();
 				if (hf->GetDimension()==1){
 					href->SetLineColor(kBlack); hf->SetLineColor(kRed);
 					href->Draw("hist"); hf->Draw("hist same");
@@ -1579,6 +1588,9 @@ void corral::Finalize(){
 	}
 	cfin->Print((PdfFileName+"]").Data());
 	fout->cd();
+	//---- the full-stats results under their corral names (hmult_k, hC2_1_k, hR2C_1_k, ...; CF maps with subgroup
+	//---- errors), always -- not only when a single-job reference exists (user 2026-09-30)
+	for (auto &r : result) if (r.second){ r.second->SetLineColor(kBlack); r.second->Write(r.first.Data()); }
 	for (TH1* h : extra) h->Write();
 	for (TObject* o : extraW) o->Write();
 	fout->Close();
