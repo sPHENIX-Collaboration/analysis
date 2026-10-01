@@ -1286,7 +1286,7 @@ void corral::Finalize(){
 						tx.DrawLatex(0.06,y,"not pt-ordered (neutral leg): not corrected"); y -= 0.08;
 					}
 					tx.SetTextSize(0.035);
-					tx.DrawLatex(0.06,0.06,"errors: subgroup (52 chunks); per-chunk bars: propagated (approximate)");
+					tx.DrawLatex(0.06,0.06,Form("errors: subgroup (%d chunks); per-chunk bars: propagated (approximate)",nlists));
 				}
 				cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
 				cout<<Form("corral::Finalize -- dC2 fits pairtype %2d %-18s: const chi2/ndf %.1f/%.0f, slope vs chunk %+.2e +- %.1e, slope vs occupancy %+.2e +- %.1e; projection fill-ins %.2e",
