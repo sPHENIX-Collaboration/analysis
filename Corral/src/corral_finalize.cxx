@@ -935,7 +935,18 @@ void corral::Finalize(){
 				cout<<Form("corral::Finalize -- step 1b pairtype %2d (ds %+d, tested half dphi%s0): f near %+.3e +- %.1e (%d chunks) | near |dy|<%.2g %+.3e +- %.1e | away %+.3e +- %.1e | fM near %+.3e +- %.1e | check sum(C2C-C2)/S %+.3e",
 					ipaty,ds,X.half<0?"<":">",X.f[0],X.ef[0],X.nuse[0],dycut,X.f[1],X.ef[1],X.f[2],X.ef[2],X.fM[0],X.efM[0],X.fC)<<endl;
 			}
-			for (int k=0;k<NK;k++){ result[Form("%s_%d",Form(KINDNAME[k],ir2),ipaty)] = full.h[k]; full.h[k] = 0; }
+			for (int k=0;k<NK;k++){
+				TString nm	= Form("%s_%d",Form(KINDNAME[k],ir2),ipaty);
+				//---- the map was built from a per-zvtx slice clone: take title and axis titles from the chunk's own map
+				TH1 *t		= (TH1*)fch[0]->Get(nm.Data());
+				if (t){
+					full.h[k]->SetTitle(t->GetTitle());
+					full.h[k]->GetXaxis()->SetTitle(t->GetXaxis()->GetTitle());
+					full.h[k]->GetYaxis()->SetTitle(t->GetYaxis()->GetTitle());
+					delete t;
+				}
+				result[nm]	= full.h[k]; full.h[k] = 0;
+			}
 			full.Delete();
 			for (int ic=0;ic<nlists;ic++) sub[ic].Delete();		// README_Finalize step 1b will use sub[] here
 			for (int ic=0;ic<nlists;ic++) for (int z=0;z<NZ;z++){ delete cS[ic][z]; delete cM[ic][z]; }
@@ -1590,9 +1601,30 @@ void corral::Finalize(){
 	fout->cd();
 	//---- the full-stats results under their corral names (hmult_k, hC2_1_k, hR2C_1_k, ...; CF maps with subgroup
 	//---- errors), always -- not only when a single-job reference exists (user 2026-09-30)
-	for (auto &r : result) if (r.second){ r.second->SetLineColor(kBlack); r.second->Write(r.first.Data()); }
+	//---- top level = the physics set per pairtype, corral names (user 2026-09-30); everything else, incl. all hFin_*, in work/
+	auto isPhys	= [](const TString& n){
+		TString t	= n; t.Remove(t.Last('_'));
+		return (t=="hmult" || t=="hC2C_1" || t=="hR2C_1");
+	};
+	//---- top-level copies of the projections and C(Q) under corral-style names (hFin_* originals stay in work/)
+	auto physCopy	= [](const TString& n) -> TString {
+		static const char* MAP[][2]	= { {"hFin_C2dy_C","hC2Cdy_1"}, {"hFin_C2dphi_C","hC2Cdphi_1"},
+										{"hFin_R2dy_C","hR2Cdy_1"}, {"hFin_R2dphi_C","hR2Cdphi_1"},
+										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"} };
+		TString t	= n, k = n(n.Last('_')+1,n.Length()); t.Remove(t.Last('_'));
+		for (auto &m : MAP) if (t==m[0]) return TString(m[1])+"_"+k;
+		return "";
+	};
+	TDirectory *dwork	= fout->mkdir("work");
+	for (auto &r : result) if (r.second){ r.second->SetLineColor(kBlack); (isPhys(r.first) ? (TDirectory*)fout : dwork)->cd(); r.second->Write(r.first.Data()); }
+	dwork->cd();
 	for (TH1* h : extra) h->Write();
-	for (TObject* o : extraW) o->Write();
+	for (TObject* o : extraW){
+		dwork->cd(); o->Write();
+		TString nc	= physCopy(o->GetName());
+		if (nc!=""){ fout->cd(); o->Write(nc.Data()); }
+	}
+	fout->cd();
 	fout->Close();
 	cout<<"corral::Finalize -- wrote "<<RootFileName<<" and "<<PdfFileName<<endl;
 	cout<<"done."<<endl;
