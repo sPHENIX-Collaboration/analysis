@@ -857,6 +857,46 @@ void corral::Loop(){
 			}
 		}
 	}
+	//---- README_CQcomparison.md sec 2.1-2.2: V0 daughter sharing / duplicates, and <pT> vs N_ch (sibling only, all events).
+	//---- kv: 0 K0s, 1 Lambda, 2 Lbar. "In the lists" = as the pair types take them (ridgePID, Species_ptmin, Species_yu).
+	//---- dR = sqrt(deta^2+dphi^2) (rad); CQC_DRDUP = the near-duplicate radius used for the categories below.
+	const double CQC_DRDUP	= 0.05;
+	const char* v0nm[3]		= {"K^{0}_{S}","#Lambda","#bar{#Lambda}"};
+	TH2D *hV0share		= new TH2D("hV0share","in-peak V0 pairs sharing a daughter index;V0 1;V0 2",3,-0.5,2.5,3,-0.5,2.5);
+	TH2D *hV0pairs		= new TH2D("hV0pairs","all in-peak V0 pairs;V0 1;V0 2",3,-0.5,2.5,3,-0.5,2.5);
+	TH2D *hV0shareOff	= new TH2D("hV0shareOff","in-peak V0 sharing a daughter with an off-peak V0;in-peak V0;off-peak V0",3,-0.5,2.5,3,-0.5,2.5);
+	TH1D *hDauNear_dR[3][2], *hDauNear_skf[3][2];	// [kv][daughter charge 0 +, 1 -]: nearest same-charge, same-PID track in the lists
+	TH2D *hDauNear_dRdpt[3][2];
+	for (int kv=0;kv<3;kv++) for (int q=0;q<2;q++){
+		const char* dn	= (kv==0) ? (q?"#pi^{-}":"#pi^{+}") : (kv==1) ? (q?"#pi^{-}":"p") : (q?"#bar{p}":"#pi^{+}");
+		hDauNear_dR[kv][q]		= new TH1D(Form("hDauNear_dR_%d_%d",kv,q),Form("in-peak %s, daughter %s: nearest same-PID track in the lists;#DeltaR (rad);daughters",v0nm[kv],dn),150,0.,0.3);
+		hDauNear_skf[kv][q]		= new TH1D(Form("hDauNear_skf_%d_%d",kv,q),Form("in-peak %s, daughter %s: SiSplitScore with the nearest, #DeltaR<%.2f;SKF",v0nm[kv],dn,CQC_DRDUP),22,-0.05,1.05);
+		hDauNear_dRdpt[kv][q]	= new TH2D(Form("hDauNear_dRdpt_%d_%d",kv,q),Form("in-peak %s, daughter %s: nearest;#DeltaR (rad);abs(#Deltap_{T})/p_{T}",v0nm[kv],dn),50,0.,0.1,50,0.,0.5);
+	}
+	//---- p-Lambda [0] and pbar-Lbar [1] sibling Q = 2k*, by the (anti)proton: 0 within CQC_DRDUP of the V0's own
+	//---- (anti)proton daughter, 1 daughter of an off-peak V0, 2 neither
+	const char* pLcat[3]	= {"near-dup of own daughter","off-peak V0 daughter","neither"};
+	TH1D *hpLa_Q[2][3];
+	TH2D *hpLa_QdR[2];
+	TH1D *hLaLa_Q[2][3];		// Lambda-Lambda [0], Lbar-Lbar [1]: 0 share a daughter, 1 same-charge daughters within CQC_DRDUP, 2 neither
+	const char* LLcat[3]	= {"share a daughter","daughters #DeltaR<0.05","neither"};
+	TH1D *hnLApeak[2];
+	for (int a=0;a<2;a++){
+		const char* pn	= a ? "#bar{p}#bar{#Lambda}" : "p#Lambda";
+		const char* ln	= a ? "#bar{#Lambda}#bar{#Lambda}" : "#Lambda#Lambda";
+		for (int c=0;c<3;c++){
+			hpLa_Q[a][c]	= new TH1D(Form("hpLa_Q_%d_%d",a,c),Form("%s sibling, (anti)proton: %s;Q = 2k* (GeV/c);pairs",pn,pLcat[c]),50,0.,1.);
+			hLaLa_Q[a][c]	= new TH1D(Form("hLaLa_Q_%d_%d",a,c),Form("%s sibling: %s;Q (GeV/c);pairs",ln,LLcat[c]),40,0.,4.);
+		}
+		hpLa_QdR[a]	= new TH2D(Form("hpLa_QdR_%d",a),Form("%s sibling;Q = 2k* (GeV/c);#DeltaR((anti)proton, V0's own daughter) (rad)",pn),50,0.,1.,50,0.,0.5);
+		hnLApeak[a]	= new TH1D(Form("hnLApeak_%d",a),Form("in-peak %s per event, in the pair window;n;events",a?"#bar{#Lambda}":"#Lambda"),8,-0.5,7.5);
+	}
+	TProfile *hptNch[3][2], *hptNchV0[3];	// <pT> vs N_ch (ntrkept) of what enters the pair types: [pi,K,p][+,-], V0 [kv]
+	for (int k=0;k<3;k++) for (int q=0;q<2;q++)
+		hptNch[k][q]	= new TProfile(Form("hptNch_%d_%d",k,q),Form("<p_{T}> vs N_{ch}, %s %s;N_{ch} (accepted tracks);<p_{T}> (GeV/c)",idName[k],q?"-":"+"),40,-0.5,39.5);
+	for (int kv=0;kv<3;kv++)
+		hptNchV0[kv]	= new TProfile(Form("hptNchV0_%d",kv),Form("<p_{T}> vs N_{ch}, in-peak %s;N_{ch} (accepted tracks);<p_{T}> (GeV/c)",v0nm[kv]),40,-0.5,39.5);
+	long nNchKept	= 0, nNchSeen = 0;	// events inside / seen by the nchLLHH class (sec 2.1)
 	TH2D *hypt_id[3];										// y vs pt of identified pi/K/p inside the charged eta fiducial:
 	for (int k=0;k<3;k++) hypt_id[k] = new TH2D(Form("hypt_id%d",k),Form("y vs p_{T}, PID = %s, abs(#eta) fiducial;y;p_{T} (GeV/c)",idName[k]),88,-1.1,1.1,100,0.,2.);	// with the Species_yu windows drawn
 	for (int k=0;k<3;k++) for (int ic=0;ic<2;ic++) hpt_id[k][ic] = new TH1D(Form("hpt_id%d_%d",k,ic),Form("p_{T}, PID = %s, %s;p_{T} (GeV/c)",idName[k],strch[ic]),200,0.,2.);
@@ -2281,6 +2321,132 @@ void corral::Loop(){
 			//
 		}	// end v0 loop
 		//
+		//---- README_CQcomparison.md sec 2.1-2.2: V0 daughter sharing / duplicates and <pT> vs N_ch (sibling only, every event,
+		//---- independent of the nchLLHH class). Q = 2k* exactly as CalcRm::PairInfo's dq, 4-vectors from (pT, y, phi) and the
+		//---- assigned masses.
+		{
+			auto v0kind	= [&](int iv0){ return (v0pid[iv0]==310) ? 0 : (v0pid[iv0]==3122) ? 1 : (v0pid[iv0]==-3122) ? 2 : -1; };
+			auto v0yOf	= [&](int iv0){ return 0.5*log((v0ene[iv0]+v0pz[iv0])/(v0ene[iv0]-v0pz[iv0])); };
+			auto v0ptOf	= [&](int iv0){ return sqrt(v0px[iv0]*v0px[iv0]+v0py[iv0]*v0py[iv0]); };
+			auto inList	= [&](int it, int k){	// track it enters the pair types as PID k (0 pi, 1 K, 2 p)
+				return it>=0 && it<(*ntr) && ridgePID[it]==k && pt[it]>=Species_ptmin[k] && fabs(ridgeY[it])<Species_yu[k];
+			};
+			auto v0InList	= [&](int iv0){ int kv = v0kind(iv0); return kv>=0 && v0InPeak(iv0) && v0ptOf(iv0)>=Species_ptmin[5+kv] && fabs(v0yOf(iv0))<Species_yu[5+kv]; };
+			auto dRof	= [&](int a, int b){
+				double dp	= phi[a]-phi[b];
+				while (dp> M_PI) dp -= 2*M_PI;
+				while (dp<-M_PI) dp += 2*M_PI;
+				double de	= eta[a]-eta[b];
+				return sqrt(dp*dp+de*de);
+			};
+			auto dqOf	= [&](double pt1, double y1, double ph1, double m1, double pt2, double y2, double ph2, double m2){
+				double mt1=sqrt(pt1*pt1+m1*m1), mt2=sqrt(pt2*pt2+m2*m2);
+				double px1=pt1*cos(ph1), py1=pt1*sin(ph1), pz1=mt1*sinh(y1), e1=mt1*cosh(y1);
+				double px2=pt2*cos(ph2), py2=pt2*sin(ph2), pz2=mt2*sinh(y2), e2=mt2*cosh(y2);
+				double qinv2	= (e1-e2)*(e1-e2) - (px1-px2)*(px1-px2) - (py1-py2)*(py1-py2) - (pz1-pz2)*(pz1-pz2);
+				double minv2	= (e1+e2)*(e1+e2) - (px1+px2)*(px1+px2) - (py1+py2)*(py1+py2) - (pz1+pz2)*(pz1+pz2);
+				if (minv2<=0.) return 0.;
+				double Q	= (m1*m1-m2*m2)/sqrt(minv2);
+				return sqrt(std::max(0.,Q*Q-qinv2));
+			};
+			//---- daughter index of V0 iv0 with charge sign q (0 +, 1 -), or -1
+			auto dauOf	= [&](int iv0, int q){
+				const int itd[2]	= {v0indtr1[iv0], v0indtr2[iv0]};
+				for (int kd=0;kd<2;kd++){
+					int it	= itd[kd];
+					if (it<0 || it>=(*ntr)) continue;
+					if ((q==0 && chg[it]>0) || (q==1 && chg[it]<0)) return it;
+				}
+				return -1;
+			};
+			auto shareDau	= [&](int a, int b){
+				const int ia[2]	= {v0indtr1[a], v0indtr2[a]}, ib[2] = {v0indtr1[b], v0indtr2[b]};
+				for (int i=0;i<2;i++) for (int j=0;j<2;j++) if (ia[i]>=0 && ia[i]==ib[j]) return true;
+				return false;
+			};
+			//---- daughters of off-peak V0 candidates (they stay in the track lists)
+			std::vector<char> offDau((*ntr),0);
+			for (int iv0=0;iv0<(*nv0);iv0++){
+				if (v0kind(iv0)<0 || v0InPeak(iv0)) continue;
+				const int itd[2]	= {v0indtr1[iv0], v0indtr2[iv0]};
+				for (int kd=0;kd<2;kd++) if (itd[kd]>=0 && itd[kd]<(*ntr)) offDau[itd[kd]] = 1;
+			}
+			//---- 1. V0-V0 sharing
+			for (int iv0=0;iv0<(*nv0);iv0++){
+				int k1	= v0kind(iv0);
+				if (k1<0) continue;
+				bool p1	= v0InPeak(iv0);
+				for (int jv0=0;jv0<(*nv0);jv0++){
+					if (jv0==iv0) continue;
+					int k2	= v0kind(jv0);
+					if (k2<0) continue;
+					bool p2	= v0InPeak(jv0);
+					if (p1 && p2 && jv0>iv0){
+						hV0pairs->Fill(std::min(k1,k2),std::max(k1,k2));
+						if (shareDau(iv0,jv0)) hV0share->Fill(std::min(k1,k2),std::max(k1,k2));
+					}
+					if (p1 && !p2 && shareDau(iv0,jv0)) hV0shareOff->Fill(k1,k2);
+				}
+			}
+			//---- 2. nearest same-charge, same-PID track in the lists to each in-peak daughter
+			for (int iv0=0;iv0<(*nv0);iv0++){
+				int kv	= v0kind(iv0);
+				if (kv<0 || !v0InPeak(iv0)) continue;
+				for (int q=0;q<2;q++){
+					int d	= dauOf(iv0,q);
+					if (d<0) continue;
+					int sp	= (kv==1 && q==0) || (kv==2 && q==1) ? 2 : 0;	// the (anti)proton, else a pion
+					double best	= 1e9; int jb = -1;
+					for (int it=0;it<(*ntr);it++){
+						if (it==d || !inList(it,sp) || chg[it]*chg[d]<=0) continue;
+						double r	= dRof(it,d);
+						if (r<best){ best = r; jb = it; }
+					}
+					if (jb<0) continue;
+					hDauNear_dR[kv][q]	->Fill(std::min(best,0.2999));
+					hDauNear_dRdpt[kv][q]->Fill(best,fabs(pt[jb]-pt[d])/pt[d]);
+					if (best<CQC_DRDUP) hDauNear_skf[kv][q]->Fill(SiSplitScore(&siclukey[jb*7],&siclukey[d*7],layermask[jb],layermask[d]));
+				}
+			}
+			//---- 3. p-Lambda / pbar-Lbar sibling Q by the (anti)proton's category; 4. Lambda-Lambda
+			int nLin[2]	= {0,0};
+			for (int iv0=0;iv0<(*nv0);iv0++){
+				int kv	= v0kind(iv0);
+				if (kv<1 || !v0InList(iv0)) continue;
+				int a	= kv-1;
+				++nLin[a];
+				int own	= dauOf(iv0,a);		// Lambda: the + daughter (p); Lbar: the - daughter (pbar)
+				double vpt=v0ptOf(iv0), vy=v0yOf(iv0), vph=atan2(v0py[iv0],v0px[iv0]);
+				for (int ip=0;ip<(*ntr);ip++){
+					if (!inList(ip,2) || (a==0 && chg[ip]<=0) || (a==1 && chg[ip]>=0)) continue;
+					double Q	= dqOf(pt[ip],ridgeY[ip],phi[ip],Species_mass[2],vpt,vy,vph,Species_mass[6+a]);
+					double r	= (own>=0) ? dRof(ip,own) : 9.;
+					int c		= (r<CQC_DRDUP) ? 0 : (offDau[ip] ? 1 : 2);
+					hpLa_Q[a][c]	->Fill(Q);
+					hpLa_QdR[a]		->Fill(Q,std::min(r,0.4999));
+				}
+				for (int jv0=iv0+1;jv0<(*nv0);jv0++){
+					if (v0kind(jv0)!=kv || !v0InList(jv0)) continue;
+					double Q	= dqOf(vpt,vy,vph,Species_mass[6+a],v0ptOf(jv0),v0yOf(jv0),atan2(v0py[jv0],v0px[jv0]),Species_mass[6+a]);
+					bool nearD	= false;
+					for (int q=0;q<2;q++){
+						int d1=dauOf(iv0,q), d2=dauOf(jv0,q);
+						if (d1>=0 && d2>=0 && d1!=d2 && dRof(d1,d2)<CQC_DRDUP) nearD = true;
+					}
+					int c		= shareDau(iv0,jv0) ? 0 : (nearD ? 1 : 2);
+					hLaLa_Q[a][c]->Fill(std::min(Q,3.999));
+				}
+			}
+			for (int a=0;a<2;a++) hnLApeak[a]->Fill(nLin[a]);
+			//---- <pT> vs N_ch
+			for (int it=0;it<(*ntr);it++){
+				int k	= ridgePID[it];
+				if (k<0 || k>2 || !inList(it,k)) continue;
+				hptNch[k][chg[it]>0?0:1]->Fill(ntrkept,pt[it]);
+			}
+			for (int iv0=0;iv0<(*nv0);iv0++) if (v0InList(iv0)) hptNchV0[v0kind(iv0)]->Fill(ntrkept,v0ptOf(iv0));
+		}
+		//
 		//---- fill some event variable histograms...
 		hntrk			->Fill(ntrkept);
 		double negfr	= -1;
@@ -2358,8 +2524,11 @@ void corral::Loop(){
 		//	cout<<"NEG \t"<<in<<"\t "<<part2[in][0]<<" "<<part2[in][1]<<" "<<part2[in][2]<<endl;
 		//}
 		//
-		//
-		if (!NOCORRELATIONS){
+		//---- README_CQcomparison.md sec 2.1: only events in the nchLLHH multiplicity class reach CalcRm
+		++nNchSeen;
+		const bool inNchClass	= (ntrkept>=valNchLo && ntrkept<=valNchHi);
+		if (inNchClass) ++nNchKept;
+		if (!NOCORRELATIONS && inNchClass){
 			for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
 				int ipid1			= PairTypes_Info[ipaty][0];
 				int ipid2			= PairTypes_Info[ipaty][1];
@@ -2431,6 +2600,7 @@ void corral::Loop(){
 	cout<<"V0s in the pair types (README_PID.md sec 12, in their mass peak): K0s "<<nv0Paired[0]<<" of "<<nv0All[0]
 		<<", Lambda "<<nv0Paired[1]<<" of "<<nv0All[1]<<", Lbar "<<nv0Paired[2]<<" of "<<nv0All[2]
 		<<"; in-peak daughters that indv0 did not flag: "<<nPeakDauNotIndv0<<endl;
+	cout<<"multiplicity class (README_CQcomparison.md sec 2.1): "<<valNchLo<<" <= N_ch <= "<<valNchHi<<": "<<nNchKept<<" of "<<nNchSeen<<" events reached CalcRm"<<endl;
 	cout<<"V0 zero-sentinel fixes (README_v0etaSpike.md): eta "<<nv0fixEta<<"  phi "<<nv0fixPhi<<"  mass "<<nv0fixMass<<"  ctau "<<nv0fixCtau<<endl;
 	htrigRun		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
 	hrirun_ntrk		->GetXaxis()->SetRangeUser(run_lowest-10.5,run_highest+10.5);
@@ -2521,6 +2691,8 @@ void corral::Loop(){
 	TH1D *hMinvFS[NPairTypes]				= {0};		// fine Minv near threshold, sibling (C(Q) page)
 	TH1D *hMinvFM[NPairTypes]				= {0};		// same, mixed
 	TH1D *hQmix[NPairTypes]					= {0};		// raw mixed denominator behind hCQ -- not written before 2026-09-21 (sec 13.8.5)
+	TH1D *hQsibW[NPairTypes]				= {0};		// long-Q test copies, 0-8 GeV, Zvtx-summed (README_CQcomparison sec 2.3)
+	TH1D *hQmixW[NPairTypes]				= {0};
 	TH2D *hCQKT[NPairTypes]					= {0};		// README_CQ: C(Q) vs (Qinv,kT), STAR's 4 kT bins, Zvtx-averaged
 	TH2D *hQsibKT[NPairTypes]				= {0};		// its sibling numerator, Zvtx-summed
 	TH2D *hQmixKT[NPairTypes]				= {0};		// its mixed denominator, Zvtx-summed
@@ -2575,6 +2747,12 @@ void corral::Loop(){
 			hQmix[ipaty]	= (TH1D*)R[ipaty]->GethQmix();
 			hQmix[ipaty]	->SetTitle(Form("%s%s, Q_{mix} (raw mixed pairs);Q_{inv} (GeV)",part1name.Data(),part2name.Data()));
 			hQmix[ipaty]	->SetName(Form("hQmix_%d",ipaty));
+			hQsibW[ipaty]	= (TH1D*)R[ipaty]->GethQsibW();
+			hQsibW[ipaty]	->SetTitle(Form("%s%s, Q_{sib} 0-8 GeV (long-Q test copy);Q_{inv} (GeV)",part1name.Data(),part2name.Data()));
+			hQsibW[ipaty]	->SetName(Form("hQsibW_%d",ipaty));
+			hQmixW[ipaty]	= (TH1D*)R[ipaty]->GethQmixW();
+			hQmixW[ipaty]	->SetTitle(Form("%s%s, Q_{mix} 0-8 GeV (long-Q test copy, #Sigma_{z});Q_{inv} (GeV)",part1name.Data(),part2name.Data()));
+			hQmixW[ipaty]	->SetName(Form("hQmixW_%d",ipaty));
 			hCQKT[ipaty]	= (TH2D*)R[ipaty]->GethCQKT();
 			hCQKT[ipaty]	->SetTitle(Form("%s%s, C(Q) vs k_{T};Q_{inv} (GeV);k_{T} (GeV)",part1name.Data(),part2name.Data()));
 			hCQKT[ipaty]	->SetName(Form("hCQKT_%d",ipaty));
@@ -3567,6 +3745,121 @@ void corral::Loop(){
 	ccan[ican]->cd(); ccan[ican]->Update();
 	ccan[ican]->Print(OutputFileName.Data());
 
+	//---- README_CQcomparison.md sec 2.1-2.2: V0 daughter sharing / duplicates, and <pT> vs N_ch.
+	//---- Row 1: in-peak V0 pairs sharing a daughter (counts, of all in-peak pairs in the title); in-peak V0 sharing with
+	//---- off-peak candidates; nearest list track to the Lambda p / Lbar pbar daughter (dashed: the CQC_DRDUP radius).
+	//---- Row 2: p-Lambda, pbar-Lbar sibling Q by proton category (dashed: daughter-parent Q = 0.10 GeV); Lambda-Lambda,
+	//---- Lbar-Lbar sibling Q by daughter category. Row 3: SKF of near daughters; n_Lambda per event vs Poisson; <pT> vs N_ch.
+	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+	ccan[ican]->cd(); ccan[ican]->Divide(4,3,0.0001,0.0001);
+	{
+		const char* v0lab[3]	= {"K0s","Lambda","Lbar"};
+		for (int k=1;k<=3;k++){
+			hV0share->GetXaxis()->SetBinLabel(k,v0lab[k-1]); hV0share->GetYaxis()->SetBinLabel(k,v0lab[k-1]);
+			hV0shareOff->GetXaxis()->SetBinLabel(k,v0lab[k-1]); hV0shareOff->GetYaxis()->SetBinLabel(k,v0lab[k-1]);
+		}
+		gStyle->SetPaintTextFormat(".0f");
+		ccan[ican]->cd(1);
+		hV0share->SetTitle(Form("in-peak V0 pairs sharing a daughter: %.0f of %.0f in-peak pairs",hV0share->Integral(),hV0pairs->Integral()));
+		hV0share->SetMarkerSize(2.0); hV0share->Draw("text");
+		ccan[ican]->cd(2);
+		hV0shareOff->SetTitle("in-peak V0 sharing a daughter with an off-peak candidate");
+		hV0shareOff->SetMarkerSize(2.0); hV0shareOff->Draw("text");
+		auto vline	= [&](double x){ gPad->Update(); TLine *l = new TLine(x,gPad->GetUymin(),x,gPad->GetUymax());
+			if (gPad->GetLogy()) l = new TLine(x,pow(10,gPad->GetUymin()),x,pow(10,gPad->GetUymax()));
+			l->SetLineStyle(2); l->SetLineColor(kGray+2); l->Draw(); };
+		const int kvq[2][2]	= {{1,0},{2,1}};	// Lambda p, Lbar pbar
+		for (int i=0;i<2;i++){
+			ccan[ican]->cd(3+i); gPad->SetLogy(1);
+			TH1D *h	= hDauNear_dR[kvq[i][0]][kvq[i][1]];
+			h->SetLineColor(kBlack); h->Draw("hist"); vline(CQC_DRDUP);
+		}
+		const int col[3]	= {kRed, kBlue, kBlack};
+		for (int a=0;a<2;a++){
+			ccan[ican]->cd(5+a);
+			double mx	= 0;
+			for (int c=0;c<3;c++) mx = std::max(mx,hpLa_Q[a][c]->GetMaximum());
+			TLegend *lg	= new TLegend(0.45,0.62,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.035);
+			for (int c=0;c<3;c++){
+				hpLa_Q[a][c]->SetLineColor(col[c]); hpLa_Q[a][c]->SetMaximum(1.15*mx); hpLa_Q[a][c]->SetMinimum(0);
+				if (c==0) hpLa_Q[a][c]->SetTitle(Form("%s sibling Q, by the (anti)proton",a?"#bar{p}#bar{#Lambda}":"p#Lambda"));
+				hpLa_Q[a][c]->Draw(c?"hist same":"hist");
+				lg->AddEntry(hpLa_Q[a][c],Form("%s (%.0f)",pLcat[c],hpLa_Q[a][c]->Integral()),"l");
+			}
+			vline(0.10); lg->AddEntry((TObject*)0,"dashed: daughter-parent Q","");
+			lg->Draw();
+		}
+		for (int a=0;a<2;a++){
+			ccan[ican]->cd(7+a); gPad->SetLogy(1);
+			double mx	= 0;
+			for (int c=0;c<3;c++) mx = std::max(mx,hLaLa_Q[a][c]->GetMaximum());
+			TLegend *lg	= new TLegend(0.45,0.70,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.035);
+			for (int c=0;c<3;c++){
+				hLaLa_Q[a][c]->SetLineColor(col[c]); hLaLa_Q[a][c]->SetMaximum(3.*std::max(mx,1.)); hLaLa_Q[a][c]->SetMinimum(0.5);
+				if (c==0) hLaLa_Q[a][c]->SetTitle(Form("%s sibling Q, by the daughters",a?"#bar{#Lambda}#bar{#Lambda}":"#Lambda#Lambda"));
+				hLaLa_Q[a][c]->Draw(c?"hist same":"hist");
+				lg->AddEntry(hLaLa_Q[a][c],Form("%s (%.0f)",LLcat[c],hLaLa_Q[a][c]->Integral()),"l");
+			}
+			lg->Draw();
+		}
+		ccan[ican]->cd(9);
+		{
+			TH1D *h0	= hDauNear_skf[1][0], *h1 = hDauNear_skf[2][1];
+			h0->SetLineColor(kRed); h1->SetLineColor(kBlue);
+			h0->SetTitle(Form("SiSplitScore, (anti)proton daughter vs its nearest (#DeltaR<%.2f)",CQC_DRDUP));
+			h0->SetMaximum(1.15*std::max(1.,std::max(h0->GetMaximum(),h1->GetMaximum()))); h0->SetMinimum(0);
+			h0->Draw("hist"); h1->Draw("hist same");
+			TLegend *lg	= new TLegend(0.45,0.75,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+			lg->AddEntry(h0,Form("#Lambda: p (%.0f)",h0->Integral()),"l"); lg->AddEntry(h1,Form("#bar{#Lambda}: #bar{p} (%.0f)",h1->Integral()),"l"); lg->Draw();
+		}
+		ccan[ican]->cd(10); gPad->SetLogy(1);
+		{
+			TLegend *lg	= new TLegend(0.40,0.70,0.89,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+			const int cl[2]	= {kRed, kBlue};
+			for (int a=0;a<2;a++){
+				TH1D *h	= hnLApeak[a];
+				double N=h->Integral(), mu=(N>0.)?h->GetMean():0.;
+				TH1D *pz	= (TH1D*)h->Clone(Form("%s_poisson",h->GetName())); pz->Reset();
+				for (int b=1;b<=pz->GetNbinsX();b++) pz->SetBinContent(b,N*TMath::Poisson(b-1,mu));
+				h->SetLineColor(cl[a]); pz->SetLineColor(cl[a]); pz->SetLineStyle(2);
+				if (a==0){ h->SetTitle("in-peak #Lambda, #bar{#Lambda} per event (dashed: Poisson, same mean)"); h->SetMinimum(0.5); h->SetMaximum(3.*N); }
+				h->Draw(a?"hist same":"hist"); pz->Draw("hist same");
+				double s2	= 0;
+				for (int b=1;b<=h->GetNbinsX();b++){ double n = b-1; s2 += h->GetBinContent(b)*n*(n-1); }
+				double f2	= (mu>0.) ? s2/N/(mu*mu) : 0.;
+				lg->AddEntry(h,Form("%s: <n(n-1)>/<n>^{2} = %.2f",a?"#bar{#Lambda}":"#Lambda",f2),"l");
+			}
+			lg->AddEntry((TObject*)0,"dashed: Poisson (= 1.00)","");
+			lg->Draw();
+		}
+		for (int j=0;j<2;j++){
+			ccan[ican]->cd(11+j);
+			TLegend *lg	= new TLegend(0.15,0.70,0.60,0.89); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.04);
+			const int cs[3]	= {kRed, kGreen+2, kBlue};
+			bool first	= true;
+			for (int k=0;k<3;k++){
+				TProfile *h	= (j==0) ? hptNch[k][0] : hptNchV0[k];
+				if (j==0){ TProfile *hn = hptNch[k][1]; h = (TProfile*)h->Clone(Form("%s_both",h->GetName())); h->Add(hn); }
+				h->SetLineColor(cs[k]); h->SetMarkerColor(cs[k]); h->SetMarkerStyle(20); h->SetMarkerSize(0.6);
+				h->SetMinimum(0.); h->SetMaximum(j?2.0:1.2);
+				if (first){ h->SetTitle(j?"<p_{T}> vs N_{ch}, in-peak V0s in the pair types":"<p_{T}> vs N_{ch}, #pi K p (both charges) in the pair types"); }
+				h->GetXaxis()->SetRangeUser(0.,30.);
+				h->Draw(first?"pe":"pe same"); first = false;
+				lg->AddEntry(h,j?v0nm[k]:idName[k],"lp");
+			}
+			if (valNchHi<9999){
+				gPad->Update();
+				TBox *bx	= new TBox(valNchLo-0.5,gPad->GetUymin(),valNchHi+0.5,gPad->GetUymax());
+				bx->SetFillStyle(3354); bx->SetFillColor(kOrange+1); bx->SetLineColor(kOrange+1); bx->Draw();
+				lg->AddEntry(bx,Form("this run's class: %d-%d",valNchLo,valNchHi),"f");
+			}
+			lg->Draw();
+		}
+		gStyle->SetPaintTextFormat("g");
+	}
+	ccan[ican]->cd(); ccan[ican]->Update();
+	ccan[ican]->Print(OutputFileName.Data());
+
 	//---- V0 timing QA
 	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
 	ccan[ican]->cd(); ccan[ican]->Divide(3,2,0.0001,0.0001);
@@ -3778,7 +4071,7 @@ void corral::Loop(){
 				if (ymx>ymn){ hf->SetMinimum(ymn-0.05*(ymx-ymn)); hf->SetMaximum(ymx+0.25*(ymx-ymn)); }
 				hf->Draw();
 				gPad->Update();
-				DrawCQSignposts(ipid1,ipid2,gPad->GetUymin(),gPad->GetUymax(),2.0);
+				DrawCQSignposts(ipid1,ipid2,gPad->GetUymin(),gPad->GetUymax(),hf->GetXaxis()->GetXmax());
 			}
 			ccan[ican]->cd(2);
 			{
@@ -4102,6 +4395,8 @@ void corral::Loop(){
 			hCQ[ipaty]				->Write();
 			hQsib[ipaty]			->Write();
 			hQmix[ipaty]			->Write();
+			hQsibW[ipaty]			->Write();
+			hQmixW[ipaty]			->Write();
 			hCQKT[ipaty]			->Write();
 			hQsibKT[ipaty]			->Write();
 			hQmixKT[ipaty]			->Write();

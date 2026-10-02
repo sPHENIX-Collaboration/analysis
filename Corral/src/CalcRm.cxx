@@ -417,6 +417,12 @@ void CalcRm::Book(){
 		hCQ[izv]		= new TH1D( Form("hCQ%d"  ,izv), Form("hCQ%d"  ,izv), 2000,0.,2.0 );
 		hQsib[izv]		->Sumw2();
 		hQmix[izv]		->Sumw2();
+		//---- 2026-10-02: long-Q test copies, 0-8 GeV in 10 MeV bins, for the multiplicity / closure tests only
+		//---- (README_CQcomparison sec 2.3); the physics C(Q) above stays 0-2 GeV (user: keep the physics axes)
+		hQsibW[izv]		= new TH1D( Form("hQsibW%d",izv), Form("hQsibW%d",izv), 800,0.,8.0 );
+		hQmixW[izv]		= new TH1D( Form("hQmixW%d",izv), Form("hQmixW%d",izv), 800,0.,8.0 );
+		hQsibW[izv]		->Sumw2();
+		hQmixW[izv]		->Sumw2();
 		//---- README_CQ step 3: (Qinv, kT), 2 MeV in Q, STAR's kT bins (arXiv:1004.0925); kT outside
 		//---- 0.15-0.60 goes to the kT under/overflow, so summing all kT bins gives back hQsib (rebinned x2)
 		{
@@ -658,6 +664,7 @@ void CalcRm::Increment(double zv, double field,
 					hMinvF_S		->Fill(Minv   ,weight);
 					hQsib[izv]		->Fill(dq     ,weight);	// dq is the STAR-style qInv (see PairInfo); the local "Qinv" is q^2's own byproduct and is negative-definite for identical species
 					hQsibKT[izv]	->Fill(dq,kT  ,weight);	// README_CQ step 3
+					hQsibW[izv]		->Fill(dq     ,weight);	// long-Q test copy
 					//hMinvdq_S[izv]->Fill(dq,Minv,weight);
 					//cout<<izv<<" "<<dq<<" "<<Minv<<" "<<weight<<" "<<Minv-dq<<endl;
 					//
@@ -770,6 +777,7 @@ void CalcRm::Increment(double zv, double field,
 					hMinvF_M			->Fill(Minv   ,weight);
 					hQmix[izv]			->Fill(dq     ,weight);	// dq is the STAR-style qInv (see PairInfo); the local "Qinv" is q^2's own byproduct and is negative-definite for identical species
 					hQmixKT[izv]		->Fill(dq,kT  ,weight);	// README_CQ step 3, same kT as sibling
+					hQmixW[izv]			->Fill(dq     ,weight);	// long-Q test copy
 					//
 					//hMinvdq_M[izv]	->Fill(dq,Minv,weight);
 					//cout<<izv<<" "<<dq<<" "<<Minv<<" "<<weight<<" "<<Minv-dq<<endl;
@@ -1213,6 +1221,7 @@ void CalcRm::Calculate(){
 		//---- (=NCombinations2/NMIX=(NMIX-1)/2) removes exactly that excess -- it depends only on NMIX.
 		hQmix[izv]	->Scale(1.0/denomfactor_izv);	// sec 18.23
 		hQmixKT[izv]->Scale(1.0/denomfactor_izv);	// README_CQ step 3, same normalization
+		hQmixW[izv]	->Scale(1.0/denomfactor_izv);	// long-Q test copy, same normalization
 		//---- same bin-by-bin ratio for the 1D and the (Qinv,kT) versions; GetNcells covers every bin
 		//---- including flow (the kT under/overflow are real kT ranges, <0.15 and >0.60)
 		TH1* qn[2]	= {hQsib[izv], hQsibKT[izv]};
@@ -1534,6 +1543,8 @@ void CalcRm::Calculate(){
 		hQmix[ZVTXNB]		->Add(hQmix[izv]    ,   1.0);
 		hQsibKT[ZVTXNB]		->Add(hQsibKT[izv]  ,   1.0);
 		hQmixKT[ZVTXNB]		->Add(hQmixKT[izv]  ,   1.0);
+		hQsibW[ZVTXNB]		->Add(hQsibW[izv]   ,   1.0);
+		hQmixW[ZVTXNB]		->Add(hQmixW[izv]   ,   1.0);
 		//
 		//double nev	= hmult[izv]->GetEntries();
 		//double np	= hmult[izv]->ProjectionX()->GetMean();

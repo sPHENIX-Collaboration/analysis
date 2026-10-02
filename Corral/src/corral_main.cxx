@@ -189,6 +189,7 @@ void DisplayHelp(){
 	cout<<"    tsepmYYPP     two-track LS pair cut, sibling and mixed: reject |dy|<0.YY && min over R=0.30-0.78 m of |dphi*|<P.P deg (default tsepm0620; dy 0.02-0.10, dphi* 1.0-4.0); notsep: off"<<endl;
 	cout<<"    isepPPP       near-vertex two-track pair cut (sec 29), sibling and mixed, LS and ULS: reject |dy|<1.0 && |dphi*(R=3 cm)|<P.P deg (default isep020 = 2.0 deg; 0.3-4.0); noisep: off"<<endl;
 	cout<<"    vzNN          event |zvtx| < NN cm (default 16; 6-16)"<<endl;
+	cout<<"    nchLLHH       multiplicity class: only events with LL <= N_ch <= HH (accepted tracks, hntrk) reach CalcRm (default all; LL 0-40, HH LL-99)"<<endl;
 	cout<<"    Finalize_fzNN Finalize only: average the Zvtx slices inside |zvtx| < NN cm (default 8; 2-16); the chunks keep all slices"<<endl;
 	cout<<"    qcut          reject pairs with qinv < 0.150 GeV"<<endl;
 	cout<<"    548           fine binning: 5 dy x 48 dphi bins"<<endl;

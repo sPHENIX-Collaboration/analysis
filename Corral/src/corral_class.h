@@ -132,6 +132,10 @@ public :
 	//---- event |zvtx| max (cm), README_SplitTracks573 sec 30: "vzNN" (6-16), default 16 (under discussion: R2 per Zvtx
 	//---- slice is flat only at abs(zvtx) < ~6-8 cm)
 	double	valVzMax;
+	//---- event multiplicity class (README_CQcomparison.md sec 2.1): only events with valNchLo <= N_ch <= valNchHi (N_ch =
+	//---- accepted tracks, ntrkept = hntrk) reach CalcRm, so siblings, mixing pools and r2 are all within the class.
+	//---- "nchLLHH" sets both (LL 0-40, HH LL-99); default 0-9999 (all events).
+	int		valNchLo, valNchHi;
 	//---- Finalize: the abs(zvtx) range for physics (cm), README_SplitTracks573 sec 30 (user, 2026-09-28): the chunks keep
 	//---- every Zvtx slice (abs(zvtx) < 16); Finalize averages only the slices inside abs(zvtx) < valFinZMax (whole 2 cm
 	//---- slices). Default 8; "fzNN" in the Finalize run string (Finalize_fzNN, 2-16) overrides it.

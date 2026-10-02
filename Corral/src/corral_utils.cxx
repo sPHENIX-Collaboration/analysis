@@ -102,7 +102,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , NTPCCUT(18)				// LL=8 (inclusive), 18 is open but better
   , PTMINCUT(0.1)
   , valFullMVTX(2), valFullMVTXdinv(0.0), valPregateDEta(0.040)	// README_SplitTracks573 sec 14/15/18:
-  , valTSepDy(0.06), valTSepDphi(2.0), valISepDphi(2.), valVzMax(16.), valFinZMax(8.)							// constants except dps / tsepm (tokens)
+  , valTSepDy(0.06), valTSepDphi(2.0), valISepDphi(2.), valVzMax(16.), valNchLo(0), valNchHi(9999), valFinZMax(8.)							// constants except dps / tsepm (tokens)
   , valDPsW(2.0), valDPsR(0.06)
   , nentriesfile(0)
   , fChain(BuildInputChain(tree))
@@ -254,6 +254,17 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		saneOrDie("vzNN",valVzMax,6.,16.);
 	}
 	cout<<"reader::reader -- event abs(zvtx) < "<<valVzMax<<" cm"<<endl;
+	//---- "nchLLHH": event multiplicity class LL <= N_ch <= HH (README_CQcomparison.md sec 2.1). Checked clean against every
+	//---- other token (none contains "nch").
+	if (RunString.Contains("nch",TString::kIgnoreCase)){
+		int ij	= RunString.Index("nch",0,TString::kIgnoreCase);
+		TString sl = RunString(ij+3,2), sh = RunString(ij+5,2);
+		valNchLo	= sl.IsDigit() ? atoi(sl.Data()) : -1;
+		valNchHi	= sh.IsDigit() ? atoi(sh.Data()) : -1;
+		saneOrDie("nchLLHH (LL)",valNchLo,0,40);
+		saneOrDie("nchLLHH (HH)",valNchHi,valNchLo,99);
+		cout<<"reader::reader -- multiplicity class: only events with "<<valNchLo<<" <= N_ch <= "<<valNchHi<<" reach CalcRm"<<endl;
+	}
 	//---- "fzNN": Finalize's physics abs(zvtx) range, 2-16 cm (sec 30). Checked clean (no other token contains "fz").
 	if (RunString.Contains("fz",TString::kIgnoreCase)){
 		int ij	= RunString.Index("fz",0,TString::kIgnoreCase);

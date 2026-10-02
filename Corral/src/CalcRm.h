@@ -227,6 +227,8 @@ class CalcRm{
 		virtual TH1D*	GethQsib(int izv);				// one parameter  -> returns histogram in this Zvtx bin
 		virtual TH1D*	GethQmix();						// no parameters  -> returns Zvtx-averaged histogram
 		virtual TH1D*	GethQmix(int izv);				// one parameter  -> returns histogram in this Zvtx bin
+		virtual TH1D*	GethQsibW(){ return hQsibW[ZVTXNB]; }	// long-Q test copies (0-8 GeV, 10 MeV), Zvtx-summed
+		virtual TH1D*	GethQmixW(){ return hQmixW[ZVTXNB]; }
 		virtual TH1D*	GethCQ();						// no parameters  -> returns Zvtx-averaged histogram
 		virtual TH1D*	GethCQ(int izv);				// one parameter  -> returns histogram in this Zvtx bin
 		virtual TH2D*	GethQsibKT(){ return hQsibKT[ZVTXNB]; }			// README_CQ: (Qinv,kT), Zvtx-summed
@@ -454,6 +456,8 @@ class CalcRm{
 		long	nMixedPairs_neighborTF;
 		TH1D*	hQsib[NZVTXMAX];			// femtoscopic numerator: Qinv, same-event pairs
 		TH1D*	hQmix[NZVTXMAX];			// femtoscopic denominator: Qinv, mixed-event pairs (NMIX-only normalization applied in Calculate)
+		TH1D*	hQsibW[NZVTXMAX];			// long-Q test copies of hQsib / hQmix, 0-8 GeV in 10 MeV bins (README_CQcomparison sec 2.3)
+		TH1D*	hQmixW[NZVTXMAX];
 		TH1D*	hCQ[NZVTXMAX];				// femtoscopic C(Q) = hQsib/hQmix
 		TH2D*	hQsibKT[NZVTXMAX];			// README_CQ: same as hQsib, vs (Qinv, kT) in STAR's 4 kT bins (flow bins = kT outside 0.15-0.60)
 		TH2D*	hQmixKT[NZVTXMAX];			// same as hQmix, vs (Qinv, kT)

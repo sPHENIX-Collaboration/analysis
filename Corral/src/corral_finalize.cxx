@@ -120,12 +120,10 @@ void corral::Finalize(){
 		fch.push_back(f);
 	}
 	TString REF	= PROJ+"root/"+SET+"/"+CorralFilePrefix(SET.Data())+".root";	// per-dataset convention
-	cout<<"corral::Finalize -- reference "<<REF<<endl;
-	TFile *fref	= TFile::Open(REF.Data());
-	if (!fref || fref->IsZombie()){	// the whole-dataset job may still be running: physics pages only, no reference pages
-		cout<<"corral::Finalize -- WARNING: no reference "<<REF<<", the pages vs the reference are skipped"<<endl;
-		fref	= nullptr;
-	}
+	//---- a whole-dataset job is optional (most chunked passes have none, user 2026-10-02): without it, no reference pages
+	TFile *fref	= gSystem->AccessPathName(REF.Data()) ? nullptr : TFile::Open(REF.Data());
+	if (fref && fref->IsZombie()) fref = nullptr;
+	cout<<"corral::Finalize -- whole-dataset reference "<<REF<<(fref?": found, pages vs the reference follow":": none (optional), no pages vs the reference")<<endl;
 	//
 	//---- crossing correction: follow the chunks. A "nocross" job leaves its C maps empty (CalcRm), and Finalize then
 	//---- leaves the C maps uncorrected too (copies of the plain ones), so a nocross set stays uncorrected end to end.
@@ -1069,7 +1067,7 @@ void corral::Finalize(){
 				cph->cd(1);
 				{ TH1D *h = (TH1D*)P.CQ5->Clone(Form("CQ5page_%d",ipaty)); h->SetDirectory(0);
 				  yrange(h,0.0201,2.0,0.25); h->Draw(); gPad->Update();
-				  DrawCQSignposts(pid1,pid2,gPad->GetUymin(),gPad->GetUymax(),2.0); }
+				  DrawCQSignposts(pid1,pid2,gPad->GetUymin(),gPad->GetUymax(),h->GetXaxis()->GetXmax()); }
 				cph->cd(2);
 				{
 					const int kcol[4]	= {kBlue,kGreen+2,kOrange+1,kRed};
@@ -1603,6 +1601,7 @@ void corral::Finalize(){
 	//---- errors), always -- not only when a single-job reference exists (user 2026-09-30)
 	//---- top level = the physics set per pairtype, corral names (user 2026-09-30); everything else, incl. all hFin_*, in work/
 	auto isPhys	= [](const TString& n){
+		if (n.Last('_')<0) return false;
 		TString t	= n; t.Remove(t.Last('_'));
 		return (t=="hmult" || t=="hC2C_1" || t=="hR2C_1");
 	};
@@ -1611,6 +1610,7 @@ void corral::Finalize(){
 		static const char* MAP[][2]	= { {"hFin_C2dy_C","hC2Cdy_1"}, {"hFin_C2dphi_C","hC2Cdphi_1"},
 										{"hFin_R2dy_C","hR2Cdy_1"}, {"hFin_R2dphi_C","hR2Cdphi_1"},
 										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"} };
+		if (n.Last('_')<0) return TString("");
 		TString t	= n, k = n(n.Last('_')+1,n.Length()); t.Remove(t.Last('_'));
 		for (auto &m : MAP) if (t==m[0]) return TString(m[1])+"_"+k;
 		return "";

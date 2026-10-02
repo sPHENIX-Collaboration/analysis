@@ -255,6 +255,7 @@ are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the 
 | `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
 | `cmmaskAABB` | the central-membrane mask window w in [-0.AA,0.BB) (each 0.00-0.20) |
+| `nchLLHH` | multiplicity class: only events with LL <= N_ch <= HH (accepted tracks, `hntrk`) reach CalcRm, so siblings, mixing pools and hmult (r2) stay inside the class (default all events; LL 0-40, HH LL-99; e.g. `nch0607`). The loop's QA pages still see every event. |
 | **opposite-charge split tracks** | |
 | `noulstest` | turn off the opposite-charge veto |
 | `ulstestNN` | opposite-charge veto at SiSplitScore 0.NN (default 0.05; 0.02-0.95) |
