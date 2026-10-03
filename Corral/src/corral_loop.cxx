@@ -2,6 +2,7 @@
 #include <TEllipse.h>
 #include "corral_class.h"
 #include <algorithm>
+#include <deque>
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
@@ -785,6 +786,14 @@ void corral::Loop(){
 	//---- dR(t,d) of every LS-flagged partner of a Lambda/Lbar daughter BEFORE the dR cone; y = 4*daughter + PID(t),
 	//---- daughter 0 Lambda p, 1 Lambda pi-, 2 Lbar pbar, 3 Lbar pi+; PID 0 pi 1 K 2 p 3 unid
 	TH2D *hDauP_dRLS	= new TH2D("hDauP_dRLS","LS-flagged partners of #Lambda/#bar{#Lambda} daughters before the dR cone;#DeltaR(t,d);4*daughter (#Lambda p,#pi^{-},#bar{#Lambda} #bar{p},#pi^{+}) + PID(t) (#pi K p unid)",150,0.,0.3,16,-0.5,15.5);
+	//---- 2026-10-03 (README_CQcomparison STATUS 16:30, p-Lbar / pbar-Lambda low-Q excess since 2c): EVERY opposite-charge track
+	//---- t of a Lambda p / Lbar pbar daughter d, before any cut (also the dE/dx (anti)protons 2c protects): SiSplitScore(t,d) by
+	//---- PID(t); for the proton-tagged t, Q(t,V0), |dpT|/pT and dR(t,d) by SiSplitScore class. y = 4*side (0 Lambda p, 1 Lbar pbar)
+	//---- + PID(t) (0 pi 1 K 2 p 3 unid), or + class (0: skf < valULSTestCut, 1: < 0.5, 2: < 0.99, 3: >= 0.99). Diagnostic only.
+	TH2D *hDauP_ulsSkfPid	= new TH2D("hDauP_ulsSkfPid","ULS tracks of a #Lambda p / #bar{#Lambda} #bar{p} daughter;SiSplitScore(t,d);4*side (#Lambda p, #bar{#Lambda} #bar{p}) + PID(t) (#pi K p unid)",42,0.,1.05,8,-0.5,7.5);
+	TH2D *hDauP_ulsP_QtV	= new TH2D("hDauP_ulsP_QtV","proton-tagged ULS tracks of a #Lambda p / #bar{#Lambda} #bar{p} daughter: Q(t,V0);Q (GeV);4*side + SiSplitScore class (<cut, <0.5, <0.99, >=0.99)",400,0.,2.,8,-0.5,7.5);
+	TH2D *hDauP_ulsP_dpt	= new TH2D("hDauP_ulsP_dpt","proton-tagged ULS tracks of a #Lambda p / #bar{#Lambda} #bar{p} daughter: |p_{T,t}-p_{T,d}|/p_{T,d};|#Deltap_{T}|/p_{T};4*side + SiSplitScore class",100,0.,2.,8,-0.5,7.5);
+	TH2D *hDauP_ulsP_dR	= new TH2D("hDauP_ulsP_dR","proton-tagged ULS tracks of a #Lambda p / #bar{#Lambda} #bar{p} daughter: #DeltaR(t,d);#sqrt{#Delta#eta^{2}+#Delta#phi^{2}};4*side + SiSplitScore class",320,0.,3.2,8,-0.5,7.5);
 	TH2D *hDauP_n[2], *hDauP_dptrel[4], *hDauP_dR[4], *hDauP_Qtd[4], *hDauP_QtV[4], *hDauP_skf[4], *hDauP_tpid[4];
 	for (int k=0;k<2;k++) hDauP_n[k] = new TH2D(Form("hDauP_n%s",k?"new":"all"),Form("V0-daughter partners flagged (%s);path (0 SL, 1 RG, 2 MVTX, 3 ULS);daughter (K0S #pi^{+},#pi^{-}; #Lambda p,#pi^{-}; #bar{#Lambda} #bar{p},#pi^{+})",k?"new losers only":"all"),4,-0.5,3.5,6,-0.5,5.5);
 	for (int p=0;p<4;p++){
@@ -879,6 +888,18 @@ void corral::Loop(){
 	//---- kv: 0 K0s, 1 Lambda, 2 Lbar. "In the lists" = as the pair types take them (ridgePID, Species_ptmin, Species_yu).
 	//---- dR = sqrt(deta^2+dphi^2) (rad); CQC_DRDUP = the near-duplicate radius used for the categories below.
 	const double CQC_DRDUP	= 0.05;
+	//---- README_CQcomparison sec 2.3 (2026-10-03): (track, nearer V0 daughter) separation maps, sibling vs mixed -- HISTOGRAMS
+	//---- ONLY (two-track merging search, no cut). c: 0 p-Lambda, 1 pbar-Lbar, 2 pi+Lambda, 3 pi-Lbar; sm: 0 sibling, 1 mixed.
+	//---- hSep: deta vs dphi* to the nearer daughter; hSepQ: that separation vs Q (does a small-separation loss map onto a Q bin?);
+	//---- hSepLS: same as hSepQ but only when the nearer daughter has the track's charge.
+	const char* sepnm[4]	= {"p#Lambda","#bar{p}#bar{#Lambda}","#pi^{+}#Lambda","#pi^{-}#bar{#Lambda}"};
+	TH2D *hSep[4][2], *hSepQ[4][2], *hSepLS[4][2];
+	for (int c=0;c<4;c++) for (int sm=0;sm<2;sm++){
+		const char* sn	= sm ? "mixed" : "sibling";
+		hSep[c][sm]		= new TH2D(Form("hSep_%d_%d",c,sm),Form("%s %s: track vs nearer V0 daughter;#Delta#eta;#Delta#phi* (deg, min over R = 0.30-0.78 m)",sepnm[c],sn),60,-0.3,0.3,120,-30.,30.);
+		hSepQ[c][sm]	= new TH2D(Form("hSepQ_%d_%d",c,sm),Form("%s %s: separation to the nearer daughter vs Q;#sqrt{#Delta#eta^{2}+#Delta#phi*^{2}} (rad);Q (GeV)",sepnm[c],sn),50,0.,0.5,50,0.,1.);
+		hSepLS[c][sm]	= new TH2D(Form("hSepLS_%d_%d",c,sm),Form("%s %s: nearer daughter like-sign, separation vs Q;#sqrt{#Delta#eta^{2}+#Delta#phi*^{2}} (rad);Q (GeV)",sepnm[c],sn),50,0.,0.5,50,0.,1.);
+	}
 	const char* v0nm[3]		= {"K^{0}_{S}","#Lambda","#bar{#Lambda}"};
 	TH2D *hV0share		= new TH2D("hV0share","in-peak V0 pairs sharing a daughter index;V0 1;V0 2",3,-0.5,2.5,3,-0.5,2.5);
 	TH2D *hV0pairs		= new TH2D("hV0pairs","all in-peak V0 pairs;V0 1;V0 2",3,-0.5,2.5,3,-0.5,2.5);
@@ -1713,6 +1734,21 @@ void corral::Loop(){
 				for (int t : pionidx){
 					bool sameCharge	= (chg[d]*chg[t] > 0);
 					int path	= -1;
+					if (!sameCharge && dIsP){	// diagnostic, see hDauP_ulsSkfPid (2026-10-03)
+						const double skf	= SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t]);
+						const int pidt	= pidOf(t), side = (kvd==1) ? 0 : 1;
+						hDauP_ulsSkfPid->Fill(skf, 4*side+pidt);
+						if (pidt==2){
+							const int cls	= skf<valULSTestCut ? 0 : (skf<0.5 ? 1 : (skf<0.99 ? 2 : 3));
+							double deta	= eta[d]-eta[t], dphi = phi[d]-phi[t];
+							if (dphi> M_PI) dphi -= 2*M_PI;
+							if (dphi<-M_PI) dphi += 2*M_PI;
+							hDauP_ulsP_QtV->Fill(q2k(pt[t]*cos(phi[t]),pt[t]*sin(phi[t]),pt[t]*sinh(eta[t]),Species_mass[2],
+								v0px[ivd],v0py[ivd],v0pz[ivd],Species_mass[5+kvd]), 4*side+cls);
+							hDauP_ulsP_dpt->Fill(fabs(pt[t]-pt[d])/pt[d], 4*side+cls);
+							hDauP_ulsP_dR->Fill(sqrt(deta*deta+dphi*dphi), 4*side+cls);
+						}
+					}
 					if (sameCharge && doSplitRemoval && doDauCheck){
 						double deta	= eta[d]-eta[t];
 						double dphi	= phi[d]-phi[t];
@@ -1736,9 +1772,12 @@ void corral::Loop(){
 							const bool wide	= dIsP && pidt==0;	// a pion-tagged LS partner of a p/pbar is its ghost: no cone (2026-10-03)
 							if (!wide && dR2 >= DAU_DRMAX*DAU_DRMAX) path = -1;	// option 2: close copies only
 						}
-					} else if (!sameCharge && doULSTest && doDauCheck && pidOf(t)!=2){	// ULS ghost of the daughter (no angular gate, as in
-						//---- the main ULS veto). Option 2c: never a dE/dx (anti)proton -- a ghost is built from the daughter's own hits, so
-						//---- it looks like the daughter (pion-like for the soft pi); a proton-tagged ULS partner is a real proton
+					} else if (!sameCharge && doULSTest && doDauCheck && (dIsP || pidOf(t)!=2)){	// ULS ghost of the daughter (no angular
+						//---- gate, as in the main ULS veto). Option 2c: a ghost is built from the daughter's own hits, so it looks like the
+						//---- daughter: a proton-tagged ULS partner of a PION daughter is a real proton (removing it made the v10 p-Lambda dip)
+						//---- and is never removed. v13 (2026-10-03): for a p/pbar daughter the proton-tagged partner IS its wrong-sign copy:
+						//---- ana573_v12ulsP (chunks 00-19, comparison/DauProtons.C) -- 652 proton-tagged ULS partners of Lbar pbar share Si
+						//---- (498 all of it), dR ~0.06 vs 1.9, = 38% of the p-Lbar sibling pairs at Q < 0.15 (34% for pbar-Lambda)
 						if (SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t])>=valULSTestCut) path = 3;
 					}
 					if (path<0) continue;
@@ -2465,6 +2504,69 @@ void corral::Loop(){
 				for (int i=0;i<2;i++) for (int j=0;j<2;j++) if (ia[i]>=0 && ia[i]==ib[j]) return true;
 				return false;
 			};
+			//---- README_CQcomparison sec 2.3: separation maps (booking: hSep), only with "sepmaps" (doSepMaps; ~+5 min per chunk).
+			//---- Own mixing: in-list Lambda/Lbar of the last SEP_DEPTH
+			//---- events in the same 2 cm zvtx slice (|zvtx| < 16). dphi* as the tsep cut (CalcRm::PairInfo): sign +, min over R.
+			if (doSepMaps){
+				struct SepDau	{ double eta, phi, pt, q; };
+				struct SepV0	{ int kv; double pt, y, phi; SepDau d[2]; };
+				static const int SEP_DEPTH	= 5;
+				static std::vector<std::deque<std::vector<SepV0>>> sepBuf(16);
+				const double aB	= 0.3*fabs(field)/2.0;
+				std::vector<SepV0> cur;
+				for (int iv0=0;iv0<(*nv0);iv0++){
+					int kv	= v0kind(iv0);
+					if ((kv!=1 && kv!=2) || !v0InList(iv0)) continue;
+					int d0=dauOf(iv0,0), d1=dauOf(iv0,1);
+					if (d0<0 || d1<0) continue;
+					SepV0 v; v.kv=kv; v.pt=v0ptOf(iv0); v.y=v0yOf(iv0); v.phi=atan2(v0py[iv0],v0px[iv0]);
+					const int dd[2]	= {d0,d1};
+					for (int k=0;k<2;k++) v.d[k] = {eta[dd[k]], phi[dd[k]], pt[dd[k]], (double)chg[dd[k]]};
+					cur.push_back(v);
+				}
+				auto fillSep	= [&](int t, int c, const SepV0& v, int sm){
+					double best=1e9, bde=0, bdp=0; int bk=-1;
+					for (int k=0;k<2;k++){
+						const SepDau& d	= v.d[k];
+						double dp0	= (phi[t]-d.phi)*180.0/M_PI;
+						while (dp0>= 180.) dp0 -= 360.;
+						while (dp0< -180.) dp0 += 360.;
+						double ds	= dp0, dmin = 1e9;
+						for (double R=0.30; R<=0.781; R+=0.02){
+							double x1 = aB*R/pt[t], x2 = aB*R/d.pt;
+							if (x1>=1.0 || x2>=1.0) break;
+							double dd	= dp0 - (chg[t]*asin(x1) - d.q*asin(x2))*180.0/M_PI;
+							while (dd>= 180.) dd -= 360.;
+							while (dd< -180.) dd += 360.;
+							if (fabs(dd)<dmin){ dmin = fabs(dd); ds = dd; }
+						}
+						double de	= eta[t]-d.eta;
+						double sp	= sqrt(de*de + pow(ds*M_PI/180.0,2));
+						if (sp<best){ best=sp; bde=de; bdp=ds; bk=k; }
+					}
+					const int kt	= (c<2) ? 2 : 0;
+					double Q	= dqOf(pt[t],ridgeY[t],phi[t],Species_mass[kt],v.pt,v.y,v.phi,Species_mass[5+v.kv]);
+					hSep[c][sm]	->Fill(bde,bdp);
+					hSepQ[c][sm]->Fill(best,Q);
+					if (v.d[bk].q*chg[t]>0) hSepLS[c][sm]->Fill(best,Q);
+				};
+				int iz	= (int)floor(((*vtxz)+16.0)/2.0);
+				if (iz>=0 && iz<16){
+					for (int t=0;t<(*ntr);t++){
+						int c	= -1;
+						if (inList(t,2)) c = (chg[t]>0) ? 0 : 1;
+						else if (inList(t,0)) c = (chg[t]>0) ? 2 : 3;
+						if (c<0) continue;
+						const int kvw	= (c==0 || c==2) ? 1 : 2;
+						for (const SepV0& v : cur) if (v.kv==kvw) fillSep(t,c,v,0);
+						for (const auto& ev : sepBuf[iz]) for (const SepV0& v : ev) if (v.kv==kvw) fillSep(t,c,v,1);
+					}
+					if (!cur.empty()){
+						sepBuf[iz].push_back(cur);
+						if ((int)sepBuf[iz].size()>SEP_DEPTH) sepBuf[iz].pop_front();
+					}
+				}
+			}
 			//---- daughters of off-peak V0 candidates (they stay in the track lists)
 			std::vector<char> offDau((*ntr),0);
 			for (int iv0=0;iv0<(*nv0);iv0++){

@@ -38,6 +38,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doOldPID(false)
   , doSiPhiMask(true)
   , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.07,0.10); "nocmmask" off, "cmmaskAABB" override
+  , doSepMaps(false)		// README_CQcomparison sec 2.3: diagnostic separation maps (~+5 min per chunk); "sepmaps" on
   , valCMMaskLo(-0.07)
   , valCMMaskHi(0.10)
   , nSiPhiMask(NSIPHIMASK_MAIN)
@@ -336,6 +337,9 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		<<"... valSLCut = "<<valSLCut<<", valSiKeyCut = "<<valSiKeyCut<<", valRadialGapCut = "<<valRadialGapCut
 		<<", RadialGap path "<<(DISABLE_RG?"DISABLED (noRG)":"enabled")<<endl;
 	//
+	//---- README_CQcomparison sec 2.3: separation-map diagnostic (histograms hSep*, own mixing), default OFF; "sepmaps" = on
+	if (RunString.Contains("sepmaps",TString::kIgnoreCase)) doSepMaps = true;
+	cout<<"reader::reader -- separation maps (README_CQcomparison sec 2.3) "<<(doSepMaps?"ON (sepmaps)":"OFF")<<endl;
 	//---- README_SplitTracks573 sec 38: central-membrane mask, default ON, w in [-0.07,0.10); "nocmmask" = off; "cmmaskAABB" = w in [-0.AA, 0.BB) (sane: each 0.00-0.20)
 	if (RunString.Contains("nocmmask",TString::kIgnoreCase)){
 		doCMMask	= false;
@@ -379,7 +383,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//---- README_CQcomparison sec 2.2 (2026-10-03, option 2): V0-daughter partner check, ON; "nodau" turns it off.
 	//---- Checked clean: no other token contains "nodau".
 	if (RunString.Contains("nodau",TString::kIgnoreCase))	doDauCheck	= false;
-	cout<<"reader::reader -- V0-daughter partners (README_CQcomparison sec 2.2): "<<(doDauCheck?"on (Lambda/Lbar daughters: LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton; not K0S)":"OFF")<<endl;
+	cout<<"reader::reader -- V0-daughter partners (README_CQcomparison sec 2.2): "<<(doDauCheck?"on (Lambda/Lbar daughters: LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton partner of a pion daughter; not K0S)":"OFF")<<endl;
 	//
 	//---- sec 18.21: opt-in TF-deduplication diagnostic, OFF by default. "onlyfirsttf" verified
 	//---- clean against every token this codebase parses (ulstest/SL/REMOVE/SIKEY/cross/qcut/ntpc/
