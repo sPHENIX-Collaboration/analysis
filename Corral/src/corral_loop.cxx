@@ -777,6 +777,7 @@ void corral::Loop(){
 	long nFlagged_complementary	= 0;	// path 2 (RadialGap>=cut, new sec 17.14)
 	long nFlagged_fullmvtx		= 0;	// path 3 (full MVTX match, README_SplitTracks573 sec 8)
 	long nFlagged_Looper		= 0;	// README_SplitTracks573 sec 35: looper veto, tracks flagged
+	long nFlagged_dau[2]		= {0,0};	// README_CQcomparison.md sec 2.2: split partners of in-peak V0 daughters, [0] LS [1] ULS
 	TH1D *hLooper_p		= new TH1D("hLooper_p","looper veto: |p| of the removed track;|p| (GeV/c);tracks",40,0.,0.4);
 	TH1D *hLooper_rs	= new TH1D("hLooper_rs","looper veto: OS pairs, |p|<LOOPER_PMAX, #Delta#phi#geq170#circ;|#vec{p}_{1}+#vec{p}_{2}|/(|p_{1}|+|p_{2}|);pairs",50,0.,0.25);
 	long nFlagged_ULS			= 0;	// sec 18.10: opposite-charge SiSplitScore path -- now TRACK-level
@@ -1664,6 +1665,45 @@ void corral::Loop(){
 						nSplitFlagged_thisevt.push_back(loser);	// don't double-count if flagged by >1 partner
 						lsLosers_thisevt.push_back(loser);
 						loserPath_thisevt.push_back({loser, flagDuplicate ? 0 : (flagComplementary ? 1 : 2)});
+					}
+				}
+			}
+			//---- README_CQcomparison.md sec 2.2 (2026-10-02): in-peak V0 daughters as split-track PARTNERS. The loop above
+			//---- skips them (a daughter must never be dropped, README_PID.md sec 12), so a split copy of a daughter survived
+			//---- into the pair lists (p-Lambda Q < 0.2 GeV: 292 of 581 sibling pairs, V0page_ana573_v9). Same tests as above
+			//---- -- LS: pregate, SiSplitScore gate, then the SL / RadialGap / MVTX paths; ULS: the SiSplitScore veto -- but
+			//---- the daughter always wins. Daughter-daughter pairs never occur (pionidx has no daughters); no diagnostic
+			//---- histogram of the loop above sees these pairs. Losers go in the same per-path lists.
+			for (int d=0; d<(*ntr); d++){
+				if (!isPeakDaughter(d) || chg[d]==0) continue;
+				for (int t : pionidx){
+					bool sameCharge	= (chg[d]*chg[t] > 0);
+					int path	= -1;
+					if (sameCharge && doSplitRemoval){
+						double deta	= eta[d]-eta[t];
+						double dphi	= phi[d]-phi[t];
+						if (dphi> M_PI) dphi -= 2*M_PI;
+						if (dphi<-M_PI) dphi += 2*M_PI;
+						if (!InLSPregate(deta,dphi,pt[d],pt[t])) continue;
+						if (SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t]) < valSiKeyCut) continue;
+						double SL	= ComputeSplitSL(layermask[d],layermask[t]);
+						double RG	= ComputeRadialGap(layermask[d],layermask[t]);
+						double mvtxFrac,inttFrac; int mvtxDen,inttDen;
+						SiKeyFracSplit(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t],mvtxFrac,mvtxDen,inttFrac,inttDen);
+						int nMatchMVTX	= (int)std::lround(mvtxFrac*mvtxDen);
+						if (SL < valSLCut)											path = 0;
+						else if (!DISABLE_RG && RG>=0.0 && RG>=valRadialGapCut)	path = 1;
+						else if (valFullMVTX>0 && mvtxDen>0 && nMatchMVTX>=valFullMVTX
+								&& fabs(1.0/pt[d]-1.0/pt[t])>=valFullMVTXdinv)		path = 2;
+					} else if (!sameCharge && doULSTest){
+						if (SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t])>=valULSTestCut) path = 3;
+					}
+					if (path<0) continue;
+					++nFlagged_dau[path==3 ? 1 : 0];
+					if (std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),t)==nSplitFlagged_thisevt.end()){
+						nSplitFlagged_thisevt.push_back(t);
+						if (path<3) lsLosers_thisevt.push_back(t);
+						loserPath_thisevt.push_back({t,path});
 					}
 				}
 			}
@@ -4350,7 +4390,8 @@ void corral::Loop(){
 	//
 	cout<<"split-track pre-pass -- tracks flagged="<<nSplitFlagged_total<<" events w/ a flag="<<nSplitFlagged_evts
 		<<" pairs: duplicate="<<nFlagged_duplicate<<" complementary="<<nFlagged_complementary<<" (sec 17.14) fullmvtx="<<nFlagged_fullmvtx
-		<<" ULS(opp-charge)="<<nFlagged_ULS<<" (sec 18.10, track-level)"<<" looper="<<nFlagged_Looper<<" (sec 35)"<<endl;
+		<<" ULS(opp-charge)="<<nFlagged_ULS<<" (sec 18.10, track-level)"<<" looper="<<nFlagged_Looper<<" (sec 35)"
+		<<" V0-daughter partners LS="<<nFlagged_dau[0]<<" ULS="<<nFlagged_dau[1]<<" (README_CQcomparison sec 2.2)"<<endl;
 	cout<<"sec 18.22 -- doXTFClean="<<doXTFClean<<" strict="<<doXTFStrict<<" neither="<<nXTF_neither<<" duplicate pairs="<<nXTF_pairs<<" byINTT="<<nXTF_byINTT
 		<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_TF="<<ONLY_FIRST_TF<<" rows skipped as same-TF duplicates="<<nSkippedSameTF<<endl;
