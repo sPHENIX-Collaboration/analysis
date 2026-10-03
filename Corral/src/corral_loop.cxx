@@ -778,6 +778,23 @@ void corral::Loop(){
 	long nFlagged_fullmvtx		= 0;	// path 3 (full MVTX match, README_SplitTracks573 sec 8)
 	long nFlagged_Looper		= 0;	// README_SplitTracks573 sec 35: looper veto, tracks flagged
 	long nFlagged_dau[2]		= {0,0};	// README_CQcomparison.md sec 2.2: split partners of in-peak V0 daughters, [0] LS [1] ULS
+	//---- README_CQcomparison.md sec 2.2 follow-up (2026-10-03): what the daughter-partner check removes. One set per path
+	//---- (0 SL, 1 RadialGap, 2 MVTX, 3 ULS), y = daughter: 0 K0S pi+, 1 K0S pi-, 2 Lambda p, 3 Lambda pi-, 4 Lbar pbar, 5 Lbar pi+.
+	//---- Kinematic histograms: NEW losers only (tracks not already removed by the main pre-pass / XTF), i.e. the change.
+	//---- Q = 2k* (CalcRm::PairInfo dq); d with its V0-daughter mass, t with its dE/dx PID mass (unidentified: pion).
+	//---- dR(t,d) of every LS-flagged partner of a Lambda/Lbar daughter BEFORE the dR cone; y = 4*daughter + PID(t),
+	//---- daughter 0 Lambda p, 1 Lambda pi-, 2 Lbar pbar, 3 Lbar pi+; PID 0 pi 1 K 2 p 3 unid
+	TH2D *hDauP_dRLS	= new TH2D("hDauP_dRLS","LS-flagged partners of #Lambda/#bar{#Lambda} daughters before the dR cone;#DeltaR(t,d);4*daughter (#Lambda p,#pi^{-},#bar{#Lambda} #bar{p},#pi^{+}) + PID(t) (#pi K p unid)",150,0.,0.3,16,-0.5,15.5);
+	TH2D *hDauP_n[2], *hDauP_dptrel[4], *hDauP_dR[4], *hDauP_Qtd[4], *hDauP_QtV[4], *hDauP_skf[4], *hDauP_tpid[4];
+	for (int k=0;k<2;k++) hDauP_n[k] = new TH2D(Form("hDauP_n%s",k?"new":"all"),Form("V0-daughter partners flagged (%s);path (0 SL, 1 RG, 2 MVTX, 3 ULS);daughter (K0S #pi^{+},#pi^{-}; #Lambda p,#pi^{-}; #bar{#Lambda} #bar{p},#pi^{+})",k?"new losers only":"all"),4,-0.5,3.5,6,-0.5,5.5);
+	for (int p=0;p<4;p++){
+		hDauP_dptrel[p]	= new TH2D(Form("hDauP_dptrel_%d",p),Form("V0-daughter partners, path %d: |p_{T,t}-p_{T,d}|/p_{T,d};|#Deltap_{T}|/p_{T};daughter",p),100,0.,2.,6,-0.5,5.5);
+		hDauP_dR[p]		= new TH2D(Form("hDauP_dR_%d",p),Form("V0-daughter partners, path %d: #DeltaR(t,d);#sqrt{#Delta#eta^{2}+#Delta#phi^{2}};daughter",p),320,0.,3.2,6,-0.5,5.5);
+		hDauP_Qtd[p]	= new TH2D(Form("hDauP_Qtd_%d",p),Form("V0-daughter partners, path %d: Q(t,d);Q (GeV);daughter",p),400,0.,2.,6,-0.5,5.5);
+		hDauP_QtV[p]	= new TH2D(Form("hDauP_QtV_%d",p),Form("V0-daughter partners, path %d: Q(t,V0);Q (GeV);daughter",p),400,0.,2.,6,-0.5,5.5);
+		hDauP_skf[p]	= new TH2D(Form("hDauP_skf_%d",p),Form("V0-daughter partners, path %d: SiSplitScore(t,d);SiSplitScore;daughter",p),42,0.,1.05,6,-0.5,5.5);
+		hDauP_tpid[p]	= new TH2D(Form("hDauP_tpid_%d",p),Form("V0-daughter partners, path %d: PID of t (0 #pi 1 K 2 p 3 unid; +4 if negative);PID(t);daughter",p),8,-0.5,7.5,6,-0.5,5.5);
+	}
 	TH1D *hLooper_p		= new TH1D("hLooper_p","looper veto: |p| of the removed track;|p| (GeV/c);tracks",40,0.,0.4);
 	TH1D *hLooper_rs	= new TH1D("hLooper_rs","looper veto: OS pairs, |p|<LOOPER_PMAX, #Delta#phi#geq170#circ;|#vec{p}_{1}+#vec{p}_{2}|/(|p_{1}|+|p_{2}|);pairs",50,0.,0.25);
 	long nFlagged_ULS			= 0;	// sec 18.10: opposite-charge SiSplitScore path -- now TRACK-level
@@ -1674,16 +1691,34 @@ void corral::Loop(){
 			//---- -- LS: pregate, SiSplitScore gate, then the SL / RadialGap / MVTX paths; ULS: the SiSplitScore veto -- but
 			//---- the daughter always wins. Daughter-daughter pairs never occur (pionidx has no daughters); no diagnostic
 			//---- histogram of the loop above sees these pairs. Losers go in the same per-path lists.
+			//---- 2026-10-03 (option 2b, README_CQcomparison sec 2.2 follow-up): Lambda/Lbar daughters only (both), LS paths only
+			//---- inside dR(t,d) < DAU_DRMAX (no cone for a pion-tagged partner of a p/pbar: its ghost, dR tail to ~0.12; pi+Lambda Q<0.05
+			//---- excess 4.13 -> 1.07, laptop-Claude's suggestion), ULS never removes a dE/dx (anti)proton (option 2c). K0S daughters are out: pi K0S had no low-Q excess in v9 yet lost
+			//---- ~10% of its Q < 0.4 sibling pairs; LS beyond dR 0.05 made part of the p-Lambda dip (comparison/DauPartners.C).
+			auto q2k	= [](double px1,double py1,double pz1,double m1,double px2,double py2,double pz2,double m2){	// = CalcRm dq
+				double e1=sqrt(px1*px1+py1*py1+pz1*pz1+m1*m1), e2=sqrt(px2*px2+py2*py2+pz2*pz2+m2*m2);
+				double qinv2	= (e1-e2)*(e1-e2)-(px1-px2)*(px1-px2)-(py1-py2)*(py1-py2)-(pz1-pz2)*(pz1-pz2);
+				double minv2	= (e1+e2)*(e1+e2)-(px1+px2)*(px1+px2)-(py1+py2)*(py1+py2)-(pz1+pz2)*(pz1+pz2);
+				if (minv2<=0.) return 0.;
+				double Q	= (m1*m1-m2*m2)/sqrt(minv2);
+				return sqrt(std::max(0.,Q*Q-qinv2));
+			};
 			for (int d=0; d<(*ntr); d++){
 				if (!isPeakDaughter(d) || chg[d]==0) continue;
+				const int ivd	= peakV0Of[d];
+				const int kvd	= (v0pid[ivd]==310) ? 0 : (v0pid[ivd]==3122) ? 1 : 2;
+				const bool dIsP	= (kvd==1 && chg[d]>0) || (kvd==2 && chg[d]<0);
+				const int dcat	= 2*kvd + (kvd==0 ? (chg[d]>0 ? 0 : 1) : (dIsP ? 0 : 1));
+				if (kvd==0) continue;	// 2026-10-03 option 2b: K0S daughters out (pi K0S had no v9 excess; removal hurt there)
 				for (int t : pionidx){
 					bool sameCharge	= (chg[d]*chg[t] > 0);
 					int path	= -1;
-					if (sameCharge && doSplitRemoval){
+					if (sameCharge && doSplitRemoval && doDauCheck){
 						double deta	= eta[d]-eta[t];
 						double dphi	= phi[d]-phi[t];
 						if (dphi> M_PI) dphi -= 2*M_PI;
 						if (dphi<-M_PI) dphi += 2*M_PI;
+						const double dR2	= deta*deta+dphi*dphi;
 						if (!InLSPregate(deta,dphi,pt[d],pt[t])) continue;
 						if (SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t]) < valSiKeyCut) continue;
 						double SL	= ComputeSplitSL(layermask[d],layermask[t]);
@@ -1695,12 +1730,38 @@ void corral::Loop(){
 						else if (!DISABLE_RG && RG>=0.0 && RG>=valRadialGapCut)	path = 1;
 						else if (valFullMVTX>0 && mvtxDen>0 && nMatchMVTX>=valFullMVTX
 								&& fabs(1.0/pt[d]-1.0/pt[t])>=valFullMVTXdinv)		path = 2;
-					} else if (!sameCharge && doULSTest){
+						if (path>=0){
+							const int pidt	= pidOf(t);
+							hDauP_dRLS->Fill(sqrt(dR2), 4*(dcat-2)+pidt);
+							const bool wide	= dIsP && pidt==0;	// a pion-tagged LS partner of a p/pbar is its ghost: no cone (2026-10-03)
+							if (!wide && dR2 >= DAU_DRMAX*DAU_DRMAX) path = -1;	// option 2: close copies only
+						}
+					} else if (!sameCharge && doULSTest && doDauCheck && pidOf(t)!=2){	// ULS ghost of the daughter (no angular gate, as in
+						//---- the main ULS veto). Option 2c: never a dE/dx (anti)proton -- a ghost is built from the daughter's own hits, so
+						//---- it looks like the daughter (pion-like for the soft pi); a proton-tagged ULS partner is a real proton
 						if (SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t])>=valULSTestCut) path = 3;
 					}
 					if (path<0) continue;
 					++nFlagged_dau[path==3 ? 1 : 0];
+					hDauP_n[0]->Fill(path,dcat);
 					if (std::find(nSplitFlagged_thisevt.begin(),nSplitFlagged_thisevt.end(),t)==nSplitFlagged_thisevt.end()){
+						{	// README_CQcomparison sec 2.2 follow-up: kinematics of the NEW loser t vs daughter d and parent V0
+							double deta	= eta[d]-eta[t], dphi = phi[d]-phi[t];
+							if (dphi> M_PI) dphi -= 2*M_PI;
+							if (dphi<-M_PI) dphi += 2*M_PI;
+							int pt_	= pidOf(t);
+							double mt	= Species_mass[pt_==1 ? 1 : (pt_==2 ? 2 : 0)];
+							double md	= Species_mass[dIsP ? 2 : 0];
+							double pxt=pt[t]*cos(phi[t]), pyt=pt[t]*sin(phi[t]), pzt=pt[t]*sinh(eta[t]);
+							double pxd=pt[d]*cos(phi[d]), pyd=pt[d]*sin(phi[d]), pzd=pt[d]*sinh(eta[d]);
+							hDauP_n[1]		->Fill(path,dcat);
+							hDauP_dptrel[path]->Fill(fabs(pt[t]-pt[d])/pt[d],dcat);
+							hDauP_dR[path]	->Fill(sqrt(deta*deta+dphi*dphi),dcat);
+							hDauP_Qtd[path]	->Fill(q2k(pxt,pyt,pzt,mt,pxd,pyd,pzd,md),dcat);
+							hDauP_QtV[path]	->Fill(q2k(pxt,pyt,pzt,mt,v0px[ivd],v0py[ivd],v0pz[ivd],Species_mass[5+kvd]),dcat);
+							hDauP_skf[path]	->Fill(SiSplitScore(&siclukey[d*7],&siclukey[t*7],layermask[d],layermask[t]),dcat);
+							hDauP_tpid[path]->Fill(pt_ + (chg[t]<0 ? 4 : 0),dcat);
+						}
 						nSplitFlagged_thisevt.push_back(t);
 						if (path<3) lsLosers_thisevt.push_back(t);
 						loserPath_thisevt.push_back({t,path});

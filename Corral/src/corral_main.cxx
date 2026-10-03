@@ -162,6 +162,8 @@ void DisplayHelp(){
 	cout<<"  split tracks, opposite-charge (sec 15, 18.10, 18.24)"<<endl;
 	cout<<"    noulstest     turn OFF the ULS track-level veto"<<endl;
 	cout<<"    ulstestNN     ULS veto ON at SiSplitScore threshold 0.NN (default 0.05; sane range 0.02-0.95)"<<endl;
+	cout<<"  V0-daughter split partners (README_CQcomparison sec 2.2)"<<endl;
+	cout<<"    nodau         turn OFF the split-partner check of Lambda/Lbar daughters"<<endl;
 	cout<<"  loopers (README_SplitTracks573 sec 35): the returning half of a curling low-pt track, OS and back to back"<<endl;
 	cout<<"    nolooper      turn OFF the looper veto"<<endl;
 	cout<<"    looperNN      looper veto: relative momentum sum |p1+p2|/(|p1|+|p2|) < 0.NN (default 0.08; sane range 0.02-0.10)"<<endl;

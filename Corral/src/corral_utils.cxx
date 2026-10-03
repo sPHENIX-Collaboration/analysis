@@ -84,6 +84,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 						// "ulstestNN" overrides the threshold. Independently re-derived and reconfirmed
 						// after the sec 16 restart, via a different method (fixed-k windowed survival
 						// function, sec 18.5/18.7): same conclusion both times.
+  , doDauCheck(true)	// README_CQcomparison sec 2.2 (2026-10-03, option 2): ON; "nodau" turns it off
   , valULSTestCut(0.05)		// sec 15.7 full-stats 14-point scan: best non-degenerate point (>=0.05,
 							// 0.10, 0.15 bit-identical; >=0.00 degenerate). Was 0.60 (sec 15.6 reuse).
 							// sec 18.7 (2026-09-23): reconfirmed via fine 0.01/0.02/0.03 grid -- gap below
@@ -375,6 +376,10 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	}
 	cout<<"reader::reader -- ULS pair veto (sec 15) "<<(doULSTest?"enabled":"DISABLED")
 		<<"... valULSTestCut = "<<valULSTestCut<<endl;
+	//---- README_CQcomparison sec 2.2 (2026-10-03, option 2): V0-daughter partner check, ON; "nodau" turns it off.
+	//---- Checked clean: no other token contains "nodau".
+	if (RunString.Contains("nodau",TString::kIgnoreCase))	doDauCheck	= false;
+	cout<<"reader::reader -- V0-daughter partners (README_CQcomparison sec 2.2): "<<(doDauCheck?"on (Lambda/Lbar daughters: LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton; not K0S)":"OFF")<<endl;
 	//
 	//---- sec 18.21: opt-in TF-deduplication diagnostic, OFF by default. "onlyfirsttf" verified
 	//---- clean against every token this codebase parses (ulstest/SL/REMOVE/SIKEY/cross/qcut/ntpc/

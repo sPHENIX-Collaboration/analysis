@@ -165,6 +165,8 @@ public :
 						// pi+pi- pairs beyond the 4.1deg pregate); instead this track-level veto no longer
 						// uses any angular gate, which covers the same pairs symmetrically.
 	double	valULSTestCut;	// SiSplitScore threshold for the above, default 0.05 (sec 15.7, reconfirmed 18.7)
+	bool	doDauCheck;	// README_CQcomparison sec 2.2: split partners of in-peak Lambda/Lbar daughters (LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton); not K0S; ON, "nodau" off
+	static constexpr double DAU_DRMAX = 0.05;	// sec 2.2 (2026-10-03, option 2): daughter-partner check only inside dR(t,d) < 0.05
 	bool	ONLY_CROSSING0;	// sec 18.21 follow-up: opt-in diagnostic, OFF by default ("Xing0" in RunString
 							// turns it on; absent = all crossings kept). NOT "crossing0only" -- that
 							// contains "cross" and would silently enable doCrossing. Keeps only rows
