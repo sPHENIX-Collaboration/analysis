@@ -85,10 +85,6 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
     std::cout << spinPatternBlue[i] << " " << spinPatternYellow[i] << std::endl;
   }
 
-  xingshift = spindb->GetCrossingShift();
-  spindb->GetPolarizationBlue(0,bluepolarization,bluepolarizationerr);
-  spindb->GetPolarizationYellow(0,yellowpolarization,yellowpolarizationerr);
-
   hbunchnum = new TH1F("hbunchnum", "Bunch Number", 120, 0, 120);
   hsphnxbunchnum = new TH1F("hsphnxbunchnum", "Sphenix Bunch Number", 120, 0, 120);
   hmultiplicity = new TH1F("hmultiplicity", "Multiplicity", 100, 0, 100);
@@ -106,6 +102,10 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   singleTrackTree->Branch("trackBunch", &trackBunch, "trackBunch/I");
   singleTrackTree->Branch("bspin", &bspin, "bspin/I");
   singleTrackTree->Branch("yspin", &yspin, "yspin/I");
+  singleTrackTree->Branch("bpol", &bpol, "bpol/F");
+  singleTrackTree->Branch("bpolerr", &bpolerr, "bpolerr/F");
+  singleTrackTree->Branch("ypol", &ypol, "ypol/F");
+  singleTrackTree->Branch("ypolerr", &ypolerr, "ypolerr/F");
   singleTrackTree->Branch("bco", &bco, "bco/l");
   singleTrackTree->Branch("bcowindowlow", &bcowindowlow, "bcowindowlow/l");
   singleTrackTree->Branch("bcowindowhigh", &bcowindowhigh, "bcowindowhigh/l");
@@ -113,10 +113,16 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   singleTrackTree->Branch("doublecount", &doublecount, "doublecount/O");
   singleTrackTree->Branch("p", &p, "p/F");
   singleTrackTree->Branch("pt", &pt, "pt/F");
+  singleTrackTree->Branch("pz", &pz, "pz/F");
+  singleTrackTree->Branch("xf", &xf, "xf/F");
   singleTrackTree->Branch("eta", &eta, "eta/F");
   singleTrackTree->Branch("phi", &phi, "phi/F");
   singleTrackTree->Branch("quality", &quality, "quality/F");
   singleTrackTree->Branch("charge", &charge, "charge/F");
+
+  xingshift = spindb->GetCrossingShift();
+  spindb->GetPolarizationBlue(0,bpol,bpolerr);
+  spindb->GetPolarizationYellow(0,ypol,ypolerr);
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -174,6 +180,8 @@ int SingleTrackAN::process_event([[maybe_unused]] PHCompositeNode *topNode)
     quality = track->get_quality();
     p = track->get_p();
     pt = track->get_pt();
+    pz = track->get_pz();
+    xf = (2*pz)/200;
     eta = track->get_eta();
     phi = track->get_phi();
 
