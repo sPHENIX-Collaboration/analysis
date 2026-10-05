@@ -59,33 +59,34 @@ class SingleTrackAN : public SubsysReco
 
   std::string m_output_filename = "SingleTrackAN.root";
 
-  int trackBunch = 0;
-  int bspin = 0;
-  int yspin = 0;
 
-  static const int NBUNCHES = 120;
-  int spinPatternBlue[NBUNCHES] = {0};
-  int spinPatternYellow[NBUNCHES] = {0};
+
+
 
   int bunchnum;
   int sphnxbunchnum;
   int multiplicity; 
   int crossing;
 
-    // spin stuff
-  int bluepattern[120];
-  int yellowpattern[120];
-  float bluepolarization;
-  float bluepolarizationerr;
-  float yellowpolarization;
-  float yellowpolarizationerr;
+  // spin stuff
+  static const int NBUNCHES = 120;
   int xingshift;
-  int bluespin;
-  int yellspin;
+  int spinPatternBlue[NBUNCHES] = {0};
+  int spinPatternYellow[NBUNCHES] = {0};
+  int trackBunch = 0;
+  int bspin = 0;
+  int yspin = 0;
+  float bpol;
+  float bpolerr;
+  float ypol;
+  float ypolerr;
+
 
   // track stuff
   float p;
   float pt;
+  float pz;
+  float xf;
   float eta;
   float phi;
   float quality;
