@@ -18,6 +18,7 @@
 #include <TBox.h>
 #include <TLatex.h>
 #include <TFitResult.h>
+#include <TParameter.h>
 #include <sstream>
 
 //------------------------------------------------------------
@@ -287,7 +288,7 @@ void corral::Finalize(){
 				for (int ic=0;ic<nlists;ic++) if (nc[ic][z]>=2. && dc[ic][z]>0.){ Nz[z] += nc[ic][z]; NDz[z] += nc[ic][z]*dc[ic][z]; }
 				okq[z]	= (Nz[z]>=2. && NDz[z]>0.);
 			}
-			auto buildCQ	= [&](const char* bs, const char* bm, int rebin, const char* outname, const char* title) -> TH1* {
+			auto buildCQ	= [&](const char* bs, const char* bm, int rebin, const char* outname, const char* title, bool keepSD=false) -> TH1* {
 				TH1 *t0	= (TH1*)fch[0]->Get(Form("%s_z00_%d",bs,ipaty));
 				if (!t0){ cout<<"corral::Finalize -- "<<bs<<"_z00_"<<ipaty<<" missing, exit"<<endl; exit(1); }
 				TH1 *out	= (TH1*)t0->Clone(outname); out->SetDirectory(0); delete t0;
@@ -311,9 +312,23 @@ void corral::Finalize(){
 						delete hs; delete hm;
 					}
 				}
+				//---- keepSD (user 2026-10-06): also keep the numerator and denominator, hQsib_k = sum_z Qsib (sibling pairs,
+				//---- sqrt(N) errors) and hQmix_k = sum_z D_z (mixed, expected-sibling-pair units), so peak yields in pairs
+				//---- = sum (C - base) * hQmix need no pass over the chunks
+				TH1 *hS = 0, *hD = 0;
+				if (keepSD){
+					TString pn	= TString(out->GetTitle()); pn.Remove(pn.First(','));	// the pair label (title is a Form() buffer, long reused here)
+					hS	= (TH1*)out->Clone(Form("hQsib_%d",ipaty)); hS->SetDirectory(0);
+					hD	= (TH1*)out->Clone(Form("hQmix_%d",ipaty)); hD->SetDirectory(0);
+					double nevQ	= 0.; for (int z=0;z<NZ;z++) if (okq[z]) nevQ += Nz[z];
+					hS->SetTitle(Form("%s, #Sigma_{z} sibling pairs (N_{evt} = %.0f);Q_{inv} (GeV);pairs",pn.Data(),nevQ));
+					hD->SetTitle(Form("%s, #Sigma_{z} mixed pairs, expected-sibling units (N_{evt} = %.0f);Q_{inv} (GeV);pairs",pn.Data(),nevQ));
+					extraW.push_back(new TParameter<double>(Form("nevtQ_%d",ipaty),nevQ));
+				}
 				for (int ib=0;ib<nce;ib++){
 					double S=0, D=0;
 					for (int ic=0;ic<nlists;ic++){ S += Sc[ic][ib]; D += Dc[ic][ib]; }
+					if (hS){ hS->SetBinContent(ib,S); hS->SetBinError(ib,sqrt(S)); hD->SetBinContent(ib,D); hD->SetBinError(ib,0.); }
 					if (D<=0.){ out->SetBinContent(ib,0.); out->SetBinError(ib,0.); continue; }
 					double C	= S/D;
 					double v	= 0.;
@@ -323,10 +338,11 @@ void corral::Finalize(){
 					out->SetBinContent(ib,C); out->SetBinError(ib,e);
 				}
 				extraW.push_back(out);
+				if (hS){ extraW.push_back(hS); extraW.push_back(hD); }
 				return out;
 			};
 			TString pnm	= Form("%s%s",ParticleIDNames[PairTypes_Info[ipaty][0]],ParticleIDNames[PairTypes_Info[ipaty][1]]);
-			P.CQ	= (TH1D*)buildCQ("hQsib","hQmix",1,Form("hFin_CQ_%d",ipaty),    Form("%s, C(Q) = #Sigma_{z}sib / #Sigma_{z}mix (1 MeV bins);Q_{inv} (GeV);C(Q)",pnm.Data()));
+			P.CQ	= (TH1D*)buildCQ("hQsib","hQmix",1,Form("hFin_CQ_%d",ipaty),    Form("%s, C(Q) = #Sigma_{z}sib / #Sigma_{z}mix (1 MeV bins);Q_{inv} (GeV);C(Q)",pnm.Data()),true);
 			P.CQ5	= (TH1D*)buildCQ("hQsib","hQmix",5,Form("hFin_CQ5_%d",ipaty),   Form("%s, C(Q) (5 MeV bins, #pm subgroup err);Q_{inv} (GeV);C(Q)",pnm.Data()));
 			P.CQKT	= (TH2D*)buildCQ("hQsibKT","hQmixKT",1,Form("hFin_CQKT_%d",ipaty),  Form("%s, C(Q,k_{T});Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
 			P.CQKT10= (TH2D*)buildCQ("hQsibKT","hQmixKT",5,Form("hFin_CQKT10_%d",ipaty),Form("%s, C(Q,k_{T}) (10 MeV bins);Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
