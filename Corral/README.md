@@ -10,27 +10,28 @@ dE/dx (the KFParticle gates in `dedxGates_KFP.root`). The code includes sensitiv
 kinds of split and duplicate tracks in the Run-3 p+p (polyseeder) data -- like-sign and opposite-charge
 split tracks, copies across bunch crossings and trigger frames, and loopers -- as well as a correction for
 track crossing. `ana573/SplitTrackTypes_ana573.pdf` shows what each kind looks like, and
-`ana573/SplitTrackLogic_ana573.pdf` every decision in processing order (3 and 2 pages).
+`ana573/SplitTrackLogic_ana573.pdf` every decision in processing order (3 pages each).
 
 Correlations are measured by comparing **sibling** pairs (both particles from the same event) with
 **mixed** pairs (particles from different events with a similar vertex position zvtx, NMIX=10 events per
 zvtx bin, 16 bins over -16 < zvtx < 16 cm), which see the same acceptance but carry no physical
 correlation.
 
-The default `src/PairTypes.h` has 28 pair types (the charged hadron always before the V0):
+The default `src/PairTypes.h` has 46 pair types (the lighter species first, a charged hadron before a V0):
 
-| index | pairs | index | pairs | index | pairs |
-|---|---|---|---|---|---|
-| 0 | pi+ pi- | 10 | p pi+ (Delta++) | 20 | pi+ anti-Lambda |
-| 1 | pi- pi+ (species order swapped: cross-check of 0) | 11 | pbar pi- | 21 | pi- anti-Lambda |
-| 2 | pi+ pi+ | 12 | p Lambda | 22 | K0S K0S |
-| 3 | pi- pi- | 13 | p anti-Lambda | 23 | Lambda Lambda |
-| 4 | K+ K- (phi) | 14 | pbar Lambda | 24 | anti-Lambda anti-Lambda |
-| 5 | p pbar | 15 | pbar anti-Lambda | 25 | K0S Lambda |
-| 6 | p p | 16 | pi+ K0S (K*+) | 26 | K0S anti-Lambda |
-| 7 | pbar pbar | 17 | pi- K0S (K*-) | 27 | Lambda anti-Lambda |
-| 8 | p pi- (Lambda, Delta0) | 18 | pi+ Lambda (Sigma*+) | | |
-| 9 | pbar pi+ | 19 | pi- Lambda (Sigma*-, Xi-) | | |
+| pairs | index: pair type |
+|---|---|
+| pi pi | 0 pi+pi-, 1 pi-pi+, 2 pi+pi+, 3 pi-pi- |
+| K K | 4 K+K- (phi), 5 K+K+, 6 K-K- |
+| p p | 7 p pbar, 8 p p, 9 pbar pbar |
+| pi K | 10 pi+K-, 11 pi-K+, 12 pi+K+, 13 pi-K- |
+| pi p | 14 pi+pbar, 15 pi-p (Lambda, Delta0), 16 pi+p (Delta++), 17 pi-pbar |
+| K p | 18 K+pbar, 19 K-p, 20 K+p, 21 K-pbar |
+| K Lambda | 22 K+Lambda, 23 K+Lbar, 24 K-Lambda, 25 K-Lbar |
+| p Lambda | 26 p Lambda, 27 p Lbar, 28 pbar Lambda, 29 pbar Lbar |
+| pi V0 | 30 pi+K0S (K*+), 31 pi-K0S (K*-), 32 pi+Lambda (Sigma*+), 33 pi-Lambda (Sigma*-, Xi-), 34 pi+Lbar, 35 pi-Lbar |
+| K, p with K0S | 36 K+K0S, 37 K-K0S, 38 p K0S, 39 pbar K0S |
+| V0 V0 | 40 K0S K0S, 41 Lambda Lambda, 42 Lbar Lbar, 43 K0S Lambda, 44 K0S Lbar, 45 Lambda Lbar |
 
 The pair densities are filled in rapidity y (from the identified mass), inside abs(eta) < 1.1 and each species'
 y window abs(y) < `Species_yu` (fluct_common.h): pi 1.0, K 0.7, p 0.6, K0s / Lambda / Lbar 0.7. Each pair type has
@@ -85,7 +86,7 @@ what each step removes). Two charts in the repository draw them, and each item b
 `ana573/SplitTrackTypes_ana573.pdf`, pictures (page 1: like-sign split tracks and whole-event copies, panels
 1-3; page 2: opposite-sign pairs, panels 4-6; page 3: the central-membrane hole, panels 7-9), and
 `ana573/SplitTrackLogic_ana573.pdf`, the decisions in processing order (page 1, stages 0-2: events and
-tracks; page 2, stage 3: pairs and the maps, and what is watched):
+tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0s and their daughters):
 
 - **Vertex-phi mask (SiPhiMask), ana573.** Two vertex-phi windows, [70,83) and [94,115) deg, where the
   tracks are few and their DCA is large (a feature fixed at the silicon radius, for this data only), are
@@ -113,13 +114,22 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched):
   carry the same cluster on at least two MVTX layers is flagged whatever its SL (two particles from one
   vertex cannot share two MVTX clusters unless their momenta are nearly equal). The extra copy is
   removed from the event.
+  Charts: SplitTrackTypes page 1, panels 1-2; SplitTrackLogic page 1, stage 2, same charge (paths 1-3).
 - **Opposite-charge split-track veto.** The same silicon seed can also be attached to two TPC tracks of
   opposite charge. These are removed by a track-level veto on the shared silicon clusters.
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 2, opposite charge.
+- **V0 daughters.** A V0 inside its mass peak (+-3 sigma) claims its two daughters: they leave every track
+  pair type and are never the loser of a split-track test. For Lambda and anti-Lambda only (not K0S), an
+  accepted track that is a split copy of a daughter is removed: like-sign within dR < 0.05 (except a
+  pion-tagged partner of a p/pbar), opposite-sign by shared silicon, where a proton-tagged partner of the
+  (anti)proton daughter is its wrong-sign copy. `nodau` turns this off.
+  Charts: SplitTrackLogic page 3.
 - **Looper veto.** A track with pT below ~0.17 GeV/c curls back inside the TPC, and its returning half,
   read outward, is a second track of the opposite charge, exactly back to back with the same momentum.
   Opposite-charge pairs with both |p| < 0.20 GeV/c, dphi >= 170 deg and a relative momentum sum
   |p1 + p2| / (|p1| + |p2|) < 0.08 are one particle: the worse half is removed (0.01% of the tracks, 0.08%
   of those at pT 0.1-0.2 GeV/c). Without it the pi+pi- away side has a spike at dy ~ 0.
+  Charts: SplitTrackTypes page 2, panel 5; SplitTrackLogic page 1, stage 2, opposite charge.
 - **Cross-crossing duplicate cleaner.** sPHENIX reads out continuously; one trigger frame (TF) holds
   several bunch crossings, and each crossing with a vertex is one event. One silicon seed can be
   attached to TPC tracks in different crossings of the same TF, so the "same" particle appears in two
@@ -127,10 +137,12 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched):
   different events of one TF that share silicon clusters (cluster keys are unique within one TF) and
   keeps the copy whose own INTT time bucket matches its event's crossing; if neither matches, both are
   dropped (strict mode, the default); remaining ties go to the better fit.
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 0 (b).
 - **No mixing with adjacent trigger frames.** A smaller residual of the same effect comes from events in
   neighbouring TFs, where cluster keys cannot be compared. Whole mixed event pairs from adjacent TFs of
   the same run are therefore skipped (2-10% of the mixed event pairs, depending on the zvtx bin). The mixed
   normalization is kept per zvtx bin, so the exclusion does not bias it.
+  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 2, stage 3.
 - **Collisions copied into overlapping trigger frames.** When two triggers are closer in time than a
   TF's readout window, both TFs reconstruct the collisions in the overlap: the same vertex appears in two
   events of different TFs, with the crossing shifted by exactly the difference of the two TFs' GL1 BCO.
@@ -140,17 +152,21 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched):
   (sibling and mixed). In ana573 about 13% of events are such copies, most in the next TF but some two
   TFs later (which the adjacent-TF mixing exclusion does not reach). Trees without `bco` (ana532 and
   older) are processed exactly as before; the log says the removal was not possible.
+  Charts: SplitTrackTypes page 1, panel 3; SplitTrackLogic page 1, stage 0 (a).
 - **Two-track resolution cut.** Two like-sign tracks that stay close through the TPC are lost to
   merging. Like-sign pairs with abs(dy) < 0.06 whose minimum azimuthal separation anywhere in the TPC
   (dphi* over R = 0.30-0.78 m) is below 2 deg are removed from sibling and mixed pairs alike, so the
   loss cancels in the ratio. It is visible mostly in C(Q) at Q < ~20 MeV.
+  Charts: SplitTrackLogic page 2, stage 3.
 - **Near-vertex two-track cut.** Sibling tracks at nearly the same phi near the vertex are lost; charged
   pairs with abs(dphi*(R = 3 cm)) < 2 deg at abs(dy) < 1 are removed from sibling and mixed pairs alike
   (0.9% of the pion pairs). The log prints the fraction of pairs each pair cut removes.
+  Charts: SplitTrackLogic page 2, stage 3.
 - **Watched, not removed: the +-15 deg notch.** Opposite-charge tracks bend toward each other; a pair
   whose two tracks meet in phi between the INTT and the TPC (R ~ 0.10-0.30 m) is lost in the silicon-TPC
   matching, which leaves a ~4% deficit of pi+pi- pairs at 10-20 deg in dphi (README_SplitTracks573.md secs
   32-34). It is upstream of Corral; the notch monitor page shows it in every production.
+  Charts: SplitTrackTypes page 2, panel 6; SplitTrackLogic page 2, WATCH.
 - **Crossing correction.** When two real tracks cross in the TPC, one can lose hits to the other and
   fail the hit requirement: a pair inefficiency that a single-track efficiency cannot see. Pairs are
   pt-ordered when filled, so that every instance of this loss falls on the same ("dirty") side of dphi
@@ -158,6 +174,7 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched):
   is replaced by its mirror bin from the clean side, and the away side is symmetrized in dphi. Only dphi
   is ever symmetrized; dy stays y1 - y2. Pairs with a neutral V0 leg are not pt-ordered and are left
   untouched.
+  Charts: SplitTrackLogic page 2, stage 3 (the maps).
 - **V0 zero-value repair.** Some V0 getters return exactly 0 for eta, phi, mass or decay length when the
   value was not filled; Corral recomputes these from the V0 momentum and decay geometry instead of
   using the zero.
@@ -173,16 +190,6 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched):
   from the (dy, dphi) map and from the (y1, y2) map; Finalize compares every histogram with a
   single-job full-statistics reference and reports the pulls; and the logs count every removed track,
   vetoed pair and skipped mixed pair.
-  Charts: SplitTrackTypes page 1, panels 1-2; SplitTrackLogic page 1, stage 2, same charge (paths 1-3).
-  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 2, opposite charge.
-  Charts: SplitTrackTypes page 2, panel 5; SplitTrackLogic page 1, stage 2, opposite charge.
-  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 1, stage 0 (b).
-  Charts: SplitTrackTypes page 2, panel 4; SplitTrackLogic page 2, stage 3.
-  Charts: SplitTrackTypes page 1, panel 3; SplitTrackLogic page 1, stage 0 (a).
-  Charts: SplitTrackLogic page 2, stage 3.
-  Charts: SplitTrackLogic page 2, stage 3.
-  Charts: SplitTrackTypes page 2, panel 6; SplitTrackLogic page 2, WATCH.
-  Charts: SplitTrackLogic page 2, stage 3 (the maps).
 
 ## Building
 
@@ -260,6 +267,8 @@ are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the 
 | **opposite-charge split tracks** | |
 | `noulstest` | turn off the opposite-charge veto |
 | `ulstestNN` | opposite-charge veto at SiSplitScore 0.NN (default 0.05; 0.02-0.95) |
+| **V0-daughter split partners** | |
+| `nodau` | turn off the split-partner check of Lambda/Lbar daughters (see "V0 daughters" above) |
 | **cross-crossing duplicates and mixing** | |
 | `noXTF` | turn off the duplicate cleaner and the adjacent-TF mixing exclusion |
 | `XTFclean` | cleaner non-strict (if neither copy matches the INTT timing, keep the better one; strict is the default) |
@@ -321,8 +330,8 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    Corral/run_m.bash <dataset>
    ```
    Output: `root/<dataset>/corral.root`, `pdf/<dataset>/corral.pdf`, `log/<dataset>/corral.log`. It asks for
-   16 GB and 7 days (`MEM=`, `TIME=` override). With the 28 pair types a job takes about 2 h 15 min and
-   3 GB per 50M events, so ana573 (642M events) takes ~29 h (the 2026-09-29 production asked MEM=32G).
+   16 GB and 7 days (`MEM=`, `TIME=` override). With 28 pair types a job took about 2 h 15 min and
+   3 GB per 50M events (ana573, 642M events: ~29 h, MEM=32G); with 46 a 10M-event chunk takes ~1.5 h.
    This job also snapshots its binary.
 4. **Finalize**, in a work directory with `root/` and `pdf/`:
    ```sh
@@ -374,7 +383,7 @@ the repository.
 | `src/fluct_common.h`, `corral_class.h` | shared definitions (species, PID caps and pT minima, the SiPhiMask windows, the V0 mass peaks); `NOCORRELATIONS` in `corral_class.h` skips all pair work (fast QA runs) |
 | `dedxGates_KFP.root` | the KFParticle dE/dx gates (lower/upper edge vs momentum for pi, K, p, d), read at run time |
 | `ana573/SplitTrackTypes_ana573.pdf` | pictures of each split / duplicate case the ana573 default removes, the notch, and the central-membrane hole with its mask (3 pages) |
-| `ana573/SplitTrackLogic_ana573.pdf` | flowchart of every removal decision in processing order, with the fractions removed (2 pages) |
+| `ana573/SplitTrackLogic_ana573.pdf` | flowchart of every removal decision in processing order, with the fractions removed (3 pages) |
 
 ## The name
 
