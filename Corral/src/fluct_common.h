@@ -183,8 +183,9 @@
 	//---- each species' y window in CalcRm: y at this p at the eta edge = the whole y reach (V0 entries unused).
 	static const double Species_pmax_pid[NSpecies]        = {  5.0, 0.6, 1.0,  5.0,  5.0,   5.0, 5.0, 5.0 };
 	//---- 2026-09-30 (user): the rapidity window of each species, abs(y) < Species_yu (YL = -YU). A pair type uses the window of each
-	//---- of its two species; the y bin counts (and the dy bin width) are per pair type in PairTypes.h.
-	static const double Species_yu[NSpecies]              = {  1.0, 0.65, 0.6, 0.6,  0.6,   0.7, 0.7, 0.7 };
+	//---- of its two species; the y bin width (y1, y2 and dy) is per pair type in PairTypes.h (PairTypes_Info[][3]).
+	//---- 2026-10-05 (user): K 0.65 -> 0.7 (= the V0s), so K-V0 pairs can share a coarse bin width (1.3 only shares 0.05, 0.1).
+	static const double Species_yu[NSpecies]              = {  1.0, 0.7, 0.6, 0.6,  0.6,   0.7, 0.7, 0.7 };
 	//---- R2yy(dy) from the (y1,y2) map (a cross-check only; physics is (dy,dphi)): the fraction of a (y1,y2) cell of widths w1, w2
 	//---- centred at c1, c2 that falls in each bin of a dy axis (nb bins from lo, width bw), by sub-sampling the cell. With equal
 	//---- widths and bw = w1 the cell centre lands on a dy bin centre: the caller uses that bin alone.

@@ -67,6 +67,40 @@ void DrawCQSignposts(int ipid1, int ipid2, double ymin, double ymax, double xmax
 		{ PM,  PIP, 1.232,    mp,  mpi, "#bar{#Delta}^{0}" },
 		{ PM,  PIM, 1.232,    mp,  mpi, "#bar{#Delta}^{--}"},
 		{ KP,  KM,  1.019461, mK,  mK,  "#phi"             },
+		//---- 2026-10-06: the 46-pairtype table (PDG masses; a0(980)->KK0s and f0(980)->K0sK0s sit below threshold)
+		{ KP,  PIM, 0.89555,  mK,  mpi, "K*^{0}"           },
+		{ KM,  PIP, 0.89555,  mK,  mpi, "#bar{K*}^{0}"     },
+		{ KP,  PIM, 1.4324,   mK,  mpi, "K_{2}*^{0}(1430)" },
+		{ KM,  PIP, 1.4324,   mK,  mpi, "#bar{K}_{2}*^{0}(1430)"},
+		{ KM,  PIP, 1.86484,  mK,  mpi, "D^{0}"            },
+		{ KP,  PIM, 1.86484,  mK,  mpi, "#bar{D}^{0}"      },
+		{ KP,  KM,  1.86484,  mK,  mK,  "D^{0}"            },
+		{ KM,  PP,  1.5194,   mK,  mp,  "#Lambda(1520)"    },
+		{ KP,  PM,  1.5194,   mK,  mp,  "#bar{#Lambda}(1520)"},
+		{ KM,  PP,  1.820,    mK,  mp,  "#Lambda(1820)"    },
+		{ KP,  PM,  1.820,    mK,  mp,  "#bar{#Lambda}(1820)"},
+		{ KS,  PIP, 1.86966,  mK0, mpi, "D^{+}"            },
+		{ KS,  PIM, 1.86966,  mK0, mpi, "D^{-}"            },
+		{ KS,  KP,  1.86966,  mK0, mK,  "D^{+}"            },
+		{ KS,  KM,  1.86966,  mK0, mK,  "D^{-}"            },
+		{ KS,  KP,  1.96835,  mK0, mK,  "D_{s}^{+}"        },
+		{ KS,  KM,  1.96835,  mK0, mK,  "D_{s}^{-}"        },
+		{ KS,  PP,  2.28646,  mK0, mp,  "#Lambda_{c}^{+}"  },
+		{ KS,  PM,  2.28646,  mK0, mp,  "#bar{#Lambda}_{c}^{-}"},
+		{ LA,  PIP, 2.28646,  mL,  mpi, "#Lambda_{c}^{+}"  },
+		{ AL,  PIM, 2.28646,  mL,  mpi, "#bar{#Lambda}_{c}^{-}"},
+		{ LA,  KM,  1.67245,  mL,  mK,  "#Omega^{-}"       },
+		{ AL,  KP,  1.67245,  mL,  mK,  "#bar{#Omega}^{+}" },
+		{ LA,  KM,  1.690,    mL,  mK,  "#Xi(1690)^{-}"    },
+		{ AL,  KP,  1.690,    mL,  mK,  "#bar{#Xi}(1690)^{+}"},
+		{ LA,  KM,  1.823,    mL,  mK,  "#Xi(1820)^{-}"    },
+		{ AL,  KP,  1.823,    mL,  mK,  "#bar{#Xi}(1820)^{+}"},
+		{ LA,  KS,  1.690,    mL,  mK0, "#Xi(1690)^{0}"    },
+		{ AL,  KS,  1.690,    mL,  mK0, "#bar{#Xi}(1690)^{0}"},
+		{ LA,  KS,  1.823,    mL,  mK0, "#Xi(1820)^{0}"    },
+		{ AL,  KS,  1.823,    mL,  mK0, "#bar{#Xi}(1820)^{0}"},
+		{ KS,  KS,  1.5174,   mK0, mK0, "f'_{2}(1525)"     },
+		{ KS,  KS,  1.733,    mK0, mK0, "f_{0}(1710)"      },
 	};
 	int iy	= 0;
 	for (const Post &p : posts){
@@ -239,18 +273,27 @@ void corral::Loop(){
 	double  thisYL		= -1.1;	
 	double  thisYU		= +1.1;
 	//---- 2026-09-30 (user): acceptance = the eta fiducial abs(eta) < 1.1 (the detector edge) and, per species, the rapidity
-	//---- window abs(y) < Species_yu (fluct_common.h: pi 1.0, K 0.65, p 0.6, K0s/Lambda/Lbar 0.7). Binning per pair type
-	//---- (PairTypes_YBins, PairTypes.h): y bins across each window (the two widths need not match) and the dy bin width.
+	//---- window abs(y) < Species_yu (fluct_common.h: pi 1.0, K 0.7, p 0.6, K0s/Lambda/Lbar 0.7). 2026-10-05 (user): one y bin
+	//---- width per pair type (PairTypes_Info[][3], units of 0.01) for y1, y2 and dy; it must divide both windows.
 	double pairEtaEdge[NPairTypes], pairYL1[NPairTypes], pairYU1[NPairTypes], pairYL2[NPairTypes], pairYU2[NPairTypes], pairDYBW[NPairTypes];
 	int pairYNB1[NPairTypes], pairYNB2[NPairTypes];
 	for (int ip=0;ip<NPairTypes;ip++){
 		pairEtaEdge[ip]	= thisYU;
-		pairYU1[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][0])]; pairYL1[ip] = -pairYU1[ip]; pairYNB1[ip] = (int)PairTypes_YBins[ip][0];
-		pairYU2[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][1])]; pairYL2[ip] = -pairYU2[ip]; pairYNB2[ip] = (int)PairTypes_YBins[ip][1];
-		pairDYBW[ip]	= PairTypes_YBins[ip][2];
+		pairYU1[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][0])]; pairYL1[ip] = -pairYU1[ip];
+		pairYU2[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][1])]; pairYL2[ip] = -pairYU2[ip];
+		const int ibw	= PairTypes_Info[ip][3];
+		const int iw1	= (int)lround(200.*pairYU1[ip]), iw2 = (int)lround(200.*pairYU2[ip]);	// window widths, units of 0.01
+		if (ibw<=0 || iw1%ibw!=0 || iw2%ibw!=0 || iw1/ibw<2 || iw2/ibw<2){
+			cout<<"corral::Loop -- pair type "<<ip<<" "<<ParticleIDNames[PairTypes_Info[ip][0]]<<" "<<ParticleIDNames[PairTypes_Info[ip][1]]
+				<<": y bin width "<<ibw<<" (x0.01) does not divide the y windows "<<iw1<<" and "<<iw2<<" -- see PairTypes.h, exit"<<endl;
+			exit(1);
+		}
+		pairYNB1[ip]	= iw1/ibw;
+		pairYNB2[ip]	= iw2/ibw;
+		pairDYBW[ip]	= 0.01*ibw;
 		cout<<"corral::Loop -- pair type "<<ip<<" "<<ParticleIDNames[PairTypes_Info[ip][0]]<<" "<<ParticleIDNames[PairTypes_Info[ip][1]]
-			<<": abs(eta) < "<<pairEtaEdge[ip]<<", abs(y1) < "<<pairYU1[ip]<<" ("<<pairYNB1[ip]<<" bins of "<<2.*pairYU1[ip]/pairYNB1[ip]
-			<<"), abs(y2) < "<<pairYU2[ip]<<" ("<<pairYNB2[ip]<<" bins of "<<2.*pairYU2[ip]/pairYNB2[ip]<<"), dy bin width "<<pairDYBW[ip]<<endl;
+			<<": abs(eta) < "<<pairEtaEdge[ip]<<", abs(y1) < "<<pairYU1[ip]<<" ("<<pairYNB1[ip]<<" bins), abs(y2) < "<<pairYU2[ip]
+			<<" ("<<pairYNB2[ip]<<" bins), y and dy bin width "<<pairDYBW[ip]<<endl;
 	}
 	if (!doOldPID) cout<<"corral::Loop -- PID ptot caps: pi "<<Species_pmax_pid[0]<<", p "<<Species_pmax_pid[2]<<", K "<<Species_pmax_pid[1]<<" GeV/c"<<endl;
 	double  thisPTL		=  0.1;

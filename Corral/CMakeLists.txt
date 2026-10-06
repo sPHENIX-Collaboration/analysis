@@ -46,10 +46,3 @@ target_link_libraries(corral PRIVATE ${CORRAL_ROOT_LIBS})
 # Default project directory (lists/<set>/, root/<set>/ read by Finalize) = this source tree;
 # the environment variable CORRAL_DIR overrides it at run time (finalize_hists.h, CorralDir()).
 target_compile_definitions(corral PRIVATE CORRAL_DIR_DEFAULT="${CMAKE_SOURCE_DIR}/")
-
-# corral_pi: the same code with only the 4 pion pair types (src/PairTypes.h, CORRAL_PIONS_ONLY), for
-# fast split-track / two-track development runs (README_SplitTracks573 sec 16). Not for production.
-add_executable(corral_pi ${COMMON_SOURCES} src/CalcRm.cxx)
-target_include_directories(corral_pi PRIVATE src)
-target_link_libraries(corral_pi PRIVATE ${CORRAL_ROOT_LIBS})
-target_compile_definitions(corral_pi PRIVATE CORRAL_DIR_DEFAULT="${CMAKE_SOURCE_DIR}/" CORRAL_PIONS_ONLY)

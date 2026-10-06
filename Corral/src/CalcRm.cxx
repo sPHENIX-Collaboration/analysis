@@ -130,7 +130,7 @@ void CalcRm::UpdateBinningPars(){
 	YBW2	= (YU2-YL2)/YNB2;
 	YBW		= YBW1;
 	//---- 2026-09-30 (user): the y widths of the two species need not match, and the dy width of the (dy,dphi) maps (the
-	//---- physics CF) is set per pair type (PairTypes_YBins). Odd bin count, dy = 0 at a bin centre, covering
+	//---- physics CF) is set per pair type (PairTypes_Info[][3]; since 2026-10-05 the same width as y1, y2). Odd bin count, dy = 0 at a bin centre, covering
 	//---- abs(dy) < (m+0.5) DYBW <= YU1-YL2 (the outermost half bin is dropped, as before).
 	DYBW	= (fDYBWset>0.) ? fDYBWset : YBW1;
 	double dyMax	= 0.5*((YU1-YL2)+(YU2-YL1));

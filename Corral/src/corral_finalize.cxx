@@ -573,7 +573,7 @@ void corral::Finalize(){
 				own.Delete();
 			}
 			for (int k=0;k<NK;k++){
-				cout<<Form("corral::Finalize -- step 3 check 1 %-16s one-chunk chain (own rule, N_exp>=0) vs the chunk's own map: max |diff| content %.2e error %.2e (%d chunks missing it)",
+				cout<<Form("corral::Finalize -- step 3 check 1 %-16s one-chunk chain (own rule, N_exp>=0) vs the chunk's own map: max |diff| content %.2e uncertainty %.2e (%d chunks missing it)",
 					Form("%s_%d",Form(KINDNAME[k],ir2),ipaty),chk1d[k],chk1e[k],chk1miss[k])<<endl;
 				chk1d[k]=0.; chk1e[k]=0.; chk1miss[k]=0;
 			}
@@ -630,7 +630,7 @@ void corral::Finalize(){
 					}
 					hf->SetBinError(ib,err);
 				}
-				cout<<Form("corral::Finalize -- step 3 %-16s subgroup errors in %d bins, %d valid bins with N_valid<%d -> error 0; median sg/per-run-style error %.3f, median weighted/unweighted %.4f",
+				cout<<Form("corral::Finalize -- step 3 %-16s subgroup uncertainties in %d bins, %d valid bins with N_valid<%d -> uncertainty 0; median sg/per-run-style uncertainty %.3f, median weighted/unweighted %.4f",
 					hf->GetName(),nset,nlow,NVALIDMIN,Median(rsp),Median(rw))<<endl;
 			}
 			//---- N_valid maps (same for kinds 0-3; kinds 4-6 use the corrected validity)

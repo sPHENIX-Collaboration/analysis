@@ -33,10 +33,10 @@ The default `src/PairTypes.h` has 28 pair types (the charged hadron always befor
 | 9 | pbar pi+ | 19 | pi- Lambda (Sigma*-, Xi-) | | |
 
 The pair densities are filled in rapidity y (from the identified mass), inside abs(eta) < 1.1 and each species'
-y window abs(y) < `Species_yu` (fluct_common.h): pi 1.0, K 0.65, p 0.6, K0s / Lambda / Lbar 0.7. The binning is set
-per pair type (`PairTypes_YBins`, PairTypes.h): the y bins across each species' window (the two widths may differ)
-and the dy bin width of (dy,dphi), always an odd number of dy bins with dy = 0 at a bin centre. Each pair type gets
-as many bins as its data support (canary: empty mixed-event bins). Protons and antiprotons enter pairs only above pT = 0.4 GeV/c (beam-pipe
+y window abs(y) < `Species_yu` (fluct_common.h): pi 1.0, K 0.7, p 0.6, K0s / Lambda / Lbar 0.7. Each pair type has
+one y bin width (4th field of `PairTypes_Info`, PairTypes.h, units of 0.01) used for y1, y2 and dy; it must divide
+both species' windows (each row lists its allowed values), and dy always has an odd number of bins with dy = 0 at a
+bin centre. Each pair type gets as many bins as its data support (canary: empty mixed-event bins). Protons and antiprotons enter pairs only above pT = 0.4 GeV/c (beam-pipe
 spallation protons). Tracks used by a V0 in its mass peak (+-3 sigma) stay out of every pair type.
 
 ## The physics plots
@@ -194,8 +194,9 @@ cmake -S Corral -B Corral/build
 make -C Corral/build
 ```
 
-This builds the executable `corral` in the Corral directory (not in `build/`), and `corral_pi`, the same code
-with only the four pion pair types (for quick development runs). Until 2026-09-27 the executable and its
+This builds the executable `corral` in the Corral directory (not in `build/`). The pair types are set in
+`src/PairTypes.h` (number and order change now and then; a pions-only study edits that table, it gets no
+separate binary). Until 2026-09-27 the executable and its
 output files were called `corral_m`; files made before then keep that name. Finalize knows which datasets
 use it (`CorralFilePrefix` in `src/finalize_hists.h`: ana532 uses `corral_m`, later datasets use `corral`).
 
