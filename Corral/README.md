@@ -235,10 +235,41 @@ says which glob was used and how many files matched.
 
 ### Run-string tokens
 
-The defaults need no run string. Tokens either turn a mechanism off (`no...`) or change an important cut
-value; they are matched as substrings, case-insensitively. `NN` is two digits, read as 0.NN. A value outside
-its sane range (given in the table) stops the job with a message; it is never clamped silently. Cuts that
-are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the like-sign split-track ones).
+Most runs need no run string, or one of the main tokens below. Tokens are matched as substrings,
+case-insensitively; join several with `_`.
+
+| token | effect |
+|---|---|
+| *(none)* | the defaults: every split-track cleaner, the masks and the crossing correction ON; zero-bias crossing selection (below) |
+| `Raw` | every cleaner and correction OFF: shorthand for `noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask`, and all crossings (`AllX`) unless a crossing token is given too (e.g. `Raw_Xing0`) |
+| `nocross` | turn off only the crossing correction (pt-ordering at fill + (dy, dphi) bin correction) |
+| `Xing0` | keep only crossing 0: the triggered collision (not zero bias) |
+| `NearX0` | keep only −4 ≤ crossing ≤ 2 without 0: the neighbours of the trigger (monitoring) |
+| `AllX` | keep all crossings |
+
+**Default crossing selection = zero bias** (`ZB`; the token is accepted but not needed): −20 ≤ crossing ≤ 390,
+outside the NearX0 window. It is protected against three things:
+1. **crossing 0** is the triggered collision, not zero bias (in jet/photon-trigger TFs ⟨N_trk⟩ 6.2 vs 4.3,
+   ⟨pT⟩ 0.59 vs 0.48 GeV);
+2. **the crossings next to 0** (NearX0, −4..+2): ⟨N_trk⟩ ~6% low in every trigger class, and their
+   correlations differ from ZB; kept out so they can be monitored separately with `NearX0`;
+3. **extreme crossings** (< −20 or > 390), at the readout-window edges, where ⟨N_trk⟩ per event sags from its
+   plateau value in the bulk of the zero-bias region (4.27 at −30..−21, 3.90 at 401-410).
+
+Xing0, NearX0 and ZB exclude each other (~15% of events, the extreme crossings, are in none of them); giving
+more than one of Xing0 / NearX0 / ZB / AllX stops the job. The limits are constants in `src/corral_class.h`
+(`XNEAR_LO/HI`, `ZB_LO/HI`); the QA pages show ⟨N_trk⟩ and ⟨pT⟩ vs crossing per trigger class, before and
+after the selection.
+
+`-s Finalize` is special: see the end of this section.
+
+#### Expert switches: split-track cleaners
+
+These are expert-level switches that turn individual split-track cleaners (and the related two-track pair
+cuts) off or on, or move their important cuts. `Raw` turns all of them off at once. `NN` is two digits, read as
+0.NN. A value outside its sane range (given in the table) stops the job with a message; it is never clamped
+silently. Cuts that are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the like-sign
+split-track ones).
 
 | token | effect |
 |---|---|
@@ -257,13 +288,6 @@ are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the 
 | **near-vertex two-track loss (LS and ULS)** | |
 | `isepPPP` | near-vertex two-track pair cut, sibling and mixed alike, LS and ULS: reject abs(dy) < 1.0 and abs(dphi*(R = 3 cm)) < P.P deg (default `isep020` = 2.0 deg; 0.3-4.0). Sibling tracks at nearly the same phi near the vertex are lost out to abs(dy) ~ 0.8 (README_SplitTracks573.md sec 28-29); the PDF page "Near-vertex two-track loss" draws the cut on the loss. |
 | `noisep` | turn off the near-vertex two-track cut |
-| **PID and y windows (README_PID.md)** | |
-| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p then K, all accepted tracks are split-track candidates) |
-| `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
-| `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
-| `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
-| `cmmaskAABB` | the central-membrane mask window w in [-0.AA,0.BB) (each 0.00-0.20) |
-| `nchLLHH` | multiplicity class: only events with LL <= N_ch <= HH (accepted tracks, `hntrk`) reach CalcRm, so siblings, mixing pools and hmult (r2) stay inside the class (default all events; LL 0-40, HH LL-99; e.g. `nch0607`). The loop's QA pages still see every event. |
 | **opposite-charge split tracks** | |
 | `noulstest` | turn off the opposite-charge veto |
 | `ulstestNN` | opposite-charge veto at SiSplitScore 0.NN (default 0.05; 0.02-0.95) |
@@ -274,12 +298,22 @@ are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the 
 | `XTFclean` | cleaner non-strict (if neither copy matches the INTT timing, keep the better one; strict is the default) |
 | `mixAdjTF` | allow mixing with adjacent TFs |
 | `noTFdup` | keep collisions copied into overlapping TFs (default: skip the later copies; needs the Collect `bco` branch, no effect without it) |
+
+#### Expert switches: other
+
+| token | effect |
+|---|---|
+| **PID, masks and multiplicity class (README_PID.md)** | |
+| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p then K, all accepted tracks are split-track candidates) |
+| `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
+| `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
+| `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
+| `cmmaskAABB` | the central-membrane mask window w in [-0.AA,0.BB) (each 0.00-0.20) |
+| `nchLLHH` | multiplicity class: only events with LL <= N_ch <= HH (accepted tracks, `hntrk`) reach CalcRm, so siblings, mixing pools and hmult (r2) stay inside the class (default all events; LL 0-40, HH LL-99; e.g. `nch0607`). The loop's QA pages still see every event. |
 | **event selections (diagnostics; they cost statistics)** | |
 | `onlyfirsttf` | keep only the first event of each TF |
-| `Xing0` | keep only crossing-0 (triggered) events |
 | `XingPos` | keep only the first event with crossing > 0 of each TF |
 | **other** | |
-| `nocross` | turn off the crossing correction |
 | `ntpcNN` | track cut: at least NN TPC clusters (default 18; 10-40) |
 | `qcut` | reject pairs with Q < 0.150 GeV |
 | `548` | fine (dy, dphi) binning, 5 x 48 (default 32 x 36) |
@@ -288,7 +322,8 @@ are not listed are fixed constants (see README_SplitTracks573.md sec 18 for the 
 
 Watch for substring collisions when choosing a run string: `mixNoAdjTF` contains `NoAdjTF`,
 `XTFcleanStrict` contains `XTFclean`, `noulstest` contains `ulstest`, `nolooper` contains `looper`, `nocmmask`
-contains `cmmask`, and any word containing `nocross` turns off the crossing correction.
+contains `cmmask`, `siphimaskallX...` (no `_`) contains `AllX`, any word containing `raw` means `Raw`, and any
+word containing `nocross` turns off the crossing correction.
 
 `-s Finalize` is special: instead of processing events, it runs Finalize (below). `-s Finalize_<tokens>`
 also runs Finalize; its token `fzNN` sets the Zvtx range for physics: Finalize averages only the 2 cm Zvtx
@@ -311,6 +346,15 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    This writes `lists/<dataset>/` with `list_NN.txt`, `list_all.txt` (all lists together), `manifest.txt`,
    `lists_summary.txt` and `segment_entries.txt`. Each list holds contiguous segments of one run, so the
    chunks follow the data-taking time order. `<dataset>` defaults to the name of the Collect directory.
+   The Collect files may sit in the directory itself or in run-number subfolders (`<collect_dir>/<run>/`).
+   An optional 4th argument keeps only some runs, so one production can be split into run groups.
+   ana573 is split this way: `ana573_795xx` (runs 79514-79516), `ana573_8156x` (81566) and `ana573_8158x`
+   (81584-81586), with plain `ana573` for all runs together:
+   ```sh
+   Corral/lists/make_lists.bash /rs/rs_grp_rhi/sPHENIX/ana573 10000000 ana573_8158x 81584,81585,81586
+   ```
+   If `lists/<dataset>/segment_entries.txt` already exists, it is used and nothing is recounted. For
+   all-runs `ana573`, join the run groups' `segment_entries.txt` into it first.
 2. **Run one job per list** as a SLURM array (the partition and time limit in the scripts are set for the
    WSU grid; adjust them for your site):
    ```sh

@@ -1012,6 +1012,31 @@ void corral::Loop(){
 	TH1D *hKSxing		= new TH1D("hKSxing","crossing, KS found",600,-100.5,499.5);
 	TH1D *hLAxing		= new TH1D("hLAxing","crossing, LA found",600,-100.5,499.5);
 	TH1D *hALxing		= new TH1D("hALxing","crossing, AL found",600,-100.5,499.5);
+	//---- 2026-10-08: does the triggered collision (crossing 0) leak into its neighbours? <ntrk>, <pT> and
+	//---- events vs crossing, split by the TF's trigger class (the trigger bits belong to the whole TF, so
+	//---- crossing!=0 events of a jet-triggered TF are streaming events next to a busy collision).
+	//---- 1-crossing bins in [-50,50], 10-crossing bins outside. [0]=all [1]=clock [2]=MB trigger [3]=jet [4]=photon.
+	const int NXTRIGCL	= 5;
+	const char *xtrigName[NXTRIGCL]	= {"all TFs","clock trigger","MB trigger","jet trigger","photon trigger"};
+	const int xtrigCol[NXTRIGCL]	= {1,kGray+1,kBlue+1,kRed+1,kGreen+2};
+	std::vector<double> xtrigEdges;
+	for (double x=-100.5;x<-50.6;x+=10.)	xtrigEdges.push_back(x);
+	for (double x=-50.5;x<50.4;x+=1.)		xtrigEdges.push_back(x);
+	for (double x=50.5;x<480.6;x+=10.)		xtrigEdges.push_back(x);
+	TProfile *pntrk_xing[NXTRIGCL], *ppt_xing[NXTRIGCL];
+	TH1D *hnev_xing[NXTRIGCL];
+	TProfile *pntrkraw_xing[NXTRIGCL], *pptraw_xing[NXTRIGCL];	// raw: filled before the crossing selection and event cuts
+	TH1D *hnevraw_xing[NXTRIGCL];
+	for (int c=0;c<NXTRIGCL;c++){
+		pntrkraw_xing[c]	= new TProfile(Form("pntrkraw_xing%d",c),Form("<N_{trk}> (raw ntr) vs crossing, before crossing selection, %s;crossing;<N_{trk}> raw",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		pptraw_xing[c]		= new TProfile(Form("pptraw_xing%d",c),Form("<p_{T}> (all tracks) vs crossing, before crossing selection, %s;crossing;<p_{T}> (GeV/c)",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		hnevraw_xing[c]		= new TH1D(Form("hnevraw_xing%d",c),Form("events vs crossing, before crossing selection, %s;crossing;events",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		for (TH1 *h : {(TH1*)pntrkraw_xing[c],(TH1*)pptraw_xing[c],(TH1*)hnevraw_xing[c]}){ h->SetLineColor(xtrigCol[c]); h->SetMarkerColor(xtrigCol[c]); h->SetMarkerStyle(20); h->SetMarkerSize(0.5); }
+		pntrk_xing[c]	= new TProfile(Form("pntrk_xing%d",c),Form("<N_{trk}> (kept) vs crossing, %s;crossing;<N_{trk}>",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		ppt_xing[c]		= new TProfile(Form("ppt_xing%d",c),Form("<p_{T}> (kept tracks) vs crossing, %s;crossing;<p_{T}> (GeV/c)",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		hnev_xing[c]	= new TH1D(Form("hnev_xing%d",c),Form("events vs crossing, %s;crossing;events",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		for (TH1 *h : {(TH1*)pntrk_xing[c],(TH1*)ppt_xing[c],(TH1*)hnev_xing[c]}){ h->SetLineColor(xtrigCol[c]); h->SetMarkerColor(xtrigCol[c]); h->SetMarkerStyle(20); h->SetMarkerSize(0.5); }
+	}
 	//---- coarser than hxing/hKSxing/etc -- with only O(10-100) V0 candidates, the fine
 	//---- 600-bin crossing axis left entries too sparse (sub-pixel-wide bins) to actually see.
 	TH2D *hKSmass_xing	= new TH2D("hKSmass_xing","hKSmass_xing" ,120,-100.5,499.5,100, 0.4, 0.6);
@@ -1161,10 +1186,10 @@ void corral::Loop(){
 	int lastKeptTF_run	= -1;	// sec 18.21
 	int lastKeptTF_evt	= -1;
 	long nSkippedSameTF	= 0;
-	long nSkippedXingNot0	= 0;	// sec 18.21 follow-up
 	int lastPosTF_run	= -1;	// sec 18.21 follow-up 2
 	int lastPosTF_evt	= -1;
 	long nSkippedXingPos	= 0;
+	long nSkippedXing		= 0;	// Xing0 / NearX0 / ZB
 	for (Long64_t jentry=0; jentry<nentries && fReader.Next(); jentry++) {
 		if (jentry%100000==0) cout<<"processing "<<jentry<<endl;
 		//
@@ -1186,12 +1211,6 @@ void corral::Loop(){
 			lastKeptTF_run	= (*run);
 			lastKeptTF_evt	= (*evt);
 		}
-		//---- sec 18.21 follow-up: "Xing0" -- keep only the triggered crossing (crossing==0), at most
-		//---- one row per TF by construction; pure per-row cut, before ANY processing.
-		if (ONLY_CROSSING0 && (*crossing)!=0){
-			++nSkippedXingNot0;
-			continue;
-		}
 		//---- sec 18.21 follow-up 2: "XingPos" -- keep only the first crossing>0 row of each TF (pure
 		//---- streaming, <=1 row/TF). Same consecutive-rows assumption as ONLY_FIRST_TF above.
 		if (ONLY_FIRST_XINGPOS){
@@ -1201,6 +1220,38 @@ void corral::Loop(){
 			}
 			lastPosTF_run	= (*run);
 			lastPosTF_evt	= (*evt);
+		}
+		//---- 2026-10-08: "Xing0" / "NearX0" / "ZB" -- crossing 0 (triggered), its neighbours [XNEAR_LO,XNEAR_HI]
+		//---- without 0, or the rest of [ZB_LO,ZB_HI]; pure per-row cut, before ANY processing.
+		//---- trigger class of the TF (same bits as goodClock/goodMB/goodJet/goodPho below), for the
+		//---- crossing pages; the raw page is filled here, before the crossing selection and event cuts.
+		bool xtrigIn[NXTRIGCL]	= {true,false,false,false,false};
+		{
+			int ib	= 0;
+			for (bool on : *trigVec){
+				if (on){
+					if (ib==0)										xtrigIn[1] = true;
+					if (ib==3 || (ib>=10&&ib<=14))					xtrigIn[2] = true;
+					if ((ib>=16&&ib<=23) || (ib>=32&&ib<=35))		xtrigIn[3] = true;
+					if ((ib>=24&&ib<=31) || (ib>=36&&ib<=38))		xtrigIn[4] = true;
+				}
+				if (++ib>=NTRIGS) break;
+			}
+			double sumpt	= 0;
+			for (int it=0;it<(*ntr);it++) sumpt += pt[it];
+			for (int c=0;c<NXTRIGCL;c++) if (xtrigIn[c]){
+				hnevraw_xing[c]	->Fill((*crossing));
+				pntrkraw_xing[c]->Fill((*crossing),(*ntr));
+				if ((*ntr)>0) pptraw_xing[c]->Fill((*crossing),sumpt/(*ntr),(*ntr));	// track-weighted, as ppt_xing
+			}
+		}
+		if (xingSel>0){
+			int xs	= (*crossing)==0 ? 1 : (((*crossing)>=XNEAR_LO && (*crossing)<=XNEAR_HI) ? 2 :
+					  (((*crossing)>=ZB_LO && (*crossing)<=ZB_HI) ? 3 : 4));		// 4 = readout edges, in no sample
+			if (xs!=xingSel){
+				++nSkippedXing;
+				continue;
+			}
 		}
 		//
 		//---- get runindex...		
@@ -2123,6 +2174,7 @@ void corral::Loop(){
 				continue;
 			}
 			++ntrkept;
+			for (int c=0;c<NXTRIGCL;c++) if (xtrigIn[c]) ppt_xing[c]->Fill((*crossing),pt[it]);
 			if (chg[it]  >   0.){ npos+=1.; }
 			if (chg[it]  <   0.){ nneg+=1.; }
 			//
@@ -2695,6 +2747,10 @@ void corral::Loop(){
 		//
 		//---- fill some event variable histograms...
 		hntrk			->Fill(ntrkept);
+		for (int c=0;c<NXTRIGCL;c++) if (xtrigIn[c]){
+			pntrk_xing[c]->Fill((*crossing),ntrkept);
+			hnev_xing[c] ->Fill((*crossing));		// raw counts (hadd-safe); divided by bin width when drawn
+		}
 		double negfr	= -1;
 		if (npos+nneg>0.){ negfr = nneg/(npos+nneg); }
 		hrirun_ntrk		->Fill((*run),(*ntr) );
@@ -3676,6 +3732,62 @@ void corral::Loop(){
 	ccan[ican]->cd(); ccan[ican]->Update();
 	ccan[ican]->Print(OutputFileName.Data());
 
+	//---- 2026-10-08: crossing vs the TF's trigger class -- does the triggered collision leak into its
+	//---- neighbours? Top row zoomed on the trigger, bottom row the full crossing range. Shaded: the
+	//---- NearX0 window [XNEAR_LO,XNEAR_HI] without 0; crossing 0 = Xing0; ZB = the rest of [ZB_LO,ZB_HI] (dashed).
+	//---- Two pages: raw (filled before the crossing selection and event cuts, so every run shows all crossings)
+	//---- and kept (filled after everything).
+	auto drawXingPage = [&](TH1D **hn, TProfile **pn, TProfile **pp, double r0lo, double r0hi, double r1lo, double r1hi){
+		++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+		ccan[ican]->cd(); ccan[ican]->Divide(3,2,0.0001,0.0001);
+		TH1D *hev[NXTRIGCL];
+		for (int c=0;c<NXTRIGCL;c++){ hev[c] = (TH1D*)hn[c]->Clone(Form("%s%d_draw",hn[c]->GetName(),c)); hev[c]->SetDirectory(0); hev[c]->Scale(1.,"width"); hev[c]->GetYaxis()->SetTitle("events / crossing"); }
+		TH1 *col[3][NXTRIGCL];
+		for (int c=0;c<NXTRIGCL;c++){ col[0][c] = hev[c]; col[1][c] = pn[c]; col[2][c] = pp[c]; }
+		for (int row=0;row<2;row++) for (int k=0;k<3;k++){
+			ccan[ican]->cd(1+3*row+k); gPad->SetLeftMargin(0.13); gPad->SetRightMargin(0.03);
+			double xlo = row==0 ? r0lo : r1lo, xhi = row==0 ? r0hi : r1hi;
+			int b1 = col[k][0]->FindBin(xlo+0.1), b2 = col[k][0]->FindBin(xhi-0.1);
+			double ymin = 1e30, ymax = -1e30;
+			for (int c=0;c<NXTRIGCL;c++) for (int b=b1;b<=b2;b++){
+				if (col[k][c]->GetBinContent(b)<=0) continue;
+				ymin = std::min(ymin,col[k][c]->GetBinContent(b)); ymax = std::max(ymax,col[k][c]->GetBinContent(b));
+			}
+			if (ymax<ymin){ ymin = 0.1; ymax = 1.; }
+			if (k==0){ gPad->SetLogy(1); ymin *= 0.5; ymax *= 3.; } else { double d = ymax-ymin; ymin -= 0.1*d; ymax += 0.35*d; }
+			bool first = true;
+			for (int c=0;c<NXTRIGCL;c++){
+				if (col[k][c]->GetEntries()<=0) continue;
+				col[k][c]->GetXaxis()->SetRangeUser(xlo,xhi);
+				col[k][c]->SetMinimum(ymin); col[k][c]->SetMaximum(ymax);
+				col[k][c]->Draw(first ? "E1" : "E1 same"); first = false;
+			}
+			if (first) continue;
+			gPad->Update();
+			double ylo = k==0 ? pow(10,gPad->GetUymin()) : gPad->GetUymin(), yhi = k==0 ? pow(10,gPad->GetUymax()) : gPad->GetUymax();
+			TBox *bx = new TBox(XNEAR_LO-0.5,ylo,XNEAR_HI+0.5,yhi); bx->SetFillColorAlpha(kOrange,0.30); bx->SetLineWidth(0); bx->Draw();
+			TLine *lz = 0;
+			for (double xz : {ZB_LO-0.5,ZB_HI+0.5}){ if (xz<xlo || xz>xhi) continue; lz = new TLine(xz,ylo,xz,yhi); lz->SetLineColor(kMagenta+2); lz->SetLineStyle(2); lz->SetLineWidth(2); lz->Draw(); }
+			for (int c=0;c<NXTRIGCL;c++) if (col[k][c]->GetEntries()>0) col[k][c]->Draw("E1 same");
+			if (row==0 && k==1){
+				TLegend *lg = new TLegend(0.40,0.62,0.96,0.92); lg->SetBorderSize(0); lg->SetFillStyle(0); lg->SetTextSize(0.040);
+				for (int c=0;c<NXTRIGCL;c++) if (col[k][c]->GetEntries()>0) lg->AddEntry(col[k][c],xtrigName[c],"lp");
+				lg->AddEntry(bx,Form("NearX0: %d #leq crossing #leq %d, #neq 0 (Xing0 = 0)",XNEAR_LO,XNEAR_HI),"f");
+				TLine *ll = new TLine(); ll->SetLineColor(kMagenta+2); ll->SetLineStyle(2); ll->SetLineWidth(2);
+				lg->AddEntry(ll,Form("ZB limits %d #leq crossing #leq %d",ZB_LO,ZB_HI),"l");
+				lg->Draw();
+			}
+		}
+		ccan[ican]->cd(); ccan[ican]->Update();
+		ccan[ican]->Print(OutputFileName.Data());
+		for (int k=1;k<3;k++) for (int c=0;c<NXTRIGCL;c++){ col[k][c]->GetXaxis()->SetRange(0,0); col[k][c]->SetMinimum(-1111); col[k][c]->SetMaximum(-1111); }	// saved profiles stay unzoomed
+	};
+	//---- each set twice: (-20..40, full range) and a zoom on crossing 0 vs its neighbours (-50..50, -10..10)
+	drawXingPage(hnevraw_xing,pntrkraw_xing,pptraw_xing,-20.5,40.5,-100.5,480.5);
+	drawXingPage(hnevraw_xing,pntrkraw_xing,pptraw_xing,-50.5,50.5,-10.5,10.5);
+	drawXingPage(hnev_xing,pntrk_xing,ppt_xing,-20.5,40.5,-100.5,480.5);
+	drawXingPage(hnev_xing,pntrk_xing,ppt_xing,-50.5,50.5,-10.5,10.5);
+
 	//---- track kinematics (raw = black, kept = green overlay)
 	++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
 	ccan[ican]->cd(); ccan[ican]->Divide(3,3,0.0001,0.0001);
@@ -4602,8 +4714,8 @@ void corral::Loop(){
 		<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_TF="<<ONLY_FIRST_TF<<" rows skipped as same-TF duplicates="<<nSkippedSameTF<<endl;
 	cout<<"doTFDup="<<doTFDup<<" -- rows skipped as overlapping-TF collision copies="<<nTFDup_rows<<endl;
-	cout<<"sec 18.21 -- ONLY_CROSSING0="<<ONLY_CROSSING0<<" rows skipped with crossing!=0="<<nSkippedXingNot0<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_XINGPOS="<<ONLY_FIRST_XINGPOS<<" rows skipped (crossing<=0 or not first crossing>0 in TF)="<<nSkippedXingPos<<endl;
+	cout<<"crossing selection xingSel="<<xingSel<<" (1 Xing0, 2 NearX0, 3 ZB) -- events skipped="<<nSkippedXing<<endl;
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){
 			long ntot = R[ipaty]->GetNMixedPairs_total();

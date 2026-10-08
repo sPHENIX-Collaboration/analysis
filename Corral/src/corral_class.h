@@ -168,18 +168,6 @@ public :
 	double	valULSTestCut;	// SiSplitScore threshold for the above, default 0.05 (sec 15.7, reconfirmed 18.7)
 	bool	doDauCheck;	// README_CQcomparison sec 2.2: split partners of in-peak Lambda/Lbar daughters (LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton partner of a pion daughter); not K0S; ON, "nodau" off
 	static constexpr double DAU_DRMAX = 0.05;	// sec 2.2 (2026-10-03, option 2): daughter-partner check only inside dR(t,d) < 0.05
-	bool	ONLY_CROSSING0;	// sec 18.21 follow-up: opt-in diagnostic, OFF by default ("Xing0" in RunString
-							// turns it on; absent = all crossings kept). NOT "crossing0only" -- that
-							// contains "cross" and would silently enable doCrossing. Keeps only rows
-							// with `crossing==0` -- the physically-meaningful TRIGGERED collision,
-							// exactly one per TF by construction (user's suggestion). Pure per-row cut,
-							// no state tracking. Differs from ONLY_FIRST_TF below: rows within a TF are
-							// written in ASCENDING crossing order (checked: 4681/4681 TFs in
-							// outputCollect_79510_0.root -- NOT "most tracks first", as an earlier note
-							// here wrongly said), and 55% of TFs have a negative crossing, so the first
-							// row is crossing 0 in only ~25% of TFs -- ONLY_FIRST_TF mostly selects
-							// pre-trigger streaming crossings. Only ~57% of TFs have a crossing==0 row at
-							// all, so many TFs contribute zero rows here -- expected, not a bug.
 	bool	doXTFClean;	// sec 18.22: ON by default since sec 18.25 ("noXTF" turns it off, see corral_utils.cxx). Cross-crossing
 							// duplicate-track cleaner. Cause (sec 18.22): the tracking matcher lets ONE
 							// silicon seed join SEVERAL TPC seeds, each combination gets its own crossing,
@@ -217,9 +205,25 @@ public :
 	bool	ONLY_FIRST_XINGPOS;	// sec 18.21 follow-up 2: opt-in, OFF by default ("XingPos" turns it on).
 							// Keeps only the FIRST row with crossing>0 in each (run,evt) TF, skips every
 							// other row -- pure STREAMING (non-triggered) events, still <=1 row/TF.
-							// Complement of ONLY_CROSSING0 (pure triggered, <=1 row/TF). Rows within a
+							// Complement of the old exactly-crossing-0 cut (pure triggered, <=1 row/TF). Rows within a
 							// TF are written in ascending crossing order (checked: 4681/4681 TFs,
 							// outputCollect_79510_0.root), so "first positive row" == lowest crossing>0.
+	int		xingSel;	// 2026-10-08: crossing selection, three distinct samples; DEFAULT = 3 (ZB), "AllX" -> 0 = all crossings.
+						// 1 "Xing0"     crossing==0 only: the triggered collision (biased by jet/photon triggers:
+						//               <N_trk> 6.2 vs 4.3, <pT> 0.59 vs 0.48 in jet-trigger TFs).
+						// 2 "NearX0"    XNEAR_LO<=crossing<=XNEAR_HI, crossing!=0: the neighbours of the trigger.
+						//               No leakage seen, but <N_trk> is ~6% low in every trigger class (4.0-4.25
+						//               vs the 4.40 plateau; 2M-event test, ana573_795xx). The limits are where the
+						//               dip ends: -5 and +3 are back on the plateau.
+						// 3 "ZB"        (default) ZB_LO<=crossing<=ZB_HI outside the NearX0 window: streaming, away from the
+						//               trigger. The limits drop the readout-window ramps: <N_trk> is on its 4.40
+						//               plateau from -20 to ~260, within 3% up to 390, then falls (3.90 at 401-410,
+						//               2.0 at 475); below -20 it falls too (4.27 at -30..-21, 2.8 at -100). ~15% of
+						//               all events are outside [ZB_LO,ZB_HI] and are in none of the three samples.
+	static constexpr int XNEAR_LO = -4;
+	static constexpr int XNEAR_HI =  2;
+	static constexpr int ZB_LO    = -20;
+	static constexpr int ZB_HI    = 390;
 	bool	ONLY_FIRST_TF;	// sec 18.21: opt-in diagnostic, OFF by default ("onlyfirsttf" turns it on).
 							// Keeps only the FIRST row seen for each (run,evt) -- evt IS the trigger
 							// frame's own EvtSequence (SDCC-claude, sec 18.20), constant across every row

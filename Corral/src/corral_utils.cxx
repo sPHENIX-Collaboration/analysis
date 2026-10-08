@@ -18,10 +18,11 @@ TChain* corral::BuildInputChain(TTree *tree){
 	}
 	//
 	//---- no job list (-l): the whole production in one job (useful for testing). The file glob is
-	//---- $CORRAL_TREES if set, else the WSU copy of ana573 below (ana532 until 2026-09-27).
+	//---- $CORRAL_TREES if set, else the 795xx runs of the WSU copy of ana573 below (ana532 until 2026-09-27;
+	//---- 795xx only from 2026-10-08, when runs 81566 and 81584-81586 start landing in the same directory).
 	//----   e.g. export CORRAL_TREES='/path/to/production/outputCollect_*.root'  (quote the glob)
 	const char* env	= getenv("CORRAL_TREES");
-	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/ana573/outputCollect_*.root");
+	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/ana573/795*/outputCollect_*.root");
 	TChain *chain	= new TChain("outTree","Collect tree chain");
 	int nf			= chain->Add(GLOB.Data());
 	cout<<"corral -- input trees "<<GLOB<<((env && *env)?"  ($CORRAL_TREES)":"  (default; set CORRAL_TREES to change)")<<": "<<nf<<" files"<<endl;
@@ -92,7 +93,6 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 							// 0.05 is empty (SiSplitScore is quantized: 0 by default, jumps straight to a
 							// discrete nonzero value), and the 0.05-0.99 falloff is gradual with no sharp
 							// optimum, so this value is not tuned to a peak -- it just clears the floor.
-  , ONLY_CROSSING0(false)		// sec 18.21 follow-up, OFF by default -- "Xing0" turns it on
   , doXTFClean(true)		// sec 18.22/18.25: ON by default -- "noXTF" turns it (and the two below) off
   , doMixNoAdjTF(true)	// sec 18.23/18.25: ON by default -- "noXTF" or "mixAdjTF" turns it off
   , doXTFStrict(true)		// sec 18.22/18.25: ON by default -- "noXTF" off; plain "XTFclean" selects non-strict
@@ -100,6 +100,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doTFDup(true)			// 2026-09-26: ON by default -- "noTFdup" turns it off (no-op without a bco branch)
   , nTFDup_rows(0), TFDup_maxAbsDvz(0)
   , ONLY_FIRST_XINGPOS(false)	// sec 18.21 follow-up 2, OFF by default -- "XingPos" turns it on
+  , xingSel(3)				// 2026-10-08: ZB by default -- "AllX" = all crossings, "Xing0" / "NearX0" the other samples
   , ONLY_FIRST_TF(false)		// sec 18.21, OFF by default -- "onlyfirsttf" in RunString turns it on
   , NTPCCUT(18)				// LL=8 (inclusive), 18 is open but better
   , PTMINCUT(0.1)
@@ -180,6 +181,18 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	gPrintViaErrorHandler = kTRUE;
 	gErrorIgnoreLevel = kWarning;
 	//
+	//---- 2026-10-08: "Raw" = every cleaner and correction OFF and all crossings, i.e. shorthand for RAW_TOKENS below. It is expanded
+	//---- into RunString here, before any token is parsed, so the logs show the switches in force.
+	{
+		static const char* RAW_TOKENS = "noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask";
+		if (RunString.Contains("Raw",TString::kIgnoreCase)){
+			RunString += TString("_")+RAW_TOKENS;
+			//---- all crossings, unless a crossing sample is asked for too (e.g. "Raw_Xing0")
+			if (!RunString.Contains("Xing0",TString::kIgnoreCase) && !RunString.Contains("NearX0",TString::kIgnoreCase)
+				&& !RunString.Contains("ZB",TString::kIgnoreCase)) RunString += "_AllX";
+			cout<<"reader::reader -- Raw = "<<RAW_TOKENS<<" (+ AllX unless Xing0/NearX0/ZB)  -> RunString="<<RunString<<endl;
+		}
+	}
 	//---- README_Crossing.md (2026-09-25): crossing correction (pt-ordering + post-CF bin correction)
 	//---- is the DEFAULT. "nocross" turns off both. The old "cross" token is removed.
 	if (RunString.Contains("nocross",TString::kIgnoreCase)){
@@ -392,11 +405,6 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		ONLY_FIRST_TF	= true;
 	}
 	cout<<"reader::reader -- ONLY_FIRST_TF (sec 18.21) "<<(ONLY_FIRST_TF?"enabled -- ~85% stats cost":"DISABLED")<<endl;
-	//---- sec 18.21 follow-up: keep only crossing==0 (the triggered crossing, one per TF).
-	//---- "Xing0" checked clean against every token above; leaving it out keeps all crossings.
-	if (RunString.Contains("Xing0",TString::kIgnoreCase)){
-		ONLY_CROSSING0	= true;
-	}
 	//---- sec 18.22/18.23, DEFAULT since sec 18.25 (2026-09-24): cross-crossing duplicate-track cleaner
 	//---- (strict variant) + neighboring-TF mixed-event-pair exclusion. Tokens (all checked clean
 	//---- against every token above, case-insensitive substring matching):
@@ -432,7 +440,20 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		ONLY_FIRST_XINGPOS	= true;
 	}
 	cout<<"reader::reader -- ONLY_FIRST_XINGPOS (sec 18.21) "<<(ONLY_FIRST_XINGPOS?"enabled -- first crossing>0 row per TF only":"DISABLED")<<endl;
-	cout<<"reader::reader -- ONLY_CROSSING0 (sec 18.21) "<<(ONLY_CROSSING0?"enabled -- crossing==0 rows only":"DISABLED -- all crossings")<<endl;
+	//---- 2026-10-08: crossing selection, three distinct samples (see corral_class.h xingSel). "Xing0", "NearX0"
+	//---- and "ZB" checked clean against each other and every other token parsed here. ZB is the DEFAULT (no token);
+	//---- "AllX" = all crossings (beware "siphimaskallX..." without a separator).
+	{
+		int nsel	= 0;
+		if (RunString.Contains("AllX",TString::kIgnoreCase)){	xingSel = 0; ++nsel; }
+		if (RunString.Contains("Xing0",TString::kIgnoreCase)){	xingSel = 1; ++nsel; }
+		if (RunString.Contains("NearX0",TString::kIgnoreCase)){	xingSel = 2; ++nsel; }
+		if (RunString.Contains("ZB",TString::kIgnoreCase)){		xingSel = 3; ++nsel; }
+		if (nsel>1){ cout<<"reader::reader -- more than one of Xing0 / NearX0 / ZB / AllX given, they exclude each other"<<endl; exit(1); }
+	}
+	cout<<"reader::reader -- crossing selection: "<<(xingSel==1?TString("Xing0 -- crossing==0 only (triggered collision)"):
+		xingSel==2?TString::Format("NearX0 -- %d<=crossing<=%d, crossing!=0 (trigger neighbours)",XNEAR_LO,XNEAR_HI):
+		xingSel==3?TString::Format("ZB -- %d<=crossing<%d or %d<crossing<=%d (streaming, away from the trigger and the readout edges)",ZB_LO,XNEAR_LO,XNEAR_HI,ZB_HI):TString("all crossings"))<<endl;
 	//
 	if (RunString.Contains("548",TString::kIgnoreCase)){ FinePhiBinning = true; }
 	if (FinePhiBinning){ cout<<"reader::reader -- FinePhiBinning enabled..."<<endl; }
@@ -446,13 +467,13 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//---- default dataset, update the value (lists/count_entries.C) or set it to 0 to force the rescan.
 	const Long64_t nentriesfile_ana532	= 50498542;		// ana532 (was run_ecuts_cf) re-cut (5k TF/segment, sec 12/13),
 														// all 1554 files, live GetEntries() 2026-09-21
-	const Long64_t nentriesfile_ana573	= 642480426;	// ana573 complete: all 4581 files (79514 798, 79515 1891, 79516 1892
+	const Long64_t nentriesfile_ana573_795xx	= 642480426;	// ana573 795xx complete: all 4581 files (79514 798, 79515 1891, 79516 1892
 														// chunks; the 79514 rerun landed 2026-09-28), count_entries.C
-														// 2026-09-28 (lists/ana573/segment_entries.txt, 0 unreadable)
+														// 2026-09-28 (lists/ana573_795xx/segment_entries.txt, 0 unreadable)
 	(void)nentriesfile_ana532;
 	const char* envTrees	= getenv("CORRAL_TREES");
-	if (tree==0 && !(envTrees && *envTrees))	// default glob (ana573) only
-	nentriesfile	= nentriesfile_ana573;
+	if (tree==0 && !(envTrees && *envTrees))	// default glob (ana573 795xx) only
+	nentriesfile	= nentriesfile_ana573_795xx;
 	//
 	if (nentriesfile==0){
 		cout<<"Getting tree Nevt..."<<endl;

@@ -5,7 +5,7 @@
 #     [array-range]  optional, e.g. 0-3 or 7 (default: all lists, 0..nlists-1)
 #   CORRAL_VARIANT=<name> CORRAL_RS=<runstring> ./run_m_array.bash <set> ...   a VARIANT of the set (README_SplitTracks573, Final state):
 #     the same lists, run with -s <runstring>, outputs under <set>_<name>/ (lists/<set>_<name> is made as a symlink to
-#     lists/<set>, so Finalize runs unchanged with -d <set>_<name>). e.g. CORRAL_VARIANT=raw CORRAL_RS=noLS_noulstest_... ./run_m_array.bash ana573
+#     lists/<set>, so Finalize runs unchanged with -d <set>_<name>). e.g. CORRAL_VARIANT=raw CORRAL_RS=noLS_noulstest_... ./run_m_array.bash ana573_795xx
 #     (not VAR/RS: the login profile already sets RS=/rs/rs_grp_rhi)
 # Snapshots the current corral to log/<out>/chunks/corral.snapshot so every task runs the same binary.
 # Outputs (<out> = <set>, or <set>_<CORRAL_VARIANT>): root/<out>/chunks/corral_NN.root, pdf/<out>/chunks/corral_NN.pdf,
