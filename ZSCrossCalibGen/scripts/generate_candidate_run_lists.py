@@ -28,6 +28,22 @@ import psycopg2
 TARGET_SEBS = tuple(f"seb{i:02d}" for i in range(19))  # seb00 to seb18 (19 SEBs)
 
 
+class Tee:
+    """Duplicate stream output to both console and a log file."""
+
+    def __init__(self, *files):
+        self.files = files
+
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+            f.flush()
+
+    def flush(self):
+        for f in self.files:
+            f.flush()
+
+
 def parse_arguments() -> argparse.Namespace:
     script_dir = Path(__file__).resolve().parent
     repo_files_dir = script_dir.parent / "files"
@@ -52,6 +68,12 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=repo_files_dir / "lists",
         help="Directory where segment list files will be saved (default: ZSCrossCalibGen/files/lists)",
+    )
+    parser.add_argument(
+        "--log-file",
+        type=Path,
+        default=None,
+        help="Path to save execution logs and the summary report to a file",
     )
     parser.add_argument(
         "--dbname",
@@ -219,12 +241,21 @@ def fetch_segment_files(cursor, runnumber: int) -> Dict[int, List[str]]:
 def main():
     args = parse_arguments()
 
+    original_stdout = sys.stdout
+    log_file_handle = None
+    if args.log_file:
+        args.log_file.parent.mkdir(parents=True, exist_ok=True)
+        log_file_handle = open(args.log_file, "w", encoding="utf-8")
+        sys.stdout = Tee(sys.stdout, log_file_handle)
+
     print("=" * 80)
     print(" sPHENIX ZSCrossCalib Candidate Run & Segment List Generator")
     print("=" * 80)
     print(f"Epoch file:       {args.epoch_file}")
     print(f"Runs list file:   {args.runs_file}")
     print(f"Output directory: {args.output_dir}")
+    if args.log_file:
+        print(f"Log file:         {args.log_file}")
     print(f"Database:         {args.dbname}")
     print(f"Dry run mode:     {'Enabled (no files written)' if args.dry_run else 'Disabled'}")
     print("-" * 80)
@@ -352,6 +383,11 @@ def main():
                 f"but none have valid segments with all 19 seb00-seb18 files."
             )
         print("=" * 90)
+
+    if log_file_handle:
+        print(f"\nReport and logs saved to: {args.log_file}")
+        sys.stdout = original_stdout
+        log_file_handle.close()
 
 
 if __name__ == "__main__":
