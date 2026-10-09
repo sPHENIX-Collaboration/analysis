@@ -1,0 +1,15 @@
+# Local Python environment
+.venv/
+__pycache__/
+*.pyc
+
+# Training / plotting output directories (--outdir default and dated variants)
+calib_out*/
+
+# Artifacts written wherever --outdir or the macro arguments point
+*.pt
+*.root
+*.png
+*.pdf
+*.csv
+summary.txt
