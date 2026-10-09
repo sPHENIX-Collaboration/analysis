@@ -183,10 +183,10 @@ void corral::Finalize(){
 		std::vector<double>	Ic, fracc, efracc;	// per chunk
 		TH1D	*hy1, *hy2;						// nevt-weighted averages over chunks
 		double	fillin;							// fraction of chunk-bin values taken from full stats in the projections
-		TH1D	*CQ, *CQ5;						// C(Q) at 1 MeV (written) and 5 MeV (display), ratio of zvtx sums
+		TH1D	*CQ, *CQ5, *CQ20;				// C(Q) at 1 MeV (written), 5 MeV (display) and 20 MeV (comparisons), ratio of zvtx sums
 		TH2D	*CQKT, *CQKT10;					// C(Q,kT) at 2 MeV and 10 MeV (display)
 		TH1D	*MinvS, *MinvM;					// hMinvFS/FM plain sums (counts)
-		Phys(){ R2yy=0; for (int k=0;k<2;k++){ pU[k]=pC[k]=nU[k]=nC[k]=qU[k]=qC[k]=0; } dC2=0; dC2dy=dC2dphi=0; I=eI=Sfull=frac=efrac=0; hy1=hy2=0; fillin=0; CQ=CQ5=0; CQKT=CQKT10=0; MinvS=MinvM=0; }
+		Phys(){ R2yy=0; for (int k=0;k<2;k++){ pU[k]=pC[k]=nU[k]=nC[k]=qU[k]=qC[k]=0; } dC2=0; dC2dy=dC2dphi=0; I=eI=Sfull=frac=efrac=0; hy1=hy2=0; fillin=0; CQ=CQ5=CQ20=0; CQKT=CQKT10=0; MinvS=MinvM=0; }
 	};
 	std::vector<Phys> ph(NPairTypes);
 	std::vector<long> fillN(NPairTypes,0), fillT(NPairTypes,0);
@@ -344,6 +344,23 @@ void corral::Finalize(){
 			TString pnm	= Form("%s%s",ParticleIDNames[PairTypes_Info[ipaty][0]],ParticleIDNames[PairTypes_Info[ipaty][1]]);
 			P.CQ	= (TH1D*)buildCQ("hQsib","hQmix",1,Form("hFin_CQ_%d",ipaty),    Form("%s, C(Q) = #Sigma_{z}sib / #Sigma_{z}mix (1 MeV bins);Q_{inv} (GeV);C(Q)",pnm.Data()),true);
 			P.CQ5	= (TH1D*)buildCQ("hQsib","hQmix",5,Form("hFin_CQ5_%d",ipaty),   Form("%s, C(Q) (5 MeV bins, #pm subgroup err);Q_{inv} (GeV);C(Q)",pnm.Data()));
+			P.CQ20	= (TH1D*)buildCQ("hQsib","hQmix",20,Form("hFin_CQ20_%d",ipaty), Form("%s, C(Q) (20 MeV bins, #pm subgroup err);Q_{inv} (GeV);C(Q)",pnm.Data()));
+			//---- 2026-10-08: pair-normalized C(Q) at 20 MeV, hCQ20n_k = hCQ20_k / (1+r2), with 1+r2 = total sibling pairs /
+			//---- total mixed pairs (expected-sibling units) over ALL Q incl. overflow, same zvtx slices = int rho2 / int rho1rho1
+			//---- of exactly the pairs in C(Q). Removes the event-normalization offset (baseline -> ~1); 1+r2 is in the title
+			//---- and in work/onePlusR2_k.
+			{
+				TH1 *hS = 0, *hD = 0;
+				for (TObject *o : extraW){ TString n = o->GetName(); if (n==Form("hQsib_%d",ipaty)) hS = (TH1*)o; if (n==Form("hQmix_%d",ipaty)) hD = (TH1*)o; }
+				double St = hS ? hS->Integral(0,hS->GetNbinsX()+1) : 0., Dt = hD ? hD->Integral(0,hD->GetNbinsX()+1) : 0.;
+				double opr	= (St>0. && Dt>0.) ? St/Dt : 0.;
+				TH1D *hn	= (TH1D*)P.CQ20->Clone(Form("hFin_CQ20n_%d",ipaty)); hn->SetDirectory(0);
+				if (opr>0.) hn->Scale(1./opr); else hn->Reset();
+				hn->SetTitle(Form("%s, C(Q)/(1+r_{2}), 1+r_{2} = %.4f (20 MeV bins, #pm subgroup err);Q_{inv} (GeV);C(Q)/(1+r_{2})",pnm.Data(),opr));
+				extraW.push_back(hn);
+				extraW.push_back(new TParameter<double>(Form("onePlusR2_%d",ipaty),opr));
+				cout<<"corral::Finalize -- pairtype "<<ipaty<<" "<<pnm<<": 1+r2 (C(Q) pairs, all Q) = "<<opr<<endl;
+			}
 			P.CQKT	= (TH2D*)buildCQ("hQsibKT","hQmixKT",1,Form("hFin_CQKT_%d",ipaty),  Form("%s, C(Q,k_{T});Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
 			P.CQKT10= (TH2D*)buildCQ("hQsibKT","hQmixKT",5,Form("hFin_CQKT10_%d",ipaty),Form("%s, C(Q,k_{T}) (10 MeV bins);Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
 			//---- Minv near threshold: plain sums (counts)
@@ -1625,7 +1642,7 @@ void corral::Finalize(){
 	auto physCopy	= [](const TString& n) -> TString {
 		static const char* MAP[][2]	= { {"hFin_C2dy_C","hC2Cdy_1"}, {"hFin_C2dphi_C","hC2Cdphi_1"},
 										{"hFin_R2dy_C","hR2Cdy_1"}, {"hFin_R2dphi_C","hR2Cdphi_1"},
-										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"} };
+										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"}, {"hFin_CQ20","hCQ20"}, {"hFin_CQ20n","hCQ20n"} };
 		if (n.Last('_')<0) return TString("");
 		TString t	= n, k = n(n.Last('_')+1,n.Length()); t.Remove(t.Last('_'));
 		for (auto &m : MAP) if (t==m[0]) return TString(m[1])+"_"+k;
