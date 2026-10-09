@@ -204,7 +204,7 @@ void corral::Loop(){
 		}
 		fgate->Close(); delete fgate;
 		dsave->cd();
-		cout<<"corral::Loop -- PID: KFP dE/dx gates from "<<gname<<" (pi, then p, then K, on dedxKFP, "<<GATE_PMIN<<"<p<"<<GATE_PMAX<<")"<<endl;
+		cout<<"corral::Loop -- PID: KFP dE/dx gates from "<<gname<<" (pi, then p outside K, then K, on dedxKFP, "<<GATE_PMIN<<"<p<"<<GATE_PMAX<<")"<<endl;
 	} else {
 		cout<<"corral::Loop -- PID: legacy (oldpid) -- pi = dedx70s<400 at any momentum, no p or K"<<endl;
 	}
@@ -227,7 +227,8 @@ void corral::Loop(){
 		} else if (ptot[it]>GATE_PMIN && ptot[it]<GATE_PMAX && dedxKFP[it]>0.){
 			double pp	= ptot[it];											// each species only below its ptot cap (fluct_common.h)
 			if		(pp<Species_pmax_pid[0] && inGate(0,pp,dedxKFP[it])) k = 0;		// pions first,
-			else if	(pp<Species_pmax_pid[2] && inGate(2,pp,dedxKFP[it])) k = 2;		// then protons,
+			else if	(pp<Species_pmax_pid[2] && inGate(2,pp,dedxKFP[it])
+			         && !inGate(1,pp,dedxKFP[it])) k = 2;							// then protons outside the K band (K and p overlap near 0.75 GeV/c),
 			else if	(pp<Species_pmax_pid[1] && inGate(1,pp,dedxKFP[it])) k = 1;		// then kaons
 		}
 		return k;
@@ -3935,7 +3936,7 @@ void corral::Loop(){
 		if (doCMMask) pt->AddText(Form("  CM mask ON: w = (#eta+%.3f z_{c}) sign(-z_{c}) in [%.2f,%.2f), z_{c} = zvtx-slice centre",CMMASK_K,valCMMaskLo,valCMMaskHi));
 		else pt->AddText("  CM mask OFF (nocmmask)");
 		if (doOldPID) pt->AddText("  PID: legacy (oldpid), #pi = dedx70s < 400");
-		else pt->AddText(Form("  PID: KFP gates (dedxKFP), #pi>p>K; p_{max} %.1f/%.1f/%.1f", Species_pmax_pid[0], Species_pmax_pid[2], Species_pmax_pid[1]));
+		else pt->AddText(Form("  PID: KFP gates (dedxKFP), #pi>p>K, p not in K; p_{max} %.1f/%.1f/%.1f", Species_pmax_pid[0], Species_pmax_pid[2], Species_pmax_pid[1]));
 		pt->AddText(Form("  pairs: p_{T} min #pi %.2f, K %.2f, p/#bar{p} %.2f GeV/c", Species_ptmin[0], Species_ptmin[1], Species_ptmin[2]));
 		pt->AddText("  V0 daughters in no pair type"); pt->AddText(Form("  split-track removal %s", doSplitRemoval ? "ON" : "OFF"));
 		pt->AddText(Form("  looper veto %s (OS, |p|<%.2f, p-sum<%.2f): %ld tracks", doLooperVeto ? "ON" : "OFF", LOOPER_PMAX, valLooperRSum, nFlagged_Looper));

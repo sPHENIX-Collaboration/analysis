@@ -304,7 +304,7 @@ split-track ones).
 | token | effect |
 |---|---|
 | **PID, masks and multiplicity class (README_PID.md)** | |
-| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p then K, all accepted tracks are split-track candidates) |
+| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K, all accepted tracks are split-track candidates) |
 | `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
 | `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
