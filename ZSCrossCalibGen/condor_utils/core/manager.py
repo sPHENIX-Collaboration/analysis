@@ -330,8 +330,6 @@ class CondorJobManager:
             lines.append(f"retry_request_memory = {retry_mem}")
         lines.extend([
             f"max_retries          = {effective_retries}",
-            f"stream_output        = True",
-            f"stream_error         = True",
             "",
         ])
 
