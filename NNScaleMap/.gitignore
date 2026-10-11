@@ -13,3 +13,8 @@ calib_out*/
 *.pdf
 *.csv
 summary.txt
+
+# Job logs (nohup, shell redirects, Condor stdout/stderr)
+*.log
+*.out
+*.err

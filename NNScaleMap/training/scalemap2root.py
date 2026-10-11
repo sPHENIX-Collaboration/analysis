@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Export scale maps to TH2D for ROOT plotting."""
 import argparse, numpy as np, torch, uproot
-from ml_momentum_calibration_reso_v2 import (KappaNet, ETA_RANGE, semi_even_pt_grid, load_stage1)
+from nnscalemap.constants import ETA_RANGE
+from nnscalemap.kinematics import semi_even_pt_grid
+from nnscalemap.stage1 import KappaNet, load_stage1
 
 DEFAULT_PT_VALUES = (0.3, 0.5, 1.0, 2.0, 3.0)
 

@@ -1,0 +1,59 @@
+# NNScaleMap training run card:  python train.py --config configs/example.toml
+# Keys are the train.py option names (see python train.py --help); sections only
+# organise this file.  Flags given on the command line after --config override
+# the values here, e.g.  --config configs/example.toml --epochs 800 --outdir trial_017
+# Booleans: true passes the flag; false omits it (it cannot be switched off from
+# the command line once set true here).
+# <outdir>/run_metadata.toml (read-only) records the command, the input files with sha256 checksums and every resolved option.
+
+[data]
+# One or more files per species; glob patterns are expanded and sorted, e.g.
+# "/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run8160*.root"
+kshort = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run81612.root"]
+lam = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Lambda0_reco_KFParticle_run81612.root"]
+tree = "DecayTree"
+max_candidates = 0          # per species, 0 = all; shared across files in proportion to their entries
+subsample_seed = 42
+
+[output]
+outdir = "calib_out"
+lookup_pt_min = 0.10        # GeV, lower pT of the kappa lookup and kappa-map diagnostics
+lookup_pt_max = 5.0         # GeV, upper pT of the kappa lookup and kappa-map diagnostics
+kappa_slices = 25           # curvature slices in the fig6/fig7 kappa diagnostics
+
+[stage1]
+feature = "inv_pt"          # momentum feature: inv_pt = 1/pT, pt, log_pt
+history_every = 0           # mass-history fit cadence in epochs (0 = refresh cadence)
+epochs = 400
+lr = 2e-3
+hidden = 48
+refresh = 50                # signal-weight refresh cadence in epochs
+lam_prior = 0.05            # L2(eps, delta) weight at epoch 0, annealed linearly to 0
+lam_split = 1.0             # Lambda / anti-Lambda peak-split term
+lam_alpha = 2.0             # K0s Armenteros alpha symmetry term
+loss_pt_binning = "quantile"# daughter-pT loss-bin edges: quantile (equal population) | log (equal ln pT width over the lookup range)
+loss_pt_bins = 6            # number of daughter-pT loss bins (x 10 eta x 8 phi x 2 charge)
+chunk_size = 500000         # candidates per gradient chunk: memory scales with this, not with the sample
+# load_stage1 = "calib_out/model.pt"   # skip stage-1 training and load this checkpoint
+
+[stage2]
+no_reso = false             # true = stage 1 only
+reso_model = "pull"         # pull: calibrate the KFParticle covariance; absolute: (a, b) fields from peak widths
+reso_epochs = 300
+reso_lr = 2e-3
+reso_hidden = 32
+reso_layers = 3
+c_per_resonance = false     # separate mass-width floor for K0s and Lambda
+reso_scalar_steps = 1500    # reduced global-scalar fit steps (Hessian errors)
+
+[injection]
+inject = false              # append the go/no-go toy campaign after the data pass
+inject_only = false         # run the toy campaign and skip the data pass
+inject_n = 200000
+inject_s0 = 1.30            # pull mode: injected covariance miscalibration factor
+inject_u0 = 0.0             # pull mode: injected pT exponent
+inject_a0 = 0.010           # absolute mode: injected MS-like coefficient
+inject_b0 = 0.012           # absolute mode: injected curvature coefficient [1/GeV]
+inject_c0 = 0.0015          # injected mass-width floor [GeV]
+inject_seed = 1234
+inject_scalar_steps = 1500
