@@ -40,7 +40,7 @@ The default `src/PairTypes.h` has 49 pair types (the lighter species first, a ch
 | pi V0 | 30 pi+K0S (K*+), 31 pi-K0S (K*-), 32 pi+Lambda (Sigma*+), 33 pi-Lambda (Sigma*-, Xi-), 34 pi+Lbar, 35 pi-Lbar |
 | K, p with K0S | 36 K+K0S, 37 K-K0S, 38 p K0S, 39 pbar K0S |
 | V0 V0 | 40 K0S K0S, 41 Lambda Lambda, 42 Lbar Lbar, 43 K0S Lambda, 44 K0S Lbar, 45 Lambda Lbar |
-| h h | 46 h+h-, 47 h+h+, 48 h-h- |
+| h h | 46 h+h-, 47 h+h+, 48 h-h- (PID info ignored, pion binning) |
 
 h+ and h- are every accepted charged track, with the dE/dx PID ignored (the charged-hadron CFs of many
 papers). They are filled in pseudorapidity, not y, over the whole track acceptance abs(eta) < 1.1, with the
