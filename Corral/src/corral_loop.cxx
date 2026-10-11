@@ -22,9 +22,12 @@
 #include <TSystem.h>
 
 #include "fluct_common.h"
+#include "CQResonances.h"	// C(Q) signposts and the ir2=2 Q binning (README_meanpT_from_CQ.md)
+#include "QPTPage.h"		// ir2=2 (Q,pT_pair) summary page, shared with Finalize
 #include "CalcRm.h"
 //#include "CalcR3mid.h"
 #include "PairTypes.h"
+#include "EtaLabels.h"		// h+, h- pages and maps in eta
 #include "finalize_hists.h"	// CorralDir(): where dedxGates_KFP.root lives
 
 double fDEDXexpected(double *x, double *par) {	// bichsel function...
@@ -35,76 +38,12 @@ double fDEDXexpected(double *x, double *par) {	// bichsel function...
 	return par[0]*(1.0 + ( amass*amass/momentum/momentum ));
 }
 
-//---- README_CQ: C(Q) signposts. Q_inv (= dq = 2k*, CalcRm::PairInfo) at which a two-body decay
-//---- R -> 1+2 lands: dq = sqrt((M^2-(m1+m2)^2)(M^2-(m1-m2)^2))/M. Order of the two legs doesn't
-//---- matter. Draws a dashed line + label for each one inside the current pad's x range.
-double CQResonanceQ(double M, double m1, double m2){
-	double a	= (M*M-(m1+m2)*(m1+m2))*(M*M-(m1-m2)*(m1-m2));
-	return (a>0.) ? sqrt(a)/M : -1.;
-}
+//---- README_CQ: C(Q) signposts. A dashed line + label for each CQResonances.h entry of this species pair
+//---- inside the current pad's x range (the same list sets the fine Q bins of ir2=2).
 void DrawCQSignposts(int ipid1, int ipid2, double ymin, double ymax, double xmax){
-	const double mpi = 0.13957, mK0 = 0.497611, mL = 1.115683, mp = 0.938272, mK = 0.493677;		// PDG
-	const int PIP = kParticleIDPionPlus, PIM = kParticleIDPionMinus;
-	const int PP = kParticleIDProton, PM = kParticleIDAntiProton, KP = kParticleIDKaonPlus, KM = kParticleIDKaonMinus;
-	const int KS = kParticleIDKshort, LA = kParticleIDLambda, AL = kParticleIDAntiLambda;
-	struct Post { int a, b; double M, m1, m2; const char* lab; };
-	const Post posts[]	= {
-		{ PIP, PIM, 0.497611, mpi, mpi, "K^{0}_{S}"        },
-		{ PIP, PIM, 0.77526,  mpi, mpi, "#rho^{0}"         },
-		{ PIP, PIM, 0.990,    mpi, mpi, "f_{0}(980)"       },
-		{ KS,  PIP, 0.89167,  mK0, mpi, "K*^{+}"           },
-		{ KS,  PIM, 0.89167,  mK0, mpi, "K*^{-}"           },
-		{ LA,  PIP, 1.38280,  mL,  mpi, "#Sigma*^{+}"      },
-		{ LA,  PIM, 1.3872,   mL,  mpi, "#Sigma*^{-}"      },
-		{ LA,  PIM, 1.32171,  mL,  mpi, "#Xi^{-}"          },
-		{ AL,  PIM, 1.38280,  mL,  mpi, "#bar{#Sigma*}^{-}"},
-		{ AL,  PIP, 1.3872,   mL,  mpi, "#bar{#Sigma*}^{+}"},
-		{ AL,  PIP, 1.32171,  mL,  mpi, "#bar{#Xi}^{+}"    },
-		{ PP,  PIM, 1.115683, mp,  mpi, "#Lambda"          },		// Lambdas not reconstructed as V0s (README_PID.md)
-		{ PP,  PIM, 1.232,    mp,  mpi, "#Delta^{0}"       },
-		{ PP,  PIP, 1.232,    mp,  mpi, "#Delta^{++}"      },
-		{ PM,  PIP, 1.115683, mp,  mpi, "#bar{#Lambda}"    },
-		{ PM,  PIP, 1.232,    mp,  mpi, "#bar{#Delta}^{0}" },
-		{ PM,  PIM, 1.232,    mp,  mpi, "#bar{#Delta}^{--}"},
-		{ KP,  KM,  1.019461, mK,  mK,  "#phi"             },
-		//---- 2026-10-06: the 46-pairtype table (PDG masses; a0(980)->KK0s and f0(980)->K0sK0s sit below threshold)
-		{ KP,  PIM, 0.89555,  mK,  mpi, "K*^{0}"           },
-		{ KM,  PIP, 0.89555,  mK,  mpi, "#bar{K*}^{0}"     },
-		{ KP,  PIM, 1.4324,   mK,  mpi, "K_{2}*^{0}(1430)" },
-		{ KM,  PIP, 1.4324,   mK,  mpi, "#bar{K}_{2}*^{0}(1430)"},
-		{ KM,  PIP, 1.86484,  mK,  mpi, "D^{0}"            },
-		{ KP,  PIM, 1.86484,  mK,  mpi, "#bar{D}^{0}"      },
-		{ KP,  KM,  1.86484,  mK,  mK,  "D^{0}"            },
-		{ KM,  PP,  1.5194,   mK,  mp,  "#Lambda(1520)"    },
-		{ KP,  PM,  1.5194,   mK,  mp,  "#bar{#Lambda}(1520)"},
-		{ KM,  PP,  1.820,    mK,  mp,  "#Lambda(1820)"    },
-		{ KP,  PM,  1.820,    mK,  mp,  "#bar{#Lambda}(1820)"},
-		{ KS,  PIP, 1.86966,  mK0, mpi, "D^{+}"            },
-		{ KS,  PIM, 1.86966,  mK0, mpi, "D^{-}"            },
-		{ KS,  KP,  1.86966,  mK0, mK,  "D^{+}"            },
-		{ KS,  KM,  1.86966,  mK0, mK,  "D^{-}"            },
-		{ KS,  KP,  1.96835,  mK0, mK,  "D_{s}^{+}"        },
-		{ KS,  KM,  1.96835,  mK0, mK,  "D_{s}^{-}"        },
-		{ KS,  PP,  2.28646,  mK0, mp,  "#Lambda_{c}^{+}"  },
-		{ KS,  PM,  2.28646,  mK0, mp,  "#bar{#Lambda}_{c}^{-}"},
-		{ LA,  PIP, 2.28646,  mL,  mpi, "#Lambda_{c}^{+}"  },
-		{ AL,  PIM, 2.28646,  mL,  mpi, "#bar{#Lambda}_{c}^{-}"},
-		{ LA,  KM,  1.67245,  mL,  mK,  "#Omega^{-}"       },
-		{ AL,  KP,  1.67245,  mL,  mK,  "#bar{#Omega}^{+}" },
-		{ LA,  KM,  1.690,    mL,  mK,  "#Xi(1690)^{-}"    },
-		{ AL,  KP,  1.690,    mL,  mK,  "#bar{#Xi}(1690)^{+}"},
-		{ LA,  KM,  1.823,    mL,  mK,  "#Xi(1820)^{-}"    },
-		{ AL,  KP,  1.823,    mL,  mK,  "#bar{#Xi}(1820)^{+}"},
-		{ LA,  KS,  1.690,    mL,  mK0, "#Xi(1690)^{0}"    },
-		{ AL,  KS,  1.690,    mL,  mK0, "#bar{#Xi}(1690)^{0}"},
-		{ LA,  KS,  1.823,    mL,  mK0, "#Xi(1820)^{0}"    },
-		{ AL,  KS,  1.823,    mL,  mK0, "#bar{#Xi}(1820)^{0}"},
-		{ KS,  KS,  1.5174,   mK0, mK0, "f'_{2}(1525)"     },
-		{ KS,  KS,  1.733,    mK0, mK0, "f_{0}(1710)"      },
-	};
 	int iy	= 0;
-	for (const Post &p : posts){
-		if (!((p.a==ipid1 && p.b==ipid2) || (p.a==ipid2 && p.b==ipid1))) continue;
+	for (const CQResonance &p : CQ_RESONANCES){
+		if (!CQResonanceMatches(p,ipid1,ipid2)) continue;
 		double q	= CQResonanceQ(p.M,p.m1,p.m2);
 		if (q<=0. || q>=xmax) continue;
 		TLine *ln	= new TLine(q,ymin,q,ymax);
@@ -280,8 +219,8 @@ void corral::Loop(){
 	int pairYNB1[NPairTypes], pairYNB2[NPairTypes];
 	for (int ip=0;ip<NPairTypes;ip++){
 		pairEtaEdge[ip]	= thisYU;
-		pairYU1[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][0])]; pairYL1[ip] = -pairYU1[ip];
-		pairYU2[ip]		= Species_yu[GetSpecies(PairTypes_Info[ip][1])]; pairYL2[ip] = -pairYU2[ip];
+		pairYU1[ip]		= IsHadronParticleID(PairTypes_Info[ip][0]) ? Hadron_etau : Species_yu[GetSpecies(PairTypes_Info[ip][0])]; pairYL1[ip] = -pairYU1[ip];	// h+, h-: eta
+		pairYU2[ip]		= IsHadronParticleID(PairTypes_Info[ip][1]) ? Hadron_etau : Species_yu[GetSpecies(PairTypes_Info[ip][1])]; pairYL2[ip] = -pairYU2[ip];
 		const int ibw	= PairTypes_Info[ip][3];
 		const int iw1	= (int)lround(200.*pairYU1[ip]), iw2 = (int)lround(200.*pairYU2[ip]);	// window widths, units of 0.01
 		if (ibw<=0 || iw1%ibw!=0 || iw2%ibw!=0 || iw1/ibw<2 || iw2/ibw<2){
@@ -293,8 +232,8 @@ void corral::Loop(){
 		pairYNB2[ip]	= iw2/ibw;
 		pairDYBW[ip]	= 0.01*ibw;
 		cout<<"corral::Loop -- pair type "<<ip<<" "<<ParticleIDNames[PairTypes_Info[ip][0]]<<" "<<ParticleIDNames[PairTypes_Info[ip][1]]
-			<<": abs(eta) < "<<pairEtaEdge[ip]<<", abs(y1) < "<<pairYU1[ip]<<" ("<<pairYNB1[ip]<<" bins), abs(y2) < "<<pairYU2[ip]
-			<<" ("<<pairYNB2[ip]<<" bins), y and dy bin width "<<pairDYBW[ip]<<endl;
+			<<": abs(eta) < "<<pairEtaEdge[ip]<<", abs("<<(IsHadronParticleID(PairTypes_Info[ip][0])?"eta1":"y1")<<") < "<<pairYU1[ip]<<" ("<<pairYNB1[ip]<<" bins), abs("
+			<<(IsHadronParticleID(PairTypes_Info[ip][1])?"eta2":"y2")<<") < "<<pairYU2[ip]<<" ("<<pairYNB2[ip]<<" bins), "<<(IsHPairType(ip)?"eta and deta":"y and dy")<<" bin width "<<pairDYBW[ip]<<endl;
 	}
 	if (!doOldPID) cout<<"corral::Loop -- PID ptot caps: pi "<<Species_pmax_pid[0]<<", p "<<Species_pmax_pid[2]<<", K "<<Species_pmax_pid[1]<<" GeV/c"<<endl;
 	double  thisPTL		=  0.1;
@@ -332,7 +271,7 @@ void corral::Loop(){
 				<<"\t pid: "<<ParticleIDNames[ipid1]<<" "<<ParticleIDNames[ipid2]<<endl;
 			thisYNB		= thisYNB0;		// default 
 			thisPHINB	= thisPHINB0;	// default 
-			if (ipid1>=kParticleIDKshort || ipid2>=kParticleIDKshort){	// This pairtype includes a V0
+			if (IsV0ParticleID(ipid1) || IsV0ParticleID(ipid2)){	// This pairtype includes a V0
 				thisYNB		=  8;
 				thisPHINB	= 12;
 			}
@@ -857,6 +796,8 @@ void corral::Loop(){
 	TH1D *hvtxx		= new TH1D("hvtxx","hvtxx",200,-1,1);
 	TH1D *hvtxy		= new TH1D("hvtxy","hvtxy",200,-1,1);
 	TH1D *hvtxz		= new TH1D("hvtxz","hvtxz",200,-20,20);
+	//---- chunkStats occupancy (2026-10-11, Finalize work/chunkStats): nvtx (raw vertices in the TF) of the events reaching CalcRm
+	TH2D *hnvtxCR	= new TH2D("hnvtxCR","events reaching CalcRm;vtx z (cm);nvtx (raw vertices in the TF)",32,-16.,16.,200,-0.5,199.5);
 	TH1D *hntrk		= new TH1D("hntrk","hntrk",50,-0.5,49.5);
 	TH1D *hdedx		= new TH1D("hdedx","hdedx",500,0,5000.);
 	TH1D *hndedx	= new TH1D("hndedx","hndedx",49,-0.5,48.5);
@@ -2306,7 +2247,9 @@ void corral::Loop(){
 			//
 			//----- save for the class....
 			//
-			if (thisParticleID<0) continue;
+			//---- h+, h- (2026-10-11): every accepted charged track, the dE/dx PID ignored
+			const int thisHadronID	= (chg[it]>0) ? kParticleIDhPlus : ((chg[it]<0) ? kParticleIDhMinus : -1);
+			if (thisParticleID<0 && thisHadronID<0) continue;
 			//
 			double thiseta,thisphi,thispt;
 			if (!USESEEDTRACKS){
@@ -2320,10 +2263,24 @@ void corral::Loop(){
 			}
 			//---- README_PID.md: CalcRm wants RAPIDITY (it builds pz = mt*sinh(y)). eta -> y with the PID mass;
 			//---- the acceptance cut below stays on eta (the detector edge), and abs(y) <= abs(eta) always.
-			double thismt	= sqrt(thispt*thispt + Species_mass[thisSpecies]*Species_mass[thisSpecies]);
-			double thisy	= asinh(thispt*sinh(thiseta)/thismt);
-			if (thisPIDk<3 && thiseta>=thisYL && thiseta<thisYU) hypt_id[thisPIDk]->Fill(thisy,thispt);
-			if (!isPeakDaughter(it) && thiseta>=-1.1 && thiseta<1.1){ ridgePID[it] = thisPIDk; ridgeY[it] = thisy; }
+			auto yOf	= [&](int isp){ double mt = sqrt(thispt*thispt + Species_mass[isp]*Species_mass[isp]); return asinh(thispt*sinh(thiseta)/mt); };
+			const int thisSpeciesH	= (thisHadronID>=0) ? GetSpecies(thisHadronID) : -1;	// h+, h-: the pion window and pT cut
+			const double thisy	= (thisSpecies >=0) ? yOf(thisSpecies)  : -999.;
+			const double thisyH	= (thisSpeciesH>=0) ? thiseta : -999.;	// h+, h-: pseudorapidity (CalcRm fUseEta)
+			if (thisParticleID>=0){
+				if (thisPIDk<3 && thiseta>=thisYL && thiseta<thisYU) hypt_id[thisPIDk]->Fill(thisy,thispt);
+				if (!isPeakDaughter(it) && thiseta>=-1.1 && thiseta<1.1){ ridgePID[it] = thisPIDk; ridgeY[it] = thisy; }
+			}
+			//---- is this track in the list of particle ipid for pair type ipaty (as its PID species, or as h+/h-)? yv = its y there
+			auto inList	= [&](int ipid, double yl, double yu, int ipaty, double& yv){
+				int isp;
+				if      (ipid==thisParticleID){ isp = thisSpecies;  yv = thisy;  }
+				else if (ipid==thisHadronID)  { isp = thisSpeciesH; yv = thisyH; }
+				else return false;
+				if (thispt < Species_ptmin[isp] || thispt >= Species_ptmax[isp]) return false;
+				if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) return false;	// detector edge
+				return (yv >= yl && yv < yu);													// class window (README_PID.md)
+			};
 			//---- add this track to all PairType indices that this species is included in...
 			if (!NOCORRELATIONS){
 				for (int ipaty=0;ipaty<NPairTypes;ipaty++){
@@ -2335,31 +2292,17 @@ void corral::Loop(){
 						continue;
 					}
 					//
-					//---- check if this track is particle 1 for this pair type
-					bool accept1	= false;
-					if (thisParticleID==PairTypes_Info[ipaty][0]) accept1 = true;
-					if (accept1){
-						if (thispt < Species_ptmin[thisSpecies]) accept1	= false;
-						if (thispt >=Species_ptmax[thisSpecies]) accept1	= false;
-						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept1	= false;	// detector edge
-						if (thisy  <  pairYL1[ipaty]   || thisy  >= pairYU1[ipaty]   ) accept1	= false;	// class window (README_PID.md)
-					}
-					//---- check if this track is particle 2 for this pair type
-					bool accept2	= false;
-					if (thisParticleID==PairTypes_Info[ipaty][1]) accept2 = true;
-					if (accept2){
-						if (thispt < Species_ptmin[thisSpecies]) accept2	= false;
-						if (thispt >=Species_ptmax[thisSpecies]) accept2	= false;
-						if (thiseta< -pairEtaEdge[ipaty] || thiseta>=pairEtaEdge[ipaty]) accept2	= false;	// detector edge
-						if (thisy  <  pairYL2[ipaty]   || thisy  >= pairYU2[ipaty]   ) accept2	= false;	// class window (README_PID.md)
-					}
+					//---- check if this track is particle 1 / particle 2 for this pair type
+					double y1v=0., y2v=0.;
+					const bool accept1	= inList(PairTypes_Info[ipaty][0],pairYL1[ipaty],pairYU1[ipaty],ipaty,y1v);
+					const bool accept2	= inList(PairTypes_Info[ipaty][1],pairYL2[ipaty],pairYU2[ipaty],ipaty,y2v);
 					if (accept1){		// this track is "Particle 1" in this PairType...
 						int kk = calcr_n_1[ipaty];
 						if (kk== MAX_CALCR_N-1){ 
 							cout<<"reader::Loop -- PVEC1 FULL .. max="<<MAX_CALCR_N<<"\t ipaty="<<ipaty<<endl; 
 							exit(0);
 						}
-						Pvec_1[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
+						Pvec_1[ipaty][kk][0]	= y1v;			// rapidity (README_PID.md)
 						Pvec_1[ipaty][kk][1]	= thisphi;
 						Pvec_1[ipaty][kk][2]	= thispt;
 						++calcr_n_1[ipaty];
@@ -2370,7 +2313,7 @@ void corral::Loop(){
 							cout<<"reader::Loop -- PVEC2 FULL .. max="<<MAX_CALCR_N<<"\t ipaty="<<ipaty<<endl;
 							exit(0);
 						}
-						Pvec_2[ipaty][kk][0]	= thisy;		// rapidity (README_PID.md)
+						Pvec_2[ipaty][kk][0]	= y2v;			// rapidity (README_PID.md)
 						Pvec_2[ipaty][kk][1]	= thisphi;
 						Pvec_2[ipaty][kk][2]	= thispt;
 						++calcr_n_2[ipaty];
@@ -2829,6 +2772,7 @@ void corral::Loop(){
 		++nNchSeen;
 		const bool inNchClass	= (ntrkept>=valNchLo && ntrkept<=valNchHi);
 		if (inNchClass) ++nNchKept;
+		if (!NOCORRELATIONS && inNchClass) hnvtxCR->Fill((*vtxz),(*nvtx));
 		if (!NOCORRELATIONS && inNchClass){
 			for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
 				int ipid1			= PairTypes_Info[ipaty][0];
@@ -3098,8 +3042,8 @@ void corral::Loop(){
 				TString r2string2		= TString(";y_{1};y_{2}");	// ir==0 is (y1,y2)
 				if (ir2==1) r2string1	= TString("dy,d#phi");		// ir==1 is (dy,dphi)
 				if (ir2==1) r2string2	= TString(";dy;d#phi");		// ir==1 is (dy,dphi)
-				if (ir2==2) r2string1	= TString("dy,dq");			// ir==2 is (dy,dq)
-				if (ir2==2) r2string2	= TString(";dy;dq");		// ir==2 is (dy,dq)
+				if (ir2==2) r2string1	= TString("Q_{inv},p_{T,pair}");					// ir==2 is (Q_inv,pT_pair), variable width in Q
+				if (ir2==2) r2string2	= TString(";Q_{inv} (GeV);p_{T,pair} (GeV/c)");
 				//---- get Zvtx-averaged densities...
 					hrho2[ir2][ipaty]		= (TH2D*)R[ipaty]->Gethrho2_S(ir2);
 					hrho2[ir2][ipaty]		->SetName(Form("hrho2_%d_%d",ir2,ipaty));
@@ -4410,7 +4354,7 @@ void corral::Loop(){
 			ccan[ican]->cd(11); hR2[1][ipaty]			->Draw("lego2");
 			ccan[ican]->cd(12); hR2[1][ipaty]			->Draw("colz");
 			ccan[ican]->cd(); ccan[ican]->Update();
-			ccan[ican]->Print(OutputFileName.Data());
+			EtaLabelsIf(ccan[ican],ipaty); ccan[ican]->Print(OutputFileName.Data());
 			//
 			//---- femtoscopic C(Q) page, 2x2
 			//---- (README_CQ): C(Q) 0-2.0 GeV with decay signposts | C(Q) in STAR's 4 kT bins |
@@ -4505,7 +4449,12 @@ void corral::Loop(){
 				lgm->Draw();
 			}
 			ccan[ican]->cd(); ccan[ican]->Update();
-			ccan[ican]->Print(OutputFileName.Data());
+			EtaLabelsIf(ccan[ican],ipaty); ccan[ican]->Print(OutputFileName.Data());
+			//
+			//---- ir2=2 (Q_inv, pT_pair) page, 2x2 (README_meanpT_from_CQ.md sec 11; QPTPage.h, same page in Finalize)
+			++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
+			DrawQPTPage(ccan[ican],hrho2[2][ipaty],hrho1rho1[2][ipaty],0,ipid1,ipid2,part1name+part2name,"zvtx-averaged #rho_{2}",Form("corral_%d",ipaty));
+			EtaLabelsIf(ccan[ican],ipaty); ccan[ican]->Print(OutputFileName.Data());
 			//
 			//---- crossing-correction page (README_Crossing decision 12, step 9), 3x2:
 			//---- column 1: R2(dy,dphi) uncorrected (colz, red perimeter around dirty-side near bins that differ
@@ -4687,7 +4636,7 @@ void corral::Loop(){
 					}
 				}
 				ccan[ican]->cd(); ccan[ican]->Update();
-				ccan[ican]->Print(OutputFileName.Data());
+				EtaLabelsIf(ccan[ican],ipaty); ccan[ican]->Print(OutputFileName.Data());
 			}
 		}	// end ipaty CF summary pages
 	}	// end nocorrelations CF summary pages
@@ -4735,6 +4684,10 @@ void corral::Loop(){
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
 			//
+			if (IsHPairType(ipaty)){	// h+, h-: eta, not y, in the titles (Finalize copies the map titles)
+				for (TH1* h : {(TH1*)hy1[ipaty],(TH1*)hy2[ipaty],(TH1*)hR2yydy[ipaty],(TH1*)hR2dy[ipaty],(TH1*)hrho2C[ipaty],(TH1*)hC2C[ipaty],(TH1*)hR2C[ipaty],(TH1*)hMempty[ipaty]}) EtaLabelsH(h);
+				for (int ir2=0;ir2<NR2TYPES;ir2++) for (TH1* h : {(TH1*)hrho2[ir2][ipaty],(TH1*)hrho1rho1[ir2][ipaty],(TH1*)hC2[ir2][ipaty],(TH1*)hR2[ir2][ipaty]}) EtaLabelsH(h);
+			}
 			hzvtx[ipaty]			->Write();
 			hmult[ipaty]			->Write();
 			hmult1[ipaty]			->Write();

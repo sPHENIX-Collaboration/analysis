@@ -1,8 +1,16 @@
 # Corral
 
 **CORRelation AnaLysis.** Corral is a general-purpose code that produces correlation functions from
-sPHENIX data. Both whole-acceptance correlations, e.g. R2(dy,dphi), and femtoscopic correlations, e.g.
-C(Q), are produced. Any pair of reconstructed particles can be studied: the pair types are a simple table
+sPHENIX data, three whole-acceptance ones and a femtoscopic one:
+
+| variables | correlation function | what it is for |
+|---|---|---|
+| (y1, y2) | rapidity CF | correlations projected onto the rapidity of each particle |
+| (dy, dphi) | angular CF | correlations projected onto difference variables, in rapidity and azimuth |
+| (Q_inv, pT_pair) | resonance CF | correlations allowing the measurement of the pT distribution of resonances identified via C(Q) |
+| Q_inv (and kT) | femtoscopic C(Q) | correlations projected onto the invariant relative momentum of the pair |
+
+Any pair of reconstructed particles can be studied: the pair types are a simple table
 in `src/PairTypes.h`, easy to edit. The code expects trees written by
 [Collect](https://github.com/sPHENIX-Collaboration/analysis/tree/master/Collect), which provides the track,
 V0, and calorimeter energy information used here. Charged tracks are identified as pi, K or p from their
@@ -17,7 +25,7 @@ Correlations are measured by comparing **sibling** pairs (both particles from th
 zvtx bin, 16 bins over -16 < zvtx < 16 cm), which see the same acceptance but carry no physical
 correlation.
 
-The default `src/PairTypes.h` has 46 pair types (the lighter species first, a charged hadron before a V0):
+The default `src/PairTypes.h` has 49 pair types (the lighter species first, a charged hadron before a V0):
 
 | pairs | index: pair type |
 |---|---|
@@ -32,6 +40,13 @@ The default `src/PairTypes.h` has 46 pair types (the lighter species first, a ch
 | pi V0 | 30 pi+K0S (K*+), 31 pi-K0S (K*-), 32 pi+Lambda (Sigma*+), 33 pi-Lambda (Sigma*-, Xi-), 34 pi+Lbar, 35 pi-Lbar |
 | K, p with K0S | 36 K+K0S, 37 K-K0S, 38 p K0S, 39 pbar K0S |
 | V0 V0 | 40 K0S K0S, 41 Lambda Lambda, 42 Lbar Lbar, 43 K0S Lambda, 44 K0S Lbar, 45 Lambda Lbar |
+| h h | 46 h+h-, 47 h+h+, 48 h-h- |
+
+h+ and h- are every accepted charged track, with the dE/dx PID ignored (the charged-hadron CFs of many
+papers). They are filled in pseudorapidity, not y, over the whole track acceptance abs(eta) < 1.1, with the
+pion pT cut and bin width (0.04), and their pages and maps are labelled in eta. CalcRm knows from the particle ID that such a leg
+carries eta and builds its 4-momentum from eta with the pion mass (Q_inv, M_inv, kT). Like every other
+track, they stay out when they are a daughter of a V0 in its mass peak.
 
 The pair densities are filled in rapidity y (from the identified mass), inside abs(eta) < 1.1 and each species'
 y window abs(y) < `Species_yu` (fluct_common.h): pi 1.0, K 0.7, p 0.6, K0s / Lambda / Lbar 0.7. Each pair type has
@@ -57,6 +72,10 @@ For every pair type, Corral makes:
 - **The crossing-corrected (dy, dphi) map** (charged-charged pairs), with the uncorrected map, the
   difference between the two, and the projections, so the size of the correction is visible (see
   "Crossing correction", below).
+- **The resonance CF, C(Q_inv, pT_pair)** (one page per pair type): C(Q) over all pT_pair with the
+  decay signposts, the (Q, pT_pair) map, C(Q) in pT_pair slices, and the mean pT_pair per Q bin for
+  sibling and mixed pairs. Q has variable-width bins (`src/CQResonances.h`): 2 MeV below 0.1 GeV, 5 MeV
+  to 0.2 GeV, fine bins around every listed peak of that pair type, 20 MeV elsewhere; the page says so.
 - **Femtoscopic C(Q).** The ratio of sibling to mixed pairs versus the invariant relative momentum Q, in
   fine (5 MeV) bins over 0-1.2 GeV and in bins of the pair transverse momentum kT. At small Q it shows
   the HBT enhancement (identical pions) and final-state interactions. Resonances that decay into the
@@ -71,9 +90,9 @@ For every pair type, Corral makes:
 A single `corral` job writes all of these for its own events. For a large production, the data are
 cut into chunks, one job runs per chunk, and **Finalize** combines them (see "Running"): it adds up the
 chunks zvtx bin by zvtx bin, forms the final crossing-corrected, zvtx-averaged correlation functions,
-takes the uncertainties from the chunk-to-chunk scatter, and writes the physics pages (four per pair
-type: overview, C(Q), crossing correction, and the size of the correction versus time and detector
-occupancy), followed by diagnostic pages.
+takes the uncertainties from the chunk-to-chunk scatter, and writes the physics pages (five per pair
+type: overview, C(Q), resonance CF, crossing correction, and the size of the correction versus time and
+detector occupancy), followed by diagnostic pages.
 
 ## What Corral does to correct and check the correlations
 
@@ -385,6 +404,12 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral.root`, and writes
    `root/corral_Finalize.root` and `pdf/corral_Finalize.pdf` in the work directory; copy them to
    `root/<dataset>/` and `pdf/<dataset>/`.
+   Finalize also writes the tree `work/chunkStats`, one entry per chunk (run, chunk, events, occupancy =
+   mean raw vertices per TF of the events used), with the multiplicity moments from each chunk's hmult,
+   for |zvtx| < 8 cm ([0]) and all zvtx ([1]): per pair type 1+r2 and its error, f2 (pairs per event),
+   <n1>, <n2>, P0; per particle <n>, P0 and P(n); and the totals over pi/K/p, over pions and over h+-
+   (<N>, f2, R2 = f2/<N>^2). Pair-type names are in the tree's UserInfo. The whole-sample totals, with
+   subgroup errors, are in the log and in `work/R2tot_*`.
    Without `corral.root` (the single job still running) it skips only the pages that compare with it. The
    crossing correction follows the chunks: a `nocross` production stays uncorrected in Finalize too.
 

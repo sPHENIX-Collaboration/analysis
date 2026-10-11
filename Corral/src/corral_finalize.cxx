@@ -1,7 +1,10 @@
 #include "corral_class.h"
 #include <TSystem.h>
 #include "fluct_common.h"
+#include "CQResonances.h"	// QPT_NOTE for the ir2=2 page
+#include "QPTPage.h"		// ir2=2 (Q,pT_pair) summary page, shared with corral_m
 #include "PairTypes.h"
+#include "EtaLabels.h"		// h+, h- pages in eta
 #include "finalize_hists.h"
 #include "CrossingCorrect.h"	// same dirty-side rule and correction as CalcRm::Calculate
 #include "ZvtxAverage.h"		// same Zvtx average as CalcRm::Calculate
@@ -19,6 +22,9 @@
 #include <TLatex.h>
 #include <TFitResult.h>
 #include <TParameter.h>
+#include <TTree.h>
+#include <TObjString.h>
+#include <TArrayD.h>
 #include <sstream>
 
 //------------------------------------------------------------
@@ -185,6 +191,8 @@ void corral::Finalize(){
 		double	fillin;							// fraction of chunk-bin values taken from full stats in the projections
 		TH1D	*CQ, *CQ5, *CQ20;				// C(Q) at 1 MeV (written), 5 MeV (display) and 20 MeV (comparisons), ratio of zvtx sums
 		TH2D	*CQKT, *CQKT10;					// C(Q,kT) at 2 MeV and 10 MeV (display)
+		TH2D	*CQvarPT, *QPTsib, *QPTmix;		// ir2=2: C(Q,pT_pair) and its zvtx sums (variable width in Q)
+		TH1D	*CQvar;							// ir2=2: C(Q) over all pT_pair (variable width in Q)
 		TH1D	*MinvS, *MinvM;					// hMinvFS/FM plain sums (counts)
 		Phys(){ R2yy=0; for (int k=0;k<2;k++){ pU[k]=pC[k]=nU[k]=nC[k]=qU[k]=qC[k]=0; } dC2=0; dC2dy=dC2dphi=0; I=eI=Sfull=frac=efrac=0; hy1=hy2=0; fillin=0; CQ=CQ5=CQ20=0; CQKT=CQKT10=0; MinvS=MinvM=0; }
 	};
@@ -288,9 +296,15 @@ void corral::Finalize(){
 				for (int ic=0;ic<nlists;ic++) if (nc[ic][z]>=2. && dc[ic][z]>0.){ Nz[z] += nc[ic][z]; NDz[z] += nc[ic][z]*dc[ic][z]; }
 				okq[z]	= (Nz[z]>=2. && NDz[z]>0.);
 			}
-			auto buildCQ	= [&](const char* bs, const char* bm, int rebin, const char* outname, const char* title, bool keepSD=false) -> TH1* {
+			//---- ir2=2 (README_meanpT_from_CQ.md sec 11): the same ratio of zvtx sums from the (Q,pT_pair) densities.
+			//----   perEvent: inputs are rho2(S) = sib/nevt and rho2(M) = mix/nevt/denomfactor (CalcRm::Calculate), so
+			//----   x nevt (= hnevtz, the same hmult entries) gives back exactly what hQsib, hQmix hold. projQ: sum over
+			//----   pT_pair (incl. under/overflow) first, for C(Q) over all pT_pair. keepSD names: sname_k, dname_k.
+			auto buildCQ	= [&](const char* bs, const char* bm, int rebin, const char* outname, const char* title, bool keepSD=false,
+								  bool perEvent=false, bool projQ=false, const char* sname="hQsib", const char* dname="hQmix") -> TH1* {
 				TH1 *t0	= (TH1*)fch[0]->Get(Form("%s_z00_%d",bs,ipaty));
 				if (!t0){ cout<<"corral::Finalize -- "<<bs<<"_z00_"<<ipaty<<" missing, exit"<<endl; exit(1); }
+				if (projQ){ TH1 *p0 = ((TH2*)t0)->ProjectionX(Form("%s_t0p",outname),0,-1); p0->SetDirectory(0); delete t0; t0 = p0; }
 				TH1 *out	= (TH1*)t0->Clone(outname); out->SetDirectory(0); delete t0;
 				if (rebin>1){ if (out->GetDimension()==2) ((TH2*)out)->RebinX(rebin); else out->Rebin(rebin); }
 				out->Reset(); out->SetTitle(title);
@@ -303,6 +317,11 @@ void corral::Finalize(){
 						TH1 *hm	= (TH1*)fch[ic]->Get(Form("%s_z%02d_%d",bm,z,ipaty));
 						if (!hs || !hm){ cout<<"corral::Finalize -- "<<bs<<"/"<<bm<<"_z"<<z<<"_"<<ipaty<<" missing in chunk "<<ic<<", exit"<<endl; exit(1); }
 						hs->SetDirectory(0); hm->SetDirectory(0);
+						if (perEvent){ hs->Scale(nc[ic][z]); hm->Scale(nc[ic][z]); }
+						if (projQ){
+							TH1 *ps	= ((TH2*)hs)->ProjectionX(Form("%s_ps",outname),0,-1), *pm = ((TH2*)hm)->ProjectionX(Form("%s_pm",outname),0,-1);
+							ps->SetDirectory(0); pm->SetDirectory(0); delete hs; delete hm; hs = ps; hm = pm;
+						}
 						if (rebin>1){
 							if (hs->GetDimension()==2){ ((TH2*)hs)->RebinX(rebin); ((TH2*)hm)->RebinX(rebin); }
 							else { hs->Rebin(rebin); hm->Rebin(rebin); }
@@ -318,12 +337,14 @@ void corral::Finalize(){
 				TH1 *hS = 0, *hD = 0;
 				if (keepSD){
 					TString pn	= TString(out->GetTitle()); pn.Remove(pn.First(','));	// the pair label (title is a Form() buffer, long reused here)
-					hS	= (TH1*)out->Clone(Form("hQsib_%d",ipaty)); hS->SetDirectory(0);
-					hD	= (TH1*)out->Clone(Form("hQmix_%d",ipaty)); hD->SetDirectory(0);
+					TString ot	= out->GetTitle();
+					TString ax	= (out->GetDimension()==2) ? TString(ot(ot.First(';'),ot.Length())) : TString(";Q_{inv} (GeV);pairs");	// 2D: the x;y axes of C
+					hS	= (TH1*)out->Clone(Form("%s_%d",sname,ipaty)); hS->SetDirectory(0);
+					hD	= (TH1*)out->Clone(Form("%s_%d",dname,ipaty)); hD->SetDirectory(0);
 					double nevQ	= 0.; for (int z=0;z<NZ;z++) if (okq[z]) nevQ += Nz[z];
-					hS->SetTitle(Form("%s, #Sigma_{z} sibling pairs (N_{evt} = %.0f);Q_{inv} (GeV);pairs",pn.Data(),nevQ));
-					hD->SetTitle(Form("%s, #Sigma_{z} mixed pairs, expected-sibling units (N_{evt} = %.0f);Q_{inv} (GeV);pairs",pn.Data(),nevQ));
-					extraW.push_back(new TParameter<double>(Form("nevtQ_%d",ipaty),nevQ));
+					hS->SetTitle(Form("%s, #Sigma_{z} sibling pairs (N_{evt} = %.0f)%s",pn.Data(),nevQ,ax.Data()));
+					hD->SetTitle(Form("%s, #Sigma_{z} mixed pairs, expected-sibling units (N_{evt} = %.0f)%s",pn.Data(),nevQ,ax.Data()));
+					if (TString(sname)=="hQsib") extraW.push_back(new TParameter<double>(Form("nevtQ_%d",ipaty),nevQ));
 				}
 				for (int ib=0;ib<nce;ib++){
 					double S=0, D=0;
@@ -362,6 +383,13 @@ void corral::Finalize(){
 				cout<<"corral::Finalize -- pairtype "<<ipaty<<" "<<pnm<<": 1+r2 (C(Q) pairs, all Q) = "<<opr<<endl;
 			}
 			P.CQKT	= (TH2D*)buildCQ("hQsibKT","hQmixKT",1,Form("hFin_CQKT_%d",ipaty),  Form("%s, C(Q,k_{T});Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
+			//---- ir2=2 (README_meanpT_from_CQ.md sec 11): C(Q,pT_pair) and C(Q) over all pT_pair, variable width in Q;
+			//---- the sums behind them kept as work/hQPTsib_k (sibling pairs), work/hQPTmix_k (mixed, expected-sibling units)
+			P.CQvarPT	= (TH2D*)buildCQ("hrho2_2","hrho1rho1_2",1,Form("hFin_CQvarPT_%d",ipaty),
+							Form("%s, C(Q,p_{T,pair}) (variable width binning in Q);Q_{inv} (GeV);p_{T,pair} (GeV/c)",pnm.Data()),true,true,false,"hQPTsib","hQPTmix");
+			P.CQvar		= (TH1D*)buildCQ("hrho2_2","hrho1rho1_2",1,Form("hFin_CQvar_%d",ipaty),
+							Form("%s, C(Q) all p_{T,pair} (variable width binning, #pm subgroup err);Q_{inv} (GeV);C(Q)",pnm.Data()),false,true,true);
+			for (TObject *o : extraW){ TString n = o->GetName(); if (n==Form("hQPTsib_%d",ipaty)) P.QPTsib = (TH2D*)o; if (n==Form("hQPTmix_%d",ipaty)) P.QPTmix = (TH2D*)o; }
 			P.CQKT10= (TH2D*)buildCQ("hQsibKT","hQmixKT",5,Form("hFin_CQKT10_%d",ipaty),Form("%s, C(Q,k_{T}) (10 MeV bins);Q_{inv} (GeV);k_{T} (GeV)",pnm.Data()));
 			//---- Minv near threshold: plain sums (counts)
 			for (int im=0;im<2;im++){
@@ -1084,7 +1112,7 @@ void corral::Finalize(){
 				cph->cd(11); if (c) c->Draw("lego2");
 				cph->cd(12); if (e){ gPad->SetRightMargin(0.14); e->Draw("colz"); }
 			}
-			cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
+			cph->cd(); cph->Update(); EtaLabelsIf(cph,ipaty); cph->Print(PdfFileName.Data());
 			//---------------- page 2: C(Q) (2x2, as corral_m): C(Q) 0-2.0 GeV (5 MeV) with signposts | C(Q) in the
 			//---------------- 4 kT bins (10 MeV) | C(Q) 0-0.3 GeV (1 MeV) | Minv near threshold, sibling vs mixed
 			if (P.CQ && P.CQ5 && P.CQKT10){
@@ -1148,7 +1176,12 @@ void corral::Finalize(){
 					TLegendEntry *l2	= lgm->AddEntry(mm,Form("mixed #times %.4g (sib/mix, top 150 MeV)",fmix),"l"); l2->SetLineColor(kBlue);
 					lgm->Draw();
 				}
-				cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
+				cph->cd(); cph->Update(); EtaLabelsIf(cph,ipaty); cph->Print(PdfFileName.Data());
+			}
+			//---------------- page 2b: ir2=2 (Q_inv, pT_pair), 2x2, the same page as in corral_m (QPTPage.h); frame 1 with subgroup errors
+			if (P.QPTsib && P.QPTmix){
+				DrawQPTPage(cph,P.QPTsib,P.QPTmix,P.CQvar,pid1,pid2,nm,"#Sigma_{z} sib / #Sigma_{z} mix",Form("fin_%d",ipaty));
+				EtaLabelsIf(cph,ipaty); cph->Print(PdfFileName.Data());
 			}
 			//---------------- page 3: crossing page (3x2), maps from Finalize, projections with subgroup errors
 			{
@@ -1234,7 +1267,7 @@ void corral::Finalize(){
 						lgc->Draw();
 					}
 				}
-				cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
+				cph->cd(); cph->Update(); EtaLabelsIf(cph,ipaty); cph->Print(PdfFileName.Data());
 			}
 			//---------------- page 4: dC2 = C2C - C2
 			{
@@ -1319,7 +1352,7 @@ void corral::Finalize(){
 					tx.SetTextSize(0.035);
 					tx.DrawLatex(0.06,0.06,Form("errors: subgroup (%d chunks); per-chunk bars: propagated (approximate)",nlists));
 				}
-				cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());
+				//cph->cd(); cph->Update(); cph->Print(PdfFileName.Data());	// page 4 (dC2) not printed (2026-10-10, not needed); still drawn, the fit line below stays in the log
 				cout<<Form("corral::Finalize -- dC2 fits pairtype %2d %-18s: const chi2/ndf %.1f/%.0f, slope vs chunk %+.2e +- %.1e, slope vs occupancy %+.2e +- %.1e; projection fill-ins %.2e",
 					ipaty,nm.Data(),chi2,ndf,slc,eslc,slx,eslx,fillT[ipaty]>0?(double)fillN[ipaty]/fillT[ipaty]:0.)<<endl;
 			}
@@ -1522,7 +1555,7 @@ void corral::Finalize(){
 			lg->AddEntry((TObject*)0,Form("slope df/d(x/#bar{x}) %+.2e #pm %.1e",X.slopex,X.eslopex),"");
 			lg->Draw();
 		}
-		cfin->Print(PdfFileName.Data());
+		EtaLabelsIf(cfin,ipaty); cfin->Print(PdfFileName.Data());
 		extraW.push_back(X.A); extraW.push_back(X.Ady);
 	}
 	//---- step 1b summary pages: (1) full-stats f per pairtype, 3 windows + the rho2(M) asymmetry;
@@ -1642,13 +1675,172 @@ void corral::Finalize(){
 	auto physCopy	= [](const TString& n) -> TString {
 		static const char* MAP[][2]	= { {"hFin_C2dy_C","hC2Cdy_1"}, {"hFin_C2dphi_C","hC2Cdphi_1"},
 										{"hFin_R2dy_C","hR2Cdy_1"}, {"hFin_R2dphi_C","hR2Cdphi_1"},
-										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"}, {"hFin_CQ20","hCQ20"}, {"hFin_CQ20n","hCQ20n"} };
+										{"hFin_CQ","hCQ"}, {"hFin_CQ5","hCQ5"}, {"hFin_CQ20","hCQ20"}, {"hFin_CQ20n","hCQ20n"},
+										{"hFin_CQvar","hCQvar"}, {"hFin_CQvarPT","hCQvarPT"} };
 		if (n.Last('_')<0) return TString("");
 		TString t	= n, k = n(n.Last('_')+1,n.Length()); t.Remove(t.Last('_'));
 		for (auto &m : MAP) if (t==m[0]) return TString(m[1])+"_"+k;
 		return "";
 	};
 	TDirectory *dwork	= fout->mkdir("work");
+	//---- work/chunkStats (2026-10-11, comparison/from_laptop_20261011_chunkStats_spec.md + the f2 request): one entry per
+	//---- chunk, from the chunk's hmult_z<zz>_<k> (events reaching CalcRm, n = 0 included) for every pair type k. Index
+	//---- [s]: 0 = |zvtx| < 8 cm (whole zvtx slices), 1 = all slices. Per pair type: 1+r2 = <n1 n2>/(<n1><n2>) (distinct)
+	//---- or <n(n-1)>/<n>^2 (identical), its error (delta method from the chunk's own hmult), f2 = <n1 n2> - <n1><n2> or
+	//---- <n(n-1)> - <n>^2 (pairs per event), <n1>, <n2>, P0 of each. Per particle ID: <n>, P0, P(n) (|zvtx| < 8, n >= NPN-1
+	//---- in the last bin). Totals: N = sum of n over pi+-, K+-, p, pbar ("id", 21 hmults), over pi+- ("pi"), over h+- ("h");
+	//---- R2tot = (<N(N-1)> - <N>^2)/<N>^2 (each species in its own y window: Species_yu). Occupancy: <nvtx> (raw vertices
+	//---- in the TF) of the events reaching CalcRm (hnvtxCR; -1 in chunks made before 2026-10-11). Pair type names in
+	//---- the tree's UserInfo (TObjString "k name"). Whole-sample totals with subgroup errors: log + work/R2tot_* parameters.
+	{
+		const int NP	= NPairTypes, NPN = 20;
+		TH1 *hn0c	= (TH1*)fch[0]->Get("hnevtz_0");
+		const int NZc	= hn0c ? hn0c->GetNbinsX() : 0;
+		if (NZc<=0){ cout<<"corral::Finalize -- chunkStats: hnevtz_0 missing, no chunkStats"<<endl; }
+		struct Mom { double N=0, A=0, B=0, C=0, AA=0, BB=0, CC=0, AB=0, AC=0, BC=0, P01=0, P02=0, Pn1[20]={0}, Pn2[20]={0}; };
+		auto addMom	= [&](Mom &m, TH2 *h, bool ident){
+			const TArrayD *arr	= dynamic_cast<TArrayD*>(h);		// hmult is a TH2D: scan its cells directly (mostly empty)
+			const int nxc		= h->GetNbinsX()+2;
+			for (int ib=0;ib<arr->GetSize();ib++){
+				const double w	= arr->At(ib); if (w==0.) continue;
+				const int i = ib%nxc, j = ib/nxc;
+				if (i<1 || i>h->GetNbinsX() || j<1 || j>h->GetNbinsY()) continue;
+				const double b	= h->GetXaxis()->GetBinCenter(i), c = h->GetYaxis()->GetBinCenter(j);
+				const double a	= ident ? b*(b-1.) : b*c;
+				m.N += w; m.A += w*a; m.B += w*b; m.C += w*c;
+				m.AA += w*a*a; m.BB += w*b*b; m.CC += w*c*c; m.AB += w*a*b; m.AC += w*a*c; m.BC += w*b*c;
+				if (b<0.5) m.P01 += w;
+				if (c<0.5) m.P02 += w;
+				m.Pn1[std::min(NPN-1,(int)lround(b))] += w; m.Pn2[std::min(NPN-1,(int)lround(c))] += w;
+			}
+		};
+		//---- 1+r2 and its delta-method error: F = <A>/(<B><C>), gradient (1/BC, -A/B^2C, -A/BC^2), covariance of the means / N
+		auto opr	= [](const Mom &m, double &e){
+			e = 0.; if (m.N<2. || m.B<=0. || m.C<=0.) return -1.;
+			const double a = m.A/m.N, b = m.B/m.N, c = m.C/m.N, F = a/(b*c);
+			const double g[3] = {1./(b*c), -a/(b*b*c), -a/(b*c*c)};
+			const double S[3][3] = {{m.AA/m.N-a*a, m.AB/m.N-a*b, m.AC/m.N-a*c},
+									{m.AB/m.N-a*b, m.BB/m.N-b*b, m.BC/m.N-b*c},
+									{m.AC/m.N-a*c, m.BC/m.N-b*c, m.CC/m.N-c*c}};
+			double v = 0.; for (int i=0;i<3;i++) for (int j=0;j<3;j++) v += g[i]*S[i][j]*g[j];
+			e = sqrt(std::max(0.,v)/m.N); return F;
+		};
+		//---- per particle ID: the pair type whose hmult gives its own n (first match, either side); per particle pair:
+		//---- the pair type with that pair (either order) -- found by ID, so the pair-type order does not matter
+		std::vector<int> kOf(NPARTICLENAMES,-1), sideOf(NPARTICLENAMES,0);
+		for (int ip=0;ip<NPARTICLENAMES;ip++) for (int k=0;k<NP && kOf[ip]<0;k++){
+			if (PairTypes_Info[k][0]==ip){ kOf[ip] = k; sideOf[ip] = 0; } else if (PairTypes_Info[k][1]==ip){ kOf[ip] = k; sideOf[ip] = 1; }
+		}
+		auto kPair	= [&](int a, int b){ for (int k=0;k<NP;k++) if ((PairTypes_Info[k][0]==a && PairTypes_Info[k][1]==b) || (PairTypes_Info[k][0]==b && PairTypes_Info[k][1]==a)) return k; return -1; };
+		const std::vector<int> setId	= {kParticleIDPionPlus,kParticleIDPionMinus,kParticleIDKaonPlus,kParticleIDKaonMinus,kParticleIDProton,kParticleIDAntiProton};
+		const std::vector<int> setPi	= {kParticleIDPionPlus,kParticleIDPionMinus};
+		const std::vector<int> setH		= {kParticleIDhPlus,kParticleIDhMinus};
+		//---- tree branches
+		Int_t	b_run, b_chunk;
+		Double_t	b_nevt[2], b_occ[2];
+		std::vector<Double_t> b_opr(2*NP), b_eopr(2*NP), b_f2(2*NP), b_n1(2*NP), b_n2(2*NP), b_P01(2*NP), b_P02(2*NP);
+		std::vector<Double_t> b_nm(2*NPARTICLENAMES), b_P0(2*NPARTICLENAMES), b_Pn(NPARTICLENAMES*NPN);
+		Double_t	b_Ntot[3][2], b_f2tot[3][2], b_R2tot[3][2];		// [id, pi, h][s]
+		dwork->cd();
+		TTree *tcs	= new TTree("chunkStats","per-chunk multiplicity moments (README.md, Finalize: work/chunkStats)");
+		if (NZc>0){
+			tcs->Branch("run",&b_run,"run/I");
+			tcs->Branch("chunk",&b_chunk,"chunk/I");
+			tcs->Branch("nevt",b_nevt,"nevt[2]/D");
+			tcs->Branch("occ",b_occ,"occ[2]/D");
+			tcs->Branch("opr",b_opr.data(),Form("opr[2][%d]/D",NP));
+			tcs->Branch("eopr",b_eopr.data(),Form("eopr[2][%d]/D",NP));
+			tcs->Branch("f2",b_f2.data(),Form("f2[2][%d]/D",NP));
+			tcs->Branch("n1",b_n1.data(),Form("n1[2][%d]/D",NP));
+			tcs->Branch("n2",b_n2.data(),Form("n2[2][%d]/D",NP));
+			tcs->Branch("P0_1",b_P01.data(),Form("P0_1[2][%d]/D",NP));
+			tcs->Branch("P0_2",b_P02.data(),Form("P0_2[2][%d]/D",NP));
+			tcs->Branch("nmean",b_nm.data(),Form("nmean[2][%d]/D",NPARTICLENAMES));
+			tcs->Branch("P0",b_P0.data(),Form("P0[2][%d]/D",NPARTICLENAMES));
+			tcs->Branch("Pn",b_Pn.data(),Form("Pn[%d][%d]/D",NPARTICLENAMES,NPN));
+			tcs->Branch("Ntot",b_Ntot,"Ntot[3][2]/D");
+			tcs->Branch("f2tot",b_f2tot,"f2tot[3][2]/D");
+			tcs->Branch("R2tot",b_R2tot,"R2tot[3][2]/D");
+			for (int k=0;k<NP;k++) tcs->GetUserInfo()->Add(new TObjString(Form("%d %s%s",k,ParticleIDNames[PairTypes_Info[k][0]],ParticleIDNames[PairTypes_Info[k][1]])));
+			for (int ip=0;ip<NPARTICLENAMES;ip++) tcs->GetUserInfo()->Add(new TObjString(Form("particle %d %s",ip,ParticleIDNames[ip])));
+		}
+		std::vector<double> sumR2tot[3][2];		// per chunk, for the subgroup errors
+		std::vector<Mom> msum(2*NP);			// whole sample
+		int nocc	= 0;
+		for (int ic=0;ic<nlists && NZc>0;ic++){
+			std::vector<Mom> m(2*NP);
+			for (int k=0;k<NP;k++){
+				const bool ident	= (PairTypes_Info[k][0]==PairTypes_Info[k][1]);
+				for (int z=0;z<NZc;z++){
+					TH2 *h	= (TH2*)fch[ic]->Get(Form("hmult_z%02d_%d",z,k));
+					if (!h){ cout<<"corral::Finalize -- chunkStats: hmult_z"<<z<<"_"<<k<<" missing in chunk "<<ic<<", exit"<<endl; exit(1); }
+					const double zlo = -16.+32.*z/NZc, zhi = -16.+32.*(z+1)/NZc;
+					if (zlo>=-8.-1e-9 && zhi<=8.+1e-9) addMom(m[k],h,ident);
+					addMom(m[NP+k],h,ident);
+					delete h;
+				}
+			}
+			b_run	= chunkRun[ic]; b_chunk = ic;
+			for (int s=0;s<2;s++) b_nevt[s] = m[s*NP].N;
+			TH2 *hv	= (TH2*)fch[ic]->Get("hnvtxCR");
+			if (hv){
+				for (int s=0;s<2;s++){ TH1 *p = hv->ProjectionY(Form("hnvtxCR_p%d",s), s==0 ? hv->GetXaxis()->FindBin(-7.99) : 0, s==0 ? hv->GetXaxis()->FindBin(7.99) : -1); b_occ[s] = p->GetMean(); delete p; }
+				++nocc; delete hv;
+			} else { b_occ[0] = b_occ[1] = -1.; }
+			for (int s=0;s<2;s++) for (int k=0;k<NP;k++){
+				const Mom &q	= m[s*NP+k];
+				double e; b_opr[s*NP+k] = opr(q,e); b_eopr[s*NP+k] = e;
+				const double n1 = q.N>0 ? q.B/q.N : 0., n2 = q.N>0 ? q.C/q.N : 0.;
+				b_f2[s*NP+k]	= q.N>0 ? q.A/q.N - n1*n2 : 0.;
+				b_n1[s*NP+k] = n1; b_n2[s*NP+k] = n2;
+				b_P01[s*NP+k] = q.N>0 ? q.P01/q.N : 0.; b_P02[s*NP+k] = q.N>0 ? q.P02/q.N : 0.;
+				Mom &t = msum[s*NP+k]; t.N += q.N; t.A += q.A; t.B += q.B; t.C += q.C;
+			}
+			for (int ip=0;ip<NPARTICLENAMES;ip++){
+				for (int s=0;s<2;s++){
+					b_nm[s*NPARTICLENAMES+ip] = -1.; b_P0[s*NPARTICLENAMES+ip] = -1.;
+					if (kOf[ip]<0) continue;
+					const Mom &q = m[s*NP+kOf[ip]]; if (q.N<=0.) continue;
+					b_nm[s*NPARTICLENAMES+ip]	= (sideOf[ip]==0 ? q.B : q.C)/q.N;
+					b_P0[s*NPARTICLENAMES+ip]	= (sideOf[ip]==0 ? q.P01 : q.P02)/q.N;
+				}
+				for (int n=0;n<NPN;n++){ b_Pn[ip*NPN+n] = -1.; if (kOf[ip]<0) continue; const Mom &q = m[kOf[ip]]; if (q.N>0.) b_Pn[ip*NPN+n] = (sideOf[ip]==0 ? q.Pn1[n] : q.Pn2[n])/q.N; }
+			}
+			//---- totals: <N> = sum <n_a>, <N(N-1)> = sum_a <n_a(n_a-1)> + 2 sum_{a<b} <n_a n_b>
+			const std::vector<int>* sets[3]	= {&setId,&setPi,&setH};
+			for (int is=0;is<3;is++) for (int s=0;s<2;s++){
+				const std::vector<int> &S = *sets[is];
+				double Nm = 0., NN = 0.; bool ok = true;
+				for (size_t i=0;i<S.size() && ok;i++){
+					const int ka = kPair(S[i],S[i]); if (ka<0 || m[s*NP+ka].N<=0.){ ok = false; break; }
+					Nm += m[s*NP+ka].B/m[s*NP+ka].N; NN += m[s*NP+ka].A/m[s*NP+ka].N;
+					for (size_t j=i+1;j<S.size();j++){ const int kb = kPair(S[i],S[j]); if (kb<0){ ok = false; break; } NN += 2.*m[s*NP+kb].A/m[s*NP+kb].N; }
+				}
+				b_Ntot[is][s] = ok ? Nm : -1.; b_f2tot[is][s] = ok ? NN - Nm*Nm : -1.; b_R2tot[is][s] = (ok && Nm>0.) ? (NN - Nm*Nm)/(Nm*Nm) : -1.;
+				if (ok && Nm>0.) sumR2tot[is][s].push_back(b_R2tot[is][s]);
+			}
+			tcs->Fill();
+		}
+		if (NZc>0){
+			cout<<"corral::Finalize -- chunkStats: "<<tcs->GetEntries()<<" chunks, occupancy (hnvtxCR) in "<<nocc<<" of them; written to work/chunkStats"<<endl;
+			//---- whole-sample totals: mean over chunks with the subgroup error (chunk-to-chunk scatter / sqrt(n))
+			const char* SETNAME[3] = {"id","pi","h"};
+			for (int is=0;is<3;is++) for (int s=0;s<2;s++){
+				const std::vector<double> &v = sumR2tot[is][s]; if (v.size()<2) continue;
+				double a = 0., a2 = 0.; for (double x : v){ a += x; a2 += x*x; } const double n = v.size(), mu = a/n;
+				const double err = sqrt(std::max(0.,(a2-a*a/n)/(n-1.)))/sqrt(n);
+				cout<<Form("corral::Finalize -- chunkStats: R2tot(%s, %s) = %.4f +- %.4f (subgroup, %d chunks)",SETNAME[is],s==0?"|zvtx|<8":"all zvtx",mu,err,(int)n)<<endl;
+				extraW.push_back(new TParameter<double>(Form("R2tot_%s_%s",SETNAME[is],s==0?"z8":"zall"),mu));
+				extraW.push_back(new TParameter<double>(Form("eR2tot_%s_%s",SETNAME[is],s==0?"z8":"zall"),err));
+			}
+			for (int k=0;k<NP;k++){
+				const Mom &t = msum[k]; if (t.N<=0. || t.B<=0. || t.C<=0.) continue;
+				cout<<Form("corral::Finalize -- chunkStats: pairtype %2d %s%s |zvtx|<8: 1+r2 (hmult) = %.4f, f2 = %.4f pairs/event, <n1> %.3f <n2> %.3f",
+					k,ParticleIDNames[PairTypes_Info[k][0]],ParticleIDNames[PairTypes_Info[k][1]],(t.A/t.N)/((t.B/t.N)*(t.C/t.N)),t.A/t.N-(t.B/t.N)*(t.C/t.N),t.B/t.N,t.C/t.N)<<endl;
+			}
+		}
+		if (NZc>0) tcs->Write(); else delete tcs;
+	}
 	for (auto &r : result) if (r.second){ r.second->SetLineColor(kBlack); (isPhys(r.first) ? (TDirectory*)fout : dwork)->cd(); r.second->Write(r.first.Data()); }
 	dwork->cd();
 	for (TH1* h : extra) h->Write();

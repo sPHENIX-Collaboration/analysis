@@ -1,6 +1,7 @@
 #include "CalcRm.h"
 #include "fluct_common.h"
 #include "CrossingCorrect.h"	// README_Crossing: dirty-side rule + correction, shared verbatim with Finalize
+#include "CQResonances.h"		// README_meanpT_from_CQ: ir2=2 Q binning, shared with the C(Q) signposts
 #include "ZvtxAverage.h"		// README_Finalize: Zvtx average over valid bins, shared with Finalize
 
 //------------------------------------------------------------
@@ -33,10 +34,11 @@ CalcRm::CalcRm(){
 	nMixedPairs_total		= 0;
 	nMixedPairs_sameTF		= 0;
 	nMixedPairs_neighborTF	= 0;
-	fDoDQ				= true;		// if false: speeds up code a lot but dQ & Minv will always equal 0...
 									// if true, enable the calculation of dQ and Minv even if not enabled by calling routine
 	fDistinguishable	= false;
 	fLikeSign			= false;
+	fUseEta1			= false;
+	fUseEta2			= false;
 	fFlipDy				= false;		// set externally
  	//
 	fQcut	= 0.15;
@@ -67,9 +69,6 @@ CalcRm::CalcRm(){
 	PTU1	=   2.0000000;		
 	PTL2	=   0.2000000;		
 	PTU2	=   2.0000000;		
-	DQNB	= 100;		//Special LOGX binning used here! Also not yet settable in calling routine, don't forget to modify UpdateBinningPars() too!
-	DQL		=   1.0e-2;	//Special LOGX binning used here! Also not yet settable in calling routine, don't forget to modify UpdateBinningPars() too!
-	DQU		=  10.0;	//Special LOGX binning used here! Also not yet settable in calling routine, don't forget to modify UpdateBinningPars() too!
 	ZVTXNB	=  30;
 	ZVTXL	= -30.;
 	ZVTXU	= +30.;
@@ -150,10 +149,6 @@ void CalcRm::UpdateBinningPars(){
  	PTNB2	= (PTU2-PTL2)/0.1;		// used only to bin rho1 (not needed for mixing, just saving it)
 	ZVTXBW	= (ZVTXU-ZVTXL)/ZVTXNB;	
 	//
-	if (fDoQcut     ) fDoDQ = true;
-	if (fDoMinvCut  ) fDoDQ = true;
-	if (fDoMinvLLCut) fDoDQ = true;
-	//
 }
 
 //------------------------------------------------------------
@@ -173,6 +168,9 @@ void CalcRm::Book(){
 	if (fPid1==fPid2) fDistinguishable 	= false;
 	int ispe1	= GetSpecies(fPid1);
 	int ispe2	= GetSpecies(fPid2);
+	fUseEta1	= IsHadronParticleID(fPid1);		// h+, h-: the loop passes eta, not y (2026-10-11)
+	fUseEta2	= IsHadronParticleID(fPid2);
+	if (fUseEta1 || fUseEta2) cout<<"CalcRm::Book .. h+/h- leg(s): eta, not y (leg1 "<<(int)fUseEta1<<", leg2 "<<(int)fUseEta2<<"); 4-momenta with the pion mass"<<endl;
 	fChg1		= ParticleCharge[fPid1];
 	fChg2		= ParticleCharge[fPid2];
 	fMass1		= Species_mass[ispe1];
@@ -289,18 +287,11 @@ void CalcRm::Book(){
 	hzvtx		= new TH1D("hzvtx","hzvtx",ZVTXNB,ZVTXL,ZVTXU);
 	axiszvtx	= hzvtx->GetXaxis();
 	//
-	//---- variable width binning for the dq axes...
-	const Int_t nbins	= DQNB;
-	Double_t xmin		= DQL;
-	Double_t xmax		= DQU;
-	Double_t logxmin	= TMath::Log10(xmin);
-	Double_t logxmax	= TMath::Log10(xmax);
-	Double_t binwidth	= (logxmax-logxmin)/nbins;
-	Double_t xbins[nbins+1];
-	xbins[0] = xmin;
-	for (Int_t i=1;i<=nbins;i++) {
-		xbins[i] = TMath::Power(10,logxmin+i*binwidth);
-	}
+	//---- ir2=2 (Q_inv, pT_pair) axes (README_meanpT_from_CQ.md sec 11): Q variable width per species pair,
+	//---- fine where CQResonances.h lists a peak of this pair; pT_pair uniform
+	const std::vector<double> qedges	= QBinEdges(fPid1,fPid2);
+	const int nqbins					= (int)qedges.size()-1;
+	cout<<"CalcRm::Book .. ir2=2 (Q,pT_pair): "<<nqbins<<" Q bins x "<<QPT_NPT<<" pT_pair bins; Q (GeV @ MeV): "<<QBinSummary(qedges)<<endl;
 	int YNB1_rho1	= YNB1;		// can be integer multiples of these parameters!
 	int YNB2_rho1	= YNB2;		// can be integer multiples of these parameters!
 	int PHINB_rho1	= PHINB;	// can be integer multiples of these parameters!
@@ -351,16 +342,11 @@ void CalcRm::Book(){
 //dptM				hrho2_M_dptP[ir2][izv]	= new TH2D( Form("hrho2_M_dptP%d%d",ir2,izv), Form("hrho2_M_dptP%d%d",ir2,izv),DYNB,DYL,DYU,DPHINB,DPHIL,DPHIU);
 //dptM				hrho2_S_dptN[ir2][izv]	= new TH2D( Form("hrho2_S_dptN%d%d",ir2,izv), Form("hrho2_S_dptN%d%d",ir2,izv),DYNB,DYL,DYU,DPHINB,DPHIL,DPHIU);
 //dptM				hrho2_M_dptN[ir2][izv]	= new TH2D( Form("hrho2_M_dptN%d%d",ir2,izv), Form("hrho2_M_dptN%d%d",ir2,izv),DYNB,DYL,DYU,DPHINB,DPHIL,DPHIU);
-			} else if (ir2==2){					//----- (dy,dq) ------
-				hrho2_S[ir2][izv]	= new TH2D( Form("hrho2_S%d%d",ir2,izv), Form("hrho2_S%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-				hrho2_M[ir2][izv]	= new TH2D( Form("hrho2_M%d%d",ir2,izv), Form("hrho2_M%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-				hC2[ir2][izv]		= new TH2D( Form("hC2%d%d"    ,ir2,izv), Form("hC2%d%d"    ,ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-				hR2[ir2][izv]		= new TH2D( Form("hR2%d%d"    ,ir2,izv), Form("hR2%d%d"    ,ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-				//if(izv==0)hm2D[ir2]	= new TH2D( Form("hm2D%d"     ,ir2    ), Form("hm2D%d"     ,ir2    ),DYNB,DYL,DYU,nbins,xbins);
-//dptM				hrho2_S_dptP[ir2][izv]	= new TH2D( Form("hrho2_S_dptP%d%d",ir2,izv), Form("hrho2_S_dptP%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-//dptM				hrho2_M_dptP[ir2][izv]	= new TH2D( Form("hrho2_M_dptP%d%d",ir2,izv), Form("hrho2_M_dptP%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-//dptM				hrho2_S_dptN[ir2][izv]	= new TH2D( Form("hrho2_S_dptN%d%d",ir2,izv), Form("hrho2_S_dptN%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
-//dptM				hrho2_M_dptN[ir2][izv]	= new TH2D( Form("hrho2_M_dptN%d%d",ir2,izv), Form("hrho2_M_dptN%d%d",ir2,izv),DYNB,DYL,DYU,nbins,xbins);
+			} else if (ir2==2){					//----- (Q_inv,pT_pair), README_meanpT_from_CQ.md sec 11 (was (dy,dq) with log dq until 2026-10-10) ------
+				hrho2_S[ir2][izv]	= new TH2D( Form("hrho2_S%d%d",ir2,izv), Form("hrho2_S%d%d",ir2,izv),nqbins,qedges.data(),QPT_NPT,0.,QPT_PTMAX);
+				hrho2_M[ir2][izv]	= new TH2D( Form("hrho2_M%d%d",ir2,izv), Form("hrho2_M%d%d",ir2,izv),nqbins,qedges.data(),QPT_NPT,0.,QPT_PTMAX);
+				hC2[ir2][izv]		= new TH2D( Form("hC2%d%d"    ,ir2,izv), Form("hC2%d%d"    ,ir2,izv),nqbins,qedges.data(),QPT_NPT,0.,QPT_PTMAX);
+				hR2[ir2][izv]		= new TH2D( Form("hR2%d%d"    ,ir2,izv), Form("hR2%d%d"    ,ir2,izv),nqbins,qedges.data(),QPT_NPT,0.,QPT_PTMAX);
 			} else {
 				cout<<"problem!"<<endl; exit(0); 
 			}
@@ -391,9 +377,6 @@ void CalcRm::Book(){
 		hR2dphi[izv]	= new TH1D( Form("hR2dphi%d" ,izv), Form("hR2dphi%d" ,izv), DPHINB,DPHIL,DPHIU);
 		hR2dphie[izv]	= new TH1D( Form("hR2dphie%d",izv), Form("hR2dphie%d",izv), DPHINB,DPHIL,DPHIU);
 		hR2dphiN[izv]	= new TH1D( Form("hR2dphiN%d",izv), Form("hR2dphiN%d",izv), DPHINB,DPHIL,DPHIU);
-		hR2dq[izv]		= new TH1D( Form("hR2dq%d"   ,izv), Form("hR2dq%d"   ,izv), nbins,xbins);
-		hR2dqe[izv]		= new TH1D( Form("hR2dqe%d"  ,izv), Form("hR2dqe%d"  ,izv), nbins,xbins);
-		hR2dqN[izv]		= new TH1D( Form("hR2dqN%d"  ,izv), Form("hR2dqN%d"  ,izv), nbins,xbins);
 		//
 // 		hR2dyNS[izv]	= new TH1D( Form("hR2dyNS%d"   ,izv), Form("hR2dyNS%d"   ,izv), DYNB,DYL,DYU);
 // 		hR2dyNSe[izv]	= new TH1D( Form("hR2dyNSe%d"  ,izv), Form("hR2dyNSe%d"  ,izv), DYNB,DYL,DYU);
@@ -659,7 +642,7 @@ void CalcRm::Increment(double zv, double field,
 					hzoom_S			->Fill(dy,dphi,weight);	// sec 16.8
 					FillTTR(0,i,iev,j,iev,izv,weight);			// README_SplitTracks573 sec 11
 					FillGap(0,i,iev,j,iev,izv,weight);			// README_SplitTracks573 sec 28
-					hrho2_S[2][izv]	->Fill(y1-y2,dq,weight);	// README_Crossing decision 11: (dy,dq) gets the UNflipped dy (dy above is pt-ordered, for (dy,dphi) only)
+					hrho2_S[2][izv]	->Fill(dq,2.*kT,weight);	// README_meanpT_from_CQ: (Q_inv, pT_pair = |pT1+pT2| = 2 kT)
 					hMinv_S[izv]	->Fill(Minv   ,weight);
 					hMinvF_S		->Fill(Minv   ,weight);
 					hQsib[izv]		->Fill(dq     ,weight);	// dq is the STAR-style qInv (see PairInfo); the local "Qinv" is q^2's own byproduct and is negative-definite for identical species
@@ -772,7 +755,7 @@ void CalcRm::Increment(double zv, double field,
 						if (sameTF) ++nMixedPairs_sameTF;
 						if (neighborTF) ++nMixedPairs_neighborTF;
 					}
-					hrho2_M[2][izv]		->Fill(y1-y2,dq,weight);	// README_Crossing decision 11: UNflipped dy, same as sibling
+					hrho2_M[2][izv]		->Fill(dq,2.*kT,weight);	// README_meanpT_from_CQ: (Q_inv, pT_pair), same as sibling
 					hMinv_M[izv]		->Fill(Minv   ,weight);
 					hMinvF_M			->Fill(Minv   ,weight);
 					hQmix[izv]			->Fill(dq     ,weight);	// dq is the STAR-style qInv (see PairInfo); the local "Qinv" is q^2's own byproduct and is negative-definite for identical species
@@ -969,19 +952,20 @@ bool CalcRm::PairInfo(int i, int iev, int j, int jev, int izv,
 	dq = 0;
 	Minv = 0;
 	kT = 0;
-	if (fDoDQ || fDoMinvCut){
+	{	//---- dq, Minv, kT: always computed (C(Q) and the ir2=2 (Q,pT_pair) block need them; fDoDQ removed 2026-10-10)
 		double px1 		= pt1*cos(phi1/raddeg);		// class phi angles are in degrees
 		double py1 		= pt1*sin(phi1/raddeg);		// class phi angles are in degrees
 		//---- y1,y2 are RAPIDITIES (README_PID.md, 2026-09-28: corral::Loop converts eta -> y with the PID mass;
 		//---- before that it passed eta here, which overstated pz by mt/pt)
+		//---- an h+/h- leg (fUseEta) carries eta: pz = pT sinh(eta), E = sqrt(p^2 + m^2) with the pion mass (2026-10-11)
 		double mt1		= sqrt(pt1*pt1 + fMass1*fMass1);
-		double pz1		= mt1*sinh(y1);
-		double pE1		= mt1*cosh(y1);
+		double pz1		= fUseEta1 ? pt1*sinh(y1) : mt1*sinh(y1);
+		double pE1		= fUseEta1 ? sqrt(mt1*mt1 + pz1*pz1) : mt1*cosh(y1);
 		double px2 		= pt2*cos(phi2/raddeg);		// class phi angles are in degrees
 		double py2 		= pt2*sin(phi2/raddeg);		// class phi angles are in degrees
 		double mt2		= sqrt(pt2*pt2 + fMass2*fMass2);
-		double pz2		= mt2*sinh(y2);
-		double pE2		= mt2*cosh(y2);
+		double pz2		= fUseEta2 ? pt2*sinh(y2) : mt2*sinh(y2);
+		double pE2		= fUseEta2 ? sqrt(mt2*mt2 + pz2*pz2) : mt2*cosh(y2);
 		double Px 		= px1+px2;
 		double Py 		= py1+py2;
 		double Pz 		= pz1+pz2;
@@ -1475,32 +1459,6 @@ void CalcRm::Calculate(){
 		//delete[] hR2dye; //hR2dye[izv]=0;
 		//delete[] hR2dyN; //hR2dyN[izv]=0;
 		//
-		//---- Project R2(dy,dq) onto R2(dq)...
-		for (int iby=1;iby<=hR2[2][izv]->GetYaxis()->GetNbins();iby++){				// y-bin is dq
-			for (int ibx=1;ibx<=hR2[2][izv]->GetXaxis()->GetNbins();ibx++){			// x-bin is dy
-				double dq	= hR2[2][izv]->GetYaxis()->GetBinCenter(iby);
-				double val	= hR2[2][izv]->GetBinContent(ibx,iby);
-				double vale	= hR2[2][izv]->GetBinError(ibx,iby);
-				if (hrho2_M[2][izv]->GetBinContent(ibx,iby)>0.){	// valid bin (README_Crossing sec 8); R2=-1 is valid
-					hR2dq[izv]	->Fill(dq,val);
-					hR2dqe[izv]	->Fill(dq,vale*vale);
-					hR2dqN[izv]	->Fill(dq,1.0);
-				}
-			}	// iby
-		}	// ibx
-		for (int ibi=1;ibi<=hR2dq[izv]->GetNbinsX();ibi++){
-			double v,e,n;
-			v	=       hR2dq[izv]	->GetBinContent(ibi);
-			e	= sqrt( hR2dqe[izv]	->GetBinContent(ibi));
-			n	=       hR2dqN[izv]	->GetBinContent(ibi);
-			if (n>0){
-				hR2dq[izv]->SetBinContent(ibi,v/n);					
-				hR2dq[izv]->SetBinError(ibi,e/n);
-			}
-		}
-		//delete[] hR2dye; //hR2dye[izv]=0;
-		//delete[] hR2dyN; //hR2dyN[izv]=0;
-		//
 	}
 	//delete[] hm2D; //hm2D=0;
 
@@ -1596,7 +1554,6 @@ void CalcRm::Calculate(){
 		for (int izv=0;izv<ZVTXNB;izv++) sl[izv] = hR2yydy[izv];	ZvtxAverageValid(hR2yydy[ZVTXNB],sl,0,wz,sliceOK,ZVTXNB,0.);
 		for (int izv=0;izv<ZVTXNB;izv++) sl[izv] = hR2dy[izv];		ZvtxAverageValid(hR2dy[ZVTXNB],  sl,0,wz,sliceOK,ZVTXNB,0.);
 		for (int izv=0;izv<ZVTXNB;izv++) sl[izv] = hR2dphi[izv];	ZvtxAverageValid(hR2dphi[ZVTXNB],sl,0,wz,sliceOK,ZVTXNB,0.);
-		for (int izv=0;izv<ZVTXNB;izv++) sl[izv] = hR2dq[izv];		ZvtxAverageValid(hR2dq[ZVTXNB],  sl,0,wz,sliceOK,ZVTXNB,0.);
 		for (int izv=0;izv<ZVTXNB;izv++){ sl[izv] = hCQ[izv]; mk[izv] = hQmix[izv]; }
 		ZvtxAverageValid(hCQ[ZVTXNB],sl,mk,wz,sliceOK,ZVTXNB,0.);
 		for (int izv=0;izv<ZVTXNB;izv++){ sl[izv] = hCQKT[izv]; mk[izv] = hQmixKT[izv]; }

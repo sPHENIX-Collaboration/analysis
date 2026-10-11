@@ -65,7 +65,8 @@ public :
 		if (ipid< 10){ ival = ipid-5; } else
 		if (ipid==10){ ival = 5; } else
 		if (ipid==11){ ival = 6; } else
-		if (ipid==12){ ival = 7; }
+		if (ipid==12){ ival = 7; } else
+		if (ipid==13 || ipid==14){ ival = 0; }	// h+, h-: pion y and pT limits (2026-10-11)
 		return ival;
 	}
 	//
