@@ -11,7 +11,11 @@ For each run group defined in epoch.csv:
    19 lines (one per SEB, sorted from seb00 to seb18), matching the format of test.list.
 3. Saves all generated list files neatly in a single subfolder in ZSCrossCalibGen/files/
    (without run subdirectories).
-4. Prints comprehensive statistics and reports any run group that has no candidate run.
+4. If an epoch group has no candidate run, writes a list of all runs in that epoch
+   from ZSCrossCalib_runs.list (no_candidate_runs_epoch<E>_<start>_<end>.list).
+5. If any runs in ZSCrossCalib_runs.list fall outside all epochs, writes a separate list
+   file for those unassigned runs (unassigned_runs.list).
+6. Prints comprehensive statistics and reports any run group that has no candidate run.
 """
 
 import argparse
@@ -68,6 +72,12 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=repo_files_dir / "lists",
         help="Directory where segment list files will be saved (default: ZSCrossCalibGen/files/lists)",
+    )
+    parser.add_argument(
+        "--runs-output-dir",
+        type=Path,
+        default=repo_files_dir,
+        help="Directory to save run lists for epochs without candidates and unassigned runs (default: ZSCrossCalibGen/files)",
     )
     parser.add_argument(
         "--log-file",
@@ -248,12 +258,15 @@ def main():
         log_file_handle = open(args.log_file, "w", encoding="utf-8")
         sys.stdout = Tee(sys.stdout, log_file_handle)
 
+    runs_out_dir = args.runs_output_dir
+
     print("=" * 80)
     print(" sPHENIX ZSCrossCalib Candidate Run & Segment List Generator")
     print("=" * 80)
     print(f"Epoch file:       {args.epoch_file}")
     print(f"Runs list file:   {args.runs_file}")
     print(f"Output directory: {args.output_dir}")
+    print(f"Runs output dir:  {runs_out_dir}")
     if args.log_file:
         print(f"Log file:         {args.log_file}")
     print(f"Database:         {args.dbname}")
@@ -272,6 +285,7 @@ def main():
 
     if not args.dry_run:
         args.output_dir.mkdir(parents=True, exist_ok=True)
+        runs_out_dir.mkdir(parents=True, exist_ok=True)
 
     # 3. Process each epoch
     stats = []
@@ -290,6 +304,13 @@ def main():
         )
 
         if candidate_info is None:
+            no_cand_filename = f"no_candidate_runs_epoch{idx}_{start}_{end}.list"
+            no_cand_path = runs_out_dir / no_cand_filename
+            if not args.dry_run:
+                with open(no_cand_path, "w", encoding="utf-8") as out_f:
+                    for r in eligible_runs:
+                        out_f.write(f"{r}\n")
+
             stats.append({
                 "group_idx": idx,
                 "range": (start, end),
@@ -297,9 +318,14 @@ def main():
                 "candidate_run": None,
                 "valid_segments": 0,
                 "lists_written": 0,
+                "no_cand_file": no_cand_path,
+                "no_cand_filename": no_cand_filename,
                 "status": "NO CANDIDATE",
             })
-            print(f"[{group_label}] -> NO candidate run found with valid segments.")
+            print(
+                f"[{group_label}] -> NO candidate run found with valid segments. "
+                f"Saved {len(eligible_runs)} runs in this epoch to: {no_cand_filename}"
+            )
             continue
 
         candidate_run, valid_segs_count = candidate_info
@@ -339,6 +365,24 @@ def main():
     cursor.close()
     conn.close()
 
+    # Identify runs from runs_file that fall into none of the epochs
+    unassigned_runs = []
+    for r in sorted(zs_runs):
+        if not any(start <= r <= end for start, end in epochs):
+            unassigned_runs.append(r)
+
+    unassigned_filename = "unassigned_runs.list"
+    unassigned_path = runs_out_dir / unassigned_filename
+    if unassigned_runs:
+        if not args.dry_run:
+            with open(unassigned_path, "w", encoding="utf-8") as out_f:
+                for r in unassigned_runs:
+                    out_f.write(f"{r}\n")
+        print(
+            f"\nFound {len(unassigned_runs)} runs in {args.runs_file.name} that fall outside all epochs. "
+            f"Saved to: {unassigned_filename}"
+        )
+
     elapsed = time.time() - t_start
 
     # 4. Print final summary and statistics
@@ -368,8 +412,17 @@ def main():
     print(f"Total run groups processed:             {len(epochs)}")
     print(f"Run groups with candidate runs:         {len(epochs) - len(no_candidate_groups)}")
     print(f"Run groups WITHOUT candidate runs:      {len(no_candidate_groups)}")
+    for s in no_candidate_groups:
+        file_desc = f"{s['no_cand_filename']} ({s['eligible_count']} runs)" if not args.dry_run else f"{s['no_cand_filename']} (dry run, {s['eligible_count']} runs)"
+        print(f"  * Group {s['group_idx']} run list:               {file_desc}")
+    print(f"Runs outside all epochs:                {len(unassigned_runs)}")
+    if unassigned_runs:
+        unassigned_desc = f"{unassigned_filename} ({len(unassigned_runs)} runs)" if not args.dry_run else f"{unassigned_filename} (dry run, {len(unassigned_runs)} runs)"
+        print(f"  * Unassigned run list:                {unassigned_desc}")
     print(f"Total segment list files generated:     {total_lists_written}")
     print(f"Output directory:                       {args.output_dir}")
+    if runs_out_dir != args.output_dir:
+        print(f"Run lists directory:                    {runs_out_dir}")
     print(f"Execution time:                         {elapsed:.2f} seconds")
     print("=" * 90)
 
@@ -382,6 +435,12 @@ def main():
                 f"{s['eligible_count']} runs in ZSCrossCalib_runs.list, "
                 f"but none have valid segments with all 19 seb00-seb18 files."
             )
+            print(f"      -> Wrote {s['eligible_count']} runs to: {s['no_cand_file']}")
+        print("=" * 90)
+
+    if unassigned_runs:
+        print(f"\n [i] NOTE: {len(unassigned_runs)} runs in ZSCrossCalib_runs.list do not fall into any epoch:")
+        print(f"    -> Wrote {len(unassigned_runs)} unassigned runs to: {unassigned_path}")
         print("=" * 90)
 
     if log_file_handle:
