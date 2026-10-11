@@ -2,20 +2,21 @@
 """
 generate_candidate_run_lists.py
 
-Selects candidate runs for each run group (epoch) and generates 19-line segment list files.
+Selects candidate runs (1st most valid segments) and test runs (2nd most valid segments)
+for each run group (epoch), and generates 19-line segment list files.
 
 For each run group defined in epoch.csv:
-1. Selects one candidate run from ZSCrossCalib_runs.list that has the maximum number
+1. Selects the candidate run (rank 1) from ZSCrossCalib_runs.list that has the maximum number
    of valid segments containing all 19 DST_TRIGGERED_EVENT files (seb00 through seb18).
-2. For each valid segment of the candidate run, writes a list file containing exactly
-   19 lines (one per SEB, sorted from seb00 to seb18), matching the format of test.list.
-3. Saves all generated list files neatly in a single subfolder in ZSCrossCalibGen/files/
-   (without run subdirectories).
-4. If an epoch group has no candidate run, writes a list of all runs in that epoch
-   from ZSCrossCalib_runs.list (no_candidate_runs_epoch<E>_<start>_<end>.list).
-5. If any runs in ZSCrossCalib_runs.list fall outside all epochs, writes a separate list
+   Generates 19-line segment list files in --output-dir (default: ZSCrossCalibGen/files/lists).
+2. Selects the test run (rank 2) from ZSCrossCalib_runs.list that has the 2nd most valid
+   segments containing all 19 DST_TRIGGERED_EVENT files.
+   Generates 19-line segment list files in --test-output-dir (default: ZSCrossCalibGen/files/test_lists).
+3. If an epoch group has no candidate run, writes a list of all runs in that epoch
+   from ZSCrossCalib_runs.list to --runs-output-dir (no_candidate_runs_epoch<E>_<start>_<end>.list).
+4. If any runs in ZSCrossCalib_runs.list fall outside all epochs, writes a separate list
    file for those unassigned runs (unassigned_runs.list).
-6. Prints comprehensive statistics and reports any run group that has no candidate run.
+5. Prints comprehensive statistics and reports any run group that has no candidate run.
 """
 
 import argparse
@@ -53,7 +54,7 @@ def parse_arguments() -> argparse.Namespace:
     repo_files_dir = script_dir.parent / "files"
 
     parser = argparse.ArgumentParser(
-        description="Select candidate runs per epoch and generate 19-SEB DST_TRIGGERED_EVENT segment list files."
+        description="Select candidate & test runs per epoch and generate 19-SEB DST_TRIGGERED_EVENT segment list files."
     )
     parser.add_argument(
         "--epoch-file",
@@ -71,7 +72,13 @@ def parse_arguments() -> argparse.Namespace:
         "--output-dir",
         type=Path,
         default=repo_files_dir / "lists",
-        help="Directory where segment list files will be saved (default: ZSCrossCalibGen/files/lists)",
+        help="Directory where candidate segment list files will be saved (default: ZSCrossCalibGen/files/lists)",
+    )
+    parser.add_argument(
+        "--test-output-dir",
+        type=Path,
+        default=repo_files_dir / "test_lists",
+        help="Directory where test segment list files (2nd most valid segments) will be saved (default: ZSCrossCalibGen/files/test_lists)",
     )
     parser.add_argument(
         "--runs-output-dir",
@@ -166,20 +173,22 @@ def get_db_connection(dbname: str, host: Optional[str] = None, port: Optional[in
         sys.exit(f"Database connection error to '{dbname}': {err}")
 
 
-def find_candidate_run(
+def find_top_runs(
     cursor,
     run_start: int,
     run_end: int,
     eligible_runs: List[int],
     verbose: bool = False,
-) -> Optional[Tuple[int, int]]:
+) -> Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]:
     """
-    Find the run in eligible_runs with the maximum number of valid segments.
+    Find top runs in eligible_runs ranked by number of valid segments.
     A valid segment has all 19 DST_TRIGGERED_EVENT files for seb00-seb18.
-    Returns (candidate_run, valid_segment_count) or None if no valid runs.
+    Returns (candidate_run_info, test_run_info):
+      candidate_run_info: (runnumber, valid_segment_count) for rank 1 (or None)
+      test_run_info: (runnumber, valid_segment_count) for rank 2 (or None)
     """
     if not eligible_runs:
-        return None
+        return None, None
 
     query = """
         WITH seb_files AS (
@@ -205,13 +214,15 @@ def find_candidate_run(
     results = cursor.fetchall()
 
     if not results:
-        return None
+        return None, None
 
-    best_run, max_segs = results[0]
+    cand_info = results[0]
+    test_info = results[1] if len(results) > 1 else None
+
     if verbose:
         print(f"    Top runs: {results}")
 
-    return best_run, max_segs
+    return cand_info, test_info
 
 
 def fetch_segment_files(cursor, runnumber: int) -> Dict[int, List[str]]:
@@ -248,6 +259,31 @@ def fetch_segment_files(cursor, runnumber: int) -> Dict[int, List[str]]:
     return valid_segment_files
 
 
+def write_segment_lists(
+    segment_files: Dict[int, List[str]],
+    runnumber: int,
+    target_dir: Path,
+    dry_run: bool = False,
+) -> int:
+    """
+    Write 19-line segment list files to target_dir.
+    Returns the number of lists written (or found, if dry_run).
+    """
+    written = 0
+    if not dry_run:
+        for seg in sorted(segment_files.keys()):
+            files = segment_files[seg]
+            list_filename = f"dst_triggered_run{runnumber}_seg{seg:05d}.list"
+            list_path = target_dir / list_filename
+            with open(list_path, "w", encoding="utf-8") as out_f:
+                for fn in files:
+                    out_f.write(f"{fn}\n")
+            written += 1
+    else:
+        written = len(segment_files)
+    return written
+
+
 def main():
     args = parse_arguments()
 
@@ -261,16 +297,17 @@ def main():
     runs_out_dir = args.runs_output_dir
 
     print("=" * 80)
-    print(" sPHENIX ZSCrossCalib Candidate Run & Segment List Generator")
+    print(" sPHENIX ZSCrossCalib Candidate & Test Run List Generator")
     print("=" * 80)
-    print(f"Epoch file:       {args.epoch_file}")
-    print(f"Runs list file:   {args.runs_file}")
-    print(f"Output directory: {args.output_dir}")
-    print(f"Runs output dir:  {runs_out_dir}")
+    print(f"Epoch file:             {args.epoch_file}")
+    print(f"Runs list file:         {args.runs_file}")
+    print(f"Candidate output dir:   {args.output_dir}")
+    print(f"Test output dir:        {args.test_output_dir}")
+    print(f"Runs output dir:        {runs_out_dir}")
     if args.log_file:
-        print(f"Log file:         {args.log_file}")
-    print(f"Database:         {args.dbname}")
-    print(f"Dry run mode:     {'Enabled (no files written)' if args.dry_run else 'Disabled'}")
+        print(f"Log file:               {args.log_file}")
+    print(f"Database:               {args.dbname}")
+    print(f"Dry run mode:           {'Enabled (no files written)' if args.dry_run else 'Disabled'}")
     print("-" * 80)
 
     # 1. Load inputs
@@ -285,11 +322,13 @@ def main():
 
     if not args.dry_run:
         args.output_dir.mkdir(parents=True, exist_ok=True)
+        args.test_output_dir.mkdir(parents=True, exist_ok=True)
         runs_out_dir.mkdir(parents=True, exist_ok=True)
 
     # 3. Process each epoch
     stats = []
-    total_lists_written = 0
+    total_cand_lists_written = 0
+    total_test_lists_written = 0
     t_start = time.time()
 
     for idx, (start, end) in enumerate(epochs, start=1):
@@ -299,11 +338,11 @@ def main():
         if args.verbose:
             print(f"\nProcessing {group_label}: {len(eligible_runs)} runs in ZSCrossCalib_runs.list")
 
-        candidate_info = find_candidate_run(
+        cand_info, test_info = find_top_runs(
             cursor, start, end, eligible_runs, verbose=args.verbose
         )
 
-        if candidate_info is None:
+        if cand_info is None:
             no_cand_filename = f"no_candidate_runs_epoch{idx}_{start}_{end}.list"
             no_cand_path = runs_out_dir / no_cand_filename
             if not args.dry_run:
@@ -316,8 +355,11 @@ def main():
                 "range": (start, end),
                 "eligible_count": len(eligible_runs),
                 "candidate_run": None,
-                "valid_segments": 0,
-                "lists_written": 0,
+                "cand_segments": 0,
+                "cand_lists_written": 0,
+                "test_run": None,
+                "test_segments": 0,
+                "test_lists_written": 0,
                 "no_cand_file": no_cand_path,
                 "no_cand_filename": no_cand_filename,
                 "status": "NO CANDIDATE",
@@ -328,38 +370,37 @@ def main():
             )
             continue
 
-        candidate_run, valid_segs_count = candidate_info
-        segment_files = fetch_segment_files(cursor, candidate_run)
-        num_valid_segs = len(segment_files)
+        cand_run, cand_segs_count = cand_info
+        cand_files = fetch_segment_files(cursor, cand_run)
+        cand_written = write_segment_lists(cand_files, cand_run, args.output_dir, args.dry_run)
+        total_cand_lists_written += cand_written
 
-        written_for_run = 0
-        if not args.dry_run:
-            for seg in sorted(segment_files.keys()):
-                files = segment_files[seg]
-                list_filename = f"dst_triggered_run{candidate_run}_seg{seg:05d}.list"
-                list_path = args.output_dir / list_filename
-                with open(list_path, "w", encoding="utf-8") as out_f:
-                    for fn in files:
-                        out_f.write(f"{fn}\n")
-                written_for_run += 1
-        else:
-            written_for_run = num_valid_segs
+        test_run = None
+        test_written = 0
+        test_segs_count = 0
+        if test_info is not None:
+            test_run, test_segs_count = test_info
+            test_files = fetch_segment_files(cursor, test_run)
+            test_written = write_segment_lists(test_files, test_run, args.test_output_dir, args.dry_run)
+            total_test_lists_written += test_written
 
-        total_lists_written += written_for_run
         stats.append({
             "group_idx": idx,
             "range": (start, end),
             "eligible_count": len(eligible_runs),
-            "candidate_run": candidate_run,
-            "valid_segments": num_valid_segs,
-            "lists_written": written_for_run,
+            "candidate_run": cand_run,
+            "cand_segments": len(cand_files),
+            "cand_lists_written": cand_written,
+            "test_run": test_run,
+            "test_segments": test_segs_count,
+            "test_lists_written": test_written,
             "status": "OK",
         })
 
+        test_msg = f", Test (2nd): Run {test_run} ({test_segs_count} segs)" if test_run else ""
         print(
-            f"[{group_label}] -> Candidate: Run {candidate_run} "
-            f"({num_valid_segs} valid segments with 19 files, "
-            f"{'generated' if not args.dry_run else 'found'} {written_for_run} lists)"
+            f"[{group_label}] -> Candidate (1st): Run {cand_run} ({len(cand_files)} segs)"
+            f"{test_msg}"
         )
 
     cursor.close()
@@ -386,14 +427,15 @@ def main():
     elapsed = time.time() - t_start
 
     # 4. Print final summary and statistics
-    print("\n" + "=" * 90)
-    print(" CANDIDATE RUN SELECTION & SEGMENT LIST GENERATION SUMMARY")
-    print("=" * 90)
+    print("\n" + "=" * 105)
+    print(" CANDIDATE & TEST RUN SELECTION SUMMARY")
+    print("=" * 105)
     print(
-        f"{'Group':<10} {'Run Range':<17} {'Runs in List':<14} {'Candidate Run':<15} "
-        f"{'Valid Segs':<12} {'Lists Made':<12} {'Status':<12}"
+        f"{'Group':<10} {'Run Range':<17} {'Runs':<6} "
+        f"{'Candidate (1st)':<18} {'Cand Segs':<11} "
+        f"{'Test (2nd)':<14} {'Test Segs':<11} {'Status':<12}"
     )
-    print("-" * 90)
+    print("-" * 105)
 
     no_candidate_groups = []
     for s in stats:
@@ -401,17 +443,19 @@ def main():
         range_str = f"[{start}, {end}]"
         group_name = f"Group {s['group_idx']}"
         cand_str = str(s["candidate_run"]) if s["candidate_run"] is not None else "-"
+        test_str = str(s["test_run"]) if s["test_run"] is not None else "-"
         print(
-            f"{group_name:<10} {range_str:<17} {s['eligible_count']:<14} "
-            f"{cand_str:<15} {s['valid_segments']:<12} {s['lists_written']:<12} {s['status']:<12}"
+            f"{group_name:<10} {range_str:<17} {s['eligible_count']:<6} "
+            f"{cand_str:<18} {s['cand_segments']:<11} "
+            f"{test_str:<14} {s['test_segments']:<11} {s['status']:<12}"
         )
         if s["candidate_run"] is None:
             no_candidate_groups.append(s)
 
-    print("-" * 90)
+    print("-" * 105)
     print(f"Total run groups processed:             {len(epochs)}")
-    print(f"Run groups with candidate runs:         {len(epochs) - len(no_candidate_groups)}")
-    print(f"Run groups WITHOUT candidate runs:      {len(no_candidate_groups)}")
+    print(f"Run groups with candidates:             {len(epochs) - len(no_candidate_groups)}")
+    print(f"Run groups WITHOUT candidates:          {len(no_candidate_groups)}")
     for s in no_candidate_groups:
         file_desc = f"{s['no_cand_filename']} ({s['eligible_count']} runs)" if not args.dry_run else f"{s['no_cand_filename']} (dry run, {s['eligible_count']} runs)"
         print(f"  * Group {s['group_idx']} run list:               {file_desc}")
@@ -419,12 +463,14 @@ def main():
     if unassigned_runs:
         unassigned_desc = f"{unassigned_filename} ({len(unassigned_runs)} runs)" if not args.dry_run else f"{unassigned_filename} (dry run, {len(unassigned_runs)} runs)"
         print(f"  * Unassigned run list:                {unassigned_desc}")
-    print(f"Total segment list files generated:     {total_lists_written}")
-    print(f"Output directory:                       {args.output_dir}")
+    print(f"Total Candidate segment list files:     {total_cand_lists_written}")
+    print(f"Total Test segment list files:          {total_test_lists_written}")
+    print(f"Candidate lists directory:              {args.output_dir}")
+    print(f"Test lists directory:                   {args.test_output_dir}")
     if runs_out_dir != args.output_dir:
         print(f"Run lists directory:                    {runs_out_dir}")
     print(f"Execution time:                         {elapsed:.2f} seconds")
-    print("=" * 90)
+    print("=" * 105)
 
     if no_candidate_groups:
         print("\n [!] WARNING: The following run group(s) have NO candidate run:")
@@ -436,12 +482,12 @@ def main():
                 f"but none have valid segments with all 19 seb00-seb18 files."
             )
             print(f"      -> Wrote {s['eligible_count']} runs to: {s['no_cand_file']}")
-        print("=" * 90)
+        print("=" * 105)
 
     if unassigned_runs:
         print(f"\n [i] NOTE: {len(unassigned_runs)} runs in ZSCrossCalib_runs.list do not fall into any epoch:")
         print(f"    -> Wrote {len(unassigned_runs)} unassigned runs to: {unassigned_path}")
-        print("=" * 90)
+        print("=" * 105)
 
     if log_file_handle:
         print(f"\nReport and logs saved to: {args.log_file}")
