@@ -39,6 +39,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doOldPID(false)
   , doSiPhiMask(true)
   , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.07,0.10); "nocmmask" off, "cmmaskAABB" override
+  , doSegVeto(false)		// README.md: "segveto" = skip the segments in bad_segments.txt
   , doSepMaps(false)		// README_CQcomparison sec 2.3: diagnostic separation maps (~+5 min per chunk); "sepmaps" on
   , valCMMaskLo(-0.07)
   , valCMMaskHi(0.10)
@@ -99,9 +100,12 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , nXTF_pairs(0), nXTF_byINTT(0), nXTF_byQuality(0), nXTF_neither(0), nXTF_losers(0)
   , doTFDup(true)			// 2026-09-26: ON by default -- "noTFdup" turns it off (no-op without a bco branch)
   , nTFDup_rows(0), TFDup_maxAbsDvz(0)
+  , doIsoVtx(false), valIsoNX(0), valIsoDZ(0.)		// README.md "isovtxNNZZ": isolated vertices only, default OFF
   , ONLY_FIRST_XINGPOS(false)	// sec 18.21 follow-up 2, OFF by default -- "XingPos" turns it on
   , xingSel(3)				// 2026-10-08: ZB by default -- "AllX" = all crossings, "Xing0" / "NearX0" the other samples
   , ONLY_FIRST_TF(false)		// sec 18.21, OFF by default -- "onlyfirsttf" in RunString turns it on
+  , valDcaxyCut(1.5)		// |dcaxy| cut (cm), "dxyNN" = NN/100 cm
+  , valDcazCut(1.5)		// |dcaz| cut (cm), "dczNN" = NN/10 cm
   , NTPCCUT(18)				// LL=8 (inclusive), 18 is open but better
   , PTMINCUT(0.1)
   , valFullMVTX(2), valFullMVTXdinv(0.0), valPregateDEta(0.040)	// README_SplitTracks573 sec 14/15/18:
@@ -229,6 +233,26 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		saneOrDie("ntpcNN",NTPCCUT,10,40);
 		cout<<"RunString="<<RunString<<"\t      sntpc="<<sntpc<<"\t NTPCCUT="<<NTPCCUT<<endl;
 	}
+	//---- README.md (2026-10-12): "dczNN" = track |dcaz| < NN/10 cm (default 1.5 cm). A flat pedestal of tracks from other
+	//---- collisions lies under the dcaz peak, twice as high at the 8158x rate (ana573/CutFlow_ana573.C).
+	if (RunString.Contains("dcz",TString::kIgnoreCase)){
+		int ij	= RunString.Index("dcz",0,TString::kIgnoreCase);
+		TString sd	= RunString(ij+3,2);
+		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dcz needs 2 digits (dczNN = |dcaz| < NN/10 cm)"<<endl; exit(1); }
+		valDcazCut	= atoi(sd.Data())/10.;
+		saneOrDie("dczNN",valDcazCut,0.2,1.5);
+	}
+	cout<<"reader::reader -- track |dcaz| < "<<valDcazCut<<" cm"<<(valDcazCut!=1.5 ? " (dcz)" : " (default)")<<endl;
+	//---- README.md (2026-10-12): "dxyNN" = track |dcaxy| < NN/100 cm (default 1.5 cm). Tracks attached from other collisions
+	//---- point back 5-7x worse in xy (rms 0.2-0.25 cm vs 0.037 cm, ana573/CutFlow_ana573.C page 2).
+	if (RunString.Contains("dxy",TString::kIgnoreCase)){
+		int ij	= RunString.Index("dxy",0,TString::kIgnoreCase);
+		TString sd	= RunString(ij+3,2);
+		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dxy needs 2 digits (dxyNN = |dcaxy| < NN/100 cm)"<<endl; exit(1); }
+		valDcaxyCut	= atoi(sd.Data())/100.;
+		saneOrDie("dxyNN",valDcaxyCut,0.05,0.99);
+	}
+	cout<<"reader::reader -- track |dcaxy| < "<<valDcaxyCut<<" cm"<<(valDcaxyCut!=1.5 ? " (dxy)" : " (default)")<<endl;
 	//
 	//
 	//---- README_SplitTracks573 sec 18 (token trim): the LS pregate half-width "dpsNN" (1.0-4.0 deg) and the
@@ -350,6 +374,9 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		<<"... valSLCut = "<<valSLCut<<", valSiKeyCut = "<<valSiKeyCut<<", valRadialGapCut = "<<valRadialGapCut
 		<<", RadialGap path "<<(DISABLE_RG?"DISABLED (noRG)":"enabled")<<endl;
 	//
+	//---- README.md (2026-10-12): "segveto" = skip the (run, DST segment)s listed in bad_segments.txt (acceptance outliers)
+	if (RunString.Contains("segveto",TString::kIgnoreCase)) doSegVeto = true;
+	cout<<"reader::reader -- segment veto "<<(doSegVeto?"ON (segveto)":"OFF")<<endl;
 	//---- README_CQcomparison sec 2.3: separation-map diagnostic (histograms hSep*, own mixing), default OFF; "sepmaps" = on
 	if (RunString.Contains("sepmaps",TString::kIgnoreCase)) doSepMaps = true;
 	cout<<"reader::reader -- separation maps (README_CQcomparison sec 2.3) "<<(doSepMaps?"ON (sepmaps)":"OFF")<<endl;
@@ -434,6 +461,15 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		doTFDup	= false;
 	}
 	cout<<"reader::reader -- doTFDup (overlapping-TF copies, key run+bco+crossing) "<<(doTFDup?"enabled":"DISABLED")<<endl;
+	//---- README.md (2026-10-12): "isovtxNNZZ" = isolated vertices only (no other vertex within +-NN crossings and |dz| < ZZ cm)
+	if (RunString.Contains("isovtx",TString::kIgnoreCase)){
+		int ij		= RunString.Index("isovtx",0,TString::kIgnoreCase);
+		TString sn	= RunString(ij+6,2), sz = RunString(ij+8,2);
+		if (!sn.IsDigit() || !sz.IsDigit()){ cout<<"RunString="<<RunString<<": isovtx needs 4 digits (isovtxNNZZ)"<<endl; exit(1); }
+		doIsoVtx	= true; valIsoNX = atoi(sn.Data()); valIsoDZ = atoi(sz.Data());
+		saneOrDie("isovtxNNZZ (NN crossings)",valIsoNX,1,50); saneOrDie("isovtxNNZZ (ZZ cm)",valIsoDZ,1,30);
+	}
+	cout<<"reader::reader -- isolated vertices only "<<(doIsoVtx?Form("ON: no other vertex within +-%d crossings and |dz| < %.0f cm (isovtx)",valIsoNX,valIsoDZ):"OFF")<<endl;
 	//---- sec 18.21 follow-up 2: keep only the first crossing>0 row per TF (pure streaming, <=1/TF).
 	//---- "XingPos" checked clean against every token above (incl. Xing0).
 	if (RunString.Contains("XingPos",TString::kIgnoreCase)){

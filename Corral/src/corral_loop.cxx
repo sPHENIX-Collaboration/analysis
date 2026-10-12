@@ -3,6 +3,9 @@
 #include "corral_class.h"
 #include <algorithm>
 #include <deque>
+#include <set>
+#include <sstream>
+#include <fstream>
 #include <TF1.h>
 #include <TH1.h>
 #include <TH2.h>
@@ -143,7 +146,7 @@ void corral::Loop(){
 		}
 		fgate->Close(); delete fgate;
 		dsave->cd();
-		cout<<"corral::Loop -- PID: KFP dE/dx gates from "<<gname<<" (pi, then p outside K, then K, on dedxKFP, "<<GATE_PMIN<<"<p<"<<GATE_PMAX<<")"<<endl;
+		cout<<"corral::Loop -- PID: KFP dE/dx gates from "<<gname<<" (pi, then p outside K, then K outside p, on dedxKFP, "<<GATE_PMIN<<"<p<"<<GATE_PMAX<<")"<<endl;
 	} else {
 		cout<<"corral::Loop -- PID: legacy (oldpid) -- pi = dedx70s<400 at any momentum, no p or K"<<endl;
 	}
@@ -168,7 +171,8 @@ void corral::Loop(){
 			if		(pp<Species_pmax_pid[0] && inGate(0,pp,dedxKFP[it])) k = 0;		// pions first,
 			else if	(pp<Species_pmax_pid[2] && inGate(2,pp,dedxKFP[it])
 			         && !inGate(1,pp,dedxKFP[it])) k = 2;							// then protons outside the K band (K and p overlap near 0.75 GeV/c),
-			else if	(pp<Species_pmax_pid[1] && inGate(1,pp,dedxKFP[it])) k = 1;		// then kaons
+			else if	(pp<Species_pmax_pid[1] && inGate(1,pp,dedxKFP[it])
+			         && !inGate(2,pp,dedxKFP[it])) k = 1;							// then kaons outside the p band (they overlap from 0.45 GeV/c)
 		}
 		return k;
 	};
@@ -501,6 +505,47 @@ void corral::Loop(){
 	TH2D *hSpoke[2][2];
 	for (int q=0;q<2;q++) for (int f=0;f<2;f++)
 		hSpoke[q][f]	= new TH2D(Form("hSpoke_%d_%d",q,f),Form("%s, %s;%s (deg);p_{T} (GeV/c)",q?"negative":"positive",f?"#phi at R = 0.55 m":"vertex #phi",f?"#phi(R=0.55 m)":"#phi"),180,-180.,180.,28,0.1,1.5);
+	//---- TPC acceptance vs time (README.md, segCells): one entry per (run, DST segment) with the TPC hits of the accepted
+	//---- charged tracks (the hphieta list) per FEE: cell = tpcsector*26 + feeMap (tpcsector = 2*sectorId+side, side 0 =
+	//---- South z<0; feeMap 0-25 = the TPC_FEE_CHANNEL_MAP index, R1 0-5, R2 6-13, R3 14-25). A hit's FEE = the FEE of the
+	//---- nearest pad in (tpcsector, layer, phi_local = tpcarclen*2mm / pad radius), from tpcFeeMap/tpc_pad_fee_map_all.txt
+	//---- (SDCC 2026-10-12, tpcFeeMap/README_tpcFeeMap.md; its phi_local = phi_global - sector center, south mirror
+	//---- included, as Collect's tpcarclen). tpcarclen is the distortion-corrected phi: hits near FEE edges can land in the
+	//---- neighbour. nevt = events reaching the track loop, ntrk = accepted charged tracks.
+	const int SC_NFEE	= 26, SC_NCELL = 24*SC_NFEE;
+	std::vector<std::vector<std::pair<float,int>>> scPad(24*48);	// per (tpcsector, layer slot): (phi_local, feeMap), sorted
+	std::vector<double> scR(48,0.);									// mean pad radius per layer slot (mm)
+	{
+		TString fn	= CorralDir()+"tpcFeeMap/tpc_pad_fee_map_all.txt";
+		std::ifstream fm(fn.Data());
+		if (!fm.good()){ cout<<"corral::Loop -- segCells: cannot open "<<fn<<", exit"<<endl; exit(1); }
+		std::string line; std::vector<int> nR(48,0); long np = 0;
+		while (std::getline(fm,line)){
+			if (line.empty() || line[0]=='#') continue;
+			std::istringstream is(line); int ebdc, side, sid, sct, lay, phibin, feeHW, feeMap, chan, padnr; std::string mod; double R, phg, phl;
+			if (!(is>>ebdc>>side>>sid>>sct>>lay>>phibin>>feeHW>>feeMap>>chan>>mod>>padnr>>R>>phg>>phl)) continue;
+			if (lay<7 || lay>54 || sct<0 || sct>23 || feeMap<0 || feeMap>=SC_NFEE) continue;
+			scPad[sct*48+lay-7].push_back({(float)phl,feeMap}); scR[lay-7] += R; nR[lay-7]++; np++;
+		}
+		for (auto &p : scPad) std::sort(p.begin(),p.end());
+		for (int L=0;L<48;L++){ if (!nR[L]){ cout<<"corral::Loop -- segCells: no pads for layer "<<L+7<<" in "<<fn<<", exit"<<endl; exit(1); } scR[L] /= nR[L]; }
+		cout<<"corral::Loop -- segCells: "<<np<<" pads from "<<fn<<" (cells = tpcsector*26 + feeMap)"<<endl;
+	}
+	auto scFee = [&](int sct, int L, double u){		// feeMap of the pad nearest to phi_local u
+		const auto &P = scPad[sct*48+L]; if (P.empty()) return -1;
+		auto it = std::lower_bound(P.begin(),P.end(),std::make_pair((float)u,-1));
+		if (it==P.end()) --it; else if (it!=P.begin() && fabs((it-1)->first-u)<fabs(it->first-u)) --it;
+		return it->second; };
+	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0;
+	std::vector<Float_t> sc_hits(SC_NCELL,0.f);
+	TTree *tSegCells	= new TTree("segCells","TPC hits of accepted tracks per (run, DST segment) per FEE, cell = tpcsector*26 + feeMap (README.md)");
+	tSegCells->SetDirectory(fout);
+	tSegCells->Branch("run",&sc_run,"run/I");
+	tSegCells->Branch("segment",&sc_seg,"segment/I");
+	tSegCells->Branch("nevt",&sc_nevt,"nevt/I");
+	tSegCells->Branch("ntrk",&sc_ntrk,"ntrk/I");
+	tSegCells->Branch("fee",sc_hits.data(),Form("fee[%d]/F",SC_NCELL));
+	auto scFlush = [&](){ if (sc_run>=0 && sc_nevt>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
 	//---- README_SplitTracks573 sec 15: residual and charge-asymmetry diagnostics (no cut reads these).
 	//---- Silicon match code per pair: x = MVTX (denM*4 + numM: layers either / both-matching track has,
 	//---- 0-15), y = INTT (denI*5 + numI, 0-24). For SKF>=cut LS pion pairs in the central bin:
@@ -1118,6 +1163,7 @@ void corral::Loop(){
 	//
 	if (doXTFClean) BuildXTFLosers(nentries);	// sec 18.22
 	if (doTFDup)    BuildTFDupRows(nentries);	// overlapping-TF collision copies
+	if (doIsoVtx)   BuildIsoRows(nentries);		// isolated vertices only (isovtxNNZZ)
 	//
 	int runprev			= -1;
 	int segmentprev		= -1;
@@ -1130,11 +1176,31 @@ void corral::Loop(){
 	int lastPosTF_evt	= -1;
 	long nSkippedXingPos	= 0;
 	long nSkippedXing		= 0;	// Xing0 / NearX0 / ZB
+	//---- README.md "segveto" (2026-10-12): the (run, DST segment)s of bad_segments.txt (ana573/SegCellsView_ana573.C:
+	//---- segments below their run's live-fraction band) are skipped before ANY processing. File = $CORRAL_SEGVETO, else
+	//---- bad_segments.txt in the folder of the -l list. Lines "run segment", '#' = comment.
+	std::set<std::pair<int,int>> segVeto;
+	long nSkippedSegVeto	= 0;
+	long nSkippedIso		= 0;	// isovtxNNZZ
+	TString segVetoFile		= "";
+	if (doSegVeto){
+		if (getenv("CORRAL_SEGVETO")) segVetoFile = getenv("CORRAL_SEGVETO");
+		else if (ListName!="") segVetoFile = TString(gSystem->DirName(ListName.Data()))+"/bad_segments.txt";
+		std::ifstream fv(segVetoFile.Data());
+		if (segVetoFile=="" || !fv.good()){ cout<<"corral::Loop -- segveto: no bad_segments.txt ("<<segVetoFile<<"; set CORRAL_SEGVETO or use -l), exit"<<endl; exit(1); }
+		std::string line;
+		while (std::getline(fv,line)){ if (line.empty() || line[0]=='#') continue; std::istringstream is(line); int r, s; if (is>>r>>s) segVeto.insert({r,s}); }
+		cout<<"corral::Loop -- segveto: "<<segVeto.size()<<" (run, segment)s from "<<segVetoFile<<endl;
+	}
 	for (Long64_t jentry=0; jentry<nentries && fReader.Next(); jentry++) {
 		if (jentry%100000==0) cout<<"processing "<<jentry<<endl;
 		//
 		//---- a collision already seen in an overlapping earlier TF: not a new event (see doTFDup)
 		if (doTFDup && jentry<(Long64_t)tfDupRows.size() && tfDupRows[jentry]) continue;
+		//---- isovtxNNZZ: a vertex with a neighbour, before ANY processing (also not in segCells)
+		if (doIsoVtx && jentry<(Long64_t)nonIsoRows.size() && nonIsoRows[jentry]){ ++nSkippedIso; continue; }
+		//---- segveto: an acceptance-outlier segment, before ANY processing (also not in segCells)
+		if (doSegVeto && segVeto.count({(*run),(*segment)})){ ++nSkippedSegVeto; continue; }
 		//
 		//---- new event processing...
 		//---- sec 18.21: opt-in TF-deduplication -- keep only the FIRST row seen for each (run,evt)
@@ -2053,6 +2119,8 @@ void corral::Loop(){
 			nSplitFlagged_total	+= (long)nSplitFlagged_thisevt.size();
 		}
 		//
+		if ((*run)!=sc_run || (*segment)!=sc_seg){ scFlush(); sc_run = (*run); sc_seg = (*segment); }	// segCells
+		++sc_nevt;
 		//---- track loop...
 		int ntrkept		= 0;
 		double npos=0,nneg=0;
@@ -2187,6 +2255,13 @@ void corral::Loop(){
 			hphi		->Fill(phi[it]);
 			hpt			->Fill(pt[it]);
 			hphieta			->Fill(eta[it],phi[it],1.);
+			++sc_ntrk;	// segCells
+			for (int L=0;L<48;L++){
+				const int sct = tpcsector[it*48+L];
+				if (sct==255) continue;
+				const int fe	= scFee(sct,L,2.0*tpcarclen[it*48+L]/scR[L]);	// phi_local (rad)
+				if (fe>=0) sc_hits[sct*SC_NFEE + fe]	+= 1.f;
+			}
 			hntpc_phieta	->Fill(eta[it],phi[it],      ntpc[it] );
 			habsdcaxy_phieta->Fill(eta[it],phi[it],fabs(dcaxy[it]));
 			habsdcaz_phieta	->Fill(eta[it],phi[it], fabs(dcaz[it]));
@@ -3880,8 +3955,10 @@ void corral::Loop(){
 		if (doCMMask) pt->AddText(Form("  CM mask ON: w = (#eta+%.3f z_{c}) sign(-z_{c}) in [%.2f,%.2f), z_{c} = zvtx-slice centre",CMMASK_K,valCMMaskLo,valCMMaskHi));
 		else pt->AddText("  CM mask OFF (nocmmask)");
 		if (doOldPID) pt->AddText("  PID: legacy (oldpid), #pi = dedx70s < 400");
-		else pt->AddText(Form("  PID: KFP gates (dedxKFP), #pi>p>K, p not in K; p_{max} %.1f/%.1f/%.1f", Species_pmax_pid[0], Species_pmax_pid[2], Species_pmax_pid[1]));
+		else pt->AddText(Form("  PID: KFP gates (dedxKFP), #pi>p>K, p not in K, K not in p; p_{max} %.1f/%.1f/%.1f", Species_pmax_pid[0], Species_pmax_pid[2], Species_pmax_pid[1]));
 		pt->AddText(Form("  pairs: p_{T} min #pi %.2f, K %.2f, p/#bar{p} %.2f GeV/c", Species_ptmin[0], Species_ptmin[1], Species_ptmin[2]));
+		pt->AddText(doIsoVtx ? Form("  isolated vertices only: no other vertex within #pm%d crossings, |#Deltaz| < %.0f cm (%ld rows skipped)",valIsoNX,valIsoDZ,nSkippedIso) : "  isolated-vertex selection OFF");
+		pt->AddText(doSegVeto ? Form("  segment veto ON: %ld rows of %zu listed segments skipped",nSkippedSegVeto,segVeto.size()) : "  segment veto OFF");
 		pt->AddText("  V0 daughters in no pair type"); pt->AddText(Form("  split-track removal %s", doSplitRemoval ? "ON" : "OFF"));
 		pt->AddText(Form("  looper veto %s (OS, |p|<%.2f, p-sum<%.2f): %ld tracks", doLooperVeto ? "ON" : "OFF", LOOPER_PMAX, valLooperRSum, nFlagged_Looper));
 		double nin	= hmask_pid->Integral(1,8,2,2), nall = hmask_pid->Integral(1,8,1,2);
@@ -4667,6 +4744,8 @@ void corral::Loop(){
 	cout<<"doTFDup="<<doTFDup<<" -- rows skipped as overlapping-TF collision copies="<<nTFDup_rows<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_XINGPOS="<<ONLY_FIRST_XINGPOS<<" rows skipped (crossing<=0 or not first crossing>0 in TF)="<<nSkippedXingPos<<endl;
 	cout<<"crossing selection xingSel="<<xingSel<<" (1 Xing0, 2 NearX0, 3 ZB) -- events skipped="<<nSkippedXing<<endl;
+	if (doIsoVtx) cout<<"isovtx -- rows skipped (not isolated: another vertex within +-"<<valIsoNX<<" crossings and |dz| < "<<valIsoDZ<<" cm) = "<<nSkippedIso<<endl;
+	if (doSegVeto) cout<<"segveto -- rows skipped (vetoed segments) = "<<nSkippedSegVeto<<" ("<<segVeto.size()<<" segments in "<<segVetoFile<<")"<<endl;
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){
 			long ntot = R[ipaty]->GetNMixedPairs_total();
@@ -4677,6 +4756,8 @@ void corral::Loop(){
 				<<" neighborTF="<<nneigh<<Form(" (%.3f%%)",ntot>0?100.0*nneigh/ntot:0.0)<<endl;
 		}
 	}
+	scFlush();	// last (run, segment) of segCells
+	cout<<"segCells -- "<<tSegCells->GetEntries()<<" (run, segment) entries"<<endl;
 	cout<<"Writing root output file "<<RootFileName.Data()<<endl;
 	fout->cd();
 	fout->Write();
@@ -4846,7 +4927,7 @@ void corral::BuildXTFLosers(Long64_t nentries){
 		for (int it=0; it<(*r_ntr); it++){
 			//---- same cuts as AcceptTrack() below -- keep in sync
 			if (r_pt[it]<0.1 || r_pt[it]>20.1 || r_ntpc[it]<NTPCCUT
-			 || fabs(r_dcaxy[it])>1.5 || fabs(r_dcaz[it])>1.5) continue;
+			 || fabs(r_dcaxy[it])>valDcaxyCut || fabs(r_dcaz[it])>valDcazCut) continue;
 			T t; t.ent=je; t.idx=it; t.xing=(*r_xing); t.q=r_quality[it];
 			for (int s=0;s<7;s++) t.k[s]=r_key[it*7+s];
 			t.intt=inttXing(t.k);
@@ -4915,6 +4996,47 @@ void corral::BuildTFDupRows(Long64_t nentries){
 	cout<<endl;
 }
 
+//---- README.md "isovtxNNZZ" (2026-10-12): mark the rows whose vertex has a neighbour -- another vertex of the same run within
+//---- +-valIsoNX crossings (absolute crossing = bco + crossing; TF boundaries do not matter) and |dz| < valIsoDZ cm. Rows with
+//---- the same absolute crossing are copies of one collision (Collect keeps one vertex per crossing; doTFDup skips them), not
+//---- neighbours. Rows without bco (bco == ~0) fall back to the crossing inside their TF (key evt*1e6 + crossing).
+//---- Per run: collect (key, z, row), sort by key, scan the window. Memory ~24 B per row of one run.
+void corral::BuildIsoRows(Long64_t nentries){
+	TChain *ch	= new TChain(fChain->GetName());
+	TIter next(fChain->GetListOfFiles());
+	while (TObject *el = next()) ch->Add(el->GetTitle());
+	ch->LoadTree(0);
+	const bool hasBco	= ch->GetBranch("bco")!=nullptr;
+	TTreeReader r(ch);
+	TTreeReaderValue<Int_t>		r_run(r,"run"), r_evt(r,"evt"), r_xing(r,"crossing");
+	TTreeReaderValue<Double_t>	r_vtxz(r,"vtxz");
+	TTreeReaderValue<ULong64_t>	*r_bco	= hasBco ? new TTreeReaderValue<ULong64_t>(r,"bco") : nullptr;
+	nonIsoRows.assign(nentries,false);
+	struct V { Long64_t key; double z; Long64_t row; };
+	std::vector<V> v; int currun = -1; long nNon = 0, nAll = 0;
+	auto scan = [&](){
+		std::sort(v.begin(),v.end(),[](const V &a, const V &b){ return a.key<b.key; });
+		size_t lo = 0;
+		for (size_t i=0;i<v.size();i++){
+			while (v[lo].key < v[i].key - valIsoNX) lo++;
+			for (size_t j=lo;j<v.size() && v[j].key <= v[i].key + valIsoNX;j++){
+				if (j==i || v[j].key==v[i].key) continue;
+				if (fabs(v[j].z - v[i].z) < valIsoDZ){ nonIsoRows[v[i].row] = true; nNon++; break; }
+			}
+		}
+		nAll += v.size(); v.clear(); };
+	cout<<"BuildIsoRows -- pre-pass over "<<nentries<<" rows..."<<endl;
+	for (Long64_t je=0; je<nentries && r.Next(); je++){
+		if ((*r_run)!=currun){ scan(); currun = (*r_run); }
+		Long64_t key	= (hasBco && (**r_bco)!=~0ULL) ? (Long64_t)(**r_bco) + (*r_xing) : (Long64_t)(*r_evt)*1000000LL + (*r_xing);
+		v.push_back({key,(*r_vtxz),je});
+	}
+	scan();
+	delete r_bco; delete ch;
+	cout<<"BuildIsoRows -- "<<nNon<<" of "<<nAll<<" rows have a neighbour within +-"<<valIsoNX<<" crossings and |dz| < "<<valIsoDZ<<" cm ("
+		<<(nAll ? 100.*nNon/nAll : 0.)<<"%), skipped"<<(hasBco ? "" : " (no bco branch: crossing within the TF only)")<<endl;
+}
+
 bool corral::AcceptTrack(int it){
 	if (!AcceptTrackBase(it)) return false;
 	if (doSiPhiMask && InSiPhiMask(it)) return false;
@@ -4941,8 +5063,8 @@ bool corral::AcceptTrackBase(int it){
 	if (  pt[it]         < PTMINCUT ) return false;
 	if (  pt[it]         >    20.1 ) return false;
 	if (  ntpc[it]       < NTPCCUT ) return false;
-	if ( fabs(dcaxy[it]) >     1.5 ) return false;
-	if ( fabs(dcaz[it])  >     1.5 ) return false;
+	if ( fabs(dcaxy[it]) > valDcaxyCut ) return false;	// "dxyNN", default 1.5 cm
+	if ( fabs(dcaz[it])  > valDcazCut ) return false;	// "dczNN", default 1.5 cm
 	return true;
 }
 

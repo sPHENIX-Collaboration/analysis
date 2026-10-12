@@ -57,10 +57,10 @@ inline void DrawQPTPage(TCanvas *c, TH2 *S, TH2 *M, TH1 *C1, int pid1, int pid2,
 		}
 		h->SetTitle(Form("%s, C(Q), all p_{T,pair} (%s);Q_{inv} (GeV);C(Q)",pair.Data(),src.Data()));
 		h->SetMarkerStyle(20); h->SetMarkerSize(0.3);
-		QPTYRange({h},QLO,0.30); h->Draw("E1"); gPad->Update();
+		QPTYRange({h},QLO,0.30); h->Draw("HIST"); h->Draw("E SAME"); gPad->Update();
 		DrawCQSignposts(pid1,pid2,gPad->GetUymin(),gPad->GetUymax(),h->GetXaxis()->GetXmax());
 		TLatex t; t.SetNDC(); t.SetTextFont(42); t.SetTextSize(0.032); t.SetTextColor(kRed+1);
-		t.DrawLatex(0.15,0.85,QPT_NOTE);
+		t.DrawLatex(0.15,0.87,QPT_NOTE);
 	}
 	//---- (2) C(Q, pT_pair) map, z range from the 2nd-98th percentile of the filled cells
 	c->cd(2);
@@ -80,7 +80,7 @@ inline void DrawQPTPage(TCanvas *c, TH2 *S, TH2 *M, TH1 *C1, int pid1, int pid2,
 	c->cd(3);
 	{
 		const double edge[5]	= {0.,0.5,1.,2.,5.};
-		const int kcol[4]		= {kBlue,kGreen+2,kOrange+1,kRed};
+		const int kcol[4]		= {kBlue,kGreen+2,kOrange+4,kRed};
 		std::vector<TH1D*> hk;
 		for (int k=0;k<4;k++){
 			int j1 = S->GetYaxis()->FindBin(edge[k]+1e-6), j2 = S->GetYaxis()->FindBin(edge[k+1]-1e-6);

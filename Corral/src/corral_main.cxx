@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
 	cout<<"Instantiating corral..."<<endl;
 	corral *read	= new corral(tree, ntd, runstr, outname);
 	read->Dataset	= dataset;
+	read->ListName	= listname;
 	if (runstr.BeginsWith("Finalize"))	read->Finalize();	// "Finalize" or "Finalize_<tokens>" (e.g. Finalize_fz10)	// README_Finalize.md (temporary switch): combine chunk outputs
 	else					read->Loop();
 

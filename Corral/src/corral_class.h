@@ -78,6 +78,9 @@ public :
 	bool	doOldPID;		// README_PID.md: "oldpid" -> legacy PID (pi = dedx70s<400, no p or K); default is the KFP dE/dx gates
 	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
 	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.07,0.10); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
+	bool	doSegVeto;		// README.md "segveto": skip the events of the (run, DST segment)s in bad_segments.txt (next to the -l list,
+					// or $CORRAL_SEGVETO), made by ana573/SegCellsView_ana573.C; default OFF
+	TString	ListName;		// -l: the job list (segveto finds bad_segments.txt next to it)
 	bool	doSepMaps;		// README_CQcomparison sec 2.3: (track, nearer V0 daughter) separation maps, own mixing, ~+5 min/chunk; OFF, "sepmaps" on
 	double	valCMMaskLo, valCMMaskHi;
 	int		nSiPhiMask;		// README_PID.md sec 10.4: windows used, NSIPHIMASK_MAIN (default) or NSIPHIMASK ("siphimaskall")
@@ -199,6 +202,13 @@ public :
 						// the first row with a key is kept, later rows with the same key are skipped
 						// entirely (sibling AND mixing). Without a bco branch this does nothing.
 	std::vector<bool> tfDupRows;			// [chain entry] -> skip (see doTFDup); 1 bit/row, fine at 1e9 rows
+	bool	doIsoVtx;		// README.md "isovtxNNZZ" (2026-10-12, default OFF): keep only ISOLATED vertices -- no other vertex of
+							// the run within +-NN crossings (absolute crossing bco+crossing) and |dz| < ZZ cm. Copies (same
+							// absolute crossing) are not neighbours (doTFDup handles them). Test of track-vertex misassignment.
+	int		valIsoNX;		// NN, crossings (1-50)
+	double	valIsoDZ;		// ZZ, cm (1-30)
+	std::vector<bool> nonIsoRows;			// [chain entry] -> skip (see doIsoVtx)
+	virtual void	BuildIsoRows(Long64_t nentries);
 	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
 	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
 	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
@@ -236,6 +246,8 @@ public :
 							// caught). Costs ~85% of statistics (~1/6-7 rows survive per TF) -- diagnostic
 							// only, never a production default.
 	int		NTPCCUT;
+	double	valDcaxyCut;	// README.md "dxyNN" (2026-10-12): track |dcaxy| < NN/100 cm, default 1.5 cm (sane 0.05-0.99)
+	double	valDcazCut;		// README.md "dczNN" (2026-10-12): track |dcaz| < NN/10 cm, default 1.5 cm (sane 0.2-1.5)
 	double	PTMINCUT;	// track pT floor, "ptminNN" = 0.NN GeV/c (default 0.1 = ana573 Collect floor; ana532 trees start at 0.2)
 	bool	KILLETA0SPIKE;
 	//

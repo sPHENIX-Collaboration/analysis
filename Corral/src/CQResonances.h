@@ -102,7 +102,7 @@ inline bool CQResonanceMatches(const CQResonance &r, int pid1, int pid2){
 const double QPT_QMAX		= 2.0;
 const int    QPT_NPT		= 50;
 const double QPT_PTMAX		= 5.0;
-const char* const QPT_NOTE	= "variable width binning in Q: fine bins at listed peaks assume #sigma_{Q} = max(2 MeV, 0.03 Q) (placeholder)";
+const char* const QPT_NOTE	= "variable width binning in Q";
 inline std::vector<double> QBinEdges(int pid1, int pid2){
 	const int NCELL	= (int)lround(QPT_QMAX/0.020);
 	std::vector<int> w(NCELL,20);						// bin width (MeV) per 20 MeV cell

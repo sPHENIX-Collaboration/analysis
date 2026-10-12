@@ -197,6 +197,20 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0
 - **V0 zero-value repair.** Some V0 getters return exactly 0 for eta, phi, mass or decay length when the
   value was not filled; Corral recomputes these from the V0 momentum and decay geometry instead of
   using the zero.
+- **Mixed-event reference: no Zajc-style correction needed.** If the singles of a mixed-event reference come
+  only from events that already hold a correlated pair (pair-triggered samples, pools filled only from events
+  with >= 2 candidates), the reference carries a smeared copy of the correlation, and dividing by it cancels
+  part of the signal (lambda low, C(Q) distorted at small Q). Zajc et al., Phys. Rev. C 29, 2173 (1984), correct
+  for this by reweighting the mixed pairs and iterating. Corral avoids it by construction: `CalcRm::Increment`
+  puts every event, with all its accepted particles of the pair type, into the mixing pool -- there is no
+  ">= 2 particles" condition (it is deliberately commented out), and V0s are pooled from all events. The mixed
+  singles are the inclusive single-particle distributions, so the reference is the true rho1 rho1.
+  Remaining caveat: the pool is per zvtx class (NMIX = 10 events), not per multiplicity class. Sibling pairs
+  weight each event by n(n-1), mixed pairs by n n', so if the single-particle spectra change with multiplicity
+  the sibling and mixed singles differ slightly in kinematics. Check: panel 4 of the C(Q, pT_pair) page
+  (`src/QPTPage.h`) draws <pT_pair> per Q bin for sibling and mixed pairs; a gap at large Q common to all pair
+  types is this multiplicity effect, one seen only in like-sign or V0-V0 pairs would need a closer look.
+  Any paper or talk on Corral results should state this (methods, citing Zajc 1984).
 - **Empty-denominator protection and zvtx averaging.** A bin is empty only if its mixed density is zero
   (a zero sibling count is a valid measurement). Correlation functions are formed per zvtx bin and then
   averaged over the zvtx bins that are valid for that bin -- the mixed density is non-zero and enough
@@ -323,7 +337,9 @@ split-track ones).
 | token | effect |
 |---|---|
 | **PID, masks and multiplicity class (README_PID.md)** | |
-| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K, all accepted tracks are split-track candidates) |
+| `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K (outside the p band), all accepted tracks are split-track candidates) |
+| `isovtxNNZZ` | isolated vertices only: skip every row (vertex) that has another vertex of the same run within +-NN crossings (absolute crossing bco+crossing, across TF boundaries) and abs(dz) < ZZ cm; copies of the same crossing are not neighbours (`noTFdup` territory). Test of track-to-vertex misassignment at high rate (README_ana573.md). NN 01-50, ZZ 01-30 cm. Default OFF |
+| `segveto` | skip the events of the (run, DST segment)s listed in `bad_segments.txt` before any processing (also not in segCells); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list. Made by `lists/make_bad_segments.C` from the segCells of a production run without `segveto`: segments below their run's live-fraction band (README_ana573.md). Default OFF |
 | `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
 | `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
@@ -334,6 +350,8 @@ split-track ones).
 | `XingPos` | keep only the first event with crossing > 0 of each TF |
 | **other** | |
 | `ntpcNN` | track cut: at least NN TPC clusters (default 18; 10-40) |
+| `dczNN` | track abs(dcaz) < NN/10 cm instead of 1.5 cm (sane 0.2-1.5). Under the dcaz peak lies a flat pedestal of tracks from other collisions, 3.5% of the tracks in abs(dcaz) < 1.5 at the 795xx rate and 7.6% at the 8158x rate (`ana573/CutFlow_ana573.C`) |
+| `dxyNN` | track abs(dcaxy) < NN/100 cm instead of 1.5 cm (sane 0.05-0.99). Tracks attached from other collisions point back 5-7x worse in xy than the vertex's own (rms 0.2-0.25 cm vs 0.037 cm; `ana573/CutFlow_ana573.C`); 0.10 cm keeps 98.5% of own tracks and removes about a quarter of the attached background |
 | `qcut` | reject pairs with Q < 0.150 GeV |
 | `548` | fine (dy, dphi) binning, 5 x 48 (default 32 x 36) |
 | **acceptance box (studies)** | |
@@ -396,20 +414,32 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    16 GB and 7 days (`MEM=`, `TIME=` override). With 28 pair types a job took about 2 h 15 min and
    3 GB per 50M events (ana573, 642M events: ~29 h, MEM=32G); with 46 a 10M-event chunk takes ~1.5 h.
    This job also snapshots its binary.
-4. **Finalize**, in a work directory with `root/` and `pdf/`:
+4. **Finalize**, as a SLURM job (about 5 min, under 1 GB):
    ```sh
-   /path/to/Corral/corral -d <dataset> -s Finalize          # abs(zvtx) < 8 cm for the physics (fz08)
-   /path/to/Corral/corral -d <dataset> -s Finalize_fz16     # the whole zvtx range
+   Corral/run_finalize.bash <dataset>                  # abs(zvtx) < 8 cm for the physics (fz08)
+   Corral/run_finalize.bash <dataset> Finalize_fz16    # the whole zvtx range
+   Corral/run_finalize.bash ana573_795xx ana573_8156x ana573_8158x ana573    # one job per dataset
    ```
-   It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral.root`, and writes
-   `root/corral_Finalize.root` and `pdf/corral_Finalize.pdf` in the work directory; copy them to
-   `root/<dataset>/` and `pdf/<dataset>/`.
+   It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral.root`, runs in a
+   scratch directory on the worker node and writes `root/<dataset>/corral_Finalize.root`,
+   `pdf/<dataset>/corral_Finalize.pdf` and `log/<dataset>/corral_Finalize.log` (`corral_Finalize_fz16.*` for
+   `Finalize_fz16`). The binary is snapshotted first; `FINALIZE_NEXPMIN` / `FINALIZE_MFRAC` are passed on.
+   By hand, in a work directory with `root/` and `pdf/`: `corral -d <dataset> -s Finalize` writes to
+   `./root` and `./pdf`.
    Finalize also writes the tree `work/chunkStats`, one entry per chunk (run, chunk, events, occupancy =
    mean raw vertices per TF of the events used), with the multiplicity moments from each chunk's hmult,
    for |zvtx| < 8 cm ([0]) and all zvtx ([1]): per pair type 1+r2 and its error, f2 (pairs per event),
    <n1>, <n2>, P0; per particle <n>, P0 and P(n); and the totals over pi/K/p, over pions and over h+-
    (<N>, f2, R2 = f2/<N>^2). Pair-type names are in the tree's UserInfo. The whole-sample totals, with
    subgroup errors, are in the log and in `work/R2tot_*`.
+   Each chunk file also holds the tree `segCells` (TPC acceptance vs time): one entry per (run, DST segment,
+   ~8.5k events) with nevt, ntrk (accepted charged tracks, the hphieta list) and `fee[624]`, the TPC hits of
+   those tracks per FEE: cell = tpcsector*26 + feeMap (tpcsector = 2*sectorId+side, side 0 = South z<0; feeMap
+   0-25 = TPC_FEE_CHANNEL_MAP index, R1 0-5, R2 6-13, R3 14-25). A hit's FEE = that of the nearest pad in
+   (tpcsector, layer, tpcarclen*2mm / pad radius) from `tpcFeeMap/tpc_pad_fee_map_all.txt` (read at run time;
+   made at SDCC from the CDB, 2026-10-12). tpcarclen is the distortion-corrected phi, so hits at FEE edges can
+   land in the neighbour. Chunk files made before 2026-10-12 hold `hits[1152]` (a generic grid, 24 tpcsector x
+   3 modules x 2 layer halves x 8 angle slices) instead; `ana573/SegCellsView_ana573.C` reads both.
    Without `corral.root` (the single job still running) it skips only the pages that compare with it. The
    crossing correction follows the chunks: a `nocross` production stays uncorrected in Finalize too.
 
