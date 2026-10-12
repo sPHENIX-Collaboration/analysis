@@ -20,7 +20,7 @@ Plots organized into subdirectories:
 6. validation/ (when --val-hist-list is provided):
    - val_residuals_<det>.png & .pdf: Combined 1D step histograms comparing residuals (CDB - Hist) for Main, -5 ns, and +5 ns windows across all validation runs.
    - val_ratios_<det>.png & .pdf: Combined 1D step histograms comparing ratios (CDB / Hist) for all three sample windows across all validation runs.
-   - val_trend_by_run_<det>.png & .pdf: Per-run mean residual & ratio trends across validation runs (error bars: ±1 standard deviation).
+   - val_trend_by_run_<det>.png & .pdf: Categorical validation run trends for mean residuals & ratios with offset timing windows and epoch grouping.
    - val_summary_<det>.csv: Tabular channel statistics per validation run and window.
    - validation/residuals/val_residuals_<det>_run<run>.png: Per-run 1D residual distributions for each validation run.
    - validation/ratios/val_ratios_<det>_run<run>.png: Per-run 1D ratio distributions for each validation run.
@@ -733,7 +733,6 @@ def render_single_run_val_ratios(
     ax.set_ylabel(r"Towers / Bin", fontsize=14)
     ax.set_yscale("log")
     ax.set_ylim(0.5, ax.get_ylim()[1] * 3.0)
-    ax.grid(True, ls=":", alpha=0.5)
     ax.legend(loc="upper right", frameon=True, framealpha=0.9, fontsize=10.0)
 
     ax.text(
@@ -934,7 +933,6 @@ def worker_plot_validation_residuals(args: Tuple) -> List[str]:
         ax.set_ylabel(r"Towers / Bin", fontsize=14)
         ax.set_yscale("log")
         ax.set_ylim(0.5, ax.get_ylim()[1] * 3.0)
-        ax.grid(True, ls=":", alpha=0.5)
         ax.legend(loc="upper right", frameon=True, framealpha=0.9, fontsize=10.0)
 
         ax.text(
@@ -952,49 +950,88 @@ def worker_plot_validation_residuals(args: Tuple) -> List[str]:
         plt.close(fig)
         saved.extend([out_rat_png.name, out_rat_pdf.name])
 
-    # 3. Per-run trend plot across validation runs (matching trends_vs_run style)
-    if len(tested_runs) >= 2 and summary_records:
+    # 3. Per-run trend plot across validation runs (categorical by validation run, with offset timing windows)
+    if tested_runs and summary_records:
         df_records = pd.DataFrame(summary_records)
+        sorted_runs = sorted(list(dict.fromkeys(tested_runs)))
+        n_runs = len(sorted_runs)
+        run_to_idx = {r: i for i, r in enumerate(sorted_runs)}
+
+        # Helper to find epoch for a given run
+        def get_run_epoch(r_num):
+            for s, e, ep_idx in epochs:
+                if s <= r_num <= e:
+                    return ep_idx
+            return None
+
+        # Build contiguous epoch intervals across the sorted validation runs
+        run_epochs = [get_run_epoch(r) for r in sorted_runs]
+        epoch_blocks = []
+        curr_ep = None
+        start_idx = 0
+        for i, ep in enumerate(run_epochs):
+            if ep != curr_ep:
+                if curr_ep is not None:
+                    epoch_blocks.append((curr_ep, start_idx, i - 1))
+                curr_ep = ep
+                start_idx = i
+        if curr_ep is not None:
+            epoch_blocks.append((curr_ep, start_idx, n_runs - 1))
+
+        # Dynamic figure width based on the number of validation runs
+        fig_width = max(11.0, min(24.0, 1.2 * n_runs + 3.5))
         fig, (ax_top, ax_bot) = plt.subplots(
-            2, 1, figsize=(14, 8), sharex=True, gridspec_kw={"height_ratios": [2.6, 1.2], "hspace": 0.08}
+            2, 1, figsize=(fig_width, 8), sharex=True, gridspec_kw={"height_ratios": [2.6, 1.2], "hspace": 0.08}
         )
-        min_run = min(tested_runs)
-        max_run = max(tested_runs)
-        run_span = max_run - min_run
-        x_pad = max(int(run_span * 0.03), 15) if run_span > 0 else 50
-        xlim_min = min_run - x_pad
-        xlim_max = max_run + x_pad
 
-        for s, e, idx in epochs:
-            if e < xlim_min or s > xlim_max:
-                continue
-            color = EPOCH_COLORS[(idx - 1) % len(EPOCH_COLORS)]
-            ax_top.axvline(s, color="gray", ls=":", lw=1.0, alpha=0.7)
-            ax_bot.axvline(s, color="gray", ls=":", lw=1.0, alpha=0.7)
+        xlim_min = -0.55
+        xlim_max = n_runs - 0.45
 
-            s_vis = max(s, xlim_min)
-            e_vis = min(e, xlim_max)
-            if s_vis < e_vis:
-                ax_top.axvspan(s_vis, e_vis, color=color, alpha=0.18)
-                ax_bot.axvspan(s_vis, e_vis, color=color, alpha=0.18)
-                mid_x = (s_vis + e_vis) / 2.0
-                ax_top.text(
-                    mid_x, 0.97,
-                    f"Epoch {idx}",
-                    transform=ax_top.get_xaxis_transform(),
-                    ha="center", va="top", fontsize=9.5, color="#222222", weight="bold",
-                    bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="none", alpha=0.75)
-                )
+        # Draw shaded epoch backgrounds, separating lines, and top epoch badges
+        for ep_idx, start_i, end_i in epoch_blocks:
+            color = EPOCH_COLORS[(ep_idx - 1) % len(EPOCH_COLORS)] if ep_idx is not None else "#aaaaaa"
+            x_s = start_i - 0.45
+            x_e = end_i + 0.45
+            ax_top.axvspan(x_s, x_e, color=color, alpha=0.15)
+            ax_bot.axvspan(x_s, x_e, color=color, alpha=0.15)
+
+            mid_x = (start_i + end_i) / 2.0
+            lbl = f"Epoch {ep_idx}" if ep_idx is not None else "Unassigned"
+            ax_top.text(
+                mid_x, 0.97,
+                lbl,
+                transform=ax_top.get_xaxis_transform(),
+                ha="center", va="top", fontsize=10, weight="bold", color="#222222",
+                bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="#cccccc", alpha=0.85)
+            )
+
+            # Prominent boundary between different epochs
+            if end_i < n_runs - 1:
+                sep_x = end_i + 0.5
+                ax_top.axvline(sep_x, color="#666666", ls="--", lw=1.2, alpha=0.7)
+                ax_bot.axvline(sep_x, color="#666666", ls="--", lw=1.2, alpha=0.7)
+
+            # Subtle dividers between individual runs within the same epoch
+            for i in range(start_i, end_i):
+                sep_x = i + 0.5
+                ax_top.axvline(sep_x, color="#dddddd", ls=":", lw=0.8, alpha=0.6)
+                ax_bot.axvline(sep_x, color="#dddddd", ls=":", lw=0.8, alpha=0.6)
 
         ax_top.axhline(0.0, color="#555555", ls="-", lw=1.0)
         ax_bot.axhline(1.0, color="#555555", ls="-", lw=1.0)
         ax_bot.axhline(0.95, color="#888888", ls=":", lw=1.0, alpha=0.6)
         ax_bot.axhline(1.05, color="#888888", ls=":", lw=1.0, alpha=0.6)
 
+        # Offsets and styling for the 3 sample windows: -5 ns (left), Main (center), +5 ns (right)
+        win_offsets = {
+            "minus5": -0.20,
+            "main": 0.0,
+            "plus5": 0.20,
+        }
         win_markers = {
-            "main": dict(marker="o", markersize=4.2, fillstyle="full", markeredgewidth=1.0, color="#1f77b4"),
-            "minus5": dict(marker="v", markersize=4.8, fillstyle="none", markeredgewidth=1.2, color="#d62728"),
-            "plus5": dict(marker="^", markersize=4.8, fillstyle="none", markeredgewidth=1.2, color="#2ca02c"),
+            "minus5": dict(marker="v", markersize=5.2, fillstyle="none", markeredgewidth=1.3, color="#d62728"),
+            "main": dict(marker="o", markersize=4.6, fillstyle="full", markeredgewidth=1.0, color="#1f77b4"),
+            "plus5": dict(marker="^", markersize=5.2, fillstyle="none", markeredgewidth=1.3, color="#2ca02c"),
         }
 
         all_diff_lows = []
@@ -1002,21 +1039,26 @@ def worker_plot_validation_residuals(args: Tuple) -> List[str]:
         all_ratio_lows = []
         all_ratio_highs = []
 
-        for win in SAMPLE_WINDOWS:
+        # Plot in left-to-right plot order matching x-offsets: -5 ns, Main, +5 ns
+        ordered_windows = sorted(SAMPLE_WINDOWS, key=lambda w: win_offsets[w["key"]])
+        for win in ordered_windows:
             w_key = win["key"]
             sub = df_records[df_records["window"] == w_key].sort_values(by="run")
             if sub.empty:
                 continue
             m_cfg = win_markers[w_key]
+            offset = win_offsets[w_key]
+            x_coords = [run_to_idx[r] + offset for r in sub["run"]]
+
             ax_top.errorbar(
-                sub["run"], sub["mean_diff"], yerr=sub["std_diff"],
+                x_coords, sub["mean_diff"], yerr=sub["std_diff"],
                 fmt=m_cfg["marker"], fillstyle=m_cfg["fillstyle"], markersize=m_cfg["markersize"],
                 markeredgewidth=m_cfg["markeredgewidth"], color=m_cfg["color"], ecolor=m_cfg["color"],
                 elinewidth=1.2, capsize=3.5, capthick=1.0, linestyle="none",
                 label=win["label"]
             )
             ax_bot.errorbar(
-                sub["run"], sub["mean_ratio"], yerr=sub["std_ratio"],
+                x_coords, sub["mean_ratio"], yerr=sub["std_ratio"],
                 fmt=m_cfg["marker"], fillstyle=m_cfg["fillstyle"], markersize=m_cfg["markersize"],
                 markeredgewidth=m_cfg["markeredgewidth"], color=m_cfg["color"], ecolor=m_cfg["color"],
                 elinewidth=1.2, capsize=3.5, capthick=1.0, linestyle="none",
@@ -1036,7 +1078,7 @@ def worker_plot_validation_residuals(args: Tuple) -> List[str]:
 
         ax_top.set_ylabel(r"Validation Residual ($\mathrm{CDB} - \mathrm{Hist}$)", fontsize=14)
         ax_top.text(
-            0.02, 0.85, f"{det}  |  {len(tested_runs)} Validation Runs (Mean $\\pm\\ 1\\sigma$)",
+            0.02, 0.85, f"{det}  |  {n_runs} Validation Runs (Mean $\\pm\\ 1\\sigma$)",
             transform=ax_top.transAxes, fontsize=15, weight="bold", color="#333333"
         )
         ax_top.legend(
@@ -1054,9 +1096,24 @@ def worker_plot_validation_residuals(args: Tuple) -> List[str]:
         ax_bot.set_ylim(r_min - 0.08 * r_span, r_max + 0.45 * r_span)
         ax_bot.set_xlim(xlim_min, xlim_max)
 
-        ax_bot.set_xlabel(r"Run Number", fontsize=14)
+        # Categorical x-tick labels for each validation run with epoch note
+        x_ticks = list(range(n_runs))
+        x_labels = []
+        for r in sorted_runs:
+            ep = get_run_epoch(r)
+            if ep is not None:
+                x_labels.append(f"Run {r}\n(Epoch {ep})")
+            else:
+                x_labels.append(f"Run {r}")
+
+        ax_bot.set_xticks(x_ticks)
+        if n_runs > 10:
+            ax_bot.set_xticklabels(x_labels, rotation=45, ha="right", fontsize=10)
+        else:
+            ax_bot.set_xticklabels(x_labels, rotation=0, ha="center", fontsize=11)
+
+        ax_bot.set_xlabel(r"Validation Run", fontsize=14)
         ax_bot.set_ylabel(r"Ratio ($\mathrm{CDB} / \mathrm{Hist}$)", fontsize=13)
-        ax_bot.ticklabel_format(useOffset=False, style="plain")
         ax_bot.legend(
             loc="upper right", bbox_to_anchor=(0.99, 0.98),
             frameon=True, facecolor="white", framealpha=0.5, edgecolor="#dddddd",
