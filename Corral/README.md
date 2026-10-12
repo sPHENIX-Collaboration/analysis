@@ -210,7 +210,6 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0
   the sibling and mixed singles differ slightly in kinematics. Check: panel 4 of the C(Q, pT_pair) page
   (`src/QPTPage.h`) draws <pT_pair> per Q bin for sibling and mixed pairs; a gap at large Q common to all pair
   types is this multiplicity effect, one seen only in like-sign or V0-V0 pairs would need a closer look.
-  Any paper or talk on Corral results should state this (methods, citing Zajc 1984).
 - **Empty-denominator protection and zvtx averaging.** A bin is empty only if its mixed density is zero
   (a zero sibling count is a valid measurement). Correlation functions are formed per zvtx bin and then
   averaged over the zvtx bins that are valid for that bin -- the mixed density is non-zero and enough
