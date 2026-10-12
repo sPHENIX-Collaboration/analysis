@@ -203,7 +203,7 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0
   part of the signal (lambda low, C(Q) distorted at small Q). Zajc et al., Phys. Rev. C 29, 2173 (1984), correct
   for this by reweighting the mixed pairs and iterating. Corral avoids it by construction: `CalcRm::Increment`
   puts every event, with all its accepted particles of the pair type, into the mixing pool -- there is no
-  ">= 2 particles" condition (it is deliberately commented out), and V0s are pooled from all events. The mixed
+  ">= 2 particles" condition, and V0s are pooled from all events. The mixed
   singles are the inclusive single-particle distributions, so the reference is the true rho1 rho1.
   Remaining caveat: the pool is per zvtx class (NMIX = 10 events), not per multiplicity class. Sibling pairs
   weight each event by n(n-1), mixed pairs by n n', so if the single-particle spectra change with multiplicity
