@@ -302,6 +302,8 @@ int Collect::Init(PHCompositeNode *topNode){
 	outTree->Branch("trigVec" ,&fTtriggerVector);
 	outTree->Branch("nvtx"    ,&fTnvtx      ,"nvtx/I");
 	outTree->Branch("vtxntr"  ,&fTvtxntr    ,"vtxntr/I");
+	outTree->Branch("nvtxXing",&fTnvtxXing  ,"nvtxXing/I");	// vertices in this crossing (>1 = pileup or split vertex); only the hottest one gets a row
+	outTree->Branch("vtxntr2" ,&fTvtxntr2   ,"vtxntr2/I");	// runner-up vertex attached-track count in this crossing (0 if nvtxXing==1)
 	outTree->Branch("vtxx"    ,&fTvtxx      ,"vtxx/D");
 	outTree->Branch("vtxy"    ,&fTvtxy      ,"vtxy/D");
 	outTree->Branch("vtxz"    ,&fTvtxz      ,"vtxz/D");
@@ -319,7 +321,7 @@ int Collect::Init(PHCompositeNode *topNode){
 		outTree->Branch("ntr"     ,&fNTracks    ,"ntr/I");
 		outTree->Branch("pid"     ,fTpid        ,"pid[ntr]/B");		// =-1 undefined, =0 pion, =1 kaon, =2 proton (ID'd as V0 daughters) - sec.12c: was /I
 		outTree->Branch("indv0"   ,fTindv0      ,"indv0[ntr]/S");	// if >=0, this is the index of the v0 mother of this track in v0 tree! - sec.12c: was /I
-		outTree->Branch("primary" ,fTprimary    ,"primary[ntr]/B");	// if ==1, particle attached to PV - sec.12c: was /I
+		outTree->Branch("primary" ,fTprimary    ,"primary[ntr]/B");	// if ==1, vertex finder attached this track to the row's vertex (no DCA test since 2026-10-13) - sec.12c: was /I
 		outTree->Branch("quality" ,fTquality    ,"quality[ntr]/F");	// sec.12c: was /D (this block down through dedxKFP)
 		outTree->Branch("chisq"   ,fTchisq      ,"chisq[ntr]/F");
 		outTree->Branch("chg"     ,fTchg        ,"chg[ntr]/F");
@@ -414,10 +416,6 @@ int Collect::Init(PHCompositeNode *topNode){
 	cout<<"Collect::Init -- Ntpc  lower limit = "<<ntpcmin<<endl;
 	cout<<"Collect::Init -- Nmvtx lower limit = "<<nmvtmin<<endl;
 	cout<<"Collect::Init -- Nintt lower limit = "<<nintmin<<endl;
-	//
-	fPrimaryDCAxyLimit	= 1.5;	// cm
-	fPrimaryDCAzLimit	= 1.5;	// cm
-	cout<<"Collect::Init -- primary-flag DCA limits: xy="<<fPrimaryDCAxyLimit<<" z="<<fPrimaryDCAzLimit<<endl;
 	//
 	return Fun4AllReturnCodes::EVENT_OK;
 	//
@@ -957,12 +955,14 @@ int Collect::process_event(PHCompositeNode *topNode){
 		//     used to be a crossing-zero-only protection to every crossing.
 		std::map<int, unsigned int> vertexIdKeepByXing;	// crossing -> vertex id with the most attached tracks
 		std::map<int, unsigned int> maxNtrkByXing;			// crossing -> that vertex's track count
+		std::map<int, unsigned int> secondNtrkByXing;		// crossing -> runner-up vertex's track count (0 if none)
+		std::map<int, int>          nVtxByXing;				// crossing -> number of vertices in it
 		for (const auto& [key, vertex] : *svtxvertexmap){	// loop over vertices...
 			int          m_vertex_crossing	= vertex->get_beam_crossing();
-			// Hotness metric (2026-09-18): count tracks in this crossing with
-			// get_vertex_id()==key AND 3D DCA to this vertex within
-			// fPrimaryDCAxyLimit/fPrimaryDCAzLimit - the same "primary" test
-			// applied below, NOT gated by the ntpc/nmvtx/nintt/pT track-quality
+			// Hotness metric: count tracks in this crossing with get_vertex_id()==key
+			// (2026-10-13: the 1.5 cm DCA test was dropped - Collect applies no DCA
+			// selection anywhere; the choice only matters for nvtxXing>1 rows),
+			// NOT gated by the ntpc/nmvtx/nintt/pT track-quality
 			// floor used for tree inclusion. Author request: a genuinely busy
 			// real vertex can have many real but lower-quality tracks attached,
 			// and should not lose the "hottest" pick to a vertex with fewer but
@@ -976,15 +976,17 @@ int Collect::process_event(PHCompositeNode *topNode){
 					if (!trk2) continue;
 					if (trk2->get_crossing()  != m_vertex_crossing) continue;
 					if (trk2->get_vertex_id() != key) continue;
-					double dxy=NAN, dxyerr=NAN, dz=NAN, dzerr=NAN;
-					calc3DDCA(trk2, svtxvertexmap, key, dxy, dxyerr, dz, dzerr);
-					if (fabs(dxy)<=fPrimaryDCAxyLimit && fabs(dz)<=fPrimaryDCAzLimit) ntrk++;
+					ntrk++;
 				}
 			}
+			nVtxByXing[m_vertex_crossing]++;
 			auto it = maxNtrkByXing.find(m_vertex_crossing);
 			if (it==maxNtrkByXing.end() || ntrk>it->second){
+				if (it!=maxNtrkByXing.end()) secondNtrkByXing[m_vertex_crossing] = it->second;	// old leader becomes runner-up
 				maxNtrkByXing[m_vertex_crossing]		= ntrk;
 				vertexIdKeepByXing[m_vertex_crossing]	= key;
+			} else if (ntrk>secondNtrkByXing[m_vertex_crossing]){
+				secondNtrkByXing[m_vertex_crossing]		= ntrk;
 			}
 		}
 		//
@@ -1004,11 +1006,13 @@ int Collect::process_event(PHCompositeNode *topNode){
 			double m_vx 				= vertex->get_x();
 			double m_vy 				= vertex->get_y();
 			double m_vz 				= vertex->get_z();
-			int	   m_ntracks			= maxNtrkByXing[m_vertex_crossing];	// DCA-based hotness count, not vertex->size_tracks() (see above)
+			int	   m_ntracks			= maxNtrkByXing[m_vertex_crossing];	// attached-track count, not vertex->size_tracks() (see above)
 			if (DEBUG) cout	<<"-----   vtx: "<<m_vertexid<<" crossing="<<m_vertex_crossing
 							<<" x="<<m_vx<<" y="<<m_vy<<" z="<<m_vz
 							<<"\t ntrkattached = "<<m_ntracks<<" ------ "<<endl;
 			fTvtxntr			= m_ntracks;			// to outTree... total number of tracks assigned to chosen vertex
+			fTnvtxXing			= nVtxByXing[m_vertex_crossing];		// to outTree... vertices sharing this crossing (CF analyses skip >1)
+			fTvtxntr2			= secondNtrkByXing[m_vertex_crossing];	// to outTree... runner-up vertex attached-track count (0 if none)
 			fTvtxx				= m_vx;					// to outTree... PV x 
 			fTvtxy				= m_vy;					// to outTree... PV y
 			fTvtxz				= m_vz;					// to outTree... PV z
@@ -1134,11 +1138,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				//
 				int vertexFlag	= 0;
 				if (track->get_vertex_id() == m_vertexid) vertexFlag = 1; 	// this track is attached to this vertex!  (otherwise just same crossing)
-				if (vertexFlag==1){
-					if (fabs(dca3d_xy) > fPrimaryDCAxyLimit || fabs(dca3d_z) > fPrimaryDCAzLimit){
-						vertexFlag = 0;	// vertex finder says it's attached, but PCA to the vertex is too large
-					}
-				}
+				// 2026-10-13: no DCA test here any more - "primary" is purely the vertex finder's
+				// attachment; dcaxy/dcaz are in the tree, so any DCA selection is made downstream (Corral AcceptTrack).
 				//
 				if (DEBUG2) cout<<"TrackLoop: doing dedx..."<<endl;
 				double	dedx70n		=    0;

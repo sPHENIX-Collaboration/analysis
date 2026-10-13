@@ -195,8 +195,6 @@ class Collect : public SubsysReco
 	bool	fHasCaloGeo;
 	bool	fKillSplitTracks;		// see FlagSplitTracks() / README_SplitTracks.md; default off until validated on real data
 	double	PTLL;		// track pT lower limit (usually 0.1)
-	double	fPrimaryDCAxyLimit;		// |dca3d_xy| limit (cm) for the "primary" track flag
-	double	fPrimaryDCAzLimit;		// |dca3d_z|  limit (cm) for the "primary" track flag
 	//
 	int		kVerbosity;
 	bool	DEBUG;		// basic verbosity
@@ -251,6 +249,8 @@ class Collect : public SubsysReco
  	double  fTTotE_epd;
  	int		fTnvtx;
  	int		fTvtxntr;
+ 	int		fTnvtxXing;		// number of vertices sharing this row's crossing (all sizes; >1 = pileup or split vertex)
+ 	int		fTvtxntr2;		// attached-track count (same count as vtxntr) of the runner-up vertex in this crossing, 0 if none
  	double	fTvtxx;
  	double	fTvtxy;
  	double	fTvtxz;

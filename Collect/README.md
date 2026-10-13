@@ -18,11 +18,15 @@ identification and removal of split tracks — a single real particle mistakenly
 reconstructed as two separate tracks, which does real damage to C(Q) and R2
 near (dy,dphi)~(0,0).
 
-Tracks written to the tree must be associated with a primary vertex in a single
-crossing, either directly by the vertex finder or by hand: for every track,
-Collect computes its 3D DCA to each candidate vertex and requires |dca_xy| and
-|dca_z| both <= 1.5 cm. Tracks that are daughters of a found V0 are always
-saved, regardless of this cut.
+Each tree row is one beam crossing that has a reconstructed vertex. Every track
+in that crossing that passes the track-quality floor (ntpc, nmvtx, nintt, pT) is
+written, whether or not the vertex finder attached it to the vertex; tracks that
+are daughters of a found V0 are always saved, even if they fail the floor.
+Collect applies NO DCA selection: each track carries its 3D DCA to the row's
+vertex (`dcaxy`, `dcaz`), and `primary==1` means only that the vertex finder
+attached it to that vertex. Choose any DCA cut downstream (e.g. Corral's
+AcceptTrack). Note the finder's attachment is loose, especially in z: in run
+81585, ~22% of attached tracks have |dca_z| > 1.5 cm.
 
 V0s are reconstructed by KFParticle already quite cleanly, since KFP's own V0
 cuts are applied in the F4A macro itself. The mass windows intentionally leave
@@ -35,9 +39,13 @@ A few extra things Collect does to keep the trees clean:
   share a daughter track, only the better-fit one (lower chi2/ndf) is kept.
 - **One-vertex-per-crossing**: when several reconstructed vertices land in
   the same beam crossing (real pileup, or a split-vertex artifact), Collect
-  keeps only the "hottest" one — the vertex with the most tracks genuinely
-  consistent with it by DCA — so tracks and V0s are never double-counted
-  across near-duplicate vertices.
+  keeps only the "hottest" one — the vertex with the most attached tracks —
+  so tracks and V0s are never double-counted across near-duplicate vertices.
+  The row records `nvtxXing` (vertices found in that crossing) and `vtxntr2`
+  (the runner-up vertex's attached-track count), so analyses that are
+  confused by >1 collision per crossing (e.g. correlation functions) can skip
+  rows with `nvtxXing>1`. (Not to be confused with `nvtx`, the vertex count of
+  the whole trigger frame.)
 - **Split-track bookkeeping**: persisted per-track hit masks and cluster
   keys let downstream analysis recompute a STAR-style Splitting Level for
   any pair, sibling or mixed-event, to identify a split track — a single
