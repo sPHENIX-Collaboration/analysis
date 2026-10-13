@@ -1,5 +1,8 @@
 #include "corral_class.h"
 #include "fluct_common.h"	// SIPHIMASK windows (README_PID.md sec 10.3)
+#include "corral_version.h"	// CORRAL_GIT, CORRAL_BUILD_TIME (made at build time, CMakeLists.txt)
+#include <TNamed.h>
+#include <TParameter.h>
 
 //------------------------------------------------------------
 // Build (or adopt) the input TChain. This must not touch any other member of
@@ -526,4 +529,58 @@ corral::~corral()
 	// members go first, then fReader, then fChain last -- exactly the order that
 	// keeps each object valid while whatever depends on it is torn down. Nothing
 	// here needs manual teardown.
+}
+
+//------------------------------------------------------------
+//---- README.md "info/" (2026-10-12): how this output was made, as text objects in the directory info/ of the root file.
+//---- Finalize checks that every chunk agrees, copies info/ into corral_Finalize.root and prints it on the title page.
+//----   info/runstring  -s run string (after the "Raw" expansion)      info/settings  SettingsText(), one line per switch
+//----   info/list       -l job list (or the input glob)                info/code      git commit of the source + build time
+//----   info/segveto    bad_segments file and number of segments       info/count_*   counters (TParameter<double>, add up)
+//----   info/cut_*      cut values (TParameter<double>) for the QA pages
+TString corral::SettingsText(){
+	TString s;
+	auto L	= [&](const TString &t){ s += t; s += "\n"; };
+	auto on	= [](bool b){ return b ? "ON" : "OFF"; };
+	L(Form("events: |vtx x|,|vtx y| < 0.5 cm, |z_{vtx}| < %.0f cm in %d slices (the physics range is chosen in Finalize, fz)",valVzMax,valZvtxNB));
+	L(TString("crossing selection: ")+(xingSel==0 ? TString("AllX (all crossings)") : xingSel==1 ? TString("Xing0 (crossing 0, the triggered collision)") :
+		xingSel==2 ? TString::Format("NearX0 (%d..%d without 0)",XNEAR_LO,XNEAR_HI) : TString::Format("ZB (%d..%d outside NearX0 %d..%d)",ZB_LO,ZB_HI,XNEAR_LO,XNEAR_HI)));
+	L(Form("segment veto (segveto) %s;  isolated vertices (isovtx) %s",on(doSegVeto),doIsoVtx ? Form("ON: +-%d crossings, |dz| < %.0f cm",valIsoNX,valIsoDZ) : "OFF"));
+	if (valNchHi<9999) L(Form("multiplicity class (nch): %d <= N_ch <= %d",valNchLo,valNchHi));
+	L(Form("overlapping-TF copies skipped (TFdup) %s;  cross-crossing duplicate cleaner (XTF) %s%s;  adjacent-TF mixing exclusion %s",
+		on(doTFDup),on(doXTFClean),doXTFClean ? (doXTFStrict ? " strict" : " non-strict") : "",on(doMixNoAdjTF)));
+	L(Form("tracks: %.2f < p_{T} < 20.1 GeV/c, ntpc >= %d, |dca_{xy}| < %.2f cm, |dca_{z}| < %.2f cm",PTMINCUT,NTPCCUT,valDcaxyCut,valDcazCut));
+	{ TString w; if (doSiPhiMask) for (int k=0;k<nSiPhiMask;k++) w += Form(" [%.0f,%.0f)",SIPHIMASK_LO[k],SIPHIMASK_HI[k]);
+	  L(Form("SiPhiMask %s%s;  central-membrane mask %s",on(doSiPhiMask),doSiPhiMask ? Form(", vertex phi (deg):%s",w.Data()) : "",
+		doCMMask ? Form("ON, w in [%.2f,%.2f)",valCMMaskLo,valCMMaskHi) : "OFF")); }
+	L(doOldPID ? TString("PID: legacy (oldpid), pi = dedx70s < 400") :
+		TString::Format("PID: KFP dE/dx gates, pi then p (outside K) then K (outside p); p_{max} pi %.1f, K %.1f, p %.1f GeV/c",Species_pmax_pid[0],Species_pmax_pid[1],Species_pmax_pid[2]));
+	L(Form("pair p_{T} min: pi %.2f, K %.2f, p %.2f GeV/c;  |y| max: pi %.2f, K %.2f, p %.2f, V0 %.2f;  h+- |eta| < %.2f",
+		Species_ptmin[0],Species_ptmin[1],Species_ptmin[2],Species_yu[0],Species_yu[1],Species_yu[2],Species_yu[5],Hadron_etau));
+	L(Form("V0s in pairs: within %.0f sigma of the mass peak (K0S %.4f+-%.4f, La %.4f+-%.4f, Lbar %.4f+-%.4f GeV); daughters in no pair type",
+		V0PEAK_NSIG,V0PEAK_MU[0],V0PEAK_SIG[0],V0PEAK_MU[1],V0PEAK_SIG[1],V0PEAK_MU[2],V0PEAK_SIG[2]));
+	L(Form("LS split-track removal %s (SL < %.2f & SiSplitScore >= %.2f; RadialGap >= %.2f %s; MVTX path %s);  pregate dps %.1f deg",
+		on(doSplitRemoval),valSLCut,valSiKeyCut,valRadialGapCut,DISABLE_RG ? "OFF" : "ON",valFullMVTX>0 ? "ON" : "OFF",valDPsW));
+	L(Form("ULS veto %s (SiSplitScore >= %.2f);  V0-daughter partners (dau) %s;  looper veto %s (|p| < %.2f, p-sum < %.2f)",
+		on(doULSTest),valULSTestCut,on(doDauCheck),on(doLooperVeto),LOOPER_PMAX,valLooperRSum));
+	L(Form("two-track cuts: tsep %s, isep %s",valTSepDy>0 ? Form("|dy| < %.2f & |dphi*| < %.1f deg",valTSepDy,valTSepDphi) : "OFF",
+		valISepDphi>0 ? Form("|dy| < 1.0 & |dphi*(3 cm)| < %.1f deg",valISepDphi) : "OFF"));
+	L(Form("crossing correction %s;  Q cut %s;  (dy,dphi) binning %s",on(doCrossing),doQCut ? Form("Q > %.3f GeV",valQCut) : "OFF",FinePhiBinning ? "5 x 48" : "default"));
+	return s;
+}
+void corral::WriteInfo(TDirectory *top, const std::vector<std::pair<TString,TString>> &texts, const std::vector<std::pair<TString,double>> &counts){
+	TDirectory *keep	= gDirectory;
+	TDirectory *d		= top->GetDirectory("info") ? top->GetDirectory("info") : top->mkdir("info","how this output was made (README.md, info/)");
+	d->cd();
+	TNamed("runstring",RunString.Data()).Write("",TObject::kOverwrite);
+	TNamed("settings",SettingsText().Data()).Write("",TObject::kOverwrite);
+	TNamed("list",(ListName!="" ? ListName : TString("default input glob")).Data()).Write("",TObject::kOverwrite);
+	TNamed("code",Form("git %s (commit date %s), built %s",CORRAL_GIT,CORRAL_GIT_DATE,CORRAL_BUILD_TIME)).Write("",TObject::kOverwrite);
+	for (auto &t : texts) TNamed(t.first.Data(),t.second.Data()).Write("",TObject::kOverwrite);
+	for (auto &c : counts) TParameter<double>(("count_"+c.first).Data(),c.second).Write("",TObject::kOverwrite);
+	//---- cut values for Finalize's QA pages (drawn on the summed histograms); Finalize takes them from the first chunk
+	const std::vector<std::pair<const char*,double>> cuts	= {{"ptmin",PTMINCUT},{"ntpc",(double)NTPCCUT},{"dcaxy",valDcaxyCut},{"dcaz",valDcazCut},
+		{"vzmax",valVzMax},{"vxymax",0.5},{"xingsel",(double)xingSel},{"siphimask",doSiPhiMask ? (double)nSiPhiMask : 0.}};
+	for (auto &c : cuts) TParameter<double>(Form("cut_%s",c.first),c.second).Write("",TObject::kOverwrite);
+	keep->cd();
 }

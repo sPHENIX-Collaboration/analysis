@@ -8,6 +8,9 @@
 #include "finalize_hists.h"
 #include "CrossingCorrect.h"	// same dirty-side rule and correction as CalcRm::Calculate
 #include "ZvtxAverage.h"		// same Zvtx average as CalcRm::Calculate
+#include "SegLive.h"			// TPC live fraction per segment (the segveto rule)
+#include "FinalizeQA.h"			// title page, QA pages, vs-segment pages, info/ of the chunks
+#include "corral_version.h"		// CORRAL_GIT, CORRAL_BUILD_TIME of this binary
 #include <fstream>
 #include <map>
 #include <algorithm>
@@ -1023,6 +1026,30 @@ void corral::Finalize(){
 	TCanvas *cfin	= new TCanvas("cfin","cfin",1400,1000);
 	cfin->Print((PdfFileName+"[").Data());
 	//
+	//==== FRONT PAGES (2026-10-12): title page (how corral ran, from info/ of the chunks; contents), QA pages of the summed
+	//==== chunk histograms with the cuts drawn, vs-segment pages (segCells). FinalizeQA.h.
+	FinQA::Info finInfo	= FinQA::ReadChunkInfo(fch);
+	std::vector<TH1*> qaHists;
+	TTree *segQA	= 0;
+	{
+		std::vector<TString> pairNames;
+		for (int k=0;k<NPairTypes;k++) pairNames.push_back(Form("%s%s",ParticleIDNames[PairTypes_Info[k][0]],ParticleIDNames[PairTypes_Info[k][1]]));
+		//---- runs: from the chunks' segCells (all runs, in order), else from lists_summary.txt
+		std::vector<int> runsT;
+		for (TFile *f : fch){ TTree *t = (TTree*)f->Get("segCells"); if (!t) continue; Int_t r; t->SetBranchStatus("*",0); t->SetBranchStatus("run",1); t->SetBranchAddress("run",&r);
+			for (Long64_t e=0;e<t->GetEntries();e++){ t->GetEntry(e); if (std::find(runsT.begin(),runsT.end(),r)==runsT.end()) runsT.push_back(r); } delete t; }
+		if (runsT.empty()) for (int r : chunkRun) if (r>=0 && std::find(runsT.begin(),runsT.end(),r)==runsT.end()) runsT.push_back(r);
+		//---- events in the physics range: events reaching CalcRm with |zvtx| < fz (hnvtxCR)
+		double nevtPhys	= -1.;
+		{ TH2 *h = (TH2*)FinQA::Sum(fch,"hnvtxCR"); if (h){ nevtPhys = h->Integral(h->GetXaxis()->FindBin(-valFinZMax+1e-6),h->GetXaxis()->FindBin(valFinZMax-1e-6),0,-1); delete h; } }
+		FinQA::TitlePage(cfin,SET,finInfo,RunString,valFinZMax,Form("git %s, built %s",CORRAL_GIT,CORRAL_BUILD_TIME),runsT,nevtPhys,pairNames,fref!=nullptr);
+		cfin->Print(PdfFileName.Data());
+		FinQA::QAPages(cfin,PdfFileName.Data(),fch,finInfo,valFinZMax,qaHists);
+		segQA	= FinQA::SegmentPages(cfin,PdfFileName.Data(),fch);
+		cfin->Clear(); cfin->cd();
+		for (const auto &m : finInfo.mismatch) cout<<"corral::Finalize -- info/: "<<m<<endl;
+	}
+	//
 	//==== PHYSICS PAGES FIRST (user 2026-09-26), per pairtype: 1 overview (as corral_m's first page, but the
 	//==== (dy,dphi) row crossing-corrected), 2 C(Q) (ratio of zvtx sums), 3 crossing page (3x2, as corral_m),
 	//==== 4 dC2 = C2C - C2 page. Diagnostic pages follow after the summary.
@@ -1840,6 +1867,23 @@ void corral::Finalize(){
 			}
 		}
 		if (NZc>0) tcs->Write(); else delete tcs;
+	}
+	//---- info/ (README.md): the chunks' record (first chunk's texts, counters summed over the chunks) + this Finalize
+	{
+		TDirectory *di	= fout->mkdir("info","how this output was made (README.md, info/)"); di->cd();
+		TNamed("runstring",finInfo.runstring.Data()).Write();
+		TNamed("settings",finInfo.settings.Data()).Write();
+		TNamed("code",finInfo.code.Data()).Write();
+		TNamed("segveto",finInfo.segveto.Data()).Write();
+		TNamed("list",finInfo.listdir.Data()).Write();
+		TString mm; for (auto &m : finInfo.mismatch) mm += m+"\n";
+		TNamed("chunks",Form("%d chunks of %s, %d with info/%s%s",finInfo.nchunks,SET.Data(),finInfo.nwith,mm!="" ? "; " : "; all agree",mm.Data())).Write();
+		TNamed("finalize",Form("run string %s, physics |zvtx| < %.0f cm, git %s (commit date %s), built %s",RunString.Data(),valFinZMax,CORRAL_GIT,CORRAL_GIT_DATE,CORRAL_BUILD_TIME)).Write();
+		for (auto &c : finInfo.counts) TParameter<double>(("count_"+c.first).Data(),c.second).Write();
+		for (auto &c : finInfo.cuts) TParameter<double>(("cut_"+c.first).Data(),c.second).Write();
+		TDirectory *dq	= dwork->mkdir("qa","QA histograms summed over the chunks (the QA pages)"); dq->cd();
+		for (TH1 *h : qaHists) h->Write(TString(h->GetName()).ReplaceAll("_fin","").Data());
+		if (segQA){ dwork->cd(); segQA->Write(); }
 	}
 	for (auto &r : result) if (r.second){ r.second->SetLineColor(kBlack); (isPhys(r.first) ? (TDirectory*)fout : dwork)->cd(); r.second->Write(r.first.Data()); }
 	dwork->cd();

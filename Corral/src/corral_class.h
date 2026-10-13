@@ -50,6 +50,8 @@ public :
 	virtual ~corral();
 	virtual void     Loop();
 	virtual void     Finalize();		// README_Finalize.md: combine chunk outputs (RunString "Finalize")
+	TString          SettingsText();	// every switch and cut value in force, one per line (info/settings, Finalize title page)
+	void             WriteInfo(TDirectory *top, const std::vector<std::pair<TString,TString>> &texts, const std::vector<std::pair<TString,double>> &counts);	// info/ (README.md)
 	//
 	virtual bool 	AcceptEvent();
 	virtual bool 	AcceptTrack(int it);				// AcceptTrackBase and, if doSiPhiMask, not InSiPhiMask

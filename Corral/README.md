@@ -338,7 +338,7 @@ split-track ones).
 | **PID, masks and multiplicity class (README_PID.md)** | |
 | `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K (outside the p band), all accepted tracks are split-track candidates) |
 | `isovtxNNZZ` | isolated vertices only: skip every row (vertex) that has another vertex of the same run within +-NN crossings (absolute crossing bco+crossing, across TF boundaries) and abs(dz) < ZZ cm; copies of the same crossing are not neighbours (`noTFdup` territory). Test of track-to-vertex misassignment at high rate (README_ana573.md). NN 01-50, ZZ 01-30 cm. Default OFF |
-| `segveto` | skip the events of the (run, DST segment)s listed in `bad_segments.txt` before any processing (also not in segCells); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list. Made by `lists/make_bad_segments.C` from the segCells of a production run without `segveto`: segments below their run's live-fraction band (README_ana573.md). Default OFF |
+| `segveto` | skip the events of the (run, DST segment)s listed in `bad_segments.txt` before any processing (segCells keeps the segment with `veto` = 1 and only `nraw` filled); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list. Made by `lists/make_bad_segments.C` from the segCells of a production run without `segveto`: segments below their run's live-fraction band (README_ana573.md). Default OFF |
 | `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
 | `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
@@ -439,6 +439,25 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    made at SDCC from the CDB, 2026-10-12). tpcarclen is the distortion-corrected phi, so hits at FEE edges can
    land in the neighbour. Chunk files made before 2026-10-12 hold `hits[1152]` (a generic grid, 24 tpcsector x
    3 modules x 2 layer halves x 8 angle slices) instead; `ana573/SegCellsView_ana573.C` reads both.
+   Since 2026-10-12 segCells has one entry for every segment read (also those `segveto` skips: `veto` = 1)
+   and per-segment QA sums: `nraw` (rows read), `nvtx` (raw vertices per TF, summed over nevt), `sumpt`,
+   `sumntpc`, `sumadcaxy`, `sumadcaz` (summed over ntrk), `nid[6]` (identified pi+ pi- K+ K- p pbar) and
+   `nv0[3]` (K0S, Lambda, Lbar in the pair mass window).
+   **Run record `info/`** (chunk files since 2026-10-12): text objects `runstring`, `settings` (every switch
+   and cut value, one per line), `list`, `segveto` (mask file and number of segments) and `code` (git commit
+   of the source, `-dirty` if it had uncommitted changes, and build time; stamped at build time by
+   `corral_version.cmake`), counters `count_*` (rows read, rows skipped as TF copies / by segveto / by isovtx,
+   events outside the crossing selection, events reaching the track loop) and cut values `cut_*`. Read
+   one with `f->Get("info/settings")->GetTitle()`.
+   **Finalize front pages:** a title page (left: the chunks' `info/`, event counts, a red line for every chunk
+   that disagrees; right: contents and the pair-type list), then the QA histograms summed over the chunks
+   with every cut drawn (events and vertices with the event flow, tracks, dE/dx PID with the KFP gates, V0
+   mass peaks with the pair window), then two pages versus DST segment in time order (events/rows,
+   vertices per TF, tracks per event, <pT>, <ntpc>, <|dca_xy|>, <|dca_z|>, TPC live fraction all/South/North
+   with the segveto rule from `src/SegLive.h`, identified particles and V0s per event; segveto segments
+   shaded, run boundaries dashed). Then the pair-type pages as before. The root file gets `info/` (the
+   chunks' texts, the counters summed, plus `chunks` and `finalize`), `work/qa/` (the summed QA histograms)
+   and `work/segQA` (the per-segment table of the vs-segment pages, live fractions included).
    Without `corral.root` (the single job still running) it skips only the pages that compare with it. The
    crossing correction follows the chunks: a `nocross` production stays uncorrected in Finalize too.
 
@@ -476,6 +495,8 @@ the repository.
 | `src/corral_loop.cxx` | the event loop: track and V0 selection, split-track and duplicate removal, QA histograms, PDF pages |
 | `src/CalcRm.cxx`, `.h` | pair filling (sibling and mixed), correlation functions per zvtx bin, C(Q) |
 | `src/corral_finalize.cxx`, `finalize_hists.h` | Finalize and its configuration |
+| `src/FinalizeQA.h` | Finalize's title page, QA pages, vs-segment pages, reading `info/` of the chunks |
+| `src/SegLive.h` | TPC live fraction per segment from segCells (used by Finalize and `lists/make_bad_segments.C`) |
 | `src/CrossingCorrect.h`, `ZvtxAverage.h` | crossing correction and zvtx averaging, shared by CalcRm and Finalize |
 | `src/PairTypes.h` | the pair-type table and the per-type minimum expected pairs |
 | `src/fluct_common.h`, `corral_class.h` | shared definitions (species, PID caps and pT minima, the SiPhiMask windows, the V0 mass peaks); `NOCORRELATIONS` in `corral_class.h` skips all pair work (fast QA runs) |

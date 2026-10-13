@@ -512,6 +512,9 @@ void corral::Loop(){
 	//---- (SDCC 2026-10-12, tpcFeeMap/README_tpcFeeMap.md; its phi_local = phi_global - sector center, south mirror
 	//---- included, as Collect's tpcarclen). tpcarclen is the distortion-corrected phi: hits near FEE edges can land in the
 	//---- neighbour. nevt = events reaching the track loop, ntrk = accepted charged tracks.
+	//---- 2026-10-12: one entry per segment READ (nraw rows), also when segveto skips it (veto = 1, nothing else filled);
+	//---- per-segment QA sums for Finalize's vs-segment pages: nvtx (raw vertices in the TF, summed over nevt), pT, ntpc,
+	//---- abs(dcaxy), abs(dcaz) (summed over ntrk), identified tracks nid = pi+ pi- K+ K- p pbar, in-peak V0s nv0 = K0S La Lbar.
 	const int SC_NFEE	= 26, SC_NCELL = 24*SC_NFEE;
 	std::vector<std::vector<std::pair<float,int>>> scPad(24*48);	// per (tpcsector, layer slot): (phi_local, feeMap), sorted
 	std::vector<double> scR(48,0.);									// mean pad radius per layer slot (mm)
@@ -536,7 +539,8 @@ void corral::Loop(){
 		auto it = std::lower_bound(P.begin(),P.end(),std::make_pair((float)u,-1));
 		if (it==P.end()) --it; else if (it!=P.begin() && fabs((it-1)->first-u)<fabs(it->first-u)) --it;
 		return it->second; };
-	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0;
+	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0, sc_nraw=0, sc_veto=0, sc_nid[6]={0}, sc_nv0[3]={0};
+	Float_t sc_nvtx=0, sc_sumpt=0, sc_sumntpc=0, sc_sadxy=0, sc_sadz=0;
 	std::vector<Float_t> sc_hits(SC_NCELL,0.f);
 	TTree *tSegCells	= new TTree("segCells","TPC hits of accepted tracks per (run, DST segment) per FEE, cell = tpcsector*26 + feeMap (README.md)");
 	tSegCells->SetDirectory(fout);
@@ -545,7 +549,17 @@ void corral::Loop(){
 	tSegCells->Branch("nevt",&sc_nevt,"nevt/I");
 	tSegCells->Branch("ntrk",&sc_ntrk,"ntrk/I");
 	tSegCells->Branch("fee",sc_hits.data(),Form("fee[%d]/F",SC_NCELL));
-	auto scFlush = [&](){ if (sc_run>=0 && sc_nevt>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
+	tSegCells->Branch("nraw",&sc_nraw,"nraw/I");
+	tSegCells->Branch("veto",&sc_veto,"veto/I");
+	tSegCells->Branch("nvtx",&sc_nvtx,"nvtx/F");
+	tSegCells->Branch("sumpt",&sc_sumpt,"sumpt/F");
+	tSegCells->Branch("sumntpc",&sc_sumntpc,"sumntpc/F");
+	tSegCells->Branch("sumadcaxy",&sc_sadxy,"sumadcaxy/F");
+	tSegCells->Branch("sumadcaz",&sc_sadz,"sumadcaz/F");
+	tSegCells->Branch("nid",sc_nid,"nid[6]/I");
+	tSegCells->Branch("nv0",sc_nv0,"nv0[3]/I");
+	auto scFlush = [&](){ if (sc_run>=0 && sc_nraw>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; sc_nraw=0; sc_veto=0; sc_nvtx=0; sc_sumpt=0; sc_sumntpc=0; sc_sadxy=0; sc_sadz=0;
+		std::fill(sc_nid,sc_nid+6,0); std::fill(sc_nv0,sc_nv0+3,0); std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
 	//---- README_SplitTracks573 sec 15: residual and charge-asymmetry diagnostics (no cut reads these).
 	//---- Silicon match code per pair: x = MVTX (denM*4 + numM: layers either / both-matching track has,
 	//---- 0-15), y = INTT (denI*5 + numI, 0-24). For SKF>=cut LS pion pairs in the central bin:
@@ -1182,6 +1196,7 @@ void corral::Loop(){
 	std::set<std::pair<int,int>> segVeto;
 	long nSkippedSegVeto	= 0;
 	long nSkippedIso		= 0;	// isovtxNNZZ
+	long nRowsRead			= 0, nEvtTracks = 0;	// info/count_*: rows read, events reaching the track loop
 	TString segVetoFile		= "";
 	if (doSegVeto){
 		if (getenv("CORRAL_SEGVETO")) segVetoFile = getenv("CORRAL_SEGVETO");
@@ -1194,13 +1209,15 @@ void corral::Loop(){
 	}
 	for (Long64_t jentry=0; jentry<nentries && fReader.Next(); jentry++) {
 		if (jentry%100000==0) cout<<"processing "<<jentry<<endl;
+		if ((*run)!=sc_run || (*segment)!=sc_seg){ scFlush(); sc_run = (*run); sc_seg = (*segment); }	// segCells
+		++sc_nraw; ++nRowsRead;
 		//
 		//---- a collision already seen in an overlapping earlier TF: not a new event (see doTFDup)
 		if (doTFDup && jentry<(Long64_t)tfDupRows.size() && tfDupRows[jentry]) continue;
-		//---- isovtxNNZZ: a vertex with a neighbour, before ANY processing (also not in segCells)
+		//---- isovtxNNZZ: a vertex with a neighbour, before ANY processing (counted in segCells nraw only)
 		if (doIsoVtx && jentry<(Long64_t)nonIsoRows.size() && nonIsoRows[jentry]){ ++nSkippedIso; continue; }
-		//---- segveto: an acceptance-outlier segment, before ANY processing (also not in segCells)
-		if (doSegVeto && segVeto.count({(*run),(*segment)})){ ++nSkippedSegVeto; continue; }
+		//---- segveto: an acceptance-outlier segment, before ANY processing (segCells: veto = 1, nraw only)
+		if (doSegVeto && segVeto.count({(*run),(*segment)})){ ++nSkippedSegVeto; sc_veto = 1; continue; }
 		//
 		//---- new event processing...
 		//---- sec 18.21: opt-in TF-deduplication -- keep only the FIRST row seen for each (run,evt)
@@ -2119,8 +2136,7 @@ void corral::Loop(){
 			nSplitFlagged_total	+= (long)nSplitFlagged_thisevt.size();
 		}
 		//
-		if ((*run)!=sc_run || (*segment)!=sc_seg){ scFlush(); sc_run = (*run); sc_seg = (*segment); }	// segCells
-		++sc_nevt;
+		++sc_nevt; sc_nvtx += (*nvtx); ++nEvtTracks;	// segCells
 		//---- track loop...
 		int ntrkept		= 0;
 		double npos=0,nneg=0;
@@ -2255,7 +2271,8 @@ void corral::Loop(){
 			hphi		->Fill(phi[it]);
 			hpt			->Fill(pt[it]);
 			hphieta			->Fill(eta[it],phi[it],1.);
-			++sc_ntrk;	// segCells
+			++sc_ntrk; sc_sumpt += pt[it]; sc_sumntpc += ntpc[it]; sc_sadxy += fabs(dcaxy[it]); sc_sadz += fabs(dcaz[it]);	// segCells
+			if (thisPIDk<3 && chg[it]!=0) ++sc_nid[2*thisPIDk+(chg[it]<0 ? 1 : 0)];
 			for (int L=0;L<48;L++){
 				const int sct = tpcsector[it*48+L];
 				if (sct==255) continue;
@@ -2522,7 +2539,7 @@ void corral::Loop(){
 			//---- track lists); an off-peak candidate would be paired with its own daughter
 			const int kv	= (v0pid[iv0]==310) ? 0 : (v0pid[iv0]==3122) ? 1 : (v0pid[iv0]==-3122) ? 2 : -1;
 			const bool v0pair	= v0InPeak(iv0);
-			if (kv>=0){ ++nv0All[kv]; if (v0pair) ++nv0Paired[kv]; }
+			if (kv>=0){ ++nv0All[kv]; if (v0pair){ ++nv0Paired[kv]; ++sc_nv0[kv]; } }
 			if (!NOCORRELATIONS && v0pair){
 				for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
 					//---- check if this track is particle 1 for this pair type
@@ -3949,7 +3966,7 @@ void corral::Loop(){
 		TPaveText *pt	= new TPaveText(0.03,0.03,0.97,0.97,"NDC"); pt->SetFillColor(0); pt->SetBorderSize(1); pt->SetTextAlign(12); pt->SetTextSize(0.034);
 		pt->AddText("Track cuts in force (AcceptTrack, PID, pair building)");
 		pt->AddText(Form("  %.2f < p_{T} < 20.1 GeV/c,  ntpc #geq %d", PTMINCUT, NTPCCUT));
-		pt->AddText("  |dcaxy| < 1.5 cm,  |dcaz| < 1.5 cm");
+		pt->AddText(Form("  |dcaxy| < %.2f cm,  |dcaz| < %.2f cm",valDcaxyCut,valDcazCut));
 		if (doSiPhiMask){ TString w; for (int k=0;k<nSiPhiMask;k++) w += Form(" [%.0f,%.0f)",SIPHIMASK_LO[k],SIPHIMASK_HI[k]); pt->AddText(Form("  SiPhiMask ON, vertex #phi (deg):%s",w.Data())); }
 		else pt->AddText("  SiPhiMask OFF (nosiphimask)");
 		if (doCMMask) pt->AddText(Form("  CM mask ON: w = (#eta+%.3f z_{c}) sign(-z_{c}) in [%.2f,%.2f), z_{c} = zvtx-slice centre",CMMASK_K,valCMMaskLo,valCMMaskHi));
@@ -4761,6 +4778,9 @@ void corral::Loop(){
 	cout<<"Writing root output file "<<RootFileName.Data()<<endl;
 	fout->cd();
 	fout->Write();
+	WriteInfo(fout,{{"segveto",doSegVeto ? Form("%s: %zu (run, segment)s",segVetoFile.Data(),segVeto.size()) : "OFF"}},
+		{{"rows_read",(double)nRowsRead},{"rows_skipped_tfdup",(double)nTFDup_rows},{"rows_skipped_isovtx",(double)nSkippedIso},
+		 {"rows_skipped_segveto",(double)nSkippedSegVeto},{"events_skipped_crossing",(double)nSkippedXing},{"events_tracks",(double)nEvtTracks}});
 	//
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){	

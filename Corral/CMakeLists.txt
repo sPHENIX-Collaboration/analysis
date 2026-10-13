@@ -40,7 +40,13 @@ set(CORRAL_ROOT_LIBS
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_executable(corral ${COMMON_SOURCES} src/CalcRm.cxx)
-target_include_directories(corral PRIVATE src)
+target_include_directories(corral PRIVATE src ${CMAKE_BINARY_DIR})
+
+# corral_version.h (git commit + build time, recorded in info/code of every output file) is rewritten at every build
+add_custom_target(corral_version
+	COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DOUT=${CMAKE_BINARY_DIR}/corral_version.h -P ${CMAKE_SOURCE_DIR}/corral_version.cmake
+	BYPRODUCTS ${CMAKE_BINARY_DIR}/corral_version.h)
+add_dependencies(corral corral_version)
 target_link_libraries(corral PRIVATE ${CORRAL_ROOT_LIBS})
 
 # Default project directory (lists/<set>/, root/<set>/ read by Finalize) = this source tree;
