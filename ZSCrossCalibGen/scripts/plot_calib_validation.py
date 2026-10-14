@@ -34,6 +34,13 @@ Plots organized into subdirectories:
      Colour ranges are symmetric around 1.0 and shared per (detector, window) across epochs.
      Algebraically equal to Hist / CDB for the validation run, which is cross-checked per window.
    - epoch_ratio/sf_ratio_summary.csv: Per (detector, epoch, window) ratio statistics and closure deviation.
+8. time_maps/ (disable with --no-time-maps):
+   - Mean raw tower time from h_CaloValid_<det>_etaphi_time_raw [ADC samples, template-fit peak shift].
+     The segment-0 HIST_JETQA file per run is looked up in FileCatalog, keeping the latest by file time.
+   - time_hist_paths.csv: Run, role, production tag and file used.
+   - candidate/time_map_run<run>.png & validation/time_map_run<run>.png: Stacked panels, one per detector.
+   - epoch_diff/time_diff_epoch<E>_val<vrun>_cand<crun>.png: t_val - t_cand per detector for each epoch pairing.
+   - epoch_diff/time_diff_summary.csv: Per (detector, epoch) difference statistics.
 """
 
 import argparse
@@ -110,6 +117,9 @@ WINDOW_BY_KEY = {w["key"]: w for w in SAMPLE_WINDOWS}
 
 # Top-to-bottom panel order for stacked scale factor figures
 SF_PANEL_ORDER = ("minus5", "main", "plus5")
+
+# FileCatalog dataset type holding the CaloValid raw time histograms
+TIME_HIST_DSTTYPE = "HIST_JETQA%"
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -193,6 +203,11 @@ def parse_arguments() -> argparse.Namespace:
         type=str,
         default=None,
         help="Custom y-axis limits for validation ratio panel in trend plots, formatted as min,max (e.g. 0.85,1.15)",
+    )
+    parser.add_argument(
+        "--no-time-maps",
+        action="store_true",
+        help="Skip raw tower time maps (requires FileCatalog access via psycopg2)",
     )
     return parser.parse_args()
 
@@ -1375,8 +1390,8 @@ def check_ratio_closure(
 
 def render_sf_panels(panels: List[Dict[str, Any]], out_path: Path) -> str:
     """Render vertically stacked (eta, phi) heatmap panels, each with its own colour bar and stats badge."""
-    fig, axes = plt.subplots(len(panels), 1, figsize=(14, 5.4 * len(panels)))
-    for i, (ax, p) in enumerate(zip(axes, panels)):
+    fig, axes = plt.subplots(len(panels), 1, figsize=(14, 5.4 * len(panels)), squeeze=False)
+    for i, (ax, p) in enumerate(zip(axes[:, 0], panels)):
         neta, nphi = p["data"].shape
         im = ax.imshow(
             np.ma.masked_invalid(p["data"]),
@@ -1458,6 +1473,23 @@ def worker_plot_sf_epoch_ratio(args: Tuple) -> str:
     return render_sf_panels(panels, output_dir / f"sf_ratio_{det}_epoch{ep_idx}_val{val_run}_cand{cand_run}.png")
 
 
+def pair_runs_by_epoch(
+    cand_runs, val_runs, epochs: List[Tuple[int, int, int]], label: str
+) -> List[Tuple[int, int, int]]:
+    """Pair each validation run with the single candidate run of its epoch. Returns (epoch, cand_run, val_run)."""
+    pairs = []
+    for s, e, ep_idx in epochs:
+        ep_vals = sorted(r for r in val_runs if s <= r <= e)
+        if not ep_vals:
+            continue
+        ep_cands = [r for r in cand_runs if s <= r <= e]
+        if len(ep_cands) != 1:
+            print(f"  Skipping {label} Epoch {ep_idx}: expected 1 candidate run, found {len(ep_cands)}.")
+            continue
+        pairs.extend((ep_idx, ep_cands[0], v) for v in ep_vals)
+    return pairs
+
+
 def build_scale_factor_tasks(
     detectors: List[str],
     epochs: List[Tuple[int, int, int]],
@@ -1510,40 +1542,29 @@ def build_scale_factor_tasks(
                     f"SFMap {det} {role} Run {run}",
                 ))
 
-        # Pair each validation run with the single candidate run of its epoch
         ratio_maps = []
-        for s, e, ep_idx in epochs:
-            ep_vals = [r for r in sf_val if s <= r <= e]
-            if not ep_vals:
-                continue
-            ep_cands = [r for r in sf_cand if s <= r <= e]
-            if len(ep_cands) != 1:
-                print(f"  Skipping {det} Epoch {ep_idx} ratio maps: expected 1 candidate run, found {len(ep_cands)}.")
-                continue
-            cand_run = ep_cands[0]
+        for ep_idx, cand_run, val_run in pair_runs_by_epoch(sf_cand, sf_val, epochs, f"{det} SF ratio maps"):
+            ratios = {w_key: sf_val[val_run][w_key] / sf_cand[cand_run][w_key] for w_key in SF_PANEL_ORDER}
+            closure = check_ratio_closure(det, val_run, input_dir, sf_val[val_run], ratios)
+            ratio_maps.append((ep_idx, cand_run, val_run, ratios))
 
-            for val_run in ep_vals:
-                ratios = {w_key: sf_val[val_run][w_key] / sf_cand[cand_run][w_key] for w_key in SF_PANEL_ORDER}
-                closure = check_ratio_closure(det, val_run, input_dir, sf_val[val_run], ratios)
-                ratio_maps.append((ep_idx, cand_run, val_run, ratios))
-
-                for w_key in SF_PANEL_ORDER:
-                    vals = ratios[w_key][np.isfinite(ratios[w_key])]
-                    summary_records.append({
-                        "detector": det,
-                        "epoch": ep_idx,
-                        "cand_run": cand_run,
-                        "val_run": val_run,
-                        "window": w_key,
-                        "window_label": WINDOW_BY_KEY[w_key]["label"],
-                        "n_towers": int(len(vals)),
-                        "mean_ratio": float(np.mean(vals)),
-                        "std_ratio": float(np.std(vals)),
-                        "median_ratio": float(np.median(vals)),
-                        "frac_within_2pct": float(np.mean(np.abs(vals - 1.0) <= 0.02)),
-                        "frac_within_5pct": float(np.mean(np.abs(vals - 1.0) <= 0.05)),
-                        "closure_max_abs_dev": closure[w_key],
-                    })
+            for w_key in SF_PANEL_ORDER:
+                vals = ratios[w_key][np.isfinite(ratios[w_key])]
+                summary_records.append({
+                    "detector": det,
+                    "epoch": ep_idx,
+                    "cand_run": cand_run,
+                    "val_run": val_run,
+                    "window": w_key,
+                    "window_label": WINDOW_BY_KEY[w_key]["label"],
+                    "n_towers": int(len(vals)),
+                    "mean_ratio": float(np.mean(vals)),
+                    "std_ratio": float(np.std(vals)),
+                    "median_ratio": float(np.median(vals)),
+                    "frac_within_2pct": float(np.mean(np.abs(vals - 1.0) <= 0.02)),
+                    "frac_within_5pct": float(np.mean(np.abs(vals - 1.0) <= 0.05)),
+                    "closure_max_abs_dev": closure[w_key],
+                })
 
         if ratio_maps:
             # Symmetric colour range around 1.0 per window, shared across all epochs of this detector
@@ -1566,6 +1587,213 @@ def build_scale_factor_tasks(
     return tasks
 
 
+def query_time_hist_paths(runs: List[int], dsttype_pattern: str = TIME_HIST_DSTTYPE) -> Dict[int, Tuple[str, str]]:
+    """
+    Look up the segment-0 QA hist file per run in FileCatalog, keeping the latest by file time.
+    Connection host/user come from the standard PGHOST / PGUSER environment. Returns {run: (tag, path)}.
+    """
+    import psycopg2
+
+    query = """
+        SELECT DISTINCT ON (d.runnumber) d.runnumber, d.tag, f.full_file_path
+        FROM datasets d JOIN files f ON d.filename = f.lfn
+        WHERE d.runnumber = ANY(%s) AND d.segment = 0 AND d.dsttype LIKE %s
+        ORDER BY d.runnumber, f.time DESC NULLS LAST
+    """
+    conn = psycopg2.connect(dbname="FileCatalog")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, (list(runs), dsttype_pattern))
+            return {int(run): (tag, path) for run, tag, path in cur.fetchall()}
+    finally:
+        conn.close()
+
+
+def load_time_map(det: str, hist_file: str) -> Optional[np.ndarray]:
+    """Load mean raw tower time [samples] as an (neta, nphi) array, NaN where a tower has no entries."""
+    cfg = DETECTOR_CONFIG[det]
+    neta, nphi = cfg["neta"], cfg["nphi"]
+    hname = f"h_CaloValid_{cfg['hist_det']}_etaphi_time_raw"
+
+    try:
+        with uproot.open(hist_file) as f:
+            if hname not in f:
+                print(f"Warning: {hname} missing in {hist_file}.")
+                return None
+            h = f[hname]
+            vals = h.values()
+            if vals.shape != (neta, nphi):
+                return None
+            # Empty bins read as 0, which is also a valid time, so mask on entries instead.
+            # uproot's TProfile2D.counts() fails here; fBinEntries is ROOT-ordered (x fastest, with flow bins).
+            entries = np.asarray(h.member("fBinEntries")).reshape((nphi + 2, neta + 2)).T[1:-1, 1:-1]
+        valid = (entries > 0) & np.isfinite(vals)
+        if not np.any(valid):
+            return None
+        return np.where(valid, vals, np.nan)
+    except Exception as e:
+        print(f"Time map load error for {det} from {hist_file}: {e}")
+        return None
+
+
+def worker_plot_time_map(args: Tuple) -> str:
+    """Worker task to render stacked per-detector mean raw time maps for a run."""
+    run, role, ep_idx, tmaps, lims, output_dir = args
+    ep_str = f"Epoch {ep_idx}" if ep_idx is not None else "Unassigned"
+
+    panels = []
+    for det, tmap in tmaps.items():
+        vals = tmap[np.isfinite(tmap)]
+        panels.append({
+            "data": tmap,
+            "cmap": "coolwarm",
+            "vmin": -lims[det],
+            "vmax": lims[det],
+            "cbar_label": f"{det} Mean Raw Time [samples]",
+            "badge": (
+                f"{det}  |  {role} Run {run} ({ep_str})  |  Mean Raw Time\n"
+                f"Mean: {vals.mean():+.3f}  |  RMS: {vals.std():.3f} samples  |  Towers: {len(vals):,}"
+            ),
+        })
+
+    return render_sf_panels(panels, output_dir / f"time_map_run{run}.png")
+
+
+def worker_plot_time_diff(args: Tuple) -> str:
+    """Worker task to render stacked per-detector t_val - t_cand maps for one epoch pairing."""
+    ep_idx, cand_run, val_run, diffs, lims, output_dir = args
+
+    panels = []
+    for det, diff in diffs.items():
+        vals = diff[np.isfinite(diff)]
+        frac_010 = float(np.mean(np.abs(vals) <= 0.10)) * 100.0
+        frac_025 = float(np.mean(np.abs(vals) <= 0.25)) * 100.0
+        panels.append({
+            "data": diff,
+            "cmap": "coolwarm",
+            "vmin": -lims[det],
+            "vmax": lims[det],
+            "cbar_label": rf"{det} $t_\mathrm{{val}} - t_\mathrm{{cand}}$ [samples]",
+            "badge": (
+                f"{det}  |  Epoch {ep_idx}  |  Val Run {val_run} - Cand Run {cand_run}  |  Raw Time Difference\n"
+                f"Mean: {vals.mean():+.3f}  |  RMS: {vals.std():.3f} samples  |  ±0.1: {frac_010:.1f}%  |  ±0.25: {frac_025:.1f}%"
+            ),
+        })
+
+    return render_sf_panels(panels, output_dir / f"time_diff_epoch{ep_idx}_val{val_run}_cand{cand_run}.png")
+
+
+def build_time_map_tasks(
+    detectors: List[str],
+    epochs: List[Tuple[int, int, int]],
+    candidates: Dict[int, str],
+    val_runs: Dict[int, str],
+    output_dir: Path,
+) -> List[Tuple]:
+    """
+    Look up and load raw time maps for candidate and validation runs, derive per-detector colour ranges,
+    pair runs by epoch to build t_val - t_cand maps, write path and summary CSVs, and return plotting tasks.
+    """
+    roles = {r: "Candidate" for r in candidates}
+    roles.update({r: "Validation" for r in val_runs})
+    runs = sorted(roles)
+
+    print(f"\nLooking up {TIME_HIST_DSTTYPE} segment-0 hist files in FileCatalog for {len(runs)} run(s)...")
+    try:
+        paths = query_time_hist_paths(runs)
+    except Exception as err:
+        print(f"Warning: FileCatalog lookup failed ({err}); skipping time maps.")
+        return []
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"run": r, "role": roles[r], "tag": paths[r][0] if r in paths else "", "path": paths[r][1] if r in paths else ""}
+        for r in runs
+    ]).to_csv(output_dir / "time_hist_paths.csv", index=False)
+
+    # Load maps; keep only runs with every requested detector available
+    tmaps = {}
+    for run in runs:
+        if run not in paths:
+            print(f"Warning: No {TIME_HIST_DSTTYPE} segment-0 file found for run {run}.")
+            continue
+        path = paths[run][1]
+        if not os.path.exists(path):
+            print(f"Warning: Time hist file for run {run} not found on disk: {path}")
+            continue
+        run_maps = {det: load_time_map(det, path) for det in detectors}
+        if any(m is None for m in run_maps.values()):
+            print(f"Warning: Incomplete raw time maps for run {run}; skipping.")
+            continue
+        tmaps[run] = run_maps
+
+    if not tmaps:
+        return []
+
+    cand_maps = {r: m for r, m in tmaps.items() if roles[r] == "Candidate"}
+    val_maps = {r: m for r, m in tmaps.items() if roles[r] == "Validation"}
+
+    # Symmetric colour range around 0 per detector, shared across all candidate and validation runs
+    lims = {}
+    for det in detectors:
+        pooled = np.concatenate([np.abs(m[det][np.isfinite(m[det])]) for m in tmaps.values()])
+        lims[det] = float(np.clip(np.percentile(pooled, 99), 0.1, 10.0))
+
+    tasks = []
+    for role, maps, role_dir in (("Candidate", cand_maps, output_dir / "candidate"), ("Validation", val_maps, output_dir / "validation")):
+        if maps:
+            role_dir.mkdir(parents=True, exist_ok=True)
+        for run, run_maps in maps.items():
+            tasks.append((
+                worker_plot_time_map,
+                (run, role, get_epoch_for_run(run, epochs), run_maps, lims, role_dir),
+                f"TimeMap {role} Run {run}",
+            ))
+
+    diff_maps = []
+    summary_records = []
+    for ep_idx, cand_run, val_run in pair_runs_by_epoch(cand_maps, val_maps, epochs, "time difference maps"):
+        diffs = {det: val_maps[val_run][det] - cand_maps[cand_run][det] for det in detectors}
+        diff_maps.append((ep_idx, cand_run, val_run, diffs))
+        for det, diff in diffs.items():
+            vals = diff[np.isfinite(diff)]
+            summary_records.append({
+                "detector": det,
+                "epoch": ep_idx,
+                "cand_run": cand_run,
+                "val_run": val_run,
+                "n_towers": int(len(vals)),
+                "mean_diff": float(np.mean(vals)),
+                "std_diff": float(np.std(vals)),
+                "median_diff": float(np.median(vals)),
+                "frac_within_0p10": float(np.mean(np.abs(vals) <= 0.10)),
+                "frac_within_0p25": float(np.mean(np.abs(vals) <= 0.25)),
+            })
+
+    if diff_maps:
+        dir_diff = output_dir / "epoch_diff"
+        dir_diff.mkdir(parents=True, exist_ok=True)
+
+        # Symmetric colour range around 0 per detector, shared across epochs
+        diff_lims = {}
+        for det in detectors:
+            pooled = np.concatenate([np.abs(d[det][np.isfinite(d[det])]) for _, _, _, d in diff_maps])
+            diff_lims[det] = float(np.clip(np.percentile(pooled, 98), 0.02, 10.0))
+
+        for ep_idx, cand_run, val_run, diffs in diff_maps:
+            tasks.append((
+                worker_plot_time_diff,
+                (ep_idx, cand_run, val_run, diffs, diff_lims, dir_diff),
+                f"TimeDiff Epoch {ep_idx}",
+            ))
+
+        csv_path = dir_diff / "time_diff_summary.csv"
+        pd.DataFrame(summary_records).to_csv(csv_path, index=False)
+        print(f"  Saved raw time difference summary: {csv_path}")
+
+    return tasks
+
+
 def execute_plotting_task(task_spec: Tuple) -> Tuple[str, Any]:
     """Top-level task dispatcher for ProcessPoolExecutor."""
     fn, args, label = task_spec
@@ -1584,6 +1812,7 @@ def plot_all_validation_parallel(
     val_hist_list_path: Optional[Path] = None,
     val_ylim_residual: Optional[Tuple[float, float]] = None,
     val_ylim_ratio: Optional[Tuple[float, float]] = None,
+    time_maps: bool = True,
     jobs: int = 8,
 ):
     """Orchestrate all validation plotting tasks in parallel across worker processes."""
@@ -1705,6 +1934,10 @@ def plot_all_validation_parallel(
         tasks.extend(build_scale_factor_tasks(
             detectors, epochs, input_dir, candidates, val_runs, output_dir / "scale_factor_maps"
         ))
+
+    # 8. Raw tower time maps and per-epoch t_val - t_cand differences
+    if time_maps and (candidates or val_runs):
+        tasks.extend(build_time_map_tasks(detectors, epochs, candidates, val_runs, output_dir / "time_maps"))
 
     print(f"\nDispatching {len(tasks)} plotting tasks across {jobs} parallel worker process(es)...")
 
@@ -1865,6 +2098,7 @@ def main():
         val_hist_list_path=args.val_hist_list,
         val_ylim_residual=val_ylim_residual,
         val_ylim_ratio=val_ylim_ratio,
+        time_maps=not args.no_time_maps,
         jobs=args.jobs,
     )
 
@@ -1876,6 +2110,8 @@ def main():
     print(f"  - Closure:       {args.output_dir / 'closure'}")
     print(f"  - Spatial Maps:  {args.output_dir / 'spatial_maps'}")
     print(f"  - SF Maps:       {args.output_dir / 'scale_factor_maps'}")
+    if not args.no_time_maps:
+        print(f"  - Time Maps:     {args.output_dir / 'time_maps'}")
     if args.val_hist_list:
         print(f"  - Validation:    {args.output_dir / 'validation'}")
         print(f"    * Combined:    {args.output_dir / 'validation'}")
