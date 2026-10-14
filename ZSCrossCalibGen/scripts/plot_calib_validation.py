@@ -25,6 +25,15 @@ Plots organized into subdirectories:
    - validation/residuals/val_residuals_<det>_run<run>.png: Per-run 1D residual distributions for each validation run.
    - validation/ratios/val_ratios_<det>_run<run>.png: Per-run 1D ratio distributions for each validation run.
    - validation/spatial_maps/spatial_map_val_<det>_run<run>_<win>.png: 2D (eta, phi) relative residual heatmaps [%] across Main, -5 ns, and +5 ns windows.
+7. scale_factor_maps/:
+   - Scale factor SF_win = H_win / T0 Integrated, built directly from each run's QA hist and its own T0 Integrated (Fratio) value.
+   - candidate/sf_map_<det>_run<run>.png: 3 stacked (eta, phi) panels (-5 ns, Main, +5 ns) per candidate run.
+   - validation/sf_map_<det>_run<run>.png: Same for each validation run (when --val-hist-list is provided).
+     Colour ranges are shared per (detector, window) across all candidate and validation runs.
+   - epoch_ratio/sf_ratio_<det>_epoch<E>_val<vrun>_cand<crun>.png: SF_val / SF_cand per window for each epoch pairing.
+     Colour ranges are symmetric around 1.0 and shared per (detector, window) across epochs.
+     Algebraically equal to Hist / CDB for the validation run, which is cross-checked per window.
+   - epoch_ratio/sf_ratio_summary.csv: Per (detector, epoch, window) ratio statistics and closure deviation.
 """
 
 import argparse
@@ -97,6 +106,10 @@ SAMPLE_WINDOWS = [
         "color": "#2ca02c",
     },
 ]
+WINDOW_BY_KEY = {w["key"]: w for w in SAMPLE_WINDOWS}
+
+# Top-to-bottom panel order for stacked scale factor figures
+SF_PANEL_ORDER = ("minus5", "main", "plus5")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -235,6 +248,14 @@ def load_hist_list(hist_list_path: Optional[Path]) -> Dict[int, str]:
 
 
 load_candidate_runs = load_hist_list
+
+
+def get_epoch_for_run(run: int, epochs: List[Tuple[int, int, int]]) -> Optional[int]:
+    """Return the epoch index containing run, or None if unassigned."""
+    for s, e, ep_idx in epochs:
+        if s <= run <= e:
+            return ep_idx
+    return None
 
 
 def find_cdb_file(input_dir: Path, det: str, run: int) -> Optional[Path]:
@@ -1004,12 +1025,8 @@ def render_val_trend_by_run(
 
     run_to_idx = {r: i for i, r in enumerate(sorted_runs)}
 
-    # Helper to find epoch for a given run
     def get_run_epoch(r_num):
-        for s, e, ep_idx in epochs:
-            if s <= r_num <= e:
-                return ep_idx
-        return None
+        return get_epoch_for_run(r_num, epochs)
 
     # Build contiguous epoch intervals across the sorted validation runs
     run_epochs = [get_run_epoch(r) for r in sorted_runs]
@@ -1275,6 +1292,280 @@ def worker_plot_val_spatial_maps(args: Tuple) -> List[str]:
     return saved
 
 
+def load_scale_factors(det: str, run: int, hist_file: str, input_dir: Path) -> Optional[Dict[str, np.ndarray]]:
+    """
+    Load per-tower scale factors SF_win = H_win / T0 Integrated for a (detector, run).
+    T0 Integrated is the run's own Fratio from its CDB file. Returns {win_key: (neta, nphi) array}
+    with NaN for invalid towers, or None if any window is unavailable.
+    """
+    cfg = DETECTOR_CONFIG[det]
+    neta, nphi = cfg["neta"], cfg["nphi"]
+    hist_det = cfg["hist_det"]
+
+    cdb_file = find_cdb_file(input_dir, det, run)
+    if not cdb_file or not cdb_file.is_file() or not os.path.exists(hist_file):
+        print(f"Warning: Missing CDB or hist file for {det} run {run}; skipping scale factor maps.")
+        return None
+
+    try:
+        with uproot.open(cdb_file) as f_cdb:
+            t0 = f_cdb["Multiple"].arrays(["Fratio"], library="np")["Fratio"]
+        if len(t0) != neta * nphi:
+            return None
+        t0_2d = t0.reshape((neta, nphi))
+
+        sf = {}
+        with uproot.open(hist_file) as f_hist:
+            for w_key in SF_PANEL_ORDER:
+                hname = f"h_CaloFittingQA_{hist_det}_etaphi_ZScrosscalib_{WINDOW_BY_KEY[w_key]['hist_suffix']}"
+                if hname not in f_hist:
+                    print(f"Warning: {hname} missing in {hist_file}; skipping {det} run {run}.")
+                    return None
+                h_obj = f_hist[hname]
+                h_vals = h_obj.values() if hasattr(h_obj, "values") else h_obj.to_numpy()[0]
+                if h_vals.shape != (neta, nphi):
+                    return None
+
+                valid = (t0_2d > 0) & (h_vals > 0) & np.isfinite(t0_2d) & np.isfinite(h_vals)
+                if not np.any(valid):
+                    return None
+                sf[w_key] = np.where(valid, h_vals / np.where(valid, t0_2d, 1.0), np.nan)
+        return sf
+    except Exception as e:
+        print(f"Scale factor load error for run {run} {det}: {e}")
+        return None
+
+
+def check_ratio_closure(
+    det: str,
+    val_run: int,
+    input_dir: Path,
+    sf_val: Dict[str, np.ndarray],
+    ratios: Dict[str, np.ndarray],
+) -> Dict[str, float]:
+    """
+    Cross-check SF_val / SF_cand against Hist_val / CDB_val per window. The two are algebraically
+    identical (CDB_val = SF_cand * T0_val, Hist_val = SF_val * T0_val). Returns max absolute deviation.
+    """
+    cfg = DETECTOR_CONFIG[det]
+    neta, nphi = cfg["neta"], cfg["nphi"]
+    out = {w_key: float("nan") for w_key in SF_PANEL_ORDER}
+
+    cdb_file = find_cdb_file(input_dir, det, val_run)
+    if not cdb_file:
+        return out
+    with uproot.open(cdb_file) as f_cdb:
+        arr = f_cdb["Multiple"].arrays(["Fratio"] + [w["cdb_col"] for w in SAMPLE_WINDOWS], library="np")
+    t0_2d = arr["Fratio"].reshape((neta, nphi))
+
+    for w_key in SF_PANEL_ORDER:
+        cdb_2d = arr[WINDOW_BY_KEY[w_key]["cdb_col"]].reshape((neta, nphi))
+        ok = np.isfinite(ratios[w_key]) & (cdb_2d > 0)
+        if not np.any(ok):
+            continue
+        hist_over_cdb = (sf_val[w_key][ok] * t0_2d[ok]) / cdb_2d[ok]
+        out[w_key] = float(np.max(np.abs(ratios[w_key][ok] - hist_over_cdb)))
+        if out[w_key] > 1e-4:
+            print(
+                f"Warning: {det} run {val_run} {w_key}: SF_val / SF_cand deviates from Hist / CDB "
+                f"by up to {out[w_key]:.2e} (expected identical)."
+            )
+    return out
+
+
+def render_sf_panels(panels: List[Dict[str, Any]], out_path: Path) -> str:
+    """Render vertically stacked (eta, phi) heatmap panels, each with its own colour bar and stats badge."""
+    fig, axes = plt.subplots(len(panels), 1, figsize=(14, 5.4 * len(panels)))
+    for i, (ax, p) in enumerate(zip(axes, panels)):
+        neta, nphi = p["data"].shape
+        im = ax.imshow(
+            np.ma.masked_invalid(p["data"]),
+            origin="lower",
+            aspect="equal",
+            cmap=p["cmap"],
+            vmin=p["vmin"],
+            vmax=p["vmax"],
+            extent=[0, nphi, 0, neta],
+        )
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="2.5%", pad=0.15)
+        cbar = plt.colorbar(im, cax=cax)
+        cbar.set_label(p["cbar_label"], fontsize=12)
+
+        ax.set_ylabel(r"$\eta$ Bin Index", fontsize=13)
+        if i == len(panels) - 1:
+            ax.set_xlabel(r"$\phi$ Bin Index", fontsize=13)
+
+        ax.text(
+            0.02, 0.95, p["badge"],
+            transform=ax.transAxes, fontsize=10.5, weight="bold", color="black", va="top",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="#cccccc", alpha=0.85)
+        )
+
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return out_path.name
+
+
+def worker_plot_sf_map(args: Tuple) -> str:
+    """Worker task to render stacked scale factor (H_win / T0 Integrated) maps for a (detector, run)."""
+    det, run, role, ep_idx, sf, vranges, output_dir = args
+    ep_str = f"Epoch {ep_idx}" if ep_idx is not None else "Unassigned"
+
+    panels = []
+    for w_key in SF_PANEL_ORDER:
+        win = WINDOW_BY_KEY[w_key]
+        vals = sf[w_key][np.isfinite(sf[w_key])]
+        vmin, vmax = vranges[w_key]
+        panels.append({
+            "data": sf[w_key],
+            "cmap": "viridis",
+            "vmin": vmin,
+            "vmax": vmax,
+            "cbar_label": rf"{win['label']} / T0 Integrated",
+            "badge": (
+                f"{det}  |  {role} Run {run} ({ep_str})  |  {win['label']} / T0 Integrated\n"
+                f"Mean: {vals.mean():.4f}  |  RMS: {vals.std():.4f}  |  Towers: {len(vals):,}"
+            ),
+        })
+
+    return render_sf_panels(panels, output_dir / f"sf_map_{det}_run{run}.png")
+
+
+def worker_plot_sf_epoch_ratio(args: Tuple) -> str:
+    """Worker task to render stacked SF_val / SF_cand maps for one (detector, epoch) pairing."""
+    det, ep_idx, cand_run, val_run, ratios, lims, output_dir = args
+
+    panels = []
+    for w_key in SF_PANEL_ORDER:
+        win = WINDOW_BY_KEY[w_key]
+        lim = lims[w_key]
+        vals = ratios[w_key][np.isfinite(ratios[w_key])]
+        frac_2pct = float(np.mean(np.abs(vals - 1.0) <= 0.02)) * 100.0
+        frac_5pct = float(np.mean(np.abs(vals - 1.0) <= 0.05)) * 100.0
+        panels.append({
+            "data": ratios[w_key],
+            "cmap": "coolwarm",
+            "vmin": 1.0 - lim,
+            "vmax": 1.0 + lim,
+            "cbar_label": rf"$\mathrm{{SF}}_\mathrm{{val}} / \mathrm{{SF}}_\mathrm{{cand}}$ ({win['label']})",
+            "badge": (
+                f"{det}  |  Epoch {ep_idx}  |  Val Run {val_run} / Cand Run {cand_run}  |  {win['label']}\n"
+                f"Mean: {vals.mean():.4f}  |  RMS: {vals.std():.4f}  |  ±2%: {frac_2pct:.1f}%  |  ±5%: {frac_5pct:.1f}%"
+            ),
+        })
+
+    return render_sf_panels(panels, output_dir / f"sf_ratio_{det}_epoch{ep_idx}_val{val_run}_cand{cand_run}.png")
+
+
+def build_scale_factor_tasks(
+    detectors: List[str],
+    epochs: List[Tuple[int, int, int]],
+    input_dir: Path,
+    candidates: Dict[int, str],
+    val_runs: Dict[int, str],
+    output_dir: Path,
+) -> List[Tuple]:
+    """
+    Load scale factors for candidate and validation runs, derive shared colour ranges, pair runs by
+    epoch to build SF_val / SF_cand ratios, write the ratio summary CSV, and return plotting tasks.
+    """
+    dir_cand = output_dir / "candidate"
+    dir_val = output_dir / "validation"
+    dir_ratio = output_dir / "epoch_ratio"
+    dir_cand.mkdir(parents=True, exist_ok=True)
+    if val_runs:
+        dir_val.mkdir(parents=True, exist_ok=True)
+        dir_ratio.mkdir(parents=True, exist_ok=True)
+
+    print(
+        f"\nLoading scale factors (H_win / T0 Integrated) for {len(candidates)} candidate "
+        f"and {len(val_runs)} validation run(s) across {len(detectors)} detector(s)..."
+    )
+
+    tasks = []
+    summary_records = []
+    for det in detectors:
+        sf_cand = {r: load_scale_factors(det, r, p, input_dir) for r, p in sorted(candidates.items())}
+        sf_val = {r: load_scale_factors(det, r, p, input_dir) for r, p in sorted(val_runs.items())}
+        sf_cand = {r: s for r, s in sf_cand.items() if s is not None}
+        sf_val = {r: s for r, s in sf_val.items() if s is not None}
+        if not sf_cand and not sf_val:
+            continue
+
+        # Colour range per window shared across all candidate and validation runs of this detector
+        sf_vranges = {}
+        for w_key in SF_PANEL_ORDER:
+            pooled = np.concatenate([s[w_key][np.isfinite(s[w_key])] for s in [*sf_cand.values(), *sf_val.values()]])
+            lo, hi = np.percentile(pooled, [1, 99])
+            if hi - lo < 1e-4:
+                lo, hi = lo - 0.005, hi + 0.005
+            sf_vranges[w_key] = (float(lo), float(hi))
+
+        for role, sf_map, role_dir in (("Candidate", sf_cand, dir_cand), ("Validation", sf_val, dir_val)):
+            for run, sf in sf_map.items():
+                tasks.append((
+                    worker_plot_sf_map,
+                    (det, run, role, get_epoch_for_run(run, epochs), sf, sf_vranges, role_dir),
+                    f"SFMap {det} {role} Run {run}",
+                ))
+
+        # Pair each validation run with the single candidate run of its epoch
+        ratio_maps = []
+        for s, e, ep_idx in epochs:
+            ep_vals = [r for r in sf_val if s <= r <= e]
+            if not ep_vals:
+                continue
+            ep_cands = [r for r in sf_cand if s <= r <= e]
+            if len(ep_cands) != 1:
+                print(f"  Skipping {det} Epoch {ep_idx} ratio maps: expected 1 candidate run, found {len(ep_cands)}.")
+                continue
+            cand_run = ep_cands[0]
+
+            for val_run in ep_vals:
+                ratios = {w_key: sf_val[val_run][w_key] / sf_cand[cand_run][w_key] for w_key in SF_PANEL_ORDER}
+                closure = check_ratio_closure(det, val_run, input_dir, sf_val[val_run], ratios)
+                ratio_maps.append((ep_idx, cand_run, val_run, ratios))
+
+                for w_key in SF_PANEL_ORDER:
+                    vals = ratios[w_key][np.isfinite(ratios[w_key])]
+                    summary_records.append({
+                        "detector": det,
+                        "epoch": ep_idx,
+                        "cand_run": cand_run,
+                        "val_run": val_run,
+                        "window": w_key,
+                        "window_label": WINDOW_BY_KEY[w_key]["label"],
+                        "n_towers": int(len(vals)),
+                        "mean_ratio": float(np.mean(vals)),
+                        "std_ratio": float(np.std(vals)),
+                        "median_ratio": float(np.median(vals)),
+                        "frac_within_2pct": float(np.mean(np.abs(vals - 1.0) <= 0.02)),
+                        "frac_within_5pct": float(np.mean(np.abs(vals - 1.0) <= 0.05)),
+                        "closure_max_abs_dev": closure[w_key],
+                    })
+
+        if ratio_maps:
+            # Symmetric colour range around 1.0 per window, shared across all epochs of this detector
+            ratio_lims = {}
+            for w_key in SF_PANEL_ORDER:
+                pooled_dev = np.concatenate([np.abs(r[w_key][np.isfinite(r[w_key])] - 1.0) for _, _, _, r in ratio_maps])
+                ratio_lims[w_key] = float(np.clip(np.percentile(pooled_dev, 98), 0.002, 0.25))
+            for ep_idx, cand_run, val_run, ratios in ratio_maps:
+                tasks.append((
+                    worker_plot_sf_epoch_ratio,
+                    (det, ep_idx, cand_run, val_run, ratios, ratio_lims, dir_ratio),
+                    f"SFRatio {det} Epoch {ep_idx}",
+                ))
+
+    if summary_records:
+        csv_path = dir_ratio / "sf_ratio_summary.csv"
+        pd.DataFrame(summary_records).to_csv(csv_path, index=False)
+        print(f"  Saved scale factor ratio summary: {csv_path}")
+
+    return tasks
+
+
 def execute_plotting_task(task_spec: Tuple) -> Tuple[str, Any]:
     """Top-level task dispatcher for ProcessPoolExecutor."""
     fn, args, label = task_spec
@@ -1380,8 +1671,8 @@ def plot_all_validation_parallel(
     # 6. Validation vs independent test hists (when val_hist_list_path is provided)
     has_val = False
     dir_validation = output_dir / "validation"
+    val_runs = load_hist_list(val_hist_list_path) if val_hist_list_path else {}
     if val_hist_list_path:
-        val_runs = load_hist_list(val_hist_list_path)
         if val_runs:
             has_val = True
             dir_val_spatial = dir_validation / "spatial_maps"
@@ -1408,6 +1699,12 @@ def plot_all_validation_parallel(
                     ))
         else:
             print(f"\nWarning: No valid runs parsed from validation hist list: {val_hist_list_path}")
+
+    # 7. Scale factor maps (H_win / T0 Integrated) and per-epoch SF_val / SF_cand ratios
+    if candidates or val_runs:
+        tasks.extend(build_scale_factor_tasks(
+            detectors, epochs, input_dir, candidates, val_runs, output_dir / "scale_factor_maps"
+        ))
 
     print(f"\nDispatching {len(tasks)} plotting tasks across {jobs} parallel worker process(es)...")
 
@@ -1578,12 +1875,14 @@ def main():
     print(f"  - Distributions: {args.output_dir / 'distributions'}")
     print(f"  - Closure:       {args.output_dir / 'closure'}")
     print(f"  - Spatial Maps:  {args.output_dir / 'spatial_maps'}")
+    print(f"  - SF Maps:       {args.output_dir / 'scale_factor_maps'}")
     if args.val_hist_list:
         print(f"  - Validation:    {args.output_dir / 'validation'}")
         print(f"    * Combined:    {args.output_dir / 'validation'}")
         print(f"    * Residuals:   {args.output_dir / 'validation' / 'residuals'}")
         print(f"    * Ratios:      {args.output_dir / 'validation' / 'ratios'}")
         print(f"    * Spatial Maps:{args.output_dir / 'validation' / 'spatial_maps'}")
+        print(f"  - SF Epoch Ratio:{args.output_dir / 'scale_factor_maps' / 'epoch_ratio'}")
     print("=" * 80)
 
 
