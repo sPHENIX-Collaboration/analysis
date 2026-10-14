@@ -23,7 +23,7 @@ R__LOAD_LIBRARY(libbcolumicount.so)
 R__LOAD_LIBRARY(libffamodules.so)
 
 void Fun4All_StreamingBco(const int nEvents = 0,
-		      const std::string &bcodst = "DST_BCOINFO-00079507.root")
+		      const std::string &bcodst = "DST_BCOINFO-00079516.root")
 {
 
   std::string outfile = "DST_STREAMING_BCOINFO-";

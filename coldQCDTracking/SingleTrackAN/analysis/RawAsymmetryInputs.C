@@ -5,7 +5,7 @@
 
 void RawAsymmetryInputs(int Verbosity = 0)
 {
-    TFile *infile = TFile::Open("/sphenix/tg/tg01/coldqcd/dloomis/singletrackan/Aug12_singletracks/79507-all.root");
+    TFile *infile = TFile::Open("/sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/Oct6/79516.root");
 
     int bunchnum;
     int sphnxbunchnum;
@@ -62,6 +62,7 @@ void RawAsymmetryInputs(int Verbosity = 0)
     singleTrackTree->SetBranchAddress("doublecount", &doublecount);
     singleTrackTree->SetBranchAddress("p", &p);
     singleTrackTree->SetBranchAddress("pt", &pt);
+    singleTrackTree->SetBranchAddress("xf", &xf);
     singleTrackTree->SetBranchAddress("eta", &eta);
     singleTrackTree->SetBranchAddress("phi", &phi);
     singleTrackTree->SetBranchAddress("quality", &quality);
@@ -113,15 +114,28 @@ void RawAsymmetryInputs(int Verbosity = 0)
 
     // Declare histograms
     TH1D *hpt = new TH1D("hpt", ";p_{T};", 1000, 0., 100.);
+    TH1D *hpt_1GeV = new TH1D("hpt_1GeV", ";p_{T};", 1000, 0., 100.);
+    TH1D *hpt_1GeV_10GeV = new TH1D("hpt_1GeV_10GeV", ";p_{T};", 1000, 0., 100.);
     TH1D *hp = new TH1D("hp", ";p;", 1000, 0., 100.);
     TH1D *heta = new TH1D("heta", ";#eta;", 100, -2., 2.);
     TH1D *hphi = new TH1D("hphi", ";#phi;", 100, -3.5, 3.5);
-    TH1D *hxf = new TH1D("hxf", ";#x_{F};", 100, -0.4, 0.4);
+    TH1D *hxf = new TH1D("hxf", ";x_{F};", 100, -0.4, 0.4);
+    TH1D *hxf_cut = new TH1D("hxf_cut", ";x_{F};", 100, -0.2, 0.2);
     TH1D *hquality = new TH1D("hquality", ";quality;", 1000, 0., 500.);
     TH2D *h2ptp = new TH2D("h2ptp", ";p;p_{T}", 1000, 0., 100., 1000, 0., 100.);
     TH2D *h2etaphi = new TH2D("h2etaphi", ";phi;eta", 100, -3.5, 3.5, 100, -2., 2.);
     TH1I *h_trigger_bias = new TH1I("h_trigger_bias", ";trigger bias;", 2, -0.5, 1.5);
     TH1I *hdoublecount = new TH1I("hdoublecount", ";doublecount;", 2, -0.5, 1.5);
+    TH1I *hcrossing_all = new TH1I("hcrossing_all", ";crossing;", 360, -20, 340);
+    TH1I *hcrossing_nobias = new TH1I("hcrossing_nobias", ";crossing;", 360, -20, 340);
+    TH1I *hcrossing_nobias_nodups = new TH1I("hcrossing_nobias_nodups", ";crossing;", 360, -20, 340);
+
+    TH1I *hsphnx_bunchnum = new TH1I("hsphnxbunchnum", "; sphnx bunchnum;", 120, 0, 120);
+    TH1I *hbunchnum = new TH1I("hbunchnum", ";bunchnum;", 120, 0, 120);
+    TH1I *htrackbunchnum = new TH1I("htrackbunchnum", ";track bunchnum;", 120, 0, 120);
+
+
+
 
     // Asymmetry Inputs
     TH1D *hphi_bspinup = new TH1D("hphi_bup", ";#phi;", 12, -3.5, 3.5);
@@ -134,23 +148,55 @@ void RawAsymmetryInputs(int Verbosity = 0)
     TH2D *h2ptphi_yspinup = new TH2D("hptphi_yup", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
     TH2D *h2ptphi_yspindown = new TH2D("hptphi_ydown", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
 
+    TH2D *h2ptphi_bspinup_pos = new TH2D("hptphi_bup_pos", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_bspindown_pos = new TH2D("hptphi_bdown_pos", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_yspinup_pos = new TH2D("hptphi_yup_pos", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_yspindown_pos = new TH2D("hptphi_ydown_pos", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+
+    TH2D *h2ptphi_bspinup_neg = new TH2D("hptphi_bup_neg", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_bspindown_neg = new TH2D("hptphi_bdown_neg", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_yspinup_neg = new TH2D("hptphi_yup_neg", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+    TH2D *h2ptphi_yspindown_neg = new TH2D("hptphi_ydown_neg", ";#phi;p_{T}", nphibins, phibins, nptbins, ptbins);
+
     TH2D *h2xfphi_bspinup = new TH2D("hxfphi_bup", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
     TH2D *h2xfphi_bspindown = new TH2D("hxfphi_bdown", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
     TH2D *h2xfphi_yspinup = new TH2D("hxfphi_yup", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
     TH2D *h2xfphi_yspindown = new TH2D("hxfphi_ydown", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+
+    TH2D *h2xfphi_bspinup_pos = new TH2D("hxfphi_bup_pos", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_bspindown_pos = new TH2D("hxfphi_bdown_pos", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_yspinup_pos = new TH2D("hxfphi_yup_pos", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_yspindown_pos = new TH2D("hxfphi_ydown_pos", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+
+    TH2D *h2xfphi_bspinup_neg = new TH2D("hxfphi_bup_neg", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_bspindown_neg = new TH2D("hxfphi_bdown_neg", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_yspinup_neg = new TH2D("hxfphi_yup_neg", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
+    TH2D *h2xfphi_yspindown_neg = new TH2D("hxfphi_ydown_neg", ";#phi;x_{F}", nphibins, phibins, nxfbins, xfbins);
 
     TH2D *h2etaphi_bspinup = new TH2D("hetaphi_bup", ";#phi;#eta", nphibins, phibins, netabins, etabins);
     TH2D *h2etaphi_bspindown = new TH2D("hetaphi_bdown", ";#phi;#eta", nphibins, phibins, netabins, etabins);
     TH2D *h2etaphi_yspinup = new TH2D("hetaphi_yup", ";#phi;#eta", nphibins, phibins, netabins, etabins);
     TH2D *h2etaphi_yspindown = new TH2D("hetaphi_ydown", ";#phi;#eta", nphibins, phibins, netabins, etabins);
 
+    TH2D *h2etaphi_bspinup_pos = new TH2D("hetaphi_bup_pos", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_bspindown_pos = new TH2D("hetaphi_bdown_pos", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_yspinup_pos = new TH2D("hetaphi_yup_pos", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_yspindown_pos = new TH2D("hetaphi_ydown_pos", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+
+    TH2D *h2etaphi_bspinup_neg = new TH2D("hetaphi_bup_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_bspindown_neg = new TH2D("hetaphi_bdown_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_yspinup_neg = new TH2D("hetaphi_yup_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+    TH2D *h2etaphi_yspindown_neg = new TH2D("hetaphi_ydown_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
+
 
     for (int i = 0; i<singleTrackTree->GetEntries(); ++i)
-    //for(int i=0; i<1000; ++i)
+    //for(int i=0; i<100000000; ++i)
     {
         // TEMPORARY -- need to calculate xf from pT and eta until we save it in the tree on the next iteration // 
-        pz = pt * std::sinh(eta);
-        xf = ( 2 * pz ) / 200;
+        //pz = pt * std::sinh(eta);
+        //xf = ( 2. * pz ) / 200.;
+
+        if (i%10000000 == 0) { std::cout << "processing event : " << i << std::endl; }
         singleTrackTree->GetEntry(i);
         if (Verbosity > 1)
         {
@@ -165,27 +211,46 @@ void RawAsymmetryInputs(int Verbosity = 0)
         bool trigger_bias = usable_bco_tag&&crossing==0;
         h_trigger_bias->Fill(trigger_bias);
         hdoublecount->Fill(doublecount);
+        hcrossing_all->Fill(crossing);
 
         if (!usable_bco_tag && crossing == 0)
         {
             continue;
         }
+        
+        hcrossing_nobias->Fill(crossing);
 
         if (doublecount) 
         {
             continue;
         }
+        hcrossing_nobias_nodups->Fill(crossing);
 
         // Making some QA hists to get oriented 
 
         hpt->Fill(pt);
+        if (pt > 1)
+        {
+            hpt_1GeV->Fill(pt);
+        }
+        if (pt > 1 && pt < 10)
+        {
+            hpt_1GeV_10GeV->Fill(pt);
+        }
         hp->Fill(p);
         hxf->Fill(xf);
+        if (fabs(xf) < 0.2)
+        {
+            hxf_cut->Fill(xf);
+        }
         heta->Fill(eta);
         hphi->Fill(phi);
         hquality->Fill(quality);
         h2ptp->Fill(p, pt);
         h2etaphi->Fill(phi, eta);
+        hsphnx_bunchnum->Fill(sphnxbunchnum);
+        hbunchnum->Fill(bunchnum);
+        htrackbunchnum->Fill(trackBunch);
 
         // Spin sorted asymmetry inputs
 
@@ -195,7 +260,18 @@ void RawAsymmetryInputs(int Verbosity = 0)
             h2ptphi_bspinup->Fill(phi, pt);
             h2xfphi_bspinup->Fill(phi, xf);
             h2etaphi_bspinup->Fill(phi, eta);
-
+            if (charge == 1)
+            {
+                h2ptphi_bspinup_pos->Fill(phi, pt);
+                h2xfphi_bspinup_pos->Fill(phi, xf);
+                h2etaphi_bspinup_pos->Fill(phi, eta);
+            }
+            if (charge == -1)
+            {
+                h2ptphi_bspinup_neg->Fill(phi, pt);
+                h2xfphi_bspinup_neg->Fill(phi, xf);
+                h2etaphi_bspinup_neg->Fill(phi, eta);
+            }
         }
         if (bspin == -1)
         {
@@ -203,20 +279,60 @@ void RawAsymmetryInputs(int Verbosity = 0)
             h2ptphi_bspindown->Fill(phi, pt);
             h2xfphi_bspindown->Fill(phi, xf);
             h2etaphi_bspindown->Fill(phi, eta);
+            if (charge == 1)
+            {
+                h2ptphi_bspindown_pos->Fill(phi, pt);
+                h2xfphi_bspindown_pos->Fill(phi, xf);
+                h2etaphi_bspindown_pos->Fill(phi, eta);
+            }
+            if (charge == -1)
+            {
+                h2ptphi_bspindown_neg->Fill(phi, pt);
+                h2xfphi_bspindown_neg->Fill(phi, xf);
+                h2etaphi_bspindown_neg->Fill(phi, eta);
+            }
         }
         if (yspin == 1)
         {
+            // double check this is correct
+            xf = -1*xf;
             hphi_yspinup->Fill(phi);
             h2ptphi_yspinup->Fill(phi, pt);
             h2xfphi_yspinup->Fill(phi, xf);
             h2etaphi_yspinup->Fill(phi, eta);
+            if (charge == 1)
+            {
+                h2ptphi_yspinup_pos->Fill(phi, pt);
+                h2xfphi_yspinup_pos->Fill(phi, xf);
+                h2etaphi_yspinup_pos->Fill(phi, eta);
+            }
+            if (charge == -1)
+            {
+                h2ptphi_yspinup_neg->Fill(phi, pt);
+                h2xfphi_yspinup_neg->Fill(phi, xf);
+                h2etaphi_yspinup_neg->Fill(phi, eta);
+            }
         }
         if (yspin == -1)
         {
+            // double check this is correct
+            xf = -1*xf;
             hphi_yspindown->Fill(phi);
             h2ptphi_yspindown->Fill(phi, pt);
             h2xfphi_yspindown->Fill(phi, xf);
             h2etaphi_yspindown->Fill(phi, eta);
+            if (charge == 1)
+            {
+                h2ptphi_yspindown_pos->Fill(phi, pt);
+                h2xfphi_yspindown_pos->Fill(phi, xf);
+                h2etaphi_yspindown_pos->Fill(phi, eta);
+            }
+            if (charge == -1)
+            {
+                h2ptphi_yspindown_neg->Fill(phi, pt);
+                h2xfphi_yspindown_neg->Fill(phi, xf);
+                h2etaphi_yspindown_neg->Fill(phi, eta);
+            }
         }
         
 
