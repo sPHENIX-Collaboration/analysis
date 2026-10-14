@@ -6,6 +6,7 @@
 #include <fun4all/SubsysReco.h>
 
 #include <string>
+#include <array>
 
 class PHCompositeNode;
 class TTree;
@@ -81,6 +82,11 @@ class SingleTrackAN : public SubsysReco
   float ypol;
   float ypolerr;
 
+  // lumi
+  std::array<double, 120> bunchnumber_lumi{0.};
+
+  double lumi{0.};
+
 
   // track stuff
   float p;
@@ -103,6 +109,8 @@ class SingleTrackAN : public SubsysReco
 
 
   TTree *singleTrackTree = nullptr;
+  TTree *runTree = nullptr;
+
 
   TH1F *hbunchnum = nullptr;
   TH1F *hsphnxbunchnum = nullptr;

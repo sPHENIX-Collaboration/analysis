@@ -1,0 +1,10 @@
+1. For the run identified, use the following command on lustre to find out how many total segments there are. 
+
+find /sphenix/lustre01/sphnxpro/production/run3pp/physics/ana573_2026p003_v001/DST_TRKR_TRACKS/run_00079500_00079600/ -maxdepth 1 -name "*00079516-*" | wc -l
+
+Change the run number and ana tag accordingly. The output of this command will be the total number of segments NSEG
+
+2. Create the queue file with `awk`. The inputs are the RUNNUMBER and NSEG (replace accordingly)
+
+awk 'BEGIN { for(i=0; i<=<NSEG>-1; i++) printf "<RUNNUMBER>, %05d\n", i }' > queue_<RUNNUMBER>_segs.list
+
