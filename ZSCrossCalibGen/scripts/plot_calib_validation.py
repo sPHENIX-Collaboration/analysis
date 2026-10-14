@@ -41,6 +41,12 @@ Plots organized into subdirectories:
    - candidate/time_map_run<run>.png & validation/time_map_run<run>.png: Stacked panels, one per detector.
    - epoch_diff/time_diff_epoch<E>_val<vrun>_cand<crun>.png: t_val - t_cand per detector for each epoch pairing.
    - epoch_diff/time_diff_summary.csv: Per (detector, epoch) difference statistics.
+9. sf_vs_time/ (requires both scale factor and time maps):
+   - Tower-by-tower 2D histograms (log counts) with a mean-y profile overlay, one panel per sample window.
+   - candidate/ & validation/sf_vs_time_<det>_run<run>.png: SF_win vs mean raw tower time.
+   - epoch_ratio_vs_dt/sf_ratio_vs_dt_<det>_epoch<E>_val<vrun>_cand<crun>.png: SF_val / SF_cand vs t_val - t_cand.
+     Axis ranges are shared per (detector, window) across runs, and across epochs for the pairings.
+   - sf_vs_time_summary.csv: Pearson r and linear fit (slope, intercept) per plot and window.
 """
 
 import argparse
@@ -56,6 +62,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
+from matplotlib.colors import LogNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 import mplhep as hep
@@ -1497,10 +1504,11 @@ def build_scale_factor_tasks(
     candidates: Dict[int, str],
     val_runs: Dict[int, str],
     output_dir: Path,
-) -> List[Tuple]:
+) -> Tuple[List[Tuple], Dict[str, Dict[int, Dict[str, np.ndarray]]]]:
     """
     Load scale factors for candidate and validation runs, derive shared colour ranges, pair runs by
-    epoch to build SF_val / SF_cand ratios, write the ratio summary CSV, and return plotting tasks.
+    epoch to build SF_val / SF_cand ratios, and write the ratio summary CSV.
+    Returns (plotting tasks, {det: {run: {win_key: sf}}}).
     """
     dir_cand = output_dir / "candidate"
     dir_val = output_dir / "validation"
@@ -1517,6 +1525,7 @@ def build_scale_factor_tasks(
 
     tasks = []
     summary_records = []
+    sf_maps = {}
     for det in detectors:
         sf_cand = {r: load_scale_factors(det, r, p, input_dir) for r, p in sorted(candidates.items())}
         sf_val = {r: load_scale_factors(det, r, p, input_dir) for r, p in sorted(val_runs.items())}
@@ -1524,6 +1533,7 @@ def build_scale_factor_tasks(
         sf_val = {r: s for r, s in sf_val.items() if s is not None}
         if not sf_cand and not sf_val:
             continue
+        sf_maps[det] = {**sf_cand, **sf_val}
 
         # Colour range per window shared across all candidate and validation runs of this detector
         sf_vranges = {}
@@ -1584,7 +1594,7 @@ def build_scale_factor_tasks(
         pd.DataFrame(summary_records).to_csv(csv_path, index=False)
         print(f"  Saved scale factor ratio summary: {csv_path}")
 
-    return tasks
+    return tasks, sf_maps
 
 
 def query_time_hist_paths(runs: List[int], dsttype_pattern: str = TIME_HIST_DSTTYPE) -> Dict[int, Tuple[str, str]]:
@@ -1689,10 +1699,11 @@ def build_time_map_tasks(
     candidates: Dict[int, str],
     val_runs: Dict[int, str],
     output_dir: Path,
-) -> List[Tuple]:
+) -> Tuple[List[Tuple], Dict[int, Dict[str, np.ndarray]]]:
     """
     Look up and load raw time maps for candidate and validation runs, derive per-detector colour ranges,
-    pair runs by epoch to build t_val - t_cand maps, write path and summary CSVs, and return plotting tasks.
+    pair runs by epoch to build t_val - t_cand maps, and write path and summary CSVs.
+    Returns (plotting tasks, {run: {det: time map}}).
     """
     roles = {r: "Candidate" for r in candidates}
     roles.update({r: "Validation" for r in val_runs})
@@ -1703,7 +1714,7 @@ def build_time_map_tasks(
         paths = query_time_hist_paths(runs)
     except Exception as err:
         print(f"Warning: FileCatalog lookup failed ({err}); skipping time maps.")
-        return []
+        return [], {}
 
     output_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame([
@@ -1728,7 +1739,7 @@ def build_time_map_tasks(
         tmaps[run] = run_maps
 
     if not tmaps:
-        return []
+        return [], {}
 
     cand_maps = {r: m for r, m in tmaps.items() if roles[r] == "Candidate"}
     val_maps = {r: m for r, m in tmaps.items() if roles[r] == "Validation"}
@@ -1790,6 +1801,202 @@ def build_time_map_tasks(
         csv_path = dir_diff / "time_diff_summary.csv"
         pd.DataFrame(summary_records).to_csv(csv_path, index=False)
         print(f"  Saved raw time difference summary: {csv_path}")
+
+    return tasks, tmaps
+
+
+def linear_fit_stats(x: np.ndarray, y: np.ndarray) -> Dict[str, float]:
+    """Pearson r and least-squares line y = slope * x + intercept over towers valid in both x and y."""
+    ok = np.isfinite(x) & np.isfinite(y)
+    x, y = x[ok], y[ok]
+    stats = {"n_towers": int(len(x)), "pearson_r": float("nan"), "slope": float("nan"), "intercept": float("nan")}
+    if len(x) >= 3 and np.std(x) > 0 and np.std(y) > 0:
+        stats["pearson_r"] = float(np.corrcoef(x, y)[0, 1])
+        stats["slope"], stats["intercept"] = (float(v) for v in np.polyfit(x, y, 1))
+    return stats
+
+
+def padded_range(vals: np.ndarray, lo_pct: float = 0.5, hi_pct: float = 99.5, min_span: float = 1e-3) -> Tuple[float, float]:
+    """Percentile range of the finite values, padded by 5% on each side."""
+    lo, hi = np.percentile(vals[np.isfinite(vals)], [lo_pct, hi_pct])
+    span = max(hi - lo, min_span)
+    return float(lo - 0.05 * span), float(hi + 0.05 * span)
+
+
+def worker_plot_sf_vs_time(args: Tuple) -> str:
+    """
+    Worker task to render tower-by-tower 2D histograms of a scale factor quantity (y) against a raw time
+    quantity (x), one panel per sample window, with a mean-y profile overlay and linear fit stats.
+    """
+    det, header, x, ys, stats, xlim, ylims, xlabel, ylabel, ref, out_path = args
+    neta = DETECTOR_CONFIG[det]["neta"]
+    nbins_x, nbins_y, nbins_prof = (80, 60, 24) if neta > 24 else (40, 30, 16)
+
+    fig, axes = plt.subplots(1, len(SF_PANEL_ORDER), figsize=(24, 7.4))
+    for ax, w_key in zip(axes, SF_PANEL_ORDER):
+        win = WINDOW_BY_KEY[w_key]
+        y = ys[w_key]
+        ok = np.isfinite(x) & np.isfinite(y)
+        xv, yv = x[ok], y[ok]
+
+        _, _, _, im = ax.hist2d(
+            xv, yv, bins=[nbins_x, nbins_y], range=[xlim, ylims[w_key]],
+            cmap="viridis", norm=LogNorm(), cmin=1,
+        )
+        ax.set_box_aspect(1)
+        # Inset colour bar tracks the square axes exactly (make_axes_locatable does not with a fixed box aspect)
+        cax = ax.inset_axes([1.03, 0.0, 0.06, 1.0])
+        cbar = plt.colorbar(im, cax=cax)
+        cbar.set_label("Towers", fontsize=15)
+        cbar.ax.tick_params(labelsize=13)
+
+        # Profile: mean y and its standard error in x bins with at least 5 towers
+        edges = np.linspace(*xlim, nbins_prof + 1)
+        idx = np.digitize(xv, edges) - 1
+        centers, means, sems = [], [], []
+        for b in range(nbins_prof):
+            sel = yv[idx == b]
+            if len(sel) >= 5:
+                centers.append(0.5 * (edges[b] + edges[b + 1]))
+                means.append(sel.mean())
+                sems.append(sel.std() / np.sqrt(len(sel)))
+        ax.errorbar(
+            centers, means, yerr=sems, fmt="o", markersize=4.5, color="black",
+            markerfacecolor="white", markeredgewidth=1.2, elinewidth=1.2, capsize=2.5, label="Profile (mean ± SEM)",
+        )
+
+        if ref.get("x") is not None:
+            ax.axvline(ref["x"], color="#555555", ls="--", lw=1.0)
+        if ref.get("y") is not None:
+            ax.axhline(ref["y"], color="#555555", ls="--", lw=1.0)
+
+        s = stats[w_key]
+        ax.text(
+            0.03, 0.97,
+            f"{win['label']}\n"
+            f"r = {s['pearson_r']:+.3f}  |  slope = {s['slope']:+.4f} / sample\n"
+            f"Towers: {s['n_towers']:,}",
+            transform=ax.transAxes, fontsize=13, weight="bold", color="black", va="top",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="#cccccc", alpha=0.85)
+        )
+        ax.set_xlim(*xlim)
+        ax.set_ylim(*ylims[w_key])
+        ax.set_xlabel(xlabel, fontsize=17)
+        # Plain substitution: LaTeX braces in the label would break str.format
+        ax.set_ylabel(ylabel.replace("{label}", win["label"]), fontsize=16)
+        ax.legend(loc="lower right", frameon=True, framealpha=0.85, fontsize=13)
+
+    fig.tight_layout()
+    # Anchor the title just above the actual (square) panel tops, which tight_layout does not account for
+    fig.canvas.draw()
+    panel_top = max(ax.get_position().y1 for ax in axes)
+    fig.suptitle(header, fontsize=19, weight="bold", y=panel_top + 0.025, va="bottom")
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return out_path.name
+
+
+def build_sf_vs_time_tasks(
+    detectors: List[str],
+    epochs: List[Tuple[int, int, int]],
+    candidates: Dict[int, str],
+    val_runs: Dict[int, str],
+    sf_maps: Dict[str, Dict[int, Dict[str, np.ndarray]]],
+    tmaps: Dict[int, Dict[str, np.ndarray]],
+    output_dir: Path,
+) -> List[Tuple]:
+    """
+    Build tower-by-tower correlation tasks: SF_win vs mean raw time per candidate / validation run, and
+    SF_val / SF_cand vs t_val - t_cand per epoch pairing. Writes a combined fit summary CSV.
+    """
+    print("\nBuilding scale factor vs raw time correlations...")
+    dir_cand = output_dir / "candidate"
+    dir_val = output_dir / "validation"
+    dir_epoch = output_dir / "epoch_ratio_vs_dt"
+
+    tasks = []
+    summary_records = []
+    for det in detectors:
+        runs = sorted(r for r in sf_maps.get(det, {}) if r in tmaps)
+        if not runs:
+            continue
+        sf_runs = sf_maps[det]
+
+        # Axis ranges shared across all runs of this detector (x) and per window (y)
+        xlim = padded_range(np.concatenate([tmaps[r][det].ravel() for r in runs]))
+        ylims = {
+            w_key: padded_range(np.concatenate([sf_runs[r][w_key].ravel() for r in runs]))
+            for w_key in SF_PANEL_ORDER
+        }
+
+        for run in runs:
+            role, role_dir = ("Candidate", dir_cand) if run in candidates else ("Validation", dir_val)
+            role_dir.mkdir(parents=True, exist_ok=True)
+            ep_idx = get_epoch_for_run(run, epochs)
+            ep_str = f"Epoch {ep_idx}" if ep_idx is not None else "Unassigned"
+            x = tmaps[run][det].ravel()
+            ys = {w_key: sf_runs[run][w_key].ravel() for w_key in SF_PANEL_ORDER}
+            stats = {w_key: linear_fit_stats(x, ys[w_key]) for w_key in SF_PANEL_ORDER}
+            for w_key in SF_PANEL_ORDER:
+                summary_records.append({
+                    "kind": role, "detector": det, "epoch": ep_idx, "run": run,
+                    "cand_run": None, "val_run": None, "window": w_key, **stats[w_key],
+                })
+            tasks.append((
+                worker_plot_sf_vs_time,
+                (
+                    det, f"{det}  |  {role} Run {run} ({ep_str})  |  Scale Factor vs Mean Raw Time",
+                    x, ys, stats, xlim, ylims,
+                    "Mean Raw Tower Time [samples]", "{label} / T0 Integrated", {},
+                    role_dir / f"sf_vs_time_{det}_run{run}.png",
+                ),
+                f"SFvsTime {det} Run {run}",
+            ))
+
+        # Per-epoch: SF_val / SF_cand vs t_val - t_cand
+        cand_runs = [r for r in runs if r in candidates]
+        val_only = [r for r in runs if r in val_runs]
+        pairs = pair_runs_by_epoch(cand_runs, val_only, epochs, f"{det} SF ratio vs time difference")
+        if not pairs:
+            continue
+        dir_epoch.mkdir(parents=True, exist_ok=True)
+
+        pair_data = []
+        for ep_idx, cand_run, val_run in pairs:
+            dx = (tmaps[val_run][det] - tmaps[cand_run][det]).ravel()
+            dys = {w_key: (sf_runs[val_run][w_key] / sf_runs[cand_run][w_key]).ravel() for w_key in SF_PANEL_ORDER}
+            pair_data.append((ep_idx, cand_run, val_run, dx, dys))
+
+        dxlim = padded_range(np.concatenate([d[3] for d in pair_data]))
+        dylims = {
+            w_key: padded_range(np.concatenate([d[4][w_key] for d in pair_data]), min_span=2e-3)
+            for w_key in SF_PANEL_ORDER
+        }
+        for ep_idx, cand_run, val_run, dx, dys in pair_data:
+            stats = {w_key: linear_fit_stats(dx, dys[w_key]) for w_key in SF_PANEL_ORDER}
+            for w_key in SF_PANEL_ORDER:
+                summary_records.append({
+                    "kind": "EpochPair", "detector": det, "epoch": ep_idx, "run": None,
+                    "cand_run": cand_run, "val_run": val_run, "window": w_key, **stats[w_key],
+                })
+            tasks.append((
+                worker_plot_sf_vs_time,
+                (
+                    det, f"{det}  |  Epoch {ep_idx}  |  Val Run {val_run} vs Cand Run {cand_run}  |  SF Ratio vs Time Difference",
+                    dx, dys, stats, dxlim, dylims,
+                    r"$t_\mathrm{val} - t_\mathrm{cand}$ [samples]",
+                    r"$\mathrm{SF}_\mathrm{val} / \mathrm{SF}_\mathrm{cand}$ ({label})",
+                    {"x": 0.0, "y": 1.0},
+                    dir_epoch / f"sf_ratio_vs_dt_{det}_epoch{ep_idx}_val{val_run}_cand{cand_run}.png",
+                ),
+                f"SFRatioVsDt {det} Epoch {ep_idx}",
+            ))
+
+    if summary_records:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = output_dir / "sf_vs_time_summary.csv"
+        pd.DataFrame(summary_records).to_csv(csv_path, index=False)
+        print(f"  Saved scale factor vs time fit summary: {csv_path}")
 
     return tasks
 
@@ -1930,14 +2137,24 @@ def plot_all_validation_parallel(
             print(f"\nWarning: No valid runs parsed from validation hist list: {val_hist_list_path}")
 
     # 7. Scale factor maps (H_win / T0 Integrated) and per-epoch SF_val / SF_cand ratios
+    sf_maps = {}
     if candidates or val_runs:
-        tasks.extend(build_scale_factor_tasks(
+        sf_tasks, sf_maps = build_scale_factor_tasks(
             detectors, epochs, input_dir, candidates, val_runs, output_dir / "scale_factor_maps"
-        ))
+        )
+        tasks.extend(sf_tasks)
 
     # 8. Raw tower time maps and per-epoch t_val - t_cand differences
+    tmaps = {}
     if time_maps and (candidates or val_runs):
-        tasks.extend(build_time_map_tasks(detectors, epochs, candidates, val_runs, output_dir / "time_maps"))
+        time_tasks, tmaps = build_time_map_tasks(detectors, epochs, candidates, val_runs, output_dir / "time_maps")
+        tasks.extend(time_tasks)
+
+    # 9. Tower-by-tower scale factor vs raw time correlations
+    if sf_maps and tmaps:
+        tasks.extend(build_sf_vs_time_tasks(
+            detectors, epochs, candidates, val_runs, sf_maps, tmaps, output_dir / "sf_vs_time"
+        ))
 
     print(f"\nDispatching {len(tasks)} plotting tasks across {jobs} parallel worker process(es)...")
 
@@ -2112,6 +2329,7 @@ def main():
     print(f"  - SF Maps:       {args.output_dir / 'scale_factor_maps'}")
     if not args.no_time_maps:
         print(f"  - Time Maps:     {args.output_dir / 'time_maps'}")
+        print(f"  - SF vs Time:    {args.output_dir / 'sf_vs_time'}")
     if args.val_hist_list:
         print(f"  - Validation:    {args.output_dir / 'validation'}")
         print(f"    * Combined:    {args.output_dir / 'validation'}")
