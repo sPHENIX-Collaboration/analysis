@@ -190,6 +190,7 @@ void corral::Finalize(){
 		TH1D	*dC2dy, *dC2dphi;				// its sums over dphi / over dy
 		double	I, eI, Sfull, frac, efrac;		// integral of dC2 (pairs per event), sum rho2(S), I/S; subgroup errors
 		std::vector<double>	Ic, fracc, efracc;	// per chunk
+		std::vector<double>	C2c, C2Cc;			// per chunk: integral of C2 (valid bins), of C2C (bins valid in both); pairs per event
 		TH1D	*hy1, *hy2;						// nevt-weighted averages over chunks
 		double	fillin;							// fraction of chunk-bin values taken from full stats in the projections
 		TH1D	*CQ, *CQ5, *CQ20;				// C(Q) at 1 MeV (written), 5 MeV (display) and 20 MeV (comparisons), ratio of zvtx sums
@@ -831,14 +832,14 @@ void corral::Finalize(){
 					P.dC2dy		= new TH1D(Form("hFin_dC2dy_%d",ipaty),  Form("%s, #Sigma_{d#phi} #DeltaC_{2} (#pm subgroup err);dy;pairs per event",pn.Data()),nx,ax->GetXmin(),ax->GetXmax());
 					P.dC2dphi	= new TH1D(Form("hFin_dC2dphi_%d",ipaty),Form("%s, #Sigma_{dy} #DeltaC_{2} (#pm subgroup err);d#phi (deg);pairs per event",pn.Data()),ny,ay->GetXmin(),ay->GetXmax());
 					P.dC2dy->SetDirectory(0); P.dC2dphi->SetDirectory(0);
-					P.Ic.assign(nlists,0.); P.fracc.assign(nlists,0.); P.efracc.assign(nlists,0.);
+					P.Ic.assign(nlists,0.); P.fracc.assign(nlists,0.); P.efracc.assign(nlists,0.); P.C2c.assign(nlists,0.); P.C2Cc.assign(nlists,0.);
 					std::vector<double> Sc(nlists,0.), eI2c(nlists,0.);
 					std::vector<std::vector<double>> cdy(nlists,std::vector<double>(nx+2,0.)), cdp(nlists,std::vector<double>(ny+2,0.));
 					P.I = 0.; P.Sfull = 0.;
 					for (int ix=1;ix<=nx;ix++) for (int iy=1;iy<=ny;iy++){
 						if (full.V->GetBinContent(ix,iy)<=0.) continue;
 						P.Sfull	+= full.h[0]->GetBinContent(ix,iy);
-						for (int ic=0;ic<nlists;ic++) Sc[ic] += sub[ic].h[0]->GetBinContent(ix,iy);
+						for (int ic=0;ic<nlists;ic++){ Sc[ic] += sub[ic].h[0]->GetBinContent(ix,iy); P.C2c[ic] += sub[ic].h[2]->GetBinContent(ix,iy); }
 						if (full.VC->GetBinContent(ix,iy)<=0.) continue;
 						double d	= full.h[5]->GetBinContent(ix,iy) - full.h[2]->GetBinContent(ix,iy);
 						P.dC2->SetBinContent(ix,iy,d);
@@ -846,7 +847,7 @@ void corral::Finalize(){
 						P.dC2dy->AddBinContent(ix,d); P.dC2dphi->AddBinContent(iy,d);
 						for (int ic=0;ic<nlists;ic++){
 							double dc	= sub[ic].h[5]->GetBinContent(ix,iy) - sub[ic].h[2]->GetBinContent(ix,iy);	// linear: no fill-in
-							P.Ic[ic] += dc; cdy[ic][ix] += dc; cdp[ic][iy] += dc;
+							P.Ic[ic] += dc; cdy[ic][ix] += dc; cdp[ic][iy] += dc; P.C2Cc[ic] += sub[ic].h[5]->GetBinContent(ix,iy);
 							eI2c[ic] += pow(sub[ic].h[5]->GetBinError(ix,iy),2);	// dirty bins: C2C error = the clean bin's
 						}
 					}
@@ -1719,6 +1720,8 @@ void corral::Finalize(){
 	//---- R2tot = (<N(N-1)> - <N>^2)/<N>^2 (each species in its own y window: Species_yu). Occupancy: <nvtx> (raw vertices
 	//---- in the TF) of the events reaching CalcRm (hnvtxCR; -1 in chunks made before 2026-10-11). Pair type names in
 	//---- the tree's UserInfo (TObjString "k name"). Whole-sample totals with subgroup errors: log + work/R2tot_* parameters.
+	//---- C2int, C2Cint, dC2Cint [pair type]: integrals of the chunk's zvtx-averaged C2(dy,dphi) over the valid bins, of C2C and of
+	//---- dC2C = C2C - C2 over the bins valid in both (pairs per event; dC2C = pairs added by the crossing correction); -999 = no map.
 	{
 		const int NP	= NPairTypes, NPN = 20;
 		TH1 *hn0c	= (TH1*)fch[0]->Get("hnevtz_0");
@@ -1768,6 +1771,7 @@ void corral::Finalize(){
 		std::vector<Double_t> b_opr(2*NP), b_eopr(2*NP), b_f2(2*NP), b_n1(2*NP), b_n2(2*NP), b_P01(2*NP), b_P02(2*NP);
 		std::vector<Double_t> b_nm(2*NPARTICLENAMES), b_P0(2*NPARTICLENAMES), b_Pn(NPARTICLENAMES*NPN);
 		Double_t	b_Ntot[3][2], b_f2tot[3][2], b_R2tot[3][2];		// [id, pi, h][s]
+		std::vector<Double_t> b_C2int(NP), b_C2Cint(NP), b_dC2Cint(NP);	// (dy,dphi) maps, zvtx-averaged; -999 = no map
 		dwork->cd();
 		TTree *tcs	= new TTree("chunkStats","per-chunk multiplicity moments (README.md, Finalize: work/chunkStats)");
 		if (NZc>0){
@@ -1788,6 +1792,9 @@ void corral::Finalize(){
 			tcs->Branch("Ntot",b_Ntot,"Ntot[3][2]/D");
 			tcs->Branch("f2tot",b_f2tot,"f2tot[3][2]/D");
 			tcs->Branch("R2tot",b_R2tot,"R2tot[3][2]/D");
+			tcs->Branch("C2int",b_C2int.data(),Form("C2int[%d]/D",NP));
+			tcs->Branch("C2Cint",b_C2Cint.data(),Form("C2Cint[%d]/D",NP));
+			tcs->Branch("dC2Cint",b_dC2Cint.data(),Form("dC2Cint[%d]/D",NP));
 			for (int k=0;k<NP;k++) tcs->GetUserInfo()->Add(new TObjString(Form("%d %s%s",k,ParticleIDNames[PairTypes_Info[k][0]],ParticleIDNames[PairTypes_Info[k][1]])));
 			for (int ip=0;ip<NPARTICLENAMES;ip++) tcs->GetUserInfo()->Add(new TObjString(Form("particle %d %s",ip,ParticleIDNames[ip])));
 		}
@@ -1808,6 +1815,8 @@ void corral::Finalize(){
 				}
 			}
 			b_run	= chunkRun[ic]; b_chunk = ic;
+			for (int k=0;k<NP;k++){ const Phys &P = ph[k]; const bool ok = (int)P.Ic.size()==nlists;
+				b_C2int[k] = ok ? P.C2c[ic] : -999.; b_C2Cint[k] = ok ? P.C2Cc[ic] : -999.; b_dC2Cint[k] = ok ? P.Ic[ic] : -999.; }
 			for (int s=0;s<2;s++) b_nevt[s] = m[s*NP].N;
 			TH2 *hv	= (TH2*)fch[ic]->Get("hnvtxCR");
 			if (hv){

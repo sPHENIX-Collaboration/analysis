@@ -157,12 +157,14 @@ void DisplayHelp(){
 	cout<<"  MAIN TOKENS (most runs need only these)"<<endl;
 	cout<<"    (none)        the defaults above, with the zero-bias crossing selection ZB:"<<endl;
 	cout<<"                  -20<=crossing<=390 outside NearX0 (no trigger crossing, no trigger neighbours, no readout edges)"<<endl;
-	cout<<"    Raw           every cleaner OFF = noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask,"<<endl;
+	cout<<"    Raw           every cleaner OFF = noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_AllSeg_multivtx,"<<endl;
 	cout<<"                  plus AllX unless Xing0 / NearX0 / ZB is given too (e.g. Raw_Xing0)"<<endl;
 	cout<<"    nocross       turn OFF the crossing correction (pt-ordering at fill + (dy,dphi) bin correction)"<<endl;
 	cout<<"    Xing0         keep only crossing==0 events (the triggered collision, not zero bias)"<<endl;
 	cout<<"    NearX0        keep only -4<=crossing<=2 without 0 (neighbours of the trigger, for monitoring)"<<endl;
 	cout<<"    AllX          keep all crossings (ZB, the default, is also accepted as a token)"<<endl;
+	cout<<"    AllSeg        segment veto OFF: read every DST segment (default: skip those in bad_segments.txt)"<<endl;
+	cout<<"    multivtx      keep events whose crossing has 2+ vertices (default: skip nvtxXing > 1; trees from 2026-10-13 on)"<<endl;
 	cout<<"  EXPERT SWITCHES (individual split-track cleaners and cuts; README.md)"<<endl;
 	cout<<"  split tracks, like-sign (README_SplitTracks sec 13-17)"<<endl;
 	cout<<"    noLS          turn OFF the whole LS split-track removal pre-pass (both paths)"<<endl;

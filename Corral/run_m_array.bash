@@ -6,7 +6,8 @@
 #   CORRAL_VARIANT=<name> CORRAL_RS=<runstring> ./run_m_array.bash <set> ...   a VARIANT of the set (README_SplitTracks573, Final state):
 #     the same lists, run with -s <runstring>, outputs under <set>_<name>/ (lists/<set>_<name> is made as a symlink to
 #     lists/<set>, so Finalize runs unchanged with -d <set>_<name>). e.g. CORRAL_VARIANT=raw CORRAL_RS=noLS_noulstest_... ./run_m_array.bash ana573_795xx
-#     (not VAR/RS: the login profile already sets RS=/rs/rs_grp_rhi)
+#     (not VAR/RS: the login profile already sets RS=/rs/rs_grp_rhi). CORRAL_RS alone: <name> = the run string, so
+#     CORRAL_RS=TightDCA ./run_m_array.bash ana573  ->  ana573_TightDCA (names: the short main tokens Raw, TightDCA, AllSeg)
 # Snapshots the current corral to log/<out>/chunks/corral.snapshot so every task runs the same binary.
 # Outputs (<out> = <set>, or <set>_<CORRAL_VARIANT>): root/<out>/chunks/corral_NN.root, pdf/<out>/chunks/corral_NN.pdf,
 #   log/<out>/chunks/corral_NN.log
@@ -22,7 +23,9 @@ RANGE=${2:-0-$((NL-1))}
 OUT=$SET
 VAR=$CORRAL_VARIANT
 CRS=$CORRAL_RS
-if [ -n "$CRS" ] && [ -z "$VAR" ]; then echo "CORRAL_RS='$CRS' needs a CORRAL_VARIANT=<name> (outputs go to <set>_<name>/)"; exit 1; fi
+#---- no CORRAL_VARIANT: the run string is the name (CORRAL_RS=TightDCA -> <set>_TightDCA); use the short main tokens
+#---- (Raw, TightDCA, AllSeg, ...), not their expansions, so names say what the set is (user 2026-10-14)
+[ -n "$CRS" ] && [ -z "$VAR" ] && VAR=$CRS
 if [ -n "$VAR" ]; then
 	[ -z "$CRS" ] && echo "variant $VAR: the code defaults (no run string), e.g. a new code version next to the old outputs"
 	OUT=${SET}_$VAR

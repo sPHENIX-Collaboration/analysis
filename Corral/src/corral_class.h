@@ -81,7 +81,7 @@ public :
 	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
 	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.07,0.10); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
 	bool	doSegVeto;		// README.md "segveto": skip the events of the (run, DST segment)s in bad_segments.txt (next to the -l list,
-					// or $CORRAL_SEGVETO), made by ana573/SegCellsView_ana573.C; default OFF
+					// or $CORRAL_SEGVETO), made by lists/make_bad_segments.C; default ON since 2026-10-13, "AllSeg" = OFF
 	TString	ListName;		// -l: the job list (segveto finds bad_segments.txt next to it)
 	bool	doSepMaps;		// README_CQcomparison sec 2.3: (track, nearer V0 daughter) separation maps, own mixing, ~+5 min/chunk; OFF, "sepmaps" on
 	double	valCMMaskLo, valCMMaskHi;
@@ -211,6 +211,13 @@ public :
 	double	valIsoDZ;		// ZZ, cm (1-30)
 	std::vector<bool> nonIsoRows;			// [chain entry] -> skip (see doIsoVtx)
 	virtual void	BuildIsoRows(Long64_t nentries);
+	bool	doSkipMultiVtx;	// README_CollectTree_20261013.md (2026-10-14, default ON): skip events whose crossing has 2+ vertices
+							// (Collect branch nvtxXing > 1: a second collision or one collision split in two). "multivtx" keeps them.
+							// Trees without nvtxXing (Collect before f2edffe6): nothing to do, info/ says so.
+	bool	hasNvtxXing;	// the input trees have the nvtxXing branch
+	std::vector<bool> multiVtxRows;			// [chain entry] -> nvtxXing > 1
+	long	nMultiVtxAll;					// events with nvtxXing > 1 in the pre-pass (all events read)
+	virtual void	BuildMultiVtxRows(Long64_t nentries, TH1D *hn, TH2D *hn2);
 	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
 	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
 	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
@@ -248,8 +255,8 @@ public :
 							// caught). Costs ~85% of statistics (~1/6-7 rows survive per TF) -- diagnostic
 							// only, never a production default.
 	int		NTPCCUT;
-	double	valDcaxyCut;	// README.md "dxyNN" (2026-10-12): track |dcaxy| < NN/100 cm, default 1.5 cm (sane 0.05-0.99)
-	double	valDcazCut;		// README.md "dczNN" (2026-10-12): track |dcaz| < NN/10 cm, default 1.5 cm (sane 0.2-1.5)
+	double	valDcaxyCut;	// README.md "dxyNN" (2026-10-12): track |dcaxy| < NN/100 cm (or dxyNNN), default 1.5 cm (sane 0.05-5.0)
+	double	valDcazCut;		// README.md "dczNN" (2026-10-12): track |dcaz| < NN/10 cm, default 1.5 cm (sane 0.1-9.9)
 	double	PTMINCUT;	// track pT floor, "ptminNN" = 0.NN GeV/c (default 0.1 = ana573 Collect floor; ana532 trees start at 0.2)
 	bool	KILLETA0SPIKE;
 	//

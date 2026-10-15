@@ -539,7 +539,7 @@ void corral::Loop(){
 		auto it = std::lower_bound(P.begin(),P.end(),std::make_pair((float)u,-1));
 		if (it==P.end()) --it; else if (it!=P.begin() && fabs((it-1)->first-u)<fabs(it->first-u)) --it;
 		return it->second; };
-	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0, sc_nraw=0, sc_veto=0, sc_nid[6]={0}, sc_nv0[3]={0};
+	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0, sc_nraw=0, sc_veto=0, sc_nmulti=0, sc_nid[6]={0}, sc_nv0[3]={0};
 	Float_t sc_nvtx=0, sc_sumpt=0, sc_sumntpc=0, sc_sadxy=0, sc_sadz=0;
 	std::vector<Float_t> sc_hits(SC_NCELL,0.f);
 	TTree *tSegCells	= new TTree("segCells","TPC hits of accepted tracks per (run, DST segment) per FEE, cell = tpcsector*26 + feeMap (README.md)");
@@ -551,6 +551,7 @@ void corral::Loop(){
 	tSegCells->Branch("fee",sc_hits.data(),Form("fee[%d]/F",SC_NCELL));
 	tSegCells->Branch("nraw",&sc_nraw,"nraw/I");
 	tSegCells->Branch("veto",&sc_veto,"veto/I");
+	tSegCells->Branch("nmulti",&sc_nmulti,"nmulti/I");	// events with nvtxXing > 1 (not vetoed), skipped or kept (multivtx)
 	tSegCells->Branch("nvtx",&sc_nvtx,"nvtx/F");
 	tSegCells->Branch("sumpt",&sc_sumpt,"sumpt/F");
 	tSegCells->Branch("sumntpc",&sc_sumntpc,"sumntpc/F");
@@ -558,7 +559,7 @@ void corral::Loop(){
 	tSegCells->Branch("sumadcaz",&sc_sadz,"sumadcaz/F");
 	tSegCells->Branch("nid",sc_nid,"nid[6]/I");
 	tSegCells->Branch("nv0",sc_nv0,"nv0[3]/I");
-	auto scFlush = [&](){ if (sc_run>=0 && sc_nraw>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; sc_nraw=0; sc_veto=0; sc_nvtx=0; sc_sumpt=0; sc_sumntpc=0; sc_sadxy=0; sc_sadz=0;
+	auto scFlush = [&](){ if (sc_run>=0 && sc_nraw>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; sc_nraw=0; sc_veto=0; sc_nmulti=0; sc_nvtx=0; sc_sumpt=0; sc_sumntpc=0; sc_sadxy=0; sc_sadz=0;
 		std::fill(sc_nid,sc_nid+6,0); std::fill(sc_nv0,sc_nv0+3,0); std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
 	//---- README_SplitTracks573 sec 15: residual and charge-asymmetry diagnostics (no cut reads these).
 	//---- Silicon match code per pair: x = MVTX (denM*4 + numM: layers either / both-matching track has,
@@ -1178,6 +1179,11 @@ void corral::Loop(){
 	if (doXTFClean) BuildXTFLosers(nentries);	// sec 18.22
 	if (doTFDup)    BuildTFDupRows(nentries);	// overlapping-TF collision copies
 	if (doIsoVtx)   BuildIsoRows(nentries);		// isolated vertices only (isovtxNNZZ)
+	//---- multi-vertex crossings (nvtxXing > 1): always marked (segCells nmulti, QA hists), skipped unless "multivtx"
+	TH1D *hnvtxXing	= new TH1D("hnvtxXing","all events read (pre-pass);nvtxXing (vertices in the crossing);events",8,0.5,8.5);
+	TH2D *hvtxntr2	= new TH2D("hvtxntr2","events with nvtxXing > 1 (pre-pass);vtxntr (tracks of the chosen vertex);vtxntr2 (runner-up vertex)",60,-0.5,59.5,60,-0.5,59.5);
+	hnvtxXing->SetDirectory(fout); hvtxntr2->SetDirectory(fout);	// the pre-passes above open files (gDirectory moves)
+	BuildMultiVtxRows(nentries,hnvtxXing,hvtxntr2);
 	//
 	int runprev			= -1;
 	int segmentprev		= -1;
@@ -1196,13 +1202,14 @@ void corral::Loop(){
 	std::set<std::pair<int,int>> segVeto;
 	long nSkippedSegVeto	= 0;
 	long nSkippedIso		= 0;	// isovtxNNZZ
+	long nSkippedMultiVtx	= 0;	// nvtxXing > 1
 	long nRowsRead			= 0, nEvtTracks = 0;	// info/count_*: rows read, events reaching the track loop
 	TString segVetoFile		= "";
 	if (doSegVeto){
 		if (getenv("CORRAL_SEGVETO")) segVetoFile = getenv("CORRAL_SEGVETO");
 		else if (ListName!="") segVetoFile = TString(gSystem->DirName(ListName.Data()))+"/bad_segments.txt";
 		std::ifstream fv(segVetoFile.Data());
-		if (segVetoFile=="" || !fv.good()){ cout<<"corral::Loop -- segveto: no bad_segments.txt ("<<segVetoFile<<"; set CORRAL_SEGVETO or use -l), exit"<<endl; exit(1); }
+		if (segVetoFile=="" || !fv.good()){ cout<<"corral::Loop -- segment veto (default ON): no bad_segments.txt ("<<segVetoFile<<"; set CORRAL_SEGVETO or use -l). A new dataset: run with AllSeg first, then lists/make_bad_segments.C. Exit"<<endl; exit(1); }
 		std::string line;
 		while (std::getline(fv,line)){ if (line.empty() || line[0]=='#') continue; std::istringstream is(line); int r, s; if (is>>r>>s) segVeto.insert({r,s}); }
 		cout<<"corral::Loop -- segveto: "<<segVeto.size()<<" (run, segment)s from "<<segVetoFile<<endl;
@@ -1218,6 +1225,8 @@ void corral::Loop(){
 		if (doIsoVtx && jentry<(Long64_t)nonIsoRows.size() && nonIsoRows[jentry]){ ++nSkippedIso; continue; }
 		//---- segveto: an acceptance-outlier segment, before ANY processing (segCells: veto = 1, nraw only)
 		if (doSegVeto && segVeto.count({(*run),(*segment)})){ ++nSkippedSegVeto; sc_veto = 1; continue; }
+		//---- multi-vertex crossing (nvtxXing > 1), after the segment veto so that count does not depend on "multivtx"
+		if (jentry<(Long64_t)multiVtxRows.size() && multiVtxRows[jentry]){ ++sc_nmulti; if (doSkipMultiVtx){ ++nSkippedMultiVtx; continue; } }
 		//
 		//---- new event processing...
 		//---- sec 18.21: opt-in TF-deduplication -- keep only the FIRST row seen for each (run,evt)
@@ -4762,6 +4771,7 @@ void corral::Loop(){
 	cout<<"sec 18.21 -- ONLY_FIRST_XINGPOS="<<ONLY_FIRST_XINGPOS<<" rows skipped (crossing<=0 or not first crossing>0 in TF)="<<nSkippedXingPos<<endl;
 	cout<<"crossing selection xingSel="<<xingSel<<" (1 Xing0, 2 NearX0, 3 ZB) -- events skipped="<<nSkippedXing<<endl;
 	if (doIsoVtx) cout<<"isovtx -- rows skipped (not isolated: another vertex within +-"<<valIsoNX<<" crossings and |dz| < "<<valIsoDZ<<" cm) = "<<nSkippedIso<<endl;
+	cout<<"multi-vertex crossings (nvtxXing > 1) -- "<<(!hasNvtxXing ? "no nvtxXing branch" : doSkipMultiVtx ? Form("events skipped = %ld",nSkippedMultiVtx) : "kept (multivtx)")<<endl;
 	if (doSegVeto) cout<<"segveto -- rows skipped (vetoed segments) = "<<nSkippedSegVeto<<" ("<<segVeto.size()<<" segments in "<<segVetoFile<<")"<<endl;
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){
@@ -4780,7 +4790,7 @@ void corral::Loop(){
 	fout->Write();
 	WriteInfo(fout,{{"segveto",doSegVeto ? Form("%s: %zu (run, segment)s",segVetoFile.Data(),segVeto.size()) : "OFF"}},
 		{{"rows_read",(double)nRowsRead},{"rows_skipped_tfdup",(double)nTFDup_rows},{"rows_skipped_isovtx",(double)nSkippedIso},
-		 {"rows_skipped_segveto",(double)nSkippedSegVeto},{"events_skipped_crossing",(double)nSkippedXing},{"events_tracks",(double)nEvtTracks}});
+		 {"rows_skipped_segveto",(double)nSkippedSegVeto},{"events_skipped_multivtx",(double)nSkippedMultiVtx},{"events_skipped_crossing",(double)nSkippedXing},{"events_tracks",(double)nEvtTracks}});
 	//
 	if (!NOCORRELATIONS){
 		for (int ipaty=0;ipaty<NPairTypes;ipaty++){	
@@ -5055,6 +5065,34 @@ void corral::BuildIsoRows(Long64_t nentries){
 	delete r_bco; delete ch;
 	cout<<"BuildIsoRows -- "<<nNon<<" of "<<nAll<<" rows have a neighbour within +-"<<valIsoNX<<" crossings and |dz| < "<<valIsoDZ<<" cm ("
 		<<(nAll ? 100.*nNon/nAll : 0.)<<"%), skipped"<<(hasBco ? "" : " (no bco branch: crossing within the TF only)")<<endl;
+}
+
+//---- README_CollectTree_20261013.md (2026-10-14): mark the events whose crossing has 2+ vertices (Collect branch nvtxXing > 1).
+//---- Separate chain over the same files, same order as fChain (as BuildTFDupRows). Trees without nvtxXing: nothing marked.
+void corral::BuildMultiVtxRows(Long64_t nentries, TH1D *hn, TH2D *hn2){
+	TChain *ch	= new TChain(fChain->GetName());
+	TIter next(fChain->GetListOfFiles());
+	while (TObject *el = next()) ch->Add(el->GetTitle());
+	ch->LoadTree(0);
+	hasNvtxXing	= ch->GetBranch("nvtxXing")!=nullptr && ch->GetBranch("vtxntr2")!=nullptr;
+	if (!hasNvtxXing){
+		cout<<"BuildMultiVtxRows -- no nvtxXing branch in these trees (Collect before 2026-10-13): multi-vertex crossings cannot be skipped"<<endl;
+		delete ch;
+		return;
+	}
+	TTreeReader r(ch);
+	TTreeReaderValue<Int_t>	r_n(r,"nvtxXing"), r_ntr(r,"vtxntr"), r_ntr2(r,"vtxntr2");
+	multiVtxRows.assign(nentries,false);
+	cout<<"BuildMultiVtxRows -- pre-pass over "<<nentries<<" events..."<<endl;
+	for (Long64_t je=0; je<nentries && r.Next(); je++){
+		hn->Fill(*r_n);
+		if ((*r_n)<=1) continue;
+		multiVtxRows[je] = true; ++nMultiVtxAll;
+		hn2->Fill((*r_ntr),(*r_ntr2));
+	}
+	delete ch;
+	cout<<"BuildMultiVtxRows -- "<<nMultiVtxAll<<" of "<<nentries<<" events ("<<(nentries ? 100.*nMultiVtxAll/nentries : 0.)<<"%) have nvtxXing > 1, "
+		<<(doSkipMultiVtx ? "skipped" : "kept (multivtx)")<<endl;
 }
 
 bool corral::AcceptTrack(int it){

@@ -273,7 +273,8 @@ case-insensitively; join several with `_`.
 | token | effect |
 |---|---|
 | *(none)* | the defaults: every split-track cleaner, the masks and the crossing correction ON; zero-bias crossing selection (below) |
-| `Raw` | every cleaner and correction OFF: shorthand for `noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask`, and all crossings (`AllX`) unless a crossing token is given too (e.g. `Raw_Xing0`) |
+| `Raw` | every cleaner and correction OFF: shorthand for `noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_AllSeg_multivtx`, and all crossings (`AllX`) unless a crossing token is given too (e.g. `Raw_Xing0`) |
+| `TightDCA` | tight track DCA cuts: shorthand for `dcz03_dxy50` (abs(dcaz) < 0.3 cm, abs(dcaxy) < 0.5 cm), applied to every track and so to every pair type. No token = 1.5 cm x 1.5 cm, applied by corral (Collect writes every quality track whatever its DCA, `README_CollectTree_20261013.md`). An explicit `dczNN` / `dxyNN` in the same run string wins |
 | `nocross` | turn off only the crossing correction (pt-ordering at fill + (dy, dphi) bin correction) |
 | `Xing0` | keep only crossing 0: the triggered collision (not zero bias) |
 | `NearX0` | keep only −4 ≤ crossing ≤ 2 without 0: the neighbours of the trigger (monitoring) |
@@ -338,7 +339,8 @@ split-track ones).
 | **PID, masks and multiplicity class (README_PID.md)** | |
 | `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K (outside the p band), all accepted tracks are split-track candidates) |
 | `isovtxNNZZ` | isolated vertices only: skip every row (vertex) that has another vertex of the same run within +-NN crossings (absolute crossing bco+crossing, across TF boundaries) and abs(dz) < ZZ cm; copies of the same crossing are not neighbours (`noTFdup` territory). Test of track-to-vertex misassignment at high rate (README_ana573.md). NN 01-50, ZZ 01-30 cm. Default OFF |
-| `segveto` | skip the events of the (run, DST segment)s listed in `bad_segments.txt` before any processing (segCells keeps the segment with `veto` = 1 and only `nraw` filled); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list. Made by `lists/make_bad_segments.C` from the segCells of a production run without `segveto`: segments below their run's live-fraction band (README_ana573.md). Default OFF |
+| `AllSeg` | segment veto OFF: read every DST segment. The veto is ON by default (since 2026-10-13): the events of the (run, DST segment)s listed in `bad_segments.txt` are skipped before any processing (segCells keeps the segment with `veto` = 1 and only `nraw` filled); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list, and corral stops if it is missing. Made by `lists/make_bad_segments.C` from the segCells of an `AllSeg` run: segments below their run's live-fraction band (README_ana573.md). A new dataset therefore goes through corral twice: `AllSeg`, then `make_bad_segments.C`, then the default. The old token `segveto` (the ON switch until 2026-10-13) is still accepted and changes nothing |
+| `multivtx` | keep the events whose crossing has 2+ vertices. By default (since 2026-10-14) they are skipped: Collect branch `nvtxXing` > 1, either a second collision in the crossing or one collision split in two (`README_CollectTree_20261013.md`); about 11-12% of the events in run 81585. Skipped after the segment veto (info/count_events_skipped_multivtx); segCells `nmulti` counts them per segment either way; `hnvtxXing` and `hvtxntr2` (runner-up vertex tracks) are filled in the pre-pass. Trees made before 2026-10-13 have no `nvtxXing`: nothing is skipped and info/settings says so |
 | `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
 | `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
@@ -349,8 +351,8 @@ split-track ones).
 | `XingPos` | keep only the first event with crossing > 0 of each TF |
 | **other** | |
 | `ntpcNN` | track cut: at least NN TPC clusters (default 18; 10-40) |
-| `dczNN` | track abs(dcaz) < NN/10 cm instead of 1.5 cm (sane 0.2-1.5). Under the dcaz peak lies a flat pedestal of tracks from other collisions, 3.5% of the tracks in abs(dcaz) < 1.5 at the 795xx rate and 7.6% at the 8158x rate (`ana573/CutFlow_ana573.C`) |
-| `dxyNN` | track abs(dcaxy) < NN/100 cm instead of 1.5 cm (sane 0.05-0.99). Tracks attached from other collisions point back 5-7x worse in xy than the vertex's own (rms 0.2-0.25 cm vs 0.037 cm; `ana573/CutFlow_ana573.C`); 0.10 cm keeps 98.5% of own tracks and removes about a quarter of the attached background |
+| `dczNN` | track abs(dcaz) < NN/10 cm instead of 1.5 cm (sane 0.1-9.9). Under the dcaz peak lies a flat pedestal of tracks from other collisions, 3.5% of the tracks in abs(dcaz) < 1.5 at the 795xx rate and 7.6% at the 8158x rate (`ana573/CutFlow_ana573.C`) |
+| `dxyNN` | track abs(dcaxy) < NN/100 cm instead of 1.5 cm; `dxyNNN` = NNN/100 cm, e.g. `dxy300` = 3 cm (sane 0.05-5.0). Tracks attached from other collisions point back 5-7x worse in xy than the vertex's own (rms 0.2-0.25 cm vs 0.037 cm; `ana573/CutFlow_ana573.C`); 0.10 cm keeps 98.5% of own tracks and removes about a quarter of the attached background |
 | `qcut` | reject pairs with Q < 0.150 GeV |
 | `548` | fine (dy, dphi) binning, 5 x 48 (default 32 x 36) |
 | **acceptance box (studies)** | |
@@ -429,7 +431,8 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    mean raw vertices per TF of the events used), with the multiplicity moments from each chunk's hmult,
    for |zvtx| < 8 cm ([0]) and all zvtx ([1]): per pair type 1+r2 and its error, f2 (pairs per event),
    <n1>, <n2>, P0; per particle <n>, P0 and P(n); and the totals over pi/K/p, over pions and over h+-
-   (<N>, f2, R2 = f2/<N>^2). Pair-type names are in the tree's UserInfo. The whole-sample totals, with
+   (<N>, f2, R2 = f2/<N>^2); per pair type the integrals of the chunk's C2(dy,dphi), C2C and dC2C = C2C - C2
+   (`C2int`, `C2Cint`, `dC2Cint`, pairs per event; dC2C = pairs added by the crossing correction). Pair-type names are in the tree's UserInfo. The whole-sample totals, with
    subgroup errors, are in the log and in `work/R2tot_*`.
    Each chunk file also holds the tree `segCells` (TPC acceptance vs time): one entry per (run, DST segment,
    ~8.5k events) with nevt, ntrk (accepted charged tracks, the hphieta list) and `fee[624]`, the TPC hits of

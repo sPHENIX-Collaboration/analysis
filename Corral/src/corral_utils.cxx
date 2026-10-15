@@ -42,7 +42,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doOldPID(false)
   , doSiPhiMask(true)
   , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.07,0.10); "nocmmask" off, "cmmaskAABB" override
-  , doSegVeto(false)		// README.md: "segveto" = skip the segments in bad_segments.txt
+  , doSegVeto(true)		// README.md: skip the segments in bad_segments.txt; default ON since 2026-10-13, "AllSeg" = OFF
   , doSepMaps(false)		// README_CQcomparison sec 2.3: diagnostic separation maps (~+5 min per chunk); "sepmaps" on
   , valCMMaskLo(-0.07)
   , valCMMaskHi(0.10)
@@ -104,6 +104,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doTFDup(true)			// 2026-09-26: ON by default -- "noTFdup" turns it off (no-op without a bco branch)
   , nTFDup_rows(0), TFDup_maxAbsDvz(0)
   , doIsoVtx(false), valIsoNX(0), valIsoDZ(0.)		// README.md "isovtxNNZZ": isolated vertices only, default OFF
+  , doSkipMultiVtx(true), hasNvtxXing(false), nMultiVtxAll(0)	// README_CollectTree_20261013.md: skip nvtxXing > 1, "multivtx" keeps them
   , ONLY_FIRST_XINGPOS(false)	// sec 18.21 follow-up 2, OFF by default -- "XingPos" turns it on
   , xingSel(3)				// 2026-10-08: ZB by default -- "AllX" = all crossings, "Xing0" / "NearX0" the other samples
   , ONLY_FIRST_TF(false)		// sec 18.21, OFF by default -- "onlyfirsttf" in RunString turns it on
@@ -191,13 +192,24 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//---- 2026-10-08: "Raw" = every cleaner and correction OFF and all crossings, i.e. shorthand for RAW_TOKENS below. It is expanded
 	//---- into RunString here, before any token is parsed, so the logs show the switches in force.
 	{
-		static const char* RAW_TOKENS = "noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask";
+		static const char* RAW_TOKENS = "noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_AllSeg_multivtx";
 		if (RunString.Contains("Raw",TString::kIgnoreCase)){
 			RunString += TString("_")+RAW_TOKENS;
 			//---- all crossings, unless a crossing sample is asked for too (e.g. "Raw_Xing0")
 			if (!RunString.Contains("Xing0",TString::kIgnoreCase) && !RunString.Contains("NearX0",TString::kIgnoreCase)
 				&& !RunString.Contains("ZB",TString::kIgnoreCase)) RunString += "_AllX";
 			cout<<"reader::reader -- Raw = "<<RAW_TOKENS<<" (+ AllX unless Xing0/NearX0/ZB)  -> RunString="<<RunString<<endl;
+		}
+	}
+	//---- 2026-10-13: "TightDCA" = the tight track DCA cuts together, shorthand for TIGHTDCA_TOKENS (expert tokens dczNN, dxyNN).
+	//---- No token: |dcaz| < 1.5 and |dcaxy| < 1.5 cm, applied here (Collect writes every quality track whatever its DCA,
+	//---- README_CollectTree_20261013.md). Appended, so an explicit dczNN / dxyNN
+	//---- earlier in the run string wins (the parsers below take the first occurrence).
+	{
+		static const char* TIGHTDCA_TOKENS = "dcz03_dxy50";
+		if (RunString.Contains("TightDCA",TString::kIgnoreCase)){
+			RunString += TString("_")+TIGHTDCA_TOKENS;
+			cout<<"reader::reader -- TightDCA = "<<TIGHTDCA_TOKENS<<"  -> RunString="<<RunString<<endl;
 		}
 	}
 	//---- README_Crossing.md (2026-09-25): crossing correction (pt-ordering + post-CF bin correction)
@@ -243,17 +255,18 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		TString sd	= RunString(ij+3,2);
 		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dcz needs 2 digits (dczNN = |dcaz| < NN/10 cm)"<<endl; exit(1); }
 		valDcazCut	= atoi(sd.Data())/10.;
-		saneOrDie("dczNN",valDcazCut,0.2,1.5);
+		saneOrDie("dczNN",valDcazCut,0.1,9.9);		// 2026-10-14: up to 9.9 cm (Collect applies no DCA cut, README_CollectTree_20261013.md)
 	}
 	cout<<"reader::reader -- track |dcaz| < "<<valDcazCut<<" cm"<<(valDcazCut!=1.5 ? " (dcz)" : " (default)")<<endl;
-	//---- README.md (2026-10-12): "dxyNN" = track |dcaxy| < NN/100 cm (default 1.5 cm). Tracks attached from other collisions
+	//---- README.md (2026-10-12): "dxyNN" = track |dcaxy| < NN/100 cm (default 1.5 cm); 2026-10-14: "dxyNNN" = NNN/100 cm, up to 5 cm. Tracks attached from other collisions
 	//---- point back 5-7x worse in xy (rms 0.2-0.25 cm vs 0.037 cm, ana573/CutFlow_ana573.C page 2).
 	if (RunString.Contains("dxy",TString::kIgnoreCase)){
 		int ij	= RunString.Index("dxy",0,TString::kIgnoreCase);
-		TString sd	= RunString(ij+3,2);
-		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dxy needs 2 digits (dxyNN = |dcaxy| < NN/100 cm)"<<endl; exit(1); }
+		TString sd	= RunString(ij+3,3);
+		if (!sd.IsDigit()) sd = RunString(ij+3,2);
+		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dxy needs 2 or 3 digits (dxyNN, dxyNNN = |dcaxy| < N/100 cm)"<<endl; exit(1); }
 		valDcaxyCut	= atoi(sd.Data())/100.;
-		saneOrDie("dxyNN",valDcaxyCut,0.05,0.99);
+		saneOrDie("dxyNN",valDcaxyCut,0.05,5.0);
 	}
 	cout<<"reader::reader -- track |dcaxy| < "<<valDcaxyCut<<" cm"<<(valDcaxyCut!=1.5 ? " (dxy)" : " (default)")<<endl;
 	//
@@ -377,9 +390,11 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		<<"... valSLCut = "<<valSLCut<<", valSiKeyCut = "<<valSiKeyCut<<", valRadialGapCut = "<<valRadialGapCut
 		<<", RadialGap path "<<(DISABLE_RG?"DISABLED (noRG)":"enabled")<<endl;
 	//
-	//---- README.md (2026-10-12): "segveto" = skip the (run, DST segment)s listed in bad_segments.txt (acceptance outliers)
-	if (RunString.Contains("segveto",TString::kIgnoreCase)) doSegVeto = true;
-	cout<<"reader::reader -- segment veto "<<(doSegVeto?"ON (segveto)":"OFF")<<endl;
+	//---- README.md (2026-10-12): skip the (run, DST segment)s listed in bad_segments.txt (acceptance outliers). Default ON since
+	//---- 2026-10-13; "AllSeg" = OFF (every segment: the first pass of a new dataset, which makes bad_segments.txt). The old
+	//---- token "segveto" is still accepted (it was the ON switch) and changes nothing.
+	if (RunString.Contains("AllSeg",TString::kIgnoreCase)) doSegVeto = false;
+	cout<<"reader::reader -- segment veto "<<(doSegVeto?"ON (default)":"OFF (AllSeg)")<<endl;
 	//---- README_CQcomparison sec 2.3: separation-map diagnostic (histograms hSep*, own mixing), default OFF; "sepmaps" = on
 	if (RunString.Contains("sepmaps",TString::kIgnoreCase)) doSepMaps = true;
 	cout<<"reader::reader -- separation maps (README_CQcomparison sec 2.3) "<<(doSepMaps?"ON (sepmaps)":"OFF")<<endl;
@@ -473,6 +488,10 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		saneOrDie("isovtxNNZZ (NN crossings)",valIsoNX,1,50); saneOrDie("isovtxNNZZ (ZZ cm)",valIsoDZ,1,30);
 	}
 	cout<<"reader::reader -- isolated vertices only "<<(doIsoVtx?Form("ON: no other vertex within +-%d crossings and |dz| < %.0f cm (isovtx)",valIsoNX,valIsoDZ):"OFF")<<endl;
+	//---- README_CollectTree_20261013.md (2026-10-14): events of crossings with 2+ vertices (nvtxXing > 1) are skipped by default;
+	//---- "multivtx" keeps them. Checked clean against every other token (none contains "multivtx").
+	if (RunString.Contains("multivtx",TString::kIgnoreCase)) doSkipMultiVtx = false;
+	cout<<"reader::reader -- multi-vertex crossings (nvtxXing > 1) "<<(doSkipMultiVtx?"SKIPPED (default)":"KEPT (multivtx)")<<endl;
 	//---- sec 18.21 follow-up 2: keep only the first crossing>0 row per TF (pure streaming, <=1/TF).
 	//---- "XingPos" checked clean against every token above (incl. Xing0).
 	if (RunString.Contains("XingPos",TString::kIgnoreCase)){
@@ -545,7 +564,8 @@ TString corral::SettingsText(){
 	L(Form("events: |vtx x|,|vtx y| < 0.5 cm, |z_{vtx}| < %.0f cm in %d slices (the physics range is chosen in Finalize, fz)",valVzMax,valZvtxNB));
 	L(TString("crossing selection: ")+(xingSel==0 ? TString("AllX (all crossings)") : xingSel==1 ? TString("Xing0 (crossing 0, the triggered collision)") :
 		xingSel==2 ? TString::Format("NearX0 (%d..%d without 0)",XNEAR_LO,XNEAR_HI) : TString::Format("ZB (%d..%d outside NearX0 %d..%d)",ZB_LO,ZB_HI,XNEAR_LO,XNEAR_HI)));
-	L(Form("segment veto (segveto) %s;  isolated vertices (isovtx) %s",on(doSegVeto),doIsoVtx ? Form("ON: +-%d crossings, |dz| < %.0f cm",valIsoNX,valIsoDZ) : "OFF"));
+	L(Form("segment veto (default; AllSeg = off) %s;  isolated vertices (isovtx) %s",on(doSegVeto),doIsoVtx ? Form("ON: +-%d crossings, |dz| < %.0f cm",valIsoNX,valIsoDZ) : "OFF"));
+	L(TString("multi-vertex crossings (nvtxXing > 1): ")+(!hasNvtxXing ? "no nvtxXing branch in these trees (Collect before 2026-10-13), all kept" : doSkipMultiVtx ? "skipped (default; multivtx = keep)" : "kept (multivtx)"));
 	if (valNchHi<9999) L(Form("multiplicity class (nch): %d <= N_ch <= %d",valNchLo,valNchHi));
 	L(Form("overlapping-TF copies skipped (TFdup) %s;  cross-crossing duplicate cleaner (XTF) %s%s;  adjacent-TF mixing exclusion %s",
 		on(doTFDup),on(doXTFClean),doXTFClean ? (doXTFStrict ? " strict" : " non-strict") : "",on(doMixNoAdjTF)));

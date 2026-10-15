@@ -133,8 +133,8 @@ inline void TitlePage(TCanvas *c, const TString &set, const Info &I, const TStri
 		y -= 0.006;
 		line("Events",0.018);
 		auto cnt	= [&](const char* k){ double v = I.count(k); return v<0 ? TString("?") : TString(Form("%.4g",v)); };
-		line(Form("  rows read (vertices in the trees) %s;  skipped: overlapping-TF copies %s, segment veto %s, isolated-vertex %s",
-			cnt("rows_read").Data(),cnt("rows_skipped_tfdup").Data(),cnt("rows_skipped_segveto").Data(),cnt("rows_skipped_isovtx").Data()),0.0145);
+		line(Form("  events read (vertices in the trees) %s;  skipped: overlapping-TF copies %s, segment veto %s, multi-vertex crossings %s, isolated-vertex %s",
+			cnt("rows_read").Data(),cnt("rows_skipped_tfdup").Data(),cnt("rows_skipped_segveto").Data(),cnt("events_skipped_multivtx").Data(),cnt("rows_skipped_isovtx").Data()),0.0145);
 		line(Form("  outside the crossing selection %s;  events reaching the track loop (|z_{vtx}| < %.0f cm) %s",
 			cnt("events_skipped_crossing").Data(),I.cut("vzmax",16.),cnt("events_tracks").Data()),0.0145);
 		line(Form("  events in CalcRm with |z_{vtx}| < %.0f cm (the physics) %.4g",fz,nevtPhys),0.0145);
@@ -222,9 +222,10 @@ inline void QAPages(TCanvas *c, const char* pdf, const std::vector<TFile*> &fch,
 		  auto L = [&](const TString &s){ t.DrawLatex(0.05,y,s.Data()); y -= 0.075; };
 		  auto v = [&](const char* k){ double x = I.count(k); return x<0 ? TString("?") : TString(Form("%.4g",x)); };
 		  L("#bf{Event flow} (summed over the chunks)");
-		  L(Form("rows read: %s",v("rows_read").Data()));
+		  L(Form("events read: %s",v("rows_read").Data()));
 		  L(Form("  - overlapping-TF copies: %s",v("rows_skipped_tfdup").Data()));
 		  L(Form("  - segment veto: %s",v("rows_skipped_segveto").Data()));
+		  L(Form("  - multi-vertex crossings: %s",v("events_skipped_multivtx").Data()));
 		  L(Form("  - isolated-vertex selection: %s",v("rows_skipped_isovtx").Data()));
 		  L(Form("  - crossing selection: %s",v("events_skipped_crossing").Data()));
 		  L(Form("  - vertex x, y, z cuts (rest)"));
