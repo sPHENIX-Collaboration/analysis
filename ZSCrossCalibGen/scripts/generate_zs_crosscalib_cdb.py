@@ -13,9 +13,18 @@ Generates new ZSCrossCalib CDBTTrees for runs in ZSCrossCalib_runs.list:
    - ratio_minus5: (ZScrosscalib_minus5 / ZSCrossCalib_ref) * original ZSCrossCalib
    - ratio_plus5: (ZScrosscalib_plus5 / ZSCrossCalib_ref) * original ZSCrossCalib
    If ZSCrossCalib_ref == 0: sets ratio_main, ratio_minus5, ratio_plus5 to 0.0.
+   With --pm5-method timefit (default), ratio_minus5 / ratio_plus5 instead use the raw tower time:
+   - Per (epoch, detector, window) a polynomial (default cubic) SF(t) is fit on the candidate run, where
+     SF = ZScrosscalib_win / ZSCrossCalib_ref and t is the mean raw tower time from
+     h_CaloValid_<det>_etaphi_time_raw (segment-0 HIST_JETQA file, looked up in FileCatalog).
+   - For each target run: ratio_win = SF(clamp(t_run, candidate time range)) * original ZSCrossCalib.
+   - Towers without a valid raw time or prediction, and runs without a raw-time hist, fall back to the
+     candidate method above (reported in the summary and in time_fit_runs.csv). ratio_main is unchanged.
 6. Writes new CDBTTree files named:
    <DET>_ZSCrossCalibT0_pro001_pcdb001_v001_<run>.root
-   to the output directory (default: scratch/calibs).
+   to the output directory (default: scratch/calibs), plus for timefit:
+   - time_fit_coefficients.csv: Fit coefficients, clamp range, tower count and residual RMS per fit.
+   - time_fit_runs.csv: Per (run, detector) method used, raw-time hist tag/path and fallback tower counts.
 Supports parallel execution across runs using multiprocessing.
 """
 
@@ -29,7 +38,23 @@ import sys
 import time
 from typing import Dict, List, Optional, Set, Tuple
 
+import numpy as np
+import pandas as pd
 import tqdm
+
+script_dir = Path(__file__).resolve().parent
+if str(script_dir) not in sys.path:
+    sys.path.insert(0, str(script_dir))
+from raw_time_utils import (  # noqa: E402
+    TIME_FIT_ORDER,
+    TIME_FIT_WINDOWS,
+    TIME_HIST_DSTTYPE,
+    fit_sf_vs_time_poly,
+    load_time_map,
+    predict_sf_from_time,
+    query_time_hist_paths,
+    time_fit_label,
+)
 
 # Supported detector configurations
 DETECTOR_MAP = {
@@ -131,6 +156,19 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Optional path to write log output",
+    )
+    parser.add_argument(
+        "--pm5-method",
+        choices=["timefit", "candidate"],
+        default="timefit",
+        help="±5 ns calibration: 'timefit' fits SF vs raw tower time on the candidate and applies it per run "
+             "(default); 'candidate' reuses the candidate scale for every run in the epoch (previous behavior)",
+    )
+    parser.add_argument(
+        "--time-fit-order",
+        type=int,
+        default=TIME_FIT_ORDER,
+        help=f"Polynomial order of the SF vs raw time fit for --pm5-method timefit (default: {TIME_FIT_ORDER})",
     )
     parser.add_argument(
         "--dry-run",
@@ -370,15 +408,42 @@ def _get_worker_instance(epoch_idx: int, det: str, cand_run: int, hist_path: str
     return worker
 
 
+def _time_fit_scales(det: str, time_info: Dict) -> Tuple[Optional[Dict[str, np.ndarray]], str]:
+    """
+    Predict per-tower ±5 ns scales for one run from its raw time map and the epoch fits.
+    Returns ({window: scales (NaN = fall back per tower)}, method label), or (None, reason) to fall back for the run.
+    """
+    fits = time_info["fits"].get(det)
+    if not fits:
+        return None, "candidate (no time fit for epoch)"
+    if not time_info["path"]:
+        return None, "candidate (no raw-time hist in FileCatalog)"
+    if not os.path.exists(time_info["path"]):
+        return None, "candidate (raw-time hist missing on disk)"
+    tmap = load_time_map(det, time_info["path"])
+    if tmap is None:
+        return None, "candidate (raw-time map unreadable)"
+
+    t = tmap.ravel()
+    scales = {}
+    for w_key in TIME_FIT_WINDOWS:
+        fit = fits.get(w_key)
+        scales[w_key] = (
+            predict_sf_from_time(np.asarray(fit["coef"]), t, fit["t_range"]) if fit else np.full(t.shape, np.nan)
+        )
+    return scales, "timefit"
+
+
 def process_single_run_task(task_args: Tuple) -> Dict:
     """Worker task executed in parallel for a single run."""
-    run, epoch_idx, cand_info, detectors, dbtag, output_dir_str = task_args
+    run, epoch_idx, cand_info, detectors, dbtag, output_dir_str, time_info = task_args
     cand_run = cand_info["run"]
     hist_path = cand_info["path"]
     output_dir = Path(output_dir_str)
 
     root = _init_root_environment()
     tree_status = {det: False for det in detectors}
+    pm5_records = []
     errors = []
 
     for det in detectors:
@@ -394,10 +459,27 @@ def process_single_run_task(task_args: Tuple) -> Dict:
             out_filename = f"{det}_ZSCrossCalibT0_pro001_pcdb001_v001_{run}.root"
             out_filepath = output_dir / out_filename
 
-            ok = worker.processRun(run, url, str(out_filepath))
+            scales, method = (None, "candidate") if time_info is None else _time_fit_scales(det, time_info)
+            if scales is not None:
+                vec = root.std.vector["float"]
+                ok = worker.processRunWithOverride(
+                    run, url, str(out_filepath),
+                    vec(scales["minus5"].astype(np.float32)), vec(scales["plus5"].astype(np.float32)),
+                )
+                n_fb = {"minus5": int(worker.getFallbackMinus5()), "plus5": int(worker.getFallbackPlus5())}
+            else:
+                ok = worker.processRun(run, url, str(out_filepath))
+                n_fb = {"minus5": None, "plus5": None}
+
             tree_status[det] = bool(ok)
             if not ok:
-                errors.append(f"{det}: processRun returned false")
+                errors.append(f"{det}: CDB write returned false")
+            if time_info is not None:
+                pm5_records.append({
+                    "run": run, "epoch": epoch_idx, "cand_run": cand_run, "detector": det, "method": method,
+                    "time_hist_tag": time_info["tag"], "time_hist_path": time_info["path"],
+                    "n_fallback_minus5": n_fb["minus5"], "n_fallback_plus5": n_fb["plus5"],
+                })
         except Exception as e:
             errors.append(f"{det}: {str(e)}")
 
@@ -406,8 +488,54 @@ def process_single_run_task(task_args: Tuple) -> Dict:
         "run": run,
         "success": all_success,
         "tree_status": tree_status,
+        "pm5_records": pm5_records,
         "errors": errors,
     }
+
+
+def fit_candidate_time(
+    worker, det: str, epoch_idx: int, cand_run: int, time_entry: Optional[Tuple[str, str]], order: int
+) -> Optional[Dict[str, Dict]]:
+    """
+    Fit SF(t) per ±5 ns window on the candidate run, with SF = candidate scale (H_win / ref ratio) and t the
+    candidate's mean raw tower time. Returns {window: {"coef", "t_range", "record"}}, or None if the candidate
+    raw-time map is unavailable (the epoch then falls back to the candidate method).
+    """
+    where = f"{det} Group {epoch_idx} (candidate run {cand_run})"
+    if time_entry is None:
+        print(f"[!] WARNING: No raw-time hist for {where}; ±5 ns for this epoch falls back to the candidate method.")
+        return None
+    tag, path = time_entry
+    if not os.path.exists(path):
+        print(f"[!] WARNING: Raw-time hist missing on disk for {where}: {path}; falling back to the candidate method.")
+        return None
+    tmap = load_time_map(det, path)
+    if tmap is None:
+        print(f"[!] WARNING: Unreadable raw-time map for {where}: {path}; falling back to the candidate method.")
+        return None
+
+    t = tmap.ravel()
+    fits = {}
+    for w_key in TIME_FIT_WINDOWS:
+        scale = np.asarray(list(worker.getScale(w_key)), dtype=float)
+        sf = np.where(scale > 0, scale, np.nan)
+        coef = fit_sf_vs_time_poly(t, sf, order)
+        ok = np.isfinite(t) & np.isfinite(sf)
+        t_range = (float(t[ok].min()), float(t[ok].max())) if np.any(ok) else (np.nan, np.nan)
+        resid = sf[ok] - np.polyval(coef, t[ok]) if coef is not None else np.array([np.nan])
+        if coef is None:
+            print(f"[!] WARNING: Time fit failed for {where} {w_key}; this window falls back to the candidate method.")
+        fits[w_key] = {
+            "coef": coef.tolist() if coef is not None else None,
+            "t_range": t_range,
+            "record": {
+                **{f"p{order - i}": (coef[i] if coef is not None else np.nan) for i in range(order + 1)},
+                "t_min": t_range[0], "t_max": t_range[1],
+                "n_fit_towers": int(np.sum(ok)), "fit_resid_rms": float(np.std(resid)),
+                "time_hist_tag": tag, "time_hist_path": path,
+            },
+        }
+    return fits
 
 
 def main():
@@ -432,6 +560,10 @@ def main():
     print(f"Output directory: {args.output_dir}")
     print(f"CDB Global Tag:   {args.dbtag}")
     print(f"Detectors:        {', '.join(detectors)}")
+    if args.pm5_method == "timefit":
+        print(f"±5 ns method:     timefit ({time_fit_label(args.time_fit_order).lower()} SF vs raw tower time, per epoch)")
+    else:
+        print("±5 ns method:     candidate (candidate scale reused across epoch)")
     print(f"Parallel jobs:    {args.jobs} worker process(es)")
     if runs_filter:
         print(f"Run filter:       {len(runs_filter)} explicit runs selected")
@@ -474,8 +606,24 @@ def main():
     t_start = time.time()
     ROOT = _init_root_environment()
 
+    # Raw-time hist lookup for every candidate and target run (one FileCatalog query)
+    time_paths: Dict[int, Tuple[str, str]] = {}
+    if args.pm5_method == "timefit":
+        lookup_runs = sorted(set(target_runs) | {c["run"] for c in candidate_map.values()})
+        print(f"\nLooking up {TIME_HIST_DSTTYPE} segment-0 raw-time hists in FileCatalog for {len(lookup_runs)} run(s)...")
+        try:
+            time_paths = query_time_hist_paths(lookup_runs)
+            print(f"  Found raw-time hists for {len(time_paths)} / {len(lookup_runs)} run(s)")
+        except Exception as err:
+            print(
+                f"\n[!] WARNING: FileCatalog lookup failed ({err}).\n"
+                f"    -> ALL runs will use the candidate method for ±5 ns (no raw-time fit applied).\n"
+            )
+
     print("\nEvaluating Candidate Zero-Ref Denominators...")
     zero_ref_stats: Dict[int, Dict[str, Dict[str, int]]] = {}
+    time_fits: Dict[int, Dict[str, Dict[str, Dict]]] = {}
+    fit_records = []
 
     for epoch_idx, cand_info in candidate_map.items():
         cand_run = cand_info["run"]
@@ -504,6 +652,15 @@ def main():
                 "pct": (zero_count / total_ch * 100.0) if total_ch > 0 else 0.0,
             }
 
+            if args.pm5_method == "timefit":
+                fits = fit_candidate_time(worker, det, epoch_idx, cand_run, time_paths.get(cand_run), args.time_fit_order)
+                if fits:
+                    time_fits.setdefault(epoch_idx, {})[det] = {
+                        w: {"coef": f["coef"], "t_range": f["t_range"]} for w, f in fits.items() if f["coef"] is not None
+                    }
+                    fit_records.extend({"epoch": epoch_idx, "cand_run": cand_run, "detector": det, "window": w, **f["record"]}
+                                       for w, f in fits.items())
+
     # Print Candidate Zero-Ref Summary
     print("\n" + "=" * 85)
     print(" CANDIDATE RUN ZERO-REF DENOMINATOR SUMMARY")
@@ -521,6 +678,24 @@ def main():
                     f"{st['zero']:<15} {st['total']:<15} {st['pct']:>6.2f}%"
                 )
     print("-" * 85)
+
+    if args.pm5_method == "timefit":
+        print("\n" + "=" * 85)
+        print(f" ±5 ns RAW-TIME FIT SUMMARY ({time_fit_label(args.time_fit_order)}, fit on candidate run)")
+        print("=" * 85)
+        print(f"{'Group':<9} {'Cand Run':<10} {'Detector':<10} {'Window':<8} {'Fit Towers':<12} {'Resid RMS':<11} {'Clamp t range [samples]'}")
+        print("-" * 85)
+        for rec in fit_records:
+            print(
+                f"Group {rec['epoch']:<3} {rec['cand_run']:<10} {rec['detector']:<10} {rec['window']:<8} "
+                f"{rec['n_fit_towers']:<12} {rec['fit_resid_rms'] * 100:>7.3f}%    [{rec['t_min']:+.2f}, {rec['t_max']:+.2f}]"
+            )
+        if not fit_records:
+            print("  No time fits available; ±5 ns will use the candidate method for all runs.")
+        print("-" * 85)
+        if time_paths:
+            n_missing = sum(1 for r in target_runs if r not in time_paths)
+            print(f"Target runs without a raw-time hist (fall back to candidate method): {n_missing} / {len(target_runs)}")
 
     if args.dry_run:
         print("\nDry run completed successfully. No CDBTree files written.")
@@ -554,41 +729,46 @@ def main():
             skipped_no_cand += 1
             continue
 
-        tasks.append((run, epoch_idx, cand_info, detectors, args.dbtag, out_dir_str))
+        time_info = None
+        if args.pm5_method == "timefit":
+            tag, path = time_paths.get(run, ("", ""))
+            time_info = {"tag": tag, "path": path, "fits": time_fits.get(epoch_idx, {})}
+        tasks.append((run, epoch_idx, cand_info, detectors, args.dbtag, out_dir_str, time_info))
 
     print(f"\nProcessing {len(tasks)} eligible target run(s) across {args.jobs} worker process(es)...")
 
     processed_count = 0
     failed_cdb = 0
     success_trees = {det: 0 for det in detectors}
+    pm5_records = []
+
+    def collect(result: Dict):
+        nonlocal processed_count, failed_cdb
+        if result["success"]:
+            processed_count += 1
+        else:
+            failed_cdb += 1
+            if args.verbose and result["errors"]:
+                print(f"Run {result['run']} issues: {', '.join(result['errors'])}")
+        for det, ok in result["tree_status"].items():
+            if ok:
+                success_trees[det] += 1
+        pm5_records.extend(result["pm5_records"])
 
     # 5. Execute processing (parallel if jobs > 1, sequential if jobs == 1)
     if args.jobs > 1 and len(tasks) > 1:
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as executor:
             for result in tqdm.tqdm(executor.map(process_single_run_task, tasks), total=len(tasks), desc="Runs"):
-                if result["success"]:
-                    processed_count += 1
-                else:
-                    failed_cdb += 1
-                    if args.verbose and result["errors"]:
-                        print(f"Run {result['run']} issues: {', '.join(result['errors'])}")
-
-                for det, ok in result["tree_status"].items():
-                    if ok:
-                        success_trees[det] += 1
+                collect(result)
     else:
         for task in tqdm.tqdm(tasks, desc="Runs"):
-            result = process_single_run_task(task)
-            if result["success"]:
-                processed_count += 1
-            else:
-                failed_cdb += 1
-                if args.verbose and result["errors"]:
-                    print(f"Run {result['run']} issues: {', '.join(result['errors'])}")
+            collect(process_single_run_task(task))
 
-            for det, ok in result["tree_status"].items():
-                if ok:
-                    success_trees[det] += 1
+    if args.pm5_method == "timefit":
+        if fit_records:
+            pd.DataFrame(fit_records).to_csv(args.output_dir / "time_fit_coefficients.csv", index=False)
+        if pm5_records:
+            pd.DataFrame(pm5_records).sort_values(["run", "detector"]).to_csv(args.output_dir / "time_fit_runs.csv", index=False)
 
     elapsed = time.time() - t_start
 
@@ -612,6 +792,28 @@ def main():
     print(f"Workers used:                           {args.jobs}")
     print(f"Total execution time:                   {elapsed:.2f} seconds")
     print("=" * 85)
+
+    if args.pm5_method == "timefit" and pm5_records:
+        df_pm5 = pd.DataFrame(pm5_records)
+        print("\n ±5 ns RAW-TIME FIT APPLICATION")
+        print("-" * 85)
+        for det in detectors:
+            sub = df_pm5[df_pm5["detector"] == det]
+            fit_sub = sub[sub["method"] == "timefit"]
+            print(
+                f"  - {det:<10}: time fit applied to {len(fit_sub)} / {len(sub)} run(s)  |  fallback towers: "
+                f"-5 ns {int(fit_sub['n_fallback_minus5'].sum())}, +5 ns {int(fit_sub['n_fallback_plus5'].sum())}"
+            )
+        fallback_runs = df_pm5[df_pm5["method"] != "timefit"]
+        if not fallback_runs.empty:
+            print(f"\n [!] WARNING: {fallback_runs['run'].nunique()} run(s) used the CANDIDATE method for ±5 ns:")
+            for reason, grp in fallback_runs.groupby("method"):
+                runs_str = ", ".join(map(str, sorted(grp["run"].unique())[:20]))
+                more = f" ... (+{grp['run'].nunique() - 20} more)" if grp["run"].nunique() > 20 else ""
+                print(f"    - {reason}: {grp['run'].nunique()} run(s): {runs_str}{more}")
+        print(f"  Details: {args.output_dir / 'time_fit_runs.csv'}")
+        print(f"  Fits:    {args.output_dir / 'time_fit_coefficients.csv'}")
+        print("=" * 85)
 
     if conflicted_epochs:
         print("\n [!] NOTE: The following run group(s) were SKIPPED due to multiple candidate runs:")

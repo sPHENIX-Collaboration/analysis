@@ -32,7 +32,8 @@ Plots organized into subdirectories:
      Colour ranges are shared per (detector, window) across all candidate and validation runs.
    - epoch_ratio/sf_ratio_<det>_epoch<E>_val<vrun>_cand<crun>.png: SF_val / SF_cand per window for each epoch pairing.
      Colour ranges are symmetric around 1.0 and shared per (detector, window) across epochs.
-     Algebraically equal to Hist / CDB for the validation run, which is cross-checked per window.
+     Algebraically equal to Hist / CDB for the validation run when the CDB uses the candidate method, which is
+     cross-checked per window. For raw-time fit CDBs (time_fit_runs.csv in --input-dir) only Main is cross-checked.
    - epoch_ratio/sf_ratio_summary.csv: Per (detector, epoch, window) ratio statistics and closure deviation.
 8. time_maps/ (disable with --no-time-maps):
    - Mean raw tower time from h_CaloValid_<det>_etaphi_time_raw [ADC samples, template-fit peak shift].
@@ -47,6 +48,14 @@ Plots organized into subdirectories:
    - epoch_ratio_vs_dt/sf_ratio_vs_dt_<det>_epoch<E>_val<vrun>_cand<crun>.png: SF_val / SF_cand vs t_val - t_cand.
      Axis ranges are shared per (detector, window) across runs, and across epochs for the pairings.
    - sf_vs_time_summary.csv: Pearson r and linear fit (slope, intercept) per plot and window.
+   - Candidate plots also show the polynomial fit (order TIME_FIT_ORDER) used by time_fit/ for the ±5 ns windows.
+10. time_fit/ (requires scale factor and time maps, and --val-hist-list):
+   - ±5 ns calibration from raw tower time: per (detector, epoch, window) a cubic SF(t) is fit on the
+     candidate run and applied to each validation run, CDB_fit = f(t_val) * T0_val. Main is unchanged.
+   - val_ratios_timefit_<det>.png & per_run/val_ratios_timefit_<det>_run<run>.png: CDB / Hist distributions
+     comparing the current method (candidate SF) with the raw-time fit on the same towers.
+   - fit_coefficients.csv: Polynomial coefficients p<k> (coefficient of t^k), fit tower count and residual RMS per fit.
+   - time_fit_summary.csv: Per (detector, epoch, window, method) ratio statistics and fallback tower count.
 """
 
 import argparse
@@ -71,14 +80,21 @@ import pandas as pd
 import tqdm
 import uproot
 
-# Import extraction module
-try:
-    from extract_calib_summary import extract_summary
-except ImportError:
-    script_dir = Path(__file__).resolve().parent
-    if str(script_dir) not in sys.path:
-        sys.path.insert(0, str(script_dir))
-    from extract_calib_summary import extract_summary
+# Import extraction module and shared raw-time helpers
+script_dir = Path(__file__).resolve().parent
+if str(script_dir) not in sys.path:
+    sys.path.insert(0, str(script_dir))
+from extract_calib_summary import extract_summary  # noqa: E402
+from raw_time_utils import (  # noqa: E402
+    TIME_FIT_ORDER,
+    TIME_FIT_WINDOWS,
+    TIME_HIST_DSTTYPE,
+    fit_sf_vs_time_poly,
+    load_time_map,
+    predict_sf_from_time,
+    query_time_hist_paths,
+    time_fit_label,
+)
 
 # Set mplhep ATLAS style
 hep.style.use(hep.style.ATLAS)
@@ -125,8 +141,7 @@ WINDOW_BY_KEY = {w["key"]: w for w in SAMPLE_WINDOWS}
 # Top-to-bottom panel order for stacked scale factor figures
 SF_PANEL_ORDER = ("minus5", "main", "plus5")
 
-# FileCatalog dataset type holding the CaloValid raw time histograms
-TIME_HIST_DSTTYPE = "HIST_JETQA%"
+TIME_FIT_LABEL = time_fit_label(TIME_FIT_ORDER)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -1358,16 +1373,30 @@ def load_scale_factors(det: str, run: int, hist_file: str, input_dir: Path) -> O
         return None
 
 
+def load_pm5_methods(input_dir: Path) -> Dict[Tuple[int, str], str]:
+    """
+    Read the ±5 ns method used per (run, detector) from the generator's time_fit_runs.csv in the CDB directory.
+    Returns an empty dict when the file is absent (CDBs produced with the candidate method throughout).
+    """
+    path = input_dir / "time_fit_runs.csv"
+    if not path.is_file():
+        return {}
+    df = pd.read_csv(path)
+    return {(int(r), str(d)): str(m) for r, d, m in zip(df["run"], df["detector"], df["method"])}
+
+
 def check_ratio_closure(
     det: str,
     val_run: int,
     input_dir: Path,
     sf_val: Dict[str, np.ndarray],
     ratios: Dict[str, np.ndarray],
+    windows: Tuple[str, ...] = SF_PANEL_ORDER,
 ) -> Dict[str, float]:
     """
     Cross-check SF_val / SF_cand against Hist_val / CDB_val per window. The two are algebraically
-    identical (CDB_val = SF_cand * T0_val, Hist_val = SF_val * T0_val). Returns max absolute deviation.
+    identical when the CDB uses the candidate method (CDB_val = SF_cand * T0_val, Hist_val = SF_val * T0_val).
+    Only the given windows are checked; others return NaN. Returns max absolute deviation per window.
     """
     cfg = DETECTOR_CONFIG[det]
     neta, nphi = cfg["neta"], cfg["nphi"]
@@ -1380,7 +1409,7 @@ def check_ratio_closure(
         arr = f_cdb["Multiple"].arrays(["Fratio"] + [w["cdb_col"] for w in SAMPLE_WINDOWS], library="np")
     t0_2d = arr["Fratio"].reshape((neta, nphi))
 
-    for w_key in SF_PANEL_ORDER:
+    for w_key in windows:
         cdb_2d = arr[WINDOW_BY_KEY[w_key]["cdb_col"]].reshape((neta, nphi))
         ok = np.isfinite(ratios[w_key]) & (cdb_2d > 0)
         if not np.any(ok):
@@ -1523,6 +1552,12 @@ def build_scale_factor_tasks(
         f"and {len(val_runs)} validation run(s) across {len(detectors)} detector(s)..."
     )
 
+    # The Hist / CDB closure identity only holds where the CDB used the candidate method. For runs whose
+    # ±5 ns came from the raw-time fit (per the generator's time_fit_runs.csv), only Main is checked.
+    pm5_methods = load_pm5_methods(input_dir)
+    if pm5_methods:
+        print(f"  {input_dir / 'time_fit_runs.csv'} found: ±5 ns closure skipped for runs calibrated with the raw-time fit.")
+
     tasks = []
     summary_records = []
     sf_maps = {}
@@ -1555,7 +1590,8 @@ def build_scale_factor_tasks(
         ratio_maps = []
         for ep_idx, cand_run, val_run in pair_runs_by_epoch(sf_cand, sf_val, epochs, f"{det} SF ratio maps"):
             ratios = {w_key: sf_val[val_run][w_key] / sf_cand[cand_run][w_key] for w_key in SF_PANEL_ORDER}
-            closure = check_ratio_closure(det, val_run, input_dir, sf_val[val_run], ratios)
+            closure_windows = ("main",) if pm5_methods.get((val_run, det)) == "timefit" else SF_PANEL_ORDER
+            closure = check_ratio_closure(det, val_run, input_dir, sf_val[val_run], ratios, closure_windows)
             ratio_maps.append((ep_idx, cand_run, val_run, ratios))
 
             for w_key in SF_PANEL_ORDER:
@@ -1597,53 +1633,8 @@ def build_scale_factor_tasks(
     return tasks, sf_maps
 
 
-def query_time_hist_paths(runs: List[int], dsttype_pattern: str = TIME_HIST_DSTTYPE) -> Dict[int, Tuple[str, str]]:
-    """
-    Look up the segment-0 QA hist file per run in FileCatalog, keeping the latest by file time.
-    Connection host/user come from the standard PGHOST / PGUSER environment. Returns {run: (tag, path)}.
-    """
-    import psycopg2
-
-    query = """
-        SELECT DISTINCT ON (d.runnumber) d.runnumber, d.tag, f.full_file_path
-        FROM datasets d JOIN files f ON d.filename = f.lfn
-        WHERE d.runnumber = ANY(%s) AND d.segment = 0 AND d.dsttype LIKE %s
-        ORDER BY d.runnumber, f.time DESC NULLS LAST
-    """
-    conn = psycopg2.connect(dbname="FileCatalog")
-    try:
-        with conn.cursor() as cur:
-            cur.execute(query, (list(runs), dsttype_pattern))
-            return {int(run): (tag, path) for run, tag, path in cur.fetchall()}
-    finally:
-        conn.close()
 
 
-def load_time_map(det: str, hist_file: str) -> Optional[np.ndarray]:
-    """Load mean raw tower time [samples] as an (neta, nphi) array, NaN where a tower has no entries."""
-    cfg = DETECTOR_CONFIG[det]
-    neta, nphi = cfg["neta"], cfg["nphi"]
-    hname = f"h_CaloValid_{cfg['hist_det']}_etaphi_time_raw"
-
-    try:
-        with uproot.open(hist_file) as f:
-            if hname not in f:
-                print(f"Warning: {hname} missing in {hist_file}.")
-                return None
-            h = f[hname]
-            vals = h.values()
-            if vals.shape != (neta, nphi):
-                return None
-            # Empty bins read as 0, which is also a valid time, so mask on entries instead.
-            # uproot's TProfile2D.counts() fails here; fBinEntries is ROOT-ordered (x fastest, with flow bins).
-            entries = np.asarray(h.member("fBinEntries")).reshape((nphi + 2, neta + 2)).T[1:-1, 1:-1]
-        valid = (entries > 0) & np.isfinite(vals)
-        if not np.any(valid):
-            return None
-        return np.where(valid, vals, np.nan)
-    except Exception as e:
-        print(f"Time map load error for {det} from {hist_file}: {e}")
-        return None
 
 
 def worker_plot_time_map(args: Tuple) -> str:
@@ -1823,12 +1814,15 @@ def padded_range(vals: np.ndarray, lo_pct: float = 0.5, hi_pct: float = 99.5, mi
     return float(lo - 0.05 * span), float(hi + 0.05 * span)
 
 
+
+
 def worker_plot_sf_vs_time(args: Tuple) -> str:
     """
     Worker task to render tower-by-tower 2D histograms of a scale factor quantity (y) against a raw time
     quantity (x), one panel per sample window, with a mean-y profile overlay and linear fit stats.
+    Optional polynomial fit curves ({win_key: np.polyfit coefficients}) are drawn on top.
     """
-    det, header, x, ys, stats, xlim, ylims, xlabel, ylabel, ref, out_path = args
+    det, header, x, ys, stats, xlim, ylims, xlabel, ylabel, ref, fits, out_path = args
     neta = DETECTOR_CONFIG[det]["neta"]
     nbins_x, nbins_y, nbins_prof = (80, 60, 24) if neta > 24 else (40, 30, 16)
 
@@ -1869,6 +1863,9 @@ def worker_plot_sf_vs_time(args: Tuple) -> str:
             ax.axvline(ref["x"], color="#555555", ls="--", lw=1.0)
         if ref.get("y") is not None:
             ax.axhline(ref["y"], color="#555555", ls="--", lw=1.0)
+        if fits.get(w_key) is not None:
+            x_curve = np.linspace(*xlim, 200)
+            ax.plot(x_curve, np.polyval(fits[w_key], x_curve), color="#e15759", lw=2.2, label=f"{TIME_FIT_LABEL} fit")
 
         s = stats[w_key]
         ax.text(
@@ -1942,12 +1939,17 @@ def build_sf_vs_time_tasks(
                     "kind": role, "detector": det, "epoch": ep_idx, "run": run,
                     "cand_run": None, "val_run": None, "window": w_key, **stats[w_key],
                 })
+            # Candidate runs show the polynomial used for the time-fit ±5 ns calibration
+            fits = (
+                {w_key: fit_sf_vs_time_poly(x, ys[w_key]) for w_key in TIME_FIT_WINDOWS}
+                if role == "Candidate" else {}
+            )
             tasks.append((
                 worker_plot_sf_vs_time,
                 (
                     det, f"{det}  |  {role} Run {run} ({ep_str})  |  Scale Factor vs Mean Raw Time",
                     x, ys, stats, xlim, ylims,
-                    "Mean Raw Tower Time [samples]", "{label} / T0 Integrated", {},
+                    "Mean Raw Tower Time [samples]", "{label} / T0 Integrated", {}, fits,
                     role_dir / f"sf_vs_time_{det}_run{run}.png",
                 ),
                 f"SFvsTime {det} Run {run}",
@@ -1986,7 +1988,7 @@ def build_sf_vs_time_tasks(
                     dx, dys, stats, dxlim, dylims,
                     r"$t_\mathrm{val} - t_\mathrm{cand}$ [samples]",
                     r"$\mathrm{SF}_\mathrm{val} / \mathrm{SF}_\mathrm{cand}$ ({label})",
-                    {"x": 0.0, "y": 1.0},
+                    {"x": 0.0, "y": 1.0}, {},
                     dir_epoch / f"sf_ratio_vs_dt_{det}_epoch{ep_idx}_val{val_run}_cand{cand_run}.png",
                 ),
                 f"SFRatioVsDt {det} Epoch {ep_idx}",
@@ -1997,6 +1999,170 @@ def build_sf_vs_time_tasks(
         csv_path = output_dir / "sf_vs_time_summary.csv"
         pd.DataFrame(summary_records).to_csv(csv_path, index=False)
         print(f"  Saved scale factor vs time fit summary: {csv_path}")
+
+    return tasks
+
+
+def ratio_stats(r: np.ndarray) -> Dict[str, float]:
+    """Mean, RMS and fractions within ±2% / ±5% of 1.0 for a CDB / Hist ratio array."""
+    return {
+        "mean_ratio": float(np.mean(r)),
+        "std_ratio": float(np.std(r)),
+        "frac_within_2pct": float(np.mean(np.abs(r - 1.0) <= 0.02)),
+        "frac_within_5pct": float(np.mean(np.abs(r - 1.0) <= 0.05)),
+    }
+
+
+def worker_plot_time_fit_ratios(args: Tuple) -> str:
+    """Worker task to render val_ratios-style CDB / Hist distributions comparing current vs raw-time-fit ±5 ns."""
+    header, ratios, n_fallback, out_path = args
+    methods = (
+        ("current", "Current (candidate SF)", "#7f7f7f", "--", 2.0),
+        ("time_fit", f"Raw-time {TIME_FIT_LABEL.lower()} fit", None, "-", 2.4),
+    )
+
+    fig, axes = plt.subplots(1, len(TIME_FIT_WINDOWS), figsize=(22, 8))
+    for ax, w_key in zip(axes, TIME_FIT_WINDOWS):
+        win = WINDOW_BY_KEY[w_key]
+        both = np.concatenate([ratios[w_key][m] for m, *_ in methods])
+        p05, p995 = np.percentile(both, [0.5, 99.5])
+        r_dev = max(abs(1.0 - p05), abs(p995 - 1.0), 0.05)
+        bins = np.linspace(1.0 - 1.25 * r_dev, 1.0 + 1.25 * r_dev, 80)
+
+        for m_key, m_label, color, ls, lw in methods:
+            r = ratios[w_key][m_key]
+            s = ratio_stats(r)
+            ax.hist(
+                r, bins=bins, histtype="step", color=color or win["color"], ls=ls, lw=lw,
+                label=(
+                    f"{m_label}\n{s['mean_ratio']:.4f} ± {s['std_ratio']:.4f}  |  "
+                    f"±2%: {s['frac_within_2pct'] * 100:.1f}%  |  ±5%: {s['frac_within_5pct'] * 100:.1f}%"
+                ),
+            )
+
+        ax.axvline(1.0, color="#555555", ls="--", lw=1.0)
+        ax.axvline(0.95, color="#888888", ls=":", lw=1.0, alpha=0.7)
+        ax.axvline(1.05, color="#888888", ls=":", lw=1.0, alpha=0.7)
+        ax.set_xlabel(r"Ratio ($\mathrm{CDB} / \mathrm{Hist}$)", fontsize=17)
+        ax.set_ylabel(r"Towers / Bin", fontsize=16)
+        ax.set_yscale("log")
+        ax.set_ylim(0.5, ax.get_ylim()[1] * 60.0)
+        ax.legend(loc="upper right", frameon=True, framealpha=0.9, fontsize=13)
+        ax.text(
+            0.03, 0.97,
+            f"{win['label']}\nTowers: {len(ratios[w_key]['current']):,}\nTime-fit fallback: {n_fallback[w_key]:,}",
+            transform=ax.transAxes, fontsize=13, weight="bold", color="black", va="top",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="#cccccc", alpha=0.85)
+        )
+
+    fig.suptitle(header, fontsize=19, weight="bold")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return out_path.name
+
+
+def build_time_fit_tasks(
+    detectors: List[str],
+    epochs: List[Tuple[int, int, int]],
+    candidates: Dict[int, str],
+    val_runs: Dict[int, str],
+    sf_maps: Dict[str, Dict[int, Dict[str, np.ndarray]]],
+    tmaps: Dict[int, Dict[str, np.ndarray]],
+    output_dir: Path,
+) -> List[Tuple]:
+    """
+    Raw-time ±5 ns calibration study. Per (detector, epoch, window) a polynomial SF(t) is fit on the candidate
+    run and applied to each validation run's raw time: CDB_fit = f(t_val) * T0_val, so CDB / Hist = f(t_val) / SF_val.
+    The current method gives SF_cand / SF_val. Towers without a valid prediction fall back to the current method.
+    Both are compared on the same towers; fit coefficients and per-run statistics are written to CSV.
+    """
+    print(f"\nBuilding raw-time {TIME_FIT_LABEL.lower()} fit validation for ±5 ns windows...")
+    dir_runs = output_dir / "per_run"
+
+    tasks = []
+    fit_records = []
+    summary_records = []
+    for det in detectors:
+        runs = [r for r in sf_maps.get(det, {}) if r in tmaps]
+        pairs = pair_runs_by_epoch(
+            [r for r in runs if r in candidates], [r for r in runs if r in val_runs], epochs, f"{det} time-fit validation"
+        )
+        if not pairs:
+            continue
+        dir_runs.mkdir(parents=True, exist_ok=True)
+
+        pooled = {w_key: {"current": [], "time_fit": []} for w_key in TIME_FIT_WINDOWS}
+        pooled_fallback = {w_key: 0 for w_key in TIME_FIT_WINDOWS}
+        for ep_idx, cand_run, val_run in pairs:
+            t_cand, t_val = tmaps[cand_run][det], tmaps[val_run][det]
+            run_ratios, run_fallback = {}, {}
+            for w_key in TIME_FIT_WINDOWS:
+                sf_cand = sf_maps[det][cand_run][w_key]
+                sf_val = sf_maps[det][val_run][w_key]
+
+                coef = fit_sf_vs_time_poly(t_cand, sf_cand)
+                ok_fit = np.isfinite(t_cand) & np.isfinite(sf_cand)
+                t_range = (float(np.min(t_cand[ok_fit])), float(np.max(t_cand[ok_fit]))) if np.any(ok_fit) else (np.nan, np.nan)
+                resid = sf_cand[ok_fit] - np.polyval(coef, t_cand[ok_fit]) if coef is not None else np.array([np.nan])
+                fit_records.append({
+                    "detector": det, "epoch": ep_idx, "cand_run": cand_run, "window": w_key,
+                    **{
+                        f"p{TIME_FIT_ORDER - i}": coef[i] if coef is not None else np.nan
+                        for i in range(TIME_FIT_ORDER + 1)
+                    },
+                    "t_min": t_range[0], "t_max": t_range[1],
+                    "n_fit_towers": int(np.sum(ok_fit)),
+                    "fit_resid_rms": float(np.std(resid)),
+                })
+
+                # Compare both methods on the towers the current method calibrates.
+                # Prediction matches production: t clamped to the candidate's fitted range.
+                mask = np.isfinite(sf_val) & np.isfinite(sf_cand)
+                pred = predict_sf_from_time(coef, t_val, t_range) if coef is not None else np.full_like(sf_val, np.nan)
+                use_fit = mask & np.isfinite(pred)
+                sf_new = np.where(use_fit, pred, sf_cand)
+
+                current = (sf_cand / sf_val)[mask]
+                time_fit = (sf_new / sf_val)[mask]
+                n_fallback = int(np.sum(mask) - np.sum(use_fit))
+                run_ratios[w_key] = {"current": current, "time_fit": time_fit}
+                run_fallback[w_key] = n_fallback
+                pooled[w_key]["current"].append(current)
+                pooled[w_key]["time_fit"].append(time_fit)
+                pooled_fallback[w_key] += n_fallback
+
+                for method, r in (("current", current), ("time_fit", time_fit)):
+                    summary_records.append({
+                        "detector": det, "epoch": ep_idx, "cand_run": cand_run, "val_run": val_run,
+                        "window": w_key, "method": method, "n_towers": int(len(r)),
+                        "n_fallback": n_fallback if method == "time_fit" else 0, **ratio_stats(r),
+                    })
+
+            tasks.append((
+                worker_plot_time_fit_ratios,
+                (
+                    f"{det}  |  Epoch {ep_idx}  |  Val Run {val_run} (Cand Run {cand_run})  |  ±5 ns CDB / Hist: Current vs Raw-Time Fit",
+                    run_ratios, run_fallback, dir_runs / f"val_ratios_timefit_{det}_run{val_run}.png",
+                ),
+                f"TimeFitRatios {det} Run {val_run}",
+            ))
+
+        combined = {w_key: {m: np.concatenate(v) for m, v in pooled[w_key].items()} for w_key in TIME_FIT_WINDOWS}
+        tasks.append((
+            worker_plot_time_fit_ratios,
+            (
+                f"{det}  |  {len(pairs)} Validation Runs (Combined)  |  ±5 ns CDB / Hist: Current vs Raw-Time Fit",
+                combined, pooled_fallback, output_dir / f"val_ratios_timefit_{det}.png",
+            ),
+            f"TimeFitRatios {det} Combined",
+        ))
+
+    if fit_records:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(fit_records).to_csv(output_dir / "fit_coefficients.csv", index=False)
+        pd.DataFrame(summary_records).to_csv(output_dir / "time_fit_summary.csv", index=False)
+        print(f"  Saved fit coefficients and time-fit summary to: {output_dir}")
 
     return tasks
 
@@ -2154,6 +2320,12 @@ def plot_all_validation_parallel(
     if sf_maps and tmaps:
         tasks.extend(build_sf_vs_time_tasks(
             detectors, epochs, candidates, val_runs, sf_maps, tmaps, output_dir / "sf_vs_time"
+        ))
+
+    # 10. ±5 ns calibration from a per-epoch raw-time polynomial fit, validated against independent runs
+    if sf_maps and tmaps and val_runs:
+        tasks.extend(build_time_fit_tasks(
+            detectors, epochs, candidates, val_runs, sf_maps, tmaps, output_dir / "time_fit"
         ))
 
     print(f"\nDispatching {len(tasks)} plotting tasks across {jobs} parallel worker process(es)...")
@@ -2330,6 +2502,8 @@ def main():
     if not args.no_time_maps:
         print(f"  - Time Maps:     {args.output_dir / 'time_maps'}")
         print(f"  - SF vs Time:    {args.output_dir / 'sf_vs_time'}")
+        if args.val_hist_list:
+            print(f"  - Time Fit:      {args.output_dir / 'time_fit'}")
     if args.val_hist_list:
         print(f"  - Validation:    {args.output_dir / 'validation'}")
         print(f"    * Combined:    {args.output_dir / 'validation'}")

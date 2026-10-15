@@ -6,6 +6,7 @@
 #include <TFile.h>
 #include <TProfile2D.h>
 
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -24,6 +25,8 @@ class ZSCrossCalibWorker
   std::vector<float> m_scale_plus5;
   int m_zero_ref_count{0};
   int m_total_channels{0};
+  int m_n_fallback_minus5{-1};
+  int m_n_fallback_plus5{-1};
 
   ZSCrossCalibWorker(const std::string &detector)
     : m_detector(detector)
@@ -179,6 +182,75 @@ class ZSCrossCalibWorker
     out_cdb.WriteCDBTTree();
     return true;
   }
+
+  // Same as processRun, but the ±5 ns scale per tower is taken from the given vectors (e.g. a raw-time fit
+  // prediction). Towers whose override is not finite or <= 0 fall back to the candidate scale.
+  // Fallback tower counts per window are available afterwards via getFallbackMinus5 / getFallbackPlus5 (-1 on failure).
+  bool processRunWithOverride(unsigned int run, const std::string &target_cdb_file, const std::string &out_file,
+                              const std::vector<float> &scale_minus5, const std::vector<float> &scale_plus5)
+  {
+    m_n_fallback_minus5 = -1;
+    m_n_fallback_plus5 = -1;
+    if (scale_minus5.size() != m_keys.size() || scale_plus5.size() != m_keys.size())
+    {
+      std::cerr << "Override scale size mismatch for run " << run << ": expected " << m_keys.size()
+                << ", got " << scale_minus5.size() << " / " << scale_plus5.size() << std::endl;
+      return false;
+    }
+
+    std::filesystem::path p(out_file);
+    if (p.has_parent_path())
+    {
+      std::error_code ec;
+      std::filesystem::create_directories(p.parent_path(), ec);
+      if (ec)
+      {
+        std::cerr << "Failed to create directory " << p.parent_path() << ": " << ec.message() << std::endl;
+        return false;
+      }
+    }
+
+    CDBTTree in_cdb(target_cdb_file);
+    in_cdb.LoadCalibrations();
+
+    m_n_fallback_minus5 = 0;
+    m_n_fallback_plus5 = 0;
+    CDBTTree out_cdb(out_file);
+    for (size_t i = 0; i < m_keys.size(); ++i)
+    {
+      unsigned int key = m_keys[i];
+      float orig_ratio = in_cdb.GetFloatValue(key, "ratio");
+
+      bool use_m5 = std::isfinite(scale_minus5[i]) && scale_minus5[i] > 0.0f;
+      bool use_p5 = std::isfinite(scale_plus5[i]) && scale_plus5[i] > 0.0f;
+      if (!use_m5) ++m_n_fallback_minus5;
+      if (!use_p5) ++m_n_fallback_plus5;
+
+      float r_main = m_scale_main[i] * orig_ratio;
+      float r_minus5 = (use_m5 ? scale_minus5[i] : m_scale_minus5[i]) * orig_ratio;
+      float r_plus5 = (use_p5 ? scale_plus5[i] : m_scale_plus5[i]) * orig_ratio;
+
+      out_cdb.SetFloatValue(key, "ratio", orig_ratio);
+      out_cdb.SetFloatValue(key, "ratio_main", r_main);
+      out_cdb.SetFloatValue(key, "ratio_minus5", r_minus5);
+      out_cdb.SetFloatValue(key, "ratio_plus5", r_plus5);
+    }
+
+    out_cdb.Commit();
+    out_cdb.WriteCDBTTree();
+    return true;
+  }
+
+  // Candidate scale (H_win / ref ratio) per tower in eta-major order; 0 where the reference ratio is 0.
+  const std::vector<float> &getScale(const std::string &window) const
+  {
+    if (window == "minus5") return m_scale_minus5;
+    if (window == "plus5") return m_scale_plus5;
+    return m_scale_main;
+  }
+
+  int getFallbackMinus5() const { return m_n_fallback_minus5; }
+  int getFallbackPlus5() const { return m_n_fallback_plus5; }
 
   int getZeroRefCount() const { return m_zero_ref_count; }
   int getTotalChannels() const { return m_total_channels; }
