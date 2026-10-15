@@ -1,49 +1,49 @@
 ================================================================================
- sPHENIX ZSCrossCalib Candidate Run & Segment List Generator
+ sPHENIX ZSCrossCalib Candidate & Test Run List Generator
 ================================================================================
-Epoch file:       /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/epoch.csv
-Runs list file:   /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/ZSCrossCalib_runs.list
-Output directory: /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/lists
-Log file:         generate_candidate_run_lists.txt
-Database:         FileCatalog
-Dry run mode:     Enabled (no files written)
+Epoch file:             /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/epoch.csv
+Runs list file:         /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/ZSCrossCalib_runs.list
+Candidate output dir:   /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/lists
+Test output dir:        /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/test_lists
+Runs output dir:        /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files
+Log file:               log/generate_candidate_run_lists.txt
+Database:               FileCatalog
+Dry run mode:           Enabled (no files written)
 --------------------------------------------------------------------------------
-Loaded 8 run groups from epoch.csv
-Loaded 2771 allowed runs from ZSCrossCalib_runs.list
+Loaded 7 run groups from epoch.csv
+Loaded 2758 allowed runs from ZSCrossCalib_runs.list
 
-[Group 1 [66567, 67699]] -> Candidate: Run 67633 (339 valid segments with 19 files, found 339 lists)
-[Group 2 [67716, 69137]] -> Candidate: Run 68145 (425 valid segments with 19 files, found 425 lists)
-[Group 3 [69272, 69574]] -> NO candidate run found with valid segments.
-[Group 4 [69576, 73818]] -> Candidate: Run 72830 (380 valid segments with 19 files, found 380 lists)
-[Group 5 [73820, 76347]] -> Candidate: Run 74244 (427 valid segments with 19 files, found 427 lists)
-[Group 6 [76348, 77664]] -> Candidate: Run 76451 (411 valid segments with 19 files, found 411 lists)
-[Group 7 [77680, 77934]] -> Candidate: Run 77883 (343 valid segments with 19 files, found 343 lists)
-[Group 8 [77935, 78954]] -> Candidate: Run 78579 (410 valid segments with 19 files, found 410 lists)
+[Group 1 [66567, 67701]] -> Candidate (1st): Run 67633 (339 segs), Test (2nd): Run 67679 (308 segs)
+[Group 2 [67716, 69144]] -> Candidate (1st): Run 68145 (425 segs), Test (2nd): Run 68148 (320 segs)
+[Group 3 [69272, 73818]] -> Candidate (1st): Run 72830 (380 segs), Test (2nd): Run 72990 (357 segs)
+[Group 4 [73820, 76347]] -> Candidate (1st): Run 74244 (427 segs), Test (2nd): Run 76075 (410 segs)
+[Group 5 [76348, 77664]] -> Candidate (1st): Run 76451 (411 segs), Test (2nd): Run 76935 (408 segs)
+[Group 6 [77680, 77934]] -> Candidate (1st): Run 77883 (343 segs), Test (2nd): Run 77908 (321 segs)
+[Group 7 [77935, 78954]] -> Candidate (1st): Run 78579 (410 segs), Test (2nd): Run 78219 (400 segs)
 
-==========================================================================================
- CANDIDATE RUN SELECTION & SEGMENT LIST GENERATION SUMMARY
-==========================================================================================
-Group      Run Range         Runs in List   Candidate Run   Valid Segs   Lists Made   Status      
-------------------------------------------------------------------------------------------
-Group 1    [66567, 67699]    22             67633           339          339          OK          
-Group 2    [67716, 69137]    361            68145           425          425          OK          
-Group 3    [69272, 69574]    17             -               0            0            NO CANDIDATE
-Group 4    [69576, 73818]    795            72830           380          380          OK          
-Group 5    [73820, 76347]    691            74244           427          427          OK          
-Group 6    [76348, 77664]    408            76451           411          411          OK          
-Group 7    [77680, 77934]    89             77883           343          343          OK          
-Group 8    [77935, 78954]    373            78579           410          410          OK          
-------------------------------------------------------------------------------------------
-Total run groups processed:             8
-Run groups with candidate runs:         7
-Run groups WITHOUT candidate runs:      1
-Total segment list files generated:     2735
-Output directory:                       /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/lists
-Execution time:                         18.88 seconds
-==========================================================================================
+=========================================================================================================
+ CANDIDATE & TEST RUN SELECTION SUMMARY
+=========================================================================================================
+Group      Run Range         Runs   Candidate (1st)    Cand Segs   Test (2nd)     Test Segs   Status      
+---------------------------------------------------------------------------------------------------------
+Group 1    [66567, 67701]    23     67633              339         67679          308         OK          
+Group 2    [67716, 69144]    362    68145              425         68148          320         OK          
+Group 3    [69272, 73818]    812    72830              380         72990          357         OK          
+Group 4    [73820, 76347]    691    74244              427         76075          410         OK          
+Group 5    [76348, 77664]    408    76451              411         76935          408         OK          
+Group 6    [77680, 77934]    89     77883              343         77908          321         OK          
+Group 7    [77935, 78954]    373    78579              410         78219          400         OK          
+---------------------------------------------------------------------------------------------------------
+Total run groups processed:             7
+Run groups with candidates:             7
+Run groups WITHOUT candidates:          0
+Runs outside all epochs:                0
+Total Candidate segment list files:     2735
+Total Test segment list files:          2524
+Candidate lists directory:              /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/lists
+Test lists directory:                   /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files/test_lists
+Run lists directory:                    /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files
+Execution time:                         19.51 seconds
+=========================================================================================================
 
- [!] WARNING: The following run group(s) have NO candidate run:
-    - Group 3 (runs 69272 to 69574): 17 runs in ZSCrossCalib_runs.list, but none have valid segments with all 19 seb00-seb18 files.
-==========================================================================================
-
-Report and logs saved to: generate_candidate_run_lists.txt
+Report and logs saved to: log/generate_candidate_run_lists.txt
