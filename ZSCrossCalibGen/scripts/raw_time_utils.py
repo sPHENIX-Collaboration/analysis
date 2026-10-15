@@ -7,8 +7,10 @@ generate_zs_crosscalib_cdb.py (production) and plot_calib_validation.py (validat
 - FileCatalog lookup of the segment-0 HIST_JETQA file per run (latest by file time).
 - Loading mean raw tower time maps from h_CaloValid_<det>_etaphi_time_raw [ADC samples].
 - Polynomial fit of the scale factor SF_win = H_win / T0 Integrated against raw time, and clamped prediction.
+- DAQ run table lookup of begin/end-of-run timestamps (used to report epoch boundaries in time).
 """
 
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -23,6 +25,10 @@ TIME_HIST_GEOMETRY = {
 
 # FileCatalog dataset type holding the CaloValid raw time histograms
 TIME_HIST_DSTTYPE = "HIST_JETQA%"
+
+# DAQ database replica holding the run table (brtimestamp / ertimestamp per run)
+DAQ_DB_HOST = "sphnxdaqdbreplica"
+DAQ_DB_NAME = "daq"
 
 # Sample windows calibrated by the raw-time polynomial fit (Main stays on the candidate-run method)
 TIME_FIT_WINDOWS = ("minus5", "plus5")
@@ -54,6 +60,20 @@ def query_time_hist_paths(runs: List[int], dsttype_pattern: str = TIME_HIST_DSTT
         with conn.cursor() as cur:
             cur.execute(query, (list(runs), dsttype_pattern))
             return {int(run): (tag, path) for run, tag, path in cur.fetchall()}
+    finally:
+        conn.close()
+
+
+def query_run_timestamps(runs: List[int]) -> Dict[int, Tuple[Optional[datetime], Optional[datetime]]]:
+    """Look up begin/end-of-run timestamps in the DAQ run table. Returns {run: (brtimestamp, ertimestamp)}."""
+    import psycopg2
+
+    query = "SELECT runnumber, brtimestamp, ertimestamp FROM run WHERE runnumber = ANY(%s)"
+    conn = psycopg2.connect(host=DAQ_DB_HOST, dbname=DAQ_DB_NAME)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, (list(runs),))
+            return {int(run): (begin, end) for run, begin, end in cur.fetchall()}
     finally:
         conn.close()
 

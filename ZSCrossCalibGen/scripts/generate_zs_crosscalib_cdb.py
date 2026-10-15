@@ -52,6 +52,7 @@ from raw_time_utils import (  # noqa: E402
     fit_sf_vs_time_poly,
     load_time_map,
     predict_sf_from_time,
+    query_run_timestamps,
     query_time_hist_paths,
     time_fit_label,
 )
@@ -226,6 +227,33 @@ def get_epoch_for_run(run: int, epochs: List[Tuple[int, int, int]]) -> Optional[
         if start <= run <= end:
             return (start, end, idx)
     return None
+
+
+def map_runs_to_epochs(runs: List[int], epochs: List[Tuple[int, int, int]]) -> Dict[int, Optional[int]]:
+    """Map each run to its epoch index (None if the run is outside every epoch range)."""
+    run_epoch = {}
+    for run in runs:
+        epoch_info = get_epoch_for_run(run, epochs)
+        run_epoch[run] = epoch_info[2] if epoch_info else None
+    return run_epoch
+
+
+def locate_outside_run(run: int, epochs: List[Tuple[int, int, int]]) -> str:
+    """Describe where a run outside every epoch sits relative to the epoch ranges."""
+    prev = max(((end, idx) for start, end, idx in epochs if end < run), default=None)
+    nxt = min(((start, idx) for start, end, idx in epochs if start > run), default=None)
+    if prev and nxt:
+        return f"between Group {prev[1]} and Group {nxt[1]}"
+    if nxt:
+        return f"before Group {nxt[1]}"
+    if prev:
+        return f"after Group {prev[1]}"
+    return "no epochs defined"
+
+
+def fmt_ts(ts) -> str:
+    """Format a DAQ timestamp, or 'n/a' if unavailable."""
+    return ts.strftime("%Y-%m-%d %H:%M:%S") if ts else "n/a"
 
 
 def extract_run_number(filepath: str) -> Optional[int]:
@@ -581,19 +609,77 @@ def main():
         print(f"Skipped {len(conflicted_epochs)} run group(s) with multiple candidate runs")
     print(f"Loaded {len(target_runs)} target runs to process\n")
 
-    # 2. Check candidate runs per epoch
-    print("Epoch Group & Candidate Mapping:")
+    # 2. Classify target runs by epoch and candidate availability (shared by dry run and production)
+    epoch_bounds = {idx: (start, end) for start, end, idx in epochs}
+    run_epoch = map_runs_to_epochs(target_runs, epochs)
+    runs_in_epoch: Dict[int, List[int]] = {idx: [] for idx in epoch_bounds}
+    no_epoch_runs = []
+    for run in target_runs:
+        if run_epoch[run] is None:
+            no_epoch_runs.append(run)
+        else:
+            runs_in_epoch[run_epoch[run]].append(run)
+    eligible_runs = [run for run in target_runs if run_epoch[run] in candidate_map]
+    no_cand_epochs = {
+        idx: runs for idx, runs in runs_in_epoch.items()
+        if runs and idx not in candidate_map and idx not in conflicted_epochs
+    }
+    multi_cand_epochs = {idx: runs for idx, runs in runs_in_epoch.items() if runs and idx in conflicted_epochs}
+
+    # Begin/end timestamps for epoch boundary runs and runs outside every epoch (+ no-candidate runs with -v)
+    ts_runs = {run for start, end in epoch_bounds.values() for run in (start, end)} | set(no_epoch_runs)
+    if args.verbose:
+        ts_runs |= {run for runs in no_cand_epochs.values() for run in runs}
+    try:
+        run_times = query_run_timestamps(sorted(ts_runs))
+    except Exception as err:
+        print(f"[!] WARNING: DAQ run-table lookup failed ({err}); run timestamps shown as n/a.\n")
+        run_times = {}
+
+    def run_begin(run: int) -> str:
+        return fmt_ts(run_times.get(run, (None, None))[0])
+
+    def run_end(run: int) -> str:
+        return fmt_ts(run_times.get(run, (None, None))[1])
+
+    # 3. Check candidate runs per epoch
+    print("Epoch Group & Candidate Mapping (time span: begin of first run -> end of last run):")
     for start, end, idx in epochs:
+        prefix = (
+            f"  Group {idx:2d} [{start:5d}, {end:5d}]  {run_begin(start)} -> {run_end(end)}  "
+            f"({len(runs_in_epoch[idx]):4d} runs) ->"
+        )
         if idx in candidate_map:
             cand_info = candidate_map[idx]
             cand_run = cand_info["run"]
             hist_name = Path(cand_info["path"]).name
-            print(f"  Group {idx:2d} [{start:5d}, {end:5d}] -> Candidate Run {cand_run:5d} ({hist_name})")
+            print(f"{prefix} Candidate Run {cand_run:5d} ({hist_name})")
         elif idx in conflicted_epochs:
             cands_str = ", ".join(map(str, conflicted_epochs[idx]))
-            print(f"  Group {idx:2d} [{start:5d}, {end:5d}] -> [SKIPPED: {len(conflicted_epochs[idx])} CANDIDATE RUNS ({cands_str})]")
+            print(f"{prefix} [SKIPPED: {len(conflicted_epochs[idx])} CANDIDATE RUNS ({cands_str})]")
         else:
-            print(f"  Group {idx:2d} [{start:5d}, {end:5d}] -> [NO CANDIDATE IN HIST LIST]")
+            print(f"{prefix} [NO CANDIDATE IN HIST LIST]")
+    print("-" * 85)
+
+    print("\nTarget Run Epoch Coverage:")
+    print(f"  Runs in epochs with a candidate:   {len(eligible_runs):5d}")
+    print(f"  Runs in epochs with NO candidate:  {sum(len(r) for r in no_cand_epochs.values()):5d}")
+    for idx, runs in no_cand_epochs.items():
+        start, end = epoch_bounds[idx]
+        print(f"      Group {idx} [{start}, {end}]: {len(runs)} run(s)")
+        if args.verbose:
+            for run in runs:
+                print(f"        {run:<7} {run_begin(run)} -> {run_end(run)}")
+    if multi_cand_epochs:
+        print(f"  Runs in multi-candidate epochs:    {sum(len(r) for r in multi_cand_epochs.values()):5d}")
+        for idx, runs in multi_cand_epochs.items():
+            start, end = epoch_bounds[idx]
+            print(f"      Group {idx} [{start}, {end}]: {len(runs)} run(s)")
+    print(f"  Runs outside every epoch:          {len(no_epoch_runs):5d}")
+    if no_epoch_runs:
+        print(f"    {'Run':<7} {'Begin':<19}    {'End':<19}  Location")
+        for run in sorted(no_epoch_runs):
+            print(f"    {run:<7} {run_begin(run)} -> {run_end(run)}  {locate_outside_run(run, epochs)}")
     print("-" * 85)
 
     if not candidate_map:
@@ -602,14 +688,14 @@ def main():
         else:
             sys.exit("Error: No valid candidate runs found in hist list matching epoch.csv.")
 
-    # 3. Initialize ROOT in main process to evaluate Candidate zero-ref summary
+    # 4. Initialize ROOT in main process to evaluate Candidate zero-ref summary
     t_start = time.time()
     ROOT = _init_root_environment()
 
-    # Raw-time hist lookup for every candidate and target run (one FileCatalog query)
+    # Raw-time hist lookup for every candidate and eligible target run (one FileCatalog query)
     time_paths: Dict[int, Tuple[str, str]] = {}
     if args.pm5_method == "timefit":
-        lookup_runs = sorted(set(target_runs) | {c["run"] for c in candidate_map.values()})
+        lookup_runs = sorted(set(eligible_runs) | {c["run"] for c in candidate_map.values()})
         print(f"\nLooking up {TIME_HIST_DSTTYPE} segment-0 raw-time hists in FileCatalog for {len(lookup_runs)} run(s)...")
         try:
             time_paths = query_time_hist_paths(lookup_runs)
@@ -694,8 +780,8 @@ def main():
             print("  No time fits available; ±5 ns will use the candidate method for all runs.")
         print("-" * 85)
         if time_paths:
-            n_missing = sum(1 for r in target_runs if r not in time_paths)
-            print(f"Target runs without a raw-time hist (fall back to candidate method): {n_missing} / {len(target_runs)}")
+            n_missing = sum(1 for r in eligible_runs if r not in time_paths)
+            print(f"Eligible runs without a raw-time hist (fall back to candidate method): {n_missing} / {len(eligible_runs)}")
 
     if args.dry_run:
         print("\nDry run completed successfully. No CDBTree files written.")
@@ -704,31 +790,18 @@ def main():
             log_file_handle.close()
         return
 
-    # 4. Prepare tasks for target runs
+    # 5. Prepare tasks for eligible target runs
     args.output_dir.mkdir(parents=True, exist_ok=True)
     out_dir_str = str(args.output_dir)
 
+    skipped_no_epoch = len(no_epoch_runs)
+    skipped_no_cand = sum(len(r) for r in no_cand_epochs.values())
+    skipped_multi_cand = sum(len(r) for r in multi_cand_epochs.values())
+
     tasks = []
-    skipped_no_epoch = 0
-    skipped_no_cand = 0
-    skipped_multi_cand = 0
-
-    for run in target_runs:
-        epoch_info = get_epoch_for_run(run, epochs)
-        if epoch_info is None:
-            skipped_no_epoch += 1
-            continue
-
-        start, end, epoch_idx = epoch_info
-        if epoch_idx in conflicted_epochs:
-            skipped_multi_cand += 1
-            continue
-
-        cand_info = candidate_map.get(epoch_idx)
-        if cand_info is None:
-            skipped_no_cand += 1
-            continue
-
+    for run in eligible_runs:
+        epoch_idx = run_epoch[run]
+        cand_info = candidate_map[epoch_idx]
         time_info = None
         if args.pm5_method == "timefit":
             tag, path = time_paths.get(run, ("", ""))
@@ -755,7 +828,7 @@ def main():
                 success_trees[det] += 1
         pm5_records.extend(result["pm5_records"])
 
-    # 5. Execute processing (parallel if jobs > 1, sequential if jobs == 1)
+    # 6. Execute processing (parallel if jobs > 1, sequential if jobs == 1)
     if args.jobs > 1 and len(tasks) > 1:
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as executor:
             for result in tqdm.tqdm(executor.map(process_single_run_task, tasks), total=len(tasks), desc="Runs"):
@@ -772,7 +845,7 @@ def main():
 
     elapsed = time.time() - t_start
 
-    # 6. Final Summary Report
+    # 7. Final Summary Report
     print("\n" + "=" * 85)
     print(" EXECUTION SUMMARY")
     print("=" * 85)
