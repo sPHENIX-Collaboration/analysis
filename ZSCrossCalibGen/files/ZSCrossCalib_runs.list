@@ -383,19 +383,21 @@
 69136
 69137
 69144
-69145
-69146
-69148
-69149
-69150
-69151
-69152
-69153
-69197
-69198
-69201
-69202
-69203
+# Excluded: MBD timing phase issue (MBD ELOG #440)
+# 69145
+# 69146
+# 69148
+# 69149
+# 69150
+# 69151
+# 69152
+# 69153
+# Excluded: satellite bunch is the main MBD peak (after RHIC shutdown); consistent with each other, could form their own group
+# 69197
+# 69198
+# 69201
+# 69202
+# 69203
 69539
 69540
 69541
