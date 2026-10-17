@@ -15,6 +15,7 @@ testexternals.cc
 
 # out-of-tree build directory (see do_build.sh)
 build/
+build_ana578/
 
 # libtool artifacts
 *.la

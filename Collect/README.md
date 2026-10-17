@@ -82,9 +82,10 @@ sh do_build.sh
 ## How to Run
 
 Load the library and register `Collect` as a `SubsysReco` in your Fun4All
-macro, after the tracking/KFParticle reconstruction chain and after
-calorimeter tower geometry has been loaded (`Collect::InitRun()` needs the
-tower geometry already on the node tree):
+macro, after the tracking/KFParticle reconstruction chain. If you want
+calorimeter information, register it after the calorimeter tower geometry
+has been loaded (`Collect::InitRun()` looks for the tower geometry on the
+node tree; without it Collect prints a notice and runs without calo info):
 
 ```cpp
 #include <collect/Collect.h>
@@ -107,3 +108,13 @@ se->registerSubsystem(myCollect);
 - `setAddTowersToTrackTree()` enables the calorimeter-tower-around-track
   energy grid on the track tree; when `false` (the default), extra dE/dx
   branches are booked instead and track-quality cuts are looser.
+- `setAddCaloSums()` (default `true`) books the event-level calorimeter
+  energy sums (`etotem`, `etotih`, `etotoh`, `etotioh`, `etotepd`). Set it
+  `false` when the job reads no calorimeter DSTs.
+
+Input track versions: Collect works with `SvtxTrack_v4` and earlier (seed
+pointers on the track) and with the slimmed `SvtxTrack_v5` tracks of the
+ana578 production, which carry only seed ids. For v5 the silicon and TPC
+seeds are looked up by id in `SiliconTrackSeedContainer` /
+`TpcTrackSeedContainer`, so hit counts, dE/dx, `layermask`, `siclukey` and
+the `tpc*` per-layer branches are filled the same way for both.

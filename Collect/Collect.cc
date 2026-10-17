@@ -111,6 +111,16 @@ double EdgeOHeta[25] = {-1.1,-1.00833,-0.916667,-0.825,-0.733333,-0.641667,-0.55
 
 #define FIXFLOAT(x) std::fixed<<std::setprecision(3)<<(x)
 
+//----- SvtxTrack_v5 (ana578 slimmed tracks, 2026-10-16) stores seed ids, not seed
+//----- pointers: use the pointer if there is one (v4 and earlier), else look the id
+//----- up in its seed container - same as PHTrackCleaner::getSiliconSeed/getTpcSeed.
+//----- Checked on ana578 79516: the seeds' cluster counts match the v5 track's own
+//----- counts for every track, and every cluster key is in TRKR_CLUSTER_SEED.
+static TrackSeed* findSeedById(TrackSeedContainer* container, unsigned short id){
+	if (!container || id >= container->size()) return nullptr;	// find() does no bounds check; USHRT_MAX = no seed
+	return *container->find(id);
+}
+
 // Optional "bco" branch (README_SplitTracks.md sec.12a.6): GL1 BCO of the
 // trigger frame (one per row, 8 bytes). ON: bco + crossing is the absolute
 // crossing, the key Corral uses to remove collisions that appear in two
@@ -189,6 +199,7 @@ Collect::Collect(const std::string &name):SubsysReco(name){
 	sumNfoundLA	= 0;
 	sumNfoundAL	= 0;
 	fHasCaloGeo	= false;
+	fAddCaloSums	= true;
 	//
 	THRESH_em	= 0.150;
 	THRESH_ih	= 0.012;
@@ -310,11 +321,13 @@ int Collect::Init(PHCompositeNode *topNode){
 //?	outTree->Branch("vtxzGlob",&fTvtxzGlob  ,"vtxzGlob/D");
 	if (ADD_BCO) outTree->Branch("bco"     ,&fTbco       ,"bco/l");	// GL1 BCO of this trigger frame; ~0ULL if no GL1RAWHIT (README_SplitTracks.md sec.12a.6)
 	outTree->Branch("crossing",&fTcrossing  ,"crossing/I");
-	outTree->Branch("etotem"  ,&fTTotE_em   ,"etotem/D");
-	outTree->Branch("etotih"  ,&fTTotE_ih   ,"etotih/D");
-	outTree->Branch("etotoh"  ,&fTTotE_oh   ,"etotoh/D");
-	outTree->Branch("etotioh" ,&fTTotE_ioh  ,"etotioh/D");
-	outTree->Branch("etotepd" ,&fTTotE_epd  ,"etotepd/D");
+	if (fAddCaloSums){	// off in Fun4All_PolySeedingNoCalo_ana573.C (no calo DST read)
+		outTree->Branch("etotem"  ,&fTTotE_em   ,"etotem/D");
+		outTree->Branch("etotih"  ,&fTTotE_ih   ,"etotih/D");
+		outTree->Branch("etotoh"  ,&fTTotE_oh   ,"etotoh/D");
+		outTree->Branch("etotioh" ,&fTTotE_ioh  ,"etotioh/D");
+		outTree->Branch("etotepd" ,&fTTotE_epd  ,"etotepd/D");
+	}
 	//
 	if (TREETRACKS){
 		cout<<"Collect::Init .. Enabled TREETRACKS"<<endl;
@@ -637,6 +650,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 	if (!clustermap) clustermap = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER_SEED");	// ana573 seed/track DSTs - same fallback as KFParticle_Tools.cc
 //?	auto globvertexmap	= findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 	auto svtxvertexmap	= findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
+	auto siliconSeedMap	= findNode::getClass<TrackSeedContainer>(topNode, "SiliconTrackSeedContainer");	// v5 seed-id lookup
+	auto tpcSeedMap		= findNode::getClass<TrackSeedContainer>(topNode, "TpcTrackSeedContainer");
 	auto tpcGeom		= findNode::getClass<PHG4TpcGeomContainer>(topNode, "TPCGEOMCONTAINER");
 	auto geometry 		= findNode::getClass<ActsGeometry>(topNode, "ActsGeometry");
 	//auto mvtxGeom		= findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_MVTX");
@@ -1162,7 +1177,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				Short_t tpcz_local[48];
 				for (int itl=0;itl<48;itl++){ tpcsector_local[itl]=255; tpcarclen_local[itl]=0; tpcz_local[itl]=0; }
 				std::vector<DiagTempClusterInfo20260920> thisTrackClusters20260920;	// DIAGTEMP-20260920
-				auto tpcseed = track->get_tpc_seed();
+				TrackSeed* tpcseed = track->get_tpc_seed();
+				if (!tpcseed) tpcseed = findSeedById(tpcSeedMap, track->get_tpc_seed_id());	// v5
 				if (tpcseed){
 					//
 					//seedpx	= tpcseed->get_px();
@@ -1263,7 +1279,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				//if (DEBUG) cout<<"TrackLoop: done doing dedx..."<<endl;
 				//
 				if (DEBUG2) cout<<"TrackLoop: count silicon hits..."<<endl;
-				auto silseed = track->get_silicon_seed();
+				TrackSeed* silseed = track->get_silicon_seed();
+				if (!silseed) silseed = findSeedById(siliconSeedMap, track->get_silicon_seed_id());	// v5
 				if (silseed){
 					for (auto it = silseed->begin_cluster_keys(); it != silseed->end_cluster_keys(); ++it){
 						auto ckey = *it;

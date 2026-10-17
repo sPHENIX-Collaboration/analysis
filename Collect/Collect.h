@@ -73,6 +73,11 @@ class Collect : public SubsysReco
 						if ( fAddTowersToTrackTree){ std::cout<<"Collect::AddTowersToTrackTree is TRUE "<<std::endl; } else
 						if (!fAddTowersToTrackTree){ std::cout<<"Collect::AddTowersToTrackTree is FALSE"<<std::endl; }
 					}
+	void setAddCaloSums(bool value){	// false: don't book the event-level etot* branches (no-calo macros)
+						fAddCaloSums		= value;
+						if ( fAddCaloSums){ std::cout<<"Collect::AddCaloSums is TRUE "<<std::endl; } else
+						if (!fAddCaloSums){ std::cout<<"Collect::AddCaloSums is FALSE"<<std::endl; }
+					}
 	void setVerbosity(int iverb){ 
 						kVerbosity = iverb; 
 						     if (kVerbosity==0){ DEBUG=false; DEBUG2=false; }
@@ -192,6 +197,7 @@ class Collect : public SubsysReco
 	TpcGlobalPositionWrapper m_globalPositionWrapper;	// crossing+distortion-corrected TPC global position - README_SplitTracks.md sec.12b
 	bool	fRequireXingZero;
 	bool	fAddTowersToTrackTree;
+	bool	fAddCaloSums;			// book etotem/ih/oh/ioh/epd on outTree (default true)
 	bool	fHasCaloGeo;
 	bool	fKillSplitTracks;		// see FlagSplitTracks() / README_SplitTracks.md; default off until validated on real data
 	double	PTLL;		// track pT lower limit (usually 0.1)
