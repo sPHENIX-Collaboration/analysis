@@ -151,6 +151,7 @@ int Fun4All_TpcV0CandidateTree(
     std::cerr << "Unknown V0_FIT_MODE='" << fit_mode << "'" << std::endl;
     return 2;
   }
+  //v0->set_use_final_track_helix(true);
 
   v0->set_point_order(env_string("V0_POINT_ORDER", "radius-descending"));
   v0->set_min_points(env_int("V0_MIN_POINTS", 30));
@@ -430,8 +431,8 @@ int Fun4All_TpcV0CandidateTree(
   
   // Full daughter cluster payload remains K0S-only. TrackTree is independent
   // and can be enabled for residual/DCA QA with V0_WRITE_TRACK_TREE=1.
-  v0->set_write_track_tree(env_bool("V0_WRITE_TRACK_TREE", true));
-  v0->set_write_track_tree(true);
+  v0->set_write_track_tree(env_bool("V0_WRITE_TRACK_TREE", false));
+  //v0->set_write_track_tree(false);
   v0->set_write_cluster_residual_tree(env_bool("V0_WRITE_CLUSTER_RESIDUAL_TREE", false));
   v0->set_write_kalman_innovation_diagnostics(env_bool("V0_WRITE_KALMAN_DIAGNOSTICS", true));
   v0->set_write_kshort_daughter_details(env_bool("V0_WRITE_KSHORT_DETAILS", true));
