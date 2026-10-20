@@ -37,7 +37,7 @@ Execution:
   --dry-run                  Prepare files but do not run/submit
 
 Main analysis options:
-  --fit-mode kalman|helix|final
+  --fit-mode acts|kalman|helix|final
   --min-points N
   --pre-track-pt-min X
   --pre-track-dca-xy-min X
@@ -92,7 +92,8 @@ set_env() {
 # Defaults mirrored by the Fun4All macro.
 set_env V0_MACRO "$SCRIPT_DIR/Fun4All_TpcV0CandidateTree.C"
 set_env V0_SETUP_SCRIPT ""
-set_env V0_FIT_MODE kalman
+#set_env V0_FIT_MODE kalman
+set_env V0_FIT_MODE acts
 set_env V0_MIN_POINTS 5
 set_env V0_PRE_TRACK_PT_MIN 0.20
 set_env V0_PRE_TRACK_DCA_XY_MIN 0.03

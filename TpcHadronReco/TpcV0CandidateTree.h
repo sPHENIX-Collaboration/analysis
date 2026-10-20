@@ -28,6 +28,8 @@ class TpcCrossingDecisionContainer;
 
 namespace tpchadronreco
 {
+  class TpcTrackActsFitter;
+
   class TpcV0CandidateTree : public SubsysReco
   {
    public:
@@ -82,6 +84,7 @@ namespace tpchadronreco
       if (value)
       {
         m_fit_kalman_tracks = false;
+        m_fit_acts_tracks = false;
       }
     }
     void set_fit_kalman(const bool value)
@@ -1381,6 +1384,10 @@ namespace tpchadronreco
     int m_min_points{5};
     bool m_fit_helix_tracks{true};
     bool m_fit_kalman_tracks{false};
+    // With m_fit_acts_tracks the Kalman path is kept, but the per-track fit is
+    // done by TpcTrackActsFitter (needs the ActsGeometry node).
+    bool m_fit_acts_tracks{false};
+    std::unique_ptr<TpcTrackActsFitter> m_acts_fitter;
     bool m_use_final_track_helix{false};
     PointOrder m_point_order{PointOrder::Path};
     int m_fit_first_points{8};

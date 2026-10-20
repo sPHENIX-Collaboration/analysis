@@ -21,7 +21,17 @@ later after its final repository/location is chosen.
 reco->set_track_fit_method("kalman");  // aliases: "kf"
 reco->set_track_fit_method("helix");   // alias: "circle"
 reco->set_track_fit_method("line");
+reco->set_track_fit_method("acts");    // ACTS Kalman fit, needs ActsGeometry
 ```
+
+`acts` fits each PolyTrack with the ACTS Kalman fitter (`TpcTrackActsFitter`).
+Every cluster gets its own cylinder surface at the cluster radius, so the
+measurement is exactly (r*phi, z) and no projection onto the ACTS TPC geometry
+is done. The field is the same PHField map as the Kalman fit (zero outside
+the map, like the RKN); no material effects. The result fills the same `TpcKalmanResult`, so downstream
+propagation/PCA is unchanged. Not implemented for ACTS: soft robust
+down-weighting (the hard chi2 cut is applied as an ACTS outlier) and
+`fit_iterations`.
 
 ## Added channels
 
@@ -71,7 +81,7 @@ production does not become more expensive unless requested.
 
 ```bash
 # Track fit
-export V0_FIT_MODE=kalman   # or: helix
+export V0_FIT_MODE=acts     # or: kalman, helix
 
 # New channels
 export V0_ENABLE_SIGMA1385=1

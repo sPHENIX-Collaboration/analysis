@@ -19,6 +19,7 @@ AM_LDFLAGS = \
 pkgincludedir = $(includedir)/tpchadronreco
 pkginclude_HEADERS = \
   TpcV0CandidateTree.h \
+  TpcTrackActsFitter.h \
   TpcTrackFit.h \
   TpcTrackHelixFitter.h \
   TpcTrackKalmanFitter.h
@@ -27,6 +28,7 @@ lib_LTLIBRARIES = libTpcHadronReco.la
 
 libTpcHadronReco_la_SOURCES = \
   TpcV0CandidateTree.cc \
+  TpcTrackActsFitter.cc \
   TpcTrackHelixFitter.cc \
   TpcTrackKalmanFitter.cc
 
@@ -51,6 +53,8 @@ libTpcHadronReco_la_LIBADD = \
   -lSubsysReco \
   -ltpc_io \
   -ltrack_io \
+  -ltrack \
+  -lActsCore \
   -ltrackeralign \
   -ltrackbase_historic_io \
   -ltpctrackreco

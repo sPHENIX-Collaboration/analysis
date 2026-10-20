@@ -7,9 +7,12 @@ R__LOAD_LIBRARY(libTpcHadronReco.so)
 #include <tpchadronreco/TpcV0CandidateTree.h>
 
 #include <fun4all/Fun4AllDstInputManager.h>
+#include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <fun4all/Fun4AllServer.h>
 
 #include <GlobalVariables.C>
+
+#include <G4_ActsGeom.C>
 #include <cdbobjects/CDBTTree.h>
 #include <ffamodules/CDBInterface.h>
 #include <ffamodules/FlagHandler.h>
@@ -66,7 +69,7 @@ int Fun4All_TpcV0CandidateTree(
 {
 
   auto *se = Fun4AllServer::instance();
-  se->Verbosity(env_int("V0_SERVER_VERBOSITY", 0));
+  se->Verbosity(env_int("V0_SERVER_VERBOSITY", 1));
 
   recoConsts* rc = recoConsts::instance();  
   Enable::CDB = true;
@@ -145,7 +148,11 @@ int Fun4All_TpcV0CandidateTree(
     std::cout << "V0 spatial correction: OFF" << std::endl;
   }
 
-  const std::string fit_mode = env_string("V0_FIT_MODE", "kalman");
+  // Track fit: "acts" = ACTS Kalman fit on per-cluster cylinder surfaces with
+  // the sPHENIX field map (needs the ACTS geometry, set up below).
+  // The custom Kalman/RKN fit is still available with V0_FIT_MODE=kalman.
+  //const std::string fit_mode = env_string("V0_FIT_MODE", "kalman");
+  const std::string fit_mode = env_string("V0_FIT_MODE", "acts");
   if (!v0->set_track_fit_method(fit_mode))
   {
     std::cerr << "Unknown V0_FIT_MODE='" << fit_mode << "'" << std::endl;
@@ -467,6 +474,18 @@ int Fun4All_TpcV0CandidateTree(
             << " omega=" << (env_bool("V0_ENABLE_OMEGA", false) ? 1 : 0)
             << " trackTree=" << (env_bool("V0_WRITE_TRACK_TREE", false) ? 1 : 0)
             << std::endl;
+
+  if (fit_mode == "acts")
+  {
+    // ActsGeometry (and its magnetic field, FIELDMAP_TRACKING from the CDB)
+    // must exist before TpcV0CandidateTree::InitRun.
+    auto *ingeo = new Fun4AllRunNodeInputManager("GeoIn");
+    ingeo->AddFile(CDBInterface::instance()->getUrl("Tracking_Geometry"));
+    se->registerInputManager(ingeo);
+
+    G4MAGNET::magfield_rescale = 1;
+    ACTSGEOM::ActsGeomInit();
+  }
 
   se->registerSubsystem(v0);
 

@@ -7,6 +7,7 @@
 #include <tpctrackreco/Tpc_PolyTrack.h>
 #include <tpctrackreco/Tpc_PolyTrackContainer.h>
 #include <tpctrackreco/Tpc_PolyTrackVertexContainer.h>
+#include "TpcTrackActsFitter.h"
 #include "TpcTrackHelixFitter.h"
 #include "TpcTrackKalmanFitter.h"
 
@@ -426,6 +427,7 @@ namespace tpchadronreco
                    [](const unsigned char ch)
                    { return static_cast<char>(std::tolower(ch)); });
 
+    m_fit_acts_tracks = false;
     if (lowered == "helix" || lowered == "circle")
     {
       set_fit_helix(true);
@@ -436,6 +438,12 @@ namespace tpchadronreco
       set_fit_kalman(true);
       return true;
     }
+    if (lowered == "acts")
+    {
+      set_fit_kalman(true);
+      m_fit_acts_tracks = true;
+      return true;
+    }
     if (lowered == "none" || lowered == "line")
     {
       m_fit_helix_tracks = false;
@@ -444,7 +452,7 @@ namespace tpchadronreco
     }
 
     std::cerr << PHWHERE << Name() << ": unknown track fit method '" << mode
-              << "'. Valid methods are helix, kalman, and line." << std::endl;
+              << "'. Valid methods are helix, kalman, acts, and line." << std::endl;
     return false;
   }
 
@@ -746,6 +754,20 @@ namespace tpchadronreco
 
   int TpcV0CandidateTree::InitRun(PHCompositeNode *topNode)
   {
+    m_acts_fitter.reset();
+    if (m_fit_kalman_tracks && m_fit_acts_tracks)
+    {
+      m_acts_fitter = TpcTrackActsFitter::create(topNode);
+      if (!m_acts_fitter)
+      {
+        std::cerr << PHWHERE << Name()
+                  << ": fit method 'acts' needs the ActsGeometry node."
+                  << " Run MakeActsGeometry (ACTSGEOM::ActsGeomInit) before this module." << std::endl;
+        return Fun4AllReturnCodes::ABORTRUN;
+      }
+      std::cout << Name() << ": using ACTS Kalman fit on per-cluster cylinder surfaces" << std::endl;
+    }
+
     if (!m_fit_kalman_tracks || !m_use_kalman_field_map)
     {
       m_owned_kalman_field.reset();
@@ -1048,7 +1070,8 @@ namespace tpchadronreco
                                       std::to_string(m_spatial_correction_scale))
                                          .c_str());
       spatial_status_metadata.Write();
-      const std::string fit_method = m_fit_kalman_tracks ? "kalman" : (m_fit_helix_tracks ? "helix" : "line");
+      const std::string fit_method = m_fit_kalman_tracks ? (m_fit_acts_tracks ? "acts" : "kalman")
+                                                         : (m_fit_helix_tracks ? "helix" : "line");
       TNamed reco_metadata(
           "tpc_hadron_reco_config",
           (std::string("fit=") + fit_method +
@@ -1089,6 +1112,11 @@ namespace tpchadronreco
     }
 
     close_spatial_correction_map();
+
+    if (m_acts_fitter)
+    {
+      m_acts_fitter->print_summary(Name());
+    }
 
     if (Verbosity() > 0)
     {
@@ -5462,8 +5490,9 @@ namespace tpchadronreco
     // that exact ordering so all returned state and QA vectors remain aligned
     // with trackTree and daughter-detail cluster vectors.
     fit_config.point_order = TpcTrackPointOrder::Input;
-    const bool success = TpcTrackKalmanFitter::fit(
-        points, charge, fit_config, kalman, kPionMass);
+    const bool success = m_acts_fitter
+                             ? m_acts_fitter->fit(points, charge, fit_config, kalman, kPionMass)
+                             : TpcTrackKalmanFitter::fit(points, charge, fit_config, kalman, kPionMass);
     const double fit_seconds = std::chrono::duration<double>(
                                    std::chrono::steady_clock::now() - start)
                                    .count();
