@@ -158,117 +158,232 @@ void SpinDBQA::doQA()
 
 void SpinDBQA::CNIHjetQA(std::string &stringMarkdown, std::string &stringHtml)
 {
-  // ============== CNI H-jet results ============== //
-  std::string filename = (boost::format("%s/fill_%d/DST_%d.root") % _cnipathname % map_fillnumber[runnumber] % map_fillnumber[runnumber]).str();
-  std::ifstream file(filename.c_str());
-  if (!file) // for qa_level = 0xFFFF cases
+  const int fill = map_fillnumber[runnumber];
+  std::string filename = (boost::format("%s") % _cnipathname).str();
+
+  TFile *cnipol = TFile::Open(filename.c_str(), "READ");
+  if (!cnipol || cnipol->IsZombie())
   {
-    std::cerr << "File does not exist: " << filename << std::endl;
-    stringMarkdown +=  ("\u274C CNI measurement exists ");
-    stringHtml +=  ("Beam polarization: <font color=\"#800080\">NOT AVAILABLE</font>; Spin patterns: <font color=\"#800080\">NOT AVAILABLE</font>; ");
+    std::cerr << "Failed to open file: " << filename << std::endl;
+    stringMarkdown += "\u274C CNI measurement exists ";
+    stringHtml += "Beam polarization: <font color=\"#800080\">NOT AVAILABLE</font>; Spin patterns: <font color=\"#800080\">NOT AVAILABLE</font>; ";
+    delete cnipol;
+    return;
   }
-  else if (map_bluepol[runnumber] == -999 || map_yellpol[runnumber] == -999) // for qa_level = 0 cases
+
+  // ============== Get CNI beam polarizations ============== //
+  TH1 *hBlue = dynamic_cast<TH1*>(cnipol->Get("runs/BLU/hPolarVsFill_BLU_100"));
+  TH1 *hYellow = dynamic_cast<TH1*>(cnipol->Get("runs/YEL/hPolarVsFill_YEL_100"));
+
+  double cnibeampol_blue = -999.;
+  double cnibeampol_yellow = -999.;
+  double cnibeampolerr_blue = -999.;
+  double cnibeampolerr_yellow = -999.;
+  bool foundBlue = false;
+  bool foundYellow = false;
+
+  if (hBlue && hBlue->GetDimension() == 1)
   {
-    stringMarkdown +=  ("\u274C CNI measurement exists ");
-    stringHtml +=  ("Beam polarization: <font color=\"#800080\">NOT AVAILABLE</font>; Spin patterns: <font color=\"#800080\">NOT AVAILABLE</font>; ");
+    const int bin = hBlue->GetXaxis()->FindFixBin(fill);
+    if (bin >= 1 && bin <= hBlue->GetNbinsX())
+    {
+      cnibeampol_blue = hBlue->GetBinContent(bin) * 100.;
+      cnibeampolerr_blue = hBlue->GetBinError(bin) * 100.;
+      // Conservatively treat an empty 0 +/- 0 bin as unavailable.
+      foundBlue = (cnibeampol_blue != 0. || cnibeampolerr_blue != 0.);
+    }
+  }
+
+  if (hYellow && hYellow->GetDimension() == 1)
+  {
+    const int bin = hYellow->GetXaxis()->FindFixBin(fill);
+    if (bin >= 1 && bin <= hYellow->GetNbinsX())
+    {
+      cnibeampol_yellow = hYellow->GetBinContent(bin) * 100.;
+      cnibeampolerr_yellow = hYellow->GetBinError(bin) * 100.;
+      foundYellow = (cnibeampol_yellow != 0. || cnibeampolerr_yellow != 0.);
+    }
+  }
+
+  // Keep both values and errors in percent for the .dat file.
+  const bool goodBlue = foundBlue && std::isfinite(cnibeampol_blue) && std::isfinite(cnibeampolerr_blue) && cnibeampol_blue >= 0. && cnibeampol_blue <= 100. && cnibeampolerr_blue >= 0.;
+  const bool goodYellow = foundYellow && std::isfinite(cnibeampol_yellow) && std::isfinite(cnibeampolerr_yellow) && cnibeampol_yellow >= 0. && cnibeampol_yellow <= 100. && cnibeampolerr_yellow >= 0.;
+
+  std::cout << "Run: " << runnumber << ", Fill: " << fill << ", CNI Blue Pol: " << cnibeampol_blue << " +/- " << cnibeampolerr_blue << ", CNI Yellow Pol: " << cnibeampol_yellow << " +/- " << cnibeampolerr_yellow << std::endl;
+  if (!foundBlue || !foundYellow)
+  {
+    stringMarkdown += "\u274C CNI beam polarization available ";
+    stringHtml += "Beam polarization: <font color=\"#800080\">NOT AVAILABLE</font>; ";
   }
   else
   {
-    TFile *cnipol = new TFile(filename.c_str());
-    if (!cnipol || cnipol->IsZombie()) 
+    stringMarkdown += (goodBlue && goodYellow) ? "\u2705 CNI beam polarization " : "\u274C CNI beam polarization ";
+    stringHtml += (goodBlue && goodYellow) ? "Beam polarization: <font color=\"#11cf17\">GOOD</font>; " : "Beam polarization: <font color=\"#ff0000\">BAD</font>; ";
+  }
+
+  // ============== Get CNI spin patterns ============== //
+  TH1 *hAsymBLU = dynamic_cast<TH1*>(cnipol->Get(Form("fills/%d/hAsymVsBunchId_X_%d_BLU", fill, fill)));
+  TH1 *hAsymYEL = dynamic_cast<TH1*>(cnipol->Get(Form("fills/%d/hAsymVsBunchId_X_%d_YEL", fill, fill)));
+
+  const char *graphNames[3] = {
+      "grAsymVsBunchId_X_up",
+      "grAsymVsBunchId_X_down",
+      "grAsymVsBunchId_X_null"
+  };
+  const int spinValues[3] = {+1, -1, -10};
+  TGraphErrors *gBLU[3] = {};
+  TGraphErrors *gYEL[3] = {};
+  bool havePatterns = hAsymBLU && hAsymYEL;
+
+  if (havePatterns)
+  {
+    for (int j = 0; j < 3; ++j)
     {
-      std::cout << "Failed to open file: " << filename << std::endl;
-      stringMarkdown +=  ("\u274C CNI measurement exists ");
-      stringHtml +=  ("Beam polarization: <font color=\"#800080\">NOT AVAILABLE</font>; Spin patterns: <font color=\"#800080\">NOT AVAILABLE</font>; ");
+      gBLU[j] = dynamic_cast<TGraphErrors*>(hAsymBLU->GetListOfFunctions()->FindObject(graphNames[j]));
+      gYEL[j] = dynamic_cast<TGraphErrors*>(hAsymYEL->GetListOfFunctions()->FindObject(graphNames[j]));
+      if (!gBLU[j] || !gYEL[j]) havePatterns = false;
     }
-    else
+  }
+
+  int spinBLU[121] = {0};
+  int spinYEL[121] = {0};
+
+  if (havePatterns)
+  {
+    for (int j = 0; j < 3; ++j)
     {
-      stringMarkdown +=  ("\u2705 CNI measurement exists ");
-      // ============== Get Hjet CNI beam polarizations and check them ============== //
-      TH1D *h_results = (TH1D*)cnipol->Get("h_results");
-      h_results->SetDirectory(0);
-      // ============== Get CNI pol spin patterns ============== //
-      TH1D *hcnipatternYellow = (TH1D*)cnipol->Get("h_polYellow");
-      TH1D *hcnipatternBlue = (TH1D*)cnipol->Get("h_polBlue");
-      hcnipatternYellow->SetDirectory(0);
-      hcnipatternBlue->SetDirectory(0);
-
-      cnipol->Close();
-      delete cnipol;
-
-      // ============== Check Hjet CNI beam polarizations ============== //
-      float cnibeampol_yellow = h_results->GetBinContent(9);
-      float cnibeampol_blue = h_results->GetBinContent(10);
-      //float cnibeampolerr_yellow = h_results->GetBinError(9);
-      //float cnibeampolerr_blue = h_results->GetBinError(10);
-      // ============== set bad run conditions ============== //
-      //badrunqa = (cnibeampol_yellow < 0 || cnibeampol_yellow > 1 || cnibeampol_blue < 0 || cnibeampol_blue > 0) ? 1 : badrunqa;
-      stringMarkdown +=  (cnibeampol_yellow < 0 || cnibeampol_yellow > 1 || cnibeampol_blue < 0 || cnibeampol_blue > 0) ? 
-                          "\u2705 CNI beam polarization " : "\u274C CNI beam polarization ";
-      stringHtml +=  (cnibeampol_yellow < 0 || cnibeampol_yellow > 1 || cnibeampol_blue < 0 || cnibeampol_blue > 0) ?
-                          "Beam polarization: <font color=\"#11cf17\">GOOD</font>; " : " Beam polarization: <font color=\"#ff0000\">BAD</font>; ";
-      // ============== Check that spin pattern matches CNI pol spin patterns ============== //
-      // ============== Find abort gap in CNI spin patterns to find CNI crossing shift //
-      int abortgaplength = 8; 
-      int currentCountYell = 0;
-      int currentCountBlue = 0;
-      int lastAgBunchIndexYell = -1;
-      int lastAgBunchIndexBlue = -1;
-
-      for (size_t i = 0; i < 120; ++i) {
-          if (hcnipatternYellow->GetBinContent(i+1) == 0) {
-              currentCountYell++; 
-              if (currentCountYell > abortgaplength) {
-                  abortgaplength = currentCountYell;
-                  lastAgBunchIndexYell = i;
-              }
-          } else {
-              currentCountYell = 0;
-          }
-
-          if (hcnipatternBlue->GetBinContent(i+1) == 0) {
-              currentCountBlue++; 
-              if (currentCountBlue > abortgaplength) {
-                  abortgaplength = currentCountBlue;
-                  lastAgBunchIndexBlue = i; 
-              }
-          } else {
-              currentCountBlue = 0;
-          }
+      for (int i = 0; i < gBLU[j]->GetN(); ++i)
+      {
+        double x, y;
+        gBLU[j]->GetPoint(i, x, y);
+        if (!std::isfinite(x) || x < 0.5 || x >= 120.5) continue;
+        const int bunch = std::lround(x);
+        spinBLU[bunch] = spinValues[j];
       }
 
-      int xingshift_cniYell = 119-lastAgBunchIndexYell;
-      int xingshift_cniBlue = 119-lastAgBunchIndexBlue;
-
-      for (int i = 0; i < 120; i++)
+      for (int i = 0; i < gYEL[j]->GetN(); ++i)
       {
-        int cniyellowbunchspin = hcnipatternYellow->GetBinContent((i+120-xingshift_cniYell)%120+1);
-        int cnibluebunchspin = hcnipatternBlue->GetBinContent((i+120-xingshift_cniBlue)%120+1);
-        if (cniyellowbunchspin == 0)
-        {
-          cniyellowbunchspin = 10;
-        }
-        if (cnibluebunchspin == 0)
-        {
-          cnibluebunchspin = 10;
-        }
-        if (cniyellowbunchspin != map_yellspin[runnumber].at(i) || cnibluebunchspin != map_bluespin[runnumber].at(i))
-        {
-          //badrunqa = 1;
-          stringMarkdown += "\u274C CNI spin pattern match ";
-          stringHtml += "Spin patterns: <font color=\"#ff0000\">BAD</font>; ";
-          break;
-        }
-        else if (i == 119)
-        {
-          stringMarkdown += "\u2705 CNI spin pattern match ";
-          stringHtml += "Spin patterns: <font color=\"#11cf17\">GOOD</font>; ";
-        }
+        double x, y;
+        gYEL[j]->GetPoint(i, x, y);
+        if (!std::isfinite(x) || x < 0.5 || x >= 120.5) continue;
+        const int bunch = std::lround(x);
+        spinYEL[bunch] = spinValues[j];
       }
     }
   }
-  return;
 
+  cnipol->Close();
+  delete cnipol;
+
+  const auto blueDB = map_bluespin.find(runnumber);
+  const auto yellowDB = map_yellspin.find(runnumber);
+  const bool haveDBPatterns = blueDB != map_bluespin.end() && yellowDB != map_yellspin.end() && blueDB->second.size() == 120 && yellowDB->second.size() == 120;
+
+  if (!havePatterns || !haveDBPatterns)
+  {
+    stringMarkdown += "\u274C CNI spin pattern available ";
+    stringHtml += "Spin patterns: <font color=\"#800080\">NOT AVAILABLE</font>; ";
+  }
+  else
+  {
+    bool match = true;
+    for (int i = 0; i < 120; ++i)
+    {
+      int cnibluebunchspin = spinBLU[i + 1];
+      int cniyellowbunchspin = spinYEL[i + 1];
+
+      // Convert CNI encoding only; do not normalize database values.
+      if (cnibluebunchspin == 0 || cnibluebunchspin == -10)
+        cnibluebunchspin = 10;
+      if (cniyellowbunchspin == 0 || cniyellowbunchspin == -10)
+        cniyellowbunchspin = 10;
+
+      if (cnibluebunchspin != blueDB->second.at(i) ||
+          cniyellowbunchspin != yellowDB->second.at(i))
+      {
+        match = false;
+        break;
+      }
+    }
+
+
+    stringMarkdown += match ? "\u2705 CNI spin pattern match " : "\u274C CNI spin pattern match ";
+    stringHtml += match ? "Spin patterns: <font color=\"#11cf17\">GOOD</font>; " : "Spin patterns: <font color=\"#ff0000\">BAD</font>; ";
+  }
+
+  // ============== Write polarization update file ============== //
+  map_bluepolbyfill[fill] = goodBlue ? cnibeampol_blue : -999.;
+  map_bluepolbyfillerr[fill] = goodBlue ? cnibeampolerr_blue : -999.;
+  map_yellpolbyfill[fill] = goodYellow ? cnibeampol_yellow : -999.;
+  map_yellpolbyfillerr[fill] = goodYellow ? cnibeampolerr_yellow : -999.;
+
+  std::ofstream out("../updatedbeampolarizations_run25.dat");
+  if (!out)
+  {
+    std::cerr << "Cannot write updatedbeampolarizations_run25.dat" << std::endl;
+    return;
+  }
+
+  out << std::setprecision(9);
+  for (const auto& [fillNumber, bluepol] : map_bluepolbyfill)
+  {
+    out << fillNumber << " "
+        << bluepol << " "
+        << map_bluepolbyfillerr.at(fillNumber) << " "
+        << map_yellpolbyfill.at(fillNumber) << " "
+        << map_yellpolbyfillerr.at(fillNumber) << "\n";
+  }
+  out.close();
+  if (!out)
+    std::cerr << "Error writing polarization file" << std::endl;
+
+  // ============== Write spin-pattern corrections ============== //
+  if (havePatterns && haveDBPatterns)
+  {
+    std::string bluePattern;
+    std::string yellowPattern;
+    bool different = false;
+
+    for (int i = 0; i < 120; ++i)
+    {
+      int blue = spinBLU[i + 1];
+      int yellow = spinYEL[i + 1];
+
+      // Same null/empty convention used in the comparison above.
+      if (blue == 0 || blue == -10) blue = 10;
+      if (yellow == 0 || yellow == -10) yellow = 10;
+
+      bluePattern += (blue == 1) ? '+' : (blue == -1) ? '-' : 'o';
+      yellowPattern += (yellow == 1) ? '+' : (yellow == -1) ? '-' : 'o';
+
+      int dbBlue = blueDB->second.at(i);
+      int dbYellow = yellowDB->second.at(i);
+      if (dbBlue == 0) dbBlue = 10;
+      if (dbYellow == 0) dbYellow = 10;
+
+      if (blue != dbBlue || yellow != dbYellow)
+      {
+        different = true;
+      }
+
+
+    }
+
+    if (different)
+    {
+      std::ofstream patternsOut("../updatedspinpatterns_run25.dat", std::ios::app);
+      if (!patternsOut)
+      {
+        std::cerr << "Cannot write updatedspinpatterns_run25.dat" << std::endl;
+        return;
+      }
+
+      patternsOut << runnumber << " " << bluePattern << " " << yellowPattern << "\n";
+      patternsOut.close();
+      if (!patternsOut)
+        std::cerr << "Error writing spin-pattern file" << std::endl;
+    }
+  }
 }
 
 
