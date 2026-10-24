@@ -228,7 +228,7 @@ int Collect::Init(PHCompositeNode *topNode){
 	std::cout<<"Collect::Init -- opening "<<foutfileName<<std::endl;
 	fout	= new TFile(foutfileName,"RECREATE");
 	//
-	hnvtx_frame	= new TH1D("hnvtx_frame","No. Vertices/TriggerFrame vs triggerframe",10003,-1.5,10001.5);
+	hnvtx_frame	= new TH1D("hnvtx_frame","N Vertices/TF vs TF seen",10003,-1.5,10001.5);
 	hdXing      = new TH1D("hdXing","Vertexed Crossings Interval (crossings)",500,-0.5,499.5);
 	hech_em		= new TH1D("hech_em","channel energy em ",2000,-0.5,1.5);
 	hech_ih		= new TH1D("hech_ih","channel energy ih ",2000,-0.5,1.5);
@@ -728,7 +728,7 @@ int Collect::process_event(PHCompositeNode *topNode){
 	NfoundAL = GetKFP( topNode, ALambda_PDGID, "KFPrecoAL_KFParticle_Container", "KFPrecoAL_SvtxTrackMap" );
 	//
 	sumNfoundKS+=NfoundKS;  sumNfoundLA+=NfoundLA;  sumNfoundAL+=NfoundAL;
-	if ((fEvtSeq-fEvtSeqFirst)%10==0) std::cout << "processing event " << fEvtSeq << " (" << fEvtSeq-fEvtSeqFirst << ") from run " << fRunNum
+	if (ievtSeen%10==0) std::cout << "processing event " << fEvtSeq << " (" << ievtSeen << ") from run " << fRunNum
 					<< ".  SUM Nk,l,a: " << sumNfoundKS << " " << sumNfoundLA << " " << sumNfoundAL << std::endl;
 	bool v0found	= false;
 	if (NfoundKS||NfoundLA||NfoundAL) v0found = true;
@@ -955,7 +955,7 @@ int Collect::process_event(PHCompositeNode *topNode){
 	int	nverticeskept	= 0;
 	if (svtxvertexmap){
 		fTnvtx		= svtxvertexmap->size();		// number of vertices found in this event
-		hnvtx_frame	->Fill(fEvtSeq-fEvtSeqFirst,fTnvtx);
+		hnvtx_frame	->Fill(ievtSeen,fTnvtx);
 		if (DEBUG) cout<<"----- Vertex NVERT = "<<fTnvtx<<endl;
 		//
 		//---- Protect against multiple vertices sharing the same crossing (real
