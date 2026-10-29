@@ -139,6 +139,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint
 from scipy.optimize import curve_fit
 import matplotlib
 matplotlib.use("Agg")
@@ -496,7 +497,12 @@ def load(args):
     pt_hi = max(float(pt_hi), float(args.lookup_pt_max))
     u_lo = 1.0 / pt_hi
     u_hi = 1.0 / pt_lo
-    pt_edges = np.unique(np.quantile(all_pt, np.linspace(0.0, 1.0, 7)))
+    if args.calibrate_for_hf:                        # fixed edges, data min/max outside
+        pmin, pmax = float(all_pt.min()), float(all_pt.max())
+        inner = np.array([e for e in args.pt_edges if pmin < e < pmax], dtype=float)
+        pt_edges = np.unique(np.concatenate(([pmin], inner, [pmax])))
+    else:
+        pt_edges = np.unique(np.quantile(all_pt, np.linspace(0.0, 1.0, 7)))
     if pt_edges.size < 4:                            # degenerate: fall back
         pt_edges = np.linspace(pt_lo, pt_hi, 7)
     pt_slices = semi_even_pt_grid(pt_lo, pt_hi, args.kappa_slices)
@@ -509,7 +515,8 @@ def load(args):
                 curv_plot=(float(u_lo), float(u_hi)))
     print(f"[norm] curvature feature: u_ref = {u_ref:.4f} GeV^-1, "
           f"u_scale = {u_scale:.4f} GeV^-1, clamp +-{U_CLAMP}")
-    print(f"[bins] daughter pT loss-bin edges (data quantiles): "
+    print(f"[bins] daughter pT loss-bin edges "
+          f"({'fixed + data min/max' if args.calibrate_for_hf else 'data quantiles'}): "
           f"{np.array2string(pt_edges, precision=3)}")
     return K, L, meta
 
@@ -535,6 +542,7 @@ class KappaNet(nn.Module):
         self.u_ref = float(norm["u_ref"])
         self.u_scale = float(norm["u_scale"])
         self.u_clamp = float(norm["u_clamp"])
+        self.ckpt_chunk = 0          # >0: recompute the net in backward, in chunks of this many rows
         dims = [4] + [hidden] * layers + [2]
         seq = []
         for i in range(len(dims) - 1):
@@ -561,7 +569,14 @@ class KappaNet(nn.Module):
             return float((u_n.abs() >= self.u_clamp).double().mean())
 
     def eps_delta(self, pt, eta, phi):
-        out = self.net(self.features(pt, eta, phi))
+        x = self.features(pt, eta, phi)
+        if self.ckpt_chunk > 0 and self.training and torch.is_grad_enabled():
+            # activation checkpointing: store only the inputs, recompute the network
+            # chunk by chunk in backward (same gradients, far less memory)
+            out = torch.cat([torch.utils.checkpoint.checkpoint(self.net, c, use_reentrant=False)
+                             for c in x.split(self.ckpt_chunk)])
+        else:
+            out = self.net(x)
         return out[..., 0], out[..., 1]
 
     def kappa(self, pt, eta, phi, q):
@@ -671,12 +686,55 @@ def semi_even_pt_grid(pt_min, pt_max, n):
     return np.interp(q, np.linspace(0.0, 1.0, vals.size), vals)
 
 
-def bin_index(pt, eta, phi, pt_edges, n_eta, n_phi):
+def make_bin_tables(pt_edges, n_eta, n_phi, coarse_pt=-1.0, n_eta_hi=5, n_phi_hi=4):
+    """Per-pT-bin (eta, phi) grid: n_eta x n_phi, but n_eta_hi x n_phi_hi for pT bins
+    whose lower edge is >= coarse_pt (negative coarse_pt disables the coarse grid).
+    Cells of pT bin b occupy [offset[b], offset[b] + ne[b]*nph[b]) in the flat index."""
+    nbp = len(pt_edges) - 1
+    hi = (pt_edges[:-1] >= coarse_pt) if coarse_pt >= 0 else torch.zeros(nbp, dtype=torch.bool)
+    ne = torch.where(hi, torch.full((nbp,), n_eta_hi, dtype=torch.long),
+                     torch.full((nbp,), n_eta, dtype=torch.long))
+    nph = torch.where(hi, torch.full((nbp,), n_phi_hi, dtype=torch.long),
+                      torch.full((nbp,), n_phi, dtype=torch.long))
+    ncell = ne * nph
+    offset = torch.cumsum(ncell, 0) - ncell
+    return dict(ne=ne, nph=nph, offset=offset, nb=int(ncell.sum()))
+
+
+def bin_index(pt, eta, phi, pt_edges, n_eta, n_phi, tab=None):
     ipt = torch.bucketize(pt, pt_edges) - 1
     ipt = ipt.clamp(0, len(pt_edges) - 2)
-    ieta = ((eta - ETA_RANGE[0]) / (ETA_RANGE[1] - ETA_RANGE[0]) * n_eta).long().clamp(0, n_eta - 1)
-    iphi = ((phi + np.pi) / (2 * np.pi) * n_phi).long().clamp(0, n_phi - 1)
-    return (ipt * n_eta + ieta) * n_phi + iphi, (len(pt_edges) - 1) * n_eta * n_phi
+    if tab is None:                                  # uniform grid in every pT bin
+        ieta = ((eta - ETA_RANGE[0]) / (ETA_RANGE[1] - ETA_RANGE[0]) * n_eta).long().clamp(0, n_eta - 1)
+        iphi = ((phi + np.pi) / (2 * np.pi) * n_phi).long().clamp(0, n_phi - 1)
+        return (ipt * n_eta + ieta) * n_phi + iphi, (len(pt_edges) - 1) * n_eta * n_phi
+    ne, nph = tab["ne"][ipt], tab["nph"][ipt]
+    ieta = ((eta - ETA_RANGE[0]) / (ETA_RANGE[1] - ETA_RANGE[0]) * ne).long()
+    ieta = torch.minimum(ieta.clamp(min=0), ne - 1)
+    iphi = ((phi + np.pi) / (2 * np.pi) * nph).long()
+    iphi = torch.minimum(iphi.clamp(min=0), nph - 1)
+    return tab["offset"][ipt] + ieta * nph + iphi, tab["nb"]
+
+
+def report_bin_occupancy(K, L, binner, tab, pt_edges, min_w=5.0):
+    """Per species/leg and daughter-pT loss bin: (eta,phi,charge) cells carrying more
+    than min_w signal weight / total cells.  Cells below min_w drop out of the loss."""
+    edges = pt_edges.numpy()
+    hdr = "  ".join(f"{edges[i]:.3g}-{edges[i + 1]:.3g}" for i in range(len(edges) - 1))
+    print(f"[bins] active/total (eta,phi,charge) cells per daughter-pT bin [GeV]: {hdr}")
+    off = tab["offset"].tolist()
+    nc = (tab["ne"] * tab["nph"]).tolist()
+    with torch.no_grad():
+        for sname, S in (("K0s", K), ("Lam", L)):
+            for leg in (1, 2):
+                idx, nb = binner(S[f"pt{leg}"], S[f"eta{leg}"], S[f"phi{leg}"])
+                idx = idx + (S[f"q{leg}"] > 0).long() * nb
+                sw = torch.zeros(2 * nb, dtype=torch.float64).index_add_(0, idx, S["w"])
+                cols = []
+                for o, n in zip(off, nc):
+                    a = int((sw[o:o + n] > min_w).sum()) + int((sw[nb + o:nb + o + n] > min_w).sum())
+                    cols.append(f"{a}/{2 * n}")
+                print(f"[bins]   {sname} leg{leg}: " + "  ".join(cols))
 
 
 def binned_mean_sq(idx, nbins, values, weights, min_w=5.0):
@@ -700,10 +758,19 @@ def corrected_mass(model, S):
 # ---------------------------------------------------------------- stage 1
 def train(args, K, L, meta):
     model = KappaNet(meta["norm"], hidden=args.hidden).double()
+    model.ckpt_chunk = args.ckpt_chunk
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
 
     pt_edges = torch.tensor(meta["pt_edges"], dtype=torch.float64)
     N_ETA, N_PHI = 10, 8
+    # without --calibrate_for_hf the coarse grid is off and the table reproduces the
+    # original uniform (N_ETA x N_PHI) indexing exactly
+    tab = make_bin_tables(pt_edges, N_ETA, N_PHI,
+                          args.coarse_above_pt if args.calibrate_for_hf else -1.0,
+                          args.n_eta_hi, args.n_phi_hi)
+
+    def binner(pt, eta, phi):
+        return bin_index(pt, eta, phi, pt_edges, N_ETA, N_PHI, tab)
 
     def refresh_weights():
         with torch.no_grad():
@@ -718,6 +785,8 @@ def train(args, K, L, meta):
     (muK0, _), (muL0, _) = refresh_weights()
     print(f"raw peaks:  K0s {muK0*1e3:8.3f} MeV (PDG {M_K0S*1e3:.3f}), "
           f"Lambda {muL0*1e3:8.3f} MeV (PDG {M_LAMBDA*1e3:.3f})")
+    if args.calibrate_for_hf:
+        report_bin_occupancy(K, L, binner, tab, pt_edges)
 
     for ep in range(args.epochs):
         opt.zero_grad()
@@ -725,36 +794,48 @@ def train(args, K, L, meta):
         prior_w = args.lam_prior * (1.0 - ep / max(args.epochs - 1, 1))  # anneal -> 0
 
         for S in (K, L):
-            m, _, reg = corrected_mass(model, S)
+            m, kk, reg = corrected_mass(model, S)
+            if S is K:
+                kK = kk
             pull = (m - S["M"]) / (0.010 if S is K else 0.004)
             w = S["w"]
             for (pt, eta, phi, q) in ((S["pt1"], S["eta1"], S["phi1"], S["q1"]),
                                       (S["pt2"], S["eta2"], S["phi2"], S["q2"])):
-                idx, nb = bin_index(pt, eta, phi, pt_edges, N_ETA, N_PHI)
+                idx, nb = binner(pt, eta, phi)
                 idx = idx + ((q > 0).long() * nb)
                 loss = loss + binned_mean_sq(idx, 2 * nb, pull, w)
             loss = loss + prior_w * reg
 
         mL, _, _ = corrected_mass(model, L)
         pullL = (mL - M_LAMBDA) / 0.004
-        idx, nb = bin_index(L["pt1"], L["eta1"], L["phi1"], pt_edges, N_ETA, N_PHI)
         sel_l, sel_b = L["is_lam"], ~L["is_lam"]
         wl = L["w"]
-        swl  = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_l], wl[sel_l])
-        swvl = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_l], (wl * pullL)[sel_l])
-        swb  = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_b], wl[sel_b])
-        swvb = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_b], (wl * pullL)[sel_b])
-        mk = (swl > 5) & (swb > 5)
-        split = swvl[mk] / swl[mk] - swvb[mk] / swb[mk]
-        wsum = (swl[mk] * swb[mk]) / (swl[mk] + swb[mk])
-        loss = loss + args.lam_split * (wsum * split**2).sum() / wsum.sum().clamp(min=1e-9)
+        # Lambda vs anti-Lambda split: binned in leg-1 (pion) kinematics; with
+        # --calibrate_for_hf also a second term in leg-2 (proton = high-pT leg) kinematics
+        split_terms = [(1, args.lam_split)]
+        if args.calibrate_for_hf:
+            split_terms.append((2, args.lam_split2))
+        for leg, lam_w in split_terms:
+            if lam_w <= 0:
+                continue
+            idx, nb = binner(L[f"pt{leg}"], L[f"eta{leg}"], L[f"phi{leg}"])
+            swl  = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_l], wl[sel_l])
+            swvl = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_l], (wl * pullL)[sel_l])
+            swb  = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_b], wl[sel_b])
+            swvb = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx[sel_b], (wl * pullL)[sel_b])
+            mk = (swl > 5) & (swb > 5)
+            split = swvl[mk] / swl[mk] - swvb[mk] / swb[mk]
+            wsum = (swl[mk] * swb[mk]) / (swl[mk] + swb[mk])
+            loss = loss + lam_w * (wsum * split**2).sum() / wsum.sum().clamp(min=1e-9)
 
-        k1, _, _ = model.kappa(K["pt1"], K["eta1"], K["phi1"], K["q1"])
-        k2, _, _ = model.kappa(K["pt2"], K["eta2"], K["phi2"], K["q2"])
+        if args.reuse_kappa:
+            k1, k2 = kK                   # identical values, already in the graph above
+        else:
+            k1, _, _ = model.kappa(K["pt1"], K["eta1"], K["phi1"], K["q1"])
+            k2, _, _ = model.kappa(K["pt2"], K["eta2"], K["phi2"], K["q2"])
         p1, p2 = k1 * K["pt1"], k2 * K["pt2"]
         alpha = (p1 - p2) / (p1 + p2)                      # pi- minus pi+
-        idxc, nbc = bin_index(K["cpt"], K["ceta"], K["cphi"],
-                              pt_edges, N_ETA, N_PHI)
+        idxc, nbc = binner(K["cpt"], K["ceta"], K["cphi"])
         loss = loss + args.lam_alpha * binned_mean_sq(idxc, nbc, alpha, K["w"])
 
         loss.backward()
@@ -785,6 +866,7 @@ class ResoNet(nn.Module):
         super().__init__()
         self.mode = mode
         n_out = 2 if mode == "absolute" else 1
+        self.ckpt_chunk = 0          # >0: recompute the net in backward, in chunks of this many rows
         dims = [3] + [hidden] * layers + [n_out]
         seq = []
         for i in range(len(dims) - 1):
@@ -804,12 +886,21 @@ class ResoNet(nn.Module):
     def features(self, eta, phi):
         return torch.stack([eta / 1.0, torch.sin(phi), torch.cos(phi)], -1)
 
+    def _forward(self, eta, phi):
+        x = self.features(eta, phi)
+        if (self.ckpt_chunk > 0 and torch.is_grad_enabled()
+                and self.net[0].weight.requires_grad):
+            # activation checkpointing (see KappaNet.eps_delta)
+            return torch.cat([torch.utils.checkpoint.checkpoint(self.net, c, use_reentrant=False)
+                              for c in x.split(self.ckpt_chunk)])
+        return self.net(x)
+
     def ab(self, eta, phi):
-        out = self.net(self.features(eta, phi))
+        out = self._forward(eta, phi)
         return A_SCALE * F.softplus(out[..., 0]), B_SCALE * F.softplus(out[..., 1])
 
     def s(self, eta, phi):
-        out = self.net(self.features(eta, phi))
+        out = self._forward(eta, phi)
         return S_SCALE * F.softplus(out[..., 0])
 
 
@@ -959,6 +1050,7 @@ def set_c_indices(groups, per_resonance):
 def train_resolution(groups, args, n_c=1, verbose=True):
     net = ResoNet(args.reso_model, hidden=args.reso_hidden,
                   layers=args.reso_layers).double()
+    net.ckpt_chunk = args.ckpt_chunk
     glob = ResoGlobals(len(groups), n_c=n_c).double()
     # globals get 5x LR: Adam stalls along the c <-> (s, u_p) soft direction
     opt = torch.optim.Adam([
@@ -1126,7 +1218,10 @@ def fit_global_reduced(groups, mode, n_c=1, steps=3000, lr=0.02):
         return math.sqrt(v) if np.isfinite(v) and v > 0 else float("nan")
 
     def _rho(i, j):
-        d = math.sqrt(float(cov[i, i]) * float(cov[j, j]))
+        prod = float(cov[i, i]) * float(cov[j, j])
+        # a non-positive-definite Hessian can give a negative variance product:
+        # report nan instead of letting math.sqrt abort the whole run
+        d = math.sqrt(prod) if np.isfinite(prod) and prod > 0 else float("nan")
         return float(cov[i, j]) / d if np.isfinite(d) and d > 0 else float("nan")
 
     h1, h2, c, f, k = unpack(td)
@@ -2051,6 +2146,24 @@ def main():
                     help="upper pT [GeV] covered by kappa lookup and kappa-map diagnostics")
     ap.add_argument("--kappa_slices", type=int, default=25,
                     help="number of curvature slices in fig6/fig7 kappa diagnostics")
+    ap.add_argument("--calibrate_for_hf", action="store_true", default=False,
+                    help="extend the stage-1 loss binning to high-pT daughters (heavy-flavour "
+                         "use): fixed --pt_edges instead of data-quantile pT bins, coarser "
+                         "eta/phi grid above --coarse_above_pt, a second Lambda/anti-Lambda "
+                         "split term in proton kinematics (--lam_split2) and a bin-occupancy "
+                         "printout.  Default (off) = original behaviour.")
+    ap.add_argument("--pt_edges", type=float, nargs="+",
+                    default=[0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0],
+                    help="[--calibrate_for_hf] fixed daughter-pT edges [GeV] of the stage-1 "
+                         "loss bins; the data min/max are added as outer edges and edges "
+                         "outside the data range are dropped")
+    ap.add_argument("--coarse_above_pt", type=float, default=2.0,
+                    help="[--calibrate_for_hf] loss bins whose lower edge is >= this pT [GeV] "
+                         "use the coarser --n_eta_hi x --n_phi_hi grid (negative disables)")
+    ap.add_argument("--n_eta_hi", type=int, default=5,
+                    help="[--calibrate_for_hf] eta bins per pT loss bin above --coarse_above_pt")
+    ap.add_argument("--n_phi_hi", type=int, default=4,
+                    help="[--calibrate_for_hf] phi bins per pT loss bin above --coarse_above_pt")
     # stage 1
     ap.add_argument("--epochs", type=int, default=400)
     ap.add_argument("--lr", type=float, default=2e-3)
@@ -2058,8 +2171,23 @@ def main():
     ap.add_argument("--refresh", type=int, default=50, help="weight-refresh cadence")
     ap.add_argument("--lam_prior", type=float, default=0.05,
                     help="L2(eps,delta) weight at epoch 0; annealed linearly to 0")
-    ap.add_argument("--lam_split", type=float, default=1.0)
+    ap.add_argument("--lam_split", type=float, default=1.0,
+                    help="weight of the Lambda/anti-Lambda split term binned in leg-1 "
+                         "(pion) kinematics")
+    ap.add_argument("--lam_split2", type=float, default=1.0,
+                    help="[--calibrate_for_hf] weight of a second Lambda/anti-Lambda split "
+                         "term binned in leg-2 (proton, the high-pT leg) kinematics; "
+                         "0 disables")
     ap.add_argument("--lam_alpha", type=float, default=2.0)
+    ap.add_argument("--reuse_kappa", action="store_true", default=False,
+                    help="[memory] reuse the K0s kappa evaluation from corrected_mass in the "
+                         "alpha term instead of recomputing it (same values; about 30%% less "
+                         "graph memory and time)")
+    ap.add_argument("--ckpt_chunk", type=int, default=0,
+                    help="[memory] >0: activation-checkpoint the stage-1 kappa network and "
+                         "the stage-2 resolution network in chunks of this many candidates "
+                         "(e.g. 32768). Same gradients, much lower memory, little or no extra "
+                         "time; 0 = off (original)")
     ap.add_argument("--load_stage1", default=None,
                     help="existing model.pt (must carry the v4 convention tag; "
                          "older checkpoints are rejected)")
