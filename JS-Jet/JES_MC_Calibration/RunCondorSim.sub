@@ -1,0 +1,11 @@
+Universe                      = vanilla
+executable                    = CondorRunSim.sh
+arguments                     = $(trig) $(nSeg) $(iSeg) $(do_closure) $(runindex)
+output                        = condor_sim/out/condor_$(trig)_$(iSeg)_$(nSeg).out
+error                         = condor_sim/err/condor_$(trig)_$(iSeg)_$(nSeg).err
+log                           = /tmp/condor_$(trig)_$(iSeg)_$(nSeg).log
+request_memory                = 4GB
+when_to_transfer_output       = ON_EXIT
+Notification                  = Never
+PeriodicHold                  = (NumJobStarts>=1 && JobStatus == 1)
+queue trig, nSeg, iSeg, do_closure, runindex from ListCondorRunSim.csv
