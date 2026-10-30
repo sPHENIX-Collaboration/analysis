@@ -40,3 +40,8 @@
 /ana573/*
 !/ana573/SplitTrackTypes_ana573.pdf
 !/ana573/SplitTrackLogic_ana573.pdf
+# the ana578 split-track pictures (same rule)
+!/ana578/
+/ana578/*
+!/ana578/SplitTrackTypes_ana578.pdf
+!/ana578/SplitTrackLogic_ana578.pdf

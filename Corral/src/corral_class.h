@@ -15,6 +15,7 @@
 #include <TError.h>
 #include <unordered_map>
 #include <deque>
+#include <memory>
 
 using std::vector;
 using std::cout;
@@ -74,6 +75,7 @@ public :
 	//
 	int 	ntodo;
 	TString	RunString;
+	TString	RunStringGiven;		// the run string as given (-s), before Raw / ZB / TightDCA expand into RunString: names the outputs
 	TString	OutputName;		// -o: output base name (root/<name>.root, pdf/<name>.pdf); empty -> corral_<class>[_<RunString>]
 	TString	Dataset;		// -d: dataset for Finalize (lists|root/<dataset>/); empty -> FINALIZE_SET (finalize_hists.h)
 	bool	doCrossing;
@@ -215,13 +217,15 @@ public :
 							// (Collect branch nvtxXing > 1: a second collision or one collision split in two). "multivtx" keeps them.
 							// Trees without nvtxXing (Collect before f2edffe6): nothing to do, info/ says so.
 	bool	hasNvtxXing;	// the input trees have the nvtxXing branch
+	bool	hasEtot;		// the input trees have the calorimeter totals etotem..etotepd (not in ana578)
 	std::vector<bool> multiVtxRows;			// [chain entry] -> nvtxXing > 1
 	long	nMultiVtxAll;					// events with nvtxXing > 1 in the pre-pass (all events read)
 	virtual void	BuildMultiVtxRows(Long64_t nentries, TH1D *hn, TH2D *hn2);
 	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
 	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
 	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
-	long	nXTF_pairs, nXTF_byINTT, nXTF_byQuality, nXTF_neither, nXTF_losers;
+	long	nXTF_pairs, nXTF_byINTT, nXTF_byInTime, nXTF_byQuality, nXTF_neither, nXTF_losers;
+	long	nXTF_qBothOK, nXTF_qBothOKsameX, nXTF_qDisagree, nXTF_qNoINTT;	// why quality decided (README_SplitTracks578 sec 1.4)
 	bool	ONLY_FIRST_XINGPOS;	// sec 18.21 follow-up 2: opt-in, OFF by default ("XingPos" turns it on).
 							// Keeps only the FIRST row with crossing>0 in each (run,evt) TF, skips every
 							// other row -- pure STREAMING (non-triggered) events, still <=1 row/TF.
@@ -240,9 +244,12 @@ public :
 						//               plateau from -20 to ~260, within 3% up to 390, then falls (3.90 at 401-410,
 						//               2.0 at 475); below -20 it falls too (4.27 at -30..-21, 2.8 at -100). ~15% of
 						//               all events are outside [ZB_LO,ZB_HI] and are in none of the three samples.
+						//               2026-10-28: ZB_LO -20 -> 14 (user, XingView_ana578_ZB page 3: <N_trk> and <pT>
+						//               not yet on the plateau just after the trigger; no negative crossings at all).
+						//               Costs 6.6% of the old ZB events (ana578, all groups alike).
 	static constexpr int XNEAR_LO = -4;
 	static constexpr int XNEAR_HI =  2;
-	static constexpr int ZB_LO    = -20;
+	static constexpr int ZB_LO    =  14;
 	static constexpr int ZB_HI    = 390;
 	bool	ONLY_FIRST_TF;	// sec 18.21: opt-in diagnostic, OFF by default ("onlyfirsttf" turns it on).
 							// Keeps only the FIRST row seen for each (run,evt) -- evt IS the trigger
@@ -285,11 +292,8 @@ public:
 	TTreeReaderValue<Double_t>         vtxy;
 	TTreeReaderValue<Double_t>         vtxz;
 	TTreeReaderValue<Int_t>            crossing;
-	TTreeReaderValue<Double_t>         etotem;
-	TTreeReaderValue<Double_t>         etotih;
-	TTreeReaderValue<Double_t>         etotoh;
-	TTreeReaderValue<Double_t>         etotioh;
-	TTreeReaderValue<Double_t>         etotepd;
+	//---- calorimeter totals: optional (ana578 Collect trees do not have them), made in the constructor only if present
+	std::unique_ptr<TTreeReaderValue<Double_t> > etotem, etotih, etotoh, etotioh, etotepd;
 	TTreeReaderValue<Int_t>            ntr;
 	TTreeReaderArray<Char_t>           pid;
 	TTreeReaderArray<Short_t>          indv0;

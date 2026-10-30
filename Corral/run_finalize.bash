@@ -6,8 +6,9 @@
 #     Finalize_<tokens>  optional Finalize run string (default Finalize), e.g. Finalize_fz16; applies to every
 #                        dataset named after it
 #   e.g. ./run_finalize.bash ana573_795xx ana573_8156x ana573_8158x ana573     (four jobs)
-# Outputs (<name> = corral_<runstring>, e.g. corral_Finalize, corral_Finalize_fz16):
-#   root/<dataset>/<name>.root, pdf/<dataset>/<name>.pdf, log/<dataset>/<name>.log
+# Outputs (<name> = corral_<runstring>, e.g. corral_Finalize, corral_Finalize_fz16; since 2026-10-19 the dataset is in the
+#   file name too, so downloaded files can be told apart):
+#   root/<dataset>/<name>_<dataset>.root, pdf/<dataset>/<name>_<dataset>.pdf, log/<dataset>/<name>_<dataset>.log
 # The binary is snapshotted to log/<dataset>/<name>.snapshot (a rebuild cannot change a pending job).
 # FINALIZE_NEXPMIN / FINALIZE_MFRAC in the environment are passed on to the job (--export=ALL).
 # MEM= / TIME= override the defaults (4G, 2 h; a 49-pair-type ana573 run group took ~5 min and 0.7 GB).
@@ -18,6 +19,7 @@ export CORRAL_DIR=${CORRAL_DIR:-$(cd "$(dirname "$(readlink -f "$0")")" && pwd)}
 EXCLUDE=${EXCLUDE-hax[1-18],rpr[1-24]}
 TIME=${TIME-2:00:00}
 MEM=${MEM-4G}
+#---- DEPEND="afterok:<jobid>" (sbatch --dependency syntax): start only after other jobs, e.g. a rerun chunk
 FRS=Finalize
 for ARG in "$@"; do
 	if [[ $ARG == Finalize* ]]; then FRS=$ARG; continue; fi
@@ -27,11 +29,11 @@ for ARG in "$@"; do
 	NAME=corral_$FRS
 	mkdir -p $CORRAL_DIR/root/$SET $CORRAL_DIR/pdf/$SET $CORRAL_DIR/log/$SET
 	cp $CORRAL_DIR/corral $CORRAL_DIR/log/$SET/$NAME.snapshot
-	echo -n "$SET  $FRS  -> root|pdf|log/$SET/$NAME.*   "
-	sbatch --partition=prip --time=$TIME ${EXCLUDE:+--exclude=$EXCLUDE} \
+	echo -n "$SET  $FRS  -> root|pdf|log/$SET/${NAME}_$SET.*   "
+	sbatch --partition=prip --time=$TIME ${EXCLUDE:+--exclude=$EXCLUDE} ${DEPEND:+--dependency=$DEPEND} \
 		--job-name=fin_$SET \
-		--output=$CORRAL_DIR/log/$SET/$NAME.log \
-		--error=$CORRAL_DIR/log/$SET/$NAME.log \
+		--output=$CORRAL_DIR/log/$SET/${NAME}_$SET.log \
+		--error=$CORRAL_DIR/log/$SET/${NAME}_$SET.log \
 		--mem=$MEM \
 		--export=ALL \
 		$CORRAL_DIR/run_finalize.slurm $SET $FRS

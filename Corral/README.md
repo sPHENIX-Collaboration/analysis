@@ -107,9 +107,10 @@ what each step removes). Two charts in the repository draw them, and each item b
 `ana573/SplitTrackLogic_ana573.pdf`, the decisions in processing order (page 1, stages 0-2: events and
 tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0s and their daughters):
 
-- **Vertex-phi mask (SiPhiMask), ana573.** Two vertex-phi windows, [70,83) and [94,115) deg, where the
-  tracks are few and their DCA is large (a feature fixed at the silicon radius, for this data only), are
-  left out: 4.4% of the tracks. `nosiphimask` turns it off; `siphimaskall` adds six small windows.
+- **Vertex-phi mask (SiPhiMask).** The vertex-phi window [70,83) deg, where the tracks are few and their
+  DCA is large (a feature fixed at the silicon radius), is left out: 2.3% of the ana578 tracks. ana573 also
+  had [94,115) (4.4% for both); that hole is gone in ana578 (README_SplitTracks578 A1, 2026-10-21).
+  `nosiphimask` turns it off; `siphimaskall` uses all eight windows.
   Charts: SplitTrackLogic page 1, stage 1.
 
 - **Central-membrane mask (CM mask), ana573.** Tracks that cross z = 0 inside the TPC (eta ~ asinh(-zvtx/R),
@@ -273,23 +274,25 @@ case-insensitively; join several with `_`.
 | token | effect |
 |---|---|
 | *(none)* | the defaults: every split-track cleaner, the masks and the crossing correction ON; zero-bias crossing selection (below) |
-| `Raw` | every cleaner and correction OFF: shorthand for `noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_AllSeg_multivtx`, and all crossings (`AllX`) unless a crossing token is given too (e.g. `Raw_Xing0`) |
+| `Raw` | the raw data: every cleaner and correction OFF and the SiPhi mask OFF, all segments, all crossings, multi-vertex crossings kept. Shorthand for `noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_nosiphimask_AllSeg_multivtx` and `AllX` (unless `Xing0` or `NearX0` is given too). The first pass of a new production |
+| `ZB` | the same OFF switches as `Raw` (cleaners, corrections, SiPhi mask), but the default event selection: segment veto ON, ZB crossings, multi-vertex crossings skipped (since 2026-10-19). `Raw` and `ZB` together stop the job. After `Raw` or `ZB`, an OFF switch written without its `no` turns that mechanism back ON: `ZB_TFdup_XTF` = ZB with TFdup and XTF on (since 2026-10-21). A value token does the same and sets the value: `ZB_cmmask0508` = ZB with the CM mask on at [-0.05,0.08), `ZB_looper10` = looper veto on at 0.10 (since 2026-10-22; before, a value token left the mechanism OFF). Outputs are named after the run string as given (`corral_ZB_TFdup_XTF.*`), never after the expansion |
 | `TightDCA` | tight track DCA cuts: shorthand for `dcz03_dxy50` (abs(dcaz) < 0.3 cm, abs(dcaxy) < 0.5 cm), applied to every track and so to every pair type. No token = 1.5 cm x 1.5 cm, applied by corral (Collect writes every quality track whatever its DCA, `README_CollectTree_20261013.md`). An explicit `dczNN` / `dxyNN` in the same run string wins |
 | `nocross` | turn off only the crossing correction (pt-ordering at fill + (dy, dphi) bin correction) |
 | `Xing0` | keep only crossing 0: the triggered collision (not zero bias) |
 | `NearX0` | keep only −4 ≤ crossing ≤ 2 without 0: the neighbours of the trigger (monitoring) |
 | `AllX` | keep all crossings |
 
-**Default crossing selection = zero bias** (`ZB`; the token is accepted but not needed): −20 ≤ crossing ≤ 390,
-outside the NearX0 window. It is protected against three things:
+**Default crossing selection = zero bias** (no token needed; the token `ZB` also turns the cleaners off, see above): 14 ≤ crossing ≤ 390
+(since 2026-10-28; before: −20 ≤ crossing ≤ 390 outside the NearX0 window, 6.6% more events). It is protected against four things:
 1. **crossing 0** is the triggered collision, not zero bias (in jet/photon-trigger TFs ⟨N_trk⟩ 6.2 vs 4.3,
    ⟨pT⟩ 0.59 vs 0.48 GeV);
 2. **the crossings next to 0** (NearX0, −4..+2): ⟨N_trk⟩ ~6% low in every trigger class, and their
    correlations differ from ZB; kept out so they can be monitored separately with `NearX0`;
-3. **extreme crossings** (< −20 or > 390), at the readout-window edges, where ⟨N_trk⟩ per event sags from its
-   plateau value in the bulk of the zero-bias region (4.27 at −30..−21, 3.90 at 401-410).
+3. **negative and early crossings** (< 14): ⟨N_trk⟩ and ⟨pT⟩ not yet on the plateau after the trigger (XingView page 3);
+4. **extreme crossings** (> 390), at the readout-window edges, where ⟨N_trk⟩ per event sags from its
+   plateau value in the bulk of the zero-bias region (3.90 at 401-410).
 
-Xing0, NearX0 and ZB exclude each other (~15% of events, the extreme crossings, are in none of them); giving
+Xing0, NearX0 and ZB exclude each other (~20% of events, crossings < 14 other than −4..2 and > 390, are in none of them); giving
 more than one of Xing0 / NearX0 / ZB / AllX stops the job. The limits are constants in `src/corral_class.h`
 (`XNEAR_LO/HI`, `ZB_LO/HI`); the QA pages show ⟨N_trk⟩ and ⟨pT⟩ vs crossing per trigger class, before and
 after the selection.
@@ -339,10 +342,10 @@ split-track ones).
 | **PID, masks and multiplicity class (README_PID.md)** | |
 | `oldpid` | legacy PID: pi = dedx70s < 400 at any momentum, no p or K, split-track candidates = those pions (default: KFP dE/dx gates on dedxKFP, pi then p (outside the K band) then K (outside the p band), all accepted tracks are split-track candidates) |
 | `isovtxNNZZ` | isolated vertices only: skip every row (vertex) that has another vertex of the same run within +-NN crossings (absolute crossing bco+crossing, across TF boundaries) and abs(dz) < ZZ cm; copies of the same crossing are not neighbours (`noTFdup` territory). Test of track-to-vertex misassignment at high rate (README_ana573.md). NN 01-50, ZZ 01-30 cm. Default OFF |
-| `AllSeg` | segment veto OFF: read every DST segment. The veto is ON by default (since 2026-10-13): the events of the (run, DST segment)s listed in `bad_segments.txt` are skipped before any processing (segCells keeps the segment with `veto` = 1 and only `nraw` filled); the file is `$CORRAL_SEGVETO`, else `bad_segments.txt` in the folder of the `-l` list, and corral stops if it is missing. Made by `lists/make_bad_segments.C` from the segCells of an `AllSeg` run: segments below their run's live-fraction band (README_ana573.md). A new dataset therefore goes through corral twice: `AllSeg`, then `make_bad_segments.C`, then the default. The old token `segveto` (the ON switch until 2026-10-13) is still accepted and changes nothing |
+| `AllSeg` | segment veto OFF: read every DST segment. The veto is ON by default (since 2026-10-13): the events of the (run, DST segment)s listed in `bad_segments.txt` are skipped before any processing (segCells keeps the segment with `veto` = 1 and only `nraw` filled); the file is `$CORRAL_SEGVETO`, else the one file of the production, `lists/<production>/bad_segments.txt` (`<production>` = the leading `anaNNN` of the `-l` list's folder name: `lists/ana578_79515/`, `lists/ana578A_ZB/` -> `lists/ana578/`; since 2026-10-26, before that one copy per list folder), and corral stops if it is missing. Made by `lists/make_bad_segments.C` from the segCells of a `Raw` (or `AllSeg`) run: segments below their run's live-fraction band (README_ana573.md). A new dataset therefore goes `Raw`, then `make_bad_segments.C`, then `ZB` (or the default) (README_ana578.md, "New-data procedure"). The old token `segveto` (the ON switch until 2026-10-13) is still accepted and changes nothing |
 | `multivtx` | keep the events whose crossing has 2+ vertices. By default (since 2026-10-14) they are skipped: Collect branch `nvtxXing` > 1, either a second collision in the crossing or one collision split in two (`README_CollectTree_20261013.md`); about 11-12% of the events in run 81585. Skipped after the segment veto (info/count_events_skipped_multivtx); segCells `nmulti` counts them per segment either way; `hnvtxXing` and `hvtxntr2` (runner-up vertex tracks) are filled in the pre-pass. Trees made before 2026-10-13 have no `nvtxXing`: nothing is skipped and info/settings says so |
-| `nosiphimask` | turn off the ana573 vertex-phi mask (default: the two windows [70,83) and [94,115) deg) |
-| `siphimaskall` | use all eight vertex-phi mask windows (the two above and six small ones; a study option) |
+| `nosiphimask` | turn off the vertex-phi mask (default since 2026-10-21: the window [70,83) deg; ana573 also had [94,115), gone in ana578, README_SplitTracks578 A1) |
+| `siphimaskall` | use all eight vertex-phi mask windows ([70,83), [94,115) and six small ones; a study option) |
 | `nocmmask` | turn off the ana573 central-membrane mask (default: w in [-0.07,0.10), see above) |
 | `cmmaskAABB` | the central-membrane mask window w in [-0.AA,0.BB) (each 0.00-0.20) |
 | `nchLLHH` | multiplicity class: only events with LL <= N_ch <= HH (accepted tracks, `hntrk`) reach CalcRm, so siblings, mixing pools and hmult (r2) stay inside the class (default all events; LL 0-40, HH LL-99; e.g. `nch0607`). The loop's QA pages still see every event. |
@@ -422,9 +425,10 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    Corral/run_finalize.bash ana573_795xx ana573_8156x ana573_8158x ana573    # one job per dataset
    ```
    It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral.root`, runs in a
-   scratch directory on the worker node and writes `root/<dataset>/corral_Finalize.root`,
-   `pdf/<dataset>/corral_Finalize.pdf` and `log/<dataset>/corral_Finalize.log` (`corral_Finalize_fz16.*` for
-   `Finalize_fz16`). The binary is snapshotted first; `FINALIZE_NEXPMIN` / `FINALIZE_MFRAC` are passed on.
+   scratch directory on the worker node and writes `root/<dataset>/corral_Finalize_<dataset>.root`,
+   `pdf/<dataset>/corral_Finalize_<dataset>.pdf` and `log/<dataset>/corral_Finalize_<dataset>.log`
+   (`corral_Finalize_fz16_<dataset>.*` for `Finalize_fz16`; the dataset in the name since 2026-10-19, so
+   downloaded files can be told apart; older sets have `corral_Finalize.*`). The binary is snapshotted first; `FINALIZE_NEXPMIN` / `FINALIZE_MFRAC` are passed on.
    By hand, in a work directory with `root/` and `pdf/`: `corral -d <dataset> -s Finalize` writes to
    `./root` and `./pdf`.
    Finalize also writes the tree `work/chunkStats`, one entry per chunk (run, chunk, events, occupancy =
@@ -445,7 +449,10 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    Since 2026-10-12 segCells has one entry for every segment read (also those `segveto` skips: `veto` = 1)
    and per-segment QA sums: `nraw` (rows read), `nvtx` (raw vertices per TF, summed over nevt), `sumpt`,
    `sumntpc`, `sumadcaxy`, `sumadcaz` (summed over ntrk), `nid[6]` (identified pi+ pi- K+ K- p pbar) and
-   `nv0[3]` (K0S, Lambda, Lbar in the pair mass window).
+   `nv0[3]` (K0S, Lambda, Lbar in the pair mass window). Since 2026-10-20 also `r2sums[6]`: h+h- multiplicity
+   sums of the events given to CalcRm with |zvtx| < 8 cm (as chunkStats): N, sum n+, sum n-, sum n+n-,
+   sum n+(n+-1), sum n-(n--1), so per segment (or pooled segments) 1+r2 = <n+n->/(<n+><n->) and the like-sign
+   <n(n-1)>/<n>^2.
    **Run record `info/`** (chunk files since 2026-10-12): text objects `runstring`, `settings` (every switch
    and cut value, one per line), `list`, `segveto` (mask file and number of segments) and `code` (git commit
    of the source, `-dirty` if it had uncommitted changes, and build time; stamped at build time by
@@ -477,7 +484,7 @@ Outputs are kept per dataset, so that productions never mix:
 ```
 lists/<dataset>/                    job lists (made by lists/make_lists.bash)
 root/<dataset>/corral.root        single full-statistics job (the Finalize reference)
-root/<dataset>/corral_Finalize.root
+root/<dataset>/corral_Finalize_<dataset>.root
 root/<dataset>/chunks/              one file per job list
 root/<dataset>_<variant>/           the same for a variant (run_m*.bash CORRAL_VARIANT=; lists/<dataset>_<variant> -> <dataset>)
 DATASET_<dataset>.md                what the dataset is: trees, events, runs, job IDs (in the Corral

@@ -325,8 +325,8 @@ void corral::Loop(){
 	TString OutputFileBase;
 	if (OutputName!="") OutputFileBase	= OutputName;	// -o (job lists): exactly this name
 	else
-	if (RunString.Length()){
-		OutputFileBase	= TString(Form("%s_%s",ClassStr.Data(),RunString.Data()));
+	if (RunStringGiven.Length()){		//---- the run string as given names the outputs, not its Raw / ZB / TightDCA expansion
+		OutputFileBase	= TString(Form("%s_%s",ClassStr.Data(),RunStringGiven.Data()));
 	} else {
 		OutputFileBase	= ClassStr;
 	}
@@ -457,6 +457,9 @@ void corral::Loop(){
 	TH2D *hCM_w_ntpc	= new TH2D("hCM_w_ntpc","CM study: ntpc vs w;w;ntpc",100,-0.5,0.5,50,0.,50.);
 	TH2D *hCM_w_xing	= new TH2D("hCM_w_xing","CM study: w vs the event's crossing;w;crossing",100,-0.5,0.5,24,-100.,500.);
 	TH2D *hCM_nbnc	= new TH2D("hCM_nbnc","CM study: per event, tracks in the band vs in the control;n_{control};n_{band}",40,0.,40.,10,0.,10.);	// event-by-event hole depth
+	//---- README_SplitTracks578 A2: pair counts summed over events, for F2 without split tracks / loopers (30 < abs(dphi) < 150 deg):
+	//---- bin 1 band-band pairs in the window, 2 control-control in the window, 3 band-band all, 4 control-control all
+	TH1D *hCM_pairs	= new TH1D("hCM_pairs","CM study: pairs summed over events: 1 band far, 2 control far, 3 band all, 4 control all (far = 30<|dphi|<150 deg)",4,0.5,4.5);
 	TH2D *hCM_w_tpcfl[2];		// first vs last TPC layer (0-47) of tracks in the band [0] / control [1]
 	TH2D *hCM_dphideta[2][2], *hCM_ntpc12[2][2], *hCM_nsi12[2][2], *hCM_pt12[2][2];
 	TH1D *hCM_ntpcsum[2][2], *hCM_skf[2][2], *hCM_dw[2][2];
@@ -541,6 +544,8 @@ void corral::Loop(){
 		return it->second; };
 	Int_t sc_run=-1, sc_seg=-1, sc_nevt=0, sc_ntrk=0, sc_nraw=0, sc_veto=0, sc_nmulti=0, sc_nid[6]={0}, sc_nv0[3]={0};
 	Float_t sc_nvtx=0, sc_sumpt=0, sc_sumntpc=0, sc_sadxy=0, sc_sadz=0;
+	Double_t sc_r2s[6]={0};	// h+h- multiplicity sums of the events given to CalcRm, |zvtx|<8 (as chunkStats): N, sum n+, sum n-,
+							// sum n+ n-, sum n+(n+ - 1), sum n-(n- - 1) -> 1+r2 = <n+ n->/(<n+><n->), LS <n(n-1)>/<n>^2 (2026-10-20)
 	std::vector<Float_t> sc_hits(SC_NCELL,0.f);
 	TTree *tSegCells	= new TTree("segCells","TPC hits of accepted tracks per (run, DST segment) per FEE, cell = tpcsector*26 + feeMap (README.md)");
 	tSegCells->SetDirectory(fout);
@@ -559,8 +564,9 @@ void corral::Loop(){
 	tSegCells->Branch("sumadcaz",&sc_sadz,"sumadcaz/F");
 	tSegCells->Branch("nid",sc_nid,"nid[6]/I");
 	tSegCells->Branch("nv0",sc_nv0,"nv0[3]/I");
+	tSegCells->Branch("r2sums",sc_r2s,"r2sums[6]/D");
 	auto scFlush = [&](){ if (sc_run>=0 && sc_nraw>0) tSegCells->Fill(); sc_nevt=0; sc_ntrk=0; sc_nraw=0; sc_veto=0; sc_nmulti=0; sc_nvtx=0; sc_sumpt=0; sc_sumntpc=0; sc_sadxy=0; sc_sadz=0;
-		std::fill(sc_nid,sc_nid+6,0); std::fill(sc_nv0,sc_nv0+3,0); std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
+		std::fill(sc_nid,sc_nid+6,0); std::fill(sc_nv0,sc_nv0+3,0); std::fill(sc_r2s,sc_r2s+6,0.); std::fill(sc_hits.begin(),sc_hits.end(),0.f); };
 	//---- README_SplitTracks573 sec 15: residual and charge-asymmetry diagnostics (no cut reads these).
 	//---- Silicon match code per pair: x = MVTX (denM*4 + numM: layers either / both-matching track has,
 	//---- 0-15), y = INTT (denI*5 + numI, 0-24). For SKF>=cut LS pion pairs in the central bin:
@@ -1027,6 +1033,17 @@ void corral::Loop(){
 	TH1D *hnev_xing[NXTRIGCL];
 	TProfile *pntrkraw_xing[NXTRIGCL], *pptraw_xing[NXTRIGCL];	// raw: filled before the crossing selection and event cuts
 	TH1D *hnevraw_xing[NXTRIGCL];
+	TProfile *pntrkevc_xing[NXTRIGCL], *pptevc_xing[NXTRIGCL];	// README_SplitTracks578 sec 1.6: raw ntr / all-track <pT>, after AcceptEvent
+	//---- N-1 of the track cuts (README_SplitTracks578 sec 1.7): <N_trk> passing every AcceptTrackBase cut except one, after AcceptEvent
+	//---- k=4 "dca": both DCA cuts off (pt and ntpc cuts kept; user 2026-10-21)
+	const char *nm1Name[5]	= {"pt","ntpc","dcaxy","dcaz","dca"};
+	TProfile *pntrknm1_xing[5][NXTRIGCL];
+	for (int k=0;k<5;k++) for (int c=0;c<NXTRIGCL;c++)
+		pntrknm1_xing[k][c]	= new TProfile(Form("pntrknm1_%s_xing%d",nm1Name[k],c),Form("<N_{trk}> passing all track cuts but %s, after the event cuts, %s;crossing;<N_{trk}>",nm1Name[k],xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+	for (int c=0;c<NXTRIGCL;c++){
+		pntrkevc_xing[c]	= new TProfile(Form("pntrkevc_xing%d",c),Form("<N_{trk}> (raw ntr) vs crossing, after the event cuts, %s;crossing;<N_{trk}> raw",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+		pptevc_xing[c]		= new TProfile(Form("pptevc_xing%d",c),Form("<p_{T}> (all tracks) vs crossing, after the event cuts, %s;crossing;<p_{T}> (GeV/c)",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
+	}
 	for (int c=0;c<NXTRIGCL;c++){
 		pntrkraw_xing[c]	= new TProfile(Form("pntrkraw_xing%d",c),Form("<N_{trk}> (raw ntr) vs crossing, before crossing selection, %s;crossing;<N_{trk}> raw",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
 		pptraw_xing[c]		= new TProfile(Form("pptraw_xing%d",c),Form("<p_{T}> (all tracks) vs crossing, before crossing selection, %s;crossing;<p_{T}> (GeV/c)",xtrigName[c]),xtrigEdges.size()-1,xtrigEdges.data());
@@ -1198,7 +1215,8 @@ void corral::Loop(){
 	long nSkippedXing		= 0;	// Xing0 / NearX0 / ZB
 	//---- README.md "segveto" (2026-10-12): the (run, DST segment)s of bad_segments.txt (ana573/SegCellsView_ana573.C:
 	//---- segments below their run's live-fraction band) are skipped before ANY processing. File = $CORRAL_SEGVETO, else
-	//---- bad_segments.txt in the folder of the -l list. Lines "run segment", '#' = comment.
+	//---- the ONE file of the production, lists/<production>/bad_segments.txt, <production> = the leading "anaNNN" of the -l
+	//---- list's folder name (lists/ana578_79515/, lists/ana578A_ZB/ -> lists/ana578/; 2026-10-26). Lines "run segment", '#' = comment.
 	std::set<std::pair<int,int>> segVeto;
 	long nSkippedSegVeto	= 0;
 	long nSkippedIso		= 0;	// isovtxNNZZ
@@ -1207,7 +1225,12 @@ void corral::Loop(){
 	TString segVetoFile		= "";
 	if (doSegVeto){
 		if (getenv("CORRAL_SEGVETO")) segVetoFile = getenv("CORRAL_SEGVETO");
-		else if (ListName!="") segVetoFile = TString(gSystem->DirName(ListName.Data()))+"/bad_segments.txt";
+		else if (ListName!=""){
+			TString ldir = gSystem->DirName(ListName.Data()), prod = gSystem->BaseName(ldir.Data());
+			int n = prod.BeginsWith("ana") ? 3 : 0; while (n>0 && n<prod.Length() && isdigit(prod[n])) n++;
+			if (n>3) prod.Remove(n);
+			segVetoFile = TString(gSystem->DirName(ldir.Data()))+"/"+prod+"/bad_segments.txt";
+		}
 		std::ifstream fv(segVetoFile.Data());
 		if (segVetoFile=="" || !fv.good()){ cout<<"corral::Loop -- segment veto (default ON): no bad_segments.txt ("<<segVetoFile<<"; set CORRAL_SEGVETO or use -l). A new dataset: run with AllSeg first, then lists/make_bad_segments.C. Exit"<<endl; exit(1); }
 		std::string line;
@@ -1325,6 +1348,22 @@ void corral::Loop(){
 		//------------------------------
 		bool keepevt	= AcceptEvent();
 		if (!keepevt) continue;
+		{	//---- raw ntr and all-track <pT> after the event cuts, before the track cuts (README_SplitTracks578 sec 1.6)
+			double sumpt	= 0;
+			for (int it=0;it<(*ntr);it++) sumpt += pt[it];
+			for (int c=0;c<NXTRIGCL;c++) if (xtrigIn[c]){
+				pntrkevc_xing[c]->Fill((*crossing),(*ntr));
+				if ((*ntr)>0) pptevc_xing[c]->Fill((*crossing),sumpt/(*ntr),(*ntr));
+			}
+			//---- N-1: the same four cuts as AcceptTrackBase -- keep in sync
+			int nm1[5]	= {0,0,0,0,0};
+			for (int it=0;it<(*ntr);it++){
+				bool ok[4]	= {pt[it]>=PTMINCUT && pt[it]<=20.1, ntpc[it]>=NTPCCUT, fabs(dcaxy[it])<=valDcaxyCut, fabs(dcaz[it])<=valDcazCut};
+				for (int k=0;k<4;k++){ bool all = true; for (int j=0;j<4;j++) if (j!=k && !ok[j]) all = false; if (all) ++nm1[k]; }
+				if (ok[0] && ok[1]) ++nm1[4];
+			}
+			for (int k=0;k<5;k++) for (int c=0;c<NXTRIGCL;c++) if (xtrigIn[c]) pntrknm1_xing[k][c]->Fill((*crossing),nm1[k]);
+		}
 		//------------------------------
 		hvtxx		->Fill((*vtxx));
 		hvtxy		->Fill((*vtxy));
@@ -1361,12 +1400,12 @@ void corral::Loop(){
 		}
 		hhighestpt	->Fill(highestpt);
 		hxing		->Fill((*crossing));
-		if ((*crossing)==0){
-			hetotem		->Fill((*etotem) );
-			hetotih		->Fill((*etotih) );
-			hetotoh		->Fill((*etotoh) );
-			hetotioh	->Fill((*etotioh));
-			hetotepd	->Fill((*etotepd));
+		if (hasEtot && (*crossing)==0){
+			hetotem		->Fill(**etotem );
+			hetotih		->Fill(**etotih );
+			hetotoh		->Fill(**etotoh );
+			hetotioh	->Fill(**etotioh);
+			hetotepd	->Fill(**etotepd);
 		}
 		//
 		//---- first loop through the found V0's and make sure all daughters are distinct!!  NOW DONE ON SDCC
@@ -1999,7 +2038,7 @@ void corral::Loop(){
 						hCos_npi[w]		->Fill(kp.size());
 						hCos_vtxntr[w]	->Fill(*vtxntr);
 						hCos_pt[w]		->Fill(0.5*(pt[i]+pt[j]));
-						hCos_etotoh[w]	->Fill(*etotoh);
+						if (hasEtot) hCos_etotoh[w]->Fill(**etotoh);
 						hCos_dcaxy[w]	->Fill(dcaxy[i],dcaxy[j]);
 						hCos_dcaz[w]	->Fill(dcaz[i],dcaz[j]);
 						{	// sec 25.1
@@ -2032,6 +2071,14 @@ void corral::Loop(){
 						(c==0 ? kc : cc).push_back(t);
 					}
 					hCM_nbnc->Fill(cc.size(),kc.size());
+					for (int c=0;c<2;c++){		// A2 of README_SplitTracks578: pair counts, all and well separated in phi
+						std::vector<int>& v	= (c==0) ? kc : cc;
+						for (size_t ii=0;ii<v.size();ii++) for (size_t jj=ii+1;jj<v.size();jj++){
+							double dphi	= fabs(phi[v[ii]]-phi[v[jj]]); if (dphi>M_PI) dphi = 2*M_PI-dphi; dphi *= 180.0/M_PI;
+							hCM_pairs->Fill(3+c);
+							if (dphi>30. && dphi<150.) hCM_pairs->Fill(1+c);
+						}
+					}
 					for (int c=0;c<2;c++){
 						std::vector<int>& v	= (c==0) ? kc : cc;
 						for (size_t ii=0;ii<v.size();ii++) for (size_t jj=ii+1;jj<v.size();jj++){
@@ -2929,6 +2976,10 @@ void corral::Loop(){
 					R[ipaty]	->SetCurrentNch(ntrkept);			// README_SplitTracks573 sec 34
 																	// trigger frame -- used by the mixNoAdjTF
 																	// neighboring-TF event-pair exclusion
+				if (PairTypes_Info[ipaty][0]==kParticleIDhPlus && PairTypes_Info[ipaty][1]==kParticleIDhMinus && fabs(*vtxz)<8.){	// segCells r2sums
+					const double np = calcr_n_1_call, nm = calcr_n_2_call;
+					sc_r2s[0] += 1; sc_r2s[1] += np; sc_r2s[2] += nm; sc_r2s[3] += np*nm; sc_r2s[4] += np*(np-1); sc_r2s[5] += nm*(nm-1);
+				}
 				R[ipaty]	->Increment((*vtxz),field,
 										calcr_n_1_call,eff_1,Pvec_1_call,
 										calcr_n_2_call,eff_2,Pvec_2_call);
@@ -4433,12 +4484,19 @@ void corral::Loop(){
 			++ican; ccan[ican]	= new TCanvas(Form("ccan%d",ican),Form("ccan%d",ican),ican*30,30+ican*30,1200,800);
 			ccan[ican]->cd(); ccan[ican]->Divide(4,3,0.0001,0.0001);
 			//---- row 1...
-			ccan[ican]->cd(1); gPad->SetLogy(1); hmult1[ipaty]->Draw();
+			//---- n1 (particle 1, black) and n2 (particle 2, red) per event
+			ccan[ican]->cd(1); gPad->SetLogy(1);
+			{ TH1D *d1 = (TH1D*)hmult1[ipaty]->Clone(Form("hm1draw_%d",ipaty)), *d2 = (TH1D*)hmult2[ipaty]->Clone(Form("hm2draw_%d",ipaty));
+			  d1->SetDirectory(0); d2->SetDirectory(0); d1->SetStats(0); d1->SetLineColor(kBlack); d2->SetLineColor(kRed+1);
+			  d1->SetTitle(Form("%s%s, n_{1} and n_{2} per event;n",part1name.Data(),part2name.Data()));
+			  d1->SetMaximum(2.*std::max(d1->GetMaximum(),d2->GetMaximum())); d1->Draw("hist"); d2->Draw("hist same");
+			  TLegend *lgm = new TLegend(0.45,0.22,0.88,0.40); lgm->SetBorderSize(0); lgm->SetFillStyle(0); lgm->SetTextSize(0.06);
+			  lgm->AddEntry(d1,Form("n_{1}: %s",part1name.Data()),"l"); lgm->AddEntry(d2,Form("n_{2}: %s",part2name.Data()),"l"); lgm->Draw(); }
 			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.85,Form("N_{evt}=%.0f"        ,nevt  ));
-			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.78,Form("<N_{1}>=%.2f"        ,meanN1));
-			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.71,Form("INT #rho_{1}(1)=%.2f",intN1 ));
-			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.60,Form("<N_{2}>=%.2f"        ,meanN2));
-			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.53,Form("INT #rho_{1}(2)=%.2f",intN2 ));
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.78,Form("<N_{1}>=%.4g"        ,meanN1));
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->DrawLatex(0.88,0.71,Form("INT #rho_{1}(1)=%.4g",intN1 ));
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->SetTextColor(kRed+1); text[itext]->DrawLatex(0.88,0.60,Form("<N_{2}>=%.4g"        ,meanN2));
+			++itext; text[itext]->SetTextFont(42); text[itext]->SetTextSize(0.06); text[itext]->SetTextColor(kRed+1); text[itext]->DrawLatex(0.88,0.53,Form("INT #rho_{1}(2)=%.4g",intN2 ));
 			ccan[ican]->cd(2); hR2yydy[ipaty]			->Draw();
 			ccan[ican]->cd(3); hR2dphi[ipaty]			->Draw();
 			if (nv0MassPad>0){
@@ -4765,7 +4823,7 @@ void corral::Loop(){
 		<<" ULS(opp-charge)="<<nFlagged_ULS<<" (sec 18.10, track-level)"<<" looper="<<nFlagged_Looper<<" (sec 35)"
 		<<" V0-daughter partners LS="<<nFlagged_dau[0]<<" ULS="<<nFlagged_dau[1]<<" (README_CQcomparison sec 2.2)"<<endl;
 	cout<<"sec 18.22 -- doXTFClean="<<doXTFClean<<" strict="<<doXTFStrict<<" neither="<<nXTF_neither<<" duplicate pairs="<<nXTF_pairs<<" byINTT="<<nXTF_byINTT
-		<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
+		<<" byInTime="<<nXTF_byInTime<<" byQuality="<<nXTF_byQuality<<" losers="<<nXTF_losers<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_TF="<<ONLY_FIRST_TF<<" rows skipped as same-TF duplicates="<<nSkippedSameTF<<endl;
 	cout<<"doTFDup="<<doTFDup<<" -- rows skipped as overlapping-TF collision copies="<<nTFDup_rows<<endl;
 	cout<<"sec 18.21 -- ONLY_FIRST_XINGPOS="<<ONLY_FIRST_XINGPOS<<" rows skipped (crossing<=0 or not first crossing>0 in TF)="<<nSkippedXingPos<<endl;
@@ -4880,7 +4938,11 @@ void corral::Loop(){
 				h=R[ipaty]->GethGapYbar(sm);       h->SetName(Form("hGapYbar_%s_%d",sm?"M":"S",ipaty)); h->Write();
 				h=R[ipaty]->GethGapPt(sm);         h->SetName(Form("hGapPt_%s_%d"  ,sm?"M":"S",ipaty)); h->Write();
 				h=R[ipaty]->GethGapNch(sm);        h->SetName(Form("hGapNch_%s_%d" ,sm?"M":"S",ipaty)); h->Write();
-				h=R[ipaty]->GethGapRm(sm);         h->SetName(Form("hGapRm_%s_%d"  ,sm?"M":"S",ipaty)); h->Write(); }
+				h=R[ipaty]->GethGapRm(sm);         h->SetName(Form("hGapRm_%s_%d"  ,sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapSmin(sm);       h->SetName(Form("hGapSmin_%s_%d",sm?"M":"S",ipaty)); h->Write();	// README_SplitTracks578 D1
+				h=R[ipaty]->GethGapSmax(sm);       h->SetName(Form("hGapSmax_%s_%d",sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapMeetDy(sm);     h->SetName(Form("hGapMeetDy_%s_%d",sm?"M":"S",ipaty)); h->Write();
+				h=R[ipaty]->GethGapMeetDpt(sm);    h->SetName(Form("hGapMeetDpt_%s_%d",sm?"M":"S",ipaty)); h->Write(); }
 			if (ipaty<=3) for (int sm=0;sm<2;sm++) for (int w=0;w<2;w++){ TH2D* h=R[ipaty]->GethGap(sm,w); h->SetName(Form("hGap_%s_%s_%d",sm?"M":"S",w?"near":"far",ipaty)); h->Write(); }	// sec 28
 			if (ipaty<=3) for (int sm=0;sm<2;sm++) for (int sd=0;sd<2;sd++){ TH2D* h=R[ipaty]->GethTTRside(sm,sd); h->SetName(Form("hTTRside_%s_%s_%d",sm?"M":"S",sd?"dirty":"clean",ipaty)); h->Write(); }
 			hMinvFS[ipaty]			->Write();
@@ -4914,7 +4976,11 @@ bool corral::AcceptEvent(){
 // 18.22). Loser = the copy whose row crossing != its own INTT time bucket
 // ((cluskey>>32 & 0x3FF) - 200, INTT slots 3-6 only); if that doesn't decide, worse (higher)
 // quality; if still tied, the later row. Exactly one copy of each pair survives.
+// 2026-10-21 (README_SplitTracks578 sec 1.5): when INTT does not decide because a copy's INTT clusters carry different
+// time buckets (ana578: out-of-time INTT clusters on ~23% of tracks), the "in-time" rule decides first: the copy with an
+// INTT cluster in its own crossing is kept, if exactly one copy has one (|dcaz| judge: 0.941 vs 0.910 for quality).
 void corral::BuildXTFLosers(Long64_t nentries){
+	TDirectory *dout	= gDirectory;		// the output file (Loop's fout): the diagnostic hists below are written there
 	TChain *ch	= new TChain(fChain->GetName());
 	TIter next(fChain->GetListOfFiles());
 	while (TObject *el = next()) ch->Add(el->GetTitle());
@@ -4923,7 +4989,25 @@ void corral::BuildXTFLosers(Long64_t nentries){
 	TTreeReaderArray<Float_t>	r_pt(r,"pt"), r_dcaxy(r,"dcaxy"), r_dcaz(r,"dcaz"), r_quality(r,"quality");
 	TTreeReaderArray<UChar_t>	r_ntpc(r,"ntpc");
 	TTreeReaderArray<ULong64_t>	r_key(r,"siclukey");
-	struct T { Long64_t ent; int idx; int xing; int intt; float q; ULong64_t k[7]; };
+	TTreeReaderValue<Double_t>	r_vtxz(r,"vtxz");
+	struct T { Long64_t ent; int idx; int xing; int intt; bool intime; float q, dcz; double vz; ULong64_t k[7]; };
+	//---- diagnostic only, no cut reads them (README_SplitTracks578 sec 1.5): judge each XTF decision by |dcaz| to the copy's
+	//---- own row vertex. Pair class c: 0 decided by INTT, 1 quality because a copy's INTT clusters disagree, 2 quality because
+	//---- both copies match their crossing, 3 neither (both dropped; "kept" = the better quality one, as if not strict).
+	//---- Rule u: 0 the current rule, 1 "in-time" = keep the copy with an INTT cluster in its own crossing (only if exactly one has).
+	const char *xcn[4]	= {"intt","disagree","bothok","neither"};
+	TH1D *hXd_dvz[4], *hXd_rule[4]; TH2D *hXd_dcz[4][2], *hXd_ddcz[4][2];
+	for (int c=0;c<4;c++){
+		hXd_dvz[c]	= new TH1D(Form("hXTFd_dvz_%s",xcn[c]),Form("XTF pairs (%s): |vtxz(a) - vtxz(b)|;|#Deltavtxz| (cm);pairs",xcn[c]),80,0,4);
+		hXd_rule[c]	= new TH1D(Form("hXTFd_rule_%s",xcn[c]),Form("XTF pairs (%s): 0 pairs, 1 in-time rule decides, 2 agrees with current, 3 disagrees",xcn[c]),4,-0.5,3.5);
+		for (int u=0;u<2;u++){
+			const char *un = u==0 ? "cur" : "intime";
+			hXd_dcz[c][u]	= new TH2D(Form("hXTFd_dcz_%s_%s",xcn[c],un),Form("XTF pairs (%s), rule %s: |dcaz| kept vs dropped;|dcaz| kept (cm);|dcaz| dropped (cm)",xcn[c],un),60,0,1.5,60,0,1.5);
+			hXd_ddcz[c][u]	= new TH2D(Form("hXTFd_ddcz_%s_%s",xcn[c],un),Form("XTF pairs (%s), rule %s: |dcaz| kept - |dcaz| dropped vs |#Deltavtxz|;|#Deltavtxz| (cm);|dcaz| kept - dropped (cm)",xcn[c],un),30,0,3,120,-1.5,1.5);
+			hXd_dcz[c][u]->SetDirectory(dout); hXd_ddcz[c][u]->SetDirectory(dout);
+		}
+		hXd_dvz[c]->SetDirectory(dout); hXd_rule[c]->SetDirectory(dout);
+	}
 	std::vector<T> tf;
 	auto inttXing = [](const ULong64_t *k){		// -9999 = no INTT cluster, -8888 = INTT clusters disagree
 		int x=-9999;
@@ -4942,7 +5026,26 @@ void corral::BuildXTFLosers(Long64_t nentries){
 			std::vector<const T*> los;
 			if (aok!=bok){ los.push_back(aok ? &tf[b] : &tf[a]); ++nXTF_byINTT; }
 			else if (neither && doXTFStrict){ los.push_back(&tf[a]); los.push_back(&tf[b]); }
-			else { los.push_back((tf[a].q>tf[b].q) ? &tf[a] : &tf[b]); ++nXTF_byQuality; }	// tie -> later row (b)
+			else if (tf[a].intime!=tf[b].intime){ los.push_back(tf[a].intime ? &tf[b] : &tf[a]); ++nXTF_byInTime; }	// in-time rule
+			else { los.push_back((tf[a].q>tf[b].q) ? &tf[a] : &tf[b]); ++nXTF_byQuality;	// tie -> later row (b)
+				//---- why INTT did not decide: both copies match their own crossing / a copy's INTT clusters disagree / no INTT cluster
+				if (aok && bok){ ++nXTF_qBothOK; if (tf[a].xing==tf[b].xing) ++nXTF_qBothOKsameX; }
+				else if (tf[a].intt==-8888 || tf[b].intt==-8888) ++nXTF_qDisagree;
+				else ++nXTF_qNoINTT;
+			}
+			{	//---- diagnostics (see above)
+				int c = aok!=bok ? 0 : (neither ? 3 : (aok && bok ? 2 : ((tf[a].intt==-8888 || tf[b].intt==-8888) ? 1 : -1)));
+				if (c>=0){
+					const T &A = tf[a], &B = tf[b];
+					bool keepA = c==0 ? aok : (c!=3 && A.intime!=B.intime) ? A.intime : !(A.q>B.q);	// the rule in force (in-time, then quality: higher q loses; tie -> b loses)
+					double dvz = fabs(A.vz-B.vz);
+					hXd_dvz[c]->Fill(dvz); hXd_rule[c]->Fill(0);
+					auto fill = [&](int u, bool kA){ const T &K = kA ? A : B, &D = kA ? B : A;
+						hXd_dcz[c][u]->Fill(fabs(K.dcz),fabs(D.dcz)); hXd_ddcz[c][u]->Fill(dvz,fabs(K.dcz)-fabs(D.dcz)); };
+					fill(0,keepA);
+					if (A.intime!=B.intime){ hXd_rule[c]->Fill(1); hXd_rule[c]->Fill(A.intime==keepA ? 2 : 3); fill(1,A.intime); }
+				}
+			}
 			for (const T *l : los){
 				std::vector<int> &v = xtfLosers[l->ent];
 				if (std::find(v.begin(),v.end(),l->idx)==v.end()){ v.push_back(l->idx); ++nXTF_losers; }
@@ -4958,16 +5061,19 @@ void corral::BuildXTFLosers(Long64_t nentries){
 			//---- same cuts as AcceptTrack() below -- keep in sync
 			if (r_pt[it]<0.1 || r_pt[it]>20.1 || r_ntpc[it]<NTPCCUT
 			 || fabs(r_dcaxy[it])>valDcaxyCut || fabs(r_dcaz[it])>valDcazCut) continue;
-			T t; t.ent=je; t.idx=it; t.xing=(*r_xing); t.q=r_quality[it];
+			T t; t.ent=je; t.idx=it; t.xing=(*r_xing); t.q=r_quality[it]; t.dcz=r_dcaz[it]; t.vz=(*r_vtxz);
 			for (int s=0;s<7;s++) t.k[s]=r_key[it*7+s];
 			t.intt=inttXing(t.k);
+			t.intime=false; for (int s=3;s<7;s++) if (t.k[s]!=~0ULL && (int)((t.k[s]>>32)&0x3FF)-200==t.xing) t.intime=true;
 			tf.push_back(t);
 		}
 	}
 	flush();
 	delete ch;
-	cout<<"BuildXTFLosers -- duplicate pairs="<<nXTF_pairs<<" (decided by INTT="<<nXTF_byINTT
+	cout<<"BuildXTFLosers -- duplicate pairs="<<nXTF_pairs<<" (decided by INTT="<<nXTF_byINTT<<", by in-time INTT cluster="<<nXTF_byInTime
 		<<", by quality="<<nXTF_byQuality<<", neither="<<nXTF_neither<<(doXTFStrict?" [both dropped]":" [better quality kept]")<<") losers="<<nXTF_losers<<" in "<<xtfLosers.size()<<" rows"<<endl;
+	cout<<"BuildXTFLosers -- by quality because: both copies match their crossing="<<nXTF_qBothOK<<" (same crossing="<<nXTF_qBothOKsameX
+		<<"), INTT clusters of a copy disagree="<<nXTF_qDisagree<<", a copy has no INTT cluster="<<nXTF_qNoINTT<<endl;
 }
 
 //------------------------------------------------------------

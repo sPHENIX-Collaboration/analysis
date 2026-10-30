@@ -139,8 +139,8 @@ void DisplayHelp(){
 	cout<<"   -n [ntodo]    do [ntodo] events (= tree entries: one crossing with a vertex), 0 for all"<<endl;
 	cout<<"   -l [listfile] read the Collect files listed in [listfile] (one path per line) instead of the whole"<<endl;
 	cout<<"                 directory, e.g. lists/ana532/list_07.txt (see lists/make_lists.bash)"<<endl;
-	cout<<"                 Without -l, all files matching $CORRAL_TREES are read (default: the 795xx runs of the WSU copy of"<<endl;
-	cout<<"                 ana573, /rs/rs_grp_rhi/sPHENIX/ana573/795*/outputCollect_*.root)"<<endl;
+	cout<<"                 Without -l, all files matching $CORRAL_TREES are read (default: all runs of the WSU copy of ana578,"<<endl;
+	cout<<"                 /rs/rs_grp_rhi/sPHENIX/ana578/*/outputCollect_*.root)"<<endl;
 	cout<<"   -d [dataset]  dataset for Finalize: reads lists/[dataset]/, root/[dataset]/chunks/corral_NN.root and"<<endl;
 	cout<<"                 the reference root/[dataset]/corral.root (default: FINALIZE_SET in src/finalize_hists.h)"<<endl;
 	cout<<"   -o [name]     output base name: root/[name].root, pdf/[name].pdf (NOT scanned for fragments)"<<endl;
@@ -156,7 +156,7 @@ void DisplayHelp(){
 	cout<<"RUNSTRING FRAGMENTS (substring match, case-insensitive unless marked [case]; NN = two digits):"<<endl;
 	cout<<"  MAIN TOKENS (most runs need only these)"<<endl;
 	cout<<"    (none)        the defaults above, with the zero-bias crossing selection ZB:"<<endl;
-	cout<<"                  -20<=crossing<=390 outside NearX0 (no trigger crossing, no trigger neighbours, no readout edges)"<<endl;
+	cout<<"                  14<=crossing<=390 (no trigger crossing, no trigger neighbours, no negative crossings, no readout edges)"<<endl;
 	cout<<"    Raw           every cleaner OFF = noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_AllSeg_multivtx,"<<endl;
 	cout<<"                  plus AllX unless Xing0 / NearX0 / ZB is given too (e.g. Raw_Xing0)"<<endl;
 	cout<<"    nocross       turn OFF the crossing correction (pt-ordering at fill + (dy,dphi) bin correction)"<<endl;

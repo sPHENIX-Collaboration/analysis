@@ -1019,7 +1019,7 @@ void corral::Finalize(){
 	}
 	//
 	//---- compare with the reference, write, draw
-	TString OutputFileBase	= (OutputName!="") ? OutputName : TString(Form("corral_%s",RunString.Data()));
+	TString OutputFileBase	= (OutputName!="") ? OutputName : TString(Form("corral_%s",RunStringGiven.Data()));
 	TString RootFileName	= TString("./root/") + OutputFileBase + ".root";
 	TString PdfFileName		= TString("./pdf/")  + OutputFileBase + ".pdf";
 	TFile *fout	= new TFile(RootFileName.Data(),"RECREATE");
@@ -1091,14 +1091,20 @@ void corral::Finalize(){
 			cph->cd(1); gPad->SetLogy(1);
 			if (hm1){
 				TH1 *d	= (TH1*)hm1->Clone(Form("hm1page_%d",ipaty)); d->SetDirectory(0);
-				d->SetTitle(Form("%s, n_{1} per event (Finalize, all chunks);n_{1}",nm.Data()));
-				d->Draw();
+				//---- n1 (particle 1, black) and n2 (particle 2, red) per event; for identical particles (pi+pi+) they are the same
+				d->SetTitle(Form("%s, n_{1} and n_{2} per event (Finalize, all chunks);n",nm.Data()));
+				d->SetLineColor(kBlack); d->SetLineWidth(1); d->SetStats(0);
+				TH1 *d2	= hm2 ? (TH1*)hm2->Clone(Form("hm2page_%d",ipaty)) : 0;
+				if (d2){ d2->SetDirectory(0); d2->SetLineColor(kRed+1); d2->SetLineWidth(1); d->SetMaximum(2.*std::max(d->GetMaximum(),d2->GetMaximum())); }
+				d->Draw("hist"); if (d2) d2->Draw("hist same");
+				TLegend *lgm = new TLegend(0.45,0.22,0.88,0.40); lgm->SetBorderSize(0); lgm->SetFillStyle(0); lgm->SetTextSize(0.06);
+				lgm->AddEntry(d,Form("n_{1}: %s",ParticleIDNames[pid1]),"l"); if (d2) lgm->AddEntry(d2,Form("n_{2}: %s",ParticleIDNames[pid2]),"l"); lgm->Draw();
 				TLatex tx; tx.SetNDC(); tx.SetTextFont(42); tx.SetTextSize(0.06); tx.SetTextAlign(31);
 				tx.DrawLatex(0.88,0.85,Form("N_{evt}=%.0f",hmm?hmm->GetEntries():0.));
-				tx.DrawLatex(0.88,0.78,Form("<N_{1}>=%.3g",hm1->GetMean()));
-				if (P.hy1) tx.DrawLatex(0.88,0.71,Form("INT #rho_{1}(1)=%.3g",P.hy1->Integral()));
-				if (hm2) tx.DrawLatex(0.88,0.60,Form("<N_{2}>=%.3g",hm2->GetMean()));
-				if (P.hy2) tx.DrawLatex(0.88,0.53,Form("INT #rho_{1}(2)=%.3g",P.hy2->Integral()));
+				tx.DrawLatex(0.88,0.78,Form("<N_{1}>=%.4g",hm1->GetMean()));
+				if (P.hy1) tx.DrawLatex(0.88,0.71,Form("INT #rho_{1}(1)=%.4g",P.hy1->Integral()));
+				if (hm2){ tx.SetTextColor(kRed+1); tx.DrawLatex(0.88,0.60,Form("<N_{2}>=%.4g",hm2->GetMean())); }
+				if (P.hy2) tx.DrawLatex(0.88,0.53,Form("INT #rho_{1}(2)=%.4g",P.hy2->Integral()));
 			}
 			cph->cd(2); P.R2yy->SetMarkerStyle(20); P.R2yy->SetMarkerSize(0.5); P.R2yy->Draw("E1");
 			cph->cd(3);
