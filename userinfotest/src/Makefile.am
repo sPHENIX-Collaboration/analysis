@@ -27,7 +27,7 @@ libuserinfotest_la_SOURCES = \
   userinfotest.cc
 
 libuserinfotest_la_LIBADD = \
-  -ltreeuserinfo \
+  -luserinfo \
   -lSubsysReco
 
 %_Dict.cc: %.h %LinkDef.h

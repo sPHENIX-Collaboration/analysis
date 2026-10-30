@@ -9,7 +9,7 @@
 #include <phool/getClass.h>
 // G4Cells includes
 
-#include <treeuserinfo/TreeUserInfo.h>
+#include <userinfo/TreeUserInfo.h>
 #include <iostream>
 
 //____________________________________________________________________________..
@@ -58,8 +58,9 @@ int userinfotest::End(PHCompositeNode *topNode)
 
   _f->cd();
   
-  TreeUserInfo::Add(_tree);
+  TTree *prov = TreeUserInfo::Make();
   
+  prov->Show(0);
   _f->Write();
   _f->Close();
 
