@@ -61,7 +61,8 @@ class KappaNet(nn.Module):
             return float((x_n.abs() >= self.x_clamp).double().mean())
 
     def eps_delta(self, pt, eta, phi):
-        out = self.net(self.features(pt, eta, phi))
+        # the network runs in its own precision (--dtype); eps, delta return in the input precision
+        out = self.net(self.features(pt, eta, phi).to(self.net[0].weight.dtype)).to(pt.dtype)
         return out[..., 0], out[..., 1]
 
     def kappa(self, pt, eta, phi, q):
@@ -85,7 +86,7 @@ def save_stage1(model, path):
                 "convention": model.tag()}, path)
 
 
-def load_stage1(path, hidden):
+def load_stage1(path, hidden, layers):
     ckpt = torch.load(path, weights_only=False)
     tag = ckpt.get("convention", "") if isinstance(ckpt, dict) else ""
     if not tag.startswith(f"{CONVENTION_TAG}:feature="):
@@ -93,7 +94,7 @@ def load_stage1(path, hidden):
                  f"'{CONVENTION_TAG}:feature=<kind>' convention (or is a bare "
                  f"state_dict). It would load silently with WRONG semantics. "
                  f"Retrain stage 1.")
-    model = KappaNet(ckpt["norm"], hidden=hidden).double()
+    model = KappaNet(ckpt["norm"], hidden=hidden, layers=layers).double()
     model.load_state_dict(ckpt["state_dict"])
     return model
 
@@ -150,20 +151,21 @@ def stage1_mass_history_from_model(model, K, L):
 def train(args, K, L, meta):
     """Returns (model, history); history is the per-epoch list of rows for
     plot_stage1_training_history."""
-    model = KappaNet(meta["norm"], hidden=args.hidden).double()
+    model = KappaNet(meta["norm"], hidden=args.hidden, layers=args.layers).to(getattr(torch, args.dtype))
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     history = {0: empty_stage1_history_row(0)}
     history_every = max(1, args.history_every if args.history_every > 0 else args.refresh)
 
-    pt_edges = torch.tensor(meta["pt_edges"], dtype=torch.float64)
-    N_ETA, N_PHI = 10, 8
+    loss_bins = meta["loss_bins"]
 
     def refresh_weights():
         with torch.no_grad():
             mK, _, _ = corrected_mass(model, K)
             mL, _, _ = corrected_mass(model, L)
-        muK, sK, pK = fit_peak(mK.numpy(), M_K0S, 0.010, 0.42, 0.58)
-        muL, sL, pL = fit_peak(mL.numpy(), M_LAMBDA, 0.004, 1.09, 1.145)
+        muK, sK, pK = fit_peak(mK.numpy(), M_K0S, 0.010, *args.k0s_window,
+                               bkg_order=args.bkg_order)
+        muL, sL, pL = fit_peak(mL.numpy(), M_LAMBDA, 0.004, *args.lam_window,
+                               bkg_order=args.bkg_order)
         K["w"] = torch.tensor(signal_weights(mK.numpy(), pK))
         L["w"] = torch.tensor(signal_weights(mL.numpy(), pL))
         metrics = stage1_mass_history_from_masses(
@@ -182,11 +184,29 @@ def train(args, K, L, meta):
         daughter_bins[name] = []
         for (pt, eta, phi, q) in ((S["pt1"], S["eta1"], S["phi1"], S["q1"]),
                                   (S["pt2"], S["eta2"], S["phi2"], S["q2"])):
-            idx, nb = bin_index(pt, eta, phi, pt_edges, N_ETA, N_PHI)
+            idx, nb = bin_index(pt, eta, phi, loss_bins)
             daughter_bins[name].append((idx + ((q > 0).long() * nb), 2 * nb))
-    idx_split, nb_split = bin_index(L["pt1"], L["eta1"], L["phi1"], pt_edges, N_ETA, N_PHI)
-    idxc, nbc = bin_index(K["cpt"], K["ceta"], K["cphi"], pt_edges, N_ETA, N_PHI)
+    # Lambda / anti-Lambda split terms: binned in leg-1 (pion) and leg-2 (proton) kinematics
+    split_bins = [(bin_index(L[f"pt{leg}"], L[f"eta{leg}"], L[f"phi{leg}"], loss_bins), lam_w)
+                  for leg, lam_w in ((1, args.lam_split), (2, args.lam_split2)) if lam_w > 0]
+    idxc, nbc = bin_index(K["cpt"], K["ceta"], K["cphi"], loss_bins)
     sel_l, sel_b = L["is_lam"], ~L["is_lam"]
+
+    # cells above the binned_mean_sq signal-weight minimum (5), at the raw-peak weights;
+    # the first half of the daughter cells is q < 0, the second q > 0
+    edges = meta["pt_edges"]
+    print("[bins] populated / all (eta, phi, charge) cells per daughter-pT bin [GeV]: "
+          + "  ".join(f"{edges[b]:.3g}-{edges[b + 1]:.3g}" for b in range(len(edges) - 1)))
+    n_cells_pt = (loss_bins["ne"] * loss_bins["nph"]).tolist()
+    for name, S, label in (("K", K, "K0s"), ("L", L, "Lambda")):
+        for leg, (idx, nb) in enumerate(daughter_bins[name], 1):
+            sw = torch.zeros(nb, dtype=torch.float64).index_add_(0, idx, S["w"])
+            sw_neg, sw_pos = sw[:nb // 2], sw[nb // 2:]
+            cols = []
+            for o, n in zip(loss_bins["offset"].tolist(), n_cells_pt):
+                populated = int((sw_neg[o:o + n] > 5).sum() + (sw_pos[o:o + n] > 5).sum())
+                cols.append(f"{populated}/{2 * n}")
+            print(f"[bins]   {label} leg {leg}: " + "  ".join(cols))
     pull_scale = {"K": 0.010, "L": 0.004}     # GeV, mass-pull normalisation of the loss
 
     def chunks(S):
@@ -229,21 +249,22 @@ def train(args, K, L, meta):
 
         pullL = val["L"][0]
         wl = L["w"]
-        swl  = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_l], wl[sel_l])
-        swvl = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_l], (wl * pullL)[sel_l])
-        swb  = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_b], wl[sel_b])
-        swvb = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_b], (wl * pullL)[sel_b])
-        mk = (swl > 5) & (swb > 5)
-        split = torch.zeros(nb_split, dtype=torch.float64)
-        wsum = torch.zeros(nb_split, dtype=torch.float64)
-        split[mk] = swvl[mk] / swl[mk] - swvb[mk] / swb[mk]
-        wsum[mk] = (swl[mk] * swb[mk]) / (swl[mk] + swb[mk])
-        norm_split = wsum[mk].sum().clamp(min=1e-9)
-        loss += args.lam_split * ((wsum[mk] * split[mk]**2).sum() / norm_split).item()
-        # d/d pull_i of sum_b wsum_b split_b^2 / norm: +-2 wsum_b split_b w_i / sw_b / norm
-        g = 2.0 * args.lam_split * wsum * split / norm_split
-        coef["L"][sel_l] += g[idx_split[sel_l]] * wl[sel_l] / swl[idx_split[sel_l]].clamp(min=1e-9)
-        coef["L"][sel_b] -= g[idx_split[sel_b]] * wl[sel_b] / swb[idx_split[sel_b]].clamp(min=1e-9)
+        for (idx_split, nb_split), lam_w in split_bins:
+            swl  = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_l], wl[sel_l])
+            swvl = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_l], (wl * pullL)[sel_l])
+            swb  = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_b], wl[sel_b])
+            swvb = torch.zeros(nb_split, dtype=torch.float64).index_add_(0, idx_split[sel_b], (wl * pullL)[sel_b])
+            mk = (swl > 5) & (swb > 5)
+            split = torch.zeros(nb_split, dtype=torch.float64)
+            wsum = torch.zeros(nb_split, dtype=torch.float64)
+            split[mk] = swvl[mk] / swl[mk] - swvb[mk] / swb[mk]
+            wsum[mk] = (swl[mk] * swb[mk]) / (swl[mk] + swb[mk])
+            norm_split = wsum[mk].sum().clamp(min=1e-9)
+            loss += lam_w * ((wsum[mk] * split[mk]**2).sum() / norm_split).item()
+            # d/d pull_i of sum_b wsum_b split_b^2 / norm: +-2 wsum_b split_b w_i / sw_b / norm
+            g = 2.0 * lam_w * wsum * split / norm_split
+            coef["L"][sel_l] += g[idx_split[sel_l]] * wl[sel_l] / swl[idx_split[sel_l]].clamp(min=1e-9)
+            coef["L"][sel_b] -= g[idx_split[sel_b]] * wl[sel_b] / swb[idx_split[sel_b]].clamp(min=1e-9)
 
         v, coef_alpha = binned_mean_sq(idxc, nbc, val["K"][1], K["w"])
         loss += args.lam_alpha * v.item()

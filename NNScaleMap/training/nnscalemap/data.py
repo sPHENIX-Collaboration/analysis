@@ -267,7 +267,8 @@ def _subsample(d, n_max, rng, label):
 
 def load(args):
     """Returns (K, L, meta).  meta carries has_cov, the momentum-feature
-    normalisation, the loss-bin pT edges and the data-driven plot ranges."""
+    normalisation, the loss bins (pT edges and per-bin eta x phi cells) and
+    the data-driven plot ranges."""
     rng = np.random.default_rng(args.subsample_seed)
 
     def read(paths, need_pdg):
@@ -339,14 +340,21 @@ def load(args):
     q16, q50, q84 = np.quantile(x_all, [0.16, 0.50, 0.84])
     x_ref = float(q50)
     x_scale = float(max(0.5 * (q84 - q16), 1e-3))    # robust sigma
+    # widen the clamp so it never binds inside the exported lookup range
+    lookup_pt_min, lookup_pt_max = min(args.lookup_pt_values), max(args.lookup_pt_values)
+    x_lookup = feature_raw(args.feature, np.array([lookup_pt_min, lookup_pt_max]))
+    x_clamp = max(X_CLAMP, float(np.abs((x_lookup - x_ref) / x_scale).max()))
     pt_lo, pt_hi = np.quantile(all_pt, [0.005, 0.995])
-    pt_lo = min(float(pt_lo), float(args.lookup_pt_min))
-    pt_hi = max(float(pt_hi), float(args.lookup_pt_max))
+    pt_lo = min(float(pt_lo), float(lookup_pt_min))
+    pt_hi = max(float(pt_hi), float(lookup_pt_max))
     u_lo = 1.0 / pt_hi
     u_hi = 1.0 / pt_lo
-    if args.loss_pt_binning == "log":
+    if args.loss_pt_binning == "fixed":
+        # edges as given; daughters outside them fall in the first / last bin
+        pt_edges = np.asarray(args.loss_pt_edges, dtype=float)
+    elif args.loss_pt_binning == "log":
         # equal width in ln pT over the lookup range; daughters outside it fall in the first / last bin
-        pt_edges = np.geomspace(args.lookup_pt_min, args.lookup_pt_max, args.loss_pt_bins + 1)
+        pt_edges = np.geomspace(lookup_pt_min, lookup_pt_max, args.loss_pt_bins + 1)
     else:
         pt_edges = np.unique(np.quantile(all_pt, np.linspace(0.0, 1.0, args.loss_pt_bins + 1)))
         if pt_edges.size < 4:                            # degenerate: fall back
@@ -354,15 +362,28 @@ def load(args):
     pt_slices = semi_even_pt_grid(pt_lo, pt_hi, args.kappa_slices)
     curv_slices = 1.0 / pt_slices
 
+    # stage-1 loss cells: n_eta x n_phi per daughter-pT bin, the coarse grid in the
+    # bins whose lower edge is >= loss_coarse_above_pt (negative: no coarse bins)
+    coarse = torch.tensor(pt_edges[:-1] >= args.loss_coarse_above_pt) & (args.loss_coarse_above_pt >= 0)
+    ne = torch.where(coarse, args.loss_n_eta_coarse, args.loss_n_eta)
+    nph = torch.where(coarse, args.loss_n_phi_coarse, args.loss_n_phi)
+    n_cells_pt = ne * nph
+    loss_bins = dict(pt_edges=torch.tensor(pt_edges, dtype=torch.float64), ne=ne, nph=nph,
+                     offset=torch.cumsum(n_cells_pt, 0) - n_cells_pt,
+                     n_cells=int(n_cells_pt.sum()))
+
     meta = dict(has_cov=has_cov,
                 norm=dict(kind=args.feature, x_ref=x_ref, x_scale=x_scale,
-                          x_clamp=X_CLAMP),
-                pt_edges=pt_edges, pt_slices=pt_slices, curv_slices=curv_slices,
+                          x_clamp=x_clamp),
+                pt_edges=pt_edges, loss_bins=loss_bins,
+                pt_slices=pt_slices, curv_slices=curv_slices,
                 pt_plot=(float(pt_lo), float(pt_hi)),
                 curv_plot=(float(u_lo), float(u_hi)))
     print(f"[norm] feature '{args.feature}': x_ref = {x_ref:.4f} "
           f"{FEATURE_UNITS[args.feature]}, x_scale = {x_scale:.4f}, "
-          f"clamp +-{X_CLAMP}")
+          f"clamp +-{x_clamp:.2f}")
     print(f"[bins] daughter pT loss-bin edges ({args.loss_pt_binning}): "
           f"{np.array2string(pt_edges, precision=3)}")
+    print(f"[bins] (eta x phi) cells per daughter-pT bin: "
+          f"{' '.join(f'{a}x{b}' for a, b in zip(ne.tolist(), nph.tolist()))}")
     return K, L, meta

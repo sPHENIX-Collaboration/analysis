@@ -4,17 +4,21 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 # ---------------------------------------------------------------- signal weights
-def gauss_lin(x, N, mu, sig, a, b):
-    return N * np.exp(-0.5 * ((x - mu) / sig)**2) + a + b * x
+def gauss_poly(x, N, mu, sig, *c):
+    """Gaussian + polynomial background c[0] + c[1] x + c[2] x^2 + ..."""
+    y = N * np.exp(-0.5 * ((x - mu) / sig)**2)
+    for k, ck in enumerate(c):
+        y = y + ck * x**k
+    return y
 
 
-def fit_peak(masses, mu0, sig0, lo, hi, nbins=100, weights=None):
-    """Gaussian+linear fit with floating peak. Returns (mu, sig, popt)."""
+def fit_peak(masses, mu0, sig0, lo, hi, nbins=100, weights=None, bkg_order=1):
+    """Gaussian + polynomial (order bkg_order) fit with floating peak. Returns (mu, sig, popt)."""
     h, edges = np.histogram(masses, bins=nbins, range=(lo, hi), weights=weights)
     c = 0.5 * (edges[:-1] + edges[1:])
-    p0 = [h.max() - np.median(h), mu0, sig0, np.median(h), 0.0]
+    p0 = [h.max() - np.median(h), mu0, sig0, np.median(h)] + [0.0] * bkg_order
     try:
-        popt, _ = curve_fit(gauss_lin, c, h, p0=p0,
+        popt, _ = curve_fit(gauss_poly, c, h, p0=p0,
                             sigma=np.sqrt(np.maximum(h, 1)), maxfev=20000)
         if not (lo < popt[1] < hi) or not (0.2 * sig0 < abs(popt[2]) < 5 * sig0):
             raise RuntimeError
@@ -35,7 +39,7 @@ def fit_peak_with_error(masses, mu0, sig0, lo, hi, nbins=80):
     p0 = [h.max() - np.median(h), mu0, sig0, np.median(h), 0.0]
     try:
         popt, pcov = curve_fit(
-            gauss_lin, c, h, p0=p0,
+            gauss_poly, c, h, p0=p0,
             sigma=np.sqrt(np.maximum(h, 1)), absolute_sigma=True,
             maxfev=20000
         )
@@ -57,6 +61,6 @@ def fit_peak_with_error(masses, mu0, sig0, lo, hi, nbins=80):
 
 def signal_weights(masses, popt):
     s = popt[0] * np.exp(-0.5 * ((masses - popt[1]) / popt[2])**2)
-    b = np.maximum(popt[3] + popt[4] * masses, 0.0)
+    b = np.maximum(sum(ck * masses**k for k, ck in enumerate(popt[3:])), 0.0)
     w = s / np.maximum(s + b, 1e-9)
     return np.clip(w, 0.0, 1.0)

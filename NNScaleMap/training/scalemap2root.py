@@ -8,9 +8,10 @@ from nnscalemap.stage1 import KappaNet, load_stage1
 DEFAULT_PT_VALUES = (0.3, 0.5, 1.0, 2.0, 3.0)
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--model",  default="calib_out_upgrade20260731/model.pt")
-ap.add_argument("--out",    default="calib_out_upgrade20260731/kappa_maps.root")
+ap.add_argument("--model",  default="results/calib_out/model.pt")
+ap.add_argument("--out",    default="results/calib_out/kappa_maps.root")
 ap.add_argument("--hidden", type=int,   default=48)     # must match training
+ap.add_argument("--layers", type=int,   default=3)      # must match training
 ap.add_argument("--pt_mode", choices=("fixed", "even"), default="fixed",
                 help="fixed: use --pt_values; even: use --slices/--pt_min/--pt_max")
 ap.add_argument("--pt_values", nargs="+", default=DEFAULT_PT_VALUES,
@@ -42,7 +43,7 @@ def pt_slices(args):
         raise ValueError("--pt_values must be finite positive values")
     return pts
 
-model = load_stage1(a.model, hidden=a.hidden).eval()
+model = load_stage1(a.model, hidden=a.hidden, layers=a.layers).eval()
 
 eta_e = np.linspace(*ETA_RANGE, a.n_eta + 1)
 phi_e = np.linspace(-np.pi, np.pi, a.n_phi + 1)

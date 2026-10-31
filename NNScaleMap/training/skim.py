@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """pT-stratified skim of KFParticle K0s / Lambda nTuples for NNScaleMap training.
 
-Keeps every candidate whose larger daughter pT exceeds ptmax_threshold and a
-random bulk_fraction of the rest, writing only the configured branches.
-Output: <skim_dir>/<production>/<tag>/{Kshort,Lambda0}/skim_<run>.root, each
+Keeps every candidate whose own (V0) pT exceeds pt_threshold and a random
+bulk_fraction of the rest, writing only the configured branches.
+Output: <skim_dir>/<production>/<tag>/{Kshort,Lambda0}/skimmed_<input name>.root, each
 with a read-only .toml sidecar (card values, source sha256, kept counts).
 
     python skim.py --config configs/skim_V0_polyseeding_ana573.toml
@@ -12,7 +12,6 @@ with a read-only .toml sidecar (card values, source sha256, kept counts).
 import argparse
 import json
 import os
-import re
 import sys
 import tomllib
 import zlib
@@ -40,13 +39,15 @@ def main():
     inp, sel, br, out = card["input"], card["selection"], card["branches"], card["output"]
 
     # branches to write, and the reader's required set checked before any file is read
-    branches = {}
+    branches, mother = {}, {}
     for key in SPECIES:
         branches[key] = list(br["stage1"][key])
         if br["keep_stage2"]:
             branches[key] += br["stage2"][key]
         listed = set(branches[key])
-        if not any(all(f"{m}_{x}" in listed for x in MOTHER_VARS) for m in MOTHER_PREFIXES):
+        mother[key] = next((m for m in MOTHER_PREFIXES
+                            if all(f"{m}_{x}" in listed for x in MOTHER_VARS)), None)
+        if mother[key] is None:
             sys.exit(f"[branches] {key}: the training reader needs <mother>_{MOTHER_VARS} "
                      f"for one mother in {MOTHER_PREFIXES}")
         required = [f"track_{i}_{x}" for i in (1, 2) for x in TRACK_VARS]
@@ -56,8 +57,8 @@ def main():
         if missing:
             sys.exit(f"[branches] {key}: the training reader needs {missing}")
 
-    thr, frac, seed = float(sel["ptmax_threshold"]), float(sel["bulk_fraction"]), int(sel["seed"])
-    tag = (f"ptmax{thr}_bulk{frac}_seed{seed}".replace(".", "p")
+    thr, frac, seed = float(sel["pt_threshold"]), float(sel["bulk_fraction"]), int(sel["seed"])
+    tag = (f"ptcand{thr}_bulk{frac}_seed{seed}".replace(".", "p")
            + ("_stage1stage2" if br["keep_stage2"] else "_stage1"))
     tagdir = os.path.join(out["skim_dir"], inp["production"], tag)
 
@@ -76,8 +77,7 @@ def main():
     failed = []
     for key, sub, path in jobs:
         base = os.path.basename(path)
-        run = re.search(r"run(\d+)", base)
-        name = f"skim_run{run.group(1)}" if run else f"skim_{os.path.splitext(base)[0]}"
+        name = f"skimmed_{os.path.splitext(base)[0]}"
         odir = os.path.join(tagdir, sub)
         os.makedirs(odir, exist_ok=True)
         print(f"[{sub}] {path} -> {odir}/{name}.root", flush=True)
@@ -89,10 +89,10 @@ def main():
         try:
             t = uproot.open(path)[inp["tree"]]
             for raw in t.iterate(branches[key], library="np", step_size=100000):
-                ptmax = np.maximum(raw["track_1_pT"], raw["track_2_pT"])
-                high = ptmax > thr
-                keep = high | (rng.random(ptmax.size) < frac)
-                n_seen += ptmax.size
+                pt = raw[f"{mother[key]}_pT"]
+                high = pt > thr
+                keep = high | (rng.random(pt.size) < frac)
+                n_seen += pt.size
                 n_high += int(high.sum())
                 n_bulk += int((keep & ~high).sum())
                 for b in branches[key]:
@@ -116,7 +116,7 @@ def main():
                  f"production = {json.dumps(inp['production'])}",
                  f"tag = {json.dumps(tag)}",
                  f"species = {json.dumps(sub)}",
-                 f"ptmax_threshold = {json.dumps(thr)}",
+                 f"pt_threshold = {json.dumps(thr)}",
                  f"bulk_fraction = {json.dumps(frac)}",
                  f"seed = {seed}",
                  f"keep_stage2 = {json.dumps(br['keep_stage2'])}",

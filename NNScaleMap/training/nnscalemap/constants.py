@@ -13,7 +13,7 @@ ETA_RANGE = (-1.5, 1.5)
 PT_SANITY = 1e-3             # GeV; reject unphysical/zero pT, NOT a fiducial cut
 
 KAPPA_GUARD = 0.05           # numerical floor on kappa_curv = 1 + eps + q*delta. NOT a physics cap; hit fraction must be 0.
-X_CLAMP = 6.0                # numerical clamp on the normalised momentum feature x; outside it kappa is constant in x.
+X_CLAMP = 6.0                # minimum numerical clamp on the normalised momentum feature x (widened to cover the lookup range); outside it kappa is constant in x.
 
 # stage-1 momentum feature x(pT) fed to KappaNet
 FEATURE_KINDS = ("inv_pt", "pt", "log_pt")

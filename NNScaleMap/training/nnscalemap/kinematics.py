@@ -67,12 +67,18 @@ def semi_even_pt_grid(pt_min, pt_max, n):
     return np.interp(q, np.linspace(0.0, 1.0, vals.size), vals)
 
 
-def bin_index(pt, eta, phi, pt_edges, n_eta, n_phi):
+def bin_index(pt, eta, phi, bins):
+    """Flat (pT, eta, phi) cell index and the number of cells.  bins = meta["loss_bins"]:
+    pT bin b has ne[b] x nph[b] (eta, phi) cells at [offset[b], offset[b] + ne[b]*nph[b])."""
+    pt_edges = bins["pt_edges"]
     ipt = torch.bucketize(pt, pt_edges) - 1
     ipt = ipt.clamp(0, len(pt_edges) - 2)
-    ieta = ((eta - ETA_RANGE[0]) / (ETA_RANGE[1] - ETA_RANGE[0]) * n_eta).long().clamp(0, n_eta - 1)
-    iphi = ((phi + np.pi) / (2 * np.pi) * n_phi).long().clamp(0, n_phi - 1)
-    return (ipt * n_eta + ieta) * n_phi + iphi, (len(pt_edges) - 1) * n_eta * n_phi
+    ne, nph = bins["ne"][ipt], bins["nph"][ipt]
+    ieta = ((eta - ETA_RANGE[0]) / (ETA_RANGE[1] - ETA_RANGE[0]) * ne).long()
+    ieta = torch.minimum(ieta.clamp(min=0), ne - 1)
+    iphi = ((phi + np.pi) / (2 * np.pi) * nph).long()
+    iphi = torch.minimum(iphi.clamp(min=0), nph - 1)
+    return bins["offset"][ipt] + ieta * nph + iphi, bins["n_cells"]
 
 
 def binned_mean_sq(idx, nbins, values, weights, min_w=5.0):

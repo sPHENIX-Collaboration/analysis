@@ -53,34 +53,73 @@ def main():
                          "random subsample, shared across files in proportion "
                          "to their entries")
     ap.add_argument("--subsample_seed", type=int, default=42)
-    ap.add_argument("--outdir", default="calib_out")
-    ap.add_argument("--lookup_pt_min", type=float, default=0.10,
-                    help="lower pT [GeV] covered by kappa lookup and kappa-map diagnostics")
-    ap.add_argument("--lookup_pt_max", type=float, default=5.0,
-                    help="upper pT [GeV] covered by kappa lookup and kappa-map diagnostics")
+    ap.add_argument("--outdir", default="results/calib_out")
+    ap.add_argument("--lookup_pt_values", type=float, nargs="+",
+                    default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0, 100.0],
+                    help="pT points [GeV] of the kappa lookup; their range also sets the "
+                         "kappa-map diagnostics and the feature clamp (kappa is constant "
+                         "outside it)")
+    ap.add_argument("--lookup_n_eta", type=int, default=13,
+                    help="eta points of the kappa lookup, uniform over the eta acceptance")
+    ap.add_argument("--lookup_n_phi", type=int, default=25,
+                    help="phi points of the kappa lookup, uniform over [-pi, pi]")
     ap.add_argument("--kappa_slices", type=int, default=25,
                     help="number of curvature slices in fig6/fig7 kappa diagnostics")
     # stage 1
-    ap.add_argument("--feature", choices=FEATURE_KINDS, default="inv_pt",
-                    help="stage-1 momentum feature: inv_pt = 1/pT (default), "
-                         "pt, log_pt. Information-equivalent; changes the "
+    ap.add_argument("--feature", choices=FEATURE_KINDS, default="log_pt",
+                    help="stage-1 momentum feature: log_pt = ln pT (default), "
+                         "inv_pt = 1/pT, pt. Information-equivalent; changes the "
                          "smoothness prior and which tail the numerical clamp "
                          "truncates.")
     ap.add_argument("--history_every", type=int, default=0,
                     help="stage-1 mass-history fit cadence in epochs "
                          "(0 = --refresh; use 1 for every epoch)")
-    ap.add_argument("--epochs", type=int, default=400)
+    ap.add_argument("--epochs", type=int, default=800)
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--hidden", type=int, default=48)
+    ap.add_argument("--layers", type=int, default=3, help="number of hidden layers")
+    ap.add_argument("--seed", type=int, default=17,
+                    help="torch seed for the network initialisation")
     ap.add_argument("--refresh", type=int, default=50, help="weight-refresh cadence")
     ap.add_argument("--lam_prior", type=float, default=0.05,
                     help="L2(eps,delta) weight at epoch 0; annealed linearly to 0")
-    ap.add_argument("--lam_split", type=float, default=1.0)
+    ap.add_argument("--lam_split", type=float, default=1.0,
+                    help="weight of the Lambda/anti-Lambda split term binned in leg-1 "
+                         "(pion) kinematics; 0 disables")
+    ap.add_argument("--lam_split2", type=float, default=0.0,
+                    help="weight of the Lambda/anti-Lambda split term binned in leg-2 "
+                         "(proton) kinematics; 0 disables")
     ap.add_argument("--lam_alpha", type=float, default=2.0)
-    ap.add_argument("--loss_pt_binning", choices=("quantile", "log"), default="quantile",
+    ap.add_argument("--dtype", choices=("float32", "float64"), default="float32",
+                    help="precision of the stage-1 network (float32 is ~2.5x faster); "
+                         "masses, loss sums and binning stay float64")
+    ap.add_argument("--k0s_window", type=float, nargs=2, default=[0.42, 0.58],
+                    help="K0s signal-weight fit window [GeV]; inside the 0.40-0.60 "
+                         "candidate preselection")
+    ap.add_argument("--lam_window", type=float, nargs=2, default=[1.09, 1.145],
+                    help="Lambda signal-weight fit window [GeV]; inside the "
+                         "1.08-1.15 candidate preselection")
+    ap.add_argument("--bkg_order", type=int, default=1,
+                    help="polynomial order of the background in the signal-weight fit")
+    ap.add_argument("--loss_pt_binning", choices=("quantile", "log", "fixed"), default="quantile",
                     help="daughter-pT loss-bin edges: quantile = equal population; "
-                         "log = equal width in ln pT over [lookup_pt_min, lookup_pt_max]")
-    ap.add_argument("--loss_pt_bins", type=int, default=6, help="number of daughter-pT loss bins")
+                         "log = equal width in ln pT over the lookup_pt_values range; "
+                         "fixed = --loss_pt_edges")
+    ap.add_argument("--loss_pt_bins", type=int, default=6,
+                    help="number of daughter-pT loss bins (quantile, log)")
+    ap.add_argument("--loss_pt_edges", type=float, nargs="+",
+                    default=[0.0, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 100.0],
+                    help="daughter-pT loss-bin edges [GeV] (fixed); daughters outside "
+                         "them fall in the first / last bin")
+    ap.add_argument("--loss_n_eta", type=int, default=10, help="eta cells per daughter-pT loss bin")
+    ap.add_argument("--loss_n_phi", type=int, default=8, help="phi cells per daughter-pT loss bin")
+    ap.add_argument("--loss_coarse_above_pt", type=float, default=-1.0,
+                    help="daughter-pT loss bins whose lower edge is >= this [GeV] use the "
+                         "coarse eta x phi grid; negative = none")
+    ap.add_argument("--loss_n_eta_coarse", type=int, default=5,
+                    help="eta cells per coarse daughter-pT loss bin")
+    ap.add_argument("--loss_n_phi_coarse", type=int, default=4,
+                    help="phi cells per coarse daughter-pT loss bin")
     ap.add_argument("--chunk_size", type=int, default=500000,
                     help="candidates per gradient chunk; the full-batch gradient is "
                          "accumulated over chunks, so memory scales with this, not "
@@ -131,6 +170,7 @@ def main():
             paths += matches
         setattr(args, key, paths)
 
+    torch.manual_seed(args.seed)
     os.makedirs(args.outdir, exist_ok=True)
     K, L, meta = load(args)
     print(f"loaded {len(K['mass'])} K0s, {len(L['mass'])} Lambda candidates")
@@ -146,14 +186,16 @@ def main():
 
     # ---- stage 1: momentum scale
     if args.load_stage1:
-        model = load_stage1(args.load_stage1, hidden=args.hidden)
+        model = load_stage1(args.load_stage1, hidden=args.hidden, layers=args.layers)
         print(f"loaded stage-1 model from {args.load_stage1} "
               f"(convention '{model.tag()}' verified)")
         with torch.no_grad():
             mK, _, _ = corrected_mass(model, K)
             mL, _, _ = corrected_mass(model, L)
-        _, _, pK = fit_peak(mK.numpy(), M_K0S, 0.010, 0.42, 0.58)
-        _, _, pL = fit_peak(mL.numpy(), M_LAMBDA, 0.004, 1.09, 1.145)
+        _, _, pK = fit_peak(mK.numpy(), M_K0S, 0.010, *args.k0s_window,
+                            bkg_order=args.bkg_order)
+        _, _, pL = fit_peak(mL.numpy(), M_LAMBDA, 0.004, *args.lam_window,
+                            bkg_order=args.bkg_order)
         K["w"] = torch.tensor(signal_weights(mK.numpy(), pK))
         L["w"] = torch.tensor(signal_weights(mL.numpy(), pL))
     else:
@@ -161,7 +203,7 @@ def main():
         plot_stage1_training_history(history, args.outdir)
         save_stage1(model, os.path.join(args.outdir, "model.pt"))
 
-    export_lookup(model, meta, os.path.join(args.outdir, "kappa_lookup.csv"))
+    export_lookup(model, args, os.path.join(args.outdir, "kappa_lookup.csv"))
     diagnostics(model, K, L, meta, args.outdir)
 
     if args.no_reso:

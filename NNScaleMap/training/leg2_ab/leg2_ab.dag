@@ -1,0 +1,14 @@
+JOB A_s17 condor_leg2_ab.job
+VARS A_s17 trial="A_s17" seed="17" split2="0.0"
+JOB A_s18 condor_leg2_ab.job
+VARS A_s18 trial="A_s18" seed="18" split2="0.0"
+JOB A_s19 condor_leg2_ab.job
+VARS A_s19 trial="A_s19" seed="19" split2="0.0"
+JOB B_s17 condor_leg2_ab.job
+VARS B_s17 trial="B_s17" seed="17" split2="1.0"
+JOB B_s18 condor_leg2_ab.job
+VARS B_s18 trial="B_s18" seed="18" split2="1.0"
+JOB B_s19 condor_leg2_ab.job
+VARS B_s19 trial="B_s19" seed="19" split2="1.0"
+JOB compare condor_compare.job
+PARENT A_s17 A_s18 A_s19 B_s17 B_s18 B_s19 CHILD compare

@@ -10,18 +10,17 @@ import torch
 import matplotlib.pyplot as plt
 
 from .constants import ETA_RANGE, FEATURE_UNITS
-from .kinematics import semi_even_pt_grid
 
 # ---------------------------------------------------------------- outputs
-def export_lookup(model, meta, path):
-    """kappa is the pT MULTIPLIER (pT_corr = kappa * pT); the pT grid is
-    semi_even_pt_grid over meta["pt_plot"] (60 points) and both pT and 1/pT
-    columns are exported.  Normalisation constants are stamped so the map is
-    reproducible at deployment time."""
-    pts = semi_even_pt_grid(meta["pt_plot"][0], meta["pt_plot"][1], 60)
+def export_lookup(model, args, path):
+    """kappa is the pT MULTIPLIER (pT_corr = kappa * pT); the grid is
+    --lookup_pt_values x --lookup_n_eta x --lookup_n_phi points, and both pT
+    and 1/pT columns are exported.  Normalisation constants are stamped so the
+    map is reproducible at deployment time."""
+    pts = np.asarray(args.lookup_pt_values, dtype=float)
     curvs = 1.0 / pts
-    etas = np.linspace(*ETA_RANGE, 13)
-    phis = np.linspace(-np.pi, np.pi, 25)
+    etas = np.linspace(*ETA_RANGE, args.lookup_n_eta)
+    phis = np.linspace(-np.pi, np.pi, args.lookup_n_phi)
     rows = []
     with torch.no_grad():
         for q in (-1.0, 1.0):

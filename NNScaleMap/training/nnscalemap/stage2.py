@@ -367,7 +367,9 @@ def fit_global_reduced(groups, mode, n_c=1, steps=3000, lr=0.02):
         return math.sqrt(v) if np.isfinite(v) and v > 0 else float("nan")
 
     def _rho(i, j):
-        d = math.sqrt(float(cov[i, i]) * float(cov[j, j]))
+        prod = float(cov[i, i]) * float(cov[j, j])
+        # a non-positive-definite Hessian can give a negative variance product
+        d = math.sqrt(prod) if np.isfinite(prod) and prod > 0 else float("nan")
         return float(cov[i, j]) / d if np.isfinite(d) and d > 0 else float("nan")
 
     h1, h2, c, f, k = unpack(td)

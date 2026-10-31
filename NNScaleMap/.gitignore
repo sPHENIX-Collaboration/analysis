@@ -3,6 +3,9 @@
 __pycache__/
 *.pyc
 
+# Training outputs: every training, campaign and plot output lives under training/results/
+training/results/
+
 # Training / plotting output directories (--outdir default and dated variants)
 calib_out*/
 

@@ -1,17 +1,17 @@
 # NNScaleMap skim card:  python skim.py --config configs/skim_V0_polyseeding_ana573.toml
 # One input only (e.g. one Condor job per file):  ... --file <path of one input below>
-# Output: <skim_dir>/<production>/<tag>/{Kshort,Lambda0}/skim_run<N>.root + read-only skim_run<N>.toml,
-# with <tag> = ptmax<threshold>_bulk<fraction>_seed<seed>_<stage1 | stage1stage2>, e.g. ptmax1p0_bulk0p02_seed42_stage1
+# Output: <skim_dir>/<production>/<tag>/{Kshort,Lambda0}/skimmed_<input name>.root + read-only skimmed_<input name>.toml,
+# with <tag> = ptcand<threshold>_bulk<fraction>_seed<seed>_<stage1 | stage1stage2>, e.g. ptcand1p0_bulk0p02_seed42_stage1
 
 [input]
 production = "V0_polyseeding_ana573"    # names the output subfolder
 # glob patterns are expanded and sorted; files that cannot be read are reported and skipped
-kshort = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run*.root"]
-lam = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Lambda0_reco_KFParticle_run*.root"]
+kshort = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run79514_to_81612_cut.root"]
+lam = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Lambda0_reco_KFParticle_run79514_to_81612_cut.root"]
 tree = "DecayTree"
 
 [selection]
-ptmax_threshold = 1.0       # GeV; every candidate with max(daughter pT) above this is kept
+pt_threshold = 1.0          # GeV; every candidate whose own (V0) pT is above this is kept
 bulk_fraction = 0.02        # random fraction kept below the threshold
 seed = 42                   # combined with each input file name, so every file has its own reproducible draw
 
