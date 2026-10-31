@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "plotUtils.h"
+
 TGaxis::SetMaxDigits(3);
 
 namespace
@@ -43,34 +45,6 @@ struct ZRange
     double halfWidth = 0.0;
     bool initialized = false;
 };
-
-std::string directoryName(const std::string &path)
-{
-    const std::size_t slash = path.find_last_of('/');
-    return slash == std::string::npos ? "." : path.substr(0, slash);
-}
-
-std::string baseName(const std::string &path)
-{
-    const std::size_t slash = path.find_last_of('/');
-    return slash == std::string::npos ? path : path.substr(slash + 1);
-}
-
-std::string stripExtension(const std::string &name)
-{
-    const std::size_t dot = name.find_last_of('.');
-    return dot == std::string::npos ? name : name.substr(0, dot);
-}
-
-std::string safeFileStem(std::string name)
-{
-    for (char &c : name)
-    {
-        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-' || c == '.'))
-            c = '_';
-    }
-    return name;
-}
 
 bool parsePtFromName(const std::string &name, double &pt)
 {
