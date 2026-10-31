@@ -15,6 +15,7 @@
 #include <TError.h>
 #include <unordered_map>
 #include <deque>
+#include <memory>
 
 using std::vector;
 using std::cout;
@@ -50,6 +51,8 @@ public :
 	virtual ~corral();
 	virtual void     Loop();
 	virtual void     Finalize();		// README_Finalize.md: combine chunk outputs (RunString "Finalize")
+	TString          SettingsText();	// every switch and cut value in force, one per line (info/settings, Finalize title page)
+	void             WriteInfo(TDirectory *top, const std::vector<std::pair<TString,TString>> &texts, const std::vector<std::pair<TString,double>> &counts);	// info/ (README.md)
 	//
 	virtual bool 	AcceptEvent();
 	virtual bool 	AcceptTrack(int it);				// AcceptTrackBase and, if doSiPhiMask, not InSiPhiMask
@@ -65,18 +68,23 @@ public :
 		if (ipid< 10){ ival = ipid-5; } else
 		if (ipid==10){ ival = 5; } else
 		if (ipid==11){ ival = 6; } else
-		if (ipid==12){ ival = 7; }
+		if (ipid==12){ ival = 7; } else
+		if (ipid==13 || ipid==14){ ival = 0; }	// h+, h-: pion y and pT limits (2026-10-11)
 		return ival;
 	}
 	//
 	int 	ntodo;
 	TString	RunString;
+	TString	RunStringGiven;		// the run string as given (-s), before Raw / ZB / TightDCA expand into RunString: names the outputs
 	TString	OutputName;		// -o: output base name (root/<name>.root, pdf/<name>.pdf); empty -> corral_<class>[_<RunString>]
 	TString	Dataset;		// -d: dataset for Finalize (lists|root/<dataset>/); empty -> FINALIZE_SET (finalize_hists.h)
 	bool	doCrossing;
 	bool	doOldPID;		// README_PID.md: "oldpid" -> legacy PID (pi = dedx70s<400, no p or K); default is the KFP dE/dx gates
 	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
 	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.07,0.10); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
+	bool	doSegVeto;		// README.md "segveto": skip the events of the (run, DST segment)s in bad_segments.txt (next to the -l list,
+					// or $CORRAL_SEGVETO), made by lists/make_bad_segments.C; default ON since 2026-10-13, "AllSeg" = OFF
+	TString	ListName;		// -l: the job list (segveto finds bad_segments.txt next to it)
 	bool	doSepMaps;		// README_CQcomparison sec 2.3: (track, nearer V0 daughter) separation maps, own mixing, ~+5 min/chunk; OFF, "sepmaps" on
 	double	valCMMaskLo, valCMMaskHi;
 	int		nSiPhiMask;		// README_PID.md sec 10.4: windows used, NSIPHIMASK_MAIN (default) or NSIPHIMASK ("siphimaskall")
@@ -198,10 +206,26 @@ public :
 						// the first row with a key is kept, later rows with the same key are skipped
 						// entirely (sibling AND mixing). Without a bco branch this does nothing.
 	std::vector<bool> tfDupRows;			// [chain entry] -> skip (see doTFDup); 1 bit/row, fine at 1e9 rows
+	bool	doIsoVtx;		// README.md "isovtxNNZZ" (2026-10-12, default OFF): keep only ISOLATED vertices -- no other vertex of
+							// the run within +-NN crossings (absolute crossing bco+crossing) and |dz| < ZZ cm. Copies (same
+							// absolute crossing) are not neighbours (doTFDup handles them). Test of track-vertex misassignment.
+	int		valIsoNX;		// NN, crossings (1-50)
+	double	valIsoDZ;		// ZZ, cm (1-30)
+	std::vector<bool> nonIsoRows;			// [chain entry] -> skip (see doIsoVtx)
+	virtual void	BuildIsoRows(Long64_t nentries);
+	bool	doSkipMultiVtx;	// README_CollectTree_20261013.md (2026-10-14, default ON): skip events whose crossing has 2+ vertices
+							// (Collect branch nvtxXing > 1: a second collision or one collision split in two). "multivtx" keeps them.
+							// Trees without nvtxXing (Collect before f2edffe6): nothing to do, info/ says so.
+	bool	hasNvtxXing;	// the input trees have the nvtxXing branch
+	bool	hasEtot;		// the input trees have the calorimeter totals etotem..etotepd (not in ana578)
+	std::vector<bool> multiVtxRows;			// [chain entry] -> nvtxXing > 1
+	long	nMultiVtxAll;					// events with nvtxXing > 1 in the pre-pass (all events read)
+	virtual void	BuildMultiVtxRows(Long64_t nentries, TH1D *hn, TH2D *hn2);
 	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
 	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
 	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
-	long	nXTF_pairs, nXTF_byINTT, nXTF_byQuality, nXTF_neither, nXTF_losers;
+	long	nXTF_pairs, nXTF_byINTT, nXTF_byInTime, nXTF_byQuality, nXTF_neither, nXTF_losers;
+	long	nXTF_qBothOK, nXTF_qBothOKsameX, nXTF_qDisagree, nXTF_qNoINTT;	// why quality decided (README_SplitTracks578 sec 1.4)
 	bool	ONLY_FIRST_XINGPOS;	// sec 18.21 follow-up 2: opt-in, OFF by default ("XingPos" turns it on).
 							// Keeps only the FIRST row with crossing>0 in each (run,evt) TF, skips every
 							// other row -- pure STREAMING (non-triggered) events, still <=1 row/TF.
@@ -220,9 +244,12 @@ public :
 						//               plateau from -20 to ~260, within 3% up to 390, then falls (3.90 at 401-410,
 						//               2.0 at 475); below -20 it falls too (4.27 at -30..-21, 2.8 at -100). ~15% of
 						//               all events are outside [ZB_LO,ZB_HI] and are in none of the three samples.
+						//               2026-10-28: ZB_LO -20 -> 14 (user, XingView_ana578_ZB page 3: <N_trk> and <pT>
+						//               not yet on the plateau just after the trigger; no negative crossings at all).
+						//               Costs 6.6% of the old ZB events (ana578, all groups alike).
 	static constexpr int XNEAR_LO = -4;
 	static constexpr int XNEAR_HI =  2;
-	static constexpr int ZB_LO    = -20;
+	static constexpr int ZB_LO    =  14;
 	static constexpr int ZB_HI    = 390;
 	bool	ONLY_FIRST_TF;	// sec 18.21: opt-in diagnostic, OFF by default ("onlyfirsttf" turns it on).
 							// Keeps only the FIRST row seen for each (run,evt) -- evt IS the trigger
@@ -235,6 +262,8 @@ public :
 							// caught). Costs ~85% of statistics (~1/6-7 rows survive per TF) -- diagnostic
 							// only, never a production default.
 	int		NTPCCUT;
+	double	valDcaxyCut;	// README.md "dxyNN" (2026-10-12): track |dcaxy| < NN/100 cm (or dxyNNN), default 1.5 cm (sane 0.05-5.0)
+	double	valDcazCut;		// README.md "dczNN" (2026-10-12): track |dcaz| < NN/10 cm, default 1.5 cm (sane 0.1-9.9)
 	double	PTMINCUT;	// track pT floor, "ptminNN" = 0.NN GeV/c (default 0.1 = ana573 Collect floor; ana532 trees start at 0.2)
 	bool	KILLETA0SPIKE;
 	//
@@ -263,11 +292,8 @@ public:
 	TTreeReaderValue<Double_t>         vtxy;
 	TTreeReaderValue<Double_t>         vtxz;
 	TTreeReaderValue<Int_t>            crossing;
-	TTreeReaderValue<Double_t>         etotem;
-	TTreeReaderValue<Double_t>         etotih;
-	TTreeReaderValue<Double_t>         etotoh;
-	TTreeReaderValue<Double_t>         etotioh;
-	TTreeReaderValue<Double_t>         etotepd;
+	//---- calorimeter totals: optional (ana578 Collect trees do not have them), made in the constructor only if present
+	std::unique_ptr<TTreeReaderValue<Double_t> > etotem, etotih, etotoh, etotioh, etotepd;
 	TTreeReaderValue<Int_t>            ntr;
 	TTreeReaderArray<Char_t>           pid;
 	TTreeReaderArray<Short_t>          indv0;

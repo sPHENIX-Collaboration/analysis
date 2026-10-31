@@ -1,5 +1,9 @@
+#include "TObjString.h"
 #include "corral_class.h"
 #include "fluct_common.h"	// SIPHIMASK windows (README_PID.md sec 10.3)
+#include "corral_version.h"	// CORRAL_GIT, CORRAL_BUILD_TIME (made at build time, CMakeLists.txt)
+#include <TNamed.h>
+#include <TParameter.h>
 
 //------------------------------------------------------------
 // Build (or adopt) the input TChain. This must not touch any other member of
@@ -18,11 +22,11 @@ TChain* corral::BuildInputChain(TTree *tree){
 	}
 	//
 	//---- no job list (-l): the whole production in one job (useful for testing). The file glob is
-	//---- $CORRAL_TREES if set, else the 795xx runs of the WSU copy of ana573 below (ana532 until 2026-09-27;
-	//---- 795xx only from 2026-10-08, when runs 81566 and 81584-81586 start landing in the same directory).
+	//---- $CORRAL_TREES if set, else all runs of the WSU copy of ana578 below (ana532 until 2026-09-27, ana573 795xx
+	//---- until 2026-10-26).
 	//----   e.g. export CORRAL_TREES='/path/to/production/outputCollect_*.root'  (quote the glob)
 	const char* env	= getenv("CORRAL_TREES");
-	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/ana573/795*/outputCollect_*.root");
+	TString GLOB	= (env && *env) ? TString(env) : TString("/rs/rs_grp_rhi/sPHENIX/ana578/*/outputCollect_*.root");
 	TChain *chain	= new TChain("outTree","Collect tree chain");
 	int nf			= chain->Add(GLOB.Data());
 	cout<<"corral -- input trees "<<GLOB<<((env && *env)?"  ($CORRAL_TREES)":"  (default; set CORRAL_TREES to change)")<<": "<<nf<<" files"<<endl;
@@ -34,11 +38,13 @@ TChain* corral::BuildInputChain(TTree *tree){
 corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   : ntodo(ntd)
   , RunString(runstr)
+  , RunStringGiven(runstr)
   , OutputName(outname)
   , doCrossing(true)
   , doOldPID(false)
   , doSiPhiMask(true)
   , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.07,0.10); "nocmmask" off, "cmmaskAABB" override
+  , doSegVeto(true)		// README.md: skip the segments in bad_segments.txt; default ON since 2026-10-13, "AllSeg" = OFF
   , doSepMaps(false)		// README_CQcomparison sec 2.3: diagnostic separation maps (~+5 min per chunk); "sepmaps" on
   , valCMMaskLo(-0.07)
   , valCMMaskHi(0.10)
@@ -96,12 +102,17 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doXTFClean(true)		// sec 18.22/18.25: ON by default -- "noXTF" turns it (and the two below) off
   , doMixNoAdjTF(true)	// sec 18.23/18.25: ON by default -- "noXTF" or "mixAdjTF" turns it off
   , doXTFStrict(true)		// sec 18.22/18.25: ON by default -- "noXTF" off; plain "XTFclean" selects non-strict
-  , nXTF_pairs(0), nXTF_byINTT(0), nXTF_byQuality(0), nXTF_neither(0), nXTF_losers(0)
+  , nXTF_pairs(0), nXTF_byINTT(0), nXTF_byInTime(0), nXTF_byQuality(0), nXTF_neither(0), nXTF_losers(0)
+  , nXTF_qBothOK(0), nXTF_qBothOKsameX(0), nXTF_qDisagree(0), nXTF_qNoINTT(0)
   , doTFDup(true)			// 2026-09-26: ON by default -- "noTFdup" turns it off (no-op without a bco branch)
   , nTFDup_rows(0), TFDup_maxAbsDvz(0)
+  , doIsoVtx(false), valIsoNX(0), valIsoDZ(0.)		// README.md "isovtxNNZZ": isolated vertices only, default OFF
+  , doSkipMultiVtx(true), hasNvtxXing(false), hasEtot(false), nMultiVtxAll(0)	// README_CollectTree_20261013.md: skip nvtxXing > 1, "multivtx" keeps them
   , ONLY_FIRST_XINGPOS(false)	// sec 18.21 follow-up 2, OFF by default -- "XingPos" turns it on
   , xingSel(3)				// 2026-10-08: ZB by default -- "AllX" = all crossings, "Xing0" / "NearX0" the other samples
   , ONLY_FIRST_TF(false)		// sec 18.21, OFF by default -- "onlyfirsttf" in RunString turns it on
+  , valDcaxyCut(1.5)		// |dcaxy| cut (cm), "dxyNN" = NN/100 cm
+  , valDcazCut(1.5)		// |dcaz| cut (cm), "dczNN" = NN/10 cm
   , NTPCCUT(18)				// LL=8 (inclusive), 18 is open but better
   , PTMINCUT(0.1)
   , valFullMVTX(2), valFullMVTXdinv(0.0), valPregateDEta(0.040)	// README_SplitTracks573 sec 14/15/18:
@@ -120,11 +131,6 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , vtxy(fReader,"vtxy")
   , vtxz(fReader,"vtxz")
   , crossing(fReader,"crossing")
-  , etotem(fReader,"etotem")
-  , etotih(fReader,"etotih")
-  , etotoh(fReader,"etotoh")
-  , etotioh(fReader,"etotioh")
-  , etotepd(fReader,"etotepd")
   , ntr(fReader,"ntr")
   , pid(fReader,"pid")
   , indv0(fReader,"indv0")
@@ -181,16 +187,86 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	gPrintViaErrorHandler = kTRUE;
 	gErrorIgnoreLevel = kWarning;
 	//
+	//---- 2026-10-19: the calorimeter totals are bound only if the trees have them (a missing branch stops TTreeReader
+	//---- reading anything). ana578 Collect trees do not; their QA histograms then stay empty.
+	{
+		TChain ch(fChain->GetName());
+		if (fChain->GetListOfFiles()->GetEntries()>0) ch.Add(fChain->GetListOfFiles()->At(0)->GetTitle());
+		ch.LoadTree(0);
+		hasEtot	= ch.GetBranch("etotem") && ch.GetBranch("etotih") && ch.GetBranch("etotoh") && ch.GetBranch("etotioh") && ch.GetBranch("etotepd");
+		if (hasEtot){
+			etotem.reset(new TTreeReaderValue<Double_t>(fReader,"etotem"));
+			etotih.reset(new TTreeReaderValue<Double_t>(fReader,"etotih"));
+			etotoh.reset(new TTreeReaderValue<Double_t>(fReader,"etotoh"));
+			etotioh.reset(new TTreeReaderValue<Double_t>(fReader,"etotioh"));
+			etotepd.reset(new TTreeReaderValue<Double_t>(fReader,"etotepd"));
+		}
+		cout<<"reader::reader -- calorimeter totals (etotem..etotepd) "<<(hasEtot?"read":"NOT in these trees, QA left empty")<<endl;
+	}
 	//---- 2026-10-08: "Raw" = every cleaner and correction OFF and all crossings, i.e. shorthand for RAW_TOKENS below. It is expanded
 	//---- into RunString here, before any token is parsed, so the logs show the switches in force.
+	//---- 2026-10-19 (user): the two first-pass samples of a production
+	//----   "Raw" = the raw data: OFF_TOKENS (every cleaner and correction, and the SiPhi mask) + all segments, all crossings,
+	//----           multi-vertex crossings kept
+	//----   "ZB"  = OFF_TOKENS, but the default event selection: segment veto, ZB crossings, multi-vertex crossings skipped
+	//----   Raw and ZB together stop the job. ZB is also the default crossing selection (parsed below), so ZB alone does both.
+	//---- 2026-10-21 (user: short run strings that also name the files): after Raw or ZB, a token that is an OFF switch without
+	//---- its "no" turns that mechanism back ON, e.g. "ZB_TFdup_XTF" = ZB with TFdup and XTF on. Such ON tokens are exact
+	//---- "_"-separated tokens (case ignored); they are taken out of the internal RunString (some value parsers, e.g. isepPPP,
+	//---- would misread a bare "isep") and only decide which OFF switches are appended. The file name keeps them (RunStringGiven).
 	{
-		static const char* RAW_TOKENS = "noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask";
-		if (RunString.Contains("Raw",TString::kIgnoreCase)){
-			RunString += TString("_")+RAW_TOKENS;
+		static const char* OFF_TOKENS = "noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross_nocmmask_nosiphimask";
+		const bool isRaw = RunString.Contains("Raw",TString::kIgnoreCase), isZB = RunString.Contains("ZB",TString::kIgnoreCase);
+		if (isRaw && isZB){ cout<<"reader::reader -- Raw and ZB exclude each other (Raw = all segments and crossings, ZB = good ones)"<<endl; exit(1); }
+		TString offList = OFF_TOKENS;
+		if (isRaw || isZB){
+			//---- 2026-10-22: a value token (the ON name followed by digits, optionally after one letter: cmmask0508, looper10,
+			//---- tsepm0620) also turns the mechanism ON, and stays in RunString for its value parser (before, it left the OFF
+			//---- switch in force).
+			TObjArray *given = RunString.Tokenize("_"), *offs = TString(OFF_TOKENS).Tokenize("_");
+			auto isValueOf = [](const TString &t, const TString &name){
+				if (t.Length()<=name.Length() || !t.BeginsWith(name,TString::kIgnoreCase)) return false;
+				TString r = t(name.Length(),99); if (r.Length()>1 && isalpha(r[0]) && TString(r(1,99)).IsDigit()) r = r(1,99);
+				return r.IsDigit(); };
+			TString kept, on;
+			for (int i=0;i<given->GetEntries();i++){
+				TString t = ((TObjString*)given->At(i))->GetString(); bool isOn = false, isVal = false;
+				for (int j=0;j<offs->GetEntries();j++){ TString nm = TString(((TObjString*)offs->At(j))->GetString())(2,99);
+					if (t.EqualTo(nm,TString::kIgnoreCase)) isOn = true; else if (isValueOf(t,nm)) isVal = true; }
+				if (isOn || isVal) on += (on.Length()?"_":"")+t;
+				if (!isOn) kept += (kept.Length()?"_":"")+t;
+			}
+			offList = "";
+			for (int j=0;j<offs->GetEntries();j++){
+				TString o = ((TObjString*)offs->At(j))->GetString(), nm = o(2,99); bool skip = false;
+				for (int i=0;i<given->GetEntries();i++){ TString t = ((TObjString*)given->At(i))->GetString();
+					if (t.EqualTo(nm,TString::kIgnoreCase) || isValueOf(t,nm)) skip = true; }
+				if (!skip) offList += (offList.Length()?"_":"")+o;
+			}
+			delete given; delete offs;
+			RunString = kept;
+			if (on.Length()) cout<<"reader::reader -- ON under "<<(isRaw?"Raw":"ZB")<<": "<<on<<endl;
+		}
+		if (isRaw){
+			RunString += TString("_")+offList+"_AllSeg_multivtx";
 			//---- all crossings, unless a crossing sample is asked for too (e.g. "Raw_Xing0")
-			if (!RunString.Contains("Xing0",TString::kIgnoreCase) && !RunString.Contains("NearX0",TString::kIgnoreCase)
-				&& !RunString.Contains("ZB",TString::kIgnoreCase)) RunString += "_AllX";
-			cout<<"reader::reader -- Raw = "<<RAW_TOKENS<<" (+ AllX unless Xing0/NearX0/ZB)  -> RunString="<<RunString<<endl;
+			if (!RunString.Contains("Xing0",TString::kIgnoreCase) && !RunString.Contains("NearX0",TString::kIgnoreCase)) RunString += "_AllX";
+			cout<<"reader::reader -- Raw = "<<offList<<"_AllSeg_multivtx (+ AllX unless Xing0/NearX0)  -> RunString="<<RunString<<endl;
+		}
+		if (isZB){
+			if (offList.Length()) RunString += TString("_")+offList;
+			cout<<"reader::reader -- ZB = "<<offList<<" (segment veto, ZB crossings, multi-vertex skip: defaults)  -> RunString="<<RunString<<endl;
+		}
+	}
+	//---- 2026-10-13: "TightDCA" = the tight track DCA cuts together, shorthand for TIGHTDCA_TOKENS (expert tokens dczNN, dxyNN).
+	//---- No token: |dcaz| < 1.5 and |dcaxy| < 1.5 cm, applied here (Collect writes every quality track whatever its DCA,
+	//---- README_CollectTree_20261013.md). Appended, so an explicit dczNN / dxyNN
+	//---- earlier in the run string wins (the parsers below take the first occurrence).
+	{
+		static const char* TIGHTDCA_TOKENS = "dcz03_dxy50";
+		if (RunString.Contains("TightDCA",TString::kIgnoreCase)){
+			RunString += TString("_")+TIGHTDCA_TOKENS;
+			cout<<"reader::reader -- TightDCA = "<<TIGHTDCA_TOKENS<<"  -> RunString="<<RunString<<endl;
 		}
 	}
 	//---- README_Crossing.md (2026-09-25): crossing correction (pt-ordering + post-CF bin correction)
@@ -229,6 +305,27 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		saneOrDie("ntpcNN",NTPCCUT,10,40);
 		cout<<"RunString="<<RunString<<"\t      sntpc="<<sntpc<<"\t NTPCCUT="<<NTPCCUT<<endl;
 	}
+	//---- README.md (2026-10-12): "dczNN" = track |dcaz| < NN/10 cm (default 1.5 cm). A flat pedestal of tracks from other
+	//---- collisions lies under the dcaz peak, twice as high at the 8158x rate (ana573/CutFlow_ana573.C).
+	if (RunString.Contains("dcz",TString::kIgnoreCase)){
+		int ij	= RunString.Index("dcz",0,TString::kIgnoreCase);
+		TString sd	= RunString(ij+3,2);
+		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dcz needs 2 digits (dczNN = |dcaz| < NN/10 cm)"<<endl; exit(1); }
+		valDcazCut	= atoi(sd.Data())/10.;
+		saneOrDie("dczNN",valDcazCut,0.1,9.9);		// 2026-10-14: up to 9.9 cm (Collect applies no DCA cut, README_CollectTree_20261013.md)
+	}
+	cout<<"reader::reader -- track |dcaz| < "<<valDcazCut<<" cm"<<(valDcazCut!=1.5 ? " (dcz)" : " (default)")<<endl;
+	//---- README.md (2026-10-12): "dxyNN" = track |dcaxy| < NN/100 cm (default 1.5 cm); 2026-10-14: "dxyNNN" = NNN/100 cm, up to 5 cm. Tracks attached from other collisions
+	//---- point back 5-7x worse in xy (rms 0.2-0.25 cm vs 0.037 cm, ana573/CutFlow_ana573.C page 2).
+	if (RunString.Contains("dxy",TString::kIgnoreCase)){
+		int ij	= RunString.Index("dxy",0,TString::kIgnoreCase);
+		TString sd	= RunString(ij+3,3);
+		if (!sd.IsDigit()) sd = RunString(ij+3,2);
+		if (!sd.IsDigit()){ cout<<"RunString="<<RunString<<": dxy needs 2 or 3 digits (dxyNN, dxyNNN = |dcaxy| < N/100 cm)"<<endl; exit(1); }
+		valDcaxyCut	= atoi(sd.Data())/100.;
+		saneOrDie("dxyNN",valDcaxyCut,0.05,5.0);
+	}
+	cout<<"reader::reader -- track |dcaxy| < "<<valDcaxyCut<<" cm"<<(valDcaxyCut!=1.5 ? " (dxy)" : " (default)")<<endl;
 	//
 	//
 	//---- README_SplitTracks573 sec 18 (token trim): the LS pregate half-width "dpsNN" (1.0-4.0 deg) and the
@@ -350,6 +447,11 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		<<"... valSLCut = "<<valSLCut<<", valSiKeyCut = "<<valSiKeyCut<<", valRadialGapCut = "<<valRadialGapCut
 		<<", RadialGap path "<<(DISABLE_RG?"DISABLED (noRG)":"enabled")<<endl;
 	//
+	//---- README.md (2026-10-12): skip the (run, DST segment)s listed in bad_segments.txt (acceptance outliers). Default ON since
+	//---- 2026-10-13; "AllSeg" = OFF (every segment: the first pass of a new dataset, which makes bad_segments.txt). The old
+	//---- token "segveto" is still accepted (it was the ON switch) and changes nothing.
+	if (RunString.Contains("AllSeg",TString::kIgnoreCase)) doSegVeto = false;
+	cout<<"reader::reader -- segment veto "<<(doSegVeto?"ON (default)":"OFF (AllSeg)")<<endl;
 	//---- README_CQcomparison sec 2.3: separation-map diagnostic (histograms hSep*, own mixing), default OFF; "sepmaps" = on
 	if (RunString.Contains("sepmaps",TString::kIgnoreCase)) doSepMaps = true;
 	cout<<"reader::reader -- separation maps (README_CQcomparison sec 2.3) "<<(doSepMaps?"ON (sepmaps)":"OFF")<<endl;
@@ -434,6 +536,19 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 		doTFDup	= false;
 	}
 	cout<<"reader::reader -- doTFDup (overlapping-TF copies, key run+bco+crossing) "<<(doTFDup?"enabled":"DISABLED")<<endl;
+	//---- README.md (2026-10-12): "isovtxNNZZ" = isolated vertices only (no other vertex within +-NN crossings and |dz| < ZZ cm)
+	if (RunString.Contains("isovtx",TString::kIgnoreCase)){
+		int ij		= RunString.Index("isovtx",0,TString::kIgnoreCase);
+		TString sn	= RunString(ij+6,2), sz = RunString(ij+8,2);
+		if (!sn.IsDigit() || !sz.IsDigit()){ cout<<"RunString="<<RunString<<": isovtx needs 4 digits (isovtxNNZZ)"<<endl; exit(1); }
+		doIsoVtx	= true; valIsoNX = atoi(sn.Data()); valIsoDZ = atoi(sz.Data());
+		saneOrDie("isovtxNNZZ (NN crossings)",valIsoNX,1,50); saneOrDie("isovtxNNZZ (ZZ cm)",valIsoDZ,1,30);
+	}
+	cout<<"reader::reader -- isolated vertices only "<<(doIsoVtx?Form("ON: no other vertex within +-%d crossings and |dz| < %.0f cm (isovtx)",valIsoNX,valIsoDZ):"OFF")<<endl;
+	//---- README_CollectTree_20261013.md (2026-10-14): events of crossings with 2+ vertices (nvtxXing > 1) are skipped by default;
+	//---- "multivtx" keeps them. Checked clean against every other token (none contains "multivtx").
+	if (RunString.Contains("multivtx",TString::kIgnoreCase)) doSkipMultiVtx = false;
+	cout<<"reader::reader -- multi-vertex crossings (nvtxXing > 1) "<<(doSkipMultiVtx?"SKIPPED (default)":"KEPT (multivtx)")<<endl;
 	//---- sec 18.21 follow-up 2: keep only the first crossing>0 row per TF (pure streaming, <=1/TF).
 	//---- "XingPos" checked clean against every token above (incl. Xing0).
 	if (RunString.Contains("XingPos",TString::kIgnoreCase)){
@@ -453,7 +568,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	}
 	cout<<"reader::reader -- crossing selection: "<<(xingSel==1?TString("Xing0 -- crossing==0 only (triggered collision)"):
 		xingSel==2?TString::Format("NearX0 -- %d<=crossing<=%d, crossing!=0 (trigger neighbours)",XNEAR_LO,XNEAR_HI):
-		xingSel==3?TString::Format("ZB -- %d<=crossing<%d or %d<crossing<=%d (streaming, away from the trigger and the readout edges)",ZB_LO,XNEAR_LO,XNEAR_HI,ZB_HI):TString("all crossings"))<<endl;
+		xingSel==3?TString::Format("ZB -- %d<=crossing<=%d (streaming, away from the trigger and the readout edges)",ZB_LO,ZB_HI):TString("all crossings"))<<endl;
 	//
 	if (RunString.Contains("548",TString::kIgnoreCase)){ FinePhiBinning = true; }
 	if (FinePhiBinning){ cout<<"reader::reader -- FinePhiBinning enabled..."<<endl; }
@@ -467,13 +582,12 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//---- default dataset, update the value (lists/count_entries.C) or set it to 0 to force the rescan.
 	const Long64_t nentriesfile_ana532	= 50498542;		// ana532 (was run_ecuts_cf) re-cut (5k TF/segment, sec 12/13),
 														// all 1554 files, live GetEntries() 2026-09-21
-	const Long64_t nentriesfile_ana573_795xx	= 642480426;	// ana573 795xx complete: all 4581 files (79514 798, 79515 1891, 79516 1892
-														// chunks; the 79514 rerun landed 2026-09-28), count_entries.C
-														// 2026-09-28 (lists/ana573_795xx/segment_entries.txt, 0 unreadable)
+	const Long64_t nentriesfile_ana578	= 3716118368;	// ana578 14 runs (79510-79572): all 35051 files, count_entries.C
+														// 2026-10-26 (lists/ana578/segment_entries.txt, 0 unreadable)
 	(void)nentriesfile_ana532;
 	const char* envTrees	= getenv("CORRAL_TREES");
-	if (tree==0 && !(envTrees && *envTrees))	// default glob (ana573 795xx) only
-	nentriesfile	= nentriesfile_ana573_795xx;
+	if (tree==0 && !(envTrees && *envTrees))	// default glob (ana578) only
+	nentriesfile	= nentriesfile_ana578;
 	//
 	if (nentriesfile==0){
 		cout<<"Getting tree Nevt..."<<endl;
@@ -490,4 +604,60 @@ corral::~corral()
 	// members go first, then fReader, then fChain last -- exactly the order that
 	// keeps each object valid while whatever depends on it is torn down. Nothing
 	// here needs manual teardown.
+}
+
+//------------------------------------------------------------
+//---- README.md "info/" (2026-10-12): how this output was made, as text objects in the directory info/ of the root file.
+//---- Finalize checks that every chunk agrees, copies info/ into corral_Finalize.root and prints it on the title page.
+//----   info/runstring  -s run string (after the "Raw" expansion)      info/settings  SettingsText(), one line per switch
+//----   info/list       -l job list (or the input glob)                info/code      git commit of the source + build time
+//----   info/segveto    bad_segments file and number of segments       info/count_*   counters (TParameter<double>, add up)
+//----   info/cut_*      cut values (TParameter<double>) for the QA pages
+TString corral::SettingsText(){
+	TString s;
+	auto L	= [&](const TString &t){ s += t; s += "\n"; };
+	auto on	= [](bool b){ return b ? "ON" : "OFF"; };
+	L(Form("events: |vtx x|,|vtx y| < 0.5 cm, |z_{vtx}| < %.0f cm in %d slices (the physics range is chosen in Finalize, fz)",valVzMax,valZvtxNB));
+	L(TString("crossing selection: ")+(xingSel==0 ? TString("AllX (all crossings)") : xingSel==1 ? TString("Xing0 (crossing 0, the triggered collision)") :
+		xingSel==2 ? TString::Format("NearX0 (%d..%d without 0)",XNEAR_LO,XNEAR_HI) : TString::Format("ZB (%d..%d)",ZB_LO,ZB_HI)));
+	L(Form("segment veto (default; AllSeg = off) %s;  isolated vertices (isovtx) %s",on(doSegVeto),doIsoVtx ? Form("ON: +-%d crossings, |dz| < %.0f cm",valIsoNX,valIsoDZ) : "OFF"));
+	if (!hasEtot) L("calorimeter totals (etotem..etotepd): not in these trees, calorimeter QA empty");
+	L(TString("multi-vertex crossings (nvtxXing > 1): ")+(!hasNvtxXing ? "no nvtxXing branch in these trees (Collect before 2026-10-13), all kept" : doSkipMultiVtx ? "skipped (default; multivtx = keep)" : "kept (multivtx)"));
+	if (valNchHi<9999) L(Form("multiplicity class (nch): %d <= N_ch <= %d",valNchLo,valNchHi));
+	L(Form("overlapping-TF copies skipped (TFdup) %s;  cross-crossing duplicate cleaner (XTF) %s%s;  adjacent-TF mixing exclusion %s",
+		on(doTFDup),on(doXTFClean),doXTFClean ? (doXTFStrict ? " strict" : " non-strict") : "",on(doMixNoAdjTF)));
+	L(Form("tracks: %.2f < p_{T} < 20.1 GeV/c, ntpc >= %d, |dca_{xy}| < %.2f cm, |dca_{z}| < %.2f cm",PTMINCUT,NTPCCUT,valDcaxyCut,valDcazCut));
+	{ TString w; if (doSiPhiMask) for (int k=0;k<nSiPhiMask;k++) w += Form(" [%.0f,%.0f)",SIPHIMASK_LO[k],SIPHIMASK_HI[k]);
+	  L(Form("SiPhiMask %s%s;  central-membrane mask %s",on(doSiPhiMask),doSiPhiMask ? Form(", vertex phi (deg):%s",w.Data()) : "",
+		doCMMask ? Form("ON, w in [%.2f,%.2f)",valCMMaskLo,valCMMaskHi) : "OFF")); }
+	L(doOldPID ? TString("PID: legacy (oldpid), pi = dedx70s < 400") :
+		TString::Format("PID: KFP dE/dx gates, pi then p (outside K) then K (outside p); p_{max} pi %.1f, K %.1f, p %.1f GeV/c",Species_pmax_pid[0],Species_pmax_pid[1],Species_pmax_pid[2]));
+	L(Form("pair p_{T} min: pi %.2f, K %.2f, p %.2f GeV/c;  |y| max: pi %.2f, K %.2f, p %.2f, V0 %.2f;  h+- |eta| < %.2f",
+		Species_ptmin[0],Species_ptmin[1],Species_ptmin[2],Species_yu[0],Species_yu[1],Species_yu[2],Species_yu[5],Hadron_etau));
+	L(Form("V0s in pairs: within %.0f sigma of the mass peak (K0S %.4f+-%.4f, La %.4f+-%.4f, Lbar %.4f+-%.4f GeV); daughters in no pair type",
+		V0PEAK_NSIG,V0PEAK_MU[0],V0PEAK_SIG[0],V0PEAK_MU[1],V0PEAK_SIG[1],V0PEAK_MU[2],V0PEAK_SIG[2]));
+	L(Form("LS split-track removal %s (SL < %.2f & SiSplitScore >= %.2f; RadialGap >= %.2f %s; MVTX path %s);  pregate dps %.1f deg",
+		on(doSplitRemoval),valSLCut,valSiKeyCut,valRadialGapCut,DISABLE_RG ? "OFF" : "ON",valFullMVTX>0 ? "ON" : "OFF",valDPsW));
+	L(Form("ULS veto %s (SiSplitScore >= %.2f);  V0-daughter partners (dau) %s;  looper veto %s (|p| < %.2f, p-sum < %.2f)",
+		on(doULSTest),valULSTestCut,on(doDauCheck),on(doLooperVeto),LOOPER_PMAX,valLooperRSum));
+	L(Form("two-track cuts: tsep %s, isep %s",valTSepDy>0 ? Form("|dy| < %.2f & |dphi*| < %.1f deg",valTSepDy,valTSepDphi) : "OFF",
+		valISepDphi>0 ? Form("|dy| < 1.0 & |dphi*(3 cm)| < %.1f deg",valISepDphi) : "OFF"));
+	L(Form("crossing correction %s;  Q cut %s;  (dy,dphi) binning %s",on(doCrossing),doQCut ? Form("Q > %.3f GeV",valQCut) : "OFF",FinePhiBinning ? "5 x 48" : "default"));
+	return s;
+}
+void corral::WriteInfo(TDirectory *top, const std::vector<std::pair<TString,TString>> &texts, const std::vector<std::pair<TString,double>> &counts){
+	TDirectory *keep	= gDirectory;
+	TDirectory *d		= top->GetDirectory("info") ? top->GetDirectory("info") : top->mkdir("info","how this output was made (README.md, info/)");
+	d->cd();
+	TNamed("runstring",RunString.Data()).Write("",TObject::kOverwrite);
+	TNamed("settings",SettingsText().Data()).Write("",TObject::kOverwrite);
+	TNamed("list",(ListName!="" ? ListName : TString("default input glob")).Data()).Write("",TObject::kOverwrite);
+	TNamed("code",Form("git %s (commit date %s), built %s",CORRAL_GIT,CORRAL_GIT_DATE,CORRAL_BUILD_TIME)).Write("",TObject::kOverwrite);
+	for (auto &t : texts) TNamed(t.first.Data(),t.second.Data()).Write("",TObject::kOverwrite);
+	for (auto &c : counts) TParameter<double>(("count_"+c.first).Data(),c.second).Write("",TObject::kOverwrite);
+	//---- cut values for Finalize's QA pages (drawn on the summed histograms); Finalize takes them from the first chunk
+	const std::vector<std::pair<const char*,double>> cuts	= {{"ptmin",PTMINCUT},{"ntpc",(double)NTPCCUT},{"dcaxy",valDcaxyCut},{"dcaz",valDcazCut},
+		{"vzmax",valVzMax},{"vxymax",0.5},{"xingsel",(double)xingSel},{"siphimask",doSiPhiMask ? (double)nSiPhiMask : 0.}};
+	for (auto &c : cuts) TParameter<double>(Form("cut_%s",c.first),c.second).Write("",TObject::kOverwrite);
+	keep->cd();
 }

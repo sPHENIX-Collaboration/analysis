@@ -21,6 +21,8 @@
 #include <phool/PHNodeIterator.h> 
 
 #include <bcolumicount/StreamingBcoInfo.h>
+#include <bcolumicount/StreamingLumiInfo.h>
+
 
 #include <TFile.h>
 #include <TH1F.h>
@@ -40,18 +42,21 @@
 SingleTrackAN::SingleTrackAN(const std::string &name):
  SubsysReco(name)
 {
+  // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::SingleTrackAN(const std::string &name) Calling ctor" << std::endl;
 }
 
 //____________________________________________________________________________..
 SingleTrackAN::~SingleTrackAN()
 {
+  // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::~SingleTrackAN() Calling dtor" << std::endl;
 }
 
 //____________________________________________________________________________..
 int SingleTrackAN::Init([[maybe_unused]] PHCompositeNode *topNode)
 {
+  // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::Init(PHCompositeNode *topNode) Initializing" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -65,7 +70,8 @@ int SingleTrackAN::Init([[maybe_unused]] PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
 {
-  std::cout << "SingleTrackAN::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
+  // TODO: Add Verbosity switch
+  //std::cout << "SingleTrackAN::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
 
   outfile = new TFile(m_output_filename.c_str(), "RECREATE");
   outfile->cd();
@@ -75,6 +81,12 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   {
     std::cout << PHWHERE << ":: SpinDB node missing! Skipping run" << std::endl;
     return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  StreamingLumiInfo *streaming_lumi_info = findNode::getClass<StreamingLumiInfo>(topNode, "STREAMINGLUMIINFO");
+  if (streaming_lumi_info)
+  {
+    std::cout << " lumi : " << streaming_lumi_info->get_lumi() << std::endl;
   }
   
   for (int i = 0; i < 120; i++)
@@ -102,10 +114,6 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   singleTrackTree->Branch("trackBunch", &trackBunch, "trackBunch/I");
   singleTrackTree->Branch("bspin", &bspin, "bspin/I");
   singleTrackTree->Branch("yspin", &yspin, "yspin/I");
-  singleTrackTree->Branch("bpol", &bpol, "bpol/F");
-  singleTrackTree->Branch("bpolerr", &bpolerr, "bpolerr/F");
-  singleTrackTree->Branch("ypol", &ypol, "ypol/F");
-  singleTrackTree->Branch("ypolerr", &ypolerr, "ypolerr/F");
   singleTrackTree->Branch("bco", &bco, "bco/l");
   singleTrackTree->Branch("bcowindowlow", &bcowindowlow, "bcowindowlow/l");
   singleTrackTree->Branch("bcowindowhigh", &bcowindowhigh, "bcowindowhigh/l");
@@ -120,9 +128,25 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   singleTrackTree->Branch("quality", &quality, "quality/F");
   singleTrackTree->Branch("charge", &charge, "charge/F");
 
+  runTree = new TTree("runTree", "Tree for quantities needed only once per run");
+  runTree->SetDirectory(outfile);
+  runTree->Branch("bpol", &bpol, "bpol/F");
+  runTree->Branch("bpolerr", &bpolerr, "bpolerr/F");
+  runTree->Branch("ypol", &ypol, "ypol/F");
+  runTree->Branch("ypolerr", &ypolerr, "ypolerr/F");
+  runTree->Branch("lumi", &lumi, "lumi/D");
+  runTree->Branch("bunchnumber_lumi", &bunchnumber_lumi);
+
+  // Double check that this is working as expected... It seems like the sphnxbunchnum and bunchnum distributions are identical, which makes me think xingshift is 0
   xingshift = spindb->GetCrossingShift();
+
   spindb->GetPolarizationBlue(0,bpol,bpolerr);
   spindb->GetPolarizationYellow(0,ypol,ypolerr);
+
+  lumi = streaming_lumi_info->get_lumi();
+  bunchnumber_lumi = streaming_lumi_info->get_bunchnumber_lumi();
+
+  runTree->Fill();
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -144,11 +168,11 @@ int SingleTrackAN::process_event([[maybe_unused]] PHCompositeNode *topNode)
   bcowindowhigh = window.second;
 
 
-  std::cout << "BCO: " << bco << std::endl;
-  std::cout << "Usable BCO Tag: " << usable_bco_tag << std::endl;
-  std::cout << "BCO Streaming Window: " << bcowindowlow << " to " << bcowindowhigh << std::endl;
+  // Check BCO output -- TODO: add Verbosity switch //
 
-
+  //std::cout << "BCO: " << bco << std::endl;
+  //std::cout << "Usable BCO Tag: " << usable_bco_tag << std::endl;
+  //std::cout << "BCO Streaming Window: " << bcowindowlow << " to " << bcowindowhigh << std::endl;
 
 
   SvtxTrackMap* trackmap = findNode::getClass<SvtxTrackMap>(topNode, "SvtxTrackMap");
@@ -185,6 +209,7 @@ int SingleTrackAN::process_event([[maybe_unused]] PHCompositeNode *topNode)
     eta = track->get_eta();
     phi = track->get_phi();
 
+    // It seems like sphnxbunchnum and bunchnum have identical distributions. Is this expected?
     trackBunch = crossing + sphnxbunchnum;
     while (trackBunch < 0)
     {
@@ -200,21 +225,23 @@ int SingleTrackAN::process_event([[maybe_unused]] PHCompositeNode *topNode)
     
   }
 
-
-    std::cout << "SingleTrackAN::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
+    // TODO: Add Verbosity switch
+    //std::cout << "SingleTrackAN::process_event(PHCompositeNode *topNode) Processing Event" << std::endl;
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int SingleTrackAN::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 {
-  std::cout << "SingleTrackAN::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
+  // TODO: Add Verbosity switch
+  //std::cout << "SingleTrackAN::ResetEvent(PHCompositeNode *topNode) Resetting internal structures, prepare for next event" << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
 //____________________________________________________________________________..
 int SingleTrackAN::EndRun(const int runnumber)
 {
+  // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -222,11 +249,13 @@ int SingleTrackAN::EndRun(const int runnumber)
 //____________________________________________________________________________..
 int SingleTrackAN::End([[maybe_unused]] PHCompositeNode *topNode)
 {
+  // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::End(PHCompositeNode *topNode) This is the End..." << std::endl;  
 
 
   outfile->cd();
   singleTrackTree->Write();
+  runTree->Write();
   outfile->Close();
 
 

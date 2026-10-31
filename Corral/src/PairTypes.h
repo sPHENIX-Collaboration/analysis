@@ -26,7 +26,9 @@
 // ---- N_min: pion-containing 10 (pi-K too, 2026-10-05); the sparser K-K, p-p, p-V0, V0-V0 types 1 for now.
 // ---- 2026-10-05 (user): 46 pair types: + K+K+, K-K-, pi-K, K-p, K-V0, K-K0s, p-K0s. pi-p now has the pion FIRST
 // ---- (was p first): dphi = phi(pi)-phi(p), the opposite sign of pre-2026-10-05 outputs.
-static const int NPairTypes		= 46;
+// ---- 2026-10-11 (user): 49 pair types: + h+h-, h+h+, h-h- (h = every accepted charged track, dE/dx PID ignored;
+// ---- pion pT cut and bin width, in eta: abs(eta) < 1.1, Hadron_etau in fluct_common.h).
+static const int NPairTypes		= 49;
 static const int PairTypes_Info[NPairTypes][4]= {
 	{ kParticleIDPionPlus,     kParticleIDPionMinus   ,10,   4 },	// 0  pi+ pi-                  bw: 1 2 4 5 8 10 20 25 40 50 100
 	{ kParticleIDPionMinus,    kParticleIDPionPlus    ,10,   4 },	// 1  pi- pi+  	               bw: 1 2 4 5 8 10 20 25 40 50 100
@@ -73,7 +75,10 @@ static const int PairTypes_Info[NPairTypes][4]= {
 	{ kParticleIDAntiLambda,   kParticleIDAntiLambda  , 1, 35 },	// 42 Lbar Lbar                bw: 1 2 4 5 7 10 14 20 28 35 70
 	{ kParticleIDKshort,       kParticleIDLambda      , 1, 35 },	// 43 K0s Lambda               bw: 1 2 4 5 7 10 14 20 28 35 70
 	{ kParticleIDKshort,       kParticleIDAntiLambda  , 1, 35 },	// 44 K0s Lbar                 bw: 1 2 4 5 7 10 14 20 28 35 70
-	{ kParticleIDLambda,       kParticleIDAntiLambda  , 1, 35 }		// 45 Lambda Lbar              bw: 1 2 4 5 7 10 14 20 28 35 70
+	{ kParticleIDLambda,       kParticleIDAntiLambda  , 1, 35 },	// 45 Lambda Lbar              bw: 1 2 4 5 7 10 14 20 28 35 70
+	{ kParticleIDhPlus,        kParticleIDhMinus      ,10,   4 },	// 46 h+ h-   (abs(eta) < 1.1)  bw: 1 2 4 5 10 11 20 22 44 55 110
+	{ kParticleIDhPlus,        kParticleIDhPlus       ,10,   4 },	// 47 h+ h+   (abs(eta) < 1.1)  bw: 1 2 4 5 10 11 20 22 44 55 110
+	{ kParticleIDhMinus,       kParticleIDhMinus      ,10,   4 }		// 48 h- h-   (abs(eta) < 1.1)  bw: 1 2 4 5 10 11 20 22 44 55 110
 };
 
 //---- end of PairTypes.h

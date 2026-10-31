@@ -111,6 +111,16 @@ double EdgeOHeta[25] = {-1.1,-1.00833,-0.916667,-0.825,-0.733333,-0.641667,-0.55
 
 #define FIXFLOAT(x) std::fixed<<std::setprecision(3)<<(x)
 
+//----- SvtxTrack_v5 (ana578 slimmed tracks, 2026-10-16) stores seed ids, not seed
+//----- pointers: use the pointer if there is one (v4 and earlier), else look the id
+//----- up in its seed container - same as PHTrackCleaner::getSiliconSeed/getTpcSeed.
+//----- Checked on ana578 79516: the seeds' cluster counts match the v5 track's own
+//----- counts for every track, and every cluster key is in TRKR_CLUSTER_SEED.
+static TrackSeed* findSeedById(TrackSeedContainer* container, unsigned short id){
+	if (!container || id >= container->size()) return nullptr;	// find() does no bounds check; USHRT_MAX = no seed
+	return *container->find(id);
+}
+
 // Optional "bco" branch (README_SplitTracks.md sec.12a.6): GL1 BCO of the
 // trigger frame (one per row, 8 bytes). ON: bco + crossing is the absolute
 // crossing, the key Corral uses to remove collisions that appear in two
@@ -189,6 +199,7 @@ Collect::Collect(const std::string &name):SubsysReco(name){
 	sumNfoundLA	= 0;
 	sumNfoundAL	= 0;
 	fHasCaloGeo	= false;
+	fAddCaloSums	= true;
 	//
 	THRESH_em	= 0.150;
 	THRESH_ih	= 0.012;
@@ -217,7 +228,7 @@ int Collect::Init(PHCompositeNode *topNode){
 	std::cout<<"Collect::Init -- opening "<<foutfileName<<std::endl;
 	fout	= new TFile(foutfileName,"RECREATE");
 	//
-	hnvtx_frame	= new TH1D("hnvtx_frame","No. Vertices/TriggerFrame vs triggerframe",10003,-1.5,10001.5);
+	hnvtx_frame	= new TH1D("hnvtx_frame","N Vertices/TF vs TF seen",10003,-1.5,10001.5);
 	hdXing      = new TH1D("hdXing","Vertexed Crossings Interval (crossings)",500,-0.5,499.5);
 	hech_em		= new TH1D("hech_em","channel energy em ",2000,-0.5,1.5);
 	hech_ih		= new TH1D("hech_ih","channel energy ih ",2000,-0.5,1.5);
@@ -302,24 +313,28 @@ int Collect::Init(PHCompositeNode *topNode){
 	outTree->Branch("trigVec" ,&fTtriggerVector);
 	outTree->Branch("nvtx"    ,&fTnvtx      ,"nvtx/I");
 	outTree->Branch("vtxntr"  ,&fTvtxntr    ,"vtxntr/I");
+	outTree->Branch("nvtxXing",&fTnvtxXing  ,"nvtxXing/I");	// vertices in this crossing (>1 = pileup or split vertex); only the hottest one gets a row
+	outTree->Branch("vtxntr2" ,&fTvtxntr2   ,"vtxntr2/I");	// runner-up vertex attached-track count in this crossing (0 if nvtxXing==1)
 	outTree->Branch("vtxx"    ,&fTvtxx      ,"vtxx/D");
 	outTree->Branch("vtxy"    ,&fTvtxy      ,"vtxy/D");
 	outTree->Branch("vtxz"    ,&fTvtxz      ,"vtxz/D");
 //?	outTree->Branch("vtxzGlob",&fTvtxzGlob  ,"vtxzGlob/D");
 	if (ADD_BCO) outTree->Branch("bco"     ,&fTbco       ,"bco/l");	// GL1 BCO of this trigger frame; ~0ULL if no GL1RAWHIT (README_SplitTracks.md sec.12a.6)
 	outTree->Branch("crossing",&fTcrossing  ,"crossing/I");
-	outTree->Branch("etotem"  ,&fTTotE_em   ,"etotem/D");
-	outTree->Branch("etotih"  ,&fTTotE_ih   ,"etotih/D");
-	outTree->Branch("etotoh"  ,&fTTotE_oh   ,"etotoh/D");
-	outTree->Branch("etotioh" ,&fTTotE_ioh  ,"etotioh/D");
-	outTree->Branch("etotepd" ,&fTTotE_epd  ,"etotepd/D");
+	if (fAddCaloSums){	// off in Fun4All_PolySeedingNoCalo_ana573.C (no calo DST read)
+		outTree->Branch("etotem"  ,&fTTotE_em   ,"etotem/D");
+		outTree->Branch("etotih"  ,&fTTotE_ih   ,"etotih/D");
+		outTree->Branch("etotoh"  ,&fTTotE_oh   ,"etotoh/D");
+		outTree->Branch("etotioh" ,&fTTotE_ioh  ,"etotioh/D");
+		outTree->Branch("etotepd" ,&fTTotE_epd  ,"etotepd/D");
+	}
 	//
 	if (TREETRACKS){
 		cout<<"Collect::Init .. Enabled TREETRACKS"<<endl;
 		outTree->Branch("ntr"     ,&fNTracks    ,"ntr/I");
 		outTree->Branch("pid"     ,fTpid        ,"pid[ntr]/B");		// =-1 undefined, =0 pion, =1 kaon, =2 proton (ID'd as V0 daughters) - sec.12c: was /I
 		outTree->Branch("indv0"   ,fTindv0      ,"indv0[ntr]/S");	// if >=0, this is the index of the v0 mother of this track in v0 tree! - sec.12c: was /I
-		outTree->Branch("primary" ,fTprimary    ,"primary[ntr]/B");	// if ==1, particle attached to PV - sec.12c: was /I
+		outTree->Branch("primary" ,fTprimary    ,"primary[ntr]/B");	// if ==1, vertex finder attached this track to the row's vertex (no DCA test since 2026-10-13) - sec.12c: was /I
 		outTree->Branch("quality" ,fTquality    ,"quality[ntr]/F");	// sec.12c: was /D (this block down through dedxKFP)
 		outTree->Branch("chisq"   ,fTchisq      ,"chisq[ntr]/F");
 		outTree->Branch("chg"     ,fTchg        ,"chg[ntr]/F");
@@ -414,10 +429,6 @@ int Collect::Init(PHCompositeNode *topNode){
 	cout<<"Collect::Init -- Ntpc  lower limit = "<<ntpcmin<<endl;
 	cout<<"Collect::Init -- Nmvtx lower limit = "<<nmvtmin<<endl;
 	cout<<"Collect::Init -- Nintt lower limit = "<<nintmin<<endl;
-	//
-	fPrimaryDCAxyLimit	= 1.5;	// cm
-	fPrimaryDCAzLimit	= 1.5;	// cm
-	cout<<"Collect::Init -- primary-flag DCA limits: xy="<<fPrimaryDCAxyLimit<<" z="<<fPrimaryDCAzLimit<<endl;
 	//
 	return Fun4AllReturnCodes::EVENT_OK;
 	//
@@ -639,6 +650,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 	if (!clustermap) clustermap = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER_SEED");	// ana573 seed/track DSTs - same fallback as KFParticle_Tools.cc
 //?	auto globvertexmap	= findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
 	auto svtxvertexmap	= findNode::getClass<SvtxVertexMap>(topNode, "SvtxVertexMap");
+	auto siliconSeedMap	= findNode::getClass<TrackSeedContainer>(topNode, "SiliconTrackSeedContainer");	// v5 seed-id lookup
+	auto tpcSeedMap		= findNode::getClass<TrackSeedContainer>(topNode, "TpcTrackSeedContainer");
 	auto tpcGeom		= findNode::getClass<PHG4TpcGeomContainer>(topNode, "TPCGEOMCONTAINER");
 	auto geometry 		= findNode::getClass<ActsGeometry>(topNode, "ActsGeometry");
 	//auto mvtxGeom		= findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_MVTX");
@@ -715,7 +728,7 @@ int Collect::process_event(PHCompositeNode *topNode){
 	NfoundAL = GetKFP( topNode, ALambda_PDGID, "KFPrecoAL_KFParticle_Container", "KFPrecoAL_SvtxTrackMap" );
 	//
 	sumNfoundKS+=NfoundKS;  sumNfoundLA+=NfoundLA;  sumNfoundAL+=NfoundAL;
-	if ((fEvtSeq-fEvtSeqFirst)%10==0) std::cout << "processing event " << fEvtSeq << " (" << fEvtSeq-fEvtSeqFirst << ") from run " << fRunNum
+	if (ievtSeen%10==0) std::cout << "processing event " << fEvtSeq << " (" << ievtSeen << ") from run " << fRunNum
 					<< ".  SUM Nk,l,a: " << sumNfoundKS << " " << sumNfoundLA << " " << sumNfoundAL << std::endl;
 	bool v0found	= false;
 	if (NfoundKS||NfoundLA||NfoundAL) v0found = true;
@@ -942,7 +955,7 @@ int Collect::process_event(PHCompositeNode *topNode){
 	int	nverticeskept	= 0;
 	if (svtxvertexmap){
 		fTnvtx		= svtxvertexmap->size();		// number of vertices found in this event
-		hnvtx_frame	->Fill(fEvtSeq-fEvtSeqFirst,fTnvtx);
+		hnvtx_frame	->Fill(ievtSeen,fTnvtx);
 		if (DEBUG) cout<<"----- Vertex NVERT = "<<fTnvtx<<endl;
 		//
 		//---- Protect against multiple vertices sharing the same crossing (real
@@ -957,12 +970,14 @@ int Collect::process_event(PHCompositeNode *topNode){
 		//     used to be a crossing-zero-only protection to every crossing.
 		std::map<int, unsigned int> vertexIdKeepByXing;	// crossing -> vertex id with the most attached tracks
 		std::map<int, unsigned int> maxNtrkByXing;			// crossing -> that vertex's track count
+		std::map<int, unsigned int> secondNtrkByXing;		// crossing -> runner-up vertex's track count (0 if none)
+		std::map<int, int>          nVtxByXing;				// crossing -> number of vertices in it
 		for (const auto& [key, vertex] : *svtxvertexmap){	// loop over vertices...
 			int          m_vertex_crossing	= vertex->get_beam_crossing();
-			// Hotness metric (2026-09-18): count tracks in this crossing with
-			// get_vertex_id()==key AND 3D DCA to this vertex within
-			// fPrimaryDCAxyLimit/fPrimaryDCAzLimit - the same "primary" test
-			// applied below, NOT gated by the ntpc/nmvtx/nintt/pT track-quality
+			// Hotness metric: count tracks in this crossing with get_vertex_id()==key
+			// (2026-10-13: the 1.5 cm DCA test was dropped - Collect applies no DCA
+			// selection anywhere; the choice only matters for nvtxXing>1 rows),
+			// NOT gated by the ntpc/nmvtx/nintt/pT track-quality
 			// floor used for tree inclusion. Author request: a genuinely busy
 			// real vertex can have many real but lower-quality tracks attached,
 			// and should not lose the "hottest" pick to a vertex with fewer but
@@ -976,15 +991,17 @@ int Collect::process_event(PHCompositeNode *topNode){
 					if (!trk2) continue;
 					if (trk2->get_crossing()  != m_vertex_crossing) continue;
 					if (trk2->get_vertex_id() != key) continue;
-					double dxy=NAN, dxyerr=NAN, dz=NAN, dzerr=NAN;
-					calc3DDCA(trk2, svtxvertexmap, key, dxy, dxyerr, dz, dzerr);
-					if (fabs(dxy)<=fPrimaryDCAxyLimit && fabs(dz)<=fPrimaryDCAzLimit) ntrk++;
+					ntrk++;
 				}
 			}
+			nVtxByXing[m_vertex_crossing]++;
 			auto it = maxNtrkByXing.find(m_vertex_crossing);
 			if (it==maxNtrkByXing.end() || ntrk>it->second){
+				if (it!=maxNtrkByXing.end()) secondNtrkByXing[m_vertex_crossing] = it->second;	// old leader becomes runner-up
 				maxNtrkByXing[m_vertex_crossing]		= ntrk;
 				vertexIdKeepByXing[m_vertex_crossing]	= key;
+			} else if (ntrk>secondNtrkByXing[m_vertex_crossing]){
+				secondNtrkByXing[m_vertex_crossing]		= ntrk;
 			}
 		}
 		//
@@ -1004,11 +1021,13 @@ int Collect::process_event(PHCompositeNode *topNode){
 			double m_vx 				= vertex->get_x();
 			double m_vy 				= vertex->get_y();
 			double m_vz 				= vertex->get_z();
-			int	   m_ntracks			= maxNtrkByXing[m_vertex_crossing];	// DCA-based hotness count, not vertex->size_tracks() (see above)
+			int	   m_ntracks			= maxNtrkByXing[m_vertex_crossing];	// attached-track count, not vertex->size_tracks() (see above)
 			if (DEBUG) cout	<<"-----   vtx: "<<m_vertexid<<" crossing="<<m_vertex_crossing
 							<<" x="<<m_vx<<" y="<<m_vy<<" z="<<m_vz
 							<<"\t ntrkattached = "<<m_ntracks<<" ------ "<<endl;
 			fTvtxntr			= m_ntracks;			// to outTree... total number of tracks assigned to chosen vertex
+			fTnvtxXing			= nVtxByXing[m_vertex_crossing];		// to outTree... vertices sharing this crossing (CF analyses skip >1)
+			fTvtxntr2			= secondNtrkByXing[m_vertex_crossing];	// to outTree... runner-up vertex attached-track count (0 if none)
 			fTvtxx				= m_vx;					// to outTree... PV x 
 			fTvtxy				= m_vy;					// to outTree... PV y
 			fTvtxz				= m_vz;					// to outTree... PV z
@@ -1134,11 +1153,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				//
 				int vertexFlag	= 0;
 				if (track->get_vertex_id() == m_vertexid) vertexFlag = 1; 	// this track is attached to this vertex!  (otherwise just same crossing)
-				if (vertexFlag==1){
-					if (fabs(dca3d_xy) > fPrimaryDCAxyLimit || fabs(dca3d_z) > fPrimaryDCAzLimit){
-						vertexFlag = 0;	// vertex finder says it's attached, but PCA to the vertex is too large
-					}
-				}
+				// 2026-10-13: no DCA test here any more - "primary" is purely the vertex finder's
+				// attachment; dcaxy/dcaz are in the tree, so any DCA selection is made downstream (Corral AcceptTrack).
 				//
 				if (DEBUG2) cout<<"TrackLoop: doing dedx..."<<endl;
 				double	dedx70n		=    0;
@@ -1161,7 +1177,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				Short_t tpcz_local[48];
 				for (int itl=0;itl<48;itl++){ tpcsector_local[itl]=255; tpcarclen_local[itl]=0; tpcz_local[itl]=0; }
 				std::vector<DiagTempClusterInfo20260920> thisTrackClusters20260920;	// DIAGTEMP-20260920
-				auto tpcseed = track->get_tpc_seed();
+				TrackSeed* tpcseed = track->get_tpc_seed();
+				if (!tpcseed) tpcseed = findSeedById(tpcSeedMap, track->get_tpc_seed_id());	// v5
 				if (tpcseed){
 					//
 					//seedpx	= tpcseed->get_px();
@@ -1262,7 +1279,8 @@ int Collect::process_event(PHCompositeNode *topNode){
 				//if (DEBUG) cout<<"TrackLoop: done doing dedx..."<<endl;
 				//
 				if (DEBUG2) cout<<"TrackLoop: count silicon hits..."<<endl;
-				auto silseed = track->get_silicon_seed();
+				TrackSeed* silseed = track->get_silicon_seed();
+				if (!silseed) silseed = findSeedById(siliconSeedMap, track->get_silicon_seed_id());	// v5
 				if (silseed){
 					for (auto it = silseed->begin_cluster_keys(); it != silseed->end_cluster_keys(); ++it){
 						auto ckey = *it;

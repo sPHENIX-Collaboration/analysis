@@ -48,11 +48,11 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libsingletrackan.so)
 
 
-void Fun4All_SingleTrackAN(const int nevnt = 10, 
-  const char *inputfile = "/sphenix/lustre01/sphnxpro/production/run3pp/physics/ana556_2025p013_v002/DST_TRKR_SEED/run_00079500_00079600/DST_TRKR_SEED_run3pp_ana556_2025p013_v002-00079507-00000.root",
-  const std::string& outputdir = "/sphenix/tg/tg01/coldqcd/dloomis/singletrackan/", 
-  const char *inputfile_bco = "../streamingbcodsts/DST_STREAMING_BCOINFO-00079507.root",
-  const std::string& outfilename = "clusters_seeds"
+void Fun4All_SingleTrackAN(const int nevnt = -1, 
+  const char *inputfile = "/sphenix/lustre01/sphnxpro/production/run3pp/physics/ana573_2026p003_v001/DST_TRKR_TRACKS/run_00079500_00079600/DST_TRKR_TRACKS_run3pp_ana573_2026p003_v001-00079516-00000.root",
+  const char *inputfile_lumi = "/sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/lumi/Oct13/DST_STREAMING_LUMIINFO-00079516-00000.root",
+  const std::string& outputdir = "/sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/",
+  const char *inputfile_bco = "../streamingbcodsts/DST_STREAMING_BCOINFO-00079516.root"
 )
 {
 
@@ -66,6 +66,11 @@ void Fun4All_SingleTrackAN(const int nevnt = 10,
   Fun4AllInputManager *in_bco = new Fun4AllDstInputManager("DSTin_bco");
   in_bco->fileopen(inputfile_bco);
   se->registerInputManager(in_bco);
+
+
+  Fun4AllInputManager *in_lumi = new Fun4AllDstInputManager("DSTin_lumi");
+  in_lumi->fileopen(inputfile_lumi);
+  se->registerInputManager(in_lumi);
 
 
   G4TRACKING::convert_seeds_to_svtxtracks = false;
@@ -142,7 +147,7 @@ void Fun4All_SingleTrackAN(const int nevnt = 10,
   TrackingInit();
 
   // reject laser events if G4TPC::REJECT_LASER_EVENTS is true
-  Reject_Laser_Events();
+  //Reject_Laser_Events();
 
   
   //*********************** Go from clusters to seeds ******************** //
@@ -158,12 +163,13 @@ void Fun4All_SingleTrackAN(const int nevnt = 10,
   // Go from seeds to tracks
 
   // Track Matching
-  Tracking_Reco_TrackMatching_run2pp("TRKR_CLUSTER_SEED");
+  // Tracking_Reco_TrackMatching_run2pp("TRKR_CLUSTER_SEED");
 
   /*
    * Either converts seeds to tracks with a straight line/helix fit
    * or run the full Acts track kalman filter fit
    */
+  /*
   if (G4TRACKING::convert_seeds_to_svtxtracks)
   {
     auto *converter = new TrackSeedTrackMapConverter;
@@ -181,7 +187,7 @@ void Fun4All_SingleTrackAN(const int nevnt = 10,
 
   //vertexing and propagation to vertex
   Tracking_Reco_Vertex_run2pp("TRKR_CLUSTER_SEED");
-
+  */
   // ****************** register spin info *****************
   SpinDBNode *spin = new SpinDBNode();
   se->registerSubsystem(spin);

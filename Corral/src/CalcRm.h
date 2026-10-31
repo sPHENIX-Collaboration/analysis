@@ -129,7 +129,8 @@ class CalcRm{
 			if (ipid< 10){ ival = ipid-5; } else
 			if (ipid==10){ ival = 5;      } else
 			if (ipid==11){ ival = 6;      } else
-			if (ipid==12){ ival = 7;      }
+			if (ipid==12){ ival = 7;      } else
+			if (ipid==13 || ipid==14){ ival = 0; }	// h+, h-: pion y and pT limits (2026-10-11)
 			return ival;
 		}
 		//
@@ -185,8 +186,6 @@ class CalcRm{
 		virtual TH1D*	GethR2dy(int izv);				// one parameter  -> returns histogram in this Zvtx bin
 		virtual TH1D*	GethR2dphi();					// no parameters  -> returns Zvtx-averaged histogram
 		virtual TH1D*	GethR2dphi(int izv);			// one parameter  -> returns histogram in this Zvtx bin
-		virtual TH1D*	GethR2dq();						// no parameters  -> returns Zvtx-averaged histogram
-		virtual TH1D*	GethR2dq(int izv);				// one parameter  -> returns histogram in this Zvtx bin
 		//
 // 		virtual TH1D*	GethR2dyNS();					// no parameters  -> returns Zvtx-averaged histogram
 // 		virtual TH1D*	GethR2dyNS(int izv);			// one parameter  -> returns histogram in this Zvtx bin
@@ -217,6 +216,10 @@ class CalcRm{
 		virtual TH2D*	GethGapPt(int sm){ return hGapPt[sm]; }		// sec 34: the notch vs pair mean pt
 		virtual TH2D*	GethGapNch(int sm){ return hGapNch[sm]; }		// sec 34: the notch vs accepted charged tracks
 		virtual TH2D*	GethGapRm(int sm){ return hGapRm[sm]; }		// sec 34.1: the notch vs the pair's meeting radius (where the two tracks meet in phi)
+		virtual TH2D*	GethGapSmin(int sm){ return hGapSmin[sm]; }	// README_SplitTracks578 D1: min / max abs(dphi*(R)) over R = 0.10-0.30 m
+		virtual TH2D*	GethGapSmax(int sm){ return hGapSmax[sm]; }
+		virtual TH2D*	GethGapMeetDy(int sm){ return hGapMeetDy[sm]; }	// D1: pairs that meet in phi in 0.10-0.30 m, vs abs(dy)
+		virtual TH2D*	GethGapMeetDpt(int sm){ return hGapMeetDpt[sm]; }	// D1: the same vs abs(pt1 - pt2)
 		virtual void	FillGap(int sm, int i, int iev, int j, int jev, int izv, double weight);
 		virtual TH1D*	GethMinvFineS(){ return hMinvF_S; }	// fine Minv near threshold, sibling (all Zvtx, raw)
 		virtual TH1D*	GethMinvFineM(){ return hMinvF_M; }	// same, mixed
@@ -254,10 +257,11 @@ class CalcRm{
 //		static const int NCOMBMAX	= 1000;		// comfortable for NMIX = 8 or less.... obsolete
 //		static const int YNBMAX		=   40;		// needed for 4th dimension of R4 via TH3D...
 		//
-		static const int NR2TYPES	=   3;		// y1y2, dydphi, dydq
+		static const int NR2TYPES	=   3;		// y1y2, dydphi, (Q,pT_pair)
 		//-------------------------------------
 		//
 		bool   fDistinguishable;
+		bool   fUseEta1, fUseEta2;	// 2026-10-11: this leg is h+/h- -- its "y" is the pseudorapidity (set in Book from the pid)
 		bool   fLikeSign;
 		bool   fDoCrossing;
 		bool   fDoBaseline;
@@ -276,7 +280,6 @@ class CalcRm{
 		bool   fTSepMin;		// true: use min over R = 0.30-0.78 m of abs(dphi*) instead of R = 0.5 m ("tsepmYYPP")	// README_SplitTracks573 sec 11: two-track-resolution pair cut, OFF if fTSepDy<=0.
 									// A charged like-sign pair (sibling AND mixed, in PairInfo) is rejected if
 									// abs(y1-y2)<fTSepDy && abs(dphi*(0.5 m))<fTSepDphi (deg), dphi* with the sign "+" of FillTTR.
-		bool   fDoDQ;		// set internally
 		double fQcut;
 		int    fExcludeAdjTF;	// sec 18.23: skip mixed EVENT pairs (iev,jev) from neighboring trigger frames
 								// (same run, |evt1-evt2|==1; mode 2 also same-TF, |devt|==0 -- used when the
@@ -334,9 +337,6 @@ class CalcRm{
 		double ZVTXL;
 		double ZVTXU;		
 		double ZVTXBW;
-		int    DQNB;
-		double DQL;
-		double DQU;
 		//
 		bool   fFlipDy;
 		bool   fDoMinvCut;
@@ -412,9 +412,6 @@ class CalcRm{
 		TH1D*	hR2dphi[NZVTXMAX];			// from dydphi...
 		TH1D*	hR2dphie[NZVTXMAX];			// from dydphi...
 		TH1D*	hR2dphiN[NZVTXMAX];			// from dydphi...
-		TH1D*	hR2dq[NZVTXMAX];			// from dydq...
-		TH1D*	hR2dqe[NZVTXMAX];			// from dydq...
-		TH1D*	hR2dqN[NZVTXMAX];			// from dydq...
 		//
 // 		TH1D*	hR2dyNS[NZVTXMAX];			// from y1y2...
 // 		TH1D*	hR2dyNSe[NZVTXMAX];			// from y1y2...
@@ -446,6 +443,10 @@ class CalcRm{
 		TH2D*	hGapYbar[2];
 		TH2D*	hGapPt[2];			// sec 34: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs pair mean pt, abs(dy) < 1
 		TH2D*	hGapRm[2];			// sec 34.1: [sibling|mixed] vertex dphi vs meeting radius R_m (m; 1.4 = the tracks never meet)
+		TH2D*	hGapSmin[2];		// README_SplitTracks578 D1: [sibling|mixed] vertex dphi vs min abs(dphi*(R)) over R = 0.10-0.30 m (deg)
+		TH2D*	hGapSmax[2];		//   ... and vs max abs(dphi*(R)) over the same radii (small = close across the whole INTT-TPC gap)
+		TH2D*	hGapMeetDy[2];		// D1: [sibling|mixed] vertex dphi vs abs(dy), pairs with min abs(dphi*) < 0.5 deg over R = 0.10-0.30 m
+		TH2D*	hGapMeetDpt[2];		// D1: the same pairs vs abs(pt1 - pt2) (GeV/c)
 		TH2D*	hGapNch[2];			// sec 34: [sibling|mixed] vertex dphi vs accepted charged tracks (event of particle 1)		// sec 32: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs ybar (0.1), abs(dy) < 1
 		TH2D*	hGapDy[2];			// sec 28: [sibling|mixed] vertex dphi (1 deg, abs < 60) vs abs(dy) (0-2), raw counts, all Zvtx
 		TH2D*	hTTRside[2][2];		// sec 20: [sibling|mixed][pt-ordered dphi side: 0 clean (dphi>0), 1 dirty (dphi<0)], sign +, min over R
@@ -606,8 +607,6 @@ inline TH1D* CalcRm::GethR2yydy(){ return hR2yydy[ZVTXNB]; }
 inline TH1D* CalcRm::GethR2yydy(int izv){ return hR2yydy[izv]; }
 inline TH1D* CalcRm::GethR2dy(){ return hR2dy[ZVTXNB]; }
 inline TH1D* CalcRm::GethR2dy(int izv){ return hR2dy[izv]; }
-inline TH1D* CalcRm::GethR2dq(){ return hR2dq[ZVTXNB]; }
-inline TH1D* CalcRm::GethR2dq(int izv){ return hR2dq[izv]; }
 inline TH1D* CalcRm::GethR2dphi(){ return hR2dphi[ZVTXNB]; }
 inline TH1D* CalcRm::GethR2dphi(int izv){ return hR2dphi[izv]; }
 

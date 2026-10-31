@@ -168,11 +168,12 @@
 	static const double		V0PEAK_SIG[3]		= { 0.0076, 0.0035, 0.0028 };
 	static const double		V0PEAK_NSIG			= 3.0;
 	//---- README_PID.md sec 10.3: ana573 vertex-phi windows (deg) of large abs(dca), fixed at the silicon radius; for THIS data only
-	//---- the first NSIPHIMASK_MAIN are the two big ones (default); "siphimaskall" adds the six small ones (sec 10.4: track dips
-	//---- at 0.5-0.8 of the local level, most with a DCA spike)
+	//---- the first NSIPHIMASK_MAIN are the default; "siphimaskall" uses all eight (sec 10.4: six small track dips at 0.5-0.8 of the
+	//---- local level, most with a DCA spike). 2026-10-21 (README_SplitTracks578 A1, user): ana578 keeps only [70,83); the
+	//---- [94,115) hole of ana573 is gone in ana578 (flat track count, normal abs(dcaxy)).
 	//---- README_SplitTracks573 sec 38: the TPC central-membrane hole: centre at eta = -CMMASK_K vtxz (hetazvtx, ana573)
 	static const double		CMMASK_K				= 0.018;
-	static const int		NSIPHIMASK_MAIN			= 2;
+	static const int		NSIPHIMASK_MAIN			= 1;
 	static const int		NSIPHIMASK				= 8;
 	static const double		SIPHIMASK_LO[NSIPHIMASK]	= { 70., 94., -23., -6., 26., 43., 55., 157.};
 	static const double		SIPHIMASK_HI[NSIPHIMASK]	= { 83.,115., -18., -2., 31., 47., 57., 161.};
@@ -186,6 +187,8 @@
 	//---- of its two species; the y bin width (y1, y2 and dy) is per pair type in PairTypes.h (PairTypes_Info[][3]).
 	//---- 2026-10-05 (user): K 0.65 -> 0.7 (= the V0s), so K-V0 pairs can share a coarse bin width (1.3 only shares 0.05, 0.1).
 	static const double Species_yu[NSpecies]              = {  1.0, 0.7, 0.6, 0.6,  0.6,   0.7, 0.7, 0.7 };
+	//---- 2026-10-11 (user): h+, h- use pseudorapidity over the whole track acceptance, abs(eta) < 1.1 (= the eta fiducial)
+	static const double Hadron_etau						= 1.1;
 	//---- R2yy(dy) from the (y1,y2) map (a cross-check only; physics is (dy,dphi)): the fraction of a (y1,y2) cell of widths w1, w2
 	//---- centred at c1, c2 that falls in each bin of a dy axis (nb bins from lo, width bw), by sub-sampling the cell. With equal
 	//---- widths and bw = w1 the cell centre lands on a dy bin centre: the caller uses that bin alone.
@@ -217,7 +220,10 @@
 	//
 	//	ParticleID = SpeciesID for chg>0, and =SpeciesID+NSpecies for chg<0
 	//
-	static const int NPARTICLENAMES					= 13;
+	//---- 2026-10-11 (user): h+, h- = every accepted charged track, the dE/dx PID ignored (charged-hadron CFs, as in the
+	//---- many h+/h- papers). Pion pT cut and mass (GetSpecies -> pion), but in PSEUDORAPIDITY, abs(eta) < Hadron_etau: the loop
+	//---- passes eta, and CalcRm (fUseEta, from the pid) builds the 4-momenta from eta with the pion mass.
+	static const int NPARTICLENAMES					= 15;
 	static const int kParticleIDPionPlus			=  0;
 	static const int kParticleIDKaonPlus			=  1;
 	static const int kParticleIDProton				=  2;
@@ -231,6 +237,10 @@
 	static const int kParticleIDKshort				= 10;
 	static const int kParticleIDLambda				= 11;
 	static const int kParticleIDAntiLambda			= 12;
+	static const int kParticleIDhPlus				= 13;
+	static const int kParticleIDhMinus				= 14;
+	inline bool IsHadronParticleID(int ipid){ return ipid==kParticleIDhPlus || ipid==kParticleIDhMinus; }	// h+, h-: eta, not y
+	inline bool IsV0ParticleID(int ipid){ return ipid==kParticleIDKshort || ipid==kParticleIDLambda || ipid==kParticleIDAntiLambda; }
 //	static const int kParticleIDTritonPlus			=  5;
 //	static const int kParticleID3HePlus				=  6;
 //	static const int kParticleID4HePlus				=  7;
@@ -239,16 +249,16 @@
 //	static const int kParticleID4HeMinus			= 15;
 	static const char *ParticleIDNames[NPARTICLENAMES] = {"#pi+", "K+", "p"      , "n"      , "d"      ,	// "t+","^{3}He+","#alpha+",
 											   		 	  "#pi-", "K-", "#bar{p}", "#bar{n}", "#bar{d}",	// "t-","^{3}He-","#alpha-" 
-											   		 	  "K^{0}_{S}","#Lambda_{0}","#bar{#Lambda}_{0}"  };
+											   		 	  "K^{0}_{S}","#Lambda_{0}","#bar{#Lambda}_{0}", "h+", "h-"  };
 	static const int ParticlePDGids[NPARTICLENAMES]	= { 211, 321, 2212, 2112, 1000010020,	//  1000010030, 1000020030, 1000020040,
 	                                                   -211,-321,-2212,-2112,-1000010020,	// -1000010030,-1000020030,-1000020040 
-	                                                    310, 3122, -3122};
+	                                                    310, 3122, -3122, 0, 0};	// h+, h-: no PDG id
 	static const int ParticleBaryNum[NPARTICLENAMES]= { 0, 0,  1,  1,  2,					//  1000010030, 1000020030, 1000020040,
 	                                                    0, 0, -1, -1, -2,					// -1000010030,-1000020030,-1000020040 
-	                                                    0, 1, -1 };
+	                                                    0, 1, -1, 0, 0 };
 	static const int ParticleCharge[NPARTICLENAMES]= { 1,1,1,1,1,							//  1000010030, 1000020030, 1000020040,
 	                                                  -1,-1,-1,-1,-1,						// -1000010030,-1000020030,-1000020040 
-	                                                   0, 0, 0 };
+	                                                   0, 0, 0, 1, -1 };
 	//
 	//
 	static const int NR2TYPES	= 3;	// used in reader to get hists. Also defined in class CalcRm - ensure consistency!!!

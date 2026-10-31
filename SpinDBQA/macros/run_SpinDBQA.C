@@ -5,12 +5,12 @@ R__LOAD_LIBRARY(libSpinDBQA.so)
 // For Run 2 pp
 //First run in spin db: 41935
 //First official spin run: 45236
-//Final spin (pp) run: 53880
+//Final spin run: 53880
 
 // For run 3 pp
 //First run in spin db: 79145
 //First run with Hjet and pC data (first official spin run): 79243 (fill number 36468)
-//
+//Final spin run: 81668 (fill number 36615)
 
 void run_SpinDBQA()
 {
