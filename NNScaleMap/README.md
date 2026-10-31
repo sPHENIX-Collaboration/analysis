@@ -168,7 +168,7 @@ Stage-1 options (`[stage1]` in the card):
 | `refresh` | 50 | epochs between refits of the mass peaks that set the signal weights |
 | `lam_prior` | 0.05 | L2 pull of epsilon, delta toward zero at epoch 0, annealed linearly to 0 |
 | `lam_split` | 1.0 | weight of the Lambda/anti-Lambda peak-split term, binned in leg-1 (pion) kinematics |
-| `lam_split2` | 0.0 | weight of the same term binned in leg-2 (proton) kinematics; off in `example.toml` (no gain in the 2026-10-30 A/B, results/leg2_ab) |
+| `lam_split2` | 0.0 | weight of the same term binned in leg-2 (proton) kinematics; off in `example.toml` (no gain in the 2026-10-30 A/B test on fill 79514–79516) |
 | `lam_alpha` | 2.0 | weight of the K0s Armenteros ⟨α⟩ symmetry term |
 | `k0s_window`, `lam_window` | [0.42, 0.58], [1.09, 1.145] | GeV, mass windows of the peak fits that set the signal weights (inside the 0.40–0.60 and 1.08–1.15 preselection) |
 | `bkg_order` | 1 | polynomial order of the background in those peak fits |
@@ -219,12 +219,3 @@ Both campaigns run on fill 79514–79516 with its nominal card. Results go to `t
 - Every other source contributes its largest |\delta kappa|.
 - sigma_syst is the quadrature sum of all sources except `stat`.
 - The output `kappa_lookup_unc.csv` is the nominal lookup plus sigma_stat, sigma_syst and one column per source. The script also prints how often each source exceeds σ_stat.
-
-## Notes on the V0_polyseeding_ana573 production
-
-- Inputs: `/sphenix/user/cdean/public/V0_polyseeding_ana573` (11 runs per species).
-- Three files cannot be read by uproot or ROOT, and the skim reports them as failed:
-  - `output_Kshort_reco_KFParticle_run81603.root`
-  - `output_Kshort_reco_KFParticle_run81610.root`
-  - `output_Lambda0_reco_KFParticle_run81610.root`
-- Measured on two runs: about 4–5% of candidates have a daughter above 1 GeV, 0.3–0.4% above 2 GeV and about 0.02% above 5 GeV. Over the 19 readable files this is about 2M candidates per species above 1 GeV and about 10k above 5 GeV.
