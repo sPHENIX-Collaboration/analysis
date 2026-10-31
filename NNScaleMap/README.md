@@ -219,3 +219,11 @@ Both campaigns run on fill 79514–79516 with its nominal card. Results go to `t
 - Every other source contributes its largest |\delta kappa|.
 - sigma_syst is the quadrature sum of all sources except `stat`.
 - The output `kappa_lookup_unc.csv` is the nominal lookup plus sigma_stat, sigma_syst and one column per source. The script also prints how often each source exceeds σ_stat.
+
+---
+### Disclaimer and acknowledgement
+This project is an effort to investigate the use of artificial intelligence, including but not limited to generative AI, to assist and accelerate the development of physics-object calibrations.
+
+The overall design philosophy, underlying physics concepts, calibration strategies, and validation procedures are developed by humans. The implementation of these ideas, including software development and code generation, is assisted by generative AI tools, primarily Codex through the MIT generative AI platform Parley API and Claude Code.
+
+All AI-generated code and related outputs are carefully reviewed, validated, and refined by humans before use. The resulting implementations are verified through a comprehensive set of closure tests using both simulated events and real collision data processed with the standard sPHENIX reconstruction chain. These validation studies are used to verify that the AI-assisted implementations reproduce the expected physics performance and meet the requirements for accuracy, reliability, and reproducibility.
