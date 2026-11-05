@@ -4138,7 +4138,9 @@ void corral::Loop(){
 		TGraph *g	= new TGraph();
 		for (int i=1;i<=px->GetNbinsX();i++) if (px->GetBinEntries(i)>100) g->SetPoint(g->GetN(),px->GetBinContent(i),pz->GetBinContent(i));
 		g->SetTitle(Form("per 1#circ vertex-#phi bin, accepted tracks: r = %.2f;<|dcaxy|> (cm);<|dcaz|> (cm)",g->GetCorrelationFactor()));
-		g->SetMarkerStyle(20); g->SetMarkerSize(0.4); g->Draw("AP");
+		g->SetMarkerStyle(20); g->SetMarkerSize(0.4);
+		if (g->GetN()>0) g->Draw("AP");												// a fully vetoed chunk has no points (ROOT error otherwise)
+		else { TLatex t; t.SetNDC(); t.SetTextAlign(22); t.DrawLatex(0.5,0.5,"no bins with > 100 tracks"); }
 	}
 	ccan[ican]->cd(); ccan[ican]->Update();
 	ccan[ican]->Print(OutputFileName.Data());

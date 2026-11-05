@@ -220,8 +220,7 @@ tracks; page 2, stage 3: pairs and the maps, and what is watched; page 3: the V0
   fits the per-chunk values versus time and versus occupancy, to catch any drift.
 - **Built-in cross-checks.** pi- pi+ is the pi+ pi- system with the species order swapped (dy -> -dy),
   a check of the sign and crossing conventions; R2(dy) is computed both
-  from the (dy, dphi) map and from the (y1, y2) map; Finalize compares every histogram with a
-  single-job full-statistics reference and reports the pulls; and the logs count every removed track,
+  from the (dy, dphi) map and from the (y1, y2) map; and the logs count every removed track,
   vetoed pair and skipped mixed pair.
 
 ## Building
@@ -384,7 +383,7 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    ```sh
    Corral/lists/make_lists.bash /path/to/collect_dir 1000000 <dataset>
    ```
-   This writes `lists/<dataset>/` with `list_NN.txt`, `list_all.txt` (all lists together), `manifest.txt`,
+   This writes `lists/<dataset>/` with `list_NN.txt`, `manifest.txt`,
    `lists_summary.txt` and `segment_entries.txt`. Each list holds contiguous segments of one run, so the
    chunks follow the data-taking time order. `<dataset>` defaults to the name of the Collect directory.
    The Collect files may sit in the directory itself or in run-number subfolders (`<collect_dir>/<run>/`).
@@ -405,26 +404,34 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    hax* and rpr* nodes by default (`EXCLUDE="..."` replaces the list, `EXCLUDE=` allows every node). Outputs go to
    `root/<dataset>/chunks/corral_NN.root`, and the same under `pdf/` and `log/`.
    A **variant** of the dataset (the same lists with a run string) is
-   `CORRAL_VARIANT=<name> CORRAL_RS=<runstring> Corral/run_m_array.bash <dataset>` (and the same for
-   `run_m.bash`): outputs go under `<dataset>_<name>/`, and `lists/<dataset>_<name>` is made as a link to the
+   `CORRAL_VARIANT=<name> CORRAL_RS=<runstring> Corral/run_m_array.bash <dataset>`: outputs go under `<dataset>_<name>/`, and `lists/<dataset>_<name>` is made as a link to the
    dataset's lists, so Finalize runs with `-d <dataset>_<name>`. For example, everything off:
    `CORRAL_VARIANT=raw CORRAL_RS=noLS_noulstest_noXTF_noTFdup_nolooper_notsep_noisep_nocross`.
-3. **Run the single full-statistics job**, which reads `list_all.txt` and is the reference Finalize
-   compares against:
-   ```sh
-   Corral/run_m.bash <dataset>
-   ```
-   Output: `root/<dataset>/corral.root`, `pdf/<dataset>/corral.pdf`, `log/<dataset>/corral.log`. It asks for
-   16 GB and 7 days (`MEM=`, `TIME=` override). With 28 pair types a job took about 2 h 15 min and
-   3 GB per 50M events (ana573, 642M events: ~29 h, MEM=32G); with 46 a 10M-event chunk takes ~1.5 h.
-   This job also snapshots its binary.
-4. **Finalize**, as a SLURM job (about 5 min, under 1 GB):
+   **Why two scripts.** With 140-170 chunks at once reading the same run from the shared network
+   disk (/rs on the WSU Grid System), each chunk used under a minute of CPU per hour and took 2-11 h instead of ~1 h: the nodes
+   sat waiting for the disk. The disk is slow per read request, not per MB, and corral reads every file
+   several times (pre-passes plus the main loop) in many small requests. The same pass from local disk is
+   30-40x faster. So:
+   - `run_m_array.bash` submits the chunks. Each task copies its list's files to the node's local `$TMPDIR`
+     (4 at a time, one big sequential read per file), runs corral there, and deletes the copy when the task
+     ends, however it ends. A chunk now takes ~35 min, ~5 min of it copying. A task needs its input size
+     (~12 GB per 10M events) plus 5 GB free; if that is not there it fails with `LOCALCOPY FAIL`: resubmit
+     that array range. `CORRAL_LOCAL=0` reads the files in place, as before.
+   - `run_throttle.bash <maxrun> <array jobid> ...` limits how many chunks copy from /rs at once. Submit
+     the arrays with a small limit each (e.g. `0-27%2`), then start it (e.g. `28`). It submits itself as a
+     small SLURM job. Every 10 min it shares `<maxrun>` running tasks among the arrays that still have pending
+     ones (`scontrol ... ArrayTaskThrottle`), so about `<maxrun>` chunks run until the work runs out. A slow
+     chunk holds only its own slot. It ends by itself when all the arrays are done (log:
+     `log/throttle/throttle_<first jobid>.log`). 28 at once copied in ~4-5 min each; more is probably fine.
+
+   There is no single whole-dataset job: a dataset is always run as chunks.
+3. **Finalize**, as a SLURM job (about 5 min, under 1 GB):
    ```sh
    Corral/run_finalize.bash <dataset>                  # abs(zvtx) < 8 cm for the physics (fz08)
    Corral/run_finalize.bash <dataset> Finalize_fz16    # the whole zvtx range
    Corral/run_finalize.bash ana573_795xx ana573_8156x ana573_8158x ana573    # one job per dataset
    ```
-   It reads `lists/<dataset>/`, `root/<dataset>/chunks/` and `root/<dataset>/corral.root`, runs in a
+   It reads `lists/<dataset>/` and `root/<dataset>/chunks/`, runs in a
    scratch directory on the worker node and writes `root/<dataset>/corral_Finalize_<dataset>.root`,
    `pdf/<dataset>/corral_Finalize_<dataset>.pdf` and `log/<dataset>/corral_Finalize_<dataset>.log`
    (`corral_Finalize_fz16_<dataset>.*` for `Finalize_fz16`; the dataset in the name since 2026-10-19, so
@@ -468,8 +475,7 @@ Everything belonging to one dataset (for example `ana532`) uses the dataset name
    shaded, run boundaries dashed). Then the pair-type pages as before. The root file gets `info/` (the
    chunks' texts, the counters summed, plus `chunks` and `finalize`), `work/qa/` (the summed QA histograms)
    and `work/segQA` (the per-segment table of the vs-segment pages, live fractions included).
-   Without `corral.root` (the single job still running) it skips only the pages that compare with it. The
-   crossing correction follows the chunks: a `nocross` production stays uncorrected in Finalize too.
+   The crossing correction follows the chunks: a `nocross` production stays uncorrected in Finalize too.
 
 ### Where things are looked for
 
@@ -483,10 +489,9 @@ Outputs are kept per dataset, so that productions never mix:
 
 ```
 lists/<dataset>/                    job lists (made by lists/make_lists.bash)
-root/<dataset>/corral.root        single full-statistics job (the Finalize reference)
 root/<dataset>/corral_Finalize_<dataset>.root
 root/<dataset>/chunks/              one file per job list
-root/<dataset>_<variant>/           the same for a variant (run_m*.bash CORRAL_VARIANT=; lists/<dataset>_<variant> -> <dataset>)
+root/<dataset>_<variant>/           the same for a variant (run_m_array.bash CORRAL_VARIANT=; lists/<dataset>_<variant> -> <dataset>)
 DATASET_<dataset>.md                what the dataset is: trees, events, runs, job IDs (in the Corral
                                     directory itself, so it survives when a superseded dataset is deleted)
 pdf/<dataset>/, log/<dataset>/      the same structure

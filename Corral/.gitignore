@@ -14,8 +14,7 @@
 !/src/*.cxx
 
 # job submission
-!/run_m.bash
-!/run_m.slurm
+!/run_throttle.bash
 !/run_m_array.bash
 !/run_m_array.slurm
 !/run_finalize.bash
@@ -45,3 +44,8 @@
 /ana578/*
 !/ana578/SplitTrackTypes_ana578.pdf
 !/ana578/SplitTrackLogic_ana578.pdf
+# the ana581 split-track pictures (same rule)
+!/ana581/
+/ana581/*
+!/ana581/SplitTrackTypes_ana581.pdf
+!/ana581/SplitTrackLogic_ana581.pdf

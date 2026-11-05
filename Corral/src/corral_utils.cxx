@@ -43,11 +43,11 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
   , doCrossing(true)
   , doOldPID(false)
   , doSiPhiMask(true)
-  , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.07,0.10); "nocmmask" off, "cmmaskAABB" override
+  , doCMMask(true)		// README_SplitTracks573 sec 38: default ON (2026-09-30), w in [-0.09,0.16) since 2026-11-03 (ana581 A2); "nocmmask" off, "cmmaskAABB" override
   , doSegVeto(true)		// README.md: skip the segments in bad_segments.txt; default ON since 2026-10-13, "AllSeg" = OFF
   , doSepMaps(false)		// README_CQcomparison sec 2.3: diagnostic separation maps (~+5 min per chunk); "sepmaps" on
-  , valCMMaskLo(-0.07)
-  , valCMMaskHi(0.10)
+  , valCMMaskLo(-0.09)
+  , valCMMaskHi(0.16)
   , nSiPhiMask(NSIPHIMASK_MAIN)
   , doQCut(false)
   , FinePhiBinning(false)	// only set true below if RunString requests it
@@ -455,7 +455,7 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//---- README_CQcomparison sec 2.3: separation-map diagnostic (histograms hSep*, own mixing), default OFF; "sepmaps" = on
 	if (RunString.Contains("sepmaps",TString::kIgnoreCase)) doSepMaps = true;
 	cout<<"reader::reader -- separation maps (README_CQcomparison sec 2.3) "<<(doSepMaps?"ON (sepmaps)":"OFF")<<endl;
-	//---- README_SplitTracks573 sec 38: central-membrane mask, default ON, w in [-0.07,0.10); "nocmmask" = off; "cmmaskAABB" = w in [-0.AA, 0.BB) (sane: each 0.00-0.20)
+	//---- README_SplitTracks573 sec 38: central-membrane mask, default ON, w in [-0.09,0.16); "nocmmask" = off; "cmmaskAABB" = w in [-0.AA, 0.BB) (sane: each 0.00-0.20)
 	if (RunString.Contains("nocmmask",TString::kIgnoreCase)){
 		doCMMask	= false;
 		cout<<"RunString="<<RunString<<"\t doCMMask="<<(int)doCMMask<<endl;
@@ -591,7 +591,12 @@ corral::corral(TTree *tree, int ntd, TString runstr, TString outname)
 	//
 	if (nentriesfile==0){
 		cout<<"Getting tree Nevt..."<<endl;
-		nentriesfile	= fChain->GetEntries();
+		//---- count on a separate chain: fChain->GetEntries() would leave fChain on its last file under fReader
+		//---- (benign, but ROOT warns "The current tree in the TChain ... has changed" at the first Next()).
+		TChain cnt(fChain->GetName());
+		TIter nextf(fChain->GetListOfFiles());
+		while (TObject *el = nextf()) cnt.Add(el->GetTitle());
+		nentriesfile	= cnt.GetEntries();
 	}
 	cout<<"Nentriesfile = "<<nentriesfile<<endl;
 	//

@@ -81,7 +81,7 @@ public :
 	bool	doCrossing;
 	bool	doOldPID;		// README_PID.md: "oldpid" -> legacy PID (pi = dedx70s<400, no p or K); default is the KFP dE/dx gates
 	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
-	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.07,0.10); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
+	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.09,0.16); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
 	bool	doSegVeto;		// README.md "segveto": skip the events of the (run, DST segment)s in bad_segments.txt (next to the -l list,
 					// or $CORRAL_SEGVETO), made by lists/make_bad_segments.C; default ON since 2026-10-13, "AllSeg" = OFF
 	TString	ListName;		// -l: the job list (segveto finds bad_segments.txt next to it)

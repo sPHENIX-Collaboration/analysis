@@ -192,7 +192,7 @@ void DisplayHelp(){
 	cout<<"  other"<<endl;
 	cout<<"    ntpcNN        track cut ntpc>=NN (default 18; sane range 10-40)"<<endl;
 	cout<<"    nosiphimask   turn OFF the ana573 vertex-phi mask (README_PID sec 10; default: [70,83) and [94,115) deg)"<<endl;
-	cout<<"    nocmmask      turn OFF the central-membrane mask (default: w in [-0.07,0.10), README_SplitTracks573 sec 38)"<<endl;
+	cout<<"    nocmmask      turn OFF the central-membrane mask (default: w in [-0.09,0.16), README_SplitTracks573 sec 38)"<<endl;
 	cout<<"    cmmaskAABB    central-membrane mask: drop tracks with w = (eta+0.018 vtxz) sign(-vtxz) in [-0.AA,0.BB) (README_SplitTracks573 sec 38)"<<endl;
 	cout<<"    siphimaskall  vertex-phi mask with all eight windows (the two above + six small ones; a study option)"<<endl;
 	cout<<"    oldpid        legacy PID (pi = dedx70s<400, no p or K); default: the KFP dE/dx gates (dedxGates_KFP.root)"<<endl;
