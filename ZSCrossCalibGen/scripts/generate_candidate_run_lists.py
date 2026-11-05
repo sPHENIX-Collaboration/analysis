@@ -8,6 +8,8 @@ for each run group (epoch), and generates 19-line segment list files.
 For each run group defined in epoch.csv:
 1. Selects the candidate run (rank 1) from ZSCrossCalib_runs.list that has the maximum number
    of valid segments containing all 19 DST_TRIGGERED_EVENT files (seb00 through seb18).
+   All 19 files in a segment come from a single production tag: --tag if given, otherwise
+   (per run) the tag with the newest file timestamps that has complete segments.
    Generates 19-line segment list files in --output-dir (default: ZSCrossCalibGen/files/lists).
 2. Selects the test run (rank 2) from ZSCrossCalib_runs.list that has the 2nd most valid
    segments containing all 19 DST_TRIGGERED_EVENT files.
@@ -111,6 +113,13 @@ def parse_arguments() -> argparse.Namespace:
         help="PostgreSQL port (optional, defaults to 5432 / PGPORT)",
     )
     parser.add_argument(
+        "--tag",
+        type=str,
+        default=None,
+        help="Use only this production tag (e.g. ana581_nocdbtag_v001). "
+             "Default: per run, the tag with the newest file timestamps that has all 19 SEBs",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Query candidate runs and print statistics without writing list files to disk",
@@ -178,21 +187,32 @@ def find_top_runs(
     run_start: int,
     run_end: int,
     eligible_runs: List[int],
+    tag: Optional[str] = None,
     verbose: bool = False,
-) -> Tuple[Optional[Tuple[int, int]], Optional[Tuple[int, int]]]:
+) -> Tuple[Optional[Tuple[int, str, int]], Optional[Tuple[int, str, int]]]:
     """
     Find top runs in eligible_runs ranked by number of valid segments.
-    A valid segment has all 19 DST_TRIGGERED_EVENT files for seb00-seb18.
+    A valid segment has all 19 DST_TRIGGERED_EVENT files for seb00-seb18, all
+    from the SAME production tag (tags are never mixed within a segment).
+
+    Tag choice per run:
+      - If `tag` is given, only that tag is considered.
+      - Otherwise, among the tags that have at least one valid segment for the
+        run, the tag whose files are newest (max file timestamp in the `files`
+        table) is chosen.
+
     Returns (candidate_run_info, test_run_info):
-      candidate_run_info: (runnumber, valid_segment_count) for rank 1 (or None)
-      test_run_info: (runnumber, valid_segment_count) for rank 2 (or None)
+      candidate_run_info: (runnumber, tag, valid_segment_count) for rank 1 (or None)
+      test_run_info: (runnumber, tag, valid_segment_count) for rank 2 (or None)
     """
     if not eligible_runs:
         return None, None
 
-    query = """
-        WITH seb_files AS (
-            SELECT runnumber, segment, count(DISTINCT substring(filename from 'seb[0-9]+')) AS n_seb
+    tag_filter = "AND tag = %s" if tag else ""
+    query = f"""
+        WITH seb_rows AS (
+            SELECT runnumber, tag, segment, filename,
+                   substring(filename from 'seb[0-9]+') AS seb_id
             FROM datasets
             WHERE runnumber >= %s AND runnumber <= %s AND runnumber = ANY(%s)
               AND dsttype LIKE 'DST_TRIGGERED%%'
@@ -200,17 +220,41 @@ def find_top_runs(
                 'seb00','seb01','seb02','seb03','seb04','seb05','seb06','seb07','seb08','seb09',
                 'seb10','seb11','seb12','seb13','seb14','seb15','seb16','seb17','seb18'
               )
-            GROUP BY runnumber, segment
-            HAVING count(DISTINCT substring(filename from 'seb[0-9]+')) = 19
+              {tag_filter}
+        ),
+        seg_tag AS (
+            SELECT runnumber, tag, segment
+            FROM seb_rows
+            GROUP BY runnumber, tag, segment
+            HAVING count(DISTINCT seb_id) = 19
+        ),
+        run_tag AS (
+            SELECT runnumber, tag, count(*) AS valid_segments
+            FROM seg_tag
+            GROUP BY runnumber, tag
+        ),
+        tag_time AS (
+            SELECT r.runnumber, r.tag, max(f.time) AS newest
+            FROM seb_rows r
+            JOIN files f ON f.lfn = r.filename
+            GROUP BY r.runnumber, r.tag
+        ),
+        best_tag AS (
+            SELECT DISTINCT ON (rt.runnumber) rt.runnumber, rt.tag, rt.valid_segments
+            FROM run_tag rt
+            LEFT JOIN tag_time tt USING (runnumber, tag)
+            ORDER BY rt.runnumber, tt.newest DESC NULLS LAST, rt.tag DESC
         )
-        SELECT runnumber, count(*) AS valid_segments
-        FROM seb_files
-        GROUP BY runnumber
+        SELECT runnumber, tag, valid_segments
+        FROM best_tag
         ORDER BY valid_segments DESC, runnumber DESC
         LIMIT 5;
     """
 
-    cursor.execute(query, (run_start, run_end, eligible_runs))
+    params = [run_start, run_end, eligible_runs]
+    if tag:
+        params.append(tag)
+    cursor.execute(query, params)
     results = cursor.fetchall()
 
     if not results:
@@ -220,20 +264,21 @@ def find_top_runs(
     test_info = results[1] if len(results) > 1 else None
 
     if verbose:
-        print(f"    Top runs: {results}")
+        print(f"    Top runs (run, tag, valid_segments): {results}")
 
     return cand_info, test_info
 
 
-def fetch_segment_files(cursor, runnumber: int) -> Dict[int, List[str]]:
+def fetch_segment_files(cursor, runnumber: int, tag: str) -> Dict[int, List[str]]:
     """
-    Fetch all 19 seb00-seb18 files for each valid segment of a candidate run.
+    Fetch all 19 seb00-seb18 files of the given tag for each valid segment of a run.
     Returns a dictionary mapping segment number -> sorted list of 19 filenames.
     """
     query = """
         SELECT segment, filename, substring(filename from 'seb[0-9]+') AS seb_id
         FROM datasets
         WHERE runnumber = %s
+          AND tag = %s
           AND dsttype LIKE 'DST_TRIGGERED%%'
           AND substring(filename from 'seb[0-9]+') IN (
             'seb00','seb01','seb02','seb03','seb04','seb05','seb06','seb07','seb08','seb09',
@@ -241,15 +286,19 @@ def fetch_segment_files(cursor, runnumber: int) -> Dict[int, List[str]]:
           )
         ORDER BY segment, seb_id;
     """
-    cursor.execute(query, (runnumber,))
+    cursor.execute(query, (runnumber, tag))
     rows = cursor.fetchall()
 
-    # Group by segment, deduplicate per SEB if needed, ensuring exactly 19 SEBs
+    # Group by segment; a single tag must yield exactly one file per SEB
     segments: Dict[int, Dict[str, str]] = {}
     for seg, filename, seb_id in rows:
-        if seg not in segments:
-            segments[seg] = {}
-        segments[seg][seb_id] = filename
+        sebs = segments.setdefault(seg, {})
+        if seb_id in sebs and sebs[seb_id] != filename:
+            raise RuntimeError(
+                f"Run {runnumber} seg {seg} {seb_id}: multiple files for tag {tag}: "
+                f"{sebs[seb_id]} and {filename}"
+            )
+        sebs[seb_id] = filename
 
     valid_segment_files: Dict[int, List[str]] = {}
     for seg, sebs in segments.items():
@@ -307,6 +356,7 @@ def main():
     if args.log_file:
         print(f"Log file:               {args.log_file}")
     print(f"Database:               {args.dbname}")
+    print(f"Tag:                    {args.tag if args.tag else 'auto (newest by file timestamp, per run)'}")
     print(f"Dry run mode:           {'Enabled (no files written)' if args.dry_run else 'Disabled'}")
     print("-" * 80)
 
@@ -339,7 +389,7 @@ def main():
             print(f"\nProcessing {group_label}: {len(eligible_runs)} runs in ZSCrossCalib_runs.list")
 
         cand_info, test_info = find_top_runs(
-            cursor, start, end, eligible_runs, verbose=args.verbose
+            cursor, start, end, eligible_runs, tag=args.tag, verbose=args.verbose
         )
 
         if cand_info is None:
@@ -355,9 +405,11 @@ def main():
                 "range": (start, end),
                 "eligible_count": len(eligible_runs),
                 "candidate_run": None,
+                "cand_tag": None,
                 "cand_segments": 0,
                 "cand_lists_written": 0,
                 "test_run": None,
+                "test_tag": None,
                 "test_segments": 0,
                 "test_lists_written": 0,
                 "no_cand_file": no_cand_path,
@@ -370,17 +422,18 @@ def main():
             )
             continue
 
-        cand_run, cand_segs_count = cand_info
-        cand_files = fetch_segment_files(cursor, cand_run)
+        cand_run, cand_tag, cand_segs_count = cand_info
+        cand_files = fetch_segment_files(cursor, cand_run, cand_tag)
         cand_written = write_segment_lists(cand_files, cand_run, args.output_dir, args.dry_run)
         total_cand_lists_written += cand_written
 
         test_run = None
+        test_tag = None
         test_written = 0
         test_segs_count = 0
         if test_info is not None:
-            test_run, test_segs_count = test_info
-            test_files = fetch_segment_files(cursor, test_run)
+            test_run, test_tag, test_segs_count = test_info
+            test_files = fetch_segment_files(cursor, test_run, test_tag)
             test_written = write_segment_lists(test_files, test_run, args.test_output_dir, args.dry_run)
             total_test_lists_written += test_written
 
@@ -389,17 +442,21 @@ def main():
             "range": (start, end),
             "eligible_count": len(eligible_runs),
             "candidate_run": cand_run,
+            "cand_tag": cand_tag,
             "cand_segments": len(cand_files),
             "cand_lists_written": cand_written,
             "test_run": test_run,
+            "test_tag": test_tag,
             "test_segments": test_segs_count,
             "test_lists_written": test_written,
             "status": "OK",
         })
 
-        test_msg = f", Test (2nd): Run {test_run} ({test_segs_count} segs)" if test_run else ""
+        test_msg = (
+            f", Test (2nd): Run {test_run} [{test_tag}] ({test_segs_count} segs)" if test_run else ""
+        )
         print(
-            f"[{group_label}] -> Candidate (1st): Run {cand_run} ({len(cand_files)} segs)"
+            f"[{group_label}] -> Candidate (1st): Run {cand_run} [{cand_tag}] ({len(cand_files)} segs)"
             f"{test_msg}"
         )
 
@@ -436,6 +493,7 @@ def main():
         f"{'Test (2nd)':<14} {'Test Segs':<11} {'Status':<12}"
     )
     print("-" * 105)
+    tag_lines = []
 
     no_candidate_groups = []
     for s in stats:
@@ -451,8 +509,18 @@ def main():
         )
         if s["candidate_run"] is None:
             no_candidate_groups.append(s)
+        else:
+            tag_lines.append(
+                f"  Group {s['group_idx']}: candidate {s['candidate_run']} -> {s['cand_tag']}"
+                + (f", test {s['test_run']} -> {s['test_tag']}" if s["test_run"] is not None else "")
+            )
 
     print("-" * 105)
+    if tag_lines:
+        print("Tags used:")
+        for line in tag_lines:
+            print(line)
+        print("-" * 105)
     print(f"Total run groups processed:             {len(epochs)}")
     print(f"Run groups with candidates:             {len(epochs) - len(no_candidate_groups)}")
     print(f"Run groups WITHOUT candidates:          {len(no_candidate_groups)}")
