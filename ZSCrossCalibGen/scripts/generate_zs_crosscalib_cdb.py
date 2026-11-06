@@ -375,6 +375,40 @@ def parse_runs_filter(filter_str: Optional[str]) -> Optional[Set[int]]:
     return result
 
 
+CANDIDATE_T0_WINDOWS = ("main", "minus5", "plus5")
+
+
+def check_candidate_t0_hists(candidate_map: Dict[int, Dict], detectors: List[str]) -> List[str]:
+    """
+    Verify every candidate hist file has non-empty MBD-t0-window profiles (_main, _minus5, _plus5)
+    for each detector. CaloFittingQA fills these only when MbdOut t0 is finite, so they are all empty
+    when MbdReco ran without valid calibrations (e.g. missing MBD_QFIT). Returns a list of problems.
+    """
+    import uproot
+
+    problems = []
+    for epoch_idx, cand in sorted(candidate_map.items()):
+        run, path = cand["run"], cand["path"]
+        try:
+            with uproot.open(path) as f:
+                for det in detectors:
+                    prefix = DETECTOR_MAP[det]["hist_prefix"]
+                    empty = []
+                    for w in CANDIDATE_T0_WINDOWS:
+                        hname = f"h_CaloFittingQA_{prefix}_etaphi_ZScrosscalib_{w}"
+                        if hname not in f:
+                            empty.append(f"{w} (missing)")
+                        elif float(f[hname].member("fEntries")) <= 0:
+                            empty.append(w)
+                    if empty:
+                        problems.append(
+                            f"Group {epoch_idx} candidate run {run} {det}: empty t0-window hists: {', '.join(empty)}"
+                        )
+        except Exception as err:
+            problems.append(f"Group {epoch_idx} candidate run {run}: cannot read {path}: {err}")
+    return problems
+
+
 def _init_root_environment():
     """Import and initialize ROOT and sPHENIX libraries inside a worker process."""
     global _worker_initialized, _ROOT
@@ -687,6 +721,21 @@ def main():
             sys.exit("Error: No single-candidate run groups available (all matching groups had multiple candidates).")
         else:
             sys.exit("Error: No valid candidate runs found in hist list matching epoch.csv.")
+
+    # Fail loudly if any candidate's MBD-t0-window hists are empty: every ratio_main / ratio_minus5 /
+    # ratio_plus5 derived from them would silently be 0.
+    t0_problems = check_candidate_t0_hists(candidate_map, detectors)
+    if t0_problems:
+        print("\n[!] ERROR: Candidate hist(s) have empty MBD-t0-window profiles:")
+        for p in t0_problems:
+            print(f"    - {p}")
+        print(
+            "    CaloFittingQA fills _main/_minus5/_plus5 only when the MBD t0 is finite. Empty windows usually\n"
+            "    mean MbdReco ran without valid calibrations for that run (e.g. no MBD_QFIT payload in the CDB\n"
+            "    global tag; check the job stdout for 'no file found for MBD_QFIT'). Pick a candidate run that\n"
+            "    has the MBD calibrations (generate_candidate_run_lists.py --cdb-tag) and rerun its QA jobs."
+        )
+        sys.exit(1)
 
     # 4. Initialize ROOT in main process to evaluate Candidate zero-ref summary
     t_start = time.time()

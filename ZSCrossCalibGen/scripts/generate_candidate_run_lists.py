@@ -10,9 +10,12 @@ For each run group defined in epoch.csv:
    of valid segments containing all 19 DST_TRIGGERED_EVENT files (seb00 through seb18).
    All 19 files in a segment come from a single production tag: --tag if given, otherwise
    (per run) the tag with the newest file timestamps that has complete segments.
+   Candidate and test runs must also have the per-run MBD_QFIT payload in the CDB global tag
+   given by --cdb-tag (default: newcdbtag); higher-ranked runs without it are skipped. Without
+   MBD_QFIT the MBD t0 is NaN and CaloFittingQA leaves all t0-window histograms empty.
    Generates 19-line segment list files in --output-dir (default: ZSCrossCalibGen/files/lists).
 2. Selects the test run (rank 2) from ZSCrossCalib_runs.list that has the 2nd most valid
-   segments containing all 19 DST_TRIGGERED_EVENT files.
+   segments containing all 19 DST_TRIGGERED_EVENT files (same tag and CDB requirements).
    Generates 19-line segment list files in --test-output-dir (default: ZSCrossCalibGen/files/test_lists).
 3. If an epoch group has no candidate run, writes a list of all runs in that epoch
    from ZSCrossCalib_runs.list to --runs-output-dir (no_candidate_runs_epoch<E>_<start>_<end>.list).
@@ -33,6 +36,10 @@ from typing import Dict, List, Optional, Set, Tuple
 import psycopg2
 
 TARGET_SEBS = tuple(f"seb{i:02d}" for i in range(19))  # seb00 to seb18 (19 SEBs)
+
+# Per-run CDB payloads a candidate/test run must have. Without MBD_QFIT (MBD charge gains),
+# MbdReco yields no hits -> MBD t0 is NaN -> CaloFittingQA leaves every t0-window profile empty.
+REQUIRED_CDB_PAYLOADS = ("MBD_QFIT",)
 
 
 class Tee:
@@ -120,6 +127,13 @@ def parse_arguments() -> argparse.Namespace:
              "Default: per run, the tag with the newest file timestamps that has all 19 SEBs",
     )
     parser.add_argument(
+        "--cdb-tag",
+        type=str,
+        default="newcdbtag",
+        help=f"CDB global tag used to require per-run payloads ({', '.join(REQUIRED_CDB_PAYLOADS)}) "
+             "for candidate and test runs (default: newcdbtag)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Query candidate runs and print statistics without writing list files to disk",
@@ -182,16 +196,57 @@ def get_db_connection(dbname: str, host: Optional[str] = None, port: Optional[in
         sys.exit(f"Database connection error to '{dbname}': {err}")
 
 
-def find_top_runs(
+class CDBChecker:
+    """
+    Checks that required per-run CDB payloads (e.g. MBD_QFIT) resolve under a global tag,
+    using sPHENIX CDBUtils through PyROOT. Results are cached per run.
+    """
+
+    def __init__(self, global_tag: str, payload_types: Tuple[str, ...] = REQUIRED_CDB_PAYLOADS):
+        import ROOT
+
+        ROOT.gSystem.Load("libsphenixnpc")
+        ROOT.gInterpreter.Declare("""
+        #ifndef ZSCC_CANDIDATE_CDB_CHECK
+        #define ZSCC_CANDIDATE_CDB_CHECK
+        #include <sphenixnpc/CDBUtils.h>
+        #include <sphenixnpc/SphenixClient.h>
+        std::string zscc_cdb_url(const std::string& gtag, const std::string& pl_type, unsigned long run) {
+            static CDBUtils* utils = nullptr;
+            static std::string current_tag;
+            if (!utils) utils = new CDBUtils();
+            if (current_tag != gtag) { utils->setGlobalTag(gtag); current_tag = gtag; }
+            return utils->getUrl(pl_type, run);
+        }
+        #endif
+        """)
+        self._root = ROOT
+        self.global_tag = global_tag
+        self.payload_types = payload_types
+        self._cache: Dict[int, List[str]] = {}
+
+    def missing_payloads(self, run: int) -> List[str]:
+        """Return the required payload types that do NOT resolve for this run (empty list = all present)."""
+        if run not in self._cache:
+            missing = []
+            for pl_type in self.payload_types:
+                url = str(self._root.zscc_cdb_url(self.global_tag, pl_type, run))
+                if not url or url.startswith("DataBaseException"):
+                    missing.append(pl_type)
+            self._cache[run] = missing
+        return self._cache[run]
+
+
+def rank_runs(
     cursor,
     run_start: int,
     run_end: int,
     eligible_runs: List[int],
     tag: Optional[str] = None,
     verbose: bool = False,
-) -> Tuple[Optional[Tuple[int, str, int]], Optional[Tuple[int, str, int]]]:
+) -> List[Tuple[int, str, int]]:
     """
-    Find top runs in eligible_runs ranked by number of valid segments.
+    Rank runs in eligible_runs by number of valid segments (most first).
     A valid segment has all 19 DST_TRIGGERED_EVENT files for seb00-seb18, all
     from the SAME production tag (tags are never mixed within a segment).
 
@@ -201,12 +256,10 @@ def find_top_runs(
         run, the tag whose files are newest (max file timestamp in the `files`
         table) is chosen.
 
-    Returns (candidate_run_info, test_run_info):
-      candidate_run_info: (runnumber, tag, valid_segment_count) for rank 1 (or None)
-      test_run_info: (runnumber, tag, valid_segment_count) for rank 2 (or None)
+    Returns [(runnumber, tag, valid_segment_count), ...] sorted best first.
     """
     if not eligible_runs:
-        return None, None
+        return []
 
     tag_filter = "AND tag = %s" if tag else ""
     query = f"""
@@ -247,8 +300,7 @@ def find_top_runs(
         )
         SELECT runnumber, tag, valid_segments
         FROM best_tag
-        ORDER BY valid_segments DESC, runnumber DESC
-        LIMIT 5;
+        ORDER BY valid_segments DESC, runnumber DESC;
     """
 
     params = [run_start, run_end, eligible_runs]
@@ -257,16 +309,33 @@ def find_top_runs(
     cursor.execute(query, params)
     results = cursor.fetchall()
 
-    if not results:
-        return None, None
-
-    cand_info = results[0]
-    test_info = results[1] if len(results) > 1 else None
-
     if verbose:
-        print(f"    Top runs (run, tag, valid_segments): {results}")
+        print(f"    Top runs (run, tag, valid_segments): {results[:5]}")
 
-    return cand_info, test_info
+    return results
+
+
+def select_runs_with_cdb(
+    ranked: List[Tuple[int, str, int]], checker: CDBChecker, n_select: int = 2, verbose: bool = False
+) -> Tuple[List[Tuple[int, str, int]], List[Tuple[int, List[str]]]]:
+    """
+    Walk the ranked runs best-first and keep the first n_select runs whose required CDB payloads
+    all resolve. Returns (selected, skipped) where skipped = [(run, missing_payloads), ...] for runs
+    ranked above the last selected run that were rejected.
+    """
+    selected: List[Tuple[int, str, int]] = []
+    skipped: List[Tuple[int, List[str]]] = []
+    for info in ranked:
+        missing = checker.missing_payloads(info[0])
+        if missing:
+            skipped.append((info[0], missing))
+            if verbose:
+                print(f"    Skip run {info[0]}: missing {', '.join(missing)} in CDB tag {checker.global_tag}")
+            continue
+        selected.append(info)
+        if len(selected) == n_select:
+            break
+    return selected, skipped
 
 
 def fetch_segment_files(cursor, runnumber: int, tag: str) -> Dict[int, List[str]]:
@@ -357,6 +426,7 @@ def main():
         print(f"Log file:               {args.log_file}")
     print(f"Database:               {args.dbname}")
     print(f"Tag:                    {args.tag if args.tag else 'auto (newest by file timestamp, per run)'}")
+    print(f"CDB global tag:         {args.cdb_tag} (requires {', '.join(REQUIRED_CDB_PAYLOADS)} per run)")
     print(f"Dry run mode:           {'Enabled (no files written)' if args.dry_run else 'Disabled'}")
     print("-" * 80)
 
@@ -375,6 +445,10 @@ def main():
         args.test_output_dir.mkdir(parents=True, exist_ok=True)
         runs_out_dir.mkdir(parents=True, exist_ok=True)
 
+    # CDB payload checker (only runs that reach the top of a ranking are queried)
+    cdb_checker = CDBChecker(args.cdb_tag)
+    all_skipped_cdb: List[Tuple[int, int, List[str]]] = []
+
     # 3. Process each epoch
     stats = []
     total_cand_lists_written = 0
@@ -388,9 +462,17 @@ def main():
         if args.verbose:
             print(f"\nProcessing {group_label}: {len(eligible_runs)} runs in ZSCrossCalib_runs.list")
 
-        cand_info, test_info = find_top_runs(
-            cursor, start, end, eligible_runs, tag=args.tag, verbose=args.verbose
-        )
+        ranked = rank_runs(cursor, start, end, eligible_runs, tag=args.tag, verbose=args.verbose)
+        selected, skipped_cdb = select_runs_with_cdb(ranked, cdb_checker, n_select=2, verbose=args.verbose)
+        cand_info = selected[0] if selected else None
+        test_info = selected[1] if len(selected) > 1 else None
+        if skipped_cdb:
+            all_skipped_cdb.extend((idx, run, missing) for run, missing in skipped_cdb)
+            print(
+                f"[{group_label}] Skipped {len(skipped_cdb)} higher-ranked run(s) missing CDB payloads "
+                f"in '{args.cdb_tag}': "
+                + ", ".join(f"{run} ({'/'.join(missing)})" for run, missing in skipped_cdb)
+            )
 
         if cand_info is None:
             no_cand_filename = f"no_candidate_runs_epoch{idx}_{start}_{end}.list"
@@ -417,7 +499,8 @@ def main():
                 "status": "NO CANDIDATE",
             })
             print(
-                f"[{group_label}] -> NO candidate run found with valid segments. "
+                f"[{group_label}] -> NO candidate run found with valid segments and "
+                f"{', '.join(REQUIRED_CDB_PAYLOADS)} in '{args.cdb_tag}'. "
                 f"Saved {len(eligible_runs)} runs in this epoch to: {no_cand_filename}"
             )
             continue
@@ -547,9 +630,19 @@ def main():
             print(
                 f"    - Group {s['group_idx']} (runs {start} to {end}): "
                 f"{s['eligible_count']} runs in ZSCrossCalib_runs.list, "
-                f"but none have valid segments with all 19 seb00-seb18 files."
+                f"but none have valid segments with all 19 seb00-seb18 files "
+                f"and {', '.join(REQUIRED_CDB_PAYLOADS)} in CDB tag '{args.cdb_tag}'."
             )
             print(f"      -> Wrote {s['eligible_count']} runs to: {s['no_cand_file']}")
+        print("=" * 105)
+
+    if all_skipped_cdb:
+        print(
+            f"\n [i] NOTE: {len(all_skipped_cdb)} higher-ranked run(s) were skipped as candidate/test because "
+            f"required CDB payloads are missing in '{args.cdb_tag}':"
+        )
+        for g_idx, run, missing in all_skipped_cdb:
+            print(f"    - Group {g_idx}: run {run} missing {', '.join(missing)}")
         print("=" * 105)
 
     if unassigned_runs:
