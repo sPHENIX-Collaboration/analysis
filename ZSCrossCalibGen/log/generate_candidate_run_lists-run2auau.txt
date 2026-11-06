@@ -1,0 +1,53 @@
+================================================================================
+ sPHENIX ZSCrossCalib Candidate & Test Run List Generator
+================================================================================
+Epoch file:             files/epoch-run2auau.csv
+Runs list file:         files/run2auau.list
+Candidate output dir:   files/lists-run2auau
+Test output dir:        files/test_lists-run2auau
+Runs output dir:        /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files
+Log file:               log/generate_candidate_run_lists-run2auau.txt
+Database:               FileCatalog
+Tag:                    auto (newest by file timestamp, per run)
+CDB global tag:         newcdbtag (requires MBD_QFIT per run)
+Dry run mode:           Disabled
+--------------------------------------------------------------------------------
+Loaded 1 run groups from epoch-run2auau.csv
+Loaded 108 allowed runs from run2auau.list
+
+[Group 1 [54361, 54974]] Skipped 7 higher-ranked run(s) missing CDB payloads in 'newcdbtag': 54684 (MBD_QFIT), 54693 (MBD_QFIT), 54689 (MBD_QFIT), 54697 (MBD_QFIT), 54754 (MBD_QFIT), 54768 (MBD_QFIT), 54677 (MBD_QFIT)
+[Group 1 [54361, 54974]] -> Candidate (1st): Run 54483 [ana581_nocdbtag_v001] (237 segs), Test (2nd): Run 54803 [ana581_nocdbtag_v001] (233 segs)
+
+=========================================================================================================
+ CANDIDATE & TEST RUN SELECTION SUMMARY
+=========================================================================================================
+Group      Run Range         Runs   Candidate (1st)    Cand Segs   Test (2nd)     Test Segs   Status      
+---------------------------------------------------------------------------------------------------------
+Group 1    [54361, 54974]    108    54483              237         54803          233         OK          
+---------------------------------------------------------------------------------------------------------
+Tags used:
+  Group 1: candidate 54483 -> ana581_nocdbtag_v001, test 54803 -> ana581_nocdbtag_v001
+---------------------------------------------------------------------------------------------------------
+Total run groups processed:             1
+Run groups with candidates:             1
+Run groups WITHOUT candidates:          0
+Runs outside all epochs:                0
+Total Candidate segment list files:     237
+Total Test segment list files:          233
+Candidate lists directory:              files/lists-run2auau
+Test lists directory:                   files/test_lists-run2auau
+Run lists directory:                    /direct/sphenix+u/anarde/Documents/sPHENIX/analysis-ZSCrossCalibGen/ZSCrossCalibGen/files
+Execution time:                         31.49 seconds
+=========================================================================================================
+
+ [i] NOTE: 7 higher-ranked run(s) were skipped as candidate/test because required CDB payloads are missing in 'newcdbtag':
+    - Group 1: run 54684 missing MBD_QFIT
+    - Group 1: run 54693 missing MBD_QFIT
+    - Group 1: run 54689 missing MBD_QFIT
+    - Group 1: run 54697 missing MBD_QFIT
+    - Group 1: run 54754 missing MBD_QFIT
+    - Group 1: run 54768 missing MBD_QFIT
+    - Group 1: run 54677 missing MBD_QFIT
+=========================================================================================================
+
+Report and logs saved to: log/generate_candidate_run_lists-run2auau.txt
