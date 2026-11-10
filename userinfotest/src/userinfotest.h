@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "TTree.h"
-#include "TFile.h"
+#include <TTree.h>
 
 class PHCompositeNode;
 class PHParameters;
@@ -29,8 +28,7 @@ class userinfotest : public SubsysReco
 
  private:
 
-  TFile *_f;
-  TTree *_tree;
+  TTree *_tree{nullptr};
   std::string _foutname;
 
   int b_test = 0;

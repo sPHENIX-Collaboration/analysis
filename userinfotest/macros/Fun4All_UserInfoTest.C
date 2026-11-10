@@ -4,6 +4,7 @@
 #include <frog/FROG.h>
 #include <fun4all/SubsysReco.h>
 #include <fun4all/Fun4AllServer.h>
+#include <fun4all/PHTFileServer.h>
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <ffamodules/CDBInterface.h>
@@ -13,10 +14,12 @@
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 
 #include <userinfotest/userinfotest.h>
+#include <metadata/MetaDataTreeWriter.h>
 
 #include <Calo_Calib.C>
 
 R__LOAD_LIBRARY(libuserinfotest.so)
+R__LOAD_LIBRARY(libmetadata.so)
 
 R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libfun4allraw.so)
@@ -53,9 +56,15 @@ void Fun4All_UserInfoTest(const std::string filename = "DST_JETCALO_run2pp_ana52
   userinfotest *ufo = new userinfotest("userinfotest","test.root");
   se->registerSubsystem(ufo);
 
+  // provenance tree into the same file (shared through PHTFileServer)
+  se->registerSubsystem(new MetaDataTreeWriter("MetaDataTreeWriter", "test.root"));
+
   se->skip(0);
   se->run(nevents);
   se->End();
+  // close the PHTFileServer files now: left open, they are cleaned up at program exit after ROOT
+  // already tore its files down, and the job crashes (double free) after finishing
+  PHTFileServer::close();
   
   cout << "JOB COMPLETE :)" <<endl;
 }
