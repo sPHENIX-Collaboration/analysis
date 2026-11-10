@@ -60,20 +60,17 @@ class SingleTrackAN : public SubsysReco
 
   std::string m_output_filename = "SingleTrackAN.root";
 
-
-
-
-
   int bunchnum;
   int sphnxbunchnum;
   int multiplicity; 
   int crossing;
+  int runnum;
 
   // spin stuff
   static const int NBUNCHES = 120;
   int xingshift;
-  int spinPatternBlue[NBUNCHES] = {0};
-  int spinPatternYellow[NBUNCHES] = {0};
+  std::array<int, NBUNCHES> spinPatternBlue{0};
+  std::array<int, NBUNCHES> spinPatternYellow{0};
   int trackBunch = 0;
   int bspin = 0;
   int yspin = 0;
@@ -83,10 +80,8 @@ class SingleTrackAN : public SubsysReco
   float ypolerr;
 
   // lumi
-  std::array<double, 120> bunchnumber_lumi{0.};
-
+  std::array<double, NBUNCHES> bunchnumber_lumi{0.};
   double lumi{0.};
-
 
   // track stuff
   float p;
@@ -95,6 +90,8 @@ class SingleTrackAN : public SubsysReco
   float xf;
   float eta;
   float phi;
+  float bphi;
+  float yphi;
   float quality;
   float charge;
 
@@ -107,10 +104,8 @@ class SingleTrackAN : public SubsysReco
   bool usable_bco_tag;
   bool doublecount;
 
-
   TTree *singleTrackTree = nullptr;
   TTree *runTree = nullptr;
-
 
   TH1F *hbunchnum = nullptr;
   TH1F *hsphnxbunchnum = nullptr;
@@ -121,10 +116,6 @@ class SingleTrackAN : public SubsysReco
   TH1F *hyspin = nullptr;
 
   TFile *outfile; 
-  
-
-
-
 
 };
 

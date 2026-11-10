@@ -19,6 +19,7 @@
 #include <ffarawobjects/Gl1Packet.h>
 
 #include <phool/PHNodeIterator.h> 
+#include <phool/recoConsts.h>
 
 #include <bcolumicount/StreamingBcoInfo.h>
 #include <bcolumicount/StreamingLumiInfo.h>
@@ -73,6 +74,13 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   // TODO: Add Verbosity switch
   //std::cout << "SingleTrackAN::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
 
+  auto* runHeader = findNode::getClass<RunHeader>(topNode, "RunHeader");
+  if (!runHeader)
+  {
+    return Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  runnum = recoConsts::instance()->get_IntFlag("RUNNUMBER");
   outfile = new TFile(m_output_filename.c_str(), "RECREATE");
   outfile->cd();
 
@@ -89,14 +97,6 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
     std::cout << " lumi : " << streaming_lumi_info->get_lumi() << std::endl;
   }
   
-  for (int i = 0; i < 120; i++)
-  {
-    spinPatternBlue[i] = -1*spindb->GetSpinPatternBlue(i); //-1 for IP12 -> IP8
-    spinPatternYellow[i] = -1*spindb->GetSpinPatternYellow(i); //-1 for IP12 -> IP8
-
-    std::cout << spinPatternBlue[i] << " " << spinPatternYellow[i] << std::endl;
-  }
-
   hbunchnum = new TH1F("hbunchnum", "Bunch Number", 120, 0, 120);
   hsphnxbunchnum = new TH1F("hsphnxbunchnum", "Sphenix Bunch Number", 120, 0, 120);
   hmultiplicity = new TH1F("hmultiplicity", "Multiplicity", 100, 0, 100);
@@ -125,17 +125,23 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
   singleTrackTree->Branch("xf", &xf, "xf/F");
   singleTrackTree->Branch("eta", &eta, "eta/F");
   singleTrackTree->Branch("phi", &phi, "phi/F");
+  singleTrackTree->Branch("bphi", &bphi, "bphi/F");
+  singleTrackTree->Branch("yphi", &yphi, "yphi/F");
   singleTrackTree->Branch("quality", &quality, "quality/F");
   singleTrackTree->Branch("charge", &charge, "charge/F");
 
   runTree = new TTree("runTree", "Tree for quantities needed only once per run");
   runTree->SetDirectory(outfile);
+  runTree->Branch("runnum", &runnum, "runnum/I");
   runTree->Branch("bpol", &bpol, "bpol/F");
   runTree->Branch("bpolerr", &bpolerr, "bpolerr/F");
   runTree->Branch("ypol", &ypol, "ypol/F");
   runTree->Branch("ypolerr", &ypolerr, "ypolerr/F");
   runTree->Branch("lumi", &lumi, "lumi/D");
   runTree->Branch("bunchnumber_lumi", &bunchnumber_lumi);
+  runTree->Branch("spin_pattern_blue", &spinPatternBlue);
+  runTree->Branch("spin_pattern_yellow", &spinPatternYellow);
+
 
   // Double check that this is working as expected... It seems like the sphnxbunchnum and bunchnum distributions are identical, which makes me think xingshift is 0
   xingshift = spindb->GetCrossingShift();
@@ -145,6 +151,13 @@ int SingleTrackAN::InitRun([[maybe_unused]] PHCompositeNode *topNode)
 
   lumi = streaming_lumi_info->get_lumi();
   bunchnumber_lumi = streaming_lumi_info->get_bunchnumber_lumi();
+
+  for (int i = 0; i < 120; i++)
+  {
+    spinPatternBlue[i] = -1*spindb->GetSpinPatternBlue(i); //-1 for IP12 -> IP8
+    spinPatternYellow[i] = -1*spindb->GetSpinPatternYellow(i); //-1 for IP12 -> IP8
+    std::cout << spinPatternBlue[i] << " " << spinPatternYellow[i] << std::endl;
+  }
 
   runTree->Fill();
 
@@ -208,6 +221,12 @@ int SingleTrackAN::process_event([[maybe_unused]] PHCompositeNode *topNode)
     xf = (2*pz)/200;
     eta = track->get_eta();
     phi = track->get_phi();
+    bphi = phi - TMath::Pi() / 2.;
+    //std::cout << " TMath::Pi() : " << TMath::Pi() << std::endl;
+    yphi = phi + TMath::Pi() / 2.;
+
+    bphi = bphi < -1 * TMath::Pi() ? bphi + 2 * TMath::Pi() : bphi;
+    yphi = yphi > TMath::Pi() ? yphi - 2 * TMath::Pi() : yphi;
 
     // It seems like sphnxbunchnum and bunchnum have identical distributions. Is this expected?
     trackBunch = crossing + sphnxbunchnum;
@@ -241,6 +260,13 @@ int SingleTrackAN::ResetEvent([[maybe_unused]] PHCompositeNode *topNode)
 //____________________________________________________________________________..
 int SingleTrackAN::EndRun(const int runnumber)
 {
+  lumi_up_blue = 0;
+  lumi_down_blue = 0;
+  lumi_up_yellow = 0;
+  lumi_down_yellow = 0;
+  rel_lumi_blue = 0;
+  rel_lumi_yellow = 0;
+
   // TODO: Add Verbosity switch
   std::cout << "SingleTrackAN::EndRun(const int runnumber) Ending Run for Run " << runnumber << std::endl;
   return Fun4AllReturnCodes::EVENT_OK;
