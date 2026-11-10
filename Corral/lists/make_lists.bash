@@ -7,8 +7,7 @@
 #   run group: ana573_795xx (79514-79516), ana573_8156x (81566), ana573_8158x (81584-81586); plain ana573 = ALL runs.
 #   If lists/<dataset>/segment_entries.txt already exists (and no lists), it is used as is -- no recount; e.g. for
 #   ana573: cat the run-group segment_entries.txt files into lists/ana573/segment_entries.txt first.
-# Output: lists/<dataset>/  list_NN.txt, list_all.txt (all lists, in list order: the single full-statistics
-#         job), lists_summary.txt, manifest.txt, segment_entries.txt.  <dataset> defaults to the basename
+# Output: lists/<dataset>/  list_NN.txt, lists_summary.txt, manifest.txt, segment_entries.txt.  <dataset> defaults to the basename
 #         of <collect_dir>; it is the name used everywhere (root|pdf|log/<dataset>/, corral -d <dataset>).
 # Each list holds contiguous segments of one run, ~nevt_per_list events. Refuses to overwrite an
 # existing list set (move or rename the old folder first).
@@ -33,6 +32,4 @@ else
 	root -l -b -q "$HERE/count_entries.C(\"$CDIR\",\"$OUT/segment_entries.txt\",\"$RUNS\")" 2>&1 | grep -E "files=|rror"
 fi
 python3 $HERE/make_lists.py $OUT $NEVT $CDIR
-NL=$(awk '$1=="nlists"{print $2}' $OUT/manifest.txt)
-for ((i=0; i<NL; i++)); do cat $OUT/$(printf "list_%02d.txt" $i); done > $OUT/list_all.txt
 echo "lists written to $OUT"

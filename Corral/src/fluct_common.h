@@ -168,11 +168,12 @@
 	static const double		V0PEAK_SIG[3]		= { 0.0076, 0.0035, 0.0028 };
 	static const double		V0PEAK_NSIG			= 3.0;
 	//---- README_PID.md sec 10.3: ana573 vertex-phi windows (deg) of large abs(dca), fixed at the silicon radius; for THIS data only
-	//---- the first NSIPHIMASK_MAIN are the two big ones (default); "siphimaskall" adds the six small ones (sec 10.4: track dips
-	//---- at 0.5-0.8 of the local level, most with a DCA spike)
+	//---- the first NSIPHIMASK_MAIN are the default; "siphimaskall" uses all eight (sec 10.4: six small track dips at 0.5-0.8 of the
+	//---- local level, most with a DCA spike). 2026-10-21 (README_SplitTracks578 A1, user): ana578 keeps only [70,83); the
+	//---- [94,115) hole of ana573 is gone in ana578 (flat track count, normal abs(dcaxy)).
 	//---- README_SplitTracks573 sec 38: the TPC central-membrane hole: centre at eta = -CMMASK_K vtxz (hetazvtx, ana573)
 	static const double		CMMASK_K				= 0.018;
-	static const int		NSIPHIMASK_MAIN			= 2;
+	static const int		NSIPHIMASK_MAIN			= 1;
 	static const int		NSIPHIMASK				= 8;
 	static const double		SIPHIMASK_LO[NSIPHIMASK]	= { 70., 94., -23., -6., 26., 43., 55., 157.};
 	static const double		SIPHIMASK_HI[NSIPHIMASK]	= { 83.,115., -18., -2., 31., 47., 57., 161.};

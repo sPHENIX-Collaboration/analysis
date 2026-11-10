@@ -37,7 +37,10 @@ echo "set $SET -> $OUT: $NL lists, run string '${CRS}', submitting array $RANGE"
 #---- keep off the hax* and rpr* nodes (user, 2026-09-28: hax18 stalled reading /rs); EXCLUDE="..." replaces the
 #---- list (sbatch --exclude syntax), EXCLUDE= (empty) allows every node
 EXCLUDE=${EXCLUDE-hax[1-18],rpr[1-24]}
-sbatch --partition=prip --time=2-23:59:59 ${EXCLUDE:+--exclude=$EXCLUDE} \
+#---- DEPEND="afterany:<jobid>" (sbatch --dependency syntax): start only after other arrays, so passes over many runs
+#---- do not all read /rs at once (user 2026-10-26)
+#---- BEGIN="now+90minutes" (sbatch --begin syntax): staggered start of waves of runs, same reason (user 2026-10-29)
+sbatch --partition=prip --time=2-23:59:59 ${EXCLUDE:+--exclude=$EXCLUDE} ${DEPEND:+--dependency=$DEPEND} ${BEGIN:+--begin=$BEGIN} \
 	--array=$RANGE \
 	--job-name=crm_$OUT \
 	--output=$PROJDIR/log/$OUT/chunks/corral_%2a.log \

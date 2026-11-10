@@ -1,0 +1,11 @@
+nominal_s17 --seed 17
+nominal_s18 --seed 18
+nominal_s19 --seed 19
+nominal_s20 --seed 20
+nominal_s21 --seed 21
+hidden24 --hidden 24
+hidden96 --hidden 96
+layers2 --layers 2
+layers4 --layers 4
+lr1e-3 --lr 1e-3
+lr5e-3 --lr 5e-3

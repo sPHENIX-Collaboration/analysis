@@ -1,8 +1,8 @@
 #!/bin/bash
 # One Finalize job, submitted by run_finalize.bash (which snapshots the binary and makes the output folders).
 #   $1 = dataset (-d), $2 = Finalize run string (Finalize or Finalize_<tokens>)
-# Runs in a scratch dir on the worker node, then copies root/pdf to root|pdf/<dataset>/; the log is written
-# directly to log/<dataset>/corral_<runstring>.log.
+# Runs in a scratch dir on the worker node, then copies root/pdf to root|pdf/<dataset>/corral_<runstring>_<dataset>.*; the
+# log is written directly to log/<dataset>/corral_<runstring>_<dataset>.log.
 SET=$1
 FRS=${2:-Finalize}
 # CORRAL_DIR is exported by run_finalize.bash (sbatch runs a spooled copy of this script)
@@ -21,8 +21,8 @@ cp $PROJDIR/log/$SET/$NAME.snapshot ./corral
 echo Starting..........................
 time ./corral -d $SET -s $FRS
 RC=$?
-cp -v ./root/$NAME.root $PROJDIR/root/$SET/
-cp -v ./pdf/$NAME.pdf   $PROJDIR/pdf/$SET/
+cp -v ./root/$NAME.root $PROJDIR/root/$SET/${NAME}_$SET.root
+cp -v ./pdf/$NAME.pdf   $PROJDIR/pdf/$SET/${NAME}_$SET.pdf
 cd /
 rm -rf $WORK
 exit $RC

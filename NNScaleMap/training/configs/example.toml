@@ -1,0 +1,75 @@
+# NNScaleMap training run card:  python train.py --config configs/example.toml
+# Keys are the train.py option names (see python train.py --help); sections only
+# organise this file.  Flags given on the command line after --config override
+# the values here, e.g.  --config configs/example.toml --epochs 800 --outdir results/trial_017
+# Booleans: true passes the flag; false omits it (it cannot be switched off from
+# the command line once set true here).
+# <outdir>/run_metadata.toml (read-only) records the command, the input files with sha256 checksums and every resolved option.
+
+[data]
+# One or more files per species; glob patterns are expanded and sorted, e.g.
+# "/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run8160*.root"
+kshort = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Kshort_reco_KFParticle_run81612.root"]
+lam = ["/sphenix/user/cdean/public/V0_polyseeding_ana573/output_Lambda0_reco_KFParticle_run81612.root"]
+tree = "DecayTree"
+max_candidates = 0          # per species, 0 = all; shared across files in proportion to their entries
+subsample_seed = 42
+
+[output]
+outdir = "results/calib_out"
+# GeV, pT points of the kappa lookup; their range also sets the kappa-map diagnostics and
+# the feature clamp, so kappa is constant above the last point
+lookup_pt_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0, 100.0]
+lookup_n_eta = 13           # eta points of the kappa lookup, uniform over -1.5..1.5
+lookup_n_phi = 25           # phi points of the kappa lookup, uniform over -pi..pi
+kappa_slices = 25           # curvature slices in the fig6/fig7 kappa diagnostics
+
+[stage1]
+feature = "log_pt"          # momentum feature: log_pt = ln pT (default), inv_pt = 1/pT, pt
+history_every = 0           # mass-history fit cadence in epochs (0 = refresh cadence)
+epochs = 800
+lr = 2e-3
+hidden = 48
+layers = 3                  # number of hidden layers
+seed = 17                   # torch seed for the network initialisation
+dtype = "float32"           # network precision: float32 (~2.5x faster) | float64 (masses, loss sums, binning stay float64)
+refresh = 50                # signal-weight refresh cadence in epochs
+lam_prior = 0.05            # L2(eps, delta) weight at epoch 0, annealed linearly to 0
+lam_split = 1.0             # Lambda / anti-Lambda peak-split term, binned in leg-1 (pion) kinematics
+lam_split2 = 0.0            # Lambda / anti-Lambda peak-split term, binned in leg-2 (proton) kinematics; 0 = off
+lam_alpha = 2.0             # K0s Armenteros alpha symmetry term
+k0s_window = [0.42, 0.58]   # GeV, K0s signal-weight fit window (inside the 0.40-0.60 preselection)
+lam_window = [1.09, 1.145]  # GeV, Lambda signal-weight fit window (inside the 1.08-1.15 preselection)
+bkg_order = 1               # polynomial order of the background in the signal-weight fit
+loss_pt_binning = "fixed"   # daughter-pT loss-bin edges: fixed (loss_pt_edges) | quantile (equal population) | log (equal ln pT width over the lookup range)
+loss_pt_bins = 6            # number of daughter-pT loss bins (quantile, log)
+loss_pt_edges = [0.0, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 100.0]  # GeV (fixed); daughters outside fall in the first / last bin
+loss_n_eta = 10             # eta cells per daughter-pT loss bin (x phi x 2 charge)
+loss_n_phi = 8              # phi cells per daughter-pT loss bin
+loss_coarse_above_pt = 2.0  # GeV, loss bins whose lower edge is >= this use the coarse grid below; negative = none
+loss_n_eta_coarse = 5       # eta cells per coarse loss bin
+loss_n_phi_coarse = 4       # phi cells per coarse loss bin
+chunk_size = 500000         # candidates per gradient chunk: memory scales with this, not with the sample
+# load_stage1 = "calib_out/model.pt"   # skip stage-1 training and load this checkpoint
+
+[stage2]
+no_reso = false             # true = stage 1 only
+reso_model = "pull"         # pull: calibrate the KFParticle covariance; absolute: (a, b) fields from peak widths
+reso_epochs = 300
+reso_lr = 2e-3
+reso_hidden = 32
+reso_layers = 3
+c_per_resonance = false     # separate mass-width floor for K0s and Lambda
+reso_scalar_steps = 1500    # reduced global-scalar fit steps (Hessian errors)
+
+[injection]
+inject = false              # append the go/no-go toy campaign after the data pass
+inject_only = false         # run the toy campaign and skip the data pass
+inject_n = 200000
+inject_s0 = 1.30            # pull mode: injected covariance miscalibration factor
+inject_u0 = 0.0             # pull mode: injected pT exponent
+inject_a0 = 0.010           # absolute mode: injected MS-like coefficient
+inject_b0 = 0.012           # absolute mode: injected curvature coefficient [1/GeV]
+inject_c0 = 0.0015          # injected mass-width floor [GeV]
+inject_seed = 1234
+inject_scalar_steps = 1500

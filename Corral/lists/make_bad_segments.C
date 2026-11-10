@@ -1,7 +1,9 @@
 //---- make_bad_segments.C -- the segment mask for corral "segveto" (README.md, README_ana573.md), from the segCells trees of a
 //---- production's chunk files (the acceptance pass, run WITHOUT segveto).
 //----   root -l -b -q 'make_bad_segments.C+("ana573_795xx,ana573_8156x,ana573_8158x")'   (from lists/; reads ../root/<set>/chunks/)
-//---- Writes lists/<set>/bad_segments.txt for every set given (and lists/ana573/ when several sets are given): one
+//---- Writes the ONE file of the production, lists/<production>/bad_segments.txt (<production> = the leading "anaNNN" of the
+//---- first set's name, e.g. ana578A_Raw -> lists/ana578/; corral segveto reads it from there, 2026-10-26). Give ALL Raw sets
+//---- of the production (e.g. "ana578A_Raw,ana578B_Raw"): every run gets its own band, the file covers every run. One
 //---- "run segment" line per LOW segment; "# band" header lines give each run's band and threshold (SegCellsView draws them).
 //---- Rule (user 2026-10-12; the live fraction is computed in src/SegLive.h, shared with Finalize):
 //----   x_c = TPC hits in cell c per accepted track in the segment; r_c = 90th percentile of x_c over all segments; cells with
@@ -18,8 +20,10 @@
 #include <cmath>
 
 //---- write = false: print the per-run counts only, write no bad_segments.txt (a check)
-void make_bad_segments(const char* setlist = "ana573_795xx,ana573_8156x,ana573_8158x", bool write = true){
-	const double BANDW = 0.02, LOWMIN = 0.005, LOWNS = 4.;
+//---- lowmin = LOWMIN, the smallest drop below the mode that counts as low (0.005 = ana573; a nearly fully live TPC, as
+//----   ana578, has sigma ~0.001, so LOWMIN alone sets the threshold: 0.005 = two dead FEEs on one side)
+void make_bad_segments(const char* setlist = "ana573_795xx,ana573_8156x,ana573_8158x", bool write = true, double lowmin = 0.005){
+	const double BANDW = 0.02, LOWMIN = lowmin, LOWNS = 4.;
 	TString ldir	= gSystem->DirName(gSystem->UnixPathName(__FILE__));	// lists/
 	TObjArray *ts	= TString(setlist).Tokenize(",");
 	const int NS	= ts->GetEntries();
@@ -41,7 +45,7 @@ void make_bad_segments(const char* setlist = "ana573_795xx,ana573_8156x,ana573_8
 	for (auto &R : byRun){
 		std::array<double,3> thr;
 		for (int a=0;a<3;a++){
-			TH1D hb("hb","",400,0.6,1.0); for (auto &s : R.second) hb.Fill(std::min(0.99999,(double)s.second[a]));
+			TH1D hb("hb","",1000,0.0,1.0); for (auto &s : R.second) hb.Fill(std::min(0.99999,(double)s.second[a]));	// full range (was 0.6-1: ana578B North ~0.556 fell below it)
 			double mode = hb.GetBinCenter(hb.GetMaximumBin()), s1 = 0, s2 = 0; int n = 0;
 			for (auto &s : R.second){ double v = s.second[a]; if (fabs(v-mode)<BANDW){ s1 += v; s2 += v*v; n++; } }
 			double sig = n>1 ? sqrt(std::max(0.,s2/n-pow(s1/n,2))) : 0.;
@@ -55,9 +59,9 @@ void make_bad_segments(const char* setlist = "ana573_795xx,ana573_8156x,ana573_8
 	//---- write
 	printf("%zu of %zu segments low\n",low.size(),live.size());
 	if (!write){ printf("write = false: no bad_segments.txt written\n"); return; }
-	std::vector<TString> dirs = setName; if (NS>1) dirs.push_back("ana573");
-	for (auto &d : dirs){
-		if (gSystem->AccessPathName(ldir+"/"+d+"/manifest.txt")) continue;
+	TString prod = setName[0]; { int n = 3; while (n<prod.Length() && isdigit(prod[n])) n++; prod.Remove(n); }
+	for (auto &d : std::vector<TString>{prod}){
+		gSystem->mkdir(ldir+"/"+d,true);
 		TString fn = ldir+"/"+d+"/bad_segments.txt";
 		FILE *fo = fopen(fn.Data(),"w");
 		fprintf(fo,"# run segment -- below the run's live-fraction band in any view (all/S/N): live < mode - max(%.3f, %.0f sigma), band = mode +- %.2f\n",LOWMIN,LOWNS,BANDW);

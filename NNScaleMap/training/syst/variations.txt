@@ -1,0 +1,38 @@
+stat boot0 --kshort $(inputs)/$(kshort)_boot0.root --lam $(inputs)/$(lam)_boot0.root
+stat boot1 --kshort $(inputs)/$(kshort)_boot1.root --lam $(inputs)/$(lam)_boot1.root
+stat boot2 --kshort $(inputs)/$(kshort)_boot2.root --lam $(inputs)/$(lam)_boot2.root
+stat boot3 --kshort $(inputs)/$(kshort)_boot3.root --lam $(inputs)/$(lam)_boot3.root
+stat boot4 --kshort $(inputs)/$(kshort)_boot4.root --lam $(inputs)/$(lam)_boot4.root
+stat boot5 --kshort $(inputs)/$(kshort)_boot5.root --lam $(inputs)/$(lam)_boot5.root
+stat boot6 --kshort $(inputs)/$(kshort)_boot6.root --lam $(inputs)/$(lam)_boot6.root
+stat boot7 --kshort $(inputs)/$(kshort)_boot7.root --lam $(inputs)/$(lam)_boot7.root
+stat boot8 --kshort $(inputs)/$(kshort)_boot8.root --lam $(inputs)/$(lam)_boot8.root
+stat boot9 --kshort $(inputs)/$(kshort)_boot9.root --lam $(inputs)/$(lam)_boot9.root
+stat boot10 --kshort $(inputs)/$(kshort)_boot10.root --lam $(inputs)/$(lam)_boot10.root
+stat boot11 --kshort $(inputs)/$(kshort)_boot11.root --lam $(inputs)/$(lam)_boot11.root
+stat boot12 --kshort $(inputs)/$(kshort)_boot12.root --lam $(inputs)/$(lam)_boot12.root
+stat boot13 --kshort $(inputs)/$(kshort)_boot13.root --lam $(inputs)/$(lam)_boot13.root
+stat boot14 --kshort $(inputs)/$(kshort)_boot14.root --lam $(inputs)/$(lam)_boot14.root
+stat boot15 --kshort $(inputs)/$(kshort)_boot15.root --lam $(inputs)/$(lam)_boot15.root
+stat boot16 --kshort $(inputs)/$(kshort)_boot16.root --lam $(inputs)/$(lam)_boot16.root
+stat boot17 --kshort $(inputs)/$(kshort)_boot17.root --lam $(inputs)/$(lam)_boot17.root
+stat boot18 --kshort $(inputs)/$(kshort)_boot18.root --lam $(inputs)/$(lam)_boot18.root
+stat boot19 --kshort $(inputs)/$(kshort)_boot19.root --lam $(inputs)/$(lam)_boot19.root
+nominal nominal --seed 17
+seed s18 --seed 18
+seed s19 --seed 19
+seed s20 --seed 20
+seed s21 --seed 21
+feature inv_pt --feature inv_pt
+feature pt --feature pt
+binning quantile6 --loss_pt_binning quantile --loss_pt_bins 6
+binning log18 --loss_pt_bins 18
+lam_split x0p5 --lam_split 0.5
+lam_split x2 --lam_split 2.0
+lam_alpha x0p5 --lam_alpha 1.0
+lam_alpha x2 --lam_alpha 4.0
+lam_prior x0p5 --lam_prior 0.025
+lam_prior x2 --lam_prior 0.1
+window narrow --k0s_window 0.44 0.56 --lam_window 1.10 1.135
+window wide --k0s_window 0.41 0.59 --lam_window 1.085 1.15
+bkg pol2 --bkg_order 2

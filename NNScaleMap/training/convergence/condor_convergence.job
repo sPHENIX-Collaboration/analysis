@@ -1,0 +1,30 @@
+# Training-procedure validation, fill 79514-79516, full skim. Each line of trials.txt is one job:
+# <trial> <train.py flags>, overriding the nominal card. Trial names: <optimizer><precision>_e<epochs>_s<seed>.
+#   adam64_e{400,800}: float64 Adam (nominal procedure) at 400 and 800 epochs
+#   adam32: float32 equivalence; cosine*: Adam with cosine learning-rate decay; lbfgs*: full-batch L-BFGS
+# convergence/compare.py compares every trial with the adam64 run at the largest epoch count, in units of sigma_stat.
+# Once, before the first submit:  mkdir -p <base>/logs
+# Submit from training/convergence/:  condor_submit condor_convergence.job
+#   another trial list:  condor_submit condor_convergence.job trials_file=<list>
+base               = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/results/convergence/fill79514to79516
+card               = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/configs/fullsample_20261011_fill79514to79516.toml
+skims              = /sphenix/tg/tg01/hf/hjheng/HF-analysis/NNScaleMap/KFParticle_skims/V0_polyseeding_ana573/ptcand1p0_bulk0p02_seed42_stage1
+kshort             = $(skims)/Kshort/skimmed_output_Kshort_reco_KFParticle_run79514_to_79516_cut.root
+lam                = $(skims)/Lambda0/skimmed_output_Lambda0_reco_KFParticle_run79514_to_79516_cut.root
+
+Universe           = vanilla
+Executable         = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/run_trial.sh
+transfer_executable = false
+request_cpus       = 4
+request_memory     = 8GB
+environment        = "OMP_NUM_THREADS=$(request_cpus) PYTHONUNBUFFERED=1"
+
+Output             = $(base)/logs/$(trial).out
+Error              = $(base)/logs/$(trial).err
+Log                = /tmp/condor-NNScaleMap-hjheng_convergence_$(Cluster).log
+Arguments          = "$(card) $(base)/$(trial) $(kshort) $(lam) $(flags)"
+
+if ! defined trials_file
+  trials_file      = trials.txt
+endif
+Queue trial,flags from $(trials_file)

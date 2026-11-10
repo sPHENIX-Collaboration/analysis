@@ -448,6 +448,10 @@ void CalcRm::Book(){
 		hGapPt[sm]	= new TH2D(Form("hGapPt_%d",sm),Form("hGapPt_%d;#Delta#phi (deg);#LTp_{T}#GT (GeV/c)",sm),120,-60.,60.,8,ptE);
 		hGapRm[sm]	= new TH2D(Form("hGapRm_%d",sm),Form("hGapRm_%d;#Delta#phi (deg);R_{m} (meeting radius, m)",sm),120,-60.,60.,29,0.,1.45);
 		hGapNch[sm]	= new TH2D(Form("hGapNch_%d",sm),Form("hGapNch_%d;#Delta#phi (deg);N_{ch} accepted",sm),120,-60.,60.,11,nchE);
+		hGapSmin[sm]	= new TH2D(Form("hGapSmin_%d",sm),Form("hGapSmin_%d;#Delta#phi (deg);min |#Delta#phi*| over R = 0.10-0.30 m (deg)",sm),120,-60.,60.,80,0.,20.);
+		hGapSmax[sm]	= new TH2D(Form("hGapSmax_%d",sm),Form("hGapSmax_%d;#Delta#phi (deg);max |#Delta#phi*| over R = 0.10-0.30 m (deg)",sm),120,-60.,60.,80,0.,20.);
+		hGapMeetDy[sm]	= new TH2D(Form("hGapMeetDy_%d",sm),Form("hGapMeetDy_%d;#Delta#phi (deg);|dy|, pairs meeting in R = 0.10-0.30 m",sm),120,-60.,60.,20,0.,1.);
+		hGapMeetDpt[sm]	= new TH2D(Form("hGapMeetDpt_%d",sm),Form("hGapMeetDpt_%d;#Delta#phi (deg);|p_{T1}-p_{T2}| (GeV/c), pairs meeting in R = 0.10-0.30 m",sm),120,-60.,60.,20,0.,1.);
 	}
 	//---- fine invariant mass near threshold, drawn next to C(Q): 500 x 1 MeV from m1+m2-5 MeV
 	{
@@ -841,9 +845,18 @@ void CalcRm::FillGap(int sm, int i, int iev, int j, int jev, int izv, double wei
 	while (dphi>= 180.) dphi -= 360.;
 	while (dphi< -180.) dphi += 360.;
 	if (fabs(dphi)>=60.) return;
+	//---- README_SplitTracks578 D1 (2026-10-22): with the pt-ordering on (fDoCrossing), the plotted dphi gets the same sign
+	//---- convention as PairInfo (LS by pt, ULS by charge; crossing damage at dphi < 0). R_m and dphi* below use the raw dphi
+	//---- (the physics does not depend on the pair order).
+	const double dphiRaw	= dphi;
+	bool flipped	= false;
+	if (fDoCrossing){ double dpt = pt1-pt2;
+		if (fLikeSign){ if ((fChg1>0 && dpt<0.0) || (fChg1<0 && dpt>0.0)) flipped = true; }
+		else if (fChg1>0 && fChg2<0) flipped = true; }
+	if (flipped) dphi = -dphi;
 	hGapDy[sm]->Fill(dphi,ady,weight);
 	if (ady>=1.0) return;
-	double phib	= phi2 + 0.5*dphi;						// circular mean of the two vertex phis
+	double phib	= phi2 + 0.5*dphiRaw;						// circular mean of the two vertex phis
 	while (phib>= 180.) phib -= 360.;
 	while (phib< -180.) phib += 360.;
 	hGapPhi[sm]->Fill(dphi,phib,weight);
@@ -854,14 +867,24 @@ void CalcRm::FillGap(int sm, int i, int iev, int j, int jev, int izv, double wei
 		//---- (the sign the data pick, sec 28), small-angle: dphi + aR (q1/pt1 - q2/pt2) = 0. Never meet (R < 0) -> 1.4 m.
 		const double aa	= 0.3*fabs(fField)/2.0;
 		double k	= aa*(fChg1/pt1 - fChg2/pt2);
-		double rx	= (k!=0.) ? -(dphi*M_PI/180.0)/k : -1.;
+		double rx	= (k!=0.) ? -(dphiRaw*M_PI/180.0)/k : -1.;
 		if (rx<0. || rx>1.4) rx = 1.4;
 		hGapRm[sm]->Fill(dphi,rx,weight);
+		//---- README_SplitTracks578 D1 (2026-10-22): how close the two tracks stay across the INTT-TPC gap. dphi*(R) = dphi +
+		//---- q1 asin(aR/pt1) - q2 asin(aR/pt2) (the same sign as R_m); min and max of abs(dphi*) over R = 0.10-0.30 m.
+		double smin = 1e9, smax = -1.;
+		for (double R=0.10; R<=0.3001; R+=0.01){
+			double x1 = aa*R/pt1, x2 = aa*R/pt2; if (x1>=1.0 || x2>=1.0) break;
+			double d = fabs(dphiRaw + (fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI);
+			if (d<smin) smin = d; if (d>smax) smax = d; }
+		if (smax>=0.){ hGapSmin[sm]->Fill(dphi,std::min(smin,19.99),weight); hGapSmax[sm]->Fill(dphi,std::min(smax,19.99),weight); }
+		if (smax>=0. && smin<0.5){ hGapMeetDy[sm]->Fill(dphi,ady,weight); hGapMeetDpt[sm]->Fill(dphi,std::min(fabs(pt1-pt2),0.999),weight); }
 	}
 	const double a	= 0.3*fabs(fField)/2.0, R = 0.55;
 	double x1 = a*R/pt1, x2 = a*R/pt2;
 	if (x1>=1.0 || x2>=1.0) return;
 	double s	= (fChg1*asin(x1) - fChg2*asin(x2))*180.0/M_PI;
+	if (flipped) s = -s;	// s is antisymmetric in the pair order, like dphi
 	hGap[sm][ady<0.4 ? 1 : 0]->Fill(dphi,s,weight);
 }
 

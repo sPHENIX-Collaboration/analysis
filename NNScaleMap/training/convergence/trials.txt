@@ -1,0 +1,18 @@
+adam64_e400_s17 --epochs 400 --seed 17
+adam64_e400_s18 --epochs 400 --seed 18
+adam64_e800_s17 --epochs 800 --seed 17
+adam64_e800_s18 --epochs 800 --seed 18
+adam32_e800_s17 --dtype float32 --epochs 800 --seed 17
+adam32_e800_s18 --dtype float32 --epochs 800 --seed 18
+cosine64_e400_s17 --lr_schedule cosine --epochs 400 --seed 17
+cosine64_e400_s18 --lr_schedule cosine --epochs 400 --seed 18
+cosine64_e800_s17 --lr_schedule cosine --epochs 800 --seed 17
+cosine64_e800_s18 --lr_schedule cosine --epochs 800 --seed 18
+lbfgs64_e100_s17 --optimizer lbfgs --epochs 100 --seed 17
+lbfgs64_e100_s18 --optimizer lbfgs --epochs 100 --seed 18
+lbfgs64_e200_s17 --optimizer lbfgs --epochs 200 --seed 17
+lbfgs64_e200_s18 --optimizer lbfgs --epochs 200 --seed 18
+cosine32_e800_s17 --dtype float32 --lr_schedule cosine --epochs 800 --seed 17
+cosine32_e800_s18 --dtype float32 --lr_schedule cosine --epochs 800 --seed 18
+lbfgs32_e200_s17 --dtype float32 --optimizer lbfgs --epochs 200 --seed 17
+lbfgs32_e200_s18 --dtype float32 --optimizer lbfgs --epochs 200 --seed 18
