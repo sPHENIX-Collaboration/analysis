@@ -1,0 +1,1 @@
+# tag 2026p001, FEEs with >= 0.50 of pads masked. cols: run side sectorId tpcsector ebdc feeHW module maskedchans totalchans (decoded with generator placement)

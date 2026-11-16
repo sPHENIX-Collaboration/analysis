@@ -24,7 +24,7 @@ public:
     SpinDBQA();
     ~SpinDBQA();
 
-    void SetCNIPath(std::string cnipath = "/gpfs02/eic/cnipol/jet_run24/results"){_cnipathname = cnipath;};
+    void SetCNIPath(std::string cnipath = "/gpfs02/eic/cnipol/run25/root/run25_phys/run25_phys.root"){_cnipathname = cnipath;};
     void SetMarkdownFilename(std::string markdownfile = "README.md"){_markdownfilename = markdownfile;};
     void SetHtmlFilename(std::string htmlfile = "runsummary.html"){_htmlfilename = htmlfile;};
     void SetRootFilename(std::string rootfile = "qa_results.root"){_rootfilename = rootfile;};
@@ -42,9 +42,6 @@ public:
     void WriteMarkdown();
     void WriteRootFile();
 
-    void WriteNewQALevel(int newqalevel = -999);
-    //void WriteSpinDBData();
-    //void PrintSpinDBData();
 
 private:
     SpinDBContent *spin_cont;
@@ -59,15 +56,11 @@ private:
     void PrepareHtml();
     std::string HtmlContent();
 
-    void PrepareUpdatedCrossingShifts();
-    void PrepareUpdatedBeamPolarizations();
-    void PrepareUpdatedSpinPatterns();
-
     std::vector<int> runlistvect;
     std::map<std::string, std::vector<int>> map_spindbqa_markdown;
     std::map<std::string, std::vector<int>> map_spindbqa_html;
     
-    std::string _cnipathname = "/gpfs02/eic/cnipol/jet_run24/results";
+    std::string _cnipathname = "/gpfs02/eic/cnipol/run25/root/run25_phys/run25_phys.root";
     std::string _markdownfilename;
     std::string _htmlfilename;
     std::string _rootfilename;

@@ -1,0 +1,27 @@
+# Uncertainty of the kappa map, fill 79514-79516. Outputs: <base>/<source>/<variation>/; syst/combine.py combines them.
+# Each line of variations.txt is one job: <source> <variation> <train.py flags>, overriding the nominal card.
+#  - source "stat": nominal settings on bootstrap replica N (its --kshort/--lam replace the full skim)
+#  - every other source: the full skim
+# Once, before the first submit (from training/, in the venv shell), with as many replicas as stat lines (20):
+#   mkdir -p <base>/logs
+#   python resample.py --bootstrap 20 --outdir <inputs> <kshort skim> <lam skim>
+# Submit from training/syst/:  condor_submit condor_syst.job
+base               = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/results/syst/fill79514to79516
+inputs             = /sphenix/tg/tg01/hf/hjheng/HF-analysis/NNScaleMap/syst/fill79514to79516/inputs
+card               = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/configs/fullsample_20261011_fill79514to79516.toml
+skims              = /sphenix/tg/tg01/hf/hjheng/HF-analysis/NNScaleMap/KFParticle_skims/V0_polyseeding_ana573/ptcand1p0_bulk0p02_seed42_stage1
+kshort             = skimmed_output_Kshort_reco_KFParticle_run79514_to_79516_cut
+lam                = skimmed_output_Lambda0_reco_KFParticle_run79514_to_79516_cut
+
+Universe           = vanilla
+Executable         = /sphenix/user/hjheng/sPHENIXRepo/analysis/NNScaleMap/training/run_trial.sh
+transfer_executable = false
+request_cpus       = 4
+request_memory     = 8GB
+environment        = "OMP_NUM_THREADS=$(request_cpus) PYTHONUNBUFFERED=1"
+Log                = /tmp/condor-NNScaleMap-hjheng_syst_$(Cluster).log
+
+Output             = $(base)/logs/$(source)_$(variation).out
+Error              = $(base)/logs/$(source)_$(variation).err
+Arguments          = "$(card) $(base)/$(source)/$(variation) $(skims)/Kshort/$(kshort).root $(skims)/Lambda0/$(lam).root $(flags)"
+Queue source,variation,flags from variations.txt

@@ -1,0 +1,11 @@
+Universe	= vanilla
+Executable	= run_streaminglumi.sh
+notification	= Never
+Output		= /sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/logs/streaminglumi_run$(runnumber)_$(clusterId).$(process).txt
+Error		= /sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/logs/streaminglumi_run$(runnumber)_$(clusterId).$(process).err
+Log		= /tmp/condor_dillfitz_$(clusterId).$(process).log
+Initialdir	= /gpfs/mnt/gpfs02/phenix/spin/spin1/phnxsp01/dillfitz/sphenix_software/analysis/coldQCDTracking/SingleTrackAN/streaminglumi
+Arguments	= $(runnumber) $(segment) Oct13
+request_memory	= 4000MB
+PeriodicHold = (NumJobStarts>=1 && JobStatus == 1)
+Queue runnumber, segment from queue_79516_segs_4.list

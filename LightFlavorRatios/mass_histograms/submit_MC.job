@@ -1,0 +1,12 @@
+Universe           = vanilla
+Executable         = plot_mass.sh
+Output          = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/MC/logs/massplot_$(Process).out
+Error           = /sphenix/tg/tg01/hf/mjpeters/LightFlavorProduction/mass_histogram_output/MC/logs/massplot_$(Process).err
+Log             = /tmp/log_mjpeters/massplot_$(Process).log
+Initialdir      = /sphenix/user/mjpeters/analysis/LightFlavorRatios/mass_histograms/
+PeriodicHold    = (NumJobStarts>=1 && JobStatus == 1)
+request_memory     = 2GB
+Priority           = 20
+job_lease_duration = 3600
+Arguments          = $INT(Process,%06d)
+Queue 10000

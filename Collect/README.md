@@ -1,0 +1,120 @@
+# Collect
+
+`Collect` is a Fun4All `SubsysReco` module for sPHENIX analyses. In a
+single pass over each event it writes out:
+
+- a **track tree**, with per-track kinematics, quality flags, dE/dx
+  (multiple estimators), and optional calorimeter-tower-energy-around-track
+  grids, and
+- a **V0/decay tree**, built from `KFParticle` K-short / Lambda / anti-Lambda
+  candidates, with full daughter-track linkage back to the track tree.
+
+The tree written by Collect is intended to support both spectra and correlations
+analyses. Both whole-acceptance correlation functions, e.g. R2(dy,dphi), and
+femtoscopic correlation functions, e.g. C(Q), can be built for arbitrary pair
+species and charges from these trees. This is possible because the trees carry
+per-track tracking-hit bitmasks and cluster keys, which support sensitive
+identification and removal of split tracks — a single real particle mistakenly
+reconstructed as two separate tracks, which does real damage to C(Q) and R2
+near (dy,dphi)~(0,0).
+
+Each tree row is one beam crossing that has a reconstructed vertex. Every track
+in that crossing that passes the track-quality floor (ntpc, nmvtx, nintt, pT) is
+written, whether or not the vertex finder attached it to the vertex; tracks that
+are daughters of a found V0 are always saved, even if they fail the floor.
+Collect applies NO DCA selection: each track carries its 3D DCA to the row's
+vertex (`dcaxy`, `dcaz`), and `primary==1` means only that the vertex finder
+attached it to that vertex. Choose any DCA cut downstream (e.g. Corral's
+AcceptTrack). Note the finder's attachment is loose, especially in z: in run
+81585, ~22% of attached tracks have |dca_z| > 1.5 cm.
+
+V0s are reconstructed by KFParticle already quite cleanly, since KFP's own V0
+cuts are applied in the F4A macro itself. The mass windows intentionally leave
+enough room on either side of the peak to perform sideband subtraction and
+remove the backgrounds visible in the V0 invariant-mass plots.
+
+A few extra things Collect does to keep the trees clean:
+
+- **Duplicate-V0 cleanup**: if two reconstructed V0s in the same crossing
+  share a daughter track, only the better-fit one (lower chi2/ndf) is kept.
+- **One-vertex-per-crossing**: when several reconstructed vertices land in
+  the same beam crossing (real pileup, or a split-vertex artifact), Collect
+  keeps only the "hottest" one — the vertex with the most attached tracks —
+  so tracks and V0s are never double-counted across near-duplicate vertices.
+  The row records `nvtxXing` (vertices found in that crossing) and `vtxntr2`
+  (the runner-up vertex's attached-track count), so analyses that are
+  confused by >1 collision per crossing (e.g. correlation functions) can skip
+  rows with `nvtxXing>1`. (Not to be confused with `nvtx`, the vertex count of
+  the whole trigger frame.)
+- **Split-track bookkeeping**: persisted per-track hit masks and cluster
+  keys let downstream analysis recompute a STAR-style Splitting Level for
+  any pair, sibling or mixed-event, to identify a split track — a single
+  real particle mistakenly reconstructed twice — and remove the extra stub
+  from the event.
+
+## How to Build
+
+`Collect` is a standard sPHENIX autotools package (`configure.ac` /
+`Makefile.am`), meant to be built against an sPHENIX offline software
+environment.
+
+```sh
+# Inside an sPHENIX environment (OFFLINE_MAIN and MYINSTALL set, e.g. via
+# `source setup.sh <build>` from sPHENIX's cvmfs area or your own build):
+
+git clone https://github.com/sPHENIX-Collaboration/analysis.git
+cd analysis/Collect
+
+sh autogen.sh
+mkdir build && cd build
+../configure --prefix="$MYINSTALL"
+make
+make install
+```
+
+This installs `libcollect.so` (and `Collect.h`) into `$MYINSTALL`. A
+`do_build.sh` convenience script wraps the same steps:
+
+```sh
+sh do_build.sh
+```
+
+## How to Run
+
+Load the library and register `Collect` as a `SubsysReco` in your Fun4All
+macro, after the tracking/KFParticle reconstruction chain. If you want
+calorimeter information, register it after the calorimeter tower geometry
+has been loaded (`Collect::InitRun()` looks for the tower geometry on the
+node tree; without it Collect prints a notice and runs without calo info):
+
+```cpp
+#include <collect/Collect.h>
+R__LOAD_LIBRARY(libcollect.so)
+
+...
+
+Collect *myCollect = new Collect("myCollect");
+myCollect->setVerbosity(0);
+myCollect->setSegment(segment);
+myCollect->setRequireXingZero(ReqXing0);
+myCollect->setAddTowersToTrackTree(collectAddTowersToTrackTree);
+myCollect->outfileName(collFile.c_str());
+se->registerSubsystem(myCollect);
+```
+
+- `setSegment()` records the input segment number in the output tree, for
+  bookkeeping across batch jobs.
+- `setRequireXingZero()` restricts output to bunch-crossing-zero vertices.
+- `setAddTowersToTrackTree()` enables the calorimeter-tower-around-track
+  energy grid on the track tree; when `false` (the default), extra dE/dx
+  branches are booked instead and track-quality cuts are looser.
+- `setAddCaloSums()` (default `true`) books the event-level calorimeter
+  energy sums (`etotem`, `etotih`, `etotoh`, `etotioh`, `etotepd`). Set it
+  `false` when the job reads no calorimeter DSTs.
+
+Input track versions: Collect works with `SvtxTrack_v4` and earlier (seed
+pointers on the track) and with the slimmed `SvtxTrack_v5` tracks of the
+ana578 production, which carry only seed ids. For v5 the silicon and TPC
+seeds are looked up by id in `SiliconTrackSeedContainer` /
+`TpcTrackSeedContainer`, so hit counts, dE/dx, `layermask`, `siclukey` and
+the `tpc*` per-layer branches are filled the same way for both.

@@ -165,8 +165,8 @@ class V0DuplicateReader
   {
     m_tree->SetBranchAddress("runNumber", &m_runNumber);
     m_tree->SetBranchAddress("eventNumber", &m_eventNumber);
-    m_tree->SetBranchAddress("BCO", &m_bco);
-    m_tree->SetBranchAddress("event_bco", &m_eventBCO);
+    m_tree->SetBranchAddress("Collision_BCO", &m_bco);
+    m_tree->SetBranchAddress("GL1_BCO", &m_eventBCO);
   }
 
   void setupParticleBranches()
@@ -179,7 +179,7 @@ class V0DuplicateReader
     m_tree->SetBranchAddress((prefix + "_phi").c_str(), &m_phi);
     m_tree->SetBranchAddress((prefix + "_decayLength").c_str(), &m_decayLength);
     m_tree->SetBranchAddress((prefix + "_DIRA").c_str(), &m_dira);
-    m_tree->SetBranchAddress((prefix + "_IP").c_str(), &m_ip);
+    m_tree->SetBranchAddress((prefix + "_PV_DCA").c_str(), &m_ip);
     m_tree->SetBranchAddress((prefix + "_x").c_str(), &m_x);
     m_tree->SetBranchAddress((prefix + "_y").c_str(), &m_y);
     m_tree->SetBranchAddress((prefix + "_z").c_str(), &m_z);

@@ -87,7 +87,7 @@ namespace HeavyFlavorReco
   float pid_frac = 0.6;
   float cemc_proj_radius = 102.9; //Virgile recommendation according to DetailedCalorimeterGeometry
   bool constrain_lambda_mass = true;
-  bool extraolate_tracks_to_secondary_vertex = true; // Set to false to ensure the pT map is accurate for asymmetry study
+  bool extrapolate_tracks_to_secondary_vertex = true; // Set to false to ensure the pT map is accurate for asymmetry study
 };  // namespace HeavyFlavorReco'
 
 using namespace HeavyFlavorReco;
@@ -128,7 +128,7 @@ void reconstruct_pipi_mass()
 
   kfparticle->setDecayDescriptor(pipi_decay_descriptor);
 
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
 
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -203,7 +203,7 @@ void reconstruct_KK_mass()
 
   kfparticle->setDecayDescriptor(KK_decay_descriptor);
 
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
 
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -263,7 +263,7 @@ void reconstruct_ppi_mass()
 
   kfparticle->setDecayDescriptor(ppi_decay_descriptor);
 
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
 
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -325,7 +325,7 @@ void reconstruct_Kpi_mass()
 
   kfparticle->setDecayDescriptor(Kpi_decay_descriptor);
 
-  //kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  //kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
 
   kfparticle->saveOutput(save_kfpntuple);
 
@@ -401,7 +401,7 @@ void reconstruct_ee_mass()
 
   kfparticle->setDecayDescriptor(ee_decay_descriptor);
 
-  kfparticle->extraolateTracksToSV(extraolate_tracks_to_secondary_vertex);
+  kfparticle->extrapolateTracksToSV(extrapolate_tracks_to_secondary_vertex);
 
   kfparticle->saveOutput(save_kfpntuple);
 

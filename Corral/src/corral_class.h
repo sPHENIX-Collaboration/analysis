@@ -1,0 +1,357 @@
+#ifndef corral_h
+#define corral_h
+
+#include <iostream>
+#include <vector>
+#include <TROOT.h>
+#include <TRandom3.h>
+#include <TChain.h>
+#include <TTreeReader.h>
+#include <TTreeReaderValue.h>
+#include <TTreeReaderArray.h>
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TError.h>
+#include <unordered_map>
+#include <deque>
+#include <memory>
+
+using std::vector;
+using std::cout;
+using std::endl;
+
+static const bool USESEEDTRACKS		= false;	// get eta,phi,pt from tpc seed not svtxtrack...
+static const bool NOCORRELATIONS	= false;	// skip the correlations classes for speed...
+// per-run QA histogram axis, one bin per run: Run-3 pp only, just outside the first and last run
+// of the Run-3 pp golden tracking list (79340-81667, 306 runs, lists/Golden_run3pp_tracking_list_
+// 20260917.txt). Was 49700-54200 (Run 2), where every Run-3 run landed in overflow.
+static const int    RUNAXIS_NBIN	= 2400;
+static const double RUNAXIS_LO		= 79300.5;
+static const double RUNAXIS_HI		= 81700.5;
+// KILLSPLITTRACKS (same-Si-seed proxy pre-pass) retired 2026-09-19 -- see README_SplitTracks.md
+// sec 9/10. Replaced by the split-track removal pre-pass (doSplitRemoval/valSLCut/valSiKeyCut
+// below, corral_loop.cxx, finalized sec 17.6) plus a diagnostic-only SL/SKF monitor that fills
+// the same "flagged (split-candidate)" QA page the old pruner used to (sec 10.9).
+
+//------------------------------------------------------------------------------------
+// corral -- TTreeReader-based replacement for the old MakeClass skeleton.
+//
+//   No more fixed-size C arrays (NTRKMAX/NV0MAX) mapped onto branches via
+//   SetBranchAddress: every per-track/per-V0 branch below is a TTreeReaderArray,
+//   which ROOT sizes to the *actual* per-entry leaf count (ntr / nv0) every time
+//   GetEntry-equivalent happens. There is therefore no way for a high-multiplicity
+//   event to overflow a fixed buffer and silently corrupt adjacent class members
+//   (the old failure mode this class used to be vulnerable to).
+//------------------------------------------------------------------------------------
+class corral {
+public :
+	//
+	corral(TTree *tree=0, int ntd=0, TString rs="", TString outname="");
+	virtual ~corral();
+	virtual void     Loop();
+	virtual void     Finalize();		// README_Finalize.md: combine chunk outputs (RunString "Finalize")
+	TString          SettingsText();	// every switch and cut value in force, one per line (info/settings, Finalize title page)
+	void             WriteInfo(TDirectory *top, const std::vector<std::pair<TString,TString>> &texts, const std::vector<std::pair<TString,double>> &counts);	// info/ (README.md)
+	//
+	virtual bool 	AcceptEvent();
+	virtual bool 	AcceptTrack(int it);				// AcceptTrackBase and, if doSiPhiMask, not InSiPhiMask
+	virtual bool 	AcceptTrackBase(int it);			// pt, ntpc, dca limits
+	virtual bool 	InSiPhiMask(int it);
+	virtual bool 	InCMMask(int it);						// README_SplitTracks573 sec 38: w = (eta + CMMASK_K vtxz) sign(-vtxz) in [valCMMaskLo, valCMMaskHi)					// vertex phi inside a PHIMASK window (README_PID.md sec 10.3)
+	virtual void	BuildXTFLosers(Long64_t nentries);	// sec 18.22, see doXTFClean
+	virtual void	BuildTFDupRows(Long64_t nentries);	// see doTFDup
+	//
+	virtual int		GetSpecies(int ipid){
+		int ival	= -1;
+		if (ipid<  5){ ival = ipid; } else
+		if (ipid< 10){ ival = ipid-5; } else
+		if (ipid==10){ ival = 5; } else
+		if (ipid==11){ ival = 6; } else
+		if (ipid==12){ ival = 7; } else
+		if (ipid==13 || ipid==14){ ival = 0; }	// h+, h-: pion y and pT limits (2026-10-11)
+		return ival;
+	}
+	//
+	int 	ntodo;
+	TString	RunString;
+	TString	RunStringGiven;		// the run string as given (-s), before Raw / ZB / TightDCA expand into RunString: names the outputs
+	TString	OutputName;		// -o: output base name (root/<name>.root, pdf/<name>.pdf); empty -> corral_<class>[_<RunString>]
+	TString	Dataset;		// -d: dataset for Finalize (lists|root/<dataset>/); empty -> FINALIZE_SET (finalize_hists.h)
+	bool	doCrossing;
+	bool	doOldPID;		// README_PID.md: "oldpid" -> legacy PID (pi = dedx70s<400, no p or K); default is the KFP dE/dx gates
+	bool	doSiPhiMask;		// README_PID.md sec 10.3: drop tracks in the ana573 vertex-phi windows SIPHIMASK_LO/HI (default on; "nosiphimask" off)
+	bool	doCMMask;		// README_SplitTracks573 sec 38: drop tracks in the central-membrane hole (default ON, w in [-0.09,0.16); "nocmmask" off; "cmmaskAABB" = [-0.AA, 0.BB))
+	bool	doSegVeto;		// README.md "segveto": skip the events of the (run, DST segment)s in bad_segments.txt (next to the -l list,
+					// or $CORRAL_SEGVETO), made by lists/make_bad_segments.C; default ON since 2026-10-13, "AllSeg" = OFF
+	TString	ListName;		// -l: the job list (segveto finds bad_segments.txt next to it)
+	bool	doSepMaps;		// README_CQcomparison sec 2.3: (track, nearer V0 daughter) separation maps, own mixing, ~+5 min/chunk; OFF, "sepmaps" on
+	double	valCMMaskLo, valCMMaskHi;
+	int		nSiPhiMask;		// README_PID.md sec 10.4: windows used, NSIPHIMASK_MAIN (default) or NSIPHIMASK ("siphimaskall")
+	bool	doQCut;
+	bool	FinePhiBinning;
+	double	valQCut;
+	double	valSLCut;	// production pre-pass's SL threshold, default 0.18 (sec 17.6)
+	double	valSiKeyCut;	// production pre-pass's SiSplitScore gate, default 0.10 (sec 17.6)
+	double	valRadialGapCut;	// sec 17.14: SECOND flagging path's threshold -- pairs that share a Si
+								// seed (SKF>=valSiKeyCut) but fail the SL<valSLCut "duplicate" test are
+								// flagged anyway if RadialGap>=this (the "complementary"/STAR-fig-1b
+								// mechanism SL cannot see, sec 17.11). Default 0.45 -- sec 17.16's 12-point
+								// survey (SL/SKF held fixed) confirms this lands inside the good window:
+								// visible overcut hole below ~0.35, ridge fully returns above ~0.55.
+	bool	DISABLE_LScuts;	// sec 17.9: "noLS" in RunString -> true, and the pregate + SL/SKF/RadialGap
+							// split-track pre-pass are NOT applied (sec 17.14 folds the RadialGap path into
+							// the SAME switch -- it's a refinement of this pre-pass, not a separate
+							// mechanism). New philosophy as of sec 17.6/17.9: once a cut is finalized it
+							// defaults ON (doSplitRemoval below = !DISABLE_LScuts), and the RunString
+							// provides only the OFF switch -- no separate "enable" token needed.
+	//---- README_SplitTracks573 sec 18 (token trim, 2026-09-27): LS pregate and path 3. CONSTANTS (no token):
+	//---- deta semi-axis 0.040 (sec 8.3/15.3), path 3 at >= 2 matched MVTX layers with no abs(1/pt1-1/pt2)
+	//---- floor (sec 8.2/15.3), dphi0 at R = 0.06 m. The pregate is the flat ellipse CENTRED ON THE SPLIT
+	//---- PEAK (sec 12): (deta/a)^2 + ((abs(dphi) - dphi0)/w)^2 < 1, dphi0 = the azimuth difference the two
+	//---- fragments build up by R; its half-width w (valDPsW, default 2.0 deg) is the only token ("dpsNN").
+	int		valFullMVTX;		// path 3: >= this many MVTX layers with the same cluster on both tracks (2)
+	double	valFullMVTXdinv;	// path 3: abs(1/pt1-1/pt2) floor (0)
+	double	valPregateDEta;		// pregate deta semi-axis (0.040)
+	double	valDPsW, valDPsR;	// pregate dphi half-width (deg, "dpsNN") and the radius of dphi0 (m)
+	double	DPsCentre(double ptA, double ptB) const {	// dphi0 (rad): abs(asin(aR/ptA) - asin(aR/ptB)), a = 0.3*1.4/2
+		const double aR	= 0.3*1.4/2.0*valDPsR;
+		double xA = std::min(1.0,aR/ptA), xB = std::min(1.0,aR/ptB);
+		return fabs(asin(xA)-asin(xB));
+	}
+	//---- README_SplitTracks573 sec 33 (2026-09-29): the split stripe's dphi spread grows with dphi0 (rms ~ 0.22 + 0.13*dphi0
+	//---- deg), so the half-width is max(valDPsW, 3 rms): valDPsW (2 deg) up to dphi0 ~ 3.4 deg, 3.1 deg at dphi0 = 6.2
+	static constexpr double PREGATE_S0 = 0.22, PREGATE_S1 = 0.13, PREGATE_NSIG = 3.0;
+	double	DPsWidth(double c) const {			// c = dphi0 (rad) -> half-width (rad)
+		double cdeg	= c*180.0/M_PI;
+		return std::max(valDPsW, PREGATE_NSIG*(PREGATE_S0 + PREGATE_S1*cdeg))*M_PI/180.0;
+	}
+	bool	InLSPregate(double deta, double dphi, double ptA, double ptB) const {	// dphi in rad
+		double c	= DPsCentre(ptA,ptB);
+		double w	= DPsWidth(c);
+		double u	= (fabs(dphi)-c)/w;
+		return (deta/valPregateDEta)*(deta/valPregateDEta) + u*u < 1.0;
+	}
+	//---- two-track-resolution LS pair cut (sec 11/13): abs(dy) < valTSepDy && min over R = 0.30-0.78 m of
+	//---- abs(dphi*) < valTSepDphi, sibling and mixed alike. "tsepmYYPP" sets both, "notsep" turns it off.
+	double	valTSepDy, valTSepDphi;
+	//---- near-vertex two-track pair cut (README_SplitTracks573 sec 29): reject abs(dphi*(R = 3 cm)) < valISepDphi (deg) at
+	//---- abs(dy) < 1.0, LS and ULS, sibling and mixed alike. Default 2.0 deg; "isepPPP" (deg x 10, 0.3-4.0) / "noisep" (off).
+	double	valISepDphi;
+	//---- event |zvtx| max (cm), README_SplitTracks573 sec 30: "vzNN" (6-16), default 16 (under discussion: R2 per Zvtx
+	//---- slice is flat only at abs(zvtx) < ~6-8 cm)
+	double	valVzMax;
+	//---- event multiplicity class (README_CQcomparison.md sec 2.1): only events with valNchLo <= N_ch <= valNchHi (N_ch =
+	//---- accepted tracks, ntrkept = hntrk) reach CalcRm, so siblings, mixing pools and r2 are all within the class.
+	//---- "nchLLHH" sets both (LL 0-40, HH LL-99); default 0-9999 (all events).
+	int		valNchLo, valNchHi;
+	//---- Finalize: the abs(zvtx) range for physics (cm), README_SplitTracks573 sec 30 (user, 2026-09-28): the chunks keep
+	//---- every Zvtx slice (abs(zvtx) < 16); Finalize averages only the slices inside abs(zvtx) < valFinZMax (whole 2 cm
+	//---- slices). Default 8; "fzNN" in the Finalize run string (Finalize_fzNN, 2-16) overrides it.
+	double	valFinZMax;
+	bool	DISABLE_RG;	// sec 17.17: "noRG" in RunString -> true, and ONLY the RadialGap path (path 2)
+						// is skipped -- path 1 (SL/SKF "duplicate" flagging) stays live. Finer-grained
+						// than DISABLE_LScuts (which turns off both paths together): lets a run isolate
+						// the RadialGap path's own before/after effect specifically.
+	bool	doSplitRemoval;	// split-track REMOVAL pre-pass (corral_loop.cxx, sec 13.8.4/13.8.6/13.8.18,
+							// values finalized sec 17.6, RadialGap path added sec 17.14) -- the production
+							// split-track mitigation. Driven by !DISABLE_LScuts (sec 17.9); uses
+							// valSLCut/valSiKeyCut/valRadialGapCut as its threshold values.
+	bool	doLooperVeto;	// README_SplitTracks573 sec 35: looper veto (OS back-to-back halves of one curling track), ON; "nolooper" off
+	static constexpr double LOOPER_PMAX = 0.20;	// sec 35: both |p| below (GeV/c)
+	double	valLooperRSum;	// sec 35: relative 3-momentum sum below (default 0.08; "looperNN" = 0.NN, 0.02-0.10)
+	int		valZvtxNB;		// sec 38: zvtx slices over +-16 cm for the mixing and the Zvtx average (default 16 = 2 cm; sec 38: 1-cm slices tested, no change)
+	bool	doULSTest;	// ULS opposite-charge SiSplitScore removal (README sec 15) -- ON by default since
+						// 2026-09-22 ("noulstest" turns it off); "ulstestNN" sets the threshold. sec 18.10:
+						// converted from a CalcRm::PairInfo sibling-only PAIR veto to a TRACK-level removal
+						// (folded into corral_loop.cxx's nSplitFlagged_thisevt, same mechanism as
+						// doSplitRemoval/LS below) -- the pair-only version left the loser track sitting in
+						// Pvec_1/Pvec_2 and hence in the mixing buffer for every OTHER pairtype, which sec
+						// 18's own survey found as a genuine compact spike in the raw MIXED density
+						// (hzoomM_0) at the same (dy,dphi) as the sibling ridge -- a single-particle-density
+						// defect no sibling-only veto could ever reach. sec 18.24: CalcRm's own sibling-only
+						// pair veto (fDoULSTest) is REMOVED -- it was not a no-op (it caught 0.40% of sibling
+						// pi+pi- pairs beyond the 4.1deg pregate); instead this track-level veto no longer
+						// uses any angular gate, which covers the same pairs symmetrically.
+	double	valULSTestCut;	// SiSplitScore threshold for the above, default 0.05 (sec 15.7, reconfirmed 18.7)
+	bool	doDauCheck;	// README_CQcomparison sec 2.2: split partners of in-peak Lambda/Lbar daughters (LS paths dR<0.05 except pion-tagged partners of a p/pbar, ULS never an (anti)proton partner of a pion daughter); not K0S; ON, "nodau" off
+	static constexpr double DAU_DRMAX = 0.05;	// sec 2.2 (2026-10-03, option 2): daughter-partner check only inside dR(t,d) < 0.05
+	bool	doXTFClean;	// sec 18.22: ON by default since sec 18.25 ("noXTF" turns it off, see corral_utils.cxx). Cross-crossing
+							// duplicate-track cleaner. Cause (sec 18.22): the tracking matcher lets ONE
+							// silicon seed join SEVERAL TPC seeds, each combination gets its own crossing,
+							// so copies of one Si seed land in DIFFERENT crossing rows of the same TF and
+							// survive into mixed pairs (the ULS rho2(M) ridge / LS mixed-origin excess).
+							// A pre-pass (BuildXTFLosers) groups consecutive rows by (run,evt); any two
+							// accepted tracks in DIFFERENT rows sharing >=2 siclukey slots (within one TF a
+							// shared key IS the same physical cluster) are duplicates; the loser is the
+							// one whose row crossing != its own INTT bucket, else the worse `quality`.
+							// Losers join nSplitFlagged_thisevt (track-level removal, like LS/ULS).
+	bool	doXTFStrict;	// sec 18.22 variant, ON by default since sec 18.25 (plain "XTFclean" = non-strict): in the "neither" case
+							// (both copies have INTT, neither row crossing == its INTT bucket, ~12%) drop
+							// BOTH copies instead of keeping the better-quality one (SDCC-claude's view:
+							// neither copy's crossing can be trusted there).
+	bool	doMixNoAdjTF;	// sec 18.23: ON by default since sec 18.25 ("noXTF" or "mixAdjTF" turns it off). Mixed EVENT pairs from
+							// neighboring trigger frames (same run, |devt|==1) are skipped in every pairtype's
+							// mixing, with per-zvtx-bin mixed normalization (CalcRm::SetExcludeAdjTF). With
+							// doXTFClean off it also skips same-TF event pairs (|devt|<=1), since those are
+							// only safe to mix after the same-TF cleaner.
+	std::unordered_map<Long64_t,std::vector<int>> xtfLosers;	// chain entry -> track indices to drop
+	bool	doTFDup;	// 2026-09-26: ON by default ("noTFdup" turns it off). Collision duplicated across
+						// OVERLAPPING trigger frames: when two triggers are closer in time than a TF's
+						// readout window, the collisions in the overlap are reconstructed in both TFs
+						// (same vertex, crossing shifted by exactly the TFs' GL1 BCO difference). Such
+						// copies are whole-EVENT duplicates in different (run,evt) rows, invisible to the
+						// siclukey-based XTF cleaner (keys are only comparable within one TF). Needs the
+						// Collect "bco" branch (ana573 on): key = (run, bco+crossing) = absolute crossing;
+						// the first row with a key is kept, later rows with the same key are skipped
+						// entirely (sibling AND mixing). Without a bco branch this does nothing.
+	std::vector<bool> tfDupRows;			// [chain entry] -> skip (see doTFDup); 1 bit/row, fine at 1e9 rows
+	bool	doIsoVtx;		// README.md "isovtxNNZZ" (2026-10-12, default OFF): keep only ISOLATED vertices -- no other vertex of
+							// the run within +-NN crossings (absolute crossing bco+crossing) and |dz| < ZZ cm. Copies (same
+							// absolute crossing) are not neighbours (doTFDup handles them). Test of track-vertex misassignment.
+	int		valIsoNX;		// NN, crossings (1-50)
+	double	valIsoDZ;		// ZZ, cm (1-30)
+	std::vector<bool> nonIsoRows;			// [chain entry] -> skip (see doIsoVtx)
+	virtual void	BuildIsoRows(Long64_t nentries);
+	bool	doSkipMultiVtx;	// README_CollectTree_20261013.md (2026-10-14, default ON): skip events whose crossing has 2+ vertices
+							// (Collect branch nvtxXing > 1: a second collision or one collision split in two). "multivtx" keeps them.
+							// Trees without nvtxXing (Collect before f2edffe6): nothing to do, info/ says so.
+	bool	hasNvtxXing;	// the input trees have the nvtxXing branch
+	bool	hasEtot;		// the input trees have the calorimeter totals etotem..etotepd (not in ana578)
+	std::vector<bool> multiVtxRows;			// [chain entry] -> nvtxXing > 1
+	long	nMultiVtxAll;					// events with nvtxXing > 1 in the pre-pass (all events read)
+	virtual void	BuildMultiVtxRows(Long64_t nentries, TH1D *hn, TH2D *hn2);
+	long	nTFDup_rows;					// rows skipped as overlapping-TF copies
+	std::map<int,long> nTFDup_byDevt;		// evt(copy) - evt(kept), for the log
+	double	TFDup_maxAbsDvz;				// largest |vtxz(copy)-vtxz(kept)| seen (should be ~0)
+	long	nXTF_pairs, nXTF_byINTT, nXTF_byInTime, nXTF_byQuality, nXTF_neither, nXTF_losers;
+	long	nXTF_qBothOK, nXTF_qBothOKsameX, nXTF_qDisagree, nXTF_qNoINTT;	// why quality decided (README_SplitTracks578 sec 1.4)
+	bool	ONLY_FIRST_XINGPOS;	// sec 18.21 follow-up 2: opt-in, OFF by default ("XingPos" turns it on).
+							// Keeps only the FIRST row with crossing>0 in each (run,evt) TF, skips every
+							// other row -- pure STREAMING (non-triggered) events, still <=1 row/TF.
+							// Complement of the old exactly-crossing-0 cut (pure triggered, <=1 row/TF). Rows within a
+							// TF are written in ascending crossing order (checked: 4681/4681 TFs,
+							// outputCollect_79510_0.root), so "first positive row" == lowest crossing>0.
+	int		xingSel;	// 2026-10-08: crossing selection, three distinct samples; DEFAULT = 3 (ZB), "AllX" -> 0 = all crossings.
+						// 1 "Xing0"     crossing==0 only: the triggered collision (biased by jet/photon triggers:
+						//               <N_trk> 6.2 vs 4.3, <pT> 0.59 vs 0.48 in jet-trigger TFs).
+						// 2 "NearX0"    XNEAR_LO<=crossing<=XNEAR_HI, crossing!=0: the neighbours of the trigger.
+						//               No leakage seen, but <N_trk> is ~6% low in every trigger class (4.0-4.25
+						//               vs the 4.40 plateau; 2M-event test, ana573_795xx). The limits are where the
+						//               dip ends: -5 and +3 are back on the plateau.
+						// 3 "ZB"        (default) ZB_LO<=crossing<=ZB_HI outside the NearX0 window: streaming, away from the
+						//               trigger. The limits drop the readout-window ramps: <N_trk> is on its 4.40
+						//               plateau from -20 to ~260, within 3% up to 390, then falls (3.90 at 401-410,
+						//               2.0 at 475); below -20 it falls too (4.27 at -30..-21, 2.8 at -100). ~15% of
+						//               all events are outside [ZB_LO,ZB_HI] and are in none of the three samples.
+						//               2026-10-28: ZB_LO -20 -> 14 (user, XingView_ana578_ZB page 3: <N_trk> and <pT>
+						//               not yet on the plateau just after the trigger; no negative crossings at all).
+						//               Costs 6.6% of the old ZB events (ana578, all groups alike).
+	static constexpr int XNEAR_LO = -4;
+	static constexpr int XNEAR_HI =  2;
+	static constexpr int ZB_LO    =  14;
+	static constexpr int ZB_HI    = 390;
+	bool	ONLY_FIRST_TF;	// sec 18.21: opt-in diagnostic, OFF by default ("onlyfirsttf" turns it on).
+							// Keeps only the FIRST row seen for each (run,evt) -- evt IS the trigger
+							// frame's own EvtSequence (SDCC-claude, sec 18.20), constant across every row
+							// from that TF -- and skips every subsequent row from the same TF entirely,
+							// before ANY processing. Makes same-TF mixed-pair contamination structurally
+							// impossible (no two rows that ever enter the pipeline can share a TF), unlike
+							// sec 18.20's per-pair exclusion (which left single-particle multiplicities
+							// inconsistent with the reduced pair count -- a real normalization bug the user
+							// caught). Costs ~85% of statistics (~1/6-7 rows survive per TF) -- diagnostic
+							// only, never a production default.
+	int		NTPCCUT;
+	double	valDcaxyCut;	// README.md "dxyNN" (2026-10-12): track |dcaxy| < NN/100 cm (or dxyNNN), default 1.5 cm (sane 0.05-5.0)
+	double	valDcazCut;		// README.md "dczNN" (2026-10-12): track |dcaz| < NN/10 cm, default 1.5 cm (sane 0.1-9.9)
+	double	PTMINCUT;	// track pT floor, "ptminNN" = 0.NN GeV/c (default 0.1 = ana573 Collect floor; ana532 trees start at 0.2)
+	bool	KILLETA0SPIKE;
+	//
+	//
+	Long64_t	nentriesfile;
+	//
+private:
+	// builds/returns the input TChain; must be callable before any other member exists
+	// (it runs in the constructor's member-initializer-list, ahead of fReader).
+	static TChain* BuildInputChain(TTree *tree);
+	//
+	TChain      *fChain;	// owns the input chain for the lifetime of this object
+	TTreeReader fReader;	// drives fChain; every reader value/array below binds to this
+	//
+public:
+	// Tree contents, read via TTreeReader (declaration order here MUST match the
+	// member-initializer-list order in corral_utils.cxx, since fChain must be
+	// constructed before fReader, and fReader before everything that follows).
+	TTreeReaderValue<Int_t>            run;
+	TTreeReaderValue<Int_t>            segment;
+	TTreeReaderValue<Int_t>            evt;
+	TTreeReaderValue<vector<bool> >    trigVec;
+	TTreeReaderValue<Int_t>            nvtx;
+	TTreeReaderValue<Int_t>            vtxntr;
+	TTreeReaderValue<Double_t>         vtxx;
+	TTreeReaderValue<Double_t>         vtxy;
+	TTreeReaderValue<Double_t>         vtxz;
+	TTreeReaderValue<Int_t>            crossing;
+	//---- calorimeter totals: optional (ana578 Collect trees do not have them), made in the constructor only if present
+	std::unique_ptr<TTreeReaderValue<Double_t> > etotem, etotih, etotoh, etotioh, etotepd;
+	TTreeReaderValue<Int_t>            ntr;
+	TTreeReaderArray<Char_t>           pid;
+	TTreeReaderArray<Short_t>          indv0;
+	TTreeReaderArray<Char_t>           primary;
+	TTreeReaderArray<Float_t>          quality;
+	TTreeReaderArray<Float_t>          chisq;
+	TTreeReaderArray<Float_t>          chg;
+	TTreeReaderArray<Float_t>          ptot;
+	TTreeReaderArray<Float_t>          eta;
+	TTreeReaderArray<Float_t>          phi;
+	TTreeReaderArray<Float_t>          pt;
+	TTreeReaderArray<Float_t>          seedeta;
+	TTreeReaderArray<Float_t>          seedphi;
+	TTreeReaderArray<Float_t>          seedpt;
+	TTreeReaderArray<UChar_t>          ntpc;
+	TTreeReaderArray<UChar_t>          nmvtx;
+	TTreeReaderArray<UChar_t>          nintt;
+	TTreeReaderArray<Float_t>          dcaxy;
+	TTreeReaderArray<Float_t>          dcaz;
+	TTreeReaderArray<UChar_t>          dedx70n;
+	TTreeReaderArray<Float_t>          dedx70s;
+	TTreeReaderArray<Float_t>          dedxKFP;	// dedx value KFP actually cuts on (PID set via CDB, not ours) -- for QA vs dedxQA bands
+	TTreeReaderArray<ULong64_t>        layermask;	// bit per absolute TrkrDefs layer w/ a cluster on this track (0-2 MVTX, 3-6 INTT, 7-54 TPC) -- see README_SplitTracks.md sec 9/10
+	// siclukey/tpcsector/tpcarclen/tpcz below are new-this-round raw per-track/per-Si-or-TPC-layer
+	// data (README_SplitTracks.md sec 12a.1/12b.5) -- NOT yet used by any pairwise cut logic here
+	// (that's sec 12a.4/12b, deliberately deferred). TTreeReaderArray flattens the tree's fixed
+	// second dimension into one contiguous ntr*N array; index element (itrk, slot) as
+	// arr[itrk*N + slot] where N=7 for siclukey (Si layer slot, bit 0-6 of layermask) or N=48 for
+	// the tpc* triplet (TPC layer slot = absolute layer - 7, range 0-47 for layers 7-54).
+	TTreeReaderArray<ULong64_t>        siclukey;	// [ntr][7], sentinel ~0ULL == no cluster in that Si slot -- sec 12a.1/12a.2
+	TTreeReaderArray<UChar_t>          tpcsector;	// [ntr][48], sentinel 255 == no TPC cluster on that layer -- sec 12b.5
+	TTreeReaderArray<Char_t>           tpcarclen;	// [ntr][48], 2.0 mm/count local arc-length, valid only where tpcsector!=255 -- sec 12b.5
+	TTreeReaderArray<Short_t>          tpcz;		// [ntr][48], 0.1 mm/count crossing-corrected global z, valid only where tpcsector!=255 -- sec 12b.5
+	TTreeReaderValue<Int_t>            nv0;
+	TTreeReaderArray<Int_t>            v0pid;
+	TTreeReaderArray<Double_t>         v0x;
+	TTreeReaderArray<Double_t>         v0y;
+	TTreeReaderArray<Double_t>         v0z;
+	TTreeReaderArray<Double_t>         v0px;
+	TTreeReaderArray<Double_t>         v0py;
+	TTreeReaderArray<Double_t>         v0pz;
+	TTreeReaderArray<Double_t>         v0pt;
+	TTreeReaderArray<Double_t>         v0ptot;
+	TTreeReaderArray<Double_t>         v0eta;
+	TTreeReaderArray<Double_t>         v0phi;
+	TTreeReaderArray<Double_t>         v0ene;
+	TTreeReaderArray<Double_t>         v0mass;
+	TTreeReaderArray<Double_t>         v0ctau;
+	TTreeReaderArray<Double_t>         v0decaylen;
+	TTreeReaderArray<Double_t>         v0chi2ndf;
+	TTreeReaderArray<Double_t>         v0dira;
+	TTreeReaderArray<Double_t>         v0pvdca;
+	TTreeReaderArray<Double_t>         v0decayx;
+	TTreeReaderArray<Double_t>         v0decayy;
+	TTreeReaderArray<Double_t>         v0decayz;
+	TTreeReaderArray<Int_t>            v0indtr1;
+	TTreeReaderArray<Int_t>            v0indtr2;
+	//
+};
+
+#endif

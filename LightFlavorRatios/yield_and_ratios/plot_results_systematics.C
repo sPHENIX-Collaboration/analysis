@@ -89,7 +89,7 @@ void plot_results_systematics()
   
   // get the ratios
   //===========  
-  TFile* f = TFile::Open("/sphenix/user/mjpeters/analysis/LightFlavorRatios/yield_and_ratios/fits.root");
+  TFile* f = TFile::Open("fits.root");
   if(!f)
     {
       std::cout << "Failed to open the file fits.root" << std::endl;

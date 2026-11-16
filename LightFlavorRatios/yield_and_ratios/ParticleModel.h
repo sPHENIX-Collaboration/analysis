@@ -8,6 +8,10 @@
 struct ParticleModel
 {
   std::string name;
+  int pdgid;
+  std::vector<int> daughter_pdgids;
+
+  bool use_threshold = false;
 
   std::shared_ptr<RooRealVar> mass;
 
@@ -26,12 +30,12 @@ struct ParticleModel
   void add_signal_parameter(const std::string& name, const std::string& title, float init_val, float min_val, float max_val)
   {
     signal_parameters.emplace_back(name.c_str(),title.c_str(),init_val,min_val,max_val);
-    signal_parameter_arglist.addClone(signal_parameters.back());
+    signal_parameter_arglist.add(signal_parameters.back());
   }
   void add_background_parameter(const std::string& name, const std::string& title, float init_val, float min_val, float max_val)
   {
     background_parameters.emplace_back(name.c_str(),title.c_str(),init_val,min_val,max_val);
-    background_parameter_arglist.addClone(background_parameters.back());
+    background_parameter_arglist.add(background_parameters.back());
   }
 
   std::shared_ptr<RooRealVar> n_signal;
@@ -55,35 +59,9 @@ struct ParticleModel
     fit_function->fitTo(ds,RooFit::Offset(true));
   }
 
-  bool use_threshold = false;
-  std::shared_ptr<RooRealVar> threshold_turnon;
-  std::shared_ptr<RooRealVar> threshold_width;
-  std::shared_ptr<TF1> threshold_function;
-  std::shared_ptr<RooTFnPdfBinding> threshold_pdf;
-  std::shared_ptr<RooProdPdf> signal_with_threshold;
-  std::shared_ptr<RooProdPdf> background_with_threshold;
-
   void generate_fitFunction()
   {
-    if(use_threshold)
-    {
-      threshold_turnon = std::make_shared<RooRealVar>("threshold_turnon","threshold turn-on",mass->getMin(),mass->getMax());
-      threshold_width = std::make_shared<RooRealVar>("threshold_width","threshold width",0.,(mass->getMax()-mass->getMin()));
-
-      threshold_function = std::make_shared<TF1>("fThreshold","TMath::Erf(x/[1]-[0])");
-      threshold_pdf = std::make_shared<RooTFnPdfBinding>("threshold_pdf","threshold pdf",threshold_function.get(),RooArgList(*mass,*threshold_turnon,*threshold_width));
-
-      signal_with_threshold = std::make_shared<RooProdPdf>((name+"_signal_with_threshold").c_str(),"signal with threshold",RooArgList(*signal_function,*threshold_pdf));
-
-      background_with_threshold = std::make_shared<RooProdPdf>((name+"_bkg_with_threshold").c_str(),"background with threshold",RooArgList(*background_function,*threshold_pdf));
-
-      fit_function = std::make_shared<RooAddPdf>((name+"_model_with_threshold").c_str(),"combined signal and background with threshold",RooArgList(*signal_with_threshold,*background_with_threshold),RooArgList(*n_signal,*n_background));
-    }
-
-    else
-    {
-      fit_function = std::make_shared<RooAddPdf>((name+"_model").c_str(),"combined signal and background",RooArgList(*signal_function,*background_function),RooArgList(*n_signal,*n_background));
-    }
+    fit_function = std::make_shared<RooAddPdf>((name+"_model").c_str(),"combined signal and background",RooArgList(*signal_function,*background_function),RooArgList(*n_signal,*n_background));
   }                                                                                                                                                 
 };
 

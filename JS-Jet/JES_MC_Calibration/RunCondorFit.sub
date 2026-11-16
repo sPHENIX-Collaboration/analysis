@@ -1,0 +1,11 @@
+Universe                      = vanilla
+executable                    = CondorRunFit.sh
+arguments                     = $(r_val) $(z_val) $(n_eta) $(do_closure)
+output                        = condor_fit/out/condor_r0$(r_val)_z$(z_val).out
+error                         = condor_fit/err/condor_r0$(r_val)_z$(z_val).err
+log                           = /tmp/condor_fit_r0$(r_val)_z$(z_val).log
+request_memory                = 2GB
+when_to_transfer_output       = ON_EXIT
+Notification                  = Never
+PeriodicHold                  = (NumJobStarts>=1 && JobStatus == 1)
+queue r_val, z_val, n_eta, do_closure from ListCondorRunFit.csv

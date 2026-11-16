@@ -17,8 +17,9 @@ struct GeoAcceptanceCorrection : CorrectionHistogram1D
   GeoAcceptanceCorrection(std::string filename, std::string hname)
   {
     f = std::make_shared<TFile>(filename.c_str(),"READ");
-    TCanvas* c = (TCanvas*)f->Get("myCanvas");
-    h_corr = (TH1F*)c->GetPrimitive(hname.c_str())->Clone();
+//    TCanvas* c = (TCanvas*)f->Get("myCanvas");
+//    h_corr = (TH1F*)c->GetPrimitive(hname.c_str())->Clone();
+    h_corr = (TH1F*)f->Get(hname.c_str());
     // preserve histogram on file close
     h_corr->SetDirectory(nullptr);
     name = "geoacceptance";

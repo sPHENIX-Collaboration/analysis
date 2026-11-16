@@ -68,7 +68,7 @@ string to_string_with_precision(const T a_value, const int n = 0)
     return out.str();
 }
 
-void buildLumiTable()
+void buildLumiTable(const bool printMarkdownTable = false, const bool printLatexTable = true)
 {
   cout.setf(ios::fixed);
 
@@ -76,15 +76,27 @@ void buildLumiTable()
   int sumProceEvents = 0;
   float sumLumi = 0;
 
+  ostringstream markdownTable;
+  ostringstream latexTable;
+
   float pp_cross_section_200GeV = 20e6;// Roughly 20 mb for MBD, written here in nb (https://arxiv.org/abs/0704.3599)
 
- int runList[] = {79514, 79515, 79516, 79526, 79528, 79529}; //
- //int runList[] = {79507, 79509, 79510, 79511, 79512, 79513, 79514, 79515, 79516, 79524, 79525, 79526, 79528, 79529, 79530, 79563, 79565, 79567, 79568, 79570, 79571, 79572, 79593, 79594, 79595, 79596, 79597, 79598, 79599, 79600, 79614, 79617, 79627, 79652, 79653, 79656, 79660, 79707, 79708, 79709, 79711, 79712};
+ //int runList[] = {79514, 79515, 79516, 79526, 79528, 79529}; //
+ int runList[] = {79507, 79509, 79510, 79511, 79512, 79513, 79514, 79515, 79516, 79524, 79525, 79526, 79528, 79529, 79530, 79563, 79565, 79567, 79568, 79570, 79571, 79572, 79593, 79594, 79595, 79596, 79597, 79598, 79599, 79600, 79614, 79617, 79627, 79652, 79653, 79656, 79660, 79707, 79708, 79709, 79711, 79712};
 
-  cout << "  \\begin{tabular}{p{2.5cm}p{2.5cm}p{3.0cm}p{2.5cm}p{2.4cm}}" << endl;
-  cout << "    \\toprule[1pt]" << endl;
-  cout << "    Run number  & No. recorded triggers [$\\times 10^{6}$] & No. processed triggers [$\\times 10^{6}$] & Analyzed $\\int \\mathcal{L} dt$ [$\\rm nb^{-1}$] & Avg. MBD rate [\\khz] \\\\" << endl;
-  cout << "    \\midrule[0.2pt]" << endl;
+  if (printMarkdownTable)
+  {
+    markdownTable << "| Run number | No. recorded triggers [$\\times 10^{6}$] | No. processed triggers [$\\times 10^{6}$] | Analyzed $\\int \\mathcal{L} dt$ [$\\rm nb^{-1}$] | Avg. MBD rate [kHz] |" << endl;
+    markdownTable << "|:--:|:--:|:--:|:--:|:--:|" << endl;
+  }
+
+  if (printLatexTable)
+  {
+    latexTable << "  \\begin{tabular}{p{2.5cm}p{2.5cm}p{3.0cm}p{2.5cm}p{2.4cm}}" << endl;
+    latexTable << "    \\toprule[1pt]" << endl;
+    latexTable << "    Run number  & No. recorded triggers [$\\times 10^{6}$] & No. processed triggers [$\\times 10^{6}$] & Analyzed $\\int \\mathcal{L} dt$ [$\\rm nb^{-1}$] & Avg. MBD rate [\\khz] \\\\" << endl;
+    latexTable << "    \\midrule[0.2pt]" << endl;
+  }
 
   for (const int run : runList)
   {
@@ -101,15 +113,38 @@ void buildLumiTable()
 
     float lumi = i_nProceEvents/(pp_cross_section_200GeV);// Triggered lumi in inv nb
 
-    cout << "    " << run << " & " << to_string_with_precision(nTotalEvents/1e6, 1) << " & " << to_string_with_precision(i_nProceEvents/1e6, 1) << " & " << to_string_with_precision(lumi, 3) << " & " + to_string_with_precision(rate, 1) + "\\\\" << endl;
+    const string totalEvents = to_string_with_precision(nTotalEvents/1e6, 1);
+    const string processedEvents = to_string_with_precision(i_nProceEvents/1e6, 1);
+    const string integratedLumi = to_string_with_precision(lumi, 3);
+    const string mbdRate = to_string_with_precision(rate, 1);
+
+    if (printMarkdownTable)
+    {
+      markdownTable << "| " << run << " | " << totalEvents << " | " << processedEvents << " | " << integratedLumi << " | " << mbdRate << " |" << endl;
+    }
+
+    if (printLatexTable)
+    {
+      latexTable << "    " << run << " & " << totalEvents << " & " << processedEvents << " & " << integratedLumi << " & " << mbdRate << "\\\\" << endl;
+    }
 
     sumTotalEvents += nTotalEvents;
     sumProceEvents += i_nProceEvents;
     sumLumi += lumi;
   }
 
-  cout << "    \\bottomrule[1pt]" << endl;
-  cout << "    Total & " << to_string_with_precision(sumTotalEvents/1e6, 1) <<  " & " << to_string_with_precision(sumProceEvents/1e6, 1) << " & " << to_string_with_precision(sumLumi, 1) << " & - \\\\" << endl;
-  cout << "    \\bottomrule[1pt]" << endl;
-  cout << "  \\end{tabular}" << endl;
+  if (printMarkdownTable)
+  {
+    markdownTable << "| Total | " << to_string_with_precision(sumTotalEvents/1e6, 1) << " | " << to_string_with_precision(sumProceEvents/1e6, 1) << " | " << to_string_with_precision(sumLumi, 1) << " | - |" << endl;
+    cout << markdownTable.str();
+  }
+
+  if (printLatexTable)
+  {
+    latexTable << "    \\bottomrule[1pt]" << endl;
+    latexTable << "    Total & " << to_string_with_precision(sumTotalEvents/1e6, 1) <<  " & " << to_string_with_precision(sumProceEvents/1e6, 1) << " & " << to_string_with_precision(sumLumi, 1) << " & - \\\\" << endl;
+    latexTable << "    \\bottomrule[1pt]" << endl;
+    latexTable << "  \\end{tabular}" << endl;
+    cout << latexTable.str();
+  }
 }

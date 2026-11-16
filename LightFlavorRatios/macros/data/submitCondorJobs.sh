@@ -4,22 +4,31 @@ submissionFile=myCondor.job
 
 listDir=fileLists
 
-runs="79509 79510 79511 79512 79513 79514 79515 79516 79528 79529 79530 79570 79571 79572 79600"
-#runs="79570 79571 79572 79600"
-# DST_TRKR_TRACKS_run3pp_ana538_2025p011_v001-00079509-0029.list
+#runs="82420"
+#runs="79514 79515 79516"
+#runs="53877 53534 53631 53687 53716 53744 53756 53876"
+runs="79516"
 
 for run in $runs
 do
-  currentOptionsFile=$(grep 'Queue' ${submissionFile} | awk '{print $NF}' | awk -F "/" '{print $NF}')
-  newOptionsFile=masterList_run${run}.list
-  
-  if [ -f ${listDir}/${newOptionsFile} ]; then
-    echo "Current options file: ${currentOptionsFile}"
-    echo "New options file:  ${newOptionsFile}s"
-    sed -i -e "s/${currentOptionsFile}/${newOptionsFile}/g" ${submissionFile}
-    condor_submit ${submissionFile}
-  else
-    echo "File ${newOptionsFile} is missing"
-  fi
+  nFiles=$(($(ls -l ${listDir}/file_run${run}_*.list | wc -l) - 1))
 
+  for i in  $(seq 0 $nFiles) 
+  do
+  
+    i=$(printf "%02d" $i)
+  
+    currentOptionsFile=$(grep 'Queue' ${submissionFile} | awk '{print $NF}' | awk -F "/" '{print $NF}')
+    newOptionsFile=file_run${run}_$i.list
+  
+    if [ -f ${listDir}/${newOptionsFile} ]; then
+      echo "Current options file: ${currentOptionsFile}"
+      echo "New options file:  ${newOptionsFile}s"
+      sed -i -e "s/${currentOptionsFile}/${newOptionsFile}/g" ${submissionFile}
+      condor_submit ${submissionFile}
+    else
+      echo "File ${newOptionsFile} is missing"
+    fi
+  
+  done
 done
