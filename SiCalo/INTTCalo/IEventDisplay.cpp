@@ -1,6 +1,6 @@
 #include <iostream>
 #include "INTT_Calo_trkReco.h"
-#include "EventDisplay.h"
+#include "IEventDisplay.h"
 
 const float PI = 3.141592;
 
@@ -27,7 +27,7 @@ void EventSelection( int& ievent) {
   if(imenu==2) {
     cout <<"Enter event number to display (negative to quit) "<<endl;
     cin>>ievent;
-    if(ievent<0 || ievent >40000) {
+    if(ievent<0 || ievent >1000000) {
       ievent = -1;
       return;
     }
@@ -42,10 +42,10 @@ void EventSelection( int& ievent) {
 }
 
 
-void EventDisplay(int iframe){   
+void IEventDisplay(int iframe){   
 
   int nEmcClust=energy->size();
-  int ntrack=pt0->size();
+  int ntrack=vtrk_pt0->size();
   int nSiClust=si_x->size();
   int nSiClustA=a_si_x->size();
   
@@ -240,19 +240,19 @@ void EventDisplay(int iframe){
   if(iframe==1) Rtrk=2.0; else Rtrk=80;
   if(iframe==1) Rmax=12.0; else Rmax=80;
   for(int k=0;k<ntrack;k++) {
-    if(pt0->at(k)>pt0min) {
-      float dx=Rtrk*cos(phi0->at(k));
-      float dy=Rtrk*sin(phi0->at(k));
-      seedtrk[ntrks]=new TArrow(vx0->at(k),vy0->at(k),vx0->at(k)+dx,vy0->at(k)+dy,Asize);
+    if(vtrk_pt0->at(k)>pt0min) {
+      float dx=Rtrk*cos(vtrk_phi0->at(k));
+      float dy=Rtrk*sin(vtrk_phi0->at(k));
+      seedtrk[ntrks]=new TArrow(vtrk_x0->at(k),vtrk_y0->at(k),vtrk_x0->at(k)+dx,vtrk_y0->at(k)+dy,Asize);
       ntrks++;
 
-      if(abs(phi0->at(k)-phiSlice)<DphiSlice) {
-	float r0=sqrt((vx0->at(k))*(vx0->at(k))+(vy0->at(k))*(vy0->at(k)));
-	float eta = eta0->at(k);
+      if(abs(vtrk_phi0->at(k)-phiSlice)<DphiSlice) {
+	float r0=sqrt((vtrk_x0->at(k))*(vtrk_x0->at(k))+(vtrk_y0->at(k))*(vtrk_y0->at(k)));
+	float eta = vtrk_eta0->at(k);
 	float theta = 2*atan(exp(-eta));
-	float Zend = (Rmax-r0)/tan(theta)+vz0->at(k);
+	float Zend = (Rmax-r0)/tan(theta)+vtrk_z0->at(k);
 
-	seedtrkRZ[ntrksRZ]=new TArrow(vz0->at(k),r0,Zend,Rmax,Asize);
+	seedtrkRZ[ntrksRZ]=new TArrow(vtrk_z0->at(k),r0,Zend,Rmax,Asize);
 	ntrksRZ++;
       }
     }

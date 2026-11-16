@@ -1,0 +1,52 @@
+trackTree content
+
+0:  evt			event number
+1:  track_id		ID of the track.
+2:  x0			x of the silicon seed at the staring point
+3:  y0			y of the silicon seed at the staring point
+4:  z0			z of the silicon seed at the staring point
+5:  px0			px of the silicon seed at (x0,y0,z0)
+6:  py0			py of the silicon seed at (x0,y0,z0)
+7:  pz0			pz of the silicon seed at (x0,y0,z0)
+8:  eta0		eta of the silicon seed  at (x0,y0,z0)
+9:  phi0		phi of the silicon seed at (x0,y0,z0)
+10: pt0			pt of the silicon seed  at (x0,y0,z0)
+11: chi2ndf		chi2/NDF of the silicon seed
+12: dxy			2D DCA (sqrt(pow(xgvtx-t_x0, 2) + pow(ygvtx-t_y0, 2))
+13: dz			z0 - zgvtx (or zgvtx - z0)?
+14: charge		charge of this track (+1 or -1)
+15: nmaps		# of Mvtx clusters of associated to this track?
+16: nintt		# of INTT clusters of associated to this track?
+17: innerintt		# of INTT hits at inner layer
+18: outerintt		# of INTT hits at outer layer
+19: crossing		beam crossing (int) = timebucket (=0 means triggered time)
+20: x_proj_emc		x of the silicon seed track projected at EMC
+21: y_proj_emc		y of the silicon seed track projected at EMC
+22: z_proj_emc		z of the silicon seed track projected at EMC
+23: px_proj_emc		px of the silicon seed track at EMC
+24: py_proj_emc		py of the silicon seed track at EMC 
+25: pz_proj_emc		pz of the silicon seed track at EMC 
+26: eta_proj_emc	eta of the silicon seed track at EMC 
+27: phi_proj_emc	phi of the silicon seed track at EMC 
+28: pt_proj_emc		pt of the silicon seed track at EMC 
+29: x_proj_oemc		x of the silicon seed track projected at EMC outer surface
+30: y_proj_oemc		y of the silicon seed track projected at EMC outer surface
+31: z_proj_oemc		z of the silicon seed track projected at EMC outer surface
+32: x_rv_proj_emc	x of the silicon seed track w/ charged flipped projected at EMC
+33: y_rv_proj_emc	y of the silicon seed track w/ charged flipped projected at EMC
+34: z_rv_proj_emc	z of the silicon seed track w/ charged flipped projected at EMC
+35: track_id_truth	MC truth track ID (ID of PHG4Particle). INTMAX for realdata
+36: sicalo_pt		pt of Silicon-Emc track improved
+37: sicalo_phi		same with track phi0,  phi of Silicon-Emc track at the origin (x0, y0, z0)
+38: sicalo_eta		same with track eta0, eta of Silicon-Emc track at the origin (x0, y0, z0)
+39: sicalo_dphi		phi difference between the closest EMC cluster and track projection
+40: sicalo_dz		z difference between the closest EMC cluster and track projection
+41: sicalo_emc_x        x of the associated Emc cluster
+42: sicalo_emc_y	y of the associated Emc cluster
+43: sicalo_emc_z	z of the associated Emc cluster
+44: sicalo_emc_r	r of the associated Emc cluster
+45: sicalo_emc_phi	phi of the associated Emc cluster
+46: sicalo_emc_energy	energy of the associated Emc cluster
+47: sicalo_emc_chi2	chi2 of the associated Emc cluster
+48: sicalo_emc_prob	prob of the associated Emc cluster
+

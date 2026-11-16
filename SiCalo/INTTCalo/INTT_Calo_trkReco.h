@@ -1,6 +1,7 @@
 #ifndef INTT_CALO_TRKRECO_H
 #define INTT_CALO_TRKRECO_H
 
+//#define DEBUG_MODE
 //#include <vector>
 
 void INTT_Calo_trkReco_Init(void);
@@ -86,7 +87,8 @@ float xBC=0;     //x of Beam Center
 float yBC=0;     //y of Beam Center
 float gzvtx;     //Global zvtx;
 
-const float R_Emc = 103.5;
+//const float R_Emc = 103.5;
+const float R_Emc = 93.5;
 const float Top_E_min = 0.2; //Minimun Calo energy [GeV].
 
 struct InttPair {
@@ -101,8 +103,10 @@ struct InttPair {
 
 vector<InttPair>     vInttPair;
 
+// data structure of Calo-INTT-Mvtx track (CIM track)
 struct CaloInttMvtx {
   int iTop;       //index in vTop_r, vTop_phi, vTop_z etc (best)
+  int iEmc;       //index vEmc_r, etc, *emc_energy,etc and ,*emc_tower_e, etc
   int iINTT0;     //index in vINTT0r, vINTT0phi, vINTT0z
   int iINTT1;     //index in vINTT1r, vINTT1phi, vINTT1z
   int iMvtx0;     //index in vMvtx0r, vMvtx0phi, vMvtx0z (best)
@@ -116,19 +120,22 @@ struct CaloInttMvtx {
   float yc_intt;  //
   float z_intt;   // z of intt tracklet. z of INTT0.
   float zvtx_intt;//
-  
+
+  // EMC-INTT track info. -99 if track is not formed
   float r_emc_intt;  //The radius of the circle of (EMC-INTT1-INTT0)
-  float xc_emc_intt; //The center of the circle
+  float xc_emc_intt; //The center (x,y,z) of the circle
   float yc_emc_intt;
   float z_emc_intt;
   float zvtx_emc_intt;// zvtxt projection of the EMC-INTT tracklet
 
-  float r_intt_mvtx;
+  // INTT-MVTX track info. -99 if track is not formed  
+  float r_intt_mvtx;  //radius of INTT-MVTX circle
   float xc_intt_mvtx;
   float yc_intt_mvtx;
   float zvtx_intt_mvtx;
 
-  // Emc cluser center
+  // data of Emc cluster connected to the track. -99 if not connected
+  // Emc cluser center (x,y,z)
   float xemc;
   float yemc;
   float zemc;
@@ -141,17 +148,20 @@ struct CaloInttMvtx {
   float emc_e;     //energy of emcal cluster associated with topocluster
 
   // eID parameter
-  float BDT_e;     // BDT socre for electron ID
+  float emc_prob;  // 1= EM partilce like; 0= hadron like
+  float BDT_e;     // BDT socre for electron ID. Unimplemented
   
-  // EMC-INTT based track information.
+  // EMC-INTT based track information. (-99 if track is not formed)
   float x0e;    // (x0,y0,z0) of the track starting point
   float y0e;
   float z0e;
-  float pt0e;   // (pt0, pt0, pz0) at (x0,y0,z0);
-  float phi0e;
+  float pt0e;    // (pt,phi,pz) at r=0 by circle method;
+  float phi0e;   //
   float pz0e;
+  float pt0e2;   // pt, pz from dphi method
+  float pz0e2;
 
-  // Mvtx-INTT based track information.
+  // Mvtx-INTT based track information. (-99 if track is not formed)
   float x0m;    // (x0,y0,z0) of the track starting point
   float y0m;
   float z0m;
@@ -163,15 +173,16 @@ struct CaloInttMvtx {
 vector<CaloInttMvtx> vCaloInttMvtx;
 CaloInttMvtx a_CaloInttMvtx;
 
-
-// Emc clusters
+// nDST contents
+// Emc clusters. These vectors has common index
 vector<float> vEmc_r;
 vector<float> vEmc_phi;
 vector<float> vEmc_eta;
 vector<float> vEmc_z;
+vector<float> vEmc_prob;
 vector<float> vEmc_e;
 
-// TopoClusters
+// TopoClusters. These vectors has common index
 vector<float> vTop_r;
 vector<float> vTop_phi;
 vector<float> vTop_eta;
@@ -182,44 +193,51 @@ vector<float> vTop_ihc_e;
 vector<float> vTop_ohc_e;
 
 // Emc Cluster info associated with TopCluster
+// The index of these vectors and TopCluster vectors are the same
+// If a Topo Cluster is NOT associated with an Emc, Top_emc_r is negative.
+vector<int>   vTop_emc;     //index of emc associated with TopoCluster
 vector<float> vTop_emc_r;
 vector<float> vTop_emc_phi;
 vector<float> vTop_emc_eta;
 vector<float> vTop_emc_z;
 vector<float> vTop_emc_emc_e;
+vector<float> vTop_emc_prob;
 
-// INTT0 and INTT1 clusters
+// INTT0 clusters. These vectors have common index
 vector<float> vINTT0r;
 vector<float> vINTT0phi;
 vector<float> vINTT0z;
 vector<float> vINTT0t;
 
+// INTT1 clusters. These vectors have common index
 vector<float> vINTT1r;
 vector<float> vINTT1phi;
 vector<float> vINTT1z;
 vector<float> vINTT1t;
 
-// Mvtx0, Mvtx1, Mvtx2 clusters
+// Mvtx0 clusters. These vectors have common index
 vector<float> vMvtx0r;
 vector<float> vMvtx0phi;
 vector<float> vMvtx0z;
 vector<float> vMvtx0t;
 
+// Mvtx1 clusters. These vectors have common index
 vector<float> vMvtx1r;
 vector<float> vMvtx1phi;
 vector<float> vMvtx1z;
 vector<float> vMvtx1t;
 
+// Mvtx2 clusters. These vectors have common index
 vector<float> vMvtx2r;
 vector<float> vMvtx2phi;
 vector<float> vMvtx2z;
 vector<float> vMvtx2t;
 
+#ifdef DEBUG_MODE
 //
 // Histograms to monitor/diagonize the program
 //
 //Histograms
-TH1F *hzgvtx;
 TH1F *hINTTdphi;
 TH1F *hINTTdZvtx;
 TH1F *hINTTdz0;
@@ -280,4 +298,6 @@ TH1F *hMvtx2_dr2;
 TH1F *hdphi_ij;
 TH1F *hdzvtx_ij;
 TH1F *hdphi_ij2;
+#endif   //DEBUG_MODE
+
 #endif

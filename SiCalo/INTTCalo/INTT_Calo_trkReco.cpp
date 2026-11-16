@@ -8,8 +8,11 @@ static vector<int>   vMvtx0Hit;
 static vector<int>   vMvtx1Hit;
 static vector<int>   vMvtx2Hit;
 
+// constant for this analysis
+const float Cpt  = 0.217;
+
 void INTT_Calo_trkReco_Init(void) {
-  hzgvtx = new TH1F("hzgvtx","global Zvtx",100,-50,50);
+#ifdef DEBUG_MODE
   hINTTdphi = new TH1F("hINTTdphi","INTT1phi - INTT0phi",100,-0.1,0.1);
   hINTTdZvtx = new TH1F("hINTTdZvtx","zvtx_intt - zgvtx",100,-50,50);
   hINTTdz0 = new TH1F("hINTTdz0","z0-z0proj",100,-25.,25.);
@@ -76,10 +79,11 @@ void INTT_Calo_trkReco_Init(void) {
   hdphi_ij = new TH1F("hdphi_ij","dphi_i-dphi_j",160,-0.04,0.04);
   hdzvtx_ij = new TH1F("hdzvtx_ij","zvtx_i-zvtx_j",100,-10,10);
   hdphi_ij2 = new TH1F("hdphi_ij2","dphi_i-dphi_j(w dzvtx cut)",160,-0.04,0.04);
+#endif  //DEBUG_MODE
 }
 
 void INTT_Calo_trkReco_End(void) {
-  hzgvtx->Write();
+#ifdef DEBUG_MODE
   hINTTdphi->Write();
   hINTTdZvtx->Write();
   hINTTdz0->Write();
@@ -145,10 +149,10 @@ void INTT_Calo_trkReco_End(void) {
   hdphi_ij->Write();
   hdzvtx_ij->Write();
   hdphi_ij2->Write();
+#endif //DEBUG_MODE
 }
 
 void INTT_Calo_trkReco(void) {
-  hzgvtx->Fill(zgvtx);
 
   LoadTrackerData();
 
@@ -169,10 +173,13 @@ void INTT_Calo_trkReco(void) {
 // support functions
 //
 bool Is_Hot_Emc(int iemc) {
+  /*
   float phiEMC = emc_phi->at(iemc);
   float zEMC = emc_z->at(iemc);
   if( (2.4 < phiEMC && phiEMC < 2.7) && (zEMC < 0)) return true;
   else return false;
+  */
+  return false;
 }
 
 float rz2eta(float r,float z) {
@@ -192,6 +199,7 @@ void LoadTrackerData(void) {
   vEmc_phi.clear();
   vEmc_eta.clear();
   vEmc_z.clear();
+  vEmc_prob.clear();
   vEmc_e.clear();
 
   vTop_r.clear();
@@ -208,6 +216,7 @@ void LoadTrackerData(void) {
   vTop_emc_eta.clear();
   vTop_emc_z.clear();
   vTop_emc_emc_e.clear();
+  vTop_emc_prob.clear();
 
   vINTT0r.clear();
   vINTT0phi.clear();
@@ -237,11 +246,12 @@ void LoadTrackerData(void) {
   if(nEmc>0) {
     for(int iemc=0;iemc<nEmc;iemc++) {
       if(!Is_Hot_Emc(iemc)) {
-	//	vEmc_r.push_back(emc_r->at(iemc));
-	vEmc_r.push_back(R_Emc);
+      	vEmc_r.push_back(emc_r->at(iemc));
+	//	vEmc_r.push_back(R_Emc);
 	vEmc_phi.push_back(emc_phi->at(iemc));
 	vEmc_eta.push_back(emc_eta->at(iemc));
 	vEmc_z.push_back(emc_z->at(iemc));
+	vEmc_prob.push_back(emc_prob->at(iemc));
 	vEmc_e.push_back(energy->at(iemc));
       }//if(!Is_Hot_Emc)
     }//for(iemc)
@@ -254,9 +264,9 @@ void LoadTrackerData(void) {
       vTop_eta.push_back(top_eta->at(itop));
       vTop_z.push_back(top_z->at(itop));
       vTop_e.push_back(top_e->at(itop));
-      vTop_emc_e.push_back(emc_e->at(itop));
-      vTop_ihc_e.push_back(ihc_e->at(itop));
-      vTop_ohc_e.push_back(ohc_e->at(itop));
+      vTop_emc_e.push_back(top_emc_e->at(itop));
+      vTop_ihc_e.push_back(top_ihc_e->at(itop));
+      vTop_ohc_e.push_back(top_ohc_e->at(itop));
     }//for(itop)
   }//if(nTop)
 
@@ -321,38 +331,22 @@ void Connect_Topo_and_Emc(void) {
 
   int nTop = vTop_r.size();
   int nEmc = vEmc_r.size();
-  /*
-  if(imode==2) {
-    cout << "nTop = "<<nTop<<endl;
-    for(int it=0;it<nTop;it++) {
-      cout << it <<": e="<<vTop_e.at(it);
-      cout <<" emc_e="<<vTop_emc_e.at(it);
-      cout <<" r= "<<vTop_r.at(it);
-      cout << " phi= "<<vTop_phi.at(it);
-      cout << " eta= "<<vTop_eta.at(it)<<endl; 
-    }
-    cout << "nEmc = "<<nEmc<<endl;
-    for(int ie=0;ie<nEmc;ie++) {
-      cout << ie <<": E="<<vEmc_e.at(ie);
-      cout <<" r= "<<vEmc_r.at(ie);
-      cout << " phi= "<<vEmc_phi.at(ie);
-      cout << " eta= "<<vEmc_eta.at(ie)<<endl; 
-    }    
-  }
-  */
+
   if(nTop>0) {
     for(int it=0;it<nTop;it++) {
-      float Top_e = vTop_e.at(it);
+      float Top_e   = vTop_e.at(it);
       float Top_emc_e = vTop_emc_e.at(it);
-      float Top_r = vTop_r.at(it);
+      float Top_r   = vTop_r.at(it);
       float Top_phi = vTop_phi.at(it);
       float Top_eta = vTop_eta.at(it);
 
+      vTop_emc.push_back(-99);      //mark as empty
       vTop_emc_r.push_back(-99);    //mark as empty
       vTop_emc_phi.push_back(-99);  //mark as empty
       vTop_emc_eta.push_back(-99);  //mark as empty
       vTop_emc_z.push_back(-99);    //mark as empty
       vTop_emc_emc_e.push_back(-99);//mark as empty
+      vTop_emc_prob.push_back(-99); //mark as empty
 
       if(Top_e > Top_E_min) {
 	int iemc_match= -1;
@@ -369,15 +363,19 @@ void Connect_Topo_and_Emc(void) {
 	    float TopEmc_dphi = Top_phi - Emc_phi;
 	    float TopEmc_deta = Top_eta - Emc_eta;
 	    
+#ifdef DEBUG_MODE
 	    hTopEmc_dphi->Fill(TopEmc_dphi);
 	    hTopEmc_deta->Fill(TopEmc_deta);
+#endif
 	    
 	    // find emc cluster that is closest to this Topo cluster
 	    if(abs(Top_phi-Emc_phi)<0.15 && abs(Top_eta-Emc_eta)<0.15&& Top_emc_e>0.18) {
 	      if(Top_r < R_emc_front) {
 		//		if(imode == 2) cout << " r<93.5" <<endl;
+#ifdef DEBUG_MODE
 		hTopEmc_dphi_1->Fill(TopEmc_dphi);
 		hTopEmc_deta_1->Fill(TopEmc_deta);
+#endif
 		
 		float sdphi = TopEmc_dphi/sigma_dphi1;
 		float sdeta = TopEmc_deta/sigma_deta1;
@@ -388,8 +386,10 @@ void Connect_Topo_and_Emc(void) {
 		}
 	      } else if(Top_r < R_ohcal_front) {
 		//		if(imode == 2) cout << " 93.5 < r < 218" <<endl;
+#ifdef DEBUG_MODE
 		hTopEmc_dphi_2->Fill(TopEmc_dphi);
 		hTopEmc_deta_2->Fill(TopEmc_deta);
+#endif		
 		
 		float sdphi = TopEmc_dphi/sigma_dphi2;
 		float sdeta = TopEmc_deta/sigma_deta2;
@@ -401,18 +401,21 @@ void Connect_Topo_and_Emc(void) {
 	      } else {
 		// in this case, there is no energy in emcal
 		// So this TopoCLuster has no associated EMC cluser
+#ifdef DEBUG_MODE
 		hTopEmc_dphi_3->Fill(TopEmc_dphi);
 		hTopEmc_deta_3->Fill(TopEmc_deta);
+#endif		
 	      }//if(Top_r)	
 	    }//for(ie)
 	    // store closest Emc cluster info
 	    if(iemc_match>=0) {
-	      //if(imode==2) cout <<" Emc hit found: it="<<it<<" iemc= "<<iemc_match<<endl;
+	      vTop_emc.at(it)    = iemc_match;
 	      vTop_emc_r.at(it)  = vEmc_r.at(iemc_match);
 	      vTop_emc_phi.at(it)= vEmc_phi.at(iemc_match);
 	      vTop_emc_eta.at(it)= vEmc_eta.at(iemc_match);
 	      vTop_emc_z.at(it)  = vEmc_z.at(iemc_match);
 	      vTop_emc_emc_e.at(it) = vEmc_e.at(iemc_match);
+	      vTop_emc_prob.at(it) = vEmc_prob.at(iemc_match);
 	    }
 	  }//if(abs(Emc_e - Top_emc_e))
 	}//if(nEmc)
@@ -436,7 +439,9 @@ void FindInttPair(void) {
     for(int i1=0;i1<nINTT1;i1++){
       for(int i0=0;i0<nINTT0;i0++){
 	float dphi = vINTT1phi.at(i1)-vINTT0phi.at(i0);
+#ifdef DEBUG_MODE
 	if(abs(dphi)<0.1) hINTTdphi->Fill(dphi);
+#endif
       
 	if(abs(dphi)<dPhiMax) {
 	  // Get the hit position of INTT0 and INTT1
@@ -473,14 +478,17 @@ void FindInttPair(void) {
 
 	  const float alpha = 0.75;
 	  if(r > R_min) {
+#ifdef DEBUG_MODE 
 	    hINTTdZvtx->Fill(zvtx_intt-zgvtx);
+#endif
 	    if(abs(zvtx_intt-zgvtx)< dZvtx_max) {
+#ifdef DEBUG_MODE	      
 	      hINTTdz0->Fill(z0-z0proj);
 	      hINTTdz1->Fill(z1-z1proj);
 	      hINTTdz0dz1->Fill(z0-z0proj,z1-z1proj);
 	      hINTTdz0dz1r->Fill(z0-z0proj-alpha*(z1-z1proj),z1-z1proj);
 	      hINTTdz_r->Fill(z0-z0proj-alpha*(z1-z1proj));
-	  
+#endif	  
 	      InttPair new_pair;
 	      new_pair.iINTT0 = i0;
 	      new_pair.iINTT1 = i1;
@@ -526,11 +534,15 @@ void RemoveDuplicatedPair(InttPair &pair_i, InttPair &pair_j) {
   float zvtx_i = pair_i.zvtx;
   float zvtx_j = pair_j.zvtx;
 
+#ifdef DEBUG_MODE
   hdphi_ij->Fill(dphi_i - dphi_j);
   hdzvtx_ij->Fill(zvtx_i-zvtx_j);
+#endif
   if(abs(zvtx_i-zvtx_j)<0.06) {
+#ifdef DEBUG_MODE   
     hdphi_ij2->Fill(dphi_i - dphi_j);
-    pair_j.r=-99;
+#endif
+ pair_j.r=-99;
   }
 }
 
@@ -686,26 +698,30 @@ void FindCaloIntt(void) {
 	      if(abs(Z1)<12.9) dZ1max = 0.9;
 	      if(abs(Z0)<12.9) dZ0max = 0.9;
 	      
+#ifdef DEBUG_MODE
 	      hZvtxTrk->Fill(ZvtxTrk);
 	      hdZvtxTrk->Fill(zgvtx-ZvtxTrk);
-	      
+#endif	      
 	      // Cuts in R-phi space
 	      if(abs(rEmc-rIntt - dRoffset) < dRcut) {
 		//
 		// a maching Topo cluster is found in Rphi plane.
 		//
+#ifdef DEBUG_MODE
 		hdZe1->Fill(dZe1);
-		hdZe0->Fill(dZe0);
+		hdZe0->Fill(dZe0);		
 		hZvtxTrk2->Fill(ZvtxTrk);
 		hdZvtxTrk2->Fill(zgvtx-ZvtxTrk);
-
+#endif
 		// Cuts in RZ space
 		if(abs(dZe1)<dZ1max && abs(dZe0)<dZ0max) {
 		  //
 		  // Topo-INTT1-INTT0 is consisent with a straight line in RZ space
 		  //
+#ifdef DEBUG_MODE
 		  hZvtxTrk4->Fill(ZvtxTrk);
 		  hdZvtxTrk4->Fill(zgvtx-ZvtxTrk);
+#endif
 		  if(abs(zgvtx-ZvtxTrk)<dZvtxCut) { // 
 		    //
 		    // A TopoCluster in the search window is found.
@@ -733,13 +749,20 @@ void FindCaloIntt(void) {
 		    //
 		    // the following part is to monitor the code. To be removed later
 		    //
+#ifdef DEBUG_MODE
 		    hrIntt_rsEmc->Fill(rIntt/rsEmc);
+#endif		    
 		    if(abs(zgvtx-ZvtxTrk)<dZvtx_narrow) {
+#ifdef DEBUG_MODE		      
 		      hrIntt_rsEmc2->Fill(rIntt/rsEmc);
+#endif
 		      if(abs(rEmc-rIntt - dRoffset) < dRcut_narrow) {
+#ifdef DEBUG_MODE
 			hrIntt_rsEmc3->Fill(rIntt/rsEmc);
+#endif
 		      }//if(dRcut_narrow)
 		    }//if(dZvtx_narrow)
+#ifdef DEBUG_MODE		    
 		    hptTrk->Fill(ptTrk);
 		    hTopE->Fill(total_e);
 		    hp_Trk->Fill(p_Trk);
@@ -747,20 +770,26 @@ void FindCaloIntt(void) {
 		    hEmcE_p->Fill(emcal_e/p_Trk);
 		    hTopE_p_Zvtx->Fill(total_e/p_Trk);
 		    hEmcE_p_Zvtx->Fill(emcal_e/p_Trk);
+#endif
 		  }//if(abs(zgvtx-ZvtxTrk)
 		}//if(dZe1 && dZe0)
 		//
 		// the following part is to check the cut efficiency
 		//
 		if(abs(dZe1)<dZ1max && abs(dZe0)< dZ0max) {
+#ifdef DEBUG_MODE
 		  hEmcIntt_dr_Zvtx2->Fill(rEmc-rIntt);
+#endif		  
 		}
 	      }//if(abs()
 	      //
 	      // the following part is to check the cut efficiency
 	      //
+#ifdef DEBUG_MODE
 	      hEmcIntt_dr->Fill(rEmc-rIntt);
+#endif	      
 	      if(abs(dZe1)<dZ1max && abs(dZe0)<dZ0max) {
+#ifdef DEBUG_MODE		
 		hEmcIntt_dr_Zcut->Fill(rEmc-rIntt);
 		hZvtxTrk3->Fill(ZvtxTrk);
 		hdZvtxTrk3->Fill(zgvtx-ZvtxTrk);
@@ -770,6 +799,7 @@ void FindCaloIntt(void) {
 		if(abs(zgvtx-ZvtxTrk)<dZvtx_narrow) {
 		  hEmcIntt_dr_Zvtx5->Fill(rEmc-rIntt);
 		}
+#endif		
 	      }
 	    }// if(Emc_emc_e)
 	  }// if(Top_E_min)
@@ -804,8 +834,17 @@ void FindCaloIntt(void) {
 	  float phi_emc = vTop_emc_phi.at(itop);
 	  float xemc = r_emc*cos(phi_emc);
 	  float yemc = r_emc*sin(phi_emc);
+	  float pt0e = vptTrk.at(i_dr_min);
+	  float phi0e = phi0 + sign*r0/vrsEmc.at(i_dr_min);
+	  float pz0e  = vpzTrk.at(i_dr_min);
+	  float dphi_emc = phi_emc - phi0e;
+	  if(dphi_emc > 2*PI) dphi_emc = dphi_emc - 2*PI;
+	  if(dphi_emc < -2*PI) dphi_emc = dphi_emc + 2*PI;
+	  float pt0e2 = abs(Cpt/dphi_emc);
+	  float pz0e2 = pt0e2*pz0e/pt0e;
 	  
 	  a_CaloInttMvtx.iTop = itop;
+	  a_CaloInttMvtx.iEmc = vTop_emc.at(itop);
 	  a_CaloInttMvtx.iINTT0 = i0;
 	  a_CaloInttMvtx.iINTT1 = i1;
 	  a_CaloInttMvtx.iMvtx0 = -99;
@@ -833,13 +872,16 @@ void FindCaloIntt(void) {
 	  a_CaloInttMvtx.ihcal_e = vTop_ihc_e.at(itop);
 	  a_CaloInttMvtx.ohcal_e = vTop_ohc_e.at(itop);
 	  a_CaloInttMvtx.emc_e   = vTop_emc_emc_e.at(itop);
+	  a_CaloInttMvtx.emc_prob = vTop_emc_prob.at(itop);
 	  a_CaloInttMvtx.BDT_e   = -99;  // not calucalted yet
 	  a_CaloInttMvtx.x0e   = 0.0;
 	  a_CaloInttMvtx.y0e   = 0.0;
 	  a_CaloInttMvtx.z0e   = vZvtxTrk.at(i_dr_min);
-	  a_CaloInttMvtx.pt0e  = vptTrk.at(i_dr_min);
-	  a_CaloInttMvtx.phi0e = phi0 + sign*r0/vrsEmc.at(i_dr_min);
-	  a_CaloInttMvtx.pz0e  = vpzTrk.at(i_dr_min);
+	  a_CaloInttMvtx.pt0e  = pt0e;
+	  a_CaloInttMvtx.phi0e = phi0e;
+	  a_CaloInttMvtx.pz0e  = pz0e; 
+	  a_CaloInttMvtx.pt0e2  = pt0e2;
+       	  a_CaloInttMvtx.pz0e2  = pz0e2;	  
 	  a_CaloInttMvtx.x0m   = -99;
 	  a_CaloInttMvtx.y0m   = -99;
 	  a_CaloInttMvtx.z0m   = -99;
@@ -1129,7 +1171,7 @@ void FormInttMvtxTrk1(float x0, float y0, float z0,float x1, float y1,float z1,
   float dzdr = (z0-z0m)/(r0-rm);  
   zvtx_intt_mvtx= z0-dzdr*rm;  
   pt0m=0.0042*rc_intt_mvtx;
-  phi0m=phim + (phi0-phim)*rm/(r0-rm);
+  phi0m=phim - (phi0-phim)*rm/(r0-rm);   //phi at r=0
   pz0m=dzdr*pt0m;
 }
 
@@ -1228,7 +1270,7 @@ void FormInttMvtxTrk2(float x0, float y0, float z0,float x1, float y1,float z1,
   zvtx_intt_mvtx= zIm-dzdr*rIm;  
 
   pt0m=0.0042*rc_intt_mvtx;
-  phi0m=phiIm + (phiOm - phiIm)*rIm/(rOm-rIm);
+  phi0m=phiIm - (phiOm - phiIm)*rIm/(rOm-rIm);  //phi at r=0
   pz0m=dzdr*pt0m;
 
 }
@@ -1327,7 +1369,7 @@ void FormInttMvtxTrk3(float x0, float y0, float z0,float x1, float y1,float z1,
   float zIm  = vMvtx0z.at(iMvtx0);
 
   float rOm  = vMvtx1r.at(iMvtx1);
-  float phiOm= vMvtx1phi.at(iMvtx1);
+  float phiOm= vMvtx1phi.at(iMvtx1);  
   float zOm  = vMvtx1z.at(iMvtx1);
 
   float dzdr = (zOm-zIm)/(rOm-rIm);
@@ -1339,7 +1381,7 @@ void FormInttMvtxTrk3(float x0, float y0, float z0,float x1, float y1,float z1,
   zvtx_intt_mvtx= zIm-dzdr*rIm;  
 
   pt0m=0.0042*rc_intt_mvtx;
-  phi0m=phiIm + (phiOm - phiIm)*rIm/(rOm-rIm);
+  phi0m=phiIm - (phiOm - phiIm)*rIm/(rOm-rIm);  // phi at r=0
   pz0m=dzdr*pt0m;
 }
 
@@ -1439,6 +1481,7 @@ void FindInttMvtx(void) {
 	  (vCaloInttMvtx.at(itrk)).pt0m  = pt0m;
 	  (vCaloInttMvtx.at(itrk)).phi0m = phi0m;
 	  (vCaloInttMvtx.at(itrk)).pz0m  = pz0m;
+	  (vCaloInttMvtx.at(itrk)).phi0e = phi0m;	  
 	} else {
 	  //the same InttPair is not found, i.e., CASE 2.
 	  // Add a new CIMtrack.
@@ -1447,6 +1490,7 @@ void FindInttMvtx(void) {
 	  }
 	  CaloInttMvtx a_CaloInttMvtx;
 	  a_CaloInttMvtx.iTop = -99;
+	  a_CaloInttMvtx.iEmc = -99;
 	  a_CaloInttMvtx.iINTT0 = i0;
 	  a_CaloInttMvtx.iINTT1 = i1;
 	  a_CaloInttMvtx.iMvtx0 = iMvtx0;
@@ -1481,6 +1525,8 @@ void FindInttMvtx(void) {
 	  a_CaloInttMvtx.pt0e  = -99;
 	  a_CaloInttMvtx.phi0e = -99;
 	  a_CaloInttMvtx.pz0e  = -99;
+	  a_CaloInttMvtx.pt0e2  = -99;
+	  a_CaloInttMvtx.pz0e2  = -99;
 	  a_CaloInttMvtx.x0m   = x0m;
 	  a_CaloInttMvtx.y0m   = y0m;
 	  a_CaloInttMvtx.z0m   = z0m;
@@ -1523,29 +1569,33 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
     pvMvtx_r   = &vMvtx2r;
     pvMvtx_phi = &vMvtx2phi;
     pvMvtx_z   = &vMvtx2z;
-    
+#ifdef DEBUG_MODE
     hMvtx_dz0 = hMvtx2_dz0;
     hMvtx_dz1 = hMvtx2_dz1;
     hMvtx_dr  = hMvtx2_dr;
     hMvtx_dr2 = hMvtx2_dr2;
+#endif
   } else if(layer == 1) {
     pvMvtx_r   = &vMvtx1r;
     pvMvtx_phi = &vMvtx1phi;
     pvMvtx_z   = &vMvtx1z;
     
+#ifdef DEBUG_MODE
     hMvtx_dz0 = hMvtx1_dz0;
     hMvtx_dz1 = hMvtx1_dz1;
     hMvtx_dr  = hMvtx1_dr;
     hMvtx_dr2 = hMvtx1_dr2;
+#endif
   } else if(layer == 0) {
     pvMvtx_r   = &vMvtx0r;
     pvMvtx_phi = &vMvtx0phi;
     pvMvtx_z   = &vMvtx0z;
-    
+#ifdef DEBUG_MODE    
     hMvtx_dz0 = hMvtx0_dz0;
     hMvtx_dz1 = hMvtx0_dz1;
     hMvtx_dr  = hMvtx0_dr;
     hMvtx_dr2 = hMvtx0_dr2;
+#endif
   }
   
   int nMvtx = pvMvtx_r->size();
@@ -1562,10 +1612,14 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
     float dzdr = (z-zgvtx)/r;
     float zproj0 = zgvtx+dzdr*r0;
     float zproj1 = zgvtx+dzdr*r1;
+#ifdef DEBUG_MODE
     hMvtx_dr->Fill(rmvtx-rIntt);
+#endif
     if(abs(rmvtx-rIntt)< InttMvtx_dr_cut) {
+#ifdef DEBUG_MODE
       hMvtx_dz0->Fill(z0-zproj0);
       hMvtx_dz1->Fill(z1-zproj1);
+#endif
       if(abs(z0-zproj0) < InttMvtx_dz_cut  &&
 	 abs(z1-zproj1) < InttMvtx_dz_cut ) {
 	// A Mvtx hit is found in the window. store it.
@@ -1575,11 +1629,13 @@ int FindMvtxHit(int layer, float rIntt, float xc, float yc,
 	vMvtx_dz1.push_back(z1-zproj1);
       }
     }//if(abs(rmvtx...)
+#ifdef DEBUG_MODE
     // This part is to see the S/N of the associated hit
     if(abs(z0-zproj0) < InttMvtx_dz_cut &&
        abs(z1-zproj1) < InttMvtx_dz_cut ) {
       hMvtx_dr2->Fill(rmvtx-rIntt);
     }//if(abs(z0-zproj0)...
+#endif
     i++;
   }//while(i)
   // Now Mvtx(layer) hits that can associated with
@@ -1705,9 +1761,15 @@ void FindCaloInttMvtx(void) {
 	  float pt0m = pCIMtrack->pt0m;
 	  float pz0m = pCIMtrack->pz0m;
 	  float pt0e = 0.0042*r_emc_intt;
-	  float pz0e = pt0e*(pz0m/pt0m);
+	  float pz0e = pt0e*pz0m/pt0m;
+	  float dphi_emc = emc_phi - phi0e;
+	  if(dphi_emc > 2*PI) dphi_emc= dphi_emc - 2*PI;
+	  if(dphi_emc < -2*PI) dphi_emc= dphi_emc + 2*PI;
+	  float pt0e2 = abs(Cpt/dphi_emc);
+	  float pz0e2 = pt0e*(pz0m/pt0m);
 
 	  pCIMtrack->iTop = itop_best;
+	  pCIMtrack->iEmc = vTop_emc.at(itop_best);
 	  pCIMtrack->r_emc_intt = r_emc_intt;
 	  pCIMtrack->xc_emc_intt = xc_emc_intt;
 	  pCIMtrack->yc_emc_intt = yc_emc_intt;
@@ -1720,15 +1782,18 @@ void FindCaloInttMvtx(void) {
 	  pCIMtrack->ihcal_e = vTop_ihc_e.at(itop_best);
 	  pCIMtrack->ohcal_e = vTop_ohc_e.at(itop_best);
 	  pCIMtrack->emc_e = vTop_emc_emc_e.at(itop_best);
+	  pCIMtrack->emc_prob = vTop_emc_prob.at(itop_best);
 	  pCIMtrack->BDT_e = 0;
 	  pCIMtrack->x0e = x0e;
 	  pCIMtrack->y0e = y0e;
 	  pCIMtrack->z0e = z0e;
 	  pCIMtrack->pt0e = pt0e;
 	  pCIMtrack->phi0e = phi0e;
-	  pCIMtrack->pz0e = pz0e;	  
+	  pCIMtrack->pz0e = pz0e;
+	  pCIMtrack->pt0e2 = pt0e2;
+	  pCIMtrack->pz0e2 = pz0e2;
 	}
       }//if(nMvtxHits>=2)
     }//for(itrk)
-  }//if(ntrk>0)
+  }//if(ntrk>
 }

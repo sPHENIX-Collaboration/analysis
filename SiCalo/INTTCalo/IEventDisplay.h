@@ -1,5 +1,5 @@
-#ifndef EVENTDISPLAY_H
-#define EVENTDISPLAY_H
+#ifndef IEVENTDISPLAY_H
+#define IEVENTDISPLAY_H
 
 #include <vector>
 #include <TCanvas.h>
@@ -9,7 +9,7 @@
 #include <TBox.h>
 
 void EventSelection(int& ievent);
-void EventDisplay(int iframe);
+void IEventDisplay(int iframe);
 //bool Is_Hot_EMC(int);
 
 // display frame;
