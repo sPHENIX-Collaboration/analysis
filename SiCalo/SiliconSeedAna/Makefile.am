@@ -17,6 +17,7 @@ pkginclude_HEADERS = \
   SiliconCaloTrackMap_v1.h \
   SiliconCaloMatching.h \
   ChargeRecalc.h  \
+  KFParticle_nTupleSCIF.h  \
   SiliconSeedsAna.h 
 
 lib_LTLIBRARIES = \
@@ -40,6 +41,7 @@ libsiliconseedsana_la_SOURCES = \
   SiliconCaloTrackMap_v1.cc \
   SiliconCaloMatching.cc \
   ChargeRecalc.cc \
+  KFParticle_nTupleSCIF.cc  \
   SiliconSeedsAna.cc 
 
 
@@ -57,6 +59,7 @@ libsiliconseedsana_la_LIBADD = \
   -ltrack_io \
   -ltrackbase_historic_io \
   -ltrack_reco \
+  -lkfparticle_sphenix \
   -lqautils
 
 BUILT_SOURCES = testexternals.cc

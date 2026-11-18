@@ -1,6 +1,7 @@
 #include "SiliconSeedsAna.h"
 #include "SiliconCaloTrack.h"
 #include "SiliconCaloTrackMap.h"
+#include "KFParticle_nTupleSCIF.h"
 
 #include <ffarawobjects/Gl1Packet.h>
 #include <ffaobjects/EventHeader.h>
@@ -18,14 +19,32 @@
 #include <trackbase_historic/ActsTransformations.h>
 #include <trackbase_historic/SvtxTrackState_v1.h>
 
+#include <calobase/TowerInfoDefs.h>
+
+
 #include <globalvertex/GlobalVertex.h>
 #include <globalvertex/GlobalVertexMap.h>
 
+#include <phhepmc/PHHepMCGenEvent.h>
+#include <phhepmc/PHHepMCGenEventMap.h>
+#include <phhepmc/PHHepMCGenHelper.h>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include <HepMC/GenEvent.h>
+#include <HepMC/GenVertex.h>
+#pragma GCC diagnostic pop
+#include <HepMC/GenParticle.h>
+#include <HepMC/HeavyIon.h> // for HeavyIon
+#include <HepMC/IteratorRange.h>
+#include <HepMC/SimpleVector.h>
+
+
+#include <KFParticle.h>
+#include <kfparticle_sphenix/KFParticle_Container.h>
+//#include <kfparticle_sphenix/KFParticle_nTuple.h>
+
 #include <g4eval/SvtxTrackEval.h>  // for SvtxTrackEval
-
-#include <siliconseedsana/SiliconCaloTrack.h>
-#include <siliconseedsana/SiliconCaloTrackMap.h>
-
 
 
 #include <TH2.h>
@@ -43,7 +62,14 @@
 SiliconSeedsAna::SiliconSeedsAna(const std::string &name)
     : SubsysReco(name)
 {
+//  _kfp_ntuple = new KFParticle_nTuple();
+  _kfp_ntuple = std::make_unique<KFParticle_nTupleSCIF>();
 }
+
+//-SiliconSeedsAna::~SiliconSeedsAna()
+//-{
+//-  delete _kfp_ntuple;
+//-}
 
 #define LOG(msg) std::cout << "[SiliconSeedsAna] " << msg << std::endl;
 
@@ -103,9 +129,13 @@ void SiliconSeedsAna::clearCaloVectors() {
     calo_tower_time.clear();
 }
 
-void SiliconSeedsAna::fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState) {
-  if(!state) { std::cout<<"No EMCState front"<<std::endl;}
-  if(!ostate) { std::cout<<"No EMCState back"<<std::endl;}
+void SiliconSeedsAna::fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState, float pT) {
+  bool debug=(Verbosity()>1);
+
+  if(debug){
+    if(!state) { std::cout<<"No EMCState front : pT="<<pT<<std::endl;}
+    if(!ostate) { std::cout<<"No EMCState back : pT="<<pT<<std::endl;}
+  }
 
   track_x_emc.push_back(  state ?  state->get_x()  : NAN);
   track_y_emc.push_back(  state ?  state->get_y()  : NAN);
@@ -264,8 +294,10 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
   m_outfile = new TFile(m_outputfilename.c_str(), "RECREATE");
   
   createHistos();
+
   // Create a TTree to store track data and initialize branches
   initTrackTreeBranches();
+
   SiClusTree = new TTree("SiClusTree", "Silicon Cluster used by track");
   SiClusTree->Branch("evt", &evt, "evt/I");
   SiClusTree->Branch("Siclus_trackid", &SiClus_trackid);
@@ -336,6 +368,24 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
     truthTree->Branch("truth_vtx_y", &truth_vtx_y);
     truthTree->Branch("truth_vtx_z", &truth_vtx_z);
     truthTree->SetBasketSize("*",50000); // Set a larger basket size for better performance
+
+    hepmctree = new TTree("hepmctree", "HepMC Particle Data");
+    hepmctree->Branch("hepmc_px", &hepmc_px);
+    hepmctree->Branch("hepmc_py", &hepmc_py);
+    hepmctree->Branch("hepmc_pz", &hepmc_pz);
+    hepmctree->Branch("hepmc_pt", &hepmc_pt);
+    hepmctree->Branch("hepmc_eta", &hepmc_eta);
+    hepmctree->Branch("hepmc_phi", &hepmc_phi);
+    hepmctree->Branch("hepmc_e", &hepmc_e);
+    hepmctree->Branch("hepmc_x", &hepmc_x);
+    hepmctree->Branch("hepmc_y", &hepmc_y);
+    hepmctree->Branch("hepmc_z", &hepmc_z);
+    hepmctree->Branch("hepmc_vtx_x", &hepmc_vtx_x);
+    hepmctree->Branch("hepmc_vtx_y", &hepmc_vtx_y);
+    hepmctree->Branch("hepmc_vtx_z", &hepmc_vtx_z);
+    hepmctree->Branch("hepmc_pid", &hepmc_pid);
+    hepmctree->Branch("hepmc_barcode", &hepmc_barcode);
+    hepmctree->Branch("hepmc_par_barcode", &hepmc_par_barcode);
   }
 
     TopoClusTree = new TTree("TopoClusTree", "Topo cluster and associated tower info");
@@ -357,18 +407,35 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
     TopoClusTree->Branch("clus_ihcal_e", &topo_clus_ihcal_e);
     TopoClusTree->Branch("clus_ohcal_e", &topo_clus_ohcal_e);
 
-    TopoClusTree->Branch("tower_caloid", &topo_tower_caloid);
-    TopoClusTree->Branch("tower_ieta",   &topo_tower_ieta);
-    TopoClusTree->Branch("tower_iphi",   &topo_tower_iphi);
-    TopoClusTree->Branch("tower_e",      &topo_tower_e);
-    TopoClusTree->Branch("tower_x",      &topo_tower_x);
-    TopoClusTree->Branch("tower_y",      &topo_tower_y);
-    TopoClusTree->Branch("tower_z",      &topo_tower_z);
-    TopoClusTree->Branch("tower_eta",    &topo_tower_eta);
-    TopoClusTree->Branch("tower_phi",    &topo_tower_phi);
-    TopoClusTree->Branch("tower_time",   &topo_tower_time);
+    if(_is_write_topotower){
+      TopoClusTree->Branch("tower_caloid", &topo_tower_caloid);
+      TopoClusTree->Branch("tower_ieta",   &topo_tower_ieta);
+      TopoClusTree->Branch("tower_iphi",   &topo_tower_iphi);
+      TopoClusTree->Branch("tower_e",      &topo_tower_e);
+      TopoClusTree->Branch("tower_x",      &topo_tower_x);
+      TopoClusTree->Branch("tower_y",      &topo_tower_y);
+      TopoClusTree->Branch("tower_z",      &topo_tower_z);
+      TopoClusTree->Branch("tower_eta",    &topo_tower_eta);
+      TopoClusTree->Branch("tower_phi",    &topo_tower_phi);
+      TopoClusTree->Branch("tower_time",   &topo_tower_time);
+    }
 
     TopoClusTree->SetBasketSize("*", 50000);
+
+  ////////////////////////////////////
+  // kfparticle
+  // get mother name
+  size_t first  = m_kfparticleName.find('_');
+  size_t second = m_kfparticleName.find('_', first + 1);
+
+  std::string result = m_kfparticleName.substr(first + 1, second - first - 1);
+
+  std::cout << result << std::endl; // J
+  _kfp_ntuple->setMotherName(result);
+
+  _kfp_ntuple->initializeBranches(topNode);
+  std::cout << "KFP_ntuple initialized" << std::endl; // J
+
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -377,15 +444,18 @@ int SiliconSeedsAna::InitRun(PHCompositeNode *topNode )
 int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
 {
  
-  if(isMC)
+  if(isMC) {
     fillTruthTree(topNode);
+    fillHepmcinfo(topNode);
+  }
 
   processVertexMap(topNode);
   processCaloClusters(topNode);
   processTrackMap(topNode);
   processSiCluster(topNode);
 
-    processHCalinfo(topNode);
+  processHCalinfo(topNode);
+  processKFParticle(topNode);
 
 
   //////////////
@@ -398,6 +468,7 @@ int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
     evt_evtseq     = std::numeric_limits<int>::signaling_NaN();
 
     auto gl1        = findNode::getClass<Gl1Packet>(  topNode, "GL1Packet");
+    if(!gl1)    gl1 = findNode::getClass<Gl1Packet>(  topNode, "GL1RAWHIT");
     auto evthdr     = findNode::getClass<EventHeader>(topNode, "EventHeader");
     //auto clustermap = findNode::getClass<TrkrClusterContainer>(topNode, m_clusterContainerName);
 
@@ -408,6 +479,7 @@ int SiliconSeedsAna::process_event(PHCompositeNode* topNode)
 
     }
     else { std::cout<<"No GL1Packet"<<std::endl; }
+    if(Verbosity()>1) std::cout<<"scaled: 0x"<<std::hex<<evt_scaledtrig<<std::dec<<std::endl;
 
     if(evthdr){
       evt_evtseq = evthdr->get_EvtSequence();
@@ -470,7 +542,7 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     float vy = primVtx->get_y();
     float vz = primVtx->get_z();
     float vtx_r = sqrt(vx*vx+vy*vy);
-    if(vtx_r>5) continue;
+    if(vtx_r>80) continue; // originally to R>5
 
     //--int trackid = ptcl->get_track_id();
     //--int pid     = ptcl->get_pid();
@@ -508,9 +580,125 @@ void SiliconSeedsAna::fillTruthTree(PHCompositeNode* topNode)
     truth_primary_id.push_back(ptcl->get_primary_id());
     truth_parent_id .push_back(ptcl->get_parent_id());
 
-    //std::cout<<"pid :"<<ptcl->get_pid()<<", "<<ptcl->get_name()<<", "<<ptcl->get_primary_id()<<", "<<ptcl->get_parent_id()<<", "<<ptcl->get_track_id()<<std::endl;
+    if(Verbosity()>1) 
+      std::cout<<"pid :"<<ptcl->get_pid()<<", "<<ptcl->get_name()<<", "<<ptcl->get_primary_id()<<", "<<ptcl->get_parent_id()<<", "<<ptcl->get_track_id()<<" "<<ptcl->get_barcode()<<std::endl;
   }
   truthTree->Fill();
+}
+
+void SiliconSeedsAna::fillHepmcinfo(PHCompositeNode* topNode)
+{
+  PHHepMCGenEventMap * m_geneventmap = findNode::getClass<PHHepMCGenEventMap>(topNode, "PHHepMCGenEventMap");
+  if(!m_geneventmap){
+    std::cout << PHWHERE << "Warning: PHHepMCGenEventMap not found. Skipping hepmcinfotree filling for this event." << std::endl;
+    return;
+  }
+
+  hepmc_px.clear(); hepmc_py.clear();  hepmc_pz.clear();
+  hepmc_pt.clear(); hepmc_eta.clear(); hepmc_phi.clear();
+  hepmc_e.clear(); hepmc_x.clear(); hepmc_y.clear();  hepmc_z.clear(); 
+  hepmc_pid.clear(); hepmc_pid.clear(); hepmc_barcode.clear(); hepmc_par_barcode.clear();
+  
+  PHHepMCGenHelper *phhepmcgenhlpr = new PHHepMCGenHelper();
+  phhepmcgenhlpr->PHHepMCGenHelper_Verbosity(1);
+
+  PHHepMCGenEventMap::ConstIter iter_beg = m_geneventmap->begin();
+  PHHepMCGenEventMap::ConstIter iter_end = m_geneventmap->end();
+  for (PHHepMCGenEventMap::ConstIter iter = iter_beg; iter != iter_end; ++iter)
+    {
+      PHHepMCGenEvent *genevt = iter->second;
+      
+      HepMC::GenEvent *event = genevt->getEvent();
+      if(!event) {
+        std::cout<<"No Gen Event"<<std::endl;
+        continue;
+      }
+      // Get the Lorentz rotation and boost
+      const CLHEP::HepLorentzRotation lortentz_rotation(genevt->get_LorentzRotation_EvtGen2Lab());
+      const double mom_factor = HepMC::Units::conversion_factor(event->momentum_unit(), HepMC::Units::GEV);
+      
+      if(Verbosity()>1){
+        // genevt->PrintEvent();
+        std::cout << "Signal process id " << event->signal_process_id() << std::endl;
+        std::cout << "Embedding id " << genevt->get_embedding_id() << std::endl;
+        std::cout << "is simulated " << genevt->is_simulated() << std::endl;
+        std::cout << "Collision vertex x (PHHepMCGenEvent): " << genevt->get_collision_vertex().x() << std::endl;
+        std::cout << "Collision vertex y (PHHepMCGenEvent): " << genevt->get_collision_vertex().y() << std::endl;
+        std::cout << "Collision vertex z (PHHepMCGenEvent): " << genevt->get_collision_vertex().z() << std::endl;
+        std::cout << "Collision vertex t (PHHepMCGenEvent): " << genevt->get_collision_vertex().t() << std::endl;
+        //      int signal_process_id_ = event->signal_process_id();
+      }
+
+      for (HepMC::GenEvent::particle_const_iterator p = event->particles_begin(); p != event->particles_end(); ++p)
+        {
+          HepMC::GenParticle *particle  = *p;
+          HepMC::GenVertex   *vtx_decay = particle->end_vertex();
+
+  
+          if( (!_hepmc_save_onlyfinal) || ( particle->status() == 1) )
+          //if (particle->status() == 1)// Final state partilce
+            {
+            
+              // Lorentz rotation and boost for the beam crossing and shifted vertex
+              CLHEP::HepLorentzVector lv_momentum(particle->momentum().px(), particle->momentum().py(), particle->momentum().pz(), particle->momentum().e());
+              lv_momentum = lortentz_rotation(lv_momentum);
+                                                                                                                                                                                                                                                   
+              TLorentzVector hepmcp;
+              hepmcp.SetPxPyPzE(lv_momentum.px() * mom_factor, lv_momentum.py() * mom_factor, lv_momentum.pz() * mom_factor, lv_momentum.e() * mom_factor);
+  
+              if(Verbosity()>=1)
+              {
+                //int barcode = particle->barcode();
+                //std::cout<<"barcode=="<<barcode<<" "<<particle->pdg_id()<<std::endl;
+                std::cout<<"hepmc : "<<particle->pdg_id()<<" "<<particle->barcode()
+                         <<", "      <<hepmcp.Pt()<<" "<<hepmcp.Pz();
+                if (vtx_decay)
+                  {
+                     std::cout << " has daughters:";
+                  }
+                std::cout<<std::endl;
+              }
+
+              //
+              hepmc_px.push_back(hepmcp.Px());
+              hepmc_py.push_back(hepmcp.Py());
+              hepmc_pz.push_back(hepmcp.Pz());
+              hepmc_pt.push_back(hepmcp.Pt());
+              hepmc_eta.push_back(hepmcp.Eta());
+              hepmc_phi.push_back(hepmcp.Phi());
+              hepmc_e.push_back(hepmcp.E());
+              hepmc_x.push_back(hepmcp.X());
+              hepmc_y.push_back(hepmcp.Y());
+              hepmc_z.push_back(hepmcp.Z());
+              hepmc_pid.push_back(particle->pdg_id());
+              hepmc_barcode.push_back(particle->barcode());
+  
+              HepMC::GenVertex *vtx_prod = particle->production_vertex();
+              if (vtx_prod)
+                {
+                  hepmc_vtx_x.push_back(vtx_prod->position().x());
+                  hepmc_vtx_y.push_back(vtx_prod->position().y());
+                  hepmc_vtx_z.push_back(vtx_prod->position().z());
+                }
+
+              std::vector<int> v_par;
+              if (vtx_prod) {
+                for (auto parent = vtx_prod->particles_in_const_begin();
+                     parent != vtx_prod->particles_in_const_end();
+                     ++parent) {
+            
+                    HepMC::GenParticle* mom = *parent;
+                    v_par.push_back(mom->barcode());
+            
+                    if(Verbosity()>1) std::cout << "    Parent PDG ID: " << mom->pdg_id() <<" "<<mom->barcode() << std::endl;
+                    
+                }
+              }
+              hepmc_par_barcode.push_back(v_par);
+            }
+        }
+    }
+    hepmctree->Fill();
 }
 
 void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
@@ -623,6 +811,8 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
     float t_dz     = evt_zgvtx-t_z;
 
 
+    //--std::cout<<"siliconseedsna px,py="<<t_px<<" "<<t_py<<std::endl;
+
     int t_crossing  = trkcrossing;
     if(t_crossing==0) evt_nsiseed0++;
 
@@ -704,19 +894,21 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
                 << ", dxy,dz=" << t_dxy << " " << t_dz << std::endl;
 
     SvtxTrackState *emcalState    = track->get_state(_caloRadiusEMCal);
-    SvtxTrackState *emcalOutState = track->get_state(_caloRadiusEMCal+_caloThicknessEMCal);
+    SvtxTrackState *emcalOutState = track->get_state(_caloOutRadiusEMCal);
+    //SvtxTrackState *emcalOutState = track->get_state(_caloRadiusEMCal + _caloThicknessEMCal);
 
     SvtxTrack *trkcp = (SvtxTrack*)track->CloneMe();
     trkcp->set_charge((t_charge>0)?-1:1); // reverse
     SvtxTrackState *rvsEmcalState = projectToEMCal(topNode, trkcp);
 
-    fillEMCalState(emcalState, emcalOutState, rvsEmcalState);
+    fillEMCalState(emcalState, emcalOutState, rvsEmcalState, t_pt);
 
     // trackeval for MC
     int g4part_id = std::numeric_limits<int>::max(); 
     if(isMC&&_doEval)
     {
-      bool printMC=true; //false;
+      //bool printMC=true; //false;
+      bool printMC=(Verbosity()>1); //false;
       if(trackeval!=nullptr)
       {
         auto *g4particle_match = trackeval->max_truth_particle_by_nclusters(track);
@@ -739,9 +931,11 @@ void SiliconSeedsAna::processTrackMap(PHCompositeNode* topNode)
           }
         }
       }
-      std::cout<<" Eval matched g4part id "<<
-      ((g4part_id == std::numeric_limits<int>::max()) ? "not found" : "confirmed")
-       <<std::endl;
+      if(printMC){
+        std::cout<<" Eval matched g4part id "<<
+        ((g4part_id == std::numeric_limits<int>::max()) ? "not found" : "confirmed")
+         <<std::endl;
+      }
     }
     track_id_truth.push_back(g4part_id);
 
@@ -907,6 +1101,23 @@ SvtxTrackState* SiliconSeedsAna::projectToEMCal(
   SvtxTrack* trk
 )
 {
+
+  // debug if
+  if (!std::isfinite(trk->get_phi()) ||
+      !std::isfinite(trk->get_pt()) ||
+      !std::isfinite(trk->get_pz()) ||
+      !std::isfinite(trk->get_x()) ||
+      !std::isfinite(trk->get_y()) ||
+      !std::isfinite(trk->get_z()) )
+  {
+    std::cout << "Skipping track with NaN "
+    	<< std::endl;
+    return NULL;
+  }
+  
+
+
+
   // m_tGeometry
   // caloRadius
   // halfZ
@@ -1198,6 +1409,7 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 
                 const int ieta = RawTowerDefs::decode_index1(tower_key);
                 const int iphi = RawTowerDefs::decode_index2(tower_key);
+                const unsigned int towerinfokey = TowerInfoDefs::encode_emcal(ieta, iphi);
 
                 float tower_x = NAN;
                 float tower_y = NAN;
@@ -1222,21 +1434,8 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 
                 if (towEM)
                 {
-                    for (unsigned int ch = 0; ch < towEM->size(); ++ch)
-                    {
-                        unsigned int tkey = towEM->encode_key(ch);
-
-                        if (static_cast<int>(towEM->getTowerEtaBin(tkey)) == ieta &&
-                            static_cast<int>(towEM->getTowerPhiBin(tkey)) == iphi)
-                        {
-                            TowerInfo* tinfo = towEM->get_tower_at_channel(ch);
-                            if (tinfo)
-                            {
-                                tower_time = tinfo->get_time();
-                            }
-                            break;
-                        }
-                    }
+                    TowerInfo* tinfo = towEM->get_tower_at_key(towerinfokey);
+                    if (tinfo) tower_time = tinfo->get_time();
                 }
 
                 v_ieta.push_back(ieta);
@@ -1279,7 +1478,8 @@ void SiliconSeedsAna::processCaloClusters(PHCompositeNode* topNode)
 
 void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
 {
-  bool debug=false;
+  //bool debug=true;
+  bool debug=(Verbosity()>1);
 
 ////////////////
   GlobalVertexMap* globalvtxmap = findNode::getClass<GlobalVertexMap>(topNode, "GlobalVertexMap");
@@ -1293,7 +1493,8 @@ void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
   evt_gvtx_x.clear(); evt_gvtx_y.clear(); evt_gvtx_z.clear();
   if (globalvtxmap && !globalvtxmap->empty())
   {
-    std::cout<<"GlobalVertex Size : "<<globalvtxmap->size()<<std::endl;
+    if(debug)
+      std::cout<<"GlobalVertex Size : "<<globalvtxmap->size()<<std::endl;
     //globalvtxmap->identify();
     for(const auto& [key, globalvtx] : *globalvtxmap)
     {
@@ -1412,7 +1613,7 @@ void SiliconSeedsAna::processVertexMap(PHCompositeNode* topNode)
     evt_yvtx = vy;
     evt_zvtx = vz;
 
-    std::cout<<"SvtxVertex : "<<vx<<" "<<vy<<" "<<vz<<std::endl;
+    if(Verbosity()>1) std::cout<<"SvtxVertex : "<<vx<<" "<<vy<<" "<<vz<<std::endl;
   }
 }
 
@@ -1433,16 +1634,18 @@ void SiliconSeedsAna::processHCalinfo(PHCompositeNode* topNode)
     topo_clus_ihcal_e.clear();
     topo_clus_ohcal_e.clear();
 
-    topo_tower_caloid.clear();
-    topo_tower_ieta.clear();
-    topo_tower_iphi.clear();
-    topo_tower_e.clear();
-    topo_tower_x.clear();
-    topo_tower_y.clear();
-    topo_tower_z.clear();
-    topo_tower_eta.clear();
-    topo_tower_phi.clear();
-    topo_tower_time.clear();
+    if(_is_write_topotower){
+      topo_tower_caloid.clear();
+      topo_tower_ieta.clear();
+      topo_tower_iphi.clear();
+      topo_tower_e.clear();
+      topo_tower_x.clear();
+      topo_tower_y.clear();
+      topo_tower_z.clear();
+      topo_tower_eta.clear();
+      topo_tower_phi.clear();
+      topo_tower_time.clear();
+    }
 
     auto clusters = findNode::getClass<RawClusterContainer>(topNode, "TOPOCLUSTER_ALLCALO");
     //auto clusters = findNode::getClass<RawClusterContainer>(topNode, "CLUSTERINFO_CEMC");
@@ -1513,78 +1716,80 @@ void SiliconSeedsAna::processHCalinfo(PHCompositeNode* topNode)
             RawTowerGeomContainer* geom = nullptr;
             TowerInfoContainer* towerinfos = nullptr;
           
+            unsigned int towerinfokey = 0xFFFFFFFF;
             if (caloid == RawTowerDefs::CEMC)
             {
                 geom = geomEM;
                 towerinfos = towEM;
                 e_emcal += tower_e_in_cluster;
+
+                towerinfokey = TowerInfoDefs::encode_emcal(ieta, iphi);
             }
             else if (caloid == RawTowerDefs::HCALIN)
             {
                 geom = geomIH;
                 towerinfos = towIH;
                 e_ihcal += tower_e_in_cluster;
+
+                towerinfokey = TowerInfoDefs::encode_hcal(ieta, iphi);
             }
             else if (caloid == RawTowerDefs::HCALOUT)
             {
                 geom = geomOH;
                 towerinfos = towOH;
                 e_ohcal += tower_e_in_cluster;
+
+                towerinfokey = TowerInfoDefs::encode_hcal(ieta, iphi);
             }
             else
             {
                 continue;
             }
 
-            float tower_x = NAN;
-            float tower_y = NAN;
-            float tower_z = NAN;
-            float tower_eta = NAN;
-            float tower_phi = NAN;
-            float tower_time = NAN;
+            //////////////////////////////////////////
+            // tower info
+            if(_is_write_topotower){
+                float tower_x = NAN;
+                float tower_y = NAN;
+                float tower_z = NAN;
+                float tower_eta = NAN;
+                float tower_phi = NAN;
+                float tower_time = NAN;
 
-            if (geom)
-            {
-                RawTowerGeom* tower_geom = geom->get_tower_geometry(tower_key);
-                if (tower_geom)
+                if (geom)
                 {
-                    tower_x = tower_geom->get_center_x();
-                    tower_y = tower_geom->get_center_y();
-                    tower_z = tower_geom->get_center_z();
-                    tower_eta = tower_geom->get_eta();
-                    tower_phi = tower_geom->get_phi();
-                    
-                    // std::cout << "Tower geometry - CaloID: " << caloid << ", iEta: " << ieta << ", iPhi: " << iphi << ", x: " << tower_x << ", y: " << tower_y << ", z: " << tower_z
-		    //           << ", eta: " << tower_eta << ", phi: " << tower_phi << std::endl;
-		    // std::cout <<"==========================JY================================"<<std::endl;
-		}
-	    }
-
-            if (towerinfos)
-            {
-                for (unsigned int ch = 0; ch < towerinfos->size(); ++ch)
-                {
-                    unsigned int tkey = towerinfos->encode_key(ch);
-                    if (static_cast<int>(towerinfos->getTowerEtaBin(tkey)) == ieta &&
-                        static_cast<int>(towerinfos->getTowerPhiBin(tkey)) == iphi)
+                    RawTowerGeom* tower_geom = geom->get_tower_geometry(tower_key);
+                    if (tower_geom)
                     {
-                        TowerInfo* tinfo = towerinfos->get_tower_at_channel(ch);
-                        if (tinfo) tower_time = tinfo->get_time();
-                        break;
-                    }
-                }
-            }
+                        tower_x = tower_geom->get_center_x();
+                        tower_y = tower_geom->get_center_y();
+                        tower_z = tower_geom->get_center_z();
+                        tower_eta = tower_geom->get_eta();
+                        tower_phi = tower_geom->get_phi();
+                        
+                        // std::cout << "Tower geometry - CaloID: " << caloid << ", iEta: " << ieta << ", iPhi: " << iphi << ", x: " << tower_x << ", y: " << tower_y << ", z: " << tower_z
+	                //           << ", eta: " << tower_eta << ", phi: " << tower_phi << std::endl;
+	                // std::cout <<"==========================JY================================"<<std::endl;
+	            }
+	        }
 
-            v_caloid.push_back(static_cast<int>(caloid));
-            v_ieta.push_back(ieta);
-            v_iphi.push_back(iphi);
-            v_e.push_back(tower_e_in_cluster);
-            v_x.push_back(tower_x);
-            v_y.push_back(tower_y);
-            v_z.push_back(tower_z);
-            v_eta.push_back(tower_eta);
-            v_phi.push_back(tower_phi);
-            v_time.push_back(tower_time);
+                if (towerinfos&&towerinfokey!=0xFFFFFFFF)
+                {
+                  TowerInfo* tinfo = towerinfos->get_tower_at_key(towerinfokey);
+                  if (tinfo) tower_time = tinfo->get_time();
+                }
+
+                v_caloid.push_back(static_cast<int>(caloid));
+                v_ieta.push_back(ieta);
+                v_iphi.push_back(iphi);
+                v_e.push_back(tower_e_in_cluster);
+                v_x.push_back(tower_x);
+                v_y.push_back(tower_y);
+                v_z.push_back(tower_z);
+                v_eta.push_back(tower_eta);
+                v_phi.push_back(tower_phi);
+                v_time.push_back(tower_time);
+            }
         }
 
 	// if (e_emcal/(e_ihcal+e_ohcal+0.00001) < 0.75)
@@ -1605,19 +1810,97 @@ void SiliconSeedsAna::processHCalinfo(PHCompositeNode* topNode)
 	topo_clus_ihcal_e.push_back(e_ihcal);
 	topo_clus_ohcal_e.push_back(e_ohcal);
         
-        topo_tower_caloid.push_back(v_caloid);
-        topo_tower_ieta.push_back(v_ieta);
-        topo_tower_iphi.push_back(v_iphi);
-        topo_tower_e.push_back(v_e);
-        topo_tower_x.push_back(v_x);
-        topo_tower_y.push_back(v_y);
-        topo_tower_z.push_back(v_z);
-        topo_tower_eta.push_back(v_eta);
-        topo_tower_phi.push_back(v_phi);
-        topo_tower_time.push_back(v_time);
+        if(_is_write_topotower){
+            topo_tower_caloid.push_back(v_caloid);
+            topo_tower_ieta.push_back(v_ieta);
+            topo_tower_iphi.push_back(v_iphi);
+            topo_tower_e.push_back(v_e);
+            topo_tower_x.push_back(v_x);
+            topo_tower_y.push_back(v_y);
+            topo_tower_z.push_back(v_z);
+            topo_tower_eta.push_back(v_eta);
+            topo_tower_phi.push_back(v_phi);
+            topo_tower_time.push_back(v_time);
+        }
     }
 
     if (TopoClusTree) TopoClusTree->Fill();
+}
+
+void SiliconSeedsAna::processKFParticle(PHCompositeNode* topNode)
+{
+  KFParticle_Container* kfparticlemap = findNode::getClass<KFParticle_Container>(topNode, m_kfparticleName.c_str());
+  if (!kfparticlemap)
+  {
+    std::cout << PHWHERE << " Error - KFParticle node is missing"<< std::endl;
+    return; // Fun4AllReturnCodes::ABORTRUN;
+  }
+
+  std::vector<KFParticle> mother;
+  std::map<int, KFParticle*> daughterpool;
+
+  if(Verbosity()>1) 
+    std::cout<<"processKFParticle : N="<<kfparticlemap->size()<<std::endl;
+
+  for(auto &part_itr : *kfparticlemap)
+  {
+    //--int         idx  = part_itr.first;
+    KFParticle* part = part_itr.second;
+
+
+    int ndaughters = part->NDaughters();
+    //--std::cout<<"KFP : "<<idx<<" "<<part->Id()<<" "<<part->Id()<<", Ndaughters: "<<ndaughters<<" (";
+    //--for(int i=0; i<ndaughters; i++){ std::cout<<part->DaughterIds()[i]<<" "; }
+    //--std::cout<<")"<<std::endl;
+
+    if(ndaughters>0) mother.push_back(*part);
+    else             daughterpool.insert( std::make_pair(part->Id(), part) );
+
+  }
+
+  //--std::cout<<"preparing daugher vector"<<std::endl;
+  std::vector<std::vector<KFParticle>> daughters;
+  for(uint i=0; i<mother.size(); i++){
+    int ndaughters = mother[i].NDaughters();
+    //std::cout<<"KFP : "<<idx<<" "<<part->Id()<<", Ndaughters: "<<ndaughters<<" (";
+   
+    std::vector<KFParticle> vdaughter;
+    for(int id=0; id<ndaughters; id++){ 
+      std::map<int, KFParticle*>::iterator map_itr = daughterpool.find(mother[i].DaughterIds()[id]);
+      if(map_itr==daughterpool.end()) {
+         std::cout<<"No daughter found. daughterID: "<<mother[i].DaughterIds()[id]<<", mother="<<mother[i].Id()<<std::endl;; 
+         continue;
+      }
+
+      vdaughter.push_back(*(map_itr->second));
+    }
+
+    daughters.push_back(vdaughter);
+  }
+
+  //std::cout<<"fillBranch "<<std::endl;
+  std::vector<KFParticle> vertex_kfparticle = mother;
+  std::vector<std::vector<KFParticle>> intermediates = daughters;
+
+  for(uint i=0; i<mother.size(); i++){
+    //--std::cout<<"mother id "<<mother[i].Id()<<std::endl;
+    //--std::cout<<"vertex    "<<vertex_kfparticle[i].Id()<<std::endl;
+    //--std::cout<<"daughter size "<<daughters[i].size()<<std::endl;
+    //--for(uint id=0; id<daughters[i].size(); id++){
+    //--  std::cout<<"daughter "<<id<<", "<<daughters[i][id].Id()<<std::endl;
+    //--}
+    //------------
+    // vertex - this is bug. should use the closest vertex and its ID to vertex map
+    vertex_kfparticle[i].SetId(0); // this is bug
+    vertex_kfparticle[i].X() = evt_xvtx;  // this is bug
+    vertex_kfparticle[i].Y() = evt_yvtx;  // this is bug
+    vertex_kfparticle[i].Z() = evt_zvtx;  // this is bug
+    //-----------
+
+    _kfp_ntuple->fillBranch(topNode, mother[i], vertex_kfparticle[i], daughters[i], intermediates[i]);
+  }
+
+  //--std::cout<<"end fillBranch "<<std::endl;
 }
                     
 
@@ -1689,12 +1972,19 @@ int SiliconSeedsAna::EndRun(const int /*runnumber*/)
     truthTree->Write();
   }
 
+  if (hepmctree && hepmctree->GetEntries() > 0)
+    {
+      hepmctree->Write();
+    }
+
+
   if (TopoClusTree)
   {
       TopoClusTree->Write();
   }
 
   // Close the file
+  m_outfile->Write();
   m_outfile->Close();
 
   return Fun4AllReturnCodes::EVENT_OK;

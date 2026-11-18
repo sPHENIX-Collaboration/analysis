@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 class PHCompositeNode;
 class SvtxTrackMap;
@@ -45,9 +46,11 @@ public:
   void setClusterContainerName(     const std::string &name) { _clusterContainerName = name; }
   void setEMCalClusterContainerName(const std::string &name) { _emcalClusName = name; }
 
-  void setEmcalRadius(float radius) { _caloRadiusEMCal = radius; }
+  void setEmcalRadius(float radius) { _caloRadiusEMCal  = radius; }
+  void setEmcalOutRadius(float radius){ _caloOutRadiusEMCal = radius; }
   void setEmcalLowEcut(float ecut)  { _emcal_low_cut = ecut; }
   void setTrackLowpTcut(float ptcut){ _track_lowpt_cut = ptcut; }
+  void setEmcalInOutFrac(float frac) { if(frac<0||1<frac) {std::cout<<"InOutFrac: out of range : "<<frac<<std::endl; return; } _proj_frac = frac; } // this should be 0-1
 
   void setUpdate_pTinSvtxTrack(const bool flag=true) { _update_pTinSvtxTrack = flag; }
 
@@ -71,7 +74,9 @@ protected:
   double _emcal_low_cut      = 0.18;
   double _track_lowpt_cut    = 0.20;
   float  _caloRadiusEMCal    = 93.5;
-  float  _caloThicknessEMCal = 20.4997;
+  float  _caloOutRadiusEMCal = 113.9997; // 93.5 + 20.4997;
+  //float  _caloThicknessEMCal = 20.4997;
+  float  _proj_frac          = 0.5;
 
   bool _isMC = false;
   bool _update_pTinSvtxTrack = false; 

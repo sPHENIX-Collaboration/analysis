@@ -24,7 +24,10 @@
 #include <phool/getClass.h>
 #include <fun4all/Fun4AllReturnCodes.h>
 
-#include <TVector3.h>
+//#include <TVector3.h>
+#include <Math/Vector3D.h>
+
+using ROOT::Math::XYZVector;
 
 // for sort algorithm
 bool compLayer(TrkrDefs::cluskey a, TrkrDefs::cluskey b)
@@ -87,6 +90,8 @@ int SiliconCaloMatching::InitRun(PHCompositeNode * topNode)
 //____________________________________________________________________________..
 int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 {
+  static int n_noemcstate = 0;
+
   if(Verbosity()>0)
     std::cout<<"SiliconCaloMatching::process_event(PHCompositeNode* topNode)"<<std::endl;
   
@@ -97,7 +102,8 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
     //if((evt%1000)==0) std::cout << "start track map  EVENT " << evt << " is OK" << std::endl;
   
   // vertex position from crossing=0
-  TVector3 vtxPos(0,0,0);
+  //TVector3 vtxPos(0,0,0);
+  XYZVector vtxPos(0,0,0);
   //if (!b_skipvtx)
   {
     if (!_vertexmap->empty())
@@ -107,7 +113,8 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
       {
         if (v && v->get_beam_crossing() == 0)
         {
-          vtxPos = TVector3(v->get_x(), v->get_y(), v->get_z()) ;
+          //vtxPos = TVector3(v->get_x(), v->get_y(), v->get_z()) ;
+          vtxPos = XYZVector(v->get_x(), v->get_y(), v->get_z()) ;
           break;
         }
       }
@@ -153,20 +160,34 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 
     // track projection to EMCAL
     SvtxTrackState *emcalState    = track->get_state(_caloRadiusEMCal);
- //   SvtxTrackState *emcalOutState = track->get_state(_caloRadiusEMCal+_caloThicknessEMCal);
+    SvtxTrackState *emcalOutState = track->get_state(_caloOutRadiusEMCal);
+    //SvtxTrackState *emcalOutState = track->get_state(_caloRadiusEMCal+_caloThicknessEMCal);
 
     
     if(!emcalState){
-      std::cout<<"No TrackState (EMC projection object), pT = "<<t_pt<<std::endl;
+      n_noemcstate++;
+      if (Verbosity()>1 && n_noemcstate < 10 ) {
+        std::cout<<"No TrackState (EMC projection object), pT = "<<t_pt<<std::endl;
+      }
+      continue;
+    }
+    if(!emcalOutState){
+      n_noemcstate++;
+      if (Verbosity()>1 && n_noemcstate < 10 ) {
+        std::cout<<"No TrackState (EMC Out projection object), pT = "<<t_pt<<std::endl;
+      }
       continue;
     }
 
     ntrk_crossing++; // good track (crossing & state_ok)
 
     // track projection to EMC surface
-    TVector3 projPos(emcalState->get_x(), emcalState->get_y(), emcalState->get_z());
-    //float phi_proj = projPos.phi();
-    //float z_proj =   projPos.z();
+    //TVector3 projPos(emcalState->get_x(), emcalState->get_y(), emcalState->get_z());
+    //TVector3 projOutPos(emcalOutState->get_x(), emcalOutState->get_y(), emcalOutState->get_z());
+    XYZVector projPos(emcalState->get_x(), emcalState->get_y(), emcalState->get_z());
+    XYZVector projOutPos(emcalOutState->get_x(), emcalOutState->get_y(), emcalOutState->get_z());
+    float phi_proj = _proj_frac*projPos.Phi() + (1.-_proj_frac)*projOutPos.Phi();
+    float z_proj   = _proj_frac*projPos.Z()   + (1.-_proj_frac)*projOutPos.Z();
 
     // --- EMCal cluster matching ---
     // Find the closest EMCal cluster in eta/phi to this state
@@ -194,9 +215,9 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
 
       //TVector3 emcPos(emc->get_x(), emc->get_y(), emc->get_z());
 
-      float dz   = emc->get_z()   - projPos.z(); // cm unit
+      float dz   = emc->get_z()   - z_proj;   // cm unit
 
-      float dphi = emc->get_phi() - projPos.Phi(); // radian
+      float dphi = emc->get_phi() - phi_proj; // radian
       if (dphi >  M_PI) dphi -= 2 * M_PI;
       if (dphi < -M_PI) dphi += 2 * M_PI;
 
@@ -229,13 +250,13 @@ int SiliconCaloMatching::process_event(PHCompositeNode* topNode)
     //
     float pt_calo = calculatePt(track, emcClus);
     //--std::cout << "caloPt : " << pt_calo<<std::endl;
-
-
-    // Fill updated value to SvtxTrack and SiliconCaloTrack object
+    //--std::cout<<"before update "<< track->get_px()<<" "<< track->get_py()
+    //--        <<",   "<<pt_calo*cos(track->get_phi())<<pt_calo*sin(track->get_phi())<<std::endl;
     if(_update_pTinSvtxTrack){
       track->set_px( pt_calo*cos(track->get_phi()) );
       track->set_py( pt_calo*sin(track->get_phi()) );
     }
+    //--std::cout<<"after update "<< track->get_px()<<" "<< track->get_py()<<std::endl;
 
     
     auto sicalo = std::make_unique<SiliconCaloTrack_v1>();
