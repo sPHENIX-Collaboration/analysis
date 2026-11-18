@@ -51,6 +51,7 @@
 #include <memory>
 
 class SvtxTrack;
+class KFParticle_nTupleSCIF;
 class PHCompositeNode;
 class TH1;
 class TH2;
@@ -63,7 +64,13 @@ class SiliconSeedsAna : public SubsysReco
 public:
   SiliconSeedsAna(const std::string &name = "SiliconSeedsAna");
 
+  //~SiliconSeedsAna();
   ~SiliconSeedsAna() override = default;
+  //
+ 
+  SiliconSeedsAna(const SiliconSeedsAna&) = delete;
+  SiliconSeedsAna& operator=(const SiliconSeedsAna&) = delete;
+
 
   int InitRun(PHCompositeNode *topNode) override;
   int process_event(PHCompositeNode *topNode) override;
@@ -79,7 +86,10 @@ public:
   }
   void setClusterContainerName(const std::string &name) { m_clusterContainerName = name; }
   void setEMCalClusterContainerName(const std::string &name) { m_emcalClusName = name; }
-  void setEMcalRadius(float radius) { _caloRadiusEMCal = radius; }
+  void setKFParticleContainerName(const std::string &name) { m_kfparticleName = name; }
+
+  void setEMcalRadius(float radius)    { _caloRadiusEMCal    = radius; }
+  void setEMcalOutRadius(float radius) { _caloOutRadiusEMCal = radius; }
   void setEmcalLowEcut(float ecut)  { m_emcal_low_cut = ecut; }
   void setTopoCluster(bool topo)
   {
@@ -95,6 +105,12 @@ public:
   void setVtxSkip(bool input) { b_skipvtx = input; }
   void setCaloSkip(bool input) { b_skipcalo = input; }
 
+  void setWriteEnableTopoTower(bool enable){ _is_write_topotower = enable; };
+
+  void setHepmcSaveOnlyFinal(bool flag){ _hepmc_save_onlyfinal = flag; }
+
+  KFParticle_nTupleSCIF* getKFParticleNtuple() { return _kfp_ntuple.get(); }
+
 
 protected:
   //--std::tuple<float, float, float> getClusterPos(TrkrDefs::cluskey cluskey, TrkrClusterContainer *clusterContainer);
@@ -104,10 +120,13 @@ protected:
   void createHistos();
 
   void fillTruthTree(PHCompositeNode *topNode);
+  void fillHepmcinfo(PHCompositeNode *topNode);
   void processTrackMap(PHCompositeNode *topNode);
   void processSiCluster(PHCompositeNode *topNode);
   void processCaloClusters(PHCompositeNode *topNode);
   void processVertexMap(PHCompositeNode *topNode);
+
+  void processKFParticle(PHCompositeNode *topNode);
 
     // ----- JY start - HCal information on NanoDST -----
     void processHCalinfo(PHCompositeNode *topNode);
@@ -143,7 +162,7 @@ protected:
 
   // Utility functions for track vector management and EMCal state
   void clearTrackVectors();
-  void fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState);
+  void fillEMCalState(SvtxTrackState* state, SvtxTrackState* ostate, SvtxTrackState* rvsState, float pT=0.);
   void initTrackTreeBranches();
   void clearCaloVectors();
   void initCaloTreeBranches();
@@ -156,6 +175,7 @@ protected:
   std::string m_trackMapName         = "SvtxTrackMap";
   std::string m_vertexMapName        = "SvtxVertexMap";
   std::string m_emcalClusName        = "CLUSTER_CEMC";
+  std::string m_kfparticleName       = "KFParticle_Jpsi_KFParticle_Container";
   std::string m_outputfilename       = "output_histograms.root";
 
   // std::string m_emcal_node_name = "TOWERINFO_CALIB_CEMC";
@@ -180,6 +200,15 @@ protected:
   std::vector<int>   truth_vtxid;
   std::vector<int>   truth_primary_id, truth_parent_id;
   std::vector<float> truth_vtx_x, truth_vtx_y, truth_vtx_z; // index is  vtxid, not trackid. vector size is Nvertex in this event(usually 1)
+
+  TTree *hepmctree = nullptr;
+  std::vector<float>   hepmc_px, hepmc_py,hepmc_pz;
+  std::vector<float>   hepmc_pt, hepmc_eta, hepmc_phi, hepmc_e;
+  std::vector<float>   hepmc_x, hepmc_y, hepmc_z;
+  std::vector<int>     hepmc_pid, hepmc_barcode;
+  std::vector<float>   hepmc_vtx_x, hepmc_vtx_y, hepmc_vtx_z;
+  std::vector< std::vector<int> > hepmc_par_barcode; // 
+
 
   TTree *trackTree = nullptr;
   int evt = 0;
@@ -286,16 +315,24 @@ protected:
   std::vector<float> evt_gvtx_z;   // all vertex in globalvertex
 
 
+  // KFParticle
+  //KFParticle_nTuple *_kfp_ntuple = nullptr;
+  std::unique_ptr<KFParticle_nTupleSCIF> _kfp_ntuple;
+
 
   double m_emcal_low_cut = 0.18;
   float _caloRadiusEMCal    = 93.5;
-  float _caloThicknessEMCal = 20.4997;
+  //float _caloThicknessEMCal = 20.4997;
+  float _caloOutRadiusEMCal = 113.9997; //93.5 + 20.4997;
 
   bool isMC    = false;
   bool _doEval = false;
+  bool _is_write_topotower = false;
+  bool _hepmc_save_onlyfinal = false;
 
   bool b_skipvtx = false;
   bool b_skipcalo = false;
+
   TH1 *h_ntrack1d = nullptr;
   TH2 *h_ntrack = nullptr;
   TH1 *h_nmaps = nullptr;
