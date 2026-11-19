@@ -175,22 +175,23 @@ CaloInttMvtx a_CaloInttMvtx;
 
 // nDST contents
 // Emc clusters. These vectors has common index
-vector<float> vEmc_r;
-vector<float> vEmc_phi;
-vector<float> vEmc_eta;
-vector<float> vEmc_z;
-vector<float> vEmc_prob;
-vector<float> vEmc_e;
+// Hot towers (Is_Hot_Emc) are excluded
+vector<float> vEmc_r;    //*emc_r
+vector<float> vEmc_phi;  //*emc_phi
+vector<float> vEmc_eta;  //*emc_eta
+vector<float> vEmc_z;    //*emc_z
+vector<float> vEmc_prob; //*emc_prob
+vector<float> vEmc_e;    //*energy
 
 // TopoClusters. These vectors has common index
-vector<float> vTop_r;
-vector<float> vTop_phi;
-vector<float> vTop_eta;
-vector<float> vTop_z;
-vector<float> vTop_e;
-vector<float> vTop_emc_e;
-vector<float> vTop_ihc_e;
-vector<float> vTop_ohc_e;
+vector<float> vTop_r;   //*top_r
+vector<float> vTop_phi; //*top_phi
+vector<float> vTop_eta; //*top_eta
+vector<float> vTop_z;   //*top_z
+vector<float> vTop_e;   //*top_e
+vector<float> vTop_emc_e; //*top_emc_e
+vector<float> vTop_ihc_e; //*top_ihc_e
+vector<float> vTop_ohc_e; //*top_ohc_e
 
 // Emc Cluster info associated with TopCluster
 // The index of these vectors and TopCluster vectors are the same

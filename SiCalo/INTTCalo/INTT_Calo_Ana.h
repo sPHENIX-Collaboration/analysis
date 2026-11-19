@@ -73,7 +73,7 @@ vector<int> *a_layer=nullptr;
 vector<float> *a_si_x=nullptr;
 vector<float> *a_si_y=nullptr;
 vector<float> *a_si_z=nullptr;
-vector<float> *a_si_t=nullptr;
+vector<int>   *a_si_t=nullptr;
 
 // data in trackTree (extended and connected to EMC)
 // since there are now 48 entries, I added vtrk_ at 
