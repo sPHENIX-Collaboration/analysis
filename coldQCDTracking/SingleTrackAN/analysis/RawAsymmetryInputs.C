@@ -5,18 +5,19 @@
 
 void RawAsymmetryInputs(int Verbosity = 0)
 {
-    TFile *infile = TFile::Open("/sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/Oct6/79516.root");
+    TFile *infile = TFile::Open("/sphenix/tg/tg01/coldqcd/dillfitz/singletrackan/Nov5/79516.root");
 
     int bunchnum;
     int sphnxbunchnum;
     int multiplicity; 
     int crossing;
+    int runnum;
   
     // spin stuff
     static const int NBUNCHES = 120;
     int xingshift;
-    int spinPatternBlue[NBUNCHES] = {0};
-    int spinPatternYellow[NBUNCHES] = {0};
+    std::array<int, NBUNCHES> spinPatternBlue{0};
+    std::array<int, NBUNCHES> spinPatternYellow{0};
     int trackBunch = 0;
     int bspin = 0;
     int yspin = 0;
@@ -24,6 +25,16 @@ void RawAsymmetryInputs(int Verbosity = 0)
     float bpolerr;
     float ypol;
     float ypolerr;
+
+    // lumi
+    std::array<double, NBUNCHES> bunchnumber_lumi{0.};
+    double lumi{0.};
+    double lumi_up_blue{0.};
+    double lumi_down_blue{0.};
+    double lumi_up_yellow{0.};
+    double lumi_down_yellow{0.};
+    double rel_lumi_blue{0.};
+    double rel_lumi_yellow{0.};
   
   
     // track stuff
@@ -32,7 +43,7 @@ void RawAsymmetryInputs(int Verbosity = 0)
     float pz;
     float xf;
     float eta;
-    float phi;
+    float phi, bphi, yphi;
     float quality;
     float charge;
 
@@ -45,6 +56,19 @@ void RawAsymmetryInputs(int Verbosity = 0)
     ULong64_t bcowindowhigh;
     bool usable_bco_tag;
     bool doublecount;
+
+    TTree *runTree = (TTree*)infile->Get("runTree");
+
+    runTree->SetBranchAddress("runnum", &runnum);
+    runTree->SetBranchAddress("bpol", &bpol);
+    runTree->SetBranchAddress("bpolerr", &bpolerr);
+    runTree->SetBranchAddress("ypol", &ypol);
+    runTree->SetBranchAddress("ypolerr", &ypolerr);
+    runTree->SetBranchAddress("lumi", &lumi);
+    runTree->SetBranchAddress("bunchnumber_lumi", &bunchnumber_lumi);
+    runTree->SetBranchAddress("spin_pattern_blue", &spinPatternBlue);
+    runTree->SetBranchAddress("spin_pattern_yellow", &spinPatternYellow);
+
 
     TTree *singleTrackTree = (TTree*)infile->Get("singleTrackTree");
 
@@ -65,8 +89,12 @@ void RawAsymmetryInputs(int Verbosity = 0)
     singleTrackTree->SetBranchAddress("xf", &xf);
     singleTrackTree->SetBranchAddress("eta", &eta);
     singleTrackTree->SetBranchAddress("phi", &phi);
+    singleTrackTree->SetBranchAddress("bphi", &bphi);
+    singleTrackTree->SetBranchAddress("yphi", &yphi);
     singleTrackTree->SetBranchAddress("quality", &quality);
     singleTrackTree->SetBranchAddress("charge", &charge);
+
+
 
     // Questions // 
     // high and low pt thresholds for good tracks??
@@ -188,17 +216,66 @@ void RawAsymmetryInputs(int Verbosity = 0)
     TH2D *h2etaphi_yspinup_neg = new TH2D("hetaphi_yup_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
     TH2D *h2etaphi_yspindown_neg = new TH2D("hetaphi_ydown_neg", ";#phi;#eta", nphibins, phibins, netabins, etabins);
 
+    // Extract relevant information from the run tree (e.g. relative luminosity and polarization)
+    for (int i = 0; i<runTree->GetEntries(); ++i)
+    {
+        runTree->GetEntry(i);
+        // Need to revisit this if the run tree is more than 1 run long, at which point these values need to be zeroed out and the rel_lumi_blue and rel_lumi_yellow need to be saved into some kind of data structure
+        // The current workflow requires all track DST segments to be processed to calculate the lumi, so for run 79516 alone there were already ~38000 trees to combine. 
+        /*
+        lumi_up_blue = 0.;
+        lumi_down_blue = 0.;
+        lumi_up_yellow = 0.;
+        lumi_down_yellow = 0.;
+        rel_lumi_blue = 0.;
+        rel_lumi_yellow = 0.;
+        */
+        if (Verbosity > 1)
+        {
+            std::cout << "runnumber : " << runnum << std::endl;
+            std::cout << " bpol +/- bpolerr : " << bpol << " +/- " << bpolerr << std::endl;
+            std::cout << " ypol +/- ypolerr : " << ypol << " +/- " << ypolerr << std::endl;
+            std::cout << " lumi : " << lumi << std::endl;
+        }
+        for (int bunch = 0; bunch < NBUNCHES; ++bunch)
+        {
+
+            if (spinPatternBlue[bunch] == 1)
+            {
+                lumi_up_blue += bunchnumber_lumi[bunch];
+            }
+            else if (spinPatternBlue[bunch] == -1)
+            {
+                lumi_down_blue += bunchnumber_lumi[bunch];
+            }
+            if (spinPatternYellow[bunch] == 1)
+            {
+                lumi_up_yellow += bunchnumber_lumi[bunch];
+            }
+            else if (spinPatternYellow[bunch] == -1)
+            {
+                lumi_down_yellow += bunchnumber_lumi[bunch];
+            }
+        }
+        // This is currently designed for a run tree with 1 entry so that these values are not overwritten when looping over the single track tree
+        rel_lumi_blue = lumi_up_blue / lumi_down_blue;
+        rel_lumi_yellow = lumi_up_yellow / lumi_down_yellow;
+    }
+    // If the worflow changes to processing multiple runs simultaneously, need to change to a TGraph with runnum, rel_lumi_(blue, yellow) or something
+    // How do we get an error estimate on the luminosity?
+    // Not currently saving this in the lumi workflow, ask Jin and Joe!
+    TParameter<double> rl_blue("rel_lumi_blue", rel_lumi_blue);
+    TParameter<double> rl_yellow("rel_lumi_yellow", rel_lumi_yellow);
+
+    rl_blue.Write();
+    rl_yellow.Write();
 
     for (int i = 0; i<singleTrackTree->GetEntries(); ++i)
-    //for(int i=0; i<100000000; ++i)
+    //for(int i=0; i<1000000; ++i)
     {
-        // TEMPORARY -- need to calculate xf from pT and eta until we save it in the tree on the next iteration // 
-        //pz = pt * std::sinh(eta);
-        //xf = ( 2. * pz ) / 200.;
-
-        if (i%10000000 == 0) { std::cout << "processing event : " << i << std::endl; }
+        if (i%10000000 == 0) { std::cout << "processing entry : " << i << " of " << singleTrackTree->GetEntries() << std::endl; }
         singleTrackTree->GetEntry(i);
-        if (Verbosity > 1)
+        if (Verbosity > 5)
         {
             std::cout << "bco  : " << bco << std::endl;
             std::cout << "usable_bco_tag : " << usable_bco_tag << std::endl;
@@ -256,82 +333,82 @@ void RawAsymmetryInputs(int Verbosity = 0)
 
         if (bspin == 1)
         {
-            hphi_bspinup->Fill(phi);
-            h2ptphi_bspinup->Fill(phi, pt);
-            h2xfphi_bspinup->Fill(phi, xf);
-            h2etaphi_bspinup->Fill(phi, eta);
+            hphi_bspinup->Fill(bphi);
+            h2ptphi_bspinup->Fill(bphi, pt);
+            h2xfphi_bspinup->Fill(bphi, xf);
+            h2etaphi_bspinup->Fill(bphi, eta);
             if (charge == 1)
             {
-                h2ptphi_bspinup_pos->Fill(phi, pt);
-                h2xfphi_bspinup_pos->Fill(phi, xf);
-                h2etaphi_bspinup_pos->Fill(phi, eta);
+                h2ptphi_bspinup_pos->Fill(bphi, pt);
+                h2xfphi_bspinup_pos->Fill(bphi, xf);
+                h2etaphi_bspinup_pos->Fill(bphi, eta);
             }
             if (charge == -1)
             {
-                h2ptphi_bspinup_neg->Fill(phi, pt);
-                h2xfphi_bspinup_neg->Fill(phi, xf);
-                h2etaphi_bspinup_neg->Fill(phi, eta);
+                h2ptphi_bspinup_neg->Fill(bphi, pt);
+                h2xfphi_bspinup_neg->Fill(bphi, xf);
+                h2etaphi_bspinup_neg->Fill(bphi, eta);
             }
         }
         if (bspin == -1)
         {
-            hphi_bspindown->Fill(phi);
-            h2ptphi_bspindown->Fill(phi, pt);
-            h2xfphi_bspindown->Fill(phi, xf);
-            h2etaphi_bspindown->Fill(phi, eta);
+            hphi_bspindown->Fill(bphi);
+            h2ptphi_bspindown->Fill(bphi, pt);
+            h2xfphi_bspindown->Fill(bphi, xf);
+            h2etaphi_bspindown->Fill(bphi, eta);
             if (charge == 1)
             {
-                h2ptphi_bspindown_pos->Fill(phi, pt);
-                h2xfphi_bspindown_pos->Fill(phi, xf);
-                h2etaphi_bspindown_pos->Fill(phi, eta);
+                h2ptphi_bspindown_pos->Fill(bphi, pt);
+                h2xfphi_bspindown_pos->Fill(bphi, xf);
+                h2etaphi_bspindown_pos->Fill(bphi, eta);
             }
             if (charge == -1)
             {
-                h2ptphi_bspindown_neg->Fill(phi, pt);
-                h2xfphi_bspindown_neg->Fill(phi, xf);
-                h2etaphi_bspindown_neg->Fill(phi, eta);
+                h2ptphi_bspindown_neg->Fill(bphi, pt);
+                h2xfphi_bspindown_neg->Fill(bphi, xf);
+                h2etaphi_bspindown_neg->Fill(bphi, eta);
             }
         }
         if (yspin == 1)
         {
             // double check this is correct
             xf = -1*xf;
-            hphi_yspinup->Fill(phi);
-            h2ptphi_yspinup->Fill(phi, pt);
-            h2xfphi_yspinup->Fill(phi, xf);
-            h2etaphi_yspinup->Fill(phi, eta);
+            hphi_yspinup->Fill(yphi);
+            h2ptphi_yspinup->Fill(yphi, pt);
+            h2xfphi_yspinup->Fill(yphi, xf);
+            h2etaphi_yspinup->Fill(yphi, eta);
             if (charge == 1)
             {
-                h2ptphi_yspinup_pos->Fill(phi, pt);
-                h2xfphi_yspinup_pos->Fill(phi, xf);
-                h2etaphi_yspinup_pos->Fill(phi, eta);
+                h2ptphi_yspinup_pos->Fill(yphi, pt);
+                h2xfphi_yspinup_pos->Fill(yphi, xf);
+                h2etaphi_yspinup_pos->Fill(yphi, eta);
             }
             if (charge == -1)
             {
-                h2ptphi_yspinup_neg->Fill(phi, pt);
-                h2xfphi_yspinup_neg->Fill(phi, xf);
-                h2etaphi_yspinup_neg->Fill(phi, eta);
+                h2ptphi_yspinup_neg->Fill(yphi, pt);
+                h2xfphi_yspinup_neg->Fill(yphi, xf);
+                h2etaphi_yspinup_neg->Fill(yphi, eta);
             }
         }
         if (yspin == -1)
         {
             // double check this is correct
             xf = -1*xf;
-            hphi_yspindown->Fill(phi);
-            h2ptphi_yspindown->Fill(phi, pt);
-            h2xfphi_yspindown->Fill(phi, xf);
-            h2etaphi_yspindown->Fill(phi, eta);
+            hphi_yspindown->Fill(yphi);
+            h2ptphi_yspindown->Fill(yphi, pt);
+            h2xfphi_yspindown->Fill(yphi, xf);
+            h2etaphi_yspindown->Fill(yphi, eta);
             if (charge == 1)
             {
-                h2ptphi_yspindown_pos->Fill(phi, pt);
-                h2xfphi_yspindown_pos->Fill(phi, xf);
-                h2etaphi_yspindown_pos->Fill(phi, eta);
+                h2ptphi_yspindown_pos->Fill(yphi, pt);
+                h2xfphi_yspindown_pos->Fill(yphi, xf);
+                h2etaphi_yspindown_pos->Fill(yphi, eta);
             }
             if (charge == -1)
             {
-                h2ptphi_yspindown_neg->Fill(phi, pt);
-                h2xfphi_yspindown_neg->Fill(phi, xf);
-                h2etaphi_yspindown_neg->Fill(phi, eta);
+                h2ptphi_yspindown_neg->Fill(yphi, pt);
+                h2xfphi_yspindown_neg->Fill(yphi, xf);
+                h2etaphi_yspindown_neg->Fill(yphi, eta);
             }
         }
         
