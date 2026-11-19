@@ -3,6 +3,8 @@
 RUN=53046
 RUN8=$(printf "%08d" "$RUN") 
 
+
+
 BASE_calo="/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana468_2024p012_v001/DST_CALOFITTING/run_00053000_00053100/dst/DST_CALOFITTING_run2pp_ana468_2024p012_v001-${RUN8}-"
 BASE_clus="/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana504_2024p023_v001/DST_TRKR_CLUSTER/run_00053000_00053100/dst/DST_TRKR_CLUSTER_run2pp_ana504_2024p023_v001-${RUN8}-"
 BASE_seed="/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana506_2024p023_v002/DST_TRKR_SEED/run_00053000_00053100/dst/DST_TRKR_SEED_run2pp_ana506_2024p023_v002-${RUN8}-"

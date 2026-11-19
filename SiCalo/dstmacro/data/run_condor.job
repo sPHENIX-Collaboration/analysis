@@ -8,22 +8,22 @@ job_lease_duration = 86400
 
 # If you need multiple cores you can ask for them, but the scheduling
 # may take longer the "larger" a job you ask for
-request_cpus=1
+#request_cpus=1
 
 # Copy all of the user's current shell environment variables 
 # at the time of job submission.
-GetEnv=True
+#GetEnv=True
 
 # The requirement line specifies which machines we want to
 # run this job on.  Any arbitrary classad expression can
 # be used.
-Requirements=(CPU_Speed >= 1)
+#Requirements=(CPU_Speed >= 1)
 
 # Rank is an expression that states how to rank machines which 
 # have already met the requirements expression.  Essentially, 
 # rank expresses preference.  A higher numeric value equals better 
 # rank.  Condor will give the job the machine with the highest rank.
-Rank=CPU_Speed
+#Rank=CPU_Speed
 
 Initialdir         = /sphenix/user/hachiya/myrepo/analysis/SiCalo/dstmacro/data
 
@@ -36,7 +36,8 @@ Arguments          = "$(nevts) $(indst_clus) $(indst_seed) $(indst_calo) $(outro
 log_filename       = condor_$(process)
 Output             = $(output_directory)/log/$(log_filename).out
 Error              = $(output_directory)/log/$(log_filename).err
-Log                = $(output_directory)/log/$(log_filename).log
+Log                = /tmp/condor_hachiya_run_job_$(process).log
+#Log                = $(output_directory)/log/$(log_filename).log
 on_exit_hold = (ExitBySignal == True) || (ExitCode != 0)
 
 #Queue nevts, indst_clus, indst_seed, indst_calo, outroot, startevt from joblist/dst_run53876_1.list

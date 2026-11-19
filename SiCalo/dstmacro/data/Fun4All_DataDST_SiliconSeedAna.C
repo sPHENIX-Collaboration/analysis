@@ -72,10 +72,15 @@ R__LOAD_LIBRARY(libsiliconseedsana.so)
 bool useTopologicalCluster = false;
 
 int Fun4All_DataDST_SiliconSeedAna(
-    const int nEvents = 1000, const string inlst_dst_clus = "list/test/run53879_clus_0.list"
+    const int nEvents = 1000
+    , const string inlst_dst_clus = "list/test/run53879_clus_0.list"
     //  , const string inlst_dst_strk = "run53879_strk_0.list"
-    ,
-    const string inlst_dst_strk = "list/test/run53879_seed_0.list", const string inlst_dst_calo = "list/test/run53879_calo_0.list", const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root", const int startnumber = 0, bool withtopo=false)
+    , const string inlst_dst_strk = "list/test/run53879_seed_0.list"
+    , const string inlst_dst_calo = "list/test/run53879_calo_0.list"
+    , const string out_root = "/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/ana/newgeo/calocalib/recalc_charge/ana_53879_1000evt.root"
+    , const int startnumber = 0
+    , bool withtopo=false
+)
 {
 
   std::cout << "inlst_dst_clus : " << inlst_dst_clus << endl;
