@@ -1,24 +1,45 @@
 #! /bin/bash
 
-RUN=79516
+#79508 79510 79511 79512 79513 79514 79515
+#79516 79523 79524 79525 79526 79527 79528
+#79529 79530 79564 79565 79566 79567 79568
+#79569 79570 79571 79572 80858 80859 80861
+#80864 80865 80866 80878 80879 80880 80891
+#80892 80893 80895 80901 80902 80904 80905
+#80906 80908 80909 80910 80912 80915 81556
+#81558 81559 81561 81566 81575 81577 81580
+#81581 81583 81584 81585 81586 81600 81601
+#81602 81603 81605 81607 81609 81610 81611
+
+RUN=${1:-79516}
+
+#RUN=79516
+echo $RUN
+#exit
+
 RUN8=$(printf "%08d" "$RUN") 
 
-RUN_ROUNDING=$(( RUN / 100 * 100 ))
-RUN_ROUNDING1=$(( ((RUN / 100)+1) * 100 ))
+RUN_RNG_B=$(( RUN / 100 * 100 ))
+RUN_RNG_E=$(( ((RUN / 100)+1) * 100 ))
+RUN_RNG=$(printf "%08d_%08d" "$RUN_RNG_B" "$RUN_RNG_E")
+
+#CALO file = 100000 evt
+#SEED file = 1000 evt
+
 #x=78516
 #y=$(( x / 100 * 100 ))
 
 #echo $RUN_ROUNDING $RUN_ROUNDING1
 
+CALO_VER="pro001_pcdb001_v001" 
+SEED_VER="ana573_2026p003_v001"
+
 BASE_LISTOUT="/sphenix/user/hachiya/myrepo/analysis/SiCalo/dstmacro/data/list_run3pp"
 BASE_ANAOUT="/sphenix/tg/tg01/commissioning/INTT/work/hachiya/SiCaloTrack/data/run3pp"
 
 
-BASE_calo="/sphenix/lustre01/sphnxpro/production2/run3pp/physics/calofitting/new_newcdbtag_v008/run_000${RUN_ROUNDING}_000${RUN_ROUNDING1}/DST_CALOFITTING_run3pp_new_newcdbtag_v008-${RUN8}-"
-BASE_seed="/sphenix/lustre01/sphnxpro/production/run3pp/physics/ana538_2025p011_v001/DST_TRKR_SEED/run_000${RUN_ROUNDING}_000${RUN_ROUNDING1}/DST_TRKR_SEED_run3pp_ana538_2025p011_v001-${RUN8}-"
-#-- #          /sphenix/lustre01/sphnxpro/production2/run3pp/physics/calofitting/new_newcdbtag_v008/run_00079500_00079600/DST_CALOFITTING_run3pp_new_newcdbtag_v008-00079516-
-#-- #           /sphenix/lustre01/sphnxpro/production/run3pp/physics/ana538_2025p011_v001/DST_TRKR_SEED/run_00079500_00079600/DST_TRKR_SEED_run3pp_ana538_2025p011_v001-00079516-37800.root
-#-- #BASE_clus="/sphenix/lustre01/sphnxpro/production/run2pp/physics/ana504_2024p023_v001/DST_TRKR_CLUSTER/run_00053000_00053100/dst/DST_TRKR_CLUSTER_run2pp_ana504_2024p023_v001-${RUN8}-"
+BASE_calo="/sphenix/lustre01/sphnxpro/production/run3pp/physics/${CALO_VER}/DST_CALOFITTING/run_${RUN_RNG}/DST_CALOFITTING_run3pp_${CALO_VER}-${RUN8}-"
+BASE_seed="/sphenix/lustre01/sphnxpro/production/run3pp/physics/${SEED_VER}/DST_TRKR_SEED/run_${RUN_RNG}/DST_TRKR_SEED_run3pp_${SEED_VER}-${RUN8}-"
 
 #echo $BASE_calo
 #echo $BASE_seed
@@ -27,19 +48,24 @@ OUT_alllist="./joblist/dst_run${RUN}.list"
 : > "$OUT_alllist"
 
 Nevt=100000
- 
 
-NCALO=378
-#NCALO=5
+NCALO=$(ls ${BASE_calo}*.root | wc -l)
+echo $NCALO
+
+SEEDFILELIST="dst_trkr_seed-${RUN8}.list"
+
+echo $SEEDFILELIST
+
+#exit
 
  i=0
- while [ $i -le $NCALO ]; do  #number of calo dst 
+ while [ $i -lt $NCALO ]; do  #number of calo dst 
+# while [ $i -le 1 ]; do  #number of calo dst 
    printf -v I '%05d' "$i" 
    SUF="$I"
 
-   OUT_calo="${BASE_LISTOUT}/calo/run${RUN}_calo_${I}.list"
-   OUT_seed="${BASE_LISTOUT}/seed/run${RUN}_seed_${I}.list"   
-   #OUT_clus="/sphenix/tg/tg01/commissioning/INTT/work/mahiro/SIliconCalo/run24pp/macro/makedata/list/clus/run${RUN}_clus_${I}.list"
+   OUT_calo="${BASE_LISTOUT}/calo/${RUN}/run${RUN}_calo_${I}.list"
+   OUT_seed="${BASE_LISTOUT}/seed/${RUN}/run${RUN}_seed_${I}.list"   
 
    OUTDIR_condor="${BASE_ANAOUT}/${RUN}"   
    OUT_condor="${OUTDIR_condor}/ana_${RUN}_${I}.root"   
@@ -78,9 +104,19 @@ NCALO=378
    l=0
      while [ $l -lt 100 ]; do
        j=$((100*i+l))
+
        printf -v J '%05d' "$j"
        # SUF_trkr=$(printf "%05d" "$j")  
-       printf "%s%s.root\n" "${BASE_seed}" "${J}" >> "$OUT_seed" 
+       #printf "%s%s.root\n" "${BASE_seed}" "${J}" >> "$OUT_seed" 
+
+       SEEDFILE=$(printf "%s%05d.root" "${BASE_seed}" "${j}")
+       SEEDFILENAME=$(basename $SEEDFILE)
+       #if [  -f $SEEDFILE ]; then
+       if  grep -q "$SEEDFILENAME" $SEEDFILELIST; then
+         #echo $SEEDFILE
+         echo $SEEDFILE >> "$OUT_seed"
+       fi
+
        l=$((l+1))
      done
    printf "%s %s %s %s %s\n" "$Nevt" "$OUT_seed" "$OUT_calo" "$OUT_condor" "$Sevt">> "$OUT_alllist" 

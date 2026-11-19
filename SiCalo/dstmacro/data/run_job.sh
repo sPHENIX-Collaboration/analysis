@@ -29,8 +29,12 @@ source /opt/sphenix/core/bin/setup_local.sh "${myinstall}"
 
 #export NOPAYLOADCLIENT_CONF=/sphenix/user/phnxbld/sPHENIX_newcdb.json
 
+echo "start processing"
+date
+
 echo "Fun4All_DST_SiliconSeedAna.C(${nevts},\"${indst_clus}\",\"${indst_seed}\",\"${indst_calo}\",\"${outroot}\",${startevt})"
 root -b -q "Fun4All_DataDST_SiliconSeedAna.C(${nevts},\"${indst_clus}\",\"${indst_seed}\",\"${indst_calo}\",\"${outroot}\",${startevt})"
+#root -b -q "Fun4All_DataDST_SiliconSeedAna.C(${nevts},\"${indst_clus}\",\"${indst_seed}\",\"${indst_calo}\",\"${outroot}\",${startevt}, true)"
 
 ls -lh "${outroot}" || echo "[WARN] output not found"
 
